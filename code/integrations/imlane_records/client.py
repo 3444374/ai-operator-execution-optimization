@@ -13,9 +13,12 @@ class RecordsRejected(RuntimeError):
 
 
 class RecordsBridge:
-    def __init__(self, process, *, abort_owner: Callable[[], None], timeout_s=10.0, log=None):
+    def __init__(self, process, *, abort_owner: Callable[[], None], timeout_s=10.0, log=None,
+                 protocol="imlane.records.v1"):
         if not callable(abort_owner) or not 0 < timeout_s <= 600:
             raise ValueError("records bridge requires a supervisor and finite timeout")
+        if protocol not in ("imlane.records.v1", "imlane.records.v2"):
+            raise ValueError("unsupported records protocol")
         self.process, self.abort_owner, self.timeout_s = process, abort_owner, timeout_s
         self.log = log or (lambda _line: None)
         self._buffer = bytearray()
@@ -24,7 +27,7 @@ class RecordsBridge:
             os.set_blocking(process.stdin.fileno(), False)
             os.set_blocking(process.stdout.fileno(), False)
             self.meta = self._read(time.monotonic() + timeout_s)
-            if self.meta.get("event") != "ready" or self.meta.get("protocol") != "imlane.records.v1":
+            if self.meta.get("event") != "ready" or self.meta.get("protocol") != protocol:
                 raise RuntimeError("records bridge startup differs")
         except BaseException as error:
             self._terminal = True
@@ -93,17 +96,17 @@ class RecordsBridge:
                 error.add_note("Owner cleanup remains unconfirmed: " + type(cleanup).__name__)
             raise
 
-    def begin(self, query_id):
-        return self.request("begin", query_id=query_id)
+    def begin(self, query_id, *, deadline=None):
+        return self.request("begin", query_id=query_id, deadline=deadline)
 
-    def submit(self, block_id, rows):
-        return self.request("submit", block_id=block_id, rows=rows)
+    def submit(self, block_id, rows, *, deadline=None):
+        return self.request("submit", block_id=block_id, rows=rows, deadline=deadline)
 
     def ready(self, *, deadline=None):
         return self.request("poll", deadline=deadline)["ready"]
 
-    def collect(self, block_id):
-        return self.request("collect", block_id=block_id)["rows"]
+    def collect(self, block_id, *, deadline=None):
+        return self.request("collect", block_id=block_id, deadline=deadline)["rows"]
 
     def wait_ready(self, *, timeout_s):
         if not 0 < timeout_s <= 600:
@@ -130,8 +133,8 @@ class RecordsBridge:
             error.add_note("Owner cleanup remains unconfirmed: " + type(cleanup).__name__)
         raise error
 
-    def end(self):
-        return self.request("end")
+    def end(self, *, deadline=None):
+        return self.request("end", deadline=deadline)
 
     def abort(self):
         self._terminal = True

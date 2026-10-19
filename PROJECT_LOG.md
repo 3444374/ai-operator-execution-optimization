@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：实现 IMLane 普通 Filter 接线与 CPU 资格
+
+职责分支 `feat/imlane-local-filter` 从集成c0be45dd建立，按计划与交接复用原Filter方法／engine／parser／账本／评价，新增可逆身份、显式v2逐项终态与私有模型进程接线；默认echo合同、公共CLI与作者调度保留。每query独立owner／engine，跨query模型复用不在本次资格。
+104项CPU检查通过，完整原方法／合成输入评价与真实CPU子进程退出有原件；两独审关闭坏后缀丢已知usage、异常兜底重抛、关闭／晚到错误误报及实例／token证据缺口。失败原件保留，模型环境guard未删除，最终摘要及源码见[报告](experiments/results/diagnostics/imlane_filter_cpu_20261019/README.md)。
+指定既有SSH ControlMaster socket不存在，检查未建立连接；没有新连服务器、改依赖、创建远端lease或启动GPU／模型。作者C++／CPython无模型、Arrow16方法副本、实际双查询模型及作者Ray仍pending，入口交集成owner排期，不把CPU或旧echo记为模型贯通。
+
 ## 2026-10-16：准备独立 Daft 双查询资格并交接 IMLane 方法边界
 
 固定7d12d63c的389文件闭包，准备独立控制器／双查询child与原方法、输入及原生控制原件绑定；新16次账本只计划首单元永久4次，每引擎cap2、并发1、零重试，旧32/32不动。外层单元1200秒／清理15秒，无工程累计截止时间。

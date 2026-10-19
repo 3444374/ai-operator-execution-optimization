@@ -20,14 +20,18 @@ Json envelope(const Table& in, int64_t i) {
         {"error_type", nullptr}, {"error", nullptr}, {"model_entry_attempted", false},
         {"completion_known", true}, {"worker", {{"worker_pid", 1}}}};
 }
-Table output(const Table& in, const std::string& fault = "") {
+Table output(const Table& in, const std::string& fault = "", bool terminals_v2 = false) {
     arrow::StringBuilder ids, results; arrow::Int64Builder rows;
     for (int64_t i = 0; i < (fault == "missing" ? 1 : 2); ++i) {
         auto pos = fault == "reversed" ? 1-i : i;
         check(ids.Append(string_at(in, 0, pos))); check(rows.Append(7));
         auto value = envelope(in, pos);
+        if (terminals_v2) value["protocol"] = "imlane.records.v2";
         if (fault == "error") value.update({{"status", "error"}, {"result", nullptr},
             {"error", "injected"}, {"error_type", "EchoFailure"}, {"completion_known", false}});
+        if (terminals_v2 && fault == "error") value["result"] = {
+            {"_occurrence_id", string_at(in, 0, pos)}, {"_position", 7},
+            {"engine_result", {{"status", "failed"}, {"prompt_tokens", 5}, {"completion_tokens", 2}}}};
         if (fault == "mixed") value["error"] = "unexpected";
         if (fault == "query") value["query_id"] = "another-query";
         if (fault == "identity") value["result"]["_occurrence_id"] = "wrong";
@@ -90,8 +94,24 @@ int main() {
         failed.set_exception(std::make_exception_ptr(std::runtime_error("author task failure")));
         Pending rejected{result, std::make_unique<dbend::ExecAsyncFuncContext>(std::move(future))};
         rejects([&] { collect_ready(rejected); }); rejects([&] { collect_ready(rejected); });
+        auto terminals = std::make_shared<ExchangeResult>(); terminals->input = in;
+        terminals->terminals_v2 = true; terminals->max_output_bytes = 1048576;
+        converter.ConvertFromExchange(output(in, "error", true), *terminals);
+        require(!terminals->conversion_error && terminals->output, "v2 lost observed failure terminals");
+        auto known_usage = Json::parse(string_at(terminals->output, 2, 0));
+        require(known_usage.at("result").at("engine_result").at("prompt_tokens") == 5,
+            "v2 lost authoritative usage before author release");
+        std::promise<void> delivered; auto delivered_future = delivered.get_future(); delivered.set_value();
+        Pending partial{terminals, std::make_unique<dbend::ExecAsyncFuncContext>(std::move(delivered_future))};
+        require(collect_ready(partial)->num_rows() == 2 && partial.state == Pending::State::collected,
+            "v2 did not deliver all observed terminals exactly once");
+        rejects([&] { collect_ready(partial); });
+        auto mismatch = std::make_shared<ExchangeResult>(); mismatch->input = in; mismatch->max_output_bytes = 1048576;
+        converter.ConvertFromExchange(output(in, "error", true), *mismatch);
+        require(bool(mismatch->conversion_error), "v1 accepted a v2 result without explicit negotiation");
         std::cout << Json({{"passed", true}, {"negative_output_cases", 9}, {"future_exception_consumed_once", true},
-            {"owned_output_survived_mutation", true}, {"real_model_requests", 0}}).dump() << std::endl;
+            {"owned_output_survived_mutation", true}, {"v2_known_failure_usage_delivered", true},
+            {"real_model_requests", 0}}).dump() << std::endl;
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; return 1; }
 }

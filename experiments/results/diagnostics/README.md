@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[IMLane 普通 Filter CPU 接线](imlane_filter_cpu_20261019/README.md)：原方法、可逆身份、v2逐项终态与模型进程责任的104项CPU检查；作者C++／CPython实机及GPU因既有通道缺失待验。
+
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
 [Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md)：独立Ray Data／Daft／SemLoom静态切片，CPU分层资格与原生参照／Ray Data／静态参照的Qwen单4090小切片实测；原失败和同预算32/32保留，Daft GPU、级联与production Core待验。

@@ -132,7 +132,8 @@ namespace／SHM 核验仍由 owner helper 负责。这不是本地模型或 GPU 
 
 ## 普通 Filter 方法接入交接
 
-下一步先复用现有 `FilterMethod`／`LotusFilterMethod`、`GenerationSpec` 和隔离的 `EngineSpec`，
+以下交接记录对应集成基点 `c0be45dd`；后续本职责分支的实现与资格见[普通 Filter v2](#普通-filter-v2cpu-资格作者实机待验)。
+交接要求先复用现有 `FilterMethod`／`LotusFilterMethod`、`GenerationSpec` 和隔离的 `EngineSpec`，
 再接原 parser、调用账本与 SemBench evaluator。主链的字符串 `row_id` 需要到本桥 `int64`
 的可逆映射，同时保留原 `row_id`、`source_position`、`call_index` 与完整 `call_id/query_id/stage_id`；
 不把重复来源合并，也不将评价标签放入 `record_json`。五列 Arrow 传输和作者 DBEnd 的调度归属保持。
@@ -149,3 +150,77 @@ scope，再独立准备双查询模型资格；保留原 10 个 scope 的历史�
 环境传播及自身模型 owner，不能借用其他路径的 Ray pool 或 GPU 退出结论。模型进程的 PID 出生身份、
 全部后代、namespace／SHM 与独立 GPU 清点均结清后才能关闭 owner／释放自己的 lease。
 本轮只完成交接，没有进入作者环境、增加模型单元或修改桥协议。
+
+## 普通 Filter v2：CPU 资格，作者实机待验
+
+职责分支 `feat/imlane-local-filter` 从 `integration/data-execution@c0be45dd` 建立。
+当前实现接入原普通 Movie Q3 方法，未修改公共 CLI、公共 records 合同、共享 engine、
+作者 Coordinator／Lane／执行器或旧 HTTP 配置。[本轮证据与阻塞](../../../experiments/results/diagnostics/imlane_filter_cpu_20261019/README.md)
+单列，原 echo 的 10 个作者 scope 保持原源码及运行身份。
+
+| 计划与实施要求 | 当前落点 | 验收 |
+|---|---|---|
+| [架构 §3.2](../../../experiments/plans/系统架构.md#lotus-data-execution)：后端拥有派发，原方法拥有格式和解析 | [Filter UDF](filter_udf.py) 调用既有 `LotusFilterMethod`，宿主将原始 engine rows 交给既有 `run_movie_query` | 原 formatter、parser、usage、COUNT 与原 SemBench evaluator 的 CPU 接线 |
+| [Filter 计划](../../../experiments/plans/数据组织.md#lotus-filter-data-execution)：逐发生项关联、不传标签 | [可逆映射](filter_workload.py)，wire `row_id` 为有界发生项序号；原字符串身份置于轻量 JSON 元字段 | 重复来源不同 call ID、Unicode／空值样式文本、错配／缺失／重复／乱序与跨查询拒绝 |
+| 同计划：坏后缀不能抹掉已发送前缀，失败及未知项保留 | [宿主结果迭代器](filter_host.py) 最多两块 pending，发现失败后停止供给、有限排空已接纳块；逐项交账本后由原 consumer 报错 | 块内成功→带 usage 的失败→成功、跨块已接纳终态、坏后缀、unknown 与不补零 |
+| [模型所有权](../../../experiments/plans/系统架构.md#model-engine-execution)：跨环境只传值，角色固定，失败 owner 隔离 | 选择性复用现有 `daft_engine_process.EngineProcess`；[IMLane 启动装配](model_process.py) 清除作者 ABI 环境，显式保留 owner 分配的单 GPU；解释器共享一个固定配置槽 | alias 不能另开模型角色；关闭失败不先标 closed；构造失败不冒称从未创建模型进程；CPU 子进程与后代退出 |
+| README 原交接：先 CPU，再作者 CPython 无模型，再双查询模型；作者 Ray 单列 | [有限资格入口](verify_filter.py)，复用已有 scope／lease；固定输入、每查询永久预留及输出目录禁止覆盖 | 本机 CPU 已运行；作者 C++／CPython、隔离 Arrow16 方法副本及真实模型均待实测；作者 Ray 未接入 |
+
+五列输入和三列输出不变。默认 `imlane.records.v1` 继续严格拒绝 worker error 整块；
+只有启动二进制时显式追加 `imlane.records.v2`，client 也选择同版本，才交付 v2。
+v2 在原九字段 outcome 上增加 `protocol`，失败 `result` 仍携带 `kind=filter` 与完整
+`engine_result`，或 `kind=close` 与关闭报告。模型 `succeeded/failed/unknown`、提交证据、
+原 messages SHA256、token IDs、usage、finish reason、engine UID 原值透传；桥结构或身份损坏
+仍使 owner 终态并交监督清理。v2 的查询 wire 容量为 4096 个模型发生项加一个显式关闭记录，
+关闭记录不占模型预算；输入、输出及命令的原字节上限保持。
+
+输出仍在 `ConvertFromExchange` 内校验、经 Arrow IPC 独立复制，并在返回作者清理路径后才收集。
+无模型 echo 的异常安全策略未改变：converter 捕获错误而不向作者抛出，保留资源责任；
+本轮未新增作者资源清理补丁，也未删除旧校验。v2 的新 C++ 检查尚未在作者构建环境执行。
+
+每个查询 owner 持有一个私有 engine，在该查询多块间复用；关闭控制记录须在 pending 结清后
+经同一作者 Lane 执行。两个查询使用独立 owner、engine 和取消目录；本版不声明跨查询同 engine
+复用资格。这是首个普通 Filter 接入的工程范围选择，与计划允许的查询私有资源一致；
+若后续研究跨查询模型复用，须另核实例、期限与总预算，不能借此版推导。
+失败模型初始化留下未知句柄或关闭报告不确认时，继续保留 owner 责任，使用 namespace supervisor
+收尾；API close、进程退出、SHM 与 GPU 清点分别记录。
+
+资格入口只消费仓库外 `imlane.filter.run.v1` JSON 配置，至少包含：
+
+```json
+{
+  "schema": "imlane.filter.run.v1",
+  "mode": "no-model",
+  "author_root": "/absolute/checked-author-root",
+  "method_python": "/absolute/isolated-arrow16-method/bin/python",
+  "bridge_binary": "/absolute/new-v2-build/imlane_records",
+  "artifact_root": "/absolute/owned-artifacts",
+  "source_manifest": "/absolute/movie-records/manifest.json",
+  "sembench_checkout": "/absolute/fixed-SemBench",
+  "preflight_report": "/absolute/current-preflight.json",
+  "method": {"model_name": "openai/local-fixture"},
+  "engine": {
+    "model_path": "/absolute/local-model",
+    "model_python": "/absolute/model-venv/bin/python",
+    "driver_python": "/absolute/driver-venv/bin/python",
+    "max_model_calls": 8
+  },
+  "generation": {},
+  "resources": {"prepare_batch_rows": 4, "model_batch_rows": 4, "max_active_batches": 2},
+  "query_ids": ["qualification-q1", "qualification-q2"],
+  "max_total_calls": 16,
+  "model_environment": {}
+}
+```
+
+```bash
+PYTHONPATH=code <driver-python> -m integrations.imlane_records.verify_filter \
+  --config <private-config.json> --output <new-private-run-directory>
+```
+
+`no-model` 明确使用测试 UDF／CPU 子进程，GPU mask 为空，不加载权重。
+`local-model` 由集成 owner 排期，在配置中显式提供其单 GPU mask，核原作者 Python3.12／Arrow16.1、
+独立方法副本的固定 LOTUS 源码、无 LOTUS 的 vLLM0.25.1 模型环境及绑定源码的新桥二进制。
+开始前持久化所有查询的永久预算，失败／unknown 不退款、不重发；本入口不能自动重启或复用旧输出。
+清理后单独查询 GPU compute 进程和显存回落；观察失败或资源 unknown 保留本次 lease。
+CPU 结果不认证该模型装配。当前受限于既有 SSH ControlMaster 缺失，未尝试新连接、安装依赖或运行 GPU。

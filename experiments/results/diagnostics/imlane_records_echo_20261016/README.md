@@ -104,3 +104,6 @@ SHA-256 为 `a2c702c0f408ade3a51efc0ee18e5a761e39a4fc80ba105a11fd3232c31d89e5`�
 此次集成尚未重跑作者 scope。当前 `collect_ready` 遇 worker 错误会拒绝整块，未来接模型时
 还须保留块内已完成调用的 usage，并显式映射主链的模型角色、阶段与发生项身份；echo 资格
 不证明这些方法和账目接线已经完成。
+
+后续职责分支从 c0be45dd 实现上述[普通 Filter v2 的 CPU 接线](../imlane_filter_cpu_20261019/README.md)。
+它的源码、CPU／独审与环境阻塞单列；本报告的作者 echo 运行不重新绑定为新协议、方法或模型实测。

@@ -6,6 +6,7 @@
 
 [IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
 本机修后22项CPU／Arrow与PID／SHM替身检查不替代新增helper的作者实机重跑，也不提供模型方法、usage或GPU资格，见[分层证据](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
+职责分支的[普通 Filter v2](integrations/imlane_records/README.md#普通-filter-v2cpu-资格作者实机待验)新增原方法、逐项usage与私有模型进程接线；104项CPU检查及两独审通过，[作者实机／模型因既有通道缺失仍待验](../experiments/results/diagnostics/imlane_filter_cpu_20261019/README.md)。
 
 [LOTUS 完整请求模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，
 [Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)保留原查询与评价器。

@@ -5,7 +5,9 @@
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。
 当前主线新增独立owner helper，复用精确PID出生标识、namespace／SHM核验与禁止stale恢复的host lease；22项本机CPU检查通过。
 原作者实测不重新绑定为新helper实测，作者Ray、LOTUS／模型方法、逐调用usage、完整真实模型生命周期及新helper作者实机重跑仍pending，见[报告](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
-后续普通Filter的可逆发生项映射、隔离解释器和块内已知usage交接已收口到[现有模块交接](integrations/imlane_records/README.md#普通-filter-方法接入交接)，本轮未新增作者环境或模型执行。
+职责分支 `feat/imlane-local-filter` 从 c0be45dd 实现[普通 Filter v2](integrations/imlane_records/README.md#普通-filter-v2cpu-资格作者实机待验)：可逆发生项映射、原 LOTUS 准备、原始逐项终态／已知 usage、私有模型进程与显式 Lane 关闭接线，默认 v1 不变。
+104项本机CPU检查通过（原方法／owner／进程65＋独立engine39），两独审发现项修复后接受；[本轮报告](../experiments/results/diagnostics/imlane_filter_cpu_20261019/README.md)区分合成输入／固定响应与模型资格。
+指定既有SSH socket缺失，未进入作者环境；新C++、Arrow16方法副本、作者CPython实机、真实模型与作者Ray均pending，GPU／模型请求0，不转授原echo资格，也未改公共selector或作者调度。
 
 ## 独立 records 数据执行切片
 

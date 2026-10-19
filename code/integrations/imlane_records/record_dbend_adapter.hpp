@@ -104,9 +104,13 @@ inline std::vector<std::string> validate_input(const Table& input, const std::st
     }
     return ids;
 }
-inline Json validate_outcome(const std::string& wire, const Table& input, int64_t i) {
+inline Json validate_outcome(const std::string& wire, const Table& input, int64_t i,
+                             bool terminals_v2 = false) {
     auto value = Json::parse(wire);
-    require(value.is_object() && value.size() == 9, "records outcome fields differ");
+    require(value.is_object() && value.size() == (terminals_v2 ? 10 : 9), "records outcome fields differ");
+    if (terminals_v2)
+        require(value.contains("protocol") && value.at("protocol") == "imlane.records.v2",
+            "records terminal protocol differs");
     for (const char* key : {"query_id", "stage_id", "status", "result", "error_type", "error",
                            "model_entry_attempted", "completion_known", "worker"})
         require(value.contains(key), "records outcome field is missing");
@@ -126,10 +130,17 @@ inline Json validate_outcome(const std::string& wire, const Table& input, int64_
             result.contains("_position") && result.at("_position").is_number_integer() &&
             result.at("_position").get<int64_t>() == row_at(input, i), "records result occurrence differs");
     } else {
-        require(value.at("status") == "error" && value.at("result").is_null() &&
+        require(value.at("status") == "error" &&
+            (terminals_v2 ? value.at("result").is_object() : value.at("result").is_null()) &&
             value.at("error_type").is_string() && !value.at("error_type").get<std::string>().empty() &&
             value.at("error").is_string() && !value.at("error").get<std::string>().empty(),
             "records failure/success fields are inconsistent");
+    }
+    if (terminals_v2) {
+        const auto& result = value.at("result");
+        require(result.contains("_occurrence_id") && result.at("_occurrence_id") == string_at(input, 0, i) &&
+            result.contains("_position") && result.at("_position").is_number_integer() &&
+            result.at("_position").get<int64_t>() == row_at(input, i), "records terminal occurrence differs");
     }
     return value;
 }
@@ -138,6 +149,7 @@ struct ExchangeResult {
     size_t max_output_bytes = 0;
     std::exception_ptr conversion_error;
     bool conversion_entered = false;
+    bool terminals_v2 = false;
 };
 inline void convert_output(const Table& table, ExchangeResult& result) {
     schema(table, {"call_id", "row_id", "outcome_json"}, {arrow::utf8(), arrow::int64(), arrow::utf8()});
@@ -146,7 +158,7 @@ inline void convert_output(const Table& table, ExchangeResult& result) {
     for (int64_t i = 0; i < table->num_rows(); ++i) {
         require(string_at(table, 0, i) == string_at(result.input, 0, i) &&
             row_at(table, i) == row_at(result.input, i), "records occurrence/order differs");
-        validate_outcome(string_at(table, 2, i), result.input, i);
+        validate_outcome(string_at(table, 2, i), result.input, i, result.terminals_v2);
     }
     auto sink = take(arrow::io::BufferOutputStream::Create());
     auto writer = take(arrow::ipc::MakeStreamWriter(sink, table->schema()));
@@ -199,7 +211,8 @@ inline Table collect_ready(Pending& pending) {
     require(pending.result->conversion_entered && bool(pending.result->output), "records output was not converted");
     auto result = pending.result->output;
     for (int64_t i = 0; i < result->num_rows(); ++i)
-        require(validate_outcome(string_at(result, 2, i), pending.result->input, i).at("status") == "ok",
+        require(pending.result->terminals_v2 ||
+            validate_outcome(string_at(result, 2, i), pending.result->input, i).at("status") == "ok",
             "records worker reported an error; owner must stop");
     pending.result.reset();
     pending.state = Pending::State::collected;
@@ -212,9 +225,12 @@ class Session {
     std::unordered_set<std::string> calls_, blocks_, queries_;
     std::map<std::string, Pending> pending_;
     bool poisoned_ = false;
+    bool terminals_v2_ = false;
 public:
-    Session(std::shared_ptr<dbend::DBEndContext> context, std::string alias, Limits limits = {})
-        : context_(std::move(context)), alias_(std::move(alias)), limits_(limits) { limits_.validate(); }
+    Session(std::shared_ptr<dbend::DBEndContext> context, std::string alias, Limits limits = {},
+            bool terminals_v2 = false)
+        : context_(std::move(context)), alias_(std::move(alias)), limits_(limits),
+          terminals_v2_(terminals_v2) { limits_.validate(); }
     bool poisoned() const { return poisoned_; }
     void mark_terminal() noexcept { poisoned_ = true; }
     size_t pending_count() const { return pending_.size(); }
@@ -236,6 +252,7 @@ public:
         auto result = std::make_shared<ExchangeResult>();
         result->input = std::move(input);
         result->max_output_bytes = limits_.max_output_bytes;
+        result->terminals_v2 = terminals_v2_;
         try {
             // Allocate host bookkeeping before enqueueing an author task.
             auto inserted = pending_.emplace(block, Pending{result, nullptr});
