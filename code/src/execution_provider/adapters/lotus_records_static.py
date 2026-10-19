@@ -7,81 +7,15 @@ directly to a single model actor. The driver receives only compact terminal rows
 from __future__ import annotations
 
 import os
-import shlex
 import time
 from dataclasses import asdict
-from pathlib import Path
 from typing import Any, Callable, Iterator
 
+from src.execution_provider.adapters.lotus_records_actor_owner import (
+    RecordsActorOwner, _ModelActor, _PrepareActor, _check, _runtime_env,
+)
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
-
-
-_CODE_ROOT = Path(__file__).resolve().parents[3]
-
-
-def _runtime_env(python: str) -> dict[str, Any]:
-    return {
-        "py_executable": shlex.quote(python),
-        "env_vars": {"PYTHONPATH": str(_CODE_ROOT)},
-    }
-
-
-def _check(deadline: float, cancelled: Callable[[], bool] | None = None) -> None:
-    if cancelled is not None and cancelled():
-        raise InterruptedError("Movie Q3 static reference cancelled")
-    if time.monotonic() >= deadline:
-        raise TimeoutError("Movie Q3 static reference deadline expired")
-
-
-class _PrepareActor:
-    def __init__(self, method: dict[str, Any]):
-        from src.semantic_methods.lotus.engine import LotusFilterMethod
-
-        self.method = LotusFilterMethod(FilterMethod.from_dict(method))
-
-    def prepare(self, rows: list[dict[str, Any]], deadline: float) -> list[dict[str, Any]]:
-        _check(deadline)
-        prepared = self.method.prepare_rows(rows)
-        _check(deadline)
-        return prepared
-
-
-class _ModelActor:
-    def __init__(self, engine: dict[str, Any], generation: dict[str, Any], model_batch_rows: int):
-        self.engine_spec = EngineSpec.from_dict(engine)
-        self.generation = GenerationSpec.from_dict(generation)
-        self.model_batch_rows = model_batch_rows
-        self.engine = None
-
-    def ready(self, deadline: float) -> dict[str, Any]:
-        from src.serving.backends.vllm_engine import VllmEngine
-
-        _check(deadline)
-        if self.engine is None:
-            self.engine = VllmEngine(self.engine_spec, self.generation)
-        _check(deadline)
-        return self.engine.ready()
-
-    def run(self, rows: list[dict[str, Any]], deadline: float) -> Any:
-        _check(deadline)
-        results = []
-        for start in range(0, len(rows), self.model_batch_rows):
-            try:
-                results.extend(self.engine.run_prepared(
-                    rows[start:start + self.model_batch_rows], deadline_monotonic=deadline,
-                ))
-            except BaseException as exc:
-                # Ray exception transport would otherwise hide successful
-                # earlier sub-batches from the independent caller ledger.
-                return dict(results=results, error_type=type(exc).__name__,
-                            unresolved_calls=len(rows) - start)
-        return results
-
-    def close(self, timeout: float) -> dict[str, Any]:
-        if self.engine is None:
-            return dict(status="closed", engine_api_shutdown_confirmed=True, gpu_exit_confirmed=True)
-        return self.engine.close(timeout=timeout)
 
 
 class _StaticRows(Iterator[dict[str, Any]]):
@@ -234,50 +168,44 @@ class SemLoomRecordsStaticReference:
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.generation = GenerationSpec.from_dict(asdict(generation))
         self.resources = RecordsResources(**asdict(resources))
-        self.ray = None
-        self._prepare_actors: list[Any] = []
-        self._model_actor = None
-        self._model_ready = None
-        self._model_close_ref = None
-        self._model_close_report = None
-        self._killed: set[int] = set()
+        self._actor_owner = RecordsActorOwner(
+            self.method, self.engine, self.generation, self.resources,
+        )
         self._active: _StaticRows | None = None
         self._unsettled = False
         self._closing = False
         self.last_query_report = None
         self.last_close_report = None
 
+    @property
+    def ray(self) -> Any:
+        return self._actor_owner.ray
+
+    @ray.setter
+    def ray(self, value: Any) -> None:
+        self._actor_owner.ray = value
+
+    @property
+    def _prepare_actors(self) -> list[Any]:
+        return self._actor_owner.prepare_actors
+
+    @property
+    def _model_actor(self) -> Any:
+        return self._actor_owner.model_actor
+
+    @property
+    def _model_ready(self) -> Any:
+        return self._actor_owner.model_ready
+
     def _wait_ready(self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None) -> Any:
-        while True:
-            _check(deadline, cancelled)
-            ready, _ = self.ray.wait(
-                [ref], num_returns=1,
-                timeout=min(0.05, max(0.0, deadline - time.monotonic())),
-                fetch_local=False,
-            )
-            if ready:
-                return self.ray.get(ref)
+        return self._actor_owner.wait_ready(ref, deadline, cancelled)
 
     def _start(self, deadline: float, cancelled: Callable[[], bool] | None) -> None:
-        if self._model_actor is not None:
-            return
-        import ray
-
-        self.ray = ray
-        prepare = ray.remote(_PrepareActor)
-        model = ray.remote(_ModelActor)
-        for _ in range(self.resources.cpu_workers):
-            self._prepare_actors.append(prepare.options(
-                num_cpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
-                runtime_env=_runtime_env(self.engine.driver_python),
-            ).remote(asdict(self.method)))
-        self._model_actor = model.options(
-            num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
-            runtime_env=_runtime_env(self.engine.model_python),
-        ).remote(asdict(self.engine), asdict(self.generation), self.resources.model_batch_rows)
-        self._model_ready = self._wait_ready(
-            self._model_actor.ready.remote(deadline), deadline, cancelled
-        )
+        self._actor_owner.method = self.method
+        self._actor_owner.engine = self.engine
+        self._actor_owner.generation = self.generation
+        self._actor_owner.resources = self.resources
+        self._actor_owner.start(deadline, cancelled)
 
     def evaluate(
         self, source: Any, *, query_id: str,
@@ -351,54 +279,13 @@ class SemLoomRecordsStaticReference:
         if self._active is not None:
             query_report = self._active.close()
             errors.extend(query_report["cleanup_errors"])
-        if self._model_actor is not None and not (
-            self._model_close_report or {}
-        ).get("engine_api_shutdown_confirmed"):
-            try:
-                if self._model_close_ref is None:
-                    self._model_close_ref = self._model_actor.close.remote(10.0)
-                deadline = time.monotonic() + min(10.0, self.resources.startup_timeout_s)
-                report = self._wait_ready(self._model_close_ref, deadline, None)
-                self._model_close_ref = None
-                if type(report) is not dict:
-                    raise ValueError("model close must return a compact report")
-                self._model_close_report = report
-                if not report.get("engine_api_shutdown_confirmed"):
-                    errors.append("model_engine_shutdown_unconfirmed")
-            except BaseException as exc:
-                if not isinstance(exc, TimeoutError):
-                    self._model_close_ref = None
-                errors.append("model_close: " + type(exc).__name__)
-        actors = list(self._prepare_actors)
-        if (self._model_close_report or {}).get("engine_api_shutdown_confirmed"):
-            actors.append(self._model_actor)
-        for actor in actors:
-            if id(actor) in self._killed:
-                continue
-            try:
-                self.ray.kill(actor, no_restart=True)
-                self._killed.add(id(actor))
-            except BaseException as exc:
-                errors.append("actor_kill_request: " + type(exc).__name__)
-        empty = self._model_actor is None
-        gpu_exit = True if empty else (self._model_close_report or {}).get("gpu_exit_confirmed")
-        owned_actors = list(self._prepare_actors)
-        if self._model_actor is not None:
-            owned_actors.append(self._model_actor)
-        actors_requested = all(id(actor) in self._killed for actor in owned_actors)
-        settled = not errors and actors_requested and (empty or bool(
-            (self._model_close_report or {}).get("engine_api_shutdown_confirmed")
-        )) and gpu_exit is True
+        actor_report = self._actor_owner.close()
+        errors.extend(actor_report["cleanup_errors"])
         self.last_close_report = {
             "implementation": "semloom_records_static_reference",
             "production_core_connected": False,
-            "status": "closed" if settled else "unknown",
-            "cleanup_scope": "ray_actor_and_engine_api",
-            "model_ready": self._model_ready,
-            "engine_close_report": self._model_close_report,
-            "gpu_exit_confirmed": gpu_exit,
-            "actor_kill_requests_confirmed": actors_requested,
-            "model_actor_handle_retained": self._model_actor is not None,
+            **actor_report,
+            "status": "closed" if actor_report["status"] == "closed" and not errors else "unknown",
             "last_query_report": self.last_query_report,
             "cleanup_errors": errors,
         }

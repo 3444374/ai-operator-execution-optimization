@@ -345,6 +345,33 @@ class StaticRecordsTests(unittest.TestCase):
         self.assertEqual(sum(event[0] == "set_runner_native" for event in events), 1)
         self.assertTrue({row["call_id"] for row in first}.isdisjoint(row["call_id"] for row in second))
 
+    def test_empty_source_does_not_allocate_actors_and_keeps_close_schema(self):
+        self.rows = []
+        stack, events, engines, _ = self._runtime()
+        with stack:
+            owner = self._owner()
+            self.assertEqual(list(owner.evaluate(Source(self.rows), query_id="empty")), [])
+            report = owner.close()
+        self.assertEqual(engines, [])
+        self.assertFalse(any(event[0] == "actor" for event in events))
+        self.assertEqual(report["status"], "closed")
+        self.assertEqual(set(report), {
+            "implementation", "production_core_connected", "status", "cleanup_scope", "model_ready",
+            "engine_close_report", "gpu_exit_confirmed", "actor_kill_requests_confirmed",
+            "model_actor_handle_retained", "last_query_report", "cleanup_errors",
+        })
+
+    def test_actor_closure_does_not_overwrite_static_query_report(self):
+        stack, _, _, _ = self._runtime()
+        with stack:
+            owner = self._owner()
+            list(owner.evaluate(Source(self.rows), query_id="q"))
+            query_report = owner.last_query_report
+            report = owner.close()
+        self.assertIs(report["last_query_report"], owner.last_query_report)
+        self.assertEqual(report["last_query_report"], query_report)
+        self.assertNotIn("last_query_report", owner._actor_owner.last_close_report)
+
     def test_failed_engine_close_retains_actor_for_retry_and_unknown_report(self):
         stack, events, engines, _ = self._runtime(fail_first_close=True)
         with stack:
