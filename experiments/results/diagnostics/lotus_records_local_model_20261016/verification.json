@@ -636,5 +636,273 @@
         "sha256": "46e31068e8aee820aed2cf5df8529e4a2dfb428776798ea7b0060edffe003ec2"
       }
     ]
+  },
+  "core_logprobs_integration_cpu_20261019": {
+    "integration_code_commit": "1a959084823b76b94b2927e9515b7c07f88c2f09",
+    "identity_assertion_commit": "e5ac2b6d",
+    "source_sha256": {
+      "code/tests/execution_provider/test_lotus_records_core_libraries.py": "31d194fc77f6363976f6f704c10f5b166cf338e1c95bd194981ef61b75048e5a",
+      "code/src/execution_provider/adapters/lotus_records_core.py": "8f6ca0c49428bfd14bf1f0d532368d0fc50c540d3f207e060d3bedcb0085ba97",
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "cc823f1bc7b28b14da346f4378cc9316e8d86b2fbccc784e375ebe8c0dd4a08d",
+      "code/src/experiments/lotus_records_movie.py": "7f2cccaaebebeab2227a957145a273955eed7d78e533d49cd32f230bd4391edc",
+      "code/src/semantic_methods/lotus/records.py": "fc53d708b0e0bf4c031f5c73c40bee6f1f6256ac961ffab21336493227ced365",
+      "code/src/serving/backends/vllm_engine.py": "483983185bb15f2c434969d1366180a5c599fc75fdcbde11a4136c100e41c3b4"
+    },
+    "actual_model_calls": 0,
+    "gpu_calls": 0,
+    "logprobs": {
+      "author_commits": [
+        "6e898921",
+        "f1455b732c3e75d7512f95443d9f3d794fbb6d08"
+      ],
+      "tests_passed": 62,
+      "skipped": 0,
+      "scope": "Pinned CPU fake-vLLM kernel plus actual LOTUS LM/formatter/LiteLLM contracts; no local model",
+      "content_shape": "OpenAI content array; no outer content object",
+      "ordinary_filter_still_rejects_logprobs": true,
+      "summary": {
+        "sha256": "49b7c26525bea46829b4d5b488bb0534948225f263fd13c7b11135f4c9b559e5",
+        "bytes": 1505
+      }
+    },
+    "late_close_receipts": {
+      "author_commit": "fdf97c0e",
+      "actual_lotus_and_ledger_checks": 34,
+      "isolated_fake_kernel_checks": 51,
+      "skip": 0,
+      "real_unknown_overwritten": false,
+      "only_runner_missing_placeholders_upgrade": true,
+      "submission": {
+        "sha256": "169681e29d59499fcdf9f965268bd716a9ef544f34138a914ff226d2f8dd6169",
+        "bytes": 2153
+      }
+    },
+    "role_stage_identity": {
+      "author_commit": "5fba118f",
+      "cpu_checks": 59,
+      "skipped": 0,
+      "old_default_call_ids_unchanged": true,
+      "summary": {
+        "sha256": "f817e1deb78a51d03f922c2e35e169cd48ac51297e77a7601b20c70cb790064a",
+        "bytes": 1083
+      }
+    },
+    "core_selector": {
+      "author_commit": "232130f2",
+      "cpu_checks": 108,
+      "isolated_fake_kernel_checks": 51,
+      "skipped": 0,
+      "production_core_used_from_actual_session_engine": true,
+      "prepare_and_model_batch_rows_required": 1,
+      "submission": {
+        "sha256": "9203ff86b147eb75e1c457a8a3915d41e1548761a4faed0ed8732817e06ded00",
+        "bytes": 2300
+      }
+    },
+    "joint_cpu_graph": {
+      "tests_passed": 1,
+      "queries": 4,
+      "fixture_request_rows": 12,
+      "versions": {
+        "python": "3.12.6",
+        "ray": "2.56.1",
+        "daft": "0.7.21",
+        "lotus_ai": "1.2.4"
+      },
+      "production_core_used": true,
+      "static_reference_core_used": false,
+      "original_parser_and_evaluator": true,
+      "count_per_query": 1,
+      "true_positive_per_query": 1,
+      "true_negative_per_query": 2,
+      "synthetic_tokens_per_query": 12,
+      "same_engine_across_two_queries_per_arm": true,
+      "core_credits_returned": true,
+      "transport_closed": true,
+      "observed_owned_processes": 20,
+      "observed_owned_exit_confirmed": true,
+      "elapsed_s": 19.86807441699966,
+      "gpu_exit_qualified": false,
+      "scope": "fixed CPU output; synthetic token IDs and usage"
+    },
+    "preserved_failed_cpu_run": {
+      "name": "core-records-cpu-libraries-r2",
+      "reason": "launch helper omitted reports directory",
+      "observed_owned_exit_confirmed": true,
+      "source_unchanged_before_r3": true,
+      "supervisor": {
+        "sha256": "d0241119f0bd2b3c3c0a1a5382cacde08848a41c94839b5802e6fabf9cffe506",
+        "bytes": 2442
+      },
+      "worker_log": {
+        "sha256": "fdcda88ad91b7f73dc18090f0779e854779a4dc920a167580124f33657ff8769",
+        "bytes": 4521
+      }
+    },
+    "joint_raw_evidence": {
+      "reports/composition.json": {
+        "sha256": "3e5780de357d8fdf14e016ddbe801497f8d1496a11fc5071fba2676b0df04e71",
+        "bytes": 2004
+      },
+      "reports/core-close.json": {
+        "sha256": "afd5bb67b6eeb4a8a7e961a79e43fe38b8b33183c6008424f6071594e48c794f",
+        "bytes": 1993
+      },
+      "reports/core-cpu-1.json": {
+        "sha256": "62ce055a31f378354f34660415cc24e7301465effdccfd8a9c19f70d89ad7a59",
+        "bytes": 12589
+      },
+      "reports/core-cpu-2.json": {
+        "sha256": "75d2b0d768d98837e299f0b1641049a1529c4198b879456685a5bf4988fc8ffd",
+        "bytes": 12593
+      },
+      "reports/static-close.json": {
+        "sha256": "46ca207a576dd7b2a297514f4d8571f4d2fba7acf6c13b33934f15ea8b382e8a",
+        "bytes": 906
+      },
+      "reports/static-cpu-1.json": {
+        "sha256": "b73ca8b5254f3bcb26e9f049399ec0ae7cfcff5f8fab7f92255147592c00bb4d",
+        "bytes": 12040
+      },
+      "reports/static-cpu-2.json": {
+        "sha256": "805c198e8adac511ccabbf6c2fb2d4d9d9cac5402216084c304d360ff58ad89b",
+        "bytes": 12046
+      },
+      "source.json": {
+        "sha256": "0e2a8c4487929de7af5797dbc94a0abc088ef61287aadf076feb007ef13fb706",
+        "bytes": 1309
+      },
+      "supervision/supervisor.json": {
+        "sha256": "5436220c8044a6740e9fce289c04c83339f76ff26fb498e75d7aa6dd6f29c567",
+        "bytes": 2731
+      },
+      "supervision/worker.log": {
+        "sha256": "72e3c47ac464adb59add04eb9a156e677eba14c9d3d6c51f5375ef6130dce688",
+        "bytes": 2062
+      }
+    },
+    "reviews": {
+      "spec": "PASS on 1a959084 source before added marker assertion",
+      "standards": "PASS on 1a959084 source before added marker assertion",
+      "joint_report_review": "pending integration documentation review"
+    },
+    "limitations": [
+      "Actual local model/GPU/Core qualification remains pending.",
+      "Ray CPU fixture replaces only the model kernel, model allocation and interpreter preflight; usage and token IDs are synthetic.",
+      "Counters from separate targeted runs are not an aggregate count of unique tests.",
+      "Generic task/column backend migration is separate and not claimed here."
+    ]
+  },
+  "daft_close_repair_cpu_20261019": {
+    "author_commits": [
+      "11dda33b09fa0bdba9d6d8b65ac9b0aec4941ab9",
+      "cc96c8d6947dd6469f22db2d0fb645e1e507349c"
+    ],
+    "integrated_commits": [
+      "a31bf05f",
+      "0c4e7034"
+    ],
+    "engine_source_sha256": "433e9d9b1ce9a141745c101e3e6d8f787ee327cad73e0328092f210f89c68528",
+    "default_lock_held_close_budget_s": 15,
+    "rpc_budget_s": 11,
+    "cleanup_reserved_s": 4,
+    "literal_api_confirmation_required": true,
+    "confirmed_api_cleanup_retry_sends_rpc": false,
+    "new_initial_tests_passed": 5,
+    "legacy_tests_passed": 17,
+    "final_confirmation_targeted_tests_passed": 16,
+    "final_confirmation_observed_owned_processes": 17,
+    "observed_owned_exit_confirmed": true,
+    "close_wire_unchanged": true,
+    "serve_run_cancel_ast_unchanged": true,
+    "raw_failed_runs_preserved": true,
+    "model_calls": 0,
+    "gpu_calls": 0,
+    "gpu_exit_confirmed": null,
+    "review_spec": "PASS",
+    "review_standards": "PASS",
+    "evidence": [
+      {
+        "name": "engine-process-close-delivery-r1.json",
+        "sha256": "fc469d9c83345fef9bfc1f7e3e26fd0c6fca8c461e788121df4f9f4b7bd775c7",
+        "bytes": 14152
+      },
+      {
+        "name": "engine-process-close-confirmation-delivery-r1.json",
+        "sha256": "00adbff44ebaac529b13d278a2cbdf5815a423ee68a91984f371c6c5746dd87c",
+        "bytes": 12117
+      }
+    ],
+    "qualification_only_source": {
+      "commit": "f526fbf149873bd437da51b480e36f8892093fbd",
+      "base": "7d12d63cc12acce27713b4c8cf9666c92b9c4e0a",
+      "matched_files": 389,
+      "changed_paths": [
+        "code/src/baselines/text/frameworks/daft_engine_process.py"
+      ],
+      "model_run_started": false
+    },
+    "limitations": [
+      "Lock waiting, process-table access and reporting are bounded by the dedicated outer supervisor.",
+      "Only observed owned OS process exit is confirmed; a CPU fixture is not physical GPU exit.",
+      "Separate targeted counts overlap and must not be summed as unique tests."
+    ]
+  },
+  "finite_chain_integration_cpu_20261019": {
+    "author_head": "52037286692f7a913d1c580f5717a6a6d1744222",
+    "selected_integration_commit": "262dba4d",
+    "integration_source_commit": "0c4e7034a640644b48e72826c1d3777e892fda6f",
+    "source_sha256": {
+      "code/src/semantic_methods/lotus/record_chain.py": "80bf62407304c1e985e4afabeb3eb77865c9c022709b7a7b17df90eb927e9975",
+      "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "11718e2c5f0f91b3de65c5a2f63532570df79ae2c750139a7a37fe72e0d9fff3",
+      "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
+      "code/src/baselines/text/frameworks/daft_engine_process.py": "433e9d9b1ce9a141745c101e3e6d8f787ee327cad73e0328092f210f89c68528",
+      "code/src/serving/backends/vllm_engine.py": "483983185bb15f2c434969d1366180a5c599fc75fdcbde11a4136c100e41c3b4",
+      "code/tests/semantic_methods/test_lotus_record_chain.py": "18aec615205675fc56df3e41140986c70e124976d38b16af5bf42eaac224c8b3",
+      "code/tests/baselines/text/test_ray_data_lotus_chain.py": "c24d7f62f7154fa7fd36c92d1b96aac422da1b88deb13ddfa9d01915ee809db0"
+    },
+    "checks_passed": 42,
+    "skipped": 0,
+    "original_lotus_checks": 18,
+    "native_and_transport_checks": 24,
+    "real_ray_graph_checks": 5,
+    "actual_model_calls": 0,
+    "gpu_calls": 0,
+    "observed_owned_processes": 67,
+    "observed_owned_exit_confirmed": true,
+    "elapsed_s": 48.48405579199971,
+    "scope": "Pinned LOTUS method differential, private CPU engine protocol and actual native Ray graph; synthetic engine output and usage",
+    "compositions": [
+      "filter-map-extract",
+      "map-filter"
+    ],
+    "generation_and_close_dependencies_included": true,
+    "old_single_filter_backend_generic_migration_included": false,
+    "raw_evidence": {
+      "source.json": {
+        "sha256": "90633d5f4c1e1b9f75815748bf86808c00618d8e40ce0b9d871a263b198e6532",
+        "bytes": 1387
+      },
+      "supervision/supervisor.json": {
+        "sha256": "fc3282f9919e80fa03ab99d371f2ff2ba6da00398823c8d014aeae0cad501afc",
+        "bytes": 6253
+      },
+      "supervision/worker.log": {
+        "sha256": "e3292885e8404b9c95543112ebb7413d7a3044a593f190e37bd9e94d23e43d96",
+        "bytes": 35616
+      }
+    },
+    "preserved_failed_launch": {
+      "reason": "unqualified unittest discovery module name not importable by native Ray workers",
+      "production_sources_changed_for_retry": false,
+      "worker_log": {
+        "sha256": "8c45a669645c6e1a6ad9ce0be770a80eae4d8803124e9051c931a5ca78a4c4dc",
+        "bytes": 72900
+      },
+      "supervisor": {
+        "sha256": "cbeb6476a7e8773b6d6f0e88ab5c6f1f7f3159901aec857b44c224bbf43825a0",
+        "bytes": 6038
+      }
+    }
   }
 }

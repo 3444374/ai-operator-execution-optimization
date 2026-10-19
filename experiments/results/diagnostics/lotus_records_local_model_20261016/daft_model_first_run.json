@@ -1,0 +1,191 @@
+{
+  "schema": "semloom.daft_records.model_first_run.v1",
+  "status": "failed",
+  "date": "2026-10-19",
+  "production_source": {
+    "source_mode": "git_archive",
+    "git_checkout_verified": false,
+    "declared_repository_commit": "7d12d63cc12acce27713b4c8cf9666c92b9c4e0a",
+    "matched_files": 389,
+    "source_archive_sha256": "b5f5558ed2a6e225ac1c1dced28aedc9eccd4ed25e90aa6789018e3359e4bc45"
+  },
+  "config_sha256": "6521177bc1ece3d2273ff3d1f1bd5cc3e495477e9c03e8921045cf82be00d9b1",
+  "method_profile": "Original LOTUS 1.2.4 ordinary Movie Q3 Filter",
+  "workload": {
+    "source_csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "prefix_rows": 15,
+    "eligible_source_positions": [
+      1,
+      14
+    ],
+    "labels_used_only_for_preflight_and_evaluation": true
+  },
+  "outcome": {
+    "complete_queries": 0,
+    "queries_started": 1,
+    "planned_queries": 2,
+    "second_query_started": false,
+    "original_parser_completed": false,
+    "count_completed": false,
+    "original_evaluator_completed": false,
+    "error_type": "RuntimeError",
+    "error": "Daft records cleanup remains unconfirmed",
+    "known_succeeded_terminal_rows": 2,
+    "actual_model_calls": null,
+    "engine_counters": [
+      null
+    ],
+    "engine_lifetimes": 1,
+    "usage": {
+      "prompt_tokens": 253,
+      "known_prompt_tokens": 253,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 8,
+      "known_completion_tokens": 8,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 261,
+      "known_total_tokens": 261,
+      "unknown_total_tokens_calls": 0
+    }
+  },
+  "terminals": [
+    {
+      "source_position": 1,
+      "status": "succeeded",
+      "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+      "text": "Answer: False",
+      "prompt_token_ids_json": "[151644, 8948, 198, 785, 1196, 686, 3410, 264, 3717, 323, 1045, 9760, 2266, 624, 262, 4615, 2618, 374, 311, 8253, 3425, 279, 3717, 374, 830, 369, 279, 2661, 2266, 624, 257, 5443, 279, 2701, 3561, 311, 3410, 697, 4226, 510, 310, 21806, 25, 366, 7771, 4226, 1588, 13, 576, 4226, 1265, 387, 2987, 3007, 476, 3557, 397, 1797, 151645, 198, 151644, 872, 198, 1972, 510, 58, 19432, 1318, 5669, 12486, 1519, 2581, 51014, 279, 1931, 60035, 525, 13451, 7538, 77018, 27343, 23535, 323, 16851, 7409, 38995, 13784, 425, 71405, 11, 879, 1618, 7017, 27390, 315, 279, 52364, 24250, 460, 311, 1855, 501, 24798, 369, 862, 11821, 594, 43989, 23938, 62523, 323, 369, 862, 1828, 51987, 738, 9666, 13, 12992, 1406, 45544, 25, 29901, 421, 279, 2701, 3395, 374, 9355, 6785, 13, 10294, 25, 10294, 1318, 151645, 198, 151644, 77091, 198]",
+      "output_token_ids_json": "[16141, 25, 3557, 151645]",
+      "prompt_tokens": 140,
+      "completion_tokens": 4,
+      "total_tokens": 144,
+      "finish_reason": "stop",
+      "engine_uid": "93864aac13d349189c9929f28cbeded7",
+      "engine_request_id": "0",
+      "submission_confirmed": true
+    },
+    {
+      "source_position": 14,
+      "status": "succeeded",
+      "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+      "text": "Answer: False",
+      "prompt_token_ids_json": "[151644, 8948, 198, 785, 1196, 686, 3410, 264, 3717, 323, 1045, 9760, 2266, 624, 262, 4615, 2618, 374, 311, 8253, 3425, 279, 3717, 374, 830, 369, 279, 2661, 2266, 624, 257, 5443, 279, 2701, 3561, 311, 3410, 697, 4226, 510, 310, 21806, 25, 366, 7771, 4226, 1588, 13, 576, 4226, 1265, 387, 2987, 3007, 476, 3557, 397, 1797, 151645, 198, 151644, 872, 198, 1972, 510, 58, 19432, 1318, 5669, 12486, 1986, 36204, 58815, 3668, 323, 40202, 614, 1012, 40298, 700, 1753, 4623, 1091, 807, 1033, 3512, 8791, 311, 387, 40298, 13, 12992, 1406, 45544, 25, 29901, 421, 279, 2701, 3395, 374, 9355, 6785, 13, 10294, 25, 10294, 1318, 151645, 198, 151644, 77091, 198]",
+      "output_token_ids_json": "[16141, 25, 3557, 151645]",
+      "prompt_tokens": 113,
+      "completion_tokens": 4,
+      "total_tokens": 117,
+      "finish_reason": "stop",
+      "engine_uid": "93864aac13d349189c9929f28cbeded7",
+      "engine_request_id": "1",
+      "submission_confirmed": true
+    }
+  ],
+  "accounting": {
+    "budget_id": "records-daft-model-20261016",
+    "limit": 16,
+    "allocated_requests": 4,
+    "unit_id": "daft-double-query",
+    "unit_requests": 4,
+    "unit_claimed": true,
+    "automatic_retries": 0,
+    "extra_warmup_calls": 0,
+    "unused_reservation_refunded": false,
+    "unknown_engine_counter_replaced": false,
+    "old_budget_reserved": 32,
+    "old_budget_limit": 32,
+    "old_budget_write_allowed": false,
+    "old_budget_sha256_before": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+    "old_budget_sha256_after": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6"
+  },
+  "cleanup": {
+    "engine_status": "unknown",
+    "engine_api": null,
+    "engine_process_exit_confirmed": true,
+    "observed_engine_processes": 14,
+    "live_observed_engine_processes": 0,
+    "engine_cleanup_errors": [
+      "engine_close: TimeoutError"
+    ],
+    "engine_close_seconds": 2.8638404989615083,
+    "old_parent_rpc_budget_s": 2.5,
+    "child_engine_api_timeout_s": 10,
+    "observed_outer_processes": 33,
+    "observed_outer_exit_confirmed": true,
+    "outer_cleanup_errors": [],
+    "outer_remaining_owned_pids": [],
+    "controller_resource_exit_confirmed": true,
+    "normal_lease_released_owned_only": true,
+    "backend_gpu_exit_confirmed": null,
+    "independent_gpu_check": {
+      "checked": true,
+      "memory_used_mib": 1,
+      "compute_apps": 0
+    }
+  },
+  "preflight": {
+    "initial_environment_check": "failed: required DATABASE_URL absent; no model or ledger created at that point",
+    "repair": "repository-external localhost placeholder with no username or password; records path does not connect to database",
+    "repaired_environment_check": "passed",
+    "dependency_installations": 0,
+    "model_files_sha256_matched": 11
+  },
+  "archive": {
+    "sha256": "e706d80ad331f2d9bb71232ae927d0adf2b8b1eb53850d0f55d4f15c13db1262",
+    "bytes": 955055,
+    "regular_members": 38,
+    "all_member_hashes_and_sizes_verified": true,
+    "independent_local_copy": true,
+    "originals_retained": true,
+    "storage": "private artifacts outside Git",
+    "contains_private_runtime_material": true
+  },
+  "raw_evidence": {
+    "artifacts/controller-report.json": {
+      "sha256": "f601fa8c4722eeadd5c3e81a181598a481f25668c27ee882554a6a0886887afb",
+      "bytes": 11591
+    },
+    "artifacts/units/daft-double-query/unit_report.json": {
+      "sha256": "1470006247655e7379d14ef09e2e32934f921596f466038ffa5d69ec9337e413",
+      "bytes": 34867
+    },
+    "artifacts/units/daft-double-query/daft-first-q3.json": {
+      "sha256": "2a58945f787eda1a003aa34b4777ef11e16e63ed0181ed9a9b235d45e6e37e92",
+      "bytes": 12797
+    },
+    "artifacts/supervision/daft-double-query/supervisor.json": {
+      "sha256": "0612543ae52d7a510d3aea2bd856af3919352b0239039c15c348e64a74c65d0d",
+      "bytes": 3578
+    },
+    "preflight/environment.json": {
+      "sha256": "158d08ea5cd52967230ff35497a19ec863d39c86859d7e531e2f81db749afd76",
+      "bytes": 5462
+    },
+    "preflight/environment-r2.json": {
+      "sha256": "f1cf19ee3506c98dccbbe3fb8d1eed85548e9f824ffb17e8009aafdc43e152f4",
+      "bytes": 5450
+    },
+    "qualification-daft-config.input.json": {
+      "sha256": "41918a0e93855519bf334ccb5d6d3f5160a502d798a523fffa9fac8c4822fed3",
+      "bytes": 53201
+    },
+    "launch-intent.json": {
+      "sha256": "9aa66dfae795380832e4bd6a79a8c6ebdbdb549c03db757a5d764b3d3e9bb59f",
+      "bytes": 465
+    },
+    "launch.json": {
+      "sha256": "b221ca5a5bfcb1208ce7504ff22b7641904c4279221fadfa1fb287ba448c04d5",
+      "bytes": 475
+    },
+    "tmp/daft-records-8tg1bwos/engine-cfd96678cb7e4a9d87a9723cab94d969.json": {
+      "sha256": "2214c6f6081c10d9c619eac88fd48ad5cb68cb9a4f8e59ffb9b64dcd312d6665",
+      "bytes": 2700
+    }
+  },
+  "limitations": [
+    "The unit failed before original parser, COUNT or evaluator completion; successful terminal rows are not a completed query qualification.",
+    "The final engine counter remains null despite two known successful terminal results.",
+    "API shutdown, observed OS process exit and independent GPU inventory are separate observations.",
+    "Source is a verified Git-byte archive, not a remotely verified Git checkout.",
+    "No performance, full-dataset quality, Core, chain or cascade qualification."
+  ]
+}

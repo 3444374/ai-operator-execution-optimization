@@ -14,6 +14,14 @@ construction. Unknown closure retains the model handle; actor kill never proves 
 The static reference uses this owner without changing its query/window scheduler. Its historical
 model qualification and the new owner's CPU checks retain separate fixed sources in the slice record.
 
+The separate [Core records adapter](lotus_records_core.py) connects raw bounded records to the
+existing `SessionEngine` and `BoundedAsyncBackend`. Preparation references reach the same model
+owner directly; the consumer releases Core leases after decoding bounded terminal bytes. Unknown
+work retains its Core credit and references. This first profile requires both batch sizes to be one.
+The explicit Movie selector is `semloom-local-model-core`; its production marker comes from the
+actual Core owner/iterator. Real Ray/Daft/LOTUS/SemBench CPU composition has been checked with
+a synthetic model kernel, while real model/GPU qualification remains pending in the slice record.
+
 This module accepts prepared single-model request bytes through the existing Core.
 It does not interpret prompts, change generation parameters, or replace a supplier's parser.
 The implementation is adopted from integration source `671a22dd4285319209396ece3572bb89ff5ab74e`;

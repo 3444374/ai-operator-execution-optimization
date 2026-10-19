@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-10-19：接回 records 生产 Core、保留日志并记录 Daft 模型失败
+
+选择性整合职责 Core adapter并接共享actor owner／显式selector，保留真实SessionEngine、BoundedAsyncBackend、lease-release与unknown占用。
+最终实际Ray／Daft／LOTUS／原SemBench CPU组合四query、12条固定响应通过；Core身份true、static false，原方法／usage／评价一致，20个已观察owned进程退出。日志、合成token范围及漏建报告目录的首次启动失败分别保留。
+共享引擎有限logprobs返回逐token content数组；迟到close receipts归原查询、旧默认call IDs与声明role／stage均保持。各职责定向检查与双独审分列，不将新CPU来源继承旧GPU资格。
+实际固定7d12的Daft首单元4/16永久claim，第一query两个成功终态与253／8 tokens已知，EOF关闭超时使查询失败，第二query未启动、最终引擎计数仍null；33个外层owned身份退出、GPU1MiB无compute、normal lease释放，旧32/32 SHA不变。
+关闭修复经CPU复现与双独审后保留15秒总预算（API11／清理4），要求字面True API确认，GPU仍unknown；下一模型源码f526fbf1与原389路径闭包仅此文件不同，未重放失败单元。原始38文件独立归档及逐成员核验从[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)定位。
+有限链62001fb9／52037286仅取新方法、Ray图、私有传输与原证据；Map→Filter共用已有阶段循环。公共单Filter的Q3约束迁移单列推进，未据链资格宣称全部后端已解耦。
+在冻结GPU单元结束后同步main公共清理与文档，保留两边日志；不改main、不带未验证records功能进入main，不重写共享历史。
+
 ## 2026-10-19：清理历史脚本私有死代码与重复 CSV 写出
 
 删除请求等价脚本未调用的 `_redact`／`time` 和 SAOR 摘要未调用的 `_decode_json_value`；SAOR 继续复用现有共享校验函数。

@@ -66,7 +66,9 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py check
 }
 ```
 
-另可选择 `semloom-local-model-static-reference`（明确未接production Core）或 `daft-native-local-model`。静态路径在Ray初始化后、Daft首次推断前显式选Native；复用已有Native，拒绝已有Ray或冲突配置。
+另可选择 `semloom-local-model-static-reference`（明确未接production Core）、`daft-native-local-model` 或 `semloom-local-model-core`。
+Core arm在模型分配前要求准备／模型批均为1，并由实际SessionEngine标记生产Core连接；其CPU组合资格与真实模型待验范围分列。
+静态路径在Ray初始化后、Daft首次推断前显式选Native；复用已有Native，拒绝已有Ray或冲突配置。
 Daft 路径由原生 process UDF 和私有模型进程拥有执行，不 import／init Ray；[模块合同](../src/baselines/text/frameworks/daft_lotus_records.README.md)说明协作取消与 IPC 观测范围。
 本入口沿用 Daft 默认 runner_threads／64 MiB 实际准备批上限，不新增专属配置键；`max_active_batches` 属于 Ray 设置，不表示 Daft 提交窗口。
 driver 固定 LOTUS 1.2.4／LiteLLM 1.95.0／OpenAI 2.50.0、Ray 2.56.1／Daft 0.7.21；模型环境单独安装 vLLM 0.25.1，不能含 LOTUS。

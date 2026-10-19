@@ -4,8 +4,8 @@
 集成时同步已审纯文档 main `d73c44463e9fdb98e2ac1397295114568afabb1c`，由 `integration/data-execution` 集成。
 后续再同步已审纯文档main `6e3828b4a05d16962efb1166bb872a7fd97ae627` 的Daft布局／消费与有限算子链合同；下述实机仍按各自固定源码解释。
 2026-10-19 同步纯文档 main `9b74f00db35ffa532ca74ecf9fae65ae38015ef1` 的原生查询与计时边界；不改变历史模型资格来源。
-最终 Daft／Ray Data／IMLane CPython 与作者 Ray 对照均保留为计划要求；本切片只支持普通 Movie Q3 的 Filter＋COUNT，
-不是级联、图像、生产 Core 或性能结果。旧 request 接入、活动 baseline 和旧测试树没有修改。
+最终 Daft／Ray Data／IMLane CPython 与作者 Ray 对照均保留为计划要求；首阶段支持普通 Movie Q3 的 Filter＋COUNT。
+后续 Core CPU、有限链和共享引擎增量在下方分别记录，尚无这些新来源的模型或性能资格。旧 request 接入、活动 baseline 和旧测试树没有修改。
 
 ## 实现与来源
 
@@ -89,8 +89,8 @@ source 是共同离线投影的无标签 `records.csv`；driver 的 `preflight()
 `query_seconds` 在完整 COUNT 后、evaluator 前截取；结果交付前的主动模型关闭与 EOF 收尾可能在内，最终 owner 清理按实际时点及 `elapsed_seconds` 报告，不将全部清理一概移出或移入主计时。
 IMLane 新桥可复用这些值合同和方法核对，必须由作者 DBEnd／session 拥有调度；本报告的 LOTUS 模型切片未覆盖它，[独立无模型echo与集成检查](../imlane_records_echo_20261016/README.md)另列。
 
-当前仍为 pending：首发早于末准备及峰值留存观察、原全局 helper-LM 级联、AsyncLLM 持续供给、图像、
-Daft 原生 process UDF 的真实模型／GPU资格、IMLane 模型方法与作者 Ray 以及生产 Core 接入。
+当前仍为 pending：首发早于末准备及峰值留存观察、原全局 helper-LM 级联的模型资格、AsyncLLM 持续供给、图像、
+Daft 原生 process UDF 的完整模型／GPU资格、IMLane 模型方法与作者 Ray，以及新 Core 与有限链的模型资格。
 单次同步 `LLM.chat` 跨批排空，不能称为跨批持续供给。下方单卡资格只覆盖实际执行的普通 Q3 小切片。
 
 source 目前限制 4,096 行、CSV 16 MiB、单 review UTF-8 1 MiB；这些是有限输入资格，不是 RSS／GPU 显存硬上限。
@@ -138,11 +138,12 @@ API的GPU unknown与这些外层独立结果分别保存；原始报告、日志
 该资格覆盖普通Filter的真实小切片、同方法差分与观测到的生命周期。SemLoom仍明确为未接production Core的静态参照；
 Daft独立路径、IMLane、全局级联、图像和AsyncLLM持续供给沿各自后续资格推进。vLLM日志的内部asynchronous scheduling不代表本适配已实现跨批AsyncLLM供给。
 
-## Daft 双查询模型资格准备：尚未运行
+<a id="daft-双查询模型资格准备尚未运行"></a>
+## Daft 双查询资格的历史准备
 
 基于固定 `7d12d63c` 的389文件字节闭包，已准备独立 Daft 入口、来源证明与有限预算，
 见[准备记录](daft_model_preparation.json)。新账本最大16次应用调用，只计划为首个双查询单元永久预留4次，
-每查询私有引擎 cap2、单Infer并发1、零重试、每图只消费一次；当前尚未创建账本或执行该预留。
+每查询私有引擎 cap2、单Infer并发1、零重试、每图只消费一次；准备记录形成时尚未创建账本或执行该预留。
 旧32/32永久预留及失败未知项不退款、不复用。单元外层监督1200秒并留15秒清理，不设工程累计截止时间。
 
 Python3.12.6 的控制器8项、child 7项检查全部通过；实际 Daft0.7.21 的安装源码摘要和CPU物理计划
@@ -153,15 +154,40 @@ Python3.12.6 的控制器8项、child 7项检查全部通过；实际 Daft0.7.21
 原SSH复用socket已结束，首次严格主机校验、公钥只读连接在认证前关闭，资源／lease现场预检未执行。
 2026-10-19 重查本机未发现可复用通道；严格公钥只读探测退出255、标准输出／错误均为空，无法据此确定失败阶段。
 用户随后明确服务器尚未开机；新探测原件与摘要另行保留。恢复后须先重新核对资源、模型／输入身份与正常lease。
-本轮未上传新源码、未发起模型调用，目标四条实际请求和两次独立引擎退出仍pending。
+上述准备阶段未上传新源码或发起模型调用；恢复后的首轮失败记录见下一节，原准备 JSON 不改写。
 IMLane本轮仅形成[方法与usage交接](../../../../code/integrations/imlane_records/README.md#普通-filter-方法接入交接)，没有增加第二个GPU单元。
+
+## Daft 首轮真实模型：关闭超时，查询失败
+
+2026-10-19 恢复原服务器通道后，重新只读核对输入、隔离 Python 环境、11 个模型文件与空闲 GPU。
+固定 `7d12d63c` 的389文件字节闭包及原方法、生成配置、输入与原生参照均保持；
+重启后的配置修订只重绑三个平台空闲进程的 PID／出生身份。初次环境检查因缺少 `DATABASE_URL` 停止，
+随后仅在仓库外加入无账号／密码的 localhost 占位值，环境复核通过；records 路径不连接数据库，未安装依赖。
+
+[首轮记录](daft_model_first_run.json)保留失败：第一 query 返回两条 `Answer: False` 成功终态，
+已知 prompt253／completion8／total261 tokens、一个引擎 lifetime；EOF 时私有引擎关闭超时，
+故原 parser、COUNT 和 evaluator 均未完成，第二 query 未启动。最终引擎计数仍为 `null`，不能用两个已知终态代填。
+定位为父进程默认5秒关闭中只给 RPC 2.5秒，而 child 调用引擎 API 的期限为10秒；原件保持原样。
+
+同一个新16次账本永久预留并 claim 首单元4次，不退款、不重跑；旧32/32账本前后 SHA 相同且只读。
+外层确认33个已观察 owned 身份退出，controller 自身退出、正常 lease 仅由 owner 释放；
+独立 GPU 检查为空 compute／1 MiB。后端 `engine_api=null`／`gpu_exit_confirmed=null` 与这些外层观察分开记录。
+38个原始文件已在 Mac 独立归档、逐成员大小和 SHA 核验，归档 SHA 为
+`e706d80ad331f2d9bb71232ae927d0adf2b8b1eb53850d0f55d4f15c13db1262`。
+修复后的新单元需另绑源码、另占同账本额度并独立审查；本失败不提供完整 Daft 查询或性能资格。
+
+关闭修复 `11dda33b`／`cc96c8d` 已通过两轴独审：默认锁后15秒，RPC11秒／清理4秒，
+已启动进程须取得字面值 True 的 API 确认才可 closed；API已确认后的 OS 清理重试不再重复 RPC。
+旧行为和四项确认反例先复现，新增5项／原17项及后续16项定向CPU检查按各自来源保留，不能相加作唯一测试数。
+GPU保持unknown，硬墙钟仍由外层supervisor负责；`verification.json.daft_close_repair_cpu_20261019` 登记新源。
+用于下一次资格的 `f526fbf1` 从原7d12只改变私有引擎这一个生产文件，389路径闭包其余字节不变；尚未启动新模型单元。
 
 ## 共享引擎与 actor owner：CPU 增量
 
 为有限链提供[逐调用生成配置](../../../../code/src/serving/backends/README.md)：职责 `64044682` 在
 `run_prepared(..., generation=None)` 保持构造默认；显式配置整份覆盖本次调用，每次新建采样参数。
 JSON 仅为 `json_object`，不增加严格 schema 或改写 stop；普通 Filter 方法明确拒绝该模式。
-logprobs 仍未开放，原全局 helper-LM 级联由独立方法任务继续实现，不按物理批重新校准。
+本段原资格形成时 logprobs 尚未开放；后续有限日志接口另列如下，普通 Filter 方法仍拒绝 helper 配置。
 
 职责 `f1d5f780` 提取[准备／模型 actor owner](../../../../code/src/execution_provider/adapters/lotus_records_actor_owner.py)，
 static 的 `_StaticRows`／`evaluate` 调度保持原样；owner 不调用生产 Core，也不拥有查询或逐调用账本。
@@ -175,3 +201,38 @@ static 的 `_StaticRows`／`evaluate` 调度保持原样；owner 不调用生产
 factory／启动失败修订只重跑CPU合同，未将这次图测冒称为修订后重跑。
 两轴只读独审均已通过 generation／Filter guard 和 owner 修订，原件与源码SHA见
 `verification.json.shared_records_cpu_20261019`。新增代码没有真实模型或性能资格，旧模型结果仍只绑定原归档来源。
+
+<a id="records-core-cpu-20261019"></a>
+## Core 接线、逐调用身份与日志：组合 CPU 资格
+
+新增 [Core records adapter](../../../../code/src/execution_provider/adapters/lotus_records_core.py) 与显式
+`semloom-local-model-core` selector，复用原 `SessionEngine`／`BoundedAsyncBackend` 和共享 actor owner。
+首版要求 prepare／model batch rows 均为1；raw records bytes 由 Core 接纳，准备 ObjectRef 直接交给模型 actor，
+结果消费后 release，unknown 保留 Core 额度及引用。工作单位为 model calls，不是 token 成本。
+`production_core_used` 从实际 SessionEngine owner／iterator 回填；静态参照仍为 false，模型与 GPU 关闭状态独立。
+
+共享 runner 合并 close 期间已知终态后再标 missing unknown，只允许升级自身创建的缺失占位，
+不覆盖 backend 的真实 unknown，不重跑语义解释。`identity()` 允许声明 role／stage，旧普通 Filter ID 字节不变。
+共享引擎 `logprobs=0..20` 返回与 output token IDs 对齐的 OpenAI content 数组；
+缺日志或非法概率失败时保留真实 usage，不填造概率。逐调用生成配置保持独立，原全局级联的控制流由方法负责。
+
+原职责 Core fixture104项、集成 wiring 与 selector108项及隔离内核51项按各自来源分列；
+新 logprobs62项包括真实 LOTUS LM／LiteLLM 合同，role／stage59项和迟到 receipt34项另列，均零skip、零模型。
+最终组合在实际 Ray2.56.1／Daft0.7.21、LOTUS1.2.4 与原 SemBench evaluator 下运行：
+static／Core 各两 query、共12条固定 CPU 响应，逐调用消息／解析／usage／结果一致，均 COUNT1／TP1／TN2。
+Core 标记为 true、静态为 false，两个 Core session 独立、每臂复用同引擎；Core 额度归零，transport 关闭，20个已观察进程退出。
+模型 kernel、GPU 分配及解释器预检为显式替身，token IDs／每查询12 tokens 为合成值，不能外推真实模型。
+首个补充启动器漏建报告子目录的失败及退出报告保留，修启动器后在新目录通过；生产源码未因该失败改动。
+来源、原件 SHA 与逐项范围见 `verification.json.core_logprobs_integration_cpu_20261019`；新 Core／引擎 GPU 资格仍待验证。
+
+## 有限链独立接纳
+
+选择接纳职责 `62001fb9`／`52037286` 的新方法、Ray fused 图、私有传输及原 CPU 证据，
+见[有限链报告](../lotus_record_chain_20261019/README.md)。已有共用阶段循环覆盖 Filter→Map→Extract 与 Map→Filter，
+生成列进入后继 Filter，重复消费与末阶段后关闭均有 CPU 检查；没有为 Map→Filter 新建执行器。
+整合有限 logprobs 与关闭修复后，18项原LOTUS方法差分加24项原生／传输检查重新通过（含5项实际Ray CPU图），
+零skip、零模型／GPU，67个已观察进程退出。首次启动器使用短测试模块名导致4项worker导入失败，
+改用可导入的完整模块名后在新目录通过；生产源码未改变，失败原件仍在。
+本次组合源码与原件SHA见 `verification.json.finite_chain_integration_cpu_20261019`。
+单 Filter 公共后端仍在迁移其旧 Q3 绑定，本段接纳不表示所有后端已解除任务约束；任务切换须分别验收。
+新链真实模型、Daft／IMLane／Core 有限链、跨阶段 AsyncLLM 仍待验证。

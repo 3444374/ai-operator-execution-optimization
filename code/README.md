@@ -2,10 +2,13 @@
 
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，
 直达本地模型接点和原 LOTUS／SemBench 解释评价；[命令](scripts/README.md#movie-q3-records-本地模型接点)与
-[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft GPU、级联及production Core仍pending。
+[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft首轮两条终态后因关闭超时失败，未完成查询评价。Core已有真实CPU组合接线，其模型／GPU资格仍pending。
 
-[共享本地引擎](src/serving/backends/README.md)提供逐调用生成配置；[records actor owner](src/execution_provider/adapters/README.md)
+[共享本地引擎](src/serving/backends/README.md)提供逐调用生成配置及有限token logprobs；[records actor owner](src/execution_provider/adapters/README.md)
 只共享准备／模型的启动与关闭，静态参照继续拥有原查询调度。新增接口和启动失败修复按各自 CPU 来源核验。
+
+显式 `semloom-local-model-core` 接入原生产 Core，要求单行准备／模型批；四次 static／Core CPU查询的原方法、usage和评价核同，身份及额度归还有独立检查。
+[有限链](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)共用同一阶段循环执行 Filter→Map→Extract 和 Map→Filter；各新来源的模型资格分开验证。单Filter后端的旧Q3业务绑定另在本轮迁移，不能以链检查替代。
 
 [IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
 本机修后22项CPU／Arrow与PID／SHM替身检查不替代新增helper的作者实机重跑，也不提供模型方法、usage或GPU资格，见[分层证据](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
@@ -20,7 +23,7 @@
 [原生CLIP检索](scripts/README.md#原生-lotus-clip-查询)已带必要查询／身份／静态生命周期闭包；显式单卡资源入口的8834 CPU检查、main570四路径40行实机及d2历史条件见[接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)。HSE资源auto、多卡和PZ分别待验。
 
 
-本页的已接纳实现以 main 为准；records、有限链与新 Core／IMLane 接点的独立分支及资格从[实施来源](../experiments/plans/数据组织.md#model-engine-roadmap)定位。
+本页首节 records、有限链与新 Core／IMLane 接点属于独立集成来源；下方已接纳实现以 main 为准，分支及资格从[实施来源](../experiments/plans/数据组织.md#model-engine-roadmap)定位。
 
 ## Core 与完整响应基础
 
