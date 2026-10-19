@@ -1,5 +1,9 @@
 # LOTUS 方法与执行接点
 
+[原全局 helper 级联](cascade.README.md)新增独立 records 阶段接口与 Ray Data 图，直接绑定原控制流，
+保留全局校准、重复采样、阈值和复核；原库／真实 Ray CPU 固定响应与原 SemBench 评价已验证。
+真实模型仍等待公共引擎 logprobs 和 owner 排期，本分支未修改普通 Q3 的公共 CLI／引擎。
+
 ## Movie Q3 records 最小切片
 
 本分支新增独立的[普通 Filter records 接口](records.py)、[worker 准备／原结果解释](engine.py)，

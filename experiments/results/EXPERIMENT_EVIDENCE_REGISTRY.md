@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-19：[Movie Q3 原全局 helper 级联](../../code/src/semantic_methods/lotus/cascade.README.md)。
+原 LOTUS 控制流直接绑定 records 评价，CPU 原库方法 21 项、原 SemBench evaluator 2 项、真实 Ray／进程 6 项通过；
+分数、采样与阈值保持全局，重复抽样逐次记账，异常前缀 usage 和 unknown 保留。原始输出和失败位于仓库外，两个独立审查已完成。
+真实引擎 logprobs／GPU／多后端级联比较仍未验证，不赋予普通 Q3 历史模型结果新的资格。
+
 2026-10-16：[IMLane 独立多行记录桥](diagnostics/imlane_records_echo_20261016/README.md)。
 职责78f05783的作者CPython10scope无模型echo、8正常退出及2异常监督清理保持原来源；新owner依赖收口另有修后22项本机CPU／Arrow／PID-SHM替身检查。真实模型、作者Ray及新helper作者实机重跑未验证，不恢复旧HTTP树。
 

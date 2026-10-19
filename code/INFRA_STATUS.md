@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+## 全局 helper 级联的独立切片
+
+[Movie Q3 级联说明](src/semantic_methods/lotus/cascade.README.md)记录从 `c0be45dd` 开发的原 LOTUS 控制流接点、
+独立 Ray Data 阶段和原 evaluator 查询函数。原库方法 21 项、SemBench 查询 2 项、Ray／进程 6 项通过，均为 CPU 固定响应。
+逐调用身份、部分失败与 usage 独立于最终 COUNT；两项独立审查发现的问题已修复。
+真实 helper logprobs、不同模型角色、GPU 退出与完整比较仍 pending；当前公共生成配置拒绝 helper logprobs，模型执行在预检明确报错。
+
 ## 独立 IMLane 记录桥
 
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。

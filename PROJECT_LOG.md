@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-19：原 LOTUS 全局 helper 级联的独立 records 切片
+
+从 `integration/data-execution@c0be45dd` 实现[原控制流接点与独立 Ray Data 阶段](code/src/semantic_methods/lotus/cascade.README.md)，
+保留全局校准／采样／阈值及样本后的重新复核；新增 Movie Q3 COUNT／原 evaluator callable，公共 CLI 与引擎由集成 owner 协调。
+原库方法 21 项、评价 2 项、Ray／进程 6 项 CPU 检查通过，已修复两项独审发现；真实模型 logprobs、GPU 与其余后端仍 pending。
+功能分支交付，不向 main 合入；原始失败与完整输出留在仓库外。
+
 ## 2026-10-16：准备独立 Daft 双查询资格并交接 IMLane 方法边界
 
 固定7d12d63c的389文件闭包，准备独立控制器／双查询child与原方法、输入及原生控制原件绑定；新16次账本只计划首单元永久4次，每引擎cap2、并发1、零重试，旧32/32不动。外层单元1200秒／清理15秒，无工程累计截止时间。
