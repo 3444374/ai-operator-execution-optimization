@@ -147,61 +147,69 @@ class VllmAsyncEngine:
                 or size > self.limits.item_input_bytes
                 or self._input_bytes + size > self.limits.input_bytes):
             raise RuntimeError("async engine input capacity exhausted")
-        state = dict(entered=False, abort_requested=False, uncertain=False)
+        started = time.monotonic()
+        if started >= deadline_monotonic:
+            result = result_record(identity, engine_uid=self.engine_uid, start=started,
+                end=started, status="failed", submitted=False, error_type="DeadlineExceeded")
+            result.update(deadline_expired=True, engine_terminal_confirmed=True)
+            return result
+        state = dict(entered=False, abort_requested=False, uncertain=False, output=None)
         self._requests[request_id] = state
         self._input_bytes += size
-        started = time.monotonic()
         confirmed = False
-        try:
-            async with asyncio.timeout_at(deadline_monotonic):
-                _, prompts = await self._llm.renderer.render_chat_async(
-                    conversations, self._chat_params,
-                )
-                if len(prompts) != 1 or prompts[0].get("type") != "token":
-                    raise ValueError("async text engine requires one rendered token input")
-                expected_ids = common._token_ids(prompts[0].get("prompt_token_ids"), "rendered token IDs")
-                if not expected_ids:
-                    raise ValueError("chat renderer did not provide token IDs")
-                if state["abort_requested"]:
-                    confirmed = True
-                    result = result_record(identity, engine_uid=self.engine_uid, start=started,
-                        end=time.monotonic(), status="failed", submitted=False,
-                        error_type="CancelledBeforeSubmission")
-                    result["engine_terminal_confirmed"] = True
-                    return result
-                if (self.spec.max_model_calls is not None
-                        and self._reserved_model_calls >= self.spec.max_model_calls):
-                    raise ValueError("max_model_calls exceeded before generation")
-                self._reserved_model_calls += 1
-                state["entered"] = True
-                final = None
-                async for output in self._llm.generate(prompts[0], sampling, request_id):
-                    if output.finished is True:
-                        final = output
-                if final is None:
-                    raise RuntimeError("generate ended without a final output")
-                result = common.result_from_output(identity, final,
-                    engine_uid=self.engine_uid, start=started, end=time.monotonic(),
-                    generation=effective, get_tokenizer=self._llm.get_tokenizer)
-                if final.request_id != request_id or common._token_ids(
-                    final.prompt_token_ids, "returned prompt token IDs"
-                ) != expected_ids:
-                    result.update(status="unknown", text=None, error_type="ResultAssociationError")
-                # v0.25.1 synthesizes abort output locally before sending ABORT
-                # to the core. Preserve usage, but do not return remote capacity.
-                if result.get("finish_reason") == "abort":
-                    result.update(status="unknown", text=None, error_type="AbortNotConfirmed")
-                if time.monotonic() >= deadline_monotonic:
-                    result.update(status="failed" if result["status"] != "unknown" else "unknown",
-                                  text=None, deadline_expired=True, error_type="DeadlineExceeded")
-                confirmed = result["status"] != "unknown"
-                result["engine_terminal_confirmed"] = confirmed
+
+        async def execute():
+            _, prompts = await self._llm.renderer.render_chat_async(conversations, self._chat_params)
+            if len(prompts) != 1 or prompts[0].get("type") != "token":
+                raise ValueError("async text engine requires one rendered token input")
+            expected_ids = common._token_ids(prompts[0].get("prompt_token_ids"), "rendered token IDs")
+            if not expected_ids:
+                raise ValueError("chat renderer did not provide token IDs")
+            state["expected_ids"] = expected_ids
+            expired = time.monotonic() >= deadline_monotonic
+            if state["abort_requested"] or expired or self._closing_task is not None:
+                result = result_record(identity, engine_uid=self.engine_uid, start=started,
+                    end=time.monotonic(), status="failed", submitted=False,
+                    error_type="DeadlineExceeded" if expired else "CancelledBeforeSubmission")
+                result.update(engine_terminal_confirmed=True, deadline_expired=expired)
                 return result
+            if (self.spec.max_model_calls is not None
+                    and self._reserved_model_calls >= self.spec.max_model_calls):
+                raise ValueError("max_model_calls exceeded before generation")
+            self._reserved_model_calls += 1
+            state["entered"] = True
+            async for output in self._llm.generate(prompts[0], sampling, request_id):
+                if output.finished is True:
+                    state["output"] = output
+            if state["output"] is None:
+                raise RuntimeError("generate ended without a final output")
+            return self._convert(identity, state["output"], request_id, expected_ids,
+                                 effective, started, deadline_monotonic)
+
+        work = state["task"] = asyncio.create_task(execute())
+        work.add_done_callback(lambda task: None if task.cancelled() else task.exception())
+        try:
+            done, _ = await asyncio.wait((work,), timeout=max(0, deadline_monotonic - time.monotonic()))
+            if not done:
+                # AsyncLLM catches cancellation and awaits ABORT. Notify the
+                # caller now; retain this bounded task and all unknown ownership.
+                raise TimeoutError("request deadline reached")
+            result = work.result()
+            confirmed = result["status"] != "unknown"
+            return result
         except (Exception, asyncio.CancelledError) as error:
-            confirmed = not state["entered"]
+            state["abort_requested"] = True
+            if not work.done():
+                work.cancel()
+            confirmed = not state["entered"] and work.done()
             result = result_record(identity, engine_uid=self.engine_uid, start=started,
                 end=time.monotonic(), status="failed" if confirmed else "unknown",
                 submitted=False, error_type=type(error).__name__)
+            if state["output"] is not None:
+                result = self._convert(identity, state["output"], request_id, state["expected_ids"],
+                                       effective, started, deadline_monotonic)
+                result.update(status="unknown", text=None, error_type=type(error).__name__)
+                confirmed = False
             result["engine_terminal_confirmed"] = confirmed
             result["deadline_expired"] = isinstance(error, TimeoutError)
             return result
@@ -211,6 +219,26 @@ class VllmAsyncEngine:
                 self._input_bytes -= size
             else:
                 state["uncertain"] = self._unhealthy = True
+
+    def _convert(self, identity, output, request_id, expected_ids, generation, start, deadline):
+        result = common.result_from_output(identity, output,
+            engine_uid=self.engine_uid, start=start, end=time.monotonic(),
+            generation=generation, get_tokenizer=self._llm.get_tokenizer)
+        try:
+            associated = (output.request_id == request_id and common._token_ids(
+                output.prompt_token_ids, "returned prompt token IDs") == expected_ids)
+        except (AttributeError, TypeError, ValueError):
+            associated = False
+        if not associated:
+            result.update(status="unknown", text=None, error_type="ResultAssociationError")
+        # v0.25.1 synthesizes abort output before sending ABORT to the core.
+        if result.get("finish_reason") == "abort":
+            result.update(status="unknown", text=None, error_type="AbortNotConfirmed")
+        if time.monotonic() >= deadline:
+            result.update(status="failed" if result["status"] != "unknown" else "unknown",
+                          text=None, deadline_expired=True, error_type="DeadlineExceeded")
+        result["engine_terminal_confirmed"] = result["status"] != "unknown"
+        return result
 
     async def abort(self, request_id):
         self._control()
@@ -225,9 +253,7 @@ class VllmAsyncEngine:
     async def close(self, timeout=10.0):
         self._control()
         common._number(timeout, "close timeout", low=0, inclusive_low=False)
-        if self._closed:
-            return dict(status="closed", engine_api_shutdown_confirmed=True,
-                        gpu_exit_confirmed=None, uncertain_requests=len(self._requests))
+        deadline = time.monotonic() + timeout
         if self._closing_task is None:
             self._closing_task = asyncio.create_task(asyncio.to_thread(self._llm.shutdown, timeout=timeout))
         try:
@@ -237,8 +263,14 @@ class VllmAsyncEngine:
             if self._shutdown_failed:
                 raise RuntimeError("a prior shutdown attempt remains unconfirmed")
             self._closed = True
-            return dict(status="closed", engine_api_shutdown_confirmed=True,
-                        gpu_exit_confirmed=None, uncertain_requests=len(self._requests))
+            pending = [state["task"] for state in self._requests.values() if not state["task"].done()]
+            for task in pending:
+                task.cancel()
+            if pending:
+                _, pending = await asyncio.wait(pending, timeout=max(0, deadline - time.monotonic()))
+            return dict(status="unknown" if pending else "closed", engine_api_shutdown_confirmed=True,
+                        gpu_exit_confirmed=None, uncertain_requests=len(self._requests),
+                        pending_request_tasks=len(pending))
         except Exception as error:
             # A timeout leaves the same shutdown task running. Its eventual
             # return can confirm that attempt; an actual exception cannot.

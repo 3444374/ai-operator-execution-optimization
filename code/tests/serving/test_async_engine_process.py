@@ -135,6 +135,26 @@ class AsyncProcessTests(unittest.TestCase):
         self.assertIsNone(events[1].result)
         self.assertEqual(owner.snapshot()["held_requests"], 1)
 
+    def test_idle_child_death_rejects_new_work_and_preserves_any_known_result(self):
+        for completed in (False, True):
+            with self.subTest(completed=completed):
+                owner = self.owner()
+                if completed:
+                    key = self.submit(owner)
+                    self.until(owner, lambda: owner.snapshot()["ready_results"] == 1)
+                owner.process.kill()
+                owner.process.wait(timeout=2)
+                self.assertTrue(owner._io_done.wait(2))
+                rejected = owner.submit(row(1), deadline_monotonic=time.monotonic() + 2)
+                self.assertEqual(rejected.status, "rejected")
+                self.assertEqual(owner.snapshot()["queued_commands"], 0)
+                if completed:
+                    event = owner.poll()[0]
+                    self.assertEqual(event.request_id, key)
+                    self.assertTrue(event.engine_terminal_confirmed)
+                    self.assertEqual(event.result["prompt_tokens"], 11)
+                self.assertEqual(owner.snapshot()["held_requests"], 0)
+
     def test_query_identity_and_old_abort_do_not_leak_into_next_query(self):
         owner = self.owner()
         old = self.submit(owner, 0, query="first")
@@ -160,6 +180,34 @@ class AsyncProcessTests(unittest.TestCase):
         self.assertEqual(event.result["completion_tokens"], 1)
         self.assertEqual(event.result["error_type"], "ResultCapacityExceeded")
         self.assertTrue(event.engine_terminal_confirmed)
+
+    def test_near_limit_identity_has_a_reserved_usage_receipt_or_is_rejected_before_handoff(self):
+        owner = self.owner()
+        valid = row(text="large")
+        valid["call_id"] = "x" * 2800
+        ticket = owner.submit(valid, deadline_monotonic=time.monotonic() + 3)
+        self.assertEqual(ticket.status, "queued")
+        self.until(owner, lambda: owner.snapshot()["ready_results"] == 1)
+        result = owner.poll()[0].result
+        self.assertEqual(result["call_id"], valid["call_id"])
+        self.assertEqual(result["prompt_tokens"], 11)
+        self.assertEqual(result["error_type"], "ResultCapacityExceeded")
+        too_large = row(1, "large")
+        too_large["call_id"] = "x" * 3200
+        with self.assertRaisesRegex(ValueError, "byte capacity"):
+            owner.submit(too_large, deadline_monotonic=time.monotonic() + 3)
+        self.assertEqual(owner.snapshot()["held_requests"], 0)
+        self.assertEqual(owner._sequence, 1)
+
+    def test_unexpected_request_task_error_propagates_unknown_instead_of_hanging(self):
+        owner = self.owner()
+        key = self.submit(owner, text="bad-shape")
+        self.until(owner, lambda: owner.snapshot()["ready_results"] == 1)
+        event = owner.poll()[0]
+        self.assertEqual(event.request_id, key)
+        self.assertFalse(event.engine_terminal_confirmed)
+        self.assertIsNone(event.result)
+        self.assertIsNotNone(owner.snapshot()["broken"])
 
     def test_wrong_result_identity_becomes_unknown_and_keeps_accepted_reservation(self):
         owner = self.owner()
