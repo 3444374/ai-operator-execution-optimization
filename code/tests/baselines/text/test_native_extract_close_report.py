@@ -102,6 +102,20 @@ class NativeExtractCloseReportTests(unittest.TestCase):
         self.assertEqual(len(report["phase_reports"]), 2)
         self.assertIn("phase_0_close_report: TypeError", report["cleanup_errors"])
 
+    def test_invalid_close_return_never_confirms_resource_cleanup(self):
+        for value in (None, []):
+            with self.subTest(value=value):
+                phase = self.phase(raises=False)
+                phase.last_close_report = None
+                phase.close = lambda value=value: value
+                stream = self.stream([phase])
+                report = stream.close()
+                self.assertEqual(report["status"], "unknown")
+                self.assertIsNone(report["gpu_exit_confirmed"])
+                self.assertIn("phase_0_close: TypeError", report["cleanup_errors"])
+                self.assertEqual(report["registered_engine_report_count"], 0)
+                self.assertTrue(stream.control.is_dir())
+
 
 if __name__ == "__main__":
     unittest.main()

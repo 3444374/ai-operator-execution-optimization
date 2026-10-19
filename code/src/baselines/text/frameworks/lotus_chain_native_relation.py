@@ -156,8 +156,11 @@ class NativeExtractRelationRows:
             report = None
             try:
                 report = phase.close()
+                if not isinstance(report, dict):
+                    raise TypeError("native phase close report must be a dictionary")
             except BaseException as error:
                 errors.append("phase_" + str(index) + "_close: " + type(error).__name__)
+                report = None
                 try:
                     retained = phase.last_close_report
                     if isinstance(retained, dict):
@@ -166,8 +169,6 @@ class NativeExtractRelationRows:
                     errors.append("phase_" + str(index) + "_close_report: " + type(report_error).__name__)
             if report is not None:
                 try:
-                    if not isinstance(report, dict):
-                        raise TypeError("native phase close report must be a dictionary")
                     reports.append(report)
                     engine_reports.extend(report.get("engine_reports", []))
                     if report.get("status") != "closed":
