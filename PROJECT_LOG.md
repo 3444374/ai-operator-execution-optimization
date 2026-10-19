@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：本地接纳 IMLane 通用方法与共享有限链，保留待验项
+
+选择性导入原522、兼容7cd和丢账修复174，复用原作者carrier／单角色owner与共同批内核，没有复制stage loop或恢复旧HTTP树。固定0190作者CPython报告保持原来源，不能资格当前wire／关闭／链。
+原7cd68项CPU通过；独审两个P1反例后，174保留唯一关联回执／raw／已知usage，host停补并排空已接受块再抛原错，已有unknown不升级。63项NoPopen通过，SVE及失败wire的Git前检替身明列，原guard失败保留；完整72项因自动审批服务容量错误明确未执行，9项进程依赖复测仍pending。
+Core新4调用上传、只读mux检查及阶段推送也因相同审核基础设施错误未执行；不绕过、不重复启动或修改旧账本。当前代码／文档只在本地职责集成分支，新wire作者／模型／GPU及共享传输异常边界仍待验，详见[分层报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-通用-filter与共享有限链的本地接纳)。
+
 ## 2026-10-19：接纳共享批内核与 Daft／Core 有限链 CPU 切片
 
 共享FusedChainBatch仅调用唯一原方法阶段循环，ChainBatchResults只核验关系／身份／账本；Ray消费与关闭AST保持。22合同及2私有CPU传输／5实际Ray图通过；首个重复Ray初始化失败保留，按图独立driver后72已观察owned退出。

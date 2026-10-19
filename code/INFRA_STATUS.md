@@ -4,8 +4,9 @@
 
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。
 当前主线新增独立owner helper，复用精确PID出生标识、namespace／SHM核验与禁止stale恢复的host lease；22项本机CPU检查通过。
-原作者实测不重新绑定为新helper实测，作者Ray、LOTUS／模型方法、逐调用usage、完整真实模型生命周期及新helper作者实机重跑仍pending，见[报告](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
+原echo作者实测不重新绑定为新helper实测；作者Ray、当前wire／模型生命周期及作者实机重跑按各自来源验证，见[历史报告](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)与下方后续记录。
 后续普通Filter的可逆发生项映射、隔离解释器和块内已知usage交接已收口到[现有模块交接](integrations/imlane_records/README.md#普通-filter-方法接入交接)，本轮未新增作者环境或模型执行。
+当前集成另接纳 `52213fa5`／`7cd08b3a`／`174ee853`：通用Filter、共享有限批内核、原作者carrier及独立20秒关闭窗口。固定0190的作者普通Filter CPU结果保留来源；当前丢账修复双审及63项NoPopen通过，完整72项被审批服务容量错误阻断且未执行，9项进程依赖复测、新wire作者／模型资格仍pending。上游共享EngineProcess整批unknown边界未改，详情见[本地接纳](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-通用-filter与共享有限链的本地接纳)。
 
 ## 独立 records 数据执行切片
 

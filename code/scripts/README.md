@@ -33,7 +33,8 @@ auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在�
 ## IMLane 独立多行记录桥
 
 `PYTHONPATH=code python code/integrations/imlane_records/verify.py --help` 可独立读取无模型echo验证器的固定作者prefix／workload／资源参数，实际启动需依照[模块合同](../integrations/imlane_records/README.md)与正常共享lease。
-本轮只选择性整合桥与owner helper，本机检查没有启动作者组件；[原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)分列。真实模型命令与完整LOTUS接线尚未提供。
+[原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)保持原来源。后续普通Filter入口为 `code/integrations/imlane_records/verify_filter.py`，接原Movie runner／parser／evaluator，并接受仓外方法解释器与模型配置；有限链使用同目录 `chain_host.py` API，当前不提供共享链CLI selector。
+固定0190作者CPU结果与当前通用接线／63项NoPopen修复分开；当前9项进程依赖、新wire作者与模型资格仍pending。真实模型入口还须由外层持久预算、正常lease、owner资源上限和独立GPU退出检查包裹，不因单引擎cap存在而允许重复运行。
 
 ## Movie Q3 records 本地模型接点
 

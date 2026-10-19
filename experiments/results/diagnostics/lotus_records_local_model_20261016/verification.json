@@ -1670,5 +1670,259 @@
       ],
       "log_sha256": "11c53ba74c239dda3a0e18e788891b6b3934040c86ecf664f5265d29fdb06ae1"
     }
+  },
+  "imlane_generic_chain_cpu_20261019": {
+    "status": "reviewed local integration; required full process regression and author/model qualification pending",
+    "author_commits": [
+      "52213fa56104e9b77108679b9b353ea035a3b2df",
+      "7cd08b3a6ed609127094a529fd3ab537b15eaba7",
+      "174ee85349044610ebc06b7537f3b1d6cfc21fb9"
+    ],
+    "integration_commits": [
+      "50f9062f",
+      "5ac9f555",
+      "bd5332bf"
+    ],
+    "shared_dependencies": [
+      "6c584426611ba8dffcdbc93191e2c6371dba8bba",
+      "88e2c360e003f5e54dfdd813ef384030b6e34ef3"
+    ],
+    "reviews": {
+      "compatibility": "Spec found P1 receipt loss, Standards PASS; repaired in separate174ee853",
+      "receipt_repair": "Spec PASS / Standards PASS fixed174ee853, zero code findings; required process tests remain pending"
+    },
+    "method_and_transport": {
+      "ordinary_filter": "caller-bound canonical FilterMethod/neutral RecordScan; identity_json and payload_json strings; raw Filter rejects reserved identity column names",
+      "finite_chain": "one transport occurrence per finite fused batch; shared FusedChainBatch.run_rows and ChainBatchResults; sole LotusRecordChain.run_batch stage loop",
+      "shapes": [
+        "FME",
+        "MF",
+        "MMF",
+        "FFM"
+      ],
+      "scheduler_owner": "Original author DBEnd/Coordinator/Lane/CPython executor",
+      "pending_blocks_upper_bound": 2,
+      "model_lifetime": "one engine per query owner, reused across its blocks; independent owners/engines between queries",
+      "close_budget_s": 20,
+      "shared_engine_api_reply_and_cleanup_s": [
+        11,
+        4
+      ],
+      "method_abi": "Python3.12 / Arrow16.1 required before author owner starts; new source needs live preflight",
+      "new_model_resource_config": {
+        "cpu_cores": 8,
+        "owned_family_rss_bytes": 34359738368,
+        "namespace_shm_bytes": 2147483648,
+        "child_affinity_max_cpus": 8
+      },
+      "resource_configuration_live_qualified": false,
+      "shared_cgroup_changed": false
+    },
+    "first_compatibility_cpu": {
+      "tests": 68,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_commit": "7cd08b3a6ed609127094a529fd3ab537b15eaba7",
+      "scope": {
+        "passed": 68,
+        "skipped": 0,
+        "real_model_requests": 0,
+        "gpu_requests": 0,
+        "ssh_actions": 0,
+        "python": "3.12.6",
+        "lotus": "1.2.4",
+        "author_runtime": "LocalAuthor CPU fixtures; existing author echo/Filter historical qualification not rerun",
+        "method_abi_preflight": "source probe assembly and pre-allocation rejection covered with CPU mocks; target Arrow16 ABI requires fresh runtime preflight",
+        "process_boundary": "self-written short-lived CPU engine child and localhost fixture tested through formal tool approval"
+      }
+    },
+    "receipt_repair": {
+      "source_commit": "174ee85349044610ebc06b7537f3b1d6cfc21fb9",
+      "behavior": [
+        "preserve complete uniquely associated engine terminals despite cardinality/order errors; only missing or ambiguous calls become unknown",
+        "duplicate/contradictory identities remain raw unassociated; private audit records actual returned batch before author wire",
+        "host decode exception carries partial_results and missing-only unconfirmed_results; carrier stops fill and drains already accepted blocks before primary error",
+        "close preserves known receipts/raw under same query via existing unconsumed_call_results; existing unknown cannot be upgraded and audit failure remains retryable",
+        "shared EngineProcess upstream cardinality/identity-to-whole-batch-unknown behavior is unchanged and pending"
+      ],
+      "validation": {
+        "pure_cpu_pass": 63,
+        "pure_cpu_skip": 0,
+        "popen_calls": 0,
+        "child_processes_started": 0,
+        "real_author_runtime_started": false,
+        "model_requests": 0,
+        "gpu_work": false,
+        "required_full_suite_tests": 72,
+        "required_full_suite_executed": false,
+        "excluded_child_dependent_cases": [
+          "tests.integrations.test_imlane_records.ClientChecks.test_empty_ready_polls_do_not_hide_native_task_deadline",
+          "tests.integrations.test_imlane_records.ClientChecks.test_failed_owner_cleanup_is_not_marked_closed_and_can_retry",
+          "tests.integrations.test_imlane_records.ClientChecks.test_native_task_deadline_caps_a_blocked_poll_response",
+          "tests.integrations.test_imlane_records.ClientChecks.test_partial_response_cannot_block_past_rpc_deadline",
+          "tests.integrations.test_imlane_records.ClientChecks.test_pre_submission_rejection_allows_next_command",
+          "tests.integrations.test_imlane_records.OwnerChecks.test_import_needs_no_removed_tree_or_runtime_start",
+          "tests.integrations.test_imlane_filter.FilterTests.test_full_original_movie_query_and_evaluator_through_cpu_bridge",
+          "tests.integrations.test_imlane_filter.FilterTests.test_original_formatter_private_child_parser_and_physical_exit",
+          "tests.integrations.test_imlane_compatibility.CompatibilityTests.test_fresh_cpu_child_clears_author_abi_and_uses_the_shared_code_path"
+        ],
+        "directly_affected_pending_process_cases": [
+          "tests.integrations.test_imlane_filter.FilterTests.test_full_original_movie_query_and_evaluator_through_cpu_bridge",
+          "tests.integrations.test_imlane_filter.FilterTests.test_original_formatter_private_child_parser_and_physical_exit"
+        ],
+        "other_pending_process_cases": "5 unchanged ClientChecks, 1 unchanged import child, 1 unchanged fresh interpreter ABI child; their process/source bytes match 7cd08b3a",
+        "fixture_scope": {
+          "numpy_sve_probe": "exact lscpu probe simulated unsupported; no child",
+          "wire_error_checkout": "read-only Git identity probe mocked in early transport-error ledger test; query fails before parser/evaluator; production verify_checkout unchanged"
+        }
+      },
+      "preserved_failed_pure_runs": {
+        "pure-cpu-r1.json": "12 failures from forbidden NumPy.testing lscpu import probe; no process started",
+        "pure-cpu-r2.json": "1 failure from forbidden original SemBench Git metadata probe; no process started",
+        "pure-cpu-r3.json": "1 same Git metadata probe failure; strict attempt did not match upstream safe.directory command; no process started"
+      },
+      "required_process_regression": {
+        "action": "run full 72-test suite including self-written CPU child/socket fixtures",
+        "target_worktree": "<private-workspace>/records-imlane-integration",
+        "command": [
+          "<private-workspace>/nonmodel-venv/bin/python",
+          "-B",
+          "-m",
+          "unittest",
+          "tests.integrations.test_imlane_records",
+          "tests.integrations.test_imlane_filter",
+          "tests.integrations.test_imlane_compatibility",
+          "tests.integrations.test_imlane_chain",
+          "-v"
+        ],
+        "outcome": "not_executed",
+        "reason": "automatic approval review infrastructure: Selected model is at capacity; not an unsafe-action determination",
+        "retry_attempts": 0,
+        "approval_bypassed": false
+      }
+    },
+    "source_sha256": {
+      "code/integrations/imlane_records/README.md": "1ddbc795cf53afa3a0676761a60a54ed9d54549040ee4826d62d660032ffcc02",
+      "code/integrations/imlane_records/chain_host.py": "498990bcfd73ed4dea352f31040bbba4b4d01f6ac008856ca844a4a506d51de0",
+      "code/integrations/imlane_records/chain_udf.py": "a11c822fe84e3b219b2e3cc85fd8f7dbf3261aa7caf6da69f4387da1c81ad5a1",
+      "code/integrations/imlane_records/chain_workload.py": "644313b8fc2b1503cc7df41ef03c6e1339bf92ac68f03d7479400950c3698e7e",
+      "code/integrations/imlane_records/client.py": "98ddc83483386ec239d67cada23c2d1ceb803516b6913490a75b1e59e756ff23",
+      "code/integrations/imlane_records/filter_host.py": "0e96f8ff480b71bd7cc97a3ef47fa2ee047c5645cd4cb38ff406219876a3e75b",
+      "code/integrations/imlane_records/filter_udf.py": "f5388972f911919e2d2c02ebcf68b9d9838f1faa5ab7be3c06ac9906218e00ae",
+      "code/integrations/imlane_records/filter_workload.py": "43270571de382bfc2f7442f9f748cd6dab602312c4e60f5eb3164f81d21972e4",
+      "code/integrations/imlane_records/method_environment.py": "954492293e1315f149f71748524bc76c03bf9cd2a421d9654e3299cadb9ad29e",
+      "code/integrations/imlane_records/method_owner.py": "d6d8d3e5cefb0afb50d9cc8c8cf8fe18656751d1df02e4bd94cba0448bb0d131",
+      "code/integrations/imlane_records/model_lifecycle.py": "8d508181b0678df771a67d3f934087e87e3c7466a09818ae984bff2491142d11",
+      "code/integrations/imlane_records/model_process.py": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+      "code/integrations/imlane_records/owner.py": "415b9e43c5c0a0712d3600e3caba3e7e28a9b2f2ceeb92693d4345afbd124f7d",
+      "code/integrations/imlane_records/records_host.py": "8536bae7b5ba56bc77101241556f275fd53789e59bc87371e44cd0987aeee313",
+      "code/integrations/imlane_records/resource_limits.py": "f4545f47d849bcae9a227579ae6f03dc17bd3d88fb2495e971f2d1adfe812eba",
+      "code/integrations/imlane_records/verify.py": "92cf7fdb4637bcfbca66c7dd5eea83928068dd4a6aee4006b9dfbe1f9d1b0f6f",
+      "code/integrations/imlane_records/verify_filter.py": "99b8170c684c59192182ac40473adf19cc41abb47d8216c4cadace06a2abc315",
+      "code/src/baselines/text/frameworks/daft_engine_process.py": "433e9d9b1ce9a141745c101e3e6d8f787ee327cad73e0328092f210f89c68528",
+      "code/src/baselines/text/frameworks/lotus_chain_batch.py": "ffbd7ce1b78c5ee62b3bb8e50a88298311a9648219de25e27642134c912ca2d3",
+      "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
+      "code/src/baselines/text/frameworks/lotus_chain_results.py": "b9078d6961fba8299a2e58f1ad8e85a75b62bc52f49915e2a405c9f4c0953507",
+      "code/src/serving/backends/vllm_engine.py": "483983185bb15f2c434969d1366180a5c599fc75fdcbde11a4136c100e41c3b4",
+      "code/tests/integrations/imlane_filter_fixture.py": "cfebc880fab44fd9a30c925e0a351e02109db3b91db2a187407b1d9aab57a06c",
+      "code/tests/integrations/imlane_filter_fixture_udf.py": "0cd80650a86db331a5573614b28793159ed8a77db82ad2c7f4bd800d36acb29f",
+      "code/tests/integrations/test_imlane_chain.py": "5cb6a04fa1447c6f27cfbc70ce7e17815368acc05eb8ee6b062de1887031b024",
+      "code/tests/integrations/test_imlane_compatibility.py": "1fcf3a3c5b8ce76474032de54c979c273a1e4cc6b8a42bcb2479e03d6426f9ca",
+      "code/tests/integrations/test_imlane_filter.py": "88fa9ad728414d3443d84d2a8b666a96945755810dcae4512c380563b80d5b24",
+      "code/tests/integrations/test_imlane_records.py": "bf5f1aff88a434e043696d1adc2369a05919aa56c1eeceead408ffb87b2a7f21"
+    },
+    "source_delta": {
+      "files": {
+        "code/integrations/imlane_records/README.md": {
+          "qualified_sha256": "a1ee9c42f83ba1379ff47597fd86d76859d4927325e778dd806f52ec8cfd3702",
+          "integrated_sha256": "1ddbc795cf53afa3a0676761a60a54ed9d54549040ee4826d62d660032ffcc02"
+        }
+      },
+      "reason": "Root README only clarifies0190 historical source and current63/9pending status; production/tests/process sources match reviewed author bytes."
+    },
+    "historical_reports_unchanged_sha256": {
+      "experiments/results/diagnostics/imlane_filter_author_cpu_20261019/README.md": "28f9b003324ad83e8062731ef2c62ec4a0cc5e8eb0189fd4e0acc2d1bd7f6c9c",
+      "experiments/results/diagnostics/imlane_filter_author_cpu_20261019/qualification.json": "a725a43ffd9261b855aabb63d8d371198082ae6d61698faaf633a80f4715c679",
+      "experiments/results/diagnostics/imlane_filter_cpu_20261019/README.md": "f359c3430eedee16be6675f282fc03e2f910c1d9dc0e5183baf1af6a7d2d9066",
+      "experiments/results/diagnostics/imlane_filter_cpu_20261019/qualification.json": "ceb74d0e103c6c9d65ab6129fe808ff87e78d32fe1779f0289a3c3212eca2df4"
+    },
+    "cpp_unchanged_sha256": {
+      "code/integrations/imlane_records/imlane_records.cpp": "e0102edcb883e3159510362fecb80967d112bbd782473e97c003bb655dcfe8be",
+      "code/integrations/imlane_records/record_dbend_adapter.hpp": "f606760a61845ea7b98f69bfd41a413279e8b9eef349511e3d6f7f4c83ad9e16",
+      "code/integrations/imlane_records/records_checks.cpp": "2e5f3813ae94909d8e7e75d2407e85c4d2d2dea83e70fc8f40a2148328c041a9"
+    },
+    "real_author_new_wire_runs": 0,
+    "real_model_requests": 0,
+    "gpu_requests": 0,
+    "pending": [
+      "Full72 required suite not executed because automatic approval review service is at capacity;9 process-dependent cases remain pending,2 directly affected by Filter fix.",
+      "Actual author CPython on new wire/ABI and source-bound no-model regression.",
+      "New independent permanent4-call budget,2 queries/cap2 and2 model owners; no warmups or retries; per-query GPU exit gates.",
+      "Shared EngineProcess upstream malformed cardinality/association handling still converts whole batch to unknown.",
+      "Real model/GPU/author Ray, shared chain CLI, continuous supply and performance."
+    ],
+    "raw_evidence": [
+      {
+        "file": "nonmodel-evidence/imlane-integration-20261019-r1/delivery.json",
+        "sha256": "625f9a30be2a7e7e5d8e16a81d2f726e2c028873d025e88c1a50cf5aecc511cd",
+        "bytes": 8356
+      },
+      {
+        "file": "nonmodel-evidence/imlane-integration-20261019-r1/all-imlane-approved-r4.json",
+        "sha256": "630cb92848ef9d3a47adecea3a1df249cca9120d1b087dbba584afe9dd3aa3c1",
+        "bytes": 25486
+      },
+      {
+        "file": "nonmodel-evidence/imlane-integration-20261019-r1/static-source-scope-r2.json",
+        "sha256": "ea42f459bba9bb21bcf4893936990327548583d95eea74ebe2dadb201c8e522b",
+        "bytes": 5630
+      },
+      {
+        "file": "nonmodel-evidence/imlane-integration-spec-review-r1.json",
+        "sha256": "d84c7588a2a1aed302982d4d09b5e085dbde29ef5de6be12377f31c9424c5e5e",
+        "bytes": 1397
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/delivery.json",
+        "sha256": "8bd1870565288ede5f6eaccf2ea5f9b490d25d054938cd65bb67ec3d94fa1ae0",
+        "bytes": 9256
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/targeted-r1.json",
+        "sha256": "4a900cae0583a2d2174ee57572bb74cb54967193dcc2f889a963099353c87c94",
+        "bytes": 1534
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/pure-cpu-r1.json",
+        "sha256": "81b073471914fa6a9409699c8ca3179d2fd5a82902f3c2f97881eba115523352",
+        "bytes": 128476
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/pure-cpu-r2.json",
+        "sha256": "c70a97ab6448f7a68279d1eeb089f8e3e349459831dbfdf027f50a49f284b91b",
+        "bytes": 27926
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/pure-cpu-r3.json",
+        "sha256": "eadded82e8df2c552bb5e7ca882bf80883bb8f565c1c5de52855f7fb06b78238",
+        "bytes": 27968
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/pure-cpu-r4.json",
+        "sha256": "8604ae3f7d91078cc59fd65c1636f46d28b1b7cfba81fdd61a39a9aef6406969",
+        "bytes": 24946
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/static-source-scope.json",
+        "sha256": "0da289f73e96f95bb8c4e6c865a3d58605a4705dcf7869e474df137af2e188fa",
+        "bytes": 3273
+      },
+      {
+        "file": "nonmodel-evidence/imlane-receipts-20261019-r1/approval-capacity-block.json",
+        "sha256": "2b9b3958a10ec709fb35f3f4095a3e96b25db13b1b8393856f9562de8410c08c",
+        "bytes": 675
+      }
+    ]
   }
 }

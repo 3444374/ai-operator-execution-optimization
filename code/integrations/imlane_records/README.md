@@ -2,7 +2,7 @@
 
 本目录保留无模型 v1 记录桥，并新增[普通 Filter v2 的 CPU 接线](#普通-filter-v2cpu-资格作者实机待验)。作者 DBEnd（数据库调用入口）、Coordinator（协调进程）、Lane
 （共享内存交换通道）和 CPython executor（Python 执行进程）继续拥有执行与调度。
-v2 已接原方法、source、调用账本与 CPU 子进程，并通过[作者 CPython 无模型资格](../../../experiments/results/diagnostics/imlane_filter_author_cpu_20261019/README.md)；真实模型／GPU 和作者 Ray 仍待验，不接 Ray Data 或 SemLoom 模型池。
+冻结 `0190e8cd` 的 v2 原方法、source、调用账本与 CPU 子进程通过[作者 CPython 无模型资格](../../../experiments/results/diagnostics/imlane_filter_author_cpu_20261019/README.md)；当前兼容／有限链修订的来源与待验项在下节分列。真实模型／GPU 和作者 Ray 仍待验，不接 Ray Data 或 SemLoom 模型池。
 无模型 v1 桥从 `78f05783` 选择性接入，没有恢复旧 IMLane／Sema HTTP 执行树。
 
 ## 当前 Filter 合同与有限链接点
@@ -10,6 +10,9 @@ v2 已接原方法、source、调用账本与 CPU 子进程，并通过[作者 C
 作者无模型报告固定在 `0190e8cd`，由 `9f1a817f` 交付；下述兼容修订和有限链只具有新的
 本机 CPU／替身检查，不能重绑定为原作者资格，也没有真实模型、GPU 或作者有限链运行资格。
 原 C++ v2 桥字节保持；新 Python 方法和关闭路径需要在新的源码归档和 owner 下核验。
+`7cd08b3a` 有68项完整CPU检查；后续 `174ee853` 的两项丢账反例与63项 NoPopen 子集通过。
+当前完整72项因自动审批服务容量错误未执行，9项子进程依赖复测仍pending，其中2项直接覆盖本次Filter修复。
+新 wire 的作者实库／模型资格尚未启动，不能以旧68项或原作者归档补齐。
 
 - Filter caller 先调用 [`bind_source(source, method)`](filter_workload.py)，执行 source preflight，
   取得中性 `RecordScan` 并冻结原 LOTUS 列序。worker 严格接收已绑定配置和 scan，拒绝缺列；

@@ -295,5 +295,29 @@ Ray Data、Daft Native、SemLoom静态参照、production Core四个普通路径
 来源、各次失败和精确SHA见 `verification.json.generic_filter_integration_cpu_20261019`。所有新推理响应均为CPU替身，IMLane与helper级联不包含在本通用迁移声明中。
 有限链共享原stage循环；Extract仍只允许末端，重复业务index及业务列名与调用身份分开。逻辑bytes额度不表示物理RSS或显存上限。
 
+## IMLane 通用 Filter与共享有限链的本地接纳
+
+选择接纳 `52213fa5` 的原职责文件及历史报告，再接 `7cd08b3a` 的兼容／有限链和 `174ee853` 的丢账修复；
+原作者 DBEnd／Coordinator／Lane／CPython executor 继续拥有调度与传输，C++桥字节保留。
+[Filter](../../../../code/integrations/imlane_records/filter_host.py) 在 caller 冻结中性scan／原列序，wire 使用分离的 identity_json／payload_json；
+raw Filter拒绝身份名文本列。[有限链](../../../../code/integrations/imlane_records/chain_host.py)使用一条transport occurrence承载有限原始批，
+只调用共同 FusedChainBatch 与结果核验，业务同名列保留于嵌套values，不复制阶段循环。
+FME／MF／MMF／FFM 共用同一路径；Extract限末端、单部署，query间owner／engine独立。
+
+关闭独立保留20秒，不被过期query期限截短；共享API reply11秒／进程清理4秒不变，GPU另核。
+作者启动前核方法Python3.12／Arrow16 ABI与固定源，模型解释器保持独立。
+新模型配置显式声明CPU8／owned家族RSS32GiB／SHM2GiB及不超过8核的root child affinity；这些仍待实机绑定，旧echo默认和共享cgroup未改。
+
+| 固定来源 | 已完成与保留范围 |
+|---|---|
+| `0190e8cd`／`9f1a817f` | [作者CPython普通Filter无模型报告](../imlane_filter_author_cpu_20261019/README.md)：7echo、两Q3 owner及四行mixed；两次依赖失败原件保留。该旧源结果不资格当前wire、关闭或有限链 |
+| `7cd08b3a` | 68项CPU检查零skip，真实LOTUS／固定作者及模型替身／自写CPU child；旧C++和四份历史报告字节保持 |
+| `174ee853` | 两项P1反例与63项NoPopen子集通过，Popen／child／作者／模型均0；仅测试内模拟NumPy SVE探针不支持和失败wire用例的Git元数据前检。三次guard碰到只读探针的失败原件保留 |
+
+当前worker／host收到的唯一完整关联终态保持已知usage；矛盾身份仅留raw，缺项unknown，host停止补块并排空已接纳块后抛原错。
+close receipts归原query，已有unknown不升级，不重发。共享EngineProcess上游条数／关联检查整批转unknown的既有边界未改，不能把此局部修复写成完整链路故障资格。
+完整72项因自动审批服务容量错误明确未执行、未重试；9个依赖子进程的用例仍待复测，其中2个直接覆盖Filter修复。
+新wire作者CPU、真实模型／GPU、作者Ray、共享链CLI及性能仍pending。精确源码、失败与排除用例见 `verification.json.imlane_generic_chain_cpu_20261019`。
+
 后续模型准备还修正owner的关闭范围：字面True API与成功kill请求只确认请求／API范围，OS与GPU仍待独立观察。
 部分分配失败无model句柄仍unknown，静态未确认工作继续保留；最终91项CPU零skip通过，不将旧模型结果重新绑定新owner源码。

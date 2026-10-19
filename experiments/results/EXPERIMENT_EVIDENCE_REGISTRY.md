@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane通用Filter／共享有限链本地接纳](diagnostics/lotus_records_local_model_20261016/README.md#imlane-通用-filter与共享有限链的本地接纳)。原0190作者CPU不重绑定；7cd68项与174修复63项NoPopen分列。唯一回执usage保留／unknown不升级的P1已闭，但完整72项因审核容量未执行、9项子进程依赖和新wire作者／模型资格pending；上游共享传输整批unknown边界保留。
+
 2026-10-19：[共享批内核与 Daft／Core 有限链](diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)。共享22合同及2私有传输／5实际Ray图通过；Daft13项含7实库用例（含预分配拒绝）、Core23项真实Core及私有CPU进程协议通过，分别保留失败和来源。新Core为本机worker／pipe profile，模型、链CLI及持续供给仍pending，不继承冻结Daft模型资格。
 
 2026-10-19：[Daft关闭修正真实模型](diagnostics/lotus_records_local_model_20261016/daft_model_close_correction.json)。冻结f526的一文件修复，两查询4次调用／两独立引擎，506／16 tokens、COUNT0／原评价核同，59已观察owned退出和独立GPU空闲／正常lease释放。首轮actual null不改、原4加新4永久占用现8／16，旧32 SHA不变；只认证固定小样源码。
