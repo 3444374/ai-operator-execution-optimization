@@ -5,6 +5,8 @@ stage-call upper bound, not a count of GPU requests currently executing. The
 shared worker owns methods, original parsers, and the private model process.
 Logical transport bytes exclude worker Python copies, audit files and the
 consumer's retained relation/call ledger; they are not RSS or GPU-memory limits.
+An explicit relation-barrier profile drains a complete Extract prefix before
+continuing guarded batch-local segments on that same query's model owner.
 """
 
 from __future__ import annotations
@@ -94,6 +96,7 @@ class _ChainTransport:
     def __init__(self, owner):
         self.owner = owner
         self.worker = None
+        self._worker_phase = None
         self._stopping = threading.Event()
         self._lock = threading.Lock()
         self._worker_lock = threading.Lock()
@@ -116,12 +119,25 @@ class _ChainTransport:
                 from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
 
                 worker_type = owner._batch_type or FusedChainBatch
+                options = owner._worker_phase_options() if owner.relation_barriers else {}
                 self.worker = worker_type(
                     owner.chain.describe(), asdict(owner.engine),
                     list(owner.results.bindings.values()), str(owner.control),
                     owner.deadline, owner.resources.startup_timeout_s,
                     socket.gethostname(), owner.control_token,
+                    **options,
                 )
+                self._worker_phase = owner.phase_stage_ids
+            elif self._worker_phase != owner.phase_stage_ids:
+                # The control thread admits this phase only after the previous
+                # session/transport are drained. Configure the existing worker
+                # here, on its execution thread, without another model owner.
+                self.worker.begin_relation_phase(
+                    owner.chain.describe(), list(owner.results.bindings.values()),
+                    initial_parents=owner._phase_parents, columns=owner._phase_columns,
+                    allow_nulls=owner._phase_allow_nulls, source_exhausted=True,
+                )
+                self._worker_phase = owner.phase_stage_ids
             if self._stopping.is_set():
                 raise InterruptedError("Core chain transport closed during worker construction")
         value = self.worker.run_rows(json.loads(task.task.payload))
@@ -143,7 +159,8 @@ class _ChainTransport:
             self._outcomes[task.key] = payload
         records = [RecordOccurrence.from_dict(json.loads(row["record_json"]))
                    for row in json.loads(task.task.payload)]
-        audit = ChainBatchResults(records, self.owner.chain)
+        options = self.owner._accountant_options(records) if self.owner.relation_barriers else {}
+        audit = ChainBatchResults(records, self.owner.chain, **options)
         try:
             audit.accept(value)
         except ChainExecutionError as error:
@@ -172,6 +189,10 @@ class _ChainTransport:
     def retained_inputs(self):
         with self._lock:
             return len(self._inputs)
+
+    def phase_drained(self):
+        with self._lock:
+            return not self._inputs and not self._outcomes and not self._stopping.is_set()
 
     def close_worker(self, timeout):
         until = time.monotonic() + timeout
@@ -237,12 +258,16 @@ class _CoreChainRows:
     def __init__(self, owner, records, spec, cancelled):
         self.owner, self.source = owner, iter(records)
         self.cancelled = cancelled
-        self.session = owner.core.open(spec)
+        limits = (owner.capacity.limits(owner.resources, len(owner.chain.stages))
+                  if owner.relation_barriers else None)
+        self.session = owner.core.open(spec, limits)
         self.offered, self.sequence = set(), 0
         self.pending = None
         self.source_eof = self.source_closed = self.finished = self.completed = False
         self.last_close_report = None
         self.peak_core_usage = asdict(owner.core.capacity.usage())
+        self._phase_records = []
+        self._source_close_error = None
 
     @property
     def production_core_connected(self):
@@ -250,7 +275,7 @@ class _CoreChainRows:
 
     @property
     def calls(self):
-        return self.owner.results.calls
+        return self.owner.calls
 
     @property
     def columns(self):
@@ -258,15 +283,24 @@ class _CoreChainRows:
 
     @property
     def batch_stage_stats(self):
-        return self.owner.results.batch_stage_stats
+        if not self.owner.relation_barriers:
+            return self.owner.results.batch_stage_stats
+        return [snapshot for result in self.owner._accountants.values()
+                for snapshot in result.batch_stage_stats]
 
     @property
     def raw_result_batches(self):
-        return self.owner.results.raw_result_batches
+        if not self.owner.relation_barriers:
+            return self.owner.results.raw_result_batches
+        return {key: value for result in self.owner._accountants.values()
+                for key, value in result.raw_result_batches.items()}
 
     @property
     def unassociated_results(self):
-        return self.owner.results.unassociated_results
+        if not self.owner.relation_barriers:
+            return self.owner.results.unassociated_results
+        return [value for result in self.owner._accountants.values()
+                for value in result.unassociated_results]
 
     def __iter__(self):
         return self
@@ -330,7 +364,11 @@ class _CoreChainRows:
             while True:
                 _check(self.owner.deadline, self.cancelled)
                 if self.owner.results.pending:
-                    return self.owner.results.pop()
+                    row = self.owner.results.pop()
+                    if self.owner._has_next_phase:
+                        self._phase_records.append(row)
+                        continue
+                    return row
                 self._fill()
                 _check(self.owner.deadline, self.cancelled)
                 progress = self.session.advance(1)
@@ -346,8 +384,14 @@ class _CoreChainRows:
                     self.owner._collect_receipts(accept=True)
                     raise RuntimeError("Core chain execution failed: " + str(progress.error))
                 if progress.state == State.FINISHED:
-                    self.owner.results.verify_coverage()
+                    if self.owner.relation_barriers:
+                        self.owner.results.verify_success(source_exhausted=self.source_eof)
+                    else:
+                        self.owner.results.verify_coverage()
                     self.owner.results.finalize_columns()
+                    if self.owner._has_next_phase:
+                        self.owner._advance_relation_phase(self)
+                        continue
                     report = self.owner.close()
                     if report["status"] != "closed":
                         raise RuntimeError("Core chain cleanup remains unconfirmed")
@@ -374,7 +418,14 @@ class _CoreChainRows:
 
     def _close_query(self):
         self.finished, self.pending = True, None
+        errors = self._close_source()
+        self.session.close()
+        self.owner.core.reap(self.owner.capacity.step_actions)
+        return errors
+
+    def _close_source(self):
         errors = []
+        self._source_close_error = None
         if not self.source_closed:
             try:
                 close = getattr(self.source, "close", None)
@@ -382,9 +433,8 @@ class _CoreChainRows:
                     close()
                 self.source_closed = True
             except BaseException as error:
+                self._source_close_error = error
                 errors.append("source_iterator_close: " + type(error).__name__)
-        self.session.close()
-        self.owner.core.reap(self.owner.capacity.step_actions)
         return errors
 
     def close(self, *, timeout=None):
@@ -416,6 +466,14 @@ class SemLoomRecordChainCore:
         self.core = self.transport = self.chain = self.results = self._active = None
         self.control = self.deadline = self.control_token = None
         self.last_close_report = None
+        self.query_chain, self._segments = None, ()
+        self.relation_barriers = False
+        self._phase_index, self._accountants = 0, {}
+        self._phase_parents = self._phase_columns = None
+        self._phase_allow_nulls = False
+        self._source_expected, self._current_relation = (), ()
+        self._expected_count = 0
+        self.phase_history = []
 
     @property
     def production_core_connected(self):
@@ -425,12 +483,93 @@ class SemLoomRecordChainCore:
         if threading.get_ident() != self._thread:
             raise RuntimeError("Core chain owner requires one control thread")
 
-    def evaluate(self, records, chain, *, expected, query_id, cancelled=None):
+    @property
+    def phase_stage_ids(self):
+        return tuple(stage.stage_id for stage in self.chain.stages)
+
+    @property
+    def calls(self):
+        if not self.relation_barriers and self.results is not None:
+            return self.results.calls
+        return [call for result in self._accountants.values() for call in result.calls]
+
+    @property
+    def _has_next_phase(self):
+        return self._phase_index + 1 < len(self._segments)
+
+    def _accountant_options(self, records):
+        parents = (None if self._phase_parents is None else {
+            (record.row_id, record.source_position): self._phase_parents[
+                (record.row_id, record.source_position)] for record in records
+        })
+        return dict(initial_parents=parents, columns=self._phase_columns)
+
+    def _worker_phase_options(self):
+        return dict(initial_parents=self._phase_parents, columns=self._phase_columns,
+                    allow_nulls=self._phase_allow_nulls, close_on_source_complete=False)
+
+    def _phase_spec(self):
+        return SessionSpec(self.query_chain.query_id,
+                           "lotus-record-chain-phase-" + str(self._phase_index),
+                           "lotus-record-chain-fused-v1", work_unit="stage_call_upper_bound")
+
+    def _advance_relation_phase(self, stream):
+        """Cross one complete Extract relation on the single Core control thread."""
+        from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults
+        from src.semantic_methods.lotus.record_relation import complete_extract_relation
+
+        self._control()
+        _check(self.deadline, stream.cancelled)
+        usage = asdict(self.core.capacity.usage())
+        if (not stream.source_eof or stream.pending is not None
+                or self.results.pending or any(usage.values())
+                or not self.transport.phase_drained()):
+            raise RuntimeError("Core relation phase still owns source, delivery or transport work")
+        self.results.verify_success(source_exhausted=True)
+        errors = stream._close_source()
+        if errors:
+            raise stream._source_close_error
+        retired = stream.session.close()
+        if retired.status != "CLOSED" or any(asdict(retired.usage).values()):
+            raise RuntimeError("Core relation session did not retire completely")
+        completed = complete_extract_relation(
+            stream._phase_records, columns=self.results.columns,
+            extract_stage=self.chain.stages[-1], query_id=self.query_chain.query_id,
+            calls=self.calls, source_exhausted=True,
+        )
+        _check(self.deadline, stream.cancelled)
+        self.phase_history.append(dict(
+            phase_stage_ids=list(self.phase_stage_ids), source_exhausted=True,
+            session_id=stream.session.session_id, received_occurrences=len(self.results.received),
+            output_occurrences=len(completed.records), core_usage=usage,
+            barrier="complete_extract_relation", verified_success=True,
+        ))
+        self._phase_index += 1
+        self.chain = self._segments[self._phase_index]
+        self._current_relation = completed.records
+        self._phase_parents = completed.parent_call_ids
+        self._phase_columns = completed.columns
+        self._phase_allow_nulls = True
+        self.results = ChainBatchResults(completed.records, self.chain,
+                                         initial_parents=self._phase_parents,
+                                         columns=self._phase_columns)
+        self._accountants[self.phase_stage_ids] = self.results
+        stream.source = iter(completed.records)
+        stream.source_eof = stream.source_closed = False
+        stream.offered, stream.sequence, stream.pending = set(), 0, None
+        stream._phase_records = []
+        stream.session = self.core.open(
+            self._phase_spec(), self.capacity.limits(self.resources, len(self.chain.stages)))
+
+    def evaluate(self, records, chain, *, expected, query_id, cancelled=None, columns=None):
         """Return a single-pass relation iterator; publish its frame after completed EOF.
 
         ``expected`` binds each source occurrence and its values without prompts.
         ``model_batch_rows`` bounds one fused input batch, including preparation;
         no separate preparation pool or per-stage Core dispatch is introduced.
+        Explicit ``relation_barriers`` chains retain complete intermediate
+        Extract relations on the driver. ``columns`` supplies an ordered schema
+        even for an empty source. This retention is outside Core's wire limits.
         Calls/usage remain inspectable on failure. Unknown work retains the Core
         task and source bytes, even when a later private-engine cleanup succeeds.
         """
@@ -450,14 +589,30 @@ class SemLoomRecordChainCore:
                 raise ValueError("Core chain requires globally unique " + name)
         if any(record.index_updates for record in expected):
             raise ValueError("assemble final Extract index updates before another query")
+        if columns is not None and (type(columns) not in (tuple, list)
+                                    or any(type(name) is not str for name in columns)
+                                    or len(set(columns)) != len(columns)
+                                    or any(not set(record.values).issubset(columns) for record in expected)):
+            raise ValueError("Core relation columns must cover source values in a unique order")
+        self.relation_barriers = chain.relation_barriers
+        if columns is not None and not self.relation_barriers:
+            raise ValueError("explicit relation columns require relation_barriers=True")
+        self.query_chain, self._segments = chain, chain.relation_segments()
+        self._source_expected = expected if self.relation_barriers else ()
+        self._expected_count = len(expected)
         self.engine.validate_driver_environment()
-        spec = SessionSpec(query_id, "lotus-record-chain", "lotus-record-chain-fused-v1",
-                           work_unit="stage_call_upper_bound")
+        spec = (self._phase_spec() if self.relation_barriers else
+                SessionSpec(query_id, "lotus-record-chain", "lotus-record-chain-fused-v1",
+                            work_unit="stage_call_upper_bound"))
         self.deadline = time.monotonic() + self.resources.query_timeout_s
         _check(self.deadline, cancelled)
         from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults
 
-        self.chain, self.results = chain, ChainBatchResults(expected, chain)
+        self.chain = self._segments[0]
+        self._phase_columns = None if columns is None else tuple(columns)
+        self.results = ChainBatchResults(expected, self.chain, **(
+            dict(columns=self._phase_columns) if self.relation_barriers else {}))
+        self._accountants[self.phase_stage_ids] = self.results
         self.control = Path(tempfile.mkdtemp(prefix="core-lotus-chain-", dir=self.control_dir))
         try:
             require_outside_git(self.control)
@@ -485,10 +640,22 @@ class SemLoomRecordChainCore:
     def _collect_receipts(self, *, accept=False):
         for payload in self.transport.take_receipts():
             value = json.loads(payload)
+            accountant = self._accountant_for(value)
             if accept:
-                self.results.accept(value)
+                accountant.accept(value)
             else:
-                self.results.recover(value)
+                accountant.recover(value)
+
+    def _accountant_for(self, envelope):
+        stages = envelope.get("phase_stage_ids")
+        if stages is None and not self.relation_barriers:
+            return self.results
+        if type(stages) is not list or any(type(stage) is not str for stage in stages):
+            raise ValueError("Core relation audit lacks its phase identity")
+        result = self._accountants.get(tuple(stages))
+        if result is None:
+            raise ValueError("Core relation audit belongs to an undeclared phase")
+        return result
 
     def close(self, *, timeout=None):
         self._control()
@@ -524,13 +691,14 @@ class SemLoomRecordChainCore:
         if self.control is not None and self.control.exists() and self.results is not None:
             from src.baselines.text.frameworks.daft_engine_process import MAX_MESSAGE_BYTES
 
-            maximum = MAX_MESSAGE_BYTES * (len(self.chain.stages) + 2) + self.capacity.item_input_bytes
+            maximum = MAX_MESSAGE_BYTES * (len(self.query_chain.stages) + 2) + self.capacity.item_input_bytes
             for path in [*self.control.glob("chain-audit-*.json"),
                          *self.control.glob("chain-failure-*.json")]:
                 try:
                     if path.is_symlink() or not path.is_file() or path.stat().st_size > maximum:
                         raise ValueError("invalid or oversized chain audit")
-                    self.results.recover(json.loads(path.read_text()))
+                    envelope = json.loads(path.read_text())
+                    self._accountant_for(envelope).recover(envelope)
                 except BaseException as error:
                     errors.append("call_audit: " + type(error).__name__)
         transport_closed = self.transport is None
@@ -565,11 +733,12 @@ class SemLoomRecordChainCore:
             cross_query_model_reuse=False, overlapped_cross_batch_supply=False,
             work_unit="stage_call_upper_bound", core_task="one_fused_input_batch",
             application_call_upper_bound=(0 if self.results is None
-                                          else len(self.results.expected) * len(self.chain.stages)),
+                                          else self._expected_count * len(self.query_chain.stages)),
             cpu_workers_applied=True, prepare_batch_rows_applied=False,
-            declared_model_evaluations=0 if self.results is None else len(self.results.calls),
-            expected_occurrences=0 if self.results is None else len(self.results.expected),
-            received_occurrences=0 if self.results is None else len(self.results.received),
+            declared_model_evaluations=len(self.calls),
+            expected_occurrences=0 if self.results is None else self._expected_count,
+            received_occurrences=(0 if not self._accountants else
+                                  len(next(iter(self._accountants.values())).received)),
             prepare_batch_rows_reason="preparation is owned by the shared fused method worker",
             native_engine_abort_supported=False,
             cleanup_artifacts=None if closed or self.control is None else str(self.control),
@@ -577,6 +746,21 @@ class SemLoomRecordChainCore:
         if self._active is not None:
             self.last_close_report["peak_core_usage"] = self._active.peak_core_usage
             self._active.last_close_report = self.last_close_report
+        if self.relation_barriers:
+            self.last_close_report.update(
+                relation_barriers=True, relation_phase_count=len(self._segments),
+                current_phase=self._phase_index,
+                phase_history=list(self.phase_history),
+                phase_stage_ids=[list(stages) for stages in self._accountants],
+                source_materialization=("full source expected occurrence/value declaration; incremental source "
+                                        "iterator; complete Extract relation at each explicit barrier"),
+                driver_retention=("full source expected values, source iterator, one pending raw batch, "
+                                  "current complete Extract relation, call/stats/raw history and decoded results"),
+                transport_byte_scope=("per-task logical raw input/result wire reservations; excludes driver "
+                                      "declarations, complete relations, audit, history and worker/IPC copies"),
+                whole_query_rss_bounded=False,
+                model_batch_mode="finite_synchronous_fused_segments_with_extract_barriers",
+            )
         if closed and self.control is not None:
             shutil.rmtree(self.control)
         return self.last_close_report
