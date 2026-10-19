@@ -1,5 +1,7 @@
 # 项目大纲
 
+固定来源的新增结果分别见[IMLane查询API模型检查](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)与[Async迟到供给／取消检查](experiments/results/diagnostics/async_records_actor_20261019/README.md#model-late-cancel-20261019)。前者的有限关系链通过，后续公开selector仍另验；后者late通过而cancel保留失败及unknown责任，均不提供性能结论。
+
 [Daft 有限退出观察复验](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)在 `52216739` 的独立两调用样本通过，短暂 resource tracker 自然退出且无信号；原 Daft 失败与 MFE 负结果仍保留，其他方法与性能另验。
 
 [独立 Map→Extract 覆盖](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)补齐终端 Extract 的实际模型调用：Core／Ray 小轮通过，Daft 退出资格仍有负结果。它使用独立命名和预算，原 MFE 失败及源 index 物化问题继续保留。
@@ -34,7 +36,7 @@ Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及
 
 独立records分支已按各自固定源码验证普通Q3的原生参照／Ray Data／静态参照、Daft关闭修正及[Core同引擎双查询](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)。IMLane 首模型尝试的[原unknown与独立物理结清](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)分列，actual／API计数不补造。这些有限模型资格与后续共享接口CPU检查分列；不转授给main、有限链、级联、IMLane、持续供给或性能结论。
 
-本分支已接显式[Async Core／CLI](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[Extract后继](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)及[通用原全局级联](code/src/semantic_methods/lotus/cascade.README.md)的CPU实现与独立审核，保持各系统原生调度和原LOTUS方法。Async原parser／COUNT／evaluator CPU闭环及关闭knownusage反例已验；真实AsyncLLM、helper模型、IMLane新组合、GPU阶段退出和性能继续按固定来源逐项取得资格，不从CPU或旧模型样本外推。
+本分支已接显式[Async Core／CLI](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[Extract后继](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)及[通用原全局级联](code/src/semantic_methods/lotus/cascade.README.md)的CPU实现与独立审核，保持各系统原生调度和原LOTUS方法。Async原parser／COUNT／evaluator的CPU对照和关闭knownusage反例已验；后续模型结果按上方固定来源解释。helper模型、公开入口作者执行、未覆盖的组合及性能继续逐项验证。
 
 研究按真实路径测量、已有原生批执行与有界流水、数据驻留／复用和多卡负载、拓扑执行组、必要跨卡传输推进；
 后几项须由前面的实际瓶颈决定，训练为远期适用场景。保持合理调优的原生 Ray Data 与高效静态参照，

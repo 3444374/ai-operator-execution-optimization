@@ -4,6 +4,10 @@
 
 2026-10-19：[IMLane通用级联公开selector](diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)。独立record-cascade-check/run不绑定Q3，直接原run_cascade／作者桥；27入口（67子用例）／21 owner／16 source新CPU及70普通链／20旧Movie级联回归通过。正常外lease／既有永久unit／逐阶段GPU门共用一份owner编排，Q与实际调用分列。关闭unknown后metadata失败的已知回执丢失RED已修；原primary／usage／unknown保持。旧r3作者44fixture不认证当前入口，8d35私包冻结；新入口作者／真实helper模型／GPU及性能另验。
 
+2026-10-19：[IMLane固定API关系链模型](diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)。`4fc53086`的ME／EF、原作者执行与实际终态SDK差分通过；查询API与后续`8d35ddea`公开selector分开，旧7a CPU及旧失败保持各自来源。必要计数、原件与独审摘要见同目录model_qualification.json，完整原件留仓库外。
+
+2026-10-19：[Async固定模型的迟到供给与取消](diagnostics/async_records_actor_20261019/README.md#model-late-cancel-20261019)。`82e685b3`原生未完成区间内的第三条接纳通过；cancel缺少对应abort意图记录，原InterruptedError、unknown容量／引用与known usage保持。独立物理退出通过不改变取消判定，r1模型前失败保留；无GPU执行重叠或性能结论。
+
 2026-10-19：[IMLane公开 ordinary chain 入口](diagnostics/imlane_chain_cpu_20261019/README.md#公开入口与固定来源)。显式selector复用原作者backend／有限链，25入口、45owner、17旧路径NoPopen CPU通过，浮点精度及lease同bytes反例已闭合；实际LOTUS和临时ledger、显式fixture作者／ABI／GPU分列。旧7a冻结作者CPU12次fixture／三scope通过，50观察出生身份和13作者ticks退出，旧成功不认证最终关闭修补／selector。当前入口作者执行、真实模型／GPU与性能另验，Async82e包保持冻结。
 
 2026-10-19：[IMLane普通方法与关系链](diagnostics/imlane_chain_cpu_20261019/README.md)。选择7a4524b7的十个所属文件，原17项CPU不重绑；共享关闭报告修补固定eaa1c1d7，5新＋11旧NoPopen合同及16项IMLane组合通过。公开model／physical证据保留，unknown／后继阻断及usage口径保持；旧冻结作者CPU后续回执与最终入口资格见上项。

@@ -2,11 +2,11 @@
 
 [Async r2取消／关闭诊断与修补](async_cancel_close_20261019/README.md)：取消与关闭的CPU反馈环；队列接管、原RPC和原生终态分列，历史失败保持，实际竞争层未定，新源模型资格待验。
 
-[IMLane普通 Map／Extract 与关系链](imlane_chain_cpu_20261019/README.md)：原17项本机CPU、16项无child组合及旧7a冻结作者12次fixture分列；公开selector新增25入口／45owner／17旧路径CPU。共享关闭失败仍unknown，旧作者成功不转授最终源码；当前入口作者／模型／GPU资格待验。
+[IMLane普通Map／Extract与关系链](imlane_chain_cpu_20261019/README.md)：本机CPU、旧7a作者CPU及[4fc查询API模型](imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)按来源分列；后续公开selector的作者执行仍待验。
 
 [IMLane通用级联阶段与公开入口](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥；新27入口／21 owner／16 source CPU和90旧路径回归，冻结r3作者44fixture与当前入口分列。原保存失败保留，真实helper／模型／GPU另验，8d35普通链包冻结。
 
-[Async actor／Core／CLI](async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)：原合同、实际CPU组合及关闭known usage的RED→GREEN分列，unknown责任不释放，真实AsyncLLM／GPU／性能待验。
+[Async actor／Core／CLI](async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)：CPU接线与[固定82e模型结果](async_records_actor_20261019/README.md#model-late-cancel-20261019)分列，late通过、cancel失败；known usage及unknown责任保持，性能另验。
 
 [通用全局级联后端](../../../code/src/semantic_methods/lotus/cascade.README.md)：原LOTUS全局算法、Ray／Daft／Core CPU执行，新增Core关闭窗口修复与原实库来源分列；helper模型及IMLane新组合待验。
 
@@ -18,7 +18,7 @@
 
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
-[Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)：按基本接入／实际库／模型／扩展四层及固定源码核对；Ray／Daft／普通Core已有小切片资格，当前IMLane[初始化失败及独立结清](lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)保留unknown，有限链、级联与持续供给另验。
+[Movie Q3 records本地模型接点](lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)：按基本接入／实际库／模型／扩展及固定源码核对；IMLane原初始化unknown与后续API模型结果分列，级联、入口及性能按实际来源另验。
 
 [main原生CLIP最小闭包](main_lotus_clip_20261015/README.md)：完整RM／index／search与显式单卡资源，分列8834 CPU／SDK、来源d2条件模型与失败、main570四路径八臂40行严格单卡实机；未扩展HSE／多卡资格。
 
