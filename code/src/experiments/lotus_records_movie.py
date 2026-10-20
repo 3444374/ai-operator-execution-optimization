@@ -111,7 +111,7 @@ def merge_unconsumed_call_results(report, expected, close_report, *, primary=Non
         raise errors[0]
 
 
-def run_movie_query(source, checkout, method, generation, execute, *, query_id):
+def run_movie_query(source, checkout, method, generation, execute, *, query_id, observer=None):
     """Execute once; only compact final engine results may collect at the driver.
 
     execute is a lazy backend factory. Preflight and LM policy validation happen
@@ -122,11 +122,14 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
     from src.semantic_methods.lotus.engine import (
         interpret_results, lm_report, make_lm, validate_filter_source, validate_lm,
     )
+    emit = observer if observer is not None else lambda _event: None
+    emit("query_source_start")
     _fixed_method(method)
     inputs = source.preflight(method)
     upstream = verify_checkout(checkout)
     method_source = validate_filter_source()
     expected = source.expected(query_id)
+    emit("query_source_ready")
     ledger = CallLedger(expected, max_calls=max(1, len(expected)))
     lm = make_lm(method, generation)
     report = dict(schema="semloom.movie_records_query.v1", query_id=query_id,
@@ -155,9 +158,11 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
             decisions = interpret_results(ordered, lm, method)
             count = sum(row["decision"] for row in decisions)
             result = pd.DataFrame({"positive_review_cnt": [count]})
+            emit("result_ready")
             report.update(result={"positive_review_cnt": count}, decisions=decisions,
                           query_seconds=time.monotonic() - started)
             evaluated_at = time.monotonic()
+            emit("evaluation_start")
             labeled = source.labeled_frame()
             quality = evaluate_original(upstream, 3, result, labeled)
             rows = source.rows()
@@ -169,6 +174,7 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
             report.update(quality=json_metric(quality),
                           evaluation_seconds=time.monotonic() - evaluated_at,
                           status="completed")
+            emit("evaluation_end")
     except BaseException as error:
         primary = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
@@ -193,6 +199,14 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
             merge_unconsumed_call_results(report, expected, None, primary=primary)
         report["lm"] = lm_report(lm)
         report["elapsed_seconds"] = time.monotonic() - started
+        try:
+            emit("query_cleanup_end")
+        except BaseException as observation:
+            report.setdefault("observer_errors", []).append(redact_text(str(observation)))
+            if primary is None:
+                primary = observation
+            else:
+                primary.add_note("cleanup observation also failed: " + type(observation).__name__)
         if primary is not None:
             report["status"] = "failed"
             primary.query_report = report
@@ -526,7 +540,8 @@ def _cascade_model_worker(config, source, checkout, method, generations, resourc
         raise failure
 
 
-def _model_worker(config, source, checkout, method, generation, resources, engine, root):
+def _model_worker(config, source, checkout, method, generation, resources, engine, root, *, observer=None):
+    emit = observer if observer is not None else lambda _event: None
     ray = None
     owner = None
     async_owner = async_limits = None
@@ -534,6 +549,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     failure = None
     report = {}
     runtime_started = time.monotonic()
+    emit("runtime_setup_start")
     try:
         if is_async:
             async_limits = _async_limits(config)
@@ -546,6 +562,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                                                  "LITELLM_LOCAL_MODEL_COST_MAP": "True",
                                                  "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
         runtime_seconds = time.monotonic() - runtime_started
+        emit("runtime_setup_end")
         def execute():
             nonlocal owner, async_owner
             if config["backend"] == "daft-native-local-model":
@@ -567,7 +584,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
             return owner.evaluate(source, query_id=config["query_id"])
-        report = run_movie_query(source, checkout, method, generation, execute, query_id=config["query_id"])
+        report = run_movie_query(source, checkout, method, generation, execute,
+                                 query_id=config["query_id"], observer=observer)
         report.update(backend=config["backend"], runtime_setup_seconds=runtime_seconds,
                       execution_kind="synchronous local-model qualification", performance_claim=False)
     except BaseException as error:
@@ -641,6 +659,15 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             else:
                 failure.add_note("Ray close also failed: " + type(cleanup).__name__)
         report["independent_gpu_process_exit_check"] = False
+        try:
+            emit("runtime_closed")
+        except BaseException as observation:
+            report.setdefault("observer_errors", []).append(redact_text(str(observation)))
+            report["status"] = "failed"
+            if failure is None:
+                failure = observation
+            else:
+                failure.add_note("runtime close observation also failed: " + type(observation).__name__)
         try:
             write_private_json(root / "query.json", report)
         except BaseException as recording:

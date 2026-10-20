@@ -202,7 +202,7 @@ def _wait(owned, pgid, created, deadline, output=None, *, exit_events=None,
 
 
 def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
-              grace_s: float = 5, natural_exit_grace_s: float = 0) -> dict:
+              grace_s: float = 5, natural_exit_grace_s: float = 0, monitor=None) -> dict:
     """Run a worker within one wall budget, reserving a bounded cleanup window.
 
     The report confirms only observed OS process exits. It cannot establish GPU
@@ -264,6 +264,8 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                 while True:
                     output.pump(deadline)
                     _observe(owned, process.pid, created)
+                    if monitor is not None:
+                        monitor(tuple(owned))
                     if time.monotonic() >= worker_deadline:
                         raise TimeoutError("records worker exceeded its overall work window")
                     if process.poll() is not None:
