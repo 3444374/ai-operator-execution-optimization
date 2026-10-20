@@ -1,0 +1,719 @@
+{
+  "schema": "semloom.engineering_qualification_progress.v1",
+  "updated_utc": "2026-10-20T10:54:25.959247+00:00",
+  "source_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "finite_manifest_sha256": "85ef1453732255334f7994093a10d87c95bab5250eecd841bfcb128cd93f8f98",
+  "budget": {
+    "limit": 164,
+    "base_permanently_allocated": 134,
+    "total_permanently_allocated": 159,
+    "completed_unit_caps": 159,
+    "repair_allocated": 25,
+    "repair_unallocated": 5,
+    "repair_units_used": 1,
+    "permanent_units": [
+      {
+        "unit_id": "core-mfe",
+        "first_attempt": 1,
+        "requests": 6,
+        "claimed": 1
+      },
+      {
+        "unit_id": "core-em",
+        "first_attempt": 7,
+        "requests": 4,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-mfe",
+        "first_attempt": 11,
+        "requests": 6,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-em",
+        "first_attempt": 17,
+        "requests": 4,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-mfe",
+        "first_attempt": 21,
+        "requests": 6,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-em",
+        "first_attempt": 27,
+        "requests": 4,
+        "claimed": 1
+      },
+      {
+        "unit_id": "core-cascade",
+        "first_attempt": 31,
+        "requests": 25,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-cascade",
+        "first_attempt": 56,
+        "requests": 25,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-cascade",
+        "first_attempt": 81,
+        "requests": 25,
+        "claimed": 1
+      },
+      {
+        "unit_id": "imlane-ef",
+        "first_attempt": 106,
+        "requests": 4,
+        "claimed": 1
+      },
+      {
+        "unit_id": "imlane-cascade",
+        "first_attempt": 110,
+        "requests": 25,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-cascade-repair1",
+        "first_attempt": 135,
+        "requests": 25,
+        "claimed": 1
+      }
+    ],
+    "clock_start_utc": "2026-10-20T09:33:11.837129+00:00",
+    "deadline_utc": "2026-10-20T11:43:11.837129+00:00",
+    "window_seconds": 7800,
+    "elapsed_seconds_at_independent_terminal": 4480.61513710022,
+    "within_original_7800_seconds": true
+  },
+  "completed_units": {
+    "core-mfe": {
+      "status": "passed",
+      "permanent_cap": 6,
+      "actual_model_calls": 5,
+      "original_worker_actual_model_calls": 5,
+      "known_receipts": 5,
+      "known_confirmed_submissions": 5,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 5,
+        "stage_calls": {
+          "map": 2,
+          "filter": 2,
+          "extract": 1
+        },
+        "output_rows": 1
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 459,
+        "known_prompt_tokens": 459,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 33,
+        "known_completion_tokens": 33,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 492,
+        "known_total_tokens": 492,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 21,
+      "sampled_peaks": {
+        "rss_bytes": 7807205376,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 55.03152084350586
+    },
+    "core-em": {
+      "status": "passed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "original_worker_actual_model_calls": 4,
+      "known_receipts": 4,
+      "known_confirmed_submissions": 4,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 4,
+        "stage_calls": {
+          "extract": 2,
+          "map": 2
+        },
+        "output_rows": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 404,
+        "known_prompt_tokens": 404,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 30,
+        "known_completion_tokens": 30,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 434,
+        "known_total_tokens": 434,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 21,
+      "sampled_peaks": {
+        "rss_bytes": 7835557888,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 56.67901301383972
+    },
+    "ray-mfe": {
+      "status": "passed",
+      "permanent_cap": 6,
+      "actual_model_calls": 5,
+      "original_worker_actual_model_calls": 5,
+      "known_receipts": 5,
+      "known_confirmed_submissions": 5,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 5,
+        "stage_calls": {
+          "map": 2,
+          "filter": 2,
+          "extract": 1
+        },
+        "output_rows": 1
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 459,
+        "known_prompt_tokens": 459,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 33,
+        "known_completion_tokens": 33,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 492,
+        "known_total_tokens": 492,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 34,
+      "sampled_peaks": {
+        "rss_bytes": 10408722432,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 81.03886580467224
+    },
+    "ray-em": {
+      "status": "passed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "original_worker_actual_model_calls": 4,
+      "known_receipts": 4,
+      "known_confirmed_submissions": 4,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 4,
+        "stage_calls": {
+          "extract": 2,
+          "map": 2
+        },
+        "output_rows": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 404,
+        "known_prompt_tokens": 404,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 30,
+        "known_completion_tokens": 30,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 434,
+        "known_total_tokens": 434,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 55,
+      "sampled_peaks": {
+        "rss_bytes": 10294800384,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 136.88998746871948
+    },
+    "daft-mfe": {
+      "status": "passed",
+      "permanent_cap": 6,
+      "actual_model_calls": 5,
+      "original_worker_actual_model_calls": 5,
+      "known_receipts": 5,
+      "known_confirmed_submissions": 5,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 5,
+        "stage_calls": {
+          "map": 2,
+          "filter": 2,
+          "extract": 1
+        },
+        "output_rows": 1
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 459,
+        "known_prompt_tokens": 459,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 33,
+        "known_completion_tokens": 33,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 492,
+        "known_total_tokens": 492,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 29,
+      "sampled_peaks": {
+        "rss_bytes": 9028145152,
+        "shm_bytes": 776
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 70.50649189949036
+    },
+    "daft-em": {
+      "status": "passed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "original_worker_actual_model_calls": 4,
+      "known_receipts": 4,
+      "known_confirmed_submissions": 4,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 4,
+        "stage_calls": {
+          "extract": 2,
+          "map": 2
+        },
+        "output_rows": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 404,
+        "known_prompt_tokens": 404,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 30,
+        "known_completion_tokens": 30,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 434,
+        "known_total_tokens": 434,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 41,
+      "sampled_peaks": {
+        "rss_bytes": 8927637504,
+        "shm_bytes": 776
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 119.51912665367126
+    },
+    "core-cascade": {
+      "status": "passed",
+      "permanent_cap": 25,
+      "actual_model_calls": 17,
+      "original_worker_actual_model_calls": 17,
+      "known_receipts": 17,
+      "known_confirmed_submissions": 17,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "input_rows": 10,
+        "helper_calls": 10,
+        "sample_calls": 5,
+        "fallback_calls": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 2078,
+        "known_prompt_tokens": 2078,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 68,
+        "known_completion_tokens": 68,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 2146,
+        "known_total_tokens": 2146,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 205,
+      "sampled_peaks": {
+        "rss_bytes": 10158792704,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 181.61124897003174
+    },
+    "ray-cascade": {
+      "status": "unknown",
+      "permanent_cap": 25,
+      "actual_model_calls": null,
+      "original_worker_actual_model_calls": null,
+      "known_receipts": 10,
+      "known_confirmed_submissions": 0,
+      "unknown_call_records": 10,
+      "coverage": null,
+      "original_lotus_replay": null,
+      "usage": {
+        "prompt_tokens": null,
+        "known_prompt_tokens": 0,
+        "unknown_prompt_tokens_calls": 10,
+        "completion_tokens": null,
+        "known_completion_tokens": 0,
+        "unknown_completion_tokens_calls": 10,
+        "total_tokens": null,
+        "known_total_tokens": 0,
+        "unknown_total_tokens_calls": 10
+      },
+      "physical_exit_confirmed": null,
+      "lease_released": false,
+      "observed_process_identities": 31,
+      "sampled_peaks": {
+        "rss_bytes": 9753501696,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": "resolved-physical-orphan-only",
+      "later_resolution_budget_unchanged": true,
+      "elapsed_seconds": 556.2323920726776
+    },
+    "daft-cascade": {
+      "status": "qualification_failed",
+      "permanent_cap": 25,
+      "actual_model_calls": 17,
+      "original_worker_actual_model_calls": null,
+      "known_receipts": 17,
+      "known_confirmed_submissions": 17,
+      "unknown_call_records": 0,
+      "coverage": null,
+      "original_lotus_replay": null,
+      "usage": {
+        "prompt_tokens": 2078,
+        "known_prompt_tokens": 2078,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 68,
+        "known_completion_tokens": 68,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 2146,
+        "known_total_tokens": 2146,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 73,
+      "sampled_peaks": {
+        "rss_bytes": 9305600000,
+        "shm_bytes": 3976
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 169.65246987342834
+    },
+    "imlane-ef": {
+      "status": "qualification_failed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "original_worker_actual_model_calls": 4,
+      "known_receipts": 4,
+      "known_confirmed_submissions": 4,
+      "unknown_call_records": 0,
+      "coverage": null,
+      "original_lotus_replay": null,
+      "usage": {
+        "prompt_tokens": 402,
+        "known_prompt_tokens": 402,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 25,
+        "known_completion_tokens": 25,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 427,
+        "known_total_tokens": 427,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 104,
+      "sampled_peaks": {
+        "rss_bytes": 10979938304,
+        "shm_bytes": 134234944
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 180.55368280410767
+    },
+    "imlane-cascade": {
+      "status": "passed",
+      "permanent_cap": 25,
+      "actual_model_calls": 17,
+      "original_worker_actual_model_calls": 17,
+      "known_receipts": 17,
+      "known_confirmed_submissions": 17,
+      "unknown_call_records": 0,
+      "coverage": {
+        "passed": true,
+        "helper_calls": 10,
+        "sample_calls": 5,
+        "fallback_calls": 2,
+        "input_rows": 10
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 2078,
+        "known_prompt_tokens": 2078,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 68,
+        "known_completion_tokens": 68,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 2146,
+        "known_total_tokens": 2146,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 145,
+      "sampled_peaks": {
+        "rss_bytes": 11299086336,
+        "shm_bytes": 134234944
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 258.1794626712799
+    },
+    "ray-cascade-repair1": {
+      "status": "qualification_failed",
+      "permanent_cap": 25,
+      "actual_model_calls": 17,
+      "original_worker_actual_model_calls": null,
+      "known_receipts": 17,
+      "known_confirmed_submissions": 17,
+      "unknown_call_records": 0,
+      "coverage": null,
+      "original_lotus_replay": null,
+      "usage": {
+        "prompt_tokens": 2078,
+        "known_prompt_tokens": 2078,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 68,
+        "known_completion_tokens": 68,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 2146,
+        "known_total_tokens": 2146,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 81,
+      "sampled_peaks": {
+        "rss_bytes": 10081898496,
+        "shm_bytes": 32
+      },
+      "later_physical_resolution": null,
+      "later_resolution_budget_unchanged": null,
+      "elapsed_seconds": 163.1727945804596
+    }
+  },
+  "passed_units": 8,
+  "known_confirmed_model_calls": 99,
+  "unconfirmed_call_records": 10,
+  "actual_model_calls_total": null,
+  "queue_stop_present": false,
+  "historical_12_unchanged": true,
+  "physical_idle_at_capture": {
+    "gpu_used_mib": 1,
+    "compute_count": 0,
+    "shm_count": 0,
+    "lease_count": 0
+  },
+  "performance_claim": false,
+  "formal_baseline_executed": false,
+  "automatic_model_retries": 0,
+  "diagnostic_correction": "Ray successor pending GPU warning was transient; E→M naturally passed. An unnecessary cancellation precondition rejected the already-completed unit before any signal. The separate original Ray generic cascade failed: caller declared2 Ray CPUs for CSV/prepare/infer;25 cap and10 unknown records remain. An exact owned orphan cleanup resolved physical resources only; it did not convert that qualification to success.",
+  "usage_reconciliation": {
+    "prompt_tokens": 11303,
+    "completion_tokens": 486,
+    "total_tokens": 11789,
+    "scope": "Known token fields only; unknown fields are retained and excluded from these sums.",
+    "unknown_fields_by_metric": {
+      "prompt_tokens": 10,
+      "completion_tokens": 10,
+      "total_tokens": 10
+    }
+  },
+  "supplemental_receipt_audits": {
+    "daft-cascade": {
+      "status": "passed-receipt-audit-only",
+      "original_worker_status": "failed-retained",
+      "original_controller_status": "qualification_failed-retained",
+      "known_confirmed_model_calls": 17,
+      "unknown_call_records": 0,
+      "new_model_calls": 0,
+      "stages": {
+        "helper_score": 10,
+        "threshold_sample": 5,
+        "fallback": 2
+      },
+      "production_stage_cleanup_confirmed": true,
+      "original_lotus_replay": {
+        "status": "passed",
+        "original_messages_parser_decisions_stats_usage_exact": true,
+        "stages": [
+          {
+            "stage": "helper_score",
+            "calls": 10,
+            "messages_exact": true,
+            "generation_exact": true
+          },
+          {
+            "stage": "threshold_sample",
+            "calls": 5,
+            "messages_exact": true,
+            "generation_exact": true
+          },
+          {
+            "stage": "fallback",
+            "calls": 2,
+            "messages_exact": true,
+            "generation_exact": true
+          }
+        ],
+        "extra_model_calls": 0
+      },
+      "audit_sha256": "3c1e5014ba28ead18f57c89d2cda891df601b29591d1eda2ef9318edb6300386",
+      "limitation": "Original harness failed on unsupported redundant backend.close after completed native stages. Existing receipts were replayed without new inference; the failed attempt and25 cap remain."
+    },
+    "ray-cascade-repair1": {
+      "status": "passed-receipt-audit-only",
+      "original_worker_status": "failed-retained",
+      "original_controller_status": "qualification_failed-retained",
+      "known_confirmed_model_calls": 17,
+      "unknown_call_records": 0,
+      "new_model_calls": 0,
+      "stages": {
+        "helper_score": 10,
+        "threshold_sample": 5,
+        "fallback": 2
+      },
+      "native_row_close_statuses_retained": [
+        "unknown",
+        "unknown",
+        "unknown"
+      ],
+      "native_graph_and_engine_process_fields_confirmed": true,
+      "original_lotus_replay": {
+        "status": "passed",
+        "original_messages_parser_decisions_stats_usage_exact": true,
+        "stages": [
+          {
+            "stage": "helper_score",
+            "calls": 10,
+            "messages_exact": true,
+            "generation_exact": true
+          },
+          {
+            "stage": "threshold_sample",
+            "calls": 5,
+            "messages_exact": true,
+            "generation_exact": true
+          },
+          {
+            "stage": "fallback",
+            "calls": 2,
+            "messages_exact": true,
+            "generation_exact": true
+          }
+        ],
+        "extra_model_calls": 0
+      },
+      "audit_sha256": "b43b4af1c789a014e8061272e59257be17554529d2864b747133fa57bfb99dca",
+      "limitation": "The private redundant backend.close failed. Three native row-close status fields remain unknown; graph/API/process fields and independent physical exit were checked separately. No status was promoted and no fresh model run was made."
+    },
+    "imlane-ef": {
+      "status": "PARITY_CONFIRMED_SENTINEL_FAILED",
+      "actual_confirmed_calls": 4,
+      "actual_unknown_calls": 0,
+      "new_model_calls": 0,
+      "full_result_exact": true,
+      "empty_prototype_exact": true,
+      "missing_prototype_rejected": true,
+      "known_usage": {
+        "prompt_tokens": 402,
+        "completion_tokens": 25,
+        "total_tokens": 427
+      },
+      "original_unit_status": "failed",
+      "original_controller_status": "qualification_failed",
+      "all_kept_sentinel": {
+        "met": false,
+        "expected_rows": 2,
+        "actual_rows": 0
+      },
+      "product_deviation_in_audited_fields": false,
+      "audit_sha256": "f63b5c965ed6db6292ae27d2cbb1d228678601018e807e00f36d564c492013af",
+      "messages_generated_field_and_parents_exact": true,
+      "limitation": "Both actual Filter replies were False; the all-kept sentinel remains failed. Replay verified the same typed empty relation from the original LOTUS accessor and did not infer why the model chose False."
+    }
+  },
+  "qualification_summary": {
+    "attempt_reports_passed": 8,
+    "attempt_reports_failed": 3,
+    "attempt_reports_unknown": 1,
+    "all_attempt_reports_passed": false,
+    "zero_inference_audits": 3,
+    "formal_baseline_executed": false
+  },
+  "per_unit_observed_identity_count_scope": "Union of retained worker and controller process identities; a missing controller array is not treated as zero observations. The final independent count additionally includes outer process/wrapper identities.",
+  "state": "completed-with-preserved-failures",
+  "all_model_execution_stopped": true,
+  "final_cleanup": {
+    "gpu_used_mib": 1,
+    "compute_count": 0,
+    "shm_count": 0,
+    "lease_count": 0,
+    "active_rpc_count": 0,
+    "observed_process_identities": 864,
+    "all_observed_identities_absent": true,
+    "historical_12_unchanged": true,
+    "all_13_ledger_sha256_verified": true,
+    "wal_or_shm_sidecars": 0
+  },
+  "evidence_archive": {
+    "archive_bytes": 6166755,
+    "archive_sha256": "9eaa7bf7c32c298ecc4f9e7bb8cc3360281f1d288add1825c44fc2f22c8da4c5",
+    "regular_members": 1535,
+    "all_member_sha256_verified": true
+  }
+}

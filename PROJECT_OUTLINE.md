@@ -1,6 +1,6 @@
 # 项目大纲
 
-固定a503的[六个有限链模型单元](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)已补齐Core／Ray／Daft的非空M→F→E与E→M；各源旧失败保留，helper／IMLane公开CLI及正式性能继续按独立profile验证。
+固定a503的[工程终态](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engineering-model-20261020)已分列有限链、Core／IMLane通用级联及其余失败／unknown；原attempt与零推理审计分别保留，正式SemBench和性能未执行。
 
 本轮已补[固定a503取消交接观测的有限验收](experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)、[原独立native后继CPU](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#independent-native-successors-20261020)与[固定53d公开CLI作者CPU](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)。逻辑unknown保持不等于物理资源未退出；其他模型／级联和[正式baseline准备](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-readiness-20261020)仍按各自新配置推进，尚无新版正式性能成绩。
 
@@ -40,7 +40,7 @@ Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及
 
 独立records分支已按各自固定源码验证普通Q3的原生参照／Ray Data／静态参照、Daft关闭修正及[Core同引擎双查询](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)。IMLane 首模型尝试的[原unknown与独立物理结清](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)分列，actual／API计数不补造。这些有限模型资格与后续共享接口CPU检查分列；不转授给main、有限链、级联、IMLane、持续供给或性能结论。
 
-本分支已接显式[Async Core／CLI](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[Extract后继](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)及[通用原全局级联](code/src/semantic_methods/lotus/cascade.README.md)的CPU实现与独立审核，保持各系统原生调度和原LOTUS方法。Async原parser／COUNT／evaluator的CPU对照和关闭knownusage反例已验；后续模型结果按上方固定来源解释。固定53d公开CLI的实际作者CPU执行已验，当前公开CLI模型、helper模型、未覆盖的组合及性能继续逐项验证。
+本分支已接显式[Async Core／CLI](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[Extract后继](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)及[通用原全局级联](code/src/semantic_methods/lotus/cascade.README.md)的CPU实现与独立审核，保持各系统原生调度和原LOTUS方法。Async原parser／COUNT／evaluator的CPU对照和关闭knownusage反例已验；后续模型结果按上方固定来源解释。固定53d公开CLI的实际作者CPU执行已验；后续a503工程模型只覆盖上方终态报告的固定组合，未覆盖profile及正式性能继续逐项验证。
 
 研究按真实路径测量、已有原生批执行与有界流水、数据驻留／复用和多卡负载、拓扑执行组、必要跨卡传输推进；
 后几项须由前面的实际瓶颈决定，训练为远期适用场景。保持合理调优的原生 Ray Data 与高效静态参照，

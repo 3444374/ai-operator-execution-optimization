@@ -15,7 +15,7 @@ records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOT
 并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
 HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎尚未纳入 main，功能分支的实现及资格统一从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对。
 集成分支的 [IMLane普通关系链入口](code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)复用原作者执行与LOTUS方法；旧作者CPU和最终入口资格按固定源码分列。
-[IMLane通用级联入口](code/integrations/imlane_records/cascade.README.md#公开通用记录入口)独立接受caller指令，复用原全局方法和作者桥；当前CPU接线不转授真实模型资格。
+[IMLane通用级联入口](code/integrations/imlane_records/cascade.README.md#公开通用记录入口)独立接受caller指令，复用原全局方法和作者桥；CPU接线与[固定a503工程模型终态](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engineering-model-20261020)分别绑定来源，保留失败／unknown，不转授正式性能。
 
 | 要查什么 | 权威入口 |
 |---|---|

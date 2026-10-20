@@ -1,8 +1,10 @@
 # SemLoom Code
 
+固定a503的records／本地模型工程结果从[同题主报告终态](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engineering-model-20261020)进入；当前源码、CPU与模型资格分别绑定。
+
 [Extract 后继](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)已完成 Core 同 worker 和 Ray／Daft 显式原生分段的 CPU 接线；默认末端 guard 保持，每段初始化成本明示。
 [可选 Async actor／Core／CLI](../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)已接纳，并修复关闭时已知 usage 交接；真实 AsyncLLM／GPU／性能仍待验证。
-[原 helper-LM 全局级联](src/semantic_methods/lotus/cascade.README.md)已有通用方法及 Ray／Daft／Core CPU 后端，IMLane另有[通用记录selector](integrations/imlane_records/cascade.README.md#公开通用记录入口)复用原方法和作者桥；当前入口与旧r3作者CPU分列，真实helper模型／GPU待验。
+[原 helper-LM 全局级联](src/semantic_methods/lotus/cascade.README.md)已有通用方法及 Ray／Daft／Core CPU 后端，IMLane另有[通用记录selector](integrations/imlane_records/cascade.README.md#公开通用记录入口)复用原方法和作者桥；当前入口与旧r3作者CPU分列，固定a503已验范围见上方工程终态，其余源码／profile仍待验。
 基本接入、实际库、模型和扩展的状态按[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)分别解释。
 
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，
@@ -15,7 +17,7 @@
 显式 `semloom-local-model-core` 接入原生产 Core，要求单行准备／模型批；四次 static／Core CPU查询的原方法、usage和评价核同，身份及额度归还有独立检查。[冻结Core模型资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)为一个owner／引擎、两独立query、四次真实调用，共506／16 tokens；40个已观察owned身份及控制器退出，独立GPU空闲、正常lease释放。后续共享修复不继承该固定来源。
 [有限链](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)共用同一阶段循环执行 Filter→Map→Extract 和 Map→Filter；各新来源的模型资格分开验证。单Filter后端的旧Q3业务绑定另在本轮迁移，不能以链检查替代。
 后续 [Daft 有限链](src/baselines/text/frameworks/daft_lotus_chain.py)与 [Core 有限链](src/execution_provider/adapters/lotus_record_chain_core.py)
-复用同一批内核及结果核验；Daft 使用原生 process 图，Core 使用有界接纳／单本机 worker／私有 pipe，分别完成13／23项CPU检查，真实模型另验。
+复用同一批内核及结果核验；Daft 使用原生 process 图，Core 使用有界接纳／单本机 worker／私有 pipe，分别完成13／23项CPU检查；这些CPU来源不转授模型资格，后续a503有限MFE／EM已验范围见上方工程终态，其余profile另验。
 
 [IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
 [普通关系链公开入口](integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)提供显式IMLane `chain-check`／`chain-run`，共用原有限链／完整Extract关系屏障与作者调度；旧7a作者CPU12次fixture和新入口CPU资格分列，最终源码的作者／模型／GPU资格另验。

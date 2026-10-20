@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[固定a503六个有限链模型单元](lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)：Core／Ray／Daft非空M→F→E与完整E→M、原LOTUS replay及独立物理退出通过；原失败保持，无正式性能结论。
+[固定a503工程终态](lotus_records_local_model_20261016/README.md#engineering-model-20261020)：完整批次、三项零推理审计及物理结清分别登记；原失败／unknown、[有限链快照](lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)和预算保持，无正式性能结论。
 
 [Async r2取消／关闭诊断与修补](async_cancel_close_20261019/README.md)：取消与关闭的CPU反馈环；队列接管、原RPC和原生终态分列，历史失败保持，实际竞争层未定；[a503单次交接观测](async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)按有限范围收口。
 

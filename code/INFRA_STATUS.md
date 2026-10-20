@@ -2,7 +2,7 @@
 
 ## 2026-10-20：资格补验与有限收口
 
-固定a503的[六个有限链模型单元](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)已通过Core／Ray／Daft的非空M→F→E与E→M及原LOTUS replay／独立物理退出，补齐该有限profile；原失败与helper、IMLane公开CLI及正式性能范围分列。
+固定a503的[工程终态](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engineering-model-20261020)分列有限链、Core／IMLane通用级联、原失败／unknown和零推理审计；物理结清不升级逻辑状态，未执行正式SemBench或性能测量。
 
 固定a503的[取消交接观测](../experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)已完成单次cap1；原RPC false／关闭接管／原生调用／物理退出分列，逻辑unknown／held-ref1按合同保留，旧r2不升级。
 [原独立native Extract占位](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#independent-native-successors-20261020)补齐实际Ray／Daft CPU与原LOTUS差分；[固定53d公开CLI](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)原作者CPU终态已补齐只读审阅。均不转授其他源码／真实helper／完整模型或性能资格。
@@ -66,7 +66,7 @@ Daft 职责提交 `fc5380a9` 的CPU资格与共享 selector 集成后26项／2su
 详情和源码SHA从[同题CPU增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)核对，不借旧模型资格。
 新增Core单行adapter／selector复用真实SessionEngine与BoundedAsyncBackend；最终实际Ray／Daft／LOTUS／SemBench CPU组合四query、12固定响应核同，20个已观察进程退出。Core标记true、static仍false，unknown保留额度及引用；共享runner回收迟到usage，role／stage身份与有限logprobs合同另有定向检查，见[组合记录](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-core-cpu-20261019)。
 有限链职责52037286已选择整合原方法／Ray fused图与原CPU证据；Map生成列可被后继Filter消费。普通Ray／Daft／静态／Core已消费中性scan，185职责合同与换列换指令的实库8query／28合成响应通过；root79项组合零skip、40已观察进程退出。Q3规则仍归任务，其他路径不转授该声明。
-[原全局级联](src/semantic_methods/lotus/cascade.README.md)已去任务硬编码，通用 instruction／角色列序及 Ray／Daft／Core CPU 后端接纳；原全局控制与有限logprobs保持，真实helper模型仍pending。共享有限批内核／纯结果核验已抽取，原Ray生命周期AST保持；Daft有限链13项含7实库用例（含预分配拒绝）、Core有限链23项真实Core及私有CPU进程检查通过。Core新链为本机单worker／pipe profile，不冒称沿用普通Filter的Ray actor图；两者模型资格、公共链CLI及跨批持续供给仍pending。精确来源从[有限链增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)定位。
+[原全局级联](src/semantic_methods/lotus/cascade.README.md)已去任务硬编码，通用 instruction／角色列序及 Ray／Daft／Core CPU 后端接纳；原全局控制与有限logprobs保持；固定a503的Core／IMLane通用helper阶段模型已验，Ray／Daft保留各自失败及零推理审计，其他源码／profile仍pending。共享有限批内核／纯结果核验已抽取，原Ray生命周期AST保持；Daft有限链13项含7实库用例（含预分配拒绝）、Core有限链23项真实Core及私有CPU进程检查通过。Core新链为本机单worker／pipe profile，不冒称沿用普通Filter的Ray actor图；该CPU阶段当时的模型资格／公共链CLI为pending，后续a503有限MFE／EM已验范围见上方工程终态；其余源码／profile及跨批持续供给另验。精确来源从[有限链增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)定位。
 owner只将字面True API与kill请求作为其关闭scope，OS／GPU仍独立观察；部分分配无句柄和静态unsettled保持unknown，91项CPU检查通过。
 冻结 `ebe3035f` 的[普通Core模型资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)已完成：394文件Git archive逐字核同，一个owner／Core／模型actor／引擎复用两query，四次真实调用506／16 tokens，原messages／token／LMstats／COUNT及原SemBench评价核同。Core额度／引用归零；API关闭与独立40个已观察owned身份＋控制器退出、GPU1MiB空compute、正常lease释放分列。新4／4永久claim，旧32和Daft16 SHA不变，成功Daft未重跑；后续公共源码、有限链／级联／IMLane模型及性能另验。
 后续 `a4f47eab` 仅提取同步／未来Async共用的 `result_record`／`result_from_output`，原采样、预算、关联和关闭保持。69项独立解释器CPU及64项固定旧源码差分通过、4个已观察owned退出；当前Async实现与持续供给尚未由此完成，详见[提取范围](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)。

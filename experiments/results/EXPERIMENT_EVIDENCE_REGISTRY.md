@@ -1,6 +1,8 @@
 # 实验与机制证据台账
 
-2026-10-20：[固定a503六个有限链模型单元](diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)。运行组engineering-20261020-r1的Core／Ray／Daft非空MFE与EM全部通过，27实际／30永久额度，原LOTUS messages／parser／用量／关系与物理结清分列；唯一允许列表摘要绑定85ef1453清单，整批完整归档后补，不重复模型。Ray瞬态pending已自然完成且未发signal，旧负结果与预算不改。不是正式SemBench或性能结果。
+2026-10-20：[固定a503工程终态](diagnostics/lotus_records_local_model_20261016/README.md#engineering-model-20261020)。原attempt状态、回执零推理差分与独立物理清理分列，完整归档／允许列表和计数来源均已绑定；不补写旧成功或退款，不构成正式SemBench／性能资格。
+
+2026-10-20阶段快照（完整归档已由上方当前入口补充）：[固定a503六个有限链模型单元](diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)。运行组engineering-20261020-r1的Core／Ray／Daft非空MFE与EM全部通过，27实际／30永久额度，原LOTUS messages／parser／用量／关系与物理结清分列；唯一允许列表摘要绑定85ef1453清单，整批完整归档后补，不重复模型。Ray瞬态pending已自然完成且未发signal，旧负结果与预算不改。不是正式SemBench或性能结果。
 
 2026-10-20：[a503单次取消交接观测与保守unknown验收](diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)。新cap1已耗尽，完整关联／原生进入返回与已观察物理退出通过；false RPC、关闭接管与held-ref1分列，旧r2及旧账本不改。
 

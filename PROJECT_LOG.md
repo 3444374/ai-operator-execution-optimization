@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：固定a503工程批次最终证据与失败保留
+
+唯一GPU owner已结束该批次模型执行。按允许列表r2与双审收据，将最终摘要／清单原样保存，导出Markdown无损压缩为证据输入并吸收到既有[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engineering-model-20261020)，未新增平行主报告。原Ray资源声明失败、Daft／Ray repair私有close错误、IMLane EF sentinel失败及三项零推理审计分列；完整归档与最终物理／账本核验已补定位。仅发布文档，运行源码a503、全部原attempt和预算不改；不合main、不重跑模型或正式baseline。
+
 ## 2026-10-20：发布固定 a503 的六个有限链模型资格
 
 唯一GPU owner按原164／130分钟授权完成Core、Ray、Daft各M→F→E与E→M，原LOTUS replay／knownusage／完整关系和独立物理退出通过；[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)保存唯一允许列表摘要、配置清单SHA与逐次原值。27实际／30永久额度不退款，旧12账本不变，未用修复或模型重跑。Ray E→M的pending瞬态后自然完成，取消检查在signal前因已有终态停止；只读诊断不据此改代码。完整整批归档定位后补，不扩为正式性能结论。

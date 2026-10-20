@@ -1,0 +1,15 @@
+{
+  "schema": "semloom.engineering.public_result_manifest.v1",
+  "source_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "files_sha256": {
+    "README.md": "1af1d6452c0239054ba9ca9d0d427c6e5c2cdf5c2100f00cb50497ac1c6894b8",
+    "summary.json": "08d936535c34824336ae327f403983b98bf6e59110f5dc426af71b9a7f34bd6e"
+  },
+  "scope": "Bounded engineering batch only; original failures, native unknown statuses and all-kept sentinel failure retained.",
+  "known_confirmed_model_calls": 99,
+  "unconfirmed_call_records": 10,
+  "permanently_allocated_calls": 159,
+  "authorized_ceiling": 164,
+  "formal_baseline_executed": false,
+  "revision": 2
+}
