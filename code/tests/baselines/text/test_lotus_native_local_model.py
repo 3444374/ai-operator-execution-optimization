@@ -71,6 +71,7 @@ class WireFixture:
     def __init__(self, failure=None, malformed=False):
         self.requests, self.responses = [], []
         self.failure, self.malformed = failure, malformed
+        self.token_fault = None
         self.active = self.peak = 0
         self.lock = threading.Lock()
     def __call__(self, request):
@@ -89,6 +90,16 @@ class WireFixture:
                 message=dict(role="assistant", content="Answer: True" if positive else "Answer: False"))],
             usage=dict(prompt_tokens=13 if positive else 11, completion_tokens=2,
                        total_tokens=15 if positive else 13))
+        # Synthetic transport IDs deliberately differ from encoding the text.
+        response["prompt_token_ids"] = [71] * response["usage"]["prompt_tokens"]
+        response["choices"][0]["token_ids"] = [91, 93]
+        if self.token_fault == "missing":
+            response.pop("prompt_token_ids")
+            response["choices"][0].pop("token_ids")
+        elif self.token_fault == "bool":
+            response["choices"][0]["token_ids"] = [True, 93]
+        elif self.token_fault == "length":
+            response["choices"][0]["token_ids"] = [91]
         status = 200
         if self.failure == ordinal:
             status = 500
@@ -215,8 +226,49 @@ class NativeLocalTests(unittest.TestCase):
         self.assertEqual(report["calls"]["counts"]["succeeded"], 3)
         self.assertEqual(report["calls"]["counts"]["failed"], 1)
         self.assertEqual(report["calls"]["usage"]["known_completion_tokens"], 8)
+        for row in report["calls"]["records"]:
+            if row["status"] != "succeeded":
+                self.assertNotIn("token_ids_source", row)
+                self.assertNotIn("prompt_token_ids", row)
+                self.assertNotIn("output_token_ids", row)
         self.assertNotIn("quality", report)
         self.assertTrue(FixtureService.instances[0].closed)
+
+    def test_requests_observation_ids_and_preserves_authoritative_wire_arrays(self):
+        report = self.run_query()
+        self.assertTrue(all(body.get("return_token_ids") is True for body in self.wire.requests))
+        by_id = {response["id"]: response for response in self.wire.responses}
+        for row in report["calls"]["records"]:
+            response = by_id[row["engine_request_id"]]
+            self.assertEqual(row["prompt_token_ids"], response["prompt_token_ids"])
+            self.assertEqual(row["output_token_ids"], response["choices"][0]["token_ids"])
+            self.assertEqual(row["token_ids_source"], "vllm_http_response")
+        self.assertEqual(report["result"], {"positive_review_cnt": 2})
+        self.assertEqual(report["native_batch_invocations"], 1)
+        self.assertEqual(self.budget.attempts, 4)
+        self.assertGreater(self.wire.peak, 1)
+
+    def _reject_token_receipt(self, fault):
+        self.wire.token_fault = fault
+        with self.assertRaises(Exception) as caught:
+            self.run_query()
+        report = caught.exception.query_report
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["calls"]["counts"]["failed"], 4)
+        usage = report["calls"]["usage"]
+        self.assertEqual(usage["known_prompt_tokens"] + usage["known_completion_tokens"], 56)
+        self.assertEqual(len(report["http_receipts"]), 4)
+        self.assertEqual(self.budget.attempts, 4)
+        self.assertTrue(FixtureService.instances[0].closed)
+
+    def test_missing_actual_ids_fails_without_retokenizing_or_losing_usage(self):
+        self._reject_token_receipt("missing")
+
+    def test_boolean_token_id_is_a_protocol_error(self):
+        self._reject_token_receipt("bool")
+
+    def test_actual_id_counts_must_agree_with_usage(self):
+        self._reject_token_receipt("length")
 
     def test_controller_physical_gpu_uuid_is_forwarded_without_ordinal_remapping(self):
         device = "GPU-12345678-1234-5678-9abc-123456789abc"
@@ -364,7 +416,7 @@ class NativeLocalTests(unittest.TestCase):
                 ordinal = len(received)
                 received.append(json.loads(request.content))
             return httpx.Response(200, json=dict(id="fixture-full-" + str(ordinal), model=json.loads(request.content)["model"],
-                created=1, object="chat.completion", choices=[dict(index=0, finish_reason="stop",
+                created=1, object="chat.completion", prompt_token_ids=[71], choices=[dict(index=0, finish_reason="stop", token_ids=[91],
                     message=dict(role="assistant", content="False"))],
                 usage=dict(prompt_tokens=1, completion_tokens=1, total_tokens=2)), request=request)
         with patch.object(httpx, "HTTPTransport", side_effect=lambda **kw: httpx.MockTransport(fixture)):
@@ -503,7 +555,8 @@ class ReceiptTests(unittest.TestCase):
             http_response=dict(status=200, response=response))
 
     def response(self, identifier, text="Answer: True"):
-        return dict(id=identifier, model="local-fixture", choices=[dict(index=0, finish_reason="stop", message=dict(content=text))],
+        return dict(id=identifier, model="local-fixture", prompt_token_ids=[71] * 11,
+                    choices=[dict(index=0, finish_reason="stop", message=dict(content=text), token_ids=[91, 93])],
                     usage=dict(prompt_tokens=11, completion_tokens=2, total_tokens=13))
 
     def test_duplicate_messages_use_native_return_order_and_response_id(self):

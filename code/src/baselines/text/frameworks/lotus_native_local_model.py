@@ -289,6 +289,7 @@ class _Calls:
                 expected["seed"] = g.seed
             if (body.get("model") != self.model or body.get("n", 1) != 1
                     or body.get("stream", False) is not False
+                    or body.get("return_token_ids") is not True
                     or body.get("max_tokens", body.get("max_completion_tokens")) != g.max_tokens
                     or any(body.get(name) != value for name, value in expected.items())
                     or content_digest(body.get("messages")) not in {r["messages_sha256"] for r in self.prepared}):
@@ -359,6 +360,7 @@ class _Calls:
                 row.update(attempt=receipt["attempt"], http_status=receipt["http_status"],
                            submission_confirmed=receipt["http_status"] is not None)
                 payload = receipt["response"]
+                valid_token_ids = False
                 if type(payload) is dict:
                     usage = payload.get("usage")
                     usage = usage if type(usage) is dict else {}
@@ -372,6 +374,13 @@ class _Calls:
                     message = choice.get("message")
                     message = message if type(message) is dict else {}
                     row.update(text=message.get("content"), finish_reason=choice.get("finish_reason"))
+                    prompt_ids, output_ids = payload.get("prompt_token_ids"), choice.get("token_ids")
+                    valid_token_ids = (type(prompt_ids) is list and bool(prompt_ids)
+                        and type(output_ids) is list
+                        and all(type(token) is int and token >= 0 for token in prompt_ids + output_ids)
+                        and len(prompt_ids) == row["prompt_tokens"]
+                        and len(output_ids) == row["completion_tokens"]
+                        and len(output_ids) <= self.generation.max_tokens)
                 valid_usage = (row["prompt_tokens"] is not None and row["completion_tokens"] is not None
                     and row["total_tokens"] == row["prompt_tokens"] + row["completion_tokens"])
                 native_matches = True
@@ -384,12 +393,14 @@ class _Calls:
                         and all(getattr(usage, name, None) == row[name]
                                 for name in ("prompt_tokens", "completion_tokens", "total_tokens")))
                 if (receipt["messages_sha256"] == prepared.get("messages_sha256")
-                        and receipt["http_status"] == 200 and valid_usage
+                        and receipt["http_status"] == 200 and valid_usage and valid_token_ids
                         and native_matches
                         and payload.get("model") == self.model
                         and type(row.get("engine_request_id")) is str and row["engine_request_id"]
                         and type(row.get("text")) is str and row.get("finish_reason") in ("stop", "length")):
                     row.update(status="succeeded", engine_uid=self.engine_uid)
+                    row.update(prompt_token_ids=list(prompt_ids), output_token_ids=list(output_ids),
+                               token_ids_source="vllm_http_response")
                     row.pop("error_type")
                 elif receipt["http_status"] is not None:
                     row.update(status="failed", error_type="NativeHTTPProtocolError")
@@ -411,7 +422,8 @@ def _client_and_lm(method, generation, resources, profile, endpoint):
                                 limits=httpx.Limits(max_connections=None, max_keepalive_connections=None)))
     lm.max_batch_size = profile["native_lm_max_batch_size"]
     lm.kwargs.update(api_base=endpoint.removesuffix("/chat/completions"), api_key="local-fixture",
-        num_retries=0, max_retries=0, timeout=resources.query_timeout_s, n=1, client=client)
+        num_retries=0, max_retries=0, timeout=resources.query_timeout_s, n=1, client=client,
+        extra_body={"return_token_ids": True})
     return client, lm
 
 
