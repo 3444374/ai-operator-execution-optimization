@@ -243,7 +243,7 @@
     "code/src/experiments/scenarios/__init__.py": "19981b96bb6d89d1056d8f95858eee41328138abc89bc43622a5af9c2eac9a79",
     "code/src/experiments/scenarios/core.py": "136aaf2bd4a55ba26cace21dd5fa4f993d6c44e33eb653e14114132abb3b046d",
     "code/src/experiments/sembench_animals.py": "c8581056d26088651ba85ae5613948f0cd16c67e023a4ade86076fac90051507",
-    "code/src/experiments/sembench_records_formal.py": "aaaa30653bc2c71ec2983122f7682f27b7bcdf2575fd9a66ad612c869652d912",
+    "code/src/experiments/sembench_records_formal.py": "25ec93cfb86006e6429395065270028f49155b52690fbf5e4fdc232d6939e563",
     "code/src/experiments/sembench_records_formal_resources.py": "9d5f1e4c9182f08572fcb63af57d206e17d21e8804a6805bc9bdac8122b64080",
     "code/src/experiments/shared_request_budget.py": "e9cbe8874d6ae25d52f4d29a06930688e4f70edc773d951045595aed9f87f8c1",
     "code/src/experiments/shared_vllm/__init__.py": "cb198d815734597ef0004b9a250f3583ab95648b317c6d43320b6ff0433a7adb",
@@ -553,7 +553,7 @@
     "files/movie/query/gold_sql/Q2.sql": "5ab598444ef58794879227734873d370636dbc89ec9b29d4529d33dd4d5f2965",
     "files/movie/query/gold_sql/Q3.sql": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5"
   },
-  "runtime_source_commit": "1a035e68af746a453f39e24786b3c17fb86a4631",
+  "runtime_source_commit": "3dfc34a5c9d38b64684d5f9a4dd49a172bb4292c",
   "adapter_upstream_commits": {
     "lotus-native": "e0b4fcbdcb3ac1480d1c18a35156ab036819f1be",
     "imlane": "c211d11674b0740c085fe47e93d0ad28a2346acf"
