@@ -50,16 +50,19 @@ class FixtureService:
     close_confirmed = True
     def __init__(self, *args):
         self.endpoint = "http://127.0.0.1:39281/v1/chat/completions"
+        self.engine_uid = "software-fixture-" + str(len(self.instances))
+        self.cuda_device = args[-1]
         self.closed = False
         self.instances.append(self)
     def start(self):
-        return dict(no_inference=True, software_fixture=True, pid=None,
+        return dict(engine_uid=self.engine_uid, no_inference=True, software_fixture=True, pid=None,
                     template_application="fixture receives the untemplated native conversation")
     def verify_listener(self):
         pass
     def close(self):
         self.closed = True
         return dict(status="closed" if self.close_confirmed else "unknown",
+                    engine_uid=self.engine_uid,
                     process_exit_confirmed=self.close_confirmed, gpu_exit_confirmed=None,
                     software_fixture=True)
 
@@ -174,6 +177,8 @@ class NativeLocalTests(unittest.TestCase):
         self.assertLess(events.index("evaluation_end"), events.index("owner_closed"))
         self.assertTrue(FixtureService.instances[0].closed)
         self.assertTrue(report["backend_close"]["process_exit_confirmed"])
+        self.assertEqual({r["engine_uid"] for r in report["calls"]["records"]}, {report["owner_ready"]["engine_uid"]})
+        self.assertEqual(report["owner_ready"]["engine_uid"], report["backend_close"]["engine_uid"])
         self.assertFalse(lotus.settings.enable_cache)
         reference_decisions, reference_prompts = [], []
         client, lm = native._client_and_lm(self.method, self.generation, self.resources, self.profile,
@@ -212,6 +217,13 @@ class NativeLocalTests(unittest.TestCase):
         self.assertEqual(report["calls"]["usage"]["known_completion_tokens"], 8)
         self.assertNotIn("quality", report)
         self.assertTrue(FixtureService.instances[0].closed)
+
+    def test_controller_physical_gpu_uuid_is_forwarded_without_ordinal_remapping(self):
+        device = "GPU-12345678-1234-5678-9abc-123456789abc"
+        self.context["runtime_binding"]["cuda_visible_devices"] = device
+        report = self.run_query()
+        self.assertEqual(report["status"], "completed")
+        self.assertEqual(FixtureService.instances[0].cuda_device, device)
 
     def test_transport_failure_keeps_successes_and_unknown_usage(self):
         original = self.wire.__call__

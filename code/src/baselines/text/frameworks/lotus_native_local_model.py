@@ -20,11 +20,13 @@ import importlib
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import socket
 import subprocess
 import threading
 import time
+import uuid
 
 from src.baselines.common.private_artifacts import (
     content_digest, file_identity, json_metric, new_private_directory,
@@ -54,6 +56,7 @@ class LocalService:
         self.process = self.created = self.port = None
         self.owned = set()
         self.ready_report = self.last_close_report = None
+        self.engine_uid = uuid.uuid4().hex
         self._stop = threading.Event()
         self._monitor = None
         self._monitor_errors = []
@@ -148,7 +151,7 @@ class LocalService:
             selection.bind(("127.0.0.1", 0))
             self.port = selection.getsockname()[1]
         self.endpoint = f"http://127.0.0.1:{self.port}/v1/chat/completions"
-        environment = dict(os.environ, CUDA_VISIBLE_DEVICES=self.cuda_device,
+        environment = dict(os.environ, CUDA_VISIBLE_DEVICES=self.cuda_device, CUDA_DEVICE_ORDER="PCI_BUS_ID",
             HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", HF_HUB_DISABLE_TELEMETRY="1",
             VLLM_NO_USAGE_STATS="1", DO_NOT_TRACK="1")
         self.process = subprocess.Popen(self.command(), stdin=subprocess.DEVNULL,
@@ -176,10 +179,11 @@ class LocalService:
                         listener = self._listen_identity()
                         if not listener or artifacts != self._artifacts():
                             raise RuntimeError("owned listener or model/template artifacts changed at readiness")
-                        self.ready_report = dict(endpoint=self.endpoint, port=self.port,
+                        self.ready_report = dict(engine_uid=self.engine_uid, endpoint=self.endpoint, port=self.port,
                             pid=self.process.pid, create_time=self.created, listeners=listener,
                             ready_monotonic_ns=time.monotonic_ns(), startup_seconds=time.monotonic() - started,
                             command=redact_argument_list(self.command()), artifacts=artifacts,
+                            cuda_visible_devices=self.cuda_device, cuda_device_order="PCI_BUS_ID",
                             model_config=asdict(self.engine), vllm_version=VLLM_VERSION,
                             template_application="untemplated conversation POST; server chat applies template once",
                             template_application_scope="protocol/source contract; real model token parity pending")
@@ -226,6 +230,7 @@ class LocalService:
         confirmed = (self.process is None or self.created is not None
                      and self.process.poll() is not None and not live and not errors)
         self.last_close_report = dict(status="failed" if owner_failed else "closed" if confirmed else "unknown",
+            engine_uid=self.engine_uid,
             process_exit_confirmed=confirmed, gpu_exit_confirmed=None,
             cleanup_scope="only query-owned birth-matched observed OS processes; GPU check belongs to controller",
             owned_processes=[dict(pid=p, create_time=c) for p, c in sorted(self.owned)],
@@ -248,6 +253,7 @@ class _Calls:
         self.returned = None
         self.events = {}
         self.batch_invocations = 0
+        self.engine_uid = None
         self._lock = threading.Lock()
         self._spends = 0
         self.before_post = None
@@ -383,7 +389,7 @@ class _Calls:
                         and payload.get("model") == self.model
                         and type(row.get("engine_request_id")) is str and row["engine_request_id"]
                         and type(row.get("text")) is str and row.get("finish_reason") in ("stop", "length")):
-                    row.update(status="succeeded", engine_uid="query-owned-vllm-http")
+                    row.update(status="succeeded", engine_uid=self.engine_uid)
                     row.pop("error_type")
                 elif receipt["http_status"] is not None:
                     row.update(status="failed", error_type="NativeHTTPProtocolError")
@@ -477,8 +483,9 @@ def run(source, checkout, method, generation, engine, resources, *,
         if runtime.get("tokenizer_path", engine.model_path) != (engine.tokenizer_path or engine.model_path):
             raise ValueError("native tokenizer differs from the controller runtime binding")
         device = runtime["cuda_visible_devices"]
-        if type(device) is not str or not device.isascii() or not device.isdecimal():
-            raise ValueError("native local model requires one declared physical CUDA device")
+        if (type(device) is not str or re.fullmatch(
+                r"(?:[0-9]+|GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})", device) is None):
+            raise ValueError("native local model requires one declared physical CUDA index or GPU UUID")
         if expected:
             report["environment"] = engine.validate_driver_environment()
         new_private_directory(directory)
@@ -488,6 +495,7 @@ def run(source, checkout, method, generation, engine, resources, *,
             service = LocalService(engine, calls.model, resources, directory, device)
             emit("owner_start")
             report["owner_ready"] = service.start()
+            calls.engine_uid = report["owner_ready"]["engine_uid"]
             calls.before_post = service.verify_listener
             endpoint = service.endpoint
         else:
