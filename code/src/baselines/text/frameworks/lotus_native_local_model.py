@@ -523,6 +523,7 @@ def run(source, checkout, method, generation, engine, resources, *,
             raise ValueError("native complete result/call/decision protocol differs: " + "; ".join(errors))
         emit("evaluation_start")
         evaluated = time.monotonic()
+        evaluation_error = None
         try:
             labeled = source.labeled_frame()
             quality = evaluate_original(upstream, 3, result, labeled)
@@ -531,9 +532,17 @@ def run(source, checkout, method, generation, engine, resources, *,
                 {r["row_id"]: labels[r["row_id"]] for r in expected},
                 [(r["row_id"], "POSITIVE" if r["decision"] else "NEGATIVE") for r in decisions])
             report.update(quality=json_metric(quality), status="completed")
+        except BaseException as error:
+            evaluation_error = error
+            raise
         finally:
             report["evaluation_seconds"] = time.monotonic() - evaluated
-            emit("evaluation_end")
+            try:
+                emit("evaluation_end")
+            except BaseException as error:
+                if evaluation_error is None:
+                    raise
+                evaluation_error.add_note("native evaluation_end observer also failed: " + type(error).__name__)
     except BaseException as error:
         primary = error
     finally:

@@ -307,6 +307,16 @@ class NativeLocalTests(unittest.TestCase):
         self.assertEqual(report["call_accounting_error"], "ValueError")
         self.assertTrue(report["backend_close"]["process_exit_confirmed"])
 
+    def test_evaluation_and_end_observer_failure_preserves_original_error(self):
+        def observer(event):
+            if event == "evaluation_end":
+                raise ValueError("fixture evaluation end observer failed")
+        with patch.object(native, "evaluate_original", side_effect=RuntimeError("fixture original evaluation failed")):
+            with self.assertRaisesRegex(RuntimeError, "original evaluation failed") as caught:
+                self.run_query(observer)
+        self.assertEqual(caught.exception.query_report["calls"]["counts"]["succeeded"], 4)
+        self.assertTrue(any("evaluation_end observer also failed" in n for n in caught.exception.__notes__))
+
     def test_empty_original_query_returns_zero_without_service_or_inference(self):
         directory = self.root / "empty"
         directory.mkdir()
