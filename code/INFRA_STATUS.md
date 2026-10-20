@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+原生LOTUS HTTP新增[实际token IDs观测合同](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)：原调度／generation保持，缺失IDs保留usage并失败；CPU与锁／包已绑定，真实HTTP资格仍单独验证，旧514不改写。
+
 ## 2026-10-20：资格补验与有限收口
 
 [正式 Q3 候选组件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)在独立候选接纳原生 LOTUS／IMLane 新 adapter、可选 Movie observer 与 supervisor monitor。作者 47／38 项 CPU 原件分列复用，不重复计数；新共享 COUNT 回调反例修后单项通过。[controller／manifest 最终 CPU 组合](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)已接纳，四终态反例及八组合检查通过；当前 a503 工程包不变，新服务、作者、模型资格仍 pending，正式预算 0。

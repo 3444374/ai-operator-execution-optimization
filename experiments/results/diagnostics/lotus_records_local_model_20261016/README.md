@@ -670,3 +670,21 @@ Ray E→M曾出现1CPU／1GPU pending警告，后自然完成；取消前置检�
 北京时间17:33:11.837129开始，19:43:11.837129截止，不因后续扩展重置。
 这些是固定单次工程资格，非原MovieQ3正式测量，不支持吞吐、质量或性能排名；
 原8be全过滤／空Index失败、Daft旧生命周期负结果及各自预算不改写，不转授helper／IMLane／Async新profile或main。
+
+
+<a id="native-http-token-observation-20261020"></a>
+## 原生 HTTP 的实际 token IDs 观测修补（2026-10-20）
+
+冻结514的原生LOTUS HTTP回执只请求并核验messages摘要、usage、text和finish reason；它没有请求实际prompt／output token IDs，不能用本地模板重建或重新encode补作引擎观测。Q3资格执行前因此保持blocked-before-reserve，模型调用、预算reserve／claim均为0；原阻断及旧源码不改写。
+
+源码修补`0d4cc1e90acae81cac953dd28664386ae6a5fb59`只在原LM的provider `extra_body`增加`return_token_ids=true`，保留原LOTUS／LiteLLM分批与线程调度、generation、HTTP服务及清理。固定[vLLM0.25.1协议](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/openai/chat_completion/protocol.py)支持该字段；[非stream响应实现](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/openai/chat_completion/serving.py)直接从实际RequestOutput返回prompt IDs及output IDs，未把此观测开关放入SamplingParams。
+
+adapter保留原始HTTP响应，仅在model／请求关联、SDK内容、usage、finish及全部协议条件成功后，把`prompt_token_ids`／`output_token_ids`归一入ledger并标`token_ids_source=vllm_http_response`。数组必须由非负整数构成（bool拒绝），长度须与usage对应，输出不越max_tokens；缺失或非法IDs成为已知协议失败，原usage及raw response继续保留。失败行不附上归一的实际IDs来源。未新增tokenizer调用或把encode结果写成实际IDs。
+
+四个新增用例在精确514模块上全部RED，修补后通过。最终受影响Native模块24项／0skip通过，包含四新增、完整2000输入／120命中在并发4与8下的原方法CPU差分；另1项原公开Native worker／实际SDK／临时SQLite组合通过。IDs均为HTTP替身提供的合成数组，这些是观测协议检查，不是真实模型token证据；重复执行不累加。首次green测试错用不存在的known_total_tokens字段，以及两处旧手工响应未提供IDs的失败均保留，修正只涉及测试；独审另将IDs归一移动到完整成功之后，旧HTTP500用例验证失败行无归一IDs。
+
+540项source lock保持原顺序，只重绑native adapter一项及runtime source commit，新SHA为`fade0a104e48053437bc622f74fe8aaeb0fc07e10a870466db868a368567c79f`。新独立35查询准备包的103成员完整性SHA为`a2ccf3eab023479e036e9f061bde83cbb3ccade9491f8b0d0d454b746da5eda9`；已通过clean `prepare --check-source`，模型／claim为0，实际runtime资格仍未通过。原514和原103成员包保留。
+
+本轮双独审及[紧凑来源记录](native_http_token_observation_20261020.json)绑定源码、官方静态文件、原RED／失败、最终CPU与锁／包。当前修补只消除本地回执合同缺口；真实installed-vLLM、HTTP与embedded的一次模板／实际IDs／decode／usage／质量和独立物理退出仍须由唯一GPU owner在已授权的同一Q3范围内验证。返回IDs增加的HTTP序列化／传输与观测成本计入实际计时，不假定协议成本相等。输出IDs可能含text中被stop／EOS处理掉的token，应按实际服务语义核对，不能把encode(text)当作原输出序列。
+
+600次资格及全部通过后条件正式4200次的既有授权不扩额；不借用工程164或重跑finite成功单元。本线程未启动服务器、模型、GPU或新账本，也不把旧idle状态作为本轮现场证明。Q1／Q2／Q3任务配置扩展保持独立来源。

@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：原生HTTP实际token IDs协议缺口
+
+在独立fix/native-http-token-receipts中只增加vLLM观测字段及已关联成功回执的实际数组校验，不改原LOTUS／LiteLLM调度或采样；Native24项和公开worker1项CPU通过，原RED、测试修正与独审修复保留。540锁只改native一项，新的103成员准备包独立保存；[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)统一登记。原514未改、资格仍需实机；本线程模型／服务器／预算0，不增加已授权4800范围，不混入Q1Q2扩展。
+
 ## 2026-10-20：完成正式 Q3 控制器的 CPU 集成与来源重绑
 
 选择a87的六个未应用controller-owned提交，两个adapter和015不重复；540文件锁保留c412并绑定3dfc终态修补。独审复现最终GPU／墙钟失败仍completed和漏永久快照，四反例RED→GREEN、八项必要组合通过；Native logging的NoSocket selfpipe警告留原件，单项guard收尾复核不加计。作者77／四profile全120仅复用，各自人工COUNT不冒跨臂质量。新不可变35-query包与默认CLI零claim通过，[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)说明600资格桥接＋4200正式共4800仅提案、均0分配，30150秒是502.5min硬上限而120–240min仍未校准。当前a503工程执行不切源，不借164、不合main。

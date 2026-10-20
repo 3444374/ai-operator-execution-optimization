@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-20：[原生HTTP token IDs观测CPU修补](diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)。原514资格在reserve前因实际IDs缺口阻断；新原生回执合同／540锁与独立包完成CPU绑定，失败、合成证据与真实资格分列，0新增模型／预算动作。
+
 2026-10-20：[正式 Q3 五臂控制器 CPU 接纳](diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)。选择a87的controller-owned增量，两个adapter不重复；540文件锁重绑原COUNT修补和3dfc最终verdict修补，旧包保持。作者77与四配置全120仅复用，root四反例RED→GREEN／八组合通过；Native1 guard清理补验不加计，真实CLI默认零claim。35／4200／30150只是新提案；无改码完整Q3资格桥接另需600，均未分配，不借164或外推质量／性能。
 
 2026-10-20：[下一正式 Q3 adapter 与观察接点 CPU 候选](diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)。原生 LOTUS e0b4／IMLane c211 两文件交付各保留原 SHA，作者 47／38 含共同旧 Movie27，不累加成独立用例；全120行 p1／p2 仅合成响应差分。共享 COUNT 先记录再发 result_ready 的单条 RED→GREEN 保留，observer guard 新组合与作者旧 tested module 分列。正式控制器、原生服务／作者新模型资格和预算另验；a503 工程源不切换。

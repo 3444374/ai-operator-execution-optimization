@@ -1,0 +1,190 @@
+{
+  "schema": "semloom.native_http_token_observation_cpu.v1",
+  "status": "cpu_passed_real_http_qualification_pending",
+  "base_frozen_source": "514757ab5e3afff713454053403047568d2e5499",
+  "source_fix_commit": "0d4cc1e90acae81cac953dd28664386ae6a5fb59",
+  "code_and_lock_commit": "1b96d9770019dc50d76ec6364ff4f4993a1f0b31",
+  "source_sha256": {
+    "code/src/baselines/text/frameworks/lotus_native_local_model.py": "43ac4b087e4467b413545acbb0e56be80864835cb10f5bf98d8ae8fd6f926f51",
+    "code/tests/baselines/text/test_lotus_native_local_model.py": "a2ff2f57e1246d26e612fe75096191df9fe36d6eb43e45575c2a0584d6c1dccb"
+  },
+  "scope": "Original LOTUS scheduling and generation retained. Request only provider return_token_ids; actual HTTP response arrays are normalized only for fully associated successful receipts. No reencoding is a source of actual IDs.",
+  "wire_fields": {
+    "request": "return_token_ids=true",
+    "prompt_ids": "response.prompt_token_ids",
+    "output_ids": "response.choices[0].token_ids",
+    "normalized_source": "vllm_http_response",
+    "validation": "nonempty prompt list, nonnegative integer IDs excluding bool, lengths match known usage, output length within max_tokens; model/request/SDK identity and response status retained.",
+    "failed_receipts": "Known usage and raw HTTP response retained; no normalized actual-ID provenance on failed row."
+  },
+  "cpu": {
+    "new_regressions": 4,
+    "exact_frozen514_red": {
+      "tests": 4,
+      "failures": 4,
+      "errors": 0
+    },
+    "initial_green_fixture_error": {
+      "tests": 4,
+      "errors": 3,
+      "cause": "Test referred to nonexistent known_total_tokens; fixed assertion uses existing known prompt+completion fields."
+    },
+    "affected_suite_initial": {
+      "tests": 24,
+      "failures": 1,
+      "errors": 1,
+      "cause": "Two legacy synthetic HTTP responses omitted new IDs."
+    },
+    "fixture_followup": {
+      "tests": 2,
+      "passed": 2
+    },
+    "final_native_suite": {
+      "tests": 24,
+      "passed": 24,
+      "skipped": 0,
+      "includes_new_four": true,
+      "includes_full120_profiles": [
+        4,
+        8
+      ]
+    },
+    "public_native_worker": {
+      "tests": 1,
+      "passed": 1,
+      "skipped": 0,
+      "scope": "Actual public worker/adapter/original parser and temporary SQLite, CPU HTTP fixture and synthetic hardware/authorization."
+    },
+    "counts_not_summed_across_repeats": true,
+    "synthetic_ids_are_not_actual_model_qualification": true
+  },
+  "source_lock": {
+    "old_sha256": "77e6f60dcf37e840553c8063b501e4359ea444b93597b11d7cbfbefeb27dc3dc",
+    "new_sha256": "fade0a104e48053437bc622f74fe8aaeb0fc07e10a870466db868a368567c79f",
+    "ordered_entries": 540,
+    "only_runtime_entry_changed": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+    "all_files_hash_verified": true
+  },
+  "new_private_preparation": {
+    "units": 35,
+    "request_upper": 4200,
+    "integrity_members": 103,
+    "integrity_sha256": "a2ccf3eab023479e036e9f061bde83cbb3ccade9491f8b0d0d454b746da5eda9",
+    "source_bound_clean_prepare": true,
+    "model_or_claims": 0,
+    "runtime_qualified": false
+  },
+  "prior_blocked_qualification": {
+    "source": "514757ab5e3afff713454053403047568d2e5499",
+    "public_export_manifest_sha256": "db3b0d997ca1326b70f6585c18b0da136b95ad3254118af31c1c176ceea52cc8",
+    "model_calls": 0,
+    "budget_reservations": 0,
+    "budget_claims": 0,
+    "status_preserved": "blocked-before-reserve; synthetic checks and source/package verification do not qualify runtime."
+  },
+  "official_sources": {
+    "protocol": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/openai/chat_completion/protocol.py",
+    "serving": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/openai/chat_completion/serving.py",
+    "local_snapshots_sha256": {
+      "protocol.py": "ce7d0f91bbbe883c94e9a9257704365e943d0088d6c9fddd67e2fdecf9effbe7",
+      "serving.py": "6239fae503211193942d0e2037f7b0edcf71ed70271604701283bfc0453d202b"
+    },
+    "scope": "Official fixed-version source/static contract; installed runtime must still be verified."
+  },
+  "raw_evidence": {
+    "red.json": {
+      "bytes": 595,
+      "sha256": "5d8e073245c80260e4ac99935966e95f140b42155bac5e18667725e36e55fe3c"
+    },
+    "red.log": {
+      "bytes": 6628,
+      "sha256": "4425e412961609dcbc6184950bae6b2fcb4955710f8bab8e2ea9de8fcb7db763"
+    },
+    "green.json": {
+      "bytes": 597,
+      "sha256": "03b3eb9ae8f051becbe3d2d98aa9f4906a7797496978bd423417fb692b6b859c"
+    },
+    "green.log": {
+      "bytes": 5180,
+      "sha256": "3501eebd3efbcf488f2393bbc3d61e13ba5a8c6a312a8b7987042900bc6b2eb9"
+    },
+    "red-corrected.json": {
+      "bytes": 708,
+      "sha256": "6ace6cd3359069fd4f59b51c59bc27ef35ef80a6518748d8ccd7cf236418bd30"
+    },
+    "red-corrected.log": {
+      "bytes": 5752,
+      "sha256": "ed46d3e42a0a23ece247b7057c7d5c11e4fa8462f33be898cd0cca42833f5643"
+    },
+    "green-corrected.json": {
+      "bytes": 648,
+      "sha256": "ab141afdd4154c1992e0683ac25e2fc955ce6250f2b65aa9c66d85d81af1618b"
+    },
+    "green-corrected.log": {
+      "bytes": 2376,
+      "sha256": "5365184082db9a377237ca32923c9bbaff3ad9a63bb561d9138d880d76fdbf7d"
+    },
+    "affected-suite.json": {
+      "bytes": 648,
+      "sha256": "37b745ff567c993f6e2a752c11ed730f8978d0e71c33c0a541224aa985971b42"
+    },
+    "affected-suite.log": {
+      "bytes": 20141,
+      "sha256": "5140c57983ead0afdadb86b5ac195777647164d7db9679582707bed5a227e91d"
+    },
+    "fixture-followup.json": {
+      "bytes": 649,
+      "sha256": "063e919709d93397ea8e32631a16b4fbdad81296aab9fefcc8876a318c54d5d4"
+    },
+    "fixture-followup.log": {
+      "bytes": 2320,
+      "sha256": "870ec23afda785c4ac1737853df9897938257c494f5cf2c84bdc40dc51dfb8d7"
+    },
+    "final-native-suite.json": {
+      "bytes": 652,
+      "sha256": "6ae69b5183b27111ca45f8f669e3d9a4236c79f98423d9c63593d234995a3710"
+    },
+    "final-native-suite.log": {
+      "bytes": 12605,
+      "sha256": "8937d04ea05b4f0986ef29931b36fe0c26e4c7672551f5e0013134811ec60ebd"
+    },
+    "native-public-worker-r1.json": {
+      "bytes": 795,
+      "sha256": "d1d6b392436fcbdb44bd307c03219adff07a411dd16a42abcbe615c76e8bbbc4"
+    },
+    "native-public-worker-r1.log": {
+      "bytes": 775,
+      "sha256": "5ee2140c084450eb635e0b677fade4257d9e1dbad68d777191dbc0469af42bbc"
+    },
+    "spec-review.json": {
+      "bytes": 8307,
+      "sha256": "87fafc65d1391eeb1a662af533d33fa32b4cff9227500755dfd86d270e9bffbd"
+    },
+    "standards-review.json": {
+      "bytes": 10638,
+      "sha256": "7950e2b10fda98b21b20b4f36d52882f0d316b6d3808a1563911600bdbde89c7"
+    },
+    "official-source-binding.json": {
+      "bytes": 1031,
+      "sha256": "3a57d53a24f05027df5af773443389ac3697d59018b6ed331c988454c9e9cedc"
+    },
+    "lock-rebind.json": {
+      "bytes": 463,
+      "sha256": "0cd3a21c5f804f942fa77cd4652723527b4f071b9879d977ad4e61c03f32de85"
+    },
+    "package-binding.json": {
+      "bytes": 570,
+      "sha256": "98ad980e2660e3c7e76709eec1c105a86f2c2ad0f7d004452778ba7df0444e96"
+    }
+  },
+  "review_note": "Success-before-normalization finding closed before final24; both independent source reviews passed. Earlier revisions preserved.",
+  "execution": {
+    "model": 0,
+    "server": 0,
+    "gpu": 0,
+    "budget_or_lease_actions": 0,
+    "additional_authorized_calls": 0,
+    "original_4800_scope_unchanged": true
+  },
+  "remaining": "Unique owner must bind new source/harness and actual installed vLLM, restore existing server connection, obtain actual full120 HTTP token/template/output/usage/quality and independent physical receipts, then conditionally execute formal scope. No old idle or CPU result is a current runtime proof."
+}
