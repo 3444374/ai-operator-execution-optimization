@@ -60,6 +60,7 @@ unknown，并保留 task/输入责任，防止原生 generate 的 abort 等待�
 显式 Async owner 已接入 actor 的生命周期和 Core backend：将派发交给 `submit`，将有限 `poll` 事件
 关联到原任务，只在可信终态释放原责任；未知项进入既有失败/清理流程。baseline 的原生调度不共享 Core。
 
-冻结82e的真实迟到供给 late3 成功与 r2 取消失败按原来源解释；新取消修补尚无模型资格，原 unknown、
-2402＋1 tokens、held/ref=1 保留。原生 abort／shutdown 时序、新源 token／模板／日志及后代／GPU范围
-由独立资格计划核验；不重启旧 late3＋cancel1 控制器。cascade 全局校准与 Extract 关系屏障保持原方法合同。
+冻结82e的真实迟到供给 late3 成功与 r2 取消失败按原来源解释，原unknown、2402＋1 tokens及held/ref1保留。
+固定a503的[单次取消交接观测](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)
+核对原生abort／shutdown、输入／token及已观察物理退出范围；逻辑unknown／held-ref1仍按当前合同保留，
+不认证一般取消完成或性能，不重启旧late3＋cancel1控制器。cascade全局校准与Extract关系屏障保持原方法合同。

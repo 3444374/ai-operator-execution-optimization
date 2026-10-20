@@ -158,3 +158,12 @@ float64；消费者需保留实际最终关系的零行原件或提供已核准�
 测试覆盖原 LOTUS 空 Map 新列与覆盖列、空 Filter 的源 extension dtype、列序不符／非零行／坏 schema
 拒绝、复制不改源、显式 Index 优先及非空额外空键。原 LOTUS formatter／parser、后端图和引擎均未改。
 此处是 sink metadata 消费接口，不会自动迁移 IMLane 调用方；新原生组合及真实模型仍按各自资格另验。
+
+<a id="independent-native-successors-20261020"></a>
+## 原独立 native 占位的实际补验（2026-10-20）
+
+原独立审计文件的两个永久pending方法现已改为显式opt-in实际库用例；原b447失败和此前各批回执保持。[本次固定源码与监督记录](independent_native_verification.json)、[完整脱敏日志](independent_native_cpu_logs.json.gz)绑定两个tests／fixture文件，生产代码未改。
+
+Ray2.56.1与Daft0.7.21各用新的受监督CPU driver、真实原生图与私有CPU模型替身，分别一项通过。每项四个源发生项，重复Index跨native batch；Extract稀疏None及原parser额外空键经过全关系EOF广播，grouped父调用交给Map，Filter真实消费Map生成列。原LOTUS1.2.4逐阶段messages、最终DataFrame／Index／列和usage差分通过；各12次合成评价、168合成tokens、两个native段独立引擎。再次消费EOF不增加评价。
+
+Ray／Daft分别16／8个已观察owned身份退出，无remaining／cleanup errors／signals；GPU退出及未观察后代未由Mac CPU检查认证。原日志的第三方deprecation／ResourceWarning照留，不隐藏为无警告。旧纯合同、其他实际库和模型单元未重跑；本次不升级当前新Extract后继的真实模型或性能资格，也不把两段模型重建说成持续供给。

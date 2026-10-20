@@ -90,3 +90,8 @@ ordinary账本counts字段、cascade profile fixture缺字段和早期WIP运行�
 [public_selector_verification.json](public_selector_verification.json)。CSV／DTO／字段及额度限额
 是逻辑入口边界，不证明完整查询RSS硬限额或吞吐。旧r3作者44fixture、当前入口CPU和未来真实
 helper／模型／GPU／性能保持各自来源；服务器正在使用的8d35普通链源码包不变、不重打包。
+
+<a id="public-cli-author-cpu-20261019"></a>
+## 固定公开 CLI 作者 CPU 的后续证据
+
+固定53d的实际公开ordinary／cascade CLI作者CPU单元在上轮停止前已完成；本轮补齐其原Spec终态有限审阅缺口，不重运行。[共同主报告与唯一原件摘要](../imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)分列模型替身及真实作者执行。它不替代本报告原r3阶段API身份，不提供真实helper模型或当前公开CLI模型资格。

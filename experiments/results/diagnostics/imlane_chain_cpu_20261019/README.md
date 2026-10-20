@@ -1,7 +1,7 @@
 # IMLane 普通 Map／Extract、关系链与固定 API 模型验证
 
 当前固定 `4fc53086` 的查询 API 已完成下方[有限模型检查](#fixed-api-model-20261019)；
-后续 `8d35ddea` 的公开 selector 仍只有本机 CPU 检查，两者按各自来源解释。
+后续公开 selector 在固定 `53dae5f0` 完成[实际作者CPU执行](#fixed-public-cli-author-cpu-20261019)，公开CLI模型仍待验，各自按固定来源解释。
 
 职责分支 `feat/imlane-records-chain` 固定基点 `aebbbcd8`，选择性接纳共享
 `empty_prototype` 提交 `f977c979`。新增
@@ -88,7 +88,7 @@ source、作者 HEAD／status／diff／源码／二进制、现有账本和独�
 新增 [chain-check／chain-run](../../../../code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)
 显式选择 `imlane-author-local-model-chain`，使用已有IMLaneChainBackend和完整Extract关系屏障，
 单阶段Filter／Map／Extract与有限组合共用原LOTUS loop。通用source不要求Q3列，不附加COUNT
-或SemBench质量指标；旧Movie和级联命令保持各自身份。该入口尚无真实作者／模型／GPU资格。
+或SemBench质量指标；旧Movie和级联命令保持各自身份。该入口的固定53d作者CPU结果见[后续补验](#fixed-public-cli-author-cpu-20261019)，真实模型／GPU资格仍另验。
 
 25项入口CPU核验实际使用固定LOTUS1.2.4、公共方法／批内核和内存FixtureBackend，严格差分
 Map／Extract／ME／EF消息及关系，重复Index／grouped parents、空prototype、knownusage、
@@ -145,3 +145,12 @@ RPC活跃连接0，9个非活动目录项保留。三个作者资源组正常退
 
 本次只认证上述查询API。公开selector的实际作者执行、作者Ray、多executor、PostgreSQL接入、
 语义质量和性能仍另验；不把4fc模型结果转授后续公开入口或级联。
+
+<a id="fixed-public-cli-author-cpu-20261019"></a>
+## 固定公开 CLI 的作者 CPU 补验
+
+上轮收尾前实际完成的 `53dae5f0` 公开入口补验现已登记，未重执行；[精简原件与恢复摘要](public_cli_author_cpu.json)保留来源。六个真实check／run／worker CLI进程覆盖ordinary Map和通用级联；24次固定CPU响应、四个作者scope，永久fixture cap27的两个unit已claim，不能转为模型额度。作者ABI／二进制／DBEnd／Lane和正常lease真实执行；模型环境前检与计算明确使用CPU替身。
+
+ordinary的两次和cascade的22次评价分别与原LOTUS结果、消息、Index、抽样、阈值、统计与LM usage核同。独立124个已观察出生身份和19个作者tick身份退出，正常lease释放；无GPU模型或provider请求。184.094秒只描述该CPU单元完整墙钟，不提供吞吐或质量结论。
+
+原terminal Spec在用户停止时仅有限收口；本轮只读重算完整两query差分及1262成员归档并补齐审阅，旧有限审阅原件保留。完整归档13606097B，SHA `51b4c694d733f638c7867dfc8805d1780cfa4c311357f4de939510d5de622b09`，成员index及审阅摘要见JSON。固定4fc的API模型、7a作者CPU和本53d公开CPU各保留来源；当前公开入口的真实模型仍待独立新单元，不借用旧成功。

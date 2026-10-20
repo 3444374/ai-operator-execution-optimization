@@ -4,6 +4,12 @@ from copy import deepcopy
 from dataclasses import asdict
 import hashlib
 import json
+import os
+import sys
+import uuid
+
+from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+from src.baselines.text.frameworks.lotus_chain_engine_process import ChainEngineProcess
 
 from src.semantic_methods.lotus.record_chain import (
     ExtractMethod, LotusRecordChain, MapMethod, RecordOccurrence, StageSpec,
@@ -96,3 +102,48 @@ class FixtureInfer:
                          ensure_ascii=False, sort_keys=True, separators=(",", ":"),
                          allow_nan=False).encode()).hexdigest(),
                      actual_model_call=False, usage_source="synthetic CPU fixture") for row in rows]
+
+
+class NativeSuccessorProcess(ChainEngineProcess):
+    def _command(self, engine, result_fd):
+        return [sys.executable, "-B", "-m", __name__, "--serve", str(result_fd)]
+
+
+class NativeSuccessorBatch(FusedChainBatch):
+    _engine_type = NativeSuccessorProcess
+
+
+def _serve(fd):
+    from src.baselines.text.frameworks.lotus_chain_engine_process import serve
+    from src.serving.backends import vllm_engine
+
+    class CpuEngine:
+        def __init__(self, engine, generation):
+            self.uid = "independent-native-successor-" + uuid.uuid4().hex
+            self.limit, self.count = engine.max_model_calls, 0
+            self.infer = FixtureInfer(empty_key=True)
+
+        def ready(self):
+            assert all(name not in sys.modules for name in ("lotus", "ray", "vllm"))
+            return dict(engine_uid=self.uid, pid=os.getpid(), fixture=True, physical_gpu_work=False)
+
+        def run_prepared(self, rows, *, generation, deadline_monotonic):
+            self.count += len(rows)
+            assert self.limit is not None and self.count <= self.limit
+            return [dict(result, engine_uid=self.uid, prompt_token_ids_json=json.dumps([1] * 11),
+                         output_token_ids_json=json.dumps([2] * 3),
+                         fixture_batch_positions=[row["source_position"] for row in rows])
+                    for result in self.infer(rows, generation=generation)]
+
+        def close(self, timeout=10):
+            return dict(status="closed", engine_api_shutdown_confirmed=True,
+                        reserved_model_calls=self.count, gpu_exit_confirmed=None)
+
+    vllm_engine.VllmEngine = CpuEngine
+    serve(fd)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3 or sys.argv[1] != "--serve":
+        raise ValueError("this private CPU fixture requires its owned transport descriptor")
+    _serve(int(sys.argv[2]))

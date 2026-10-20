@@ -1,4 +1,4 @@
-"""Independent Extract-successor contracts; native-library wiring stays pending.
+"""Independent Extract-successor contracts and opt-in native-library checks.
 
 The empty-key successor test deliberately asserts original LOTUS semantics. On
 b447fc37 it is a known upstream failure, not a passing rejection contract.
@@ -7,6 +7,8 @@ b447fc37 it is a known upstream failure, not a passing rejection contract.
 from copy import deepcopy
 from dataclasses import asdict
 import json
+import os
+from pathlib import Path
 from types import SimpleNamespace
 import sys
 import tempfile
@@ -22,7 +24,7 @@ from src.semantic_methods.lotus.record_relation import complete_extract_relation
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 from tests.baselines.text.native_extract_successor_fixture import (
-    FixtureInfer, relation_plan, source_records,
+    FixtureInfer, NativeSuccessorBatch, relation_plan, source_records,
 )
 
 
@@ -274,13 +276,81 @@ class OriginalParserParityRegressionTests(ContractCase):
         self.assertTrue(all(row.values[""] == "extra" for row in result["records"]))
 
 
-@unittest.skip("pending fixed Ray/Daft Extract-successor wiring commit; no native runtime was executed")
-class PendingNativeExtractLibraryTests(unittest.TestCase):
-    def test_ray_data_extract_successor_original_lotus_parity(self):
-        self.fail("implement actual Ray assertions after consuming the fixed wiring commit")
+class NativeExtractSuccessorLibraryTests(unittest.TestCase):
+    def native_successor(self, backend):
+        import lotus
+        import pandas as pd
+        from src.baselines.text.frameworks import daft_lotus_chain, ray_data_lotus_chain
 
+        records, chain = source_records(), relation_plan(query_id="independent-native-" + backend)
+        with tempfile.TemporaryDirectory(prefix="nxs-", dir="/tmp") as folder, \
+             lotus.settings.context(enable_cache=False):
+            if backend == "ray":
+                import ray
+                import ray.data
+                self.assertEqual(ray.__version__, "2.56.1")
+                ray.init(num_cpus=2, num_gpus=0, include_dashboard=False, log_to_driver=False,
+                         _temp_dir=str(Path(folder) / "ray"), object_store_memory=128 * 1024**2)
+                self.addCleanup(ray.shutdown)
+                native = ray_data_lotus_chain
+                frame = ray.data.from_items([record_row(row) for row in records], override_num_blocks=4)
+                options = {}
+            else:
+                import daft
+                self.assertEqual(daft.__version__, "0.7.21")
+                native = daft_lotus_chain
+                native._native_runner(2)
+                frame = daft.from_pylist([record_row(row) for row in records])
+                options = dict(runner_threads=2)
+            graph = native._graph
+            with patch.object(EngineSpec, "validate_driver_environment", return_value={"CPU fixture": True}), \
+                 patch.object(native, "_graph", side_effect=lambda *args, **kwargs:
+                    graph(*args, **dict(kwargs, batch_type=NativeSuccessorBatch, model_gpus=0))):
+                stream = native.evaluate(frame, chain,
+                    EngineSpec(folder, sys.executable, sys.executable, max_model_calls=12),
+                    RecordsResources(model_batch_rows=2, max_active_batches=1,
+                                     query_timeout_s=90, startup_timeout_s=30),
+                    expected=records, query_id=chain.query_id, control_dir=folder, **options)
+                try:
+                    output = list(stream)
+                    self.assertTrue(stream.completed)
+                    expected, _ = ContractCase.original(self, records, chain, stream.calls)
+                    pd.testing.assert_frame_equal(records_to_frame(output, columns=stream.columns), expected)
+                    self.assertEqual([row.row_id for row in output], ["occ-0", "occ-2"])
+                    self.assertIn("", stream.columns)
+                    self.assertEqual(len(stream.calls), 12)
+                    self.assertEqual(sum(row["total_tokens"] for row in stream.calls), 168)
+                    self.assertTrue(all(row["actual_model_call"] is False for row in stream.calls))
+                    prefix = {row["source_position"]: row for row in stream.calls
+                              if row["algorithm_stage"] == "extract"}
+                    self.assertNotEqual(prefix[0]["fixture_batch_positions"], prefix[2]["fixture_batch_positions"])
+                    self.assertEqual(len({row["engine_uid"] for row in stream.calls}), 2)
+                    self.assertEqual(len(stream.phase_history), 2)
+                    self.assertTrue(all(phase["source_exhausted"] and phase["verified_success"]
+                                        for phase in stream.phase_history))
+                    for call in stream.calls:
+                        if call["algorithm_stage"] == "map" and call["source_position"] in (0, 2):
+                            self.assertEqual(call["parent_call_ids"], [prefix[0]["call_id"], prefix[2]["call_id"]])
+                    self.assertEqual(stream.last_close_report["status"], "closed")
+                    self.assertFalse(stream.last_close_report["engine_reuse_across_segments"])
+                    self.assertIsNone(stream.last_close_report["gpu_exit_confirmed"])
+                    before = len(stream.calls)
+                    self.assertEqual(list(stream), [])
+                    self.assertEqual(len(stream.calls), before)
+                finally:
+                    stream.close()
+                    if backend == "ray":
+                        ray.shutdown()
+
+    @unittest.skipUnless(os.environ.get("RUN_NATIVE_EXTRACT_SUCCESSORS") == "ray",
+                         "requires a fresh pinned Ray CPU driver")
+    def test_ray_data_extract_successor_original_lotus_parity(self):
+        self.native_successor("ray")
+
+    @unittest.skipUnless(os.environ.get("RUN_NATIVE_EXTRACT_SUCCESSORS") == "daft",
+                         "requires a fresh pinned Daft CPU driver")
     def test_daft_native_extract_successor_original_lotus_parity(self):
-        self.fail("implement actual Daft assertions after consuming the fixed wiring commit")
+        self.native_successor("daft")
 
 
 if __name__ == "__main__":

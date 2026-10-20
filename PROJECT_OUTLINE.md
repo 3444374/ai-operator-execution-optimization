@@ -1,6 +1,8 @@
 # 项目大纲
 
-固定来源的新增结果分别见[IMLane查询API模型检查](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)与[Async迟到供给／取消检查](experiments/results/diagnostics/async_records_actor_20261019/README.md#model-late-cancel-20261019)。前者的有限关系链通过，后续公开selector仍另验；后者late通过而cancel保留失败及unknown责任，均不提供性能结论。
+本轮已补[固定a503取消交接观测的有限验收](experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)、[原独立native后继CPU](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#independent-native-successors-20261020)与[固定53d公开CLI作者CPU](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)。逻辑unknown保持不等于物理资源未退出；其他模型／级联和[正式baseline准备](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-readiness-20261020)仍按各自新配置推进，尚无新版正式性能成绩。
+
+固定来源的新增结果分别见[IMLane查询API模型检查](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)与[Async迟到供给／取消检查](experiments/results/diagnostics/async_records_actor_20261019/README.md#model-late-cancel-20261019)。前者的有限关系链通过，后续公开selector的模型范围仍另验；后者late通过而cancel保留失败及unknown责任，均不提供性能结论。
 
 [Daft 有限退出观察复验](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)在 `52216739` 的独立两调用样本通过，短暂 resource tracker 自然退出且无信号；原 Daft 失败与 MFE 负结果仍保留，其他方法与性能另验。
 
@@ -11,7 +13,7 @@
 图像能力按固定实现 `bdae61bb` 与[能力表](code/INFRA_STATUS.md#current-image-status)核对；其他旧记录保留原 [`9c59dc9b` 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
 main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列8834 CPU及main570严格单卡40行实机资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
 
-维护日期：2026-10-19。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
+维护日期：2026-10-20。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，
 证据身份归[台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)，完整数字、失败与重复归原报告。
 
@@ -36,7 +38,7 @@ Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及
 
 独立records分支已按各自固定源码验证普通Q3的原生参照／Ray Data／静态参照、Daft关闭修正及[Core同引擎双查询](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)。IMLane 首模型尝试的[原unknown与独立物理结清](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)分列，actual／API计数不补造。这些有限模型资格与后续共享接口CPU检查分列；不转授给main、有限链、级联、IMLane、持续供给或性能结论。
 
-本分支已接显式[Async Core／CLI](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[Extract后继](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)及[通用原全局级联](code/src/semantic_methods/lotus/cascade.README.md)的CPU实现与独立审核，保持各系统原生调度和原LOTUS方法。Async原parser／COUNT／evaluator的CPU对照和关闭knownusage反例已验；后续模型结果按上方固定来源解释。helper模型、公开入口作者执行、未覆盖的组合及性能继续逐项验证。
+本分支已接显式[Async Core／CLI](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[Extract后继](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)及[通用原全局级联](code/src/semantic_methods/lotus/cascade.README.md)的CPU实现与独立审核，保持各系统原生调度和原LOTUS方法。Async原parser／COUNT／evaluator的CPU对照和关闭knownusage反例已验；后续模型结果按上方固定来源解释。固定53d公开CLI的实际作者CPU执行已验，当前公开CLI模型、helper模型、未覆盖的组合及性能继续逐项验证。
 
 研究按真实路径测量、已有原生批执行与有界流水、数据驻留／复用和多卡负载、拓扑执行组、必要跨卡传输推进；
 后几项须由前面的实际瓶颈决定，训练为远期适用场景。保持合理调优的原生 Ray Data 与高效静态参照，

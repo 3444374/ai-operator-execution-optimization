@@ -74,3 +74,6 @@ close 只确认 API、直接 child 和本地 I/O，后代／GPU 仍需外层 own
 [取消／关闭交接修补](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md)让已接纳的控制先于 close，
 冻结关闭后拒绝新 abort；actor 接管仅确认父控制队列，不证明原取消 RPC 或原生 abort 成功。
 冻结82e模型 late3 成功、r2 cancel 失败与当前修补CPU分列；历史 unknown／用量／held 不升级，性能仍待验。
+
+固定a503的[单调用取消交接观测](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)
+补齐本次原生abort／shutdown来源及独立退出范围；unknown／held-ref保留属保守合同，不认证一般逻辑取消完成或性能。

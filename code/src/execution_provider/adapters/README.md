@@ -155,6 +155,9 @@ same engine. `abort_handoff.scope=parent_control_queue_only` records this adopti
 the original cancel RPC. A late RPC returning false stays false; queued control does not confirm a
 native abort or terminal. Known usage, unknown Core credits and retained inputs remain owned.
 The historical r2 cancel failure is preserved; CPU reproductions do not identify its winning race.
+The [fixed a503 handoff observation](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)
+passed with scoped independent physical exit. Its retired query keeps unknown/held/ref ownership;
+this is expected conservative accounting and does not permit reusing an unsettled owner.
 
 [`CoreCascadeBackend`](lotus_cascade_core.py) reuses production sessions for each original LOTUS
 helper/sample/fallback stage. Its provider aliases, bounded stage CSV, model startup and closure

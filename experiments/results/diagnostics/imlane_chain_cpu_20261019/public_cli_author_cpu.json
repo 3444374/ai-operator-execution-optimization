@@ -1,0 +1,107 @@
+{
+  "schema": "semloom.imlane_public_cli_author_cpu.v1",
+  "status": "passed_cpu_only",
+  "source_commit": "53dae5f07badd48a462b7d7112d8ca6646d59c2a",
+  "run_id": "imlane-public-cli-53dae5f0-cpu-20261019-r1",
+  "top_level_cli_processes": 6,
+  "source_files": 1088,
+  "queries": {
+    "ordinary": {
+      "status": "passed",
+      "fixture_calls": 2,
+      "engines": 1,
+      "author_scopes": 1,
+      "original_sdk_result_exact": true,
+      "messages_exact": true,
+      "real_model_requests": 0,
+      "known_prompt_tokens": 10,
+      "known_completion_tokens": 4,
+      "independent_gpu_exit": true,
+      "external_lease_valid": true
+    },
+    "cascade": {
+      "status": "passed",
+      "fixture_calls": 22,
+      "engines": 3,
+      "author_scopes": 3,
+      "original_sdk_result_exact": true,
+      "messages_exact": true,
+      "real_model_requests": 0,
+      "known_prompt_tokens": 398,
+      "known_completion_tokens": 22,
+      "independent_gpu_exit": true,
+      "external_lease_valid": true
+    }
+  },
+  "fixture_evaluations": 24,
+  "fixture_permanent_cap": 27,
+  "fixture_budget": {
+    "schema": "semloom.cell_budget.task_completion.v2",
+    "budget_id": "imlane-public-cli-53d-cpu-fixture-20261019",
+    "limit": 27,
+    "allocated_requests": 27,
+    "deadline_utc": null,
+    "units": [
+      {
+        "unit_id": "ordinary",
+        "first_attempt": 1,
+        "requests": 2,
+        "claimed": 1
+      },
+      {
+        "unit_id": "cascade",
+        "first_attempt": 3,
+        "requests": 25,
+        "claimed": 1
+      }
+    ]
+  },
+  "real_model_requests": 0,
+  "gpu_requests": 0,
+  "provider_requests": 0,
+  "outer_elapsed_s": 184.09392309188843,
+  "independent_exit": {
+    "observed_birth_identities": 124,
+    "author_tick_identities": 19,
+    "all_observed_absent": true,
+    "normal_owned_lease_released": true,
+    "gpu_used_mib": 1,
+    "gpu_compute": [],
+    "shm_entries": [],
+    "active_rpc_count": 0
+  },
+  "resource_sample_peaks": {
+    "rss_bytes": 3396202496,
+    "shm_bytes": 134242304
+  },
+  "sampled_peak_is_hard_limit": false,
+  "old_ten_ledgers_unchanged": true,
+  "current_inventory_after_this_run": {
+    "model_ledgers": 10,
+    "cpu_fixture_ledgers": 1
+  },
+  "production_scheduler_owner": "author DBEnd/Coordinator/Lane",
+  "model_seam": [
+    "CLI driver EngineSpec model environment check replaced explicitly",
+    "real backends use existing CPU fixture UDF workload only",
+    "per-engine CPU child fixture ready/close evidence",
+    "driver site import hook and raising real constructor; CPU child isolation uses its fixed fixture module"
+  ],
+  "prior_terminal_spec_scope": "Original limited terminal review retained; full differential and complete-archive read-only audit was finished on2026-10-20 without rerunning the unit.",
+  "completion_audit": {
+    "sha256": "1016ef3340f5ee258bbaa1ee18c19e2d54ce78c904ce5407b0ef547ec7888973",
+    "retrieval": "Project integrator retains the fixed read-only audit and recomputation script by this run id."
+  },
+  "raw_summary_sha256": "465df40c2b84645314c1856e87ae74fea61fc891404b8484c41b0b68ee6995ad",
+  "complete_archive": {
+    "bytes": 13606097,
+    "sha256": "51b4c694d733f638c7867dfc8805d1780cfa4c311357f4de939510d5de622b09",
+    "regular_members": 1262,
+    "member_index_sha256": "74ddda88b73852dc9caa90015806541dc173d18118fc93dd18b2fdbb670942bd",
+    "retrieval": "Authorized execution owner retains source/config/raw reports and all members by run id and SHA."
+  },
+  "public_report_commit_precedes_this_run": true,
+  "model_qualification": false,
+  "performance_claim": false,
+  "current_selector_model_qualification": false
+}

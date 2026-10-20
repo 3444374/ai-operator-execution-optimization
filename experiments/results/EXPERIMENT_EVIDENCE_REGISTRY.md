@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-20：[a503单次取消交接观测与保守unknown验收](diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)。新cap1已耗尽，完整关联／原生进入返回与已观察物理退出通过；false RPC、关闭接管与held-ref1分列，旧r2及旧账本不改。
+
+2026-10-20：[独立Ray／Daft Extract后继CPU](diagnostics/lotus_extract_relation_20261019/README.md#independent-native-successors-20261020)补原两个占位，无生产改动，原SDK空键／跨批重复Index／None／parents差分；原raw警告及源码摘要保留，非模型／性能结果。
+
+2026-10-20：[固定53d公开CLI作者CPU的完整终态补审](diagnostics/imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)。不重执行上轮已完成单元，只读补齐原limited Spec的全差分／完整归档核验；model seam与真实作者及正常lease分列，不转授公开CLI模型。
+
 2026-10-19：[Async r2取消／关闭诊断与CPU修补](diagnostics/async_cancel_close_20261019/README.md)。选择ec013835源码／ca4ee72c证据，controls前缀与actor同期限取消接管两层分别复现；原r2实际交错未知，unknown／2402＋1 tokens／held-ref1及旧四次额度保持。163常规／65子测试、Ray CPU1项及Core实库7项固定来源不重绑；当前24资格依赖逐字核同，定向29项／7子测试通过且观察owned清理无信号，首次沙箱进程枚举失败另保留。关闭接管仅parent队列，不冒认原RPC或native确认；新cap1建议未分配未执行，不重跑late3或借用旧预算。
 
 2026-10-19：[IMLane通用级联公开selector](diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)。独立record-cascade-check/run不绑定Q3，直接原run_cascade／作者桥；27入口（67子用例）／21 owner／16 source新CPU及70普通链／20旧Movie级联回归通过。正常外lease／既有永久unit／逐阶段GPU门共用一份owner编排，Q与实际调用分列。关闭unknown后metadata失败的已知回执丢失RED已修；原primary／usage／unknown保持。旧r3作者44fixture不认证当前入口，8d35私包冻结；新入口作者／真实helper模型／GPU及性能另验。

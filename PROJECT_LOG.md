@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-20：恢复固定材料、分列补验与当前边界
+
+cap1最后三文件35项／48子用例通过；最新第十一CPU fixture账本更新只复验受影响5项／8子用例，原observer11及生产成功不重跑。完整a503源／8harness／1118包经两轴窄审后，唯一GPU owner单次完成取消交接观测；已知usage／原RPC false／关闭接管／逻辑unknown与独立物理退出保持分列。[主报告](experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)明确unknown保留属有限合同，旧r2不升级。
+
+选择已审59103642两份旧固定模型报告，保留4fc API与82e late／cancel的来源；固定53d公开CLI作者CPU原件只读补齐先前limited Spec终态差分与完整归档审阅，未重运行。另将两独立native Extract占位变为实际Ray／Daft CPU用例，原LOTUS结果／消息／索引与空键保留；生产和原生调度未改。旧请求baseline、失败与未知原件均保持。
+
+[当前资格／后续准备](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-readiness-20261020)不借旧额度或35840模板，不新增正式性能结论。本机exec通道曾断开、后独立检查恢复，未改安全设置；不合main、不删分支／worktree。
+
 ## 2026-10-19：接纳 Async r2 取消与关闭交接修补
 
 选择职责ec013835两个生产文件与三专属测试、ca4ee72c固定证据；当前集成前两生产与82e逐字同，选择后五职责文件及24资格依赖均同原已验摘要。已接纳controls先close、冻结后abort false、actor同期限接管pending再close同engine；关闭接管仅父队列，不冒认迟到RPC或native成功。根定向29项／7子测试CPU通过，观察owned清理无剩余／错误／信号；首次受限sysctl失败原件保留，不重跑原163／Ray1／Core实库7或模型矩阵。原r2 unknown、2403tokens、held-ref1和旧四次预算不升级；真实竞争层未定，新cap1仅计划交唯一GPU owner，冻结82e／8d35包不变。[报告与原件](experiments/results/diagnostics/async_cancel_close_20261019/README.md)。

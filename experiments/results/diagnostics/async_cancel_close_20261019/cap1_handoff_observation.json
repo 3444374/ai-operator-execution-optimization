@@ -1,0 +1,118 @@
+{
+  "schema": "semloom.async_cancel_handoff_model_qualification.v1",
+  "status": "passed_cancel_handoff_observation_only",
+  "source_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "run_id": "async-cancel-a5035105-20261019-r1",
+  "executed_utc": {
+    "started": "2026-10-20T08:44:25.222616+00:00",
+    "finished": "2026-10-20T08:46:07.671106+00:00"
+  },
+  "source_members": 1092,
+  "bundle_sha256": "757dc6f0d2f1ef2afb0d957463ab06f9be7aa5c84303753569069c71120a294d",
+  "manifest_sha256": "a9ea8545ed73e0ddad4d13b25e266db83f07c69a91df7a88e6ff01dc1b5988bb",
+  "config_raw_sha256": "8924dce84d63029831d94de53e79364204c369ea3f09962c3325e678eefcbb27",
+  "command_sha256": "a52a3fc4a5dc4ba083a9c27eb983452872a54a2e4da1c9d43f014f5efbd1bf4b",
+  "model": {
+    "id": "Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "dtype": "bfloat16",
+    "gpu_count": 1,
+    "vllm_version": "0.25.1",
+    "max_model_calls": 1,
+    "max_num_seqs": 2,
+    "max_model_len": 4096,
+    "max_num_batched_tokens": 4096,
+    "gpu_memory_utilization": 0.8,
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "seed": 0
+  },
+  "permanent_budget": {
+    "limit": 1,
+    "allocated": 1,
+    "claimed": 1,
+    "remaining": 0,
+    "actual_model_calls": 1,
+    "engines": 1,
+    "automatic_retries": 0,
+    "warmups": 0,
+    "refunds_or_resets": 0
+  },
+  "outer_elapsed_s": 102.44849157333374,
+  "outer_exit_code": 0,
+  "cancellation": {
+    "full_core_key_to_native_request_correlation": true,
+    "native_abort_control_worker_span_count": 1,
+    "original_direct_actor_rpc_requested_literals": [
+      false
+    ],
+    "close_adopted_request_count": 1,
+    "close_adoption_scope": "parent_control_queue_only",
+    "native_abort_enter_ms_after_cancel": 8.48486227914691,
+    "native_abort_return_ms_after_cancel": 9.186821058392525,
+    "native_abort_preceded_shutdown": true,
+    "abort_return_relation_to_shutdown": "before_shutdown_entry",
+    "shutdown_observations": {
+      "engine_close_entry_return": 1,
+      "unattributed_entry_return": 1,
+      "engine_count": 1
+    },
+    "native_terminal_finish_reasons": [
+      "abort"
+    ],
+    "native_abort_return_is_physical_terminal_ack": false,
+    "native_cancel_effect_confirmed": false,
+    "gpu_hardware_inflight_proven": false
+  },
+  "logical_request": {
+    "status": "unknown",
+    "held_tasks": 1,
+    "retained_refs": 1,
+    "terminal_confirmed": false,
+    "responsibility_released": false
+  },
+  "known_usage": {
+    "prompt_tokens": 2402,
+    "completion_tokens": 0,
+    "total_tokens": 2402
+  },
+  "independent_exit": {
+    "all_38_observed_birth_identities_absent": true,
+    "primary_supervisor_unit_wrapper_identities": 37,
+    "additional_sampled_outer_controller_identity": 1,
+    "unobserved_descendants_confirmed": false,
+    "gpu_used_mib": 1,
+    "gpu_compute": [],
+    "shm_entries": [],
+    "active_rpc_count": 0,
+    "normal_lease_present": false,
+    "supervisor_signals": [],
+    "supervisor_cleanup_errors": [],
+    "old_11_ledger_sha256_unchanged": true,
+    "current_ledger_count": 12
+  },
+  "resource_sample_peaks": {
+    "rss_bytes": 9921814528,
+    "shm_bytes": 24576
+  },
+  "resource_sampling_is_cgroup_hard_limit": false,
+  "archive": {
+    "sha256": "db9ad97333b9bace7a25f227ebf1afa015b71cef9ad2f1cf7ec0996b89614c0b",
+    "bytes": 5547685,
+    "regular_members": 1196,
+    "all_member_sha256_verified": true,
+    "retrieval": "Retained by unique GPU execution owner; complete source/config/runtime/counter/event and independent exit evidence."
+  },
+  "historical_r2": {
+    "status": "failed/unknown/AbortNotConfirmed",
+    "known_prompt_tokens": 2402,
+    "known_completion_tokens": 1,
+    "held_tasks": 1,
+    "retained_refs": 1,
+    "race_layer_established": false,
+    "modified_or_replayed": false
+  },
+  "successful_late3_repeated": false,
+  "performance_claim": false,
+  "new_general_sembench_or_native_baseline_qualification": false
+}

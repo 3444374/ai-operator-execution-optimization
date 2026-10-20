@@ -1,0 +1,83 @@
+{
+  "schema": "semloom.records_qualification_readiness.v1",
+  "as_of": "2026-10-20",
+  "source_reference": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "status": "bounded_engineering_qualifications_with_remaining_live_cells",
+  "new_formal_performance_results": false,
+  "completed_scopes": {
+    "ordinary_filter": "Existing fixed native/Ray/Daft/static/Core small real-model qualification; original failures retained.",
+    "map_extract": "Existing per-source Map→Extract and separate Daft exit evidence; not a full MFE qualification.",
+    "imlane_query_api": "Fixed4fc ME/EF real-model qualification.",
+    "imlane_public_cli": "Fixed53d original author CPU with declared model fixtures only.",
+    "extract_successor_independent_native": "Two new real Ray/Daft CPU graphs, synthetic responses, original LOTUS parity; no model.",
+    "async_late": "Fixed82e late3 original success.",
+    "async_cancel": "Fixeda503 cap1 cancel handoff observation only; unknown/held/ref preserved, physical exit independently scoped."
+  },
+  "remaining_live_cells": [
+    {
+      "scope": "finite M→F→E reaching nonempty Extract and E→M",
+      "owners": [
+        "Ray Data",
+        "Daft",
+        "SemLoom Core"
+      ],
+      "state": "new bounded source/config/budget freeze required; prior failed/all-filtered MFE not a pass"
+    },
+    {
+      "scope": "original global helper cascade",
+      "owners": [
+        "Ray Data",
+        "Daft",
+        "SemLoom Core",
+        "IMLane author"
+      ],
+      "state": "actual helper token/logprobs/template and role lifecycle qualification required"
+    },
+    {
+      "scope": "IMLane public CLI model",
+      "owners": [
+        "IMLane author DBEnd/Lane"
+      ],
+      "state": "public ordinary Extract-successor and cascade live profile; fixed4fc API and53d CPU do not certify it"
+    }
+  ],
+  "ledger_boundary": {
+    "protected_current_inventory": 12,
+    "real_model_ledgers": 11,
+    "cpu_fixture_ledgers": 1,
+    "cap1_spent": true,
+    "old_allocations_refunded": false,
+    "new_engineering_or_formal_budget_allocated_by_this_record": false
+  },
+  "unknown_acceptance": "Expected conservative responsibility for a retired cancelled query after observed handoff and scoped physical cleanup; cannot reuse the owner or label logical cancellation confirmed.",
+  "formal_baseline_preparation": {
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "lotus_profile": "1.2.4; distinguish upstream SemBench1.1.3 environment",
+    "first_supported_workload_scope": "Freeze original ordinary MovieQ3 query/source/evaluator before expanding other original queries.",
+    "native_scheduler_owners": [
+      "original LOTUS",
+      "Ray Data",
+      "Daft",
+      "IMLane"
+    ],
+    "semloom_arms": [
+      "explicit static reference",
+      "separate candidate when implemented/qualified"
+    ],
+    "required_before_model_allocation": [
+      "Final code/workload/ground truth and exact original query behavior",
+      "Model roles/generation/cache/random policy and native lifecycle/concurrency",
+      "Matched resource/calibration and complete input-to-result timing",
+      "Immutable per-query call bounds and interleaved repeated-run order"
+    ],
+    "reuse_old_35840_template_as_current_budget": false,
+    "reason": "Old four-arm/three-query request template omits current IMLane and records execution/lifecycle scope.",
+    "authoritative_plans": [
+      "../../../plans/reference/对照规范.md#lotus-algorithm-execution",
+      "../../../plans/数据组织.md#model-engine-roadmap",
+      "../../../plans/系统架构.md#lotus-data-execution"
+    ]
+  },
+  "old_request_baselines_preserved": true,
+  "new_model_calls_by_integrator": 0
+}

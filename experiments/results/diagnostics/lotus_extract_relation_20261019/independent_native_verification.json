@@ -1,0 +1,101 @@
+{
+  "schema": "semloom.independent_native_extract_successors_cpu.v1",
+  "production_base_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "production_changes": false,
+  "native_scheduler_owners": [
+    "Ray Data2.56.1",
+    "Daft Native0.7.21"
+  ],
+  "semantic_reference": "Original LOTUS1.2.4 accessors with actual returned CPU fixture texts",
+  "scope": "Only two previously pending independent native cases; older contract tests retain their original receipts.",
+  "versions": {
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "lotus": "1.2.4"
+  },
+  "inputs": {
+    "occurrences": 4,
+    "model_batch_rows": 2,
+    "duplicate_source_indices": [
+      17,
+      29,
+      17,
+      53
+    ],
+    "stages": [
+      "extract",
+      "map",
+      "filter"
+    ],
+    "parser_extra_empty_key": true,
+    "nullable_derived_fields": true
+  },
+  "required_assertions": [
+    "Original SDK messages, final frame/index/columns and per-stage knownusage exact",
+    "Duplicate label spans different native input batches; later original Extract write broadcasts globally",
+    "Same-label grouped Extract parents reach Map; only generated Map field reaches Filter",
+    "Successful source EOF and cleanup before successor graph; two vendor-owned engine lifetimes",
+    "One consumer action; reading EOF again adds no evaluations",
+    "Original parser extra empty field survives rather than being rejected"
+  ],
+  "units": {
+    "ray": {
+      "tests": 1,
+      "status": "passed",
+      "worker_exit": 0,
+      "observed_owned_processes": 16,
+      "remaining_owned_pids": [],
+      "cleanup_errors": [],
+      "signals": [],
+      "actual_model_calls": 0,
+      "logical_gpu_slots": 0,
+      "synthetic_evaluations": 12,
+      "synthetic_total_tokens": 168,
+      "model_fixture_instances": 2,
+      "source_unchanged": true,
+      "source_sha256": {
+        "code/tests/baselines/text/test_native_extract_successors_independent.py": "7eceda0ea505a2f5e8070dcee1c7f9a96885433d882ab1b62909625f072a7d6d",
+        "code/tests/baselines/text/native_extract_successor_fixture.py": "9b683ce8e56f076e74d953659f23286ff54369f04b5639fabb7113100343dd53"
+      },
+      "outer_elapsed_s": 19.75396470799751,
+      "physical_gpu_exit_checked": false,
+      "unobserved_descendants_confirmed": false,
+      "private_receipt_sha256": "e43668752a1af9d276e39b62962075b7a87747cdbf2a94e8916814989c92147c"
+    },
+    "daft": {
+      "tests": 1,
+      "status": "passed",
+      "worker_exit": 0,
+      "observed_owned_processes": 8,
+      "remaining_owned_pids": [],
+      "cleanup_errors": [],
+      "signals": [],
+      "actual_model_calls": 0,
+      "logical_gpu_slots": 0,
+      "synthetic_evaluations": 12,
+      "synthetic_total_tokens": 168,
+      "model_fixture_instances": 2,
+      "source_unchanged": true,
+      "source_sha256": {
+        "code/tests/baselines/text/test_native_extract_successors_independent.py": "7eceda0ea505a2f5e8070dcee1c7f9a96885433d882ab1b62909625f072a7d6d",
+        "code/tests/baselines/text/native_extract_successor_fixture.py": "9b683ce8e56f076e74d953659f23286ff54369f04b5639fabb7113100343dd53"
+      },
+      "outer_elapsed_s": 17.28612712500035,
+      "physical_gpu_exit_checked": false,
+      "unobserved_descendants_confirmed": false,
+      "private_receipt_sha256": "ac32acf0d881082985050fe81510cfd75069c07b10e388c339a9b965558923be"
+    }
+  },
+  "raw_log_archive": {
+    "file": "independent_native_cpu_logs.json.gz",
+    "sha256": "4e69e2eea8b2f7f634d4269da7a45db477f754aecd680738d7aa2fa322ef2aec",
+    "bytes": 1991,
+    "member_names": [
+      "ray-r1/worker.log",
+      "daft-r1/worker.log"
+    ]
+  },
+  "server_actions": 0,
+  "gpu_models": 0,
+  "performance_claim": false
+}

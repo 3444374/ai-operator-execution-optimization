@@ -109,6 +109,8 @@ Standards 对新增与受影响旧路径共 48 项／9 子测试 PASS；Spec 对
 
 ## 共享集成与固定来源
 
+以下是a503共享集成时的准备状态；2026-10-20的后续单次模型观测见下一节，不回写本段原件。
+
 选择性接入职责源码与证据，集成基点为 `53dae5f0`。原两个生产文件在82e与该基点逐字相同；
 选择后五个职责文件、常规回执列出的24个依赖与ec013835固定摘要全部一致。原163项、Ray1项及
 Core实库7项沿用各自原件，不改绑模型资格；根仅定向复核新增8项及既有actor／IPC关闭故障，
@@ -120,3 +122,19 @@ errors／signals均为空；API／GPU／未观察后代仍按原范围解释。
 没有改监督器或安全配置。来源、原失败、定向回执与完整脱敏恢复映射见
 [integration_verification.json](integration_verification.json)。本次集成不访问服务器，不重包或改写
 冻结82e／8d35材料，新的cap1模型计划保持未分配／未执行。
+
+<a id="cap1-handoff-observation-20261020"></a>
+## 单调用取消交接观测补验（2026-10-20）
+
+固定 `a5035105` 的 cancel-only 材料完成最后三文件35项／48子用例与最新11账本变化5项／8子用例检查；后者是受影响复验，不与前者相加。八个运行文件、完整1092源码与1118成员包经两轴窄审，实际check-local／check-only通过。唯一GPU owner随后执行原标识 `async-cancel-a5035105-20261019-r1` 一次；[原始精简结果](cap1_handoff_observation.json)逐字取自执行owner，旧准备和失败原件不改。
+
+新永久cap1分配并claim1，实际1请求／1引擎，无重试、下载、额外预热或退款。完整Core key→IPC→真实control-worker→原生abort入口／返回→shutdown观测通过；原actor取消RPC的false字面值保持，close接管一项仍只证明parent_control_queue_only。原生输出finish_reason=abort，已知2402＋0 tokens。两次shutdown入口／返回的来源分别为engine_close与unattributed，不据此认定两个引擎或特定析构来源。外层102.4485秒包含预检、初始化、模型及退出，不是性能比较。
+
+独立38个已观察出生身份均已退出，GPU1MiB／compute空、SHM空、RPC活动0、normal lease不存在，未发清理信号且无cleanup error；未观察后代不填已确认。完整服务器归档1196普通成员／5547685B、SHA `db9ad97333b9bace7a25f227ebf1afa015b71cef9ad2f1cf7ec0996b89614c0b` 已逐成员核同。十份旧模型账本与一份CPU fixture账本均未变，新cap1已耗尽；后续材料应保护十二份账本。
+
+### 有限验收：unknown是预期保守责任
+
+本单元可按“取消交接观测＋同owner有界关闭＋独立物理退出”收口；逻辑unknown、held1与retained-ref1保持是当前合同的预期结果。它是已退役查询的未确认责任快照，不等于仍有活进程或GPU工作，也不允许继续在同owner接纳查询。
+[异步引擎](../../../../code/src/serving/backends/vllm_async_engine.py)明确把abort合成终态标为AbortNotConfirmed，保留已知usage；[actor acknowledge](../../../../code/src/execution_provider/adapters/lotus_records_async_actor.py)只释放已确认项；[Core evaluate](../../../../code/src/execution_provider/adapters/lotus_records_core.py)在error／held责任存在时拒绝复用。
+
+只有常规成功结果错误地保留责任、已知回执丢失、未知owner仍收新输入、关闭超界或物理资源未退出，才构成本范围必须修复的缺陷。若未来要把外部物理退出回执变成可复用session的信用归还，须另立可信关联合同；不是清零本次历史快照的前置项。原r2的失败、2402＋1 tokens、held/ref1和未确定竞争层不升级；本结果也不认证一般逻辑取消完成、其他组合、级联或正式SemBench性能。
