@@ -118,7 +118,6 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id, 
     before calling it. A failure carries query_report, including every known call.
     """
     import lotus
-    import pandas as pd
     from src.semantic_methods.lotus.engine import (
         interpret_results, lm_report, make_lm, validate_filter_source, validate_lm,
     )

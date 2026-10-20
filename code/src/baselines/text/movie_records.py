@@ -10,7 +10,7 @@ import threading
 from src.baselines.common.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
-from src.semantic_methods.lotus.records import FilterMethod, MOVIE_Q3_INSTRUCTION, RecordScan, identity
+from src.semantic_methods.lotus.records import RecordScan, identity
 from .movie_tasks import MovieTask
 
 
