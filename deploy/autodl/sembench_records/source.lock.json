@@ -54,7 +54,7 @@
     "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "03572c1b7b82956e48054779edb33b329e9717d8cdd6b3f6073d5eea6acdb7fa",
     "code/src/baselines/text/frameworks/ray_data_pg_http.py": "820fde1d5dd78eccc832f28b975b99b5e2bb14647db4668bc65859d246973888",
     "code/src/baselines/text/map_inputs.py": "837c2122afda31ba96b802d1c4608260ae90d9accb4e12147f71e1c482da72ea",
-    "code/src/baselines/text/movie_records.py": "803889cdb0af96976c61ddedb2c782247b290bd0658512baf6057365483a9afb",
+    "code/src/baselines/text/movie_records.py": "ee4de937cfa86ac09ce2397c31c4c183b34b52cd43fe4cc3a894ec734267fdd6",
     "code/src/baselines/text/movie_tasks.py": "548a3b876451251f8a5126e8b5631b566cd088dcbfe4bad6634be92ec8a0169d",
     "code/src/baselines/text/orchestration/__init__.py": "c43c4fcd3c898c9b08ca013ceedf4c18e0ab52b96b151759a570e404d9944d6d",
     "code/src/baselines/text/orchestration/cli.py": "8a820297d88ecae2a33905d84c2db1d9a406207b0f8b3ba455f8a99fe0e868bd",
@@ -156,7 +156,7 @@
     "code/src/experiments/lotus_cascade_movie.py": "a2fe15ae2cc38e6d120e74ee67ea2526b24456377f42d6ec1fd7f578ec7a4703",
     "code/src/experiments/lotus_records_cascade.py": "cfffa8ca387dfee7ea6b6f742aeaaada55bb10f1d96ac7c53f35f449ecd342d1",
     "code/src/experiments/lotus_records_chain.py": "6d0b724c67936f1240c730314398a5ded392391cb1da6714fb0b405acc04020a",
-    "code/src/experiments/lotus_records_movie.py": "f2b37c7abb69f46ffd1688ea5ef4b624c857cb8bb03e1577ccbbeef383b5cf38",
+    "code/src/experiments/lotus_records_movie.py": "456ffe67e738756008a3b2c0bfcc3aba872266ad72cd3864608908ea4561d58c",
     "code/src/experiments/lotus_records_supervisor.py": "d9c1eac2f0a186f651b0e5f312843a7fe9b73360958cb36fff23ad90d6967173",
     "code/src/experiments/map_observation_probe.py": "d08330e09d03e1409be7313abbda7d6c4bff12489e7104c9bec336f7cb5d5313",
     "code/src/experiments/mapped_core_probe.py": "1c9cb5a4d0d1de888156eaa295b395554021022d861a2bc7fc3b09b59bc6b274",
@@ -554,7 +554,7 @@
     "files/movie/query/gold_sql/Q2.sql": "5ab598444ef58794879227734873d370636dbc89ec9b29d4529d33dd4d5f2965",
     "files/movie/query/gold_sql/Q3.sql": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5"
   },
-  "runtime_source_commit": "63c3d77aa2cf167ed992c2d3a69bb11f53bacf9a",
+  "runtime_source_commit": "90790721652eddfda202d07b68148d1fb3a38ae7",
   "adapter_upstream_commits": {
     "lotus-native": "e0b4fcbdcb3ac1480d1c18a35156ab036819f1be",
     "imlane": "c211d11674b0740c085fe47e93d0ad28a2346acf"
