@@ -1,0 +1,148 @@
+{
+  "schema": "semloom.sembench_records_backends.v1",
+  "backends": [
+    {
+      "id": "lotus-native",
+      "scheduler_owner": "Original LOTUS LM/LiteLLM batch_completion",
+      "interface": "Original SemBench _execute_q3 calling unmodified sem_filter",
+      "current_command": "formal worker -> lotus_native_local_model.run",
+      "status": "cpu_wiring_implemented_current_model_runtime_qualification_pending",
+      "limitation": "Native original LM/LiteLLM uses an owned query-scoped localhost vLLM HTTP service. LM scheduling and uncached method remain unchanged. HTTP vs embedded serving cost/token parity must be disclosed and qualified on the current source.",
+      "profiles": [
+        {
+          "id": "p1",
+          "native_lm_max_batch_size": 4
+        },
+        {
+          "id": "p2",
+          "native_lm_max_batch_size": 8
+        }
+      ],
+      "lifecycle": "One service/model owner per full nonempty query; owned port/PID/birth identity and ready/calls/close engine UID. Startup and cleanup included; resident unavailable. Native max_batch_size and original batch_completion remain owners of concurrency.",
+      "evidence": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "formal_entry": "code/scripts/experiments/run_sembench_records_formal.py run",
+      "adapter_source_commit": "e0b4fcbdcb3ac1480d1c18a35156ab036819f1be"
+    },
+    {
+      "id": "semloom-core",
+      "selector": "semloom-local-model-core",
+      "scheduler_owner": "Production SessionEngine + StaticAdmissionController + existing actor owner",
+      "current_command": "code/scripts/experiments/run_lotus_records_movie.py run",
+      "status": "cpu_wiring_implemented_current_model_runtime_qualification_pending",
+      "profiles": [
+        {
+          "id": "p1",
+          "cpu_workers": 2,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 1,
+          "model_batch_rows": 1,
+          "max_active_batches": 1
+        },
+        {
+          "id": "p2",
+          "cpu_workers": 2,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 1,
+          "model_batch_rows": 1,
+          "max_active_batches": 2
+        }
+      ],
+      "lifecycle": "Current CLI fresh Ray runtime/model owner per query; no-Core static-reference is a different arm. One OfferedTask/model call and both batch sizes1 are current Core limits only.",
+      "evidence": "experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019",
+      "formal_entry": "code/scripts/experiments/run_sembench_records_formal.py run"
+    },
+    {
+      "id": "ray-data",
+      "selector": "ray-data-local-model",
+      "scheduler_owner": "Ray Data native read_csv/filter/map_batches/ActorPoolStrategy",
+      "current_command": "code/scripts/experiments/run_lotus_records_movie.py run",
+      "status": "cpu_wiring_implemented_current_model_runtime_qualification_pending",
+      "profiles": [
+        {
+          "id": "p1",
+          "cpu_workers": 2,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 16,
+          "model_batch_rows": 4,
+          "max_active_batches": 2
+        },
+        {
+          "id": "p2",
+          "cpu_workers": 2,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 32,
+          "model_batch_rows": 8,
+          "max_active_batches": 2
+        }
+      ],
+      "lifecycle": "Native callable-class graph and one GPU model actor per finite query; fresh runtime in current CLI. Synchronous LLM.chat is this implemented adapter, not all Ray Data inference capabilities; async processor is outside this matrix.",
+      "evidence": "code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+      "formal_entry": "code/scripts/experiments/run_sembench_records_formal.py run"
+    },
+    {
+      "id": "daft",
+      "selector": "daft-native-local-model",
+      "scheduler_owner": "Daft NativeRunner process UDF graph and private model IPC",
+      "current_command": "code/scripts/experiments/run_lotus_records_movie.py run",
+      "status": "cpu_wiring_implemented_current_model_runtime_qualification_pending",
+      "profiles": [
+        {
+          "id": "p1",
+          "cpu_workers": 2,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 16,
+          "model_batch_rows": 4,
+          "max_active_batches": 2
+        },
+        {
+          "id": "p2",
+          "cpu_workers": 2,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 32,
+          "model_batch_rows": 8,
+          "max_active_batches": 2
+        }
+      ],
+      "effective_parameters": {
+        "max_active_batches": "not applied; schema value only, Daft owns buffering",
+        "runner_threads": "existing NativeRunner default; current CLI has no dedicated key",
+        "max_prepared_batch_bytes": 67108864
+      },
+      "lifecycle": "No Ray init; fresh native graph/process UDF and private model process, with IPC/cancel/close cost retained. Staged layout only; never assume physical overlap from a graph.",
+      "evidence": "code/src/baselines/text/frameworks/daft_lotus_records.README.md",
+      "formal_entry": "code/scripts/experiments/run_sembench_records_formal.py run"
+    },
+    {
+      "id": "imlane",
+      "selector": "imlane-author-local-model-filter",
+      "scheduler_owner": "Original author DBEnd/Coordinator/Lane, one CPython executor",
+      "current_command": "formal worker -> imlane_movie_formal.run",
+      "status": "cpu_wiring_implemented_current_model_runtime_qualification_pending",
+      "profiles": [
+        {
+          "id": "p1",
+          "cpu_workers": 1,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 4,
+          "model_batch_rows": 4,
+          "max_active_batches": 2
+        },
+        {
+          "id": "p2",
+          "cpu_workers": 1,
+          "gpu_workers": 1,
+          "prepare_batch_rows": 8,
+          "model_batch_rows": 8,
+          "max_active_batches": 2
+        }
+      ],
+      "effective_parameters": {
+        "model_batch_rows": "Filter model child currently receives each bridge block; record actual call batch rather than assuming an independent rebatch"
+      },
+      "lifecycle": "Fresh author FilterScope/private model child per query. Existing FilterResults plus original Movie Q3 COUNT/evaluator. Same author scheduler, Arrow exchange, shutdown and normal external lease are retained. Dedicated imlane-owner subdirectory; outer query.json belongs to public worker.",
+      "evidence": "experiments/results/diagnostics/lotus_records_local_model_20261016/README.md",
+      "formal_entry": "code/scripts/experiments/run_sembench_records_formal.py run",
+      "adapter_source_commit": "c211d11674b0740c085fe47e93d0ad28a2346acf"
+    }
+  ]
+}

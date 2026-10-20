@@ -1,0 +1,72 @@
+{
+  "schema": "semloom.sembench_movie_query_coverage.v1",
+  "status": "coverage_and_incremental_budget_proposal_only",
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "target_backends": [
+    "lotus-native",
+    "semloom-core",
+    "ray-data",
+    "daft",
+    "imlane"
+  ],
+  "queries": [
+    {
+      "query": "Q1",
+      "logical_shape": "all2000 rows -> original ordinary Filter -> first5 in source order -> reviewId",
+      "instruction": "Determine if the following movie review is clearly positive. Review: \"{reviewText}\".",
+      "model_call_upper_bound_per_complete_query": 2000,
+      "existing": "Original SemBench accessor/evaluator definitions and native generic Filter backends; old request qualification is separate",
+      "missing_in_all_five_new_formal_paths": [
+        "explicit Q1 task/source/prompt binding",
+        "source-order-preserving head5 and business reviewId projection",
+        "original evaluator plus duplicate/invalid/row coverage supplement",
+        "source/profile-specific CPU and model qualification"
+      ],
+      "input_gate": "Current fixed execution CSV differs from upstream in360 full rows, including Q1 inputs. Resolve full-table provenance or bind official input with a new task source; do not reuse Q3 relation equality.",
+      "incremental_proposed_queries": 35,
+      "incremental_proposed_call_upper_bound": 70000
+    },
+    {
+      "query": "Q2",
+      "logical_shape": "taken_3 predicate120 rows -> original ordinary Filter -> first5 in source order -> reviewId",
+      "instruction": "Determine if the following movie review is clearly positive. Review: \"{reviewText}\".",
+      "model_call_upper_bound_per_complete_query": 120,
+      "existing": "Original accessor/evaluator and predicate relation; same120 complete rows and source positions as upstream; generic Filter backends",
+      "missing_in_all_five_new_formal_paths": [
+        "explicit Q2 task binding and exact quoted prompt, different from Q3",
+        "source-order-preserving head5 and business reviewId projection",
+        "original evaluator plus duplicate/invalid/row coverage supplement",
+        "source/profile-specific CPU and model qualification"
+      ],
+      "input_gate": "Q2 predicate relation identity is verified by the Q3 full-row/position audit; this does not qualify the different prompt and result semantics",
+      "incremental_proposed_queries": 35,
+      "incremental_proposed_call_upper_bound": 4200
+    },
+    {
+      "query": "Q3",
+      "logical_shape": "taken_3 predicate120 rows -> original ordinary Filter -> COUNT",
+      "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+      "model_call_upper_bound_per_complete_query": 120,
+      "existing": "Core/Ray/Daft ordinary Q3 qualification CLI; IMLane Movie Filter qualification helper; original accessor/evaluator",
+      "remaining_gates": [
+        "final source/current-model qualification",
+        "current runtime/physical-exit/resource checks",
+        "separate parent-approved formal budget"
+      ],
+      "proposed_queries": 35,
+      "proposed_call_upper_bound": 4200,
+      "cpu_implemented": [
+        "native LOTUS formal adapter preserving original LM/LiteLLM scheduling",
+        "IMLane formal Q3 adapter retaining author FilterScope",
+        "common clock/permanent-ledger/controller plus public-worker CPU integration"
+      ]
+    }
+  ],
+  "minimum_incremental_operator_work": "Q1/Q2 need task and ordered head5/projection/evaluator wiring; no new Join/Map/Extract operator is needed for these query definitions. All Filter calls complete before head5; do not budget only five calls.",
+  "same_design_assumption": "Five arms each receive2 finite calibration points and5 measured blocks. Further qualification/repair work is not included in this proposed measurement budget.",
+  "all_three_queries_proposed_upper_bound": 78400,
+  "increment_above_current_Q3_proposal": 74200,
+  "formal_calls_allocated": 0,
+  "engineering_164_budget_extended": false,
+  "not_authorization": true
+}

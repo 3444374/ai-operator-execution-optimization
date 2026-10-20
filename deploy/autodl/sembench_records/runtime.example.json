@@ -1,0 +1,13 @@
+{
+  "binding_status": "placeholders_no_runtime_qualification",
+  "driver_python": "/path/to/driver/bin/python",
+  "model_python": "/path/to/model-env/bin/python",
+  "model_path": "/path/to/Qwen2.5-7B-Instruct",
+  "tokenizer_path": "/path/to/Qwen2.5-7B-Instruct",
+  "runtime_preflight_report": "/path/to/current/private/runtime-preflight.json",
+  "imlane_method_python": "/path/to/imlane-method/bin/python",
+  "imlane_author_root": "/path/to/imlane-author",
+  "imlane_bridge_binary": "/path/to/imlane-bridge",
+  "imlane_artifact_root": "/path/to/existing/shared-host-artifact-root",
+  "cuda_visible_devices": "0"
+}

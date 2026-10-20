@@ -1,0 +1,197 @@
+{
+  "schema": "semloom.sembench_records_plan.v1",
+  "status": "preparation_only",
+  "execution_authorized": false,
+  "repository": "https://github.com/3444374/ai-operator-execution-optimization",
+  "source_commit": "79dd14514b34dac9e25a965dcd27381b0ce7bb9d",
+  "production_reference_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "sembench": {
+    "commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "query": "src/scenario/movie/runner/lotus_runner/lotus_runner.py:LotusRunner._execute_q3",
+    "gold_sql": "files/movie/query/gold_sql/Q3.sql",
+    "evaluator": "src/scenario/movie/evaluation/evaluate.py:MovieEvaluator._evaluate_q3",
+    "lotus_profile": "1.2.4",
+    "upstream_dependency_profile": "1.1.3; not used as the execution profile"
+  },
+  "input": {
+    "task": "ordinary-movie-q3",
+    "csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "csv_bytes": 654765,
+    "max_rows": 2000,
+    "rows": 2000,
+    "eligible_rows": 120,
+    "predicate": {
+      "column": "id",
+      "operator": "eq",
+      "value": "taken_3"
+    },
+    "role": "sembench_movie_subset",
+    "selection": "Entire fixed 2000-row execution CSV, in source order; no quality-driven selection",
+    "upstream_csv_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+    "provenance_limit": "Execution CSV and upstream CSV differ in 360 rows. Q3 eligible full rows and source positions are equal. Do not extend this equality to Q1/Q2 or the entire dataset.",
+    "offline_projection": "records.csv without scoreSentiment; references.csv retained separately; projection cost reported separately"
+  },
+  "method": {
+    "model_name": "openai/qwen2.5-7b",
+    "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+    "default": true,
+    "output_tokens": [
+      "True",
+      "False"
+    ],
+    "system_prompt": null
+  },
+  "generation": {
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 0,
+    "stop": [
+      "\n"
+    ],
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "logprobs": null,
+    "response_format": null
+  },
+  "model": {
+    "id": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "identity_evidence": "experiments/results/diagnostics/lotus_records_local_model_20261016/model_identity.json",
+    "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "engine": {
+      "dtype": "bfloat16",
+      "max_model_len": 4096,
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 4096,
+      "gpu_memory_utilization": 0.8,
+      "seed": 0,
+      "chat_template": null
+    },
+    "tp": 1,
+    "pp": 1,
+    "cache_policy": "LOTUS result cache disabled; fresh model owners in this first cold experiment; capture effective vLLM prefix/cache/compile defaults and package hashes before running",
+    "downloads": false
+  },
+  "versions": {
+    "python": "3.12",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "vllm": "0.25.1",
+    "lotus_commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "imlane_author_commit": "072f8257db80569e42c9f5727d839587df529652",
+    "imlane_method_arrow": "16.1.0; separate author ABI environment"
+  },
+  "shared_resources": {
+    "gpu_count": 1,
+    "gpu_model": "NVIDIA GeForce RTX 4090",
+    "cpu_affinity_slots": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_sampled_owned_rss_bytes": 21474836480,
+    "max_owned_shm_bytes": 536870912,
+    "scope": "Proposed common ceilings; require current runtime inventory and per-owner monitoring, not a claim of cgroup enforcement",
+    "normal_exclusive_host_lease": true,
+    "serial_gpu_owner": true,
+    "foreign_process_action": "stop queue; never kill foreign owners or reset old ledgers",
+    "native_concurrency": "Per-backend native limits, not a shared SemLoom scheduling policy"
+  },
+  "design": {
+    "calibration_profiles_per_backend": 2,
+    "measured_blocks": 5,
+    "measured_order": "Five cyclic Latin rotations: each backend occurs once at each position",
+    "selection": "Choose lower cold complete-query wall time among correctness/quality/resource-valid calibration points; exact tie selects profile p1; freeze before measured block 1",
+    "warmup_queries": 0,
+    "cold_scope": "Fresh query and model owner; native graph/process construction and model load remain in query/CLI cost where they occur",
+    "resident_scope": "Unavailable in this first cold matrix; do not infer resident performance from repeated cold CLIs or remove native in-query reconstruction",
+    "per_query_startup_timeout_s": 300,
+    "per_query_query_timeout_s": 480,
+    "per_query_supervisor_ceiling_s": 810,
+    "round_control_and_cleanup_allowance_s": 1800,
+    "time_estimate": "Uncalibrated planning estimate 3-6 minutes per cold unit plus 15-30 minutes control: 120-240 minutes for 35 units; replace only before budget approval with observed matching-profile calibration",
+    "retries": 0,
+    "repair_reserve_calls": 0,
+    "failed_unknown_allocations_refunded": false,
+    "engineering_164_calls_130_minutes_available_to_this_plan": false
+  },
+  "timing": {
+    "primary": "t_complete_result - t_query_submit, starting before query-scoped source validation/read and backend construction; ending after native complete COUNT/result delivery, before offline evaluation",
+    "cold_application": "Outer monotonic time from driver start through durable result and owned process/GPU cleanup, including runtime and all query-scoped model startup",
+    "separate": [
+      "offline projection",
+      "environment/preflight",
+      "runtime startup",
+      "query-scoped source validation and scan",
+      "prepare",
+      "model load",
+      "model calls",
+      "fan-in/parser/COUNT",
+      "offline evaluation",
+      "owner cleanup",
+      "physical exit",
+      "evidence persistence"
+    ],
+    "existing_query_seconds": "Diagnostic only: existing qualification runner starts after driver preflight/expected and runtime init; not interchangeable with the primary boundary",
+    "overlap": "Do not sum nested or parallel phase times or subtract process CPU from wall time"
+  },
+  "quality": {
+    "original_metric": "Unmodified original Movie Q3 COUNT evaluator, gold count 14 for the fixed input",
+    "row_audit": [
+      "TP",
+      "FP",
+      "TN",
+      "FN",
+      "invalid format/default parser use",
+      "missing",
+      "duplicate",
+      "unknown identity",
+      "source order association"
+    ],
+    "execution_gate": "Exactly 120 unique successful terminal calls with valid usage, original parser and full COUNT; any failed/unknown/missing/duplicate or unresolved resource responsibility stops the cell",
+    "comparison_gate": "Same fixed response CPU parity first; real native baseline and every arm must then retain exact effective messages/generation and row-decision/COUNT equality for an execution-only comparison. Original accuracy and row errors are reported even when all arms agree.",
+    "mismatch": "Preserve raw quality and cost results; report quality-incomparable rather than attributing performance to scheduling; no prompt/threshold tuning to force success"
+  },
+  "statistics": {
+    "independent_unit": "One complete query/owner invocation; same model seed and shared machine may induce dependence, so show all paired blocks and observed conditions",
+    "measured_n_per_backend": 5,
+    "primary_reports": [
+      "all raw complete-query times",
+      "median",
+      "min/max",
+      "paired block ratios",
+      "rows/s and successful model calls/s with exact boundary"
+    ],
+    "p99": "unavailable: five complete-query samples per backend",
+    "p99_99": "unavailable: five complete-query samples per backend",
+    "tail_sufficiency": "At n=5, even P(at least one beyond true p99)=1-.99^5 is only about4.9%; for p99.99 about0.05%. Approximately299/29956 independent samples give only95% chance of one tail observation, not a reliable quantile estimate. Request latencies within one batch/query do not enlarge independent query n."
+  },
+  "formal_gates": [
+    "Parent approves a fresh formal call/time budget and immutable per-query reservations; preparation is not authorization",
+    "Integrator freezes final source and reviews this package; old source-bound results do not qualify the final source/profile",
+    "Native LOTUS adapter retaining original LM batch_completion scheduling is CPU implemented; actual current-source vLLM HTTP/token/model-quality and physical-exit qualification still required.",
+    "IMLane original author FilterScope plus Q3 COUNT/evaluator adapter is CPU implemented; actual current author ABI/model/template and physical exit still require engineering qualification.",
+    "Common result-ready observer, cold application clock and supervisor monitoring are implemented; final combined CPU checks and Linux process/resource inventory still required.",
+    "Current environment/model/weights/tokenizer/template/engine-default/CPU-GPU allocation signatures and all exit/resource monitors must pass",
+    "Two finite native calibration opportunities per arm finish within the new ledger; selected profiles frozen before measurement"
+  ],
+  "excluded": [
+    "Movie Q1/Q2 and Q4-Q10, Animals and other original queries: no current matched records task/evaluator qualification",
+    "Map/Extract chains as substitutes for unsupported original SemBench queries",
+    "Global helper cascade: engineering helper/logprobs/role-lifecycle qualification pending; no helper calls budgeted here",
+    "Async Core candidate, adaptive strategy, multi-GPU, IMLane author Ray runtime, fused Daft alternate layouts, images and multimodal tasks",
+    "No-Core static-reference wrapper: optional separate internal control, not the production Core arm and not funded in these five arms",
+    "Old request four-arm three-query 35840-call template and historical model ledgers"
+  ],
+  "source_scope": "source_commit is the production-compatible preparation base. Final combined executable source is separately bound by source.lock.json and the preparation package checked_out_commit."
+}
