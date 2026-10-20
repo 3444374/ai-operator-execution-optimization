@@ -44,7 +44,7 @@
     "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
     "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "424979a1f6a54f4a5a05a86a65a3d83c6583ce986ec609f238cc87d0979982b8",
     "code/src/baselines/text/frameworks/lotus_chain_results.py": "d55defeb780072123056023bc60969b1af3f95c6057806805a4973fb64908084",
-    "code/src/baselines/text/frameworks/lotus_native_local_model.py": "9f81c222e1b21eda56a513f8661659e8f3ab61a306017810331d01ff0892e53a",
+    "code/src/baselines/text/frameworks/lotus_native_local_model.py": "43ac4b087e4467b413545acbb0e56be80864835cb10f5bf98d8ae8fd6f926f51",
     "code/src/baselines/text/frameworks/lotus_pg.py": "9e5fe09f21d780d8b3845513527a1f1d35bb14d6f4869ccc5f563020edbad008",
     "code/src/baselines/text/frameworks/native_calls.py": "e2991fb0768bd1a8749667ef4abc823c42abe0fdb301856a3e206c70a41d3882",
     "code/src/baselines/text/frameworks/prepared_map.py": "8019fc872a9a721e7eb3b2cc4d8f002c7031ec16d56fa363f398414073c8a194",
@@ -553,7 +553,7 @@
     "files/movie/query/gold_sql/Q2.sql": "5ab598444ef58794879227734873d370636dbc89ec9b29d4529d33dd4d5f2965",
     "files/movie/query/gold_sql/Q3.sql": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5"
   },
-  "runtime_source_commit": "3dfc34a5c9d38b64684d5f9a4dd49a172bb4292c",
+  "runtime_source_commit": "0d4cc1e90acae81cac953dd28664386ae6a5fb59",
   "adapter_upstream_commits": {
     "lotus-native": "e0b4fcbdcb3ac1480d1c18a35156ab036819f1be",
     "imlane": "c211d11674b0740c085fe47e93d0ad28a2346acf"
