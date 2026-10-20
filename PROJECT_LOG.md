@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：完成正式 Q3 控制器的 CPU 集成与来源重绑
+
+选择a87的六个未应用controller-owned提交，两个adapter和015不重复；540文件锁保留c412并绑定3dfc终态修补。独审复现最终GPU／墙钟失败仍completed和漏永久快照，四反例RED→GREEN、八项必要组合通过；Native logging的NoSocket selfpipe警告留原件，单项guard收尾复核不加计。作者77／四profile全120仅复用，各自人工COUNT不冒跨臂质量。新不可变35-query包与默认CLI零claim通过，[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)说明600资格桥接＋4200正式共4800仅提案、均0分配，30150秒是502.5min硬上限而120–240min仍未校准。当前a503工程执行不切源，不借164、不合main。
+
 ## 2026-10-20：在独立候选接纳正式 Q3 adapter 与观察接点
 
 选择 e0b4 原生 LOTUS 本地 HTTP、c211 IMLane 原作者 Q3 evaluator adapter 与 01553b01 可选 Movie／supervisor hook；作者文件 SHA 核同，47／38 CPU 原件分列复用，共同旧 Movie27 不重计。独审发现 result_ready 先于已知 COUNT 入账，c412 最小交换顺序及新单项 RED→GREEN 保留 COUNT／usage／关闭回执；两处 cleanup guard 与作者实际 tested module 差异和准备失败原件明确记录。[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)限定为下一正式 CPU 候选，控制器最终组合及实际服务／作者／模型资格另验，正式预算 0。当前 a503 工程源不变，无服务器、模型或租约动作。

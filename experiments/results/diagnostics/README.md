@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[正式 Q3 adapter 与完整查询观察接点](lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)：独立下一候选的 CPU 组件，保留原 LOTUS／IMLane 所有权；正式控制器和实际运行资格另验。
+[正式 Q3 adapter 与完整查询观察接点](lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)：独立下一候选的 CPU 组件，保留原 LOTUS／IMLane 所有权；后续[控制器 CPU 组合及桥接](lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)已接，实际运行资格另验。
 
 [固定a503六个有限链模型单元](lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)：Core／Ray／Daft非空M→F→E与完整E→M、原LOTUS replay及独立物理退出通过；原失败保持，无正式性能结论。
 

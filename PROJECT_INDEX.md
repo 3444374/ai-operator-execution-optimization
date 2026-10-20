@@ -1,6 +1,6 @@
 # 项目导航
 
-维护日期：2026-10-16。本文件回答内容归属、阅读入口和旧路径定位；
+维护日期：2026-10-20。本文件回答内容归属、阅读入口和旧路径定位；
 方向、实现与证据分别从[总纲](PROJECT_OUTLINE.md)、[代码状态](code/INFRA_STATUS.md)和[结果导航](experiments/results/README.md)核对，不复制运行进度。
 
 ## 内容与文档职责
@@ -34,6 +34,7 @@
 
 | 主题 | 入口 |
 |---|---|
+| 正式 Q3 五臂准备 | [配置与来源锁](deploy/autodl/sembench_records/README.md)、[check／run命令](code/scripts/README.md#sembench-records-formal)、[CPU与资格桥接](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020) |
 | IMLane 独立多行记录桥 | [模块与参数](code/integrations/imlane_records/README.md)、[无模型资格及集成边界](experiments/results/diagnostics/imlane_records_echo_20261016/README.md) |
 | IMLane 普通关系链 CLI | [chain-check／chain-run与owner合同](code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)、[分来源CPU证据](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#公开入口与固定来源) |
 | IMLane 通用级联 CLI | [record-cascade-check／run](code/integrations/imlane_records/cascade.README.md#公开通用记录入口)、[入口与旧作者CPU边界](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口) |

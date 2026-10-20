@@ -17,6 +17,8 @@ HTTP records 流水保留为阶段实现与对照；记录级入口与生成模�
 集成分支的 [IMLane普通关系链入口](code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)复用原作者执行与LOTUS方法；旧作者CPU和最终入口资格按固定源码分列。
 [IMLane通用级联入口](code/integrations/imlane_records/cascade.README.md#公开通用记录入口)独立接受caller指令，复用原全局方法和作者桥；当前CPU接线不转授真实模型资格。
 
+下一正式 Q3 候选提供[五臂配置与有限控制器](deploy/autodl/sembench_records/README.md)，保留各原生执行方法，默认只检查；[CPU 接纳和资格桥接边界](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)不代表已执行正式模型实验或已纳入 main。
+
 | 要查什么 | 权威入口 |
 |---|---|
 | 规则、术语与内容归属 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md)、[项目导航](PROJECT_INDEX.md) |

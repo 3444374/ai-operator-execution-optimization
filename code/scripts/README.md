@@ -36,6 +36,22 @@ auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在�
 [原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)保持原来源。普通Filter资格入口 `code/integrations/imlane_records/verify_filter.py` 接原Movie runner／parser／evaluator。共享 `run_lotus_records_movie.py` 另增 `chain-check`／`chain-run`，显式 `imlane-author-local-model-chain` 接普通Filter／Map／Extract与有限组合，包括完整Extract关系后继；[参数与正常owner合同](../integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)。省略 `--execute-model` 只preflight；实际运行复用作者backend／有限supervisor及调用方既有lease、资源和永久unit。通用关系不附加Q3评价，新入口作者／模型资格另验。
 固定0190作者CPU结果保持原来源；审批恢复后固定174完整72项CPU通过，后续共享故障回执组合116项及Daft实库17项通过，详见[分层复验](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。新wire作者与IMLane模型资格仍pending。真实模型入口还须由外层持久预算、正常lease、owner资源上限和独立GPU退出检查包裹，不因单引擎cap存在而允许重复运行。
 
+
+<a id="sembench-records-formal"></a>
+## 正式五臂 Q3 的有限准备入口
+
+`experiments/run_sembench_records_formal.py`消费[配置生成器](../../deploy/autodl/sembench_records/README.md)生成的仓外不可变包。
+`check`及不带`--execute-model`的`run`只检查，零claim／零模型；占位runtime返回blocked及退出码2。
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_records_formal.py check --package "$PREPARED_Q3_PACKAGE"
+```
+
+真正执行要求新源码对应的五臂真实资格、固定包／来源／runtime摘要和独立正式authorization；
+35query／4200calls／30150秒是当前提案，未分配。不要把独立worker模板或小切片代替整个控制器门槛。
+每臂五个测量查询不支持可靠P99／P99.99；冷启动、初始化／评价／关闭与原生所有权详见[主报告](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)。
+
+
 ## Movie Q3 records 本地模型接点
 
 `experiments/run_lotus_records_movie.py` 是独立入口，限定普通 Movie Q3 Filter＋COUNT。

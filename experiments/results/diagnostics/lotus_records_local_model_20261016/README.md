@@ -545,7 +545,7 @@ NoPopen窗外先核同一固定SemBench源码，窗内仅缓存该Git核验并�
 
 此增量放在独立的下一正式候选分支，当前模型工程包继续固定 `a5035105`。
 [组件来源与证据摘要](formal_adapters_cpu_20261020.json)关联原生 LOTUS `e0b4fcbd`、
-IMLane `c211d116` 和共享观察接点 `01553b01`；最终 controller／配置／逐查询 manifest 的组合尚待交付。
+IMLane `c211d116` 和共享观察接点 `01553b01`；后续 controller／配置／逐查询 manifest 的 CPU 接纳见[下一节](#formal-controller-cpu-20261020)。
 正式调用额度为 0，旧工程授权及旧模板不转作该候选的执行额度。
 
 [原生 LOTUS adapter](../../../../code/src/baselines/text/frameworks/lotus_native_local_model.py)
@@ -574,8 +574,68 @@ root 只交换入账与回调顺序，并新增一条三发生项回归：精确
 首轮 guard 误拦上游只读 Git 和次轮证据写入已有文件的准备失败均保留；有效 r3 只允许原固定
 SemBench 的两条只读 Git 校验，禁止 socket 与模型／服务启动。
 
-当前结论限组件 CPU 接入；最终控制器组合、真实 HTTP／embedded 一次模板与 token 对照、
+本阶段结论限组件 CPU 接入；控制器 CPU 组合在下一节续记，真实 HTTP／embedded 一次模板与 token 对照、
 实际 Linux 作者 ABI／模型／物理清理及正式完整查询计时仍须新资格。没有正式性能或排名结果。
+
+<a id="formal-controller-cpu-20261020"></a>
+## 正式五臂 Q3 的控制器与来源锁 CPU 接纳
+
+选择最终 `a87e1ae7` 的六个尚未应用 controller 提交，已接纳的 `01553b01` 与两个 adapter
+没有重复应用。[配置和字段](../../../../deploy/autodl/sembench_records/README.md)、
+[默认检查命令](../../../../code/scripts/README.md#sembench-records-formal)与
+[唯一机器摘要](formal_controller_cpu_20261020.json)保存本轮来源。
+这是独立下一候选，GPU 工程包继续固定 a503；正式分配仍为 0。
+
+540 个运行文件按最终集成逐字锁定，显式包含前节 COUNT 修补；随后 `3dfc34a5` 修正控制器
+最终判定并再次重绑。作者原不可变包摘要 `a13dfb79…` 保持，新的 clean checkout 包摘要为
+`8f27ac31fabf0f681e1ccdfb72200ac6890ba77e39f0a4495efc285eaa1a458a`。
+元数据重绑首轮误排序全部映射，已恢复原序；最终差额仅实际改变的运行文件摘要和来源 commit，不改预算。
+
+固定 2000 输入／120 eligible 的普通原 Q3，五臂各两个校准点，再各做五个交错测量查询：
+10＋25＝35 次完整查询，1200＋3000＝4200 调用上界。各臂原生调度、自己的合理批量和冷启动生命周期保持，
+不把 static-reference 冒充生产 Core。每臂 n=5，不提供可靠 P99／P99.99 或常驻结果。
+原 source CSV 的全表差异／Q3 唯一等价范围仍按前节保留。
+
+作者 77 项是 19 controller＋20 native＋11 IMLane＋27 旧 Movie 的原来源 union，root 没有重跑全套。
+公共 worker 四个全 120 行 profile 的 CPU 差分也只复用：native 人工 COUNT6、IMLane 人工 COUNT0，
+各自与相同人工响应的原 Q3 相等；不能据此认为两臂模型质量相同或达到 gold14。
+此前 Mac 进程枚举 18 pass／10 skip 单列，不认证 Linux 全后代退出。
+
+两轴独审发现新终态缺口：循环结束先标 completed，最终 GPU 读取失败或收尾越过总墙钟却仍可能退出 0；
+读取 GPU 失败还会漏永久账本快照。四条 CPU 反例在旧源为 3 fail／1 error，修后 4／4、零 skip。
+修补独立保存账本，先留 provisional 的 campaign-before-release 证据，再尝试已确认物理状态的正常 lease
+释放；最终 campaign 只写一次，未知物理／lease错误／墙钟跨线均否决 completed 并保留原 primary。
+elapsed 包含 lease 收尾，已知物理清洁可以释放 lease 而不把逻辑或超时失败升级为成功。
+
+另外八项必要组合检查通过，覆盖两个实际 adapter 的公共 CPU worker、原 parser／评价／clock、
+完整／早停／deadline 的真实临时 SQLite 记账及旧 CPU 资格拒绝。
+严格 NoSocket guard 曾拦截 LiteLLM logging 的 asyncio 内部 self-pipe，出现退出警告；原件保留，
+只定向复核其中 native 一项，允许既有 AF_UNIX socketpair 的 fd 包装、仍禁新网络／监听与模型 child，
+退出无警告，不另加独立用例数。真实 CLI 两次检查均按占位 runtime 返回 blocked2、零调用／零 claim。
+
+### 资格桥接与预算含义
+
+当前 formal worker 硬锁完整 35／4200／30150 包，prepare 硬锁 2000 行及 120 eligible，
+正式 authorization 还要求五臂已有 current-source real_model 资格；因此不能拿 10-call 小包自举或绕过门槛。
+保持现有完整 Q3 数据及入口而不改生产 gate 的最低桥接，是独立外层预算／normal lease／有限监督下，
+五臂各做一次 p1 完整查询，至少 5×120＝600 次新资格上界；p2 仍可在正式校准阶段验证。
+这 600 次由新的 source-bound 外层资格 launcher 复用五臂现有普通 Q3 底层入口，不是 formal worker 的五查询模式，
+也不重跑已通过的有限 M→F→E／E→M 工程单元；资格 launcher 本身还须冻结、窄审和新额度授权。
+10-call API smoke 若另做只能证明小切片，不能替代这些完整输入／公共 worker 的资格。
+
+| 独立范围 | 调用上界提案 | 硬墙钟提案 | 当前分配 |
+|---|---:|---:|---:|
+| 五臂完整 Q3 p1 资格桥接 | 600 | 5×810＋450＝4500 s（75 min） | 0 |
+| 两点校准＋五测量 block 正式矩阵 | 4200 | 35×810＋1800＝30150 s（502.5 min） | 0 |
+| 两范围都获准且均完成 | 4800 | 34650 s（577.5 min） | 0 |
+
+30150 秒是保守总硬上限，包含控制与清理余量；全局监控预留 30 秒做最终物理收尾，越线失败并记录，
+不隐藏 OS 清理耗时。120–240 分钟只是未校准计划假设，不是预计完成承诺；桥接的 75 分钟同样只是建议上限。
+资格桥接须固定最终 source.lock、权重／模板／ABI与私有 harness，实际完整 messages／tokens／COUNT／
+原评价／逐行质量、非零真实调用及独立进程／GPU／SHM 结清均通过才可生成资格回执；600 不保证通过。
+首次失败或 unknown 停止，永久额度不退、不自动重试，不借用工程 164 或其剩余 repair。
+桥接 600 也不能事后冲抵本控制器的 fresh／no-resume 正式 4200；改此流程需另审计划和控制器。
+全部仍是提案，本轮没有服务器、作者二进制、真实模型、GPU或正式预算动作。
 
 <a id="finite-chain-model-20261020"></a>
 ## 固定 a503 的六个有限链模型单元（2026-10-20）

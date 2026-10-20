@@ -1,0 +1,87 @@
+{
+  "schema": "semloom.formal_controller_cpu.v1",
+  "status": "integrated_cpu_preparation_complete_pending_real_runtime_and_budget",
+  "author_source": "a87e1ae7d23fa9f5b4614193fdcf3046c4b16ffa",
+  "root_final_verdict_fix": "3dfc34a5c9d38b64684d5f9a4dd49a172bb4292c",
+  "runtime_lock_sha256": "77e6f60dcf37e840553c8063b501e4359ea444b93597b11d7cbfbefeb27dc3dc",
+  "runtime_lock_files": 540,
+  "preserved_movie_count_fix": "c412eaf1559cc620a4ea8fbcce5385cbab562b6a",
+  "original_author_package_integrity_sha256": "a13dfb796e59c61ff5e59abbd83b3d42fe6542aa202e47925751eb5b5faf0cd5",
+  "new_integrated_package_integrity_sha256": "8f27ac31fabf0f681e1ccdfb72200ac6890ba77e39f0a4495efc285eaa1a458a",
+  "matrix": {
+    "query": "original Movie Q3 taken_3 ordinary Filter->COUNT",
+    "backends": [
+      "lotus-native",
+      "semloom-core",
+      "ray-data",
+      "daft",
+      "imlane"
+    ],
+    "input_rows": 2000,
+    "eligible_occurrences_per_query": 120,
+    "calibration_profiles_per_backend": 2,
+    "measured_queries_per_backend": 5,
+    "complete_queries": 35,
+    "call_upper_bound": 4200,
+    "allocated_calls": 0,
+    "hard_wall_s": 30150,
+    "hard_wall_minutes": 502.5,
+    "hard_wall_formula": "35*810+1800",
+    "estimated_minutes": [
+      120,
+      240
+    ],
+    "estimate_kind": "uncalibrated planning assumption; no measured formal runtime",
+    "resident_results": null,
+    "p99": null,
+    "p99_99": null
+  },
+  "author_evidence_reused": {
+    "unique_cpu_tests_passed": 77,
+    "composition": "19controller+20native+11IMLane+27oldMovie, original source scope; not all rerun on root",
+    "four_public_worker_full120_profiles": "Native fixtureCOUNT6 and IMLane fixtureCOUNT0, each equal to original Q3 using its own artificial responses; gold14. No cross-arm model-quality equivalence.",
+    "full120_verification_sha256": "4c92ddf7206eb57b3e7c003e62cc5bb658d25041b3cf76734533ae834129d355",
+    "old_macos_inventory": "Earlier18passed/10skipped, separate; no actual Linux descendant qualification"
+  },
+  "root_checks": {
+    "new_finalization_tests": 4,
+    "pre_fix_failures": 3,
+    "pre_fix_errors": 1,
+    "post_fix_passed": 4,
+    "combination_tests_passed": 8,
+    "skipped": 0,
+    "new_finalization_receipt_sha256": "6e6260b16adf3cbdfe019ad38f94dab7595abe01162d0dde83099fb3a3d4cd06",
+    "combination_receipt_sha256": "93850b16b925e199b2e800c56f4f8f82fd6b0a0a105c076d2d9bfe79e9c9fcc1",
+    "native_harness_cleanup_recheck": {
+      "tests": 1,
+      "passed": 1,
+      "not_added_as_independent_test": true,
+      "reason": "Blanket socket guard blocked asyncio internal self-pipe and produced exit warnings. Retained r1; only existing AF_UNIX socketpair fd wrappers allowed in recheck, all INET/new listening sockets blocked.",
+      "receipt_sha256": "45202aa4940349e310a209abd8e74525bf5993a08c0a87ad384f087bf697bdba"
+    },
+    "actual_cli_no_model_checks": 2,
+    "actual_cli_receipt_sha256": "cf5b6e83c9ada2253879d94e8e92d7f49f3347742ca130a7a59ad86900c09e42",
+    "cli_result": "check and run-without-execute-model return expectedblocked2 for placeholder runtime, actual_calls0/claims0, no model-output directory",
+    "source_preparer": "Fresh manifest-r2 built with clean integrated checkout and --check-source; original author package preserved."
+  },
+  "final_verdict": "Persist permanent ledger separately from GPU read. Before-release evidence is provisional; final campaign records GPU/lease/wall errors as failed, raises without replacing an existing primary, and includes lease cleanup in elapsed. Unknown physical responsibility retains lease. Known clean physical state may release even when logical/deadline result fails.",
+  "bridge_proposal": {
+    "existing_formal_worker_cannot_run_small_10_call_package": true,
+    "complete_fixed_q3_p1_queries": 5,
+    "new_bridge_calls": 600,
+    "new_bridge_hard_wall_s": 4500,
+    "bridge_wall_formula": "5*810+450, proposed unmeasured ceiling",
+    "bridge_allocated": 0,
+    "formal_calls_separate": 4200,
+    "combined_proposed_calls": 4800,
+    "combined_proposed_wall_s": 34650,
+    "all_proposals_unallocated": true,
+    "engineering164_budget_separate": true,
+    "no_success_guarantee": true,
+    "entry": "New source-bound external qualification launcher reusing five existing ordinary Q3 backend entry points; not the formal worker in a five-query mode. Freeze and review that launcher before its separate authorization.",
+    "scope": "New complete ordinary Q3 source/profile/launcher qualification; do not repeat already-qualified finite MFE/EM units."
+  },
+  "root_model_server_budget_actions": 0,
+  "engineering_source_unchanged": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "remaining": "Actual current-source five-arm model/service/author/template/token/quality/resources qualification, source-bound real qualification report and separately authorized formal campaign. Q1/Q2 unsupported in this first round."
+}

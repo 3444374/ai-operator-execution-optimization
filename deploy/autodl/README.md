@@ -1,5 +1,7 @@
 # AutoDL 云部署指南
 
+下一 records／local-model 的[普通 Q3 五臂准备](sembench_records/README.md)包含固定来源锁、逐查询 manifest 和默认仅检查的控制器；现有四臂模板不转作新预算。CPU 与运行资格从[主报告](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)核对。
+
 LOTUS 原版 Movie 的 main 四臂配置见[示例](sembench_lotus_queries.example.json)，
 对应[脚本入口](../../code/scripts/README.md#lotus-原版-movie-四臂)和[本批资格](../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
 执行前检查`core,text,semantic-benchmarks`，使用仓库外真实环境与新输出目录；本配置不启动模型服务。
