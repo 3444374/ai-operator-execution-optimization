@@ -121,6 +121,31 @@ class MovieRecordsTests(unittest.TestCase):
                 run_movie_query(self.source, CHECKOUT, self.method, self.generation, execute, query_id="q")
         execute.assert_not_called()
 
+    def test_result_observer_failure_keeps_known_count_decisions_usage_and_close(self):
+        from src.experiments.lotus_records_movie import run_movie_query
+        iterator = ClosingRows([fixed_result(i) for i in (0, 2, 3)], [])
+        observation = RuntimeError("result clock failed")
+        events = []
+
+        def observe(event):
+            events.append(event)
+            if event == "result_ready":
+                raise observation
+
+        with self.assertRaises(RuntimeError) as failure:
+            run_movie_query(self.source, CHECKOUT, self.method, self.generation,
+                            lambda: iterator, query_id="q", observer=observe)
+        self.assertIs(failure.exception, observation)
+        report = observation.query_report
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["result"], {"positive_review_cnt": 1})
+        self.assertEqual(len(report["decisions"]), 3)
+        self.assertEqual(report["calls"]["counts"]["succeeded"], 3)
+        self.assertEqual(report["calls"]["usage"]["total_tokens"], 44)
+        self.assertIsNotNone(iterator.last_close_report)
+        self.assertIn("query_cleanup_end", events)
+        self.assertNotIn("quality", report)
+
     def test_empty_and_no_eligible_sources_match_native_zero_call_query(self):
         from src.experiments.lotus_records_movie import fixed_response_qualification
         for index, rows in enumerate(([], [["id", "other", "no predicate match", "NEGATIVE"]])):

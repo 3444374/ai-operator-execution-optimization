@@ -158,9 +158,9 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id, 
             decisions = interpret_results(ordered, lm, method)
             count = sum(row["decision"] for row in decisions)
             result = pd.DataFrame({"positive_review_cnt": [count]})
-            emit("result_ready")
             report.update(result={"positive_review_cnt": count}, decisions=decisions,
                           query_seconds=time.monotonic() - started)
+            emit("result_ready")
             evaluated_at = time.monotonic()
             emit("evaluation_start")
             labeled = source.labeled_frame()
