@@ -137,7 +137,19 @@ class CampaignContractTests(unittest.TestCase):
     def test_global_deadline_stops_inside_supervision_and_reserves_physical_cleanup(self):
         self._campaign_fixture(fail=True, deadline=True)
 
-    def _campaign_fixture(self, *, fail, deadline=False):
+    def test_final_gpu_observation_failure_cannot_return_completed(self):
+        self._campaign_fixture(fail=False, final_failure="gpu")
+
+    def test_final_cleanup_wall_overrun_cannot_return_completed(self):
+        self._campaign_fixture(fail=False, final_failure="deadline")
+
+    def test_lease_release_wall_overrun_cannot_return_completed(self):
+        self._campaign_fixture(fail=False, final_failure="lease_deadline")
+
+    def test_final_gpu_failure_preserves_existing_query_error(self):
+        self._campaign_fixture(fail=True, final_failure="gpu")
+
+    def _campaign_fixture(self, *, fail, deadline=False, final_failure=None):
         """Declared synthetic transport/hardware; tests orchestration, never a model."""
         from src.baselines.text.movie_records import MovieRecordSource, prepare_movie_source
         from src.experiments.sembench_records_formal import run_campaign
@@ -156,7 +168,13 @@ class CampaignContractTests(unittest.TestCase):
             lease_file = root / "lease"
             lease_file.write_text("declared CPU fixture lease")
             released = []
-            lease = SimpleNamespace(path=lease_file, release=lambda: released.append(True))
+
+            def release():
+                released.append(True)
+                if final_failure == "lease_deadline":
+                    clock_time[0] = 30251.0
+
+            lease = SimpleNamespace(path=lease_file, release=release)
             backends = ["lotus-native", "semloom-core", "ray-data", "daft", "imlane"]
             units = []
             for phase, count in (("calibration", 2), ("measured", 5)):
@@ -181,6 +199,16 @@ class CampaignContractTests(unittest.TestCase):
             monitor = SimpleNamespace(finish=lambda: {"passed": True, "scope": "synthetic CPU fixture"})
             invoked = []
             clock_time = [100.0]
+
+            def snapshot(_device):
+                last = units[0 if fail else -1]["query_id"]
+                if (root / "campaign" / last / "physical.json").exists():
+                    if final_failure == "gpu":
+                        raise OSError("fixture final GPU observation failed")
+                    if final_failure == "deadline":
+                        clock_time[0] = 30251.0
+                return hardware
+
             def transport(argv, output, **kwargs):
                 invoked.append(argv)
                 if deadline:
@@ -211,11 +239,23 @@ class CampaignContractTests(unittest.TestCase):
                     patch("src.experiments.sembench_records_formal.time.monotonic", side_effect=lambda: clock_time[0]), \
                     patch("src.experiments.sembench_records_formal.check_package", return_value=(schedule, runtime)), \
                     patch.object(os, "sched_getaffinity", return_value=set(range(8)), create=True), \
-                    patch("integrations.imlane_records.resource_limits.gpu_snapshot", return_value=hardware), \
+                    patch("integrations.imlane_records.resource_limits.gpu_snapshot", side_effect=snapshot), \
                     patch("src.infrastructure.runner_lease.acquire_runner_lease", return_value=lease), \
                     patch("src.experiments.sembench_records_formal_resources.ResourceMonitor", return_value=monitor), \
                     patch("src.experiments.lotus_records_supervisor.supervise", side_effect=transport):
-                if fail:
+                if final_failure and not fail:
+                    expected_error = OSError if final_failure == "gpu" else TimeoutError
+                    with self.assertRaises(expected_error):
+                        run_campaign(package, authorization, root / "campaign")
+                    report = json.loads((root / "campaign/campaign.json").read_text())
+                    self.assertEqual(report["status"], "failed")
+                    self.assertEqual(len(invoked), 35)
+                    self.assertEqual(report["permanent_budget"]["allocated_requests"], 35)
+                    self.assertEqual(released, [] if final_failure == "gpu" else [True])
+                    self.assertEqual(report["physical_exit_confirmed"], final_failure != "gpu")
+                    if final_failure in ("deadline", "lease_deadline"):
+                        self.assertEqual(report["deadline_overrun_seconds"], 1)
+                elif fail:
                     with self.assertRaisesRegex(TimeoutError if deadline else RuntimeError,
                             "physical-cleanup window" if deadline else "fixture transport failure"):
                         run_campaign(package, authorization, root / "campaign")
@@ -224,6 +264,7 @@ class CampaignContractTests(unittest.TestCase):
                     self.assertEqual(report["permanent_budget"]["allocated_requests"], 1)
                     self.assertEqual(released, [])
                     self.assertEqual(report["lease_status"], "held_unresolved")
+                    self.assertEqual(report["status"], "failed")
                 else:
                     report = run_campaign(package, authorization, root / "campaign")
                     self.assertEqual(len(invoked), 35)

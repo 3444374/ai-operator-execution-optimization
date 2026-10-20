@@ -339,6 +339,7 @@ def run_campaign(root, authorization, output):
     complete, calibration, selected, reference, physical_confirmed = [], [], None, None, True
     report = dict(schema="semloom.sembench_records_formal.v1", status="failed", queries=complete,
         no_automatic_retries=True, resident_results=None, p99=None, p99_99=None)
+    primary = None
     try:
         for summary in schedule["units"]:
             check_package(root)
@@ -431,24 +432,66 @@ def run_campaign(root, authorization, output):
             median_cold_seconds={b: statistics.median(r["cold_complete_seconds"] for r in complete
                 if r["backend"] == b and r["phase"] == "measured") for b in ADAPTERS.keys() | {"semloom-core", "ray-data", "daft"}})
     except BaseException as error:
+        primary = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
         raise
     finally:
+        final_errors = []
+        try:
+            report["permanent_budget"] = ledger.snapshot()
+        except BaseException as recording:
+            final_errors.append(recording)
         try:
             final_gpu = gpu_snapshot(runtime["cuda_visible_devices"])
             physical_confirmed = physical_confirmed and gpu_exited(before, final_gpu)
-            report.update(final_gpu=final_gpu, permanent_budget=ledger.snapshot())
+            report["final_gpu"] = final_gpu
         except BaseException as cleanup:
             physical_confirmed = False
+            final_errors.append(cleanup)
             report.update(cleanup_error_type=type(cleanup).__name__, cleanup_error=redact_text(str(cleanup)))
+        if not physical_confirmed and not final_errors:
+            final_errors.append(RuntimeError("final physical responsibility remains unconfirmed"))
+        report.update(physical_exit_confirmed=physical_confirmed,
+            lease_status="release_pending" if physical_confirmed else "held_unresolved")
+        try:
+            write_private_json(output / "campaign-before-release.json",
+                               redact_json_values(dict(report, status="finalizing")))
+        except BaseException as recording:
+            final_errors.append(recording)
+            report["lease_status"] = "held_evidence_unconfirmed"
+        else:
+            if physical_confirmed:
+                try:
+                    lease.release()
+                    report["lease_status"] = "released"
+                    write_private_json(output / "lease-released.json", dict(released=True, after_campaign_evidence=True))
+                except BaseException as cleanup:
+                    final_errors.append(cleanup)
+                    if report["lease_status"] != "released":
+                        report["lease_status"] = "release_unconfirmed"
         elapsed = time.monotonic() - started
         report.update(elapsed_seconds=elapsed, deadline_overrun_seconds=max(0, elapsed - auth["max_wall_s"]),
-            cleanup_reserve_seconds=30, physical_exit_confirmed=physical_confirmed,
-            lease_status="release_pending" if physical_confirmed else "held_unresolved")
-        write_private_json(output / "campaign.json", redact_json_values(report))
-        if physical_confirmed:
-            lease.release()
-            write_private_json(output / "lease-released.json", dict(released=True, after_campaign_evidence=True))
+            cleanup_reserve_seconds=30)
+        if report["deadline_overrun_seconds"]:
+            final_errors.append(TimeoutError("campaign exceeded its global wall budget during finalization"))
+        if final_errors:
+            report["status"] = "failed"
+            report["finalization_errors"] = [dict(error_type=type(error).__name__, error=redact_text(str(error)))
+                                             for error in final_errors]
+            report.setdefault("error_type", type(final_errors[0]).__name__)
+            report.setdefault("error", redact_text(str(final_errors[0])))
+            if primary is not None:
+                for error in final_errors:
+                    primary.add_note("campaign finalization also failed: " + type(error).__name__)
+        try:
+            write_private_json(output / "campaign.json", redact_json_values(report))
+        except BaseException as recording:
+            if primary is None and not final_errors:
+                raise
+            (primary if primary is not None else final_errors[0]).add_note(
+                "campaign report also failed: " + type(recording).__name__)
+        if primary is None and final_errors:
+            raise final_errors[0]
     return report
 
 
