@@ -113,6 +113,8 @@ authorization schema为`semloom.sembench_records_authorization.v1`，字段为`a
 控制器使用现有SQLite cell ledger，每查询永久预留120、worker只claim一次；无退款、重启或隐式续跑。
 RSS/SHM/CPU亲和性监测回调仅停止本次supervisor已观察的owned进程；SHM是独占lease下全机用量增量的保守观测，
 不声称内核硬限或未观察detached进程已退出。失败原件保留，责任不明则normal lease留在held状态。
+全局deadline在supervisor监测回调中生效，提前30秒进入物理清理窗口；任何OS退出/清理超时按
+`deadline_overrun_seconds`另报并失败，不能隐去超额或继续后继单元。
 
 生成物包括`source.json`、标签隔离的`input/`、35份`units/*.json`、每个候选的精确`configs/*.json`、
 `schedule.json`、`commands.json`、`package-identity.json`和逐文件`integrity.json`。

@@ -349,7 +349,7 @@ def run_campaign(root, authorization, output):
             profile = unit["selected_profile"] or selected[unit["backend"]]
             chosen = next(c for c in unit["configurations"] if c["profile"] == profile)
             remaining = deadline - time.monotonic()
-            if remaining < schedule["serial_unit_ceiling_s"]:
+            if remaining < schedule["serial_unit_ceiling_s"] + 30:
                 raise TimeoutError("remaining global budget cannot cover the next complete unit")
             gpu_before = gpu_snapshot(runtime["cuda_visible_devices"])
             if not gpu_exited(before, gpu_before):
@@ -375,11 +375,15 @@ def run_campaign(root, authorization, output):
                 "--output-dir", str(unit_root), "--execute-model"]
             physical_confirmed = False
             monitor = ResourceMonitor(read(CONFIG_ROOT / "comparison.json")["shared_resources"])
+            def bounded_monitor(identities):
+                if time.monotonic() >= deadline - 30:
+                    raise TimeoutError("global deadline entered the reserved physical-cleanup window")
+                monitor(identities)
             invoked = time.monotonic_ns()
             supervised = None
             try:
                 supervised = supervise(argv, unit_root, timeout_s=schedule["serial_unit_ceiling_s"],
-                    grace_s=15, natural_exit_grace_s=1, monitor=monitor)
+                    grace_s=15, natural_exit_grace_s=1, monitor=bounded_monitor)
             finally:
                 physical = dict(gpu_before=gpu_before, gpu_exit_confirmed=False, resources=None)
                 try:
@@ -437,7 +441,9 @@ def run_campaign(root, authorization, output):
         except BaseException as cleanup:
             physical_confirmed = False
             report.update(cleanup_error_type=type(cleanup).__name__, cleanup_error=redact_text(str(cleanup)))
-        report.update(elapsed_seconds=time.monotonic() - started, physical_exit_confirmed=physical_confirmed,
+        elapsed = time.monotonic() - started
+        report.update(elapsed_seconds=elapsed, deadline_overrun_seconds=max(0, elapsed - auth["max_wall_s"]),
+            cleanup_reserve_seconds=30, physical_exit_confirmed=physical_confirmed,
             lease_status="release_pending" if physical_confirmed else "held_unresolved")
         write_private_json(output / "campaign.json", redact_json_values(report))
         if physical_confirmed:

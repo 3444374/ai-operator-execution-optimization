@@ -134,7 +134,10 @@ class CampaignContractTests(unittest.TestCase):
     def test_campaign_fixture_stops_first_failure_without_refund_or_next_owner(self):
         self._campaign_fixture(fail=True)
 
-    def _campaign_fixture(self, *, fail):
+    def test_global_deadline_stops_inside_supervision_and_reserves_physical_cleanup(self):
+        self._campaign_fixture(fail=True, deadline=True)
+
+    def _campaign_fixture(self, *, fail, deadline=False):
         """Declared synthetic transport/hardware; tests orchestration, never a model."""
         from src.baselines.text.movie_records import MovieRecordSource, prepare_movie_source
         from src.experiments.sembench_records_formal import run_campaign
@@ -177,8 +180,12 @@ class CampaignContractTests(unittest.TestCase):
             hardware = dict(uuid="declared-cpu-fixture", memory_mib=0, compute_processes=[])
             monitor = SimpleNamespace(finish=lambda: {"passed": True, "scope": "synthetic CPU fixture"})
             invoked = []
+            clock_time = [100.0]
             def transport(argv, output, **kwargs):
                 invoked.append(argv)
+                if deadline:
+                    clock_time[0] = 124.0
+                    kwargs["monitor"](())
                 if fail:
                     raise RuntimeError("declared fixture transport failure")
                 context = json.loads((output / "context.json").read_text())
@@ -200,7 +207,8 @@ class CampaignContractTests(unittest.TestCase):
                 write_private_json(output / "clock.json", clock.events)
                 return {"observed_owned_exit_confirmed": True}
             with patch("src.experiments.sembench_records_formal.validate_authorization", return_value=dict(
-                    budget_id="cpu-campaign-fixture", limit_calls=35, max_wall_s=30150)), \
+                    budget_id="cpu-campaign-fixture", limit_calls=35, max_wall_s=53 if deadline else 30150)), \
+                    patch("src.experiments.sembench_records_formal.time.monotonic", side_effect=lambda: clock_time[0]), \
                     patch("src.experiments.sembench_records_formal.check_package", return_value=(schedule, runtime)), \
                     patch.object(os, "sched_getaffinity", return_value=set(range(8)), create=True), \
                     patch("integrations.imlane_records.resource_limits.gpu_snapshot", return_value=hardware), \
@@ -208,7 +216,8 @@ class CampaignContractTests(unittest.TestCase):
                     patch("src.experiments.sembench_records_formal_resources.ResourceMonitor", return_value=monitor), \
                     patch("src.experiments.lotus_records_supervisor.supervise", side_effect=transport):
                 if fail:
-                    with self.assertRaisesRegex(RuntimeError, "fixture transport failure"):
+                    with self.assertRaisesRegex(TimeoutError if deadline else RuntimeError,
+                            "physical-cleanup window" if deadline else "fixture transport failure"):
                         run_campaign(package, authorization, root / "campaign")
                     report = json.loads((root / "campaign/campaign.json").read_text())
                     self.assertEqual(len(invoked), 1)
