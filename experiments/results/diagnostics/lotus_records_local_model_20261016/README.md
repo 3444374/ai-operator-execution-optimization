@@ -540,6 +540,43 @@ NoPopen窗外先核同一固定SemBench源码，窗内仅缓存该Git核验并�
 
 正式SemBench仅进入准备：固定原查询／数据／真值／模型角色、LOTUS配置、原生调度与合理生命周期、同口径计时和重复顺序，再从逐query manifest推导预算。权威规则是[同一LOTUS方法的执行对照](../../../plans/reference/对照规范.md#lotus-algorithm-execution)与[当前实施边界](../../../plans/数据组织.md#model-engine-roadmap)。旧四臂三query的35840示例不是当前records／IMLane矩阵或新执行额度；尚无新版正式性能成绩，不省略最终原生LOTUS／Ray／Daft／IMLane与SemLoom静态／候选身份，也不把unsupported方法静默替换。旧请求baseline和历史失败全部保留。
 
+<a id="formal-adapters-cpu-20261020"></a>
+## 下一正式 Q3 的 adapter 与观察接点 CPU 候选
+
+此增量放在独立的下一正式候选分支，当前模型工程包继续固定 `a5035105`。
+[组件来源与证据摘要](formal_adapters_cpu_20261020.json)关联原生 LOTUS `e0b4fcbd`、
+IMLane `c211d116` 和共享观察接点 `01553b01`；最终 controller／配置／逐查询 manifest 的组合尚待交付。
+正式调用额度为 0，旧工程授权及旧模板不转作该候选的执行额度。
+
+[原生 LOTUS adapter](../../../../code/src/baselines/text/frameworks/lotus_native_local_model.py)
+保留原 `LM._process_uncached_messages`、LiteLLM batch 调用与线程执行，逐次 HTTP POST 从调用方
+已经 claim 的完整查询预算消费，不重复 claim、自动重试或退款。每个非空查询启动并关闭自己的本地
+HTTP 服务；该服务与 embedded vLLM 的 token、质量和初始化边界须实测核对。
+[IMLane adapter](../../../../code/src/experiments/imlane_movie_formal.py)复用原作者
+DBEnd／Coordinator／Lane／CPython、记录桥和 FilterResults，再接原 COUNT／SemBench evaluator；
+不增加 SemLoom 调度。两个 adapter 都使用调用方正常外部 lease，不替调用方释放。
+
+可选 Movie observer 记录 source、result、evaluation 与 cleanup 边界；supervisor 可选 monitor
+在既有监督循环中采样并通过原异常路径停止已拥有的 child，默认 `None` 保持旧路径。
+事件仅表示到达观测位置，不能代替模型 API 或独立 GPU／后代退出回执。
+
+作者原件分别为 47 项（新 20＋旧 Movie27）和 38 项（新 11＋同一旧 Movie27），均零 skip；
+root 核同四份源码／测试文件并复用证据，没有重复运行这些 suites，也不把重叠检查相加。
+固定 2000 行输入的 Q3 全部 120 发生项在 p1=4／p2=8 的原提示、判定、COUNT、用量和评价差分通过，
+响应为显式软件 fixture；全 False 的 COUNT0／gold14 不认证模型质量。
+固定执行 CSV 与上游原文件全表有 360 行不同，只有 Q3 的 120 条完整行及位置核同，不认证 Q1／Q2。
+
+组合核对保留了共享文件版本差异：IMLane 作者 tested module `8bf4c81f` 没有 controller 后补的
+两处 cleanup observer 异常保护，不能声称整个共享模块逐字相同。
+独审又发现 COUNT 已算出但 result_ready 回调先于报告入账，回调异常会丢掉已知 COUNT／decisions。
+root 只交换入账与回调顺序，并新增一条三发生项回归：精确旧函数 RED、修后 GREEN，已知 COUNT1、
+三个终态、44 合成 tokens 与关闭回执保留；原错误仍失败，不生成虚假质量结果。
+首轮 guard 误拦上游只读 Git 和次轮证据写入已有文件的准备失败均保留；有效 r3 只允许原固定
+SemBench 的两条只读 Git 校验，禁止 socket 与模型／服务启动。
+
+当前结论限组件 CPU 接入；最终控制器组合、真实 HTTP／embedded 一次模板与 token 对照、
+实际 Linux 作者 ABI／模型／物理清理及正式完整查询计时仍须新资格。没有正式性能或排名结果。
+
 <a id="finite-chain-model-20261020"></a>
 ## 固定 a503 的六个有限链模型单元（2026-10-20）
 

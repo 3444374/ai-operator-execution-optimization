@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[正式 Q3 adapter 与完整查询观察接点](lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)：独立下一候选的 CPU 组件，保留原 LOTUS／IMLane 所有权；正式控制器和实际运行资格另验。
+
 [固定a503六个有限链模型单元](lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)：Core／Ray／Daft非空M→F→E与完整E→M、原LOTUS replay及独立物理退出通过；原失败保持，无正式性能结论。
 
 [Async r2取消／关闭诊断与修补](async_cancel_close_20261019/README.md)：取消与关闭的CPU反馈环；队列接管、原RPC和原生终态分列，历史失败保持，实际竞争层未定；[a503单次交接观测](async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)按有限范围收口。

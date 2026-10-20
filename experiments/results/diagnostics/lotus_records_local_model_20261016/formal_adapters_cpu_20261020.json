@@ -1,0 +1,79 @@
+{
+  "schema": "semloom.formal_adapters_cpu.v1",
+  "status": "component_cpu_candidate_pending_final_controller_and_runtime_qualification",
+  "integrated_component_commit": "c412eaf1559cc620a4ea8fbcce5385cbab562b6a",
+  "engineering_execution_source_unchanged": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "source_commits": {
+    "native_lotus": [
+      "33b760728273ff89ae818b9904b69dd08c68b0f2",
+      "b69eb917e9c885a64d5a83466049768b4cd0d468",
+      "e0b4fcbdcb3ac1480d1c18a35156ab036819f1be"
+    ],
+    "imlane": "c211d11674b0740c085fe47e93d0ad28a2346acf",
+    "movie_observer_supervisor_callback": "01553b017a46495b799916125b4170bbe93aad42"
+  },
+  "author_evidence_reused_without_rerun": {
+    "native_lotus": {
+      "cpu_passed": 47,
+      "new_adapter_tests": 20,
+      "old_movie_tests_included": 27,
+      "skipped": 0,
+      "handoff_sha256": "e9d419e1b9d43791138183524305632edb387bce744d3ae196f3e0b8e651e7b5",
+      "source_sha256": "9f81c222e1b21eda56a513f8661659e8f3ab61a306017810331d01ff0892e53a"
+    },
+    "imlane": {
+      "cpu_passed": 38,
+      "new_adapter_tests": 11,
+      "old_movie_tests_included": 27,
+      "skipped": 0,
+      "handoff_sha256": "8e55bc3fd1c11a90ec995ede1cea11a05384db9a2e3fef13166c8572c71c8f64",
+      "source_sha256": "d1125a3e720230ed1d1fca04ecef474575566ff6aa954ea9550af599b3680464"
+    },
+    "overlap": "Both author suites include the same old Movie27 checks; do not add totals as independent tests. All120 Q3 occurrences at p1=4 and p2=8 use synthetic responses, not model quality evidence."
+  },
+  "shared_observer_tested_module_delta": {
+    "imlane_author_tested_sha256": "8bf4c81f1b6bd6622b2b1c863f54d75c095041593e05c338c200882cb14818b8",
+    "controller_commit_module_sha256": "792c5c66366653c00bc242feb330546183f13867c0cd510b53ad669ed7a15693",
+    "root_current_module_sha256": "7959f267df4842cd19e046c454df2edf748c2544fafd5d1f1e9ea96f594b0855",
+    "changes": [
+      "Guard query_cleanup_end observer errors while preserving known ledger and primary.",
+      "Guard runtime_closed observer errors and still write the report.",
+      "Persist known COUNT/decisions before result_ready callback."
+    ],
+    "scope": "Adapter files retain author hashes; shared observer is explicitly a new combination."
+  },
+  "root_new_regression": {
+    "name": "MovieRecordsTests.test_result_observer_failure_keeps_known_count_decisions_usage_and_close",
+    "pre_fix_commit": "ff0b450467ec005cf3356356a7f06f627d731f06",
+    "pre_fix_errors": 1,
+    "passed_after_fix": 1,
+    "skipped": 0,
+    "red_green_receipt_sha256": "84b6fa201968e8c05e43be3c569129d2d0d37f9373b20a7a746ec4e9158bcbef",
+    "fixture_evaluations": 3,
+    "model_evaluations": 0,
+    "constraints": "No sockets or model/service child; only exact pinned SemBench read-only Git verification commands permitted.",
+    "preparation_failures_preserved": [
+      "First guard rejected required local Git verification before reaching the callback.",
+      "Next attempt hit exclusive evidence writer on an existing path. Fresh r3 output preserves both prior attempts."
+    ]
+  },
+  "source_identity": {
+    "fixed_execution_csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "upstream_csv_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+    "rows": 2000,
+    "differing_full_rows": 360,
+    "q3_120_full_records_and_positions_equal": true,
+    "gold_positive_count": 14,
+    "non_q3_equivalence_qualified": false
+  },
+  "formal_budget_allocated": 0,
+  "engineering_164_budget_used_by_this_component_work": 0,
+  "new_model_or_service_calls": 0,
+  "performance_claim": false,
+  "remaining": [
+    "Final formal controller/config/manifest package and scoped combination validation.",
+    "Actual native HTTP service versus embedded model token/template/quality qualification.",
+    "Actual new IMLane formal author ABI/model/GPU lifecycle qualification.",
+    "Complete fair timing, finite campaign budget and formal execution remain separate."
+  ]
+}

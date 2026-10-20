@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：在独立候选接纳正式 Q3 adapter 与观察接点
+
+选择 e0b4 原生 LOTUS 本地 HTTP、c211 IMLane 原作者 Q3 evaluator adapter 与 01553b01 可选 Movie／supervisor hook；作者文件 SHA 核同，47／38 CPU 原件分列复用，共同旧 Movie27 不重计。独审发现 result_ready 先于已知 COUNT 入账，c412 最小交换顺序及新单项 RED→GREEN 保留 COUNT／usage／关闭回执；两处 cleanup guard 与作者实际 tested module 差异和准备失败原件明确记录。[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)限定为下一正式 CPU 候选，控制器最终组合及实际服务／作者／模型资格另验，正式预算 0。当前 a503 工程源不变，无服务器、模型或租约动作。
+
 ## 2026-10-20：发布固定 a503 的六个有限链模型资格
 
 唯一GPU owner按原164／130分钟授权完成Core、Ray、Daft各M→F→E与E→M，原LOTUS replay／knownusage／完整关系和独立物理退出通过；[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)保存唯一允许列表摘要、配置清单SHA与逐次原值。27实际／30永久额度不退款，旧12账本不变，未用修复或模型重跑。Ray E→M的pending瞬态后自然完成，取消检查在signal前因已有终态停止；只读诊断不据此改代码。完整整批归档定位后补，不扩为正式性能结论。

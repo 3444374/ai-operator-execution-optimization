@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-20：[下一正式 Q3 adapter 与观察接点 CPU 候选](diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)。原生 LOTUS e0b4／IMLane c211 两文件交付各保留原 SHA，作者 47／38 含共同旧 Movie27，不累加成独立用例；全120行 p1／p2 仅合成响应差分。共享 COUNT 先记录再发 result_ready 的单条 RED→GREEN 保留，observer guard 新组合与作者旧 tested module 分列。正式控制器、原生服务／作者新模型资格和预算另验；a503 工程源不切换。
+
 2026-10-20：[固定a503六个有限链模型单元](diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)。运行组engineering-20261020-r1的Core／Ray／Daft非空MFE与EM全部通过，27实际／30永久额度，原LOTUS messages／parser／用量／关系与物理结清分列；唯一允许列表摘要绑定85ef1453清单，整批完整归档后补，不重复模型。Ray瞬态pending已自然完成且未发signal，旧负结果与预算不改。不是正式SemBench或性能结果。
 
 2026-10-20：[a503单次取消交接观测与保守unknown验收](diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)。新cap1已耗尽，完整关联／原生进入返回与已观察物理退出通过；false RPC、关闭接管与held-ref1分列，旧r2及旧账本不改。

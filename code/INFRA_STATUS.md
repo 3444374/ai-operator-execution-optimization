@@ -2,6 +2,8 @@
 
 ## 2026-10-20：资格补验与有限收口
 
+[正式 Q3 候选组件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)在独立候选接纳原生 LOTUS／IMLane 新 adapter、可选 Movie observer 与 supervisor monitor。作者 47／38 项 CPU 原件分列复用，不重复计数；新共享 COUNT 回调反例修后单项通过。当前 a503 工程包不变，正式 controller／manifest 最终组合及新服务、作者、模型资格仍 pending，正式预算 0。
+
 固定a503的[六个有限链模型单元](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)已通过Core／Ray／Daft的非空M→F→E与E→M及原LOTUS replay／独立物理退出，补齐该有限profile；原失败与helper、IMLane公开CLI及正式性能范围分列。
 
 固定a503的[取消交接观测](../experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)已完成单次cap1；原RPC false／关闭接管／原生调用／物理退出分列，逻辑unknown／held-ref1按合同保留，旧r2不升级。

@@ -4,6 +4,8 @@
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
+[text/frameworks/lotus_native_local_model.py](text/frameworks/lotus_native_local_model.py)保留原 LOTUS LM 与 LiteLLM batch 调用，由每查询私有本地 HTTP 服务承接；HTTP 与 embedded 引擎的边界分列。与[IMLane 正式 Q3 adapter](../experiments/imlane_movie_formal.py)共用已 claim 的查询上下文和观察事件；当前只完成[CPU 候选组件](../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)，不借旧服务或模型资格。
+
 [Movie Q3 records](../semantic_methods/lotus/README.md#movie-q3-records-最小切片)提供原生 Ray Data 与
 [Daft Native process 图](text/frameworks/daft_lotus_records.README.md)，各自拥有准备、传输与模型执行接点。
 有限链的[显式 Extract 关系布局](../../../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)
