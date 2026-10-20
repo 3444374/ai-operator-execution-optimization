@@ -688,3 +688,20 @@ adapter保留原始HTTP响应，仅在model／请求关联、SDK内容、usage�
 本轮双独审及[紧凑来源记录](native_http_token_observation_20261020.json)绑定源码、官方静态文件、原RED／失败、最终CPU与锁／包。当前修补只消除本地回执合同缺口；真实installed-vLLM、HTTP与embedded的一次模板／实际IDs／decode／usage／质量和独立物理退出仍须由唯一GPU owner在已授权的同一Q3范围内验证。返回IDs增加的HTTP序列化／传输与观测成本计入实际计时，不假定协议成本相等。输出IDs可能含text中被stop／EOS处理掉的token，应按实际服务语义核对，不能把encode(text)当作原输出序列。
 
 600次资格及全部通过后条件正式4200次的既有授权不扩额；不借用工程164或重跑finite成功单元。本线程未启动服务器、模型、GPU或新账本，也不把旧idle状态作为本轮现场证明。Q1／Q2／Q3任务配置扩展保持独立来源。
+
+<a id="native-q3-runtime-20261020"></a>
+## 原生 HTTP 全120行模型观测与资格终验失败（2026-10-20）
+
+唯一GPU owner在冻结`85133c6f4a688efe03f80d2c1cac0cd214406782`上执行首个Native p1资格单元；540项锁仍为`fade0a104e48053437bc622f74fe8aaeb0fc07e10a870466db868a368567c79f`。固定执行CSV全2000行中，原Q3谓词命中120个发生项；模型为Qwen2.5-7B-Instruct／vLLM0.25.1，原LOTUS1.2.4、LiteLLM调度和批大小4保持。调用／质量／计时与归档摘要归[本次紧凑记录](native_q3_runtime_20261020.json)。
+
+实际POST、HTTP回执和成功调用均120，无missing／failed／unknown调用。每条ledger实际prompt／output IDs与原始HTTP数组逐项相同；owner离线核对一次模板输入及实际输出decode，120条全部通过，没有重新encode补作实际IDs。known usage为14566输入＋480输出＝15046 tokens。原parser默认／歧义均0，COUNT为7、gold为14，原relative_error为0.5；原提示、判定与评价未更改，不称质量通过。
+
+原查询`completed`、Native close为`closed`、原supervisor为`passed`；**私有资格campaign仍为`failed`**。独立unit-final全库存门报告foreign Python／Ray／model work，但在抛错前未保存原始库存和资源现场，故当时PID、出生身份及归属均unknown。事后库存无foreign work、133个已观察出生身份全部退出，不能证明原断言误报，也不能补写缺失现场；未向foreign进程发信号。原失败、缺口和审计均保留，后验token审计不提升campaign状态。
+
+owner收尾核对GPU为1MiB／compute空、SHM及活动RPC为0、精确本次lease释放，旧13账本SHA不变。这些是本次有限观察的收据，不是未采集进程或后续现场的证明。永久预留120次／已claim一个120次查询单元，实际模型调用120次；无退款／重试。其他四臂未启动，余480未分配且不解释为重跑授权；正式35查询／4200次均未启动。
+
+含服务冷启动的query为77.43545482307673s（不含评价），含评价和close的query report为79.28763950895518s；supervisor完整单元85.25919562298805s，外层controller92.42706632614136s。没有resident latency、正式重复、跨框架或尾延迟结论。
+
+完整私有归档`q3-85133c6f-r1-runtime-evidence-20261020.tar.gz`为976704B／161成员，SHA-256为`29f022b63b993ea38ec10fe44367d34ef4616ac4b1fc2409ce65a27b3ae79d8c`；root只读逐项核同160份载荷、120条raw HTTP关联和不可变只读SQLite，未重跑模型或decode。原始交付和定位清单通过获批artifact交接取得，原始服务器字段不进Git。
+
+后续最小修补仅限私有终验：先持久化原始库存、资源及offender身份，再执行原fail-closed断言，并用无模型CPU检查通过／失败路径；该修补在本报告中仍为待完成。若需Native复验，owner建议另列120次／870秒／零自动重试的新授权，保留本次120；本报告不批准执行。生产851、原生调度、其他四臂和条件正式门均保持。

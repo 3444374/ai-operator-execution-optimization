@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-原生LOTUS HTTP新增[实际token IDs观测合同](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)：原调度／generation保持，缺失IDs保留usage并失败；CPU与锁／包已绑定，真实HTTP资格仍单独验证，旧514不改写。
+原生LOTUS HTTP的[全120行模型观测](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-q3-runtime-20261020)已核同实际IDs／一次模板／decode及known usage；首个Native资格campaign因私有终验库存门失败保持failed，原失败现场未持久化、归属unknown。其他四臂和正式查询未启动，原514／851冻结源码不改写；后续仅准备私有证据留存修补，不借余480重跑。
 
 ## 2026-10-20：资格补验与有限收口
 

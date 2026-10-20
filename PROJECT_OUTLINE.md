@@ -1,6 +1,6 @@
 # 项目大纲
 
-[下一正式 Q3 候选](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)已完成五臂配置／有限控制器的 CPU 接纳与来源锁；真实资格和正式预算仍待独立批准，不构成正式性能成绩。
+[正式 Q3 候选](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)已完成五臂配置／有限控制器的CPU接纳与来源锁；冻结851的[首个Native全120行模型观测](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-q3-runtime-20261020)通过实际IDs审计，但资格campaign因私有终验库存门失败保持failed。其余四臂和条件正式尚未启动，无正式性能成绩。
 
 固定a503的[六个有限链模型单元](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)已补齐Core／Ray／Daft的非空M→F→E与E→M；各源旧失败保留，helper／IMLane公开CLI及正式性能继续按独立profile验证。
 

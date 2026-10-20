@@ -1,0 +1,235 @@
+{
+  "schema": "semloom.native_q3_runtime_observation.v1",
+  "run_id": "q3-85133c6f-qualification-r1-lotus-native",
+  "source_commit": "85133c6f4a688efe03f80d2c1cac0cd214406782",
+  "source_lock_sha256": "fade0a104e48053437bc622f74fe8aaeb0fc07e10a870466db868a368567c79f",
+  "packet_sha256": "adececd0cfe939a7ef41f28d4cb3f5cd799b5a3f5fc2c4f85348063e79fd4185",
+  "source_runtime_unchanged_by_report": true,
+  "input": {
+    "task": "movie-q3",
+    "profile": "historical_sf2000",
+    "csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "source_rows": 2000,
+    "eligible_rows": 120,
+    "official_csv_whole_table_identity_claimed": false
+  },
+  "model": {
+    "name": "Qwen2.5-7B-Instruct",
+    "served_alias": "openai/qwen2.5-7b",
+    "vllm_version": "0.25.1",
+    "python_version": [
+      3,
+      12,
+      3
+    ],
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 4096,
+    "gpu_memory_utilization": 0.8,
+    "artifacts": {
+      "model_config": {
+        "sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+        "bytes": 663
+      },
+      "tokenizer_config": {
+        "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+        "bytes": 7305
+      },
+      "tokenizer": {
+        "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+        "bytes": 7031645
+      },
+      "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f"
+    }
+  },
+  "method": {
+    "lotus_commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0"
+    },
+    "native_lm_max_batch_size": 4,
+    "native_dispatch_retained": true,
+    "instruction_changed": false,
+    "generation_changed": false,
+    "parser_decisions_changed": false
+  },
+  "generation": {
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 0,
+    "stop": [
+      "\n"
+    ],
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "logprobs": null,
+    "response_format": null
+  },
+  "execution": {
+    "started_utc": "2026-10-20T13:13:58.028628+00:00",
+    "controller_exit": 1,
+    "outer_elapsed_s": 92.42706632614136,
+    "qualification_elapsed_s": 88.35179968504235,
+    "qualification_status": "failed",
+    "native_query_status": "completed",
+    "native_supervisor_status": "passed",
+    "native_close_status": "closed",
+    "other_four_units_started": false,
+    "formal_started": false,
+    "qualification_status_not_promoted": true
+  },
+  "calls": {
+    "http_send_attempts": 120,
+    "http_receipts": 120,
+    "expected": 120,
+    "recorded": 120,
+    "missing": 0,
+    "succeeded": 120,
+    "failed": 0,
+    "unknown": 0,
+    "submission_confirmed": 120,
+    "submission_unconfirmed": 0
+  },
+  "actual_token_observation": {
+    "source": "vllm_http_response",
+    "raw_http_arrays_equal_call_ledger_all120": true,
+    "owner_single_template_and_decode_audit": "passed120",
+    "actual_ids_reencoded": false,
+    "root_template_or_decode_audit_rerun": false,
+    "known_usage": {
+      "prompt_tokens": 14566,
+      "known_prompt_tokens": 14566,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 480,
+      "known_completion_tokens": 480,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 15046
+    }
+  },
+  "quality": {
+    "positive_review_count": 7,
+    "original_gold": 14,
+    "original_metric": {
+      "relative_error": 0.5,
+      "absolute_error": 7.0,
+      "mean_absolute_percentage_error": 50.0
+    },
+    "classification": {
+      "true_positive": 7,
+      "false_positive": 0,
+      "true_negative": 106,
+      "false_negative": 7,
+      "invalid": 0,
+      "evaluated_rows": 120,
+      "missing_rows": 0,
+      "count_error_from_classifications": -7
+    },
+    "parser_defaults": 0,
+    "parser_ambiguous": 0,
+    "quality_pass_claimed": false
+  },
+  "failure": {
+    "action": "independent unit-final full-inventory gate",
+    "error": {
+      "error_type": "RuntimeError",
+      "error": "foreign Python, Ray or model work was observed; nothing was signalled"
+    },
+    "foreign_process_identity": "unknown",
+    "process_family_or_ownership": "unknown; cannot classify as query child, existing user process, or sampling misclassification",
+    "evidence_limit": "unit_final called host.idle, which raised before independent-physical.json and raw failing snapshot/resources were saved. No PID/birth/cmdline offender evidence survives for that instant. Later campaign-final and independent inventories had foreign_work empty; this does not prove the original assertion was false.",
+    "original_attempt_retained": true,
+    "automatic_approval_denial": false
+  },
+  "postfailure_physical_observation": {
+    "status": "complete_after_independent_reconciliation",
+    "observed_owned_identities": 133,
+    "all_observed_absent": true,
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "shm": 0,
+    "active_query_rpc": 0,
+    "leases_present": 0,
+    "exact_owned_lease_released": true,
+    "no_foreign_process_signals": true,
+    "original_failed_campaign_unchanged": true
+  },
+  "missing_failure_snapshot_reconstructed": false,
+  "accounting": {
+    "actual_http_send_attempts": 120,
+    "http_receipts": 120,
+    "actual_model_calls": 120,
+    "succeeded": 120,
+    "failed": 0,
+    "unknown": 0,
+    "missing": 0,
+    "permanent_reserved": 120,
+    "permanent_claimed_units": 1,
+    "qualification_limit": 600,
+    "unallocated": 480,
+    "unallocated_is_not_retry_authorization": true,
+    "formal_calls": 0,
+    "formal_limit": 4200,
+    "no_refunds": true,
+    "no_retries": true,
+    "budget_sqlite_integrity": "ok",
+    "budget_sqlite_sha256": "2296212235c3f8e4618fdf5d2191deab0a93ab4cdf1ba0e275a805f3b72f23ee",
+    "old13_ledgers_unchanged": true,
+    "old_unknown_cancellation_preserved": true
+  },
+  "timing": {
+    "query_cold_start_included_s": 77.43545482307673,
+    "resident_latency_available": false,
+    "evaluation_in_query_seconds": false,
+    "query_report_including_evaluation_and_close_s": 79.28763950895518,
+    "native_service_startup_s": 63.30018834816292,
+    "supervisor_complete_unit_s": 85.25919562298805,
+    "outer_controller_s": 92.42706632614136,
+    "formal_measurement": false,
+    "no_cross_framework_or_P99_claim": true
+  },
+  "followup": {
+    "private_inventory_persist_before_assert_fix": "pending_not_implemented_in_this_report",
+    "cpu_success_and_failure_paths": "pending",
+    "native_revalidation_proposal": {
+      "native_calls": 120,
+      "max_wall_s": 870,
+      "automatic_retries": 0,
+      "requires_explicit_authorization": true,
+      "reason": "Current Native qualification remains failed; unused480 does not authorize repeating it."
+    },
+    "execution_authorized_by_this_report": false,
+    "no_production_change_requested": true,
+    "unused480_authorizes_retry": false
+  },
+  "evidence": {
+    "owner_handoff_sha256": "e2ffa05898c0044ceff34288d37352e3510bcc8625aa8978759d4bca06857518",
+    "archive": {
+      "bytes": 976704,
+      "sha256": "29f022b63b993ea38ec10fe44367d34ef4616ac4b1fc2409ce65a27b3ae79d8c",
+      "members": 161,
+      "manifest_sha256": "414d2f6d61698c7a9893e9304cec1ddf78b7a5b56c6631b41bd4c4a96cc88db9",
+      "files_verified": 160
+    },
+    "private_archive_basename": "q3-85133c6f-r1-runtime-evidence-20261020.tar.gz",
+    "private_retrieval": "Approved artifact handoff by run_id and SHA-256; raw server-identifying fields are not published.",
+    "original_query_sha256": "3cd2ef0a81ffb3d5f44d3c59845a781cf28b511256f234a0de78b64e4d17fa58",
+    "original_campaign_sha256": "f3783453a61da3428d7eb372625fd068f2cb668cd7ce0b41a9d1f8e190fb2d55",
+    "postmortem_token_audit_sha256": "3d247318d1a960536e831cf169166c82dfa5f695712e4fb723c9f81e54f0b66c",
+    "postfailure_final_idle_sha256": "c4a4bdecb4e35f00aa2564626f1fcedd06ef897720cd7e826a8af95ae382790f",
+    "root_readonly_reconciliation_sha256": "231ec4f213fea7b0a323269368ca1080d35a3b5e28206fc2a1ac482446c17211",
+    "root_verifier_sha256": "be47692e016ee567992279c127a0f599dec59a3fce6a8ffd0e1824ba97ac851a"
+  },
+  "reporting_scope": {
+    "all_five_qualification_passed": false,
+    "formal35_started": false,
+    "formal4200_calls": 0,
+    "cross_framework_comparison_claimed": false,
+    "resident_or_tail_latency_claimed": false,
+    "root_server_or_model_or_budget_actions": 0
+  }
+}

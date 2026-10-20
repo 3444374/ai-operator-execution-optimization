@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：登记Native全120行模型观测与资格终验失败
+
+在独立报告分支只读核验冻结851的完整161成员归档／160载荷、120条HTTP实际IDs关联及SQLite：120实际调用、120永久预留、1个查询claim，known usage14566＋480。owner一次模板／decode审计通过，原COUNT7／gold14／relative_error0.5保留。查询completed／Native closed／原supervisor passed与私有campaign库存门failed分列；原foreign身份及失败现场缺失，事后133观察身份退出不反推误报。[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-q3-runtime-20261020)说明其他四臂／正式未执行、余480不作重跑授权，以及私有留存修补和新Native120／870秒复验仅为待办建议。此次整合无生产源码、服务器、模型或账本动作，原514／851及Q123候选保持。
+
 ## 2026-10-20：原生HTTP实际token IDs协议缺口
 
 在独立fix/native-http-token-receipts中只增加vLLM观测字段及已关联成功回执的实际数组校验，不改原LOTUS／LiteLLM调度或采样；Native24项和公开worker1项CPU通过，原RED、测试修正与独审修复保留。540锁只改native一项，新的103成员准备包独立保存；[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)统一登记。原514未改、资格仍需实机；本线程模型／服务器／预算0，不增加已授权4800范围，不混入Q1Q2扩展。
