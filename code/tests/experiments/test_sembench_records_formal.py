@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
-from src.experiments.sembench_records_formal import QueryClock, main, parser_audit, select_profiles, validate_result
+from src.experiments.sembench_records_formal import QueryClock, main, parser_audit, select_profiles, validate_result, validate_runtime_qualification
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, identity
@@ -91,6 +91,14 @@ class CampaignContractTests(unittest.TestCase):
     def test_cpu_fixture_is_not_model_qualification(self):
         with self.assertRaisesRegex(ValueError, "cannot qualify"):
             validate_result(dict(status="completed", inference_calls=0), [identity("q", "r", 0)])
+
+    def test_old_or_cpu_preflight_does_not_qualify_new_source(self):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "preflight.json"
+            for value in (dict(status="ok"), dict(status="ok", qualification_kind="cpu", actual_model_calls=0)):
+                path.write_text(json.dumps(value))
+                with self.assertRaisesRegex(ValueError, "CPU/old"):
+                    validate_runtime_qualification(path)
 
     def test_default_parser_use_is_audited_without_changing_original_policy(self):
         from src.serving.backends.vllm_engine import GenerationSpec

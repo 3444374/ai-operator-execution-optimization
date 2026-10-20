@@ -110,6 +110,28 @@ def check(root):
         units=len(schedule["units"]), formal_execution_authorized=False)
 
 
+def validate_runtime_qualification(path):
+    """An old status-only or CPU report cannot qualify the new executable source."""
+    report = read(path)
+    locked, plan = read(CONFIG_ROOT / "source.lock.json"), read(CONFIG_ROOT / "comparison.json")
+    backends = {"lotus-native", "semloom-core", "ray-data", "daft", "imlane"}
+    if (report.get("schema") != "semloom.sembench_records_runtime_qualification.v1"
+            or report.get("status") != "ok" or report.get("qualification_kind") != "real_model"
+            or report.get("runtime_source_lock_sha256") != sha(CONFIG_ROOT / "source.lock.json")
+            or report.get("model_identity_evidence_sha256") != locked["model_identity_evidence_sha256"]
+            or report.get("sembench_commit") != plan["sembench"]["commit"]
+            or report.get("input_csv_sha256") != plan["input"]["csv_sha256"]
+            or set(report.get("backends", {})) != backends):
+        raise ValueError("current-source real-model qualification identity required; CPU/old reports are insufficient")
+    for backend, evidence in report["backends"].items():
+        if (evidence.get("status") != "passed" or type(evidence.get("real_model_calls")) is not int
+                or evidence["real_model_calls"] <= 0 or evidence.get("physical_exit_confirmed") is not True
+                or evidence.get("quality_comparable") is not True
+                or sha(evidence["evidence_path"]) != evidence.get("evidence_sha256")):
+            raise ValueError(backend + " requires positive real calls, bound evidence, comparable quality and physical exit")
+    return report
+
+
 def validate_authorization(root, authorization):
     schedule, runtime = check_package(root)
     value = read(authorization)
@@ -124,8 +146,7 @@ def validate_authorization(root, authorization):
             or value["runtime_preflight_sha256"] != sha(runtime["runtime_preflight_report"])):
         raise ValueError("formal authorization must exactly bind the reviewed package/source/runtime/budget")
     AttemptBudget(value["budget_id"], value["limit_calls"])
-    if read(runtime["runtime_preflight_report"]).get("status") != "ok":
-        raise ValueError("current successful runtime preflight required")
+    validate_runtime_qualification(runtime["runtime_preflight_report"])
     if check(root)["blockers"]:
         raise ValueError("formal adapters/runtime are not ready")
     return value

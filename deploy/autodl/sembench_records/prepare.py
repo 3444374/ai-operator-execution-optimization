@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
@@ -66,8 +67,10 @@ def prepare(args):
         raise ValueError("fixed-input Q3 relation/source positions differ from upstream")
     root = Path(args.output_dir).resolve()
     new_private_directory(root)
+    projection_started = time.monotonic()
     manifest = prepare_movie_source(args.input_csv, root / "input", expected_csv_sha256=plan["input"]["csv_sha256"],
         max_rows=plan["input"]["max_rows"], role=plan["input"]["role"])
+    projection_seconds = time.monotonic() - projection_started
     source = MovieRecordSource.from_manifest(manifest)
     source_report = source.preflight(FilterMethod.from_dict(plan["method"]))
     count = source_report["eligible_rows"]
@@ -78,6 +81,7 @@ def prepare(args):
     emit = lambda name, value: write_private_json(root / name, value)
     emit("runtime-binding.json", runtime)
     emit("source.json", dict(source_report, preparation_only=True,
+        offline_projection_seconds=projection_seconds, offline_projection_timing_scope="prepare_movie_source only; full input validation preceding projection is excluded",
         upstream_csv_sha256=digest(args.upstream_csv), eligible_full_rows_and_positions_equal=True,
         whole_csv_equal=digest(args.input_csv) == digest(args.upstream_csv),
         differing_full_rows=sum(a != b for a, b in zip(fixed, original, strict=True)),
@@ -178,6 +182,7 @@ def prepare(args):
         source_commit=plan["source_commit"], production_reference_commit=plan["production_reference_commit"],
         checked_out_commit=subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True).strip(),
         checked_out_dirty=bool(subprocess.check_output(["git", "-C", str(REPO), "status", "--porcelain"], text=True).strip()),
+        versions=plan["versions"], sembench_commit=plan["sembench"]["commit"],
         sembench_checkout=str(checkout),
         runtime_source_lock_sha256=digest(HERE / "source.lock.json"),
         runtime_binding_status=runtime["binding_status"], model_identity=plan["model"],

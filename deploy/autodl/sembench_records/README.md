@@ -104,6 +104,12 @@ authorization schema为`semloom.sembench_records_authorization.v1`，字段为`a
 `limit_calls`4200、`max_wall_s`30150、`package_integrity_sha256`、`runtime_source_lock_sha256`与`runtime_preflight_sha256`。
 文件在Git外由批准后的运行owner提供；没有该文件或字节不符则拒绝。`worker`是外层监督的内部入口，还检查
 原授权、包/配置身份、祖先拥有的normal lease和一次性预算claim；不能借worker绕过controller。
+`runtime_preflight_report`须为集成者审查后的`semloom.sembench_records_runtime_qualification.v1`汇总：
+`status=ok`、`qualification_kind=real_model`、当前`runtime_source_lock_sha256`、
+`model_identity_evidence_sha256`、`sembench_commit`、`input_csv_sha256`，并在`backends`覆盖全部五个ID。
+每臂记录`status=passed`、正整数`real_model_calls`、`physical_exit_confirmed=true`、`quality_comparable=true`，
+以及原始证据绝对路径`evidence_path`和`evidence_sha256`。旧status-only或CPU报告会在预算创建前拒绝。
+该汇总是现有实机证据的审查绑定，不能伪填通过；不能因此扩大164工程owner额度。
 控制器使用现有SQLite cell ledger，每查询永久预留120、worker只claim一次；无退款、重启或隐式续跑。
 RSS/SHM/CPU亲和性监测回调仅停止本次supervisor已观察的owned进程；SHM是独占lease下全机用量增量的保守观测，
 不声称内核硬限或未观察detached进程已退出。失败原件保留，责任不明则normal lease留在held状态。
