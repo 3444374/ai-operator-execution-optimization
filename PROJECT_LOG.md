@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：独立Movie任务通用化候选
+
+以851独立分支选择接纳作者1381／ed470，统一MovieTask选择Q1/Q2/Q3，五后端与scheduler不新增策略；保留已审HTTP实际IDs观测。独审P2揭示原数值reviewId被字符串化，独立原CSV与gold的两反例RED→GREEN；孤儿import和通用计时／预算文案一并最小收口。固定541锁下35项受影响CPU、12个满规模worker组合通过，作者114仅分列复用。三个107成员新包与CLI默认资格门核同；[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#movie-task-switching-cpu-20261020)统一记录。Q1/Q2的84800调用仍仅提案、分配0；未改851实机源或花4800Q3／164工程预算。
+
 ## 2026-10-20：原生HTTP实际token IDs协议缺口
 
 在独立fix/native-http-token-receipts中只增加vLLM观测字段及已关联成功回执的实际数组校验，不改原LOTUS／LiteLLM调度或采样；Native24项和公开worker1项CPU通过，原RED、测试修正与独审修复保留。540锁只改native一项，新的103成员准备包独立保存；[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)统一登记。原514未改、资格仍需实机；本线程模型／服务器／预算0，不增加已授权4800范围，不混入Q1Q2扩展。

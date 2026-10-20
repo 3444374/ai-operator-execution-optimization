@@ -4,6 +4,8 @@
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
+[MovieTask](text/movie_tasks.py)绑定Q1/Q2/Q3的输入谓词、原提示、源序head5或COUNT与原评价；[统一任务配置](../../../deploy/autodl/sembench_records/README.md#统一任务选择)复用既有五臂Filter，源码锁／实机资格／预算随任务独立绑定。
+
 [text/frameworks/lotus_native_local_model.py](text/frameworks/lotus_native_local_model.py)保留原 LOTUS LM 与 LiteLLM batch 调用，由每查询私有本地 HTTP 服务承接；HTTP 与 embedded 引擎的边界分列。与[IMLane 正式 Q3 adapter](../experiments/imlane_movie_formal.py)共用已 claim 的查询上下文和观察事件；当前只完成[CPU 候选组件](../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)，不借旧服务或模型资格。
 
 [Movie Q3 records](../semantic_methods/lotus/README.md#movie-q3-records-最小切片)提供原生 Ray Data 与

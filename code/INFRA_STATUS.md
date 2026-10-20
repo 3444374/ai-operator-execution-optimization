@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+[Movie任务切换CPU组合](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#movie-task-switching-cpu-20261020)已接纳Q1/Q2/Q3显式配置并保留HTTP token观测。原业务ID类型P2的独立原CSV／gold回归修后通过；541锁、35项受影响CPU及12个满规模公共worker组合核同。三个新包均未获实机资格，Q1/Q2模型预算未分配；851冻结Q3保持独立。
+
 原生LOTUS HTTP新增[实际token IDs观测合同](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)：原调度／generation保持，缺失IDs保留usage并失败；CPU与锁／包已绑定，真实HTTP资格仍单独验证，旧514不改写。
 
 ## 2026-10-20：资格补验与有限收口

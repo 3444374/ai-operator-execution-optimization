@@ -1,0 +1,292 @@
+{
+  "schema": "semloom.movie_task_switching_cpu.v1",
+  "status": "CPU_verified_runtime_and_model_qualification_pending",
+  "candidate_parent_commit": "85133c6f4a688efe03f80d2c1cac0cd214406782",
+  "author_commits": [
+    "1381d26de9f8772c57b7d42051b9756f2c4ebb7b",
+    "ed470bc56fd241065d7be4f9a921e9122acd9fdc"
+  ],
+  "applied_commits": [
+    "63c3d77aa2cf167ed992c2d3a69bb11f53bacf9a",
+    "2a5624a4c48525bb76b0879247be6d10603c3df4"
+  ],
+  "runtime_source_commit": "dd6ed8dbbda6f089995848d5e3e0f1aa33db80a3",
+  "runtime_source_lock_sha256": "dc129a4a7ab1a1e747d2c5128fb4024aaa9fbe25732bf3159afdb15ec27ab218",
+  "runtime_entries": 541,
+  "tasks": {
+    "movie-q1": {
+      "input_profile": "official_sf2000",
+      "filter_occurrences": 2000,
+      "sink": "source_order_head5_reviewId"
+    },
+    "movie-q2": {
+      "input_profile": "historical_sf2000",
+      "filter_occurrences": 120,
+      "sink": "source_order_head5_reviewId"
+    },
+    "movie-q3": {
+      "input_profile": "historical_sf2000",
+      "filter_occurrences": 120,
+      "sink": "COUNT"
+    }
+  },
+  "native_backends": [
+    "lotus-native",
+    "semloom-core",
+    "ray-data",
+    "daft",
+    "imlane"
+  ],
+  "execution_backend_or_scheduler_added": false,
+  "Core_Ray_Daft_scheduler_source_changed": false,
+  "HTTP_actual_ID_observation_preserved": true,
+  "input_identities": {
+    "official_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+    "historical_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "official_git_blob": "710028a863dbf04853e45a3e618113dff7521b4d",
+    "differing_source_positions": 360,
+    "multiset_excess_each_side": 11,
+    "Q2_Q3_eligible_whole_rows_positions_equal": 120,
+    "historical_provenance_reused": true,
+    "generation_environment_difference_not_reconstructed": true
+  },
+  "closed_review_findings": [
+    {
+      "priority": "P2",
+      "finding": "Q1/Q2 business reviewId stringification changed original typed result/gold and was hidden by same transformed-frame differential",
+      "fix": "Restore int64-compatible business IDs only for exact SHA-pinned SemBench roles after full validation; physical CSV and software fixture text IDs unchanged",
+      "red": {
+        "tests": 1,
+        "failing_subtests": 2,
+        "source": "0450c26cb6aad39bd54190a8ca05b731d4d59e01"
+      },
+      "green_in_final_35": true
+    },
+    {
+      "priority": "P3",
+      "finding": "new orphaned imports after task ownership moved",
+      "fixed": true
+    },
+    {
+      "priority": "P3",
+      "finding": "generic timing and authorization wording still said COUNT/4200",
+      "fixed": true
+    }
+  ],
+  "CPU": {
+    "author_unique_tests_reused": 114,
+    "author_evidence": {
+      "file": "HANDOFF.json",
+      "bytes": 13792,
+      "sha256": "60eecd25114e70c6e08035d69e6d2a2fdc3fcfba91ba0af31dac5d4f14e7171e"
+    },
+    "root_affected_tests": 35,
+    "root_composition": "Native24 plus task11, including one new original-CSV/gold case with two Q1/Q2 subtests",
+    "root_failures": 0,
+    "root_errors": 0,
+    "root_skips": 0,
+    "public_worker_configurations": 12,
+    "full_rows_per_task": [
+      2000,
+      120,
+      120
+    ],
+    "backends_profiles": [
+      "lotus-native p1/p2",
+      "imlane p1/p2"
+    ],
+    "parity": [
+      "messages",
+      "decisions",
+      "result",
+      "usage",
+      "original evaluator",
+      "LM statistics"
+    ],
+    "author_Daft_real_process_fixture_switch_reused": {
+      "file": "verification.json",
+      "bytes": 1681,
+      "sha256": "a611ba1bef221dc313bd21a818c4751d4f1e7f06fe917dfb2b7d4feac07b9b0e"
+    },
+    "do_not_add_overlapping_or_repeated_counts": true,
+    "synthetic_HTTP_author_hardware_budget_fixtures": true,
+    "actual_model_quality_or_token_qualification": false
+  },
+  "packages": [
+    {
+      "task": "movie-q1",
+      "integrity_members": 107,
+      "integrity_sha256": "12b07288bd382da6b647f209166083f43f3934e5ee07018394998eed9552a197",
+      "checked_out_commit": "d9c5f231ed460aba0e9ea5b5db5b87a79fbc537b",
+      "formal_calls_upper": 70000,
+      "public_check_expected_exit": 2,
+      "public_check_blockers": [
+        "runtime binding is not current_runtime_qualified"
+      ],
+      "all_hashes_match": true,
+      "formal_ready": false,
+      "actual_model_calls": 0,
+      "budget_claims": 0
+    },
+    {
+      "task": "movie-q2",
+      "integrity_members": 107,
+      "integrity_sha256": "7793528696ee7e60f60a6c41ff7c5e75cfce9e148305ea48c7078c38e245f34f",
+      "checked_out_commit": "d9c5f231ed460aba0e9ea5b5db5b87a79fbc537b",
+      "formal_calls_upper": 4200,
+      "public_check_expected_exit": 2,
+      "public_check_blockers": [
+        "runtime binding is not current_runtime_qualified"
+      ],
+      "all_hashes_match": true,
+      "formal_ready": false,
+      "actual_model_calls": 0,
+      "budget_claims": 0
+    },
+    {
+      "task": "movie-q3",
+      "integrity_members": 107,
+      "integrity_sha256": "9688eeeeac339c48b66e6cd7018e16fbdca8d9962c3ebe3945101afccddaf8cc",
+      "checked_out_commit": "d9c5f231ed460aba0e9ea5b5db5b87a79fbc537b",
+      "formal_calls_upper": 4200,
+      "public_check_expected_exit": 2,
+      "public_check_blockers": [
+        "runtime binding is not current_runtime_qualified"
+      ],
+      "all_hashes_match": true,
+      "formal_ready": false,
+      "actual_model_calls": 0,
+      "budget_claims": 0
+    }
+  ],
+  "all_package_member_checks_passed": true,
+  "public_check_runtime_gate_expected_exit": 2,
+  "public_check_runtime_gate": "runtime binding is not current_runtime_qualified",
+  "formal_ready": false,
+  "failure_preservation": {
+    "original_author_findings_and_failures_retained": true,
+    "root_first34_font_guard_failures": 8,
+    "harness_fix": "Preload the trusted evaluator dependency before tests; process/network guard not relaxed",
+    "root_first34_not_reported_as_passed": true,
+    "original_typed_ID_two_subtest_RED_retained": true
+  },
+  "budget": {
+    "Q1_comparison_proposal": 70000,
+    "Q2_comparison_proposal": 4200,
+    "Q1_Q2_comparison_proposal": 74200,
+    "Q1_Q2_full_qualification_proposal": 10600,
+    "Q1_Q2_total_proposal": 84800,
+    "allocation": 0,
+    "Q3_4800_authorization_reusable": false,
+    "engineering164_reusable": false,
+    "per_task_comparison_stop_ceiling_s": 30150,
+    "new_task_completion_estimate_calibrated": false
+  },
+  "scope_preserved": {
+    "frozen514_or851_source_modified": false,
+    "historical_failures_or_ledgers_rewritten": false,
+    "main_or_integration_merged": false,
+    "models": 0,
+    "server_commands": 0,
+    "GPU": 0,
+    "real_reserve_or_claims": 0
+  },
+  "raw_receipts": [
+    {
+      "evidence_key": "source-lock-combination.json",
+      "file": "source-lock-combination.json",
+      "bytes": 879,
+      "sha256": "4c9e9749fc58d88716ae3cdcb98bd965e8aa17a57acd39ee02432b690ff56a37"
+    },
+    {
+      "evidence_key": "source-lock-cleanup.json",
+      "file": "source-lock-cleanup.json",
+      "bytes": 614,
+      "sha256": "06155f6dddc9adaa565a9a1f7ef7b2a0a79becd987457534bbc8f1fd21c30491"
+    },
+    {
+      "evidence_key": "source-lock-final-runtime.json",
+      "file": "source-lock-final-runtime.json",
+      "bytes": 472,
+      "sha256": "220126cec5d341cc193d386ed11747d86f2b1588f6196532aeb07fbd7b064b4e"
+    },
+    {
+      "evidence_key": "standards-review.json",
+      "file": "standards-review.json",
+      "bytes": 4983,
+      "sha256": "38ce3d3f4f3e000cb6e3df116a7236b0d326a328fffb5f686d5577266b1d0b51"
+    },
+    {
+      "evidence_key": "standards-source-combination.json",
+      "file": "standards-source-combination.json",
+      "bytes": 2393,
+      "sha256": "b21b2b787b1cd39902babe5a785d1cff74ca394386b265047ee5be6cfed383ad"
+    },
+    {
+      "evidence_key": "spec-review.json",
+      "file": "spec-review.json",
+      "bytes": 9997,
+      "sha256": "fa5f2d5501cf8b11b5902a1c3aee66bafc1725bdda62ef3e0d8e00a45efa73b6"
+    },
+    {
+      "evidence_key": "spec-addendum-r2.json",
+      "file": "spec-addendum-r2.json",
+      "bytes": 5871,
+      "sha256": "8d529f889153aa1bc65c11e1195e77690033713d7087361ceacd383f0401bbd6"
+    },
+    {
+      "evidence_key": "typed-review-ids-red-r1/verification.json",
+      "file": "verification.json",
+      "bytes": 766,
+      "sha256": "6b5f025106a280ce5bec227fc962290fe934e0fdf931c766b3bc7a2984361139"
+    },
+    {
+      "evidence_key": "typed-review-ids-red-r1/run.log",
+      "file": "run.log",
+      "bytes": 2353,
+      "sha256": "6ecb69d62974187308c925c22a678f409737a5ebf317e1147877bcded5741d3e"
+    },
+    {
+      "evidence_key": "combined-units-r1/verification.json",
+      "file": "verification.json",
+      "bytes": 764,
+      "sha256": "9c1a6b90b2c43bd78746dfc6a92093b5e29d3185a9b0d7b1e8c5e8b03f6b53f9"
+    },
+    {
+      "evidence_key": "combined-units-r1/run.log",
+      "file": "run.log",
+      "bytes": 85028,
+      "sha256": "4babc321149477ef804e9be799961a0a089b329830c1e9d7011e58e23b54d894"
+    },
+    {
+      "evidence_key": "combined-units-r2/verification.json",
+      "file": "verification.json",
+      "bytes": 766,
+      "sha256": "a05d587f07d5dd8cce73d0bbcf766a8ec7e99e2610e1eb7631f658b24b71c5dc"
+    },
+    {
+      "evidence_key": "combined-units-r2/run.log",
+      "file": "run.log",
+      "bytes": 19888,
+      "sha256": "d58f6a41d40b775dfb45b424fc4287fd31b1b7ebdd3b963f46cea7008ea186bf"
+    },
+    {
+      "evidence_key": "public-worker-full-r1/verification.json",
+      "file": "verification.json",
+      "bytes": 781,
+      "sha256": "ab6d79b65c393ec968573ad20fb0ea46efbe4f3f27e88ad67497d57a15d32f2a"
+    },
+    {
+      "evidence_key": "public-worker-full-r1/outputs/verification.json",
+      "file": "verification.json",
+      "bytes": 7809,
+      "sha256": "b9d1f7a16d5455f4cb48a7ddd6adffad76e5b2c264dcb02a11c6f926aa5508b3"
+    },
+    {
+      "evidence_key": "package-binding-r1.json",
+      "file": "package-binding-r1.json",
+      "bytes": 2127,
+      "sha256": "5a9e16e50bd6f61a1d82e388e209c392945c96aa0e38b6f56bc7c60bc29a513f"
+    }
+  ]
+}

@@ -688,3 +688,18 @@ adapter保留原始HTTP响应，仅在model／请求关联、SDK内容、usage�
 本轮双独审及[紧凑来源记录](native_http_token_observation_20261020.json)绑定源码、官方静态文件、原RED／失败、最终CPU与锁／包。当前修补只消除本地回执合同缺口；真实installed-vLLM、HTTP与embedded的一次模板／实际IDs／decode／usage／质量和独立物理退出仍须由唯一GPU owner在已授权的同一Q3范围内验证。返回IDs增加的HTTP序列化／传输与观测成本计入实际计时，不假定协议成本相等。输出IDs可能含text中被stop／EOS处理掉的token，应按实际服务语义核对，不能把encode(text)当作原输出序列。
 
 600次资格及全部通过后条件正式4200次的既有授权不扩额；不借用工程164或重跑finite成功单元。本线程未启动服务器、模型、GPU或新账本，也不把旧idle状态作为本轮现场证明。Q1／Q2／Q3任务配置扩展保持独立来源。
+
+<a id="movie-task-switching-cpu-20261020"></a>
+## Movie Q1／Q2／Q3 任务切换的独立 CPU 候选（2026-10-20）
+
+未来任务候选在851之上选择接纳作者1381／ed470，保留原生HTTP token观测。`MovieTask`和[任务配置](../../../../deploy/autodl/sembench_records/README.md#统一任务选择)统一绑定输入、原提示、完整Filter后源序head5／COUNT与原评价；Core、Ray Data、Daft、IMLane和原LOTUS继续拥有各自执行。Core／Ray／Daft及scheduler源码无改动，没有为Q1/Q2另造后端。
+
+Q1明确使用官方sf2000全部2000行；Q2/Q3保留历史输入的taken_3完整120行，后者与官方对应完整行及位置相同。两文件完整SHA和历史provenance分开；360位置／各11条多重集差异不被重写。head5只在全部Filter发生项结束后执行，保留原源序与重复业务ID。
+
+独审发现P2：原数值reviewId被字符串化，CPU差分同时转换两侧而未暴露原gold集合类型差异。新回归独立用原CSV的pandas类型与原gold／evaluator，Q1/Q2两个反例在0450源均RED；现在仅在两个SHA固定SemBench角色完成来源核验后恢复业务整数类型，物理CSV与软件fixture文本ID不变。原typed结果及评价修后核同。另清理新孤儿import，并把通用时钟／授权文案改为所选任务的完整结果和调用上界。
+
+作者114项CPU及其实际Daft进程UDF切换证据单列复用。集成组合35项（Native24＋任务11）全部通过、0skip；含新增类型回归，不能和114累加。另12个Native／IMLane公共worker配置（各任务p1/p2、满2000／120／120输入）对原查询的messages、逐行决策、结果、usage、原评价差分全部通过。HTTP、硬件和author carrier均为显式CPU替身，未产生真实模型调用。首轮34项中8项被测试守卫拒绝字体依赖初始化，修正仅预载受信依赖，网络／进程守卫未放宽；失败原件保留。
+
+最终运行源码为`dd6ed8dbbda6f089995848d5e3e0f1aa33db80a3`，541项锁SHA为`dc129a4a7ab1a1e747d2c5128fb4024aaa9fbe25732bf3159afdb15ec27ab218`。三个独立新包各107成员，clean d9c5准备及逐成员校验通过；公开check按预期仍在runtime未资格处返回2，模型／reserve／claim均为0。来源和失败／复核摘要见[紧凑记录](movie_task_switching_cpu_20261020.json)。
+
+新Q1/Q2比较74200＋单列资格10600＝84800调用只作提案，分配0；30150秒是每任务比较停止上限，不是完成时间估计。冻结514／851的Q3源码、已批4800及历史164工程范围独立，新候选不继承其模型资格或额度。没有服务器、GPU或正式执行；后续任务须重新绑定实际runtime、token／模板、原质量与物理退出资格。

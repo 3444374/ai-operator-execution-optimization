@@ -11,7 +11,7 @@ Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身�
 原生参照、Ray Data与静态参照的Qwen／单4090小切片已分别验证；static两查询同engine、隔离call IDs，原提示／token／usage／parser／COUNT与原评价一致。首次Native runner及Daft关闭失败保留，修正来源单列。普通Ray／Daft／静态／Core共用中性scan的CPU复用已验证；[冻结普通Core](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)另完成同引擎两query／四次真实调用。后续源码、有限链／级联模型、图像与持续供给仍分别待验，旧request资格保持独立。
 
 `LotusFilterMethod.prepare_rows()` 是 worker 本地方法接口；`FilterMethod` 为通用普通文本配置，
-默认参数兼容 Q3。Movie source／runner 独立严格绑定 Q3 instruction、default、True/False tokens、
+默认参数兼容 Q3。Movie source／runner 按[显式任务配置](../../../../deploy/autodl/sembench_records/README.md#统一任务选择)严格绑定 Q1/Q2/Q3 的 instruction、default、True/False tokens、
 system prompt、原 predicate 与 CSV schema；方法层继续拒绝 JSON 模式及 helper logprobs／repetition override。
 [共享引擎](../../serving/backends/README.md)另支持逐调用完整 `GenerationSpec` 与 `json_object`，供后续 Extract 选择；
 默认参数不变，每次调用独立构造采样参数。这项接口只有 CPU 合同资格，不继承上方固定源码的模型结果。
@@ -72,7 +72,7 @@ source 保留 `csv_path`、`preflight(method)`、`expected(query_id)`，并通�
 
 配置支持 `describe()`／`from_dict()` 的 JSON 往返，不承载通用 SQL 或执行图。
 source 拥有 schema、任务语义、来源和发生项预检；后端消费扫描值并使用自身的 scan/filter/select。
-`MovieRecordSource.scan_spec()` 每次先预检 Q3，再返回原五列 schema、`reviewText` 投影和 `id == taken_3`。
+`MovieRecordSource.scan_spec()` 每次先预检任务，再返回原五列 schema、`reviewText` 投影；Q1无源谓词，Q2/Q3保留 `id == taken_3`。
 通用列、旧 Q3、序列化 alias 和 Map→Filter 的 CPU 合同不扩展既有真实模型资格；冻结模型运行仍绑定其原源码。
 
 ## 原 helper-LM 全局级联与可选 Async

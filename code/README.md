@@ -1,5 +1,7 @@
 # SemLoom Code
 
+[Movie Q1/Q2/Q3任务选择](../deploy/autodl/sembench_records/README.md#统一任务选择)在独立CPU候选中复用现有五臂Filter；配置绑定输入、原提示、源序head5或COUNT及原评价，冻结Q3资格源码和预算保持独立。
+
 [下一正式 Q3 候选组件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-adapters-cpu-20261020)接纳原生 LOTUS 本地 HTTP 与 IMLane evaluator adapter、可选完整查询时钟及资源监控回调；仅复用 CPU 证据并修补 observer 丢失已知 COUNT 的反例。后续[有限控制器与来源锁](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#formal-controller-cpu-20261020)已完成 CPU 组合；实际运行资格另验，当前 a503 工程执行不切源。
 
 [Extract 后继](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)已完成 Core 同 worker 和 Ray／Daft 显式原生分段的 CPU 接线；默认末端 guard 保持，每段初始化成本明示。
