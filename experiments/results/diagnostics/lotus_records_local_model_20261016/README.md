@@ -705,3 +705,18 @@ owner收尾核对GPU为1MiB／compute空、SHM及活动RPC为0、精确本次lea
 完整私有归档`q3-85133c6f-r1-runtime-evidence-20261020.tar.gz`为976704B／161成员，SHA-256为`29f022b63b993ea38ec10fe44367d34ef4616ac4b1fc2409ce65a27b3ae79d8c`；root只读逐项核同160份载荷、120条raw HTTP关联和不可变只读SQLite，未重跑模型或decode。原始交付和定位清单通过获批artifact交接取得，原始服务器字段不进Git。
 
 后续最小修补仅限私有终验：先持久化原始库存、资源及offender身份，再执行原fail-closed断言，并用无模型CPU检查通过／失败路径；该修补在本报告中仍为待完成。若需Native复验，owner建议另列120次／870秒／零自动重试的新授权，保留本次120；本报告不批准执行。生产851、原生调度、其他四臂和条件正式门均保持。
+
+<a id="native-q3-revalidation-20261020"></a>
+## Native单臂独立复验通过，准确率结果保留（2026-10-20）
+
+在单独批准的120次／870秒预算内，唯一GPU owner完成一次Native p1全120行复验，零自动重试。生产仍冻结`85133c6f4a688efe03f80d2c1cac0cd214406782`；原LOTUS／LiteLLM调度、提示、generation与输入保持。私有终验已改为先保存原始库存、资源和owned观察再应用原断言；准备阶段一次前置检查失败及其修正保留，均发生在任何模型调用／reserve之前。本次[脱敏指标](native_q3_revalidation_20261020.json)仅对应这个新单元。
+
+120次实际模型调用、POST与回执全部一致，失败／unknown／missing均0。原始HTTP实际IDs与ledger逐项匹配，owner实际token／一次模板／decode及原语义核验通过；known usage仍为14566输入＋480输出＝15046 tokens。root只读核对回执关联和原审计绑定，未重跑decode或模型。原Native close、supervisor、独立物理终态和资源检查均通过，**新单臂执行资格为passed**。23个已观察owned出生身份全部退出；收尾GPU为1MiB，compute／SHM／RPC／lease均0，无额外收尾或foreign信号。
+
+**准确率结果未提高**：COUNT7／gold14，relative_error0.5、绝对误差7，7个漏项；TP7／FP0／TN106／FN7，原parser默认／歧义均0。120条有效消息摘要、generation及逐行原输出／实际IDs／usage与旧次核同，COUNT和原评价结果相同。原执行门没有数值准确率下限，执行资格通过不解释为准确率达标；其他臂尚未执行，跨臂完整消息／判定／原评价一致性门仍未满足。
+
+含服务冷启动的query为55.468263070099056s（不含评价）；含eval／close的query report为57.072227290365845s，worker application E2E为63.022697387s，campaign含审计与关闭为77.81870937999338s，outer controller为82.8600902557373s。单次观测，无resident latency、跨后端加速或P99结论。
+
+新独立账本永久预留120次、claim一个120次查询单元，无退款／重试；旧失败120次账本和其他旧账本均未改变，原480未使用。两次Q3实际调用合计240，不包含更早13份账本。**旧campaign仍failed、原foreign身份和缺失现场仍unknown**，不因新单元通过而回写。其他四后端与正式35查询／4200次均未启动；新单臂通过不构成五臂或正式资格。
+
+本次发布仅追加脱敏摘要、指标和来源SHA；原始日志归档、服务器字段、凭据和本地路径不进入报告。完整原件继续通过获批artifact交接核验。root核同33个归档成员／32份载荷、新SQLite和旧失败原件；本次报告整合无生产修改、服务器、GPU或新预算动作。

@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-20：发布Native独立复验摘要，保留旧失败与准确率误差
+
+根据新增明确GitHub发布授权，只在既有报告分支追加[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-q3-revalidation-20261020)及脱敏指标。新Native120／870秒独立单元120次全成功、零重试，实际HTTP IDs／一次模板／decode、原close／supervisor、23个owned身份终态通过；COUNT7／gold14、relative_error0.5及7漏项未提高。旧failed120和其他旧账本保持，两次模型实际共240；其他四后端／正式35均未启动。root只读核验原件与新旧SQLite，无生产代码、服务器、GPU或新预算动作，未发布原始日志归档、服务器字段、凭据或本地路径。
+
 ## 2026-10-20：登记Native全120行模型观测与资格终验失败
 
 在独立报告分支只读核验冻结851的完整161成员归档／160载荷、120条HTTP实际IDs关联及SQLite：120实际调用、120永久预留、1个查询claim，known usage14566＋480。owner一次模板／decode审计通过，原COUNT7／gold14／relative_error0.5保留。查询completed／Native closed／原supervisor passed与私有campaign库存门failed分列；原foreign身份及失败现场缺失，事后133观察身份退出不反推误报。[同题主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#native-q3-runtime-20261020)说明其他四臂／正式未执行、余480不作重跑授权，以及私有留存修补和新Native120／870秒复验仅为待办建议。此次整合无生产源码、服务器、模型或账本动作，原514／851及Q123候选保持。

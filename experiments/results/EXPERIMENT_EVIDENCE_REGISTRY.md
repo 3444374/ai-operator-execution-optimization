@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-20：[Native单臂独立复验与准确率结果](diagnostics/lotus_records_local_model_20261016/README.md#native-q3-revalidation-20261020)。新独立预算120次全部成功，HTTP实际IDs／模板／decode、原close／supervisor与23个owned观察身份终态通过，执行资格仅该新单元passed。COUNT7／gold14、relative_error0.5、7漏项及旧完整结果相同；旧失败120与其他旧账本不改。两次实际共240，其他四臂／正式0；不外推五臂、准确率或性能通过。
+
 2026-10-20：[冻结851的Native Q3全120行模型观测与终验失败](diagnostics/lotus_records_local_model_20261016/README.md#native-q3-runtime-20261020)。120实际调用／raw HTTP IDs与owner一次模板、decode审计通过，COUNT7／gold14／relative_error0.5；查询和原关闭完成，但私有campaign库存门failed、当时foreign身份unknown且现场缺失。事后133观察身份退出不提升资格；120永久预留／1个查询claim，余480不作重跑授权，其他四臂及正式未执行。
 
 2026-10-20：[原生HTTP token IDs观测CPU修补](diagnostics/lotus_records_local_model_20261016/README.md#native-http-token-observation-20261020)。原514资格在reserve前因实际IDs缺口阻断；新原生回执合同／540锁与独立包完成CPU绑定，失败、合成证据与真实资格分列，0新增模型／预算动作。
