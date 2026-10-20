@@ -1,0 +1,5 @@
+{
+  "schema": "semloom.movie_task_selection.v1",
+  "task": "movie-q3",
+  "input_profile": "historical_sf2000"
+}

@@ -2,7 +2,7 @@
   "schema": "semloom.sembench_runtime_source_lock.v1",
   "baseline_commit": "79dd14514b34dac9e25a965dcd27381b0ce7bb9d",
   "production_reference_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
-  "candidate_status": "new CPU-only formal wiring; not qualified by older model runs",
+  "candidate_status": "CPU-only task-generalization candidate; frozen Q3 runtime and4800 authorization do not apply",
   "runtime_files_sha256": {
     "code/src/__init__.py": "d84c3889bba4c371eeeeba8ba5beaf5266caac81b0f3a29144cec5d69f82d34a",
     "code/src/baselines/__init__.py": "c803958cadb5073c245f7108bdc1c3cefcda5f7b7a1549594a407070cee2997a",
@@ -44,7 +44,7 @@
     "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
     "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "424979a1f6a54f4a5a05a86a65a3d83c6583ce986ec609f238cc87d0979982b8",
     "code/src/baselines/text/frameworks/lotus_chain_results.py": "d55defeb780072123056023bc60969b1af3f95c6057806805a4973fb64908084",
-    "code/src/baselines/text/frameworks/lotus_native_local_model.py": "43ac4b087e4467b413545acbb0e56be80864835cb10f5bf98d8ae8fd6f926f51",
+    "code/src/baselines/text/frameworks/lotus_native_local_model.py": "5c51de916c5274f7024ffd8984dc5ab5bea616ba5c93fff1d2390b150770fbe2",
     "code/src/baselines/text/frameworks/lotus_pg.py": "9e5fe09f21d780d8b3845513527a1f1d35bb14d6f4869ccc5f563020edbad008",
     "code/src/baselines/text/frameworks/native_calls.py": "e2991fb0768bd1a8749667ef4abc823c42abe0fdb301856a3e206c70a41d3882",
     "code/src/baselines/text/frameworks/prepared_map.py": "8019fc872a9a721e7eb3b2cc4d8f002c7031ec16d56fa363f398414073c8a194",
@@ -54,7 +54,8 @@
     "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "03572c1b7b82956e48054779edb33b329e9717d8cdd6b3f6073d5eea6acdb7fa",
     "code/src/baselines/text/frameworks/ray_data_pg_http.py": "820fde1d5dd78eccc832f28b975b99b5e2bb14647db4668bc65859d246973888",
     "code/src/baselines/text/map_inputs.py": "837c2122afda31ba96b802d1c4608260ae90d9accb4e12147f71e1c482da72ea",
-    "code/src/baselines/text/movie_records.py": "1169a2069d58f291568d9a7546611c696d070d83415bdeb50b4e15f2ea684029",
+    "code/src/baselines/text/movie_records.py": "803889cdb0af96976c61ddedb2c782247b290bd0658512baf6057365483a9afb",
+    "code/src/baselines/text/movie_tasks.py": "548a3b876451251f8a5126e8b5631b566cd088dcbfe4bad6634be92ec8a0169d",
     "code/src/baselines/text/orchestration/__init__.py": "c43c4fcd3c898c9b08ca013ceedf4c18e0ab52b96b151759a570e404d9944d6d",
     "code/src/baselines/text/orchestration/cli.py": "8a820297d88ecae2a33905d84c2db1d9a406207b0f8b3ba455f8a99fe0e868bd",
     "code/src/baselines/text/orchestration/gate_runner.py": "af67ad80d722f1904010a005d2bed993690ab7ed791cd9585aa85e45d7d26b57",
@@ -150,12 +151,12 @@
     "code/src/experiments/image_multijob/native.py": "8456ec217f673151baa7a8bcb8ec6bb7d037fd00af892d7ca47e03729dfb80ec",
     "code/src/experiments/image_multijob/project.py": "268fc60f9f747f9de76b7fa125feafa2fa3cdda9edf3864f0ba9e3a8c3fcef59",
     "code/src/experiments/image_reuse.py": "4751bc82fce5250583b2570c1b92b5e83ea15e1c3730fd6bd2d3cbdb2c6a63eb",
-    "code/src/experiments/imlane_movie_formal.py": "d1125a3e720230ed1d1fca04ecef474575566ff6aa954ea9550af599b3680464",
+    "code/src/experiments/imlane_movie_formal.py": "698166168b73cdaeab3fd3c8c4a324444e5e17072344005818e0fc9332298483",
     "code/src/experiments/imlane_owned_query.py": "a7aa8caef852a47f90cb13b0a10d7229eda386916a98fc8469a075290eabc834",
     "code/src/experiments/lotus_cascade_movie.py": "a2fe15ae2cc38e6d120e74ee67ea2526b24456377f42d6ec1fd7f578ec7a4703",
     "code/src/experiments/lotus_records_cascade.py": "cfffa8ca387dfee7ea6b6f742aeaaada55bb10f1d96ac7c53f35f449ecd342d1",
     "code/src/experiments/lotus_records_chain.py": "6d0b724c67936f1240c730314398a5ded392391cb1da6714fb0b405acc04020a",
-    "code/src/experiments/lotus_records_movie.py": "7959f267df4842cd19e046c454df2edf748c2544fafd5d1f1e9ea96f594b0855",
+    "code/src/experiments/lotus_records_movie.py": "f2b37c7abb69f46ffd1688ea5ef4b624c857cb8bb03e1577ccbbeef383b5cf38",
     "code/src/experiments/lotus_records_supervisor.py": "d9c1eac2f0a186f651b0e5f312843a7fe9b73360958cb36fff23ad90d6967173",
     "code/src/experiments/map_observation_probe.py": "d08330e09d03e1409be7313abbda7d6c4bff12489e7104c9bec336f7cb5d5313",
     "code/src/experiments/mapped_core_probe.py": "1c9cb5a4d0d1de888156eaa295b395554021022d861a2bc7fc3b09b59bc6b274",
@@ -243,7 +244,7 @@
     "code/src/experiments/scenarios/__init__.py": "19981b96bb6d89d1056d8f95858eee41328138abc89bc43622a5af9c2eac9a79",
     "code/src/experiments/scenarios/core.py": "136aaf2bd4a55ba26cace21dd5fa4f993d6c44e33eb653e14114132abb3b046d",
     "code/src/experiments/sembench_animals.py": "c8581056d26088651ba85ae5613948f0cd16c67e023a4ade86076fac90051507",
-    "code/src/experiments/sembench_records_formal.py": "25ec93cfb86006e6429395065270028f49155b52690fbf5e4fdc232d6939e563",
+    "code/src/experiments/sembench_records_formal.py": "50d74a56da83337ceeaaaa4b0938db910875edcb8d87eef3b834f7dcd6f48c60",
     "code/src/experiments/sembench_records_formal_resources.py": "9d5f1e4c9182f08572fcb63af57d206e17d21e8804a6805bc9bdac8122b64080",
     "code/src/experiments/shared_request_budget.py": "e9cbe8874d6ae25d52f4d29a06930688e4f70edc773d951045595aed9f87f8c1",
     "code/src/experiments/shared_vllm/__init__.py": "cb198d815734597ef0004b9a250f3583ab95648b317c6d43320b6ff0433a7adb",
@@ -425,7 +426,7 @@
     "code/integrations/imlane_records/records_host.py": "8536bae7b5ba56bc77101241556f275fd53789e59bc87371e44cd0987aeee313",
     "code/integrations/imlane_records/resource_limits.py": "652d67481ce9da0079e9f15c6db72735be4b1b30a29e0e763d05eec4ce574edc",
     "code/integrations/imlane_records/verify.py": "92cf7fdb4637bcfbca66c7dd5eea83928068dd4a6aee4006b9dfbe1f9d1b0f6f",
-    "code/integrations/imlane_records/verify_filter.py": "c51cd3e83955a1818c34060102af955bf6eb3a468e2416f0adb6b80d7db7a927",
+    "code/integrations/imlane_records/verify_filter.py": "10ae4c58a21010f6d439d5f5fdac6bf330a731d3b1ac6ac0613fb7b0211344c8",
     "code/scripts/__init__.py": "23a1cbc2dabe983fa699e108c4eaf10d4e85ca3e6cd4116f3c3eac7a62777e4a",
     "code/scripts/analysis/__init__.py": "b07a61ab9029922a8b7fd0a2ca51bdeadfb7713a88e7620185ed88a2a7421040",
     "code/scripts/analysis/audit_chat_prompt_overhead.py": "7c174ca767e060a515da340d92ff6a77025895c60dfedbbb0a88d5956bef4989",
@@ -553,9 +554,10 @@
     "files/movie/query/gold_sql/Q2.sql": "5ab598444ef58794879227734873d370636dbc89ec9b29d4529d33dd4d5f2965",
     "files/movie/query/gold_sql/Q3.sql": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5"
   },
-  "runtime_source_commit": "0d4cc1e90acae81cac953dd28664386ae6a5fb59",
+  "runtime_source_commit": "63c3d77aa2cf167ed992c2d3a69bb11f53bacf9a",
   "adapter_upstream_commits": {
     "lotus-native": "e0b4fcbdcb3ac1480d1c18a35156ab036819f1be",
     "imlane": "c211d11674b0740c085fe47e93d0ad28a2346acf"
-  }
+  },
+  "task_generalization_base_commit": "514757ab5e3afff713454053403047568d2e5499"
 }

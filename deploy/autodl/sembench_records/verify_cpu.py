@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the finite preparation and full Q3 fixture parity, never model qualification."""
+"""Check a selected finite task and original-query CPU parity, never model qualification."""
 
 import argparse
 from collections import Counter, defaultdict
@@ -33,6 +33,11 @@ def sha(path):
 
 def check(package, checkout, evidence):
     plan = load(HERE / "comparison.json")
+    source = MovieRecordSource.from_manifest(package / "input/manifest.json")
+    task = source.task
+    plan["method"] = dict(plan["method"], instruction=task.instruction)
+    eligible_rows = load(HERE / "tasks.json")["tasks"][task.name]["eligible_rows"]
+    total_calls = 35 * eligible_rows
     report = dict(schema="semloom.sembench_records_cpu_verification.v1", status="failed",
         real_model_calls=0, gpu_launches=0, author_launches=0, performance_claim=False,
         model_quality_qualification=False, checks=[])
@@ -52,11 +57,11 @@ def check(package, checkout, evidence):
         source = MovieRecordSource.from_manifest(package / "input/manifest.json")
         source.preflight(FilterMethod.from_dict(plan["method"]))
         source_manifest = load(package / "input/manifest.json")
-        require(source_manifest["rows"] == 2000 and source_manifest["eligible_rows"] == 120,
-            "2000 input rows and 120 predicate-eligible occurrences")
+        require(source_manifest["rows"] == 2000 and source_manifest["eligible_rows"] == eligible_rows,
+            "2000 input rows and task-bound eligible occurrences")
         require("scoreSentiment" not in source_manifest["columns"], "execution records contain no gold label column")
         require(load(package / "source.json")["eligible_full_rows_and_positions_equal"] is True,
-            "upstream Q3 full records/source positions equal; full dataset identity remains distinct")
+            "selected task full records/source positions equal to the pinned input relation")
         schedule = load(package / "schedule.json")
         identity = load(package / "package-identity.json")
         require(identity["runtime_source_lock_sha256"] == sha(HERE / "source.lock.json")
@@ -73,8 +78,8 @@ def check(package, checkout, evidence):
                 "query manifest identity " + unit["query_id"])
             expected = source.expected(unit["query_id"])
             calls = unit["stages"][0]["calls"]
-            if (calls != expected or len(calls) != 120 or unit["model_call_upper_bound"] != 120
-                    or summary["max_calls"] != 120 or unit["source_manifest_sha256"] != sha(source.manifest_path)):
+            if (calls != expected or len(calls) != eligible_rows or unit["model_call_upper_bound"] != eligible_rows
+                    or summary["max_calls"] != eligible_rows or unit["source_manifest_sha256"] != sha(source.manifest_path)):
                 raise AssertionError("stage identity/budget/input binding mismatch")
             if any(row["call_id"] in ids for row in calls):
                 raise AssertionError("call identity reused across query owners")
@@ -91,7 +96,7 @@ def check(package, checkout, evidence):
                     raise AssertionError("config SHA256 mismatch")
                 value = load(path)
                 engine = value.get("engine", value.get("requested_engine"))
-                if EngineSpec.from_dict(engine).max_model_calls != 120:
+                if EngineSpec.from_dict(engine).max_model_calls != eligible_rows:
                     raise AssertionError("per-engine cap mismatch")
                 if value["method"] != plan["method"] or value["generation"] != plan["generation"]:
                     raise AssertionError("method/generation drift")
@@ -99,11 +104,11 @@ def check(package, checkout, evidence):
                     read_config(path)  # Actual three-backend CLI parser; no environment/model construction.
                 elif unit["backend"] == "imlane":
                     RecordsResources(**value["resources"])
-                    if value["query_ids"] != [unit["query_id"]] or value["max_total_calls"] != 120:
+                    if value["query_ids"] != [unit["query_id"]] or value["max_total_calls"] != eligible_rows:
                         raise AssertionError("IMLane per-query reservation mismatch")
             budget += len(calls)
-        require(budget == len(ids) == schedule["max_model_calls"] == 4200,
-            "4200 exact unique call identities equal stage-derived global upper bound")
+        require(budget == len(ids) == schedule["max_model_calls"] == total_calls,
+            "exact unique call identities equal task-derived global upper bound")
         require(all(counts[b, "calibration"] == 2 and counts[b, "measured"] == 5
             for b in ["lotus-native", "semloom-core", "ray-data", "daft", "imlane"]),
             "five backends each have two calibration and five measured queries")
@@ -132,8 +137,8 @@ def check(package, checkout, evidence):
             write_private_json(evidence / "original-q3-fixture.json", result)
             require(result["inference_calls"] == 0 and result["status"] == "completed"
                 and all(result["native_reference"][k] is True for k in (
-                    "messages_equal", "decisions_equal", "count_equal", "lm_stats_equal")),
-                "120-row original LOTUS accessor vs records messages/parser/COUNT/usage fixture parity")
+                    "messages_equal", "decisions_equal", "result_equal", "lm_stats_equal")),
+                "full selected task original LOTUS accessor vs records messages/parser/result/usage fixture parity")
             try:
                 fixed_response_qualification(source, checkout, FilterMethod.from_dict(plan["method"]),
                     GenerationSpec.from_dict(plan["generation"]), responses[:-1], query_id="cpu-missing")
@@ -151,10 +156,10 @@ def check(package, checkout, evidence):
             report["checks"].append("modified input bytes rejected before model/owner allocation")
         else:
             raise AssertionError("tampered input accepted")
-        require(result["result"]["positive_review_cnt"] == 0,
+        require(result["result"] == ({"positive_review_cnt": 0} if task.query == 3 else {"reviewId": []}),
             "all-False fixture remains an artificial result, not model quality success")
-        report.update(status="passed", query_manifests=35, exact_call_identities=4200,
-            full_original_fixture_occurrences=120, max_model_calls_proposed=4200,
+        report.update(status="passed", task=task.name, query_manifests=35, exact_call_identities=total_calls,
+            full_original_fixture_occurrences=eligible_rows, max_model_calls_proposed=total_calls,
             measured_n_per_backend=5, p99=None, p99_99=None,
             p99_reason="five complete measured query units per backend; zero real runs here",
             parser_scope="three existing records selectors; IMLane data classes only, no author ABI/runtime probe",

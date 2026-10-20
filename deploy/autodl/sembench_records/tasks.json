@@ -1,0 +1,50 @@
+{
+  "schema": "semloom.movie_task_catalog.v1",
+  "tasks": {
+    "movie-q1": {
+      "input_profile": "official_sf2000",
+      "rows": 2000,
+      "eligible_rows": 2000
+    },
+    "movie-q2": {
+      "input_profile": "historical_sf2000",
+      "rows": 2000,
+      "eligible_rows": 120
+    },
+    "movie-q3": {
+      "input_profile": "historical_sf2000",
+      "rows": 2000,
+      "eligible_rows": 120
+    }
+  },
+  "input_profiles": {
+    "official_sf2000": {
+      "role": "sembench_movie_official",
+      "csv_bytes": 654791,
+      "csv_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+      "git_blob_oid": "710028a863dbf04853e45a3e618113dff7521b4d",
+      "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+      "identity": "files/movie/data/sf_2000/Reviews.csv in the pinned official Git tree; input path remains explicit"
+    },
+    "historical_sf2000": {
+      "role": "sembench_movie_subset",
+      "csv_bytes": 654765,
+      "csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+      "identity": "Historical separately generated fixed input, preserved without rewriting or relabeling it as the official Git blob",
+      "provenance_sha256": "3807fc752cd1dfaf9963fd3bc757c0edfe1962d7298f0ecc22e58246324813bf",
+      "generator": "src/scenario/movie/preparation/generate_data.py",
+      "generator_sha256": "95d665e2ce3a8e275c3f20e82591d56e6113287e1fbc2d973bd61f7897902f65",
+      "source_version": "Kaggle Clapper dataset version4",
+      "archive_sha256": "92d95672cd39260fca12e6e64d814f7d324ad0600823e0d9207ed1fb52ead707",
+      "sampling": "historical sidecar records unchanged upstream generator, random_state42, newline replacement",
+      "differences_from_official": {
+        "differing_source_positions": 360,
+        "full_row_multiset_excess_each_side": 11,
+        "taken_3_complete_rows_and_positions_equal": 120
+      },
+      "reproduction_limit": "Exact package/source-generation environment difference was not reconstructed; separate identities are retained"
+    }
+  },
+  "scope": "Original ordinary Filter plus task-owned source-order head5/reviewId or COUNT only; no new backend or operator",
+  "budget_policy": "New tasks and changed source require new independently approved budgets; never use the frozen Q3 4800-call authorization"
+}

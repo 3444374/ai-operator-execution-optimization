@@ -1,4 +1,63 @@
-# 普通 Movie Q3 records / local-model 首轮配置
+# 普通 Movie Q1/Q2/Q3 records / local-model 任务入口
+
+`514757ab`冻结的Q3资格源码、私有包、预算和证据保持原样。本分支是另行审查的CPU候选，
+把任务与已有Filter执行后端解耦；任务切换只选择统一的`task-selection`配置，不新增后端或调度器。
+现有Core、Ray Data、Daft执行图和并发机制保持不变。以下Q3首轮说明保留其历史范围；新增任务使用下面的显式选择。
+
+## 统一任务选择
+
+把`task.example.json`复制到Git外，选择`task`与`input_profile`，仍调用同一个`prepare.py`与正式CLI：
+
+| task | input_profile | Filter输入 | 原提示 | 输出/原评价 |
+|---|---|---:|---|---|
+| movie-q1 | official_sf2000 | 全2000条 | 原`movie review`引号/句点提示 | 源顺序head5，保留重复reviewId；原Q1 evaluator |
+| movie-q2 | historical_sf2000 | taken_3全部120条 | 与Q1完全相同 | 源顺序head5，保留重复reviewId；原Q2 evaluator |
+| movie-q3 | historical_sf2000 | taken_3全部120条 | 原Q3无引号`review`提示 | 完整COUNT；原Q3 evaluator |
+
+```json
+{"schema":"semloom.movie_task_selection.v1","task":"movie-q1","input_profile":"official_sf2000"}
+```
+
+```sh
+python3 -B deploy/autodl/sembench_records/prepare.py \
+  --task-config "$PRIVATE_TASK_SELECTION" \
+  --input-csv "$EXPLICIT_SELECTED_CSV" --upstream-csv "$PINNED_OFFICIAL_CSV" \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --runtime-json "$RUNTIME_BINDING" \
+  --output-dir "$NEW_PRIVATE_PACKAGE" --run-id "$NEW_UNIQUE_RUN_ID" --check-source
+```
+
+输入路径仍由调用方明确提供；选Q1却传历史CSV会在创建输出/模型前拒绝，不会暗中替换。
+`tasks.json`保留两份完整SHA256。官方CSV的Git blob为`710028a863dbf04853e45a3e618113dff7521b4d`，
+与SemBench固定提交`c814e380...`的tree条目及文件内容离线相符。历史输入provenance记录Kaggle v4、
+源archive与原生成器哈希、random_state42；两表360个位置不同，完整行多重集各有11条差异，
+确切生成环境/排序原因未复现，不能把历史输入改称官方输入。原文件和旧证据均保留。
+
+`MovieTask`仅拥有输入谓词、原prompt、源序投影/COUNT和evaluator编号；`MovieRecordSource`的v2
+manifest显式绑定任务。旧v1 Q3 source与默认配置仍兼容。后端仍消费同一个RecordScan/FilterMethod。
+Q1/Q2相同prompt不足以确定任务：config与source的task也必须相同。每条Filter发生项完成后才执行
+head5，绝不按5条输出计算调用额度。缺失/重复发生项不能被head5遮蔽；business reviewId重复按原查询保留。
+
+每个任务独立生成35个比较单元（2校准＋5测量／臂），独立参照、profile选择和永久账本：
+
+| 新任务预算提案 | 每完整查询 | 五臂各一次完整资格 | 35查询比较 | 合计 |
+|---|---:|---:|---:|---:|
+| Q1 | 2000 | 10000 | 70000 | 80000 |
+| Q2 | 120 | 600 | 4200 | 4800 |
+| 新Q1＋Q2 | — | 10600 | 74200 | **84800** |
+
+以上均分配0。资格阶段单列，不藏在比较包内；已批4800 Q3与164工程预算均不可借用。
+比较包每任务保留30150秒队列停止上限及300/480/810秒单元边界，尚无新任务的完成时间估计；
+上限不保证任务必能在期限内完成，需实机资格后另审时间预算。`budget-proposal.json`逐项列明。
+改动后的source不自动继承冻结Q3资格；runtime资格同时绑定task、输入SHA与新source.lock。
+
+新任务报告的result为`{"reviewId":[...]}`，Q3继续用`{"positive_review_cnt":N}`；同一结果校验器
+按显式任务核对完整发生项与源序输出。Q1/Q2原始precision/recall/F1和重复/invalid/limit补充审计均保留；
+COUNT误差、人工响应和业务ID重复不能替代逐发生项质量检查。Q1最多2000条的完整token证据报告单独允许128MiB，
+其余配置/授权JSON仍为8MiB上界；不是内存硬限制，也不授权扩大工作负载。
+
+任务切换CPU回归覆盖Q1→Q2→Q3→Q1→Q3→Q2，检查原提示、输入列、源索引、输出、原评价和LOTUS设置恢复。
+Native/IMLane公共worker以满2000/120/120输入、p1/p2对相同人工响应的原查询做差分；这些都是CPU接线证据，
+不能当作真实模型资格。当前支持范围只到普通Filter与三个已有投影/聚合，不包括Q4以后或任意新算子。
 
 本目录是**准备材料**；本轮没有模型运行或正式额度分配。
 `prepare.py` 生成有限逐查询身份和配置；`verify_cpu.py` 检查身份、预算及人工固定响应差分。
@@ -147,9 +206,9 @@ normal独占lease、指定8 CPU槽、单现有4090、采样RSS20GiB/SHM512MiB及
 任何调用关联/用量/质量不可比、超资源、签名漂移、失败或未知退出立即保存失败材料并停相应单元；
 发现foreign owner或物理退出不明则停全队列，保留owner责任，不结束他人进程，不启动后继、不自动重试。
 
-本轮不纳入原Q1/Q2/其他query、helper cascade、有限链替代原查询、Async候选、图像、作者Ray或多GPU。
+冻结Q3批次不纳入原Q1/Q2/其他query、helper cascade、有限链替代原查询、Async候选、图像、作者Ray或多GPU。
 旧request/小模型资格、空过滤未达到后继的运行、CPU人工响应与新source的真实模型资格分开。
-Q1/Q2/Q3×五臂覆盖及最小增量见`query_coverage.json`：Q1/Q2只需Filter任务、源顺序head5/reviewId投影和原评价接线，
-并非缺Join；但Q1全表身份仍待解决。同样35-query设计时Q2增4200、Q1增70000，三query合计78400次提案，绝未扩当前164工程预算。
+Q1/Q2/Q3×五臂覆盖和预算见`query_coverage.json`：本分支已补齐普通Filter任务、源顺序head5/reviewId投影和原评价接线；
+Q1官方Git blob身份已核清，历史重新生成版本仍独立保留。同样35-query设计时Q2增4200、Q1增70000，三query合计78400次提案，绝未扩当前164工程预算。
 
 集成者后续可在上级AutoDL README登记本目录入口；共享README/INFRA/台账/PROJECT_LOG由唯一集成者串行整合。
