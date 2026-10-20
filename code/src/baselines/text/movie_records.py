@@ -266,6 +266,11 @@ class MovieRecordSource:
                 or occurrences != eligible
                 or manifest["eligible_rows"] != len(eligible)):
             raise ValueError("Movie eligible occurrences differ from the fixed predicate")
+        # Both SHA-pinned SemBench profiles have original pandas int64 reviewId.
+        # Restore that business type after validation; fixture IDs remain text.
+        if manifest["role"] in ("sembench_movie_subset", "sembench_movie_official"):
+            for record in records:
+                record["reviewId"] = int(record["reviewId"])
         return manifest, records, references
 
     @property

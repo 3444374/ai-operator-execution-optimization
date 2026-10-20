@@ -183,7 +183,7 @@ class QueryClock:
             raise ValueError("one complete pre-evaluation result_ready timestamp is required")
         return dict(query_result_seconds=(found[0] - invoked_ns) / 1e9,
             application_e2e_seconds=(finished_ns - invoked_ns) / 1e9, events=self.events,
-            scope="worker invocation through full COUNT; application includes worker-owned evaluation/close",
+            scope="worker invocation through complete task result; application includes worker-owned evaluation/close",
             resident_query_seconds=None)
 
 
@@ -437,7 +437,7 @@ def run_campaign(root, authorization, output):
                     raise ValueError("the first native LOTUS calibration must establish the real-model reference")
                 reference = signature
             elif signature != reference:
-                raise ValueError("real-model row/message/COUNT/quality differs; execution-only comparison stops")
+                raise ValueError("real-model row/message/task result/quality differs; execution-only comparison stops")
             clock = QueryClock()
             clock.events = read(unit_root / "clock.json")
             timing = clock.result(invoked, finished)

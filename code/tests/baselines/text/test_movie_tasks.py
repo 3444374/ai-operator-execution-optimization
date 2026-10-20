@@ -80,6 +80,34 @@ class MovieTaskTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "every unique"):
                 source.task.result_frame(source.rows(), values)
 
+    @unittest.skipUnless(all(os.environ.get(k) for k in
+        ('SEMBENCH_CHECKOUT', 'SEMBENCH_Q1_MANIFEST', 'SEMBENCH_Q2_MANIFEST')),
+        'requires separately pinned full Q1/Q2 inputs and original evaluator')
+    def test_fixed_input_ids_and_gold_match_original_csv_types(self):
+        import pandas as pd
+        from src.baselines.text.sembench_movie import evaluate_original
+        for query in (1, 2):
+            with self.subTest(query=query):
+                source = MovieRecordSource.from_manifest(os.environ[f'SEMBENCH_Q{query}_MANIFEST'])
+                manifest = json.loads(source.manifest_path.read_text())
+                original = pd.read_csv(manifest['original_csv'])
+                self.assertEqual(str(original['reviewId'].dtype), 'int64')
+                mask = original['scoreSentiment'].eq('POSITIVE')
+                if query == 2:
+                    mask &= original['id'].eq('taken_3')
+                expected = original.loc[mask, ['reviewId']].head(5).reset_index(drop=True)
+                decisions = [dict(row_id=row['row_id'], decision=
+                    original.iloc[row['source_position']]['scoreSentiment'] == 'POSITIVE')
+                    for row in source.rows() if source.task.accepts(row)]
+                actual = source.task.result_frame(source.rows(), decisions)
+                # Gold uses the independent original CSV, not the materialized frame.
+                actual_quality = evaluate_original(os.environ['SEMBENCH_CHECKOUT'], query, actual, original)
+                expected_quality = evaluate_original(os.environ['SEMBENCH_CHECKOUT'], query, expected, original)
+                self.assertEqual(actual_quality, expected_quality)
+                self.assertGreater(actual_quality['original_metric']['precision'], 0)
+                pd.testing.assert_frame_equal(actual, expected)
+                pd.testing.assert_frame_equal(source.labeled_frame()[['reviewId']], original[['reviewId']])
+
     def test_official_profile_never_silently_uses_historical_or_fixture_bytes(self):
         with self.assertRaisesRegex(ValueError, "separately locked"):
             prepare_movie_source(self.raw, self.root / "official-wrong", expected_csv_sha256=self.digest,

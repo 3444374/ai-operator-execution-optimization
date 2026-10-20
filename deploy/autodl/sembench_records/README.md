@@ -62,7 +62,7 @@ Native/IMLane公共worker以满2000/120/120输入、p1/p2对相同人工响应�
 本目录是**准备材料**；本轮没有模型运行或正式额度分配。
 `prepare.py` 生成有限逐查询身份和配置；`verify_cpu.py` 检查身份、预算及人工固定响应差分。
 新增正式控制器`code/scripts/experiments/run_sembench_records_formal.py`默认只check；真正执行必须另有绑定
-全部文件/源码/runtime/4200次与30150秒的正式authorization及显式`--execute-model`。
+全部文件/源码/runtime、所选任务调用上界与30150秒的正式authorization及显式`--execute-model`。
 原LOTUS和IMLane adapter已在独立组合区接入公共worker，CPU替身通过单次claim、原Q3及observer契约；
 当前source的Linux进程资源、真实模型/template/token与GPU退出资格仍待工程owner补测。
 Movie计时observer与supervisor监测callback均为独立最小补丁，交集成者串行接纳；原生调度和模型引擎不改。
