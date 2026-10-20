@@ -1,0 +1,249 @@
+{
+  "schema": "semloom.engineering_qualification_progress.v1",
+  "updated_utc": "2026-10-20T09:51:07.426025+00:00",
+  "source_commit": "a50351051de0d960736c46914f4c56bde2fa5111",
+  "finite_manifest_sha256": "85ef1453732255334f7994093a10d87c95bab5250eecd841bfcb128cd93f8f98",
+  "budget": {
+    "limit": 164,
+    "base_permanently_allocated": 134,
+    "completed_unit_caps": 30,
+    "repair_unallocated": 30,
+    "repair_units_used": 0,
+    "clock_start_utc": "2026-10-20T09:33:11.837129+00:00",
+    "deadline_utc": "2026-10-20T11:43:11.837129+00:00",
+    "window_seconds": 7800
+  },
+  "completed_units": {
+    "core-mfe": {
+      "status": "passed",
+      "permanent_cap": 6,
+      "actual_model_calls": 5,
+      "known_receipts": 5,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 5,
+        "stage_calls": {
+          "map": 2,
+          "filter": 2,
+          "extract": 1
+        },
+        "output_rows": 1
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 459,
+        "known_prompt_tokens": 459,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 33,
+        "known_completion_tokens": 33,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 492,
+        "known_total_tokens": 492,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 21,
+      "sampled_peaks": {
+        "rss_bytes": 7807205376,
+        "shm_bytes": 32
+      },
+      "elapsed_seconds": 55.03152084350586
+    },
+    "core-em": {
+      "status": "passed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "known_receipts": 4,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 4,
+        "stage_calls": {
+          "extract": 2,
+          "map": 2
+        },
+        "output_rows": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 404,
+        "known_prompt_tokens": 404,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 30,
+        "known_completion_tokens": 30,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 434,
+        "known_total_tokens": 434,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 21,
+      "sampled_peaks": {
+        "rss_bytes": 7835557888,
+        "shm_bytes": 32
+      },
+      "elapsed_seconds": 56.67901301383972
+    },
+    "ray-mfe": {
+      "status": "passed",
+      "permanent_cap": 6,
+      "actual_model_calls": 5,
+      "known_receipts": 5,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 5,
+        "stage_calls": {
+          "map": 2,
+          "filter": 2,
+          "extract": 1
+        },
+        "output_rows": 1
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 459,
+        "known_prompt_tokens": 459,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 33,
+        "known_completion_tokens": 33,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 492,
+        "known_total_tokens": 492,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 34,
+      "sampled_peaks": {
+        "rss_bytes": 10408722432,
+        "shm_bytes": 32
+      },
+      "elapsed_seconds": 81.03886580467224
+    },
+    "ray-em": {
+      "status": "passed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "known_receipts": 4,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 4,
+        "stage_calls": {
+          "extract": 2,
+          "map": 2
+        },
+        "output_rows": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 404,
+        "known_prompt_tokens": 404,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 30,
+        "known_completion_tokens": 30,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 434,
+        "known_total_tokens": 434,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 55,
+      "sampled_peaks": {
+        "rss_bytes": 10294800384,
+        "shm_bytes": 32
+      },
+      "elapsed_seconds": 136.88998746871948
+    },
+    "daft-mfe": {
+      "status": "passed",
+      "permanent_cap": 6,
+      "actual_model_calls": 5,
+      "known_receipts": 5,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 5,
+        "stage_calls": {
+          "map": 2,
+          "filter": 2,
+          "extract": 1
+        },
+        "output_rows": 1
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 459,
+        "known_prompt_tokens": 459,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 33,
+        "known_completion_tokens": 33,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 492,
+        "known_total_tokens": 492,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 29,
+      "sampled_peaks": {
+        "rss_bytes": 9028145152,
+        "shm_bytes": 776
+      },
+      "elapsed_seconds": 70.50649189949036
+    },
+    "daft-em": {
+      "status": "passed",
+      "permanent_cap": 4,
+      "actual_model_calls": 4,
+      "known_receipts": 4,
+      "coverage": {
+        "passed": true,
+        "errors": [],
+        "actual_calls": 4,
+        "stage_calls": {
+          "extract": 2,
+          "map": 2
+        },
+        "output_rows": 2
+      },
+      "original_lotus_replay": "passed",
+      "usage": {
+        "prompt_tokens": 404,
+        "known_prompt_tokens": 404,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 30,
+        "known_completion_tokens": 30,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 434,
+        "known_total_tokens": 434,
+        "unknown_total_tokens_calls": 0
+      },
+      "physical_exit_confirmed": true,
+      "lease_released": true,
+      "observed_process_identities": 41,
+      "sampled_peaks": {
+        "rss_bytes": 8927637504,
+        "shm_bytes": 776
+      },
+      "elapsed_seconds": 119.51912665367126
+    }
+  },
+  "actual_model_calls_completed": 27,
+  "historical_12_unchanged": true,
+  "physical_idle_at_capture": {
+    "gpu_used_mib": 1,
+    "compute_count": 0,
+    "shm_count": 0,
+    "lease_count": 0
+  },
+  "performance_claim": false,
+  "formal_baseline_executed": false,
+  "automatic_model_retries": 0,
+  "diagnostic_correction": "Ray successor pending GPU warning was transient; E→M naturally passed. An unnecessary cancellation precondition rejected the already-completed unit before any signal; no cancellation or model retry occurred."
+}

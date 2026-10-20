@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[固定a503六个有限链模型单元](lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)：Core／Ray／Daft非空M→F→E与完整E→M、原LOTUS replay及独立物理退出通过；原失败保持，无正式性能结论。
+
 [Async r2取消／关闭诊断与修补](async_cancel_close_20261019/README.md)：取消与关闭的CPU反馈环；队列接管、原RPC和原生终态分列，历史失败保持，实际竞争层未定；[a503单次交接观测](async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)按有限范围收口。
 
 [IMLane普通Map／Extract与关系链](imlane_chain_cpu_20261019/README.md)：本机CPU、旧7a作者CPU及[4fc查询API模型](imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)按来源分列；[固定53d公开CLI作者CPU](imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)已补终态审阅，真实模型仍另验。

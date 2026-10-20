@@ -11,18 +11,10 @@
     "imlane_public_cli": "Fixed53d original author CPU with declared model fixtures only.",
     "extract_successor_independent_native": "Two new real Ray/Daft CPU graphs, synthetic responses, original LOTUS parity; no model.",
     "async_late": "Fixed82e late3 original success.",
-    "async_cancel": "Fixeda503 cap1 cancel handoff observation only; unknown/held/ref preserved, physical exit independently scoped."
+    "async_cancel": "Fixeda503 cap1 cancel handoff observation only; unknown/held/ref preserved, physical exit independently scoped.",
+    "finite_mfe_and_extract_successor": "Fixeda503 six bounded model units:Core/Ray/Daft nonemptyM→F→E andE→M,27 actual calls under30 permanent unit caps,originalLOTUS replay and independent physical checks passed. Old8be failures retained; no formal performance result."
   },
   "remaining_live_cells": [
-    {
-      "scope": "finite M→F→E reaching nonempty Extract and E→M",
-      "owners": [
-        "Ray Data",
-        "Daft",
-        "SemLoom Core"
-      ],
-      "state": "new bounded source/config/budget freeze required; prior failed/all-filtered MFE not a pass"
-    },
     {
       "scope": "original global helper cascade",
       "owners": [
@@ -42,11 +34,21 @@
     }
   ],
   "ledger_boundary": {
-    "protected_current_inventory": 12,
-    "real_model_ledgers": 11,
-    "cpu_fixture_ledgers": 1,
+    "protected_historical_inventory": 12,
+    "historical_real_model_ledgers": 11,
+    "historical_cpu_fixture_ledgers": 1,
     "cap1_spent": true,
     "old_allocations_refunded": false,
+    "current_engineering_budget_snapshot": {
+      "limit": 164,
+      "base_permanently_allocated": 134,
+      "completed_unit_caps": 30,
+      "repair_unallocated": 30,
+      "repair_units_used": 0,
+      "clock_start_utc": "2026-10-20T09:33:11.837129+00:00",
+      "deadline_utc": "2026-10-20T11:43:11.837129+00:00",
+      "window_seconds": 7800
+    },
     "new_engineering_or_formal_budget_allocated_by_this_record": false
   },
   "unknown_acceptance": "Expected conservative responsibility for a retired cancelled query after observed handoff and scoped physical cleanup; cannot reuse the owner or label logical cancellation confirmed.",
@@ -61,8 +63,9 @@
       "IMLane"
     ],
     "semloom_arms": [
+      "production Core with a fixed static policy, separate from the no-Core static reference",
       "explicit static reference",
-      "separate candidate when implemented/qualified"
+      "separate candidate only when implemented and qualified"
     ],
     "required_before_model_allocation": [
       "Final code/workload/ground truth and exact original query behavior",
@@ -79,5 +82,14 @@
     ]
   },
   "old_request_baselines_preserved": true,
-  "new_model_calls_by_integrator": 0
+  "new_model_calls_by_integrator": 0,
+  "finite_completion_evidence": {
+    "summary": "finite_chain_20261020.json",
+    "sha256": "5b998844c3a08d41e616d71e8b962ba2e75b9af4c4f03d5458963f0ea64b01b0",
+    "finite_manifest_sha256": "85ef1453732255334f7994093a10d87c95bab5250eecd841bfcb128cd93f8f98",
+    "snapshot_updated_utc": "2026-10-20T09:51:07.426025+00:00",
+    "publication_scope": "GPU-owner allowlisted completed-unit summary; full batch archive remains with owner for later final mapping, not independently rehashed in this publication."
+  },
+  "status_snapshot_utc": "2026-10-20T09:51:07.426025+00:00",
+  "status_snapshot_scope": "Completed finite group allowlist publication; subsequent generic and IMLane engineering cells are separate source/config publications, not realtime queue state."
 }

@@ -1,5 +1,7 @@
 # Movie Q3 records 到本地模型接点与分层资格
 
+最新固定a503的[六个有限链模型单元](#finite-chain-model-20261020)补齐Core／Ray／Daft的非空M→F→E与E→M；原8be失败与其他来源保持。原全局helper、IMLane公开CLI模型和正式性能仍分项推进。
+
 本切片在已审阅 main `52391e375b6d9699e5bd76bb6d37bdbd939ef23e` 上独立实现，
 集成时同步已审纯文档 main `d73c44463e9fdb98e2ac1397295114568afabb1c`，由 `integration/data-execution` 集成。
 后续再同步已审纯文档main `6e3828b4a05d16962efb1166bb872a7fd97ae627` 的Daft布局／消费与有限算子链合同；下述实机仍按各自固定源码解释。
@@ -448,9 +450,9 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 
 | 执行 owner | 基本 records／本地模型接点 | 实际库验证 | 真实模型资格 | 扩展覆盖 |
 |---|---|---|---|---|
-| Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4普通Q3两负例；另有8be单行Map→Extract，原MFE失败保留 | 有限链及显式Extract分段CPU；非末端关系模型另验 |
-| Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526普通Q3两query／4调用，首轮actual null保持；另有522单行Map→Extract | 共享有限链及显式Extract分段CPU；当前新源码不继承旧模型资格 |
-| SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f普通Filter同engine两query／4调用；另有8be单行Map→Extract，不转授新源 | 显式Core Extract屏障CPU通过；原同步批不等于Async供给 |
+| Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4普通Q3两负例；另有8be单行Map→Extract，原MFE失败保留 另有[a503有限MFE／EM](#finite-chain-model-20261020)；| 有限链及显式Extract分段CPU；固定a503的E→M模型已验，其余组合／profile另验 |
+| Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526普通Q3两query／4调用，首轮actual null保持；另有522单行Map→Extract 另有[a503有限MFE／EM](#finite-chain-model-20261020)；| 共享有限链及显式Extract分段CPU；当前新源码不继承旧模型资格 |
+| SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f普通Filter同engine两query／4调用；另有8be单行Map→Extract，不转授新源 另有[a503有限MFE／EM](#finite-chain-model-20261020)；| 显式Core Extract屏障CPU通过；原同步批不等于Async供给 |
 | IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 旧7a作者CPU保持原来源；固定53d[公开CLI作者CPU](../imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)已验 | [4fc查询API](../imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)的ME／EF通过；[旧8be初始化unknown](#imlane-model-initialization-attempt-20261019)不改写 | 当前公开CLI模型、作者Ray及级联模型另验；r3级联CPU保持原来源 |
 | SemLoom Async Core（显式） | 生产Core／准备ObjectRef／线程actor／有界三通道child | 原CPU传输与parser／COUNT／evaluator按来源分列 | [82e模型](../async_records_actor_20261019/README.md#model-late-cancel-20261019)late通过、cancel失败；[a503取消交接观测](../async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)通过，逻辑unknown及旧失败保留 | 同步默认保持，公开CLI模型、跨阶段持续供给及性能另验 |
 | 原全局级联（Ray／Daft／Core／IMLane） | 原LOTUS全局控制、角色／阶段及call身份；公共backend selector | 原方法差分、各native阶段CPU和Core关窗／入口合同分列；固定53d IMLane公开CLI作者CPU已验 | 真实helper日志／模型／GPU换模待验 | IMLane阶段API与[公共CLI](../imlane_cascade_cpu_20261019/README.md#public-cli-author-cpu-20261019)按来源分别核对 |
@@ -534,6 +536,40 @@ NoPopen窗外先核同一固定SemBench源码，窗内仅缓存该Git核验并�
 
 [当前资格／缺口清单](readiness_20261020.json)按来源分列既有普通Filter、Map→Extract／Daft退出、固定4fc IMLane API、固定53d公开作者CPU和a503取消交接观测。已通过单元不重跑；原MFE未到Extract的负结果仍保持。新的native Extract后继独立CPU两项见[原问题主报告](../lotus_extract_relation_20261019/README.md#independent-native-successors-20261020)。
 
-最小后续真实单元仍是能到非空Extract的M→F→E与E→M、原全局helper级联、IMLane公开CLI的Extract后继与级联。需冻结新source／config／unit和原生所有权，保留已知调用与失败，不借用旧预算。cancel cap1的unknown／held-ref保持属于其明确保守合同，不作为无限清零修复任务；[验收依据](../async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)分开物理退出和逻辑责任。
+固定a503的M→F→E与E→M已按下节补齐六个真实单元。后续真实单元仍为原全局helper级联、IMLane公开CLI的Extract后继与级联。需冻结新source／config／unit和原生所有权，保留已知调用与失败，不借用旧预算。cancel cap1的unknown／held-ref保持属于其明确保守合同，不作为无限清零修复任务；[验收依据](../async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)分开物理退出和逻辑责任。
 
 正式SemBench仅进入准备：固定原查询／数据／真值／模型角色、LOTUS配置、原生调度与合理生命周期、同口径计时和重复顺序，再从逐query manifest推导预算。权威规则是[同一LOTUS方法的执行对照](../../../plans/reference/对照规范.md#lotus-algorithm-execution)与[当前实施边界](../../../plans/数据组织.md#model-engine-roadmap)。旧四臂三query的35840示例不是当前records／IMLane矩阵或新执行额度；尚无新版正式性能成绩，不省略最终原生LOTUS／Ray／Daft／IMLane与SemLoom静态／候选身份，也不把unsupported方法静默替换。旧请求baseline和历史失败全部保留。
+
+<a id="finite-chain-model-20261020"></a>
+## 固定 a503 的六个有限链模型单元（2026-10-20）
+
+运行组 `engineering-20261020-r1` 固定生产源码 `a50351051de0d960736c46914f4c56bde2fa5111`，
+finite配置／harness清单SHA256为 `85ef1453732255334f7994093a10d87c95bab5250eecd841bfcb128cd93f8f98`。
+Core、Ray Data和Daft分别完成两输入发生项的非空Map→Filter→Extract及完整Extract→Map，
+保留各自调度与方法阶段／关系屏障。前者各实际Map2、Filter2、Extract1，输出1行；后者各Extract2、Map2，输出2行。
+原LOTUS messages、parser、known usage、最终关系及父身份replay均通过。
+
+| 单元 | 实际模型调用 | 永久上限 | 输入／输出tokens | 完整单元秒数 |
+|---|---:|---:|---:|---:|
+| core-mfe | 5 | 6 | 459／33 | 55.032 |
+| core-em | 4 | 4 | 404／30 | 56.679 |
+| ray-mfe | 5 | 6 | 459／33 | 81.039 |
+| ray-em | 4 | 4 | 404／30 | 136.890 |
+| daft-mfe | 5 | 6 | 459／33 | 70.506 |
+| daft-em | 4 | 4 | 404／30 | 119.519 |
+
+合计27次实际模型调用，六单元30次额度永久占用，少用部分不退；未用修复或模型重跑。
+每单元独立物理检查确认已观察进程退出、GPU回到1MiB／空compute、SHM／RPC为空、正常owned lease释放；
+旧12份历史账本SHA不变。各单元观察身份及RSS／SHM峰值分列，不能跨单元相加或当cgroup硬限制。
+Ray E→M曾出现1CPU／1GPU pending警告，后自然完成；取消前置检查发现终态已存在，在任何signal前停止，
+没有取消、重跑或据此修改生产。原瞬态判断保留在更正说明。
+
+[唯一脱敏摘要](finite_chain_20261020.json)直接保存GPU owner的允许列表导出，快照为北京时间2026-10-20 17:51:07；
+原件继续由唯一GPU owner按该组／单元身份保存，整批最终归档与完整清理成员核验后另补定位，本次不冒称已核全部归档。
+本次独审只核发布摘要、计数／来源和结论边界，不重跑模型。现有源与配置清单SHA定位精确输入和harness，
+不上传机器配置、PID／连接身份、私有路径或凭据。
+
+共享工程窗口仍为已批准164次／130分钟，134基础已永久预留、30修复储备在此快照仍未分配；
+北京时间17:33:11.837129开始，19:43:11.837129截止，不因后续扩展重置。
+这些是固定单次工程资格，非原MovieQ3正式测量，不支持吞吐、质量或性能排名；
+原8be全过滤／空Index失败、Daft旧生命周期负结果及各自预算不改写，不转授helper／IMLane／Async新profile或main。

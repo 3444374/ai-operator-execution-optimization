@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-20：发布固定 a503 的六个有限链模型资格
+
+唯一GPU owner按原164／130分钟授权完成Core、Ray、Daft各M→F→E与E→M，原LOTUS replay／knownusage／完整关系和独立物理退出通过；[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)保存唯一允许列表摘要、配置清单SHA与逐次原值。27实际／30永久额度不退款，旧12账本不变，未用修复或模型重跑。Ray E→M的pending瞬态后自然完成，取消检查在signal前因已有终态停止；只读诊断不据此改代码。完整整批归档定位后补，不扩为正式性能结论。
+
+root同时完成有意义的generic10行／IMLane E→F2行固定输入及六项CPU合同、两轴窄审，保留fixture环境首轮失败和所有复核，不在此计作模型调用；材料留私有，由唯一GPU owner绑定已有中央预算。正式observer和两个adapter在独立候选接纳，已冻结a503工程执行不切源；本报告提交无生产修改。
+
 ## 2026-10-20：恢复固定材料、分列补验与当前边界
 
 cap1最后三文件35项／48子用例通过；最新第十一CPU fixture账本更新只复验受影响5项／8子用例，原observer11及生产成功不重跑。完整a503源／8harness／1118包经两轴窄审后，唯一GPU owner单次完成取消交接观测；已知usage／原RPC false／关闭接管／逻辑unknown与独立物理退出保持分列。[主报告](experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)明确unknown保留属有限合同，旧r2不升级。

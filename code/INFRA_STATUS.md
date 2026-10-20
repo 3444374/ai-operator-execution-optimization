@@ -2,11 +2,13 @@
 
 ## 2026-10-20：资格补验与有限收口
 
+固定a503的[六个有限链模型单元](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-chain-model-20261020)已通过Core／Ray／Daft的非空M→F→E与E→M及原LOTUS replay／独立物理退出，补齐该有限profile；原失败与helper、IMLane公开CLI及正式性能范围分列。
+
 固定a503的[取消交接观测](../experiments/results/diagnostics/async_cancel_close_20261019/README.md#cap1-handoff-observation-20261020)已完成单次cap1；原RPC false／关闭接管／原生调用／物理退出分列，逻辑unknown／held-ref1按合同保留，旧r2不升级。
 [原独立native Extract占位](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#independent-native-successors-20261020)补齐实际Ray／Daft CPU与原LOTUS差分；[固定53d公开CLI](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-public-cli-author-cpu-20261019)原作者CPU终态已补齐只读审阅。均不转授其他源码／真实helper／完整模型或性能资格。
 [剩余矩阵与正式baseline准备](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-readiness-20261020)按新配置和十二账本边界推进；旧35840模板不作当前额度。
 
-[IMLane固定查询API模型检查](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)已在`4fc53086`完成有限Map→Extract与Extract→Filter，保留原作者调度、段间独立实例及SDK差分；后续`8d35ddea`公开selector的作者执行仍待验，旧7a作者CPU不改来源。
+[IMLane固定查询API模型检查](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)已在`4fc53086`完成有限Map→Extract与Extract→Filter，保留原作者调度、段间独立实例及SDK差分；后续公开selector固定53d已有作者CPU，当前公开CLI模型仍另验，旧7a作者CPU不改来源。
 
 [Async固定模型检查](../experiments/results/diagnostics/async_records_actor_20261019/README.md#model-late-cancel-20261019)在`82e685b3`取得原生未完成区间内的迟到接纳证据；取消因缺少对应abort意图观察保留失败，known usage、Core unknown责任与独立物理退出分列。性能及取消修正另验。
 
@@ -22,7 +24,7 @@
 
 [显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。
 后续修复原 parser 额外空字段名在后继 schema 被误拒绝的问题；39 项 CPU／17 subtests 通过，该阶段两个独立native占位的后续补验见本页首段，原失败见[兼容回归](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。
-[Ray／Daft 显式关系布局](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)已接纳：13 合同与各 2 项实际 native CPU 用例通过，EOF／覆盖／成功后推进，native 保有分批／调度，每段独立引擎，18／11 已观察 owned 退出。新增[源 Index 物化接口](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)保空切片／dtype／name，51 项／43 subtests CPU 通过；调用方须显式保留原 Index，原独立native占位后续补验按首段的新范围解释。原 MFE 不改写，真实新关系模型及 GPU 仍待验。
+[Ray／Daft 显式关系布局](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)已接纳：13 合同与各 2 项实际 native CPU 用例通过，EOF／覆盖／成功后推进，native 保有分批／调度，每段独立引擎，18／11 已观察 owned 退出。新增[源 Index 物化接口](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)保空切片／dtype／name，51 项／43 subtests CPU 通过；调用方须显式保留原 Index，原独立native占位后续补验按首段的新范围解释。原 MFE 不改写；固定a503的E→M模型资格见页首，其余新组合／profile仍另验。
 [Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选121项CPU与关闭修复36项分列；未知保留句柄／预留，close只确认API／直接child／I/O。后续[actor／Core／公开selector](../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)已接，130／40原检查与独立实际CPU scope分列；关闭known usage RED由0e515修复，原unknown额度保留。另一个实际CPU对照取得原parser／COUNT2／evaluator零误差、22／2／24合成usage及Core额度／refs0，17个已观察身份退出、模型0；固定82e模型结果另列于上方，不转授公开CLI或性能。
 [Async r2取消／关闭修补](../experiments/results/diagnostics/async_cancel_close_20261019/README.md)选择职责ec013835的两个生产文件：已接纳controls先于close，冻结后拒新abort，actor用原期限接管pending后关闭同engine。parent_control_queue_only不确认原RPC或native成功；163常规／65子测试、独立Ray1项及7项Core实库CPU分列，24资格依赖与当前逐字同，集成定向29项／7子测试通过。冻结82e late3成功与r2取消失败保持，原unknown／2403tokens／held-ref1不升级，实际竞争层仍未定；新cap1单次观测见本页首段，旧四次额度和原包不改。
 [Core actor 接点](../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)新增显式 owner 注入、完整 TaskKey 提交／取消／结果确认及模式报告；同步默认保持，92 项 CPU／39 subtests 通过。取消请求不释放未知责任，Async actor／公开 selector 后续接纳，默认同步保持；新组合按各自固定来源解释。
