@@ -1,4 +1,4 @@
-"""Formal Movie Q3 boundary around the existing author-owned Filter carrier.
+"""Formal Movie task boundary around the existing author-owned Filter carrier.
 
 The controller owns the normal host lease, permanent query claim and clocks.
 IMLane DBEnd/Coordinator/Lane/CPython retain their existing scheduling and close

@@ -357,7 +357,7 @@ class PublicWorkerAdapterTests(unittest.TestCase):
         shutil.copytree(fixture.source.manifest_path.parent, package / "input")
         for directory in ("units", "configs"):
             (package / directory).mkdir()
-        config = dict(engine=asdict(fixture.engine), method=asdict(fixture.method),
+        config = dict(task=fixture.source.task.name, engine=asdict(fixture.engine), method=asdict(fixture.method),
             generation=asdict(fixture.generation), resources=asdict(fixture.resources))
         if backend == "lotus-native":
             config["native_options"] = profile

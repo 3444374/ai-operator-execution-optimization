@@ -508,6 +508,10 @@ class ConfigurationTests(unittest.TestCase):
 
 
 class WorkerCleanupTests(unittest.TestCase):
+    def setUp(self):
+        from src.baselines.text.movie_tasks import MovieTask
+        self.source = SimpleNamespace(task=MovieTask(3))
+
     def test_core_selector_allocates_lazily_and_does_not_claim_unconnected_core(self):
         from src.experiments import lotus_records_movie as module
         rows = iter(())
@@ -526,10 +530,10 @@ class WorkerCleanupTests(unittest.TestCase):
              patch.object(module, "run_movie_query", side_effect=query), \
              patch.object(module, "write_private_json", side_effect=lambda p, v: recorded.append(deepcopy(v))):
             module._model_worker({"backend": "semloom-local-model-core", "query_id": "q"},
-                "source", "checkout", "method", "generation", SimpleNamespace(cpu_workers=1, gpu_workers=1),
+                self.source, "checkout", "method", "generation", SimpleNamespace(cpu_workers=1, gpu_workers=1),
                 "engine", Path("unused"))
         constructor.assert_called_once()
-        owner.evaluate.assert_called_once_with("source", query_id="q")
+        owner.evaluate.assert_called_once_with(self.source, query_id="q")
         static.assert_not_called()
         owner.close.assert_called_once()
         self.assertFalse(recorded[-1]["production_core_used"])
@@ -557,8 +561,8 @@ class WorkerCleanupTests(unittest.TestCase):
              patch.object(module, "write_private_json", side_effect=lambda path, value: recorded.append(dict(value))), \
              patch("builtins.__import__", side_effect=guarded_import):
             module._model_worker({"backend": "daft-native-local-model", "query_id": "q"},
-                                 "source", "checkout", "method", "generation", "resources", "engine", Path("unused"))
-        evaluate.assert_called_once_with("source", "method", "engine", "generation", "resources", query_id="q")
+                                 self.source, "checkout", "method", "generation", "resources", "engine", Path("unused"))
+        evaluate.assert_called_once_with(self.source, "method", "engine", "generation", "resources", query_id="q")
         self.assertEqual(recorded[-1]["status"], "completed")
         self.assertFalse(recorded[-1]["independent_gpu_process_exit_check"])
         self.assertFalse(recorded[-1]["production_core_used"])
@@ -584,7 +588,7 @@ class WorkerCleanupTests(unittest.TestCase):
              patch.object(module, "write_private_json", side_effect=lambda path, value: recorded.append(dict(value))):
             with self.assertRaises(BaseException) as failure:
                 module._model_worker({"backend": "semloom-local-model-static-reference", "query_id": "q"},
-                                     None, None, None, None,
+                                     self.source, None, None, None,
                                      SimpleNamespace(cpu_workers=1, gpu_workers=1), None, Path("unused"))
         owner.close.assert_called_once()
         runtime.shutdown.assert_called_once()

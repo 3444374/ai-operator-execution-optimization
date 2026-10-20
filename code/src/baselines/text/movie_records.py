@@ -1,4 +1,4 @@
-"""Finite raw Movie records and separate evaluation labels for plain Q3."""
+"""Finite Movie inputs and labels; task binding owns predicate and output semantics."""
 
 from contextlib import contextmanager
 import csv
@@ -11,14 +11,17 @@ from src.baselines.common.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
 from src.semantic_methods.lotus.records import FilterMethod, MOVIE_Q3_INSTRUCTION, RecordScan, identity
+from .movie_tasks import MovieTask
 
 
 SCHEMA = "semloom.movie_records.v1"
+TASK_SCHEMA = "semloom.movie_records.v2"
 RECORD_COLUMNS = ("row_id", "source_position", "reviewId", "id", "reviewText")
 REFERENCE_COLUMNS = ("row_id", "source_position", "reviewId", "id", "scoreSentiment")
 PREDICATE = dict(column="id", operator="eq", value="taken_3")
 # The fixed input profile also used by experiments.postgresql.sembench_queries.
 MOVIE_CSV_DIGEST = "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf"
+OFFICIAL_MOVIE_CSV_DIGEST = "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21"
 MAX_ROWS = 4096
 MAX_CSV_BYTES = 16 * 1024 * 1024
 MAX_REVIEW_BYTES = 1024 * 1024
@@ -26,15 +29,8 @@ MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 _CSV_LOCK = threading.RLock()
 
 
-def validate_movie_method(method):
-    """Bind the original Q3 instruction and parser policy at the task boundary."""
-    if type(method) is not FilterMethod:
-        raise ValueError("Movie source requires the plain FilterMethod")
-    method.describe()
-    if (method.instruction != MOVIE_Q3_INSTRUCTION or method.default is not True
-            or method.output_tokens != ("True", "False") or method.system_prompt is not None
-            or method.resolved_input_columns not in (None, ("reviewText",))):
-        raise ValueError("original Movie Q3 requires its instruction, output tokens, default parser policy and system prompt")
+def validate_movie_method(method, task="movie-q3"):
+    MovieTask.from_config(task).validate_method(method)
 
 
 def _bounded_file(path, limit=MAX_CSV_BYTES):
@@ -70,10 +66,12 @@ def _row_limit(value):
 
 
 def _role(role, source_digest):
-    if role not in ("software_fixture", "sembench_movie_subset"):
+    if role not in ("software_fixture", "sembench_movie_subset", "sembench_movie_official"):
         raise ValueError("Movie source requires an explicit fixture or SemBench subset role")
     if role == "sembench_movie_subset" and source_digest != MOVIE_CSV_DIGEST:
         raise ValueError("SemBench Movie subset must use the fixed original CSV SHA256")
+    if role == "sembench_movie_official" and source_digest != OFFICIAL_MOVIE_CSV_DIGEST:
+        raise ValueError("official SemBench Movie input must use its separately locked CSV SHA256")
 
 
 @contextmanager
@@ -140,11 +138,12 @@ def _original_prefix(source, max_rows, expected_digest):
 
 
 def prepare_movie_source(input_csv, output_dir, *, expected_csv_sha256, max_rows,
-                         role="software_fixture") -> Path:
+                         role="software_fixture", task=None) -> Path:
     """Copy the first bounded prefix without labels in the execution records."""
     _row_limit(max_rows)
     expected_csv_sha256 = _digest(expected_csv_sha256)
     _role(role, expected_csv_sha256)
+    binding = MovieTask.from_config("movie-q3" if task is None else task)
     source = Path(input_csv).resolve(strict=True)
     selected, references, source_rows = _original_prefix(source, max_rows, expected_csv_sha256)
     root = Path(output_dir)
@@ -160,10 +159,10 @@ def prepare_movie_source(input_csv, output_dir, *, expected_csv_sha256, max_rows
             writer.writerows(rows)
         _bounded_file(root / filename)
     eligible = [dict(row_id=row["row_id"], source_position=row["source_position"])
-                for row in selected if row["id"] == PREDICATE["value"]]
+                for row in selected if binding.accepts(row)]
     manifest = dict(
-        schema=SCHEMA, task="movie-q3", predicate=PREDICATE,
-        instruction=MOVIE_Q3_INSTRUCTION, columns=list(RECORD_COLUMNS), role=role,
+        schema=SCHEMA if task is None else TASK_SCHEMA, task=binding.name, predicate=binding.predicate,
+        instruction=binding.instruction, columns=list(RECORD_COLUMNS), role=role,
         original_csv=str(source), source_csv_sha256=expected_csv_sha256, max_rows=max_rows,
         source_rows=source_rows, rows=len(selected), eligible_rows=len(eligible),
         eligible_occurrences=eligible,
@@ -215,10 +214,11 @@ class MovieRecordSource:
         if len(raw) > MAX_MANIFEST_BYTES:
             raise ValueError("Movie manifest exceeds its declared file byte limit")
         manifest = json.loads(raw)
-        if (type(manifest) is not dict or manifest.get("schema") != SCHEMA
-                or manifest.get("task") != "movie-q3"
-                or manifest.get("predicate") != PREDICATE
-                or manifest.get("instruction") != MOVIE_Q3_INSTRUCTION
+        binding = MovieTask.from_config(manifest.get("task")) if type(manifest) is dict else None
+        if (type(manifest) is not dict or manifest.get("schema") not in (SCHEMA, TASK_SCHEMA)
+                or (manifest["schema"] == SCHEMA and binding.query != 3)
+                or manifest.get("predicate") != binding.predicate
+                or manifest.get("instruction") != binding.instruction
                 or manifest.get("columns") != list(RECORD_COLUMNS)):
             raise ValueError("Movie manifest task/predicate/schema/instruction/columns differ")
         _role(manifest.get("role"), _digest(manifest.get("source_csv_sha256")))
@@ -256,7 +256,7 @@ class MovieRecordSource:
                 or manifest["source_rows"] != source_rows):
             raise ValueError("Movie materialized records/references differ from the original CSV prefix")
         eligible = [dict(row_id=row["row_id"], source_position=row["source_position"])
-                    for row in records if row["id"] == PREDICATE["value"]]
+                    for row in records if binding.accepts(row)]
         occurrences = manifest.get("eligible_occurrences")
         if (type(occurrences) is not list
                 or any(type(item) is not dict or set(item) != {"row_id", "source_position"}
@@ -269,17 +269,22 @@ class MovieRecordSource:
         return manifest, records, references
 
     @property
+    def task(self):
+        return MovieTask.from_config(self._load()[0]["task"])
+
+    @property
     def csv_path(self):
         manifest, _, _ = self._load()
         return self._artifact(manifest["records"], "records.csv")
 
     def preflight(self, method):
-        validate_movie_method(method)
         manifest, records, _ = self._load()
+        task = MovieTask.from_config(manifest["task"])
+        task.validate_method(method)
         return dict(
             schema="semloom.movie_records_preflight.v1", status="passed",
             manifest_sha256=self._manifest_digest, role=manifest["role"],
-            task=manifest["task"], predicate=dict(PREDICATE), method=method.describe(),
+            task=manifest["task"], predicate=task.predicate, method=method.describe(),
             source_csv_sha256=manifest["source_csv_sha256"], rows=len(records),
             eligible_rows=manifest["eligible_rows"], records=dict(manifest["records"]),
             references=dict(manifest["references"]),
@@ -292,18 +297,20 @@ class MovieRecordSource:
 
     def scan_spec(self, method):
         self.preflight(method)
+        predicate = self.task.predicate
         return RecordScan(
             csv_schema=tuple((name, "int64" if name == "source_position" else "string")
                              for name in RECORD_COLUMNS),
-            payload_columns=("reviewText",), predicate=(PREDICATE["column"], PREDICATE["value"]),
+            payload_columns=("reviewText",), predicate=None if predicate is None else (predicate["column"], predicate["value"]),
         )
 
     def expected(self, query_id):
         if type(query_id) is not str or not query_id.strip():
             raise ValueError("query_id must be a nonempty string")
-        _, records, _ = self._load()
+        manifest, records, _ = self._load()
+        task = MovieTask.from_config(manifest["task"])
         return [identity(query_id, row["row_id"], row["source_position"])
-                for row in records if row["id"] == PREDICATE["value"]]
+                for row in records if task.accepts(row)]
 
     def rows(self):
         return self._load()[1]

@@ -1,4 +1,4 @@
-"""Finite Q3 campaign orchestration; native backends retain all task scheduling.
+"""Finite Movie task campaigns; native backends retain all Filter scheduling.
 
 Checking never allocates a budget or starts an execution framework. Model work
 requires a separately bound authorization, a fresh ledger and the normal host
@@ -37,9 +37,9 @@ def runtime_files():
         for p in (REPO / directory).rglob("*") if p.is_file() and p.suffix in (".py", ".cpp", ".hpp")}
 
 
-def read(path):
+def read(path, *, max_bytes=8 * 1024**2):
     path = Path(path)
-    if path.is_symlink() or not path.is_file() or path.stat().st_size > 8 * 1024**2:
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > max_bytes:
         raise ValueError("a bounded regular JSON file is required")
     def reject(value):
         raise ValueError("nonfinite JSON: " + value)
@@ -71,10 +71,24 @@ def check_package(root):
     schedule, runtime = read(root / "schedule.json"), read(root / "runtime-binding.json")
     expected, all_calls = set(), set()
     source = MovieRecordSource.from_manifest(root / "input/manifest.json")
+    task = source.task
+    catalog = read(CONFIG_ROOT / "tasks.json")
+    task_plan = catalog["tasks"][task.name]
+    source_info = source.preflight(task.method("openai/local-check"))
+    input_profile = catalog["input_profiles"][task_plan["input_profile"]]
+    if (source_info["eligible_rows"] != task_plan["eligible_rows"] or source_info["rows"] != task_plan["rows"]
+            or source_info["source_csv_sha256"] != input_profile["csv_sha256"]
+            or source_info["role"] != input_profile["role"]):
+        raise ValueError("task input cardinality differs from the reviewed catalog")
+    if read(root / "task-definition.json") != task.describe():
+        raise ValueError("package task definition differs from the selected task")
+    selection = read(root / "task-selection.json")
+    if selection["task"] != task.name or selection["input_profile"] != task_plan["input_profile"]:
+        raise ValueError("package input profile and task selection differ")
     for summary in schedule["units"]:
         unit = read(root / summary["manifest"])
         if (sha(root / summary["manifest"]) != summary["sha256"] or summary["query_id"] in expected
-                or unit["query_id"] != summary["query_id"]):
+                or unit["query_id"] != summary["query_id"] or unit["task"] != task.name):
             raise ValueError("query identity changed or was reused")
         expected.add(summary["query_id"])
         calls = unit["stages"][0]["calls"]
@@ -85,10 +99,11 @@ def check_package(root):
             raise ValueError("per-stage call upper bound differs")
         all_calls.update(c["call_id"] for c in calls)
         for cfg in unit["configurations"]:
-            if sha(root / cfg["path"]) != cfg["sha256"]:
+            if sha(root / cfg["path"]) != cfg["sha256"] or read(root / cfg["path"])["task"] != task.name:
                 raise ValueError("candidate config changed")
     total = sum(u["max_calls"] for u in schedule["units"])
-    if (total != schedule["max_model_calls"] or total != 4200 or len(expected) != 35
+    if (total != schedule["max_model_calls"] or total != 35 * task_plan["eligible_rows"] or len(expected) != 35
+            or schedule["task"] != task.name
             or schedule["max_round_wall_s"] != 30150):
         raise ValueError("finite matrix/budget changed; requires a new plan")
     return schedule, runtime
@@ -110,17 +125,20 @@ def check(root):
         units=len(schedule["units"]), formal_execution_authorized=False)
 
 
-def validate_runtime_qualification(path):
+def validate_runtime_qualification(path, *, source=None):
     """An old status-only or CPU report cannot qualify the new executable source."""
     report = read(path)
     locked, plan = read(CONFIG_ROOT / "source.lock.json"), read(CONFIG_ROOT / "comparison.json")
     backends = {"lotus-native", "semloom-core", "ray-data", "daft", "imlane"}
+    task = "movie-q3" if source is None else source.task.name
+    input_digest = plan["input"]["csv_sha256"] if source is None else source.preflight(
+        source.task.method("openai/local-check"))["source_csv_sha256"]
     if (report.get("schema") != "semloom.sembench_records_runtime_qualification.v1"
             or report.get("status") != "ok" or report.get("qualification_kind") != "real_model"
             or report.get("runtime_source_lock_sha256") != sha(CONFIG_ROOT / "source.lock.json")
             or report.get("model_identity_evidence_sha256") != locked["model_identity_evidence_sha256"]
             or report.get("sembench_commit") != plan["sembench"]["commit"]
-            or report.get("input_csv_sha256") != plan["input"]["csv_sha256"]
+            or report.get("input_csv_sha256") != input_digest or report.get("task", "movie-q3") != task
             or set(report.get("backends", {})) != backends):
         raise ValueError("current-source real-model qualification identity required; CPU/old reports are insufficient")
     for backend, evidence in report["backends"].items():
@@ -146,7 +164,7 @@ def validate_authorization(root, authorization):
             or value["runtime_preflight_sha256"] != sha(runtime["runtime_preflight_report"])):
         raise ValueError("formal authorization must exactly bind the reviewed package/source/runtime/budget")
     AttemptBudget(value["budget_id"], value["limit_calls"])
-    validate_runtime_qualification(runtime["runtime_preflight_report"])
+    validate_runtime_qualification(runtime["runtime_preflight_report"], source=MovieRecordSource.from_manifest(Path(root) / "input/manifest.json"))
     if check(root)["blockers"]:
         raise ValueError("formal adapters/runtime are not ready")
     return value
@@ -169,7 +187,7 @@ class QueryClock:
             resident_query_seconds=None)
 
 
-def validate_result(report, expected):
+def validate_result(report, expected, *, source=None):
     if report.get("status") != "completed":
         raise ValueError("query did not complete")
     if report.get("inference_calls") == 0 or report.get("execution_kind") == "fixed-response software qualification":
@@ -190,9 +208,13 @@ def validate_result(report, expected):
     if (len(decisions) != len(expected) or len({r["row_id"] for r in decisions}) != len(expected)
             or {r["row_id"] for r in decisions} != {r["row_id"] for r in expected}
             or any(type(r["decision"]) is not bool for r in decisions)
-            or report["result"]["positive_review_cnt"] != sum(r["decision"] for r in decisions)
             or "original_metric" not in report["quality"]):
-        raise ValueError("complete row decisions, COUNT and original evaluation required")
+        raise ValueError("complete row decisions and original evaluation required")
+    if source is None:
+        if report["result"].get("positive_review_cnt") != sum(r["decision"] for r in decisions):
+            raise ValueError("COUNT differs from complete decisions")
+    else:
+        source.task.validate_result(report["result"], source.rows(), decisions)
     return dict(decisions=sorted((r["row_id"], r["decision"]) for r in decisions),
         messages=sorted((r["row_id"], r["messages_sha256"]) for r in calls["records"]),
         result=report["result"], original_metric=report["quality"]["original_metric"])
@@ -261,6 +283,8 @@ def worker(root, unit_path, config_path, context_path, output):
         context["claimed_budget"] = claim
         context["output_dir"] = output
         source = MovieRecordSource.from_manifest(root / "input/manifest.json")
+        if config.get("task", "movie-q3") != source.task.name:
+            raise ValueError("worker config and input must bind the same explicit Movie task")
         runtime = read(root / "runtime-binding.json")
         from integrations.imlane_records.resource_limits import gpu_snapshot
         assigned = gpu_snapshot(runtime["cuda_visible_devices"])
@@ -401,9 +425,9 @@ def run_campaign(root, authorization, output):
             finished = time.monotonic_ns()
             if not physical_confirmed or resources["passed"] is not True or supervised["observed_owned_exit_confirmed"] is not True:
                 raise RuntimeError("query physical/resource responsibility remains unresolved")
-            result = read(unit_root / "query.json")
+            result = read(unit_root / "query.json", max_bytes=128 * 1024**2)
             source = MovieRecordSource.from_manifest(root / "input/manifest.json")
-            signature = validate_result(result, source.expected(unit["query_id"]))
+            signature = validate_result(result, source.expected(unit["query_id"]), source=source)
             effective_config = read(root / chosen["path"])
             write_private_json(unit_root / "quality-audit.json", parser_audit(result,
                 FilterMethod.from_dict(effective_config["method"]),
@@ -422,7 +446,8 @@ def run_campaign(root, authorization, output):
                 profile=profile, cold_complete_seconds=timing["application_e2e_seconds"],
                 query_result_seconds=timing["query_result_seconds"], actual_model_calls=len(result["calls"]["records"]),
                 input_rows=len(source.rows()),
-                filter_rows=len(result["calls"]["records"]), result_rows=1,
+                filter_rows=len(result["calls"]["records"]),
+                result_rows=1 if source.task.query == 3 else len(result["result"]["reviewId"]),
                 successful_calls_per_query_second=len(result["calls"]["records"]) / timing["query_result_seconds"],
                 result_sha256=sha(unit_root / "query.json"))
             complete.append(row)

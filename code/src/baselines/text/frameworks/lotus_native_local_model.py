@@ -1,4 +1,4 @@
-"""Original SemBench Q3 / LOTUS LM over a query-owned local vLLM HTTP service.
+"""Original SemBench Movie task / LOTUS LM over a query-owned local vLLM HTTP service.
 
 LOTUS and LiteLLM retain scheduling, concurrency, accounting and parsing. The
 batch_completion wrapper only observes its ordered return; it calls the original
@@ -304,7 +304,7 @@ class _Calls:
         def observed(*args, **kwargs):
             self.batch_invocations += 1
             if self.batch_invocations != 1 or not self.prompts_observed:
-                raise ValueError("native plain Q3 requires exactly one LM batch_completion invocation")
+                raise ValueError("native ordinary Filter requires exactly one LM batch_completion invocation")
             result = original(*args, **kwargs)
             self.returned = result
             return result
@@ -429,7 +429,7 @@ def _client_and_lm(method, generation, resources, profile, endpoint):
 
 def run(source, checkout, method, generation, engine, resources, *,
         query_id, profile, observer=None, context=None):
-    """Execute the unchanged original Q3, with controller-owned budget/lease."""
+    """Execute the selected unchanged original Movie query, with controller-owned budget/lease."""
     report = dict(schema="semloom.lotus_native_local_model.v1", status="failed", query_id=query_id,
         production_core_used=False, scheduler_owner="Original LOTUS LM/LiteLLM batch_completion",
         native_scheduling_retained=True, observational_batch_wrapper=True,
@@ -453,10 +453,11 @@ def run(source, checkout, method, generation, engine, resources, *,
         import pandas as pd
         from lotus.types import SerializationFormat
         if type(source) is not MovieRecordSource:
-            raise TypeError("native Movie Q3 requires MovieRecordSource")
+            raise TypeError("native Movie tasks require MovieRecordSource")
         if type(engine) is not EngineSpec or type(generation) is not GenerationSpec or type(resources) is not RecordsResources:
-            raise TypeError("native Movie Q3 requires typed engine/generation/resources")
-        validate_movie_method(method)
+            raise TypeError("native Movie tasks require typed engine/generation/resources")
+        task = source.task
+        validate_movie_method(method, task.name)
         validate_generation(method, generation)
         resources.describe()
         engine.__post_init__()
@@ -473,7 +474,7 @@ def run(source, checkout, method, generation, engine, resources, *,
         if not isinstance(budget, ClaimedUnit) or budget.reservation.unit_id != query_id or budget.attempts:
             raise ValueError("the current query's fresh controller-claimed budget is required")
         emit("preflight_start")
-        report.update(source=source.preflight(method), method=method.describe(), generation=asdict(generation),
+        report.update(source=source.preflight(method), task=task.describe(), method=method.describe(), generation=asdict(generation),
                       method_source=validate_filter_source(), profile=dict(profile),
                       resources=resources.describe())
         upstream = verify_checkout(checkout)
@@ -481,9 +482,9 @@ def run(source, checkout, method, generation, engine, resources, *,
         calls = _Calls(expected, budget, generation, method.model_name[len("openai/"):], engine.max_model_calls)
         if ((expected and budget.remaining != len(expected))
                 or engine.max_model_calls is not None and engine.max_model_calls < len(expected)):
-            raise ValueError("native complete Q3 exceeds its claimed model-call upper bound")
+            raise ValueError("native complete task exceeds its claimed model-call upper bound")
         if lotus.settings.serialization_format != SerializationFormat.DEFAULT:
-            raise ValueError("native Q3 requires the original DEFAULT serialization")
+            raise ValueError("native Movie tasks require the original DEFAULT serialization")
         directory = Path(context["output_dir"]) / "lotus-native-http"
         require_outside_git(directory)
         lease = context["owner_context"]
@@ -531,22 +532,21 @@ def run(source, checkout, method, generation, engine, resources, *,
             with observe_filter_rows(record, calls.prompts), calls.observe_batch():
                 with _observe_native_httpx_client(calls, calls.record, endpoint,
                                                   timeout_s=resources.query_timeout_s):
-                    result = run_original_lotus_query(upstream, 3, load)
-        # The timestamp is immediately after the original complete COUNT returns.
-        try:
-            emit("result_ready")
-        finally:
-            report.update(result={"positive_review_cnt": int(result.iloc[0, 0])}, decisions=decisions,
-                          query_seconds=time.monotonic() - started)
+                    result = run_original_lotus_query(upstream, task.query, load)
+        # The timestamp is immediately after the original complete task result returns.
+        report.update(result=task.encode_result(result), decisions=decisions,
+                      query_seconds=time.monotonic() - started)
+        emit("result_ready")
         ledger, receipts, errors = calls.ledger(None)
-        if errors or len(decisions) != len(expected) or report["result"]["positive_review_cnt"] != sum(r["decision"] for r in decisions):
+        if errors or len(decisions) != len(expected):
             raise ValueError("native complete result/call/decision protocol differs: " + "; ".join(errors))
+        task.validate_result(report["result"], source.rows(), decisions)
         emit("evaluation_start")
         evaluated = time.monotonic()
         evaluation_error = None
         try:
             labeled = source.labeled_frame()
-            quality = evaluate_original(upstream, 3, result, labeled)
+            quality = evaluate_original(upstream, task.query, result, labeled)
             labels = dict(zip((r["row_id"] for r in source.rows()), labeled["scoreSentiment"], strict=True))
             quality["classification_audit"] = classification_audit(
                 {r["row_id"]: labels[r["row_id"]] for r in expected},

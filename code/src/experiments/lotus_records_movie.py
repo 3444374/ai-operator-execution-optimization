@@ -25,8 +25,8 @@ CASCADE_BACKENDS = ("ray-data-local-model-cascade", "daft-native-local-model-cas
                     "semloom-local-model-core-cascade")
 
 
-def _fixed_method(method):
-    validate_movie_method(method)
+def _fixed_method(method, task="movie-q3"):
+    validate_movie_method(method, task)
 
 
 def _finish(iterator, primary):
@@ -124,7 +124,8 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id, 
     )
     emit = observer if observer is not None else lambda _event: None
     emit("query_source_start")
-    _fixed_method(method)
+    task = source.task
+    _fixed_method(method, task.name)
     inputs = source.preflight(method)
     upstream = verify_checkout(checkout)
     method_source = validate_filter_source()
@@ -133,10 +134,10 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id, 
     ledger = CallLedger(expected, max_calls=max(1, len(expected)))
     lm = make_lm(method, generation)
     report = dict(schema="semloom.movie_records_query.v1", query_id=query_id,
-                  status="failed", source=inputs, method=asdict(method),
+                  status="failed", source=inputs, task=task.describe(), method=asdict(method),
                   generation=asdict(generation), method_source=method_source,
                   production_core_used=False, model_calls_are_not_output_rows=True,
-                  query_timing_scope="backend construction, scan, prepare, model, native interpretation and COUNT",
+                  query_timing_scope="backend construction, scan, prepare, model, native interpretation and task projection/aggregation",
                   evaluation_in_query_seconds=False, upstream_accessor_used_in_records=False)
     iterator = None
     primary = None
@@ -156,15 +157,14 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id, 
             by_call = {row["call_id"]: row for row in raw}
             ordered = [by_call[row["call_id"]] for row in expected]
             decisions = interpret_results(ordered, lm, method)
-            count = sum(row["decision"] for row in decisions)
-            result = pd.DataFrame({"positive_review_cnt": [count]})
-            report.update(result={"positive_review_cnt": count}, decisions=decisions,
+            result = task.result_frame(source.rows(), decisions)
+            report.update(result=task.encode_result(result), decisions=decisions,
                           query_seconds=time.monotonic() - started)
             emit("result_ready")
             evaluated_at = time.monotonic()
             emit("evaluation_start")
             labeled = source.labeled_frame()
-            quality = evaluate_original(upstream, 3, result, labeled)
+            quality = evaluate_original(upstream, task.query, result, labeled)
             rows = source.rows()
             labels = dict(zip((row["row_id"] for row in rows), labeled["scoreSentiment"], strict=True))
             quality["classification_audit"] = classification_audit(
@@ -224,7 +224,8 @@ def fixed_response_qualification(source, checkout, method, generation, responses
         LotusFilterMethod, bind_filter_method, engine_response, lm_report, make_lm, validate_filter_source,
     )
 
-    _fixed_method(method)
+    task = source.task
+    _fixed_method(method, task.name)
     source.preflight(method)
     validate_filter_source()
     expected = source.expected(query_id)
@@ -263,18 +264,19 @@ def fixed_response_qualification(source, checkout, method, generation, responses
             columns={"row_id": "_execution_row_id"})
         with lotus.settings.context(lm=reference, enable_cache=False):
             with observe_filter_rows(native_decisions.extend, native_prompts.extend):
-                result = run_original_lotus_query(checkout, 3, lambda: frame)
+                result = run_original_lotus_query(checkout, task.query, lambda: frame)
         native_messages = [message for call in captured for message in call["messages"]]
         if (len(captured) != 1
                 or native_messages != [json.loads(row["messages_json"]) for row in prepared]):
             raise ValueError("records preparation differs from original LOTUS messages")
         observed = [(row["row_id"], row["decision"]) for row in report["decisions"]]
-        if native_decisions != observed or int(result.iloc[0, 0]) != report["result"]["positive_review_cnt"]:
-            raise ValueError("records Filter decisions or COUNT differ from original LOTUS")
+        if native_decisions != observed or task.encode_result(result) != report["result"]:
+            raise ValueError("records Filter decisions or task projection differ from original LOTUS")
         if lm_report(reference)["stats"] != report["lm"]["stats"]:
             raise ValueError("records physical/virtual usage differs from original LM accounting")
         report.update(execution_kind="fixed-response software qualification", inference_calls=0,
-                      native_reference=dict(messages_equal=True, decisions_equal=True, count_equal=True,
+                      native_reference=dict(messages_equal=True, decisions_equal=True, result_equal=True,
+                                            count_equal=True if task.query == 3 else None,
                                             lm_stats_equal=True, effective_kwargs=captured[0]["kwargs"]))
     except BaseException as error:
         report.update(status="failed", error_type=type(error).__name__, error=redact_text(str(error)),
@@ -299,7 +301,7 @@ def read_config(path):
     from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "method", "generation", "engine", "resources", "async_limits"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -307,7 +309,7 @@ def read_config(path):
     if "async_limits" in value and value["backend"] != _ASYNC_BACKEND:
         raise ValueError("async_limits requires the explicit async Core backend")
     method = FilterMethod.from_dict(value["method"])
-    _fixed_method(method)
+    _fixed_method(method, value.get("task", "movie-q3"))
     generation = GenerationSpec.from_dict(value.get("generation", {}))
     resources = RecordsResources(**value.get("resources", {}))
     if value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND) and (
@@ -330,7 +332,7 @@ def model_preflight(source, checkout, method, generation, engine):
     import lotus
     from src.semantic_methods.lotus.engine import make_lm, validate_filter_source, validate_lm
 
-    _fixed_method(method)
+    _fixed_method(method, source.task.name)
     inputs = source.preflight(method)
     verify_checkout(checkout)
     method_source = validate_filter_source()
@@ -541,6 +543,8 @@ def _cascade_model_worker(config, source, checkout, method, generations, resourc
 
 
 def _model_worker(config, source, checkout, method, generation, resources, engine, root, *, observer=None):
+    if config.get("task", "movie-q3") != source.task.name:
+        raise ValueError("execution configuration task differs from its source binding")
     emit = observer if observer is not None else lambda _event: None
     ray = None
     owner = None
@@ -698,7 +702,8 @@ def main(argv=None):
     prepare.add_argument("--input-csv", required=True)
     prepare.add_argument("--input-sha256", required=True)
     prepare.add_argument("--max-rows", type=int, required=True)
-    prepare.add_argument("--role", choices=("software_fixture", "sembench_movie_subset"), required=True)
+    prepare.add_argument("--role", choices=("software_fixture", "sembench_movie_subset", "sembench_movie_official"), required=True)
+    prepare.add_argument("--task", choices=("movie-q1", "movie-q2", "movie-q3"), default=None)
     prepare.add_argument("--output-dir", required=True)
     for name in ("check", "run", "fixture", "cascade-check", "cascade-run"):
         command = commands.add_parser(name)
@@ -717,17 +722,17 @@ def main(argv=None):
     if args.action == "prepare":
         print(prepare_movie_source(args.input_csv, args.output_dir,
                                    expected_csv_sha256=args.input_sha256,
-                                   max_rows=args.max_rows, role=args.role))
+                                   max_rows=args.max_rows, role=args.role, task=args.task))
         return 0
     source = MovieRecordSource.from_manifest(args.source_manifest)
     if args.action == "fixture":
         from src.serving.backends.vllm_engine import GenerationSpec
-        method, generation = FilterMethod(args.model_name), GenerationSpec()
+        method, generation = source.task.method(args.model_name), GenerationSpec()
         root = Path(args.output_dir).resolve()
         new_private_directory(root)
         try:
             report = fixed_response_qualification(source, args.sembench_checkout, method, generation,
-                                                 json.loads(Path(args.responses).read_text()), query_id="movie-q3-fixture")
+                                                 json.loads(Path(args.responses).read_text()), query_id=source.task.name + "-fixture")
         except BaseException as error:
             report = getattr(error, "query_report", dict(status="failed", error_type=type(error).__name__,
                                                          error=redact_text(str(error)), inference_calls=0))
@@ -761,6 +766,8 @@ def main(argv=None):
             supervise(command, root, timeout_s=resources.startup_timeout_s + resources.query_timeout_s + 30)
         return 0
     config, method, generation, resources, engine = read_config(args.config)
+    if config.get("task", "movie-q3") != source.task.name:
+        raise ValueError("execution configuration task differs from its source binding")
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
     if config["backend"] == _ASYNC_BACKEND:
         limits = _async_limits(config)

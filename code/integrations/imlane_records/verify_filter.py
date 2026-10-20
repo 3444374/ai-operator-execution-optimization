@@ -64,6 +64,8 @@ def configuration(value):
             or engine.max_model_calls is None or engine.max_model_calls * len(queries) > value["max_total_calls"]):
         raise ValueError("qualification needs distinct query IDs and a finite total permanent allowance")
     source = MovieRecordSource.from_manifest(value["source_manifest"])
+    if value.get("task", source.task.name) != source.task.name:
+        raise ValueError("IMLane task selector differs from its input task binding")
     method, _scan = bind_source(source, method)
     from src.semantic_methods.lotus.engine import validate_generation
     validate_generation(method, generation)
