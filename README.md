@@ -16,6 +16,8 @@ records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOT
 records生产实现与CSV无需PG的能力预检修复仍在[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)独立核验，尚未纳入main。冻结45d的G1仅完成Native/Core三个入口的负例小资格；Ray runtime/Daft session已补充窄功能资格，其余入口仍待各自核验，见[资格范围](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
 HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎尚未纳入 main，功能分支的实现及资格统一从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对。
 
+共享链结果身份合同的首批目录归位候选见[代码状态](code/INFRA_STATUS.md#record-results-migration)；旧import保留，未迁移全仓命名空间或改变原生baseline执行。
+
 | 要查什么 | 权威入口 |
 |---|---|
 | 规则、术语与内容归属 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md)、[项目导航](PROJECT_INDEX.md) |

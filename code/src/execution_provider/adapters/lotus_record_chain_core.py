@@ -147,7 +147,7 @@ class _ChainTransport:
         return _encode(value, task.task.max_result_bytes)
 
     async def _execute(self, task, endpoint):
-        from src.baselines.text.frameworks.lotus_chain_results import (
+        from src.semantic_methods.lotus.record_results import (
             ChainBatchResults, ChainExecutionError,
         )
 
@@ -310,7 +310,7 @@ class _CoreChainRows:
             self.peak_core_usage[key] = max(value, self.peak_core_usage[key])
 
     def _fill(self):
-        from src.baselines.text.frameworks.lotus_chain_results import _source_binding, record_row
+        from src.semantic_methods.lotus.record_results import _source_binding, record_row
 
         owner = self.owner
         if self.source_eof or owner.core.capacity.usage().held_tasks:
@@ -515,7 +515,7 @@ class SemLoomRecordChainCore:
 
     def _advance_relation_phase(self, stream):
         """Cross one complete Extract relation on the single Core control thread."""
-        from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults
+        from src.semantic_methods.lotus.record_results import ChainBatchResults
         from src.semantic_methods.lotus.record_relation import complete_extract_relation
 
         self._control()
@@ -606,7 +606,7 @@ class SemLoomRecordChainCore:
                             work_unit="stage_call_upper_bound"))
         self.deadline = time.monotonic() + self.resources.query_timeout_s
         _check(self.deadline, cancelled)
-        from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults
+        from src.semantic_methods.lotus.record_results import ChainBatchResults
 
         self.chain = self._segments[0]
         self._phase_columns = None if columns is None else tuple(columns)

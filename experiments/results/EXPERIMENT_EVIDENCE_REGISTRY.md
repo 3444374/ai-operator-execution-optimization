@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-26：[共享链结果合同归位](../../code/INFRA_STATUS.md#record-results-migration)。固定`45d184df`的独立后继单模块迁移，旧import同对象、六类行为差分与旧collector pickle读取通过；17项新增CPU检查及51项既有回归通过。首次`-S`隐藏既有依赖的测试错误保留，仅修正测试启动方式。无新模型、原生图或GPU运行，无性能/内存收益结论，不转授records资格。 完整树的历史复现来源漂移由七份旧字节快照和33条override路由修复，expected SHA与projection ID保持，五投影另作CPU还原核验。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
+
 <a id="pr52-g1-negative-records"></a>
 2026-10-26：固定45d的records G1窄功能范围。两轮实际14次成功调用仅覆盖Native resident、Core默认同步及显式async的首次/复用和两条eligible负例；新轮8次无失败/unknown/missing/重试，旧轮私有审计失败仍保留。完整资源退出与调用确认分列，不证明正例质量、Map/Extract、P99或稳定性能。[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，其余入口不能由该结果取得资格，见[代码状态](../../code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
 

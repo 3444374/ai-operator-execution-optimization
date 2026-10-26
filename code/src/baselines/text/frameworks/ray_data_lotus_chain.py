@@ -29,7 +29,7 @@ from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
 
 
 from .lotus_chain_batch import FusedChainBatch
-from .lotus_chain_results import (
+from src.semantic_methods.lotus.record_results import (
     ChainBatchResults, _json, _metadata, _source_binding, record_row,
 )
 

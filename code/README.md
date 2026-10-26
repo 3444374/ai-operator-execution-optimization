@@ -23,6 +23,8 @@ CSV／本地records与本地模型执行不要求PG；只有显式DB／SQL入口
 通用records方法须显式传`instruction`，缺失或空值会拒绝；Movie提示仅由MovieTask提供，其他数据字段由调用方绑定。
 固定2000行／120发生项的原SDK CPU用例按[本地资产绑定](tests/records_cpu.md)配置路径，不向生产代码写入机器路径；缺资产与无效资产分别保留skip／失败。
 
+第一批职责归位只将[链结果身份合同](src/semantic_methods/lotus/record_results.py)移到方法公共层，旧import保留；[迁移回归](tests/semantic_methods/test_lotus_record_results.py)与[验证边界](INFRA_STATUS.md#record-results-migration)分列，不扩大为全仓命名空间迁移。
+
 ## Core 与完整响应基础
 
 main 在原执行层上接纳了[完整响应与 native task API](src/execution_provider/adapters/README.md)。

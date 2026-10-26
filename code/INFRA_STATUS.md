@@ -32,6 +32,13 @@ records的G1三入口两轮14次成功，G2另补Ray runtime/Daft session8次成
 
 [priority9231小对照与取消状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)单列：本轮无收益、默认仍FIFO，取消unknown/held与物理资源释放不互相替代。独审定位私有runner漏消费晚到终态P2；45d owner已有close后collect和调用收据合并，11项针对性CPU通过、0skip，本探针不构成PR52新增合并阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；不把88次成功主臂一律改为失败，也不据此免除PR52其他门槛。
 
+<a id="record-results-migration"></a>
+## 2026-10-26 共享链结果合同归位候选
+
+基于PR #52固定候选`45d184df`，`semantic_methods/lotus/record_results.py`逐字节接纳旧`baselines/text/frameworks/lotus_chain_results.py`实现；旧模块保留全部既有定义及导入名的同对象重导出。Core四处导入及Ray Data、Daft、fused worker三个消费者改用新路径，不改方法/调度/模型/响应或错误规则。新类型pickle引用新模块，旧模块pickle仍可读；不支持新旧源码worker混搭。 此批依赖未合并的[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)，只存在于独立迁移候选；受测45d目录及其资格身份未改，不将本批CPU结果转授给PR52。
+
+[迁移检查](tests/semantic_methods/test_lotus_record_results.py)17项和既有Core/方法回归51项通过；六类旧/新行为快照一致，真实旧版collector pickle可由新源码读取。首次测试错误来自`-S`隐藏既有PyArrow依赖，仅修正测试启动方式；沿用的serving包初始化仍需PyArrow，本批未拆该依赖。全部是CPU fixture/独立解释器检查，原生迭代器close由fixture替代；未新跑Ray/Daft图、模型或GPU，不提升当前records生产闭包的资格，也不声称性能或内存收益。 历史复现新增七份旧公共来源快照，覆盖本次五文件迁移及45d已有环境/说明漂移；仅补33条override路由，expected hash与projection ID不改，不改active45d。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
+
 ## 2026-10-26 records生产闭包review候选（代码与原CPU范围）
 
 独立候选从`main@5f291d3d`选择性接入r2冻结代码闭包，补齐records/Core方法底座、Native／Ray／Daft／IMLane薄适配与Movie生产runner；不是整支合并旧Movie或a244。

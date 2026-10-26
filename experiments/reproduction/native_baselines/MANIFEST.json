@@ -619,7 +619,12 @@
         "code/scripts/data/import_bounded_output_workload.py": "historical_sources/code/scripts/data/import_bounded_output_workload.py",
         "code/src/baselines/text/frameworks/ray_data_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_http.py",
         "code/src/experiments/movie_matrix.README.md": "historical_sources/code/src/experiments/movie_matrix.README.md",
-        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py"
+        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_batch.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "code/src/baselines/text/frameworks/lotus_chain_results.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_record_chain_core.py"
       },
       "default_selected": false
     },
@@ -1276,7 +1281,12 @@
         "code/scripts/data/import_bounded_output_workload.py": "historical_sources/code/scripts/data/import_bounded_output_workload.py",
         "code/src/baselines/text/frameworks/ray_data_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_http.py",
         "code/src/experiments/movie_matrix.README.md": "historical_sources/code/src/experiments/movie_matrix.README.md",
-        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py"
+        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_batch.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "code/src/baselines/text/frameworks/lotus_chain_results.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_record_chain_core.py"
       },
       "default_selected": false
     },
@@ -1943,7 +1953,12 @@
         "code/scripts/data/import_bounded_output_workload.py": "historical_sources/code/scripts/data/import_bounded_output_workload.py",
         "code/src/baselines/text/frameworks/ray_data_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_http.py",
         "code/src/experiments/movie_matrix.README.md": "historical_sources/code/src/experiments/movie_matrix.README.md",
-        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py"
+        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_batch.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "code/src/baselines/text/frameworks/lotus_chain_results.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_record_chain_core.py"
       },
       "default_selected": false
     },
@@ -2611,7 +2626,12 @@
         "code/tests/experiments/test_movie_runtime_configuration.py": "compatibility/explicit_instruction/b3f7aa7ba942/code/tests/experiments/test_movie_runtime_configuration.py",
         "code/scripts/data/import_bounded_output_workload.py": "historical_sources/code/scripts/data/import_bounded_output_workload.py",
         "code/src/baselines/text/frameworks/ray_data_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_http.py",
-        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py"
+        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_batch.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "code/src/baselines/text/frameworks/lotus_chain_results.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_record_chain_core.py"
       },
       "default_selected": false
     },
@@ -3282,7 +3302,12 @@
         "code/tests/experiments/test_movie_runtime_configuration.py": "compatibility/explicit_instruction/b3f7aa7ba942/code/tests/experiments/test_movie_runtime_configuration.py",
         "code/scripts/data/import_bounded_output_workload.py": "historical_sources/code/scripts/data/import_bounded_output_workload.py",
         "code/src/baselines/text/frameworks/ray_data_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_http.py",
-        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py"
+        "code/src/infrastructure/environment.py": "historical_sources/code/src/infrastructure/environment.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_batch.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "code/src/baselines/text/frameworks/lotus_chain_results.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_record_chain_core.py"
       },
       "default_selected": false
     }

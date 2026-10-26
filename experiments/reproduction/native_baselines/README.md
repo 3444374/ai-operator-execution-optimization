@@ -1,5 +1,8 @@
 # 原生基线与具名 Core 历史复现
 
+共享结果模块迁移与e2bc汇合的本地候选将九份原公共来源保存在`historical_sources/`：五份结果合同/消费者旧文件、旧环境预检和Movie矩阵说明，以及旧RayHTTP与importer。MANIFEST相对45d共新增43条override，保留双方既有路由，原expected SHA、projection ID、source revision及既有variant override保持；还原树继续使用原字节，不导入当前shim或新模块。此目录属于历史复现，不是生产共享实现。
+
+
 维护代码在 `code/`；这里保留五种**已实测来源的实际差异文件**和逐文件摘要，不仅保留 patch，也不把不同 Core 策略合成新默认。没有模型、数据、机器配置或原始日志。
 
 ```sh
