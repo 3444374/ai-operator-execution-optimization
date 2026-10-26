@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+[本轮后继优先及取消状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)：隔离小对照无收益、默认仍FIFO；unknown／held不因物理退出而成为成功终态，独审定位私有runner漏收晚到终态，不构成PR52新增阻断，修复仍待审。
+records三入口小资格已完成两轮、累计14次成功；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft，未接纳到main。
+
 文本Map工程诊断的[当前状态与已完成项](../experiments/plans/查询调优.md#completed-query-work)已按结果收敛：
 准备分段的PG／模型检查、尾块追加、观察隔离和worker／gateway复用均已执行；负结果选项保持原默认，
 新的RPC组合与准备共享仍是待证假设。下文逐次记录按原来源解释，不构成重新执行的清单。
