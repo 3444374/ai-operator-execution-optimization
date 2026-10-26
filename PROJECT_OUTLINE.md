@@ -387,6 +387,11 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
+离线结果工具已随[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)接纳；records的[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，待新源码资格。
+已完成的文本Map工程诊断统一从[查询调优状态](experiments/plans/查询调优.md#completed-query-work)读取，
+不再列为下一步。准备分段、尾块追加和批量记账在各自固定配置的完整查询中未获净收益，线程记账的负结果来自无模型对照；
+它们保留为显式诊断与历史复现。其他模型、表示和容量仍需自身证据，当前选择性链问题不由这些结果否定。
+
 2026-10-26收敛：先完成必要工程交付，再用最小对照检验选择性链；工程短期诊断与研究主线并行，不要求所有后端、故障、多模态全部完成后才研究。continuation（保存状态后继续执行）、基础流水、后继优先及父子引用释放作为已有能力和强对照，不独立主张创新；近邻与待证范围见[研究定位](docs/research/研究定位.md#selective-chain-increment)。
 
 ### 当前证据与候选分列

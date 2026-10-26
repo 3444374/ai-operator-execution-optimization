@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-26：收敛查询调优状态并移除未调用helper
+
+[查询调优](experiments/plans/查询调优.md)将已完成诊断和固定配置负结果移出活跃事项，旧执行要求从固定提交恢复，保留既有章节定位；总纲、代码状态、计划索引和证据台账同步。
+删除导入脚本中未被调用的`wrap_prompt`；实际入口继续使用`_apply_template`及既有默认模板。原始实验和历史来源不变，未新增模型运行。
+[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)已于09:25:34 UTC合并为`380cfbda`，离线工具实施事项关闭；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，新源码的模型与资源资格待核验。后文候选叙事按原记录时点解释。
+
 ## 2026-10-26：离线结果摘要独立review候选
 
 新增[离线结果摘要](code/scripts/analysis/OFFLINE_RESULTS.md)及最小统计helper依赖，仅显式读取两种紧凑schema；API计数矛盾拒绝，缺失/unknown不补零，源级失败不分摊，MFU/物理buffer缺证据保持NA。当前基底47个不同CPU方法通过、0跳过，同一31方法的三种入口均通过；独立Python隔离模式两类CLI通过，不重跑历史GPU或4109项旧审计。此批与records受测源码、observer和调度策略分开，保持draft等待整合核验。

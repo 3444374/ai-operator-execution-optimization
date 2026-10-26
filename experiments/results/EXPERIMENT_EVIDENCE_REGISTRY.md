@@ -1,6 +1,10 @@
 # 实验与机制证据台账
 
-2026-10-26：[离线工具CPU核验范围](../../code/scripts/analysis/OFFLINE_RESULTS.md)。当前基底47个不同方法通过，31项在三入口重复通过不计93；两schema的隔离CLI与摘要计数边界核验，不重算历史原始trace、GPU/质量或4109项旧审计。仅工具候选，无新模型资格。
+2026-10-26状态整理：[查询调优](../plans/查询调优.md#completed-query-work)移出已完成清单，按各次报告保留负结果与适用条件。
+本次只调整计划和导航，未重跑或重算实验；原始观测、失败、源码身份与既有默认保持。
+
+2026-10-26：[离线工具CPU核验范围](../../code/scripts/analysis/OFFLINE_RESULTS.md)已随[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)合并为`380cfbda`。
+原来源47个不同方法通过，同一31方法的三种入口不计成93个；保留两类schema的计数检查，不重算旧原始trace或认证模型质量。
 
 2026-10-26历史证据迁入：[2026-10-20 Native Q3失败资格与独立复验](diagnostics/lotus_records_local_model_20261016/README.md)。原生产85133c6f、两次独立120调用；旧campaign失败不改，新复验仅Native单臂通过，质量不足和缺失现场仍保留。不导入records实现，不认证后来九配置或稳定性能。
 

@@ -1,8 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
-## 2026-10-26 离线结果工具review候选
+文本Map工程诊断的[当前状态与已完成项](../experiments/plans/查询调优.md#completed-query-work)已按结果收敛：
+准备分段的PG／模型检查、尾块追加、观察隔离和worker／gateway复用均已执行；负结果选项保持原默认，
+新的RPC组合与准备共享仍是待证假设。下文逐次记录按原来源解释，不构成重新执行的清单。
 
-[离线摘要入口](scripts/analysis/OFFLINE_RESULTS.md)只读取调用方指定的两类紧凑文件，复用latency_observations统计。47个不同CPU方法及同一31方法三入口通过；缺失计数/unknown、MFU和物理buffer边界保留，不产生新的模型或records执行资格。与生产闭包PR分开，不修改其冻结源码或运行配置。
+## 2026-10-26 离线结果工具已接纳
+
+[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)已合并为`380cfbda`。
+[离线摘要入口](scripts/analysis/OFFLINE_RESULTS.md)读取显式指定的两类紧凑文件；原来源47个不同CPU方法及同一31方法的三种入口已通过，
+缺失／unknown不补零，缺少观测的指标保持NA。本次只同步接纳状态，不重跑旧实验，也不增加records或模型资格。
 
 ## main 与集成分支的阅读范围
 
