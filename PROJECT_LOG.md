@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-27：统一records接纳与候选的现行导航
+
+按当前main源码与既有台账更正仍写PR52待接纳的状态、模块及架构导航；PR52／56已接纳，45d各轮小实机、e2bc零模型来源检查与迁移CPU检查仍保留各自身份。有限链在main仍为worker内完整阶段循环；逐记录FIFO／token接合属于独立候选，不转授旧来源实机或性能资格。本次只修文档，不改代码、默认策略或实验原件，不新增模型运行。
+
 ## 2026-10-26：旧开发线历史归档与维护代码接纳分列
 
 PR52／56已将经过验收的records代码与结果合同选择性接入main；旧三开发分支没有整支合并。其准确末端已发布为[具名归档引用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-work-line-archives)，逐项Git fetch与SHA核同，本地完整历史恢复bundle已verify。Q3两份JSON与main逐字节相同；Movie旧封包、source lock及CPU证据仅保历史身份，不成为当前运行默认或新模型资格。

@@ -20,7 +20,7 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 工程优先减少可避免的表示往返、整批输入物化与重复启动；固定资源下的候选联合选择及真实消费者范围见[研究定位](docs/research/研究定位.md#representation-consumer-choice)。
 
 LOTUS 主线保留 SemBench 任务评价、原方法与全局校准。近期研究收窄为[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)：在同一逻辑计划、模型、prompt与生成规则下，检验依赖范围细化及有限物理重组是否改善完整查询。普通／级联 Filter 保留为方法参照、无机会反例与后续全局依赖场景，不再把扩大单 Filter 并发作为主要研究增量。
-records→结果独立建设；旧 request 冻结接入范围作参照和选择性复用，不作为新主链的接口或重构前提。
+records→结果独立建设；PR52已接纳文本records、有限链及本地模型接点，PR56另归位共享结果模块，各自实现与模型资格见[代码状态](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。独立FIFO／token候选不因此成为main能力。旧request保留既有接入范围作参照和选择性复用，不作为新主链的接口或重构前提。
 LOTUS 目标配置以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；Core 的中立接口不要求所有路径采用该配置。
 Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及当前请求接点与目标入口的区别见[架构](experiments/plans/系统架构.md#lotus-data-execution)。
 实际模型实例纳入执行 worker／actor 的[第二层接点](experiments/plans/系统架构.md#model-engine-execution)沿 records 合同接受受支持模型输入并调用真实推理 API；分支实施与 main 接纳分开解释。

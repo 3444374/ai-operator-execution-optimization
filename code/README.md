@@ -10,16 +10,16 @@
 [原生CLIP检索](scripts/README.md#原生-lotus-clip-查询)已带必要查询／身份／静态生命周期闭包；显式单卡资源入口的8834 CPU检查、main570四路径40行实机及d2历史条件见[接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)。HSE资源auto、多卡和PZ分别待验。
 
 
-本页的已接纳实现以 main 为准；records、有限链与新 Core／IMLane 接点的独立分支及资格从[实施来源](../experiments/plans/数据组织.md#model-engine-roadmap)定位。
+本页的已接纳实现以 main 为准；records、有限链与Core／IMLane接点已随PR52接纳，共享结果模块随PR56归位。各入口的原45d实机资格与未完成项见[当前状态](INFRA_STATUS.md#pr52-g1-qualified-scope)。
 
 CSV／本地records与本地模型执行不要求PG；只有显式DB／SQL入口需要数据库能力与真实连接配置，见[能力预检](../deploy/runtime/README.md)。`requirements.txt`是维护可选路径的全量依赖集合，按能力安装以`deploy/runtime/assets.json`为准。
 
-本地records生产闭包候选补齐[Movie records矩阵](src/experiments/movie_matrix.README.md)、
+已接纳的本地records生产闭包补齐[Movie records矩阵](src/experiments/movie_matrix.README.md)、
 中性查询生命周期与公共返回计时；Ray `runtime_reuse_only`只核对runtime，Daft
 `native_single_thread_session`核对常驻模型。IMLane resident经`movie_records_session`运行。
 [五份具名复现代码树](../experiments/reproduction/native_baselines/README.md)保留原来源字节和显式策略选择；
 [Kalypso客户端](src/baselines/text/frameworks/kalypso_native/README.md)附着外部作者服务。
-当前只有本机CPU／SDK与CLI检查，尚未进入main或完成新的私有运行绑定及GPU资格；任务、生成与调度默认保持。
+PR52／56已接纳；CPU／SDK／CLI、45d各轮小实机资格与e2bc零模型来源检查分别保留原身份，不能互相替代。非空链、helper cascade、正例及性能仍须另证；任务、生成与调度默认保持。
 通用records方法须显式传`instruction`，缺失或空值会拒绝；Movie提示仅由MovieTask提供，其他数据字段由调用方绑定。
 固定2000行／120发生项的原SDK CPU用例按[本地资产绑定](tests/records_cpu.md)配置路径，不向生产代码写入机器路径；缺资产与无效资产分别保留skip／失败。
 
