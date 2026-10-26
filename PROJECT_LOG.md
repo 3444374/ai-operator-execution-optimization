@@ -8,6 +8,13 @@
 
 从旧Q3分支13d63374/452505e8仅迁[两份脱敏JSON与历史说明](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)，同步诊断索引和证据台账。两次生产85133c6f/source lock相同，run与证据指纹不同；旧failed不提升，新复验仅Native单臂资格，保留质量不足、缺失现场和不同计时边界。本批不导入旧117提交或records执行器，不覆盖已合研究路线，不新增模型运行；旧Q3完整历史和其他开发分支继续保留。
 
+
+## 2026-10-26：明确目录职责与候选来源
+
+在main380cfbda上选择性重放已审文档，落实[目录职责](experiments/plans/系统架构.md#code-directory-boundaries)、[代码导航](code/README.md#目录结构)及[baseline交接表](code/src/baselines/README.md#text-execution-boundaries)。明确main现有请求／SQL接点与PR #52候选records／模型／Kalypso／具名复现的来源，不以框架名、HTTP或目录存在推导能力与资格。
+
+33条路径与11项建议分别核对：五个候选共享接点另批兼容归位，三个旧请求桥保留入口，实验名／历史容器／还原CLI无需物理改名。根入口和索引同步，未移动源码、修改默认或历史字节，未改变45d184df受测源码；未来纯Core产品目录也仍是拟议。本文不新增模型运行或接纳records实现。
+
 ## 2026-10-26：第三份资料补充查询目标与资源边界
 
 第三份分析继续进入[既有单卡选择性链方案](experiments/plans/数据组织.md#query-goal-extension)：预计后继只作软规划，合法性/confirmed责任与实际物理释放不被预测覆盖；完整query始终主目标，SLO/slack可选且后置，不能将timeout/cancel改名或用query内记录数代替独立query样本。[近邻边界](docs/research/研究定位.md#selective-chain-increment)补入FaaSTube/SLOs-Serve及已有Agentix/JITServe对应节，未来消费者与E2E/deadline均非独有。后置异构资源文献按[原索引](docs/research/ai_operator_literature_inventory.md#query-goal-transfer-sources)登记，方法与架构只补采用/反证和慢配置快推进责任；未扩为通用GPU集群或新增实现/运行。保留前两份资料的同一研究路线；本批仅更新七份文档，不接纳实现或发布实验原件。

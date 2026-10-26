@@ -1,6 +1,6 @@
 # 项目导航
 
-维护日期：2026-10-15。本文件回答内容归属、阅读入口和旧路径定位；
+维护日期：2026-10-26。本文件回答内容归属、阅读入口和旧路径定位；
 方向、实现与证据分别从[总纲](PROJECT_OUTLINE.md)、[代码状态](code/INFRA_STATUS.md)和[结果导航](experiments/results/README.md)核对，不复制运行进度。
 
 ## 内容与文档职责
@@ -34,6 +34,7 @@
 
 | 主题 | 入口 |
 |---|---|
+| 目录职责与命名 | [职责与逐项采用决定](experiments/plans/系统架构.md#code-directory-boundaries)、[代码目录](code/README.md#目录结构)、[main／候选交接表](code/src/baselines/README.md#text-execution-boundaries)；说明已更新，源码未迁移 |
 | 可选 vLLM 部署资源 | [命令](code/scripts/README.md#可选-vllm-部署资源分配)、[来源与单卡资格](experiments/results/diagnostics/main_service_auto_20261015/README.md) |
 | LOTUS 原版 Movie／Animals 四臂 | [模块/API](code/src/semantic_methods/lotus/README.md)、[Movie入口](code/scripts/README.md#lotus-原版-movie-四臂)、[Animals入口](code/scripts/README.md#animals-原版图文-q1)、[Animals闭包](experiments/results/diagnostics/main_lotus_animals_20261015/README.md)、[固定main实际模型](experiments/results/diagnostics/main_queries_20261015/README.md) |
 | LOTUS 原生CLIP检索 | [公开入口](code/scripts/README.md#原生-lotus-clip-查询)、[最小闭包及main570严格单卡资格](experiments/results/diagnostics/main_lotus_clip_20261015/README.md) |
