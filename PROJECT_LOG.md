@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-10-26：第三份资料补充查询目标与资源边界
+
+第三份分析继续进入[既有单卡选择性链方案](experiments/plans/数据组织.md#query-goal-extension)：预计后继只作软规划，合法性/confirmed责任与实际物理释放不被预测覆盖；完整query始终主目标，SLO/slack可选且后置，不能将timeout/cancel改名或用query内记录数代替独立query样本。[近邻边界](docs/research/研究定位.md#selective-chain-increment)补入FaaSTube/SLOs-Serve及已有Agentix/JITServe对应节，未来消费者与E2E/deadline均非独有。后置异构资源文献按[原索引](docs/research/ai_operator_literature_inventory.md#query-goal-transfer-sources)登记，方法与架构只补采用/反证和慢配置快推进责任；未扩为通用GPU集群或新增实现/运行。保留前两份资料的同一研究路线；本批仅更新七份文档，不接纳实现或发布实验原件。
+
+## 2026-10-26：选择性语义链研究与短期工程诊断收敛
+
+将外部分析材料按当前源码/实测及原始近邻来源校正后，归入[总纲执行顺序](PROJECT_OUTLINE.md#8-当前执行顺序)、[选择性链方案](experiments/plans/数据组织.md#selective-chain-plan)、[目标接合](experiments/plans/系统架构.md#chain-continuation-ownership)和[待证增量](docs/research/研究定位.md#selective-chain-increment)，未增加平行方案。已有MethodRun/消费者额度、fused有限链、旧a503小链模型结果与2026-10-25八配置/Kalypso结果分别解释；不再写正式矩阵未跑，不将新records当作图文已接通。
+
+研究问题聚焦合法依赖范围与真实主机数据寿命/有限重组的联合效果。基础continuation、流水和引用释放是已有能力/强对照；保留无法证明可拆的Extract全局屏障，收益由完整query、实际工作与唯一buffer驻留检验。B/W/C与cache-only软证据更新仅为支撑诊断，后者仍待新条件验证；本批仅将7份已有Markdown的研究更新纳入项目；八配置/Kalypso及新候选的详细实测原件尚未随本批发布，不能视为main代码或新配置资格。没有实现、模型或运行额度变化。
+
+第二份分析并入同一路线：[既有文献清单](docs/research/ai_operator_literature_inventory.md#selective-chain-transfer-sources)加入分层的重要设计参照和后置近邻，[优化方法依据](docs/research/优化方法依据.md#selective-chain-transfer-basis)只维护迁移采用/反证条件；任务↔表示映射与分阶段资源交接补入原架构/实验章节。未新增平行方案、批量PDF或完成式精读笔记，不转向RDMA、GPU driver或近似视觉KV实现。
+
 ## 2026-10-19：退役早期 mean／ridge 成本比较入口
 
 删除没有现行调用方的 `compare_cost_estimators.py`，历史实现从 `4973465d0ea900b2b3864333cbfd883e026b33ca` 恢复；原始数据、结果表格和旧来源记录保留。

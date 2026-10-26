@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-10-15；历史选目与精读状态沿各节原日期解释。
+更新日期：2026-10-26；历史选目与精读状态沿各节原日期解释。
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -87,7 +87,7 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 |---|---|---|
 | FairServe | arXiv 2024 | weighted service、interaction-aware throttling |
 | DLPM/D2LPM | arXiv 2025 | deficit fairness + prefix locality |
-| Agentix（arXiv v1 名称 Autellix） | NSDI 2026，2443–2459 | program/job-level attained service |
+| [Agentix（arXiv v1 名称 Autellix）](https://www.usenix.org/conference/nsdi26/presentation/luo) | NSDI2026，2443–2459；本轮[§4.2/§6](https://www.usenix.org/system/files/nsdi26-luo.pdf) | program E2E与已获服务；响应时间/token尾部非query秒P99，不是未来剩余oracle |
 | Chiron | arXiv 2025 | 分层 backpressure 与 autoscaling |
 | Clipper | NSDI 2017 | AIMD batching 历史来源 |
 | Splitwise | ISCA 2024 | prefill/decode 分池 |
@@ -108,7 +108,7 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 | SFS | arXiv 2026 | 动态 workload 的 service/TTFT 估计与路由 |
 | TIE — Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions | ICML 2026 | 用重尾输出长度分布和 Tail Inflated Expectation 替代单一点估计；支撑 work 分位数与 tail-risk 特征 |
 | Past-Future Scheduler | ASPLOS 2025 | 从历史输出长度分布预测未来显存占用，以 SLA goodput 评价排队/eviction 决策 |
-| JITServe | NSDI 2026 | 不精确信息下保守准入并随生成进展修正估计；支撑 remaining-work online update |
+| [JITServe: SLO-aware LLM Serving with Imprecise Request Information](https://www.usenix.org/conference/nsdi26/presentation/zhang-wei) | NSDI2026，825–848；本轮[§2–4/§6](https://www.usenix.org/system/files/nsdi26-zhang-wei.pdf) | compound全部完成E2EL期限与保守信息更新已有；迟到compound的token goodput为0，指标需区分token与完整query |
 | Beyond Prediction: Tail-Aware Scheduling | ICML 2026 | 证明长度预测策略在分布漂移、burst、GPU memory pressure 下可能脆弱；作为 prediction-free/tail baseline 依据 |
 | FastServe | NSDI 2026 | 用输入长度和多级反馈队列做 prediction-light 抢占调度；本项目只迁移强对照思想，不实现 serving 内部抢占 |
 | Palimpzest | CIDR 2025 | 小样本 sentinel profile |
@@ -269,6 +269,41 @@ StarPU/HetExchange、红蓝pebble原始定理与MaxWeight本次未新增核验�
 
 上述源码证明提供何种接口与逻辑处理，不证明本项目物理I/O、decoder性能或完整查询收益。
 没有在本项目运行这些新增媒体/部署对照，滚动资料在运行前另固定实际版本。
+
+<a id="selective-chain-transfer-sources"></a>
+## 选择性链的跨领域设计参照（2026-10-26）
+
+本节只加入重要原始来源，不调整Top15/正式题录等级。阅读状态为本轮对应设计节与官方题录核验，不等于完成全文精读、图核对或artifact复现；不批量下载PDF。方法迁移及反证统一见[优化方法依据](优化方法依据.md#selective-chain-transfer-basis)，不另建综述。
+
+| 阅读优先级/文献 | 核对版本与范围 | 本项目角色 |
+|---|---|---|
+| 核心：[Mitigating Resource Usage Dependency in Sorting-based KV Stores on Hybrid Storage Devices via Operation Decoupling（DecouKV）](https://www.usenix.org/system/files/atc25-zhang-qingyang.pdf) | USENIX ATC2025，pp.513–529，§3.3–3.7 | 先改变资源耦合的工作单位，再评价调度；不是将LSM索引/数据分离算法直接用于语义链 |
+| 核心：[GraphWalker: An I/O-Efficient and Resource-Friendly Graph Analytic System for Fast and Scalable Random Walks](https://www.usenix.org/system/files/atc20-wang-rui.pdf) | USENIX ATC2020，pp.559–571，§3.2–3.4 | 从当前任务状态反查数据需求，同时面对拖尾；不把局部性或防拖尾当未覆盖问题 |
+| 核心：[MinFlow: High-performance and Cost-efficient Data Passing for I/O-intensive Stateful Serverless Analytics](https://www.usenix.org/conference/fast24/presentation/li) | FAST2024，pp.311–327，[原文§3.2–3.4](https://www.usenix.org/system/files/fast24-li.pdf) | 联合拓扑/放置/传递选择的设计参照，非当前普通链需要all-to-all的证据 |
+| 采用条件：[FineMem: Breaking the Allocation Overhead vs. Memory Waste Dilemma in Fine-Grained Disaggregated Memory Management](https://www.usenix.org/conference/osdi25/presentation/wang-xiaoyang) | OSDI2025，pp.57–74，[原文§3–4.3/§7](https://www.usenix.org/system/files/osdi25-wang-xiaoyang.pdf) | 建立/分配与细粒度使用解耦；不据此承诺本项目已支持RDMA或细粒度物理回收 |
+| 采用条件：[Leveraging I/O Stalls for Efficient Scheduling in ANNS（LIOS）](https://arxiv.org/html/2605.19335v1) | arXiv:2605.19335v1，2026-05-19，§4.2–4.4；未补造正式venue | 可恢复辅助工作、超窗风险与反馈；不将ANNS假设和延迟保证转给不可抢占解码/GPU |
+| 后置反馈：[Holistic and Automated Task Scheduling for Distributed LSM-tree-based Storage（HATS）](https://www.usenix.org/system/files/fast26-ren.pdf) | FAST2026正式论文，设计中的前台读/compaction协调 | 维护工作当前干扰与未来收益的权衡；先观测再加反馈，不复刻存储调度器 |
+| 多模态近邻：[Visual Cache Reuse for Efficient Multimodal Inference（VisMemo）](https://arxiv.org/html/2610.25136v1) | arXiv:2610.25136v1，2026-10-18，§3.2–3.4；公开稿 | 精确/近似视觉复用及分层表示政策；近似另获质量授权，不混入固定方法主比较 |
+| 物理显存近邻：[gKSM: GPU Memory Deduplication at Driver Layer for Serverless LLM Inference](https://arxiv.org/html/2610.25219v1) | arXiv:2610.25219v1，2026-10-18，§3/§5；原文自报accepted ACM SIGOPS ATC2026，11月会议尚未举行，正式proceedings/DOI直达未独立确认 | 逻辑模型对象与物理页共享分开；driver层机制后置，不成为本轮实现任务 |
+
+这些是跨领域设计参照或近邻，非可直接运行Filter→Map的同任务性能baseline；不迁移论文加速比、理论保证或作者环境资格。直接参照仍为合理LOTUS/Ray/Daft/IMLane与项目内静态、FIFO、投影/块大小、总压紧/从不压紧控制；与Kalypso等语义近邻的差异另按[研究定位](研究定位.md#selective-chain-increment)核对。
+
+<a id="query-goal-transfer-sources"></a>
+### 查询目标与后置异构资源参照
+
+第三份资料仅扩充同一选择性链问题的边界，近期不新增SLO/多GPU实现项目。重点近邻Agentix、JITServe沿上方既有条目补核对应节，gKSM沿前表不重复。下列核对以原文指定版本/设计节及官方题录为限，不表示全文精读、artifact或本项目性能资格。
+
+| 角色/文献 | 版本与核对范围 | 对本项目的约束 |
+|---|---|---|
+| 直接边界：[FaaSTube: Optimizing GPU-oriented Data Transfer for Serverless Computing](https://arxiv.org/html/2411.01830v1) | arXiv:2411.01830v1，2024-11-04，§6.1/§7.2；本轮未核可靠会议 | 已有函数SLO传输及下游队列感知的中间数据迁移/回迁；不能称首次未来消费者或SLO传输 |
+| 直接边界：[SLOs-Serve: Optimized Serving of Multi-SLO LLMs](https://arxiv.org/html/2504.08784v1) | arXiv:2504.08784v1，2025-04-05，§2.1/§3–4及§6评价；本轮未核可靠会议 | TTFT/TPOT阶段及DP/soft admission已有；保留被拒/尽力服务的全部到达分母，不能迁移论文特定层级的达标结果 |
+| 后置分层资源：[Energy-Efficient LLM Serving via Disaggregated Attention–FFN and Flexible Frequency Scaling（AFlex）](https://arxiv.org/html/2608.01891v1) | arXiv:2608.01891v1，2026-08-03，§IV-B/IV-D；未列会议 | 慢规划/快执行及重配置成本参照；A/F是Transformer内部层，不搬DVFS或把当前actor改址称活跃序列迁移 |
+| 后置分层资源：[Libra: Flexible Request Partitioning and Scheduling for Serving Unbalanced and Dynamic LLM Workloads](https://www.usenix.org/conference/nsdi26/presentation/ruan-libra) | NSDI2026，1243–1258，[原文§3.1/§4.1–4.3](https://www.usenix.org/system/files/nsdi26-ruan-libra.pdf) | token边界micro-request、全局切分/实例、本地SLO批与真实KV chunk传输；token续接不证明条件语义DAG合法 |
+| 后置迁移边界：[DCUDA: Dynamic GPU Scheduling with Live Migration Support](https://www.cse.cuhk.edu.hk/~cslui/PUBLICATION/SOCC_2019_B.pdf) | SoCC2019，DOI10.1145/3357223.3362714，§3.4/§6 | 仅迁移未launch的kernel并等已提交完成，须重建handle/binary与统一内存状态；非running-kernel抢占，非换actor即可迁移 |
+| 后置CPU/GPU共享：[Towards Resource-Efficient Serverless LLM Inference with SLINFER](https://arxiv.org/html/2507.00507v2) | v2，2025-12-15，§VI–VII/§IX-A；[HPCA2026官方题录](https://2026.hpca-conf.org/details/hpca-2026-main-conference/8/Towards-Resource-Efficient-Serverless-LLM-Inference-with-SLINFER) | token计算/内存扩缩和实例整合；AMX CPU/A100及冷启动TTFT宽限条件不转为当前CPU收益，预算不替代实际释放 |
+| 后置干扰模型：[iGniter: Interference-Aware GPU Resource Provisioning for Predictable DNN Inference in the Cloud](https://arxiv.org/html/2211.01713v1) | 机制依据v1，2022-11-03，§II-B/IV-B；正式题录TPDS2023，34(3):812–827，[DOI](https://doi.org/10.1109/TPDS.2022.3232715)、[作者仓库](https://github.com/icloud-ecnu/igniter)，未逐字比对刊版 | placement/batch/MPS干扰联合；shadow重定向后续请求，非在途透明迁移，不把逻辑fractional GPU当物理隔离 |
+
+重要性只影响边界核验与阅读顺序，不改变近期单卡链优先级。三份资料的迁移条件统一归[方法依据](优化方法依据.md#query-goal-transfer-basis)和[现有实验方案](../../experiments/plans/数据组织.md#query-goal-extension)，不为每篇文献新建方案或搬其加速比。
 
 <a id="early-candidates"></a>
 ## 早期跨领域线索

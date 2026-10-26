@@ -3,7 +3,7 @@
 图像能力按固定实现 `bdae61bb` 与[能力表](code/INFRA_STATUS.md#current-image-status)核对；其他旧记录保留原 [`9c59dc9b` 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
 main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列8834 CPU及main570严格单卡40行实机资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
 
-维护日期：2026-10-19。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
+维护日期：2026-10-26。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，
 证据身份归[台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)，完整数字、失败与重复归原报告。
 
@@ -19,7 +19,7 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 
 工程优先减少可避免的表示往返、整批输入物化与重复启动；固定资源下的候选联合选择及真实消费者范围见[研究定位](docs/research/研究定位.md#representation-consumer-choice)。
 
-LOTUS 主线保留 SemBench 任务评价与 LOTUS 原算法及优化；下一单元限定[普通／级联 Filter 的记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)。
+LOTUS 主线保留 SemBench 任务评价、原方法与全局校准。近期研究收窄为[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)：在同一逻辑计划、模型、prompt与生成规则下，检验依赖范围细化及有限物理重组是否改善完整查询。普通／级联 Filter 保留为方法参照、无机会反例与后续全局依赖场景，不再把扩大单 Filter 并发作为主要研究增量。
 records→结果独立建设；旧 request 冻结接入范围作参照和选择性复用，不作为新主链的接口或重构前提。
 LOTUS 目标配置以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；Core 的中立接口不要求所有路径采用该配置。
 Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及当前请求接点与目标入口的区别见[架构](experiments/plans/系统架构.md#lotus-data-execution)。
@@ -387,34 +387,29 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-本表安排目标工作；功能分支已完成的接口和各自资格从[固定实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对，不重复列为新建任务。
+2026-10-26收敛：先完成必要工程交付，再用最小对照检验选择性链；工程短期诊断与研究主线并行，不要求所有后端、故障、多模态全部完成后才研究。continuation（保存状态后继续执行）、基础流水、后继优先及父子引用释放作为已有能力和强对照，不独立主张创新；近邻与待证范围见[研究定位](docs/research/研究定位.md#selective-chain-increment)。
 
-| 顺序与对象 | 要回答的问题 | 参照与当前范围 |
+### 当前证据与候选分列
+
+- 2026-10-25八配置文本Q1/Q2/Q3已完成72个正式任务组，Kalypso独立波次已完成9个正式组；不能继续写“其他臂／正式矩阵未跑”。八配置五份实际执行快照为67d6f801、e7090055、65114360、79e8f103、5007e95b；Kalypso作者来源05024f0，提示、parser和引擎不同，不能据同任务结果断言纯调度胜负。上述实测原件及具名快照尚未随本批文档发布，完整重复、质量、失败及生命周期仍以各自固定原件为准；这些短指纹不是Git提交。公开[Movie候选](https://github.com/3444374/ai-operator-execution-optimization/tree/a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05)与[Q3证据分支](https://github.com/3444374/ai-operator-execution-optimization/tree/452505e80f7d13dcbfbc838fe7fae6f127790b62)保留records开发历史，不等于这些最终实测快照或main代码接纳。
+- 旧a5035105的Core/Ray/Daft各有M→F→E、E→M真实小单元，合27次模型调用；它们不认证当前九配置的链性能或精确F→M→E。main已有MethodRun与消费者结果计费，有限LOTUS链仍是独立来源中的fused阶段循环，两者面向main接纳的接合仍待验证。
+- 旧Animals64四路径图文结果与CLIP检索保留各自资格；新records来源的image_url及媒体列仍被文本校验拒绝，不能称当前本地模型配置已接通图像。
+- FIFO隔离候选已有极小真实引擎方法资格及一次API层混阶段观察；不证明kernel并行、稳定加速或main已接纳。token r5的direct-engine功能资格也已完成，但绕过Actor/IPC、原parser/evaluator，原records完整budget接线仍未完成；不能把诊断资格称完整查询收益。相关原件尚未随本批文档发布。ee39并发反事实与B/W/C工程诊断由唯一执行者分别维护，本批不启动或重复分配模型工作。
+
+| 顺序与对象 | 要回答的问题 | 通过或收窄条件 |
 |---|---|---|
-| 原生 Ray Data 普通 Filter 首闭环 | 独立 records 主链能否保留同一 SemBench 查询和原方法结果 | 直接与原生 LOTUS 核对，旧 adapter 仅补充参照；[方法差分与真实库资格](experiments/plans/数据组织.md#lotus-filter-data-execution)先于性能 |
-| 同范围原全局级联 | Q3 helper、样本、校准、阈值、回退与合并是否保留 | 在普通闭环上逐项核对原 LOTUS 动态算法，不按物理批次重跑校准 |
-| Ray Data／SemLoom 静态首两臂 | Daft＋Ray Core／Actor 能否独立完成同任务，是否仍有可归属损耗 | 首切片可先行；最终对照必须补齐 Daft、Ray Data、IMLane，保留原生 LOTUS 及 SemLoom 静态／候选 |
-| 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [实施与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)分别解释已完成接口、固定来源模型资格和剩余范围，不等待完整 HTTP 矩阵 |
-| 并行：普通方法／有限链复用 | 换任务或组合 Map→Filter 能否复用方法、模型与原生接线 | [扩展路线](experiments/plans/数据组织.md#lotus-operator-extension)与原级联接线并行；已支持节点按实际组合核验，不为每条链复制执行器 |
-| 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
-| 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
-| 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |
-| 拓扑执行组 | 只有实际放置／消费信息可得时，分组是否值得 | 先验证信息与必要动作，不用 unknown locality 推导收益 |
-| 必要跨卡传输 | 本地复用和负载安排仍不足时，传输是否在关键路径 | 使用已有传输设施；CUDA／NCCL 不在重写范围 |
-| 后续共享与训练 | 何时存在多查询竞争或训练供给需求 | 各自定义任务与质量，不能由推理软件检查推定训练或公平性收益 |
+| 工程短期收口 | 固定来源、签名、默认关闭的B/W、confirmed终态责任及最小并发反事实能否审阅和复现 | 按[短期诊断](experiments/plans/数据组织.md#short-concurrency-diagnostic)完成CPU与获授权运行；B/传输/窗口变化不混入策略归因 |
+| 复用现有continuation接点 | 原LOTUS阶段能否在Core背压与逐请求Async完成之间暂停和恢复 | 同一份StageSpec/formatter/parser/阶段转换；保留调优fused与有界FIFO无重组对照，不复制第二个方法循环 |
+| 方法合法依赖范围 | 逐记录、按组、全局的必要输入何时确定 | Extract重复label源序写入、动态schema、None与缺键、group closure均有证据；不能证明则用完整关系屏障 |
+| 真实表示与有限重组 | 保留视图、压紧幸存集、保留紧凑源后重准备是否值得 | 确认Python/JSON副本或共享buffer实际身份；计入复制/重建及全局信息获取成本，同时评价完整query与驻留 |
+| 强对照和因果消融 | 增量来自合法等待减少、物理数据寿命还是弱参照 | fused、FIFO continuation、后继优先、同调度加有限重组，以及byte-aware背压/阶段预算机制对照；后者不冒称原生Ray复现 |
+| 后续范围 | 全局级联状态延续、真实多模态及多卡是否有实际需求 | 保留全局校准和方法质量；图文先补表示/processor资格；两卡与GPU直传只在实际移动成为瓶颈后开展 |
 
-图像复用、多卡与训练按各自任务独立验证，不作为所有现有文本路径或 CPU 接口检查的前置项。
+单Filter/COUNT是无后继收益的开销对照；文本F→M→E/M→F→E、重复label的E→M和真实全局级联各回答不同问题。实际工作量、生成质量、模型生命周期和完整任务计时均单独核对，不用GPU busy、早启动或逻辑额度归零替代收益。
 
-PG 接入随实际路径核对同步语义、关联／顺序、快照／权限、取消与资源责任；
-独立核心和外部 LOTUS／PZ 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
-本轮不扩 PZ、所有算子、任意 DAG、多节点或通用 compiler；IMLane 新数据函数／schema 是最终对照必需项，CPython 与作者 Ray 分列，不阻塞首组 Ray Data／SemLoom 对照。
-记录级新链与旧 request 的[分支安排及实施次序](experiments/plans/数据组织.md#lotus-filter-data-execution)单独登记，不把旧请求资格视为新链已完成。
-PZ 的[独立计划](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)保留，后续先复现 SemBench Movie Q3 完整过滤与 count，再固定物理计划逐一检查五组执行目标；
-Q2 `LIMIT 5` 另保留，实际提交、完成及残余工作按观测记录，不由结果上限推定只有五次模型请求。
-共享 GPU 按既有 lease 及 LOTUS 优先安排；文档更新不表示 PZ 接入、真实模型或五组性能比较已经完成。
-公司移植按[架构计划](experiments/plans/系统架构.md#company-integration-questions)核对实际接口和授权。
-原 Q2 后续工作点、常驻连续查询与其他新运行仅在其对应计划及实际结果就绪后更新状态；
-不恢复旧 GPU 矩阵或沿用已结束运行额度。
+查询完整时间始终是主目标；[可选期限与后续资源选择](experiments/plans/数据组织.md#query-goal-extension)在单卡合法链/Async及主机寿命得到证据后扩展。预测后继仅用于软规划，不提前执行或预占硬额度；SLO（服务目标）不替代timeout/cancel责任。两卡放置与模型角色预备后置，慢速选择少量配置、快速层在配置内推进合法工作，不新增一组互相追逐的控制器；完整查询目标、未来消费者信息或加deadline本身均非新颖性。
+
+PG接入按实际路径验证语义、权限、快照、关联/顺序和取消；外部有限链不自动取得SQL组合资格。原生Ray Data/Daft/IMLane拥有各自执行与合理生命周期；增强原生图命名为“SemLoom语义机制＋原生后端”，不混作未增强baseline。最终系统比较保留既定原生系统，对Kalypso的超越主张须有真实实现或忠实相关机制对照。PZ、多Job、训练与更广SQL形态按自身计划和授权推进，不作为此文本研究切片的串行前置项。
 
 ## 9. 结果解释与写作规则
 
