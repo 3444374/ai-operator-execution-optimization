@@ -112,6 +112,45 @@ def latency_observations(rows, *, sample_unit_key=None, slowest=3):
         scope='caller-declared homogeneous task/phase/population; not pure GPU inference')
 
 
+def query_costs(rows, *, offline_scan_s=0.0):
+    """Each submitted query includes its online exploration exactly once.
+
+    Historical calibration_cost is provenance, never this run's new scan cost.
+    Caller supplies actual submission-to-answer times and separates first,
+    reused and rescanned populations before latency summarization.
+    """
+    rows=list(rows)
+    if not math.isfinite(offline_scan_s) or offline_scan_s<0:
+        raise ValueError('actual offline scan cost must be nonnegative')
+    groups={};costs=[];online=[]
+    for row in rows:
+        groups.setdefault(row['phase'],[]).append(row)
+        elapsed=row.get('elapsed_s');exploration=row.get('online_exploration_s',0.)
+        if elapsed is not None and (not math.isfinite(elapsed) or elapsed<0):
+            raise ValueError('query elapsed time must be nonnegative')
+        if exploration is not None and (not math.isfinite(exploration) or exploration<0):
+            raise ValueError('online cost must be nonnegative or missing')
+        costs.append(elapsed);online.append(exploration)
+    total=None if any(v is None for v in costs) else sum(costs)
+    return dict(by_phase={name:latency_observations(items) for name,items in groups.items()},
+        query_wall_sum_s=total,actual_offline_scan_s=offline_scan_s,
+        cumulative_cost_s=None if total is None else total+offline_scan_s,
+        online_exploration_s=None if any(v is None for v in online) else sum(online),
+        online_already_in_query_wall=True,historical_calibration_cost_added=False)
+
+
+def reuse_payback(*, fixed_query_s, first_query_s, reused_query_s, actual_offline_scan_s=0.):
+    """Conditional estimate from matched costs, not an observed causal result."""
+    values=(fixed_query_s,first_query_s,reused_query_s,actual_offline_scan_s)
+    if any(not math.isfinite(v) or v<0 for v in values):
+        raise ValueError('payback costs must be finite nonnegative')
+    upfront=max(0.,first_query_s+actual_offline_scan_s-fixed_query_s)
+    saving=fixed_query_s-reused_query_s
+    return dict(extra_first_cost_s=upfront,assumed_saving_per_reuse_s=saving,
+        additional_reuses_to_repay=0 if upfront==0 else None if saving<=0 else math.ceil(upfront/saving),
+        assumption='matched resource/workload/lifecycle costs remain stationary; online cost already in first query')
+
+
 def repeat_summary(values: list[float]) -> dict[str, float | int | str]:
     """Summarize repeat means with a conservative two-sided 95% t interval."""
 

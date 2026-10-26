@@ -1,0 +1,245 @@
+"""Finite CPython ordinary Movie Filter qualification; the owner supplies its slot.
+
+No public backend selector is changed. The no-model entry uses original LOTUS
+and an explicit CPU subprocess. local-model must be scheduled by the slot owner.
+"""
+from __future__ import annotations
+
+import argparse
+from dataclasses import asdict
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import threading
+import time
+
+OWNED = Path(__file__).resolve().parent
+CODE = OWNED.parents[1]
+sys.path.insert(0, str(CODE))
+
+from integrations.imlane_records import owner, verify
+from integrations.imlane_records.client import RecordsBridge
+from integrations.imlane_records.filter_host import FilterResults
+from integrations.imlane_records.filter_workload import PROTOCOL, bind_source
+from integrations.imlane_records.method_environment import preflight_method, validate_author_build
+from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S
+from integrations.imlane_records.model_process import assigned_environment
+from integrations.imlane_records.resource_limits import owner_limits, gpu_snapshot, gpu_exited
+from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.baselines.common.redact import redact_json_values, redact_text
+from src.baselines.text.movie_records import MovieRecordSource
+from src.experiments.lotus_records_movie import run_movie_query
+from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+
+
+class FilterScope(verify.RecordScope):
+    def stop_root(self, process, writer, *, owner=False):
+        return super().stop_root(process, writer, owner=owner, timeout_s=MODEL_CLOSE_GRACE_S)
+
+    def workload_environment(self):
+        return dict(IMLANE_FILTER_CONFIG=str(self.args.filter_config),
+                    CUDA_VISIBLE_DEVICES=self.args.cuda_visible_devices,
+                    IMLANE_FILTER_FIXTURE="normal", HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
+                    LITELLM_LOCAL_MODEL_COST_MAP="True")
+
+
+def configuration(value):
+    if value.get("schema") != "imlane.filter.run.v1" or value.get("mode") not in ("no-model", "local-model"):
+        raise ValueError("an explicit versioned no-model or local-model run is required")
+    method = FilterMethod.from_dict(value["method"])
+    engine = EngineSpec.from_dict(value["engine"])
+    generation = GenerationSpec.from_dict(value["generation"])
+    resources = RecordsResources(**value["resources"])
+    if (resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.prepare_batch_rows > 16
+            or resources.max_active_batches > 2):
+        raise ValueError("this CPython slice requires one worker and the existing finite bridge capacities")
+    queries = value["query_ids"]
+    if (type(queries) is not list or not 1 <= len(queries) <= 2 or len(set(queries)) != len(queries)
+            or any(type(q) is not str or not q.strip() for q in queries)
+            or type(value["max_total_calls"]) is not int or not 0 < value["max_total_calls"] <= 4096
+            or engine.max_model_calls is None or engine.max_model_calls * len(queries) > value["max_total_calls"]):
+        raise ValueError("qualification needs distinct query IDs and a finite total permanent allowance")
+    source = MovieRecordSource.from_manifest(value["source_manifest"])
+    if value.get("task", source.task.name) != source.task.name:
+        raise ValueError("IMLane task selector differs from its input task binding")
+    method, _scan = bind_source(source, method)
+    from src.semantic_methods.lotus.engine import validate_generation
+    validate_generation(method, generation)
+    if any(len(source.expected(q)) > engine.max_model_calls for q in queries):
+        raise ValueError("source occurrences exceed this model instance's request allowance")
+    if value["mode"] == "local-model" and any(not source.expected(q) for q in queries):
+        raise ValueError("model qualification requires at least one eligible occurrence in each query")
+    preflight = json.loads(Path(value["preflight_report"]).read_text())
+    if preflight.get("status") != "ok":
+        raise ValueError("the owner must supply a successful current runtime preflight")
+    method_python, author = Path(value["method_python"]), Path(value["author_root"])
+    preflight_method(method_python, author, CODE)
+    binary = Path(value["bridge_binary"])
+    validate_author_build(author, binary)
+    if value["mode"] == "local-model":
+        if "owner_resource_limits" not in value:
+            raise ValueError("local-model qualification requires an explicit owner resource allowance")
+        limits = owner_limits(value["owner_resource_limits"])
+        if not hasattr(os, "sched_getaffinity") or len(os.sched_getaffinity(0)) > limits["cpu_cores"]:
+            raise ValueError("launch the owned qualification child with its declared CPU affinity allowance")
+        engine.validate_driver_environment()
+        assigned_environment(value["model_environment"])
+    elif value.get("model_environment"):
+        raise ValueError("no-model qualification must keep its GPU mask empty")
+    return method, engine, generation, resources, source
+
+
+def settle_lease(lease, scopes, report):
+    if report.get("model_launch_possible") and report.get("gpu_exit_confirmed") is not True:
+        report["passed"] = False
+        report["host_lease"] = dict(status="held_unresolved", reason="independent GPU exit remains unconfirmed",
+                                    scopes=[owner.resource_state(scope) for scope in scopes])
+        return
+    verify._settle_host_lease(lease, scopes, report)
+
+
+def apply_final_verdict(report, *, stopped):
+    if (stopped or report.get("sampler_errors") or report.get("stderr_capture_errors")
+            or report.get("cleanup_errors") or report.get("final_cleanup_notices")
+            or any(not item.get("passed", False) for item in report.get("cleanup", []))):
+        report["passed"] = False
+
+
+def run_one(args, value, report, components, query_id):
+    method, engine, generation, resources, source = components
+    deadline = time.monotonic() + resources.query_timeout_s
+    args.filter_config = args.output / ("worker-" + str(len(report["queries"])) + ".json")
+    args.cuda_visible_devices = value.get("model_environment", {}).get("CUDA_VISIBLE_DEVICES", "")
+    udf = (OWNED / "filter_udf.py" if value["mode"] == "local-model"
+           else CODE / "tests/integrations/imlane_filter_fixture_udf.py")
+    scope = FilterScope(args, "cpython-filter", owner, report, kernel=udf)
+    control = scope.root / "query-control"
+    control.mkdir()
+    scan = source.scan_spec(method)
+    write_private_json(args.filter_config, dict(method=asdict(method), engine=asdict(engine),
+        generation=asdict(generation), resources=asdict(resources), query_id=query_id,
+        deadline_monotonic=deadline, control_dir=str(control), scan=scan.describe(),
+        model_environment=value.get("model_environment", {})))
+    iterator = None
+    try:
+        scope.__enter__()
+        def execute():
+            nonlocal iterator
+            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(udf), "infer_records", PROTOCOL],
+                env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, start_new_session=True)
+            scope.track_root(process)
+            writer = verify._capture_stderr(process.stderr, scope.root / "bridge-stderr.log", report)
+            scope.children.append((process, writer))
+            def finish_owner():
+                scope.close()
+                return owner.resource_state(scope)
+            def abort_owner():
+                state = finish_owner()
+                process.wait(timeout=3)
+                if not state["resources_confirmed"]:
+                    raise RuntimeError("Filter scope resources remain unconfirmed")
+            client = RecordsBridge(process, abort_owner=abort_owner, timeout_s=min(60, resources.query_timeout_s),
+                                   protocol=PROTOCOL)
+            rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
+                         **{name: row[name] for name in scan.payload_columns})
+                    for row in source.rows() if scan.predicate is None
+                    or row[scan.predicate[0]] == scan.predicate[1])
+            iterator = FilterResults(rows, client, query_id=query_id, max_calls=engine.max_model_calls,
+                columns=scan.payload_columns, cleanup_scope=args.stop_budget.cleanup,
+                control_dir=control, deadline=deadline, close_owner=finish_owner,
+                block_rows=resources.prepare_batch_rows, max_pending=resources.max_active_batches)
+            return iterator
+        result = run_movie_query(source, value["sembench_checkout"], method, generation, execute, query_id=query_id)
+        report["queries"].append(result)
+    except BaseException as error:
+        report["queries"].append(getattr(error, "query_report", dict(query_id=query_id, status="failed",
+            error_type=type(error).__name__, error=redact_text(str(error)))))
+        raise
+    finally:
+        scope.close()
+        report.setdefault("scope_resources", []).append(owner.resource_state(scope))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    require_outside_git(args.config)
+    require_outside_git(args.output)
+    value = json.loads(args.config.read_text())
+    components = configuration(value)  # No owner/model construction before preflight.
+    args.output.mkdir(parents=True, exist_ok=False, mode=0o700)
+    for name in ("author_root", "method_python", "bridge_binary", "artifact_root"):
+        path = Path(value[name]).resolve()
+        require_outside_git(path)
+        setattr(args, name, path)
+    args.scopes, args.stop_budget = [], owner.StopBudget(threading.Event())
+    args.owner_resource_limits = owner_limits(value.get("owner_resource_limits"))
+    signal.signal(signal.SIGTERM, args.stop_budget.signal)
+    signal.signal(signal.SIGINT, args.stop_budget.signal)
+    report = dict(schema="imlane.filter.qualification.v1", mode=value["mode"], runtime="author-cpython",
+                  author_commit=owner.AUTHOR, model_lifetime="one private engine per query owner",
+                  author_scheduling_modified=False, public_cli_changed=False, queries=[], cleanup=[], passed=False,
+                  owner_resource_limits=args.owner_resource_limits,
+                  cpu_affinity=sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None,
+                  sources_sha256={p.name: owner.digest(p) for p in OWNED.iterdir() if p.suffix in (".py", ".cpp", ".hpp")})
+    if value["mode"] == "no-model":
+        report.update(real_model_requests=0, gpu_requests=0)
+    engine = components[1]
+    reservation = dict(schema="imlane.filter.reservation.v1", max_total_calls=value["max_total_calls"],
+                       reserved_by_query={q: engine.max_model_calls for q in value["query_ids"]},
+                       retry=False, refund_failed_or_unknown=False, one_new_engine_per_query=True)
+    write_private_json(args.output / "reservation.json", reservation)
+    report["reservation"] = reservation
+    lease = verify._host_lease(args.artifact_root, "imlane-filter-staged-source")
+    try:
+        if value["mode"] == "local-model":
+            report["gpu_before"] = gpu_snapshot(value["model_environment"]["CUDA_VISIBLE_DEVICES"])
+            if report["gpu_before"]["compute_processes"]:
+                raise RuntimeError("the owner's assigned GPU is not idle before this run")
+        for query_id in value["query_ids"]:
+            args.stop_budget.check()
+            if value["mode"] == "local-model":
+                report["model_launch_possible"] = True
+            run_one(args, value, report, components, query_id)
+            if value["mode"] == "local-model":
+                after = gpu_snapshot(value["model_environment"]["CUDA_VISIBLE_DEVICES"])
+                confirmed = gpu_exited(report["gpu_before"], after)
+                report.setdefault("query_gpu_exit", []).append(dict(query_id=query_id, snapshot=after,
+                                                                    gpu_exit_confirmed=confirmed))
+                if not confirmed:
+                    raise RuntimeError("the completed query's GPU exit is unconfirmed; do not start another owner")
+        report["passed"] = all(q["status"] == "completed" for q in report["queries"])
+    except BaseException as error:
+        report.update(passed=False, error_type=type(error).__name__, error=redact_text(str(error)))
+    finally:
+        for scope in reversed(args.scopes):
+            try:
+                scope.close()
+            except BaseException as error:
+                report.setdefault("cleanup_errors", []).append(redact_text(type(error).__name__ + ": " + str(error)))
+        if report.get("model_launch_possible"):
+            try:
+                report["gpu_after"] = gpu_snapshot(value["model_environment"]["CUDA_VISIBLE_DEVICES"])
+                before, after = report["gpu_before"], report["gpu_after"]
+                report["gpu_exit_confirmed"] = gpu_exited(before, after)
+            except BaseException as error:
+                report["gpu_exit_confirmed"] = None
+                report["gpu_cleanup_error"] = redact_text(type(error).__name__ + ": " + str(error))
+        apply_final_verdict(report, stopped=args.stop_budget.stopped.is_set())
+        settle_lease(lease, args.scopes, report)
+        if any(not owner.resource_state(scope)["resources_confirmed"] for scope in args.scopes):
+            report["passed"] = False
+        write_private_json(args.output / "report.json", redact_json_values(report))
+    print(json.dumps(dict(passed=report["passed"], queries=len(report["queries"]), mode=value["mode"])))
+    return 0 if report["passed"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -6,6 +6,7 @@ import json
 import math
 import os
 from pathlib import Path
+import uuid
 
 
 def content_digest(value: object) -> str:
@@ -61,6 +62,21 @@ def write_private_json(path: Path, value: object) -> None:
     payload = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
     with open_private_text(path) as stream:
         stream.write(payload)
+
+
+def publish_private_json(path: Path, value: object) -> None:
+    """Expose a complete fresh record atomically to a concurrent observer."""
+    path = Path(path)
+    pending = path.with_name('.pending-' + uuid.uuid4().hex)
+    write_private_json(pending, value)
+    os.link(pending, path)  # Exclusive publication: never replace old evidence.
+    descriptor = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.fsync(descriptor)
+        pending.unlink()
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def workload_summary(manifest: dict) -> dict:

@@ -200,7 +200,10 @@ def check_environment(
     """Check one machine profile without changing packages, files, or services."""
 
     results: list[CheckResult] = []
-    _check_profile(profile, environment, results)
+    _check_profile(
+        profile, environment, results, groups=groups,
+        required_environment_by_group=manifest.get("required_environment_by_group", {}),
+    )
     python_groups = manifest.get("python_groups", {})
     if not isinstance(python_groups, dict):
         raise ValueError("assets manifest python_groups must be an object")
@@ -354,7 +357,9 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _check_profile(
-    profile: dict[str, Any], environment: dict[str, str], results: list[CheckResult]
+    profile: dict[str, Any], environment: dict[str, str], results: list[CheckResult],
+    *, groups: tuple[str, ...] = (),
+    required_environment_by_group: dict[str, list[str]] | None = None,
 ) -> None:
     allowed_platforms = profile.get("platforms", [])
     current_platform = platform.system()
@@ -388,7 +393,17 @@ def _check_profile(
             f"observed={cpu_slots}; minimum={minimum_cpu}",
         )
     )
-    for key in profile.get("required_environment", []):
+    required_environment = list(profile.get("required_environment", []))
+    by_group = required_environment_by_group if required_environment_by_group is not None else {}
+    if not isinstance(by_group, dict):
+        raise ValueError("required_environment_by_group must be an object")
+    for group, names in by_group.items():
+        if (not isinstance(names, list)
+                or any(not isinstance(name, str) or not name.strip() for name in names)):
+            raise ValueError("group environment requirements must be lists of names")
+        if group in groups:
+            required_environment.extend(names)
+    for key in dict.fromkeys(required_environment):
         present = bool(environment.get(str(key), "").strip())
         results.append(
             CheckResult(
@@ -397,7 +412,33 @@ def _check_profile(
                 "set" if present else "unset",
             )
         )
+        if present and key == "DATABASE_URL":
+            # Parse only explicitly required DB configuration. Never connect, and
+            # never put a private DSN or a parser exception in the report.
+            value = environment[key]
+            valid = False
+            detail = "invalid PostgreSQL connection configuration"
+            try:
+                from psycopg.conninfo import conninfo_to_dict
+
+                valid = not ("${" in value or re.search(r"<[^>]+>", value)) and bool(
+                    conninfo_to_dict(value)
+                )
+                if valid:
+                    detail = "PostgreSQL syntax parsed; connectivity not checked"
+            except ImportError:
+                detail = "PostgreSQL configuration parser unavailable; select/install database capability"
+            except Exception:
+                pass
+            results.append(CheckResult("configuration:DATABASE_URL", "ok" if valid else "missing", detail))
     for command in profile.get("commands", []):
+        command_groups = command.get("groups")
+        if command_groups is not None:
+            if (not isinstance(command_groups, list) or not command_groups
+                    or any(not isinstance(group, str) or not group.strip() for group in command_groups)):
+                raise ValueError("command groups must be a non-empty list of names")
+            if not set(command_groups).intersection(groups):
+                continue
         name = _required_string(command, "name")
         required = bool(command.get("required", True))
         path = shutil.which(name)

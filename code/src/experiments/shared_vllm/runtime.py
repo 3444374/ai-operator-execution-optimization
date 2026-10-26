@@ -12,6 +12,7 @@ from pathlib import Path
 from src.infrastructure.runtime_env import ray_runtime_env
 from src.modalities.text.contracts import build_text_runtime_snapshot
 from src.observability.metrics import gpu_metadata, scrape_prometheus_metrics
+from src.observability.metrics.resources import host_metadata
 from src.scheduling.runtime.shared_credit_ray import get_or_create_shared_credit_client
 from src.scheduling.submission_control.saor import SaorReleaseConfig
 
@@ -243,29 +244,7 @@ def _resource_sample(
 ) -> list[dict[str, object]]:
     observed_epoch_s = time.time()
     gpu = gpu_metadata()
-    try:
-        import psutil
-
-        per_cpu = [
-            float(value)
-            for value in psutil.cpu_percent(interval=None, percpu=True)
-        ]
-        memory = psutil.virtual_memory()
-        host = {
-            "host_cpu_busy_cores": sum(per_cpu) / 100.0,
-            "host_cpu_per_core_max_pct": max(per_cpu, default=0.0),
-            "host_memory_used_pct": float(memory.percent),
-            "host_memory_available_mib": (
-                float(memory.available) / (1024 * 1024)
-            ),
-        }
-    except (ImportError, OSError):
-        host = {
-            "host_cpu_busy_cores": "",
-            "host_cpu_per_core_max_pct": "",
-            "host_memory_used_pct": "",
-            "host_memory_available_mib": "",
-        }
+    host = host_metadata()
     rows = []
     for endpoint_index, metrics_url in enumerate(metrics_urls):
         metrics = scrape_prometheus_metrics(metrics_url)

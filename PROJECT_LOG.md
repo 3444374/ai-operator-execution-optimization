@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-10-26：冻结45d的G1/G2窄功能资格与剩余门槛
+
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，records尚未进入main。固定`45d184df`的G1两轮实际14次成功调用，只覆盖CSV/Q3两条eligible负例、Native resident、Core默认同步及显式async的首次/复用；旧轮私有审计失败仍保留，不改写为一次无失败运行。该小样本不证明正例、质量矩阵、P99或性能收益，具体分层见[当前代码状态](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+
+G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d累计22成功；Ray只复用runtime、每query新模型，Daft跨query复用同模型后关闭。其余isolated模式、IMLane、Kalypso、有限链、helper cascade及正式sealed矩阵入口均未被转授资格。priority9231隔离小对照本轮无收益、默认仍FIFO；取消探针的unknown/held与物理退出分别保留；独审定位私有runner漏收晚到终态P2，45d已有close后collect/收据合并及11项CPU回归，因此不构成PR52新增阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；该候选不夹入45d默认。原45d的8处前置漂移与汇合最新main后的RayHTTP/importer差异，在独立整合树中以4份精确旧快照及18条override路由恢复；Git整合者已核五投影全部materialize匹配，原expected hashes/IDs不变。原45d及PR56未改，最终运行身份与执行依赖闭包仍须冻结核对；不据旧结果或同字节叶子直接merge。
+
+以下预检和CPU条目保留原交付时点；新的窄功能范围以上述G1条目为准，不累计旧CPU或重新分配运行额度。main的PR54目录职责、PR55已完成项清理及PR53离线工具状态继续保留。
+
+## 2026-10-26：按能力修正CSV预检的数据库要求（原修复记录）
+
+在records冻结e8eb345之后，以独立后续提交将三个GPU机器profile的DATABASE_URL／psql要求限于显式database或sql-readers能力，PostgreSQL驱动由core移入可选DB能力。CSV／本地records不部署或连接PG，混合能力仍核要求并集；缺失/空/无效DB配置失败，语法检查不证明连通或凭据有效。运行入口、依赖说明与[能力合同](deploy/runtime/README.md)同步；原e8eb模型前预检失败及零调用证据保留，新源码资格由唯一GPU owner重新绑定。当前修复33项环境/配置/lease CPU通过、0跳过；汇合已批准离线main后，两个范围共80个不同CPU方法通过、0跳过；系统Python无DB驱动时16通过、1项显式DB解析跳过，不与原e8eb的383项累加。
+
+## 2026-10-26：records生产闭包独立review候选（原交付记录）
+
+从main5f291d3d选择性接入r2冻结的records/Core、本地文本引擎、原生薄适配、运行入口与具名历史复现，未整合旧分支全历史。通用instruction必填，Movie提示仅属任务；main既有helper及已合研究/Q3证据保留。当前源码383个去重CPU用例通过、0跳过，固定2000行/120发生项由真实CSV摘要及本地manifest绑定；Daft本机socket与私有回执目录的首轮错误、后续复验分别保留，不累加重复。
+
+五份历史投影保持逐字节来源，不混cfdc/ee39或新FIFO/index/B/W候选为默认。当前仅供draft PR审阅；新的private packet/source/input/token/model/env/ledger/owner绑定及本次源码GPU资格尚未完成，不允许据旧实测merge。入口见[代码状态](code/INFRA_STATUS.md)、[CPU资产](code/tests/records_cpu.md)与[具名复现](experiments/reproduction/native_baselines/README.md)。
+
 ## 2026-10-26：同步后继优先小对照与资格状态
 
 [priority9231小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)完成，本轮无收益、默认仍FIFO；取消unknown／held保留，物理资源已释放，独审定位私有runner漏收晚到终态，不构成PR52新增阻断；修复仍待审。

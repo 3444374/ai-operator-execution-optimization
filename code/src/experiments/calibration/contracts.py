@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
+from src.scheduling.runtime.calibration import identity_signature as core_identity_signature
+
 
 JsonScalar: TypeAlias = str | int | float | bool | None
 

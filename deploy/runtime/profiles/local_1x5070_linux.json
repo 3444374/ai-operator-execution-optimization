@@ -19,12 +19,11 @@
     "MODEL_ROOT",
     "DATA_ROOT",
     "VENV_ROOT",
-    "DATABASE_URL",
     "GPU_IDS"
   ],
   "commands": [
     {"name": "git", "required": true},
-    {"name": "psql", "required": true},
+    {"name": "psql", "required": true, "groups": ["database", "sql-readers"]},
     {"name": "nvidia-smi", "required": true},
     {"name": "nvcc", "required": false}
   ],

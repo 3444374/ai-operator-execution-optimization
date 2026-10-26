@@ -223,8 +223,17 @@ def _write_exclusive(path: Path, record: dict[str, object]) -> None:
 
 def _read_lease(path: Path) -> dict[str, object]:
     try:
-        decoded = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        payload = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"runner lease is unreadable: {path}") from exc
+    return _decode_lease(payload, path)
+
+
+def _decode_lease(payload: str | bytes, path: Path) -> dict[str, object]:
+    """Validate the supplied snapshot without reading another lease version."""
+    try:
+        decoded = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"runner lease is unreadable: {path}") from exc
     if not isinstance(decoded, dict) or not _REQUIRED_FIELDS.issubset(decoded):
         raise RuntimeError(f"runner lease has an invalid schema: {path}")

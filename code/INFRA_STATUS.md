@@ -1,7 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQL驱动；资产能力清单的DATABASE_URL及三机器profile的psql仅对database／sql-readers必需。DB语法检查不连接服务、不验证凭据；数据库入口仍保留实际连接gate。此修复不改变e8eb历史失败或赋予新源码GPU资格，见[运行合同](../deploy/runtime/README.md)。
+
 [本轮后继优先及取消状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)：隔离小对照无收益、默认仍FIFO；unknown／held不因物理退出而成为成功终态，独审定位私有runner漏收晚到终态，不构成PR52新增阻断，修复仍待审。
-records三入口小资格已完成两轮、累计14次成功；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft，未接纳到main。
+records的G1三入口两轮14次成功，G2另补Ray runtime/Daft session8次成功，45d累计22次；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft，未接纳到main。
 
 文本Map工程诊断的[当前状态与已完成项](../experiments/plans/查询调优.md#completed-query-work)已按结果收敛：
 准备分段的PG／模型检查、尾块追加、观察隔离和worker／gateway复用均已执行；负结果选项保持原默认，
@@ -12,6 +14,49 @@ records三入口小资格已完成两轮、累计14次成功；[PR52](https://gi
 [PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)已合并为`380cfbda`。
 [离线摘要入口](scripts/analysis/OFFLINE_RESULTS.md)读取显式指定的两类紧凑文件；原来源47个不同CPU方法及同一31方法的三种入口已通过，
 缺失／unknown不补零，缺少观测的指标保持NA。本次只同步接纳状态，不重跑旧实验，也不增加records或模型资格。
+
+<a id="pr52-g1-qualified-scope"></a>
+## 冻结45d的G1/G2资格范围与当前未完成项
+
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)固定`45d184dfaf0ef3a85ccccc805be7fc38e646b527`仍为draft。运行owner的两轮G1实际共14次成功：新轮Native 4/Core async 4，旧轮Core sync 4/Native 2；新轮失败、unknown、missing及重试均0。旧轮私有审计失败保持，不把两轮改写成一次无失败运行。资源退出/租约回执与调用终态分别核对；本文不新增运行或额度。
+
+| 已覆盖入口 | 窄范围 | 不能转授 |
+|---|---|---|
+| Native resident | 新轮首次/复用4调用，另保留旧轮2调用 | isolated、其他模型/profile或质量矩阵 |
+| Core resident默认同步 | 旧轮首次/复用4调用，默认同步与静态配置 | isolated、其他容量或调度策略 |
+| Core resident显式async | 新轮首次/复用4调用，C2/B1/engine64 | 其他C/engine、FIFO/priority或token候选 |
+
+每个G1查询只有两条eligible负例，COUNT=0/TN=2；不是正例或Map/Extract后继资格。G1当前源码投影与原件身份按各次owner证据解释；同字节叶子不认证新session的编排、输入/评价、模型所有权或清理。G2已补Ray runtime-reuse及Daft单线程session的首次/复用各4请求，0失败/unknown/missing/重试；Ray每query不同model UID并退出，Daft同model UID跨query后关闭。83个原始证据文件和570运行文件及压缩包/报告/结果摘要全部匹配；106个本轮身份退出、GPU/RPC/租约释放。两条负例、每格n=1仍不支持性能排名。Ray/Daft的isolated模式、IMLane/Kalypso、非空有限链、helper cascade及正式CLI/sealed packet闭包仍须各自核验，不能以G1代替完整五臂或九配置。
+
+原45d维护预检/说明带来8处历史投影漂移；汇合main的PR57 RayHTTP校验和PR55 importer未调用helper删除后，需保留的旧来源差异总计18处（environment 5、matrix README 3、RayHTTP 5、importer 5）。独立整合树已按Git整合者回执保存4份精确旧快照并新增18条override，五份投影实际materialize全部匹配；原expected hashes、projection ID和既有路由不变。原45d与[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)不改，PR56的共享结果模块迁移仍独立，不借该复现修复转授模型资格。最终源码身份与执行依赖闭包仍须冻结核对。
+
+[priority9231小对照与取消状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)单列：本轮无收益、默认仍FIFO，取消unknown/held与物理资源释放不互相替代。独审定位私有runner漏消费晚到终态P2；45d owner已有close后collect和调用收据合并，11项针对性CPU通过、0skip，本探针不构成PR52新增合并阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；不把88次成功主臂一律改为失败，也不据此免除PR52其他门槛。
+
+## 2026-10-26 records生产闭包review候选（代码与原CPU范围）
+
+独立候选从`main@5f291d3d`选择性接入r2冻结代码闭包，补齐records/Core方法底座、Native／Ray／Daft／IMLane薄适配与Movie生产runner；不是整支合并旧Movie或a244。
+`native_query_lifecycle`保持查询返回、关闭及主异常，`movie_records_session.run_sequence`保留兼容入口；
+Ray runtime复用只检查runtime，Daft显式单线程session检查模型，原生图、batch与调度不变。
+Kalypso客户端使用中性生命周期和公共计时，模型启动归属外部GPU owner，attach未测该成本。
+Core原评价器整合测试改用显式`SEMBENCH_CHECKOUT`，缺绑定明确跳过；绑定后的该用例通过。
+
+通用`FilterMethod`已去除Movie／`reviewText`隐含指令，构造及配置要求显式非空instruction，错误在引擎绑定前拒绝。
+MovieTask保留原Q3提示，相关Movie入口显式传递，Core无benchmark依赖；不同字段的原LOTUS格式化和非Movie用例通过CPU检查。
+
+[具名复现](../experiments/reproduction/native_baselines/README.md)保存五份原代码投影与必要历史override，
+不会以维护测试改动或新策略替换cfdc／ee39；内容ID不是Git提交。CPU／实际SDK与CLI检查仅认证接线，
+尚未合入main；该处原CPU/SDK/CLI范围不代替下列G1或其他入口的新源码资格。
+候选保留MFU完整性修正；晚于query边界的FLOPs尾部仍需完整caller关闭trace，不能据终态声称query-ready分子完整。
+
+原e8eb整合源码383个去重CPU用例通过、0跳过，包含原SDK固定2000行/120发生项及真实Daft CPU图。首次socket权限与回执输出目录错误保留，针对性复跑不改源码、不重复计数；不是模型质量或GPU资格。
+
+### 候选来源与验证边界
+
+本候选包含必要的可选观测、离线统计与Kalypso客户端前置；这些工具的源码检查不提升历史实测资格。
+2026-10-25九配置完整报告与原始封包尚未随本候选发布；具名代码投影见[历史复现](../experiments/reproduction/native_baselines/README.md)，不是将不同cfdc/ee39策略合成默认。
+已公开的[2026-10-20 Native Q3历史失败/复验](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)保持原生产85133c6f、两个运行和有限资格，不能转授本候选。
+本地records格式器和公共文本引擎拒绝图像输入，不能继承下文旧HTTP/Animals或CLIP图文资格。
+当前review仅取得下列G1三个入口的窄功能资格，其他新源码入口的模型与资源资格仍未闭环，未允许据历史结果或CPU直接merge；CPU资产绑定见[检查说明](tests/records_cpu.md)。
 
 ## main 与集成分支的阅读范围
 
