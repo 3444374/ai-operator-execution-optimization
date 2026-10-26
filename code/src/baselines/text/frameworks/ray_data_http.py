@@ -163,6 +163,9 @@ def run_ray_data_http(
     rows = processor(runtime.ray.data.from_items(items)).take_all()
     completed_at_s = time.time()
     row_by_id = {int(row["doc_id"]): row for row in rows}
+    if (len(rows) != len(materialized) or len(row_by_id) != len(rows)
+            or set(row_by_id) != {request.doc_id for request in materialized}):
+        raise ValueError("Ray HTTP results contain missing, duplicate or unexpected row identities")
     return tuple(
         BaselineRequestResult(
             doc_id=request.doc_id,
