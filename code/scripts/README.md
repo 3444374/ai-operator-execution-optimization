@@ -2,6 +2,8 @@
 
 ## Movie records生产闭包候选
 
+CSV／本地records预检使用`core,text,semantic-benchmarks`，不要求PG。SQL数据源显式选择`database`／`sql-readers`；配置缺失或语法无效会失败，检查不替代真实SQL连接验收，见[运行时能力说明](../../deploy/runtime/README.md)。
+
 `experiments/run_movie_records_matrix.py`进入Movie records矩阵与session，显式选择原生生命周期；
 Ray `runtime_reuse_only`不表示模型复用，Daft `native_single_thread_session`使用独立的原生session。
 IMLane resident同样经此session；`imlane_movie_formal.py`保留隔离查询职责。

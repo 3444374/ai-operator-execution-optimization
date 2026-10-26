@@ -1,3 +1,5 @@
+# Full optional-path dependency union; not the CSV/records minimum.
+# Prefer deploy/runtime/assets.json capability groups; database/sql-readers opt into psycopg.
 numpy
 pyarrow>=16,<25
 ray[data,serve]

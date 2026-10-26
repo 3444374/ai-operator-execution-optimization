@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-26：records e8eb首阶段资格停在模型前公共预检，CSV-only被旧profile强制要求DATABASE_URL；0模型调用、0预留，尚未完成输入/模型/资源资格。后续按[能力合同](../../deploy/runtime/README.md)修复DB可选检查，不改旧失败或继承实机资格。
+
 2026-10-26：[records生产闭包review状态](../../code/INFRA_STATUS.md)、[CPU资产与范围](../../code/tests/records_cpu.md)。当前整合源码383个去重CPU用例通过、0跳过；旧失败输出及两次调用环境修正保留，不叠加旧r1/r2计数。固定真实输入不把合成响应变成模型质量；无新GPU/SSH/预算，本次源码独立模型与资源资格仍为merge前置，历史投影按[具名来源](../reproduction/native_baselines/README.md)解释。
 
 2026-10-26历史证据迁入：[2026-10-20 Native Q3失败资格与独立复验](diagnostics/lotus_records_local_model_20261016/README.md)。原生产85133c6f、两次独立120调用；旧campaign失败不改，新复验仅Native单臂通过，质量不足和缺失现场仍保留。不导入records实现，不认证后来九配置或稳定性能。

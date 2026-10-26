@@ -1,14 +1,20 @@
 {
   "schema_version": 1,
   "kind": "runtime_assets",
+  "required_environment_by_group": {
+    "database": ["DATABASE_URL"],
+    "sql-readers": ["DATABASE_URL"]
+  },
   "python_groups": {
     "core": [
       {"module": "numpy", "install": "numpy"},
       {"module": "pyarrow", "install": "pyarrow>=16,<25"},
       {"module": "ray", "install": "ray[data,serve]"},
-      {"module": "psycopg", "install": "psycopg[binary]>=3.2"},
       {"module": "daft", "install": "daft"},
       {"module": "psutil", "install": "psutil>=5.9"}
+    ],
+    "database": [
+      {"module": "psycopg", "install": "psycopg[binary]>=3.2"}
     ],
     "text": [
       {"module": "aiohttp", "install": "aiohttp>=3.9"},
@@ -19,7 +25,8 @@
     "sql-readers": [
       {"module": "sqlalchemy", "install": "SQLAlchemy>=2,<3"},
       {"module": "sqlglot", "install": "sqlglot>=30,<31"},
-      {"module": "connectorx", "install": "connectorx>=0.4,<0.5"}
+      {"module": "connectorx", "install": "connectorx>=0.4,<0.5"},
+      {"module": "psycopg", "install": "psycopg[binary]>=3.2"}
     ],
     "semantic-benchmarks": [
       {"module": "pandas", "install": "pandas>=2,<3"},

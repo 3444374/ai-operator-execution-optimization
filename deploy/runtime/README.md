@@ -51,6 +51,10 @@ PYTHONPATH=code python code/scripts/environment/manage_environment.py check \
 `machine_id`、CPU slots、GPU 型号/显存和 driver。只有诊断时才传
 `--machine-profile` 强制覆盖，不能用覆盖掩盖硬件不满足合同。
 
+CSV／本地records和本地模型检查不访问PostgreSQL，使用`core,text,semantic-benchmarks`，无需`DATABASE_URL`、`psql`或PostgreSQL驱动。三个机器profile仅在显式选择`database`或`sql-readers`能力组时要求DB配置与`psql`；混合能力按要求并集检查，GPU、目录、磁盘、其他命令与软件检查照常执行。
+
+数据库入口选择`database`；Daft等SQL reader选择`sql-readers`（已含PostgreSQL驱动）。缺失/空配置或不能解析的PostgreSQL连接配置使预检失败；只检查连接语法，报告不输出DSN/解析异常，不连接数据库或证明凭据有效。实际SQL入口仍须自己的只读连接/schema/workload gate。不得给CSV路径填占位URL或部署无关数据库来满足检查。
+
 SemBench Movie原生查询与评价使用`core,text,semantic-benchmarks`：后者额外检查pandas、DuckDB、
 SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1与Arrow版本。
 原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
@@ -69,7 +73,7 @@ SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1
 cd <repository>
 cp deploy/runtime/runtime.env.example <persistent-root>/ai-operator-runtime.env
 # 编辑这一个仓库外文件：PROJECT_ROOT/ARTIFACT_ROOT/MODEL_ROOT/DATA_ROOT/
-# VENV_ROOT、DATABASE_URL、GPU_IDS、模型和 endpoint。
+# VENV_ROOT、GPU_IDS、模型和 endpoint；只有选择DB能力才配置DATABASE_URL。
 
 PYTHONPATH=code python code/scripts/environment/manage_environment.py check \
   --groups core,text,image,analysis,ml-estimators,download,text-qwen15b,image-clip,workload-text,workload-image-smoke \

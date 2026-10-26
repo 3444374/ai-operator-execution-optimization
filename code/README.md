@@ -12,6 +12,8 @@
 
 本页的已接纳实现以 main 为准；records、有限链与新 Core／IMLane 接点的独立分支及资格从[实施来源](../experiments/plans/数据组织.md#model-engine-roadmap)定位。
 
+CSV／本地records与本地模型执行不要求PG；只有显式DB／SQL入口需要数据库能力与真实连接配置，见[能力预检](../deploy/runtime/README.md)。`requirements.txt`是维护可选路径的全量依赖集合，按能力安装以`deploy/runtime/assets.json`为准。
+
 本地records生产闭包候选补齐[Movie records矩阵](src/experiments/movie_matrix.README.md)、
 中性查询生命周期与公共返回计时；Ray `runtime_reuse_only`只核对runtime，Daft
 `native_single_thread_session`核对常驻模型。IMLane resident经`movie_records_session`运行。

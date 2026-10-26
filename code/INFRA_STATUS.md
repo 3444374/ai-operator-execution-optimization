@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQL驱动；三机器profile的DATABASE_URL与psql仅对database／sql-readers必需。DB语法检查不连接服务、不验证凭据；数据库入口仍保留实际连接gate。此修复不改变e8eb历史失败或赋予新源码GPU资格，见[运行合同](../deploy/runtime/README.md)。
+
 ## 2026-10-26 records生产闭包review候选
 
 独立候选从`main@5f291d3d`选择性接入r2冻结代码闭包，补齐records/Core方法底座、Native／Ray／Daft／IMLane薄适配与Movie生产runner；不是整支合并旧Movie或a244。
