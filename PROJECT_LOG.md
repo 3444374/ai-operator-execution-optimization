@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-10-26：records生产闭包与共享结果合同已接纳
+
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)已合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`。最终records整合`e2bc889b`的[V0来源检查](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-e2bc-v0)九角色、574文件／159模块通过，零模型／预算；模型功能资格仍归各轮45d。共享结果迁移head `58c76ee9`与71项CPU通过的`7c5f4eff`文件树相同，旧import／pickle与五投影原字节保留。部署须统一新模块与兼容层，不混用旧worker；这不是新模型、完整链或性能资格。当前无配置Actions检查，不称CI通过。
+
+以下逐次条目保留原记录时点，draft／待核验以本条及现行代码状态为准；原失败、unknown和负结果不改写。
+
+## 2026-10-26：补齐IMLane短RPC正常资格
+
+[独立六调用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)在冻结45d上完成：isolated2、resident首次／复用各2，保持同resident模型身份，失败／unknown／重试0。仅修私有RPC配置；旧G3初始化失败及本轮首次目录收尾失败保留，原账本／deadline未重置。无需实施前门隔离；随后e2bc零模型V0通过，PR52／56已接纳，来源与边界见页首；本批仅更新六文档，不重跑模型或修改生产源码。
+
+## 2026-10-26：补入反序负结果与剩余入口资格
+
+[后继优先反序小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)仍无收益，当前负载停止简单策略自动扩测、默认FIFO；保留复用摘要文本及输出长度相差3个token，不称严格同输出。runner r3独审完成，559份生产运行文件未变，旧取消unknown保持。
+[G3小资格](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)Ray 2／Daft 2／Kalypso 4次业务成功；两个IMLane入口当轮初始化失败、业务0且未通过，物理清理通过；后续短RPC资格见上一条。该轮PR52仍为draft，现已接纳；本批只更新文档，不改源码或原件，不新增模型运行。
+
 ## 2026-10-26：共享链结果身份合同单模块归位候选
 
 在records候选`45d184df`的独立后继上，将原baseline目录的纯结果合同逐字节归到`semantic_methods/lotus/record_results.py`，保留旧import同对象入口并调整七处维护导入；不修改历史复制树或引入原生baseline对Core的依赖。[迁移检查及边界](code/INFRA_STATUS.md#record-results-migration)记录17项新增CPU检查、51项既有回归、六类差分与真实旧pickle读取，首次测试环境错误单列。新pickle使用新路径，旧pickle仍可读；未搬其他模块、改模型/调度或运行GPU，未作性能收益结论。 完整45d树复核发现复现公共来源漂移，后继补七份旧字节快照与33条override路由；原expected hash、projection ID及历史产物不改，五份还原须在该候选重新验证。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
