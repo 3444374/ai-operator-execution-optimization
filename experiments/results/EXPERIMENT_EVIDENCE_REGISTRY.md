@@ -17,12 +17,33 @@
 主对照88次成功（含8次预热）。本轮无收益，隔离候选默认仍FIFO，下一步仅分析已有机制记录；
 不据小样本否定其他负载，不新增性能调参或模型运行任务，不将单次首次／复用合为稳定性能证据。
 
-取消探针保留1次unknown；API close后仍有1个held请求和1项未持久交付结果，不能升级为成功终态。
+<a id="priority-reverse-small-pair"></a>
+2026-10-26反序补证：`continuation-ready-priority-reverse-gpu-r3-20261026-r1`按priority→FIFO执行，
+同一`d7f0245c`源码快照、559份生产运行文件原字节保持；私有runner r3已完成独审，44项CPU及28个子用例的核验按执行负责人回执解释，不计作本批重跑。
+报告SHA-256为`18cf581bb2234e8216e72167e9505d7ceee42c851f04575d8fe0a83fd5b5dac7`，原件按运行标识和摘要经既有artifact交接取得。
+
+| 反序选择方式 | 首次完整查询（秒） | 复用完整查询（秒） |
+|---|---:|---:|
+| 后继优先 | 1.156905 | 1.089293 |
+| FIFO | 1.036028 | 1.013191 |
+
+本轮88次模型调用成功（含8次预热、80次正式调用），失败／unknown均0；未运行取消探针，旧unknown不改成功。每格query n=1、16行，API n=20、P99为NA。
+首次与复用合计慢9.61%，只表示两次完整查询之和；复用有1条摘要文本／token不同，输出长度相差3个token，分类相同，不能称严格同输出。
+与原轮慢10.26%共同支持在当前负载停止简单后继优先的自动扩测、保留FIFO默认；不合并两波为稳定性能统计，不泛化为所有负载或优先策略无效。
+
+原轮取消探针保留1次unknown；API close后仍有1个held请求和1项未持久交付结果，不能升级为成功终态。
 独立清理确认物理GPU／RPC／租约已释放，物理退出不代替调用结果确认。原生运行中的取消与真实aging尚未取得资格；
-独审定位P2为本轮私有runner关闭后漏收晚到终态；45d生产owner已有close后collect和调用收据合并，11项针对性CPU通过、0skip，本探针不构成PR52新增合并阻断。
-修复仍待独审，原unknown不可改写，也不将88次成功主对照一律改为失败。
+独审定位P2为原轮私有runner关闭后漏收晚到终态；45d生产owner已有close后collect和调用收据合并，11项针对性CPU通过、0skip，本探针不构成PR52新增合并阻断。
+私有runner r3的独审已完成；未以新主对照替代原取消探针资格，原unknown不可改写，也不将原88次成功主对照一律改为失败。
 独审原件按运行标识`priority-cancel-impact-independent-review-20261026-r1`及报告SHA-256 `7fc0f74285cb055d51f7000d30d2943fb0138c21bb22ea2e68ce9d4e557079c2`经既有artifact交接取得。
 另据执行负责人回执，records三入口小资格（G1）已完成两轮、累计14次成功；其余资格仍待核验，[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)保持draft、尚未合并。
+
+<a id="records-g3-small-qualification"></a>
+2026-10-26 records剩余入口小资格：`records-production-g3-remaining14-45d184df-20261026-r1`固定PR52的`45d184df`、570份运行文件。
+Ray isolated 2次、Daft isolated 2次、Kalypso-native 4次业务请求成功；IMLane isolated／resident均在模型初始化时出现`ZMQError`，业务调用0、资格未通过，仍在诊断。
+模型业务失败／unknown均0，另保留2条未提交失败记录；不猜测ZMQ根因，不把初始化失败当作2次真实模型失败。物理清理通过，不代替未知的模型API关闭确认。
+本轮不是完整矩阵、链／cascade或稳态排名资格；PR52仍为draft、未合并。报告SHA-256为
+`d5686fe0f5a87a90ac2f2c01587a35afd316a1a5c1d181d96139c05f851e2338`，原件按运行标识和摘要经既有artifact交接取得。
 
 2026-10-26状态整理：[查询调优](../plans/查询调优.md#completed-query-work)移出已完成清单，按各次报告保留负结果与适用条件。
 本次只调整计划和导航，未重跑或重算实验；原始观测、失败、源码身份与既有默认保持。

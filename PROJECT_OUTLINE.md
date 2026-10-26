@@ -396,7 +396,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ### 当前证据与候选分列
 
-- [priority9231隔离小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)已完成：本轮无收益，默认仍FIFO，仅分析已有机制记录；取消探针的unknown／held与物理资源释放分列，独审定位私有runner漏收晚到终态，不构成PR52新增阻断，修复仍待审。三入口小资格两轮累计14次成功，PR52其余资格待核验，仍为draft。
+- [后继优先及反序小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)分别慢10.26%／9.61%；当前负载停止简单策略自动扩测，默认FIFO，不外推其他负载。反序复用一摘要输出长度差3个token、分类相同，不称严格同输出；runner r3独审已完成，旧取消unknown保留。
+- [G3剩余入口小资格](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)：Ray 2／Daft 2／Kalypso 4次业务成功，两个IMLane入口初始化ZMQError、业务0且资格未通过，诊断中；物理清理通过，PR52仍为draft。
 - 2026-10-25八配置文本Q1/Q2/Q3已完成72个正式任务组，Kalypso独立波次已完成9个正式组；不能继续写“其他臂／正式矩阵未跑”。八配置五份实际执行快照为67d6f801、e7090055、65114360、79e8f103、5007e95b；Kalypso作者来源05024f0，提示、parser和引擎不同，不能据同任务结果断言纯调度胜负。上述实测原件及具名快照尚未随本批文档发布，完整重复、质量、失败及生命周期仍以各自固定原件为准；这些短指纹不是Git提交。公开[Movie候选](https://github.com/3444374/ai-operator-execution-optimization/tree/a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05)与[Q3证据分支](https://github.com/3444374/ai-operator-execution-optimization/tree/452505e80f7d13dcbfbc838fe7fae6f127790b62)保留records开发历史，不等于这些最终实测快照或main代码接纳。
 - 旧a5035105的Core/Ray/Daft各有M→F→E、E→M真实小单元，合27次模型调用；它们不认证当前九配置的链性能或精确F→M→E。main已有MethodRun与消费者结果计费，有限LOTUS链仍是独立来源中的fused阶段循环，两者面向main接纳的接合仍待验证。
 - 旧Animals64四路径图文结果与CLIP检索保留各自资格；新records来源的image_url及媒体列仍被文本校验拒绝，不能称当前本地模型配置已接通图像。

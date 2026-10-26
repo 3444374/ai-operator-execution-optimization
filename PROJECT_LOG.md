@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-26：补入反序负结果与剩余入口资格
+
+[后继优先反序小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)仍无收益，当前负载停止简单策略自动扩测、默认FIFO；保留复用摘要文本及输出长度相差3个token，不称严格同输出。runner r3独审完成，559份生产运行文件未变，旧取消unknown保持。
+[G3小资格](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)Ray 2／Daft 2／Kalypso 4次业务成功；两个IMLane入口初始化失败、业务0且资格未通过，诊断中，物理清理通过。同步计划、状态与结果索引，PR52仍为draft；本批只更新文档，不改源码或原件，不新增模型运行。
+
 ## 2026-10-26：同步后继优先小对照与资格状态
 
 [priority9231小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)完成，本轮无收益、默认仍FIFO；取消unknown／held保留，物理资源已释放，独审定位私有runner漏收晚到终态，不构成PR52新增阻断；修复仍待审。
