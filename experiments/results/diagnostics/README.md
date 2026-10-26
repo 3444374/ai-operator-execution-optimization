@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[历史Native Q3失败与复验](lotus_records_local_model_20261016/README.md)：2026-10-20两个独立运行的紧凑证据、源码与原件身份；旧failed及新Native-only资格分列，不作为当前records生产接纳或九配置结果。
+
 [main原生CLIP最小闭包](main_lotus_clip_20261015/README.md)：完整RM／index／search与显式单卡资源，分列8834 CPU／SDK、来源d2条件模型与失败、main570四路径八臂40行严格单卡实机；未扩展HSE／多卡资格。
 
 [HSE真实身份与基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)：历史B/C按hunk恢复、RM结果／导出边界与固定来源CPU／少量同任务GPU资格；组件不外推系统收益。
