@@ -1,5 +1,31 @@
 # AI 算子执行 Infra 当前状态
 
+## 2026-10-26 records生产闭包review候选
+
+独立候选从`main@5f291d3d`选择性接入r2冻结代码闭包，补齐records/Core方法底座、Native／Ray／Daft／IMLane薄适配与Movie生产runner；不是整支合并旧Movie或a244。
+`native_query_lifecycle`保持查询返回、关闭及主异常，`movie_records_session.run_sequence`保留兼容入口；
+Ray runtime复用只检查runtime，Daft显式单线程session检查模型，原生图、batch与调度不变。
+Kalypso客户端使用中性生命周期和公共计时，模型启动归属外部GPU owner，attach未测该成本。
+Core原评价器整合测试改用显式`SEMBENCH_CHECKOUT`，缺绑定明确跳过；绑定后的该用例通过。
+
+通用`FilterMethod`已去除Movie／`reviewText`隐含指令，构造及配置要求显式非空instruction，错误在引擎绑定前拒绝。
+MovieTask保留原Q3提示，相关Movie入口显式传递，Core无benchmark依赖；不同字段的原LOTUS格式化和非Movie用例通过CPU检查。
+
+[具名复现](../experiments/reproduction/native_baselines/README.md)保存五份原代码投影与必要历史override，
+不会以维护测试改动或新策略替换cfdc／ee39；内容ID不是Git提交。CPU／实际SDK与CLI检查仅认证接线，
+尚未合入main、重建私有packet/source/input/token/环境绑定或取得当前候选GPU资格。
+候选保留MFU完整性修正；晚于query边界的FLOPs尾部仍需完整caller关闭trace，不能据终态声称query-ready分子完整。
+
+当前整合源码383个去重CPU用例通过、0跳过，包含原SDK固定2000行/120发生项及真实Daft CPU图。首次socket权限与回执输出目录错误保留，针对性复跑不改源码、不重复计数；不是模型质量或GPU资格。
+
+## 来源与验证边界
+
+本候选包含必要的可选观测、离线统计与Kalypso客户端前置；这些工具的源码检查不提升历史实测资格。
+2026-10-25九配置完整报告与原始封包尚未随本候选发布；具名代码投影见[历史复现](../experiments/reproduction/native_baselines/README.md)，不是将不同cfdc/ee39策略合成默认。
+已公开的[2026-10-20 Native Q3历史失败/复验](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)保持原生产85133c6f、两个运行和有限资格，不能转授本候选。
+本地records格式器和公共文本引擎拒绝图像输入，不能继承下文旧HTTP/Animals或CLIP图文资格。
+当前review仍待新源码的实际模型与资源资格，未允许仅据历史结果merge；CPU资产绑定见[检查说明](tests/records_cpu.md)。
+
 ## main 与集成分支的阅读范围
 
 main 已按必要闭包接纳公共统计修复、Core／完整响应、LOTUS Movie／Animals完整请求、可选vLLM部署资源及原生CLIP查询的必要工程闭包。每批固定源码和资格从下文报告核对；

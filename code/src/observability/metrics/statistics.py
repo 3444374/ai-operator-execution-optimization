@@ -67,6 +67,90 @@ def percentile(values: list[float], p: float) -> float:
     return ordered[index]
 
 
+def latency_observations(rows, *, sample_unit_key=None, slowest=3):
+    """Offline receipt summary for one declared task/phase/population.
+
+    Batch-copied intervals require a shared sample-unit ID. A hundred completed
+    units only permits an empirical rank; it does not establish population P99.
+    """
+    rows=list(rows);units={};ids=set()
+    for row in rows:
+        if row['id'] in ids:
+            raise ValueError('duplicate observation ID')
+        ids.add(row['id'])
+        if row['status'] not in ('succeeded','failed','unknown'):
+            raise ValueError('explicit observation status required')
+        value=row.get('elapsed_s')
+        if value is not None and (type(value) not in (int,float) or not math.isfinite(value) or value<0):
+            raise ValueError('elapsed time must be finite nonnegative or missing')
+        if row['status']=='succeeded' and value is not None:
+            key=row['id'] if sample_unit_key is None else row[sample_unit_key]
+            if key in units and units[key]!=value:
+                raise ValueError('one sample unit has inconsistent copied intervals')
+            units[key]=value
+    values=list(units.values())
+    missing=sum(row['status']!='succeeded' or row.get('elapsed_s') is None for row in rows)
+    batch_unknown=sample_unit_key is None and any(row.get('copied_batch_interval') for row in rows)
+    eligible=len(values)>=100 and not missing and not batch_unknown
+    completed=[row for row in rows if row['status']=='succeeded' and row.get('elapsed_s') is not None]
+    domains={row.get('clock_domain') for row in completed}
+    timed=completed and None not in domains and len(domains)==1 and all(
+        row.get('clock_domain_verified') is True and row.get('end_s') is not None for row in completed)
+    last=max(completed,key=lambda row:row['end_s']) if timed else None
+    return dict(observations=len(rows),completed_units=len(values),incomplete_observations=missing,
+        median_s=statistics.median(values) if values else None,maximum_s=max(values) if values else None,
+        p50_s=percentile(values,50) if values else None,p95_s=percentile(values,95) if values else None,
+        quantile_method='nearest rank; median_s uses arithmetic middle',
+        empirical_p99_s=percentile(values,99) if eligible else None,
+        empirical_p99_rank=math.ceil(.99*len(values)) if eligible else None,
+        empirical_only=True,population_P99_established=False,
+        p99_unavailable_reason=None if eligible else 'insufficient_units_or_incomplete_or_unidentified_batch',
+        slowest=sorted(completed,key=lambda row:row['elapsed_s'],reverse=True)[:slowest],
+        last_completed=last,clock_correlation_available=bool(timed),
+        incomplete=[row for row in rows if row['status']!='succeeded' or row.get('elapsed_s') is None],
+        distribution_scope='completed successful units; incomplete observations listed separately',
+        scope='caller-declared homogeneous task/phase/population; not pure GPU inference')
+
+
+def query_costs(rows, *, offline_scan_s=0.0):
+    """Each submitted query includes its online exploration exactly once.
+
+    Historical calibration_cost is provenance, never this run's new scan cost.
+    Caller supplies actual submission-to-answer times and separates first,
+    reused and rescanned populations before latency summarization.
+    """
+    rows=list(rows)
+    if not math.isfinite(offline_scan_s) or offline_scan_s<0:
+        raise ValueError('actual offline scan cost must be nonnegative')
+    groups={};costs=[];online=[]
+    for row in rows:
+        groups.setdefault(row['phase'],[]).append(row)
+        elapsed=row.get('elapsed_s');exploration=row.get('online_exploration_s',0.)
+        if elapsed is not None and (not math.isfinite(elapsed) or elapsed<0):
+            raise ValueError('query elapsed time must be nonnegative')
+        if exploration is not None and (not math.isfinite(exploration) or exploration<0):
+            raise ValueError('online cost must be nonnegative or missing')
+        costs.append(elapsed);online.append(exploration)
+    total=None if any(v is None for v in costs) else sum(costs)
+    return dict(by_phase={name:latency_observations(items) for name,items in groups.items()},
+        query_wall_sum_s=total,actual_offline_scan_s=offline_scan_s,
+        cumulative_cost_s=None if total is None else total+offline_scan_s,
+        online_exploration_s=None if any(v is None for v in online) else sum(online),
+        online_already_in_query_wall=True,historical_calibration_cost_added=False)
+
+
+def reuse_payback(*, fixed_query_s, first_query_s, reused_query_s, actual_offline_scan_s=0.):
+    """Conditional estimate from matched costs, not an observed causal result."""
+    values=(fixed_query_s,first_query_s,reused_query_s,actual_offline_scan_s)
+    if any(not math.isfinite(v) or v<0 for v in values):
+        raise ValueError('payback costs must be finite nonnegative')
+    upfront=max(0.,first_query_s+actual_offline_scan_s-fixed_query_s)
+    saving=fixed_query_s-reused_query_s
+    return dict(extra_first_cost_s=upfront,assumed_saving_per_reuse_s=saving,
+        additional_reuses_to_repay=0 if upfront==0 else None if saving<=0 else math.ceil(upfront/saving),
+        assumption='matched resource/workload/lifecycle costs remain stationary; online cost already in first query')
+
+
 def repeat_summary(values: list[float]) -> dict[str, float | int | str]:
     """Summarize repeat means with a conservative two-sided 95% t interval."""
 

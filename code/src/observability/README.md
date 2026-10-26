@@ -7,10 +7,22 @@ over the execution policy it observes.
   once with no admission limit, retry, cache, route choice, or payload rewrite, then records lifecycle
   clocks and endpoint-reported token usage for cross-framework tail/fairness metrics.
 - `metrics/` contains reusable metric collectors and summaries.
+- `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
 - `profiling/` contains the PostgreSQL AI operator profiler's stable result schema and helpers.
 
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
+
+Native scheduled-work MFU helpers live in `metrics/mfu.py`, `mfu_trace.py` and the explicitly invoked
+`mfu_native_bootstrap.py`. They require one verified engine/GPU, complete token/terminal watermarks
+and native FLOPs updates. Missing computed-prefill FLOPs also make an estimate unavailable; a final
+completion watermark alone cannot restore that numerator. These are analytic scheduled-work estimates,
+not hardware instruction utilization or kernel MFU. No model engine is registered or started by adding them.
+
+`metrics.statistics.latency_observations`, `query_costs` and `reuse_payback` read existing receipts only.
+Declare actual API/batch sample units; keep failed/unknown observations separate, report small query
+samples with median/max, and charge external scan once plus complete query costs. Reporting rules and
+GPU/MFU报告按[既有报告核对](../../../experiments/plans/reference/报告核对.md)声明观测窗口与分母。query-ready、完整caller返回、owner关闭分别报告；窗口未封闭的FLOPs尾部标unavailable，不能仅由finished/token终态补作完整分子。
 
 `process_resources/` provides Linux FD identity observations, explicit missing values, sampling windows,
 stable baselines, operation/error capture and gzip JSONL persistence. A tick is a sequential observation

@@ -1,5 +1,16 @@
 # SemLoom 脚本入口
 
+## Movie records生产闭包候选
+
+`experiments/run_movie_records_matrix.py`进入Movie records矩阵与session，显式选择原生生命周期；
+Ray `runtime_reuse_only`不表示模型复用，Daft `native_single_thread_session`使用独立的原生session。
+IMLane resident同样经此session；`imlane_movie_formal.py`保留隔离查询职责。
+`experiments/materialize_native_baseline.py list|prepare`只构造并核验[具名历史代码树](../../experiments/reproduction/native_baselines/README.md)，
+不执行模型；`prepare`须显式选择variant与不存在的输出目录。
+Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`check_kalypso_native_cpu.py`
+分别负责服务、附着查询与作者CPU检查，所需配置见[适配说明](../src/baselines/text/frameworks/kalypso_native/README.md)。
+本批仅完成本机CPU与`--help`检查，新运行仍需私有packet、source/input/token/模型/环境绑定和owner资格。
+
 ## 原生 LOTUS CLIP 查询
 
 三个公开入口按内容manifest、模型身份、完整查询衔接：

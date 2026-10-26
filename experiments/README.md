@@ -7,6 +7,7 @@
 |---|---|
 | 现行方案与共同对照规范 | [plans/](plans/README.md) |
 | 已执行与历史方案 | [已执行](plans/completed/README.md)、[历史](plans/archive/README.md) |
+| 具名历史代码复现 | [原生基线代码投影](reproduction/native_baselines/README.md)，与当前维护代码和新运行资格分列 |
 | 实验报告与原始证据 | [results/](results/README.md)、[证据台账](results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 动机画像 | [动机结果](results/motivation/README.md) |
 | 组件与能力检查 | [诊断结果](results/diagnostics/README.md) |

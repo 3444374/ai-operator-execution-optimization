@@ -38,6 +38,7 @@ class _Pending:
     future: Future
     reported_unknown: bool = False
     completed_order: int | None = None
+    producer_stopped: bool = False
 
 
 class BoundedAsyncBackend:
@@ -129,7 +130,7 @@ class BoundedAsyncBackend:
                 key=lambda item: item[1].completed_order,
             )
             for key, slot in completed:
-                if not slot.future.done() or slot.reported_unknown:
+                if not slot.future.done() or slot.reported_unknown and not slot.producer_stopped:
                     continue
                 # Report an uncertain transport failure once, retaining its slot.
                 # No terminal event is consumed if this poll raises instead.
@@ -140,6 +141,15 @@ class BoundedAsyncBackend:
                         if (key, slot.handle) not in handles:
                             raise RuntimeError("asynchronous failure has no registered owner") from None
                         events.append(Terminal(key, slot.handle, "failed"))
+                        if len(events) == max_events:
+                            break
+                        continue
+                    if slot.producer_stopped:
+                        if (key, slot.handle) not in handles:
+                            raise RuntimeError("retired borrowing has no registered owner") from None
+                        # cancelled ends borrowing, not the model's unknown
+                        # outcome. The adapter retains its separate call ledger.
+                        events.append(Terminal(key, slot.handle, "cancelled"))
                         if len(events) == max_events:
                             break
                         continue
@@ -185,6 +195,31 @@ class BoundedAsyncBackend:
         # There is no authoritative remote-cancel operation in this transport.
         # Continue reading the bounded response so the engine can settle it later.
         return None
+
+    def retire_producer(self, keys: tuple[TaskKey, ...]) -> int:
+        """End selected borrowing after the adapter proves its producer stopped.
+
+        Caller must have an exact-owner remote quiescence acknowledgement.
+        This method additionally requires the local I/O loop and all callbacks
+        to have stopped. It emits no model result and never reopens admission.
+        Known completions still win a close race; uncertainty is not rewritten.
+        """
+        if (type(keys) is not tuple or len(keys) > self._maximum
+                or any(type(key) is not TaskKey or any(type(value) is not int or not 0 <= value < 1 << 64
+                    for value in (key.session_id, key.sequence)) for key in keys)
+                or len(set(keys)) != len(keys)):
+            raise ValueError("retirement requires unique full task keys")
+        with self._lock:
+            if not self._closed or self._thread.is_alive():
+                raise RuntimeError("local producer is not stopped")
+            slots = [self._slots[key] for key in keys if key in self._slots]
+            if any(not slot.future.done() for slot in slots):
+                raise RuntimeError("local delivery callback remains active")
+            count = sum(not slot.producer_stopped for slot in slots)
+            for slot in slots:
+                slot.producer_stopped = True
+        self._notify()
+        return count
 
     def close(self, timeout: float = 5.0) -> bool:
         if timeout <= 0:

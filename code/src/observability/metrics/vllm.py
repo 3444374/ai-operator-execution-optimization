@@ -36,11 +36,27 @@ def parse_prometheus_metrics(text: str) -> dict[str, float]:
         metrics[name] = metrics.get(name, 0.0) + value
     return metrics
 
-def scrape_prometheus_metrics(url: str, timeout_s: float = 5.0) -> dict[str, float]:
+class _DirectResponseOnly(request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def scrape_prometheus_metrics(
+    url: str, timeout_s: float = 5.0, *, require_direct_response: bool = False,
+) -> dict[str, float]:
+    """Keep legacy empty-on-error behavior unless direct diagnostic reads are requested.
+
+    Direct reads bypass environment proxies, reject redirects and propagate read/HTTP
+    errors so the caller can distinguish probe failure from absent metric fields.
+    """
+    open_url = (request.build_opener(request.ProxyHandler({}), _DirectResponseOnly()).open
+                if require_direct_response else request.urlopen)
     try:
-        with request.urlopen(url, timeout=timeout_s) as response:
+        with open_url(url, timeout=timeout_s) as response:
             body = response.read()
     except (OSError, error.URLError):
+        if require_direct_response:
+            raise
         return {}
     return parse_prometheus_metrics(body.decode("utf-8", errors="replace"))
 

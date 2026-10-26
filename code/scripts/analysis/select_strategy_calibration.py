@@ -10,8 +10,15 @@ import json
 import shlex
 import statistics
 import subprocess
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+CODE_ROOT = Path(__file__).resolve().parents[2]
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.scheduling.runtime.calibration import select_near_peak
 
 
 def _sha256(path: Path) -> str:
@@ -212,15 +219,7 @@ def _select_actor_shape(
             else float("inf")
         )
 
-    peak = max(throughput_medians.values())
-    candidates = [
-        workers
-        for workers, throughput in throughput_medians.items()
-        if throughput >= ceiling_ratio * peak
-    ]
-    if not candidates:
-        raise ValueError("no actor shape satisfies the ceiling rule")
-    selected_workers = min(candidates)
+    selected_workers, _ = select_near_peak(throughput_medians, ratio=ceiling_ratio)
     return (
         selected_workers,
         concurrency_by_workers[selected_workers],
@@ -378,33 +377,49 @@ def build_selection(
     }
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--feeding-runs", required=True, type=Path)
+    parser.add_argument("--core-scan", type=Path, help="completed Core scan JSON; never starts a scan")
+    parser.add_argument("--feeding-runs", type=Path)
     parser.add_argument("--feeding-scenario", default="fixed16_c16")
-    parser.add_argument("--direct-baseline-root", required=True, type=Path)
+    parser.add_argument("--direct-baseline-root", type=Path)
     parser.add_argument("--direct-cell", default="bounded_fixed16_c16")
-    parser.add_argument("--token-budget-runs", required=True, type=Path)
-    parser.add_argument("--actor-shape-runs", required=True, type=Path)
+    parser.add_argument("--token-budget-runs", type=Path)
+    parser.add_argument("--actor-shape-runs", type=Path)
     parser.add_argument("--minimum-repeats", type=int, default=3)
+    parser.add_argument("--near-peak-ratio", type=float, default=0.97)
     parser.add_argument("--minimum-feeding-ratio", type=float, default=0.95)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--env-output", type=Path)
-    return parser.parse_args()
+    args = parser.parse_args(argv)
+    legacy = (args.feeding_runs, args.direct_baseline_root, args.token_budget_runs, args.actor_shape_runs)
+    if args.core_scan is not None:
+        if any(value is not None for value in legacy) or args.env_output is not None:
+            parser.error("--core-scan uses its own measurements and JSON output only")
+    elif any(value is None for value in legacy):
+        parser.error("strategy selection requires --feeding-runs, --direct-baseline-root, --token-budget-runs and --actor-shape-runs")
+    return args
 
 
-def main() -> None:
-    args = parse_args()
-    selection = build_selection(
-        feeding_runs=args.feeding_runs,
-        feeding_scenario=args.feeding_scenario,
-        direct_baseline_root=args.direct_baseline_root,
-        direct_cell=args.direct_cell,
-        token_budget_runs=args.token_budget_runs,
-        actor_shape_runs=args.actor_shape_runs,
-        minimum_repeats=args.minimum_repeats,
-        minimum_feeding_ratio=args.minimum_feeding_ratio,
-    )
+def main(argv=None) -> None:
+    args = parse_args(argv)
+    if args.core_scan is not None:
+        from src.experiments.calibration.core import build_core_selection
+        selection = build_core_selection(**json.loads(args.core_scan.read_text(encoding="utf-8")),
+            minimum_repeats=args.minimum_repeats, near_peak_ratio=args.near_peak_ratio)
+        selection["evidence"].update(
+            scan_path=str(args.core_scan.resolve()), scan_sha256=_sha256(args.core_scan))
+    else:
+        selection = build_selection(
+            feeding_runs=args.feeding_runs,
+            feeding_scenario=args.feeding_scenario,
+            direct_baseline_root=args.direct_baseline_root,
+            direct_cell=args.direct_cell,
+            token_budget_runs=args.token_budget_runs,
+            actor_shape_runs=args.actor_shape_runs,
+            minimum_repeats=args.minimum_repeats,
+            minimum_feeding_ratio=args.minimum_feeding_ratio,
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_name(f"{args.output.name}.tmp")
     temporary.write_text(

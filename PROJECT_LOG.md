@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-26：records生产闭包独立review候选
+
+从main5f291d3d选择性接入r2冻结的records/Core、本地文本引擎、原生薄适配、运行入口与具名历史复现，未整合旧分支全历史。通用instruction必填，Movie提示仅属任务；main既有helper及已合研究/Q3证据保留。当前源码383个去重CPU用例通过、0跳过，固定2000行/120发生项由真实CSV摘要及本地manifest绑定；Daft本机socket与私有回执目录的首轮错误、后续复验分别保留，不累加重复。
+
+五份历史投影保持逐字节来源，不混cfdc/ee39或新FIFO/index/B/W候选为默认。当前仅供draft PR审阅；新的private packet/source/input/token/model/env/ledger/owner绑定及本次源码GPU资格尚未完成，不允许据旧实测merge。入口见[代码状态](code/INFRA_STATUS.md)、[CPU资产](code/tests/records_cpu.md)与[具名复现](experiments/reproduction/native_baselines/README.md)。
+
 ## 2026-10-26：迁入Q3历史失败与独立复验证据
 
 从旧Q3分支13d63374/452505e8仅迁[两份脱敏JSON与历史说明](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)，同步诊断索引和证据台账。两次生产85133c6f/source lock相同，run与证据指纹不同；旧failed不提升，新复验仅Native单臂资格，保留质量不足、缺失现场和不同计时边界。本批不导入旧117提交或records执行器，不覆盖已合研究路线，不新增模型运行；旧Q3完整历史和其他开发分支继续保留。
