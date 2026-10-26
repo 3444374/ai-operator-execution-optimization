@@ -6,7 +6,13 @@
 
 本页描述 main 已接纳的请求／检索接点；独立 records、有限链及本地模型分支的实现与资格统一见[实施来源](../../../../experiments/plans/数据组织.md#model-engine-roadmap)，不表示已纳入本模块。
 
+records本地闭包候选的`FilterMethod(model_name, instruction)`要求调用方显式提供非空instruction；
+序列化配置同样拒绝缺失或空值，不选择Movie／字段／标签默认。调用方先按自己的列绑定方法，再交执行owner。
+Movie原提示由`baselines/text/movie_tasks.py`显式提供，公共Core不导入benchmark配置；新接口仅有CPU接线检查，尚未转授模型资格。
+
 ## 接口与所有权
+
+共享的[records结果合同](record_results.py)承载发生项、调用身份、父关联、coverage与失败/unknown审计，由Core、Ray Data和Daft消费者共用，不拥有模型或调度。旧`src.baselines.text.frameworks.lotus_chain_results`保留同一对象的薄重导出。新pickle使用新模块路径，旧pickle全局名仍可读取；worker须绑定同一候选源码，不能混用缺少新模块的旧worker。迁移与CPU边界见[代码状态](../../../INFRA_STATUS.md#record-results-migration)。
 
 - `batch.lotus_executor(lm, executor)` 在作用域内替换 uncached 执行接点，退出时恢复；
   `LotusBatchExecutor` 将完整请求提交给已有 native task API，并将完整响应交回原 SDK。

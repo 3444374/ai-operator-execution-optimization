@@ -1,5 +1,18 @@
 # SemLoom 脚本入口
 
+## Movie records生产闭包候选
+
+CSV／本地records预检使用`core,text,semantic-benchmarks`，不要求PG。SQL数据源显式选择`database`／`sql-readers`；配置缺失或语法无效会失败，检查不替代真实SQL连接验收，见[运行时能力说明](../../deploy/runtime/README.md)。
+
+`experiments/run_movie_records_matrix.py`进入Movie records矩阵与session，显式选择原生生命周期；
+Ray `runtime_reuse_only`不表示模型复用，Daft `native_single_thread_session`使用独立的原生session。
+IMLane resident同样经此session；`imlane_movie_formal.py`保留隔离查询职责。
+`experiments/materialize_native_baseline.py list|prepare`只构造并核验[具名历史代码树](../../experiments/reproduction/native_baselines/README.md)，
+不执行模型；`prepare`须显式选择variant与不存在的输出目录。
+Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`check_kalypso_native_cpu.py`
+分别负责服务、附着查询与作者CPU检查，所需配置见[适配说明](../src/baselines/text/frameworks/kalypso_native/README.md)。
+本批仅完成本机CPU与`--help`检查，新运行仍需私有packet、source/input/token/模型/环境绑定和owner资格。
+
 离线保留结果的统一读取入口为 [`analysis/summarize_offline_results.py`](analysis/summarize_offline_results.py)；
 显式 schema/manifest、路径、CLI/库 API、支持格式和 NA 语义见[离线结果说明](analysis/OFFLINE_RESULTS.md)。
 

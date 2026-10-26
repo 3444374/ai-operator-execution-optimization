@@ -1,5 +1,20 @@
 # 实验与机制证据台账
 
+2026-10-26：[共享链结果合同归位](../../code/INFRA_STATUS.md#record-results-migration)。固定`45d184df`的独立后继单模块迁移，旧import同对象、六类行为差分与旧collector pickle读取通过；17项新增CPU检查及51项既有回归通过。首次`-S`隐藏既有依赖的测试错误保留，仅修正测试启动方式。无新模型、原生图或GPU运行，无性能/内存收益结论，不转授records资格。 完整树的历史复现来源漂移由七份旧字节快照和33条override路由修复，expected SHA与projection ID保持，五投影另作CPU还原核验。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
+
+<a id="pr52-g1-negative-records"></a>
+2026-10-26：固定45d的records G1窄功能范围。两轮实际14次成功调用仅覆盖Native resident、Core默认同步及显式async的首次/复用和两条eligible负例；新轮8次无失败/unknown/missing/重试，旧轮私有审计失败仍保留。完整资源退出与调用确认分列，不证明正例质量、Map/Extract、P99或稳定性能。[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)已合并；该条只登记G1，其余入口从各自后续结果取资格，见[代码状态](../../code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+
+G2运行`records-production-ray-daft8-45d184df-20261026-r1`另有8真实请求成功（4个batch API各2请求）、0预热/失败/unknown/missing/重试；45d累计22成功。Ray同runtime、每query新model UID并退出；Daft显式单线程、同model UID跨query后关闭。106个本轮身份退出及GPU/RPC/租约释放分别核验。每格n=1、两条负例，未转授isolated、其他后端或性能结论；原件按运行标识及HANDOFF SHA-256 `b1976a373ccba25d8c603cb51526a04729e0524f2c96c0dd859810bfb1810b18`经既有artifact交接取得。
+
+原45d的8处预检/说明漂移，加上最新main的RayHTTP/importer差异，在独立整合树中共需18条历史override。Git整合者回执确认4份精确旧快照、18条路由及五投影实际materialize全部匹配，原hash/ID/既有路由不变；原45d与[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)未改。该回执只证明历史代码还原，不认证新模型/执行闭包，也不重算或改写历史观测、发布原始运行材料。
+
+以下两条仅记录e8eb初期预检与CPU交付时点；新G1不覆盖或删除其原失败，也不与383/80项CPU相加。
+
+2026-10-26：records e8eb首阶段资格停在模型前公共预检，CSV-only被旧profile强制要求DATABASE_URL；0模型调用、0预留，尚未完成输入/模型/资源资格。后续按[能力合同](../../deploy/runtime/README.md)修复DB可选检查，不改旧失败或继承实机资格。
+
+2026-10-26：[records生产闭包review状态](../../code/INFRA_STATUS.md)、[CPU资产与范围](../../code/tests/records_cpu.md)。原e8eb整合源码383个去重CPU用例通过、0跳过；旧失败输出及两次调用环境修正保留，不叠加旧r1/r2计数。固定真实输入不把合成响应变成模型质量；无新GPU/SSH/预算，本次源码独立模型与资源资格仍为merge前置，历史投影按[具名来源](../reproduction/native_baselines/README.md)解释。
+
 <a id="priority9231-small-pair"></a>
 2026-10-26：后继优先的隔离小对照。
 
@@ -36,13 +51,13 @@
 独审定位P2为原轮私有runner关闭后漏收晚到终态；45d生产owner已有close后collect和调用收据合并，11项针对性CPU通过、0skip，本探针不构成PR52新增合并阻断。
 私有runner r3的独审已完成；未以新主对照替代原取消探针资格，原unknown不可改写，也不将原88次成功主对照一律改为失败。
 独审原件按运行标识`priority-cancel-impact-independent-review-20261026-r1`及报告SHA-256 `7fc0f74285cb055d51f7000d30d2943fb0138c21bb22ea2e68ce9d4e557079c2`经既有artifact交接取得。
-另据执行负责人回执，records三入口小资格（G1）已完成两轮、累计14次成功；其余资格仍待核验，[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)保持draft、尚未合并。
+另据执行负责人回执，records三入口小资格（G1）已完成两轮、累计14次成功；该条保留原G1时点；后续资格及[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)接纳状态见下文。
 
 <a id="records-g3-small-qualification"></a>
 2026-10-26 records剩余入口小资格：`records-production-g3-remaining14-45d184df-20261026-r1`固定PR52的`45d184df`、570份运行文件。
 Ray isolated 2次、Daft isolated 2次、Kalypso-native 4次业务请求成功；IMLane isolated／resident均在模型初始化时出现`ZMQError`，业务调用0、该轮资格未通过；后续独立补资格见[短RPC复验](#records-imlane-rpc-qualification)。
 模型业务失败／unknown均0，另保留2条未提交失败记录；不猜测ZMQ根因，不把初始化失败当作2次真实模型失败。物理清理通过，不代替未知的模型API关闭确认。
-本轮不是完整矩阵、链／cascade或稳态排名资格；PR52仍为draft、未合并。报告SHA-256为
+本轮不是完整矩阵、链／cascade或稳态排名资格；该轮PR52仍为draft，现接纳状态见下文。报告SHA-256为
 `d5686fe0f5a87a90ac2f2c01587a35afd316a1a5c1d181d96139c05f851e2338`，原件按运行标识和摘要经既有artifact交接取得。
 
 <a id="records-imlane-rpc-qualification"></a>
@@ -50,7 +65,13 @@ Ray isolated 2次、Daft isolated 2次、Kalypso-native 4次业务请求成功�
 isolated 2次、resident首次／复用各2次，共6条唯一native请求成功；3个query、3次同步B2 API样本，0预热／模型失败／unknown／missing／重试。resident保持同worker和model出生身份，初始化一次、累计预留2→4、最终一次关闭；原方法、实际token／模板及COUNT0／TN2核验通过。
 本轮独立预留／领取各6，旧G3领取未用6不转移或退款。原控制器isolated成功后因自有陈旧socket目录收尾失败停止，原失败与未释放收据保留；核实所有权及物理退出后只续行原账本未领取resident4，不重放isolated、不重置原900秒deadline，最终在原起点后831.593秒释放。
 最终GPU／RPC／两个短目录／租约释放，正常调用资格通过不抹去前置CPU及首次外层清理失败，也不改旧G3的API关闭unknown。每query仅2条eligible负例、query n=1，不认证正例、完整Q123、chain／cascade、取消或稳定性能。
-报告SHA-256为`7cd3edd7985939fd24971ebc8686c8af4330d9ff2910e7b6874a7a6ebc9e8786`，原件按运行标识和摘要经既有artifact交接取得。无需因旧初始化失败强制隔离IMLane；候选`e2bc889b`的零模型V0部署来源仍待核验，不能把45d实测改写为e2bc新模型运行，PR52尚未合并。
+报告SHA-256为`7cd3edd7985939fd24971ebc8686c8af4330d9ff2910e7b6874a7a6ebc9e8786`，原件按运行标识和摘要经既有artifact交接取得。无需因旧初始化失败强制隔离IMLane；`e2bc889b`的零模型V0部署来源已通过，PR52／56已接纳，仍不能把45d实测改写为e2bc新模型运行。
+
+<a id="records-e2bc-v0"></a>
+2026-10-26 records最终部署来源检查：`records-e2bc-v0-execution-20261026-r1`固定`e2bc889b331a07c6ebb7148e71c74f4106dfbbab`，9/9角色、574文件及159模块来源一致，29.477秒，模型／调用／预算／GPU预留均0；17个观测到的自有进程退出，GPU compute 0／1 MiB、RPC及租约释放。
+该检查是CPU角色及模块来源探针，未启动生产推理actor，不是新source推理资格；目标环境的LOTUS可用性使原负例fixture首轮失败，私有fixture按实际可用性修正后17项通过，冻结生产源码未变、原失败保留。外部权重和完整vendor／解释器／驱动树未重新全量校验。
+报告SHA-256 `8a96f649103c7f7f3bd8389039cd905b81b2601b1a6e53d11aec6850bc70eca3`，原件按运行标识与摘要经既有artifact交接取得。45d→e2bc源码影响独审及V0合起来支持本次接纳，不能改写历史模型身份。
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`：迁移head `58c76ee9`与71项CPU、五投影完整还原通过的`7c5f4eff`文件树一致，旧import／pickle保留；所有worker须同时部署新模块和兼容层，不能将e2bc V0标签转授迁移版。当前无配置Actions检查，不称CI通过。
 
 2026-10-26状态整理：[查询调优](../plans/查询调优.md#completed-query-work)移出已完成清单，按各次报告保留负结果与适用条件。
 本次只调整计划和导航，未重跑或重算实验；原始观测、失败、源码身份与既有默认保持。

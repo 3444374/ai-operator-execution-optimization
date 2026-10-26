@@ -62,7 +62,7 @@ def resource_sample_stats(
         memory_used = _finite_number(sample.get("gpu_memory_used_mib"))
         memory_total = _finite_number(sample.get("gpu_memory_total_mib"))
         power = _finite_number(sample.get("gpu_power_w"))
-        timestamp = _finite_number(sample.get("sample_epoch_s"))
+        timestamp = _finite_number(sample.get("sample_monotonic_s", sample.get("sample_epoch_s")))
         running_value = _finite_number(
             sample.get("vllm_num_requests_running")
         )
@@ -219,7 +219,9 @@ def estimate_mfu(
         "mfu_estimate": estimate,
     }
 
-def gpu_metadata(gpu_ids: Sequence[str] | None = None) -> dict[str, str]:
+def gpu_metadata(gpu_ids: Sequence[str] | None = None, *, use_nvml: bool = False) -> dict[str, str]:
+    if use_nvml:
+        return _gpu_metadata_nvml(gpu_ids)
     command = [
         "nvidia-smi",
         "--query-gpu=name,utilization.gpu,memory.used,memory.total,power.draw",
@@ -294,3 +296,91 @@ def gpu_metadata(gpu_ids: Sequence[str] | None = None) -> dict[str, str]:
         ),
         "gpu_power_w": str(sum(power_values)) if power_values else "",
     }
+
+
+def _gpu_metadata_nvml(gpu_ids):
+    """In-process observation only; never spawn an unregistered probe child."""
+    fields = ("gpu_name", "gpu_utilization_pct", "gpu_memory_used_mib",
+              "gpu_memory_total_mib", "gpu_power_w")
+    missing = {field: "" for field in fields}
+    if (not gpu_ids or any(not isinstance(value, str) or not value.startswith("GPU-") for value in gpu_ids)
+            or len(set(gpu_ids)) != len(gpu_ids)):
+        return dict(missing, gpu_metrics_status="unavailable:explicit_physical_GPU_UUIDs_required")
+    initialized = False
+    try:
+        import pynvml
+
+        pynvml.nvmlInit()
+        initialized = True
+        rows = []
+        errors = []
+        for gpu_uuid in gpu_ids:
+            handle = pynvml.nvmlDeviceGetHandleByUUID(gpu_uuid)
+            observed_uuid = pynvml.nvmlDeviceGetUUID(handle)
+            observed_uuid = observed_uuid.decode() if isinstance(observed_uuid, bytes) else observed_uuid
+            if observed_uuid != gpu_uuid:
+                raise ValueError("NVML assigned physical UUID differs")
+            row = {}
+            readers = {
+                "gpu_utilization_pct": lambda: pynvml.nvmlDeviceGetUtilizationRates(handle).gpu,
+                "gpu_power_w": lambda: pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0,
+            }
+            for field, reader in readers.items():
+                try:
+                    row[field] = reader()
+                except pynvml.NVMLError as error:
+                    errors.append(field + ":" + type(error).__name__)
+            try:
+                memory = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                row.update(gpu_memory_used_mib=memory.used / 1024**2,
+                           gpu_memory_total_mib=memory.total / 1024**2)
+            except pynvml.NVMLError as error:
+                errors.append("gpu_memory:" + type(error).__name__)
+            rows.append(row)
+        result = dict(missing, gpu_name=";".join(gpu_ids),
+                      gpu_metrics_status="partial:" + ",".join(errors) if errors else "snapshot:nvml")
+        for field in fields[1:]:
+            if all(field in row for row in rows):
+                value = sum(row[field] for row in rows)
+                result[field] = str(value / len(rows) if field == "gpu_utilization_pct" else value)
+        return result
+    except Exception as error:
+        return dict(missing, gpu_metrics_status="unavailable:nvml:" + type(error).__name__)
+    finally:
+        if initialized:
+            try:
+                pynvml.nvmlShutdown()
+            except Exception:
+                pass
+
+
+def host_metadata(*, include_status=False) -> dict[str, float | str]:
+    """Host-wide CPU/memory observation, shared with the records driver.
+
+    cpu_percent needs two observations on the same sampling thread; callers
+    must mark its first observation as a baseline rather than a measured zero.
+    """
+    try:
+        import psutil
+
+        per_cpu = [float(value) for value in psutil.cpu_percent(interval=None, percpu=True)]
+        memory = psutil.virtual_memory()
+        result = {
+            "host_cpu_busy_cores": sum(per_cpu) / 100.0,
+            "host_cpu_per_core_max_pct": max(per_cpu, default=0.0),
+            "host_memory_used_pct": float(memory.percent),
+            "host_memory_available_mib": float(memory.available) / (1024 * 1024),
+        }
+        if include_status:
+            result["host_metrics_status"] = "observed" if per_cpu else "partial:empty_cpu_observation"
+            if not per_cpu:
+                result.update(host_cpu_busy_cores="", host_cpu_per_core_max_pct="")
+        return result
+    except (ImportError, OSError) as error:
+        result = {name: "" for name in (
+            "host_cpu_busy_cores", "host_cpu_per_core_max_pct",
+            "host_memory_used_pct", "host_memory_available_mib",
+        )}
+        if include_status:
+            result["host_metrics_status"] = "unavailable:" + type(error).__name__
+        return result

@@ -1,13 +1,41 @@
 # 项目日志
 
+## 2026-10-26：records生产闭包与共享结果合同已接纳
+
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)已合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`。最终records整合`e2bc889b`的[V0来源检查](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-e2bc-v0)九角色、574文件／159模块通过，零模型／预算；模型功能资格仍归各轮45d。共享结果迁移head `58c76ee9`与71项CPU通过的`7c5f4eff`文件树相同，旧import／pickle与五投影原字节保留。部署须统一新模块与兼容层，不混用旧worker；这不是新模型、完整链或性能资格。当前无配置Actions检查，不称CI通过。
+
+以下逐次条目保留原记录时点，draft／待核验以本条及现行代码状态为准；原失败、unknown和负结果不改写。
+
 ## 2026-10-26：补齐IMLane短RPC正常资格
 
-[独立六调用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)在冻结45d上完成：isolated2、resident首次／复用各2，保持同resident模型身份，失败／unknown／重试0。仅修私有RPC配置；旧G3初始化失败及本轮首次目录收尾失败保留，原账本／deadline未重置。无需实施前门隔离，e2bc零模型V0与PR52最终接纳仍待核验；本批仅更新六文档，不重跑模型或修改生产源码。
+[独立六调用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)在冻结45d上完成：isolated2、resident首次／复用各2，保持同resident模型身份，失败／unknown／重试0。仅修私有RPC配置；旧G3初始化失败及本轮首次目录收尾失败保留，原账本／deadline未重置。无需实施前门隔离；随后e2bc零模型V0通过，PR52／56已接纳，来源与边界见页首；本批仅更新六文档，不重跑模型或修改生产源码。
 
 ## 2026-10-26：补入反序负结果与剩余入口资格
 
 [后继优先反序小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)仍无收益，当前负载停止简单策略自动扩测、默认FIFO；保留复用摘要文本及输出长度相差3个token，不称严格同输出。runner r3独审完成，559份生产运行文件未变，旧取消unknown保持。
-[G3小资格](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)Ray 2／Daft 2／Kalypso 4次业务成功；两个IMLane入口初始化失败、业务0且资格未通过，诊断中，物理清理通过。同步计划、状态与结果索引，PR52仍为draft；本批只更新文档，不改源码或原件，不新增模型运行。
+[G3小资格](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)Ray 2／Daft 2／Kalypso 4次业务成功；两个IMLane入口当轮初始化失败、业务0且未通过，物理清理通过；后续短RPC资格见上一条。该轮PR52仍为draft，现已接纳；本批只更新文档，不改源码或原件，不新增模型运行。
+
+## 2026-10-26：共享链结果身份合同单模块归位候选
+
+在records候选`45d184df`的独立后继上，将原baseline目录的纯结果合同逐字节归到`semantic_methods/lotus/record_results.py`，保留旧import同对象入口并调整七处维护导入；不修改历史复制树或引入原生baseline对Core的依赖。[迁移检查及边界](code/INFRA_STATUS.md#record-results-migration)记录17项新增CPU检查、51项既有回归、六类差分与真实旧pickle读取，首次测试环境错误单列。新pickle使用新路径，旧pickle仍可读；未搬其他模块、改模型/调度或运行GPU，未作性能收益结论。 完整45d树复核发现复现公共来源漂移，后继补七份旧字节快照与33条override路由；原expected hash、projection ID及历史产物不改，五份还原须在该候选重新验证。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
+
+## 2026-10-26：冻结45d的G1/G2窄功能资格与剩余门槛
+
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，records尚未进入main。固定`45d184df`的G1两轮实际14次成功调用，只覆盖CSV/Q3两条eligible负例、Native resident、Core默认同步及显式async的首次/复用；旧轮私有审计失败仍保留，不改写为一次无失败运行。该小样本不证明正例、质量矩阵、P99或性能收益，具体分层见[当前代码状态](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+
+G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d累计22成功；Ray只复用runtime、每query新模型，Daft跨query复用同模型后关闭。其余isolated模式、IMLane、Kalypso、有限链、helper cascade及正式sealed矩阵入口均未被转授资格。priority9231隔离小对照本轮无收益、默认仍FIFO；取消探针的unknown/held与物理退出分别保留；独审定位私有runner漏收晚到终态P2，45d已有close后collect/收据合并及11项CPU回归，因此不构成PR52新增阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；该候选不夹入45d默认。原45d的8处前置漂移与汇合最新main后的RayHTTP/importer差异，在独立整合树中以4份精确旧快照及18条override路由恢复；Git整合者已核五投影全部materialize匹配，原expected hashes/IDs不变。原45d及PR56未改，最终运行身份与执行依赖闭包仍须冻结核对；不据旧结果或同字节叶子直接merge。
+
+以下预检和CPU条目保留原交付时点；新的窄功能范围以上述G1条目为准，不累计旧CPU或重新分配运行额度。main的PR54目录职责、PR55已完成项清理及PR53离线工具状态继续保留。
+
+## 2026-10-26：按能力修正CSV预检的数据库要求（原修复记录）
+
+在records冻结e8eb345之后，以独立后续提交将三个GPU机器profile的DATABASE_URL／psql要求限于显式database或sql-readers能力，PostgreSQL驱动由core移入可选DB能力。CSV／本地records不部署或连接PG，混合能力仍核要求并集；缺失/空/无效DB配置失败，语法检查不证明连通或凭据有效。运行入口、依赖说明与[能力合同](deploy/runtime/README.md)同步；原e8eb模型前预检失败及零调用证据保留，新源码资格由唯一GPU owner重新绑定。当前修复33项环境/配置/lease CPU通过、0跳过；汇合已批准离线main后，两个范围共80个不同CPU方法通过、0跳过；系统Python无DB驱动时16通过、1项显式DB解析跳过，不与原e8eb的383项累加。
+
+## 2026-10-26：records生产闭包独立review候选（原交付记录）
+
+从main5f291d3d选择性接入r2冻结的records/Core、本地文本引擎、原生薄适配、运行入口与具名历史复现，未整合旧分支全历史。通用instruction必填，Movie提示仅属任务；main既有helper及已合研究/Q3证据保留。当前源码383个去重CPU用例通过、0跳过，固定2000行/120发生项由真实CSV摘要及本地manifest绑定；Daft本机socket与私有回执目录的首轮错误、后续复验分别保留，不累加重复。
+
+五份历史投影保持逐字节来源，不混cfdc/ee39或新FIFO/index/B/W候选为默认。当前仅供draft PR审阅；新的private packet/source/input/token/model/env/ledger/owner绑定及本次源码GPU资格尚未完成，不允许据旧实测merge。入口见[代码状态](code/INFRA_STATUS.md)、[CPU资产](code/tests/records_cpu.md)与[具名复现](experiments/reproduction/native_baselines/README.md)。
 
 ## 2026-10-26：同步后继优先小对照与资格状态
 
