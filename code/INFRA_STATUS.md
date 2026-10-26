@@ -3,7 +3,7 @@
 CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQL驱动；资产能力清单的DATABASE_URL及三机器profile的psql仅对database／sql-readers必需。DB语法检查不连接服务、不验证凭据；数据库入口仍保留实际连接gate。此修复不改变e8eb历史失败或赋予新源码GPU资格，见[运行合同](../deploy/runtime/README.md)。
 
 [本轮后继优先及取消状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)：隔离小对照无收益、默认仍FIFO；unknown／held不因物理退出而成为成功终态，独审定位私有runner漏收晚到终态，不构成PR52新增阻断，修复仍待审。
-records三入口小资格已完成两轮、累计14次成功；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft，未接纳到main。
+records的G1三入口两轮14次成功，G2另补Ray runtime/Daft session8次成功，45d累计22次；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft，未接纳到main。
 
 文本Map工程诊断的[当前状态与已完成项](../experiments/plans/查询调优.md#completed-query-work)已按结果收敛：
 准备分段的PG／模型检查、尾块追加、观察隔离和worker／gateway复用均已执行；负结果选项保持原默认，
@@ -16,7 +16,7 @@ records三入口小资格已完成两轮、累计14次成功；[PR52](https://gi
 缺失／unknown不补零，缺少观测的指标保持NA。本次只同步接纳状态，不重跑旧实验，也不增加records或模型资格。
 
 <a id="pr52-g1-qualified-scope"></a>
-## 冻结45d的G1资格范围与当前未完成项
+## 冻结45d的G1/G2资格范围与当前未完成项
 
 [PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)固定`45d184dfaf0ef3a85ccccc805be7fc38e646b527`仍为draft。运行owner的两轮G1实际共14次成功：新轮Native 4/Core async 4，旧轮Core sync 4/Native 2；新轮失败、unknown、missing及重试均0。旧轮私有审计失败保持，不把两轮改写成一次无失败运行。资源退出/租约回执与调用终态分别核对；本文不新增运行或额度。
 
@@ -26,7 +26,7 @@ records三入口小资格已完成两轮、累计14次成功；[PR52](https://gi
 | Core resident默认同步 | 旧轮首次/复用4调用，默认同步与静态配置 | isolated、其他容量或调度策略 |
 | Core resident显式async | 新轮首次/复用4调用，C2/B1/engine64 | 其他C/engine、FIFO/priority或token候选 |
 
-每个G1查询只有两条eligible负例，COUNT=0/TN=2；不是正例或Map/Extract后继资格。G1当前源码投影与原件身份按各次owner证据解释；同字节叶子不认证新session的编排、输入/评价、模型所有权或清理。Ray/Daft补资格尚未完成；IMLane/Kalypso、非空有限链、helper cascade及正式CLI/sealed packet的配置/预算/owner-worker闭包仍须各自核验，不能以G1代替完整五臂或九配置。
+每个G1查询只有两条eligible负例，COUNT=0/TN=2；不是正例或Map/Extract后继资格。G1当前源码投影与原件身份按各次owner证据解释；同字节叶子不认证新session的编排、输入/评价、模型所有权或清理。G2已补Ray runtime-reuse及Daft单线程session的首次/复用各4请求，0失败/unknown/missing/重试；Ray每query不同model UID并退出，Daft同model UID跨query后关闭。83个原始证据文件和570运行文件及压缩包/报告/结果摘要全部匹配；106个本轮身份退出、GPU/RPC/租约释放。两条负例、每格n=1仍不支持性能排名。Ray/Daft的isolated模式、IMLane/Kalypso、非空有限链、helper cascade及正式CLI/sealed packet闭包仍须各自核验，不能以G1代替完整五臂或九配置。
 
 原45d维护预检/说明带来8处历史投影漂移；汇合main的PR57 RayHTTP校验和PR55 importer未调用helper删除后，需保留的旧来源差异总计18处（environment 5、matrix README 3、RayHTTP 5、importer 5）。独立整合树已按Git整合者回执保存4份精确旧快照并新增18条override，五份投影实际materialize全部匹配；原expected hashes、projection ID和既有路由不变。原45d与[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)不改，PR56的共享结果模块迁移仍独立，不借该复现修复转授模型资格。最终源码身份与执行依赖闭包仍须冻结核对。
 

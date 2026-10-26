@@ -1,7 +1,9 @@
 # 实验与机制证据台账
 
 <a id="pr52-g1-negative-records"></a>
-2026-10-26：固定45d的records G1窄功能范围。两轮实际14次成功调用仅覆盖Native resident、Core默认同步及显式async的首次/复用和两条eligible负例；新轮8次无失败/unknown/missing/重试，旧轮私有审计失败仍保留。完整资源退出与调用确认分列，不证明正例质量、Map/Extract、P99或稳定性能。[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，Ray/Daft补资格及其余入口未由该结果取得资格，见[代码状态](../../code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+2026-10-26：固定45d的records G1窄功能范围。两轮实际14次成功调用仅覆盖Native resident、Core默认同步及显式async的首次/复用和两条eligible负例；新轮8次无失败/unknown/missing/重试，旧轮私有审计失败仍保留。完整资源退出与调用确认分列，不证明正例质量、Map/Extract、P99或稳定性能。[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，其余入口不能由该结果取得资格，见[代码状态](../../code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+
+G2运行`records-production-ray-daft8-45d184df-20261026-r1`另有8真实请求成功（4个batch API各2请求）、0预热/失败/unknown/missing/重试；45d累计22成功。Ray同runtime、每query新model UID并退出；Daft显式单线程、同model UID跨query后关闭。106个本轮身份退出及GPU/RPC/租约释放分别核验。每格n=1、两条负例，未转授isolated、其他后端或性能结论；原件按运行标识及HANDOFF SHA-256 `b1976a373ccba25d8c603cb51526a04729e0524f2c96c0dd859810bfb1810b18`经既有artifact交接取得。
 
 原45d的8处预检/说明漂移，加上最新main的RayHTTP/importer差异，在独立整合树中共需18条历史override。Git整合者回执确认4份精确旧快照、18条路由及五投影实际materialize全部匹配，原hash/ID/既有路由不变；原45d与[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)未改。该回执只证明历史代码还原，不认证新模型/执行闭包，也不重算或改写历史观测、发布原始运行材料。
 

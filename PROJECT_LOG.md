@@ -1,10 +1,10 @@
 # 项目日志
 
-## 2026-10-26：冻结45d的G1窄功能资格与剩余门槛
+## 2026-10-26：冻结45d的G1/G2窄功能资格与剩余门槛
 
 [PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，records尚未进入main。固定`45d184df`的G1两轮实际14次成功调用，只覆盖CSV/Q3两条eligible负例、Native resident、Core默认同步及显式async的首次/复用；旧轮私有审计失败仍保留，不改写为一次无失败运行。该小样本不证明正例、质量矩阵、P99或性能收益，具体分层见[当前代码状态](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
 
-Ray/Daft补资格尚未完成，IMLane、Kalypso、有限链、helper cascade及正式sealed矩阵入口均不由G1取得资格。priority9231隔离小对照本轮无收益、默认仍FIFO；取消探针的unknown/held与物理退出分别保留；独审定位私有runner漏收晚到终态P2，45d已有close后collect/收据合并及11项CPU回归，因此不构成PR52新增阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；该候选不夹入45d默认。原45d的8处前置漂移与汇合最新main后的RayHTTP/importer差异，在独立整合树中以4份精确旧快照及18条override路由恢复；Git整合者已核五投影全部materialize匹配，原expected hashes/IDs不变。原45d及PR56未改，最终运行身份与执行依赖闭包仍须冻结核对；不据旧结果或同字节叶子直接merge。
+G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d累计22成功；Ray只复用runtime、每query新模型，Daft跨query复用同模型后关闭。其余isolated模式、IMLane、Kalypso、有限链、helper cascade及正式sealed矩阵入口均未被转授资格。priority9231隔离小对照本轮无收益、默认仍FIFO；取消探针的unknown/held与物理退出分别保留；独审定位私有runner漏收晚到终态P2，45d已有close后collect/收据合并及11项CPU回归，因此不构成PR52新增阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；该候选不夹入45d默认。原45d的8处前置漂移与汇合最新main后的RayHTTP/importer差异，在独立整合树中以4份精确旧快照及18条override路由恢复；Git整合者已核五投影全部materialize匹配，原expected hashes/IDs不变。原45d及PR56未改，最终运行身份与执行依赖闭包仍须冻结核对；不据旧结果或同字节叶子直接merge。
 
 以下预检和CPU条目保留原交付时点；新的窄功能范围以上述G1条目为准，不累计旧CPU或重新分配运行额度。main的PR54目录职责、PR55已完成项清理及PR53离线工具状态继续保留。
 
