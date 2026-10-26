@@ -67,6 +67,51 @@ def percentile(values: list[float], p: float) -> float:
     return ordered[index]
 
 
+def latency_observations(rows, *, sample_unit_key=None, slowest=3):
+    """Offline receipt summary for one declared task/phase/population.
+
+    Batch-copied intervals require a shared sample-unit ID. A hundred completed
+    units only permits an empirical rank; it does not establish population P99.
+    """
+    rows=list(rows);units={};ids=set()
+    for row in rows:
+        if row['id'] in ids:
+            raise ValueError('duplicate observation ID')
+        ids.add(row['id'])
+        if row['status'] not in ('succeeded','failed','unknown'):
+            raise ValueError('explicit observation status required')
+        value=row.get('elapsed_s')
+        if value is not None and (type(value) not in (int,float) or not math.isfinite(value) or value<0):
+            raise ValueError('elapsed time must be finite nonnegative or missing')
+        if row['status']=='succeeded' and value is not None:
+            key=row['id'] if sample_unit_key is None else row[sample_unit_key]
+            if key in units and units[key]!=value:
+                raise ValueError('one sample unit has inconsistent copied intervals')
+            units[key]=value
+    values=list(units.values())
+    missing=sum(row['status']!='succeeded' or row.get('elapsed_s') is None for row in rows)
+    batch_unknown=sample_unit_key is None and any(row.get('copied_batch_interval') for row in rows)
+    eligible=len(values)>=100 and not missing and not batch_unknown
+    completed=[row for row in rows if row['status']=='succeeded' and row.get('elapsed_s') is not None]
+    domains={row.get('clock_domain') for row in completed}
+    timed=completed and None not in domains and len(domains)==1 and all(
+        row.get('clock_domain_verified') is True and row.get('end_s') is not None for row in completed)
+    last=max(completed,key=lambda row:row['end_s']) if timed else None
+    return dict(observations=len(rows),completed_units=len(values),incomplete_observations=missing,
+        median_s=statistics.median(values) if values else None,maximum_s=max(values) if values else None,
+        p50_s=percentile(values,50) if values else None,p95_s=percentile(values,95) if values else None,
+        quantile_method='nearest rank; median_s uses arithmetic middle',
+        empirical_p99_s=percentile(values,99) if eligible else None,
+        empirical_p99_rank=math.ceil(.99*len(values)) if eligible else None,
+        empirical_only=True,population_P99_established=False,
+        p99_unavailable_reason=None if eligible else 'insufficient_units_or_incomplete_or_unidentified_batch',
+        slowest=sorted(completed,key=lambda row:row['elapsed_s'],reverse=True)[:slowest],
+        last_completed=last,clock_correlation_available=bool(timed),
+        incomplete=[row for row in rows if row['status']!='succeeded' or row.get('elapsed_s') is None],
+        distribution_scope='completed successful units; incomplete observations listed separately',
+        scope='caller-declared homogeneous task/phase/population; not pure GPU inference')
+
+
 def repeat_summary(values: list[float]) -> dict[str, float | int | str]:
     """Summarize repeat means with a conservative two-sided 95% t interval."""
 

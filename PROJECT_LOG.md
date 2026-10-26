@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-26：离线结果摘要独立review候选
+
+新增[离线结果摘要](code/scripts/analysis/OFFLINE_RESULTS.md)及最小统计helper依赖，仅显式读取两种紧凑schema；API计数矛盾拒绝，缺失/unknown不补零，源级失败不分摊，MFU/物理buffer缺证据保持NA。当前基底47个不同CPU方法通过、0跳过，同一31方法的三种入口均通过；独立Python隔离模式两类CLI通过，不重跑历史GPU或4109项旧审计。此批与records受测源码、observer和调度策略分开，保持draft等待整合核验。
+
 ## 2026-10-26：迁入Q3历史失败与独立复验证据
 
 从旧Q3分支13d63374/452505e8仅迁[两份脱敏JSON与历史说明](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)，同步诊断索引和证据台账。两次生产85133c6f/source lock相同，run与证据指纹不同；旧failed不提升，新复验仅Native单臂资格，保留质量不足、缺失现场和不同计时边界。本批不导入旧117提交或records执行器，不覆盖已合研究路线，不新增模型运行；旧Q3完整历史和其他开发分支继续保留。

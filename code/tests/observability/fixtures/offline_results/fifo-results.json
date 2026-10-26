@@ -1,0 +1,365 @@
+{
+  "actual_success": 12,
+  "actual_failure": 0,
+  "actual_unknown": 0,
+  "automatic_model_retries": 0,
+  "historical_allocated": 24,
+  "historical_claimed_cap": 16,
+  "API_unit": "single_generate",
+  "queries": [
+    {
+      "mode": "fused",
+      "actual_success": 6,
+      "stage_counts": {
+        "sentiment": 4,
+        "summary": 2
+      },
+      "startup_s": 29.697842488996685,
+      "query_result_ready_s": 1.172964848112315,
+      "close_s": 3.1988077349960804,
+      "owner_lifecycle_s": 34.07025323808193,
+      "caller_return_s": 42.746426134,
+      "API": {
+        "n": 6,
+        "values": [
+          0.685213259421289,
+          0.6852557831443846,
+          0.7000502729788423,
+          0.6999919461086392,
+          0.38428226206451654,
+          0.41521524311974645
+        ],
+        "median": 0.6852345212828368,
+        "maximum": 0.7000502729788423,
+        "empirical_P99": null,
+        "P99_reason": "not reported: too few samples; query P99 is not estimated"
+      },
+      "GPU_caller_window": {
+        "status": "observed",
+        "boundary": "query submission through actual API return; only complete probe intervals inside",
+        "start_ns": 4136098879591909,
+        "end_ns": 4136141626018043,
+        "query_duration_s": 42.746426134,
+        "samples": 165,
+        "crossing_edge_samples_excluded": 1,
+        "observed_span_s": 42.306178875,
+        "first_edge_gap_s": 0.2731382,
+        "last_edge_gap_s": 0.167109059,
+        "interval": {
+          "requested_s": 0.25,
+          "median_s": 0.254405357,
+          "max_s": 0.38073448
+        },
+        "collection_wall_s": 0.930633216,
+        "collection_thread_CPU_s": 0.5912793940000002,
+        "metrics": {
+          "gpu_utilization_pct": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "gpu:field_not_exposed_or_unsupported:unavailable:nvml:ModuleNotFoundError"
+            ]
+          },
+          "gpu_memory_used_mib": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "gpu:field_not_exposed_or_unsupported:unavailable:nvml:ModuleNotFoundError"
+            ]
+          },
+          "gpu_power_w": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "gpu:field_not_exposed_or_unsupported:unavailable:nvml:ModuleNotFoundError"
+            ]
+          },
+          "vllm_num_requests_running": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "native_metrics_not_exposed_no_HTTP_required"
+            ]
+          },
+          "vllm_num_requests_waiting": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "native_metrics_not_exposed_no_HTTP_required"
+            ]
+          },
+          "vllm_kv_cache_usage_perc": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "native_metrics_not_exposed_no_HTTP_required"
+            ]
+          },
+          "vllm_preemptions_total": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_SM_utilization_pct": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_memory_utilization_pct": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_temperature_C": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_clock_MHz": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 165,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          }
+        },
+        "coverage_scope": "valid/attempted samples, not continuous time, GPU kernel coverage or owned CPU attribution",
+        "time_coverage": {
+          "status": "unavailable",
+          "reason": "no verified continuous GPU validity intervals; observed span and sample availability are not time coverage"
+        },
+        "overhead_scope": "collector observed work, already overlaps query; not a causal slowdown estimate; never subtract",
+        "MFU": {
+          "status": "unavailable",
+          "reason": "no verified model FLOPs/time/hardware precision peak binding",
+          "GPU_utilization_is_not_MFU": true
+        },
+        "collector_status": "partial",
+        "raw_samples_complete": true,
+        "collector_errors": [],
+        "group_persistence_write_wall_s": 0.06787445396184921,
+        "group_shutdown_wait_s": 0.029353342950344086,
+        "group_final_flush_wall_s": 0.029240224044770002,
+        "group_costs_must_not_be_summed_per_query": true
+      }
+    },
+    {
+      "mode": "fifo",
+      "actual_success": 6,
+      "stage_counts": {
+        "sentiment": 4,
+        "summary": 2
+      },
+      "startup_s": 30.006324572023004,
+      "query_result_ready_s": 1.2031611679121852,
+      "close_s": 3.1503153420053422,
+      "owner_lifecycle_s": 34.360805282369256,
+      "caller_return_s": 43.806139108,
+      "API": {
+        "n": 6,
+        "values": [
+          0.705007724929601,
+          0.12271494697779417,
+          0.1225550533272326,
+          0.12246003793552518,
+          0.3856772971339524,
+          0.41655110474675894
+        ],
+        "median": 0.2541961220558733,
+        "maximum": 0.705007724929601,
+        "empirical_P99": null,
+        "P99_reason": "not reported: too few samples; query P99 is not estimated"
+      },
+      "GPU_caller_window": {
+        "status": "observed",
+        "boundary": "query submission through actual API return; only complete probe intervals inside",
+        "start_ns": 4136956417439024,
+        "end_ns": 4137000223578132,
+        "query_duration_s": 43.806139108,
+        "samples": 168,
+        "crossing_edge_samples_excluded": 1,
+        "observed_span_s": 43.418264052,
+        "first_edge_gap_s": 0.268492018,
+        "last_edge_gap_s": 0.119383038,
+        "interval": {
+          "requested_s": 0.25,
+          "median_s": 0.254193191,
+          "max_s": 0.447455914
+        },
+        "collection_wall_s": 0.899796121,
+        "collection_thread_CPU_s": 0.5607318390000006,
+        "metrics": {
+          "gpu_utilization_pct": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "gpu:field_not_exposed_or_unsupported:unavailable:nvml:ModuleNotFoundError"
+            ]
+          },
+          "gpu_memory_used_mib": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "gpu:field_not_exposed_or_unsupported:unavailable:nvml:ModuleNotFoundError"
+            ]
+          },
+          "gpu_power_w": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "gpu:field_not_exposed_or_unsupported:unavailable:nvml:ModuleNotFoundError"
+            ]
+          },
+          "vllm_num_requests_running": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "native_metrics_not_exposed_no_HTTP_required"
+            ]
+          },
+          "vllm_num_requests_waiting": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "native_metrics_not_exposed_no_HTTP_required"
+            ]
+          },
+          "vllm_kv_cache_usage_perc": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "native_metrics_not_exposed_no_HTTP_required"
+            ]
+          },
+          "vllm_preemptions_total": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_SM_utilization_pct": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_memory_utilization_pct": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_temperature_C": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          },
+          "gpu_clock_MHz": {
+            "sample_mean": null,
+            "observed_max": null,
+            "valid_samples": 0,
+            "attempted_samples": 168,
+            "sample_availability": 0.0,
+            "missing_reasons": [
+              "field_not_exposed_by_frozen_sampler"
+            ]
+          }
+        },
+        "coverage_scope": "valid/attempted samples, not continuous time, GPU kernel coverage or owned CPU attribution",
+        "time_coverage": {
+          "status": "unavailable",
+          "reason": "no verified continuous GPU validity intervals; observed span and sample availability are not time coverage"
+        },
+        "overhead_scope": "collector observed work, already overlaps query; not a causal slowdown estimate; never subtract",
+        "MFU": {
+          "status": "unavailable",
+          "reason": "no verified model FLOPs/time/hardware precision peak binding",
+          "GPU_utilization_is_not_MFU": true
+        },
+        "collector_status": "partial",
+        "raw_samples_complete": true,
+        "collector_errors": [],
+        "group_persistence_write_wall_s": 0.076790536288172,
+        "group_shutdown_wait_s": 0.0008942517451941967,
+        "group_final_flush_wall_s": 0.0007452922873198986,
+        "group_costs_must_not_be_summed_per_query": true
+      }
+    }
+  ]
+}
