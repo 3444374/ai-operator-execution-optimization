@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[后继优先隔离小对照](../EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)：16行、每格一次，首次与复用合计慢10.26%，本轮无收益、默认仍FIFO；取消unknown／held与已完成的物理释放分列，独审定位私有runner漏收晚到终态，不构成PR52新增阻断，修复仍待审。
+
 [历史Native Q3失败与复验](lotus_records_local_model_20261016/README.md)：2026-10-20两个独立运行的紧凑证据、源码与原件身份；旧failed及新Native-only资格分列，不作为当前records生产接纳或九配置结果。
 
 [main原生CLIP最小闭包](main_lotus_clip_20261015/README.md)：完整RM／index／search与显式单卡资源，分列8834 CPU／SDK、来源d2条件模型与失败、main570四路径八臂40行严格单卡实机；未扩展HSE／多卡资格。
