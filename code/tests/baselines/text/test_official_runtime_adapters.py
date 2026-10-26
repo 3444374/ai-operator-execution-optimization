@@ -285,5 +285,63 @@ class OfficialRuntimeAdapterTests(unittest.TestCase):
         self.assertEqual(results[0].output_tokens, 2)
 
 
+class RayHttpRowIdentityTests(unittest.TestCase):
+    def run_rows(self, requested, returned):
+        captured = {"graph_runs": 0}
+
+        def build_processor(_config, *, preprocess, postprocess):
+            def processor(items):
+                captured["graph_runs"] += 1
+                captured["items"] = items
+                return SimpleNamespace(take_all=lambda: returned)
+            return processor
+
+        modules = SimpleNamespace(
+            ray=SimpleNamespace(data=SimpleNamespace(from_items=lambda items: items)),
+            config_class=lambda **options: captured.update(config=options),
+            build_processor=build_processor,
+        )
+        config = RayDataHttpConfig("http://localhost/fixture", None, "fixture", 128, 16, 4)
+        result = run_ray_data_http(tuple(sample_request(i) for i in requested), config, modules)
+        return result, captured
+
+    @staticmethod
+    def row(doc_id):
+        return dict(doc_id=doc_id, input_tokens=4, output_tokens=2,
+                    output_text=f"answer-{doc_id}", finish_reason="stop")
+
+    def test_reordered_rows_preserve_request_order_and_native_processor_options(self):
+        result, captured = self.run_rows([7, 3], [self.row(3), self.row(7)])
+        self.assertEqual([r.doc_id for r in result], [7, 3])
+        self.assertEqual([r.output_text for r in result], ["answer-7", "answer-3"])
+        self.assertEqual(captured["config"]["concurrency"], (4, 4))
+        self.assertEqual(captured["config"]["max_retries"], 0)
+        self.assertEqual(captured["graph_runs"], 1)
+
+    def test_duplicate_returned_identity_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "row identities"):
+            self.run_rows([7, 3], [self.row(7), self.row(3), self.row(7)])
+
+    def test_extra_returned_identity_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "row identities"):
+            self.run_rows([7, 3], [self.row(7), self.row(3), self.row(99)])
+
+    def test_missing_returned_identity_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "row identities"):
+            self.run_rows([7, 3], [self.row(7)])
+
+    def test_replaced_returned_identity_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "row identities"):
+            self.run_rows([7, 3], [self.row(7), self.row(99)])
+
+    def test_empty_request_and_result_stay_empty(self):
+        result, _ = self.run_rows([], [])
+        self.assertEqual(result, ())
+
+    def test_unexpected_result_for_empty_request_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "row identities"):
+            self.run_rows([], [self.row(99)])
+
+
 if __name__ == "__main__":
     unittest.main()

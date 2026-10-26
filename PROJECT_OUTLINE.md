@@ -387,10 +387,16 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
+离线结果工具已随[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)接纳；records的[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，待新源码资格。
+已完成的文本Map工程诊断统一从[查询调优状态](experiments/plans/查询调优.md#completed-query-work)读取，
+不再列为下一步。准备分段、尾块追加和批量记账在各自固定配置的完整查询中未获净收益，线程记账的负结果来自无模型对照；
+它们保留为显式诊断与历史复现。其他模型、表示和容量仍需自身证据，当前选择性链问题不由这些结果否定。
+
 2026-10-26收敛：先完成必要工程交付，再用最小对照检验选择性链；工程短期诊断与研究主线并行，不要求所有后端、故障、多模态全部完成后才研究。continuation（保存状态后继续执行）、基础流水、后继优先及父子引用释放作为已有能力和强对照，不独立主张创新；近邻与待证范围见[研究定位](docs/research/研究定位.md#selective-chain-increment)。
 
 ### 当前证据与候选分列
 
+- [priority9231隔离小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)已完成：本轮无收益，默认仍FIFO，仅分析已有机制记录；取消探针的unknown／held与物理资源释放分列，独审定位私有runner漏收晚到终态，不构成PR52新增阻断，修复仍待审。三入口小资格两轮累计14次成功，PR52其余资格待核验，仍为draft。
 - 2026-10-25八配置文本Q1/Q2/Q3已完成72个正式任务组，Kalypso独立波次已完成9个正式组；不能继续写“其他臂／正式矩阵未跑”。八配置五份实际执行快照为67d6f801、e7090055、65114360、79e8f103、5007e95b；Kalypso作者来源05024f0，提示、parser和引擎不同，不能据同任务结果断言纯调度胜负。上述实测原件及具名快照尚未随本批文档发布，完整重复、质量、失败及生命周期仍以各自固定原件为准；这些短指纹不是Git提交。公开[Movie候选](https://github.com/3444374/ai-operator-execution-optimization/tree/a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05)与[Q3证据分支](https://github.com/3444374/ai-operator-execution-optimization/tree/452505e80f7d13dcbfbc838fe7fae6f127790b62)保留records开发历史，不等于这些最终实测快照或main代码接纳。
 - 旧a5035105的Core/Ray/Daft各有M→F→E、E→M真实小单元，合27次模型调用；它们不认证当前九配置的链性能或精确F→M→E。main已有MethodRun与消费者结果计费，有限LOTUS链仍是独立来源中的fused阶段循环，两者面向main接纳的接合仍待验证。
 - 旧Animals64四路径图文结果与CLIP检索保留各自资格；新records来源的image_url及媒体列仍被文本校验拒绝，不能称当前本地模型配置已接通图像。

@@ -2,25 +2,51 @@
 
 ## 2026-10-26：共享链结果身份合同单模块归位候选
 
-在records候选`45d184df`的独立后继上，将原baseline目录的纯结果合同逐字节归到`semantic_methods/lotus/record_results.py`，保留旧import同对象入口并调整七处维护导入；不修改历史复制树或引入原生baseline对Core的依赖。[迁移检查及边界](code/INFRA_STATUS.md#record-results-migration)记录17项新增CPU检查、51项既有回归、六类差分与真实旧pickle读取，首次测试环境错误单列。新pickle使用新路径，旧pickle仍可读；未搬其他模块、改模型/调度或运行GPU，未作性能收益结论。 完整45d树复核发现复现公共来源漂移，后继补七份旧字节快照与33条override路由；原expected hash、projection ID及历史产物不改，五份还原须在该候选重新验证。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。
+在records候选`45d184df`的独立后继上，将原baseline目录的纯结果合同逐字节归到`semantic_methods/lotus/record_results.py`，保留旧import同对象入口并调整七处维护导入；不修改历史复制树或引入原生baseline对Core的依赖。[迁移检查及边界](code/INFRA_STATUS.md#record-results-migration)记录17项新增CPU检查、51项既有回归、六类差分与真实旧pickle读取，首次测试环境错误单列。新pickle使用新路径，旧pickle仍可读；未搬其他模块、改模型/调度或运行GPU，未作性能收益结论。 完整45d树复核发现复现公共来源漂移，后继补七份旧字节快照与33条override路由；原expected hash、projection ID及历史产物不改，五份还原须在该候选重新验证。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
 
-## 2026-10-26：按能力修正CSV预检的数据库要求
+## 2026-10-26：冻结45d的G1/G2窄功能资格与剩余门槛
+
+[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，records尚未进入main。固定`45d184df`的G1两轮实际14次成功调用，只覆盖CSV/Q3两条eligible负例、Native resident、Core默认同步及显式async的首次/复用；旧轮私有审计失败仍保留，不改写为一次无失败运行。该小样本不证明正例、质量矩阵、P99或性能收益，具体分层见[当前代码状态](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+
+G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d累计22成功；Ray只复用runtime、每query新模型，Daft跨query复用同模型后关闭。其余isolated模式、IMLane、Kalypso、有限链、helper cascade及正式sealed矩阵入口均未被转授资格。priority9231隔离小对照本轮无收益、默认仍FIFO；取消探针的unknown/held与物理退出分别保留；独审定位私有runner漏收晚到终态P2，45d已有close后collect/收据合并及11项CPU回归，因此不构成PR52新增阻断。r3修复仍待独审，原unknown不改写，原生运行中取消尚未资格；该候选不夹入45d默认。原45d的8处前置漂移与汇合最新main后的RayHTTP/importer差异，在独立整合树中以4份精确旧快照及18条override路由恢复；Git整合者已核五投影全部materialize匹配，原expected hashes/IDs不变。原45d及PR56未改，最终运行身份与执行依赖闭包仍须冻结核对；不据旧结果或同字节叶子直接merge。
+
+以下预检和CPU条目保留原交付时点；新的窄功能范围以上述G1条目为准，不累计旧CPU或重新分配运行额度。main的PR54目录职责、PR55已完成项清理及PR53离线工具状态继续保留。
+
+## 2026-10-26：按能力修正CSV预检的数据库要求（原修复记录）
 
 在records冻结e8eb345之后，以独立后续提交将三个GPU机器profile的DATABASE_URL／psql要求限于显式database或sql-readers能力，PostgreSQL驱动由core移入可选DB能力。CSV／本地records不部署或连接PG，混合能力仍核要求并集；缺失/空/无效DB配置失败，语法检查不证明连通或凭据有效。运行入口、依赖说明与[能力合同](deploy/runtime/README.md)同步；原e8eb模型前预检失败及零调用证据保留，新源码资格由唯一GPU owner重新绑定。当前修复33项环境/配置/lease CPU通过、0跳过；汇合已批准离线main后，两个范围共80个不同CPU方法通过、0跳过；系统Python无DB驱动时16通过、1项显式DB解析跳过，不与原e8eb的383项累加。
 
-## 2026-10-26：records生产闭包独立review候选
+## 2026-10-26：records生产闭包独立review候选（原交付记录）
 
 从main5f291d3d选择性接入r2冻结的records/Core、本地文本引擎、原生薄适配、运行入口与具名历史复现，未整合旧分支全历史。通用instruction必填，Movie提示仅属任务；main既有helper及已合研究/Q3证据保留。当前源码383个去重CPU用例通过、0跳过，固定2000行/120发生项由真实CSV摘要及本地manifest绑定；Daft本机socket与私有回执目录的首轮错误、后续复验分别保留，不累加重复。
 
 五份历史投影保持逐字节来源，不混cfdc/ee39或新FIFO/index/B/W候选为默认。当前仅供draft PR审阅；新的private packet/source/input/token/model/env/ledger/owner绑定及本次源码GPU资格尚未完成，不允许据旧实测merge。入口见[代码状态](code/INFRA_STATUS.md)、[CPU资产](code/tests/records_cpu.md)与[具名复现](experiments/reproduction/native_baselines/README.md)。
 
-## 2026-10-26：离线结果摘要已独立接纳
+## 2026-10-26：同步后继优先小对照与资格状态
 
-新增[离线结果摘要](code/scripts/analysis/OFFLINE_RESULTS.md)及最小统计helper依赖，仅显式读取两种紧凑schema；API计数矛盾拒绝，缺失/unknown不补零，源级失败不分摊，MFU/物理buffer缺证据保持NA。当前基底47个不同CPU方法通过、0跳过，同一31方法的三种入口均通过；独立Python隔离模式两类CLI通过，不重跑历史GPU或4109项旧审计。该工具已由[PR #53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)独立合入main380cfbda；与records、observer和调度策略分开，未赋予模型资格。
+[priority9231小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority9231-small-pair)完成，本轮无收益、默认仍FIFO；取消unknown／held保留，物理资源已释放，独审定位私有runner漏收晚到终态，不构成PR52新增阻断；修复仍待审。
+三入口小资格两轮累计14次成功，其余资格待核验，PR52仍为draft。同步总纲、数据组织方案、代码状态和诊断索引；本次只同步已有记录，不改源码或原证据；取消修复另行审查，不新增性能调参任务。
+
+## 2026-10-26：收敛查询调优状态并移除未调用helper
+
+[查询调优](experiments/plans/查询调优.md)将已完成诊断和固定配置负结果移出活跃事项，旧执行要求从固定提交恢复，保留既有章节定位；总纲、代码状态、计划索引和证据台账同步。
+删除导入脚本中未被调用的`wrap_prompt`；实际入口继续使用`_apply_template`及既有默认模板。原始实验和历史来源不变，未新增模型运行。
+[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)已于09:25:34 UTC合并为`380cfbda`，离线工具实施事项关闭；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，新源码的模型与资源资格待核验。后文候选叙事按原记录时点解释。
+
+## 2026-10-26：离线结果摘要独立review候选
+
+新增[离线结果摘要](code/scripts/analysis/OFFLINE_RESULTS.md)及最小统计helper依赖，仅显式读取两种紧凑schema；API计数矛盾拒绝，缺失/unknown不补零，源级失败不分摊，MFU/物理buffer缺证据保持NA。当前基底47个不同CPU方法通过、0跳过，同一31方法的三种入口均通过；独立Python隔离模式两类CLI通过，不重跑历史GPU或4109项旧审计。此批与records受测源码、observer和调度策略分开，保持draft等待整合核验。
 
 ## 2026-10-26：迁入Q3历史失败与独立复验证据
 
 从旧Q3分支13d63374/452505e8仅迁[两份脱敏JSON与历史说明](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)，同步诊断索引和证据台账。两次生产85133c6f/source lock相同，run与证据指纹不同；旧failed不提升，新复验仅Native单臂资格，保留质量不足、缺失现场和不同计时边界。本批不导入旧117提交或records执行器，不覆盖已合研究路线，不新增模型运行；旧Q3完整历史和其他开发分支继续保留。
+
+
+## 2026-10-26：明确目录职责与候选来源
+
+在main380cfbda上选择性重放已审文档，落实[目录职责](experiments/plans/系统架构.md#code-directory-boundaries)、[代码导航](code/README.md#目录结构)及[baseline交接表](code/src/baselines/README.md#text-execution-boundaries)。明确main现有请求／SQL接点与PR #52候选records／模型／Kalypso／具名复现的来源，不以框架名、HTTP或目录存在推导能力与资格。
+
+33条路径与11项建议分别核对：五个候选共享接点另批兼容归位，三个旧请求桥保留入口，实验名／历史容器／还原CLI无需物理改名。根入口和索引同步，未移动源码、修改默认或历史字节，未改变45d184df受测源码；未来纯Core产品目录也仍是拟议。本文不新增模型运行或接纳records实现。
 
 ## 2026-10-26：第三份资料补充查询目标与资源边界
 
