@@ -1,6 +1,6 @@
 # 项目导航
 
-维护日期：2026-10-15。本文件回答内容归属、阅读入口和旧路径定位；
+维护日期：2026-10-26。本文件回答内容归属、阅读入口和旧路径定位；
 方向、实现与证据分别从[总纲](PROJECT_OUTLINE.md)、[代码状态](code/INFRA_STATUS.md)和[结果导航](experiments/results/README.md)核对，不复制运行进度。
 
 ## 内容与文档职责
@@ -34,12 +34,13 @@
 
 | 主题 | 入口 |
 |---|---|
+| 目录职责与命名 | [职责与逐项采用决定](experiments/plans/系统架构.md#code-directory-boundaries)、[代码目录](code/README.md#目录结构)、[main／候选交接表](code/src/baselines/README.md#text-execution-boundaries)；说明已更新，源码未迁移 |
 | 可选 vLLM 部署资源 | [命令](code/scripts/README.md#可选-vllm-部署资源分配)、[来源与单卡资格](experiments/results/diagnostics/main_service_auto_20261015/README.md) |
 | Records生产review与历史复现 | [当前候选边界](code/INFRA_STATUS.md)、[CPU资产绑定](code/tests/records_cpu.md)、[具名历史投影](experiments/reproduction/native_baselines/README.md)；新源码资格未完成前不merge |
 | LOTUS 原版 Movie／Animals 四臂 | [模块/API](code/src/semantic_methods/lotus/README.md)、[Movie入口](code/scripts/README.md#lotus-原版-movie-四臂)、[Animals入口](code/scripts/README.md#animals-原版图文-q1)、[Animals闭包](experiments/results/diagnostics/main_lotus_animals_20261015/README.md)、[固定main实际模型](experiments/results/diagnostics/main_queries_20261015/README.md) |
 | LOTUS 原生CLIP检索 | [公开入口](code/scripts/README.md#原生-lotus-clip-查询)、[最小闭包及main570严格单卡资格](experiments/results/diagnostics/main_lotus_clip_20261015/README.md) |
 | 实验记账组件 | [小批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
-| 就绪窗口的准备粒度 | [本地原型与反例](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)、[实施计划](experiments/plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03) |
+| 就绪窗口的准备粒度 | [本地原型与反例](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)、[历史定位](experiments/plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03) |
 | 完整流程与场景分层 | [应用/工程/理论分析](docs/research/优化方法依据.md#query-specific-execution-opportunities)、[物理需求与准备时机](docs/research/优化方法依据.md#heterogeneous-demand-supplement)、[共享准备切片](experiments/plans/数据组织.md#scene-preparation-pilot) |
 | 同步/增量生成Map | [语义规格](experiments/plans/生成算子.md)、[增量设计](experiments/plans/增量执行.md#session) |
 | 多Job与查询归属 | [多会话设计](experiments/plans/增量执行.md#multi-query)、[查询Job设计](experiments/plans/数据库接入.md#query-job) |
@@ -47,7 +48,7 @@
 | baseline与计时角色 | [参照要求](experiments/plans/reference/对照规范.md#执行者与计时的读法) |
 | 观测指标 | [模块说明](code/src/observability/README.md#运行指标的读法)、[选择依据](docs/research/evaluation_metrics_survey_20260731.md#观察变量选择) |
 | 文本Map四路径比较 | [真实模型结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md) |
-| worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway生命周期](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、[本地共享干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md) |
+| 查询调优状态与既有结果 | [当前假设、已完成项与负结果](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway生命周期](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、[本地共享干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md) |
 | 同步/线程记账与Arrow分批 | [记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md) |
 | DuckDB历史比较 | [静态路径](experiments/results/text_db_e2e_duckdb_static_comparison_20260808/README.md)、[规模诊断](experiments/results/duckdb_direct_scale_diagnostic_20260807/README.md) |
 | 动机与组件检查 | [动机](experiments/results/motivation/README.md)、[组件与能力](experiments/results/diagnostics/README.md) |

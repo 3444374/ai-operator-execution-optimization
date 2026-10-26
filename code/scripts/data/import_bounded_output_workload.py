@@ -34,12 +34,6 @@ if str(CODE_ROOT) not in sys.path:
 INSTRUCTION_TOKENS = 12
 
 
-def wrap_prompt(text: str, max_words: int) -> str:
-    return (
-        f"Summarize the following text in at most {max_words} words: {text}"
-    )
-
-
 DEFAULT_TEMPLATE = (
     "Summarize the following text in at most {max_words} words: {text}"
 )

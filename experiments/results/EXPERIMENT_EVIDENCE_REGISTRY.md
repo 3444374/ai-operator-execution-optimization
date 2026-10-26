@@ -1,10 +1,45 @@
 # 实验与机制证据台账
 
+<a id="pr52-g1-negative-records"></a>
+2026-10-26：固定45d的records G1窄功能范围。两轮实际14次成功调用仅覆盖Native resident、Core默认同步及显式async的首次/复用和两条eligible负例；新轮8次无失败/unknown/missing/重试，旧轮私有审计失败仍保留。完整资源退出与调用确认分列，不证明正例质量、Map/Extract、P99或稳定性能。[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，Ray/Daft补资格及其余入口未由该结果取得资格，见[代码状态](../../code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+
+原45d的8处预检/说明漂移，加上最新main的RayHTTP/importer差异，在独立整合树中共需18条历史override。Git整合者回执确认4份精确旧快照、18条路由及五投影实际materialize全部匹配，原hash/ID/既有路由不变；原45d与[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)未改。该回执只证明历史代码还原，不认证新模型/执行闭包，也不重算或改写历史观测、发布原始运行材料。
+
+以下两条仅记录e8eb初期预检与CPU交付时点；新G1不覆盖或删除其原失败，也不与383/80项CPU相加。
+
 2026-10-26：records e8eb首阶段资格停在模型前公共预检，CSV-only被旧profile强制要求DATABASE_URL；0模型调用、0预留，尚未完成输入/模型/资源资格。后续按[能力合同](../../deploy/runtime/README.md)修复DB可选检查，不改旧失败或继承实机资格。
 
 2026-10-26：[records生产闭包review状态](../../code/INFRA_STATUS.md)、[CPU资产与范围](../../code/tests/records_cpu.md)。原e8eb整合源码383个去重CPU用例通过、0跳过；旧失败输出及两次调用环境修正保留，不叠加旧r1/r2计数。固定真实输入不把合成响应变成模型质量；无新GPU/SSH/预算，本次源码独立模型与资源资格仍为merge前置，历史投影按[具名来源](../reproduction/native_baselines/README.md)解释。
 
-2026-10-26：[离线工具CPU核验范围](../../code/scripts/analysis/OFFLINE_RESULTS.md)。当前基底47个不同方法通过，31项在三入口重复通过不计93；两schema的隔离CLI与摘要计数边界核验，不重算历史原始trace、GPU/质量或4109项旧审计。工具已由PR #53独立合入main，无新模型资格。
+<a id="priority9231-small-pair"></a>
+2026-10-26：后继优先的隔离小对照。
+
+运行标识`continuation-ready-priority-gpu-9231-20261026-r1`，策略父快照`9231f088`、实际源码快照`d7f0245c`；
+它们是内容指纹，不是Git提交或PR52当前源码资格。仓库外`HANDOFF.json`的SHA-256为
+`d9fdaf02dc27f4359f2b37461766bdbf237683e519af66928238caadc7cb934c`，结果摘要为
+`dc03850f281ff505f5917c18707471b829e88e05ddaaebec7290cc2c3a2e7949`；原件按运行标识及摘要经既有artifact交接取得。
+
+| 选择方式 | 首次完整查询（秒） | 复用完整查询（秒） |
+|---|---:|---:|
+| FIFO | 1.063662 | 1.034930 |
+| 后继优先 | 1.147095 | 1.166761 |
+
+每格仅1次查询、16行派生输入，首次与复用合计慢10.26%；6次真实非FIFO选择，配对输出与token一致，
+主对照88次成功（含8次预热）。本轮无收益，隔离候选默认仍FIFO，下一步仅分析已有机制记录；
+不据小样本否定其他负载，不新增性能调参或模型运行任务，不将单次首次／复用合为稳定性能证据。
+
+取消探针保留1次unknown；API close后仍有1个held请求和1项未持久交付结果，不能升级为成功终态。
+独立清理确认物理GPU／RPC／租约已释放，物理退出不代替调用结果确认。原生运行中的取消与真实aging尚未取得资格；
+独审定位P2为本轮私有runner关闭后漏收晚到终态；45d生产owner已有close后collect和调用收据合并，11项针对性CPU通过、0skip，本探针不构成PR52新增合并阻断。
+修复仍待独审，原unknown不可改写，也不将88次成功主对照一律改为失败。
+独审原件按运行标识`priority-cancel-impact-independent-review-20261026-r1`及报告SHA-256 `7fc0f74285cb055d51f7000d30d2943fb0138c21bb22ea2e68ce9d4e557079c2`经既有artifact交接取得。
+另据执行负责人回执，records三入口小资格（G1）已完成两轮、累计14次成功；其余资格仍待核验，[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)保持draft、尚未合并。
+
+2026-10-26状态整理：[查询调优](../plans/查询调优.md#completed-query-work)移出已完成清单，按各次报告保留负结果与适用条件。
+本次只调整计划和导航，未重跑或重算实验；原始观测、失败、源码身份与既有默认保持。
+
+2026-10-26：[离线工具CPU核验范围](../../code/scripts/analysis/OFFLINE_RESULTS.md)已随[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)合并为`380cfbda`。
+原来源47个不同方法通过，同一31方法的三种入口不计成93个；保留两类schema的计数检查，不重算旧原始trace或认证模型质量。
 
 2026-10-26历史证据迁入：[2026-10-20 Native Q3失败资格与独立复验](diagnostics/lotus_records_local_model_20261016/README.md)。原生产85133c6f、两次独立120调用；旧campaign失败不改，新复验仅Native单臂通过，质量不足和缺失现场仍保留。不导入records实现，不认证后来九配置或稳定性能。
 

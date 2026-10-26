@@ -13,7 +13,7 @@ LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化�
 自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。下一单元是[普通／级联 Filter 记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)，
 records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOTUS 核对；旧 request 冻结范围作参照，选择性复用，不作为新主链的必经依赖。
 并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
-当前CSV／本地records主线不依赖PostgreSQL；旧SQL数据源是显式可选入口，环境要求按[所选能力](deploy/runtime/README.md)检查。
+records生产实现与CSV无需PG的能力预检修复仍在[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)独立核验，尚未纳入main。冻结45d的G1仅完成Native/Core三个入口的负例小资格；Ray/Daft补资格和其他入口仍待各自核验，见[资格范围](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
 HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎尚未纳入 main，功能分支的实现及资格统一从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对。
 
 | 要查什么 | 权威入口 |
@@ -21,7 +21,7 @@ HTTP records 流水保留为阶段实现与对照；记录级入口与生成模�
 | 规则、术语与内容归属 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md)、[项目导航](PROJECT_INDEX.md) |
 | 方向、优先级与历史范围 | [项目总纲](PROJECT_OUTLINE.md) |
 | 实际能力与尚未验证项 | [代码状态](code/INFRA_STATUS.md)、[模块与命令](code/README.md) |
-| 架构职责与接入设计 | [系统架构](experiments/plans/系统架构.md) |
+| 目录职责、命名与接入设计 | [职责与来源状态](experiments/plans/系统架构.md#code-directory-boundaries)、[代码目录](code/README.md#目录结构)、[baseline交接单位](code/src/baselines/README.md#text-execution-boundaries) |
 | 最近邻、机制与文献版本 | [研究定位](docs/research/研究定位.md)、[方法依据](docs/research/优化方法依据.md)、[文献入口](docs/research/README.md) |
 | 实验设计与比较口径 | [方案](experiments/plans/README.md)、[对照规范](experiments/plans/reference/对照规范.md)、[报告核对](experiments/plans/reference/报告核对.md) |
 | 实际结果、全部重复与失败 | [结果导航](experiments/results/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |

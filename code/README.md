@@ -269,7 +269,7 @@ tested but has not been run on the powered-off GPU server.
 2026-08-03 已完成的路径迁移过程见
 [固定提交记录](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/ARCHITECTURE_REFACTOR_PLAN.md)。
 
-本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `code/scripts/benchmarks/` 或 `code/scripts/benchmarks/`。
+本目录存放维护实现、薄CLI和测试。一次性机制诊断放在 `code/scripts/benchmarks/`，具名历史还原材料与原始结果分别由 `experiments/reproduction/`、`experiments/results/` 承载；候选目录按下方来源状态解释。
 
 绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
 
@@ -280,10 +280,11 @@ code/
 ├── src/
 │   ├── data/                     ← PostgreSQL/Daft source、Arrow/Daft materializer、sink、workload
 │   ├── planning/                 ← 纯 cost estimator 与 work-unit packing；不依赖执行引擎
+│   ├── semantic_methods/         ← 原方法与SDK合同；records/关系扩展仍属PR #52候选
 │   ├── scheduling/
 │   │   ├── core/                 ← typed state、capacity contract、execution ledger、scheduler loop
 │   │   ├── organization/         ← pending batching、token/work budget、service quantum
-│   │   ├── submission_control/   ← request/work credit、legacy baselines、SAOR policy/ordered release
+│   │   ├── submission_control/   ← request/work准入与容量策略；不是外部原生baseline执行器
 │   │   ├── endpoint_routing/     ← pinned/queue/work/prefix routing
 │   │   └── runtime/              ← Ray adapter、服务观测缓存、SAOR 容量/多阶段薄适配
 │   ├── serving/                  ← completion/embedding backend 与 vLLM probe
@@ -296,7 +297,7 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   ├── execution_provider/       ← semantic gateway、wire v2/v3/v4/v5 与 recording/golden/fixed-model adapters
+│   ├── execution_provider/       ← gateway/wire与前端→Core适配；不接管原生baseline调度
 │   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
@@ -305,6 +306,12 @@ code/
 ├── configs/                      ← vendor baseline pin 与可复现实验配置
 └── requirements.txt
 ```
+
+目录职责与采用决定见[架构§8.1.2](../experiments/plans/系统架构.md#code-directory-boundaries)，各接点的main／候选状态见[baseline交接边界表](src/baselines/README.md#text-execution-boundaries)。上图列现有根目录；具体records／链模型worker、Kalypso接线及`experiments/reproduction/native_baselines/`来自[PR #52的固定候选45d184df](https://github.com/3444374/ai-operator-execution-optimization/tree/45d184dfaf0ef3a85ccccc805be7fc38e646b527)，尚未进入main。
+
+`semantic_methods/lotus/`拥有原方法与SDK解释，`execution_provider/adapters/lotus_*core*.py`属于SemLoom适配，`baselines/text/frameworks/`保留原生系统执行owner。普通records候选在worker准备／执行，查询调用方收齐并重排完整回执后调用原LOTUS parser。Kalypso是独立作者系统；五份具名历史树含两种Core版本，是还原材料，不是native backend注册目录。
+
+本批已落实职责说明和导航，未迁移源码。五个真实共享接点另批兼容归位；三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG；对应能力预检修复也在PR #52候选中，旧SQL路径保留为显式可选接入，不能以本文代替代码状态或资格报告。
 
 跨机器运行不要直接对着 `requirements.txt` 反复试装。先按
 `deploy/runtime/README.md` 选择 machine profile 与能力组，保存只读 preflight 报告；
