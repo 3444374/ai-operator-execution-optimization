@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-26：旧开发线历史归档与维护代码接纳分列
+
+PR52／56已将经过验收的records代码与结果合同选择性接入main；旧三开发分支没有整支合并。其准确末端已发布为[具名归档引用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-work-line-archives)，逐项Git fetch与SHA核同，本地完整历史恢复bundle已verify。Q3两份JSON与main逐字节相同；Movie旧封包、source lock及CPU证据仅保历史身份，不成为当前运行默认或新模型资格。
+
+baseline的Ray Serve CLIP诊断及固定版本PZ方法接入保留为历史／可选能力，当前未进入main；不是已被证明无效或已由records替代。main继续维护已有CLIP原生图和请求／records入口，其他能力按实际需求独立验收，不倒灌整个旧分支。历史保存已完成；旧工作分支删除被自动审批拒绝，尚未执行，待针对未整支合并分支的明确删除批准。未修改原dirty主树、a244或任何GPU源码／预算。
+
 ## 2026-10-26：records生产闭包与共享结果合同已接纳
 
 [PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)已合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`。最终records整合`e2bc889b`的[V0来源检查](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-e2bc-v0)九角色、574文件／159模块通过，零模型／预算；模型功能资格仍归各轮45d。共享结果迁移head `58c76ee9`与71项CPU通过的`7c5f4eff`文件树相同，旧import／pickle与五投影原字节保留。部署须统一新模块与兼容层，不混用旧worker；这不是新模型、完整链或性能资格。当前无配置Actions检查，不称CI通过。

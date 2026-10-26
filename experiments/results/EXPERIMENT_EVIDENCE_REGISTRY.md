@@ -1,5 +1,22 @@
 # 实验与机制证据台账
 
+<a id="legacy-work-line-archives"></a>
+## 2026-10-26 旧开发线的具名历史恢复引用
+
+当前维护代码由PR52／56选择性接纳；以下tag仅保存完整历史，不表示旧分支整支合入main或授予新源码实机资格。三个tag均已从公开远端实际fetch到独立验证ref，并核对准确末端；旧工作分支的删除审批未通过、尚未执行，tag不替代这一批准。
+
+| 来源与用途 | 持久归档tag（均以`archive/semloom/20261026/`为前缀） | 准确末端 |
+|---|---|---|
+| 旧请求级baseline与可选方法来源 | `legacy/request-baselines-and-optional-methods` | [e9a54e3e43ef9ce9e3b6973530715655028b1da5](https://github.com/3444374/ai-operator-execution-optimization/tree/e9a54e3e43ef9ce9e3b6973530715655028b1da5) |
+| Movie任务开发／旧准备封包与CPU记录 | `reproduction/records-development-history` | [a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05](https://github.com/3444374/ai-operator-execution-optimization/tree/a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05) |
+| Native Q3历史失败与复验血缘 | `evidence/native-q3-history` | [452505e80f7d13dcbfbc838fe7fae6f127790b62](https://github.com/3444374/ai-operator-execution-optimization/tree/452505e80f7d13dcbfbc838fe7fae6f127790b62) |
+
+Q3的两份`native_q3_*_20261020.json`已由PR51原字节入main，旧failed与新复验分列；该来源无相对Movie独有执行器。Movie的旧`deploy/autodl/sembench_records/`及`movie_task_switching_cpu_20261020.json`留在其归档树：11文件隐私形状检查无新增问题，541项runtime lock匹配历史树；原记录35项受影响CPU通过、模型／预算分配0，未在本轮重跑，不改成当前资格。
+
+旧baseline尾项归属：main已有的原生CLIP图和SDK／请求清理继续维护，RayHTTP身份防护已PR57接纳；额外Ray Serve CLIP是独立`diagnostic_reference`，固定版本PZ是另一方法的可选baseline，二者当前仅归档保源、未接入main默认，不称已替代或无效。后续若需要它们，按功能提取适配、配置与测试并单独验收，不能借旧实测授予当前records图文／方法资格。其余旧prepared API、Sema／DuckDB／IMLane及HSE／SAOR历史同样保留来源，不改变当前策略。
+
+完整三末端恢复bundle SHA-256 `7b6a8a16d2504336e31b481ba4bd3dca9369334520a6969a776f9cb32c7769e5`，仓库外原件按`legacy-final-retirement-20261026-r1`交接；642140102字节，bundle verify通过。已有7fb data-execution历史仍可从原archive tag及上述Movie／Q3血缘取回。没有永久丢弃唯一内容、强推、重算实验或启动GPU。
+
 2026-10-26：[共享链结果合同归位](../../code/INFRA_STATUS.md#record-results-migration)。固定`45d184df`的独立后继单模块迁移，旧import同对象、六类行为差分与旧collector pickle读取通过；17项新增CPU检查及51项既有回归通过。首次`-S`隐藏既有依赖的测试错误保留，仅修正测试启动方式。无新模型、原生图或GPU运行，无性能/内存收益结论，不转授records资格。 完整树的历史复现来源漂移由七份旧字节快照和33条override路由修复，expected SHA与projection ID保持，五投影另作CPU还原核验。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
 
 <a id="pr52-g1-negative-records"></a>
