@@ -1,0 +1,18 @@
+{
+  "schema": "semloom.offline_inputs.v1",
+  "input_schema": "semloom.public_query_observations.v1",
+  "comparison_scope": "records_e2e",
+  "files": {
+    "queries": {
+      "path": "public-queries.jsonl",
+      "sha256": "3b2b04576bde4ddeb5067cf72b3c8371ebc94e071fcdf6b97e6d3ece949ba5cf"
+    },
+    "api_samples": {
+      "path": "public-api.jsonl",
+      "sha256": "81966977d8d3de31254a224f2281db45ab5057ce25e32a2fb60027d820dff71e"
+    }
+  },
+  "metadata": {
+    "evidence_kind": "retained observed values; CPU replay fixture; no new model calls"
+  }
+}

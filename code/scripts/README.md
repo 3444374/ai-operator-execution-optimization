@@ -1,5 +1,8 @@
 # SemLoom 脚本入口
 
+离线保留结果的统一读取入口为 [`analysis/summarize_offline_results.py`](analysis/summarize_offline_results.py)；
+显式 schema/manifest、路径、CLI/库 API、支持格式和 NA 语义见[离线结果说明](analysis/OFFLINE_RESULTS.md)。
+
 ## 原生 LOTUS CLIP 查询
 
 三个公开入口按内容manifest、模型身份、完整查询衔接：

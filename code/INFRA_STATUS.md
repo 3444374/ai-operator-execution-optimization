@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+## 2026-10-26 离线结果工具review候选
+
+[离线摘要入口](scripts/analysis/OFFLINE_RESULTS.md)只读取调用方指定的两类紧凑文件，复用latency_observations统计。47个不同CPU方法及同一31方法三入口通过；缺失计数/unknown、MFU和物理buffer边界保留，不产生新的模型或records执行资格。与生产闭包PR分开，不修改其冻结源码或运行配置。
+
 ## main 与集成分支的阅读范围
 
 main 已按必要闭包接纳公共统计修复、Core／完整响应、LOTUS Movie／Animals完整请求、可选vLLM部署资源及原生CLIP查询的必要工程闭包。每批固定源码和资格从下文报告核对；

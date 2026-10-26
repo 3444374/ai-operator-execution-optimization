@@ -1,0 +1,14 @@
+{
+  "schema": "semloom.offline_inputs.v1",
+  "input_schema": "semloom.fifo_summary.v1",
+  "comparison_scope": "finite_chain_diagnostic",
+  "files": {
+    "results": {
+      "path": "fifo-results.json",
+      "sha256": "16638ddc3d3d37653484aca60ae52a3781c7386c201b8a1dcea467bac794b86d"
+    }
+  },
+  "metadata": {
+    "evidence_kind": "retained observed values; CPU replay fixture; no new model calls"
+  }
+}
