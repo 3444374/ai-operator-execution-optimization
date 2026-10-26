@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQL驱动；三机器profile的DATABASE_URL与psql仅对database／sql-readers必需。DB语法检查不连接服务、不验证凭据；数据库入口仍保留实际连接gate。此修复不改变e8eb历史失败或赋予新源码GPU资格，见[运行合同](../deploy/runtime/README.md)。
+CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQL驱动；资产能力清单的DATABASE_URL及三机器profile的psql仅对database／sql-readers必需。DB语法检查不连接服务、不验证凭据；数据库入口仍保留实际连接gate。此修复不改变e8eb历史失败或赋予新源码GPU资格，见[运行合同](../deploy/runtime/README.md)。
 
 ## 2026-10-26 records生产闭包review候选
 
@@ -18,7 +18,7 @@ MovieTask保留原Q3提示，相关Movie入口显式传递，Core无benchmark依
 尚未合入main、重建私有packet/source/input/token/环境绑定或取得当前候选GPU资格。
 候选保留MFU完整性修正；晚于query边界的FLOPs尾部仍需完整caller关闭trace，不能据终态声称query-ready分子完整。
 
-当前整合源码383个去重CPU用例通过、0跳过，包含原SDK固定2000行/120发生项及真实Daft CPU图。首次socket权限与回执输出目录错误保留，针对性复跑不改源码、不重复计数；不是模型质量或GPU资格。
+原e8eb整合源码383个去重CPU用例通过、0跳过，包含原SDK固定2000行/120发生项及真实Daft CPU图。首次socket权限与回执输出目录错误保留，针对性复跑不改源码、不重复计数；不是模型质量或GPU资格。
 
 ## 来源与验证边界
 
@@ -27,6 +27,10 @@ MovieTask保留原Q3提示，相关Movie入口显式传递，Core无benchmark依
 已公开的[2026-10-20 Native Q3历史失败/复验](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)保持原生产85133c6f、两个运行和有限资格，不能转授本候选。
 本地records格式器和公共文本引擎拒绝图像输入，不能继承下文旧HTTP/Animals或CLIP图文资格。
 当前review仍待新源码的实际模型与资源资格，未允许仅据历史结果merge；CPU资产绑定见[检查说明](tests/records_cpu.md)。
+
+## 2026-10-26 离线结果工具已独立接纳
+
+[离线摘要入口](scripts/analysis/OFFLINE_RESULTS.md)已由[PR #53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)独立合入main380cfbda，只读取调用方指定的两类紧凑文件，复用latency_observations统计。47个不同CPU方法及同一31方法三入口通过；缺失计数/unknown、MFU和物理buffer边界保留，不产生新的模型或records执行资格。与生产闭包PR分开，不修改其冻结源码或运行配置。
 
 ## main 与集成分支的阅读范围
 

@@ -13,6 +13,9 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 分别负责服务、附着查询与作者CPU检查，所需配置见[适配说明](../src/baselines/text/frameworks/kalypso_native/README.md)。
 本批仅完成本机CPU与`--help`检查，新运行仍需私有packet、source/input/token/模型/环境绑定和owner资格。
 
+离线保留结果的统一读取入口为 [`analysis/summarize_offline_results.py`](analysis/summarize_offline_results.py)；
+显式 schema/manifest、路径、CLI/库 API、支持格式和 NA 语义见[离线结果说明](analysis/OFFLINE_RESULTS.md)。
+
 ## 原生 LOTUS CLIP 查询
 
 三个公开入口按内容manifest、模型身份、完整查询衔接：

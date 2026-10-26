@@ -1,0 +1,85 @@
+{
+  "public": [
+    {
+      "query_id": "eight:qual-movie-q1-native-first",
+      "model_API": {
+        "empirical_P99": null,
+        "maximum": 0.114681655,
+        "median": 0.1063893405,
+        "n": 2
+      },
+      "full_s": 2.352143582,
+      "ready_s": 1.044747286
+    },
+    {
+      "query_id": "eight:qual-movie-q1-imlane-first",
+      "model_API": {
+        "empirical_P99": null,
+        "maximum": 0.5635970779694617,
+        "median": 0.5635970779694617,
+        "n": 1
+      },
+      "full_s": 20.271843258,
+      "ready_s": 19.08868766
+    },
+    {
+      "query_id": "eight:qual-movie-q3-native-first",
+      "model_API": {
+        "empirical_P99": null,
+        "maximum": 0.117502677,
+        "median": 0.10928404750000001,
+        "n": 2
+      },
+      "full_s": 2.475132485,
+      "ready_s": 1.068944392
+    }
+  ],
+  "fifo": [
+    {
+      "mode": "fused",
+      "API": {
+        "n": 6,
+        "values": [
+          0.685213259421289,
+          0.6852557831443846,
+          0.7000502729788423,
+          0.6999919461086392,
+          0.38428226206451654,
+          0.41521524311974645
+        ],
+        "median": 0.6852345212828368,
+        "maximum": 0.7000502729788423,
+        "empirical_P99": null,
+        "P99_reason": "not reported: too few samples; query P99 is not estimated"
+      },
+      "full_s": 42.746426134,
+      "ready_s": 1.172964848112315
+    },
+    {
+      "mode": "fifo",
+      "API": {
+        "n": 6,
+        "values": [
+          0.705007724929601,
+          0.12271494697779417,
+          0.1225550533272326,
+          0.12246003793552518,
+          0.3856772971339524,
+          0.41655110474675894
+        ],
+        "median": 0.2541961220558733,
+        "maximum": 0.705007724929601,
+        "empirical_P99": null,
+        "P99_reason": "not reported: too few samples; query P99 is not estimated"
+      },
+      "full_s": 43.806139108,
+      "ready_s": 1.2031611679121852
+    }
+  ],
+  "provenance": {
+    "public_queries_gzip_sha256": "3e89bf8c3714d07ca0dd30e6d1d7cc3f84d4145cb9108ef61b4865989f18dd36",
+    "public_api_gzip_sha256": "a4615ea263ee641bee11288adf2acd7f9f263a597f779e89b87e25b8e932a88e",
+    "fifo_summary_sha256": "6848bb8367380e4b0ccd911801cf5e01f39b05e53c241bcd961dfc7ae239cbb2",
+    "selection": "three qualification queries selected by shape, plus two FIFO receipts; copied numeric summaries are the differential oracle"
+  }
+}

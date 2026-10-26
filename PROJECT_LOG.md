@@ -2,13 +2,17 @@
 
 ## 2026-10-26：按能力修正CSV预检的数据库要求
 
-在records冻结e8eb345之后，以独立后续提交将三个GPU机器profile的DATABASE_URL／psql要求限于显式database或sql-readers能力，PostgreSQL驱动由core移入可选DB能力。CSV／本地records不部署或连接PG，混合能力仍核要求并集；缺失/空/无效DB配置失败，语法检查不证明连通或凭据有效。运行入口、依赖说明与[能力合同](deploy/runtime/README.md)同步；原e8eb模型前预检失败及零调用证据保留，新源码资格由唯一GPU owner重新绑定。
+在records冻结e8eb345之后，以独立后续提交将三个GPU机器profile的DATABASE_URL／psql要求限于显式database或sql-readers能力，PostgreSQL驱动由core移入可选DB能力。CSV／本地records不部署或连接PG，混合能力仍核要求并集；缺失/空/无效DB配置失败，语法检查不证明连通或凭据有效。运行入口、依赖说明与[能力合同](deploy/runtime/README.md)同步；原e8eb模型前预检失败及零调用证据保留，新源码资格由唯一GPU owner重新绑定。当前修复33项环境/配置/lease CPU通过、0跳过；汇合已批准离线main后，两个范围共80个不同CPU方法通过、0跳过；系统Python无DB驱动时16通过、1项显式DB解析跳过，不与原e8eb的383项累加。
 
 ## 2026-10-26：records生产闭包独立review候选
 
 从main5f291d3d选择性接入r2冻结的records/Core、本地文本引擎、原生薄适配、运行入口与具名历史复现，未整合旧分支全历史。通用instruction必填，Movie提示仅属任务；main既有helper及已合研究/Q3证据保留。当前源码383个去重CPU用例通过、0跳过，固定2000行/120发生项由真实CSV摘要及本地manifest绑定；Daft本机socket与私有回执目录的首轮错误、后续复验分别保留，不累加重复。
 
 五份历史投影保持逐字节来源，不混cfdc/ee39或新FIFO/index/B/W候选为默认。当前仅供draft PR审阅；新的private packet/source/input/token/model/env/ledger/owner绑定及本次源码GPU资格尚未完成，不允许据旧实测merge。入口见[代码状态](code/INFRA_STATUS.md)、[CPU资产](code/tests/records_cpu.md)与[具名复现](experiments/reproduction/native_baselines/README.md)。
+
+## 2026-10-26：离线结果摘要已独立接纳
+
+新增[离线结果摘要](code/scripts/analysis/OFFLINE_RESULTS.md)及最小统计helper依赖，仅显式读取两种紧凑schema；API计数矛盾拒绝，缺失/unknown不补零，源级失败不分摊，MFU/物理buffer缺证据保持NA。当前基底47个不同CPU方法通过、0跳过，同一31方法的三种入口均通过；独立Python隔离模式两类CLI通过，不重跑历史GPU或4109项旧审计。该工具已由[PR #53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)独立合入main380cfbda；与records、observer和调度策略分开，未赋予模型资格。
 
 ## 2026-10-26：迁入Q3历史失败与独立复验证据
 
