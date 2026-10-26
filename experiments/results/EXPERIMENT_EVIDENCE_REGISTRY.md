@@ -40,10 +40,17 @@
 
 <a id="records-g3-small-qualification"></a>
 2026-10-26 records剩余入口小资格：`records-production-g3-remaining14-45d184df-20261026-r1`固定PR52的`45d184df`、570份运行文件。
-Ray isolated 2次、Daft isolated 2次、Kalypso-native 4次业务请求成功；IMLane isolated／resident均在模型初始化时出现`ZMQError`，业务调用0、资格未通过，仍在诊断。
+Ray isolated 2次、Daft isolated 2次、Kalypso-native 4次业务请求成功；IMLane isolated／resident均在模型初始化时出现`ZMQError`，业务调用0、该轮资格未通过；后续独立补资格见[短RPC复验](#records-imlane-rpc-qualification)。
 模型业务失败／unknown均0，另保留2条未提交失败记录；不猜测ZMQ根因，不把初始化失败当作2次真实模型失败。物理清理通过，不代替未知的模型API关闭确认。
 本轮不是完整矩阵、链／cascade或稳态排名资格；PR52仍为draft、未合并。报告SHA-256为
 `d5686fe0f5a87a90ac2f2c01587a35afd316a1a5c1d181d96139c05f851e2338`，原件按运行标识和摘要经既有artifact交接取得。
+
+<a id="records-imlane-rpc-qualification"></a>
+2026-10-26 IMLane独立短RPC补资格：`records-production-imlane6-rpc-45d184df-20261026-r1`仍固定`45d184df`及570份运行文件，作者源码／桥／调度不变；仅私有环境显式设置短`VLLM_RPC_BASE_PATH`。
+isolated 2次、resident首次／复用各2次，共6条唯一native请求成功；3个query、3次同步B2 API样本，0预热／模型失败／unknown／missing／重试。resident保持同worker和model出生身份，初始化一次、累计预留2→4、最终一次关闭；原方法、实际token／模板及COUNT0／TN2核验通过。
+本轮独立预留／领取各6，旧G3领取未用6不转移或退款。原控制器isolated成功后因自有陈旧socket目录收尾失败停止，原失败与未释放收据保留；核实所有权及物理退出后只续行原账本未领取resident4，不重放isolated、不重置原900秒deadline，最终在原起点后831.593秒释放。
+最终GPU／RPC／两个短目录／租约释放，正常调用资格通过不抹去前置CPU及首次外层清理失败，也不改旧G3的API关闭unknown。每query仅2条eligible负例、query n=1，不认证正例、完整Q123、chain／cascade、取消或稳定性能。
+报告SHA-256为`7cd3edd7985939fd24971ebc8686c8af4330d9ff2910e7b6874a7a6ebc9e8786`，原件按运行标识和摘要经既有artifact交接取得。无需因旧初始化失败强制隔离IMLane；候选`e2bc889b`的零模型V0部署来源仍待核验，不能把45d实测改写为e2bc新模型运行，PR52尚未合并。
 
 2026-10-26状态整理：[查询调优](../plans/查询调优.md#completed-query-work)移出已完成清单，按各次报告保留负结果与适用条件。
 本次只调整计划和导航，未重跑或重算实验；原始观测、失败、源码身份与既有默认保持。

@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-26：补齐IMLane短RPC正常资格
+
+[独立六调用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)在冻结45d上完成：isolated2、resident首次／复用各2，保持同resident模型身份，失败／unknown／重试0。仅修私有RPC配置；旧G3初始化失败及本轮首次目录收尾失败保留，原账本／deadline未重置。无需实施前门隔离，e2bc零模型V0与PR52最终接纳仍待核验；本批仅更新六文档，不重跑模型或修改生产源码。
+
 ## 2026-10-26：补入反序负结果与剩余入口资格
 
 [后继优先反序小对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)仍无收益，当前负载停止简单策略自动扩测、默认FIFO；保留复用摘要文本及输出长度相差3个token，不称严格同输出。runner r3独审完成，559份生产运行文件未变，旧取消unknown保持。

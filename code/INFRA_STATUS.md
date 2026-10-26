@@ -1,7 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
 [后继优先及反序状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)：当前负载两轮均无收益，停止简单策略自动扩测、默认FIFO；runner r3独审已完成，559份生产运行文件未变，旧取消unknown保留。
-records三入口小资格两轮累计14次成功；[G3](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)的Ray／Daft／Kalypso业务通过，两个IMLane入口初始化失败、业务0且资格未通过，诊断中。[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft、未接纳到main。
+records三入口小资格两轮累计14次成功；[G3](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)的Ray／Daft／Kalypso业务通过，两个IMLane入口该轮初始化失败、业务0；后续[短RPC六调用](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)正常资格通过，旧失败／unknown保留。e2bc零模型部署来源V0待核验；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)其余资格待核验，仍为draft、未接纳到main。
 
 文本Map工程诊断的[当前状态与已完成项](../experiments/plans/查询调优.md#completed-query-work)已按结果收敛：
 准备分段的PG／模型检查、尾块追加、观察隔离和worker／gateway复用均已执行；负结果选项保持原默认，
