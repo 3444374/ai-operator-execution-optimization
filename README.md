@@ -16,6 +16,8 @@ records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOT
 当前CSV／本地records主线不依赖PostgreSQL；旧SQL数据源是显式可选入口，环境要求按[所选能力](deploy/runtime/README.md)检查。
 HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎尚未纳入 main，功能分支的实现及资格统一从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对。
 
+共享链结果身份合同的首批目录归位候选见[代码状态](code/INFRA_STATUS.md#record-results-migration)；旧import保留，未迁移全仓命名空间或改变原生baseline执行。
+
 | 要查什么 | 权威入口 |
 |---|---|
 | 规则、术语与内容归属 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md)、[项目导航](PROJECT_INDEX.md) |

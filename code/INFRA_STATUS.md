@@ -2,6 +2,13 @@
 
 CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQL驱动；资产能力清单的DATABASE_URL及三机器profile的psql仅对database／sql-readers必需。DB语法检查不连接服务、不验证凭据；数据库入口仍保留实际连接gate。此修复不改变e8eb历史失败或赋予新源码GPU资格，见[运行合同](../deploy/runtime/README.md)。
 
+<a id="record-results-migration"></a>
+## 2026-10-26 共享链结果合同归位候选
+
+基于PR #52固定候选`45d184df`，`semantic_methods/lotus/record_results.py`逐字节接纳旧`baselines/text/frameworks/lotus_chain_results.py`实现；旧模块保留全部既有定义及导入名的同对象重导出。Core四处导入及Ray Data、Daft、fused worker三个消费者改用新路径，不改方法/调度/模型/响应或错误规则。新类型pickle引用新模块，旧模块pickle仍可读；不支持新旧源码worker混搭。 此批依赖未合并的[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)，只存在于独立迁移候选；受测45d目录及其资格身份未改，不将本批CPU结果转授给PR52。
+
+[迁移检查](tests/semantic_methods/test_lotus_record_results.py)17项和既有Core/方法回归51项通过；六类旧/新行为快照一致，真实旧版collector pickle可由新源码读取。首次测试错误来自`-S`隐藏既有PyArrow依赖，仅修正测试启动方式；沿用的serving包初始化仍需PyArrow，本批未拆该依赖。全部是CPU fixture/独立解释器检查，原生迭代器close由fixture替代；未新跑Ray/Daft图、模型或GPU，不提升当前records生产闭包的资格，也不声称性能或内存收益。 历史复现新增七份旧公共来源快照，覆盖本次五文件迁移及45d已有环境/说明漂移；仅补33条override路由，expected hash与projection ID不改，不改active45d。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。
+
 ## 2026-10-26 records生产闭包review候选
 
 独立候选从`main@5f291d3d`选择性接入r2冻结代码闭包，补齐records/Core方法底座、Native／Ray／Daft／IMLane薄适配与Movie生产runner；不是整支合并旧Movie或a244。

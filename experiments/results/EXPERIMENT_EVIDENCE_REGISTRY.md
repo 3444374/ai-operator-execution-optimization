@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-26：[共享链结果合同归位](../../code/INFRA_STATUS.md#record-results-migration)。固定`45d184df`的独立后继单模块迁移，旧import同对象、六类行为差分与旧collector pickle读取通过；17项新增CPU检查及51项既有回归通过。首次`-S`隐藏既有依赖的测试错误保留，仅修正测试启动方式。无新模型、原生图或GPU运行，无性能/内存收益结论，不转授records资格。 完整树的历史复现来源漂移由七份旧字节快照和33条override路由修复，expected SHA与projection ID保持，五投影另作CPU还原核验。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。
+
 2026-10-26：records e8eb首阶段资格停在模型前公共预检，CSV-only被旧profile强制要求DATABASE_URL；0模型调用、0预留，尚未完成输入/模型/资源资格。后续按[能力合同](../../deploy/runtime/README.md)修复DB可选检查，不改旧失败或继承实机资格。
 
 2026-10-26：[records生产闭包review状态](../../code/INFRA_STATUS.md)、[CPU资产与范围](../../code/tests/records_cpu.md)。原e8eb整合源码383个去重CPU用例通过、0跳过；旧失败输出及两次调用环境修正保留，不叠加旧r1/r2计数。固定真实输入不把合成响应变成模型质量；无新GPU/SSH/预算，本次源码独立模型与资源资格仍为merge前置，历史投影按[具名来源](../reproduction/native_baselines/README.md)解释。

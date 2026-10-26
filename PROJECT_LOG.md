@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-26：共享链结果身份合同单模块归位候选
+
+在records候选`45d184df`的独立后继上，将原baseline目录的纯结果合同逐字节归到`semantic_methods/lotus/record_results.py`，保留旧import同对象入口并调整七处维护导入；不修改历史复制树或引入原生baseline对Core的依赖。[迁移检查及边界](code/INFRA_STATUS.md#record-results-migration)记录17项新增CPU检查、51项既有回归、六类差分与真实旧pickle读取，首次测试环境错误单列。新pickle使用新路径，旧pickle仍可读；未搬其他模块、改模型/调度或运行GPU，未作性能收益结论。 完整45d树复核发现复现公共来源漂移，后继补七份旧字节快照与33条override路由；原expected hash、projection ID及历史产物不改，五份还原须在该候选重新验证。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。
+
 ## 2026-10-26：按能力修正CSV预检的数据库要求
 
 在records冻结e8eb345之后，以独立后续提交将三个GPU机器profile的DATABASE_URL／psql要求限于显式database或sql-readers能力，PostgreSQL驱动由core移入可选DB能力。CSV／本地records不部署或连接PG，混合能力仍核要求并集；缺失/空/无效DB配置失败，语法检查不证明连通或凭据有效。运行入口、依赖说明与[能力合同](deploy/runtime/README.md)同步；原e8eb模型前预检失败及零调用证据保留，新源码资格由唯一GPU owner重新绑定。当前修复33项环境/配置/lease CPU通过、0跳过；汇合已批准离线main后，两个范围共80个不同CPU方法通过、0跳过；系统Python无DB驱动时16通过、1项显式DB解析跳过，不与原e8eb的383项累加。

@@ -36,6 +36,7 @@
 |---|---|
 | 可选 vLLM 部署资源 | [命令](code/scripts/README.md#可选-vllm-部署资源分配)、[来源与单卡资格](experiments/results/diagnostics/main_service_auto_20261015/README.md) |
 | Records生产review与历史复现 | [当前候选边界](code/INFRA_STATUS.md)、[CPU资产绑定](code/tests/records_cpu.md)、[具名历史投影](experiments/reproduction/native_baselines/README.md)；新源码资格未完成前不merge |
+| 共享链结果合同归位 | [方法公共模块](code/src/semantic_methods/lotus/record_results.py)、[旧import兼容及CPU范围](code/INFRA_STATUS.md#record-results-migration)；仅一个模块，不迁移整个产品命名空间 |
 | LOTUS 原版 Movie／Animals 四臂 | [模块/API](code/src/semantic_methods/lotus/README.md)、[Movie入口](code/scripts/README.md#lotus-原版-movie-四臂)、[Animals入口](code/scripts/README.md#animals-原版图文-q1)、[Animals闭包](experiments/results/diagnostics/main_lotus_animals_20261015/README.md)、[固定main实际模型](experiments/results/diagnostics/main_queries_20261015/README.md) |
 | LOTUS 原生CLIP检索 | [公开入口](code/scripts/README.md#原生-lotus-clip-查询)、[最小闭包及main570严格单卡资格](experiments/results/diagnostics/main_lotus_clip_20261015/README.md) |
 | 实验记账组件 | [小批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md) |

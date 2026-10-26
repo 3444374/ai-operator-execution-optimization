@@ -22,7 +22,7 @@ from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 from .daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
 from .lotus_chain_batch import FusedChainBatch
-from .lotus_chain_results import ChainBatchResults, ChainExecutionError, _json, _source_binding, record_row
+from src.semantic_methods.lotus.record_results import ChainBatchResults, ChainExecutionError, _json, _source_binding, record_row
 
 
 DAFT_VERSION = "0.7.21"

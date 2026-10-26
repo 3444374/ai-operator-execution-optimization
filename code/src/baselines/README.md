@@ -4,6 +4,8 @@
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
+LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)归方法公共层，Ray Data/Daft与Core直接复用；旧`text/frameworks/lotus_chain_results.py`仅重导出同一类型/函数，原生图、批次与模型生命周期不变。该归位不向baseline引入Core策略，其他共享worker/process仍待后续分批处理。
+
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
 `text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；
 `text/frameworks/ray_data_pg_http.py`使用Ray2.56.1的SQL reader与HTTP Processor。
