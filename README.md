@@ -10,13 +10,13 @@ PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、�
 模型服务仍拥有其内部 tensor、KV 和计算调度。方向与顺序只在[总纲](PROJECT_OUTLINE.md)维护。
 
 LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化；SemLoom 的目标底座保持 Daft 扫描／普通关系处理＋Ray Core／Actor，
-自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。下一单元是[普通／级联 Filter 记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)，
+自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。[普通／级联 Filter 记录级接点](experiments/plans/数据组织.md#lotus-filter-data-execution)保留方法参照，后续检验[选择性有限链](experiments/plans/数据组织.md#selective-chain-plan)的合法推进与数据寿命，
 records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOTUS 核对；旧 request 冻结范围作参照，选择性复用，不作为新主链的必经依赖。
 并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
-records生产实现与CSV无需PG的能力预检修复仍在[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)独立核验，尚未纳入main。冻结45d的G1仅完成Native/Core三个入口的负例小资格；Ray runtime/Daft session已补充窄功能资格，其余入口仍待各自核验，见[资格范围](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
-HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎尚未纳入 main，功能分支的实现及资格统一从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对。
+records生产实现及CSV无需PG的能力预检已随[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)接纳；[PR #56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)另完成共享结果模块归位。原45d各轮小实机资格、e2bc零模型来源检查和迁移CPU检查保留各自身份，非空链、helper cascade、正例及稳定性能仍须另证，见[资格范围](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
+HTTP records流水保留为阶段实现与对照；main已接纳文本records、整批有限链与本地模型引擎。图文及逐记录FIFO／token接合仍须各自验证和接纳，不能由当前源码或旧实测转授，见[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)。
 
-共享链结果身份合同的首批目录归位候选见[代码状态](code/INFRA_STATUS.md#record-results-migration)；旧import保留，未迁移全仓命名空间或改变原生baseline执行。
+共享链结果身份合同的首批单模块归位已接纳，见[代码状态](code/INFRA_STATUS.md#record-results-migration)；旧import保留，未迁移全仓命名空间或改变原生baseline执行。
 
 | 要查什么 | 权威入口 |
 |---|---|
