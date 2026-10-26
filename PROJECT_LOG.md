@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-26：迁入Q3历史失败与独立复验证据
+
+从旧Q3分支13d63374/452505e8仅迁[两份脱敏JSON与历史说明](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)，同步诊断索引和证据台账。两次生产85133c6f/source lock相同，run与证据指纹不同；旧failed不提升，新复验仅Native单臂资格，保留质量不足、缺失现场和不同计时边界。本批不导入旧117提交或records执行器，不覆盖已合研究路线，不新增模型运行；旧Q3完整历史和其他开发分支继续保留。
+
 ## 2026-10-26：第三份资料补充查询目标与资源边界
 
 第三份分析继续进入[既有单卡选择性链方案](experiments/plans/数据组织.md#query-goal-extension)：预计后继只作软规划，合法性/confirmed责任与实际物理释放不被预测覆盖；完整query始终主目标，SLO/slack可选且后置，不能将timeout/cancel改名或用query内记录数代替独立query样本。[近邻边界](docs/research/研究定位.md#selective-chain-increment)补入FaaSTube/SLOs-Serve及已有Agentix/JITServe对应节，未来消费者与E2E/deadline均非独有。后置异构资源文献按[原索引](docs/research/ai_operator_literature_inventory.md#query-goal-transfer-sources)登记，方法与架构只补采用/反证和慢配置快推进责任；未扩为通用GPU集群或新增实现/运行。保留前两份资料的同一研究路线；本批仅更新七份文档，不接纳实现或发布实验原件。

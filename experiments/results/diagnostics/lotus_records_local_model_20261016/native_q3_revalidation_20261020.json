@@ -1,0 +1,149 @@
+{
+  "schema": "semloom.native_q3_revalidation_summary.v1",
+  "run_id": "native120-revalidation-20261020-r1",
+  "source_commit": "85133c6f4a688efe03f80d2c1cac0cd214406782",
+  "source_lock_sha256": "fade0a104e48053437bc622f74fe8aaeb0fc07e10a870466db868a368567c79f",
+  "scope": {
+    "backend": "Original LOTUS Native HTTP",
+    "profile": "p1",
+    "task": "movie-q3",
+    "eligible_rows": 120,
+    "native_scheduling_retained": true,
+    "production_source_changed": false
+  },
+  "qualification": {
+    "new_attempt": "passed_native_only",
+    "original_attempt": "failed_unchanged",
+    "all_five_passed": false,
+    "accuracy_pass_claimed": false,
+    "formal_qualification_inferred": false
+  },
+  "calls": {
+    "actual_model_calls": 120,
+    "HTTP_send_attempts": 120,
+    "HTTP_receipts": 120,
+    "succeeded": 120,
+    "failed": 0,
+    "unknown": 0,
+    "missing": 0,
+    "automatic_retries": 0
+  },
+  "verification": {
+    "actual_token_template_decode": "passed120_actual_HTTP_ids_no_reencoding",
+    "source_semantic_validation": "passed_original_validate_result120",
+    "parser_defaults": 0,
+    "parser_ambiguous": 0,
+    "original_close": "closed",
+    "original_supervisor": "passed",
+    "independent_physical": "passed",
+    "resource_monitor": "passed528_samples62_full_inventories",
+    "native_scheduling_retained": true,
+    "exact_current_native_signature_matches_old_failed_native": true
+  },
+  "results_equal_to_original_attempt": {
+    "effective_messages_all120": true,
+    "generation": true,
+    "row_outputs_actual_ids_and_known_usage_all120": true,
+    "COUNT_and_original_metric": true,
+    "root_decode_rerun": false
+  },
+  "quality": {
+    "COUNT": 7,
+    "gold": 14,
+    "relative_error": 0.5,
+    "absolute_error": 7,
+    "MAPE": 50,
+    "classification": {
+      "true_positive": 7,
+      "false_positive": 0,
+      "true_negative": 106,
+      "false_negative": 7,
+      "invalid": 0,
+      "evaluated_rows": 120,
+      "missing_rows": 0,
+      "count_error_from_classifications": -7
+    },
+    "usage": {
+      "prompt_tokens": 14566,
+      "known_prompt_tokens": 14566,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 480,
+      "known_completion_tokens": 480,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 15046
+    },
+    "numeric_accuracy_floor_in_original_gate": false,
+    "accuracy_pass_claimed": false,
+    "cross_backend_comparison": "pending_other_four_unexecuted"
+  },
+  "timing": {
+    "native_query_cold_start_included_s": 55.468263070099056,
+    "evaluation_in_native_query": false,
+    "service_startup_s": 41.683809282,
+    "evaluation_s": 0.858795152977109,
+    "query_report_including_evaluation_close_s": 57.072227290365845,
+    "worker_invocation_through_COUNT_s": 59.25539666,
+    "worker_application_e2e_s": 63.022697387,
+    "supervisor_complete_s": 62.723631233908236,
+    "campaign_with_audit_and_closure_s": 77.81870937999338,
+    "outer_controller_s": 82.8600902557373,
+    "deadline_overrun_s": 0,
+    "resident_latency_available": false,
+    "formal_measurement": false,
+    "repeats": 1,
+    "no_cross_backend_speedup_or_P99_claim": true
+  },
+  "cleanup": {
+    "status": "complete",
+    "observed_owned_identities": 23,
+    "all_observed_owned_absent": true,
+    "gpu_used_mib": 1,
+    "gpu_compute": 0,
+    "shm": 0,
+    "RPC": 0,
+    "leases": 0,
+    "normal_owned_lease_status": "released",
+    "extra_postcampaign_cleanup_signals": [],
+    "foreign_signals": [],
+    "old13_and_failed120_protected_unchanged": true,
+    "raw_unit_final_inventory_saved_before_assert": true,
+    "resource_and_owned_observation_saved_before_assert": true,
+    "independent_postcampaign_inventory_saved": true
+  },
+  "accounting": {
+    "permanent_reserved": 120,
+    "permanent_claimed_units": 1,
+    "hard_new_cap": 120,
+    "wall_cap_s": 870,
+    "automatic_retries": 0,
+    "original_failed120_retained": true,
+    "old13_ledgers_unchanged": true,
+    "original480_unallocated_not_used": true,
+    "Q3_two_actual_attempts_combined_calls": 240,
+    "older13_not_included_in240": true,
+    "refunds": 0,
+    "other_backend_calls": 0,
+    "formal_calls": 0
+  },
+  "preparation": {
+    "first_preflight_failure_retained": true,
+    "resolved_before_any_model_or_reservation": true
+  },
+  "unstarted": {
+    "other_four_backends": true,
+    "formal35_queries": true
+  },
+  "evidence_provenance": {
+    "owner_handoff_sha256": "69f137a75cd6d2e29b6c0d93db7a59f484f3cf98cf7481e06446c04c81c844f2",
+    "offline_actual120_summary_sha256": "6be2d8bfc95cf1e84e7db3bc94bf3f1c3a3550625d0d58015aaef2f2ad0576e4",
+    "independent_terminal_summary_sha256": "6d0671d54e9e44be40bba994d1f5aa60013cdb0025bf69dd211267cd42bea52e",
+    "root_readonly_reconciliation_sha256": "f9bfcef5d98c67522ff0b499e2b2ad5e2347c2d108711065384f34d730e6032f",
+    "raw_archives_logs_server_information_credentials_and_local_paths_published": false
+  },
+  "publication_only": {
+    "new_server_or_GPU_tests": 0,
+    "production_changes": 0,
+    "budget_actions": 0,
+    "main_changes": 0
+  }
+}

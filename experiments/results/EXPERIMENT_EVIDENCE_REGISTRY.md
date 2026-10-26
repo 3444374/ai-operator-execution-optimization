@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-26历史证据迁入：[2026-10-20 Native Q3失败资格与独立复验](diagnostics/lotus_records_local_model_20261016/README.md)。原生产85133c6f、两次独立120调用；旧campaign失败不改，新复验仅Native单臂通过，质量不足和缺失现场仍保留。不导入records实现，不认证后来九配置或稳定性能。
+
 2026-10-16：[Animals观测模式CPU回归](diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)。紧凑body留证与原SDK／Daft连续查询按新源码单列，旧模型与RSS证据保持原身份。
 
 2026-10-15：[固定main Movie／Animals连续运行](diagnostics/main_queries_20261015/README.md#long-run)。
