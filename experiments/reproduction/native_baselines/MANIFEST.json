@@ -662,7 +662,11 @@
         "code/src/serving/backends/async_engine_process.py": "historical_sources/28a7bc9b/code/src/serving/backends/async_engine_process.py",
         "code/src/serving/backends/vllm_async_engine.py": "historical_sources/28a7bc9b/code/src/serving/backends/vllm_async_engine.py",
         "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py",
-        "code/src/scheduling/runtime/calibration.README.md": "historical_sources/28a7bc9b/code/src/scheduling/runtime/calibration.README.md"
+        "code/src/scheduling/runtime/calibration.README.md": "historical_sources/28a7bc9b/code/src/scheduling/runtime/calibration.README.md",
+        "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
+        "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
       },
       "default_selected": false
     },
@@ -1353,7 +1357,11 @@
         "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py",
         "code/src/execution_provider/adapters/lotus_records_static.py": "historical_sources/28a7bc9b/code/src/execution_provider/adapters/lotus_records_static.py",
         "code/src/experiments/movie_matrix_support.py": "historical_sources/28a7bc9b/code/src/experiments/movie_matrix_support.py",
-        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py"
+        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py",
+        "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
+        "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
       },
       "default_selected": false
     },
@@ -2054,7 +2062,11 @@
         "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py",
         "code/src/execution_provider/adapters/lotus_records_static.py": "historical_sources/28a7bc9b/code/src/execution_provider/adapters/lotus_records_static.py",
         "code/src/experiments/movie_matrix_support.py": "historical_sources/28a7bc9b/code/src/experiments/movie_matrix_support.py",
-        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py"
+        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py",
+        "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
+        "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
       },
       "default_selected": false
     },
@@ -2756,7 +2768,11 @@
         "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py",
         "code/src/execution_provider/adapters/lotus_records_static.py": "historical_sources/28a7bc9b/code/src/execution_provider/adapters/lotus_records_static.py",
         "code/src/experiments/movie_matrix_support.py": "historical_sources/28a7bc9b/code/src/experiments/movie_matrix_support.py",
-        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py"
+        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py",
+        "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
+        "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
       },
       "default_selected": false
     },
@@ -3462,7 +3478,11 @@
         "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py",
         "code/src/execution_provider/adapters/lotus_records_static.py": "historical_sources/28a7bc9b/code/src/execution_provider/adapters/lotus_records_static.py",
         "code/src/experiments/movie_matrix_support.py": "historical_sources/28a7bc9b/code/src/experiments/movie_matrix_support.py",
-        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py"
+        "code/tests/experiments/test_movie_calibration_cli.py": "historical_sources/28a7bc9b/code/tests/experiments/test_movie_calibration_cli.py",
+        "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
+        "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
       },
       "default_selected": false
     }

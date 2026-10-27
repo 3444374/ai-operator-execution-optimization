@@ -1,5 +1,22 @@
 # 实验与机制证据台账
 
+<a id="animals-q7-shared-media-native128"></a>
+## 2026-10-27：原 Animals Q7 的共享图像表示正常功能
+
+运行`q7-native128-retain-895c3a-20261027-r1`及独审对应冻结来源
+`9dcfe589d550bf782a8fd4440af18a22aaf5f59b02b7726f13f43222407cdc82`（1112份code文件，非Git提交），
+基于`2cc7b340`；当前main适配单独检查，不改写原运行来源。Qwen2-VL-2B-Instruct固定revision
+`895c3a49bc3fa70a340399125c650a463535e71c`，仅LOTUS native、64原图、128 MiB URI保留单臂：
+128请求全部success/stop，无unknown或重试；编码64次、命中64次。最后消费者正常结束后保留字节、活跃借用和待消费项均为0。
+
+原SQL evaluator最终City集合正确，不表示逐图Species判断全对：Species有23个假阴性、4个假阳性，
+各City仍保留真阳性。没有关闭保留的性能对照；真实unknown／abort未测试，逻辑引用归还不证明RSS或GPU内存回收，
+也不认证其他执行后端或通用依赖图编排。默认关闭，开启须显式配置且核对实际模型、生成和图像处理身份。
+
+原始材料留在仓库外，按运行ID及摘要取得；216196618字节的请求原件留在原机器，SHA256为
+`2ce486fe4b9d2a9e84b00327510cd223b80c515a161f78bdc4331a32360960cd`，不进入公开代码。
+运行交接摘要SHA256为`a8b7c7e2264a6c5247400fd3eea175dbdaed550d7907ceda17d075240401b8cd`，独审回执SHA256为`223ee8e9855ed219676f58215b3061d83255aac7c495b93f65b0bc5b5b48cdec`。
+
 <a id="records-dynamic-sad24-621"></a>
 ## 2026-10-27：显式动态入口的短查询与提示复用
 

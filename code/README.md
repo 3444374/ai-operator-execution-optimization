@@ -210,6 +210,8 @@ now lives under `code/src/`:
   row-cap-first placement candidate sharing the same validation and ordering.
 - `serving/backends/`: 公共 backend 合同、embedding backend 与
   completion/async/Ollama backend；包入口保持原公开 import 不变。
+- `modalities/image/shared_media.py`: finite image URI retention by source/profile and declared consumers;
+  LOTUS observation stays in `baselines/image/lotus_media_observation.py`, without a separate scheduler.
 - `modalities/image/`: engine-independent image batch/result semantics, a lazy Daft
   PostgreSQL image source, CPU CLIP preprocessing, and a tensor-only GPU actor.
   The actor owns no hidden batching; organizer/scheduler remains the batching
