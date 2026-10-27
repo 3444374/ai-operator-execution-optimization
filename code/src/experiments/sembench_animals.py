@@ -1,4 +1,4 @@
-"""One bounded Animals Q1 qualification using the existing LOTUS executors."""
+"""Bounded Animals Q1 or explicit Q7 using the existing LOTUS executors."""
 
 import argparse
 import base64
@@ -25,6 +25,7 @@ from src.baselines.image.sembench_animals import (
     classification_audit,
     evaluate_original,
     run_original_query,
+    verify_animals_checkout,
 )
 from src.baselines.text.frameworks.lotus_pg import observe_filter_rows
 from src.baselines.text.frameworks.native_calls import NativeCallExecutor
@@ -117,6 +118,9 @@ def run_query(
     core_input_bytes=None,
     core_ray_window_bytes=None,
     core_ray_object_bytes=None,
+    query_id=1,
+    media_retention_bytes=0,
+    media_profile=None,
 ):
     """No constructor warmup; full HTTP body copies are qualification-only."""
     if arm not in ("lotus-native", "daft", "ray-data", "semloom"):
@@ -127,6 +131,23 @@ def run_query(
         raise ValueError("Animals request allowance must be between 2 and 16")
     if type(max_tokens) is not int or not 1 <= max_tokens <= 8192:
         raise ValueError("Animals generation allowance must be between 1 and 8192")
+    if type(query_id) is not int or query_id not in (1, 7):
+        raise ValueError("Animals supports original Q1 or explicit Q7")
+    if type(media_retention_bytes) is not int or not 0 <= media_retention_bytes <= 256 * 1024 * 1024:
+        raise ValueError("media retention must be between zero and 256 MiB")
+    if query_id == 1 and (media_retention_bytes or media_profile is not None):
+        raise ValueError("media observation/retention is an explicit Q7 option")
+    if query_id == 7:
+        if (type(media_profile) is not dict or set(media_profile) != {"model", "generation", "service_preprocess"}
+                or type(media_profile["model"]) is not dict
+                or media_profile["model"].get("id") != model.model_id
+                or not media_profile["model"].get("revision")
+                or media_profile["generation"] != dict(temperature=0, top_p=1, max_tokens=max_tokens, retries=0)
+                or type(media_profile["service_preprocess"]) is not dict
+                or not media_profile["service_preprocess"].get("processor_revision")
+                or not media_profile["service_preprocess"].get("parameters")):
+            raise ValueError("Q7 requires exact model/generation/service processor profile for both arrangements")
+        media_profile = json.loads(json.dumps(media_profile, allow_nan=False))
     if arm == "semloom":
         if concurrency > 8:
             raise ValueError("Animals Core request allowance exceeds its eight Ray CPUs")
@@ -147,14 +168,22 @@ def run_query(
                 "Animals Core requires explicit compatible item/input and Ray window/object bytes"
             )
     preflight = dataset.preflight()
+    if query_id == 7:
+        preflight["q7_source_sha256"] = verify_animals_checkout(dataset.checkout, 7)
     validate_source(message_profile=IMAGE_TEXT_PROFILE)
     root = Path(output)
     new_private_directory(root)
     write_private_json(root / "preflight.json", preflight)
     rows = dataset.read()["rows"]
-    ledger = AttemptLedger.create(root / "attempts.jsonl", AttemptBudget("animals-q1", len(rows)))
+    query_name = f"animals-q{query_id}"
+    stage_count = 2 if query_id == 7 else 1
+    ledger = AttemptLedger.create(root / "attempts.jsonl", AttemptBudget(query_name, stage_count * len(rows)))
     expected, actual = Counter(), Counter()
     decisions, prompts = [], []
+    stages = []
+    active_stage = None
+    prompt_occurrences = {}
+    media = None
     lock = threading.Lock()
     capture_bodies = observation_mode == "qualification"
     started = time.monotonic_ns()
@@ -173,19 +202,31 @@ def run_query(
         concurrency=concurrency,
         warmup_model_calls=0,
         query_count=1,
+        query_id=query_id,
+        expected_attempts=stage_count * len(rows),
+        stages=stages,
+        media_retention_bytes=media_retention_bytes,
         upstream_lotus_version="1.1.3",
         selected_lotus_version="1.2.4",
-        execution_scope="original Q1 on finite external ImageArray; no PostgreSQL claim",
+        execution_scope=f"original Q{query_id} on finite external ImageArray; no PostgreSQL claim",
         query_tail_quantiles="unavailable: one complete query",
         observation_scope="matched proxy, request/response digests and status; mode-selected body capture; message identity checks",
         full_query_scope="source verification/read, original query/import, native graph and complete result",
-        constructor_warmup="not invoked; unbound original Q1 method with caller-configured LM",
+        constructor_warmup=f"not invoked; unbound original Q{query_id} method with caller-configured LM",
     )
     failure = None
     try:
         with ExitStack() as stack:
             requests = stack.enter_context(open_private_text(root / "requests.jsonl"))
             responses = stack.enter_context(open_private_text(root / "responses.jsonl"))
+            if query_id == 7:
+                from src.baselines.image.lotus_media_observation import LotusMediaObservation
+                media_events = stack.enter_context(open_private_text(root / "media-events.jsonl"))
+                def record_media(value):
+                    media_events.write(json.dumps(value) + "\n")
+                media = LotusMediaObservation(rows, [f"filter-{i}" for i in range(stage_count)],
+                    retention_bytes=media_retention_bytes, profile=media_profile, record=record_media)
+                stack.enter_context(media.observe())
 
             def before(_route, body):
                 value = json.loads(body)
@@ -205,6 +246,13 @@ def run_query(
                         bytes=len(body),
                         body_sha256=body_sha256,
                     )
+                    if query_id == 7:
+                        if active_stage is None:
+                            raise ValueError("Q7 request outside an original active Filter")
+                        candidates = prompt_occurrences[(active_stage, digest)]
+                        record.update(stage_id=active_stage, source_occurrences=candidates,
+                            source_row_id=candidates[0] if len(candidates) == 1 else None,
+                            identity_scope="unique message identity or explicit equivalent-occurrence set")
                     if capture_bodies:
                         record["body"] = value
                     requests.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -223,7 +271,7 @@ def run_query(
 
             gateway = stack.enter_context(
                 ObservationGateway(
-                    routes=(GatewayRoute("animals-q1", "model", model.endpoint_url),),
+                    routes=(GatewayRoute(query_name, "model", model.endpoint_url),),
                     trace_path=root / "http-trace.jsonl",
                     request_timeout_s=model.timeout_ms / 1000,
                     before_forward=before,
@@ -233,7 +281,7 @@ def run_query(
             )
             routed = replace(
                 model,
-                endpoint_url=gateway.endpoint_url("animals-q1", "model"),
+                endpoint_url=gateway.endpoint_url(query_name, "model"),
                 bearer_token=model.bearer_token or "local-fixture",
             )
             lm = configure_lm(routed, concurrency, max_tokens, tokenizer_path)
@@ -291,7 +339,7 @@ def run_query(
                 executor = LotusNativeBatchExecutor(
                     native,
                     routed,
-                    query_id="animals-q1",
+                    query_id=query_name,
                     operator_id="filter",
                     call_limits=limits,
                     message_profile=IMAGE_TEXT_PROFILE,
@@ -353,7 +401,7 @@ def run_query(
                 executor = LotusBatchExecutor(
                     execution,
                     routed,
-                    query_id="animals-q1",
+                    query_id=query_name,
                     operator_id="filter",
                     call_limits=limits,
                     message_profile=IMAGE_TEXT_PROFILE,
@@ -361,39 +409,91 @@ def run_query(
                 )
 
             def record_prompts(values):
-                if prompts or [p["row_id"] for p in values] != [r["row_id"] for r in rows]:
+                if ((query_id == 1 and prompts) or
+                        (query_id == 7 and (active_stage is None or stages[-1].get("prompt_rows") is not None))
+                        or [p["row_id"] for p in values] != [r["row_id"] for r in rows]):
                     raise ValueError(
                         "Animals requires one original LM message per source occurrence"
                     )
-                prompts.extend(values)
+                if query_id == 1:
+                    prompts.extend(values)
                 expected.update(content_digest(p["messages"]) for p in values)
+                if query_id == 7:
+                    stages[-1]["prompt_rows"] = len(values)
+                    stages[-1]["prompts_ready_monotonic_ns"] = time.monotonic_ns()
+                    for p in values:
+                        prompt_occurrences.setdefault((active_stage, content_digest(p["messages"])), []).append(p["row_id"])
                 if observation_mode == "qualification":
                     # Optional extra source/pixel verification; performance skips this second read.
                     dataset.read()
+
+            def begin_filter(identities):
+                nonlocal active_stage
+                if active_stage is not None or len(stages) >= stage_count or identities != [r["row_id"] for r in rows]:
+                    raise ValueError("Q7 requires exactly two complete sequential original Filters")
+                active_stage = f"filter-{len(stages)}"
+                stages.append(dict(stage_id=active_stage, started_monotonic_ns=time.monotonic_ns(),
+                    attempts_before=ledger.attempts, prompt_rows=None))
+                if executor is not None:
+                    # Each synchronous call closes its existing flow before the next.
+                    executor.operator_id = active_stage
+                media.begin(active_stage, identities)
+
+            def record_decisions(values):
+                if active_stage is None or [i for i,_ in values] != [r["row_id"] for r in rows]:
+                    raise ValueError("Q7 Filter decisions changed source occurrences")
+                stages[-1]["decisions"] = values
+                decisions.extend(values)
+
+            def finish_filter(_identities):
+                nonlocal active_stage
+                stage = stages[-1]
+                stage["attempts_after"] = ledger.attempts
+                if stage.get("prompt_rows") != len(rows) or stage["attempts_after"] - stage["attempts_before"] != len(rows):
+                    raise ValueError("Q7 Filter attempts do not cover every original occurrence")
+                stage["terminal_monotonic_ns"] = time.monotonic_ns()
+                if executor is not None:
+                    stage["executor_close_report"] = (dict(lotus_cleanup_errors=[
+                        dict(phase=p, error_type=type(e).__name__) for p,e in executor.last_cleanup_errors])
+                        if arm == "semloom" else executor.last_close_report)
+                media.finish()
+                active_stage = None
 
             query_started = time.monotonic_ns()
             try:
                 with (
                     lotus_executor(lm, executor),
-                    observe_filter_rows(decisions.extend, record_prompts),
+                    (observe_filter_rows(record_decisions, record_prompts,
+                        before_filter=begin_filter, after_filter=finish_filter) if query_id == 7
+                     else observe_filter_rows(decisions.extend, record_prompts)),
                 ):
-                    result = run_original_query(dataset.checkout, dataset.frame)
+                    result = (run_original_query(dataset.checkout, dataset.frame, query_id=7) if query_id == 7
+                              else run_original_query(dataset.checkout, dataset.frame))
             finally:
                 summary["full_query_seconds"] = (time.monotonic_ns() - query_started) / 1e9
-            if actual != expected or sum(actual.values()) != len(rows):
+            if actual != expected or sum(actual.values()) != stage_count * len(rows):
                 raise ValueError(
                     "Animals full-query model requests do not cover every original input"
                 )
-            if (
+            if query_id == 7:
+                if len(stages) != 2 or active_stage is not None:
+                    raise ValueError("original Q7 did not finish both Filters")
+                cities = {r["row_id"]: r["City"] for r in rows}
+                retained = [{cities[i] for i,kept in s["decisions"] if kept} for s in stages]
+                if list(result.columns) != ["city"] or result["city"].tolist() != sorted(retained[0] & retained[1]):
+                    raise ValueError("original Q7 City intersection differs from its Filter decisions")
+                media.close()
+                summary["media"] = media.snapshot()
+            elif (
                 list(result.columns) != ["count(*)"]
                 or len(result) != 1
                 or int(result.iloc[0, 0]) != sum(v for _, v in decisions)
             ):
                 raise ValueError("original Animals COUNT differs from its Filter decisions")
-            summary["classification_audit"] = classification_audit(rows, decisions)
-            summary["quality"] = evaluate_original(
-                dataset.checkout, result, dataset.frame(references=True)
-            )
+            if query_id == 1:
+                summary["classification_audit"] = classification_audit(rows, decisions)
+            summary["quality"] = (evaluate_original(dataset.checkout, result, dataset.frame(references=True), query_id=7)
+                if query_id == 7 else evaluate_original(dataset.checkout, result, dataset.frame(references=True)))
             summary["model_calls"] = ledger.attempts
             summary["lm_stats"] = asdict(lm.stats)
             trace = gateway.snapshot()
@@ -426,6 +526,12 @@ def run_query(
     except BaseException as error:
         failure = error
     finally:
+        if media is not None:
+            summary["media"] = media.snapshot()
+            if not media.closed and failure is not None:
+                # Preserve unconfirmed representation ownership for the caller;
+                # an exception is not evidence of an async consumer's terminal state.
+                failure._semloom_media_owner = media
         try:
             summary["model_calls"] = ledger.attempts
         except BaseException as error:
@@ -476,6 +582,9 @@ def main(argv=None):
     parser.add_argument("--observation-mode", choices=("qualification", "performance"))
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--max-tokens", type=int, default=8192)
+    parser.add_argument("--query", type=int, choices=(1, 7), default=1)
+    parser.add_argument("--media-retention-bytes", type=int, default=0)
+    parser.add_argument("--media-profile", type=Path)
     parser.add_argument("--ray-temp-root", type=Path)
     parser.add_argument("--core-request-bytes", type=int)
     parser.add_argument("--core-input-bytes", type=int)
@@ -486,7 +595,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     dataset = AnimalsDataset(args.checkout, args.manifest, args.manifest_digest)
     if args.preflight:
-        print(json.dumps(dataset.preflight(), indent=2))
+        result = dataset.preflight()
+        if args.query == 7:
+            result["q7_source_sha256"] = verify_animals_checkout(args.checkout, 7)
+        print(json.dumps(result, indent=2))
         return 0
     if any(
         v is None
@@ -522,6 +634,9 @@ def main(argv=None):
             core_input_bytes=args.core_input_bytes,
             core_ray_window_bytes=args.core_ray_window_bytes,
             core_ray_object_bytes=args.core_ray_object_bytes,
+            query_id=args.query,
+            media_retention_bytes=args.media_retention_bytes,
+            media_profile=json.loads(args.media_profile.read_text()) if args.media_profile else None,
         )
     print(
         json.dumps(

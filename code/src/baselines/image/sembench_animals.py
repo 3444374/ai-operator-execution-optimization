@@ -1,4 +1,4 @@
-"""Pinned Animals Q1, its original aggregate evaluator, and frozen image inputs."""
+"""Pinned Animals Q1/Q7, original evaluators, and frozen image inputs."""
 
 from dataclasses import asdict, dataclass
 import hashlib
@@ -36,7 +36,9 @@ def upstream_bytes(checkout, relative):
     return raw
 
 
-def verify_animals_checkout(checkout):
+def verify_animals_checkout(checkout, query_id=1):
+    if type(query_id) is not int or query_id not in (1, 7):
+        raise ValueError("only original Animals Q1/Q7 are supported")
     root = verify_checkout(checkout)
     # Include the sparse SQL path: the shared Movie verifier only covers Movie SQL.
     dirty = subprocess.check_output(
@@ -57,7 +59,8 @@ def verify_animals_checkout(checkout):
     )
     if dirty:
         raise ValueError("Animals SQL checkout is modified")
-    return {name: hashlib.sha256(upstream_bytes(root, name)).hexdigest() for name in SOURCE_FILES}
+    files = SOURCE_FILES + (("files/animals/query/gold_sql/Q7.sql",) if query_id == 7 else ())
+    return {name: hashlib.sha256(upstream_bytes(root, name)).hexdigest() for name in files}
 
 
 def image_identity(path):
@@ -158,9 +161,9 @@ class AnimalsDataset:
         return frame
 
 
-def run_original_query(checkout, load_images):
-    """Call the unchanged upstream Q1; its constructor warmup is intentionally separate."""
-    verify_animals_checkout(checkout)
+def run_original_query(checkout, load_images, query_id=1):
+    """Call unchanged upstream Q1 or explicit Q7, without constructor warmup."""
+    verify_animals_checkout(checkout, query_id)
     module = _load(
         checkout,
         "sembench_animals_lotus",
@@ -175,15 +178,15 @@ def run_original_query(checkout, load_images):
             raise ValueError("reference Species must not enter the semantic query")
         return frame
 
-    return module.LotusRunner._execute_q1(SimpleNamespace(load_data=load))
+    return getattr(module.LotusRunner, f"_execute_q{query_id}")(SimpleNamespace(load_data=load))
 
 
-def evaluate_original(checkout, result, labeled_images):
-    """Execute original Species SQL and the original Animals aggregation evaluator."""
+def evaluate_original(checkout, result, labeled_images, query_id=1):
+    """Execute original Species SQL and the original query-specific evaluator."""
     import duckdb
 
-    verify_animals_checkout(checkout)
-    sql = upstream_bytes(checkout, SOURCE_FILES[-1]).decode()
+    verify_animals_checkout(checkout, query_id)
+    sql = upstream_bytes(checkout, f"files/animals/query/gold_sql/Q{query_id}.sql").decode()
     with duckdb.connect() as connection:
         connection.register("ImageData", labeled_images)
         truth = connection.execute(sql).fetchdf()
@@ -191,7 +194,10 @@ def evaluate_original(checkout, result, labeled_images):
         checkout, "sembench_animals_evaluator", "src/scenario/animals/evaluation/evaluate.py"
     )
     evaluator = object.__new__(module.AnimalsEvaluator)
-    metric = evaluator._evaluate_q1(result, truth)
+    metric = getattr(evaluator, f"_evaluate_q{query_id}")(result, truth)
+    if query_id == 7:
+        return dict(original_metric=asdict(metric), ground_truth=sorted(truth.iloc[:, 0].tolist()),
+                    predicted=result.iloc[:, 0].tolist(), sembench_commit=SEMBENCH_COMMIT)
     return dict(
         original_metric=asdict(metric),
         ground_truth=int(truth.iloc[0, 0]),

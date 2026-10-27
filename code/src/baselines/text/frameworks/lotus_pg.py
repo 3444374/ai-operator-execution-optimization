@@ -44,7 +44,7 @@ def load_reviews(connection, inputs):
 
 
 @contextmanager
-def observe_filter_rows(record, record_prompts):
+def observe_filter_rows(record, record_prompts, *, before_filter=None, after_filter=None):
     """Record native operator input/kept IDs; preserve its exact arguments/result."""
     from lotus.sem_ops.sem_filter import SemFilterDataframe
     from lotus.models import LM
@@ -54,6 +54,8 @@ def observe_filter_rows(record, record_prompts):
     def observed(accessor,*args,**kwargs):
         nonlocal active_ids
         original_ids = list(accessor._obj['_execution_row_id'])
+        if before_filter is not None:
+            before_filter(original_ids)
         active_ids = original_ids
         try:
             result = original(accessor,*args,**kwargs)
@@ -63,6 +65,8 @@ def observe_filter_rows(record, record_prompts):
         if len(set(original_ids)) != len(original_ids) or not kept <= set(original_ids):
             raise ValueError('native Filter row identities are ambiguous')
         record([(identity,identity in kept) for identity in original_ids])
+        if after_filter is not None:
+            after_filter(original_ids)
         return result
     def observed_lm(lm,messages,*args,**kwargs):
         if active_ids is None or len(messages)!=len(active_ids):

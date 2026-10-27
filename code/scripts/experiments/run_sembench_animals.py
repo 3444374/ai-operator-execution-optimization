@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded original SemBench Animals Q1 adapter."""
+"""Run bounded original Animals Q1, or explicit Q7 with retention off by default."""
 
 from src.experiments.sembench_animals import main
 

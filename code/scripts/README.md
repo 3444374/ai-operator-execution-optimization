@@ -81,6 +81,14 @@ Ray臂使用新的短`--ray-temp-root`。模型逐请求超时有限且不超过
 不复制完整请求或响应body；`qualification`额外保存请求JSON与原始响应base64，供完整离线核验。
 两种模式保留相同消息身份、预算、HTTP透传、逐行判定、COUNT、原评价及观测HTTP峰值；
 `summary.body_capture`明确记录选择。performance仍解析消息以做身份校验，其紧凑记录不能独立重放完整body。
+显式 `--query 7` 执行原双 Filter 和 City 集合交集；64图每阶段64请求，总attempt上限128，默认仍为Q1。
+Q7须提供`--media-profile`：model的id/revision、generation的temperature=0/top_p=1/max_tokens（与CLI一致）/retries=0，
+以及service_preprocess的processor_revision和parameters；运行方须从实际服务配置核对这些值。
+`--media-retention-bytes`默认0（关闭），固定128 MiB用134217728。关闭与开启均保留相同源校验、stage/row/attempt及原SDK/parser/evaluator。
+仅计保留的URI payload，不含LOTUS数组、编码临时量、SDK副本、RSS或HBM。异常未确认终结时，
+`_semloom_media_owner`随原异常返回；只能明确放弃未开始的消费者，不能把active/unknown写成已释放。
+[原冻结源码的真实native Q7正常功能及边界](../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#animals-q7-shared-media-native128)。
+
 资源失败保留质量与结果，账本收尾不可读时计数标为unavailable，不覆盖原查询异常或重开预算。
 [实际资格与适用边界](../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
 
