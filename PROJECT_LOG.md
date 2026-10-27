@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-27：语义依赖与数据存活准入归并现有方案
+
+补充分析全文核对后，将潜在后继／合法ready、服务／排队／空间责任、共享引擎容量、新源扩张／存量排空和消费者释放条件归入[既有架构](experiments/plans/系统架构.md#semantic-liveness-admission-contract)与[方法采用条件](docs/research/优化方法依据.md#semantic-liveness-admission-basis)，不新造方案或生产策略。Ray Data v5／Kalypso v2已有覆盖，新增收益仅为待证假设。资源线[本地观测方案及91项CPU](experiments/plans/数据组织.md#dag-resource-observation)已完成；组合线76测试／171子用例及37组main差分另列，有限F/M与关系屏障Extract的实现不混作GPU全覆盖，真实token仍仅F→M。该专项的真实后端库与GPU资源观测未做；当前只CPU离线，不预加载／迁移，不恢复旧预算。保留prioritization与token负结果，未叠加资源8文件补丁、未改源码／实验原件或发布。
+
 ## 2026-10-27：补齐token准入门控与停止状态
 
 [49d候选C64对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)完成1817次成功调用（1777正式／40预热），W阻塞及确认终态后的恢复机制成立；Map输出／实际工作量严格可比性未过，按原门控停止，不能称性能优化通过。63个观测自有身份与GPU／RPC／租约已清理；前置取消unknown、旧冷导入失败及未用领取不改写。main仍是已接纳的整批有限链，逐记录Actor／IPC和token候选未接纳；本次仅补当前状态，历史日志与原始实验保留，无新模型运行。
