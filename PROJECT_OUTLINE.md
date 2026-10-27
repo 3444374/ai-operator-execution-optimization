@@ -401,7 +401,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 - 2026-10-25八配置文本Q1/Q2/Q3已完成72个正式任务组，Kalypso独立波次已完成9个正式组；不能继续写“其他臂／正式矩阵未跑”。八配置五份实际执行快照为67d6f801、e7090055、65114360、79e8f103、5007e95b；Kalypso作者来源05024f0，提示、parser和引擎不同，不能据同任务结果断言纯调度胜负。上述实测原件及具名快照尚未随本批文档发布，完整重复、质量、失败及生命周期仍以各自固定原件为准；这些短指纹不是Git提交。公开[历史Movie候选](https://github.com/3444374/ai-operator-execution-optimization/tree/a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05)与[Q3证据分支](https://github.com/3444374/ai-operator-execution-optimization/tree/452505e80f7d13dcbfbc838fe7fae6f127790b62)保留records开发历史，不等于这些最终实测快照；main按PR52／56选择性接纳维护代码，未整支回灌旧历史。
 - 旧a5035105的Core/Ray/Daft各有M→F→E、E→M真实小单元，合27次模型调用；它们不认证当前九配置的链性能或精确F→M→E。main已有MethodRun与消费者结果计费，main已接纳有限LOTUS链的fused阶段循环，continuation／Async接合及非空后继的新模型资格仍待验证。
 - 旧Animals64四路径图文结果与CLIP检索保留各自资格；新records来源的image_url及媒体列仍被文本校验拒绝，不能称当前本地模型配置已接通图像。
-- FIFO隔离候选已有极小真实引擎方法资格及一次API层混阶段观察；不证明kernel并行、稳定加速或main已接纳。token r5的direct-engine功能资格也已完成，但绕过Actor/IPC、原parser/evaluator，原records完整budget接线仍未完成；不能把诊断资格称完整查询收益。相关原件尚未随本批文档发布。ee39并发反事实与B/W/C工程诊断由唯一执行者分别维护，本批不启动或重复分配模型工作。
+- main已接纳整批有限链；逐记录FIFO／token仍是独立候选。旧r5 direct-engine资格不转授后续Actor／IPC；[49d候选](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)已取得真实接线与W阻塞／恢复证据，C64本轮1817调用成功、资源清理完成，但Map输出／实际工作量严格可比性门控失败，首门控后未续跑性能矩阵。每格query n=1，不称kernel并行、稳定收益或main已接纳；原取消unknown与旧失败保持。ee39及B/W/C其他诊断仍按各自固定来源解释，本批不启动模型工作。
 
 | 顺序与对象 | 要回答的问题 | 通过或收窄条件 |
 |---|---|---|

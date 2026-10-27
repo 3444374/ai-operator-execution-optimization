@@ -5,6 +5,8 @@ CSV／本地records环境预检按所选能力运行，默认core不带PostgreSQ
 [后继优先及反序状态](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)：当前负载两轮均无收益，停止简单策略自动扩测、默认FIFO；runner r3独审已完成，559份生产运行文件未变，旧取消unknown保留。
 records三入口小资格两轮累计14次成功；[G3](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)的Ray／Daft／Kalypso业务通过，两个IMLane入口该轮初始化失败、业务0；后续[短RPC六调用](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)正常资格通过，旧失败／unknown保留。[e2bc零模型部署V0](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-e2bc-v0)通过；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)已合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`。模型实测仍归45d，非空链／cascade、正例及稳定性能未获资格。
 
+[独立49d逐记录／token候选](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)已取得Actor／IPC正常路径与真实W阻塞／恢复证据；C64本轮1817成功调用、资源已清理，但Map输出严格可比性门控失败，停止后续性能矩阵。该内容指纹基于main66754a8f，未进main；旧取消unknown保留，不将机制成立写成完整质量／性能通过。
+
 文本Map工程诊断的[当前状态与已完成项](../experiments/plans/查询调优.md#completed-query-work)已按结果收敛：
 准备分段的PG／模型检查、尾块追加、观察隔离和worker／gateway复用均已执行；负结果选项保持原默认，
 新的RPC组合与准备共享仍是待证假设。下文逐次记录按原来源解释，不构成重新执行的清单。
