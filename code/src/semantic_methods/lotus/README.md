@@ -30,12 +30,12 @@ HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，�
 完整响应字节预算不等于进程 RSS 上限。接口和完整响应基础见[执行层说明](../../execution_provider/adapters/README.md)。
 
 <a id="finite-chain-result-index"></a>
-## 有限链共享结果关联索引（本地候选）
+## 有限链共享结果关联索引
 
-基于 main28a7bc9b 的独立候选在公共 `FusedChainBatch._infer` 使用七字段完整身份索引，
+公共 `FusedChainBatch._infer` 使用七字段完整身份索引，
 供 Core fused、Ray Data、Daft 的正常有限链路径共同调用，不是 SemLoom 策略独占优化。
 普通 SemBench Movie 单 Filter records／session 和 Core `record_local_sections` 不经过此 worker，
-不能把该候选当作这些入口的优化或成绩。
+不能把该实现当作这些入口的优化或成绩。
 
 标准 list／dict 及 str／int 身份结果只建一次临时索引；重复、缺失、外来及乱序结果保留原处理，
 声明顺序、raw 顺序、父调用、deepcopy 隔离、known usage 和 unknown 不变。
@@ -129,7 +129,7 @@ HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入
 <a id="completed-chain-audit-lifetime"></a>
 ## 有限链 worker 的可选审计引用释放
 
-本地候选在 `SemLoomRecordChainCore(..., release_completed_audit=True)` 和
+在 `SemLoomRecordChainCore(..., release_completed_audit=True)` 和
 `ray_data_lotus_chain.evaluate(..., release_completed_audit=True)`／
 `daft_lotus_chain.evaluate(..., release_completed_audit=True)` 提供相同 Python 选项，默认 `False`。
 三条路径共用一个 `FusedChainBatch`；选项会传入每个完整关系阶段，不改变原生组批、调度、模型调用或重试。
@@ -143,7 +143,7 @@ HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入
 通过重新绑定空列表释放自身引用，不清空其他消费者持有的列表。
 
 CPU 接线覆盖 Core 完整链及 Extract 阶段、Ray／Daft 构图到共享 worker 的参数传递和异常保留。
-原生图测试使用 CPU 构图替身，未证明目标系统的模型、跨进程或性能资格；
+原生图测试使用CPU构图替身，未证明真实Ray／Daft模型图或性能；同步IPC组件的Linux结果及当前整合边界见[状态说明](../../../INFRA_STATUS.md#shared-chain-ipc-scope)。
 仅减少 Python 引用持有，不证明 RSS、操作系统物理内存或 GPU KV 下降。
 
 <a id="record-local-sections"></a>
