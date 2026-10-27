@@ -44,6 +44,37 @@ def _phase_values(chain, expected, initial_parents, columns, allow_nulls):
     return chain, bindings, parents, _ordered_columns([], columns)
 
 
+def _associate_declared_results(declared, results):
+    # Index ordinary protocol identities once. Damaged/non-scalar identities
+    # retain the original equality path, including Python's bool/int aliases.
+    groups = None
+    if type(results) is list and all(
+        type(row) is dict and all(type(row.get(key)) in (str, int) for key in IDENTITY_FIELDS)
+        for rows in (declared, results) for row in rows
+    ):
+        groups, keys = {}, []
+        for row in results:
+            key = tuple(row[name] for name in IDENTITY_FIELDS)
+            keys.append(key)
+            groups.setdefault(key, []).append(row)
+        expected = {tuple(row[name] for name in IDENTITY_FIELDS) for row in declared}
+    for declaration in declared:
+        matches = (groups.get(tuple(declaration[key] for key in IDENTITY_FIELDS), [])
+                   if groups is not None else
+                   [row for row in results if type(row) is dict and all(
+                       row.get(key) == declaration[key] for key in IDENTITY_FIELDS)])
+        if len(matches) == 1:
+            parents = declaration["parent_call_ids"]
+            declaration.clear()
+            declaration.update(deepcopy(matches[0]), parent_call_ids=parents)
+    if groups is not None:
+        return [row for row, key in zip(results, keys)
+                if len(groups[key]) != 1 or key not in expected]
+    return [row for row in results if type(row) is not dict or sum(
+        type(other) is dict and all(other.get(key) == row.get(key) for key in IDENTITY_FIELDS)
+        for other in results) != 1 or not any(
+            all(row.get(key) == item[key] for key in IDENTITY_FIELDS) for item in declared)]
+
 
 class FusedChainBatch:
     """One native worker, with local methods and one private model process."""
@@ -132,17 +163,7 @@ class FusedChainBatch:
                 self.engine_spec, generation, self.control, self.deadline,
                 self.startup_timeout_s)
         results = self.engine.run_prepared(prepared, generation=generation)
-        for declaration in declared:
-            matches = [row for row in results if type(row) is dict and all(
-                row.get(key) == declaration[key] for key in IDENTITY_FIELDS)]
-            if len(matches) == 1:
-                parents = declaration["parent_call_ids"]
-                declaration.clear()
-                declaration.update(deepcopy(matches[0]), parent_call_ids=parents)
-        raw = [row for row in results if type(row) is not dict or sum(
-            type(other) is dict and all(other.get(key) == row.get(key) for key in IDENTITY_FIELDS)
-            for other in results) != 1 or not any(
-                all(row.get(key) == item[key] for key in IDENTITY_FIELDS) for item in declared)]
+        raw = _associate_declared_results(declared, results)
         try:
             _publish(self._audit_path, dict(audit, raw_results=raw))
         except BaseException as exc:

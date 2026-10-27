@@ -29,6 +29,24 @@ HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，�
 取消与本地 iterator 关闭不证明远端模型停止；未确认的工作保留原 ownership，执行 owner 负责 drain。
 完整响应字节预算不等于进程 RSS 上限。接口和完整响应基础见[执行层说明](../../execution_provider/adapters/README.md)。
 
+<a id="finite-chain-result-index"></a>
+## 有限链共享结果关联索引（本地候选）
+
+基于 main28a7bc9b 的独立候选在公共 `FusedChainBatch._infer` 使用七字段完整身份索引，
+供 Core fused、Ray Data、Daft 的正常有限链路径共同调用，不是 SemLoom 策略独占优化。
+普通 SemBench Movie 单 Filter records／session 和 Core `record_local_sections` 不经过此 worker，
+不能把该候选当作这些入口的优化或成绩。
+
+标准 list／dict 及 str／int 身份结果只建一次临时索引；重复、缺失、外来及乱序结果保留原处理，
+声明顺序、raw 顺序、父调用、deepcopy 隔离、known usage 和 unknown 不变。
+原有非标准身份／容器比较路径保留，不添加协议放行或静默补成功。
+这是通常哈希条件下的关联 CPU 优化，不保证所有输入严格线性；临时索引增加 O(n) Python 容器。
+模型调用、组批、屏障、审计写入、取消及结果租约未改变；[审计引用释放](#completed-chain-audit-lifetime)仍是独立且默认关闭的选项。
+
+[固定及随机差分](../../../tests/execution_provider/test_chain_result_index.py)包含100组固定种子案例、
+真实哈希碰撞、执行中取消与部分结果，关联操作计数与原循环作 RED／GREEN 对照。
+完整链、结果合同及迁移回归为 CPU 证据；没有新模型、RSS 或完整查询性能验证。
+
 <a id="filter-execution-boundary"></a>
 ## 当前 Filter 边界与目标入口
 
