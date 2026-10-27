@@ -8,7 +8,7 @@ Core完整fixture中位数0.864303→0.700667秒，少18.933%；把计数准备�
 
 ## 实现与适用条件
 
-按[查询调优清单](../../../plans/查询调优.md#同机共享预付计数的本地原型)继续已有观察成本归因。
+按[查询调优清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#同机共享预付计数的本地原型)继续已有观察成本归因。
 参考生产源码为main `53155f8c`，未改变Core、PG、Ray Map传输或模型服务；新增内容位于实验组件和本地诊断API。
 本机为Darwin arm64、Python3.12.6、SQLite3.45.3，未安装厂商库、连接服务器或调用外部服务。
 
@@ -108,7 +108,7 @@ HTTPX同步/异步与原生Ray的aiohttp session factory共用该入口。取消
 另以每调用方最多19次的有限producer验证两个进程：HTTPX19、aiohttp18，共用37个连续编号，owner结束后双方拒绝再领，句柄归还。
 两次SDK检查共74次替身POST，HTTP网络及模型请求0；该过程验证实际进程与SDK接入，不评价公平性或原生执行性能。
 
-Core侧按[新清单](../../../plans/查询调优.md#同机共享预付计数的本地原型)比较SQLite逐行计数与共享映射，
+Core侧按[新清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#同机共享预付计数的本地原型)比较SQLite逐行计数与共享映射，
 两臂都运行真实gateway/Core、Linux凭据、Ray、Daft/Arrow和同一本机HTTP服务，不用厂商替身API。
 固定全局活动4、两个生产Job、一个未派发后取消Job；每Job检查留存16行、测量留存64行，
 总输入12MiB、结果预留48/192MiB，4CPU/0GPU/128MiB Ray、一个HTTP actor、Daft批次4行、2MiB窗口、4MiB表引用。

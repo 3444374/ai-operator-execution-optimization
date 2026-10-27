@@ -1,43 +1,22 @@
 # SemLoom
 
-本项目研究**AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**，面向研究工作负载构建可扩展的语义数据执行层。
-PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、快照、权限及查询生命周期；SemLoom 通过中立接口组织外部执行，具体准备与模型设施按路径选择，
-与 Ray Data、Daft 等原生数据执行路径比较。合理调优的原生批处理、actor 池、背压与 CPU/GPU 流水是共同起点。
+研究 **AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**。
+SemLoom 面向 LOTUS 等语义 API 与数据库前端；各前端拥有语义与查询生命周期，执行层组织合法工作。
+近期问题与推进顺序由[项目大纲](PROJECT_OUTLINE.md)维护。
 
-近期优先加速**单查询／一批数据的完整执行**，检验能否少准备、少搬运、少做重复计算。
-端到端任务时间及有效吞吐是主要目标；GPU 利用率解释供给与等待，多查询共享属于后续场景。
-原生 tensor 路径可以研究表示、阶段工作量、准备位置、后继消费者和局部性；当前完整 HTTP 请求接点控制供给与路由，
-模型服务仍拥有其内部 tensor、KV 和计算调度。方向与顺序只在[总纲](PROJECT_OUTLINE.md)维护。
+## 内容与文档职责
 
-LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化；SemLoom 的目标底座保持 Daft 扫描／普通关系处理＋Ray Core／Actor，
-自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。[普通／级联 Filter 记录级接点](experiments/plans/数据组织.md#lotus-filter-data-execution)保留方法参照，后续检验[选择性有限链](experiments/plans/数据组织.md#selective-chain-plan)的合法推进与数据寿命，
-records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOTUS 核对；旧 request 冻结范围作参照，选择性复用，不作为新主链的必经依赖。
-并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
-records生产实现及CSV无需PG的能力预检已随[PR #52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)接纳；[PR #56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)另完成共享结果模块归位。原45d各轮小实机资格、e2bc零模型来源检查和迁移CPU检查保留各自身份，非空链、helper cascade、正例及稳定性能仍须另证，见[资格范围](code/INFRA_STATUS.md#pr52-g1-qualified-scope)。
-HTTP records流水保留为阶段实现与对照；main已接纳文本records、整批有限链与本地模型引擎。图文及逐记录FIFO／token接合仍须各自验证和接纳，不能由当前源码或旧实测转授，见[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)。
-
-共享链结果身份合同的首批单模块归位已接纳，见[代码状态](code/INFRA_STATUS.md#record-results-migration)；旧import保留，未迁移全仓命名空间或改变原生baseline执行。
-
-| 要查什么 | 权威入口 |
+| 要查什么 | 唯一维护位置 |
 |---|---|
-| 规则、术语与内容归属 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md)、[项目导航](PROJECT_INDEX.md) |
-| 方向、优先级与历史范围 | [项目总纲](PROJECT_OUTLINE.md) |
-| 实际能力与尚未验证项 | [代码状态](code/INFRA_STATUS.md)、[模块与命令](code/README.md) |
-| 目录职责、命名与接入设计 | [职责与来源状态](experiments/plans/系统架构.md#code-directory-boundaries)、[代码目录](code/README.md#目录结构)、[baseline交接单位](code/src/baselines/README.md#text-execution-boundaries) |
-| 最近邻、机制与文献版本 | [研究定位](docs/research/研究定位.md)、[方法依据](docs/research/优化方法依据.md)、[文献入口](docs/research/README.md) |
-| 实验设计与比较口径 | [方案](experiments/plans/README.md)、[对照规范](experiments/plans/reference/对照规范.md)、[报告核对](experiments/plans/reference/报告核对.md) |
-| 实际结果、全部重复与失败 | [结果导航](experiments/results/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 环境、数据及历史材料 | [运行手册](deploy/runtime/README.md)、[数据](data/README.md)、[文档](docs/README.md)、[图资产](figures/README.md) |
-| 变更与来源恢复 | [项目日志](PROJECT_LOG.md) |
+| 长期行为与领域术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |
+| 研究内容与近期顺序 | [项目大纲](PROJECT_OUTLINE.md) |
+| 已接纳能力与未验证范围 | [代码状态](code/INFRA_STATUS.md) |
+| 实现、接口与命令 | [代码入口](code/README.md)、[脚本入口](code/scripts/README.md)，再进入对应模块 |
+| 架构与实验设计 | [方案入口](experiments/plans/README.md)、[对照规范](experiments/plans/reference/对照规范.md) |
+| 运行身份、共享证据与结论 | [证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)、[结果导航](experiments/results/README.md)；完整数字、重复与失败只在主报告维护 |
+| 文献与方法依据 | [研究入口](docs/research/README.md)、[研究定位](docs/research/研究定位.md)、[优化方法依据](docs/research/优化方法依据.md) |
+| 环境与数据 | [运行手册](deploy/runtime/README.md)、[数据来源与导入](data/README.md) |
+| 图与历史材料 | [图资产](figures/README.md)、[历史文档](docs/README.md)、[项目日志](PROJECT_LOG.md) |
 
-Palimpzest 与 LOTUS 是平行的语义系统参照；其[研究定位](docs/research/研究定位.md#palimpzest-comparison)和[五组执行目标](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)区分完整系统与固定计划比较，目标接入仍需分别验证。
-
-main 的[原生CLIP查询入口](code/scripts/README.md#原生-lotus-clip-查询)保留RM、FAISS建库／检索及完整结果；
-[本批接纳记录](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)分列CPU接入、固定d2历史资格及main570四路径八臂40行严格单卡实机结果。
-历史外部文件CLIP、文本原Q2、PG路径与负结果保留各自身份。
-常驻完整查询、一次性启动／建库及逐查询原生重建的计时按[统一口径](experiments/plans/reference/对照规范.md#resident-query-timing)解释。
-
-main 已接纳统计修复、[Core／完整响应基础](code/src/execution_provider/adapters/README.md)和[LOTUS Movie／Animals 四臂](code/src/semantic_methods/lotus/README.md)，原提示、SDK解析和查询评价仍由LOTUS拥有；CLIP条件入口及main570实机资格从上方同题报告核对。
-[固定 main 的原Movie／Animals实际模型报告](experiments/results/diagnostics/main_queries_20261015/README.md)覆盖四臂完整查询，保留质量不足和单次边界。
-[可选vLLM部署资源](experiments/results/diagnostics/main_service_auto_20261015/README.md)按显式分配解析auto／数量，候选服务和main2041的单卡原Movie Q2／Animals Q1复验分列，未覆盖CLIP或多卡。
-Git 合并不等于性能、质量或新来源实测通过。分支与工作区安排由集成负责人维护，根入口不缓存临时支线清单。
+目录变化只更新直接入口；事实变化只更新拥有该事实的正文和实际受影响的引用，具体要求见根规则。
+旧目录、旧方案和原知识总汇的迁移表保留在[精简前导航](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/PROJECT_INDEX.md)，按历史日期查阅。

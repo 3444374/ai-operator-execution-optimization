@@ -6,7 +6,7 @@
 低准备成本的本地反例与真实负结果均保留，暂不推荐启用，原即时默认与追加选项的False默认保持。
 
 研究对象是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
-实施与已授权的服务器清单见[查询调优计划](../../../plans/查询调优.md#queued-preparation-coalescing)。
+实施与已授权的服务器清单见[查询调优计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#queued-preparation-coalescing)。
 
 ## 原记录与诊断选择
 

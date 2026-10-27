@@ -1,6 +1,6 @@
 # gateway复用、首行交付与真实模型复测
 
-依据[准备与首批处理计划](../../../plans/查询调优.md)，继续定位
+依据[准备与首批处理计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md)，继续定位
 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的查询准备成本。
 最初生命周期与PG交付诊断累计10,272次本地fixture POST、真实模型POST为0，执行层源码来自main的`11714bdc`。
 该阶段未修改生产执行层，复用现有`PersistentMapGateway`；后续新增计时的源码身份和4,112次fixture另列如下。
@@ -10,7 +10,7 @@ PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化�
 2026-10-01，执行下方已有真实记录所缺的热批次、账本与RPC细分。本轮源码为
 `8399b0843ee1877d750f06fdbc46c17e1064646a`，新增模型请求0；没有重放真实清单。
 源码818份摘要、Git受控文件状态、原PG库摘要及独立清理核对通过。
-运行计划见[准备调优计划](../../../plans/查询调优.md#热路径独立计时与无模型验证)，
+运行计划见[准备调优计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#热路径独立计时与无模型验证)，
 实现流程见[代码说明](../../../../code/README.md#当前-postgresql-文本-map-的执行流程)。
 
 PG18.3、Ray2.56.1、Daft0.7.21、Arrow24.0.0、psycopg3.3.4、httpx0.28.1，复用现成driver，

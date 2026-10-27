@@ -1,6 +1,6 @@
 # 文本Map准备成本诊断与worker复用
 
-2026-09-30。对应[调优计划](../../../plans/查询调优.md)。研究对象为
+2026-09-30。对应[调优计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md)。研究对象为
 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
 本轮定位了重复查询中Ray新worker启动的主要准备成本，并实现可选的服务拥有worker。

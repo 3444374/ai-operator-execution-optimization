@@ -7,7 +7,7 @@
 
 ## 问题、源码与执行身份
 
-按[查询调优清单](../../../plans/查询调优.md#next-submission-work)，隔离
+按[查询调优清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#next-submission-work)，隔离
 [已有真实记录](../../postgresql/text_map_arrow_real_20261003/README.md#submission-followup)中的观察开销与提交前等待。
 依据仍是[提交与完成粒度条件](../../../../docs/research/优化方法依据.md#submission-granularity-condition)。
 本轮是SemLoom内部控制，不是原生baseline，也不比较模型质量。

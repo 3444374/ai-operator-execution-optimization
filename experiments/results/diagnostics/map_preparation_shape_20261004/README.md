@@ -1,6 +1,6 @@
 # 真实分批成本与单／双Job供给形态
 
-按[服务器准备清单](../../../plans/查询调优.md#server-preparation-shape)完成3,632行固定窗口准备、
+按[服务器准备清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#server-preparation-shape)完成3,632行固定窗口准备、
 20个Core case、2,080次本机HTTP和24项检查。模型、GPU执行及PostgreSQL查询为0；生产源码和默认未改。
 这是SemLoom内部工程诊断，报告与紧凑证据按下方保存入口定位，不更新原生Daft／Ray Data或数据库真实模型排名。
 
@@ -133,7 +133,7 @@ Core提交观察至RPC开始的逐行中位数为15.550／12.796／21.403／10.5
 <a id="ready-queue-snapshots"></a>
 ## 补充：选取前队列与观察干扰
 
-按[就绪队列清单](../../../plans/查询调优.md#ready-queue-observation)继续，运行标识`ready-queue-20261004a`。
+按[就绪队列清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#ready-queue-observation)继续，运行标识`ready-queue-20261004a`。
 沿同一Git参考和资源设置，增加观察开／关八项，各8行检查、128行一次预热及三次交错测量，
 40个case、4,160次本机HTTP全部通过；模型、GPU执行及PG查询0。监督进程195.606秒，套件192.931秒，共享Ray启动9.172秒单列。
 12个检查方法在macOS和Linux各通过，厂商表及Ray调用在这些方法中为fixture；随后套件使用真实Ray／Daft／Arrow和Linux凭据。

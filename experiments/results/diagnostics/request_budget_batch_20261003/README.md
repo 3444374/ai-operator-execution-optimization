@@ -11,7 +11,7 @@
 真实控制器结束时刻由已记录的开始时间与总耗时计算，元数据标明推导方式，不用文件时间补造观测。
 
 2026-10-03首次本地组件阶段。来源为当次源码、本地临时SQLite与故障注入检查。
-按[查询调优计划](../../../plans/查询调优.md#小批量持久记账的本地尝试2026-10-03)，
+按[查询调优计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#小批量持久记账的本地尝试2026-10-03)，
 检验将已准备请求的实验记录合并到同一事务，能否减少重复提交成本。
 这属于实验观察成本的工程尝试；该组件阶段没有运行HTTP、PostgreSQL、Ray、模型或远端服务。
 
@@ -230,7 +230,7 @@ PYTHONPATH=code python3 experiments/results/diagnostics/request_budget_batch_202
 708/709份执行摘要一致，再离线复算已有结果。此处的复算不调用服务，也不代替修订后的真实测量。
 [本地检查记录](raw/review-checks.json)及[完整输出](raw/review-tests.txt)：83项中73项通过，10项因本机缺Daft/Arrow跳过；
 服务器同组83项全部通过。本地首次检查多列出一个不存在的模块，已纠正并保留输出，不计为候选行为失败。
-用户另授权按[当前复核清单](../../../plans/查询调优.md#审查修订后的真实模型复核2026-10-03)进行新的有限真实对照；
+用户另授权按[当前复核清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#审查修订后的真实模型复核2026-10-03)进行新的有限真实对照；
 该清单已完成，结果见下方独立小节，旧真实负结果继续保留。
 本轮实际源码由`69f0c849`加[执行修订](raw/review-source.patch.gz)及逐文件摘要定位，不用报告后续文字修订代替测量源码。
 

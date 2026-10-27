@@ -104,9 +104,6 @@ isolated 2次、resident首次／复用各2次，共6条唯一native请求成功
 报告SHA-256 `8a96f649103c7f7f3bd8389039cd905b81b2601b1a6e53d11aec6850bc70eca3`，原件按运行标识与摘要经既有artifact交接取得。45d→e2bc源码影响独审及V0合起来支持本次接纳，不能改写历史模型身份。
 [PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`：迁移head `58c76ee9`与71项CPU、五投影完整还原通过的`7c5f4eff`文件树一致，旧import／pickle保留；所有worker须同时部署新模块和兼容层，不能将e2bc V0标签转授迁移版。当前无配置Actions检查，不称CI通过。
 
-2026-10-26状态整理：[查询调优](../plans/查询调优.md#completed-query-work)移出已完成清单，按各次报告保留负结果与适用条件。
-本次只调整计划和导航，未重跑或重算实验；原始观测、失败、源码身份与既有默认保持。
-
 2026-10-26：[离线工具CPU核验范围](../../code/scripts/analysis/OFFLINE_RESULTS.md)已随[PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)合并为`380cfbda`。
 原来源47个不同方法通过，同一31方法的三种入口不计成93个；保留两类schema的计数检查，不重算旧原始trace或认证模型质量。
 
@@ -785,130 +782,10 @@ prepared/invalidation、旧校准拒绝与零 provider 连接；实际执行明�
 
 代码测试和性能证据必须分开记录。通过单元测试仅说明实现符合约定，不等于吞吐、尾延迟、能耗或 MFU 得到改善。
 
-## 2. 机制完成度与当前结论
+## 报告与历史机制快照
 
-本节为截至2026-09-02的早期机制快照，保留当时的“当前不存在／尚未实现”及失败判断。
-后续 accepted-prefix、增量 adapter、LOTUS／IMLane 接入与图像资格从上方日期条目、原报告及[代码状态](../../code/INFRA_STATUS.md)核对，
-不把本表当作整个当前集成版本的完成清单。
-
-| 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
-|---|---|---|---|
-| 校准前独立资格小切片 | `6c111b24`；[逐响应数据、普通 SQL EXPLAIN 与旧/新 builder 对照](postgresql/semfilter_qualification_20260901/README.md) | PG18.3 `-Werror`、regression 1/1、TAP 437/437、Python 59/59（其中 calibration 9/9）；同模型同 prompt 的 baseline/choice 各 30 次测量和各 1 次预热 | 两项完成、一项未通过：builder 拒绝完全/近似共线；MCV/dependencies 将普通谓词 estimate 8 修正为 64、actual=64；choice 格式由 27/30 提高至 30/30，但两配置都仅符合 12/27 预设语义判断。没有访问 held-out payload，未拟合真实数据，choice 未接入生产 SQL/spec/wire，整轮校准继续暂停。 |
-| exact SemFilter 真实 reference calibration 首轮采集 | 生产源码 `dcde2be5`，采集合同 `2feab7d4` / `7042132e`；[观测、脚本与 SHA 清单](postgresql/semfilter_reference_calibration_20260901/README.md) | PostgreSQL 18.3 + Qwen2.5-1.5B-Instruct + vLLM 0.25.1 + 单 RTX 4090；64 条预热完成，首个 training 查询第 23 个响应为非法 3-byte 内容，SQLSTATE `22000`。完整 training/held-out observation 均为 0，55/55 既有合同与 6/6 采集检查通过 | 失败采集：保留全部 87 条响应的脱敏观测、错误和事后身份/readback 核验；未拟合、未运行 held-out、未发布或加载 artifact。20% 阈值和原有语义未修改；当前固定模型在该 workload 下尚不能稳定遵守输出格式。不能将其作为真实成本、质量或四项系数可辨识性验证。 |
-| PostgreSQL planner-visible `SemMap` / exact `SemFilter` | `code/postgres/semloom_pg/`、`code/src/execution_provider/`、`code/src/planning/semfilter_reference_calibration.py`；20 项 PostgreSQL static contract、8 项冻结 v2 protocol、9 项 v3 semantic protocol、8 项 fixed-model adapter、5 项 gateway migration 和 5 项 calibration contract，另有 PGXS SQL regression 与 TAP lifecycle/fault tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；历史 4A/4A.1、4B、4B.1、cost-observability 与 gap-hardening 结果继续绑定各自提交。`dcde2be5` 通过 clean warning-free `-Werror`、regression 1/1、TAP 437/437、Python/static/gateway 55/55 和 neutral/machine C11 compile；`postgresql_semfilter_reference_calibration_dcde2be5_20260901` 保存源码/提交身份、原始日志、actual/expected、二进制、状态和已校验 manifest | 功能测试：recording Map/Filter compatibility 与三参数 exact Filter 保持 ordinary child、三值/NULL/cardinality、`LIMIT` 前 placement、prepared/generic plan、RLS/权限、snapshot/savepoint、cancel/recovery、多 backend 与 direct `INSERT ... SELECT`。fixed adapter 的既有 HTTP/DNS 边界保持。planner 能严格加载与 semantic/physical/model/role/provider 匹配的静态 calibration artifact，并在损坏、escaped NUL、duplicate、缺失或失配时保留 uncalibrated reference；EXPLAIN 分列 artifact/workload/service identity、predicted service milliseconds 和 held-out error。当前 artifact 是 deterministic fixture，真实 matched cost、第二 path、rescan/EPQ/parallel、join/aggregate 和更宽 query shape 仍未支持。 |
-| PostgreSQL-private plan/runtime + neutral provider seam | `code/postgres/semloom_pg/src/{sem_plan_spec,sem_filter_calibration,sem_filter_cost,semantic_filter_contract,recording_contract,pg_semantic_runtime,sem_pump,sem_operator_machine,sem_map_machine,sem_filter_machine,ai_provider_port,provider,recording_provider,uds_provider,wire_common,wire_v2,wire_v3}.{h,c}`；`code/src/execution_provider/{wire,adapters,server.py}`；旧 `gateway/` compatibility wrappers 与上述 contract/TAP | 历史 resource、4A/4B、4B.1 与 cost-observability 证据继续绑定原提交；`dcde2be5` 只追加 planner calibration qualification，不替换 runtime/resource 或真实模型 evidence | schema v1/v2、pump binding、shared runtime 与 provider seam 保持；cost metadata schema v2 和 calibration loader 只位于 planner，runtime 仍只计数实际 model calls 和 prompt/output usage。`wire_common.c`、v2/v3 和 gateway golden/fixed-model 职责不变。endpoint/model/timeout/auth 只来自仓库外配置；artifact workload/service signature 是离线适用性身份，不是 backend 对 endpoint/hardware 的在线探测。真实 matched artifact、accepted-prefix、多在途/乱序 completion 与增量 SemLoom adapter 尚未实现。 |
-| extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | extension 已证明当前 exact plan identity、prepared/generic plan 与 lifecycle；LOTUS/Cortex alternatives 和第二路径的 carrier 反例审查尚未完成，不能据此声称 core 永远不需要修改。 |
-| IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |
-| `SemFilter` 关系语义 | `sem_filter_path.c`、`sem_filter_calibration.c`、`sem_filter_cost.c`、`sem_filter_machine.c`、公共 runtime、wire v2/v3 与 PGXS/TAP | 历史 recording、golden/resource、真实模型 capability、HTTP boundary 与 cost-observability 结果继续保留；`dcde2be5` 追加 TAP 437/437 planner calibration qualification；无新性能/质量结果 | 一参 recording 兼容不变；三参 path 严格解析 uppercase TRUE/FALSE/UNKNOWN，SQL NULL 不建 task，并已验证 duplicate identity、`LIMIT` 前 keep/drop、Unicode/空串、savepoint、invalid raw output/error frame、cancel/recovery、EXPLAIN plan identity/estimate/actual usage 和 fixed endpoint。静态 artifact 匹配时校准 reference cardinality/work/service cost，拒绝时回退 uncalibrated reference。真实模型单次结果和 deterministic artifact 分别只证明执行链路与 calibration control flow；真实 cost accuracy、第二 proxy/oracle path、近似质量 policy 与异步乱序 completion 尚未实现。 |
-| LOTUS v1.2.4 compatibility/native baseline | companion extension profile、`code/tests/compatibility/lotus_v124/` fixtures 与独立 native runner；当前不存在 | 无 | 只保留为后置兼容和完整系统 baseline，messages/output/error parity 尚未实现且不阻塞核心。 |
-| 固定行 batching | `code/src/scheduling/organization/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
-| Sequential token-budget | `code/src/scheduling/organization/{batching,token_budget}.py`、对应 tests | baseline、joint、BFD 与 row-cap 系列；`rc1_data_organization/`（07-31 系统重测） | 已重复验证；当前数据组织默认，必须同时满足 token budget 和 row cap。**07-31 干净平台**：2-ep/4-ep 均属第一梯队（保 prefix 局部性，ratio 0.13），4-ep KV 饱和 regime 下**最稳**（50k，命中 0.47–0.48，SLO 17%）。 |
-| Length-align | batching 实现与测试 | local baseline 早期消融；`rc1_data_organization/`（07-31 系统重测，2-ep+4-ep） | 早期仅初筛。**07-31 干净平台**：2-ep（无 KV 压力）length_align 已是最慢（50.3k vs fixed 56.3k，命中最低 0.60——按长度排序破坏 prefix 局部性）；4-ep（KV 饱和）进一步崩到 39.4k、命中 0.06。**cache-ON 下 length-align 的 HOL 收益被丢掉的 cache 复用抵消**，regime-dependent 不稳定收益。 |
-| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/`、`prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`、`prefix_cache_routing_4ep_1.5b_20260731/`、`rc1_prefix_routing/kv_budget_sweep_20260731/` | cache-off 0/30/70/100% 无稳定收益；cache-on 2-ep/7B batching/routing 跨数据集吞吐均中性（\|Δ\|<2%）。4-ep/1.5B routing +5.9% 跨门禁，但 matched-KV 隔离显示 2-ep/1.5B 在 gpu_mem_util 0.3–0.9 均中性（−0.1%～+1.0%），因此当前证据更支持 **endpoint consolidation** 是信号显现的驱动因素，而不是单纯 per-endpoint KV 大小或“cache 压力开关”；4-ep 饱和深度仍是残余混淆。agent-trace 的 P50/SLO 信号属于不同 workload，不能合并成统一 cache-pressure 结论。文本 prefix 遗留实验已 parked。 |
-| BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列；`rc1_data_organization/`（07-31 系统重测） | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。**07-31 干净平台**：best_fit 在 2-ep 命中最高（0.76）；row_cap 命中 0.68（第 4/5）。两者在 4-ep KV 饱和时**一起崩最惨**（命中 0.07、SLO 60%、TTFT ~1.1s）——重排序装箱打散 prefix 组（ratio 0.03）。regime-dependent：仅适合无压力 regime。 |
-| Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
-| Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_saturation_20260729/` | 双 4090 八档、每档三次 formal。65K 达到最大吞吐 97.80%，下一档仅 +0.92%；按预注册规则选为最小饱和点。98K→131K 吞吐持平且 P99/SLO 更差。 |
-| Static credit workload-existence audit | `summarize_static_credit_workload_surface.py` 与等价臂门禁模板 | `static_credit_prompt_length_screen_20260730/` | Short/long 48/48 成功，但 urllib/no-token-ID、非 factorial、short 无准入压力等价臂分裂 48.5%，且均值/中位数选择冲突；证据等级为真实 GPU screening，动态 GO/NO-GO=`inconclusive`。 |
-| Request-level continuous replenishment | request 粒度 replay、逐请求 credit release、Ray adapter 与 trace tests | `dual_gpu_request_replay_20260728/` | 双 4090 三次重复已跑通。等名义工作量的 request K48 与 batch K16 吞吐不可分辨；K64 吞吐最高但 offered work 高约 33%，且 P99 更差。机制可用，但独立性能增量尚未证明。 |
-| Complete-row service quantum | `slice_service_quanta`、offline/replay expansion、completion/credit trace tests | `dual_gpu_service_quantum_20260729/` | 固定 65K work 的三次重复完成；512/request 将 credit-held 降约 16%，但四档 quantum 吞吐相对 batch 仅 -0.03%～+0.54%，request +1.75%。固定 quantum 不晋升，request 保留作精确控制基础。 |
-| Static K_max | admission 与 profiler tests | local baseline 干扰实验、joint search | shared-vLLM 下 `K_max=8` 有必要性证据；当前静态安全基线。 |
-| Immediate/fixed/adaptive flush | scheduler、flush policy 与 trace tests | accelerated/window/randomized/cross-rate/2048/joint/shared-vLLM | Adaptive 稳定优于 fixed-25，但未优于 fixed-50；shared-vLLM 下约 89.4% 决策选择 50ms，也没有稳定增量。当前默认 fixed 50ms。 |
-| SLO-aware EWMA flush | `SloAwareEwmaFlush`、feedback/provider、arrival-gap completion 与 trace tests | `dual_gpu_slo_ewma_flush_formal_20260729/` | 双 4090 高压/arrival-limited 各三次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约。未过 5% 晋升门槛，fixed-50 保持默认。 |
-| AIMD、EWMA、PID admission | `code/src/scheduling/submission_control/{adaptive,pid}.py` 及测试 | `adaptive_admission_controller_20260726/`、`shared_vllm_adaptive_admission_20260726/`、`hol_age_diagnostic_512_20260728/` | 单作业与 shared-vLLM 双作业重复均完成。AIMD 在共享服务中 0 次 decrease、窗口均值 15.953；相对 static K16 前台与吞吐均略差，当前没有动态反馈增量证据。hol_age 诊断进一步确认：换 HOL-age 信号 + request-level replenish 仍未击败 static K16（SLO-goodput 反而 −56%/−70%/−81%），锁定刻画型 framing。 |
-| UCB 多臂老虎机 | `code/src/scheduling/submission_control/ucb.py`、对应 scheduling tests | 无端到端结果 | 有有限 K_max action set、探索/利用和 SLO reward 的纯控制器测试；尚未接入 profiler。必须先封闭 epoch 内请求完成与 reward 归因，避免把跨 epoch completion 记到错误 arm。 |
-| SAOR capacity-only development | `scheduling/submission_control/saor.py`、`scheduling/runtime/saor_capacity.py`、shared-vLLM adapter 与 SAOR tests | `saor_capacity_development_20260811/` | 纯策略、非因果 paired replay 与真实 capacity actuation 已接。四臂各一次：SAOR 相对 K128 +4.36%，但相对 K160 +0.52%、相对 threshold −1.46%，Jain 最低；未过晋级门。完整 ordered release/fairness/stage queues 未执行，不能称完整 SAOR 或定理已验证。 |
-| SAOR fixed-envelope active-set release | named shared-credit runtime、direct/project 统一 runner、matched solo、lifecycle/mechanism fail-closed 汇总 | `saor_active_set_release_formal_20260812_69affc7e/` | 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上重汇总为 passed，credit mechanism effective 12/12；原 failed 文件保留审计。SAOR 12,393 tok/s、fg P99 50.3s，为 credit 臂 fg 最好；static fg P99 29.2s/SLO 0%，故 SAOR 未晋级。 |
-| Foreground strict-priority release-only upper bound | shared-credit `strict_priority`、Job lifecycle close、priority evidence、三臂 readiness/summary | `saor_priority_reachability_smoke_20260812_91ffcaa/` | 两轮 rehearsal-only：11,791 tok/s、fg JCT/P99 20.04/14.27s、SLO 0%，相对 SAOR fg P99 −73.02%。证明 non-preemptive release ordering 可达，不是 formal/proposed；hard priority 仍缺 anti-starvation 和 bulk lag/SLO guard。 |
-| SAOR bounded-priority development | `saor_bounded_priority` selector、actual-work debt/reclaim barrier、lossless event ledger、双轮 fail-closed 汇总 | `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | 双轮四臂 GPU gate 无 cap 晋级：0.25K 第 2 轮 debt-recovery=0；两个 cap fg P99 49–56s、SLO violation 85%–95%。event ledger 证明可见前台 head 都获 priority，但 per-Job 同步 pull 只暴露单 head，完整 ready backlog 不可见；先修 observation contract，不启动 formal/4-Job/reservation。 |
-| SAOR bounded-ready development | `saor_bounded_ready` 有界 concrete-request 预注册、跨 submission/request trace lifecycle join、actor-side register/grant event ledger | `state_aware_work_unit/saor_bounded_ready_gate_20260813/` | 两个独立 rehearsal root、8/8 cell、0 incident；0.125K 两轮全过 correctness/mechanism/foreground/bulk/efficiency 门，均值 12,361 tok/s、fg P99 17.87s、fg SLO 0%、bulk SLO 0.662，注册 formal candidate。0.25K 两轮 bulk SLO 0.752/0.744 越界，拒绝。尚无 formal repeats、4-Job、reservation 或理论公平结论。 |
-| SAOR matched-ready selector attribution | completion-accounted registered-ready lag、bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt 同 observation 双轮汇总 | `state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/` | 12/12 cell、0 incident、12,288 requests exactly-once。DRR/VTC-style 约 12.90K tok/s、fg P99 27.23/26.16s、fg SLO 0；SAOR 12.28K tok/s、fg P99 17.85s、lag P95 57.7K work。相对 VTC-style，SAOR 用约 4.8% 吞吐、5.2% bulk JCT 和 22.7% longest-no-service 代价换取 31.8% fg P99 与 11.7% lag 改善。它是 development 中的非支配折中点，不是已授权 formal 的 selector winner；native baseline count=0。 |
-| SAOR ready-observation bridge | frozen-static/single-head shared FIFO/bounded-ready FIFO 三臂配置、readiness 与双轮 raw-effect 汇总 | `state_aware_work_unit/saor_ready_observation_bridge_rehearsal_20260813/` | 6/6 cell、0 incident、6,144 requests exactly-once。共享容量双轮均值 tok/s +25.96%、fg P99 +99.17%；bounded-ready 在同 FIFO 下 tok/s +7.30%、fg P99 −33.62%，但 fg SLO violation 仍约 39.7%。证明 static isolation、shared efficiency 与 ready exposure 是不同效应；不授权 formal，native baseline count=0。 |
-| SAOR 五臂共同观测系统对照 | 五臂 runner、T0--T4、严格透传 observation-only gateway、archive/identity/trace validator | `state_aware_work_unit/saor_native_system_matched_gateway_rehearsal_20260821/` | `93271012` 的 5/5 rehearsal cell、exactly-once 与独立 archive validation 通过；五臂 request P99/SLO/Jain/lag/no-service 已可比较。单次 SAOR 相对同 executor static 提高吞吐、降低 group JCT，但 P99、Jain、lag 和最长无服务变差，只支持效率—尾延迟—公平权衡。formal 未运行，0s/5s isolation 只有 partial。 |
-| Actor pool 分池与 endpoint routing | `code/src/scheduling/runtime/ray_adapter.py`、profiler/trace 与契约测试 | `dual_gpu_actor_pool_shape_20260729/` | 固定 65K work、256 slots 和 0.5 CPU/endpoint 的三次重复已完成；2×128/4×64 相对 1×256 仅 +2.00%/+0.75%，未达 5% 晋升门槛。当前同构单 job 保留 1×256；多 job 分池仍待验证。 |
-| Shared-vLLM endpoint credit 与 DRR | `code/src/experiments/shared_vllm/`、named shared-credit runtime 与测试 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 双 4090 36/36 group run、0 incident；全局 256 request/65,536 work 安全与归零通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选。 |
-| Batching × submission 联合搜索 | scenario runner 与汇总工具 | `joint_batching_submission_512_20260726/` | 18 单元筛选和候选重复完成；当前单 GPU 下联合候选未显著优于独立拼接。 |
-| vLLM CUDA Graph | 服务配置与相同 profiler 路径 | `vllm_cuda_graph_512_20260726/` | 重复真实对照显著优于 eager；作为本地部署 baseline，不作为上游调度研究贡献。 |
-| 算子代价估计 | `code/src/planning/costs/`、`code/scripts/analysis/estimate_operator_cost.py`、context-LOO driver 及测试 | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/` 等 | cache-on 有效集含 429 formal、20 context × 4 candidate；Hybrid pooled/macro/max regret 1.67%/2.90%/14.72%，candidate pairwise 0.808。max regret 仅以 0.28 pp 通过 15% 门，属于 marginal pass，仍需跨时间/workload/硬件校准。 |
-| 多模态 cost adapter / image path | 中性 `work_units` + lazy Daft image source + typed CLIP tensor actor、staged descriptor、真实 static HSE broker 与 observe-only snapshot 已实现；两个 CLIP profiler；`code/scripts/data/import_coco_images.py` | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`、`image_clip_preprocess_variants_20260801/`、`experiments/results/image_ai_embed_operator_formal_20260803/`、`opening_image_native_fourjob_formal_20260810/`、`opening_image_project_fourjob_observe_only_formal_20260810/` | 静态 operator-E2E、matched-resource、原生多 Job 干扰和 Project observe-only 证据已完成；尚未完成 HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 检索质量闭环和跨 workload/硬件验证。vLLM pooling 0.25.1 能力门仍 blocked，不生成性能排名。 |
-| 图像原生四 Job 干扰 | Daft built-in/Ray Data vendor-owned single→four-job runner、immutable 1+3 manifest 与 fail-closed 汇总 | `opening_image_native_fourjob_formal_20260810/` | 40/40 runs、30 formal group 通过；两条路径均出现非均匀 Job slowdown。只作各路径内部 normalized 干扰和状态证据，不作跨框架绝对排名。 |
-| 图像 staged descriptor / observe-only snapshot | production staged descriptor、freshness/signature 检查与 Project control trace | `opening_image_project_fourjob_observe_only_formal_20260810/` | 24/24 group、99K formal rows exactly-once；3,114 个 snapshot 全 fresh、构建均值 0.141 ms。static/proposed group JCT 差 0.98%，只证明观测接入，不证明 state-aware 动作收益。 |
-| 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | request replay、active-work saturation、Actor Pool、Shared-vLLM formal 与 5s 两 Job 干扰实验 | 真实双 4090 容量、admission、worker identity、equal-weight 1/2/4-job 和 5s staggered 两 Job 证据已建立；尚不能声称 weighted/held-out、多 Job 路由增量或故障迁移有效。 |
-| 两 Job guaranteed-overlap 干扰 | online exact-short、Project eager full/half/static/shared、原生两 Job runner与统一逐请求时间汇总器 | `opening_multijob_interference_20260809/` | 5s offset下项目因果链与三条原生观察已闭合。online下shared提aggregate但伤short/Jain；eager下quota-only+59.00%、matched static/shared竞争+58.77%/+28.90%，shared相对static short JCT−48.94%、aggregate+31.85%。证明arrival-regime dependence与idle borrowing，不证明动态普遍胜出。 |
-| 文本四 Job quota/competition/shared 因果分解 | Project full/quarter single + static/shared multi；Daft Native/Ray、Ray Data 各自 single→four-job | `opening_fourjob_interference_20260809/` | 按三次 formal 均值，shared 相对 static 使 group throughput +8.68%、四个 Job JCT 全部改善，是效率/JCT 子向量的 baseline-relative empirical Pareto；但 raw-work Jain 0.960→0.923，long1/2 的 shared/quarter-solo=1.29/1.14，未达到经验性保留份额非劣。compact CSV 可算三反事实，不能补 event-level service lag/starvation；不称完整 Pareto 或 DRF/Themis/VTC 理论性质。 |
-| Project short all-at-t0 计时诊断 | 同 short manifest、冻结 K128/W65K/8×32 actor 的 Project 1+3 与 T0–T4 raw 汇总 | `opening_project_short_all_at_t0_diagnostic_20260809/` | T3 model-request window 11.354s vs Daft Native11.059s，service tokens/s与MFU只差约−2.5%；排除“Project模型请求路径慢6.4×”。Daft缺外层T0，完整系统E2E不排名；short不要求60s。 |
-| 文本原生框架入口 | official/native adapter、单 job matrix 与 native multi-job runner tests | `opening_text_native_gate_20260808/` | bounded、Daft Native/Ray、Ray Data 的 6/6 capability/calibration gate 通过；只证明入口、provenance、exactly-once 和最小 Ray Data 筛选可用，n=1 不作性能排名。 |
-| 文本原生单 job 正式观察 | bounded C128、Daft Native/Ray、Ray Data official graph + vLLM/GPU time series | `opening_text_native_single_job_formal_20260808/` | 16/16 cells、12 formal，吞吐/JCT CV<0.7%。Daft waiting mean=783/742、KV max≈1；Ray Data running=17.3、MFU=0.112；证明压力形态不同，不证明项目方法胜出。 |
-| ShareGPT bounded 饱和校准 | bounded HTTP C32/C64/C128/C256 + vLLM/GPU time series | `opening_bounded_saturation_calibration_20260808/` | 8/8 cells 通过；formal C128 达 C256 已测峰值 98.22%，冻结为正式对照。C32 仅 52.07%，高 GPU util 不等于喂饱；C256 明显过量排队。 |
-| Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay、active-work、Actor Pool 与 service quantum | 已固定 vLLM 8192 batched-token/256 seq capacity，并标定上游 65K work 饱和点；增加 actor 或固定 quantum 均未过 5% 门槛。 |
-
-## 3. 主要结果目录（非穷举）
-
-本节和同目录 `README.md` 都是高频结果的非穷举导航；未列出的结果直接查看目录及其 README。
-机制是否实现、运行和可声明以最新来源条目、[代码状态](../../code/INFRA_STATUS.md)及对应原始结果为准，避免两个目录清单因新增结果产生
-无声分叉。
-
-| 结果目录 | 角色 | 当前状态或结论 |
-|---|---|---|
-| `postgresql/choice_pg_plan_20260902/` | 四 C 的 PG plan 接入 | 最终 `134447dd`：PG18.3 regression 1/1、TAP 537/537、Python 68/68；新配置仅可规划/EXPLAIN，不执行、不回落 v3，不恢复质量或成本校准。 |
-| `postgresql/choice_profile_contract_20260902/` | 四 C 的第一个值合同实现 | C/Python 114-byte encoding 和拒绝测试通过；68/68 本地/服务器合同与 PG18.3 仅构建，未安装/启动 PG、未调用模型。SQL/plan/wire 接入 pending。 |
-| `postgresql/semfilter_prompt_qualification_20260901/` | 实际 messages/template 核对、唯一 prompt 与条件性 7B 对照 | 两个完整尝试的消息与 token IDs 一致，全部格式合法，但旧/新样例未全对；321 次 completion 包含 83 次中止记录。无生产变更，校准仍暂停。 |
-| `postgresql/semfilter_qualification_20260901/` | 三项独立前置验证 | 秩检查修复、PG18.3 普通多列统计通过；choice 仅通过格式，语义预期仍不符，reference 资格未通过。 |
-| `postgresql/semfilter_reference_calibration_20260901/` | exact SemFilter 首轮真实 reference calibration，失败采集 | 64 条预热完成；首个 training 查询第 23 个响应违反严格 tristate，PG18.3 报 `22000`。held-out、拟合、artifact 均未运行；保留失败，不改变阈值或静默排除样本。 |
-| `saor_capacity_development_20260811/` | SAOR控制microbenchmark、paired trace replay与2×4090四臂capacity-only开发门：两档SAOR、frozen lower/upper及legacy threshold。 | 4/4 arm、5,266 requests/arm、0 incident，动作安全；SAOR相对K128 +4.36%、K160 +0.52%、简单threshold −1.46%。一次顺序运行，server dirty-worktree provenance及旧manifest漏字段与后续修补分别保留；原轮仅属development／not-promoted，不作formal排名。 |
-| `saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job：六active-set臂＋四matched-solo，1+3 formal。 | 40/40、0 incident、exactly-once；原failed validation保留，resolution-aware v2完整validation通过、credit mechanism effective 12/12。SAOR在credit臂内fg最好，但static显著更强，状态formal-valid／not-promoted。 |
-| `saor_priority_reachability_smoke_20260812_91ffcaa/` | static／SAOR／foreground strict-priority三臂，两轮rehearsal-only release上界短测。 | 两轮lifecycle／mechanism通过；strict-priority 11,791 tok/s、fg JCT/P99 20.04/14.27s、fg SLO 0%，fg P99相对SAOR −73.02%。formal repeats=0，仅证明release-only可达性，不作正式排名或proposed／winner结论。 |
-| `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | static／SAOR／$0.125W_e$／$0.25W_e$两轮bounded-priority开发门。 | Round 1 clean；Round 2的0.25K（$0.25W_e$）debt-recovery=0，机制门fail-closed，汇总diagnostic_only。全部请求正确完成且GPU饱和，负结果不是欠供给；两cap fg P99 49–56s、SLO violation 85%–95%，均未晋级。ready backlog未完整暴露给coordinator，formal／4-Job／reservation未运行。 |
-| `state_aware_work_unit/saor_bounded_ready_gate_20260813/` | 同selector改用项目自有有界concrete-ready预注册，两轮四臂development gate；原生baseline不使用该机制。 | 8/8 cell、0 incident，两轮clean；仅$0.125W_e$（0.125K）全过并冻结，均值12,361 tok/s、fg P99 17.87s、fg SLO 0%、bulk 30s miss 0.662。0.25K（$0.25W_e$）因两轮bulk SLO越界拒绝。汇总formal_registration_candidate，仍待project-only matched-observation归因；不是正式排名，formal／4-Job／reservation未运行。 |
-| `opening_text_native_gate_20260808/` | 开题文本原生框架：bounded、Daft Native/Ray、Ray Data的256-row capability gate及Ray Data C4/C8/C16最小筛选。 | 6/6 gate正确性与provenance通过；冻结单次measured peak C8/B16供正式矩阵。n=1的256-row gate不支持框架正式性能排名。 |
-| `opening_text_native_single_job_formal_20260808/` | 开题原生单Job观察：同一2,048-row ShareGPT manifest的bounded C128、Daft Native/Ray、Ray Data，1+3 formal，含MFU、服务压力及能耗。 | 16/16 cells、12 formal通过，状态指纹稳定；四臂依次17,800／17,286／16,747／3,551 tok/s。Daft两臂waiting/KV高，Ray Data该冻结路径running/MFU低；仅报告官方graph／冻结点外部现象，不作内部因果归因或项目优势结论。 |
-| `opening_multijob_interference_20260809/` | short/long guaranteed-overlap的online exact-short、Project eager full/half/static/shared、single/multi及三条原生5s overlap观察，含逐请求阶段／状态分解。 | online quota-only≈0，shared提高aggregate但伤short/Jain；eager quota-only +59.00%、matched static竞争+58.77%、shared竞争+28.90%，shared相对static short JCT −48.94%。long同时影响service与上游pending；Project／原生仅作各轨normalized影响，支持arrival-regime dependence与idle borrowing动机，不证明动态普遍胜出。完整raw留服务器，Git保存紧凑派生数据。 |
-| `opening_image_native_fourjob_formal_20260810/` | 同一2K short＋3×3K long、0.5s offset：Daft built-in／Ray Data single→four-job，1+3正式观察。 | 40/40 runs、30 formal group及exactly-once／overlap检查通过；仅比较各系统内部Job slowdown，不作跨框架绝对排名或Project／state-aware胜出结论。 |
-| `opening_image_project_fourjob_observe_only_formal_20260810/` | 同一图像manifest的Project single/static/proposed-role staged descriptor＋observe-only snapshot，1+3正式门禁。 | 24/24 group、99K formal rows exactly-once；3,114个snapshot 100% fresh，构建均值0.141 ms；static/proposed group JCT差0.98%，近似中性。仅证明观测接入，不证明动态收益。 |
-| `opening_project_short_all_at_t0_diagnostic_20260809/` | 同一short manifest的Project eager single／all-at-t0 1+3（三次formal），统一T0–T4 timer并对齐Daft raw T3/T4。 | Project T0=14.957s，Daft T0未采集，完整系统E2E不排名；可比短诊断T3为11.354s／11.059s，Project service tokens/s与MFU约−2.5%。不扩为60s容量排名。 |
-| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP C32/C64/C128/C256容量校准，含MFU、服务状态与服务器原始归档SHA。 | 四档formal tok/s依次9,455／14,058／17,834／18,158；C128达C256的98.22%，是首个满足原预定97%选择条件的点，C256已过量排队。单次formal仅用于确定bounded对照并纠正旧C32欠供给口径，不作统计或框架性能排名。 |
-| `opening_database_e2e_text_refeed_20260808/` | 开题统一PG source/sink的database-E2E文本三静态臂replacement：SQuAD均匀＋ShareGPT异质，含MFU、能耗及服务状态。 | 24/24单元、18 formal的完成性、质量、source/sink、identity与稳定性核对通过。SQuAD的Project计时额外含指标采集、记录写入及结束处理，不按不到1%的差异排名；ShareGPT C32后续证实欠供给，旧1.546比值不排名，DuckDB有4,921/6,144行cap语义失败，不支持方法性能排名。旧_20260807/仅保留为failed-feeding诊断。 |
-| `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/` | cache-on 双 4090 代价估计正式结果 | 429 formal、20 context × 4 candidate；Hybrid pooled/macro/max regret 1.67%/2.90%/14.72%，pairwise 0.808；最坏 regret 为边界通过。 |
-| `hol_age_diagnostic_512_20260728/` | HOL-age 诊断实验实际运行（6 臂 × 3 formal，24/24 ok） | **负向**：aimd_hol/replenish/aimd_hol_replenish SLO-goodput（6.78/4.62/2.91）远低于 static_k16（15.27），P99 恶化 4–13×。「诊断优先」假设被否定——补 HOL-age 信号 + request-level replenish 后动态稳态仍不优于最佳静态。 |
-| `hol_age_diagnostic_512_20260727/` | HOL-age 诊断预注册设计 + 配置（设置 A） | 07-27 本机无 GPU 未运行；实际执行在 `_20260728/`。含预注册判据与 6 臂设计。 |
-| `oceanbase_b1_gate_20260731/` | OceanBase B1 baseline 门禁 #1 验证 + 部署阻塞 | 门禁通过（CE 4.5.0 含 `AI_COMPLETE`/`DBMS_AI_SERVICE`，静态确证）；当前 AutoDL 容器 observer init step 4/18 clog errcode -9100 自杀（seccomp 等，容器内不可修）。降为待部署，复跑需特权容器/VM。 |
-| `prefix_cache_routing_req_20260730/` | cache-on prefix-affinity routing 消融（request 粒度，3 臂） | 12/12 ok；纯 routing -0.1%、length-align +1.9%（均 <5% 门禁）。2-ep/7B 下 prefix 方向收口。 |
-| `prefix_cache_routing_4ep_1.5b_20260731/` | cache-on prefix-affinity routing 消融（4×Qwen2.5-1.5B，request 粒度，2 臂；含 4-endpoint 调整与 stale-Ray 事故记录） | 8/8 ok、0 incident；prefix_affinity 相对 least_queued **+5.9%**（46,943 vs 44,317 tok/s，raw 不重叠、CV≤0.9%）、SLO −6.3pp、P95 −3.15s，**跨过 5% 门禁**。⚠️ 混淆（1.5B×4-ep×更小 KV）、过饱和 regime（SLO 违约 25–31%），需隔离消融后正式晋级。 |
-| `rc1_prefix_routing/kv_budget_sweep_20260731/` | KV-budget × prefix_affinity 隔离扫描（2-ep/1.5B，1 endpoint/GPU，扫 gpu_mem_util 0.3–0.9；新存储约定 raw/+README） | 2-ep 全 KV 范围 prefix_affinity **中性**（Δ ∈ [−0.1%, +1.0%]，含 13–15% SLO 抖动点）；matched-KV（~7GB）：2-ep/0.45 −0.1% vs 4-ep/0.43 +5.9% → **endpoint 数（consolidation）是驱动，非 per-endpoint KV 大小**。跨引擎共享池价值定位在多 endpoint consolidation，不在小 KV。 |
-| `rc1_data_organization/` | RC1 数据组织系统重测（5 策略 × {2-ep/0.9, 4-ep/0.43}, 1.5B, multiturn, cache-ON, P0 指标 prefix_hit/TTFT；新存储约定 raw/+README；**取代 07-25/26 gropy；07-18/19 保留作历史动机参照**） | 20+20 formal、CV 1–6%、GPU 79–90%。**regime-dependent 闭合**：2-ep（KV max 7–10% 无压力）5 策略 E2E 50–56k 紧凑、fixed≈seq>bestfit>rowcap>lenalign；4-ep（KV max **98–100% 饱和**）分化 39–50k、**排名反转为 seq>fixed>>rowcap≈bestfit>lenalign**。机制 smoking gun `prefix_group_ratio`：重排序类 organizer（length_align/best_fit/row_cap）打散 prefix 组（0.03）→ 4-ep 命中从 0.60–0.76 **崩到 0.06–0.07** → prefill 重算激增 → TTFT 翻倍（0.2–0.3s→0.6–1.1s）、best_fit/row_cap SLO 60%；保序类 fixed/sequential ratio 0.13–0.29、命中 0.47–0.48。consolidation 是惩罚（4-ep −10～−26% + 能耗 +40%）。**与 #28 routing / KV-sweep 闭环**：上游策略价值在 4-ep 饱和 regime 才显现。✅ feeding 门禁已补（batched bounded，gate 放宽 ≥2 endpoint）：2-ep 真上限 **79,488** tok/s（策略 63–71%，缺口=active-work 准入节流 W65536 把 inflight 压到 4–22 vs K256，**非饿死**；`model_wall≈operator_wall` 无 pipeline 瓶颈）；4-ep bounded **24,733 病态**（unthrottled thrash 小 KV，策略 160–202% 超过）→ **准入控制是吞吐杠杆、效应随 regime 反向**（2-ep 压住上限可放开 W、4-ep 防 thrash 应保留）。 |
-| `prefix_cache_data_org_20260730/` | cache-on prefix-aware batching 消融（batch 粒度，3 臂）+ routing 报告交叉引用 | 12/12 ok；上游 batching 顺序 within 1.2% 中性。vLLM APC 覆盖上游 prefix 组织。 |
-| `prefix_routing_agent_20260730/` | cache-on prefix-affinity routing 跨数据集消融（agent-trace，2-ep/7B，3 臂）+ 跨数据集合并分析 | 12/12 ok、0 incident；吞吐三臂 \|Δ\|<2% 中性，但 pala P50 −7.8%/SLO −3.8pp/goodput +17%（高 cache 压力，过饱和区间，吞吐 −1.9% 未过门禁）。 |
-| `prefix_routing_concentrated_20260730/` | cache-on prefix-affinity routing 跨数据集消融（concentrated ShareGPT，2-ep/7B，3 臂） | 12/12 ok、0 incident；吞吐 \|Δ\|<1.2% 中性，pala 信号弱（cache 压力低于 agent）。自包含简表 + 指向 agent 报告的合并分析。 |
-| `static_credit_prompt_length_screen_20260730/` | Short/long prompt下request K／active-work存在性筛选，含独立median/CV及等价臂审计。 | 48/48成功，long W65K有稳定正信号；short无压力等价臂分裂48.5%且高方差，叠加urllib/no-token-ID与非factorial设计，正式判决阻塞、dynamic GO/NO-GO inconclusive。保留机制审计身份，原后续为async等价臂gate复验。 |
-| `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent-full、static-partition与endpoint-shared DRR对照。 | 36/36、0 incident，全局request/work精确上限、容量安全与公平门槛通过。2-job无收益；4-job aggregate throughput +9.57%、max P99 −22.52%，但逐repeat异质，需held-out复验，仅作高竞争候选，不作通用默认。 |
-| `dual_gpu_slo_ewma_flush_formal_20260729/` | high／arrival-limited replay下fixed-50、queue-25/50与SLO-EWMA-25/50对照。 | 24/24成功，exactly-once与completion-lag审计通过；SLO-EWMA相对fixed吞吐−0.52%／+0.10%，各臂30s-SLO violation均0。25–50ms控制相对5.6–17.4s P99缺少一阶杠杆，未晋级。 |
-| `dual_gpu_service_quantum_20260729/` | 固定work/pool的batch、512/1024/2048/4096 complete-row quantum及request完成粒度对照。 | 24/24成功，HOL／credit barrier缩短、credit-held约降16%，但吞吐最多+1.75%，未形成超过原5%门槛的稳态吞吐或SLO收益；没有fixed quantum晋级。 |
-| `dual_gpu_actor_pool_shape_20260729/` | 固定work、slots及Ray CPU的1×256／2×128／4×64 actor拓扑对照。 | 12/12成功，多actor最多+2.00%，未达原预注册5%晋升门槛；该single-job同构endpoint配置保留1×256，不外推多Job隔离或故障迁移。 |
-| `dual_gpu_active_work_saturation_20260729/` | 双4090、八档request-level per-endpoint active-work饱和曲线，各cap三次formal。 | 32/32成功；65K（65,536）为原预注册最小饱和点，98K／131K不再增加吞吐且P99／SLO更差。 |
-| `dual_gpu_active_work_curve_20260728/` | 双4090、request-level per-endpoint predicted-token work的早期五档容量曲线，各三次formal，用于发现原上界仍在上升。 | 当时49K仅为knee candidate、65K为最高已测边界；容量选择已由2026-07-29的dual_gpu_active_work_saturation_20260729/八档扩展取代，同签名后续采用预注册最小饱和点65,536。原结果保留诊断与复现价值。 |
-| `dual_gpu_request_replay_20260728/` | 双endpoint whole-submission barrier与request-level continuous replenishment的K-count对照，真实双4090、每臂三次formal。 | global K32≈per-endpoint K16，名义work-matched request K48≈batch K16；K64吞吐最高，但offered work约多33%，未隔离该增量，不能称最优或机制胜出。 |
-| `shared_vllm_adaptive_admission_20260726/` | Shared-vLLM前台／后台static K8、static K16、AIMD及adaptive-flush对照，真实单GPU三次重复，含精确request/token记账。 | K8保护前台尾延迟，K16提高后台吞吐；AIMD饱和至K16且decrease为0，没有反馈增量。adaptive flush大多选择50ms、近似fixed-50，也无稳定增量。 |
-| `adaptive_admission_controller_20260726/` | 真实单GPU：64-request gate、随机512-request static K8／AIMD／EWMA-AIMD／PID矩阵，以及AIMD对static K16机制对照。 | 重复结果显示动态策略相对K8的收益来自收敛至K≈16，AIMD与同上限static K16不可分辨，未证明超越强静态；shared-service保护仍未验证。 |
-| `accelerated_arrival_flush_20260725/` | 单RTX5070 accelerated-arrival下immediate／fixed-timeout／queue-adaptive flush首轮真实筛选，含run、submission、flush及resource traces。 | fixed timeout减少submissions，但吞吐差异未达到统计可分辨；queue-adaptive未形成多行batch。 |
-| `adaptive_flush_cross_rate_20260726/` | 约51.4／12.85 req/s到达率下512-request fixed-25／fixed-50／adaptive筛选。 | 测试范围内fixed-50最好或等价；adaptive不足以支持增加默认复杂度。 |
-| `adaptive_flush_randomized_20260726/` | Natural-EOS gate、随机顺序512-request fixed-25／fixed-50／queue-adaptive重复，含实际output-token／finish追踪。 | fixed-50与adaptive均比fixed-25约高32% tokens/s，二者不可分辨；fixed-50为该轮最简候选。 |
-| `adaptive_flush_window_20260725/` | 修正后的双窗口adaptive flush gates、1024-row probe及512-row重复，含plot-ready traces。 | 单GPU accelerated replay在512行有正向候选信号；固定policy-group顺序、16-token输出上限及缺少per-request E2E tails限制结论，后续更严格实验已收窄原判断，仍保留需跟进的候选身份。 |
-| `joint_batching_submission_512_20260726/` | 18-cell token-budget×K_max×flush真实筛选，以及independent splice、joint candidate、fixed-50机制控制的随机重复验证。 | 原1% SLO gate下独立拼接与联合搜索不可分辨；fixed-50是该workload的最简候选。 |
-| `local_vllm_qwen15b_baseline/` | 本地AI_COMPLETE早期基线：PostgreSQL→Daft→Ray→vLLM Qwen2.5-1.5B；含fixed batch、token-budget／K_max配置、synthetic smoke、ShareGPT／BurstGPT固定行batch扫描CSV及latency probe。 | 真实链路／本地PG rehearsal及固定行batch基础证据，部分早期消融缺少现代trace完整度；不是token-aware调度结果或PostgreSQL18.3内置平台结果。 |
-| `operator_cost_estimation_20260726/` | 已有profile的离线二次分析：仅用204条real formal做23-feature decision-context LOO；历史all-phase结果已归档。 | CE5 candidate pairwise 0.800，macro／pooled／max regret 4.58%／0.62%／26.23%；row pairwise 0.684未过原门槛，不晋级。粗粒度估计可用，严格SLO精度不足。 |
-| `output_aware_bfd_1024_20260726/` | 1024-row held-out BFD确认，对照同cost sequential与最强practical baseline。 | 负规模结果：该BFD未泛化；原报告要求进一步联合调优row cap。 |
-| `output_aware_bfd_512_20260726/` | 已替代的修前512行失败运行：sequential／BFD row cap不一致及timeout审计。 | 计划24次中完成21次后超时；约束不一致，仅保留审计身份，排除性能结论。 |
-| `output_aware_bfd_512_v2_20260726/` | 修后512-row sequential／BFD×output-cost六cell比较，18 formal runs及plot-ready summaries。 | BFD trace在512行有局部正向候选信号；n=3，trace metadata不是paired output oracle。 |
-| `output_aware_bfd_gate_20260726/` | 已替代的修前64-row output-aware BFD gate。 | lifecycle／resource链路证据仍可审计；sequential与BFD row cap未配平，排除算法性能比较。 |
-| `output_aware_bfd_gate_v2_20260726/` | 修后64-row真实组件gate：output-cost、sequential／BFD packing及request/resource traces、power、energy、MFU。 | 约束与trace通过，所有token-budget策略共享token及row cap；仅为基础设施验证。 |
-| `prefix_aware_batching_20260726/` | 0/30/70/100% shared-prefix受控workload、源码语义审计及真实vLLM筛选。 | cache关闭时prefix-only grouping无稳定收益；该轮保留sequential token-budget默认。 |
-| `request_lifecycle_gate_20260725/` | 真实64-prompt PostgreSQL→Daft→Arrow→Ray→vLLM生命周期gate，含seeded runner、SLO字段及显式request→submission身份。 | 身份、计时与SLO trace闭环；每策略仅一次、fixed后adaptive，属于基础设施验证，不支持策略性能结论。 |
-| `row_cap_aware_packing_1024_20260726/` | 1024-row held-out sequential／classic-BFD／row-cap-first比较，含request SLO、energy及MFU。 | 吞吐约+1%，但SLO violation由50.39%升至88.67%；默认采用被否决，保留sequential。 |
-| `row_cap_aware_packing_512_20260726/` | 经prefix-cache审计的512-row row-cap／token-budget／packing筛选及三次重复确认。 | row-cap-first仅有512行小幅局部信号，不足以覆盖1024行负结果；cache-enabled探索轮只保留为invalid-ordering审计证据。 |
-| `row_cap_aware_packing_gate_20260726/` | 64-row真实PostgreSQL→Daft→Ray→vLLM gate：sequential、classic BFD及BFD-inspired row-cap-first placement。 | 6/6 runs通过，约束及request/resource/MFU invariants通过；只有一次formal repeat，仅属基础设施验证，不支持性能排名。 |
-| `text_heldout_2048_20260726/` | Natural-EOS 2048-request held-out fixed-50／adaptive比较，含精确request及MFU审计。 | 单次screen中fixed-50吞吐+1.75%、P99改善2.61%；持续积压仍放大尾延迟。 |
-| `vllm_cuda_graph_512_20260726/` | Matched eager／CUDA-Graph 64-request gates，每臂1次warm-up＋3次formal 512-request重复，含完整prompt/output/request/resource/MFU tracing。 | CUDA Graph相对eager E2E −71.76%、observed tokens/s +254.05%，作为该轮本地steady-state baseline；属于部署调优，不是上游调度贡献。 |
-
-台账中已登记的正式目录均有各自的 `README.md`。失败、被替代或门禁目录仍保留，是为了记录事故和排除理由，不应从台账中删除。尚未形成独立报告的原始运行目录不计入该句。
+报告按[结果导航](README.md)定位；实际设置、全部重复、失败和机制判断只在原主报告维护。
+截至 2026-09-02 的机制完成度表与早期目录摘要保留在[固定版本](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#2-机制完成度与当前结论)，按原日期解释。
 
 ## 4. 统一复现入口
 
@@ -945,24 +822,9 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 按[实验规则](../AGENTS.md)、[结果保存规则](AGENTS.md)与[报告核对](../plans/reference/报告核对.md)核对本次适用证据，
 台账不重复维护指标、归档或统计要求。
 
-## 6. 尚无证据覆盖的能力（2026-08-31）
-
-以下条目只说明证据缺口，不构成实施顺序：
-
-1. reference/optimized 第二 path identity、quality policy/evidence 与 fallback 尚无实现资格证据；
-   当前 schema v2 已通过 golden/fixed-model reference，reference AI-work cost 只是已测试的显式
-   engineering heuristic，真实模型仍只有单次 capability，没有质量或性能验证。
-2. extension/core carrier audit、accepted-prefix、多在途、增量 SemLoom adapters 与 IMLane-like batch
-   placement 尚无相应验证；Kalypso-like lineage/prefix lease 仍只是参考方向。
-3. 图像 HSE static GPU 非劣、stage/CE5 在线动作和小规模 pgvector 检索质量尚未完成。
-4. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability
-   仍未完成或未获授权。
-5. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持
-   marginal feasibility。
-6. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix
-   隔离统一为 `parked-conditional`，不阻塞当前主线。
-
-以下保存当时的镜像摘要与存放决定，已由[当前保存规则](AGENTS.md)和本台账的恢复核验记录替代；其中的“待迁出”与“不进git”不作为当前要求。
+当前能力与缺项从[代码状态](../../code/INFRA_STATUS.md)读取，2026-08-31 的缺口快照按上方固定版本回查。
+以下保存当时的镜像摘要与存放决定，已由[当前保存规则](AGENTS.md)和本台账的恢复核验记录替代；
+其中的“待迁出”与“不进git”不作为当前要求。
 
 <a id="storage-history-20260807"></a>
 <a id="storage-history-20260807-实验数据存放政策2026-08-07-修订"></a>
@@ -1011,7 +873,7 @@ raw，被该实验 README 引用）。按新政策属应迁出项，但非本次
 <a id="result-index-notes"></a>
 ## 原结果入口的补充说明
 
-与§3重复的42条目录摘要已合并到§3，各条独有解释与负结果保留；以下只保留额外目录或来源说明。
+早期目录摘要已按上方固定版本保存；以下保留额外目录或来源说明。
 
 以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
 

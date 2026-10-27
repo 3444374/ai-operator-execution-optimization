@@ -81,7 +81,7 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 上述独立研发、模型运行与正式实验分别满足各自的检查要求；服务器使用与模型运行按“环境与正式实验”执行。
 既有 profiler/manifest、Daft/Ray/static/SAOR 结果保持外部执行或 emulated operator 身份，不自动恢复旧
 GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多阶段需求后才另行立项。
-当前任务与实现状态只从主计划、`PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和证据台账引用。
+近期顺序从 `PROJECT_OUTLINE.md` 读取，实现范围从 `code/INFRA_STATUS.md` 读取，逐次证据从台账和原报告读取。
 
 ## 4. 工作方式与证据纪律
 
@@ -148,20 +148,22 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 项目内的 `docs/research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
 `docs/archive/opening/` 已归档；普通研究、代码和实验变更不触发该目录或开题专用图集的同步。
 
-| 变更 | 必须同步 |
-|---|---|
-| 方向、题目、研究内容 | `PROJECT_OUTLINE.md`、根入口、`PROJECT_LOG.md` |
-| 实现状态或关键接口 | 源码/测试、`code/INFRA_STATUS.md`、证据台账、相关 README、`PROJECT_LOG.md` |
-| 实验结论 | 原始结果报告、证据台账、`PROJECT_OUTLINE.md`、实际仍维护的对外材料、`PROJECT_LOG.md` |
-| 目录或关键入口 | 所在目录 README、`PROJECT_INDEX.md`、根 README、`PROJECT_LOG.md` |
-| 规则 | 只改拥有该规则的最窄 `AGENTS.md`；全局行为才改本文件，并记入 `PROJECT_LOG.md` |
-| 图表 | 图源、导出、`figures/README.md`、对应 audit；影响主线时同步实际仍维护的论文或材料引用 |
+事实只在所属正文维护，引用变化时再修订直接入口：
+
+- 研究问题、题目与近期顺序：`PROJECT_OUTLINE.md`。
+- 实现与接口：源码/测试和模块说明；接纳或验证范围：`code/INFRA_STATUS.md`。
+- 实验结果：主报告；新证据身份、共享来源或研究判断：证据台账。
+- 路径：所属 README 和受影响的链接；一级入口变化才改根 README。
+- 规则：拥有该行为的最窄 `AGENTS.md`；图表：图源、导出与实际引用材料。
+
+实现或实验未改变研究方向时无需改总纲；导航、方案和日志只引用状态。
+`PROJECT_LOG.md` 记录有独立追溯价值的跨目录决定，日常变化由 Git 与所属文档记录。
 
 ### 7.1 文档生命周期
 
 - 新建或替代前用 `rg` 查同主题内容，明确其唯一所属目录、用途及当前/历史状态。规则放能覆盖任务
   的最窄 `AGENTS.md`，事实放既有权威文件，清单放 README，临时材料放 `tmp/`。
-- 新文档登记到已有 README/索引；仅新增局部行为要求时增设子目录规则，不另建平行规则或索引。
+- 新文档登记到直接所属 README；仅新增局部行为要求时增设子目录规则，不另建平行规则或索引。
 - 替代时让当前入口只指向新文档；旧文档开头标明历史状态和替代入口。更新现行引用，保留历史日志
   与原始证据引用。移动或删除前检查反向引用、唯一内容与恢复路径；只有内容重复或可重生成且无现行引用时才删除。
 - 验收核对登记、替代关系、必要同步及术语与证据表述，执行 Markdown 本地链接检查和 `git diff --check`；
