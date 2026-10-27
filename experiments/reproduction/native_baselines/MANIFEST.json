@@ -645,7 +645,12 @@
         "code/src/baselines/text/products/project_static.py": "historical_sources/code/src/baselines/text/products/project_static.py",
         "code/src/baselines/text/frameworks/lotus_native_local_model.py": "historical_sources/code/src/baselines/text/frameworks/lotus_native_local_model.py",
         "code/src/baselines/text/frameworks/ray_data_pg_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_pg_http.py",
-        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py"
+        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "code/src/execution_provider/adapters/lotus_records_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_core.py",
+        "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
       },
       "default_selected": false
     },
@@ -1328,7 +1333,11 @@
         "code/src/baselines/text/products/project_static.py": "historical_sources/code/src/baselines/text/products/project_static.py",
         "code/src/baselines/text/frameworks/lotus_native_local_model.py": "historical_sources/code/src/baselines/text/frameworks/lotus_native_local_model.py",
         "code/src/baselines/text/frameworks/ray_data_pg_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_pg_http.py",
-        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py"
+        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
       },
       "default_selected": false
     },
@@ -2021,7 +2030,11 @@
         "code/src/baselines/text/products/project_static.py": "historical_sources/code/src/baselines/text/products/project_static.py",
         "code/src/baselines/text/frameworks/lotus_native_local_model.py": "historical_sources/code/src/baselines/text/frameworks/lotus_native_local_model.py",
         "code/src/baselines/text/frameworks/ray_data_pg_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_pg_http.py",
-        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py"
+        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
       },
       "default_selected": false
     },
@@ -2715,7 +2728,11 @@
         "code/src/baselines/text/products/project_static.py": "historical_sources/code/src/baselines/text/products/project_static.py",
         "code/src/baselines/text/frameworks/lotus_native_local_model.py": "historical_sources/code/src/baselines/text/frameworks/lotus_native_local_model.py",
         "code/src/baselines/text/frameworks/ray_data_pg_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_pg_http.py",
-        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py"
+        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
       },
       "default_selected": false
     },
@@ -3413,7 +3430,11 @@
         "code/src/baselines/text/frameworks/lotus_native_local_model.py": "historical_sources/code/src/baselines/text/frameworks/lotus_native_local_model.py",
         "code/src/baselines/text/frameworks/daft_lotus_records.py": "historical_sources/code/src/baselines/text/frameworks/daft_lotus_records.py",
         "code/src/baselines/text/frameworks/ray_data_pg_http.py": "historical_sources/code/src/baselines/text/frameworks/ray_data_pg_http.py",
-        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py"
+        "code/src/baselines/text/frameworks/native_calls.py": "historical_sources/code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
       },
       "default_selected": false
     }
