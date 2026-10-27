@@ -716,9 +716,9 @@ class OwnershipTests(unittest.TestCase):
         self.owner.created = 10.0
         self.owner.owned = {(1200, 10.0), (1201, 10.1)}
         with patch.object(self.owner, "_observe"), \
-             patch("src.experiments.lotus_records_supervisor._live", side_effect=[[Mock()], [], []]), \
-             patch("src.experiments.lotus_records_supervisor._signal", return_value=[]) as send, \
-             patch("src.experiments.lotus_records_supervisor._wait"):
+             patch("src.infrastructure.owned_processes._live", side_effect=[[Mock()], [], []]), \
+             patch("src.infrastructure.owned_processes._signal", return_value=[]) as send, \
+             patch("src.infrastructure.owned_processes._wait"):
             report = self.owner.close()
             self.assertTrue(report["process_exit_confirmed"])
             self.assertEqual(send.call_count, 1)
@@ -733,7 +733,7 @@ class OwnershipTests(unittest.TestCase):
         self.owner.owned = {(1200, 10.0)}
         self.owner.ready_report = dict(software_fixture=True)
         with patch.object(self.owner, "_observe"), \
-             patch("src.experiments.lotus_records_supervisor._live", return_value=[]):
+             patch("src.infrastructure.owned_processes._live", return_value=[]):
             report = self.owner.close()
         self.assertTrue(report["process_exit_confirmed"])
         self.assertEqual(report["status"], "failed")

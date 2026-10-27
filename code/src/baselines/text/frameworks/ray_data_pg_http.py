@@ -6,8 +6,8 @@ inside open_rows. Native Ray owns sharding, actors, batching and backpressure.
 from contextlib import contextmanager
 from dataclasses import dataclass
 
-from src.experiments.postgresql.map_direct import request_body
-from src.experiments.request_identity import RAY_IDENTITY_FIELD
+from src.execution_provider.semantic_map import request_body
+from src.observability.request_identity import RAY_IDENTITY_FIELD
 from src.execution_provider.adapters.completion_response import decode_backend_completion
 from src.execution_provider.semantic_map import completion_status, MapCompletionStatus
 

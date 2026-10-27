@@ -257,7 +257,7 @@ class _DaftChainRows(ChainBatchResults):
 
 
 def _stop_registered_engine(report):
-    from src.experiments.lotus_records_supervisor import _live, _observe, _signal, _wait
+    from src.infrastructure.owned_processes import _live, _observe, _signal, _wait
 
     pid, created = report["model_pid"], report["process_created"]
     owned = {tuple(item) for item in report.get("owned_processes", [(pid, created)])}

@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from enum import IntEnum
 import hashlib
+import json
 import struct
 
 from .message_encoding import encode_messages
@@ -135,3 +136,8 @@ def completion_status(plan: SemanticMapPlan, completion: Completion) -> MapCompl
     if completion.finish_reason != "stop":
         return MapCompletionStatus.INCOMPLETE
     return MapCompletionStatus.VALID
+
+
+def request_body(plan, text):
+    return dict(model=plan.model_id, messages=json.loads(canonical_messages(plan.instruction, text)),
+                **plan.generation_constraints())

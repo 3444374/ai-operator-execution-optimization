@@ -40,8 +40,8 @@ from src.baselines.text.movie_records import MovieRecordSource, validate_movie_m
 from src.baselines.text.sembench_movie import (
     classification_audit, evaluate_original, run_original_lotus_query, verify_checkout,
 )
-from src.experiments.cell_budget import ClaimedUnit
-from src.experiments.native_http_observer import _observe_native_httpx_client
+from src.infrastructure.request_budget import ClaimedUnit
+from src.observability.httpx_observer import _observe_native_httpx_client
 from src.semantic_methods.lotus.engine import (
     lm_report, make_lm, validate_filter_source, validate_generation,
 )
@@ -105,7 +105,7 @@ class LocalService:
         return result
 
     def _observe(self):
-        from src.experiments.lotus_records_supervisor import _observe
+        from src.infrastructure.owned_processes import _observe
         with self._owned_lock:
             _observe(self.owned, self.process.pid, self.created)
 
@@ -205,7 +205,7 @@ class LocalService:
         raise TimeoutError("owned local model HTTP service startup deadline expired")
 
     def close(self):
-        from src.experiments.lotus_records_supervisor import _live, _signal, _wait
+        from src.infrastructure.owned_processes import _live, _signal, _wait
         if self.last_close_report is not None:
             return self.last_close_report
         self._stop.set()

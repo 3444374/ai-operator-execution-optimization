@@ -16,6 +16,9 @@ import re
 import stat
 
 
+from src.infrastructure.request_budget import BudgetError, BudgetExhausted
+
+
 MAX_LEDGER_BYTES = 65536
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -42,14 +45,6 @@ class AttemptBudget:
     @property
     def header(self):
         return {"schema_version": 1, "budget_id": self.budget_id, "limit": self.limit}
-
-
-class BudgetError(RuntimeError):
-    """The authoritative attempt history could not be verified or persisted."""
-
-
-class BudgetExhausted(BudgetError):
-    """All permitted attempts have been reserved."""
 
 
 def required_ledger_bytes(budget: AttemptBudget) -> int:

@@ -38,7 +38,7 @@ def _span(operation):
     # Reuse the optional timing layer when integrated; no writer when disabled.
     if not os.environ.get("SEMLOOM_DETAILED_TIMING_DIR"):
         return nullcontext()
-    from src.experiments.execution_timing import timing_span
+    from src.observability.execution_timing import timing_span
 
     return timing_span(operation, backend="daft-image")
 
@@ -105,7 +105,7 @@ def _build_embedder(*, model_path, processor_path, dtype, batch_size,
                 try:
                     self.actor.synchronize()
                 except BaseException as cleanup:
-                    from src.experiments.execution_timing import is_timing_error
+                    from src.observability.execution_timing import is_timing_error
                     if is_timing_error(error) and not is_timing_error(cleanup):
                         cleanup.add_note("Prior image timing failure: " + type(error).__name__)
                         raise cleanup from error
@@ -309,7 +309,7 @@ class DaftClipExecutor:
                 if iterator is not None:
                     iterator.close()
             except BaseException as cleanup:
-                from src.experiments.execution_timing import is_timing_error
+                from src.observability.execution_timing import is_timing_error
                 if is_timing_error(error) and not is_timing_error(cleanup):
                     cleanup.add_note("Prior image timing failure: " + type(error).__name__)
                     raise cleanup from error

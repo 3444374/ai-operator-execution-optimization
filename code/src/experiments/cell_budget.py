@@ -5,7 +5,6 @@ after a crash before its first request. Default process claims spend in memory;
 the opt-in native-worker claim records each POST durably across processes.
 """
 from contextlib import contextmanager
-from dataclasses import dataclass
 import math
 import os
 from pathlib import Path
@@ -17,67 +16,12 @@ import time
 
 from src.baselines.common.private_artifacts import require_outside_git
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError, BudgetExhausted
+from src.infrastructure.request_budget import ClaimedUnit, Reservation, _DIGEST
 
 SCHEMA = 'semloom.cell_budget.v1'
 COMPLETION_SCHEMA = 'semloom.cell_budget.task_completion.v2'
 _ID = re.compile(r'[A-Za-z0-9_.-]{1,128}\Z')
-_DIGEST = re.compile(r'[0-9a-f]{64}\Z')
 _SQLITE_MAX_INT = 2**63 - 1
-
-
-@dataclass(frozen=True)
-class Reservation:
-    unit_id: str
-    first_attempt: int
-    requests: int
-
-
-class ClaimedUnit:
-    """One process owns these already-charged attempts; reserve performs no I/O."""
-    def __init__(self, reservation: Reservation, deadline_utc: float | None):
-        self.reservation = reservation
-        self._pid = os.getpid()
-        self._deadline = None if deadline_utc is None else time.monotonic() + max(0, deadline_utc - time.time())
-        self._used = 0
-        self._execution_bound = False
-        self._lock = threading.Lock()
-
-    def __getstate__(self):
-        raise TypeError('a claimed unit cannot be transferred or copied')
-
-    @property
-    def attempts(self):
-        with self._lock:
-            return self._used
-
-    @property
-    def remaining(self):
-        return self.reservation.requests - self.attempts
-
-    def bind_execution(self):
-        """Bind a precharged claim once before allocating a session model owner."""
-        with self._lock:
-            if os.getpid() != self._pid:
-                raise BudgetError('claimed budget belongs to another process')
-            if self._deadline is not None and time.monotonic() >= self._deadline:
-                raise BudgetExhausted('experiment deadline reached')
-            if self._execution_bound or self._used:
-                raise BudgetError('claimed budget execution is already bound or spent')
-            self._execution_bound = True
-
-    def reserve(self, request_sha256: str):
-        if not isinstance(request_sha256, str) or not _DIGEST.fullmatch(request_sha256):
-            raise BudgetError('invalid request digest')
-        with self._lock:
-            if os.getpid() != self._pid:
-                raise BudgetError('claimed budget belongs to another process')
-            if self._deadline is not None and time.monotonic() >= self._deadline:
-                raise BudgetExhausted('experiment deadline reached')
-            if self._used == self.reservation.requests:
-                raise BudgetExhausted('reserved unit budget exhausted')
-            attempt = self.reservation.first_attempt + self._used
-            self._used += 1
-            return attempt
 
 
 class CellBudgetLedger:

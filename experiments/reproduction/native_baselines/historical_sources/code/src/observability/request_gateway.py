@@ -1,0 +1,779 @@
+"""Observe Job-labelled HTTP requests while forwarding each request exactly once.
+
+The gateway adds no admission limit, application queue, retry, cache, routing, or
+payload rewrite.  It records arrival/completion clocks and endpoint-reported token
+usage so otherwise framework-owned execution paths share one passive observation
+contract.
+
+The original epoch fields retain their meanings, including
+``response_completed_epoch_s`` (response ready, before writing). The additional
+monotonic fields start at handler entry after HTTP headers have been parsed and
+end only when aiohttp Response.write_eof returns successfully. This is a proxy
+HTTP interval; it excludes earlier SDK work, client receipt and client parsing.
+write_eof completion means local transport writing/flow control completed, not a
+peer acknowledgement. Missing stages remain None after failure.
+
+``preserve_http=True`` passes complete HTTP response bytes and repeated headers
+without decompression or following redirects. Upstream transport failures close
+the caller connection and retain their error type in the trace. This mode does
+not rewrite Location or provide a general proxy route for redirected requests.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import json
+import math
+import os
+import threading
+import time
+import uuid
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable
+from urllib.parse import quote
+
+from src.experiments.execution_timing import get_timing, is_timing_error, _timing_error
+
+
+_HOP_BY_HOP_HEADERS = {
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+    "host",
+    "content-length",
+}
+
+_MONOTONIC_FIELDS = (
+    "request_body_read_completed_monotonic_ns",
+    "before_forward_started_monotonic_ns",
+    "before_forward_completed_monotonic_ns",
+    "upstream_dispatch_started_monotonic_ns",
+    "upstream_connection_queued_started_monotonic_ns",
+    "upstream_connection_queued_completed_monotonic_ns",
+    "upstream_connection_create_started_monotonic_ns",
+    "upstream_connection_create_completed_monotonic_ns",
+    "upstream_connection_reused_monotonic_ns",
+    "upstream_headers_send_started_monotonic_ns",
+    "upstream_response_body_read_completed_monotonic_ns",
+    "upstream_attempt_finished_monotonic_ns",
+    "after_forward_started_monotonic_ns",
+    "after_forward_completed_monotonic_ns",
+    "response_ready_monotonic_ns",
+    "response_write_started_monotonic_ns",
+    "response_write_completed_monotonic_ns",
+    "request_terminal_monotonic_ns",
+)
+
+
+def _record_failure(row: dict[str, Any], error: BaseException, phase: str) -> None:
+    """Retain error identity without persisting exception text or credentials."""
+
+    row["status"] = "failed"
+    if not row["error_type"]:
+        row["error_type"] = type(error).__name__
+        row["error_phase"] = phase
+    row["errors"].append({
+        "phase": phase,
+        "error_type": type(error).__name__,
+        "observed_monotonic_ns": time.monotonic_ns(),
+    })
+
+
+@dataclass(frozen=True)
+class GatewayRoute:
+    """Bind one externally visible Job/endpoint path to one backend URL."""
+
+    job_id: str
+    endpoint_id: str
+    upstream_url: str
+
+
+class ObservationGateway:
+    """Run one unbounded async pass-through gateway in a background thread."""
+
+    def __init__(
+        self,
+        *,
+        routes: tuple[GatewayRoute, ...],
+        trace_path: Path,
+        bind_host: str = "127.0.0.1",
+        bind_port: int = 0,
+        request_timeout_s: float = 600.0,
+        before_forward: Callable[[GatewayRoute, bytes], None] | None = None,
+        after_forward: Callable[[GatewayRoute, bytes, bytes, int], None] | None = None,
+        query_identity: Callable[[], str | None] | None = None,
+        fresh_upstream_connections: bool = False,
+        preserve_http: bool = False,
+    ) -> None:
+        if not routes:
+            raise ValueError("observation gateway requires at least one route")
+        keys = [(route.job_id, route.endpoint_id) for route in routes]
+        if any(not job or not endpoint for job, endpoint in keys):
+            raise ValueError("gateway Job and endpoint identities must be non-empty")
+        if len(set(keys)) != len(keys):
+            raise ValueError("observation gateway routes must be unique")
+        if not math.isfinite(request_timeout_s) or request_timeout_s <= 0:
+            raise ValueError("gateway request timeout must be finite and positive")
+        if not isinstance(fresh_upstream_connections, bool):
+            raise ValueError("fresh upstream connections must be a boolean diagnostic option")
+        if not isinstance(preserve_http, bool):
+            raise ValueError("HTTP response preservation must be a boolean option")
+        self._routes = {(route.job_id, route.endpoint_id): route for route in routes}
+        self._trace_path = trace_path
+        self._bind_host = bind_host
+        self._bind_port = bind_port
+        self._request_timeout_s = request_timeout_s
+        self._before_forward = before_forward
+        self._after_forward = after_forward
+        self._query_identity = query_identity
+        self._fresh_upstream_connections = fresh_upstream_connections
+        self._preserve_http = preserve_http
+        self._upstream_pool_generation = 0
+        self._reset_upstream: Callable[[], Any] | None = None
+        self._trace_rows: dict[int, dict[str, Any]] = {}
+        self._query_rows: dict[str | None, dict[int, dict[str, Any]]] = {}
+        self._pending_rows: dict[int, dict[str, Any]] = {}
+        self._archived_rows = 0
+        self._archive_rows: Callable[[str, list[dict[str, Any]]], None] | None = None
+        self._thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._ready = threading.Event()
+        self._startup_error: BaseException | None = None
+        self._shutdown_error: BaseException | None = None
+        self._port: int | None = None
+        self._detailed_timing: Any = None
+        self._detailed_timing_error: BaseException | None = None
+        self._detailed_owner_id: str | None = None
+
+    def __enter__(self) -> "ObservationGateway":
+        self.start()
+        return self
+
+    def __exit__(self, *_error: object) -> None:
+        try:
+            self.stop()
+        except BaseException as cleanup_error:
+            if _error[1] is None or (self._detailed_timing_error is None and self._shutdown_error is None):
+                raise
+            if is_timing_error(_error[1]) and not is_timing_error(cleanup_error):
+                cleanup_error.add_note("Detailed timing also failed: " + type(_error[1]).__name__)
+                raise
+            _error[1].add_note("Gateway cleanup also failed: " + type(cleanup_error).__name__)
+
+    def start(self) -> None:
+        """Bind the gateway before a measured Job release occurs."""
+
+        if self._thread is not None:
+            raise RuntimeError("observation gateway is already started")
+        if self._trace_path.exists():
+            raise FileExistsError(
+                f"observation gateway trace already exists: {self._trace_path}"
+            )
+        self._trace_path.parent.mkdir(parents=True, exist_ok=True)
+        # Capture the process recorder before crossing the background-thread
+        # boundary; query identity still comes from each request's trace row.
+        self._detailed_timing = get_timing()
+        if self._detailed_timing is not None:
+            self._detailed_owner_id = "gateway-" + uuid.uuid4().hex
+        self._thread = threading.Thread(
+            target=self._run,
+            name="observation-gateway",
+            daemon=True,
+        )
+        self._thread.start()
+        if not self._ready.wait(timeout=15.0):
+            raise RuntimeError("observation gateway did not become ready")
+        if self._startup_error is not None:
+            raise RuntimeError("observation gateway startup failed") from self._startup_error
+
+    def stop(self) -> None:
+        """Stop the gateway after every client request has completed."""
+
+        if self._thread is None:
+            return
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._loop.stop)
+        self._thread.join(timeout=15.0)
+        if self._thread.is_alive():
+            raise RuntimeError("observation gateway did not stop cleanly")
+        self._thread = None
+        self._loop = None
+        self._reset_upstream = None
+        self._archive_rows = None
+        if self._shutdown_error is not None:
+            raise self._shutdown_error
+        if self._detailed_timing_error is not None:
+            raise _timing_error(RuntimeError("detailed gateway timing failed")) from self._detailed_timing_error
+
+    def _track_request(self, row: dict[str, Any]) -> None:
+        request_id = row["gateway_request_id"]
+        self._trace_rows[request_id] = row
+        self._query_rows.setdefault(row.get("query_id"), {})[request_id] = row
+        self._pending_rows[request_id] = row
+
+    def _request_settled(self, row: dict[str, Any]) -> None:
+        if row["request_terminal_monotonic_ns"] is not None:
+            self._pending_rows.pop(row["gateway_request_id"], None)
+        self._record_detailed_request(row)
+
+    def _record_detailed_request(self, row: dict[str, Any]) -> None:
+        """Reuse settled clocks after callbacks and local writing release control.
+
+        A response write is local write_eof completion, not proof of client
+        receipt or parsing. Missing body/write completion remains an open span.
+        Observation failures never replace an HTTP execution failure; stop()
+        reports them after the gateway has cleaned up.
+        """
+        timing = self._detailed_timing
+        if timing is None or row.get("detailed_timing_recorded"):
+            return
+        row["detailed_timing_recorded"] = True
+        fields = dict(query_id=row.get("query_id"), request_id=row["detailed_timing_request_id"],
+            gateway_request_id=row["gateway_request_id"], job_id=row["job_id"],
+            endpoint_id=row["endpoint_id"], owner_id=self._detailed_owner_id,
+            scope="proxy_http_handler")
+        status = "cancelled" if row["error_type"] == "CancelledError" else row["status"]
+        try:
+            for operation, first, last in (
+                ("gateway.handler_to_terminal", "received_monotonic_ns", "request_terminal_monotonic_ns"),
+                ("gateway.upstream_dispatch_to_body_read", "upstream_dispatch_started_monotonic_ns",
+                 "upstream_response_body_read_completed_monotonic_ns"),
+                ("gateway.local_response_write", "response_write_started_monotonic_ns",
+                 "response_write_completed_monotonic_ns"),
+            ):
+                if row[first] is not None:
+                    completed = row[last] is not None
+                    outcome = status if operation == "gateway.handler_to_terminal" or not completed else "completed"
+                    timing.record_interval(operation, row[first], row[last], **fields,
+                        status=outcome,
+                        error_type=row["error_type"] if outcome != "completed" else None,
+                        reason=None if completed else "completion_not_observed")
+            for operation, source_event in (
+                ("gateway.upstream_headers_send_started", "upstream_headers_send_started_monotonic_ns"),
+                ("gateway.upstream_response_headers_received", "upstream_response_headers_received_monotonic_ns"),
+            ):
+                if row.get(source_event) is not None:
+                    timing.mark(operation, monotonic_ns=row[source_event], **fields, source_event=source_event)
+            if row["request_terminal_monotonic_ns"] is not None:
+                timing.mark("gateway.request_terminal", monotonic_ns=row["request_terminal_monotonic_ns"],
+                            **fields, status=status, error_type=row["error_type"] or None)
+        except BaseException as error:
+            row["detailed_timing_error_type"] = type(error).__name__
+            if self._detailed_timing_error is None:
+                self._detailed_timing_error = error
+
+    def endpoint_url(self, job_id: str, endpoint_id: str) -> str:
+        """Return the Job-labelled Chat Completions URL for one route."""
+
+        if (job_id, endpoint_id) not in self._routes:
+            raise KeyError(f"unknown observation route: {job_id}/{endpoint_id}")
+        if self._port is None:
+            raise RuntimeError("observation gateway is not running")
+        return (
+            f"http://{self._bind_host}:{self._port}/observe/"
+            f"{quote(job_id, safe='')}/{quote(endpoint_id, safe='')}"
+            "/v1/chat/completions"
+        )
+
+    def urls_for_job(
+        self, job_id: str, endpoint_ids: tuple[str, ...]
+    ) -> tuple[str, ...]:
+        """Return route URLs in the caller's frozen endpoint order."""
+
+        return tuple(self.endpoint_url(job_id, endpoint) for endpoint in endpoint_ids)
+
+    def snapshot(
+        self, timeout_s: float = 5.0, *, query_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Wait for all pending requests, then copy retained rows or one query.
+
+        Existing callers retain full history unless they explicitly archive it.
+        Persistent owners select a query and acknowledge its durable export with
+        archive_query(); they do not need a copy of already archived history.
+        """
+        if self._loop is None or not math.isfinite(timeout_s) or timeout_s <= 0:
+            raise ValueError("a running gateway and positive snapshot timeout are required")
+
+        async def copy_rows():
+            deadline = time.monotonic() + timeout_s
+            while self._pending_rows:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("gateway requests remain unsettled")
+                await asyncio.sleep(.001)
+            rows = self._trace_rows if query_id is None else self._query_rows.get(query_id, {})
+            return json.loads(json.dumps(list(rows.values())))
+
+        return asyncio.run_coroutine_threadsafe(copy_rows(), self._loop).result(timeout_s + 1)
+
+    def archive_query(
+        self, query_id: str, rows: list[dict[str, Any]], timeout_s: float = 5.0,
+    ) -> None:
+        """After the caller's durable export, persist and release exactly that snapshot.
+
+        A changed snapshot, unfinished work or failed owner-trace write retains
+        every row. Unknown identities are never reclaimed by this operation.
+        A queued timeout prevents archival. A synchronous write already running
+        may finish after timeout; only its successful fsync permits reclamation.
+        """
+        if (self._loop is None or self._archive_rows is None or not query_id
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise ValueError("a running gateway, query identity and positive archive timeout are required")
+
+        abandoned = threading.Event()
+
+        async def archive():
+            if not abandoned.is_set():
+                self._archive_rows(query_id, rows)
+
+        future = asyncio.run_coroutine_threadsafe(archive(), self._loop)
+        try:
+            future.result(timeout_s)
+        except BaseException:
+            abandoned.set()
+            future.cancel()
+            raise
+
+    @staticmethod
+    def _write_trace_rows(stream: Any, rows: Any) -> None:
+        offset = stream.tell()
+        try:
+            for row in rows:
+                stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        except BaseException as failure:
+            try:
+                stream.seek(offset)
+                stream.truncate()
+                stream.flush()
+            except BaseException as rollback_error:
+                failure.add_note("Trace rollback also failed: " + type(rollback_error).__name__)
+            raise
+
+    def reset_upstream_connections(self, timeout_s: float = 5.0) -> None:
+        """Replace an idle pool between queries; reject any unsettled request."""
+
+        if (self._loop is None or self._reset_upstream is None
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise ValueError("a running gateway and positive reset timeout are required")
+        asyncio.run_coroutine_threadsafe(self._reset_upstream(), self._loop).result(timeout_s)
+
+    def _run(self) -> None:
+        loop = asyncio.new_event_loop()
+        self._loop = loop
+        asyncio.set_event_loop(loop)
+        runner: Any = None
+        trace_stream = None
+        trace_rows = self._trace_rows
+        try:
+            from aiohttp import ClientSession, ClientTimeout, DummyCookieJar, TCPConnector, TraceConfig, web
+
+            trace_stream = self._trace_path.open("x", encoding="utf-8")
+
+            def archive_rows(query_id: str, rows: list[dict[str, Any]]) -> None:
+                current = self._query_rows.get(query_id, {})
+                if self._pending_rows:
+                    raise RuntimeError("cannot archive while gateway requests remain unsettled")
+                if (len(current) != len(rows)
+                        or len({row["gateway_request_id"] for row in rows}) != len(rows)
+                        or any(row.get("query_id") != query_id
+                               or current.get(row["gateway_request_id"]) != row for row in rows)):
+                    raise RuntimeError("query observations changed after snapshot")
+                if not current:
+                    return
+                self._write_trace_rows(trace_stream, current.values())
+                for request_id in current:
+                    del trace_rows[request_id]
+                del self._query_rows[query_id]
+                self._archived_rows += len(current)
+
+            self._archive_rows = archive_rows
+            session: Any = None
+            sequence = iter(range(2**63))
+            self_gateway = self
+
+            class ObservedResponse(web.Response):
+                """Observe the framework's existing writer without replacing it."""
+
+                def __init__(self, row: dict[str, Any], **kwargs: Any) -> None:
+                    super().__init__(**kwargs)
+                    self._observation_row = row
+
+                async def prepare(self, request: Any) -> Any:
+                    try:
+                        return await super().prepare(request)
+                    except BaseException as error:
+                        row = self._observation_row
+                        _record_failure(row, error, "response_prepare")
+                        row["response_write_status"] = "failed"
+                        row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                        self_gateway._request_settled(row)
+                        raise
+
+                async def write_eof(self, data: bytes = b"") -> None:
+                    row = self._observation_row
+                    if row["response_write_completed_monotonic_ns"] is not None:
+                        # aiohttp may call this again after an already sent response.
+                        await super().write_eof(data)
+                        return
+                    row["response_write_started_monotonic_ns"] = time.monotonic_ns()
+                    try:
+                        await super().write_eof(data)
+                    except BaseException as error:
+                        _record_failure(row, error, "response_write")
+                        row["response_write_status"] = "failed"
+                        row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                        self_gateway._request_settled(row)
+                        raise
+                    completed = time.monotonic_ns()
+                    row["response_write_completed_monotonic_ns"] = completed
+                    row["request_terminal_monotonic_ns"] = completed
+                    row["response_write_status"] = "completed"
+                    self_gateway._request_settled(row)
+
+            class DisconnectedResponse(web.StreamResponse):
+                """Let aiohttp finish a closed connection without sending HTTP."""
+
+                async def prepare(self, _request: Any) -> Any:
+                    raise ConnectionResetError("upstream did not return a complete HTTP response")
+
+            async def headers_send_started(_session: Any, context: Any, _params: Any) -> None:
+                row = context.trace_request_ctx
+                # aiohttp's documented headers-sent signal runs at entry to its
+                # header writer. It is not evidence of remote receipt.
+                row["upstream_headers_send_count"] += 1
+                if row["upstream_headers_send_started_monotonic_ns"] is None:
+                    row["upstream_headers_send_started_monotonic_ns"] = time.monotonic_ns()
+
+            def connection_signal(name: str) -> Any:
+                async def record(_session: Any, context: Any, _params: Any) -> None:
+                    row = context.trace_request_ctx
+                    row[name + "_count"] += 1
+                    if row[name + "_monotonic_ns"] is None:
+                        row[name + "_monotonic_ns"] = time.monotonic_ns()
+                return record
+
+            def new_session() -> Any:
+                connector = TCPConnector(limit=0, limit_per_host=0,
+                    force_close=self._fresh_upstream_connections)
+                trace_config = TraceConfig()
+                trace_config.on_request_headers_sent.append(headers_send_started)
+                for signal, name in (
+                    (trace_config.on_connection_queued_start, "upstream_connection_queued_started"),
+                    (trace_config.on_connection_queued_end, "upstream_connection_queued_completed"),
+                    (trace_config.on_connection_create_start, "upstream_connection_create_started"),
+                    (trace_config.on_connection_create_end, "upstream_connection_create_completed"),
+                    (trace_config.on_connection_reuseconn, "upstream_connection_reused"),
+                ):
+                    signal.append(connection_signal(name))
+                return ClientSession(connector=connector,
+                    cookie_jar=DummyCookieJar(),
+                    timeout=ClientTimeout(total=self._request_timeout_s),
+                    auto_decompress=not self._preserve_http,
+                    skip_auto_headers=("Accept-Encoding",) if self._preserve_http else (),
+                    trace_configs=[trace_config])
+
+            async def reset_upstream() -> None:
+                nonlocal session
+                if self._pending_rows:
+                    raise RuntimeError("cannot replace upstream connections during a request")
+                previous = session
+                # Swap before yielding so a newly arriving request uses the new pool.
+                session = new_session()
+                self._upstream_pool_generation += 1
+                await previous.close()
+
+            async def observe(request: Any) -> Any:
+                request_id = next(sequence)
+                received_monotonic_ns = time.monotonic_ns()
+                received_epoch_s = time.time()
+                job_id = str(request.match_info["job_id"])
+                endpoint_id = str(request.match_info["endpoint_id"])
+                route = self._routes.get((job_id, endpoint_id))
+                if route is None:
+                    return web.json_response({"error": "unknown route"}, status=404)
+                row: dict[str, Any] = {
+                    "schema_version": 1,
+                    "timing_schema_version": 1,
+                    "timing_clock": "time.monotonic_ns",
+                    "timing_scope": "proxy_handler_entry_to_response_write_eof_return",
+                    "gateway_request_id": request_id,
+                    "job_id": job_id,
+                    "endpoint_id": endpoint_id,
+                    "received_epoch_s": received_epoch_s,
+                    "received_monotonic_ns": received_monotonic_ns,
+                    "upstream_start_epoch_s": None,
+                    "upstream_response_epoch_s": None,
+                    "response_completed_epoch_s": None,
+                    "dispatch_delay_s": None,
+                    "upstream_status": 0,
+                    "client_status": 0,
+                    "callback_error_type": "",
+                    "upstream_response_status": None,
+                    "retry_count": 0,
+                    "upstream_connection_policy": (
+                        "fresh_per_request" if self._fresh_upstream_connections else "pooled"),
+                    "upstream_pool_generation": self._upstream_pool_generation,
+                    "request_body_sha256": None,
+                    "forwarded_body_sha256": None,
+                    "forwarded": False,
+                    "status": "incomplete",
+                    "error_type": "",
+                    "error_phase": "",
+                    "errors": [],
+                    "response_write_status": "not_started",
+                    "upstream_headers_send_count": 0,
+                    "upstream_connection_queued_started_count": 0,
+                    "upstream_connection_queued_completed_count": 0,
+                    "upstream_connection_create_started_count": 0,
+                    "upstream_connection_create_completed_count": 0,
+                    "upstream_connection_reused_count": 0,
+                    **dict.fromkeys(_MONOTONIC_FIELDS),
+                    **_response_usage(b""),
+                }
+                if self._query_identity is not None:
+                    row["query_id"] = self._query_identity()
+                if self._detailed_timing is not None:
+                    timing = self._detailed_timing
+                    row.update(pid=timing.pid, clock_domain=timing.clock_domain,
+                        clock_verified=timing.clock_verified, run_id=timing.run_id,
+                        owner_id=self._detailed_owner_id,
+                        detailed_timing_request_id=f"{self._detailed_owner_id}:{request_id}",
+                        upstream_response_headers_received_monotonic_ns=None)
+                if self._preserve_http:
+                    row.update(preserve_http=True, transport_error="", caller_connection_closed=False)
+                # The evidence buffer also retains failures during body reading.
+                # No synchronous disk I/O is added to request handling.
+                self._track_request(row)
+                try:
+                    body = await request.read()
+                    row["request_body_read_completed_monotonic_ns"] = time.monotonic_ns()
+                except BaseException as error:
+                    _record_failure(row, error, "request_body_read")
+                    row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    self._request_settled(row)
+                    raise
+                body_sha256 = hashlib.sha256(body).hexdigest()
+                row["request_body_sha256"] = body_sha256
+                headers = {
+                    name: value
+                    for name, value in request.headers.items()
+                    if name.lower() not in _HOP_BY_HOP_HEADERS
+                }
+                upstream_start_epoch_s = time.time()
+                row["upstream_start_epoch_s"] = upstream_start_epoch_s
+                row["dispatch_delay_s"] = max(0.0, upstream_start_epoch_s - received_epoch_s)
+                upstream_status = 0
+                response_body = b""
+                response_headers: Any = {}
+                response_reason = None
+                phase = "before_forward"
+                try:
+                    row["before_forward_started_monotonic_ns"] = time.monotonic_ns()
+                    if self._query_identity is not None and row.get("query_id") != self._query_identity():
+                        raise RuntimeError("request query owner changed before forwarding")
+                    if self._before_forward is not None:
+                        self._before_forward(route, body)
+                    row["before_forward_completed_monotonic_ns"] = time.monotonic_ns()
+                    row["forwarded"] = True
+                    row["forwarded_body_sha256"] = body_sha256
+                    phase = "upstream_request"
+                    row["upstream_dispatch_started_monotonic_ns"] = time.monotonic_ns()
+                    async with session.post(
+                        route.upstream_url,
+                        data=body,
+                        headers=headers,
+                        allow_redirects=not self._preserve_http,
+                        trace_request_ctx=row,
+                    ) as response:
+                        if self._detailed_timing is not None:
+                            row["upstream_response_headers_received_monotonic_ns"] = time.monotonic_ns()
+                        upstream_status = int(response.status)
+                        row["upstream_response_status"] = upstream_status
+                        phase = "upstream_response_read"
+                        response_body = await response.read()
+                        row["upstream_response_body_read_completed_monotonic_ns"] = time.monotonic_ns()
+                        if self._preserve_http:
+                            # web.Response accepts repeated header pairs. Content-Length
+                            # describes the unchanged encoded body, so keep it too.
+                            response_headers = [
+                                (name.decode("utf-8", "surrogateescape"),
+                                 value.decode("utf-8", "surrogateescape"))
+                                for name, value in response.raw_headers
+                                if name.lower() == b"content-length"
+                                or name.decode("ascii").lower() not in _HOP_BY_HOP_HEADERS
+                            ]
+                            response_reason = response.reason
+                        else:
+                            response_headers = {
+                                name: value
+                                for name, value in response.headers.items()
+                                if name.lower() not in _HOP_BY_HOP_HEADERS
+                            }
+                        phase = "upstream_response_release"
+                except asyncio.CancelledError as error:
+                    _record_failure(row, error, phase)
+                    row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    raise
+                except Exception as error:  # third-party transport boundary
+                    _record_failure(row, error, phase)
+                    if self._preserve_http and phase != "before_forward":
+                        row.update(upstream_status=upstream_status, client_status=0,
+                            transport_error=type(error).__name__,
+                            request_terminal_monotonic_ns=time.monotonic_ns())
+                        if request.transport is not None:
+                            request.transport.close()
+                            row["caller_connection_closed"] = True
+                        return DisconnectedResponse()
+                    upstream_status = 502
+                    response_body = json.dumps(
+                        {"error": "observation gateway upstream request failed"}
+                    ).encode("utf-8")
+                    response_headers = {"Content-Type": "application/json"}
+                finally:
+                    if row["upstream_dispatch_started_monotonic_ns"] is not None:
+                        row["upstream_attempt_finished_monotonic_ns"] = time.monotonic_ns()
+                        if row["request_terminal_monotonic_ns"] is not None:
+                            row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    if row["request_terminal_monotonic_ns"] is not None:
+                        self._request_settled(row)
+                upstream_response_epoch_s = time.time()
+                row["upstream_response_epoch_s"] = upstream_response_epoch_s
+                client_status = upstream_status
+                client_body = response_body
+                client_headers = response_headers
+                client_reason = response_reason
+                try:
+                    row["after_forward_started_monotonic_ns"] = time.monotonic_ns()
+                    if self._query_identity is not None and row.get("query_id") != self._query_identity():
+                        raise RuntimeError("request query owner changed before consuming response")
+                    if self._after_forward is not None:
+                        self._after_forward(route, body, response_body, upstream_status)
+                    row["after_forward_completed_monotonic_ns"] = time.monotonic_ns()
+                except asyncio.CancelledError as error:
+                    _record_failure(row, error, "after_forward")
+                    row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    self._request_settled(row)
+                    raise
+                except Exception as error:
+                    row["callback_error_type"] = type(error).__name__
+                    _record_failure(row, error, "after_forward")
+                    client_status = 502
+                    client_body = b'{"error":"observation callback failed"}'
+                    client_headers = {"Content-Type": "application/json"}
+                    client_reason = None
+                usage = _response_usage(response_body)
+                row.update({
+                    "response_ready_monotonic_ns": time.monotonic_ns(),
+                    "response_completed_epoch_s": time.time(),
+                    "upstream_status": upstream_status,
+                    "client_status": client_status,
+                    **usage,
+                    "status": (
+                        "completed"
+                        if 200 <= upstream_status < 300 and not row["error_type"]
+                        else "failed"
+                    ),
+                })
+                return ObservedResponse(
+                    row,
+                    status=client_status,
+                    reason=client_reason,
+                    body=client_body,
+                    headers=client_headers,
+                )
+
+            async def health(_request: Any) -> Any:
+                return web.json_response(
+                    {
+                        "status": "ok",
+                        "policy": "pass_through_no_queue_no_retry",
+                        "upstream_connection_policy": (
+                            "fresh_per_request" if self._fresh_upstream_connections else "pooled"),
+                        "upstream_pool_generation": self._upstream_pool_generation,
+                        "route_count": len(self._routes),
+                    }
+                )
+
+            async def initialize() -> Any:
+                nonlocal session
+                session = new_session()
+                self._reset_upstream = reset_upstream
+                app = web.Application(client_max_size=64 * 1024 * 1024)
+
+                async def close_session(_app: Any) -> None:
+                    await session.close()
+
+                app.on_cleanup.append(close_session)
+                app.router.add_get("/health", health)
+                app.router.add_post(
+                    "/observe/{job_id}/{endpoint_id}/v1/chat/completions",
+                    observe,
+                )
+                app_runner = web.AppRunner(app, access_log=None)
+                await app_runner.setup()
+                site = web.TCPSite(
+                    app_runner, self._bind_host, self._bind_port
+                )
+                await site.start()
+                sockets = site._server.sockets  # aiohttp has no public bound-port API
+                self._port = int(sockets[0].getsockname()[1])
+                return app_runner
+
+            runner = loop.run_until_complete(initialize())
+            self._ready.set()
+            loop.run_forever()
+        except BaseException as error:
+            self._startup_error = error
+            self._ready.set()
+        finally:
+            self._reset_upstream = None
+            self._archive_rows = None
+            if runner is not None:
+                try:
+                    loop.run_until_complete(runner.cleanup())
+                except BaseException as error:
+                    self._shutdown_error = error
+            if trace_stream is not None:
+                try:
+                    rows = sorted(trace_rows.values(), key=lambda item: int(item["gateway_request_id"]))
+                    for row in rows:
+                        self._request_settled(row)
+                    self._write_trace_rows(trace_stream, rows)
+                except BaseException as error:
+                    if self._shutdown_error is None:
+                        self._shutdown_error = error
+                    else:
+                        self._shutdown_error.add_note("Trace write also failed: " + type(error).__name__)
+                finally:
+                    trace_stream.close()
+            loop.close()
+
+
+def _response_usage(body: bytes) -> dict[str, int | None]:
+    """Read endpoint usage without altering or reserializing the response."""
+
+    try:
+        decoded = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        decoded = {}
+    usage = decoded.get("usage", {}) if isinstance(decoded, dict) else {}
+    if not isinstance(usage, dict):
+        usage = {}
+
+    def integer(name: str) -> int | None:
+        value = usage.get(name)
+        return int(value) if isinstance(value, int) and not isinstance(value, bool) else None
+
+    return {
+        "actual_prompt_tokens": integer("prompt_tokens"),
+        "actual_output_tokens": integer("completion_tokens"),
+        "actual_total_tokens": integer("total_tokens"),
+    }

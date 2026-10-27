@@ -30,7 +30,7 @@ def timing_span(operation, **fields):
     if not os.environ.get("SEMLOOM_DETAILED_TIMING_DIR"):
         return nullcontext()
     # Reuse the optional timing slice when installed on the integration branch.
-    from src.experiments.execution_timing import timing_span as existing_span
+    from src.observability.execution_timing import timing_span as existing_span
     return existing_span(operation, **fields)
 
 

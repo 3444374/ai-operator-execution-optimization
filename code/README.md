@@ -1,4 +1,4 @@
-# SemLoom Code
+# AI 任务研究工程
 
 本页说明目录、接口与执行流程；接纳及验证范围见[实现状态](INFRA_STATUS.md)，
 运行命令只在[脚本入口](scripts/README.md)维护，方法与后端细节从所属模块读取。
@@ -114,7 +114,7 @@ code/
 ├── src/
 │   ├── data/                     ← PostgreSQL/Daft source、Arrow/Daft materializer、sink、workload
 │   ├── planning/                 ← 纯 cost estimator 与 work-unit packing；不依赖执行引擎
-│   ├── semantic_methods/         ← 原方法与SDK合同；records/关系扩展仍属PR #52候选
+│   ├── semantic_methods/         ← 原方法、SDK、records与关系处理；共享结果已归位
 │   ├── scheduling/
 │   │   ├── core/                 ← typed state、capacity contract、execution ledger、scheduler loop
 │   │   ├── organization/         ← pending batching、token/work budget、service quantum
@@ -141,11 +141,11 @@ code/
 └── requirements.txt
 ```
 
-目录职责与采用决定见[架构§8.1.2](../experiments/plans/系统架构.md#code-directory-boundaries)，各接点的main／候选状态见[baseline交接边界表](src/baselines/README.md#text-execution-boundaries)。上图列现有根目录；具体records／链模型worker、Kalypso接线及`experiments/reproduction/native_baselines/`来自[PR #52的固定候选45d184df](https://github.com/3444374/ai-operator-execution-optimization/tree/45d184dfaf0ef3a85ccccc805be7fc38e646b527)，尚未进入main。
+目录职责与采用决定见[架构§8.1.2](../experiments/plans/系统架构.md#code-directory-boundaries)，各接点的接纳状态见[baseline交接边界表](src/baselines/README.md#text-execution-boundaries)。上图列现有根目录；records／链模型worker、Kalypso接线及`experiments/reproduction/native_baselines/`已随PR52进入main，[原45d184df实机来源](https://github.com/3444374/ai-operator-execution-optimization/tree/45d184dfaf0ef3a85ccccc805be7fc38e646b527)保持独立，源码接纳不扩大其验证范围。
 
-`semantic_methods/lotus/`拥有原方法与SDK解释，`execution_provider/adapters/lotus_*core*.py`属于SemLoom适配，`baselines/text/frameworks/`保留原生系统执行owner。普通records候选在worker准备／执行，查询调用方收齐并重排完整回执后调用原LOTUS parser。Kalypso是独立作者系统；五份具名历史树含两种Core版本，是还原材料，不是native backend注册目录。
+`semantic_methods/lotus/`拥有原方法与SDK解释，`execution_provider/adapters/lotus_*core*.py`属于SemLoom适配，`baselines/text/frameworks/`保留原生系统执行owner。普通records在worker准备／执行，查询调用方收齐并重排完整回执后调用原LOTUS parser。Kalypso是独立作者系统；五份具名历史树含两种Core版本，是还原材料，不是native backend注册目录。
 
-本批已落实职责说明和导航，未迁移源码。五个真实共享接点另批兼容归位；三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG；对应能力预检修复也在PR #52候选中，旧SQL路径保留为显式可选接入，不能以本文代替代码状态或资格报告。
+PR56已将纯结果模块归位到`semantic_methods/lotus/record_results.py`；同步模型进程与阶段清理分别归`serving/backends/vllm_sync_process.py`和`stage_process_cleanup.py`，旧import与同步进程CLI保留。逐阶段生成进程和链worker仍待分批迁移。三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG，对应能力预检修复已随PR52接纳；旧SQL路径保留为显式可选接入，实际实现和验证范围仍从源码及报告读取。
 
 跨机器运行不要直接对着 `requirements.txt` 反复试装。先按
 `deploy/runtime/README.md` 选择 machine profile 与能力组，保存只读 preflight 报告；
@@ -229,6 +229,15 @@ now lives under `code/src/`:
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
   worker before any model request is sent.
+- `infrastructure/owned_processes.py`: birth-matched process observation, signalling and bounded
+  exit waits. The records supervisor owns CLI orchestration and retains its existing helper imports;
+  the shared serving process and cleanup modules import the neutral helpers directly.
+- `infrastructure/request_budget.py`: process-local spending of prepaid request allowances;
+  persistent ledgers and comparison setup remain under `experiments/`. Shared timing, buffered events,
+  model-reuse and HTTPX observations belong to `observability/`, with legacy experiment imports retained.
+- `serving/backends/vllm_sync_process.py` and `stage_process_cleanup.py`: synchronous private model
+  IPC and registered stage-process cleanup. Existing baseline paths reexport the same objects;
+  the old synchronous child CLI remains available alongside the new serving entry point.
 - `infrastructure/config_env.py` and `infrastructure/environment.py`: strict
   `${ENV_VAR}` config expansion plus read-only machine/Python/model/dataset
   preflight. Missing values fail closed; installs/downloads remain explicit CLI
