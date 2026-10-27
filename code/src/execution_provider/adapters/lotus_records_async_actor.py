@@ -37,6 +37,7 @@ class _Call:
     delivered: bool = False
     aborted: bool = False
     abort_queued: bool = False
+    chain_call: bool = False
 
 
 class AsyncCoreModelActor:
@@ -136,17 +137,21 @@ class AsyncCoreModelActor:
             value = event.result
             if value is None:
                 value = self._receipt(call.identity, "unknown", event.error_type or "EngineOutcomeUnknown")
-            audit = CallLedger([call.identity], 1)
-            audit.record(value)
+            if call.chain_call:
+                from .lotus_chain_token_budget import audit_chain_call
+                audit_chain_call(call.identity, value)
+            else:
+                CallLedger([call.identity], 1).record(value)
             call.value, call.confirmed = value, event.engine_terminal_confirmed
             if not event.engine_terminal_confirmed:
                 self._unhealthy = True
         if events:
             self._condition.notify_all()
 
-    def _submit(self, key, call, row, deadline):
+    def _submit(self, key, call, row, deadline, generation=None):
         try:
-            submitted = self.engine.submit(row, deadline_monotonic=deadline)
+            options = {} if generation is None else {"generation": generation}
+            submitted = self.engine.submit(row, deadline_monotonic=deadline, **options)
         except (TypeError, ValueError) as error:
             call.value = self._receipt(call.identity, "failed", type(error).__name__)
             call.confirmed = True
@@ -159,16 +164,32 @@ class AsyncCoreModelActor:
                 call.confirmed = True
 
     def run_core(self, rows, deadline, maximum, request_key):
+        return self._serve_core(rows, deadline, maximum, request_key)
+
+    def run_prepared_core(self, rows, deadline, maximum, request_key, generation, token_cost=None):
+        generation = GenerationSpec.from_dict(generation)
+        from .lotus_chain_token_budget import audit_chain_call
+        if type(rows) is not list or len(rows) != 1:
+            raise ValueError("prepared Core calls need one occurrence")
+        audit_chain_call(rows[0])
+        if token_cost is not None:
+            from .lotus_chain_token_budget import verify_cost
+            if type(rows) is not list or len(rows) != 1:
+                raise ValueError("prepared Core calls need one occurrence")
+            verify_cost(rows[0], generation, token_cost, engine=self.spec)
+        return self._serve_core(rows, deadline, maximum, request_key, generation)
+
+    def _serve_core(self, rows, deadline, maximum, request_key, generation=None):
         with self._condition:
             self._readers += 1
         try:
-            return self._run_core(rows, deadline, maximum, request_key)
+            return self._run_core(rows, deadline, maximum, request_key, generation)
         finally:
             with self._condition:
                 self._readers -= 1
                 self._condition.notify_all()
 
-    def _run_core(self, rows, deadline, maximum, request_key):
+    def _run_core(self, rows, deadline, maximum, request_key, generation=None):
         _deadline(deadline)
         key = _request_key(request_key)
         if type(rows) is not list or len(rows) != 1:
@@ -197,7 +218,8 @@ class AsyncCoreModelActor:
                 self._session = key[0]
                 self._cancel_session = max(self._cancel_session, key[0])
                 self._early_cancels = {item for item in self._early_cancels if item[0] >= key[0]}
-            call = self._held[key] = _Call(occurrence, aborted=key in self._early_cancels)
+            call = self._held[key] = _Call(occurrence, aborted=key in self._early_cancels,
+                                         chain_call=generation is not None)
             self._early_cancels.discard(key)
             expired = time.monotonic() >= deadline
             if call.aborted or expired:
@@ -205,7 +227,7 @@ class AsyncCoreModelActor:
                     "DeadlineExceeded" if expired else "CancelledBeforeSubmission", expired=expired)
                 call.confirmed = True
             else:
-                self._submit(key, call, rows[0], deadline)
+                self._submit(key, call, rows[0], deadline, generation)
         while True:
             with self._condition:
                 self._collect()
@@ -219,7 +241,7 @@ class AsyncCoreModelActor:
                         # NOT_ACCEPTED carries no model ownership. Retry only
                         # this finite handoff after a capacity change; never
                         # submit an accepted call a second time.
-                        self._submit(key, call, rows[0], deadline)
+                        self._submit(key, call, rows[0], deadline, generation)
                 if call.value is not None:
                     # Keep this bounded receipt until the Core transport has
                     # actually received it, including failure/unknown usage.
@@ -396,8 +418,8 @@ class AsyncRecordsActorOwner(_ActorOwner):
     model_batch_mode = "independent_final_results"
     native_engine_abort_supported = True
 
-    def __init__(self, method, engine, generation, resources, *, limits=None):
-        super().__init__(method, engine, generation, resources)
+    def __init__(self, method, engine, generation, resources, *, limits=None, _prepared_only=False):
+        super().__init__(method, engine, generation, resources, _prepared_only=_prepared_only)
         if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
             raise ValueError("Async Core requires prepare_batch_rows=model_batch_rows=1")
         maximum = resources.max_active_batches
@@ -409,6 +431,15 @@ class AsyncRecordsActorOwner(_ActorOwner):
         if self.limits.result_slots < maximum:
             raise ValueError("Async actor needs one reserved result per Core request")
 
+    @classmethod
+    def for_prepared(cls, engine, generation, resources, *, limits=None):
+        """Own one model for caller-prepared calls, without a Filter formatter.
+
+        The caller owns method/source validation and supplies generation options
+        through submit_prepared_core. No preparation actor is allocated here.
+        """
+        return cls(None, engine, generation, resources, limits=limits, _prepared_only=True)
+
     def _model_actor_type(self):
         return AsyncCoreModelActor
 
@@ -418,9 +449,13 @@ class AsyncRecordsActorOwner(_ActorOwner):
         return 15.0
 
     def execution_metadata(self):
-        return dict(model_batch_mode=self.model_batch_mode,
-                    native_engine_abort_supported=self.native_engine_abort_supported,
-                    async_limits=asdict(self.limits))
+        metadata = dict(model_batch_mode=self.model_batch_mode,
+                        native_engine_abort_supported=self.native_engine_abort_supported,
+                        async_limits=asdict(self.limits))
+        if self._prepared_only:
+            metadata.update(preparation_scope="caller_prepared_messages",
+                            prepare_actor_count=len(self.prepare_actors))
+        return metadata
 
     def _model_actor_arguments(self):
         return (asdict(self.engine), asdict(self.generation), self.resources.model_batch_rows,
@@ -432,8 +467,14 @@ class AsyncRecordsActorOwner(_ActorOwner):
             runtime_env=_runtime_env(self.engine.driver_python))
 
     def submit_core(self, prepared, deadline, maximum, key):
+        if self._prepared_only:
+            raise ValueError("prepared-only owner requires submit_prepared_core")
         return self.model_actor.run_core.remote(prepared, deadline, maximum,
                                                 (key.session_id, key.sequence))
+
+    def submit_prepared_core(self, prepared, deadline, maximum, key, generation, token_cost=None):
+        return self.model_actor.run_prepared_core.remote(prepared, deadline, maximum,
+            (key.session_id, key.sequence), generation, token_cost)
 
     def cancel_core(self, key):
         if self.model_actor is not None:

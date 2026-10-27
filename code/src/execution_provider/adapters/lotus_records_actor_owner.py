@@ -121,10 +121,13 @@ class RecordsActorOwner:
     """
 
     def __init__(
-        self, method: FilterMethod, engine: EngineSpec,
-        generation: GenerationSpec, resources: RecordsResources,
+        self, method: FilterMethod | None, engine: EngineSpec,
+        generation: GenerationSpec, resources: RecordsResources, *, _prepared_only=False,
     ):
-        self.method = FilterMethod.from_dict(asdict(method))
+        if _prepared_only and method is not None:
+            raise ValueError("prepared-only ownership does not accept a record preparation method")
+        self._prepared_only = _prepared_only
+        self.method = None if _prepared_only else FilterMethod.from_dict(asdict(method))
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.generation = GenerationSpec.from_dict(asdict(generation))
         self.resources = RecordsResources(**asdict(resources))
@@ -194,24 +197,28 @@ class RecordsActorOwner:
         if self.model_actor is not None:
             return self.model_ready
         _check(deadline, cancelled)
-        from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
+        if not self._prepared_only:
+            from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
         import ray
 
-        validate_generation(self.method, self.generation)
-        self.method = bind_filter_method(self.method)
+        if not self._prepared_only:
+            validate_generation(self.method, self.generation)
+            self.method = bind_filter_method(self.method)
         self.engine.validate_driver_environment()
         if ray.__version__ != "2.56.1" or not ray.is_initialized():
             raise RuntimeError("records actors require caller-owned Ray 2.56.1")
         _check(deadline, cancelled)
         self.ray = ray
         try:
-            prepare = ray.remote(_PrepareActor)
+            if not self._prepared_only:
+                prepare = ray.remote(_PrepareActor)
             model = ray.remote(self._model_actor_type())
-            for _ in range(self.resources.cpu_workers):
-                self.prepare_actors.append(prepare.options(
-                    num_cpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
-                    runtime_env=_runtime_env(self.engine.driver_python),
-                ).remote(asdict(self.method)))
+            if not self._prepared_only:
+                for _ in range(self.resources.cpu_workers):
+                    self.prepare_actors.append(prepare.options(
+                        num_cpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
+                        runtime_env=_runtime_env(self.engine.driver_python),
+                    ).remote(asdict(self.method)))
             self.model_actor = model.options(**self._model_actor_options()).remote(
                 *self._model_actor_arguments(),
             )
