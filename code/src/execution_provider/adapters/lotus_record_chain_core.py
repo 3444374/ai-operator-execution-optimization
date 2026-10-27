@@ -122,7 +122,7 @@ class _ChainTransport:
             if self._stopping.is_set():
                 raise InterruptedError("Core chain transport is closing")
             if self.worker is None:
-                from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+                from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
 
                 worker_type = owner._batch_type or FusedChainBatch
                 options = owner._worker_phase_options() if owner.relation_barriers else {}

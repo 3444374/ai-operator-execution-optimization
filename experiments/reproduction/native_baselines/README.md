@@ -6,6 +6,8 @@
 
 同步模型进程和阶段清理归位另保存原`daft_engine_process.py`与`lotus_cascade_process.py`两份共享原件，五份投影增加对应十条override；摘要与投影身份保持，历史树继续使用原实现，不导入当前兼容入口或新的serving模块。
 
+阶段生成IPC归位另保存原`lotus_chain_engine_process.py`，五份投影只追加对应override；链worker及其原生消费者沿用已保存原件，旧锁、投影ID和来源不变。
+
 运行依赖归位同样为受影响的公共来源保留精确原件，仅追加必要override；原观测状态、额度类型、Map请求值及比较入口继续按各投影原字节还原，不借当前中立组件改写旧源码锁或资格。
 
 共享结果模块迁移与e2bc汇合的本地候选将九份原公共来源保存在`historical_sources/`：五份结果合同/消费者旧文件、旧环境预检和Movie矩阵说明，以及旧RayHTTP与importer。MANIFEST相对45d共新增43条override，保留双方既有路由，原expected SHA、projection ID、source revision及既有variant override保持；还原树继续使用原字节，不导入当前shim或新模块。此目录属于历史复现，不是生产共享实现。
