@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-10-27：语义依赖与数据存活准入归并现有方案
+
+补充分析全文核对后，将潜在后继／合法ready、服务／排队／空间责任、共享引擎容量、新源扩张／存量排空和消费者释放条件归入[既有架构](experiments/plans/系统架构.md#semantic-liveness-admission-contract)与[方法采用条件](docs/research/优化方法依据.md#semantic-liveness-admission-basis)，不新造方案或生产策略。Ray Data v5／Kalypso v2已有覆盖，新增收益仅为待证假设。资源线[本地观测方案及91项CPU](experiments/plans/数据组织.md#dag-resource-observation)已完成；组合线76测试／171子用例及37组main差分另列，有限F/M与关系屏障Extract的实现不混作GPU全覆盖，真实token仍仅F→M。该专项的真实后端库与GPU资源观测未做；当前只CPU离线，不预加载／迁移，不恢复旧预算。保留prioritization与token负结果，未叠加资源8文件补丁、未改源码／实验原件或发布。
+
+## 2026-10-27：补齐token准入门控与停止状态
+
+[49d候选C64对照](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)完成1817次成功调用（1777正式／40预热），W阻塞及确认终态后的恢复机制成立；Map输出／实际工作量严格可比性未过，按原门控停止，不能称性能优化通过。63个观测自有身份与GPU／RPC／租约已清理；前置取消unknown、旧冷导入失败及未用领取不改写。main仍是已接纳的整批有限链，逐记录Actor／IPC和token候选未接纳；本次仅补当前状态，历史日志与原始实验保留，无新模型运行。
+
+## 2026-10-27：统一records接纳与候选的现行导航
+
+按当前main源码与既有台账更正仍写PR52待接纳的状态、模块及架构导航；PR52／56已接纳，45d各轮小实机、e2bc零模型来源检查与迁移CPU检查仍保留各自身份。有限链在main仍为worker内完整阶段循环；逐记录FIFO／token接合属于独立候选，不转授旧来源实机或性能资格。本次只修文档，不改代码、默认策略或实验原件，不新增模型运行。
+
+## 2026-10-26：旧开发线历史归档与维护代码接纳分列
+
+PR52／56已将经过验收的records代码与结果合同选择性接入main；旧三开发分支没有整支合并。其准确末端已发布为[具名归档引用](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-work-line-archives)，逐项Git fetch与SHA核同，本地完整历史恢复bundle已verify。Q3两份JSON与main逐字节相同；Movie旧封包、source lock及CPU证据仅保历史身份，不成为当前运行默认或新模型资格。
+
+baseline的Ray Serve CLIP诊断及固定版本PZ方法接入保留为历史／可选能力，当前未进入main；不是已被证明无效或已由records替代。main继续维护已有CLIP原生图和请求／records入口，其他能力按实际需求独立验收，不倒灌整个旧分支。历史保存已完成；旧工作分支删除被自动审批拒绝，尚未执行，待针对未整支合并分支的明确删除批准。未修改原dirty主树、a244或任何GPU源码／预算。
+
 ## 2026-10-26：records生产闭包与共享结果合同已接纳
 
 [PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)已合并为`c0da4d2d`，随后[PR56](https://github.com/3444374/ai-operator-execution-optimization/pull/56)合并为`eed2ef64`。最终records整合`e2bc889b`的[V0来源检查](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-e2bc-v0)九角色、574文件／159模块通过，零模型／预算；模型功能资格仍归各轮45d。共享结果迁移head `58c76ee9`与71项CPU通过的`7c5f4eff`文件树相同，旧import／pickle与五投影原字节保留。部署须统一新模块与兼容层，不混用旧worker；这不是新模型、完整链或性能资格。当前无配置Actions检查，不称CI通过。

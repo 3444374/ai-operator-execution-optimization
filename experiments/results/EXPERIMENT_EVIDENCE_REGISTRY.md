@@ -1,5 +1,36 @@
 # 实验与机制证据台账
 
+<a id="token-c64-comparability-gate"></a>
+## 2026-10-26 C64 token准入：机制成立，可比性门控停止
+
+运行`records-chain-budget-c64-abba-49d-20261026-r2`固定421文件内容指纹`49d05984229d551401f221461c60ccd5940dfd1943d8b8198e28b2829c738830`，基于Git main66754a8f；指纹不是Git提交，该逐记录Actor／IPC链候选未进main。它执行真实派生Movie的Filter→Map，不是完整SemBench Q1／Q2／Q3。B1／H1、engine容量64，count C64，token C64／W8192；每格完整query n=1，只有mixed-first两臂配对，其余count查询保留为无token对应的诊断。
+
+- **机制证据：** 36个不同W阻塞状态、16个不同候选恢复。首例活跃61<C64，预留8175+候选115>8192；一次确认成功终态释放148后，同候选被接受，预留变为8142。接受后的60条终态未算作恢复前证据。W是完整输入+输出cap的估计预留，不是物理KV／显存上界，也不是GPU kernel并行度。
+- **严格可比性未通过：** 两臂353对调用输入token IDs全部相同，Filter保留集合均97行、Filter质量相同；但29条Map文本／输出IDs不同，14条输出长度不同，4条finish_reason不同，输出token合计3420／3432。没有Map gold可判谁更好，不能称Filter质量下降。已按原门控停止后续矩阵；私有观测开销未事后扣除，不声明公平策略排名或稳定收益。
+- **完成量与时间：** 本轮1817成功=1777正式+40预热，模型失败／unknown均0；这不是1817个完整查询。唯一配对mixed-first caller为5.344680／6.611279秒（token慢23.70%），带观测且输出不一致，只作诊断。353是每臂独立B1记录／阶段API样本数；API经验P99不能代替query P99。新轮领取2624，未用807不退款；旧冷导入失败轮领取2080、实际0及其预算原件另留，旧单元未重领或退款、失败不抹去；新轮使用独立恢复账本。
+- **资源与责任：** 63个观测到的自有出生身份全退出，GPU计算进程0／显存1 MiB、活动RPC0、租约释放、采样器停止，SHM基线不变。仅确认本轮正常收尾；不能清零旧取消unknown，不能由物理退出授予原生运行中取消资格。全程／查询GPU观测和MFU边界按原报告，busy不等MFU。
+
+前置`records-chain-token-main49d-qualification-20261026-r1`已走Actor／IPC与原方法回放：正常路径12成功，另1次取消unknown保留、实际执行数12–13，未用领取4不退款；它不是旧r5 direct-engine资格的转授。当前新增的是独立49d候选的真实接线和W机制证据，不是main已接纳逐记录FIFO／token、Extract／cascade或完整质量性能资格。门控恢复任务已终止；后续只先处理可比性与证据缺口，需新计划和预算后才能新增模型运行。
+
+报告SHA-256 `e2e6577fb16da6123922671103eefab38fe1a453e172bcd64e1dc3659104f78c`；紧凑原始144文件压缩包SHA-256 `8fc2f8982583e4a6bb126353e44f883456aba0d204604d97302b7b6fee4e4706`，按上述运行标识经既有artifact交接取得。已有独立增量核对复算调用量、W恢复前终态、输出差异及63身份清理；本次文档同步只核回执，不重跑模型或替换原始记录。
+
+<a id="legacy-work-line-archives"></a>
+## 2026-10-26 旧开发线的具名历史恢复引用
+
+当前维护代码由PR52／56选择性接纳；以下tag仅保存完整历史，不表示旧分支整支合入main或授予新源码实机资格。三个tag均已从公开远端实际fetch到独立验证ref，并核对准确末端；旧工作分支的删除审批未通过、尚未执行，tag不替代这一批准。
+
+| 来源与用途 | 持久归档tag（均以`archive/semloom/20261026/`为前缀） | 准确末端 |
+|---|---|---|
+| 旧请求级baseline与可选方法来源 | `legacy/request-baselines-and-optional-methods` | [e9a54e3e43ef9ce9e3b6973530715655028b1da5](https://github.com/3444374/ai-operator-execution-optimization/tree/e9a54e3e43ef9ce9e3b6973530715655028b1da5) |
+| Movie任务开发／旧准备封包与CPU记录 | `reproduction/records-development-history` | [a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05](https://github.com/3444374/ai-operator-execution-optimization/tree/a8d6acd253cfa9c63b9a2d9d1c711518b7ec8a05) |
+| Native Q3历史失败与复验血缘 | `evidence/native-q3-history` | [452505e80f7d13dcbfbc838fe7fae6f127790b62](https://github.com/3444374/ai-operator-execution-optimization/tree/452505e80f7d13dcbfbc838fe7fae6f127790b62) |
+
+Q3的两份`native_q3_*_20261020.json`已由PR51原字节入main，旧failed与新复验分列；该来源无相对Movie独有执行器。Movie的旧`deploy/autodl/sembench_records/`及`movie_task_switching_cpu_20261020.json`留在其归档树：11文件隐私形状检查无新增问题，541项runtime lock匹配历史树；原记录35项受影响CPU通过、模型／预算分配0，未在本轮重跑，不改成当前资格。
+
+旧baseline尾项归属：main已有的原生CLIP图和SDK／请求清理继续维护，RayHTTP身份防护已PR57接纳；额外Ray Serve CLIP是独立`diagnostic_reference`，固定版本PZ是另一方法的可选baseline，二者当前仅归档保源、未接入main默认，不称已替代或无效。后续若需要它们，按功能提取适配、配置与测试并单独验收，不能借旧实测授予当前records图文／方法资格。其余旧prepared API、Sema／DuckDB／IMLane及HSE／SAOR历史同样保留来源，不改变当前策略。
+
+完整三末端恢复bundle SHA-256 `7b6a8a16d2504336e31b481ba4bd3dca9369334520a6969a776f9cb32c7769e5`，仓库外原件按`legacy-final-retirement-20261026-r1`交接；642140102字节，bundle verify通过。已有7fb data-execution历史仍可从原archive tag及上述Movie／Q3血缘取回。没有永久丢弃唯一内容、强推、重算实验或启动GPU。
+
 2026-10-26：[共享链结果合同归位](../../code/INFRA_STATUS.md#record-results-migration)。固定`45d184df`的独立后继单模块迁移，旧import同对象、六类行为差分与旧collector pickle读取通过；17项新增CPU检查及51项既有回归通过。首次`-S`隐藏既有依赖的测试错误保留，仅修正测试启动方式。无新模型、原生图或GPU运行，无性能/内存收益结论，不转授records资格。 完整树的历史复现来源漂移由七份旧字节快照和33条override路由修复，expected SHA与projection ID保持，五投影另作CPU还原核验。 当前最终后继71个不同CPU用例通过、0跳过（原68项迁移/方法与3项还原回归，不重复累加）；五投影完整文件摘要核同。 本地汇合e2bc后保留双方路由，相对45d共新增43条override；71项CPU在整合树复验通过、0跳过，不与原回执重复累加。
 
 <a id="pr52-g1-negative-records"></a>

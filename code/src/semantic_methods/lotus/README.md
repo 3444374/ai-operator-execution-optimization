@@ -4,11 +4,11 @@
 只在完整 uncached batch 的执行接点选择原 SDK、Daft、Ray Data 或 SemLoom。
 `sdk.validate_source()` 核对实际安装源码和版本；不把可选 PG 兼容 profile 当成原 LOTUS 查询。
 
-本页描述 main 已接纳的请求／检索接点；独立 records、有限链及本地模型分支的实现与资格统一见[实施来源](../../../../experiments/plans/数据组织.md#model-engine-roadmap)，不表示已纳入本模块。
+main已接纳请求／检索接点及PR52的records、有限链和本地模型接点；PR56另归位共享结果模块。实现、45d各入口小实机资格与尚未完成项见[当前状态](../../../INFRA_STATUS.md#pr52-g1-qualified-scope)，各来源的资格不自动互授。
 
-records本地闭包候选的`FilterMethod(model_name, instruction)`要求调用方显式提供非空instruction；
+已接纳records本地闭包的`FilterMethod(model_name, instruction)`要求调用方显式提供非空instruction；
 序列化配置同样拒绝缺失或空值，不选择Movie／字段／标签默认。调用方先按自己的列绑定方法，再交执行owner。
-Movie原提示由`baselines/text/movie_tasks.py`显式提供，公共Core不导入benchmark配置；新接口仅有CPU接线检查，尚未转授模型资格。
+Movie原提示由`baselines/text/movie_tasks.py`显式提供，公共Core不导入benchmark配置；CPU接线与各轮45d小实机资格分别解释，不转授未测任务或新源码组合。
 
 ## 接口与所有权
 
@@ -41,7 +41,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 
 `lotus_executor()` 已按 LM 实例挂载，helper／main 可分别复用；SDK 已支持 logprobs，LOTUS 已有作用域设置。
 现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
-记录／媒体引用到准备、调用与结果的[新主链](../../../../experiments/plans/系统架构.md#lotus-data-execution)在独立分支推进，尚未纳入 main；旧请求路径冻结接入范围作参照和选择性复用。
+记录到准备、调用与结果的文本接点已随PR52进入main；[后续设计](../../../../experiments/plans/系统架构.md#lotus-data-execution)中的媒体及独立FIFO／token接合仍须各自验证和接纳。旧请求路径保留既有接入范围作参照和选择性复用。
 首闭环直接与原生 LOTUS 核对，不以旧 adapter 为唯一正确性定义，也不要求经过本模块的完整调用执行器。
 
 `sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
@@ -49,7 +49,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；旧内核／图段仅可选提取，新链的输入、执行和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)独立验证。
 `prepare_call()`／完整 HTTP 接点准备和传输模型服务请求，未生成 GPU 输入或持有生成式模型引擎。
 [第二层目标](../../../../experiments/plans/系统架构.md#model-engine-execution)将常驻 LLM／VLM 纳入 worker；已有 `ClipTensorActor.embed()` 真正完成 tensor 上卡、图像特征计算与 CPU 结果返回，
-但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。拟增 records／引擎适配及现有文件的改动见[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)，尚未成为本模块实现。
+但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。records文本／本地引擎接点已接纳；[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)中的图文及其他扩展不因此取得实现或模型资格。
 
 ## 原版 Movie 查询
 
