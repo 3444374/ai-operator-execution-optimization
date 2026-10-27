@@ -131,7 +131,7 @@ class _ChainTransport:
                     list(owner.results.bindings.values()), str(owner.control),
                     owner.deadline, owner.resources.startup_timeout_s,
                     socket.gethostname(), owner.control_token,
-                    **options,
+                    release_completed_audit=owner.release_completed_audit, **options,
                 )
                 self._worker_phase = owner.phase_stage_ids
             elif self._worker_phase != owner.phase_stage_ids:
@@ -735,7 +735,13 @@ class SemLoomRecordChainCore:
 
     def __init__(self, engine: EngineSpec, resources: RecordsResources, *,
                  capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
-                 execution="fused", actor_owner=None, method_limits=None):
+                 execution="fused", actor_owner=None, method_limits=None,
+                 release_completed_audit=False):
+        if type(release_completed_audit) is not bool:
+            raise TypeError("release_completed_audit must be a boolean")
+        if release_completed_audit and execution != "fused":
+            raise ValueError("release_completed_audit requires the fused worker")
+        self.release_completed_audit = release_completed_audit
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.resources = RecordsResources(**asdict(resources))
         if execution not in ("fused", "record_local_sections"):

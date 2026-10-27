@@ -257,7 +257,8 @@ def _stop_registered_engine(report):
 
 
 def _graph(dataset, chain, engine, resources, expected, control, deadline, control_token,
-           *, batch_type=None, model_gpus=1, initial_parents=None, columns=None, allow_nulls=False):
+           *, batch_type=None, model_gpus=1, initial_parents=None, columns=None,
+           allow_nulls=False, release_completed_audit=False):
     """CPU library tests inject fixtures; public evaluation fixes the real kernel."""
     import ray.data
 
@@ -272,7 +273,8 @@ def _graph(dataset, chain, engine, resources, expected, control, deadline, contr
             expected=[_source_binding(record) for record in expected], control=str(control),
             deadline=deadline, startup_timeout_s=resources.startup_timeout_s,
             driver_host=socket.gethostname(), control_token=control_token,
-            initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls),
+            initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls,
+            release_completed_audit=release_completed_audit),
         num_cpus=1, num_gpus=model_gpus, max_concurrency=1, max_restarts=0, max_task_retries=0,
         runtime_env={"py_executable": shlex.quote(engine.driver_python), "env_vars": {
             "PYTHONPATH": str(CODE_ROOT), "LITELLM_LOCAL_MODEL_COST_MAP": "True",
@@ -280,7 +282,8 @@ def _graph(dataset, chain, engine, resources, expected, control, deadline, contr
 
 
 def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
-             expected, query_id, control_dir=None, cancelled=None, columns=None):
+             expected, query_id, control_dir=None, cancelled=None, columns=None,
+             release_completed_audit=False):
     """Build one native graph, then consume it once with identity-only collection.
 
     ``expected`` contains source occurrence metadata, never prepared prompts.
@@ -301,6 +304,8 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     with a distinct query_id for independent work. Actions on the private native Dataset
     are unsupported, and this path does not use LOTUS LazyFrame content caching.
     """
+    if type(release_completed_audit) is not bool:
+        raise TypeError("release_completed_audit must be a boolean")
     resources = RecordsResources(**asdict(resources))
     if resources.cpu_workers != 1:
         raise ValueError("the fused Ray chain supports cpu_workers=1 only")
@@ -355,14 +360,16 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
                     source = ray.data.from_arrow(pa.table({"record_json": pa.array([], type=pa.string())}))
                 graph = _graph(source, segment, engine, resources, records, phase_control,
                     deadline, phase_token, initial_parents=initial_parents,
-                    columns=columns, allow_nulls=allow_nulls)
+                    columns=columns, allow_nulls=allow_nulls,
+                    release_completed_audit=release_completed_audit)
                 return _RayChainRows(graph, records, segment, deadline, cancelled, phase_control,
                     initial_parents=initial_parents, columns=columns)
 
             return NativeExtractRelationRows(chain, expected, open_phase, control, deadline,
                 cancelled, scheduler_owner="Ray Data " + RAY_VERSION, columns=columns)
         result = _graph(
-            dataset, chain, engine, resources, expected, control, deadline, token, columns=columns)
+            dataset, chain, engine, resources, expected, control, deadline, token, columns=columns,
+            release_completed_audit=release_completed_audit)
         return _RayChainRows(result, expected, chain, deadline, cancelled, control, columns=columns)
     except BaseException:
         shutil.rmtree(control)

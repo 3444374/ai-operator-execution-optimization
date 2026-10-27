@@ -49,7 +49,8 @@ PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权
 [PR64](https://github.com/3444374/ai-operator-execution-optimization/pull/64)已将逐阶段模型进程移到
 [`serving/backends/staged_generation_process.py`](src/serving/backends/staged_generation_process.py)，共享链执行移到
 [`execution_provider/method_workers/lotus_chain_batch.py`](src/execution_provider/method_workers/lotus_chain_batch.py)。Core、Ray和Daft共用该实现，旧路径保留兼容入口。
-独立真实进程测试当时因系统权限未完成复跑，不能记为独立通过；后续补测按实际回执更新。
+main `62c157b6` 的[共享链进程通信测试](tests/serving/test_shared_chain_migration.py)已在Linux单项通过，含清理1.395秒、自有进程退出和租约释放，零模型、零重试。
+Mac EPERM原失败保留；该结果不代替本轮新源码的Linux IPC检查或真实模型验证。
 逐记录查询的接纳与验证范围见[下方说明](#record-local-sections-c827)。
 
 <a id="候选交接状态2026-10-27"></a>
@@ -67,7 +68,7 @@ PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权
 | 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、`calibrate/run_calibrated/run_query`及有限矩阵扫描；普通Movie与维护session可显式选择原单遍反馈入口和精确提示复用，默认固定。原冻结来源完成短查询功能检查，未证明反馈调节或收益 | 可选实现已整合；真实反馈、探索和调窗仍待验证 | [公共接口](src/scheduling/runtime/calibration.README.md)、[实测身份与局限](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 按真实查询验证反馈、探索和完整成本，保留旧未回本及负结果；不把容量边界或短查询初值当作最优 |
 | 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63含共用调用审计，但完整查询的阶段传递和Extract仍按请求数，token尚未贯通。C64输出可比性失败和无净收益结果保留。这不同于main已有的token分批 | 候选组件保留待接入；不能只加一个开关 | [token 对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)、[PR63](https://github.com/3444374/ai-operator-execution-optimization/pull/63)、[已有token分批](src/data/materializers/text.py) | 动态接入稳定后，贯通共享预算、阶段传递、FIFO与Extract的一致工作量、取消及unknown结算，再暴露显式选项；默认count保持 |
 | 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown，组合版本未整体实机验证 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
-| 减少结果审计对象存活时间 | `r2`候选已有CPU与独立检查，`release_completed_audit=False`，main尚无此开关；只证明Python持有减少，未证明物理内存归还或完整查询更快 | 候选待接入与验证，没有废弃 | 本地r2候选及[共享链执行文件](src/execution_provider/method_workers/lotus_chain_batch.py) | 与公共关联索引按顺序适配同一文件，补显式入口和默认路径回归；不把对象释放记成物理free |
+| 减少结果审计对象存活时间 | `r2`释放条件已在基于main28a7bc9b的独立候选接通Core fused、Ray／Daft有限链Python入口及各Extract阶段，默认`release_completed_audit=False`；普通Movie单Filter CLI不经过此worker，record_local_sections拒绝开启。默认及异常责任有CPU回归，当前源码的Linux IPC单项待通过，真实模型未验证 | 本地候选，尚未发布或部署；仅减少Python持有，不证明RSS或查询收益 | [选项与验证边界](src/semantic_methods/lotus/README.md#completed-chain-audit-lifetime)、[共享worker](src/execution_provider/method_workers/lotus_chain_batch.py) | 先完成当前源码的Linux IPC单项，再讨论是否安排真实模型功能检查；公共关联索引仍独立，不把逻辑释放记成物理free |
 | 共享链结果关联索引 | 公共内核候选已有13项CPU与100组差分检查；main尚无`_associate_declared_results`。这不是仅供历史复现的算法，也不属于SemLoom独占优化 | 候选待适配；本轮核接入差异 | 本地公共内核候选，目标为[共享链执行文件](src/execution_provider/method_workers/lotus_chain_batch.py) | 先核main前文、结果身份及异常行为，再接入并回归Core／Ray／Daft消费者；CPU小探针不代替模型查询收益 |
 | 图像准备分离、字节背压与多工作进程 | main的HSE底层已有独立准备／模型额度、字节broker、ready优先提交；`hse_static`诊断入口仍在。普通LOTUS资源入口拒绝HSE和CPU>1，执行器将worker及阶段深度固定为1 | 已有实现，确有普通入口缺口 | [HSE循环](src/modalities/image/staged_execution.py)、[资源解析](src/modalities/image/resource_budget.py)、[LOTUS图像入口](src/semantic_methods/lotus/image_backend.py) | 动态接入后先恢复单GPU、多CPU准备的显式参数与转发，补CPU及输出回归；保留当前TF32和单GPU检查，不默认开启、不声称多卡或位置优化已验证 |
 | 可选图像阶段dispatcher | `StageModelDispatcher`及HSE接入仍在`reference/optional-baselines-image-runtime`，main尚无这两个模块；是可继续维护的可选实现，未成为位置／拷贝代价优化器 | 待按小范围接入核对，不整支合并 | [阶段选择器](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/scheduling/runtime/stage_dispatch.py)、[HSE接入](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/modalities/image/hse_dispatch.py) | 单独适配显式配置、容量和速率过期合同，保持默认与原生baseline边界；不因为保存在参考分支就淘汰 |

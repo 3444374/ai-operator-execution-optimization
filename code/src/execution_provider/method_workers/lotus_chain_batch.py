@@ -52,9 +52,12 @@ class FusedChainBatch:
 
     def __init__(self, chain, engine, expected, control, deadline, startup_timeout_s,
                  driver_host, control_token, *, initial_parents=None, columns=None,
-                 allow_nulls=False, close_on_source_complete=True):
+                 allow_nulls=False, close_on_source_complete=True, release_completed_audit=False):
         from src.serving.backends.vllm_sync_process import _publish
 
+        if type(release_completed_audit) is not bool:
+            raise TypeError("release_completed_audit must be a boolean")
+        self.release_completed_audit = release_completed_audit
         if socket.gethostname() != driver_host:
             raise RuntimeError("LOTUS chain supports a single local host only")
         self.control = Path(control)
@@ -220,6 +223,14 @@ class FusedChainBatch:
         encoded = _json(envelope)
         if self.failed:
             self._failure_json = encoded
+        if (self.release_completed_audit and not self.failed and not envelope["cleanup_errors"]
+                and ("engine_close" not in envelope or
+                     envelope["engine_close"]["status"] == "closed"
+                     and not envelope["engine_close"]["cleanup_errors"])
+                and not (self.control / "stop").exists() and time.monotonic() < self.deadline):
+            # Encoding and audit recovery no longer need this worker's copy.
+            # Rebind so any other owner of the list keeps its complete data.
+            self._audit_calls = []
         return encoded
 
 

@@ -108,6 +108,26 @@ HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入
 [本批来源与检查](../../../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)明确区分当前CPU接入、
 固定d2历史证据与main570新增四路径八臂40行严格单卡实机分列；默认数值失败、HSE环境缺项及性能边界保留。
 
+<a id="completed-chain-audit-lifetime"></a>
+## 有限链 worker 的可选审计引用释放
+
+本地候选在 `SemLoomRecordChainCore(..., release_completed_audit=True)` 和
+`ray_data_lotus_chain.evaluate(..., release_completed_audit=True)`／
+`daft_lotus_chain.evaluate(..., release_completed_audit=True)` 提供相同 Python 选项，默认 `False`。
+三条路径共用一个 `FusedChainBatch`；选项会传入每个完整关系阶段，不改变原生组批、调度、模型调用或重试。
+这是有限链 API 接线，普通 SemBench Movie 的单 Filter records／session CLI 不经过该 worker，
+没有给那些入口增加无效参数。Core 的 `record_local_sections` 不持有该 worker 的审计副本，显式拒绝开启此项。
+
+成功 batch 的完整 envelope 编码后，仅当无方法／审计清理错误、已尝试的 engine close 确认为
+`closed` 且无内层错误，同时尚未观察到取消或 deadline 过期，才撤掉 worker 自己的 `_audit_calls` 引用。
+未执行 close 的中间成功 batch 可释放该副本，模型仍按原生命周期运行。编码失败、unknown／脏 close、
+取消或过期均保留；已编码结果、磁盘恢复审计、消费者账本、身份、usage 和 Core 结果租约保持原责任。
+通过重新绑定空列表释放自身引用，不清空其他消费者持有的列表。
+
+CPU 接线覆盖 Core 完整链及 Extract 阶段、Ray／Daft 构图到共享 worker 的参数传递和异常保留。
+原生图测试使用 CPU 构图替身，未证明目标系统的模型、跨进程或性能资格；
+仅减少 Python 引用持有，不证明 RSS、操作系统物理内存或 GPU KV 下降。
+
 <a id="record-local-sections"></a>
 ## 同模型有限计划的可选逐记录执行
 
