@@ -23,7 +23,7 @@ Daft 路径为 Arrow 表 → Daft 图与分批 → Arrow 批次；直接 Arrow �
 原清单先在仓库外保存，再由用户授权新的账本：最多 8,224 次请求、20 分钟，单查询 120 秒，预留 120 秒清理。
 两臂各 16 行检查、1024 行一次预热与三次交错测量；总量为 `2 × (16 + 4 × 1024) = 8224`，检查及预热全部计入。
 首次请求、查询、身份、关联、顺序、计费、容量或超时错误即停；没有重放、重置额度或自动重启。
-来源为[当前清单](../../../plans/查询调优.md#arrow-real-20261003)与[实际计划](raw/run-plan.json)。
+来源为[当前清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#arrow-real-20261003)与[实际计划](raw/run-plan.json)。
 
 - 机器：128 CPU、双 RTX 4090，实际模型只使用空闲 GPU 0；每卡 24 GiB。Linux 5.15.0-97-generic，驱动 595.71.05。
 - PostgreSQL 18.3，扩展 0.2.0；复用已核对的软件前缀，在数据盘启动独立临时数据库，不安装或改写扩展。
@@ -100,7 +100,7 @@ JCT（完整查询时间）为 `(t_query_terminal_ns − query_preparation_start
 不能把逻辑名额近满解读为模型已充分供给，也不能从worker平均占用推导GPU利用率或最优并发。
 worker完全没有方法在执行的空档仅累计10.770–21.207毫秒；这一小样本不支持长时间完全断供的说法。
 下一项优先拆开提交前等待和观察成本，再评估实际已有任务的成组RPC；不改变发送前持久计费，不增加人为等待。
-具体对照与多模态研究切片进入[现行调优安排](../../../plans/查询调优.md#next-submission-work)。
+具体对照与多模态研究切片进入[现行调优安排](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#next-submission-work)。
 
 复算方式：先按下方命令恢复公开材料，再执行以下离线命令；不需要原始评论或模型服务。
 

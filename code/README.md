@@ -1,125 +1,34 @@
 # SemLoom Code
 
-[LOTUS 完整请求模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，
-[Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)保留原查询与评价器。
-[Animals 图文 Q1](scripts/README.md#animals-原版图文-q1)复用这四个执行 owner，额外显式声明原图请求容量。
-固定来源与实际检查分别见[Movie](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)和
-[Animals](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
-原查询模型结果见[固定main464报告](../experiments/results/diagnostics/main_queries_20261015/README.md)；
-[可选vLLM资源配置](../experiments/results/diagnostics/main_service_auto_20261015/README.md)的服务与合并后原查询按各自源码分列。
-[原生CLIP检索](scripts/README.md#原生-lotus-clip-查询)已带必要查询／身份／静态生命周期闭包；显式单卡资源入口的8834 CPU检查、main570四路径40行实机及d2历史条件见[接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)。HSE资源auto、多卡和PZ分别待验。
+本页说明目录、接口与执行流程；接纳及验证范围见[实现状态](INFRA_STATUS.md)，
+运行命令只在[脚本入口](scripts/README.md)维护，方法与后端细节从所属模块读取。
 
+| 对象 | 接口说明 |
+|---|---|
+| LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
+| Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
+| 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) |
+| PG 载体与 SQL 支持形状 | [extension](postgres/semloom_pg/README.md) |
+| 观测定义与离线结果 | [observability](src/observability/README.md)、[离线工具](scripts/analysis/OFFLINE_RESULTS.md) |
 
-本页的已接纳实现以 main 为准；records、有限链与Core／IMLane接点已随PR52接纳，共享结果模块随PR56归位。各入口的原45d实机资格与未完成项见[当前状态](INFRA_STATUS.md#pr52-g1-qualified-scope)。
+## 文本Map诊断选项
 
-CSV／本地records与本地模型执行不要求PG；只有显式DB／SQL入口需要数据库能力与真实连接配置，见[能力预检](../deploy/runtime/README.md)。`requirements.txt`是维护可选路径的全量依赖集合，按能力安装以`deploy/runtime/assets.json`为准。
+下列可选接口保留各自用途，实际默认以源码为准；完整数字与失败只从对应报告读取。
 
-已接纳的本地records生产闭包补齐[Movie records矩阵](src/experiments/movie_matrix.README.md)、
-中性查询生命周期与公共返回计时；Ray `runtime_reuse_only`只核对runtime，Daft
-`native_single_thread_session`核对常驻模型。IMLane resident经`movie_records_session`运行。
-[五份具名复现代码树](../experiments/reproduction/native_baselines/README.md)保留原来源字节和显式策略选择；
-[Kalypso客户端](src/baselines/text/frameworks/kalypso_native/README.md)附着外部作者服务。
-PR52／56已接纳；CPU／SDK／CLI、45d各轮小实机资格与e2bc零模型来源检查分别保留原身份，不能互相替代。非空链、helper cascade、正例及性能仍须另证；任务、生成与调度默认保持。
-通用records方法须显式传`instruction`，缺失或空值会拒绝；Movie提示仅由MovieTask提供，其他数据字段由调用方绑定。
-固定2000行／120发生项的原SDK CPU用例按[本地资产绑定](tests/records_cpu.md)配置路径，不向生产代码写入机器路径；缺资产与无效资产分别保留skip／失败。
+| 选项 | 使用要求与现状 | 结果来源 |
+|---|---|---|
+| `RayMapConfig.worker_pool` | 默认 `None` 由查询创建；显式池由调用方在已连接的 Ray 中创建，查询独占借用并核对模型／容量；创建者保持连接，未确认错误后停止借用 | [worker 复用](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md) |
+| `RayMapConfig.payload_backend` | 默认 `daft`，`arrow` 为显式直接分批对照；完整行请求、身份与取消不变 | [Arrow 实际模型](../experiments/results/postgresql/text_map_arrow_real_20261003/README.md) |
+| `RayMapConfig.preparation` | 默认 `None`；准备借用、复制空间和未知调用责任分开，原型不推荐启用 | [准备分段与真实负结果](../experiments/results/postgresql/text_map_preparation_validation_20261004/README.md) |
+| `coalesce_queued_preparation` | 默认 `False`；尾块追加仅保留显式诊断 | [追加与返回等待](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md) |
+| `remote_budget_mode=batched` | 默认逐行同步；显式批量最多合并 16 条已就绪记录，下次推进持久提交后才能 RPC，额度不足整批拒绝，不等待未来请求 | [批量记账负结果](../experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
+| 共享预付观察、线程记账与就绪窗口等待 | 保留原诊断身份；共享观察未进入正式查询入口，就绪等待仅保留补丁；不从局部计数变快推导完整查询收益 | [共享观察](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)、[线程记账](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[窗口反例](../experiments/results/diagnostics/ready_window_coalescing_20261003/README.md) |
 
-第一批职责归位只将[链结果身份合同](src/semantic_methods/lotus/record_results.py)移到方法公共层，旧import保留；[迁移回归](tests/semantic_methods/test_lotus_record_results.py)与[验证边界](INFRA_STATUS.md#record-results-migration)分列，不扩大为全仓命名空间迁移。
-
-## Core 与完整响应基础
-
-main 在原执行层上接纳了[完整响应与 native task API](src/execution_provider/adapters/README.md)。
-Core 修正空释放后的等待代次、满额完成事件后的继续排空和暂停派发时的进展提示。
-有限元数据检查只保留最近未接纳后缀的值与类型签名；每次 offer 仍核对当前容量、描述、work 和取消，
-元数据、类型、预算或作用域变化时重新检查，接纳、封口、失败和关闭时释放对应记录。
-本机重复 offer 诊断只说明 CPU 检查成本；[main 资格记录](../experiments/results/diagnostics/main_foundation_20261015/README.md)
-区分旧路径、真实 CPU Ray、未运行的 PG 图像检查及尚无模型结论的范围。
-
-固定 `bdae61bb` 的[图像基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)
-统一真实预处理身份、恢复历史 B/C 小优化及 RM 结果／已导出观测成本；当前默认、入口、最近实测与未验证项见[能力表](INFRA_STATUS.md#current-image-status)。
-本段导航该固定分支的完整修正；main只接纳本批CLIP所需的身份／静态生命周期及结果边界，未接Broker历史计数或新dispatcher，见[main 状态](INFRA_STATUS.md#main-与集成分支的阅读范围)。
-
-[待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
-`RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
-不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。
-阶段broker原子登记追加字节和行前段；最终147项库检查、16项PG检查及8224次真实模型请求通过。
-1024行完整查询中位数10.069→12.686秒，追加慢25.987%；全部行/计费/资源及RSS/PSS核对，暂不推荐启用，默认保持。
-
-[返回等待隔离](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)补齐真实Ray结果future回调及Map恢复读取时刻。
-71个本地fixture/4107次模拟与20次实际Ray/Daft运行/16,448次模拟行处理通过；本项没有HTTP、PG或模型请求。
-同步实验记账会影响接收与供给；线程选择缩短等待却使完整消费更慢，默认继续保持。
-
-[文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
-借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
-`RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。
-编码字节、准备复制和ready字节由阶段broker管理；取消中的线程和未知远端结果继续持有记录，关闭consumer后可reap归还。
-`ready_work`是准备数据所含的预计模型工作量，`model_inflight`在此表示共享块的持有数量，不能当作HTTP或GPU活动数。
-后一额度须容纳全部可能的借用块，实际请求/work仍按Core原值；ready字节不超过同一`object_bytes`，先预留两份表示的复制空间。
-[计划与资格](../experiments/plans/查询调优.md#map-input-preparation)、[原型检查记录](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)
-区分替身与实际库；后续[PG／真实模型验证](../experiments/results/postgresql/text_map_preparation_validation_20261004/README.md)
-完成16项PG检查、8,224次真实请求及RSS/PSS采样，1024行完整查询中位数慢86.597%，继续保持旧默认。
-多Job准备接入仍pending，该选项暂不推荐启用。
-启用准备时，Core先推进所有终止任务流的取消通知，再轮转本地输入归还；未确认的借用继续保留。
-[合并审查回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)补查小动作额度和同Job多任务流，不替代PG或模型验证。
-
-[共享预付观察API](src/experiments/request_budget_client.py)由HTTPX观察器及原生Ray的session factory显式使用：
-descriptor在调用进程打开/归还，普通budget保持原所有权；[Linux/Ray检查及负结果](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
-该共享映射候选尚未接入正式查询入口，其PG生命周期与真实模型检查仍pending；默认仍同步计数。
-
-[gateway多查询干扰诊断](scripts/README.md#gateway多查询干扰诊断)运行真实UDS与共享执行循环，厂商调用和worker为替身。
-区分状态线程、分批准备、慢消费和同步观察的影响，生产执行与默认保持；[结果与来源](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)保留实际范围。
-
-[同机共享预付计数](scripts/README.md#同机共享预付计数原型)复用持久单元预付，多个进程在本地共享状态逐条领取。
-已完成组件/Core替身、Linux/真实Ray SDK及真实Ray/Daft/Arrow与本机HTTP检查；该候选的正式查询入口及PG/模型检查仍pending。
-它与现有PG多查询共享使用不同的验证记录，详见下方[查询归属、请求发送与计数范围](#query-accounting-scopes)及[计数报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)。
-
-新增[本地观察成本诊断](scripts/README.md#本地coremap观察成本诊断)：真实Core与Map传输循环运行，厂商调用和服务使用明确替身。
-它只比较观察方式对提交时序的影响，不增加真实请求模式或修改生产默认，结果与源身份见[主报告](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。
-
-实验账本支持显式[`SharedClaimedUnit.reserve_many`](src/experiments/shared_request_budget.py)：
-对已准备的有限摘要列表或元组一次持久提交，返回对应计费编号，整批额度不足时全部拒绝。
-实验查询可显式选择`remote_budget_mode=batched`，在下一次事件循环推进时合并最多16条已就绪记录，
-提交及内容观察完成后才允许RPC，取消继续由传输检查；不等未来请求凑满，默认仍逐行同步。
-[组件与服务器查询结果](../experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留实际范围和负面开销。
-两轮真实模型复测中批量方式分别慢7.31%和40.52%，因此该选项仅保留用于诊断，不作为推荐优化。
-失败或取消仍记录已知逐行编号与批次事务，公开精简事件保留首尾编号；记录器报错不替换已有错误或取消信号。
-
-`src/` 保存数据源、工作量描述、组织、调度、外部执行、观测和 baseline 适配；
-`postgres/semloom_pg/` 保存 PostgreSQL extension。目录关系见下方[目录结构](#目录结构)，
-现行模块职责见[extension 模块说明](postgres/semloom_pg/README.md#module-layout)。
-
-当前实现、已验证内容与待完成项见[实现状态](INFRA_STATUS.md)；
-运行命令见[脚本说明](scripts/README.md)；结果身份与失败记录见
-[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
-最近的[可选 Daft/Ray 文本传输](../experiments/results/postgresql/incremental_transport_20260927/README.md)
-保留 HTTP 路径和 SQL 结果返回；[真实模型检查](../experiments/results/postgresql/transport_real_20260927/README.md)
-完成 12 条 SQL 与 4,144 次请求，配对输出存在差异。完整查询和持续供给仍需独立评价。
-
-[准备调优](../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)增加可选worker服务：
-在调用方已连接的Ray中使用`owned_map_worker_pool(ray, model_config, capacity, physical)`管理创建和结束，
-`RayMapConfig.worker_pool`按服务名选择；查询独占借用并核对模型配置和容量，默认值`None`保持查询创建方式。
-调用方维持创建者进程，避免结束Ray连接；不使用detached lifetime。异常未确认时服务拒绝后续借用，
-由调用方处理结束错误。接口位于[Ray Map传输](src/execution_provider/adapters/ray_map_transport.py)，
-已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
-本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
-
-Ray Map新增显式`RayMapConfig.payload_backend=arrow`，直接构建已选有限行的独立Arrow批次，
-用于检查小窗口重复建Daft图的开销；默认`daft`保留，同步记账保持。行身份、完整请求、对象上限与
-取消生命周期不修改。[目标92项及8,224次fixture](../experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)通过，模型0次；
-完整查询8.354→8.149秒，仅少2.457%，next执行约1→0.2秒与同步记账重叠。暂保留显式选项，不更新真实baseline结论。
-
-Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调用、事件循环恢复，以及RPC同步提交和等待。
-实验配置新增`remote_budget_mode=threaded`，将原持久reserve交给单个I/O线程；默认`synchronous`保留。
-内容核对和请求记录留在原事件循环，异步发送前回调完成后才允许RPC；取消等待事务结束且不退款。
-实现位于[线程记账回调](src/experiments/async_request_guard.py)。[目标同条件对照](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)
-70项及累计8,224次fixture通过，模型0次；线程选择8.287→11.570秒，慢39.606%，仅保留为显式诊断。
-恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，后续[实际Ray分段](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)另核对返回等待、登记排队和分批变化。
-Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
-实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
-验证安排见[准备调优计划](../experiments/plans/查询调优.md#热路径独立计时与无模型验证)。
+新 RPC 组合和共享准备的采用条件归[数据组织方案](../experiments/plans/数据组织.md#execution-engineering-hypotheses)。
 
 ## 当前 PostgreSQL 文本 Map 的执行流程
 
-下面描述已接入的增量Map路径，外部runner直接读取数据库的历史流程另见后文。
+下面描述已接入的增量 Map 路径；外部 runner 的历史流程按末尾固定来源读取。
 
 ```mermaid
 flowchart LR
@@ -197,83 +106,6 @@ HTTP执行路径仍可选；默认Ray worker由查询创建，可选服务由调
 现有PG查询共享的受控与有限真实模型检查由[查询共享报告](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)维护，
 其中执行、关联和回收检查与复述质量负结果分别解释。共享映射候选的Linux/真实Ray SDK及本机HTTP检查由
 [计数接入报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)维护，其PG/真实模型检查尚未完成，不能混用两项资格。
-
-下节保存已停止的 SAOR 实现说明，供历史代码和证据追溯；它不表示可以重新运行模型实验。
-
-## Stopped SAOR native-system implementation record
-
-SAOR native-system matched infrastructure is locally implemented but remains stopped for GPU/formal
-execution. A non-rehearsal run now requires a separate authorization artifact that exactly binds the
-repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
-runner creates an output root, acquires a host lease, or calls an executor. The reusable offline core
-lives in `src/experiments/saor/native_system_summary.py`; typed contract/parser/validator/evidence/publisher,
-executor adapters and no-writeback completion-evidence validator live beside it under `src/experiments/saor/`; the
-pre-dispatch executor-binding core lives in `src/experiments/saor/native_system_bindings.py`; the CLI
-only composes these typed components. The readiness layer now jointly loads all three real configs,
-requires exact vLLM distribution/source evidence, and verifies revision-bound model artifacts plus
-the complete live endpoint identity before any cell. Before
-publishing any ranking, the core recomputes the authorization, contract snapshot, manifest, service
-signature, scheduler-owner map, schedule, index, and per-cell identities. A failed or tampered matrix
-publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system, Job,
-and resource ranking tables are withheld. This is local safety infrastructure, not new
-server/GPU evidence and not an authorization to resume the stopped experiment.
-
-The matched Project SAOR command now supports the common eager Job-internal
-arrival contract without executor-internal replay. Profiler validation permits
-this only for `saor_bounded_ready` with request granularity, bounded concrete
-pre-registration, a positive logical payload-byte limit, and request tracing.
-The observed eager Job start epoch is copied to both the scheduler request and
-trace seed, and the scheduler still executes the concrete envelope
-register/grant/submit lifecycle. Legacy
-single-head `saor_bounded_priority` remains replay-only.
-
-The matched contract also freezes the concrete two-endpoint mapping and the two 512-row Job identities.
-Native Daft/Ray Data commands are rechecked offline against their evidence-bound adapter, concurrency,
-and batch selection; Project commands are separately bound to the same endpoint pair. These checks do
-not inject Project batching, credit, routing, or data organization into native-framework arms.
-
-Each authorized physical matrix now receives a fresh `matrix_instance_id` after authorization and
-copies it into the immutable snapshot, index, and every cell; mixing a cell from another output root
-therefore fails offline validation. Persisted exception text is scrubbed with the shared credential
-redactor at both native-shard and matrix boundaries. The frozen manifest is sealed inside the matrix
-root; resource/output artifacts use root-relative, non-escaping paths, so moving the complete root
-does not break offline verification. Native raw Job summaries additionally seal each Job manifest and
-rewrite shard log/summary/request locators relative to the cell root; the matrix index uses a curated
-schema rather than copying arbitrary executor fields. Every valid cell and every `all_runs.csv` row also carries actual
-`server_version` and `pgvector_version`, collected from the timed PostgreSQL source evidence rather
-than inferred from a directory name. The shared typed `DatabaseIdentity` requires the same pair across
-the whole matrix, not merely a non-empty pair per cell. A passed summary keeps
-`formal_authorized=false` and records the narrower fact `formal_authorization_verified=true`.
-Every ranked cell ends at validated model completion with `writeback=none`. It must pass an
-independent manifest doc-id, row-count, content-digest, and exactly-once trace validation selected before the run; PostgreSQL
-remains the common timed source and no output-sink time enters the ranking.
-
-The five-arm comparison now places one common observation-only HTTP gateway between every Job and
-the fixed vLLM FCFS endpoints. It has no admission limit, retry, cache, route choice, or payload
-rewrite: each Job/endpoint path forwards the exact request body once and records endpoint-reported
-prompt/output tokens plus receive/completion clocks. Daft Native, Daft Ray, and Ray Data still own
-their execution order and backpressure. The common trace supplies real request P50/P95/P99, request
-SLO, weighted service share/Jain, completion-accounted service lag, and longest no-service interval
-for all five arms. Each Job also persists T0 release-before-PostgreSQL, T1 first batch, T2 first vLLM
-arrival, T3 last vLLM completion, and T4 validated in-memory result visibility; headline JCT and
-correct throughput use T0--T4, while source/execution/service spans remain separate.
-
-The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
-execution target. The only active text diagnostic compares D0 direct K-only, D1 direct K+W, and
-Project bounded-ready FIFO K+W for the feeding gap. Its direct K+W check is endpoint-local
-and Job-unaware, while the Project arm reuses the existing Daft/Ray/shared-credit path. The runner
-stores structured PostgreSQL/Ray/endpoint clean-state checks plus lossless K/W occupancy evidence, and the
-offline summary cannot alter the sealed negative formal decision. This infrastructure is locally
-tested but has not been run on the powered-off GPU server.
-
-代码职责与依赖方向见[实现规则](AGENTS.md)和下方目录，主要依赖由
-[架构测试](tests/architecture/test_architecture_boundaries.py)检查。
-2026-08-03 已完成的路径迁移过程见
-[固定提交记录](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/ARCHITECTURE_REFACTOR_PLAN.md)。
-
-本目录存放维护实现、薄CLI和测试。一次性机制诊断放在 `code/scripts/benchmarks/`，具名历史还原材料与原始结果分别由 `experiments/reproduction/`、`experiments/results/` 承载；候选目录按下方来源状态解释。
-
-绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
 
 ## 目录结构
 
@@ -860,172 +692,10 @@ The real contract test covers Daft `RecordBatch`/Arrow conversion and local Ray
 task/actor exactly-once execution. It is integration evidence only. GPU
 performance claims require the real PostgreSQL source and vLLM endpoint.
 
-## AI_COMPLETE workload import
+## 命令与历史实现
 
-Final comparable AI_COMPLETE baselines should use the normalized
-ShareGPT/BurstGPT workload instead of the legacy synthetic seed. Raw payloads
-live under `data/raw/` and are ignored by git; see `data/README.md`.
-
-Import 2048 local rows of the current main workload (sharegpt_multiturn, doc_id 300000-302047, target_output_tokens 1-256) without clearing existing `documents` rows:
-
-```powershell
-.conda\pg-ai-profile\python.exe code\scripts\data\import_ai_complete_workload.py `
-  --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
-  --workload-name sharegpt_multiturn `
-  --start-doc-id 300000 `
-  --max-rows 2048 `
-  --batch-rows 500
-```
-
-Run the profiling script against this workload with:
-
-```powershell
---source-workload-name sharegpt_multiturn
-```
-
-Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload retained for reproducing 0725-0728 experiments; it is no longer the default for current baselines.
-
-## Daft 文本组织 smoke
-
-当前 Daft 接入的项目代码在 `code/src/data/materializers/text.py`：`ArrowOrganizer`
-是 baseline 后端，`DaftOrganizer` 是文本阶段 Daft DataFrame 后端。独立 smoke 入口只负责验证
-`rows -> Arrow Table -> organizer -> batches`，并可显式切换 Ray runner 验证
-`into_partitions`。这不是正式性能实验，不写入 `experiments/results/motivation/gpu/`。
-
-```powershell
-.conda\pg-ai-profile\python.exe code\scripts\profiling\daft_text_organizer_smoke.py `
-  --organizer daft --runner ray --rows 32 --batch-size 8 `
-  --partition-mode into_partitions --partitions 4 `
-  --output tmp\daft_text_organizer_smoke.csv
-```
-
-```powershell
-.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py
-```
-
-## PostgreSQL AI 算子链路画像
-
-既有画像入口：
-
-```text
-code/scripts/profiling/postgres_ai_operator_profile.py
-```
-
-目标是采集 PostgreSQL 18 触发 AI 算子后的外部执行链路画像；既有 rehearsal 使用 18.4，当前
-semantic-operator qualification 锁定 18.3，前者不能代替 `REL_18_3` planner/query-lifecycle 验证：
-
-```text
-PostgreSQL documents/job table
-  -> external worker
-  -> ArrowOrganizer / DaftOrganizer
-  -> Ray actor fake or compatible HTTP AI_EMBED / AI_COMPLETE
-  -> bounded backpressure
-  -> fan-in
-  -> writeback document_embeddings / document_completions
-```
-
-以下为当时 Docker PostgreSQL 18.4 + pgvector 0.8.2 同构预演环境的历史记录，不能据此推定当前本机仍在运行：
-数据库、扩展和向量查询已经验证；WSL `.venv` 已安装 Ray、PyArrow、NumPy
-和 psycopg，并完成 256 行 PostgreSQL -> Arrow -> Ray actor -> fake embedding
--> PostgreSQL 写回冒烟运行。CSV 位于
-`experiments/results/diagnostics/pg18_4_connection_smoke_256_rows.csv`（及 `pg18_4_connection_smoke_runs.csv`），完整记录见
-`experiments/results/diagnostics/pg18_4_connection_validation.md`。
-脚本内部连接、读取、Ray 执行和写回函数的对应关系见 `scripts/README.md`。
-
-最小 dry-run：
-
-```bash
-.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
-  --dry-run \
-  --output experiments/results/diagnostics/postgres_ai_operator_profile_dry_run.csv
-```
-
-历史本地同构 PostgreSQL 连接示例（当前配置按[运行手册](../deploy/runtime/README.md)核验）：
-
-```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
-.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
-  --setup \
-  --seed-rows 10000 \
-  --total-rows 10000 \
-  --db-fetch-rows 1024 \
-  --ray-batch-rows 512 \
-  --model-workers 2 \
-  --max-inflight 8 \
-  --strategy coalesced \
-  --organizer arrow \
-  --output experiments/results/diagnostics/pg18_4_connection_smoke_256_rows.csv
-```
-
-Daft organizer dry-run:
-
-```powershell
-.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
-  --dry-run --executor python `
-  --organizer daft --daft-runner native `
-  --output tmp\postgres_profile_dry_run.csv
-```
-
-真实报告必须说明数据库平台类型：
-
-- 锁定 `REL_18_3` 的 semantic-operator qualification；
-- 普通 PostgreSQL + pgvector 同构预演替身；
-- 其他开源数据库 AI 算子平台。
-
-## 同条件 baseline 模块
-
-`code/src/baselines/` 把现有系统对照与本项目实现分离成可审计适配层：
-
-- `contracts.py` / `manifests.py` 固定请求语义、顺序、hash 与 endpoint 分片；
-- `controls/` 提供项目自写 direct controls，`ceilings/vllm_bench.py` 提供 serving
-  ceiling；
-- `runtime/daft_prompt.py` / `runtime/ray_data_http.py` 分别对接 Daft 与 Ray Data
-  vendor-native API graph；
-- `provenance.py` 固定 role、scheduler owner、custom scheduling、formal eligibility
-  与 upstream source，避免 control/ceiling 冒充 native baseline；
-- `postgres_manifest.py` 从正式 PostgreSQL workload 只读导出完整行与 source
-  hash，随后交给共同 endpoint 分片器；
-- `products/oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
-- `results.py` / `gate.py` 统一验证 exactly-once、延迟、吞吐和 fail-closed 条件；
-- `cli.py` 只做 shard dispatch、原始证据保存和格式归一化；
-- `gate_runner.py` 串行 core cell、并行双 endpoint shard，并在空队列校验后
-  fail closed，不复制项目 profiler。
-
-该模块的目标不是让 baseline 共享本项目调度逻辑，而是共享同一个不可变
-Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属于数据库
-算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
-能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
-
-已结束的开题三路径矩阵及专用汇总器已退役，复算使用
-[固定历史源码](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts)。
-当时的实验条件见[开题三路径记录](../experiments/plans/archive/开题三路径对照_20260807.md)，
-原始结果及失败记录继续保留。当前可运行入口见 [scripts/README.md](scripts/README.md)。
-
-`src/baselines/text/orchestration/native_matrix.py` 在运行前记录并固定每臂校准指纹后，
-复用 core gate 执行原生文本框架的 1 warmup + N 交错 formal；它不复制
-adapter 或请求计数逻辑，并为每个 run 保存逐 GPU 资源时序、vLLM gauge 与
-latency/estimated-FLOPs delta，供 GPU 利用率、能耗和 MFU 审计。
-`native_multijob.py` 只负责绝对时间启动两个错峰
-原生 job、保存四个 endpoint shard 证据、组级计数、vLLM gauge/latency delta
-与逐 GPU 利用率/功耗时序；禁止项目 credit/router/inflight 参数进入
-Daft/Ray Data 观察臂。两个 endpoint shard 共享显式进程 wall deadline，超时会终止
-survivor、保存 job evidence 并 fail closed；HTTP 单 request timeout 不替代该生命周期门。
-项目 static/shared 因果 A/B 仍由
-`src/experiments/shared_vllm/` 执行。
-其中 `saor_projection_evidence.py` 是 selector-neutral 的离线证据边界：只从 schema-5 raw
-event 的 debt、active set、weights、own/foreign/candidate work 重算 projected debt 和离散
-overshoot bound，不调用在线 SAOR selector，避免实现与验证共享同一个公式错误。
-
-`src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
-token-budget 和同协议 actor-shape 校准结果记录为后续策略实验的机器可校验
-合同，避免示例环境中的历史默认值静默进入正式 data-organization、
-submission 或多 job 矩阵。
-合同分别记录 throughput-oriented token budget 与在 95% throughput floor
-内最大化 SLO goodput 的候选预算，避免把一个预算误写成所有目标的通用最优。
-actor shape 保持每 endpoint 总 slots 不变，并选择达到峰值 97% 的最小
-actor 数；Chat 结果不能用来确定 Completions 主线配置。
-Shared-vLLM 的 4-job 数据面必须使用有界 persistent async actor pool；显式
-4-job `ray_task` 配置会在外部请求前失败，防止数百 worker 再次耗尽容器 VMA。
+工作负载导入、组织 smoke、PG 画像和 baseline 运行从[脚本入口](scripts/README.md)选择，不在本页重复命令。
+已停止的 SAOR 实现、旧运行配方及其来源见[精简前代码说明](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/code/README.md#stopped-saor-native-system-implementation-record)。
 
 <a id="代码组织的读法"></a>
 

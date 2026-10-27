@@ -70,6 +70,6 @@
 
 - 新增文献先核验正式题录与轨道，再下载、精读和分类。
 - 不根据摘要直接重排 Top 15。
-- 新增/删除泛读或精读笔记时同步本 README、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`；PDF 有变化时再同步 `REFERENCE_INDEX.md`。
+- 新增/删除笔记时更新所属笔记目录 README；研究入口或引用实际变化时再更新本页，PDF 变化时更新 `REFERENCE_INDEX.md`。
 - 泛读可使用 `reading_notes/tpl-文献泛读.md`；精读不使用统一模板，按 `精读文献笔记/README.md` 的目录与内容要求组织。
 - 结论标明来源：论文、官方文档、源码、本地实验、合理推断或待确认。

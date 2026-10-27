@@ -1,7 +1,7 @@
 # 单Job文本Map的准备与提交分段
 
 研究对象是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
-按[准备分段计划](../../../plans/查询调优.md#map-input-preparation)完成可选接法，原即时执行路径继续作为默认。
+按[准备分段计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#map-input-preparation)完成可选接法，原即时执行路径继续作为默认。
 本报告拥有本地行为、替身对照、服务器实际库检查与失败；PG接入、真实模型、物理内存及多Job收益pending。
 
 ## 实现与资源归属

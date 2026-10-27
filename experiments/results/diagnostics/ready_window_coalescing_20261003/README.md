@@ -6,7 +6,7 @@
 这不是Daft、Ray、PostgreSQL或GPU的性能测量，真实模型排名不更新。
 
 来源为main `7cbc888c8bb8adbcc33f47baf67fe4da225413be`及测量时尚未提交的候选。
-按[查询调优计划](../../../plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03)，服务器关闭后只使用本地受控对象；
+按[查询调优计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03)，服务器关闭后只使用本地受控对象；
 HTTP、PG、GPU及模型请求均为0，未连接服务器、安装依赖或下载数据。
 文献依据与反证条件见[优化方法依据](../../../../docs/research/优化方法依据.md#就绪准备窗口的有时限聚合2026-10-03)。
 

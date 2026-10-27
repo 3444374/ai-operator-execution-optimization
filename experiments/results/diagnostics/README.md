@@ -1,8 +1,7 @@
 # Feasibility Results
 
-[后继优先原轮与反序补证](../EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)：两轮分别慢10.26%／9.61%，当前负载停止简单策略自动扩测、默认FIFO；反序复用一摘要输出长度差3个token、分类相同，不称严格同输出。runner r3独审完成，旧取消unknown保留。
-
-[G3剩余入口小资格](../EXPERIMENT_EVIDENCE_REGISTRY.md#records-g3-small-qualification)：Ray／Daft／Kalypso业务通过；两个IMLane入口该轮初始化ZMQError、业务0；后续[短RPC六调用](../EXPERIMENT_EVIDENCE_REGISTRY.md#records-imlane-rpc-qualification)正常资格通过，旧失败／unknown保留。[e2bc零模型V0](../EXPERIMENT_EVIDENCE_REGISTRY.md#records-e2bc-v0)通过，PR52／56已接纳，仍不转授新source推理或完整链资格。
+[后继策略、records 入口及 token 候选](../EXPERIMENT_EVIDENCE_REGISTRY.md)的运行身份、失败与停止原因由证据台账维护；
+main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 
 [历史Native Q3失败与复验](lotus_records_local_model_20261016/README.md)：2026-10-20两个独立运行的紧凑证据、源码与原件身份；旧failed及新Native-only资格分列，不作为当前records生产接纳或九配置结果。
 

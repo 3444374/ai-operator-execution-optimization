@@ -7,7 +7,7 @@
 
 ## 来源与实际设置
 
-问题来自[现行验证计划](../../../plans/查询调优.md#map-preparation-pg-real)：
+问题来自[现行验证计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#map-preparation-pg-real)：
 验证显式准备分段的 PG 接入、真实模型完整查询时间及进程物理内存。
 该选项复用[准备原型](../../diagnostics/map_input_preparation_20261004/README.md)，默认即时执行保持。
 

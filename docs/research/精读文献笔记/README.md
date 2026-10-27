@@ -56,7 +56,7 @@
 2. 在独立论文目录中创建同名主笔记；本目录不使用统一模板，也不维护阅读状态字段。
 3. 精读至少覆盖：研究问题与假设、方法和系统边界、实验设计与 baseline、关键数据、局限/威胁、可迁移机制、与本项目的关系及不能声称的内容。
 4. 论文原文事实尽量标注章节、页码、表号或图号；推断和项目判断必须与论文事实分开。
-5. 完成后更新本目录计数、`../README.md`、`../../../PROJECT_INDEX.md` 和 `../../../PROJECT_LOG.md`；新增或替换 PDF 时再更新 `../reference/REFERENCE_INDEX.md`。进入开题 Top 15 时，是否更新开题快照由 `../../archive/opening/literature/reading_list.md` 单独决定。
+5. 完成后更新本目录入口与计数；影响上级入口或实际引用时再修订对应内容，新增或替换 PDF 时更新 `../reference/REFERENCE_INDEX.md`。进入开题 Top 15 时，是否更新开题快照由 `../../archive/opening/literature/reading_list.md` 单独决定。
 
 ## 配图规则
 

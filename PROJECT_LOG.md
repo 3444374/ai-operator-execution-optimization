@@ -1,5 +1,13 @@
 # 项目日志
 
+本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
+
+## 2026-10-27：减少重复导航与状态维护
+
+删除 PROJECT_INDEX.md，项目入口并入根 README；查询调优的三个活跃假设并入数据组织，历史引用固定到精简前提交。
+总纲保留方向与顺序，代码状态保留接纳范围，台账保留证据身份；移出重复摘要和旧快照，原始结果、失败、配置与复现材料保留。
+精简前完整正文由提交 `0b8aca5ff599e1b6525b77608e3865b20a4fd996` 恢复，后续同步按事实归属执行。
+
 ## 2026-10-27：语义依赖与数据存活准入归并现有方案
 
 补充分析全文核对后，将潜在后继／合法ready、服务／排队／空间责任、共享引擎容量、新源扩张／存量排空和消费者释放条件归入[既有架构](experiments/plans/系统架构.md#semantic-liveness-admission-contract)与[方法采用条件](docs/research/优化方法依据.md#semantic-liveness-admission-basis)，不新造方案或生产策略。Ray Data v5／Kalypso v2已有覆盖，新增收益仅为待证假设。资源线[本地观测方案及91项CPU](experiments/plans/数据组织.md#dag-resource-observation)已完成；组合线76测试／171子用例及37组main差分另列，有限F/M与关系屏障Extract的实现不混作GPU全覆盖，真实token仍仅F→M。该专项的真实后端库与GPU资源观测未做；当前只CPU离线，不预加载／迁移，不恢复旧预算。保留prioritization与token负结果，未叠加资源8文件补丁、未改源码／实验原件或发布。
@@ -62,7 +70,7 @@ G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d�
 
 ## 2026-10-26：收敛查询调优状态并移除未调用helper
 
-[查询调优](experiments/plans/查询调优.md)将已完成诊断和固定配置负结果移出活跃事项，旧执行要求从固定提交恢复，保留既有章节定位；总纲、代码状态、计划索引和证据台账同步。
+[查询调优](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md)将已完成诊断和固定配置负结果移出活跃事项，旧执行要求从固定提交恢复，保留既有章节定位；总纲、代码状态、计划索引和证据台账同步。
 删除导入脚本中未被调用的`wrap_prompt`；实际入口继续使用`_apply_template`及既有默认模板。原始实验和历史来源不变，未新增模型运行。
 [PR53](https://github.com/3444374/ai-operator-execution-optimization/pull/53)已于09:25:34 UTC合并为`380cfbda`，离线工具实施事项关闭；[PR52](https://github.com/3444374/ai-operator-execution-optimization/pull/52)仍为draft，新源码的模型与资源资格待核验。后文候选叙事按原记录时点解释。
 
@@ -308,7 +316,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 
 - 按用户要求更新现有文档，依据当前源码区分查询/流/任务归属、Ray worker实际发送、累计实验预算、在途容量与观察事件；详细说明归[代码README](code/README.md#query-accounting-scopes)。
 - [数据库接入](experiments/plans/数据库接入.md#query-job)明确多个PG backend分别登记查询，以及同一查询流加入仍要求同一可信peer；多个gateway总容量和跨PG并行执行进程登记继续标为pending。
-- [查询调优](experiments/plans/查询调优.md#同机共享预付计数的本地原型)、代码状态及总纲同步候选已完成的Linux/真实Ray检查，区分现有PG查询共享与共享映射候选尚未完成的PG/模型检查。
+- [查询调优](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#同机共享预付计数的本地原型)、代码状态及总纲同步候选已完成的Linux/真实Ray检查，区分现有PG查询共享与共享映射候选尚未完成的PG/模型检查。
 - 本次只修订说明与现行引用，实验结论继续引用原报告，没有新增实现或运行。
 
 ## 2026-10-04：准备分段的 PG 接入、模型停止与对象观测修订
@@ -372,7 +380,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 
 ## 2026-10-04：gateway多查询干扰的本地诊断
 
-- 按用户认可的[gateway诊断计划](experiments/plans/查询调优.md#gateway-isolation-probe)实现本地工具；真实UDS/登记/Core/Map循环运行，厂商、服务和kernel peer为fixture。
+- 按用户认可的[gateway诊断计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#gateway-isolation-probe)实现本地工具；真实UDS/登记/Core/Map循环运行，厂商、服务和kernel peer为fixture。
 - 完成40个新进程case、1,088次模拟调用，相关30项中29通过、1项Linux检查跳过；HTTP／模型／PG为0，未连接服务器或安装依赖。
 - 原始事件、行身份、资源归还及阶段等待复算通过；共享observer会传播阻塞，准备等待还涉及逻辑活动名额，慢消费按本次条件保留隔离信号。
 - 首次0调用不可变装配对象接线错误和未正常排空状态保留；修复后完成清单。生产执行/默认未改，不据模拟采用新线程、RPC或等待窗口。
@@ -387,7 +395,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 
 ## 2026-10-03：本地观察成本隔离与后续取舍
 
-- 按用户同意尝试[查询调优清单](experiments/plans/查询调优.md#next-submission-work)，新增有限诊断与复算入口，真实Core／Map循环运行，厂商和服务为明确替身。
+- 按用户同意尝试[查询调优清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#next-submission-work)，新增有限诊断与复算入口，真实Core／Map循环运行，厂商和服务为明确替身。
 - 主清单20次执行、16,448次模拟调用、103项检查及原始字段复算通过；HTTP、PG、模型均为0，没有连接服务器或安装依赖。
 - 观察方式改变提交等待和窗口形态，生产默认与真实计费保持；真实Ray成本待核验，暂不实现成组RPC。
 - 保留准备接线、驱动自唤醒的失败与排空计数更正；Git只保存必要代码／报告／聚合／复算／清单和约3.12MB压缩证据，其余原件保留仓库外。
@@ -591,7 +599,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 - 公开339份文本脱敏压缩并恢复核验，343份原始材料留仓库外备份；源码准备失败与控制器失败保留。
   PG/Ray/HTTP、worker及原ACL清理核对通过，模型POST0。
 - [结果](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)和
-  [计划](experiments/plans/查询调优.md)按阶段区分诊断与真实复测。
+  [计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md)按阶段区分诊断与真实复测。
 - 后续真实清单14条查询/11,312次后因控制器提前检查剩余时间停止，缺失重复不补造，失败原件单独保留。
   修订时间检查，3项通过；用户新授权完整12,336次与20分钟。启动模块导入失败为0POST且尚无账本，
   修订准备先以实际运行用户验证导入，沿用该授权的原截止时间。
@@ -614,7 +622,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 - 817份源码前后SHA一致，89项相关及2项记录器检查通过；126个记录PID与创建时间核对无活动残留，
   四次模型进程组正常结束，PG/Ray/GPU空闲与两处父目录ACL恢复原值核对通过。
 - 8,224份小事件与合并记录逐字节一致，公开归档只保留合并版；缓存、数据库数据、runtime env和连接信息不提交。
-  [计划](experiments/plans/查询调优.md)与[完整结果](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)保存失败、原值及范围。
+  [计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md)与[完整结果](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)保存失败、原值及范围。
 
 ## 2026-09-30：准备诊断、worker复用与推送恢复
 
@@ -630,7 +638,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
   修订诊断HTTP队列后独立清单通过，不认定旧模型故障根因。全部诊断累计21079次fixture，真实模型0次。
 - 201个采样PID及创建时间核对，活动残留0；PG/Ray/HTTP结束，两处父目录ACL恢复原值，GPU计算进程为空。
   1733份选择文本脱敏后压缩为约6.56MB并逐项恢复核验；可重建数据库二进制与runtime文件留在仓库外完整原始归档。
-- [计划](experiments/plans/查询调优.md)与[结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
+- [计划](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md)与[结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
   登记全部重复、失败、源码身份及适用范围；剩余首批处理观测与真实模型复测清单。
 
 ## 2026-09-30：文本Map分支审查与证据压缩

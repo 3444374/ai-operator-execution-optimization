@@ -1,6 +1,6 @@
 # gateway多查询干扰的本地组件诊断
 
-按[gateway诊断清单](../../../plans/查询调优.md#gateway-isolation-probe)完成40个新进程case、
+按[gateway诊断清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#gateway-isolation-probe)完成40个新进程case、
 1,088次模拟调用，主清单全部通过；HTTP、模型与PG查询均为0，生产执行代码与默认配置未改。
 本报告与紧凑证据随`codex/gateway-isolation-diagnostics`实验分支保存；运行源码身份仍以原始摘要表示。
 
@@ -134,7 +134,7 @@ PYTHONPATH=code python3 experiments/results/diagnostics/gateway_isolation_202610
 <a id="server-platform"></a>
 ## 服务器补充：Linux凭据与真实Ray的无模型检查
 
-用户允许使用服务器后，按[平台清单](../../../plans/查询调优.md#服务器平台与真实ray的无模型验证)完成16项检查，全部通过且没有跳过。
+用户允许使用服务器后，按[平台清单](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#服务器平台与真实ray的无模型验证)完成16项检查，全部通过且没有跳过。
 真实Linux `SO_PEERCRED`凭据及跨进程UDS资源检查运行；随后直接HTTP与Ray HTTP两路径完成272次本机确定性HTTP请求。
 模型、GPU执行与PG查询均为0，四个250毫秒干扰情形未在此重测，不能把平台接入当作干扰结论的扩大验证。
 
