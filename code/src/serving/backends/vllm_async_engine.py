@@ -29,9 +29,13 @@ class AsyncEngineLimits:
     command_slots: int = 8
     control_slots: int = 16
     control_frame_bytes: int = 64 * 1024
+    feedback_interval_s: float = 0.0
 
     def __post_init__(self):
         for name, value in vars(self).items():
+            if name == "feedback_interval_s":
+                common._number(value, name, low=0)
+                continue
             if type(value) is not int or value <= 0:
                 raise ValueError(name + " must be a positive integer")
         if self.input_bytes < self.item_input_bytes or self.result_bytes < self.item_result_bytes:
@@ -89,6 +93,11 @@ class VllmAsyncEngine:
         self._requests = {}
         self._reserved_model_calls = self._input_bytes = 0
         self._loop = asyncio.get_running_loop()
+        self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics) \
+            if self.limits.feedback_interval_s or self.spec.enable_mfu_metrics else None
+        if self.spec.enable_mfu_metrics:
+            from src.observability.metrics.mfu_trace import install
+            install(self.engine_uid)
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
             dtype=self.spec.dtype, max_model_len=self.spec.max_model_len,
@@ -99,7 +108,9 @@ class VllmAsyncEngine:
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
-        ))
+            **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
+        ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
+              if self._feedback is not None else {}))
         self._chat_params = ChatParams(
             chat_template=template, chat_template_content_format="auto",
             chat_template_kwargs=dict(add_generation_prompt=True, continue_final_message=False,
@@ -117,11 +128,15 @@ class VllmAsyncEngine:
         return params
 
     def ready(self):
+        from src.observability.metrics.mfu import configuration_snapshot
         return dict(engine_uid=self.engine_uid, pid=os.getpid(), python=sys.executable,
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
                     reserved_model_calls=self._reserved_model_calls,
-                    native_abort_is_terminal_confirmation=False)
+                    native_abort_is_terminal_confirmation=False,
+                    **({"native_mfu_initial": self.mfu_snapshot(),
+                        "native_mfu_configuration": configuration_snapshot(self._llm.vllm_config)}
+                       if self.spec.enable_mfu_metrics else {}))
 
     async def generate_prepared(self, row, *, request_id, generation=None,
                                 deadline_monotonic):
@@ -279,3 +294,48 @@ class VllmAsyncEngine:
             return dict(status="unknown", engine_api_shutdown_confirmed=False,
                         gpu_exit_confirmed=None, uncertain_requests=len(self._requests),
                         error_type=type(error).__name__)
+
+
+    def feedback_snapshot(self):
+        return None if self._feedback is None else self._feedback.snapshot()
+
+
+    def mfu_snapshot(self):
+        return (dict(status="disabled") if not self.spec.enable_mfu_metrics
+                else self._feedback.mfu.snapshot())
+
+
+class NativeStats:
+    """Constant-size vLLM 0.25.1 stat logger; no I/O in the output handler."""
+
+    def __init__(self, engine_uid, *, clock=time.monotonic, enable_mfu_metrics=False):
+        self.engine_uid, self.clock = engine_uid, clock
+        self.sequence = self.preemptions = self.finished = self.tokens = 0
+        self.latest = None
+        from src.observability.metrics.mfu import NativeMfuTotals
+        self.mfu = NativeMfuTotals(engine_uid, clock=clock) if enable_mfu_metrics else None
+
+    def record(self, scheduler_stats, iteration_stats, mm_cache_stats=None, engine_idx=0):
+        if self.mfu is not None:
+            self.mfu.record(scheduler_stats, iteration_stats, engine_idx)
+        if iteration_stats is not None:
+            self.preemptions += iteration_stats.num_preempted_reqs
+            self.tokens += iteration_stats.num_generation_tokens
+            self.finished += sum(getattr(item.finish_reason, "name", str(item.finish_reason)).lower() != "abort"
+                                 for item in iteration_stats.finished_requests)
+        if scheduler_stats is not None:
+            self.sequence += 1
+            self.latest = dict(engine_uid=self.engine_uid, sequence=self.sequence,
+                observed_at_s=self.clock(), running=scheduler_stats.num_running_reqs,
+                waiting=scheduler_stats.num_waiting_reqs, kv_usage=scheduler_stats.kv_cache_usage,
+                preemptions_total=self.preemptions, finished_total=self.finished,
+                generation_tokens_total=self.tokens)
+
+    def log_engine_initialized(self):
+        pass
+
+    def log(self):
+        pass
+
+    def snapshot(self):
+        return None if self.latest is None else dict(self.latest)

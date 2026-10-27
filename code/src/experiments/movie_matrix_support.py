@@ -111,6 +111,8 @@ def validate_core_scan(plan, group, index, cpu_limit):
     from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
     from src.serving.backends.vllm_engine import EngineSpec
     from src.semantic_methods.lotus.records import RecordsResources
+    if plan['profile'].get('admission') is not None:
+        raise ValueError('fixed Core calibration cannot also run online admission')
     if plan['backend']!='semloom-core' or plan['profile'].get('mode')!='async':
         raise ValueError('measured Core selection currently supports async only; fixed sync remains available')
     resources=RecordsResources(**plan['resources']);engine=EngineSpec.from_dict(plan['engine'])
@@ -124,7 +126,7 @@ def core_observations(cfg, packet, gpu):
     """Reuse fresh host/model preflight, never infer a measured performance value."""
     from src.infrastructure.environment import observe_machine
     machine=observe_machine()
-    shared=packet.read(packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']
+    shared=declared_shared_resources(cfg,packet)
     receipt=packet.read(packet.HERE/'runtime/model-preflight.json')
     if (receipt['status']!='passed' or receipt['source_commit']!=packet.COMMIT
             or len(machine.gpu_driver_versions)!=1):
@@ -206,7 +208,7 @@ def owner_context_contract(context):
 
 def build_launch_context(cfg,packet_sha,index,group,lease,output,unit_deadline,gpu,*,packet,budget_path,budget_id):
     """Use the same complete configuration for CPU preflight and owner startup."""
-    shared=packet.read(packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']
+    shared=declared_shared_resources(cfg,packet)
     prefix='/s'+format(int(cfg['ipc_prefix_base'][2:],16)+index,'08x')+'0'
     return dict(packet_sha256=packet_sha,plan_sha256=packet.sha(packet.HERE/group['plan']),
         assigned_gpu_uuid=gpu['uuid'],worker_deadline_monotonic=unit_deadline-60,
@@ -288,3 +290,76 @@ class OptionalPerformance:
 
 def optional_performance(cfg,output,gpu,event_paths,*,host,packet):
     return OptionalPerformance(cfg,output,gpu,event_paths,host=host,packet=packet)
+
+
+def declared_shared_resources(cfg,packet):
+    """Use sealed launch limits; retain the existing source-file contract if omitted."""
+    if 'shared_resources' in cfg:
+        return cfg['shared_resources']
+    return packet.read(packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']
+
+
+def validate_record_admission_cache(value, resolved):
+    """Validate metadata only; policy validation remains in the public Core API."""
+    if value is None:
+        return None
+    if (type(value) is not dict or set(value) - {'identity','cache_dir','reuse'}
+            or not {'identity','cache_dir'}.issubset(value)
+            or type(value.get('reuse',True)) is not bool
+            or type(value['cache_dir']) is not str or not Path(value['cache_dir']).is_absolute()):
+        raise ValueError('admission_cache needs identity, absolute cache_dir and optional boolean reuse')
+    if resolved is None or resolved.get('mode')!='async' or 'admission' not in resolved:
+        raise ValueError('admission_cache requires explicit async resource-feedback admission')
+    from src.scheduling.runtime.calibration import identity_signature
+    identity_signature(value['identity'])
+    return value
+
+
+def run_record_admission(cache, resolved, source, method, generation, engine, resources,
+                         execute_query, *, warmup=False):
+    """Cache only after the existing complete query callback returns and drains.
+
+    The caller still owns model startup/final close and actual return timing.
+    Identity metadata is supplied by the run manifest; actual source, method,
+    generation and configured capacities are additionally bound below.
+    """
+    from dataclasses import asdict
+    import time
+    from src.scheduling.runtime.calibration import run_admission_query
+    from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
+    entered=time.monotonic()
+    cache=validate_record_admission_cache(cache,resolved)
+    options=ResourceFeedbackConfig(**{k:v for k,v in resolved['admission'].items()
+                                     if k not in ('kind','gpu_ids')})
+    initial,maximum=resolved['max_inflight'],resolved['owner_max_inflight']
+    if warmup:
+        result=execute_query(initial,allow_exploration=False,search_hint=None)
+        result['admission_selection']=dict(cache_hit=False,configuration_source='warmup_initial',
+            cache_read_or_write=False,scan_cost=dict(wall_s=0.,samples=0))
+        return result
+    identity=deepcopy(cache['identity'])
+    identity['model']=dict(declared=identity['model'],actual=asdict(engine))
+    identity['generation']=dict(declared=identity['generation'],actual=asdict(generation))
+    identity['execution']=dict(declared=identity['execution'],profile=resolved['requested'],
+                               resources=asdict(resources))
+    identity['workload']=dict(declared=identity['workload'],manifest_sha256=sha(source.manifest_path),
+                             method=asdict(method))
+    def execute(window, *, allow_exploration, search_hint=None):
+        result=execute_query(window,allow_exploration=allow_exploration,search_hint=search_hint)
+        close=result.get('backend_close') or {}
+        usage=close.get('core_usage') or {}
+        counts=(result.get('calls') or {}).get('counts') or {}
+        eligible=(result.get('status')=='completed' and close.get('status')=='closed'
+                  and usage.get('held_tasks')==0 and close.get('source_closed') is True
+                  and not close.get('cleanup_errors')
+                  and all(counts.get(k)==0 for k in ('failed','unknown','missing')))
+        return dict(status=result.get('status'),reuse_eligible=eligible,
+            admission_feedback=close.get('admission_feedback'),query_report=result)
+    selection=run_admission_query(identity,execute,initial_window=initial,maximum=maximum,
+        cache_dir=cache['cache_dir'],reuse=cache.get('reuse',True),options=options,
+        request_started_monotonic=entered)
+    result=selection.pop('result')['query_report']
+    result['admission_selection']=selection
+    selection['entry_work_wall_s']=time.monotonic()-entered
+    selection['entry_work_scope']='binding through complete query and cache write, before payload return; caller measures actual return'
+    return result

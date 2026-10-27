@@ -313,7 +313,7 @@ def read_config(path):
     from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_profile"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_profile", "admission_cache"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -344,9 +344,12 @@ def read_config(path):
     if is_core:
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
         resolved = resolve_core_profile(engine, resources, profile)
-        if limits is not None and (limits.max_inflight != resolved["max_inflight"]
-                                   or limits.result_slots < resolved["max_inflight"]):
+        if limits is not None and (limits.max_inflight != resolved.get("owner_max_inflight", resolved["max_inflight"])
+                                   or limits.result_slots < resolved.get("owner_max_inflight", resolved["max_inflight"])):
             raise ValueError("async_limits must cover and match the Core request limit")
+    if value.get("admission_cache") is not None:
+        from src.experiments.movie_matrix_support import validate_record_admission_cache
+        validate_record_admission_cache(value["admission_cache"], resolved if is_core else None)
     query_id = value["query_id"]
     # Validate query identity even for empty source relations.
     from src.semantic_methods.lotus.records import identity
@@ -598,6 +601,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                                                  "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
         runtime_seconds = time.monotonic() - runtime_started
         emit("runtime_setup_end")
+        query_options = {}
         def execute():
             nonlocal owner
             if config["backend"] == "daft-native-local-model":
@@ -610,12 +614,23 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 from src.execution_provider.adapters.lotus_records_core import create_records_core
                 owner = create_records_core(method, engine, generation, resources,
                                              profile=profile, async_limits=async_limits)
-                return owner.evaluate(source, query_id=config["query_id"])
+                return owner.evaluate(source, query_id=config["query_id"], **query_options)
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
             return owner.evaluate(source, query_id=config["query_id"])
-        report = run_movie_query(source, checkout, method, generation, execute,
-                                 query_id=config["query_id"], observer=observer)
+        if config.get("admission_cache") is not None:
+            from src.experiments.movie_matrix_support import run_record_admission
+            resolved = resolve_core_profile(engine, resources, profile)
+            def execute_query(window, *, allow_exploration, search_hint=None):
+                query_options.update(max_inflight=window, allow_exploration=allow_exploration,
+                                     search_hint=search_hint)
+                return run_movie_query(source, checkout, method, generation, execute,
+                                       query_id=config["query_id"], observer=observer)
+            report = run_record_admission(config["admission_cache"], resolved, source, method,
+                generation, engine, resources, execute_query)
+        else:
+            report = run_movie_query(source, checkout, method, generation, execute,
+                                     query_id=config["query_id"], observer=observer)
         report.update(backend=config["backend"], runtime_setup_seconds=runtime_seconds,
                       execution_kind="synchronous local-model qualification", performance_claim=False)
     except BaseException as error:

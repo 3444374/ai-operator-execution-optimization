@@ -1,5 +1,7 @@
 # 原生基线与具名 Core 历史复现
 
+动态查询入口更新另为十一份受影响旧文件各保留一个精确副本，由五种历史复现共享23条新增来源映射。旧哈希、投影ID、来源与已有映射不变；这些冻结副本仅供无Git源码包还原，不参与维护版执行。
+
 可选逐记录查询的代码变化为五份受影响旧文件各保留一个精确副本，五种复现按需共享；只追加21条来源映射，原文件哈希、版本摘要及已有映射保持。
 
 进程工具归位另将原`lotus_records_supervisor.py`逐字节保存到`historical_sources/`，五份投影只增加该文件的override路由；原expected SHA、projection ID与source revision均保持，历史树不依赖新的`infrastructure/owned_processes.py`。

@@ -33,12 +33,14 @@ from src.scheduling.runtime import calibration
 from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
 
 SOURCE=Path(entry.__file__).resolve().parents[3]
-UPSTREAM=SOURCE.parent/'packet/sembench'
+UPSTREAM=Path(os.environ['SEMBENCH_CHECKOUT']).expanduser().resolve() if 'SEMBENCH_CHECKOUT' in os.environ else None
 
 
 class CLIIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if UPSTREAM is None:
+            raise unittest.SkipTest('set SEMBENCH_CHECKOUT to the pinned upstream checkout')
         import duckdb  # Keep native module identity across Runtime's sys.modules fixtures.
         from src.baselines.text.sembench_movie import _load
         _load(UPSTREAM,'CPU_fixture_evaluator_warm','src/scenario/movie/evaluation/evaluate.py')
@@ -75,6 +77,8 @@ class CLIIntegrationTests(unittest.TestCase):
             rpc_root_prefix=str(self.root/'rpc-'),ray_root_prefix=str(self.root/'ray-'),environment_file='CPU-fixture-env',
             expected_template_sha256=hashlib.sha256(b'CPU fixture template').hexdigest(),
             finite_generation_profiles=[asdict(GenerationSpec())],driver_versions=dict(driver='CPU-fixture'))
+        self.cfg['shared_resources']=dict(cpu_affinity_slots=[0,1,2,3],
+            max_sampled_owned_rss_bytes=1024**3,max_owned_shm_bytes=1024**2)
         receipt=dict(status='passed',source_commit='CPU-fixture-source',model_revision='CPU-fixture-model',
             model_files={'CPU-fixture':dict(sha256='a'*64)},model_versions=dict(vllm='CPU-fixture'),
             tokenizer_artifacts_sha256={'CPU-fixture-tokenizer':'b'*64},template_sha256=self.cfg['expected_template_sha256'])

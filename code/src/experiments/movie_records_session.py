@@ -33,7 +33,7 @@ def check_plan(plan):
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
-    if (type(plan) is not dict or set(plan) != required
+    if (type(plan) is not dict or set(plan) not in (required, required | {"admission_cache"})
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
         raise ValueError("an explicit Movie session plan is required")
@@ -51,9 +51,14 @@ def check_plan(plan):
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
     core_profile = None
+    if plan["backend"] == "semloom-static-reference" and plan["profile"] != {"mode": "sync"}:
+        raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
         core_profile = resolve_core_profile(engine, resources, plan["profile"])
+    if plan.get("admission_cache") is not None:
+        from src.experiments.movie_matrix_support import validate_record_admission_cache
+        validate_record_admission_cache(plan["admission_cache"], core_profile)
     if type(plan["queries"]) is not list or not plan["queries"]:
         raise ValueError("declare every complete warmup and measured query")
     checked, ids = [], set()
@@ -82,6 +87,10 @@ def check_plan(plan):
                 or engine.max_model_calls is None or engine.max_model_calls > 4096):
             raise ValueError("IMLane resident control records and whole-session calls exceed finite bridge capacity")
     total = sum(query["expected_calls"] for query in checked)
+    if plan["backend"] == "semloom-static-reference":
+        methods = [MovieTask.from_config(query["task"]).method(plan["model_name"]) for query in checked]
+        if any(method != methods[0] for method in methods):
+            raise ValueError("a static reference session retains one method instruction")
     if engine.max_model_calls is None or engine.max_model_calls < total:
         raise ValueError("max_model_calls must explicitly cover the whole session, including warmup")
     if plan["backend"] == "lotus-native":
@@ -169,7 +178,7 @@ class _MovieDriver:
             self.owner = IMLaneResidentSession(self.engine, self.generation, self.resources,
                 author_args=args, model_environment=value["model_environment"], deadline_monotonic=deadline)
             return self.owner.start()
-        if backend in {"semloom-core", "ray-data"}:
+        if backend in {"semloom-core", "semloom-static-reference", "ray-data"}:
             import ray
             if ray.is_initialized():
                 raise RuntimeError("session refuses an existing Ray runtime; use its private supervised worker")
@@ -183,11 +192,15 @@ class _MovieDriver:
                 self.ray_identity = dict(driver_pid=os.getpid(), node_id=ray.get_runtime_context().get_node_id())
                 return dict(no_session_model=True, model_startup_scope="inside each native Dataset",
                             runtime_identity=self.ray_identity)
-        if backend == "semloom-core":
-            from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
-            self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"])
-            self.owner = create_records_core(method, self.engine, self.generation, self.resources,
-                                             profile=self.plan["profile"])
+        if backend in {"semloom-core", "semloom-static-reference"}:
+            if backend == "semloom-core":
+                from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
+                self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"])
+                self.owner = create_records_core(method, self.engine, self.generation, self.resources,
+                                                 profile=self.plan["profile"])
+            else:
+                from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
+                self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
             ready = self.owner.start()
             if self.plan["lifecycle"] != "resident":
                 return ready
@@ -197,13 +210,16 @@ class _MovieDriver:
             import psutil
             pid = ready.get("pid")
             if type(pid) is not int or pid <= 0:
-                raise RuntimeError("Core model readiness lacks its actual process ID")
+                raise RuntimeError(("Core" if backend == "semloom-core" else "static reference")
+                                   + " model readiness lacks its actual process ID")
             process = psutil.Process(pid)
             birth = process.create_time()
             if process.pid != pid or psutil.Process(pid).create_time() != birth:
-                raise RuntimeError("Core model birth changed during readiness observation")
+                raise RuntimeError(("Core" if backend == "semloom-core" else "static reference")
+                                   + " model birth changed during readiness observation")
             return dict(ready, readiness_observation=dict(pid=pid, create_time=birth,
-                boundary="Core.start returned original model readiness"))
+                boundary=("Core.start returned original model readiness" if backend == "semloom-core"
+                          else "static reference start returned original model readiness")))
         return dict(no_session_model=True, model_startup_scope="inside existing per-query adapter")
 
     def query(self, spec, emit):
@@ -242,11 +258,16 @@ class _MovieDriver:
             engine = replace(self.engine, max_model_calls=binding["expected_calls"])
             return run(source, checkout, method, self.generation, engine, self.resources,
                 query_id=spec["query_id"], profile=self.plan["profile"], context=context, observer=emit)
+        query_options = {}
         if backend == "imlane":
             self.imlane_guard()
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
         elif backend == "semloom-core":
-            execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"], method=method)
+            execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"], method=method, **query_options)
+        elif backend == "semloom-static-reference":
+            if method != self.owner.method:
+                raise ValueError("a static reference session retains one method instruction")
+            execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"])
         elif backend == "daft" and self.owner is not None:
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
         else:
@@ -260,8 +281,19 @@ class _MovieDriver:
         self.last_query_failure = None
         self.last_query_report = None
         try:
-            self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
-                                   query_id=spec["query_id"], observer=emit)
+            if self.plan.get("admission_cache") is not None:
+                from src.experiments.movie_matrix_support import run_record_admission
+                def execute_query(window, *, allow_exploration, search_hint=None):
+                    query_options.update(max_inflight=window, allow_exploration=allow_exploration,
+                                         search_hint=search_hint)
+                    return run_movie_query(source, checkout, method, self.generation, execute,
+                                          query_id=spec["query_id"], observer=emit)
+                self.last_query_report = run_record_admission(self.plan["admission_cache"],
+                    self.core_execution, source, method, self.generation, self.engine, self.resources,
+                    execute_query, warmup=spec["phase"] == "warmup")
+            else:
+                self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
+                                       query_id=spec["query_id"], observer=emit)
             if backend == "semloom-core":
                 from src.experiments.movie_matrix_support import record_core_selection
                 record_core_selection(self.last_query_report,self.context)

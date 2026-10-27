@@ -132,6 +132,8 @@ class AsyncEngineProcess:
         self._broken = None
         self.ready_report = self.engine_close_report = self.last_close_report = None
         self._drain_report = None
+        self._native_feedback = None
+        self._native_mfu = None
         self._producer_report = self._producer_quiescence = None
         self._retired_unknown = set()
         self._query_id = None
@@ -214,7 +216,9 @@ class AsyncEngineProcess:
                         owner_uid=self._owner_uid,
                         issued_submissions=self._sequence,
                         child_alive=self.process is not None and self.process.poll() is None,
-                        child_drain_report=self._drain_report)
+                        child_drain_report=self._drain_report,
+                        **({"native_mfu": self._native_mfu} if self.spec.enable_mfu_metrics else {}),
+                        native_feedback=None if self._native_feedback is None else dict(self._native_feedback))
 
     def submit(self, row, *, generation=None, deadline_monotonic):
         common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
@@ -355,6 +359,11 @@ class AsyncEngineProcess:
                 if result.get("engine_terminal_confirmed", confirmed) is not confirmed:
                     raise ValueError("model and transport confirmation disagree")
                 slot.terminal = value
+                if self.spec.enable_mfu_metrics and value.get("native_mfu") is not None:
+                    observed = value["native_mfu"]
+                    if observed.get("engine_uid") == self.ready_report.get("engine_uid"):
+                        if self._native_mfu is None or observed.get("sequence", -1) >= self._native_mfu.get("sequence", -1):
+                            self._native_mfu = observed
                 slot.result_bytes = encoded_bytes
                 if confirmed:
                     slot.input_bytes = 0
@@ -365,6 +374,8 @@ class AsyncEngineProcess:
                 if self.ready_report is not None:
                     raise ValueError("duplicate model ready")
                 self.ready_report = value["report"]
+                if self.spec.enable_mfu_metrics:
+                    self._native_mfu = self.ready_report.get("native_mfu_initial")
             elif op == "accepted":
                 key = value.get("request_id", "")
                 prefix, _, sequence = key.rpartition(":")
@@ -373,6 +384,11 @@ class AsyncEngineProcess:
                 slot = self._slots.get(key)
                 if slot is not None:
                     slot.accepted = True
+            elif op == "feedback":
+                snapshot = value.get("snapshot")
+                if (type(snapshot) is dict and self.ready_report is not None
+                        and snapshot.get("engine_uid") == self.ready_report.get("engine_uid")):
+                    self._native_feedback = snapshot
             elif op == "drained":
                 self._drain_report = value
             elif op == "closed":
@@ -594,11 +610,16 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         failure = loop.create_future()
         next_sequence = 0
 
+        feedback_packet = None
+
         async def writer(sock, queue):
+            nonlocal feedback_packet
             while True:
                 packet, key = await queue.get()
                 try:
                     await loop.sock_sendall(sock, packet)
+                    if packet is feedback_packet:
+                        feedback_packet = None
                     if key is not None:
                         owned.pop(key, None)
                 finally:
@@ -606,6 +627,25 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
 
         async def reply(value):
             await control_queue.put((_frame(value, limits.control_frame_bytes), None))
+
+        async def feedback_updates():
+            nonlocal feedback_packet
+            latest_sequence = None
+            while not closing.is_set():
+                await asyncio.sleep(limits.feedback_interval_s)
+                # One optional packet at most, leaving a slot for critical control.
+                if feedback_packet is not None or control_queue.qsize() >= control_queue.maxsize - 1:
+                    continue
+                try:
+                    snapshot = engine.feedback_snapshot()
+                    if snapshot is None or snapshot["sequence"] == latest_sequence:
+                        continue
+                    packet = _frame(dict(op="feedback", snapshot=snapshot), limits.control_frame_bytes)
+                    control_queue.put_nowait((packet, None))
+                    feedback_packet, latest_sequence = packet, snapshot["sequence"]
+                except Exception:
+                    # Performance feedback must never replace a terminal or close cause.
+                    continue
 
         async def abort_requests():
             # Native ABORT may wait on the engine's own IPC. Its single bounded
@@ -644,6 +684,9 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
             except ValueError:
                 event["result"] = _compact_result(result)
                 packet = _frame(event, limits.item_result_bytes)
+            if opening['engine'].get('enable_mfu_metrics', False):
+                from src.observability.metrics.mfu import optional_packet
+                packet = optional_packet(event, lambda: engine.mfu_snapshot(), _frame, limits.item_result_bytes)
             await result_queue.put((packet, key))
 
         async def input_commands():
@@ -707,6 +750,8 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                  asyncio.create_task(writer(results, result_queue)),
                  asyncio.create_task(input_commands()), asyncio.create_task(control_commands()),
                  asyncio.create_task(abort_requests())]
+        if limits.feedback_interval_s and callable(getattr(engine, "feedback_snapshot", None)):
+            tasks.append(asyncio.create_task(feedback_updates()))
         waiter = asyncio.create_task(closing.wait())
         done, _ = await asyncio.wait([*tasks, waiter, failure], return_when=asyncio.FIRST_COMPLETED)
         for task in done:
@@ -715,6 +760,9 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
             if task is not waiter:
                 task.result()
         closing.set()
+        if len(tasks) > 5:
+            tasks[5].cancel()
+            await asyncio.gather(tasks[5], return_exceptions=True)
         # Freeze input before shutdown; no late data-channel frame may create
         # another generation after the engine's close acknowledgement.
         for task in tasks[2:4]:

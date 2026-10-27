@@ -27,11 +27,13 @@ from src.scheduling.core.session_contract import (
 from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
-from src.scheduling.submission_control.admission import StaticAdmissionController
+from src.scheduling.submission_control.admission import StaticAdmissionController, DynamicAdmissionGate
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 from .lotus_records_actor_owner import RecordsActorOwner, _ModelActor
+from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
+from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlockingMetricsObservationProvider
 
 
 def resolve_core_profile(engine, resources, profile=None):
@@ -41,8 +43,8 @@ def resolve_core_profile(engine, resources, profile=None):
     allocation and machine preflight remain the caller's existing responsibility.
     """
     profile = {} if profile is None else profile
-    if type(profile) is not dict or set(profile) - {"mode", "max_inflight", "stage_timing"}:
-        raise ValueError("Core profile accepts mode, max_inflight and stage_timing only")
+    if type(profile) is not dict or set(profile) - {"mode", "max_inflight", "stage_timing", "admission"}:
+        raise ValueError("Core profile accepts mode, max_inflight, stage_timing and optional admission only")
     mode = profile.get("mode", "sync")
     requested = profile.get("max_inflight", resources.max_active_batches)
     timing = profile.get("stage_timing", False)
@@ -57,7 +59,7 @@ def resolve_core_profile(engine, resources, profile=None):
         raise ValueError("Core in-flight limit exceeds its declared request or model capacity")
     else:
         maximum = requested
-    return dict(requested=dict(profile), mode=mode, max_inflight=maximum, stage_timing=timing,
+    result = dict(requested=dict(profile), mode=mode, max_inflight=maximum, stage_timing=timing,
                 capacity_source="min(Core request budget, EngineSpec.max_num_seqs)"
                 if requested == "auto" else "explicit Core request budget",
                 declared_request_budget=resources.max_active_batches,
@@ -65,12 +67,23 @@ def resolve_core_profile(engine, resources, profile=None):
                 model_batch_rows=1,
                 model_batch_mode="independent_final_results" if mode == "async" else "finite_synchronous_single_row",
                 performance_tuned=False)
+    admission = profile.get("admission")
+    if admission is not None:
+        if mode != "async" or type(admission) is not dict or admission.get("kind") != "resource_feedback":
+            raise ValueError("resource feedback requires explicit async Core admission")
+        gpu_ids = admission.get("gpu_ids", ())
+        if not isinstance(gpu_ids, (list, tuple)) or any(not isinstance(v, str) or not v.startswith("GPU-") for v in gpu_ids):
+            raise ValueError("feedback GPU IDs must be physical UUIDs when supplied")
+        config = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
+        result.update(owner_max_inflight=min(resources.max_active_batches, engine.max_num_seqs),
+            initial_window=maximum, admission=dict(kind="resource_feedback", gpu_ids=list(gpu_ids), **asdict(config)))
+    return result
 
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
     resolved = resolve_core_profile(engine, resources, profile)
-    effective = replace(resources, max_active_batches=resolved["max_inflight"])
+    effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     options = {}
     actors = None
     if resolved["mode"] == "async":
@@ -80,6 +93,8 @@ def create_records_core(method, engine, generation, resources, *, profile=None, 
         )
     elif async_limits is not None:
         raise ValueError("async_limits requires async Core execution")
+    if "admission" in resolved:
+        options["admission"] = resolved["admission"]
     if resolved["stage_timing"]:
         options["stage_timing"] = True
     try:
@@ -444,6 +459,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
         self._execution_profile = dict(owner.execution_profile if execution_profile is None else execution_profile)
         owner.transport.bind_query(self.session.session_id, prepare_method)
         self.received, self.offered = set(), set()
+        self.completed_work = (0, 0, 0)
         self.sequence = 0
         self.pending = None
         self.source_eof = self.finished = self.source_closed = False
@@ -452,6 +468,8 @@ class _CoreRows(Iterator[dict[str, Any]]):
         self.last_close_report = None
         self.peak_usage = asdict(owner.core.capacity.usage())
         self.timings = owner.transport.timings
+        if owner._feedback is not None:
+            owner._feedback.stream = self
 
     def __iter__(self):
         return self
@@ -465,6 +483,8 @@ class _CoreRows(Iterator[dict[str, Any]]):
         return dict(self._execution_profile)
 
     def _observe(self):
+        if self.owner._feedback is not None:
+            self.owner._feedback.observe(self)
         for name, value in asdict(self.owner.core.capacity.usage()).items():
             self.peak_usage[name] = max(value, self.peak_usage[name])
 
@@ -515,7 +535,17 @@ class _CoreRows(Iterator[dict[str, Any]]):
             raise ValueError("Core returned an undeclared or duplicate call")
         audit = CallLedger([expected], 1)
         audit.record(value)
+        _, input_work, output_work = self.completed_work
+        if (value["status"] != "succeeded" or value.get("prompt_tokens") is None
+                or value.get("completion_tokens") is None or input_work is None):
+            input_work = output_work = None
+        else:
+            input_work += value["prompt_tokens"]
+            output_work += value["completion_tokens"]
+        self.completed_work = (len(self.received) + 1, input_work, output_work)
         self.received.add(value["call_id"])
+        if self.owner._feedback is not None:
+            self.owner._feedback.observe(self)
         return value
 
     def __next__(self):
@@ -600,6 +630,8 @@ class _CoreRows(Iterator[dict[str, Any]]):
         )
         if self.timings is not None:
             self.last_close_report["stage_timings"] = self.timings.snapshot()
+        if self.owner._feedback is not None:
+            self.last_close_report["admission_feedback"] = self.owner._feedback.finish(self)
         self.owner.last_query_report = self.last_close_report
         return self.last_close_report
 
@@ -656,7 +688,7 @@ class SemLoomRecordsCore:
 
     def __init__(self, method: FilterMethod, engine: EngineSpec, generation: GenerationSpec,
                  resources: RecordsResources, *, capacity: CoreRecordsCapacity | None = None,
-                 actor_owner: RecordsActorOwner | None = None, stage_timing: bool = False):
+                 actor_owner: RecordsActorOwner | None = None, stage_timing: bool = False, admission=None):
         self.method = FilterMethod.from_dict(asdict(method))
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.generation = GenerationSpec.from_dict(asdict(generation))
@@ -684,6 +716,14 @@ class SemLoomRecordsCore:
         self.execution_profile.update(
             mode="async" if actual_mode == "independent_final_results" else "sync",
             model_batch_mode=actual_mode)
+        self._feedback = None
+        if admission is not None:
+            configured = resolve_core_profile(self.engine, self.resources,
+                dict(mode=self.execution_profile["mode"], admission=admission))
+            self._actors.limits = replace(self._actors.limits,
+                feedback_interval_s=configured["admission"]["poll_interval_s"])
+            self._feedback = _CoreFeedback(self, configured["admission"])
+            self.execution_profile.update(configured)
         self.core = self.transport = self._active = None
         self._closing = False
         self._deadline = None
@@ -713,7 +753,8 @@ class SemLoomRecordsCore:
         return self._actors.start(deadline)
 
     def evaluate(self, source, *, query_id, method: FilterMethod | None = None,
-                 cancelled: Callable[[], bool] | None = None, max_inflight: int | None = None):
+                 cancelled: Callable[[], bool] | None = None, max_inflight: int | None = None,
+                 allow_exploration: bool | None = None, search_hint: dict | None = None):
         self._control()
         if self._closing or (self.core is not None and
                              (self.core.error or self.core.capacity.usage().held_tasks)):
@@ -721,13 +762,24 @@ class SemLoomRecordsCore:
         if self._active is not None and not self._active.finished:
             raise RuntimeError("Core records already owns an active query")
         query_limits, query_profile = None, dict(self.execution_profile)
+        if search_hint is not None and (self._feedback is None or
+                self._feedback.base_options.search_mode != "geometric"):
+            raise ValueError("search_hint requires geometric resource feedback")
+        if allow_exploration is not None:
+            if self._feedback is None or type(allow_exploration) is not bool:
+                raise ValueError("per-query exploration requires resource feedback and a boolean")
+            query_profile["admission"] = dict(query_profile["admission"], allow_exploration=allow_exploration)
         if max_inflight is not None:
             if (query_profile["mode"] != "async" or type(max_inflight) is not int
-                    or not 1 <= max_inflight <= query_profile["max_inflight"]):
+                    or not 1 <= max_inflight <= query_profile.get("owner_max_inflight", query_profile["max_inflight"])):
                 raise ValueError("query in-flight must fit the existing async model owner")
-            query_limits = self.capacity.limits(replace(self.resources, max_active_batches=max_inflight))
-            query_profile.update(owner_max_inflight=query_profile["max_inflight"], max_inflight=max_inflight,
-                capacity_source="per-query limit within existing owner; model capacity unchanged")
+            if self._feedback is None:
+                query_limits = self.capacity.limits(replace(self.resources, max_active_batches=max_inflight))
+            query_profile.update(owner_max_inflight=query_profile.get("owner_max_inflight", query_profile["max_inflight"]),
+                max_inflight=max_inflight, capacity_source="per-query initial soft window" if self._feedback is not None
+                else "per-query limit within existing owner; model capacity unchanged")
+            if self._feedback is not None:
+                query_profile["initial_window"] = max_inflight
         if self._active is not None:
             # A cancelled flow can settle after its iterator closes. Preserve
             # its compact receipts before a new query replaces that flow.
@@ -785,11 +837,15 @@ class SemLoomRecordsCore:
                                    cancelled)
             else:
                 self._actors.ray = ray
+            if self._feedback is not None:
+                self._feedback.begin(len(expected), query_profile["max_inflight"],
+                                     allow_exploration=allow_exploration,search_hint=search_hint)
             if self.core is None:
                 limits = self.capacity.limits(self.resources)
                 endpoint = EndpointSnapshot("local-model", "local://model", "local", "0",
                                             True, 0, 0, None, time.monotonic())
-                policies = SessionPolicies(StaticAdmissionController(limits.active_requests),
+                policies = SessionPolicies(self._feedback.gate if self._feedback is not None
+                                           else StaticAdmissionController(limits.active_requests),
                                            RoundRobinEndpointRouter(),
                                            TopologySnapshot((endpoint,), time.monotonic()), "local")
                 self.transport = _RecordTransport(self._actors, limits.held_tasks, lambda: self.core.wake.notify())
@@ -814,6 +870,8 @@ class SemLoomRecordsCore:
                 errors.extend(self._active.close()["cleanup_errors"])
             except BaseException as error:
                 errors.append("core_query_close: " + type(error).__name__)
+        if self._feedback is not None:
+            self._feedback.stop()
         closed = close_prepared_core(self._actors, self.transport, self.core, self.capacity,
                                      deadline=self._deadline, timeout=timeout)
         actor_report = closed["model_owner"]
@@ -839,6 +897,173 @@ class SemLoomRecordsCore:
             "producer_retirement": retirement,
             "last_query_report": self.last_query_report, "cleanup_errors": errors,
             "execution_profile": dict(self.execution_profile),
+            "feedback_sampler_stopped": self._feedback is None or self._feedback.provider is None
+                or not self._feedback.provider.is_running,
             "work_unit": "model_calls",
         }
         return self.last_close_report
+
+
+class _CoreFeedback:
+    """Query-scoped observation; Core remains the only admission/credit owner."""
+    def __init__(self, owner, admission):
+        self.owner = owner
+        self.options = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
+        self.base_options = self.options
+        self.gpu_ids = admission.get("gpu_ids", ())
+        self.gate = self.provider = self.stream = self.ref = self.future = None
+        self.controller = None
+        self.progress = (0, 0, 0, False)
+        self.completed_work = (0, None, None)
+        self.transition_keys = set()
+        self.generation = 0
+        self.ref_deadline = None
+        self.ref_expired = False
+        self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
+
+    def begin(self, total, initial, *, allow_exploration=None, search_hint=None):
+        self.options = (self.base_options if allow_exploration is None else
+                        replace(self.base_options, allow_exploration=allow_exploration))
+        self.generation += 1
+        self.started = time.monotonic()
+        self.stream = None
+        self.progress = (0, total, 0, False)
+        self.completed_work = (0, None, None)
+        self.transition_keys.clear()
+        self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
+        self.controller = ResourceFeedbackController(self.owner.resources.max_active_batches, initial, self.options)
+        self.controller.reset(initial, total, search_hint=search_hint)
+        if self.provider is None:
+            self.provider = NonBlockingMetricsObservationProvider(self.sample,
+                poll_interval_s=self.options.poll_interval_s,
+                # Delivery already consumes up to two poll periods; allow one
+                # more for the gate's scheduled consumption of the source frame.
+                stale_after_s=max(.5, self.options.poll_interval_s * 3), close_timeout_s=.1)
+        else:
+            self.provider.poll_interval_s = self.options.poll_interval_s
+            self.provider.resume()
+        if self.gate is None:
+            self.gate = DynamicAdmissionGate(self.controller, self.provider, trace_sink=self.changed,
+                min_update_interval_s=self.options.poll_interval_s)
+        else:
+            self.gate.controller, self.gate.observation_provider, self.gate.limit = self.controller, self.provider, initial
+            self.gate.reset_cadence()
+        self.last_window = initial
+
+    def sample(self):
+        generation, stream = self.generation, self.stream
+        if stream is None:
+            return None
+        try:
+            if self.ref is None:
+                self.ref = self.owner._actors.model_actor.snapshot.remote()
+                self.snapshot_requests += 1
+                self.future = self.ref.future()
+                self.ref_deadline = time.monotonic() + max(.1, self.options.poll_interval_s * 2)
+                self.ref_expired = False
+            future = self.future
+            if not future.done():
+                if not self.ref_expired and time.monotonic() >= self.ref_deadline:
+                    self.ref_expired = True
+                    try:
+                        self.owner._actors.ray.cancel(self.ref, force=False)
+                    except Exception:
+                        self.sample_errors += 1
+                return None
+            if self.ref_expired:
+                self.ref = self.future = None
+                return None
+            value = future.result()
+            if generation != self.generation:
+                return None
+            self.ref = self.future = None
+            ipc = value.get("ipc") or {}
+            snapshot = ipc.get("native_feedback")
+            if snapshot is None:
+                return None
+            expected = self.owner._actors.model_ready["engine_uid"]
+            if (snapshot.get("engine_uid") != expected or value.get("session_id") != stream.session.session_id
+                    or snapshot.get("observed_at_s", -1) < self.started):
+                return None
+            completed, pending, transition, backpressure = self.progress
+            work_count, input_work, output_work = self.completed_work
+            if work_count != completed:
+                input_work = output_work = None
+            pressure = None
+            if self.gpu_ids:
+                from src.observability.metrics.resources import gpu_metadata
+                gpu = gpu_metadata(self.gpu_ids, use_nvml=True)
+                if gpu["gpu_memory_used_mib"] and gpu["gpu_memory_total_mib"]:
+                    free = (float(gpu["gpu_memory_total_mib"]) - float(gpu["gpu_memory_used_mib"])) * 1024**2
+                    pressure = free < self.options.memory_floor_bytes if self.options.memory_floor_bytes else None
+            if generation != self.generation:
+                return None
+            self.samples += 1
+            self.peak_native_running = max(self.peak_native_running, snapshot["running"])
+            return ServiceMetricsSnapshot(snapshot["running"], snapshot["waiting"], snapshot["kv_usage"],
+                completed_tokens_total=snapshot["generation_tokens_total"],
+                source_sequence=snapshot["sequence"], source_observed_at_s=snapshot["observed_at_s"],
+                completed_items_total=completed, pending_items=pending,
+                preemptions_total=snapshot["preemptions_total"], memory_pressure=pressure,
+                transition_pending=transition, consumer_backpressure=backpressure,
+                completed_input_work_total=input_work, completed_output_work_total=output_work)
+        except Exception:
+            if generation == self.generation:
+                self.ref = self.future = None
+                self.sample_errors += 1
+            return None
+        finally:
+            if generation == self.generation and self.provider is not None:
+                self.provider.poll_interval_s = (self.options.poll_interval_s if self.ref is not None
+                    else self.controller.sampling_interval_s(self.progress[1]))
+
+    def observe(self, stream):
+        if self.stream is not stream:
+            return
+        if self.transition_keys:
+            records = self.owner.core.capacity.records
+            self.transition_keys = {key for key in self.transition_keys
+                                    if key in records and records[key].compute}
+        records = tuple(r for r in self.owner.core.capacity.records.values()
+                        if r.key.session_id == stream.session.session_id)
+        unsubmitted = len(stream.expected) - len(stream.offered) + sum(r.phase == "QUEUED" for r in records)
+        ready = sum(r.phase in ("READY", "LEASED") for r in records)
+        self.progress = (len(stream.received), unsubmitted, len(self.transition_keys),
+                         ready >= self.controller.current_window)
+        self.completed_work = stream.completed_work
+
+    def changed(self, event):
+        if event.window != self.last_window:
+            self.last_window = event.window
+            self.transition_keys = {r.key for r in self.owner.core.capacity.records.values() if r.compute}
+            self.observe(self.stream)
+
+    def pause(self):
+        self.generation += 1
+        if self.provider is not None:
+            self.provider.pause()
+        if self.ref is not None and not self.ref_expired:
+            self.ref_expired = True
+            try:
+                self.owner._actors.ray.cancel(self.ref, force=False)
+            except Exception:
+                self.sample_errors += 1
+
+    def stop(self):
+        self.pause()
+        if self.provider is not None:
+            self.provider.close()
+
+    def finish(self, stream):
+        if self.stream is not stream:
+            return getattr(stream, "_admission_report", None)
+        self.pause()
+        stream._admission_report = dict(self.controller.report(), samples=self.samples,
+            snapshot_requests=self.snapshot_requests, exploration_enabled=self.options.allow_exploration,
+            exploration_poll_interval_s=self.options.poll_interval_s,
+            protection_poll_interval_s=max(self.options.poll_interval_s,self.options.window_s),
+            source_stale_after_s=self.provider.stale_after_s,
+            sample_errors=self.sample_errors, peak_native_running=self.peak_native_running,
+            sampling_paused=True, sampler_scope="model_owner", sampler_stopped=not self.provider.is_running)
+        self.stream = None
+        return stream._admission_report
