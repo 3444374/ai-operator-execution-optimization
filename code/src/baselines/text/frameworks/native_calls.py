@@ -27,7 +27,7 @@ from src.execution_provider.adapters.full_response import (
     decode_full_response,
     encode_full_response,
 )
-from src.experiments.execution_timing import is_timing_error, timing_span, timing_thread_target
+from src.observability.execution_timing import is_timing_error, timing_span, timing_thread_target
 from .prepared_map import NativeGraphOptions
 
 

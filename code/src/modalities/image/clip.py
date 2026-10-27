@@ -305,7 +305,7 @@ class ClipTensorActor:
             projected=True,
             normalized=normalize,
         )
-        from src.experiments.image_reuse import observe_model
+        from src.observability.model_reuse import observe_model
         self._reuse_probe = observe_model(self._model, role="clip_tensor_actor", device=device)
         if self._resource_identity is not None:
             from .worker_identity import record_worker_identity

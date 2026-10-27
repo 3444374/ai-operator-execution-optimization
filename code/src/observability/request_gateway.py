@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
 
-from src.experiments.execution_timing import get_timing, is_timing_error, _timing_error
+from src.observability.execution_timing import get_timing, is_timing_error, _timing_error
 
 
 _HOP_BY_HOP_HEADERS = {

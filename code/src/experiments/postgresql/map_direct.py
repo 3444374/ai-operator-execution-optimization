@@ -8,15 +8,10 @@ from types import SimpleNamespace
 from src.execution_provider.adapters.async_fixed_model import AsyncFixedModelTransport
 from src.execution_provider.adapters.completion_response import decode_backend_completion
 from src.execution_provider.adapters.model_config import MAX_MODEL_RESPONSE_BYTES
-from src.execution_provider.semantic_map import canonical_messages, completion_status, MapCompletionStatus
+from src.execution_provider.semantic_map import request_body, completion_status, MapCompletionStatus
 from src.scheduling.core.session_contract import TaskKey
 from src.experiments.request_identity import request_identity
 from src.baselines.common.private_artifacts import content_digest
-
-
-def request_body(plan, text):
-    return dict(model=plan.model_id, messages=json.loads(canonical_messages(plan.instruction, text)),
-                **plan.generation_constraints())
 
 
 class DirectMap:

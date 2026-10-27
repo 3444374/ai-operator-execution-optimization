@@ -383,7 +383,7 @@ class RayDataImageExecutor:
                 try:
                     action()
                 except BaseException as cleanup_error:
-                    from src.experiments.execution_timing import is_timing_error
+                    from src.observability.execution_timing import is_timing_error
                     if error is None:
                         error = cleanup_error
                     elif is_timing_error(error) and not is_timing_error(cleanup_error):

@@ -7,6 +7,12 @@ over the execution policy it observes.
   once with no admission limit, retry, cache, route choice, or payload rewrite, then records lifecycle
   clocks and endpoint-reported token usage for cross-framework tail/fairness metrics.
 - `metrics/` contains reusable metric collectors and summaries.
+- `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,
+  bounded event output and weak model-reuse observations. Existing experiment imports share the same
+  module objects; enabling flags, schemas and failure handling remain unchanged.
+- `httpx_observer.py` observes complete POSTs using a caller-supplied request allowance;
+  `request_identity.py` owns task-local observation identity. Durable experiment ledgers remain in
+  `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
 - `profiling/` contains the PostgreSQL AI operator profiler's stable result schema and helpers.
 
