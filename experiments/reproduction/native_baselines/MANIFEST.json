@@ -650,7 +650,8 @@
         "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
         "code/src/execution_provider/adapters/lotus_records_core.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_core.py",
         "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
-        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py"
       },
       "default_selected": false
     },
@@ -1337,7 +1338,8 @@
         "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
         "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
         "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
-        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py"
       },
       "default_selected": false
     },
@@ -2034,7 +2036,8 @@
         "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
         "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
         "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
-        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py"
       },
       "default_selected": false
     },
@@ -2732,7 +2735,8 @@
         "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
         "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
         "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
-        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py"
       },
       "default_selected": false
     },
@@ -3434,7 +3438,8 @@
         "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_actor_owner.py",
         "code/src/execution_provider/adapters/lotus_records_async_actor.py": "historical_sources/code/src/execution_provider/adapters/lotus_records_async_actor.py",
         "code/src/semantic_methods/driver.py": "historical_sources/code/src/semantic_methods/driver.py",
-        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py"
+        "code/src/semantic_methods/lotus/record_chain.py": "historical_sources/code/src/semantic_methods/lotus/record_chain.py",
+        "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "historical_sources/code/src/baselines/text/frameworks/lotus_chain_engine_process.py"
       },
       "default_selected": false
     }

@@ -28,7 +28,7 @@ from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
 
 
-from .lotus_chain_batch import FusedChainBatch
+from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
 from src.semantic_methods.lotus.record_results import (
     ChainBatchResults, _json, _metadata, _source_binding, record_row,
 )

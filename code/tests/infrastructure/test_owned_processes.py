@@ -153,7 +153,7 @@ with patch.object(psutil, 'Process', side_effect=AssertionError('eager process r
                            PYTHONDONTWRITEBYTECODE="1")
         for process_type, module in (
             (EngineProcess, "src.serving.backends.vllm_sync_process"),
-            (ChainEngineProcess, "src.baselines.text.frameworks.lotus_chain_engine_process"),
+            (ChainEngineProcess, "src.serving.backends.staged_generation_process"),
         ):
             with self.subTest(module=module):
                 read_fd, write_fd = os.pipe()

@@ -121,7 +121,7 @@ code/
 │   │   ├── submission_control/   ← request/work准入与容量策略；不是外部原生baseline执行器
 │   │   ├── endpoint_routing/     ← pinned/queue/work/prefix routing
 │   │   └── runtime/              ← Ray adapter、服务观测缓存、SAOR 容量/多阶段薄适配
-│   ├── serving/                  ← completion/embedding backend 与 vLLM probe
+│   ├── serving/                  ← backend、同步/阶段生成IPC、模型进程清理与probe
 │   ├── modalities/
 │   │   ├── text/                 ← prompt/output-token work 语义
 │   │   └── image/                ← encoded bytes/tensor/CLIP/source/audit 合同
@@ -131,7 +131,7 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   ├── execution_provider/       ← gateway/wire与前端→Core适配；不接管原生baseline调度
+│   ├── execution_provider/       ← gateway/wire、前端→Core适配与无策略共享method_workers
 │   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
@@ -145,7 +145,7 @@ code/
 
 `semantic_methods/lotus/`拥有原方法与SDK解释，`execution_provider/adapters/lotus_*core*.py`属于SemLoom适配，`baselines/text/frameworks/`保留原生系统执行owner。普通records在worker准备／执行，查询调用方收齐并重排完整回执后调用原LOTUS parser。Kalypso是独立作者系统；五份具名历史树含两种Core版本，是还原材料，不是native backend注册目录。
 
-PR56已将纯结果模块归位到`semantic_methods/lotus/record_results.py`；同步模型进程与阶段清理分别归`serving/backends/vllm_sync_process.py`和`stage_process_cleanup.py`，旧import与同步进程CLI保留。逐阶段生成进程和链worker仍待分批迁移。三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG，对应能力预检修复已随PR52接纳；旧SQL路径保留为显式可选接入，实际实现和验证范围仍从源码及报告读取。
+PR56已将纯结果模块归位到`semantic_methods/lotus/record_results.py`；同步模型进程与阶段清理分别归`serving/backends/vllm_sync_process.py`和`stage_process_cleanup.py`，旧import与同步进程CLI保留。逐阶段生成进程归`serving/backends/staged_generation_process.py`，Core／Ray／Daft共用的链worker归`execution_provider/method_workers/lotus_chain_batch.py`；旧路径只作同对象导入及历史命令兼容，不保存第二份执行实现。三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG，对应能力预检修复已随PR52接纳；旧SQL路径保留为显式可选接入，实际实现和验证范围仍从源码及报告读取。
 
 跨机器运行不要直接对着 `requirements.txt` 反复试装。先按
 `deploy/runtime/README.md` 选择 machine profile 与能力组，保存只读 preflight 报告；

@@ -6,7 +6,7 @@
 
 运行所需观测、预付额度和Map请求值分别复用`observability/`、`infrastructure/request_budget.py`和`execution_provider/semantic_map.py`，不从实验入口取得实现。旧`text/products/project_static.py`只保留比较编排的兼容API，维护实现在`src/experiments/project_static.py`；原画像CLI、实验名与计时含义保持。
 
-LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)归方法公共层，Ray Data/Daft与Core直接复用；旧`text/frameworks/lotus_chain_results.py`仅重导出同一类型/函数，原生图、批次与模型生命周期不变。同步模型进程及阶段清理已归[同步IPC](../serving/backends/vllm_sync_process.py)和[进程清理](../serving/backends/stage_process_cleanup.py)，旧路径保留同对象导出与原同步进程CLI；逐阶段生成进程和链worker仍待分批迁移。
+LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)归方法公共层，Ray Data/Daft与Core直接复用；旧`text/frameworks/lotus_chain_results.py`仅重导出同一类型/函数，原生图、批次与模型生命周期不变。同步模型进程及阶段清理已归[同步IPC](../serving/backends/vllm_sync_process.py)和[进程清理](../serving/backends/stage_process_cleanup.py)，旧路径保留同对象导出与原同步进程CLI；逐阶段生成进程归[阶段生成IPC](../serving/backends/staged_generation_process.py)，链worker归[共享方法worker](../execution_provider/method_workers/lotus_chain_batch.py)；两份旧模块直接重导出同一对象，旧进程CLI仍可用。
 
 <a id="text-execution-boundaries"></a>
 ## 文本入口按交接边界分类
@@ -26,7 +26,7 @@ LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)�
 
 已接纳接点的Ray `runtime_reuse_only`和Daft `native_single_thread_session`是生命周期配置，不是新的执行层级；同题比较须同时记录输入边界、方法owner、模型owner和计时边界。
 PR52已接纳的共享`lotus_chain_batch`及私有模型process也被Core引用；它们属于无策略共享接点，不能因兼容入口在本目录就算作native专属。
-五个共享文件中，结果模块、同步模型进程与阶段清理已归位；`lotus_chain_engine_process.py`和`lotus_chain_batch.py`仍待迁移。清楚的vendor wrapper、旧request桥与稳定CLI保留。逐项采用决定见[命名与迁移清单](../../../experiments/plans/系统架构.md#code-directory-boundaries)，历史复现字节保持。
+五个共享文件已按职责归位：结果合同在`semantic_methods/lotus/record_results.py`，同步IPC、阶段生成IPC及清理在`serving/backends/`，有限链worker在`execution_provider/method_workers/`；此共享包不导入Core策略。清楚的vendor wrapper、旧request桥与稳定CLI保留。逐项采用决定见[命名与迁移清单](../../../experiments/plans/系统架构.md#code-directory-boundaries)，历史复现字节保持。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
 `text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；

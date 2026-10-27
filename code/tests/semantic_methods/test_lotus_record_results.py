@@ -121,7 +121,7 @@ print(json.dumps({'calls': len(audit.calls), 'rows': len(audit.pending)}))
         self.assertIs(lotus_chain_batch._source_binding, results._source_binding)
 
     def test_moved_module_and_native_consumers_do_not_import_core(self):
-        paths = [Path(results.__file__), *[
+        paths = [Path(results.__file__), CODE / "src/execution_provider/method_workers/lotus_chain_batch.py", *[
             CODE / "src/baselines/text/frameworks" / (name + ".py")
             for name in ("lotus_chain_results", "lotus_chain_batch", "ray_data_lotus_chain", "daft_lotus_chain")]]
         for path in paths:
@@ -130,7 +130,9 @@ print(json.dumps({'calls': len(audit.calls), 'rows': len(audit.pending)}))
                          else [v.name for v in node.names] if isinstance(node, ast.Import) else [])
                 for name in names:
                     with self.subTest(path=path.name, dependency=name):
-                        self.assertFalse(name.startswith(("src.scheduling", "src.execution_provider", "src.semloom")))
+                        shared_worker = name == "src.execution_provider.method_workers.lotus_chain_batch"
+                        self.assertFalse(name.startswith(("src.scheduling", "src.semloom")))
+                        self.assertFalse(name.startswith("src.execution_provider") and not shared_worker)
 
 
 class ResultContractTests(unittest.TestCase):
