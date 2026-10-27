@@ -1,12 +1,14 @@
 """Finite LOTUS chains carried by the existing production incremental Core.
 
-Core schedules one fused batch at a time. Its work descriptor is a conservative
+By default Core schedules one fused batch at a time. Its work descriptor is a conservative
 stage-call upper bound, not a count of GPU requests currently executing. The
 shared worker owns methods, original parsers, and the private model process.
 Logical transport bytes exclude worker Python copies, audit files and the
 consumer's retained relation/call ledger; they are not RSS or GPU-memory limits.
 An explicit relation-barrier profile drains a complete Extract prefix before
 continuing guarded batch-local segments on that same query's model owner.
+The explicit record_local_sections mode uses the shared per-row MethodDriver,
+one prepared Async owner, and the same ChainRun across complete Extracts.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from __future__ import annotations
 import asyncio
 from concurrent.futures import Future, TimeoutError as FutureTimeout
 from dataclasses import asdict, dataclass
+from copy import deepcopy
 import hashlib
 import json
 import math
@@ -31,15 +34,18 @@ from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import (
-    OfferedTask, SessionLimits, SessionSpec, SessionTimeouts, State, TaskInfo,
+    OfferedTask, SessionLimits, SessionSpec, SessionTimeouts, State, TaskInfo, TaskProfile,
 )
 from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
 from src.scheduling.submission_control.admission import StaticAdmissionController
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence
+from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, ChainRun, stage_identity
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+
+from .lotus_chain_actor_backend import LotusChainActorBackend
+from .lotus_records_core import CoreRecordsCapacity, close_prepared_core
 
 
 @dataclass(frozen=True)
@@ -441,25 +447,328 @@ class _CoreChainRows:
         return self.owner.close(timeout=timeout)
 
 
+class _SectionTransport(LotusChainActorBackend):
+    """Register the existing transport's exact prepared calls before its RPC."""
+
+    def __init__(self, owner, maximum):
+        self.owner = owner
+        super().__init__(owner._actors, maximum, lambda: owner.core.wake.notify(),
+                         deadline_monotonic=owner.deadline, on_result=owner._record_local_receipt)
+
+    def _submit_task(self, task, timings, prepare_method):
+        self.owner._register_local_task(task, self._request(task))
+        return super()._submit_task(task, timings, prepare_method)
+
+
+class _RecordLocalRows:
+    """Coordinate existing row programs and complete Extracts on one model owner."""
+
+    def __init__(self, owner, records, run, cancelled):
+        self.owner, self.source, self.run = owner, iter(records), run
+        self.cancelled = cancelled
+        self.bindings = {record.row_id: record for record in run.current}
+        self.offered = set()
+        self.source_eof = self.source_closed = self.finished = self.completed = False
+        self.driver = self.session = self.section = self.pending = None
+        self.pool = None
+        self._output = None
+        self._output_exhausted = self._method_complete = self._root_failed = False
+        self._source_errors = []
+        self.error = self.last_close_report = None
+        self.peak_core_usage = asdict(owner.core.capacity.usage())
+
+    @property
+    def calls(self):
+        return self.owner.calls
+
+    @property
+    def columns(self):
+        return self.run.columns
+
+    @property
+    def batch_stage_stats(self):
+        return [deepcopy(self.run.stats)]
+
+    @property
+    def raw_result_batches(self):
+        return {}
+
+    @property
+    def unassociated_results(self):
+        return []
+
+    @property
+    def production_core_connected(self):
+        return self.owner.production_core_connected
+
+    def __iter__(self):
+        return self
+
+    def _close_source(self):
+        if self.source_closed:
+            return
+        try:
+            close = getattr(self.source, "close", None)
+            if close is not None:
+                close()
+            self.source_closed = True
+        except BaseException as error:
+            self._source_errors.append("source_iterator_close: " + type(error).__name__)
+            raise
+
+    def _pull_source(self):
+        from src.semantic_methods.lotus.record_results import _source_binding
+
+        _check(self.owner.deadline, self.cancelled)
+        try:
+            record = next(self.source)
+        except StopIteration:
+            self.source_eof = True
+            if self.offered != set(self.bindings):
+                raise ValueError("record-local source omitted expected occurrences")
+            self._close_source()
+            _check(self.owner.deadline, self.cancelled)
+            raise
+        if type(record) is not RecordOccurrence:
+            raise ValueError("record-local source changed or duplicated an occurrence")
+        # Own this read snapshot once; backpressure may retain the row upstream
+        # of MethodDriver for several ticks while the producer reuses its data.
+        record = RecordOccurrence.from_dict(record.describe())
+        if (record.row_id not in self.bindings
+                or record.row_id in self.offered
+                or _source_binding(record) != _source_binding(self.bindings[record.row_id])):
+            raise ValueError("record-local source changed or duplicated an occurrence")
+        self.offered.add(record.row_id)
+        return record
+
+    def _begin_phase(self):
+        from src.semantic_methods.budget import MethodBudgetPool, MethodCapacity, row_reservation
+        from src.semantic_methods.driver import MethodDriver
+        from src.semantic_methods.lotus.record_continuation import PreparedCallProgram
+        from .lotus_record_chain_fifo import LotusChainFIFO
+
+        if self.run.position == len(self.run.chain.stages):
+            result = self.run.result()
+            self._method_complete, self._output = True, iter(result["records"])
+            return
+        self._using_source = not self.source_eof
+        self._phase_eof = False
+        self._extract_results = []
+        if self.run.method.stage.kind == "extract":
+            # Full-relation preparation never treats the expected declaration
+            # alone as proof that the actual source has completed.
+            while not self.source_eof:
+                try:
+                    self._pull_source()
+                except StopIteration:
+                    break
+            self._using_source = False
+            stage = self.run.method.stage
+            prepared = self.run.prepare()
+            self._stage_ids = (stage.stage_id,)
+            self.section = None
+            if not prepared:
+                self.run.complete_relation(source_exhausted=True)
+                self._history(None, 0)
+                return
+            self._prepared = {row["row_id"]: row for row in prepared}
+            program = PreparedCallProgram(stage, max_result_bytes=self.owner.capacity.item_result_bytes)
+            stages = (stage,)
+            self._phase_source = iter(self.run.current)
+        else:
+            self.section = self.run.delegate_record_local()
+            from src.semantic_methods.lotus.record_results import _source_binding
+            self._phase_bindings = {row.row_id: _source_binding(row) for row in self.section.records}
+            stages = self.section.chain.stages
+            self._stage_ids = tuple(stage.stage_id for stage in stages)
+            self._phase_source = self.source if self._using_source else iter(self.section.records)
+        self._phase_count = 0
+        self.session = self.owner.core.open(SessionSpec(self.run.chain.query_id,
+            "chain-section-" + str(self.run.position), "lotus-record-prepared-v1",
+            task_profiles=tuple(TaskProfile(stage.stage_id, "prepared-chain") for stage in stages)))
+        self.owner.transport.bind_query(self.session.session_id, None)
+        limits = self.owner.method_limits
+        capacity = MethodCapacity(self.owner.resources.max_active_batches,
+                                  self.owner.resources.max_active_batches * row_reservation(limits))
+        self.pool = MethodBudgetPool(capacity)
+        budget = self.pool.allocate(capacity)
+        self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget) if self.section is not None
+                       else MethodDriver(self.session, program, limits, budget))
+
+    def _fill(self):
+        from src.semantic_methods.driver import RowIdentity
+
+        if self._phase_eof:
+            return
+        if self.pending is None:
+            try:
+                self.pending = self._pull_source() if self._using_source else next(self._phase_source)
+            except StopIteration:
+                self._phase_eof = True
+                _check(self.owner.deadline, self.cancelled)
+                self.driver.end_input()
+                return
+        row = self.pending
+        if self.section is not None:
+            accepted = self.driver.offer_record(row,
+                parent_call_ids=self.section.initial_parents[(row.row_id, row.source_position)],
+                columns=self.section.columns, allow_nulls=self.section.allow_nulls)
+        else:
+            accepted = self.driver.offer_row(RowIdentity(row.source_position, row.row_id),
+                self.driver.method.input(self._prepared[row.row_id],
+                    parent_call_ids=self.run.parents[(row.row_id, row.source_position)]))
+        if accepted:
+            self._phase_count += 1
+            self.pending = None
+
+    def _history(self, session_id, inputs):
+        self.owner.phase_history.append(dict(phase_stage_ids=list(self._stage_ids),
+            source_exhausted=self.source_eof, source_closed=self.source_closed,
+            session_id=session_id, input_occurrences=inputs,
+            output_occurrences=len(self.run.current), verified_success=True,
+            core_usage=asdict(self.owner.core.capacity.usage()),
+            transition="record_local_adoption" if self.section is not None else "complete_extract_relation"))
+
+    def _finish_phase(self):
+        if (not self.source_eof or not self.source_closed or self.pending is not None
+                or any(asdict(self.owner.core.capacity.usage()).values())
+                or self.owner.transport.retained_refs() or self.pool.used != (0, 0)):
+            raise RuntimeError("record-local phase still owns source, result or transport work")
+        retired = self.session.close()
+        if retired.status != "CLOSED" or any(asdict(retired.usage).values()):
+            raise RuntimeError("record-local session did not retire completely")
+        if self.section is not None:
+            self.run.adopt_record_local(self.section, source_exhausted=True)
+        else:
+            self.run.complete(self._extract_results)
+            self.run.complete_relation(source_exhausted=True)
+        self._history(self.session.session_id, self._phase_count)
+        self.driver.close()
+        self.driver, self.section = None, None
+
+    def _tick(self):
+        _check(self.owner.deadline, self.cancelled)
+        if self.driver is None:
+            self._begin_phase()
+            return
+        self._fill()
+        _check(self.owner.deadline, self.cancelled)
+        bound = min(self.owner.capacity.step_actions, self.session.limits.held_tasks)
+        progress = self.driver.advance(bound)
+        for result in self.driver.results(bound):
+            try:
+                value = json.loads(result.value)
+                if self.section is not None:
+                    self.section.accept(dict(value, batch_id=str(result.row.sequence),
+                        inputs=[self._phase_bindings[result.row.call_id]]))
+                else:
+                    self._extract_results.append(value)
+            finally:
+                self.driver.release_result(result.row)
+        for key, value in asdict(self.owner.core.capacity.usage()).items():
+            self.peak_core_usage[key] = max(self.peak_core_usage[key], value)
+        if self.driver.finished:
+            self._finish_phase()
+        elif not progress.has_immediate_work:
+            self.owner.core.wake.wait(progress.generation,
+                min(self.owner.capacity.poll_interval_s, max(0, self.owner.deadline - time.monotonic())))
+
+    def __next__(self):
+        self.owner._control()
+        if self.finished:
+            raise StopIteration
+        try:
+            while True:
+                _check(self.owner.deadline, self.cancelled)
+                if self._output is not None:
+                    try:
+                        return next(self._output)
+                    except StopIteration:
+                        self._output_exhausted = True
+                        report = self.owner.close()
+                        if report["status"] != "closed":
+                            raise RuntimeError("record-local query cleanup remains unconfirmed")
+                        self.completed = report["query_completed"] = True
+                        raise
+                self._tick()
+        except StopIteration:
+            raise
+        except BaseException as error:
+            self.error = error
+            try:
+                report = self.owner.close()
+                if report["status"] != "closed":
+                    error.add_note("record-local query cleanup remains unconfirmed")
+            except BaseException as cleanup:
+                error.add_note("record-local close also failed: " + type(cleanup).__name__)
+            error.chain_calls = self.calls
+            error.chain_stage_stats = deepcopy(self.run.stats)
+            raise
+
+    def _close_query(self):
+        self.finished, self.pending = True, None
+        if self.driver is not None:
+            self.driver.close()
+        if not self._output_exhausted and self.error is None:
+            self.error = InterruptedError("record-local consumer closed before result EOF")
+        try:
+            self._close_source()
+        except BaseException:
+            pass  # The exact failure stays in _source_errors and the close report.
+        return list(self._source_errors)
+
+    def close(self, *, timeout=None):
+        return self.owner.close(timeout=timeout)
+
+
 class SemLoomRecordChainCore:
-    """Single-control-thread owner for one finite query and one fused worker.
+    """Single-control-thread owner for one finite query; fused is the default.
 
     This profile requires one CPU worker and one active fused batch. Core owns
     admission and delivery leases; the shared kernel owns the original method
     loop. A fresh owner/query ID is required for independent repeat work.
+    record_local_sections instead reuses a prepared async model across legal
+    F/M intervals and complete Extracts; it never starts the fused worker.
     """
 
     _batch_type = None
 
     def __init__(self, engine: EngineSpec, resources: RecordsResources, *,
-                 capacity: CoreChainCapacity | None = None, control_dir=None):
+                 capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
+                 execution="fused", actor_owner=None, method_limits=None):
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.resources = RecordsResources(**asdict(resources))
-        if resources.cpu_workers != 1 or resources.max_active_batches != 1:
-            raise ValueError("Core fused chain requires cpu_workers=max_active_batches=1")
-        self.capacity = CoreChainCapacity() if capacity is None else capacity
-        if type(self.capacity) is not CoreChainCapacity:
-            raise TypeError("Core chain capacity must be CoreChainCapacity")
+        if execution not in ("fused", "record_local_sections"):
+            raise ValueError("chain execution requires fused or record_local_sections")
+        self.execution = execution
+        if execution == "fused":
+            if resources.cpu_workers != 1 or resources.max_active_batches != 1:
+                raise ValueError("Core fused chain requires cpu_workers=max_active_batches=1")
+            if actor_owner is not None or method_limits is not None:
+                raise ValueError("prepared owner and method limits require record_local_sections")
+            self.capacity = CoreChainCapacity() if capacity is None else capacity
+            if type(self.capacity) is not CoreChainCapacity:
+                raise TypeError("Core chain capacity must be CoreChainCapacity")
+        else:
+            from src.semantic_methods.continuation import MethodLimits
+            from .lotus_records_async_actor import AsyncRecordsActorOwner
+            from .lotus_records_core import resolve_core_profile
+            if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
+                raise ValueError("record-local sections require prepare_batch_rows=model_batch_rows=1")
+            resolve_core_profile(self.engine, self.resources, dict(mode="async"))
+            self.capacity = CoreRecordsCapacity() if capacity is None else capacity
+            if type(self.capacity) is not CoreRecordsCapacity:
+                raise TypeError("record-local sections capacity must be CoreRecordsCapacity")
+            if method_limits is not None and type(method_limits) is not MethodLimits:
+                raise TypeError("record-local method limits must be MethodLimits")
+            if actor_owner is not None and (not isinstance(actor_owner, AsyncRecordsActorOwner)
+                    or not actor_owner._prepared_only or actor_owner.engine != self.engine
+                    or actor_owner.resources != self.resources):
+                raise ValueError("record-local sections need the matching prepared-only async owner")
+        self._actors, self.method_limits = actor_owner, method_limits
+        self._receipt_lock = threading.Lock()
+        self._contexts, self._raw_receipts = {}, {}
+        self._root_run = None
         self._thread = threading.get_ident()
         self._closing = False
         self.control_dir = control_dir
@@ -489,6 +798,8 @@ class SemLoomRecordChainCore:
 
     @property
     def calls(self):
+        if self.execution == "record_local_sections":
+            return self._local_calls()
         if not self.relation_barriers and self.results is not None:
             return self.results.calls
         return [call for result in self._accountants.values() for call in result.calls]
@@ -572,8 +883,16 @@ class SemLoomRecordChainCore:
         even for an empty source. This retention is outside Core's wire limits.
         Calls/usage remain inspectable on failure. Unknown work retains the Core
         task and source bytes, even when a later private-engine cleanup succeeds.
+
+        With record_local_sections, expected and actual source positions must
+        increase; protocol occurrence IDs remain unique, while payloads and
+        user index labels may repeat. Source EOF/close, complete row finals,
+        and drained Core work precede every semantic relation handoff. This
+        mode requires caller-owned Ray and one compatible model deployment.
         """
         self._control()
+        if self.execution == "record_local_sections":
+            return self._evaluate_record_local(records, chain, expected, query_id, cancelled, columns)
         if self._closing or self._active is not None:
             raise RuntimeError("Core chain owner already used or closing")
         chain = LotusRecordChain.from_dict(chain.describe())
@@ -662,6 +981,8 @@ class SemLoomRecordChainCore:
         if timeout is not None and (type(timeout) not in (int, float)
                                     or not math.isfinite(timeout) or timeout <= 0):
             raise ValueError("cleanup timeout must be finite and positive")
+        if self.execution == "record_local_sections":
+            return self._close_record_local(timeout=timeout)
         self._closing = True
         if self.last_close_report is not None and self.last_close_report["status"] == "closed":
             return self.last_close_report
@@ -763,4 +1084,151 @@ class SemLoomRecordChainCore:
             )
         if closed and self.control is not None:
             shutil.rmtree(self.control)
+        return self.last_close_report
+
+    def _evaluate_record_local(self, records, chain, expected, query_id, cancelled, columns):
+        from src.semantic_methods.continuation import MethodLimits
+        from .lotus_records_async_actor import AsyncRecordsActorOwner
+
+        if self._closing or self._active is not None:
+            raise RuntimeError("Core chain owner already used or closing")
+        chain = LotusRecordChain.from_dict(chain.describe())
+        if chain.query_id != query_id or len({s.method.model_name for s in chain.stages}) != 1:
+            raise ValueError("record-local query requires one query and one model deployment")
+        if any(s.generation.max_tokens > self.engine.max_model_len for s in chain.stages):
+            raise ValueError("chain max_tokens exceeds max_model_len")
+        expected = tuple(RecordOccurrence.from_dict(r.describe()) for r in expected)
+        run = ChainRun(chain, list(expected), columns=columns, _relation_execution=True)
+        SessionSpec(query_id, "chain-section-0", "lotus-record-prepared-v1",
+            task_profiles=tuple(TaskProfile(stage.stage_id, "prepared-chain") for stage in chain.stages))
+        if self.method_limits is None:
+            size = self.capacity.item_input_bytes + len(chain.stages) * self.capacity.item_result_bytes
+            self.method_limits = MethodLimits(self.capacity.item_input_bytes, 2 * size, size, len(chain.stages))
+        if self.method_limits.stages < len(chain.stages):
+            raise ValueError("method stage reservation must cover the complete finite plan")
+        self.query_chain = self.chain = chain
+        self._stage_bindings = {stage.stage_id: stage for stage in chain.stages}
+        self._expected_bindings = {record.row_id: record for record in expected}
+        self._root_run, self._source_expected = run, expected
+        self._expected_count = len(expected)
+        self.deadline = time.monotonic() + self.resources.query_timeout_s
+        _check(self.deadline, cancelled)
+        if self._actors is None:
+            self._actors = AsyncRecordsActorOwner.for_prepared(
+                self.engine, chain.stages[0].generation, self.resources)
+        elif self._actors.generation != chain.stages[0].generation:
+            raise ValueError("prepared owner's default generation differs from the initial stage")
+        limits = self.capacity.limits(self.resources)
+        endpoint = EndpointSnapshot("local-chain-model", "local://model", "local", "0",
+                                    True, 0, 0, None, time.monotonic())
+        policies = SessionPolicies(StaticAdmissionController(limits.active_requests),
+            RoundRobinEndpointRouter(), TopologySnapshot((endpoint,), time.monotonic()), "local")
+        self.transport = _SectionTransport(self, limits.held_tasks)
+        self.core = SessionEngine(limits, self.transport, policies)
+        try:
+            self._active = _RecordLocalRows(self, records, run, cancelled)
+            if expected:
+                self._actors.start(min(self.deadline, time.monotonic() + self.resources.startup_timeout_s), cancelled)
+        except BaseException as error:
+            error.add_note("record-local startup cleanup: " + str(self.close()))
+            raise
+        return self._active
+
+    def _register_local_task(self, task, value):
+        stage = self._stage_bindings[task.task.profile_name]
+        record = self._expected_bindings[value["row"]["row_id"]]
+        canonical = stage_identity(self.query_chain.query_id, record, stage.stage_id, model_role=stage.model_role)
+        if (any(value["row"].get(name) != canonical[name] for name in IDENTITY_FIELDS)
+                or GenerationSpec.from_dict(value["generation"]) != stage.generation):
+            raise ValueError("prepared request differs from the immutable query stage binding")
+        context = dict(identity=canonical, parent_call_ids=list(value["parent_call_ids"]))
+        with self._receipt_lock:
+            if task.key in self._contexts and self._contexts[task.key] != context:
+                raise ValueError("prepared task key changed its query association")
+            self._contexts[task.key] = context
+
+    def _record_local_receipt(self, key, value):
+        with self._receipt_lock:
+            context = self._contexts[key]
+            if any(value.get(name) != context["identity"][name] for name in IDENTITY_FIELDS):
+                raise ValueError("prepared receipt changed its registered query task")
+            receipt = dict(deepcopy(value), parent_call_ids=list(context["parent_call_ids"]))
+            previous = self._raw_receipts.get(key)
+            if previous is not None:
+                for name in (*IDENTITY_FIELDS, "status", "text", "prompt_tokens", "completion_tokens",
+                             "total_tokens", "engine_uid", "engine_request_id", "parent_call_ids"):
+                    if previous.get(name) != receipt.get(name):
+                        raise ValueError("late prepared receipt conflicts with its original outcome")
+            self._raw_receipts[key] = receipt
+
+    def _collect_local_receipts(self):
+        for key, payload in self.transport.failure_receipts():
+            self._record_local_receipt(key, json.loads(payload))
+
+    def _local_calls(self):
+        if self._root_run is None:
+            return []
+        with self._receipt_lock:
+            calls = {v["call_id"]: deepcopy(v) for v in self._raw_receipts.values()}
+        parsed = list(self._root_run.calls)
+        if self._active is not None and self._active.section is not None:
+            parsed += self._active.section._results.calls
+        for value in parsed:
+            if value.get("error_type") == "NativeTaskUnconfirmed" and value["call_id"] in calls:
+                continue  # A real receipt supplements a declaration, never a model unknown.
+            calls[value["call_id"]] = {**calls.get(value["call_id"], {}), **deepcopy(value)}
+        order = {stage.stage_id: i for i, stage in enumerate(self.query_chain.stages)}
+        return sorted(calls.values(), key=lambda v: (order[v["algorithm_stage"]], v["source_position"], v["call_index"]))
+
+    def _close_record_local(self, *, timeout=None):
+        self._closing = True
+        if self.last_close_report is not None and self.last_close_report["status"] == "closed":
+            return self.last_close_report
+        errors = [] if self._active is None else self._active._close_query()
+        if self._actors is None:
+            actor = dict(status="closed", cleanup_errors=[], gpu_exit_confirmed=None)
+            closed = dict(model_owner=actor, transport_closed=True, producer_retirement=None, cleanup_errors=[])
+        else:
+            closed = close_prepared_core(self._actors, self.transport, self.core, self.capacity,
+                                         deadline=self.deadline, timeout=timeout)
+        errors += closed["cleanup_errors"]
+        if self.transport is not None:
+            try:
+                self._collect_local_receipts()
+            except BaseException as error:
+                errors.append("late_receipt: " + type(error).__name__)
+        stream = self._active
+        if stream is not None and stream.error is not None and not stream._root_failed:
+            prepared_ids = {v["call_id"] for v in stream.run.prepared}
+            with self._receipt_lock:
+                submitted = {v["identity"]["call_id"] for v in self._contexts.values()} & prepared_ids
+                stream.run.raw_results = [deepcopy(v) for v in self._raw_receipts.values() if v["call_id"] in submitted]
+            stream.run.failure(stream.error, submitted_call_ids=submitted)
+            stream._root_failed = True
+        usage = None if self.core is None else asdict(self.core.capacity.usage())
+        actor = closed["model_owner"]
+        status = "closed" if (actor["status"] == "closed" and closed["transport_closed"]
+                              and not errors and (usage is None or not usage["held_tasks"])) else "unknown"
+        self.last_close_report = dict(implementation="semloom_record_chain_core", execution=self.execution,
+            status=status, query_completed=bool(stream is not None and stream._output_exhausted
+                                               and stream.error is None and status == "closed"),
+            production_core_connected=self.production_core_connected,
+            cleanup_scope="core_transport_actor_and_engine_api", physical_gpu_exit_checked=False,
+            gpu_exit_confirmed=actor.get("gpu_exit_confirmed"), model_owner=actor,
+            transport_closed=closed["transport_closed"], producer_retirement=closed["producer_retirement"],
+            retained_remote_inputs=0 if self.transport is None else self.transport.retained_refs(),
+            core_usage=usage, cleanup_errors=list(dict.fromkeys(errors)), calls=self.calls,
+            phase_history=deepcopy(self.phase_history), expected_occurrences=self._expected_count,
+            received_occurrences=0 if stream is None else len(stream.offered),
+            peak_core_usage=None if stream is None else stream.peak_core_usage,
+            source_exhausted=bool(stream and stream.source_eof), source_closed=bool(stream and stream.source_closed),
+            scheduler_owner="SemLoom SessionEngine", method_owner="shared ChainRun/MethodRun",
+            model_batch_mode="independent_final_results", model_batch_rows=1,
+            cross_query_model_reuse=False, whole_query_rss_bounded=False,
+            driver_retention="finite expected relation, current full relation, parsed call and raw receipt audit",
+            prepare_actor_count=0, prepare_worker_pool_used=False, work_unit="model_calls")
+        if stream is not None:
+            stream.last_close_report = self.last_close_report
+            if stream.error is not None:
+                stream.error.chain_calls = self.calls
         return self.last_close_report

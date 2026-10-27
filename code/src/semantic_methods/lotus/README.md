@@ -41,7 +41,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 
 `lotus_executor()` 已按 LM 实例挂载，helper／main 可分别复用；SDK 已支持 logprobs，LOTUS 已有作用域设置。
 现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
-记录到准备、调用与结果的文本接点已随PR52进入main；[后续设计](../../../../experiments/plans/系统架构.md#lotus-data-execution)中的媒体及独立FIFO／token接合仍须各自验证和接纳。旧请求路径保留既有接入范围作参照和选择性复用。
+记录到准备、调用与结果的文本接点已随PR52进入main；同模型有限计划的可选执行见下节。[后续设计](../../../../experiments/plans/系统架构.md#lotus-data-execution)中的媒体准备和跨模型接合仍须分别实现和验证。旧请求路径保留既有接入范围作参照和选择性复用。
 首闭环直接与原生 LOTUS 核对，不以旧 adapter 为唯一正确性定义，也不要求经过本模块的完整调用执行器。
 
 `sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
@@ -107,3 +107,18 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入。
 [本批来源与检查](../../../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)明确区分当前CPU接入、
 固定d2历史证据与main570新增四路径八臂40行严格单卡实机分列；默认数值失败、HSE环境缺项及性能边界保留。
+
+<a id="record-local-sections"></a>
+## 同模型有限计划的可选逐记录执行
+
+同一份 `LotusRecordChain` 可以显式交给 Core 的 `record_local_sections` 模式。
+已有普通 Filter／Map／Extract 可依赖合法地排序和重复，不按链名、Q编号或预测结果选择策略，
+也不自由重排算子。F/M共享原方法对象、formatter/parser及计量；其真实结果只归并一次。
+Extract仍用完整关系：真实EOF、所有前段结果与调用责任检查后执行原parser及组装，再续后段。
+重复用户index、动态列和父调用按原关系方法处理，不能把Extract直接套入逐行F/M程序。
+
+默认fused、原LOTUS方法、baseline原生路径不变。第一版一个查询使用一个模型部署，
+同部署角色变化可形成新段；另一模型部署会在启动前报错，不做猜测路由。
+这是有限顺序计划的执行选项，不表示Join、任意DAG、跨查询模型复用或所有组合已实机验证。
+接口与资源说明见[执行owner](../../execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
+资格范围见[代码状态](../../../INFRA_STATUS.md#record-local-sections-c827)。

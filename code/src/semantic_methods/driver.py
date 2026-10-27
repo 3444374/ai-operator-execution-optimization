@@ -1,6 +1,6 @@
 """Bounded sequential methods over many rows, using one exclusively owned new session."""
 
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from dataclasses import dataclass, replace
 
 from ..planning.work import StageWork, WorkDescriptor
@@ -51,7 +51,10 @@ class MethodDriver:
         budget: MethodBudget,
         *,
         describe_work=None,
+        ready_order="round_robin",
     ):
+        if ready_order not in ("round_robin", "fifo"):
+            raise ValueError("unknown continuation ready order")
         self._reservation = row_reservation(limits)
         if budget.capacity.bytes < self._reservation:
             raise ValueError("method budget cannot hold one stage transition")
@@ -71,6 +74,7 @@ class MethodDriver:
         self._eof = self._sealed = self._closed = False
         self.error = None
         self._describe_work = describe_work
+        self._ready = deque() if ready_order == "fifo" else None
 
     @property
     def active_rows(self):
@@ -100,6 +104,8 @@ class MethodDriver:
             self._abort(error)
             raise
         self._row_sequence = row.sequence
+        if self._ready is not None and run.pending is not None:
+            self._ready.append(row.sequence)
         return True
 
     def end_input(self):
@@ -109,7 +115,8 @@ class MethodDriver:
     def _submit(self, maximum):
         actions = 0
         # Rotate visited rows to keep a waiting row ahead of newly generated stages.
-        for sequence in tuple(self._rows):
+        ready = tuple(self._rows) if self._ready is None else tuple(self._ready)
+        for sequence in ready:
             if actions >= maximum:
                 break
             row = self._rows[sequence]
@@ -151,6 +158,8 @@ class MethodDriver:
             self._tasks[key] = sequence
             self._task_sequence += 1
             self._rows.move_to_end(sequence)
+            if self._ready is not None:
+                self._ready.popleft()
             actions += 1
         return actions
 
@@ -175,6 +184,8 @@ class MethodDriver:
                         raise RuntimeError("method task failed")
                     sequence = self._tasks.pop(delivery.key)
                     self._rows[sequence].run.complete(delivery.key, delivery.result)
+                    if self._ready is not None and self._rows[sequence].run.pending is not None:
+                        self._ready.append(sequence)
             finally:
                 self.session.release(tuple(d.lease_id for d in progress.deliveries))
             if progress.state in (State.FAILED, State.CANCELLED):
@@ -234,6 +245,8 @@ class MethodDriver:
             return self.session.close_consumer(clean=self.finished)
         finally:
             self._tasks.clear()
+            if self._ready is not None:
+                self._ready.clear()
             while self._rows:
                 self._rows.popitem()
                 self.budget.release(self._reservation)

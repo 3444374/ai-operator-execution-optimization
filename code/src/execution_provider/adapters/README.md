@@ -64,3 +64,34 @@ These are engineering decisions within the existing Core and transport interface
 [real CPU Ray tests](../../../tests/execution_provider/test_native_ray_integration.py)
 exercise the implementation. Supplier adapters, a complete LOTUS query, GPU benefits and PG
 integration on this composed source require their own qualification.
+
+## Optional single-model finite record plans
+
+`SemLoomRecordChainCore(..., execution="record_local_sections")` runs a legal finite
+Filter/Map/Extract plan using the shared `ChainRun` and one prepared Async model owner.
+`execution="fused"` remains the default. This is a Python API option, not an automatic
+selector or a change to a baseline's native execution.
+
+Record-local F/M sections use `LotusChainFIFO` over the existing Core/MethodDriver.
+Extract waits for actual source EOF, complete predecessor finals and drained result
+responsibility; the original parser and relation assembler then run once before continuation.
+One model is started and finally closed per query, including all its sections. Cross-query
+reuse, multiple deployments and arbitrary DAGs are not provided by this option.
+
+The caller owns Ray 2.56.1. Preparation/model batch sizes must both be 1; explicit
+`max_active_batches` must fit the engine capacity. Formatting/parsing remains in the
+method caller and no Filter prepare actor is allocated. Core/MethodBudget logical limits
+do not bound whole-query relations, audit memory, process RSS or GPU KV bytes.
+The full-query mode uses request-count admission. `LotusChainFIFO`'s existing optional
+`ChainTokenBudget` is a separate explicit interface and is not enabled by this option.
+
+Source positions are increasing and protocol occurrence IDs unique; user index labels
+and business IDs may repeat. A query failure stops continuation and retains earlier facts.
+Late receipts may supplement the stopped query's report but cannot rerun a parser or
+produce successors. Actual unknown results and known usage remain; producer retirement
+and physical GPU exit are distinct checks.
+
+See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_local_query.py),
+[prepared owner cases](../../../tests/execution_provider/test_lotus_prepared_actor_owner.py),
+the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
+and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).

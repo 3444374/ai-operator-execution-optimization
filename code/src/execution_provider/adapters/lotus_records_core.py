@@ -29,7 +29,7 @@ from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
 from src.scheduling.submission_control.admission import StaticAdmissionController
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 from .lotus_records_actor_owner import RecordsActorOwner, _ModelActor
 
@@ -189,8 +189,7 @@ def _check(deadline, cancelled=None):
 
 def _capacity_failure(value):
     """Keep identity and known usage when a full result cannot fit its reservation."""
-    occurrence = identity(value["query_id"], value["row_id"],
-                          value["source_position"], value["call_index"])
+    occurrence = {name:value[name] for name in IDENTITY_FIELDS}
     return dict(
         occurrence, status="unknown" if value["status"] == "unknown" else "failed",
         text=None, prompt_tokens=value.get("prompt_tokens"),
@@ -266,13 +265,7 @@ class _RecordTransport:
         # binding before awaiting preparation/model completion.
         self._query_binding = session_id, prepare_method
 
-    async def _execute(self, task, endpoint):
-        timings = self.timings  # Keep late work attached to its original query.
-        binding = self._query_binding
-        if binding is not None and binding[0] != task.key.session_id:
-            raise ValueError("Core task belongs to another query method binding")
-        prepare_method = None if binding is None else binding[1]
-        _check(self.deadline)
+    def _submit_task(self, task, timings, prepare_method):
         row = json.loads(task.task.payload)
         expected = {key: row[key] for key in identity(
             row["query_id"], row["row_id"], row["source_position"], row["call_index"],
@@ -293,6 +286,24 @@ class _RecordTransport:
             )
         with self._lock:
             self._refs[task.key] = (prepared, result_ref)
+        return result_ref
+
+    def _audit_result(self, expected, value):
+        CallLedger([expected], 1).record(value)
+
+    def _result_transferred(self, task, value):
+        """Optional adapter sink, after retention and before the actor ack."""
+
+    async def _execute(self, task, endpoint):
+        timings = self.timings  # Keep late work attached to its original query.
+        binding = self._query_binding
+        if binding is not None and binding[0] != task.key.session_id:
+            raise ValueError("Core task belongs to another query method binding")
+        prepare_method = None if binding is None else binding[1]
+        _check(self.deadline)
+        result_ref = self._submit_task(task, timings, prepare_method)
+        with self._lock:
+            expected = self._requests[task.key][0]
         with _measure(timings, "dependency_and_model_wait"):
             result = await asyncio.wrap_future(result_ref.future())
         with _measure(timings, "transport_result_processing"):
@@ -300,12 +311,12 @@ class _RecordTransport:
                 raise ValueError("model completion exceeded its byte reservation")
             value = json.loads(result)
             # Association is checked before a successful backend terminal can free input.
-            audit = CallLedger([expected], 1)
-            audit.record(value)
+            self._audit_result(expected, value)
             with self._lock:
                 self._outcomes[task.key] = result
                 if value["status"] != "unknown":
                     self._refs.pop(task.key, None)
+            self._result_transferred(task, value)
             # Transfer before the actor may discard its copy; unknown still owns refs.
             self.actors.acknowledge_core(task.key)
         if value["status"] == "unknown":
@@ -341,7 +352,7 @@ class _RecordTransport:
                     continue
                 expected, maximum = request
                 value = receipt["result"]
-                CallLedger([expected], 1).record(value)
+                self._audit_result(expected, value)
                 try:
                     encoded = _encode(value, maximum)
                 except ValueError:
@@ -599,6 +610,47 @@ class _CoreRows(Iterator[dict[str, Any]]):
                 self.unconsumed_call_results.append(row)
 
 
+def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=None):
+    """Stop the existing producer, recover receipts, then retire proved borrowing.
+
+    The caller first closes its source/MethodDriver consumer. A new timeout
+    permits cleanup only; unknown results are never upgraded by retirement.
+    """
+    errors = []
+    # The first closure shares the query's absolute deadline. An explicit
+    # subsequent timeout grants only a new cleanup attempt, never new work.
+    if timeout is not None:
+        import math
+        if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("cleanup timeout must be finite and positive")
+        actors.close_deadline = time.monotonic() + timeout
+    else:
+        actors.close_deadline = deadline
+    actor_report = actors.close()
+    errors.extend(actor_report["cleanup_errors"])
+    if transport is not None:
+        errors.extend(transport.recover_actor_receipts(
+            actor_report.get("unconsumed_core_results", [])))
+    if core is not None:
+        core.reap(capacity.step_actions)
+    transport_closed = True
+    retirement = None
+    if transport is not None:
+        transport_closed = transport.backend.close(timeout=0.05)
+        proof = actor_report.get("producer_quiescence")
+        if transport_closed and proof is not None:
+            try:
+                core.reap(capacity.step_actions)
+                keys = tuple(record.key for record in core.capacity.records.values() if record.compute)
+                retirement = transport.retire_producer(proof, keys)
+                for _ in range(1 + len(keys) // capacity.step_actions):
+                    core.reap(capacity.step_actions)
+            except Exception as error:
+                errors.append("producer_retirement: " + type(error).__name__)
+    return dict(model_owner=actor_report, transport_closed=transport_closed,
+                producer_retirement=retirement, cleanup_errors=errors)
+
+
 class SemLoomRecordsCore:
     """One model owner, with the constructor method as each query's default."""
 
@@ -762,36 +814,11 @@ class SemLoomRecordsCore:
                 errors.extend(self._active.close()["cleanup_errors"])
             except BaseException as error:
                 errors.append("core_query_close: " + type(error).__name__)
-        # The first closure shares the query's absolute deadline. An explicit
-        # subsequent timeout grants only a new cleanup attempt, never new work.
-        if timeout is not None:
-            import math
-            if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
-                raise ValueError("cleanup timeout must be finite and positive")
-            self._actors.close_deadline = time.monotonic() + timeout
-        else:
-            self._actors.close_deadline = self._deadline
-        actor_report = self._actors.close()
-        errors.extend(actor_report["cleanup_errors"])
-        if self.transport is not None:
-            errors.extend(self.transport.recover_actor_receipts(
-                actor_report.get("unconsumed_core_results", [])))
-        if self.core is not None:
-            self.core.reap(self.capacity.step_actions)
-        transport_closed = True
-        retirement = None
-        if self.transport is not None:
-            transport_closed = self.transport.backend.close(timeout=0.05)
-            proof = actor_report.get("producer_quiescence")
-            if transport_closed and proof is not None:
-                try:
-                    self.core.reap(self.capacity.step_actions)
-                    keys = tuple(record.key for record in self.core.capacity.records.values() if record.compute)
-                    retirement = self.transport.retire_producer(proof, keys)
-                    for _ in range(1 + len(keys) // self.capacity.step_actions):
-                        self.core.reap(self.capacity.step_actions)
-                except Exception as error:
-                    errors.append("producer_retirement: " + type(error).__name__)
+        closed = close_prepared_core(self._actors, self.transport, self.core, self.capacity,
+                                     deadline=self._deadline, timeout=timeout)
+        actor_report = closed["model_owner"]
+        transport_closed, retirement = closed["transport_closed"], closed["producer_retirement"]
+        errors.extend(closed["cleanup_errors"])
         if self._active is not None:
             self._active.collect_receipts()
             if self.last_query_report is not None:
