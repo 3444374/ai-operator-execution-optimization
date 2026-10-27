@@ -59,7 +59,7 @@ def _native_runner(runner_threads):
 
 def _graph(frame, chain, engine, resources, expected, control, deadline, control_token,
            *, runner_threads=None, batch_type=None, model_gpus=1,
-           initial_parents=None, columns=None, allow_nulls=False):
+           initial_parents=None, columns=None, allow_nulls=False, release_completed_audit=False):
     """Only CPU qualification may substitute a kernel or GPU resource request."""
     import daft
 
@@ -88,7 +88,8 @@ def _graph(frame, chain, engine, resources, expected, control, deadline, control
             self.kernel = (batch_type or FusedChainBatch)(
                 chain_config, engine_config, bindings, control_path, deadline,
                 startup_timeout_s, driver_host, control_token,
-                initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls)
+                initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls,
+                release_completed_audit=release_completed_audit)
 
         @daft.method.batch(return_dtype=daft.DataType.string(), batch_size=resources.model_batch_rows)
         def run(self, records):
@@ -274,7 +275,8 @@ def _stop_registered_engine(report):
 
 
 def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
-             expected, query_id, control_dir=None, cancelled=None, runner_threads=None, columns=None):
+             expected, query_id, control_dir=None, cancelled=None, runner_threads=None, columns=None,
+             release_completed_audit=False):
     """Execute once, under an outer query-process supervisor for a hard deadline.
 
     The lazy input must contain exactly one string record_json column; each row
@@ -285,6 +287,8 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
     segment initializes a separate model. EngineSpec.max_model_calls is per
     engine. This adapter does not provide Join, branches or global aggregation.
     """
+    if type(release_completed_audit) is not bool:
+        raise TypeError("release_completed_audit must be a boolean")
     resources = RecordsResources(**asdict(resources))
     if resources.cpu_workers != 1:
         raise ValueError("the fused Daft chain supports cpu_workers=1 only")
@@ -340,14 +344,16 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
                     source = daft.from_arrow(pa.table({"record_json": pa.array([], type=pa.string())}))
                 graph = _graph(source, segment, engine, resources, records, phase_control,
                     deadline, phase_token, runner_threads=runner_threads,
-                    initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls)
+                    initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls,
+                    release_completed_audit=release_completed_audit)
                 return _DaftChainRows(graph, records, segment, deadline, cancelled, phase_control,
                     initial_parents=initial_parents, columns=columns)
 
             return NativeExtractRelationRows(chain, expected, open_phase, control, deadline,
                 cancelled, scheduler_owner="Daft Native " + DAFT_VERSION, columns=columns)
         graph = _graph(frame, chain, engine, resources, expected, control, deadline, token,
-                       runner_threads=runner_threads, columns=columns)
+                       runner_threads=runner_threads, columns=columns,
+                       release_completed_audit=release_completed_audit)
         return _DaftChainRows(graph, expected, chain, deadline, cancelled, control, columns=columns)
     except BaseException:
         shutil.rmtree(control)

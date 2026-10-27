@@ -49,7 +49,9 @@ PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权
 [PR64](https://github.com/3444374/ai-operator-execution-optimization/pull/64)已将逐阶段模型进程移到
 [`serving/backends/staged_generation_process.py`](src/serving/backends/staged_generation_process.py)，共享链执行移到
 [`execution_provider/method_workers/lotus_chain_batch.py`](src/execution_provider/method_workers/lotus_chain_batch.py)。Core、Ray和Daft共用该实现，旧路径保留兼容入口。
-独立真实进程测试当时因系统权限未完成复跑，不能记为独立通过；后续补测按实际回执更新。
+<a id="shared-chain-ipc-scope"></a>
+冻结组合`baa45eb7`的[共享链进程通信测试](tests/serving/test_shared_chain_migration.py)已在Linux单项通过：测试0.447秒，含清理1.253秒，自有进程退出、租约释放，零失败／跳过、零模型、零重试。
+当前整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合检查；这不是新整合整体的Linux执行回执。Mac EPERM原失败保留，不再将该同步组件列为待测缺口。
 逐记录查询的接纳与验证范围见[下方说明](#record-local-sections-c827)。
 
 <a id="候选交接状态2026-10-27"></a>
@@ -67,8 +69,8 @@ PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权
 | 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、`calibrate/run_calibrated/run_query`及有限矩阵扫描；普通Movie与维护session可显式选择原单遍反馈入口和精确提示复用，默认固定。原冻结来源完成短查询功能检查，未证明反馈调节或收益 | 可选实现已整合；真实反馈、探索和调窗仍待验证 | [公共接口](src/scheduling/runtime/calibration.README.md)、[实测身份与局限](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 按真实查询验证反馈、探索和完整成本，保留旧未回本及负结果；不把容量边界或短查询初值当作最优 |
 | 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63含共用调用审计，但完整查询的阶段传递和Extract仍按请求数，token尚未贯通。C64输出可比性失败和无净收益结果保留。这不同于main已有的token分批 | 候选组件保留待接入；不能只加一个开关 | [token 对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)、[PR63](https://github.com/3444374/ai-operator-execution-optimization/pull/63)、[已有token分批](src/data/materializers/text.py) | 动态接入稳定后，贯通共享预算、阶段传递、FIFO与Extract的一致工作量、取消及unknown结算，再暴露显式选项；默认count保持 |
 | 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown，组合版本未整体实机验证 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
-| 减少结果审计对象存活时间 | `r2`候选已有CPU与独立检查，`release_completed_audit=False`，main尚无此开关；只证明Python持有减少，未证明物理内存归还或完整查询更快 | 候选待接入与验证，没有废弃 | 本地r2候选及[共享链执行文件](src/execution_provider/method_workers/lotus_chain_batch.py) | 与公共关联索引按顺序适配同一文件，补显式入口和默认路径回归；不把对象释放记成物理free |
-| 共享链结果关联索引 | 公共内核候选已有13项CPU与100组差分检查；main尚无`_associate_declared_results`。这不是仅供历史复现的算法，也不属于SemLoom独占优化 | 候选待适配；本轮核接入差异 | 本地公共内核候选，目标为[共享链执行文件](src/execution_provider/method_workers/lotus_chain_batch.py) | 先核main前文、结果身份及异常行为，再接入并回归Core／Ray／Daft消费者；CPU小探针不代替模型查询收益 |
+| 减少结果审计对象存活时间 | Core fused、Ray／Daft有限链Python入口及各Extract阶段支持同一`release_completed_audit`选项，默认False；普通Movie单Filter CLI不经过此worker，record_local_sections明确拒绝开启。成功编码且无失败、取消、unknown或清理错误时只撤掉worker自身列表引用，消费者账本保持 | 可选实现与组合检查完成；不证明RSS或查询收益 | [选项与边界](src/semantic_methods/lotus/README.md#completed-chain-audit-lifetime)、[IPC组件检查](#shared-chain-ipc-scope) | 按真实持有与消费者行为评估，区分Python引用、物理内存和查询性能；不自动开启 |
+| 共享链结果关联索引 | 原审七字段完整身份索引由Core fused、Ray／Daft有限链共用，固定、随机差分、碰撞及取消检查通过；普通Movie单Filter和record_local_sections不适用 | 实现与组合检查完成；真实查询收益仍待验证 | [范围与测试](src/semantic_methods/lotus/README.md#finite-chain-result-index)、[共享worker](src/execution_provider/method_workers/lotus_chain_batch.py) | 保留原异常、顺序和身份规则；关联操作减少不代表完整查询收益 |
 | 图像准备分离、字节背压与多工作进程 | main的HSE底层已有独立准备／模型额度、字节broker、ready优先提交；`hse_static`诊断入口仍在。普通LOTUS资源入口拒绝HSE和CPU>1，执行器将worker及阶段深度固定为1 | 已有实现，确有普通入口缺口 | [HSE循环](src/modalities/image/staged_execution.py)、[资源解析](src/modalities/image/resource_budget.py)、[LOTUS图像入口](src/semantic_methods/lotus/image_backend.py) | 动态接入后先恢复单GPU、多CPU准备的显式参数与转发，补CPU及输出回归；保留当前TF32和单GPU检查，不默认开启、不声称多卡或位置优化已验证 |
 | 可选图像阶段dispatcher | `StageModelDispatcher`及HSE接入仍在`reference/optional-baselines-image-runtime`，main尚无这两个模块；是可继续维护的可选实现，未成为位置／拷贝代价优化器 | 待按小范围接入核对，不整支合并 | [阶段选择器](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/scheduling/runtime/stage_dispatch.py)、[HSE接入](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/modalities/image/hse_dispatch.py) | 单独适配显式配置、容量和速率过期合同，保持默认与原生baseline边界；不因为保存在参考分支就淘汰 |
 | 私有记录方式的对照 | `6a263` 已通过 CPU 独立检查；真实对照正在恢复运行准备，已登录并等待确认机器现场状态，尚无执行回执 | 是：服务器运行准备 | `6a263` 独立检查及本轮运行准备回报 | 确认机器现场状态后执行限定对照并返回结果；准备状态不写成已经运行 |
