@@ -73,19 +73,24 @@ class WireFixture:
     def __init__(self, failure=None, malformed=False):
         self.requests, self.responses = [], []
         self.failure, self.malformed = failure, malformed
+        self.failure_text, self._failure_matched = None, False
         self.token_fault = None
         self.active = self.peak = 0
         self.lock = threading.Lock()
     def __call__(self, request):
         import httpx
         body = json.loads(request.content)
+        content = json.dumps(body["messages"], ensure_ascii=False)
         with self.lock:
             ordinal = len(self.requests)
             self.requests.append(body)
+            fail = self.failure == ordinal
+            if (self.failure_text is not None and self.failure_text in content
+                    and not self._failure_matched):
+                fail, self._failure_matched = True, True
             self.active += 1
             self.peak = max(self.peak, self.active)
         time.sleep(0.005)  # overlap proves the actual native thread pool is used
-        content = json.dumps(body["messages"], ensure_ascii=False)
         positive = "good" in content
         response = dict(id="fixture-" + str(ordinal), model=body["model"], created=1,
             object="chat.completion", choices=[dict(index=0, finish_reason="stop",
@@ -103,7 +108,7 @@ class WireFixture:
         elif self.token_fault == "length":
             response["choices"][0]["token_ids"] = [91]
         status = 200
-        if self.failure == ordinal:
+        if fail:
             status = 500
             response = dict(response, error=dict(message="fixture failure", type="server_error"))
         if self.malformed:
@@ -217,7 +222,8 @@ class NativeLocalTests(unittest.TestCase):
         self.assertEqual(report["calls"]["usage"]["total_tokens"], 56)
 
     def test_http_failure_keeps_every_native_receipt_and_never_retries(self):
-        self.wire.failure = 1
+        # The fixture's bad conversation is unique; arrival order is concurrent.
+        self.wire.failure_text = "«bad»"
         with self.assertRaises(Exception) as caught:
             self.run_query()
         report = caught.exception.query_report
@@ -233,6 +239,36 @@ class NativeLocalTests(unittest.TestCase):
                 self.assertNotIn("token_ids_source", row)
                 self.assertNotIn("prompt_token_ids", row)
                 self.assertNotIn("output_token_ids", row)
+        self.assertNotIn("quality", report)
+        self.assertTrue(FixtureService.instances[0].closed)
+
+    def test_duplicate_message_HTTP_failure_stays_unknown_with_all_wire_receipts(self):
+        # Both good occurrences have the same conversation. Fail only one,
+        # under the transport's existing lock, without choosing an arrival ID.
+        self.wire.failure_text = "«good»"
+        with self.assertRaises(Exception) as caught:
+            self.run_query()
+        report = caught.exception.query_report
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(len(self.wire.requests), 4)
+        self.assertEqual(self.budget.attempts, 4)
+        self.assertEqual(report["calls"]["counts"]["recorded"], 4)
+        self.assertEqual(report["calls"]["counts"]["missing"], 0)
+        self.assertEqual(report["calls"]["counts"]["succeeded"], 3)
+        self.assertEqual(report["calls"]["counts"]["failed"], 0)
+        self.assertEqual(report["calls"]["counts"]["unknown"], 1)
+        self.assertEqual(report["calls"]["usage"]["known_completion_tokens"], 6)
+        self.assertEqual(len(report["http_receipts"]), 4)
+        failures = [r for r in report["http_receipts"] if r["http_status"] == 500]
+        self.assertEqual(len(failures), 1)
+        digest = failures[0]["messages_sha256"]
+        duplicates = [r for r in report["calls"]["records"] if r["messages_sha256"] == digest]
+        self.assertEqual(len(duplicates), 2)
+        unknown, = [r for r in duplicates if r["status"] == "unknown"]
+        self.assertFalse(unknown["submission_confirmed"])
+        self.assertNotIn("token_ids_source", unknown)
+        self.assertNotIn("prompt_token_ids", unknown)
+        self.assertNotIn("output_token_ids", unknown)
         self.assertNotIn("quality", report)
         self.assertTrue(FixtureService.instances[0].closed)
 
