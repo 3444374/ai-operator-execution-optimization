@@ -95,3 +95,32 @@ See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_
 [prepared owner cases](../../../tests/execution_provider/test_lotus_prepared_actor_owner.py),
 the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
 and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).
+
+
+## records Core 可选动态接纳
+
+`lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。
+`profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
+显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
+不是另一个执行器。`C0` 是起始软窗口，owner 上界为声明的 Core request budget 与
+`EngineSpec.max_num_seqs` 的较小值；prepare 数、模型容量和 actor/IPC 容量在启动前确定。
+显式 `async_limits.max_inflight/result_slots` 必须覆盖该 owner 上界，不是只覆盖 C0。
+
+`allow_exploration=True` 显式允许原有限探索；不设 admission 时保持固定且不启动 native
+反馈采样。`max_inflight="auto"` 仍只是声明容量的 min，不是实测调优。同步 Core 仍只
+接收 model batch 1；有限同步批参照 `lotus_records_static` 不冒称 Core 批处理。
+
+普通查询可用同一公共 `scheduling.runtime.calibration.run_admission_query` 接精确配置复用。
+Movie 的薄配置槽及计时/资格边界见 [calibration.README](../../scheduling/runtime/calibration.README.md)。
+恢复的是旧策略本身，历史波动和负结果保留；功能实测与当前整合的边界见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)。
+
+
+### 静态参照的显式 session
+
+维护 Movie session 现在可选择 `backend="semloom-static-reference"`、
+`profile={"mode":"sync"}`，继续使用原 `RecordsResources` 的 prepare/model batch。
+这是 Core 外有限批参照，不是 Core B4；Core 的原单行合同不变。
+resident 在查询前调用原模型 owner 的 start，两次完整查询复用模型，query EOF 不关闭模型，
+session 结束一次原 close。不同 FilterMethod 指令明确拒绝，不能复用旧 formatter 冒称支持。
+准备批、原有限模型批、原 LOTUS parser、身份和未确认关闭责任不变。
+本接线已做维护 CLI/CPU first-reuse 与失败边界检查，真实模型/物理退出仍需本候选单独资格。

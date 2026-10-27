@@ -27,7 +27,7 @@ from src.semantic_methods.lotus.records import CallLedger
 from src.observability.records_telemetry import TelemetryEvents
 from src.experiments.movie_matrix_support import (
     _diagnostic_warning, build_launch_context, validate_launch_context,
-    unit_final, optional_performance, matrix_budget, audit_tokenizer,
+    unit_final, optional_performance, matrix_budget, audit_tokenizer, declared_shared_resources,
     scan_jobs,group_slots,planned_queries,validate_core_scan,core_observations,materialize_core_plan,
 )
 
@@ -90,7 +90,7 @@ class MovieMatrix:
 
     def check(self, packet_sha, *, offline=False):
         cfg, matrix, groups = self.bound(packet_sha, host_checks=not offline)
-        cpu_limit=len(self.packet.read(self.packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']['cpu_affinity_slots']) if any(g.get('calibration') for g in groups) else 0
+        cpu_limit=len(declared_shared_resources(cfg,self.packet)['cpu_affinity_slots']) if any(g.get('calibration') for g in groups) else 0
         for index,group in enumerate(groups):
             plan = check_plan(self.packet.read(self.packet.HERE / group['plan']))
             if plan['expected_calls'] != group['max_calls']:
@@ -318,7 +318,7 @@ class MovieMatrix:
         for name in ('tmp', 'mpl'):
             (self.root / 'runtime' / name).mkdir(parents=True, exist_ok=True, mode=0o700)
         os.environ.update(PYTHONPATH=str(self.packet.SOURCE / 'code') + os.pathsep + str(self.packet.HERE), AI_OPERATOR_ENV_FILE=cfg['environment_file'], CUDA_VISIBLE_DEVICES=gpu['uuid'], RAY_TMPDIR=ray, VLLM_RPC_BASE_PATH=rpc, TMPDIR=str(self.root / 'runtime/tmp'), MPLCONFIGDIR=str(self.root / 'runtime/mpl'), SEMLOOM_RUN_IPC_PREFIX=context['ipc_prefix'], SEMLOOM_RUN_IPC_RECEIPTS=context['ipc_receipts'], SEMLOOM_RUN_IPC_CONTEXT=str(output / 'context.json'), RAY_USAGE_STATS_ENABLED='0', DAFT_RUNNER='native', VLLM_WORKER_MULTIPROC_METHOD='spawn', PYTHONHASHSEED='0', PYTHONOPTIMIZE='0')
-        monitor = self.host.FullMonitor(cfg, self.packet.read(self.packet.SOURCE / 'deploy/autodl/sembench_records/comparison.json')['shared_resources'], unit_deadline)
+        monitor = self.host.FullMonitor(cfg, declared_shared_resources(cfg,self.packet), unit_deadline)
         performance = self.finalizers.optional_performance(cfg, output, gpu['uuid'], (output / 'session-events.jsonl',))
         error = supervised = None
         physical = None
@@ -509,7 +509,7 @@ class MovieMatrix:
             # Input preflight supplies exact finite occurrence counts for every task.
             checked = [check_plan(self.packet.read(self.packet.HERE / g['plan'])) for g in groups]
             if any(g.get('calibration') for g in groups):
-                cpu_limit=len(self.packet.read(self.packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']['cpu_affinity_slots'])
+                cpu_limit=len(declared_shared_resources(cfg,self.packet)['cpu_affinity_slots'])
                 for index,g in enumerate(groups):
                     validate_core_scan(self.packet.read(self.packet.HERE/g['plan']),g,index,cpu_limit)
             if (any(p['expected_calls'] != g['max_calls'] for g,p in zip(groups,checked,strict=True))
@@ -622,7 +622,7 @@ def main(argv=None):
     if args.action == 'audit' and (args.report is None or args.audit_output is None):
         parser.error('audit requires --report and --audit-output')
     runtime = load_runtime(args.packet, args.packet_sha)
-    entrypoint = Path(__file__).resolve().parents[2] / 'scripts/experiments/run_sembench_movie_matrix.py'
+    entrypoint = Path(__file__).resolve().parents[2] / 'scripts/experiments/run_movie_records_matrix.py'
     driver = MovieMatrix(runtime, args.output_dir, entrypoint)
     driver.packet_digest = args.packet_sha
     if args.action == 'check' or (args.action == 'run' and not args.execute_model):

@@ -114,3 +114,46 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 不会只凭同一硬件就泛化到另一个任务，也没有新增相似度匹配或自动漂移控制。
 `performance_tuned` 及参数来源在策略报告中；Core 工厂原字段只表示其自身显式容量声明，
 不会因外层选参就伪称该工厂曾主动测量硬件。
+
+
+## 可选单遍动态接纳与参数提示复用
+
+`run_admission_query` 接回原 cfdc/79e8 版本的单遍反馈策略和精确 hint 缓存。
+它与上述 `run_query(mode="query"/"offline"/"online")` 并存：后者调用完整工作负载测量回调，
+前者在**本来要完成的查询请求**上调整 admission，不另做一遍查询。此次接回不修改历史选参算法。
+默认 Core 仍固定；没有 `profile.admission` 就没有新增反馈采样任务。
+
+普通公共调用先以 `create_records_core(..., profile=profile)` 建立唯一 async owner，
+再将完整查询消费/解析/汇总和借用释放放进 `run_admission_query` 的回调；
+回调中的 `owner.evaluate(..., max_inflight=window, allow_exploration=..., search_hint=...)`
+使用同一模型。必须消费 iterator 并核对原关闭/调用账本后才报告 `reuse_eligible=True`，
+不能以创建 lazy iterator 代替查询完成。公共层不依赖 Movie、gold 或 experiments。
+
+`ResourceFeedbackConfig` 是 owner 与缓存 policy 的同一份选项。显式
+`allow_exploration=True, search_mode="geometric"` 才启用原几何性能试探；
+`allow_exploration=False` 可仅保留资源压力保护。缺失/过期 native 反馈不当作零压力。
+模型 `max_num_seqs` 和 owner 上界在启动前声明，控制器只调整运行时 admission，
+不热改模型容量，不把容量边界叫最优，不取消已经在途的请求来缩窗。
+
+Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`；可选
+`admission_cache={"identity": six_group_identity, "cache_dir": absolute_directory, "reuse": true}`
+只负责薄接线到上述公共 API。identity 仍要求 hardware/model/generation/execution/workload/measurement
+六组及 `measurement.work_unit`。调用者须提供真实硬件、权重/tokenizer/软件版本和计时口径；
+适配层额外绑定实际 EngineSpec、generation、resources/profile、source manifest SHA 和 method。
+更换 query ID 不自动失效，实际输入/方法或环境变化必须失效；不支持未经验证的相似任务泛化。
+预热不读取/写入 hint 且不探索。成功短任务可复用安全初值，但不因此称其经过调优。
+未结束的搜索 hint 按原有限预算继续，不能把未决状态当全局最佳。
+
+单遍探索的请求正常贡献输出，探索耗时已在 `total_wall_s` / caller 返回中，不能再相加。
+`admission_selection.entry_work_wall_s` 覆盖绑定到完整回调和缓存写入、止于 payload 返回前；
+真实调用方返回、模型启动/暖机/最终关闭由原生命周期计时单列。历史扫描费只记一次。
+缓存写入是查询局部资格，不证明物理 GPU/后代退出；unknown、held、借用未释放或账本不完整
+不会发布新 hint。原冻结来源的功能实测与当前代码整合分别判断，见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)；短查询提示复用不证明反馈调节或搜索收益。
+
+
+维护矩阵的 `base-config.json.shared_resources` 可显式提供本轮已封存的共同资源上限
+（`cpu_affinity_slots`、`max_sampled_owned_rss_bytes`、`max_owned_shm_bytes`，及原 host
+monitor 所需字段）。未提供时维持旧 source comparison 文件合同；该文件在当前 main 中已不存在，
+因此新封包须显式提供，不能搜索历史目录或采用机器相关默认值。原资源监护和责任判断不变。
+现有 `run_movie_records_matrix.py` 是唯一 worker/audit 路径，旧 `run_sembench_movie_matrix.py`
+仍可转调同一 main；修复了原 main 与绑定检查选用不同脚本名的问题。

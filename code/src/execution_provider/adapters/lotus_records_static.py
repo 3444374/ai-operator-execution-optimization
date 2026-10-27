@@ -199,11 +199,19 @@ class SemLoomRecordsStaticReference:
     def _wait_ready(self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None) -> Any:
         return self._actor_owner.wait_ready(ref, deadline, cancelled)
 
-    def _start(self, deadline: float, cancelled: Callable[[], bool] | None) -> None:
+    def _start(self, deadline: float, cancelled: Callable[[], bool] | None) -> dict[str, Any]:
         self._actor_owner.engine = self.engine
         self._actor_owner.generation = self.generation
         self._actor_owner.resources = self.resources
-        self._actor_owner.start(deadline, cancelled)
+        return self._actor_owner.start(deadline, cancelled)
+
+    def start(self) -> dict[str, Any]:
+        """Load the existing model once; query scans and batches stay unchanged."""
+        if self._closing or self._unsettled:
+            raise RuntimeError("static reference has closing or unconfirmed model ownership")
+        if self._active is not None and not self._active.finished:
+            raise RuntimeError("static reference already owns an active query")
+        return self._start(time.monotonic() + self.resources.startup_timeout_s, None)
 
     def evaluate(
         self, source: Any, *, query_id: str,

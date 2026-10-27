@@ -21,6 +21,16 @@ class ServiceMetricsSnapshot:
     kv_usage: float | None
     completed_tokens_total: float | None = None
     endpoint_count: int = 1
+    source_sequence: int | None = None
+    source_observed_at_s: float | None = None
+    completed_items_total: int | None = None
+    pending_items: int | None = None
+    preemptions_total: int | None = None
+    memory_pressure: bool | None = None
+    transition_pending: int = 0
+    consumer_backpressure: bool = False
+    completed_input_work_total: int | None = None
+    completed_output_work_total: int | None = None
 
     def __post_init__(self) -> None:
         # Reuse the observation schema's validation without inventing another
@@ -32,6 +42,11 @@ class ServiceMetricsSnapshot:
             running=self.running,
             waiting=self.waiting,
             kv_usage=self.kv_usage,
+            completed_items_total=self.completed_items_total, pending_items=self.pending_items,
+            preemptions_total=self.preemptions_total, memory_pressure=self.memory_pressure,
+            transition_pending=self.transition_pending, consumer_backpressure=self.consumer_backpressure,
+            completed_input_work_total=self.completed_input_work_total,
+            completed_output_work_total=self.completed_output_work_total,
         )
         if self.completed_tokens_total is not None and (
             not math.isfinite(self.completed_tokens_total)
@@ -40,6 +55,10 @@ class ServiceMetricsSnapshot:
             raise ValueError(
                 "completed_tokens_total must be finite and non-negative"
             )
+        if self.source_sequence is not None and (type(self.source_sequence) is not int or self.source_sequence < 0):
+            raise ValueError("source_sequence must be a non-negative integer")
+        if self.source_observed_at_s is not None and (not math.isfinite(self.source_observed_at_s) or self.source_observed_at_s < 0):
+            raise ValueError("source timestamp must be finite and non-negative")
         if self.endpoint_count <= 0:
             raise ValueError("endpoint_count must be positive")
 
@@ -188,9 +207,13 @@ class NonBlockingMetricsObservationProvider:
         self._snapshot: ServiceMetricsSnapshot | None = None
         self._sampled_at_s: float | None = None
         self._sample_generation = 0
+        self._source_sequence = None
         self._last_delivered_generation = 0
         self._service_rate_tokens_s_per_endpoint: float | None = None
         self._rate_tracker = _ServiceRateTracker(rate_ewma_alpha)
+        self._epoch = 0
+        self._enabled = True
+        self._rate_alpha = rate_ewma_alpha
         self._thread = threading.Thread(
             target=self._sample_loop,
             name="service-metrics-sampler",
@@ -216,7 +239,7 @@ class NonBlockingMetricsObservationProvider:
             fresh = (
                 snapshot is not None
                 and sampled_at_s is not None
-                and now - sampled_at_s <= self.stale_after_s
+                and 0 <= now - sampled_at_s <= self.stale_after_s
                 and sample_generation != self._last_delivered_generation
             )
             if fresh:
@@ -240,6 +263,14 @@ class NonBlockingMetricsObservationProvider:
                 else None
             ),
             hol_age_s=hol_age_s,
+            completed_items_total=None if snapshot is None else snapshot.completed_items_total,
+            pending_items=None if snapshot is None else snapshot.pending_items,
+            preemptions_total=None if snapshot is None else snapshot.preemptions_total,
+            memory_pressure=None if snapshot is None else snapshot.memory_pressure,
+            transition_pending=0 if snapshot is None else snapshot.transition_pending,
+            consumer_backpressure=False if snapshot is None else snapshot.consumer_backpressure,
+            completed_input_work_total=None if snapshot is None else snapshot.completed_input_work_total,
+            completed_output_work_total=None if snapshot is None else snapshot.completed_output_work_total,
         )
 
     def close(self) -> None:
@@ -248,24 +279,49 @@ class NonBlockingMetricsObservationProvider:
 
     def _sample_loop(self) -> None:
         while not self._stop.is_set():
-            try:
-                snapshot = self.sampler()
-            except Exception:
-                _logger.warning(
-                    "metrics sampler failed in background thread",
-                    exc_info=True,
-                )
-                snapshot = None
-            sampled_at_s = self.clock()
-            service_rate = self._rate_tracker.update(
-                snapshot,
-                sampled_at_s,
-            )
             with self._lock:
-                self._snapshot = snapshot
-                self._sampled_at_s = sampled_at_s
-                self._service_rate_tokens_s_per_endpoint = service_rate
-                self._sample_generation += 1
+                epoch, enabled = self._epoch, self._enabled
+            snapshot = None
+            if enabled:
+                try:
+                    snapshot = self.sampler()
+                except Exception:
+                    _logger.warning("metrics sampler failed in background thread", exc_info=True)
+            now = self.clock()
+            with self._lock:
+                if epoch == self._epoch and not self._stop.is_set():
+                    if (snapshot is not None and snapshot.source_observed_at_s is not None
+                            and snapshot.source_observed_at_s > now):
+                        snapshot = None
+                    sequence = None if snapshot is None else snapshot.source_sequence
+                    duplicate = (sequence is not None and self._source_sequence is not None
+                                 and sequence <= self._source_sequence)
+                    if not duplicate:
+                        sampled_at = (snapshot.source_observed_at_s if snapshot is not None
+                                      and snapshot.source_observed_at_s is not None else now)
+                        self._snapshot, self._sampled_at_s = snapshot, sampled_at
+                        self._service_rate_tokens_s_per_endpoint = self._rate_tracker.update(snapshot, sampled_at)
+                        self._sample_generation += 1
+                        if sequence is not None:
+                            self._source_sequence = sequence
             self._sampled.set()
             if self._stop.wait(self.poll_interval_s):
                 return
+
+
+    def _set_enabled(self, enabled):
+        with self._lock:
+            self._epoch += 1
+            self._enabled = enabled
+            self._snapshot = self._sampled_at_s = self._source_sequence = None
+            self._service_rate_tokens_s_per_endpoint = None
+            self._rate_tracker = _ServiceRateTracker(self._rate_alpha)
+            self._sample_generation += 1
+
+
+    def pause(self):
+        self._set_enabled(False)
+
+
+    def resume(self):
+        self._set_enabled(True)

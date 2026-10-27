@@ -563,3 +563,113 @@ def run_query(identity, candidates, execute: Callable | None = None, *, default,
         report["request_wait_s"] = (None if request_started_monotonic is None
                                     else ended - request_started_monotonic)
     return report
+
+
+def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir,
+                        reuse=True, clock=time.monotonic, request_started_monotonic=None,
+                        options=None):
+    """Execute once, optionally reusing a precisely matched admission hint.
+
+    execute(window, *, allow_exploration) returns a completed-query receipt with
+    admission_feedback and explicit reuse_eligible (all calls accounted and query
+    borrowing released). The model may remain resident. The receipt is a local
+    one-pass hint, never a fixed-C complete-query calibration measurement.
+    Geometric options additionally pass search_hint. Only finite point progress
+    is reused; reference rates are measured anew. Ordinary run_query defaults
+    and its offline scan/cache remain unchanged.
+    """
+    started=clock();signature=identity_signature(identity)
+    _positive_int(initial_window,'initial_window');_positive_int(maximum,'maximum')
+    if initial_window>maximum or type(reuse) is not bool:
+        raise ValueError('initial window must fit capacity; reuse is boolean')
+    if request_started_monotonic is not None:
+        _seconds(request_started_monotonic,'request_started_monotonic',zero=True)
+        if request_started_monotonic>started:
+            raise ValueError('request start must precede invocation in the same clock')
+    from ..submission_control.adaptive import ResourceFeedbackConfig, _GeometricSearch
+    if options is not None and not isinstance(options,ResourceFeedbackConfig):
+        raise TypeError('options must be ResourceFeedbackConfig')
+    geometric=options is not None and options.search_mode=='geometric'
+    strategy='onepass_geometric_v1' if geometric else 'onepass_performance_v3'
+    policy=dict(strategy=strategy,initial_window=initial_window,maximum=maximum)
+    if options is not None:
+        policy['options']=asdict(options)
+    path=Path(cache_dir)/('admission-'+_digest(dict(identity=signature,policy=policy))+'.json')
+    cached=None;lookup_error=None
+    if reuse:
+        try:
+            if path.exists():
+                cached=json.loads(path.read_text())
+                if (cached['schema']!='semloom.runtime_admission_hint.v1' or cached['identity_sha256']!=signature
+                        or cached['policy']!=policy or type(cached['window']) is not int
+                        or not 1<=cached['window']<=maximum or cached['reuse_eligible'] is not True
+                        or type(cached['evidence']) is not dict):
+                    raise ValueError('incompatible admission hint')
+                if geometric:
+                    state=cached['evidence']['search_state']
+                    if state['origin']!=initial_window or type(cached['evidence']['can_continue']) is not bool:
+                        raise ValueError('incompatible geometric origin')
+                    _GeometricSearch(initial_window,maximum,options.max_candidate_attempts,state)
+        except (OSError,ValueError,KeyError,TypeError) as error:
+            cached=None;lookup_error=type(error).__name__
+    window=initial_window if cached is None else cached['window']
+    permitted=options is None or options.allow_exploration
+    continuation=permitted and cached is not None and cached['evidence'].get(
+        'can_continue' if geometric else 'exploration_censored') is True
+    report=dict(configuration=dict(max_inflight=window),cache_hit=cached is not None,
+        configuration_source='explicit_initial' if cached is None else 'exact_admission_hint',
+        scan_cost=dict(wall_s=0.,samples=0),lookup_error=lookup_error,
+        timing_scope='policy invocation through complete callback; caller anchor covers outside startup/queue',
+        historical_evidence=None if cached is None else cached['evidence'])
+    report['bounded_continuation']=continuation
+    try:
+        arguments=dict(allow_exploration=permitted and (cached is None or continuation))
+        if geometric:
+            arguments['search_hint']=None if cached is None else deepcopy(cached['evidence']['search_state'])
+        value=execute(window,**arguments)
+        report['result']=value
+        feedback=value.get('admission_feedback') or {}
+        report['online_exploration_s']=feedback.get('exploration_wall_s')
+        report['online_exploration_already_in_total']=True
+        if (value.get('status')=='completed' and value.get('reuse_eligible') is True
+                and feedback.get('strategy')==strategy):
+            pressure=any(row['reason']=='resource_pressure' for row in feedback['history'])
+            selected=(feedback['window'] if pressure and not feedback['unconfirmed_trial']
+                      else feedback.get('recommended_window'))
+            if selected is None and not feedback['changes']:
+                selected=window
+            terminal_stop=feedback.get('stop_reason') in ('capacity_limit','local_plateau',
+                'performance_rollback','waiting_regression','inconclusive_noise')
+            new_incomparable=(continuation and feedback.get('invalidated_comparisons',0)>0
+                and any(cached['evidence'].get(key)!=feedback.get(key) for key in
+                        ('stop_reason','incomplete_reason','invalidated_comparisons')))
+            unchanged=(feedback.get('search_state')==cached['evidence'].get('search_state')
+                       and feedback.get('can_continue')==cached['evidence'].get('can_continue')) if geometric and cached else False
+            if cached is not None and selected==window and (unchanged if geometric else
+                    (not continuation or not (terminal_stop or new_incomparable))):
+                report['reused_hint_unmodified']=True
+            elif type(selected) is int and 1<=selected<=maximum:
+                payload=dict(schema='semloom.runtime_admission_hint.v1',identity_sha256=signature,
+                    policy=policy,window=selected,reuse_eligible=True,
+                    evidence=dict(scope=feedback['recommendation_scope'],accepted_steps=feedback['accepted_steps'],
+                        unconfirmed_trial=feedback['unconfirmed_trial'],strategy=feedback['strategy'],
+                        stop_reason=feedback.get('stop_reason'),
+                        exploration_censored=feedback.get('exploration_censored',False),
+                        incomplete_reason=feedback.get('incomplete_reason'),
+                        invalidated_comparisons=feedback.get('invalidated_comparisons',0),
+                        source='successful one-pass query, not a fixed full-query measurement'))
+                if geometric:
+                    payload['evidence'].update(search_state=deepcopy(feedback['search_state']),
+                        can_continue=feedback['can_continue'])
+                try:
+                    _save(path,payload)
+                    report['saved_hint']=dict(window=selected,path=str(path),scope=payload['evidence']['scope'])
+                except OSError as error:
+                    report['cache_write_warning']=type(error).__name__
+        return report
+    except BaseException as error:
+        error.admission_query_report=report
+        raise
+    finally:
+        ended=clock();report['total_wall_s']=ended-started
+        report['request_wait_s']=None if request_started_monotonic is None else ended-request_started_monotonic

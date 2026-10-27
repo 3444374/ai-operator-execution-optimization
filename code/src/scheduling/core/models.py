@@ -181,6 +181,14 @@ class AdmissionObservation:
     service_rate_tokens_s_per_endpoint: float | None = None
     sample_age_s: float | None = None
     hol_age_s: float | None = None
+    completed_items_total: int | None = None
+    pending_items: int | None = None
+    preemptions_total: int | None = None
+    memory_pressure: bool | None = None
+    transition_pending: int = 0
+    consumer_backpressure: bool = False
+    completed_input_work_total: int | None = None
+    completed_output_work_total: int | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
@@ -193,6 +201,15 @@ class AdmissionObservation:
             not math.isfinite(self.hol_age_s) or self.hol_age_s < 0
         ):
             raise ValueError("hol_age_s must be finite and non-negative when present")
+        for name in ("completed_items_total", "pending_items", "preemptions_total", "transition_pending",
+                     "completed_input_work_total", "completed_output_work_total"):
+            value = getattr(self, name)
+            if value is not None and (type(value) is not int or value < 0):
+                raise ValueError(name + " must be a non-negative integer")
+        if type(self.consumer_backpressure) is not bool:
+            raise ValueError("consumer_backpressure must be boolean")
+        if self.memory_pressure is not None and type(self.memory_pressure) is not bool:
+            raise ValueError("memory_pressure must be boolean when present")
         if self.inflight < 0:
             raise ValueError("inflight must be non-negative")
         if (
