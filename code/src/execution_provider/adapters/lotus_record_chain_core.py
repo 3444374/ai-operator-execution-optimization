@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import Future, TimeoutError as FutureTimeout
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from copy import deepcopy
 import hashlib
 import json
@@ -453,7 +453,8 @@ class _SectionTransport(LotusChainActorBackend):
     def __init__(self, owner, maximum):
         self.owner = owner
         super().__init__(owner._actors, maximum, lambda: owner.core.wake.notify(),
-                         deadline_monotonic=owner.deadline, on_result=owner._record_local_receipt)
+                         deadline_monotonic=owner.deadline, on_result=owner._record_local_receipt,
+                         token_budget=owner.token_budget)
 
     def _submit_task(self, task, timings, prepare_method):
         self.owner._register_local_task(task, self._request(task))
@@ -585,6 +586,7 @@ class _RecordLocalRows:
         self._phase_count = 0
         self.session = self.owner.core.open(SessionSpec(self.run.chain.query_id,
             "chain-section-" + str(self.run.position), "lotus-record-prepared-v1",
+            work_unit="model_calls" if self.owner.token_budget is None else "tokens",
             task_profiles=tuple(TaskProfile(stage.stage_id, "prepared-chain") for stage in stages)))
         self.owner.transport.bind_query(self.session.session_id, None)
         limits = self.owner.method_limits
@@ -592,7 +594,8 @@ class _RecordLocalRows:
                                   self.owner.resources.max_active_batches * row_reservation(limits))
         self.pool = MethodBudgetPool(capacity)
         budget = self.pool.allocate(capacity)
-        self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget) if self.section is not None
+        self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget,
+                                     token_budget=self.owner.token_budget) if self.section is not None
                        else MethodDriver(self.session, program, limits, budget))
 
     def _fill(self):
@@ -736,7 +739,7 @@ class SemLoomRecordChainCore:
     def __init__(self, engine: EngineSpec, resources: RecordsResources, *,
                  capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
                  execution="fused", actor_owner=None, method_limits=None,
-                 release_completed_audit=False):
+                 release_completed_audit=False, token_budget=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -747,6 +750,20 @@ class SemLoomRecordChainCore:
         if execution not in ("fused", "record_local_sections"):
             raise ValueError("chain execution requires fused or record_local_sections")
         self.execution = execution
+        self.token_budget = None
+        if token_budget is not None:
+            from .lotus_chain_token_budget import ChainTokenBudget
+            if execution != "record_local_sections":
+                raise ValueError("token_budget requires record_local_sections")
+            if type(token_budget) is not ChainTokenBudget:
+                raise TypeError("token_budget must be ChainTokenBudget or None")
+            if token_budget.engine != self.engine:
+                raise ValueError("token_budget must belong to the query model")
+            self.token_budget = ChainTokenBudget(token_budget.tokenizer, self.engine,
+                active_tokens=token_budget.active_tokens,
+                tokenizer_signature=token_budget.tokenizer_signature,
+                template_signature=token_budget.template_signature,
+                expected_output=dict(token_budget.expected_output))
         if execution == "fused":
             if resources.cpu_workers != 1 or resources.max_active_batches != 1:
                 raise ValueError("Core fused chain requires cpu_workers=max_active_batches=1")
@@ -1103,6 +1120,13 @@ class SemLoomRecordChainCore:
             raise ValueError("record-local query requires one query and one model deployment")
         if any(s.generation.max_tokens > self.engine.max_model_len for s in chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
+        if self.token_budget is not None:
+            if any(stage.kind not in ("filter", "map") for stage in chain.stages):
+                raise ValueError("query token_budget supports only Filter/Map plans")
+            if len({stage.model_role for stage in chain.stages}) != 1:
+                raise ValueError("query token_budget requires one model role")
+            if set(self.token_budget.expected_output) != {stage.stage_id for stage in chain.stages}:
+                raise ValueError("query stages must match token_budget output estimates")
         expected = tuple(RecordOccurrence.from_dict(r.describe()) for r in expected)
         run = ChainRun(chain, list(expected), columns=columns, _relation_execution=True)
         SessionSpec(query_id, "chain-section-0", "lotus-record-prepared-v1",
@@ -1125,6 +1149,8 @@ class SemLoomRecordChainCore:
         elif self._actors.generation != chain.stages[0].generation:
             raise ValueError("prepared owner's default generation differs from the initial stage")
         limits = self.capacity.limits(self.resources)
+        if self.token_budget is not None:
+            limits = replace(limits, active_work=self.token_budget.active_tokens)
         endpoint = EndpointSnapshot("local-chain-model", "local://model", "local", "0",
                                     True, 0, 0, None, time.monotonic())
         policies = SessionPolicies(StaticAdmissionController(limits.active_requests),
@@ -1232,7 +1258,8 @@ class SemLoomRecordChainCore:
             model_batch_mode="independent_final_results", model_batch_rows=1,
             cross_query_model_reuse=False, whole_query_rss_bounded=False,
             driver_retention="finite expected relation, current full relation, parsed call and raw receipt audit",
-            prepare_actor_count=0, prepare_worker_pool_used=False, work_unit="model_calls")
+            prepare_actor_count=0, prepare_worker_pool_used=False,
+            work_unit="model_calls" if self.token_budget is None else "tokens")
         if stream is not None:
             stream.last_close_report = self.last_close_report
             if stream.error is not None:

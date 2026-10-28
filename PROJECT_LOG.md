@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-10-28：完整F/M查询token配置的独立本地接线
+
+将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。
+本地候选、接口与验证范围分别归[代码状态](code/INFRA_STATUS.md#finite-query-token-candidate)、adapter说明和[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)。
+原49d输出差异与负结果保留，本次不发布、不运行模型，不携入私有runner。
+
 ## 2026-10-27：减少重复导航与状态维护
 
 删除 PROJECT_INDEX.md，项目入口并入根 README；查询调优的三个活跃假设并入数据组织，历史引用固定到精简前提交。

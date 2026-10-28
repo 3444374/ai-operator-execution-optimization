@@ -82,8 +82,24 @@ The caller owns Ray 2.56.1. Preparation/model batch sizes must both be 1; explic
 `max_active_batches` must fit the engine capacity. Formatting/parsing remains in the
 method caller and no Filter prepare actor is allocated. Core/MethodBudget logical limits
 do not bound whole-query relations, audit memory, process RSS or GPU KV bytes.
-The full-query mode uses request-count admission. `LotusChainFIFO`'s existing optional
-`ChainTokenBudget` is a separate explicit interface and is not enabled by this option.
+The full-query mode defaults to request-count admission (`token_budget=None`).
+An explicit existing `ChainTokenBudget` can be passed to the same owner:
+
+```python
+owner = SemLoomRecordChainCore(engine, resources, execution="record_local_sections",
+                             token_budget=budget)
+```
+
+This option supports complete Filter/Map plans with one model deployment and one model role.
+Extract and model-role changes are rejected before source consumption or model startup;
+their existing count-mode behavior remains available. The budget's engine and exact set of
+stage output estimates must match the query. The owner copies its declared configuration.
+Every legal continuation is estimated from its actual prepared messages and stage generation,
+including columns produced by earlier calls. The existing Core alone holds both the request
+limit (`max_active_batches`) and token work limit (`budget.active_tokens`); the latter reserves
+estimated complete input plus the stage output cap, rather than actual KV bytes or GPU work.
+Expected output is diagnostic and does not reduce that reservation. Confirmed terminals and
+the existing producer-retirement protocol settle work; cancellation alone cannot release it.
 
 Source positions are increasing and protocol occurrence IDs unique; user index labels
 and business IDs may repeat. A query failure stops continuation and retains earlier facts.
@@ -92,6 +108,7 @@ produce successors. Actual unknown results and known usage remain; producer reti
 and physical GPU exit are distinct checks.
 
 See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_local_query.py),
+[whole-query token cases](../../../tests/execution_provider/test_lotus_record_local_tokens.py),
 [prepared owner cases](../../../tests/execution_provider/test_lotus_prepared_actor_owner.py),
 the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
 and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).
