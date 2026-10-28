@@ -4,6 +4,10 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+本地维护候选将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
+复用现有监督函数，不迁入历史原件或改变生产算法／默认。
+[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；候选尚待独审和发布。
+
 <a id="pr52-g1-qualified-scope"></a>
 ## Records、有限链与本地模型
 
