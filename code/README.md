@@ -147,6 +147,8 @@ code/
 
 PR56已将纯结果模块归位到`semantic_methods/lotus/record_results.py`；同步模型进程与阶段清理分别归`serving/backends/vllm_sync_process.py`和`stage_process_cleanup.py`，旧import与同步进程CLI保留。逐阶段生成进程归`serving/backends/staged_generation_process.py`，Core／Ray／Daft共用的链worker归`execution_provider/method_workers/lotus_chain_batch.py`；旧路径只作同对象导入及历史命令兼容，不保存第二份执行实现。三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG，对应能力预检修复已随PR52接纳；旧SQL路径保留为显式可选接入，实际实现和验证范围仍从源码及报告读取。
 
+通用[脱敏](src/infrastructure/redact.py)和[私有产物 I/O](src/infrastructure/private_artifacts.py)归`infrastructure/`；旧`baselines/common`路径保留兼容转发。两种工作负载格式的公开摘要仍在原模块，不进入通用文件工具。
+
 跨机器运行不要直接对着 `requirements.txt` 反复试装。先按
 `deploy/runtime/README.md` 选择 machine profile 与能力组，保存只读 preflight 报告；
 可选能力分别维护在 `requirements/`，例如 learned estimator 与通用下载工具不会被

@@ -666,7 +666,9 @@
         "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
         "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
         "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
-        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py",
+        "code/src/baselines/common/redact.py": "historical_sources/bc3d85a8/code/src/baselines/common/redact.py",
+        "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py"
       },
       "default_selected": false
     },
@@ -1361,7 +1363,9 @@
         "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
         "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
         "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
-        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py",
+        "code/src/baselines/common/redact.py": "historical_sources/bc3d85a8/code/src/baselines/common/redact.py",
+        "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py"
       },
       "default_selected": false
     },
@@ -2066,7 +2070,9 @@
         "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
         "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
         "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
-        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py",
+        "code/src/baselines/common/redact.py": "historical_sources/bc3d85a8/code/src/baselines/common/redact.py",
+        "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py"
       },
       "default_selected": false
     },
@@ -2772,7 +2778,9 @@
         "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
         "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
         "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
-        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py",
+        "code/src/baselines/common/redact.py": "historical_sources/bc3d85a8/code/src/baselines/common/redact.py",
+        "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py"
       },
       "default_selected": false
     },
@@ -3482,7 +3490,9 @@
         "code/scripts/experiments/run_sembench_animals.py": "historical_sources/39c03f1b/code/scripts/experiments/run_sembench_animals.py",
         "code/src/baselines/image/sembench_animals.py": "historical_sources/39c03f1b/code/src/baselines/image/sembench_animals.py",
         "code/src/baselines/text/frameworks/lotus_pg.py": "historical_sources/39c03f1b/code/src/baselines/text/frameworks/lotus_pg.py",
-        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py"
+        "code/src/experiments/sembench_animals.py": "historical_sources/39c03f1b/code/src/experiments/sembench_animals.py",
+        "code/src/baselines/common/redact.py": "historical_sources/bc3d85a8/code/src/baselines/common/redact.py",
+        "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py"
       },
       "default_selected": false
     }
