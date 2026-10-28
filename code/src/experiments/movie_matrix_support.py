@@ -108,16 +108,17 @@ def validate_core_scan(plan, group, index, cpu_limit):
     """Validate declared capacities without pretending to observe hardware."""
     jobs=scan_jobs(group,index)
     if not jobs:return
-    from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
+    from src.execution_provider.adapters.lotus_records_core import expand_core_profile, resolve_core_profile
     from src.serving.backends.vllm_engine import EngineSpec
     from src.semantic_methods.lotus.records import RecordsResources
-    if plan['profile'].get('admission') is not None:
+    profile=expand_core_profile(plan['profile'])
+    if profile.get('admission') is not None:
         raise ValueError('fixed Core calibration cannot also run online admission')
-    if plan['backend']!='semloom-core' or plan['profile'].get('mode')!='async':
+    if plan['backend']!='semloom-core' or profile.get('mode')!='async':
         raise ValueError('measured Core selection currently supports async only; fixed sync remains available')
     resources=RecordsResources(**plan['resources']);engine=EngineSpec.from_dict(plan['engine'])
     for candidate in _calibration_candidates(group['calibration']):
-        resolve_core_profile(engine,resources,dict(plan['profile'],max_inflight=candidate['max_inflight']))
+        resolve_core_profile(engine,resources,dict(profile,max_inflight=candidate['max_inflight']))
         if candidate['cpu_workers']+resources.gpu_workers+1>cpu_limit:
             raise ValueError('Core candidate exceeds declared prepare/model/driver CPU budget')
 
@@ -303,7 +304,7 @@ def validate_record_admission_cache(value, resolved):
     """Validate metadata only; policy validation remains in the public Core API."""
     if value is None:
         return None
-    if (type(value) is not dict or set(value) - {'identity','cache_dir','reuse'}
+    if (type(value) is not dict or set(value) - {'identity','cache_dir','reuse','workload_features'}
             or not {'identity','cache_dir'}.issubset(value)
             or type(value.get('reuse',True)) is not bool
             or type(value['cache_dir']) is not str or not Path(value['cache_dir']).is_absolute()):
@@ -312,6 +313,9 @@ def validate_record_admission_cache(value, resolved):
         raise ValueError('admission_cache requires explicit async resource-feedback admission')
     from src.scheduling.runtime.calibration import identity_signature
     identity_signature(value['identity'])
+    if resolved['admission'].get('work_basis') == 'computed' or 'workload_features' in value:
+        from src.scheduling.runtime.calibration import admission_identity
+        admission_identity(value['identity'], workload_features=value.get('workload_features'))
     return value
 
 
@@ -357,7 +361,7 @@ def run_record_admission(cache, resolved, source, method, generation, engine, re
             admission_feedback=close.get('admission_feedback'),query_report=result)
     selection=run_admission_query(identity,execute,initial_window=initial,maximum=maximum,
         cache_dir=cache['cache_dir'],reuse=cache.get('reuse',True),options=options,
-        request_started_monotonic=entered)
+        workload_features=cache.get('workload_features'), request_started_monotonic=entered)
     result=selection.pop('result')['query_report']
     result['admission_selection']=selection
     selection['entry_work_wall_s']=time.monotonic()-entered

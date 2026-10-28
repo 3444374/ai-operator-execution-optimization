@@ -565,9 +565,40 @@ def run_query(identity, candidates, execute: Callable | None = None, *, default,
     return report
 
 
+def admission_identity(identity, *, workload_features):
+    """Use explicit cost features, never a task label, as the admission workload.
+
+    The producer supplies measured/declared input and output work distributions
+    and cache policy. This is exact feature matching, not workload clustering.
+    Query IDs, prompt text and source names stay in the caller's audit record.
+    """
+    identity_signature(identity)
+    if (type(workload_features) is not dict or set(workload_features) !=
+            {"work_unit", "input_work", "output_work", "cache"}):
+        raise ValueError("workload_features requires work_unit, input_work, output_work and cache")
+    if not isinstance(workload_features["work_unit"], str) or not workload_features["work_unit"]:
+        raise ValueError("work_unit must be nonempty")
+    for group in ("input_work", "output_work"):
+        values = workload_features[group]
+        if type(values) is not dict or not values:
+            raise ValueError(group + " requires numeric cost features")
+        for name, value in values.items():
+            if not isinstance(name, str) or not name:
+                raise ValueError("cost feature names must be nonempty")
+            _seconds(value, group + "." + name, zero=True)
+    cache = workload_features["cache"]
+    if (type(cache) is not dict or set(cache) != {"enabled", "scope"}
+            or type(cache["enabled"]) is not bool or not isinstance(cache["scope"], str)
+            or not cache["scope"]):
+        raise ValueError("cache features require enabled and scope")
+    value = deepcopy(identity)
+    value["workload"] = deepcopy(workload_features)
+    return value
+
+
 def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir,
                         reuse=True, clock=time.monotonic, request_started_monotonic=None,
-                        options=None):
+                        options=None, workload_features=None):
     """Execute once, optionally reusing a precisely matched admission hint.
 
     execute(window, *, allow_exploration) returns a completed-query receipt with
@@ -578,7 +609,13 @@ def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir
     is reused; reference rates are measured anew. Ordinary run_query defaults
     and its offline scan/cache remain unchanged.
     """
-    started=clock();signature=identity_signature(identity)
+    # Supplied workload features are not free measurements: a caller that
+    # constructs them for this query must anchor before that construction.
+    # Precomputed inputs with unknown generation cost cannot imply zero cost.
+    started=clock()
+    if workload_features is not None:
+        identity=admission_identity(identity,workload_features=workload_features)
+    signature=identity_signature(identity)
     _positive_int(initial_window,'initial_window');_positive_int(maximum,'maximum')
     if initial_window>maximum or type(reuse) is not bool:
         raise ValueError('initial window must fit capacity; reuse is boolean')
@@ -590,7 +627,11 @@ def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir
     if options is not None and not isinstance(options,ResourceFeedbackConfig):
         raise TypeError('options must be ResourceFeedbackConfig')
     geometric=options is not None and options.search_mode=='geometric'
-    strategy='onepass_geometric_v1' if geometric else 'onepass_performance_v3'
+    work_aware=options is not None and options.work_basis=='computed'
+    if work_aware and workload_features is None:
+        raise ValueError('computed admission requires explicit workload_features')
+    strategy=('onepass_local_pairs_v2' if work_aware and options.work_comparison=='local_pairs' else
+              'onepass_work_aware_v3' if work_aware else 'onepass_geometric_v1' if geometric else 'onepass_performance_v3')
     policy=dict(strategy=strategy,initial_window=initial_window,maximum=maximum)
     if options is not None:
         policy['options']=asdict(options)
@@ -623,9 +664,19 @@ def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir
         historical_evidence=None if cached is None else cached['evidence'])
     report['bounded_continuation']=continuation
     try:
-        arguments=dict(allow_exploration=permitted and (cached is None or continuation))
+        # A completed hint needs only fresh work validation. With matching
+        # conditions its finite search has no new points and makes no trials.
+        arguments=dict(allow_exploration=permitted and (cached is None or continuation or work_aware))
         if geometric:
             arguments['search_hint']=None if cached is None else deepcopy(cached['evidence']['search_state'])
+            state=arguments['search_hint']
+            if work_aware and state is not None and state['ceiling'] < maximum:
+                # Do not rewrite historical evidence. A pressure limit from an
+                # earlier query needs fresh validation, not permanent exclusion.
+                progress=_GeometricSearch(initial_window,maximum,options.max_candidate_attempts,state)
+                progress.resume_pressure()
+                arguments['search_hint']=progress.snapshot()
+                report['revalidate_prior_pressure']=True
         value=execute(window,**arguments)
         report['result']=value
         feedback=value.get('admission_feedback') or {}
@@ -633,7 +684,8 @@ def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir
         report['online_exploration_already_in_total']=True
         if (value.get('status')=='completed' and value.get('reuse_eligible') is True
                 and feedback.get('strategy')==strategy):
-            pressure=any(row['reason']=='resource_pressure' for row in feedback['history'])
+            pressure=(any(row['reason']=='resource_pressure' for row in feedback['history'])
+                      or feedback.get('stop_reason')=='resource_pressure')
             selected=(feedback['window'] if pressure and not feedback['unconfirmed_trial']
                       else feedback.get('recommended_window'))
             if selected is None and not feedback['changes']:
@@ -661,6 +713,11 @@ def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir
                 if geometric:
                     payload['evidence'].update(search_state=deepcopy(feedback['search_state']),
                         can_continue=feedback['can_continue'])
+                if work_aware:
+                    payload['evidence']['configuration_evidence']=(
+                        'pressure_limited' if feedback.get('stop_reason')=='resource_pressure' else
+                        'observed_comparable_gain' if feedback.get('comparable_selection') else
+                        'safe_initial_or_unresolved_progress')
                 try:
                     _save(path,payload)
                     report['saved_hint']=dict(window=selected,path=str(path),scope=payload['evidence']['scope'])

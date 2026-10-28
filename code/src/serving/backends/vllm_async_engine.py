@@ -239,6 +239,15 @@ class VllmAsyncEngine:
         result = common.result_from_output(identity, output,
             engine_uid=self.engine_uid, start=start, end=time.monotonic(),
             generation=generation, get_tokenizer=self._llm.get_tokenizer)
+        # vLLM 0.25.1 RequestOutput reports actual prefix-cache hits per request.
+        # Keep missing observation missing; this does not change usage/billing.
+        cached = getattr(output, "num_cached_tokens", None)
+        prompt = result.get("prompt_tokens")
+        valid = (type(cached) is int and type(prompt) is int and 0 <= cached <= prompt
+                 and not getattr(output, "kv_transfer_params", None))
+        result["prompt_cached_tokens"] = cached if valid else None
+        result["prompt_computed_tokens"] = prompt - cached if valid else None
+        result["input_work_source"] = "vllm_request_output_cache_tokens" if valid else None
         try:
             associated = (output.request_id == request_id and common._token_ids(
                 output.prompt_token_ids, "returned prompt token IDs") == expected_ids)

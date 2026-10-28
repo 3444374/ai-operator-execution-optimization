@@ -192,7 +192,16 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id, 
         report["calls"] = ledger.report()
         try:
             report["backend_close"] = getattr(iterator, "last_close_report", None)
-            merge_unconsumed_call_results(report, expected, report["backend_close"], primary=primary)
+            receipts = ([] if report["backend_close"] is None else
+                        report["backend_close"].get("unconsumed_call_results", []))
+            # This snapshot was just made from the original validated ledger.
+            # With no new terminal, replaying every record adds no accounting.
+            if (primary is None and report["status"] == "completed"
+                    and report["calls"]["counts"]["succeeded"] == len(expected)
+                    and type(receipts) is list and not receipts):
+                report["runner_unconfirmed_call_ids"] = []
+            else:
+                merge_unconsumed_call_results(report, expected, report["backend_close"], primary=primary)
         except BaseException as error:
             if primary is None:
                 primary = error
@@ -301,7 +310,8 @@ def _async_limits(config):
 
 
 def _core_profile(config):
-    profile = config.get("core_profile")
+    from src.execution_provider.adapters.lotus_records_core import expand_core_profile
+    profile = expand_core_profile(config.get("core_profile"))
     if config["backend"] == _ASYNC_BACKEND:
         if profile is not None and (type(profile) is not dict or profile.get("mode", "async") != "async"):
             raise ValueError("the explicit async backend requires async Core mode")
