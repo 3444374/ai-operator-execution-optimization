@@ -79,7 +79,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | 普通输入准备 | 已有`TaskPreparation`接口，普通准备尚未使用它；静态／原生路径的准备批次与Core显式async仍在，Core的B1限制不能只删检查就解除 | 已有接口、实际准备接入仍缺；不是配置被废弃 | [接口定义](src/scheduling/core/session_contract.py)、[Core入口](src/execution_provider/adapters/lotus_records_core.py) | 在已有输入／结果身份和准备输出容量合同上实现，核取消、持有和归还；本轮不把大批次或物理释放写成已支持 |
 | 最终结果消费的字节预算 | 执行程序仍积累 `raw` 结果，尚未把消费期间持有的数据纳入统一字节预算 | 否，当前缺项 | 本轮完整查询与内存检查回报 | 记录真实消费者和最后使用时刻，纳入字节预算并验证慢消费；模型完成不能代替结果已消费 |
 | 公共物理阶段描述与实测 | 已明确准备、模型、消费和交接的研究目标；尚未完成公共描述和真实完整查询测量，画像只作支撑 | 是：阶段描述与测量设计 | 本轮研究目标修订；[架构中的目标](../experiments/plans/系统架构.md#physical-stage-research-goal) | 先选一个完整查询，说明阶段、数据与允许动作，测展开／计算／收缩及准备消费竞争；不以任务间迁移为主线 |
-| 后继优先、反序与等待老化 | 私有原型保留`SuccessorFirst`与等待／连续选择上限，main尚未接入。两轮当前负载无收益，停止的是该失败试法的盲目扩展，不是整个方向 | 当前试法暂停，原型待适配；未安排新模型实验 | [原对照与负结果](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair) | 在动态与token入口稳定后核ready选择、时钟和FIFO转交，保持原默认；保留源等待转移及输出变化，不因未收益删除实现 |
+| 后继优先、反序与等待老化 | 本地候选恢复9231f088原driver及ready时钟修正，并透传完整F/M查询选项；尚未合入main。原两轮约10%变慢及输出差异保留 | 本地候选与CPU回归完成，未安排模型实验 | [本地候选](#finite-query-successor-candidate)、[原对照与负结果](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair) | 独审已通过，核对当前main整合；轮转/FIFO各自默认保持，不把当前fresh-query接口称为历史resident first/reuse复现 |
 | 跨模型、任意依赖图、预加载、多 GPU 与查询时限策略 | 本轮暂缓，不作为以上工作的前置项 | 否，暂缓 | 当前研究范围 | 先完成单卡完整查询和公共阶段实测，再按实际问题决定是否需要扩展 |
 
 ## main 与集成分支的阅读范围
@@ -128,7 +128,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 原始计时、资源采样及局限见[证据身份](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-local-query-owner-c827)。
 
 <a id="finite-query-token-candidate"></a>
-## 完整F/M查询token配置的本地候选
+## 完整F/M查询的可选token配置
 
 原候选基于`77fe087b`，已与main`43a463b6`本地组合并通过36项CPU检查；`SemLoomRecordChainCore(..., execution="record_local_sections", token_budget=budget)`
 复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
@@ -137,5 +137,17 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
 实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径均核对；没有新增模型运行或性能结论。
 独审33项通过；首次集成迟到关闭失败保留，后续独立复现确认释放测试信号早于transport Future交付。测试仅等真实交付后再检查，原断言和timeout保持；生产unknown及W预留不提前清零。
-这是已独审的本地候选，尚未合入或部署。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
+[PR71](https://github.com/3444374/ai-operator-execution-optimization/pull/71)已合入main`230789c4`，默认仍关闭；尚无本配置的新实机或性能结论。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
 CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。
+
+<a id="finite-query-successor-candidate"></a>
+## 后继优先与等待老化的本地恢复候选
+
+原候选基于`77fe087b`，先在main`43a463b6`独立整合，再在已含PR71的main`230789c4`本地组合；通用`MethodDriver`与9231f088的driver逐字相同，包含可选观察读时异常及必需策略读时失败的处理。
+`LotusChainFIFO`保留已在main的token参数，另接原ready选项；完整查询owner提供相同选择与`ready_clock`透传。
+通用driver默认轮转，FIFO wrapper及查询默认FIFO；自定义选项限同部署同角色F/M计划，Extract、角色切换及fused明确拒绝该组合。
+原main43a独立组合77项CPU检查通过；当前main230组合106项CPU检查通过（17项联合检查，含原token生命周期重放）。逐文件摘要与五份历史还原身份保持。
+当前候选支持同部署同角色F/M内单独选择或与token联合选择；Core队列中的已接纳调用不被重排，token W只限制活跃调用的估计工作量。
+该联合树尚待独审、未合入或部署；未携入私有runner、未改动态实现，也未运行模型。
+原两轮负结果与输出差异仍从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)引用；
+新接口不是原resident first/reuse的实机复现，适用条件见[adapter说明](src/execution_provider/adapters/README.md#optional-method-ready-successor-selection)。

@@ -2,6 +2,8 @@
 
 from collections import OrderedDict, deque
 from dataclasses import dataclass, replace
+import math
+import time
 
 from ..planning.work import StageWork, WorkDescriptor
 from ..scheduling.core.session_contract import State, TaskInfo, TaskKey
@@ -27,12 +29,41 @@ class MethodResult:
     value: bytes
 
 
+@dataclass(frozen=True)
+class SuccessorFirst:
+    """Explicit service/age settings; neither value is inferred from a workload."""
+
+    max_burst: int
+    max_wait_s: float
+
+    def __post_init__(self):
+        if type(self.max_burst) is not int or self.max_burst <= 0:
+            raise ValueError("successor burst must be a positive integer")
+        if (type(self.max_wait_s) not in (int, float) or not math.isfinite(self.max_wait_s)
+                or self.max_wait_s <= 0):
+            raise ValueError("ready aging must be finite and positive")
+
+
+@dataclass(frozen=True)
+class ReadyEvent:
+    """Local method-ready and Core-offer clocks; never native engine admission."""
+
+    row: RowIdentity
+    stage_index: int
+    action: str
+    ready_at: float
+    at: float
+    reason: str | None = None
+    key: TaskKey | None = None
+
+
 @dataclass
 class _Row:
     identity: RowIdentity
     run: MethodRun
     delivered: bool = False
     stages: int = 0
+    ready_at: float | None = None
 
 
 class MethodDriver:
@@ -52,9 +83,19 @@ class MethodDriver:
         *,
         describe_work=None,
         ready_order="round_robin",
+        successor_first: SuccessorFirst | None = None,
+        clock=None,
+        on_ready_event=None,
     ):
-        if ready_order not in ("round_robin", "fifo"):
+        if ready_order not in ("round_robin", "fifo", "successor_first"):
             raise ValueError("unknown continuation ready order")
+        if ((ready_order == "successor_first") != (successor_first is not None)
+                or successor_first is not None and type(successor_first) is not SuccessorFirst):
+            raise ValueError("successor_first order requires its explicit settings")
+        if clock is not None and not callable(clock):
+            raise TypeError("ready clock must be callable")
+        if on_ready_event is not None and not callable(on_ready_event):
+            raise TypeError("ready observer must be callable")
         self._reservation = row_reservation(limits)
         if budget.capacity.bytes < self._reservation:
             raise ValueError("method budget cannot hold one stage transition")
@@ -74,7 +115,64 @@ class MethodDriver:
         self._eof = self._sealed = self._closed = False
         self.error = None
         self._describe_work = describe_work
-        self._ready = deque() if ready_order == "fifo" else None
+        self._ready = None if ready_order == "round_robin" else deque()
+        self._ready_order, self._priority = ready_order, successor_first
+        self._successor_burst = 0
+        self._clock = time.monotonic if clock is None else clock
+        self._on_ready_event = on_ready_event
+        self.ready_observer_error = None
+
+    def _ready_event(self, row, action, reason=None, key=None):
+        if self._on_ready_event is not None:
+            try:
+                at = self._clock()
+                if row.ready_at is None:
+                    row.ready_at = at
+                event = ReadyEvent(row.identity, row.stages, action, row.ready_at,
+                                   at, reason, key)
+                self._on_ready_event(event)
+            except Exception as error:
+                # Optional diagnostics cannot fail the method or its required audit.
+                self.ready_observer_error = type(error).__name__
+                self._on_ready_event = None
+
+    def _mark_ready(self, sequence):
+        row = self._rows[sequence]
+        # Aging needs a real policy timestamp; diagnostic clocks are optional.
+        row.ready_at = self._clock() if self._priority is not None else None
+        if self._ready is not None:
+            self._ready.append(sequence)
+        self._ready_event(row, "method_ready")
+
+    def _candidates(self, maximum):
+        if self._priority is None:
+            for sequence in tuple(self._rows) if self._ready is None else tuple(self._ready):
+                yield sequence, self._ready_order
+            return
+        for _ in range(maximum):
+            if not self._ready:
+                return
+            oldest = self._ready[0]
+            if self._clock() - self._rows[oldest].ready_at >= self._priority.max_wait_s:
+                yield oldest, "aged"
+                continue
+            source, successor = None, None
+            for sequence in self._ready:
+                if self._rows[sequence].stages == 0:
+                    if source is None:
+                        source = sequence
+                elif successor is None:
+                    successor = sequence
+                if source is not None and successor is not None:
+                    break
+            if source is None:
+                yield successor, "only_successor"
+            elif successor is None:
+                yield source, "only_source"
+            elif self._successor_burst >= self._priority.max_burst:
+                yield source, "source_turn"
+            else:
+                yield successor, "successor_first"
 
     @property
     def active_rows(self):
@@ -104,8 +202,12 @@ class MethodDriver:
             self._abort(error)
             raise
         self._row_sequence = row.sequence
-        if self._ready is not None and run.pending is not None:
-            self._ready.append(row.sequence)
+        if run.pending is not None:
+            try:
+                self._mark_ready(row.sequence)
+            except Exception as error:
+                self._abort(error)
+                raise
         return True
 
     def end_input(self):
@@ -115,8 +217,7 @@ class MethodDriver:
     def _submit(self, maximum):
         actions = 0
         # Rotate visited rows to keep a waiting row ahead of newly generated stages.
-        ready = tuple(self._rows) if self._ready is None else tuple(self._ready)
-        for sequence in ready:
+        for sequence, reason in self._candidates(maximum):
             if actions >= maximum:
                 break
             row = self._rows[sequence]
@@ -149,17 +250,26 @@ class MethodDriver:
             )
             outcome = self.session.offer((offered,))
             if not outcome.accepted_prefix_count:
+                self._ready_event(row, "Core_backpressure", reason)
                 if outcome.status != "BACKPRESSURE":
                     raise RuntimeError(f"method task rejected: {outcome.reason}")
                 break
             key = TaskKey(self.session.session_id, self._task_sequence)
             row.run.accepted(key)
+            self._ready_event(row, "Core_offer_accepted", reason, key)
+            if self._priority is not None:
+                self._successor_burst = (min(self._priority.max_burst, self._successor_burst + 1)
+                                         if row.stages else 0)
             row.stages += 1
+            row.ready_at = None
             self._tasks[key] = sequence
             self._task_sequence += 1
             self._rows.move_to_end(sequence)
             if self._ready is not None:
-                self._ready.popleft()
+                if self._priority is None:
+                    self._ready.popleft()
+                else:
+                    self._ready.remove(sequence)
             actions += 1
         return actions
 
@@ -184,8 +294,8 @@ class MethodDriver:
                         raise RuntimeError("method task failed")
                     sequence = self._tasks.pop(delivery.key)
                     self._rows[sequence].run.complete(delivery.key, delivery.result)
-                    if self._ready is not None and self._rows[sequence].run.pending is not None:
-                        self._ready.append(sequence)
+                    if self._rows[sequence].run.pending is not None:
+                        self._mark_ready(sequence)
             finally:
                 self.session.release(tuple(d.lease_id for d in progress.deliveries))
             if progress.state in (State.FAILED, State.CANCELLED):

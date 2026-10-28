@@ -8,6 +8,12 @@
 本地候选、接口与验证范围分别归[代码状态](code/INFRA_STATUS.md#finite-query-token-candidate)、adapter说明和[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)。
 原49d输出差异与负结果保留，本次不发布、不运行模型，不携入私有runner。
 
+## 2026-10-28：后继优先选项按原实现独立恢复
+
+以9231f088原driver恢复选择与ready时钟修正，仅适配现有FIFO及完整查询参数；后续在main`230789c4`与PR71的token选项本地组合，不改两项原算法或动态策略。
+默认与历史负结果保持，候选及验证范围归[代码状态](code/INFRA_STATUS.md#finite-query-successor-candidate)和[台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-successor-local-cpu)。
+查询参数与文档重叠已在独立组合分支处理，原两候选保持冻结；新组合交独审后另行确认发布，本次不发布或运行模型。
+
 ## 2026-10-27：减少重复导航与状态维护
 
 删除 PROJECT_INDEX.md，项目入口并入根 README；查询调优的三个活跃假设并入数据组织，历史引用固定到精简前提交。

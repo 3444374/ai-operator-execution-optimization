@@ -595,7 +595,8 @@ class _RecordLocalRows:
         self.pool = MethodBudgetPool(capacity)
         budget = self.pool.allocate(capacity)
         self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget,
-                                     token_budget=self.owner.token_budget) if self.section is not None
+                                     token_budget=self.owner.token_budget,
+                                     **self.owner._ready_options) if self.section is not None
                        else MethodDriver(self.session, program, limits, budget))
 
     def _fill(self):
@@ -739,7 +740,8 @@ class SemLoomRecordChainCore:
     def __init__(self, engine: EngineSpec, resources: RecordsResources, *,
                  capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
                  execution="fused", actor_owner=None, method_limits=None,
-                 release_completed_audit=False, token_budget=None):
+                 release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
+                 ready_clock=None, on_ready_event=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -764,6 +766,23 @@ class SemLoomRecordChainCore:
                 tokenizer_signature=token_budget.tokenizer_signature,
                 template_signature=token_budget.template_signature,
                 expected_output=dict(token_budget.expected_output))
+        from src.semantic_methods.driver import SuccessorFirst
+        if ready_order not in ("round_robin", "fifo", "successor_first"):
+            raise ValueError("unknown continuation ready order")
+        if ((ready_order == "successor_first") != (successor_first is not None)
+                or successor_first is not None and type(successor_first) is not SuccessorFirst):
+            raise ValueError("successor_first order requires its explicit settings")
+        if ready_clock is not None and not callable(ready_clock):
+            raise TypeError("ready clock must be callable")
+        if on_ready_event is not None and not callable(on_ready_event):
+            raise TypeError("ready observer must be callable")
+        self._ready_options = {}
+        if ready_order != "fifo" or any(value is not None for value in
+                                      (successor_first, ready_clock, on_ready_event)):
+            if execution != "record_local_sections":
+                raise ValueError("ready selection options require record_local_sections")
+            self._ready_options = dict(ready_order=ready_order, successor_first=successor_first,
+                                       clock=ready_clock, on_ready_event=on_ready_event)
         if execution == "fused":
             if resources.cpu_workers != 1 or resources.max_active_batches != 1:
                 raise ValueError("Core fused chain requires cpu_workers=max_active_batches=1")
@@ -1127,6 +1146,11 @@ class SemLoomRecordChainCore:
                 raise ValueError("query token_budget requires one model role")
             if set(self.token_budget.expected_output) != {stage.stage_id for stage in chain.stages}:
                 raise ValueError("query stages must match token_budget output estimates")
+        if self._ready_options:
+            if any(stage.kind not in ("filter", "map") for stage in chain.stages):
+                raise ValueError("ready selection options support only Filter/Map plans")
+            if len({stage.model_role for stage in chain.stages}) != 1:
+                raise ValueError("ready selection options require one model role")
         expected = tuple(RecordOccurrence.from_dict(r.describe()) for r in expected)
         run = ChainRun(chain, list(expected), columns=columns, _relation_execution=True)
         SessionSpec(query_id, "chain-section-0", "lotus-record-prepared-v1",
@@ -1260,6 +1284,14 @@ class SemLoomRecordChainCore:
             driver_retention="finite expected relation, current full relation, parsed call and raw receipt audit",
             prepare_actor_count=0, prepare_worker_pool_used=False,
             work_unit="model_calls" if self.token_budget is None else "tokens")
+        if self._ready_options:
+            policy = self._ready_options["successor_first"]
+            self.last_close_report["ready_selection"] = dict(
+                order=self._ready_options["ready_order"],
+                successor_first=None if policy is None else asdict(policy),
+                caller_clock=self._ready_options["clock"] is not None,
+                observer_configured=self._ready_options["on_ready_event"] is not None,
+                scope="local method-ready to Core offer; no native preemption")
         if stream is not None:
             stream.last_close_report = self.last_close_report
             if stream.error is not None:

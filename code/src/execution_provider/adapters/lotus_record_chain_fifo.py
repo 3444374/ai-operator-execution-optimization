@@ -12,7 +12,8 @@ class LotusChainFIFO(MethodDriver):
     The external owner advances/reaps Engine and closes the same model process.
     """
 
-    def __init__(self, session, chain, limits, budget, *, token_budget=None):
+    def __init__(self, session, chain, limits, budget, *, token_budget=None,
+                 ready_order="fifo", successor_first=None, clock=None, on_ready_event=None):
         if limits.stages < len(chain.stages):
             raise ValueError("method stage reservation must cover the finite chain")
         for stage in chain.stages:
@@ -26,8 +27,9 @@ class LotusChainFIFO(MethodDriver):
                 raise ValueError("chain stages and Core W must match the token configuration")
         self.program = LotusChainProgram(chain, max_result_bytes=session.limits.item_result_bytes,
             estimate_tokens=None if token_budget is None else token_budget.estimate)
-        super().__init__(session, self.program, limits, budget, ready_order="fifo",
-                         describe_work=None if token_budget is None else token_budget.describe_work)
+        super().__init__(session, self.program, limits, budget, ready_order=ready_order,
+                         describe_work=None if token_budget is None else token_budget.describe_work,
+                         successor_first=successor_first, clock=clock, on_ready_event=on_ready_event)
 
     def offer_record(self, record, *, parent_call_ids=(), columns=None, allow_nulls=False):
         return self.offer_row(RowIdentity(record.source_position, record.row_id),
