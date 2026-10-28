@@ -136,6 +136,6 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
 实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径均核对；没有新增模型运行或性能结论。
-独审33项通过；集成首次复测的迟到关闭用例有1次unknown，随后单项及完整12项诊断通过，间歇原因仍待核，未改断言。
+独审33项通过；首次集成迟到关闭失败保留，后续独立复现确认释放测试信号早于transport Future交付。测试仅等真实交付后再检查，原断言和timeout保持；生产unknown及W预留不提前清零。
 这是已独审的本地候选，尚未合入或部署。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
 CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。

@@ -300,6 +300,9 @@ class QueryTokenTests(unittest.TestCase):
                 self.assertEqual(before["status"], "unknown")
                 self.assertGreater(before["core_usage"]["active_work"], 0)
                 release.set()
+                # Fixture release precedes delivery through the async transport.
+                for pending in tuple(owner.transport.backend._slots.values()):
+                    pending.future.result(timeout=3)
                 after = owner.close(timeout=3)
                 self.assertEqual(after["status"], "closed")
                 self.assertEqual(after["core_usage"]["active_work"], 0)
