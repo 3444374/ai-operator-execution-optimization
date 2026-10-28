@@ -8,7 +8,18 @@
 另3项历史还原检查通过，五个具名版本的逐文件摘要和身份保持，未改历史清单或49d原件。
 覆盖默认count、显式token、实际生成列成为后继输入、输入估计加阶段输出cap、W低于C时阻止/终态后恢复、取消unknown、未确认关闭保留W及晚到终态不重放后继。
 只支持同部署同角色F/M完整查询；Extract、角色切换及fused在token模式启动前拒绝，count路径原支持保持。
-候选尚未合入或部署；原[49d真实可比性失败及负结果](#token-c64-comparability-gate)不变，本次CPU检查不增加模型质量或性能资格。
+上述为原候选检查；其后已由[PR71](https://github.com/3444374/ai-operator-execution-optimization/pull/71)合入main，默认仍关闭。原[49d真实可比性失败及负结果](#token-c64-comparability-gate)不变，本次CPU检查不增加模型质量或性能资格。
+
+<a id="finite-query-successor-local-cpu"></a>
+## 2026-10-28：后继优先与等待老化的本地恢复
+
+独立候选基于`77fe087b`；driver与历史9231f088原字节一致，恢复原ready时钟修正，并在现有FIFO及完整查询owner透传可选设置。
+141项CPU检查通过，含原[9项选择](../../code/tests/scheduling/test_method_ready_order.py)、[7项时钟](../../code/tests/scheduling/test_method_ready_clock.py)及[8项完整查询新检查](../../code/tests/execution_provider/test_lotus_record_local_priority.py)。
+原LOTUS、Core和CPU子进程通信实际工作，Ray RPC与模型推理为替身；模型/GPU/SSH调用0。五个具名历史版本的完整文件摘要和原身份保持。
+轮转/FIFO默认、年龄与连续选择次数、背压不重计龄、可选观察错误、必需读时失败、实际生成列/参数/父调用、取消unknown及晚到结果不重放后继均核对。
+候选仅支持同部署同角色F/M完整查询的自定义选项；Extract/角色切换提前拒绝，默认count与Extract路径保持。
+以上独立候选未叠token或私有runner。后续在main`230789c4`与已合PR71的token选项本地组合，新增[联合检查](../../code/tests/execution_provider/test_lotus_record_local_token_priority.py)：默认、两种单项及联合结果/消息/生成/身份一致；token W限制活跃调用，有限Core offer容量下保留ready年龄及连续后继次数限制；失败/取消unknown/晚到结果与启动前拒绝不支持计划均保留。
+当前联合树尚待独审，未合入或部署。原[两轮负结果与输出差异](#priority-reverse-small-pair)保留；本次不产生新模型、质量、性能或历史resident复现资格。
 
 <a id="animals-q7-shared-media-native128"></a>
 ## 2026-10-27：原 Animals Q7 的共享图像表示正常功能

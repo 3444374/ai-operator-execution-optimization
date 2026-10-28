@@ -113,6 +113,52 @@ See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_
 the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
 and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).
 
+## Optional method-ready successor selection
+
+The generic `MethodDriver` still defaults to `round_robin`; `LotusChainFIFO` and
+the full-query record-local owner still default to `fifo`. Explicit selection uses
+the unchanged historical `SuccessorFirst` settings:
+
+```python
+from src.semantic_methods.driver import SuccessorFirst
+
+owner = SemLoomRecordChainCore(engine, resources, execution="record_local_sections",
+    ready_order="successor_first", successor_first=SuccessorFirst(max_burst=2, max_wait_s=1.0))
+```
+
+The two values above are explicit example settings, not defaults or selected optima.
+The policy chooses among already legal method-ready calls before `Core.offer`.
+An aged oldest call wins first; otherwise successors precede fresh sources until the
+declared accepted-successor burst gives a waiting source its turn. Backpressure does
+not consume a turn or reset age. This does not reorder accepted Core work, preempt
+native inference, speculate on future methods, or change source preparation order.
+
+The full-query options are limited to complete Filter/Map plans with one model deployment
+and one model role. Extract and role changes reject custom ready options before source
+consumption or model startup; the default query behavior keeps its existing support.
+These options can be used together with `token_budget=budget` on that same supported plan.
+Ready selection controls calls before `Core.offer`; it does not reorder calls already queued
+inside Core. Token W limits active native work, so an accepted offer alone does not prove
+native startup. Both limits and their existing settlement rules remain in force.
+The old wrapper's `clock` maps to the owner's `ready_clock`; both pass to the same driver,
+and `on_ready_event` passes through unchanged. These clocks describe local method ready
+and Core offer times, never native model acceptance or GPU execution.
+
+Policy clock failures use the original method failure/cleanup path. Optional event clock
+or callback failures disable that observation without changing the policy's ready age.
+Default execution without priority or observation performs no new ready clock reads.
+Fair service requires continuing admission opportunities, finite live rows/stages, a
+working monotonic clock and progressing engine/consumer; there is no wall-clock waiting guarantee.
+
+[Ready-order cases](../../../tests/scheduling/test_method_ready_order.py),
+[clock cases](../../../tests/scheduling/test_method_ready_clock.py) and
+[whole-query cases](../../../tests/execution_provider/test_lotus_record_local_priority.py)
+cover the restored implementation; [joint token/priority cases](../../../tests/execution_provider/test_lotus_record_local_token_priority.py)
+cover default, separate and combined settings, lifecycle and bounded ready service with token estimates.
+The [two historical negative observations](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)
+remain unchanged. The public full-query owner has no cross-query resident reuse, so those
+historical first/reuse runs are not reproduced merely by exposing this option.
+
 
 ## records Core 可选动态接纳
 
