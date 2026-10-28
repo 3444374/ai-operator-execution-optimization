@@ -1,5 +1,15 @@
 # 实验与机制证据台账
 
+<a id="finite-query-token-local-cpu"></a>
+## 2026-10-28：完整F/M查询token配置的本地接线检查
+
+基于`77fe087b`的独立本地候选，仅在查询owner传递现有`ChainTokenBudget`，未改49d的预算、FIFO、actor backend或估算算法。
+126项相关CPU检查通过，含[12项新检查](../../code/tests/execution_provider/test_lotus_record_local_tokens.py)；使用原LOTUS、微型Hugging Face分词器、Core及CPU子进程通信，Ray RPC和模型推理为替身，模型/GPU/SSH调用0。
+另3项历史还原检查通过，五个具名版本的逐文件摘要和身份保持，未改历史清单或49d原件。
+覆盖默认count、显式token、实际生成列成为后继输入、输入估计加阶段输出cap、W低于C时阻止/终态后恢复、取消unknown、未确认关闭保留W及晚到终态不重放后继。
+只支持同部署同角色F/M完整查询；Extract、角色切换及fused在token模式启动前拒绝，count路径原支持保持。
+候选尚未合入或部署；原[49d真实可比性失败及负结果](#token-c64-comparability-gate)不变，本次CPU检查不增加模型质量或性能资格。
+
 <a id="animals-q7-shared-media-native128"></a>
 ## 2026-10-27：原 Animals Q7 的共享图像表示正常功能
 

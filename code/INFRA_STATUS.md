@@ -67,7 +67,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 |---|---|---|---|---|
 | 已有图像与文本执行基础 | main 已有图像分阶段执行（HSE）、完整矩阵收集、records 文本记录及整批有限链；不同路径的模型结果分别解释 | 已有实现；后续改进按下列项判断 | [图像执行](src/modalities/image/staged_execution.py)、[矩阵收集](src/semantic_methods/lotus/image_backend.py)、上方 records 说明及下方各路径报告 | 复用已支持的行为；完整矩阵和必要结果不能因省内存被丢弃 |
 | 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、`calibrate/run_calibrated/run_query`及有限矩阵扫描；普通Movie与维护session可显式选择原单遍反馈入口和精确提示复用，默认固定。原冻结来源完成短查询功能检查，未证明反馈调节或收益 | 可选实现已整合；真实反馈、探索和调窗仍待验证 | [公共接口](src/scheduling/runtime/calibration.README.md)、[实测身份与局限](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 按真实查询验证反馈、探索和完整成本，保留旧未回本及负结果；不把容量边界或短查询初值当作最优 |
-| 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63含共用调用审计，但完整查询的阶段传递和Extract仍按请求数，token尚未贯通。C64输出可比性失败和无净收益结果保留。这不同于main已有的token分批 | 候选组件保留待接入；不能只加一个开关 | [token 对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate)、[PR63](https://github.com/3444374/ai-operator-execution-optimization/pull/63)、[已有token分批](src/data/materializers/text.py) | 动态接入稳定后，贯通共享预算、阶段传递、FIFO与Extract的一致工作量、取消及unknown结算，再暴露显式选项；默认count保持 |
+| 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63已含预算、FIFO和actor组件。本地候选将同角色完整F/M查询接入显式`token_budget`，Extract和角色切换仍拒绝token模式；C64输出差异和无净收益结果保留 | 本地接线与CPU检查完成，尚未合入main | [本地候选范围](#finite-query-token-candidate)、[原对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate) | 独审已通过；准备合并与当前源码实机检查，默认count保持，Extract的token支持仍待做，不将CPU结果写成模型质量或性能收益 |
 | 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown，组合版本未整体实机验证 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
 | 减少结果审计对象存活时间 | [PR67](https://github.com/3444374/ai-operator-execution-optimization/pull/67)已合入；Core fused、Ray／Daft有限链Python入口及各Extract阶段支持同一`release_completed_audit`选项，默认False；普通Movie单Filter CLI不经过此worker，record_local_sections明确拒绝开启。成功编码且无失败、取消、unknown或清理错误时只撤掉worker自身列表引用，消费者账本保持 | 可选实现与组合检查完成；不证明RSS或查询收益 | [选项与边界](src/semantic_methods/lotus/README.md#completed-chain-audit-lifetime)、[IPC组件检查](#shared-chain-ipc-scope) | 按真实持有与消费者行为评估，区分Python引用、物理内存和查询性能；不自动开启 |
 | 共享链结果关联索引 | 原审七字段完整身份索引由Core fused、Ray／Daft有限链共用，固定、随机差分、碰撞及取消检查通过；普通Movie单Filter和record_local_sections不适用 | 实现与组合检查完成；真实查询收益仍待验证 | [范围与测试](src/semantic_methods/lotus/README.md#finite-chain-result-index)、[共享worker](src/execution_provider/method_workers/lotus_chain_batch.py) | 保留原异常、顺序和身份规则；关联操作减少不代表完整查询收益 |
@@ -126,3 +126,16 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 另一个新owner的取消项保留1次unknown，只证明IPC queued后触发取消，未证明原生运行中abort完成。
 没有独立gold、任意链质量、跨查询模型复用、RSS/KV物理上限、可信P99或稳定加速资格。
 原始计时、资源采样及局限见[证据身份](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-local-query-owner-c827)。
+
+<a id="finite-query-token-candidate"></a>
+## 完整F/M查询token配置的本地候选
+
+基于`77fe087b`，`SemLoomRecordChainCore(..., execution="record_local_sections", token_budget=budget)`
+复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
+默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token，Extract、角色切换及fused明确拒绝该组合。
+本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
+另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
+实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径均核对；没有新增模型运行或性能结论。
+独审33项通过；集成首次复测的迟到关闭用例有1次unknown，随后单项及完整12项诊断通过，间歇原因仍待核，未改断言。
+这是已独审的本地候选，尚未合入或部署。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
+CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。
