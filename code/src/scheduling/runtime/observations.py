@@ -31,6 +31,8 @@ class ServiceMetricsSnapshot:
     consumer_backpressure: bool = False
     completed_input_work_total: int | None = None
     completed_output_work_total: int | None = None
+    completed_computed_input_work_total: int | None = None
+    completed_cached_input_work_total: int | None = None
 
     def __post_init__(self) -> None:
         # Reuse the observation schema's validation without inventing another
@@ -47,6 +49,8 @@ class ServiceMetricsSnapshot:
             transition_pending=self.transition_pending, consumer_backpressure=self.consumer_backpressure,
             completed_input_work_total=self.completed_input_work_total,
             completed_output_work_total=self.completed_output_work_total,
+            completed_computed_input_work_total=self.completed_computed_input_work_total,
+            completed_cached_input_work_total=self.completed_cached_input_work_total,
         )
         if self.completed_tokens_total is not None and (
             not math.isfinite(self.completed_tokens_total)
@@ -271,6 +275,8 @@ class NonBlockingMetricsObservationProvider:
             consumer_backpressure=False if snapshot is None else snapshot.consumer_backpressure,
             completed_input_work_total=None if snapshot is None else snapshot.completed_input_work_total,
             completed_output_work_total=None if snapshot is None else snapshot.completed_output_work_total,
+            completed_computed_input_work_total=None if snapshot is None else snapshot.completed_computed_input_work_total,
+            completed_cached_input_work_total=None if snapshot is None else snapshot.completed_cached_input_work_total,
         )
 
     def close(self) -> None:

@@ -118,10 +118,31 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 
 ## 可选单遍动态接纳与参数提示复用
 
-`run_admission_query` 接回原 cfdc/79e8 版本的单遍反馈策略和精确 hint 缓存。
+`run_admission_query` 保留已交付工作量扫描（原 cfdc/79e8），并接回计算工作量／局部配对版本（原 ee39/5007）的完整反馈与 hint 状态。
 它与上述 `run_query(mode="query"/"offline"/"online")` 并存：后者调用完整工作负载测量回调，
 前者在**本来要完成的查询请求**上调整 admission，不另做一遍查询。此次接回不修改历史选参算法。
 默认 Core 仍固定；没有 `profile.admission` 就没有新增反馈采样任务。
+
+### 原实验配置选项
+
+`create_records_core(..., profile=name)`、普通 Movie 的 `core_profile` 和 session 的 `profile`
+均接受以下名称；显式字典配置仍可使用，普通 sync/fixed 默认不变。
+
+| 名称 | 对应历史实现 | 工作量与比较方式 |
+|---|---|---|
+| `delivered-work-scan` | cfdc，实际冻结源码 `79e8f103` | 已交付请求与输入／输出工作量；原范围比较 |
+| `computed-work-local-pairs` | ee39，实际冻结源码 `5007e95b` | 实际计算／缓存 token；原局部配对和状态重验证 |
+
+两项都展开为历史正式配置：async、起始8、反馈读取0.1秒、测量窗0.25秒、最少16个样本、
+剩余至少64请求、10秒探索上限、最多8次调整、增益及工作量容差各3%、几何搜索、候选最多2次尝试，
+并开启原阶段计时。owner 上界仍来自调用方资源与模型容量；复现原实验须显式声明容量64、
+CPU准备2、prepare/model batch均1，以及相同模型、生成、输入和缓存条件。名称不修改这些外部声明。
+未指定名称的 `ResourceFeedbackConfig` 原默认值没有改成这些实验参数。
+
+原首次／复用条件为同一模型依次执行16条预热、完整首次和完整复用；预热不读写 hint，
+首次结束满足完整成功与关闭责任后才保存，复用须显式配置下述 `admission_cache`。
+模型常驻本身不等于配置 hint 已保存。历史实现与原样恢复入口见[具名来源](../../../../experiments/reproduction/native_baselines/README.md)。
+两版本的固定源码和负结果保留；CPU差分不能替代同条件真实模型验收，不能按期望成绩修改参数或结果。
 
 普通公共调用先以 `create_records_core(..., profile=profile)` 建立唯一 async owner，
 再将完整查询消费/解析/汇总和借用释放放进 `run_admission_query` 的回调；
@@ -135,12 +156,20 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 模型 `max_num_seqs` 和 owner 上界在启动前声明，控制器只调整运行时 admission，
 不热改模型容量，不把容量边界叫最优，不取消已经在途的请求来缩窗。
 
+计算型选项使用原 `work_basis="computed", work_comparison="local_pairs"`。
+每次真实 RequestOutput 的缓存计数有效且无KV传输时才得到 `prompt_computed_tokens`／`prompt_cached_tokens`；
+缺失或非法保持未知，不能假设缓存为0。原交付前缀、工作量匹配、压力后重验证与有限续探一起保留。
+
 Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`；可选
 `admission_cache={"identity": six_group_identity, "cache_dir": absolute_directory, "reuse": true}`
 只负责薄接线到上述公共 API。identity 仍要求 hardware/model/generation/execution/workload/measurement
 六组及 `measurement.work_unit`。调用者须提供真实硬件、权重/tokenizer/软件版本和计时口径；
 适配层额外绑定实际 EngineSpec、generation、resources/profile、source manifest SHA 和 method。
-更换 query ID 不自动失效，实际输入/方法或环境变化必须失效；不支持未经验证的相似任务泛化。
+交付型沿用该输入身份；计算型缓存另须显式提供 `workload_features`，其结构为
+`{"work_unit":"tokens","input_work":{...},"output_work":{...},"cache":{"enabled":true,"scope":"..."}}`。
+调用方提供有来源的数值特征并计入获取成本；原 `admission_identity` 用这些精确特征替换 workload 组，
+其他五组身份保留。缓存命中后仍用本次实际计算工作量重验证，不复用历史速率。
+更换 query ID 不自动失效，不做相似度匹配；旧源码或不同策略的磁盘 hint 不自动迁移。
 预热不读取/写入 hint 且不探索。成功短任务可复用安全初值，但不因此称其经过调优。
 未结束的搜索 hint 按原有限预算继续，不能把未决状态当全局最佳。
 

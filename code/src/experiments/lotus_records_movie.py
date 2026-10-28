@@ -301,7 +301,8 @@ def _async_limits(config):
 
 
 def _core_profile(config):
-    profile = config.get("core_profile")
+    from src.execution_provider.adapters.lotus_records_core import expand_core_profile
+    profile = expand_core_profile(config.get("core_profile"))
     if config["backend"] == _ASYNC_BACKEND:
         if profile is not None and (type(profile) is not dict or profile.get("mode", "async") != "async"):
             raise ValueError("the explicit async backend requires async Core mode")

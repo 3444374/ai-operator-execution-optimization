@@ -189,6 +189,8 @@ class AdmissionObservation:
     consumer_backpressure: bool = False
     completed_input_work_total: int | None = None
     completed_output_work_total: int | None = None
+    completed_computed_input_work_total: int | None = None
+    completed_cached_input_work_total: int | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
@@ -202,7 +204,8 @@ class AdmissionObservation:
         ):
             raise ValueError("hol_age_s must be finite and non-negative when present")
         for name in ("completed_items_total", "pending_items", "preemptions_total", "transition_pending",
-                     "completed_input_work_total", "completed_output_work_total"):
+                     "completed_input_work_total", "completed_output_work_total",
+                     "completed_computed_input_work_total", "completed_cached_input_work_total"):
             value = getattr(self, name)
             if value is not None and (type(value) is not int or value < 0):
                 raise ValueError(name + " must be a non-negative integer")
