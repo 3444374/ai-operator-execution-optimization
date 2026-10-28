@@ -80,7 +80,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_qualified_resource_snapshot_and_config_hash_are_enforced(self):
         source = {'commit':'a'*40, 'tree':'b'*40}
-        ready = dict(status='passed_CPU_only_host_lease_pending', source=source,
+        ready = dict(status='passed_CPU_only_host_lease_pending', source=source, token_budget_required=True,
             config_sha256=hashlib.sha256(self.path.read_bytes()).hexdigest(),
             resources=asdict(entry.make_resources(self.config)))
         path = self.root / 'ready.json';path.write_text(json.dumps(ready))
@@ -120,6 +120,83 @@ class ConfigTests(unittest.TestCase):
         self.assertIn('--execute-model', command)
         self.assertEqual(supervisor.call_args.kwargs['timeout_s'], 360)
         self.assertEqual(supervisor.call_args.kwargs['grace_s'], 90)
+
+
+class BudgetRuleTests(unittest.TestCase):
+    vector = [74,105,81,65,96,98,92,70,124,78,130,96,91,84,78,89]
+
+    def test_recorded_real_vector_and_permutation_choose134_without_hardcoding(self):
+        self.assertEqual(checks.initial_window(self.vector),134)
+        self.assertEqual(checks.initial_window(list(reversed(self.vector))),134)
+        self.assertEqual(checks.initial_window([3,3,5]),5)
+
+    def test_raw_source_first_pair_is_not_the_minimum_pair(self):
+        self.assertEqual(sum(self.vector[:2])-1,178)
+        self.assertEqual(checks.initial_window(self.vector),134)
+        self.assertLess(2*min(self.vector)-1,max(self.vector))
+        self.assertTrue(all(self.vector[a]+self.vector[b]>134 for a in range(16) for b in range(a+1,16)))
+
+    def test_insufficient_and_infeasible_vectors_stop_without_retuning(self):
+        for costs in [[],[65],[1,2,3],[2,3,10]]:
+            with self.subTest(costs=costs),self.assertRaisesRegex(ValueError,'no feasible'):
+                checks.initial_window(costs)
+
+
+class QualificationModeTests(unittest.TestCase):
+    setUp = ConfigTests.setUp
+    save = ConfigTests.save
+    def test_count_objects_keep_tokenizer_and_inputs_but_never_construct_W(self):
+        engine=EngineSpec.from_dict(self.config['engine'])
+        generation=GenerationSpec.from_dict(self.config['generation'])
+        token=object()
+        with patch('transformers.AutoTokenizer.from_pretrained',return_value=token), \
+                patch.object(entry,'make_budget',side_effect=AssertionError('count must not construct W')) as estimate:
+            actual,records,chain,budget,W=entry.objects(self.config,engine,generation,require_token_budget=False)
+        self.assertIs(actual,token);self.assertEqual(len(records),16)
+        self.assertIsNone(budget);self.assertIsNone(W);estimate.assert_not_called()
+
+    def test_count_qualifier_binds_false_scope_and_actual_C4(self):
+        with patch.object(entry,'checkout_identity',return_value={'commit':'a'*40}), \
+                patch.object(entry,'objects',return_value=(None,None,None,None,None)) as objects, \
+                patch.object(entry.metadata,'version',side_effect=lambda name:'2.56.1' if name=='ray' else 'fixture'):
+            report=entry.qualify(self.path,self.root/'count-ready.json',require_token_budget=False)
+        self.assertIs(report['token_budget_required'],False)
+        self.assertIsNone(report['W']);self.assertIsNone(report['token_estimator_signature'])
+        self.assertEqual(report['resources']['max_active_batches'],4)
+        self.assertEqual(objects.call_args.kwargs,{'require_token_budget':False})
+        self.assertEqual((report['models'],report['claims']),(0,0))
+
+    def test_token_qualifier_binds_true_scope_W_and_estimator_signature(self):
+        budget=Mock(signature='c'*64)
+        with patch.object(entry,'checkout_identity',return_value={'commit':'a'*40}), \
+                patch.object(entry,'objects',return_value=(None,None,None,budget,{'active_tokens':134})) as objects, \
+                patch.object(entry.metadata,'version',side_effect=lambda name:'2.56.1' if name=='ray' else 'fixture'):
+            report=entry.qualify(self.path,self.root/'token-ready.json')
+        self.assertIs(report['token_budget_required'],True)
+        self.assertEqual(report['W'],{'active_tokens':134})
+        self.assertEqual(report['token_estimator_signature'],'c'*64)
+        self.assertEqual(objects.call_args.kwargs,{'require_token_budget':True})
+
+    def test_wrong_or_missing_readiness_scope_rejects_before_case_launch(self):
+        source={'commit':'a'*40,'tree':'b'*40}
+        data=dict(status='passed_CPU_only_host_lease_pending',source=source,
+            config_sha256=hashlib.sha256(self.path.read_bytes()).hexdigest(),
+            resources=asdict(entry.make_resources(self.config)),token_budget_required=False)
+        ready=self.root/'ready.json';ready.write_text(json.dumps(data))
+        with patch.object(entry,'checkout_identity',return_value=source):
+            entry.qualified(self.path,ready,require_token_budget=False)
+            with self.assertRaisesRegex(ValueError,'changed'):
+                entry.qualified(self.path,ready,require_token_budget=True)
+            data.pop('token_budget_required');ready.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError,'changed'):
+                entry.qualified(self.path,ready,require_token_budget=False)
+
+    def test_no_requalification_after_any_budget_file_exists(self):
+        artifact=Path(self.config['artifact_root']);artifact.mkdir()
+        (artifact/'budget.sqlite').write_text('not an actual ledger; existence guard only')
+        with patch.object(entry,'objects') as objects,self.assertRaisesRegex(FileExistsError,'never requalify'):
+            entry.qualify(self.path,self.root/'ready.json',require_token_budget=False)
+        objects.assert_not_called();self.assertFalse((self.root/'ready.json').exists())
 
 
 class SourceTests(unittest.TestCase):

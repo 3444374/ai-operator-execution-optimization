@@ -6,9 +6,10 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
 本地维护候选将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。
-[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；代码迁移已通过独审，尚未发布。
-`check`不加载真实tokenizer；当前r2公式在真实首阶段预留量65～130上算出W=129，不能容纳单条130，四臂共用的资格检查已失败。
-W修复仍待另行核对和重新检查，通过前不能声称四臂GPU可运行；迁移未改生产算法或默认。
+[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；原代码迁移已通过独审，本地追加预算和资格分流修复，尚未发布。
+原W129零调用失败保留；修复改用排序后最小两项之和减1，并将count与token资格分开，迁移未改生产算法或默认。
+main0689底座配合已审现场验收入口完成四臂各48次；两token臂W134均有42个不同调用阻塞后恢复，后继竞争未触发。
+新的Git入口组合只有CPU回归；`check`不加载真实tokenizer，未取得整树GPU资格，严格输出／性能等价仍未通过。
 
 <a id="pr52-g1-qualified-scope"></a>
 ## Records、有限链与本地模型
@@ -72,9 +73,9 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | 尝试或检查 | 已做／未做 | 是否正在推进 | 依据 | 下一步 |
 |---|---|---|---|---|
 | 已有图像与文本执行基础 | main 已有图像分阶段执行（HSE）、完整矩阵收集、records 文本记录及整批有限链；不同路径的模型结果分别解释 | 已有实现；后续改进按下列项判断 | [图像执行](src/modalities/image/staged_execution.py)、[矩阵收集](src/semantic_methods/lotus/image_backend.py)、上方 records 说明及下方各路径报告 | 复用已支持的行为；完整矩阵和必要结果不能因省内存被丢弃 |
-| 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、完整矩阵和公共校准API；补齐已交付工作量扫描与计算工作量／局部配对两种原实现及原参数选项，普通Movie与session共享显式入口，默认固定。CPU差分核对参数、反馈及跨查询状态 | 两版可选实现已接入；同条件首次／复用GPU验收待完成 | [原配置与验收条件](src/scheduling/runtime/calibration.README.md#原实验配置选项)、[旧短查询实测边界](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 与历史源码、模型、输入、生成、预热、缓存和计时逐项对应；明显差异须诊断，不按期望成绩调参。旧负结果保留，截断搜索不当最优 |
-| 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63已含预算、FIFO和actor组件。本地候选将同角色完整F/M查询接入显式`token_budget`，Extract和角色切换仍拒绝token模式；C64输出差异和无净收益结果保留 | 本地接线与CPU检查完成，尚未合入main | [本地候选范围](#finite-query-token-candidate)、[原对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate) | 独审已通过；准备合并与当前源码实机检查，默认count保持，Extract的token支持仍待做，不将CPU结果写成模型质量或性能收益 |
-| 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown，组合版本未整体实机验证 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
+| 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、完整矩阵和公共校准API；补齐已交付工作量扫描与计算工作量／局部配对两种原实现及原参数选项，普通Movie与session共享显式入口，默认固定。CPU差分核对参数、反馈及跨查询状态；已完成CFDC/main43与ee39/main0689的原参数n1首次／复用 | 可选实现已接入；两组均保留输出ID差异，不宣称严格等价 | [原配置与验收条件](src/scheduling/runtime/calibration.README.md#原实验配置选项)、[旧短查询实测边界](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 与历史源码、模型、输入、生成、预热、缓存和计时逐项对应；明显差异须诊断，不按期望成绩调参。旧负结果保留，截断搜索不当最优 |
+| 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63已含预算、FIFO和actor组件。PR71已将同角色完整F/M查询接入显式`token_budget`，Extract和角色切换仍拒绝token模式；C64输出差异和无净收益结果保留 | 已合入main；本轮两token臂各48次成功，W阻塞／恢复均42次 | [本地候选范围](#finite-query-token-candidate)、[原对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate) | 原接口已合并；本轮W功能通过但输出ID不完全相同，默认count保持，Extract的token支持仍待做，不将CPU结果写成模型质量或性能收益 |
+| 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown；本轮main0689底座四配置各48次正常调用完成，失败／取消与性能另计 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
 | 减少结果审计对象存活时间 | [PR67](https://github.com/3444374/ai-operator-execution-optimization/pull/67)已合入；Core fused、Ray／Daft有限链Python入口及各Extract阶段支持同一`release_completed_audit`选项，默认False；普通Movie单Filter CLI不经过此worker，record_local_sections明确拒绝开启。成功编码且无失败、取消、unknown或清理错误时只撤掉worker自身列表引用，消费者账本保持 | 可选实现与组合检查完成；不证明RSS或查询收益 | [选项与边界](src/semantic_methods/lotus/README.md#completed-chain-audit-lifetime)、[IPC组件检查](#shared-chain-ipc-scope) | 按真实持有与消费者行为评估，区分Python引用、物理内存和查询性能；不自动开启 |
 | 共享链结果关联索引 | 原审七字段完整身份索引由Core fused、Ray／Daft有限链共用，固定、随机差分、碰撞及取消检查通过；普通Movie单Filter和record_local_sections不适用 | 实现与组合检查完成；真实查询收益仍待验证 | [范围与测试](src/semantic_methods/lotus/README.md#finite-chain-result-index)、[共享worker](src/execution_provider/method_workers/lotus_chain_batch.py) | 保留原异常、顺序和身份规则；关联操作减少不代表完整查询收益 |
 | 图像准备分离、字节背压与多工作进程 | main的HSE底层已有独立准备／模型额度、字节broker、ready优先提交；`hse_static`诊断入口仍在。普通LOTUS资源入口拒绝HSE和CPU>1，执行器将worker及阶段深度固定为1 | 已有实现，确有普通入口缺口 | [HSE循环](src/modalities/image/staged_execution.py)、[资源解析](src/modalities/image/resource_budget.py)、[LOTUS图像入口](src/semantic_methods/lotus/image_backend.py) | 动态接入后先恢复单GPU、多CPU准备的显式参数与转发，补CPU及输出回归；保留当前TF32和单GPU检查，不默认开启、不声称多卡或位置优化已验证 |
@@ -85,7 +86,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | 普通输入准备 | 已有`TaskPreparation`接口，普通准备尚未使用它；静态／原生路径的准备批次与Core显式async仍在，Core的B1限制不能只删检查就解除 | 已有接口、实际准备接入仍缺；不是配置被废弃 | [接口定义](src/scheduling/core/session_contract.py)、[Core入口](src/execution_provider/adapters/lotus_records_core.py) | 在已有输入／结果身份和准备输出容量合同上实现，核取消、持有和归还；本轮不把大批次或物理释放写成已支持 |
 | 最终结果消费的字节预算 | 执行程序仍积累 `raw` 结果，尚未把消费期间持有的数据纳入统一字节预算 | 否，当前缺项 | 本轮完整查询与内存检查回报 | 记录真实消费者和最后使用时刻，纳入字节预算并验证慢消费；模型完成不能代替结果已消费 |
 | 公共物理阶段描述与实测 | 已明确准备、模型、消费和交接的研究目标；尚未完成公共描述和真实完整查询测量，画像只作支撑 | 是：阶段描述与测量设计 | 本轮研究目标修订；[架构中的目标](../experiments/plans/系统架构.md#physical-stage-research-goal) | 先选一个完整查询，说明阶段、数据与允许动作，测展开／计算／收缩及准备消费竞争；不以任务间迁移为主线 |
-| 后继优先、反序与等待老化 | 本地候选恢复9231f088原driver及ready时钟修正，并透传完整F/M查询选项；尚未合入main。原两轮约10%变慢及输出差异保留 | 本地候选与CPU回归完成，未安排模型实验 | [本地候选](#finite-query-successor-candidate)、[原对照与负结果](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair) | 独审已通过，核对当前main整合；轮转/FIFO各自默认保持，不把当前fresh-query接口称为历史resident first/reuse复现 |
+| 后继优先、反序与等待老化 | PR72已恢复9231f088原driver及ready时钟修正，并透传完整F/M查询选项。原两轮约10%变慢及输出差异保留 | 已合入main；两后继臂各48次正常完成，均无竞争选择 | [本地候选](#finite-query-successor-candidate)、[原对照与负结果](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair) | 功能正常不等于优先效果；本轮未触发争用，轮转/FIFO各自默认保持，不把当前fresh-query接口称为历史resident first/reuse复现 |
 | 跨模型、任意依赖图、预加载、多 GPU 与查询时限策略 | 本轮暂缓，不作为以上工作的前置项 | 否，暂缓 | 当前研究范围 | 先完成单卡完整查询和公共阶段实测，再按实际问题决定是否需要扩展 |
 
 ## main 与集成分支的阅读范围
@@ -141,19 +142,19 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token，Extract、角色切换及fused明确拒绝该组合。
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
-实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径均核对；没有新增模型运行或性能结论。
+前述CPU范围核对实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径；本轮现场修复后的两token臂各48次正常完成，输出ID仍有差异，不作性能结论。
 独审33项通过；首次集成迟到关闭失败保留，后续独立复现确认释放测试信号早于transport Future交付。测试仅等真实交付后再检查，原断言和timeout保持；生产unknown及W预留不提前清零。
-[PR71](https://github.com/3444374/ai-operator-execution-optimization/pull/71)已合入main`230789c4`，默认仍关闭；尚无本配置的新实机或性能结论。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
+[PR71](https://github.com/3444374/ai-operator-execution-optimization/pull/71)已合入main`230789c4`，默认仍关闭；本轮现场仅覆盖同部署同角色M→M→F的小功能检查，不作性能结论。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
 CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。
 
 <a id="finite-query-successor-candidate"></a>
-## 后继优先与等待老化的本地恢复候选
+## 后继优先与等待老化的可选配置
 
 原候选基于`77fe087b`，先在main`43a463b6`独立整合，再在已含PR71的main`230789c4`本地组合；通用`MethodDriver`与9231f088的driver逐字相同，包含可选观察读时异常及必需策略读时失败的处理。
 `LotusChainFIFO`保留已在main的token参数，另接原ready选项；完整查询owner提供相同选择与`ready_clock`透传。
 通用driver默认轮转，FIFO wrapper及查询默认FIFO；自定义选项限同部署同角色F/M计划，Extract、角色切换及fused明确拒绝该组合。
 原main43a独立组合77项CPU检查通过；当前main230组合106项CPU检查通过（17项联合检查，含原token生命周期重放）。逐文件摘要与五份历史还原身份保持。
-当前候选支持同部署同角色F/M内单独选择或与token联合选择；Core队列中的已接纳调用不被重排，token W只限制活跃调用的估计工作量。
-该联合树尚待独审、未合入或部署；未携入私有runner、未改动态实现，也未运行模型。
+该接口支持同部署同角色F/M内单独选择或与token联合选择；Core队列中的已接纳调用不被重排，token W只限制活跃调用的估计工作量。
+PR72已合入main0689；本轮两个后继配置各48次真实调用完成，但竞争选择均为0，不证明优先调度效果。新的Git验收入口组合另行版本化，不继承整树模型资格。
 原两轮负结果与输出差异仍从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)引用；
 新接口不是原resident first/reuse的实机复现，适用条件见[adapter说明](src/execution_provider/adapters/README.md#optional-method-ready-successor-selection)。

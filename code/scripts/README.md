@@ -30,7 +30,8 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 git fetch origin "$VERIFIED_COMMIT"
 git switch --detach "$VERIFIED_COMMIT"
 "$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py check --config "$CHECK_CONFIG"
-"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py qualify --config "$CHECK_CONFIG" --output "$CPU_READY"
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py qualify --config "$CHECK_CONFIG" --count-only --output "$CPU_READY_COUNT"
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py qualify --config "$CHECK_CONFIG" --output "$CPU_READY_TOKEN"
 ```
 
 Git对象不可访问或不一致时保留诊断并停止；本入口不改代理、证书或凭据，不自动安装、下载或连接服务器。
@@ -38,10 +39,16 @@ Git对象不可访问或不一致时保留诊断并停止；本入口不改代�
 `qualify`只加载本地tokenizer、估计W、记录依赖及源码／配置身份，不启动Ray、不领取额度。
 源码或配置改变后需新的检查回执，不能沿用旧候选的模型结论。
 
-当前迁入的r2仍使用`W=2*min(r)-1`，其中r为首阶段请求的输入估计加生成上限。
-已有真实tokenizer检查得到r范围65～130，因而W=129小于单条最大预留量130，`qualify`在模型启动和额度领取前失败。
-四臂共用此检查，当前均不能据此开始GPU验收；`check`成功和CPU fixture通过不解除这一阻塞。
-W修复仍另行核对，须审查并重新通过真实tokenizer检查后再执行下方case命令；本次迁移未修复W，也未验证任何替代数值。
+原r2的`W=2*min(r)-1`在真实预留量65～130上得到129，不能容纳单条130；该零调用失败保留。
+本地候选接入已独审并在现场使用的修复：将首阶段预留量排序，取最小两项之和减1；
+要求`max(r)<=W<最小两项之和`，不可行则拒绝，不硬编码数值。本轮65+70−1=134。
+`qualify --count-only`仍核对源码、实际资源、输入和本地tokenizer，但不构造W；默认qualify为token模式。
+两种回执分别记录`token_budget_required`和估算器身份，worker在领取额度前拒绝不匹配的模式／源码／配置。
+已有账本禁止重新资格检查；回执只创建新文件，不能覆盖旧失败或重用已领取额度。
+现场修复后的两个token臂各48次成功、42个不同调用阻塞后恢复；实际Map后继预留65～69、Filter98～102均小于134。
+这只覆盖本轮实际请求，不是未来生成值的上界；后继超W仍由原估算器拒绝，不扩W或重试。
+现场空／True后继探针是独立CPU诊断，本CLI不自动执行该探针。
+新的Git组合仅完成CPU回归；不能继承整个旧包的GPU资格，`check`也不证明真实tokenizer或模型已验证。
 
 私有JSON字段均由调用者提供，真实值不得提交Git：
 
@@ -66,10 +73,11 @@ W沿用输入估计加生成上限，真实tokenizer门禁失败即停，不自�
 预留四个case后，串行执行以下命令（替换`$CASE`，一次一臂）：
 
 ```sh
-"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py case --config "$CHECK_CONFIG" --ready "$CPU_READY" --case "$CASE" --execute-model
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py case --config "$CHECK_CONFIG" --ready "$MATCHING_CPU_READY" --case "$CASE" --execute-model
 "$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py compare --config "$CHECK_CONFIG" --output "$COMPARISON"
 ```
 
+`MATCHING_CPU_READY`按case选择count或token回执，作用域不符即拒绝。
 `case`复用原supervise，360秒含90秒清理预留；`worker`是其子进程入口，不另建总控。
 监督者仍核对每臂GPU空闲、出生身份退出和租约；API close或supervisor返回不等于物理GPU退出。
 任一失败、unknown或未确认清理后停止后续臂。四臂总墙钟上限1500秒由外层监督者保持。

@@ -21,6 +21,14 @@ def make_chain(model_name, generation):
     ), query_id='current-main-MMF')
 
 
+def initial_window(reservations):
+    """Largest input-only W that cannot admit two initial requests together."""
+    costs = sorted(reservations)
+    if len(costs) < 2 or costs[-1] >= costs[0] + costs[1]:
+        raise ValueError('no feasible initial W: require max(r) < sum(two smallest); no retuning')
+    return costs[0] + costs[1] - 1
+
+
 def make_budget(tokenizer, engine, chain, records, active_tokens=None):
     estimates = {s.stage_id: OutputTokenEstimate(s.generation.max_tokens,
         'declared generation cap for functional acceptance; not measured output') for s in chain.stages}
@@ -32,12 +40,12 @@ def make_budget(tokenizer, engine, chain, records, active_tokens=None):
     if not run.prepare():
         raise ValueError('nonempty first stage required')
     costs = sorted(probe.estimate(row, chain.stages[0].generation)['reserved_tokens'] for row in run.prepared)
-    W = 2 * costs[0] - 1 if active_tokens is None else active_tokens
+    W = initial_window(costs) if active_tokens is None else active_tokens
     if not (len(costs) >= 2 and max(costs) <= W < costs[0] + costs[1]):
         raise ValueError('input-only W gate failed; stop before model, no automatic retuning')
     return ChainTokenBudget(tokenizer, engine, active_tokens=W, **options), dict(
         active_tokens=W, initial_reserved_tokens=costs,
-        rule='W=2*minimum_initial_reservation-1; require every initial request fits and two smallest do not',
+        rule='default W=sum(two smallest initial reservations)-1; require every initial request fits and two smallest do not; reject infeasible inputs',
         units='declared input tokens plus generation cap; not RSS, HBM or measured KV')
 
 

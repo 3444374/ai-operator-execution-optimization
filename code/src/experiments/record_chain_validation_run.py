@@ -99,35 +99,40 @@ def check(path):
                 max_requests=192, models=0, claims=0)
 
 
-def objects(config, engine, generation):
+def objects(config, engine, generation, *, require_token_budget=True):
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(engine.tokenizer_path, local_files_only=True, use_fast=True)
     records = inputs(config)
     chain = make_chain(config['model_name'], generation)
-    budget, W = make_budget(tokenizer, engine, chain, records)
+    budget, W = make_budget(tokenizer, engine, chain, records) if require_token_budget else (None, None)
     return tokenizer, records, chain, budget, W
 
 
-def qualify(path, output):
+def qualify(path, output, *, require_token_budget=True):
     config, engine, resources, generation = configuration(path)
+    if (Path(config['artifact_root']) / 'budget.sqlite').exists():
+        raise FileExistsError('never requalify an existing model budget')
     source = checkout_identity(config['public_git_commit'])
-    _, _, _, budget, W = objects(config, engine, generation)
+    _, _, _, budget, W = objects(config, engine, generation, require_token_budget=require_token_budget)
     versions = {p: metadata.version(p) for p in ('ray', 'lotus-ai', 'transformers', 'tokenizers', 'pyarrow')}
     if versions['ray'] != '2.56.1':
         raise ValueError('published owner requires Ray2.56.1')
     report = dict(status='passed_CPU_only_host_lease_pending', models=0, claims=0,
                   config_sha256=file_identity(path)['sha256'], source=source,
                   resources=asdict(resources), versions=versions, W=W,
-                  token_estimator_signature=budget.signature)
+                  token_budget_required=require_token_budget,
+                  token_estimator_signature=None if budget is None else budget.signature)
     write_private_json(output, report)
     return report
 
 
-def qualified(path, ready_path):
+def qualified(path, ready_path, *, require_token_budget=None):
     config, engine, resources, generation = configuration(path)
     require_outside_git(Path(ready_path))
     ready = read(ready_path)
-    if (ready['status'] != 'passed_CPU_only_host_lease_pending' or
+    if (type(ready.get('token_budget_required')) is not bool or
+            require_token_budget is not None and ready['token_budget_required'] != require_token_budget or
+            ready['status'] != 'passed_CPU_only_host_lease_pending' or
             ready['config_sha256'] != file_identity(path)['sha256'] or
             ready['resources'] != asdict(resources) or
             ready['source'] != checkout_identity(config['public_git_commit'])):
@@ -145,7 +150,8 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     import ray
 
     started = time.monotonic_ns() if process_started_ns is None else process_started_ns
-    config, engine, resources, generation, ready = qualified(path, ready_path)
+    token_mode = next(token for name, token, _ in CASES if name == case_id)
+    config, engine, resources, generation, ready = qualified(path, ready_path, require_token_budget=token_mode)
     case = next(c for c in config['cases'] if c['case_id'] == case_id)
     if config['execution_enabled'] is not True or ray.__version__ != '2.56.1' or ray.is_initialized():
         raise ValueError('explicit enabled config and fresh Ray2.56.1 required')
@@ -167,8 +173,8 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
                                  interval_s=.2, max_samples=2000).start()
     try:
         sampler.__enter__()
-        tokenizer, records, chain, budget, W = objects(config, engine, generation)
-        if W != ready['W'] or budget.signature != ready['token_estimator_signature']:
+        tokenizer, records, chain, budget, W = objects(config, engine, generation, require_token_budget=case['token'])
+        if W != ready['W'] or (None if budget is None else budget.signature) != ready['token_estimator_signature']:
             raise ValueError('qualified tokenizer/W changed')
         env = dict(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
                    LITELLM_LOCAL_MODEL_COST_MAP='True', VLLM_WORKER_MULTIPROC_METHOD='spawn')
@@ -223,7 +229,8 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
 def supervised_case(path, ready, case_id):
     from integrations.imlane_records.chain_runtime import check_external_lease
     from src.experiments.lotus_records_supervisor import supervise
-    config, engine, _, _, _ = qualified(path, ready)
+    token_mode = next(token for name, token, _ in CASES if name == case_id)
+    config, engine, _, _, _ = qualified(path, ready, require_token_budget=token_mode)
     if config['execution_enabled'] is not True:
         raise ValueError('explicit enabled config required before worker launch')
     check_external_lease(config['external_owner'])
@@ -241,12 +248,15 @@ def main(argv=None, *, process_started_ns=None):
     parser.add_argument('--ready', type=Path)
     parser.add_argument('--case', choices=[name for name, _, _ in CASES])
     parser.add_argument('--execute-model', action='store_true')
+    parser.add_argument('--count-only', action='store_true', help='qualify count cases without a token budget')
     args = parser.parse_args(argv)
+    if args.count_only and args.action != 'qualify':
+        parser.error('--count-only applies only to CPU qualification')
     if args.action == 'check':
         result = check(args.config)
     elif args.action == 'qualify':
         if args.output is None: parser.error('qualify requires a fresh private --output')
-        result = qualify(args.config, args.output)
+        result = qualify(args.config, args.output, require_token_budget=not args.count_only)
     elif args.action == 'compare':
         if args.output is None: parser.error('compare requires a fresh private --output')
         config, _, _, _ = configuration(args.config)
