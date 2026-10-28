@@ -36,13 +36,29 @@ from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, R
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlockingMetricsObservationProvider
 
 
+def expand_core_profile(profile):
+    """Expand the two retained experimental profiles; ordinary defaults stay fixed."""
+    if type(profile) is not str:
+        return profile
+    if profile not in ("delivered-work-scan", "computed-work-local-pairs"):
+        raise ValueError("unknown Core query feedback profile")
+    admission = dict(kind="resource_feedback", search_mode="geometric",
+        poll_interval_s=0.1, window_s=0.25, min_samples=16, min_remaining=64,
+        exploration_s=10.0, max_changes=8, allow_exploration=True,
+        min_gain=0.03, work_tolerance=0.03, max_candidate_attempts=2,
+        memory_floor_bytes=0)
+    if profile == "computed-work-local-pairs":
+        admission.update(work_basis="computed", work_comparison="local_pairs")
+    return dict(mode="async", max_inflight=8, stage_timing=True, admission=admission)
+
+
 def resolve_core_profile(engine, resources, profile=None):
     """Resolve an explicit execution profile, without probing or allocating hardware.
 
     Auto is a bound on caller-declared capacity, not a throughput tuner. Device
     allocation and machine preflight remain the caller's existing responsibility.
     """
-    profile = {} if profile is None else profile
+    profile = {} if profile is None else expand_core_profile(profile)
     if type(profile) is not dict or set(profile) - {"mode", "max_inflight", "stage_timing", "admission"}:
         raise ValueError("Core profile accepts mode, max_inflight, stage_timing and optional admission only")
     mode = profile.get("mode", "sync")
@@ -460,6 +476,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
         owner.transport.bind_query(self.session.session_id, prepare_method)
         self.received, self.offered = set(), set()
         self.completed_work = (0, 0, 0)
+        self.completed_effective_work = (0, 0, 0)
         self.sequence = 0
         self.pending = None
         self.source_eof = self.finished = self.source_closed = False
@@ -484,7 +501,8 @@ class _CoreRows(Iterator[dict[str, Any]]):
 
     def _observe(self):
         if self.owner._feedback is not None:
-            self.owner._feedback.observe(self)
+            with _measure(self.timings, "feedback_progress"):
+                self.owner._feedback.observe(self)
         for name, value in asdict(self.owner.core.capacity.usage()).items():
             self.peak_usage[name] = max(value, self.peak_usage[name])
 
@@ -543,6 +561,15 @@ class _CoreRows(Iterator[dict[str, Any]]):
             input_work += value["prompt_tokens"]
             output_work += value["completion_tokens"]
         self.completed_work = (len(self.received) + 1, input_work, output_work)
+        if self.owner._feedback is not None and self.owner._feedback.options.work_basis == "computed":
+            _, computed, cached = self.completed_effective_work
+            new_computed, new_cached = value.get("prompt_computed_tokens"), value.get("prompt_cached_tokens")
+            valid = (value["status"] == "succeeded" and computed is not None
+                and type(new_computed) is int and type(new_cached) is int
+                and min(new_computed, new_cached) >= 0
+                and new_computed + new_cached == value.get("prompt_tokens"))
+            self.completed_effective_work = (len(self.received) + 1,
+                computed + new_computed if valid else None, cached + new_cached if valid else None)
         self.received.add(value["call_id"])
         if self.owner._feedback is not None:
             self.owner._feedback.observe(self)
@@ -915,6 +942,7 @@ class _CoreFeedback:
         self.controller = None
         self.progress = (0, 0, 0, False)
         self.completed_work = (0, None, None)
+        self.completed_effective_work = (0, None, None)
         self.transition_keys = set()
         self.generation = 0
         self.ref_deadline = None
@@ -929,6 +957,7 @@ class _CoreFeedback:
         self.stream = None
         self.progress = (0, total, 0, False)
         self.completed_work = (0, None, None)
+        self.completed_effective_work = (0, None, None)
         self.transition_keys.clear()
         self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
         self.controller = ResourceFeedbackController(self.owner.resources.max_active_batches, initial, self.options)
@@ -951,6 +980,11 @@ class _CoreFeedback:
         self.last_window = initial
 
     def sample(self):
+        timings = getattr(getattr(self.owner, "transport", None), "timings", None)
+        with _measure(timings, "feedback_poll"):
+            return self._sample()
+
+    def _sample(self):
         generation, stream = self.generation, self.stream
         if stream is None:
             return None
@@ -989,6 +1023,9 @@ class _CoreFeedback:
             work_count, input_work, output_work = self.completed_work
             if work_count != completed:
                 input_work = output_work = None
+            effective_count, computed_work, cached_work = self.completed_effective_work
+            if effective_count != completed:
+                computed_work = cached_work = None
             pressure = None
             if self.gpu_ids:
                 from src.observability.metrics.resources import gpu_metadata
@@ -1006,7 +1043,9 @@ class _CoreFeedback:
                 completed_items_total=completed, pending_items=pending,
                 preemptions_total=snapshot["preemptions_total"], memory_pressure=pressure,
                 transition_pending=transition, consumer_backpressure=backpressure,
-                completed_input_work_total=input_work, completed_output_work_total=output_work)
+                completed_input_work_total=input_work, completed_output_work_total=output_work,
+                completed_computed_input_work_total=computed_work,
+                completed_cached_input_work_total=cached_work)
         except Exception:
             if generation == self.generation:
                 self.ref = self.future = None
@@ -1031,6 +1070,7 @@ class _CoreFeedback:
         self.progress = (len(stream.received), unsubmitted, len(self.transition_keys),
                          ready >= self.controller.current_window)
         self.completed_work = stream.completed_work
+        self.completed_effective_work = stream.completed_effective_work
 
     def changed(self, event):
         if event.window != self.last_window:

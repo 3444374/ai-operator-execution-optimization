@@ -117,6 +117,8 @@ and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-
 ## records Core 可选动态接纳
 
 `lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。
+可显式选择 `profile="delivered-work-scan"` 或 `profile="computed-work-local-pairs"`；
+名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
 `profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
 显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
 不是另一个执行器。`C0` 是起始软窗口，owner 上界为声明的 Core request budget 与
@@ -129,7 +131,8 @@ and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-
 
 普通查询可用同一公共 `scheduling.runtime.calibration.run_admission_query` 接精确配置复用。
 Movie 的薄配置槽及计时/资格边界见 [calibration.README](../../scheduling/runtime/calibration.README.md)。
-恢复的是旧策略本身，历史波动和负结果保留；功能实测与当前整合的边界见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)。
+恢复的是两版旧策略本身，历史波动和负结果保留；旧短查询功能实测的边界见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)。
+两版原参数的同条件首次／复用模型验收须另列，不能以开关能运行或短查询返回替代。
 
 
 ### 静态参照的显式 session
