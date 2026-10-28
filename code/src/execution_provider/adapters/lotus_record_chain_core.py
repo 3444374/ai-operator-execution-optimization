@@ -29,7 +29,7 @@ import threading
 import time
 import uuid
 
-from src.baselines.common.private_artifacts import require_outside_git
+from src.infrastructure.private_artifacts import require_outside_git
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
@@ -1016,7 +1016,7 @@ class SemLoomRecordChainCore:
         # outside the Core wire reservation. They preserve usage after a failed
         # result encode, cancellation, or unpublished Core delivery.
         if self.control is not None and self.control.exists() and self.results is not None:
-            from src.baselines.text.frameworks.daft_engine_process import MAX_MESSAGE_BYTES
+            from src.serving.backends.vllm_sync_process import MAX_MESSAGE_BYTES
 
             maximum = MAX_MESSAGE_BYTES * (len(self.query_chain.stages) + 2) + self.capacity.item_input_bytes
             for path in [*self.control.glob("chain-audit-*.json"),

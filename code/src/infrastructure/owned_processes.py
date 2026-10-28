@@ -13,7 +13,7 @@ import time
 
 import psutil
 
-from src.baselines.common.redact import redact_argument_list, redact_text
+from src.infrastructure.redact import redact_argument_list, redact_text
 
 
 def _seconds(value, name):
