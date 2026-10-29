@@ -148,8 +148,10 @@ class _ChainTransport:
                 self._worker_phase = owner.phase_stage_ids
             if self._stopping.is_set():
                 raise InterruptedError("Core chain transport closed during worker construction")
-        options = ({'source_flush_reason': task.task.metadata.decode('ascii')}
-                   if owner._streaming_tokens else {})
+        options = {}
+        if owner._streaming_tokens:
+            prepared_info = json.loads(task.task.metadata)
+            options = dict(source_flush_reason=prepared_info['reason'], prepared_info=prepared_info)
         value = self.worker.run_rows(json.loads(task.task.payload), **options)
         # Worker materialization and its audit are separate from the bounded
         # Core response. Overflow is an uncertain task, never a fake terminal;
@@ -323,7 +325,7 @@ class _CoreChainRows:
     def _pack_source(self):
         """Prepare bounded reads lazily; only the batcher chooses model groups."""
         from transformers import AutoTokenizer
-        from src.semantic_methods.lotus.prepared_batching import PreparedRequestBatcher
+        from src.semantic_methods.lotus.prepared_batching import PreparedRequestBatcher, prepared_wire_row
         from src.semantic_methods.lotus.record_results import _source_binding, record_row
 
         owner, seen = self.owner, set()
@@ -354,9 +356,9 @@ class _CoreChainRows:
                 yield read_chunk()
 
         def size(row):
-            # Charge both the pending wire value and its prepared message.
-            return (len(_encode([row['source_row']], owner.capacity.item_input_bytes))
-                    + len(row['messages_json'].encode('utf-8')))
+            # Single-row arrays conservatively cover the final array framing.
+            # Prepared messages and identities remain charged input, not metadata.
+            return len(_encode([prepared_wire_row(row)], owner.capacity.item_input_bytes))
 
         yield from PreparedRequestBatcher(owner.prepared_batching, tokenizer).iter_batches(
             chunks(), owner.chain.stages[0].generation,
@@ -371,12 +373,19 @@ class _CoreChainRows:
         if self.pending is None:
             rows, batch_ids, metadata = [], set(), b''
             if owner._streaming_tokens:
+                from src.semantic_methods.lotus.prepared_batching import (
+                    preparation_signature, prepared_wire_row,
+                )
+
                 if self._token_batches is None:
                     self._token_batches = self._pack_source()
                 try:
                     group = next(self._token_batches)
-                    rows = [row['source_row'] for row in group.rows]
-                    metadata = group.reason.encode('ascii')
+                    rows = [prepared_wire_row(row) for row in group.rows]
+                    metadata = _encode(dict(reason=group.reason, input_tokens=group.input_tokens,
+                        output_cap_tokens=group.output_cap_tokens, signature=preparation_signature(
+                            owner.chain.stages[0], owner.engine, owner.prepared_batching)),
+                        owner.capacity.metadata_bytes)
                 except StopIteration:
                     pass
             else:

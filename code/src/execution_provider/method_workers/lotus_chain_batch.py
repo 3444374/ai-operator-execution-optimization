@@ -104,7 +104,7 @@ class FusedChainBatch:
             chain, expected, initial_parents, columns, allow_nulls)
         self.engine_spec = EngineSpec.from_dict(engine)
         self.prepared_batching, self._request_batcher = None, None
-        self._source_flush_reason = None
+        self._source_flush_reason = self._source_prepared_group = None
         if prepared_batching is not None:
             from src.semantic_methods.lotus.prepared_batching import PreparedBatching
             self.prepared_batching = PreparedBatching(**prepared_batching)
@@ -158,7 +158,11 @@ class FusedChainBatch:
 
         _check(self.deadline, self.control)
         groups = None
-        if self.prepared_batching is not None:
+        if self._source_prepared_group is not None:
+            if tuple(prepared) != self._source_prepared_group.rows:
+                raise ValueError('reused prepared batch changed before inference')
+            groups = (self._source_prepared_group,)
+        elif self.prepared_batching is not None:
             try:
                 if self._request_batcher is None:
                     from transformers import AutoTokenizer
@@ -280,7 +284,32 @@ class FusedChainBatch:
             offset += len(group.rows)
         return results
 
-    def _run_batch(self, batch, *, source_flush_reason=None):
+    def _reused_group(self, prepared, info):
+        from src.semantic_methods.lotus.prepared_batching import (
+            PreparedRequestBatch, preparation_signature,
+        )
+
+        config = self.prepared_batching
+        if (config is None or config.policy != 'token_budget' or len(self.chain.stages) != 1
+                or type(info) is not dict or set(info) != {
+                    'reason', 'input_tokens', 'output_cap_tokens', 'signature'}):
+            raise ValueError('prepared reuse requires one token-batched Filter or Map')
+        stage = self.chain.stages[0]
+        if (info['signature'] != preparation_signature(stage, self.engine_spec, config)
+                or info['reason'] != self._source_flush_reason or info['reason'] not in (
+                    'token_budget', 'max_rows', 'max_bytes', 'compatibility', 'source_exhausted')
+                or type(info['input_tokens']) is not int or info['input_tokens'] < 0
+                or type(info['output_cap_tokens']) is not int
+                or info['output_cap_tokens'] != len(prepared) * stage.generation.max_tokens
+                or not prepared or config.max_rows is not None and len(prepared) > config.max_rows):
+            raise ValueError('prepared batch changed its method, parameters or estimated cost')
+        oversize = info['input_tokens'] + info['output_cap_tokens'] > config.token_budget
+        if oversize and len(prepared) != 1:
+            raise ValueError('only one complete oversize request may exceed B')
+        return PreparedRequestBatch(tuple(prepared), info['input_tokens'], info['output_cap_tokens'],
+                                    info['reason'], oversize)
+
+    def _run_batch(self, batch, *, source_flush_reason=None, prepared_info=None):
         from src.serving.backends.vllm_sync_process import _publish
 
         if self.failed:
@@ -289,9 +318,10 @@ class FusedChainBatch:
             return self._failure_json
         self._audit_calls, self._audit_errors, self._request_batches = [], [], []
         self._source_flush_reason = source_flush_reason
+        self._source_prepared_group = None
         self._batch_id, self._raw_stage_id = uuid.uuid4().hex, None
         self._audit_path = self.control / ("chain-audit-" + self._batch_id + ".json")
-        records = []
+        records, prepared = [], []
         envelope = dict(inputs=[],
                         batch_id=self._batch_id, raw_stage_id=None,
                         records=[], calls=[], stage_stats={}, columns=list(self.columns), raw_results=[], error_type=None,
@@ -303,7 +333,8 @@ class FusedChainBatch:
                 raise RuntimeError("a closed chain owner cannot begin more work")
             batch_ids = set()
             for row in batch.to_pylist():
-                if set(row) != {"record_json"} or type(row["record_json"]) is not str:
+                keys = {'record_json'} if prepared_info is None else {'record_json', 'prepared'}
+                if set(row) != keys or type(row["record_json"]) is not str:
                     raise ValueError("chain input requires one record_json string column")
                 record = RecordOccurrence.from_dict(json.loads(row["record_json"]))
                 if (self.expected.get(record.row_id) != _source_binding(record)
@@ -311,13 +342,19 @@ class FusedChainBatch:
                     raise ValueError("chain input changed or duplicated an occurrence")
                 batch_ids.add(record.row_id)
                 records.append(record)
+                if prepared_info is not None:
+                    prepared.append(row['prepared'])
             self.received.update(batch_ids)
             envelope.update(inputs=[_source_binding(record) for record in records], native_input_rows=len(records))
             seeds = {(record.row_id, record.source_position): self.initial_parents[(record.row_id, record.source_position)]
                      for record in records}
+            options = {}
+            if prepared_info is not None:
+                self._source_prepared_group = self._reused_group(prepared, prepared_info)
+                options['prepared_rows'] = prepared
             result = (self.chain.run_batch(records, self._infer, initial_parents=seeds,
-                                          columns=self.columns, allow_nulls=self.allow_nulls)
-                      if self._phase_options else self.chain.run_batch(records, self._infer))
+                                          columns=self.columns, allow_nulls=self.allow_nulls, **options)
+                      if self._phase_options else self.chain.run_batch(records, self._infer, **options))
             envelope.update(records=[record.describe() for record in result["records"]],
                             calls=result["calls"], stage_stats=result["stage_stats"],
                             columns=result["columns"])
@@ -348,6 +385,7 @@ class FusedChainBatch:
             except BaseException as recording:
                 envelope["cleanup_errors"].append("failure_ledger_write: " + type(recording).__name__)
         finally:
+            self._source_prepared_group = None
             if self.prepared_batching is not None:
                 envelope['request_batches'] = list(self._request_batches)
             envelope["cleanup_errors"].extend(self._audit_errors)
@@ -379,7 +417,7 @@ class FusedChainBatch:
         return encoded
 
 
-    def run_rows(self, rows, *, source_flush_reason=None):
+    def run_rows(self, rows, *, source_flush_reason=None, prepared_info=None):
         """Run one bounded list of record_json rows and return its batch envelope."""
         class RowBatch:
             def to_pylist(self):
@@ -387,7 +425,8 @@ class FusedChainBatch:
                     raise TypeError("chain input requires a finite list of record_json rows")
                 return rows
 
-        return json.loads(self._run_batch(RowBatch(), source_flush_reason=source_flush_reason))
+        return json.loads(self._run_batch(RowBatch(), source_flush_reason=source_flush_reason,
+                                          prepared_info=prepared_info))
 
     def __call__(self, batch):
         """Keep Ray's one-envelope Arrow output for its native map_batches API."""

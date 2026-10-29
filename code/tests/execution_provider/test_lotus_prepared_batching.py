@@ -361,8 +361,8 @@ class PreparedBatchingTests(unittest.TestCase):
         rows = fixture.source_rows(column='text', size=7)
         for row in rows: row.values['text'] = 'short'
         run = self.chain.start_batch(rows); run.prepare()
-        charge = lambda record, row: (len(json.dumps([record_row(record)], ensure_ascii=False,
-            separators=(',', ':')).encode()) + len(row['messages_json'].encode()))
+        charge = lambda record, row: len(json.dumps([
+            dict(record_row(record), prepared=row)], ensure_ascii=False, separators=(',', ':')).encode())
         allowance = sum(sorted((charge(r, p) for r, p in zip(rows, run.prepared)), reverse=True)[:2])
         for guard, capacity, sizes, reason in (
                 (5, None, [5, 2], 'max_rows'),
