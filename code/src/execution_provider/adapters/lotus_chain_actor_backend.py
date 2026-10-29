@@ -109,6 +109,11 @@ class LotusChainActorBackend(_RecordTransport):
                     task_key = TaskKey(*receipt['request_key'])
                     if task_key not in context['members']:
                         raise ValueError('bulk result belongs to another group')
+                    if task_key not in pending and task_key not in context['futures']:
+                        # A lost ACK can hold a later bounded page behind this
+                        # receipt. Retry only after audit/sink transfer removed
+                        # its future, never just because the future is ready.
+                        self.actors.acknowledge_core(task_key)
                     if task_key in pending:
                         future = context['futures'].get(task_key)
                         try:
@@ -120,7 +125,10 @@ class LotusChainActorBackend(_RecordTransport):
                         pending.remove(task_key)
                 if not pending:
                     break
-                if response.get('closed') or response.get('status') == 'rejected':
+                if response.get('closed') and type(response.get('more_results')) is not bool:
+                    raise ValueError('closed bulk reply has no bounded-page frontier')
+                if (response.get('closed') and not response['more_results']
+                        or response.get('status') == 'rejected'):
                     raise RuntimeError('bulk producer closed without all member receipts')
                 raw = receipt = future = None
                 response = dict(status='accepted')

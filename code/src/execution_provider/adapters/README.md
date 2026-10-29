@@ -346,6 +346,15 @@ bound. Unknown work retains its reservation until an authoritative terminal or
 the existing exact-owner producer-quiescence proof; retiring borrowing does not
 change an unknown model outcome into success.
 
+Closing the producer does not mean that bounded result pages have been drained.
+The private `more_results` reply flag identifies additional currently available
+receipts beyond the returned page. Closed delivery retains only a grant-bounded
+ACK frontier, advances after each member ACK, and leaves the close audit snapshot
+intact. Unacknowledged pages remain readable. An unknown receipt's delivery ACK
+does not refund its separate borrowing responsibility. Close retries retain the
+previously published audit prefix. A repeated receipt can retry a lost ACK only
+after that member has completed local validation and sink transfer.
+
 The default tokenizer is loaded from the declared engine tokenizer/model. A caller
 may supply `batching_tokenizer` for a controlled environment; matching its rendered
 template to the native model remains the caller's responsibility. CPU fixtures use

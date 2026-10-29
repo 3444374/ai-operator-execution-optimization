@@ -32,6 +32,7 @@ def actor():
     value._closing = value._unhealthy = False
     value.engine = None
     value.last_close_report = None
+    value._closed_pending = None
     return value
 
 

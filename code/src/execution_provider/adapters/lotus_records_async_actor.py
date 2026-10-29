@@ -61,6 +61,7 @@ class AsyncCoreModelActor:
         self._cancel_session = -1
         self._readers = 0
         self.last_close_report = None
+        self._closed_pending = None
 
     def _process_type(self):
         return AsyncEngineProcess
@@ -266,7 +267,8 @@ class AsyncCoreModelActor:
                 self._collect()
             if self._closing and self.last_close_report is not None:
                 available = [(tuple(v['request_key']), v['result']) for v in
-                    self.last_close_report.get('unconsumed_core_results', []) if tuple(v.get('batch_key', ())) == batch_key]
+                    self.last_close_report.get('unconsumed_core_results', [])
+                    if tuple(v.get('batch_key', ())) == batch_key and tuple(v['request_key']) in self._closed_pending]
             else:
                 available = [(key, call.value) for key, call in self._held.items()
                              if call.batch_key == batch_key and call.value is not None and not call.delivered]
@@ -277,17 +279,19 @@ class AsyncCoreModelActor:
                 value = json.loads(self._bounded(value, self.limits.item_result_bytes))
                 candidate = dict(request_key=list(key), result=value)
                 try:
-                    _encode(dict(results=results+[candidate], closed=closed), maximum)
+                    _encode(dict(results=results+[candidate], closed=closed, more_results=False), maximum)
                 except ValueError:
                     if not results:
                         raise
                     break
                 results.append(candidate)
                 exposed.append(key)
-            payload = _encode(dict(results=results, closed=closed), maximum)
+            payload = _encode(dict(results=results, closed=closed, more_results=len(results)<len(available)), maximum)
             for key in exposed:
                 if key in self._held:
                     self._held[key].poll_exposed = True
+                if self._closed_pending is not None and key in self._closed_pending:
+                    self._closed_pending[key] = True
             return payload
 
     def _serve_core(self, rows, deadline, maximum, request_key, generation=None):
@@ -405,6 +409,11 @@ class AsyncCoreModelActor:
         key = _request_key(request_key)
         with self._condition:
             call = self._held.get(key)
+            closed_ack = self._closed_pending is not None and self._closed_pending.get(key) is True
+            if closed_ack:
+                del self._closed_pending[key]
+            if call is None:
+                return closed_ack
             if call is not None and call.batch_key is not None and call.poll_exposed:
                 # Only the consumer ACK establishes delivery of a bulk reply.
                 # A lost/failed RPC remains readable without resubmitting work.
@@ -427,6 +436,12 @@ class AsyncCoreModelActor:
             with self._condition:
                 if (self.last_close_report or {}).get("producer_quiescence") is not None:
                     return self.last_close_report
+                if self._closed_pending is None:
+                    # Delivery metadata only, at most the existing request grant.
+                    # Keep the close audit snapshot intact after individual ACKs,
+                    # including when producer proof clears the borrowing ledger.
+                    self._closed_pending = {key: call.poll_exposed for key, call in self._held.items()
+                        if call.batch_key is not None and not call.delivered}
                 self._closing = True
                 self._condition.notify_all()
                 engine = self.engine
@@ -482,6 +497,15 @@ class AsyncCoreModelActor:
                     keyed = [dict(request_key=list(key), result=dict(call.value),
                                   **(dict(batch_key=list(call.batch_key)) if call.batch_key is not None else {}))
                              for key, call in self._held.items() if call.value is not None]
+                    retained = {tuple(v['request_key']): v for v in
+                                (self.last_close_report or {}).get('unconsumed_core_results', [])}
+                    for receipt in keyed:
+                        key = tuple(receipt['request_key'])
+                        if key in retained and retained[key] != receipt:
+                            raise ValueError('close retry changed an existing audited receipt')
+                        retained[key] = receipt
+                    keyed = list(retained.values())
+                    receipts = [dict(v['result']) for v in keyed]
                 settled = ipc.get("status") == "closed"
                 report = dict(status="closed" if settled else "unknown",
                     cleanup_scope="async_engine_api_direct_child_and_ipc",
