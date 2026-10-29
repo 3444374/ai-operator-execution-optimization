@@ -72,6 +72,13 @@ Filter/Map/Extract plan using the shared `ChainRun` and one prepared Async model
 `execution="fused"` remains the default. This is a Python API option, not an automatic
 selector or a change to a baseline's native execution.
 
+These are separate choices: ordinary records `sync`/`async` selects model handoff;
+chain `fused`/`record_local_sections` selects batch-stage or record-local progression;
+fixed/dynamic admission selects whether the request window changes during a query.
+Selecting async alone does not select record-local chains or dynamic admission.
+Current defaults remain ordinary records sync, chain fused, and fixed admission.
+The research preference for record-local progression does not change those API defaults.
+
 Record-local F/M sections use `LotusChainFIFO` over the existing Core/MethodDriver.
 Extract waits for actual source EOF, complete predecessor finals and drained result
 responsibility; the original parser and relation assembler then run once before continuation.
@@ -100,6 +107,19 @@ limit (`max_active_batches`) and token work limit (`budget.active_tokens`); the 
 estimated complete input plus the stage output cap, rather than actual KV bytes or GPU work.
 Expected output is diagnostic and does not reduce that reservation. Confirmed terminals and
 the existing producer-retirement protocol settle work; cancellation alone cannot release it.
+
+<a id="chain-token-batching-boundary"></a>
+`token_budget` here is an in-flight reservation limit W, not a per-batch packing budget B.
+`LotusChainProgram._step` estimates each actual prepared continuation; `MethodDriver._submit`
+offers one task and `LotusChainActorBackend._submit_task` sends `[row]` to the actor.
+Core checks the sum of active reservations; an authoritative terminal or validated producer-retirement
+proof can settle a reservation. Cancellation or an unknown result alone cannot do so;
+retirement does not upgrade the unknown result to success.
+No batch membership or close boundary is formed from that sum. Preparation/model batch rows
+remain 1; C separately limits active requests, and vLLM owns its internal compute batches.
+Existing `PendingBatchBuilder` and text organizer token packing are not wired into this chain.
+The desired per-batch token organization and its minimal reuse plan are in the
+[data organization plan](../../../../experiments/plans/数据组织.md#chain-token-batching).
 
 Source positions are increasing and protocol occurrence IDs unique; user index labels
 and business IDs may repeat. A query failure stops continuation and retains earlier facts.
