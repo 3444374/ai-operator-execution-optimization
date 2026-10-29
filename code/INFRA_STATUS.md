@@ -202,7 +202,8 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 原固定行链与默认路径保留。原固定head的独审范围限CPU，不替代合并源码的组合验收；真实模板/模型、质量与GPU性能仍须服务器验证。
 接口、逻辑字节边界及unknown责任见[所属说明](src/execution_provider/adapters/README.md#prepared-request-batching)。
 
-本地异步记录链候选在准确已发布基底 `beb5966c` 上接入同一组批配置，未包含PR83的同步重复准备修复。
+独立异步记录链候选 `c79fcc6d` 在准确已发布基底 `beb5966c` 上接入同一组批配置，未包含PR83的同步重复准备修复。
+后续本地组合以准确 `2212e331` 为基底，顺序接入异步核心、关闭分页修复及正常入口；原PR83准备复用／进程关闭／历史还原字节保留，新组合须单独验收。
 它复用原MethodRun/Core/actor/engine，以一次数据RPC及IPC提交一个token批，保留逐成员完成、后继推进、取消与unknown责任及Extract关系屏障。
 可选范围为固定B、固定应用批并发C_batch、FIFO、record推进、W关闭；无每批行帽，R仍同时约束在途成员与resident行。
 默认与同步对照保留；后续本地入口增量已将配置经原records工厂接入正常Movie `check/run`和isolated session，保留冻结任务、source及原评价器绑定，并核对实际B/C_batch/R和逐成员回执。
