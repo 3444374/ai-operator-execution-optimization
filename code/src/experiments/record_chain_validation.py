@@ -117,7 +117,7 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
         e['at_ns'] > b['at_ns'] for e in core_events)]
     pool = getattr(owner._active, 'pool', None)
     return dict(records=outputs, calls=calls, columns=list(stream.columns), close=close,
-        execution=close['execution'], progression=close.get('progression'), resources=asdict(owner.resources),
+        execution=owner.execution, progression=close.get('progression'), resources=asdict(owner.resources),
         driver_progression=driver_modes[0] if driver_modes else None,
         capacity=None if pool is None else dict(active_request_limit=owner.core.capacity.limits.active_requests,
             held_task_limit=owner.core.capacity.limits.held_tasks,
