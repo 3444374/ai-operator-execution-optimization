@@ -2,14 +2,6 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
-## 2026-10-29：校正文档中的研究目标、实现与证据边界
-
-以 main `a421c9d4` 核对现有源码：每批 token 组批与在途安全限流分开，记录链尚缺前者接入；研究优先逐记录推进不改变当前默认。
-接口、PR73 接纳与动态配置状态归[代码状态](code/INFRA_STATUS.md)，观察范围归[阶段方案](experiments/plans/数据组织.md#dag-resource-observation)，
-gold、迁移严格等价及实际工作量归[对照规范](experiments/plans/reference/对照规范.md#quality-equivalence-work)。
-已有不同启动布局的对照按[原解释边界](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-layout-comparison-interpretation)保留，不能归为 main 合并前后回归或单一粒度收益。
-本次只校正文档并本地提交，未改生产代码、默认、历史原件或失败判定，未新增模型／GPU运行。
-
 ## 2026-10-28：完整F/M查询token配置的独立本地接线
 
 将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。

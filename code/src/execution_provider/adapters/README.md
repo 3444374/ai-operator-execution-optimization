@@ -112,7 +112,9 @@ the existing producer-retirement protocol settle work; cancellation alone cannot
 `token_budget` here is an in-flight reservation limit W, not a per-batch packing budget B.
 `LotusChainProgram._step` estimates each actual prepared continuation; `MethodDriver._submit`
 offers one task and `LotusChainActorBackend._submit_task` sends `[row]` to the actor.
-Core checks the sum of active reservations and releases each on an authoritative terminal.
+Core checks the sum of active reservations; an authoritative terminal or validated producer-retirement
+proof can settle a reservation. Cancellation or an unknown result alone cannot do so;
+retirement does not upgrade the unknown result to success.
 No batch membership or close boundary is formed from that sum. Preparation/model batch rows
 remain 1; C separately limits active requests, and vLLM owns its internal compute batches.
 Existing `PendingBatchBuilder` and text organizer token packing are not wired into this chain.

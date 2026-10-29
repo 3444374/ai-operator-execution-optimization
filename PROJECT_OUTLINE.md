@@ -15,8 +15,7 @@ LOTUS 主线由 SemBench 提供任务与评价，保留 LOTUS 原方法及全局
 近期研究集中于[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)：
 固定逻辑计划、模型、prompt 与生成规则，检验依赖范围细化及有限物理重组是否改善完整查询。
 普通／级联 Filter 是方法参照、无机会反例与全局依赖场景；扩大单 Filter 并发本身不作为研究增量。
-研究优先沿已合法就绪的记录推进后继，复用显式 `record_local_sections`；这不表示 main 默认已改，
-同步 fused 仍作低开销强对照，普通 records 的同步／异步与固定／动态配置另按[接口](code/src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)区分。
+近期优先验证合法记录的后继推进；实际默认、接入与资格从[代码状态](code/INFRA_STATUS.md#record-local-sections-c827)核对。
 
 records→结果独立建设，旧 request 接点按实际适用范围复用。LOTUS 目标配置为 Daft 扫描／普通关系处理
 加 Ray Core／Actor，SemLoom 自管准备、供给与回收；Ray Data、Daft、IMLane 对照各自原生执行。

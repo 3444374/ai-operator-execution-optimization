@@ -1,14 +1,23 @@
 # 实验与机制证据台账
 
 <a id="record-layout-comparison-interpretation"></a>
-## 2026-10-29：已有执行布局对照的解释边界
+## 2026-10-29：416调用布局对照的解释边界
 
-本条按既有交接的短标识`464`／`416`校正解释，不新增模型运行或原件复算；完整来源、原报告和校验值仍经原artifact交接取得。
-`416`比较的是fused C1与record C4，两条路径的启动流程、进程／owner布局及并发不同，不能称同一配置在main合并前后的回归。
-两臂工作段为21.976／7.857秒，全程为64.018／66.408秒；工作段变短不表示完整过程变快，启动与收尾也不能事后删去。
-已有7条Map输出差异、输出token合计1004／1013；没有逐记录gold不能判哪臂质量更好，实际工作量差异须单列。
-这些时间不能单独归因于记录粒度；已有`464`／`416`外层API及资源观察也未证明计算、HBM、host带宽或H2D瓶颈。
+运行`record-local-observation-230789c4-20261028-r2`比较fused C1与record C4，每臂208次调用（128 Filter＋80 Map），合计416次。
+两条路径的启动流程、进程／owner布局及并发不同，不能称同一配置在main合并前后的回归，也不能单独归因于记录粒度。
+
+| 执行配置 | 工作窗口（秒） | 监督器`elapsed_s`（秒） | 全208次调用的输出token | 其中80次Map的输出token |
+|---|---|---|---|---|
+| fused C1 | 21.975702 | 64.018396 | 1004 | 492 |
+| record C4 | 7.856900 | 66.408121 | 1013 | 501 |
+
+工作窗口从首次`model_submit`到最后一次`result_receive`，全程为监督器`elapsed_s`；工作窗口变短不表示全程变快，启动与收尾不能事后删去。
+独立离线复算确认7条Map文本不同。本次未做对应的gold／evaluator质量评价，不能据输出差异判断哪臂质量更好；任务gold为query级时仍可按原evaluator评价，不要求补造逐记录标签。
+外层API及资源观察尚未证明计算、HBM、host带宽或H2D瓶颈。
 后续同配置对照须固定生命周期与并发，再改变一个待验选项；应用质量按[gold口径](../plans/reference/对照规范.md#quality-equivalence-work)评价，旧严格等价失败不改判通过。
+
+保留原件`RESULT.json`的SHA-256为`7cabc7a4bbfab7571ee1b584a7acc5ea8d052b1f3f9768d8ea9331cffb40ad5f`，
+`RESOURCE_COMPARISON.json`的SHA-256为`40ccbff53e866161eb91c650d154aa1da46ea8388f8e9ed21dfaed7d19a47083`；按上述运行标识、成员名和摘要经既有artifact交接取得。
 
 <a id="finite-query-token-local-cpu"></a>
 ## 2026-10-28：完整F/M查询token配置的本地接线检查

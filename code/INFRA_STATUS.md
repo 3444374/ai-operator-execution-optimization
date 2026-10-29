@@ -86,7 +86,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | 字节限制与阶段预算组合对照 | 14 项 CPU 检查仅覆盖参考实现，尚未使用真实执行接口 | 否，当前为参考实现 | 本轮 14 项 CPU 检查回报 | 公共阶段具备真实接口后，按同一查询验证这一简单对照，不能把模拟结果当原生系统结果 |
 | 普通输入准备 | 已有`TaskPreparation`接口，普通准备尚未使用它；静态／原生路径的准备批次与Core显式async仍在，Core的B1限制不能只删检查就解除 | 已有接口、实际准备接入仍缺；不是配置被废弃 | [接口定义](src/scheduling/core/session_contract.py)、[Core入口](src/execution_provider/adapters/lotus_records_core.py) | 在已有输入／结果身份和准备输出容量合同上实现，核取消、持有和归还；本轮不把大批次或物理释放写成已支持 |
 | 最终结果消费的字节预算 | 执行程序仍积累 `raw` 结果，尚未把消费期间持有的数据纳入统一字节预算 | 否，当前缺项 | 本轮完整查询与内存检查回报 | 记录真实消费者和最后使用时刻，纳入字节预算并验证慢消费；模型完成不能代替结果已消费 |
-| 公共物理阶段描述与实测 | 已有外层事件和资源观察，CPU准备、IPC／传输／排队、模型、消费、关系依赖及表示展开／驻留／释放仍需公共描述与完整时间线；画像只作支撑 | 仍需补齐阶段观测，不是已经定位硬件瓶颈 | [架构中的目标](../experiments/plans/系统架构.md#physical-stage-research-goal)、[观测方案](../experiments/plans/数据组织.md#dag-resource-observation) | 先选一个完整查询补实际缺项；计算型／访存型只是例子，不预设瓶颈或自动向别的链迁移 |
+| 公共物理阶段描述与实测 | 已有外层事件和资源观察，公共阶段描述与完整时间线尚未齐备；画像只作支撑 | 仍需补齐阶段观测，不是已经定位硬件瓶颈 | [架构中的目标](../experiments/plans/系统架构.md#physical-stage-research-goal)、[观测方案](../experiments/plans/数据组织.md#dag-resource-observation) | 先选一个完整查询补实际缺项，不预设瓶颈或自动向别的链迁移 |
 | 后继优先、反序与等待老化 | PR72已恢复9231f088原driver及ready时钟修正，并透传完整F/M查询选项。原两轮约10%变慢及输出差异保留 | 已合入main；两后继臂各48次正常完成，均无竞争选择 | [本地候选](#finite-query-successor-candidate)、[原对照与负结果](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair) | 功能正常不等于优先效果；本轮未触发争用，轮转/FIFO各自默认保持，不把当前fresh-query接口称为历史resident first/reuse复现 |
 | 跨模型、任意依赖图、预加载、多 GPU 与查询时限策略 | 本轮暂缓，不作为以上工作的前置项 | 否，暂缓 | 当前研究范围 | 先完成单卡完整查询和公共阶段实测，再按实际问题决定是否需要扩展 |
 
@@ -141,7 +141,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 原候选基于`77fe087b`，已与main`43a463b6`本地组合并通过36项CPU检查；`SemLoomRecordChainCore(..., execution="record_local_sections", token_budget=budget)`
 复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
 默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token，Extract、角色切换及fused明确拒绝该组合。
-这里的 `token_budget` 是在途上限 W：按每条实际完整消息的估计输入 token 加阶段输出 cap 预留，确认终态后归还，unknown继续持有；它没有决定一批成员和批次边界。
+这里的 `token_budget` 是在途上限 W：按每条实际完整消息的估计输入 token 加阶段输出 cap 预留。取消或unknown本身不释放W；权威终态或现有协议确认的生产者退出证明可结算预留，后者不将unknown结果改为成功。它没有决定一批成员和批次边界。
 用户原目标是以每批累计 token 上限 B 代替固定行数作为主要组批条件。现有[文本组批器](src/data/materializers/text.py)和[待提交批次组件](src/scheduling/organization/batching.py)已有相应逻辑，但尚未接入当前完整记录链。
 W应保留为较高的安全护栏，与B和请求数C分开；输入／输出估计不等于实际计算量或物理KV用量。接口细节见[adapter说明](src/execution_provider/adapters/README.md#chain-token-batching-boundary)。
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
