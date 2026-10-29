@@ -4,6 +4,7 @@
 
 | 内容 | 入口 | 职责 |
 |---|---|---|
+| 执行优化配置 | [执行配置与优化开关](执行配置与优化开关.md) | 唯一配置总览：源码默认、适用路径、开启时机、组合限制与测试效果；开发中选项单列 |
 | 文献、研究分析与方法依据 | [research/](research/README.md) | 回答已有工作、研究问题、指标选择与可验证假设 |
 | 历史工程设计与实施记录 | [archive/engineering/](archive/engineering/README.md) | 按原日期追溯设计；现行实现从源码核对 |
 | 已结束的开题及旧PPT工程 | [archive/opening/](archive/opening/README.md) | 保存历史报告、人工修改、发布快照与复现材料 |

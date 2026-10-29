@@ -5,6 +5,7 @@
 
 | 对象 | 接口说明 |
 |---|---|
+| 执行优化的配置与开关 | [统一总览](../docs/执行配置与优化开关.md)：默认、开启时机、组合限制、实测效果及开发中边界 |
 | LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
 | Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
 | 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) |
@@ -13,16 +14,7 @@
 
 ## 文本Map诊断选项
 
-下列可选接口保留各自用途，实际默认以源码为准；完整数字与失败只从对应报告读取。
-
-| 选项 | 使用要求与现状 | 结果来源 |
-|---|---|---|
-| `RayMapConfig.worker_pool` | 默认 `None` 由查询创建；显式池由调用方在已连接的 Ray 中创建，查询独占借用并核对模型／容量；创建者保持连接，未确认错误后停止借用 | [worker 复用](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md) |
-| `RayMapConfig.payload_backend` | 默认 `daft`，`arrow` 为显式直接分批对照；完整行请求、身份与取消不变 | [Arrow 实际模型](../experiments/results/postgresql/text_map_arrow_real_20261003/README.md) |
-| `RayMapConfig.preparation` | 默认 `None`；准备借用、复制空间和未知调用责任分开，原型不推荐启用 | [准备分段与真实负结果](../experiments/results/postgresql/text_map_preparation_validation_20261004/README.md) |
-| `coalesce_queued_preparation` | 默认 `False`；尾块追加仅保留显式诊断 | [追加与返回等待](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md) |
-| `remote_budget_mode=batched` | 默认逐行同步；显式批量最多合并 16 条已就绪记录，下次推进持久提交后才能 RPC，额度不足整批拒绝，不等待未来请求 | [批量记账负结果](../experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
-| 共享预付观察、线程记账与就绪窗口等待 | 保留原诊断身份；共享观察未进入正式查询入口，就绪等待仅保留补丁；不从局部计数变快推导完整查询收益 | [共享观察](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)、[线程记账](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[窗口反例](../experiments/results/diagnostics/ready_window_coalescing_20261003/README.md) |
+worker复用、Daft／Arrow物化、准备分段、尾块追加和实验记账的默认、约束与原测试效果统一见[配置总览的PG／HTTP部分](../docs/执行配置与优化开关.md#pg-http)，本页不维护第二份开关表。
 
 新 RPC 组合和共享准备的采用条件归[数据组织方案](../experiments/plans/数据组织.md#execution-engineering-hypotheses)。
 
