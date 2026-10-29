@@ -176,6 +176,117 @@ See [controlled async IPC tests](../../../tests/execution_provider/test_lotus_re
 [method/request differentials](../../../tests/semantic_methods/test_lotus_chain_composition.py)
 and [current scope](../../../INFRA_STATUS.md#record-local-completion-progression).
 
+<a id="prepared-request-batching"></a>
+## Optional prepared-request submission batches
+
+The synchronous `execution="fused"` entry accepts an independent application batch
+configuration. Its default `prepared_batching=None` keeps the previous submission
+boundaries and performs no additional tokenization. For a fixed-row/token comparison:
+
+```python
+from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+from src.semantic_methods.lotus.records import RecordsResources
+
+# Use the same engine, resources, chain and source for each separate owner/run.
+resources = RecordsResources(cpu_workers=1, model_batch_rows=32, max_active_batches=1)
+fixed = PreparedBatching("fixed_rows", max_rows=32)
+tokens = PreparedBatching("token_budget", max_rows=None, token_budget=17506)
+owner = SemLoomRecordChainCore(engine, resources, prepared_batching=tokens)
+rows = owner.evaluate(source, chain, expected=expected, query_id=chain.query_id)
+try:
+    result = list(rows)
+finally:
+    report = owner.close()
+groups = owner.request_batches
+```
+
+These numbers are example capacities, not calibrated recommendations. In token mode,
+`max_rows=None` means **no application batch row limit**; omitting `max_rows` also
+selects None. B, the independent logical-byte allowance and successful source EOF
+determine the groups. `resources.model_batch_rows` is only a read chunk size;
+neither it nor `EngineSpec.max_num_seqs` closes an application token batch.
+No larger fixed row number is substituted. Core's stage-call accounting uses the
+whole query's already-declared call upper bound, which cannot limit any individual
+batch and is never passed to the batcher.
+
+Fixed-row mode requires a positive `max_rows` and retains the existing bounded
+fused behavior (`max_rows <= model_batch_rows`) for the row-based control. An explicit
+positive row cap in token mode is accepted only for compatibility with historical
+limited configurations. In particular, the old B=17506/max_rows=128 measurement
+remains a row-capped result; it does not qualify the no-row-limit token target.
+Future SemBench runs for that target must record `"max_rows": null`, and keep
+byte/context/engine capacities separately visible. Do not change a running unit's
+configuration or reinterpret its old measurements.
+
+The cross-read token path currently accepts **one Filter or one Map stage**, one
+deployment and one role. Multi-stage token chains fail before source consumption
+and model preflight, rather than silently keeping the old per-block splits. The
+original fixed-row chains remain available. Successor buffering/re-estimation
+across a multi-stage chain is pending; no new operator barriers or pipeline modes
+are introduced. Extract and `record_local_sections` reject prepared batching.
+The existing serial requirement `cpu_workers=max_active_batches=1` remains.
+The tokenizer must own the chat template (`EngineSpec.chat_template=None`).
+
+The original method creates complete chat messages. A local tokenizer counts the
+full rendered prompt; each request adds the stage's `generation.max_tokens` output
+cap. **B** targets the sum of these token estimates in one application submission.
+It is configurable independently of the number of concurrent batches **C**, which
+remains 1 in this candidate. Increasing B can put more short requests in each list;
+it does not increase C. A single request's context limit and vLLM's internal
+scheduled-token budget are separate constraints, not limits on application B.
+A budget oversize request is submitted intact as an explicitly flagged singleton;
+no prompt is truncated or split.
+
+`PendingBatchBuilder` retains a partial batch across read chunks. It closes at B,
+before the next complete request would exceed B, at the independent byte guard,
+or on successful source EOF. Only an explicitly configured legacy row cap can
+produce a `max_rows` flush. An arbitrary read tail does not flush. The
+source is finite and synchronously available; timed/blocked-source flush is not
+implemented. The existing `CoreChainCapacity.item_input_bytes` separately guards
+the complete wire rows: raw records, prepared messages and prepared identities.
+The charge includes JSON framing and escaping. A single request beyond that
+byte allowance fails before submission. There can be one bounded lookahead request;
+these are logical buffer limits, not a whole-query RSS or GPU-memory bound. Expected
+source declarations, audit/consumer ledgers and worker copies remain outside them.
+
+Each selected group enters the existing worker/private process and native synchronous
+`LLM.chat(list)` API. The token producer prepares and estimates each request once;
+the worker reuses those messages and costs, validates source/call identities and order,
+and checks their method/deployment/generation/policy signature and B bounds. Only
+scalar cost/flush information and that signature use bounded control metadata;
+prepared messages remain in charged input. The same method interpreter consumes
+the responses. Fixed-row and disabled paths keep their original preparation behavior.
+Charging the complete wire row may close a byte-limited group earlier than the old
+raw-record-plus-message estimate. vLLM owns internal scheduling and may process a list larger than its
+running-sequence capacity; the adapter does not cut it at `max_num_seqs`.
+
+`owner.request_batches` retains group IDs, membership, token/output-cap costs,
+flush reasons (`token_budget`, `max_rows`, `max_bytes`, `source_exhausted`) and
+oversize flags. Per-call results remain authoritative for acceptance and usage.
+Failed/malformed replies, cancellation or deadline stop further batches. Known
+prefix facts survive; unsent source rows do not become unknown model work. An
+uncertain attempted batch keeps the original Core credit and cleanup responsibility.
+There is no retry or model lifetime change. The disabled default remains unchanged
+and does no additional tokenizer work.
+
+The separate record-local `token_budget` argument controls in-flight work **W** and
+remains off by default; this serial B path does not combine it with C or W. The
+existing low-level `PendingBatchBuilder.set_token_budget` only allows changes while
+a batch is empty. Runtime feedback has not been connected to that boundary here:
+this candidate uses a constant configured B. Future joint B/C feedback is research,
+not part of this fix. Historical concurrency sweeps are not evidence of a B sweep;
+the new CPU cases vary B at fixed C solely to verify membership behavior.
+
+[CPU query/IPC cases](../../../tests/execution_provider/test_lotus_prepared_batching.py)
+exercise the real Core entry, original LOTUS methods and private process protocol with
+deterministic inference. [Reuse checks](../../../tests/execution_provider/test_lotus_prepared_reuse.py)
+compare native input/parameters/results, count preparation/estimation passes and reject
+changed identities or configurations. This reuse revision has CPU coverage only;
+it does not attribute the whole historical API gap to preparation or establish a GPU speedup.
+Real tokenizer/model/GPU performance and output-quality
+comparison remain pending; [qualification status](../../../INFRA_STATUS.md#prepared-request-batching)
+records this boundary.
+
 ## Optional method-ready successor selection
 
 The generic `MethodDriver` still defaults to `round_robin`; `LotusChainFIFO` and

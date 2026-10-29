@@ -1,5 +1,9 @@
 # 原生基线与具名 Core 历史复现
 
+无行数上限修正改变了维护版`batching.py`；五份历史投影共享[原f3文件](historical_sources/f3c259ac/code/src/scheduling/organization/batching.py)的单份精确副本，只追加五条override。旧逐文件SHA、投影ID、来源及已有映射不变；当前组批运行时继续使用维护版无行数上限逻辑，不导入此副本。
+
+token组批的纯回执校验抽取改变了维护版`engine.py`；五份历史投影共享[原a421文件](historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py)的单份精确副本，只追加五条override。原逐文件SHA、投影ID、来源及已有映射不变；维护运行时不导入此副本。
+
 动态查询入口更新另为十一份受影响旧文件各保留一个精确副本，由五种历史复现共享23条新增来源映射。旧哈希、投影ID、来源与已有映射不变；这些冻结副本仅供无Git源码包还原，不参与维护版执行。
 
 可选逐记录查询的代码变化为五份受影响旧文件各保留一个精确副本，五种复现按需共享；只追加21条来源映射，原文件哈希、版本摘要及已有映射保持。

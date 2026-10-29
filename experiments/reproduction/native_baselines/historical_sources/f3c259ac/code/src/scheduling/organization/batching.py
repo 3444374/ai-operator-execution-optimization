@@ -1,0 +1,480 @@
+"""Engine-independent pending batch construction from complete row requests."""
+
+from __future__ import annotations
+
+import math
+import time
+from dataclasses import dataclass
+from typing import Callable, Generic, Iterable, Iterator, Protocol, TypeVar
+
+from ..submission_control.flush import FlushObservation, FlushWindow
+from .token_budget import (
+    ArrivalRateEwma,
+    TokenBudgetDecision,
+    TokenBudgetObservation,
+)
+
+
+def _is_non_negative_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+@dataclass(frozen=True)
+class RowArrival:
+    """Metadata for one complete request entering the pending batch."""
+
+    row_id: str
+    arrival_s: float
+    prompt_tokens: int
+    estimated_output_tokens: int
+    prefix_key: str
+    payload_ref: object
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.row_id, str) or not self.row_id:
+            raise ValueError("row_id must be non-empty")
+        if not isinstance(self.arrival_s, (int, float)) or isinstance(
+            self.arrival_s, bool
+        ) or not math.isfinite(self.arrival_s) or self.arrival_s < 0:
+            raise ValueError("arrival_s must be finite and non-negative")
+        if not _is_non_negative_int(self.prompt_tokens):
+            raise ValueError("prompt token count must be a non-negative integer")
+        if not _is_non_negative_int(self.estimated_output_tokens):
+            raise ValueError(
+                "estimated output token count must be a non-negative integer"
+            )
+        if not isinstance(self.prefix_key, str):
+            raise ValueError("prefix_key must be a string")
+        if self.payload_ref is None:
+            raise ValueError("payload_ref must not be None")
+
+    @property
+    def estimated_total_tokens(self) -> int:
+        return self.prompt_tokens + self.estimated_output_tokens
+
+
+@dataclass(frozen=True)
+class PendingBatch:
+    """A closed, ordered batch of complete row requests."""
+
+    rows: tuple[RowArrival, ...]
+    prompt_tokens: int
+    estimated_output_tokens: int
+    oldest_arrival_s: float
+
+    @property
+    def row_count(self) -> int:
+        return len(self.rows)
+
+    @property
+    def estimated_total_tokens(self) -> int:
+        return self.prompt_tokens + self.estimated_output_tokens
+
+
+class PendingBatchBuilder:
+    """Accumulates complete rows until a row or token capacity is reached."""
+
+    def __init__(self, max_rows: int, token_budget: int) -> None:
+        if not _is_non_negative_int(max_rows) or max_rows == 0:
+            raise ValueError("max_rows must be a positive integer")
+        if not _is_non_negative_int(token_budget):
+            raise ValueError("token_budget must be a non-negative integer")
+        self._max_rows = max_rows
+        self._token_budget = token_budget
+        self._rows: list[RowArrival] = []
+        self._prompt_tokens = 0
+        self._estimated_output_tokens = 0
+        self._capacity_reached = False
+
+    @property
+    def token_budget(self) -> int:
+        return self._token_budget
+
+    def set_token_budget(self, token_budget: int) -> None:
+        """Set the next batch budget before its first row is admitted."""
+        if self._rows:
+            raise RuntimeError("token budget cannot change inside an open batch")
+        if not _is_non_negative_int(token_budget):
+            raise ValueError("token_budget must be a non-negative integer")
+        self._token_budget = token_budget
+
+    def would_exceed_token_budget(self, row: RowArrival) -> bool:
+        """Report whether a later complete row requires a new token batch."""
+        if not isinstance(row, RowArrival):
+            raise ValueError("row must be a RowArrival")
+        return (
+            bool(self._rows)
+            and self._token_budget > 0
+            and (
+                self._prompt_tokens
+                + self._estimated_output_tokens
+                + row.estimated_total_tokens
+                > self._token_budget
+            )
+        )
+
+    def add(self, row: RowArrival) -> bool:
+        """Add a complete row and report whether this batch must now close."""
+        if self._capacity_reached:
+            raise RuntimeError("batch capacity reached; call close() before adding")
+        if not isinstance(row, RowArrival):
+            raise ValueError("row must be a RowArrival")
+
+        self._rows.append(row)
+        self._prompt_tokens += row.prompt_tokens
+        self._estimated_output_tokens += row.estimated_output_tokens
+        self._capacity_reached = (
+            len(self._rows) >= self._max_rows
+            or (
+                self._token_budget > 0
+                and self._prompt_tokens + self._estimated_output_tokens
+                >= self._token_budget
+            )
+        )
+        return self._capacity_reached
+
+    def close(self) -> PendingBatch:
+        """Close the current batch and reset the builder for the next one."""
+        if not self._rows:
+            raise ValueError("cannot close an empty pending batch")
+
+        batch = PendingBatch(
+            rows=tuple(self._rows),
+            prompt_tokens=self._prompt_tokens,
+            estimated_output_tokens=self._estimated_output_tokens,
+            oldest_arrival_s=min(row.arrival_s for row in self._rows),
+        )
+        self._rows = []
+        self._prompt_tokens = 0
+        self._estimated_output_tokens = 0
+        self._capacity_reached = False
+        return batch
+
+
+class ReplayClock(Protocol):
+    """Monotonic clock boundary used by arrival replay."""
+
+    def now(self) -> float:
+        ...
+
+    def wait_until(self, deadline_s: float) -> None:
+        ...
+
+
+class SystemReplayClock:
+    """Wall-clock replay implementation backed only by monotonic time."""
+
+    def now(self) -> float:
+        return time.monotonic()
+
+    def wait_until(self, deadline_s: float) -> None:
+        while (delay_s := deadline_s - self.now()) > 0:
+            time.sleep(delay_s)
+
+
+@dataclass(frozen=True)
+class ReplayServiceObservation:
+    fresh: bool
+    running: int | None
+    waiting: int | None
+    kv_usage: float | None
+    service_rate_tokens_s_per_endpoint: float | None = None
+
+
+@dataclass(frozen=True)
+class FlushTraceEvent:
+    elapsed_s: float
+    pending_rows: int
+    pending_tokens: int
+    oldest_age_s: float
+    action: str
+    reason: str
+    selected_wait_s: float = 0.0
+    window_reason: str = ""
+    selected_token_budget: int = 0
+    token_budget_reason: str = ""
+    arrival_rate_tokens_s: float | None = None
+    service_rate_tokens_s_per_endpoint: float | None = None
+
+
+class _FlushPolicy(Protocol):
+    def select_window(self, observation: FlushObservation) -> FlushWindow:
+        ...
+
+
+class _TokenBudgetPolicy(Protocol):
+    def select(
+        self,
+        observation: TokenBudgetObservation,
+    ) -> TokenBudgetDecision:
+        ...
+
+
+ReplayResult = TypeVar("ReplayResult")
+
+
+class ArrivalReplayBatcher(Generic[ReplayResult]):
+    """Lazily replay row arrivals and close batches through a flush policy."""
+
+    def __init__(
+        self,
+        rows: Iterable[RowArrival],
+        builder_factory: Callable[[], PendingBatchBuilder],
+        flush_policy: _FlushPolicy,
+        close_batch: Callable[[PendingBatch], ReplayResult],
+        service_observation: Callable[[], ReplayServiceObservation],
+        clock: ReplayClock,
+        arrival_time_scale: float = 1.0,
+        token_budget_policy: _TokenBudgetPolicy | None = None,
+        arrival_rate_ewma_alpha: float = 0.3,
+    ) -> None:
+        if (
+            not isinstance(arrival_time_scale, (int, float))
+            or isinstance(arrival_time_scale, bool)
+            or not math.isfinite(arrival_time_scale)
+            or arrival_time_scale <= 0
+        ):
+            raise ValueError("arrival_time_scale must be finite and positive")
+        self._rows = rows
+        self._builder_factory = builder_factory
+        self._flush_policy = flush_policy
+        self._close_batch = close_batch
+        self._service_observation = service_observation
+        self._clock = clock
+        self._arrival_time_scale = float(arrival_time_scale)
+        self._token_budget_policy = token_budget_policy
+        self._arrival_rate = ArrivalRateEwma(arrival_rate_ewma_alpha)
+        self._trace: list[FlushTraceEvent] = []
+
+    @property
+    def trace(self) -> tuple[FlushTraceEvent, ...]:
+        return tuple(self._trace)
+
+    def __iter__(self) -> Iterator[ReplayResult]:
+        self._trace = []
+        source = iter(self._rows)
+        first = self._next_validated(source, previous_arrival_s=None)
+        if first is None:
+            return
+
+        origin_arrival_s = first.arrival_s
+        previous_arrival_s = first.arrival_s
+        replay_start_s = self._clock.now()
+        next_row: RowArrival | None = first
+        next_deadline_s = replay_start_s
+        builder = self._builder_factory()
+        if not isinstance(builder, PendingBatchBuilder):
+            raise ValueError("builder_factory must return PendingBatchBuilder")
+
+        while next_row is not None:
+            now_s = self._clock.now()
+            if next_deadline_s > now_s:
+                self._clock.wait_until(next_deadline_s)
+
+            service = self._service_observation()
+            arrival_rate = self._arrival_rate.observe(
+                arrival_s=next_row.arrival_s,
+                tokens=next_row.estimated_total_tokens,
+                time_scale=self._arrival_time_scale,
+            )
+            budget_decision = (
+                self._token_budget_policy.select(
+                    TokenBudgetObservation(
+                        arrival_rate_tokens_s=arrival_rate,
+                        service_rate_tokens_s_per_endpoint=(
+                            service.service_rate_tokens_s_per_endpoint
+                        ),
+                    )
+                )
+                if self._token_budget_policy is not None
+                else TokenBudgetDecision(
+                    builder.token_budget,
+                    "builder_static",
+                )
+            )
+            if builder.token_budget > 0:
+                builder.set_token_budget(budget_decision.token_budget)
+
+            pending_oldest_deadline_s = next_deadline_s
+            pending_rows = 1
+            pending_tokens = next_row.estimated_total_tokens
+            budget_reached = builder.add(next_row)
+            following = self._next_validated(
+                source,
+                previous_arrival_s=previous_arrival_s,
+            )
+            if following is None:
+                next_row = None
+            else:
+                previous_arrival_s = following.arrival_s
+                next_row = following
+                next_deadline_s = replay_start_s + (
+                    following.arrival_s - origin_arrival_s
+                ) * self._arrival_time_scale
+
+            now_s = self._clock.now()
+            window = self._flush_policy.select_window(
+                FlushObservation(
+                    now_s=now_s,
+                    oldest_arrival_s=pending_oldest_deadline_s,
+                    pending_rows=pending_rows,
+                    pending_cost=pending_tokens,
+                    budget_reached=budget_reached,
+                    metrics_fresh=service.fresh,
+                    running=service.running,
+                    waiting=service.waiting,
+                    kv_usage=service.kv_usage,
+                    token_budget=builder.token_budget,
+                    arrival_rate_tokens_s=arrival_rate,
+                    service_rate_tokens_s_per_endpoint=(
+                        service.service_rate_tokens_s_per_endpoint
+                    ),
+                )
+            )
+            selected_deadline_s = (
+                pending_oldest_deadline_s + window.wait_s
+            )
+            self._record_trace(
+                replay_start_s,
+                now_s,
+                pending_rows,
+                pending_tokens,
+                pending_oldest_deadline_s,
+                "wait" if window.wait_s > 0 and not budget_reached else "flush",
+                (
+                    f"{window.reason}_wait"
+                    if window.wait_s > 0 and not budget_reached
+                    else "budget_reached"
+                    if budget_reached
+                    else window.reason
+                ),
+                selected_wait_s=window.wait_s,
+                window_reason=window.reason,
+                budget_decision=budget_decision,
+                arrival_rate_tokens_s=arrival_rate,
+                service_rate_tokens_s_per_endpoint=(
+                    service.service_rate_tokens_s_per_endpoint
+                ),
+            )
+
+            flush_reason = window.reason
+            while not budget_reached and window.wait_s > 0:
+                if next_row is None:
+                    flush_reason = "end_of_input"
+                    break
+                if builder.would_exceed_token_budget(next_row):
+                    flush_reason = "token_budget_membership"
+                    break
+                if next_deadline_s > selected_deadline_s:
+                    now_s = self._clock.now()
+                    if selected_deadline_s > now_s:
+                        self._clock.wait_until(selected_deadline_s)
+                    break
+
+                now_s = self._clock.now()
+                if next_deadline_s > now_s:
+                    self._clock.wait_until(next_deadline_s)
+                pending_rows += 1
+                pending_tokens += next_row.estimated_total_tokens
+                self._arrival_rate.observe(
+                    arrival_s=next_row.arrival_s,
+                    tokens=next_row.estimated_total_tokens,
+                    time_scale=self._arrival_time_scale,
+                )
+                budget_reached = builder.add(next_row)
+                following = self._next_validated(
+                    source,
+                    previous_arrival_s=previous_arrival_s,
+                )
+                if following is None:
+                    next_row = None
+                else:
+                    previous_arrival_s = following.arrival_s
+                    next_row = following
+                    next_deadline_s = replay_start_s + (
+                        following.arrival_s - origin_arrival_s
+                    ) * self._arrival_time_scale
+
+            if budget_reached:
+                flush_reason = "budget_reached"
+            now_s = self._clock.now()
+            self._record_trace(
+                replay_start_s,
+                now_s,
+                pending_rows,
+                pending_tokens,
+                pending_oldest_deadline_s,
+                "flush",
+                flush_reason,
+                selected_wait_s=window.wait_s,
+                window_reason=window.reason,
+                budget_decision=budget_decision,
+                arrival_rate_tokens_s=arrival_rate,
+                service_rate_tokens_s_per_endpoint=(
+                    service.service_rate_tokens_s_per_endpoint
+                ),
+            )
+            yield self._close_batch(builder.close())
+
+    @staticmethod
+    def _next_validated(
+        source: Iterator[RowArrival],
+        previous_arrival_s: float | None,
+    ) -> RowArrival | None:
+        try:
+            row = next(source)
+        except StopIteration:
+            return None
+        try:
+            arrival_s = row.arrival_s
+        except (AttributeError, TypeError):
+            raise ValueError(
+                "arrival_s must be present, finite, and non-negative"
+            ) from None
+        if (
+            not isinstance(arrival_s, (int, float))
+            or isinstance(arrival_s, bool)
+            or not math.isfinite(arrival_s)
+            or arrival_s < 0
+        ):
+            raise ValueError("arrival_s must be finite and non-negative")
+        if previous_arrival_s is not None and arrival_s < previous_arrival_s:
+            raise ValueError("arrival_s values must be non-decreasing")
+        if not isinstance(row, RowArrival):
+            raise ValueError("rows must contain RowArrival values")
+        return row
+
+    def _record_trace(
+        self,
+        replay_start_s: float,
+        now_s: float,
+        pending_rows: int,
+        pending_tokens: int,
+        oldest_deadline_s: float,
+        action: str,
+        reason: str,
+        *,
+        selected_wait_s: float,
+        window_reason: str,
+        budget_decision: TokenBudgetDecision,
+        arrival_rate_tokens_s: float | None,
+        service_rate_tokens_s_per_endpoint: float | None,
+    ) -> None:
+        self._trace.append(
+            FlushTraceEvent(
+                elapsed_s=now_s - replay_start_s,
+                pending_rows=pending_rows,
+                pending_tokens=pending_tokens,
+                oldest_age_s=now_s - oldest_deadline_s,
+                action=action,
+                reason=reason,
+                selected_wait_s=selected_wait_s,
+                window_reason=window_reason,
+                selected_token_budget=budget_decision.token_budget,
+                token_budget_reason=budget_decision.reason,
+                arrival_rate_tokens_s=arrival_rate_tokens_s,
+                service_rate_tokens_s_per_endpoint=(
+                    service_rate_tokens_s_per_endpoint
+                ),
+            )
+        )

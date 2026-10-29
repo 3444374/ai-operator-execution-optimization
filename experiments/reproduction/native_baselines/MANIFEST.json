@@ -595,6 +595,8 @@
         "code/tests/serving/test_async_engine_process.py": "8bcfd15d4291f26c6b31c16f32b87f8d60953b342bb8b1e760ea2b24974b63e4"
       },
       "overrides": {
+        "code/src/scheduling/organization/batching.py": "historical_sources/f3c259ac/code/src/scheduling/organization/batching.py",
+        "code/src/semantic_methods/lotus/engine.py": "historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py",
         "code/src/baselines/text/frameworks/daft_lotus_records.py": "variants/native_isolated_and_imlane/code/src/baselines/text/frameworks/daft_lotus_records.py",
         "code/src/experiments/movie_records_matrix.py": "variants/native_isolated_and_imlane/code/src/experiments/movie_records_matrix.py",
         "code/src/experiments/movie_records_session.py": "variants/native_isolated_and_imlane/code/src/experiments/movie_records_session.py",
@@ -1279,6 +1281,8 @@
         "code/tests/serving/test_native_resource_feedback.py": "30e6eb18e668ab9a95f0b4858870b51117cb5509f7370dd6554650ad8fdfe6f1"
       },
       "overrides": {
+        "code/src/scheduling/organization/batching.py": "historical_sources/f3c259ac/code/src/scheduling/organization/batching.py",
+        "code/src/semantic_methods/lotus/engine.py": "historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py",
         "code/src/baselines/text/frameworks/daft_lotus_records.py": "variants/core_original_dynamic/code/src/baselines/text/frameworks/daft_lotus_records.py",
         "code/src/execution_provider/adapters/lotus_records_core.py": "variants/core_original_dynamic/code/src/execution_provider/adapters/lotus_records_core.py",
         "code/src/experiments/lotus_records_movie.py": "variants/core_original_dynamic/code/src/experiments/lotus_records_movie.py",
@@ -1981,6 +1985,8 @@
         "code/tests/serving/work_aware_fixture.py": "6107eb0c130c05479b586c97b536cc25e4245bdccd3f6a2cbb1cce227ddf2e85"
       },
       "overrides": {
+        "code/src/scheduling/organization/batching.py": "historical_sources/f3c259ac/code/src/scheduling/organization/batching.py",
+        "code/src/semantic_methods/lotus/engine.py": "historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py",
         "code/src/baselines/text/frameworks/daft_lotus_records.py": "variants/core_local_window_pairs/code/src/baselines/text/frameworks/daft_lotus_records.py",
         "code/src/execution_provider/adapters/lotus_records_core.py": "variants/core_local_window_pairs/code/src/execution_provider/adapters/lotus_records_core.py",
         "code/src/experiments/lotus_records_movie.py": "variants/core_local_window_pairs/code/src/experiments/lotus_records_movie.py",
@@ -2689,6 +2695,8 @@
         "code/tests/serving/work_aware_fixture.py": "6107eb0c130c05479b586c97b536cc25e4245bdccd3f6a2cbb1cce227ddf2e85"
       },
       "overrides": {
+        "code/src/scheduling/organization/batching.py": "historical_sources/f3c259ac/code/src/scheduling/organization/batching.py",
+        "code/src/semantic_methods/lotus/engine.py": "historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py",
         "code/src/baselines/text/frameworks/daft_lotus_records.py": "variants/ray_runtime_reuse/code/src/baselines/text/frameworks/daft_lotus_records.py",
         "code/src/execution_provider/adapters/lotus_records_core.py": "variants/ray_runtime_reuse/code/src/execution_provider/adapters/lotus_records_core.py",
         "code/src/experiments/lotus_records_movie.py": "variants/ray_runtime_reuse/code/src/experiments/lotus_records_movie.py",
@@ -3400,6 +3408,8 @@
         "code/tests/serving/work_aware_fixture.py": "6107eb0c130c05479b586c97b536cc25e4245bdccd3f6a2cbb1cce227ddf2e85"
       },
       "overrides": {
+        "code/src/scheduling/organization/batching.py": "historical_sources/f3c259ac/code/src/scheduling/organization/batching.py",
+        "code/src/semantic_methods/lotus/engine.py": "historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py",
         "code/src/execution_provider/adapters/lotus_records_core.py": "variants/daft_single_thread_session/code/src/execution_provider/adapters/lotus_records_core.py",
         "code/src/experiments/lotus_records_movie.py": "variants/daft_single_thread_session/code/src/experiments/lotus_records_movie.py",
         "code/src/experiments/movie_matrix.README.md": "variants/daft_single_thread_session/code/src/experiments/movie_matrix.README.md",
