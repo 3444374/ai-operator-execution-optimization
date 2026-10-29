@@ -361,8 +361,8 @@ class PreparedBatchingTests(unittest.TestCase):
         rows = fixture.source_rows(column='text', size=7)
         for row in rows: row.values['text'] = 'short'
         run = self.chain.start_batch(rows); run.prepare()
-        charge = lambda record, row: (len(json.dumps([record_row(record)], ensure_ascii=False,
-            separators=(',', ':')).encode()) + len(row['messages_json'].encode()))
+        charge = lambda record, row: len(json.dumps([
+            dict(record_row(record), prepared=row)], ensure_ascii=False, separators=(',', ':')).encode())
         allowance = sum(sorted((charge(r, p) for r, p in zip(rows, run.prepared)), reverse=True)[:2])
         for guard, capacity, sizes, reason in (
                 (5, None, [5, 2], 'max_rows'),
@@ -395,7 +395,38 @@ class PreparedBatchingTests(unittest.TestCase):
         self.assertEqual(len(owner.calls), 1); self.assertEqual(owner.calls[0]['status'], 'succeeded')
         self.assertIs(owner.calls[0]['submission_confirmed'], True)
         self.assertEqual(report['core_usage']['held_tasks'], 0)
-        self.assertEqual(report['status'], 'closed'); self.assertFalse(report['query_completed'])
+        self.assertEqual(report['status'], 'closed', report); self.assertFalse(report['query_completed'])
+
+    def test_idle_reaper_first_after_buffer_error_confirms_API_and_preserves_prefix(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import _ChainTransport
+
+        original, reaped = _ChainTransport.close_worker, []
+
+        def reap_first(transport, timeout):
+            process = transport.worker.engine
+            self.assertTrue((transport.owner.control / 'stop').exists())
+            process._reaper.join(timeout=3)
+            self.assertFalse(process._reaper.is_alive())
+            reaped.append(process)
+            return original(transport, timeout)
+
+        rows = fixture.source_rows(column='text', size=2)
+        rows[0].values['text'], rows[1].values['text'] = 'short', 'long ' * 10000
+        run = self.chain.start_batch(rows[:1]); run.prepare()
+        cost = chat_token_count(self.tokenizer, _prepared(run.prepared)[1][0]) + 64
+        with patch.object(_ChainTransport, 'close_worker', reap_first):
+            owner, records, report, native, error = self.execute('token_budget', rows=rows,
+                read_rows=1, max_rows=None, budget=cost,
+                capacity=CoreChainCapacity(item_input_bytes=2048), allow_failure=True)
+        self.assertIsNotNone(error); self.assertEqual(len(native), 1)
+        self.assertEqual(len(owner.calls), 1); self.assertEqual(owner.calls[0]['status'], 'succeeded')
+        self.assertIs(owner.calls[0]['submission_confirmed'], True)
+        self.assertTrue(all(value == 0 for value in report['core_usage'].values()))
+        self.assertEqual(report['status'], 'closed', report)
+        self.assertTrue(report['model_owner']['engine_api']['engine_api_shutdown_confirmed'])
+        self.assertFalse(report['query_completed'])
+        self.assertTrue(reaped)
+        self.assertTrue(all(process._broken and process._closed for process in reaped))
 
     def test_empty_source_and_all_filtered_rows_complete_without_phantom_calls(self):
         owner, records, report, native, error = self.execute('token_budget', rows=[], read_rows=2)

@@ -243,14 +243,21 @@ or on successful source EOF. Only an explicitly configured legacy row cap can
 produce a `max_rows` flush. An arbitrary read tail does not flush. The
 source is finite and synchronously available; timed/blocked-source flush is not
 implemented. The existing `CoreChainCapacity.item_input_bytes` separately guards
-pending raw wire values plus prepared message bytes. A single request beyond that
+the complete wire rows: raw records, prepared messages and prepared identities.
+The charge includes JSON framing and escaping. A single request beyond that
 byte allowance fails before submission. There can be one bounded lookahead request;
 these are logical buffer limits, not a whole-query RSS or GPU-memory bound. Expected
 source declarations, audit/consumer ledgers and worker copies remain outside them.
 
 Each selected group enters the existing worker/private process and native synchronous
-`LLM.chat(list)` API. The worker rechecks the prepared messages against B before
-submission. vLLM owns internal scheduling and may process a list larger than its
+`LLM.chat(list)` API. The token producer prepares and estimates each request once;
+the worker reuses those messages and costs, validates source/call identities and order,
+and checks their method/deployment/generation/policy signature and B bounds. Only
+scalar cost/flush information and that signature use bounded control metadata;
+prepared messages remain in charged input. The same method interpreter consumes
+the responses. Fixed-row and disabled paths keep their original preparation behavior.
+Charging the complete wire row may close a byte-limited group earlier than the old
+raw-record-plus-message estimate. vLLM owns internal scheduling and may process a list larger than its
 running-sequence capacity; the adapter does not cut it at `max_num_seqs`.
 
 `owner.request_batches` retains group IDs, membership, token/output-cap costs,
@@ -272,7 +279,11 @@ the new CPU cases vary B at fixed C solely to verify membership behavior.
 
 [CPU query/IPC cases](../../../tests/execution_provider/test_lotus_prepared_batching.py)
 exercise the real Core entry, original LOTUS methods and private process protocol with
-deterministic inference. Real tokenizer/model/GPU performance and output-quality
+deterministic inference. [Reuse checks](../../../tests/execution_provider/test_lotus_prepared_reuse.py)
+compare native input/parameters/results, count preparation/estimation passes and reject
+changed identities or configurations. This reuse revision has CPU coverage only;
+it does not attribute the whole historical API gap to preparation or establish a GPU speedup.
+Real tokenizer/model/GPU performance and output-quality
 comparison remain pending; [qualification status](../../../INFRA_STATUS.md#prepared-request-batching)
 records this boundary.
 

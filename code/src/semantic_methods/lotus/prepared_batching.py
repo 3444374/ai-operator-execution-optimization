@@ -1,9 +1,23 @@
 """Submission batches of complete prepared requests; no admission or inference."""
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import hashlib
+import json
 
 from src.modalities.text.tokenization import chat_token_count
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.vllm_engine import _prepared
+
+
+def preparation_signature(stage, engine, batching):
+    """Bind reused estimates to the exact method, deployment and batch policy."""
+    value = dict(stage=stage.describe(), engine=asdict(engine), batching=asdict(batching))
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+        allow_nan=False, separators=(',', ':')).encode('utf-8')).hexdigest()
+
+
+def prepared_wire_row(row):
+    """Keep both source and prepared values in the charged Core input payload."""
+    return dict(row['source_row'], prepared={k: v for k, v in row.items() if k != 'source_row'})
 
 
 @dataclass(frozen=True)
