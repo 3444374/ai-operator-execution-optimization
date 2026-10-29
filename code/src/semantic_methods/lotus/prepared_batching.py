@@ -38,8 +38,8 @@ class PreparedRequestBatch:
 class PreparedRequestBatcher:
     """Pack one model deployment and generation configuration in input order.
 
-    The ready set is finite: its tail flushes immediately, without waiting for
-    more source rows. Oversize requests remain intact as singleton batches.
+    Read chunks do not close a batch. Only the source EOF closes its remaining
+    tail. Oversize requests remain intact as singleton batches.
     """
     def __init__(self, config, tokenizer):
         if type(config) is not PreparedBatching:
@@ -47,30 +47,55 @@ class PreparedRequestBatcher:
         self.config, self.tokenizer = config, tokenizer
 
     def batches(self, rows, generation):
-        _, conversations = _prepared(rows)
-        arrivals = [RowArrival(row['call_id'], 0.0, chat_token_count(self.tokenizer, conversation),
-            generation.max_tokens, '', index) for index, (row, conversation) in enumerate(zip(rows, conversations))]
+        # The worker still accepts a finite ready set; preserve its validation
+        # and presubmission estimation boundary for the existing callers.
+        _prepared(rows)
+        return tuple(self.iter_batches((rows,), generation, tail_reason='ready_exhausted'))
+
+    def iter_batches(self, chunks, generation, *, max_bytes=None, size=None,
+                     tail_reason='source_exhausted'):
+        """Accumulate across reads with independent row and logical-byte guards.
+
+        ``size`` charges the caller's pending payload and prepared-message bytes;
+        it is not a process RSS estimate. No source prefetch, timer or model work
+        is introduced here. The finite source must make progress synchronously.
+        """
+        if max_bytes is not None and (type(max_bytes) is not int or max_bytes <= 0 or not callable(size)):
+            raise ValueError('a byte guard requires a positive max_bytes and size function')
         builder = PendingBatchBuilder(self.config.max_rows, self.config.token_budget)
-        output, compatibility, pending_rows = [], None, 0
+        compatibility, pending_rows, pending_bytes, seen = None, 0, 0, set()
 
         def close(reason):
-            nonlocal pending_rows
+            nonlocal pending_rows, pending_bytes
             batch = builder.close()
-            output.append(PreparedRequestBatch(tuple(rows[r.payload_ref] for r in batch.rows),
+            result = PreparedRequestBatch(tuple(r.payload_ref for r in batch.rows),
                 batch.prompt_tokens, batch.estimated_output_tokens, reason,
-                self.config.token_budget > 0 and batch.estimated_total_tokens > self.config.token_budget))
-            pending_rows = 0
+                self.config.token_budget > 0 and batch.estimated_total_tokens > self.config.token_budget)
+            pending_rows, pending_bytes = 0, 0
+            return result
 
-        for row, arrival in zip(rows, arrivals):
-            key = tuple(row[name] for name in ('query_id', 'algorithm_stage', 'model_role'))
-            if pending_rows and key != compatibility:
-                close('compatibility')
-            if builder.would_exceed_token_budget(arrival):
-                close('token_budget')
-            compatibility = key
-            pending_rows += 1
-            if builder.add(arrival):
-                close('max_rows' if pending_rows == self.config.max_rows else 'token_budget')
+        for chunk in chunks:
+            for row in chunk:
+                _, conversations = _prepared([row])
+                if row['call_id'] in seen:
+                    raise ValueError('prepared source repeated a call identity')
+                seen.add(row['call_id'])
+                charge = 0 if max_bytes is None else size(row)
+                if type(charge) is not int or charge < 0 or max_bytes is not None and charge > max_bytes:
+                    raise BufferError('complete prepared request exceeds the logical byte allowance')
+                arrival = RowArrival(row['call_id'], 0.0,
+                    chat_token_count(self.tokenizer, conversations[0]), generation.max_tokens, '', row)
+                key = tuple(row[name] for name in ('query_id', 'algorithm_stage', 'model_role'))
+                if pending_rows and key != compatibility:
+                    yield close('compatibility')
+                if builder.would_exceed_token_budget(arrival):
+                    yield close('token_budget')
+                if pending_rows and max_bytes is not None and pending_bytes + charge > max_bytes:
+                    yield close('max_bytes')
+                compatibility = key
+                pending_rows += 1
+                pending_bytes += charge
+                if builder.add(arrival):
+                    yield close('max_rows' if pending_rows == self.config.max_rows else 'token_budget')
         if pending_rows:
-            close('ready_exhausted')
-        return tuple(output)
+            yield close(tail_reason)

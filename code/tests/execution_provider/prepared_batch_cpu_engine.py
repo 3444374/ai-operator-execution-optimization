@@ -32,7 +32,8 @@ class Engine:
         results = []
         for row in identities:
             text = (('generated ' * (1 + row['source_position'] * 2)).strip()
-                    if row['algorithm_stage'] == 'label' else 'True')
+                    if row['algorithm_stage'] == 'label' else
+                    'False' if row['source_position'] in (self.config.get('false_positions') or []) else 'True')
             results.append(dict(row, status='succeeded', text=text, prompt_tokens=1,
                 completion_tokens=1, total_tokens=2, prompt_token_ids_json='[0]',
                 output_token_ids_json='[1]', finish_reason='stop', submission_confirmed=True,

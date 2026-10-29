@@ -148,14 +148,16 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。
 
 <a id="prepared-request-batching"></a>
-## 完整F/M查询的可选token组批
+## 单阶段跨读取块token组批候选
 
-基于main`a421c9d4`的本地候选在同步fused入口增加`prepared_batching=PreparedBatching(...)`，默认`None`不变。
-`fixed_rows`与`token_budget`复用既有`PendingBatchBuilder`，在原方法生成完整prompt后按累计输入token加阶段输出上限组批，后继prompt重新计数。
-每组实际进入同步模型列表API；这控制应用提交批次B，不把在途W或vLLM内部调度称为组批。
-首版限单部署、单角色Filter/Map、原fused C1，组批不跨外层有界输入批；Extract与异步逐记录路径不支持此选项。
-CPU替身覆盖真实查询入口、私有进程通信、成员与token回执及失败／取消保留；真实模型、GPU性能和输出质量比较仍待验证。
-完整配置、超预算单请求规则及责任边界只在[接口说明](src/execution_provider/adapters/README.md#prepared-request-batching)维护。
+PR78的`c228d59d`候选保留历史身份：它仅在固定外层输入块内拆分，未完成跨读取块token组批。
+本地后续修正复用既有`PendingBatchBuilder`、原LOTUS方法和Core/私有引擎路径；默认`prepared_batching=None`不变。
+显式token模式对一个Filter或Map按完整prompt token加阶段输出上限累计B，读取块尾不封模型批次。
+读取块大小、B、独立行/字节护栏、并发批数C和vLLM内部容量分开；C仍固定1，W默认关闭不变。
+高行数护栏可大于读取块及引擎running-sequence容量；护栏/EOF封批原因明确记录，单条超过B完整单独提交并标记。
+多阶段token链在消费源或模型预检前拒绝；跨阶段后继缓冲、反馈动态调整B/C、阻塞源定时flush仍未实现。
+原固定行链与默认路径保留。验证限本地CPU；真实模板/模型、质量与GPU性能仍待独审和服务器验收。
+接口、逻辑字节边界及unknown责任见[所属说明](src/execution_provider/adapters/README.md#prepared-request-batching)。
 
 <a id="finite-query-successor-candidate"></a>
 ## 后继优先与等待老化的可选配置

@@ -5,6 +5,7 @@ private model process and audit snapshots, but no vendor scheduling or iterator.
 """
 
 from copy import deepcopy
+from dataclasses import replace
 import json
 import math
 import os
@@ -103,6 +104,7 @@ class FusedChainBatch:
             chain, expected, initial_parents, columns, allow_nulls)
         self.engine_spec = EngineSpec.from_dict(engine)
         self.prepared_batching, self._request_batcher = None, None
+        self._source_flush_reason = None
         if prepared_batching is not None:
             from src.semantic_methods.lotus.prepared_batching import PreparedBatching
             self.prepared_batching = PreparedBatching(**prepared_batching)
@@ -168,6 +170,10 @@ class FusedChainBatch:
                     self._request_batcher = PreparedRequestBatcher(self.prepared_batching, tokenizer)
                 # Recount actual successor messages after every method preparation.
                 groups = self._request_batcher.batches(prepared, generation)
+                if self._source_flush_reason is not None:
+                    if len(groups) != 1:
+                        raise ValueError('source token batch no longer fits its prepared request budget')
+                    groups = (replace(groups[0], reason=self._source_flush_reason),)
             except Exception as exc:
                 # A local estimate cannot have submitted any of this stage's calls.
                 self._raw_stage_id = prepared[0]['algorithm_stage']
@@ -274,7 +280,7 @@ class FusedChainBatch:
             offset += len(group.rows)
         return results
 
-    def _run_batch(self, batch):
+    def _run_batch(self, batch, *, source_flush_reason=None):
         from src.serving.backends.vllm_sync_process import _publish
 
         if self.failed:
@@ -282,6 +288,7 @@ class FusedChainBatch:
             # sees the first error. Preserve that error without another call.
             return self._failure_json
         self._audit_calls, self._audit_errors, self._request_batches = [], [], []
+        self._source_flush_reason = source_flush_reason
         self._batch_id, self._raw_stage_id = uuid.uuid4().hex, None
         self._audit_path = self.control / ("chain-audit-" + self._batch_id + ".json")
         records = []
@@ -372,7 +379,7 @@ class FusedChainBatch:
         return encoded
 
 
-    def run_rows(self, rows):
+    def run_rows(self, rows, *, source_flush_reason=None):
         """Run one bounded list of record_json rows and return its batch envelope."""
         class RowBatch:
             def to_pylist(self):
@@ -380,7 +387,7 @@ class FusedChainBatch:
                     raise TypeError("chain input requires a finite list of record_json rows")
                 return rows
 
-        return json.loads(self._run_batch(RowBatch()))
+        return json.loads(self._run_batch(RowBatch(), source_flush_reason=source_flush_reason))
 
     def __call__(self, batch):
         """Keep Ray's one-envelope Arrow output for its native map_batches API."""
