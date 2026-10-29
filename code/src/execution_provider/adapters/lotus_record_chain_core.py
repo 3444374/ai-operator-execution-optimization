@@ -596,6 +596,7 @@ class _RecordLocalRows:
         budget = self.pool.allocate(capacity)
         self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget,
                                      token_budget=self.owner.token_budget,
+                                     completion_batch_rows=self.owner.progression_batch_rows,
                                      **self.owner._ready_options) if self.section is not None
                        else MethodDriver(self.session, program, limits, budget))
 
@@ -741,7 +742,7 @@ class SemLoomRecordChainCore:
                  capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
                  execution="fused", actor_owner=None, method_limits=None,
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
-                 ready_clock=None, on_ready_event=None):
+                 ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -752,6 +753,19 @@ class SemLoomRecordChainCore:
         if execution not in ("fused", "record_local_sections"):
             raise ValueError("chain execution requires fused or record_local_sections")
         self.execution = execution
+        if progression not in ("record", "batch_stage"):
+            raise ValueError("unknown chain completion progression")
+        if progression == "record" and progression_batch_rows is not None:
+            raise ValueError("progression_batch_rows requires batch_stage progression")
+        if progression == "batch_stage":
+            if execution != "record_local_sections":
+                raise ValueError("completion progression requires record_local_sections")
+            if (type(progression_batch_rows) is not int or
+                    not 1 <= progression_batch_rows <= self.resources.max_active_batches):
+                raise ValueError("completion batch must fit the retained row capacity")
+            if token_budget is not None or ready_order != "fifo":
+                raise ValueError("batch-stage progression currently requires count admission and FIFO")
+        self.progression, self.progression_batch_rows = progression, progression_batch_rows
         self.token_budget = None
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
@@ -1139,6 +1153,9 @@ class SemLoomRecordChainCore:
             raise ValueError("record-local query requires one query and one model deployment")
         if any(s.generation.max_tokens > self.engine.max_model_len for s in chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
+        if self.progression == "batch_stage" and (any(s.kind not in ("filter", "map") for s in chain.stages)
+                or len({s.model_role for s in chain.stages}) != 1):
+            raise ValueError("batch-stage progression requires same-role Filter/Map plans")
         if self.token_budget is not None:
             if any(stage.kind not in ("filter", "map") for stage in chain.stages):
                 raise ValueError("query token_budget supports only Filter/Map plans")
@@ -1283,6 +1300,8 @@ class SemLoomRecordChainCore:
             cross_query_model_reuse=False, whole_query_rss_bounded=False,
             driver_retention="finite expected relation, current full relation, parsed call and raw receipt audit",
             prepare_actor_count=0, prepare_worker_pool_used=False,
+            progression=dict(policy=self.progression, batch_rows=self.progression_batch_rows,
+                scope="successor submission over the same single-row async model path"),
             work_unit="model_calls" if self.token_budget is None else "tokens")
         if self._ready_options:
             policy = self._ready_options["successor_first"]

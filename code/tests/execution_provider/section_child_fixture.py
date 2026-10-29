@@ -33,6 +33,10 @@ class FixtureEngine:
         response = self.config["responses"][token]
         started = time.monotonic()
         self.event("start", token=token, request_id=request_id)
+        if response.get("wait_file"):
+            gate = self.gates[request_id] = asyncio.Event()
+            while not Path(response["wait_file"]).exists() and not gate.is_set():
+                await asyncio.sleep(0.002)
         if token in self.config.get("release_on", []):
             for gate in self.gates.values():
                 gate.set()

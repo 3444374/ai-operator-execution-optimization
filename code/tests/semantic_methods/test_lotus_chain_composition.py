@@ -81,7 +81,7 @@ def normalized(result):
                                                key=lambda c: c["call_id"]))
 
 
-def make_driver(chain, *, slots=2, live_rows=2):
+def make_driver(chain, *, slots=2, live_rows=2, completion_batch_rows=None):
     core, old, backend, _clock = setup(held_tasks=slots, active_requests=slots, active_work=slots,
         input_bytes=slots * 65536, item_input_bytes=65536,
         result_bytes=slots * 65536, item_result_bytes=65536, metadata_bytes=4096)
@@ -90,7 +90,8 @@ def make_driver(chain, *, slots=2, live_rows=2):
         task_profiles=tuple(TaskProfile(s.stage_id, "fixture") for s in chain.stages)))
     limits = MethodLimits(65536, 131072, 131072, len(chain.stages))
     pool = MethodBudgetPool(MethodCapacity(live_rows, live_rows * row_reservation(limits)))
-    driver = LotusChainFIFO(session, chain, limits, pool.allocate(pool.capacity))
+    driver = LotusChainFIFO(session, chain, limits, pool.allocate(pool.capacity),
+                            completion_batch_rows=completion_batch_rows)
     return driver, core, backend, pool
 
 
@@ -101,8 +102,8 @@ def complete_one(backend, key, fixture):
     backend.complete(key, json.dumps(result).encode())
 
 
-def run_driver(chain, rows):
-    driver, core, backend, pool = make_driver(chain)
+def run_driver(chain, rows, *, completion_batch_rows=None):
+    driver, core, backend, pool = make_driver(chain, completion_batch_rows=completion_batch_rows)
     fixture = ResponseFixture(chain)
     outputs, cursor, eof, backpressure = [], 0, False, False
     try:
@@ -163,6 +164,22 @@ class CompositionAcceptance(unittest.TestCase):
                     self.assertEqual(normalized(actual), normalized(fused))
                     self.assertEqual(requests, reference.requests)
                     self.assertEqual(len({c["call_id"] for c in actual["calls"]}), len(actual["calls"]))
+
+    def test_batch_stage_progression_preserves_all_F_M_methods_requests_and_parents(self):
+        # Five records force two full groups, backpressure and an EOF tail.
+        backpressure = False
+        for length in range(1, 5):
+            for sequence in product("FM", repeat=length):
+                pattern = "".join(sequence)
+                with self.subTest(pattern=pattern):
+                    chain, rows = chain_for(pattern), source_rows(size=5)
+                    reference = ResponseFixture(chain)
+                    fused = chain.run_batch(rows, reference)
+                    actual, requests, blocked = run_driver(chain, rows, completion_batch_rows=2)
+                    self.assertEqual(normalized(actual), normalized(fused))
+                    self.assertEqual(requests, reference.requests)
+                    backpressure |= blocked
+        self.assertTrue(backpressure)
 
     def test_renaming_size_and_longer_sequence_do_not_choose_another_strategy(self):
         for column, size, pattern in (("other_field", 1, "MFMF"), ("内容", 8, "FMFMFM")):

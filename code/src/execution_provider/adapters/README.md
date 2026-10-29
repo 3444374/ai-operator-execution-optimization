@@ -72,6 +72,13 @@ Filter/Map/Extract plan using the shared `ChainRun` and one prepared Async model
 `execution="fused"` remains the default. This is a Python API option, not an automatic
 selector or a change to a baseline's native execution.
 
+These are separate choices: ordinary records `sync`/`async` selects model handoff;
+chain `fused`/`record_local_sections` selects batch-stage or record-local progression;
+fixed/dynamic admission selects whether the request window changes during a query.
+Selecting async alone does not select record-local chains or dynamic admission.
+Current defaults remain ordinary records sync, chain fused, and fixed admission.
+The research preference for record-local progression does not change those API defaults.
+
 Record-local F/M sections use `LotusChainFIFO` over the existing Core/MethodDriver.
 Extract waits for actual source EOF, complete predecessor finals and drained result
 responsibility; the original parser and relation assembler then run once before continuation.
@@ -101,6 +108,19 @@ estimated complete input plus the stage output cap, rather than actual KV bytes 
 Expected output is diagnostic and does not reduce that reservation. Confirmed terminals and
 the existing producer-retirement protocol settle work; cancellation alone cannot release it.
 
+<a id="chain-token-batching-boundary"></a>
+`token_budget` here is an in-flight reservation limit W, not a per-batch packing budget B.
+`LotusChainProgram._step` estimates each actual prepared continuation; `MethodDriver._submit`
+offers one task and `LotusChainActorBackend._submit_task` sends `[row]` to the actor.
+Core checks the sum of active reservations; an authoritative terminal or validated producer-retirement
+proof can settle a reservation. Cancellation or an unknown result alone cannot do so;
+retirement does not upgrade the unknown result to success.
+No batch membership or close boundary is formed from that sum. Preparation/model batch rows
+remain 1; C separately limits active requests, and vLLM owns its internal compute batches.
+Existing `PendingBatchBuilder` and text organizer token packing are not wired into this chain.
+The desired per-batch token organization and its minimal reuse plan are in the
+[data organization plan](../../../../experiments/plans/数据组织.md#chain-token-batching).
+
 Source positions are increasing and protocol occurrence IDs unique; user index labels
 and business IDs may repeat. A query failure stops continuation and retains earlier facts.
 Late receipts may supplement the stopped query's report but cannot rerun a parser or
@@ -112,6 +132,47 @@ See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_
 [prepared owner cases](../../../tests/execution_provider/test_lotus_prepared_actor_owner.py),
 the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
 and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).
+
+## Optional completion progression on the same async backend
+
+The record-local owner defaults to `progression="record"`: each completed record
+can submit its next legal stage. An explicit `progression="batch_stage"` waits for
+the other members of that record's fixed group to complete the current stage:
+
+```python
+owner = SemLoomRecordChainCore(engine, resources, execution="record_local_sections",
+    progression="batch_stage", progression_batch_rows=2)
+```
+
+This option requires FIFO, count admission, one model deployment and role, and a
+complete Filter/Map plan. Unsupported plans reject before source consumption or
+model startup; existing default Extract relation barriers remain available.
+Groups follow accepted source order. A full group closes at its declared size;
+source EOF closes the last partial group. Filtered/final members have no further
+stage to wait for. Each subsequent stage has its own completion barrier.
+
+`progression_batch_rows` counts records in a dependency group. It is independent
+of token work W and does not build a native inference batch: both preparation and
+model request batch sizes remain 1. The group must fit the retained row and byte
+grant, currently derived from `max_active_batches`; reject oversized groups
+instead of waiting for members that cannot be admitted. A singleton at C1
+degenerates to per-record progression.
+
+Both policies use the same `LotusChainProgram`/`MethodRun`, Core, actor and async
+IPC. Original formatting/parsing and bounded continuation preparation can occur
+before the group is complete; only successor submission is gated. Confirmed Core
+deliveries are released immediately, while retained row state remains charged to
+MethodBudget. Failure/cancel stops successors and keeps the existing unknown and
+producer-retirement rules. `close()['progression']` records the actual policy.
+
+The caller continues to own and retain Ray across queries. Each query still owns
+and closes one fresh model; this option does not implement cross-query model
+borrowing. The old fused path remains the default complete implementation and
+receives no Ray wrapper. This group barrier is an explicit internal mechanism
+comparison, not a replacement for native system baselines or GPU qualification.
+See [controlled async IPC tests](../../../tests/execution_provider/test_lotus_record_local_progression.py),
+[method/request differentials](../../../tests/semantic_methods/test_lotus_chain_composition.py)
+and [current scope](../../../INFRA_STATUS.md#record-local-completion-progression).
 
 ## Optional method-ready successor selection
 
