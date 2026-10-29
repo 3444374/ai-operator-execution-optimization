@@ -46,7 +46,7 @@ class CompletedWorkTests(unittest.TestCase):
 
 
 class CoreFeedbackTests(unittest.TestCase):
-    def test_public_runtime_hint_reuse_toggles_same_owner_without_repeat_exploration(self):
+    def test_short_query_hint_stays_unresolved_without_repeating_calls_or_probes(self):
         from pathlib import Path
         import tempfile
         from src.scheduling.runtime.calibration import run_admission_query
@@ -67,7 +67,9 @@ class CoreFeedbackTests(unittest.TestCase):
             try:
                 results=[run_admission_query(identity,execute,initial_window=2,maximum=4,cache_dir=Path(tmp)) for _ in range(3)]
                 self.assertEqual([r['cache_hit'] for r in results],[False,True,True])
-                self.assertEqual([r['admission_feedback']['exploration_enabled'] for r in reports],[True,False,False])
+                self.assertEqual([r['admission_feedback']['exploration_enabled'] for r in reports],[True,True,True])
+                self.assertTrue(all(r['admission_feedback']['exploration_censored'] for r in reports))
+                self.assertTrue(all(r['admission_feedback']['changes']==0 for r in reports))
                 self.assertEqual(len(fake.async_actors),1);self.assertEqual(fake.async_actors[0].instance.engine._sequence,72)
                 self.assertEqual(owner.core.capacity.usage().held_tasks,0);self.assertEqual(owner.transport.retained_refs(),0)
                 self.assertTrue(owner._feedback.base_options.allow_exploration)
@@ -86,11 +88,12 @@ class CoreFeedbackTests(unittest.TestCase):
             GenerationSpec(),RecordsResources(cpu_workers=2,prepare_batch_rows=1,model_batch_rows=1,
                 max_active_batches=maximum,startup_timeout_s=5,query_timeout_s=10),profile=profile)
 
-    def test_real_model_end_admission_grows_with_one_pass_and_matches_fixed_results(self):
+    def test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results(self):
         rows=self.rows(64);outputs=[];prompts=[]
         for enabled in (False,True):
             with ThreadedRuntime(rows) as fake, patch.object(AsyncCoreModelActor,'_process_type',return_value=CPUFeedbackProcess):
-                owner=self.owner(admission=enabled)
+                owner=self.owner(admission=enabled,options=dict(min_remaining=0,
+                    exploration_s=None,max_changes=None))
                 try:
                     stream=owner.evaluate(Source(rows),query_id='same-input');values=list(stream)
                     outputs.append([(r['source_position'],r['text'],r['total_tokens']) for r in sorted(values,key=lambda r:r['source_position'])])
@@ -101,6 +104,9 @@ class CoreFeedbackTests(unittest.TestCase):
                     self.assertEqual(owner.core.capacity.usage().held_tasks,0)
                     self.assertEqual(owner.transport.retained_refs(),0)
                     if enabled:
+                        self.assertIsNone(owner._feedback.options.exploration_s)
+                        self.assertIsNone(owner._feedback.options.max_changes)
+                        self.assertEqual(owner._feedback.options.min_remaining,0)
                         feedback=stream.last_close_report['admission_feedback']
                         self.assertGreater(feedback['changes'],0,feedback)
                         self.assertGreater(feedback['peak_native_running'],1,feedback)

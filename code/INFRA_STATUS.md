@@ -10,6 +10,11 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
 完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
 生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。
+同一候选继续取消显式动态配置隐含的10秒、剩余32／64条与8次调整截止，默认改为
+`exploration_s=None, min_remaining=0, max_changes=None`；原 sync/fixed 默认不变。
+两具名配置明确为 legacy 参数对照，正值仍可显式设置；历史源码投影、旧失败与负结果保留。
+缺失 pending 反馈不作结束证明；短查询即使未 probe 也标证据不足。这只清理 C 扫描的
+无依据截止，没有接入 CPU／GPU 联合资源决策或 B 扫描；当前验证仍限 CPU，不能转授GPU资格。
 
 本地维护候选将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。

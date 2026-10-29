@@ -120,13 +120,16 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 
 `run_admission_query` 保留已交付工作量扫描（原 cfdc/79e8），并接回计算工作量／局部配对版本（原 ee39/5007）的完整反馈与 hint 状态。
 它与上述 `run_query(mode="query"/"offline"/"online")` 并存：后者调用完整工作负载测量回调，
-前者在**本来要完成的查询请求**上调整 admission，不另做一遍查询。此次接回不修改历史选参算法。
+前者在**本来要完成的查询请求**上调整 admission，不另做一遍查询。历史源码从冻结投影还原；
+维护版现在默认不设内部探索期限、剩余条数门槛或变更次数预算，比较工作量与原请求语义保留。
 默认 Core 仍固定；没有 `profile.admission` 就没有新增反馈采样任务。
 
 ### 原实验配置选项
 
 `create_records_core(..., profile=name)`、普通 Movie 的 `core_profile` 和 session 的 `profile`
 均接受以下名称；显式字典配置仍可使用，普通 sync/fixed 默认不变。
+两个名称保留 **legacy 实验参数对照**；它们不是新研究
+配置的推荐，也不证明这些数值得到资源平台验证。新探索使用下面的显式字典配置。
 
 | 名称 | 对应历史实现 | 工作量与比较方式 |
 |---|---|---|
@@ -135,14 +138,28 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 
 两项都展开为历史正式配置：async、起始8、反馈读取0.1秒、测量窗0.25秒、最少16个样本、
 剩余至少64请求、10秒探索上限、最多8次调整、增益及工作量容差各3%、几何搜索、候选最多2次尝试，
-并开启原阶段计时。owner 上界仍来自调用方资源与模型容量；复现原实验须显式声明容量64、
+并开启原阶段计时。当前 owner 上界来自调用方 request budget，与引擎每轮序列上限分开；复现原实验须显式声明两处容量64、
 CPU准备2、prepare/model batch均1，以及相同模型、生成、输入和缓存条件。名称不修改这些外部声明。
-未指定名称的 `ResourceFeedbackConfig` 原默认值没有改成这些实验参数。
+未指定名称时，`ResourceFeedbackConfig` 默认 `exploration_s=None, min_remaining=0,
+max_changes=None`，不按10秒、32／64条或8次变更停止。采样与比较参数仍是未调优的工程候选。
+
+```python
+profile = {"mode": "async", "max_inflight": C0,
+           "admission": {"kind": "resource_feedback", "allow_exploration": True,
+                         "search_mode": "geometric"}}
+```
+
+现有 `exploration_s`／`max_changes` 可显式给正值；`min_remaining>0` 显式启用旧尾段与
+未来收益摊销门槛。它们仅作为 legacy／预算对照，触发表示探索截断，不能作为平台证据。
+缺少 pending 反馈时保持未知；没有可提交工作或查询结束、样本不足时不补调用，不等待额外样本。
+`exploration_censored`／`incomplete_reason` 保留证据不足，包括从未开启 probe 的短查询。
+实验外部 wall／call 预算、取消、实际请求／字节额度、结果槽位与 unknown 责任始终独立保留。
 
 原首次／复用条件为同一模型依次执行16条预热、完整首次和完整复用；预热不读写 hint，
 首次结束满足完整成功与关闭责任后才保存，复用须显式配置下述 `admission_cache`。
 模型常驻本身不等于配置 hint 已保存。历史实现与原样恢复入口见[具名来源](../../../../experiments/reproduction/native_baselines/README.md)。
-两版本的固定源码和负结果保留；CPU差分不能替代同条件真实模型验收，不能按期望成绩修改参数或结果。
+两版本的固定源码和负结果保留；CPU差分验证显式旧参数及保留比较逻辑，不再要求维护配置／控制器AST与旧版相同。
+这些检查不能替代同条件真实模型验收，不能按期望成绩修改参数或结果。
 
 普通公共调用先以 `create_records_core(..., profile=profile)` 建立唯一 async owner，
 再将完整查询消费/解析/汇总和借用释放放进 `run_admission_query` 的回调；

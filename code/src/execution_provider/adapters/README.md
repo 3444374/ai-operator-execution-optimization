@@ -166,6 +166,8 @@ historical first/reuse runs are not reproduced merely by exposing this option.
 
 `lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。
 可显式选择 `profile="delivered-work-scan"` 或 `profile="computed-work-local-pairs"`；
+这两个名称是 legacy 实验参数对照，不推荐其
+10秒／剩余64条等限制作为新的资源平台研究配置。冻结历史源码仍从具名复现还原。
 名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
 `profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
 显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
@@ -176,8 +178,10 @@ vLLM 的每轮序列上限，不再截断 records Core 的请求额度。外层�
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
 显式 `async_limits.max_inflight/result_slots` 必须覆盖该 owner 上界，不是只覆盖 C0。
 
-`allow_exploration=True` 显式允许原有限探索；不设 admission 时保持固定且不启动 native
-反馈采样。`max_inflight="auto"` 仅在显式 async 下选择声明的 Core request budget，
+`allow_exploration=True` 显式允许单遍性能试探；不设 admission 时保持固定且不启动 native
+反馈采样。当前显式字典的默认 `exploration_s=None, min_remaining=0, max_changes=None`
+不设内部总探索期限、剩余条数门槛或变更次数上限；正值仅供显式 legacy 预算对照。
+`max_inflight="auto"` 仅在显式 async 下选择声明的 Core request budget，
 不是实测调优，也不自动扩大调用方额度。同步 Core 仍只
 接收 model batch 1；有限同步批参照 `lotus_records_static` 不冒称 Core 批处理。
 当前反馈只调未完成请求窗口 C；每批行数或累计 token 工作预算 B 是组批边界，

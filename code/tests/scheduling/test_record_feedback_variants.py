@@ -119,7 +119,7 @@ class Trace:
         self.view = view
         self.now = self.count = self.inputs = self.outputs = self.computed = self.cached = 0
         kw = dict(search_mode="geometric", window_s=1, min_samples=2,
-                  min_remaining=4, exploration_s=100, allow_exploration=True)
+                  min_remaining=4, exploration_s=100, max_changes=8, allow_exploration=True)
         if computed:
             kw.update(work_basis="computed", work_comparison="local_pairs" if pairs else "envelope")
         self.options = options or view.adaptive.ResourceFeedbackConfig(**kw)
@@ -214,16 +214,102 @@ class LegacyFeedbackContracts(unittest.TestCase):
         expected, actual = oracle.c.report(), target.c.report()
         self.assertEqual(project_legacy(actual, expected) if legacy else actual, expected)
 
-    def test_retained_controller_nodes_are_exact_ee39_ast(self):
+    def test_work_comparison_and_candidate_search_nodes_are_exact_ee39_ast(self):
         logical = "code/src/scheduling/submission_control/adaptive.py"
-        names = {"ResourceFeedbackConfig", "_local_pair_evidence", "_GeometricSearch",
-                 "ResourceFeedbackController"}
+        names = {"_local_pair_evidence", "_GeometricSearch"}
         def nodes(view):
             tree = ast.parse(view.path(logical).read_text())
             return {node.name: ast.dump(node, include_attributes=False) for node in tree.body
                     if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name in names}
         self.assertEqual(set(nodes(self.target)), names)
         self.assertEqual(nodes(self.target), nodes(self.ee39))
+
+    def test_current_feedback_defaults_have_no_implicit_exploration_cutoffs(self):
+        cfg = self.target.adaptive.ResourceFeedbackConfig()
+        self.assertEqual((cfg.exploration_s, cfg.min_remaining, cfg.max_changes), (None, 0, None))
+        self.assertFalse(cfg.allow_exploration)
+        for invalid in (dict(exploration_s=0), dict(exploration_s=float('inf')),
+                        dict(min_remaining=-1), dict(min_remaining=True), dict(max_changes=0)):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.target.adaptive.ResourceFeedbackConfig(**invalid)
+
+    def test_unbudgeted_scan_can_start_after_ten_seconds_with_fewer_than_sixty_four_pending(self):
+        options = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric',
+            window_s=1, min_samples=2, allow_exploration=True)
+        trace = Trace(self.target, initial=4, maximum=8, total=60, options=options)
+        trace.tick(6, pending=50)
+        for _ in range(20):
+            trace.tick(0, pending=50)
+        for _ in range(8):
+            trace.tick(2, pending=60-trace.count-2-trace.c.current_window)
+            if trace.c.current_window == 8:
+                break
+        self.assertEqual(trace.c.current_window, 8)
+        self.assertGreater(trace.now, 10)
+        self.assertNotIn('exploration_budget', trace.c.reasons)
+        self.assertNotIn('short_tail_or_fixed', trace.c.reasons)
+
+    def test_unrequested_change_budget_does_not_stop_measured_growth(self):
+        options = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric',
+            window_s=1, min_samples=2, allow_exploration=True)
+        trace = Trace(self.target, initial=1, maximum=2048, total=1000000000, options=options)
+        for _ in range(200):
+            window = trace.c.current_window
+            trace.tick(window*2, pending=trace.c.total_items-trace.count-window*3)
+            if trace.c._growth_stopped:
+                break
+        report = trace.c.report()
+        self.assertEqual(report['recommended_window'], 2048)
+        self.assertGreater(report['changes'], 8)
+        self.assertNotIn('exploration_budget', report['reasons'])
+        self.assertEqual(report['stop_reason'], 'sampled_range_complete')
+        self.assertFalse(report['learned_global_optimum'])
+
+    def test_short_work_without_comparison_is_censored_even_without_a_probe(self):
+        for mode in ('local', 'geometric'):
+            options = self.target.adaptive.ResourceFeedbackConfig(search_mode=mode,
+                min_remaining=32, allow_exploration=True)
+            trace = Trace(self.target, initial=3, maximum=6, total=3, options=options)
+            trace.tick(0, pending=0)
+            report = trace.c.report()
+            self.assertEqual(report['changes'], 0)
+            self.assertTrue(report['exploration_censored'])
+            self.assertFalse(report['learned_global_optimum'])
+            if mode == 'geometric':
+                self.assertFalse(report['can_continue'])
+
+    def test_missing_pending_work_is_unknown_and_zero_pending_is_not_a_platform(self):
+        options = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric',
+            window_s=1, min_samples=2, allow_exploration=True)
+        trace = Trace(self.target, initial=3, maximum=6, total=3, options=options)
+        self.assertEqual(trace.tick(0, pending=None).reason, 'missing_pending_feedback')
+        self.assertFalse(trace.c._growth_stopped)
+        self.assertEqual(trace.tick(0, pending=0).reason, 'no_pending_work')
+        report = trace.c.report()
+        self.assertTrue(report['exploration_censored'])
+        self.assertEqual(report['incomplete_reason'], 'no_pending_work')
+        self.assertFalse(report['learned_global_optimum'])
+
+    def test_old_budgeted_hint_does_not_alias_unbudgeted_policy(self):
+        old = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric', window_s=1,
+            min_samples=2, min_remaining=64, exploration_s=10, max_changes=8, allow_exploration=True)
+        current = replace(old, min_remaining=0, exploration_s=None, max_changes=None)
+        identity = {name: dict(fixture=name) for name in
+                    ('hardware', 'model', 'generation', 'execution', 'workload', 'measurement')}
+        identity['measurement']['work_unit'] = 'rows'
+        with tempfile.TemporaryDirectory() as directory:
+            reports = []
+            for options in (old, current, current):
+                def execute(window, *, allow_exploration, search_hint):
+                    trace = Trace(self.target, initial=window, maximum=6,
+                        options=replace(options, allow_exploration=allow_exploration), hint=search_hint)
+                    if allow_exploration:
+                        trace.run()
+                    return dict(status='completed', reuse_eligible=True, admission_feedback=trace.c.report())
+                reports.append(self.target.calibration.run_admission_query(identity, execute,
+                    initial_window=3, maximum=6, cache_dir=directory, options=options))
+            self.assertEqual([report['cache_hit'] for report in reports], [False, False, True])
+            self.assertNotEqual(reports[0]['saved_hint']['path'], reports[1]['saved_hint']['path'])
 
     def test_delivered_defaults_preserve_cfdc_decisions_existing_fields_and_state(self):
         for mode in ("gain", "regression", "noise", "cache_only"):

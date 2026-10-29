@@ -37,7 +37,7 @@ from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlock
 
 
 def expand_core_profile(profile):
-    """Expand the two retained experimental profiles; ordinary defaults stay fixed."""
+    """Retain named legacy experiment settings; ordinary defaults stay fixed."""
     if type(profile) is not str:
         return profile
     if profile not in ("delivered-work-scan", "computed-work-local-pairs"):
