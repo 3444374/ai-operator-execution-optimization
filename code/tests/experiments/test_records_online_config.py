@@ -34,13 +34,6 @@ class CPUFeedbackWithBirth(CPUFeedbackProcess):
 
 
 class OnlineConfigurationTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        # Runtime fixtures replace sys.modules temporarily. Load native modules
-        # before that boundary so they are not reinitialized in the same driver.
-        import duckdb
-        import lotus
-
     def setUp(self):
         self.fixture=session_fixtures.PlanTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
         self.root=Path(self.fixture.manifests['movie-q3']).parent.parent

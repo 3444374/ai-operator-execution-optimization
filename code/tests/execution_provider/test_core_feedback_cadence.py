@@ -62,14 +62,19 @@ class CadenceTests(unittest.TestCase):
         self.assertFalse(f.gate.decide(4).allowed)
         self.assertEqual(f.provider.calls,before+1)
 
-    def test_short_tail_capacity_and_default_use_pressure_polling_after_response(self):
-        for total,pending,initial,extra in [(3,3,2,{}),(100,2,2,dict(allow_exploration=True)),
+    def test_explicit_legacy_tail_capacity_and_fixed_use_pressure_polling_after_response(self):
+        for total,pending,initial,extra in [(3,3,2,{}),(100,2,2,dict(allow_exploration=True,min_remaining=4)),
                 (100,90,8,dict(allow_exploration=True)),(100,90,2,{})]:
             with self.subTest(total=total,pending=pending,initial=initial,extra=extra):
                 f=self.make(total,initial,**extra);f.progress=(0,pending,0,False)
                 self.assertIsNotNone(f.sample())
                 self.assertEqual(f.provider.poll_interval_s,1.)
                 self.assertEqual(len(self.refs),1)
+
+    def test_unbudgeted_feedback_does_not_treat_small_pending_count_as_a_tail_cutoff(self):
+        f=self.make(100,2,allow_exploration=True);f.progress=(0,2,0,False)
+        self.assertIsNotNone(f.sample())
+        self.assertEqual(f.provider.poll_interval_s,.1)
 
     def test_explicit_growth_keeps_faster_polling_and_pending_rpc_is_never_slowed(self):
         f=self.make(100,2,allow_exploration=True);f.progress=(0,90,0,False)

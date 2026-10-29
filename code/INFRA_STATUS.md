@@ -4,6 +4,18 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
+显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
+`max_num_seqs` 保持原引擎配置，普通同步默认不变。CPU 检查覆盖高于引擎每轮
+序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
+完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
+生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。
+同一候选继续取消显式动态配置隐含的10秒、剩余32／64条与8次调整截止，默认改为
+`exploration_s=None, min_remaining=0, max_changes=None`；原 sync/fixed 默认不变。
+两具名配置明确为 legacy 参数对照，正值仍可显式设置；历史源码投影、旧失败与负结果保留。
+缺失 pending 反馈不作结束证明；短查询即使未 probe 也标证据不足。这只清理 C 扫描的
+无依据截止，没有接入 CPU／GPU 联合资源决策或 B 扫描；当前验证仍限 CPU，不能转授GPU资格。
+
 [PR73](https://github.com/3444374/ai-operator-execution-optimization/pull/73)已合入 main `a421c9d4`，将固定四配置的完整记录查询检查入口纳入Git；机器配置、额度、输入与结果仍在仓外。
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。
 [入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)、21项CPU检查及独审不代替当前源码的GPU验收。
@@ -12,7 +24,7 @@ main0689底座配合已审现场验收入口完成四臂各48次；两token臂W1
 W134是刻意触发阻塞／恢复的功能测试值，不是每批 token 目标或推荐运行值；常规限流应为按实际容量确定的宽松安全护栏，防止下游过量排队。
 上述交付时Git入口组合只有CPU回归；`check`不加载真实tokenizer。2026-10-29后续当前源码的模型功能复验及严格输出／性能边界见[配置总览的证据索引](../docs/执行配置与优化开关.md#e1)，不将小功能检查推广为稳定性能。
 
-本地增补[同容量检查](scripts/README.md#matched-record-chain-execution)固定fused／逐记录两臂C1、B1和每查询一个新模型，
+[PR75](https://github.com/3444374/ai-operator-execution-optimization/pull/75)已合入的[同容量检查](scripts/README.md#matched-record-chain-execution)固定fused／逐记录两臂C1、B1和每查询一个新模型，
 保留默认四配置、fused容量限制和真实Ray归属；增加owner阶段及worker的Ray启停计时，并拒绝混用资源／模型生命周期的回执。
 CPU检查覆盖完整F→M的相同结果／父调用和每查询一次模型创建；模型与Ray RPC为替身，逐记录子进程IPC实际运行。
 这不增加跨查询模型复用或纯粒度／性能资格；新增对照尚未部署或GPU验证。
@@ -143,15 +155,15 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 <a id="record-local-completion-progression"></a>
 ### 同异步后端的可选完成推进
 
-基于main`a421c9d4`的本地候选在既有逐记录异步owner上增加
+[PR74](https://github.com/3444374/ai-operator-execution-optimization/pull/74)已在既有逐记录异步owner上接入可选
 `progression="record"`（默认）和`"batch_stage"`／显式`progression_batch_rows`。
 后者按接纳输入顺序固定有限组，每阶段完成后放行合法后继；末尾EOF封组，过滤终结不等待后继。
 原单记录请求、方法转换、Core容量、取消与unknown结清不变，已确认回执及时释放，组内状态仍计费。
 首版限同模型同角色完整F/M、请求计数和FIFO，组必须同时容纳于行数与字节grant；不实现token组批或调整W。
 原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，每查询模型仍新建并关闭，跨查询借用尚未实现。
 CPU检查与差分范围见[接口与测试](src/execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)；
-没有真实Ray／GPU验收、完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
-后续本地候选补充[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
+GPU／质量资格仍按各固定源码的报告解释；新main组合尚未GPU复测，不作完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
+PR74同时提供[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
 将策略／组大小传入真实owner，并检查实际策略、同C、held／行／字节grant和配置摘要；默认四臂保持。
 
 <a id="finite-query-token-candidate"></a>

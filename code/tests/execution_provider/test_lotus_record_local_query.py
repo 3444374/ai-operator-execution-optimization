@@ -412,7 +412,7 @@ class QueryOwnerTests(unittest.TestCase):
             self.assertEqual(len(runtime.async_actors), 1)
             self.assertEqual(len({c["engine_uid"] for c in owner.calls}), 1)
 
-    def test_incompatible_plan_and_capacity_fail_before_model_start(self):
+    def test_incompatible_plan_and_invalid_request_budget_fail_before_model_start(self):
         base, rows = fixture.chain_for("MM"), fixture.source_rows(size=1)
         other = chains.LotusRecordChain((base.stages[0], replace(base.stages[1],
             method=replace(base.stages[1].method, model_name="openai/another"))), query_id=base.query_id)
@@ -422,8 +422,13 @@ class QueryOwnerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "one model"):
                 owner.evaluate(iter(rows), other, expected=rows, query_id=other.query_id)
             self.assertEqual(runtime.async_actors, [])
-            with self.assertRaisesRegex(ValueError, "in-flight"):
-                self.owner(base, C=9)
+            with self.assertRaises(ValueError):
+                self.owner(base, C=0)
+            larger = self.owner(base, C=9)
+            self.assertEqual(larger.engine.max_num_seqs, 8)
+            self.assertEqual(larger._actors.limits.max_inflight, 9)
+            self.assertEqual(runtime.async_actors, [])
+            larger.close()
             owner.close()
 
     def test_explicit_failure_scope_does_not_invent_unsubmitted_Extract_calls(self):

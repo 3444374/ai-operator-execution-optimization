@@ -23,10 +23,6 @@ class WorkCounterProcess(online.CPUFeedbackWithBirth):
 
 
 class ProfileEntryTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        online.OnlineConfigurationTests.setUpClass()
-
     def fixture(self):
         case = online.OnlineConfigurationTests()
         case.setUp()

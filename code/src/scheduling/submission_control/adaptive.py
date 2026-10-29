@@ -246,13 +246,13 @@ class HolAgeAimdAdmissionController:
 
 @dataclass(frozen=True)
 class ResourceFeedbackConfig:
-    """Optional one-pass admission policy; values are candidates, not tuned defaults."""
+    """Opt-in feedback; explicit legacy budgets are not platform criteria."""
     poll_interval_s: float = 0.25
     window_s: float = 1.0
     min_samples: int = 16
-    min_remaining: int = 32
-    exploration_s: float = 10.0
-    max_changes: int = 8
+    min_remaining: int = 0
+    exploration_s: float | None = None
+    max_changes: int | None = None
     allow_exploration: bool = False
     min_gain: float = 0.03
     memory_floor_bytes: int = 0
@@ -265,12 +265,17 @@ class ResourceFeedbackConfig:
     def __post_init__(self):
         for name in ("poll_interval_s", "window_s", "exploration_s"):
             value = getattr(self, name)
+            if name == "exploration_s" and value is None:
+                continue
             if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError(name + " must be finite and positive")
         for name in ("min_samples", "min_remaining", "max_changes"):
             value = getattr(self, name)
-            if type(value) is not int or value < 1:
-                raise ValueError(name + " must be a positive integer")
+            if name == "max_changes" and value is None:
+                continue
+            if type(value) is not int or value < (0 if name == "min_remaining" else 1):
+                raise ValueError(name + " must be a non-negative integer" if name == "min_remaining"
+                                 else name + " must be a positive integer")
         if type(self.allow_exploration) is not bool:
             raise ValueError("allow_exploration must be boolean")
         if not 0 <= self.min_gain < 1:
@@ -570,13 +575,21 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._change(self._reference["window"], reason, o)
         return self._hold(reason)
 
+    def _exploration_time_left(self, now):
+        limit = self.options.exploration_s
+        return math.inf if limit is None else limit - (now - self.started)
+
+    def _within_change_budget(self, reserve):
+        limit = self.options.max_changes
+        return limit is None or self._changes + reserve <= limit
+
     def sampling_interval_s(self, pending_items):
         has_candidate = bool(self._search.available()) if self._search is not None else self.current_window < self.config.max_window
         exploring = (self.options.allow_exploration and not self._growth_stopped
             and (self._probe_at is not None or has_candidate)
             and pending_items is not None and pending_items > self.options.min_remaining
-            and self.clock()-self.started < self.options.exploration_s
-            and self._changes < self.options.max_changes)
+            and self._exploration_time_left(self.clock()) > 0
+            and self._within_change_budget(1))
         return self.options.poll_interval_s if exploring else max(self.options.poll_interval_s,self.options.window_s)
 
     def update(self, observation):
@@ -609,7 +622,7 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._stop("capacity_limit",o)
         # Reserve a possible rollback; resource-pressure reductions are independent.
         reserve = 2  # trial plus a return to the last safe setting
-        if self._changes+reserve > self.options.max_changes:
+        if not self._within_change_budget(reserve):
             return self._stop("exploration_budget",o)
         remaining = max(0,self.total_items-o.completed_items_total)
         remaining_s = remaining/point["rate"]
@@ -632,9 +645,12 @@ class ResourceFeedbackController(AimdAdmissionController):
             optimistic_saved_after_trial_s=later_saving,incremental_controller_estimate_s=control_estimate,
             unpredicted_trial_costs="transition/IPC/observation losses; full query still measures them",
             assumption="reference-rate useful progress during trial, then ideal scaling; not measured benefit")])[-64:]
-        if self.options.exploration_s-(o.observed_at_s-self.started) < trial_s:
+        if self._exploration_time_left(o.observed_at_s) < trial_s:
             return self._stop("exploration_budget",o)
-        if after_trial <= self.options.min_remaining or (higher > self.current_window and later_saving <= control_estimate):
+        # Positive min_remaining explicitly opts into the old amortization
+        # heuristic. Unrequested remaining-work estimates do not stop a scan.
+        if self.options.min_remaining and (after_trial <= self.options.min_remaining
+                or higher > self.current_window and later_saving <= control_estimate):
             return self._stop("insufficient_remaining_benefit",o)
         self._probe_loss_base = self.estimated_trial_loss_s
         self._probe_at = o.observed_at_s
@@ -713,9 +729,9 @@ class ResourceFeedbackController(AimdAdmissionController):
                     self._probe_candidate,self._reference = point,None
                 return self._hold('collecting_local_pairs')
             if not rechecking and evidence['outcome']!='regression':
-                remaining_s = self.options.exploration_s-(o.observed_at_s-self.started)
+                remaining_s = self._exploration_time_left(o.observed_at_s)
                 allowance = 3*max(self.options.window_s,self.options.min_samples/previous['rate'])+2*self.options.window_s
-                if (not self._reference_recheck_used and self._changes+2<=self.options.max_changes
+                if (not self._reference_recheck_used and self._within_change_budget(2)
                         and remaining_s>=allowance and o.pending_items>self.options.min_remaining):
                     self._reference_recheck_used=True
                     self._probe_reference=previous
@@ -742,8 +758,8 @@ class ResourceFeedbackController(AimdAdmissionController):
         elif self.options.work_basis == "computed":
             if not previous["comparison_eligible"]:
                 if (point["comparison_eligible"] and not self._reference_recheck_used
-                        and self._changes+2 <= self.options.max_changes
-                        and o.observed_at_s-self.started < self.options.exploration_s
+                        and self._within_change_budget(2)
+                        and self._exploration_time_left(o.observed_at_s) > 0
                         and o.pending_items > self.options.min_remaining):
                     # One short A-B-A check. B's output remains useful, but is
                     # not accepted against an unstable A. Warming is irreversible;
@@ -822,7 +838,7 @@ class ResourceFeedbackController(AimdAdmissionController):
 
     def _update(self, o):
         if not o.fresh or not o.has_service_metrics:
-            if self._probe_at is not None and o.observed_at_s-self.started >= self.options.exploration_s:
+            if self._probe_at is not None and self._exploration_time_left(o.observed_at_s) <= 0:
                 return self._stop("exploration_budget",o,rollback=True)
             return self._hold("missing_or_stale_feedback")
         now = o.observed_at_s
@@ -863,21 +879,22 @@ class ResourceFeedbackController(AimdAdmissionController):
                 and self.options.allow_exploration and o.waiting == 0
                 and o.kv_usage <= self.config.low_load_kv_usage
                 and (not self.options.memory_floor_bytes or o.memory_pressure is False)
-                and now-self.started < self.options.exploration_s
-                and self._changes+1 < self.options.max_changes
+                and self._exploration_time_left(now) > 0
+                and self._within_change_budget(2)
                 and o.pending_items is not None and o.pending_items > self.options.min_remaining):
             # A fresh low-pressure frame permits new measurements at the lower
             # setting, not restoration of an old rate or an old high window.
             self._search.resume_pressure()
             self._growth_stopped, self._stop_reason = False, None
             self._reference, self._anchor, self._windows = None, None, []
-        if (self.options.allow_exploration and not self._growth_stopped and (now-self.started >= self.options.exploration_s
-                or self._changes >= self.options.max_changes)):
+        if (self.options.allow_exploration and not self._growth_stopped and (
+                self._exploration_time_left(now) <= 0 or not self._within_change_budget(1))):
             return self._stop("exploration_budget",o,rollback=True)
         if (self._search is not None and self.options.allow_exploration and
                 (self.total_items < self.options.min_remaining or
                  o.pending_items is not None and o.pending_items <= self.options.min_remaining)):
-            return self._stop("short_tail_or_fixed",o,rollback=True)
+            return self._stop("no_pending_work" if not self.options.min_remaining
+                              else "short_tail_or_fixed",o,rollback=True)
         if o.transition_pending or self._needs_settle:
             self._mark(o)
             self._needs_settle = bool(o.transition_pending)
@@ -888,8 +905,11 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._hold("cooldown")
         if not self.options.allow_exploration:
             return self._hold("short_tail_or_fixed")
-        if self.total_items < self.options.min_remaining or o.pending_items is None or o.pending_items <= self.options.min_remaining:
-            return self._stop("short_tail_or_fixed",o,rollback=True)
+        if o.pending_items is None:
+            return self._hold("missing_pending_feedback")
+        if self.total_items < self.options.min_remaining or o.pending_items <= self.options.min_remaining:
+            return self._stop("no_pending_work" if not self.options.min_remaining
+                              else "short_tail_or_fixed",o,rollback=True)
         if self._growth_stopped:
             return self._hold(self._stop_reason or "exploration_stopped")
         if self.options.memory_floor_bytes and o.memory_pressure is None:
@@ -969,13 +989,13 @@ class ResourceFeedbackController(AimdAdmissionController):
         short = self.total_items <= self.options.min_remaining
         stop = self._stop_reason or ("short_query" if short else "capacity_limit"
             if self._search is None and self.current_window == self.config.max_window and self._probe_at is None else None)
-        censored = self.options.allow_exploration and not short and (
-            self._probe_at is not None or stop in (None,"exploration_budget","insufficient_remaining_benefit")
-            or stop == "short_tail_or_fixed" and self._changes > 0)
+        censored = self.options.allow_exploration and (
+            self._probe_at is not None or stop in (None,"exploration_budget","insufficient_remaining_benefit",
+                                                  "short_query","short_tail_or_fixed","no_pending_work"))
         invalidated=sum(row["kind"] == "incomparable_work_mix" for row in self.evaluations)
         search = self._search
         if search is not None:
-            censored = (not short and (self.options.allow_exploration or any(
+            censored = ((self.options.allow_exploration or any(
                 row["attempts"] for row in search.points.values())) and
                 (bool(search.available()) or search.stop_reason() != "sampled_range_complete"))
         return dict(kind="resource_feedback",strategy="onepass_local_pairs_v2" if self.options.work_comparison == "local_pairs"

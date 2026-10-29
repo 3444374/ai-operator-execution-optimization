@@ -53,11 +53,27 @@ class CoreProfileTests(unittest.TestCase):
         self.engine = EngineSpec("/tmp/model", "/tmp/model-python", "/tmp/driver-python", max_num_seqs=4)
         self.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=8)
 
-    def test_auto_is_bounded_by_both_declared_request_budget_and_native_model_capacity(self):
+    def test_async_request_budget_can_exceed_engine_iteration_capacity(self):
+        for initial in (5, 8):
+            with self.subTest(initial=initial):
+                resolved = core.resolve_core_profile(self.engine, self.resources,
+                    dict(mode="async", max_inflight=initial))
+                self.assertEqual(resolved["max_inflight"], initial)
+                self.assertEqual(resolved["declared_request_budget"], 8)
+                self.assertEqual(resolved["engine_max_num_seqs"], 4)
+        feedback = core.resolve_core_profile(self.engine, self.resources,
+            dict(mode="async", max_inflight=2, admission=dict(kind="resource_feedback")))
+        self.assertEqual((feedback["initial_window"], feedback["owner_max_inflight"]), (2, 8))
+        self.assertEqual(self.engine.max_num_seqs, 4)
+        with self.assertRaises(ValueError):
+            core.resolve_core_profile(self.engine, self.resources, dict(mode="async", max_inflight=9))
+
+    def test_auto_selects_declared_request_budget_and_keeps_engine_iteration_capacity(self):
         resolved = core.resolve_core_profile(self.engine, self.resources,
                                              dict(mode="async", max_inflight="auto"))
-        self.assertEqual(resolved["max_inflight"], 4)
-        self.assertEqual(resolved["capacity_source"], "min(Core request budget, EngineSpec.max_num_seqs)")
+        self.assertEqual(resolved["max_inflight"], 8)
+        self.assertEqual(resolved["capacity_source"], "Core request budget")
+        self.assertEqual(resolved["engine_max_num_seqs"], 4)
         smaller = core.resolve_core_profile(self.engine, replace(self.resources, max_active_batches=2),
                                             dict(mode="async", max_inflight="auto"))
         self.assertEqual(smaller["max_inflight"], 2)
@@ -69,7 +85,7 @@ class CoreProfileTests(unittest.TestCase):
         self.assertEqual(resolved["max_inflight"], 8)
         self.assertFalse(resolved["stage_timing"])
         for profile in (dict(mode="missing"), dict(mode="sync", max_inflight="auto"),
-                        dict(mode="async", max_inflight=5), dict(mode="async", max_inflight=True),
+                        dict(mode="async", max_inflight=9), dict(mode="async", max_inflight=True),
                         dict(mode="async", stage_timing="yes"), dict(auto=True)):
             with self.subTest(profile=profile), self.assertRaises(ValueError):
                 core.resolve_core_profile(self.engine, self.resources, profile)
@@ -122,7 +138,7 @@ class CoreProfileTests(unittest.TestCase):
                     allocate.assert_not_called()
                     report = json.loads(output.getvalue())
                     self.assertEqual(report["core_execution"]["mode"], "async")
-                    self.assertEqual(report["core_execution"]["max_inflight"], 4)
+                    self.assertEqual(report["core_execution"]["max_inflight"], 8)
                     self.assertFalse(report["core_execution"]["performance_tuned"])
                     self.assertIsNone(report["requested_async_limits"])
 

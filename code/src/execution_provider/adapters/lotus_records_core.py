@@ -37,7 +37,7 @@ from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlock
 
 
 def expand_core_profile(profile):
-    """Expand the two retained experimental profiles; ordinary defaults stay fixed."""
+    """Retain named legacy experiment settings; ordinary defaults stay fixed."""
     if type(profile) is not str:
         return profile
     if profile not in ("delivered-work-scan", "computed-work-local-pairs"):
@@ -69,14 +69,13 @@ def resolve_core_profile(engine, resources, profile=None):
     if requested == "auto":
         if mode != "async":
             raise ValueError("automatic in-flight capacity requires the existing async owner")
-        maximum = min(resources.max_active_batches, engine.max_num_seqs)
-    elif (type(requested) is not int or requested < 1 or requested > resources.max_active_batches
-          or mode == "async" and requested > engine.max_num_seqs):
-        raise ValueError("Core in-flight limit exceeds its declared request or model capacity")
+        maximum = resources.max_active_batches
+    elif type(requested) is not int or requested < 1 or requested > resources.max_active_batches:
+        raise ValueError("Core in-flight limit exceeds its declared request capacity")
     else:
         maximum = requested
     result = dict(requested=dict(profile), mode=mode, max_inflight=maximum, stage_timing=timing,
-                capacity_source="min(Core request budget, EngineSpec.max_num_seqs)"
+                capacity_source="Core request budget"
                 if requested == "auto" else "explicit Core request budget",
                 declared_request_budget=resources.max_active_batches,
                 engine_max_num_seqs=engine.max_num_seqs,
@@ -91,7 +90,7 @@ def resolve_core_profile(engine, resources, profile=None):
         if not isinstance(gpu_ids, (list, tuple)) or any(not isinstance(v, str) or not v.startswith("GPU-") for v in gpu_ids):
             raise ValueError("feedback GPU IDs must be physical UUIDs when supplied")
         config = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
-        result.update(owner_max_inflight=min(resources.max_active_batches, engine.max_num_seqs),
+        result.update(owner_max_inflight=resources.max_active_batches,
             initial_window=maximum, admission=dict(kind="resource_feedback", gpu_ids=list(gpu_ids), **asdict(config)))
     return result
 

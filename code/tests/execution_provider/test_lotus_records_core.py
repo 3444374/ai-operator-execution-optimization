@@ -207,7 +207,13 @@ class Runtime:
         daft.set_runner_native = lambda: self.runner.__setitem__(0, SimpleNamespace(name="native"))
         self.modules = {"ray": ray, "daft": daft, "daft.runners": runners}
         self.stack = ExitStack()
-        self.stack.enter_context(patch.dict(sys.modules, self.modules))
+        # Undo only our stubs; imports may initialize native extension modules.
+        for name, module in self.modules.items():
+            if name in sys.modules:
+                self.stack.callback(sys.modules.__setitem__, name, sys.modules[name])
+            else:
+                self.stack.callback(sys.modules.pop, name, None)
+            sys.modules[name] = module
         self.stack.enter_context(patch.object(daft_runtime, "_configured", None))
         self.stack.enter_context(patch.dict(os.environ))
         os.environ.pop("DAFT_RUNNER", None)
@@ -234,6 +240,57 @@ class Runtime:
         for pool in self.pools:
             pool.shutdown(wait=True)
         self.stack.close()
+
+
+class RuntimeModuleIsolationTests(unittest.TestCase):
+    def test_only_owned_stub_modules_are_restored_and_normal_imports_survive(self):
+        existing, imported = "_semloom_existing_module_fixture", "_semloom_imported_module_fixture"
+        cleanup = ExitStack()
+        self.addCleanup(cleanup.close)
+        for name in ("ray", "daft", "daft.runners", existing, imported):
+            if name in sys.modules:
+                cleanup.callback(sys.modules.__setitem__, name, sys.modules[name])
+            else:
+                cleanup.callback(sys.modules.pop, name, None)
+        original_daft, original_runners = ModuleType("daft"), ModuleType("daft.runners")
+        before, after, loaded = ModuleType(existing), ModuleType(existing), ModuleType(imported)
+        sys.modules.pop("ray", None)
+        sys.modules.update({"daft": original_daft, "daft.runners": original_runners, existing: before})
+        sys.modules.pop(imported, None)
+        with Runtime([]) as runtime:
+            self.assertIs(sys.modules["ray"], runtime.ray)
+            self.assertIs(sys.modules["daft"], runtime.daft)
+            sys.modules[existing], sys.modules[imported] = after, loaded
+        self.assertNotIn("ray", sys.modules)
+        self.assertIs(sys.modules["daft"], original_daft)
+        self.assertIs(sys.modules["daft.runners"], original_runners)
+        self.assertIs(sys.modules[existing], after)
+        self.assertIs(sys.modules[imported], loaded)
+
+    def test_nested_fixture_restores_outer_stubs_after_exception(self):
+        name = "_semloom_nested_import_fixture"
+        if name in sys.modules:
+            self.addCleanup(sys.modules.__setitem__, name, sys.modules[name])
+        else:
+            self.addCleanup(sys.modules.pop, name, None)
+        original = {key: sys.modules[key] for key in ("ray", "daft", "daft.runners") if key in sys.modules}
+        loaded = ModuleType(name)
+        with Runtime([]) as outer:
+            with self.assertRaisesRegex(RuntimeError, "nested fixture"):
+                with Runtime([]) as inner:
+                    self.assertIs(sys.modules["ray"], inner.ray)
+                    self.assertIsNot(inner.ray, outer.ray)
+                    sys.modules[name] = loaded
+                    raise RuntimeError("nested fixture")
+            self.assertIs(sys.modules["ray"], outer.ray)
+            self.assertIs(sys.modules["daft"], outer.daft)
+            self.assertIs(sys.modules[name], loaded)
+        self.assertIs(sys.modules[name], loaded)
+        for key in ("ray", "daft", "daft.runners"):
+            if key not in original:
+                self.assertNotIn(key, sys.modules)
+            else:
+                self.assertIs(sys.modules[key], original[key])
 
 
 class CoreRecordsTests(unittest.TestCase):
