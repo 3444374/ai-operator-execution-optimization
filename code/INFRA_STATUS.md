@@ -4,12 +4,17 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
-本地维护候选将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
+[PR73](https://github.com/3444374/ai-operator-execution-optimization/pull/73)已将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。
-[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；原代码迁移已通过独审，本地追加预算和资格分流修复，尚未发布。
+[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；原代码迁移、预算和资格分流修复已合入main。
 原W129零调用失败保留；修复改用排序后最小两项之和减1，并将count与token资格分开，迁移未改生产算法或默认。
 main0689底座配合已审现场验收入口完成四臂各48次；两token臂W134均有42个不同调用阻塞后恢复，后继竞争未触发。
 新的Git入口组合只有CPU回归；`check`不加载真实tokenizer，未取得整树GPU资格，严格输出／性能等价仍未通过。
+
+本地增补[同容量检查](scripts/README.md#matched-record-chain-execution)固定fused／逐记录两臂C1、B1和每查询一个新模型，
+保留默认四配置、fused容量限制和真实Ray归属；增加owner阶段及worker的Ray启停计时，并拒绝混用资源／模型生命周期的回执。
+CPU检查覆盖完整F→M的相同结果／父调用和每查询一次模型创建；模型与Ray RPC为替身，逐记录子进程IPC实际运行。
+这不增加跨查询模型复用或纯粒度／性能资格；新增对照尚未部署或GPU验证。
 
 <a id="pr52-g1-qualified-scope"></a>
 ## Records、有限链与本地模型

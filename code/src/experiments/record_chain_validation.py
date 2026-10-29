@@ -5,6 +5,7 @@ are added by the recorded-answer reference. Input and outputs stay private.
 """
 from dataclasses import asdict
 import json
+import math
 import time
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_chain_token_budget import ChainTokenBudget, OutputTokenEstimate, fingerprint
@@ -50,19 +51,21 @@ def make_budget(tokenizer, engine, chain, records, active_tokens=None):
 
 
 def run_case(records, chain, engine, resources, *, control_dir, token_budget=None,
-             priority=False, actor_owner=None):
+             priority=False, actor_owner=None, execution='record_local_sections'):
+    entered = time.monotonic_ns()
     ready, core_events = [], []
     options = {} if token_budget is None else {'token_budget': token_budget}
     if priority:
         options.update(ready_order='successor_first', successor_first=SuccessorFirst(2, 1.0),
                        on_ready_event=lambda event: ready.append(asdict(event)))
     owner = SemLoomRecordChainCore(engine, resources, control_dir=control_dir,
-        execution='record_local_sections', actor_owner=actor_owner, **options)
-    entered = time.monotonic_ns()
+        execution=execution, actor_owner=actor_owner, **options)
+    constructed = time.monotonic_ns()
     primary = None
     close = None
     try:
         stream = owner.evaluate(iter(records), chain, expected=records, query_id=chain.query_id)
+        evaluated = time.monotonic_ns()
         owner.core.observe_capacity_blocks = True
         def observe(kind, key):
             record = owner.core.capacity.records.get(key)
@@ -76,6 +79,7 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
         primary = error
         raise
     finally:
+        close_entered = time.monotonic_ns()
         try:
             close = owner.close(timeout=30)
         except BaseException as cleanup:
@@ -89,7 +93,8 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
     returned = time.monotonic_ns()
     calls = list(owner.calls)
     if (close['status'] != 'closed' or not close['query_completed'] or
-            close['core_usage']['active_work'] != 0 or len(calls) != 3 * len(records) or
+            close['core_usage']['active_work'] != 0 or
+            not len(records) <= len(calls) <= len(chain.stages) * len(records) or
             len({c['call_id'] for c in calls}) != len(calls) or
             any(c['status'] != 'succeeded' or c['submission_confirmed'] is not True for c in calls)):
         raise ValueError('normal query/coverage/close acceptance failed')
@@ -100,12 +105,22 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
     recovered = [b for b in blocked if any(e['kind'] == 'submitted' and e['key'] == b['key'] and
         e['at_ns'] > b['at_ns'] for e in core_events)]
     return dict(records=outputs, calls=calls, columns=list(stream.columns), close=close,
+        execution=execution, resources=asdict(resources),
+        lifecycle=dict(model_lifetime=('one_fresh_model_per_query' if actor_owner is None
+                                      else 'supplied_model_owner_closed_by_query'),
+            cross_query_model_reuse=False, ray_initialized_by_helper=False,
+            adapter_uses_ray=execution == 'record_local_sections'),
         ready_events=ready, core_events=core_events, W_block_states=len(blocked),
         W_block_states_later_submitted=len(recovered),
         contended_successor_choices=sum(e['action']=='Core_offer_accepted' and
             e['reason']=='successor_first' for e in ready),
-        timing=dict(caller_entered_ns=entered, iterator_complete_ns=iterator_complete_ns,
+        timing=dict(caller_entered_ns=entered, owner_constructed_ns=constructed,
+                    evaluate_returned_ns=evaluated, iterator_complete_ns=iterator_complete_ns,
                     caller_returned_ns=returned, full_owner_call_s=(returned-entered)/1e9,
+                    construct_s=(constructed-entered)/1e9, evaluate_s=(evaluated-constructed)/1e9,
+                    iterate_to_eof_s=(iterator_complete_ns-evaluated)/1e9,
+                    final_close_s=(returned-close_entered)/1e9,
+                    iteration_scope='includes lazy model startup in fused and automatic query close in both paths',
                     iterator_complete_scope='not claimed earliest model result readiness'),
         default_ready_options_omitted=not priority)
 
@@ -153,10 +168,38 @@ FIELDS=['query_id','model_role','algorithm_stage','call_id','row_id','source_pos
 def compare(root, config):
     cases=[];uids=[];differences=[]
     reference=None;ref_outputs=None
+    matched = config.get('suite') == 'matched-execution'
+    if matched:
+        from src.semantic_methods.lotus.records import RecordsResources
+        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        resources = RecordsResources(**config['resources'])
+        engine = json.loads(json.dumps(asdict(EngineSpec.from_dict(config['engine']))))
+        generation = json.loads(json.dumps(asdict(GenerationSpec.from_dict(config['generation']))))
+        if (resources.max_active_batches != 1 or resources.model_batch_rows != 1 or
+                resources.prepare_batch_rows != 1 or resources.cpu_workers != 1 or resources.gpu_workers != 1 or
+                [(c['case_id'], c['execution']) for c in config['cases']] !=
+                [('fused-count', 'fused'), ('record-local-count', 'record_local_sections')]):
+            raise ValueError('matched execution comparison requires the fixed C1/B1 pair')
     for case in config['cases']:
         value=json.loads((root/'cases'/case['case_id']/'case.json').read_text())
         if value['status']!='completed' or value['public_git_commit']!=config['public_git_commit']:
             raise ValueError('incomplete or wrong source case: '+case['case_id'])
+        if matched:
+            lifecycle = value.get('lifecycle', {})
+            runtime = value.get('caller_runtime', {})
+            close = value.get('close', {})
+            if (value.get('execution') != case['execution'] or value.get('resources') != asdict(resources) or
+                    value.get('engine') != engine or value.get('generation') != generation or
+                    value.get('input_sha256') != config['input']['sha256'] or
+                    lifecycle.get('model_lifetime') != 'one_fresh_model_per_query' or
+                    lifecycle.get('ray_initialized_by_helper') is not False or
+                    runtime.get('ray_owned') is not (case['execution'] != 'fused') or
+                    any(type(runtime.get(k)) not in (int, float) or not math.isfinite(runtime[k]) or runtime[k] < 0
+                        for k in ('ray_init_s', 'ray_shutdown_s')) or
+                    case['execution'] == 'fused' and any(runtime[k] != 0 for k in ('ray_init_s', 'ray_shutdown_s')) or
+                    close.get('status') != 'closed' or close.get('query_completed') is not True or
+                    close.get('peak_core_usage', {}).get('active_requests') != 1):
+                raise ValueError('matched execution configuration/lifecycle receipt differs: '+case['case_id'])
         calls=value['calls'];by_id={c['call_id']:{f:c.get(f) for f in FIELDS} for c in calls}
         if len(calls)!=48 or len(by_id)!=48:raise ValueError('call coverage differs')
         if any(type(c.get('engine_uid')) is not str or not c['engine_uid'].strip() or c['engine_uid']!=c['engine_uid'].strip() for c in calls):
@@ -181,9 +224,19 @@ def compare(root, config):
             full_owner_call_s=value['timing']['full_owner_call_s'],worker_wall_s=value['worker_wall_before_final_write_s'],
             timing_scope='owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded',
             physical_cleanup='separate external supervisor receipt required'))
-    if len(set(uids))!=4:raise ValueError('independent case owners reused a native engine identity')
+        if matched:
+            cases[-1].update(execution=value['execution'], resources=value['resources'],
+                lifecycle=value['lifecycle'], caller_runtime=value['caller_runtime'], owner_timing=value['timing'])
+    if len(set(uids))!=len(config['cases']):raise ValueError('independent case owners reused a native engine identity')
     identical=all(not d['changed_calls'] and d['final_outputs_identical'] for d in differences)
-    return dict(status='captured_receipts_compared',public_git_commit=config['public_git_commit'],cases=cases,
+    report = dict(status='captured_receipts_compared',public_git_commit=config['public_git_commit'],cases=cases,
         outputs_strictly_comparable=identical,differences=differences,
         performance_qualification='not established: n1 small functional smoke even if outputs identical',
         mechanism_gate='token needs observed W block and later submission; successor needs contended choice; absent means not exercised, no automatic rerun')
+    if matched:
+        report.update(comparison_scope='same C1/B1 resources and fresh model per query; complete backend paths',
+            isolated_granularity_causality_or_stable_speedup_proven=False,
+            remaining_confounds=['synchronous fused versus asynchronous record native API',
+                'caller Ray runtime is required only by record path and remains included in worker time',
+                'one small pair; cache state and GPU batching are not matched by this check'])
+    return report

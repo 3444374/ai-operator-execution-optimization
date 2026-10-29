@@ -85,6 +85,35 @@ W沿用输入估计加生成上限，真实tokenizer门禁失败即停，不自�
 结果区分完整worker、查询迭代与关闭时间；CPU检查、未触发的W阻塞／优先竞争不能写成模型机制通过。
 本入口是功能验收，n1、不同输出或生命周期不对齐时不作性能／全局默认切换结论。
 
+<a id="matched-record-chain-execution"></a>
+### 同容量的 fused／逐记录检查
+
+仓外配置显式设置`"suite": "matched-execution"`时，同一入口只运行`fused-count`和
+`record-local-count`两臂；省略`suite`仍为上面的四配置检查。两臂必须使用相同的
+`max_active_batches=1`、单CPU／GPU、B1、模型、生成、16行输入及干净源码。
+fused不支持C4；本入口拒绝该配置，不为对齐表格删除生产容量限制。
+`ray_roots`只提供`record-local-count`的短仓外目录；fused不启动无用Ray。
+
+先执行同样的`check`，再使用`qualify --count-only`创建新的匹配回执。
+沿用已有唯一监督者、host lease、`CellBudgetLedger`和`case --execute-model`流程，
+新账本总额度为96，每臂预留48；只串行运行这两个case，任一失败或物理退出不确认即停。
+每臂仍是16行M→M→F，不是历史128行F→M的复现；通用`run_case(..., execution=...)`
+也可由原监督者传入已绑定的完整F/M链，调用方仍拥有输入、额度和实际模型配置。
+
+每臂均使用一个新模型，并在该查询内复用至全部阶段完成。逐记录路径借用调用方已经初始化的
+Ray 2.56.1；查询帮助函数不初始化或关闭Ray，有限查询的跨查询模型复用仍不支持。
+独立worker按各自真实路径冷启动；逐记录worker单独记录Ray初始化与关闭，fused两项为0。
+不通过给fused补启动Ray或扣掉记录级开销制造可比结果。
+
+`timing`记录owner构造、`evaluate`、迭代至EOF及最后一次close的边界。
+fused的模型惰性启动在迭代内，逐记录的启动在`evaluate`内；两者的迭代都可能包含自动close，
+最后一次显式close通常是幂等收尾，不能称为全部清理时间。worker总时间仍包含实际的启动、
+tokenizer、Ray、查询、重放与清理；物理退出仍由外层监督者另核。
+`compare`核对实际资源、模型／生成、输入摘要、查询模型生命周期及Ray归属，拒绝C1/C4或
+resident/fresh混用；同时返回各段原计时，不从总时间扣除累计阶段开销。
+这是同容量的完整后端路径比较：同步与异步native API、缓存及GPU batching仍不同，
+即使输出一致也不证明纯粒度因果或稳定加速。历史不匹配对照和负结果保留。
+
 ## 原生 LOTUS CLIP 查询
 
 三个公开入口按内容manifest、模型身份、完整查询衔接：

@@ -281,3 +281,171 @@ class NormalQueryBridgeTests(unittest.TestCase):
                 outputs = [r.describe() for r in result['records']]
                 if baseline is None: baseline = outputs
                 self.assertEqual(outputs,baseline)
+
+
+class ExecutionComparisonTests(unittest.TestCase):
+    setUp = ConfigTests.setUp
+    save = ConfigTests.save
+
+    def matched_config(self):
+        self.config['suite'] = 'matched-execution'
+        self.config['resources']['max_active_batches'] = 1
+        self.config['ray_roots'] = {'record-local-count': str(self.root / 'ray-record')}
+        self.save()
+
+    def test_matched_suite_requires_C1_on_both_existing_paths(self):
+        self.matched_config()
+        config, _, resources, _ = entry.configuration(self.path)
+        self.assertEqual(resources.max_active_batches, 1)
+        self.assertEqual([(c['case_id'], c['execution']) for c in config['cases']],
+                         [('fused-count', 'fused'), ('record-local-count', 'record_local_sections')])
+        with patch.object(entry, 'checkout_identity', return_value={'commit': 'a' * 40}):
+            checked = entry.check(self.path)
+        self.assertEqual((checked['cases'], checked['max_requests']), (2, 96))
+        self.config['resources']['max_active_batches'] = 4
+        self.save()
+        with self.assertRaisesRegex(ValueError, 'max_active_batches=1'):
+            entry.configuration(self.path)
+
+    def test_matched_suite_rejects_token_qualification_before_loading_tokenizer(self):
+        self.matched_config()
+        with patch.object(entry, 'objects') as objects, self.assertRaisesRegex(ValueError, 'count-only'):
+            entry.qualify(self.path, self.root / 'token-ready.json')
+        objects.assert_not_called()
+
+    def test_foreign_suite_case_rejects_before_reading_ready_or_claiming(self):
+        self.matched_config()
+        with self.assertRaisesRegex(ValueError, 'case is not part'):
+            entry.qualified(self.path, self.root / 'nonexistent-ready.json', case_id='fifo-count')
+
+    def test_unknown_suite_fails_without_silently_selecting_another_comparison(self):
+        self.config['suite'] = 'typo'; self.save()
+        with self.assertRaisesRegex(ValueError, 'unknown validation suite'):
+            entry.configuration(self.path)
+
+    def test_worker_uses_the_selected_path_and_does_not_boot_Ray_for_fused(self):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+        from src.semantic_methods.lotus.record_chain import RecordOccurrence
+
+        self.matched_config()
+        self.config.update(execution_enabled=True, external_owner={'fixture': 'lease check is mocked'},
+                           physical_gpu_UUID='GPU-fixture')
+        self.save()
+        config, engine, resources, generation = entry.configuration(self.path)
+        ready = dict(source={'commit': 'a' * 40}, config_sha256='b' * 64,
+                     W=None, token_estimator_signature=None)
+        for case in config['cases']:
+            fake_ray = SimpleNamespace(__version__='2.56.1', is_initialized=lambda: False,
+                                       init=Mock(), shutdown=Mock())
+            sampler = MagicMock(); sampler.summary.return_value = {}
+            telemetry = Mock(); telemetry.start.return_value = telemetry; telemetry.close.return_value = {}
+            result = dict(records=[RecordOccurrence('r', 0, 0, {'text': 'fixture'})], calls=[], close={},
+                          resources=asdict(resources), timing={'full_owner_call_s': 0})
+            with self.subTest(case=case['case_id']), patch.dict(sys.modules, {'ray': fake_ray}), \
+                    patch.object(entry, 'qualified', return_value=(config, engine, resources, generation, ready)), \
+                    patch.object(entry, 'objects', return_value=(None, [], None, None, None)), \
+                    patch.object(entry, 'run_case', return_value=result) as run, \
+                    patch.object(entry, 'replay_native_answers', return_value={'model_calls': 0}), \
+                    patch('integrations.imlane_records.chain_runtime.check_external_lease'), \
+                    patch('src.experiments.cell_budget.CellBudgetLedger') as ledger, \
+                    patch('src.experiments.process_sampling.ProcessSampler', return_value=sampler), \
+                    patch('src.observability.records_telemetry.RecordsTelemetry', return_value=telemetry):
+                report = entry.execute_worker(self.path, self.root / 'ready.json', case['case_id'])
+                self.assertEqual(run.call_args.kwargs['execution'], case['execution'])
+                if case['execution'] == 'fused':
+                    self.assertTrue(Path(run.call_args.kwargs['control_dir']).is_dir())
+                self.assertEqual(fake_ray.init.call_count, int(case['execution'] != 'fused'))
+                self.assertEqual(fake_ray.shutdown.call_count, int(case['execution'] != 'fused'))
+                self.assertEqual(report['caller_runtime']['ray_owned'], case['execution'] != 'fused')
+                self.assertEqual(ledger.call_args.args[1].limit, 96)
+
+    def test_fused_C4_is_still_rejected_before_source_or_model_creation(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
+        with self.assertRaisesRegex(ValueError, 'max_active_batches=1'):
+            SemLoomRecordChainCore(EngineSpec.from_dict(self.config['engine']),
+                                  entry.make_resources(self.config), execution='fused')
+
+    def test_C1_pair_uses_real_query_owners_and_one_model_per_query(self):
+        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
+        from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
+        from tests.execution_provider.test_lotus_record_local_query import Process, QueryOwnerTests
+        from tests.semantic_methods.test_lotus_chain_composition import source_rows
+        from tests.semantic_methods.test_lotus_record_chain import engine_result
+
+        fixture = QueryOwnerTests(); fixture.setUp(); self.addCleanup(fixture.doCleanups)
+        generation = GenerationSpec(max_tokens=8)
+        chain = checks.LotusRecordChain((
+            checks.StageSpec('keep', checks.FilterMethod('openai/cpu-fixture', 'Is {text} positive?'), generation),
+            checks.StageSpec('label', checks.MapMethod('openai/cpu-fixture', 'Label {text}', 'label'), generation),
+        ), query_id='matched-Filter-Map')
+        records = source_rows(column='text', size=3)
+        responses = fixture.config_for(chain, records)['responses']
+        events = []
+
+        class Engine:
+            def __init__(self, *args): events.append('construct')
+            def run_prepared(self, prepared, *, generation):
+                from src.serving.backends.vllm_engine import _prepared
+                identities, _ = _prepared(prepared)
+                return [dict(engine_result(row, responses[row['algorithm_stage'] + '|' + row['row_id']]['text']),
+                             **identity) for row, identity in zip(prepared, identities)]
+            def close(self, timeout=None):
+                events.append('close')
+                return dict(status='closed', process_exit_confirmed=True,
+                    engine_api_shutdown_confirmed=True, gpu_exit_confirmed=None, cleanup_errors=[])
+
+        resources = entry.make_resources({**self.config, 'suite': 'matched-execution',
+            'resources': {**self.config['resources'], 'max_active_batches': 1}})
+        model = EngineSpec(str(fixture.config), sys.executable, sys.executable, max_model_len=4096)
+        results = []
+        with ThreadedRuntime([]) as runtime, patch.object(AsyncCoreModelActor, '_process_type', return_value=Process), \
+                patch.object(FusedChainBatch, '_engine_type', Engine), \
+                patch.object(EngineSpec, 'validate_driver_environment', return_value={}):
+            for execution in ('fused', 'record_local_sections'):
+                result = checks.run_case(records, chain, model, resources, control_dir=self.root,
+                                         execution=execution)
+                results.append([r.describe() for r in result['records']])
+                self.assertEqual(len(result['calls']), 5)  # Three Filters; only two legal Map successors.
+                self.assertEqual(result['execution'], execution)
+                self.assertEqual(result['resources']['max_active_batches'], 1)
+                self.assertEqual(result['close']['peak_core_usage']['active_requests'], 1)
+                self.assertEqual(result['lifecycle']['model_lifetime'], 'one_fresh_model_per_query')
+                self.assertFalse(result['lifecycle']['ray_initialized_by_helper'])
+                self.assertLessEqual(result['timing']['caller_entered_ns'], result['timing']['evaluate_returned_ns'])
+                self.assertLessEqual(result['timing']['evaluate_returned_ns'], result['timing']['iterator_complete_ns'])
+                self.assertLessEqual(result['timing']['iterator_complete_ns'], result['timing']['caller_returned_ns'])
+                self.assertEqual(checks.replay_native_answers(records, chain, result)['model_calls'], 0)
+            self.assertEqual(len(runtime.async_actors), 1)
+        self.assertEqual(results[0], results[1])
+        self.assertEqual(events.count('construct'), 1)
+        self.assertGreaterEqual(events.count('close'), 1)
+        self.assertEqual(sum(e['event'] == 'construct' for e in fixture.events()), 1)
+        self.assertEqual(sum(e['event'] == 'close' for e in fixture.events()), 1)
+
+    def test_matched_comparator_rejects_mixed_capacity_and_runtime_receipts(self):
+        fixture = CapturedUidTests(); fixture.setUp(); self.addCleanup(fixture.doCleanups)
+        config = fixture.config
+        config['suite'] = 'matched-execution'
+        config['resources']['max_active_batches'] = 1
+        config['cases'] = [dict(case_id='fused-count', execution='fused'),
+                           dict(case_id='record-local-count', execution='record_local_sections')]
+        fixture.reports = fixture.reports[:2]
+        for case, report in zip(config['cases'], fixture.reports):
+            report.update(execution=case['execution'], resources=asdict(entry.make_resources(config)),
+                engine=config['engine'], generation=config['generation'], input_sha256=config['input']['sha256'],
+                lifecycle=dict(model_lifetime='one_fresh_model_per_query', ray_initialized_by_helper=False),
+                caller_runtime=dict(ray_owned=case['execution'] != 'fused', ray_init_s=0, ray_shutdown_s=0),
+                close=dict(status='closed', query_completed=True, peak_core_usage={'active_requests': 1}))
+        result = fixture.compare()
+        self.assertTrue(result['outputs_strictly_comparable'])
+        self.assertFalse(result['isolated_granularity_causality_or_stable_speedup_proven'])
+        for field, bad in [('resources', {**fixture.reports[1]['resources'], 'max_active_batches': 4}),
+                           ('caller_runtime', {'ray_owned': False}),
+                           ('lifecycle', {'model_lifetime': 'resident', 'ray_initialized_by_helper': False})]:
+            with self.subTest(field=field):
+                original = fixture.reports[1][field]; fixture.reports[1][field] = bad
+                with self.assertRaisesRegex(ValueError, 'configuration/lifecycle receipt differs'):
+                    fixture.compare()
+                fixture.reports[1][field] = original
