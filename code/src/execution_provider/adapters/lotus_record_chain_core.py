@@ -126,6 +126,8 @@ class _ChainTransport:
 
                 worker_type = owner._batch_type or FusedChainBatch
                 options = owner._worker_phase_options() if owner.relation_barriers else {}
+                if owner.prepared_batching is not None:
+                    options['prepared_batching'] = asdict(owner.prepared_batching)
                 self.worker = worker_type(
                     owner.chain.describe(), asdict(owner.engine),
                     list(owner.results.bindings.values()), str(owner.control),
@@ -741,7 +743,7 @@ class SemLoomRecordChainCore:
                  capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
                  execution="fused", actor_owner=None, method_limits=None,
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
-                 ready_clock=None, on_ready_event=None):
+                 ready_clock=None, on_ready_event=None, prepared_batching=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -752,6 +754,18 @@ class SemLoomRecordChainCore:
         if execution not in ("fused", "record_local_sections"):
             raise ValueError("chain execution requires fused or record_local_sections")
         self.execution = execution
+        self.prepared_batching = None
+        if prepared_batching is not None:
+            from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+            if execution != 'fused':
+                raise ValueError('prepared_batching requires the synchronous fused path')
+            if type(prepared_batching) is not PreparedBatching:
+                raise TypeError('prepared_batching must be PreparedBatching or None')
+            if prepared_batching.max_rows > self.resources.model_batch_rows:
+                raise ValueError('prepared batching max_rows cannot exceed model_batch_rows')
+            if self.engine.chat_template is not None:
+                raise ValueError('prepared_batching currently requires the tokenizer-owned chat template')
+            self.prepared_batching = PreparedBatching(**asdict(prepared_batching))
         self.token_budget = None
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
@@ -845,6 +859,12 @@ class SemLoomRecordChainCore:
         if not self.relation_barriers and self.results is not None:
             return self.results.calls
         return [call for result in self._accountants.values() for call in result.calls]
+
+    @property
+    def request_batches(self):
+        """Logical groups declared for the synchronous native batch API."""
+        return [deepcopy(batch) for result in self._accountants.values()
+                for batch in result.request_batches]
 
     @property
     def _has_next_phase(self):
@@ -942,6 +962,10 @@ class SemLoomRecordChainCore:
             raise ValueError("chain and query_id must identify the same query")
         if len({stage.method.model_name for stage in chain.stages}) != 1:
             raise ValueError("Core fused chain requires one model deployment")
+        if self.prepared_batching is not None and (
+                any(stage.kind not in ('filter', 'map') for stage in chain.stages)
+                or len({stage.model_role for stage in chain.stages}) != 1):
+            raise ValueError('prepared_batching currently requires Filter/Map with one model role')
         if any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
         expected = tuple(RecordOccurrence.from_dict(record.describe()) for record in expected)
@@ -1109,6 +1133,9 @@ class SemLoomRecordChainCore:
         if self._active is not None:
             self.last_close_report["peak_core_usage"] = self._active.peak_core_usage
             self._active.last_close_report = self.last_close_report
+        if self.prepared_batching is not None:
+            self.last_close_report['prepared_batching'] = asdict(self.prepared_batching)
+            self.last_close_report['request_batch_count'] = len(self.request_batches)
         if self.relation_barriers:
             self.last_close_report.update(
                 relation_barriers=True, relation_phase_count=len(self._segments),

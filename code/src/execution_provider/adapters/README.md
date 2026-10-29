@@ -113,6 +113,74 @@ See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_
 the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
 and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).
 
+<a id="prepared-request-batching"></a>
+## Optional prepared-request submission batches
+
+The synchronous `execution="fused"` entry accepts an independent application batch
+configuration. Its default `prepared_batching=None` keeps the previous submission
+boundaries and performs no additional tokenization. For a fixed-row/token comparison:
+
+```python
+from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+from src.semantic_methods.lotus.records import RecordsResources
+
+# Use the same engine, resources, chain and source for each separate owner/run.
+resources = RecordsResources(cpu_workers=1, model_batch_rows=32, max_active_batches=1)
+fixed = PreparedBatching("fixed_rows", max_rows=32)
+tokens = PreparedBatching("token_budget", max_rows=32, token_budget=8192)
+owner = SemLoomRecordChainCore(engine, resources, prepared_batching=tokens)
+rows = owner.evaluate(source, chain, expected=expected, query_id=chain.query_id)
+try:
+    result = list(rows)
+finally:
+    report = owner.close()
+groups = owner.request_batches
+```
+
+These numbers are example capacities, not calibrated recommendations. `max_rows`
+must fit `resources.model_batch_rows`, the bounded outer input batch. This first
+implementation supports Filter/Map plans with one deployment and one model role;
+Extract and `record_local_sections` reject this option before model startup.
+The existing fused requirement `cpu_workers=max_active_batches=1` remains.
+The tokenizer must own the chat template (`EngineSpec.chat_template=None`);
+explicit native template overrides are rejected until their renderer is matched.
+
+The original method first creates complete prepared chat messages. A local tokenizer
+from `EngineSpec.tokenizer_path` (or `model_path`) counts the full chat template;
+the per-request estimate adds that stage's `generation.max_tokens` output cap.
+The token target **B** limits the sum of these estimates in one application batch.
+Fixed-row mode uses the same measurement but closes by row count. Each stage is
+recounted from its actual messages, including generated predecessor columns.
+There is no prompt truncation or splitting of one request. An oversize request
+is sent intact as a flagged singleton, as in the existing batch builder; model
+context and IPC limits still apply. B is consequently a packing target, not a
+hard per-request context limit, measured GPU work or KV-memory bound.
+
+`PendingBatchBuilder` preserves input order. A batch closes before adding a row
+that would cross B, at the row guard or token target, on incompatible query/stage/role,
+or immediately at the finite ready-set tail. One invocation has one deployment and
+generation configuration. It never waits for future source rows or merges across
+outer input batches. Each group actually calls `ChainEngineProcess.run_prepared`
+with a list, then `VllmEngine.run_prepared` passes its conversation list to the
+native synchronous `LLM.chat` API. vLLM continues to own its internal scheduling;
+these application submission groups do not prescribe GPU compute batches.
+
+`owner.request_batches` retains group IDs, ordered call membership, input and output-cap
+token estimates, flush reasons and oversize flags. Receipts declare attempted API
+submissions; per-call results remain the authority for acceptance, usage and unknown
+outcomes. Failure, malformed replies, cancellation or deadline stop subsequent groups;
+known prefix results remain, while unsent suffix requests are marked failed before
+submission. Unknown attempts keep the original query/Core cleanup responsibility.
+There is no retry or model lifetime change. The separate record-local `token_budget`
+argument still controls in-flight work **W**; this serial profile does not combine it
+with B or alter async actor B1 restrictions.
+
+[CPU query/IPC cases](../../../tests/execution_provider/test_lotus_prepared_batching.py)
+exercise the real Core entry, original LOTUS methods and private process protocol with
+deterministic inference. Real tokenizer/model/GPU performance and output-quality
+comparison remain pending; [qualification status](../../../INFRA_STATUS.md#prepared-request-batching)
+records this boundary.
+
 ## Optional method-ready successor selection
 
 The generic `MethodDriver` still defaults to `round_robin`; `LotusChainFIFO` and

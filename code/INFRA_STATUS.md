@@ -135,17 +135,27 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 原始计时、资源采样及局限见[证据身份](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-local-query-owner-c827)。
 
 <a id="finite-query-token-candidate"></a>
-## 完整F/M查询的可选token配置
+## 完整F/M查询的可选token在途配置
 
 原候选基于`77fe087b`，已与main`43a463b6`本地组合并通过36项CPU检查；`SemLoomRecordChainCore(..., execution="record_local_sections", token_budget=budget)`
 复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
-默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token，Extract、角色切换及fused明确拒绝该组合。
+默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token在途W，Extract、角色切换及fused明确拒绝该`token_budget`组合。
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
 前述CPU范围核对实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径；本轮现场修复后的两token臂各48次正常完成，输出ID仍有差异，不作性能结论。
 独审33项通过；首次集成迟到关闭失败保留，后续独立复现确认释放测试信号早于transport Future交付。测试仅等真实交付后再检查，原断言和timeout保持；生产unknown及W预留不提前清零。
 [PR71](https://github.com/3444374/ai-operator-execution-optimization/pull/71)已合入main`230789c4`，默认仍关闭；本轮现场仅覆盖同部署同角色M→M→F的小功能检查，不作性能结论。接口见[adapter说明](src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
 CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。
+
+<a id="prepared-request-batching"></a>
+## 完整F/M查询的可选token组批
+
+基于main`a421c9d4`的本地候选在同步fused入口增加`prepared_batching=PreparedBatching(...)`，默认`None`不变。
+`fixed_rows`与`token_budget`复用既有`PendingBatchBuilder`，在原方法生成完整prompt后按累计输入token加阶段输出上限组批，后继prompt重新计数。
+每组实际进入同步模型列表API；这控制应用提交批次B，不把在途W或vLLM内部调度称为组批。
+首版限单部署、单角色Filter/Map、原fused C1，组批不跨外层有界输入批；Extract与异步逐记录路径不支持此选项。
+CPU替身覆盖真实查询入口、私有进程通信、成员与token回执及失败／取消保留；真实模型、GPU性能和输出质量比较仍待验证。
+完整配置、超预算单请求规则及责任边界只在[接口说明](src/execution_provider/adapters/README.md#prepared-request-batching)维护。
 
 <a id="finite-query-successor-candidate"></a>
 ## 后继优先与等待老化的可选配置

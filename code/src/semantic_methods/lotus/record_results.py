@@ -54,6 +54,7 @@ class ChainBatchResults:
         self._has_parent_seeds = initial_parents is not None
         self.received = set()
         self.calls, self.batch_stage_stats, self.unassociated_results = [], [], []
+        self._request_batches = {}
         self.raw_result_batches, self._raw_priorities, self._received_batches = {}, {}, set()
         self.columns = list(dict.fromkeys(
             _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
@@ -80,12 +81,28 @@ class ChainBatchResults:
                 self._failure_errors.append("recovered semantic failure")
             self._cleanup_errors.extend(envelope.get("cleanup_errors", []))
             self._record_calls(envelope["calls"], recovering=True)
+            self._record_request_batches(envelope)
             if "stage_stats" in envelope and envelope["stage_stats"] not in self.batch_stage_stats:
                 self.batch_stage_stats.append(envelope["stage_stats"])
             self._recover_raw(envelope, priority=2 if "error_type" in envelope else 1)
         except BaseException as error:
             self._failure_errors.append(type(error).__name__)
             raise
+
+    @property
+    def request_batches(self):
+        return tuple(deepcopy(batch) for batch in self._request_batches.values())
+
+    def _record_request_batches(self, envelope):
+        for batch in envelope.get('request_batches', []):
+            batch_id, calls = batch['request_batch_id'], batch['call_ids']
+            if (type(batch_id) is not str or not batch_id or type(calls) is not list
+                    or not calls or len(set(calls)) != len(calls)
+                    or any(call_id not in self._call_records for call_id in calls)):
+                raise ValueError('invalid prepared request batch membership')
+            if batch_id in self._request_batches and self._request_batches[batch_id] != batch:
+                raise ValueError('conflicting prepared request batch receipt')
+            self._request_batches[batch_id] = deepcopy(batch)
 
     @property
     def pending(self):
@@ -186,6 +203,7 @@ class ChainBatchResults:
         if any(call.get("row_id") not in batch_ids for call in envelope["calls"]):
             raise ValueError(f"{self._backend_name} chain call belongs to a different native batch")
         self._record_calls(envelope["calls"])
+        self._record_request_batches(envelope)
         self._cleanup_errors.extend(envelope.get("cleanup_errors", []))
         self.batch_stage_stats.append(envelope["stage_stats"])
         self._recover_raw(envelope, priority=2)

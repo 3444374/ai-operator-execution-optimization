@@ -80,10 +80,12 @@ class FusedChainBatch:
     """One native worker, with local methods and one private model process."""
 
     _engine_type = None
+    prepared_batching = None
 
     def __init__(self, chain, engine, expected, control, deadline, startup_timeout_s,
                  driver_host, control_token, *, initial_parents=None, columns=None,
-                 allow_nulls=False, close_on_source_complete=True, release_completed_audit=False):
+                 allow_nulls=False, close_on_source_complete=True, release_completed_audit=False,
+                 prepared_batching=None):
         from src.serving.backends.vllm_sync_process import _publish
 
         if type(release_completed_audit) is not bool:
@@ -100,6 +102,15 @@ class FusedChainBatch:
         self.chain, self.expected, self.initial_parents, self.columns = _phase_values(
             chain, expected, initial_parents, columns, allow_nulls)
         self.engine_spec = EngineSpec.from_dict(engine)
+        self.prepared_batching, self._request_batcher = None, None
+        if prepared_batching is not None:
+            from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+            self.prepared_batching = PreparedBatching(**prepared_batching)
+            if self.engine_spec.chat_template is not None:
+                raise ValueError('prepared_batching requires the tokenizer-owned chat template')
+            if (any(stage.kind not in ('filter', 'map') for stage in self.chain.stages)
+                    or len({stage.model_role for stage in self.chain.stages}) != 1):
+                raise ValueError('prepared_batching requires Filter/Map with one model role')
         if any(stage.generation.max_tokens > self.engine_spec.max_model_len for stage in self.chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
         self.allow_nulls, self.close_on_source_complete = allow_nulls, close_on_source_complete
@@ -144,6 +155,26 @@ class FusedChainBatch:
         from src.serving.backends.staged_generation_process import ChainEngineProcess
 
         _check(self.deadline, self.control)
+        groups = None
+        if self.prepared_batching is not None:
+            try:
+                if self._request_batcher is None:
+                    from transformers import AutoTokenizer
+                    from src.semantic_methods.lotus.prepared_batching import PreparedRequestBatcher
+
+                    tokenizer = AutoTokenizer.from_pretrained(
+                        self.engine_spec.tokenizer_path or self.engine_spec.model_path,
+                        local_files_only=True, trust_remote_code=False)
+                    self._request_batcher = PreparedRequestBatcher(self.prepared_batching, tokenizer)
+                # Recount actual successor messages after every method preparation.
+                groups = self._request_batcher.batches(prepared, generation)
+            except Exception as exc:
+                # A local estimate cannot have submitted any of this stage's calls.
+                self._raw_stage_id = prepared[0]['algorithm_stage']
+                return [dict({name: row[name] for name in IDENTITY_FIELDS}, status='failed',
+                    submission_confirmed=False, text=None, error_type='PreparedBatchingEstimateError',
+                    cause_type=type(exc).__name__, prompt_tokens=None,
+                    completion_tokens=None, total_tokens=None) for row in prepared]
         prior = {call["row_id"]: call["call_id"] for call in self._audit_calls}
         declared = [dict({key: row[key] for key in IDENTITY_FIELDS}, status="unknown",
                          parent_call_ids=(list(self.initial_parents[(row["row_id"], row["source_position"])])
@@ -155,6 +186,8 @@ class FusedChainBatch:
         self._raw_stage_id = prepared[0]["algorithm_stage"]
         audit = dict(batch_id=self._batch_id, raw_stage_id=self._raw_stage_id, calls=self._audit_calls,
                      phase_stage_ids=list(self._phase_stage_ids))
+        if groups is not None:
+            audit['request_batches'] = self._request_batches
         _publish(self._audit_path, audit)
         if self.engine is None:
             _publish(self.worker_report, dict(engine_allocation_started=True, worker_pid=os.getpid()))
@@ -162,12 +195,61 @@ class FusedChainBatch:
             self.engine = (self._engine_type or ChainEngineProcess)(
                 self.engine_spec, generation, self.control, self.deadline,
                 self.startup_timeout_s)
-        results = self.engine.run_prepared(prepared, generation=generation)
+        results = (self.engine.run_prepared(prepared, generation=generation) if groups is None else
+                   self._infer_groups(groups, declared, generation, audit))
         raw = _associate_declared_results(declared, results)
         try:
             _publish(self._audit_path, dict(audit, raw_results=raw))
         except BaseException as exc:
             self._audit_errors.append("call_ledger_write: " + type(exc).__name__)
+        return results
+
+    def _infer_groups(self, groups, declared, generation, audit):
+        """Each group invokes the existing native list API, without retries.
+
+        The logical receipt declares an attempt; physical acceptance is known
+        only from each response. Unsubmitted suffix rows never become unknown
+        model work merely because an earlier group failed or was cancelled.
+        """
+        from src.serving.backends.vllm_sync_process import _publish
+
+        results, offset, stopped = [], 0, None
+        for index, group in enumerate(groups):
+            if stopped is None:
+                try:
+                    _check(self.deadline, self.control)
+                except (InterruptedError, TimeoutError) as exc:
+                    stopped = type(exc).__name__
+            if stopped is not None:
+                results.extend(dict({name: row[name] for name in IDENTITY_FIELDS},
+                    status='failed', submission_confirmed=False, text=None,
+                    error_type='BatchStoppedBeforeSubmission', stop_reason=stopped,
+                    prompt_tokens=None, completion_tokens=None, total_tokens=None) for row in group.rows)
+                offset += len(group.rows)
+                continue
+            receipt = dict(request_batch_id=f'{self._batch_id}:{self._raw_stage_id}:{index}',
+                call_ids=[row['call_id'] for row in group.rows],
+                policy=self.prepared_batching.policy, token_budget=self.prepared_batching.token_budget,
+                max_rows=self.prepared_batching.max_rows, input_tokens=group.input_tokens,
+                output_cap_tokens=group.output_cap_tokens, estimated_tokens=group.estimated_tokens,
+                flush_reason=group.reason, oversize=group.oversize,
+                cost_scope='local_tokenizer_estimate_not_native_usage',
+                submission_scope='synchronous_engine_batch_api',
+                submission_confirmation='per_call_ledger')
+            self._request_batches.append(receipt)
+            _publish(self._audit_path, audit)
+            batch_results = self.engine.run_prepared(list(group.rows), generation=generation)
+            results.extend(batch_results)
+            declarations = declared[offset:offset + len(group.rows)]
+            raw = _associate_declared_results(declarations, batch_results)
+            # Keep every confirmed prefix before another process call can fail.
+            _publish(self._audit_path, dict(audit, raw_results=raw))
+            if (raw or len(batch_results) != len(group.rows) or any(
+                    call.get('status') != 'succeeded' or call.get('submission_confirmed') is not True
+                    or 'engine_protocol_error' in call
+                    or call.get('error_type') == 'NativeTaskUnconfirmed' for call in declarations)):
+                stopped = 'PreviousBatchUnconfirmedOrFailed'
+            offset += len(group.rows)
         return results
 
     def _run_batch(self, batch):
@@ -177,7 +259,7 @@ class FusedChainBatch:
             # Ray may already have queued another batch before the consumer
             # sees the first error. Preserve that error without another call.
             return self._failure_json
-        self._audit_calls, self._audit_errors = [], []
+        self._audit_calls, self._audit_errors, self._request_batches = [], [], []
         self._batch_id, self._raw_stage_id = uuid.uuid4().hex, None
         self._audit_path = self.control / ("chain-audit-" + self._batch_id + ".json")
         records = []
@@ -221,11 +303,24 @@ class FusedChainBatch:
                             columns=getattr(exc, "chain_columns", envelope["columns"]),
                             records=[], error_type=type(exc).__name__)
             envelope["raw_stage_id"] = self._raw_stage_id
+            if self.prepared_batching is not None:
+                # A malformed response or interruption may bypass method parsing.
+                # Retain native facts beside its unconfirmed declarations.
+                native = {call['call_id']: call for call in self._audit_calls}
+                for call in envelope['calls']:
+                    fact = native.get(call['call_id'])
+                    if (fact is not None and call.get('status') == 'unknown'
+                            and call.get('submission_confirmed') is not True
+                            and call.get('text') is None and call.get('total_tokens') is None):
+                        call.update(fact)
+                envelope['request_batches'] = list(self._request_batches)
             try:
                 _publish(self.control / ("chain-failure-" + self._batch_id + ".json"), envelope)
             except BaseException as recording:
                 envelope["cleanup_errors"].append("failure_ledger_write: " + type(recording).__name__)
         finally:
+            if self.prepared_batching is not None:
+                envelope['request_batches'] = list(self._request_batches)
             envelope["cleanup_errors"].extend(self._audit_errors)
             if self.engine is not None and (self.failed or self.close_on_source_complete
                                            and len(self.received) == len(self.expected)):
