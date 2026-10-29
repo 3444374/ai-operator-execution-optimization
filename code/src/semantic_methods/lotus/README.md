@@ -160,3 +160,8 @@ Extract仍用完整关系：真实EOF、所有前段结果与调用责任检查�
 这是有限顺序计划的执行选项，不表示Join、任意DAG、跨查询模型复用或所有组合已实机验证。
 接口与资源说明见[执行owner](../../execution_provider/adapters/README.md#optional-single-model-finite-record-plans)，
 资格范围见[代码状态](../../../INFRA_STATUS.md#record-local-sections-c827)。
+
+同一逐记录异步后端可显式选择逐记录完成推进，或按固定输入组逐阶段等待后提交后继；
+原`StageSpec`、`ChainRun`／`MethodRun`、格式器和解析保持。组内过滤终结、尾组和取消不产生不存在的后继。
+这只改变提交放行时刻，不表示native请求已经按token组批；跨查询模型借用尚未实现。
+接口、范围及与原fused完整路径的区别见[同异步后端推进策略](../../execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)。
