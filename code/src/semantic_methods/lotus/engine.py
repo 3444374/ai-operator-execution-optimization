@@ -182,10 +182,8 @@ def prepare_rows(rows, method):
     return LotusFilterMethod(method).prepare_rows(rows)
 
 
-def engine_response(result, lm):
-    """Build a native accounting response; semantic use also checks the protocol."""
-    from litellm.types.utils import ModelResponse
-
+def validate_engine_output(result):
+    """Validate terminal answer structure without accounting or postprocessing."""
     tokens = [result.get(key) for key in ("prompt_tokens", "completion_tokens", "total_tokens")]
     if any(type(value) is not int or value < 0 for value in tokens):
         raise ValueError("successful engine output requires authoritative token usage")
@@ -195,6 +193,14 @@ def engine_response(result, lm):
         raise ValueError("only successful engine text is a semantic answer")
     if result.get("finish_reason") not in ("stop", "length"):
         raise ValueError("unfinished or aborted engine output is not a semantic answer")
+    return tokens
+
+
+def engine_response(result, lm):
+    """Build a native accounting response; semantic use also checks the protocol."""
+    from litellm.types.utils import ModelResponse
+
+    tokens = validate_engine_output(result)
     return ModelResponse(
         id=result["engine_request_id"], model=lm.model, object="chat.completion",
         created=int(time.time()),

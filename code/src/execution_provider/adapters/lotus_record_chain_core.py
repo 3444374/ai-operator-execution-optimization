@@ -126,6 +126,8 @@ class _ChainTransport:
 
                 worker_type = owner._batch_type or FusedChainBatch
                 options = owner._worker_phase_options() if owner.relation_barriers else {}
+                if owner.prepared_batching is not None:
+                    options['prepared_batching'] = asdict(owner.prepared_batching)
                 self.worker = worker_type(
                     owner.chain.describe(), asdict(owner.engine),
                     list(owner.results.bindings.values()), str(owner.control),
@@ -146,7 +148,9 @@ class _ChainTransport:
                 self._worker_phase = owner.phase_stage_ids
             if self._stopping.is_set():
                 raise InterruptedError("Core chain transport closed during worker construction")
-        value = self.worker.run_rows(json.loads(task.task.payload))
+        options = ({'source_flush_reason': task.task.metadata.decode('ascii')}
+                   if owner._streaming_tokens else {})
+        value = self.worker.run_rows(json.loads(task.task.payload), **options)
         # Worker materialization and its audit are separate from the bounded
         # Core response. Overflow is an uncertain task, never a fake terminal;
         # close recovers the independent call audit without releasing its credit.
@@ -264,7 +268,7 @@ class _CoreChainRows:
     def __init__(self, owner, records, spec, cancelled):
         self.owner, self.source = owner, iter(records)
         self.cancelled = cancelled
-        limits = (owner.capacity.limits(owner.resources, len(owner.chain.stages))
+        limits = (owner._fused_limits(len(owner.chain.stages))
                   if owner.relation_barriers else None)
         self.session = owner.core.open(spec, limits)
         self.offered, self.sequence = set(), 0
@@ -274,6 +278,7 @@ class _CoreChainRows:
         self.peak_core_usage = asdict(owner.core.capacity.usage())
         self._phase_records = []
         self._source_close_error = None
+        self._token_batches = None
 
     @property
     def production_core_connected(self):
@@ -315,6 +320,48 @@ class _CoreChainRows:
         for key, value in asdict(self.owner.core.capacity.usage()).items():
             self.peak_core_usage[key] = max(value, self.peak_core_usage[key])
 
+    def _pack_source(self):
+        """Prepare bounded reads lazily; only the batcher chooses model groups."""
+        from transformers import AutoTokenizer
+        from src.semantic_methods.lotus.prepared_batching import PreparedRequestBatcher
+        from src.semantic_methods.lotus.record_results import _source_binding, record_row
+
+        owner, seen = self.owner, set()
+        tokenizer = AutoTokenizer.from_pretrained(
+            owner.engine.tokenizer_path or owner.engine.model_path,
+            local_files_only=True, trust_remote_code=False)
+
+        def read_chunk():
+            for _ in range(owner.resources.model_batch_rows):
+                _check(owner.deadline, self.cancelled)
+                try:
+                    record = next(self.source)
+                except StopIteration:
+                    self.source_eof = True
+                    return
+                if type(record) is not RecordOccurrence:
+                    raise TypeError('Core chain source must yield RecordOccurrence')
+                if (owner.results.bindings.get(record.row_id) != _source_binding(record)
+                        or record.row_id in seen):
+                    raise ValueError('Core chain source changed or duplicated an occurrence')
+                seen.add(record.row_id)
+                record = RecordOccurrence.from_dict(record.describe())
+                row = owner.chain.methods[0].prepare_rows([record], query_id=owner.chain.query_id)[0]
+                yield dict(row, source_row=record_row(record))
+
+        def chunks():
+            while not self.source_eof:
+                yield read_chunk()
+
+        def size(row):
+            # Charge both the pending wire value and its prepared message.
+            return (len(_encode([row['source_row']], owner.capacity.item_input_bytes))
+                    + len(row['messages_json'].encode('utf-8')))
+
+        yield from PreparedRequestBatcher(owner.prepared_batching, tokenizer).iter_batches(
+            chunks(), owner.chain.stages[0].generation,
+            max_bytes=owner.capacity.item_input_bytes, size=size)
+
     def _fill(self):
         from src.semantic_methods.lotus.record_results import _source_binding, record_row
 
@@ -322,21 +369,31 @@ class _CoreChainRows:
         if self.source_eof or owner.core.capacity.usage().held_tasks:
             return
         if self.pending is None:
-            rows, batch_ids = [], set()
-            for _ in range(owner.resources.model_batch_rows):
-                _check(owner.deadline, self.cancelled)
+            rows, batch_ids, metadata = [], set(), b''
+            if owner._streaming_tokens:
+                if self._token_batches is None:
+                    self._token_batches = self._pack_source()
                 try:
-                    record = next(self.source)
+                    group = next(self._token_batches)
+                    rows = [row['source_row'] for row in group.rows]
+                    metadata = group.reason.encode('ascii')
                 except StopIteration:
-                    self.source_eof = True
-                    break
-                if type(record) is not RecordOccurrence:
-                    raise TypeError("Core chain source must yield RecordOccurrence")
-                if (owner.results.bindings.get(record.row_id) != _source_binding(record)
-                        or record.row_id in self.offered or record.row_id in batch_ids):
-                    raise ValueError("Core chain source changed or duplicated an occurrence")
-                batch_ids.add(record.row_id)
-                rows.append(record_row(record))
+                    pass
+            else:
+                for _ in range(owner.resources.model_batch_rows):
+                    _check(owner.deadline, self.cancelled)
+                    try:
+                        record = next(self.source)
+                    except StopIteration:
+                        self.source_eof = True
+                        break
+                    if type(record) is not RecordOccurrence:
+                        raise TypeError("Core chain source must yield RecordOccurrence")
+                    if (owner.results.bindings.get(record.row_id) != _source_binding(record)
+                            or record.row_id in self.offered or record.row_id in batch_ids):
+                        raise ValueError("Core chain source changed or duplicated an occurrence")
+                    batch_ids.add(record.row_id)
+                    rows.append(record_row(record))
             if not rows:
                 self.session.seal()
                 return
@@ -345,7 +402,7 @@ class _CoreChainRows:
             work = WorkDescriptor((StageWork("fused_chain", upper, "stage_call_upper_bound"),),
                                   "fused_chain", "finite-chain-upper-bound-v1")
             self.pending = OfferedTask(
-                self.sequence, payload, upper, owner.capacity.item_result_bytes,
+                self.sequence, payload, upper, owner.capacity.item_result_bytes, metadata=metadata,
                 info=TaskInfo(hashlib.sha256(payload).hexdigest(), self.sequence,
                               "fused_chain", work),
             )
@@ -434,6 +491,8 @@ class _CoreChainRows:
         self._source_close_error = None
         if not self.source_closed:
             try:
+                if self._token_batches is not None:
+                    self._token_batches.close()
                 close = getattr(self.source, "close", None)
                 if close is not None:
                     close()
@@ -742,7 +801,8 @@ class SemLoomRecordChainCore:
                  capacity: CoreChainCapacity | CoreRecordsCapacity | None = None, control_dir=None,
                  execution="fused", actor_owner=None, method_limits=None,
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
-                 ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None):
+                 ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
+                 prepared_batching=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -766,6 +826,21 @@ class SemLoomRecordChainCore:
             if token_budget is not None or ready_order != "fifo":
                 raise ValueError("batch-stage progression currently requires count admission and FIFO")
         self.progression, self.progression_batch_rows = progression, progression_batch_rows
+        self.prepared_batching = None
+        if prepared_batching is not None:
+            from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+            if execution != 'fused':
+                raise ValueError('prepared_batching requires the synchronous fused path')
+            if type(prepared_batching) is not PreparedBatching:
+                raise TypeError('prepared_batching must be PreparedBatching or None')
+            if (prepared_batching.policy == 'fixed_rows'
+                    and prepared_batching.max_rows > self.resources.model_batch_rows):
+                raise ValueError('prepared batching max_rows cannot exceed model_batch_rows')
+            if self.engine.chat_template is not None:
+                raise ValueError('prepared_batching currently requires the tokenizer-owned chat template')
+            self.prepared_batching = PreparedBatching(**asdict(prepared_batching))
+        self._streaming_tokens = (self.prepared_batching is not None
+                                  and self.prepared_batching.policy == 'token_budget')
         self.token_budget = None
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
@@ -861,6 +936,12 @@ class SemLoomRecordChainCore:
         return [call for result in self._accountants.values() for call in result.calls]
 
     @property
+    def request_batches(self):
+        """Logical groups declared for the synchronous native batch API."""
+        return [deepcopy(batch) for result in self._accountants.values()
+                for batch in result.request_batches]
+
+    @property
     def _has_next_phase(self):
         return self._phase_index + 1 < len(self._segments)
 
@@ -879,6 +960,11 @@ class SemLoomRecordChainCore:
         return SessionSpec(self.query_chain.query_id,
                            "lotus-record-chain-phase-" + str(self._phase_index),
                            "lotus-record-chain-fused-v1", work_unit="stage_call_upper_bound")
+
+    def _fused_limits(self, stage_count):
+        resources = (replace(self.resources, model_batch_rows=self.prepared_batching.max_rows)
+                     if self._streaming_tokens else self.resources)
+        return self.capacity.limits(resources, stage_count)
 
     def _advance_relation_phase(self, stream):
         """Cross one complete Extract relation on the single Core control thread."""
@@ -926,14 +1012,16 @@ class SemLoomRecordChainCore:
         stream.offered, stream.sequence, stream.pending = set(), 0, None
         stream._phase_records = []
         stream.session = self.core.open(
-            self._phase_spec(), self.capacity.limits(self.resources, len(self.chain.stages)))
+            self._phase_spec(), self._fused_limits(len(self.chain.stages)))
 
     def evaluate(self, records, chain, *, expected, query_id, cancelled=None, columns=None):
         """Return a single-pass relation iterator; publish its frame after completed EOF.
 
         ``expected`` binds each source occurrence and its values without prompts.
-        ``model_batch_rows`` bounds one fused input batch, including preparation;
-        no separate preparation pool or per-stage Core dispatch is introduced.
+        Without token packing, ``model_batch_rows`` bounds one fused input batch.
+        Single-stage token packing uses it only for reads; B and independent
+        row/byte guards choose the native submission batch. No preparation pool
+        or per-stage Core dispatch is introduced.
         Explicit ``relation_barriers`` chains retain complete intermediate
         Extract relations on the driver. ``columns`` supplies an ordered schema
         even for an empty source. This retention is outside Core's wire limits.
@@ -956,6 +1044,12 @@ class SemLoomRecordChainCore:
             raise ValueError("chain and query_id must identify the same query")
         if len({stage.method.model_name for stage in chain.stages}) != 1:
             raise ValueError("Core fused chain requires one model deployment")
+        if self.prepared_batching is not None and (
+                any(stage.kind not in ('filter', 'map') for stage in chain.stages)
+                or len({stage.model_role for stage in chain.stages}) != 1):
+            raise ValueError('prepared_batching currently requires Filter/Map with one model role')
+        if self._streaming_tokens and len(chain.stages) != 1:
+            raise ValueError('cross-read token batching currently requires a single Filter or Map stage')
         if any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
         expected = tuple(RecordOccurrence.from_dict(record.describe()) for record in expected)
@@ -996,7 +1090,7 @@ class SemLoomRecordChainCore:
             descriptor = os.open(self.control / "owner", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(descriptor, "w") as output:
                 output.write(self.control_token)
-            limits = self.capacity.limits(self.resources, len(chain.stages))
+            limits = self._fused_limits(len(chain.stages))
             endpoint = EndpointSnapshot("local-chain", "local://chain", "local", "0",
                                         True, 0, 0, None, time.monotonic())
             policies = SessionPolicies(StaticAdmissionController(1), RoundRobinEndpointRouter(),
@@ -1123,6 +1217,19 @@ class SemLoomRecordChainCore:
         if self._active is not None:
             self.last_close_report["peak_core_usage"] = self._active.peak_core_usage
             self._active.last_close_report = self.last_close_report
+        if self.prepared_batching is not None:
+            self.last_close_report['prepared_batching'] = asdict(self.prepared_batching)
+            self.last_close_report['request_batch_count'] = len(self.request_batches)
+            self.last_close_report['cross_read_token_batches'] = self._streaming_tokens
+            if self._streaming_tokens:
+                self.last_close_report.update(
+                    pending_payload_and_message_byte_limit=self.capacity.item_input_bytes,
+                    pending_lookahead_rows=1,
+                    model_batch_mode='single_stage_cross_read_token_batches',
+                    source_pull_batch_rows=self.resources.model_batch_rows,
+                    model_batch_row_guard=self.prepared_batching.max_rows,
+                    batch_concurrency=1,
+                    prepare_batch_rows_reason='control-thread cost preparation; original worker preparation retained')
         if self.relation_barriers:
             self.last_close_report.update(
                 relation_barriers=True, relation_phase_count=len(self._segments),
@@ -1138,6 +1245,8 @@ class SemLoomRecordChainCore:
                 whole_query_rss_bounded=False,
                 model_batch_mode="finite_synchronous_fused_segments_with_extract_barriers",
             )
+            if self._streaming_tokens:
+                self.last_close_report['model_batch_mode'] = 'single_stage_cross_read_token_batches'
         if closed and self.control is not None:
             shutil.rmtree(self.control)
         return self.last_close_report
