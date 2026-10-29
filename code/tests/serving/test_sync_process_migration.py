@@ -182,6 +182,43 @@ class StageCleanupTests(unittest.TestCase):
 
 
 class RealProcessTests(unittest.TestCase):
+    def test_idle_stop_and_deadline_confirm_API_but_broken_channel_keeps_unknown(self):
+        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+
+        class CPUProcess(vllm_sync_process.EngineProcess):
+            @staticmethod
+            def _command(engine, result_fd):
+                return [engine.model_python, '-m', 'tests.baselines.text.daft_session_cpu_engine',
+                        str(result_fd)]
+
+        for trigger in ('stop', 'deadline', 'broken'):
+            with self.subTest(trigger=trigger), tempfile.TemporaryDirectory() as directory:
+                control = Path(directory)
+                process = CPUProcess(EngineSpec('/tmp/CPU-fixture-model', sys.executable, sys.executable),
+                                     GenerationSpec(), control, time.monotonic() + 5, 3)
+                try:
+                    with process._lock:
+                        if trigger == 'deadline':
+                            process.deadline = time.monotonic() - 1
+                        else:
+                            process._broken = trigger == 'broken'
+                            (control / 'stop').touch()
+                    process._reaper.join(timeout=3)
+                    self.assertFalse(process._reaper.is_alive())
+                    report = process.close(2)
+                    self.assertTrue(report['process_exit_confirmed'], report)
+                    self.assertTrue(process._broken)
+                    self.assertIs(process.close(2), report)
+                    if trigger == 'broken':
+                        self.assertEqual(report['status'], 'unknown')
+                        self.assertIsNone(report['engine_api'])
+                        self.assertIn('engine_api_shutdown_unconfirmed', report['cleanup_errors'])
+                    else:
+                        self.assertEqual(report['status'], 'closed', report)
+                        self.assertTrue(report['engine_api']['engine_api_shutdown_confirmed'])
+                finally:
+                    process.close(2)
+
     def test_migrated_transport_preserves_call_identity_usage_and_idempotent_close(self):
         from src.semantic_methods.lotus.records import identity
         from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
