@@ -79,7 +79,9 @@ One model is started and finally closed per query, including all its sections. C
 reuse, multiple deployments and arbitrary DAGs are not provided by this option.
 
 The caller owns Ray 2.56.1. Preparation/model batch sizes must both be 1; explicit
-`max_active_batches` must fit the engine capacity. Formatting/parsing remains in the
+`max_active_batches` declares the outer request slots and their Core/actor/IPC reservations.
+The shared records resolver also checks this path; the engine's per-iteration sequence
+limit is a separate configuration and is not rewritten. Formatting/parsing remains in the
 method caller and no Filter prepare actor is allocated. Core/MethodBudget logical limits
 do not bound whole-query relations, audit memory, process RSS or GPU KV bytes.
 The full-query mode defaults to request-count admission (`token_budget=None`).
@@ -167,13 +169,19 @@ historical first/reuse runs are not reproduced merely by exposing this option.
 名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
 `profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
 显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
-不是另一个执行器。`C0` 是起始软窗口，owner 上界为声明的 Core request budget 与
-`EngineSpec.max_num_seqs` 的较小值；prepare 数、模型容量和 actor/IPC 容量在启动前确定。
+不是另一个执行器。`C0` 是起始软窗口，owner 上界为声明的
+`RecordsResources.max_active_batches`；prepare 数、模型配置和 actor/IPC 容量在启动前确定。
+应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 保持传给
+vLLM 的每轮序列上限，不再截断 records Core 的请求额度。外层额度可以更大，仍受
+原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
 显式 `async_limits.max_inflight/result_slots` 必须覆盖该 owner 上界，不是只覆盖 C0。
 
 `allow_exploration=True` 显式允许原有限探索；不设 admission 时保持固定且不启动 native
-反馈采样。`max_inflight="auto"` 仍只是声明容量的 min，不是实测调优。同步 Core 仍只
+反馈采样。`max_inflight="auto"` 仅在显式 async 下选择声明的 Core request budget，
+不是实测调优，也不自动扩大调用方额度。同步 Core 仍只
 接收 model batch 1；有限同步批参照 `lotus_records_static` 不冒称 Core 批处理。
+当前反馈只调未完成请求窗口 C；每批行数或累计 token 工作预算 B 是组批边界，
+不是这个窗口。当前 records Core 仍为 B1，没有扫描 B 或按 token 组批与动态反馈联动。
 
 普通查询可用同一公共 `scheduling.runtime.calibration.run_admission_query` 接精确配置复用。
 Movie 的薄配置槽及计时/资格边界见 [calibration.README](../../scheduling/runtime/calibration.README.md)。

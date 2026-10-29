@@ -1,10 +1,13 @@
 """New profile wiring over existing real Core, threaded actor and CPU IPC tests."""
 
 import json
+import sys
+import time
 import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters import lotus_records_async_actor as async_actor
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.execution_provider import test_lotus_records_async_core as async_fixture
@@ -23,6 +26,43 @@ class ProfiledAsyncCoreTests(async_fixture.AsyncCoreCompositionTests):
             GenerationSpec(), resources,
             profile=dict(mode="async", max_inflight="auto", stage_timing=True),
         )
+
+    def test_outer_requests_above_native_iteration_capacity_keep_IPC_limits_and_terminal_accounting(self):
+        rows = self.rows(["hold"] * 6)
+        with async_fixture.ThreadedRuntime(rows) as runtime:
+            owner = core.create_records_core(
+                FilterMethod("fixture", instruction="Keep {reviewText}"),
+                EngineSpec("/tmp/fixture-model", "/tmp/model-python", "/tmp/driver-python", max_num_seqs=1),
+                GenerationSpec(), RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
+                    max_active_batches=8, query_timeout_s=8, startup_timeout_s=5),
+                profile=dict(mode="async", max_inflight=8))
+            try:
+                stream = owner.evaluate(async_fixture.Source(rows), query_id="outer-above-native", max_inflight=4)
+                stream._fill()
+                until = time.monotonic() + 3
+                engine = runtime.async_actors[0].instance.engine
+                while engine.snapshot()["accepted_requests"] < 4:
+                    stream.session.advance(1)
+                    self.assertLess(time.monotonic(), until)
+                    owner.core.wake.wait(owner.core.wake.generation, .005)
+                self.assertEqual(owner.engine.max_num_seqs, 1)
+                self.assertEqual(owner._actors.limits.max_inflight, 8)
+                self.assertEqual(owner._actors.limits.result_slots, 8)
+                self.assertEqual(stream.session.limits.active_requests, 4)
+                self.assertEqual(engine.snapshot()["active_requests"], 4)
+                self.assertEqual(owner.core.capacity.usage().held_tasks, 4)
+                self.assertLessEqual(engine.snapshot()["input_bytes"], owner._actors.limits.input_bytes)
+                stream.close()
+                while owner.core.capacity.usage().held_tasks:
+                    owner.core.reap(owner.capacity.step_actions)
+                    self.assertLess(time.monotonic(), until)
+                    owner.core.wake.wait(owner.core.wake.generation, .005)
+                stream.collect_receipts()
+                self.assertEqual(len(stream.unconsumed_call_results), 4)
+                self.assertEqual(sum(r["prompt_tokens"] for r in stream.unconsumed_call_results), 44)
+                self.assertEqual(engine._sequence, 4)
+            finally:
+                self.assertEqual(owner.close(timeout=3)["status"], "closed")
 
     def test_consecutive_queries_keep_one_engine_fresh_timing_and_exact_identities(self):
         rows = self.rows(["fast", "fast"])
@@ -89,6 +129,40 @@ class OptionalStageTimingTests(unittest.TestCase):
         self.assertGreater(calls, 0)
         self.assertEqual(report["status"], "closed")
         self.assertGreater(report["stage_timings"]["timing_errors"], 0)
+
+
+class RecordChainCapacityTests(unittest.TestCase):
+    def test_record_local_query_shares_the_request_boundary_without_rewriting_native_capacity(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
+        from tests.execution_provider import test_lotus_record_local_query as chain_fixture
+
+        case = chain_fixture.QueryOwnerTests()
+        case.setUp()
+        self.addCleanup(case.doCleanups)
+        plan, rows = chain_fixture.fixture.chain_for("MMF"), chain_fixture.fixture.source_rows(size=3)
+        case.config_for(plan, rows)
+        model = EngineSpec(str(case.config), sys.executable, sys.executable,
+                           max_model_len=4096, max_num_seqs=1)
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
+                                     max_active_batches=3, query_timeout_s=12, startup_timeout_s=8)
+        with async_fixture.ThreadedRuntime([]) as runtime, patch.object(
+                async_actor.AsyncCoreModelActor, "_process_type", return_value=chain_fixture.Process):
+            actors = async_actor.AsyncRecordsActorOwner.for_prepared(model, plan.stages[0].generation, resources)
+            owner = SemLoomRecordChainCore(model, resources, execution="record_local_sections",
+                actor_owner=actors, capacity=core.CoreRecordsCapacity(item_input_bytes=65536,
+                                                                     item_result_bytes=65536))
+            try:
+                stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
+                self.assertEqual(len(list(stream)), 2)
+                self.assertEqual(len(owner.calls), 9)
+                self.assertEqual(len({call["call_id"] for call in owner.calls}), 9)
+                self.assertEqual(len({call["engine_uid"] for call in owner.calls}), 1)
+                self.assertEqual(model.max_num_seqs, 1)
+                self.assertEqual(actors.limits.max_inflight, 3)
+                self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
+                self.assertEqual(len(runtime.async_actors), 1)
+            finally:
+                self.assertEqual(owner.close(timeout=3)["status"], "closed")
 
 
 if __name__ == "__main__":

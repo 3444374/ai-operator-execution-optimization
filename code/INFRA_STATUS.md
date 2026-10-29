@@ -4,6 +4,13 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+本地未发布的 records Core 容量纠偏将应用层请求额度与 vLLM 每轮序列上限分开；
+显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
+`max_num_seqs` 保持原引擎配置，普通同步默认不变。CPU 检查覆盖高于引擎每轮
+序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
+完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
+生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。
+
 本地维护候选将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。
 [入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；原代码迁移已通过独审，本地追加预算和资格分流修复，尚未发布。
