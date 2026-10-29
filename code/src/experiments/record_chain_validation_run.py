@@ -1,6 +1,6 @@
 """Git-owned finite-chain validation entry; site config and receipts stay outside Git.
 
-This is a bounded options or progression check, not a matrix/host controller. The existing
+This is a bounded options, matched-capacity or progression check, not a matrix/host controller. The existing
 external owner keeps its lease, budgets, CPU/GPU placement and physical checks.
 """
 from dataclasses import asdict
@@ -30,6 +30,7 @@ from src.experiments.record_chain_validation import (
 
 CASES = (('fifo-count', False, False), ('fifo-token', True, False),
          ('successor-count', False, True), ('successor-token', True, True))
+EXECUTION_CASES = (('fused-count', False, False), ('record-local-count', False, False))
 PROGRESSION_CASES = ('record-count', 'batch-stage-count')
 REPO = Path(__file__).resolve().parents[3]
 ENTRY = REPO / 'code/scripts/experiments/validate_record_chain_options.py'
@@ -41,13 +42,15 @@ def read(path):
 
 def make_resources(config):
     suite = config.get('suite', 'options')
-    if suite not in ('options', 'progression'):
+    if suite not in ('options', 'matched-execution', 'progression'):
         raise ValueError('unknown validation suite')
     resources = RecordsResources(**config['resources'])
-    if suite == 'options' and resources.max_active_batches != 4:
-        raise ValueError('this four-case check requires explicit max_active_batches=4')
-    if suite == 'options' and 'progression_batch_rows' in config:
-        raise ValueError('progression_batch_rows requires the progression suite')
+    if suite != 'progression':
+        capacity = 1 if suite == 'matched-execution' else 4
+        if resources.max_active_batches != capacity:
+            raise ValueError(f'this {suite} check requires explicit max_active_batches={capacity}')
+        if 'progression_batch_rows' in config:
+            raise ValueError('progression_batch_rows requires the progression suite')
     if suite == 'progression':
         group = config.get('progression_batch_rows')
         if (not 1 <= resources.max_active_batches <= 4 or type(group) is not int or
@@ -79,16 +82,18 @@ def configuration(path):
     for name in ('artifact_root',):
         require_outside_git(Path(config[name]))
     require_outside_git(Path(config['input']['existing_csv']))
+    matched = config.get('suite', 'options') == 'matched-execution'
     if config.get('suite') == 'progression':
         config['cases'] = [dict(case_id=name, token=False, successor=False,
             progression='record' if name == 'record-count' else 'batch_stage',
             progression_batch_rows=None if name == 'record-count' else config['progression_batch_rows'])
             for name in PROGRESSION_CASES]
     else:
-        config['cases'] = [dict(case_id=name, token=token, successor=priority)
-                           for name, token, priority in CASES]
-    if set(config['ray_roots']) != {case['case_id'] for case in config['cases']}:
-        raise ValueError('explicit private Ray roots required for the selected cases')
+        config['cases'] = [dict(case_id=name, token=token, successor=priority,
+            **({'execution': 'fused' if name == 'fused-count' else 'record_local_sections'} if matched else {}))
+            for name, token, priority in (EXECUTION_CASES if matched else CASES)]
+    if set(config['ray_roots']) != {c['case_id'] for c in config['cases'] if c.get('execution') != 'fused'}:
+        raise ValueError('explicit private Ray roots required for the cases using Ray')
     for root in config['ray_roots'].values():
         require_outside_git(Path(root))
     return config, engine, resources, generation
@@ -130,6 +135,8 @@ def objects(config, engine, generation, *, require_token_budget=True):
 
 def qualify(path, output, *, require_token_budget=True):
     config, engine, resources, generation = configuration(path)
+    if config.get('suite') == 'matched-execution' and require_token_budget:
+        raise ValueError('matched-execution requires --count-only qualification')
     if config.get('suite') == 'progression' and require_token_budget:
         raise ValueError('progression requires --count-only qualification')
     if (Path(config['artifact_root']) / 'budget.sqlite').exists():
@@ -151,9 +158,9 @@ def qualify(path, output, *, require_token_budget=True):
 def qualified(path, ready_path, *, require_token_budget=None, case_id=None):
     config, engine, resources, generation = configuration(path)
     if case_id is not None:
-        case = next((case for case in config['cases'] if case['case_id'] == case_id), None)
+        case = next((c for c in config['cases'] if c['case_id'] == case_id), None)
         if case is None:
-            raise ValueError('case is not part of the selected suite')
+            raise ValueError('case is not part of the configured suite')
         require_token_budget = case['token']
     require_outside_git(Path(ready_path))
     ready = read(ready_path)
@@ -179,6 +186,7 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     started = time.monotonic_ns() if process_started_ns is None else process_started_ns
     config, engine, resources, generation, ready = qualified(path, ready_path, case_id=case_id)
     case = next(c for c in config['cases'] if c['case_id'] == case_id)
+    execution = case.get('execution', 'record_local_sections')
     if config['execution_enabled'] is not True or ray.__version__ != '2.56.1' or ray.is_initialized():
         raise ValueError('explicit enabled config and fresh Ray2.56.1 required')
     check_external_lease(config['external_owner'])
@@ -193,7 +201,8 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
                   suite=config.get('suite', 'options'), input_sha256=config['input']['sha256'],
                   config_sha256=ready['config_sha256'],
                   pid=os.getpid(), pid_birth=psutil.Process().create_time(),
-                  scope='n1 functional check; not performance or default-switch acceptance')
+                  scope='n1 functional check; not performance or default-switch acceptance',
+                  caller_runtime=dict(ray_owned=execution != 'fused', ray_init_s=0.0, ray_shutdown_s=0.0))
     primary = None
     created_ray = False
     sampler = ProcessSampler(out / 'rss.jsonl', {'driver': os.getpid()}, interval=.2,
@@ -208,14 +217,19 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
         env = dict(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
                    LITELLM_LOCAL_MODEL_COST_MAP='True', VLLM_WORKER_MULTIPROC_METHOD='spawn')
         os.environ.update(env)
-        # Same caller bootstrap as the normal Movie session, not another model owner.
-        created_ray = True
-        ray.init(address='local', num_cpus=3, num_gpus=1, include_dashboard=False,
-                 _temp_dir=config['ray_roots'][case_id], runtime_env={'env_vars': env})
-        result = run_case(records, chain, engine, resources, control_dir=out / 'control',
+        if execution != 'fused':
+            # The Ray adapter borrows its caller's runtime; fused uses no Ray runtime.
+            created_ray = True
+            ray_started = time.monotonic_ns()
+            ray.init(address='local', num_cpus=3, num_gpus=1, include_dashboard=False,
+                     _temp_dir=config['ray_roots'][case_id], runtime_env={'env_vars': env})
+            report['caller_runtime']['ray_init_s'] = (time.monotonic_ns()-ray_started)/1e9
+        control = out / 'control'
+        if execution == 'fused':
+            control.mkdir(mode=0o700)
+        result = run_case(records, chain, engine, resources, control_dir=control,
                           token_budget=budget if case['token'] else None, priority=case['successor'],
-                          **({k:case[k] for k in ('progression', 'progression_batch_rows')}
-                             if 'progression' in case else {}))
+                          **{k:case[k] for k in ('execution', 'progression', 'progression_batch_rows') if k in case})
         report.update({k:v for k,v in result.items() if k != 'records'})
         report['actual_calls'] = len(result['calls'])
         replay_started = time.monotonic_ns()
@@ -239,8 +253,10 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     finally:
         if created_ray:
             try:
+                ray_closing = time.monotonic_ns()
                 ray.shutdown()
                 report['ray_shutdown_returned'] = True
+                report['caller_runtime']['ray_shutdown_s'] = (time.monotonic_ns()-ray_closing)/1e9
             except BaseException as error:
                 report['ray_shutdown_error'] = type(error).__name__
         try:
@@ -276,7 +292,7 @@ def main(argv=None, *, process_started_ns=None):
     parser.add_argument('--config', required=True, type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--ready', type=Path)
-    parser.add_argument('--case', choices=[name for name, _, _ in CASES] + list(PROGRESSION_CASES))
+    parser.add_argument('--case', choices=[name for name, _, _ in CASES + EXECUTION_CASES] + list(PROGRESSION_CASES))
     parser.add_argument('--execute-model', action='store_true')
     parser.add_argument('--count-only', action='store_true', help='qualify count cases without a token budget')
     args = parser.parse_args(argv)
