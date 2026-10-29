@@ -171,6 +171,8 @@ submissions; per-call results remain the authority for acceptance, usage and unk
 outcomes. Failure, malformed replies, cancellation or deadline stop subsequent groups;
 known prefix results remain, while unsent suffix requests are marked failed before
 submission. Unknown attempts keep the original query/Core cleanup responsibility.
+If model construction fails, these requests remain failed before submission while
+model allocation and cleanup can independently remain unknown.
 There is no retry or model lifetime change. The separate record-local `token_budget`
 argument still controls in-flight work **W**; this serial profile does not combine it
 with B or alter async actor B1 restrictions.

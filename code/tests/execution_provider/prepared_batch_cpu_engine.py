@@ -4,10 +4,11 @@ import json
 import os
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.serving.backends import staged_generation_process, vllm_engine
-from src.serving.backends.vllm_engine import _prepared
+from src.serving.backends.vllm_engine import _prepared, result_from_output
 
 
 class Engine:
@@ -40,6 +41,16 @@ class Engine:
             Path(self.config['stop_file']).touch()
         if self.config.get('corrupt_batch') == index:
             results.append(dict(results[0]))
+        if self.config.get('invalid_success_batch') == index:
+            invalid = self.config['invalid_success']
+            if invalid == 'converter_missing_usage':
+                output = SimpleNamespace(request_id='CPU-missing-usage', prompt_token_ids=None,
+                    outputs=[SimpleNamespace(index=0, text='generated', token_ids=[1], finish_reason='stop')],
+                    finished=True)
+                results[0] = result_from_output(identities[0], output, engine_uid=self.uid,
+                    start=1, end=2, generation=generation, get_tokenizer=lambda: None)
+            else:
+                results[0].update(invalid)
         return results
 
     def close(self):

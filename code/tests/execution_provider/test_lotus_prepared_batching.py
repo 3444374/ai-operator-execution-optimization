@@ -11,6 +11,7 @@ from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBa
 from src.modalities.text.tokenization import chat_token_count
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching, PreparedRequestBatcher
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec, MapMethod
+from src.semantic_methods.lotus.record_results import ChainExecutionError
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.staged_generation_process import ChainEngineProcess
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, _prepared
@@ -51,8 +52,9 @@ class PreparedBatchingTests(unittest.TestCase):
         _, conversations = _prepared(run.prepared)
         self.B = sum(chat_token_count(self.tokenizer, c) + 64 for c in conversations[:2])
 
-    def execute(self, policy, *, fail_batch=None, cancel_after=None, corrupt_batch=None, allow_failure=False):
-        model = self.root / (policy + '.json')
+    def execute(self, policy, *, fail_batch=None, cancel_after=None, corrupt_batch=None,
+                invalid_success=None, allow_failure=False):
+        model = Path(tempfile.mkdtemp(prefix=policy+'-', dir=self.root)) / 'model.json'
         spec = EngineSpec(str(model), sys.executable, sys.executable,
             tokenizer_path=str(self.root / 'tokenizer'), max_model_len=4096, max_num_seqs=4)
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=4,
@@ -64,6 +66,8 @@ class PreparedBatchingTests(unittest.TestCase):
             stream = owner.evaluate(iter(self.rows), self.chain, expected=self.rows, query_id=self.chain.query_id)
             model.write_text(json.dumps(dict(fail_batch=fail_batch, cancel_after=cancel_after,
                                            corrupt_batch=corrupt_batch,
+                                           invalid_success_batch=None if invalid_success is None else 0,
+                                           invalid_success=invalid_success,
                                            stop_file=str(owner.control / 'stop'))))
             try:
                 records = list(stream)
@@ -116,7 +120,7 @@ class PreparedBatchingTests(unittest.TestCase):
         self.assertEqual(report['status'], 'unknown')
         self.assertGreater(report['core_usage']['held_tasks'], 0)
         owner.close(timeout=1)
-        self.assertEqual(len(Path(str(self.root / 'token_budget.json') + '.batches').read_text().splitlines()), 2)
+        self.assertEqual(len(Path(owner.engine.model_path + '.batches').read_text().splitlines()), 2)
 
     def test_cancel_between_batches_preserves_returned_prefix_without_later_model_calls(self):
         owner, records, report, native, error = self.execute('token_budget', cancel_after=0, allow_failure=True)
@@ -135,6 +139,51 @@ class PreparedBatchingTests(unittest.TestCase):
         self.assertEqual(owner.calls[2]['status'], 'unknown')
         self.assertEqual(owner.calls[-1]['error_type'], 'BatchStoppedBeforeSubmission')
         self.assertGreater(len(owner.results.unassociated_results), 0)
+
+    def test_invalid_success_stops_following_native_groups_before_stage_parsing(self):
+        faults = ['converter_missing_usage', {'total_tokens':3}, {'text':None},
+                  {'finish_reason':'abort'}, {'completion_tokens':True}]
+        for fault in faults:
+            with self.subTest(fault=fault):
+                owner, records, report, native, error = self.execute('token_budget',
+                    invalid_success=fault, allow_failure=True)
+                self.assertIsNotNone(error); self.assertFalse(records)
+                self.assertIsInstance(error, ChainExecutionError)
+                self.assertEqual(error.remote_error_type, 'RuntimeError')
+                self.assertFalse(report['query_completed'])
+                self.assertEqual(len(native), 1)
+                self.assertEqual(len(owner.request_batches), 1)
+                self.assertEqual(owner.calls[0]['status'], 'succeeded')
+                self.assertIs(owner.calls[0]['submission_confirmed'], True)
+                self.assertEqual(owner.calls[1]['total_tokens'], 2)
+                self.assertTrue(all(call['status'] == 'failed' and call['submission_confirmed'] is False
+                    and call['error_type'] == 'BatchStoppedBeforeSubmission' for call in owner.calls[2:]))
+                if fault == 'converter_missing_usage':
+                    self.assertIsNone(owner.calls[0]['prompt_tokens'])
+                    self.assertEqual(owner.calls[0]['completion_tokens'], 1)
+
+    def test_constructor_failure_marks_no_call_attempted_but_keeps_model_cleanup_unknown(self):
+        owner = Owner(EngineSpec('CPU-fixture', sys.executable, sys.executable,
+            tokenizer_path=str(self.root/'tokenizer')),
+            RecordsResources(model_batch_rows=4, max_active_batches=1), control_dir=self.root,
+            prepared_batching=PreparedBatching('fixed_rows', 1))
+        with patch.object(EngineSpec, 'validate_driver_environment', return_value={}), \
+                patch.object(Process, '__init__', side_effect=RuntimeError('CPU allocation failed')), \
+                patch.object(Process, 'run_prepared') as submit:
+            stream = owner.evaluate(iter(self.rows), self.chain, expected=self.rows, query_id=self.chain.query_id)
+            try:
+                with self.assertRaises(ChainExecutionError) as caught: list(stream)
+                self.assertEqual(caught.exception.remote_error_type, 'RuntimeError')
+            finally:
+                report = owner.close(timeout=1)
+            submit.assert_not_called()
+        self.assertEqual(owner.request_batches, [])
+        self.assertEqual(len(owner.calls), 4)
+        self.assertTrue(all(call['status'] == 'failed' and call['submission_confirmed'] is False
+            and call['error_type'] == 'BatchStoppedBeforeSubmission' for call in owner.calls))
+        self.assertFalse(report['query_completed']); self.assertEqual(report['status'], 'unknown')
+        self.assertEqual(report['model_owner']['status'], 'unknown')
+        self.assertIs(report['model_owner']['engine_api_shutdown_confirmed'], False)
 
     def test_configuration_rejects_invalid_or_unsupported_scope_before_model(self):
         for args in [('typo', 4, 0), ('token_budget', 4, 0), ('fixed_rows', True, 0),

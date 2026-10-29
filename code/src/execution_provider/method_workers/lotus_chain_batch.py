@@ -192,9 +192,22 @@ class FusedChainBatch:
         if self.engine is None:
             _publish(self.worker_report, dict(engine_allocation_started=True, worker_pid=os.getpid()))
             self._engine_start_attempted = True
-            self.engine = (self._engine_type or ChainEngineProcess)(
-                self.engine_spec, generation, self.control, self.deadline,
-                self.startup_timeout_s)
+            try:
+                self.engine = (self._engine_type or ChainEngineProcess)(
+                    self.engine_spec, generation, self.control, self.deadline,
+                    self.startup_timeout_s)
+            except Exception:
+                if groups is not None:
+                    # No group can enter run_prepared before construction returns.
+                    # Model allocation/cleanup uncertainty remains separately owned.
+                    for call in declared:
+                        call.update(status='failed', text=None,
+                            error_type='BatchStoppedBeforeSubmission', stop_reason='ModelInitializationFailed')
+                    try:
+                        _publish(self._audit_path, audit)
+                    except BaseException as recording:
+                        self._audit_errors.append('call_ledger_write: ' + type(recording).__name__)
+                raise
         results = (self.engine.run_prepared(prepared, generation=generation) if groups is None else
                    self._infer_groups(groups, declared, generation, audit))
         raw = _associate_declared_results(declared, results)
@@ -212,6 +225,7 @@ class FusedChainBatch:
         model work merely because an earlier group failed or was cancelled.
         """
         from src.serving.backends.vllm_sync_process import _publish
+        from src.semantic_methods.lotus.engine import validate_engine_output
 
         results, offset, stopped = [], 0, None
         for index, group in enumerate(groups):
@@ -249,6 +263,14 @@ class FusedChainBatch:
                     or 'engine_protocol_error' in call
                     or call.get('error_type') == 'NativeTaskUnconfirmed' for call in declarations)):
                 stopped = 'PreviousBatchUnconfirmedOrFailed'
+            else:
+                try:
+                    for call in declarations:
+                        validate_engine_output(call)
+                except ValueError:
+                    # Keep native facts; the original method still owns the error,
+                    # accounting and parser once the complete stage is returned.
+                    stopped = 'PreviousBatchInvalidResponse'
             offset += len(group.rows)
         return results
 
