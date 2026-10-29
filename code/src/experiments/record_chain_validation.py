@@ -9,6 +9,7 @@ import time
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_chain_token_budget import ChainTokenBudget, OutputTokenEstimate, fingerprint
 from src.semantic_methods.driver import SuccessorFirst
+from src.semantic_methods.budget import row_reservation
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec, MapMethod, FilterMethod
 from src.serving.backends.vllm_engine import _prepared
 
@@ -50,14 +51,15 @@ def make_budget(tokenizer, engine, chain, records, active_tokens=None):
 
 
 def run_case(records, chain, engine, resources, *, control_dir, token_budget=None,
-             priority=False, actor_owner=None):
-    ready, core_events = [], []
+             priority=False, actor_owner=None, progression='record', progression_batch_rows=None):
+    ready, core_events, driver_modes = [], [], []
     options = {} if token_budget is None else {'token_budget': token_budget}
     if priority:
         options.update(ready_order='successor_first', successor_first=SuccessorFirst(2, 1.0),
                        on_ready_event=lambda event: ready.append(asdict(event)))
     owner = SemLoomRecordChainCore(engine, resources, control_dir=control_dir,
-        execution='record_local_sections', actor_owner=actor_owner, **options)
+        execution='record_local_sections', actor_owner=actor_owner, progression=progression,
+        progression_batch_rows=progression_batch_rows, **options)
     entered = time.monotonic_ns()
     primary = None
     close = None
@@ -65,6 +67,12 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
         stream = owner.evaluate(iter(records), chain, expected=records, query_id=chain.query_id)
         owner.core.observe_capacity_blocks = True
         def observe(kind, key):
+            driver = owner._active.driver
+            if driver is not None:
+                group = getattr(driver, 'completion_batch_rows', None)
+                mode = dict(policy='record' if group is None else 'batch_stage', batch_rows=group)
+                if mode not in driver_modes:
+                    driver_modes.append(mode)
             record = owner.core.capacity.records.get(key)
             core_events.append(dict(at_ns=time.monotonic_ns(), kind=kind, key=asdict(key),
                 usage=asdict(owner.core.capacity.usage()),
@@ -90,6 +98,7 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
     calls = list(owner.calls)
     if (close['status'] != 'closed' or not close['query_completed'] or
             close['core_usage']['active_work'] != 0 or len(calls) != 3 * len(records) or
+            driver_modes != ([{k:close['progression'][k] for k in ('policy', 'batch_rows')}] if calls else []) or
             len({c['call_id'] for c in calls}) != len(calls) or
             any(c['status'] != 'succeeded' or c['submission_confirmed'] is not True for c in calls)):
         raise ValueError('normal query/coverage/close acceptance failed')
@@ -99,7 +108,15 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
         e['usage']['active_work'] + e['estimated_work'] > token_budget.active_tokens]
     recovered = [b for b in blocked if any(e['kind'] == 'submitted' and e['key'] == b['key'] and
         e['at_ns'] > b['at_ns'] for e in core_events)]
+    pool = owner._active.pool
     return dict(records=outputs, calls=calls, columns=list(stream.columns), close=close,
+        execution=close['execution'], progression=close['progression'], resources=asdict(owner.resources),
+        driver_progression=driver_modes[0] if driver_modes else None,
+        capacity=None if pool is None else dict(active_request_limit=owner.core.capacity.limits.active_requests,
+            held_task_limit=owner.core.capacity.limits.held_tasks,
+            retained_rows=pool.capacity.runs,
+            retained_bytes=pool.capacity.bytes,
+            row_reservation_bytes=row_reservation(owner.method_limits)),
         ready_events=ready, core_events=core_events, W_block_states=len(blocked),
         W_block_states_later_submitted=len(recovered),
         contended_successor_choices=sum(e['action']=='Core_offer_accepted' and
@@ -150,13 +167,56 @@ FIELDS=['query_id','model_role','algorithm_stage','call_id','row_id','source_pos
         'messages_sha256','prompt_token_ids_json','output_token_ids_json','text','finish_reason',
         'prompt_tokens','completion_tokens','total_tokens','parent_call_ids','decision','status','submission_confirmed']
 
-def compare(root, config):
+def compare(root, config, *, config_sha256=None):
     cases=[];uids=[];differences=[]
     reference=None;ref_outputs=None
+    progression = config.get('suite') == 'progression'
+    if progression:
+        from src.semantic_methods.lotus.records import RecordsResources
+        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        resources = RecordsResources(**config['resources'])
+        group = config.get('progression_batch_rows')
+        if (type(group) is not int or not 1 <= group <= resources.max_active_batches <= 4 or
+                type(config_sha256) is not str or len(config_sha256) != 64 or
+                [(c['case_id'], c.get('progression'), c.get('progression_batch_rows'), c['token'], c['successor'])
+                 for c in config['cases']] !=
+                [('record-count', 'record', None, False, False), ('batch-stage-count', 'batch_stage', group, False, False)]):
+            raise ValueError('progression comparison requires the fixed same-C count/FIFO pair and bound config')
+        engine = json.loads(json.dumps(asdict(EngineSpec.from_dict(config['engine']))))
+        generation = json.loads(json.dumps(asdict(GenerationSpec.from_dict(config['generation']))))
     for case in config['cases']:
         value=json.loads((root/'cases'/case['case_id']/'case.json').read_text())
         if value['status']!='completed' or value['public_git_commit']!=config['public_git_commit']:
             raise ValueError('incomplete or wrong source case: '+case['case_id'])
+        if progression:
+            close, actual, capacity = value.get('close', {}), value.get('progression', {}), value.get('capacity', {})
+            driver = value.get('driver_progression', {})
+            expected_mode = dict(policy=case['progression'], batch_rows=case['progression_batch_rows'])
+            if (any(type(v) is not dict for v in (close, actual, capacity, driver)) or
+                    any(type(mode.get(k)) is not type(v) or mode.get(k) != v
+                        for mode in (actual, driver) for k, v in expected_mode.items())):
+                raise ValueError('progression policy receipt differs: '+case['case_id'])
+            if (value.get('case_id') != case['case_id'] or value.get('suite') != 'progression' or
+                    value.get('config_sha256') != config_sha256 or value.get('input_sha256') != config['input']['sha256'] or
+                    value.get('execution') != 'record_local_sections' or close.get('execution') != 'record_local_sections' or
+                    value.get('resources') != asdict(resources) or value.get('engine') != engine or value.get('generation') != generation or
+                    actual != close.get('progression') or
+                    close.get('status') != 'closed' or close.get('query_completed') is not True or
+                    close.get('cross_query_model_reuse') is not False or close.get('model_batch_rows') != 1 or
+                    not close.get('core_usage') or any(close['core_usage'].values()) or
+                    any(type(capacity.get(k)) is not int or capacity[k] < 1 for k in
+                        ('active_request_limit', 'held_task_limit', 'retained_rows', 'retained_bytes', 'row_reservation_bytes'))):
+                raise ValueError('progression source/config/policy/capacity receipt differs: '+case['case_id'])
+            if (capacity['active_request_limit'] != resources.max_active_batches or
+                    capacity['held_task_limit'] != resources.max_active_batches or
+                    capacity['retained_rows'] != resources.max_active_batches or
+                    capacity['retained_bytes'] != capacity['retained_rows'] * capacity['row_reservation_bytes'] or
+                    group > min(capacity['held_task_limit'], capacity['retained_rows'],
+                                capacity['retained_bytes'] // capacity['row_reservation_bytes']) or
+                    any(type(close.get('peak_core_usage', {}).get(k)) is not int or
+                        not 1 <= close['peak_core_usage'][k] <= capacity[limit]
+                        for k, limit in [('active_requests', 'active_request_limit'), ('held_tasks', 'held_task_limit')])):
+                raise ValueError('progression group or observed usage exceeds held capacity: '+case['case_id'])
         calls=value['calls'];by_id={c['call_id']:{f:c.get(f) for f in FIELDS} for c in calls}
         if len(calls)!=48 or len(by_id)!=48:raise ValueError('call coverage differs')
         if any(type(c.get('engine_uid')) is not str or not c['engine_uid'].strip() or c['engine_uid']!=c['engine_uid'].strip() for c in calls):
@@ -181,9 +241,15 @@ def compare(root, config):
             full_owner_call_s=value['timing']['full_owner_call_s'],worker_wall_s=value['worker_wall_before_final_write_s'],
             timing_scope='owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded',
             physical_cleanup='separate external supervisor receipt required'))
-    if len(set(uids))!=4:raise ValueError('independent case owners reused a native engine identity')
+        if progression:
+            cases[-1].update(progression=actual, resources=value['resources'], capacity=capacity)
+    if len(set(uids))!=(2 if progression else 4):raise ValueError('independent case owners reused a native engine identity')
     identical=all(not d['changed_calls'] and d['final_outputs_identical'] for d in differences)
-    return dict(status='captured_receipts_compared',public_git_commit=config['public_git_commit'],cases=cases,
+    report = dict(status='captured_receipts_compared',public_git_commit=config['public_git_commit'],cases=cases,
         outputs_strictly_comparable=identical,differences=differences,
         performance_qualification='not established: n1 small functional smoke even if outputs identical',
         mechanism_gate='token needs observed W block and later submission; successor needs contended choice; absent means not exercised, no automatic rerun')
+    if progression:
+        report.update(suite='progression', comparison_scope='same C, input/model/generation and fresh-query async backend',
+            mechanism_gate='driver policy and capacity binding checked; group-stage timing and physical exits require separate evidence')
+    return report
