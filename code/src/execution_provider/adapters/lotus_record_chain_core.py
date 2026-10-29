@@ -34,7 +34,7 @@ from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import (
-    OfferedTask, SessionLimits, SessionSpec, SessionTimeouts, State, TaskInfo, TaskProfile,
+    Acceptance, OfferedTask, SessionLimits, SessionSpec, SessionTimeouts, State, TaskInfo, TaskProfile,
 )
 from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
@@ -522,7 +522,18 @@ class _SectionTransport(LotusChainActorBackend):
         self.owner = owner
         super().__init__(owner._actors, maximum, lambda: owner.core.wake.notify(),
                          deadline_monotonic=owner.deadline, on_result=owner._record_local_receipt,
-                         token_budget=owner.token_budget)
+                         token_budget=owner.token_budget, bulk=owner._async_token_batches)
+        self.poll_interval_s = owner.capacity.poll_interval_s
+
+    def try_submit_batch(self, tasks, endpoint):
+        for task in tasks:
+            self.owner._register_local_task(task, self._request(task))
+        outcome = super().try_submit_batch(tasks, endpoint)
+        if outcome.acceptance == Acceptance.NOT_ACCEPTED:
+            with self.owner._receipt_lock:
+                for task in tasks:
+                    self.owner._contexts.pop(task.key, None)
+        return outcome
 
     def _submit_task(self, task, timings, prepare_method):
         self.owner._register_local_task(task, self._request(task))
@@ -724,10 +735,14 @@ class _RecordLocalRows:
         if self.driver is None:
             self._begin_phase()
             return
-        self._fill()
+        if self.owner._async_token_batches:
+            while not self._phase_eof and self.driver.active_rows < self.owner.resources.max_active_batches:
+                self._fill()
+        else:
+            self._fill()
         _check(self.owner.deadline, self.cancelled)
         bound = min(self.owner.capacity.step_actions, self.session.limits.held_tasks)
-        progress = self.driver.advance(bound)
+        progress = self.driver.advance(bound, offer_ready_frontier=True) if self.owner._async_token_batches else self.driver.advance(bound)
         for result in self.driver.results(bound):
             try:
                 value = json.loads(result.value)
@@ -740,6 +755,8 @@ class _RecordLocalRows:
                 self.driver.release_result(result.row)
         for key, value in asdict(self.owner.core.capacity.usage()).items():
             self.peak_core_usage[key] = max(self.peak_core_usage[key], value)
+        if self.owner._async_token_batches:
+            self.owner._token_organizer.usage()
         if self.driver.finished:
             self._finish_phase()
         elif not progress.has_immediate_work:
@@ -811,7 +828,7 @@ class SemLoomRecordChainCore:
                  execution="fused", actor_owner=None, method_limits=None,
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
-                 prepared_batching=None):
+                 prepared_batching=None, batch_concurrency=None, batching_tokenizer=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -838,8 +855,6 @@ class SemLoomRecordChainCore:
         self.prepared_batching = None
         if prepared_batching is not None:
             from src.semantic_methods.lotus.prepared_batching import PreparedBatching
-            if execution != 'fused':
-                raise ValueError('prepared_batching requires the synchronous fused path')
             if type(prepared_batching) is not PreparedBatching:
                 raise TypeError('prepared_batching must be PreparedBatching or None')
             if (prepared_batching.policy == 'fixed_rows'
@@ -849,7 +864,18 @@ class SemLoomRecordChainCore:
                 raise ValueError('prepared_batching currently requires the tokenizer-owned chat template')
             self.prepared_batching = PreparedBatching(**asdict(prepared_batching))
         self._streaming_tokens = (self.prepared_batching is not None
-                                  and self.prepared_batching.policy == 'token_budget')
+                                  and self.prepared_batching.policy == 'token_budget' and execution == 'fused')
+        self._async_token_batches = self.prepared_batching is not None and execution == 'record_local_sections'
+        self.batch_concurrency, self._batching_tokenizer = batch_concurrency, batching_tokenizer
+        if self._async_token_batches:
+            if (self.prepared_batching.policy != 'token_budget' or self.prepared_batching.max_rows is not None
+                    or progression != 'record' or token_budget is not None or ready_order != 'fifo'):
+                raise ValueError('async token batches require uncapped token B, record progression, FIFO and W off')
+            self.batch_concurrency = 1 if batch_concurrency is None else batch_concurrency
+            if type(self.batch_concurrency) is not int or not 1 <= self.batch_concurrency <= resources.max_active_batches:
+                raise ValueError('batch_concurrency must fit the member request grant')
+        elif batch_concurrency is not None or batching_tokenizer is not None:
+            raise ValueError('batch controls require record-local token batching')
         self.token_budget = None
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
@@ -1321,6 +1347,14 @@ class SemLoomRecordChainCore:
         policies = SessionPolicies(StaticAdmissionController(limits.active_requests),
             RoundRobinEndpointRouter(), TopologySnapshot((endpoint,), time.monotonic()), "local")
         self.transport = _SectionTransport(self, limits.held_tasks)
+        if self._async_token_batches:
+            from .lotus_chain_token_batches import PreparedTokenOrganizer
+            if expected and self._batching_tokenizer is None:
+                from transformers import AutoTokenizer
+                self._batching_tokenizer = AutoTokenizer.from_pretrained(
+                    self.engine.tokenizer_path or self.engine.model_path, local_files_only=True, trust_remote_code=False)
+            self._token_organizer = PreparedTokenOrganizer(self, self._batching_tokenizer, self.batch_concurrency)
+            policies = replace(policies, organize=self._token_organizer)
         self.core = SessionEngine(limits, self.transport, policies)
         try:
             self._active = _RecordLocalRows(self, records, run, cancelled)
@@ -1427,6 +1461,13 @@ class SemLoomRecordChainCore:
             progression=dict(policy=self.progression, batch_rows=self.progression_batch_rows,
                 scope="successor submission over the same single-row async model path"),
             work_unit="model_calls" if self.token_budget is None else "tokens")
+        if self._async_token_batches:
+            self.last_close_report['async_token_batches'] = dict(self._token_organizer.report(),
+                data_batch_rpcs=self.transport.data_batch_rpcs,
+                peak_data_rpc_bytes=getattr(self._actors, 'peak_prepared_batch_rpc_bytes', 0),
+                peak_result_rpc_bytes=self.transport.peak_result_frame_bytes,
+                engine_max_num_seqs=self.engine.max_num_seqs,
+                engine_max_num_batched_tokens=self.engine.max_num_batched_tokens)
         if self._ready_options:
             policy = self._ready_options["successor_first"]
             self.last_close_report["ready_selection"] = dict(

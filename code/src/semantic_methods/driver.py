@@ -270,7 +270,7 @@ class MethodDriver:
             actions += 1
         return actions
 
-    def advance(self, maximum: int = 1):
+    def advance(self, maximum: int = 1, *, offer_ready_frontier=False):
         """Bound submissions/deliveries; return session wake/deadline information unchanged.
 
         Release each core delivery before attempting a subsequent stage. The reserved row
@@ -282,6 +282,8 @@ class MethodDriver:
             or not 0 < maximum <= self.session.limits.held_tasks
         ):
             raise ValueError("invalid method advance bound")
+        if type(offer_ready_frontier) is not bool:
+            raise TypeError('offer_ready_frontier must be boolean')
         try:
             progress = self.session.advance(maximum)
             # Even a later callback failure must release every delivery in this batch.
@@ -297,7 +299,7 @@ class MethodDriver:
                 self.session.release(tuple(d.lease_id for d in progress.deliveries))
             if progress.state in (State.FAILED, State.CANCELLED):
                 raise RuntimeError(progress.error or "method session terminated")
-            submitted = self._submit(maximum)
+            submitted = self._submit(self.session.limits.held_tasks if offer_ready_frontier else maximum)
             sealed = False
             if (
                 self._eof

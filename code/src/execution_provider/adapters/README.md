@@ -223,7 +223,8 @@ deployment and one role. Multi-stage token chains fail before source consumption
 and model preflight, rather than silently keeping the old per-block splits. The
 original fixed-row chains remain available. Successor buffering/re-estimation
 across a multi-stage chain is pending; no new operator barriers or pipeline modes
-are introduced. Extract and `record_local_sections` reject prepared batching.
+are introduced in this synchronous path. Extract rejects this fused configuration;
+the optional async record path is described separately below.
 The existing serial requirement `cpu_workers=max_active_batches=1` remains.
 The tokenizer must own the chat template (`EngineSpec.chat_template=None`).
 
@@ -286,6 +287,73 @@ it does not attribute the whole historical API gap to preparation or establish a
 Real tokenizer/model/GPU performance and output-quality
 comparison remain pending; [qualification status](../../../INFRA_STATUS.md#prepared-request-batching)
 records this boundary.
+
+## Optional async record token batches
+
+The local candidate also accepts `PreparedBatching("token_budget", None, B)` on
+`execution="record_local_sections"`, with fixed `batch_concurrency=C_batch`.
+It uses the existing `MethodRun`, Core, async actor and engine process. It does
+not add a second model owner. The default remains `prepared_batching=None`.
+This interface requires `progression="record"`, FIFO, no custom method-ready
+selection and `token_budget=None` (the independent in-flight token guard W is off).
+`batch_concurrency` defaults to 1 when batching is enabled, and cannot exceed the
+declared request capacity. Fixed-row and fused references retain their interfaces.
+
+```python
+# B and C_batch are example settings, not a measured performance recommendation.
+resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
+                             max_active_batches=128)
+owner = SemLoomRecordChainCore(engine, resources,
+    execution="record_local_sections",
+    prepared_batching=PreparedBatching("token_budget", None, 17506),
+    batch_concurrency=4)
+```
+
+The units remain separate. **B** is the sum of complete rendered prompt tokens
+plus each stage's maximum output in one application transport batch. **C_batch**
+counts transport batches with members still owning compute, including unknown
+members. **R** is the Core member-request capacity, inherited here from
+`resources.max_active_batches`; it also bounds resident method rows in this
+minimal path. That inherited R bound can limit the currently available frontier;
+there is no independent per-batch row cap. Engine `max_num_seqs` and
+`max_num_batched_tokens` govern native scheduling rather than application batches.
+The application bulk frame is not a claim that vLLM executes a physical batch of
+the same size at once.
+
+The method prepares actual messages once. The organizer counts each Core task's
+full message/template plus stage output cap and groups compatible ready requests
+across source read chunks. A batch flushes at B, before an incompatible request,
+at the separate byte/request capacity, on successful EOF, or when the current
+legal ready frontier is exhausted. A short frontier is submitted without waiting
+for a future dependency to finish. Oversize-B requests stay intact singletons.
+There is no flush timer or asynchronous blocked-source contract.
+
+One selected group uses one actor data RPC and one private engine data frame.
+Each member retains its own request identity, result, ACK and cancellation
+responsibility. A fast member can release its result and start its legal successor
+while a peer remains unfinished, subject to the explicit C_batch/R/byte grants.
+Closing a batch does not add a semantic completion barrier. Existing relation
+barriers, including Extract, remain. The finite same-deployment/role chain scope
+comes from the existing record-local owner; arbitrary DAG fan-in and cross-query
+model reuse are not introduced here.
+
+`report["async_token_batches"]` records selected groups, recent member/token/flush
+information, peak active batch/member counts and encoded RPC/frame byte bounds.
+IPC accounting covers the JSON body, excluding its four-byte framing header;
+Ray serialization overhead, Python object overhead, expected/full relations and
+audit retention are outside those logical limits. This is not a whole-query RSS
+bound. Unknown work retains its reservation until an authoritative terminal or
+the existing exact-owner producer-quiescence proof; retiring borrowing does not
+change an unknown model outcome into success.
+
+The default tokenizer is loaded from the declared engine tokenizer/model. A caller
+may supply `batching_tokenizer` for a controlled environment; matching its rendered
+template to the native model remains the caller's responsibility. CPU fixtures use
+a small tokenizer and inference substitute. [Query and independent-member cases](../../../tests/execution_provider/test_lotus_async_token_batches.py)
+and [lifecycle boundary cases](../../../tests/execution_provider/test_lotus_async_batch_lifecycle.py)
+check this optional API. Real Ray/model/GPU correctness and performance, a common
+SemBench CLI and dynamic C_batch or joint B/C control remain pending. This candidate
+does not include the separate synchronous prepared-reuse change from PR83.
 
 ## Optional method-ready successor selection
 

@@ -272,7 +272,7 @@ class _ActorOwner(RecordsActorOwner):
 class _RecordTransport:
     """Bounded Ray I/O and failure receipts; Core remains the sole capacity owner."""
 
-    def __init__(self, actors, maximum, notify):
+    def __init__(self, actors, maximum, notify, *, finalize=None):
         self.actors = actors
         self.maximum = maximum
         self.deadline = None
@@ -287,7 +287,7 @@ class _RecordTransport:
         self._retirement = None
         self.backend = BoundedAsyncBackend(
             self._execute, max_tasks=maximum, notify=notify, isolate_failures=True,
-            cancel_pending=actors.cancel_core,
+            cancel_pending=actors.cancel_core, finalize=finalize,
         )
 
     def bind_query(self, session_id, prepare_method):
@@ -694,7 +694,9 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
     transport_closed = True
     retirement = None
     if transport is not None:
-        transport_closed = transport.backend.close(timeout=0.05)
+        transport_closed = (transport.backend.close(timeout=0.05, wait_pending=True)
+                            if getattr(transport, 'supports_batch_submit', False)
+                            else transport.backend.close(timeout=0.05))
         proof = actor_report.get("producer_quiescence")
         if transport_closed and proof is not None:
             try:

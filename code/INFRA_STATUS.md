@@ -175,7 +175,7 @@ PR74同时提供[同一Git入口的双策略套件](scripts/README.md#record-pro
 复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
 默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token在途W，Extract、角色切换及fused明确拒绝该`token_budget`组合。
 这里的 `token_budget` 是在途上限 W：按每条实际完整消息的估计输入 token 加阶段输出 cap 预留。取消或unknown本身不释放W；权威终态或现有协议确认的生产者退出证明可结算预留，后者不将unknown结果改为成功。它没有决定一批成员和批次边界。
-用户原目标是以每批累计 token 上限 B 代替固定行数作为主要组批条件；同步fused单阶段的接入范围与待验证项见[跨读取块组批候选](#prepared-request-batching)，异步记录链与跨阶段token组批仍未实现。
+用户原目标是以每批累计 token 上限 B 代替固定行数作为主要组批条件；同步fused单阶段的接入范围与待验证项见[跨读取块组批候选](#prepared-request-batching)，异步记录链的本地可选候选见下述接口，尚无组合实机资格。
 W应保留为较高的安全护栏，与B和请求数C分开；输入／输出估计不等于实际计算量或物理KV用量。接口细节见[adapter说明](src/execution_provider/adapters/README.md#chain-token-batching-boundary)。
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
@@ -201,6 +201,12 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 多阶段token链在消费源或模型预检前拒绝；跨阶段后继缓冲、反馈动态调整B/C、阻塞源定时flush仍未实现。
 原固定行链与默认路径保留。原固定head的独审范围限CPU，不替代合并源码的组合验收；真实模板/模型、质量与GPU性能仍须服务器验证。
 接口、逻辑字节边界及unknown责任见[所属说明](src/execution_provider/adapters/README.md#prepared-request-batching)。
+
+本地异步记录链候选在准确已发布基底 `beb5966c` 上接入同一组批配置，未包含PR83的同步重复准备修复。
+它复用原MethodRun/Core/actor/engine，以一次数据RPC及IPC提交一个token批，保留逐成员完成、后继推进、取消与unknown责任及Extract关系屏障。
+可选范围为固定B、固定应用批并发C_batch、FIFO、record推进、W关闭；无每批行帽，R仍同时约束在途成员与resident行。
+默认与同步对照保留；当前是公共Python API的CPU候选，动态C_batch、B/C联合控制、通用SemBench入口及真实Ray/模型/GPU功能与性能验收尚未完成。
+准确参数单位、尾批行为、字节边界和CPU检查入口统一见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)，不据此宣称性能提升。
 
 <a id="finite-query-successor-candidate"></a>
 ## 后继优先与等待老化的可选配置
