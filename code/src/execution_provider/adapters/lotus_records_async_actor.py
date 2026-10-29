@@ -284,16 +284,23 @@ class AsyncCoreModelActor:
             results, exposed = [], []
             maximum = self.limits.item_result_bytes + self.limits.control_frame_bytes
             closed = self.last_close_report is not None
+            empty = _encode(dict(results=[], closed=closed, more_results=False), maximum)
+            if not available:
+                return empty
+            used = len(empty)
             for key, value in available:
                 call = self._held.get(key)
                 value = self._bounded_call_result(value, None if call is None else call.max_result_bytes)
                 candidate = dict(request_key=list(key), result=value)
                 try:
-                    _encode(dict(results=results+[candidate], closed=closed, more_results=False), maximum)
+                    # Count the exact member and comma once. False reserves the
+                    # same larger flag spelling used by the original page probe.
+                    size = len(_encode(candidate, maximum-used-(1 if results else 0)))
                 except ValueError:
                     if not results:
                         raise
                     break
+                used += size + (1 if results else 0)
                 results.append(candidate)
                 exposed.append(key)
             payload = _encode(dict(results=results, closed=closed, more_results=len(results)<len(available)), maximum)
