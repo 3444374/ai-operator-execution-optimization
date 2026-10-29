@@ -190,7 +190,7 @@ from src.semantic_methods.lotus.records import RecordsResources
 # Use the same engine, resources, chain and source for each separate owner/run.
 resources = RecordsResources(cpu_workers=1, model_batch_rows=32, max_active_batches=1)
 fixed = PreparedBatching("fixed_rows", max_rows=32)
-tokens = PreparedBatching("token_budget", max_rows=32, token_budget=8192)
+tokens = PreparedBatching("token_budget", max_rows=None, token_budget=17506)
 owner = SemLoomRecordChainCore(engine, resources, prepared_batching=tokens)
 rows = owner.evaluate(source, chain, expected=expected, query_id=chain.query_id)
 try:
@@ -201,13 +201,22 @@ groups = owner.request_batches
 ```
 
 These numbers are example capacities, not calibrated recommendations. In token mode,
-`resources.model_batch_rows` is only a **read chunk size**. `max_rows` is an independent
-row guard and may be much larger than the read chunk or `EngineSpec.max_num_seqs`.
-For example, keep reads at 32 rows while using
-`PreparedBatching("token_budget", max_rows=4096, token_budget=65536)`.
-Neither value prescribes a GPU batch. Fixed-row mode retains its existing bounded
-fused behavior (`max_rows <= model_batch_rows`); token mode replaces that outer
-row boundary with accumulation across reads.
+`max_rows=None` means **no application batch row limit**; omitting `max_rows` also
+selects None. B, the independent logical-byte allowance and successful source EOF
+determine the groups. `resources.model_batch_rows` is only a read chunk size;
+neither it nor `EngineSpec.max_num_seqs` closes an application token batch.
+No larger fixed row number is substituted. Core's stage-call accounting uses the
+whole query's already-declared call upper bound, which cannot limit any individual
+batch and is never passed to the batcher.
+
+Fixed-row mode requires a positive `max_rows` and retains the existing bounded
+fused behavior (`max_rows <= model_batch_rows`) for the row-based control. An explicit
+positive row cap in token mode is accepted only for compatibility with historical
+limited configurations. In particular, the old B=17506/max_rows=128 measurement
+remains a row-capped result; it does not qualify the no-row-limit token target.
+Future SemBench runs for that target must record `"max_rows": null`, and keep
+byte/context/engine capacities separately visible. Do not change a running unit's
+configuration or reinterpret its old measurements.
 
 The cross-read token path currently accepts **one Filter or one Map stage**, one
 deployment and one role. Multi-stage token chains fail before source consumption
@@ -229,8 +238,9 @@ A budget oversize request is submitted intact as an explicitly flagged singleton
 no prompt is truncated or split.
 
 `PendingBatchBuilder` retains a partial batch across read chunks. It closes at B,
-before the next complete request would exceed B, at the row guard, at the byte
-guard, or on successful source EOF. An arbitrary read tail does not flush. The
+before the next complete request would exceed B, at the independent byte guard,
+or on successful source EOF. Only an explicitly configured legacy row cap can
+produce a `max_rows` flush. An arbitrary read tail does not flush. The
 source is finite and synchronously available; timed/blocked-source flush is not
 implemented. The existing `CoreChainCapacity.item_input_bytes` separately guards
 pending raw wire values plus prepared message bytes. A single request beyond that

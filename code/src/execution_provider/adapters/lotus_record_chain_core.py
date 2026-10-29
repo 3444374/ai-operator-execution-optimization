@@ -962,9 +962,15 @@ class SemLoomRecordChainCore:
                            "lotus-record-chain-fused-v1", work_unit="stage_call_upper_bound")
 
     def _fused_limits(self, stage_count):
-        resources = (replace(self.resources, model_batch_rows=self.prepared_batching.max_rows)
-                     if self._streaming_tokens else self.resources)
-        return self.capacity.limits(resources, stage_count)
+        limits = self.capacity.limits(self.resources, stage_count)
+        if self._streaming_tokens:
+            rows = self.prepared_batching.max_rows
+            # Core accounts stage-call upper bounds. With no batch row cap,
+            # the immutable whole-query declaration bounds this counter; it
+            # cannot close or shrink a batch and is not passed to the batcher.
+            rows = max(1, self._expected_count) if rows is None else rows
+            limits = replace(limits, active_work=rows * stage_count)
+        return limits
 
     def _advance_relation_phase(self, stream):
         """Cross one complete Extract relation on the single Core control thread."""

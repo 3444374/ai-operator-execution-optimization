@@ -9,14 +9,15 @@ from src.serving.backends.vllm_engine import _prepared
 @dataclass(frozen=True)
 class PreparedBatching:
     policy: str
-    max_rows: int
+    max_rows: int | None = None
     token_budget: int = 0
 
     def __post_init__(self):
         if self.policy not in ('fixed_rows', 'token_budget'):
             raise ValueError('prepared batching requires fixed_rows or token_budget')
-        if type(self.max_rows) is not int or self.max_rows <= 0:
-            raise ValueError('prepared batching max_rows must be positive')
+        if (self.max_rows is not None and (type(self.max_rows) is not int or self.max_rows <= 0)
+                or self.policy == 'fixed_rows' and self.max_rows is None):
+            raise ValueError('max_rows must be positive; None is allowed only for token_budget')
         if (type(self.token_budget) is not int or self.token_budget < 0 or
                 (self.policy == 'token_budget') != (self.token_budget > 0)):
             raise ValueError('a positive B is required only for token_budget batching')

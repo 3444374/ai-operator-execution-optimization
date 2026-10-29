@@ -272,6 +272,76 @@ class PreparedBatchingTests(unittest.TestCase):
         self.assertEqual(owner.request_batches[0]['flush_reason'], 'source_exhausted')
         self.assertEqual(report['peak_core_usage']['held_tasks'], 1)
 
+    def test_no_row_cap_at_B17506_is_not_replaced_by_128_or_read_chunk_size(self):
+        rows = fixture.source_rows(column='text', size=400)
+        for row in rows: row.values['text'] = 'short'
+        chain = LotusRecordChain((StageSpec('label', self.chain.stages[0].method,
+            GenerationSpec(max_tokens=8)),), query_id=self.chain.query_id)
+        run = chain.start_batch(rows[:1]); run.prepare()
+        cost = chat_token_count(self.tokenizer, _prepared(run.prepared)[1][0]) + 8
+        full, tail = divmod(len(rows), 17506 // cost)
+        sizes = [17506 // cost] * full + ([tail] if tail else [])
+        self.assertGreater(sizes[0], 128)
+        for read_rows in (1, 64):
+            owner, records, report, native, error = self.execute('token_budget', rows=rows,
+                chain=chain, read_rows=read_rows, max_rows=None, budget=17506)
+            self.assertIsNone(error); self.assertEqual(len(records), len(rows))
+            self.assertEqual([len(b['calls']) for b in native], sizes)
+            self.assertIsNone(report['model_batch_row_guard'])
+            self.assertEqual(owner._fused_limits(1).active_work, len(rows))
+            for batch in owner.request_batches:
+                self.assertIsNone(batch['max_rows'])
+                self.assertNotEqual(batch['flush_reason'], 'max_rows')
+                self.assertLessEqual(batch['estimated_tokens'], 17506)
+
+    def test_no_row_cap_keeps_oversize_EOF_cancel_and_unknown_semantics(self):
+        for fault, sizes, status in (({}, [2, 1, 1], 'closed'),
+                ({'cancel_after':0}, [2], None), ({'fail_batch':1}, [2, 1], 'unknown')):
+            owner, records, report, native, error = self.execute('token_budget',
+                read_rows=1, max_rows=None, allow_failure=True, **fault)
+            self.assertEqual([len(b['calls']) for b in native], sizes)
+            if status is None:
+                # Cancellation preserves separately uncertain cleanup; successful
+                # request receipts do not turn that report into a closed owner.
+                self.assertIn(report['status'], ('closed', 'unknown'))
+            else:
+                self.assertEqual(report['status'], status, fault)
+            self.assertTrue(all(b['max_rows'] is None and b['flush_reason'] != 'max_rows'
+                                for b in owner.request_batches))
+            if not fault:
+                self.assertIsNone(error); self.assertEqual(len(records), 4)
+                self.assertTrue(owner.request_batches[1]['oversize'])
+                self.assertEqual(owner.request_batches[-1]['flush_reason'], 'source_exhausted')
+            else:
+                self.assertIsNotNone(error)
+                self.assertEqual([c['status'] for c in owner.calls[:2]], ['succeeded', 'succeeded'])
+                if status == 'unknown': self.assertEqual(report['core_usage']['held_tasks'], 1)
+        owner, records, report, native, error = self.execute('token_budget', max_rows=None, rows=[])
+        self.assertIsNone(error); self.assertFalse(native); self.assertEqual(records, [])
+        self.assertTrue(report['query_completed'])
+
+    def test_no_row_cap_retains_the_separate_byte_guard(self):
+        rows = fixture.source_rows(column='text', size=7)
+        for row in rows: row.values['text'] = 'short'
+        owner, records, report, native, error = self.execute('token_budget',
+            rows=rows, read_rows=1, max_rows=None, budget=1_000_000,
+            capacity=CoreChainCapacity(item_input_bytes=2048), allow_failure=True)
+        self.assertIsNone(error); self.assertEqual(len(records), 7)
+        self.assertTrue(any(b['flush_reason'] == 'max_bytes' for b in owner.request_batches))
+        self.assertTrue(all(b['flush_reason'] != 'max_rows' for b in owner.request_batches))
+        owner, records, report, native, error = self.execute('token_budget', max_rows=None,
+            capacity=CoreChainCapacity(item_input_bytes=32), allow_failure=True)
+        self.assertIsNotNone(error); self.assertFalse(native); self.assertEqual(owner.calls, [])
+        self.assertEqual(report['status'], 'closed')
+
+    def test_token_config_can_omit_rows_but_fixed_rows_still_requires_them(self):
+        config = PreparedBatching('token_budget', token_budget=17506)
+        self.assertIsNone(config.max_rows)
+        self.assertIsNone(PreparedBatching(**json.loads(json.dumps(
+            dict(policy='token_budget', max_rows=None, token_budget=17506)))).max_rows)
+        with self.assertRaisesRegex(ValueError, 'max_rows'):
+            PreparedBatching('fixed_rows')
+
     def test_tail_merges_across_reads_and_larger_B_changes_groups_at_constant_C(self):
         rows = fixture.source_rows(column='text', size=7)
         for row in rows: row.values['text'] = 'short'
