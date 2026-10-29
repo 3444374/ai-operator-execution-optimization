@@ -135,6 +135,20 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 没有独立gold、任意链质量、跨查询模型复用、RSS/KV物理上限、可信P99或稳定加速资格。
 原始计时、资源采样及局限见[证据身份](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-local-query-owner-c827)。
 
+<a id="record-local-completion-progression"></a>
+### 同异步后端的可选完成推进
+
+基于main`a421c9d4`的本地候选在既有逐记录异步owner上增加
+`progression="record"`（默认）和`"batch_stage"`／显式`progression_batch_rows`。
+后者按接纳输入顺序固定有限组，每阶段完成后放行合法后继；末尾EOF封组，过滤终结不等待后继。
+原单记录请求、方法转换、Core容量、取消与unknown结清不变，已确认回执及时释放，组内状态仍计费。
+首版限同模型同角色完整F/M、请求计数和FIFO，组必须同时容纳于行数与字节grant；不实现token组批或调整W。
+原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，每查询模型仍新建并关闭，跨查询借用尚未实现。
+CPU检查与差分范围见[接口与测试](src/execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)；
+没有真实Ray／GPU验收、完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
+后续本地候选补充[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
+将策略／组大小传入真实owner，并检查实际策略、同C、held／行／字节grant和配置摘要；默认四臂保持。
+
 <a id="finite-query-token-candidate"></a>
 ## 完整F/M查询的可选token配置
 

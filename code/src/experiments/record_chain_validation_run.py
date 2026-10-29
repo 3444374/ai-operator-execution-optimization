@@ -1,6 +1,6 @@
 """Git-owned finite-chain validation entry; site config and receipts stay outside Git.
 
-This is one bounded four-case check, not a matrix/host controller. The existing
+This is a bounded options or progression check, not a matrix/host controller. The existing
 external owner keeps its lease, budgets, CPU/GPU placement and physical checks.
 """
 from dataclasses import asdict
@@ -30,6 +30,7 @@ from src.experiments.record_chain_validation import (
 
 CASES = (('fifo-count', False, False), ('fifo-token', True, False),
          ('successor-count', False, True), ('successor-token', True, True))
+PROGRESSION_CASES = ('record-count', 'batch-stage-count')
 REPO = Path(__file__).resolve().parents[3]
 ENTRY = REPO / 'code/scripts/experiments/validate_record_chain_options.py'
 
@@ -39,9 +40,19 @@ def read(path):
 
 
 def make_resources(config):
+    suite = config.get('suite', 'options')
+    if suite not in ('options', 'progression'):
+        raise ValueError('unknown validation suite')
     resources = RecordsResources(**config['resources'])
-    if resources.max_active_batches != 4:
+    if suite == 'options' and resources.max_active_batches != 4:
         raise ValueError('this four-case check requires explicit max_active_batches=4')
+    if suite == 'options' and 'progression_batch_rows' in config:
+        raise ValueError('progression_batch_rows requires the progression suite')
+    if suite == 'progression':
+        group = config.get('progression_batch_rows')
+        if (not 1 <= resources.max_active_batches <= 4 or type(group) is not int or
+                not 1 <= group <= resources.max_active_batches):
+            raise ValueError('progression group must fit explicit retained C within max_num_seqs4')
     return resources
 
 
@@ -64,16 +75,22 @@ def configuration(path):
     if (engine.max_model_calls != 48 or engine.max_num_seqs != 4 or
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1 or
             resources.cpu_workers != 1 or resources.gpu_workers != 1):
-        raise ValueError('this check requires one model/CPU, B1, C4 and a48-call native cap')
+        raise ValueError('this check requires one model/CPU, B1, max_num_seqs4 and a48-call native cap')
     for name in ('artifact_root',):
         require_outside_git(Path(config[name]))
     require_outside_git(Path(config['input']['existing_csv']))
-    if set(config['ray_roots']) != {name for name, _, _ in CASES}:
-        raise ValueError('explicit private Ray roots required for all four cases')
+    if config.get('suite') == 'progression':
+        config['cases'] = [dict(case_id=name, token=False, successor=False,
+            progression='record' if name == 'record-count' else 'batch_stage',
+            progression_batch_rows=None if name == 'record-count' else config['progression_batch_rows'])
+            for name in PROGRESSION_CASES]
+    else:
+        config['cases'] = [dict(case_id=name, token=token, successor=priority)
+                           for name, token, priority in CASES]
+    if set(config['ray_roots']) != {case['case_id'] for case in config['cases']}:
+        raise ValueError('explicit private Ray roots required for the selected cases')
     for root in config['ray_roots'].values():
         require_outside_git(Path(root))
-    config['cases'] = [dict(case_id=name, token=token, successor=priority)
-                       for name, token, priority in CASES]
     return config, engine, resources, generation
 
 
@@ -94,9 +111,12 @@ def check(path):
     source = checkout_identity(config['public_git_commit'])
     records = inputs(config)
     make_chain(config['model_name'], generation)
-    return dict(status='configuration_checked_not_tokenizer_or_runtime_qualified', source=source,
-                resources=asdict(resources), rows=len(records), cases=4,
-                max_requests=192, models=0, claims=0)
+    report = dict(status='configuration_checked_not_tokenizer_or_runtime_qualified', source=source,
+                  resources=asdict(resources), rows=len(records), cases=len(config['cases']),
+                  max_requests=engine.max_model_calls * len(config['cases']), models=0, claims=0)
+    if config.get('suite') == 'progression':
+        report.update(suite='progression', progression_cases=config['cases'])
+    return report
 
 
 def objects(config, engine, generation, *, require_token_budget=True):
@@ -110,6 +130,8 @@ def objects(config, engine, generation, *, require_token_budget=True):
 
 def qualify(path, output, *, require_token_budget=True):
     config, engine, resources, generation = configuration(path)
+    if config.get('suite') == 'progression' and require_token_budget:
+        raise ValueError('progression requires --count-only qualification')
     if (Path(config['artifact_root']) / 'budget.sqlite').exists():
         raise FileExistsError('never requalify an existing model budget')
     source = checkout_identity(config['public_git_commit'])
@@ -126,8 +148,13 @@ def qualify(path, output, *, require_token_budget=True):
     return report
 
 
-def qualified(path, ready_path, *, require_token_budget=None):
+def qualified(path, ready_path, *, require_token_budget=None, case_id=None):
     config, engine, resources, generation = configuration(path)
+    if case_id is not None:
+        case = next((case for case in config['cases'] if case['case_id'] == case_id), None)
+        if case is None:
+            raise ValueError('case is not part of the selected suite')
+        require_token_budget = case['token']
     require_outside_git(Path(ready_path))
     ready = read(ready_path)
     if (type(ready.get('token_budget_required')) is not bool or
@@ -150,8 +177,7 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     import ray
 
     started = time.monotonic_ns() if process_started_ns is None else process_started_ns
-    token_mode = next(token for name, token, _ in CASES if name == case_id)
-    config, engine, resources, generation, ready = qualified(path, ready_path, require_token_budget=token_mode)
+    config, engine, resources, generation, ready = qualified(path, ready_path, case_id=case_id)
     case = next(c for c in config['cases'] if c['case_id'] == case_id)
     if config['execution_enabled'] is not True or ray.__version__ != '2.56.1' or ray.is_initialized():
         raise ValueError('explicit enabled config and fresh Ray2.56.1 required')
@@ -159,10 +185,13 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     root = Path(config['artifact_root'])
     out = root / 'cases' / case_id
     out.mkdir(parents=True, exist_ok=False, mode=0o700)
-    claim = CellBudgetLedger(root / 'budget.sqlite', AttemptBudget(config['run_id'], 192)).claim_unit(case_id)
+    claim = CellBudgetLedger(root / 'budget.sqlite',
+        AttemptBudget(config['run_id'], engine.max_model_calls * len(config['cases']))).claim_unit(case_id)
     claim.bind_execution()
     report = dict(status='failed', case_id=case_id, actual_calls=None,
                   public_git_commit=ready['source']['commit'], process_start_ns=started,
+                  suite=config.get('suite', 'options'), input_sha256=config['input']['sha256'],
+                  config_sha256=ready['config_sha256'],
                   pid=os.getpid(), pid_birth=psutil.Process().create_time(),
                   scope='n1 functional check; not performance or default-switch acceptance')
     primary = None
@@ -184,7 +213,9 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
         ray.init(address='local', num_cpus=3, num_gpus=1, include_dashboard=False,
                  _temp_dir=config['ray_roots'][case_id], runtime_env={'env_vars': env})
         result = run_case(records, chain, engine, resources, control_dir=out / 'control',
-                          token_budget=budget if case['token'] else None, priority=case['successor'])
+                          token_budget=budget if case['token'] else None, priority=case['successor'],
+                          **({k:case[k] for k in ('progression', 'progression_batch_rows')}
+                             if 'progression' in case else {}))
         report.update({k:v for k,v in result.items() if k != 'records'})
         report['actual_calls'] = len(result['calls'])
         replay_started = time.monotonic_ns()
@@ -197,7 +228,7 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
             outputs.append(value)
         report.update(status='completed', **result, outputs=outputs, replay=oracle, W=W,
             replay_wall_s=(time.monotonic_ns()-replay_started)/1e9,
-            engine=asdict(engine), generation=asdict(generation), resources=asdict(resources),
+            engine=asdict(engine), generation=asdict(generation),
             W_exercised=None if not case['token'] else result['W_block_states'] > 0 and result['W_block_states_later_submitted'] > 0,
             successor_contention_exercised=None if not case['successor'] else result['contended_successor_choices'] > 0)
     except BaseException as error:
@@ -229,8 +260,7 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
 def supervised_case(path, ready, case_id):
     from integrations.imlane_records.chain_runtime import check_external_lease
     from src.experiments.lotus_records_supervisor import supervise
-    token_mode = next(token for name, token, _ in CASES if name == case_id)
-    config, engine, _, _, _ = qualified(path, ready, require_token_budget=token_mode)
+    config, engine, _, _, _ = qualified(path, ready, case_id=case_id)
     if config['execution_enabled'] is not True:
         raise ValueError('explicit enabled config required before worker launch')
     check_external_lease(config['external_owner'])
@@ -246,7 +276,7 @@ def main(argv=None, *, process_started_ns=None):
     parser.add_argument('--config', required=True, type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--ready', type=Path)
-    parser.add_argument('--case', choices=[name for name, _, _ in CASES])
+    parser.add_argument('--case', choices=[name for name, _, _ in CASES] + list(PROGRESSION_CASES))
     parser.add_argument('--execute-model', action='store_true')
     parser.add_argument('--count-only', action='store_true', help='qualify count cases without a token budget')
     args = parser.parse_args(argv)
@@ -260,7 +290,8 @@ def main(argv=None, *, process_started_ns=None):
     elif args.action == 'compare':
         if args.output is None: parser.error('compare requires a fresh private --output')
         config, _, _, _ = configuration(args.config)
-        result = compare(Path(config['artifact_root']), config)
+        result = compare(Path(config['artifact_root']), config,
+                         config_sha256=file_identity(args.config)['sha256'])
         write_private_json(args.output, result)
     else:
         if not args.execute_model or args.case is None or args.ready is None:
@@ -269,5 +300,6 @@ def main(argv=None, *, process_started_ns=None):
             result = execute_worker(args.config, args.ready, args.case, process_started_ns=process_started_ns)
         else:
             result = supervised_case(args.config, args.ready, args.case)
-    print(json.dumps({k:result[k] for k in ('status', 'models', 'claims', 'max_requests') if k in result}))
+    print(json.dumps({k:result[k] for k in ('status', 'models', 'claims', 'max_requests',
+        'suite', 'progression_cases') if k in result}))
     return 0
