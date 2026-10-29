@@ -360,9 +360,30 @@ may supply `batching_tokenizer` for a controlled environment; matching its rende
 template to the native model remains the caller's responsibility. CPU fixtures use
 a small tokenizer and inference substitute. [Query and independent-member cases](../../../tests/execution_provider/test_lotus_async_token_batches.py)
 and [lifecycle boundary cases](../../../tests/execution_provider/test_lotus_async_batch_lifecycle.py)
-check this optional API. Real Ray/model/GPU correctness and performance, a common
-SemBench CLI and dynamic C_batch or joint B/C control remain pending. This candidate
+check this optional API. Real Ray/model/GPU correctness and performance and
+dynamic C_batch or joint B/C control remain pending. The core candidate
 does not include the separate synchronous prepared-reuse change from PR83.
+
+The ordinary records factory `create_records_core` accepts the same optional
+`prepared_batching` and `batch_concurrency`. It requires fixed async mode without
+resource-feedback admission or stage timing. A finite source must provide its
+validated `rows()` relation as well as the existing `preflight`, `scan_spec` and
+`expected` contracts. The adapter binds one ordinary Filter stage to the unchanged
+method and generation, using the existing record-chain owner. It preserves the
+original chain call ID as `chain_call_id` while mapping each receipt into the
+ordinary Filter ledger's declared identity; no request is replayed. Completed
+reports check the actual B/C_batch/R and full member indices against the selection.
+`transport_batches[].receipt_members` records each member's two identities,
+submission confirmation, Core key, native request ID, status and native end time.
+Failed/unknown query receipts keep their original usage and confirmation.
+
+This finite chain already retains a full expected relation. The ordinary ledger
+adapter delivers raw receipts after the existing complete chain traversal; it is
+not a live result-stream API, and does not add a per-batch execution barrier. There
+is no new scheduler or engine. The normal Movie config/CLI and isolated session
+driver use this factory; resident reuse, dynamic admission/cache and unsupported
+row-capped combinations fail before model construction. Configuration and commands
+are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
 
 ## Optional method-ready successor selection
 

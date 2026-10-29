@@ -205,7 +205,8 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 本地异步记录链候选在准确已发布基底 `beb5966c` 上接入同一组批配置，未包含PR83的同步重复准备修复。
 它复用原MethodRun/Core/actor/engine，以一次数据RPC及IPC提交一个token批，保留逐成员完成、后继推进、取消与unknown责任及Extract关系屏障。
 可选范围为固定B、固定应用批并发C_batch、FIFO、record推进、W关闭；无每批行帽，R仍同时约束在途成员与resident行。
-默认与同步对照保留；当前是公共Python API的CPU候选，动态C_batch、B/C联合控制、通用SemBench入口及真实Ray/模型/GPU功能与性能验收尚未完成。
+默认与同步对照保留；后续本地入口增量已将配置经原records工厂接入正常Movie `check/run`和isolated session，保留冻结任务、source及原评价器绑定，并核对实际B/C_batch/R和逐成员回执。
+该入口是CPU候选；动态C_batch、B/C联合控制、resident组合及真实Ray/模型/GPU功能与性能验收尚未完成，不继承旧树GPU证据。
 准确参数单位、尾批行为、字节边界和CPU检查入口统一见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)，不据此宣称性能提升。
 
 <a id="finite-query-successor-candidate"></a>

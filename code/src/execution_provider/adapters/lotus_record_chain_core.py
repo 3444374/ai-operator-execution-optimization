@@ -1461,7 +1461,7 @@ class SemLoomRecordChainCore:
             progression=dict(policy=self.progression, batch_rows=self.progression_batch_rows,
                 scope="successor submission over the same single-row async model path"),
             work_unit="model_calls" if self.token_budget is None else "tokens")
-        if self._async_token_batches:
+        if self._async_token_batches and hasattr(self, '_token_organizer'):
             self.last_close_report['async_token_batches'] = dict(self._token_organizer.report(),
                 data_batch_rpcs=self.transport.data_batch_rpcs,
                 peak_data_rpc_bytes=getattr(self._actors, 'peak_prepared_batch_rpc_bytes', 0),
