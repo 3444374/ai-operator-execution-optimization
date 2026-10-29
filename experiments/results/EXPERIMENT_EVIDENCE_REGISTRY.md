@@ -1,5 +1,15 @@
 # 实验与机制证据台账
 
+<a id="record-layout-comparison-interpretation"></a>
+## 2026-10-29：已有执行布局对照的解释边界
+
+本条按既有交接的短标识`464`／`416`校正解释，不新增模型运行或原件复算；完整来源、原报告和校验值仍经原artifact交接取得。
+`416`比较的是fused C1与record C4，两条路径的启动流程、进程／owner布局及并发不同，不能称同一配置在main合并前后的回归。
+两臂工作段为21.976／7.857秒，全程为64.018／66.408秒；工作段变短不表示完整过程变快，启动与收尾也不能事后删去。
+已有7条Map输出差异、输出token合计1004／1013；没有逐记录gold不能判哪臂质量更好，实际工作量差异须单列。
+这些时间不能单独归因于记录粒度；已有`464`／`416`外层API及资源观察也未证明计算、HBM、host带宽或H2D瓶颈。
+后续同配置对照须固定生命周期与并发，再改变一个待验选项；应用质量按[gold口径](../plans/reference/对照规范.md#quality-equivalence-work)评价，旧严格等价失败不改判通过。
+
 <a id="finite-query-token-local-cpu"></a>
 ## 2026-10-28：完整F/M查询token配置的本地接线检查
 
@@ -19,7 +29,7 @@
 轮转/FIFO默认、年龄与连续选择次数、背压不重计龄、可选观察错误、必需读时失败、实际生成列/参数/父调用、取消unknown及晚到结果不重放后继均核对。
 候选仅支持同部署同角色F/M完整查询的自定义选项；Extract/角色切换提前拒绝，默认count与Extract路径保持。
 以上独立候选未叠token或私有runner。后续在main`230789c4`与已合PR71的token选项本地组合，新增[联合检查](../../code/tests/execution_provider/test_lotus_record_local_token_priority.py)：默认、两种单项及联合结果/消息/生成/身份一致；token W限制活跃调用，有限Core offer容量下保留ready年龄及连续后继次数限制；失败/取消unknown/晚到结果与启动前拒绝不支持计划均保留。
-当前联合树尚待独审，未合入或部署。原[两轮负结果与输出差异](#priority-reverse-small-pair)保留；本次不产生新模型、质量、性能或历史resident复现资格。
+上述联合树在该次记录时尚待独审；后续PR72已合入main`0689ba32`，当前接纳与新Git入口资格见[代码状态](../../code/INFRA_STATUS.md#finite-query-successor-candidate)。原[两轮负结果与输出差异](#priority-reverse-small-pair)保留；本次CPU记录不产生新模型、质量、性能或历史resident复现资格。
 
 <a id="animals-q7-shared-media-native128"></a>
 ## 2026-10-27：原 Animals Q7 的共享图像表示正常功能

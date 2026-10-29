@@ -15,6 +15,8 @@ LOTUS 主线由 SemBench 提供任务与评价，保留 LOTUS 原方法及全局
 近期研究集中于[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)：
 固定逻辑计划、模型、prompt 与生成规则，检验依赖范围细化及有限物理重组是否改善完整查询。
 普通／级联 Filter 是方法参照、无机会反例与全局依赖场景；扩大单 Filter 并发本身不作为研究增量。
+研究优先沿已合法就绪的记录推进后继，复用显式 `record_local_sections`；这不表示 main 默认已改，
+同步 fused 仍作低开销强对照，普通 records 的同步／异步与固定／动态配置另按[接口](code/src/execution_provider/adapters/README.md#optional-single-model-finite-record-plans)区分。
 
 records→结果独立建设，旧 request 接点按实际适用范围复用。LOTUS 目标配置为 Daft 扫描／普通关系处理
 加 Ray Core／Actor，SemLoom 自管准备、供给与回收；Ray Data、Daft、IMLane 对照各自原生执行。
@@ -60,6 +62,8 @@ plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray�
 HTTP 路径只能利用外部可见的请求及服务信息，不能假定持有内部 tensor／KV。
 
 长度或工作量分组、准备复用与局部性选择都是候选，先与合理原生及同信息静态路径比较。
+文本组批的原目标是以每批累计 token 上限决定成员及边界，缓解固定行数下各批工作量差异；
+它与防止下游积压的在途 token 安全上限分别配置，当前记录链的接入缺口见[代码状态](code/INFRA_STATUS.md#finite-query-token-candidate)。
 以完整任务时间、有效结果吞吐及适用的质量为主要结果，准备次数、实际字节、阶段 work、
 峰值留存和 GPU 供给用于解释；没有净收益时保留静态方案。
 
@@ -95,6 +99,7 @@ PG 接入由数据库拥有 SQL、计划、快照、权限、取消与结果生�
 独立 producer 的验证保持原身份。调用与结果绑定见[数据库接入](experiments/plans/数据库接入.md)，
 公共会话与方法推进见[增量执行](experiments/plans/增量执行.md)，职责与移植条件见[系统架构](experiments/plans/系统架构.md)。
 同任务执行比较与改变调用结构的语义方法比较分别评价，质量、实际工作量、资源与完整查询时间共同解释。
+应用质量以任务 gold 和原 evaluator 为主要依据；迁移严格等价、任务质量和实际工作量分别判断，见[评价口径](experiments/plans/reference/对照规范.md#quality-equivalence-work)。
 
 ## 8. 当前执行顺序
 

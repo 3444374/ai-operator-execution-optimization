@@ -4,11 +4,12 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
-本地维护候选将固定四配置的完整记录查询检查入口纳入Git，机器配置、额度、输入与结果仍在仓外；
+[PR73](https://github.com/3444374/ai-operator-execution-optimization/pull/73)已合入 main `a421c9d4`，将固定四配置的完整记录查询检查入口纳入Git；机器配置、额度、输入与结果仍在仓外。
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。
-[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)及CPU检查不代替当前源码的GPU验收；原代码迁移已通过独审，本地追加预算和资格分流修复，尚未发布。
+[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)、21项CPU检查及独审不代替当前源码的GPU验收。
 原W129零调用失败保留；修复改用排序后最小两项之和减1，并将count与token资格分开，迁移未改生产算法或默认。
 main0689底座配合已审现场验收入口完成四臂各48次；两token臂W134均有42个不同调用阻塞后恢复，后继竞争未触发。
+W134是刻意触发阻塞／恢复的功能测试值，不是每批 token 目标或推荐运行值；常规限流应为按实际容量确定的宽松安全护栏，防止下游过量排队。
 新的Git入口组合只有CPU回归；`check`不加载真实tokenizer，未取得整树GPU资格，严格输出／性能等价仍未通过。
 
 <a id="pr52-g1-qualified-scope"></a>
@@ -73,19 +74,19 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | 尝试或检查 | 已做／未做 | 是否正在推进 | 依据 | 下一步 |
 |---|---|---|---|---|
 | 已有图像与文本执行基础 | main 已有图像分阶段执行（HSE）、完整矩阵收集、records 文本记录及整批有限链；不同路径的模型结果分别解释 | 已有实现；后续改进按下列项判断 | [图像执行](src/modalities/image/staged_execution.py)、[矩阵收集](src/semantic_methods/lotus/image_backend.py)、上方 records 说明及下方各路径报告 | 复用已支持的行为；完整矩阵和必要结果不能因省内存被丢弃 |
-| 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、完整矩阵和公共校准API；补齐已交付工作量扫描与计算工作量／局部配对两种原实现及原参数选项，普通Movie与session共享显式入口，默认固定。CPU差分核对参数、反馈及跨查询状态；已完成CFDC/main43与ee39/main0689的原参数n1首次／复用 | 可选实现已接入；两组均保留输出ID差异，不宣称严格等价 | [原配置与验收条件](src/scheduling/runtime/calibration.README.md#原实验配置选项)、[旧短查询实测边界](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 与历史源码、模型、输入、生成、预热、缓存和计时逐项对应；明显差异须诊断，不按期望成绩调参。旧负结果保留，截断搜索不当最优 |
+| 动态参数扫描、查询控制与参数缓存 | 保留`IncreasingSearch`、完整矩阵和公共校准API；已交付工作量扫描与计算工作量／局部配对两种原实现及原参数选项均已接main，普通Movie与session共享显式入口，默认固定。已完成CFDC/main43与ee39/main0689的原参数GPU单轮n1首次／复用 | 两组均保留输出ID差异；当前n1不与历史源码n3合并，不宣称严格等价或稳定收益 | [原配置与验收条件](src/scheduling/runtime/calibration.README.md#原实验配置选项)、[旧短查询实测边界](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621) | 与历史源码、模型、输入、生成、预热、缓存和计时逐项对应；明显差异须诊断，不按期望成绩调参。旧负结果保留，截断搜索不当最优 |
 | 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63已含预算、FIFO和actor组件。PR71已将同角色完整F/M查询接入显式`token_budget`，Extract和角色切换仍拒绝token模式；C64输出差异和无净收益结果保留 | 已合入main；本轮两token臂各48次成功，W阻塞／恢复均42次 | [本地候选范围](#finite-query-token-candidate)、[原对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate) | 原接口已合并；本轮W功能通过但输出ID不完全相同，默认count保持，Extract的token支持仍待做，不将CPU结果写成模型质量或性能收益 |
 | 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown；本轮main0689底座四配置各48次正常调用完成，失败／取消与性能另计 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
 | 减少结果审计对象存活时间 | [PR67](https://github.com/3444374/ai-operator-execution-optimization/pull/67)已合入；Core fused、Ray／Daft有限链Python入口及各Extract阶段支持同一`release_completed_audit`选项，默认False；普通Movie单Filter CLI不经过此worker，record_local_sections明确拒绝开启。成功编码且无失败、取消、unknown或清理错误时只撤掉worker自身列表引用，消费者账本保持 | 可选实现与组合检查完成；不证明RSS或查询收益 | [选项与边界](src/semantic_methods/lotus/README.md#completed-chain-audit-lifetime)、[IPC组件检查](#shared-chain-ipc-scope) | 按真实持有与消费者行为评估，区分Python引用、物理内存和查询性能；不自动开启 |
 | 共享链结果关联索引 | 原审七字段完整身份索引由Core fused、Ray／Daft有限链共用，固定、随机差分、碰撞及取消检查通过；普通Movie单Filter和record_local_sections不适用 | 实现与组合检查完成；真实查询收益仍待验证 | [范围与测试](src/semantic_methods/lotus/README.md#finite-chain-result-index)、[共享worker](src/execution_provider/method_workers/lotus_chain_batch.py) | 保留原异常、顺序和身份规则；关联操作减少不代表完整查询收益 |
 | 图像准备分离、字节背压与多工作进程 | main的HSE底层已有独立准备／模型额度、字节broker、ready优先提交；`hse_static`诊断入口仍在。普通LOTUS资源入口拒绝HSE和CPU>1，执行器将worker及阶段深度固定为1 | 已有实现，确有普通入口缺口 | [HSE循环](src/modalities/image/staged_execution.py)、[资源解析](src/modalities/image/resource_budget.py)、[LOTUS图像入口](src/semantic_methods/lotus/image_backend.py) | 动态接入后先恢复单GPU、多CPU准备的显式参数与转发，补CPU及输出回归；保留当前TF32和单GPU检查，不默认开启、不声称多卡或位置优化已验证 |
 | 可选图像阶段dispatcher | `StageModelDispatcher`及HSE接入仍在`reference/optional-baselines-image-runtime`，main尚无这两个模块；是可继续维护的可选实现，未成为位置／拷贝代价优化器 | 待按小范围接入核对，不整支合并 | [阶段选择器](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/scheduling/runtime/stage_dispatch.py)、[HSE接入](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/modalities/image/hse_dispatch.py) | 单独适配显式配置、容量和速率过期合同，保持默认与原生baseline边界；不因为保存在参考分支就淘汰 |
-| 私有记录方式的对照 | `6a263` 已通过 CPU 独立检查；真实对照正在恢复运行准备，已登录并等待确认机器现场状态，尚无执行回执 | 是：服务器运行准备 | `6a263` 独立检查及本轮运行准备回报 | 确认机器现场状态后执行限定对照并返回结果；准备状态不写成已经运行 |
+| 私有记录方式的对照 | 原`6a263`准备记录不作为当前运行状态；已有`464`／`416`外层观察，未证明硬件瓶颈 | 已有观察；本页不表示GPU正在运行 | [既有对照的解释边界](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-layout-comparison-interpretation) | 复用已有事件，按阶段方案补缺失证据；启动布局、并发与实际工作量不同须单列 |
 | 小规模真实事件观测 | 已完成 5 次调用、取得 56 条事件；这不是完整画像，也没有提供新的优化收益结论 | 否，本次观测已完成 | 已有 5 调用／56 事件回报 | 复用已有事件，按实际缺失项补充，不把调用成功当成瓶颈已定位 |
 | 字节限制与阶段预算组合对照 | 14 项 CPU 检查仅覆盖参考实现，尚未使用真实执行接口 | 否，当前为参考实现 | 本轮 14 项 CPU 检查回报 | 公共阶段具备真实接口后，按同一查询验证这一简单对照，不能把模拟结果当原生系统结果 |
 | 普通输入准备 | 已有`TaskPreparation`接口，普通准备尚未使用它；静态／原生路径的准备批次与Core显式async仍在，Core的B1限制不能只删检查就解除 | 已有接口、实际准备接入仍缺；不是配置被废弃 | [接口定义](src/scheduling/core/session_contract.py)、[Core入口](src/execution_provider/adapters/lotus_records_core.py) | 在已有输入／结果身份和准备输出容量合同上实现，核取消、持有和归还；本轮不把大批次或物理释放写成已支持 |
 | 最终结果消费的字节预算 | 执行程序仍积累 `raw` 结果，尚未把消费期间持有的数据纳入统一字节预算 | 否，当前缺项 | 本轮完整查询与内存检查回报 | 记录真实消费者和最后使用时刻，纳入字节预算并验证慢消费；模型完成不能代替结果已消费 |
-| 公共物理阶段描述与实测 | 已明确准备、模型、消费和交接的研究目标；尚未完成公共描述和真实完整查询测量，画像只作支撑 | 是：阶段描述与测量设计 | 本轮研究目标修订；[架构中的目标](../experiments/plans/系统架构.md#physical-stage-research-goal) | 先选一个完整查询，说明阶段、数据与允许动作，测展开／计算／收缩及准备消费竞争；不以任务间迁移为主线 |
+| 公共物理阶段描述与实测 | 已有外层事件和资源观察，CPU准备、IPC／传输／排队、模型、消费、关系依赖及表示展开／驻留／释放仍需公共描述与完整时间线；画像只作支撑 | 仍需补齐阶段观测，不是已经定位硬件瓶颈 | [架构中的目标](../experiments/plans/系统架构.md#physical-stage-research-goal)、[观测方案](../experiments/plans/数据组织.md#dag-resource-observation) | 先选一个完整查询补实际缺项；计算型／访存型只是例子，不预设瓶颈或自动向别的链迁移 |
 | 后继优先、反序与等待老化 | PR72已恢复9231f088原driver及ready时钟修正，并透传完整F/M查询选项。原两轮约10%变慢及输出差异保留 | 已合入main；两后继臂各48次正常完成，均无竞争选择 | [本地候选](#finite-query-successor-candidate)、[原对照与负结果](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair) | 功能正常不等于优先效果；本轮未触发争用，轮转/FIFO各自默认保持，不把当前fresh-query接口称为历史resident first/reuse复现 |
 | 跨模型、任意依赖图、预加载、多 GPU 与查询时限策略 | 本轮暂缓，不作为以上工作的前置项 | 否，暂缓 | 当前研究范围 | 先完成单卡完整查询和公共阶段实测，再按实际问题决定是否需要扩展 |
 
@@ -140,6 +141,9 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 原候选基于`77fe087b`，已与main`43a463b6`本地组合并通过36项CPU检查；`SemLoomRecordChainCore(..., execution="record_local_sections", token_budget=budget)`
 复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
 默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token，Extract、角色切换及fused明确拒绝该组合。
+这里的 `token_budget` 是在途上限 W：按每条实际完整消息的估计输入 token 加阶段输出 cap 预留，确认终态后归还，unknown继续持有；它没有决定一批成员和批次边界。
+用户原目标是以每批累计 token 上限 B 代替固定行数作为主要组批条件。现有[文本组批器](src/data/materializers/text.py)和[待提交批次组件](src/scheduling/organization/batching.py)已有相应逻辑，但尚未接入当前完整记录链。
+W应保留为较高的安全护栏，与B和请求数C分开；输入／输出估计不等于实际计算量或物理KV用量。接口细节见[adapter说明](src/execution_provider/adapters/README.md#chain-token-batching-boundary)。
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
 前述CPU范围核对实际生成列、后继参数、W阻止/恢复、取消unknown、晚到终态和原count/Extract路径；本轮现场修复后的两token臂各48次正常完成，输出ID仍有差异，不作性能结论。
