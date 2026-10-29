@@ -113,6 +113,47 @@ See [whole-query CPU cases](../../../tests/execution_provider/test_lotus_record_
 the [shared method API](../../semantic_methods/lotus/README.md#record-local-sections)
 and [actual qualification scope](../../../INFRA_STATUS.md#record-local-sections-c827).
 
+## Optional completion progression on the same async backend
+
+The record-local owner defaults to `progression="record"`: each completed record
+can submit its next legal stage. An explicit `progression="batch_stage"` waits for
+the other members of that record's fixed group to complete the current stage:
+
+```python
+owner = SemLoomRecordChainCore(engine, resources, execution="record_local_sections",
+    progression="batch_stage", progression_batch_rows=2)
+```
+
+This option requires FIFO, count admission, one model deployment and role, and a
+complete Filter/Map plan. Unsupported plans reject before source consumption or
+model startup; existing default Extract relation barriers remain available.
+Groups follow accepted source order. A full group closes at its declared size;
+source EOF closes the last partial group. Filtered/final members have no further
+stage to wait for. Each subsequent stage has its own completion barrier.
+
+`progression_batch_rows` counts records in a dependency group. It is independent
+of token work W and does not build a native inference batch: both preparation and
+model request batch sizes remain 1. The group must fit the retained row and byte
+grant, currently derived from `max_active_batches`; reject oversized groups
+instead of waiting for members that cannot be admitted. A singleton at C1
+degenerates to per-record progression.
+
+Both policies use the same `LotusChainProgram`/`MethodRun`, Core, actor and async
+IPC. Original formatting/parsing and bounded continuation preparation can occur
+before the group is complete; only successor submission is gated. Confirmed Core
+deliveries are released immediately, while retained row state remains charged to
+MethodBudget. Failure/cancel stops successors and keeps the existing unknown and
+producer-retirement rules. `close()['progression']` records the actual policy.
+
+The caller continues to own and retain Ray across queries. Each query still owns
+and closes one fresh model; this option does not implement cross-query model
+borrowing. The old fused path remains the default complete implementation and
+receives no Ray wrapper. This group barrier is an explicit internal mechanism
+comparison, not a replacement for native system baselines or GPU qualification.
+See [controlled async IPC tests](../../../tests/execution_provider/test_lotus_record_local_progression.py),
+[method/request differentials](../../../tests/semantic_methods/test_lotus_chain_composition.py)
+and [current scope](../../../INFRA_STATUS.md#record-local-completion-progression).
+
 ## Optional method-ready successor selection
 
 The generic `MethodDriver` still defaults to `round_robin`; `LotusChainFIFO` and

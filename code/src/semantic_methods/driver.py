@@ -266,10 +266,7 @@ class MethodDriver:
             self._task_sequence += 1
             self._rows.move_to_end(sequence)
             if self._ready is not None:
-                if self._priority is None:
-                    self._ready.popleft()
-                else:
-                    self._ready.remove(sequence)
+                self._ready.remove(sequence)
             actions += 1
         return actions
 
