@@ -281,11 +281,11 @@ the new CPU cases vary B at fixed C solely to verify membership behavior.
 exercise the real Core entry, original LOTUS methods and private process protocol with
 deterministic inference. [Reuse checks](../../../tests/execution_provider/test_lotus_prepared_reuse.py)
 compare native input/parameters/results, count preparation/estimation passes and reject
-changed identities or configurations. This reuse revision has CPU coverage only;
-it does not attribute the whole historical API gap to preparation or establish a GPU speedup.
-Real tokenizer/model/GPU performance and output-quality
-comparison remain pending; [qualification status](../../../INFRA_STATUS.md#prepared-request-batching)
-records this boundary.
+changed identities or configurations. Real-model coverage and quality/performance
+limits are source/task specific; [qualification status](../../../INFRA_STATUS.md#prepared-request-batching)
+records the completed Q1 reuse comparison and the remaining unmeasured combinations.
+The observed comparison does not establish strict per-row equivalence, a stable
+speedup or recovery of the whole historical API gap.
 
 ## Optional method-ready successor selection
 
