@@ -85,6 +85,59 @@ W沿用输入估计加生成上限，真实tokenizer门禁失败即停，不自�
 结果区分完整worker、查询迭代与关闭时间；CPU检查、未触发的W阻塞／优先竞争不能写成模型机制通过。
 本入口是功能验收，n1、不同输出或生命周期不对齐时不作性能／全局默认切换结论。
 
+<a id="record-progression-validation"></a>
+### 同异步后端的 record／batch_stage 检查
+
+同一公开CLI现支持仓外JSON显式选择`"suite": "progression"`，省略仍为上述四臂C4。
+新套件固定`record-count`（`record`）和`batch-stage-count`（`batch_stage`）两臂；
+共同使用同一份`resources`，允许显式C1～4，`progression_batch_rows`必须是1～C内的整数。
+例如C2／组大小2用于非退化组检查；C1／组1只是与逐记录相同的控制。
+配置片段如下，其余模型、输入、租约等仍按上表提供真实仓外值：
+
+```json
+{
+  "suite": "progression",
+  "progression_batch_rows": 2,
+  "resources": {
+    "cpu_workers": 1, "gpu_workers": 1,
+    "prepare_batch_rows": 1, "model_batch_rows": 1,
+    "max_active_batches": 2
+  },
+  "ray_roots": {
+    "record-count": "/private/path/ray-record",
+    "batch-stage-count": "/private/path/ray-batch"
+  }
+}
+```
+
+先同步包含后端双策略及本入口的同一已审提交，绑定`public_git_commit`并执行：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py check --config "$PROGRESSION_CONFIG"
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py qualify --config "$PROGRESSION_CONFIG" --count-only --output "$PROGRESSION_READY"
+```
+
+`check`显示实际两臂策略和96次总上限；新套件拒绝token资格，源码、组大小或C变化使旧回执失效。
+现有唯一监督者持有原host lease，创建新的96额度账本并分别为两个case预留48，再逐臂运行：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py case --config "$PROGRESSION_CONFIG" --ready "$PROGRESSION_READY" --case record-count --execute-model
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py case --config "$PROGRESSION_CONFIG" --ready "$PROGRESSION_READY" --case batch-stage-count --execute-model
+"$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py compare --config "$PROGRESSION_CONFIG" --output "$PROGRESSION_COMPARISON"
+```
+
+每臂成功且物理退出确认后才进入下一臂；失败／unknown停止，不重试或复用旧额度。监督与模型上限、
+每臂16行原M→M→F及48次调用不变。这是读取SemBench Movie CSV的有限功能检查，
+不代替完整SemBench Q1～Q3查询、gold／原evaluator或质量验收。
+
+helper实际向正常owner传入策略，并在Core事件中读取活动driver的组配置，与owner关闭回执交叉核对；
+同时记录实际Core请求／held上限、
+MethodBudget保留行数／字节和单行预留。`compare`核对策略、组大小、输入／配置摘要、模型／生成、
+同C资源、关闭状态、峰值及组不超过held与行／字节grant；不能用重跑`record`的回执冒充`batch_stage`。
+两臂仍是同一单记录native异步API，组为依赖放行组，未实现token packing或改变W。
+worker继续按现有监督范围独立冷启动Ray和新模型，完整worker时间包含这些成本；
+不据此宣称常驻复用或启动提速。与其他新组批配置的组合资格仍待验证。
+
 ## 原生 LOTUS CLIP 查询
 
 三个公开入口按内容manifest、模型身份、完整查询衔接：

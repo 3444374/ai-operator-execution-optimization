@@ -145,6 +145,8 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，每查询模型仍新建并关闭，跨查询借用尚未实现。
 CPU检查与差分范围见[接口与测试](src/execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)；
 没有真实Ray／GPU验收、完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
+后续本地候选补充[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
+将策略／组大小传入真实owner，并检查实际策略、同C、held／行／字节grant和配置摘要；默认四臂保持。
 
 <a id="finite-query-token-candidate"></a>
 ## 完整F/M查询的可选token配置
