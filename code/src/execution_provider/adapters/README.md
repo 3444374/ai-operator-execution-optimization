@@ -330,7 +330,11 @@ There is no flush timer or asynchronous blocked-source contract.
 
 One selected group uses one actor data RPC and one private engine data frame.
 Each member retains its own request identity, result, ACK and cancellation
-responsibility. A fast member can release its result and start its legal successor
+responsibility. Its admitted result-byte reservation also bounds poll replies and
+close-audit receipts, even when the actor item allowance is larger. Oversized
+confirmed completions become `ResultCapacityExceeded` failures with known usage
+retained; unknown outcomes remain unknown. A fast member can release its result
+and start its legal successor
 while a peer remains unfinished, subject to the explicit C_batch/R/byte grants.
 Closing a batch does not add a semantic completion barrier. Existing relation
 barriers, including Extract, remain. The finite same-deployment/role chain scope

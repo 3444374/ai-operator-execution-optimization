@@ -1,6 +1,7 @@
 """Deterministic bulk handoff/receipt boundaries, without Ray or model execution."""
 import json
 from concurrent.futures import Future
+from copy import deepcopy
 from dataclasses import asdict, replace
 import threading
 import time
@@ -37,6 +38,108 @@ def actor():
 
 
 class BatchLifecycleTests(unittest.TestCase):
+    def member_result_actor(self, *, unknown=False, producer_stopped=False):
+        value, events, uid = actor(), [], 'f'*32
+        calls = []
+        for i, maximum in enumerate((2048, 4096)):
+            row = stage_identity('q', RecordOccurrence('r'+str(i), i, 0, {}), 'stage')
+            row['messages_json'] = json.dumps([dict(role='user', content='complete prompt')])
+            calls.append(dict(row=row, generation=asdict(GenerationSpec()), maximum=maximum,
+                              request_key=[0, i]))
+        def submit(rows, **options):
+            tickets = []
+            for i, row in enumerate(rows):
+                ticket = uid+':'+str(i)
+                identity = {name: row[name] for name in actors.IDENTITY_FIELDS}
+                result = actors.result_record(identity, engine_uid='CPU-member-limit', start=1., end=2.,
+                    status='unknown' if unknown else 'succeeded', submitted=True)
+                result.update(text='x'*2700, prompt_token_ids_json='[11]', output_token_ids_json='[12]',
+                    prompt_tokens=1, completion_tokens=1, total_tokens=2, finish_reason='stop',
+                    engine_request_id=ticket, engine_terminal_confirmed=not unknown)
+                self.assertGreater(len(_encode(result, 100000)), 2048)
+                self.assertLessEqual(len(_encode(result, 100000)), 4096)
+                events.append(TerminalEvent(ticket, identity, result, not unknown, None))
+                tickets.append(ticket)
+            return BatchSubmitResult('queued', tuple(tickets))
+        proof = dict(schema='semloom.async_producer_quiescence.v1', confirmed=True, owner_uid=uid,
+                     engine_uid='CPU-member-limit', issued_submissions=2)
+        value.engine = SimpleNamespace(submit_batch=submit,
+            poll=lambda maximum: tuple(events.pop(0) for _ in range(min(maximum, len(events)))),
+            close=lambda **options: dict(status='closed',
+                **(dict(producer_quiescence=proof) if producer_stopped else {})),
+            ready_report=dict(engine_uid='CPU-member-limit'),
+            snapshot=lambda: dict(owner_uid=uid, issued_submissions=2))
+        payload = _encode(dict(calls=calls, batch_key=[0, 0], deadline=time.monotonic()+3),
+                          value.limits.input_bytes)
+        self.assertEqual(value.submit_prepared_batch(payload), dict(status='accepted'))
+        return value
+
+    def assert_member_results(self, receipts, *, unknown=False):
+        by_key = {tuple(item['request_key']): item['result'] for item in receipts}
+        small, large = by_key[(0, 0)], by_key[(0, 1)]
+        self.assertLessEqual(len(_encode(small, 100000)), 2048)
+        self.assertLessEqual(len(_encode(large, 100000)), 4096)
+        self.assertEqual(small['status'], 'unknown' if unknown else 'failed')
+        self.assertEqual(small['error_type'], 'ResultCapacityExceeded')
+        self.assertEqual(large['status'], 'unknown' if unknown else 'succeeded')
+        self.assertEqual(large['text'], 'x'*2700)
+        for result in (small, large):
+            self.assertEqual((result['prompt_tokens'], result['completion_tokens'], result['total_tokens']),
+                             (1, 1, 2))
+            self.assertTrue(result['submission_confirmed'])
+
+    def test_bulk_members_keep_independent_result_reservations(self):
+        for unknown in (False, True):
+            with self.subTest(unknown=unknown):
+                value = self.member_result_actor(unknown=unknown)
+                raw = value.poll_prepared_batch((0, 0))
+                self.assertEqual(value.poll_prepared_batch((0, 0)), raw, 'no ACK means no delivery')
+                self.assert_member_results(json.loads(raw)['results'], unknown=unknown)
+                self.assertTrue(all(call.confirmed is not unknown for call in value._held.values()))
+                for key in ((0, 0), (0, 1)):
+                    self.assertIs(value.acknowledge_core(key), not unknown)
+                self.assertEqual(len(value._held), 2 if unknown else 0)
+
+    def test_closed_member_bounds_survive_producer_retirement_and_repeated_close(self):
+        for stopped in (False, True):
+            for unknown in (False, True):
+                with self.subTest(producer_stopped=stopped, unknown=unknown):
+                    value = self.member_result_actor(unknown=unknown, producer_stopped=stopped)
+                    report = value.close(1)
+                    audit = deepcopy(report)
+                    self.assert_member_results(report['unconsumed_core_results'], unknown=unknown)
+                    if stopped:
+                        self.assertEqual(value._held, {})
+                    packet = json.loads(value.poll_prepared_batch((0, 0)))
+                    self.assertTrue(packet['closed'])
+                    self.assert_member_results(packet['results'], unknown=unknown)
+                    for key in ((0, 0), (0, 1)):
+                        self.assertIs(value.acknowledge_core(key), stopped or not unknown)
+                    self.assertEqual(json.loads(value.poll_prepared_batch((0, 0)))['results'], [])
+                    self.assertEqual(value.close(1)['unconsumed_core_results'],
+                                     audit['unconsumed_core_results'])
+
+    def test_rejected_unsubmitted_members_obey_the_checked_result_reservation(self):
+        for started in (False, True):
+            with self.subTest(engine_started=started):
+                value = actor()
+                if started:
+                    value.engine = SimpleNamespace(ready_report={},
+                        submit_batch=lambda *args, **options: SimpleNamespace(status='rejected'))
+                row = stage_identity('q', RecordOccurrence('r0', 0, 0, {}), 'stage')
+                row['messages_json'] = json.dumps([dict(role='user', content='complete prompt')])
+                call = dict(row=row, generation=asdict(GenerationSpec()), maximum=512, request_key=[0, 0])
+                payload = _encode(dict(calls=[call], batch_key=[0, 0], deadline=time.monotonic()+3),
+                                  value.limits.input_bytes)
+                response = value.submit_prepared_batch(payload)
+                self.assertEqual(response['status'], 'rejected')
+                result = response['results'][0]['result']
+                self.assertLessEqual(len(_encode(result, 100000)), 512)
+                self.assertEqual(result['status'], 'failed')
+                self.assertEqual(result['error_type'], 'ResultCapacityExceeded')
+                self.assertFalse(result['submission_confirmed'])
+                self.assertEqual(value._held, {})
+
     def test_close_collects_terminals_while_abort_handoff_was_temporarily_unavailable(self):
         value, polls, aborts, closes = actor(), [0], {}, []
         events = []

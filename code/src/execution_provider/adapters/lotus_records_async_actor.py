@@ -41,6 +41,7 @@ class _Call:
     chain_call: bool = False
     batch_key: tuple | None = None
     poll_exposed: bool = False
+    max_result_bytes: int | None = None
 
 
 class AsyncCoreModelActor:
@@ -128,6 +129,11 @@ class AsyncCoreModelActor:
             return _encode(value, maximum)
         except ValueError:
             return _encode(_capacity_failure(value), maximum)
+
+    def _bounded_call_result(self, value, maximum):
+        maximum = (self.limits.item_result_bytes if maximum is None
+                   else min(self.limits.item_result_bytes, maximum))
+        return json.loads(self._bounded(value, maximum))
 
     def _collect(self):
         # Called under the actor condition; one reader transfers each IPC event.
@@ -224,8 +230,9 @@ class AsyncCoreModelActor:
                 self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
             expired = time.monotonic() >= deadline
             if self._closing or self._unhealthy or self.engine is None or expired or batch_key[0] < self._session:
-                return dict(status='rejected', results=[dict(request_key=list(key), result=self._receipt(
-                    {n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted', expired=expired)) for key, call in zip(keys, calls)])
+                return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
+                    self._receipt({n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted',
+                                  expired=expired), call['maximum'])) for key, call in zip(keys, calls)])
             if any(key in self._held for key in keys):
                 raise ValueError('batch repeats an owned Core key')
             while True:
@@ -238,15 +245,17 @@ class AsyncCoreModelActor:
                     break
                 self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
             if submitted is not None and submitted.status != 'queued':
-                return dict(status='rejected', results=[dict(request_key=list(key), result=self._receipt(
-                    {n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted')) for key, call in zip(keys, calls)])
+                return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
+                    self._receipt({n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted'),
+                    call['maximum'])) for key, call in zip(keys, calls)])
             self._session = batch_key[0]
             self._cancel_session = max(self._cancel_session, self._session)
             self._early_cancels = {key for key in self._early_cancels if key[0] >= self._session}
             tickets = {} if submitted is None else dict(zip((key for key, _ in live), submitted.request_ids, strict=True))
             for key, call in zip(keys, calls):
                 identity = {name: call['row'][name] for name in IDENTITY_FIELDS}
-                held = self._held[key] = _Call(identity, chain_call=True, batch_key=batch_key)
+                held = self._held[key] = _Call(identity, chain_call=True, batch_key=batch_key,
+                                             max_result_bytes=call['maximum'])
                 if key not in tickets:
                     held.value = self._receipt(identity, 'failed', 'CancelledBeforeSubmission')
                     held.confirmed = True
@@ -276,7 +285,8 @@ class AsyncCoreModelActor:
             maximum = self.limits.item_result_bytes + self.limits.control_frame_bytes
             closed = self.last_close_report is not None
             for key, value in available:
-                value = json.loads(self._bounded(value, self.limits.item_result_bytes))
+                call = self._held.get(key)
+                value = self._bounded_call_result(value, None if call is None else call.max_result_bytes)
                 candidate = dict(request_key=list(key), result=value)
                 try:
                     _encode(dict(results=results+[candidate], closed=closed, more_results=False), maximum)
@@ -494,7 +504,8 @@ class AsyncCoreModelActor:
                     while self._readers and time.monotonic() < deadline:
                         self._condition.wait(min(0.01, max(0, deadline - time.monotonic())))
                     receipts = [dict(call.value) for call in self._held.values() if call.value is not None]
-                    keyed = [dict(request_key=list(key), result=dict(call.value),
+                    keyed = [dict(request_key=list(key),
+                                  result=self._bounded_call_result(call.value, call.max_result_bytes),
                                   **(dict(batch_key=list(call.batch_key)) if call.batch_key is not None else {}))
                              for key, call in self._held.items() if call.value is not None]
                     retained = {tuple(v['request_key']): v for v in
