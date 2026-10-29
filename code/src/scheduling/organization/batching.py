@@ -72,13 +72,15 @@ class PendingBatch:
 
 
 class PendingBatchBuilder:
-    """Accumulates complete rows until a row or token capacity is reached."""
+    """Accumulates complete rows; None removes the row cap when B is positive."""
 
-    def __init__(self, max_rows: int, token_budget: int) -> None:
-        if not _is_non_negative_int(max_rows) or max_rows == 0:
-            raise ValueError("max_rows must be a positive integer")
+    def __init__(self, max_rows: int | None, token_budget: int) -> None:
+        if max_rows is not None and (not _is_non_negative_int(max_rows) or max_rows == 0):
+            raise ValueError("max_rows must be a positive integer or None")
         if not _is_non_negative_int(token_budget):
             raise ValueError("token_budget must be a non-negative integer")
+        if max_rows is None and token_budget == 0:
+            raise ValueError("no row cap requires a positive token budget")
         self._max_rows = max_rows
         self._token_budget = token_budget
         self._rows: list[RowArrival] = []
@@ -96,6 +98,8 @@ class PendingBatchBuilder:
             raise RuntimeError("token budget cannot change inside an open batch")
         if not _is_non_negative_int(token_budget):
             raise ValueError("token_budget must be a non-negative integer")
+        if self._max_rows is None and token_budget == 0:
+            raise ValueError("no row cap requires a positive token budget")
         self._token_budget = token_budget
 
     def would_exceed_token_budget(self, row: RowArrival) -> bool:
@@ -119,12 +123,14 @@ class PendingBatchBuilder:
             raise RuntimeError("batch capacity reached; call close() before adding")
         if not isinstance(row, RowArrival):
             raise ValueError("row must be a RowArrival")
+        if self._max_rows is None and row.estimated_total_tokens == 0:
+            raise ValueError("uncapped token batches require positive request costs")
 
         self._rows.append(row)
         self._prompt_tokens += row.prompt_tokens
         self._estimated_output_tokens += row.estimated_output_tokens
         self._capacity_reached = (
-            len(self._rows) >= self._max_rows
+            (self._max_rows is not None and len(self._rows) >= self._max_rows)
             or (
                 self._token_budget > 0
                 and self._prompt_tokens + self._estimated_output_tokens

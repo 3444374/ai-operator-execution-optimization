@@ -225,8 +225,12 @@ class EngineProcess:
         while not self._reaper_stop.wait(0.02):
             if (self.control / "stop").exists() or time.monotonic() >= self.deadline:
                 with self._lock:
-                    self._broken = True
-                    self.close()
+                    # An idle stop forbids reuse without breaking a healthy
+                    # IPC channel before it can acknowledge engine shutdown.
+                    try:
+                        self.close()
+                    finally:
+                        self._broken = True
                 return
 
     def _run_prepared(self, rows):

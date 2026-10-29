@@ -20,7 +20,7 @@ from .engine import (
 )
 from .records import FilterMethod, _resolved_columns
 from .sdk import SOURCE_HASHES
-from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
 
 # The old import and serialized tag remain readable; Filter has one value type.
 TextFilterMethod = FilterMethod
@@ -280,9 +280,9 @@ class LotusRecordMethod:
         if not self.columns:
             raise ValueError("a record method must reference an input column")
 
-    def prepare_rows(self, records, *, query_id, allow_nulls=False):
+    def validate_rows(self, records, *, allow_nulls=False):
+        """Check ordinary input/settings even when a caller already prepared it."""
         import lotus
-        import pandas as pd
         from lotus.types import SerializationFormat
 
         if lotus.settings.enable_cache or lotus.settings.serialization_format != SerializationFormat.DEFAULT:
@@ -293,6 +293,11 @@ class LotusRecordMethod:
             if any(name not in record.values or not (type(record.values[name]) is str
                    or allow_nulls and record.values[name] is None) for name in self.columns):
                 raise ValueError("ordinary record methods require present text input columns")
+
+    def prepare_rows(self, records, *, query_id, allow_nulls=False):
+        import pandas as pd
+
+        self.validate_rows(records, allow_nulls=allow_nulls)
         if not records:
             return []
         started = time.monotonic_ns()
@@ -409,10 +414,32 @@ class LotusRecordChain:
         return ChainRun(self, records, initial_parents=initial_parents, columns=columns,
                         allow_nulls=allow_nulls, _relation_execution=True)
 
-    def run_batch(self, records, infer, *, initial_parents=None, columns=None, allow_nulls=False):
+    def run_batch(self, records, infer, *, initial_parents=None, columns=None, allow_nulls=False,
+                  prepared_rows=None):
+        """Use the same method state, optionally reusing its single F/M preparation.
+
+        The execution owner binds prepared_rows to the method and generation;
+        this method checks ordinary inputs, message shape and ordered identities.
+        """
         run = self.start_batch(records, initial_parents=initial_parents,
                                columns=columns, allow_nulls=allow_nulls)
         try:
+            if prepared_rows is not None:
+                # The producer uses this same method's formatter. Reuse only a
+                # complete single F/M stage; successors still prepare normally.
+                if len(self.stages) != 1 or self.stages[0].kind not in ('filter', 'map'):
+                    raise ValueError('prepared rows require a single Filter or Map')
+                run.method.validate_rows(run.current, allow_nulls=allow_nulls)
+                _prepared(prepared_rows)
+                stage = run.method.stage
+                if len(prepared_rows) != len(run.current) or any(
+                    any(row[key] != identity[key] for key in IDENTITY_FIELDS)
+                    for row, identity in zip(prepared_rows, (
+                        stage_identity(self.query_id, record, stage.stage_id, model_role=stage.model_role)
+                        for record in run.current))
+                ):
+                    raise ValueError('prepared rows changed stage identity or member order')
+                run.prepared = deepcopy(prepared_rows)
             while run.prepare():
                 run.complete(infer(run.prepared, generation=run.method.stage.generation))
             return run.result()

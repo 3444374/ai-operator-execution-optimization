@@ -605,6 +605,24 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
 
 
 class PendingBatchBuilderTests(unittest.TestCase):
+    def test_none_removes_the_row_cap_without_disabling_the_token_budget(self) -> None:
+        builder = PendingBatchBuilder(max_rows=None, token_budget=300)
+        for index in range(300):
+            self.assertEqual(builder.add(row(str(index))), index == 299)
+        self.assertEqual(builder.close().row_count, 300)
+        builder.set_token_budget(5)
+        self.assertTrue(builder.add(row('oversize', prompt_tokens=6)))
+        self.assertEqual(builder.close().row_count, 1)
+
+    def test_uncapped_builder_rejects_missing_budget_and_zero_cost_requests(self) -> None:
+        with self.assertRaisesRegex(ValueError, 'positive token budget'):
+            PendingBatchBuilder(max_rows=None, token_budget=0)
+        builder = PendingBatchBuilder(max_rows=None, token_budget=1)
+        with self.assertRaisesRegex(ValueError, 'positive token budget'):
+            builder.set_token_budget(0)
+        with self.assertRaisesRegex(ValueError, 'positive request costs'):
+            builder.add(row('zero', prompt_tokens=0))
+
     def test_close_preserves_row_order_and_aggregates_metadata(self) -> None:
         builder = PendingBatchBuilder(max_rows=2, token_budget=0)
 

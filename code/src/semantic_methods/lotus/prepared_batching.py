@@ -1,22 +1,37 @@
 """Submission batches of complete prepared requests; no admission or inference."""
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import hashlib
+import json
 
 from src.modalities.text.tokenization import chat_token_count
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.vllm_engine import _prepared
 
 
+def preparation_signature(stage, engine, batching):
+    """Bind reused estimates to the exact method, deployment and batch policy."""
+    value = dict(stage=stage.describe(), engine=asdict(engine), batching=asdict(batching))
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+        allow_nan=False, separators=(',', ':')).encode('utf-8')).hexdigest()
+
+
+def prepared_wire_row(row):
+    """Keep both source and prepared values in the charged Core input payload."""
+    return dict(row['source_row'], prepared={k: v for k, v in row.items() if k != 'source_row'})
+
+
 @dataclass(frozen=True)
 class PreparedBatching:
     policy: str
-    max_rows: int
+    max_rows: int | None = None
     token_budget: int = 0
 
     def __post_init__(self):
         if self.policy not in ('fixed_rows', 'token_budget'):
             raise ValueError('prepared batching requires fixed_rows or token_budget')
-        if type(self.max_rows) is not int or self.max_rows <= 0:
-            raise ValueError('prepared batching max_rows must be positive')
+        if (self.max_rows is not None and (type(self.max_rows) is not int or self.max_rows <= 0)
+                or self.policy == 'fixed_rows' and self.max_rows is None):
+            raise ValueError('max_rows must be positive; None is allowed only for token_budget')
         if (type(self.token_budget) is not int or self.token_budget < 0 or
                 (self.policy == 'token_budget') != (self.token_budget > 0)):
             raise ValueError('a positive B is required only for token_budget batching')

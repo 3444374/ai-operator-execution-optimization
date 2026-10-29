@@ -79,6 +79,8 @@ PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权
 PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合检查；这不是新整合整体的Linux执行回执。Mac EPERM原失败保留，不再将该同步组件列为待测缺口。
 逐记录查询的接纳与验证范围见[下方说明](#record-local-sections-c827)。
 
+本地清理竞态修正让空闲stop／deadline先通过健康IPC取得真实API关闭回执，再禁止复用；已损坏的通道仍保留unknown及进程清理责任。原先空闲reaper先标记broken会跳过交握，该顺序在beb和b0均可复现。定序Core与同步进程CPU测试覆盖成功前缀、实际关闭回执及坏通道unknown；不据此增加GPU退出或性能资格。
+
 <a id="候选交接状态2026-10-27"></a>
 ## 优化与观测进展（2026-10-27）
 
@@ -188,8 +190,14 @@ CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENC
 PR78的`c228d59d`候选保留历史身份：它仅在固定外层输入块内拆分，未完成跨读取块token组批。
 [PR80](https://github.com/3444374/ai-operator-execution-optimization/pull/80)后续修正复用既有`PendingBatchBuilder`、原LOTUS方法和Core/私有引擎路径；默认`prepared_batching=None`不变。
 显式token模式对一个Filter或Map按完整prompt token加阶段输出上限累计B，读取块尾不封模型批次。
-读取块大小、B、独立行/字节护栏、并发批数C和vLLM内部容量分开；C仍固定1，W默认关闭不变。
-高行数护栏可大于读取块及引擎running-sequence容量；护栏/EOF封批原因明确记录，单条超过B完整单独提交并标记。
+token配置默认`max_rows=None`，没有每批行数上限；按B、独立逻辑字节额度或EOF封批，不以更大的固定行数替代。
+读取块、B、字节额度、并发批数C和vLLM内部容量分别记录。显式正整数行帽只供历史受限配置复现；固定行模式作为对照。
+旧B=17506、行帽128的测量保留，但不作为无行数上限目标验收；后续SemBench使用准确新提交和`max_rows:null`，不修改在跑配置。
+Core调用数记账仅受整条查询已声明调用总量约束，不作为batch封批条件。单条超过B仍完整单独提交并标记。
+准备结果复用修正让token请求只在producer按原方法准备并估算一次，worker复用消息及成本，仍核对身份、顺序、方法/部署/生成参数签名和B。
+完整prepared身份与消息计入Core输入字节额度；因此字节受限组可能比旧近似计费更早封批。固定行与默认路径保持原准备行为。
+该复用修正只有CPU真实入口/进程协议覆盖，尚无对应源码的GPU性能验收；不把历史调用间隙差额全归因于重复准备。
+C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节额度不宣称是进程RSS或GPU/KV显存上限。
 多阶段token链在消费源或模型预检前拒绝；跨阶段后继缓冲、反馈动态调整B/C、阻塞源定时flush仍未实现。
 原固定行链与默认路径保留。原固定head的独审范围限CPU，不替代合并源码的组合验收；真实模板/模型、质量与GPU性能仍须服务器验证。
 接口、逻辑字节边界及unknown责任见[所属说明](src/execution_provider/adapters/README.md#prepared-request-batching)。
