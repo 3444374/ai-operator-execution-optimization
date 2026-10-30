@@ -1,0 +1,21 @@
+{
+  "schema": "semloom.record_observation.source.v1",
+  "collector_commit": "3b7991c1b645485f534b4e21eeca99450d27760c",
+  "collector_base": "684c416143bfc9baff1a36e31c3c4be7f15251c7",
+  "origin_sha256": {
+    "record_observer.py": "962c862dad44376d20d6e4a621330715b8ad9c63affc9844ffc009e8d48c8c12",
+    "record_ipc_observer.py": "8bc6588bec822daf0ae490ff4e80206d171e39c722e9643801f4dc788c7fd94b",
+    "record_gpu_observer.py": "e4541868cf1789536f1bd16a649c0ceef2f2054546d83b9f1f2613b9c122e69a",
+    "record_model_bootstrap.py": "e0a42603f234cfd5d0e0c063d6e4b070359069777d4a6534064a270ad120d1f7",
+    "sitecustomize.py": "4434a0894aa6ab6cec426dd534bb39c292a130444248de38fd8266e6ead2a283",
+    "run_resource_C2.py": "921244ad5e6d87abadf01d24f747e89a9225ee953d1506a0ff7adcd3d067cdd0",
+    "control_resource_C2.py": "545483354f1b91007459eeae9573a3e6d4dde59c0f8948f47e919248e83b2607"
+  },
+  "migration": [
+    "Four runtime files remain byte-identical. run_resource_C2.py removes only obsolete prepare_cells; execution/observer dispatch remains unchanged.",
+    "record_observer.py and record_ipc_observer.py add token-batch poll/Future boundaries to the existing hooks, reuse native exposure/ACK state and defer sink finalization while batch ACKs remain. No production or scheduling changes.",
+    "workflow.py uses the existing controller Git source gate, CPU qualification, budgets, supervisor and private-artifact primitives.",
+    "Old recipe-dependent and external membership-consumer tests stay with the original reviewed collector; public CPU suite covers the migrated capture/handoff path and new Git workflow."
+  ],
+  "production_imports_test_tools": false
+}

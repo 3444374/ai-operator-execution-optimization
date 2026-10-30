@@ -21,6 +21,14 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 固定B、C_batch、R、isolated会话限制、配置和实际回执见[所属入口说明](../src/experiments/movie_matrix.README.md#record-token-batch-entry)。
 这是本地CPU入口增量，实机验证须重新绑定当前源码，不继承旧树GPU证据。
 
+## 通过 Git 同步资源观测
+
+[`profiling/record_observation/workflow.py`](profiling/record_observation/workflow.py) 提供
+`qualify/prepare/check/run/manifest/verify`：采集代码和 CPU 检查随同一提交同步，私有配置与原件留仓外。
+复用已审采集器、既有 Git 身份、lease、预算、supervisor 和私有产物工具；不向生产代码引入采集依赖。
+最小 on/off 配置、两种源码身份、运行及完整字节回收检查见[所属说明](profiling/record_observation/README.md)。
+这次 Git 迁移仅有本地 CPU 资格，不能继承旧私有包的 Ray/GPU 或性能结论。
+
 ## 通过 Git 同步完整记录查询检查
 
 [`validate_record_chain_options.py`](experiments/validate_record_chain_options.py)提供固定小规模的

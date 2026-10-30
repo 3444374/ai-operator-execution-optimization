@@ -221,3 +221,12 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 PR72已合入main0689；本轮两个后继配置各48次真实调用完成，但竞争选择均为0，不证明优先调度效果。新的Git验收入口组合另行版本化，不继承整树模型资格。
 原两轮负结果与输出差异仍从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)引用；
 新接口不是原resident first/reuse的实机复现，适用条件见[adapter说明](src/execution_provider/adapters/README.md#optional-method-ready-successor-selection)。
+
+
+## Git 同步的资源观测入口
+
+测试采集器和最小 on/off 工作流位于 [profiling 工具](scripts/profiling/record_observation/README.md)，
+复用既有 Git/CPU 资格、原监督／额度及逐文件私有原件检查；配置、认证、数据和回执不进仓库。
+CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页重读不重复统计成员首次返回；
+源码没有批 API 时明确标记该 CPU 范围不支持，事件、sink 或时钟缺失仍不能宣称完整。
+本地迁移未改变生产调度或默认值；新 Git 入口尚未取得真实 Ray/GPU 资格，不继承原私有包的结果。
