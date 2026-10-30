@@ -7,7 +7,7 @@ import unittest
 
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.runtime.calibration import run_admission_query
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
+from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController, _GeometricSearch
 
 
 class Trace:
@@ -40,6 +40,33 @@ class Trace:
 
 
 class GeometricAdmissionTests(unittest.TestCase):
+    def test_unlimited_unresolved_attempts_round_trip_without_counter_reset(self):
+        search = _GeometricSearch(4, 16, None)
+        for window in (8, 16):
+            search.begin(window)
+            search.finish(window, 'noise')
+        self.assertEqual(search.next(), 8)
+        search.begin(8)
+        search.finish(8, 'noise')
+        restored = _GeometricSearch(4, 16, None, search.snapshot())
+        self.assertEqual(restored.points[8]['attempts'], 2)
+        self.assertEqual(set(restored.available()), {8, 16})
+        self.assertIsNone(restored.snapshot()['attempt_limit'])
+
+    def test_interruption_restores_only_that_candidate_when_budget_remains(self):
+        search = _GeometricSearch(1, 4, 2)
+        search.begin(2)
+        search.begin(4); search.finish(4, 'gain')
+        search.interrupt(2)
+        self.assertEqual(search.here, {4})
+        self.assertEqual(search.points[4], dict(attempts=1, outcome='gain'))
+        self.assertEqual(search.points[2], dict(attempts=1, outcome='incomparable'))
+        self.assertEqual(search.next(), 2)
+        search.begin(2); search.interrupt(2)
+        self.assertEqual(search.points[2]['attempts'], 2)
+        self.assertNotIn(2, search.available())
+        self.assertEqual(search.here, {2, 4})
+
     def test_declared_capacity_reachable_with_original_eight_changes(self):
         trace=Trace(maximum=64)
         report=trace.run({c:c*5 for c in (4,8,16,32,64)})

@@ -102,8 +102,28 @@ backend，并增加以下字段。省略新字段仍走原工厂和默认路径�
 这是现有完整配置的片段；engine、generation、query_id、task及冻结输入仍须显式绑定。
 B 是每批完整模板 prompt token 加各请求阶段输出上限；C_batch 是仍有未结算计算成员的应用传输批数；
 R 是原工厂解析后的请求容量，同时仍限制resident行。没有每批行数帽，native `max_num_seqs`／
-iteration token容量单独记录。B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
-目前不支持动态admission/cache、stage_timing、resident跨查询模型复用或受行帽限制的组合，预检明确拒绝。
+iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
+目前不支持逐请求动态admission/cache、stage_timing、resident跨查询模型复用或受行帽限制的组合，预检明确拒绝。
+
+同一JSON可显式加入以下片段，选择固定B、从一批起步的供给反馈候选：
+
+```json
+{
+  "batch_concurrency": 1,
+  "batch_feedback": {"max_batches": 4}
+}
+```
+
+`max_batches`须显式给出且不大于R，是运行容量护栏，不是已测最优值；上例只演示字段。
+省略`batch_feedback`或设null保持固定对照，不安装采样器。可选`options`复用
+`SupplyFeedbackConfig`／`ResourceFeedbackConfig`字段；部分覆盖继承供给策略默认的computed工作量、
+local_pairs比较和geometric探索。`check`输出解析后配置且不构造owner。
+供给策略默认`exploration_s=null`、`max_changes=null`、`max_candidate_attempts=null`、`min_remaining=0`，
+不继承旧“两次候选”或10秒／64待办的截断；有限预算只在显式配置旧预算规则时启用。容量上限仍须保留。
+策略读取实际Core就绪需求、确认完成工作及同owner/session原生running/waiting/KV／抢占，
+只改变C_batch，B与R／IPC字节责任保持独立。缺失／陈旧信息不表示空闲，配置碰顶不表示性能平台。
+反馈间断使本轮比较失效并回退，只恢复中断候选的重试资格，原尝试计数／探索成本与显式预算保留；不读gold或全表token reference选参。
+CPU/GPU利用率、物理可用内存、原生容量readback及动态B仍未接入。
 
 ```sh
 PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py check \
@@ -113,7 +133,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_m
   --output-dir "$NEW_PRIVATE_OUTPUT" --execute-model
 ```
 
-`check`不构造owner或请求模型。`run`沿用原监督worker；正常会话／sealed matrix计划也可增加相同两组批字段，
+`check`不构造owner或请求模型。`run`沿用原监督worker；正常会话／sealed matrix计划也可增加相同组批及可选反馈字段，
 其`profile`使用上例`core_profile`的值，且`backend="semloom-core"`、`lifecycle="isolated"`。
 仍由原owner提供lease、调用额度、完整source.lock／packet和物理退出检查；新入口须重新绑定这些资产，
 不能把旧packet或旧树模型证据直接套用到新源码。启动成本真实记在有限查询内，不扣减或伪装resident。
@@ -130,6 +150,8 @@ MovieTask／source manifest继续拥有Q1/Q2/Q3提示、普通谓词、完整Fil
 准确`41ce4c24`已完成真实Ray/模型功能验收及Movie Q1/Q2/Q3矩阵独审；默认仍关闭，未证明完整冷查询加速。
 Q1严格原生输出等价未通过，Q3共同COUNT=7、gold=14。测试条件、完成范围与未覆盖项见
 [实现状态](../../INFRA_STATUS.md#async-record-token-batches)和[PR84公开摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)，不继承为后续修复或其它组合的资格。
+新增可选反馈配置透传／默认关闭同样由 CPU 入口覆盖；本组合的反馈与观测增量待准确新树实机验收，
+不继承上述 `41ce4c24` 资格。
 
 ## Core 查询方法与模型复用（本地 CPU 增量）
 
