@@ -444,6 +444,13 @@ settles, so repeated polls cannot stack unconfirmed sampling requests.
 Pressure protection keeps priority; a pending gap is retained until a qualified
 non-pressure frame invalidates the comparison, so protection cannot hide it.
 
+A ready backlog survives normal gaps between compute batches. An instantaneous
+active-batch count below the selected window does not erase that window's
+measurements: its dispatch gaps remain in measured wall time. No progress cannot
+form a new measurement. Empty ready supply, stale feedback, queue/capacity and
+tail boundaries retain their existing guards. A window change still clears the
+partial measurements and waits for transition/settling before measuring anew.
+
 Control RPC evidence uses the existing normal query close receipt at
 `owner_close.batch_supply_feedback`. `snapshot_rpc_receipts` records each collected
 return or result exception, its local request index/session, driver timestamps,

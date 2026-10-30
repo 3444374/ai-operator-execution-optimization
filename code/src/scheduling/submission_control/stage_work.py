@@ -293,14 +293,16 @@ class SupplyFeedbackController(ResourceFeedbackController):
             state = "work_tail_or_dependency_wait"
             self._anchor, self._windows = None, []
             decision = self._hold(state)
-        elif not supply.ready_items or supply.active_batches < self.current_window:
+        # Ready work can remain while compute batches hand over. Include that
+        # dispatch gap in this candidate's measured wall time; an instantaneous
+        # active-batch count does not establish upstream supply starvation.
+        elif not supply.ready_items:
             state = "upstream_supply_limited"
             self._anchor, self._windows = None, []
-            reason = ('preparation_below_completion' if not supply.ready_items and rates is not None
+            reason = ('preparation_below_completion' if rates is not None
                       and rates.get('completed_items_s') is not None
                       and rates['prepared_items_s'] < rates['completed_items_s'] else
-                      'ready_backlog_not_submitted' if supply.ready_items and rates is not None
-                      and rates['submitted_items_s'] == 0 else state)
+                      state)
             decision = self._hold(reason)
         if decision is None:
             decision = super().update(o)

@@ -86,6 +86,113 @@ class SupplyFeedbackTests(unittest.TestCase):
         self.assertEqual(r['control_unit'], 'application_batches')
         self.assertFalse(r['B_adjusted'])
 
+    def test_S2_ready_backlog_handoff_keeps_reference_measurement(self):
+        # Recorded S2 control times and supply counts. Work is normalized here
+        # to isolate the gate; queued=prepared-submitted is its trace upper
+        # estimate (98--100 actual QUEUED records around the final instant).
+        trace = [
+            (2.890113, .626501, 163, 88, 29),
+            (3.401904, .632099, 216, 118, 30),
+            (3.914560, .552136, 246, 148, 30),
+            (4.416660, .473703, 276, 176, 26),
+            (4.934851, .489368, 305, 206, 13),
+            (5.460959, .544696, 339, 263, 30),
+            (5.962683, .613899, 391, 292, 29),
+            (6.516685, .583047, 420, 321, 29),
+            (7.042460, .579566, 450, 351, 0),
+        ]
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(128), clock=lambda: self.now)
+        self.c.reset(1, 512)
+        for at, age, prepared, submitted, active in trace:
+            if not active:
+                self.assertEqual(len(self.c._windows), 2)
+            self.now = at
+            completed = submitted-active
+            o = AdmissionObservation(at, True, int(active > 0), active, 0, .03,
+                sample_age_s=age, completed_items_total=completed,
+                pending_items=512-completed, preemptions_total=0,
+                completed_input_work_total=completed*100, completed_output_work_total=completed*4,
+                completed_computed_input_work_total=completed*100, completed_cached_input_work_total=0)
+            s = SupplyState(at, prepared-submitted, prepared, submitted,
+                int(active > 0), True, False)
+            decision = self.c.update_supply(o, s)
+        self.assertEqual((decision.window, decision.reason), (2, 'performance_probe'))
+        self.assertEqual(len(self.c.measurements), 1)
+        self.assertEqual(self.c.measurements[0]['window'], 1)
+        self.assertEqual(self.c._windows, [])  # New C2 cannot inherit C1 samples.
+        self.assertIsNone(self.c._anchor)
+
+    def test_ready_backlog_without_progress_cannot_probe_and_keeps_stall_cost(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 10000)
+        for n in range(4):
+            self.tick(n*20, completed_computed_input_work_total=n*2000,
+                      completed_cached_input_work_total=0)
+        for _ in range(20):
+            decision = self.tick(60, active_batches=0, inflight=0, running=0,
+                completed_computed_input_work_total=6000, completed_cached_input_work_total=0)
+            self.assertEqual(decision.reason, 'insufficient_progress')
+            self.assertEqual(decision.window, 1)
+        self.assertEqual(self.c.measurements, [])
+        self.assertEqual(len(self.c._windows), 2)
+        decision = self.tick(80, completed_computed_input_work_total=8000,
+                             completed_cached_input_work_total=0)
+        self.assertEqual((decision.window, decision.reason), (2, 'performance_probe'))
+        point = self.c.measurements[0]
+        self.assertEqual(point['elapsed_s'], 23)  # No grace period or excluded stall.
+        self.assertAlmostEqual(point['rate'], 60/23)
+
+    def test_ready_handoff_does_not_bypass_feedback_supply_or_capacity_guards(self):
+        cases = [
+            (dict(ready_items=0), 'upstream_supply_limited', 0),
+            (dict(ready_items=0, source_exhausted=True), 'work_tail_or_dependency_wait', 0),
+            (dict(waiting=2), 'backend_queued', 0),
+            (dict(capacity_blocked='member_R'), 'configuration_boundary', 0),
+            (dict(sample_age_s=2), 'insufficient_information', 0),
+            (dict(fresh=False), 'insufficient_information', 2),
+            (dict(running=None), 'insufficient_information', 2),
+            (dict(ready_items=0, exhausted=True, running=None), 'work_exhausted', 2),
+        ]
+        for changes, reason, retained in cases:
+            with self.subTest(changes=changes):
+                self.now = 0.
+                self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+                self.c.reset(1, 10000)
+                for n in range(4):
+                    self.tick(n*20, completed_computed_input_work_total=n*2000,
+                              completed_cached_input_work_total=0)
+                self.assertEqual(len(self.c._windows), 2)
+                decision = self.tick(80, active_batches=0, inflight=0,
+                    completed_computed_input_work_total=8000,
+                    completed_cached_input_work_total=0, **changes)
+                self.assertEqual((decision.window, decision.reason), (1, reason))
+                self.assertEqual(len(self.c._windows), retained)
+                self.assertEqual(self.c.measurements, [])
+
+    def test_candidate_transition_and_settling_exclude_previous_window_counters(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 10000)
+        for n in range(5):
+            self.tick(n*20, completed_computed_input_work_total=n*2000,
+                      completed_cached_input_work_total=0)
+        self.assertEqual(self.c.current_window, 2)
+        self.assertEqual(self.c._windows, [])
+        self.assertIsNone(self.c._anchor)
+        for completed, pending, reason in [(100, 1, 'transition'),
+                                          (120, 0, 'transition_settled'), (140, 0, 'cooldown')]:
+            decision = self.tick(completed, active_batches=1, transition_pending=pending,
+                completed_computed_input_work_total=completed*100, completed_cached_input_work_total=0)
+            self.assertEqual(decision.reason, reason)
+            self.assertEqual(self.c._windows, [])
+        for completed in (160, 180, 200):
+            self.tick(completed, completed_computed_input_work_total=completed*100,
+                      completed_cached_input_work_total=0)
+        point = self.c.measurements[-1]
+        self.assertEqual((point['window'], point['control_phase_id']), (2, 1))
+        self.assertEqual(point['completed'], 60)
+        self.assertEqual(point['elapsed_s'], 3)
+        self.assertTrue(all(row['completed_begin'] >= 140 for row in point['windows']))
+
     def test_invalid_configuration_rejected(self):
         for maximum in [0, -1, True]:
             with self.assertRaises(ValueError):SupplyFeedbackConfig(maximum)
