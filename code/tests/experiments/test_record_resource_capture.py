@@ -63,6 +63,9 @@ def stubs():
 
 class CaptureTests(unittest.TestCase):
     def setUp(self):
+        provider=sys.modules.get('src.scheduling.runtime.observations')
+        self.feedback_provider=None if provider is None else provider.NonBlockingMetricsObservationProvider
+        self.feedback_constructor=None if provider is None else self.feedback_provider.__init__
         self.tmp=tempfile.TemporaryDirectory();self.directory=Path(self.tmp.name)
         config={'observation':dict(mode='on',max_events_per_process=10000,max_event_bytes=65536,max_pending_frame_metadata=50,
                                    native_runner_contracts={})}
@@ -73,7 +76,9 @@ class CaptureTests(unittest.TestCase):
         self.observer=load('record_observer')
 
     def tearDown(self):
-        self.observer.close_events();self.modules.stop();self.env.stop();self.tmp.cleanup()
+        self.observer.close_events()
+        if self.feedback_provider is not None:self.feedback_provider.__init__=self.feedback_constructor
+        self.modules.stop();self.env.stop();self.tmp.cleanup()
 
     def events(self):
         return [json.loads(line) for path in (self.directory/'events').glob('*.jsonl') for line in path.read_text().splitlines()]

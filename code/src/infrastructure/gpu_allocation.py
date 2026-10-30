@@ -43,6 +43,52 @@ def _probe_uuid(token):
     return values[0]
 
 
+def cuda_visible_gpu_uuids(visibility):
+    """Bind telemetry to CUDA visibility without treating ordinals as NVML IDs.
+
+    UUID masks are already unambiguous. The only numeric case we can resolve
+    without initializing CUDA is ordinal zero with exactly one NVML device.
+    Other numeric masks require an explicit UUID deployment binding.
+    """
+    tokens = _tokens(visibility, "CUDA_VISIBLE_DEVICES")
+    if all(token.startswith("GPU-") for token in tokens):
+        uuids = tokens
+    else:
+        uuids = _single_cuda_gpu_uuid(tokens)
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=",".join(uuids))
+    allocation = resolve_gpu_allocation(allowed_gpus=uuids, environ=env, probe=lambda uid: uid)
+    if allocation.selected_gpu_uuids != uuids:
+        raise ValueError("CUDA visibility differs from the inherited physical UUID allocation")
+    return uuids
+
+
+def _single_cuda_gpu_uuid(tokens):
+    if tokens != ("0",):
+        raise ValueError("numeric CUDA visibility requires an unambiguous single-device UUID binding")
+    import pynvml
+    pynvml.nvmlInit()
+    try:
+        if pynvml.nvmlDeviceGetCount() != 1:
+            raise ValueError("CUDA ordinal zero is ambiguous with multiple NVML devices; use GPU UUIDs")
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        try:
+            mig = pynvml.nvmlDeviceGetMigMode(handle)[0]
+        except Exception as error:
+            if not isinstance(error, getattr(pynvml, "NVMLError_NotSupported", ())):
+                raise
+            mig = 0
+        if mig:
+            raise ValueError("numeric CUDA visibility with MIG requires an explicit supported device binding")
+        value = pynvml.nvmlDeviceGetUUID(handle)
+        value = value.decode() if isinstance(value, bytes) else value
+        uuid = _tokens([value], "observed physical GPU UUID")[0]
+        if not uuid.startswith("GPU-"):
+            raise ValueError("observed physical GPU UUID is unavailable")
+        return (uuid,)
+    finally:
+        pynvml.nvmlShutdown()
+
+
 @dataclass(frozen=True)
 class GpuAllocation:
     requested_count: int | str

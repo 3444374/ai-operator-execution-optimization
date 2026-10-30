@@ -33,6 +33,9 @@ class ServiceMetricsSnapshot:
     completed_output_work_total: int | None = None
     completed_computed_input_work_total: int | None = None
     completed_cached_input_work_total: int | None = None
+    source_uid: str | None = None
+    source_session_id: int | None = None
+    received_at_s: float | None = None
 
     def __post_init__(self) -> None:
         # Reuse the observation schema's validation without inventing another
@@ -193,6 +196,7 @@ class NonBlockingMetricsObservationProvider:
         rate_ewma_alpha: float = 0.3,
         clock: Callable[[], float] = time.monotonic,
         close_timeout_s: float | None = None,
+        observer=None,
     ):
         if poll_interval_s <= 0:
             raise ValueError("poll_interval_s must be positive")
@@ -205,6 +209,7 @@ class NonBlockingMetricsObservationProvider:
         self.stale_after_s = stale_after_s
         self.clock = clock
         self.close_timeout_s = close_timeout_s
+        self.observer = observer
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._sampled = threading.Event()
@@ -248,6 +253,10 @@ class NonBlockingMetricsObservationProvider:
             )
             if fresh:
                 self._last_delivered_generation = sample_generation
+            reason = ("fresh_for_consumer" if fresh else "missing_snapshot" if snapshot is None
+                      else "stale_snapshot" if sampled_at_s is None or not 0 <= now-sampled_at_s <= self.stale_after_s
+                      else "already_delivered_generation")
+        self._observe(snapshot, stage="consumer", accepted=fresh, reason=reason, at_s=now)
         return AdmissionObservation(
             observed_at_s=now,
             fresh=fresh,
@@ -283,6 +292,32 @@ class NonBlockingMetricsObservationProvider:
         self._stop.set()
         self._thread.join(timeout=self.close_timeout_s)
 
+    def _observe(self, snapshot, *, stage, accepted, reason, at_s):
+        if self.observer is None:
+            return
+        try:
+            self.observer(dict(stage=stage, accepted=accepted, reason=reason, decision_at_s=at_s,
+                engine_uid=None if snapshot is None else snapshot.source_uid,
+                session_id=None if snapshot is None else snapshot.source_session_id,
+                source_sequence=None if snapshot is None else snapshot.source_sequence,
+                source_observed_at_s=None if snapshot is None else snapshot.source_observed_at_s,
+                received_at_s=None if snapshot is None else snapshot.received_at_s))
+        except Exception:
+            pass  # Optional observation cannot change freshness, results or ownership.
+
+    def observe_native(self, snapshot, *, session_id, received_at_s, accepted, reason):
+        """Optional RPC-validation boundary; not a policy admission decision."""
+        if self.observer is None:
+            return
+        snapshot = snapshot or {}
+        try:
+            self.observer(dict(stage="RPC_sample", accepted=accepted, reason=reason,
+                engine_uid=snapshot.get("engine_uid"), session_id=session_id,
+                source_sequence=snapshot.get("sequence"), source_observed_at_s=snapshot.get("observed_at_s"),
+                received_at_s=received_at_s, decision_at_s=received_at_s))
+        except Exception:
+            pass
+
     def _sample_loop(self) -> None:
         while not self._stop.is_set():
             with self._lock:
@@ -294,11 +329,15 @@ class NonBlockingMetricsObservationProvider:
                 except Exception:
                     _logger.warning("metrics sampler failed in background thread", exc_info=True)
             now = self.clock()
+            observed_snapshot = snapshot
+            reason = "sampler_unavailable" if snapshot is None else "sample_updated"
+            accepted = False
             with self._lock:
                 if epoch == self._epoch and not self._stop.is_set():
                     if (snapshot is not None and snapshot.source_observed_at_s is not None
                             and snapshot.source_observed_at_s > now):
                         snapshot = None
+                        reason = "source_clock_in_future"
                     sequence = None if snapshot is None else snapshot.source_sequence
                     duplicate = (sequence is not None and self._source_sequence is not None
                                  and sequence <= self._source_sequence)
@@ -310,6 +349,12 @@ class NonBlockingMetricsObservationProvider:
                         self._sample_generation += 1
                         if sequence is not None:
                             self._source_sequence = sequence
+                        accepted = snapshot is not None
+                    else:
+                        reason = "duplicate_or_older_source_sequence"
+                else:
+                    reason = "sampling_generation_invalidated"
+            self._observe(observed_snapshot, stage="sample", accepted=accepted, reason=reason, at_s=now)
             self._sampled.set()
             if self._stop.wait(self.poll_interval_s):
                 return

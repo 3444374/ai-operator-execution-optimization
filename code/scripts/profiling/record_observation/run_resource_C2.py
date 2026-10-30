@@ -162,11 +162,13 @@ def main(root):
         install_driver()
         if not light:
             from src.experiments.process_sampling import ProcessSampler
-            from src.observability.records_telemetry import RecordsTelemetry
+            from src.observability.records_telemetry import RecordsTelemetry,MetricSources
             memory_snapshot('worker_entry');probe=config['observation']
             sampler=ProcessSampler(root/'rss.jsonl',{'driver':os.getpid()},interval=probe['sample_interval_s'],max_samples=probe['max_samples'],include_children=True)
             sampler.__enter__()
-            telemetry=RecordsTelemetry(root/'telemetry',gpu_ids=[config['runtime_binding']['cuda_visible_devices']],interval_s=probe['sample_interval_s'],max_samples=probe['max_samples']).start()
+            metrics=MetricSources.from_cuda_visibility(config['runtime_binding']['cuda_visible_devices'])
+            telemetry=RecordsTelemetry(root/'telemetry',gpu_ids=metrics.gpu_ids,sample_fn=metrics,
+                interval_s=probe['sample_interval_s'],max_samples=probe['max_samples']).start()
     cap=config['workload']['expected_calls']
     ledger=CellBudgetLedger(root/'budget.sqlite',AttemptBudget(config['run_id'],cap))
     report=dict(status='failed',actual_calls=0,observation_kind='real_model_capture',scope=config['workload']['name'],

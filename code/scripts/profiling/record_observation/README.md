@@ -111,9 +111,45 @@ token 批路径沿用原 `submit_prepared_batch`／`poll_prepared_batch` 和逐�
 本地成员 Future 就绪，不当作 Ray RPC 完成。actor 关闭后仍有批 ACK 待处理时 sink 不宣称收尾；
 缺失后续 ACK、sink 或有效时钟仍是未知，不能据此宣称完整捕获。
 
+## 设备绑定与 native 反馈审计
+
+full 模式的 NVML 读取器仍只接受物理 GPU UUID。入口通过现有 GPU allocation 模块解析
+`runtime_binding.cuda_visible_devices`：UUID 列表保留顺序并核对继承分配；数字 `0` 仅在 NVML 确认恰有一个非 MIG 设备时
+解析为该设备的 UUID。多设备数字序号、空配置、无法读取或身份漂移均记录 unknown；不猜测
+CUDA ordinal 与 NVML index 的对应，不回退到全机设备，不把缺失填零。每次指标读取仍验证 UUID。
+
+CPU/RSS/NVML 的 `sample_interval_s` 是轮询间隔；报告保存实际间隔、采集起止与缺失原因。
+NVML GPU 活动率使用设备内部的采样周期，不能将每次轮询当作独立硬件样本；它不是 MFU、
+SM 占用或 HBM 带宽瓶颈证明。原 `nvidia-smi` 时间序列仍是另一份有起止括号的设备观察，
+不能与 NVML 或 CUDA trace 重复计数。handoff 模式不启动这些物理资源采样。
+
+观察开启时，native 反馈元数据复用原事件 sink，先写有界内存缓冲，`close_events` 再排空和 fsync；
+反馈/决策线程不写文件，也不等待 sink 的写锁。缓冲条数与单包字节分别受既有
+`max_events_per_process`／`max_event_bytes` 限制；达到边界丢弃新观察并在 footer 记数，不覆盖旧证据。
+footer 的 `feedback_buffer` 保存 attempted/enqueued/drained/dropped/errors、峰值、剩余与边界；
+`drain_complete` 和 sink 的 flush/error/drop 需分别核对，均不代替原生产者退出和未决 RPC 证明。
+`observation_ns` 是入缓冲时钟，普通事件时钟是随后写 sink 的时间；来源时钟、接收时间分别保存。
+
+`native_feedback_frame` 的 `IPC_cache` 只表示原客户端接受/拒绝缓存帧；`actor_snapshot` 带实际
+Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feedback_consumption` 分别记录
+`RPC_sample` 的 UID/session/查询起点校验、`sample` 的序号/源时钟校验、`consumer` 的新鲜度/重复
+消费判断。`accepted=true` 不是策略已接纳更高并发，也不证明所有工作可比。UID、session、
+源序号/源时钟缺失仍未知；仅保留规范 native UID、数值和理由码，不记录 prompt、输出或环境。
+
+该消费审计需要被测 runtime 的可选 provider observer 接口；旧 runtime 明确发出
+`native_feedback_audit_unavailable`，不能仅凭工具版本宣称完整。main 的 request-feedback sampler
+提供完整来源元数据；独立供给 sampler 需同样传入 `ServiceMetricsSnapshot` 的可选
+`source_uid/source_session_id/received_at_s`，并在 RPC 校验处调用 `observe_native`。观察器不复制执行器，
+不为了审计开启反馈策略，观察 off 保持原路径。
+
+启用既有 native stats 的异步引擎可从原 ready 回执读取 `native_capacity`：值来自构造完成的
+`AsyncLLM.vllm_config`，不以 EngineSpec 声明补值。有效 seq/token/context 配置、KV池块数/块大小
+分别保留未知；这不是空闲 KV/显存读数，也不改变控制策略。上述新增接点仅有本地 CPU 验证，
+准确新树的 NVML/Ray/vLLM 接入与 on/off 开销仍待实机检查。
+
 ## 本地维护和清理边界
 
-可直接运行 `qualify` 中的三个 unittest 模块及两个 `probe_record_resource*_handoff.py`，不用仓库外
+可直接运行 `qualify` 中的 unittest 模块及两个 `probe_record_resource*_handoff.py`，不用仓库外
 Python 消费器。旧 `prepare_cells`、八格冻结配方和只依赖私有分析目录的联动用例未带入此入口；
 它们的原件保留在原审核／运行目录。新 `prepare` 取代旧矩阵配置拼装，但不删除 full 模式或
 任何有效优化。当前在用的私有包、历史冻结源码、运行回执、失败记录及原始数据均不清理。

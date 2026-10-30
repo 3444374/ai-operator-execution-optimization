@@ -133,16 +133,28 @@ class TelemetryEvents:
 class MetricSources:
     """Reuse the existing GPU/host/Prometheus readers without a model endpoint."""
 
-    def __init__(self, gpu_ids, native_metrics_url=None):
+    def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None):
         self.gpu_ids, self.native_metrics_url = tuple(gpu_ids), native_metrics_url
+        self.gpu_binding_error = gpu_binding_error
         self._first_cpu = True
-        if not self.gpu_ids:
+        if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
         if native_metrics_url is not None:
             parsed = urlsplit(native_metrics_url)
             if (parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost", "::1")
                     or parsed.username is not None or parsed.password is not None):
                 raise ValueError("native metrics URL must be an explicitly supplied credential-free loopback HTTP URL")
+
+    @classmethod
+    def from_cuda_visibility(cls, visibility=None):
+        """Resolve once; the UUID-only reader still verifies every sample."""
+        from src.infrastructure.gpu_allocation import cuda_visible_gpu_uuids
+        try:
+            ids = cuda_visible_gpu_uuids(os.environ.get("CUDA_VISIBLE_DEVICES", "")
+                                         if visibility is None else visibility)
+        except Exception as error:
+            return cls((), gpu_binding_error="unavailable:CUDA_UUID_binding:" + _error(error))
+        return cls(ids)
 
     def __call__(self):
         values, missing, sources = {}, {}, {}
@@ -162,7 +174,9 @@ class MetricSources:
                 if values[field] is None:
                     missing[field] = reason or name + ":field_not_exposed_or_unsupported:" + source_status
 
-        collect("gpu", GPU_FIELDS, lambda: gpu_metadata(self.gpu_ids, use_nvml=True))
+        collect("gpu", GPU_FIELDS, lambda: dict(gpu_metrics_status=self.gpu_binding_error)
+                if self.gpu_binding_error is not None else gpu_metadata(self.gpu_ids, use_nvml=True))
+        sources["gpu"]["physical_gpu_uuids"] = list(self.gpu_ids)
         collect("host", HOST_FIELDS, lambda: host_metadata(include_status=True))
         if self._first_cpu and all(values[field] is not None for field in HOST_FIELDS[:2]):
             for field in HOST_FIELDS[:2]:

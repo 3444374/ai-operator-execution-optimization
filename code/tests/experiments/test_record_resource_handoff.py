@@ -25,6 +25,62 @@ class HandoffTests(unittest.TestCase):
         value._held={};value._closed_pending=None;value.last_close_report=None
         return ipc,value,sys.modules['src.execution_provider.adapters.lotus_records_async_actor'].AsyncCoreModelActor
 
+    def test_feedback_buffer_does_no_file_IO_and_drains_through_existing_sink(self):
+        with patch.object(self.observer.os,'write',side_effect=AssertionError('hot-path I/O forbidden')):
+            self.observer.emit_feedback('native_feedback_frame',engine_uid='a'*32,owner_uid='b'*32,
+                session_id=7,source_sequence=3,source_observed_at_s=1.,received_at_s=1.1,
+                stage='IPC_cache',accepted=True,reason='cached_for_consumer',prompt=fixtures.SECRET)
+        self.assertEqual(self.events(),[])
+        self.observer.close_events()
+        event=self.events()[0]
+        self.assertEqual(event['source_sequence'],3);self.assertEqual(event['session_id'],7)
+        self.assertEqual(event['engine_uid'],'a'*32)
+        self.assertLessEqual(event['observation_ns'],event['monotonic_ns'])
+        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
+        status=json.loads(next((self.fixture.directory/'events').glob('*.status.json')).read_text())
+        self.assertTrue(status['feedback_buffer']['drain_complete'])
+        self.assertTrue(status['flush_confirmed']);self.assertEqual(status['feedback_buffer']['drained'],1)
+
+    def test_feedback_buffer_overflow_and_bad_identity_are_visible_and_off_does_not_buffer(self):
+        self.observer.settings()['max_events_per_process']=2
+        for i in range(3):
+            self.observer.emit_feedback('native_feedback_frame',engine_uid=fixtures.SECRET,
+                session_id=True,source_sequence=i,reason='fixture')
+        self.observer.ENABLED=False
+        self.observer.emit_feedback('native_feedback_frame',source_sequence=99)
+        self.observer.ENABLED=True;self.observer.close_events()
+        self.assertEqual(len(self.events()),2)
+        self.assertTrue(all(x['engine_uid']is None and x['session_id']is None for x in self.events()))
+        status=json.loads(next((self.fixture.directory/'events').glob('*.status.json')).read_text())
+        self.assertEqual(status['feedback_buffer']['attempted'],3)
+        self.assertEqual(status['feedback_buffer']['dropped'],1)
+        self.assertFalse(status['feedback_buffer']['drain_complete'])
+        self.assertEqual(status['dropped'],1)
+        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
+
+    def test_actor_snapshot_keeps_session_and_source_identity_without_reading_payload(self):
+        ipc,actor,base=self.actor()
+        value=dict(session_id=4,ipc=dict(owner_uid='b'*32,native_feedback=dict(engine_uid='a'*32,
+            sequence=9,observed_at_s=2.,running=3,waiting=0,kv_usage=.2,prompt=fixtures.SECRET)))
+        with patch.object(base,'snapshot',return_value=value,create=True):
+            self.assertIs(actor.snapshot(),value)
+        self.observer.close_events();event=self.events()[0]
+        self.assertEqual((event['session_id'],event['source_sequence'],event['engine_uid']),(4,9,'a'*32))
+        self.assertIsNone(event['accepted']);self.assertEqual(event['reason'],'returned_before_Ray_delivery')
+        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
+
+    def test_feedback_observation_clock_failure_preserves_original_receive_result(self):
+        ipc=fixtures.load('record_ipc_observer');base=sys.modules['src.serving.backends.async_engine_process'].AsyncEngineProcess
+        process=ipc.ObservedAsyncEngineProcess();process.ready_report={'engine_uid':'a'*32};process._owner_uid='b'*32
+        value=dict(op='feedback',snapshot=dict(engine_uid='a'*32,sequence=1,observed_at_s=1.))
+        def receive(instance,packet,**kw):instance._native_feedback=packet['snapshot'];return packet
+        with patch.object(base,'_receive',receive,create=True), \
+                patch.object(ipc.time,'monotonic',side_effect=RuntimeError('CPU clock failure')):
+            self.assertIs(process._receive(value,results=False),value)
+        self.observer.close_events()
+        event=next(e for e in self.events()if e['event']=='native_feedback_frame')
+        self.assertIsNone(event['received_at_s']);self.assertTrue(event['accepted'])
+
     def test_batch_pages_and_lost_ACK_replay_mark_each_member_once(self):
         ipc,actor,base=self.actor();group=(1,7);first=(1,0);second=(1,1)
         identities={first:fixtures.IDENTITY,second:dict(fixtures.IDENTITY,call_id='second')}

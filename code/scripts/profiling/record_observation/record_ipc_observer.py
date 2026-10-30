@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from src.serving.backends.async_engine_process import AsyncEngineProcess
-from record_observer import ROOT, ENABLED, emit, ids, core_key, settings, install_cpu_hooks, handoff_profile, close_events
+from record_observer import ROOT, ENABLED, emit, emit_feedback, emit_buffered, ids, core_key, settings, install_cpu_hooks, handoff_profile, close_events
 
 _frames=OrderedDict()
 _lock=threading.Lock()
@@ -137,6 +137,14 @@ def install_transport(*,child):
     module.serve=observed_serve
 
 
+def observe_feedback(snapshot, **context):
+    snapshot=snapshot if type(snapshot)is dict else {}
+    emit_feedback('native_feedback_frame',engine_uid=snapshot.get('engine_uid'),
+        source_sequence=snapshot.get('sequence'),source_observed_at_s=snapshot.get('observed_at_s'),
+        **{name:snapshot.get(name)for name in ('running','waiting','kv_usage','preemptions_total',
+                                              'finished_total','generation_tokens_total')},**context)
+
+
 class ObservedAsyncEngineProcess(AsyncEngineProcess):
     @staticmethod
     def _command(spec,descriptors):
@@ -150,6 +158,9 @@ class ObservedAsyncEngineProcess(AsyncEngineProcess):
         finally:
             ready=getattr(self,'ready_report',None) or {}
             emit('IPC_engine_start_return',engine_uid=ready.get('engine_uid'))
+            emit_buffered('native_startup_capacity',engine_uid=ready.get('engine_uid'),
+                native_capacity=ready.get('native_capacity'),reason='effective_config_receipt'
+                if ready.get('native_capacity')is not None else 'runtime_has_no_effective_capacity_receipt')
 
     def _io(self):
         if handoff_profile():return super()._io()
@@ -161,10 +172,31 @@ class ObservedAsyncEngineProcess(AsyncEngineProcess):
         return super()._io()
 
     def _receive(self,value,*,results,encoded_bytes=0):
-        if handoff_profile():return super()._receive(value,results=results,encoded_bytes=encoded_bytes)
-        sock=self._results if results else self._control
-        if isinstance(sock,ObservedSocket):sock.frame_decoded(value,encoded_bytes)
-        else:emit('frame_decoded',actual_socket_bytes=None,unknown='owned receive instrumentation unavailable')
+        if not handoff_profile():
+            sock=self._results if results else self._control
+            if isinstance(sock,ObservedSocket):sock.frame_decoded(value,encoded_bytes)
+            else:emit('frame_decoded',actual_socket_bytes=None,unknown='owned receive instrumentation unavailable')
+        if isinstance(value,dict) and value.get('op')=='feedback':
+            try:received=time.monotonic()
+            except Exception:received=None
+            snapshot=value.get('snapshot')
+            try:result=super()._receive(value,results=results,encoded_bytes=encoded_bytes)
+            except BaseException:
+                try:observe_feedback(snapshot,stage='IPC_cache',accepted=False,
+                    reason='native_receive_raised',received_at_s=received)
+                except Exception:pass
+                raise
+            try:
+                ready=getattr(self,'ready_report',None)
+                accepted=isinstance(snapshot,dict) and getattr(self,'_native_feedback',None)is snapshot
+                reason=('cached_for_consumer'if accepted else 'malformed_snapshot'if type(snapshot)is not dict
+                        else 'engine_not_ready'if ready is None else 'engine_uid_mismatch')
+                observe_feedback(snapshot,stage='IPC_cache',accepted=accepted,reason=reason,
+                    received_at_s=received,expected_engine_uid=(ready or {}).get('engine_uid'),
+                    owner_uid=getattr(self,'_owner_uid',None),session_id=None)
+            except Exception:
+                emit_buffered('native_feedback_audit_unavailable',reason='IPC_metadata_unavailable')
+            return result
         return super()._receive(value,results=results,encoded_bytes=encoded_bytes)
 
     def submit(self,row,*args,**kwargs):
@@ -197,6 +229,16 @@ def __getattr__(name):
             from record_observer import install_actor
             install_actor();super().__init__(*args,**kwargs)
         def _process_type(self):return ObservedAsyncEngineProcess
+        def snapshot(self):
+            value=super().snapshot()
+            try:
+                ipc=value.get('ipc') or {}
+                observe_feedback(ipc.get('native_feedback'),stage='actor_snapshot',accepted=None,
+                    reason='returned_before_Ray_delivery',received_at_s=time.monotonic(),
+                    owner_uid=ipc.get('owner_uid'),session_id=value.get('session_id'))
+            except Exception:
+                emit_buffered('native_feedback_audit_unavailable',reason='actor_snapshot_metadata_unavailable')
+            return value
         def _run_core(self,rows,deadline,maximum,request_key,generation=None):
             if not handoff_profile():return super()._run_core(rows,deadline,maximum,request_key,generation)
             key=core_key(request_key)

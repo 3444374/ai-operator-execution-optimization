@@ -24,6 +24,79 @@ def fixture_sample():
 
 
 class RecordsTelemetryTests(unittest.TestCase):
+    def test_cuda_single_device_binding_fixes_the_ordinal_reader_mismatch(self):
+        nvml = SimpleNamespace(NVMLError=RuntimeError,nvmlInit=Mock(),nvmlShutdown=Mock(),
+            nvmlDeviceGetCount=lambda:1,nvmlDeviceGetHandleByIndex=lambda i:('index',i),
+            nvmlDeviceGetMigMode=lambda handle:(0,0),
+            nvmlDeviceGetUUID=lambda handle:b'GPU-fixture',
+            nvmlDeviceGetHandleByUUID=Mock(return_value='UUID-handle'),
+            nvmlDeviceGetUtilizationRates=lambda handle:SimpleNamespace(gpu=42),
+            nvmlDeviceGetMemoryInfo=lambda handle:SimpleNamespace(used=12*1024**2,total=24*1024**2),
+            nvmlDeviceGetPowerUsage=lambda handle:150000)
+        with patch.dict('sys.modules',pynvml=nvml),patch.dict(os.environ,CUDA_VISIBLE_DEVICES='0'), \
+                patch('subprocess.run',side_effect=AssertionError('no probe subprocess')), \
+                patch('src.observability.records_telemetry.host_metadata',return_value={}):
+            old=MetricSources(('0',))()
+            source=MetricSources.from_cuda_visibility();result=source()
+        self.assertIsNone(old['values']['gpu_utilization_pct'])
+        self.assertEqual(source.gpu_ids,('GPU-fixture',))
+        self.assertEqual(result['values']['gpu_utilization_pct'],42)
+        self.assertEqual(result['values']['gpu_memory_used_mib'],12)
+        self.assertEqual(result['sources']['gpu']['physical_gpu_uuids'],['GPU-fixture'])
+        nvml.nvmlDeviceGetHandleByUUID.assert_called_once_with('GPU-fixture')
+        self.assertEqual(nvml.nvmlInit.call_count,nvml.nvmlShutdown.call_count)
+
+    def test_uuid_cuda_mask_preserves_selection_order_and_still_verifies_reader_identity(self):
+        with patch.dict(os.environ,CUDA_VISIBLE_DEVICES='GPU-b,GPU-a'), \
+                patch('src.observability.records_telemetry.gpu_metadata',return_value={})as read, \
+                patch('src.observability.records_telemetry.host_metadata',return_value={}):
+            source=MetricSources.from_cuda_visibility();source()
+        self.assertEqual(source.gpu_ids,('GPU-b','GPU-a'))
+        read.assert_called_once_with(('GPU-b','GPU-a'),use_nvml=True)
+
+    def test_ambiguous_ordinals_and_unavailable_NVML_remain_unknown_without_host_device_guessing(self):
+        for visibility,count in [('0',2),('0',0),('0,1',2),('',1),('GPU-a,0',2)]:
+            with self.subTest(visibility=visibility,count=count):
+                nvml=SimpleNamespace(nvmlInit=Mock(),nvmlShutdown=Mock(),nvmlDeviceGetCount=lambda:count,
+                    nvmlDeviceGetHandleByIndex=Mock(side_effect=AssertionError('must not select ambiguous GPU')))
+                with patch.dict('sys.modules',pynvml=nvml), \
+                        patch('src.observability.records_telemetry.gpu_metadata')as read, \
+                        patch('src.observability.records_telemetry.host_metadata',return_value={'host_memory_used_pct':40}):
+                    source=MetricSources.from_cuda_visibility(visibility);result=source()
+                read.assert_not_called();nvml.nvmlDeviceGetHandleByIndex.assert_not_called()
+                self.assertEqual(source.gpu_ids,())
+                self.assertIsNone(result['values']['gpu_utilization_pct'])
+                self.assertIn('CUDA_UUID_binding',result['missing']['gpu_utilization_pct'])
+                self.assertEqual(result['values']['host_memory_used_pct'],40)
+        with patch.dict('sys.modules',pynvml=None):
+            source=MetricSources.from_cuda_visibility('0')
+        self.assertIsNotNone(source.gpu_binding_error)
+
+    def test_single_device_identity_drift_is_unknown_and_cannot_publish_another_devices_values(self):
+        nvml=SimpleNamespace(NVMLError=RuntimeError,nvmlInit=Mock(),nvmlShutdown=Mock(),
+            nvmlDeviceGetCount=lambda:1,nvmlDeviceGetHandleByIndex=lambda i:i,
+            nvmlDeviceGetMigMode=lambda handle:(0,0),
+            nvmlDeviceGetUUID=Mock(side_effect=[b'GPU-before',b'GPU-after']),
+            nvmlDeviceGetHandleByUUID=lambda uid:uid,
+            nvmlDeviceGetUtilizationRates=Mock(side_effect=AssertionError('wrong UUID must stop before values')))
+        with patch.dict('sys.modules',pynvml=nvml), \
+                patch('src.observability.records_telemetry.host_metadata',return_value={}):
+            source=MetricSources.from_cuda_visibility('0');value=source()
+        self.assertEqual(source.gpu_ids,('GPU-before',))
+        self.assertIsNone(value['values']['gpu_utilization_pct'])
+        self.assertIn('unavailable:nvml:ValueError',value['missing']['gpu_utilization_pct'])
+        nvml.nvmlDeviceGetUtilizationRates.assert_not_called()
+
+    def test_UUID_mapping_preserves_inherited_mask_and_MIG_ambiguity(self):
+        with patch.dict(os.environ,NVIDIA_VISIBLE_DEVICES='GPU-other'):
+            self.assertIsNotNone(MetricSources.from_cuda_visibility('GPU-fixture').gpu_binding_error)
+        nvml=SimpleNamespace(nvmlInit=lambda:None,nvmlShutdown=Mock(),nvmlDeviceGetCount=lambda:1,
+            nvmlDeviceGetHandleByIndex=lambda i:i,nvmlDeviceGetMigMode=lambda handle:(1,1),
+            nvmlDeviceGetUUID=Mock(side_effect=AssertionError('MIG ordinal must remain unknown')))
+        with patch.dict('sys.modules',pynvml=nvml):
+            self.assertIsNotNone(MetricSources.from_cuda_visibility('0').gpu_binding_error)
+        nvml.nvmlDeviceGetUUID.assert_not_called();nvml.nvmlShutdown.assert_called_once()
+
     def test_native_metrics_errors_preserve_unavailable_reason(self):
         with patch("src.observability.records_telemetry.gpu_metadata", return_value={}), \
                 patch("src.observability.records_telemetry.host_metadata", return_value={}), \

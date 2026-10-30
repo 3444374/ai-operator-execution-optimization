@@ -1012,6 +1012,13 @@ class _CoreFeedback:
         with _measure(timings, "feedback_poll"):
             return self._sample()
 
+    def _observe_native(self,snapshot,value,received_at_s,*,accepted,reason):
+        audit=getattr(self.provider,"observe_native",None)
+        if callable(audit):
+            try:audit(snapshot,session_id=value.get("session_id"),received_at_s=received_at_s,
+                      accepted=accepted,reason=reason)
+            except Exception:pass
+
     def _sample(self):
         generation, stream = self.generation, self.stream
         if stream is None:
@@ -1036,16 +1043,21 @@ class _CoreFeedback:
                 self.ref = self.future = None
                 return None
             value = future.result()
+            received_at_s = time.monotonic()
             if generation != self.generation:
                 return None
             self.ref = self.future = None
             ipc = value.get("ipc") or {}
             snapshot = ipc.get("native_feedback")
             if snapshot is None:
+                self._observe_native(None,value,received_at_s,accepted=False,reason="native_frame_missing")
                 return None
             expected = self.owner._actors.model_ready["engine_uid"]
-            if (snapshot.get("engine_uid") != expected or value.get("session_id") != stream.session.session_id
-                    or snapshot.get("observed_at_s", -1) < self.started):
+            reason = ("engine_uid_mismatch" if snapshot.get("engine_uid") != expected else
+                      "session_mismatch" if value.get("session_id") != stream.session.session_id else
+                      "source_predates_query" if snapshot.get("observed_at_s", -1) < self.started else "RPC_sample_valid")
+            self._observe_native(snapshot,value,received_at_s,accepted=reason=="RPC_sample_valid",reason=reason)
+            if reason != "RPC_sample_valid":
                 return None
             completed, pending, transition, backpressure = self.progress
             work_count, input_work, output_work = self.completed_work
@@ -1066,6 +1078,7 @@ class _CoreFeedback:
             self.samples += 1
             self.peak_native_running = max(self.peak_native_running, snapshot["running"])
             return ServiceMetricsSnapshot(snapshot["running"], snapshot["waiting"], snapshot["kv_usage"],
+                source_uid=snapshot["engine_uid"], source_session_id=value["session_id"], received_at_s=received_at_s,
                 completed_tokens_total=snapshot["generation_tokens_total"],
                 source_sequence=snapshot["sequence"], source_observed_at_s=snapshot["observed_at_s"],
                 completed_items_total=completed, pending_items=pending,
