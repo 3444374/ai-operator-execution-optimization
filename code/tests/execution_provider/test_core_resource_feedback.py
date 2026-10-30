@@ -15,6 +15,19 @@ from tests.serving.test_native_resource_feedback import CPUFeedbackProcess
 
 
 class CompletedWorkTests(unittest.TestCase):
+    def test_optional_audit_clock_failure_does_not_discard_valid_service_feedback(self):
+        from tests.execution_provider.test_core_feedback_cadence import CadenceTests
+        f=CadenceTests().make();clock=core.time.monotonic;failed=[]
+        f.ref=f.owner._actors.model_actor.snapshot.remote();f.future=f.ref.future()
+        f.ref_expired=False;f.ref_deadline=clock()+1
+        def capture():
+            if not failed:
+                failed.append(True);raise RuntimeError('CPU audit clock failure')
+            return clock()
+        with patch.object(core.time,'monotonic',side_effect=capture):sample=f.sample()
+        self.assertIsNotNone(sample);self.assertIsNone(sample.received_at_s)
+        self.assertEqual(f.sample_errors,0);self.assertEqual(f.samples,1)
+
     def stream(self):
         from types import SimpleNamespace
         from src.semantic_methods.lotus.records import identity
