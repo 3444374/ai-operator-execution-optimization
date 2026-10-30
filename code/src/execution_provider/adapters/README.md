@@ -359,6 +359,11 @@ does not refund its separate borrowing responsibility. Close retries retain the
 previously published audit prefix. A repeated receipt can retry a lost ACK only
 after that member has completed local validation and sink transfer.
 
+Poll sizing counts each encoded member and the complete JSON envelope once,
+then validates the final bounded frame before exposing any receipt. Sizing is
+local to that poll; no retained page cache is added. The original page boundaries,
+per-member result allowance and ACK/unknown ownership remain.
+
 The default tokenizer is loaded from the declared engine tokenizer/model. A caller
 may supply `batching_tokenizer` for a controlled environment; matching its rendered
 template to the native model remains the caller's responsibility. CPU fixtures use
