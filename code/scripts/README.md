@@ -16,6 +16,11 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 离线保留结果的统一读取入口为 [`analysis/summarize_offline_results.py`](analysis/summarize_offline_results.py)；
 显式 schema/manifest、路径、CLI/库 API、支持格式和 NA 语义见[离线结果说明](analysis/OFFLINE_RESULTS.md)。
 
+正常Movie Q1/Q2/Q3的可选记录级异步token组批继续使用
+[`run_lotus_records_movie.py check/run`](experiments/run_lotus_records_movie.py)及原records执行工厂；
+固定B、C_batch、R、isolated会话限制、配置和实际回执见[所属入口说明](../src/experiments/movie_matrix.README.md#record-token-batch-entry)。
+这是本地CPU入口增量，实机验证须重新绑定当前源码，不继承旧树GPU证据。
+
 ## 通过 Git 同步资源观测
 
 [`profiling/record_observation/workflow.py`](profiling/record_observation/workflow.py) 提供

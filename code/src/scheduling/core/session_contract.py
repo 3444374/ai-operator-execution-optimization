@@ -210,6 +210,13 @@ class Submission:
 
 
 @dataclass(frozen=True)
+class BatchSubmission:
+    """Optional atomic backend handoff; every member retains its own terminal."""
+    acceptance: Acceptance
+    handles: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Terminal:
     key: TaskKey
     handle: str | None

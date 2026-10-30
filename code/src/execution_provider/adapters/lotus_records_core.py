@@ -95,10 +95,37 @@ def resolve_core_profile(engine, resources, profile=None):
     return result
 
 
-def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None):
+def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None):
+    """Validate the optional fixed token batch path before allocating an owner."""
+    if prepared_batching is None:
+        if batch_concurrency is not None:
+            raise ValueError('batch_concurrency requires prepared_batching')
+        return None
+    from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+    if (type(prepared_batching) is not PreparedBatching or prepared_batching.policy != 'token_budget'
+            or prepared_batching.max_rows is not None):
+        raise ValueError('record batching requires token_budget with max_rows=None')
+    if resolved['mode'] != 'async' or 'admission' in resolved or resolved['stage_timing']:
+        raise ValueError('record batching requires fixed async execution without admission or stage_timing')
+    requests = resolved['max_inflight']
+    concurrency = 1 if batch_concurrency is None else batch_concurrency
+    if type(concurrency) is not int or not 1 <= concurrency <= requests:
+        raise ValueError('batch_concurrency must fit the request grant R')
+    return dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
+        request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,
+        row_cap=None, W=None, batch_unit='application transport batch with unsettled compute members',
+        request_unit='single complete model request; also the inherited resident-row limit')
+
+
+def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
+                        prepared_batching=None, batch_concurrency=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
     resolved = resolve_core_profile(engine, resources, profile)
+    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
+    if batching is not None:
+        from .lotus_records_batches import PreparedRecordsCore
+        return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits)
     options = {}
     actors = None
     if resolved["mode"] == "async":
@@ -272,7 +299,7 @@ class _ActorOwner(RecordsActorOwner):
 class _RecordTransport:
     """Bounded Ray I/O and failure receipts; Core remains the sole capacity owner."""
 
-    def __init__(self, actors, maximum, notify):
+    def __init__(self, actors, maximum, notify, *, finalize=None):
         self.actors = actors
         self.maximum = maximum
         self.deadline = None
@@ -287,7 +314,7 @@ class _RecordTransport:
         self._retirement = None
         self.backend = BoundedAsyncBackend(
             self._execute, max_tasks=maximum, notify=notify, isolate_failures=True,
-            cancel_pending=actors.cancel_core,
+            cancel_pending=actors.cancel_core, finalize=finalize,
         )
 
     def bind_query(self, session_id, prepare_method):
@@ -694,7 +721,9 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
     transport_closed = True
     retirement = None
     if transport is not None:
-        transport_closed = transport.backend.close(timeout=0.05)
+        transport_closed = (transport.backend.close(timeout=0.05, wait_pending=True)
+                            if getattr(transport, 'supports_batch_submit', False)
+                            else transport.backend.close(timeout=0.05))
         proof = actor_report.get("producer_quiescence")
         if transport_closed and proof is not None:
             try:
