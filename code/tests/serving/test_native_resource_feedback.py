@@ -1,5 +1,5 @@
 """Actual CPU IPC/native-stat adapter tests. No vLLM install or GPU needed."""
-from dataclasses import replace
+from dataclasses import asdict,replace
 import json
 import atexit
 import importlib.util
@@ -25,6 +25,56 @@ class CPUFeedbackProcess(AsyncEngineProcess):
 
 
 class NativeFeedbackTests(unittest.TestCase):
+    def test_public_CPU_actor_full_handoff_off_close_without_driver_fallback(self):
+        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.serving.backends import async_engine_process as transport
+        tools=Path(__file__).resolve().parents[2]/'scripts/profiling/record_observation'
+        for mode,profile in (('on','full'),('on','handoff'),('off','full')):
+            with self.subTest(mode=mode,profile=profile),tempfile.TemporaryDirectory()as folder, \
+                    patch.dict(sys.modules),patch.dict(os.environ,SEM_RECORD_OBSERVATION=mode,SEM_RECORD_OBSERVER_ROOT=folder), \
+                    patch.object(transport,'_frame',transport._frame),patch.object(transport,'_read_frame',transport._read_frame), \
+                    patch.object(transport,'serve',transport.serve):
+                root=Path(folder);(root/'config.json').write_text(json.dumps(dict(observation=dict(
+                    mode=mode,profile=profile,max_events_per_process=2000,max_event_bytes=65536,
+                    max_pending_frame_metadata=50))))
+                def load(name):
+                    spec=importlib.util.spec_from_file_location(name,tools/(name+'.py'))
+                    module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module);return module
+                observer=load('record_observer');ipc=load('record_ipc_observer')
+                class ObservedCPU(ipc.ObservedAsyncEngineProcess):
+                    _command=staticmethod(CPUFeedbackProcess._command)
+                actor_type=ipc.ObservedAsyncCoreModelActor if mode=='on'else AsyncCoreModelActor
+                process_type=ObservedCPU if mode=='on'else CPUFeedbackProcess
+                with patch.object(observer,'install_actor',lambda:observer.emit('actor_observer_installed')), \
+                        patch.object(actor_type,'_process_type',return_value=process_type), \
+                        patch.object(EngineSpec,'validate_driver_environment',return_value={}):
+                    actor=actor_type(asdict(EngineSpec('/tmp/cpu-fixture',sys.executable,sys.executable)),
+                        asdict(GenerationSpec()),1,asdict(AsyncEngineLimits(max_inflight=4,result_slots=4,
+                            command_slots=4,control_slots=2,feedback_interval_s=.001)))
+                    try:
+                        actor.ready(time.monotonic()+5)
+                        self.until(lambda:actor.snapshot()['ipc']['native_feedback']is not None)
+                        self.assertEqual(actor.engine.snapshot()['accepted_requests'],0)
+                        report=actor.close(3)
+                        self.assertEqual(report['status'],'closed');self.assertTrue(report['producer_quiescence']['confirmed'])
+                        if mode=='on':
+                            # Do not call driver close_events before this assertion.
+                            self.assertTrue(observer._closed)
+                            status_path=next((root/'events').glob('*.status.json'));saved=status_path.read_bytes()
+                            status=json.loads(saved)
+                            self.assertTrue(status['flush_confirmed']and status['feedback_buffer']['drain_complete'])
+                            self.assertEqual((status['dropped'],status['errors']),(0,0))
+                            events=[json.loads(line)for p in(root/'events').glob('*.jsonl')for line in p.read_text().splitlines()]
+                            startup,=[e for e in events if e['event']=='native_startup_capacity']
+                            self.assertIsNone(startup['native_capacity'])  # Fixture has no effective vLLM config.
+                            self.assertTrue(any(e['event']=='native_feedback_frame'and e['accepted']is True for e in events))
+                            actor.snapshot();actor.close(3)
+                            self.assertEqual(status_path.read_bytes(),saved)
+                        else:
+                            self.assertFalse(observer._closed);self.assertFalse((root/'events').exists())
+                    finally:
+                        actor.close(3);observer.close_events();atexit.unregister(observer.close_events)
+
     def test_public_CPU_IPC_audit_preserves_results_rejects_foreign_UID_and_flushes_bounded_metadata(self):
         tools=Path(__file__).resolve().parents[2]/'scripts/profiling/record_observation'
         with tempfile.TemporaryDirectory()as folder,patch.dict(sys.modules), \

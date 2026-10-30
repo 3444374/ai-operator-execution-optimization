@@ -230,15 +230,20 @@ def __getattr__(name):
             install_actor();super().__init__(*args,**kwargs)
         def _process_type(self):return ObservedAsyncEngineProcess
         def snapshot(self):
-            value=super().snapshot()
-            try:
-                ipc=value.get('ipc') or {}
-                observe_feedback(ipc.get('native_feedback'),stage='actor_snapshot',accepted=None,
-                    reason='returned_before_Ray_delivery',received_at_s=time.monotonic(),
-                    owner_uid=ipc.get('owner_uid'),session_id=value.get('session_id'))
-            except Exception:
-                emit_buffered('native_feedback_audit_unavailable',reason='actor_snapshot_metadata_unavailable')
-            return value
+            if not ENABLED:return super().snapshot()
+            # The native condition is reentrant. Include this observer producer
+            # in the same close gate; zero data readers alone does not cover it.
+            with self._condition:
+                value=super().snapshot()
+                if not getattr(self,'_record_sink_finalized',False):
+                    try:
+                        ipc=value.get('ipc') or {}
+                        observe_feedback(ipc.get('native_feedback'),stage='actor_snapshot',accepted=None,
+                            reason='returned_before_Ray_delivery',received_at_s=time.monotonic(),
+                            owner_uid=ipc.get('owner_uid'),session_id=value.get('session_id'))
+                    except Exception:
+                        emit_buffered('native_feedback_audit_unavailable',reason='actor_snapshot_metadata_unavailable')
+                return value
         def _run_core(self,rows,deadline,maximum,request_key,generation=None):
             if not handoff_profile():return super()._run_core(rows,deadline,maximum,request_key,generation)
             key=core_key(request_key)
@@ -255,6 +260,7 @@ def __getattr__(name):
             # Reuse the native first-exposure/ACK frontier, not an observer ledger.
             # Its condition is reentrant; no native ownership fields are changed.
             with self._condition:
+                if getattr(self,'_record_sink_finalized',False):return super().poll_prepared_batch(batch_key)
                 pending=None
                 try:
                     group=tuple(batch_key)if core_key(batch_key)is not None else None
@@ -284,19 +290,21 @@ def __getattr__(name):
                 except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
                 return result
         def _finalize_record_sink(self,report):
-            if not handoff_profile()or getattr(self,'_record_sink_finalized',False):return
+            if not ENABLED:return
             with self._condition:
+                if getattr(self,'_record_sink_finalized',False):return
                 proof=report.get('producer_quiescence')or {}
                 if (report.get('status')=='closed'and proof.get('schema')=='semloom.async_actor_quiescence.v1'
                         and proof.get('confirmed')is True and proof.get('input_gate_closed')is True
                         and proof.get('active_readers')==0 and self._readers==0
                         and not getattr(self,'_closed_pending',None)):
-                    emit('actor_sink_finalizing',status='closed',scope='native producer quiescence and no pending batch ACK; before owner kill request')
+                    emit('actor_sink_finalizing',status='closed',metrics=dict(snapshot_gate_closed=True),
+                        scope='native producer quiescence; ACKs consumed; snapshot observer gate closed before owner kill; later RPCs outside this sink')
                     close_events();self._record_sink_finalized=True
                 else:emit('actor_sink_not_final',status='unknown',scope='native readers, pending batch ACK or producer close not proved')
         def acknowledge_core(self,request_key):
             result=super().acknowledge_core(request_key)
-            if handoff_profile()and result and self.last_close_report is not None:
+            if ENABLED and result and self.last_close_report is not None:
                 self._finalize_record_sink(self.last_close_report)
             return result
         def close(self,*args,**kwargs):

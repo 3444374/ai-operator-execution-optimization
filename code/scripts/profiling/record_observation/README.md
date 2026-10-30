@@ -97,6 +97,13 @@ actor，model/GPU worker 也不在轻量模式发事件。缺角色、缺 status
 无法唯一关联请求或未知 close，均不能拿“已收到的 sinks”子集冒充完整。物理退出和 lease
 由原 supervisor 单独核对。
 
+full 与 handoff 的 actor sink 都在原生生产者静止、reader 归零且最后一项批 ACK 消费后收尾，
+不依赖 Ray actor 进程的 atexit。snapshot 返回前的观察与收尾共用原 actor condition；当前
+回调先完成入缓冲，再排空、fsync 和写 footer。关闭观察入口后到达的 snapshot／poll 仍走
+原生方法，返回或异常不变，但不再写这份 sink。该边界不证明 Ray 结果已送达，也不代替
+driver 采样器／Future 回调结束。driver 仍按原 worker finally 停止采样、关闭 telemetry 和
+自身 sink；full 的原生模型／GPU 事件与 trace export 另随原监督退出流程完成，须分别核对。
+
 标记分别表示 actor 原 reader guard 内的返回前边界、额外 Future 完成通知和 driver decode 后
 审核入口。通知与原 await 恢复不保证全序；既有 `Ray_result_to_Core` 是 transfer **入口**，
 不是 sink 已完成。跨进程仅使用同机 monotonic 边界，同线程才解释 thread CPU，重叠区间取并集。

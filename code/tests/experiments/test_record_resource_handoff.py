@@ -346,6 +346,131 @@ class HandoffTests(unittest.TestCase):
         self.assertTrue(status['closed']and status['flush_confirmed']);self.assertEqual(status['dropped'],0)
         self.assertEqual(sum(e['event']=='actor_sink_finalizing'for e in self.events()),1)
 
+    def test_full_close_drains_capacity_and_snapshot_metadata_without_exit_fallback(self):
+        self.observer.settings()['profile']='full';ipc,actor,base=self.actor()
+        capacity=dict(status='unknown',max_num_seqs=None,kv_free_bytes=None)
+        self.observer.emit_buffered('native_startup_capacity',engine_uid='a'*32,native_capacity=capacity)
+        value=dict(session_id=1,ipc=dict(native_feedback=dict(engine_uid='a'*32,sequence=3,observed_at_s=1.)))
+        report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
+            confirmed=True,input_gate_closed=True,active_readers=0))
+        with patch.object(base,'snapshot',return_value=value,create=True),patch.object(base,'close',return_value=report,create=True):
+            self.assertIs(actor.snapshot(),value);self.assertIs(actor.close(1),report)
+        self.assertTrue(self.observer._closed)
+        events=self.events();self.assertEqual(sum(e['event']=='native_feedback_frame'for e in events),1)
+        self.assertEqual(next(e for e in events if e['event']=='native_startup_capacity')['native_capacity'],capacity)
+        status=json.loads(next((self.fixture.directory/'events').glob('*.status.json')).read_text())
+        self.assertEqual((status['feedback_buffer']['enqueued'],status['feedback_buffer']['drained']),(2,2))
+        self.assertTrue(status['flush_confirmed']);self.assertEqual((status['dropped'],status['errors']),(0,0))
+
+    def test_full_pending_ACK_delays_footer_and_last_ACK_finalizes_once(self):
+        self.observer.settings()['profile']='full';ipc,actor,base=self.actor();key=(1,0)
+        report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
+            confirmed=True,input_gate_closed=True,active_readers=0))
+        actor.last_close_report=report;actor._closed_pending={key:False}
+        with patch.object(base,'close',return_value=report,create=True):self.assertIs(actor.close(1),report)
+        self.assertFalse(self.observer._closed)
+        with patch.object(base,'acknowledge_core',return_value=False,create=True):self.assertFalse(actor.acknowledge_core(key))
+        self.assertFalse(self.observer._closed)
+        def acknowledge(instance,request):return instance._closed_pending.pop(tuple(request),None)is not None
+        with patch.object(base,'acknowledge_core',acknowledge,create=True):
+            self.assertTrue(actor.acknowledge_core(key));self.assertTrue(self.observer._closed)
+            self.assertFalse(actor.acknowledge_core(key))
+        self.assertEqual(sum(e['event']=='actor_sink_finalizing'for e in self.events()),1)
+
+    def assert_snapshot_producer_finishes_before_footer(self,profile):
+        self.observer.settings()['profile']=profile;ipc,actor,base=self.actor()
+        entered,release,close_attempted=[threading.Event()for _ in range(3)];immediate=[];errors=[]
+        class Condition(threading.Condition):
+            def __enter__(condition):
+                if threading.current_thread()is closer:
+                    acquired=condition.acquire(False);immediate.append(acquired);close_attempted.set()
+                    if not acquired:condition.acquire()
+                    return condition
+                return super().__enter__()
+        actor._condition=Condition();original=ipc.observe_feedback
+        value=dict(session_id=1,ipc=dict(native_feedback=dict(engine_uid='a'*32,sequence=3,observed_at_s=1.)))
+        report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
+            confirmed=True,input_gate_closed=True,active_readers=0))
+        def observe(*args,**kwargs):
+            entered.set()
+            if not release.wait(5):raise AssertionError('snapshot probe not released')
+            original(*args,**kwargs)
+        def snapshot():
+            try:self.assertIs(actor.snapshot(),value)
+            except BaseException as error:errors.append(error)
+        def close():
+            try:self.assertIs(actor.close(1),report)
+            except BaseException as error:errors.append(error)
+        reader=threading.Thread(target=snapshot,daemon=True);closer=threading.Thread(target=close,daemon=True)
+        with patch.object(base,'snapshot',return_value=value,create=True),patch.object(base,'close',return_value=report,create=True), \
+                patch.object(ipc,'observe_feedback',side_effect=observe)as audit:
+            reader.start()
+            try:
+                self.assertTrue(entered.wait(5));closer.start()
+                self.assertTrue(close_attempted.wait(5));self.assertEqual(immediate,[False])
+                self.assertFalse(self.observer._closed)
+            finally:
+                release.set();reader.join(5)
+                if closer.ident is not None:closer.join(5)
+            self.assertFalse(reader.is_alive());self.assertFalse(closer.is_alive());self.assertEqual(errors,[])
+            self.assertTrue(self.observer._closed);self.assertEqual(audit.call_count,1)
+            status_path=next((self.fixture.directory/'events').glob('*.status.json'));saved=status_path.read_bytes()
+            attempts=self.observer._buffer_attempts
+            self.assertIs(actor.snapshot(),value)  # Native RPC remains legal; observation gate is closed.
+            self.assertEqual(audit.call_count,1);self.assertEqual(self.observer._buffer_attempts,attempts)
+            with patch.object(base,'poll_prepared_batch',return_value=value,create=True):
+                self.assertIs(actor.poll_prepared_batch((1,0)),value)
+            self.assertEqual(status_path.read_bytes(),saved)
+            failure=RuntimeError(fixtures.SECRET)
+            with patch.object(base,'snapshot',side_effect=failure):
+                with self.assertRaises(RuntimeError)as caught:actor.snapshot()
+                self.assertIs(caught.exception,failure)
+        status=json.loads(saved);self.assertEqual((status['dropped'],status['errors']),(0,0))
+        self.assertEqual(sum(e['event']=='native_feedback_frame'for e in self.events()),1)
+
+    def test_full_snapshot_callback_finishes_before_footer_and_late_RPC_keeps_native_result(self):
+        self.assert_snapshot_producer_finishes_before_footer('full')
+
+    def test_handoff_snapshot_callback_finishes_before_footer_and_late_RPC_keeps_native_result(self):
+        self.assert_snapshot_producer_finishes_before_footer('handoff')
+
+    def test_disabled_actor_close_snapshot_and_ACK_delegate_without_observer_condition(self):
+        ipc,actor,base=self.actor();del actor._condition;report=dict(status='closed');actor.last_close_report=report
+        value=object()
+        with patch.object(ipc,'ENABLED',False),patch.object(self.observer,'ENABLED',False), \
+                patch.object(base,'snapshot',return_value=value,create=True),patch.object(base,'close',return_value=report,create=True), \
+                patch.object(base,'acknowledge_core',return_value=True,create=True):
+            self.assertIs(actor.snapshot(),value);self.assertIs(actor.close(1),report)
+            self.assertTrue(actor.acknowledge_core((1,0)))
+        self.assertEqual(self.events(),[]);self.assertFalse(self.observer._closed)
+
+    def test_concurrent_full_actor_close_writes_one_final_marker_and_footer(self):
+        self.observer.settings()['profile']='full';ipc,actor,base=self.actor()
+        attempting=threading.Event();count_lock=threading.Lock();attempts=[];errors=[]
+        class Condition(threading.Condition):
+            def __enter__(condition):
+                if threading.current_thread()is not threading.main_thread():
+                    with count_lock:
+                        attempts.append(1)
+                        if len(attempts)==2:attempting.set()
+                return super().__enter__()
+        actor._condition=Condition()
+        report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
+            confirmed=True,input_gate_closed=True,active_readers=0))
+        def close():
+            try:self.assertIs(actor.close(1),report)
+            except BaseException as error:errors.append(error)
+        workers=[threading.Thread(target=close,daemon=True)for _ in range(2)]
+        with patch.object(base,'close',return_value=report,create=True):
+            with actor._condition:
+                for worker in workers:worker.start()
+                self.assertTrue(attempting.wait(5))
+            for worker in workers:worker.join(5);self.assertFalse(worker.is_alive())
+        self.assertEqual(errors,[]);self.assertTrue(self.observer._closed)
+        self.assertEqual(sum(e['event']=='actor_sink_finalizing'for e in self.events()),1)
+        self.assertEqual(self.observer._dropped,0)
+        self.assertEqual(len(list((self.fixture.directory/'events').glob('*.status.json'))),1)
+
     def test_unknown_or_active_reader_close_never_claims_final_sink(self):
         ipc,actor,base=self.actor()
         for active in (0,1):
