@@ -31,3 +31,5 @@ attached比较编排使用实验层的 `native_query_lifecycle` 和公共 `nativ
 作者README的Llama70B/TP4示例与当前既有7B/单卡绑定有区别。新运行让原生CLI按该绑定解析默认值，并披露这个环境选择；不能称完整论文配置复现或已达到硬件平台。两种历史运行与新默认运行分别报告，不改写原结果。
 
 本地回归覆盖参数省略/旧覆盖拒绝、固定作者源码检查（含`vllm/config`及`arg_utils`）、实际值只读回执、三处标准CLI、输入完整发生项与质量记录，以及原观察异常/unknown与历史投影。真实作者环境CPU解析、worker初始化和完整SemBench新运行尚待验证；本地替身不授予GPU资格。
+
+外层既有owner可调用`src.experiments.kalypso_query_lifecycle.owner_cli_bindings(cfg)`取得server/CPU/query命令前缀、Git模块PYTHONPATH和实际旁录模块路径；`native_cpu_evidence`必须指向新CPU检查结果，不能继续匹配旧参考目录。该函数只返回命令数据，不启动进程、取得lease、调整超时或接管清理。owner继续在原timeout前缀、进程出生身份监督、TIME_WAIT端口检查与finally物理清理内调用这些命令；源文件仍写死私有模块路径时，需要显式替换相应接点。历史owner的campaign根、已过期限和账本身份不能重放成新运行，本接线不修改或放宽这些保护。

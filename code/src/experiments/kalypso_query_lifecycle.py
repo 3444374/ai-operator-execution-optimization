@@ -1,9 +1,27 @@
 """Source/sink and observation adapter; the author service owns all Filter work."""
 import json
+import os
 from pathlib import Path
 
 from src.baselines.text.frameworks.kalypso_native import adapter as native
 from src.baselines.text.frameworks.kalypso_native.native_server import server_argv
+
+
+def owner_cli_bindings(cfg):
+    """Command data for the existing external owner; no process or lifecycle work."""
+    server_argv(cfg)
+    root=Path(cfg['baseline_source']).resolve()
+    scripts=root/'code/scripts/experiments'
+    entries={role:scripts/name for role,name in dict(server='run_kalypso_native_server.py',
+        cpu='check_kalypso_native_cpu.py',query='run_kalypso_sembench_query.py').items()}
+    if any(not path.is_file() for path in entries.values()):
+        raise ValueError('Kalypso Git CLI binding is incomplete')
+    adapter_path=root/'code/src/baselines/text/frameworks/kalypso_native'
+    author_python=str(Path(cfg['install_root'])/'venv/bin/python')
+    return dict(**{role:[cfg['driver_python'] if role=='query' else author_python,'-B',str(path)]
+        for role,path in entries.items()},pythonpath=os.pathsep.join((str(root/'code'),str(adapter_path))),
+        observer_module=str(adapter_path/'native_server.py'),
+        cpu_reference_root=str(Path(cfg['native_cpu_evidence'])))
 
 
 def run_attached(cfg,unit,output,observer=None):
