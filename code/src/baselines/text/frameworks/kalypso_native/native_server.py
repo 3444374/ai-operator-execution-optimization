@@ -16,6 +16,35 @@ import uuid
 
 ROW = contextvars.ContextVar('observed_native_row',default=None)
 CALL = contextvars.ContextVar('observed_native_call',default=None)
+AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
+
+
+def check_author_source(cfg):
+    if cfg['source_commit'] != AUTHOR_SOURCE_COMMIT:
+        raise ValueError('Native binding requires the fixed author commit')
+    source = Path(cfg['install_root']) / 'source'
+    actual = subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()
+    if actual != AUTHOR_SOURCE_COMMIT:
+        raise ValueError('Author checkout changed')
+    clean = subprocess.run(['git','-C',str(source),'diff','HEAD','--exit-code','--','vllm'],capture_output=True)
+    if clean.returncode:
+        raise ValueError('Author implementation or native defaults changed')
+
+
+def native_engine_configuration(runner):
+    """Read existing worker config; never profile, allocate or change its values."""
+    c = runner.vllm_config
+    def values(obj, names):
+        return {name: (value if value is None or type(value) in (str,int,float,bool)
+                       else str(value)) for name in names for value in [getattr(obj,name,None)]}
+    return dict(source='actual worker vllm_config after original load_model returned',
+        allocation_scope='KV allocation and graph capture may finish later; retain native startup log',
+        model=values(c.model_config,('max_model_len','dtype')),
+        scheduler=values(c.scheduler_config,('max_num_seqs','max_num_batched_tokens','enable_chunked_prefill')),
+        cache=values(c.cache_config,('gpu_memory_utilization','enable_prefix_caching','block_size','num_gpu_blocks')),
+        parallel=values(c.parallel_config,('tensor_parallel_size','pipeline_parallel_size')),
+        attention=values(getattr(c,'attention_config',None),('backend',)),
+        compilation=values(c.compilation_config,('max_cudagraph_capture_size',)))
 
 
 def _worker_status(directory,status,**fields):
@@ -68,7 +97,8 @@ def install_worker_model_observation(cfg,directory,runner_class):
                 runner_module_path=runner_path,observer_module_path=str(Path(__file__).resolve()),
                 physical_gpu_index=cfg['physical_gpu_index'],physical_gpu_uuid_sha256=actual_uuid,
                 CUDA_VISIBLE_DEVICES=visible,weights_copied_to_CPU=False,
-                source='actual worker GPUModelRunner.model metadata after original load_model returned')
+                source='actual worker GPUModelRunner.model metadata after original load_model returned',
+                native_engine_configuration=native_engine_configuration(self))
             path=directory/'loaded-model.json';temp=path.with_name(path.name+'.'+str(os.getpid())+'.tmp')
             with temp.open('x') as stream:
                 json.dump(proof,stream,indent=2);stream.flush();os.fsync(stream.fileno())
@@ -196,15 +226,25 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
 
 
 def server_argv(cfg):
-    e=cfg['engine']
+    if cfg.get('native_launch') != 'author_defaults' or 'engine' in cfg:
+        raise ValueError('Use a fresh native_launch=author_defaults binding without engine overrides')
     return ['serve',cfg['model'],'--host','127.0.0.1','--port',str(cfg['port']),
-        '--tensor-parallel-size','1','--dtype',e['dtype'],
-        '--max-model-len',str(e['max_model_len']),'--max-num-seqs',str(e['max_num_seqs']),
-        '--max-num-batched-tokens',str(e['max_num_batched_tokens']),
-        '--gpu-memory-utilization',str(e['gpu_memory_utilization']),'--seed',str(e['seed']),
-        '--enable-prefix-caching','--enable-chunked-prefill','--attention-backend','TRITON_ATTN',
-        '--kv-cache-metrics-sample','1.0',
         '--worker-extension-cls','native_server.WorkerObservationExtension']
+
+
+def native_launch_report(cfg, parsed):
+    argv = server_argv(cfg)
+    if parsed.model_tag != cfg['model'] or parsed.worker_extension_cls != 'native_server.WorkerObservationExtension':
+        raise ValueError('Actual native CLI model or observation binding differs')
+    names = ('max_num_seqs','max_num_batched_tokens','max_model_len','gpu_memory_utilization',
+             'dtype','tensor_parallel_size','seed','attention_backend','enable_prefix_caching',
+             'enable_chunked_prefill','kv_cache_metrics_sample')
+    return dict(policy='author_defaults',author_commit=AUTHOR_SOURCE_COMMIT,argv=argv,
+        parsed_options={name:getattr(parsed,name,None) for name in names},
+        capacity_overrides=False,
+        parameter_source='author CLI defaults; model and localhost endpoint are explicit bindings',
+        observation_override='worker extension only; no scheduler or sampling override',
+        effective_capacity_source='worker loaded-model.json.native_engine_configuration and native startup log; CPU parsing is not hardware resolution')
 
 
 def main():
@@ -213,12 +253,8 @@ def main():
     p.add_argument('--evidence',type=Path,required=True);p.add_argument('--cpu-check',action='store_true')
     a=p.parse_args();cfg=json.loads(a.config.read_text())
     unit=next(u for u in cfg['units'] if u['unit_id']==a.unit)
-    source=Path(cfg['install_root'])/'source'
-    actual=subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()
-    if actual!=cfg['source_commit']:raise ValueError('Author checkout changed')
-    clean=subprocess.run(['git','-C',str(source),'diff','HEAD','--exit-code','--',
-        'vllm/kalypso','vllm/v1','vllm/entrypoints/openai/api_server.py'],capture_output=True)
-    if clean.returncode:raise ValueError('Author implementation changed')
+    argv=server_argv(cfg)
+    check_author_source(cfg)
     sys.path.insert(0,str(Path(cfg['baseline_source'])/'code'))
     import torch
     from vllm.kalypso.execution.vllm_executor import VLLMExecutor
@@ -227,23 +263,25 @@ def main():
     from vllm.entrypoints.cli.serve import ServeSubcommand
     from vllm.utils.argparse_utils import FlexibleArgumentParser
     parser=FlexibleArgumentParser();ServeSubcommand().subparser_init(parser.add_subparsers(dest='command'))
-    parsed=parser.parse_args(server_argv(cfg))
-    if parsed.model_tag!=cfg['model']:raise ValueError('Actual CLI model differs')
+    parsed=parser.parse_args(argv)
+    launch=native_launch_report(cfg,parsed)
     if a.cpu_check:
         if os.environ.get('CUDA_VISIBLE_DEVICES')!='' or torch.cuda.is_initialized():
             raise ValueError('CPU check must not initialize CUDA')
         print(json.dumps(dict(status='native_hooks_imported_and_arguments_parsed_CPU_only',
-            argv=server_argv(cfg),cuda_initialized=False)))
+            argv=argv,native_launch=launch,cuda_initialized=False)))
         return
     if not cfg['execution_enabled'] or cfg.get('CPU_fixture_only'):
         raise ValueError('GPU owner runtime config is not enabled')
+    with (a.evidence/'native-launch.json').open('x') as stream:
+        json.dump(launch,stream,indent=2)
     # Only environment and an existing-file import path cross the native process boundary.
     # No GPU runner import, forced fork/spawn, sitecustomize, or author source edit here.
     os.environ.update(KALYPSO_OBSERVER_CONFIG=str(a.config.resolve()),KALYPSO_OBSERVER_UNIT=a.unit,
         KALYPSO_OBSERVER_EVIDENCE=str(a.evidence.resolve()),KALYPSO_OBSERVER_API_PID=str(os.getpid()))
     sys.path.insert(0,str(Path(__file__).resolve().parent))
     counters=install_hooks(cfg,unit,a.evidence,VLLMExecutor,SemFilter)
-    sys.argv=['vllm',*server_argv(cfg)]
+    sys.argv=['vllm',*argv]
     try:
         runpy.run_module('vllm.entrypoints.cli.main',run_name='__main__')
     finally:

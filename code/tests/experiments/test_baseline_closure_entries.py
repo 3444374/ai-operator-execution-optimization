@@ -64,7 +64,7 @@ class KalypsoClientLifecycleTests(unittest.TestCase):
             def close(self):events.append('close');return dict(status='closed')
         with tempfile.TemporaryDirectory() as root,patch.object(adapter,'load_dependencies'),patch.object(adapter,'NativeQueryDriver',Driver):
             unit=dict(queries=[dict(query_id='first',phase='measured'),dict(query_id='reuse',phase='measured')])
-            result=adapter.run_attached({},unit,Path(root)/'run')
+            result=adapter.run_attached(dict(native_launch='author_defaults',model='fixture-model',port=18103),unit,Path(root)/'run')
         self.assertEqual(events,['start','first','reuse','close'])
         self.assertEqual(result['status'],'completed')
         self.assertEqual((lifecycle.BACKENDS,lifecycle.RESIDENT),before)
@@ -80,7 +80,7 @@ class KalypsoClientLifecycleTests(unittest.TestCase):
             def close(self):return dict(status='closed')
         with tempfile.TemporaryDirectory() as root,patch.object(adapter,'load_dependencies'),patch.object(adapter,'NativeQueryDriver',Driver):
             with self.assertRaisesRegex(TimeoutError,'uncertain') as caught:
-                adapter.run_attached({},dict(queries=[dict(query_id='first',phase='measured')]),Path(root)/'run')
+                adapter.run_attached(dict(native_launch='author_defaults',model='fixture-model',port=18103),dict(queries=[dict(query_id='first',phase='measured')]),Path(root)/'run')
         self.assertEqual((lifecycle.BACKENDS,lifecycle.RESIDENT),before)
         self.assertIsNone(caught.exception.session_report['queries'][0]['query_api_return_ns'])
 

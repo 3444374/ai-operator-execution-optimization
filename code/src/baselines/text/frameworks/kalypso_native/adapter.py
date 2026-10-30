@@ -137,7 +137,22 @@ class NativeQueryDriver:
                     or (not self.cfg.get('CPU_fixture_only') and Path(proof['runner_module_path'])!=expected)):
                 raise ValueError('Actual worker model/physical UUID observation is not qualified')
         self.model_uid=proof['model_uid']
-        return dict(status='attached_ready',loaded_model=proof,
+        launch={}
+        if self.cfg.get('native_launch') == 'author_defaults':
+            from .native_server import server_argv, AUTHOR_SOURCE_COMMIT
+            launch=json.loads((Path(self.cfg['loaded_model_proof']).parent/'native-launch.json').read_text())
+            if (self.cfg.get('source_commit')!=AUTHOR_SOURCE_COMMIT
+                    or launch.get('policy')!='author_defaults' or launch.get('author_commit')!=AUTHOR_SOURCE_COMMIT
+                    or launch.get('argv')!=server_argv(self.cfg) or launch.get('capacity_overrides') is not False):
+                raise ValueError('Native launch provenance differs from this binding')
+            config=proof.get('native_engine_configuration',{})
+            values=[config.get('model',{}).get('max_model_len'),
+                    *(config.get('scheduler',{}).get(name) for name in ('max_num_seqs','max_num_batched_tokens'))]
+            memory=config.get('cache',{}).get('gpu_memory_utilization')
+            if (any(type(value) is not int or value<=0 for value in values)
+                    or type(memory) not in (int,float) or not 0<memory<=1):
+                raise ValueError('Actual native worker capacity observation is incomplete')
+        return dict(status='attached_ready',loaded_model=proof,native_launch=launch,
                     model_startup_scope='external GPU owner lifecycle; not measured by client attach',
                     service_startup_scope='GPU owner external lifecycle, not this attach operation')
 

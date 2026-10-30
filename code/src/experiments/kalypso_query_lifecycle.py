@@ -3,9 +3,11 @@ import json
 from pathlib import Path
 
 from src.baselines.text.frameworks.kalypso_native import adapter as native
+from src.baselines.text.frameworks.kalypso_native.native_server import server_argv
 
 
 def run_attached(cfg,unit,output,observer=None):
+    server_argv(cfg)
     native.load_dependencies(cfg)
     from src.experiments import native_query_lifecycle as sessions
     from src.observability.native_query_timing import ObservationStore,timed_driver_type,query_timing
@@ -33,6 +35,7 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
     cfg=json.loads(args.config.read_text())
+    server_argv(cfg)  # Reject legacy engine overrides before client/service attachment.
     unit=next(u for u in cfg['units'] if u['unit_id']==args.unit)
     cfg.update(url='http://127.0.0.1:'+str(cfg['port']),native_trace=str(args.output.parent/'native-trace.jsonl'),
                loaded_model_proof=str(args.output.parent/'loaded-model.json'),
