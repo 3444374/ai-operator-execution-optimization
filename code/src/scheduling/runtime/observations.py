@@ -36,6 +36,9 @@ class ServiceMetricsSnapshot:
     source_uid: str | None = None
     source_session_id: int | None = None
     received_at_s: float | None = None
+    control_request_index: int | None = None
+    source_clock_domain: str | None = None
+    received_clock_domain: str | None = None
 
     def __post_init__(self) -> None:
         # Reuse the observation schema's validation without inventing another
@@ -297,21 +300,29 @@ class NonBlockingMetricsObservationProvider:
             return
         try:
             self.observer(dict(stage=stage, accepted=accepted, reason=reason, decision_at_s=at_s,
+                decision_clock_domain='provider.clock seconds',
                 engine_uid=None if snapshot is None else snapshot.source_uid,
                 session_id=None if snapshot is None else snapshot.source_session_id,
                 source_sequence=None if snapshot is None else snapshot.source_sequence,
                 source_observed_at_s=None if snapshot is None else snapshot.source_observed_at_s,
-                received_at_s=None if snapshot is None else snapshot.received_at_s))
+                received_at_s=None if snapshot is None else snapshot.received_at_s,
+                control_request_index=None if snapshot is None else snapshot.control_request_index,
+                source_clock_domain=None if snapshot is None else snapshot.source_clock_domain,
+                received_clock_domain=None if snapshot is None else snapshot.received_clock_domain))
         except Exception:
             pass  # Optional observation cannot change freshness, results or ownership.
 
-    def observe_native(self, snapshot, *, session_id, received_at_s, accepted, reason):
+    def observe_native(self, snapshot, *, session_id, received_at_s, accepted, reason,
+                       control_request_index=None, source_clock_domain=None, received_clock_domain=None):
         """Optional RPC-validation boundary; not a policy admission decision."""
         if self.observer is None:
             return
         snapshot = snapshot or {}
         try:
             self.observer(dict(stage="RPC_sample", accepted=accepted, reason=reason,
+                control_request_index=control_request_index,
+                source_clock_domain=source_clock_domain, received_clock_domain=received_clock_domain,
+                decision_clock_domain=received_clock_domain,
                 engine_uid=snapshot.get("engine_uid"), session_id=session_id,
                 source_sequence=snapshot.get("sequence"), source_observed_at_s=snapshot.get("observed_at_s"),
                 received_at_s=received_at_s, decision_at_s=received_at_s))

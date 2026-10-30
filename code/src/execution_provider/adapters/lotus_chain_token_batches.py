@@ -5,6 +5,7 @@ import json
 import math
 from threading import Lock
 import time
+import weakref
 
 from src.modalities.text.tokenization import chat_token_count
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
@@ -203,9 +204,61 @@ class BatchSupplyFeedback:
         # Receipt timestamps are optional evidence, not a prerequisite for
         # collecting a known RPC result or for the owner's required cleanup.
         try:
-            return time.monotonic(), None
+            observed = time.monotonic()
+            if type(observed) not in (int, float) or not math.isfinite(observed):
+                raise ValueError('receipt clock is not finite')
+            return observed, None
         except Exception as error:
             return None, type(error).__name__
+
+    def _note_future_timing(self, index, **values):
+        with self._snapshot_lock:
+            request = self._snapshot_request
+            if request is not None and request['request_index'] == index:
+                self._snapshot_request = dict(request, **values)
+
+    def _observe_future_ready(self, done):
+        # Observation only: no wakeup, extra RPC, result read or ownership release.
+        # A callback observes local readiness; it is not remote terminal proof.
+        try:
+            enabled = callable(getattr(self.provider, 'observer', None))
+        except Exception:
+            return
+        if not enabled:
+            return
+        polled, poll_error = self._snapshot_clock()
+        with self._snapshot_lock:
+            request = self._snapshot_request
+            if request is None:
+                return
+            request = dict(request, future_poll_observed_at_s=polled,
+                future_poll_clock_error_type=poll_error, future_polled_done=done,
+                future_poll_count=request.get('future_poll_count', 0)+1)
+            if not done:
+                request['future_last_pending_poll_observed_at_s'] = polled
+            self._snapshot_request = request
+            if request.get('future_timing_enabled'):
+                return
+            index, future = request['request_index'], self.future
+            self._snapshot_request = dict(request, future_timing_enabled=True,
+                future_timing_clock='driver.time.monotonic seconds',
+                future_ready_observed_at_s=None, future_ready_clock_error_type=None,
+                future_observer_error_type=None)
+        registered, clock_error = self._snapshot_clock()
+        try:
+            self._note_future_timing(index, future_registered_at_s=registered,
+                future_registration_clock_error_type=clock_error,
+                future_done_before_registration=done)
+            owner = weakref.ref(self)
+            def notified(completed):
+                feedback = owner()
+                if feedback is not None:
+                    observed, error = feedback._snapshot_clock()
+                    feedback._note_future_timing(index, future_ready_observed_at_s=observed,
+                        future_ready_clock_error_type=error)
+            future.add_done_callback(notified)
+        except Exception as error:
+            self._note_future_timing(index, future_observer_error_type=type(error).__name__)
 
     @staticmethod
     def _snapshot_header(value):
@@ -247,6 +300,7 @@ class BatchSupplyFeedback:
                 self.errors += 1
                 self._snapshot_request = dict(self._snapshot_request, poll_error_type=type(error).__name__)
             return None
+        self._observe_future_ready(done)
         if not done:
             if cancel_pending and self.closed:
                 self._cancel_snapshot('close')
@@ -256,6 +310,13 @@ class BatchSupplyFeedback:
             # Cancel requested/failed is not terminal proof. The same ref owns
             # this slot; duplicate native sequences keep their original age.
             return None if self.closed else self.last_native
+        with self._snapshot_lock:
+            index = self._snapshot_request['request_index']
+            timing = self._snapshot_request.get('future_timing_enabled', False)
+        if timing:
+            observed, error = self._snapshot_clock()
+            self._note_future_timing(index, future_collect_started_at_s=observed,
+                future_collect_clock_error_type=error)
         try:
             value = self.future.result()
         except CancelledError:
@@ -263,13 +324,24 @@ class BatchSupplyFeedback:
             # return/exception. Keep the same RPC ownership explicitly unknown.
             with self._snapshot_lock:
                 self._snapshot_request = dict(self._snapshot_request, client_future_cancelled=True)
+            if timing:
+                observed, error = self._snapshot_clock()
+                self._note_future_timing(index, future_result_observed_at_s=observed,
+                    future_result_clock_error_type=error)
             return None
         except Exception as error:
+            if timing:
+                observed, clock_error = self._snapshot_clock()
+                self._note_future_timing(index, future_result_observed_at_s=observed,
+                    future_result_clock_error_type=clock_error)
             if not self.closed:
                 self.errors += 1
             self._finish_snapshot('raised', 'rpc_error', error=type(error).__name__)
             return None
-        received_at_s, _ = self._snapshot_clock()
+        received_at_s, received_clock_error = self._snapshot_clock()
+        if timing:
+            self._note_future_timing(index, future_result_observed_at_s=received_at_s,
+                future_result_clock_error_type=received_clock_error)
         snapshot, disposition, reason = None, 'invalid_frame', 'invalid_native_frame'
         native, response_session = None, None
         try:
@@ -294,7 +366,9 @@ class BatchSupplyFeedback:
             else:
                 snapshot = ServiceMetricsSnapshot(native['running'], native['waiting'], native['kv_usage'],
                     source_uid=native['engine_uid'], source_session_id=response_session,
-                    received_at_s=received_at_s,
+                    received_at_s=received_at_s, control_request_index=index,
+                    source_clock_domain='native-engine NativeStats.clock seconds',
+                    received_clock_domain='driver.time.monotonic seconds',
                     completed_tokens_total=native['generation_tokens_total'],
                     preemptions_total=native['preemptions_total'], source_sequence=native['sequence'],
                     source_observed_at_s=native['observed_at_s'])
@@ -307,7 +381,9 @@ class BatchSupplyFeedback:
             audit = getattr(self.provider, 'observe_native', None)
             if callable(audit):
                 audit(native, session_id=response_session, received_at_s=received_at_s,
-                    accepted=snapshot is not None, reason=reason)
+                    accepted=snapshot is not None, reason=reason, control_request_index=index,
+                    source_clock_domain='native-engine NativeStats.clock seconds',
+                    received_clock_domain='driver.time.monotonic seconds')
         except Exception:
             pass  # Optional audit cannot change the RPC receipt or valid feedback.
         if snapshot is not None:
