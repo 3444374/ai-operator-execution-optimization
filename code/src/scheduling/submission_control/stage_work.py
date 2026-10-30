@@ -127,6 +127,22 @@ class SupplyFeedbackConfig:
         if self.options.poll_interval_s > self.options.window_s:
             raise ValueError("poll interval must fit the measurement window")
 
+    @classmethod
+    def from_dict(cls, value):
+        if (type(value) is not dict or 'max_batches' not in value
+                or set(value)-{'max_batches', 'options'}):
+            raise ValueError('batch_feedback requires max_batches and optional options')
+        config = cls(value['max_batches'])
+        if 'options' not in value:
+            return config
+        if type(value['options']) is not dict:
+            raise ValueError('batch_feedback options must be an object')
+        try:
+            options = replace(config.options, **value['options'])
+        except TypeError as error:
+            raise ValueError('unsupported batch_feedback option') from error
+        return cls(config.max_batches, options)
+
 
 @dataclass(frozen=True)
 class SupplyState:

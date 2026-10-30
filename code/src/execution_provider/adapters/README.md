@@ -398,7 +398,13 @@ are maintained in the [Movie entry documentation](../../experiments/movie_matrix
 `src.scheduling.submission_control.stage_work`. This requires the existing
 record-local token path, `batch_concurrency=1`, FIFO, record progression and W off;
 the ceiling must fit R. Omission retains the fixed path and installs no sampler.
-The Movie CLI/JSON and resident-session schemas do not yet expose this new field.
+The normal Movie `check/run` JSON and isolated session plans accept the same
+`batch_feedback` object (`max_batches` and optional `options`); omitted/null keeps
+feedback off. Partial `options` inherit `SupplyFeedbackConfig` defaults, including
+computed work, local pairs and geometric exploration. The shared factory and
+typed config own validation; no alternate runner is installed. See the
+[normal entry](../../experiments/movie_matrix.README.md#record-token-batch-entry).
+Resident sessions remain unsupported by this finite-query token path.
 
 Only the application **batch** window changes. B remains the caller's fixed work
 budget, and R, Core bytes, IPC slots/bytes and native startup declarations remain
@@ -436,7 +442,7 @@ not qualified by the token-work comparison; stage descriptors remain explicit.
 check missing feedback, pressure, bounds, no-gain rollback, original prompts/results,
 successors, Extract barriers and unknown ownership. Positive CPU integration uses
 an explicit delivered-work test configuration, a simulated engine-stat source and
-a logical sampling frontier with an injected gap. A separate real-clock case
+a logical busy-Core sampling frontier with an injected gap. A separate real-clock case
 checks original transport/results/cleanup without requiring a finite fixture to
 last long enough for exploration. Default computed policy is replay-tested.
 These are engineering checks, not GPU

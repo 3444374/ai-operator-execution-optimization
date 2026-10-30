@@ -81,9 +81,7 @@ class PreparedRecordsCore:
         feedback = None
         if 'feedback' in batching:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
-            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
-            spec = batching['feedback']
-            feedback = SupplyFeedbackConfig(spec['max_batches'], ResourceFeedbackConfig(**spec['options']))
+            feedback = SupplyFeedbackConfig.from_dict(batching['feedback'])
         self.owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, prepared_batching=PreparedBatching(**batching['prepared_batching']),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback)

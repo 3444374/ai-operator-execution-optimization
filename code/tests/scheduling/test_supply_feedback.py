@@ -1,5 +1,5 @@
 """Deterministic demand/native-window replays; no hardware benefit inference."""
-from dataclasses import replace
+from dataclasses import asdict, replace
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
@@ -91,6 +91,23 @@ class SupplyFeedbackTests(unittest.TestCase):
             with self.assertRaises(ValueError):SupplyFeedbackConfig(maximum)
         with self.assertRaises(ValueError):
             SupplyFeedbackConfig(4, replace(self.options, poll_interval_s=2))
+
+    def test_JSON_options_inherit_supply_defaults_and_round_trip(self):
+        default = SupplyFeedbackConfig.from_dict(dict(max_batches=3))
+        self.assertEqual(default, SupplyFeedbackConfig(3))
+        self.assertEqual(default.options.work_basis, 'computed')
+        self.assertTrue(default.options.allow_exploration)
+        partial = SupplyFeedbackConfig.from_dict(dict(max_batches=3, options=dict(poll_interval_s=.1)))
+        self.assertEqual(partial.options, replace(default.options, poll_interval_s=.1))
+        self.assertEqual(SupplyFeedbackConfig.from_dict(asdict(partial)), partial)
+
+    def test_JSON_unknown_fields_and_invalid_shapes_are_rejected(self):
+        for value in [None, [], {}, dict(max_batches=True), dict(max_batches=0),
+                dict(max_batches=3, rows=64), dict(max_batches=3, options=None),
+                dict(max_batches=3, options=dict(unsupported=True)),
+                dict(max_batches=3, options=dict(poll_interval_s=3))]:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                SupplyFeedbackConfig.from_dict(value)
 
     def test_gap_cannot_confirm_a_trial_and_retains_its_online_cost(self):
         for n in range(4):self.tick(n*20)
