@@ -86,6 +86,13 @@ class SubmitResult:
 
 
 @dataclass(frozen=True)
+class BatchSubmitResult:
+    status: str
+    request_ids: tuple[str, ...] = ()
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
 class TerminalEvent:
     request_id: str
     identity: dict
@@ -110,7 +117,7 @@ class AsyncEngineProcess:
 
     submit transfers local ownership only. Child acceptance is observable in
     snapshot; poll transfers terminal evidence. Unknown keeps its reservations.
-    This component never retries, batches, routes or selects scheduling policy.
+    This component never retries, chooses batch membership or selects routing/scheduling policy.
     """
 
     def __init__(self, engine, generation, *, limits=None, startup_timeout_s=120):
@@ -124,6 +131,7 @@ class AsyncEngineProcess:
         self.spec.validate_driver_environment()
         self._owner_uid = uuid.uuid4().hex
         self._sequence = 0
+        self._submitted_batches = self._peak_batch_members = self._peak_batch_frame_bytes = 0
         self._slots = {}
         self._data_commands, self._controls, self._ready = deque(), deque(), deque()
         self._condition = threading.Condition()
@@ -218,7 +226,25 @@ class AsyncEngineProcess:
                         child_alive=self.process is not None and self.process.poll() is None,
                         child_drain_report=self._drain_report,
                         **({"native_mfu": self._native_mfu} if self.spec.enable_mfu_metrics else {}),
-                        native_feedback=None if self._native_feedback is None else dict(self._native_feedback))
+                        native_feedback=None if self._native_feedback is None else dict(self._native_feedback),
+                        **(dict(submitted_batch_frames=self._submitted_batches,
+                                peak_batch_members=self._peak_batch_members,
+                                peak_batch_frame_bytes=self._peak_batch_frame_bytes)
+                           if self._submitted_batches else {}))
+
+    def _check_receipt_capacity(self, identity):
+        # Every accepted item must be able to return known usage even if its
+        # full output overflows. The shared schema supplies the small receipt.
+        example = result_record(identity, engine_uid="x" * 32, start=1e20, end=1e20,
+                                status="unknown", submitted=False, error_type="ResultCapacityExceeded")
+        example.update(prompt_tokens=(1 << 64) - 1, completion_tokens=(1 << 64) - 1,
+            total_tokens=(1 << 65) - 2, engine_request_id="x" * 256,
+            engine_terminal_confirmed=False, finish_reason="length",
+            model_start_monotonic=1.7976931348623157e308,
+            model_end_monotonic=1.7976931348623157e308,
+            model_elapsed_s=1.7976931348623157e308)
+        _frame(dict(op="terminal", request_id="x" * 64, confirmed=False,
+                    result=_compact_result(example)), self.limits.item_result_bytes)
 
     def submit(self, row, *, generation=None, deadline_monotonic):
         common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
@@ -232,18 +258,7 @@ class AsyncEngineProcess:
         identities, _ = common._prepared([row])
         identity = identities[0]
         snapshot = {name: row[name] for name in (*common.IDENTITY_FIELDS, "messages_json")}
-        # Every accepted item must be able to return known usage even if its
-        # full output overflows. The shared schema supplies the small receipt.
-        example = result_record(identity, engine_uid="x" * 32, start=1e20, end=1e20,
-                                status="unknown", submitted=False, error_type="ResultCapacityExceeded")
-        example.update(prompt_tokens=(1 << 64) - 1, completion_tokens=(1 << 64) - 1,
-            total_tokens=(1 << 65) - 2, engine_request_id="x" * 256,
-            engine_terminal_confirmed=False, finish_reason="length",
-            model_start_monotonic=1.7976931348623157e308,
-            model_end_monotonic=1.7976931348623157e308,
-            model_elapsed_s=1.7976931348623157e308)
-        _frame(dict(op="terminal", request_id="x" * 64, confirmed=False,
-                    result=_compact_result(example)), self.limits.item_result_bytes)
+        self._check_receipt_capacity(identity)
         with self._condition:
             if self._io_done.is_set() or self.process is None or self.process.poll() is not None:
                 # The reader still drains any already-written terminal prefix.
@@ -275,6 +290,61 @@ class AsyncEngineProcess:
             self._query_id = identity["query_id"]
             self._condition.notify_all()
             return SubmitResult("queued", request_id)
+
+    def submit_batch(self, rows, *, generation, deadline_monotonic):
+        """One bounded data frame, atomic local acceptance, independent terminals."""
+        common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
+        if not rows or len(rows) > self.limits.max_inflight:
+            return BatchSubmitResult("backpressure", reason="member request capacity exhausted")
+        effective = common.GenerationSpec.from_dict(asdict(generation))
+        effective.kwargs()
+        if effective.max_tokens > self.spec.max_model_len:
+            raise ValueError("max_tokens exceeds max_model_len")
+        identities, _ = common._prepared(list(rows))
+        for identity in identities:
+            self._check_receipt_capacity(identity)
+        if len({r['call_id'] for r in identities}) != len(identities):
+            raise ValueError("batch call identities must be distinct")
+        if len({r['query_id'] for r in identities}) != 1:
+            raise ValueError("batch members must belong to one query")
+        snapshots = [{name: row[name] for name in (*common.IDENTITY_FIELDS, "messages_json")} for row in rows]
+        with self._condition:
+            if self._io_done.is_set() or self.process is None or self.process.poll() is not None:
+                self._broken = self._broken or "ChildUnavailable"
+            if self._broken is not None or self._closing or time.monotonic() >= deadline_monotonic:
+                return BatchSubmitResult("rejected", reason="owner unavailable or deadline expired")
+            if self._slots and self._query_id != identities[0]['query_id']:
+                return BatchSubmitResult("rejected", reason="previous query still owns work")
+            count, used = len(rows), self._usage()
+            if self._sequence + count > 1 << 63:
+                return BatchSubmitResult("rejected", reason="request identity sequence exhausted")
+            if (used['active_requests'] + count > self.limits.max_inflight
+                    or len(self._slots) + count > self.limits.result_slots
+                    or used['reserved_result_bytes'] + count*self.limits.item_result_bytes > self.limits.result_bytes
+                    or len(self._data_commands) >= self.limits.command_slots):
+                return BatchSubmitResult("backpressure", reason="request, result or command capacity exhausted")
+            keys = tuple(self._owner_uid + ':' + str(self._sequence+i) for i in range(count))
+            items = [dict(request_id=key, row=row) for key, row in zip(keys, snapshots)]
+            for item in items:
+                _frame(dict(op='submit', **item, generation=asdict(effective), deadline=deadline_monotonic),
+                       self.limits.item_input_bytes)
+            data = _frame(dict(op='submit_batch', requests=items, generation=asdict(effective),
+                               deadline=deadline_monotonic), min(self.limits.input_bytes, (1 << 32)-1))
+            size = len(data)-4
+            if used['input_bytes'] + size > self.limits.input_bytes:
+                return BatchSubmitResult("backpressure", reason="input byte capacity exhausted")
+            charges = [len(_frame(item, self.limits.input_bytes))-4 for item in items]
+            charges[0] += size-sum(charges)
+            for key, identity, charge in zip(keys, identities, charges):
+                self._slots[key] = _Slot(identity, charge)
+            self._data_commands.append(data)
+            self._sequence += count
+            self._query_id = identities[0]['query_id']
+            self._submitted_batches += 1
+            self._peak_batch_members = max(self._peak_batch_members, count)
+            self._peak_batch_frame_bytes = max(self._peak_batch_frame_bytes, size)
+            self._condition.notify_all()
+            return BatchSubmitResult("queued", keys)
 
     def abort(self, request_id):
         with self._condition:
@@ -568,6 +638,9 @@ class AsyncEngineProcess:
                 io_thread_closed=thread_closed, cleanup_errors=errors,
                 producer_quiescence=self._producer_quiescence,
                 retired_unknown_requests=len(self._retired_unknown), transport_error=self._broken, **usage)
+            if self._submitted_batches:
+                self.last_close_report.update(submitted_batch_frames=self._submitted_batches,
+                    peak_batch_members=self._peak_batch_members, peak_batch_frame_bytes=self._peak_batch_frame_bytes)
             return self.last_close_report
 
     def _finish_io(self, deadline, errors):
@@ -692,22 +765,43 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         async def input_commands():
             nonlocal next_sequence
             while not closing.is_set():
-                value, size = await _read_frame(data, limits.item_input_bytes)
-                key = value.get("request_id")
-                if value.get("op") != "submit" or key != opening["owner_uid"] + ":" + str(next_sequence):
-                    raise ValueError("async engine submit sequence invalid")
-                next_sequence += 1
-                if (len(owned) >= min(limits.max_inflight, limits.result_slots)
+                value, size = await _read_frame(data, min(limits.input_bytes, (1 << 32)-1))
+                if value.get('op') == 'submit':
+                    if size > limits.item_input_bytes:
+                        raise ValueError('single request exceeds IPC item allowance')
+                    items = [dict(request_id=value['request_id'], row=value['row'])]
+                    charges = [size]
+                elif value.get('op') == 'submit_batch':
+                    items = value.get('requests')
+                    if type(items) is not list or not 0 < len(items) <= limits.max_inflight:
+                        raise ValueError('invalid IPC batch members')
+                    charges = [len(_frame(item, limits.input_bytes))-4 for item in items]
+                    charges[0] += size-sum(charges)
+                else:
+                    raise ValueError('invalid IPC data command')
+                count = len(items)
+                if (len(owned)+count > min(limits.max_inflight, limits.result_slots)
                         or sum(s["bytes"] for s in owned.values()) + size > limits.input_bytes
-                        or (len(owned) + 1) * limits.item_result_bytes > limits.result_bytes):
+                        or (len(owned) + count) * limits.item_result_bytes > limits.result_bytes):
                     raise ValueError("async engine child reservation exceeded")
-                common._prepared([value["row"]])
-                slot = dict(bytes=size, aborted=key in early_aborts, task=None)
-                early_aborts.discard(key)
-                owned[key] = slot
-                await reply(dict(op="accepted", request_id=key))
-                slot["task"] = asyncio.create_task(run(key, slot, value))
-                slot["task"].add_done_callback(observe_request)
+                common._prepared([item['row'] for item in items])
+                for i, item in enumerate(items):
+                    if item.get('request_id') != opening['owner_uid'] + ':' + str(next_sequence+i):
+                        raise ValueError('async engine submit sequence invalid')
+                    _frame(dict(op='submit', **item, generation=value['generation'], deadline=value['deadline']),
+                           limits.item_input_bytes)
+                next_sequence += count
+                for item, charge in zip(items, charges):
+                    key = item['request_id']
+                    owned[key] = dict(bytes=charge, aborted=key in early_aborts, task=None)
+                    early_aborts.discard(key)
+                for item in items:
+                    key, slot = item['request_id'], owned[item['request_id']]
+                    await reply(dict(op='accepted', request_id=key))
+                    slot['task'] = asyncio.create_task(run(key, slot, dict(row=item['row'],
+                        generation=value['generation'], deadline=value['deadline'])))
+                    slot['task'].add_done_callback(observe_request)
+                value = items = None  # Do not retain other members after their terminal.
 
         def observe_request(task):
             if not task.cancelled():

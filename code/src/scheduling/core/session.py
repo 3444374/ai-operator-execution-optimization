@@ -19,6 +19,7 @@ from .session_contract import (
     BackendTask,
     BatchKey,
     BatchMember,
+    BatchSubmission,
     CleanupReport,
     CloseReport,
     Delivery,
@@ -780,6 +781,8 @@ class SchedulingSession:
 
     def _dispatch(self, record: TaskRecord, now: float) -> bool:
         engine = self.engine
+        if self._pending_members and getattr(engine.backend, "supports_batch_submit", False):
+            return self._dispatch_batch(now)
         if not engine.capacity.can_dispatch(record, self.limits):
             self._capacity_waiting = record.key
             if engine.observe_capacity_blocks:
@@ -847,6 +850,60 @@ class SchedulingSession:
             self._fail("backend acceptance unknown")
         engine._emit("submitted", record.key)
         return True
+
+    def _dispatch_batch(self, now):
+        """Optional atomic transport handoff over existing per-member reservations."""
+        engine = self.engine
+        if engine.credit is not None:
+            raise ValueError("atomic transport batches do not support shared-credit routing")
+        records = tuple(engine.capacity.records[key] for key in self._pending_members)
+        reserved = []
+        try:
+            for record in records:
+                if not engine.capacity.can_dispatch(record, self.limits):
+                    self._capacity_waiting = record.key
+                    return False
+                endpoint = engine.policies.select(record,
+                    tuple(r for r in engine.capacity.records.values() if r.compute), now)
+                if endpoint is None:
+                    return False
+                record.compute, record.endpoint = True, endpoint
+                reserved.append((record, record.since))
+            if len({r.endpoint for r in records}) != 1:
+                raise ValueError("a transport batch requires one endpoint")
+            if self._cancel.is_set():
+                return False
+            for record in records:
+                record.phase, record.since = "INFLIGHT", now
+            try:
+                outcome = engine.backend.try_submit_batch(tuple(
+                    BackendTask(r.key, r.spec, r.task, r.member) for r in records), records[0].endpoint)
+            except Exception:
+                outcome = BatchSubmission(Acceptance.UNKNOWN)
+            if (type(outcome) is not BatchSubmission or type(outcome.acceptance) is not Acceptance
+                    or type(outcome.handles) is not tuple
+                    or outcome.acceptance == Acceptance.ACCEPTED and
+                    (len(outcome.handles) != len(records) or any(type(h) is not str or not h
+                        or len(h.encode()) > self.limits.metadata_bytes for h in outcome.handles))
+                    or outcome.acceptance != Acceptance.ACCEPTED and outcome.handles):
+                outcome = BatchSubmission(Acceptance.UNKNOWN)
+            if outcome.acceptance == Acceptance.NOT_ACCEPTED:
+                return False
+            reserved.clear()  # All member compute responsibilities transferred.
+            self._capacity_waiting = None
+            self._pending_members = ()
+            for i, record in enumerate(records):
+                record.handle = outcome.handles[i] if outcome.handles else None
+                if outcome.acceptance == Acceptance.UNKNOWN:
+                    record.phase = "UNCERTAIN"
+                engine._emit("submitted", record.key)
+            if outcome.acceptance == Acceptance.UNKNOWN:
+                self._fail("backend batch acceptance unknown")
+            return True
+        finally:
+            for record, since in reserved:
+                record.compute, record.endpoint, record.phase = False, None, "QUEUED"
+                record.since = since
 
     def _next_record(self, queued: tuple[TaskRecord, ...]) -> TaskRecord | None:
         if self.engine.policies.organize is None:

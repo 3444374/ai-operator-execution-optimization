@@ -83,6 +83,52 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B -m unittest discover \
 原日志/归档/总结/收据/失败和其恢复所需脚本继续保留，正在汇总的 r3 原件完全未改。
 
 
+<a id="record-token-batch-entry"></a>
+## 记录级异步 token 组批入口（本地 CPU 增量）
+
+正常 `run_lotus_records_movie.py check/run` 的
+`semloom.movie_records_run.v1` 配置可选择原 `semloom-local-model-core-async`
+backend，并增加以下字段。省略新字段仍走原工厂和默认路径；示例数值不代表校准结果：
+
+```json
+{
+  "core_profile": {"mode": "async", "max_inflight": 128},
+  "resources": {"prepare_batch_rows": 1, "model_batch_rows": 1, "max_active_batches": 128},
+  "prepared_batching": {"policy": "token_budget", "max_rows": null, "token_budget": 17506},
+  "batch_concurrency": 4
+}
+```
+
+这是现有完整配置的片段；engine、generation、query_id、task及冻结输入仍须显式绑定。
+B 是每批完整模板 prompt token 加各请求阶段输出上限；C_batch 是仍有未结算计算成员的应用传输批数；
+R 是原工厂解析后的请求容量，同时仍限制resident行。没有每批行数帽，native `max_num_seqs`／
+iteration token容量单独记录。B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
+目前不支持动态admission/cache、stage_timing、resident跨查询模型复用或受行帽限制的组合，预检明确拒绝。
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py check \
+  --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$QUERY_CONFIG"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py run \
+  --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$QUERY_CONFIG" \
+  --output-dir "$NEW_PRIVATE_OUTPUT" --execute-model
+```
+
+`check`不构造owner或请求模型。`run`沿用原监督worker；正常会话／sealed matrix计划也可增加相同两组批字段，
+其`profile`使用上例`core_profile`的值，且`backend="semloom-core"`、`lifecycle="isolated"`。
+仍由原owner提供lease、调用额度、完整source.lock／packet和物理退出检查；新入口须重新绑定这些资产，
+不能把旧packet或旧树模型证据直接套用到新源码。启动成本真实记在有限查询内，不扣减或伪装resident。
+
+MovieTask／source manifest继续拥有Q1/Q2/Q3提示、普通谓词、完整Filter覆盖、head5／COUNT及原评价器。
+执行工厂把普通Filter声明接到已实现的记录级链，保留链调用ID与普通ledger ID的显式一对一映射。
+正常关闭回执含`record_batching`、`async_token_batches`及`transport_batches[].receipt_members`，记录真实成员、
+逐成员确认／状态／native结束时刻，成功时核对B/C_batch/R、组内索引和RPC批数。
+资源责任仍逐请求结算；unknown不因关闭而改成成功或零用量。普通账本适配在已有完整链遍历后交付，
+不会以该账本交付时间冒充逐请求延迟；完整输入及审计关系的内存保留也不宣称受R约束。
+
+[CPU入口测试](../../tests/experiments/test_movie_async_token_entry.py)执行正常CLI的Q1/Q2/Q3、原isolated driver、
+零模型检查、空输入和unknown失败会计，使用真实LOTUS方法与CPU子进程IPC，Ray和上游评价为显式fixture。
+实机功能、模板一致性、质量和性能比较仍待后续验收，当前不作性能结论。
+
 ## Core 查询方法与模型复用（本地 CPU 增量）
 
 Core 使用原 create_records_core 和模型 owner；evaluate(source, query_id=..., method=None)

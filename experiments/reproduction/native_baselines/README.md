@@ -1,5 +1,9 @@
 # 原生基线与具名 Core 历史复现
 
+异步token批提交改变了维护版`session.py`、`session_contract.py`和`async_backend.py`。
+本地组合将这三份共享旧源按准确`2212e331`字节保存在`historical_sources/2212e331/`，五份历史投影只增加15条override。
+原逐文件SHA、投影ID、来源及已有映射保持；快照仅供旧投影还原，维护运行时不导入这些副本。
+
 无行数上限修正改变了维护版`batching.py`；五份历史投影共享[原f3文件](historical_sources/f3c259ac/code/src/scheduling/organization/batching.py)的单份精确副本，只追加五条override。旧逐文件SHA、投影ID、来源及已有映射不变；当前组批运行时继续使用维护版无行数上限逻辑，不导入此副本。
 
 token组批的纯回执校验抽取改变了维护版`engine.py`；五份历史投影共享[原a421文件](historical_sources/a421c9d4/code/src/semantic_methods/lotus/engine.py)的单份精确副本，只追加五条override。原逐文件SHA、投影ID、来源及已有映射不变；维护运行时不导入此副本。

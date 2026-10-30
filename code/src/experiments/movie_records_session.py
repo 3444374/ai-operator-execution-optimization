@@ -33,7 +33,8 @@ def check_plan(plan):
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
-    if (type(plan) is not dict or set(plan) not in (required, required | {"admission_cache"})
+    optional = {'admission_cache', 'prepared_batching', 'batch_concurrency'}
+    if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
         raise ValueError("an explicit Movie session plan is required")
@@ -51,11 +52,18 @@ def check_plan(plan):
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
     core_profile = None
+    batching = None
+    if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency'}):
+        raise ValueError('record batching options require semloom-core')
     if plan["backend"] == "semloom-static-reference" and plan["profile"] != {"mode": "sync"}:
         raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
+        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
+        from src.experiments.lotus_records_movie import _record_batching_options
         core_profile = resolve_core_profile(engine, resources, plan["profile"])
+        batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
+        if batching is not None and (plan['lifecycle'] != 'isolated' or plan.get('admission_cache') is not None):
+            raise ValueError('record token batches require isolated fresh owners without admission_cache')
     if plan.get("admission_cache") is not None:
         from src.experiments.movie_matrix_support import validate_record_admission_cache
         validate_record_admission_cache(plan["admission_cache"], core_profile)
@@ -109,7 +117,7 @@ def check_plan(plan):
                 native_single_thread_session=plan["lifecycle"] == "native_single_thread_session",
                 supports_runtime_reuse_only=plan["backend"] == "ray-data",
                 resident_support_scope="implemented adapter paths; not a general vendor capability claim",
-                core_execution=core_profile)
+                core_execution=core_profile, **({} if batching is None else dict(record_batching=batching)))
 
 
 class _MovieDriver:
@@ -195,9 +203,10 @@ class _MovieDriver:
         if backend in {"semloom-core", "semloom-static-reference"}:
             if backend == "semloom-core":
                 from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
+                from src.experiments.lotus_records_movie import _record_batching_options
                 self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"])
                 self.owner = create_records_core(method, self.engine, self.generation, self.resources,
-                                                 profile=self.plan["profile"])
+                                                 profile=self.plan["profile"], **_record_batching_options(self.plan))
             else:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)

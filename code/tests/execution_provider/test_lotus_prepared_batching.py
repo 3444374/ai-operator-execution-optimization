@@ -190,7 +190,7 @@ class PreparedBatchingTests(unittest.TestCase):
                      ('fixed_rows', 4, 10), ('token_budget', 1, True)]:
             with self.subTest(args=args), self.assertRaises(ValueError): PreparedBatching(*args)
         spec = EngineSpec('CPU-fixture', sys.executable, sys.executable)
-        with self.assertRaisesRegex(ValueError, 'fused'):
+        with self.assertRaisesRegex(ValueError, 'uncapped token B'):
             Owner(spec, RecordsResources(), execution='record_local_sections', prepared_batching=PreparedBatching('fixed_rows', 1))
         with self.assertRaisesRegex(ValueError, 'model_batch_rows'):
             Owner(spec, RecordsResources(), prepared_batching=PreparedBatching('fixed_rows', 10000))

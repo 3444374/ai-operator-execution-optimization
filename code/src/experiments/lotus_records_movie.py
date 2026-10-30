@@ -319,11 +319,24 @@ def _core_profile(config):
     return profile
 
 
+def _record_batching_options(config):
+    """Only explicit application token batches select the existing chain core."""
+    if 'prepared_batching' not in config and 'batch_concurrency' not in config:
+        return {}
+    from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+    value = config.get('prepared_batching')
+    if value is not None:
+        if type(value) is not dict:
+            raise ValueError('prepared_batching must be an object or null')
+        value = PreparedBatching(**value)
+    return dict(prepared_batching=value, batch_concurrency=config.get('batch_concurrency'))
+
+
 def read_config(path):
     from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_profile", "admission_cache"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -338,6 +351,8 @@ def read_config(path):
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
     is_core = value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND)
+    if not is_core and ('prepared_batching' in value or 'batch_concurrency' in value):
+        raise ValueError('record batching options require a Core backend')
     limits = None
     if is_core:
         profile = _core_profile(value)
@@ -352,8 +367,11 @@ def read_config(path):
         raise ValueError("async_limits requires the explicit async Core backend")
     engine = EngineSpec.from_dict(value["engine"])
     if is_core:
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
+        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
         resolved = resolve_core_profile(engine, resources, profile)
+        batching = resolve_record_batching(resolved, **_record_batching_options(value))
+        if batching is not None and value.get('admission_cache') is not None:
+            raise ValueError('record token batching does not support admission_cache or dynamic scanning')
         if limits is not None and (limits.max_inflight != resolved.get("owner_max_inflight", resolved["max_inflight"])
                                    or limits.result_slots < resolved.get("owner_max_inflight", resolved["max_inflight"])):
             raise ValueError("async_limits must cover and match the Core request limit")
@@ -623,7 +641,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             if is_core:
                 from src.execution_provider.adapters.lotus_records_core import create_records_core
                 owner = create_records_core(method, engine, generation, resources,
-                                             profile=profile, async_limits=async_limits)
+                                             profile=profile, async_limits=async_limits,
+                                             **_record_batching_options(config))
                 return owner.evaluate(source, query_id=config["query_id"], **query_options)
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
@@ -817,8 +836,11 @@ def main(argv=None):
         raise ValueError("execution configuration task differs from its source binding")
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
     if config["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND):
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
+        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
         preflight["core_execution"] = resolve_core_profile(engine, resources, _core_profile(config))
+        batching = resolve_record_batching(preflight['core_execution'], **_record_batching_options(config))
+        if batching is not None:
+            preflight['record_batching'] = batching
         if preflight["core_execution"]["mode"] == "async":
             limits = _async_limits(config)
             preflight["requested_async_limits"] = None if limits is None else asdict(limits)

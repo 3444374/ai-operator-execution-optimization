@@ -5,16 +5,19 @@ No second admission counter or inference queue is introduced here.
 """
 
 from copy import deepcopy
+from concurrent.futures import Future, InvalidStateError
+from dataclasses import asdict
+import asyncio
 import json
 import math
 
-from src.scheduling.core.session_contract import Terminal
+from src.scheduling.core.session_contract import Acceptance, BatchSubmission, TaskKey, Terminal
 from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
 from .lotus_records_core import _RecordTransport, _check_result_capacity
 
 
 class LotusChainActorBackend(_RecordTransport):
-    def __init__(self, actors, maximum, notify, *, deadline_monotonic, on_result, token_budget=None):
+    def __init__(self, actors, maximum, notify, *, deadline_monotonic, on_result, token_budget=None, bulk=False):
         if not math.isfinite(deadline_monotonic) or deadline_monotonic <= 0:
             raise ValueError("a finite request deadline is required")
         if not callable(on_result):
@@ -24,8 +27,124 @@ class LotusChainActorBackend(_RecordTransport):
             if type(token_budget) is not ChainTokenBudget or token_budget.engine != actors.engine:
                 raise ValueError("the token configuration must belong to the model owner")
         self.token_budget, self.on_result = token_budget, on_result
-        super().__init__(actors, maximum, notify)
+        super().__init__(actors, maximum, notify, finalize=self._finish_batches if bulk else None)
         self.deadline = deadline_monotonic
+        self.supports_batch_submit = bulk
+        self._bulk = {}
+        self.data_batch_rpcs = self.peak_result_frame_bytes = 0
+
+    def recover_actor_receipts(self, receipts):
+        errors = super().recover_actor_receipts(receipts)
+        if self.supports_batch_submit:
+            with self._lock:
+                recovered = dict(self._outcomes)
+            for context in tuple(self._bulk.values()):
+                for key, future in tuple(context['futures'].items()):
+                    if key in recovered and not future.done():
+                        try:
+                            future.set_result(recovered[key])
+                        except InvalidStateError:
+                            pass  # The ordinary result poll won the same transfer.
+        return errors
+
+    async def _finish_batches(self):
+        tasks = [c['driver'] for c in self._bulk.values() if 'driver' in c]
+        if tasks:
+            await asyncio.gather(*tasks)
+        # Backend close calls this only after all member executions stopped.
+        self._bulk.clear()
+
+    def _retire_batch(self, group, context):
+        if context['driver_done'] and not context['futures']:
+            self._bulk.pop(group, None)
+
+    def try_submit_batch(self, tasks, endpoint):
+        if not self.supports_batch_submit or not tasks or any(t.member is None for t in tasks):
+            raise ValueError('bulk handoff requires an organized prepared batch')
+        group = tasks[0].member.batch_key
+        if (group in self._bulk or any(t.member.batch_key != group for t in tasks)
+                or tuple(t.member.index for t in tasks) != tuple(range(len(tasks)))):
+            raise ValueError('bulk handoff changed ordered membership')
+        values = [self._request(t) for t in tasks]
+        context = dict(tasks={t.key: t for t in tasks}, values={t.key: v for t, v in zip(tasks, values)},
+                       members=frozenset(t.key for t in tasks), futures={t.key: Future() for t in tasks},
+                       started=False, driver_done=False)
+        self._bulk[group] = context
+        with self._lock:
+            for task, value in zip(tasks, values):
+                self._requests[task.key] = {n: value['row'][n] for n in IDENTITY_FIELDS}, task.task.max_result_bytes
+                self._refs[task.key] = (value['row'],)
+        outcome = self.backend.try_submit_batch(tasks, endpoint)
+        if outcome.acceptance == Acceptance.NOT_ACCEPTED:
+            del self._bulk[group]
+            with self._lock:
+                for task in tasks:
+                    self._requests.pop(task.key, None); self._refs.pop(task.key, None)
+        return outcome
+
+    async def _drive_batch(self, group, context):
+        try:
+            calls = [dict(row=context['values'][t.key]['row'], generation=context['values'][t.key]['generation'],
+                          maximum=t.task.max_result_bytes, request_key=[t.key.session_id, t.key.sequence])
+                     for t in context['tasks'].values()]
+            key = (group.session_id, group.sequence)
+            ref = self.actors.submit_prepared_batch(calls, key, self.deadline)
+            self.data_batch_rpcs += 1
+            calls = None
+            context['tasks'].clear()
+            context['values'].clear()
+            response = await asyncio.wrap_future(ref.future())
+            pending = set(context['members'])
+            while pending:
+                pending = {member for member in pending if (future := context['futures'].get(member)) is not None
+                           and not future.done()}
+                if not pending:
+                    break
+                if response['status'] == 'accepted':
+                    ref = self.actors.poll_prepared_batch(key)
+                    raw = await asyncio.wrap_future(ref.future())
+                    self.peak_result_frame_bytes = max(self.peak_result_frame_bytes, len(raw))
+                    response = json.loads(raw)
+                for receipt in response.get('results', ()):
+                    task_key = TaskKey(*receipt['request_key'])
+                    if task_key not in context['members']:
+                        raise ValueError('bulk result belongs to another group')
+                    if task_key not in pending and task_key not in context['futures']:
+                        # A lost ACK can hold a later bounded page behind this
+                        # receipt. Retry only after audit/sink transfer removed
+                        # its future, never just because the future is ready.
+                        self.actors.acknowledge_core(task_key)
+                    if task_key in pending:
+                        future = context['futures'].get(task_key)
+                        try:
+                            if future is not None:
+                                future.set_result(json.dumps(receipt['result'],
+                                    ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode())
+                        except InvalidStateError:
+                            pass  # A validated close receipt may already have transferred it.
+                        pending.remove(task_key)
+                if not pending:
+                    break
+                if response.get('closed') and type(response.get('more_results')) is not bool:
+                    raise ValueError('closed bulk reply has no bounded-page frontier')
+                if (response.get('closed') and not response['more_results']
+                        or response.get('status') == 'rejected'):
+                    raise RuntimeError('bulk producer closed without all member receipts')
+                raw = receipt = future = None
+                response = dict(status='accepted')
+                await asyncio.sleep(self.poll_interval_s)
+        except BaseException as error:
+            for future in tuple(context['futures'].values()):
+                if not future.done():
+                    try:
+                        future.set_exception(error)
+                    except InvalidStateError:
+                        pass
+        finally:
+            # A fast RPC may finish before the backend schedules every local
+            # member. Keep only their charged result futures until transfer.
+            context['driver_done'] = True
+            self._retire_batch(group, context)
 
     def _request(self, task):
         value = json.loads(task.task.payload)
@@ -50,6 +169,16 @@ class LotusChainActorBackend(_RecordTransport):
         return self.backend.try_submit(task, endpoint)
 
     def _submit_task(self, task, timings, prepare_method):
+        if self.supports_batch_submit:
+            context = self._bulk[task.member.batch_key]
+            if not context['started']:
+                context['started'] = True
+                context['driver'] = asyncio.create_task(self._drive_batch(task.member.batch_key, context))
+            future = context['futures'][task.key]
+            class Result:
+                def future(self):
+                    return future
+            return Result()
         value = self._request(task)
         row = value["row"]
         expected = {name: row[name] for name in IDENTITY_FIELDS}
@@ -72,7 +201,14 @@ class LotusChainActorBackend(_RecordTransport):
                        core_task_key=dict(session_id=task.key.session_id, sequence=task.key.sequence))
         if "token_cost" in request:
             receipt["token_estimate"] = deepcopy(request["token_cost"])
+        if task.member is not None:
+            receipt['transport_batch'] = asdict(task.member)
         self.on_result(task.key, receipt)
+        if task.member is not None:
+            context = self._bulk.get(task.member.batch_key)
+            if context is not None:
+                context['futures'].pop(task.key, None)
+                self._retire_batch(task.member.batch_key, context)
 
     def poll(self, handles, max_events):
         events = self.backend.poll(handles, max_events)

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from concurrent.futures import Future, TimeoutError
+from concurrent.futures import Future, TimeoutError, wait
+import time
 from itertools import count
 from dataclasses import dataclass
 from typing import Awaitable, Callable
@@ -16,6 +17,7 @@ from typing import Awaitable, Callable
 from ..core.session_contract import (
     Acceptance,
     BackendTask,
+    BatchSubmission,
     Submission,
     TaskKey,
     Terminal,
@@ -109,6 +111,41 @@ class BoundedAsyncBackend:
             self._slots[task.key] = _Pending(handle, task, future)
             future.add_done_callback(lambda done: self._completed(task.key))
             return Submission(Acceptance.ACCEPTED, handle)
+        finally:
+            self._lock.release()
+
+    def try_submit_batch(self, tasks: tuple[BackendTask, ...], endpoint: str) -> BatchSubmission:
+        """Reserve all local slots or none; publish each completion independently."""
+        if not tasks or len({t.key for t in tasks}) != len(tasks):
+            raise ValueError("a batch requires distinct member tasks")
+        if not self._lock.acquire(blocking=False):
+            return BatchSubmission(Acceptance.NOT_ACCEPTED)
+        try:
+            if (self._closed or len(self._slots) + len(tasks) > self._maximum
+                    or any(t.key in self._slots for t in tasks)):
+                return BatchSubmission(Acceptance.NOT_ACCEPTED)
+            handles = tuple(f"{t.key.session_id}:{t.key.sequence}" for t in tasks)
+            # Reserve every member before scheduling any coroutine. After this
+            # point a loop failure is uncertain ownership, never zero acceptance.
+            for task, handle in zip(tasks, handles):
+                self._slots[task.key] = _Pending(handle, task, Future())
+            failure = None
+            for task in tasks:
+                coroutine = None
+                try:
+                    if failure is not None:
+                        raise failure
+                    coroutine = self._invoke(task, endpoint)
+                    future = asyncio.run_coroutine_threadsafe(coroutine, self._loop)
+                except BaseException as error:
+                    if coroutine is not None:
+                        coroutine.close()
+                    failure = error
+                    future = Future()
+                    future.set_exception(error)
+                self._slots[task.key].future = future
+                future.add_done_callback(lambda done, key=task.key: self._completed(key))
+            return BatchSubmission(Acceptance.ACCEPTED, handles)
         finally:
             self._lock.release()
 
@@ -221,9 +258,15 @@ class BoundedAsyncBackend:
         self._notify()
         return count
 
-    def close(self, timeout: float = 5.0) -> bool:
+    def close(self, timeout: float = 5.0, *, wait_pending=False) -> bool:
         if timeout <= 0:
             raise ValueError("close timeout must be positive")
+        until = time.monotonic()+timeout if wait_pending else None
+        if wait_pending:
+            with self._lock:
+                pending = tuple(slot.future for slot in self._slots.values() if not slot.future.done())
+            if pending and wait(pending, timeout=timeout).not_done:
+                return False
         with self._lock:
             if not self._thread.is_alive():
                 return True
@@ -238,13 +281,13 @@ class BoundedAsyncBackend:
         error = None
         if self._closing_future:
             try:
-                self._closing_future.result(timeout=timeout)
+                self._closing_future.result(timeout=timeout if until is None else max(0, until-time.monotonic()))
             except TimeoutError:
                 return False
             except Exception:
                 error = RuntimeError("asynchronous transport finalization failed")
         self._loop.call_soon_threadsafe(self._loop.stop)
-        self._thread.join(timeout)
+        self._thread.join(timeout if until is None else max(0, until-time.monotonic()))
         if error:
             raise error
         return not self._thread.is_alive()

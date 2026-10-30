@@ -7,6 +7,7 @@ off prepared calls and retains each result until its transport acknowledges it.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import json
 import threading
 import time
 
@@ -38,6 +39,9 @@ class _Call:
     aborted: bool = False
     abort_queued: bool = False
     chain_call: bool = False
+    batch_key: tuple | None = None
+    poll_exposed: bool = False
+    max_result_bytes: int | None = None
 
 
 class AsyncCoreModelActor:
@@ -58,6 +62,7 @@ class AsyncCoreModelActor:
         self._cancel_session = -1
         self._readers = 0
         self.last_close_report = None
+        self._closed_pending = None
 
     def _process_type(self):
         return AsyncEngineProcess
@@ -125,6 +130,11 @@ class AsyncCoreModelActor:
         except ValueError:
             return _encode(_capacity_failure(value), maximum)
 
+    def _bounded_call_result(self, value, maximum):
+        maximum = (self.limits.item_result_bytes if maximum is None
+                   else min(self.limits.item_result_bytes, maximum))
+        return json.loads(self._bounded(value, maximum))
+
     def _collect(self):
         # Called under the actor condition; one reader transfers each IPC event.
         events = self.engine.poll(self.limits.result_slots)
@@ -178,6 +188,121 @@ class AsyncCoreModelActor:
                 raise ValueError("prepared Core calls need one occurrence")
             verify_cost(rows[0], generation, token_cost, engine=self.spec)
         return self._serve_core(rows, deadline, maximum, request_key, generation)
+
+    def submit_prepared_batch(self, payload):
+        if type(payload) is not bytes or len(payload) > self.limits.input_bytes:
+            raise ValueError('bulk RPC exceeds its byte allowance')
+        packet = json.loads(payload)
+        with self._condition:
+            self._readers += 1
+        try:
+            return self._submit_prepared_batch(packet['calls'], packet['batch_key'], packet['deadline'])
+        finally:
+            with self._condition:
+                self._readers -= 1
+                self._condition.notify_all()
+
+    def _submit_prepared_batch(self, calls, batch_key, deadline):
+        """One data RPC/IPC handoff. Results are polled and acknowledged per key."""
+        from .lotus_chain_token_budget import audit_chain_call
+        batch_key = _request_key(batch_key)
+        if type(calls) is not list or not 0 < len(calls) <= self.limits.max_inflight:
+            raise ValueError('bulk prepared handoff must fit the request grant')
+        keys = tuple(_request_key(c['request_key']) for c in calls)
+        if len(set(keys)) != len(keys) or any(k[0] != batch_key[0] for k in keys):
+            raise ValueError('batch request keys must be distinct in one session')
+        generation = GenerationSpec.from_dict(calls[0]['generation'])
+        compatible = set()
+        for call in calls:
+            audit_chain_call(call['row'])
+            _check_result_capacity(call['row'], call['maximum'])
+            if GenerationSpec.from_dict(call['generation']) != generation:
+                raise ValueError('batch generation differs between members')
+            compatible.add(tuple(call['row'][name] for name in ('query_id', 'algorithm_stage', 'model_role')))
+        if len(compatible) != 1:
+            raise ValueError('batch members changed stage compatibility')
+        with self._condition:
+            slots = min(self.limits.max_inflight, self.limits.result_slots,
+                        self.limits.result_bytes//self.limits.item_result_bytes)
+            while (len(self._held)+len(calls) > slots or batch_key[0] > self._session and self._held):
+                if self._closing or self._unhealthy or time.monotonic() >= deadline:
+                    break
+                self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
+            expired = time.monotonic() >= deadline
+            if self._closing or self._unhealthy or self.engine is None or expired or batch_key[0] < self._session:
+                return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
+                    self._receipt({n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted',
+                                  expired=expired), call['maximum'])) for key, call in zip(keys, calls)])
+            if any(key in self._held for key in keys):
+                raise ValueError('batch repeats an owned Core key')
+            while True:
+                live = [(key, call) for key, call in zip(keys, calls) if key not in self._early_cancels]
+                submitted = (self.engine.submit_batch([c['row'] for _, c in live], generation=generation,
+                    deadline_monotonic=deadline) if live else None)
+                if submitted is None or submitted.status != 'backpressure':
+                    break
+                if self._closing or self._unhealthy or time.monotonic() >= deadline:
+                    break
+                self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
+            if submitted is not None and submitted.status != 'queued':
+                return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
+                    self._receipt({n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted'),
+                    call['maximum'])) for key, call in zip(keys, calls)])
+            self._session = batch_key[0]
+            self._cancel_session = max(self._cancel_session, self._session)
+            self._early_cancels = {key for key in self._early_cancels if key[0] >= self._session}
+            tickets = {} if submitted is None else dict(zip((key for key, _ in live), submitted.request_ids, strict=True))
+            for key, call in zip(keys, calls):
+                identity = {name: call['row'][name] for name in IDENTITY_FIELDS}
+                held = self._held[key] = _Call(identity, chain_call=True, batch_key=batch_key,
+                                             max_result_bytes=call['maximum'])
+                if key not in tickets:
+                    held.value = self._receipt(identity, 'failed', 'CancelledBeforeSubmission')
+                    held.confirmed = True
+                else:
+                    held.ticket = tickets[key]
+                    self._tickets[held.ticket] = key
+                    if key in self._early_cancels:
+                        held.aborted = True
+                        held.abort_queued = self.engine.abort(held.ticket)
+                self._early_cancels.discard(key)
+            self._condition.notify_all()
+            return dict(status='accepted')
+
+    def poll_prepared_batch(self, batch_key):
+        batch_key = _request_key(batch_key)
+        with self._condition:
+            if self.engine is not None and not self._closing:
+                self._collect()
+            if self._closing and self.last_close_report is not None:
+                available = [(tuple(v['request_key']), v['result']) for v in
+                    self.last_close_report.get('unconsumed_core_results', [])
+                    if tuple(v.get('batch_key', ())) == batch_key and tuple(v['request_key']) in self._closed_pending]
+            else:
+                available = [(key, call.value) for key, call in self._held.items()
+                             if call.batch_key == batch_key and call.value is not None and not call.delivered]
+            results, exposed = [], []
+            maximum = self.limits.item_result_bytes + self.limits.control_frame_bytes
+            closed = self.last_close_report is not None
+            for key, value in available:
+                call = self._held.get(key)
+                value = self._bounded_call_result(value, None if call is None else call.max_result_bytes)
+                candidate = dict(request_key=list(key), result=value)
+                try:
+                    _encode(dict(results=results+[candidate], closed=closed, more_results=False), maximum)
+                except ValueError:
+                    if not results:
+                        raise
+                    break
+                results.append(candidate)
+                exposed.append(key)
+            payload = _encode(dict(results=results, closed=closed, more_results=len(results)<len(available)), maximum)
+            for key in exposed:
+                if key in self._held:
+                    self._held[key].poll_exposed = True
+                if self._closed_pending is not None and key in self._closed_pending:
+                    self._closed_pending[key] = True
+            return payload
 
     def _serve_core(self, rows, deadline, maximum, request_key, generation=None):
         with self._condition:
@@ -294,6 +419,15 @@ class AsyncCoreModelActor:
         key = _request_key(request_key)
         with self._condition:
             call = self._held.get(key)
+            closed_ack = self._closed_pending is not None and self._closed_pending.get(key) is True
+            if closed_ack:
+                del self._closed_pending[key]
+            if call is None:
+                return closed_ack
+            if call is not None and call.batch_key is not None and call.poll_exposed:
+                # Only the consumer ACK establishes delivery of a bulk reply.
+                # A lost/failed RPC remains readable without resubmitting work.
+                call.delivered = True
             if call is None or not call.delivered or not call.confirmed:
                 return False
             del self._held[key]
@@ -312,10 +446,18 @@ class AsyncCoreModelActor:
             with self._condition:
                 if (self.last_close_report or {}).get("producer_quiescence") is not None:
                     return self.last_close_report
+                if self._closed_pending is None:
+                    # Delivery metadata only, at most the existing request grant.
+                    # Keep the close audit snapshot intact after individual ACKs,
+                    # including when producer proof clears the borrowing ledger.
+                    self._closed_pending = {key: call.poll_exposed for key, call in self._held.items()
+                        if call.batch_key is not None and not call.delivered}
                 self._closing = True
                 self._condition.notify_all()
                 engine = self.engine
                 handoff_errors = []
+                if engine is not None:
+                    self._collect()
                 pending = [(key, call) for key, call in self._held.items() if call.value is None]
                 adopted = [list(key) for key, call in pending if not call.aborted]
                 for key, call in pending:
@@ -325,9 +467,10 @@ class AsyncCoreModelActor:
                         call.confirmed = True
                 # A Core cancel RPC can enter after close. Adopt its still
                 # owned work here, and hand off bounded abort controls before
-                # native shutdown. The normal run_core readers keep collecting
-                # receipts while control capacity is temporarily unavailable.
+                # native shutdown. Bulk polling stops at the closing gate, so
+                # close must collect terminal races while abort is unavailable.
                 while engine is not None:
+                    self._collect()
                     waiting = False
                     for key, call in pending:
                         if call.value is None and call.ticket is not None and not call.abort_queued:
@@ -361,8 +504,19 @@ class AsyncCoreModelActor:
                     while self._readers and time.monotonic() < deadline:
                         self._condition.wait(min(0.01, max(0, deadline - time.monotonic())))
                     receipts = [dict(call.value) for call in self._held.values() if call.value is not None]
-                    keyed = [dict(request_key=list(key), result=dict(call.value))
+                    keyed = [dict(request_key=list(key),
+                                  result=self._bounded_call_result(call.value, call.max_result_bytes),
+                                  **(dict(batch_key=list(call.batch_key)) if call.batch_key is not None else {}))
                              for key, call in self._held.items() if call.value is not None]
+                    retained = {tuple(v['request_key']): v for v in
+                                (self.last_close_report or {}).get('unconsumed_core_results', [])}
+                    for receipt in keyed:
+                        key = tuple(receipt['request_key'])
+                        if key in retained and retained[key] != receipt:
+                            raise ValueError('close retry changed an existing audited receipt')
+                        retained[key] = receipt
+                    keyed = list(retained.values())
+                    receipts = [dict(v['result']) for v in keyed]
                 settled = ipc.get("status") == "closed"
                 report = dict(status="closed" if settled else "unknown",
                     cleanup_scope="async_engine_api_direct_child_and_ipc",
@@ -475,6 +629,15 @@ class AsyncRecordsActorOwner(_ActorOwner):
     def submit_prepared_core(self, prepared, deadline, maximum, key, generation, token_cost=None):
         return self.model_actor.run_prepared_core.remote(prepared, deadline, maximum,
             (key.session_id, key.sequence), generation, token_cost)
+
+    def submit_prepared_batch(self, calls, batch_key, deadline):
+        payload = _encode(dict(calls=calls, batch_key=list(batch_key), deadline=deadline), self.limits.input_bytes)
+        result = self.model_actor.submit_prepared_batch.remote(payload)
+        self.peak_prepared_batch_rpc_bytes = max(getattr(self, 'peak_prepared_batch_rpc_bytes', 0), len(payload))
+        return result
+
+    def poll_prepared_batch(self, batch_key):
+        return self.model_actor.poll_prepared_batch.remote(batch_key)
 
     def cancel_core(self, key):
         if self.model_actor is not None:
