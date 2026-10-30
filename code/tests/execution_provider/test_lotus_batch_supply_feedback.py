@@ -50,6 +50,9 @@ class BatchSupplyIntegrationTests(unittest.TestCase):
                     self.assertEqual(feedback['fixed_B'], 256)
                     self.assertTrue(feedback['phases'][0]['demand_windows'])
                     self.assertGreater(feedback['phases'][0]['changes'], 0, feedback)
+                    phase = feedback['phases'][0]
+                    self.assertEqual([(r['at_s'], r['window']) for r in phase['history']],
+                                     [(r['at_s'], r['window']) for r in phase['demand_changes']])
                     self.assertLessEqual(report['async_token_batches']['peak_batches'], 3)
                 else:self.assertNotIn('batch_supply_feedback', report)
         self.assertEqual(outputs[0], outputs[1])
@@ -182,6 +185,20 @@ class BatchSupplyIntegrationTests(unittest.TestCase):
             self.assertTrue(owner.last_close_report['batch_supply_feedback']['sampler_stopped'])
             self.assertFalse(owner.last_close_report['query_completed'])
             self.assertEqual(owner.core.capacity.usage().active_requests, 0)
+
+    def test_invalid_metric_clock_is_unknown_without_changing_business_result(self):
+        from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
+        plan, rows = fixture.chain_for('M'), fixture.source_rows(size=3)
+        self.helper.helper.config_for(plan, rows)
+        with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, '_process_type', return_value=query_fixture.Process), \
+                patch.object(NonBlockingMetricsObservationProvider, 'latest', side_effect=ValueError('invalid metric clock')):
+            owner = self.helper.owner(plan, R=4, C=1, B=256, batch_feedback=SupplyFeedbackConfig(3))
+            self.assertEqual(len(list(owner.evaluate(iter(rows), plan, expected=rows,
+                columns=('passage',), query_id=plan.query_id))), 3)
+            report = owner.last_close_report
+            self.assertEqual(report['status'], 'closed')
+            self.assertGreater(report['batch_supply_feedback']['sample_errors'], 0)
+            self.assertEqual(report['batch_supply_feedback']['phases'][0]['changes'], 0)
 
 
 if __name__ == '__main__':unittest.main()

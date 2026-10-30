@@ -184,8 +184,6 @@ class BatchSupplyFeedback:
         live = [r for r in records.values() if r.key.session_id == self.session_id]
         queued = [r for r in live if r.phase == 'QUEUED']
         batches, requests = self.owner._token_organizer.usage()
-        o = (self.provider.latest(batches) if self.provider is not None else
-             AdmissionObservation(now, False, batches, None, None, None))
         with self.owner._receipt_lock:
             calls = [v for k, v in self.owner._raw_receipts.items()
                      if k.session_id == self.session_id and v.get('status') == 'succeeded']
@@ -196,6 +194,14 @@ class BatchSupplyFeedback:
                     ('completed_cached_input_work_total', 'prompt_cached_tokens')]:
                 values = [v.get(source) for v in calls]
                 work[target] = sum(values) if all(type(v) is int for v in values) else None
+        # Timestamp after local counter capture, never count a later receipt
+        # against an earlier window end. Invalid metric clocks remain unknown.
+        try:
+            o = (self.provider.latest(batches) if self.provider is not None else
+                 AdmissionObservation(time.monotonic(), False, batches, None, None, None))
+        except ValueError:
+            self.errors += 1
+            o = AdmissionObservation(time.monotonic(), False, batches, None, None, None)
         self.transition = {k for k in self.transition if k in records and records[k].compute}
         unread = max(0, self.owner._expected_count-len(stream.offered)) if not stream._phase_eof else 0
         o = replace(o, completed_items_total=len(calls), pending_items=len(queued)+unread,
@@ -224,7 +230,8 @@ class BatchSupplyFeedback:
             exhausted=stream._phase_eof and not stream.driver.active_rows,
             capacity_blocked=blocked, ready_work=tuple(StageWork(k[0], v, k[1]) for k, v in sorted(units.items())),
             local_capacity=dict(usage=asdict(usage), limits=asdict(limits),
-                                resident_rows=stream.driver.active_rows),
+                resident_rows=stream.driver.active_rows,
+                local_capture_start_s=now-self.started, local_capture_end_s=o.observed_at_s-self.started),
             source_exhausted=stream._phase_eof)
         decision = self.controller.update_supply(o, state)
         if decision.window != self.owner._token_organizer.concurrency:

@@ -173,6 +173,8 @@ class SupplyFeedbackController(ResourceFeedbackController):
             raise ValueError('supply feedback starts at one without a historical search hint')
         super().reset(1, total_items)
         self.supply_history = []
+        self.supply_changes = []
+        self.supply_states = {}
         self._supply_anchor = None
         self._delivery_anchor = None
         self._last_native_at = None
@@ -270,10 +272,11 @@ class SupplyFeedbackController(ResourceFeedbackController):
             # Low-pressure frames count even while no measurement is eligible.
             self._pressure_windows = 0
             self._preemptions = o.preemptions_total
-        if (self._supply_anchor is None
+        self.supply_states[state] = self.supply_states.get(state, 0)+1
+        if (decision.action != 'hold' or self._supply_anchor is None
                 or supply.observed_at_s-self._supply_anchor.observed_at_s >= self.options.window_s):
             self.supply_history = (self.supply_history + [dict(at_s=supply.observed_at_s-self.started,
-                state=state, action=decision.action, reason=decision.reason,
+                state=state, action=decision.action, reason=decision.reason, window=decision.window,
                 ready_items=supply.ready_items, active_batches=supply.active_batches,
                 upstream_pending=supply.upstream_pending, exhausted=supply.exhausted,
                 capacity_blocked=supply.capacity_blocked, supply_rates=rates,
@@ -281,6 +284,8 @@ class SupplyFeedbackController(ResourceFeedbackController):
                 ready_work=[asdict(w) for w in supply.ready_work],
                 running=o.running, waiting=o.waiting, kv_usage=o.kv_usage,
                 sample_age_s=o.sample_age_s)])[-64:]
+            if decision.action != 'hold':
+                self.supply_changes = (self.supply_changes + [self.supply_history[-1]])[-64:]
             self._supply_anchor = supply
             self._delivery_anchor = o
         return decision
@@ -291,6 +296,8 @@ class SupplyFeedbackController(ResourceFeedbackController):
             report.update(exploration_censored=True, incomplete_reason='feedback_gap', can_continue=False)
         return dict(report, control_unit="application_batches", initial_window=1,
                     demand_windows=list(self.supply_history), B_adjusted=False,
+                    demand_changes=list(self.supply_changes), demand_states=dict(self.supply_states),
+                    demand_decision_calls=sum(self.supply_states.values()),
                     control_seconds_scope='existing trial-controller calls only; gating/sampling stay in outer query wall',
                     CPU_GPU_utilization_and_physical_memory="not sampled; unknown",
                     capacity_is_performance_platform=False)
