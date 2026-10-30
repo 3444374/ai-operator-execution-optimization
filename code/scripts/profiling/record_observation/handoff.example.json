@@ -1,0 +1,8 @@
+{
+  "observation": {
+    "profile": "handoff",
+    "mode": "off",
+    "max_events_per_process": 10000,
+    "max_event_bytes": 65536
+  }
+}

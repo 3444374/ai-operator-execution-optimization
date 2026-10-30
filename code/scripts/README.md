@@ -16,6 +16,14 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 离线保留结果的统一读取入口为 [`analysis/summarize_offline_results.py`](analysis/summarize_offline_results.py)；
 显式 schema/manifest、路径、CLI/库 API、支持格式和 NA 语义见[离线结果说明](analysis/OFFLINE_RESULTS.md)。
 
+## 通过 Git 同步资源观测
+
+[`profiling/record_observation/workflow.py`](profiling/record_observation/workflow.py) 提供
+`qualify/prepare/check/run/manifest/verify`：采集代码和 CPU 检查随同一提交同步，私有配置与原件留仓外。
+复用已审采集器、既有 Git 身份、lease、预算、supervisor 和私有产物工具；不向生产代码引入采集依赖。
+最小 on/off 配置、两种源码身份、运行及完整字节回收检查见[所属说明](profiling/record_observation/README.md)。
+这次 Git 迁移仅有本地 CPU 资格，不能继承旧私有包的 Ray/GPU 或性能结论。
+
 ## 通过 Git 同步完整记录查询检查
 
 [`validate_record_chain_options.py`](experiments/validate_record_chain_options.py)提供固定小规模的
