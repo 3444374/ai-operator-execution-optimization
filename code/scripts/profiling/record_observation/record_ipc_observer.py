@@ -139,6 +139,8 @@ def install_transport(*,child):
 
 def observe_feedback(snapshot, **context):
     snapshot=snapshot if type(snapshot)is dict else {}
+    context.setdefault('source_clock_domain','native-engine NativeStats.clock seconds')
+    context.setdefault('received_clock_domain','observer-process.time.monotonic seconds')
     emit_feedback('native_feedback_frame',engine_uid=snapshot.get('engine_uid'),
         source_sequence=snapshot.get('sequence'),source_observed_at_s=snapshot.get('observed_at_s'),
         **{name:snapshot.get(name)for name in ('running','waiting','kv_usage','preemptions_total',

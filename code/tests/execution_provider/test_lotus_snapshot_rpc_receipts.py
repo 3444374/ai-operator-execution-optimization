@@ -497,6 +497,183 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         self.assertEqual(process.close(timeout=3)['status'], 'closed')
 
 
+    def timing_sampler(self, enabled=True):
+        feedback, refs, _ = self.sampler(); events = []
+        feedback.provider = SimpleNamespace(observer=events.append if enabled else None,
+            observe_native=lambda native, **context:events.append(context),
+            is_running=False, close=lambda:None, pause=lambda:None)
+        return feedback, refs, events
+
+    def test_ready_notification_exposes_wait_without_changing_two_poll_dispatch(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        feedback, refs, events = self.timing_sampler(); now = [0.]
+        frame = self.frame(); frame['ipc']['native_feedback']['observed_at_s'] = 0.
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+            feedback.sample()
+            self.assertEqual(len(refs[0][1]._done_callbacks), 1)
+            now[0] = .01; refs[0][1].set_result(frame)
+            now[0] = .25; value = feedback.sample()
+            self.assertEqual(len(refs), 1, 'observation must not dispatch the next RPC early')
+            row, = feedback.report()['snapshot_rpc_receipts']
+            self.assertEqual(row['future_timing_clock'], 'driver.time.monotonic seconds')
+            self.assertFalse(row['future_done_before_registration'])
+            self.assertEqual(row['future_ready_observed_at_s'], .01)
+            self.assertEqual(row['future_collect_started_at_s'], .25)
+            self.assertEqual(row['future_result_observed_at_s'], .25)
+            self.assertEqual(row['future_poll_count'], 2)
+            self.assertEqual(row['future_last_pending_poll_observed_at_s'], 0.)
+            self.assertEqual(row['future_poll_observed_at_s'], .25)
+            self.assertTrue(row['future_polled_done'])
+            self.assertAlmostEqual(row['future_collect_started_at_s']-row['future_ready_observed_at_s'], .24)
+            self.assertEqual(value.control_request_index, 1)
+            self.assertEqual(events[-1]['control_request_index'], 1)
+            now[0] = .5; feedback.sample()
+            self.assertEqual(len(refs), 2)
+            self.assertEqual(feedback.report()['snapshot_rpc_pending']['issued_at_s'], .5)
+
+    def test_timing_off_has_no_callback_and_preserves_results_and_ownership(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        results = []
+        for enabled in (False, True):
+            feedback, refs, _ = self.timing_sampler(enabled); now = [0.]
+            frame = self.frame(); frame['ipc']['native_feedback']['observed_at_s'] = 0.
+            with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+                feedback.sample()
+                self.assertEqual(len(refs[0][1]._done_callbacks), int(enabled))
+                now[0] = .01; refs[0][1].set_result(frame)
+                now[0] = .25; value = feedback.sample()
+                now[0] = .5; feedback.sample(); feedback.close()
+                report = feedback.report()
+            self.assertEqual(report['snapshot_requests'], 2)
+            self.assertEqual(report['snapshot_rpc_pending']['request_index'], 2)
+            self.assertEqual(report['snapshot_rpc_cleanup_status'], 'unknown')
+            self.assertIs(feedback.ref, refs[1][0])
+            self.assertEqual(report['sample_errors'], 0)
+            row, = report['snapshot_rpc_receipts']
+            self.assertEqual(row.get('future_timing_enabled', False), enabled)
+            results.append(value)
+        self.assertEqual(results[0], results[1])
+
+    def test_duplicate_source_keeps_consumer_identity_of_the_adopted_RPC(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
+        feedback, refs, _ = self.sampler(); events, now = [], [10.]
+        with patch('src.scheduling.runtime.observations.threading.Thread'):
+            provider = NonBlockingMetricsObservationProvider(feedback.sample,
+                clock=lambda:now[0], stale_after_s=1, observer=events.append)
+        provider._thread.is_alive.return_value = False
+        self.addCleanup(provider.close); feedback.provider = provider
+        frame = self.frame(); frame['ipc']['native_feedback']['observed_at_s'] = 10.
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])), \
+                patch.object(provider._stop, 'wait', return_value=True):
+            feedback.sample(); now[0] = 10.01; refs[0][1].set_result(frame)
+            now[0] = 10.25; provider._sample_loop()
+            self.assertTrue(provider.latest(1).fresh)
+            now[0] = 10.5; feedback.sample(); refs[1][1].set_result(frame)
+            now[0] = 10.75; provider._sample_loop()
+            self.assertFalse(provider.latest(1).fresh)
+        samples = [e for e in events if e['stage'] == 'sample']
+        self.assertEqual([e['control_request_index'] for e in samples], [1, 2])
+        self.assertEqual(samples[-1]['reason'], 'duplicate_or_older_source_sequence')
+        self.assertFalse(samples[-1]['accepted'])
+        self.assertEqual(events[-1]['control_request_index'], 1)
+        self.assertEqual(events[-1]['received_at_s'], 10.25)
+        self.assertEqual([r['request_index'] for r in feedback.report()['snapshot_rpc_receipts']], [1, 2])
+
+    def test_ready_callback_does_not_keep_a_stopped_owner_alive(self):
+        import gc
+        import weakref
+        feedback, refs, _ = self.timing_sampler()
+        feedback.sample(); feedback.close()
+        owner = weakref.ref(feedback)
+        del feedback; gc.collect()
+        self.assertIsNone(owner())
+        refs[0][1].set_result(self.frame())
+
+    def test_already_done_registration_does_not_invent_an_earlier_ready_time(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        feedback, refs, _ = self.timing_sampler(False); now = [0.]
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+            feedback.sample(); now[0] = .01; refs[0][1].set_result(self.frame())
+            feedback.provider.observer = lambda event:None
+            now[0] = .25; feedback.sample()
+        row, = feedback.report()['snapshot_rpc_receipts']
+        self.assertTrue(row['future_done_before_registration'])
+        self.assertEqual(row['future_ready_observed_at_s'], .25)
+        self.assertNotEqual(row['future_ready_observed_at_s'], .01)
+
+    def test_late_old_notification_cannot_rewrite_terminal_or_the_next_RPC(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        feedback, refs, _ = self.timing_sampler(False); callbacks = []; now = [0.]
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+            feedback.sample(); refs[0][1].add_done_callback = callbacks.append
+            feedback.provider.observer = lambda event:None
+            now[0] = .01; feedback.sample()
+            now[0] = .02; refs[0][1].set_result(self.frame())
+            now[0] = .25; feedback.sample()
+            before = feedback.report()
+            self.assertIsNone(before['snapshot_rpc_receipts'][0]['future_ready_observed_at_s'])
+            now[0] = .5; feedback.sample()
+            callbacks[0](refs[0][1])
+            after = feedback.report()
+        self.assertEqual(after['snapshot_rpc_receipts'], before['snapshot_rpc_receipts'])
+        self.assertEqual(after['snapshot_rpc_pending']['request_index'], 2)
+        self.assertIsNone(after['snapshot_rpc_pending']['future_ready_observed_at_s'])
+
+    def test_optional_ready_observer_failures_do_not_discard_known_results(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        for fault in ('registration', 'clock_exception', 'clock_nan'):
+            with self.subTest(fault=fault):
+                feedback, refs, _ = self.timing_sampler(False)
+                feedback.sample()
+                def failed(*args):raise RuntimeError('fixture optional observer unavailable')
+                if fault == 'registration':refs[0][1].add_done_callback = failed
+                feedback.provider.observer = lambda event:None
+                feedback.sample()
+                frame = self.frame()
+                if fault == 'clock_exception':
+                    with patch.object(batching, 'time', SimpleNamespace(monotonic=failed)):
+                        refs[0][1].set_result(frame)
+                elif fault == 'clock_nan':
+                    with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:float('nan'))):
+                        refs[0][1].set_result(frame)
+                else:refs[0][1].set_result(frame)
+                self.assertIsNotNone(feedback.sample())
+                report = feedback.report(); row, = report['snapshot_rpc_receipts']
+                self.assertEqual(row['rpc_terminal_status'], 'returned')
+                self.assertIsNone(row['future_ready_observed_at_s'])
+                field = 'future_observer_error_type' if fault == 'registration' else 'future_ready_clock_error_type'
+                self.assertEqual(row[field], 'ValueError' if fault == 'clock_nan' else 'RuntimeError')
+                self.assertEqual(report['sample_errors'], 0)
+                json.dumps(report, allow_nan=False)
+
+    def test_local_future_cancel_notification_is_still_an_unknown_remote_RPC(self):
+        feedback, refs, _ = self.timing_sampler()
+        feedback.sample(); refs[0][1].cancel(); feedback.close()
+        report = feedback.report()
+        self.assertIsNotNone(report['snapshot_rpc_pending']['future_ready_observed_at_s'])
+        self.assertEqual(report['snapshot_rpc_receipts'], [])
+        self.assertEqual(report['snapshot_rpc_cleanup_status'], 'unknown')
+        self.assertIs(feedback.ref, refs[0][0])
+
+    def test_observed_raised_result_keeps_exception_identity_and_notification_is_not_returned(self):
+        feedback, refs, _ = self.timing_sampler()
+        feedback.sample(); refs[0][1].set_exception(ValueError('fixture remote exception'))
+        feedback.close()
+        row, = feedback.report()['snapshot_rpc_receipts']
+        self.assertEqual((row['rpc_terminal_status'], row['rpc_error_type']), ('raised', 'ValueError'))
+        self.assertIsNotNone(row['future_ready_observed_at_s'])
+        self.assertIsNotNone(row['future_collect_started_at_s'])
+        self.assertIsNotNone(row['future_result_observed_at_s'])
+        self.assertIsNone(feedback.ref)
+
+
 class SnapshotRPCEntryTests(unittest.TestCase):
     def test_normal_Movie_CLI_persists_control_receipts_without_changing_model_calls(self):
         from contextlib import redirect_stdout

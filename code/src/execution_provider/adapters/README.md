@@ -474,6 +474,24 @@ source UID/session/sequence/time and a separate driver receive timestamp. Audit
 callbacks run after terminal collection, outside the ownership lock; provider
 freshness remains a separate decision.
 
+With the existing optional provider observer enabled, each control RPC also records
+local Future callback registration, last poll observation/count, ready notification,
+collection start and result-read timestamps in that same receipt slot. No extra
+RPC, poll, wait or wakeup is added; observer off installs no ready callback.
+`issued_at_s` precedes the local `.remote()` call, not a measured wire send. The
+ready callback timestamps notification in the driver, an upper bound on local
+readiness; late registration, delayed callbacks or missing clocks leave earlier
+readiness unknown. A positive collection-minus-notification interval bounds some
+post-readiness local waiting; it is not a pure polling or transport measurement.
+Poll observations are timestamped after `.done()` and are not atomic readiness
+bounds. Callback completion alone never settles a remote RPC. The optional
+`control_request_index` joins RPC/sample/consumer metadata; it is a snapshot RPC
+index, not a model-request count. Duplicate source frames retain the adopted RPC's
+consumer identity. Native, driver and provider clock domains are labelled separately;
+cross-process differences require valid clock anchors and are not exact wire latency.
+These fields do not change sampling cadence, freshness, three-window confirmation,
+batch/request admission units or the default-disabled feedback policy.
+
 `snapshot_rpc_pending` remains explicitly unknown while no remote result is
 available, including failed cancellation or a locally cancelled read Future.
 Cancellation request, sampler stop and physical producer exit do not establish

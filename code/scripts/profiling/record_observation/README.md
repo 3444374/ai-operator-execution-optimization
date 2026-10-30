@@ -143,6 +143,15 @@ Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feed
 消费判断。`accepted=true` 不是策略已接纳更高并发，也不证明所有工作可比。UID、session、
 源序号/源时钟缺失仍未知；仅保留规范 native UID、数值和理由码，不记录 prompt、输出或环境。
 
+供给 sampler 的可选分段观测继续使用查询关闭回执和这些消费事件，不新增日志通道。
+`control_request_index` 关联控制 RPC、provider 采纳和消费；它不是模型请求数，重复源帧不会
+刷新被采纳帧的 RPC 身份或年龄。源 `NativeStats.clock`、接收进程 monotonic 和 provider clock
+分别标注；`observation_ns`／sink 写入时钟不能替代它们。原 Future 的本地 ready 通知及
+轮询／取走时间见关闭回执，通知可能晚于实际就绪，注册时已完成或通知缺失时不补猜时间。
+同进程“通知→取走”可观察部分就绪后等待；跨进程差值仍需时钟锚点，不称精确传输时延。
+该补充只覆盖提供这些可选字段的 sampler；旧 request 路径字段缺失仍未知。观察 off 不注册
+这项 Future 回调，on/off 不改 poll/RPC 节奏、新鲜度阈值或业务输入生成参数，实机开销待测。
+
 该消费审计需要被测 runtime 的可选 provider observer 接口；旧 runtime 明确发出
 `native_feedback_audit_unavailable`，不能仅凭工具版本宣称完整。main 的 request-feedback sampler
 提供完整来源元数据；独立供给 sampler 需同样传入 `ServiceMetricsSnapshot` 的可选

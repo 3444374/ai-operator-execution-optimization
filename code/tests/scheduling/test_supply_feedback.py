@@ -76,6 +76,21 @@ class SupplyFeedbackTests(unittest.TestCase):
         self.assertEqual(self.c.current_window, 1)
         self.assertGreater(self.c.report()['reasons'].get('missing_work_feedback', 0), 0)
 
+    def test_default_confirmation_cost_is_separate_from_resource_ready_eligibility(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda:self.now)
+        self.c.reset(1, 512)
+        decisions = [self.tick(n*50, completed_computed_input_work_total=n*50*80,
+                               completed_cached_input_work_total=n*50*20) for n in range(1, 6)]
+        self.assertEqual([d.reason for d in decisions], ['priming_measurement',
+            'initial_progress_window', 'confirming_performance', 'confirming_performance',
+            'performance_probe'])
+        point, = self.c.report()['measurements']
+        self.assertEqual((point['samples'], point['begin_s'], point['end_s']), (3, 2., 5.))
+        self.assertEqual((point['completed_begin'], point['completed_end']), (100, 250))
+        self.assertFalse(point['comparison_eligible'])
+        self.assertEqual(self.c.report()['accepted_steps'], 0)
+        self.assertEqual(self.c.report()['control_unit'], 'application_batches')
+
     def test_rates_and_stage_units_are_not_hardware_utilization(self):
         self.tick(0)
         self.tick(4)

@@ -67,13 +67,18 @@ class FeedbackIdentityTests(unittest.TestCase):
                 observer.settings();observer.install_feedback_observer();p=self.provider(None)
                 with patch.object(observer.os,'write',side_effect=AssertionError('hot-path disk I/O')):
                     p.observe_native(dict(engine_uid='b'*32,sequence=2,observed_at_s=10.),
-                        session_id=8,received_at_s=10.,accepted=False,reason='session_mismatch')
+                        session_id=8,received_at_s=10.,accepted=False,reason='session_mismatch',
+                        control_request_index=9,source_clock_domain='test.engine.clock',
+                        received_clock_domain='test.driver.clock')
                     self.tick(p);self.assertTrue(p.latest(2).fresh)
                 self.assertFalse((root/'events').exists())
                 observer.close_events()
                 rows=[json.loads(x)for x in next((root/'events').glob('*.jsonl')).read_text().splitlines()]
                 self.assertEqual([e['stage']for e in rows],['RPC_sample','sample','consumer'])
                 self.assertEqual(rows[0]['reason'],'session_mismatch');self.assertFalse(rows[0]['accepted'])
+                self.assertEqual(rows[0]['control_request_index'],9)
+                self.assertEqual(rows[0]['source_clock_domain'],'test.engine.clock')
+                self.assertEqual(rows[0]['received_clock_domain'],'test.driver.clock')
                 self.assertEqual(rows[-1]['engine_uid'],'a'*32);self.assertEqual(rows[-1]['session_id'],7)
                 self.assertEqual(rows[-1]['source_sequence'],1);self.assertEqual(rows[-1]['reason'],'fresh_for_consumer')
             finally:

@@ -27,6 +27,7 @@ _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
 _ALLOWED.add('batch_key')
 _ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s received_at_s decision_at_s expected_engine_uid'.split())
+_ALLOWED.update('control_request_index source_clock_domain received_clock_domain decision_clock_domain'.split())
 _ALLOWED.update('running waiting kv_usage preemptions_total finished_total generation_tokens_total'.split())
 _ALLOWED.update('native_capacity max_num_seqs max_num_batched_tokens max_model_len kv_cache_blocks kv_cache_block_tokens kv_free_bytes physical_free_bytes'.split())
 _installed = set()
@@ -48,7 +49,7 @@ _buffer_attempts = _buffer_enqueued = 0
 def emit_feedback(event, **values):
     """Keep only bounded native identities, clocks, counters and reason codes."""
     uid_fields={'engine_uid','expected_engine_uid','owner_uid'}
-    count_fields={'session_id','source_sequence','running','waiting','preemptions_total','finished_total','generation_tokens_total'}
+    count_fields={'session_id','source_sequence','control_request_index','running','waiting','preemptions_total','finished_total','generation_tokens_total'}
     clock_fields={'source_observed_at_s','received_at_s','decision_at_s','kv_usage'}
     safe={}
     for key,value in values.items():
@@ -59,7 +60,7 @@ def emit_feedback(event, **values):
         elif key in clock_fields:
             safe[key]=value if type(value)in(int,float)and math.isfinite(value)and value>=0 else None
         elif key=='accepted':safe[key]=value if type(value)is bool else None
-        elif key in ('stage','reason','scope')and type(value)is str and len(value)<=128:safe[key]=value
+        elif key in ('stage','reason','scope','source_clock_domain','received_clock_domain','decision_clock_domain')and type(value)is str and len(value)<=128:safe[key]=value
     emit_buffered(event,**safe)
 
 
