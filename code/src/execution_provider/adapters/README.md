@@ -424,8 +424,55 @@ separate reasons. A feedback gap invalidates a trial and returns to its last saf
 setting without aborting members or releasing unknown credits. It clears the
 interrupted comparison, retains elapsed/attempt/change budgets and trial cost,
 and permits new measurements after fresh feedback resumes; it is not a permanent
-stop. Failed snapshot cancellation retains the outstanding RPC until its future
+stop. Only the interrupted candidate's per-query visit marker is released when
+eligible; its attempt count is retained. Failed snapshot cancellation retains the outstanding RPC until its future
 settles, so repeated polls cannot stack unconfirmed sampling requests.
+Pressure protection keeps priority; a pending gap is retained until a qualified
+non-pressure frame invalidates the comparison, so protection cannot hide it.
+
+The supply policy defaults to **no elapsed-time, change-count or candidate-attempt
+cutoff** (`exploration_s=None`, `max_changes=None`, `max_candidate_attempts=None`,
+`min_remaining=0`). An unresolved default candidate can be remeasured in the same
+query. A resolved adjacent point permits the next geometric point; an unresolved
+adjacent point cannot be skipped. The operational batch ceiling and original
+request/byte capacities remain finite. A finite attempt limit is an explicit
+legacy budget choice and exhaustion is reported as censored, not as a platform.
+The retained request-controller `ResourceFeedbackConfig()` still defaults to two
+candidate attempts; passing that whole options object selects its full settings.
+Partial JSON options inherit the supply defaults, including the null attempt
+limit. Python callers can likewise replace fields on `SupplyFeedbackConfig(M).options`
+or use `SupplyFeedbackConfig.from_dict` without importing legacy budget defaults.
+
+Default rules are engineering choices, not measured hardware saturation criteria.
+Their code owners are [supply policy](../../scheduling/submission_control/stage_work.py),
+[trial/search policy](../../scheduling/submission_control/adaptive.py),
+[batch organizer/sampler](lotus_chain_token_batches.py) and
+[ordinary factory](lotus_records_core.py):
+
+| Rule | Supply default and effect | Code basis |
+|---|---|---|
+| Enable/start | Omitted/null is off; enabled starts at one batch, without a historical hint | `_record_batching_options`, `SupplyFeedbackController.reset`, `BatchSupplyFeedback.bind` |
+| Work/capacity | B fixed; explicit `max_batches <= R`; original member/byte/IPC bounds remain | `resolve_record_batching`, `PreparedTokenOrganizer.__call__` |
+| Time/change budgets | Both null: no algorithm cutoff; finite values explicitly retain the old budget rules | `ResourceFeedbackConfig`, `_exploration_time_left`, `_within_change_budget` |
+| Candidate attempts | Null: unresolved candidates may retry; interruption preserves spent attempts and releases only its own visit marker | `SupplyFeedbackConfig.options`, `_GeometricSearch.available/next/interrupt` |
+| Remaining work | Zero: only no pending work stops the scan; a positive value explicitly opts into the old tail/amortization heuristic | `_next_trial`, `_update` |
+| Sampling | Poll 0.25s, window 1s, at least 16 completions per measurement; missing/stale/incoherent data cannot establish idle capacity | `ResourceFeedbackConfig`, `update_supply`, `_update` |
+| Window changes | Settle old members, one cooldown window, discard the first progress window; none is a total exploration deadline | `_change`, `_update` |
+| Candidate selection | Geometric points up to the explicit ceiling; local work-direction comparisons, 3% gain margin; unresolved comparisons can extend to six windows and one fresh safe-reference recheck per trial | `_GeometricSearch.__init__`, `_point`, `_compare`, `_local_pair_evidence` |
+| Pressure | Existing KV 0.85 congestion / 0.50 low-load guards, factor 0.5 reduction; confirm KV twice, preemption/explicit memory pressure can act immediately | `AimdConfig`, `_update` |
+| Supply/queue | No ready supply, unfilled batch window, waiting backend work, tail/dependency wait or a local capacity boundary holds growth | `update_supply` |
+| Completion/evidence | EOF ends useful work; nonmonotonic work stops adaptation; resolved geometric points end that declared search range, not a global optimum claim | `update_supply`, `_update`, `_GeometricSearch.stop_reason`, `report` |
+| Point-history scope | Actual work-context change / pressure recovery can reset point-local progress; controller elapsed/change budgets and accumulated trial wall do not reset. A feedback gap does not rebase the whole search | `rebase_work`, `record_pressure`, `resume_pressure`, `_invalidate_feedback_gap` |
+| Retention/deadlines | Recent trace arrays retain 64 entries; this does not cap batches, requests, attempts or changes. Existing owner query/startup deadlines remain lifecycle limits | trace/report code; `RecordsResources`, record owner lifecycle |
+
+The old standalone AIMD `low_load_running=64` is not a threshold used by this
+trial path (`ResourceFeedbackController` binds the field to its maximum and uses
+its own `_update`). Test loop counts/deadlines are fixture bounds, not policy
+stopping rules. The policy can still hold on incomplete evidence or end its
+declared geometric range; without physical CPU/GPU/free-memory interfaces it
+cannot guarantee growth whenever hardware has spare capacity. The 3% comparison
+margin can classify a smaller positive gain as `no_gain`. None of these outcomes proves a
+hardware limit.
 
 The policy reuses `ResourceFeedbackController` work-aware trials/comparison and
 pressure protection, with demand gating. Default comparison requires actual

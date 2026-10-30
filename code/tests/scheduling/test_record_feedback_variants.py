@@ -214,9 +214,11 @@ class LegacyFeedbackContracts(unittest.TestCase):
         expected, actual = oracle.c.report(), target.c.report()
         self.assertEqual(project_legacy(actual, expected) if legacy else actual, expected)
 
-    def test_work_comparison_and_candidate_search_nodes_are_exact_ee39_ast(self):
+    def test_work_comparison_node_is_exact_ee39_ast(self):
         logical = "code/src/scheduling/submission_control/adaptive.py"
-        names = {"_local_pair_evidence", "_GeometricSearch"}
+        # Search now supports an optional unlimited budget and interruption
+        # recovery. Finite legacy behavior remains covered by trace differentials.
+        names = {"_local_pair_evidence"}
         def nodes(view):
             tree = ast.parse(view.path(logical).read_text())
             return {node.name: ast.dump(node, include_attributes=False) for node in tree.body

@@ -99,6 +99,7 @@ class AsyncTokenEntryTests(unittest.TestCase):
         self.assertEqual((options['work_basis'], options['work_comparison'], options['search_mode']),
                          ('computed', 'local_pairs', 'geometric'))
         self.assertTrue(options['allow_exploration'])
+        self.assertIsNone(options['max_candidate_attempts'])
 
     def test_feedback_CLI_rejects_incompatible_or_malformed_config_before_factory(self):
         config = self.feedback_config()

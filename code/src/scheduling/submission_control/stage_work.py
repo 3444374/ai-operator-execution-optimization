@@ -117,7 +117,7 @@ class SupplyFeedbackConfig:
     max_batches: int
     options: ResourceFeedbackConfig = field(default_factory=lambda: ResourceFeedbackConfig(
         allow_exploration=True, search_mode="geometric", work_basis="computed",
-        work_comparison="local_pairs"))
+        work_comparison="local_pairs", max_candidate_attempts=None))
 
     def __post_init__(self):
         if type(self.max_batches) is not int or self.max_batches < 1:
@@ -194,6 +194,7 @@ class SupplyFeedbackController(ResourceFeedbackController):
         self._supply_anchor = None
         self._delivery_anchor = None
         self._last_native_at = None
+        self._pending_feedback_gap = False
         self.feedback_gaps = 0
         self._current_supply = self._measurement_supply = self._measurement_delivery = None
 
@@ -209,7 +210,10 @@ class SupplyFeedbackController(ResourceFeedbackController):
         if self._probe_at is not None and self._search is not None:
             candidate = (self._probe_candidate['window'] if self._probe_candidate is not None
                          else self.current_window)
-            self._search.finish(candidate, 'incomparable')
+            self._search.interrupt(candidate)
+            self.evaluations[-1].update(interrupted_candidate=candidate,
+                attempts=self._search.points[candidate]['attempts'],
+                retry_eligible=candidate in self._search.available())
         self._end_probe(observation.observed_at_s)
         self._reference, self._anchor, self._windows = None, None, []
         self._cached_context = None
@@ -232,10 +236,12 @@ class SupplyFeedbackController(ResourceFeedbackController):
         native_valid = (o.fresh and o.has_service_metrics and o.sample_age_s is not None
                         and o.sample_age_s <= self.options.window_s)
         native_at = None if not native_valid else o.observed_at_s-o.sample_age_s
-        feedback_gap = (native_valid and self._last_native_at is not None
-                        and not 0 <= native_at-self._last_native_at <= self.options.window_s)
+        feedback_gap = (native_valid and (self._pending_feedback_gap
+                        or self._last_native_at is not None
+                        and not 0 <= native_at-self._last_native_at <= self.options.window_s))
         if native_valid:
             self._last_native_at = native_at
+            self._pending_feedback_gap = feedback_gap
         previous = self._measurement_supply if self._anchor is not None else self._supply_anchor
         delivery = self._measurement_delivery if self._anchor is not None else self._delivery_anchor
         if previous is not None:
@@ -265,6 +271,7 @@ class SupplyFeedbackController(ResourceFeedbackController):
         elif feedback_gap:
             state = 'insufficient_information'
             decision = self._invalidate_feedback_gap(o)
+            self._pending_feedback_gap = False
         elif (not o.fresh or not o.has_service_metrics or o.sample_age_s is None
               or o.sample_age_s > self.options.window_s
               or not 0 <= supply.observed_at_s-o.observed_at_s <= self.options.poll_interval_s):
@@ -331,8 +338,20 @@ class SupplyFeedbackController(ResourceFeedbackController):
 
     def report(self):
         report = super().report()
+        if report['stop_reason'] == 'adjacent_trial_unavailable' and self._search is not None:
+            adjacent = min((key for key in self._search.points
+                            if self.current_window < key <= self._search.ceiling), default=None)
+            if (adjacent is not None and self._search.limit is not None
+                    and self._search.points[adjacent]['outcome'] not in self._search.resolved
+                    and self._search.points[adjacent]['attempts'] >= self._search.limit):
+                report.update(exploration_censored=True, incomplete_reason='candidate_attempt_budget',
+                              can_continue=False)
         return dict(report, control_unit="application_batches", initial_window=1,
                     feedback_gaps=self.feedback_gaps,
+                    feedback_gap_pending=self._pending_feedback_gap,
+                    exploration_limits=dict(elapsed_s=self.options.exploration_s,
+                        changes=self.options.max_changes, attempts_per_candidate=self.options.max_candidate_attempts,
+                        min_remaining=self.options.min_remaining),
                     demand_windows=list(self.supply_history), B_adjusted=False,
                     demand_changes=list(self.supply_changes), demand_states=dict(self.supply_states),
                     demand_decision_calls=sum(self.supply_states.values()),

@@ -118,9 +118,11 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 省略`batch_feedback`或设null保持固定对照，不安装采样器。可选`options`复用
 `SupplyFeedbackConfig`／`ResourceFeedbackConfig`字段；部分覆盖继承供给策略默认的computed工作量、
 local_pairs比较和geometric探索。`check`输出解析后配置且不构造owner。
+供给策略默认`exploration_s=null`、`max_changes=null`、`max_candidate_attempts=null`、`min_remaining=0`，
+不继承旧“两次候选”或10秒／64待办的截断；有限预算只在显式配置旧预算规则时启用。容量上限仍须保留。
 策略读取实际Core就绪需求、确认完成工作及同owner/session原生running/waiting/KV／抢占，
 只改变C_batch，B与R／IPC字节责任保持独立。缺失／陈旧信息不表示空闲，配置碰顶不表示性能平台。
-反馈间断使本轮比较失效并回退，恢复后重测，原探索成本与次数预算保留；不读gold或全表token reference选参。
+反馈间断使本轮比较失效并回退，只恢复中断候选的重试资格，原尝试计数／探索成本与显式预算保留；不读gold或全表token reference选参。
 CPU/GPU利用率、物理可用内存、原生容量readback及动态B仍未接入。
 
 ```sh

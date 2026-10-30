@@ -217,7 +217,8 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 显式`SupplyFeedbackConfig(max_batches=...)`从一批开始，默认`batch_feedback=None`不安装采样器；R、字节／IPC责任、后继和关系屏障保持。
 实际就绪WorkDescriptor、方法到Core准备／供给速率、确认完成工作量与同owner/session的running/waiting/KV／抢占信息进入可解释判断；缺失／陈旧、供给不足、后端排队、资源压力、尾部／依赖等待及配置碰顶分列。
 重用原在线比较及保护逻辑，不读同任务token reference或gold；配置上限不表示性能平台，在线观察和探索成本不扣除。默认computed比较缺计数时不确认收益。
-反馈间断使当前比较失效并回退，保留原耗时／次数预算，恢复新鲜帧后重新测量；采样RPC取消失败时持有原引用直到终态，不逐次叠发。
+反馈间断使当前比较失效并回退，只恢复被中断候选的重试资格、保留已发生次数和耗时；采样RPC取消失败时持有原引用直到终态，不逐次叠发。
+供给策略默认不设时间／变化次数／候选尝试次数预算，`min_remaining=0`；旧有限预算仅在显式沿用时保留，不把64条日志保留量当作并发上限。默认规则与源码依据集中在所属说明。
 Python owner／普通Core工厂及正常Movie `check/run` JSON、isolated session共享同一`batch_feedback`配置；省略或null默认关闭，仍拒绝逐请求admission/cache和resident组合。
 B运行时调整或联合控制尚未接入；CPU/GPU利用率、物理可用内存和原生启动容量readback仍未知，仅有IPC回执与声明容量。
 接口及CPU边界见[所属说明](src/execution_provider/adapters/README.md#optional-fixed-b-supply-feedback-local-cpu-candidate)。本轮修复与入口增量仍待独审及GPU验收，不代表资源收益、饱和点或Kalypso复现。

@@ -97,6 +97,7 @@ class SupplyFeedbackTests(unittest.TestCase):
         self.assertEqual(default, SupplyFeedbackConfig(3))
         self.assertEqual(default.options.work_basis, 'computed')
         self.assertTrue(default.options.allow_exploration)
+        self.assertIsNone(default.options.max_candidate_attempts)
         partial = SupplyFeedbackConfig.from_dict(dict(max_batches=3, options=dict(poll_interval_s=.1)))
         self.assertEqual(partial.options, replace(default.options, poll_interval_s=.1))
         self.assertEqual(SupplyFeedbackConfig.from_dict(asdict(partial)), partial)
@@ -187,6 +188,159 @@ class SupplyFeedbackTests(unittest.TestCase):
         self.assertTrue(any(d.reason == 'performance_probe' for d in decisions))
         self.assertLessEqual(self.c.current_window, 4)
         self.assertFalse(self.c.report()['learned_global_optimum'])
+
+    def test_actual_default_active_trial_gap_resumes_and_keeps_spent_cost(self):
+        # Independent review's unmodified default/data/clock shape. The old
+        # probe's final attempts==1 described the defect, not a recovery rule.
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        decisions, interrupted = [], False
+        for n in range(70):
+            decision = self.tick(n*20, pending_items=1000,
+                completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0)
+            decisions.append(decision)
+            if decision.reason == 'feedback_gap':
+                point = self.c._search.points[2]
+                self.assertEqual((decision.window, point['attempts'], point['outcome']), (1, 1, 'incomparable'))
+                self.assertNotIn(2, self.c._search.here)
+                self.assertTrue(self.c.evaluations[-1]['retry_eligible'])
+                self.assertEqual(self.c.report()['exploration_wall_s'], 4)
+            if not interrupted and decision.reason == 'performance_probe':
+                self.now += 3
+                interrupted = True
+        report = self.c.report()
+        self.assertEqual(report['feedback_gaps'], 1)
+        self.assertGreater(sum(d.reason == 'performance_probe' for d in decisions), 1)
+        self.assertGreaterEqual(self.c._search.points[2]['attempts'], 2)
+        self.assertIsNone(report['search_state']['attempt_limit'])
+        self.assertNotEqual(report['stop_reason'], 'adjacent_trial_unavailable')
+        self.assertGreaterEqual(report['exploration_wall_s'], 4)
+        self.assertEqual(self.c.started, 0)
+        self.assertFalse(report['learned_global_optimum'])
+
+    def test_default_repeated_interruptions_have_no_hidden_two_attempt_stop(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        gaps, decisions, interruptions = 0, [], []
+        for n in range(100):
+            decision = self.tick(n*20, pending_items=1000,
+                completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0)
+            decisions.append(decision)
+            if decision.reason == 'feedback_gap':
+                interruptions.append(self.c._search.points[2]['attempts'])
+            if decision.reason == 'performance_probe' and gaps < 3:
+                self.now += 3
+                gaps += 1
+        report = self.c.report()
+        self.assertEqual(interruptions, [1, 2, 3])
+        self.assertGreaterEqual(self.c._search.points[2]['attempts'], 4)
+        self.assertGreaterEqual(sum(d.reason == 'performance_probe' for d in decisions), 4)
+        self.assertGreaterEqual(report['exploration_wall_s'], 12)
+        self.assertEqual(report['exploration_limits'], dict(elapsed_s=None, changes=None,
+            attempts_per_candidate=None, min_remaining=0))
+        self.assertNotIn(report['stop_reason'], ('exploration_budget', 'search_exhausted', 'adjacent_trial_unavailable'))
+
+    def test_default_gap_during_reference_recheck_restores_the_candidate(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        interrupted, probes, gap_seen = False, 0, False
+        for n in range(100):
+            decision = self.tick(n*20, pending_items=1000,
+                completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0)
+            probes += decision.reason == 'performance_probe'
+            if decision.reason == 'feedback_gap':
+                gap_seen = True
+                self.assertEqual(decision.window, 1)
+                self.assertNotIn(2, self.c._search.here)
+                self.assertEqual(self.c._search.points[2]['attempts'], 1)
+                self.assertIsNone(self.c._probe_candidate)
+            if not interrupted and decision.reason == 'reference_recheck':
+                self.now += 3
+                interrupted = True
+        self.assertTrue(gap_seen)
+        self.assertGreater(probes, 1)
+        self.assertGreaterEqual(self.c._search.points[2]['attempts'], 2)
+        self.assertGreater(self.c.report()['exploration_wall_s'], 4)
+
+    def test_pressure_guard_does_not_hide_the_gap_from_later_comparisons(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        for n in range(5):
+            self.tick(n*20, completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0)
+        self.assertEqual(self.c.current_window, 2)
+        self.now += 3
+        decision = self.tick(100, kv_usage=.9, completed_computed_input_work_total=10000,
+                             completed_cached_input_work_total=0)
+        self.assertEqual(decision.reason, 'confirming_pressure')
+        pending = self.c.report().get('feedback_gap_pending')
+        decision = self.tick(120, completed_computed_input_work_total=12000,
+                             completed_cached_input_work_total=0)
+        self.assertEqual((decision.reason, decision.window), ('feedback_gap', 1))
+        self.assertTrue(pending)
+        self.assertNotIn(2, self.c._search.here)
+        self.assertEqual(self.c._search.points[2]['attempts'], 1)
+        self.assertFalse(self.c.report()['feedback_gap_pending'])
+        self.assertEqual(self.c.report()['exploration_wall_s'], 5)
+
+    def test_explicit_finite_attempt_budget_allows_recovery_then_preserves_its_count(self):
+        options = replace(SupplyFeedbackConfig(4).options, max_candidate_attempts=2)
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4, options), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        decisions, interrupted = [], False
+        for n in range(70):
+            decision = self.tick(n*20, pending_items=1000,
+                completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0)
+            decisions.append(decision)
+            if not interrupted and decision.reason == 'performance_probe':
+                self.now += 3
+                interrupted = True
+        self.assertEqual(sum(d.reason == 'performance_probe' for d in decisions), 2)
+        self.assertEqual(self.c._search.points[2]['attempts'], 2)
+        self.assertEqual(self.c._search.limit, 2)
+        self.assertGreaterEqual(self.c.report()['exploration_wall_s'], 4)
+
+    def test_explicit_exhausted_attempt_budget_is_censored_without_reset(self):
+        options = replace(SupplyFeedbackConfig(4).options, max_candidate_attempts=1)
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4, options), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        interrupted = False
+        for n in range(40):
+            decision = self.tick(n*20, pending_items=1000,
+                completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0)
+            if not interrupted and decision.reason == 'performance_probe':
+                self.now += 3
+                interrupted = True
+        report = self.c.report()
+        self.assertEqual(self.c._search.points[2]['attempts'], 1)
+        self.assertTrue(report['exploration_censored'])
+        self.assertEqual(report['incomplete_reason'], 'candidate_attempt_budget')
+        self.assertFalse(report['can_continue'])
+        self.assertEqual(report['exploration_wall_s'], 4)
+
+    def test_default_gain_scan_has_no_ten_second_eight_change_or_sixty_four_cutoff(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(128), clock=lambda: self.now)
+        self.c.reset(1, 10000000)
+        completed = 0
+        for _ in range(200):
+            completed += 20*self.c.current_window
+            self.tick(completed, pending_items=100000,
+                completed_computed_input_work_total=completed*100, completed_cached_input_work_total=0)
+        report = self.c.report()
+        self.assertEqual(report['recommended_window'], 128)
+        self.assertGreater(report['changes'], 8)
+        self.assertGreater(self.now, 10)
+        self.assertGreater(report['accepted_steps'], 2)
+        self.assertNotIn(report['stop_reason'], ('exploration_budget', 'search_exhausted', 'adjacent_trial_unavailable'))
+        self.assertFalse(report['capacity_is_performance_platform'])
+
+    def test_default_can_start_after_ten_seconds_with_less_than_sixty_four_pending(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        self.now = 10
+        decisions = [self.tick(n*20, ready_items=16, pending_items=32,
+            completed_computed_input_work_total=n*2000, completed_cached_input_work_total=0) for n in range(30)]
+        self.assertIn('performance_probe', [d.reason for d in decisions])
+        self.assertNotEqual(self.c.report()['stop_reason'], 'short_tail_or_fixed')
 
 
 if __name__ == '__main__':unittest.main()
