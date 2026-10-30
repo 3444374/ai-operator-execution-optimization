@@ -1,5 +1,8 @@
 # 原生基线与具名 Core 历史复现
 
+供给反馈与资源观测的维护改动另将四份共享旧源按准确`6a8a2d7b`字节保存在[历史来源](historical_sources/6a8a2d7b/code/src/)：`gpu_allocation.py`、`metrics/vllm.py`、`records_telemetry.py`与`stage_work.py`。
+五份投影只补20条override；原逐文件SHA、投影ID、来源版本及已有映射保持。静态副本只供显式历史还原，当前维护运行时不导入这些文件；历史实测结果与观测边界不变。
+
 异步token批提交改变了维护版`session.py`、`session_contract.py`和`async_backend.py`。
 本地组合将这三份共享旧源按准确`2212e331`字节保存在`historical_sources/2212e331/`，五份历史投影只增加15条override。
 原逐文件SHA、投影ID、来源及已有映射保持；快照仅供旧投影还原，维护运行时不导入这些副本。

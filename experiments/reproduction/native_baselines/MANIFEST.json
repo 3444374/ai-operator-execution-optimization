@@ -673,7 +673,11 @@
         "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py",
         "code/src/scheduling/core/session.py": "historical_sources/2212e331/code/src/scheduling/core/session.py",
         "code/src/scheduling/core/session_contract.py": "historical_sources/2212e331/code/src/scheduling/core/session_contract.py",
-        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py"
+        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py",
+        "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
+        "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
+        "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
       },
       "default_selected": false
     },
@@ -1375,7 +1379,11 @@
         "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py",
         "code/src/scheduling/core/session.py": "historical_sources/2212e331/code/src/scheduling/core/session.py",
         "code/src/scheduling/core/session_contract.py": "historical_sources/2212e331/code/src/scheduling/core/session_contract.py",
-        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py"
+        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py",
+        "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
+        "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
+        "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
       },
       "default_selected": false
     },
@@ -2087,7 +2095,11 @@
         "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py",
         "code/src/scheduling/core/session.py": "historical_sources/2212e331/code/src/scheduling/core/session.py",
         "code/src/scheduling/core/session_contract.py": "historical_sources/2212e331/code/src/scheduling/core/session_contract.py",
-        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py"
+        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py",
+        "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
+        "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
+        "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
       },
       "default_selected": false
     },
@@ -2800,7 +2812,11 @@
         "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py",
         "code/src/scheduling/core/session.py": "historical_sources/2212e331/code/src/scheduling/core/session.py",
         "code/src/scheduling/core/session_contract.py": "historical_sources/2212e331/code/src/scheduling/core/session_contract.py",
-        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py"
+        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py",
+        "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
+        "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
+        "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
       },
       "default_selected": false
     },
@@ -3517,7 +3533,11 @@
         "code/src/baselines/common/private_artifacts.py": "historical_sources/bc3d85a8/code/src/baselines/common/private_artifacts.py",
         "code/src/scheduling/core/session.py": "historical_sources/2212e331/code/src/scheduling/core/session.py",
         "code/src/scheduling/core/session_contract.py": "historical_sources/2212e331/code/src/scheduling/core/session_contract.py",
-        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py"
+        "code/src/scheduling/runtime/async_backend.py": "historical_sources/2212e331/code/src/scheduling/runtime/async_backend.py",
+        "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
+        "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
+        "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
       },
       "default_selected": false
     }
