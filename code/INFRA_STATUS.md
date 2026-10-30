@@ -175,7 +175,7 @@ PR74同时提供[同一Git入口的双策略套件](scripts/README.md#record-pro
 复用原`ChainTokenBudget`、FIFO、actor和Core账本，仅补查询owner的配置、工作量单位和容量传递。
 默认`None`仍按请求数；一个模型部署及一个角色内的完整Filter/Map计划可选token在途W，Extract、角色切换及fused明确拒绝该`token_budget`组合。
 这里的 `token_budget` 是在途上限 W：按每条实际完整消息的估计输入 token 加阶段输出 cap 预留。取消或unknown本身不释放W；权威终态或现有协议确认的生产者退出证明可结算预留，后者不将unknown结果改为成功。它没有决定一批成员和批次边界。
-用户原目标是以每批累计 token 上限 B 代替固定行数作为主要组批条件；同步fused单阶段的接入范围与待验证项见[跨读取块组批候选](#prepared-request-batching)，异步记录链的本地可选候选见下述接口，尚无组合实机资格。
+用户原目标是以每批累计 token 上限 B 代替固定行数作为主要组批条件；同步fused单阶段的范围见[跨读取块组批](#prepared-request-batching)，异步记录链固定B/C_batch的实现与实机范围见[PR84组批接口与验收](#async-record-token-batches)。
 W应保留为较高的安全护栏，与B和请求数C分开；输入／输出估计不等于实际计算量或物理KV用量。接口细节见[adapter说明](src/execution_provider/adapters/README.md#chain-token-batching-boundary)。
 本地126项相关CPU检查通过，含12项新检查；真实LOTUS格式器、微型tokenizer、Core和CPU子进程通信工作，Ray与模型推理为替身。
 另3项历史还原检查通过，五个具名版本的完整文件摘要及原身份保持，未改历史清单。
@@ -185,7 +185,7 @@ W应保留为较高的安全护栏，与B和请求数C分开；输入／输出�
 CPU身份及原49d负结果从[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#finite-query-token-local-cpu)读取。
 
 <a id="prepared-request-batching"></a>
-## 单阶段跨读取块token组批候选
+## 跨读取块token组批（同步单阶段与异步记录链）
 
 PR78的`c228d59d`候选保留历史身份：它仅在固定外层输入块内拆分，未完成跨读取块token组批。
 [PR80](https://github.com/3444374/ai-operator-execution-optimization/pull/80)后续修正复用既有`PendingBatchBuilder`、原LOTUS方法和Core/私有引擎路径；默认`prepared_batching=None`不变。
@@ -198,17 +198,28 @@ Core调用数记账仅受整条查询已声明调用总量约束，不作为batc
 完整prepared身份与消息计入Core输入字节额度；因此字节受限组可能比旧近似计费更早封批。固定行与默认路径保持原准备行为。
 准确`2212e331`已完成原MovieQ1的beb/2212同条件n2实机对照：输入、成员、参数、工作量与关闭责任通过核验，准备/计数记录工作量由各4000降为2000。Q1原检索F1均为1，但严格逐行等价未通过；观察到的计时下降不代表稳定收益、P99收益或token优于固定行，不把全部调用间隙归因于重复准备。
 C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节额度不宣称是进程RSS或GPU/KV显存上限。
-多阶段token链在消费源或模型预检前拒绝；跨阶段后继缓冲、反馈动态调整B/C、阻塞源定时flush仍未实现。
-原固定行链与默认路径保留。实机范围按准确head区分：f3为旧行帽功能，beb为无行帽功能及MovieQ1/Q2/Q3，2212仅MovieQ1；2212 的 Q2/Q3 尚未实机验证；异步记录级 token 组批尚未进入 main，也无实机资格。Q3现有COUNT为7、gold为14，不能因Q1/Q2原检索F1通过而宣称全任务质量通过。各范围与局限见[PR83验收说明](https://github.com/3444374/ai-operator-execution-optimization/pull/83)。
+同步fused路径的多阶段token链在消费源或模型预检前拒绝；该路径的跨阶段后继缓冲、反馈动态调整B/C、阻塞源定时flush仍未实现。
+原固定行链与默认路径保留。同步历史实机范围按准确head区分：f3为旧行帽功能，beb为无行帽功能及MovieQ1/Q2/Q3，2212仅MovieQ1；2212 的 Q2/Q3 尚未实机验证。Q3现有COUNT为7、gold为14，不能因Q1/Q2原检索F1通过而宣称全任务质量通过。各范围与局限见[PR83验收说明](https://github.com/3444374/ai-operator-execution-optimization/pull/83)，不以新异步组合覆盖旧head的资格。
 接口、逻辑字节边界及unknown责任见[所属说明](src/execution_provider/adapters/README.md#prepared-request-batching)。
 
-独立异步记录链候选 `c79fcc6d` 在准确已发布基底 `beb5966c` 上接入同一组批配置，未包含PR83的同步重复准备修复。
-后续本地组合以准确 `2212e331` 为基底，顺序接入异步核心、关闭分页修复及正常入口；原PR83准备复用／进程关闭／历史还原字节保留，新组合须单独验收。
+<a id="async-record-token-batches"></a>
+### 异步记录链token组批（PR84）
+
+早期独立候选 `c79fcc6d` 基于 `beb5966c`，未包含PR83的同步重复准备修复。
+[PR84](https://github.com/3444374/ai-operator-execution-optimization/pull/84)的准确验收头 `41ce4c24` 以 `2212e331` 为基底，接入异步核心、关闭分页修复及正常入口，已合入main；`cc3980c9`与该验收头仅两份文档不同，生产代码一致。
 它复用原MethodRun/Core/actor/engine，以一次数据RPC及IPC提交一个token批，保留逐成员完成、后继推进、取消与unknown责任及Extract关系屏障。
 可选范围为固定B、固定应用批并发C_batch、FIFO、record推进、W关闭；无每批行帽，R仍同时约束在途成员与resident行。
-默认与同步对照保留；后续本地入口增量已将配置经原records工厂接入正常Movie `check/run`和isolated session，保留冻结任务、source及原评价器绑定，并核对实际B/C_batch/R和逐成员回执。
-该入口是CPU候选；动态C_batch、B/C联合控制、resident组合及真实Ray/模型/GPU功能与性能验收尚未完成，不继承旧树GPU证据。
-准确参数单位、尾批行为、字节边界和CPU检查入口统一见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)，不据此宣称性能提升。
+默认仍为`prepared_batching=None`、关闭；同步对照保留。原records工厂已接正常Movie `check/run`和isolated session，保留冻结任务、source及原评价器绑定，并核对实际B/C_batch/R和逐成员回执。
+
+准确`41ce4c24`的真实Ray/模型功能范围独审通过：198条提交含174成功、17项预期确认容量失败、7项取消unknown；覆盖129+1组批、后继提前推进、关系屏障、取消、关闭分页7→3→0及ACK释放。unknown不计为成功或确认失败。
+
+Movie Q1/Q2/Q3的同步fixed128、同步token及异步token C_batch=1/2各n2，共24组、17,920次成功原生请求完成，全部物理清理与租约释放通过核对。token臂均固定B=17506、无每批行帽；异步臂另设R=259、W关闭，CB1/CB2为手动固定批并发，不是资源反馈自动选择，也不是最优推荐。
+Q2/Q3各120条，固定128行和token预算17506在本轮均实际只有一批，CB2峰值仍为1；仅Q1的CB2实测到两批重叠。
+
+未证明完整冷查询加速；冷计时从worker入口标记至原Movie查询结果就绪，含其后的必要启动，不含父控制器／Python bootstrap及后置评价、写证据与最终清理。启动栈、实际分组和缓存工作差异不允许只归因于推进粒度。Q1严格原生输出等价未通过；Q3各配置共同COUNT=7、gold=14，仍是质量失败。
+
+未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该组批入口不支持动态B/C联合控制及跨查询resident复用。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
+准确参数单位、尾批行为、字节边界与测试入口见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)。
 
 <a id="finite-query-successor-candidate"></a>
 ## 后继优先与等待老化的可选配置

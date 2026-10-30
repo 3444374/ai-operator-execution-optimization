@@ -84,7 +84,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B -m unittest discover \
 
 
 <a id="record-token-batch-entry"></a>
-## 记录级异步 token 组批入口（本地 CPU 增量）
+## 记录级异步 token 组批入口
 
 正常 `run_lotus_records_movie.py check/run` 的
 `semloom.movie_records_run.v1` 配置可选择原 `semloom-local-model-core-async`
@@ -127,7 +127,9 @@ MovieTask／source manifest继续拥有Q1/Q2/Q3提示、普通谓词、完整Fil
 
 [CPU入口测试](../../tests/experiments/test_movie_async_token_entry.py)执行正常CLI的Q1/Q2/Q3、原isolated driver、
 零模型检查、空输入和unknown失败会计，使用真实LOTUS方法与CPU子进程IPC，Ray和上游评价为显式fixture。
-实机功能、模板一致性、质量和性能比较仍待后续验收，当前不作性能结论。
+准确`41ce4c24`已完成真实Ray/模型功能验收及Movie Q1/Q2/Q3矩阵独审；默认仍关闭，未证明完整冷查询加速。
+Q1严格原生输出等价未通过，Q3共同COUNT=7、gold=14。测试条件、完成范围与未覆盖项见
+[实现状态](../../INFRA_STATUS.md#async-record-token-batches)和[PR84公开摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)，不继承为后续修复或其它组合的资格。
 
 ## Core 查询方法与模型复用（本地 CPU 增量）
 

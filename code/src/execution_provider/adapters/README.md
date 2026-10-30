@@ -290,7 +290,7 @@ speedup or recovery of the whole historical API gap.
 
 ## Optional async record token batches
 
-The local candidate also accepts `PreparedBatching("token_budget", None, B)` on
+The optional record path accepts `PreparedBatching("token_budget", None, B)` on
 `execution="record_local_sections"`, with fixed `batch_concurrency=C_batch`.
 It uses the existing `MethodRun`, Core, async actor and engine process. It does
 not add a second model owner. The default remains `prepared_batching=None`.
@@ -364,11 +364,20 @@ may supply `batching_tokenizer` for a controlled environment; matching its rende
 template to the native model remains the caller's responsibility. CPU fixtures use
 a small tokenizer and inference substitute. [Query and independent-member cases](../../../tests/execution_provider/test_lotus_async_token_batches.py)
 and [lifecycle boundary cases](../../../tests/execution_provider/test_lotus_async_batch_lifecycle.py)
-check this optional API. Real Ray/model/GPU correctness and performance and
-dynamic C_batch or joint B/C control remain pending. The standalone `c79fcc6d`
-candidate excluded PR83. This local integration starts from exact `2212e331` and
-adds the async core, closed-page repair and ordinary entry; its combined source
-requires new qualification and does not inherit the base's model/GPU evidence.
+check this optional API. The early standalone `c79fcc6d` candidate excluded PR83;
+the merged integration starts from `2212e331` and adds the async core, closed-page
+repair and ordinary entry. Exact `41ce4c24` now has independently reviewed real
+Ray/model/GPU functional coverage and the Movie Q1/Q2/Q3 comparison matrix.
+
+The feature remains disabled by default. No overall cold-query speedup is
+established; Q1 strict native-output parity fails and all Q3 configurations return
+COUNT=7 against gold=14. MMF complete returned-payload parity, full-Core GPU
+capacity-failure mapping, independent streaming read-chunk GPU cases, P99 and
+saturation remain unverified. Dynamic C_batch/joint B/C control and cross-query
+resident reuse are not supported by this path.
+The [current scope](../../../INFRA_STATUS.md#async-record-token-batches) and
+[public PR84 summary](https://github.com/3444374/ai-operator-execution-optimization/pull/84)
+separate completed checks, measured negative results and remaining limits.
 
 The ordinary records factory `create_records_core` accepts the same optional
 `prepared_batching` and `batch_concurrency`. It requires fixed async mode without
