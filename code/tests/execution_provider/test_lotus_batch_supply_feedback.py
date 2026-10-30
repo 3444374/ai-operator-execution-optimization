@@ -1,6 +1,7 @@
 """Original Core/method/actor/IPC with an explicit CPU-only inference fixture."""
 import json
 import sys
+import time
 from concurrent.futures import Future
 from contextlib import contextmanager
 from types import SimpleNamespace
@@ -93,7 +94,10 @@ class SnapshotOwnershipTests(unittest.TestCase):
         feedback.provider=SimpleNamespace(observe_native=fail);feedback.sample()
         refs[0][1].set_result(dict(session_id=1,ipc=dict(native_feedback=dict(engine_uid='a'*32,
             sequence=1,observed_at_s=1.,running=1,waiting=0,kv_usage=.1,generation_tokens_total=2,preemptions_total=0))))
-        with patch('src.execution_provider.adapters.lotus_chain_token_batches.time.monotonic',side_effect=fail):
+        # Fail only the receive-audit clock. Terminal receipt clock failures
+        # have their own explicit metadata/error accounting tests.
+        with patch('src.execution_provider.adapters.lotus_chain_token_batches.time.monotonic',
+                   side_effect=[RuntimeError('CPU observer clock failure'), time.monotonic()]):
             value=feedback.sample()
         self.assertIsNotNone(value);self.assertIsNone(value.received_at_s);self.assertEqual(feedback.errors,0)
 
