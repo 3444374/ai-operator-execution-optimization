@@ -1,6 +1,8 @@
 """Prepared-request organization for the existing Core/async owner, not an executor."""
 from dataclasses import asdict
+from concurrent.futures import CancelledError
 import json
+import math
 import time
 
 from src.modalities.text.tokenization import chat_token_count
@@ -105,6 +107,8 @@ class BatchSupplyFeedback:
         self.phases = []
         self.transition = set()
         self.next_poll = 0.
+        self.snapshot_rpc_receipts = []
+        self._snapshot_request = None
 
     def event(self, action, key):
         if action == 'submitted':
@@ -135,50 +139,135 @@ class BatchSupplyFeedback:
             self.provider.resume()
 
     def sample(self):
-        from src.scheduling.runtime.observations import ServiceMetricsSnapshot
         if self.closed or self.session_id is None:
             return None
-        finished = False
         try:
-            if self.ref is None:
+            if self.ref is None and self._snapshot_request is None:
+                remote = self.owner._actors.model_actor.snapshot.remote
                 self.sample_session = self.session_id
-                self.ref = self.owner._actors.model_actor.snapshot.remote()
                 self.requests += 1
+                ready = getattr(self.owner._actors, 'model_ready', None) or {}
+                uid = ready.get('engine_uid')
+                self._snapshot_request = dict(request_index=self.requests,
+                    request_session_id=self.sample_session, issued_at_s=time.monotonic(),
+                    expected_engine_uid=uid if type(uid) is str else None,
+                    cancel_requested=False, cancel_reason=None, cancel_error_type=None,
+                    future_access_error_type=None, dispatch_error_type=None, poll_error_type=None,
+                    client_future_cancelled=False)
+                self.ref = remote()
                 self.expiry = time.monotonic()+self.config.options.window_s
                 self.expired = False
+            if self.ref is None:
+                return None  # Dispatch outcome without a handle remains unknown.
             if self.future is None:
                 self.future = self.ref.future()
-            if not self.future.done():
-                if not self.expired and time.monotonic() >= self.expiry:
-                    self.expired = True
-                    try:
-                        self.owner._actors.ray.cancel(self.ref, force=False)
-                    except Exception:
-                        self.errors += 1
-                    # A failed cancel does not prove completion. Keep this RPC
-                    # until its future settles, as the original Core sampler does.
-                # Duplicate source sequence keeps its original timestamp in the
-                # provider; it is never relabelled as fresh or idle.
-                return self.last_native
-            finished = True
+            return self._consume_snapshot(cancel_pending=True)
+        except Exception as error:
+            self.errors += 1
+            if self._snapshot_request is not None:
+                field = 'dispatch_error_type' if self.ref is None else 'future_access_error_type'
+                self._snapshot_request = dict(self._snapshot_request, **{field:type(error).__name__})
+            return None
+
+    def _cancel_snapshot(self, reason):
+        if self.ref is None or self._snapshot_request['cancel_requested']:
+            return
+        self._snapshot_request = dict(self._snapshot_request, cancel_requested=True, cancel_reason=reason)
+        try:
+            self.owner._actors.ray.cancel(self.ref, force=False)
+        except Exception as error:
+            self.errors += 1
+            self._snapshot_request = dict(self._snapshot_request, cancel_error_type=type(error).__name__)
+
+    @staticmethod
+    def _snapshot_header(value):
+        ipc = value.get('ipc') if isinstance(value, dict) else None
+        native = ipc.get('native_feedback') if isinstance(ipc, dict) else None
+        native = native if isinstance(native, dict) else {}
+        session = value.get('session_id') if isinstance(value, dict) else None
+        uid, sequence, at = (native.get(n) for n in ('engine_uid', 'sequence', 'observed_at_s'))
+        return dict(response_session_id=session if type(session) is int else None,
+            response_engine_uid=uid if type(uid) is str else None,
+            response_source_sequence=sequence if type(sequence) is int else None,
+            response_source_observed_at_s=at if type(at) in (int, float) and math.isfinite(at) else None)
+
+    def _finish_snapshot(self, status, disposition, *, value=None, error=None):
+        self.snapshot_rpc_receipts.append(dict(self._snapshot_request,
+            rpc_terminal_status=status, future_done_confirmed=True,
+            terminal_observed_at_s=time.monotonic(), rpc_error_type=error,
+            frame_disposition=disposition, **self._snapshot_header(value)))
+        self.ref = self.future = self._snapshot_request = None
+
+    def _consume_snapshot(self, *, cancel_pending=False):
+        from src.scheduling.runtime.observations import ServiceMetricsSnapshot
+        try:
+            done = self.future.done()
+        except Exception as error:
+            self.errors += 1
+            self._snapshot_request = dict(self._snapshot_request, poll_error_type=type(error).__name__)
+            return None
+        if not done:
+            if cancel_pending and self.closed:
+                self._cancel_snapshot('close')
+            elif cancel_pending and not self.expired and time.monotonic() >= self.expiry:
+                self.expired = True
+                self._cancel_snapshot('expired')
+            # Cancel requested/failed is not terminal proof. The same ref owns
+            # this slot; duplicate native sequences keep their original age.
+            return None if self.closed else self.last_native
+        try:
             value = self.future.result()
-            self.ref = self.future = None
+        except CancelledError:
+            # A cancelled local read Future is not the ObjectRef's remote
+            # return/exception. Keep the same RPC ownership explicitly unknown.
+            self._snapshot_request = dict(self._snapshot_request, client_future_cancelled=True)
+            return None
+        except Exception as error:
+            if not self.closed:
+                self.errors += 1
+            self._finish_snapshot('raised', 'rpc_error', error=type(error).__name__)
+            return None
+        if self.closed:
+            self._finish_snapshot('returned', 'closed', value=value)
+            return None
+        snapshot, disposition = None, 'invalid_frame'
+        try:
             native = (value.get('ipc') or {}).get('native_feedback')
-            if (self.expired or self.closed or self.sample_session != self.session_id
-                    or value.get('session_id') != self.session_id or native is None
-                    or native.get('engine_uid') != self.owner._actors.model_ready['engine_uid']
-                    or native.get('observed_at_s', -1) < self.started):
-                return None
-            self.last_native = ServiceMetricsSnapshot(native['running'], native['waiting'], native['kv_usage'],
-                completed_tokens_total=native['generation_tokens_total'],
-                preemptions_total=native['preemptions_total'], source_sequence=native['sequence'],
-                source_observed_at_s=native['observed_at_s'])
-            return self.last_native
+            if self.expired:
+                disposition = 'expired'
+            elif self.sample_session != self.session_id or value.get('session_id') != self.session_id:
+                disposition = 'stale_session'
+            elif native is None:
+                disposition = 'missing_native'
+            elif native.get('engine_uid') != self.owner._actors.model_ready['engine_uid']:
+                disposition = 'wrong_engine'
+            elif native.get('observed_at_s', -1) < self.started:
+                disposition = 'stale_source'
+            else:
+                snapshot = ServiceMetricsSnapshot(native['running'], native['waiting'], native['kv_usage'],
+                    completed_tokens_total=native['generation_tokens_total'],
+                    preemptions_total=native['preemptions_total'], source_sequence=native['sequence'],
+                    source_observed_at_s=native['observed_at_s'])
+                disposition = 'eligible_for_provider'
         except Exception:
             self.errors += 1
-            if finished:
-                self.ref = self.future = None
-            return None
+            disposition = 'invalid_frame'
+        self._finish_snapshot('returned', disposition, value=value)
+        if snapshot is not None:
+            self.last_native = snapshot
+        return snapshot
+
+    def _reap_stopped_snapshot(self, *, cancel=False):
+        # The existing provider is the single writer while sampling. Never
+        # race it or wait for RPC completion on the query/close thread.
+        if self.provider is not None and self.provider.is_running:
+            return
+        if self.future is not None:
+            self._consume_snapshot()
+        if cancel and self.ref is not None:
+            self._cancel_snapshot('close')
+            if self.future is not None:
+                self._consume_snapshot()  # Collect an immediately terminal cancel.
 
     def update(self, stream):
         from dataclasses import replace
@@ -259,19 +348,29 @@ class BatchSupplyFeedback:
         self.closed = True
         if self.provider is not None:
             self.provider.close()
-        if self.ref is not None:
-            try:
-                self.owner._actors.ray.cancel(self.ref, force=False)
-            except Exception:
-                self.errors += 1
+        self._reap_stopped_snapshot(cancel=True)
         self.end_phase()
 
     def report(self):
+        if self.closed:
+            self._reap_stopped_snapshot()
+        stopped = self.provider is None or not self.provider.is_running
+        pending = (None if self._snapshot_request is None else
+                   dict(self._snapshot_request, rpc_terminal_status='unknown',
+                        unresolved_reason=('client_future_cancelled_no_rpc_result'
+                            if self._snapshot_request['client_future_cancelled'] else 'terminal_not_collected')))
+        complete = (self.closed and stopped and pending is None and self.ref is None
+                    and self.future is None and len(self.snapshot_rpc_receipts) == self.requests)
         return dict(kind='fixed_B_batch_supply_feedback', initial_batches=1,
             max_batches=self.config.max_batches, fixed_B=self.owner.prepared_batching.token_budget,
             phases=list(self.phases), snapshot_requests=self.requests, sample_errors=self.errors,
             snapshot_ref_retained=self.ref is not None,
-            sampler_stopped=self.provider is None or not self.provider.is_running,
+            sampler_stopped=stopped, snapshot_rpc_cleanup_status=(
+                'open' if not self.closed else 'closed' if complete else 'unknown'),
+            snapshot_rpc_terminal_evidence_complete=complete,
+            snapshot_rpc_receipts=[dict(row) for row in self.snapshot_rpc_receipts],
+            snapshot_rpc_pending=pending,
+            snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
             measured_interfaces=['Core demand/StageWork/credits', 'method-ready/offer counts',
                                  'confirmed member work receipts', 'native running/waiting/KV/preemptions'],
             unavailable_interfaces=['CPU utilization', 'GPU utilization', 'physical free memory', 'MFU/HBM'],

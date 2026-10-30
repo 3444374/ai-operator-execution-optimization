@@ -430,6 +430,29 @@ settles, so repeated polls cannot stack unconfirmed sampling requests.
 Pressure protection keeps priority; a pending gap is retained until a qualified
 non-pressure frame invalidates the comparison, so protection cannot hide it.
 
+Control RPC evidence uses the existing normal query close receipt at
+`owner_close.batch_supply_feedback`. `snapshot_rpc_receipts` records each collected
+return or result exception, its local request index/session, driver timestamps,
+cancel outcome and returned native identity/sequence/time headers. It stores no
+prompt or result text. `eligible_for_provider` means schema/identity eligibility,
+not proof that the provider or controller consumed a fresh frame.
+After stopping the sampler, close/report nonblockingly collects a ready original
+Future; the final report also rechecks after the existing actor close. A later
+explicit close can publish new terminal evidence without changing the earlier
+report object or model-result ledger. There is no new snapshot or blocking wait
+to obtain this evidence.
+
+`snapshot_rpc_pending` remains explicitly unknown while no remote result is
+available, including failed cancellation or a locally cancelled read Future.
+Cancellation request, sampler stop and physical producer exit do not establish
+a normal RPC return. `snapshot_rpc_cleanup_status="closed"` and
+`snapshot_rpc_terminal_evidence_complete=True` mean all issued attempts have
+collected returns/result exceptions and the sampler stopped; a terminal exception
+is still labelled `raised`, not a normal frame. The existing owner data-plane
+close status and unknown model outcomes keep their meanings; control evidence
+must be checked separately. Historical e42 retained-ref flags cannot be upgraded
+using these new receipts or process-cleanup evidence.
+
 The supply policy defaults to **no elapsed-time, change-count or candidate-attempt
 cutoff** (`exploration_s=None`, `max_changes=None`, `max_candidate_attempts=None`,
 `min_remaining=0`). An unresolved default candidate can be remeasured in the same

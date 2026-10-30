@@ -1452,6 +1452,9 @@ class SemLoomRecordChainCore:
         if self._supply_feedback is not None:
             self._supply_feedback.close()
         if self.last_close_report is not None and self.last_close_report["status"] == "closed":
+            if self._supply_feedback is not None:
+                self.last_close_report = dict(self.last_close_report,
+                    batch_supply_feedback=self._supply_feedback.report())
             return self.last_close_report
         errors = [] if self._active is None else self._active._close_query()
         if self._actors is None:
