@@ -32,8 +32,7 @@ class NativeFeedbackTests(unittest.TestCase):
         for mode,profile in (('on','full'),('on','handoff'),('off','full')):
             with self.subTest(mode=mode,profile=profile),tempfile.TemporaryDirectory()as folder, \
                     patch.dict(sys.modules),patch.dict(os.environ,SEM_RECORD_OBSERVATION=mode,SEM_RECORD_OBSERVER_ROOT=folder), \
-                    patch.object(transport,'_frame',transport._frame),patch.object(transport,'_read_frame',transport._read_frame), \
-                    patch.object(transport,'serve',transport.serve):
+                    patch.object(transport,'_frame',transport._frame),patch.object(transport,'json',transport.json):
                 root=Path(folder);(root/'config.json').write_text(json.dumps(dict(observation=dict(
                     mode=mode,profile=profile,max_events_per_process=2000,max_event_bytes=65536,
                     max_pending_frame_metadata=50))))
