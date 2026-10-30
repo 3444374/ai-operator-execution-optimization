@@ -138,21 +138,29 @@ class BatchSupplyFeedback:
         from src.scheduling.runtime.observations import ServiceMetricsSnapshot
         if self.closed or self.session_id is None:
             return None
+        finished = False
         try:
             if self.ref is None:
                 self.sample_session = self.session_id
                 self.ref = self.owner._actors.model_actor.snapshot.remote()
-                self.future = self.ref.future()
                 self.requests += 1
                 self.expiry = time.monotonic()+self.config.options.window_s
                 self.expired = False
+            if self.future is None:
+                self.future = self.ref.future()
             if not self.future.done():
                 if not self.expired and time.monotonic() >= self.expiry:
                     self.expired = True
-                    self.owner._actors.ray.cancel(self.ref, force=False)
+                    try:
+                        self.owner._actors.ray.cancel(self.ref, force=False)
+                    except Exception:
+                        self.errors += 1
+                    # A failed cancel does not prove completion. Keep this RPC
+                    # until its future settles, as the original Core sampler does.
                 # Duplicate source sequence keeps its original timestamp in the
                 # provider; it is never relabelled as fresh or idle.
                 return self.last_native
+            finished = True
             value = self.future.result()
             self.ref = self.future = None
             native = (value.get('ipc') or {}).get('native_feedback')
@@ -168,7 +176,8 @@ class BatchSupplyFeedback:
             return self.last_native
         except Exception:
             self.errors += 1
-            self.ref = self.future = None
+            if finished:
+                self.ref = self.future = None
             return None
 
     def update(self, stream):
@@ -261,6 +270,7 @@ class BatchSupplyFeedback:
         return dict(kind='fixed_B_batch_supply_feedback', initial_batches=1,
             max_batches=self.config.max_batches, fixed_B=self.owner.prepared_batching.token_budget,
             phases=list(self.phases), snapshot_requests=self.requests, sample_errors=self.errors,
+            snapshot_ref_retained=self.ref is not None,
             sampler_stopped=self.provider is None or not self.provider.is_running,
             measured_interfaces=['Core demand/StageWork/credits', 'method-ready/offer counts',
                                  'confirmed member work receipts', 'native running/waiting/KV/preemptions'],

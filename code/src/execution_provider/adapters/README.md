@@ -415,7 +415,11 @@ feedback channel. Prepared rate is method-to-Core admission, not all CPU work.
 Repeated/stale/missing frames cannot establish spare hardware. Queued backend work,
 no ready supply, tail/dependency wait, pressure and configuration boundaries have
 separate reasons. A feedback gap invalidates a trial and returns to its last safe
-setting without aborting members or releasing unknown credits.
+setting without aborting members or releasing unknown credits. It clears the
+interrupted comparison, retains elapsed/attempt/change budgets and trial cost,
+and permits new measurements after fresh feedback resumes; it is not a permanent
+stop. Failed snapshot cancellation retains the outstanding RPC until its future
+settles, so repeated polls cannot stack unconfirmed sampling requests.
 
 The policy reuses `ResourceFeedbackController` work-aware trials/comparison and
 pressure protection, with demand gating. Default comparison requires actual
@@ -431,8 +435,11 @@ not qualified by the token-work comparison; stage descriptors remain explicit.
 [Core/actor/CPU-IPC differentials](../../../tests/execution_provider/test_lotus_batch_supply_feedback.py)
 check missing feedback, pressure, bounds, no-gain rollback, original prompts/results,
 successors, Extract barriers and unknown ownership. Positive CPU integration uses
-an explicit delivered-work test configuration and a simulated engine-stat source;
-default computed policy is replay-tested. These are engineering checks, not GPU
+an explicit delivered-work test configuration, a simulated engine-stat source and
+a logical sampling frontier with an injected gap. A separate real-clock case
+checks original transport/results/cleanup without requiring a finite fixture to
+last long enough for exploration. Default computed policy is replay-tested.
+These are engineering checks, not GPU
 resource benefit or full real-engine feedback qualification. Cold startup,
 observation and trial work stay in the caller's original query clock.
 

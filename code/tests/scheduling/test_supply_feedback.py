@@ -103,6 +103,57 @@ class SupplyFeedbackTests(unittest.TestCase):
         self.assertTrue(report['exploration_censored'])
         self.assertGreater(report['exploration_wall_s'], 0)
         self.assertFalse(report['learned_global_optimum'])
+        self.assertIsNone(report['stop_reason'])
+        self.assertEqual(report['feedback_gaps'], 1)
+        self.assertFalse(report['unconfirmed_trial'])
+        self.assertEqual(report['evaluations'][-1]['kind'], 'feedback_gap')
+        cost, changes, started = report['exploration_wall_s'], report['changes'], self.c.started
+        decisions = [self.tick(120+n*20) for n in range(16)]
+        self.assertIn('performance_probe', [d.reason for d in decisions])
+        self.assertGreaterEqual(self.c.report()['exploration_wall_s'], cost)
+        self.assertGreater(self.c.report()['changes'], changes)
+        self.assertEqual(self.c.started, started)
+
+    def test_reviewer_gap_before_reference_recovers_from_fresh_points(self):
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4,
+            replace(self.options, poll_interval_s=.25)), clock=lambda: self.now)
+        self.c.reset(1, 100000)
+        decisions = []
+        times = [1., 2.01]+[2.01+i*.25 for i in range(1, 41)]
+        for i, at in enumerate(times):
+            self.now = at-1
+            decisions.append(self.tick(i*20))
+        report = self.c.report()
+        self.assertNotEqual(report['stop_reason'], 'feedback_gap')
+        self.assertIn('performance_probe', [d.reason for d in decisions])
+        self.assertEqual(report['feedback_gaps'], 1)
+        self.assertFalse(report['learned_global_optimum'])
+
+    def test_gap_does_not_reset_trial_attempts_or_elapsed_budget(self):
+        options = replace(self.options, search_mode='geometric', max_candidate_attempts=1)
+        self.c = SupplyFeedbackController(SupplyFeedbackConfig(4, options), clock=lambda: self.now)
+        self.c.reset(1, 10000)
+        for n in range(5):self.tick(n*20)
+        self.assertEqual(self.c.current_window, 2)
+        self.now += 3
+        self.tick(100)
+        row = next(r for r in self.c.report()['search_state']['points'] if r['window'] == 2)
+        self.assertEqual((row['attempts'], row['outcome']), (1, 'incomparable'))
+        self.assertEqual(self.c.report()['changes'], 2)
+        self.assertEqual(self.c.started, 0)
+        decisions = [self.tick(120+n*20) for n in range(24)]
+        self.assertNotIn(2, [d.window for d in decisions if d.reason == 'performance_probe'])
+
+    def test_gap_does_not_reopen_a_real_stop_or_grow_from_missing_feedback(self):
+        for n in range(30):self.tick(n*20)
+        self.assertEqual(self.c.report()['stop_reason'], 'local_plateau')
+        changes = self.c.report()['changes']
+        self.now += 3
+        self.tick(620)
+        for n in range(8):self.tick(640+n*20, fresh=False)
+        for n in range(8):self.tick(800+n*20)
+        self.assertEqual(self.c.report()['stop_reason'], 'local_plateau')
+        self.assertEqual(self.c.report()['changes'], changes)
 
     def test_pressure_confirmation_does_not_bridge_a_clear_supply_limited_window(self):
         self.c.current_window = 4

@@ -178,11 +178,35 @@ class SupplyFeedbackController(ResourceFeedbackController):
         self._supply_anchor = None
         self._delivery_anchor = None
         self._last_native_at = None
+        self.feedback_gaps = 0
         self._current_supply = self._measurement_supply = self._measurement_delivery = None
 
     def _mark(self, observation):
         super()._mark(observation)
         self._measurement_supply, self._measurement_delivery = self._current_supply, observation
+
+    def _invalidate_feedback_gap(self, observation):
+        self.feedback_gaps += 1
+        self.evaluations = (self.evaluations + [dict(kind='feedback_gap',
+            at_s=observation.observed_at_s-self.started, window=self.current_window,
+            comparison_valid=False, rule='remeasure the safe window after fresh feedback resumes')])[-64:]
+        if self._probe_at is not None and self._search is not None:
+            candidate = (self._probe_candidate['window'] if self._probe_candidate is not None
+                         else self.current_window)
+            self._search.finish(candidate, 'incomparable')
+        self._end_probe(observation.observed_at_s)
+        self._reference, self._anchor, self._windows = None, None, []
+        self._cached_context = None
+        if self._search is not None:
+            self._search.verified_window = None
+        self._discard_first = True
+        self._window_at = observation.observed_at_s
+        # Keep elapsed time, attempt/change budgets and real stop conditions.
+        # The gap invalidates evidence, not the possibility of future evidence.
+        if self.current_window != self._confirmed_window:
+            return self._change(self._confirmed_window, 'feedback_gap', observation)
+        self._mark(observation)
+        return self._hold('feedback_gap')
 
     def update_supply(self, observation, supply):
         o = observation
@@ -224,8 +248,7 @@ class SupplyFeedbackController(ResourceFeedbackController):
             state = "resource_pressure"
         elif feedback_gap:
             state = 'insufficient_information'
-            decision = self._stop('feedback_gap', o, rollback=True)
-            self._anchor, self._windows = None, []
+            decision = self._invalidate_feedback_gap(o)
         elif (not o.fresh or not o.has_service_metrics or o.sample_age_s is None
               or o.sample_age_s > self.options.window_s
               or not 0 <= supply.observed_at_s-o.observed_at_s <= self.options.poll_interval_s):
@@ -292,9 +315,8 @@ class SupplyFeedbackController(ResourceFeedbackController):
 
     def report(self):
         report = super().report()
-        if report['stop_reason'] == 'feedback_gap':
-            report.update(exploration_censored=True, incomplete_reason='feedback_gap', can_continue=False)
         return dict(report, control_unit="application_batches", initial_window=1,
+                    feedback_gaps=self.feedback_gaps,
                     demand_windows=list(self.supply_history), B_adjusted=False,
                     demand_changes=list(self.supply_changes), demand_states=dict(self.supply_states),
                     demand_decision_calls=sum(self.supply_states.values()),
