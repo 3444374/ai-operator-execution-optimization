@@ -7,7 +7,8 @@
 工作流沿用既有记录查询检查的 Git 身份、CPU 资格、受监督执行方式。运行仍复用
 `control_resource_C2.py`、原 budget/lease/supervisor；旧文件名仅为兼容，C 从私有配置读取。
 采集器从工具 checkout 加载，被测代码从独立的 `source_root` 加载，两者分别绑定准确提交，
-不要求为了重现旧代码把测试工具覆盖进旧 checkout。
+不要求为了重现旧代码把测试工具覆盖进旧 checkout。controller 也在被测解释器的新进程中运行，
+不复用工具进程缓存的 `src` 模块。
 
 ## 同步、资格和最小 on/off 配置
 
@@ -23,7 +24,8 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
 
 `qualify` 跑本仓 CPU fixture 和 off/on 公共基类探针，不启动 Ray RPC、真实模型或 GPU。
 失败输出保留，未通过不产生 `CPU-READY.json`。工具提交、被测源码、基准配置和七份 runtime
-代码摘要都绑定在该新回执中，后续变化须重新资格检查。
+代码摘要都绑定在该新回执中，后续变化须重新资格检查。Movie 路径在被测源码的新进程中调用原
+`check_plan` 零模型预检，冻结每个 manifest／输入的摘要和完整调用数；不只冻结文件路径。
 
 `PRIVATE_BASE_CONFIG` 使用原有成功运行的仓外配置。仍由现场一次性保留并绑定的内容包括：
 
@@ -53,7 +55,7 @@ off/on 只改变 `mode`。事件数量与单事件字节是操作保护，不是
 "$DRIVER_PYTHON" -B "$TOOL" check --config "$NEW_ON_DIRECTORY/PREPARED-CONFIG.json"
 ```
 
-预算身份使用原 API 校验，冒号和路径字符会被拒绝。已有输出目录、账本、资格和原件均不覆盖。
+预算身份使用原 API 校验，冒号、路径字符及基准旧身份会被拒绝。已有输出目录、账本、资格和原件均不覆盖。
 被测代码、输入或站点绑定改变后会拒绝旧回执；只在代码目录放未跟踪 overlay 也会被拒绝。
 `prepare` 保留原并发配置，不沿用旧矩阵生成器去修改 C、native 容量或调用数。
 

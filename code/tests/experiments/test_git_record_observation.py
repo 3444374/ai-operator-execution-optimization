@@ -2,6 +2,7 @@
 from copy import deepcopy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -32,7 +33,7 @@ class PrivateCaptureFlowTests(unittest.TestCase):
                 input=dict(csv=str(self.root/'input.csv'), **file_identity(self.root/'input.csv'))),
             host_helpers=dict(path=str(self.root/'host.py'), **file_identity(self.root/'host.py')),
             host_config=dict(path=str(self.root/'host.json'), **file_identity(self.root/'host.json')),
-            units=dict(chain=12), engine=dict(max_model_calls=12, max_num_seqs=128),
+            units=dict(chain=12), engine=dict(max_model_calls=12, max_num_seqs=128,driver_python=sys.executable),
             generation=dict(seed=0, stop=['private fixture']),
             resources=dict(max_active_batches=2, model_batch_rows=1),
             environment=dict(KEEP_PRIVATE_BINDING='unchanged'),
@@ -42,7 +43,7 @@ class PrivateCaptureFlowTests(unittest.TestCase):
         self.base_path.write_text(json.dumps(self.base))
         self.ready = dict(status='passed_CPU_fixtures', tool_source=self.tools,
             public_source=self.source, base_config_sha256=file_identity(self.base_path)['sha256'],
-            observer_sha256=workflow.runtime_hashes())
+            observer_sha256=workflow.runtime_hashes(),input_binding=workflow.input_binding(self.base))
         self.ready_path = self.root/'CPU-READY.json'
         self.ready_path.write_text(json.dumps(self.ready))
         self.addCleanup(patch.stopall)
@@ -77,7 +78,7 @@ class PrivateCaptureFlowTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.prepare()
         self.assertFalse((self.root/'new').exists())
         (self.root/'input.csv').write_text('private fixture, never public payload')
-        for bad in ('bad:budget','../escape','..'):
+        for bad in ('bad:budget','../escape','..','original'):
             with self.assertRaises(ValueError): self.prepare(bad)
 
     def test_native_budget_mismatch_is_rejected_not_silently_rewritten(self):
@@ -93,18 +94,24 @@ class PrivateCaptureFlowTests(unittest.TestCase):
 
     def test_run_checks_ready_source_and_only_invokes_existing_controller(self):
         path = self.prepare()
-        with patch.object(workflow.controller, 'main') as controller:
+        with patch.object(workflow.subprocess, 'run') as controller:
             workflow.run(path)
-            controller.assert_called_once_with(str(path.parent.resolve()))
+            args,kwargs=controller.call_args
+            self.assertEqual(args[0][-1],str(path.parent.resolve()))
+            self.assertEqual(args[0][0],self.base['engine']['driver_python'])
+            self.assertEqual(Path(args[0][-2]),TOOL/'control_resource_C2.py')
+            self.assertEqual(kwargs['env']['PYTHONPATH'].split(os.pathsep)[0],
+                             str(Path(self.base['source_root'])/'code'))
+            self.assertTrue(kwargs['check'])
         changed = json.loads(path.read_text())
         changed['tool_source']['tree'] = 'changed'
         path.write_text(json.dumps(changed))
-        with patch.object(workflow.controller, 'main') as controller:
+        with patch.object(workflow.subprocess, 'run') as controller:
             with self.assertRaises(ValueError): workflow.run(path)
             controller.assert_not_called()
 
     def test_run_without_execute_flag_fails_before_controller(self):
-        with patch.object(workflow.controller, 'main') as controller:
+        with patch.object(workflow.subprocess, 'run') as controller:
             with self.assertRaises(SystemExit): workflow.main(['run','--config',str(self.base_path)])
             controller.assert_not_called()
 
@@ -115,9 +122,46 @@ class PrivateCaptureFlowTests(unittest.TestCase):
             changed = deepcopy(original)
             changed[key] = value
             path.write_text(json.dumps(changed))
-            with patch.object(workflow.controller, 'main') as controller:
+            with patch.object(workflow.subprocess, 'run') as controller:
                 with self.assertRaises(ValueError): workflow.run(path)
                 controller.assert_not_called()
+
+    def test_fresh_controller_environment_imports_target_not_cached_tool_modules(self):
+        target=Path(self.base['source_root'])/'code'
+        (target/'src/experiments').mkdir(parents=True)
+        for name in ('src/__init__.py','src/experiments/__init__.py','src/experiments/attempt_ledger.py'):
+            (target/name).write_text('ORIGIN="target"\n')
+        path=self.prepare()
+        original_run=subprocess.run
+        observed=[]
+        def child(command,**options):
+            program='import json,src,src.experiments.attempt_ledger as a;print(json.dumps([src.__file__,a.__file__]))'
+            result=original_run([command[0],'-B','-c',program],**options,stdout=subprocess.PIPE,text=True)
+            observed.extend(json.loads(result.stdout))
+            return result
+        with patch.object(workflow.subprocess,'run',side_effect=child):workflow.run(path)
+        self.assertEqual([Path(p).resolve()for p in observed],
+            [(target/'src/__init__.py').resolve(),(target/'src/experiments/attempt_ledger.py').resolve()])
+
+    def test_changed_legal_Movie_manifest_cannot_reuse_ready(self):
+        manifest=self.root/'movie-manifest.json'
+        manifest.write_text('{"valid_input":"first"}')
+        self.base['workload']=dict(kind='movie_session',name='MovieQ3',expected_calls=12)
+        self.base['units']=dict(q3=12)
+        self.base['movie_plan']=dict(engine=self.base['engine'],queries=[dict(manifest=str(manifest))])
+        self.base_path.write_text(json.dumps(self.base))
+        def preflight(command,**options):
+            value=dict(expected_calls=12,queries=[dict(query_id='q3',expected_calls=12,
+                manifest_sha256=file_identity(manifest)['sha256'])])
+            return subprocess.CompletedProcess(command,0,stdout=json.dumps(value))
+        with patch.object(workflow.subprocess,'run',side_effect=preflight):
+            ready=dict(self.ready,base_config_sha256=file_identity(self.base_path)['sha256'],
+                       input_binding=workflow.input_binding(self.base))
+            self.ready_path.write_text(json.dumps(ready))
+            path=self.prepare()
+            manifest.write_text('{"valid_input":"replacement"}')
+            with self.assertRaises(ValueError):workflow.check(path)
+            with self.assertRaises(ValueError):self.prepare('another')
 
     def test_base_change_during_CPU_qualification_never_publishes_ready(self):
         def execute(*args, **kwargs):
@@ -209,6 +253,42 @@ class GitSourceTests(unittest.TestCase):
             (repo/'code/overlay.py').unlink()
             source.write_text('modified\n')
             with self.assertRaises(ValueError): workflow.git_identity(repo,expected)
+
+
+class MovieInputBindingTests(unittest.TestCase):
+    def test_real_target_preflight_distinguishes_two_valid_inputs_at_same_manifest_path(self):
+        import csv
+        from dataclasses import asdict
+        import shutil
+        from src.baselines.text.movie_records import prepare_movie_source
+        from src.semantic_methods.lotus.records import RecordsResources
+        from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            manifests=[]
+            for tag in ('first','replacement'):
+                path=root/(tag+'.csv')
+                with path.open('w',newline='') as stream:
+                    writer=csv.writer(stream)
+                    writer.writerow(['reviewId','id','reviewText','scoreSentiment'])
+                    writer.writerows([['1','taken_3',tag,'POSITIVE'],['2','other','fixture','NEGATIVE']])
+                manifests.append(prepare_movie_source(path,root/tag,
+                    expected_csv_sha256=file_identity(path)['sha256'],max_rows=2,task='movie-q1'))
+            model=root/'model.json';model.write_text('{}')
+            engine=asdict(EngineSpec(str(model),sys.executable,sys.executable,max_model_calls=2))
+            plan=dict(schema='semloom.movie_session_plan.v1',backend='semloom-core',lifecycle='isolated',
+                model_name='openai/cpu-fixture',generation=asdict(GenerationSpec(max_tokens=4)),engine=engine,
+                resources=asdict(RecordsResources(prepare_batch_rows=1,model_batch_rows=1)),
+                profile=dict(mode='async',max_inflight=1),queries=[dict(query_id='q1',task='movie-q1',
+                    manifest=str(manifests[0]),phase='measured')])
+            config=dict(source_root=str(workflow.REPO),movie_plan=plan,
+                workload=dict(kind='movie_session',expected_calls=2),units=dict(q1=2))
+            first=workflow.input_binding(config)
+            for path in manifests[1].parent.iterdir():
+                if path.is_file():shutil.copyfile(path,manifests[0].parent/path.name)
+            second=workflow.input_binding(config)
+            self.assertEqual(first['expected_calls'],second['expected_calls'])
+            self.assertNotEqual(first['queries'][0]['manifest_sha256'],second['queries'][0]['manifest_sha256'])
 
 
 if __name__ == '__main__': unittest.main()

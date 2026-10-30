@@ -50,6 +50,37 @@ def runtime_hashes():
             for name in sorted(controller.RUNTIME_FILES)}
 
 
+def target_environment(config):
+    env = {k:v for k,v in os.environ.items() if not k.startswith('SEM_RECORD_')}
+    env.update(PYTHONPATH=str(Path(config['source_root'])/'code') + os.pathsep + str(HERE),
+               PYTHONDONTWRITEBYTECODE='1', HF_HUB_OFFLINE='1',
+               TRANSFORMERS_OFFLINE='1', LITELLM_LOCAL_MODEL_COST_MAP='True')
+    return env
+
+
+def input_binding(config):
+    if config['workload']['kind'] == 'record_chain':
+        return dict(kind='record_chain', input=file_identity(config['workload']['input']['csv']))
+    program = '''
+import json,sys
+from src.experiments.movie_records_session import check_plan
+value=check_plan(json.load(sys.stdin))
+print(json.dumps(dict(expected_calls=value['expected_calls'],queries=[
+    {k:q[k] for k in ('query_id','manifest_sha256','expected_calls')} for q in value['queries']])))
+'''
+    plan = config['movie_plan']
+    env = target_environment(config)
+    env['CUDA_VISIBLE_DEVICES'] = ''
+    result = subprocess.run([plan['engine']['driver_python'], '-B', '-c', program],
+        input=json.dumps(plan), env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        check=True)
+    value = json.loads(result.stdout)
+    if (value['expected_calls'] != config['workload']['expected_calls']
+            or {q['query_id']:q['expected_calls'] for q in value['queries']} != config['units']):
+        raise ValueError('Movie input binding differs from complete declared work')
+    return dict(kind='movie_session', **value)
+
+
 def validate_base(config):
     from src.experiments.attempt_ledger import AttemptBudget
     require_outside_git(Path(config['artifact_root']))
@@ -81,6 +112,7 @@ def qualify(config_path, output_root, expected_tool_commit):
     base_identity = file_identity(config_path)
     tools = tool_identity(expected_tool_commit)
     source = validate_base(config)
+    inputs = input_binding(config)
     output_root = Path(output_root).resolve()
     new_private_directory(output_root)
     env = {k: v for k, v in os.environ.items() if not k.startswith('SEM_RECORD_')}
@@ -101,10 +133,12 @@ def qualify(config_path, output_root, expected_tool_commit):
             raise RuntimeError('CPU qualification failed; original output retained')
     if (file_identity(config_path) != base_identity
             or tool_identity(expected_tool_commit) != tools
-            or validate_base(read_private(config_path)) != source):
+            or validate_base(read_private(config_path)) != source
+            or input_binding(read_private(config_path)) != inputs):
         raise ValueError('source or configuration changed during CPU qualification')
     receipt = dict(status='passed_CPU_fixtures', tool_source=tools, public_source=source,
         base_config_sha256=base_identity['sha256'],
+        input_binding=inputs,
         observer_sha256=runtime_hashes(), real_Ray_RPC=False, models=0, GPU=False)
     write_private_json(output_root / 'CPU-READY.json', receipt)
     return receipt
@@ -114,12 +148,15 @@ def prepare(base_path, ready_path, output_root, cell_id, mode, profile):
     if cell_id in ('.', '..'):
         raise ValueError('cell identity must name a new artifact')
     base = read_private(base_path)
+    if cell_id in (base.get('cell_id'), base.get('run_id')):
+        raise ValueError('use a fresh cell and run identity')
     ready = read_private(ready_path)
     tools = tool_identity(ready['tool_source']['head'])
     if (ready['status'] != 'passed_CPU_fixtures' or ready['tool_source'] != tools
             or ready['base_config_sha256'] != file_identity(base_path)['sha256']
             or ready['observer_sha256'] != runtime_hashes()
-            or ready['public_source'] != validate_base(base)):
+            or ready['public_source'] != validate_base(base)
+            or ready['input_binding'] != input_binding(base)):
         raise ValueError('qualified source, bindings or tools changed')
     config = deepcopy(base)
     config.update(cell_id=cell_id, run_id=cell_id, trace_name=cell_id,
@@ -165,7 +202,8 @@ def check(config_path):
         return value
     if (ready['tool_source'] != config['tool_source']
             or ready['public_source'] != config['expected_source']
-            or business(base) != business(config)):
+            or business(base) != business(config)
+            or ready['input_binding'] != input_binding(config)):
         raise ValueError('CPU source binding changed')
     return config
 
@@ -176,7 +214,11 @@ def run(config_path):
     root = Path(config['artifact_root']).resolve()
     if config_path != root / 'PREPARED-CONFIG.json':
         raise ValueError('execute only the frozen cell configuration')
-    controller.main(str(root))
+    target = config.get('movie_plan') or config
+    # Never carry the tool interpreter's cached src modules into the target controller.
+    subprocess.run([target['engine']['driver_python'], '-u', '-B',
+                    str(HERE/'control_resource_C2.py'), str(root)],
+                   cwd=REPO, env=target_environment(config), check=True)
 
 
 def original_files(root, excluded=None):
