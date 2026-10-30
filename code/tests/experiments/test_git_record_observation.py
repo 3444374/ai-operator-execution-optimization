@@ -126,6 +126,17 @@ class PrivateCaptureFlowTests(unittest.TestCase):
                 with self.assertRaises(ValueError): workflow.run(path)
                 controller.assert_not_called()
 
+    def test_changed_cell_or_run_identity_is_rejected_again_before_execution(self):
+        path=self.prepare()
+        original=json.loads(path.read_text())
+        for cell,run,trace in (('original','original','original'),('new','other','new')):
+            changed=dict(original,cell_id=cell,run_id=run,trace_name=trace)
+            path.write_text(json.dumps(changed))
+            with self.assertRaises(ValueError):workflow.check(path)
+            with patch.object(workflow.subprocess,'run') as controller:
+                with self.assertRaises(ValueError):workflow.run(path)
+                controller.assert_not_called()
+
     def test_fresh_controller_environment_imports_target_not_cached_tool_modules(self):
         target=Path(self.base['source_root'])/'code'
         (target/'src/experiments').mkdir(parents=True)

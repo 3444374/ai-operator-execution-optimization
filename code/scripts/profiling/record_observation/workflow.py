@@ -189,6 +189,9 @@ def check(config_path):
     controller.check_material(config)
     ready = controller.checked_json(config['cpu_check'])
     base = read_private(config['base_config']['path'])
+    if (config['cell_id'] != config['run_id'] or config['trace_name'] != config['cell_id']
+            or config['cell_id'] in (base.get('cell_id'), base.get('run_id'))):
+        raise ValueError('prepared cell/run identity changed or reused the base')
     if (file_identity(config['base_config']['path'])['sha256'] != config['base_config']['sha256']
             or config['base_config']['sha256'] != ready['base_config_sha256']):
         raise ValueError('qualified base changed')
