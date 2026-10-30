@@ -441,6 +441,13 @@ Future; the final report also rechecks after the existing actor close. A later
 explicit close can publish new terminal evidence without changing the earlier
 report object or model-result ledger. There is no new snapshot or blocking wait
 to obtain this evidence.
+If the sampler outlives close's join timeout, each report copies the request slot,
+receipts and reference flags under one short ownership lock. Dispatch, Future
+access and provider joins run outside that lock; a live sampler remains unknown
+until its result is collected. Driver clock failures and non-finite or overflowing
+source timestamps are stored as `None` with the corresponding `*_error_type`. These
+metadata failures do not erase a known RPC return/exception or stop owner cleanup;
+complete RPC terminal evidence does not imply complete timestamp metadata.
 
 `snapshot_rpc_pending` remains explicitly unknown while no remote result is
 available, including failed cancellation or a locally cancelled read Future.

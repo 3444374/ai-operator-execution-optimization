@@ -1,8 +1,10 @@
 """Snapshot RPC ownership and terminal receipts; no model, Ray or GPU required."""
 from concurrent.futures import Future
 from copy import deepcopy
+import inspect
 import json
 import sys
+import threading
 import time
 from types import SimpleNamespace
 import unittest
@@ -250,6 +252,152 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         feedback.close()
         self.assertEqual(feedback.report()['snapshot_rpc_cleanup_status'], 'closed')
         self.assertEqual(before['snapshot_rpc_cleanup_status'], 'unknown')
+
+    def test_late_future_terminal_during_report_keeps_one_ownership_snapshot(self):
+        from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
+        def line_of(method, text):
+            lines, start = inspect.getsourcelines(method)
+            return start+next(i for i, line in enumerate(lines) if text in line)
+        for pause_at in ("rpc_terminal_status='unknown'", 'complete ='):
+            with self.subTest(pause_at=pause_at):
+                feedback, refs, _ = self.sampler()
+                feedback.sample()
+                entered, release = threading.Event(), threading.Event()
+                poll_line = line_of(feedback._consume_snapshot, 'done = self.future.done()')
+                report_line = line_of(feedback.report, pause_at)
+                def worker_trace(frame, event, arg):
+                    if (event == 'line' and frame.f_code is feedback._consume_snapshot.__func__.__code__
+                            and frame.f_lineno == poll_line):
+                        entered.set()
+                        if not release.wait(3):raise TimeoutError('fixture sampler not released')
+                    return worker_trace
+                old_trace = threading.gettrace()
+                threading.settrace(worker_trace)
+                try:
+                    feedback.provider = NonBlockingMetricsObservationProvider(feedback.sample,
+                        poll_interval_s=.01, close_timeout_s=0)
+                finally:
+                    threading.settrace(old_trace)
+                paused = False
+                def report_trace(frame, event, arg):
+                    nonlocal paused
+                    if (event == 'line' and frame.f_code is feedback.report.__func__.__code__
+                            and frame.f_lineno == report_line and not paused):
+                        paused = True
+                        refs[0][1].set_result(self.frame())
+                        release.set()
+                        feedback.provider._thread.join(3)
+                        self.assertFalse(feedback.provider.is_running)
+                    return report_trace
+                old_trace = sys.gettrace()
+                try:
+                    self.assertTrue(entered.wait(3))
+                    feedback.close()
+                    self.assertTrue(feedback.provider.is_running)
+                    self.assertFalse(refs[0][1].done())
+                    sys.settrace(report_trace)
+                    before = feedback.report()
+                    sys.settrace(old_trace)
+                    self.assertTrue(paused)
+                    self.assertEqual(before['snapshot_requests'], 1)
+                    self.assertEqual(before['snapshot_rpc_receipts'], [])
+                    self.assertEqual(before['snapshot_rpc_pending']['request_index'], 1)
+                    self.assertEqual(before['snapshot_rpc_cleanup_status'], 'unknown')
+                    after = feedback.report()
+                    self.assertEqual(after['snapshot_rpc_cleanup_status'], 'closed')
+                    self.assertIsNone(after['snapshot_rpc_pending'])
+                    self.assertEqual([r['request_index'] for r in after['snapshot_rpc_receipts']], [1])
+                finally:
+                    sys.settrace(old_trace)
+                    release.set()
+                    feedback.provider.close()
+                    feedback.provider._thread.join(3)
+
+    def test_source_clock_overflow_keeps_known_RPC_terminal_with_unknown_metadata(self):
+        feedback, refs, _ = self.sampler()
+        feedback.sample()
+        frame = self.frame()
+        frame['ipc']['native_feedback']['observed_at_s'] = 10**1000
+        refs[0][1].set_result(frame)
+        feedback.close()
+        report = feedback.report()
+        row, = report['snapshot_rpc_receipts']
+        self.assertEqual(row['rpc_terminal_status'], 'returned')
+        self.assertIsNone(row['response_source_observed_at_s'])
+        self.assertEqual(row['response_source_observed_at_error_type'], 'OverflowError')
+        self.assertIsNone(feedback.ref)
+        json.dumps(report, allow_nan=False)
+
+    def test_issue_receipt_clock_failure_keeps_the_single_RPC_accounted_for(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        feedback, refs, _ = self.sampler()
+        monotonic, attempts = time.monotonic, []
+        def clock():
+            attempts.append(1)
+            if len(attempts) == 1:raise RuntimeError('fixture issue timestamp unavailable')
+            return monotonic()
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=clock)):
+            feedback.sample()
+        self.assertEqual(len(refs), 1)
+        refs[0][1].set_result(self.frame()); feedback.close()
+        report = feedback.report()
+        row, = report['snapshot_rpc_receipts']
+        self.assertEqual(report['snapshot_requests'], 1)
+        self.assertIsNone(report['snapshot_rpc_pending'])
+        self.assertIsNone(row['issued_at_s'])
+        self.assertEqual(row['issued_at_error_type'], 'RuntimeError')
+        self.assertEqual(row['rpc_terminal_status'], 'returned')
+
+    def _owner_close_with_failed_receipt_clock(self, *, cached):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        from src.execution_provider.adapters import lotus_record_chain_core as owner_module
+        feedback, refs, _ = self.sampler()
+        feedback.sample(); refs[0][1].set_result(self.frame())
+        owner = object.__new__(owner_module.SemLoomRecordChainCore)
+        owner._supply_feedback = feedback
+        prior = dict(status='closed', calls=[dict(status='unknown')]) if cached else None
+        owner.last_close_report, owner._active, owner._actors = prior, None, feedback.owner._actors
+        owner.transport = owner.core = owner.capacity = owner.deadline = None
+        class CleanupError(Exception):pass
+        cleanup_error = CleanupError('fixture original cleanup error')
+        def unavailable_clock():raise RuntimeError('fixture receipt timestamp unavailable')
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=unavailable_clock)), \
+                patch.object(owner_module, 'close_prepared_core', side_effect=cleanup_error) as cleanup:
+            if cached:
+                result = owner._close_record_local()
+                cleanup.assert_not_called()
+                self.assertEqual(result['calls'], prior['calls'])
+                self.assertNotIn('batch_supply_feedback', prior)
+            else:
+                with self.assertRaises(CleanupError) as caught:owner._close_record_local()
+                self.assertIs(caught.exception, cleanup_error)
+                cleanup.assert_called_once()
+        row, = feedback.report()['snapshot_rpc_receipts']
+        self.assertEqual(row['rpc_terminal_status'], 'returned')
+        self.assertIsNone(row['terminal_observed_at_s'])
+        self.assertEqual(row['terminal_observed_at_error_type'], 'RuntimeError')
+        self.assertIsNone(feedback.ref)
+
+    def test_receipt_clock_failure_does_not_break_cached_owner_close(self):
+        self._owner_close_with_failed_receipt_clock(cached=True)
+
+    def test_receipt_clock_failure_still_runs_cleanup_and_preserves_its_exception(self):
+        self._owner_close_with_failed_receipt_clock(cached=False)
+
+    def test_receipt_clock_failure_preserves_terminal_RPC_exception(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_chain_token_batches as batching
+        feedback, refs, _ = self.sampler()
+        feedback.sample(); refs[0][1].set_exception(ValueError('fixture RPC exception'))
+        def unavailable_clock():raise RuntimeError('fixture receipt timestamp unavailable')
+        with patch.object(batching, 'time', SimpleNamespace(monotonic=unavailable_clock)):
+            feedback.close()
+        row, = feedback.report()['snapshot_rpc_receipts']
+        self.assertEqual((row['rpc_terminal_status'], row['rpc_error_type']), ('raised', 'ValueError'))
+        self.assertEqual(row['terminal_observed_at_error_type'], 'RuntimeError')
+        self.assertIsNone(feedback.ref)
 
 
 class SnapshotRPCEntryTests(unittest.TestCase):

@@ -3,6 +3,7 @@ from dataclasses import asdict
 from concurrent.futures import CancelledError
 import json
 import math
+from threading import Lock
 import time
 
 from src.modalities.text.tokenization import chat_token_count
@@ -109,6 +110,7 @@ class BatchSupplyFeedback:
         self.next_poll = 0.
         self.snapshot_rpc_receipts = []
         self._snapshot_request = None
+        self._snapshot_lock = Lock()
 
     def event(self, action, key):
         if action == 'submitted':
@@ -144,40 +146,61 @@ class BatchSupplyFeedback:
         try:
             if self.ref is None and self._snapshot_request is None:
                 remote = self.owner._actors.model_actor.snapshot.remote
-                self.sample_session = self.session_id
-                self.requests += 1
                 ready = getattr(self.owner._actors, 'model_ready', None) or {}
                 uid = ready.get('engine_uid')
-                self._snapshot_request = dict(request_index=self.requests,
-                    request_session_id=self.sample_session, issued_at_s=time.monotonic(),
-                    expected_engine_uid=uid if type(uid) is str else None,
-                    cancel_requested=False, cancel_reason=None, cancel_error_type=None,
-                    future_access_error_type=None, dispatch_error_type=None, poll_error_type=None,
-                    client_future_cancelled=False)
-                self.ref = remote()
+                issued_at, clock_error = self._snapshot_clock()
+                with self._snapshot_lock:
+                    self.sample_session = self.session_id
+                    self.requests += 1
+                    self.errors += int(clock_error is not None)
+                    self._snapshot_request = dict(request_index=self.requests,
+                        request_session_id=self.sample_session, issued_at_s=issued_at,
+                        issued_at_error_type=clock_error,
+                        expected_engine_uid=uid if type(uid) is str else None,
+                        cancel_requested=False, cancel_reason=None, cancel_error_type=None,
+                        future_access_error_type=None, dispatch_error_type=None, poll_error_type=None,
+                        client_future_cancelled=False)
+                ref = remote()
+                with self._snapshot_lock:
+                    self.ref = ref
                 self.expiry = time.monotonic()+self.config.options.window_s
                 self.expired = False
             if self.ref is None:
                 return None  # Dispatch outcome without a handle remains unknown.
             if self.future is None:
-                self.future = self.ref.future()
+                future = self.ref.future()
+                with self._snapshot_lock:
+                    self.future = future
             return self._consume_snapshot(cancel_pending=True)
         except Exception as error:
-            self.errors += 1
-            if self._snapshot_request is not None:
-                field = 'dispatch_error_type' if self.ref is None else 'future_access_error_type'
-                self._snapshot_request = dict(self._snapshot_request, **{field:type(error).__name__})
+            with self._snapshot_lock:
+                self.errors += 1
+                if self._snapshot_request is not None:
+                    field = 'dispatch_error_type' if self.ref is None else 'future_access_error_type'
+                    self._snapshot_request = dict(self._snapshot_request, **{field:type(error).__name__})
             return None
 
     def _cancel_snapshot(self, reason):
-        if self.ref is None or self._snapshot_request['cancel_requested']:
-            return
-        self._snapshot_request = dict(self._snapshot_request, cancel_requested=True, cancel_reason=reason)
+        with self._snapshot_lock:
+            ref = self.ref
+            if ref is None or self._snapshot_request['cancel_requested']:
+                return
+            self._snapshot_request = dict(self._snapshot_request, cancel_requested=True, cancel_reason=reason)
         try:
-            self.owner._actors.ray.cancel(self.ref, force=False)
+            self.owner._actors.ray.cancel(ref, force=False)
         except Exception as error:
-            self.errors += 1
-            self._snapshot_request = dict(self._snapshot_request, cancel_error_type=type(error).__name__)
+            with self._snapshot_lock:
+                self.errors += 1
+                self._snapshot_request = dict(self._snapshot_request, cancel_error_type=type(error).__name__)
+
+    @staticmethod
+    def _snapshot_clock():
+        # Receipt timestamps are optional evidence, not a prerequisite for
+        # collecting a known RPC result or for the owner's required cleanup.
+        try:
+            return time.monotonic(), None
+        except Exception as error:
+            return None, type(error).__name__
 
     @staticmethod
     def _snapshot_header(value):
@@ -186,25 +209,38 @@ class BatchSupplyFeedback:
         native = native if isinstance(native, dict) else {}
         session = value.get('session_id') if isinstance(value, dict) else None
         uid, sequence, at = (native.get(n) for n in ('engine_uid', 'sequence', 'observed_at_s'))
+        clock_error = None
+        if type(at) in (int, float):
+            try:
+                if not math.isfinite(at):raise ValueError('non-finite source timestamp')
+            except (OverflowError, ValueError) as error:
+                at, clock_error = None, type(error).__name__
+        else:
+            at = None
         return dict(response_session_id=session if type(session) is int else None,
             response_engine_uid=uid if type(uid) is str else None,
             response_source_sequence=sequence if type(sequence) is int else None,
-            response_source_observed_at_s=at if type(at) in (int, float) and math.isfinite(at) else None)
+            response_source_observed_at_s=at, response_source_observed_at_error_type=clock_error)
 
     def _finish_snapshot(self, status, disposition, *, value=None, error=None):
-        self.snapshot_rpc_receipts.append(dict(self._snapshot_request,
-            rpc_terminal_status=status, future_done_confirmed=True,
-            terminal_observed_at_s=time.monotonic(), rpc_error_type=error,
-            frame_disposition=disposition, **self._snapshot_header(value)))
-        self.ref = self.future = self._snapshot_request = None
+        observed_at, clock_error = self._snapshot_clock()
+        header = self._snapshot_header(value)
+        with self._snapshot_lock:
+            self.errors += int(clock_error is not None)+int(header['response_source_observed_at_error_type'] is not None)
+            self.snapshot_rpc_receipts.append(dict(self._snapshot_request,
+                rpc_terminal_status=status, future_done_confirmed=True,
+                terminal_observed_at_s=observed_at, terminal_observed_at_error_type=clock_error,
+                rpc_error_type=error, frame_disposition=disposition, **header))
+            self.ref = self.future = self._snapshot_request = None
 
     def _consume_snapshot(self, *, cancel_pending=False):
         from src.scheduling.runtime.observations import ServiceMetricsSnapshot
         try:
             done = self.future.done()
         except Exception as error:
-            self.errors += 1
-            self._snapshot_request = dict(self._snapshot_request, poll_error_type=type(error).__name__)
+            with self._snapshot_lock:
+                self.errors += 1
+                self._snapshot_request = dict(self._snapshot_request, poll_error_type=type(error).__name__)
             return None
         if not done:
             if cancel_pending and self.closed:
@@ -220,7 +256,8 @@ class BatchSupplyFeedback:
         except CancelledError:
             # A cancelled local read Future is not the ObjectRef's remote
             # return/exception. Keep the same RPC ownership explicitly unknown.
-            self._snapshot_request = dict(self._snapshot_request, client_future_cancelled=True)
+            with self._snapshot_lock:
+                self._snapshot_request = dict(self._snapshot_request, client_future_cancelled=True)
             return None
         except Exception as error:
             if not self.closed:
@@ -345,7 +382,8 @@ class BatchSupplyFeedback:
             self.provider.pause()
 
     def close(self):
-        self.closed = True
+        with self._snapshot_lock:
+            self.closed = True
         if self.provider is not None:
             self.provider.close()
         self._reap_stopped_snapshot(cancel=True)
@@ -354,21 +392,28 @@ class BatchSupplyFeedback:
     def report(self):
         if self.closed:
             self._reap_stopped_snapshot()
-        stopped = self.provider is None or not self.provider.is_running
-        pending = (None if self._snapshot_request is None else
-                   dict(self._snapshot_request, rpc_terminal_status='unknown',
+        # The sampler may outlive provider.close(). Copy ownership together;
+        # RPC dispatch, result access and provider joins never hold this lock.
+        with self._snapshot_lock:
+            stopped = self.provider is None or not self.provider.is_running
+            request = None if self._snapshot_request is None else dict(self._snapshot_request)
+            receipts = list(self.snapshot_rpc_receipts)
+            requests, errors, closed = self.requests, self.errors, self.closed
+            ref_retained, future_retained = self.ref is not None, self.future is not None
+        pending = (None if request is None else
+                   dict(request, rpc_terminal_status='unknown',
                         unresolved_reason=('client_future_cancelled_no_rpc_result'
-                            if self._snapshot_request['client_future_cancelled'] else 'terminal_not_collected')))
-        complete = (self.closed and stopped and pending is None and self.ref is None
-                    and self.future is None and len(self.snapshot_rpc_receipts) == self.requests)
+                            if request['client_future_cancelled'] else 'terminal_not_collected')))
+        complete = (closed and stopped and pending is None and not ref_retained
+                    and not future_retained and len(receipts) == requests)
         return dict(kind='fixed_B_batch_supply_feedback', initial_batches=1,
             max_batches=self.config.max_batches, fixed_B=self.owner.prepared_batching.token_budget,
-            phases=list(self.phases), snapshot_requests=self.requests, sample_errors=self.errors,
-            snapshot_ref_retained=self.ref is not None,
+            phases=list(self.phases), snapshot_requests=requests, sample_errors=errors,
+            snapshot_ref_retained=ref_retained,
             sampler_stopped=stopped, snapshot_rpc_cleanup_status=(
-                'open' if not self.closed else 'closed' if complete else 'unknown'),
+                'open' if not closed else 'closed' if complete else 'unknown'),
             snapshot_rpc_terminal_evidence_complete=complete,
-            snapshot_rpc_receipts=[dict(row) for row in self.snapshot_rpc_receipts],
+            snapshot_rpc_receipts=[dict(row) for row in receipts],
             snapshot_rpc_pending=pending,
             snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
             measured_interfaces=['Core demand/StageWork/credits', 'method-ready/offer counts',
