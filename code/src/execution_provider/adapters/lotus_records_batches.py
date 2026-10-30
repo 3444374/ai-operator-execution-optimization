@@ -84,7 +84,8 @@ class PreparedRecordsCore:
             feedback = SupplyFeedbackConfig.from_dict(batching['feedback'])
         self.owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, prepared_batching=PreparedBatching(**batching['prepared_batching']),
-            batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback)
+            batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
+            rolling_refill=batching.get('rolling_refill', False))
         stream = self.owner.evaluate(iter(records), chain, expected=records,
                                      columns=scan.payload_columns, query_id=query_id, cancelled=cancelled)
         self._active = _OrdinaryResults(self, stream)
@@ -117,9 +118,14 @@ class PreparedRecordsCore:
                     status=call['status'], model_end_monotonic=call.get('model_end_monotonic')))
         if report['query_completed']:
             actual, requested = report['async_token_batches'], self.execution_profile['record_batching']
-            upper = requested.get('feedback', {}).get('max_batches', requested['C_batch'])
-            valid_window = (1 <= actual['concurrency'] <= upper and actual['peak_batches'] <= upper
-                            if 'feedback' in requested else actual['concurrency'] == requested['C_batch'])
+            if requested.get('rolling_refill'):
+                valid_window = (actual.get('rolling_refill') is True and actual['concurrency'] is None
+                    and actual.get('C_request') == requested['R'] and actual['peak_requests'] <= requested['R']
+                    and actual['peak_batches'] <= requested['R'])
+            else:
+                upper = requested.get('feedback', {}).get('max_batches', requested['C_batch'])
+                valid_window = (1 <= actual['concurrency'] <= upper and actual['peak_batches'] <= upper
+                                if 'feedback' in requested else actual['concurrency'] == requested['C_batch'])
             if (actual['policy'] != requested['prepared_batching'] or not valid_window
                     or actual['request_limit'] != requested['R'] or sum(map(len, groups.values())) != len(self._expected)
                     or actual['data_batch_rpcs'] != len(groups)):

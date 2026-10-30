@@ -79,6 +79,74 @@ class AsyncTokenEntryTests(unittest.TestCase):
         self.assertIsNone(report['record_batching']['row_cap'])
         self.assertEqual(report['inference_calls'], 0)
 
+    def rolling_config(self):
+        config = self.config()
+        config.pop('batch_concurrency')
+        return dict(config, rolling_refill=True)
+
+    def test_rolling_refill_check_reports_request_window_and_rejects_mixed_units(self):
+        config = self.rolling_config()
+        path = self.save(config)
+        out = io.StringIO()
+        with patch.object(movie, 'model_preflight', return_value=dict(status='preflight_only', inference_calls=0)), \
+                patch('src.execution_provider.adapters.lotus_records_core.create_records_core') as allocate, redirect_stdout(out):
+            self.assertEqual(movie.main(['check', '--source-manifest', self.helper.manifests['movie-q1'],
+                '--sembench-checkout', str(self.root), '--config', str(path)]), 0)
+        allocate.assert_not_called()
+        selected = json.loads(out.getvalue())['record_batching']
+        self.assertEqual((selected['B'], selected['C_request'], selected['R']), (100000, 2, 2))
+        self.assertIsNone(selected['C_batch'])
+        for change in (dict(batch_concurrency=1), dict(batch_feedback=dict(max_batches=2)),
+                       dict(rolling_refill=1), dict(rolling_refill=None), dict(prepared_batching=None)):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                movie.read_config(self.save(dict(config, **change)))
+
+    def test_rolling_refill_normal_run_uses_same_factory_and_preserves_task(self):
+        self.runtime()
+        config = self.rolling_config()
+        source = MovieRecordSource.from_manifest(self.helper.manifests['movie-q1'])
+        self.model.write_text(json.dumps(dict(responses={
+            'filter|'+r['row_id']:dict(text=str(r['source_position']==0)) for r in source.rows()})))
+        path = self.save(config); output = self.root/'rolling-run'; output.mkdir()
+        with patch('src.execution_provider.adapters.lotus_records_core.create_records_core', wraps=create_records_core) as allocate, redirect_stdout(io.StringIO()):
+            self.assertEqual(movie.main(['run', '--source-manifest', str(source.manifest_path),
+                '--sembench-checkout', str(self.root), '--config', str(path),
+                '--output-dir', str(output), '--execute-model', '--worker']), 0)
+        report = json.loads((output/'query.json').read_text())
+        self.assertTrue(allocate.call_args.kwargs['rolling_refill'])
+        self.assertEqual(report['result'], {'reviewId':['1']})
+        self.assertEqual(report['generation'], json.loads(json.dumps(config['generation'])))
+        close = report['owner_close']
+        self.assertEqual(close['status'], 'closed')
+        self.assertEqual(close['record_batching']['C_request'], 2)
+        self.assertTrue(close['async_token_batches']['rolling_refill'])
+        self.assertEqual(close['core_usage']['held_tasks'], 0)
+
+    def test_rolling_refill_isolated_session_driver_uses_same_request_window(self):
+        runtime = self.runtime(); config = self.rolling_config()
+        plan = dict(schema='semloom.movie_session_plan.v1', backend='semloom-core', lifecycle='isolated',
+            model_name='openai/cpu-fixture', generation=config['generation'], engine=config['engine'],
+            resources=config['resources'], profile=config['core_profile'], prepared_batching=config['prepared_batching'],
+            rolling_refill=True, queries=[dict(query_id='rolling-session', task='movie-q1',
+                manifest=self.helper.manifests['movie-q1'], phase='measured')])
+        checked = session.check_plan(plan); query = plan['queries'][0]
+        self.assertEqual(checked['record_batching']['C_request'], 2)
+        source = MovieRecordSource.from_manifest(query['manifest'])
+        self.model.write_text(json.dumps(dict(responses={
+            'filter|'+r['row_id']:dict(text=str(r['source_position']==0)) for r in source.rows()})))
+        context = dict(owner_context={}, claims={'rolling-session':None}, sembench_checkout=self.root,
+            checked_queries={q['query_id']:q for q in checked['queries']})
+        driver = session._MovieDriver(plan, context, self.root/'rolling-session', query)
+        with patch('integrations.imlane_records.chain_runtime.check_external_lease'):
+            driver.start()
+            try:
+                report = driver.query(query, lambda event: None)
+                self.assertEqual(report['result'], {'reviewId':['1']})
+                self.assertEqual(report['backend_close']['record_batching']['C_request'], 2)
+                self.assertEqual(len(runtime.async_actors), 1)
+            finally:
+                self.assertEqual(driver.close()['status'], 'closed')
+
     def feedback_config(self):
         return dict(self.config(), batch_concurrency=1,
             batch_feedback=dict(max_batches=2, options=dict(poll_interval_s=.002, window_s=.05)))

@@ -29,7 +29,10 @@ class PreparedTokenOrganizer:
     def __call__(self, candidates):
         owner = self.owner
         active_batches, active_requests = self.usage()
-        if active_batches >= self.concurrency:
+        # Rolling mode uses the existing per-request compute and resident grants.
+        # Every new batch still needs live, reserved member tasks; B only packs
+        # this handoff and a slow peer does not retain the whole supply window.
+        if not owner.rolling_refill and active_batches >= self.concurrency:
             return ()
         limits = owner._actors.limits
         available = min(owner.resources.max_active_batches-active_requests, limits.max_inflight,
@@ -89,11 +92,13 @@ class PreparedTokenOrganizer:
 
     def report(self):
         batches, requests = self.usage()
+        rolling = (dict(rolling_refill=True, C_request=self.owner.resources.max_active_batches,
+                        admission_unit='single_model_requests') if self.owner.rolling_refill else {})
         return dict(policy=asdict(self.owner.prepared_batching), concurrency=self.concurrency,
             concurrency_unit='application transport batches with unsettled compute members',
             request_limit=self.owner.resources.max_active_batches, active_batches=batches, active_requests=requests,
             peak_batches=self.peak_batches, peak_requests=self.peak_requests, selected_batches=self.selected,
-            recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent')
+            recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent', **rolling)
 
 
 class BatchSupplyFeedback:

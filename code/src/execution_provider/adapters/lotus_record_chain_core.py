@@ -837,7 +837,7 @@ class SemLoomRecordChainCore:
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
-                 batch_feedback=None):
+                 batch_feedback=None, rolling_refill=False):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -875,15 +875,20 @@ class SemLoomRecordChainCore:
         self._streaming_tokens = (self.prepared_batching is not None
                                   and self.prepared_batching.policy == 'token_budget' and execution == 'fused')
         self._async_token_batches = self.prepared_batching is not None and execution == 'record_local_sections'
+        if type(rolling_refill) is not bool:
+            raise ValueError('rolling_refill must be boolean')
+        self.rolling_refill = rolling_refill
         self.batch_concurrency, self._batching_tokenizer = batch_concurrency, batching_tokenizer
         if self._async_token_batches:
             if (self.prepared_batching.policy != 'token_budget' or self.prepared_batching.max_rows is not None
                     or progression != 'record' or token_budget is not None or ready_order != 'fifo'):
                 raise ValueError('async token batches require uncapped token B, record progression, FIFO and W off')
-            self.batch_concurrency = 1 if batch_concurrency is None else batch_concurrency
-            if type(self.batch_concurrency) is not int or not 1 <= self.batch_concurrency <= resources.max_active_batches:
+            if rolling_refill and (batch_concurrency is not None or batch_feedback is not None):
+                raise ValueError('rolling_refill uses request R, not batch_concurrency or batch_feedback')
+            self.batch_concurrency = None if rolling_refill else 1 if batch_concurrency is None else batch_concurrency
+            if not rolling_refill and (type(self.batch_concurrency) is not int or not 1 <= self.batch_concurrency <= resources.max_active_batches):
                 raise ValueError('batch_concurrency must fit the member request grant')
-        elif batch_concurrency is not None or batching_tokenizer is not None:
+        elif batch_concurrency is not None or batching_tokenizer is not None or rolling_refill:
             raise ValueError('batch controls require record-local token batching')
         if batch_feedback is not None:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig

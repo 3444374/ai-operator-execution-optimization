@@ -320,6 +320,37 @@ there is no independent per-batch row cap. Engine `max_num_seqs` and
 The application bulk frame is not a claim that vLLM executes a physical batch of
 the same size at once.
 
+An optional `rolling_refill=True` uses the existing **request** window R instead
+of a whole-batch window. Omit `batch_concurrency` and `batch_feedback` in this
+mode; mixing either with rolling refill is rejected before model startup.
+The default is `False`, preserving the existing fixed/feedback C_batch path.
+
+```python
+owner = SemLoomRecordChainCore(engine, resources,
+    execution="record_local_sections",
+    prepared_batching=PreparedBatching("token_budget", None, B),
+    rolling_refill=True)
+```
+
+A confirmed member terminal frees its request reservation; result consumption
+and row release return their separate storage grants. A new compatible group
+can then use that capacity while a slow member of an earlier group remains in
+flight. R still bounds Core compute, resident rows, the actor and IPC owner;
+byte/result reservations and unknown responsibility are unchanged. A submitted
+group remains immutable: refill creates another transport batch, not new members
+inside the old batch or a change to vLLM's native continuous batching. B only
+organizes each handoff, and the ready-frontier/EOF tail does not wait to fill B.
+Extract retains its complete-relation barrier. The ordinary records factory,
+Movie JSON `check/run` and isolated-session plan accept the same boolean option.
+Receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
+batch/member counts remain separate. W, dynamic request-window feedback and
+joint B/C control are not enabled by this option. Full expected relations and
+audit retention remain outside these active-row logical grants. This is an
+engineering composition of existing admission and transport contracts; only
+[CPU fixture checks](../../../tests/execution_provider/test_lotus_token_rolling_refill.py)
+and [normal-entry checks](../../../tests/experiments/test_movie_async_token_entry.py)
+cover it so far, with no real-Ray/model/GPU performance qualification.
+
 The method prepares actual messages once. The organizer counts each Core task's
 full message/template plus stage output cap and groups compatible ready requests
 across source read chunks. A batch flushes at B, before an incompatible request,

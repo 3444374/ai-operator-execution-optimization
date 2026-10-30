@@ -33,7 +33,7 @@ def check_plan(plan):
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
-    optional = {'admission_cache', 'prepared_batching', 'batch_concurrency', 'batch_feedback'}
+    optional = {'admission_cache', 'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
@@ -53,7 +53,7 @@ def check_plan(plan):
         raise ValueError("Core retains its native single-row preparation/model contract")
     core_profile = None
     batching = None
-    if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback'}):
+    if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill'}):
         raise ValueError('record batching options require semloom-core')
     if plan["backend"] == "semloom-static-reference" and plan["profile"] != {"mode": "sync"}:
         raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
