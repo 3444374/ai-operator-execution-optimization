@@ -22,7 +22,9 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
   --config "$PRIVATE_BASE_CONFIG" --output-root "$NEW_CPU_DIRECTORY"
 ```
 
-`qualify` 跑本仓 CPU fixture 和 off/on 公共基类探针，不启动 Ray RPC、真实模型或 GPU。
+`qualify` 跑本仓 CPU fixture、单请求及 token 批路径的 off/on 公共基类探针，不启动 Ray RPC、真实模型或 GPU。
+旧版被测源码没有批 API 时，该探针明确报告不支持，`CPU-READY.handoff_CPU_paths.token_batch=false`，
+不能将单请求资格解释成该版本的批路径资格。
 失败输出保留，未通过不产生 `CPU-READY.json`。工具提交、被测源码、基准配置和七份 runtime
 代码摘要都绑定在该新回执中，后续变化须重新资格检查。Movie 路径在被测源码的新进程中调用原
 `check_plan` 零模型预检，冻结每个 manifest／输入的摘要和完整调用数；不只冻结文件路径。
@@ -100,9 +102,18 @@ actor，model/GPU worker 也不在轻量模式发事件。缺角色、缺 status
 不是 sink 已完成。跨进程仅使用同机 monotonic 边界，同线程才解释 thread CPU，重叠区间取并集。
 light 不能给出 GPU 忙／闲、硬件瓶颈或 Ray/Core 因果结论；on/off 需保留额外观察开销和所有重复。
 
+token 批路径沿用原 `submit_prepared_batch`／`poll_prepared_batch` 和逐成员 ACK。`actor_result_return`
+在原 poll 锁内、Ray 返回前按成员首次暴露记一次，附原 Core `key`、`batch_key` 和请求身份；
+复用原 `poll_exposed`／关闭后待 ACK 状态，不另建完成台账，重读分页和重复 ACK 不增加成员完成数。
+这只是首次尝试返回，不能证明该 RPC 已送达。`actor_batch_poll_return.members` 仅列首次暴露子集，
+不冒充完整页成员；`driver_batch_future_done` 每次 poll RPC 通知只带批身份，不读取 Future 结果，
+不能按该事件数统计成员或唯一配对重读页。批模式的 `driver_future_done` 则是原批 driver 解码后
+本地成员 Future 就绪，不当作 Ray RPC 完成。actor 关闭后仍有批 ACK 待处理时 sink 不宣称收尾；
+缺失后续 ACK、sink 或有效时钟仍是未知，不能据此宣称完整捕获。
+
 ## 本地维护和清理边界
 
-可直接运行 `qualify` 中的三个 unittest 模块及 `probe_record_resource_handoff.py`，不用仓库外
+可直接运行 `qualify` 中的三个 unittest 模块及两个 `probe_record_resource*_handoff.py`，不用仓库外
 Python 消费器。旧 `prepare_cells`、八格冻结配方和只依赖私有分析目录的联动用例未带入此入口；
 它们的原件保留在原审核／运行目录。新 `prepare` 取代旧矩阵配置拼装，但不删除 full 模式或
 任何有效优化。当前在用的私有包、历史冻结源码、运行回执、失败记录及原始数据均不清理。

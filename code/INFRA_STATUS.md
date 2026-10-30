@@ -219,4 +219,6 @@ PR72已合入main0689；本轮两个后继配置各48次真实调用完成，但
 
 测试采集器和最小 on/off 工作流位于 [profiling 工具](scripts/profiling/record_observation/README.md)，
 复用既有 Git/CPU 资格、原监督／额度及逐文件私有原件检查；配置、认证、数据和回执不进仓库。
+CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页重读不重复统计成员首次返回；
+源码没有批 API 时明确标记该 CPU 范围不支持，事件、sink 或时钟缺失仍不能宣称完整。
 本地迁移未改变生产调度或默认值；新 Git 入口尚未取得真实 Ray/GPU 资格，不继承原私有包的结果。

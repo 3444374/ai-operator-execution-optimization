@@ -124,6 +124,9 @@ def qualify(config_path, output_root, expected_tool_commit):
     for mode in ('off', 'on'):
         commands.append((mode, [sys.executable, '-B', str(probe), config['source_root'],
                                str(output_root / mode), mode]))
+        batch_probe=probe.with_name('probe_record_resource_batch_handoff.py')
+        commands.append(('batch-'+mode,[sys.executable,'-B',str(batch_probe),config['source_root'],
+                                       str(output_root/('batch-'+mode)),mode]))
     for label, command in commands:
         result = subprocess.run(command, cwd=REPO / 'code', env=env,
                                 text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -139,6 +142,9 @@ def qualify(config_path, output_root, expected_tool_commit):
     receipt = dict(status='passed_CPU_fixtures', tool_source=tools, public_source=source,
         base_config_sha256=base_identity['sha256'],
         input_binding=inputs,
+        handoff_CPU_paths=dict(single_request=True,token_batch=all(
+            read_private(output_root/('batch-'+mode)/'PUBLIC-BATCH-HANDOFF.json')['status']
+            =='passed_actual_public_bulk_owner_actor_transport'for mode in('off','on'))),
         observer_sha256=runtime_hashes(), real_Ray_RPC=False, models=0, GPU=False)
     write_private_json(output_root / 'CPU-READY.json', receipt)
     return receipt

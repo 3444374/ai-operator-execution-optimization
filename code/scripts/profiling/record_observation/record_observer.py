@@ -24,6 +24,7 @@ _ALLOWED = set(FIELDS) | set('span_id parent_span_id operation members members_c
 _ALLOWED.update(('identities','outstanding','metrics','prompt_tokens','output_tokens'))
 _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
+_ALLOWED.add('batch_key')
 _installed = set()
 _parent = ContextVar('record_observer_parent', default=None)
 _lock = threading.Lock()
@@ -47,11 +48,18 @@ def handoff_profile():
     return ENABLED and settings().get('profile')=='handoff'
 
 
-def observe_ref_ready(ref, key, identities):
+def core_key(value):
+    if (type(value)in(list,tuple)and len(value)==2
+            and all(type(v)is int and 0<=v<1<<64 for v in value)):
+        return dict(session_id=value[0],sequence=value[1])
+
+
+def observe_ref_ready(ref, key, identities, *, batch_key=None, scope=None):
     if not handoff_profile():return
     def completed(unused):
-        emit('driver_future_done',key=key,identities=identities,
-             scope='Python Future completion notification; original await determines outcome')
+        emit('driver_batch_future_done'if key is None else 'driver_future_done',
+             key=key,identities=identities,batch_key=batch_key,
+             scope=scope or 'Python Future completion notification; original await determines outcome')
     try:ref.future().add_done_callback(completed)
     except Exception as error:
         emit('handoff_probe_unknown',key=key,error_type=type(error).__name__)
@@ -73,7 +81,10 @@ def emit(event, **values):
     global _fd, _n, _attempts, _errors, _dropped, _wall, _cpu
     if not ENABLED:
         return
-    started, cpu = time.monotonic_ns(), time.thread_time_ns()
+    try:started,cpu=time.monotonic_ns(),time.thread_time_ns()
+    except Exception:
+        with _lock:_attempts+=1;_errors+=1
+        return  # No invented clock or successful coverage when the clock fails.
     with _lock:
         _attempts += 1
         try:
@@ -97,8 +108,10 @@ def emit(event, **values):
         except Exception:
             _errors += 1
         finally:
-            _wall += time.monotonic_ns()-started
-            _cpu += time.thread_time_ns()-cpu
+            try:
+                _wall += time.monotonic_ns()-started
+                _cpu += time.thread_time_ns()-cpu
+            except Exception:_errors+=1
 
 
 def close_events():
@@ -265,13 +278,33 @@ def install_driver():
     original=LotusChainActorBackend._submit_task
     @functools.wraps(original)
     def submit(self,task,*args,**kwargs):
-        value=self._request(task)
-        emit('Ray_submit_start',identities=ids([value['row']]),key=asdict(task.key),logical_input_bytes=len(task.task.payload))
+        members=batch=None
+        try:
+            members=ids([json.loads(task.task.payload)['row']])
+            member=getattr(task,'member',None)
+            batch=None if member is None else asdict(member.batch_key)
+            emit('Ray_submit_start',identities=members,key=asdict(task.key),batch_key=batch,
+                 logical_input_bytes=len(task.task.payload),
+                 scope='member transport entry; bulk data RPC is owned by the existing batch driver')
+        except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
         result=original(self,task,*args,**kwargs)
-        emit('Ray_submit_return',key=asdict(task.key),retained_refs=self.retained_refs())
-        if handoff_profile():observe_ref_ready(result,asdict(task.key),ids([value['row']]))
+        try:
+            emit('Ray_submit_return',key=asdict(task.key),batch_key=batch,retained_refs=self.retained_refs())
+            if handoff_profile():observe_ref_ready(result,asdict(task.key),members,batch_key=batch,
+                scope=('local member Future ready after native batch-page decode; not Ray RPC completion'
+                       if batch is not None else None))
+        except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
         return result
     LotusChainActorBackend._submit_task=submit
+    poll=getattr(async_owner.AsyncRecordsActorOwner,'poll_prepared_batch',None)
+    if callable(poll):
+        @functools.wraps(poll)
+        def batch_poll(self,batch_key):
+            result=poll(self,batch_key)
+            observe_ref_ready(result,None,None,batch_key=core_key(batch_key),
+                scope='Ray poll Future notification only; no result read, member count or unique page pairing')
+            return result
+        async_owner.AsyncRecordsActorOwner.poll_prepared_batch=batch_poll
     original_audit=LotusChainActorBackend._audit_result
     @functools.wraps(original_audit)
     def audit(self,expected,value):
@@ -283,7 +316,9 @@ def install_driver():
     transferred=LotusChainActorBackend._result_transferred
     @functools.wraps(transferred)
     def transfer(self,task,value):
-        emit('Ray_result_to_Core',identities=ids([value]),key=asdict(task.key),retained_refs=self.retained_refs())
+        member=getattr(task,'member',None)
+        emit('Ray_result_to_Core',identities=ids([value]),key=asdict(task.key),
+             batch_key=None if member is None else asdict(member.batch_key),retained_refs=self.retained_refs())
         return transferred(self,task,value)
     LotusChainActorBackend._result_transferred=transfer
     emit('driver_observer_installed')

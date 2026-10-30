@@ -12,7 +12,8 @@
     "control_resource_C2.py": "545483354f1b91007459eeae9573a3e6d4dde59c0f8948f47e919248e83b2607"
   },
   "migration": [
-    "Six runtime files copied byte-for-byte. run_resource_C2.py removes only obsolete prepare_cells; execution/observer dispatch remains unchanged.",
+    "Four runtime files remain byte-identical. run_resource_C2.py removes only obsolete prepare_cells; execution/observer dispatch remains unchanged.",
+    "record_observer.py and record_ipc_observer.py add token-batch poll/Future boundaries to the existing hooks, reuse native exposure/ACK state and defer sink finalization while batch ACKs remain. No production or scheduling changes.",
     "workflow.py uses the existing controller Git source gate, CPU qualification, budgets, supervisor and private-artifact primitives.",
     "Old recipe-dependent and external membership-consumer tests stay with the original reviewed collector; public CPU suite covers the migrated capture/handoff path and new Git workflow."
   ],

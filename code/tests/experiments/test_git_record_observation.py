@@ -192,6 +192,21 @@ class PrivateCaptureFlowTests(unittest.TestCase):
         self.assertTrue((self.root/'cpu/unit-run.json').exists())
         self.assertFalse((self.root/'cpu/CPU-READY.json').exists())
 
+    def test_CPU_qualification_runs_batch_probes_and_keeps_unsupported_scope_explicit(self):
+        for supported in(True,False):
+            calls=[]
+            def execute(command,**kwargs):
+                calls.append(command)
+                if any(str(v).endswith('probe_record_resource_batch_handoff.py')for v in command):
+                    directory=Path(command[-2]);directory.mkdir()
+                    status=('passed_actual_public_bulk_owner_actor_transport'if supported else 'not_supported_by_target')
+                    (directory/'PUBLIC-BATCH-HANDOFF.json').write_text(json.dumps(dict(status=status)))
+                return subprocess.CompletedProcess(command,0,stdout='CPU fixture')
+            with patch.object(workflow.subprocess,'run',side_effect=execute):
+                ready=workflow.qualify(self.base_path,self.root/('cpu-'+str(supported)),self.tools['head'])
+            self.assertEqual(len(calls),5)
+            self.assertEqual(ready['handoff_CPU_paths'],dict(single_request=True,token_batch=supported))
+
 
 class OriginalIntegrityTests(unittest.TestCase):
     def setUp(self):

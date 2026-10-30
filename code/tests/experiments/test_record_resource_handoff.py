@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import threading
 from types import ModuleType,SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -20,8 +21,97 @@ class HandoffTests(unittest.TestCase):
     def actor(self):
         ipc=fixtures.load('record_ipc_observer')
         with patch.object(self.observer,'install_actor',lambda:None):value=ipc.ObservedAsyncCoreModelActor()
-        value._readers=0
+        value._readers=0;value._condition=threading.Condition()
+        value._held={};value._closed_pending=None;value.last_close_report=None
         return ipc,value,sys.modules['src.execution_provider.adapters.lotus_records_async_actor'].AsyncCoreModelActor
+
+    def test_batch_pages_and_lost_ACK_replay_mark_each_member_once(self):
+        ipc,actor,base=self.actor();group=(1,7);first=(1,0);second=(1,1)
+        identities={first:fixtures.IDENTITY,second:dict(fixtures.IDENTITY,call_id='second')}
+        actor._held={key:SimpleNamespace(identity=value,batch_key=group,poll_exposed=False)
+                     for key,value in identities.items()}
+        returned=fixtures.SECRET.encode();calls=[];selected=[first]
+        def poll(instance,key):
+            calls.append(key)
+            for member in selected:instance._held[member].poll_exposed=True
+            return returned
+        with patch.object(base,'poll_prepared_batch',poll,create=True):
+            self.assertIs(actor.poll_prepared_batch(group),returned)
+            self.assertIs(actor.poll_prepared_batch(group),returned)  # Lost RPC/ACK, same page.
+            selected[:]=[second]
+            self.assertIs(actor.poll_prepared_batch(group),returned)
+        markers=[e for e in self.events()if e['event']=='actor_result_return']
+        self.assertEqual(len(calls),3);self.assertEqual(len(markers),2)
+        self.assertEqual([e['key']['sequence']for e in markers],[0,1])
+        self.assertTrue(all(e['batch_key']==dict(session_id=1,sequence=7)for e in markers))
+        pages=[e for e in self.events()if e['event']=='actor_batch_poll_return']
+        self.assertEqual([len(e['members'])for e in pages],[1,0,1])
+        self.assertTrue(all(e['members_complete']is False for e in pages))
+        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
+
+    def test_batch_poll_native_exception_is_not_replaced_and_key_iterable_not_consumed(self):
+        ipc,actor,base=self.actor();business=ValueError(fixtures.SECRET);key=iter([fixtures.SECRET])
+        calls=[]
+        def poll(instance,value):calls.append(value);raise business
+        with patch.object(base,'poll_prepared_batch',poll,create=True):
+            with self.assertRaises(ValueError)as caught:actor.poll_prepared_batch(key)
+        self.assertIs(caught.exception,business);self.assertEqual(calls,[key])
+        self.assertEqual(next(key),fixtures.SECRET);self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
+
+    def test_batch_off_and_full_delegate_without_handoff_state_access(self):
+        ipc,actor,base=self.actor();result=object();del actor._condition
+        with patch.object(base,'poll_prepared_batch',return_value=result,create=True)as native:
+            self.observer.ENABLED=False;self.assertIs(actor.poll_prepared_batch([1,7]),result)
+            self.observer.ENABLED=True;self.observer.settings()['profile']='full'
+            self.assertIs(actor.poll_prepared_batch([1,7]),result)
+        self.assertEqual(native.call_count,2);self.assertEqual(self.events(),[])
+
+    def test_batch_metadata_failure_does_not_replace_native_return(self):
+        ipc,actor,base=self.actor();actor._held=None;value=object()
+        with patch.object(base,'poll_prepared_batch',return_value=value,create=True)as native:
+            self.assertIs(actor.poll_prepared_batch([1,7]),value)
+        self.assertEqual(native.call_count,1)
+        self.assertTrue(any(e['event']=='handoff_probe_unknown'for e in self.events()))
+        self.assertFalse(any(e['event']=='actor_result_return'for e in self.events()))
+
+    def test_closed_batch_receipts_remain_observable_until_last_native_ACK(self):
+        ipc,actor,base=self.actor();key=(1,0);group=(1,7)
+        report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
+            confirmed=True,input_gate_closed=True,active_readers=0),unconsumed_core_results=[
+                dict(request_key=list(key),batch_key=list(group),result=fixtures.IDENTITY)])
+        actor.last_close_report=report;actor._closed_pending={key:False}
+        with patch.object(base,'close',return_value=report,create=True):self.assertIs(actor.close(1),report)
+        self.assertFalse(self.observer._closed)
+        value=object()
+        def poll(instance,group):instance._closed_pending[key]=True;return value
+        def ack(instance,request):return instance._closed_pending.pop(tuple(request),False)
+        with patch.object(base,'poll_prepared_batch',poll,create=True),patch.object(base,'acknowledge_core',ack,create=True):
+            self.assertIs(actor.poll_prepared_batch(group),value)
+            self.assertIs(actor.poll_prepared_batch(group),value)
+            self.assertTrue(actor.acknowledge_core(key));self.assertTrue(self.observer._closed)
+            self.assertFalse(actor.acknowledge_core(key))
+        self.assertEqual(sum(e['event']=='actor_result_return'for e in self.events()),1)
+        self.assertEqual(sum(e['event']=='actor_sink_finalizing'for e in self.events()),1)
+
+    def test_batch_sink_and_clock_failures_preserve_native_result(self):
+        ipc,actor,base=self.actor();value=object();calls=[]
+        def poll(instance,group):calls.append(group);return value
+        with patch.object(base,'poll_prepared_batch',poll,create=True):
+            with patch.object(self.observer.os,'write',side_effect=OSError('CPU sink failure')):
+                self.assertIs(actor.poll_prepared_batch([1,7]),value)
+            with patch.object(self.observer.time,'monotonic_ns',side_effect=RuntimeError('CPU clock failure')):
+                self.assertIs(actor.poll_prepared_batch([1,7]),value)
+        self.assertEqual(calls,[[1,7],[1,7]]);self.assertGreaterEqual(self.observer._errors,2)
+
+    def test_batch_future_notification_never_reads_payload_or_counts_members(self):
+        future=Future();future.set_result(fixtures.SECRET)
+        ref=SimpleNamespace(future=lambda:future)
+        with patch.object(future,'result',side_effect=AssertionError('observer consumed RPC')):
+            self.observer.observe_ref_ready(ref,None,None,batch_key=dict(session_id=1,sequence=7))
+        event=self.events()[-1];self.assertEqual(event['event'],'driver_batch_future_done')
+        self.assertIsNone(event['key']);self.assertIsNone(event['identities'])
+        self.assertEqual(event['batch_key'],dict(session_id=1,sequence=7))
+        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
 
     def test_future_notification_does_not_consume_result_or_change_exception(self):
         for error in (None,ValueError(fixtures.SECRET)):

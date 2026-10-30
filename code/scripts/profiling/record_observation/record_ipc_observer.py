@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from src.serving.backends.async_engine_process import AsyncEngineProcess
-from record_observer import ROOT, ENABLED, emit, ids, settings, install_cpu_hooks, handoff_profile, close_events
+from record_observer import ROOT, ENABLED, emit, ids, core_key, settings, install_cpu_hooks, handoff_profile, close_events
 
 _frames=OrderedDict()
 _lock=threading.Lock()
@@ -199,9 +199,7 @@ def __getattr__(name):
         def _process_type(self):return ObservedAsyncEngineProcess
         def _run_core(self,rows,deadline,maximum,request_key,generation=None):
             if not handoff_profile():return super()._run_core(rows,deadline,maximum,request_key,generation)
-            key=(dict(session_id=request_key[0],sequence=request_key[1])
-                 if type(request_key)in(list,tuple)and len(request_key)==2
-                 and all(type(v)is int and 0<=v<1<<64 for v in request_key)else None)
+            key=core_key(request_key)
             try:result=super()._run_core(rows,deadline,maximum,request_key,generation)
             except BaseException as error:
                 emit('actor_result_raise',key=key,identities=ids(rows),error_type=type(error).__name__)
@@ -210,16 +208,58 @@ def __getattr__(name):
             emit('actor_result_return',key=key,identities=ids(rows),
                  scope='before native reader guard releases; Ray serialization/return still follow')
             return result
-        def close(self,*args,**kwargs):
-            report=super().close(*args,**kwargs)
-            if handoff_profile() and not getattr(self,'_record_sink_finalized',False):
+        def poll_prepared_batch(self,batch_key):
+            if not handoff_profile():return super().poll_prepared_batch(batch_key)
+            # Reuse the native first-exposure/ACK frontier, not an observer ledger.
+            # Its condition is reentrant; no native ownership fields are changed.
+            with self._condition:
+                pending=None
+                try:
+                    group=tuple(batch_key)if core_key(batch_key)is not None else None
+                    pending={key:call.identity for key,call in self._held.items()
+                             if call.batch_key==group and not call.poll_exposed}
+                    for receipt in(self.last_close_report or {}).get('unconsumed_core_results',()):
+                        key=tuple(receipt['request_key'])
+                        if (tuple(receipt.get('batch_key',()))==group
+                                and self._closed_pending.get(key)is False):
+                            pending[key]=receipt['result']
+                except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+                try:result=super().poll_prepared_batch(batch_key)
+                except BaseException as error:
+                    emit('actor_batch_poll_raise',batch_key=core_key(batch_key),error_type=type(error).__name__)
+                    raise
+                try:
+                    exposed=[]
+                    for key,identity in(pending or {}).items():
+                        held=self._held.get(key)
+                        if ((held is not None and held.poll_exposed)
+                                or (self._closed_pending or {}).get(key)is True):
+                            members=ids([identity]);exposed.append(dict(key=core_key(key),identities=members))
+                            emit('actor_result_return',key=core_key(key),batch_key=core_key(batch_key),
+                                 identities=members,scope='first native batch-poll exposure; before Ray return; not ACK or delivery proof')
+                    emit('actor_batch_poll_return',batch_key=core_key(batch_key),members=exposed,
+                         members_complete=False,scope='newly exposed members only; replay/empty pages are not new completions')
+                except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+                return result
+        def _finalize_record_sink(self,report):
+            if not handoff_profile()or getattr(self,'_record_sink_finalized',False):return
+            with self._condition:
                 proof=report.get('producer_quiescence')or {}
                 if (report.get('status')=='closed'and proof.get('schema')=='semloom.async_actor_quiescence.v1'
                         and proof.get('confirmed')is True and proof.get('input_gate_closed')is True
-                        and proof.get('active_readers')==0 and self._readers==0):
-                    emit('actor_sink_finalizing',status='closed',scope='native producer quiescence; before owner kill request')
+                        and proof.get('active_readers')==0 and self._readers==0
+                        and not getattr(self,'_closed_pending',None)):
+                    emit('actor_sink_finalizing',status='closed',scope='native producer quiescence and no pending batch ACK; before owner kill request')
                     close_events();self._record_sink_finalized=True
-                else:emit('actor_sink_not_final',status='unknown',scope='native reader/producer close not proved')
+                else:emit('actor_sink_not_final',status='unknown',scope='native readers, pending batch ACK or producer close not proved')
+        def acknowledge_core(self,request_key):
+            result=super().acknowledge_core(request_key)
+            if handoff_profile()and result and self.last_close_report is not None:
+                self._finalize_record_sink(self.last_close_report)
+            return result
+        def close(self,*args,**kwargs):
+            report=super().close(*args,**kwargs)
+            self._finalize_record_sink(report)
             return report
     class ObservedPrepareActor(_PrepareActor):
         def __init__(self,*args,**kwargs):
