@@ -32,6 +32,7 @@ _ALLOWED.update('native_capacity max_num_seqs max_num_batched_tokens max_model_l
 _installed = set()
 _parent = ContextVar('record_observer_parent', default=None)
 _lock = threading.Lock()
+_close_lock = threading.Lock()
 _fd = None
 _closed = False
 _phase = 'online'
@@ -183,13 +184,19 @@ def emit(event, **values):
 
 
 def close_events():
-    global _fd, _closed, _errors
     if not ENABLED:
         return
+    # Draining calls emit(), which takes _lock. A separate lock keeps the whole
+    # drain/fsync/footer transaction owned by one closer without blocking enqueue.
+    with _close_lock:
+        if not _closed:
+            _close_events()
+
+
+def _close_events():
+    global _fd, _closed, _errors
     _drain_buffer()
     with _lock:
-        if _closed:
-            return
         flushed = False
         if _fd is not None:
             descriptor=_fd;_fd=None
