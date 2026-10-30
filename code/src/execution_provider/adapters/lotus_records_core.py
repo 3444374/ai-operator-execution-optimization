@@ -1043,7 +1043,8 @@ class _CoreFeedback:
                 self.ref = self.future = None
                 return None
             value = future.result()
-            received_at_s = time.monotonic()
+            try:received_at_s = time.monotonic()
+            except Exception:received_at_s = None
             if generation != self.generation:
                 return None
             self.ref = self.future = None
