@@ -78,9 +78,15 @@ class PreparedRecordsCore:
             tokenizer = AutoTokenizer.from_pretrained(self.engine.tokenizer_path or self.engine.model_path,
                                                       trust_remote_code=False, local_files_only=True)
         actors = AsyncRecordsActorOwner.for_prepared(self.engine, self.generation, self.resources, limits=self._limits)
+        feedback = None
+        if 'feedback' in batching:
+            from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
+            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
+            spec = batching['feedback']
+            feedback = SupplyFeedbackConfig(spec['max_batches'], ResourceFeedbackConfig(**spec['options']))
         self.owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, prepared_batching=PreparedBatching(**batching['prepared_batching']),
-            batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer)
+            batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback)
         stream = self.owner.evaluate(iter(records), chain, expected=records,
                                      columns=scan.payload_columns, query_id=query_id, cancelled=cancelled)
         self._active = _OrdinaryResults(self, stream)
@@ -113,7 +119,10 @@ class PreparedRecordsCore:
                     status=call['status'], model_end_monotonic=call.get('model_end_monotonic')))
         if report['query_completed']:
             actual, requested = report['async_token_batches'], self.execution_profile['record_batching']
-            if (actual['policy'] != requested['prepared_batching'] or actual['concurrency'] != requested['C_batch']
+            upper = requested.get('feedback', {}).get('max_batches', requested['C_batch'])
+            valid_window = (1 <= actual['concurrency'] <= upper and actual['peak_batches'] <= upper
+                            if 'feedback' in requested else actual['concurrency'] == requested['C_batch'])
+            if (actual['policy'] != requested['prepared_batching'] or not valid_window
                     or actual['request_limit'] != requested['R'] or sum(map(len, groups.values())) != len(self._expected)
                     or actual['data_batch_rpcs'] != len(groups)):
                 raise ValueError('actual token batch execution differs from the selected factory configuration')

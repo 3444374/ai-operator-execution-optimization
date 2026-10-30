@@ -391,6 +391,51 @@ driver use this factory; resident reuse, dynamic admission/cache and unsupported
 row-capped combinations fail before model construction. Configuration and commands
 are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
 
+## Optional fixed-B supply feedback (local CPU candidate)
+
+`SemLoomRecordChainCore` and the Python `create_records_core` factory accept
+`batch_feedback=SupplyFeedbackConfig(max_batches=operational_batch_ceiling)` from
+`src.scheduling.submission_control.stage_work`. This requires the existing
+record-local token path, `batch_concurrency=1`, FIFO, record progression and W off;
+the ceiling must fit R. Omission retains the fixed path and installs no sampler.
+The Movie CLI/JSON and resident-session schemas do not yet expose this new field.
+
+Only the application **batch** window changes. B remains the caller's fixed work
+budget, and R, Core bytes, IPC slots/bytes and native startup declarations remain
+separate. The start is one batch, with no task token reference, gold, cached best
+setting or hard exploration timeout. The explicit ceiling is an operational
+limit, never a measured performance platform. Runtime B adjustment is deferred.
+
+The existing method-ready callback and Core sink count preparation admissions and
+submissions; original confirmed receipts provide completion and input/output/cache
+work. Core task `WorkDescriptor`/`StageWork` supplies the actual ready-work units.
+Window reports pair these rates/demand and logical capacity with same-owner,
+same-session native running/waiting/KV/preemption frames over the existing IPC
+feedback channel. Prepared rate is method-to-Core admission, not all CPU work.
+Repeated/stale/missing frames cannot establish spare hardware. Queued backend work,
+no ready supply, tail/dependency wait, pressure and configuration boundaries have
+separate reasons. A feedback gap invalidates a trial and returns to its last safe
+setting without aborting members or releasing unknown credits.
+
+The policy reuses `ResourceFeedbackController` work-aware trials/comparison and
+pressure protection, with demand gating. Default comparison requires actual
+computed/cached counters; unavailable work keeps the comparison unresolved.
+Existing KV protection thresholds are engineering guardrails, not saturation
+measurements. CPU/GPU utilization, physical free memory and native startup capacity
+readback are currently unknown; IPC startup limits and declared native limits are
+reported separately. KV is a usage ratio; free KV bytes are not returned by this
+interface. No GPU percentage triggers growth. Mixed-stage cost attribution is
+not qualified by the token-work comparison; stage descriptors remain explicit.
+
+[Policy replays](../../../tests/scheduling/test_supply_feedback.py) and
+[Core/actor/CPU-IPC differentials](../../../tests/execution_provider/test_lotus_batch_supply_feedback.py)
+check missing feedback, pressure, bounds, no-gain rollback, original prompts/results,
+successors, Extract barriers and unknown ownership. Positive CPU integration uses
+an explicit delivered-work test configuration and a simulated engine-stat source;
+default computed policy is replay-tested. These are engineering checks, not GPU
+resource benefit or full real-engine feedback qualification. Cold startup,
+observation and trial work stay in the caller's original query clock.
+
 ## Optional method-ready successor selection
 
 The generic `MethodDriver` still defaults to `round_robin`; `LotusChainFIFO` and

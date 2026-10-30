@@ -1,16 +1,18 @@
-"""Bounded stage-work control candidate with fail-safe static fallback.
+"""Engine-independent stage-work and demand-gated online feedback candidates.
 
-This is an engine-independent policy candidate, not a performance claim. It
-only moves inside an offline-calibrated action set and never treats GPU
-utilization or a single service metric as sufficient evidence.
+The legacy work controller uses its explicit calibrated action set. The supply
+controller reuses measured-work trials without task calibration or hardware
+utilization as evidence of spare capacity. Neither establishes resource benefit.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field, replace
 
 from ...planning.work import RuntimeStateSnapshot
+from ...planning.work import StageWork
+from .adaptive import ResourceFeedbackConfig, ResourceFeedbackController
 
 
 @dataclass(frozen=True)
@@ -107,3 +109,188 @@ class BoundedStageWorkController:
         )
         self._index = updated
         return WorkCreditDecision(self.current_work, action, reason)
+
+
+@dataclass(frozen=True)
+class SupplyFeedbackConfig:
+    """Explicit operational ceiling; no task reference or historical optimum."""
+    max_batches: int
+    options: ResourceFeedbackConfig = field(default_factory=lambda: ResourceFeedbackConfig(
+        allow_exploration=True, search_mode="geometric", work_basis="computed",
+        work_comparison="local_pairs"))
+
+    def __post_init__(self):
+        if type(self.max_batches) is not int or self.max_batches < 1:
+            raise ValueError("max_batches must be a positive operational ceiling")
+        if type(self.options) is not ResourceFeedbackConfig:
+            raise TypeError("options must be ResourceFeedbackConfig")
+        if self.options.poll_interval_s > self.options.window_s:
+            raise ValueError("poll interval must fit the measurement window")
+
+
+@dataclass(frozen=True)
+class SupplyState:
+    """Control-thread demand at the end of the same native measurement window.
+
+    Counts describe actual prepared/admitted work, not potential future model
+    calls. StageWork retains declared units, not calibrated hardware cost.
+    """
+    observed_at_s: float
+    ready_items: int
+    prepared_total: int
+    submitted_total: int
+    active_batches: int
+    upstream_pending: bool
+    exhausted: bool
+    capacity_blocked: str | None = None
+    ready_work: tuple[StageWork, ...] = ()
+    local_capacity: dict = field(default_factory=dict)
+    source_exhausted: bool = False
+
+    def __post_init__(self):
+        if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
+            raise ValueError("supply timestamp must be finite and non-negative")
+        for name in ("ready_items", "prepared_total", "submitted_total", "active_batches"):
+            if type(getattr(self, name)) is not int or getattr(self, name) < 0:
+                raise ValueError(name + " must be a non-negative integer")
+        if any(type(v) is not bool for v in (self.upstream_pending, self.exhausted, self.source_exhausted)):
+            raise TypeError("supply state flags must be boolean")
+
+
+class SupplyFeedbackController(ResourceFeedbackController):
+    """Gate the existing work-aware trials on actual demand and capacity.
+
+    The controlled window is application batches, never member/request C.
+    A bounded online probe is not a claim of idle hardware or a global optimum.
+    """
+    def __init__(self, config, *, clock=None):
+        self.supply_config = config
+        super().__init__(config.max_batches, 1, config.options, clock=clock)
+        self.config = replace(self.config, additive_increase=1)
+
+    def reset(self, initial_window, total_items, *, search_hint=None):
+        if initial_window != 1 or search_hint is not None:
+            raise ValueError('supply feedback starts at one without a historical search hint')
+        super().reset(1, total_items)
+        self.supply_history = []
+        self._supply_anchor = None
+        self._delivery_anchor = None
+        self._last_native_at = None
+        self._current_supply = self._measurement_supply = self._measurement_delivery = None
+
+    def _mark(self, observation):
+        super()._mark(observation)
+        self._measurement_supply, self._measurement_delivery = self._current_supply, observation
+
+    def update_supply(self, observation, supply):
+        o = observation
+        self._current_supply = supply
+        state, decision = "measuring", None
+        rates = None
+        native_valid = (o.fresh and o.has_service_metrics and o.sample_age_s is not None
+                        and o.sample_age_s <= self.options.window_s)
+        native_at = None if not native_valid else o.observed_at_s-o.sample_age_s
+        feedback_gap = (native_valid and self._last_native_at is not None
+                        and not 0 <= native_at-self._last_native_at <= self.options.window_s)
+        if native_valid:
+            self._last_native_at = native_at
+        previous = self._measurement_supply if self._anchor is not None else self._supply_anchor
+        delivery = self._measurement_delivery if self._anchor is not None else self._delivery_anchor
+        if previous is not None:
+            elapsed = supply.observed_at_s - previous.observed_at_s
+            if elapsed > 0 and (supply.prepared_total >= previous.prepared_total
+                                and supply.submitted_total >= previous.submitted_total):
+                rates = dict(window_start_s=previous.observed_at_s-self.started,
+                             window_end_s=supply.observed_at_s-self.started,
+                             native_point_in_window=(native_at is not None
+                                and previous.observed_at_s <= native_at <= supply.observed_at_s),
+                             prepared_items_s=(supply.prepared_total-previous.prepared_total)/elapsed,
+                             submitted_items_s=(supply.submitted_total-previous.submitted_total)/elapsed)
+                for field_name in ('completed_items_total', 'completed_input_work_total',
+                        'completed_output_work_total', 'completed_computed_input_work_total',
+                        'completed_cached_input_work_total'):
+                    a, b = getattr(delivery, field_name), getattr(o, field_name)
+                    rates[field_name.removesuffix('_total')+'_s'] = ((b-a)/elapsed
+                        if a is not None and b is not None and b >= a else None)
+        # Complete EOF can be proven locally even when the engine has no stats.
+        if supply.exhausted and not o.inflight and not supply.ready_items:
+            state = "work_exhausted"
+            decision = self._hold(state)
+        elif native_valid and (o.memory_pressure is True or o.kv_usage >= self.config.congestion_kv_usage
+                or o.preemptions_total is not None and self._preemptions is not None
+                and o.preemptions_total > self._preemptions):
+            state = "resource_pressure"
+        elif feedback_gap:
+            state = 'insufficient_information'
+            decision = self._stop('feedback_gap', o, rollback=True)
+            self._anchor, self._windows = None, []
+        elif (not o.fresh or not o.has_service_metrics or o.sample_age_s is None
+              or o.sample_age_s > self.options.window_s
+              or not 0 <= supply.observed_at_s-o.observed_at_s <= self.options.poll_interval_s):
+            state = "insufficient_information"
+            # A repeated delivery is not a new observation. Keep the last valid
+            # measurement anchor while polling; invalidate genuinely old data.
+            if o.sample_age_s is not None and o.sample_age_s > self.options.window_s:
+                self._anchor, self._windows = None, []
+            decision = self._hold(state)
+        elif o.waiting:
+            state = "backend_queued"
+            self._anchor, self._windows = None, []
+            decision = self._hold(state)
+        elif supply.capacity_blocked:
+            state = "configuration_boundary"
+            self._anchor, self._windows = None, []
+            decision = self._hold(state)
+        elif not supply.ready_items and supply.source_exhausted:
+            state = "work_tail_or_dependency_wait"
+            self._anchor, self._windows = None, []
+            decision = self._hold(state)
+        elif not supply.ready_items or supply.active_batches < self.current_window:
+            state = "upstream_supply_limited"
+            self._anchor, self._windows = None, []
+            reason = ('preparation_below_completion' if not supply.ready_items and rates is not None
+                      and rates.get('completed_items_s') is not None
+                      and rates['prepared_items_s'] < rates['completed_items_s'] else
+                      'ready_backlog_not_submitted' if supply.ready_items and rates is not None
+                      and rates['submitted_items_s'] == 0 else state)
+            decision = self._hold(reason)
+        if decision is None:
+            decision = super().update(o)
+            if decision.reason in ("capacity_limit", "sampled_range_complete"):
+                state = "configuration_boundary"
+            elif decision.reason in ("local_plateau", "performance_rollback", "waiting_regression",
+                                     "trial_no_gain", "trial_regression"):
+                state = "measured_no_gain"
+            elif decision.reason in ('missing_work_feedback', 'insufficient_progress',
+                                     'incomparable_work_mix', 'inconclusive_noise', 'missing_memory_feedback'):
+                state = 'insufficient_information'
+            elif self.evaluations and self.evaluations[-1].get('outcome') in ('no_gain', 'regression'):
+                state = "measured_no_gain"
+        elif native_valid and state != 'resource_pressure':
+            # Low-pressure frames count even while no measurement is eligible.
+            self._pressure_windows = 0
+            self._preemptions = o.preemptions_total
+        if (self._supply_anchor is None
+                or supply.observed_at_s-self._supply_anchor.observed_at_s >= self.options.window_s):
+            self.supply_history = (self.supply_history + [dict(at_s=supply.observed_at_s-self.started,
+                state=state, action=decision.action, reason=decision.reason,
+                ready_items=supply.ready_items, active_batches=supply.active_batches,
+                upstream_pending=supply.upstream_pending, exhausted=supply.exhausted,
+                capacity_blocked=supply.capacity_blocked, supply_rates=rates,
+                local_capacity=supply.local_capacity,
+                ready_work=[asdict(w) for w in supply.ready_work],
+                running=o.running, waiting=o.waiting, kv_usage=o.kv_usage,
+                sample_age_s=o.sample_age_s)])[-64:]
+            self._supply_anchor = supply
+            self._delivery_anchor = o
+        return decision
+
+    def report(self):
+        report = super().report()
+        if report['stop_reason'] == 'feedback_gap':
+            report.update(exploration_censored=True, incomplete_reason='feedback_gap', can_continue=False)
+        return dict(report, control_unit="application_batches", initial_window=1,
+                    demand_windows=list(self.supply_history), B_adjusted=False,
+                    control_seconds_scope='existing trial-controller calls only; gating/sampling stay in outer query wall',
+                    CPU_GPU_utilization_and_physical_memory="not sampled; unknown",
+                    capacity_is_performance_platform=False)

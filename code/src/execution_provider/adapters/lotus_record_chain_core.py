@@ -668,6 +668,8 @@ class _RecordLocalRows:
             work_unit="model_calls" if self.owner.token_budget is None else "tokens",
             task_profiles=tuple(TaskProfile(stage.stage_id, "prepared-chain") for stage in stages)))
         self.owner.transport.bind_query(self.session.session_id, None)
+        if self.owner._supply_feedback is not None:
+            self.owner._supply_feedback.bind(self)
         limits = self.owner.method_limits
         capacity = MethodCapacity(self.owner.resources.max_active_batches,
                                   self.owner.resources.max_active_batches * row_reservation(limits))
@@ -677,7 +679,9 @@ class _RecordLocalRows:
                                      token_budget=self.owner.token_budget,
                                      completion_batch_rows=self.owner.progression_batch_rows,
                                      **self.owner._ready_options) if self.section is not None
-                       else MethodDriver(self.session, program, limits, budget))
+                       else MethodDriver(self.session, program, limits, budget,
+                            on_ready_event=None if self.owner._supply_feedback is None
+                            else self.owner._supply_feedback.ready))
 
     def _fill(self):
         from src.semantic_methods.driver import RowIdentity
@@ -727,6 +731,8 @@ class _RecordLocalRows:
             self.run.complete(self._extract_results)
             self.run.complete_relation(source_exhausted=True)
         self._history(self.session.session_id, self._phase_count)
+        if self.owner._supply_feedback is not None:
+            self.owner._supply_feedback.end_phase()
         self.driver.close()
         self.driver, self.section = None, None
 
@@ -757,6 +763,8 @@ class _RecordLocalRows:
             self.peak_core_usage[key] = max(self.peak_core_usage[key], value)
         if self.owner._async_token_batches:
             self.owner._token_organizer.usage()
+            if self.owner._supply_feedback is not None:
+                self.owner._supply_feedback.update(self)
         if self.driver.finished:
             self._finish_phase()
         elif not progress.has_immediate_work:
@@ -828,7 +836,8 @@ class SemLoomRecordChainCore:
                  execution="fused", actor_owner=None, method_limits=None,
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
-                 prepared_batching=None, batch_concurrency=None, batching_tokenizer=None):
+                 prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
+                 batch_feedback=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -876,6 +885,15 @@ class SemLoomRecordChainCore:
                 raise ValueError('batch_concurrency must fit the member request grant')
         elif batch_concurrency is not None or batching_tokenizer is not None:
             raise ValueError('batch controls require record-local token batching')
+        if batch_feedback is not None:
+            from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
+            if type(batch_feedback) is not SupplyFeedbackConfig:
+                raise TypeError('batch_feedback must be SupplyFeedbackConfig')
+            if (not self._async_token_batches or self.batch_concurrency != 1
+                    or batch_feedback.max_batches > resources.max_active_batches
+                    or ready_clock is not None or on_ready_event is not None):
+                raise ValueError('batch feedback requires token batches starting at one, a ceiling within R and native ready clocks')
+        self.batch_feedback, self._supply_feedback = batch_feedback, None
         self.token_budget = None
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
@@ -1339,6 +1357,13 @@ class SemLoomRecordChainCore:
                 self.engine, chain.stages[0].generation, self.resources)
         elif self._actors.generation != chain.stages[0].generation:
             raise ValueError("prepared owner's default generation differs from the initial stage")
+        if self.batch_feedback is not None:
+            if self._actors.model_actor is not None:
+                raise ValueError('batch feedback must bind before the model owner starts')
+            interval = self._actors.limits.feedback_interval_s or self.batch_feedback.options.poll_interval_s
+            if interval > self.batch_feedback.options.window_s:
+                raise ValueError('native feedback interval must fit the measurement window')
+            self._actors.limits = replace(self._actors.limits, feedback_interval_s=interval)
         limits = self.capacity.limits(self.resources)
         if self.token_budget is not None:
             limits = replace(limits, active_work=self.token_budget.active_tokens)
@@ -1356,6 +1381,17 @@ class SemLoomRecordChainCore:
             self._token_organizer = PreparedTokenOrganizer(self, self._batching_tokenizer, self.batch_concurrency)
             policies = replace(policies, organize=self._token_organizer)
         self.core = SessionEngine(limits, self.transport, policies)
+        if self.batch_feedback is not None:
+            from .lotus_chain_token_batches import BatchSupplyFeedback
+            self._supply_feedback = BatchSupplyFeedback(self, self.batch_feedback)
+            previous_sink = self.core.sink
+            def sink(action, key):
+                if previous_sink is not None:
+                    previous_sink(action, key)
+                self._supply_feedback.event(action, key)
+            self.core.sink = sink
+            self._ready_options = dict(ready_order='fifo', successor_first=None,
+                clock=None, on_ready_event=self._supply_feedback.ready)
         try:
             self._active = _RecordLocalRows(self, records, run, cancelled)
             if expected:
@@ -1413,6 +1449,8 @@ class SemLoomRecordChainCore:
 
     def _close_record_local(self, *, timeout=None):
         self._closing = True
+        if self._supply_feedback is not None:
+            self._supply_feedback.close()
         if self.last_close_report is not None and self.last_close_report["status"] == "closed":
             return self.last_close_report
         errors = [] if self._active is None else self._active._close_query()
@@ -1468,6 +1506,8 @@ class SemLoomRecordChainCore:
                 peak_result_rpc_bytes=self.transport.peak_result_frame_bytes,
                 engine_max_num_seqs=self.engine.max_num_seqs,
                 engine_max_num_batched_tokens=self.engine.max_num_batched_tokens)
+        if self._supply_feedback is not None:
+            self.last_close_report['batch_supply_feedback'] = self._supply_feedback.report()
         if self._ready_options:
             policy = self._ready_options["successor_first"]
             self.last_close_report["ready_selection"] = dict(

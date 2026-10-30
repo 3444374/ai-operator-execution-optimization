@@ -95,11 +95,11 @@ def resolve_core_profile(engine, resources, profile=None):
     return result
 
 
-def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None):
+def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None, batch_feedback=None):
     """Validate the optional fixed token batch path before allocating an owner."""
     if prepared_batching is None:
-        if batch_concurrency is not None:
-            raise ValueError('batch_concurrency requires prepared_batching')
+        if batch_concurrency is not None or batch_feedback is not None:
+            raise ValueError('batch controls require prepared_batching')
         return None
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
     if (type(prepared_batching) is not PreparedBatching or prepared_batching.policy != 'token_budget'
@@ -111,17 +111,24 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
     concurrency = 1 if batch_concurrency is None else batch_concurrency
     if type(concurrency) is not int or not 1 <= concurrency <= requests:
         raise ValueError('batch_concurrency must fit the request grant R')
+    feedback = {}
+    if batch_feedback is not None:
+        from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
+        if (type(batch_feedback) is not SupplyFeedbackConfig or concurrency != 1
+                or batch_feedback.max_batches > requests):
+            raise ValueError('batch feedback requires SupplyFeedbackConfig, initial one and a ceiling within R')
+        feedback['feedback'] = asdict(batch_feedback)
     return dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
         request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,
         row_cap=None, W=None, batch_unit='application transport batch with unsettled compute members',
-        request_unit='single complete model request; also the inherited resident-row limit')
+        request_unit='single complete model request; also the inherited resident-row limit', **feedback)
 
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
-                        prepared_batching=None, batch_concurrency=None):
+                        prepared_batching=None, batch_concurrency=None, batch_feedback=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
     resolved = resolve_core_profile(engine, resources, profile)
-    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency)
+    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if batching is not None:
         from .lotus_records_batches import PreparedRecordsCore

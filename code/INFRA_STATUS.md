@@ -210,6 +210,16 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 该入口是CPU候选；动态C_batch、B/C联合控制、resident组合及真实Ray/模型/GPU功能与性能验收尚未完成，不继承旧树GPU证据。
 准确参数单位、尾批行为、字节边界和CPU检查入口统一见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)，不据此宣称性能提升。
 
+<a id="batch-supply-feedback"></a>
+## 固定B的供给反馈（独立本地CPU候选）
+
+基于`cc3980c9`的可选Python切片复用原异步token组织器、Core、actor、IPC原生统计和工作量比较器，只调整应用批并发C_batch，B保持固定。
+显式`SupplyFeedbackConfig(max_batches=...)`从一批开始，默认`batch_feedback=None`不安装采样器；R、字节／IPC责任、后继和关系屏障保持。
+实际就绪WorkDescriptor、方法到Core准备／供给速率、确认完成工作量与同owner/session的running/waiting/KV／抢占信息进入可解释判断；缺失／陈旧、供给不足、后端排队、资源压力、尾部／依赖等待及配置碰顶分列。
+重用原在线比较及保护逻辑，不读同任务token reference或gold；配置上限不表示性能平台，在线观察和探索成本不扣除。默认computed比较缺计数时不确认收益。
+当前只接Python owner与普通Core工厂，未接新Movie CLI/JSON、B运行时调整或联合控制；CPU/GPU利用率、物理可用内存和原生启动容量readback仍未知，仅有IPC回执与声明容量。
+接口及CPU边界见[所属说明](src/execution_provider/adapters/README.md#optional-fixed-b-supply-feedback-local-cpu-candidate)。本工程候选尚无独审或GPU资格，不代表资源收益、饱和点或Kalypso复现。
+
 <a id="finite-query-successor-candidate"></a>
 ## 后继优先与等待老化的可选配置
 
