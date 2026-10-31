@@ -677,7 +677,10 @@
         "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
         "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
         "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
-        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py",
+        "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py": "historical_sources/6511b950/code/src/execution_provider/adapters/lotus_cascade_core.py"
       },
       "default_selected": false
     },
@@ -1383,7 +1386,10 @@
         "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
         "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
         "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
-        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py",
+        "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py": "historical_sources/6511b950/code/src/execution_provider/adapters/lotus_cascade_core.py"
       },
       "default_selected": false
     },
@@ -2099,7 +2105,10 @@
         "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
         "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
         "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
-        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py",
+        "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py": "historical_sources/6511b950/code/src/execution_provider/adapters/lotus_cascade_core.py"
       },
       "default_selected": false
     },
@@ -2816,7 +2825,10 @@
         "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
         "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
         "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
-        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py",
+        "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py": "historical_sources/6511b950/code/src/execution_provider/adapters/lotus_cascade_core.py"
       },
       "default_selected": false
     },
@@ -3537,7 +3549,11 @@
         "code/src/infrastructure/gpu_allocation.py": "historical_sources/6a8a2d7b/code/src/infrastructure/gpu_allocation.py",
         "code/src/observability/metrics/vllm.py": "historical_sources/6a8a2d7b/code/src/observability/metrics/vllm.py",
         "code/src/observability/records_telemetry.py": "historical_sources/6a8a2d7b/code/src/observability/records_telemetry.py",
-        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py"
+        "code/src/scheduling/submission_control/stage_work.py": "historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py",
+        "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/daft_lotus_session.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/daft_lotus_session.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "historical_sources/6511b950/code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py": "historical_sources/6511b950/code/src/execution_provider/adapters/lotus_cascade_core.py"
       },
       "default_selected": false
     }

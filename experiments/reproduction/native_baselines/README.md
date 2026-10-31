@@ -1,5 +1,10 @@
 # 原生基线与具名 Core 历史复现
 
+维护代码的模型进程导入直接指向 `serving/backends/`；旧 baseline 模块继续保留 import／pickle 兼容。
+本次将四份受影响的旧调用方按准确 `6511b950` 字节保存在
+`historical_sources/6511b950/`，五份投影只追加16条 override；原逐文件 SHA、投影 ID 及已有路由不变。
+三个兼容模块与归档副本均不删除，历史还原树继续执行其原字节。
+
 供给反馈与资源观测的维护改动另将四份共享旧源按准确`6a8a2d7b`字节保存在[历史来源](historical_sources/6a8a2d7b/code/src/)：`gpu_allocation.py`、`metrics/vllm.py`、`records_telemetry.py`与`stage_work.py`。
 五份投影只补20条override；原逐文件SHA、投影ID、来源版本及已有映射保持。静态副本只供显式历史还原，当前维护运行时不导入这些文件；历史实测结果与观测边界不变。
 
