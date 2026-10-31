@@ -645,7 +645,8 @@ class ResourceFeedbackController(AimdAdmissionController):
                    + max(self.options.window_s,o.hol_age_s or 0)+self.options.window_s)
         # Measurement consumes wall time, but continues useful original work.
         # Reserve that time, then value only the work left after reference-rate
-        # progress. Controller CPU is observed; other future losses are unknown.
+        # progress. Controller-function wall time is observed; outer sampling,
+        # IPC and other future losses are not covered by this measurement.
         after_trial = max(0.,remaining-point["rate"]*trial_s)
         later_saving = after_trial/point["rate"]*max(0.,1-self.current_window/higher)
         control_estimate = (self.control_seconds/max(1,self._decisions)

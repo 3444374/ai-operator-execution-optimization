@@ -193,6 +193,11 @@ Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`�
 未结束的搜索 hint 按原有限预算继续，不能把未决状态当全局最佳。
 
 单遍探索的请求正常贡献输出，探索耗时已在 `total_wall_s` / caller 返回中，不能再相加。
+`control_seconds` 是 `ResourceFeedbackController.update()` 入口至返回／异常退出的累计
+**控制器函数墙钟耗时**，由其单调时钟差得到；它不是 CPU 时间，也不是全部控制链路成本。
+外层供给门控、采样、RPC、序列化及其他进程的工作不在该字段中；相关成本仍由完整查询计时承担。
+`exploration_wall_s` 是试探状态持续的墙钟区间，其中仍在完成原查询工作，不能当作纯等待或
+可直接扣除的损失，也不能从完整查询耗时减去它后声称得到了实测稳态性能。
 `admission_selection.entry_work_wall_s` 覆盖绑定到完整回调和缓存写入、止于 payload 返回前；
 真实调用方返回、模型启动/暖机/最终关闭由原生命周期计时单列。历史扫描费只记一次。
 缓存写入是查询局部资格，不证明物理 GPU/后代退出；unknown、held、借用未释放或账本不完整
