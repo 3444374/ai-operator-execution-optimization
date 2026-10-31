@@ -151,14 +151,16 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
 
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
-                        prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False):
+                        prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
+                        resident=False):
     """Select existing ownership; both Movie lifecycles use this same factory."""
     resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill)
     batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if batching is not None:
         from .lotus_records_batches import PreparedRecordsCore
-        return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits)
+        return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits,
+                                   resident=resident)
     options = {}
     actors = None
     if resolved["mode"] == "async":
@@ -728,9 +730,10 @@ class _CoreRows(Iterator[dict[str, Any]]):
                 self.unconsumed_call_results.append(row)
 
 
-def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=None):
-    """Stop the existing producer, recover receipts, then retire proved borrowing.
+def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=None, retain_model=False):
+    """Close query transport, retaining only a proved drained resident producer.
 
+    Otherwise stop the producer, recover receipts, and retire proved borrowing.
     The caller first closes its source/MethodDriver consumer. A new timeout
     permits cleanup only; unknown results are never upgraded by retirement.
     """
@@ -744,6 +747,16 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
         actors.close_deadline = time.monotonic() + timeout
     else:
         actors.close_deadline = deadline
+    if retain_model:
+        transport_closed = transport is None or transport.backend.close(timeout=0.05, wait_pending=True)
+        if core is not None:
+            core.reap(capacity.step_actions)
+        if (not transport_closed or transport is not None and transport.retained_refs()
+                or core is not None and any(asdict(core.capacity.usage()).values())):
+            raise RuntimeError('resident query still owns transport or Core work')
+        actor_report = actors.drain_query(actors.close_deadline)
+        return dict(model_owner=actor_report, transport_closed=transport_closed,
+                    producer_retirement=None, cleanup_errors=actor_report['cleanup_errors'])
     actor_report = actors.close()
     errors.extend(actor_report["cleanup_errors"])
     if transport is not None:

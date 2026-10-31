@@ -93,7 +93,7 @@ class RequestEntryTests(unittest.TestCase):
         self.assertEqual(results, [{'reviewId':['1']}, {'reviewId':['1']}])
         self.assertEqual(messages[0], messages[1])
 
-    def test_isolated_session_uses_same_request_feedback_and_keeps_resident_unsupported(self):
+    def test_isolated_session_uses_same_request_feedback_and_accepts_rolling_resident(self):
         self.runtime(); config = self.dynamic_config()
         plan = dict(schema='semloom.movie_session_plan.v1', backend='semloom-core', lifecycle='isolated',
             model_name='openai/cpu-fixture', generation=config['generation'], engine=config['engine'],
@@ -102,7 +102,9 @@ class RequestEntryTests(unittest.TestCase):
                 manifest=self.helper.manifests['movie-q1'], phase='measured')])
         checked = session.check_plan(plan); query = plan['queries'][0]
         self.assertEqual((checked['record_batching']['C_request'], checked['record_batching']['R']), (1, 2))
-        with self.assertRaises(ValueError):session.check_plan(dict(plan, lifecycle='resident'))
+        resident = session.check_plan(dict(plan, lifecycle='resident'))
+        self.assertEqual(resident['record_batching'], checked['record_batching'])
+        self.assertTrue(resident['supports_resident'])
         source = MovieRecordSource.from_manifest(query['manifest'])
         self.model.write_text(json.dumps(dict(responses={
             'filter|'+r['row_id']:dict(text=str(r['source_position']==0)) for r in source.rows()})))

@@ -63,8 +63,10 @@ def check_plan(plan):
         core_profile = resolve_core_profile(engine, resources, plan["profile"],
             rolling_refill=plan.get('rolling_refill', False))
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
-        if batching is not None and (plan['lifecycle'] != 'isolated' or plan.get('admission_cache') is not None):
-            raise ValueError('record token batches require isolated fresh owners without admission_cache')
+        if batching is not None and (plan.get('admission_cache') is not None
+                or plan['lifecycle'] != 'isolated' and not (
+                    plan['lifecycle'] == 'resident' and batching.get('rolling_refill'))):
+            raise ValueError('record token batches require isolated or rolling resident owners without admission_cache')
     if plan.get("admission_cache") is not None:
         from src.experiments.movie_matrix_support import validate_record_admission_cache
         validate_record_admission_cache(plan["admission_cache"], core_profile)
@@ -207,8 +209,11 @@ class _MovieDriver:
                 from src.experiments.lotus_records_movie import _record_batching_options
                 self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
                     rolling_refill=self.plan.get('rolling_refill', False))
+                options = _record_batching_options(self.plan)
+                if options.get('rolling_refill') and self.plan['lifecycle'] == 'resident':
+                    options['resident'] = True
                 self.owner = create_records_core(method, self.engine, self.generation, self.resources,
-                                                 profile=self.plan["profile"], **_record_batching_options(self.plan))
+                                                 profile=self.plan["profile"], **options)
             else:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
