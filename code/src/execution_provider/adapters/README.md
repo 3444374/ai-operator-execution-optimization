@@ -82,8 +82,9 @@ The research preference for record-local progression does not change those API d
 Record-local F/M sections use `LotusChainFIFO` over the existing Core/MethodDriver.
 Extract waits for actual source EOF, complete predecessor finals and drained result
 responsibility; the original parser and relation assembler then run once before continuation.
-One model is started and finally closed per query, including all its sections. Cross-query
-reuse, multiple deployments and arbitrary DAGs are not provided by this option.
+By default one model is started and finally closed per query, including all its sections.
+The explicit [rolling resident factory](#resident-rolling-token-owner) below is a separate
+lifetime option. Multiple deployments and arbitrary DAGs are not provided here.
 
 The caller owns Ray 2.56.1. Preparation/model batch sizes must both be 1; explicit
 `max_active_batches` declares the outer request slots and their Core/actor/IPC reservations.
@@ -167,8 +168,8 @@ deliveries are released immediately, while retained row state remains charged to
 MethodBudget. Failure/cancel stops successors and keeps the existing unknown and
 producer-retirement rules. `close()['progression']` records the actual policy.
 
-The caller continues to own and retain Ray across queries. Each query still owns
-and closes one fresh model; this option does not implement cross-query model
+The caller continues to own and retain Ray across queries. This batch-stage option owns
+and closes one fresh model per query; it does not implement cross-query model
 borrowing. The old fused path remains the default complete implementation and
 receives no Ray wrapper. This group barrier is an explicit internal mechanism
 comparison, not a replacement for native system baselines or GPU qualification.
@@ -409,8 +410,8 @@ The feature remains disabled by default. No overall cold-query speedup is
 established; Q1 strict native-output parity fails and all Q3 configurations return
 COUNT=7 against gold=14. MMF complete returned-payload parity, full-Core GPU
 capacity-failure mapping, independent streaming read-chunk GPU cases, P99 and
-saturation remain unverified. Dynamic C_batch/joint B/C control and cross-query
-resident reuse are not supported by this path.
+saturation remain unverified. That qualification does not cover subsequent feedback or
+[rolling resident reuse](#resident-rolling-token-owner) candidates; joint B/C control remains unsupported.
 The [current scope](../../../INFRA_STATUS.md#async-record-token-batches) and
 [public PR84 summary](https://github.com/3444374/ai-operator-execution-optimization/pull/84)
 separate completed checks, measured negative results and remaining limits.
@@ -432,9 +433,9 @@ Failed/unknown query receipts keep their original usage and confirmation.
 This finite chain already retains a full expected relation. The ordinary ledger
 adapter delivers raw receipts after the existing complete chain traversal; it is
 not a live result-stream API, and does not add a per-batch execution barrier. There
-is no new scheduler or engine. The normal Movie config/CLI and isolated session
-driver use this factory; resident reuse, admission cache and unsupported
-row-capped combinations fail before model construction. Configuration and commands
+is no new scheduler or engine. The normal Movie config/CLI and Session driver use this
+factory; resident is accepted only for the explicit rolling mode below. Admission cache
+and unsupported row-capped combinations fail before model construction. Configuration and commands
 are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
 
 ### Optional dynamic request permits for rolling refill (local CPU candidate)
@@ -448,7 +449,7 @@ window of 1; it is rejected for R>1. This does not bypass capacity. Declared
 resident rows. Omission/null admission retains fixed rolling C_request=R and
 installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
 The Python chain accepts `request_feedback=default_supply_feedback_options()`;
-the normal Movie/isolated-session factory resolves the existing admission object.
+the normal Movie/Session factory resolves the existing admission object.
 
 This engineering candidate reuses the existing request trial controller, typed
 ready-work/demand gates and repaired single-RPC sampler. The soft C_request starts
@@ -473,6 +474,43 @@ a configured ceiling a measured platform. CPU/GPU utilization, physical free
 memory, MFU/HBM and resource benefit remain unknown. See the
 [request mechanism and ownership tests](../../../tests/execution_provider/test_lotus_request_supply_feedback.py)
 and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedback_entry.py).
+
+<a id="resident-rolling-token-owner"></a>
+### Resident rolling token model owner (local CPU candidate)
+
+`create_records_core(..., prepared_batching=batching, rolling_refill=True, resident=True)`
+retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
+queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
+schema or model pool is introduced. Fixed rolling RF retains C_request=R; RD uses the
+same admission configuration above but creates a fresh controller at C_request=1 for
+each query. C_batch is null. Non-rolling token batches, batch feedback and admission
+cache remain excluded. Default `resident=False` preserves the single-query lifetime.
+
+```python
+owner = create_records_core(method, engine, generation, resources, profile=profile,
+    prepared_batching=batching, rolling_refill=True, resident=True)
+try:
+    model_ready = owner.start()  # Original native readiness; no application inference.
+    first = list(owner.evaluate(source, query_id="first"))
+    reused = list(owner.evaluate(source, query_id="reused", method=compatible_method))
+finally:
+    owner.close()  # Final model/IPC shutdown, separate from healthy query EOF.
+```
+
+Queries retain fresh sources, ledgers, result consumers, token organizers and feedback
+state. The existing SessionEngine keeps monotonically increasing numeric session IDs.
+Normal EOF proves query transport/Core/actor/IPC responsibility and feedback RPCs are
+drained before reporting `model_retained=true`, `model_owner.status="retained"`.
+Completed iterator reports remain independent snapshots. Failure, cancellation, early
+consumer close or unconfirmed draining stops reuse and closes the owner; unknown
+outcomes are not cleared. Model-name changes reject before work; a different fixed
+deployment, generation or capacity needs a new owner. This is not arbitrary chain reuse.
+
+The [CPU session cases](../../../tests/experiments/test_movie_token_resident_session.py)
+use real CPU socket children and a threaded Ray substitute. Real-Ray/model reuse,
+physical cleanup and query performance remain pending for this exact candidate.
+Native KV/cache effects and cross-query scheduling experience are distinct;
+see [timing and scope](../../../INFRA_STATUS.md#model-query-reuse-scope).
 
 ## Optional fixed-B supply feedback (local CPU candidate)
 
@@ -706,7 +744,7 @@ working monotonic clock and progressing engine/consumer; there is no wall-clock 
 cover the restored implementation; [joint token/priority cases](../../../tests/execution_provider/test_lotus_record_local_token_priority.py)
 cover default, separate and combined settings, lifecycle and bounded ready service with token estimates.
 The [two historical negative observations](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)
-remain unchanged. The public full-query owner has no cross-query resident reuse, so those
+remain unchanged. The priority path above has no cross-query resident reuse, so those
 historical first/reuse runs are not reproduced merely by exposing this option.
 
 

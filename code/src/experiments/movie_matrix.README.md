@@ -103,7 +103,7 @@ backend，并增加以下字段。省略新字段仍走原工厂和默认路径�
 B 是每批完整模板 prompt token 加各请求阶段输出上限；C_batch 是仍有未结算计算成员的应用传输批数；
 R 是原工厂解析后的请求容量，同时仍限制resident行。没有每批行数帽，native `max_num_seqs`／
 iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
-默认批模式不支持逐请求admission；admission cache、stage_timing、resident跨查询模型复用或受行帽限制的组合仍在预检拒绝。
+默认批模式不支持逐请求admission；admission cache、stage_timing、非rolling resident或受行帽限制的组合仍在预检拒绝。显式rolling resident见下文。
 
 ### 请求级动态 rolling 补位（本地CPU候选）
 
@@ -116,7 +116,7 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 }
 ```
 
-沿同一个普通Movie工厂／isolated session入口执行。`max_inflight`省略或显式为1时从1请求开始；
+沿同一个普通Movie工厂／Session入口执行。`max_inflight`省略或显式为1时从1请求开始；
 既有`"auto"`在R=1时也接纳并解析为1，R>1时拒绝，实际起点和容量边界没有改变。
 R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
 其C_request=R且不安装反馈。启用后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
@@ -159,8 +159,10 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_m
 
 `check`不构造owner或请求模型。`run`沿用原监督worker；正常会话／sealed matrix计划也可增加相同组批及可选反馈字段，
 其`profile`使用上例`core_profile`的值，且`backend="semloom-core"`、`lifecycle="isolated"`。
+`rolling_refill=true`的固定RF／动态RD还可显式选择`lifecycle="resident"`：沿用原Session schema，在查询计时前等待模型ready，健康EOF只结算本查询，最终Session close才关闭模型。RF保持R，RD逐查询从1重新探索；没有跨查询学习。批槽模式仍不支持resident。
 仍由原owner提供lease、调用额度、完整source.lock／packet和物理退出检查；新入口须重新绑定这些资产，
-不能把旧packet或旧树模型证据直接套用到新源码。启动成本真实记在有限查询内，不扣减或伪装resident。
+不能把旧packet或旧树模型证据直接套用到新源码。isolated中实际发生的启动／关闭计入原查询；resident另保留真实ready、首次／后续query及最终关闭时钟，不能由冷查询减估计启动成本冒充。
+兼容模型／生成／资源固定，逐查询输入、账本、结果和额度独立；失败、取消或排空未确认禁止继续复用。接口及本地CPU资格见[rolling resident说明](../execution_provider/adapters/README.md#resident-rolling-token-owner)，此新组合尚无实机性能资格。
 
 MovieTask／source manifest继续拥有Q1/Q2/Q3提示、普通谓词、完整Filter覆盖、head5／COUNT及原评价器。
 执行工厂把普通Filter声明接到已实现的记录级链，保留链调用ID与普通ledger ID的显式一对一映射。

@@ -162,7 +162,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 后者按接纳输入顺序固定有限组，每阶段完成后放行合法后继；末尾EOF封组，过滤终结不等待后继。
 原单记录请求、方法转换、Core容量、取消与unknown结清不变，已确认回执及时释放，组内状态仍计费。
 首版限同模型同角色完整F/M、请求计数和FIFO，组必须同时容纳于行数与字节grant；不实现token组批或调整W。
-原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，每查询模型仍新建并关闭，跨查询借用尚未实现。
+原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，该batch-stage组合每查询模型仍新建并关闭，不提供跨查询借用。独立rolling resident候选见[模型寿命范围](#model-query-reuse-scope)。
 CPU检查与差分范围见[接口与测试](src/execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)；
 GPU／质量资格仍按各固定源码的报告解释；新main组合尚未GPU复测，不作完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
 PR74同时提供[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
@@ -235,26 +235,27 @@ token reference生成、长度统计、预分组／R推导及此前实验均在w
 
 未证明完整冷查询加速；冷计时从worker入口标记至原Movie查询结果就绪，含其后的必要启动，不含父控制器／Python bootstrap及后置评价、写证据与最终清理。启动栈、实际分组和缓存工作差异不允许只归因于推进粒度。Q1严格原生输出等价未通过；Q3各配置共同COUNT=7、gold=14，仍是质量失败。
 
-未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该组批入口不支持动态B/C联合控制及跨查询resident复用。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
+未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该次验收不覆盖后续rolling resident候选，动态B/C联合控制仍未实现。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
 准确参数单位、尾批行为、字节边界与测试入口见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)。
 
 <a id="model-query-reuse-scope"></a>
 ## 模型所有者与跨查询复用范围
 
-以下按固定源码 `e7373c5b` 核对，仅说明接口与寿命，不新增模型／性能资格；架构目标及三类复用见[所属章节](../experiments/plans/系统架构.md#model-query-lifetime)。
+`e7373c5b` 尚无 token 跨查询复用；其后本地候选沿用现有 Session／Core／异步模型 owner，显式接通下表的 rolling resident 路径。当前仅有 CPU fixture 资格，真实 Ray／模型复用及查询性能仍待验收；架构目标及三类复用见[所属章节](../experiments/plans/系统架构.md#model-query-lifetime)。
 
 | 实际入口 | 模型与查询寿命 |
 |---|---|
 | SemLoom Core 的 Movie 单查询 CLI | 每次调用创建自己的 owner 并在 `finally` 关闭；再次启动 CLI 不构成同模型复用 |
 | 非 token Core 的 `resident` Movie Session | [`SemLoomRecordsCore.start()`](src/execution_provider/adapters/lotus_records_core.py)在 Session 查询执行前等待真实模型 ready；`evaluate()`可连续执行独立查询，最终 Session 关闭模型 |
-| token 整批、固定滚动 RF 与请求级动态 RD | 工厂使用 [`PreparedRecordsCore`](src/execution_provider/adapters/lotus_records_batches.py)，仅支持 `isolated` Session；`start()`声明 `no_session_model`，实际模型在有限链 `evaluate()`内创建，正常 EOF 先关闭模型再交付普通 Filter 结果，尚无跨查询模型复用 |
+| token 整批与默认 `isolated` RF／RD | 工厂使用 [`PreparedRecordsCore`](src/execution_provider/adapters/lotus_records_batches.py)；保持原有限查询启动及 EOF 关闭，不跨查询复用 |
+| 显式 `resident` 的 token 固定滚动 RF／请求级动态 RD | 只接通 `rolling_refill=true`、`C_batch=null`；`start()`等待实际模型 ready，正常 EOF 证明查询责任／RPC 已排空后保留模型／worker／IPC，Session 最终关闭模型。查询账本、额度、组织器与控制器重新建立，Core 的数值 session ID 继续递增 |
 
 普通非 token Core 可在同模型、引擎／生成配置及兼容数据合同下逐查询绑定受支持的 Filter 指令；这不代表任意 Map／Extract 链或模型／角色切换可共用实例。
 其 `_CoreFeedback.begin()`逐查询重建／重置控制器、进度和测量；保留模型或采样 provider 不等于自动继承推荐窗口，显式调优缓存／提示另按其配置解释。
-token RD 当前每查询重建 owner，既没有已实现的 resident 复用，也不能借用上述非 token 状态重置行为声称新组合已验证。
+token RD 的 resident 查询也各自从 `C_request=1` 开始，不继承上一查询的候选或测量；RF 保持声明的请求容量。模型原生缓存仍可能跨查询保留，不能将其计算复用直接算作调度收益。
 
-[`movie_records_session.check_plan()`](src/experiments/movie_records_session.py)明确拒绝 token batching 与 `resident` 的组合；改 Session 字段或先加一条隔离 warmup 查询不能获得同模型暖查询。
-真实模型就绪门、逐查询状态与最终 owner 关闭分离为待实现方案，须另定范围、审查和验收；本次文档补充不实施该方案，不更改默认或授予额外运行权限。
+[`movie_records_session.check_plan()`](src/experiments/movie_records_session.py)只放行上述 rolling resident 组合；批槽反馈、admission cache 及非 rolling token resident 仍拒绝。不同模型身份或运行绑定拒绝；更换部署／生成／容量配置须创建新的 owner。执行失败、取消、提前关闭或未确认排空会关闭当前 owner 并禁止继续复用，不清零 unknown。
+[复用 CPU 测试](tests/experiments/test_movie_token_resident_session.py)覆盖连续查询、不同合法 Filter 指令、空查询、账本／原生请求身份隔离、实际 RD 试探后的重置以及失败／取消和最终关闭；模型为 CPU 子进程替代，Ray 为 threaded fixture。这不是 GPU 模型常驻或加速证据，也不开放任意链、动态 B 或跨查询学习。
 已测首次查询按原边界保留，不能从时间中减去估计加载成本后补成复用成绩；Movie 与历史 `802b0b50` 的口径见[对照规范](../experiments/plans/reference/对照规范.md#movie-session-query-timing)。
 
 <a id="batch-supply-feedback"></a>
