@@ -103,9 +103,32 @@ backend，并增加以下字段。省略新字段仍走原工厂和默认路径�
 B 是每批完整模板 prompt token 加各请求阶段输出上限；C_batch 是仍有未结算计算成员的应用传输批数；
 R 是原工厂解析后的请求容量，同时仍限制resident行。没有每批行数帽，native `max_num_seqs`／
 iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
-目前不支持逐请求动态admission/cache、stage_timing、resident跨查询模型复用或受行帽限制的组合，预检明确拒绝。
+默认批模式不支持逐请求admission；admission cache、stage_timing、resident跨查询模型复用或受行帽限制的组合仍在预检拒绝。
 
-同一JSON可显式加入以下片段，选择固定B、从一批起步的供给反馈候选：
+### 请求级动态 rolling 补位（本地CPU候选）
+
+在已声明B及硬容量R的完整配置中，移除`batch_concurrency`和`batch_feedback`，加入：
+
+```json
+{
+  "rolling_refill": true,
+  "core_profile": {"mode": "async", "admission": {"kind": "resource_feedback"}}
+}
+```
+
+沿同一个普通Movie工厂／isolated session入口执行。`max_inflight`省略时从1请求开始，显式给值也只接纳1；
+R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
+其C_request=R且不安装反馈。启用后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
+完成一条可立即补位，合法后继不等慢同伴。缩容只阻止新准入，已有在途及已选择待后端接收的成员有界排空，
+不取消、不拆改既定批成员；待提交责任和真实inflight分别记录。
+现有请求扫描、同session新鲜反馈、单RPC、需求／资源门控和三窗性能确认复用，缺帧／重复／排队／供给不足／尾部均不会当空闲。
+新路径默认computed／local_pairs／geometric，`exploration_s/max_changes/max_candidate_attempts=null,min_remaining=0`；
+可在同一`admission`对象显式覆盖既有`ResourceFeedbackConfig`选项，不继承旧命名profile的10秒／64待办默认。
+`check`报告初始C_request、B、R及解析选项；关闭回执为`request_supply_feedback`，含在线探索成本和RPC终态／unknown。
+这是接线和准入粒度候选，尚无实机资源收益，未新增快速大步探索、物理CPU/GPU可用量或动态B。
+非空`admission.gpu_ids`在此候选预检拒绝，不能把旧逐请求NVML选择项静默当作已采集；原普通非token请求路径保留。
+
+另一种与rolling互斥的模式，在原批配置中显式加入以下片段，选择固定B、从一批起步的供给反馈候选：
 
 ```json
 {

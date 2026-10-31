@@ -432,9 +432,44 @@ This finite chain already retains a full expected relation. The ordinary ledger
 adapter delivers raw receipts after the existing complete chain traversal; it is
 not a live result-stream API, and does not add a per-batch execution barrier. There
 is no new scheduler or engine. The normal Movie config/CLI and isolated session
-driver use this factory; resident reuse, dynamic admission/cache and unsupported
+driver use this factory; resident reuse, admission cache and unsupported
 row-capped combinations fail before model construction. Configuration and commands
 are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
+
+### Optional dynamic request permits for rolling refill (local CPU candidate)
+
+With token `prepared_batching` and `rolling_refill=true`, the same ordinary
+`core_profile.admission={"kind":"resource_feedback"}` opts into request-level
+supply feedback. `max_inflight` is omitted or explicitly 1 at startup; declared
+`resources.max_active_batches` remains the independent hard R for compute and
+resident rows. Omission/null admission retains fixed rolling C_request=R and
+installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
+The Python chain accepts `request_feedback=default_supply_feedback_options()`;
+the normal Movie/isolated-session factory resolves the existing admission object.
+
+This engineering candidate reuses the existing request trial controller, typed
+ready-work/demand gates and repaired single-RPC sampler. The soft C_request starts
+at one, B stays fixed, and C_batch is null. Each terminal member releases its own
+permit; a slow batch peer cannot retain the permit of a finished member or block
+its legal successor. A selected immutable group already owns its member permits,
+including when the transport temporarily returns NOT_ACCEPTED. Shrinking stops
+new selections; previously admitted requests drain without cancellation or group
+splitting. Pending-selection permits are reported separately from actual compute
+inflight; they never masquerade as native requests or spare capacity. A blocked
+handoff holds exploration with `submission_backpressure`, not a performance claim.
+Core R/input/result/state, transport slots/bytes and unknown ownership remain.
+
+Default request supply options use computed work, local pairs and geometric
+trials, without time/change/attempt budgets or task-wide token/gold references.
+The existing fresh-feedback/settling/three-window confirmation still applies;
+this does not implement faster resource-led large steps or joint B adjustment.
+Explicit option overrides retain their existing meaning and online cost. Reports
+use `owner_close.request_supply_feedback`, retain exploration/transition costs,
+snapshot terminal/unknown receipts and real batch/request counts, and never call
+a configured ceiling a measured platform. CPU/GPU utilization, physical free
+memory, MFU/HBM and resource benefit remain unknown. See the
+[request mechanism and ownership tests](../../../tests/execution_provider/test_lotus_request_supply_feedback.py)
+and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedback_entry.py).
 
 ## Optional fixed-B supply feedback (local CPU candidate)
 
@@ -536,7 +571,8 @@ back to the original periodic poll, with an explicit receipt error. Close wakes
 the wait; cancellation and late terminal evidence keep the existing ownership
 rules. This is an engineering collection fix, not a freshness or resource-policy
 change. Provider-to-policy polling and three-window/finite-tail limits remain.
-It does not add this sampler or dynamic control to `rolling_refill`.
+The optional request-supply path above reuses these same collection and session
+ownership rules; fixed rolling without admission still installs no sampler.
 The [CPU collection cases](../../../tests/execution_provider/test_lotus_feedback_ready_collection.py)
 cover readiness, unchanged issue turns, close, unknown cancellation and phase reuse;
 real-backend latency and overhead on this exact new source still require validation.

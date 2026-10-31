@@ -11,12 +11,16 @@ from tests.execution_provider import test_lotus_snapshot_rpc_receipts as receipt
 
 
 class FeedbackReadyCollectionTests(unittest.TestCase):
-    def bound_sampler(self, *, observer=False, poll_interval_s=3):
+    def bound_sampler(self, *, observer=False, poll_interval_s=3, request_control=False):
         helper = receipts.SnapshotRPCReceiptTests()
         feedback, refs, cancels = helper.sampler()
         # Long test-only tick makes the event ordering decisive, not a millisecond
         # performance threshold. No production default or policy is overridden.
-        feedback.config = SupplyFeedbackConfig(4, ResourceFeedbackConfig(poll_interval_s=poll_interval_s, window_s=3))
+        config = ResourceFeedbackConfig(poll_interval_s=poll_interval_s, window_s=3)
+        if request_control:
+            feedback = batching.RequestSupplyFeedback(feedback.owner, config)
+        else:
+            feedback.config = SupplyFeedbackConfig(4, config)
         feedback.owner._expected_count = 1
         feedback.owner._token_organizer = SimpleNamespace(concurrency=1)
         stream = SimpleNamespace(session=SimpleNamespace(session_id=1),

@@ -111,13 +111,17 @@ class BoundedStageWorkController:
         return WorkCreditDecision(self.current_work, action, reason)
 
 
+def default_supply_feedback_options():
+    """Measured-work probing, without a historical point or trial/time budget."""
+    return ResourceFeedbackConfig(allow_exploration=True, search_mode="geometric",
+        work_basis="computed", work_comparison="local_pairs", max_candidate_attempts=None)
+
+
 @dataclass(frozen=True)
 class SupplyFeedbackConfig:
     """Explicit operational ceiling; no task reference or historical optimum."""
     max_batches: int
-    options: ResourceFeedbackConfig = field(default_factory=lambda: ResourceFeedbackConfig(
-        allow_exploration=True, search_mode="geometric", work_basis="computed",
-        work_comparison="local_pairs", max_candidate_attempts=None))
+    options: ResourceFeedbackConfig = field(default_factory=default_supply_feedback_options)
 
     def __post_init__(self):
         if type(self.max_batches) is not int or self.max_batches < 1:
@@ -162,6 +166,7 @@ class SupplyState:
     ready_work: tuple[StageWork, ...] = ()
     local_capacity: dict = field(default_factory=dict)
     source_exhausted: bool = False
+    active_requests: int | None = None
 
     def __post_init__(self):
         if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
@@ -169,6 +174,8 @@ class SupplyState:
         for name in ("ready_items", "prepared_total", "submitted_total", "active_batches"):
             if type(getattr(self, name)) is not int or getattr(self, name) < 0:
                 raise ValueError(name + " must be a non-negative integer")
+        if self.active_requests is not None and (type(self.active_requests) is not int or self.active_requests < 0):
+            raise ValueError('active_requests must be a non-negative integer or unknown')
         if any(type(v) is not bool for v in (self.upstream_pending, self.exhausted, self.source_exhausted)):
             raise TypeError("supply state flags must be boolean")
 
@@ -179,9 +186,14 @@ class SupplyFeedbackController(ResourceFeedbackController):
     The controlled window is application batches, never member/request C.
     A bounded online probe is not a claim of idle hardware or a global optimum.
     """
+    control_unit = 'application_batches'
+
     def __init__(self, config, *, clock=None):
         self.supply_config = config
-        super().__init__(config.max_batches, 1, config.options, clock=clock)
+        self._initialize_supply(config.max_batches, config.options, clock)
+
+    def _initialize_supply(self, capacity, options, clock):
+        super().__init__(capacity, 1, options, clock=clock)
         self.config = replace(self.config, additive_increase=1)
 
     def reset(self, initial_window, total_items, *, search_hint=None):
@@ -286,7 +298,8 @@ class SupplyFeedbackController(ResourceFeedbackController):
             self._anchor, self._windows = None, []
             decision = self._hold(state)
         elif supply.capacity_blocked:
-            state = "configuration_boundary"
+            state = ('submission_backpressure' if supply.capacity_blocked == 'pending_transport_admission'
+                     else 'configuration_boundary')
             self._anchor, self._windows = None, []
             decision = self._hold(state)
         elif not supply.ready_items and supply.source_exhausted:
@@ -332,6 +345,8 @@ class SupplyFeedbackController(ResourceFeedbackController):
                 ready_work=[asdict(w) for w in supply.ready_work],
                 running=o.running, waiting=o.waiting, kv_usage=o.kv_usage,
                 sample_age_s=o.sample_age_s)])[-64:]
+            if supply.active_requests is not None:
+                self.supply_history[-1]['active_requests'] = supply.active_requests
             if decision.action != 'hold':
                 self.supply_changes = (self.supply_changes + [self.supply_history[-1]])[-64:]
             self._supply_anchor = supply
@@ -348,7 +363,7 @@ class SupplyFeedbackController(ResourceFeedbackController):
                     and self._search.points[adjacent]['attempts'] >= self._search.limit):
                 report.update(exploration_censored=True, incomplete_reason='candidate_attempt_budget',
                               can_continue=False)
-        return dict(report, control_unit="application_batches", initial_window=1,
+        return dict(report, control_unit=self.control_unit, initial_window=1,
                     feedback_gaps=self.feedback_gaps,
                     feedback_gap_pending=self._pending_feedback_gap,
                     exploration_limits=dict(elapsed_s=self.options.exploration_s,
@@ -360,3 +375,20 @@ class SupplyFeedbackController(ResourceFeedbackController):
                     control_seconds_scope='existing trial-controller calls only; gating/sampling stay in outer query wall',
                     CPU_GPU_utilization_and_physical_memory="not sampled; unknown",
                     capacity_is_performance_platform=False)
+
+
+class RequestSupplyFeedbackController(SupplyFeedbackController):
+    """Apply the same demand gates and request trials to individual requests.
+
+    B remains an organization budget. The caller supplies real request inflight
+    counts separately from transport-batch counts and retains its hard capacity.
+    """
+    control_unit = 'single_model_requests'
+
+    def __init__(self, max_requests, options=None, *, clock=None):
+        if type(max_requests) is not int or max_requests < 1:
+            raise ValueError('max_requests must be a positive operational capacity')
+        options = default_supply_feedback_options() if options is None else options
+        if type(options) is not ResourceFeedbackConfig or options.poll_interval_s > options.window_s:
+            raise ValueError('request feedback requires valid options and a poll interval within the window')
+        self._initialize_supply(max_requests, options, clock)

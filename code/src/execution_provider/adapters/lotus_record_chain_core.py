@@ -837,7 +837,7 @@ class SemLoomRecordChainCore:
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
-                 batch_feedback=None, rolling_refill=False):
+                 batch_feedback=None, rolling_refill=False, request_feedback=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -899,6 +899,15 @@ class SemLoomRecordChainCore:
                     or ready_clock is not None or on_ready_event is not None):
                 raise ValueError('batch feedback requires token batches starting at one, a ceiling within R and native ready clocks')
         self.batch_feedback, self._supply_feedback = batch_feedback, None
+        if request_feedback is not None:
+            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
+            if type(request_feedback) is not ResourceFeedbackConfig:
+                raise TypeError('request_feedback must be ResourceFeedbackConfig')
+            if (not self._async_token_batches or not rolling_refill
+                    or ready_clock is not None or on_ready_event is not None
+                    or request_feedback.poll_interval_s > request_feedback.window_s):
+                raise ValueError('request feedback requires rolling token batches and native ready clocks')
+        self.request_feedback = request_feedback
         self.token_budget = None
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
@@ -1362,11 +1371,13 @@ class SemLoomRecordChainCore:
                 self.engine, chain.stages[0].generation, self.resources)
         elif self._actors.generation != chain.stages[0].generation:
             raise ValueError("prepared owner's default generation differs from the initial stage")
-        if self.batch_feedback is not None:
+        feedback_options = (self.request_feedback if self.request_feedback is not None else
+                            self.batch_feedback.options if self.batch_feedback is not None else None)
+        if feedback_options is not None:
             if self._actors.model_actor is not None:
-                raise ValueError('batch feedback must bind before the model owner starts')
-            interval = self._actors.limits.feedback_interval_s or self.batch_feedback.options.poll_interval_s
-            if interval > self.batch_feedback.options.window_s:
+                raise ValueError('feedback must bind before the model owner starts')
+            interval = self._actors.limits.feedback_interval_s or feedback_options.poll_interval_s
+            if interval > feedback_options.window_s:
                 raise ValueError('native feedback interval must fit the measurement window')
             self._actors.limits = replace(self._actors.limits, feedback_interval_s=interval)
         limits = self.capacity.limits(self.resources)
@@ -1386,9 +1397,10 @@ class SemLoomRecordChainCore:
             self._token_organizer = PreparedTokenOrganizer(self, self._batching_tokenizer, self.batch_concurrency)
             policies = replace(policies, organize=self._token_organizer)
         self.core = SessionEngine(limits, self.transport, policies)
-        if self.batch_feedback is not None:
-            from .lotus_chain_token_batches import BatchSupplyFeedback
-            self._supply_feedback = BatchSupplyFeedback(self, self.batch_feedback)
+        if feedback_options is not None:
+            from .lotus_chain_token_batches import BatchSupplyFeedback, RequestSupplyFeedback
+            self._supply_feedback = (RequestSupplyFeedback(self, self.request_feedback)
+                if self.request_feedback is not None else BatchSupplyFeedback(self, self.batch_feedback))
             previous_sink = self.core.sink
             def sink(action, key):
                 if previous_sink is not None:
@@ -1459,7 +1471,7 @@ class SemLoomRecordChainCore:
         if self.last_close_report is not None and self.last_close_report["status"] == "closed":
             if self._supply_feedback is not None:
                 self.last_close_report = dict(self.last_close_report,
-                    batch_supply_feedback=self._supply_feedback.report())
+                    **{self._supply_feedback.report_field: self._supply_feedback.report()})
             return self.last_close_report
         errors = [] if self._active is None else self._active._close_query()
         if self._actors is None:
@@ -1515,7 +1527,7 @@ class SemLoomRecordChainCore:
                 engine_max_num_seqs=self.engine.max_num_seqs,
                 engine_max_num_batched_tokens=self.engine.max_num_batched_tokens)
         if self._supply_feedback is not None:
-            self.last_close_report['batch_supply_feedback'] = self._supply_feedback.report()
+            self.last_close_report[self._supply_feedback.report_field] = self._supply_feedback.report()
         if self._ready_options:
             policy = self._ready_options["successor_first"]
             self.last_close_report["ready_selection"] = dict(

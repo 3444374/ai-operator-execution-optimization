@@ -79,13 +79,17 @@ class PreparedRecordsCore:
                                                       trust_remote_code=False, local_files_only=True)
         actors = AsyncRecordsActorOwner.for_prepared(self.engine, self.generation, self.resources, limits=self._limits)
         feedback = None
+        request_feedback = None
         if 'feedback' in batching:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
             feedback = SupplyFeedbackConfig.from_dict(batching['feedback'])
+        if 'request_feedback' in batching:
+            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
+            request_feedback = ResourceFeedbackConfig(**batching['request_feedback'])
         self.owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, prepared_batching=PreparedBatching(**batching['prepared_batching']),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
-            rolling_refill=batching.get('rolling_refill', False))
+            rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback)
         stream = self.owner.evaluate(iter(records), chain, expected=records,
                                      columns=scan.payload_columns, query_id=query_id, cancelled=cancelled)
         self._active = _OrdinaryResults(self, stream)
@@ -119,8 +123,10 @@ class PreparedRecordsCore:
         if report['query_completed']:
             actual, requested = report['async_token_batches'], self.execution_profile['record_batching']
             if requested.get('rolling_refill'):
+                window = actual.get('C_request')
                 valid_window = (actual.get('rolling_refill') is True and actual['concurrency'] is None
-                    and actual.get('C_request') == requested['R'] and actual['peak_requests'] <= requested['R']
+                    and (type(window) is int and 1 <= window <= requested['R'] if 'request_feedback' in requested
+                         else window == requested['R']) and actual['peak_requests'] <= requested['R']
                     and actual['peak_batches'] <= requested['R'])
             else:
                 upper = requested.get('feedback', {}).get('max_batches', requested['C_batch'])

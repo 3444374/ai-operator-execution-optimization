@@ -18,6 +18,7 @@ class PreparedTokenOrganizer:
         self.owner, self.tokenizer, self.concurrency = owner, tokenizer, concurrency
         self._estimates = {}
         self.selected = self.peak_batches = self.peak_requests = 0
+        self.request_window = owner.resources.max_active_batches
         self.history = []
 
     def usage(self):
@@ -38,6 +39,11 @@ class PreparedTokenOrganizer:
         limits = owner._actors.limits
         available = min(owner.resources.max_active_batches-active_requests, limits.max_inflight,
                         limits.result_slots, limits.result_bytes//limits.item_result_bytes)
+        if owner.rolling_refill:
+            # Core calls organize only after the prior immutable selection has
+            # been accepted/drained. Selection acquires individual permits;
+            # a later shrink stops new selections without cancelling old ones.
+            available = min(available, self.request_window-active_requests)
         if available <= 0:
             return ()
         live = owner.core.capacity.records
@@ -88,12 +94,14 @@ class PreparedTokenOrganizer:
         batch = builder.close()
         self.selected += 1
         self.history = (self.history + [dict(members=len(chosen), tokens=batch.estimated_total_tokens,
-            reason=reason, ipc_frame_bytes_upper_bound=wire_bytes, data_rpc_bytes_upper_bound=rpc_bytes)])[-64:]
+            reason=reason, ipc_frame_bytes_upper_bound=wire_bytes, data_rpc_bytes_upper_bound=rpc_bytes,
+            **(dict(C_request=self.request_window, requests_before=active_requests)
+               if owner.request_feedback is not None else {}))])[-64:]
         return tuple(chosen)
 
     def report(self):
         batches, requests = self.usage()
-        rolling = (dict(rolling_refill=True, C_request=self.owner.resources.max_active_batches,
+        rolling = (dict(rolling_refill=True, C_request=self.request_window,
                         admission_unit='single_model_requests') if self.owner.rolling_refill else {})
         return dict(policy=asdict(self.owner.prepared_batching), concurrency=self.concurrency,
             concurrency_unit='application transport batches with unsettled compute members',
@@ -104,6 +112,9 @@ class PreparedTokenOrganizer:
 
 class BatchSupplyFeedback:
     """Observe the existing owner and change only its organizer's batch window."""
+    report_field = 'batch_supply_feedback'
+    request_control = False
+
     def __init__(self, owner, config):
         self.owner, self.config = owner, config
         self.provider = self.controller = self.ref = self.future = None
@@ -120,6 +131,27 @@ class BatchSupplyFeedback:
         self._snapshot_ready = None
         self._collected_ready = None
 
+    @property
+    def options(self):
+        return self.config.options
+
+    def _new_controller(self):
+        from src.scheduling.submission_control.stage_work import SupplyFeedbackController
+        return SupplyFeedbackController(self.config)
+
+    def _inflight(self, batches, requests):
+        return batches
+
+    def _window(self):
+        return self.owner._token_organizer.concurrency
+
+    def _set_window(self, value):
+        self.owner._token_organizer.concurrency = value
+
+    def _report_identity(self):
+        return dict(kind='fixed_B_batch_supply_feedback', initial_batches=1,
+                    max_batches=self.config.max_batches)
+
     def event(self, action, key):
         if action == 'submitted':
             self.submitted += 1
@@ -130,23 +162,22 @@ class BatchSupplyFeedback:
 
     def bind(self, stream):
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
-        from src.scheduling.submission_control.stage_work import SupplyFeedbackController
         with self._snapshot_lock:
             self.session_id = stream.session.session_id
             self.last_native = None
             self.started = time.monotonic()
         self.prepared = self.submitted = 0
         self.transition.clear()
-        self.controller = SupplyFeedbackController(self.config)
+        self.controller = self._new_controller()
         # Declaration bounds possible calls; no token reference or gold is read.
         self.controller.reset(1, len(stream.run.current)*len(stream._stage_ids))
-        self.owner._token_organizer.concurrency = 1
+        self._set_window(1)
         if self.provider is None and self.owner._expected_count:
             self._snapshot_ready = Event()
             self.provider = NonBlockingMetricsObservationProvider(self.sample,
-                poll_interval_s=self.config.options.poll_interval_s,
-                stale_after_s=self.config.options.window_s,
-                close_timeout_s=self.config.options.poll_interval_s,
+                poll_interval_s=self.options.poll_interval_s,
+                stale_after_s=self.options.window_s,
+                close_timeout_s=self.options.poll_interval_s,
                 ready_event=self._snapshot_ready, collect_ready=self.collect_ready)
         elif self.provider is not None:
             self.provider.resume()
@@ -179,7 +210,7 @@ class BatchSupplyFeedback:
                 ref = remote()
                 with self._snapshot_lock:
                     self.ref = ref
-                self.expiry = time.monotonic()+self.config.options.window_s
+                self.expiry = time.monotonic()+self.options.window_s
                 self.expired = False
             if self.ref is None:
                 return None  # Dispatch outcome without a handle remains unknown.
@@ -462,11 +493,12 @@ class BatchSupplyFeedback:
         now = time.monotonic()
         if self.closed or self.controller is None or now < self.next_poll:
             return
-        self.next_poll = now+self.config.options.poll_interval_s
+        self.next_poll = now+self.options.poll_interval_s
         records = self.owner.core.capacity.records
         live = [r for r in records.values() if r.key.session_id == self.session_id]
         queued = [r for r in live if r.phase == 'QUEUED']
         batches, requests = self.owner._token_organizer.usage()
+        inflight = self._inflight(batches, requests)
         with self.owner._receipt_lock:
             calls = [v for k, v in self.owner._raw_receipts.items()
                      if k.session_id == self.session_id and v.get('status') == 'succeeded']
@@ -480,12 +512,14 @@ class BatchSupplyFeedback:
         # Timestamp after local counter capture, never count a later receipt
         # against an earlier window end. Invalid metric clocks remain unknown.
         try:
-            o = (self.provider.latest(batches) if self.provider is not None else
-                 AdmissionObservation(time.monotonic(), False, batches, None, None, None))
+            o = (self.provider.latest(inflight) if self.provider is not None else
+                 AdmissionObservation(time.monotonic(), False, inflight, None, None, None))
         except ValueError:
             self.errors += 1
-            o = AdmissionObservation(time.monotonic(), False, batches, None, None, None)
-        self.transition = {k for k in self.transition if k in records and records[k].compute}
+            o = AdmissionObservation(time.monotonic(), False, inflight, None, None, None)
+        admitted = {r.key for r in live if r.compute or self.request_control
+                    and r.phase == 'QUEUED' and r.member is not None}
+        self.transition.intersection_update(admitted)
         unread = max(0, self.owner._expected_count-len(stream.offered)) if not stream._phase_eof else 0
         o = replace(o, completed_items_total=len(calls), pending_items=len(queued)+unread,
                     transition_pending=len(self.transition), **work)
@@ -496,6 +530,9 @@ class BatchSupplyFeedback:
         # QUEUED tasks already own their input/result storage. Do not charge it
         # again, or mistake a full resident table for a dispatch constraint.
         blocked = 'member_R' if requests >= limits.active_requests else None
+        pending = len(admitted)-requests
+        if self.request_control and pending:
+            blocked = 'pending_transport_admission'
         if not queued and blocked is None:
             from src.scheduling.core.session_capacity import SessionCapacity
             for row in stream.driver._rows.values():
@@ -514,12 +551,15 @@ class BatchSupplyFeedback:
             capacity_blocked=blocked, ready_work=tuple(StageWork(k[0], v, k[1]) for k, v in sorted(units.items())),
             local_capacity=dict(usage=asdict(usage), limits=asdict(limits),
                 resident_rows=stream.driver.active_rows,
+                **(dict(pending_admission_requests=pending, charged_requests=len(admitted),
+                        C_request=self._window()) if self.request_control else {}),
                 local_capture_start_s=now-self.started, local_capture_end_s=o.observed_at_s-self.started),
-            source_exhausted=stream._phase_eof)
+            source_exhausted=stream._phase_eof,
+            active_requests=requests if self.request_control else None)
         decision = self.controller.update_supply(o, state)
-        if decision.window != self.owner._token_organizer.concurrency:
-            self.transition = {r.key for r in live if r.compute}
-            self.owner._token_organizer.concurrency = decision.window
+        if decision.window != self._window():
+            self.transition = admitted
+            self._set_window(decision.window)
 
     def end_phase(self):
         if self.controller is not None:
@@ -554,8 +594,7 @@ class BatchSupplyFeedback:
                             if request['client_future_cancelled'] else 'terminal_not_collected')))
         complete = (closed and stopped and pending is None and not ref_retained
                     and not future_retained and len(receipts) == requests)
-        return dict(kind='fixed_B_batch_supply_feedback', initial_batches=1,
-            max_batches=self.config.max_batches, fixed_B=self.owner.prepared_batching.token_budget,
+        return dict(**self._report_identity(), fixed_B=self.owner.prepared_batching.token_budget,
             phases=list(self.phases), snapshot_requests=requests, sample_errors=errors,
             snapshot_ref_retained=ref_retained,
             sampler_stopped=stopped, snapshot_rpc_cleanup_status=(
@@ -574,3 +613,38 @@ class BatchSupplyFeedback:
                 observed_IPC=(self.owner._actors.model_ready or {}).get('limits'),
                 IPC=asdict(self.owner._actors.limits)),
             no_capacity_deleted=True, online_cost_in_query=True, resource_benefit_proven=False)
+
+
+class RequestSupplyFeedback(BatchSupplyFeedback):
+    """Reuse the single-RPC sampler and demand gates; control request permits.
+
+    No batch slot is retained by a slow peer. Already selected immutable groups
+    own their member permits until accepted/settled, including after a shrink.
+    Core's independent R/storage/transport bounds remain in force.
+    """
+    report_field = 'request_supply_feedback'
+    request_control = True
+
+    @property
+    def options(self):
+        return self.config
+
+    def _new_controller(self):
+        from src.scheduling.submission_control.stage_work import RequestSupplyFeedbackController
+        return RequestSupplyFeedbackController(self.owner.resources.max_active_batches, self.config)
+
+    def _inflight(self, batches, requests):
+        return requests
+
+    def _window(self):
+        return self.owner._token_organizer.request_window
+
+    def _set_window(self, value):
+        self.owner._token_organizer.request_window = value
+
+    def _report_identity(self):
+        return dict(kind='fixed_B_request_supply_feedback', initial_requests=1,
+            max_requests=self.owner.resources.max_active_batches,
+            admission_unit='single_model_requests',
+            shrink_policy='stop new selections; drain already admitted members without cancelling',
+            pending_selection_permits='charged once per member; not native inflight', C_batch=None)

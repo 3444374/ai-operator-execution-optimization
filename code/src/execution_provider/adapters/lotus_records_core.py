@@ -52,7 +52,7 @@ def expand_core_profile(profile):
     return dict(mode="async", max_inflight=8, stage_timing=True, admission=admission)
 
 
-def resolve_core_profile(engine, resources, profile=None):
+def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=False):
     """Resolve an explicit execution profile, without probing or allocating hardware.
 
     Auto is a bound on caller-declared capacity, not a throughput tuner. Device
@@ -62,7 +62,8 @@ def resolve_core_profile(engine, resources, profile=None):
     if type(profile) is not dict or set(profile) - {"mode", "max_inflight", "stage_timing", "admission"}:
         raise ValueError("Core profile accepts mode, max_inflight, stage_timing and optional admission only")
     mode = profile.get("mode", "sync")
-    requested = profile.get("max_inflight", resources.max_active_batches)
+    request_feedback = rolling_refill and profile.get('admission') is not None
+    requested = profile.get("max_inflight", 1 if request_feedback else resources.max_active_batches)
     timing = profile.get("stage_timing", False)
     if mode not in ("sync", "async") or type(timing) is not bool:
         raise ValueError("Core requires sync/async mode and boolean stage_timing")
@@ -89,7 +90,18 @@ def resolve_core_profile(engine, resources, profile=None):
         gpu_ids = admission.get("gpu_ids", ())
         if not isinstance(gpu_ids, (list, tuple)) or any(not isinstance(v, str) or not v.startswith("GPU-") for v in gpu_ids):
             raise ValueError("feedback GPU IDs must be physical UUIDs when supplied")
-        config = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
+        options = {k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")}
+        if request_feedback:
+            from src.scheduling.submission_control.stage_work import default_supply_feedback_options
+            if gpu_ids:
+                raise ValueError('rolling request feedback uses native stats; physical GPU UUID sampling is not connected')
+            if maximum != 1:
+                raise ValueError('rolling request feedback starts at one without a historical search hint')
+            config = replace(default_supply_feedback_options(), **options)
+            if config.poll_interval_s > config.window_s:
+                raise ValueError('request feedback poll interval must fit the measurement window')
+        else:
+            config = ResourceFeedbackConfig(**options)
         result.update(owner_max_inflight=resources.max_active_batches,
             initial_window=maximum, admission=dict(kind="resource_feedback", gpu_ids=list(gpu_ids), **asdict(config)))
     return result
@@ -108,9 +120,9 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
     if (type(prepared_batching) is not PreparedBatching or prepared_batching.policy != 'token_budget'
             or prepared_batching.max_rows is not None):
         raise ValueError('record batching requires token_budget with max_rows=None')
-    if resolved['mode'] != 'async' or 'admission' in resolved or resolved['stage_timing']:
-        raise ValueError('record batching requires fixed async execution without admission or stage_timing')
-    requests = resolved['max_inflight']
+    if resolved['mode'] != 'async' or ('admission' in resolved and not rolling_refill) or resolved['stage_timing']:
+        raise ValueError('record batching requires async execution; admission requires rolling_refill, stage_timing is unsupported')
+    requests = resolved.get('owner_max_inflight', resolved['max_inflight'])
     if rolling_refill and (batch_concurrency is not None or batch_feedback is not None):
         raise ValueError('rolling_refill uses request R, not batch_concurrency or batch_feedback')
     concurrency = None if rolling_refill else 1 if batch_concurrency is None else batch_concurrency
@@ -124,17 +136,24 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
             raise ValueError('batch feedback requires SupplyFeedbackConfig, initial one and a ceiling within R')
         feedback['feedback'] = asdict(batch_feedback)
     if rolling_refill:
-        feedback.update(rolling_refill=True, C_request=requests, admission_unit='single_model_requests')
+        feedback.update(rolling_refill=True, C_request=resolved['max_inflight'], admission_unit='single_model_requests')
+        if 'admission' in resolved:
+            if resolved['max_inflight'] != 1:
+                raise ValueError('rolling request feedback starts at one')
+            feedback['request_feedback'] = {k: v for k, v in resolved['admission'].items()
+                                            if k not in ('kind', 'gpu_ids')}
     return dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
         request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,
         row_cap=None, W=None, batch_unit='application transport batch with unsettled compute members',
-        request_unit='single complete model request; also the inherited resident-row limit', **feedback)
+        request_unit=('single complete model request; soft C_request, independent resident R'
+                      if 'request_feedback' in feedback else
+                      'single complete model request; also the inherited resident-row limit'), **feedback)
 
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False):
     """Select existing ownership; both Movie lifecycles use this same factory."""
-    resolved = resolve_core_profile(engine, resources, profile)
+    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill)
     batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if batching is not None:

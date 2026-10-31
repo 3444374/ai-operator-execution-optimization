@@ -60,7 +60,8 @@ def check_plan(plan):
     if plan["backend"] == "semloom-core":
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
         from src.experiments.lotus_records_movie import _record_batching_options
-        core_profile = resolve_core_profile(engine, resources, plan["profile"])
+        core_profile = resolve_core_profile(engine, resources, plan["profile"],
+            rolling_refill=plan.get('rolling_refill', False))
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
         if batching is not None and (plan['lifecycle'] != 'isolated' or plan.get('admission_cache') is not None):
             raise ValueError('record token batches require isolated fresh owners without admission_cache')
@@ -204,7 +205,8 @@ class _MovieDriver:
             if backend == "semloom-core":
                 from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
                 from src.experiments.lotus_records_movie import _record_batching_options
-                self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"])
+                self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
+                    rolling_refill=self.plan.get('rolling_refill', False))
                 self.owner = create_records_core(method, self.engine, self.generation, self.resources,
                                                  profile=self.plan["profile"], **_record_batching_options(self.plan))
             else:

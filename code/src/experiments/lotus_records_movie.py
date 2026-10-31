@@ -375,10 +375,10 @@ def read_config(path):
     engine = EngineSpec.from_dict(value["engine"])
     if is_core:
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        resolved = resolve_core_profile(engine, resources, profile)
+        resolved = resolve_core_profile(engine, resources, profile, rolling_refill=value.get('rolling_refill', False))
         batching = resolve_record_batching(resolved, **_record_batching_options(value))
         if batching is not None and value.get('admission_cache') is not None:
-            raise ValueError('record token batching does not support admission_cache or dynamic scanning')
+            raise ValueError('record token batching does not support admission_cache')
         if limits is not None and (limits.max_inflight != resolved.get("owner_max_inflight", resolved["max_inflight"])
                                    or limits.result_slots < resolved.get("owner_max_inflight", resolved["max_inflight"])):
             raise ValueError("async_limits must cover and match the Core request limit")
@@ -623,7 +623,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     try:
         if is_core:
             from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
-            is_async = resolve_core_profile(engine, resources, profile)["mode"] == "async"
+            is_async = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False))["mode"] == "async"
         if is_async:
             async_limits = _async_limits(config)
         if config["backend"] != "daft-native-local-model":
@@ -656,7 +656,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             return owner.evaluate(source, query_id=config["query_id"])
         if config.get("admission_cache") is not None:
             from src.experiments.movie_matrix_support import run_record_admission
-            resolved = resolve_core_profile(engine, resources, profile)
+            resolved = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False))
             def execute_query(window, *, allow_exploration, search_hint=None):
                 query_options.update(max_inflight=window, allow_exploration=allow_exploration,
                                      search_hint=search_hint)
@@ -844,7 +844,8 @@ def main(argv=None):
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
     if config["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND):
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        preflight["core_execution"] = resolve_core_profile(engine, resources, _core_profile(config))
+        preflight["core_execution"] = resolve_core_profile(engine, resources, _core_profile(config),
+            rolling_refill=config.get('rolling_refill', False))
         batching = resolve_record_batching(preflight['core_execution'], **_record_batching_options(config))
         if batching is not None:
             preflight['record_batching'] = batching
