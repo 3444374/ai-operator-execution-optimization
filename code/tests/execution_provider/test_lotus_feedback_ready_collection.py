@@ -11,12 +11,12 @@ from tests.execution_provider import test_lotus_snapshot_rpc_receipts as receipt
 
 
 class FeedbackReadyCollectionTests(unittest.TestCase):
-    def bound_sampler(self, *, observer=False):
+    def bound_sampler(self, *, observer=False, poll_interval_s=3):
         helper = receipts.SnapshotRPCReceiptTests()
         feedback, refs, cancels = helper.sampler()
         # Long test-only tick makes the event ordering decisive, not a millisecond
         # performance threshold. No production default or policy is overridden.
-        feedback.config = SupplyFeedbackConfig(4, ResourceFeedbackConfig(poll_interval_s=3, window_s=3))
+        feedback.config = SupplyFeedbackConfig(4, ResourceFeedbackConfig(poll_interval_s=poll_interval_s, window_s=3))
         feedback.owner._expected_count = 1
         feedback.owner._token_organizer = SimpleNamespace(concurrency=1)
         stream = SimpleNamespace(session=SimpleNamespace(session_id=1),
@@ -209,6 +209,62 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         del feedback, thread; gc.collect()
         self.assertIsNone(owner())
         refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+
+    def test_audit_phase_change_cannot_publish_old_native_into_a_pending_new_session(self):
+        feedback, refs, _, first, _, _, thread = self.bound_sampler(poll_interval_s=.01)
+        provider = feedback.provider
+        in_audit, release_audit, new_session_polled, wrong_session = [threading.Event() for _ in range(4)]
+        original_audit, original_observe = provider.observe_native, provider._observe
+        def audit(native, **context):
+            in_audit.set()
+            self.assertTrue(release_audit.wait(1))
+            original_audit(native, **context)
+        def observe(snapshot, **context):
+            original_observe(snapshot, **context)
+            if (context['stage'] == 'sample' and feedback.session_id == 2
+                    and len(refs) == 2 and not refs[1][1].done()):
+                if context['accepted'] and snapshot.source_session_id != 2:
+                    wrong_session.set()
+                new_session_polled.set()
+        provider.observe_native, provider._observe = audit, observe
+        thread.start()
+        try:
+            self.assertTrue(first.wait(1))
+            refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+            self.assertTrue(in_audit.wait(1))
+            feedback.end_phase()
+            feedback.bind(SimpleNamespace(session=SimpleNamespace(session_id=2),
+                run=SimpleNamespace(current=[None]), _stage_ids=['map0']))
+            release_audit.set()
+            self.assertTrue(new_session_polled.wait(1), 'new session must actually poll its own pending RPC')
+            self.assertFalse(wrong_session.is_set(), 'new provider epoch accepted an old-session native cache')
+            self.assertIsNone(feedback.last_native)
+            self.assertIsNone(provider.latest(1).running)
+            self.assertEqual(feedback.report()['snapshot_rpc_receipts'][0]['rpc_terminal_status'], 'returned')
+        finally:
+            release_audit.set(); feedback.close(); thread.join(1)
+            self.assertFalse(thread.is_alive())
+
+    def test_pending_new_session_cannot_reuse_a_stale_native_cache(self):
+        feedback, refs, _ = self.manual_sampler()
+        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        native = feedback.sample()
+        feedback.bind(SimpleNamespace(session=SimpleNamespace(session_id=2),
+            run=SimpleNamespace(current=[None]), _stage_ids=['map0']))
+        with feedback._snapshot_lock:
+            feedback.last_native = native  # The inherited race's stale state.
+        feedback.provider._sample_once(feedback.sample)
+        self.assertEqual(len(refs), 2)
+        self.assertIs(feedback.ref, refs[1][0])
+        self.assertIsNone(feedback.provider.latest(1).running)
+
+    def test_pending_same_session_keeps_original_native_identity_and_age(self):
+        feedback, refs, _ = self.manual_sampler()
+        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        native = feedback.sample()
+        self.assertIs(feedback.sample(), native)
+        self.assertEqual(len(refs), 2)
+        self.assertEqual(native.source_session_id, feedback.session_id)
 
 
 if __name__ == '__main__':unittest.main()

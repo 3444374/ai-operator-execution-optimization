@@ -131,9 +131,10 @@ class BatchSupplyFeedback:
     def bind(self, stream):
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
         from src.scheduling.submission_control.stage_work import SupplyFeedbackController
-        self.session_id = stream.session.session_id
-        self.last_native = None
-        self.started = time.monotonic()
+        with self._snapshot_lock:
+            self.session_id = stream.session.session_id
+            self.last_native = None
+            self.started = time.monotonic()
         self.prepared = self.submitted = 0
         self.transition.clear()
         self.controller = SupplyFeedbackController(self.config)
@@ -352,7 +353,10 @@ class BatchSupplyFeedback:
                 self._cancel_snapshot('expired')
             # Cancel requested/failed is not terminal proof. The same ref owns
             # this slot; duplicate native sequences keep their original age.
-            return None if self.closed else self.last_native
+            with self._snapshot_lock:
+                native = self.last_native
+                return (native if not self.closed and native is not None
+                        and native.source_session_id == self.session_id else None)
         with self._snapshot_lock:
             index = self._snapshot_request['request_index']
             timing = self._snapshot_request.get('future_timing_enabled', False)
@@ -430,7 +434,12 @@ class BatchSupplyFeedback:
         except Exception:
             pass  # Optional audit cannot change the RPC receipt or valid feedback.
         if snapshot is not None:
-            self.last_native = snapshot
+            with self._snapshot_lock:
+                # Audit runs outside the ownership lock and may span bind().
+                # A known old RPC return must not seed the next Core session.
+                if self.closed or snapshot.source_session_id != self.session_id:
+                    return None
+                self.last_native = snapshot
         return snapshot
 
     def _reap_stopped_snapshot(self, *, cancel=False):

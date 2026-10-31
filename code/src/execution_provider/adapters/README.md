@@ -529,8 +529,9 @@ can then collect and publish a valid result during its regular wait. The callbac
 only signals: it never reads a result, releases a reference or issues another RPC.
 The next regular tick consumes the already-collected value (including a rejected
 or raised result), preserving the original dispatch turn and RPC issue frequency.
-Duplicate notifications cannot create RPCs or refresh a source sequence/age; old
-session values cannot enter a resumed provider. Missing wake registration falls
+Duplicate notifications cannot create RPCs or refresh a source sequence/age.
+Early-collected values are session-tagged; the next regular tick discards them
+if the current session differs. Missing wake registration falls
 back to the original periodic poll, with an explicit receipt error. Close wakes
 the wait; cancellation and late terminal evidence keep the existing ownership
 rules. This is an engineering collection fix, not a freshness or resource-policy
@@ -539,6 +540,12 @@ It does not add this sampler or dynamic control to `rolling_refill`.
 The [CPU collection cases](../../../tests/execution_provider/test_lotus_feedback_ready_collection.py)
 cover readiness, unchanged issue turns, close, unknown cancellation and phase reuse;
 real-backend latency and overhead on this exact new source still require validation.
+
+The separate `last_native` fallback commits and reuses frames only for the current
+Core session, under the same lock as `bind`'s session/cache reset. If audit spans a
+phase change, the old RPC remains a known terminal receipt, but its frame cannot
+repopulate that fallback or supply a pending RPC in the later session. This does
+not change native source freshness or the RPC's reference/cancellation lifecycle.
 
 `snapshot_rpc_pending` remains explicitly unknown while no remote result is
 available, including failed cancellation or a locally cancelled read Future.
