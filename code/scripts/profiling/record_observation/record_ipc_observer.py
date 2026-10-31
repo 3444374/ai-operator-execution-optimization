@@ -2,6 +2,7 @@
 from collections import OrderedDict
 import functools
 import json
+import os
 import socket
 import threading
 import time
@@ -145,6 +146,60 @@ def observe_feedback(snapshot, **context):
         source_sequence=snapshot.get('sequence'),source_observed_at_s=snapshot.get('observed_at_s'),
         **{name:snapshot.get(name)for name in ('running','waiting','kv_usage','preemptions_total',
                                               'finished_total','generation_tokens_total')},**context)
+
+
+def _prepare_sink_closed(sink):
+    buffer=sink.get('feedback_buffer')if type(sink)is dict else None
+    return (type(buffer)is dict and sink.get('closed')is True and sink.get('flush_confirmed')is True
+        and all(type(sink.get(k))is int and sink[k]==0 for k in ('errors','dropped'))
+        and type(sink.get('events_written'))is int and sink['events_written']>=0
+        and sink['events_written']==sink.get('events_attempted')
+        and buffer.get('closed')is True and buffer.get('drain_complete')is True
+        and all(type(buffer.get(k))is int and buffer[k]==0 for k in ('remaining','errors','dropped')))
+
+
+def install_prepare_close(owner):
+    """One bounded observation RPC before each existing prepare-actor kill."""
+    if not ENABLED or not callable(getattr(owner,'_kill_actor',None)):return
+    original_kill,original_close=owner._kill_actor,owner.close
+    @functools.wraps(original_kill)
+    def kill(self,actor):
+        if ENABLED and any(actor is p for p in self.prepare_actors):
+            with self.__dict__.setdefault('_record_prepare_close_lock',threading.Lock()):
+                states=self.__dict__.setdefault('_record_prepare_closes',{})
+                state=states.setdefault(id(actor),dict(ref=None,receipt=dict(
+                    actor_index=next(i for i,p in enumerate(self.prepare_actors)if p is actor),
+                    status='unknown',rpc_terminal_status='unsubmitted',dispatch_attempted=False,error_type=None)))
+                receipt=state['receipt']
+                try:
+                    deadline=self._record_prepare_close_deadline
+                    if not receipt['dispatch_attempted'] and time.monotonic()<deadline:
+                        receipt.update(dispatch_attempted=True,rpc_terminal_status='unknown')
+                        state['ref']=actor.close_observation.remote()
+                    if state['ref'] is not None:
+                        value=self.wait_ready(state['ref'],deadline)
+                        state['ref']=None;receipt['rpc_terminal_status']='returned'
+                        if (type(value)is not dict or value.get('role')!='prepare'
+                                or value.get('status')not in ('closed','unknown')
+                                or value['status']=='closed'and not _prepare_sink_closed(value.get('sink'))):
+                            raise ValueError('invalid prepare observation receipt')
+                        receipt.update({k:value[k]for k in ('status','pid','sink')if k in value})
+                        receipt['error_type']=value.get('error_type')
+                except Exception as error:
+                    receipt.update(status='unknown',error_type=type(error).__name__)
+        # Observation failure, timeout or an unknown RPC must never skip cleanup.
+        return original_kill(self,actor)
+    @functools.wraps(original_close)
+    def close(self,*args,**kwargs):
+        if not ENABLED or not self.prepare_actors:return original_close(self,*args,**kwargs)
+        if not hasattr(self,'_record_prepare_close_deadline'):
+            self._record_prepare_close_deadline=(self.close_deadline if self.close_deadline is not None
+                else time.monotonic()+self._model_close_timeout_s())
+        report=original_close(self,*args,**kwargs)
+        report['prepare_observation']=[dict(s['receipt'],ref_retained=s['ref']is not None)
+            for s in getattr(self,'_record_prepare_closes',{}).values()]
+        return report
+    owner._kill_actor,owner.close=kill,close
 
 
 class ObservedAsyncEngineProcess(AsyncEngineProcess):
@@ -315,6 +370,23 @@ def __getattr__(name):
             return report
     class ObservedPrepareActor(_PrepareActor):
         def __init__(self,*args,**kwargs):
+            self._record_prepare_lock=threading.RLock()
+            self._record_prepare_close_report=None
             install_cpu_hooks();super().__init__(*args,**kwargs)
+        def prepare(self,*args,**kwargs):
+            with self._record_prepare_lock:return super().prepare(*args,**kwargs)
+        def close_observation(self):
+            with self._record_prepare_lock:
+                if self._record_prepare_close_report is not None:return self._record_prepare_close_report
+                report=dict(role='prepare',pid=os.getpid(),status='unknown',sink=None,error_type=None)
+                try:
+                    emit('prepare_sink_finalizing',status='closed',scope='serialized preparation finished; observer only, before owner kill')
+                    close_events()
+                    sink=json.loads((ROOT/'events'/('events-'+str(os.getpid())+'.status.json')).read_text())
+                    report['sink']=sink
+                    if _prepare_sink_closed(sink):report['status']='closed'
+                except Exception as error:report['error_type']=type(error).__name__
+                self._record_prepare_close_report=report
+                return report
     globals().update(ObservedAsyncCoreModelActor=ObservedAsyncCoreModelActor,ObservedPrepareActor=ObservedPrepareActor)
     return globals()[name]

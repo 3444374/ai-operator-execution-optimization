@@ -261,6 +261,7 @@ def observe_method(cls, name, operation, members):
     original=getattr(cls,name)
     @functools.wraps(original)
     def wrapped(self, rows, *args, **kwargs):
+        if not ENABLED or _closed:return original(self,rows,*args,**kwargs)
         identities=members(self,rows,args,kwargs)
         legacy='prepare' if operation.endswith('prepare') else 'parser' if operation.endswith('parser') else 'method_complete'
         emit(legacy+'_start',identities=identities)
@@ -325,9 +326,10 @@ def install_driver():
     from src.execution_provider.adapters import lotus_records_actor_owner as owner,lotus_records_async_actor as async_owner
     from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
     from src.execution_provider.adapters import lotus_records_core
-    from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor
+    from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor,install_prepare_close
     async_owner.AsyncRecordsActorOwner._model_actor_type=lambda self:ObservedAsyncCoreModelActor
     owner._PrepareActor=ObservedPrepareActor
+    install_prepare_close(owner.RecordsActorOwner)
     original_env=owner._runtime_env
     def runtime_env(python):
         settings=original_env(python);variables=dict(settings['env_vars'])

@@ -172,6 +172,10 @@ class RecordsActorOwner:
     def _model_close_timeout_s(self) -> float:
         return 10.0
 
+    def _kill_actor(self, actor: Any) -> None:
+        """Termination boundary for the optional lifecycle observer."""
+        self.ray.kill(actor, no_restart=True)
+
     def wait_ready(
         self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None = None,
     ) -> Any:
@@ -264,7 +268,7 @@ class RecordsActorOwner:
             if id(actor) in self._killed:
                 continue
             try:
-                self.ray.kill(actor, no_restart=True)
+                self._kill_actor(actor)
                 self._killed.add(id(actor))
             except BaseException as exc:
                 errors.append("actor_kill_request: " + type(exc).__name__)

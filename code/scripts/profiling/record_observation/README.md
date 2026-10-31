@@ -104,6 +104,15 @@ full 与 handoff 的 actor sink 都在原生生产者静止、reader 归零且�
 driver 采样器／Future 回调结束。driver 仍按原 worker finally 停止采样、关闭 telemetry 和
 自身 sink；full 的原生模型／GPU 事件与 trace export 另随原监督退出流程完成，须分别核对。
 
+普通 records 的 full 路径另有准备 actor。它在原 owner 的终止接点前，通过同一单并发
+actor 队列领取 `close_observation` 回执，复用 `close_events` 排空、fsync 和 footer；
+当前准备调用结束后才关闭，后到的准备调用保留原生返回／异常并处于该 sink 观察范围之外。
+回执写入 `model_owner.prepare_observation`，分别记录 RPC 终态、引用是否保留及实际 sink 状态。
+超时、缺 footer 或刷盘失败仍继续原有 kill，观测保持未知，不改模型请求结果或把 owner 的
+API 关闭当作刷盘成功。重复关闭不重复派发，未取到的 RPC 引用由原 owner 保留。
+等待沿用原关闭 deadline；off 和没有准备 actor 的 token 路径不增加 RPC。旧源码若缺少该终止
+接点，工具不安装这一收尾，缺失回执仍是未知，不能借用本候选的资格。
+
 标记分别表示 actor 原 reader guard 内的返回前边界、额外 Future 完成通知和 driver decode 后
 审核入口。通知与原 await 恢复不保证全序；既有 `Ray_result_to_Core` 是 transfer **入口**，
 不是 sink 已完成。跨进程仅使用同机 monotonic 边界，同线程才解释 thread CPU，重叠区间取并集。
