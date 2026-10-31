@@ -507,8 +507,8 @@ freshness remains a separate decision.
 
 With the existing optional provider observer enabled, each control RPC also records
 local Future callback registration, last poll observation/count, ready notification,
-collection start and result-read timestamps in that same receipt slot. No extra
-RPC, poll, wait or wakeup is added; observer off installs no ready callback.
+collection start and result-read timestamps in that same receipt slot. The timing
+hook adds no RPC or result read; observer off installs no timing callback.
 `issued_at_s` precedes the local `.remote()` call, not a measured wire send. The
 ready callback timestamps notification in the driver, an upper bound on local
 readiness; late registration, delayed callbacks or missing clocks leave earlier
@@ -520,8 +520,25 @@ bounds. Callback completion alone never settles a remote RPC. The optional
 index, not a model-request count. Duplicate source frames retain the adopted RPC's
 consumer identity. Native, driver and provider clock domains are labelled separately;
 cross-process differences require valid clock anchors and are not exact wire latency.
-These fields do not change sampling cadence, freshness, three-window confirmation,
+These fields do not change RPC issue cadence, freshness, three-window confirmation,
 batch/request admission units or the default-disabled feedback policy.
+
+The existing batch-feedback sampler separately signals a coalescing Event when its
+original Future completes, with observation on or off. The same provider thread
+can then collect and publish a valid result during its regular wait. The callback
+only signals: it never reads a result, releases a reference or issues another RPC.
+The next regular tick consumes the already-collected value (including a rejected
+or raised result), preserving the original dispatch turn and RPC issue frequency.
+Duplicate notifications cannot create RPCs or refresh a source sequence/age; old
+session values cannot enter a resumed provider. Missing wake registration falls
+back to the original periodic poll, with an explicit receipt error. Close wakes
+the wait; cancellation and late terminal evidence keep the existing ownership
+rules. This is an engineering collection fix, not a freshness or resource-policy
+change. Provider-to-policy polling and three-window/finite-tail limits remain.
+It does not add this sampler or dynamic control to `rolling_refill`.
+The [CPU collection cases](../../../tests/execution_provider/test_lotus_feedback_ready_collection.py)
+cover readiness, unchanged issue turns, close, unknown cancellation and phase reuse;
+real-backend latency and overhead on this exact new source still require validation.
 
 `snapshot_rpc_pending` remains explicitly unknown while no remote result is
 available, including failed cancellation or a locally cancelled read Future.

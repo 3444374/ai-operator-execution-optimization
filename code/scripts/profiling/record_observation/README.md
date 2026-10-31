@@ -150,7 +150,9 @@ Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feed
 轮询／取走时间见关闭回执，通知可能晚于实际就绪，注册时已完成或通知缺失时不补猜时间。
 同进程“通知→取走”可观察部分就绪后等待；跨进程差值仍需时钟锚点，不称精确传输时延。
 该补充只覆盖提供这些可选字段的 sampler；旧 request 路径字段缺失仍未知。观察 off 不注册
-这项 Future 回调，on/off 不改 poll/RPC 节奏、新鲜度阈值或业务输入生成参数，实机开销待测。
+这项计时回调，on/off 不改 RPC 发起节奏、新鲜度阈值或业务输入生成参数，实机开销待测。
+批反馈运行时另用完成通知唤醒原采样线程收取已有 RPC，观察关闭时也保留；回调不读结果或
+发新 RPC，下一定期轮询仍占用原来的收取轮次。该修正不为 rolling 增加反馈计时或动态策略。
 
 该消费审计需要被测 runtime 的可选 provider observer 接口；旧 runtime 明确发出
 `native_feedback_audit_unavailable`，不能仅凭工具版本宣称完整。main 的 request-feedback sampler

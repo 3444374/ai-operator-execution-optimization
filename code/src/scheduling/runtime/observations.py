@@ -200,6 +200,8 @@ class NonBlockingMetricsObservationProvider:
         clock: Callable[[], float] = time.monotonic,
         close_timeout_s: float | None = None,
         observer=None,
+        ready_event: threading.Event | None = None,
+        collect_ready: Callable[[], ServiceMetricsSnapshot | None] | None = None,
     ):
         if poll_interval_s <= 0:
             raise ValueError("poll_interval_s must be positive")
@@ -207,12 +209,15 @@ class NonBlockingMetricsObservationProvider:
             raise ValueError("stale_after_s must be non-negative")
         if close_timeout_s is not None and close_timeout_s < 0:
             raise ValueError("close_timeout_s must be non-negative")
+        if (ready_event is None) != (collect_ready is None):
+            raise ValueError("ready_event and collect_ready must be supplied together")
         self.sampler = sampler
         self.poll_interval_s = poll_interval_s
         self.stale_after_s = stale_after_s
         self.clock = clock
         self.close_timeout_s = close_timeout_s
         self.observer = observer
+        self._ready_event, self._collect_ready = ready_event, collect_ready
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._sampled = threading.Event()
@@ -293,6 +298,8 @@ class NonBlockingMetricsObservationProvider:
 
     def close(self) -> None:
         self._stop.set()
+        if self._ready_event is not None:
+            self._ready_event.set()
         self._thread.join(timeout=self.close_timeout_s)
 
     def _observe(self, snapshot, *, stage, accepted, reason, at_s):
@@ -329,46 +336,66 @@ class NonBlockingMetricsObservationProvider:
         except Exception:
             pass
 
+    def _sample_once(self, sampler, *, ready=False):
+        with self._lock:
+            epoch, enabled = self._epoch, self._enabled
+        snapshot = None
+        if enabled:
+            try:
+                snapshot = sampler()
+            except Exception:
+                _logger.warning("metrics sampler failed in background thread", exc_info=True)
+        # An old notification or a pending/cancelled RPC has no new sample.
+        # Regular polls retain their original missing-snapshot behavior.
+        if ready and snapshot is None:
+            return
+        now = self.clock()
+        observed_snapshot = snapshot
+        reason = "sampler_unavailable" if snapshot is None else "sample_updated"
+        accepted = False
+        with self._lock:
+            if epoch == self._epoch and not self._stop.is_set():
+                if (snapshot is not None and snapshot.source_observed_at_s is not None
+                        and snapshot.source_observed_at_s > now):
+                    snapshot = None
+                    reason = "source_clock_in_future"
+                sequence = None if snapshot is None else snapshot.source_sequence
+                duplicate = (sequence is not None and self._source_sequence is not None
+                             and sequence <= self._source_sequence)
+                if not duplicate:
+                    sampled_at = (snapshot.source_observed_at_s if snapshot is not None
+                                  and snapshot.source_observed_at_s is not None else now)
+                    self._snapshot, self._sampled_at_s = snapshot, sampled_at
+                    self._service_rate_tokens_s_per_endpoint = self._rate_tracker.update(snapshot, sampled_at)
+                    self._sample_generation += 1
+                    if sequence is not None:
+                        self._source_sequence = sequence
+                    accepted = snapshot is not None
+                else:
+                    reason = "duplicate_or_older_source_sequence"
+            else:
+                reason = "sampling_generation_invalidated"
+        self._observe(observed_snapshot, stage="sample", accepted=accepted, reason=reason, at_s=now)
+        self._sampled.set()
+
     def _sample_loop(self) -> None:
         while not self._stop.is_set():
-            with self._lock:
-                epoch, enabled = self._epoch, self._enabled
-            snapshot = None
-            if enabled:
-                try:
-                    snapshot = self.sampler()
-                except Exception:
-                    _logger.warning("metrics sampler failed in background thread", exc_info=True)
-            now = self.clock()
-            observed_snapshot = snapshot
-            reason = "sampler_unavailable" if snapshot is None else "sample_updated"
-            accepted = False
-            with self._lock:
-                if epoch == self._epoch and not self._stop.is_set():
-                    if (snapshot is not None and snapshot.source_observed_at_s is not None
-                            and snapshot.source_observed_at_s > now):
-                        snapshot = None
-                        reason = "source_clock_in_future"
-                    sequence = None if snapshot is None else snapshot.source_sequence
-                    duplicate = (sequence is not None and self._source_sequence is not None
-                                 and sequence <= self._source_sequence)
-                    if not duplicate:
-                        sampled_at = (snapshot.source_observed_at_s if snapshot is not None
-                                      and snapshot.source_observed_at_s is not None else now)
-                        self._snapshot, self._sampled_at_s = snapshot, sampled_at
-                        self._service_rate_tokens_s_per_endpoint = self._rate_tracker.update(snapshot, sampled_at)
-                        self._sample_generation += 1
-                        if sequence is not None:
-                            self._source_sequence = sequence
-                        accepted = snapshot is not None
-                    else:
-                        reason = "duplicate_or_older_source_sequence"
-                else:
-                    reason = "sampling_generation_invalidated"
-            self._observe(observed_snapshot, stage="sample", accepted=accepted, reason=reason, at_s=now)
-            self._sampled.set()
-            if self._stop.wait(self.poll_interval_s):
-                return
+            self._sample_once(self.sampler)
+            if self._ready_event is None:
+                if self._stop.wait(self.poll_interval_s):
+                    return
+                continue
+            # Completion can interrupt this wait, but cannot advance its regular
+            # dispatch deadline. Scheduling uses wall monotonic, as Event.wait did.
+            deadline = time.monotonic()+self.poll_interval_s
+            while not self._stop.is_set():
+                remaining = deadline-time.monotonic()
+                if remaining <= 0 or not self._ready_event.wait(remaining):
+                    break
+                self._ready_event.clear()
+                if self._stop.is_set():
+                    return
+                self._sample_once(self._collect_ready, ready=True)
 
 
     def _set_enabled(self, enabled):
