@@ -3,7 +3,7 @@ from dataclasses import asdict
 from concurrent.futures import CancelledError
 import json
 import math
-from threading import Lock
+from threading import Event, Lock
 import time
 import weakref
 
@@ -117,6 +117,8 @@ class BatchSupplyFeedback:
         self.snapshot_rpc_receipts = []
         self._snapshot_request = None
         self._snapshot_lock = Lock()
+        self._snapshot_ready = None
+        self._collected_ready = None
 
     def event(self, action, key):
         if action == 'submitted':
@@ -129,9 +131,10 @@ class BatchSupplyFeedback:
     def bind(self, stream):
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
         from src.scheduling.submission_control.stage_work import SupplyFeedbackController
-        self.session_id = stream.session.session_id
-        self.last_native = None
-        self.started = time.monotonic()
+        with self._snapshot_lock:
+            self.session_id = stream.session.session_id
+            self.last_native = None
+            self.started = time.monotonic()
         self.prepared = self.submitted = 0
         self.transition.clear()
         self.controller = SupplyFeedbackController(self.config)
@@ -139,16 +142,23 @@ class BatchSupplyFeedback:
         self.controller.reset(1, len(stream.run.current)*len(stream._stage_ids))
         self.owner._token_organizer.concurrency = 1
         if self.provider is None and self.owner._expected_count:
+            self._snapshot_ready = Event()
             self.provider = NonBlockingMetricsObservationProvider(self.sample,
                 poll_interval_s=self.config.options.poll_interval_s,
                 stale_after_s=self.config.options.window_s,
-                close_timeout_s=self.config.options.poll_interval_s)
+                close_timeout_s=self.config.options.poll_interval_s,
+                ready_event=self._snapshot_ready, collect_ready=self.collect_ready)
         elif self.provider is not None:
             self.provider.resume()
 
     def sample(self):
         if self.closed or self.session_id is None:
             return None
+        with self._snapshot_lock:
+            collected, self._collected_ready = self._collected_ready, None
+        if collected is not None:
+            session, snapshot = collected
+            return snapshot if session == self.session_id else None
         try:
             if self.ref is None and self._snapshot_request is None:
                 remote = self.owner._actors.model_actor.snapshot.remote
@@ -173,11 +183,16 @@ class BatchSupplyFeedback:
                 self.expired = False
             if self.ref is None:
                 return None  # Dispatch outcome without a handle remains unknown.
+            acquired = None
             if self.future is None:
                 future = self.ref.future()
                 with self._snapshot_lock:
                     self.future = future
-            return self._consume_snapshot(cancel_pending=True)
+                acquired = future
+            snapshot = self._consume_snapshot(cancel_pending=True)
+            if acquired is not None and self.future is acquired:
+                self._watch_snapshot_ready(acquired)
+            return snapshot
         except Exception as error:
             with self._snapshot_lock:
                 self.errors += 1
@@ -185,6 +200,35 @@ class BatchSupplyFeedback:
                     field = 'dispatch_error_type' if self.ref is None else 'future_access_error_type'
                     self._snapshot_request = dict(self._snapshot_request, **{field:type(error).__name__})
             return None
+
+    def _watch_snapshot_ready(self, future):
+        if self._snapshot_ready is None:
+            return
+        index = self._snapshot_request['request_index']
+        owner = weakref.ref(self)
+        def notify(completed):
+            feedback = owner()
+            if feedback is not None:
+                feedback._snapshot_ready.set()
+        try:
+            future.add_done_callback(notify)
+        except Exception as error:
+            self._note_future_timing(index, future_wakeup_error_type=type(error).__name__)
+
+    def collect_ready(self):
+        # Only the provider thread consumes. A notification never issues a new
+        # RPC, and local Future cancellation still retains the original ref.
+        if self.closed or self.future is None:
+            return None
+        session = self.sample_session
+        snapshot = self._consume_snapshot()
+        with self._snapshot_lock:
+            if self.ref is not None:
+                return None
+            # The next regular tick spends the turn that used to collect this
+            # result. Publishing early therefore does not increase RPC cadence.
+            self._collected_ready = (session, snapshot)
+        return snapshot
 
     def _cancel_snapshot(self, reason):
         with self._snapshot_lock:
@@ -309,7 +353,10 @@ class BatchSupplyFeedback:
                 self._cancel_snapshot('expired')
             # Cancel requested/failed is not terminal proof. The same ref owns
             # this slot; duplicate native sequences keep their original age.
-            return None if self.closed else self.last_native
+            with self._snapshot_lock:
+                native = self.last_native
+                return (native if not self.closed and native is not None
+                        and native.source_session_id == self.session_id else None)
         with self._snapshot_lock:
             index = self._snapshot_request['request_index']
             timing = self._snapshot_request.get('future_timing_enabled', False)
@@ -387,7 +434,12 @@ class BatchSupplyFeedback:
         except Exception:
             pass  # Optional audit cannot change the RPC receipt or valid feedback.
         if snapshot is not None:
-            self.last_native = snapshot
+            with self._snapshot_lock:
+                # Audit runs outside the ownership lock and may span bind().
+                # A known old RPC return must not seed the next Core session.
+                if self.closed or snapshot.source_session_id != self.session_id:
+                    return None
+                self.last_native = snapshot
         return snapshot
 
     def _reap_stopped_snapshot(self, *, cancel=False):
