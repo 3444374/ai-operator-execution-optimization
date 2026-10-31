@@ -82,8 +82,9 @@ The research preference for record-local progression does not change those API d
 Record-local F/M sections use `LotusChainFIFO` over the existing Core/MethodDriver.
 Extract waits for actual source EOF, complete predecessor finals and drained result
 responsibility; the original parser and relation assembler then run once before continuation.
-One model is started and finally closed per query, including all its sections. Cross-query
-reuse, multiple deployments and arbitrary DAGs are not provided by this option.
+By default one model is started and finally closed per query, including all its sections.
+The explicit [rolling resident factory](#resident-rolling-token-owner) below is a separate
+lifetime option. Multiple deployments and arbitrary DAGs are not provided here.
 
 The caller owns Ray 2.56.1. Preparation/model batch sizes must both be 1; explicit
 `max_active_batches` declares the outer request slots and their Core/actor/IPC reservations.
@@ -167,8 +168,8 @@ deliveries are released immediately, while retained row state remains charged to
 MethodBudget. Failure/cancel stops successors and keeps the existing unknown and
 producer-retirement rules. `close()['progression']` records the actual policy.
 
-The caller continues to own and retain Ray across queries. Each query still owns
-and closes one fresh model; this option does not implement cross-query model
+The caller continues to own and retain Ray across queries. This batch-stage option owns
+and closes one fresh model per query; it does not implement cross-query model
 borrowing. The old fused path remains the default complete implementation and
 receives no Ray wrapper. This group barrier is an explicit internal mechanism
 comparison, not a replacement for native system baselines or GPU qualification.
@@ -320,6 +321,37 @@ there is no independent per-batch row cap. Engine `max_num_seqs` and
 The application bulk frame is not a claim that vLLM executes a physical batch of
 the same size at once.
 
+An optional `rolling_refill=True` uses the existing **request** window R instead
+of a whole-batch window. Omit `batch_concurrency` and `batch_feedback` in this
+mode; mixing either with rolling refill is rejected before model startup.
+The default is `False`, preserving the existing fixed/feedback C_batch path.
+
+```python
+owner = SemLoomRecordChainCore(engine, resources,
+    execution="record_local_sections",
+    prepared_batching=PreparedBatching("token_budget", None, B),
+    rolling_refill=True)
+```
+
+A confirmed member terminal frees its request reservation; result consumption
+and row release return their separate storage grants. A new compatible group
+can then use that capacity while a slow member of an earlier group remains in
+flight. R still bounds Core compute, resident rows, the actor and IPC owner;
+byte/result reservations and unknown responsibility are unchanged. A submitted
+group remains immutable: refill creates another transport batch, not new members
+inside the old batch or a change to vLLM's native continuous batching. B only
+organizes each handoff, and the ready-frontier/EOF tail does not wait to fill B.
+Extract retains its complete-relation barrier. The ordinary records factory,
+Movie JSON `check/run` and isolated-session plan accept the same boolean option.
+Receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
+batch/member counts remain separate. W, dynamic request-window feedback and
+joint B/C control are not enabled by this option. Full expected relations and
+audit retention remain outside these active-row logical grants. This is an
+engineering composition of existing admission and transport contracts; only
+[CPU fixture checks](../../../tests/execution_provider/test_lotus_token_rolling_refill.py)
+and [normal-entry checks](../../../tests/experiments/test_movie_async_token_entry.py)
+cover it so far, with no real-Ray/model/GPU performance qualification.
+
 The method prepares actual messages once. The organizer counts each Core task's
 full message/template plus stage output cap and groups compatible ready requests
 across source read chunks. A batch flushes at B, before an incompatible request,
@@ -378,15 +410,16 @@ The feature remains disabled by default. No overall cold-query speedup is
 established; Q1 strict native-output parity fails and all Q3 configurations return
 COUNT=7 against gold=14. MMF complete returned-payload parity, full-Core GPU
 capacity-failure mapping, independent streaming read-chunk GPU cases, P99 and
-saturation remain unverified. Dynamic C_batch/joint B/C control and cross-query
-resident reuse are not supported by this path.
+saturation remain unverified. That qualification does not cover subsequent feedback or
+[rolling resident reuse](#resident-rolling-token-owner) candidates; joint B/C control remains unsupported.
 The [current scope](../../../INFRA_STATUS.md#async-record-token-batches) and
 [public PR84 summary](https://github.com/3444374/ai-operator-execution-optimization/pull/84)
 separate completed checks, measured negative results and remaining limits.
 
 The ordinary records factory `create_records_core` accepts the same optional
-`prepared_batching` and `batch_concurrency`. It requires fixed async mode without
-resource-feedback admission or stage timing. A finite source must provide its
+`prepared_batching` and `batch_concurrency`. It requires async mode without stage
+timing. Non-rolling batch mode excludes resource-feedback admission; rolling mode
+can opt into request feedback as described below. A finite source must provide its
 validated `rows()` relation as well as the existing `preflight`, `scan_spec` and
 `expected` contracts. The adapter binds one ordinary Filter stage to the unchanged
 method and generation, using the existing record-chain owner. It preserves the
@@ -400,10 +433,273 @@ Failed/unknown query receipts keep their original usage and confirmation.
 This finite chain already retains a full expected relation. The ordinary ledger
 adapter delivers raw receipts after the existing complete chain traversal; it is
 not a live result-stream API, and does not add a per-batch execution barrier. There
-is no new scheduler or engine. The normal Movie config/CLI and isolated session
-driver use this factory; resident reuse, dynamic admission/cache and unsupported
-row-capped combinations fail before model construction. Configuration and commands
+is no new scheduler or engine. The normal Movie config/CLI and Session driver use this
+factory; resident is accepted only for the explicit rolling mode below. Admission cache
+and unsupported row-capped combinations fail before model construction. Configuration and commands
 are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
+
+### Optional dynamic request permits for rolling refill (local CPU candidate)
+
+With token `prepared_batching` and `rolling_refill=true`, the same ordinary
+`core_profile.admission={"kind":"resource_feedback"}` opts into request-level
+supply feedback. `max_inflight` may be omitted or explicitly 1 at startup. The
+existing `"auto"` value is also accepted when R=1, resolving to the same initial
+window of 1; it is rejected for R>1. This does not bypass capacity. Declared
+`resources.max_active_batches` remains the independent hard R for compute and
+resident rows. Omission/null admission retains fixed rolling C_request=R and
+installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
+The Python chain accepts `request_feedback=default_supply_feedback_options()`;
+the normal Movie/Session factory resolves the existing admission object.
+
+This engineering candidate reuses the existing request trial controller, typed
+ready-work/demand gates and repaired single-RPC sampler. The soft C_request starts
+at one, B stays fixed, and C_batch is null. Each terminal member releases its own
+permit; a slow batch peer cannot retain the permit of a finished member or block
+its legal successor. A selected immutable group already owns its member permits,
+including when the transport temporarily returns NOT_ACCEPTED. Shrinking stops
+new selections; previously admitted requests drain without cancellation or group
+splitting. Pending-selection permits are reported separately from actual compute
+inflight; they never masquerade as native requests or spare capacity. A blocked
+handoff holds exploration with `submission_backpressure`, not a performance claim.
+Core R/input/result/state, transport slots/bytes and unknown ownership remain.
+
+Default request supply options use computed work, local pairs and geometric
+trials, without time/change/attempt budgets or task-wide token/gold references.
+The existing fresh-feedback/settling/three-window confirmation still applies;
+this does not implement faster resource-led large steps or joint B adjustment.
+Explicit option overrides retain their existing meaning and online cost. Reports
+use `owner_close.request_supply_feedback`, retain exploration/transition costs,
+snapshot terminal/unknown receipts and real batch/request counts, and never call
+a configured ceiling a measured platform. CPU/GPU utilization, physical free
+memory, MFU/HBM and resource benefit remain unknown. See the
+[request mechanism and ownership tests](../../../tests/execution_provider/test_lotus_request_supply_feedback.py)
+and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedback_entry.py).
+
+<a id="resident-rolling-token-owner"></a>
+### Resident rolling token model owner (local CPU candidate)
+
+`create_records_core(..., prepared_batching=batching, rolling_refill=True, resident=True)`
+retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
+queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
+schema or model pool is introduced. Fixed rolling RF retains C_request=R; RD uses the
+same admission configuration above but creates a fresh controller at C_request=1 for
+each query. C_batch is null. Non-rolling token batches, batch feedback and admission
+cache remain excluded. Default `resident=False` preserves the single-query lifetime.
+
+```python
+owner = create_records_core(method, engine, generation, resources, profile=profile,
+    prepared_batching=batching, rolling_refill=True, resident=True)
+try:
+    model_ready = owner.start()  # Original native readiness; no application inference.
+    first = list(owner.evaluate(source, query_id="first"))
+    reused = list(owner.evaluate(source, query_id="reused", method=compatible_method))
+finally:
+    owner.close()  # Final model/IPC shutdown, separate from healthy query EOF.
+```
+
+Queries retain fresh sources, ledgers, result consumers, token organizers and feedback
+state. The existing SessionEngine keeps monotonically increasing numeric session IDs.
+Normal EOF proves query transport/Core/actor/IPC responsibility and feedback RPCs are
+drained before reporting `model_retained=true`, `model_owner.status="retained"`.
+Completed iterator reports remain independent snapshots. Failure, cancellation, early
+consumer close or unconfirmed draining stops reuse and closes the owner; unknown
+outcomes are not cleared. Model-name changes reject before work; a different fixed
+deployment, generation or capacity needs a new owner. This is not arbitrary chain reuse.
+
+The [CPU session cases](../../../tests/experiments/test_movie_token_resident_session.py)
+use real CPU socket children and a threaded Ray substitute. Real-Ray/model reuse,
+physical cleanup and query performance remain pending for this exact candidate.
+Native KV/cache effects and cross-query scheduling experience are distinct;
+see [timing and scope](../../../INFRA_STATUS.md#model-query-reuse-scope).
+
+## Optional fixed-B supply feedback (local CPU candidate)
+
+`SemLoomRecordChainCore` and the Python `create_records_core` factory accept
+`batch_feedback=SupplyFeedbackConfig(max_batches=operational_batch_ceiling)` from
+`src.scheduling.submission_control.stage_work`. This requires the existing
+record-local token path, `batch_concurrency=1`, FIFO, record progression and W off;
+the ceiling must fit R. Omission retains the fixed path and installs no sampler.
+The normal Movie `check/run` JSON and isolated session plans accept the same
+`batch_feedback` object (`max_batches` and optional `options`); omitted/null keeps
+feedback off. Partial `options` inherit `SupplyFeedbackConfig` defaults, including
+computed work, local pairs and geometric exploration. The shared factory and
+typed config own validation; no alternate runner is installed. See the
+[normal entry](../../experiments/movie_matrix.README.md#record-token-batch-entry).
+Resident sessions remain unsupported by this finite-query token path.
+
+Only the application **batch** window changes. B remains the caller's fixed work
+budget, and R, Core bytes, IPC slots/bytes and native startup declarations remain
+separate. The start is one batch, with no task token reference, gold, cached best
+setting or hard exploration timeout. The explicit ceiling is an operational
+limit, never a measured performance platform. Runtime B adjustment is deferred.
+
+The existing method-ready callback and Core sink count preparation admissions and
+submissions; original confirmed receipts provide completion and input/output/cache
+work. Core task `WorkDescriptor`/`StageWork` supplies the actual ready-work units.
+Window reports pair these rates/demand and logical capacity with same-owner,
+same-session native running/waiting/KV/preemption frames over the existing IPC
+feedback channel. Prepared rate is method-to-Core admission, not all CPU work.
+Repeated/stale/missing frames cannot establish spare hardware. Queued backend work,
+no ready supply, tail/dependency wait, pressure and configuration boundaries have
+separate reasons. A feedback gap invalidates a trial and returns to its last safe
+setting without aborting members or releasing unknown credits. It clears the
+interrupted comparison, retains elapsed/attempt/change budgets and trial cost,
+and permits new measurements after fresh feedback resumes; it is not a permanent
+stop. Only the interrupted candidate's per-query visit marker is released when
+eligible; its attempt count is retained. Failed snapshot cancellation retains the outstanding RPC until its future
+settles, so repeated polls cannot stack unconfirmed sampling requests.
+Pressure protection keeps priority; a pending gap is retained until a qualified
+non-pressure frame invalidates the comparison, so protection cannot hide it.
+
+A ready backlog survives normal gaps between compute batches. An instantaneous
+active-batch count below the selected window does not erase that window's
+measurements: its dispatch gaps remain in measured wall time. No progress cannot
+form a new measurement. Empty ready supply, stale feedback, queue/capacity and
+tail boundaries retain their existing guards. A window change still clears the
+partial measurements and waits for transition/settling before measuring anew.
+
+Control RPC evidence uses the existing normal query close receipt at
+`owner_close.batch_supply_feedback`. `snapshot_rpc_receipts` records each collected
+return or result exception, its local request index/session, driver timestamps,
+cancel outcome and returned native identity/sequence/time headers. It stores no
+prompt or result text. `eligible_for_provider` means schema/identity eligibility,
+not proof that the provider or controller consumed a fresh frame.
+After stopping the sampler, close/report nonblockingly collects a ready original
+Future; the final report also rechecks after the existing actor close. A later
+explicit close can publish new terminal evidence without changing the earlier
+report object or model-result ledger. There is no new snapshot or blocking wait
+to obtain this evidence.
+If the sampler outlives close's join timeout, each report copies the request slot,
+receipts and reference flags under one short ownership lock. Dispatch, Future
+access and provider joins run outside that lock; a live sampler remains unknown
+until its result is collected. Driver clock failures and non-finite or overflowing
+source timestamps are stored as `None` with the corresponding `*_error_type`. These
+metadata failures do not erase a known RPC return/exception or stop owner cleanup;
+complete RPC terminal evidence does not imply complete timestamp metadata.
+Returned frames also use the optional native receive/reject audit and preserve
+source UID/session/sequence/time and a separate driver receive timestamp. Audit
+callbacks run after terminal collection, outside the ownership lock; provider
+freshness remains a separate decision.
+
+With the existing optional provider observer enabled, each control RPC also records
+local Future callback registration, last poll observation/count, ready notification,
+collection start and result-read timestamps in that same receipt slot. The timing
+hook adds no RPC or result read; observer off installs no timing callback.
+`issued_at_s` precedes the local `.remote()` call, not a measured wire send. The
+ready callback timestamps notification in the driver, an upper bound on local
+readiness; late registration, delayed callbacks or missing clocks leave earlier
+readiness unknown. A positive collection-minus-notification interval bounds some
+post-readiness local waiting; it is not a pure polling or transport measurement.
+Poll observations are timestamped after `.done()` and are not atomic readiness
+bounds. Callback completion alone never settles a remote RPC. The optional
+`control_request_index` joins RPC/sample/consumer metadata; it is a snapshot RPC
+index, not a model-request count. Duplicate source frames retain the adopted RPC's
+consumer identity. Native, driver and provider clock domains are labelled separately;
+cross-process differences require valid clock anchors and are not exact wire latency.
+These fields do not change RPC issue cadence, freshness, three-window confirmation,
+batch/request admission units or the default-disabled feedback policy.
+
+The existing batch-feedback sampler separately signals a coalescing Event when its
+original Future completes, with observation on or off. The same provider thread
+can then collect and publish a valid result during its regular wait. The callback
+only signals: it never reads a result, releases a reference or issues another RPC.
+The next regular tick consumes the already-collected value (including a rejected
+or raised result), preserving the original dispatch turn and RPC issue frequency.
+Duplicate notifications cannot create RPCs or refresh a source sequence/age.
+Early-collected values are session-tagged; the next regular tick discards them
+if the current session differs. Missing wake registration falls
+back to the original periodic poll, with an explicit receipt error. Close wakes
+the wait; cancellation and late terminal evidence keep the existing ownership
+rules. This is an engineering collection fix, not a freshness or resource-policy
+change. Provider-to-policy polling and three-window/finite-tail limits remain.
+The optional request-supply path above reuses these same collection and session
+ownership rules; fixed rolling without admission still installs no sampler.
+The [CPU collection cases](../../../tests/execution_provider/test_lotus_feedback_ready_collection.py)
+cover readiness, unchanged issue turns, close, unknown cancellation and phase reuse;
+real-backend latency and overhead on this exact new source still require validation.
+
+The separate `last_native` fallback commits and reuses frames only for the current
+Core session, under the same lock as `bind`'s session/cache reset. If audit spans a
+phase change, the old RPC remains a known terminal receipt, but its frame cannot
+repopulate that fallback or supply a pending RPC in the later session. This does
+not change native source freshness or the RPC's reference/cancellation lifecycle.
+
+`snapshot_rpc_pending` remains explicitly unknown while no remote result is
+available, including failed cancellation or a locally cancelled read Future.
+Cancellation request, sampler stop and physical producer exit do not establish
+a normal RPC return. `snapshot_rpc_cleanup_status="closed"` and
+`snapshot_rpc_terminal_evidence_complete=True` mean all issued attempts have
+collected returns/result exceptions and the sampler stopped; a terminal exception
+is still labelled `raised`, not a normal frame. The existing owner data-plane
+close status and unknown model outcomes keep their meanings; control evidence
+must be checked separately. Historical e42 retained-ref flags cannot be upgraded
+using these new receipts or process-cleanup evidence.
+
+The supply policy defaults to **no elapsed-time, change-count or candidate-attempt
+cutoff** (`exploration_s=None`, `max_changes=None`, `max_candidate_attempts=None`,
+`min_remaining=0`). An unresolved default candidate can be remeasured in the same
+query. A resolved adjacent point permits the next geometric point; an unresolved
+adjacent point cannot be skipped. The operational batch ceiling and original
+request/byte capacities remain finite. A finite attempt limit is an explicit
+legacy budget choice and exhaustion is reported as censored, not as a platform.
+The retained request-controller `ResourceFeedbackConfig()` still defaults to two
+candidate attempts; passing that whole options object selects its full settings.
+Partial JSON options inherit the supply defaults, including the null attempt
+limit. Python callers can likewise replace fields on `SupplyFeedbackConfig(M).options`
+or use `SupplyFeedbackConfig.from_dict` without importing legacy budget defaults.
+
+Default rules are engineering choices, not measured hardware saturation criteria.
+Their code owners are [supply policy](../../scheduling/submission_control/stage_work.py),
+[trial/search policy](../../scheduling/submission_control/adaptive.py),
+[batch organizer/sampler](lotus_chain_token_batches.py) and
+[ordinary factory](lotus_records_core.py):
+
+| Rule | Supply default and effect | Code basis |
+|---|---|---|
+| Enable/start | Omitted/null is off; enabled starts at one batch, without a historical hint | `_record_batching_options`, `SupplyFeedbackController.reset`, `BatchSupplyFeedback.bind` |
+| Work/capacity | B fixed; explicit `max_batches <= R`; original member/byte/IPC bounds remain | `resolve_record_batching`, `PreparedTokenOrganizer.__call__` |
+| Time/change budgets | Both null: no algorithm cutoff; finite values explicitly retain the old budget rules | `ResourceFeedbackConfig`, `_exploration_time_left`, `_within_change_budget` |
+| Candidate attempts | Null: unresolved candidates may retry; interruption preserves spent attempts and releases only its own visit marker | `SupplyFeedbackConfig.options`, `_GeometricSearch.available/next/interrupt` |
+| Remaining work | Zero: only no pending work stops the scan; a positive value explicitly opts into the old tail/amortization heuristic | `_next_trial`, `_update` |
+| Sampling | Poll 0.25s, window 1s, at least 16 completions per measurement; missing/stale/incoherent data cannot establish idle capacity | `ResourceFeedbackConfig`, `update_supply`, `_update` |
+| Window changes | Settle old members, one cooldown window, discard the first progress window; none is a total exploration deadline | `_change`, `_update` |
+| Candidate selection | Geometric points up to the explicit ceiling; local work-direction comparisons, 3% gain margin; unresolved comparisons can extend to six windows and one fresh safe-reference recheck per trial | `_GeometricSearch.__init__`, `_point`, `_compare`, `_local_pair_evidence` |
+| Pressure | Existing KV 0.85 congestion / 0.50 low-load guards, factor 0.5 reduction; confirm KV twice, preemption/explicit memory pressure can act immediately | `AimdConfig`, `_update` |
+| Supply/queue | No ready supply, unfilled batch window, waiting backend work, tail/dependency wait or a local capacity boundary holds growth | `update_supply` |
+| Completion/evidence | EOF ends useful work; nonmonotonic work stops adaptation; resolved geometric points end that declared search range, not a global optimum claim | `update_supply`, `_update`, `_GeometricSearch.stop_reason`, `report` |
+| Point-history scope | Actual work-context change / pressure recovery can reset point-local progress; controller elapsed/change budgets and accumulated trial wall do not reset. A feedback gap does not rebase the whole search | `rebase_work`, `record_pressure`, `resume_pressure`, `_invalidate_feedback_gap` |
+| Retention/deadlines | Recent trace arrays retain 64 entries; this does not cap batches, requests, attempts or changes. Existing owner query/startup deadlines remain lifecycle limits | trace/report code; `RecordsResources`, record owner lifecycle |
+
+The old standalone AIMD `low_load_running=64` is not a threshold used by this
+trial path (`ResourceFeedbackController` binds the field to its maximum and uses
+its own `_update`). Test loop counts/deadlines are fixture bounds, not policy
+stopping rules. The policy can still hold on incomplete evidence or end its
+declared geometric range; without physical CPU/GPU/free-memory interfaces it
+cannot guarantee growth whenever hardware has spare capacity. The 3% comparison
+margin can classify a smaller positive gain as `no_gain`. None of these outcomes proves a
+hardware limit.
+
+The policy reuses `ResourceFeedbackController` work-aware trials/comparison and
+pressure protection, with demand gating. Default comparison requires actual
+computed/cached counters; unavailable work keeps the comparison unresolved.
+Existing KV protection thresholds are engineering guardrails, not saturation
+measurements. CPU/GPU utilization, physical free memory and native startup capacity
+readback are currently unknown; IPC startup limits and declared native limits are
+reported separately. KV is a usage ratio; free KV bytes are not returned by this
+interface. No GPU percentage triggers growth. Mixed-stage cost attribution is
+not qualified by the token-work comparison; stage descriptors remain explicit.
+
+[Policy replays](../../../tests/scheduling/test_supply_feedback.py) and
+[Core/actor/CPU-IPC differentials](../../../tests/execution_provider/test_lotus_batch_supply_feedback.py)
+check missing feedback, pressure, bounds, no-gain rollback, original prompts/results,
+successors, Extract barriers and unknown ownership. Positive CPU integration uses
+an explicit delivered-work test configuration, a simulated engine-stat source and
+a logical busy-Core sampling frontier with an injected gap. A separate real-clock case
+checks original transport/results/cleanup without requiring a finite fixture to
+last long enough for exploration. Default computed policy is replay-tested.
+These are engineering checks, not GPU
+resource benefit or full real-engine feedback qualification. Cold startup,
+observation and trial work stay in the caller's original query clock.
 
 ## Optional method-ready successor selection
 
@@ -448,7 +744,7 @@ working monotonic clock and progressing engine/consumer; there is no wall-clock 
 cover the restored implementation; [joint token/priority cases](../../../tests/execution_provider/test_lotus_record_local_token_priority.py)
 cover default, separate and combined settings, lifecycle and bounded ready service with token estimates.
 The [two historical negative observations](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#priority-reverse-small-pair)
-remain unchanged. The public full-query owner has no cross-query resident reuse, so those
+remain unchanged. The priority path above has no cross-query resident reuse, so those
 historical first/reuse runs are not reproduced merely by exposing this option.
 
 

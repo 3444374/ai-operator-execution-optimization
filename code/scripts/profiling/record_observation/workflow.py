@@ -21,7 +21,11 @@ import control_resource_C2 as controller
 
 TESTS = ('tests.experiments.test_record_resource_capture',
          'tests.experiments.test_record_resource_handoff',
-         'tests.experiments.test_git_record_observation')
+         'tests.experiments.test_record_prepare_finalization',
+         'tests.experiments.test_git_record_observation',
+         'tests.observability.test_records_telemetry',
+         'tests.observability.test_feedback_identity',
+         'tests.serving.test_native_resource_feedback')
 
 
 def read_private(path):
@@ -116,7 +120,7 @@ def qualify(config_path, output_root, expected_tool_commit):
     output_root = Path(output_root).resolve()
     new_private_directory(output_root)
     env = {k: v for k, v in os.environ.items() if not k.startswith('SEM_RECORD_')}
-    env.update(PYTHONPATH=str(REPO / 'code'), PYTHONDONTWRITEBYTECODE='1',
+    env.update(PYTHONPATH=str(REPO / 'code') + os.pathsep + str(HERE), PYTHONDONTWRITEBYTECODE='1',
                CUDA_VISIBLE_DEVICES='', HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
                LITELLM_LOCAL_MODEL_COST_MAP='True')
     commands = [('unit', [sys.executable, '-B', '-m', 'unittest', '-v', *TESTS])]

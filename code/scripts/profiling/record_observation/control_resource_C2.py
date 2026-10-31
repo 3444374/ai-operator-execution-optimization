@@ -78,6 +78,19 @@ def check_material(config):
     if config.get('execution_enabled') is not False:raise ValueError('prepared cell must not already be enabled')
 
 
+def trace_storage_bytes(directories):
+    total = 0
+    for directory in directories:
+        for path in directory.rglob('*'):
+            try:
+                if path.is_file():
+                    total += path.stat().st_size
+            except FileNotFoundError:
+                # Nsight removes transient injection metadata while profiling.
+                continue
+    return total
+
+
 def capture_status(root):
     sinks=[];parse_errors=0;sample_known=sample_unknown=0
     for path in (Path(root)/'events').glob('*.jsonl'):
@@ -138,7 +151,7 @@ def main(root):
             if time.monotonic()-started>config['limits']['controller_timeout_s']:raise TimeoutError('controller operational timeout')
             if profiled(config):
                 directories={root/'trace',Path(config['nsys_tmp'])}
-                total=sum(p.stat().st_size for directory in directories for p in directory.rglob('*') if p.is_file())
+                total=trace_storage_bytes(directories)
                 if total>config['observation']['trace_storage_bytes']:raise RuntimeError('trace storage bound')
                 if time.monotonic()-last_sample[0]>=config['observation']['physical_gpu_interval_s']:
                     lower=time.monotonic_ns()

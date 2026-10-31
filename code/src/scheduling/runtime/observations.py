@@ -33,6 +33,12 @@ class ServiceMetricsSnapshot:
     completed_output_work_total: int | None = None
     completed_computed_input_work_total: int | None = None
     completed_cached_input_work_total: int | None = None
+    source_uid: str | None = None
+    source_session_id: int | None = None
+    received_at_s: float | None = None
+    control_request_index: int | None = None
+    source_clock_domain: str | None = None
+    received_clock_domain: str | None = None
 
     def __post_init__(self) -> None:
         # Reuse the observation schema's validation without inventing another
@@ -193,6 +199,9 @@ class NonBlockingMetricsObservationProvider:
         rate_ewma_alpha: float = 0.3,
         clock: Callable[[], float] = time.monotonic,
         close_timeout_s: float | None = None,
+        observer=None,
+        ready_event: threading.Event | None = None,
+        collect_ready: Callable[[], ServiceMetricsSnapshot | None] | None = None,
     ):
         if poll_interval_s <= 0:
             raise ValueError("poll_interval_s must be positive")
@@ -200,11 +209,15 @@ class NonBlockingMetricsObservationProvider:
             raise ValueError("stale_after_s must be non-negative")
         if close_timeout_s is not None and close_timeout_s < 0:
             raise ValueError("close_timeout_s must be non-negative")
+        if (ready_event is None) != (collect_ready is None):
+            raise ValueError("ready_event and collect_ready must be supplied together")
         self.sampler = sampler
         self.poll_interval_s = poll_interval_s
         self.stale_after_s = stale_after_s
         self.clock = clock
         self.close_timeout_s = close_timeout_s
+        self.observer = observer
+        self._ready_event, self._collect_ready = ready_event, collect_ready
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._sampled = threading.Event()
@@ -248,6 +261,10 @@ class NonBlockingMetricsObservationProvider:
             )
             if fresh:
                 self._last_delivered_generation = sample_generation
+            reason = ("fresh_for_consumer" if fresh else "missing_snapshot" if snapshot is None
+                      else "stale_snapshot" if sampled_at_s is None or not 0 <= now-sampled_at_s <= self.stale_after_s
+                      else "already_delivered_generation")
+        self._observe(snapshot, stage="consumer", accepted=fresh, reason=reason, at_s=now)
         return AdmissionObservation(
             observed_at_s=now,
             fresh=fresh,
@@ -281,38 +298,104 @@ class NonBlockingMetricsObservationProvider:
 
     def close(self) -> None:
         self._stop.set()
+        if self._ready_event is not None:
+            self._ready_event.set()
         self._thread.join(timeout=self.close_timeout_s)
+
+    def _observe(self, snapshot, *, stage, accepted, reason, at_s):
+        if self.observer is None:
+            return
+        try:
+            self.observer(dict(stage=stage, accepted=accepted, reason=reason, decision_at_s=at_s,
+                decision_clock_domain='provider.clock seconds',
+                engine_uid=None if snapshot is None else snapshot.source_uid,
+                session_id=None if snapshot is None else snapshot.source_session_id,
+                source_sequence=None if snapshot is None else snapshot.source_sequence,
+                source_observed_at_s=None if snapshot is None else snapshot.source_observed_at_s,
+                received_at_s=None if snapshot is None else snapshot.received_at_s,
+                control_request_index=None if snapshot is None else snapshot.control_request_index,
+                source_clock_domain=None if snapshot is None else snapshot.source_clock_domain,
+                received_clock_domain=None if snapshot is None else snapshot.received_clock_domain))
+        except Exception:
+            pass  # Optional observation cannot change freshness, results or ownership.
+
+    def observe_native(self, snapshot, *, session_id, received_at_s, accepted, reason,
+                       control_request_index=None, source_clock_domain=None, received_clock_domain=None):
+        """Optional RPC-validation boundary; not a policy admission decision."""
+        if self.observer is None:
+            return
+        snapshot = snapshot or {}
+        try:
+            self.observer(dict(stage="RPC_sample", accepted=accepted, reason=reason,
+                control_request_index=control_request_index,
+                source_clock_domain=source_clock_domain, received_clock_domain=received_clock_domain,
+                decision_clock_domain=received_clock_domain,
+                engine_uid=snapshot.get("engine_uid"), session_id=session_id,
+                source_sequence=snapshot.get("sequence"), source_observed_at_s=snapshot.get("observed_at_s"),
+                received_at_s=received_at_s, decision_at_s=received_at_s))
+        except Exception:
+            pass
+
+    def _sample_once(self, sampler, *, ready=False):
+        with self._lock:
+            epoch, enabled = self._epoch, self._enabled
+        snapshot = None
+        if enabled:
+            try:
+                snapshot = sampler()
+            except Exception:
+                _logger.warning("metrics sampler failed in background thread", exc_info=True)
+        # An old notification or a pending/cancelled RPC has no new sample.
+        # Regular polls retain their original missing-snapshot behavior.
+        if ready and snapshot is None:
+            return
+        now = self.clock()
+        observed_snapshot = snapshot
+        reason = "sampler_unavailable" if snapshot is None else "sample_updated"
+        accepted = False
+        with self._lock:
+            if epoch == self._epoch and not self._stop.is_set():
+                if (snapshot is not None and snapshot.source_observed_at_s is not None
+                        and snapshot.source_observed_at_s > now):
+                    snapshot = None
+                    reason = "source_clock_in_future"
+                sequence = None if snapshot is None else snapshot.source_sequence
+                duplicate = (sequence is not None and self._source_sequence is not None
+                             and sequence <= self._source_sequence)
+                if not duplicate:
+                    sampled_at = (snapshot.source_observed_at_s if snapshot is not None
+                                  and snapshot.source_observed_at_s is not None else now)
+                    self._snapshot, self._sampled_at_s = snapshot, sampled_at
+                    self._service_rate_tokens_s_per_endpoint = self._rate_tracker.update(snapshot, sampled_at)
+                    self._sample_generation += 1
+                    if sequence is not None:
+                        self._source_sequence = sequence
+                    accepted = snapshot is not None
+                else:
+                    reason = "duplicate_or_older_source_sequence"
+            else:
+                reason = "sampling_generation_invalidated"
+        self._observe(observed_snapshot, stage="sample", accepted=accepted, reason=reason, at_s=now)
+        self._sampled.set()
 
     def _sample_loop(self) -> None:
         while not self._stop.is_set():
-            with self._lock:
-                epoch, enabled = self._epoch, self._enabled
-            snapshot = None
-            if enabled:
-                try:
-                    snapshot = self.sampler()
-                except Exception:
-                    _logger.warning("metrics sampler failed in background thread", exc_info=True)
-            now = self.clock()
-            with self._lock:
-                if epoch == self._epoch and not self._stop.is_set():
-                    if (snapshot is not None and snapshot.source_observed_at_s is not None
-                            and snapshot.source_observed_at_s > now):
-                        snapshot = None
-                    sequence = None if snapshot is None else snapshot.source_sequence
-                    duplicate = (sequence is not None and self._source_sequence is not None
-                                 and sequence <= self._source_sequence)
-                    if not duplicate:
-                        sampled_at = (snapshot.source_observed_at_s if snapshot is not None
-                                      and snapshot.source_observed_at_s is not None else now)
-                        self._snapshot, self._sampled_at_s = snapshot, sampled_at
-                        self._service_rate_tokens_s_per_endpoint = self._rate_tracker.update(snapshot, sampled_at)
-                        self._sample_generation += 1
-                        if sequence is not None:
-                            self._source_sequence = sequence
-            self._sampled.set()
-            if self._stop.wait(self.poll_interval_s):
-                return
+            self._sample_once(self.sampler)
+            if self._ready_event is None:
+                if self._stop.wait(self.poll_interval_s):
+                    return
+                continue
+            # Completion can interrupt this wait, but cannot advance its regular
+            # dispatch deadline. Scheduling uses wall monotonic, as Event.wait did.
+            deadline = time.monotonic()+self.poll_interval_s
+            while not self._stop.is_set():
+                remaining = deadline-time.monotonic()
+                if remaining <= 0 or not self._ready_event.wait(remaining):
+                    break
+                self._ready_event.clear()
+                if self._stop.is_set():
+                    return
+                self._sample_once(self._collect_ready, ready=True)
 
 
     def _set_enabled(self, enabled):

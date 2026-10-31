@@ -258,7 +258,7 @@ class ResourceFeedbackConfig:
     memory_floor_bytes: int = 0
     search_mode: str = "local"
     work_tolerance: float = 0.03
-    max_candidate_attempts: int = 2
+    max_candidate_attempts: int | None = 2
     work_basis: str = "delivered"
     work_comparison: str = "envelope"
 
@@ -286,8 +286,9 @@ class ResourceFeedbackConfig:
             raise ValueError("search_mode must be local or geometric")
         if not 0 <= self.work_tolerance < 1:
             raise ValueError("work_tolerance must be between zero and one")
-        if type(self.max_candidate_attempts) is not int or not 1 <= self.max_candidate_attempts <= 4:
-            raise ValueError("max_candidate_attempts must be between one and four")
+        if self.max_candidate_attempts is not None and (
+                type(self.max_candidate_attempts) is not int or not 1 <= self.max_candidate_attempts <= 4):
+            raise ValueError("max_candidate_attempts must be None or between one and four")
         if self.work_basis not in ("delivered", "computed"):
             raise ValueError("work_basis must be delivered or computed")
         if self.work_basis == "computed" and self.search_mode != "geometric":
@@ -353,7 +354,7 @@ def _local_pair_evidence(reference, candidate, margin):
 
 
 class _GeometricSearch:
-    """Finite candidate progress, not an executor or a store of reusable rates."""
+    """Geometric candidate progress, not an executor or a store of reusable rates."""
     resolved = {"gain", "no_gain", "regression", "pressure"}
     outcomes = resolved | {"pending", "noise", "incomparable"}
 
@@ -390,7 +391,8 @@ class _GeometricSearch:
             for row in rows:
                 key, count, outcome = row["window"], row["attempts"], row["outcome"]
                 if (type(key) is not int or key not in self.points or key in restored
-                        or type(count) is not int or not 0 <= count <= attempts or outcome not in self.outcomes
+                        or type(count) is not int or count < 0
+                        or attempts is not None and count > attempts or outcome not in self.outcomes
                         or count == 0 and outcome not in ("pending", "pressure")):
                     raise ValueError("invalid geometric point")
                 restored[key] = dict(attempts=count, outcome=outcome)
@@ -440,7 +442,8 @@ class _GeometricSearch:
 
     def rebase_work(self, context):
         # Rates/outcomes obtained under other cache/work conditions are not
-        # evidence about this condition. Per-query attempts and budgets remain.
+        # evidence about this condition. Point-local attempts restart for the
+        # new context; elapsed/change budgets and costs live in the controller.
         self.work_context = context
         self.verified_window = None
         for row in self.points.values():
@@ -449,11 +452,13 @@ class _GeometricSearch:
 
     def available(self):
         return [key for key, row in self.points.items() if key <= self.ceiling
-                and row["outcome"] not in self.resolved and row["attempts"] < self.limit]
+                and row["outcome"] not in self.resolved
+                and (self.limit is None or row["attempts"] < self.limit)]
 
     def next(self):
-        values = [key for key in self.available() if key not in self.here]
-        # Cover unvisited points before retrying unresolved ones on a later query.
+        values = [key for key in self.available() if self.limit is None or key not in self.here]
+        # Finite legacy scans visit once per query; an unlimited scan may
+        # remeasure unresolved points without resetting their attempt counters.
         return min(values, key=lambda key: (self.points[key]["attempts"] > 0, key)) if values else None
 
     def begin(self, window):
@@ -464,6 +469,11 @@ class _GeometricSearch:
     def finish(self, window, outcome):
         if window in self.here:
             self.points[window]["outcome"] = outcome
+
+    def interrupt(self, window):
+        self.finish(window, 'incomparable')
+        if window in self.available():
+            self.here.discard(window)
 
     def stop_reason(self):
         if self.available():
@@ -610,11 +620,14 @@ class ResourceFeedbackController(AimdAdmissionController):
         if provisional:
             # Do not skip an unresolved adjacent point just to chase a larger C.
             candidates = [key for key in self._search.points
-                          if self.current_window < key <= self._search.ceiling]
+                          if self.current_window < key <= self._search.ceiling
+                          and (self._search.limit is not None
+                               or self._search.points[key]['outcome'] not in self._search.resolved)]
             adjacent = min(candidates) if candidates else None
-            if adjacent is not None and adjacent not in self._search.here and adjacent in self._search.available():
+            if (adjacent is not None and adjacent in self._search.available()
+                    and (self._search.limit is None or adjacent not in self._search.here)):
                 higher = adjacent
-            else:
+            elif self._search.limit is not None or adjacent is not None:
                 return self._stop("adjacent_trial_unavailable", o)
         if higher is None:
             return self._stop(self._search.stop_reason(),o)
@@ -632,7 +645,8 @@ class ResourceFeedbackController(AimdAdmissionController):
                    + max(self.options.window_s,o.hol_age_s or 0)+self.options.window_s)
         # Measurement consumes wall time, but continues useful original work.
         # Reserve that time, then value only the work left after reference-rate
-        # progress. Controller CPU is observed; other future losses are unknown.
+        # progress. Controller-function wall time is observed; outer sampling,
+        # IPC and other future losses are not covered by this measurement.
         after_trial = max(0.,remaining-point["rate"]*trial_s)
         later_saving = after_trial/point["rate"]*max(0.,1-self.current_window/higher)
         control_estimate = (self.control_seconds/max(1,self._decisions)

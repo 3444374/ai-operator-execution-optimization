@@ -63,6 +63,9 @@ def stubs():
 
 class CaptureTests(unittest.TestCase):
     def setUp(self):
+        provider=sys.modules.get('src.scheduling.runtime.observations')
+        self.feedback_provider=None if provider is None else provider.NonBlockingMetricsObservationProvider
+        self.feedback_constructor=None if provider is None else self.feedback_provider.__init__
         self.tmp=tempfile.TemporaryDirectory();self.directory=Path(self.tmp.name)
         config={'observation':dict(mode='on',max_events_per_process=10000,max_event_bytes=65536,max_pending_frame_metadata=50,
                                    native_runner_contracts={})}
@@ -73,7 +76,9 @@ class CaptureTests(unittest.TestCase):
         self.observer=load('record_observer')
 
     def tearDown(self):
-        self.observer.close_events();self.modules.stop();self.env.stop();self.tmp.cleanup()
+        self.observer.close_events()
+        if self.feedback_provider is not None:self.feedback_provider.__init__=self.feedback_constructor
+        self.modules.stop();self.env.stop();self.tmp.cleanup()
 
     def events(self):
         return [json.loads(line) for path in (self.directory/'events').glob('*.jsonl') for line in path.read_text().splitlines()]
@@ -351,6 +356,51 @@ class CaptureTests(unittest.TestCase):
             self.assertEqual(args.original[1]['max_num_seqs'],128);self.assertEqual(args.original[1]['model'],SECRET)
             self.assertEqual(set(args.original[1]),{'model','max_num_seqs','disable_log_stats','worker_cls'})
         self.assertNotIn(SECRET,json.dumps(self.events()))
+
+
+class TraceStorageTests(unittest.TestCase):
+    def setUp(self):
+        load('run_resource_C2')
+        self.controller = load('control_resource_C2')
+
+    def test_transient_file_removed_after_is_file_keeps_existing_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stable, transient = root/'capture.nsys-rep', root/'injection_version.dat'
+            stable.write_bytes(b'captured')
+            transient.write_bytes(b'removed during traversal')
+            is_file = Path.is_file
+            def check_then_remove(path):
+                present = is_file(path)
+                if path == transient and present:
+                    path.unlink()
+                return present
+            with patch.object(Path, 'is_file', check_then_remove):
+                self.assertEqual(self.controller.trace_storage_bytes([root]), 8)
+            self.assertFalse(transient.exists())
+
+    def test_storage_probe_preserves_permission_and_io_failures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root/'capture.nsys-rep'
+            target.touch()
+            stat = Path.stat
+            for failure in (PermissionError('fixture permission denied'), OSError(5, 'fixture I/O failure')):
+                def fail_target(path, *args, **kwargs):
+                    if path == target:
+                        raise failure
+                    return stat(path, *args, **kwargs)
+                with self.subTest(failure=type(failure).__name__), patch.object(Path, 'stat', fail_target):
+                    with self.assertRaises(type(failure)):
+                        self.controller.trace_storage_bytes([root])
+
+    def test_all_existing_files_and_nested_directories_are_counted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'nested').mkdir()
+            (root/'capture.nsys-rep').write_bytes(b'12345678')
+            (root/'nested'/'injection.dat').write_bytes(b'123')
+            self.assertEqual(self.controller.trace_storage_bytes([root]), 11)
 
 
 class PlanTests(unittest.TestCase):

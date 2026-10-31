@@ -114,6 +114,27 @@ class AsyncCoreModelActor:
                 active_readers=self._readers,
                 ipc=None if self.engine is None else self.engine.snapshot())
 
+    def drain_query(self, deadline):
+        """Prove the previous query released its slots without stopping the model."""
+        _deadline(deadline)
+        with self._condition:
+            while True:
+                value = self.snapshot()
+                ipc = value['ipc']
+                clean = (not value['held_requests'] and not value['active_readers']
+                    and not value['early_cancellations'] and ipc is not None
+                    and not any(ipc[name] for name in ('held_requests', 'active_requests',
+                        'input_bytes', 'reserved_result_bytes', 'ready_results',
+                        'queued_commands', 'queued_controls', 'unknown_requests')))
+                healthy = (not value['closing'] and not value['unhealthy'] and ipc is not None
+                           and not ipc['broken'] and not ipc['closing'] and ipc['child_alive'])
+                if clean or not healthy or time.monotonic() >= deadline:
+                    return dict(status='retained' if clean and healthy else 'unknown',
+                        cleanup_scope='query_slots_drained_model_retained', snapshot=value,
+                        model_ready=self._ready_report(), model_retained=clean and healthy,
+                        cleanup_errors=[] if clean and healthy else ['resident_query_drain_unconfirmed'])
+                self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
+
     def _receipt(self, identity, status, error_type, *, expired=False):
         now = time.monotonic()
         value = result_record(identity,
@@ -653,6 +674,12 @@ class AsyncRecordsActorOwner(_ActorOwner):
     def acknowledge_core(self, key):
         if self.model_actor is not None:
             return self.model_actor.acknowledge_core.remote((key.session_id, key.sequence))
+
+    def drain_query(self, deadline):
+        if self.model_actor is None:
+            return dict(status='retained', model_ready=None, model_allocated=False,
+                        model_retained=True, cleanup_errors=[])
+        return self.wait_ready(self.model_actor.drain_query.remote(deadline), deadline)
 
     def close(self):
         report = super().close()

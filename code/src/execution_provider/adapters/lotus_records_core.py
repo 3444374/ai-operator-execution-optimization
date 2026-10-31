@@ -52,7 +52,7 @@ def expand_core_profile(profile):
     return dict(mode="async", max_inflight=8, stage_timing=True, admission=admission)
 
 
-def resolve_core_profile(engine, resources, profile=None):
+def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=False):
     """Resolve an explicit execution profile, without probing or allocating hardware.
 
     Auto is a bound on caller-declared capacity, not a throughput tuner. Device
@@ -62,7 +62,8 @@ def resolve_core_profile(engine, resources, profile=None):
     if type(profile) is not dict or set(profile) - {"mode", "max_inflight", "stage_timing", "admission"}:
         raise ValueError("Core profile accepts mode, max_inflight, stage_timing and optional admission only")
     mode = profile.get("mode", "sync")
-    requested = profile.get("max_inflight", resources.max_active_batches)
+    request_feedback = rolling_refill and profile.get('admission') is not None
+    requested = profile.get("max_inflight", 1 if request_feedback else resources.max_active_batches)
     timing = profile.get("stage_timing", False)
     if mode not in ("sync", "async") or type(timing) is not bool:
         raise ValueError("Core requires sync/async mode and boolean stage_timing")
@@ -89,43 +90,77 @@ def resolve_core_profile(engine, resources, profile=None):
         gpu_ids = admission.get("gpu_ids", ())
         if not isinstance(gpu_ids, (list, tuple)) or any(not isinstance(v, str) or not v.startswith("GPU-") for v in gpu_ids):
             raise ValueError("feedback GPU IDs must be physical UUIDs when supplied")
-        config = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
+        options = {k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")}
+        if request_feedback:
+            from src.scheduling.submission_control.stage_work import default_supply_feedback_options
+            if gpu_ids:
+                raise ValueError('rolling request feedback uses native stats; physical GPU UUID sampling is not connected')
+            if maximum != 1:
+                raise ValueError('rolling request feedback starts at one without a historical search hint')
+            config = replace(default_supply_feedback_options(), **options)
+            if config.poll_interval_s > config.window_s:
+                raise ValueError('request feedback poll interval must fit the measurement window')
+        else:
+            config = ResourceFeedbackConfig(**options)
         result.update(owner_max_inflight=resources.max_active_batches,
             initial_window=maximum, admission=dict(kind="resource_feedback", gpu_ids=list(gpu_ids), **asdict(config)))
     return result
 
 
-def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None):
+def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None, batch_feedback=None,
+                            rolling_refill=False):
     """Validate the optional fixed token batch path before allocating an owner."""
+    if type(rolling_refill) is not bool:
+        raise ValueError('rolling_refill must be boolean')
     if prepared_batching is None:
-        if batch_concurrency is not None:
-            raise ValueError('batch_concurrency requires prepared_batching')
+        if batch_concurrency is not None or batch_feedback is not None or rolling_refill:
+            raise ValueError('batch controls require prepared_batching')
         return None
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
     if (type(prepared_batching) is not PreparedBatching or prepared_batching.policy != 'token_budget'
             or prepared_batching.max_rows is not None):
         raise ValueError('record batching requires token_budget with max_rows=None')
-    if resolved['mode'] != 'async' or 'admission' in resolved or resolved['stage_timing']:
-        raise ValueError('record batching requires fixed async execution without admission or stage_timing')
-    requests = resolved['max_inflight']
-    concurrency = 1 if batch_concurrency is None else batch_concurrency
-    if type(concurrency) is not int or not 1 <= concurrency <= requests:
+    if resolved['mode'] != 'async' or ('admission' in resolved and not rolling_refill) or resolved['stage_timing']:
+        raise ValueError('record batching requires async execution; admission requires rolling_refill, stage_timing is unsupported')
+    requests = resolved.get('owner_max_inflight', resolved['max_inflight'])
+    if rolling_refill and (batch_concurrency is not None or batch_feedback is not None):
+        raise ValueError('rolling_refill uses request R, not batch_concurrency or batch_feedback')
+    concurrency = None if rolling_refill else 1 if batch_concurrency is None else batch_concurrency
+    if not rolling_refill and (type(concurrency) is not int or not 1 <= concurrency <= requests):
         raise ValueError('batch_concurrency must fit the request grant R')
+    feedback = {}
+    if batch_feedback is not None:
+        from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
+        if (type(batch_feedback) is not SupplyFeedbackConfig or concurrency != 1
+                or batch_feedback.max_batches > requests):
+            raise ValueError('batch feedback requires SupplyFeedbackConfig, initial one and a ceiling within R')
+        feedback['feedback'] = asdict(batch_feedback)
+    if rolling_refill:
+        feedback.update(rolling_refill=True, C_request=resolved['max_inflight'], admission_unit='single_model_requests')
+        if 'admission' in resolved:
+            if resolved['max_inflight'] != 1:
+                raise ValueError('rolling request feedback starts at one')
+            feedback['request_feedback'] = {k: v for k, v in resolved['admission'].items()
+                                            if k not in ('kind', 'gpu_ids')}
     return dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
         request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,
         row_cap=None, W=None, batch_unit='application transport batch with unsettled compute members',
-        request_unit='single complete model request; also the inherited resident-row limit')
+        request_unit=('single complete model request; soft C_request, independent resident R'
+                      if 'request_feedback' in feedback else
+                      'single complete model request; also the inherited resident-row limit'), **feedback)
 
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
-                        prepared_batching=None, batch_concurrency=None):
+                        prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
+                        resident=False):
     """Select existing ownership; both Movie lifecycles use this same factory."""
-    resolved = resolve_core_profile(engine, resources, profile)
-    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency)
+    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill)
+    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if batching is not None:
         from .lotus_records_batches import PreparedRecordsCore
-        return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits)
+        return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits,
+                                   resident=resident)
     options = {}
     actors = None
     if resolved["mode"] == "async":
@@ -695,9 +730,10 @@ class _CoreRows(Iterator[dict[str, Any]]):
                 self.unconsumed_call_results.append(row)
 
 
-def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=None):
-    """Stop the existing producer, recover receipts, then retire proved borrowing.
+def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=None, retain_model=False):
+    """Close query transport, retaining only a proved drained resident producer.
 
+    Otherwise stop the producer, recover receipts, and retire proved borrowing.
     The caller first closes its source/MethodDriver consumer. A new timeout
     permits cleanup only; unknown results are never upgraded by retirement.
     """
@@ -711,6 +747,16 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
         actors.close_deadline = time.monotonic() + timeout
     else:
         actors.close_deadline = deadline
+    if retain_model:
+        transport_closed = transport is None or transport.backend.close(timeout=0.05, wait_pending=True)
+        if core is not None:
+            core.reap(capacity.step_actions)
+        if (not transport_closed or transport is not None and transport.retained_refs()
+                or core is not None and any(asdict(core.capacity.usage()).values())):
+            raise RuntimeError('resident query still owns transport or Core work')
+        actor_report = actors.drain_query(actors.close_deadline)
+        return dict(model_owner=actor_report, transport_closed=transport_closed,
+                    producer_retirement=None, cleanup_errors=actor_report['cleanup_errors'])
     actor_report = actors.close()
     errors.extend(actor_report["cleanup_errors"])
     if transport is not None:
@@ -1012,6 +1058,13 @@ class _CoreFeedback:
         with _measure(timings, "feedback_poll"):
             return self._sample()
 
+    def _observe_native(self,snapshot,value,received_at_s,*,accepted,reason):
+        audit=getattr(self.provider,"observe_native",None)
+        if callable(audit):
+            try:audit(snapshot,session_id=value.get("session_id"),received_at_s=received_at_s,
+                      accepted=accepted,reason=reason)
+            except Exception:pass
+
     def _sample(self):
         generation, stream = self.generation, self.stream
         if stream is None:
@@ -1036,16 +1089,22 @@ class _CoreFeedback:
                 self.ref = self.future = None
                 return None
             value = future.result()
+            try:received_at_s = time.monotonic()
+            except Exception:received_at_s = None
             if generation != self.generation:
                 return None
             self.ref = self.future = None
             ipc = value.get("ipc") or {}
             snapshot = ipc.get("native_feedback")
             if snapshot is None:
+                self._observe_native(None,value,received_at_s,accepted=False,reason="native_frame_missing")
                 return None
             expected = self.owner._actors.model_ready["engine_uid"]
-            if (snapshot.get("engine_uid") != expected or value.get("session_id") != stream.session.session_id
-                    or snapshot.get("observed_at_s", -1) < self.started):
+            reason = ("engine_uid_mismatch" if snapshot.get("engine_uid") != expected else
+                      "session_mismatch" if value.get("session_id") != stream.session.session_id else
+                      "source_predates_query" if snapshot.get("observed_at_s", -1) < self.started else "RPC_sample_valid")
+            self._observe_native(snapshot,value,received_at_s,accepted=reason=="RPC_sample_valid",reason=reason)
+            if reason != "RPC_sample_valid":
                 return None
             completed, pending, transition, backpressure = self.progress
             work_count, input_work, output_work = self.completed_work
@@ -1066,6 +1125,7 @@ class _CoreFeedback:
             self.samples += 1
             self.peak_native_running = max(self.peak_native_running, snapshot["running"])
             return ServiceMetricsSnapshot(snapshot["running"], snapshot["waiting"], snapshot["kv_usage"],
+                source_uid=snapshot["engine_uid"], source_session_id=value["session_id"], received_at_s=received_at_s,
                 completed_tokens_total=snapshot["generation_tokens_total"],
                 source_sequence=snapshot["sequence"], source_observed_at_s=snapshot["observed_at_s"],
                 completed_items_total=completed, pending_items=pending,

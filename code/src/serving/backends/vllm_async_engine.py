@@ -129,11 +129,14 @@ class VllmAsyncEngine:
 
     def ready(self):
         from src.observability.metrics.mfu import configuration_snapshot
+        from src.observability.metrics.vllm import effective_capacity_snapshot
         return dict(engine_uid=self.engine_uid, pid=os.getpid(), python=sys.executable,
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
                     reserved_model_calls=self._reserved_model_calls,
                     native_abort_is_terminal_confirmation=False,
+                    **({"native_capacity": effective_capacity_snapshot(getattr(self._llm, "vllm_config", None))}
+                       if self._feedback is not None else {}),
                     **({"native_mfu_initial": self.mfu_snapshot(),
                         "native_mfu_configuration": configuration_snapshot(self._llm.vllm_config)}
                        if self.spec.enable_mfu_metrics else {}))

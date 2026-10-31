@@ -162,7 +162,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 后者按接纳输入顺序固定有限组，每阶段完成后放行合法后继；末尾EOF封组，过滤终结不等待后继。
 原单记录请求、方法转换、Core容量、取消与unknown结清不变，已确认回执及时释放，组内状态仍计费。
 首版限同模型同角色完整F/M、请求计数和FIFO，组必须同时容纳于行数与字节grant；不实现token组批或调整W。
-原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，每查询模型仍新建并关闭，跨查询借用尚未实现。
+原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，该batch-stage组合每查询模型仍新建并关闭，不提供跨查询借用。独立rolling resident候选见[模型寿命范围](#model-query-reuse-scope)。
 CPU检查与差分范围见[接口与测试](src/execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)；
 GPU／质量资格仍按各固定源码的报告解释；新main组合尚未GPU复测，不作完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
 PR74同时提供[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
@@ -211,6 +211,18 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 可选范围为固定B、固定应用批并发C_batch、FIFO、record推进、W关闭；无每批行帽，R仍同时约束在途成员与resident行。
 默认仍为`prepared_batching=None`、关闭；同步对照保留。原records工厂已接正常Movie `check/run`和isolated session，保留冻结任务、source及原评价器绑定，并核对实际B/C_batch/R和逐成员回执。
 
+本地可选`rolling_refill=True`候选复用同一路径，以既有请求窗口R滚动补交token批；慢成员不再占一个整批供给槽阻塞已释放请求额度。
+默认关闭，原C_batch模式保留；启用时省略`batch_concurrency`，并拒绝混入`batch_feedback`。
+B只组织每次传输，批成员提交后不追加；请求、驻留、字节、ACK/unknown与Extract屏障责任保持。
+正常Movie JSON和isolated session沿既有工厂进入，回执分别记录`C_request=R`与`C_batch=null`。
+目前仅[CPU场景](tests/execution_provider/test_lotus_token_rolling_refill.py)与既有入口检查；真实Ray/模型/GPU及性能收益尚未验，不能借用下述历史整批成绩。
+
+本地默认关闭的请求级动态候选在上述rolling中显式增加`core_profile.admission.kind="resource_feedback"`；
+初始C_request=1，硬R仍独立，C_batch=null、B固定，复用原请求扫描、需求门控与已修复的单RPC/session反馈。
+每条完成即可补位，缩容只停止新选择，已准入成员（含后端暂拒的不可拆分组）继续有界排空；原unknown、关系屏障及资源责任不变。
+默认无候选次数／探索时间硬停止、不读gold或全表token参考；仍沿用性能窗口确认，未增加快速大步策略或动态B。
+仅[CPU机制](tests/execution_provider/test_lotus_request_supply_feedback.py)和[正常入口](tests/experiments/test_movie_request_feedback_entry.py)验证，待独审和独立实机对照；资源收益与物理CPU/GPU余量未知。
+
 准确`41ce4c24`的真实Ray/模型功能范围独审通过：198条提交含174成功、17项预期确认容量失败、7项取消unknown；覆盖129+1组批、后继提前推进、关系屏障、取消、关闭分页7→3→0及ACK释放。unknown不计为成功或确认失败。
 
 Movie Q1/Q2/Q3的同步fixed128、同步token及异步token C_batch=1/2各n2，共24组、17,920次成功原生请求完成，全部物理清理与租约释放通过核对。token臂均固定B=17506、无每批行帽；异步臂另设R=259、W关闭，CB1/CB2为手动固定批并发，不是资源反馈自动选择，也不是最优推荐。
@@ -223,8 +235,41 @@ token reference生成、长度统计、预分组／R推导及此前实验均在w
 
 未证明完整冷查询加速；冷计时从worker入口标记至原Movie查询结果就绪，含其后的必要启动，不含父控制器／Python bootstrap及后置评价、写证据与最终清理。启动栈、实际分组和缓存工作差异不允许只归因于推进粒度。Q1严格原生输出等价未通过；Q3各配置共同COUNT=7、gold=14，仍是质量失败。
 
-未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该组批入口不支持动态B/C联合控制及跨查询resident复用。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
+未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该次验收不覆盖后续rolling resident候选，动态B/C联合控制仍未实现。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
 准确参数单位、尾批行为、字节边界与测试入口见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)。
+
+<a id="model-query-reuse-scope"></a>
+## 模型所有者与跨查询复用范围
+
+`e7373c5b` 尚无 token 跨查询复用；其后本地候选沿用现有 Session／Core／异步模型 owner，显式接通下表的 rolling resident 路径。当前仅有 CPU fixture 资格，真实 Ray／模型复用及查询性能仍待验收；架构目标及三类复用见[所属章节](../experiments/plans/系统架构.md#model-query-lifetime)。
+
+| 实际入口 | 模型与查询寿命 |
+|---|---|
+| SemLoom Core 的 Movie 单查询 CLI | 每次调用创建自己的 owner 并在 `finally` 关闭；再次启动 CLI 不构成同模型复用 |
+| 非 token Core 的 `resident` Movie Session | [`SemLoomRecordsCore.start()`](src/execution_provider/adapters/lotus_records_core.py)在 Session 查询执行前等待真实模型 ready；`evaluate()`可连续执行独立查询，最终 Session 关闭模型 |
+| token 整批与默认 `isolated` RF／RD | 工厂使用 [`PreparedRecordsCore`](src/execution_provider/adapters/lotus_records_batches.py)；保持原有限查询启动及 EOF 关闭，不跨查询复用 |
+| 显式 `resident` 的 token 固定滚动 RF／请求级动态 RD | 只接通 `rolling_refill=true`、`C_batch=null`；`start()`等待实际模型 ready，正常 EOF 证明查询责任／RPC 已排空后保留模型／worker／IPC，Session 最终关闭模型。查询账本、额度、组织器与控制器重新建立，Core 的数值 session ID 继续递增 |
+
+普通非 token Core 可在同模型、引擎／生成配置及兼容数据合同下逐查询绑定受支持的 Filter 指令；这不代表任意 Map／Extract 链或模型／角色切换可共用实例。
+其 `_CoreFeedback.begin()`逐查询重建／重置控制器、进度和测量；保留模型或采样 provider 不等于自动继承推荐窗口，显式调优缓存／提示另按其配置解释。
+token RD 的 resident 查询也各自从 `C_request=1` 开始，不继承上一查询的候选或测量；RF 保持声明的请求容量。模型原生缓存仍可能跨查询保留，不能将其计算复用直接算作调度收益。
+
+[`movie_records_session.check_plan()`](src/experiments/movie_records_session.py)只放行上述 rolling resident 组合；批槽反馈、admission cache 及非 rolling token resident 仍拒绝。不同模型身份或运行绑定拒绝；更换部署／生成／容量配置须创建新的 owner。执行失败、取消、提前关闭或未确认排空会关闭当前 owner 并禁止继续复用，不清零 unknown。
+[复用 CPU 测试](tests/experiments/test_movie_token_resident_session.py)覆盖连续查询、不同合法 Filter 指令、空查询、账本／原生请求身份隔离、实际 RD 试探后的重置以及失败／取消和最终关闭；模型为 CPU 子进程替代，Ray 为 threaded fixture。这不是 GPU 模型常驻或加速证据，也不开放任意链、动态 B 或跨查询学习。
+已测首次查询按原边界保留，不能从时间中减去估计加载成本后补成复用成绩；Movie 与历史 `802b0b50` 的口径见[对照规范](../experiments/plans/reference/对照规范.md#movie-session-query-timing)。
+
+<a id="batch-supply-feedback"></a>
+## 固定B的供给反馈（独立本地CPU候选）
+
+基于`cc3980c9`的可选切片复用原异步token组织器、Core、actor、IPC原生统计和工作量比较器，只调整应用批并发C_batch，B保持固定。
+显式`SupplyFeedbackConfig(max_batches=...)`从一批开始，默认`batch_feedback=None`不安装采样器；R、字节／IPC责任、后继和关系屏障保持。
+实际就绪WorkDescriptor、方法到Core准备／供给速率、确认完成工作量与同owner/session的running/waiting/KV／抢占信息进入可解释判断；缺失／陈旧、供给不足、后端排队、资源压力、尾部／依赖等待及配置碰顶分列。
+重用原在线比较及保护逻辑，不读同任务token reference或gold；配置上限不表示性能平台，在线观察和探索成本不扣除。默认computed比较缺计数时不确认收益。
+反馈间断使当前比较失效并回退，只恢复被中断候选的重试资格、保留已发生次数和耗时；采样RPC取消失败时持有原引用直到终态，不逐次叠发。
+供给策略默认不设时间／变化次数／候选尝试次数预算，`min_remaining=0`；旧有限预算仅在显式沿用时保留，不把64条日志保留量当作并发上限。默认规则与源码依据集中在所属说明。
+Python owner／普通Core工厂及正常Movie `check/run` JSON、isolated session共享同一`batch_feedback`配置；省略或null默认关闭，仍拒绝逐请求admission/cache和resident组合。
+B运行时调整或联合控制尚未接入；CPU/GPU利用率、物理可用内存和原生启动容量readback仍未知，仅有IPC回执与声明容量。
+接口及CPU边界见[所属说明](src/execution_provider/adapters/README.md#optional-fixed-b-supply-feedback-local-cpu-candidate)。本轮修复与入口增量仍待独审及GPU验收，不代表资源收益、饱和点或Kalypso复现。
 
 <a id="finite-query-successor-candidate"></a>
 ## 后继优先与等待老化的可选配置
@@ -245,4 +290,6 @@ PR72已合入main0689；本轮两个后继配置各48次真实调用完成，但
 复用既有 Git/CPU 资格、原监督／额度及逐文件私有原件检查；配置、认证、数据和回执不进仓库。
 CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页重读不重复统计成员首次返回；
 源码没有批 API 时明确标记该 CPU 范围不支持，事件、sink 或时钟缺失仍不能宣称完整。
-本地迁移未改变生产调度或默认值；新 Git 入口尚未取得真实 Ray/GPU 资格，不继承原私有包的结果。
+设备 UUID 绑定与 native 反馈身份审计继续复用该入口；新增有界缓冲、消费阶段与有效容量回执的
+范围见上述 README。该增量只有本地 CPU 验证，准确新树的 NVML/Ray/vLLM 与 on/off 开销待实机核对，
+不继承旧树结果；未改变生产策略、默认或 B/C 配置。

@@ -1,12 +1,13 @@
 """Opt-in private record observer. No payload logging or execution policy."""
 import atexit
-from collections import defaultdict
+from collections import defaultdict,deque
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict
 import functools
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import threading
@@ -25,14 +26,84 @@ _ALLOWED.update(('identities','outstanding','metrics','prompt_tokens','output_to
 _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
 _ALLOWED.add('batch_key')
+_ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s received_at_s decision_at_s expected_engine_uid'.split())
+_ALLOWED.update('control_request_index source_clock_domain received_clock_domain decision_clock_domain'.split())
+_ALLOWED.update('running waiting kv_usage preemptions_total finished_total generation_tokens_total'.split())
+_ALLOWED.update('native_capacity max_num_seqs max_num_batched_tokens max_model_len kv_cache_blocks kv_cache_block_tokens kv_free_bytes physical_free_bytes'.split())
 _installed = set()
 _parent = ContextVar('record_observer_parent', default=None)
 _lock = threading.Lock()
+_close_lock = threading.Lock()
 _fd = None
 _closed = False
+_close_receipt = None
 _phase = 'online'
 _n = _attempts = _errors = _dropped = _wall = _cpu = 0
 _settings_cache = None
+_buffer = deque()
+_buffer_lock = threading.Lock()
+_buffer_closed = False
+_buffer_dropped = _buffer_errors = _buffer_drained = _buffer_peak = 0
+_buffer_attempts = _buffer_enqueued = 0
+
+
+def emit_feedback(event, **values):
+    """Keep only bounded native identities, clocks, counters and reason codes."""
+    uid_fields={'engine_uid','expected_engine_uid','owner_uid'}
+    count_fields={'session_id','source_sequence','control_request_index','running','waiting','preemptions_total','finished_total','generation_tokens_total'}
+    clock_fields={'source_observed_at_s','received_at_s','decision_at_s','kv_usage'}
+    safe={}
+    for key,value in values.items():
+        if key in uid_fields:
+            safe[key]=value if type(value)is str and len(value)==32 and all(c in '0123456789abcdef'for c in value)else None
+        elif key in count_fields:
+            safe[key]=value if type(value)is int and 0<=value<1<<64 else None
+        elif key in clock_fields:
+            safe[key]=value if type(value)in(int,float)and math.isfinite(value)and value>=0 else None
+        elif key=='accepted':safe[key]=value if type(value)is bool else None
+        elif key in ('stage','reason','scope','source_clock_domain','received_clock_domain','decision_clock_domain')and type(value)is str and len(value)<=128:safe[key]=value
+    emit_buffered(event,**safe)
+
+
+def emit_buffered(event, **values):
+    """Metadata only; no file I/O or sink lock on a feedback/decision thread.
+
+    Existing event/packet bounds also bound this buffer. close_events drains it
+    through the original sink; observation_ns is the enqueue clock, while the
+    ordinary event timestamp is the later sink-write clock.
+    """
+    global _buffer_dropped, _buffer_errors, _buffer_peak, _buffer_attempts, _buffer_enqueued
+    if not ENABLED:return
+    with _buffer_lock:_buffer_attempts+=1
+    try:
+        limits = _settings_cache
+        if limits is None:raise RuntimeError('observer settings not initialized')
+        raw = dict(event=event,observation_ns=time.monotonic_ns())
+        raw.update({k:_safe(v) for k,v in values.items() if k in _ALLOWED})
+        packet = json.dumps(raw,allow_nan=False,separators=(',',':')).encode()
+        with _buffer_lock:
+            if (_buffer_closed or len(_buffer)>=limits['max_events_per_process']
+                    or len(packet)>limits['max_event_bytes']):
+                _buffer_dropped += 1;return
+            _buffer.append(packet);_buffer_enqueued+=1;_buffer_peak=max(_buffer_peak,len(_buffer))
+    except Exception:
+        with _buffer_lock:_buffer_errors += 1
+
+
+def _drain_buffer():
+    global _buffer_closed, _buffer_drained, _buffer_errors
+    with _buffer_lock:
+        _buffer_closed=True
+    while True:
+        with _buffer_lock:
+            if not _buffer:break
+            packet=_buffer.popleft()
+        try:
+            value=json.loads(packet);event=value.pop('event')
+            emit(event,**value)
+        except Exception:
+            with _buffer_lock:_buffer_errors+=1
+        _buffer_drained += 1
 
 
 def settings():
@@ -115,30 +186,61 @@ def emit(event, **values):
 
 
 def close_events():
-    global _fd, _closed, _errors
+    global _closed, _errors, _fd, _close_receipt
     if not ENABLED:
         return
+    # Draining calls emit(), which takes _lock. A separate lock keeps the whole
+    # drain/fsync/footer transaction owned by one closer without blocking enqueue.
+    with _close_lock:
+        if not _closed:
+            try:_close_receipt=_close_events()
+            except BaseException:
+                with _lock:
+                    _closed=True;_errors+=1
+                    descriptor,_fd=_fd,None
+                    if descriptor is not None:
+                        try:os.close(descriptor)
+                        except BaseException:_errors+=1
+                raise
+        return (None if _close_receipt is None else dict(_close_receipt,
+            feedback_buffer=dict(_close_receipt['feedback_buffer'])))
+
+
+def _close_events():
+    global _fd, _closed, _errors
+    _drain_buffer()
     with _lock:
-        if _closed:
-            return
         flushed = False
         if _fd is not None:
             descriptor=_fd;_fd=None
-            try:os.fsync(descriptor);flushed=True
-            except OSError:_errors+=1
-            try:os.close(descriptor)
-            except OSError:_errors+=1;flushed=False
+            try:
+                try:os.fsync(descriptor);flushed=True
+                except OSError:_errors+=1
+            finally:
+                try:os.close(descriptor)
+                except OSError:_errors+=1;flushed=False
         _closed = True
-        status = dict(events_written=_n, events_attempted=_attempts, dropped=_dropped, errors=_errors,
+        status = dict(events_written=_n, events_attempted=_attempts+_buffer_dropped+_buffer_errors,
+                       dropped=_dropped+_buffer_dropped, errors=_errors+_buffer_errors,
                       emit_wall_ns=_wall, emit_thread_cpu_ns=_cpu, closed=True,
                       flush_confirmed=flushed, last_sequence=_attempts,
                       scope='this observer sink only; not proof of complete CUPTI/process-tree capture')
+        status['feedback_buffer']=dict(attempted=_buffer_attempts,enqueued=_buffer_enqueued,
+            drained=_buffer_drained,dropped=_buffer_dropped,errors=_buffer_errors,
+            peak_events=_buffer_peak,remaining=len(_buffer),closed=_buffer_closed,
+            event_limit=settings()['max_events_per_process'],packet_byte_limit=settings()['max_event_bytes'],
+            drain_complete=not _buffer and not _buffer_dropped and not _buffer_errors)
+        footer_written=False
         try:
             path=ROOT/'events'/('events-'+str(os.getpid())+'.status.json')
             with path.open('x') as stream:json.dump(status, stream)
             path.chmod(0o600)
+            footer_written=True
         except OSError:
             _errors += 1
+        # The returned transaction includes failures after the footer snapshot.
+        # Never use a readable pre-existing file as this transaction's proof.
+        return dict(status,pid=os.getpid(),footer_written=footer_written,errors=_errors+_buffer_errors)
 
 
 if ENABLED:
@@ -178,6 +280,7 @@ def observe_method(cls, name, operation, members):
     original=getattr(cls,name)
     @functools.wraps(original)
     def wrapped(self, rows, *args, **kwargs):
+        if not ENABLED or _closed:return original(self,rows,*args,**kwargs)
         identities=members(self,rows,args,kwargs)
         legacy='prepare' if operation.endswith('prepare') else 'parser' if operation.endswith('parser') else 'method_complete'
         emit(legacy+'_start',identities=identities)
@@ -238,12 +341,14 @@ def memory_snapshot(boundary):
 def install_driver():
     if not ENABLED or 'driver' in _installed:return
     _installed.add('driver');install_cpu_hooks()
+    install_feedback_observer()
     from src.execution_provider.adapters import lotus_records_actor_owner as owner,lotus_records_async_actor as async_owner
     from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
     from src.execution_provider.adapters import lotus_records_core
-    from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor
+    from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor,install_prepare_close
     async_owner.AsyncRecordsActorOwner._model_actor_type=lambda self:ObservedAsyncCoreModelActor
     owner._PrepareActor=ObservedPrepareActor
+    install_prepare_close(owner.RecordsActorOwner)
     original_env=owner._runtime_env
     def runtime_env(python):
         settings=original_env(python);variables=dict(settings['env_vars'])
@@ -322,6 +427,30 @@ def install_driver():
         return transferred(self,task,value)
     LotusChainActorBackend._result_transferred=transfer
     emit('driver_observer_installed')
+
+
+def install_feedback_observer():
+    # The tool can inspect older runtimes, but must not claim their consumer
+    # freshness decisions are observed when the optional callback is absent.
+    if 'feedback' in _installed:return
+    _installed.add('feedback')
+    try:
+        import inspect
+        from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider as Provider
+        original=Provider.__init__
+        if 'observer' not in inspect.signature(original).parameters:
+            emit('native_feedback_audit_unavailable',reason='runtime_has_no_consumer_observer');return
+        @functools.wraps(original)
+        def construct(self,*args,**kwargs):
+            previous=kwargs.get('observer')
+            def record(value):
+                emit_feedback('native_feedback_consumption',**value)
+                if previous is not None:previous(value)
+            kwargs['observer']=record
+            return original(self,*args,**kwargs)
+        Provider.__init__=construct
+    except ImportError:
+        emit('native_feedback_audit_unavailable',reason='runtime_has_no_consumer_provider')
 
 
 def install_actor():
