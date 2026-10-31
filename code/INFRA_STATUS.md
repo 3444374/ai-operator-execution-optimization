@@ -238,6 +238,25 @@ token reference生成、长度统计、预分组／R推导及此前实验均在w
 未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该组批入口不支持动态B/C联合控制及跨查询resident复用。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
 准确参数单位、尾批行为、字节边界与测试入口见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)。
 
+<a id="model-query-reuse-scope"></a>
+## 模型所有者与跨查询复用范围
+
+以下按固定源码 `e7373c5b` 核对，仅说明接口与寿命，不新增模型／性能资格；架构目标及三类复用见[所属章节](../experiments/plans/系统架构.md#model-query-lifetime)。
+
+| 实际入口 | 模型与查询寿命 |
+|---|---|
+| SemLoom Core 的 Movie 单查询 CLI | 每次调用创建自己的 owner 并在 `finally` 关闭；再次启动 CLI 不构成同模型复用 |
+| 非 token Core 的 `resident` Movie Session | [`SemLoomRecordsCore.start()`](src/execution_provider/adapters/lotus_records_core.py)在 Session 查询执行前等待真实模型 ready；`evaluate()`可连续执行独立查询，最终 Session 关闭模型 |
+| token 整批、固定滚动 RF 与请求级动态 RD | 工厂使用 [`PreparedRecordsCore`](src/execution_provider/adapters/lotus_records_batches.py)，仅支持 `isolated` Session；`start()`声明 `no_session_model`，实际模型在有限链 `evaluate()`内创建，正常 EOF 先关闭模型再交付普通 Filter 结果，尚无跨查询模型复用 |
+
+普通非 token Core 可在同模型、引擎／生成配置及兼容数据合同下逐查询绑定受支持的 Filter 指令；这不代表任意 Map／Extract 链或模型／角色切换可共用实例。
+其 `_CoreFeedback.begin()`逐查询重建／重置控制器、进度和测量；保留模型或采样 provider 不等于自动继承推荐窗口，显式调优缓存／提示另按其配置解释。
+token RD 当前每查询重建 owner，既没有已实现的 resident 复用，也不能借用上述非 token 状态重置行为声称新组合已验证。
+
+[`movie_records_session.check_plan()`](src/experiments/movie_records_session.py)明确拒绝 token batching 与 `resident` 的组合；改 Session 字段或先加一条隔离 warmup 查询不能获得同模型暖查询。
+真实模型就绪门、逐查询状态与最终 owner 关闭分离为待实现方案，须另定范围、审查和验收；本次文档补充不实施该方案，不更改默认或授予额外运行权限。
+已测首次查询按原边界保留，不能从时间中减去估计加载成本后补成复用成绩；Movie 与历史 `802b0b50` 的口径见[对照规范](../experiments/plans/reference/对照规范.md#movie-session-query-timing)。
+
 <a id="batch-supply-feedback"></a>
 ## 固定B的供给反馈（独立本地CPU候选）
 
