@@ -416,8 +416,9 @@ The [current scope](../../../INFRA_STATUS.md#async-record-token-batches) and
 separate completed checks, measured negative results and remaining limits.
 
 The ordinary records factory `create_records_core` accepts the same optional
-`prepared_batching` and `batch_concurrency`. It requires fixed async mode without
-resource-feedback admission or stage timing. A finite source must provide its
+`prepared_batching` and `batch_concurrency`. It requires async mode without stage
+timing. Non-rolling batch mode excludes resource-feedback admission; rolling mode
+can opt into request feedback as described below. A finite source must provide its
 validated `rows()` relation as well as the existing `preflight`, `scan_spec` and
 `expected` contracts. The adapter binds one ordinary Filter stage to the unchanged
 method and generation, using the existing record-chain owner. It preserves the
@@ -440,7 +441,9 @@ are maintained in the [Movie entry documentation](../../experiments/movie_matrix
 
 With token `prepared_batching` and `rolling_refill=true`, the same ordinary
 `core_profile.admission={"kind":"resource_feedback"}` opts into request-level
-supply feedback. `max_inflight` is omitted or explicitly 1 at startup; declared
+supply feedback. `max_inflight` may be omitted or explicitly 1 at startup. The
+existing `"auto"` value is also accepted when R=1, resolving to the same initial
+window of 1; it is rejected for R>1. This does not bypass capacity. Declared
 `resources.max_active_batches` remains the independent hard R for compute and
 resident rows. Omission/null admission retains fixed rolling C_request=R and
 installs no sampler. Batch concurrency/feedback cannot be combined with rolling.

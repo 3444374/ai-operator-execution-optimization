@@ -116,7 +116,8 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 }
 ```
 
-沿同一个普通Movie工厂／isolated session入口执行。`max_inflight`省略时从1请求开始，显式给值也只接纳1；
+沿同一个普通Movie工厂／isolated session入口执行。`max_inflight`省略或显式为1时从1请求开始；
+既有`"auto"`在R=1时也接纳并解析为1，R>1时拒绝，实际起点和容量边界没有改变。
 R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
 其C_request=R且不安装反馈。启用后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
 完成一条可立即补位，合法后继不等慢同伴。缩容只阻止新准入，已有在途及已选择待后端接收的成员有界排空，
