@@ -62,7 +62,7 @@ class DaftNativeSession:
                     # Single instance is required; never load a second model if a
                     # different wrapper instance unexpectedly executes this session.
                     (control/'model-started').touch(mode=0o600,exist_ok=False)
-                    from .daft_engine_process import EngineProcess
+                    from src.serving.backends.vllm_sync_process import EngineProcess
                     self.kernel=(engine_type or EngineProcess)(engine,generation,control,deadline,
                                                               resources.startup_timeout_s)
                 results=self.kernel.run_prepared(rows)

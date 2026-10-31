@@ -95,7 +95,7 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                 raise BufferError("actual Daft inference batch exceeds its logical input allowance")
             _check(deadline, control)
             if self.kernel is None:
-                from .daft_engine_process import EngineProcess
+                from src.serving.backends.vllm_sync_process import EngineProcess
 
                 self.kernel = (engine_type or EngineProcess)(
                     EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),
@@ -114,7 +114,7 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                 try:
                     self.kernel.close()
                 except BaseException as exc:
-                    from .daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
 
                     try:
                         report = dict(

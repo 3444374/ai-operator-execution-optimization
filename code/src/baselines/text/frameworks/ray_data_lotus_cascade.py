@@ -21,7 +21,7 @@ from src.semantic_methods.lotus.records import FilterMethod, RecordScan, Records
 from src.serving.backends.vllm_engine import EngineSpec
 
 from .ray_data_lotus_records import _RayRows, _CLOSE_COLUMN, _check_deadline, _runtime_env, _table
-from .lotus_cascade_process import StageEngineCleanup
+from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 
 
 def _selected(row, *, selected, input_columns):
@@ -52,7 +52,7 @@ class InferCascade:
     """Ray Data's GPU callable owns a private, supervised local engine process."""
 
     def __init__(self, engine, generation, expected_count, deadline, startup_timeout_s, control):
-        from .daft_engine_process import EngineProcess
+        from src.serving.backends.vllm_sync_process import EngineProcess
         from src.serving.backends.vllm_engine import GenerationSpec
 
         _check_deadline(deadline)

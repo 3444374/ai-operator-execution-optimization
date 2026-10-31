@@ -84,6 +84,32 @@ with tempfile.TemporaryDirectory() as directory:
                              text=True, capture_output=True, timeout=15)
         self.assertEqual(run.returncode, 0, run.stderr)
 
+    def test_maintained_consumers_import_without_legacy_worker_shims(self):
+        program = '''
+import importlib, importlib.abc, sys
+sys.path.insert(0, sys.argv[1])
+legacy = ('src.baselines.text.frameworks.daft_engine_process',
+          'src.baselines.text.frameworks.lotus_cascade_process',
+          'src.baselines.text.frameworks.lotus_chain_engine_process')
+class Guard(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, *args):
+        forbidden = (*legacy, 'ray', 'daft', 'vllm', 'torch', 'lotus')
+        if any(fullname == p or fullname.startswith(p + '.') for p in forbidden):
+            raise AssertionError('unexpected dependency: ' + fullname)
+sys.meta_path.insert(0, Guard())
+for name in ('src.execution_provider.adapters.lotus_cascade_core',
+             'src.baselines.text.frameworks.daft_lotus_cascade',
+             'src.baselines.text.frameworks.daft_lotus_chain',
+             'src.baselines.text.frameworks.daft_lotus_records',
+             'src.baselines.text.frameworks.daft_lotus_session',
+             'src.baselines.text.frameworks.ray_data_lotus_cascade'):
+    importlib.import_module(name)
+assert not any(name in sys.modules for name in legacy)
+'''
+        run = subprocess.run([sys.executable, "-I", "-B", "-c", program, str(CODE)],
+                             text=True, capture_output=True, timeout=15)
+        self.assertEqual(run.returncode, 0, run.stderr)
+
     def test_old_and_new_cli_validate_descriptors_and_exit_on_empty_input(self):
         environment = dict(os.environ, PYTHONPATH=str(CODE), PYTHONDONTWRITEBYTECODE="1",
                            CUDA_VISIBLE_DEVICES="", HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")

@@ -26,8 +26,8 @@ import tempfile
 import time
 
 from src.baselines.common.private_artifacts import file_identity, open_private_text
-from src.baselines.text.frameworks.daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
-from src.baselines.text.frameworks.lotus_cascade_process import StageEngineCleanup
+from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
+from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 from src.semantic_methods.lotus.cascade import (
     CascadeStage, IDENTITY_FIELDS, _StageCalls, cascade_identity, local_generation,
 )
@@ -144,7 +144,7 @@ class _CascadeCoreModelActor(_CoreModelActor):
     """Use the old bounded-byte result/audit method with stage-aware inference."""
 
     def _process_type(self):
-        from src.baselines.text.frameworks.daft_engine_process import EngineProcess
+        from src.serving.backends.vllm_sync_process import EngineProcess
         return EngineProcess
 
     def ready(self, deadline):

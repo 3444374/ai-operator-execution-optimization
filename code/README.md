@@ -489,11 +489,17 @@ submits unresolved CPU futures directly to GPU actors, so the controller remains
 until an explicit pending-prepare → ready-tensor → pending-model broker exposes true stage
 queues. Its tests prove selection/fallback invariants only, not image performance.
 
-The package facade now resolves compatibility exports lazily, so importing SAOR does not
-load AIMD/PID/UCB or Ray adapters. This removes an import-time dependency, but it does not
-yet make the repository SAOR-only: the profiler, shared-vLLM runner, image multi-Job runner,
-and observability wiring still import legacy baselines directly. Those callers must migrate
-to a tested SAOR runtime profile before legacy files can be archived or removed.
+The package facade resolves compatibility exports lazily, so importing SAOR does not
+load AIMD/PID/UCB or Ray adapters. Maintained Core and native model-process consumers
+import the shared `serving/backends/` implementations directly; the old baseline modules
+retain import, child-process entry and pickle compatibility. Diagnostic experiment callers
+retain their own explicit policies. Retirement requires checking each entry's callers and
+historical reproduction mappings, rather than migrating every path to SAOR.
+The [archived development lines](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-work-line-archives)
+preserve source history; they did not retire all shared request execution or cleanup.
+The old online comparison controller is still reachable through explicit feedback
+configuration. This import cleanup does not implement resource-guided fast scanning or
+conditional reuse/rescanning; replacing that strategy needs separate validation.
 
 Endpoint state separates service health (`healthy`) from request-specific
 admission capacity (`available`). Routers use `schedulable_endpoints()` for

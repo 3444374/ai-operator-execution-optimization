@@ -208,5 +208,5 @@ Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`�
 （`cpu_affinity_slots`、`max_sampled_owned_rss_bytes`、`max_owned_shm_bytes`，及原 host
 monitor 所需字段）。未提供时维持旧 source comparison 文件合同；该文件在当前 main 中已不存在，
 因此新封包须显式提供，不能搜索历史目录或采用机器相关默认值。原资源监护和责任判断不变。
-现有 `run_movie_records_matrix.py` 是唯一 worker/audit 路径，旧 `run_sembench_movie_matrix.py`
-仍可转调同一 main；修复了原 main 与绑定检查选用不同脚本名的问题。
+`run_movie_records_matrix.py` 是唯一维护的 worker/audit CLI；重复别名
+`run_sembench_movie_matrix.py` 已退役。历史命令仍可按原提交恢复，新运行使用上述唯一入口。

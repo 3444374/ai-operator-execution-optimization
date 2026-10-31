@@ -23,7 +23,7 @@ from src.semantic_methods.lotus.records import FilterMethod, RecordScan, Records
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 from .daft_lotus_records import DEFAULT_PREPARED_BATCH_BYTES, _DaftRows, _check
-from .lotus_cascade_process import StageEngineCleanup
+from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 
 
 DAFT_VERSION = "0.7.21"
@@ -117,7 +117,7 @@ def _stage_graph(source, stage, engine, generation, resources, deadline, control
                 raise BufferError("actual Daft cascade batch exceeds its logical input allowance")
             _check(deadline, control)
             if self.kernel is None:
-                from .daft_engine_process import EngineProcess
+                from src.serving.backends.vllm_sync_process import EngineProcess
 
                 self.kernel = (engine_type or EngineProcess)(
                     EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),
@@ -142,7 +142,7 @@ def _stage_graph(source, stage, engine, generation, resources, deadline, control
                     self.kernel.close()
                 except BaseException as error:
                     # A cleanup observer cannot discard completed rows or usage.
-                    from .daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
 
                     try:
                         _publish(Path(control) / "engine-close-failure.json", dict(
