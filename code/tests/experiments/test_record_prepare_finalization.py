@@ -1,5 +1,7 @@
 """Actual records preparation/owner close; Ray and formatting are CPU fixtures."""
 from contextlib import ExitStack
+import asyncio
+from copy import deepcopy
 import json
 import os
 import subprocess
@@ -216,6 +218,137 @@ class PrepareFinalizationTests(unittest.TestCase):
         report=self.owner.close();receipt=report['prepare_observation'][0]
         self.assertEqual(receipt['status'],'unknown');self.assertEqual(receipt['rpc_terminal_status'],'unsubmitted')
         self.assertEqual(self.events,[('kill',False)])
+
+    def assert_interrupted_wait(self,error):
+        self.install()
+        with patch.object(self.owner,'wait_ready',side_effect=error):report=self.owner.close()
+        self.assertEqual(self.events,['close_rpc',('kill',False)])
+        self.assertEqual(report['status'],'unknown')
+        self.assertIn('actor_kill_request: '+type(error).__name__,report['cleanup_errors'])
+        receipt=report['prepare_observation'][0]
+        self.assertEqual(receipt['error_type'],type(error).__name__)
+        self.assertEqual(receipt['rpc_terminal_status'],'unknown');self.assertTrue(receipt['ref_retained'])
+
+    def test_KeyboardInterrupt_wait_preserves_interrupt_and_still_kills(self):
+        self.assert_interrupted_wait(KeyboardInterrupt(SECRET))
+
+    def test_CancelledError_wait_preserves_cancellation_and_still_kills(self):
+        self.assert_interrupted_wait(asyncio.CancelledError(SECRET))
+
+    def test_kill_failure_cannot_replace_the_primary_observation_interrupt(self):
+        self.install();error=KeyboardInterrupt(SECRET);self.kill_error=OSError(SECRET)
+        self.owner._record_prepare_close_deadline=time.monotonic()+2
+        with patch.object(self.owner,'wait_ready',side_effect=error),self.assertRaises(KeyboardInterrupt)as caught:
+            self.owner._kill_actor(self.handle)
+        self.assertIs(caught.exception,error);self.assertEqual(self.events[-1],('kill',False))
+        state=next(iter(self.owner._record_prepare_closes.values()))
+        self.assertIs(state['ref'],self.refs[0]);self.assertEqual(state['receipt']['kill_error_type'],'OSError')
+
+    def valid_sink(self):
+        return dict(pid=os.getpid(),footer_written=True,closed=True,flush_confirmed=True,errors=0,dropped=0,
+            events_written=1,events_attempted=1,last_sequence=1,
+            feedback_buffer=dict(closed=True,drain_complete=True,remaining=0,errors=0,dropped=0,
+                attempted=0,enqueued=0,drained=0,peak_events=0,event_limit=100,packet_byte_limit=65536))
+
+    def test_preexisting_footer_cannot_replace_failed_current_transaction(self):
+        self.install();self.prepare();stale=json.dumps(self.valid_sink())
+        self.footer_path().write_text(stale);report=self.owner.close();receipt=report['prepare_observation'][0]
+        self.assertEqual(receipt['status'],'unknown');self.assertGreater(receipt['sink']['errors'],0)
+        self.assertFalse(receipt['sink']['footer_written']);self.assertEqual(self.footer_path().read_text(),stale)
+        self.assertEqual(self.owner.close()['prepare_observation'],report['prepare_observation'])
+        self.assertEqual(self.events[-1],('kill',True))
+
+    def test_footer_permission_failure_is_in_the_returned_transaction(self):
+        self.install();self.prepare();original=Path.chmod
+        def chmod(path,*args,**kwargs):
+            if path==self.footer_path():raise OSError(SECRET)
+            return original(path,*args,**kwargs)
+        with patch.object(Path,'chmod',chmod):report=self.owner.close()
+        receipt=report['prepare_observation'][0]
+        self.assertEqual(receipt['status'],'unknown');self.assertEqual(receipt['sink']['errors'],self.observer._errors)
+        self.assertEqual(receipt['sink']['errors'],1);self.assertFalse(receipt['sink']['footer_written'])
+        self.assertEqual(self.owner.close()['prepare_observation'],report['prepare_observation'])
+        self.assertEqual(self.events[-1],('kill',True))
+
+    def test_footer_write_failure_preserves_current_error_and_cleanup(self):
+        self.install();self.prepare()
+        with patch.object(self.observer.json,'dump',side_effect=OSError(SECRET)):report=self.owner.close()
+        receipt=report['prepare_observation'][0]
+        self.assertEqual(receipt['status'],'unknown');self.assertEqual(receipt['sink']['errors'],1)
+        self.assertFalse(receipt['sink']['footer_written']);self.assertEqual(self.events[-1],('kill',True))
+
+    def test_close_transaction_receipt_cannot_be_upgraded_by_caller_mutation(self):
+        self.prepare()
+        with patch.object(self.observer.os,'fsync',side_effect=OSError(SECRET)):first=self.observer.close_events()
+        saved=deepcopy(first);self.assertGreater(first['errors'],0)
+        first['errors']=0;first['flush_confirmed']=True;first['feedback_buffer']['errors']=0
+        self.assertEqual(self.observer.close_events(),saved)
+
+    def test_interrupted_sink_flush_closes_descriptor_and_keeps_first_failure(self):
+        self.prepare();descriptor=self.observer._fd;error=KeyboardInterrupt(SECRET)
+        with patch.object(self.observer.os,'fsync',side_effect=error)as flush:
+            with self.assertRaises(KeyboardInterrupt)as caught:self.actor.close_observation()
+            self.assertIs(caught.exception,error)
+            receipt=self.actor.close_observation()
+            self.assertEqual(flush.call_count,1)
+        self.assertEqual(receipt['status'],'unknown');self.assertEqual(receipt['error_type'],'KeyboardInterrupt')
+        self.assertTrue(self.observer._closed);self.assertGreater(self.observer._errors,0)
+        with self.assertRaises(OSError):os.fstat(descriptor)
+
+    def test_concurrent_footer_failure_keeps_one_failed_transaction(self):
+        self.prepare();paused,release,second_started=[threading.Event()for _ in range(3)]
+        receipts=[];errors=[];attempts=[];original=Path.chmod
+        def chmod(path,*args,**kwargs):
+            if path==self.footer_path():
+                attempts.append(path);paused.set();self.assertTrue(release.wait(5));raise OSError(SECRET)
+            return original(path,*args,**kwargs)
+        def close(second=False):
+            if second:second_started.set()
+            try:receipts.append(self.actor.close_observation())
+            except BaseException as error:errors.append(error)
+        first=threading.Thread(target=close);second=threading.Thread(target=close,args=(True,))
+        with patch.object(Path,'chmod',chmod):
+            first.start()
+            try:
+                self.assertTrue(paused.wait(5));second.start();self.assertTrue(second_started.wait(5))
+                self.assertEqual(receipts,[])
+            finally:
+                release.set();first.join(5)
+                if second.ident is not None:second.join(5)
+            self.assertEqual(attempts,[self.footer_path()])
+        self.assertFalse(first.is_alive()or second.is_alive());self.assertEqual(errors,[])
+        self.assertEqual(len(receipts),2);self.assertEqual(receipts[0],receipts[1])
+        self.assertEqual(receipts[0]['status'],'unknown');self.assertEqual(receipts[0]['sink']['errors'],1)
+        self.assertFalse(receipts[0]['sink']['footer_written'])
+
+    def assert_bad_ack(self,change):
+        self.install();value=dict(role='prepare',status='closed',pid=os.getpid(),sink=self.valid_sink(),error_type=None)
+        change(value)
+        with patch.object(self.actor,'close_observation',return_value=value):report=self.owner.close()
+        receipt=report['prepare_observation'][0]
+        self.assertEqual(receipt['status'],'unknown');self.assertEqual(receipt['rpc_terminal_status'],'returned')
+        self.assertFalse(receipt['ref_retained']);self.assertEqual(self.events[-1],('kill',False))
+
+    def test_closed_ack_requires_producer_PID(self):
+        self.assert_bad_ack(lambda value:value.pop('pid'))
+
+    def test_closed_ack_rejects_negative_producer_PID(self):
+        self.assert_bad_ack(lambda value:value.update(pid=-5))
+
+    def test_closed_ack_cannot_also_report_an_error(self):
+        self.assert_bad_ack(lambda value:value.update(error_type='OSError'))
+
+    def test_closed_sink_requires_strict_consistent_transaction_counts(self):
+        good=self.valid_sink();self.assertTrue(self.ipc._prepare_sink_closed(good))
+        bad=[]
+        for name,value in (('pid',True),('pid',-1),('footer_written',False),('events_attempted',True),('last_sequence',-1)):
+            item=deepcopy(good);item[name]=value;bad.append(item)
+        item=deepcopy(good);item['feedback_buffer'].pop('enqueued');bad.append(item)
+        item=deepcopy(good);item['feedback_buffer'].update(attempted=10,enqueued=10,drained=0);bad.append(item)
+        item=deepcopy(good);item['feedback_buffer']['enqueued']=-1;bad.append(item)
+        item=deepcopy(good);item['feedback_buffer']['attempted']=True;bad.append(item)
+        for item in bad:
+            with self.subTest(sink=item):self.assertFalse(self.ipc._prepare_sink_closed(item))
 
     def test_disabled_observation_keeps_owner_class_and_no_extra_RPC(self):
         before=(owners.RecordsActorOwner.close,owners.RecordsActorOwner._kill_actor)

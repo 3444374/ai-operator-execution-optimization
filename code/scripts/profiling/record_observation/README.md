@@ -110,6 +110,9 @@ actor 队列领取 `close_observation` 回执，复用 `close_events` 排空、f
 回执写入 `model_owner.prepare_observation`，分别记录 RPC 终态、引用是否保留及实际 sink 状态。
 超时、缺 footer 或刷盘失败仍继续原有 kill，观测保持未知，不改模型请求结果或把 owner 的
 API 关闭当作刷盘成功。重复关闭不重复派发，未取到的 RPC 引用由原 owner 保留。
+准备回执直接使用本次 `close_events` 的事务返回值，核对 producer PID、`footer_written`
+及最终错误／缓冲计数，不重读可读旧 footer 来证明成功。权限收尾出错也保留失败；
+中断仍在 `finally` 请求原 kill，并按原 owner 的异常规则传递和记录，两项失败都不抹去。
 等待沿用原关闭 deadline；off 和没有准备 actor 的 token 路径不增加 RPC。旧源码若缺少该终止
 接点，工具不安装这一收尾，缺失回执仍是未知，不能借用本候选的资格。
 

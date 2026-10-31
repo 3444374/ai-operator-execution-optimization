@@ -36,6 +36,7 @@ _lock = threading.Lock()
 _close_lock = threading.Lock()
 _fd = None
 _closed = False
+_close_receipt = None
 _phase = 'online'
 _n = _attempts = _errors = _dropped = _wall = _cpu = 0
 _settings_cache = None
@@ -185,13 +186,24 @@ def emit(event, **values):
 
 
 def close_events():
+    global _closed, _errors, _fd, _close_receipt
     if not ENABLED:
         return
     # Draining calls emit(), which takes _lock. A separate lock keeps the whole
     # drain/fsync/footer transaction owned by one closer without blocking enqueue.
     with _close_lock:
         if not _closed:
-            _close_events()
+            try:_close_receipt=_close_events()
+            except BaseException:
+                with _lock:
+                    _closed=True;_errors+=1
+                    descriptor,_fd=_fd,None
+                    if descriptor is not None:
+                        try:os.close(descriptor)
+                        except BaseException:_errors+=1
+                raise
+        return (None if _close_receipt is None else dict(_close_receipt,
+            feedback_buffer=dict(_close_receipt['feedback_buffer'])))
 
 
 def _close_events():
@@ -201,10 +213,12 @@ def _close_events():
         flushed = False
         if _fd is not None:
             descriptor=_fd;_fd=None
-            try:os.fsync(descriptor);flushed=True
-            except OSError:_errors+=1
-            try:os.close(descriptor)
-            except OSError:_errors+=1;flushed=False
+            try:
+                try:os.fsync(descriptor);flushed=True
+                except OSError:_errors+=1
+            finally:
+                try:os.close(descriptor)
+                except OSError:_errors+=1;flushed=False
         _closed = True
         status = dict(events_written=_n, events_attempted=_attempts+_buffer_dropped+_buffer_errors,
                        dropped=_dropped+_buffer_dropped, errors=_errors+_buffer_errors,
@@ -216,12 +230,17 @@ def _close_events():
             peak_events=_buffer_peak,remaining=len(_buffer),closed=_buffer_closed,
             event_limit=settings()['max_events_per_process'],packet_byte_limit=settings()['max_event_bytes'],
             drain_complete=not _buffer and not _buffer_dropped and not _buffer_errors)
+        footer_written=False
         try:
             path=ROOT/'events'/('events-'+str(os.getpid())+'.status.json')
             with path.open('x') as stream:json.dump(status, stream)
             path.chmod(0o600)
+            footer_written=True
         except OSError:
             _errors += 1
+        # The returned transaction includes failures after the footer snapshot.
+        # Never use a readable pre-existing file as this transaction's proof.
+        return dict(status,pid=os.getpid(),footer_written=footer_written,errors=_errors+_buffer_errors)
 
 
 if ENABLED:
