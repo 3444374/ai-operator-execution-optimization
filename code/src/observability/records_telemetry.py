@@ -136,7 +136,7 @@ class MetricSources:
     def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None):
         self.gpu_ids, self.native_metrics_url = tuple(gpu_ids), native_metrics_url
         self.gpu_binding_error = gpu_binding_error
-        self._first_cpu = True
+        self._cpu_sampled_threads = {}
         if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
         if native_metrics_url is not None:
@@ -178,10 +178,17 @@ class MetricSources:
                 if self.gpu_binding_error is not None else gpu_metadata(self.gpu_ids, use_nvml=True))
         sources["gpu"]["physical_gpu_uuids"] = list(self.gpu_ids)
         collect("host", HOST_FIELDS, lambda: host_metadata(include_status=True))
-        if self._first_cpu and all(values[field] is not None for field in HOST_FIELDS[:2]):
-            for field in HOST_FIELDS[:2]:
-                values[field], missing[field] = None, "cpu_percent_baseline_priming"
-            self._first_cpu = False
+        if all(values[field] is not None for field in HOST_FIELDS[:2]):
+            # psutil's nonblocking CPU baseline is sampling-thread local. Ray
+            # may dispatch successive snapshot RPCs on different threads.
+            thread = threading.get_ident()
+            now = sources['host']['start_monotonic_ns']
+            previous = self._cpu_sampled_threads.get(thread)
+            sources['host']['cpu_percent_interval_s'] = None if previous is None else (now-previous)/1e9
+            if previous is None:
+                for field in HOST_FIELDS[:2]:
+                    values[field], missing[field] = None, "cpu_percent_baseline_priming"
+            self._cpu_sampled_threads[thread] = now
 
         def native():
             if self.native_metrics_url is None:

@@ -222,10 +222,17 @@ B只组织每次传输，批成员提交后不追加；请求、驻留、字节�
 目前仅[CPU场景](tests/execution_provider/test_lotus_token_rolling_refill.py)与既有入口检查；真实Ray/模型/GPU及性能收益尚未验，不能借用下述历史整批成绩。
 
 本地默认关闭的请求级动态候选在上述rolling中显式增加`core_profile.admission.kind="resource_feedback"`；
-初始C_request=1，硬R仍独立，C_batch=null、B固定，复用原请求扫描、需求门控与已修复的单RPC/session反馈。
+无合格提示时初始C_request=1，硬R仍独立，C_batch=null、B固定，复用需求门控与已修复的单RPC/session反馈。
 每条完成即可补位，缩容只停止新选择，已准入成员（含后端暂拒的不可拆分组）继续有界排空；原unknown、关系屏障及资源责任不变。
-默认无候选次数／探索时间硬停止、不读gold或全表token参考；仍沿用性能窗口确认，未增加快速大步策略或动态B。
-仅[CPU机制](tests/execution_provider/test_lotus_request_supply_feedback.py)和[正常入口](tests/experiments/test_movie_request_feedback_entry.py)验证，待独审和独立实机对照；资源收益与物理CPU/GPU余量未知。
+默认无候选次数／探索时间硬停止、不读gold或全表token参考。新本地`search_policy="ascending"`候选
+在可比收益后继续上探，仅平台／回退／冲突时局部确认；显式`reference`保留旧逐档回访。
+候选接通健康 resident 查询的条件提示续扫；新资源机会可唤醒旧选择，跨query旧速率区间只作失效判据。
+同一snapshot RPC可读模型actor分配设备的NVML和主机CPU；联合空闲份额在ready供给／硬R内确定可变大步探测目标，
+精确请求成本只辅助步幅，不是试探前提。显式预算、硬R／字节／unknown责任保留，无动态B或实机收益资格。
+具体判据、边界与旧动态负结果见[策略说明](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
+新策略仅有[CPU状态机](tests/scheduling/test_ascending_request_scan.py)、[成本边界](tests/scheduling/test_resource_step.py)
+和[完整查询入口](tests/experiments/test_movie_ascending_feedback.py)、[资源触发链](tests/experiments/test_movie_resource_probe.py)
+验证，待复审及真实Ray／模型／性能复验；旧实测不改标本候选。
 
 准确`41ce4c24`的真实Ray/模型功能范围独审通过：198条提交含174成功、17项预期确认容量失败、7项取消unknown；覆盖129+1组批、后继提前推进、关系屏障、取消、关闭分页7→3→0及ACK释放。unknown不计为成功或确认失败。
 
@@ -245,7 +252,10 @@ token reference生成、长度统计、预分组／R推导及此前实验均在w
 <a id="model-query-reuse-scope"></a>
 ## 模型所有者与跨查询复用范围
 
-`e7373c5b` 尚无 token 跨查询复用；其后本地候选沿用现有 Session／Core／异步模型 owner，显式接通下表的 rolling resident 路径。当前仅有 CPU fixture 资格，真实 Ray／模型复用及查询性能仍待验收；架构目标及三类复用见[所属章节](../experiments/plans/系统架构.md#model-query-lifetime)。
+`e7373c5b` 尚无 token 跨查询复用；后继`0585e9bf`接通下表的 rolling resident 路径，
+已有真实模型 RF／旧 RD 的首次／复用单配对；旧动态是负结果，见[扫描边界](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
+本轮新扫描／提示接线只完成 CPU 资格，不能继承旧源码的实机或性能验收。
+架构目标及三类复用见[所属章节](../experiments/plans/系统架构.md#model-query-lifetime)。
 
 | 实际入口 | 模型与查询寿命 |
 |---|---|
@@ -256,10 +266,12 @@ token reference生成、长度统计、预分组／R推导及此前实验均在w
 
 普通非 token Core 可在同模型、引擎／生成配置及兼容数据合同下逐查询绑定受支持的 Filter 指令；这不代表任意 Map／Extract 链或模型／角色切换可共用实例。
 其 `_CoreFeedback.begin()`逐查询重建／重置控制器、进度和测量；保留模型或采样 provider 不等于自动继承推荐窗口，显式调优缓存／提示另按其配置解释。
-token RD 的 resident 查询也各自从 `C_request=1` 开始，不继承上一查询的候选或测量；RF 保持声明的请求容量。模型原生缓存仍可能跨查询保留，不能将其计算复用直接算作调度收益。
+旧 `reference` RD 的 resident 查询各自从 `C_request=1` 开始。新 `ascending` 候选仅在完整查询成功及
+责任结清后复用同 owner、精确兼容身份下的已确认档位和未完进度；新鲜工作量重验证，不继承旧速率。
+RF 保持声明的请求容量。模型原生缓存仍可能跨查询保留，不能将其计算复用直接算作调度收益。
 
 [`movie_records_session.check_plan()`](src/experiments/movie_records_session.py)只放行上述 rolling resident 组合；批槽反馈、admission cache 及非 rolling token resident 仍拒绝。不同模型身份或运行绑定拒绝；更换部署／生成／容量配置须创建新的 owner。执行失败、取消、提前关闭或未确认排空会关闭当前 owner 并禁止继续复用，不清零 unknown。
-[复用 CPU 测试](tests/experiments/test_movie_token_resident_session.py)覆盖连续查询、不同合法 Filter 指令、空查询、账本／原生请求身份隔离、实际 RD 试探后的重置以及失败／取消和最终关闭；模型为 CPU 子进程替代，Ray 为 threaded fixture。这不是 GPU 模型常驻或加速证据，也不开放任意链、动态 B 或跨查询学习。
+[复用 CPU 测试](tests/experiments/test_movie_token_resident_session.py)覆盖连续查询、不同合法 Filter 指令、空查询、账本／原生请求身份隔离、显式旧策略重置以及失败／取消和最终关闭；[新策略入口](tests/experiments/test_movie_ascending_feedback.py)另核验条件续扫及完整结果处理后才提交提示。模型为 CPU 子进程替代，Ray 为 threaded fixture。这不是新策略 GPU 常驻或加速证据，也不开放任意链、动态 B 或跨 owner 学习。
 已测首次查询按原边界保留，不能从时间中减去估计加载成本后补成复用成绩；Movie 与历史 `802b0b50` 的口径见[对照规范](../experiments/plans/reference/对照规范.md#movie-session-query-timing)。
 
 <a id="batch-supply-feedback"></a>

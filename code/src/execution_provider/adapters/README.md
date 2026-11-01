@@ -441,19 +441,21 @@ are maintained in the [Movie entry documentation](../../experiments/movie_matrix
 ### Optional dynamic request permits for rolling refill (local CPU candidate)
 
 With token `prepared_batching` and `rolling_refill=true`, the same ordinary
-`core_profile.admission={"kind":"resource_feedback"}` opts into request-level
+`core_profile.admission={"kind":"resource_feedback"}` opts into rolling request-level
 supply feedback. `max_inflight` may be omitted or explicitly 1 at startup. The
 existing `"auto"` value is also accepted when R=1, resolving to the same initial
 window of 1; it is rejected for R>1. This does not bypass capacity. Declared
 `resources.max_active_batches` remains the independent hard R for compute and
 resident rows. Omission/null admission retains fixed rolling C_request=R and
 installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
-The Python chain accepts `request_feedback=default_supply_feedback_options()`;
+The Python chain accepts `request_feedback=default_request_feedback_options()`;
 the normal Movie/Session factory resolves the existing admission object.
 
-This engineering candidate reuses the existing request trial controller, typed
-ready-work/demand gates and repaired single-RPC sampler. The soft C_request starts
-at one, B stays fixed, and C_batch is null. Each terminal member releases its own
+The default ascending candidate reuses the existing work-aware measurements,
+typed ready-work/demand gates and repaired single-RPC sampler. Explicit
+`search_policy="reference"` retains the old reference-recheck policy. Without a
+qualified resident hint the soft C_request starts at one; B stays fixed and
+C_batch is null. Each terminal member releases its own
 permit; a slow batch peer cannot retain the permit of a finished member or block
 its legal successor. A selected immutable group already owns its member permits,
 including when the transport temporarily returns NOT_ACCEPTED. Shrinking stops
@@ -465,13 +467,21 @@ Core R/input/result/state, transport slots/bytes and unknown ownership remain.
 
 Default request supply options use computed work, local pairs and geometric
 trials, without time/change/attempt budgets or task-wide token/gold references.
-The existing fresh-feedback/settling/three-window confirmation still applies;
-this does not implement faster resource-led large steps or joint B adjustment.
+The existing fresh-feedback/settling/three-window measurement still applies.
+Comparable gains continue upward without a mandatory reference revisit after
+each gain; flat/regressed/incomparable evidence gets local confirmation. Joint
+native/supply/physical observations can propose larger, headroom-sized tentative
+targets. Missing physical readings retain ordinary geometric exploration; they
+do not erase a previous qualified resource condition. The policy and exact
+probe-position heuristic are defined in the
+[ascending policy contract](../../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫).
+Joint B adjustment remains unimplemented.
 Explicit option overrides retain their existing meaning and online cost. Reports
 use `owner_close.request_supply_feedback`, retain exploration/transition costs,
 snapshot terminal/unknown receipts and real batch/request counts, and never call
-a configured ceiling a measured platform. CPU/GPU utilization, physical free
-memory, MFU/HBM and resource benefit remain unknown. See the
+a configured ceiling a measured platform. Source-qualified UUID-bound NVML busy
+and host CPU reads feed tentative probes; physical free memory, MFU/HBM and real
+query benefit are not inferred from those reads. See the
 [request mechanism and ownership tests](../../../tests/execution_provider/test_lotus_request_supply_feedback.py)
 and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedback_entry.py).
 
@@ -482,8 +492,11 @@ and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedbac
 retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
 queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
 schema or model pool is introduced. Fixed rolling RF retains C_request=R; RD uses the
-same admission configuration above but creates a fresh controller at C_request=1 for
-each query. C_batch is null. Non-rolling token batches, batch feedback and admission
+same admission configuration above. Ascending RD starts from a compatible,
+explicitly committed healthy hint when available, validates current work and
+conditions, then holds or conditionally continues. No hint starts at one; the
+explicit reference policy continues to reset each query. C_batch is null.
+Non-rolling token batches, batch feedback and admission
 cache remain excluded. Default `resident=False` preserves the single-query lifetime.
 
 ```python
@@ -491,14 +504,19 @@ owner = create_records_core(method, engine, generation, resources, profile=profi
     prepared_batching=batching, rolling_refill=True, resident=True)
 try:
     model_ready = owner.start()  # Original native readiness; no application inference.
-    first = list(owner.evaluate(source, query_id="first"))
-    reused = list(owner.evaluate(source, query_id="reused", method=compatible_method))
+    first = list(owner.evaluate(first_source, query_id="first"))
+    first_result = interpret_complete_result(first)  # Caller owns business parsing/projection.
+    owner.confirm_query_feedback(completed=True)  # Only after the full result succeeds.
+    reused = list(owner.evaluate(next_source, query_id="reused", method=compatible_method))
+    reused_result = interpret_complete_result(reused)
+    owner.confirm_query_feedback(completed=True)
 finally:
     owner.close()  # Final model/IPC shutdown, separate from healthy query EOF.
 ```
 
-Queries retain fresh sources, ledgers, result consumers, token organizers and feedback
-state. The existing SessionEngine keeps monotonically increasing numeric session IDs.
+Queries retain fresh sources, ledgers, result consumers, token organizers and
+measurement state. Prior rate bands only invalidate conditions, never score the
+new query. The existing SessionEngine keeps monotonically increasing numeric session IDs.
 Normal EOF proves query transport/Core/actor/IPC responsibility and feedback RPCs are
 drained before reporting `model_retained=true`, `model_owner.status="retained"`.
 Completed iterator reports remain independent snapshots. Failure, cancellation, early

@@ -202,7 +202,7 @@ class MovieTokenResidentTests(unittest.TestCase):
                         self.assertEqual(batching['peak_requests'], 2)
                         self.assertEqual(batching['recent_batches'][0]['members'], 2)
 
-    def test_rd_resets_actual_first_submission_after_prior_cpu_feedback_trial(self):
+    def test_explicit_reference_policy_resets_first_submission_after_prior_cpu_feedback_trial(self):
         # Existing logical observation clock, real CPU IPC and actual controller;
         # this is a reset/ownership test, never a real-time or GPU benefit claim.
         from src.execution_provider.adapters import lotus_chain_token_batches as batches
@@ -215,7 +215,7 @@ class MovieTokenResidentTests(unittest.TestCase):
              'POSITIVE' if i % 2 == 0 else 'NEGATIVE'] for i in range(48)], task='movie-q1')
         plan = fixture.plan('RD')
         plan['resources']['max_active_batches'] = 8
-        plan['profile']['admission'].update(poll_interval_s=.002, min_samples=1)
+        plan['profile']['admission'].update(poll_interval_s=.002, min_samples=1, search_policy='reference')
         with logical_feedback_frontier(), \
                 patch('src.scheduling.submission_control.stage_work.RequestSupplyFeedbackController',
                       lambda maximum, config: RequestSupplyFeedbackController(

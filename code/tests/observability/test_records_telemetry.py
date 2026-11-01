@@ -264,6 +264,22 @@ class RecordsTelemetryTests(unittest.TestCase):
         self.assertEqual(second["missing"]["host_cpu_busy_cores"], "cpu_percent_baseline_priming")
         self.assertEqual(third["values"]["host_cpu_busy_cores"], 10)
 
+    def test_cpu_baseline_and_interval_are_local_to_each_snapshot_worker_thread(self):
+        host = {field: 10 for field in FIELDS if field.startswith('host_')}
+        with patch('src.observability.records_telemetry.gpu_metadata', return_value={}), \
+                patch('src.observability.records_telemetry.host_metadata', return_value=host), \
+                patch('src.observability.records_telemetry.threading.get_ident', return_value=111) as thread:
+            source = MetricSources(('GPU-fixture',))
+            a, b = source(), source()
+            thread.return_value = 222
+            c, d = source(), source()
+        for first in (a, c):
+            self.assertIsNone(first['values']['host_cpu_per_core_max_pct'])
+            self.assertIsNone(first['sources']['host']['cpu_percent_interval_s'])
+        for following in (b, d):
+            self.assertEqual(following['values']['host_cpu_per_core_max_pct'], 10)
+            self.assertGreaterEqual(following['sources']['host']['cpu_percent_interval_s'], 0)
+
     def test_no_implicit_GPU_selection_or_remote_metrics_endpoint(self):
         with self.assertRaises(ValueError):
             MetricSources(())

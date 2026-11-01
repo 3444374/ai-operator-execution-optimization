@@ -313,8 +313,16 @@ class _MovieDriver:
             if backend == "semloom-core":
                 from src.experiments.movie_matrix_support import record_core_selection
                 record_core_selection(self.last_query_report,self.context)
+                confirm = getattr(self.owner, 'confirm_query_feedback', None)
+                if confirm is not None:
+                    reuse = confirm(completed=self.last_query_report.get('status') == 'completed')
+                    if reuse is not None:
+                        self.last_query_report['request_scan_reuse'] = reuse
             return self.last_query_report
         except BaseException as error:
+            confirm = getattr(self.owner, 'confirm_query_feedback', None)
+            if backend == 'semloom-core' and confirm is not None:
+                confirm(completed=False)
             if backend == "imlane" and self.owner is not None:
                 self.owner.broken = True
             self.last_query_failure = error

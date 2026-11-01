@@ -56,6 +56,8 @@ class AsyncCoreModelActor:
         self.engine = None
         self._condition = threading.Condition()
         self._close_lock = threading.Lock()
+        self._resource_lock = threading.Lock()
+        self._resource_sources = None
         self._start_attempted = self._start_failed = self._closing = self._unhealthy = False
         self._held, self._tickets, self._early_cancels = {}, {}, set()
         self._session = -1
@@ -102,9 +104,11 @@ class AsyncCoreModelActor:
             producer_owner_uid=self.engine.snapshot()["owner_uid"],
             model_batch_rows=1, limits=asdict(self.limits), physical_gpu_exit_confirmed=None)
 
-    def snapshot(self):
+    def snapshot(self, *, observe_resources=False):
+        if type(observe_resources) is not bool:
+            raise TypeError('observe_resources must be boolean')
         with self._condition:
-            return dict(held_requests=len(self._held),
+            value = dict(held_requests=len(self._held),
                 reserved_result_bytes=len(self._held) * self.limits.item_result_bytes,
                 delivered_results=sum(item.delivered for item in self._held.values()),
                 unknown_requests=sum(item.value is not None and not item.confirmed
@@ -113,6 +117,30 @@ class AsyncCoreModelActor:
                 closing=self._closing, unhealthy=self._unhealthy,
                 active_readers=self._readers,
                 ipc=None if self.engine is None else self.engine.snapshot())
+        if observe_resources:
+            # The same owned RPC reads the model actor's allocated device, not
+            # a driver's potentially different host. Never hold the model's
+            # condition while optional NVML/host readers execute.
+            value['resources'] = self._resource_snapshot(value['session_id'])
+        return value
+
+    def _resource_snapshot(self, session_id):
+        started = time.monotonic()
+        try:
+            from src.observability.records_telemetry import MetricSources
+            with self._resource_lock:
+                if self._resource_sources is None:
+                    self._resource_sources = MetricSources.from_cuda_visibility()
+                sample = self._resource_sources()
+                devices = self._resource_sources.gpu_ids
+            return dict(engine_uid=(self.engine.ready_report or {}).get('engine_uid'),
+                session_id=session_id, source_elapsed_s=time.monotonic()-started,
+                gpu_uuids=list(devices), sample=sample,
+                status='observed_or_partial',
+                scope='model actor allocation; single-device busy and host-wide CPU; no capacity estimate')
+        except Exception as error:
+            return dict(status='unavailable', error_type=type(error).__name__,
+                        source_elapsed_s=time.monotonic()-started)
 
     def drain_query(self, deadline):
         """Prove the previous query released its slots without stopping the model."""

@@ -261,6 +261,7 @@ class ResourceFeedbackConfig:
     max_candidate_attempts: int | None = 2
     work_basis: str = "delivered"
     work_comparison: str = "envelope"
+    search_policy: str = "reference"
 
     def __post_init__(self):
         for name in ("poll_interval_s", "window_s", "exploration_s"):
@@ -297,6 +298,10 @@ class ResourceFeedbackConfig:
             raise ValueError("work_comparison must be envelope or local_pairs")
         if self.work_comparison == "local_pairs" and self.work_basis != "computed":
             raise ValueError("local pairs require measured computed work")
+        if self.search_policy not in ("reference", "ascending"):
+            raise ValueError("search_policy must be reference or ascending")
+        if self.search_policy == "ascending" and self.work_comparison != "local_pairs":
+            raise ValueError("ascending search requires computed local pairs")
 
 
 def _local_pair_evidence(reference, candidate, margin):
@@ -633,6 +638,20 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._stop(self._search.stop_reason(),o)
         if higher == self.current_window:
             return self._stop("capacity_limit",o)
+        decision = self._trial_budget(higher, o)
+        if decision is not None:
+            return decision
+        self._probe_loss_base = self.estimated_trial_loss_s
+        self._probe_at = o.observed_at_s
+        self._reference_recheck_used = False
+        if self._search is not None:
+            self._search.begin(higher)
+        return self._change(higher,"performance_probe",o)
+
+    def _trial_budget(self, higher, o):
+        """Shared explicit trial limits; absent budgets add no stopping rule."""
+        point = self._reference
+        provisional = not point.get("comparison_eligible", True)
         # Reserve a possible rollback; resource-pressure reductions are independent.
         reserve = 2  # trial plus a return to the last safe setting
         if not self._within_change_budget(reserve):
@@ -666,12 +685,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if self.options.min_remaining and (after_trial <= self.options.min_remaining
                 or higher > self.current_window and later_saving <= control_estimate):
             return self._stop("insufficient_remaining_benefit",o)
-        self._probe_loss_base = self.estimated_trial_loss_s
-        self._probe_at = o.observed_at_s
-        self._reference_recheck_used = False
-        if self._search is not None:
-            self._search.begin(higher)
-        return self._change(higher,"performance_probe",o)
+        return None
 
     def _point(self):
         import statistics
@@ -850,6 +864,12 @@ class ResourceFeedbackController(AimdAdmissionController):
         return (self._change(self._confirmed_window,"trial_"+outcome,o)
                 if self.current_window != self._confirmed_window else self._hold("trial_"+outcome))
 
+    def _measurement_enabled(self):
+        return not self._growth_stopped
+
+    def _pressure_event(self, observation):
+        """Confirmed pressure invalidates evidence even at the minimum quota."""
+
     def _update(self, o):
         if not o.fresh or not o.has_service_metrics:
             if self._probe_at is not None and self._exploration_time_left(o.observed_at_s) <= 0:
@@ -888,6 +908,7 @@ class ResourceFeedbackController(AimdAdmissionController):
                 self._search.verified_window = None
                 self._search.ceiling = min(self._search.ceiling,max(1,self.current_window-1))
                 self._growth_stopped, self._stop_reason = True, "resource_pressure"
+            self._pressure_event(o)
             return self._change(lower,"resource_pressure",o) if lower < self.current_window else self._hold("at_minimum")
         if (self.options.work_basis == "computed" and self._search.pressure_recovery is not None
                 and self.options.allow_exploration and o.waiting == 0
@@ -924,7 +945,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if self.total_items < self.options.min_remaining or o.pending_items <= self.options.min_remaining:
             return self._stop("no_pending_work" if not self.options.min_remaining
                               else "short_tail_or_fixed",o,rollback=True)
-        if self._growth_stopped:
+        if not self._measurement_enabled():
             return self._hold(self._stop_reason or "exploration_stopped")
         if self.options.memory_floor_bytes and o.memory_pressure is None:
             return self._hold("missing_memory_feedback")
@@ -966,6 +987,9 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._hold("confirming_performance")
         point = self._point()
         self.measurements=(self.measurements+[point])[-64:]
+        return self._accept_measurement(point, o)
+
+    def _accept_measurement(self, point, o):
         if self._probe_candidate is not None:
             candidate, self._probe_candidate = self._probe_candidate, None
             self._reference = point

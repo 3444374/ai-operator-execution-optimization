@@ -48,6 +48,17 @@ class PreparedRecordsCore:
                 else 'fresh finite query owner'),
             raw_ledger_delivery='after normal chain traversal; member compute completion remains independent')
 
+    def confirm_query_feedback(self, *, completed):
+        """Caller acknowledgement after ordinary parsing/projection, not model EOF."""
+        if type(completed) is not bool:
+            raise TypeError('completed must be the explicit complete-query outcome')
+        options = self.execution_profile['record_batching'].get('request_feedback') or {}
+        if options.get('search_policy') != 'ascending' or self.owner is None:
+            return None
+        fully_delivered = (self._active is not None and self._active.finished
+                           and self._delivered == {v['call_id'] for v in self._expected.values()})
+        return self.owner.confirm_query_feedback(completed=bool(completed and fully_delivered))
+
     def evaluate(self, source, *, query_id, method=None, cancelled=None):
         if self._closed or self._active is not None and not (self.resident and self._active.finished):
             raise ValueError('record token owner has an active query or is closed')

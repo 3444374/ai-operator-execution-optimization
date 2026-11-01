@@ -117,6 +117,11 @@ def default_supply_feedback_options():
         work_basis="computed", work_comparison="local_pairs", max_candidate_attempts=None)
 
 
+def default_request_feedback_options():
+    """Rolling requests ascend on gains; the batch/reference policy stays explicit."""
+    return replace(default_supply_feedback_options(), search_policy="ascending")
+
+
 @dataclass(frozen=True)
 class SupplyFeedbackConfig:
     """Explicit operational ceiling; no task reference or historical optimum."""
@@ -128,6 +133,8 @@ class SupplyFeedbackConfig:
             raise ValueError("max_batches must be a positive operational ceiling")
         if type(self.options) is not ResourceFeedbackConfig:
             raise TypeError("options must be ResourceFeedbackConfig")
+        if self.options.search_policy != 'reference':
+            raise ValueError('ascending search controls rolling requests, not batch slots')
         if self.options.poll_interval_s > self.options.window_s:
             raise ValueError("poll interval must fit the measurement window")
 
@@ -199,7 +206,10 @@ class SupplyFeedbackController(ResourceFeedbackController):
     def reset(self, initial_window, total_items, *, search_hint=None):
         if initial_window != 1 or search_hint is not None:
             raise ValueError('supply feedback starts at one without a historical search hint')
-        super().reset(1, total_items)
+        self._reset_supply(initial_window, total_items, search_hint=search_hint)
+
+    def _reset_supply(self, initial_window, total_items, *, search_hint=None):
+        super().reset(initial_window, total_items, search_hint=search_hint)
         self.supply_history = []
         self.supply_changes = []
         self.supply_states = {}
