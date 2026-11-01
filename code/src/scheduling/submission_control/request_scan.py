@@ -98,6 +98,7 @@ class AscendingRequestController(SupplyFeedbackController):
         self._state_validation = self._reused
         self._validation_trigger = 'query_hint' if self._reused else None
         self._resume_lower_window = lower_pending
+        self._query_pause = None
 
     def update_supply(self, observation, supply, *, resource_step=None, resource_opportunity=None):
         self._resource_step = resource_step
@@ -225,7 +226,19 @@ class AscendingRequestController(SupplyFeedbackController):
     def _measurement_enabled(self):
         # A held selection is monitored on fresh original work, without a timer
         # that automatically reopens exploration for each query or each poll.
-        return not self._growth_stopped or self._terminal is not None
+        return self._query_pause is None and (self._state_validation
+            or not self._growth_stopped or self._terminal is not None)
+
+    def _stop(self, reason, o, *, rollback=False):
+        # Query limits suspend execution, not the unresolved validation intent.
+        # _end_probe in the shared stop path must not erase its direction.
+        self._resume_lower_window = self._pending_lower_window()
+        self._query_pause = reason
+        if reason == 'nonmonotonic_work':
+            self._search.verified_window = None
+            self._state_validation = True
+            self._validation_trigger = 'invalid_work'
+        return super()._stop(reason, o, rollback=rollback)
 
     def _clear_point(self):
         self._windows = []
@@ -275,7 +288,9 @@ class AscendingRequestController(SupplyFeedbackController):
         self._terminal = None
         self._tested = {}
         self._confirming = False
-        if self._stop_reason in ('local_plateau', 'performance_regression', 'capacity_limit'):
+        # Every monitored selection (including exhausted evidence) can rebuild
+        # its reference. An actual per-query pause still obeys its spent limits.
+        if self._query_pause is None:
             self._growth_stopped, self._stop_reason = False, None
         return super()._invalidate_feedback_gap(o)
 
@@ -361,11 +376,10 @@ class AscendingRequestController(SupplyFeedbackController):
         self._observe_reference_condition(point['window'])
         if reason is not None:
             lower = max(1, self.current_window//2)
-            return (self._probe(lower, o, 'condition_changed_probe') if lower != self.current_window
+            return (self._try_lower(lower, o, 'condition_changed_probe') if lower != self.current_window
                     else self._next_trial(o))
         if self._resume_lower_window is not None:
-            target, self._resume_lower_window = self._resume_lower_window, None
-            return self._probe(target, o, 'local_probe_resume')
+            return self._try_lower(self._resume_lower_window, o, 'local_probe_resume')
         if resource_change is not None:
             return self._next_trial(o, after_window=resource_change['after_window'])
         if terminal is not None:
@@ -374,6 +388,18 @@ class AscendingRequestController(SupplyFeedbackController):
             return self._hold(held_reason)
         return self._next_trial(o)
 
+    def _set_lower_intent(self, target):
+        self._resume_lower_window = target
+        if target not in self._search.points:
+            # A declared, unstarted validation has no charged attempt or score,
+            # just like an untried geometric point. It can survive a budget veto.
+            self._search.points[target] = dict(attempts=0, outcome='pending')
+            self._search.recovery_points.add(target)
+
+    def _try_lower(self, target, o, reason):
+        self._set_lower_intent(target)
+        return self._probe(target, o, reason)
+
     def _pending_lower_window(self):
         if self._probe_at is not None:
             candidate = (self._probe_candidate['window'] if self._probe_candidate is not None
@@ -381,6 +407,21 @@ class AscendingRequestController(SupplyFeedbackController):
             if candidate < self._confirmed_window:
                 return candidate
         return self._resume_lower_window
+
+    def _local_probe_blocked_by(self):
+        target = self._pending_lower_window()
+        if target is None:
+            return None
+        if self._query_pause is not None:
+            return self._query_pause
+        if target > self._search.ceiling:
+            return 'pressure_ceiling'
+        row = self._search.points.get(target)
+        if row is not None and self._search.limit is not None and row['attempts'] >= self._search.limit:
+            return 'candidate_attempt_limit'
+        if row is not None and row['outcome'] in self._search.resolved:
+            return 'candidate_evidence_resolved'
+        return None
 
     def _probe(self, target, o, reason='performance_probe'):
         if target == self.current_window:
@@ -404,6 +445,8 @@ class AscendingRequestController(SupplyFeedbackController):
         return self._change(target, reason, o)
 
     def _next_trial(self, o, *, after_window=None):
+        if self._resume_lower_window is not None:
+            return self._try_lower(self._resume_lower_window, o, 'local_probe_resume')
         if self._terminal is not None:
             return self._hold(self._terminal)
         if self.current_window >= self.config.max_window:
@@ -468,7 +511,7 @@ class AscendingRequestController(SupplyFeedbackController):
             self._accept_gain(point, o)
             if lower_won:
                 return (self._select(o, 'performance_regression') if point['window'] == 1 else
-                        self._probe(max(1, point['window']//2), o, 'condition_changed_probe'))
+                        self._try_lower(max(1, point['window']//2), o, 'condition_changed_probe'))
             return self._next_trial(o)
         if not self._confirming:
             if outcome is None and len(self._windows) < 6:
@@ -491,7 +534,12 @@ class AscendingRequestController(SupplyFeedbackController):
             or outcome == 'gain' and any(p['gain'] < -self.options.min_gain for p in before['not_heavier_pairs'])
             or outcome == 'regression' and any(p['gain'] > self.options.min_gain for p in before['not_lighter_pairs']))
         if outcome == 'gain' and not conflicts:
+            lower_won = point['window'] < previous['window']
             self._accept_gain(point, o)
+            if lower_won:
+                if point['window'] == 1:
+                    return self._select(o, 'performance_regression')
+                self._set_lower_intent(max(1, point['window']//2))
             # A conditional recheck left admission at the lower point. Returning
             # to the accepted point is actuation, not a fresh reference replay.
             self._clear_point()
@@ -500,6 +548,8 @@ class AscendingRequestController(SupplyFeedbackController):
             self._tested[previous['window']] = previous
             self._tested[point['window']] = point
             self._search.finish(point['window'], outcome)
+            if point['window'] == self._resume_lower_window:
+                self._resume_lower_window = None
             self._end_probe(o.observed_at_s)
             self._confirming = False
             return self._select(o, 'local_plateau' if outcome == 'no_gain' else 'performance_regression')
@@ -517,11 +567,21 @@ class AscendingRequestController(SupplyFeedbackController):
         self._search.work_context = self._work_context(previous)
         self._search.verified_window = previous['window']
         self._clear_point()
+        if changed:
+            # The interrupted local trial belongs to the old work condition.
+            # Its replacement must first qualify a fresh safe reference, not
+            # silently fall through to an unrelated upward scan.
+            self._reference = None
+            self._search.verified_window = None
+            self._state_validation = True
+            self._validation_trigger = 'work_change'
         # No plateau is certified. Reopen on fresh evidence at this safe point;
         # the already-accounted elapsed/changes/attempt costs are retained.
         return self._hold('incomparable_work_mix')
 
     def _accept_gain(self, point, o):
+        if point['window'] == self._resume_lower_window:
+            self._resume_lower_window = None
         self._search.finish(point['window'], 'gain')
         self._search.verified_window = point['window']
         self._search.work_context = self._work_context(point)
@@ -584,9 +644,16 @@ class AscendingRequestController(SupplyFeedbackController):
             state_reused=self._reused, fresh_state_validation_pending=self._state_validation,
             validation_trigger=self._validation_trigger, resource_frontier=deepcopy(self._resource_frontier),
             local_probe_pending=self._pending_lower_window(),
+            query_exploration_pause=self._query_pause,
+            local_probe_blocked_by=self._local_probe_blocked_by(),
+            continuation_state=('query_paused' if self._query_pause is not None else
+                'reference_pending' if self._state_validation else
+                'local_probe_blocked' if self._local_probe_blocked_by() is not None else
+                'local_probe_pending' if self._pending_lower_window() is not None else
+                'monitoring' if self._terminal is not None else 'searching'),
             comparable_selection=not self._state_validation and self._search.verified_window == self._confirmed_window,
             work_epoch=self.work_epoch, step_decisions=deepcopy(self.step_decisions),
-            stop_reason=self._terminal or self._stop_reason, exploration_censored=not measured_stop,
+            stop_reason=self._query_pause or self._terminal or self._stop_reason, exploration_censored=not measured_stop,
             incomplete_reason=None if measured_stop else self._terminal or self._stop_reason,
             can_continue=self.options.allow_exploration and not bounded_stop and bool(self._search.available()),
             reference_rechecks=sum(row['kind'] == 'local_confirmation' for row in self.evaluations),
