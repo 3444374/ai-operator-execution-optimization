@@ -31,6 +31,19 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
 代码摘要都绑定在该新回执中，后续变化须重新资格检查。Movie 路径在被测源码的新进程中调用原
 `check_plan` 零模型预检，冻结每个 manifest／输入的摘要和完整调用数；不只冻结文件路径。
 
+CPU 区间归属另有显式零模型 Ray 组合检查，在干净的同版本 Ray 2.56.1 driver 中运行：
+
+```sh
+SEMLOOM_REAL_RAY_CPU=1 SEMLOOM_REAL_RAY_TMPDIR="$PRIVATE_TEMP_ROOT" \
+SEMLOOM_REAL_RAY_RESOURCE_RECEIPT="$NEW_RECEIPT_JSON" PYTHONPATH=code \
+  "$DRIVER_PYTHON" -B -m unittest -v tests.execution_provider.test_actor_resource_cpu_ray
+```
+
+它最多发出 10 次 snapshot RPC，组合实际 `RequestSupplyFeedback`、观察 wrapper、host CPU 计数器、
+Ray Future 和 light sink 收尾。引擎及 native 统计是 CPU fixture，不加载模型、生成 token 或分配 GPU；
+不覆盖真实 vLLM、物理大步探测或查询性能。原 5 项 Future 检查保留为独立入口，本命令不额外运行它们。
+必须显式开启才运行；本地缺 Ray 的 skip 不能写作该资格通过。
+
 `PRIVATE_BASE_CONFIG` 使用原有成功运行的仓外配置。仍由现场一次性保留并绑定的内容包括：
 
 - `source_root`、`expected_source.head/tree`：独立、干净的被测 Git checkout。

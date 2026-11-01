@@ -20,7 +20,9 @@ from src.baselines.common.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
 from src.baselines.common.redact import redact_json_values, redact_text
-from src.observability.metrics.resources import gpu_metadata, host_metadata, resource_sample_stats
+from src.observability.metrics.resources import (
+    HostCPUCounterSource, gpu_metadata, host_metadata, resource_sample_stats,
+)
 from src.observability.metrics.vllm import scrape_prometheus_metrics
 
 
@@ -136,7 +138,7 @@ class MetricSources:
     def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None):
         self.gpu_ids, self.native_metrics_url = tuple(gpu_ids), native_metrics_url
         self.gpu_binding_error = gpu_binding_error
-        self._cpu_sampled_threads = {}
+        self._cpu_source = HostCPUCounterSource()
         if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
         if native_metrics_url is not None:
@@ -173,22 +175,17 @@ class MetricSources:
                 values[field] = _number(raw.get(field))
                 if values[field] is None:
                     missing[field] = reason or name + ":field_not_exposed_or_unsupported:" + source_status
+            return raw
 
         collect("gpu", GPU_FIELDS, lambda: dict(gpu_metrics_status=self.gpu_binding_error)
                 if self.gpu_binding_error is not None else gpu_metadata(self.gpu_ids, use_nvml=True))
         sources["gpu"]["physical_gpu_uuids"] = list(self.gpu_ids)
-        collect("host", HOST_FIELDS, lambda: host_metadata(include_status=True))
-        if all(values[field] is not None for field in HOST_FIELDS[:2]):
-            # psutil's nonblocking CPU baseline is sampling-thread local. Ray
-            # may dispatch successive snapshot RPCs on different threads.
-            thread = threading.get_ident()
-            now = sources['host']['start_monotonic_ns']
-            previous = self._cpu_sampled_threads.get(thread)
-            sources['host']['cpu_percent_interval_s'] = None if previous is None else (now-previous)/1e9
-            if previous is None:
-                for field in HOST_FIELDS[:2]:
-                    values[field], missing[field] = None, "cpu_percent_baseline_priming"
-            self._cpu_sampled_threads[thread] = now
+        host = collect("host", HOST_FIELDS,
+                       lambda: host_metadata(include_status=True, cpu_source=self._cpu_source))
+        sources["host"].update({name: value for name, value in host.items() if name.startswith("cpu_")})
+        for field in HOST_FIELDS[:2]:
+            if values[field] is None and host.get("cpu_metrics_status"):
+                missing[field] = host["cpu_metrics_status"]
 
         def native():
             if self.native_metrics_url is None:

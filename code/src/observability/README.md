@@ -19,6 +19,14 @@ over the execution policy it observes.
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
 
+Records `MetricSources` owns one locked cumulative host CPU counter baseline. Successive calls on
+different RPC threads share that baseline and its monotonic clock; the first observation, counter
+rollback or invalid interval stays unknown. The feedback audit retains the raw interval, rejection
+reason and source sequence even when the unchanged measurement-window check rejects the CPU value.
+Standalone legacy `host_metadata()` callers keep their existing reader. CPU regressions live in
+[`test_host_cpu_counter_source.py`](../../tests/observability/test_host_cpu_counter_source.py).
+This ownership fix does not change sample cadence, the feedback window, actor concurrency or policy.
+
 Native scheduled-work MFU helpers live in `metrics/mfu.py`, `mfu_trace.py` and the explicitly invoked
 `mfu_native_bootstrap.py`. They require one verified engine/GPU, complete token/terminal watermarks
 and native FLOPs updates. Missing computed-prefill FLOPs also make an estimate unavailable; a final

@@ -511,7 +511,8 @@ class BatchSupplyFeedback:
                 if self._observes_resources():
                     view = self._resource_view(value.get('resources'), request_index=index,
                         requested_at_s=issued_at_s, received_at_s=received_at_s)
-                    # Long per-thread CPU intervals are not current host load.
+                    # Retain source evidence even when the CPU interval is not
+                    # eligible for the unchanged feedback measurement window.
                     packet = value.get('resources')
                     packet = packet if isinstance(packet, dict) else {}
                     sample = packet.get('sample')
@@ -519,8 +520,21 @@ class BatchSupplyFeedback:
                     sources = sample.get('sources')
                     sources = sources if isinstance(sources, dict) else {}
                     host = sources.get('host')
-                    interval = host.get('cpu_percent_interval_s') if isinstance(host, dict) else None
-                    if type(interval) not in (int, float) or not 0 < interval <= self.options.window_s:
+                    host = host if isinstance(host, dict) else {}
+                    interval = host.get('cpu_percent_interval_s')
+                    raw_interval = interval if type(interval) in (int, float) and math.isfinite(interval) else None
+                    cpu_reject = host.get('cpu_metrics_status')
+                    if cpu_reject == 'observed':
+                        cpu_reject = None
+                    if raw_interval is None:
+                        cpu_reject = cpu_reject or 'cpu_interval_missing_or_invalid'
+                    elif raw_interval <= 0:
+                        cpu_reject = 'cpu_interval_nonpositive'
+                    elif raw_interval > self.options.window_s:
+                        cpu_reject = 'cpu_interval_exceeds_feedback_window'
+                    else:
+                        cpu_reject = None if view.host_peak_cpu_pct is not None else (cpu_reject or 'cpu_value_unavailable')
+                    if raw_interval is None or not 0 < raw_interval <= self.options.window_s:
                         from dataclasses import replace
                         view = replace(view, host_peak_cpu_pct=None)
                         interval = None
@@ -529,6 +543,13 @@ class BatchSupplyFeedback:
                         status=packet.get('status', 'unavailable'), missing=sample.get('missing') or {},
                         error_type=packet.get('error_type'), observed_values=sample.get('values') or {},
                         host_cpu_interval_s=interval,
+                        host_cpu_raw_interval_s=raw_interval, host_cpu_reject_reason=cpu_reject,
+                        host_cpu_interval_type=type(host.get('cpu_percent_interval_s')).__name__,
+                        host_cpu_source={name: host[name] for name in ('cpu_metrics_status',
+                            'cpu_baseline_scope', 'cpu_counter_sample_sequence', 'cpu_sample_thread_id',
+                            'cpu_counter_read_start_monotonic_ns', 'cpu_counter_read_end_monotonic_ns')
+                            if name in host and (type(host[name]) in (str, int) or
+                                (type(host[name]) is float and math.isfinite(host[name])))},
                         busy_period_scope='NVML internal period; distinct RPC reads need not be independent samples')])[-64:]
         return snapshot
 
