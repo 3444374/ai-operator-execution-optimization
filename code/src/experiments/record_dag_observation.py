@@ -114,29 +114,41 @@ def summarize_capture(root, description, *, cpu_spans=()):
         return (call.get('engine_uid'), _key(call.get('core_task_key')),
                 call.get('query_id'), call.get('call_id'))
 
-    unique, conflicting = {}, set()
+    grouped, unique, conflicting = defaultdict(list), {}, set()
     for call in calls:
         if not isinstance(call, dict) or not all(call.get(k) for k in ('query_id', 'algorithm_stage', 'call_id')):
             issues.append('call_identity_incomplete'); continue
         if description.get('query_id') is not None and call['query_id'] != description['query_id']:
             continue
-        scope = identity(call)
-        if scope in unique:
-            if unique[scope] != call:
-                issues.append('conflicting_call_receipts')
-                conflicting.add(scope)
-            continue
+        grouped[identity(call)].append(call)
+    for scope in sorted(grouped, key=_key):
+        variants = grouped[scope]
+        call = variants[0]
+        if any(v != call for v in variants[1:]):
+            conflicting.add(scope)
+            issues.append('conflicting_call_receipts')
+            # Only agreed fields may label a disputed receipt. No disputed
+            # receipt supplies parent/child, event or task associations.
+            call = {k:v for k,v in call.items() if all(k in r and r[k] == v for r in variants)}
+        else:
+            identities[(call['query_id'], call['call_id'])].append(call)
+            if call.get('core_task_key') is not None:
+                task_calls[_key(call['core_task_key'])].append(call)
         unique[scope] = call
-        identities[(call['query_id'], call['call_id'])].append(call)
-        if call.get('core_task_key') is not None:
-            task_calls[_key(call['core_task_key'])].append(call)
         query_counts[call['query_id']] += 1
     if len(query_counts) > 1:
         raise ValueError('select one query_id; do not mix first/reuse or different queries')
+    effective_query = description.get('query_id')
+    if effective_query is None:
+        effective_query = next(iter(query_counts), None)
     sessions = {(c.get('core_task_key') or {}).get('session_id') for c in unique.values()}
     stage_calls = defaultdict(list)
     for call in unique.values():
+        if not call.get('algorithm_stage'):
+            issues.append('conflicting_stage_identity_unresolved'); continue
         stage_calls[call['algorithm_stage']].append(call)
+        if identity(call) in conflicting:
+            continue
         for parent in call.get('parent_call_ids', []):
             candidates = [p for p in identities[(call['query_id'], parent)]
                           if p.get('engine_uid') == call.get('engine_uid')
@@ -201,7 +213,8 @@ def summarize_capture(root, description, *, cpu_spans=()):
             else:
                 # Old Movie receipts and model rows use distinct call-ID schemes.
                 # Native request identity is an explicit bridge, never a row-only join.
-                native = [c for c in unique.values() if e.get('engine_uid') and e.get('request_id')
+                native = [c for c in unique.values() if identity(c) not in conflicting
+                    and e.get('engine_uid') and e.get('request_id')
                     and c.get('engine_uid') == e['engine_uid'] and c.get('engine_request_id') == e['request_id']
                     and all(c.get(f) == i.get(f) and i.get(f) is not None for f in
                         ('query_id', 'algorithm_stage', 'model_role', 'row_id', 'source_position', 'call_index'))]
@@ -284,8 +297,14 @@ def summarize_capture(root, description, *, cpu_spans=()):
         if span.get('status') != 'observed':
             issues.append('CPU_span_unknown'); continue
         members = span.get('members') or []
-        if description.get('query_id') is not None:
-            members = [m for m in members if m.get('query_id') == description['query_id']]
+        if effective_query is None:
+            issues.append('CPU_query_scope_unknown'); continue
+        selected = [m for m in members if m.get('query_id') == effective_query]
+        if not selected and members and all(m.get('query_id') is not None for m in members):
+            issues.append('CPU_span_outside_query'); continue
+        if len(selected) != len(members):
+            issues.append('CPU_span_query_membership_unresolved'); continue
+        members = selected
         stages = sorted({m['algorithm_stage'] for m in members if m.get('algorithm_stage')})
         if not stages:
             issues.append('CPU_span_members_unknown'); continue
@@ -314,12 +333,14 @@ def summarize_capture(root, description, *, cpu_spans=()):
                                'vllm_kv_cache_usage_perc'):
                     measured = []
                     for v in selected:
-                        valid = metric not in v.get('missing', {})
+                        group = 'gpu' if metric.startswith('gpu_') else 'host' if metric.startswith('host_') else 'native'
+                        source = v.get('sources', {}).get(group, {})
+                        status = source.get('status')
+                        unavailable = isinstance(status, str) and status.split(':', 1)[0] in ('unavailable', 'unknown', 'unqualified')
+                        valid = metric not in v.get('missing', {}) and not unavailable
                         if metric.startswith('gpu_'):
                             expected = description.get('gpu_uuids')
-                            source = v.get('sources', {}).get('gpu', {})
                             actual = source.get('physical_gpu_uuids')
-                            status = source.get('status')
                             valid = valid and bool(expected) and actual == expected and bool(status) and not status.startswith('unavailable')
                         measured.append(v.get('values', {}).get(metric) if valid else None)
                     known = [v for v in measured if _number(v)]

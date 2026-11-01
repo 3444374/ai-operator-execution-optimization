@@ -192,6 +192,7 @@ Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feed
 
 分析输入是仓外小型 JSON；路径相对 `--root`，`pointer` 明确选择原报告字段，不递归搜索私有输出。
 输出保留分析输入的字节摘要，并检查读取前后不变；冲突回执单列为冲突，不任选其一作已知成功或 token 总量。
+冲突身份不提供父子依赖、事件或 Core task 关联；仅用各份回执共同同意的字段标记阶段，无法一致归属的阶段保持未知。
 例如 Movie 单查询可以选择 `WORKER-RESULT.json` 的原 `calls` 和各进程事件：
 
 ```json
@@ -218,6 +219,9 @@ Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feed
 给出 `domain` 与 `basis`，依据应来自原冻结的同机／时钟绑定；未知就省略，不凭 UTC 或相近数字拼接。
 此声明不估计时钟偏移，也不独立认证声明真实性。GPU 样本还需 `gpu_uuids` 与样本来源完全一致；
 缺绑定、缺指标、CPU baseline priming、缺 sink 状态或未确认终态均保留未知。
+事件区间／采样关联的逐文件规则不改变既有 CPU helper 的物理 span 身份：同一唯一 span ID、PID/thread 的起止
+可分文件保存，仍只是一份物理成本。CPU 成员按显式选择或回执中的唯一查询隔离；混合／未知查询归属的 span
+不计入当前查询成本。host/native 的明确 unavailable/unknown 来源状态优先于残留数值0；合法 partial 来源仍逐字段处理。
 
 full 的新就绪钩子在原 `MethodDriver._ready_event` 返回后记录行引用摘要、阶段序号、session 和
 实际 Core key，不替换原 callback、不修改 ready 时间／队列或发新 RPC；off/handoff 不安装。

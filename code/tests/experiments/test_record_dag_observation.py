@@ -230,4 +230,70 @@ class DAGObservationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'original bytes changed'): workflow.main(args)
 
 
+    def test_conflicting_associations_are_quarantined_independent_of_receipt_order(self):
+        parent, child, after = call('parent', 'map0'), call('child', 'map1', 1), call('after', 'map2', 2)
+        child['parent_call_ids'] = ['parent']; after['parent_call_ids'] = ['child']
+        for changes in [dict(parent_call_ids=[]), dict(algorithm_stage='disputed', row_id='other-row')]:
+            with self.subTest(changes=changes):
+                conflict = dict(child, **changes)
+                forward = self.run_capture([parent, child, conflict, after])
+                reverse = self.run_capture([after, conflict, child, parent])
+                for key in ['stages', 'data_lineage', 'native_call_aliases', 'issues', 'observed_call_count']:
+                    self.assertEqual(forward[key], reverse[key], key)
+                self.assertEqual(forward['data_lineage'], [])
+                self.assertEqual(forward['issues']['conflicting_call_receipts'], 1)
+                self.assertEqual(forward['observed_call_count'], 3)
+                self.assertFalse(any(n['stage_id'] == 'disputed' for n in forward['stages']))
+
+    def test_CPU_members_apply_implicit_or_explicit_query_scope_without_requiring_call_coverage(self):
+        own = call(); foreign = call('f', 'foreign', 9); foreign['query_id'] = 'other'
+        pending = dict(own, call_id='not-yet-in-receipts', algorithm_stage='prepare_only')
+        for explicit in (False, True):
+            self.description = dict(self.description)
+            if explicit: self.description['query_id'] = 'q'
+            for members, reason in [([foreign], 'CPU_span_outside_query'),
+                                    ([own, foreign], 'CPU_span_query_membership_unresolved'),
+                                    ([own, dict(pending, query_id=None)], 'CPU_span_query_membership_unresolved')]:
+                with self.subTest(explicit=explicit, reason=reason):
+                    span = dict(span_id='scope', status='observed', members=members,
+                        operation='shared_prepare', wall_ns=9, exclusive_thread_CPU_ns=7)
+                    r = self.run_capture([own], spans=[span])
+                    self.assertEqual(r['physical_CPU_spans'], [])
+                    self.assertEqual([n['stage_id'] for n in r['stages']], ['filter'])
+                    self.assertEqual(r['issues'][reason], 1)
+            span = dict(span_id='pending', status='observed', members=[pending],
+                        operation='prepare', wall_ns=9, exclusive_thread_CPU_ns=7)
+            r = self.run_capture([own], spans=[span])
+            self.assertEqual(next(n for n in r['stages'] if n['stage_id']=='prepare_only')['cpu'][0]['exclusive_thread_CPU_ns'], 7)
+        self.description.pop('query_id', None)
+        self.assertIn('CPU_query_scope_unknown', self.run_capture([], spans=[span])['issues'])
+
+    def test_host_and_native_source_unavailability_overrides_stale_numeric_zero(self):
+        a = call()
+        self.description['clock_bindings'] = {p:dict(domain='host', basis='controlled fixture')
+                                               for p in ['events.jsonl', 'samples.jsonl']}
+        metrics = [('host', 'host_cpu_busy_cores'), ('host', 'host_memory_available_mib'),
+                   ('native', 'vllm_num_requests_running'), ('native', 'vllm_num_requests_waiting'),
+                   ('native', 'vllm_kv_cache_usage_perc')]
+        for source, metric in metrics:
+            for status in ['unavailable', 'unavailable:reader_failed', 'unknown:source_scope',
+                           'partial:another_field_missing', 'observed']:
+                with self.subTest(source=source, metric=metric, status=status):
+                    sample = dict(sample_start_monotonic_ns=2, sample_end_monotonic_ns=3,
+                        values={metric:0}, missing={}, sources={source:dict(status=status)})
+                    r = self.run_capture([a], [native('open', 1, a), native('close', 4, a)], samples=[sample])
+                    field = r['stages'][0]['resources'][0]['values'][metric]
+                    available = status.startswith(('partial:', 'observed'))
+                    self.assertEqual(field['observed'], int(available))
+                    self.assertEqual(field['minimum'], 0 if available else None)
+        sample = dict(sample_start_monotonic_ns=2, sample_end_monotonic_ns=3,
+            values=dict(host_cpu_busy_cores=0, host_memory_available_mib=123),
+            missing=dict(host_cpu_busy_cores='cpu_percent_baseline_priming'),
+            sources=dict(host=dict(status='partial:CPU_priming')))
+        r = self.run_capture([a], [native('open', 1, a), native('close', 4, a)], samples=[sample])
+        fields = r['stages'][0]['resources'][0]['values']
+        self.assertIsNone(fields['host_cpu_busy_cores']['minimum'])
+        self.assertEqual(fields['host_memory_available_mib']['minimum'], 123)
+
+
 if __name__ == '__main__': unittest.main()
