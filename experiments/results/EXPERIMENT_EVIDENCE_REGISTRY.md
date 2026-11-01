@@ -1088,3 +1088,12 @@ experiments/results/motivation/fake_cpu/
 | 旧Q3重叠投影 | `2212e331`的`MovieQ3-c1-on`／`MovieQ3-c2-on`，二次投影`EXISTING-EVIDENCE.json` SHA-256 `639fb8d77cbf4447f34dd28d3002767c5a84467b8ee26a7456f3b80192ae476f` | 已有流水重叠是继续隐藏准备成本的反例；捕获完整性未知，未捕获kernel区间不能当GPU空闲，旧树不转授新R128资格 |
 
 仓库外上述原件按文件名／运行标识和校验值经既有artifact交接获取；不在Git复制输入、模型原始输出、站点路径或完整临时日志。12请求的两份分析不重复计数，历史失败、unknown、Map无gold及Q3 `COUNT7/gold14`质量失败均保留。本轮没有重判此前可比性失败，也没有从kernel时间、RSS求和、API包络或GPU busy推出完整query收益。
+
+<a id="granularity-control-cpu"></a>
+## 2026-11-01：同栈推进粒度的有限CPU观察
+
+标识`granularity_control_cpu_20261101`，执行源码`c30c5845`；研究问题与同控限制见[粒度观察](../plans/数据组织.md#dag-granularity-observation)。本轮只复跑[现成完成推进测试](../../code/tests/execution_provider/test_lotus_record_local_progression.py)中的慢同伴和G1/C1退化两项，各一次，2通过／0失败／错误／跳过；共14次CPU替身IPC提交、4次CPU子进程构造与关闭，真实模型／GPU调用0。Core、actor及私有IPC实际执行，Ray RPC和推理由明确替身提供；不与旧回归或此前单臂观察相加为不同用例数或模型调用数。
+
+慢同伴例固定两行F→M、同引擎／资源／方法行字节额度、完整输入消息／生成／实际调用成员，只改变`record`与G2 `batch_stage`。前者快Map先于无关慢Filter结束；后者等慢Filter后才提交快Map。批臂已有快请求的Core回执被释放，仍有2条方法行状态及1个active／held请求；这说明屏障与请求额度是不同责任，不证明GPU有空闲资源。G1/C1两臂输出与调用保持一致；空源不创建模型。所有已完成query关闭后Core额度归零；取消／失败／unknown边界沿原资格解释，本轮未重新覆盖。
+
+机器回执`CPU-RESULT.json`的SHA-256为`6043be606b27d915795a89ace9bf0d2afc76738057a174246733af78c5623a58`；测试源码SHA-256为`26ec73687efecc9184b5b386f2702789e62daee16fee48c8153ff6b07393a43c`。命名等待文件是控制实验条件，不是真实慢记录分布；原件按标识、文件名和摘要经既有artifact交接，不公开临时路径／合成响应全文。未报告CPU合成query速度、真实native batch、RSS／显存收益或稳定P99，亦未验证当前token／rolling／resident组合的纯粒度性能。
