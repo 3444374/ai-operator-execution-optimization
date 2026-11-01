@@ -129,9 +129,10 @@ R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC�
 新策略有收益继续上探，平台／退化／冲突时局部确认；显式`search_policy="reference"`保留旧策略。
 同 resident owner 的兼容完整查询成功后可复用已确认档位／未完进度，新鲜工作量重验证，不能只凭模型EOF提交。
 阶段关闭与下次查询可续探分别记账；磁盘`admission_cache`仍拒绝。固定／非token／批槽默认不变。
-受校验的 native KV 前缀成本接口已接线，但现有 backend 未证明布局／时钟等前提，缺失时明确几何回退；
-未获得新策略实机资源收益、物理CPU/GPU可用量或动态B资格。见[完整策略和资源边界](../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
-非空`admission.gpu_ids`在此候选预检拒绝，不能把旧逐请求NVML选择项静默当作已采集；原普通非token请求路径保留。
+同一snapshot RPC在模型actor读其分配GPU的NVML及主机CPU；多个新鲜信号支持时可多试一个已有几何点。
+精确成本估计可辅助步幅，缺失不禁止资源观测触发探索；来源、未知值和采纳理由在回执分别记录。
+现仅CPU合成资源事实验证接线，尚无真实硬件采样／性能或动态B资格。见[完整策略和资源边界](../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
+非空`admission.gpu_ids`仍拒绝：新读取器绑定的是模型actor的实际CUDA分配，不能用driver的设备列表冒充；原普通非token请求路径保留。
 
 另一种与rolling互斥的模式，在原批配置中显式加入以下片段，选择固定B、从一批起步的供给反馈候选：
 

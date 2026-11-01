@@ -66,6 +66,7 @@ def propose_kv_window(frame, *, now_s, max_age_s, expected_engine_uid,
         raise ValueError("valid request limits and caller clock bounds are required")
     evidence = dict(resource="native_KV_token_blocks", physical_headroom=None,
         compute_headroom=None, cost_model=None, hard_limit=hard_limit,
+        fallback_scope="this optional cost estimator only; resource signals may still drive a trial",
         reservation="sampled used blocks plus full committed-request bounds",
         performance_platform_proven=False)
 

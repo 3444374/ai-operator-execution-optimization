@@ -19,7 +19,7 @@ class ScanTrace:
         self.controller.reset(1 if hint is None else hint['selected_window'], 100000,
                               search_hint=hint)
 
-    def tick(self, count, *, work=(100, 4, 80, 20), resource_step=None, **changes):
+    def tick(self, count, *, work=(100, 4, 80, 20), resource_step=None, resource_opportunity=None, **changes):
         self.now += 1.
         self.completed += count
         for name, amount in zip(('input', 'output', 'computed', 'cached'), work):
@@ -38,7 +38,7 @@ class ScanTrace:
         supply_changes = {k: v for k, v in changes.items()
                           if k in supply.__dataclass_fields__ and k not in observation_changes}
         return c.update_supply(replace(o, **observation_changes), replace(supply, **supply_changes),
-                               resource_step=resource_step)
+                               resource_step=resource_step, resource_opportunity=resource_opportunity)
 
     def run_until(self, predicate, *, rates=None, work=None, limit=150):
         rates = (lambda window: 20*window) if rates is None else rates
@@ -143,14 +143,18 @@ class AscendingRequestScanTests(unittest.TestCase):
         hint = trace.controller.export_hint()
         self.assertEqual(hint['schema'], 'semloom.request_scan.v1')
         self.assertEqual(hint['selected_window'], 2)
-        # Fresh work, receipt counters and rates must be measured in the new query.
+        # Fresh work, receipt counters and selection scores are measured anew.
+        # A labelled old rate band can invalidate a stale condition, never win
+        # a comparison against new work or act as a new query's reference.
         def keys(value):
             if isinstance(value, dict):
                 return set(value).union(*(keys(v) for v in value.values()))
             if isinstance(value, (tuple, list)):
                 return set().union(*(keys(v) for v in value))
             return set()
-        self.assertFalse({'rate', 'rate_min', 'rate_max', 'completed_items_total'} & keys(hint))
+        progress = {k: v for k, v in hint.items() if k != 'condition_evidence'}
+        self.assertFalse({'rate', 'rate_min', 'rate_max', 'completed_items_total'} & keys(progress))
+        self.assertEqual(hint['condition_evidence']['scope'], 'invalidation_only_not_a_current_query_score')
 
     def test_an_unfinished_compatible_scan_starts_at_the_selection_and_continues_after_fresh_work(self):
         first = ScanTrace()

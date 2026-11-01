@@ -120,6 +120,8 @@ class BatchSupplyFeedback:
         self.provider = self.controller = self.ref = self.future = None
         self.session_id = None
         self.last_native = None
+        self.resource_samples = []
+        self.resource_audit = []
         self.prepared = self.submitted = self.requests = self.errors = 0
         self.closed = False
         self.phases = []
@@ -156,6 +158,33 @@ class BatchSupplyFeedback:
         self.controller.reset(1, len(stream.run.current)*len(stream._stage_ids))
         self._set_window(1)
 
+    def _observes_resources(self):
+        return (self.request_control and self.options.search_policy == 'ascending'
+                and self.options.allow_exploration)
+
+    @staticmethod
+    def _resource_view(packet, *, request_index, requested_at_s, received_at_s):
+        from src.scheduling.submission_control.resource_probe import ResourceProbeView
+        packet = packet if isinstance(packet, dict) else {}
+        sample = packet.get('sample')
+        sample = sample if isinstance(sample, dict) else {}
+        values, sources = sample.get('values'), sample.get('sources')
+        values = values if isinstance(values, dict) else {}
+        sources = sources if isinstance(sources, dict) else {}
+        host = sources.get('host')
+        host = host if isinstance(host, dict) else {}
+        devices = packet.get('gpu_uuids') or ()
+        devices = (tuple(devices) if isinstance(devices, (tuple, list))
+                   and all(isinstance(uid, str) for uid in devices) else ())
+        def number(value):
+            return value if type(value) in (int, float) and math.isfinite(value) and value >= 0 else None
+        return ResourceProbeView(packet.get('engine_uid'), packet.get('session_id'), request_index,
+            requested_at_s, received_at_s, number(packet.get('source_elapsed_s')), devices,
+            # The shared reader aggregates multiple devices. Its mean cannot
+            # establish that every device is idle; this owner uses one GPU.
+            number(values.get('gpu_utilization_pct')) if len(devices) == 1 else None,
+            number(values.get('host_cpu_per_core_max_pct')) if host.get('cpu_percent_interval_s') is not None else None)
+
     def _decide(self, observation, supply, live, queued, admitted):
         return self.controller.update_supply(observation, supply)
 
@@ -172,6 +201,7 @@ class BatchSupplyFeedback:
         with self._snapshot_lock:
             self.session_id = stream.session.session_id
             self.last_native = None
+            self.resource_samples = []
             self.started = time.monotonic()
         self.prepared = self.submitted = 0
         self.transition.clear()
@@ -213,7 +243,7 @@ class BatchSupplyFeedback:
                         cancel_requested=False, cancel_reason=None, cancel_error_type=None,
                         future_access_error_type=None, dispatch_error_type=None, poll_error_type=None,
                         client_future_cancelled=False)
-                ref = remote()
+                ref = remote(observe_resources=True) if self._observes_resources() else remote()
                 with self._snapshot_lock:
                     self.ref = ref
                 self.expiry = time.monotonic()+self.options.window_s
@@ -397,6 +427,7 @@ class BatchSupplyFeedback:
         with self._snapshot_lock:
             index = self._snapshot_request['request_index']
             timing = self._snapshot_request.get('future_timing_enabled', False)
+            issued_at_s = self._snapshot_request.get('issued_at_s')
         if timing:
             observed, error = self._snapshot_clock()
             self._note_future_timing(index, future_collect_started_at_s=observed,
@@ -477,6 +508,28 @@ class BatchSupplyFeedback:
                 if self.closed or snapshot.source_session_id != self.session_id:
                     return None
                 self.last_native = snapshot
+                if self._observes_resources():
+                    view = self._resource_view(value.get('resources'), request_index=index,
+                        requested_at_s=issued_at_s, received_at_s=received_at_s)
+                    # Long per-thread CPU intervals are not current host load.
+                    packet = value.get('resources')
+                    packet = packet if isinstance(packet, dict) else {}
+                    sample = packet.get('sample')
+                    sample = sample if isinstance(sample, dict) else {}
+                    sources = sample.get('sources')
+                    sources = sources if isinstance(sources, dict) else {}
+                    host = sources.get('host')
+                    interval = host.get('cpu_percent_interval_s') if isinstance(host, dict) else None
+                    if type(interval) not in (int, float) or not 0 < interval <= self.options.window_s:
+                        from dataclasses import replace
+                        view = replace(view, host_peak_cpu_pct=None)
+                        interval = None
+                    self.resource_samples = (self.resource_samples + [view])[-2:]
+                    self.resource_audit = (self.resource_audit + [dict(view=asdict(view),
+                        status=packet.get('status', 'unavailable'), missing=sample.get('missing') or {},
+                        error_type=packet.get('error_type'), observed_values=sample.get('values') or {},
+                        host_cpu_interval_s=interval,
+                        busy_period_scope='NVML internal period; distinct RPC reads need not be independent samples')])[-64:]
         return snapshot
 
     def _reap_stopped_snapshot(self, *, cancel=False):
@@ -611,9 +664,16 @@ class BatchSupplyFeedback:
             snapshot_rpc_receipts=[dict(row) for row in receipts],
             snapshot_rpc_pending=pending,
             snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
+            resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
+                ownership='same single snapshot RPC; physical reader on model actor allocation',
+                estimated_request_cost_required=False, real_performance_benefit_proven=False),
             measured_interfaces=['Core demand/StageWork/credits', 'method-ready/offer counts',
-                                 'confirmed member work receipts', 'native running/waiting/KV/preemptions'],
-            unavailable_interfaces=['CPU utilization', 'GPU utilization', 'physical free memory', 'MFU/HBM'],
+                                 'confirmed member work receipts', 'native running/waiting/KV/preemptions'] +
+                (['optional actor-allocated NVML busy and host CPU with explicit missing coverage']
+                 if self._observes_resources() else []),
+            unavailable_interfaces=['MFU/HBM', 'per-request physical cost',
+                'driver-host CPU if driver and model actor differ'] +
+                ([] if self._observes_resources() else ['CPU utilization', 'GPU utilization', 'physical free memory']),
             startup_capacity=dict(member_R=self.owner.resources.max_active_batches,
                 declared_native_sequences=self.owner.engine.max_num_seqs,
                 declared_native_tokens=self.owner.engine.max_num_batched_tokens,
@@ -698,7 +758,16 @@ class RequestSupplyFeedback(BatchSupplyFeedback):
             current_window=self._window(), hard_limit=self.owner.resources.max_active_batches,
             ready=tuple(work(r) for r in queued if r.key not in admitted),
             committed=tuple(work(r) for r in live if r.key in admitted))
-        return self.controller.update_supply(o, supply, resource_step=step)
+        from src.scheduling.submission_control.resource_probe import resource_probe_opportunity
+        preemptions = self.controller._preemptions
+        opportunity = resource_probe_opportunity(o, supply, current_window=self._window(),
+            hard_limit=self.owner.resources.max_active_batches, max_age_s=self.options.window_s,
+            expected_engine_uid=ready.get('engine_uid'), expected_session_id=self.session_id,
+            physical_samples=tuple(self.resource_samples),
+            preemption_increased=(o.preemptions_total is not None and preemptions is not None
+                                  and o.preemptions_total > preemptions),
+            low_kv_usage=self.controller.config.low_load_kv_usage)
+        return self.controller.update_supply(o, supply, resource_step=step, resource_opportunity=opportunity)
 
     def end_phase(self):
         if (self.config.search_policy == 'ascending' and self.controller is not None

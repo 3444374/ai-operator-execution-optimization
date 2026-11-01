@@ -221,21 +221,38 @@ source、Core credits 和 snapshot RPC 全部结清后，Movie Session 才调用
 不发布新状态。空查询不以未测默认值覆盖健康提示。
 提示绑定实际 owner engine UID、模型／生成／方法、B、原生容量、Core／IPC 边界和完整策略选项；
 新 query ID 不单独使其失效。下一 query 在已确认档位测本次工作，未完搜索条件续扫；
-已完成选择经新鲜验证后保持并监测，工作或性能改变才局部再探。旧速率、RPC/session 和结果账本不复用。
+已完成选择经新鲜验证后保持并监测；工作、可比性能条件或新资源机会改变才局部再探。
+提示可保留明确标为`invalidation_only_not_a_current_query_score`的旧速率区间，只用于判断条件失效；
+新查询的比较参考、候选评分及结果账本全部重新测量。旧提示没有条件证据时不能直接宣布旧平台已验证。
 阶段关闭的 `can_continue=false` 与 `search_can_continue_next_query` 分开，旧阶段永不重开。
 此提示不是磁盘 `admission_cache`，也不是跨 owner／跨任务相似度学习。
 
-资源接线消费唯一 native snapshot 和实际 owner-ready 容量，向
-[`propose_kv_window`](../submission_control/resource_step.py) 传递身份／时钟／KV池及已准备请求成本。
-只有已证明的同引擎单池布局、映射时钟、新鲜使用量、完整 prompt＋最大输出成本以及已提交的未来
-分配上界齐全时，才允许按可容纳的 ready 前缀提出大步；已提交成本额外保守预留，Core／IPC硬边界不变。
-现有 backend 回执未证明 `kv_cost_model` 和 `mapped_resource_clock_domain`，尚未完成这些前提的实机资格；
-缺失或未估算的请求保持 unknown，正常走有审计理由的几何／性能回退。
-native 排队、KV压力和抢占已参与门控及降档，不能说完全没有资源反馈；
-NVML busy／空闲显存、CPU／主机内存与 MFU／HBM 未成为可靠的请求步幅成本模型。
-不得把这条受校验接口或其 CPU 正例称为已实现物理资源极限搜索。
+资源现在直接影响可回退的试探，不以精确请求成本模型为前提。
+[`resource_probe_opportunity`](../submission_control/resource_probe.py)联合实际 ready/backlog、满额在途、
+本地字节／传输背压和新鲜 native queue／KV／抢占状态，识别普通试探机会；明确的压力优先，
+即使额度已为1也会清除旧平台，恢复后重新测量。原性能窗口、显式尾部／时间／尝试预算仍生效，
+不增加10秒、64请求等默认停止规则；资源提案与普通候选使用同一资格检查。
 
-以上是 CPU 待独审候选，真实 Ray／模型和性能待验。旧 `0585e9bf` 同条件 off 配对中，
+ascending 的唯一 snapshot RPC 可在模型 actor 所在机器附带读取其分配设备的 NVML 与主机 CPU。
+默认固定、reference 及探索关闭路径不调用物理读取器，没有新采样线程／模型进程或HTTP探针。
+设备绑定沿现有 CUDA visibility→物理UUID校验；序号／engine／session、driver issue→receive包络及
+actor内采样耗时用于校验来源和新鲜度，无需假定两个主机的单调时钟绝对值相同。
+CPU百分比按工作线程单独预热，过长／未知测量区间保持unknown；主机CPU不是进程CPU。
+当前owner是一张GPU；多个设备的均值不能证明每卡空闲，因此不据其均值加大步幅。
+
+当最近两次不同RPC都显示设备及主机峰值CPU**空闲时间占多数**，同时上述供给／native条件成立时，
+可多看一个已有几何候选点（例如2倍变成4倍试探）。这是公开的工程判据，不是用户规定的容量、
+`1/GPU_busy`估算或已证明的可用算力倍数；两次读取的NVML内部采样区间可能重叠，不称统计独立。
+物理值缺失或单独GPU busy低不允许额外跨点，native普通机会／性能探测仍可继续。
+新机会可唤醒旧选择；相同资源状态的反复轮询不自动反复扫描。资源有余量但实测吞吐无收益时保留较小已测档位，
+不以“填满利用率”替代查询目标，瓶颈转移须结合各阶段等待分析。
+
+[`propose_kv_window`](../submission_control/resource_step.py)仍可在布局／时钟／完整已准备成本已证实时
+提供更具体的前缀建议；现有backend没有这些完整证明时只标该成本估计不可用，不阻断资源观测触发试探。
+设备空闲显存不等于可用KV；CPU／显存的精确请求成本、MFU／HBM和硬件性能极限仍未实现或测定。
+
+以上是 CPU 待复审候选；可控资源数据经同一RPC实际改变Core试探额度，真实硬件采样／Ray／模型和性能待验。
+旧 `0585e9bf` 同条件 off 配对中，
 复用 Q1 固定 RF 为 17.275 秒、旧动态 RD 为 74.621 秒；这是单配对负结果，不能改标新策略成绩。
 模拟／CPU 轨迹只验证状态机，不能从旧回访区间相减后报告提速。
 

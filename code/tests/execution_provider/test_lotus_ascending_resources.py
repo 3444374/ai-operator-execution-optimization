@@ -49,13 +49,15 @@ class ResourceWiringTests(unittest.TestCase):
         self.f._set_window(decision.window)
         return decision
 
-    def test_current_receipt_without_clock_and_layout_proof_uses_labelled_geometric_fallback(self):
+    def test_native_resource_opportunity_does_not_require_exact_clock_mapped_cost_model(self):
         self.feedback()
         for _ in range(5):self.tick()
         self.assertEqual(self.owner._token_organizer.request_window, 2)
         proposal, = self.f.controller.report()['step_decisions']
-        self.assertEqual(proposal['source'], 'geometric_fallback')
-        self.assertEqual(proposal['reason'], 'native_kv_clock_unknown_or_invalid')
+        self.assertEqual(proposal['source'], 'resource_feedback_probe')
+        self.assertEqual(proposal['resource_observation']['cost_model_required'], False)
+        self.assertEqual(proposal['resource_observation']['native']['waiting'], 0)
+        self.assertFalse(proposal['resource_target_accepted'])
         self.assertIsNone(proposal['evidence']['physical_headroom'])
         self.assertEqual(proposal['evidence']['engine_uid'], 'fixture-engine')
 

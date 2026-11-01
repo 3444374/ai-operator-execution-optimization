@@ -222,10 +222,13 @@ B只组织每次传输，批成员提交后不追加；请求、驻留、字节�
 每条完成即可补位，缩容只停止新选择，已准入成员（含后端暂拒的不可拆分组）继续有界排空；原unknown、关系屏障及资源责任不变。
 默认无候选次数／探索时间硬停止、不读gold或全表token参考。新本地`search_policy="ascending"`候选
 在可比收益后继续上探，仅平台／回退／冲突时局部确认；显式`reference`保留旧逐档回访。
-候选接通健康 resident 查询的条件提示续扫及受校验资源步幅接口，缺可靠时钟／布局／成本时明确几何回退；
-没有动态B或物理CPU/GPU余量到步幅的实机资格。具体边界与旧动态负结果见[策略说明](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
+候选接通健康 resident 查询的条件提示续扫；新资源机会可唤醒旧选择，跨query旧速率区间只作失效判据。
+同一snapshot RPC可读模型actor分配设备的NVML和主机CPU，多指标支持时多试一个几何点；
+精确请求成本只辅助步幅，不是试探前提。显式预算、硬R／字节／unknown责任保留，无动态B或实机收益资格。
+具体判据、边界与旧动态负结果见[策略说明](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
 新策略仅有[CPU状态机](tests/scheduling/test_ascending_request_scan.py)、[成本边界](tests/scheduling/test_resource_step.py)
-和[完整查询入口](tests/experiments/test_movie_ascending_feedback.py)验证，待独审及真实Ray／模型／性能复验；旧实测不改标本候选。
+和[完整查询入口](tests/experiments/test_movie_ascending_feedback.py)、[资源触发链](tests/experiments/test_movie_resource_probe.py)
+验证，待复审及真实Ray／模型／性能复验；旧实测不改标本候选。
 
 准确`41ce4c24`的真实Ray/模型功能范围独审通过：198条提交含174成功、17项预期确认容量失败、7项取消unknown；覆盖129+1组批、后继提前推进、关系屏障、取消、关闭分页7→3→0及ACK释放。unknown不计为成功或确认失败。
 

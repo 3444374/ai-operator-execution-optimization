@@ -6,6 +6,7 @@ Local comparisons are operational evidence, not a causal hardware cost model.
 """
 from copy import deepcopy
 from dataclasses import asdict
+import math
 
 from .adaptive import _GeometricSearch, _local_pair_evidence
 from .stage_work import SupplyFeedbackController, default_request_feedback_options
@@ -48,6 +49,14 @@ class AscendingRequestController(SupplyFeedbackController):
             progress = _GeometricSearch(1, self.config.max_window, self.options.max_candidate_attempts, state)
             if progress.work_context is None or progress.verified_window != initial_window:
                 raise ValueError('hint needs a qualified work context and selected quota')
+            condition = search_hint.get('condition_evidence')
+            if condition is not None and (type(condition) is not dict
+                    or condition.get('scope') != 'invalidation_only_not_a_current_query_score'
+                    or any(type(condition.get(k)) not in (int, float)
+                           or not math.isfinite(condition[k]) or condition[k] <= 0 for k in ('rate_min', 'rate_max'))
+                    or condition['rate_min'] > condition['rate_max']
+                    or condition.get('resource_condition') is not None and not isinstance(condition['resource_condition'], dict)):
+                raise ValueError('invalid prior query condition evidence')
             progress.resume_pressure()
             state = progress.snapshot()
         self._reset_supply(initial_window, total_items, search_hint=state)
@@ -57,14 +66,54 @@ class AscendingRequestController(SupplyFeedbackController):
         self._reused = search_hint is not None
         self._tested = {}
         self._resource_step = None
+        self._resource_opportunity = None
+        self._prior_condition = None if search_hint is None else deepcopy(search_hint.get('condition_evidence'))
+        self._last_resource_condition = (None if self._prior_condition is None else
+                                         deepcopy(self._prior_condition.get('resource_condition')))
+        self._pressure_active = False
         self.step_decisions = []
         self.work_epoch = 0
         self._confirming = False
         self._state_validation = self._reused
 
-    def update_supply(self, observation, supply, *, resource_step=None):
+    def update_supply(self, observation, supply, *, resource_step=None, resource_opportunity=None):
         self._resource_step = resource_step
+        self._resource_opportunity = resource_opportunity
         return super().update_supply(observation, supply)
+
+    def _resource_condition(self):
+        step = self._resource_step
+        if (step is not None and type(step.target_window) is int
+                and self._confirmed_window < step.target_window <= self.config.max_window):
+            return dict(kind='costed_resource_opportunity', target=step.target_window,
+                engine_uid=step.evidence.get('engine_uid'), resource=step.evidence.get('resource'),
+                cost_model=step.evidence.get('cost_model'))
+        opportunity = self._resource_opportunity
+        return (deepcopy(opportunity.condition) if opportunity is not None
+                and opportunity.kind != 'none' else None)
+
+    def _resource_changed(self):
+        current, previous = self._resource_condition(), self._last_resource_condition
+        if current is None or current == previous:
+            return False
+        # A weaker observation is not a reason to raise concurrency. A newly
+        # observed opportunity, more costed ready work, or a stronger physical
+        # idle signal can reopen a local trial. Repeated polls cannot.
+        if current['kind'] == 'native_headroom':
+            return previous is None
+        if current['kind'] == 'costed_resource_opportunity' and previous is not None:
+            if previous.get('kind') == current['kind']:
+                target = previous.get('target')
+                return type(target) is not int or current['target'] > target
+        return True
+
+    def _historical_performance_changed(self, point):
+        """Old bands invalidate conditions; they never score a new winner."""
+        previous = self._prior_condition
+        if previous is None:
+            return None
+        return (point['rate_min'] > previous['rate_max']*(1+self.options.min_gain)
+                or point['rate_max'] < previous['rate_min']*(1-self.options.min_gain))
 
     def _measurement_enabled(self):
         # A held selection is monitored on fresh original work, without a timer
@@ -85,6 +134,15 @@ class AscendingRequestController(SupplyFeedbackController):
         self.evaluations.append(dict(kind=reason, work_epoch=self.work_epoch,
             comparison_valid=False, rule='new rates measured here; historical rates are not reused'))
 
+    def _open_resource_epoch(self, point):
+        self._new_epoch(point, 'new_resource_opportunity', rebase=False)
+        for window, row in self._search.points.items():
+            if (window > self._confirmed_window and row['outcome'] != 'pressure'
+                    and (self._search.limit is None or row['attempts'] < self._search.limit)):
+                row['outcome'] = 'pending'
+        # A changed condition reopens eligible measurements, never their spent
+        # attempt budget. Old no-gain/gain scores are not new-condition scores.
+
     def _invalidate_feedback_gap(self, o):
         self._terminal = self._hint_terminal = None
         self._tested = {}
@@ -93,13 +151,20 @@ class AscendingRequestController(SupplyFeedbackController):
             self._growth_stopped, self._stop_reason = False, None
         return super()._invalidate_feedback_gap(o)
 
+    def _pressure_event(self, o):
+        self._terminal = self._hint_terminal = None
+        self._tested = {}
+        self._confirming = False
+        if not self._pressure_active:
+            self.work_epoch += 1
+        self._pressure_active = True
+
     def _update(self, o):
         decision = super()._update(o)
-        if decision.reason == 'resource_pressure':
-            self._terminal = self._hint_terminal = None
-            self._tested = {}
-            self._confirming = False
-            self.work_epoch += 1
+        if (self._pressure_active and o.fresh and o.has_service_metrics
+                and self._search.pressure_recovery is None and not o.waiting
+                and o.kv_usage <= self.config.low_load_kv_usage and o.memory_pressure is not True):
+            self._pressure_active = False
         return decision
 
     def _accept_measurement(self, point, o):
@@ -110,9 +175,17 @@ class AscendingRequestController(SupplyFeedbackController):
         if self._reference is None:
             context = self._work_context(point)
             changed = self._cached_context is not None and not self._same_work(self._cached_context, context)
+            performance_changed = (self._state_validation and self._hint_terminal is not None
+                                   and self._historical_performance_changed(point) is not False)
+            resource_changed = self._state_validation and self._hint_terminal is not None and self._resource_changed()
             self._cached_context = None
             if changed:
                 self._new_epoch(point, 'cached_work_changed')
+            elif performance_changed:
+                self._new_epoch(point, 'cached_performance_changed' if self._prior_condition is not None
+                                else 'cached_condition_unverified')
+            elif resource_changed:
+                self._open_resource_epoch(point)
             self._reference = point
             self._confirmed_window = point['window']
             self._tested[point['window']] = point
@@ -125,6 +198,9 @@ class AscendingRequestController(SupplyFeedbackController):
                     # Revalidate locally at a lower quota instead of treating a
                     # new work mix as proof for either the old rates or C=1.
                     return self._probe(max(1, self.current_window//2), o, 'work_changed_probe')
+                if performance_changed or resource_changed:
+                    self._last_resource_condition = self._resource_condition()
+                    return self._next_trial(o)
                 if self._hint_terminal is not None:
                     self._terminal = self._hint_terminal
                     self._growth_stopped, self._stop_reason = True, self._terminal
@@ -136,11 +212,19 @@ class AscendingRequestController(SupplyFeedbackController):
             changed = not self._same_work(self._work_context(previous), self._work_context(point))
             self._clear_point()
             self._reference = point
-            if changed or evidence['outcome'] in ('gain', 'regression'):
-                self._new_epoch(point, 'work_changed' if changed else 'performance_changed')
+            resources_changed = self._resource_changed()
+            if changed or evidence['outcome'] in ('gain', 'regression') or resources_changed:
+                resource_only = resources_changed and not changed and evidence['outcome'] not in ('gain', 'regression')
+                if resource_only:
+                    self._open_resource_epoch(point)
+                else:
+                    self._new_epoch(point, 'work_changed' if changed else 'performance_changed')
                 self._tested[point['window']] = point
                 self._search.work_context = self._work_context(point)
                 self._search.verified_window = point['window']
+                if resource_only:
+                    self._last_resource_condition = self._resource_condition()
+                    return self._next_trial(o)
                 lower = max(1, self.current_window//2)
                 if lower != self.current_window:
                     return self._probe(lower, o, 'condition_changed_probe')
@@ -155,8 +239,13 @@ class AscendingRequestController(SupplyFeedbackController):
     def _probe(self, target, o, reason='performance_probe'):
         if target == self.current_window:
             return self._next_trial(o) if target < self.config.max_window else self._hold('capacity_limit')
-        if not self._within_change_budget(2) or self._exploration_time_left(o.observed_at_s) <= 0:
-            return self._stop('exploration_budget', o)
+        if type(target) is not int or not 1 <= target <= self._search.ceiling:
+            return self._hold('candidate_unavailable')
+        if target in self._search.points and target not in self._search.available():
+            return self._hold('candidate_unavailable')
+        decision = self._trial_budget(target, o)
+        if decision is not None:
+            return decision
         if target not in self._search.points:
             # Resource-selected points use the existing finite progress schema;
             # no fabricated geometric outcome is attached to a skipped point.
@@ -176,18 +265,31 @@ class AscendingRequestController(SupplyFeedbackController):
         higher = [v for v in self._search.available() if v > self._confirmed_window]
         target = min(higher) if higher else None
         step = self._resource_step
+        opportunity = self._resource_opportunity
         source = 'geometric_fallback'
         reason = 'resource_estimate_unavailable' if step is None else step.reason
         if (step is not None and type(step.target_window) is int
-                and self._confirmed_window < step.target_window <= self.config.max_window):
+                and self._confirmed_window < step.target_window <= self._search.ceiling
+                and (step.target_window not in self._search.points or step.target_window in higher)):
             target = step.target_window
             source = 'costed_resource_headroom'
+        elif opportunity is not None and opportunity.kind != 'none' and higher:
+            target = sorted(higher)[min(opportunity.extra_geometric_steps, len(higher)-1)]
+            source, reason = 'resource_feedback_probe', opportunity.reason
         self.step_decisions = (self.step_decisions + [dict(at_s=o.observed_at_s-self.started,
             from_window=self._confirmed_window, target=target, source=source, reason=reason,
             evidence=None if step is None else deepcopy(step.evidence), work_epoch=self.work_epoch)])[-64:]
+        if opportunity is not None:
+            self.step_decisions[-1]['resource_observation'] = deepcopy(opportunity.evidence)
+        if step is not None:
+            self.step_decisions[-1]['requested_resource_target'] = step.target_window
+            self.step_decisions[-1]['resource_target_accepted'] = source == 'costed_resource_headroom'
         if target is None:
             return self._select(o, 'capacity_limit' if self._confirmed_window == self.config.max_window
                                 else 'candidate_evidence_exhausted')
+        condition = self._resource_condition()
+        if condition is not None:
+            self._last_resource_condition = condition
         return self._probe(target, o)
 
     def _compare(self, point, o):
@@ -291,6 +393,9 @@ class AscendingRequestController(SupplyFeedbackController):
         self._search.verified_window = selected
         self._search.work_context = self._work_context(self._reference)
         self._terminal = reason
+        condition = self._resource_condition()
+        if condition is not None:
+            self._last_resource_condition = condition
         self._growth_stopped, self._stop_reason = True, reason
         self._clear_point()
         return (self._change(selected, reason, o) if self.current_window != selected else self._hold(reason))
@@ -305,7 +410,11 @@ class AscendingRequestController(SupplyFeedbackController):
             options=asdict(self.options),
             selected_window=self._confirmed_window, search_state=deepcopy(self._search.snapshot()),
             terminal=self._terminal if self._terminal in ('local_plateau', 'performance_regression', 'capacity_limit') else None,
-            work_context=deepcopy(self._search.work_context))
+            work_context=deepcopy(self._search.work_context),
+            condition_evidence=dict(scope='invalidation_only_not_a_current_query_score',
+                rate_min=self._tested[self._confirmed_window]['rate_min'],
+                rate_max=self._tested[self._confirmed_window]['rate_max'],
+                resource_condition=deepcopy(self._last_resource_condition)))
 
     def report(self):
         value = super().report()
@@ -319,6 +428,6 @@ class AscendingRequestController(SupplyFeedbackController):
             incomplete_reason=None if measured_stop else self._terminal or self._stop_reason,
             can_continue=self.options.allow_exploration and not bounded_stop and bool(self._search.available()),
             reference_rechecks=sum(row['kind'] == 'local_confirmation' for row in self.evaluations),
-            resource_step_scope='costed native resource estimate where proven; otherwise geometric performance search',
+            resource_step_scope='source-qualified resource opportunities drive tentative geometric trials; exact cost is optional',
             recommendation_scope='measured comparable quotas; not a global optimum or hardware saturation proof')
         return deepcopy(value)

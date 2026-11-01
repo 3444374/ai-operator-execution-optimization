@@ -638,6 +638,20 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._stop(self._search.stop_reason(),o)
         if higher == self.current_window:
             return self._stop("capacity_limit",o)
+        decision = self._trial_budget(higher, o)
+        if decision is not None:
+            return decision
+        self._probe_loss_base = self.estimated_trial_loss_s
+        self._probe_at = o.observed_at_s
+        self._reference_recheck_used = False
+        if self._search is not None:
+            self._search.begin(higher)
+        return self._change(higher,"performance_probe",o)
+
+    def _trial_budget(self, higher, o):
+        """Shared explicit trial limits; absent budgets add no stopping rule."""
+        point = self._reference
+        provisional = not point.get("comparison_eligible", True)
         # Reserve a possible rollback; resource-pressure reductions are independent.
         reserve = 2  # trial plus a return to the last safe setting
         if not self._within_change_budget(reserve):
@@ -671,12 +685,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if self.options.min_remaining and (after_trial <= self.options.min_remaining
                 or higher > self.current_window and later_saving <= control_estimate):
             return self._stop("insufficient_remaining_benefit",o)
-        self._probe_loss_base = self.estimated_trial_loss_s
-        self._probe_at = o.observed_at_s
-        self._reference_recheck_used = False
-        if self._search is not None:
-            self._search.begin(higher)
-        return self._change(higher,"performance_probe",o)
+        return None
 
     def _point(self):
         import statistics
@@ -858,6 +867,9 @@ class ResourceFeedbackController(AimdAdmissionController):
     def _measurement_enabled(self):
         return not self._growth_stopped
 
+    def _pressure_event(self, observation):
+        """Confirmed pressure invalidates evidence even at the minimum quota."""
+
     def _update(self, o):
         if not o.fresh or not o.has_service_metrics:
             if self._probe_at is not None and self._exploration_time_left(o.observed_at_s) <= 0:
@@ -896,6 +908,7 @@ class ResourceFeedbackController(AimdAdmissionController):
                 self._search.verified_window = None
                 self._search.ceiling = min(self._search.ceiling,max(1,self.current_window-1))
                 self._growth_stopped, self._stop_reason = True, "resource_pressure"
+            self._pressure_event(o)
             return self._change(lower,"resource_pressure",o) if lower < self.current_window else self._hold("at_minimum")
         if (self.options.work_basis == "computed" and self._search.pressure_recovery is not None
                 and self.options.allow_exploration and o.waiting == 0

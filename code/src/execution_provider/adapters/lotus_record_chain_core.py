@@ -1623,7 +1623,9 @@ class SemLoomRecordChainCore:
         committed = bool(eligible and self._request_scan_pending)
         if committed:
             self._request_scan_hints = deepcopy(self._request_scan_pending)
-        elif not eligible or any(phase.get('feedback_gaps', 0) or any(
+        elif not eligible or any(phase.get('feedback_gaps', 0)
+                or phase.get('stop_reason') == 'resource_pressure'
+                or (phase.get('reasons') or {}).get('at_minimum', 0) or any(
                 row.get('reason') == 'resource_pressure' for row in phase.get('history', ()))
                 for phase in feedback.get('phases', ())):
             self._request_scan_hints.clear()

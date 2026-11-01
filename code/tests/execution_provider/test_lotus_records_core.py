@@ -69,7 +69,7 @@ class Runtime:
             def __init__(self, actor, name):
                 self.actor, self.name = actor, name
 
-            def remote(self, *args):
+            def remote(self, *args, **kwargs):
                 tag = type(self.actor.instance).__name__ + "." + self.name
                 runtime.events.append(("submit", tag, threading.get_ident(), args))
                 if runtime.slow_submit is not None and self.name == "run_core":
@@ -77,7 +77,9 @@ class Runtime:
 
                 def invoke():
                     resolved = [arg.value.result() if isinstance(arg, Ref) else arg for arg in args]
-                    return getattr(self.actor.instance, self.name)(*resolved)
+                    keywords = {key: value.value.result() if isinstance(value, Ref) else value
+                                for key, value in kwargs.items()}
+                    return getattr(self.actor.instance, self.name)(*resolved, **keywords)
                 return Ref(self.actor.pool.submit(invoke), tag)
 
         class Actor:
@@ -216,6 +218,9 @@ class Runtime:
             sys.modules[name] = module
         self.stack.enter_context(patch.object(daft_runtime, "_configured", None))
         self.stack.enter_context(patch.dict(os.environ))
+        from src.observability.records_telemetry import MetricSources
+        self.stack.enter_context(patch.object(MetricSources, 'from_cuda_visibility',
+            side_effect=lambda: MetricSources((), gpu_binding_error='unavailable:CPU_inference_fixture')))
         os.environ.pop("DAFT_RUNNER", None)
         self.stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         self.stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
