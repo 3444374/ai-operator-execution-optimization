@@ -223,7 +223,7 @@ class RecordsTelemetryTests(unittest.TestCase):
                     pass
             self.assertEqual([json.loads(x)["query_id"] for x in path.read_text().splitlines()], ["q1", "q1"])
 
-    def test_probes_are_independent_missing_is_not_zero_and_cpu_first_tick_is_priming(self):
+    def test_probes_are_independent_and_missing_is_not_zero(self):
         host = {field: 10 for field in FIELDS if field.startswith("host_")}
         gpu = dict(gpu_metrics_status="snapshot:nvml", gpu_utilization_pct="0", gpu_memory_used_mib="12",
                    gpu_memory_total_mib="24", gpu_power_w="")
@@ -237,7 +237,7 @@ class RecordsTelemetryTests(unittest.TestCase):
         self.assertEqual(first["values"]["gpu_utilization_pct"], 0)
         self.assertIsNone(first["values"]["gpu_power_w"])
         self.assertIn("unsupported", first["missing"]["gpu_power_w"])
-        self.assertIsNone(first["values"]["host_cpu_busy_cores"])
+        self.assertEqual(first["values"]["host_cpu_busy_cores"], 10)
         self.assertEqual(second["values"]["host_cpu_busy_cores"], 10)
         self.assertIn("no_HTTP_required", first["missing"]["vllm_num_requests_running"])
 
@@ -253,32 +253,6 @@ class RecordsTelemetryTests(unittest.TestCase):
         self.assertIsNone(result["values"]["vllm_kv_cache_usage_perc"])
         http.assert_called_once_with("http://127.0.0.1:1234/metrics", timeout_s=1.0,
                                      require_direct_response=True)
-
-    def test_CPU_baseline_only_advances_after_first_valid_probe(self):
-        host = {field: 10 for field in FIELDS if field.startswith("host_")}
-        with patch("src.observability.records_telemetry.gpu_metadata", return_value={}), \
-                patch("src.observability.records_telemetry.host_metadata", side_effect=[PermissionError("fixture"), host, host]):
-            source = MetricSources(("GPU-fixture",))
-            first, second, third = source(), source(), source()
-        self.assertIsNone(first["values"]["host_cpu_busy_cores"])
-        self.assertEqual(second["missing"]["host_cpu_busy_cores"], "cpu_percent_baseline_priming")
-        self.assertEqual(third["values"]["host_cpu_busy_cores"], 10)
-
-    def test_cpu_baseline_and_interval_are_local_to_each_snapshot_worker_thread(self):
-        host = {field: 10 for field in FIELDS if field.startswith('host_')}
-        with patch('src.observability.records_telemetry.gpu_metadata', return_value={}), \
-                patch('src.observability.records_telemetry.host_metadata', return_value=host), \
-                patch('src.observability.records_telemetry.threading.get_ident', return_value=111) as thread:
-            source = MetricSources(('GPU-fixture',))
-            a, b = source(), source()
-            thread.return_value = 222
-            c, d = source(), source()
-        for first in (a, c):
-            self.assertIsNone(first['values']['host_cpu_per_core_max_pct'])
-            self.assertIsNone(first['sources']['host']['cpu_percent_interval_s'])
-        for following in (b, d):
-            self.assertEqual(following['values']['host_cpu_per_core_max_pct'], 10)
-            self.assertGreaterEqual(following['sources']['host']['cpu_percent_interval_s'], 0)
 
     def test_no_implicit_GPU_selection_or_remote_metrics_endpoint(self):
         with self.assertRaises(ValueError):

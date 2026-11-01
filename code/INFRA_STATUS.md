@@ -229,6 +229,8 @@ B只组织每次传输，批成员提交后不追加；请求、驻留、字节�
 候选接通健康 resident 查询的条件提示续扫；新资源机会可唤醒旧选择，跨query旧速率区间只作失效判据。
 同一snapshot RPC可读模型actor分配设备的NVML和主机CPU；联合空闲份额在ready供给／硬R内确定可变大步探测目标，
 精确请求成本只辅助步幅，不是试探前提。显式预算、硬R／字节／unknown责任保留，无动态B或实机收益资格。
+CPU 区间归属修复改为采集器实例累计计数器差分，并保留拒绝的原始间隔／原因；不改采样频率、1 秒资格或 actor 并发。
+该增量有无模型 CPU 回归，新增真实 Ray 组合资格和模型 LIGHT 复验仍待执行；历史 21 条被拒间隔的原值无法补作已知。
 具体判据、边界与旧动态负结果见[策略说明](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
 新策略仅有[CPU状态机](tests/scheduling/test_ascending_request_scan.py)、[成本边界](tests/scheduling/test_resource_step.py)
 和[完整查询入口](tests/experiments/test_movie_ascending_feedback.py)、[资源触发链](tests/experiments/test_movie_resource_probe.py)

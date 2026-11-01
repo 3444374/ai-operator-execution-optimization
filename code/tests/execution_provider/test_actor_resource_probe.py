@@ -2,6 +2,7 @@
 from concurrent.futures import Future
 from copy import deepcopy
 from dataclasses import asdict, replace
+import json
 import sys
 import time
 from types import SimpleNamespace
@@ -158,6 +159,31 @@ class ActorResourceProbeTests(unittest.TestCase):
                 self.assertEqual(view.gpu_busy_pct, 10)
                 self.assertIsNone(view.host_peak_cpu_pct)
                 self.assertIsNone(feedback.resource_audit[0]['host_cpu_interval_s'])
+
+    def test_rejected_CPU_interval_and_source_reason_remain_in_audit(self):
+        for interval, reason in ((0, 'cpu_interval_nonpositive'), (-.1, 'cpu_interval_nonpositive'),
+                                 (2, 'cpu_interval_exceeds_feedback_window'),
+                                 (True, 'cpu_interval_missing_or_invalid'),
+                                 (float('nan'), 'cpu_interval_missing_or_invalid')):
+            with self.subTest(interval=interval):
+                packet = resource_packet(interval=interval)
+                host = packet['sample']['sources']['host']
+                host.update(cpu_baseline_scope='sampler_instance', cpu_counter_sample_sequence=12,
+                            cpu_metrics_status='observed')
+                feedback, _ = self.receive(packet)
+                audit, = feedback.resource_audit
+                expected = interval if type(interval) in (int, float) and interval == interval else None
+                self.assertEqual(audit['host_cpu_raw_interval_s'], expected)
+                self.assertEqual(audit['host_cpu_reject_reason'], reason)
+                self.assertEqual(audit['host_cpu_source']['cpu_counter_sample_sequence'], 12)
+                json.dumps(audit, allow_nan=False)
+
+    def test_CPU_priming_reason_does_not_erase_native_feedback_and_remains_explicit(self):
+        packet = resource_packet(interval=None)
+        packet['sample']['values']['host_cpu_per_core_max_pct'] = None
+        packet['sample']['sources']['host']['cpu_metrics_status'] = 'cpu_percent_baseline_priming'
+        feedback, _ = self.receive(packet)
+        self.assertEqual(feedback.resource_audit[0]['host_cpu_reject_reason'], 'cpu_percent_baseline_priming')
 
 
 if __name__ == '__main__':
