@@ -230,6 +230,10 @@ class BatchSupplyFeedback:
                     (type(host[name]) is float and math.isfinite(host[name])))},
             busy_period_scope='NVML internal period; distinct RPC reads need not be independent samples')
 
+    @staticmethod
+    def _audit_integer(value, *, minimum=0):
+        return value if type(value) is int and minimum <= value < 1 << 64 else None
+
     def _audit_resource_rpc(self, row, *, native, disposition, reason, request_index,
                             request_session_id, response_session_id, requested_at_s, received_at_s):
         # Only fixed metadata fields leave this boundary; never retain the RPC
@@ -243,14 +247,36 @@ class BatchSupplyFeedback:
             'cpu_counter_regressed', 'cpu_counter_delta_invalid'}
         if cpu_reason is not None and cpu_reason not in allowed_reasons:
             cpu_reason = 'cpu_source_unavailable'
-        def counter(name):
-            value = source.get(name)
-            return value if type(value) is int and value >= 0 else None
+        invalid = []
+        def integer(name, value, *, minimum=0):
+            bounded = self._audit_integer(value, minimum=minimum)
+            if value is not None and bounded is None:
+                invalid.append(name)
+            return bounded
+        def clock(name, value, *, signed=False):
+            if type(value) is int:
+                return integer(name, value, minimum=-(1 << 64)+1 if signed else 0)
+            if type(value) is float and math.isfinite(value) and (signed or value >= 0):
+                return value
+            if value is not None:
+                invalid.append(name)
+            return None
         resource_uid = row['view']['engine_uid']
+        if not (type(resource_uid) is str and len(resource_uid) == 32
+                and all(c in '0123456789abcdef' for c in resource_uid)):
+            if resource_uid is not None:
+                invalid.append('resource_engine_uid')
+            resource_uid = None
+        cpu_interval = clock('host_cpu_raw_interval_s', row['host_cpu_raw_interval_s'], signed=True)
+        if cpu_interval is None and cpu_reason is None:
+            cpu_reason = 'cpu_interval_missing_or_invalid'
         with self._snapshot_lock:
-            attempt = dict(request_index=request_index, request_session_id=request_session_id,
-                current_session_id=self.session_id, response_session_id=response_session_id,
-                requested_at_s=requested_at_s, received_at_s=received_at_s,
+            attempt = dict(request_index=integer('request_index', request_index),
+                request_session_id=integer('request_session_id', request_session_id, minimum=-1),
+                current_session_id=integer('current_session_id', self.session_id, minimum=-1),
+                response_session_id=integer('response_session_id', response_session_id, minimum=-1),
+                requested_at_s=clock('requested_at_s', requested_at_s),
+                received_at_s=clock('received_at_s', received_at_s),
                 request_clock_domain='driver.time.monotonic seconds',
                 resource_counter_clock_domain='model actor time.monotonic_ns',
                 native_clock_domain='native-engine NativeStats.clock seconds',
@@ -258,15 +284,15 @@ class BatchSupplyFeedback:
                 actor_unbound=response_session_id == -1,
                 native_frame_present=native is not None,
                 native_validation_accepted=disposition == 'eligible_for_provider',
-                resource_engine_uid=(resource_uid if type(resource_uid) is str and len(resource_uid) <= 128 else None),
-                resource_session_id=(row['view']['session_id'] if type(row['view']['session_id']) is int else None),
-                host_cpu_raw_interval_s=row['host_cpu_raw_interval_s'],
-                host_cpu_qualified=row['host_cpu_reject_reason'] is None,
+                resource_engine_uid=resource_uid,
+                resource_session_id=integer('resource_session_id', row['view']['session_id'], minimum=-1),
+                host_cpu_raw_interval_s=cpu_interval,
+                host_cpu_qualified=cpu_reason is None,
                 host_cpu_reject_reason=cpu_reason,
-                host_cpu_counter_sequence=counter('cpu_counter_sample_sequence'),
-                host_cpu_read_start_ns=counter('cpu_counter_read_start_monotonic_ns'),
-                host_cpu_read_end_ns=counter('cpu_counter_read_end_monotonic_ns'),
-                audit_only=True)
+                host_cpu_counter_sequence=integer('host_cpu_counter_sequence', source.get('cpu_counter_sample_sequence')),
+                host_cpu_read_start_ns=integer('host_cpu_read_start_ns', source.get('cpu_counter_read_start_monotonic_ns')),
+                host_cpu_read_end_ns=integer('host_cpu_read_end_ns', source.get('cpu_counter_read_end_monotonic_ns')),
+                audit_only=True, invalid_fields=tuple(invalid))
             counts = self.resource_rpc_counts
             counts['total'] += 1
             counts['native_eligible'] += attempt['native_validation_accepted']
@@ -745,7 +771,7 @@ class BatchSupplyFeedback:
             requests, errors, closed = self.requests, self.errors, self.closed
             ref_retained, future_retained = self.ref is not None, self.future is not None
             resource_attempts = [dict(row) for row in self.resource_rpc_audit]
-            resource_counts = dict(self.resource_rpc_counts)
+            resource_counts = {name:self._audit_integer(value) for name, value in self.resource_rpc_counts.items()}
         pending = (None if request is None else
                    dict(request, rpc_terminal_status='unknown',
                         unresolved_reason=('client_future_cancelled_no_rpc_result'
@@ -763,7 +789,7 @@ class BatchSupplyFeedback:
             snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
             resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
                 recent_RPC_attempts=resource_attempts, RPC_counts=resource_counts,
-                RPC_audit_session_id=self.session_id, RPC_audit_capacity=64,
+                RPC_audit_session_id=self._audit_integer(self.session_id, minimum=-1), RPC_audit_capacity=64,
                 RPC_audit_scope='current bound Core session; diagnostics only, not policy input',
                 ownership='same single snapshot RPC; physical reader on model actor allocation',
                 estimated_request_cost_required=False, real_performance_benefit_proven=False,

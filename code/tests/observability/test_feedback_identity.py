@@ -75,6 +75,9 @@ class FeedbackIdentityTests(unittest.TestCase):
                             actor_unbound=True,host_cpu_raw_interval_s=-.2,
                             host_cpu_reject_reason='cpu_interval_nonpositive',
                             request_clock_domain='driver.time.monotonic seconds',
+                            resource_engine_uid='NEVER_LOG_ROW',host_cpu_read_end_ns=1<<20000,
+                            requested_at_s=1<<20000,invalid_fields=('resource_engine_uid',
+                                'host_cpu_read_end_ns','requested_at_s','NEVER_LOG_ROW'),
                             prompt='NEVER_LOG_ROW',values=dict(private_sample='NEVER_LOG_ROW')))
                     self.tick(p);self.assertTrue(p.latest(2).fresh)
                 self.assertFalse((root/'events').exists())
@@ -90,6 +93,11 @@ class FeedbackIdentityTests(unittest.TestCase):
                 self.assertEqual(rows[0]['resource_attempt']['response_session_id'],-1)
                 self.assertEqual(rows[0]['resource_attempt']['host_cpu_raw_interval_s'],-.2)
                 self.assertEqual(rows[0]['resource_attempt']['host_cpu_reject_reason'],'cpu_interval_nonpositive')
+                self.assertIsNone(rows[0]['resource_attempt']['resource_engine_uid'])
+                self.assertIsNone(rows[0]['resource_attempt']['host_cpu_read_end_ns'])
+                self.assertIsNone(rows[0]['resource_attempt']['requested_at_s'])
+                self.assertEqual(rows[0]['resource_attempt']['invalid_fields'],
+                                 ['resource_engine_uid','host_cpu_read_end_ns','requested_at_s'])
                 self.assertNotIn('NEVER_LOG_ROW',json.dumps(rows))
                 self.assertFalse(rows[0]['accepted'],'a diagnostic CPU interval must not admit a rejected native frame')
                 self.assertEqual(rows[-1]['engine_uid'],'a'*32);self.assertEqual(rows[-1]['session_id'],7)

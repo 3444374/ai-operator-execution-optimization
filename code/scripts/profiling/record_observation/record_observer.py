@@ -36,7 +36,7 @@ _RESOURCE_FLAGS = set('actor_unbound native_frame_present native_validation_acce
 _RESOURCE_CLOCKS = set('requested_at_s received_at_s host_cpu_raw_interval_s'.split())
 _RESOURCE_LABELS = set('request_clock_domain resource_counter_clock_domain native_clock_domain frame_disposition native_reason host_cpu_reject_reason'.split())
 _ALLOWED.update(_RESOURCE_COUNTS | _RESOURCE_FLAGS | _RESOURCE_CLOCKS | _RESOURCE_LABELS |
-                {'resource_attempt', 'resource_engine_uid'})
+                {'resource_attempt', 'resource_engine_uid', 'invalid_fields'})
 _installed = set()
 _parent = ContextVar('record_observer_parent', default=None)
 _lock = threading.Lock()
@@ -70,11 +70,17 @@ def emit_feedback(event, **values):
                 elif name in _RESOURCE_FLAGS:
                     resource[name]=item if type(item)is bool else None
                 elif name in _RESOURCE_CLOCKS:
-                    resource[name]=item if type(item)in(int,float)and math.isfinite(item) else None
+                    signed=name=='host_cpu_raw_interval_s'
+                    resource[name]=(item if (type(item)is int and (-(1<<64)+1 if signed else 0)<=item<1<<64
+                        or type(item)is float and math.isfinite(item) and (signed or item>=0)) else None)
                 elif name in _RESOURCE_LABELS:
                     resource[name]=item if type(item)is str and len(item)<=128 else None
                 elif name == 'resource_engine_uid':
                     resource[name]=item if type(item)is str and len(item)==32 and all(c in '0123456789abcdef'for c in item)else None
+                elif name == 'invalid_fields' and isinstance(item,(list,tuple)):
+                    fields=_RESOURCE_COUNTS | _RESOURCE_CLOCKS | {'resource_engine_uid'}
+                    resource[name]=list(dict.fromkeys(field for field in item[:len(fields)]
+                        if type(field)is str and field in fields))
             safe[key]=resource
         elif key in uid_fields:
             safe[key]=value if type(value)is str and len(value)==32 and all(c in '0123456789abcdef'for c in value)else None

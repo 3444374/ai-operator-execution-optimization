@@ -42,6 +42,10 @@ a subsequent query switch still invokes the original session guard. Reference pr
 resources off; omitting feedback remains disabled. Turning the
 external observation tool off still permits existing production feedback and its bounded report;
 this change starts no extra readers or RPCs.
+New diagnostic IDs use the existing 32 lowercase hexadecimal engine identity and uint64
+integer ranges (with -1 for an unbound session). Malformed fields become null with fixed
+`invalid_fields` names before retention or callbacks; values already unavailable at this boundary
+stay unknown/null. No original text or oversized integer is retained in the new diagnostic row.
 The [CPU rejection cases](../../tests/execution_provider/test_resource_rpc_rejection_audit.py)
 check these boundaries with local Futures, not Ray or model execution.
 

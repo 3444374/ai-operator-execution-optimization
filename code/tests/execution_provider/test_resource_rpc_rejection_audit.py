@@ -11,9 +11,13 @@ from src.execution_provider.adapters.lotus_chain_token_batches import RequestSup
 from tests.execution_provider import test_actor_resource_probe as fixture
 
 
+UID = 'a' * 32
+
+
 class RejectedResourceAuditTests(unittest.TestCase):
     def feedback(self, *, reference=False, observer=None):
         feedback, calls, futures = fixture.ActorResourceProbeTests().feedback(reference=reference)
+        feedback.owner._actors.model_ready['engine_uid'] = UID
         self.addCleanup(feedback.close)
         if observer is not None:
             feedback.provider = SimpleNamespace(observe_native=observer, is_running=False,
@@ -22,11 +26,12 @@ class RejectedResourceAuditTests(unittest.TestCase):
 
     def frame(self, *, session=7, native=True, interval=.25):
         packet = fixture.resource_packet(interval=interval)
+        packet['engine_uid'] = UID
         packet['sample']['sources']['host'].update(cpu_metrics_status='observed',
             cpu_counter_sample_sequence=2, cpu_counter_read_start_monotonic_ns=100,
             cpu_counter_read_end_monotonic_ns=200)
         return dict(session_id=session, resources=packet,
-            ipc=dict(native_feedback=(dict(engine_uid=fixture.UID, sequence=12,
+            ipc=dict(native_feedback=(dict(engine_uid=UID, sequence=12,
                 observed_at_s=time.monotonic(), running=1, waiting=0, kv_usage=.1,
                 generation_tokens_total=4, preemptions_total=0) if native else None)))
 
@@ -93,14 +98,14 @@ class RejectedResourceAuditTests(unittest.TestCase):
         frame = self.frame()
         snapshot = self.receive(f, futures, frame)
         self.assertEqual((snapshot.source_uid, snapshot.source_session_id, snapshot.source_sequence),
-                         (fixture.UID, 7, 12))
+                         (UID, 7, 12))
         self.assertIs(snapshot, f.last_native)
         view, = f.resource_samples
         self.assertEqual((view.gpu_busy_pct, view.host_peak_cpu_pct), (10, 20))
         row, = f.resource_rpc_audit
         self.assertTrue(row['native_validation_accepted'])
         self.assertTrue(row['audit_only'])
-        self.assertEqual(row['resource_engine_uid'], fixture.UID)
+        self.assertEqual(row['resource_engine_uid'], UID)
         self.assertEqual(row['resource_session_id'], 7)
         self.assertEqual(len(f.resource_audit), 1)
         self.assertEqual(f.report()['resource_observation']['RPC_counts']['native_eligible'], 1)
@@ -223,9 +228,106 @@ class RejectedResourceAuditTests(unittest.TestCase):
     def test_observer_cannot_mutate_the_retained_diagnostic_row(self):
         def mutate(native, **context):
             context['resource_attempt']['host_cpu_qualified'] = False
+            context['resource_attempt']['invalid_fields'] += ('prompt',)
         f, _, futures = self.feedback(observer=mutate)
         self.assertIsNotNone(self.receive(f, futures, self.frame()))
         self.assertTrue(f.resource_rpc_audit[0]['host_cpu_qualified'])
+        self.assertEqual(f.resource_rpc_audit[0]['invalid_fields'], ())
+
+    def test_malformed_resource_UID_is_unknown_before_report_and_custom_observer(self):
+        marker = 'SYNTHETIC_PRIVATE_SAMPLE_TEXT_IN_RESOURCE_UID'
+        for label, uid in [('text', marker), ('uppercase', 'A'*32), ('nonhex', 'z'*32),
+                           ('short', 'a'*31), ('boolean', True)]:
+            with self.subTest(uid_kind=label):
+                events=[]
+                f, _, futures = self.feedback(observer=lambda native, **c:events.append(c))
+                frame = self.frame(native=False)
+                frame['resources']['engine_uid'] = uid
+                self.receive(f, futures, frame)
+                row, = f.resource_rpc_audit
+                self.assertIsNone(row['resource_engine_uid'])
+                self.assertIn('resource_engine_uid', row['invalid_fields'])
+                self.assertNotIn(marker, json.dumps(f.report(), allow_nan=False))
+                self.assertNotIn(marker, json.dumps(events, allow_nan=False))
+                self.assertEqual(events[0]['resource_attempt'], row)
+                self.assertEqual(f.resource_samples, [])
+                self.assertIsNone(f.last_native)
+
+    def test_rejected_packet_integer_width_is_bounded_before_report_and_observer(self):
+        fields = {'cpu_counter_sample_sequence':'host_cpu_counter_sequence',
+                  'cpu_counter_read_start_monotonic_ns':'host_cpu_read_start_ns',
+                  'cpu_counter_read_end_monotonic_ns':'host_cpu_read_end_ns',
+                  'session_id':'resource_session_id'}
+        for source, target in fields.items():
+            for label, value in [('wide', 1<<20000), ('overflow', 1<<64), ('bool', True), ('negative', -2)]:
+                with self.subTest(field=source, kind=label):
+                    events=[]
+                    f, _, futures = self.feedback(observer=lambda native, **c:events.append(c))
+                    frame = self.frame(native=False)
+                    packet = frame['resources']
+                    holder = packet if source == 'session_id' else packet['sample']['sources']['host']
+                    holder[source] = value
+                    self.receive(f, futures, frame)
+                    # The first serialization occurs before inspecting a single
+                    # field: neither the report nor an arbitrary observer may
+                    # receive an integer that breaks JSON encoding.
+                    report = json.loads(json.dumps(f.report(), allow_nan=False))
+                    observed = json.loads(json.dumps(events, allow_nan=False))
+                    row, = report['resource_observation']['recent_RPC_attempts']
+                    self.assertIsNone(row[target])
+                    if label != 'bool' or source == 'session_id':
+                        self.assertIn(target, row['invalid_fields'])
+                    # The original host-source whitelist already omits bools.
+                    # That earlier absence remains explicitly unknown/null;
+                    # this audit must not invent the lost rejection cause.
+                    self.assertEqual(observed[0]['resource_attempt'], row)
+                    self.assertLess(len(json.dumps(row).encode()), 4096)
+                    self.assertEqual((f.errors, f.resource_rpc_counts['errors']), (0, 0))
+                    self.assertEqual((f.resource_samples, f.resource_audit), ([], []))
+                    f.close()
+                    self.assertTrue(f.report()['snapshot_rpc_terminal_evidence_complete'])
+
+    def test_valid_mismatched_UID_and_uint64_boundaries_remain_diagnostic_facts(self):
+        f, _, futures = self.feedback()
+        frame = self.frame(native=False)
+        packet = frame['resources']
+        packet.update(engine_uid='f'*32, session_id=-1)
+        packet['sample']['sources']['host'].update(cpu_counter_sample_sequence=(1<<64)-1,
+            cpu_counter_read_start_monotonic_ns=0, cpu_counter_read_end_monotonic_ns=(1<<64)-1)
+        self.receive(f, futures, frame)
+        row, = f.resource_rpc_audit
+        self.assertEqual(row['resource_engine_uid'], 'f'*32)
+        self.assertEqual(row['resource_session_id'], -1)
+        self.assertEqual(row['host_cpu_counter_sequence'], (1<<64)-1)
+        self.assertEqual(row['host_cpu_read_start_ns'], 0)
+        self.assertEqual(row['host_cpu_read_end_ns'], (1<<64)-1)
+        self.assertEqual(row['invalid_fields'], ())
+        self.assertEqual(f.resource_samples, [])
+        self.assertFalse(row['native_validation_accepted'])
+        self.assertLess(len(json.dumps(row, allow_nan=False).encode()), 4096)
+
+    def test_all_new_session_index_and_clock_metadata_have_bounded_JSON(self):
+        for label, value in [('wide', 1<<20000), ('bool', True)]:
+            with self.subTest(kind=label):
+                f, _, _ = self.feedback()
+                resource = self.frame()['resources']
+                _, row = f._read_resource(resource, request_index=1, requested_at_s=0., received_at_s=1.)
+                row['host_cpu_raw_interval_s'] = value
+                f.session_id = value
+                attempt = f._audit_resource_rpc(row, native=None, disposition='missing_native',
+                    reason='native_frame_missing', request_index=value,
+                    request_session_id=value, response_session_id=value,
+                    requested_at_s=value, received_at_s=value)
+                f.resource_rpc_counts['evicted'] = value
+                report = json.loads(json.dumps(f.report(), allow_nan=False))
+                for field in ['request_index', 'request_session_id', 'current_session_id', 'response_session_id',
+                              'requested_at_s', 'received_at_s', 'host_cpu_raw_interval_s']:
+                    self.assertIsNone(attempt[field])
+                    self.assertIn(field, attempt['invalid_fields'])
+                self.assertIsNone(report['resource_observation']['RPC_audit_session_id'])
+                self.assertIsNone(report['resource_observation']['RPC_counts']['evicted'])
+                self.assertFalse(attempt['host_cpu_qualified'])
+                self.assertLess(len(json.dumps(attempt).encode()), 4096)
 
 
 if __name__ == '__main__':
