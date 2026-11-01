@@ -1073,3 +1073,18 @@ experiments/results/motivation/fake_cpu/
 [原始分析](motivation/fake_cpu/analysis.md)，数据库预演见[系统画像](motivation/pg18_4_fake/system_profile.md)。
 实际GPU模型、CPU模型、fake、PG18.4预演与当前PostgreSQL载体各自保留身份；判断先核对来源与计时。
 多Job实验从真实重叠与独立参照解释干扰，数据组织和提交变化回到完整查询与任务质量中评价。
+
+<a id="sembench-dag-pattern-observation"></a>
+## SemBench DAG 现象首轮盘点（只读二次分析）
+
+标识`sembench_dag_pattern_inventory_20261101`。这是公开固定源码静态检查与既有结果复用，不是新模型运行、CPU行为回放验收或通用调度器交付；新增模型调用为0。研究问题、覆盖表、候选现象与反例只在[阶段方案](../plans/数据组织.md#dag-resource-observation)维护，扫描／复用工程资格仍按各自原报告解释。
+
+| 证据身份 | 固定来源与范围 | 本轮可支持／不可支持的判断 |
+|---|---|---|
+| `UPSTREAM-STATIC-INDEX.json` | SemBench `c814e380`完整tree及24份公开Python文件逐一校验Git blob后AST解析；SHA-256 `406b536b18bc89913ee579192124bd74c47d4f002ae6e3c1a730d81fb647a42c` | 确认五场景目录与部分原查询的数据流／配置分支；静态调用点不等于运行次数、物理DAG或55题均已接入。Movie Q9的两种路径不能串联计数；MMQA的a/b变体不累加为模型重复 |
+| 既有Movie／Animals完整报告 | [main原查询实测](diagnostics/main_queries_20261015/README.md)，Movie Q1/Q2/Q3与Animals Q1各按原模型／规模／计时边界 | 有真实模型查询／质量证据，缺跨完整SemBench DAG物理画像；Animals Q1的64图不覆盖Q7、音频或新图文records链 |
+| `fixed-batch12-1adc-execution` | `1adcbcca`，原Q1前512条，固定C1/C2反序两轮，共2048成功；原`HANDOFF.json` SHA-256 `3bccf2743070d89b4448a75a570d0d360ae60b36216f042b85ba52478bafed05` | 模型段／供给间隙改善与冷query无稳定收益并存；保留P99、输出差异和full观测开销。单Filter不能冒充多算子链或新动态策略 |
+| `DAG-RESOURCE-ANALYSIS.json`／`MODEL-INTERNAL-PHASE-RESOURCES.json` | `a421c9d4`，项目自定义四记录MMF、B1/C1，同一12请求的两份分析；SHA-256依次`3d7937d3b9658f6fe9229ac3416de892742ab2038618cc08be7584af649813ef`／`9de48796dbf4114681302de7e665d7efc293fbab33ed81c4bd0a4c68fa303f2f` | 有关联的host／kernel／copy、重叠和驻留观察；不是SemBench原查询。初始／后续迭代均混合host与GPU工作，不据此认定SM／HBM瓶颈、P/D收益或按算子独占显存 |
+| 旧Q3重叠投影 | `2212e331`的`MovieQ3-c1-on`／`MovieQ3-c2-on`，二次投影`EXISTING-EVIDENCE.json` SHA-256 `639fb8d77cbf4447f34dd28d3002767c5a84467b8ee26a7456f3b80192ae476f` | 已有流水重叠是继续隐藏准备成本的反例；捕获完整性未知，未捕获kernel区间不能当GPU空闲，旧树不转授新R128资格 |
+
+仓库外上述原件按文件名／运行标识和校验值经既有artifact交接获取；不在Git复制输入、模型原始输出、站点路径或完整临时日志。12请求的两份分析不重复计数，历史失败、unknown、Map无gold及Q3 `COUNT7/gold14`质量失败均保留。本轮没有重判此前可比性失败，也没有从kernel时间、RSS求和、API包络或GPU busy推出完整query收益。
