@@ -81,6 +81,11 @@ class DAGObservationTests(unittest.TestCase):
         self.assertEqual(r['stages'][0]['windows'][0]['union_ns'], 2)
         event['engine_uid'] = 'other'
         self.assertEqual(self.run_capture([a], [event])['stages'][0]['windows'], [])
+        event['engine_uid'] = 'engine'
+        event['identities'][0]['call_id'] = None
+        r = self.run_capture([a], [event])
+        self.assertEqual(r['native_call_aliases'], [])
+        self.assertEqual(r['issues']['event_member_unresolved'], 1)
 
     def test_ready_wait_and_backpressure_do_not_invent_exact_barrier_cause(self):
         a = call()

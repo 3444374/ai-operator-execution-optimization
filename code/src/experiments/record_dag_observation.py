@@ -189,6 +189,8 @@ def summarize_capture(root, description, *, cpu_spans=()):
     def event_calls(e):
         found = []
         for i in e.get('identities') or e.get('members') or []:
+            if not isinstance(i.get('call_id'), str) or not i['call_id']:
+                issues.append('event_member_unresolved'); continue
             if description.get('query_id') is not None and i.get('query_id') != description['query_id']:
                 continue
             candidates = identities[(i.get('query_id'), i.get('call_id'))]
