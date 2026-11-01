@@ -203,6 +203,42 @@ Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`�
 缓存写入是查询局部资格，不证明物理 GPU/后代退出；unknown、held、借用未释放或账本不完整
 不会发布新 hint。原冻结来源的功能实测与当前代码整合分别判断，见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)；短查询提示复用不证明反馈调节或搜索收益。
 
+### rolling 请求的上探与条件续扫
+
+显式 rolling `admission.kind="resource_feedback"` 使用
+[`AscendingRequestController`](../submission_control/request_scan.py)；解析后的
+`search_policy="ascending"` 区分新策略与 `search_policy="reference"` 的旧回访策略。
+普通非 token、批槽反馈及具名历史配置仍使用 reference，默认固定路径不安装反馈。
+新策略复用现有需求／字节背压、新鲜 native 反馈、窗口采集、工作量配对和几何进度；
+有可比收益就在候选档确认并继续上探，不逐档强制 A-B-A，也不在接受后重跑整段参考测量。
+平台、回退或不可比／冲突证据才触发局部确认；真实压力仍收缩新请求额度，让已归属成员排空。
+近峰选择复用 `select_near_peak`，只纳入有独立等工作量配对的已测档位，不能推断未测档位或全局最优。
+
+resident 的新策略把模型寿命与提示状态分开：完整 query 消费、解释、结果投影成功，且调用、
+source、Core credits 和 snapshot RPC 全部结清后，Movie Session 才调用
+`PreparedRecordsCore.confirm_query_feedback(completed=True)` 提交内存提示。
+直接公共调用也须在其完整结果处理后明确确认；模型 EOF 只暂存，未确认、失败、取消或 unknown
+不发布新状态。空查询不以未测默认值覆盖健康提示。
+提示绑定实际 owner engine UID、模型／生成／方法、B、原生容量、Core／IPC 边界和完整策略选项；
+新 query ID 不单独使其失效。下一 query 在已确认档位测本次工作，未完搜索条件续扫；
+已完成选择经新鲜验证后保持并监测，工作或性能改变才局部再探。旧速率、RPC/session 和结果账本不复用。
+阶段关闭的 `can_continue=false` 与 `search_can_continue_next_query` 分开，旧阶段永不重开。
+此提示不是磁盘 `admission_cache`，也不是跨 owner／跨任务相似度学习。
+
+资源接线消费唯一 native snapshot 和实际 owner-ready 容量，向
+[`propose_kv_window`](../submission_control/resource_step.py) 传递身份／时钟／KV池及已准备请求成本。
+只有已证明的同引擎单池布局、映射时钟、新鲜使用量、完整 prompt＋最大输出成本以及已提交的未来
+分配上界齐全时，才允许按可容纳的 ready 前缀提出大步；已提交成本额外保守预留，Core／IPC硬边界不变。
+现有 backend 回执未证明 `kv_cost_model` 和 `mapped_resource_clock_domain`，尚未完成这些前提的实机资格；
+缺失或未估算的请求保持 unknown，正常走有审计理由的几何／性能回退。
+native 排队、KV压力和抢占已参与门控及降档，不能说完全没有资源反馈；
+NVML busy／空闲显存、CPU／主机内存与 MFU／HBM 未成为可靠的请求步幅成本模型。
+不得把这条受校验接口或其 CPU 正例称为已实现物理资源极限搜索。
+
+以上是 CPU 待独审候选，真实 Ray／模型和性能待验。旧 `0585e9bf` 同条件 off 配对中，
+复用 Q1 固定 RF 为 17.275 秒、旧动态 RD 为 74.621 秒；这是单配对负结果，不能改标新策略成绩。
+模拟／CPU 轨迹只验证状态机，不能从旧回访区间相减后报告提速。
+
 
 维护矩阵的 `base-config.json.shared_resources` 可显式提供本轮已封存的共同资源上限
 （`cpu_affinity_slots`、`max_sampled_owned_rss_bytes`、`max_owned_shm_bytes`，及原 host

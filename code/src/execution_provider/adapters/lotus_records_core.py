@@ -92,16 +92,18 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
             raise ValueError("feedback GPU IDs must be physical UUIDs when supplied")
         options = {k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")}
         if request_feedback:
-            from src.scheduling.submission_control.stage_work import default_supply_feedback_options
+            from src.scheduling.submission_control.stage_work import default_request_feedback_options
             if gpu_ids:
                 raise ValueError('rolling request feedback uses native stats; physical GPU UUID sampling is not connected')
             if maximum != 1:
                 raise ValueError('rolling request feedback starts at one without a historical search hint')
-            config = replace(default_supply_feedback_options(), **options)
+            config = replace(default_request_feedback_options(), **options)
             if config.poll_interval_s > config.window_s:
                 raise ValueError('request feedback poll interval must fit the measurement window')
         else:
             config = ResourceFeedbackConfig(**options)
+            if config.search_policy != 'reference':
+                raise ValueError('ascending request search requires rolling_refill')
         result.update(owner_max_inflight=resources.max_active_batches,
             initial_window=maximum, admission=dict(kind="resource_feedback", gpu_ids=list(gpu_ids), **asdict(config)))
     return result

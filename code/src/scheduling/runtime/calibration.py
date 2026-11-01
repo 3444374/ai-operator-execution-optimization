@@ -635,6 +635,8 @@ def run_admission_query(identity, execute, *, initial_window, maximum, cache_dir
     policy=dict(strategy=strategy,initial_window=initial_window,maximum=maximum)
     if options is not None:
         policy['options']=asdict(options)
+        if policy['options'].pop('search_policy') != 'reference':
+            raise ValueError('ascending request hints belong to the resident rolling query contract')
     path=Path(cache_dir)/('admission-'+_digest(dict(identity=signature,policy=policy))+'.json')
     cached=None;lookup_error=None
     if reuse:

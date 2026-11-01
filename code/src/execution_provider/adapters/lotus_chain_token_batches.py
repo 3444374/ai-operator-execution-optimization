@@ -152,6 +152,13 @@ class BatchSupplyFeedback:
         return dict(kind='fixed_B_batch_supply_feedback', initial_batches=1,
                     max_batches=self.config.max_batches)
 
+    def _reset_controller(self, stream):
+        self.controller.reset(1, len(stream.run.current)*len(stream._stage_ids))
+        self._set_window(1)
+
+    def _decide(self, observation, supply, live, queued, admitted):
+        return self.controller.update_supply(observation, supply)
+
     def event(self, action, key):
         if action == 'submitted':
             self.submitted += 1
@@ -170,8 +177,7 @@ class BatchSupplyFeedback:
         self.transition.clear()
         self.controller = self._new_controller()
         # Declaration bounds possible calls; no token reference or gold is read.
-        self.controller.reset(1, len(stream.run.current)*len(stream._stage_ids))
-        self._set_window(1)
+        self._reset_controller(stream)
         if self.provider is None and self.owner._expected_count:
             self._snapshot_ready = Event()
             self.provider = NonBlockingMetricsObservationProvider(self.sample,
@@ -556,15 +562,17 @@ class BatchSupplyFeedback:
                 local_capture_start_s=now-self.started, local_capture_end_s=o.observed_at_s-self.started),
             source_exhausted=stream._phase_eof,
             active_requests=requests if self.request_control else None)
-        decision = self.controller.update_supply(o, state)
+        decision = self._decide(o, state, live, queued, admitted)
         if decision.window != self._window():
             self.transition = admitted
             self._set_window(decision.window)
 
     def end_phase(self):
         if self.controller is not None:
-            self.phases.append(dict(self.controller.report(), session_id=self.session_id,
-                                    phase_closed=True, can_continue=False))
+            report = self.controller.report()
+            self.phases.append(dict(report, session_id=self.session_id,
+                                    phase_closed=True, search_can_continue_next_query=report['can_continue'],
+                                    can_continue=False))
             self.controller = None
         if self.provider is not None:
             self.provider.pause()
@@ -609,7 +617,7 @@ class BatchSupplyFeedback:
             startup_capacity=dict(member_R=self.owner.resources.max_active_batches,
                 declared_native_sequences=self.owner.engine.max_num_seqs,
                 declared_native_tokens=self.owner.engine.max_num_batched_tokens,
-                observed_native_capacity=None,
+                observed_native_capacity=(self.owner._actors.model_ready or {}).get('native_capacity'),
                 observed_IPC=(self.owner._actors.model_ready or {}).get('limits'),
                 IPC=asdict(self.owner._actors.limits)),
             no_capacity_deleted=True, online_cost_in_query=True, resource_benefit_proven=False)
@@ -630,8 +638,75 @@ class RequestSupplyFeedback(BatchSupplyFeedback):
         return self.config
 
     def _new_controller(self):
+        if self.config.search_policy == 'ascending':
+            from src.scheduling.submission_control.request_scan import AscendingRequestController
+            return AscendingRequestController(self.owner.resources.max_active_batches, self.config)
         from src.scheduling.submission_control.stage_work import RequestSupplyFeedbackController
         return RequestSupplyFeedbackController(self.owner.resources.max_active_batches, self.config)
+
+    def _reset_controller(self, stream):
+        if self.config.search_policy != 'ascending':
+            return super()._reset_controller(stream)
+        from src.scheduling.runtime.calibration import identity_signature
+        ready = self.owner._actors.model_ready or {}
+        uid = ready.get('engine_uid')
+        # Scope is this actual resident owner, not a disk/global learned policy.
+        # Exact method/generation/B/limits bind applicability; fresh measured
+        # descriptors still validate changed work/cache mix in the controller.
+        self._hint_identity = (None if not uid else identity_signature(dict(
+            hardware=dict(owner_engine_uid=uid, native_capacity=ready.get('native_capacity')),
+            model=asdict(self.owner.engine),
+            generation=dict(stages=[asdict(self.owner._stage_bindings[s].generation) for s in stream._stage_ids]),
+            execution=dict(options=asdict(self.config), B=asdict(self.owner.prepared_batching),
+                           capacity=asdict(self.owner.core.capacity.limits),
+                           IPC=asdict(self.owner._actors.limits)),
+            workload=dict(stages=[dict(stage_id=s, method=asdict(self.owner._stage_bindings[s].method),
+                                      model_role=self.owner._stage_bindings[s].model_role) for s in stream._stage_ids]),
+            measurement=dict(work_unit='complete_model_request', policy=self.controller.strategy))))
+        hint = (None if self._hint_identity is None else
+                self.owner._request_scan_hints.get(self._hint_identity))
+        window = 1 if hint is None else hint['selected_window']
+        self.controller.reset(window, len(stream.run.current)*len(stream._stage_ids), search_hint=hint)
+        self._set_window(window)
+
+    def _decide(self, o, supply, live, queued, admitted):
+        if self.config.search_policy != 'ascending':
+            return super()._decide(o, supply, live, queued, admitted)
+        from src.scheduling.submission_control.resource_step import NativeKVFrame, RequestKVWork, propose_kv_window
+        ready = self.owner._actors.model_ready or {}
+        capacity = ready.get('native_capacity') or {}
+        native = self.last_native
+        frame = None if native is None else NativeKVFrame(
+            native.source_uid, native.source_session_id, native.source_sequence,
+            native.source_observed_at_s, native.received_at_s,
+            capacity.get('kv_cache_blocks'), capacity.get('kv_cache_block_tokens'), native.kv_usage,
+            # Existing receipts do not prove the KV layout/cost model or a
+            # cross-host clock mapping. Missing proof stays unknown. In
+            # particular NVML free bytes cannot fill either field.
+            clock_domain=capacity.get('mapped_resource_clock_domain'),
+            cost_model=capacity.get('kv_cost_model'))
+        estimates = self.owner._token_organizer._estimates
+        def work(record):
+            estimate = estimates.get(record.key)
+            return RequestKVWork((record.key.session_id, record.key.sequence),
+                None if estimate is None else estimate[1], None if estimate is None else estimate[2])
+        # Never rescan input or manufacture mean costs to force a jump. Only
+        # actual prepared/tokenized requests qualify; an uncosted prefix takes
+        # the geometric fallback while native pressure still governs shrinking.
+        step = propose_kv_window(frame, now_s=o.observed_at_s, max_age_s=self.options.window_s,
+            expected_engine_uid=ready.get('engine_uid'), expected_session_id=self.session_id,
+            current_window=self._window(), hard_limit=self.owner.resources.max_active_batches,
+            ready=tuple(work(r) for r in queued if r.key not in admitted),
+            committed=tuple(work(r) for r in live if r.key in admitted))
+        return self.controller.update_supply(o, supply, resource_step=step)
+
+    def end_phase(self):
+        if (self.config.search_policy == 'ascending' and self.controller is not None
+                and self._hint_identity is not None):
+            hint = self.controller.export_hint()
+            if hint is not None:
+                self.owner._request_scan_pending[self._hint_identity] = hint
+        super().end_phase()
 
     def _inflight(self, batches, requests):
         return requests
@@ -643,7 +718,10 @@ class RequestSupplyFeedback(BatchSupplyFeedback):
         self.owner._token_organizer.request_window = value
 
     def _report_identity(self):
-        return dict(kind='fixed_B_request_supply_feedback', initial_requests=1,
+        initial = (self.phases[0]['initial_window'] if self.phases else
+                   getattr(self.controller, '_initial_window', 1))
+        return dict(kind='fixed_B_request_supply_feedback', initial_requests=initial,
+            declared_cold_initial_requests=1,
             max_requests=self.owner.resources.max_active_batches,
             admission_unit='single_model_requests',
             shrink_policy='stop new selections; drain already admitted members without cancelling',
