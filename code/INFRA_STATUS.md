@@ -223,7 +223,7 @@ B只组织每次传输，批成员提交后不追加；请求、驻留、字节�
 默认无候选次数／探索时间硬停止、不读gold或全表token参考。新本地`search_policy="ascending"`候选
 在可比收益后继续上探，仅平台／回退／冲突时局部确认；显式`reference`保留旧逐档回访。
 候选接通健康 resident 查询的条件提示续扫；新资源机会可唤醒旧选择，跨query旧速率区间只作失效判据。
-同一snapshot RPC可读模型actor分配设备的NVML和主机CPU，多指标支持时多试一个几何点；
+同一snapshot RPC可读模型actor分配设备的NVML和主机CPU；联合空闲份额在ready供给／硬R内确定可变大步探测目标，
 精确请求成本只辅助步幅，不是试探前提。显式预算、硬R／字节／unknown责任保留，无动态B或实机收益资格。
 具体判据、边界与旧动态负结果见[策略说明](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
 新策略仅有[CPU状态机](tests/scheduling/test_ascending_request_scan.py)、[成本边界](tests/scheduling/test_resource_step.py)

@@ -34,23 +34,23 @@ class ResourceProbeTests(unittest.TestCase):
         self.assertIsNone(self.observation.completed_input_work_total)
         self.assertEqual(self.supply.ready_work, ())
         result = self.opportunity()
-        self.assertEqual((result.kind, result.extra_geometric_steps), ("native_headroom", 0))
+        self.assertEqual((result.kind, result.probe_target_window), ("native_headroom", None))
         self.assertFalse(result.evidence["cost_model_required"])
         self.assertTrue(result.evidence["tentative"])
         self.assertFalse(result.evidence["full_query_benefit_proven"])
 
-    def test_two_fresh_device_and_host_idle_signals_allow_one_extra_geometric_step(self):
+    def test_two_fresh_device_and_host_idle_signals_choose_a_bounded_tentative_target(self):
         result = self.opportunity((self.view(1), self.view(2)))
-        self.assertEqual((result.kind, result.extra_geometric_steps), ("idle_device_headroom", 1))
+        self.assertEqual((result.kind, result.probe_target_window), ("idle_device_headroom", 28))
         self.assertEqual(result.evidence["physical_request_indices"], [1, 2])
         self.assertEqual(result.condition["gpu_uuids"], ["GPU-a"])
         self.assertFalse(result.evidence["capacity_estimate"])
         self.assertFalse(result.evidence["GPU_busy_is_MFU"])
         self.assertFalse(result.evidence["free_VRAM_to_request_conversion"])
 
-    def test_one_low_gpu_value_cannot_trigger_the_extra_step(self):
+    def test_one_low_gpu_value_cannot_choose_a_physical_probe_target(self):
         result = self.opportunity((self.view(1, gpu_busy_pct=0.),))
-        self.assertEqual((result.kind, result.extra_geometric_steps), ("native_headroom", 0))
+        self.assertEqual((result.kind, result.probe_target_window), ("native_headroom", None))
         self.assertEqual(result.reason, "two_distinct_physical_samples_required")
 
     def test_unknown_physical_metrics_preserve_ordinary_native_opportunity(self):
@@ -58,7 +58,7 @@ class ResourceProbeTests(unittest.TestCase):
                         {"gpu_busy_pct": math.nan}, {"host_peak_cpu_pct": math.inf}):
             with self.subTest(changes=changes):
                 result = self.opportunity((self.view(1), self.view(2, **changes)))
-                self.assertEqual((result.kind, result.extra_geometric_steps), ("native_headroom", 0))
+                self.assertEqual((result.kind, result.probe_target_window), ("native_headroom", None))
                 self.assertEqual(result.reason, "physical_busy_metrics_unknown_or_invalid")
 
     def test_a_host_hotspot_or_busy_gpu_prevents_only_the_accelerated_trial(self):
@@ -66,7 +66,7 @@ class ResourceProbeTests(unittest.TestCase):
                         {"gpu_busy_pct": 50.}, {"gpu_busy_pct": 90.}):
             with self.subTest(changes=changes):
                 result = self.opportunity((self.view(1), self.view(2, **changes)))
-                self.assertEqual((result.kind, result.extra_geometric_steps), ("native_headroom", 0))
+                self.assertEqual((result.kind, result.probe_target_window), ("native_headroom", None))
                 self.assertEqual(result.reason, "physical_idle_majority_not_observed")
 
     def test_latest_hot_sample_is_not_ignored_in_favour_of_older_idle_samples(self):
@@ -141,7 +141,7 @@ class ResourceProbeTests(unittest.TestCase):
         for changes in ({"waiting": 1}, {"memory_pressure": True}, {"kv_usage": .51}):
             with self.subTest(changes=changes):
                 result = self.opportunity(samples, observation=replace(self.observation, **changes))
-                self.assertEqual((result.kind, result.extra_geometric_steps), ("none", 0))
+                self.assertEqual((result.kind, result.probe_target_window), ("none", None))
         self.assertEqual(self.opportunity(samples, preemption_increased=True).kind, "none")
 
     def test_unknown_or_old_native_feedback_does_not_prove_a_probe_opportunity(self):
@@ -195,7 +195,7 @@ class ResourceProbeTests(unittest.TestCase):
         result = self.opportunity((self.view(1), self.view(2)), current_window=32,
             observation=replace(self.observation, inflight=32),
             supply=replace(self.supply, active_requests=32))
-        self.assertEqual((result.kind, result.extra_geometric_steps), ("idle_device_headroom", 1))
+        self.assertEqual((result.kind, result.probe_target_window), ("idle_device_headroom", 35))
         result = self.opportunity(current_window=37,
             observation=replace(self.observation, inflight=37),
             supply=replace(self.supply, active_requests=37))

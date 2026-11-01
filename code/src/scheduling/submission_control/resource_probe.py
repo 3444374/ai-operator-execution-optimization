@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from copy import deepcopy
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -34,7 +35,7 @@ class ResourceProbeView:
 @dataclass(frozen=True)
 class ResourceOpportunity:
     kind: Literal["none", "native_headroom", "idle_device_headroom"]
-    extra_geometric_steps: int
+    probe_target_window: int | None
     reason: str
     condition: dict
     evidence: dict
@@ -50,11 +51,11 @@ def resource_probe_opportunity(observation: AdmissionObservation, supply: Supply
         preemption_increased=False, low_kv_usage=.5) -> ResourceOpportunity:
     """Authorize a *trial opportunity*, leaving legal candidates to the caller.
 
-    Ordinary native headroom permits ordinary geometric probing without a cost
-    estimate. Two distinct fresh RPC samples with majority-idle devices/host permit
-    looking one geometric point further. This is a public engineering criterion
-    for reversible experimentation, not 1/util scaling, spare compute estimation
-    or proof of full-query benefit. Existing pressure and ownership gates win.
+    Native headroom permits geometric probing without a cost estimate. Two
+    qualified physical reads choose a tentative point within the ready-work/R
+    interval, further along when the joint observed idle share is larger. This
+    search-position heuristic is not a request-capacity estimate or 1/util
+    scaling. Benefit/pressure validation and existing ownership gates still win.
     """
     if (type(current_window) is not int or type(hard_limit) is not int
             or not 1 <= current_window <= hard_limit
@@ -67,15 +68,21 @@ def resource_probe_opportunity(observation: AdmissionObservation, supply: Supply
         full_query_benefit_proven=False, capacity_estimate=False,
         physical_scope="UUID-bound device peak busy and host-wide per-CPU peak busy",
         GPU_busy_is_MFU=False, free_VRAM_to_request_conversion=False,
+        stage_supply=dict(ready_work=[asdict(w) for w in s.ready_work],
+            local_capacity=deepcopy(s.local_capacity),
+            capacity_blocked=s.capacity_blocked, upstream_pending=s.upstream_pending,
+            source_exhausted=s.source_exhausted,
+            scope='declared stage units and local ownership, not calibrated physical demand'),
+        action_scope='request permits; not CPU/GPU placement, I/O scheduling or a joint resource allocator',
         native=dict(running=o.running, waiting=o.waiting, kv_usage=o.kv_usage,
             memory_pressure=o.memory_pressure, preemptions_total=o.preemptions_total,
             preemption_increased=preemption_increased),
         physical_samples_supplied=len(physical_samples) if type(physical_samples) is tuple else None)
 
-    def decision(kind, reason, devices=()):
-        return ResourceOpportunity(kind, int(kind == "idle_device_headroom"), reason,
-            dict(kind=kind, native="uncongested" if kind != "none" else reason,
-                 gpu_uuids=list(devices)), evidence)
+    def decision(kind, reason, devices=(), *, target=None, condition=None):
+        return ResourceOpportunity(kind, target, reason,
+            condition or dict(kind=kind, native="uncongested" if kind != "none" else reason,
+                              gpu_uuids=list(devices)), evidence)
 
     if (not isinstance(expected_engine_uid, str) or not expected_engine_uid
             or type(expected_session_id) is not int or expected_session_id < 0):
@@ -142,10 +149,27 @@ def resource_probe_opportunity(observation: AdmissionObservation, supply: Supply
         if (not all(_finite(v) and 0 <= v <= 100
                     for v in (view.gpu_busy_pct, view.host_peak_cpu_pct))):
             return regular("physical_busy_metrics_unknown_or_invalid")
-        if view.gpu_busy_pct >= 50 or view.host_peak_cpu_pct >= 50:
-            return regular("physical_idle_majority_not_observed")
+    gpu_busy = max(v.gpu_busy_pct for v in pair)
+    host_busy = max(v.host_peak_cpu_pct for v in pair)
+    if gpu_busy >= 50 or host_busy >= 50:
+        # This is an observed busy condition, unlike a missing/invalid read.
+        # Remembering that distinction permits a genuine later busy->idle
+        # transition without turning every coverage gap into a new opportunity.
+        evidence['physical_qualification'] = 'physical_idle_majority_not_observed'
+        return decision('native_headroom', 'physical_idle_majority_not_observed', devices,
+            condition=dict(kind='physical_busy', native='uncongested', gpu_uuids=list(devices)))
+    idle_share = min(1-gpu_busy/100, 1-host_busy/100, 1-o.kv_usage)
+    endpoint = min(hard_limit, current_window+s.ready_items)
+    target = current_window+max(1, math.floor((endpoint-current_window)*idle_share))
     evidence.update(physical_qualification="two_fresh_idle_majority_samples",
         physical_request_indices=[v.request_index for v in pair],
         physical_considered=[asdict(v) for v in pair],
-        idle_majority_rule="each device and host peak busy < 50 percent; one extra geometric trial only")
-    return decision("idle_device_headroom", "two_fresh_idle_majority_samples", devices)
+        idle_majority_rule="device and host peak busy < 50 percent; not a hardware capacity boundary",
+        probe_position=dict(rule='C + max(1, floor((min(R,C+ready)-C)*joint_idle_share))',
+            current_window=current_window, hard_limit=hard_limit, ready_items=s.ready_items,
+            interval_end=endpoint, gpu_busy_pct=gpu_busy, host_peak_cpu_pct=host_busy,
+            kv_usage=o.kv_usage, joint_idle_share=idle_share, target=target,
+            scope='reversible search position, not predicted sustainable request capacity'))
+    return decision("idle_device_headroom", "two_fresh_idle_majority_samples", devices, target=target,
+        condition=dict(kind='idle_device_headroom', native='uncongested',
+                       gpu_uuids=list(devices), idle_share=idle_share))

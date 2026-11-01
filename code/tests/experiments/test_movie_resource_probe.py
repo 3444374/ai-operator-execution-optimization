@@ -16,7 +16,7 @@ GPU = 'GPU-00000000-0000-0000-0000-000000000001'
 
 
 class MovieResourceProbeTests(unittest.TestCase):
-    def test_actor_packet_on_same_snapshot_rpc_selects_an_extra_geometric_probe_and_actuates_Core(self):
+    def test_actor_packet_on_same_snapshot_rpc_selects_a_headroom_sized_probe_and_actuates_Core(self):
         results, first_windows = [], []
         for physical in (False, True):
             with self.subTest(synthetic_physical_observation=physical):
@@ -54,17 +54,19 @@ class MovieResourceProbeTests(unittest.TestCase):
                 self.assertTrue(packets, 'the actor resource method must actually be called over snapshot RPC')
                 first = next(row for row in phase['history'] if row['reason'] == 'performance_probe')
                 first_windows.append(first['window'])
-                self.assertEqual((first['before'], first['window']), (1, 4 if physical else 2),
+                self.assertEqual((first['before'], first['window']), (1, 6 if physical else 2),
                                  str(phase['step_decisions']))
                 decision = phase['step_decisions'][0]
                 self.assertEqual(decision['source'], 'resource_feedback_probe')
                 self.assertFalse(decision['resource_target_accepted'], 'no exact KV cost model was supplied')
                 self.assertIsNone(decision['evidence']['cost_model'])
                 if physical:
+                    self.assertEqual(decision['requested_probe_target'], 6)
+                    self.assertTrue(decision['probe_target_accepted'])
                     self.assertEqual(decision['resource_observation']['physical_qualification'],
                                      'two_fresh_idle_majority_samples')
-                    self.assertGreaterEqual(close['async_token_batches']['peak_requests'], 4)
-                    self.assertTrue(any(batch['C_request'] == 4 and batch['members'] > 1
+                    self.assertGreaterEqual(close['async_token_batches']['peak_requests'], 6)
+                    self.assertTrue(any(batch['C_request'] == 6 and batch['members'] > 1
                                         for batch in close['async_token_batches']['recent_batches']))
                 self.assertEqual(query['backend_report']['result'], {'reviewId': ['1', '3', '5', '7', '9']})
                 classification = query['backend_report']['quality']['classification_audit']
@@ -105,7 +107,7 @@ class MovieResourceProbeTests(unittest.TestCase):
                     token_work=[(call['source_position'], call['text'], call['prompt_tokens'],
                                  call['completion_tokens'], call['prompt_computed_tokens'],
                                  call['prompt_cached_tokens']) for call in calls]))
-        self.assertEqual(first_windows, [2, 4])
+        self.assertEqual(first_windows, [2, 6])
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0], results[1])
 

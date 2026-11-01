@@ -99,13 +99,35 @@ class AscendingRequestController(SupplyFeedbackController):
         # A weaker observation is not a reason to raise concurrency. A newly
         # observed opportunity, more costed ready work, or a stronger physical
         # idle signal can reopen a local trial. Repeated polls cannot.
+        if current['kind'] == 'physical_busy':
+            return False
         if current['kind'] == 'native_headroom':
             return previous is None
+        if (current['kind'] == 'idle_device_headroom' and previous is not None
+                and previous.get('kind') == current['kind']
+                and previous.get('gpu_uuids') == current.get('gpu_uuids')):
+            before, after = previous.get('idle_share'), current.get('idle_share')
+            return before is None or after is not None and after > before*(1+self.options.min_gain)
         if current['kind'] == 'costed_resource_opportunity' and previous is not None:
             if previous.get('kind') == current['kind']:
                 target = previous.get('target')
                 return type(target) is not int or current['target'] > target
         return True
+
+    def _remember_resource_condition(self):
+        current, previous = self._resource_condition(), self._last_resource_condition
+        if current is None:
+            return
+        # Unknown physical coverage supplies only native evidence. It cannot
+        # erase the last qualified physical condition or manufacture its return.
+        if current['kind'] == 'native_headroom' and previous is not None:
+            return
+        if (current['kind'] == 'idle_device_headroom' and previous is not None
+                and previous.get('kind') == current['kind']
+                and previous.get('gpu_uuids') == current.get('gpu_uuids')
+                and current.get('idle_share', 0) <= previous.get('idle_share', 0)*(1+self.options.min_gain)):
+            return
+        self._last_resource_condition = current
 
     def _historical_performance_changed(self, point):
         """Old bands invalidate conditions; they never score a new winner."""
@@ -128,7 +150,12 @@ class AscendingRequestController(SupplyFeedbackController):
         self.work_epoch += 1
         self._tested = {}
         if rebase:
-            self._search.rebase_work(self._work_context(point))
+            self._search.work_context = self._work_context(point)
+            self._search.verified_window = None
+            for row in self._search.points.values():
+                if row['outcome'] != 'pressure':
+                    row['outcome'] = 'pending'
+            # Invalid scores do not refund already spent per-candidate attempts.
         self._terminal = self._hint_terminal = None
         self._growth_stopped, self._stop_reason = False, None
         self.evaluations.append(dict(kind=reason, work_epoch=self.work_epoch,
@@ -174,10 +201,11 @@ class AscendingRequestController(SupplyFeedbackController):
             return self._compare(candidate, o)
         if self._reference is None:
             context = self._work_context(point)
-            changed = self._cached_context is not None and not self._same_work(self._cached_context, context)
-            performance_changed = (self._state_validation and self._hint_terminal is not None
+            prior_work = self._cached_context or self._search.work_context
+            changed = prior_work is not None and not self._same_work(prior_work, context)
+            performance_changed = (self._state_validation
                                    and self._historical_performance_changed(point) is not False)
-            resource_changed = self._state_validation and self._hint_terminal is not None and self._resource_changed()
+            resource_changed = self._state_validation and self._resource_changed()
             self._cached_context = None
             if changed:
                 self._new_epoch(point, 'cached_work_changed')
@@ -194,12 +222,16 @@ class AscendingRequestController(SupplyFeedbackController):
             self._clear_point()
             if self._state_validation:
                 self._state_validation = False
-                if changed:
+                if changed or performance_changed:
                     # Revalidate locally at a lower quota instead of treating a
                     # new work mix as proof for either the old rates or C=1.
-                    return self._probe(max(1, self.current_window//2), o, 'work_changed_probe')
-                if performance_changed or resource_changed:
-                    self._last_resource_condition = self._resource_condition()
+                    lower = max(1, self.current_window//2)
+                    if lower != self.current_window:
+                        return self._probe(lower, o,
+                            'work_changed_probe' if changed else 'condition_changed_probe')
+                    return self._next_trial(o)
+                if resource_changed:
+                    self._remember_resource_condition()
                     return self._next_trial(o)
                 if self._hint_terminal is not None:
                     self._terminal = self._hint_terminal
@@ -213,6 +245,7 @@ class AscendingRequestController(SupplyFeedbackController):
             self._clear_point()
             self._reference = point
             resources_changed = self._resource_changed()
+            self._remember_resource_condition()
             if changed or evidence['outcome'] in ('gain', 'regression') or resources_changed:
                 resource_only = resources_changed and not changed and evidence['outcome'] not in ('gain', 'regression')
                 if resource_only:
@@ -223,7 +256,6 @@ class AscendingRequestController(SupplyFeedbackController):
                 self._search.work_context = self._work_context(point)
                 self._search.verified_window = point['window']
                 if resource_only:
-                    self._last_resource_condition = self._resource_condition()
                     return self._next_trial(o)
                 lower = max(1, self.current_window//2)
                 if lower != self.current_window:
@@ -273,23 +305,28 @@ class AscendingRequestController(SupplyFeedbackController):
                 and (step.target_window not in self._search.points or step.target_window in higher)):
             target = step.target_window
             source = 'costed_resource_headroom'
-        elif opportunity is not None and opportunity.kind != 'none' and higher:
-            target = sorted(higher)[min(opportunity.extra_geometric_steps, len(higher)-1)]
-            source, reason = 'resource_feedback_probe', opportunity.reason
+        elif opportunity is not None and opportunity.kind != 'none':
+            requested = opportunity.probe_target_window
+            if (type(requested) is int and self._confirmed_window < requested <= self._search.ceiling
+                    and (requested not in self._search.points or requested in higher)):
+                target = requested
+            if target is not None:
+                source, reason = 'resource_feedback_probe', opportunity.reason
         self.step_decisions = (self.step_decisions + [dict(at_s=o.observed_at_s-self.started,
             from_window=self._confirmed_window, target=target, source=source, reason=reason,
             evidence=None if step is None else deepcopy(step.evidence), work_epoch=self.work_epoch)])[-64:]
         if opportunity is not None:
             self.step_decisions[-1]['resource_observation'] = deepcopy(opportunity.evidence)
+            self.step_decisions[-1]['requested_probe_target'] = opportunity.probe_target_window
+            self.step_decisions[-1]['probe_target_accepted'] = (source == 'resource_feedback_probe'
+                and opportunity.probe_target_window is not None and target == opportunity.probe_target_window)
         if step is not None:
             self.step_decisions[-1]['requested_resource_target'] = step.target_window
             self.step_decisions[-1]['resource_target_accepted'] = source == 'costed_resource_headroom'
         if target is None:
             return self._select(o, 'capacity_limit' if self._confirmed_window == self.config.max_window
                                 else 'candidate_evidence_exhausted')
-        condition = self._resource_condition()
-        if condition is not None:
-            self._last_resource_condition = condition
+        self._remember_resource_condition()
         return self._probe(target, o)
 
     def _compare(self, point, o):
@@ -393,9 +430,7 @@ class AscendingRequestController(SupplyFeedbackController):
         self._search.verified_window = selected
         self._search.work_context = self._work_context(self._reference)
         self._terminal = reason
-        condition = self._resource_condition()
-        if condition is not None:
-            self._last_resource_condition = condition
+        self._remember_resource_condition()
         self._growth_stopped, self._stop_reason = True, reason
         self._clear_point()
         return (self._change(selected, reason, o) if self.current_window != selected else self._hold(reason))
@@ -428,6 +463,6 @@ class AscendingRequestController(SupplyFeedbackController):
             incomplete_reason=None if measured_stop else self._terminal or self._stop_reason,
             can_continue=self.options.allow_exploration and not bounded_stop and bool(self._search.available()),
             reference_rechecks=sum(row['kind'] == 'local_confirmation' for row in self.evaluations),
-            resource_step_scope='source-qualified resource opportunities drive tentative geometric trials; exact cost is optional',
+            resource_step_scope='qualified idle share chooses a bounded tentative request target; exact cost is optional',
             recommendation_scope='measured comparable quotas; not a global optimum or hardware saturation proof')
         return deepcopy(value)

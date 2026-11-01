@@ -666,13 +666,16 @@ class BatchSupplyFeedback:
             snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
             resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
                 ownership='same single snapshot RPC; physical reader on model actor allocation',
-                estimated_request_cost_required=False, real_performance_benefit_proven=False),
+                estimated_request_cost_required=False, real_performance_benefit_proven=False,
+                action_scope='request permits only; no CPU/GPU placement, I/O scheduling or dynamic B'),
             measured_interfaces=['Core demand/StageWork/credits', 'method-ready/offer counts',
                                  'confirmed member work receipts', 'native running/waiting/KV/preemptions'] +
                 (['optional actor-allocated NVML busy and host CPU with explicit missing coverage']
                  if self._observes_resources() else []),
             unavailable_interfaces=['MFU/HBM', 'per-request physical cost',
-                'driver-host CPU if driver and model actor differ'] +
+                'driver-host CPU if driver and model actor differ',
+                'I/O or link bandwidth saturation', 'stage-specific physical demand',
+                'usable host/device capacity for request admission'] +
                 ([] if self._observes_resources() else ['CPU utilization', 'GPU utilization', 'physical free memory']),
             startup_capacity=dict(member_R=self.owner.resources.max_active_batches,
                 declared_native_sequences=self.owner.engine.max_num_seqs,
