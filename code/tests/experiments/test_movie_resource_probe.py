@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
 from tests.experiments.movie_token_resident_fixture import MovieTokenResidentFixture, query_calls, query_close
-from tests.experiments.test_movie_ascending_feedback import logical_request_frontier
+from tests.experiments.movie_feedback_frontier import logical_request_frontier
 
 
 GPU = 'GPU-00000000-0000-0000-0000-000000000001'
@@ -26,8 +26,8 @@ class MovieResourceProbeTests(unittest.TestCase):
                      'POSITIVE' if i % 2 == 0 else 'NEGATIVE'] for i in range(96)], task='movie-q1')
                 plan = fixture.plan('RD', tasks=('movie-q1',))
                 plan['resources']['max_active_batches'] = 8
-                # The reused logical frontier advances each distinct snapshot
-                # by one tick. Two samples therefore require a two-tick window;
+                # The CPU service advances each completed/ready cohort by one
+                # tick. Two samples therefore require a two-tick window;
                 # this changes only the declared CPU fixture qualification.
                 plan['profile']['admission'].update(window_s=2, min_samples=1, poll_interval_s=.002)
                 packets = []

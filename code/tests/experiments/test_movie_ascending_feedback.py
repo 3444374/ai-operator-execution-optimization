@@ -3,33 +3,17 @@
 No model/GPU is used. Useful requests and the actual controller decide quotas;
 the fixture never emits a window change or makes a query last longer for a scan.
 """
-from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import replace
 import json
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_chain_token_batches as batches
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
 from src.execution_provider.adapters.lotus_records_batches import PreparedRecordsCore
-from src.scheduling.submission_control.request_scan import AscendingRequestController
 from tests.experiments.movie_token_resident_fixture import (
-    MovieTokenResidentFixture, query_calls, query_close, with_actual_cpu_pid,
+    MovieTokenResidentFixture, query_calls, query_close,
 )
-from tests.execution_provider.test_lotus_batch_supply_feedback import logical_feedback_frontier
-from tests.execution_provider.test_lotus_request_supply_feedback import CPUWorkProcess
-
-
-@contextmanager
-def logical_request_frontier():
-    with logical_feedback_frontier(), \
-            patch('src.scheduling.submission_control.request_scan.AscendingRequestController',
-                  lambda maximum, config: AscendingRequestController(
-                      maximum, config, clock=lambda: batches.time.monotonic())), \
-            patch.object(AsyncCoreModelActor, '_process_type',
-                         return_value=with_actual_cpu_pid(CPUWorkProcess)):
-        yield
+from tests.experiments.movie_feedback_frontier import logical_request_frontier
 
 
 class MovieAscendingFeedbackTests(unittest.TestCase):
