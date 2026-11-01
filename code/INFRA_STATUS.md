@@ -4,6 +4,12 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+资源采样的拒绝前诊断候选在现有单个 snapshot RPC 上保留有界元数据：会话未绑定、native
+缓存缺失与 CPU 区间资格分别记录，按本次 Core session 重置计数和最近记录。拒绝数据仍不进入
+调度，采样频率、1秒资格窗口、默认关闭行为与策略不变。仅 CPU／本地 Future 覆盖，尚未做
+此候选的真实 Ray／模型验收；历史零可采纳视图与未知 CPU 区间不回填为通过。
+字段与边界见[观测说明](src/observability/README.md)。
+
 records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
 显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
 `max_num_seqs` 保持原引擎配置，普通同步默认不变。CPU 检查覆盖高于引擎每轮

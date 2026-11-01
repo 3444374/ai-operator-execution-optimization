@@ -122,6 +122,9 @@ class BatchSupplyFeedback:
         self.last_native = None
         self.resource_samples = []
         self.resource_audit = []
+        self.resource_rpc_audit = []
+        self.resource_rpc_counts = dict(total=0, native_eligible=0, actor_unbound=0,
+            session_mismatch=0, native_missing=0, CPU_qualified=0, CPU_rejected=0, evicted=0, errors=0)
         self.prepared = self.submitted = self.requests = self.errors = 0
         self.closed = False
         self.phases = []
@@ -185,6 +188,96 @@ class BatchSupplyFeedback:
             number(values.get('gpu_utilization_pct')) if len(devices) == 1 else None,
             number(values.get('host_cpu_per_core_max_pct')) if host.get('cpu_percent_interval_s') is not None else None)
 
+    def _read_resource(self, packet, *, request_index, requested_at_s, received_at_s):
+        view = self._resource_view(packet, request_index=request_index,
+            requested_at_s=requested_at_s, received_at_s=received_at_s)
+        # Retain source evidence even when the CPU interval is not
+        # eligible for the unchanged feedback measurement window.
+        packet = packet if isinstance(packet, dict) else {}
+        sample = packet.get('sample')
+        sample = sample if isinstance(sample, dict) else {}
+        sources = sample.get('sources')
+        sources = sources if isinstance(sources, dict) else {}
+        host = sources.get('host')
+        host = host if isinstance(host, dict) else {}
+        interval = host.get('cpu_percent_interval_s')
+        raw_interval = interval if type(interval) in (int, float) and math.isfinite(interval) else None
+        cpu_reject = host.get('cpu_metrics_status')
+        if cpu_reject == 'observed':
+            cpu_reject = None
+        if raw_interval is None:
+            cpu_reject = cpu_reject or 'cpu_interval_missing_or_invalid'
+        elif raw_interval <= 0:
+            cpu_reject = 'cpu_interval_nonpositive'
+        elif raw_interval > self.options.window_s:
+            cpu_reject = 'cpu_interval_exceeds_feedback_window'
+        else:
+            cpu_reject = None if view.host_peak_cpu_pct is not None else (cpu_reject or 'cpu_value_unavailable')
+        if raw_interval is None or not 0 < raw_interval <= self.options.window_s:
+            from dataclasses import replace
+            view = replace(view, host_peak_cpu_pct=None)
+            interval = None
+        return view, dict(view=asdict(view),
+            status=packet.get('status', 'unavailable'), missing=sample.get('missing') or {},
+            error_type=packet.get('error_type'), observed_values=sample.get('values') or {},
+            host_cpu_interval_s=interval,
+            host_cpu_raw_interval_s=raw_interval, host_cpu_reject_reason=cpu_reject,
+            host_cpu_interval_type=type(host.get('cpu_percent_interval_s')).__name__,
+            host_cpu_source={name: host[name] for name in ('cpu_metrics_status',
+                'cpu_baseline_scope', 'cpu_counter_sample_sequence', 'cpu_sample_thread_id',
+                'cpu_counter_read_start_monotonic_ns', 'cpu_counter_read_end_monotonic_ns')
+                if name in host and (type(host[name]) in (str, int) or
+                    (type(host[name]) is float and math.isfinite(host[name])))},
+            busy_period_scope='NVML internal period; distinct RPC reads need not be independent samples')
+
+    def _audit_resource_rpc(self, row, *, native, disposition, reason, request_index,
+                            request_session_id, response_session_id, requested_at_s, received_at_s):
+        # Only fixed metadata fields leave this boundary; never retain the RPC
+        # payload, arbitrary metric dictionaries, prompt or model output.
+        source = row['host_cpu_source']
+        cpu_reason = row['host_cpu_reject_reason']
+        allowed_reasons = {'cpu_interval_missing_or_invalid', 'cpu_interval_nonpositive',
+            'cpu_interval_exceeds_feedback_window', 'cpu_value_unavailable',
+            'cpu_percent_baseline_priming', 'cpu_counter_clock_invalid',
+            'cpu_percent_nonpositive_interval', 'cpu_counter_shape_changed',
+            'cpu_counter_regressed', 'cpu_counter_delta_invalid'}
+        if cpu_reason is not None and cpu_reason not in allowed_reasons:
+            cpu_reason = 'cpu_source_unavailable'
+        def counter(name):
+            value = source.get(name)
+            return value if type(value) is int and value >= 0 else None
+        resource_uid = row['view']['engine_uid']
+        with self._snapshot_lock:
+            attempt = dict(request_index=request_index, request_session_id=request_session_id,
+                current_session_id=self.session_id, response_session_id=response_session_id,
+                requested_at_s=requested_at_s, received_at_s=received_at_s,
+                request_clock_domain='driver.time.monotonic seconds',
+                resource_counter_clock_domain='model actor time.monotonic_ns',
+                native_clock_domain='native-engine NativeStats.clock seconds',
+                frame_disposition=disposition, native_reason=reason,
+                actor_unbound=response_session_id == -1,
+                native_frame_present=native is not None,
+                native_validation_accepted=disposition == 'eligible_for_provider',
+                resource_engine_uid=(resource_uid if type(resource_uid) is str and len(resource_uid) <= 128 else None),
+                resource_session_id=(row['view']['session_id'] if type(row['view']['session_id']) is int else None),
+                host_cpu_raw_interval_s=row['host_cpu_raw_interval_s'],
+                host_cpu_qualified=row['host_cpu_reject_reason'] is None,
+                host_cpu_reject_reason=cpu_reason,
+                host_cpu_counter_sequence=counter('cpu_counter_sample_sequence'),
+                host_cpu_read_start_ns=counter('cpu_counter_read_start_monotonic_ns'),
+                host_cpu_read_end_ns=counter('cpu_counter_read_end_monotonic_ns'),
+                audit_only=True)
+            counts = self.resource_rpc_counts
+            counts['total'] += 1
+            counts['native_eligible'] += attempt['native_validation_accepted']
+            counts['actor_unbound'] += attempt['actor_unbound']
+            counts['session_mismatch'] += disposition == 'stale_session'
+            counts['native_missing'] += native is None
+            counts['CPU_qualified' if attempt['host_cpu_qualified'] else 'CPU_rejected'] += 1
+            counts['evicted'] += len(self.resource_rpc_audit) == 64
+            self.resource_rpc_audit = (self.resource_rpc_audit + [attempt])[-64:]
+        return attempt
+
     def _decide(self, observation, supply, live, queued, admitted):
         return self.controller.update_supply(observation, supply)
 
@@ -202,6 +295,8 @@ class BatchSupplyFeedback:
             self.session_id = stream.session.session_id
             self.last_native = None
             self.resource_samples = []
+            self.resource_rpc_audit = []
+            self.resource_rpc_counts = dict.fromkeys(self.resource_rpc_counts, 0)
             self.started = time.monotonic()
         self.prepared = self.submitted = 0
         self.transition.clear()
@@ -426,6 +521,7 @@ class BatchSupplyFeedback:
                         and native.source_session_id == self.session_id else None)
         with self._snapshot_lock:
             index = self._snapshot_request['request_index']
+            request_session_id = self._snapshot_request['request_session_id']
             timing = self._snapshot_request.get('future_timing_enabled', False)
             issued_at_s = self._snapshot_request.get('issued_at_s')
         if timing:
@@ -492,13 +588,29 @@ class BatchSupplyFeedback:
             self.errors += 1
             disposition, reason = 'invalid_frame', 'invalid_native_frame'
         self._finish_snapshot('returned', disposition, value=value)
+        resource_attempt = resource_read = None
+        if self._observes_resources():
+            try:
+                resource_read = self._read_resource(value.get('resources') if isinstance(value, dict) else None,
+                    request_index=index, requested_at_s=issued_at_s, received_at_s=received_at_s)
+                resource_attempt = self._audit_resource_rpc(resource_read[1], native=native,
+                    disposition=disposition, reason=reason, request_index=index,
+                    request_session_id=request_session_id,
+                    response_session_id=response_session if type(response_session) is int else None,
+                    requested_at_s=issued_at_s, received_at_s=received_at_s)
+            except Exception:
+                with self._snapshot_lock:
+                    self.resource_rpc_counts['total'] += 1
+                    self.resource_rpc_counts['errors'] += 1
+                # Diagnostic failure cannot change the known RPC or native eligibility.
         try:
             audit = getattr(self.provider, 'observe_native', None)
             if callable(audit):
                 audit(native, session_id=response_session, received_at_s=received_at_s,
                     accepted=snapshot is not None, reason=reason, control_request_index=index,
                     source_clock_domain='native-engine NativeStats.clock seconds',
-                    received_clock_domain='driver.time.monotonic seconds')
+                    received_clock_domain='driver.time.monotonic seconds',
+                    **(dict(resource_attempt=dict(resource_attempt)) if resource_attempt is not None else {}))
         except Exception:
             pass  # Optional audit cannot change the RPC receipt or valid feedback.
         if snapshot is not None:
@@ -509,48 +621,10 @@ class BatchSupplyFeedback:
                     return None
                 self.last_native = snapshot
                 if self._observes_resources():
-                    view = self._resource_view(value.get('resources'), request_index=index,
+                    view, resource = resource_read or self._read_resource(value.get('resources'), request_index=index,
                         requested_at_s=issued_at_s, received_at_s=received_at_s)
-                    # Retain source evidence even when the CPU interval is not
-                    # eligible for the unchanged feedback measurement window.
-                    packet = value.get('resources')
-                    packet = packet if isinstance(packet, dict) else {}
-                    sample = packet.get('sample')
-                    sample = sample if isinstance(sample, dict) else {}
-                    sources = sample.get('sources')
-                    sources = sources if isinstance(sources, dict) else {}
-                    host = sources.get('host')
-                    host = host if isinstance(host, dict) else {}
-                    interval = host.get('cpu_percent_interval_s')
-                    raw_interval = interval if type(interval) in (int, float) and math.isfinite(interval) else None
-                    cpu_reject = host.get('cpu_metrics_status')
-                    if cpu_reject == 'observed':
-                        cpu_reject = None
-                    if raw_interval is None:
-                        cpu_reject = cpu_reject or 'cpu_interval_missing_or_invalid'
-                    elif raw_interval <= 0:
-                        cpu_reject = 'cpu_interval_nonpositive'
-                    elif raw_interval > self.options.window_s:
-                        cpu_reject = 'cpu_interval_exceeds_feedback_window'
-                    else:
-                        cpu_reject = None if view.host_peak_cpu_pct is not None else (cpu_reject or 'cpu_value_unavailable')
-                    if raw_interval is None or not 0 < raw_interval <= self.options.window_s:
-                        from dataclasses import replace
-                        view = replace(view, host_peak_cpu_pct=None)
-                        interval = None
                     self.resource_samples = (self.resource_samples + [view])[-2:]
-                    self.resource_audit = (self.resource_audit + [dict(view=asdict(view),
-                        status=packet.get('status', 'unavailable'), missing=sample.get('missing') or {},
-                        error_type=packet.get('error_type'), observed_values=sample.get('values') or {},
-                        host_cpu_interval_s=interval,
-                        host_cpu_raw_interval_s=raw_interval, host_cpu_reject_reason=cpu_reject,
-                        host_cpu_interval_type=type(host.get('cpu_percent_interval_s')).__name__,
-                        host_cpu_source={name: host[name] for name in ('cpu_metrics_status',
-                            'cpu_baseline_scope', 'cpu_counter_sample_sequence', 'cpu_sample_thread_id',
-                            'cpu_counter_read_start_monotonic_ns', 'cpu_counter_read_end_monotonic_ns')
-                            if name in host and (type(host[name]) in (str, int) or
-                                (type(host[name]) is float and math.isfinite(host[name])))},
-                        busy_period_scope='NVML internal period; distinct RPC reads need not be independent samples')])[-64:]
+                    self.resource_audit = (self.resource_audit + [resource])[-64:]
         return snapshot
 
     def _reap_stopped_snapshot(self, *, cancel=False):
@@ -670,6 +744,8 @@ class BatchSupplyFeedback:
             receipts = list(self.snapshot_rpc_receipts)
             requests, errors, closed = self.requests, self.errors, self.closed
             ref_retained, future_retained = self.ref is not None, self.future is not None
+            resource_attempts = [dict(row) for row in self.resource_rpc_audit]
+            resource_counts = dict(self.resource_rpc_counts)
         pending = (None if request is None else
                    dict(request, rpc_terminal_status='unknown',
                         unresolved_reason=('client_future_cancelled_no_rpc_result'
@@ -686,6 +762,9 @@ class BatchSupplyFeedback:
             snapshot_rpc_pending=pending,
             snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
             resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
+                recent_RPC_attempts=resource_attempts, RPC_counts=resource_counts,
+                RPC_audit_session_id=self.session_id, RPC_audit_capacity=64,
+                RPC_audit_scope='current bound Core session; diagnostics only, not policy input',
                 ownership='same single snapshot RPC; physical reader on model actor allocation',
                 estimated_request_cost_required=False, real_performance_benefit_proven=False,
                 action_scope='request permits only; no CPU/GPU placement, I/O scheduling or dynamic B'),

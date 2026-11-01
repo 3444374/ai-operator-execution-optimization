@@ -69,7 +69,13 @@ class FeedbackIdentityTests(unittest.TestCase):
                     p.observe_native(dict(engine_uid='b'*32,sequence=2,observed_at_s=10.),
                         session_id=8,received_at_s=10.,accepted=False,reason='session_mismatch',
                         control_request_index=9,source_clock_domain='test.engine.clock',
-                        received_clock_domain='test.driver.clock')
+                        received_clock_domain='test.driver.clock',
+                        resource_attempt=dict(request_index=9,request_session_id=9,
+                            response_session_id=-1,host_cpu_qualified=False,audit_only=True,
+                            actor_unbound=True,host_cpu_raw_interval_s=-.2,
+                            host_cpu_reject_reason='cpu_interval_nonpositive',
+                            request_clock_domain='driver.time.monotonic seconds',
+                            prompt='NEVER_LOG_ROW',values=dict(private_sample='NEVER_LOG_ROW')))
                     self.tick(p);self.assertTrue(p.latest(2).fresh)
                 self.assertFalse((root/'events').exists())
                 observer.close_events()
@@ -79,6 +85,13 @@ class FeedbackIdentityTests(unittest.TestCase):
                 self.assertEqual(rows[0]['control_request_index'],9)
                 self.assertEqual(rows[0]['source_clock_domain'],'test.engine.clock')
                 self.assertEqual(rows[0]['received_clock_domain'],'test.driver.clock')
+                self.assertEqual(rows[0]['resource_attempt']['request_session_id'],9)
+                self.assertFalse(rows[0]['resource_attempt']['host_cpu_qualified'])
+                self.assertEqual(rows[0]['resource_attempt']['response_session_id'],-1)
+                self.assertEqual(rows[0]['resource_attempt']['host_cpu_raw_interval_s'],-.2)
+                self.assertEqual(rows[0]['resource_attempt']['host_cpu_reject_reason'],'cpu_interval_nonpositive')
+                self.assertNotIn('NEVER_LOG_ROW',json.dumps(rows))
+                self.assertFalse(rows[0]['accepted'],'a diagnostic CPU interval must not admit a rejected native frame')
                 self.assertEqual(rows[-1]['engine_uid'],'a'*32);self.assertEqual(rows[-1]['session_id'],7)
                 self.assertEqual(rows[-1]['source_sequence'],1);self.assertEqual(rows[-1]['reason'],'fresh_for_consumer')
             finally:

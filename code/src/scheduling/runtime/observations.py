@@ -320,7 +320,8 @@ class NonBlockingMetricsObservationProvider:
             pass  # Optional observation cannot change freshness, results or ownership.
 
     def observe_native(self, snapshot, *, session_id, received_at_s, accepted, reason,
-                       control_request_index=None, source_clock_domain=None, received_clock_domain=None):
+                       control_request_index=None, source_clock_domain=None, received_clock_domain=None,
+                       resource_attempt=None):
         """Optional RPC-validation boundary; not a policy admission decision."""
         if self.observer is None:
             return
@@ -332,7 +333,8 @@ class NonBlockingMetricsObservationProvider:
                 decision_clock_domain=received_clock_domain,
                 engine_uid=snapshot.get("engine_uid"), session_id=session_id,
                 source_sequence=snapshot.get("sequence"), source_observed_at_s=snapshot.get("observed_at_s"),
-                received_at_s=received_at_s, decision_at_s=received_at_s))
+                received_at_s=received_at_s, decision_at_s=received_at_s,
+                **(dict(resource_attempt=resource_attempt) if resource_attempt is not None else {})))
         except Exception:
             pass
 

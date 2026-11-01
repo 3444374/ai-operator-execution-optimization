@@ -31,6 +31,12 @@ _ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s re
 _ALLOWED.update('control_request_index source_clock_domain received_clock_domain decision_clock_domain'.split())
 _ALLOWED.update('running waiting kv_usage preemptions_total finished_total generation_tokens_total'.split())
 _ALLOWED.update('native_capacity max_num_seqs max_num_batched_tokens max_model_len kv_cache_blocks kv_cache_block_tokens kv_free_bytes physical_free_bytes'.split())
+_RESOURCE_COUNTS = set('request_index request_session_id current_session_id response_session_id resource_session_id host_cpu_counter_sequence host_cpu_read_start_ns host_cpu_read_end_ns'.split())
+_RESOURCE_FLAGS = set('actor_unbound native_frame_present native_validation_accepted host_cpu_qualified audit_only'.split())
+_RESOURCE_CLOCKS = set('requested_at_s received_at_s host_cpu_raw_interval_s'.split())
+_RESOURCE_LABELS = set('request_clock_domain resource_counter_clock_domain native_clock_domain frame_disposition native_reason host_cpu_reject_reason'.split())
+_ALLOWED.update(_RESOURCE_COUNTS | _RESOURCE_FLAGS | _RESOURCE_CLOCKS | _RESOURCE_LABELS |
+                {'resource_attempt', 'resource_engine_uid'})
 _installed = set()
 _parent = ContextVar('record_observer_parent', default=None)
 _lock = threading.Lock()
@@ -55,7 +61,22 @@ def emit_feedback(event, **values):
     clock_fields={'source_observed_at_s','received_at_s','decision_at_s','kv_usage'}
     safe={}
     for key,value in values.items():
-        if key in uid_fields:
+        if key == 'resource_attempt' and isinstance(value,dict):
+            resource={}
+            for name,item in value.items():
+                if name in _RESOURCE_COUNTS:
+                    minimum=-1 if name in ('request_session_id','current_session_id','response_session_id','resource_session_id') else 0
+                    resource[name]=item if type(item)is int and minimum<=item<1<<64 else None
+                elif name in _RESOURCE_FLAGS:
+                    resource[name]=item if type(item)is bool else None
+                elif name in _RESOURCE_CLOCKS:
+                    resource[name]=item if type(item)in(int,float)and math.isfinite(item) else None
+                elif name in _RESOURCE_LABELS:
+                    resource[name]=item if type(item)is str and len(item)<=128 else None
+                elif name == 'resource_engine_uid':
+                    resource[name]=item if type(item)is str and len(item)==32 and all(c in '0123456789abcdef'for c in item)else None
+            safe[key]=resource
+        elif key in uid_fields:
             safe[key]=value if type(value)is str and len(value)==32 and all(c in '0123456789abcdef'for c in value)else None
         elif key in count_fields:
             safe[key]=value if type(value)is int and 0<=value<1<<64 else None

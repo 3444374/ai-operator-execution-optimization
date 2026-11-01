@@ -27,6 +27,24 @@ Standalone legacy `host_metadata()` callers keep their existing reader. CPU regr
 [`test_host_cpu_counter_source.py`](../../tests/observability/test_host_cpu_counter_source.py).
 This ownership fix does not change sample cadence, the feedback window, actor concurrency or policy.
 
+The request-feedback report also keeps `recent_RPC_attempts` for the current bound Core session:
+at most 64 fixed-metadata records plus cumulative `RPC_counts` for returned resource attempts,
+including evictions and audit errors. The existing snapshot receipts still own the complete RPC ledger.
+The same optional `observe_native` callback carries this metadata for rejected and valid RPCs.
+Request/current/response session IDs and RPC indices join existing query boundaries; timestamps name
+their driver, actor-counter and native clock domains without asserting a cross-host clock mapping.
+An unbound actor, absent native frame and rejected CPU interval remain separate facts. This audit
+does not retain prompts, input rows or model outputs, refresh a native timestamp, or feed rejected
+resources into policy. `recent_samples` and the two physical policy samples still require the
+original session/native qualification. Bind resets the new diagnostics; close retains terminal
+evidence. Native validation in an audit is the RPC-validation result, not provider/controller adoption;
+a subsequent query switch still invokes the original session guard. Reference profiles keep
+resources off; omitting feedback remains disabled. Turning the
+external observation tool off still permits existing production feedback and its bounded report;
+this change starts no extra readers or RPCs.
+The [CPU rejection cases](../../tests/execution_provider/test_resource_rpc_rejection_audit.py)
+check these boundaries with local Futures, not Ray or model execution.
+
 Native scheduled-work MFU helpers live in `metrics/mfu.py`, `mfu_trace.py` and the explicitly invoked
 `mfu_native_bootstrap.py`. They require one verified engine/GPU, complete token/terminal watermarks
 and native FLOPs updates. Missing computed-prefill FLOPs also make an estimate unavailable; a final
