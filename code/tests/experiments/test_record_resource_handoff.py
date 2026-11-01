@@ -377,7 +377,7 @@ class HandoffTests(unittest.TestCase):
             self.assertFalse(actor.acknowledge_core(key))
         self.assertEqual(sum(e['event']=='actor_sink_finalizing'for e in self.events()),1)
 
-    def assert_snapshot_producer_finishes_before_footer(self,profile):
+    def assert_snapshot_producer_finishes_before_footer(self,profile,observe_resources=False):
         self.observer.settings()['profile']=profile;ipc,actor,base=self.actor()
         entered,release,close_attempted=[threading.Event()for _ in range(3)];immediate=[];errors=[]
         class Condition(threading.Condition):
@@ -396,7 +396,7 @@ class HandoffTests(unittest.TestCase):
             if not release.wait(5):raise AssertionError('snapshot probe not released')
             original(*args,**kwargs)
         def snapshot():
-            try:self.assertIs(actor.snapshot(),value)
+            try:self.assertIs(actor.snapshot(observe_resources=observe_resources),value)
             except BaseException as error:errors.append(error)
         def close():
             try:self.assertIs(actor.close(1),report)
@@ -416,14 +416,14 @@ class HandoffTests(unittest.TestCase):
             self.assertTrue(self.observer._closed);self.assertEqual(audit.call_count,1)
             status_path=next((self.fixture.directory/'events').glob('*.status.json'));saved=status_path.read_bytes()
             attempts=self.observer._buffer_attempts
-            self.assertIs(actor.snapshot(),value)  # Native RPC remains legal; observation gate is closed.
+            self.assertIs(actor.snapshot(observe_resources=observe_resources),value)  # Native RPC remains legal.
             self.assertEqual(audit.call_count,1);self.assertEqual(self.observer._buffer_attempts,attempts)
             with patch.object(base,'poll_prepared_batch',return_value=value,create=True):
                 self.assertIs(actor.poll_prepared_batch((1,0)),value)
             self.assertEqual(status_path.read_bytes(),saved)
             failure=RuntimeError(fixtures.SECRET)
             with patch.object(base,'snapshot',side_effect=failure):
-                with self.assertRaises(RuntimeError)as caught:actor.snapshot()
+                with self.assertRaises(RuntimeError)as caught:actor.snapshot(observe_resources=observe_resources)
                 self.assertIs(caught.exception,failure)
         status=json.loads(saved);self.assertEqual((status['dropped'],status['errors']),(0,0))
         self.assertEqual(sum(e['event']=='native_feedback_frame'for e in self.events()),1)
@@ -434,13 +434,46 @@ class HandoffTests(unittest.TestCase):
     def test_handoff_snapshot_callback_finishes_before_footer_and_late_RPC_keeps_native_result(self):
         self.assert_snapshot_producer_finishes_before_footer('handoff')
 
+    def test_full_resource_snapshot_callback_and_late_native_result_keep_footer_gate(self):
+        self.assert_snapshot_producer_finishes_before_footer('full',True)
+
+    def test_handoff_resource_snapshot_callback_and_late_native_result_keep_footer_gate(self):
+        self.assert_snapshot_producer_finishes_before_footer('handoff',True)
+
+    def test_resource_snapshot_keeps_native_validation_and_reader_outside_model_condition(self):
+        ipc,actor,base=self.actor();values=[];result=dict(session_id=1,ipc={})
+        failure=TypeError('CPU native boolean validation')
+        def snapshot(instance,*,observe_resources=False):
+            if type(observe_resources)is not bool:raise failure
+            values.append(observe_resources)
+            if observe_resources:
+                self.assertFalse(instance._condition._is_owned(),'optional resource reads must not block model readers')
+            return result
+        with patch.object(base,'snapshot',snapshot,create=True):
+            self.assertIs(actor.snapshot(),result)
+            self.assertIs(actor.snapshot(observe_resources=False),result)
+            self.assertIs(actor.snapshot(observe_resources=True),result)
+            for invalid in (0,1,None,'true'):
+                with self.subTest(invalid=invalid),self.assertRaises(TypeError)as caught:
+                    actor.snapshot(observe_resources=invalid)
+                self.assertIs(caught.exception,failure)
+        self.assertEqual(values,[False,False,True])
+
+    def test_snapshot_default_preserves_legacy_native_no_keyword_signature(self):
+        ipc,actor,base=self.actor();value=dict(session_id=1,ipc={})
+        with patch.object(base,'snapshot',lambda self:value,create=True):
+            self.assertIs(actor.snapshot(),value)
+            self.assertIs(actor.snapshot(observe_resources=False),value)
+
     def test_disabled_actor_close_snapshot_and_ACK_delegate_without_observer_condition(self):
         ipc,actor,base=self.actor();del actor._condition;report=dict(status='closed');actor.last_close_report=report
         value=object()
         with patch.object(ipc,'ENABLED',False),patch.object(self.observer,'ENABLED',False), \
-                patch.object(base,'snapshot',return_value=value,create=True),patch.object(base,'close',return_value=report,create=True), \
+                patch.object(base,'snapshot',return_value=value,create=True)as snapshot,patch.object(base,'close',return_value=report,create=True), \
                 patch.object(base,'acknowledge_core',return_value=True,create=True):
-            self.assertIs(actor.snapshot(),value);self.assertIs(actor.close(1),report)
+            self.assertIs(actor.snapshot(),value);self.assertIs(actor.snapshot(observe_resources=True),value)
+            self.assertEqual(snapshot.call_args_list,[unittest.mock.call(),unittest.mock.call(observe_resources=True)])
+            self.assertIs(actor.close(1),report)
             self.assertTrue(actor.acknowledge_core((1,0)))
         self.assertEqual(self.events(),[]);self.assertFalse(self.observer._closed)
 

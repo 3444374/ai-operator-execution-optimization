@@ -4,6 +4,7 @@ from collections import Counter
 from concurrent.futures import Future
 from dataclasses import asdict
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -58,6 +59,10 @@ engine=EngineSpec(str(model),sys.executable,sys.executable,max_num_seqs=1)
 actor=ObservedAsyncCoreModelActor(asdict(engine),asdict(generation),1,asdict(limits))
 submitted=[];events=[]
 class IPC:
+    def snapshot(self):
+        return dict(owner_uid='CPU-producer',native_feedback=dict(engine_uid='CPU-engine',sequence=1,
+            observed_at_s=time.monotonic(),running=1,waiting=0,kv_usage=.1,
+            generation_tokens_total=3,preemptions_total=0))
     def submit_batch(self,actual_rows,**kwargs):
         assert actual_rows==rows and kwargs['generation']==generation
         submitted.append(actual_rows)
@@ -89,7 +94,8 @@ def ack(key):
 owner=native.AsyncRecordsActorOwner.__new__(native.AsyncRecordsActorOwner)
 owner.limits=limits;owner.model_actor=SimpleNamespace(
     submit_prepared_batch=Remote(actor.submit_prepared_batch,'submit'),
-    poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'))
+    poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'),
+    snapshot=Remote(actor.snapshot,'snapshot'))
 notified=threading.Event();received=[]
 backend=LotusChainActorBackend(owner,3,notified.set,deadline_monotonic=time.monotonic()+20,
     on_result=lambda key,value:received.append((key,value)),bulk=True)
@@ -115,6 +121,42 @@ page_keys=[tuple(v['request_key'])for page in poll_pages for v in page['results'
 assert page_keys.count((1,0))==2 and set(page_keys)=={(1,i)for i in range(3)}
 assert Counter(acked)==Counter({(1,i):1 for i in range(3)})and not actor._held
 assert len(received)==3 and not backend._bulk and backend.retained_refs()==0
+# Historical targets without this native keyword retain their bulk-only probe.
+resource_probe_supported='observe_resources'in inspect.signature(native.AsyncCoreModelActor.snapshot).parameters
+feedback_report=None
+if resource_probe_supported:
+    from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
+    from src.scheduling.submission_control.stage_work import default_request_feedback_options
+    from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+    from src.semantic_methods.lotus.records import RecordsResources
+    # Actual production sampler/observed actor; IPC/Futures/readings are CPU fixtures.
+    owner.model_ready=dict(engine_uid='CPU-engine');owner.resources=RecordsResources(max_active_batches=3)
+    owner.engine=engine;owner.prepared_batching=PreparedBatching('token_budget',None,256)
+    owner.ray=SimpleNamespace(cancel=lambda *a,**k:None)
+    feedback=RequestSupplyFeedback(SimpleNamespace(_actors=owner,engine=engine,resources=owner.resources,
+        prepared_batching=owner.prepared_batching),default_request_feedback_options())
+    feedback.session_id=1;feedback.started=time.monotonic()
+    packet=dict(engine_uid='CPU-engine',session_id=1,source_elapsed_s=0,
+        gpu_uuids=['GPU-00000000-0000-0000-0000-000000000001'],status='CPU-fixture',
+        sample=dict(values=dict(gpu_utilization_pct=10,host_cpu_per_core_max_pct=20),
+                    sources=dict(host=dict(cpu_percent_interval_s=.1)),missing={}))
+    def resources(session):
+        assert session==1 and not actor._condition._is_owned()
+        return packet
+    with patch.object(actor,'_resource_snapshot',side_effect=resources)as read_resources:
+        try:
+            snapshot=feedback.sample()
+            assert snapshot is not None,feedback.report()
+            assert (snapshot.source_uid,snapshot.source_session_id)==('CPU-engine',1)
+            read_resources.assert_called_once_with(1)
+        finally:feedback.close()
+    feedback_report=feedback.report()
+    assert feedback_report['snapshot_rpc_terminal_evidence_complete'],feedback_report
+    assert feedback_report['snapshot_rpc_cleanup_status']=='closed'and feedback_report['snapshot_rpc_pending']is None
+    assert feedback_report['snapshot_requests']==len(feedback_report['snapshot_rpc_receipts'])==1
+    assert feedback_report['snapshot_rpc_receipts'][0]['frame_disposition']=='eligible_for_provider'
+    assert feedback_report['sample_errors']==0 and native_methods.count('snapshot')==1
+    assert [r.calls for r in references if r.label=='snapshot']==[1]
 close=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
     confirmed=True,input_gate_closed=True,active_readers=0))
 with patch.object(native.AsyncCoreModelActor,'close',return_value=close):assert actor.close(1)is close
@@ -143,6 +185,10 @@ report=dict(status='passed_actual_public_bulk_owner_actor_transport',mode=args.m
     returned_page_member_occurrences=len(page_keys),first_actor_member_markers=3 if args.mode=='on'else 0,
     lost_ACK_replayed_without_duplicate_member_completion=True,original_generation_and_rows_preserved=True,
     outputs_preserved=True,native_ACK_once_per_member=True,native_close_report_identity_preserved=True,
+    ascending_resource_snapshot_and_close=resource_probe_supported,
+    resource_snapshot_status='passed_CPU_fixture'if resource_probe_supported else'not_supported_by_target',
+    snapshot_RPC_requests=None if feedback_report is None else feedback_report['snapshot_requests'],
+    snapshot_RPC_terminal_complete=None if feedback_report is None else feedback_report['snapshot_rpc_terminal_evidence_complete'],
     event_counts={k:sum(e['event']==k for e in markers)for k in expected},
     output_sha256=hashlib.sha256(json.dumps(replies,sort_keys=True).encode()).hexdigest(),
     real_Ray_RPC=False,real_model_calls=0,GPU=False)

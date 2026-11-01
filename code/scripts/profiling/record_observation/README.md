@@ -23,6 +23,8 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
 ```
 
 `qualify` 跑本仓 CPU fixture、单请求及 token 批路径的 off/on 公共基类探针，不启动 Ray RPC、真实模型或 GPU。
+批探针还串起真实 `RequestSupplyFeedback` 的资源 snapshot 调用和 RPC 收尾；IPC、Future 与资源读数
+仍为 CPU fixture，不能据此声称真实 Ray、硬件采样或模型查询已验收。
 旧版被测源码没有批 API 时，该探针明确报告不支持，`CPU-READY.handoff_CPU_paths.token_batch=false`，
 不能将单请求资格解释成该版本的批路径资格。
 失败输出保留，未通过不产生 `CPU-READY.json`。工具提交、被测源码、基准配置和七份 runtime
@@ -152,6 +154,9 @@ full 与 handoff 的 actor sink 都在原生生产者静止、reader 归零且�
 原生方法，返回或异常不变，但不再写这份 sink。该边界不证明 Ray 结果已送达，也不代替
 driver 采样器／Future 回调结束。driver 仍按原 worker finally 停止采样、关闭 telemetry 和
 自身 sink；full 的原生模型／GPU 事件与 trace export 另随原监督退出流程完成，须分别核对。
+观测包装器保留原生 `observe_resources` 关键字和布尔校验；默认无资源读取时保持旧无参调用。
+原生资源读取在 model condition 外执行，只将观察回调纳入 footer 关闭门；读取期间若门已关闭，
+仍返回原生 snapshot，不再向这份 sink 写入。
 
 普通 records 的 full 路径另有准备 actor。它在原 owner 的终止接点前，通过同一单并发
 actor 队列领取 `close_observation` 回执，复用 `close_events` 排空、fsync 和 footer；

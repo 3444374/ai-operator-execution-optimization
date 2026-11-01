@@ -303,12 +303,15 @@ def __getattr__(name):
             from record_observer import install_actor
             install_actor();super().__init__(*args,**kwargs)
         def _process_type(self):return ObservedAsyncEngineProcess
-        def snapshot(self):
-            if not ENABLED:return super().snapshot()
-            # The native condition is reentrant. Include this observer producer
-            # in the same close gate; zero data readers alone does not cover it.
+        def snapshot(self,*,observe_resources=False):
+            # Retain the old no-keyword call for historical target runtimes.
+            # Native resource readers must run outside the model condition.
+            value=(super().snapshot()if observe_resources is False else
+                   super().snapshot(observe_resources=observe_resources))
+            if not ENABLED:return value
+            # Only the observer callback joins the sink's finalization gate;
+            # a native snapshot may finish after that gate has closed.
             with self._condition:
-                value=super().snapshot()
                 if not getattr(self,'_record_sink_finalized',False):
                     try:
                         ipc=value.get('ipc') or {}
