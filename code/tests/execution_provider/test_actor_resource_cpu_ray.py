@@ -1,4 +1,5 @@
 """Opt-in real-Ray snapshot/Future/footer composition; no model or GPU work."""
+from concurrent.futures import Future
 from dataclasses import asdict
 import hashlib
 import json
@@ -11,6 +12,7 @@ from types import SimpleNamespace
 import unittest
 
 from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
+from src.scheduling.runtime.observations import ServiceMetricsSnapshot
 from src.scheduling.submission_control.stage_work import default_request_feedback_options
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
@@ -50,10 +52,118 @@ class CPUFeedbackEngine:
 class CountedRef:
     def __init__(self, raw):
         self.raw, self.future_reads = raw, 0
+        self.acquired_future = None
 
     def future(self):
         self.future_reads += 1
-        return self.raw.future()
+        self.acquired_future = self.raw.future()
+        return self.acquired_future
+
+
+def collect_resource_snapshot(feedback, refs, *, timeout=10):
+    requests, references = feedback.requests, len(refs)
+    snapshot = feedback.sample()
+    assert feedback.requests == requests+1 and len(refs) == references+1
+    ref = refs[-1]
+    # sample() may already have consumed and cleared its Future. Retain the
+    # original subscription, never ask the ObjectRef for a second one.
+    future = ref.acquired_future
+    assert ref.future_reads == 1 and future is not None
+    packet = future.result(timeout)
+    if feedback.ref is not None:
+        assert feedback.ref is ref and feedback.future is future
+        snapshot = feedback.sample()
+    assert feedback.requests == requests+1 and len(refs) == references+1, 'collection dispatched another RPC'
+    assert feedback.ref is None and feedback.future is None
+    assert snapshot is not None, 'valid native response was not collected'
+    native = packet['ipc']['native_feedback']
+    assert (snapshot.source_uid, snapshot.source_session_id, snapshot.source_sequence) == (
+        native['engine_uid'], packet['session_id'], native['sequence'])
+    return packet, snapshot
+
+
+class SnapshotCollectionTimingTests(unittest.TestCase):
+    def collect_case(self, *, immediate, cached):
+        packet = dict(session_id=7, ipc=CPUFeedbackEngine().snapshot(), resources=dict(
+            engine_uid=UID, session_id=7, source_elapsed_s=0, gpu_uuids=[],
+            status='CPU-fixture', sample=dict(values=dict(host_cpu_per_core_max_pct=20),
+                sources=dict(host=dict(cpu_percent_interval_s=.25)), missing={})))
+
+        class CompleteWhenWaited(Future):
+            """Keep initial polling pending; release only at the witness wait."""
+            def result(self, timeout=None):
+                if timeout is not None and not self.done():
+                    self.set_result(packet)
+                return super().result(timeout)
+
+        future = Future() if immediate else CompleteWhenWaited()
+        if immediate:
+            future.set_result(packet)
+        refs, calls, future_reads = [], [], []
+
+        def raw_future():
+            future_reads.append(future)
+            return future
+
+        def remote(**kwargs):
+            calls.append(kwargs)
+            ref = CountedRef(SimpleNamespace(future=raw_future))
+            refs.append(ref)
+            return ref
+
+        spec = EngineSpec('/tmp/zero-model-resource-fixture', sys.executable, sys.executable)
+        owner = SimpleNamespace(resources=RecordsResources(max_active_batches=128), engine=spec,
+            prepared_batching=PreparedBatching('token_budget', None, 4096),
+            _actors=SimpleNamespace(model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
+                model_ready=dict(engine_uid=UID), limits=AsyncEngineLimits(max_inflight=128),
+                ray=SimpleNamespace(cancel=lambda *_a, **_kw: self.fail('completed RPC must not be cancelled'))))
+        feedback = RequestSupplyFeedback(owner, default_request_feedback_options())
+        feedback.session_id, feedback.started = 7, 0.
+        previous = ServiceMetricsSnapshot(0, 0, 0., source_uid=UID, source_session_id=7, source_sequence=0)
+        if cached:
+            feedback.last_native = previous
+        native_sample, observed_returns = feedback.sample, []
+
+        def sample():
+            value = native_sample()
+            observed_returns.append(value)
+            return value
+
+        feedback.sample = sample
+        try:
+            raw, snapshot = collect_resource_snapshot(feedback, refs, timeout=1)
+            self.assertIs(raw, packet)
+            self.assertEqual((snapshot.source_uid, snapshot.source_session_id, snapshot.source_sequence), (UID, 7, 1))
+            self.assertEqual(len(observed_returns), 1 if immediate else 2)
+            if not immediate:
+                self.assertIs(observed_returns[0], previous if cached else None)
+            self.assertIsNone(feedback.future)
+            self.assertIsNone(feedback.ref)
+            self.assertEqual(calls, [dict(observe_resources=True)])
+            self.assertEqual(future_reads, [future])
+            self.assertEqual(len(refs), 1)
+            self.assertEqual(refs[0].future_reads, 1)
+            self.assertEqual(feedback.errors, 0)
+        finally:
+            feedback.close()
+        report = feedback.report()
+        self.assertEqual(report['snapshot_requests'], 1)
+        self.assertTrue(report['snapshot_rpc_terminal_evidence_complete'])
+        self.assertEqual(report['snapshot_rpc_cleanup_status'], 'closed')
+        self.assertIsNone(report['snapshot_rpc_pending'])
+        self.assertEqual(len(report['snapshot_rpc_receipts']), 1)
+        self.assertEqual(report['snapshot_rpc_receipts'][0]['rpc_terminal_status'], 'returned')
+        self.assertEqual(report['snapshot_rpc_receipts'][0]['frame_disposition'], 'eligible_for_provider')
+
+    def test_immediate_completion_uses_one_RPC_and_Future_subscription(self):
+        for cached in (False, True):
+            with self.subTest(cached=cached):
+                self.collect_case(immediate=True, cached=cached)
+
+    def test_delayed_completion_uses_the_same_pending_Future_with_or_without_cached_native(self):
+        for cached in (False, True):
+            with self.subTest(cached=cached):
+                self.collect_case(immediate=False, cached=cached)
 
 
 @unittest.skipUnless(os.environ.get('SEMLOOM_REAL_RAY_CPU') == '1', 'explicit real Ray CPU driver required')
@@ -137,9 +247,9 @@ class RealRayHostCPUResourceTests(unittest.TestCase):
                     feedback.session_id, feedback.started = session, time.monotonic()
                     try:
                         for _ in range(4):
-                            self.assertIsNone(feedback.sample())
-                            packets.append(feedback.future.result(10))
-                            self.assertIsNotNone(feedback.sample())
+                            packet, snapshot = collect_resource_snapshot(feedback, refs)
+                            packets.append(packet)
+                            self.assertIsNotNone(snapshot)
                             time.sleep(options.poll_interval_s)  # Normal sampling cadence; no workload delay.
                     finally:
                         feedback.close()
