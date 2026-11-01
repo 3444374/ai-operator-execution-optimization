@@ -65,6 +65,7 @@ def resource_probe_opportunity(observation: AdmissionObservation, supply: Supply
         raise ValueError("valid request/age/KV bounds and preemption flag required")
     o, s = observation, supply
     evidence = dict(tentative=True, cost_model_required=False,
+        observed_request_window=current_window,
         full_query_benefit_proven=False, capacity_estimate=False,
         physical_scope="UUID-bound device peak busy and host-wide per-CPU peak busy",
         GPU_busy_is_MFU=False, free_VRAM_to_request_conversion=False,

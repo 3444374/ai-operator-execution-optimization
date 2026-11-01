@@ -129,7 +129,8 @@ R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC�
 新策略有收益继续上探，平台／退化／冲突时局部确认；显式`search_policy="reference"`保留旧策略。
 同 resident owner 的兼容完整查询成功后可复用已确认档位／未完进度，新鲜工作量重验证，不能只凭模型EOF提交。
 阶段关闭与下次查询可续探分别记账；磁盘`admission_cache`仍拒绝。固定／非token／批槽默认不变。
-同一snapshot RPC在模型actor读其分配GPU的NVML及主机CPU；多个新鲜信号支持时可多试一个已有几何点。
+同一snapshot RPC在模型actor读其分配GPU的NVML及主机CPU；多个新鲜信号与实际ready供给支持时，
+联合空闲程度决定有界试探目标，可跨多个档位，不限于额外一个几何点。
 精确成本估计可辅助步幅，缺失不禁止资源观测触发探索；来源、未知值和采纳理由在回执分别记录。
 现仅CPU合成资源事实验证接线，尚无真实硬件采样／性能或动态B资格。见[完整策略和资源边界](../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
 非空`admission.gpu_ids`仍拒绝：新读取器绑定的是模型actor的实际CUDA分配，不能用driver的设备列表冒充；原普通非token请求路径保留。
@@ -164,7 +165,10 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_m
 
 `check`不构造owner或请求模型。`run`沿用原监督worker；正常会话／sealed matrix计划也可增加相同组批及可选反馈字段，
 其`profile`使用上例`core_profile`的值，且`backend="semloom-core"`、`lifecycle="isolated"`。
-`rolling_refill=true`的固定RF／动态RD还可显式选择`lifecycle="resident"`：沿用原Session schema，在查询计时前等待模型ready，健康EOF只结算本查询，最终Session close才关闭模型。RF保持R，RD逐查询从1重新探索；没有跨查询学习。批槽模式仍不支持resident。
+`rolling_refill=true`的固定RF／动态RD还可显式选择`lifecycle="resident"`：沿用原Session schema，在查询计时前等待模型ready，健康EOF只结算本查询，最终Session close才关闭模型。
+RF保持R；默认ascending RD在兼容owner内续用已显式确认的健康档位／搜索进度，重新验证当前条件后保持或局部续探；
+没有合格提示才从1起步，显式reference仍逐查询重置。提示须在完整业务结果解释／投影成功后确认，不是通用跨任务学习。
+批槽模式仍不支持resident。条件失效、供给范围扩展和native间断的转换见上述唯一策略正文。
 仍由原owner提供lease、调用额度、完整source.lock／packet和物理退出检查；新入口须重新绑定这些资产，
 不能把旧packet或旧树模型证据直接套用到新源码。isolated中实际发生的启动／关闭计入原查询；resident另保留真实ready、首次／后续query及最终关闭时钟，不能由冷查询减估计启动成本冒充。
 兼容模型／生成／资源固定，逐查询输入、账本、结果和额度独立；失败、取消或排空未确认禁止继续复用。接口及本地CPU资格见[rolling resident说明](../execution_provider/adapters/README.md#resident-rolling-token-owner)，此新组合尚无实机性能资格。
