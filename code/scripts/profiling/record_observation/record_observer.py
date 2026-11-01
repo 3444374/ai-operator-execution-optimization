@@ -26,6 +26,7 @@ _ALLOWED.update(('identities','outstanding','metrics','prompt_tokens','output_to
 _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
 _ALLOWED.add('batch_key')
+_ALLOWED.update(('method_row_ref', 'stage_index', 'action', 'selection_reason'))
 _ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s received_at_s decision_at_s expected_engine_uid'.split())
 _ALLOWED.update('control_request_index source_clock_domain received_clock_domain decision_clock_domain'.split())
 _ALLOWED.update('running waiting kv_usage preemptions_total finished_total generation_tokens_total'.split())
@@ -338,9 +339,32 @@ def memory_snapshot(boundary):
          scope='sparse observed process snapshots; not phase peaks or additive shared RSS')
 
 
+def install_ready_hook():
+    """Observe after the original callback; never replace its clock or policy state."""
+    if not ENABLED or handoff_profile() or 'method_ready' in _installed:return
+    from src.semantic_methods.driver import MethodDriver
+    _installed.add('method_ready')
+    original=MethodDriver._ready_event
+    @functools.wraps(original)
+    def observed(self,row,action,reason=None,key=None):
+        result=original(self,row,action,reason,key)
+        if ENABLED and not _closed:
+            try:
+                emit('method_ready_boundary', action=action,
+                     method_row_ref=hashlib.sha256(row.identity.call_id.encode()).hexdigest(),
+                     stage_index=row.stages, session_id=self.session.session_id,
+                     key=None if key is None else asdict(key), selection_reason=reason,
+                     scope='after original method boundary; selection reason is not capacity diagnosis')
+            except Exception:
+                pass  # A passive observer cannot disable the existing feedback callback.
+        return result
+    MethodDriver._ready_event=observed
+
+
 def install_driver():
     if not ENABLED or 'driver' in _installed:return
     _installed.add('driver');install_cpu_hooks()
+    install_ready_hook()
     install_feedback_observer()
     from src.execution_provider.adapters import lotus_records_actor_owner as owner,lotus_records_async_actor as async_owner
     from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend

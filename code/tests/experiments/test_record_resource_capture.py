@@ -28,6 +28,7 @@ def stubs():
     names=['src','src.serving','src.serving.backends','src.serving.backends.async_engine_process',
            'src.execution_provider','src.execution_provider.adapters','src.execution_provider.adapters.lotus_records_async_actor',
            'src.execution_provider.adapters.lotus_records_actor_owner','src.semantic_methods','src.semantic_methods.lotus',
+           'src.semantic_methods.driver',
            'src.semantic_methods.lotus.record_chain','src.semantic_methods.lotus.engine',
            'vllm','vllm.v1','vllm.v1.worker','vllm.v1.worker.gpu_worker']
     for name in names:
@@ -36,6 +37,10 @@ def stubs():
     class Base:
         def __init__(self,*args,**kwargs):self.received_args=(args,kwargs)
     native=modules['src.serving.backends.async_engine_process'];native.AsyncEngineProcess=Base
+    class Driver:
+        def _ready_event(self,row,action,reason=None,key=None):
+            return self.callback(row,action,reason,key)
+    modules['src.semantic_methods.driver'].MethodDriver=Driver
     native.socket=socket;native.json=json
     def frame(value,maximum):
         payload=json.dumps(value,ensure_ascii=False,separators=(',',':')).encode()
@@ -90,6 +95,35 @@ class CaptureTests(unittest.TestCase):
         worker=gpu.ObservedWorker();worker.model_runner=SimpleNamespace(execute_model_state=None)
         worker.next_state=SimpleNamespace(input_batch=SimpleNamespace(req_ids=['native-A'],num_scheduled_tokens=[5]))
         return worker
+
+    def test_ready_hook_preserves_callback_identity_state_and_observer_failure(self):
+        driver_type=sys.modules['src.semantic_methods.driver'].MethodDriver
+        self.observer.install_ready_hook()
+        driver=driver_type();driver.session=SimpleNamespace(session_id=3)
+        row=SimpleNamespace(identity=SimpleNamespace(call_id=SECRET),stages=2,ready_at=None)
+        seen=[];marker=object()
+        driver.callback=lambda *args:seen.append(args) or marker
+        self.assertIs(driver._ready_event(row,'method_ready','fifo'),marker)
+        event=next(e for e in self.events() if e['event']=='method_ready_boundary')
+        self.assertEqual(event['method_row_ref'],hashlib.sha256(SECRET.encode()).hexdigest())
+        self.assertIsNone(row.ready_at)
+        self.assertEqual(len(seen),1)
+        with patch.object(self.observer,'emit',side_effect=RuntimeError('observer failed')):
+            self.assertIs(driver._ready_event(row,'Core_backpressure','fifo'),marker)
+        self.assertEqual(len(seen),2)
+        failure=ValueError(SECRET)
+        driver.callback=lambda *a:(_ for _ in ()).throw(failure)
+        with self.assertRaises(ValueError) as caught:driver._ready_event(row,'method_ready')
+        self.assertIs(caught.exception,failure)
+        self.assertNotIn(SECRET,json.dumps(self.events()))
+
+    def test_ready_hook_off_and_handoff_do_not_wrap_original(self):
+        driver_type=sys.modules['src.semantic_methods.driver'].MethodDriver
+        original=driver_type._ready_event
+        with patch.object(self.observer,'ENABLED',False):self.observer.install_ready_hook()
+        self.assertIs(driver_type._ready_event,original)
+        with patch.object(self.observer,'handoff_profile',return_value=True):self.observer.install_ready_hook()
+        self.assertIs(driver_type._ready_event,original)
 
     def test_sample_reads_actual_consumed_state_not_last_execute(self):
         gpu=self.gpu();worker=self.worker(gpu);schedule=SimpleNamespace(num_scheduled_tokens={'native-A':5})
