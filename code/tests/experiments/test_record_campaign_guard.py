@@ -10,7 +10,8 @@ import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from types import SimpleNamespace
 
 from src.experiments.attempt_ledger import BudgetError
 from src.experiments import lotus_records_supervisor as supervisor
@@ -49,17 +50,23 @@ class CampaignFixture(unittest.TestCase):
     def manifest(self, **changes):
         config = self.base / 'base-config.json'
         config.write_text('{}\n')
+        runtime = self.artifacts / 'runtime'
+        ray = self.artifacts / 'ray'
+        runtime.mkdir(exist_ok=True)
+        ray.mkdir(exist_ok=True)
         cells = []
         for name, calls in [('first', 3), ('second', 4)]:
             cell = self.artifacts / name
             cell.mkdir(exist_ok=True)
+            (cell / 'ready').mkdir(exist_ok=True)
             cells.append(dict(id=name, calls=calls, stage='qualification',
                 base_config=str(config), base_sha256=hashlib.sha256(config.read_bytes()).hexdigest(),
-                prepared_config=str(cell / 'PREPARED-CONFIG.json')))
+                prepared_config=str(cell / 'PREPARED-CONFIG.json'), ready_dir=str(cell / 'ready')))
         manifest = dict(schema='semloom.record_campaign.v1', campaign_id='cpu-campaign',
             source=dict(head='1'*40, tree='2'*40), wall_seconds=180., max_bytes=100_000,
             scan_interval_s=2., cleanup_reserve_s=20., collection_reserve_s=10.,
             artifact_roots=[str(self.artifacts)], cells=cells,
+            runtime_temp_root=str(runtime), ray_temp_root=str(ray),
             call_limit=7, historical_charge=12860)
         return dict(manifest, **changes)
 
@@ -486,6 +493,9 @@ class CampaignEntryTests(CampaignFixture):
                     observed.append(command)
                     self.assertEqual(os.environ['CUDA_VISIBLE_DEVICES'], '')
                     self.assertEqual(os.environ['SEMLOOM_REAL_RAY_CPU'], '1')
+                    self.assertEqual(os.environ['TMPDIR'], guard.manifest['runtime_temp_root'])
+                    self.assertEqual(os.environ['RAY_TMPDIR'], guard.manifest['ray_temp_root'])
+                    self.assertEqual(os.environ['SEMLOOM_REAL_RAY_TMPDIR'], guard.manifest['ray_temp_root'])
                     self.assertNotIn('RAY_ADDRESS', os.environ)
                     self.assertFalse(any(k.startswith('SEM_RECORD_') for k in os.environ))
                     self.assertNotIn('SEMLOOM_MFU_TRACE_DIR', os.environ)
@@ -521,6 +531,156 @@ class CampaignEntryTests(CampaignFixture):
                 snapshot = guard.ledger.snapshot()
                 self.assertEqual(snapshot['allocated_requests'], 7)
                 self.assertFalse(any(unit['claimed'] for unit in snapshot['units']))
+
+
+class CampaignCoverageTests(CampaignFixture):
+    def formal_manifest(self, label):
+        manifest = self.manifest(call_limit=9036, wall_seconds=3600, max_bytes=512*1024**2,
+            scan_interval_s=.25, cleanup_reserve_s=213, collection_reserve_s=90)
+        cells = []
+        for name, stage, calls in [('L-RF', 'G1', 6), ('L-RD', 'G1', 6),
+                ('S-RD-OFF', 'G2', 512), ('S-RD-LIGHT', 'G2', 512),
+                ('P-RF', 'G3', 4000), ('P-RD', 'G3', 4000)]:
+            root = self.artifacts / label / name
+            root.mkdir(parents=True)
+            config = root / 'base.json'
+            base = dict(artifact_root=str(root), nsys_tmp=str(self.artifacts / 'runtime'),
+                workload=dict(kind='movie_session'),
+                ray_options=dict(_temp_dir=str(self.artifacts / 'ray'),
+                                 _plasma_directory=str(self.artifacts / 'ray')),
+                environment={key: str(self.artifacts / 'runtime') for key in
+                    ('TMPDIR', 'RAY_TMPDIR', 'VLLM_LOG_DIR', 'PYTHONPYCACHEPREFIX')})
+            config.write_text(json.dumps(base))
+            cells.append(dict(id=name, stage=stage, calls=calls, mode='off',
+                base_config=str(config), base_sha256=hashlib.sha256(config.read_bytes()).hexdigest(),
+                prepared_config=str(root / 'PREPARED-CONFIG.json'), ready_dir=str(root / 'ready')))
+        manifest['cells'] = cells
+        return manifest
+
+    def test_six_cell_campaign_rejects_unmonitored_write_paths_before_create_or_claim(self):
+        outside = self.base / 'unmonitored'
+        outside.mkdir()
+        with (outside / 'sparse-output').open('wb') as stream:
+            stream.truncate(512*1024**2+1)  # Logical size only; no 512 MiB allocation/write.
+        self.assertGreater((outside / 'sparse-output').stat().st_size, 512*1024**2)
+        self.assertLess(guard_module.scan_bytes([self.artifacts])['bytes'], 512*1024**2)
+        cases = [('cell', 'prepared_config'), ('cell', 'ready_dir'),
+                 ('manifest', 'runtime_temp_root'), ('manifest', 'ray_temp_root'),
+                 ('base', 'artifact_root'), ('base', 'nsys_tmp'),
+                 ('ray_options', '_temp_dir'), ('ray_options', '_plasma_directory')]
+        cases += [('environment', key) for key in
+                  ('TMPDIR', 'RAY_TMPDIR', 'VLLM_LOG_DIR', 'PYTHONPYCACHEPREFIX')]
+        for phase in ('create', 'claim'):
+            for index, (scope, key) in enumerate(cases):
+                with self.subTest(phase=phase, scope=scope, path=key):
+                    label = phase+'-'+str(index)
+                    manifest = self.formal_manifest(label)
+                    root = self.base / ('campaign-'+label)
+                    if phase == 'claim':
+                        guard = guard_module.Guard.create(root, manifest,
+                            clock=self.clock.monotonic, epoch=self.clock.wall,
+                            clock_identity=self.clock_identity)
+                        target = guard.manifest
+                    else:
+                        target = manifest
+                    cell = target['cells'][0]
+                    if scope == 'cell':
+                        cell[key] = str(outside / ('PREPARED-CONFIG.json' if key == 'prepared_config' else 'ready'))
+                    elif scope == 'manifest':
+                        target[key] = str(outside)
+                    else:
+                        config = Path(cell['base_config'])
+                        base = json.loads(config.read_text())
+                        (base if scope == 'base' else base[scope])[key] = str(outside)
+                        config.write_text(json.dumps(base))
+                        cell['base_sha256'] = hashlib.sha256(config.read_bytes()).hexdigest()
+                    if phase == 'create':
+                        with self.assertRaises((BudgetError, ValueError)):
+                            guard_module.Guard.create(root, target, clock=self.clock.monotonic,
+                                epoch=self.clock.wall, clock_identity=self.clock_identity)
+                        self.assertFalse((root / 'campaign-budget.sqlite').exists())
+                    else:
+                        with self.assertRaises((BudgetError, ValueError)):
+                            guard.claim('L-RF')
+                        self.assertFalse(any(u['claimed'] for u in guard.ledger.snapshot()['units']))
+        legal = self.formal_manifest('legal-canonical')
+        alias = self.artifacts / 'internal-alias'
+        alias.symlink_to(self.artifacts / 'legal-canonical', target_is_directory=True)
+        legal['cells'][0]['prepared_config'] = str(alias / 'L-RF' / 'PREPARED-CONFIG.json')
+        legal['cells'][0]['ready_dir'] = str(alias / 'L-RF' / 'ready')
+        guard = guard_module.Guard.create(self.base / 'legal-campaign', legal,
+            clock=self.clock.monotonic, epoch=self.clock.wall, clock_identity=self.clock_identity)
+        self.assertEqual((len(guard.manifest['cells']), guard.ledger.snapshot()['limit']), (6, 9036))
+        self.assertEqual(guard.manifest['max_bytes'], 512*1024**2)
+        self.assertEqual(guard.manifest['wall_seconds'], 3600)
+        guard.check(force=True)
+        self.assertIsNotNone(guard.claim('L-RF'))
+
+    def test_ray_setup_and_cpu_command_use_the_declared_monitored_temporary_root(self):
+        import workflow
+        from tests.execution_provider import test_core_feedback_ray_future as ray_fixture
+        guard = self.create()
+        ray_root = Path(guard.manifest['ray_temp_root'])
+        fake = SimpleNamespace(__version__='2.56.1', is_initialized=lambda: False,
+            init=Mock(), shutdown=Mock(), remote=lambda **options: (lambda actor: actor))
+        cls = ray_fixture.RealRayFeedbackFutureTests
+        absent = object()
+        saved = {name: vars(cls).get(name, absent) for name in ('ray', 'directory', 'actor_type')}
+        try:
+            with patch.dict(sys.modules, ray=fake), patch.dict(os.environ,
+                    SEMLOOM_REAL_RAY_TMPDIR=str(ray_root)):
+                cls.setUpClass()  # Direct setup only; fake Ray never launches a runtime/actor.
+                try:
+                    temporary = Path(cls.directory.name)
+                    self.assertEqual(temporary.parent.resolve(), ray_root.resolve())
+                    self.assertTrue(temporary.is_dir())
+                    fake.init.assert_called_once()
+                    self.assertEqual(Path(fake.init.call_args.kwargs['_temp_dir']).resolve(), temporary.resolve())
+                    self.assertEqual(fake.init.call_args.kwargs['num_gpus'], 0)
+                finally:
+                    cls.tearDownClass()
+                fake.shutdown.assert_called_once()
+        finally:
+            for name, value in saved.items():
+                if value is absent:
+                    if name in vars(cls):
+                        delattr(cls, name)
+                else:
+                    setattr(cls, name, value)
+        self.assertFalse(temporary.exists())
+        observed = []
+
+        def cpu_supervision(command, output, **options):
+            # Explicit no-Ray/no-model log fixture for campaign environment wiring.
+            observed.append(dict(os.environ))
+            output.mkdir()
+            (output / 'worker.log').write_text('CPU FAKE only\nRan 5 tests in 0.001s\n\nOK\n')
+            return dict(status='passed', output_capture=dict(complete=True))
+
+        base = dict(movie_plan=dict(engine=dict(driver_python=sys.executable)),
+                    limits=dict(worker_timeout_s=3, cleanup_grace_s=.5))
+        before = dict(os.environ)
+        with patch.object(workflow, 'read_private', return_value=base), \
+                patch.object(workflow, 'validate_base', return_value=None), \
+                patch.object(supervisor, 'supervise', cpu_supervision):
+            for key in ('runtime_temp_root', 'ray_temp_root'):
+                with self.subTest(missing_root=key):
+                    saved_root = guard.manifest.pop(key)
+                    try:
+                        with self.assertRaises((KeyError, BudgetError, ValueError)):
+                            guard_module.run_cpu(guard, 'ray')
+                    finally:
+                        guard.manifest[key] = saved_root
+                    self.assertEqual(dict(os.environ), before)
+                    self.assertEqual(observed, [], 'no CPU process may use a fallback temp root')
+            guard_module.run_cpu(guard, 'ray')
+        self.assertEqual(dict(os.environ), before)
+        self.assertEqual(len(observed), 1)
+        for variable, path in [('TMPDIR', guard.manifest['runtime_temp_root']),
+                               ('RAY_TMPDIR', guard.manifest['ray_temp_root']),
+                               ('SEMLOOM_REAL_RAY_TMPDIR', guard.manifest['ray_temp_root'])]:
+            self.assertEqual(observed[0][variable], path)
+        self.assertFalse(any(u['claimed'] for u in guard.ledger.snapshot()['units']))
 
 
 if __name__ == '__main__':

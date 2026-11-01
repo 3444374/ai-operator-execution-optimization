@@ -86,9 +86,14 @@ GPU／进程空闲及 lease 已释放。下列入口继续领取原 lease 和额
 
 仓外 manifest 使用 `schema=semloom.record_campaign.v1`，声明 `campaign_id`、`source.head/tree`、
 `call_limit`、`historical_charge`、`wall_seconds`、`max_bytes`、`scan_interval_s`、
-`cleanup_reserve_s`、`collection_reserve_s` 和 `artifact_roots`。每个 `cells` 项声明
+`cleanup_reserve_s`、`collection_reserve_s`、`artifact_roots`、`runtime_temp_root`、
+`ray_temp_root`。每个 `cells` 项声明
 `id/calls/stage/base_config/base_sha256/prepared_config/ready_dir/mode`；总调用数必须等于全部格的
-额度之和。所有产物、CPU 资格目录和新临时目录都要被声明的根覆盖；不监控或删除模型、旧实验目录。
+额度之和。初始化、领取额度与各入口前都会核对 prepared／ready 目录、配置中的 artifact／Nsight／
+Ray／plasma 目录及明确的临时／日志输出路径；位于监控根外就拒绝，不自动扩大扫描范围。
+CPU 子命令的 `TMPDIR`、`RAY_TMPDIR` 均绑定上述专属根，五项真实 Ray 测试还通过
+`SEMLOOM_REAL_RAY_TMPDIR` 将 `rff-*` 放在监控根内。模型、数据、源码和不可变站点绑定是输入，
+不因此纳入全盘扫描。所有产物、CPU 资格目录和新临时目录都要被声明的根覆盖；不删除历史目录。
 时限与扫描间隔来自本次已批准计划，清理／收集预留来自既有关闭和监督窗口，不作为搜索停止规则。
 
 ```sh

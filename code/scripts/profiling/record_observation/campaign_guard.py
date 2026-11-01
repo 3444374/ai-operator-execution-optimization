@@ -89,6 +89,46 @@ def scan_bytes(roots):
     return result
 
 
+_WRITE_ENV_PATHS = ('TMPDIR', 'RAY_TMPDIR', 'VLLM_LOG_DIR', 'PYTHONPYCACHEPREFIX')
+
+
+def _require_covered(manifest, paths):
+    roots = [Path(p).resolve(strict=True) for p in manifest['artifact_roots']]
+    for path in paths:
+        if type(path) is not str or not Path(path).is_absolute():
+            raise BudgetError('owned output paths must be explicit absolute paths')
+        target = Path(path).resolve(strict=False)
+        if not any(target == root or root in target.parents for root in roots):
+            raise BudgetError('owned output path is outside the monitored campaign roots')
+
+
+def _configuration_coverage(manifest, config):
+    """Write destinations only; model/data/source/immutable host bindings are inputs."""
+    paths = [config[k] for k in ('artifact_root', 'nsys_tmp') if config.get(k) is not None]
+    ray = config.get('ray_options') or {}
+    paths += [ray[k] for k in ('_temp_dir', '_plasma_directory') if ray.get(k) is not None]
+    environment = config.get('environment') or {}
+    paths += [environment[k] for k in _WRITE_ENV_PATHS if environment.get(k) is not None]
+    _require_covered(manifest, paths)
+    if (config.get('workload') or {}).get('kind') == 'movie_session':
+        if not environment.get('TMPDIR') or not (ray.get('_temp_dir') or environment.get('RAY_TMPDIR')):
+            raise BudgetError('Movie runtime temporary directories must be explicitly bound')
+
+
+def validate_coverage(manifest):
+    paths = [manifest[k] for k in ('runtime_temp_root', 'ray_temp_root') if manifest.get(k) is not None]
+    for cell in manifest['cells']:
+        paths.append(str(Path(cell['prepared_config']).parent))
+        if cell.get('ready_dir') is not None:
+            paths.append(cell['ready_dir'])
+        base = Path(cell['base_config'])
+        raw = base.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != cell['base_sha256']:
+            raise BudgetError('frozen private base changed')
+        _configuration_coverage(manifest, json.loads(raw))
+    _require_covered(manifest, paths)
+
+
 class Guard:
     @classmethod
     def create(cls, root, manifest, **options):
@@ -125,6 +165,7 @@ class Guard:
         for path in manifest['artifact_roots']:
             require_outside_git(Path(path))
         scan_bytes(manifest['artifact_roots'])
+        validate_coverage(manifest)
         if any((root/name).exists() for name in ('CAMPAIGN.json', 'START.json', 'campaign-budget.sqlite')):
             raise FileExistsError('never reset a previous campaign or its reservations')
         clock, epoch = options.get('clock', time.monotonic), options.get('epoch', time.time)
@@ -200,6 +241,7 @@ class Guard:
 
     def claim(self, cell_id):
         self.check(force=True)
+        validate_coverage(self.manifest)
         return self.ledger.claim_unit(cell_id)
 
     @contextmanager
@@ -324,10 +366,12 @@ def run_cell(guard, cell_id):
     import workflow
     import control_resource_C2 as controller
     cell = _cell(guard, cell_id)
+    validate_coverage(guard.manifest)
     _check_gate(guard, cell)
     _check_ray(guard)
     path = Path(cell['prepared_config'])
     config = workflow.check(path)
+    _configuration_coverage(guard.manifest, config)
     if (path.resolve() != Path(config['artifact_root']).resolve()/'PREPARED-CONFIG.json'
             or config['expected_source'] != guard.manifest['source']
             or config['tool_source'] != guard.manifest['source']
@@ -336,6 +380,7 @@ def run_cell(guard, cell_id):
             or controller.profiled(config)):
         raise BudgetError('same-tree non-Nsight whole-cell identity required')
     effective = controller.worker_environment(config, os.environ)
+    _require_covered(guard.manifest, [effective[k] for k in _WRITE_ENV_PATHS if effective.get(k)])
     if any(key in effective for key in ('SEMLOOM_MFU_TRACE_DIR','SEMLOOM_MFU_TRACE_MILESTONES')):
         raise BudgetError('optional native trace writers must be off in both arms')
     if effective.get('RAY_ADDRESS'):
@@ -393,10 +438,16 @@ def run_cpu(guard, kind, cell_id=None):
     import workflow
     cell = (_cell(guard, cell_id) if cell_id and kind!='ray'
             else guard.manifest['cells'][0])
+    validate_coverage(guard.manifest)
+    temporary = {k:guard.manifest[k] for k in ('runtime_temp_root','ray_temp_root')}
+    _require_covered(guard.manifest, list(temporary.values()))
+    for path in temporary.values():
+        Path(path).mkdir(mode=0o700, parents=True, exist_ok=True)
     base_path = Path(cell['base_config'])
     if hashlib.sha256(base_path.read_bytes()).hexdigest() != cell['base_sha256']:
         raise BudgetError('frozen private base changed')
     base = workflow.read_private(base_path)
+    _configuration_coverage(guard.manifest, base)
     workflow.validate_base(base)
     driver = base['movie_plan']['engine']['driver_python']
     command = [driver, '-B']
@@ -420,6 +471,8 @@ def run_cpu(guard, kind, cell_id=None):
         if key.startswith('SEM_RECORD_') or key in ('RAY_ADDRESS','SEMLOOM_MFU_TRACE_DIR','SEMLOOM_MFU_TRACE_MILESTONES'):
             os.environ.pop(key)
     os.environ.update(CUDA_VISIBLE_DEVICES='', SEMLOOM_REAL_RAY_CPU='1',
+        TMPDIR=temporary['runtime_temp_root'], RAY_TMPDIR=temporary['ray_temp_root'],
+        SEMLOOM_REAL_RAY_TMPDIR=temporary['ray_temp_root'],
         PYTHONPATH=str(REPO/'code')+os.pathsep+str(HERE),
         HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', LITELLM_LOCAL_MODEL_COST_MAP='True',
         PYTHONDONTWRITEBYTECODE='1')
@@ -454,6 +507,7 @@ def run_cpu(guard, kind, cell_id=None):
 def collect(guard):
     """Hash immutable per-cell originals with existing Git manifest tools."""
     driver = None
+    validate_coverage(guard.manifest)
     for cell in guard.manifest['cells']:
         end = guard.root/(cell['id']+'-GUARD-END.json')
         if not end.exists() or json.loads(end.read_text())['status'] != 'passed':
@@ -495,6 +549,7 @@ def main(argv=None):
     if args.command=='init':
         manifest = json.loads(Path(args.manifest).read_text())
         workflow.git_identity(REPO, manifest['source'])
+        _require_covered(manifest, [manifest[k] for k in ('runtime_temp_root','ray_temp_root')])
         root = Path(args.root).resolve()
         if not any(root == Path(p).resolve() or Path(p).resolve() in root.parents
                    for p in manifest['artifact_roots']):

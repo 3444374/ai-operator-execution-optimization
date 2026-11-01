@@ -42,7 +42,8 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         if ray.__version__ != '2.56.1':
             raise RuntimeError('real Future regression requires Ray 2.56.1')
         cls.ray = ray
-        cls.directory = tempfile.TemporaryDirectory(prefix='rff-', dir='/tmp')
+        cls.directory = tempfile.TemporaryDirectory(prefix='rff-',
+            dir=os.environ.get('SEMLOOM_REAL_RAY_TMPDIR', '/tmp'))
         ray.init(num_cpus=2, num_gpus=0, include_dashboard=False, log_to_driver=False,
                  _temp_dir=cls.directory.name, object_store_memory=80*1024**2)
         @ray.remote(num_cpus=0, max_restarts=0, max_concurrency=8)
