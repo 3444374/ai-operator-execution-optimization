@@ -482,12 +482,12 @@ invalid observations. This does not yet wire ordered release or fairness debt in
 formal runtime. This capacity-only adapter remains `not-promoted` and separate from
 fixed-envelope `saor_release`; it must not be described as full SAOR.
 
-`scheduling/runtime/saor_pipeline.py` is an engine-neutral two-stage differential-
-backpressure core for image/heterogeneous pipelines. It changes only bounded flow limits
-for prestarted worker pools; it does not create Ray actors. The current image runner still
-submits unresolved CPU futures directly to GPU actors, so the controller remains unwired
-until an explicit pending-prepare → ready-tensor → pending-model broker exposes true stage
-queues. Its tests prove selection/fallback invariants only, not image performance.
+The unconnected two-stage `scheduling/runtime/saor_pipeline.py` prototype and the
+CPU-only `experiments/saor/control_benchmark.py` have left the maintained tree.
+Their exact sources and dedicated tests remain in
+[historical reproduction](../experiments/reproduction/native_baselines/README.md).
+The live stage broker and capacity adapter remain; retiring these prototypes does not
+change their execution, establish a resource-feedback loop or prove image performance.
 
 The package facade resolves compatibility exports lazily, so importing SAOR does not
 load AIMD/PID/UCB or Ray adapters. Maintained Core and native model-process consumers

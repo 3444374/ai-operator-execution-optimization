@@ -41,3 +41,10 @@ were incomplete; they provide no model comparison or performance qualification.
 Historical Project FIFO/DRR/VTC-style/strict-priority modules and evidence stay
 available for internal attribution, but they are not native system baselines and
 are not cells in the current five-arm matrix.
+
+The unconnected `scheduling/runtime/saor_pipeline.py` prototype and the CPU-only
+`control_benchmark.py` microbenchmark have left the maintained code tree. Their
+exact 54ff2324 sources, dedicated tests and original package exports remain in
+[historical reproduction sources](../../../../experiments/reproduction/native_baselines/README.md).
+The live capacity controller and stage broker remain maintained; this retirement
+does not change their execution or establish a performance improvement.

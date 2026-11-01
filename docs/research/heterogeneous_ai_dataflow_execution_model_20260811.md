@@ -5,6 +5,9 @@
 > 但 packed-uint8/pinned/DALI、动态 SAOR 与 GPU 性能门仍未完成，不构成性能或新颖性结论。工作名
 > **Heterogeneous Staged Execution（HSE）** 只用于工程沟通，投稿前必须继续做相关工作检索。
 
+原纯SAOR双阶段控制原型现已[归档](../../experiments/reproduction/native_baselines/README.md)，
+下文涉及它的复用建议保留为历史设计，不表示当前维护运行时已接入动态SAOR；静态stage broker与执行适配器继续保留。
+
 ## 1. 为什么需要执行模型，而不只是继续调 actor 数
 
 ### 1.1 本地实验事实
@@ -383,14 +386,14 @@ modalities/image/
 
 scheduling/runtime/
   stage_broker               # leases、real ready queue、byte/work credit、completion
-  saor_pipeline              # pure finite-action decision; no Ray/Daft/Torch import
+  saor_pipeline              # archived finite-action prototype; not a maintained runtime module
 
 infrastructure/
   Daft source / Ray placement / PG sink
 ```
 
 框架/native baseline 与 project 必须继续隔离：Ray Data/Daft Native 使用其官方 graph 和
-scheduler；project HSE 才使用 `stage_broker + saor_pipeline`。公共部分只限 source manifest、
+scheduler；project HSE的当前阶段执行使用`stage_broker`与静态适配器，`saor_pipeline`仅为已归档候选。公共部分只限 source manifest、
 processor/model semantics、sink、质量审计和指标。
 
 ### 6.1 对当前代码的复用审计
@@ -401,7 +404,7 @@ processor/model semantics、sink、质量审计和指标。
 | `modalities/image/contracts.py::ImageEmbeddingBatch` | 复用为 model backend 输入，不扩张成全流水线对象 | ready broker 完成后才构造；继续保持完整 batch/row id |
 | `build_image_runtime_snapshot` | 当前是 observe-only 近似，把 submitted 同时算入 prepare/model | HSE adapter 接线后由真实 prepare/ready/model/result ledger 取代 |
 | `run_project_ray_pipeline` | 当前直接把未完成 preprocess ref 排给 GPU actor | 拆成 source pump、prepare completion、ready queue、model completion 四个小循环 |
-| `scheduling/runtime/saor_pipeline.py` | 复用纯控制核；已经无 Ray/Daft/CLIP 依赖 | action 增加 ready physical-byte hard cap；arm service 继续来自离线 profile |
+| 原 `scheduling/runtime/saor_pipeline.py` | 已归档的纯控制原型，没有维护执行消费者 | 原action扩展建议仅作历史设计，不是当前HSE动态接线 |
 
 当前代码已按这条约束落地：`planning/blocks.py` 定义中性 descriptor，
 `scheduling/runtime/stage_broker.py` 维护 lease/真实 snapshot，

@@ -6,11 +6,6 @@ from .saor_capacity import (
     SaorCapacityDecision,
     SaorObservationModel,
 )
-from .saor_pipeline import (
-    SaorPipelineArmEstimate,
-    SaorPipelineController,
-    SaorPipelineDecision,
-)
 from .stage_broker import (
     BoundedStageBroker,
     StageBrokerLimits,
@@ -24,9 +19,6 @@ __all__ = [
     "SaorCapacityController",
     "SaorCapacityDecision",
     "SaorObservationModel",
-    "SaorPipelineArmEstimate",
-    "SaorPipelineController",
-    "SaorPipelineDecision",
     "BoundedStageBroker",
     "StageBrokerLimits",
     "StageBrokerSnapshot",

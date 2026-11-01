@@ -1,5 +1,12 @@
 # 原生基线与具名 Core 历史复现
 
+未接入维护执行入口的 `scheduling/runtime/saor_pipeline.py` 与纯 CPU 微基准
+`experiments/saor/control_benchmark.py` 已退出 `code/`，其实现、专属测试及原 runtime 包导出
+按准确 `54ff2324` 字节保存在 `historical_sources/54ff2324/`。
+五份投影各追加三条 override，原逐文件 SHA、投影 ID 和已有路由不变；两个专属测试只作历史来源保留，
+不增加原投影文件清单。维护运行时不导入此归档，仍使用活的 Core、stage broker 和各自适配器；
+归档原型不代表另一算法的等价替换或查询性能改善。
+
 维护代码的模型进程导入直接指向 `serving/backends/`；旧 baseline 模块继续保留 import／pickle 兼容。
 本次将四份受影响的旧调用方按准确 `6511b950` 字节保存在
 `historical_sources/6511b950/`，五份投影只追加16条 override；原逐文件 SHA、投影 ID 及已有路由不变。

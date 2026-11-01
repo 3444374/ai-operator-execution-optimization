@@ -68,6 +68,10 @@ worker 须同时部署新模块和兼容层并冷启动，不混用旧源码。C
 17处运行代码对实验实现的依赖已清除。仍有3处明确的旧比较入口兼容导入，不属于默认生产执行。
 五份历史复现继续生成原有文件与摘要，不用新实现替换旧实验源码。
 
+无维护执行消费者的纯双阶段`saor_pipeline`原型及`control_benchmark` CPU微基准已退出`code/`，
+实现、专属测试和原包导出按准确54ff2324保存在[历史复现来源](../experiments/reproduction/native_baselines/README.md)。
+活的stage broker、capacity adapter、records执行与策略默认保留；此清理不构成动态资源闭环或查询性能资格。
+
 PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权限影响的12项检查也已在原位置通过。
 这些检查没有调用模型或GPU，不代替真实查询与性能验证。
 
