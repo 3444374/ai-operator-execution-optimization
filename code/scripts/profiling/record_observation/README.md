@@ -76,6 +76,50 @@ GPU／进程空闲及 lease 已释放。下列入口继续领取原 lease 和额
 `run_resource_C2.py` 是此入口的内部监督／worker，不以直接运行 worker 绕过 Git 与资格核查。
 当前 GPU 队列和私有材料不会由本工具删除或接管。
 
+### 多格共用的操作守卫
+
+需要整轮调用／墙钟／原件上限时，可用 [campaign_guard.py](campaign_guard.py) 包住既有入口，
+不改 `control_resource_C2.py`、模型、调度器或每格参数。用被测 driver Python 启动新的守卫进程，
+工具和 runtime 必须是同一干净 Git head/tree。守卫只在该进程内组合原 `supervise.monitor`，
+异常仍由原监督器收尾自有 worker；原 lease、私有 host helper、native call cap 和关闭责任保留。
+这是操作边界工具，不是新的执行器，也不授予额外运行权限。
+
+仓外 manifest 使用 `schema=semloom.record_campaign.v1`，声明 `campaign_id`、`source.head/tree`、
+`call_limit`、`historical_charge`、`wall_seconds`、`max_bytes`、`scan_interval_s`、
+`cleanup_reserve_s`、`collection_reserve_s` 和 `artifact_roots`。每个 `cells` 项声明
+`id/calls/stage/base_config/base_sha256/prepared_config/ready_dir/mode`；总调用数必须等于全部格的
+额度之和。所有产物、CPU 资格目录和新临时目录都要被声明的根覆盖；不监控或删除模型、旧实验目录。
+时限与扫描间隔来自本次已批准计划，清理／收集预留来自既有关闭和监督窗口，不作为搜索停止规则。
+
+```sh
+GUARD=code/scripts/profiling/record_observation/campaign_guard.py
+"$DRIVER_PYTHON" -B "$GUARD" init --manifest "$PRIVATE_CAMPAIGN" --root "$CAMPAIGN_ROOT"
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind ray
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind qualify --cell-id "$CELL_ID"
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind prepare --cell-id "$CELL_ID"
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind check --cell-id "$CELL_ID"
+"$DRIVER_PYTHON" -B "$GUARD" run-cell --root "$CAMPAIGN_ROOT" --cell-id "$CELL_ID" --execute-model
+"$DRIVER_PYTHON" -B "$GUARD" collect --root "$CAMPAIGN_ROOT"
+```
+
+CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU；真实 Ray 命令须有五项无跳过通过的原始输出。
+`run-cell` 每格只 claim 一次全局 `CellBudgetLedger` 额度，不能重新建账本退还失败或未知调用。
+格按 manifest 顺序执行，前格必须完整成功；跨 `stage` 还须由检查者写入 `GATE-<上一stage>.json`，
+其 `status=passed`、`source` 和 `cells`（上一阶段各 `GUARD-END.json` 的 SHA256）必须匹配。
+守卫不自行认证质量、资源反馈接线或性能收益。
+
+空间扫描覆盖累计根，不随新格清零；内部符号链接不重复遍历，外部链接、根丢失和权限错误停止执行。
+已枚举临时文件消失可被识别；其余扫描错误不能当零占用。每次监督轮询检查墙钟，到配置间隔再扫描文件。
+这是首次观察到边界就停止的采样守卫，**不是文件系统硬配额**：写入与清理可能在采样间产生超调；
+保留真实越界量、失败原件和清理时间，不删文件把占用压回阈值，也不将越界运行写成通过。
+模型工作在整轮截止前预留清理及收集窗口；收集只对已静止的逐格目录制作原清单并验证，
+其过程也受整轮剩余时间与空间约束。异常后不能继续下一格；失败原件的只读回收另保留故障身份。
+
+`GUARD-END` 分别记录已确认提交、成功、失败、unknown 记录及未见回执的已 claim 额度。
+缺少回执时实际提交总数为 unknown，不能把 reservation 当提交、把空记录当零调用或将未知退费。
+扫描线程 CPU／墙钟成本单列；它不是整个应用 CPU 成本，必要监督带来的资源竞争不从查询耗时中扣除。
+`off/handoff` 不启用附加观察器；已开启的 ascending 生产资源反馈继续在原 actor snapshot 路径采样。
+
 ## 原件回收和观察资格
 
 进程停止写入后，对整个结果目录制作独占创建的逐文件字节清单；失败尝试也会被保留。
