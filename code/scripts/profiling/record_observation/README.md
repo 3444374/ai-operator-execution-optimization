@@ -228,6 +228,60 @@ Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feed
 
 ## 本地维护和清理边界
 
+### 完成原件的离线 DAG 观察
+
+已有 `workflow.py` 的 `summarize` 子命令只读取完成并回收的原件，不启动模型或采样器。
+它复用 `manifest/verify` 和 CPU span 汇总；输出必须在原件目录外，已有输出不覆盖：
+
+```sh
+"$DRIVER_PYTHON" -B "$TOOL" summarize --root "$RECOVERED_CELL" \
+  --manifest "$RECOVERED_CELL/ORIGINALS.json" --input "$PRIVATE_ANALYSIS_INPUT" \
+  --output "$NEW_ANALYSIS_JSON"
+```
+
+分析输入是仓外小型 JSON；路径相对 `--root`，`pointer` 明确选择原报告字段，不递归搜索私有输出。
+输出保留分析输入的字节摘要，并检查读取前后不变；冲突回执单列为冲突，不任选其一作已知成功或 token 总量。
+冲突身份不提供父子依赖、事件或 Core task 关联；仅用各份回执共同同意的字段标记阶段，无法一致归属的阶段保持未知。
+例如 Movie 单查询可以选择 `WORKER-RESULT.json` 的原 `calls` 和各进程事件：
+
+```json
+{
+  "schema": "semloom.record_dag_observation.input.v1",
+  "kind": "movie_session",
+  "calls": [{"path": "WORKER-RESULT.json", "pointer": ["calls"]}],
+  "events": ["events/events-<actual-pid>.jsonl"],
+  "samples": ["telemetry/samples.jsonl"]
+}
+```
+
+填写实际事件文件。一个原件包含多查询时，必须用 `query_id` 选择一条，不把首次／复用混成一个阶段。
+可重复 `--input` 输出多份共用字段的观察，仍分别保留输入、版本和缺失，不自动作性能排名。
+`source_commit` 可附原始版本；它是提供的来源声明，文件摘要不代替 Git 实机资格。
+原 Animals Q7 使用 `animals_summary: {"path":"实际summary文件.json"}`，复用原 `stages` 与媒体事件；
+两个 Filter 均从同一原输入出发，再交给 intersection，不由执行先后推导 Filter→Filter 数据边。
+其他结构可用 `structure.stages[].stage_id` 和 `structure.edges[]` 的 `source/target/kind` 声明，
+结构边与实际 `parent_call_ids` 分开保存，不将静态图当作实测就绪过程。
+旧 Movie 前端与模型内部的调用 ID 不同时，仅在引擎 UID、原生 request ID、查询／阶段／角色及
+完整行 occurrence 唯一一致时保存显式别名；重复／缺失身份不按行号或时间邻近补猜。
+
+缺省只在同一事件文件内配对时钟。跨进程或事件与采样关联需显式 `clock_bindings`：按相对文件名
+给出 `domain` 与 `basis`，依据应来自原冻结的同机／时钟绑定；未知就省略，不凭 UTC 或相近数字拼接。
+此声明不估计时钟偏移，也不独立认证声明真实性。GPU 样本还需 `gpu_uuids` 与样本来源完全一致；
+缺绑定、缺指标、CPU baseline priming、缺 sink 状态或未确认终态均保留未知。
+事件区间／采样关联的逐文件规则不改变既有 CPU helper 的物理 span 身份：同一唯一 span ID、PID/thread 的起止
+可分文件保存，仍只是一份物理成本。CPU 成员按显式选择或回执中的唯一查询隔离；混合／未知查询归属的 span
+不计入当前查询成本。host/native 的明确 unavailable/unknown 来源状态优先于残留数值0；合法 partial 来源仍逐字段处理。
+
+full 的新就绪钩子在原 `MethodDriver._ready_event` 返回后记录行引用摘要、阶段序号、session 和
+实际 Core key，不替换原 callback、不修改 ready 时间／队列或发新 RPC；off/handoff 不安装。
+它只能给就绪至 Core 接纳的观察区间，旧 callback 的选择理由不是实际容量拒绝原因；
+批屏障、传输、消费等没有对应事件时不猜原因。旧原件没有这些事件，等待继续不可判定。
+共享设备样本只按已知时间窗关联；模型 API／算子区间重叠不证明 GPU kernel 并行，不能把每个
+阶段的共享 CPU span 或 GPU 样本相加为独占资源。输出包含闭合 ready 区间的等待总量、墙钟并集、
+观测积压峰值及未闭合数量；这些量不是 RSS／显存或物理释放证明，也不产出 MFU/HBM 结论。
+CPU 资格覆盖身份／重复、Q7同源、时钟、共享重叠、未知／取消和真实 Core fixture 的 off/on；
+只证明观察接线与离线关联，不证明 SemBench 跨链资源规律或性能收益。
+
 可直接运行 `qualify` 中的 unittest 模块及两个 `probe_record_resource*_handoff.py`，不用仓库外
 Python 消费器。旧 `prepare_cells`、八格冻结配方和只依赖私有分析目录的联动用例未带入此入口；
 它们的原件保留在原审核／运行目录。新 `prepare` 取代旧矩阵配置拼装，但不删除 full 模式或
