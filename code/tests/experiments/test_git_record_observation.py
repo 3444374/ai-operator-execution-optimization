@@ -208,6 +208,32 @@ class PrivateCaptureFlowTests(unittest.TestCase):
             self.assertEqual(ready['handoff_CPU_paths'],dict(single_request=True,token_batch=supported))
 
 
+class PublicBulkProbeIntegrationTests(unittest.TestCase):
+    def run_probe(self,mode):
+        source=Path(__file__).resolve().parents[3]
+        probe=Path(__file__).with_name('probe_record_resource_batch_handoff.py')
+        env=dict(os.environ,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',
+                 LITELLM_LOCAL_MODEL_COST_MAP='True',CUDA_VISIBLE_DEVICES='')
+        with tempfile.TemporaryDirectory()as directory:
+            output=Path(directory)/mode
+            result=subprocess.run([sys.executable,'-B',str(probe),str(source),str(output),mode],
+                env=env,cwd=source,capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            report=json.loads((output/'PUBLIC-BATCH-HANDOFF.json').read_text())
+            self.assertEqual(report['status'],'passed_actual_public_bulk_owner_actor_transport')
+            self.assertTrue(report['outputs_preserved'])
+            self.assertTrue(report['lost_ACK_replayed_without_duplicate_member_completion'])
+            self.assertTrue(report['snapshot_RPC_terminal_complete'])
+            self.assertFalse(report['real_Ray_RPC'])
+            self.assertEqual(report['real_model_calls'],0)
+
+    def test_current_public_bulk_probe_off_uses_constructed_owner(self):
+        self.run_probe('off')
+
+    def test_current_public_bulk_probe_on_uses_constructed_owner(self):
+        self.run_probe('on')
+
+
 class OriginalIntegrityTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

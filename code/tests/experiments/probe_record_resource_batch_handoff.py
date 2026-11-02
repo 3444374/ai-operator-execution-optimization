@@ -34,6 +34,7 @@ if not hasattr(native.AsyncCoreModelActor,'poll_prepared_batch'):
     print(json.dumps(report));sys.exit(0)
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.semantic_methods.lotus.record_chain import RecordOccurrence,stage_identity
+from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec,_prepared,result_record
 from src.serving.backends.async_engine_process import AsyncEngineLimits
 from src.scheduling.core.session_contract import Acceptance,BatchKey,BatchMember,TaskKey,Terminal
@@ -91,9 +92,11 @@ def ack(key):
     value=actor.acknowledge_core(key)
     if value:acked.append(key)
     return value
-owner=native.AsyncRecordsActorOwner.__new__(native.AsyncRecordsActorOwner)
-owner.limits=limits;owner.model_actor=SimpleNamespace(
+owner=native.AsyncRecordsActorOwner.for_prepared(engine,generation,
+    RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=3),limits=limits)
+owner.model_actor=SimpleNamespace(
     submit_prepared_batch=Remote(actor.submit_prepared_batch,'submit'),
+    try_submit_prepared_batch=Remote(getattr(actor,'try_submit_prepared_batch',actor.submit_prepared_batch),'submit'),
     poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'),
     snapshot=Remote(actor.snapshot,'snapshot'))
 notified=threading.Event();received=[]
@@ -128,9 +131,8 @@ if resource_probe_supported:
     from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
     from src.scheduling.submission_control.stage_work import default_request_feedback_options
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
-    from src.semantic_methods.lotus.records import RecordsResources
     # Actual production sampler/observed actor; IPC/Futures/readings are CPU fixtures.
-    owner.model_ready=dict(engine_uid='CPU-engine');owner.resources=RecordsResources(max_active_batches=3)
+    owner.model_ready=dict(engine_uid='CPU-engine')
     owner.engine=engine;owner.prepared_batching=PreparedBatching('token_budget',None,256)
     owner.ray=SimpleNamespace(cancel=lambda *a,**k:None)
     feedback=RequestSupplyFeedback(SimpleNamespace(_actors=owner,engine=engine,resources=owner.resources,
