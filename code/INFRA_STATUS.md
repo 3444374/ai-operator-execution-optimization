@@ -4,6 +4,12 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
+只跳过 B 封包，C_request=R 且禁止动态请求反馈组合。FIFO、兼容性、成员/驻留与字节容量、
+独立结果和收尾责任不变，fused/默认路径不变。
+[入口及 CPU 回放边界](src/execution_provider/adapters/README.md#fixed-rolling-token-packing-ablation-cpu-experiment-only)
+与成员等价的准备/dispatch降开销补丁分开；未进行真实模型/Ray/GPU、完整 SemBench 或性能资格。
+
 资源采样的拒绝前诊断候选在现有单个 snapshot RPC 上保留有界元数据：会话未绑定、native
 缓存缺失与 CPU 区间资格分别记录，按本次 Core session 重置计数和最近记录。拒绝数据仍不进入
 调度，采样频率、1秒资格窗口、默认关闭行为与策略不变。仅 CPU／本地 Future 覆盖，尚未做

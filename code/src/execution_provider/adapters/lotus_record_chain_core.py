@@ -839,7 +839,8 @@ class SemLoomRecordChainCore:
                  release_completed_audit=False, token_budget=None, ready_order="fifo", successor_first=None,
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
-                 batch_feedback=None, rolling_refill=False, request_feedback=None, resident=False):
+                 batch_feedback=None, rolling_refill=False, request_feedback=None, resident=False,
+                 experimental_skip_token_packing=False):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -892,6 +893,11 @@ class SemLoomRecordChainCore:
                 raise ValueError('batch_concurrency must fit the member request grant')
         elif batch_concurrency is not None or batching_tokenizer is not None or rolling_refill:
             raise ValueError('batch controls require record-local token batching')
+        if type(experimental_skip_token_packing) is not bool:
+            raise TypeError('experimental_skip_token_packing must be boolean')
+        if experimental_skip_token_packing and not (self._async_token_batches and rolling_refill):
+            raise ValueError('experimental token packing bypass requires record-local rolling batches')
+        self.experimental_skip_token_packing = experimental_skip_token_packing
         if batch_feedback is not None:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
             if type(batch_feedback) is not SupplyFeedbackConfig:
@@ -905,6 +911,8 @@ class SemLoomRecordChainCore:
             from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
             if type(request_feedback) is not ResourceFeedbackConfig:
                 raise TypeError('request_feedback must be ResourceFeedbackConfig')
+            if experimental_skip_token_packing:
+                raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
             if (not self._async_token_batches or not rolling_refill
                     or ready_clock is not None or on_ready_event is not None
                     or request_feedback.poll_interval_s > request_feedback.window_s):

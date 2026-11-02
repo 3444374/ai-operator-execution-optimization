@@ -105,6 +105,21 @@ R 是原工厂解析后的请求容量，同时仍限制resident行。没有每�
 iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
 默认批模式不支持逐请求admission；admission cache、stage_timing、非rolling resident或受行帽限制的组合仍在预检拒绝。显式rolling resident见下文。
 
+### 固定 rolling 的 B 切包消融（仅实验）
+
+固定 rolling 配置在普通 Movie `check/run` 或 Session plan 根部可显式加入
+`"experimental_skip_token_packing": true`。仍提供原来合法的正值 B 和
+`max_rows:null`，同时 `rolling_refill:true`；此模式不允许
+`core_profile.admission`、batch_feedback 或批数并发，C_request 固定为工厂解析后的 R。
+只旁路 token 切包，仍按当前合法 ready、兼容性、C/R 空位及 RPC/IPC 字节硬限提交，
+ready 只有一条就发一条，不等待凑满或上一包全部结束。成员/驻留、输入/结果、单请求 context
+及引擎容量保护不变。R 与 native max_num_seqs 独立，后者不是应用批大小。
+
+默认省略/false 不变，fused 和其他 token 策略保持原状。B 与旁路标记均进入配置/实际报告；
+不装动态 B 或动态 C 控制器。该选项会改变包成员，须独立于成员等价的降开销补丁评审。
+当前仅支持[CPU 机制回放](../execution_provider/adapters/README.md#fixed-rolling-token-packing-ablation-cpu-experiment-only)，
+不是新 SemBench 成绩；真实模型的完整查询时间、gold、输出变化和引擎供给/排队仍待验证。
+
 ### 请求级动态 rolling 补位（本地CPU候选）
 
 在已声明B及硬容量R的完整配置中，移除`batch_concurrency`和`batch_feedback`，加入：

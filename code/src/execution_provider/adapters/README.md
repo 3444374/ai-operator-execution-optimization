@@ -438,6 +438,34 @@ factory; resident is accepted only for the explicit rolling mode below. Admissio
 and unsupported row-capped combinations fail before model construction. Configuration and commands
 are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
 
+### Fixed rolling token-packing ablation (CPU experiment only)
+
+The same factory and record-local organizer accept
+`experimental_skip_token_packing=True` only with fixed `rolling_refill=True`.
+Keep the ordinary positive-B `PreparedBatching('token_budget', None, B)` config:
+the experimental option bypasses only token-based packet sealing. C_request=R,
+the existing FIFO/compatibility, resident/member/result capacity and exact RPC/IPC
+byte bounds remain. A nonempty ready frontier is sent immediately; neither a full
+packet nor the previous packet's final member is required. The flag rejects
+request-feedback admission and non-rolling/fused paths; omission/false leaves
+their existing behavior and configuration receipts unchanged. It installs no
+dynamic B/C controller and does not merge R with native engine sequence capacity.
+
+`B` remains declared in the receipt, accompanied by the explicit experimental
+flag when bypassed. This changes packet membership, unlike preparation or dispatch
+overhead changes that preserve members. Compare each request's identity, prompt,
+generation and final output separately. GPU request arrival order/batching can
+change; CPU fixture equality is not a guarantee of native numerical equivalence.
+
+The [fixed-C CPU replay](../../../tests/execution_provider/test_lotus_token_packing_bypass.py)
+compares identical ready/C snapshots, records actual extra-member opportunities
+and separately drains both modes through immediate CPU stubs. Run from `code/`:
+`python -m tests.execution_provider.test_lotus_token_packing_bypass --microbenchmark`.
+Its encoding, stub-submit CPU and first-stub handoff times are not query/vLLM/GPU
+performance. Eight free slots with eight members exactly reaching B cannot admit
+a ninth member even when the token sealing reason occurs. Real-model query and
+quality qualification remain pending.
+
 ### Optional dynamic request permits for rolling refill (local CPU candidate)
 
 With token `prepared_batching` and `rolling_refill=true`, the same ordinary
