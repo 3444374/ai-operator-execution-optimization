@@ -68,7 +68,9 @@ class PreparedTokenOrganizer:
         self._estimates = {k: v for k, v in self._estimates.items() if k in live}
         if not live:
             self._header_estimate = self._header_context = None
-        builder = PendingBatchBuilder(None, owner.prepared_batching.token_budget)
+        skip_tokens = getattr(owner, 'experimental_skip_token_packing', False)
+        builder = PendingBatchBuilder(available if skip_tokens else None,
+                                      0 if skip_tokens else owner.prepared_batching.token_budget)
         chosen, compatibility, wire_bytes, reason = [], None, 0, 'ready_frontier_exhausted'
         for candidate in candidates:
             if candidate.key not in self._estimates:
@@ -108,7 +110,7 @@ class PreparedTokenOrganizer:
             compatibility, wire_bytes, rpc_bytes = key, proposed, rpc_proposed
             chosen.append(candidate.key)
             full = builder.add(arrival)
-            if full:
+            if full and not skip_tokens:
                 reason = 'token_budget'; break
             if len(chosen) == available:
                 reason = 'request_capacity'; break
@@ -130,7 +132,9 @@ class PreparedTokenOrganizer:
             concurrency_unit='application transport batches with unsettled compute members',
             request_limit=self.owner.resources.max_active_batches, active_batches=batches, active_requests=requests,
             peak_batches=self.peak_batches, peak_requests=self.peak_requests, selected_batches=self.selected,
-            recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent', **rolling)
+            recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent', **rolling,
+            **(dict(experimental_skip_token_packing=True)
+               if getattr(self.owner, 'experimental_skip_token_packing', False) else {}))
 
 
 class BatchSupplyFeedback:

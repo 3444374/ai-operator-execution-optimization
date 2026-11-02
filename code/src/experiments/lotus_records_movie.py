@@ -321,7 +321,8 @@ def _core_profile(config):
 
 def _record_batching_options(config):
     """Only explicit application token batches select the existing chain core."""
-    if not (set(config) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill'}):
+    if not (set(config) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
+                           'experimental_skip_token_packing'}):
         return {}
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
     value = config.get('prepared_batching')
@@ -332,6 +333,8 @@ def _record_batching_options(config):
     options = dict(prepared_batching=value, batch_concurrency=config.get('batch_concurrency'))
     if 'rolling_refill' in config:
         options['rolling_refill'] = config['rolling_refill']
+    if 'experimental_skip_token_packing' in config:
+        options['experimental_skip_token_packing'] = config['experimental_skip_token_packing']
     if 'batch_feedback' in config:
         from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
         feedback = config['batch_feedback']
@@ -343,7 +346,7 @@ def read_config(path):
     from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -358,7 +361,8 @@ def read_config(path):
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
     is_core = value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND)
-    if not is_core and (set(value) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill'}):
+    if not is_core and (set(value) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
+                                     'experimental_skip_token_packing'}):
         raise ValueError('record batching options require a Core backend')
     limits = None
     if is_core:

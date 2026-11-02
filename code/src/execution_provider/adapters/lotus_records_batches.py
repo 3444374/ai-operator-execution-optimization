@@ -131,7 +131,8 @@ class PreparedRecordsCore:
             actor_owner=actors, prepared_batching=PreparedBatching(**batching['prepared_batching']),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
             rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback,
-            resident=self.resident)
+            resident=self.resident,
+            experimental_skip_token_packing=batching.get('experimental_skip_token_packing', False))
 
     def _ordinary(self, receipt):
         expected = self._expected.get(receipt['row_id'])
@@ -171,6 +172,8 @@ class PreparedRecordsCore:
                 valid_window = (1 <= actual['concurrency'] <= upper and actual['peak_batches'] <= upper
                                 if 'feedback' in requested else actual['concurrency'] == requested['C_batch'])
             if (actual['policy'] != requested['prepared_batching'] or not valid_window
+                    or actual.get('experimental_skip_token_packing', False)
+                       != requested.get('experimental_skip_token_packing', False)
                     or actual['request_limit'] != requested['R'] or sum(map(len, groups.values())) != len(self._expected)
                     or actual['data_batch_rpcs'] != len(groups)):
                 raise ValueError('actual token batch execution differs from the selected factory configuration')
