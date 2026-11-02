@@ -1591,6 +1591,7 @@ class SemLoomRecordChainCore:
         if self._async_token_batches and hasattr(self, '_token_organizer'):
             self.last_close_report['async_token_batches'] = dict(self._token_organizer.report(),
                 data_batch_rpcs=self.transport.data_batch_rpcs,
+                batch_handoff=self.transport.batch_handoff_report(),
                 peak_data_rpc_bytes=getattr(self._actors, 'peak_prepared_batch_rpc_bytes', 0),
                 peak_result_rpc_bytes=self.transport.peak_result_frame_bytes,
                 engine_max_num_seqs=self.engine.max_num_seqs,

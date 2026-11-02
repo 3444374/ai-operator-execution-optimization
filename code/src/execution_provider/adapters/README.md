@@ -438,6 +438,36 @@ factory; resident is accepted only for the explicit rolling mode below. Admissio
 and unsupported row-capped combinations fail before model construction. Configuration and commands
 are maintained in the [Movie entry documentation](../../experiments/movie_matrix.README.md#record-token-batch-entry).
 
+### Query packet counters
+
+`last_close_report.async_token_batches.selected_batches` counts nonempty organizer
+selections. `selected_seal_reason_counts` covers the entire query with five fixed
+keys: `token_budget`, `request_capacity`, `frame_bytes`, `compatibility` and
+`ready_frontier_exhausted`. Their sum equals `selected_batches`; `recent_batches`
+remains only the latest 64 examples. A reason records the existing branch order,
+not proof that bypassing it would admit another legal member. Selection is not
+backend acceptance. A pending Core selection reused after `NOT_ACCEPTED` does not
+call the organizer again.
+
+`data_batch_rpcs` retains its existing count of submit calls that returned an
+awaitable/reference. `batch_handoff.submit_operations_started` also includes a
+synchronous submit exception. Neither counts the owner's internal backpressure
+retries. `batch_handoff.actor_ack_counts` separately counts
+the first recognized actor `accepted`/`rejected` reply, or `unknown` if no recognized
+reply was observed. `pending_actor_acks` counts operations still awaiting that
+classification. Result polling, lost result ACK retries and later member failures
+do not reclassify the initial handoff. These are transport batches, not native GPU
+batches or per-request success counts. An actor acceptance can also retain a
+cancelled member without submitting it to the engine. An unknown handoff counter
+never refunds any responsibility.
+
+Both counter sets are fixed-size snapshots and reset with the existing per-query
+organizer/transport. Model-process `submitted_batch_frames` remains an owner-lifetime
+IPC queue counter; it is not silently treated as a per-query count after reuse.
+The [CPU counter tests](../../../tests/execution_provider/test_lotus_batch_counters.py)
+cover history eviction, handoff failure/cancellation, polling and resident reuse.
+Counter qualification is CPU-only; no new model performance evidence is implied.
+
 ### Fixed rolling token-packing ablation (CPU experiment only)
 
 The same factory and record-local organizer accept

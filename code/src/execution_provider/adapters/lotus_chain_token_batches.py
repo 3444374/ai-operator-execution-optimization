@@ -19,6 +19,8 @@ class PreparedTokenOrganizer:
         self._estimates = {}
         self._header_estimate = self._header_context = None
         self.selected = self.peak_batches = self.peak_requests = 0
+        self.selected_seal_reason_counts = dict(token_budget=0, request_capacity=0,
+            frame_bytes=0, compatibility=0, ready_frontier_exhausted=0)
         self.request_window = owner.resources.max_active_batches
         self.history = []
 
@@ -118,6 +120,7 @@ class PreparedTokenOrganizer:
             return ()
         batch = builder.close()
         self.selected += 1
+        self.selected_seal_reason_counts[reason] += 1
         self.history = (self.history + [dict(members=len(chosen), tokens=batch.estimated_total_tokens,
             reason=reason, ipc_frame_bytes_upper_bound=wire_bytes, data_rpc_bytes_upper_bound=rpc_bytes,
             **(dict(C_request=self.request_window, requests_before=active_requests)
@@ -132,6 +135,7 @@ class PreparedTokenOrganizer:
             concurrency_unit='application transport batches with unsettled compute members',
             request_limit=self.owner.resources.max_active_batches, active_batches=batches, active_requests=requests,
             peak_batches=self.peak_batches, peak_requests=self.peak_requests, selected_batches=self.selected,
+            selected_seal_reason_counts=dict(self.selected_seal_reason_counts),
             recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent', **rolling,
             **(dict(experimental_skip_token_packing=True)
                if getattr(self.owner, 'experimental_skip_token_packing', False) else {}))

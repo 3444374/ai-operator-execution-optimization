@@ -273,6 +273,11 @@ token RD的多成员提交也可命中该路径；单成员、普通records动�
 原候选的CPU fixture分别观察到每千条请求计量编码5,000→2,003次，以及32成员提交容量表扫描96→3次；
 两种微基准覆盖不同局部成本，不能相加或外推完整查询收益。本组合只有CPU等价性资格，尚无真实Ray、模型或查询性能验收。
 
+组包诊断增加常数空间的全query封批原因计数，复用原`selected_batches`；最近64条history仍只作示例。
+close报告另列首次actor批ACK的accepted/rejected/unknown与尚待确认数，不与选择次数、owner内部重试、
+成员终态或GPU内部批次混用。原打包、参数、责任与默认值不变；新增计数只完成CPU验证，尚待独审及对应实机核验。
+字段与界限见[全query包计数](src/execution_provider/adapters/README.md#query-packet-counters)。
+
 <a id="model-query-reuse-scope"></a>
 ## 模型所有者与跨查询复用范围
 

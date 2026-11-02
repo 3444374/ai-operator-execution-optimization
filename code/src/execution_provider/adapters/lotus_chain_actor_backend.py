@@ -32,6 +32,25 @@ class LotusChainActorBackend(_RecordTransport):
         self.supports_batch_submit = bulk
         self._bulk = {}
         self.data_batch_rpcs = self.peak_result_frame_bytes = 0
+        self._batch_submits_started = 0
+        self._batch_ack_counts = dict(accepted=0, rejected=0, unknown=0)
+
+    def batch_handoff_report(self):
+        """First actor ACK per logical submit, separate from per-member results.
+
+        Owner backpressure retries and result polling are not new packets.
+        Unknown means no recognized first ACK was observed; it does not retire
+        any request responsibility or imply an unknown model terminal.
+        """
+        with self._lock:
+            counts = dict(self._batch_ack_counts)
+            return dict(submit_operations_started=self._batch_submits_started,
+                actor_ack_counts=counts,
+                pending_actor_acks=self._batch_submits_started-sum(counts.values()))
+
+    def _count_batch_ack(self, outcome):
+        with self._lock:
+            self._batch_ack_counts[outcome] += 1
 
     def recover_actor_receipts(self, receipts):
         errors = super().recover_actor_receipts(receipts)
@@ -83,17 +102,26 @@ class LotusChainActorBackend(_RecordTransport):
         return outcome
 
     async def _drive_batch(self, group, context):
+        ack_pending = False
         try:
             calls = [dict(row=context['values'][t.key]['row'], generation=context['values'][t.key]['generation'],
                           maximum=t.task.max_result_bytes, request_key=[t.key.session_id, t.key.sequence])
                      for t in context['tasks'].values()]
             key = (group.session_id, group.sequence)
+            with self._lock:
+                self._batch_submits_started += 1
+            ack_pending = True
             ref = self.actors.submit_prepared_batch(calls, key, self.deadline)
-            self.data_batch_rpcs += 1
+            with self._lock:
+                self.data_batch_rpcs += 1
             calls = None
             context['tasks'].clear()
             context['values'].clear()
             response = await _await_result(ref)
+            status = response.get('status') if type(response) is dict else None
+            ack_pending = False
+            self._count_batch_ack(status if type(status) is str and status in ('accepted', 'rejected')
+                                  else 'unknown')
             pending = set(context['members'])
             while pending:
                 pending = {member for member in pending if (future := context['futures'].get(member)) is not None
@@ -143,6 +171,8 @@ class LotusChainActorBackend(_RecordTransport):
                     except InvalidStateError:
                         pass
         finally:
+            if ack_pending:
+                self._count_batch_ack('unknown')
             # A fast RPC may finish before the backend schedules every local
             # member. Keep only their charged result futures until transfer.
             context['driver_done'] = True
