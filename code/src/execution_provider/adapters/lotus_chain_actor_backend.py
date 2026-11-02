@@ -13,7 +13,7 @@ import math
 
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission, TaskKey, Terminal
 from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
-from .lotus_records_core import _RecordTransport, _check_result_capacity
+from .lotus_records_core import _RecordTransport, _check_result_capacity, _await_result
 
 
 class LotusChainActorBackend(_RecordTransport):
@@ -93,7 +93,7 @@ class LotusChainActorBackend(_RecordTransport):
             calls = None
             context['tasks'].clear()
             context['values'].clear()
-            response = await asyncio.wrap_future(ref.future())
+            response = await _await_result(ref)
             pending = set(context['members'])
             while pending:
                 pending = {member for member in pending if (future := context['futures'].get(member)) is not None
@@ -101,8 +101,10 @@ class LotusChainActorBackend(_RecordTransport):
                 if not pending:
                     break
                 if response['status'] == 'accepted':
-                    ref = self.actors.poll_prepared_batch(key)
-                    raw = await asyncio.wrap_future(ref.future())
+                    ref = (self.actors.wait_prepared_batch(key)
+                           if callable(getattr(self.actors, 'wait_prepared_batch', None))
+                           else self.actors.poll_prepared_batch(key))
+                    raw = await _await_result(ref)
                     self.peak_result_frame_bytes = max(self.peak_result_frame_bytes, len(raw))
                     response = json.loads(raw)
                 for receipt in response.get('results', ()):

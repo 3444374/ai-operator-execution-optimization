@@ -147,7 +147,7 @@ class AsyncCoreCompositionTests(unittest.TestCase):
         rows = self.rows(["fast"])
         ack_started, release_ack, next_started = (threading.Event() for _ in range(3))
         original_ack = AsyncCoreModelActor.acknowledge_core
-        original_run = AsyncCoreModelActor.run_core
+        original_run = AsyncCoreModelActor.try_submit_core
 
         def delayed_ack(actor, key):
             if key == (0, 0):
@@ -163,7 +163,7 @@ class AsyncCoreCompositionTests(unittest.TestCase):
 
         with ThreadedRuntime(rows) as runtime, \
                 patch.object(AsyncCoreModelActor, "acknowledge_core", delayed_ack), \
-                patch.object(AsyncCoreModelActor, "run_core", observe_next), \
+                patch.object(AsyncCoreModelActor, "try_submit_core", observe_next), \
                 ThreadPoolExecutor(max_workers=1) as pool:
             owner = self.owner()
             try:

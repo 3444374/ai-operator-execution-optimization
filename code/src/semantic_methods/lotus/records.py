@@ -135,6 +135,7 @@ class RecordsResources:
     max_active_batches: int = 2
     query_timeout_s: float = 60
     startup_timeout_s: float = 120
+    model_rpc_workers: int | None = None
 
     def __post_init__(self):
         for name in (
@@ -146,6 +147,9 @@ class RecordsResources:
                 raise ValueError("records capacity must be a positive integer: " + name)
         if self.gpu_workers != 1:
             raise ValueError("records currently require one GPU worker and TP1")
+        if self.model_rpc_workers is not None and (
+                type(self.model_rpc_workers) is not int or self.model_rpc_workers < 1):
+            raise ValueError("model_rpc_workers must be a positive integer or None")
         for name in ("query_timeout_s", "startup_timeout_s"):
             value = getattr(self, name)
             try:

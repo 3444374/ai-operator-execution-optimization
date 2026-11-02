@@ -12,6 +12,7 @@ import asyncio
 from contextlib import contextmanager, nullcontext
 from dataclasses import asdict, dataclass, replace
 import hashlib
+import inspect
 import json
 import os
 import threading
@@ -239,6 +240,11 @@ def _measure(timings, name):
     return nullcontext() if timings is None else timings.measure(name)
 
 
+async def _await_result(value):
+    """Wait in the existing transport loop, never in a Ray data thread."""
+    return await value if inspect.isawaitable(value) else await asyncio.wrap_future(value.future())
+
+
 @dataclass(frozen=True)
 class CoreRecordsCapacity:
     """Per-row logical storage, bounded actions, and poll interval; not RSS caps."""
@@ -382,10 +388,14 @@ class _RecordTransport:
                         else actor.prepare.remote([row], self.deadline, asdict(prepare_method)))
         with self._lock:
             self._refs[task.key] = (prepared,)
-        with _measure(timings, "model_submit"):
+        if getattr(self.actors, 'nonblocking_core_handoff', False):
             result_ref = self.actors.submit_core(
-                prepared, self.deadline, task.task.max_result_bytes, task.key,
-            )
+                prepared, self.deadline, task.task.max_result_bytes, task.key, timings=timings)
+        else:
+            with _measure(timings, "model_submit"):
+                result_ref = self.actors.submit_core(
+                    prepared, self.deadline, task.task.max_result_bytes, task.key,
+                )
         with self._lock:
             self._refs[task.key] = (prepared, result_ref)
         return result_ref
@@ -407,7 +417,7 @@ class _RecordTransport:
         with self._lock:
             expected = self._requests[task.key][0]
         with _measure(timings, "dependency_and_model_wait"):
-            result = await asyncio.wrap_future(result_ref.future())
+            result = await _await_result(result_ref)
         with _measure(timings, "transport_result_processing"):
             if type(result) is not bytes or len(result) > task.task.max_result_bytes:
                 raise ValueError("model completion exceeded its byte reservation")

@@ -810,6 +810,25 @@ vLLM 的每轮序列上限，不再截断 records Core 的请求额度。外层�
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
 显式 `async_limits.max_inflight/result_slots` 必须覆盖该 owner 上界，不是只覆盖 C0。
 
+异步 Core 的 RPC 线程预算与上述驻留槽位分开。`RecordsResources.model_rpc_workers`
+是可选正整数；省略时沿用调用方声明的 `cpu_workers` 作为数据 RPC 并发预算，不读取
+输入长度、R 或引擎序列容量，也不声称探测了宿主可用 CPU。Ray 模型 actor 的线程并发为
+该数据预算加两个控制进展位置：一个供关闭／drain 等待，另一个供 snapshot、abort、ACK。
+Ray CPU/GPU 预留及 vLLM 参数不因此改变；部署方可按其 CPU 预算显式覆盖 RPC worker 数。
+
+工厂路径的数据 RPC 只交接一次已确认接受的请求；容量或 IPC 暂拒会立即返回
+`backpressure`，等待留在现有 transport 事件循环。原 `_held`、ticket、逐成员轮询和
+ACK 继续拥有请求与结果，无第二套队列或责任计数。取消不释放尚未终结的数据 RPC 许可，
+控制 RPC 不占数据许可；结果未确认仍保持 unknown 责任及原关闭回执。
+`AsyncRecordsActorOwner.submit_core/submit_prepared_core/submit_prepared_batch`
+现在返回须在 transport loop 等待的 awaitable，不能再交给 `ray.get`；内部 transport
+已同步迁移。低层 actor 的旧 `run_core/run_prepared_core/submit_prepared_batch` 阻塞接口
+仍保留作直接调用兼容，它们不提供新工厂的数据许可保证。普通 sync 固定默认路径不变。
+`model_submit` 继续计实际 `.remote()` 交接墙钟，背压重试计入该阶段；模型与依赖等待仍单列。
+执行元数据新增解析后的 RPC worker 数、来源、控制预留及交接协议，不能将其当硬件最优值。
+[线程与责任回归](../../../tests/execution_provider/test_lotus_rpc_capacity.py)仅为 CPU 资格；
+真实 Ray 的线程池、控制进展及 2,000 条模型提交仍待独立实机验收。
+
 `allow_exploration=True` 显式允许单遍性能试探；不设 admission 时保持固定且不启动 native
 反馈采样。当前显式字典的默认 `exploration_s=None, min_remaining=0, max_changes=None`
 不设内部总探索期限、剩余条数门槛或变更次数上限；正值仅供显式 legacy 预算对照。

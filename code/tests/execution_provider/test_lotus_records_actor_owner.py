@@ -36,6 +36,15 @@ class Ref:
             self.resolved = True
         return self.value
 
+    def future(self):
+        from concurrent.futures import Future
+        result = Future()
+        try:
+            result.set_result(self.resolve())
+        except BaseException as error:
+            result.set_exception(error)
+        return result
+
 
 class FakeRuntime:
     def __init__(self, *, close_reports=None, ready_error=None, constructor_error=None):

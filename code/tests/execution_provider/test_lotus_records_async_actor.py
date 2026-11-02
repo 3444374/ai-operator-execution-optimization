@@ -303,7 +303,7 @@ class AsyncActorTests(unittest.TestCase):
                                         resources, limits=self.limits)
         options = owner._model_actor_options()
         self.assertEqual(options["num_gpus"], 1)
-        self.assertGreaterEqual(options["max_concurrency"], self.limits.max_inflight + 2)
+        self.assertEqual(options["max_concurrency"], resources.cpu_workers + 2)
         self.assertIn(self.spec.driver_python, options["runtime_env"]["py_executable"])
         self.assertEqual(options["max_task_retries"], 0)
         self.assertEqual(len(owner._model_actor_arguments()), 4)

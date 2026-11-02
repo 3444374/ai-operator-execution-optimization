@@ -276,6 +276,13 @@ token RD的多成员提交也可命中该路径；单成员、普通records动�
 <a id="model-query-reuse-scope"></a>
 ## 模型所有者与跨查询复用范围
 
+异步模型 owner 的本地 RPC 容量修正将数据线程预算从 R／请求数中解耦，复用非阻塞
+提交、既有逐成员轮询与 ACK；普通 sync 默认不变，模型／引擎容量和输出语义不变。
+数据许可来自 `RecordsResources.model_rpc_workers`，省略时按声明的 `cpu_workers` 解析，
+不是硬件探测或性能选优。旧直接阻塞 actor 调用保留，owner 提交 awaitable 的迁移和
+两个控制位置的职责见[接口说明](src/execution_provider/adapters/README.md#records-core-可选动态接纳)。
+目前只有 CPU fixture／子进程 IPC 检查；没有新真实 Ray、GPU 或 2,000 条查询成绩。
+
 `e7373c5b` 尚无 token 跨查询复用；后继`0585e9bf`接通下表的 rolling resident 路径，
 已有真实模型 RF／旧 RD 的首次／复用单配对；旧动态是负结果，见[扫描边界](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
 本轮新扫描／提示接线只完成 CPU 资格，不能继承旧源码的实机或性能验收。
