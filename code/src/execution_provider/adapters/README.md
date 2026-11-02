@@ -820,6 +820,10 @@ Ray CPU/GPU 预留及 vLLM 参数不因此改变；部署方可按其 CPU 预算
 `backpressure`，等待留在现有 transport 事件循环。原 `_held`、ticket、逐成员轮询和
 ACK 继续拥有请求与结果，无第二套队列或责任计数。取消不释放尚未终结的数据 RPC 许可，
 控制 RPC 不占数据许可；结果未确认仍保持 unknown 责任及原关闭回执。
+许可在已发行 RPC 的非取消终态 Future 回调中归还，调用方 Task 反复取消或事件循环关闭
+不能提前退款。本地 Future 被取消或观察注册失败时，保留最多 RPC worker 数的临时引用、
+停止新数据发行并唤醒未发行等待者；关闭／drain 在原截止时间内凭 Ray 对象就绪核实。
+未获终态证据则 RPC 清理报告仍为 unknown，不把本地取消当远端完成或模型结果。
 `AsyncRecordsActorOwner.submit_core/submit_prepared_core/submit_prepared_batch`
 现在返回须在 transport loop 等待的 awaitable，不能再交给 `ray.get`；内部 transport
 已同步迁移。低层 actor 的旧 `run_core/run_prepared_core/submit_prepared_batch` 阻塞接口

@@ -83,10 +83,12 @@ class Handle:
     def __init__(self, actor, workers):
         self.actor = actor
         self.pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix='bounded-data-rpc')
+        self.calls = []
 
     def __getattr__(self, name):
         def remote(*args, **kwargs):
             future = self.pool.submit(getattr(self.actor, name), *args, **kwargs)
+            self.calls.append((name, future))
             return SimpleNamespace(future=lambda: future)
         return SimpleNamespace(remote=remote)
 
@@ -298,12 +300,14 @@ class RPCProgressTests(unittest.IsolatedAsyncioTestCase):
                 report = await asyncio.wrap_future(owner.model_actor.close.remote(1).future())
                 self.assertEqual(report['status'], 'closed')
                 self.assertEqual(owner._rpc_pending, 1)
-                self.assertEqual(owner._rpc_gate._value, 0)
+                self.assertEqual(owner._rpc_inflight, 1)
                 release.set()
+                remote = next(future for name, future in owner.model_actor.calls if name == 'try_submit_core')
+                await asyncio.wrap_future(remote)
                 with self.assertRaises(asyncio.CancelledError):
                     await task
                 self.assertEqual(owner._rpc_pending, 0)
-                self.assertEqual(owner._rpc_gate._value, 1)
+                self.assertEqual(owner._rpc_inflight, 0)
                 self.assertEqual(actor.engine.sequence, 0)
         finally:
             release.set()

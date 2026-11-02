@@ -698,9 +698,10 @@ class AsyncRecordsActorOwner(_ActorOwner):
         if self.limits.result_slots < maximum:
             raise ValueError("Async actor needs one reserved result per Core request")
         self.rpc_workers = resources.cpu_workers if resources.model_rpc_workers is None else resources.model_rpc_workers
-        self._rpc_loop = self._rpc_gate = None
-        self._rpc_pending = 0
-        self._rpc_state_lock = threading.Lock()
+        self._rpc_loop = self._rpc_wake = None
+        self._rpc_pending = self._rpc_inflight = 0
+        self._rpc_unconfirmed = {}
+        self._rpc_state_lock = threading.Condition()
 
     @classmethod
     def for_prepared(cls, engine, generation, resources, *, limits=None):
@@ -743,6 +744,14 @@ class AsyncRecordsActorOwner(_ActorOwner):
             max_concurrency=self.rpc_workers + self.control_rpc_reserve,
             runtime_env=_runtime_env(self.engine.driver_python))
 
+    @staticmethod
+    def _notify_rpc(loop, wake):
+        try:
+            loop.call_soon_threadsafe(wake.set)
+        except RuntimeError:
+            if not loop.is_closed():
+                raise
+
     async def _data_rpc(self, method, *args, timings=None):
         loop = asyncio.get_running_loop()
         with self._rpc_state_lock:
@@ -750,27 +759,96 @@ class AsyncRecordsActorOwner(_ActorOwner):
                 if self._rpc_pending:
                     raise RuntimeError('model RPCs still belong to the previous transport loop')
                 self._rpc_loop = loop
-                self._rpc_gate = asyncio.Semaphore(self.rpc_workers)
+                self._rpc_wake = asyncio.Event()
             self._rpc_pending += 1
-        try:
-            async with self._rpc_gate:
-                with _measure(timings, 'model_submit'):
-                    # Keep the existing poll hook visible to optional observers.
-                    ref = (self.poll_prepared_batch(*args) if method == 'poll_prepared_batch'
-                           else getattr(self.model_actor, method).remote(*args))
-                pending = asyncio.wrap_future(ref.future())
-                try:
-                    return await asyncio.shield(pending)
-                except asyncio.CancelledError:
-                    # A cancelled waiter cannot free a permit for a still-running
-                    # data RPC. Controls remain outside this data-only gate.
-                    try:
-                        await asyncio.shield(pending)
-                    finally:
-                        raise
-        finally:
+            wake = self._rpc_wake
+        acquired = issued = finished = False
+        ref = None
+
+        def release():
+            nonlocal finished
             with self._rpc_state_lock:
+                if finished:
+                    return
+                finished = True
                 self._rpc_pending -= 1
+                if acquired:
+                    self._rpc_inflight -= 1
+                self._rpc_unconfirmed.pop(id(ref), None)
+                self._rpc_state_lock.notify_all()
+            self._notify_rpc(loop, wake)
+
+        def unconfirmed():
+            with self._rpc_state_lock:
+                if finished:
+                    return
+                # Only observer failures retain opaque RPC refs, at most the
+                # data worker budget; model requests still use held/tickets.
+                self._rpc_unconfirmed[id(ref)] = (ref, release)
+                self._rpc_state_lock.notify_all()
+            self._notify_rpc(loop, wake)
+
+        def terminal(future):
+            if future.cancelled():
+                # Cancelling a local concurrent Future is not a Ray terminal.
+                unconfirmed()
+            else:
+                release()
+
+        try:
+            while True:
+                with self._rpc_state_lock:
+                    if self._rpc_unconfirmed:
+                        raise RuntimeError('a data RPC has no confirmed terminal observer')
+                    if self._rpc_inflight < self.rpc_workers:
+                        self._rpc_inflight += 1
+                        acquired = True
+                        break
+                    wake.clear()
+                await wake.wait()
+            with _measure(timings, 'model_submit'):
+                # Keep the existing poll hook visible to optional observers.
+                ref = (self.poll_prepared_batch(*args) if method == 'poll_prepared_batch'
+                       else getattr(self.model_actor, method).remote(*args))
+            issued = True
+            try:
+                future = ref.future()
+                future.add_done_callback(terminal)
+                pending = asyncio.wrap_future(future)
+            except BaseException:
+                unconfirmed()
+                raise
+            # Task cancellation, including repeated cancellation and loop
+            # shutdown, cannot cancel this Future or return its RPC permit.
+            return await asyncio.shield(pending)
+        finally:
+            if not issued:
+                release()
+
+    def _rpc_cleanup_status(self, report, *, deadline):
+        with self._rpc_state_lock:
+            unconfirmed = tuple(self._rpc_unconfirmed.values())
+        for ref, release in unconfirmed:
+            try:
+                # Ray object readiness, unlike a cancelled local Future, proves
+                # the issued RPC has returned or raised. This issues no RPC.
+                ready, _ = self.ray.wait([ref], num_returns=1,
+                    timeout=max(0, deadline-time.monotonic()), fetch_local=False)
+            except Exception:
+                continue
+            if ready:
+                release()
+        with self._rpc_state_lock:
+            while self._rpc_pending and not self._rpc_unconfirmed and time.monotonic() < deadline:
+                self._rpc_state_lock.wait(max(0, deadline-time.monotonic()))
+            pending, unknown = self._rpc_pending, len(self._rpc_unconfirmed)
+        report.update(data_rpc_pending=pending, data_rpc_unconfirmed=unknown)
+        if pending:
+            report['status'] = 'unknown'
+            if 'model_retained' in report:
+                report['model_retained'] = False
+            report['cleanup_errors'] = list(report.get('cleanup_errors', ())) + ['data_rpc_terminal_unconfirmed']
+        return report
 
     async def _core_result(self, method, arguments, key, maximum, *, timings=None):
         pair = (key.session_id, key.sequence)
@@ -830,13 +908,16 @@ class AsyncRecordsActorOwner(_ActorOwner):
         if self.model_actor is None:
             return dict(status='retained', model_ready=None, model_allocated=False,
                         model_retained=True, cleanup_errors=[])
-        return self.wait_ready(self.model_actor.drain_query.remote(deadline), deadline)
+        return self._rpc_cleanup_status(
+            self.wait_ready(self.model_actor.drain_query.remote(deadline), deadline), deadline=deadline)
 
     def close(self):
+        deadline = (self.close_deadline if self.close_deadline is not None else
+                    time.monotonic() + self._model_close_timeout_s() + 1.)
         report = super().close()
         report["unconsumed_call_results"] = (report.get("engine_close_report") or {}).get(
             "unconsumed_call_results", [])
         report["unconsumed_core_results"] = (report.get("engine_close_report") or {}).get(
             "unconsumed_core_results", [])
         report["producer_quiescence"] = (report.get("engine_close_report") or {}).get("producer_quiescence")
-        return report
+        return self._rpc_cleanup_status(report, deadline=deadline)
