@@ -17,6 +17,7 @@ class PreparedTokenOrganizer:
     def __init__(self, owner, tokenizer, concurrency):
         self.owner, self.tokenizer, self.concurrency = owner, tokenizer, concurrency
         self._estimates = {}
+        self._header_estimate = self._header_context = None
         self.selected = self.peak_batches = self.peak_requests = 0
         self.request_window = owner.resources.max_active_batches
         self.history = []
@@ -27,6 +28,23 @@ class PreparedTokenOrganizer:
         self.peak_batches = max(self.peak_batches, len(batches))
         self.peak_requests = max(self.peak_requests, len(active))
         return len(batches), len(active)
+
+    def _header_sizes(self, session_id, signature, limits):
+        context = (session_id, self.owner.deadline, signature, limits.input_bytes)
+        if context != self._header_context:
+            generation = json.loads(signature)
+            # Merging two compact JSON objects adds one comma and removes two
+            # braces. Subtract this metadata object's size minus one from the
+            # validated submit size to recover the unchanged IPC member size.
+            extra = len(_frame(dict(op='submit', generation=generation,
+                deadline=self.owner.deadline), limits.input_bytes))-5
+            header = len(_frame(dict(op='submit_batch', requests=[], generation=generation,
+                deadline=self.owner.deadline), limits.input_bytes))-4
+            rpc_header = len(_frame(dict(calls=[], batch_key=[session_id, (1 << 64)-1],
+                deadline=self.owner.deadline), limits.input_bytes))-4
+            self._header_estimate = extra, header, rpc_header
+            self._header_context = context
+        return self._header_estimate
 
     def __call__(self, candidates):
         owner = self.owner
@@ -48,6 +66,8 @@ class PreparedTokenOrganizer:
             return ()
         live = owner.core.capacity.records
         self._estimates = {k: v for k, v in self._estimates.items() if k in live}
+        if not live:
+            self._header_estimate = self._header_context = None
         builder = PendingBatchBuilder(None, owner.prepared_batching.token_budget)
         chosen, compatibility, wire_bytes, reason = [], None, 0, 'ready_frontier_exhausted'
         for candidate in candidates:
@@ -58,19 +78,22 @@ class PreparedTokenOrganizer:
                 prompt = chat_token_count(self.tokenizer, conversations[0])
                 snapshot = {name: row[name] for name in (*IDENTITY_FIELDS, 'messages_json')}
                 item = dict(request_id='f'*32+':'+str((1 << 63)-1), row=snapshot)
-                _frame(dict(op='submit', **item, generation=generation, deadline=owner.deadline), limits.item_input_bytes)
-                size = len(_frame(item, limits.input_bytes))-4
-                header = len(_frame(dict(op='submit_batch', requests=[], generation=generation,
-                    deadline=owner.deadline), limits.input_bytes))-4
+                single = len(_frame(dict(op='submit', **item, generation=generation,
+                    deadline=owner.deadline), limits.item_input_bytes))-4
+                key = tuple(row[n] for n in ('query_id', 'algorithm_stage', 'model_role')) + (json.dumps(generation, sort_keys=True),)
+                extra, _, _ = self._header_sizes(candidate.key.session_id, key[-1], limits)
+                size = single-extra
+                if size > limits.input_bytes:
+                    raise ValueError('async engine IPC item exceeds its byte capacity')
                 rpc_item = len(_frame(dict(row=row, generation=generation,
                     maximum=candidate.task.max_result_bytes,
                     request_key=[candidate.key.session_id, candidate.key.sequence]), limits.input_bytes))-4
-                rpc_header = len(_frame(dict(calls=[], batch_key=[candidate.key.session_id, (1 << 64)-1],
-                    deadline=owner.deadline), limits.input_bytes))-4
-                key = tuple(row[n] for n in ('query_id', 'algorithm_stage', 'model_role')) + (json.dumps(generation, sort_keys=True),)
                 self._estimates[candidate.key] = (row['call_id'], prompt, generation['max_tokens'], key,
-                    size, header, rpc_item, rpc_header)
-            call_id, prompt, output, key, size, header, rpc_item, rpc_header = self._estimates[candidate.key]
+                    size, rpc_item)
+            call_id, prompt, output, key, size, rpc_item = self._estimates[candidate.key]
+            extra, header, rpc_header = self._header_sizes(candidate.key.session_id, key[-1], limits)
+            if size+extra > limits.item_input_bytes or max(size, rpc_item) > limits.input_bytes:
+                raise ValueError('async engine IPC item exceeds its byte capacity')
             arrival = RowArrival(call_id, 0., prompt, output, '', candidate.key)
             if chosen and key != compatibility:
                 reason = 'compatibility'; break
