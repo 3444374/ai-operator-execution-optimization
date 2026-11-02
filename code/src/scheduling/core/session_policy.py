@@ -81,6 +81,19 @@ class SessionPolicies:
         oldest = max((now - r.since for r in active), default=0.0)
         if not self.admission.decide(len(active), hol_age_s=max(0.0, oldest)).allowed:
             return None
+        endpoints = tuple(
+            replace(
+                e,
+                running=e.running + sum(r.endpoint == e.endpoint_id for r in active),
+                estimated_active_work=e.estimated_active_work
+                + sum(r.task.estimated_work for r in active if r.endpoint == e.endpoint_id),
+            )
+            for e in self.topology.endpoints
+        )
+        return self._route(record, endpoints)
+
+    def _route(self, record: TaskRecord, endpoints) -> str | None:
+        """Route with caller-derived occupancy; admission remains per member."""
         request = BatchRequest(
             request_id=f"{record.key.session_id}:{record.key.sequence}",
             job_id=record.spec.job_id,
@@ -96,15 +109,6 @@ class SessionPolicies:
             work_unit=record.spec.work_unit,
             estimated_payload_bytes=len(record.task.payload),
             work_descriptor=record.task.info.work if record.task.info else None,
-        )
-        endpoints = tuple(
-            replace(
-                e,
-                running=e.running + sum(r.endpoint == e.endpoint_id for r in active),
-                estimated_active_work=e.estimated_active_work
-                + sum(r.task.estimated_work for r in active if r.endpoint == e.endpoint_id),
-            )
-            for e in self.topology.endpoints
         )
         topology = replace(self.topology, endpoints=endpoints)
         pool = (

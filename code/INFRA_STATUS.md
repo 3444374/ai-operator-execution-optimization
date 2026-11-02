@@ -257,6 +257,16 @@ token reference生成、长度统计、预分组／R推导及此前实验均在w
 未覆盖MMF独立完整返回payload等价、完整Core的GPU容量失败映射（GPU已测direct actor，完整映射为CPU）、四种独立读取块GPU对照、P99或资源最优；该次验收不覆盖后续rolling resident候选，动态B/C联合控制仍未实现。具体配置、耗时、CPU跳过与资产摘要限制见[公开验收摘要](https://github.com/3444374/ai-operator-execution-optimization/pull/84)；无CI通过声明，后续源码修正须另行验收。
 准确参数单位、尾批行为、字节边界与测试入口见[异步组批接口](src/execution_provider/adapters/README.md#optional-async-record-token-batches)。
 
+### 组批计量与批提交的CPU开销修正
+
+`5814f44e`复用已准备请求的逐成员帧计量及当前提交头，保留发送时的完整编码和字节校验；
+`c9b07b00`只在原生固定Core准入、单执行端、无pool路由的多成员提交中使用调用内容量快照。
+token RD的多成员提交也可命中该路径；单成员、普通records动态准入、自定义策略和其他路由继续逐成员检查。
+两项保持批成员、顺序、封批与拒绝位置、参数、unknown责任及默认配置不变。
+相关检查见[帧计量回放](tests/execution_provider/test_lotus_request_frame_metering.py)与[批提交差分](tests/scheduling/test_batch_dispatch_snapshot.py)。
+原候选的CPU fixture分别观察到每千条请求计量编码5,000→2,003次，以及32成员提交容量表扫描96→3次；
+两种微基准覆盖不同局部成本，不能相加或外推完整查询收益。本组合只有CPU等价性资格，尚无真实Ray、模型或查询性能验收。
+
 <a id="model-query-reuse-scope"></a>
 ## 模型所有者与跨查询复用范围
 
