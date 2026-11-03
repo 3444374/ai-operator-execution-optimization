@@ -355,14 +355,16 @@ owner = SemLoomRecordChainCore(engine, resources,
 A confirmed member terminal frees its request reservation; result consumption
 and row release return their separate storage grants. A new compatible group
 can then use that capacity while a slow member of an earlier group remains in
-flight. R still bounds Core compute, resident rows, the actor and IPC owner;
+flight. With legacy budgets, R bounds Core compute, resident rows, the actor and IPC owner;
 byte/result reservations and unknown responsibility are unchanged. A submitted
 group remains immutable: refill creates another transport batch, not new members
 inside the old batch or a change to vLLM's native continuous batching. B only
 organizes each handoff, and the ready-frontier/EOF tail does not wait to fill B.
 Extract retains its complete-relation barrier. The ordinary records factory,
 Movie JSON `check/run` and isolated-session plan accept the same boolean option.
-Receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
+Explicit `CoreRecordsCapacity.budget` separates the fixed request window C, hard request slots R,
+method residency and IPC grants; see the [budget fields](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选).
+Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and
 audit retention remain outside these active-row logical grants. This is an
@@ -492,7 +494,7 @@ Counter qualification is CPU-only; no new model performance evidence is implied.
 The same factory and record-local organizer accept
 `experimental_skip_token_packing=True` only with fixed `rolling_refill=True`.
 Keep the ordinary positive-B `PreparedBatching('token_budget', None, B)` config:
-the experimental option bypasses only token-based packet sealing. C_request=R,
+the experimental option bypasses only token-based packet sealing. Legacy budgets use C_request=R;
 the existing FIFO/compatibility, resident/member/result capacity and exact RPC/IPC
 byte bounds remain. A nonempty ready frontier is sent immediately; neither a full
 packet nor the previous packet's final member is required. The flag rejects
@@ -521,9 +523,9 @@ With token `prepared_batching` and `rolling_refill=true`, the same ordinary
 `core_profile.admission={"kind":"resource_feedback"}` opts into rolling request-level
 supply feedback. `max_inflight` may be omitted or explicitly 1 at startup. The
 existing `"auto"` value is also accepted when R=1, resolving to the same initial
-window of 1; it is rejected for R>1. This does not bypass capacity. Declared
-`resources.max_active_batches` remains the independent hard R for compute and
-resident rows. Omission/null admission retains fixed rolling C_request=R and
+window of 1; it is rejected for R>1. This does not bypass capacity. Without an explicit
+resource budget, `resources.max_active_batches` remains the hard R for compute and
+resident rows; explicit budgets separate these grants. Omission/null admission retains fixed rolling (C_request=R with legacy budgets) and
 installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
 The Python chain accepts `request_feedback=default_request_feedback_options()`;
 the normal Movie/Session factory resolves the existing admission object.
@@ -568,7 +570,7 @@ and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedbac
 `create_records_core(..., prepared_batching=batching, rolling_refill=True, resident=True)`
 retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
 queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
-schema or model pool is introduced. Fixed rolling RF retains C_request=R; RD uses the
+schema or model pool is introduced. Fixed rolling RF retains its configured C (legacy budgets use R); RD uses the
 same admission configuration above. Ascending RD starts from a compatible,
 explicitly committed healthy hint when available, validates current work and
 conditions, then holds or conditionally continues. No hint starts at one; the

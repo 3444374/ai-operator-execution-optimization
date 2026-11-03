@@ -253,18 +253,19 @@ source、Core credits 和 snapshot RPC 全部结清后，Movie Session 才调用
 即使额度已为1也会清除旧平台，恢复后重新测量。原性能窗口、显式尾部／时间／尝试预算仍生效，
 不增加10秒、64请求等默认停止规则；资源提案与普通候选使用同一资格检查。
 
-ascending 的唯一 snapshot RPC 可在模型 actor 所在机器附带读取其分配设备的 NVML 与主机 CPU。
+ascending 的唯一 snapshot RPC 可附带读取模型 actor 分配设备的 NVML 与其 CPU 分配范围。
 默认固定、reference 及探索关闭路径不调用物理读取器，没有新采样线程／模型进程或HTTP探针。
-设备绑定沿现有 CUDA visibility→物理UUID校验；序号／engine／session、driver issue→receive包络及
+设备优先采用同一模型 worker 的具名只读 UUID 回执；缺失时仅走已有安全 CUDA visibility 映射，不能证明则缺测。序号／engine／session、driver issue→receive包络及
 actor内采样耗时用于校验来源和新鲜度，无需假定两个主机的单调时钟绝对值相同。
-CPU百分比按工作线程单独预热，过长／未知测量区间保持unknown；主机CPU不是进程CPU。
+CPU计数按采样线程预热，过长／未知测量区间保持unknown。cgroup可用时按有效CPU配额归一，非cgroup时取分配affinity范围的核峰值；不是全机余量或单进程CPU占用。
 CPU测量区间和RPC数据年龄分别受限，不声称整个历史取样区间都落在最后一个性能窗口内。
 当前owner是一张GPU；多个设备的均值不能证明每卡空闲，因此不据其均值加大步幅。
 
-当最近两次不同RPC都显示设备及主机峰值CPU**空闲时间占多数**，同时上述供给／native条件成立时，
+当最近两次不同RPC都显示设备及上述CPU分配范围**空闲时间占多数**，同时上述供给／native条件成立时，
 用两次较忙的设备／CPU值与native KV占用得到联合空闲份额
 `s=min(1-GPU_busy/100, 1-host_peak_CPU_busy/100, 1-KV_usage)`，在有供给的额度区间内取点：
 `target=C+max(1,floor((min(R,C+ready_items)-C)*s))`。
+`host_peak_CPU_busy`沿用旧名称，实际取上述cgroup／affinity读数；字段名不能解释成全机CPU余量。
 这是可回退的**探测位置启发式**，不是把空闲份额换算成可持续请求容量，也不使用`1/GPU_busy`。
 余量程度直接改变候选，允许跨多个几何档或插入非几何点；R和真实ready工作夹住提案，
 已有pressure ceiling／尝试预算／字节边界仍优先。普通几何探测继续作为无合格物理证据时的回退。
@@ -339,7 +340,7 @@ CPU测量区间和RPC数据年龄分别受限，不声称整个历史取样区�
 
 | 阶段／资源 | 当前决策输入及作用 | 仍缺的证据或动作 |
 | --- | --- | --- |
-| CPU准备、结果消费 | ready/backlog、准备／完成率、consumer背压；同actor主机峰值CPU参与大步资格 | driver异机CPU、逐阶段核时；不调CPU worker/放置 |
+| CPU准备、结果消费 | ready/backlog、准备／完成率、consumer背压；同actor的cgroup／affinity CPU读数参与大步资格 | driver异机CPU、逐阶段核时；不调CPU worker/放置 |
 | 模型执行与设备池 | UUID-bound busy及native queue/KV/抢占；试探与压力回退 | MFU/HBM、算子物理成本；不迁移设备或拆分引擎阶段 |
 | host／device驻留 | Core行／input/result字节、IPC配额和native KV保护 | 物理可分配容量未知；不把NVML空闲显存换成请求数 |
 | IPC／数据搬运／I/O | pending transport admission、已有存储／字节背压阻止放大 | PCIe／网络／磁盘饱和度和阶段传输成本未知；不调链路或I/O并发 |

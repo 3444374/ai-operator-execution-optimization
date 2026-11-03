@@ -203,7 +203,7 @@ ready 只有一条就发一条，不等待凑满或上一包全部结束。成�
 沿同一个普通Movie工厂／Session入口执行。`max_inflight`省略或显式为1时从1请求开始；
 既有`"auto"`在R=1时也接纳并解析为1，R>1时拒绝，实际起点和容量边界没有改变。
 R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
-其C_request=R且不安装反馈。启用后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
+旧预算模式下其C_request=R且不安装反馈；显式独立budget按配置的C与硬R分别校验。启用反馈后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
 完成一条可立即补位，合法后继不等慢同伴。缩容只阻止新准入，已有在途及已选择待后端接收的成员有界排空，
 不取消、不拆改既定批成员；待提交责任和真实inflight分别记录。
 现有请求扫描、同session新鲜反馈、单RPC、需求／资源门控和三窗性能确认复用，缺帧／重复／排队／供给不足／尾部均不会当空闲。
@@ -213,7 +213,7 @@ R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC�
 新策略有收益继续上探，平台／退化／冲突时局部确认；显式`search_policy="reference"`保留旧策略。
 同 resident owner 的兼容完整查询成功后可复用已确认档位／未完进度，新鲜工作量重验证，不能只凭模型EOF提交。
 阶段关闭与下次查询可续探分别记账；磁盘`admission_cache`仍拒绝。固定／非token／批槽默认不变。
-同一snapshot RPC在模型actor读其分配GPU的NVML及主机CPU；多个新鲜信号与实际ready供给支持时，
+同一snapshot RPC在模型actor读其分配GPU的NVML及cgroup／affinity CPU范围；多个新鲜信号与实际ready供给支持时，
 联合空闲程度决定有界试探目标，可跨多个档位，不限于额外一个几何点。
 精确成本估计可辅助步幅，缺失不禁止资源观测触发探索；来源、未知值和采纳理由在回执分别记录。
 现仅CPU合成资源事实验证接线，尚无真实硬件采样／性能或动态B资格。见[完整策略和资源边界](../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
@@ -250,7 +250,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_m
 `check`不构造owner或请求模型。`run`沿用原监督worker；正常会话／sealed matrix计划也可增加相同组批及可选反馈字段，
 其`profile`使用上例`core_profile`的值，且`backend="semloom-core"`、`lifecycle="isolated"`。
 `rolling_refill=true`的固定RF／动态RD还可显式选择`lifecycle="resident"`：沿用原Session schema，在查询计时前等待模型ready，健康EOF只结算本查询，最终Session close才关闭模型。
-RF保持R；默认ascending RD在兼容owner内续用已显式确认的健康档位／搜索进度，重新验证当前条件后保持或局部续探；
+RF保持配置的固定C（旧预算模式为R）；默认ascending RD在兼容owner内续用已显式确认的健康档位／搜索进度，重新验证当前条件后保持或局部续探；
 没有合格提示才从1起步，显式reference仍逐查询重置。提示须在完整业务结果解释／投影成功后确认，不是通用跨任务学习。
 批槽模式仍不支持resident。条件失效、供给范围扩展和native间断的转换见上述唯一策略正文。
 仍由原owner提供lease、调用额度、完整source.lock／packet和物理退出检查；新入口须重新绑定这些资产，
