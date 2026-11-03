@@ -227,6 +227,14 @@ C仍固定1、W默认关闭的边界均未在本修正中改变；逻辑字节�
 可选范围为固定B、固定应用批并发C_batch、FIFO、record推进、W关闭；无每批行帽，R仍同时约束在途成员与resident行。
 默认仍为`prepared_batching=None`、关闭；同步对照保留。原records工厂已接正常Movie `check/run`和isolated session，保留冻结任务、source及原评价器绑定，并核对实际B/C_batch/R和逐成员回执。
 
+普通SemLoom records及Movie Session入口新增显式`core_capacity`和部分`async_limits`传递候选，
+复用原`CoreRecordsCapacity`／`AsyncEngineLimits`；缺省／空对象／仅反馈选项绑定解析后的owner R，
+Core单项与总量、IPC单项／槽位与总量分别推导，显式小额度和原unknown责任保留。
+[接口映射](src/experiments/movie_matrix.README.md#semloom-records-的-coreipc-容量)与
+[CPU反例](tests/experiments/test_records_capacity_config.py)已覆盖普通／常驻入口和连续查询重置；
+未新增真实Ray／模型／GPU资格，不改变其他baseline或历史具名实验。
+显式容量已进入普通admission cache身份；离线calibration的容量身份仍待其独立接线，本候选不授予该组合资格。
+
 本地可选`rolling_refill=True`候选复用同一路径，以既有请求窗口R滚动补交token批；慢成员不再占一个整批供给槽阻塞已释放请求额度。
 默认关闭，原C_batch模式保留；启用时省略`batch_concurrency`，并拒绝混入`batch_feedback`。
 B只组织每次传输，批成员提交后不追加；请求、驻留、字节、ACK/unknown与Extract屏障责任保持。

@@ -15,13 +15,15 @@ from .lotus_records_async_actor import AsyncRecordsActorOwner
 
 
 class PreparedRecordsCore:
-    def __init__(self, method, engine, generation, resources, profile, batching, limits, *, resident=False):
+    def __init__(self, method, engine, generation, resources, profile, batching, limits, *, resident=False,
+                 capacity=None):
         if type(resident) is not bool or resident and not batching.get('rolling_refill'):
             raise ValueError('resident token records require rolling_refill')
         self.resident = resident
         self.method = FilterMethod.from_dict(asdict(method))
         self.execution_profile = dict(profile, record_batching=deepcopy(batching))
         self.resources, self.engine, self.generation = resources, engine, generation
+        self.capacity = capacity
         self.owner = self._active = None
         self._limits, self._closed = limits, False
         self._expected = {}
@@ -128,7 +130,7 @@ class PreparedRecordsCore:
             from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
             request_feedback = ResourceFeedbackConfig(**batching['request_feedback'])
         return SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
-            actor_owner=actors, prepared_batching=PreparedBatching(**batching['prepared_batching']),
+            actor_owner=actors, capacity=self.capacity, prepared_batching=PreparedBatching(**batching['prepared_batching']),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
             rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback,
             resident=self.resident,
