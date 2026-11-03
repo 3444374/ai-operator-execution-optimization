@@ -56,7 +56,7 @@ rolling未接内存保护源，正值`memory_floor_bytes`在配置阶段拒绝�
 检查、环境错误与原基线复核见[记录](tests/records_cpu.md#resource-allocation-cpu)。
 
 固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
-只跳过 B 封包，C_request=R 且禁止动态请求反馈组合。FIFO、兼容性、成员/驻留与字节容量、
+只跳过 B 封包并禁止动态请求反馈组合；旧预算模式C_request=R，显式独立budget分别约束C与硬R。FIFO、兼容性、成员/驻留与字节容量、
 独立结果和收尾责任不变，fused/默认路径不变。
 [入口及 CPU 回放边界](src/execution_provider/adapters/README.md#fixed-rolling-token-packing-ablation-cpu-experiment-only)
 与成员等价的准备/dispatch降开销补丁分开；未进行真实模型/Ray/GPU、完整 SemBench 或性能资格。
@@ -312,7 +312,7 @@ CPU接线与子进程IPC不构成物理RSS／真实Ray／模型或性能证明�
 本地可选`rolling_refill=True`候选复用同一路径，以既有请求窗口R滚动补交token批；慢成员不再占一个整批供给槽阻塞已释放请求额度。
 默认关闭，原C_batch模式保留；启用时省略`batch_concurrency`，并拒绝混入`batch_feedback`。
 B只组织每次传输，批成员提交后不追加；请求、驻留、字节、ACK/unknown与Extract屏障责任保持。
-正常Movie JSON和isolated session沿既有工厂进入，回执分别记录`C_request=R`与`C_batch=null`。
+正常Movie JSON和isolated session沿既有工厂进入，旧预算模式回执记录`C_request=R`与`C_batch=null`；显式独立budget另记录软C和硬R。
 目前仅[CPU场景](tests/execution_provider/test_lotus_token_rolling_refill.py)与既有入口检查；真实Ray/模型/GPU及性能收益尚未验，不能借用下述历史整批成绩。
 
 本地默认关闭的请求级动态候选在上述rolling中显式增加`core_profile.admission.kind="resource_feedback"`；
@@ -321,7 +321,7 @@ B只组织每次传输，批成员提交后不追加；请求、驻留、字节�
 默认无候选次数／探索时间硬停止、不读gold或全表token参考。新本地`search_policy="ascending"`候选
 在可比收益后继续上探，仅平台／回退／冲突时局部确认；显式`reference`保留旧逐档回访。
 候选接通健康 resident 查询的条件提示续扫；新资源机会可唤醒旧选择，跨query旧速率区间只作失效判据。
-同一snapshot RPC可读模型actor分配设备的NVML和主机CPU；联合空闲份额在ready供给／硬R内确定可变大步探测目标，
+同一snapshot RPC可读模型actor分配设备的NVML和cgroup／affinity CPU范围；联合空闲份额在ready供给／硬R内确定可变大步探测目标，
 精确请求成本只辅助步幅，不是试探前提。显式预算、硬R／字节／unknown责任保留，无动态B或实机收益资格。
 CPU 区间归属修复改为采集器实例累计计数器差分，并保留拒绝的原始间隔／原因；不改采样频率、1 秒资格或 actor 并发。
 该增量有无模型 CPU 回归，新增真实 Ray 组合资格和模型 LIGHT 复验仍待执行；历史 21 条被拒间隔的原值无法补作已知。

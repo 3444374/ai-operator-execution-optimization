@@ -355,14 +355,16 @@ owner = SemLoomRecordChainCore(engine, resources,
 A confirmed member terminal frees its request reservation; result consumption
 and row release return their separate storage grants. A new compatible group
 can then use that capacity while a slow member of an earlier group remains in
-flight. R still bounds Core compute, resident rows, the actor and IPC owner;
+flight. With legacy budgets, R bounds Core compute, resident rows, the actor and IPC owner;
 byte/result reservations and unknown responsibility are unchanged. A submitted
 group remains immutable: refill creates another transport batch, not new members
 inside the old batch or a change to vLLM's native continuous batching. B only
 organizes each handoff, and the ready-frontier/EOF tail does not wait to fill B.
 Extract retains its complete-relation barrier. The ordinary records factory,
 Movie JSON `check/run` and isolated-session plan accept the same boolean option.
-Receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
+Explicit `CoreRecordsCapacity.budget` separates the fixed request window C, hard request slots R,
+method residency and IPC grants; see the [budget fields](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选).
+Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and
 audit retention remain outside these active-row logical grants. This is an
@@ -492,7 +494,7 @@ Counter qualification is CPU-only; no new model performance evidence is implied.
 The same factory and record-local organizer accept
 `experimental_skip_token_packing=True` only with fixed `rolling_refill=True`.
 Keep the ordinary positive-B `PreparedBatching('token_budget', None, B)` config:
-the experimental option bypasses only token-based packet sealing. C_request=R,
+the experimental option bypasses only token-based packet sealing. Legacy budgets use C_request=R;
 the existing FIFO/compatibility, resident/member/result capacity and exact RPC/IPC
 byte bounds remain. A nonempty ready frontier is sent immediately; neither a full
 packet nor the previous packet's final member is required. The flag rejects
@@ -521,9 +523,9 @@ With token `prepared_batching` and `rolling_refill=true`, the same ordinary
 `core_profile.admission={"kind":"resource_feedback"}` opts into rolling request-level
 supply feedback. `max_inflight` may be omitted or explicitly 1 at startup. The
 existing `"auto"` value is also accepted when R=1, resolving to the same initial
-window of 1; it is rejected for R>1. This does not bypass capacity. Declared
-`resources.max_active_batches` remains the independent hard R for compute and
-resident rows. Omission/null admission retains fixed rolling C_request=R and
+window of 1; it is rejected for R>1. This does not bypass capacity. Without an explicit
+resource budget, `resources.max_active_batches` remains the hard R for compute and
+resident rows; explicit budgets separate these grants. Omission/null admission retains fixed rolling (C_request=R with legacy budgets) and
 installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
 The Python chain accepts `request_feedback=default_request_feedback_options()`;
 the normal Movie/Session factory resolves the existing admission object.
@@ -568,7 +570,7 @@ and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedbac
 `create_records_core(..., prepared_batching=batching, rolling_refill=True, resident=True)`
 retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
 queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
-schema or model pool is introduced. Fixed rolling RF retains C_request=R; RD uses the
+schema or model pool is introduced. Fixed rolling RF retains its configured C (legacy budgets use R); RD uses the
 same admission configuration above. Ascending RD starts from a compatible,
 explicitly committed healthy hint when available, validates current work and
 conditions, then holds or conditionally continues. No hint starts at one; the
@@ -852,8 +854,9 @@ historical first/reuse runs are not reproduced merely by exposing this option.
 名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
 `profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
 显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
-不是另一个执行器。`C0` 是起始软窗口，owner 上界为声明的
-`RecordsResources.max_active_batches`；prepare 数、模型配置和 actor/IPC 容量在启动前确定。
+不是另一个执行器。`C0` 是起始软窗口；旧预算（`capacity.budget=None`）下，owner 硬请求额度 R
+取 `RecordsResources.max_active_batches`，显式独立 budget 下取 `budget.active_requests`，C0 不得超过 R。
+prepare 数、模型配置和 actor/IPC 容量在启动前确定。
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 或
 `max_num_batched_tokens` 未指定／null时，异步 Core 不传对应引擎参数，交由安装的
 vLLM 0.25.1 解析；显式正整数原样传入。LOTUS 原生 HTTP 服务与有限同步 `VllmEngine`
@@ -862,7 +865,9 @@ vLLM 0.25.1 解析；显式正整数原样传入。LOTUS 原生 HTTP 服务与�
 未指定不表示无限容量或自动性能调优，也不改变外层 C/B/W、上下文长度或显存比例。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
-显式 `async_limits.max_inflight/result_slots` 必须覆盖该 owner 上界，不是只覆盖 C0。
+旧预算下，`async_limits.max_inflight` 必须等于 R，`result_slots` 至少为 R，不能只按 C0 配置。
+[显式独立预算](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选)要求完整有限 IPC 额度，
+允许 IPC 请求／结果槽位小于 R；实际接纳继续受这些槽位和字节预算背压，并非无限供给。
 
 异步 Core 的 RPC 线程预算与上述驻留槽位分开。`RecordsResources.model_rpc_workers`
 是可选正整数；省略时沿用调用方声明的 `cpu_workers` 作为数据 RPC 并发预算，不读取
