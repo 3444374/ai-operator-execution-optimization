@@ -16,6 +16,13 @@ rolling未接内存保护源，正值`memory_floor_bytes`在配置阶段拒绝�
 [配置检查](tests/execution_provider/test_rolling_feedback_signals.py)只支持CPU行为判断；
 真实Ray／模型／GPU及完整查询性能尚未验证，独审待完成。
 
+<a id="physical-probe-policy-cpu"></a>
+双50%继续作为物理大步试探的默认启发式，未作为总探索停止线或安全上限。
+独立、默认关闭的`physical_probe_policy="native_only"`仅关闭这条捷径，保留原生反馈、
+普通候选与原请求／字节保护；资源归属代码不在此候选中修改。
+[选项与适用范围](src/scheduling/runtime/calibration.README.md#physical-probe-policy)及
+[CPU反例](tests/scheduling/test_resource_probe_policy.py)不支持真实资源或性能结论，独审待完成。
+
 固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
 只跳过 B 封包，C_request=R 且禁止动态请求反馈组合。FIFO、兼容性、成员/驻留与字节容量、
 独立结果和收尾责任不变，fused/默认路径不变。

@@ -263,6 +263,7 @@ class ResourceFeedbackConfig:
     work_comparison: str = "envelope"
     search_policy: str = "reference"
     pressure_response: str = "sample"
+    physical_probe_policy: str = "idle_majority"
 
     def __post_init__(self):
         for name in ("poll_interval_s", "window_s", "exploration_s"):
@@ -305,6 +306,10 @@ class ResourceFeedbackConfig:
             raise ValueError("ascending search requires computed local pairs")
         if self.pressure_response not in ("sample", "window"):
             raise ValueError("pressure_response must be sample or window")
+        if self.physical_probe_policy not in ("idle_majority", "native_only"):
+            raise ValueError("physical_probe_policy must be idle_majority or native_only")
+        if self.physical_probe_policy != "idle_majority" and self.search_policy != "ascending":
+            raise ValueError("physical probe policy requires ascending request search")
 
 
 def _local_pair_evidence(reference, candidate, margin):
