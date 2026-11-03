@@ -467,5 +467,6 @@ CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页�
 同一入口新增显式的[在途取消与新 owner 恢复功能检查](scripts/profiling/record_observation/README.md#inflight-cancellation)。
 它复用现有 Movie 驱动、取消回调和 guard，核对 native API 活跃请求／abort 身份及 Core、Method、RPC 的收尾，
 保留预期取消 unknown 与保守计费。一次真实在途取消在 actor 到最终账本的回执桥接处失败，后续恢复及性能组未运行。
-本地修正候选在 Core 收尾 ACK 前将验证过的回执移交原查询审计，保留 unknown、任务与批成员身份；CPU 回归不替代独审和实机复验。物理 GPU 清理、
-原生接口版本兼容和覆盖率待实机验收。修正覆盖现有 record_local_sections 关闭审计，生产默认与模型语义不变。
+本地修正候选在 Core 收尾 ACK 前将验证过的回执移交原查询审计，保留 unknown、任务与批成员身份；CPU 回归不替代独审和实机复验。
+审计 sink 拒收时，待补交回执及注册限额跨 ACK 保留，后续 close 持续报告未完成，成功交接后才清除；模型／Core 退休与审计交接分开，补交不重新推理或解析。实机原件时序仍未独立锁定。
+物理 GPU 清理、原生接口版本兼容和覆盖率待实机验收。修正覆盖现有 record_local_sections 关闭审计，生产默认与模型语义不变。

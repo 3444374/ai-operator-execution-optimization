@@ -520,6 +520,7 @@ class _SectionTransport(LotusChainActorBackend):
 
     def __init__(self, owner, maximum):
         self.owner = owner
+        self._audit_pending = {}
         super().__init__(owner._actors, maximum, lambda: owner.core.wake.notify(),
                          deadline_monotonic=owner.deadline, on_result=owner._record_local_receipt,
                          token_budget=owner.token_budget, bulk=owner._async_token_batches)
@@ -549,12 +550,41 @@ class _SectionTransport(LotusChainActorBackend):
         # A failed bulk reply may have ended every local result reader. Core
         # can then ACK retirement and remove these transport receipts without
         # _result_transferred running. Transfer the validated audit first.
+        return errors + self.transfer_audit_receipts()
+
+    def transfer_audit_receipts(self):
         for key, payload in self.failure_receipts():
             try:
                 self.on_result(key, json.loads(payload))
             except BaseException as error:
-                errors.append('actor_close_receipt_sink: '+type(error).__name__)
-        return errors
+                with self._lock:
+                    pending = self._audit_pending.setdefault(key, dict(ack_deferred=False))
+                    pending['error'] = 'actor_close_receipt_sink: '+type(error).__name__
+            else:
+                with self._lock:
+                    pending = self._audit_pending.pop(key, None)
+                if pending is not None and pending['ack_deferred']:
+                    super().acknowledge(key)
+        with self._lock:
+            return [v['error'] for v in self._audit_pending.values()]
+
+    def acknowledge(self, key):
+        with self._lock:
+            pending = self._audit_pending.get(key)
+            if pending is not None:
+                # Core may retire compute while the same bounded result and
+                # registered byte/identity context still await the audit sink.
+                pending['ack_deferred'] = True
+                return
+        super().acknowledge(key)
+
+    def audit_handoff_report(self):
+        with self._lock:
+            return dict(pending_receipts=len(self._audit_pending),
+                deferred_core_acks=sum(v['ack_deferred'] for v in self._audit_pending.values()),
+                retained_result_bytes=sum(len(self._outcomes[key]) for key in self._audit_pending),
+                registered_requests=sum(key in self._requests for key in self._audit_pending),
+                scope='encoded retained audit receipts; not compute ownership or RSS')
 
 
 class _RecordLocalRows:
@@ -1554,8 +1584,7 @@ class SemLoomRecordChainCore:
             self._raw_receipts[key] = receipt
 
     def _collect_local_receipts(self):
-        for key, payload in self.transport.failure_receipts():
-            self._record_local_receipt(key, json.loads(payload))
+        return self.transport.transfer_audit_receipts()
 
     def _local_calls(self):
         if self._root_run is None:
@@ -1593,7 +1622,7 @@ class SemLoomRecordChainCore:
         errors += closed["cleanup_errors"]
         if self.transport is not None:
             try:
-                self._collect_local_receipts()
+                errors += self._collect_local_receipts()
             except BaseException as error:
                 errors.append("late_receipt: " + type(error).__name__)
         stream = self._active
@@ -1620,6 +1649,7 @@ class SemLoomRecordChainCore:
             transport_closed=closed["transport_closed"], producer_retirement=closed["producer_retirement"],
             retained_remote_inputs=0 if self.transport is None else self.transport.retained_refs(),
             core_usage=usage, cleanup_errors=list(dict.fromkeys(errors)), calls=self.calls,
+            audit_handoff=None if self.transport is None else self.transport.audit_handoff_report(),
             phase_history=deepcopy(self.phase_history), expected_occurrences=self._expected_count,
             received_occurrences=0 if stream is None else len(stream.offered),
             peak_core_usage=None if stream is None else stream.peak_core_usage,

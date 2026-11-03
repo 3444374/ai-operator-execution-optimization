@@ -249,6 +249,116 @@ class CancellationEntryTests(unittest.TestCase):
         with self.assertRaises(BudgetError):context['claims'][plan['queries'][0]['query_id']].bind_execution()
         context['claims'][plan['queries'][1]['query_id']].bind_execution()
 
+    def test_audit_sink_failure_survives_retirement_until_retry_succeeds(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport, SemLoomRecordChainCore
+        for failed_positions,error_type in (((0,),OSError),((0,1),OSError),((0,1),KeyboardInterrupt)):
+            with self.subTest(failed_positions=failed_positions,error_type=error_type.__name__):
+                fixture,plan,context=self.fixture()
+                ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
+                poll=AsyncCoreModelActor.poll_prepared_batch;execute=_SectionTransport._execute
+                initialize=_SectionTransport.__init__;recover=_SectionTransport.recover_actor_receipts
+                close=SemLoomRecordChainCore._close_record_local
+                failed_readers=set();lock=threading.Lock();readers_done=threading.Event()
+                fault=[True];transports=[];closes=[];accepted={}
+                def failed_close_poll(actor,*args):
+                    with actor._condition:closing=actor._closing
+                    if closing:raise RuntimeError('CPU injected ended bulk result reader')
+                    return poll(actor,*args)
+                async def observe_reader(transport,task,*args):
+                    try:return await execute(transport,task,*args)
+                    except RuntimeError:
+                        with lock:
+                            failed_readers.add(task.key)
+                            if len(failed_readers)==2:readers_done.set()
+                        raise
+                def initialize_sink(transport,*args):
+                    initialize(transport,*args);transports.append(transport)
+                    sink=transport.on_result
+                    def submit(key,value):
+                        if fault[0] and value['source_position'] in failed_positions:
+                            raise error_type('CPU audit sink rejects this member')
+                        sink(key,value);accepted[key]=accepted.get(key,0)+1
+                    transport.on_result=submit
+                def recover_after_readers(transport,receipts):
+                    if receipts:self.assertTrue(readers_done.wait(3),'CPU readers did not stop')
+                    return recover(transport,receipts)
+                def capture_close(owner,*args,**kwargs):
+                    report=close(owner,*args,**kwargs)
+                    closes.append(dict(status=report['status'],cleanup_errors=list(report['cleanup_errors'])))
+                    return report
+                with self.cpu_boundaries(fixture), \
+                        patch.object(AsyncCoreModelActor,'poll_prepared_batch',failed_close_poll), \
+                        patch.object(_SectionTransport,'_execute',observe_reader), \
+                        patch.object(_SectionTransport,'__init__',initialize_sink), \
+                        patch.object(_SectionTransport,'recover_actor_receipts',recover_after_readers), \
+                        patch.object(SemLoomRecordChainCore,'_close_record_local',capture_close):
+                    try:
+                        result=subject.run_movie_cancellation(plan,context,fixture.root/'sink-session')
+                        self.assertEqual(result['status'],'failed')
+                        self.assertNotIn('recovery_phase',result)
+                        self.assertEqual(len(transports),1)
+                        transport=transports[0];owner=transport.owner;pending=len(failed_positions)
+                        self.assertTrue(closes)
+                        self.assertTrue(all(r['status']=='unknown' and r['cleanup_errors'] for r in closes),closes)
+                        first=deepcopy(owner.last_close_report);partial=deepcopy(owner.calls)
+                        self.assertEqual(len(transport.failure_receipts()),pending)
+                        self.assertEqual(len(transport._requests),pending)
+                        retained_requests=deepcopy(transport._requests)
+                        retained_results=dict(transport.failure_receipts())
+                        self.assertEqual(len(owner.calls),2-pending)
+                        self.assertEqual(first['audit_handoff']['pending_receipts'],pending)
+                        self.assertGreater(first['audit_handoff']['retained_result_bytes'],0)
+                        self.assertEqual(first['audit_handoff']['deferred_core_acks'],pending)
+                        self.assertEqual(first['audit_handoff']['registered_requests'],pending)
+                        self.assertEqual(first['audit_handoff']['retained_result_bytes'],sum(map(len,retained_results.values())))
+                        self.assertEqual(transport.retained_refs(),0)
+                        self.assertTrue(all(v==0 for v in first['core_usage'].values()))
+                        self.assertTrue(first['producer_retirement']['confirmed'])
+                        self.assertFalse(first['producer_retirement']['outcome_confirmation'])
+                        actor_receipts=deepcopy(first['model_owner']['unconsumed_core_results'])
+                        wanted=next(r for r in actor_receipts if r['result']['source_position'] in failed_positions)
+                        conflicting=deepcopy(wanted)
+                        conflicting['result'].update(completion_tokens=4,total_tokens=15)
+                        errors=transport.recover_actor_receipts([conflicting])
+                        self.assertIn('actor_close_receipt: ValueError',errors)
+                        self.assertEqual(owner.calls,partial)
+                        for _ in range(2):
+                            report=owner.close(timeout=1)
+                            self.assertEqual(report['status'],'unknown')
+                            self.assertTrue(report['cleanup_errors'])
+                            self.assertEqual(report['audit_handoff']['pending_receipts'],pending)
+                            self.assertEqual(len(transport._requests),pending)
+                            self.assertEqual(transport._requests,retained_requests)
+                            self.assertEqual(dict(transport.failure_receipts()),retained_results)
+                        stats=deepcopy(owner._root_run.stats)
+                        fault[0]=False
+                        report=owner.close(timeout=1)
+                        self.assertEqual(report['status'],'closed',report['cleanup_errors'])
+                        self.assertEqual(report['audit_handoff']['pending_receipts'],0)
+                        self.assertEqual(report['audit_handoff']['retained_result_bytes'],0)
+                        self.assertEqual(report['cleanup_errors'],[])
+                        calls=deepcopy(owner.calls)
+                        self.assertEqual([c['status'] for c in calls],['unknown','unknown'])
+                        self.assertTrue(all(c['error_type']=='AbortNotConfirmed' and c['engine_terminal_confirmed'] is False for c in calls))
+                        self.assertEqual(sum(c['total_tokens'] for c in calls),28)
+                        self.assertTrue(all(c['core_task_key'] and c['transport_batch'] for c in calls))
+                        self.assertEqual(list(accepted.values()),[1,1])
+                        self.assertEqual(transport.failure_receipts(),())
+                        self.assertEqual(transport._requests,{})
+                        self.assertEqual(transport.recover_actor_receipts(actor_receipts*2),[])
+                        self.assertEqual(owner.close(timeout=1)['status'],'closed')
+                        self.assertEqual(owner.calls,calls)
+                        self.assertEqual(list(accepted.values()),[1,1])
+                        self.assertEqual(owner._root_run.stats,stats)
+                        self.assertFalse(report['query_completed'])
+                        self.assertEqual(sum(e['event']=='construct' for e in fixture.events()),1)
+                        self.assertEqual(ledger.snapshot(),before)
+                        with self.assertRaises(BudgetError):context['claims'][plan['queries'][0]['query_id']].bind_execution()
+                        context['claims'][plan['queries'][1]['query_id']].bind_execution()
+                    finally:
+                        fault[0]=False
+                        for transport in transports:transport.owner.close(timeout=2)
+
     def test_cancel_receipt_write_failure_stops_before_recovery_without_refunding_unknowns(self):
         from src.experiments import native_query_lifecycle as lifecycle
         for receipt, writer in (('session.json','write_private_json'),('query-0.json','publish_private_json')):
