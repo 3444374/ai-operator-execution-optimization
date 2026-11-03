@@ -220,6 +220,8 @@ class NativeFeedbackTests(unittest.TestCase):
             explicit=asyncio.run(construct(False,max_num_seqs=128))
             null=asyncio.run(construct(False,max_num_seqs=None))
             single=asyncio.run(construct(False,max_num_seqs=1))
+            for maximum in (None,1,4096,8192):
+                asyncio.run(construct(False,max_num_batched_tokens=maximum))
         self.assertNotIn('stat_loggers',calls[0][1]);self.assertTrue(calls[1][0].disable_log_stats)
         logger=calls[1][1]['stat_loggers'][0](None,0)
         self.assertIs(logger,feedback._feedback)
@@ -232,7 +234,14 @@ class NativeFeedbackTests(unittest.TestCase):
         self.assertEqual(calls[4][0].max_num_seqs,1)
         self.assertIsNone(null.spec.max_num_seqs)
         self.assertEqual(single.spec.max_num_seqs,1)
-        self.assertNotIn('native_capacity',plain.ready())
+        self.assertNotIn('max_num_batched_tokens',vars(calls[0][0]))
+        self.assertNotIn('max_num_batched_tokens',vars(calls[5][0]))
+        self.assertEqual([call[0].max_num_batched_tokens for call in calls[6:]], [1,4096,8192])
+        self.assertEqual(plain.ready()['native_capacity']['max_num_batched_tokens'],999)
         self.assertEqual(feedback.ready()['native_capacity']['max_num_seqs'],7)
         self.assertIsNone(feedback.spec.max_num_seqs)
         self.assertEqual(explicit.spec.max_num_seqs,128)
+        plain._llm.vllm_config=None
+        unavailable=plain.ready()['native_capacity']
+        self.assertEqual(unavailable['status'],'partial_or_unavailable')
+        self.assertIsNone(unavailable['max_num_batched_tokens'])

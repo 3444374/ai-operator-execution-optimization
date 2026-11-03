@@ -101,7 +101,6 @@ class VllmAsyncEngine:
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
             dtype=self.spec.dtype, max_model_len=self.spec.max_model_len,
-            max_num_batched_tokens=self.spec.max_num_batched_tokens,
             gpu_memory_utilization=self.spec.gpu_memory_utilization, seed=self.spec.seed,
             tensor_parallel_size=1, pipeline_parallel_size=1,
             distributed_executor_backend="uni", trust_remote_code=False,
@@ -109,6 +108,8 @@ class VllmAsyncEngine:
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
             **({"max_num_seqs": self.spec.max_num_seqs}
                if self.spec.max_num_seqs is not None else {}),
+            **({"max_num_batched_tokens": self.spec.max_num_batched_tokens}
+               if self.spec.max_num_batched_tokens is not None else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
         ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
               if self._feedback is not None else {}))
@@ -136,8 +137,7 @@ class VllmAsyncEngine:
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
                     reserved_model_calls=self._reserved_model_calls,
                     native_abort_is_terminal_confirmation=False,
-                    **({"native_capacity": effective_capacity_snapshot(getattr(self._llm, "vllm_config", None))}
-                       if self._feedback is not None else {}),
+                    native_capacity=effective_capacity_snapshot(getattr(self._llm, "vllm_config", None)),
                     **({"native_mfu_initial": self.mfu_snapshot(),
                         "native_mfu_configuration": configuration_snapshot(self._llm.vllm_config)}
                        if self.spec.enable_mfu_metrics else {}))

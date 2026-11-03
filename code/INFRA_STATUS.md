@@ -46,6 +46,12 @@ records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上�
 省略参数，交vLLM 0.25.1自行解析；有限同步引擎和LOTUS原生HTTP参照默认8保持，Kalypso不改。尚无真实模型资格；
 这不是自动性能调优，不改token/context/memory或外层额度，历史显式设置及原回执保留。CPU 检查覆盖高于引擎每轮
 序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
+同一异步 Core 的 `max_num_batched_tokens` 默认修正候选在未指定／null时也省略该参数，
+由安装的 vLLM 解析有限预算；显式正值保留，启动回执始终读回实际配置，缺失仍记未知。
+普通 Movie admission 原有身份绑定完整 EngineSpec；驻留 ascending 继续绑定实际 native 配置，
+未指定与历史显式4096不会匹配同一提示身份，无需新增缓存格式。
+有限同步引擎和 LOTUS 原生 HTTP 参照保留旧默认4096，Kalypso与历史显式配置不变。
+仅做CPU候选验证，不改B/W、上下文4096或显存比例，不构成GPU性能资格。
 完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
 生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。
 同一候选继续取消显式动态配置隐含的10秒、剩余32／64条与8次调整截止，默认改为

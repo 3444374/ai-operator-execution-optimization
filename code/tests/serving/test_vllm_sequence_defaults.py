@@ -49,7 +49,7 @@ class SequenceDefaultTests(unittest.TestCase):
                     command = service.command()
                     self.assertEqual(command[command.index('--max-num-seqs')+1], str(8 if value is None else value))
                     for flag, expected in [('--max-model-len', spec.max_model_len),
-                            ('--max-num-batched-tokens', spec.max_num_batched_tokens),
+                            ('--max-num-batched-tokens', spec.legacy_max_num_batched_tokens),
                             ('--gpu-memory-utilization', spec.gpu_memory_utilization)]:
                         self.assertEqual(command[command.index(flag)+1], str(expected))
 
