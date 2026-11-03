@@ -357,12 +357,27 @@ class NativeServiceCloseTests(unittest.TestCase):
             self.assertEqual(progress.blocked_reason, 'WAIT_BACKEND')
             # Same feedback pattern as the LOTUS batch: release every returned tuple,
             # including no deliveries, then wait using this progress generation.
-            flow.release(tuple(d.lease_id for d in progress.deliveries))
+            with mock.patch.object(execution.engine.wake, 'notify',
+                                   wraps=execution.engine.wake.notify) as notify:
+                flow.release(tuple(d.lease_id for d in progress.deliveries))
+            notify.assert_not_called()
             self.assertEqual(execution.engine.wake.generation, progress.generation)
-            before = time.monotonic()
-            flow.wait(progress)
-            self.assertGreaterEqual(time.monotonic() - before, 0.005)
-            self.assertEqual(execution.engine.capacity.usage().active_requests, 4)
+            self.assertIsNotNone(progress.next_deadline)
+            # The advance deadline can expire during consumer/scheduling work.
+            # Control that clock, but keep the real wake signal and I/O thread.
+            real_wait = execution.engine.wake.wait
+            half_poll = flow.limits.poll_interval_s / 2
+            for budget, now in (('remaining', progress.next_deadline - half_poll),
+                                ('expired', progress.next_deadline + half_poll)):
+                with self.subTest(budget=budget), \
+                        mock.patch.object(execution.engine, 'clock', return_value=now) as clock, \
+                        mock.patch.object(execution.engine.wake, 'wait', wraps=real_wait) as wait:
+                    flow.wait(progress)
+                    clock.assert_called_once_with()
+                    wait.assert_called_once_with(progress.generation,
+                        max(0, progress.next_deadline - now))
+                    self.assertEqual(execution.engine.wake.generation, progress.generation)
+                    self.assertEqual(execution.engine.capacity.usage().active_requests, 4)
             release.set()
             completed = []
             deadline = time.monotonic() + 2
