@@ -164,10 +164,13 @@ token B继续只组织提交；驻留已满／字节不足保留单个pending输
 
 当前范围为普通async Filter及rolling token请求，可沿正常Movie `check/run`、isolated／resident Session进入。
 sync、fused和非rolling的批槽组合不接此预算候选。合法后继与Extract关系屏障保持，完整查询审计／关系仍可能materialize。
+直接构造`SemLoomRecordsCore`时，新预算必须配已有async actor owner，禁止自动或显式采用同步owner；
+完整C／IPC配置资格仍由上述工厂和入口校验。普通owner跨查询保留硬容量，首查询C不锁定后续查询窗口。
 Core输入与IPC编码体积可实计；结果及方法状态是保守预留，不代表Python／Ray对象、socket缓冲或RSS实测。
 unknown、失联、取消请求及未消费结果不能按空闲释放；只有原终态／消费ACK／生产者退出证明结清相应责任。
 新预算及token组批／rolling／切包消融路径进入现有校准身份；C扫描不改变该身份，
-预算或组织方式变化不得复用旧选择。
+预算或组织方式变化不得复用旧选择。token配置先按已有`PreparedBatching`校验和补齐默认字段，
+省略`max_rows`与显式`null`等有效配置共用同一身份。
 [配置／容量边界CPU检查](../../tests/experiments/test_records_resource_budget.py)和
 [CPU子进程IPC检查](../../tests/execution_provider/test_lotus_resource_budget_runtime.py)不授予真实模型、内存容量或性能资格。
 

@@ -132,9 +132,12 @@ def build_core_identity(plan, checked, *, hardware, model, software):
     if capacity is not None:
         identity["execution"]["records_capacity_policy_v1"] = capacity
         if capacity['core'].get('budget') is not None:
+            from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+            batching = plan.get('prepared_batching')
+            batching = None if batching is None else asdict(PreparedBatching(**batching))
             identity['execution']['resources']['max_active_batches'] = capacity['core']['budget']['active_requests']
             identity['execution']['record_organization_v1'] = dict(
-                prepared_batching=deepcopy(plan.get('prepared_batching')),
+                prepared_batching=batching,
                 rolling_refill=plan.get('rolling_refill', False),
                 experimental_skip_token_packing=plan.get('experimental_skip_token_packing', False))
     core_identity_signature(identity)

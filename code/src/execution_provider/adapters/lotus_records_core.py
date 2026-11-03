@@ -932,6 +932,9 @@ class SemLoomRecordsCore:
             for name in ("method", "engine", "generation", "resources"):
                 if getattr(actor_owner, name) != getattr(self, name):
                     raise ValueError("actor_owner " + name + " differs from the Core configuration")
+        if self.capacity.budget is not None and (actor_owner is None or
+                actor_owner.execution_metadata()['model_batch_mode'] != 'independent_final_results'):
+            raise ValueError('explicit resource budgets require an async actor owner')
         self._thread = threading.get_ident()
         self._actors = (actor_owner if actor_owner is not None else
                         _ActorOwner(self.method, self.engine, self.generation, self.resources))
@@ -1070,7 +1073,7 @@ class SemLoomRecordsCore:
                 endpoint = EndpointSnapshot("local-model", "local://model", "local", "0",
                                             True, 0, 0, None, time.monotonic())
                 policies = SessionPolicies(self._feedback.gate if self._feedback is not None
-                                           else StaticAdmissionController(query_profile['max_inflight']),
+                                           else StaticAdmissionController(limits.active_requests),
                                            RoundRobinEndpointRouter(),
                                            TopologySnapshot((endpoint,), time.monotonic()), "local")
                 self.transport = _RecordTransport(self._actors, limits.held_tasks, lambda: self.core.wake.notify())

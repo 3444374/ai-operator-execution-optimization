@@ -249,6 +249,8 @@ Core单项与总量、IPC单项／槽位与总量分别推导，显式小额度�
 旧默认和历史R推导保留；sync、fused及非rolling批槽不在新预算范围。
 边界与字段见[显式独立预算](src/experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选)。
 CPU接线与子进程IPC不构成物理RSS／真实Ray／模型或性能证明；全查询关系与审计保留仍不受这些活跃工作预算完整覆盖。
+独审反例的本地修复恢复旧普通owner的硬容量闸门，新预算仍逐查询设置软C；token组批身份采用校验后默认值，
+并拒绝新预算直接接同步owner。[跨查询／等效配置反例](tests/experiments/test_records_budget_query_identity.py)仅授予CPU回归资格。
 
 本地可选`rolling_refill=True`候选复用同一路径，以既有请求窗口R滚动补交token批；慢成员不再占一个整批供给槽阻塞已释放请求额度。
 默认关闭，原C_batch模式保留；启用时省略`batch_concurrency`，并拒绝混入`batch_feedback`。
