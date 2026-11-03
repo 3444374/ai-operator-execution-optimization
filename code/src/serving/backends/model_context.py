@@ -5,8 +5,11 @@ import hashlib
 import json
 
 
-def _spec_signature(spec):
-    value = json.dumps(asdict(spec), sort_keys=True, ensure_ascii=False,
+def _spec_signature(spec, *, execution_budget=True):
+    fields = asdict(spec)
+    if not execution_budget:
+        fields.pop('max_model_calls')
+    value = json.dumps(fields, sort_keys=True, ensure_ascii=False,
                        allow_nan=False, separators=(',', ':')).encode()
     return hashlib.sha256(value).hexdigest()
 
@@ -46,4 +49,6 @@ def model_context_limit(spec, ready=None):
 
 def model_context_identity(spec, ready):
     observed = checked_model_context(spec, ready)
-    return {name: value for name, value in observed.items() if name not in ('engine_uid', 'observation_signature')}
+    identity = {name: value for name, value in observed.items() if name not in ('engine_uid', 'observation_signature')}
+    identity['engine_signature'] = _spec_signature(spec, execution_budget=False)
+    return identity

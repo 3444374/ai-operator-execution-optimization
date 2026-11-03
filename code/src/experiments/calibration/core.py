@@ -89,7 +89,7 @@ def _records_capacity_policy(plan):
     return dict(core=core, IPC_overrides=normalized)
 
 
-def build_core_identity(plan, checked, *, hardware, model, software, model_ready=None):
+def _core_identity_fields(plan, checked, *, hardware, model, software):
     """Bind fixed execution and checked input bytes; ignore IDs and scanned knobs.
 
     hardware comes from existing host checks (selected devices and resource caps).
@@ -128,11 +128,6 @@ def build_core_identity(plan, checked, *, hardware, model, software, model_ready
         workload=dict(queries=schedule),
         measurement=dict(objective="sum_measured_full_query_seconds", warmup="explicit_plan_queries", work_unit="model_calls"),
     )
-    from src.serving.backends.vllm_engine import EngineSpec
-    engine = EngineSpec.from_dict(plan['engine'])
-    if engine.max_model_len is None:
-        from src.serving.backends.model_context import model_context_identity
-        identity['execution']['model_context'] = model_context_identity(engine, model_ready)
     capacity = _records_capacity_policy(plan)
     if capacity is not None:
         identity["execution"]["records_capacity_policy_v1"] = capacity
@@ -145,8 +140,90 @@ def build_core_identity(plan, checked, *, hardware, model, software, model_ready
                 prepared_batching=batching,
                 rolling_refill=plan.get('rolling_refill', False),
                 experimental_skip_token_packing=plan.get('experimental_skip_token_packing', False))
+    return identity
+
+
+def build_core_identity(plan, checked, *, hardware, model, software, model_ready=None):
+    identity = _core_identity_fields(plan, checked, hardware=hardware, model=model, software=software)
+    from src.serving.backends.vllm_engine import EngineSpec
+    engine = EngineSpec.from_dict(plan['engine'])
+    if engine.max_model_len is None:
+        from src.serving.backends.model_context import model_context_identity
+        identity['execution']['model_context'] = model_context_identity(engine, model_ready)
     core_identity_signature(identity)
     return identity
+
+
+def core_context_plan(plan, checked, candidate, *, hardware, model, software):
+    """Prepare the first declared sample, without claiming an observed identity."""
+    from src.serving.backends.vllm_engine import EngineSpec
+    if EngineSpec.from_dict(plan['engine']).max_model_len is not None:
+        raise ValueError('context confirmation is only needed for omitted context')
+    fields = _core_identity_fields(plan, checked, hardware=hardware, model=model, software=software)
+    _candidate_key(candidate, fields)
+    return _apply_candidate(plan, candidate)
+
+
+def core_model_ready(plan, ready, *, expected=None):
+    """Check the executing owner; another owner's observation is only an expectation."""
+    from src.serving.backends.vllm_engine import EngineSpec
+    from src.serving.backends.model_context import checked_model_context, model_context_identity
+    engine = EngineSpec.from_dict(plan['engine'])
+    if type(ready) is dict and (ready.get('closed') is True or ready.get('status') in {'failed', 'unknown'}):
+        raise RuntimeError('executing model is not ready')
+    checked_model_context(engine, ready)
+    if expected is not None and model_context_identity(engine, ready) != model_context_identity(engine, expected):
+        raise ValueError('executing model context differs from the calibration observation')
+    return deepcopy(ready)
+
+
+def core_session_model_ready(plan, report, *, expected=None):
+    """Bind complete query calls to their actual session owner's ready receipt."""
+    owners = report.get('owners')
+    if not isinstance(owners, list) or not owners:
+        raise RuntimeError('Core context confirmation requires session owners')
+    ready_by_owner = {}
+    first = None
+    for owner in owners:
+        if type(owner) is not dict:
+            raise ValueError('Core context confirmation requires owner records')
+        owner_id = owner.get('owner_id')
+        if type(owner_id) is not str or not owner_id or owner_id in ready_by_owner:
+            raise ValueError('Core context confirmation requires unique owner identities')
+        ready = core_model_ready(plan, owner.get('ready'), expected=expected if first is None else first)
+        ready_by_owner[owner_id] = ready
+        if first is None:
+            first = ready
+    for query in report.get('queries', []):
+        ready = ready_by_owner.get(query.get('owner_id'))
+        if ready is None:
+            raise ValueError('query is missing its actual model owner')
+        calls = (query.get('backend_report') or {}).get('calls', {})
+        records = calls.get('records', [])
+        recorded = calls.get('counts', {}).get('recorded', 0)
+        if type(recorded) is not int or recorded < 0 or len(records) != recorded:
+            raise ValueError('context confirmation requires every recorded model call')
+        if any(row.get('engine_uid') != ready['engine_uid'] for row in records):
+            raise ValueError('query call changed the executing model identity')
+    return first
+
+
+def core_context_failure(checked, report):
+    """Retain paid call counts when no observed calibration identity can be built."""
+    costs = dict(declared_model_calls=sum(q['expected_calls'] for q in checked['queries']),
+        recorded_model_calls=0, warmup_recorded_model_calls=0,
+        succeeded_model_calls=0, failed_model_calls=0, unknown_model_calls=0)
+    for query in report.get('queries', []):
+        counts = (query.get('backend_report') or {}).get('calls', {}).get('counts', {})
+        for name in ('recorded', 'succeeded', 'failed', 'unknown'):
+            value = counts.get(name, 0)
+            if type(value) is not int or value < 0:
+                raise ValueError('invalid observed call count during context confirmation')
+            costs[name + '_model_calls'] += value
+        if query['phase'] == 'warmup':
+            costs['warmup_recorded_model_calls'] += counts.get('recorded', 0)
+    return dict(schema='semloom.core_context_failure.v1', status='failed',
+        identity_sha256=None, reasons=['executing_model_context_not_confirmed'], **costs)
 
 
 def _candidate_key(candidate, identity):
@@ -176,29 +253,33 @@ def _candidate_key(candidate, identity):
     return maximum, workers
 
 
-def core_candidate_plan(plan, checked, candidate, *, identity, sample_id=None):
+def _apply_candidate(plan, candidate, sample_id=None):
+    result = deepcopy(plan)
+    result['profile']['max_inflight'] = candidate['max_inflight']
+    result['resources']['cpu_workers'] = candidate['cpu_workers']
+    if sample_id is not None:
+        if type(sample_id) is not str or not sample_id.strip():
+            raise ValueError('sample_id must be nonempty')
+        for query in result['queries']:
+            query['query_id'] = sample_id + ':' + query['query_id']
+    return result
+
+
+def core_candidate_plan(plan, checked, candidate, *, identity, sample_id=None, model_ready=None):
     """Build a plan for the existing run_movie_session, or materialize a cache hit.
 
     Assign sample_id before the caller checks/claims each new scan unit. No files,
     claims, model ownership or query execution are created by this function.
     """
     current = build_core_identity(plan, checked, hardware=identity["hardware"], model=identity["model"],
-                                  software=identity["execution"]["software"])
+                                  software=identity["execution"]["software"], model_ready=model_ready)
     if core_identity_signature(current) != core_identity_signature(identity):
         raise ValueError("plan differs from the Core calibration identity")
-    maximum, workers = _candidate_key(candidate, identity)
-    result = deepcopy(plan)
-    result["profile"]["max_inflight"] = maximum
-    result["resources"]["cpu_workers"] = workers
-    if sample_id is not None:
-        if type(sample_id) is not str or not sample_id.strip():
-            raise ValueError("sample_id must be nonempty")
-        for query in result["queries"]:
-            query["query_id"] = sample_id + ":" + query["query_id"]
-    return result
+    _candidate_key(candidate, identity)
+    return _apply_candidate(plan, candidate, sample_id)
 
 
-def core_measurement(plan, checked, report, *, identity, repeat_index, resources_passed):
+def core_measurement(plan, checked, report, *, identity, repeat_index, resources_passed, model_ready=None):
     """Reduce an existing session receipt, retaining failed/unknown sample costs.
 
     resources_passed is the existing supervisor's complete resource/cleanup
@@ -208,8 +289,13 @@ def core_measurement(plan, checked, report, *, identity, repeat_index, resources
     if type(resources_passed) is not bool:
         raise ValueError("resources_passed requires the existing supervisor verdict")
     candidate = dict(max_inflight=plan["profile"]["max_inflight"], cpu_workers=plan["resources"]["cpu_workers"])
-    core_candidate_plan(plan, checked, candidate, identity=identity)
+    core_candidate_plan(plan, checked, candidate, identity=identity, model_ready=model_ready)
     reasons = []
+    if identity['execution'].get('model_context') is not None:
+        try:
+            core_session_model_ready(plan, report, expected=model_ready)
+        except (ValueError, RuntimeError):
+            reasons.append('executing_model_context_not_confirmed')
     if report.get("backend") != "semloom-core" or report.get("lifecycle") != plan["lifecycle"]:
         raise ValueError("session receipt is not this Core execution path")
     if report.get("status") != "completed":

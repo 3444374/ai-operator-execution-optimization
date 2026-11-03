@@ -855,8 +855,13 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 显式正整数精确保留；同步SemLoom／LOTUS／Ray／Daft参照通过`legacy_max_model_len`保留原4096缺省，
 显存比例、数据精度、方法／生成参数及单GPU支持保持。每轮token修正属于独立候选。
 普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
-公共离线calibration入口的ready安排仍pending，底层`build_core_identity(..., model_ready=...)`缺回执拒绝；
-模型前的输入专用token验证仍需显式上下文。
+公共离线calibration在省略上下文时复用首个已声明完整样本的实际owner回执，随后构造身份；
+每个执行owner仍须在生成前核对自身ready及解析长度，逐调用记录须对应其引擎身份。
+首个样本在缓存未命中时只使用一次；缓存命中时仍需执行这次确认，调用与耗时分别进入
+`scan_units`和`model_context_confirmation`，不伪装零成本缓存命中。显式上下文保留原零扫描命中。
+模型实际配置的观测摘要仍绑定完整请求；缓存的上下文部分排除实例标识及查询调用额度，其他模型参数保持。
+模型前的输入专用token验证仍需显式上下文；离线接线的[CPU证据与剩余项](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#offline-model-context)
+不包含真实模型资格。
 [CPU范围与剩余项](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#异步模型上下文的-cpu-候选)
 不包含真实模型或性能资格。
 

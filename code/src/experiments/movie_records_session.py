@@ -242,6 +242,14 @@ class _MovieDriver:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
             ready = self.owner.start()
+            if backend == 'semloom-core' and self.engine.max_model_len is None and 'plan_binding' in self.context:
+                from src.experiments.calibration.core import core_model_ready
+                binding = self.context['plan_binding']
+                expected = self.context.get('core_model_context_ready', binding['observed'].get('model_ready'))
+                if expected is None and binding.get('resolve_model_context') is not True:
+                    raise RuntimeError('calibrated execution requires its observed model context')
+                self._model_ready = core_model_ready(self.plan, ready, expected=expected)
+                self.context['core_model_context_ready'] = self._model_ready
             if self.plan["lifecycle"] != "resident":
                 return ready
             # Preserve the original Core receipt and observe its real process
@@ -303,6 +311,11 @@ class _MovieDriver:
             self.imlane_guard()
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
         elif backend == "semloom-core":
+            if self.engine.max_model_len is None and 'plan_binding' in self.context:
+                from src.experiments.calibration.core import core_model_ready
+                current = core_model_ready(self.plan, self.owner._actors.model_ready, expected=self._model_ready)
+                if current['engine_uid'] != self._model_ready['engine_uid']:
+                    raise ValueError('calibrated query model owner changed after readiness')
             execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"], method=method, **query_options)
         elif backend == "semloom-static-reference":
             if method != self.owner.method:

@@ -146,7 +146,7 @@ def core_observations(cfg, packet, gpu):
 
 def materialize_core_plan(base, group, index, binding, *, source_revision, checked=None):
     """Rebuild only declared candidate parameters; cache/proof validation is shared."""
-    from src.experiments.calibration.core import build_core_identity,core_candidate_plan
+    from src.experiments.calibration.core import build_core_identity,core_candidate_plan,core_context_plan
     from src.scheduling.runtime.calibration import resolve_calibration
     if checked is None:
         from src.experiments.movie_records_session import check_plan
@@ -154,7 +154,6 @@ def materialize_core_plan(base, group, index, binding, *, source_revision, check
     observed=binding['observed']
     if observed['software']['source_revision']!=source_revision:
         raise ValueError('Core calibration source differs')
-    identity=build_core_identity(base,checked,**observed)
     if binding['kind']=='scan':
         jobs=scan_jobs(group,index)
         job=next((j for j in jobs if j['sample_id']==binding['sample_id']),None)
@@ -162,13 +161,21 @@ def materialize_core_plan(base, group, index, binding, *, source_revision, check
             raise ValueError('scan job was not predeclared')
         sample_id=job['sample_id']
     elif binding['kind']=='selected':
+        identity=build_core_identity(base,checked,**observed)
         proof=resolve_calibration(Path(binding['selection_path']),identity,policy=binding['policy'])
         if (proof['status']!='ready' or proof['selection_sha256']!=binding['selection_sha256']
                 or proof['candidate']!=binding['configuration']):
             raise ValueError('Core measured selection proof differs')
         sample_id=None
     else:raise ValueError('unsupported Core plan binding')
-    result=core_candidate_plan(base,checked,binding['configuration'],identity=identity)
+    if binding.get('resolve_model_context') is True:
+        if binding['kind']!='scan' or binding['sample_id']!=scan_jobs(group,index)[0]['sample_id']:
+            raise ValueError('only the first declared scan sample can confirm omitted context')
+        result=core_context_plan(base,checked,binding['configuration'],**observed)
+    else:
+        identity=build_core_identity(base,checked,**observed)
+        result=core_candidate_plan(base,checked,binding['configuration'],identity=identity,
+            model_ready=observed.get('model_ready'))
     if sample_id is not None:result['queries']=sample_queries(result,sample_id)
     return result
 

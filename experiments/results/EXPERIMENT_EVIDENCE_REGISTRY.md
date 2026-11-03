@@ -1,5 +1,18 @@
 # 实验与机制证据台账
 
+<a id="records-offline-context-cpu"></a>
+## 2026-11-03：离线校准实际owner就绪接线
+
+基于本地01297ff的独立增量，从首个已声明完整样本取得实际解析长度，
+在所有执行owner生成前复核；未知与失败不构造可复用身份，不回退4096。
+缓存命中仍记录确认调用与耗时，未命中复用原样本一次，显式上下文与原同步参照保持。
+[当前报告](diagnostics/records_config_refactor_20261103/README.md#offline-model-context)及
+[机器摘要](diagnostics/records_config_refactor_20261103/raw/offline_context_checks.json)：
+214个方法选择中206成功、1个方法跳过，另2类7方法缺固定SemBench资产未运行；
+14项新增用例全部通过，无新方法失败或错误。初轮缺DuckDB的类启动错误保留，已有完整CPU环境复核后仅余资产缺项。
+首个切片的6项既有失败和历史10处来源不匹配未改写，本增量历史新增不匹配0。
+这里只含CPU替身、实际私有CPU子进程通信和已有同步环境；独审及真实vLLM／Ray／GPU尚未完成。
+
 
 <a id="records-model-context-cpu"></a>
 ## 2026-11-03：异步上下文能力回执与配置身份
