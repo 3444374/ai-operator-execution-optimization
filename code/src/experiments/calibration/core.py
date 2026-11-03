@@ -5,6 +5,7 @@ cache and bounded scan orchestration live in scheduling.runtime.calibration.
 """
 
 from copy import deepcopy
+from dataclasses import asdict, replace
 import math
 
 from src.scheduling.runtime.calibration import (
@@ -33,6 +34,56 @@ def _schedule(checked):
     return [dict(task=query["task"], manifest_sha256=query["manifest_sha256"],
                  phase=query["phase"], expected_calls=query["expected_calls"])
             for query in checked["queries"]]
+
+
+def _records_capacity_policy(plan):
+    """Normalize fixed declarations, retaining limits that vary across the scan.
+
+    A count equal to today's C is not equivalent to a count derived from C.
+    Only drop an override equal to its default throughout the eligible C range.
+    The existing resolver's defaults are monotone in owner R, so endpoints suffice.
+    """
+    if not set(plan) & {"core_capacity", "async_limits"}:
+        return None
+    from src.execution_provider.adapters.lotus_records_core import (
+        CoreRecordsCapacity, resolve_core_profile, resolve_records_async_limits,
+    )
+    from src.semantic_methods.lotus.records import RecordsResources
+    from src.serving.backends.vllm_engine import EngineSpec
+
+    for name in ("core_capacity", "async_limits"):
+        if type(plan.get(name, {})) is not dict:
+            raise ValueError(name + " must be an object")
+    capacity = CoreRecordsCapacity(**plan.get("core_capacity", {}))
+    resources = RecordsResources(**plan["resources"])
+    engine = EngineSpec.from_dict(plan["engine"])
+    resolved = resolve_core_profile(engine, resources, plan["profile"],
+        rolling_refill=plan.get("rolling_refill", False))
+    owner = resolved.get("owner_max_inflight", resolved["max_inflight"])
+    overrides = plan.get("async_limits", {})
+    actual = asdict(resolve_records_async_limits(
+        replace(resources, max_active_batches=owner), capacity, overrides))
+    actual["feedback_interval_s"] = float(actual["feedback_interval_s"])
+    upper = min(resources.max_active_batches, engine.max_num_seqs) \
+        if engine.max_num_seqs is not None else resources.max_active_batches
+    bounds = (owner, owner) if "admission" in resolved else (1, upper)
+    defaults = []
+    for maximum in bounds:
+        values = asdict(resolve_records_async_limits(
+            replace(resources, max_active_batches=maximum), CoreRecordsCapacity()))
+        # Core may allow a smaller result than IPC's minimum, with an explicit
+        # valid IPC override. Comparing defaults must not reject that legal pair.
+        values.update(item_input_bytes=capacity.item_input_bytes, item_result_bytes=capacity.item_result_bytes)
+        values["input_bytes"] = maximum * overrides.get("item_input_bytes", capacity.item_input_bytes)
+        values["result_bytes"] = overrides.get("result_slots", maximum) * overrides.get(
+            "item_result_bytes", capacity.item_result_bytes)
+        defaults.append(values)
+    normalized = {key: actual[key] for key in overrides
+                  if any(values[key] != actual[key] for values in defaults)}
+    core = dict(asdict(capacity), poll_interval_s=float(capacity.poll_interval_s))
+    if capacity == CoreRecordsCapacity() and not normalized:
+        return None  # Keep the pre-capacity identity for the equivalent default policy.
+    return dict(core=core, IPC_overrides=normalized)
 
 
 def build_core_identity(plan, checked, *, hardware, model, software):
@@ -74,6 +125,9 @@ def build_core_identity(plan, checked, *, hardware, model, software):
         workload=dict(queries=schedule),
         measurement=dict(objective="sum_measured_full_query_seconds", warmup="explicit_plan_queries", work_unit="model_calls"),
     )
+    capacity = _records_capacity_policy(plan)
+    if capacity is not None:
+        identity["execution"]["records_capacity_policy_v1"] = capacity
     core_identity_signature(identity)
     return identity
 
@@ -93,6 +147,14 @@ def _candidate_key(candidate, identity):
     # Match the existing session's Ray allocation: prepare + model + driver.
     if workers + execution["resources"]["gpu_workers"] + 1 > identity["hardware"]["cpu_limit"]:
         raise ValueError("candidate exceeds the observed CPU allocation")
+    policy = execution.get("records_capacity_policy_v1")
+    if policy is not None:
+        from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity, resolve_records_async_limits
+        from src.semantic_methods.lotus.records import RecordsResources
+
+        owner = execution["resources"]["max_active_batches"] if execution["profile"].get("admission") else maximum
+        resources = RecordsResources(**dict(execution["resources"], cpu_workers=workers, max_active_batches=owner))
+        resolve_records_async_limits(resources, CoreRecordsCapacity(**policy["core"]), policy["IPC_overrides"])
     return maximum, workers
 
 

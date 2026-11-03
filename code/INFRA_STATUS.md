@@ -235,7 +235,10 @@ Core单项与总量、IPC单项／槽位与总量分别推导，显式小额度�
 [接口映射](src/experiments/movie_matrix.README.md#semloom-records-的-coreipc-容量)与
 [CPU反例](tests/experiments/test_records_capacity_config.py)已覆盖普通／常驻入口和连续查询重置；
 未新增真实Ray／模型／GPU资格，不改变其他baseline或历史具名实验。
-显式容量已进入普通admission cache身份；离线calibration的容量身份仍待其独立接线，本候选不授予该组合资格。
+有效容量已进入普通admission cache身份，省略与等效默认不分叉；离线Core calibration绑定固定容量规则，
+保留随扫描C派生的owner额度，并在owner创建前拒绝显式计数不匹配的候选。
+[容量身份CPU测试](tests/experiments/test_core_capacity_identity.py)覆盖缓存命中／隔离、默认归一和候选约束；
+仅授予本地组合接线验证，不继承真实模型或GPU性能资格。
 
 本地可选`rolling_refill=True`候选复用同一路径，以既有请求窗口R滚动补交token批；慢成员不再占一个整批供给槽阻塞已释放请求额度。
 默认关闭，原C_batch模式保留；启用时省略`batch_concurrency`，并拒绝混入`batch_feedback`。

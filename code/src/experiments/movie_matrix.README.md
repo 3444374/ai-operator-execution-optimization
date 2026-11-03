@@ -126,11 +126,15 @@ IPC单项默认取对应Core单项，请求／结果／命令槽默认取R；IPC
 IPC保留原结果／控制帧最小值与最终编码校验；Core和IPC分别校验自己的完整表示，并非同一份字节账。
 省略容量字段时原Core单项2MiB及其owner默认保持，模型、提示、生成参数、B和完成／unknown责任不变。
 
-普通admission cache对显式容量将实际Core／IPC配置纳入既有execution身份；
-未声明新容量字段时旧身份保持。离线calibration对这些新字段的身份接线尚待独立集成，
-本候选不认证自定义容量与离线缓存选择的组合。
+普通admission cache将有效Core／IPC配置纳入既有execution身份；省略、空对象与等效默认配置保持旧身份。
+离线Core calibration另绑定容量的派生规则，避免把某次扫描C对应的总量固化进身份。
+默认IPC槽位／总量仍随owner R推导；显式计数或总量只有在整个合法候选范围内等效才归一，
+否则作为固定约束保留。例如显式`max_inflight=4`即使匹配当前C，也不能与随C派生的默认策略共用身份；
+候选不匹配时在创建owner前拒绝。不同有效字节／槽位／轮询配置隔离缓存，等效数值表示归一。
+该组合仅完成本地CPU接线验证，尚无自定义容量的实机性能资格。
 [CPU配置与边界检查](../../tests/experiments/test_records_capacity_config.py)覆盖部分配置、独立字节限额、
 3MiB输入／结果、unknown预留、普通／常驻入口和查询账本重置；未新增真实Ray、模型或GPU运行。
+缓存等价／隔离和扫描约束见[容量身份测试](../../tests/experiments/test_core_capacity_identity.py)。
 
 ### 固定 rolling 的 B 切包消融（仅实验）
 

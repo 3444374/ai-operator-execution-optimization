@@ -336,7 +336,7 @@ def _async_limits(config, *, resources=None, resolved=None):
 
 
 def _record_admission_cache(config, *, resources, resolved):
-    """Bind explicit storage/IPC choices through the existing opaque identity."""
+    """Bind effective storage/IPC choices; equivalent defaults keep old identity."""
     from copy import deepcopy
     from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity, resolve_records_async_limits
 
@@ -347,9 +347,13 @@ def _record_admission_cache(config, *, resources, resolved):
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     limits = resolve_records_async_limits(effective, capacity,
         _async_limits(config, resources=resources, resolved=resolved))
+    default = CoreRecordsCapacity()
+    if capacity == default and limits == resolve_records_async_limits(effective, default):
+        return cache
     cache = deepcopy(cache)
     cache["identity"]["execution"]["records_capacity_v1"] = dict(
-        core=asdict(capacity), IPC=asdict(limits))
+        core=dict(asdict(capacity), poll_interval_s=float(capacity.poll_interval_s)),
+        IPC=dict(asdict(limits), feedback_interval_s=float(limits.feedback_interval_s)))
     return cache
 
 
