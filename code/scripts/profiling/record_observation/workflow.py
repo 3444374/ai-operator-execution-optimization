@@ -26,7 +26,8 @@ TESTS = ('tests.experiments.test_record_resource_capture',
          'tests.experiments.test_git_record_observation',
          'tests.observability.test_records_telemetry',
          'tests.observability.test_feedback_identity',
-         'tests.serving.test_native_resource_feedback')
+         'tests.serving.test_native_resource_feedback',
+         'tests.experiments.test_movie_cancellation')
 
 
 def read_private(path):
@@ -66,9 +67,12 @@ def target_environment(config):
 def input_binding(config):
     if config['workload']['kind'] == 'record_chain':
         return dict(kind='record_chain', input=file_identity(config['workload']['input']['csv']))
-    program = '''
+    from src.experiments.movie_cancellation import qualification_options
+    cancellation = qualification_options(config)
+    checker = ('from src.experiments.movie_cancellation import check_cancellation_plan as check_plan'
+               if cancellation is not None else 'from src.experiments.movie_records_session import check_plan')
+    program = checker + '''
 import json,sys
-from src.experiments.movie_records_session import check_plan
 value=check_plan(json.load(sys.stdin))
 print(json.dumps(dict(expected_calls=value['expected_calls'],queries=[
     {k:q[k] for k in ('query_id','manifest_sha256','expected_calls')} for q in value['queries']])))
@@ -88,6 +92,8 @@ print(json.dumps(dict(expected_calls=value['expected_calls'],queries=[
 
 def validate_base(config):
     from src.experiments.attempt_ledger import AttemptBudget
+    from src.experiments.movie_cancellation import qualification_options
+    qualification_options(config)
     require_outside_git(Path(config['artifact_root']))
     AttemptBudget(config['run_id'], config['workload']['expected_calls'])
     units = config['units']

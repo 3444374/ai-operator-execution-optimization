@@ -140,6 +140,52 @@ CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU；真实 Ra
 扫描线程 CPU／墙钟成本单列；它不是整个应用 CPU 成本，必要监督带来的资源竞争不从查询耗时中扣除。
 `off/handoff` 不启用附加观察器；已开启的 ascending 生产资源反馈继续在原 actor snapshot 路径采样。
 
+<a id="inflight-cancellation"></a>
+
+## 在途取消与新 owner 恢复的功能检查
+
+同一工作流可显式设置 `workload.qualification="inflight_cancel_then_recover"`。
+它复用原 Movie `run_movie_session`、`_MovieDriver`、`evaluate(cancelled=...)`、额度、lease 和监督者。
+此入口只检查固定 async rolling token 路径：两个不同 query ID、同一原 Movie task，均为
+`phase="measured"`；第一段取消，确认收尾后第二段新建 owner 恢复。没有隐式 warmup、重试或复用已退休模型。
+实现见 [Movie 取消检查](../../../src/experiments/movie_cancellation.py) 与
+[原生子进程旁路](../../experiments/probe_movie_cancellation_child.py)。
+
+按已批准功能额度制备输入。例如每种 packing 设置使用原 Q1 前两行，两段共四次额度：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py prepare \
+  --input-csv "$ORIGINAL_MOVIE_CSV" --input-sha256 "$ORIGINAL_MOVIE_SHA256" \
+  --max-rows 2 --task movie-q1 --role "$EXISTING_MOVIE_ROLE" --output-dir "$NEW_PREFIX2"
+```
+
+两个 query 的 manifest 均指向这个新前缀，保留原顺序、正文、prompt、parser、generation 和 gold。
+`units` 各两次，`workload.expected_calls` 与 `movie_plan.engine.max_model_calls` 均为四；
+入口把每个实际 owner 的 native 调用上限进一步缩至该段的两次，不退还取消／未知额度。
+固定 `profile.max_inflight` 至少容纳完整取消段；B、独立资源预算和 packing bypass 选项沿用本轮冻结配置。
+不启用 admission cache、动态并发或 batch feedback。示例的两行是功能预算，不是生产组批上限。
+
+本检查要求 `observation.mode="off"`，并复用显式正数 `max_events_per_process`、`max_event_bytes`
+限制 native 证据读取；独立轻量 native API 旁路由检查入口启用，不启用 profiler 或改变 vLLM worker／生成参数。
+只有全部目标已由 native API 登记、且其活跃请求映射尚在时，才触发原取消回调。
+收尾后再次核对同一模型进程的 add／abort 身份、事件顺序和 abort 返回。
+Core 已接受、已排队的 cancel intent 或完成后的 no-op 都不算覆盖；完成过快或证据不足即失败停止，不加调用重试。
+该证据说明 native API 在途，不证明某个 GPU kernel 正在执行，也不把 vLLM abort 返回当作模型终态确认。
+
+使用最终已审 Git 提交和新的 base／cell 身份，按上一节同一组
+`campaign_guard.py init → cpu(ray/qualify/prepare/check) → run-cell → collect` 命令执行。
+每种 packing 设置各一个 cell；本例两种设置共八次额度。唯一执行者须先核实既有剩余额度、期限和物理空闲，
+不得重新 claim 已执行的正常检查格、重置整轮边界或把本节当作新增模型授权。
+新提交须重新生成 CPU ready 和 prepared config，不能沿用旧树资格。
+
+输出保留取消段原来的失败／`InterruptedError` 报告、完整调用账目及 `native-cancel/native-<pid>.jsonl`。
+`session.json` 的 `cancellation_qualification` 单列覆盖与预期 unknown；新 owner 恢复段仍走原查询和质量评价。
+guard 重读原生证据及两段账目后，才允许这类明确声明的功能格带预期取消 unknown 通过；
+`unknown_records`、`unknown_responsibilities`、保守计费和提交数未知语义保持原值。
+任何其他失败、未知、缺回执、Core／Method 逻辑额度、数据 RPC 或本地交付责任未清零都停止恢复／后续格。
+API 收尾之外仍须由原 host supervisor 确认进程、GPU、lease 和临时目录责任；逻辑字节清零不表示 RSS 清零。
+功能通过不替代 gold 全对、性能比较或其他故障路径的验收。
+
 ## 原件回收和观察资格
 
 进程停止写入后，对整个结果目录制作独占创建的逐文件字节清单；失败尝试也会被保留。

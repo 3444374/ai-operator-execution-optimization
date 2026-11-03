@@ -418,12 +418,22 @@ def run_cell(guard, cell_id):
             if error is None:
                 error = result_error
             result = dict(status='unknown', result_read_error_type=type(result_error).__name__)
-        passed = (error is None and counts['succeeded']==cell['calls']
-            and not counts['failed'] and not counts['unknown_responsibilities']
+        expected_cancellation = None
+        calls_passed = (counts['succeeded']==cell['calls'] and not counts['failed'] and not counts['unknown_responsibilities'])
+        if config['workload'].get('qualification') is not None:
+            try:
+                from src.experiments.movie_cancellation import verify_cancellation_cell
+                expected_cancellation = verify_cancellation_cell(config, path.parent, counts)
+                calls_passed = True
+            except Exception as qualification_error:
+                calls_passed = False
+                if error is None:error = qualification_error
+        passed = (error is None and calls_passed
             and result.get('status')=='completed' and result.get('physical_cleanup_confirmed') is True
             and result.get('lease_released') is True)
         write_private_json(guard.root/(cell_id+'-GUARD-END.json'), dict(
             status='passed' if passed else 'failed', source=guard.manifest['source'], counts=counts,
+            cancellation_qualification=expected_cancellation,
             error_type=None if error is None else type(error).__name__,
             formal_controller_result=result, conservative_historical_plus_charge=
                 guard.manifest['historical_charge']+sum(u['requests'] for u in guard.ledger.snapshot()['units'] if u['claimed'])))
