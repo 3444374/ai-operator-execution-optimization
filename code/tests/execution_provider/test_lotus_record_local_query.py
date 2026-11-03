@@ -259,15 +259,33 @@ class QueryOwnerTests(unittest.TestCase):
         plan, rows = fixture.chain_for("MF"), fixture.source_rows(size=1)
         self.config_for(plan, rows)
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        reply_released, expired = threading.Event(), threading.Event()
+        original = AsyncCoreModelActor.poll_prepared_batch
+        interpreted = []
+        original_interpret = chains.LotusRecordMethod.interpret_results
+        def capture_interpret(method, results):
+            interpreted.append(method.stage.stage_id)
+            return original_interpret(method, results)
         def hold_delivery(actor, *args):
             value = original(actor, *args)
-            ready.set()
-            if not release.wait(5):
-                raise TimeoutError("CPU test did not release the known result")
+            receipts = json.loads(value)['results']
+            if receipts:
+                self.assertEqual(len(receipts), 1)
+                with actor._condition:
+                    held = actor._held[tuple(receipts[0]['request_key'])]
+                    self.assertTrue(held.confirmed)
+                    self.assertFalse(held.delivered)
+                    self.assertEqual(held.value['status'], 'succeeded')
+                    self.assertEqual(held.value['total_tokens'], 14)
+                ready.set()
+                if not release.wait(5):
+                    expired.set()
+                    raise TimeoutError("CPU test did not release the known poll result")
+                reply_released.set()
             return value
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_delivery):
+                patch.object(AsyncCoreModelActor, "poll_prepared_batch", hold_delivery), \
+                patch.object(chains.LotusRecordMethod, "interpret_results", capture_interpret):
             owner = self.owner(plan, C=1)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -277,10 +295,13 @@ class QueryOwnerTests(unittest.TestCase):
                     if time.monotonic() >= deadline:
                         self.fail("known CPU receipt was not ready")
                 first = deepcopy(owner.close(timeout=0.02))
+                self.assertFalse(expired.is_set(), "poll result expired before the controlled release")
+                self.assertFalse(reply_released.is_set())
                 self.assertEqual(first["status"], "unknown")
                 self.assertEqual(first["core_usage"]["held_tasks"], 1)
                 release.set()
                 report = owner.close(timeout=3)
+                self.assertTrue(reply_released.is_set())
                 self.assertEqual(report["status"], "closed")
                 self.assertEqual(len(owner.calls), 1)
                 self.assertEqual(owner.calls[0]["status"], "succeeded")
@@ -288,6 +309,7 @@ class QueryOwnerTests(unittest.TestCase):
                 self.assertFalse(report["query_completed"])
                 self.assertEqual(stream.run.position, 0)
                 self.assertEqual(stream.run.stats, {})
+                self.assertEqual(interpreted, [])
                 self.assertEqual(report["core_usage"]["held_tasks"], 0)
                 self.assertEqual(first["core_usage"]["held_tasks"], 1)
             finally:
