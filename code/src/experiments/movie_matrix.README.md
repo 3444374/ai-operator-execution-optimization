@@ -1,5 +1,10 @@
 # Movie 有限矩阵维护入口（CPU 候选）
 
+普通运行与 Session 的配置解释由 [`movie_records_config.py`](movie_records_config.py) 共用，
+包括 Core profile、任务与 IPC 容量、应用批选项及 admission cache 身份。
+它只调用既有类型与 resolver，不创建运行时、模型或控制器；原运行器中的五个私有导入名保留兼容。
+配置到执行的职责及本轮差分检查见[重构记录](../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md)。
+
 单一入口为 [`run_movie_records_matrix.py`](../../scripts/experiments/run_movie_records_matrix.py)，
 实现为 [`MovieMatrix`](movie_records_matrix.py)，启动与收尾 helper 为
 [`movie_matrix_support.py`](movie_matrix_support.py)。本地候选已写入维护代码，已按内容寻址冻结稀疏源码；未部署或运行模型；

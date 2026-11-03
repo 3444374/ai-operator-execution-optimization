@@ -1,5 +1,16 @@
 # 实验与机制证据台账
 
+<a id="records-config-refactor-cpu"></a>
+## 2026-11-03：Records 配置模块整理的 CPU 证据
+
+候选底稿为 PR #90 已发布 `b018d88a5615433b1efb708fc04e57be85719b01`，
+只提取普通 Movie 运行器的配置 helper，Session 直接复用，旧导入名保持。
+[主报告](diagnostics/records_config_refactor_20261103/README.md)保存实际调用图、差分摘要及后续范围；
+55组配置在改前与改后产生相同返回、异常、缓存身份与输入可变性结果。
+同一187个方法选择在改前与改后均为：unittest运行183项，181个方法成功、2个方法跳过，另1个测试类跳过；沙箱报错及原始缺项保留。
+没有真实Ray、模型或GPU运行，不能据此判断完整查询耗时；尚未独审、发布或合入main。
+历史投影的十条受影响入口映射已存在且摘要匹配；未修改旧来源、摘要或证据。
+
 <a id="http-call-configuration-cpu"></a>
 ## 2026-11-03：独立 HTTP 请求配置的 CPU 检查
 

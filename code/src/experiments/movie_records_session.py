@@ -64,7 +64,10 @@ def check_plan(plan):
         raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
+        from src.experiments.movie_records_config import (
+            record_batching_options as _record_batching_options,
+            core_capacity as _core_capacity, async_limits as _async_limits,
+        )
         capacity = _core_capacity(plan)
         core_profile = resolve_core_profile(engine, resources, plan["profile"],
             rolling_refill=plan.get('rolling_refill', False), capacity=capacity)
@@ -218,7 +221,10 @@ class _MovieDriver:
         if backend in {"semloom-core", "semloom-static-reference"}:
             if backend == "semloom-core":
                 from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
-                from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
+                from src.experiments.movie_records_config import (
+                    record_batching_options as _record_batching_options,
+                    core_capacity as _core_capacity, async_limits as _async_limits,
+                )
                 self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
                     rolling_refill=self.plan.get('rolling_refill', False), capacity=_core_capacity(self.plan))
                 options = _record_batching_options(self.plan)
@@ -313,7 +319,7 @@ class _MovieDriver:
         try:
             if self.plan.get("admission_cache") is not None:
                 from src.experiments.movie_matrix_support import run_record_admission
-                from src.experiments.lotus_records_movie import _record_admission_cache
+                from src.experiments.movie_records_config import record_admission_cache as _record_admission_cache
                 def execute_query(window, *, allow_exploration, search_hint=None):
                     query_options.update(max_inflight=window, allow_exploration=allow_exploration,
                                          search_hint=search_hint)

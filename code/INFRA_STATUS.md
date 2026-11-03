@@ -4,6 +4,17 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+<a id="records-config-refactor-cpu"></a>
+## Records 配置模块整理候选（2026-11-03）
+
+基于 PR #90 的 `b018d88`，普通 Movie 运行器的五个配置 helper 移入共享模块，
+Session 直接使用该模块；旧导入名保留。请求准备、接纳、派发、结果消费及 baseline 执行保持原实现。
+55组配置的返回、异常、缓存身份及输入可变性逐字节一致；同一187个方法选择中，unittest运行183项，181个方法成功、2个方法跳过，另1个测试类跳过。
+沙箱首次两轮因临时 Unix socket 拒绝而报错的记录保留；允许本地 socket 的重跑没有失败。
+本候选没有模型、GPU、真实 Ray 或查询耗时资格，仍待独审与统一整合。
+来源及适用范围见[主报告](../experiments/results/diagnostics/records_config_refactor_20261103/README.md)；
+上下文委托的行为变化另行实现和验证，不以结构整理推定已完成。
+
 <a id="http-call-configuration-cpu"></a>
 ## 独立 HTTP 请求配置候选（2026-11-03）
 
