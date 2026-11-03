@@ -1,5 +1,8 @@
 # 原生基线与具名 Core 历史复现
 
+取消收尾修订为五份历史投影共用的 `test_async_backend.py` 保留准确 `5ff54bfe` 原件，只追加五条来源映射。
+维护测试覆盖剩余 deadline 与零等待，历史测试、逐文件摘要及投影身份保持原状；不改历史结果或关闭既有失配。
+
 异步默认序列参数修正为共享的`vllm_engine.py`和`experiments/calibration/core.py`保留准确
 `5ff54bfe`原件，五份投影只追加十条override；原逐文件SHA、投影ID、来源及旧显式配置不变。
 这些副本只供历史还原，维护版异步路径不导入它们；未指定参数交vLLM解析不追认为旧实验设置。
