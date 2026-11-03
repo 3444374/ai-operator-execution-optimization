@@ -32,6 +32,8 @@ def initial_window(reservations):
 
 
 def make_budget(tokenizer, engine, chain, records, active_tokens=None):
+    if engine.max_model_len is None:
+        raise ValueError('input-only validation before startup requires an explicit model context')
     estimates = {s.stage_id: OutputTokenEstimate(s.generation.max_tokens,
         'declared generation cap for functional acceptance; not measured output') for s in chain.stages}
     options = dict(tokenizer_signature=fingerprint(tokenizer.backend_tokenizer.to_str()),

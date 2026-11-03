@@ -24,7 +24,7 @@ class DaftNativeSession:
         self.ready_report=None;self.last_close_report=None;self.cleanup=None
         self.last_query_report=None
         self.finish_errors=[]
-        if generation.max_tokens>engine.max_model_len:raise ValueError('generation exceeds model context limit')
+        if generation.max_tokens>engine.legacy_max_model_len:raise ValueError('generation exceeds model context limit')
 
     def start(self):
         if self.closing:raise RuntimeError('closed Daft session cannot restart')

@@ -1,5 +1,10 @@
 # Movie 有限矩阵维护入口（CPU 候选）
 
+普通运行与 Session 的配置解释由 [`movie_records_config.py`](movie_records_config.py) 共用，
+包括 Core profile、任务与 IPC 容量、应用批选项及 admission cache 身份。
+它只调用既有类型与 resolver，不创建运行时、模型或控制器；原运行器中的五个私有导入名保留兼容。
+配置到执行的职责及本轮差分检查见[重构记录](../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md)。
+
 单一入口为 [`run_movie_records_matrix.py`](../../scripts/experiments/run_movie_records_matrix.py)，
 实现为 [`MovieMatrix`](movie_records_matrix.py)，启动与收尾 helper 为
 [`movie_matrix_support.py`](movie_matrix_support.py)。本地候选已写入维护代码，已按内容寻址冻结稀疏源码；未部署或运行模型；
@@ -10,7 +15,7 @@
 沿用同一有限矩阵 schema；新建运行的查询数、调用额度和时间窗口来自 sealed matrix、scope 和输入计划。
 原 e269 的 87-query/44280-call/10800s 模板保留在父包。本组合准备的是公共校准工程资格包：
 2 个完整 Q3 目标查询（显式预热/测量各120行），最多6个扫描 owner、14个查询、1680调用上限，
-execution_enabled=false、分配0。缓存命中只执行目标240调用；潜在扫描预留不伪装实际模型调用。
+execution_enabled=false、分配0。该显式上下文封包的缓存命中只执行目标240调用；潜在扫描预留不伪装实际模型调用。
 新目录和新 budget ID 必须由新封包显式绑定，不能运行已花费的旧 packet 取得新额度。
 
 正式封包检查还要求新封包源码树的`deploy/autodl/sembench_records/`提供
@@ -106,6 +111,16 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 默认批模式不支持逐请求admission；admission cache、stage_timing、非rolling resident或受行帽限制的组合仍在预检拒绝。显式rolling resident见下文。
 
 ### SemLoom records 的 Core／IPC 容量
+
+
+异步上下文的请求值与模型实际解析值分别记录；`max_model_len`省略／null在异步路径委托vLLM，
+实际ready回执进入长度检查与运行中的缓存身份。离线校准缺实际回执时拒绝，不以未知值代替无限。
+离线省略上下文时，先执行首个已预留完整样本，从其实际owner取得解析值；缓存未命中时复用该样本，
+不重复执行。缓存命中仍保留这次确认的调用、未知回执与时间，不称为零模型调用的查表。
+每个扫描／目标owner在生成前再核对自身回执；不同上下文或模型不共用身份，失败不回退4096。
+`model_context_confirmation`记录确认成本，`frontend_total_wall_s`包含它一次；公开selector自身墙钟从确认后开始，
+不能忽略确认成本或与外层时间重复相加。显式上下文仍沿用原零扫描命中流程。
+接口、同步参照兼容及剩余项见[上下文说明](../execution_provider/adapters/README.md#records-model-context)。
 
 普通 Movie 配置和 `semloom-core` Session plan 可在根部声明 `core_capacity`，
 异步模式另可声明部分 `async_limits`；其他 baseline 不接收这两个字段。例如：

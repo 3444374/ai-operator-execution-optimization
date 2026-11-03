@@ -845,6 +845,38 @@ remain unchanged. The priority path above has no cross-query resident reuse, so 
 historical first/reuse runs are not reproduced merely by exposing this option.
 
 
+<a id="records-model-context"></a>
+## 异步模型上下文
+
+SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineArgs`省略该关键字，
+由固定版本vLLM解析。原模型ready回执新增`semloom.model_context.v1`，包含请求值、实际正整数长度、
+实际引擎身份、配置摘要与观测内容摘要；私有通信在接纳请求前核对，不从缺测推导无限长度。
+原生渲染后的完整提示加输出上限仍须适合实际长度，超限不截断或拆分请求。
+应用token组织、可选在途工作量与已启动模型的接纳缓存使用该回执，外层额度与原未知结果记录不变。
+
+显式正整数精确保留；同步SemLoom／LOTUS／Ray／Daft参照通过`legacy_max_model_len`保留原4096缺省，
+显存比例、数据精度、方法／生成参数及单GPU支持保持。每轮token修正属于独立候选。
+普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
+公共离线calibration在省略上下文时复用首个已声明完整样本的实际owner回执，随后构造身份；
+每个执行owner仍须在生成前核对自身ready及解析长度，逐调用记录须对应其引擎身份。
+首个样本在缓存未命中时只使用一次；缓存命中时仍需执行这次确认，调用与耗时分别进入
+`scan_units`和`model_context_confirmation`，不伪装零成本缓存命中。显式上下文保留原零扫描命中。
+模型实际配置的观测摘要仍绑定完整请求；缓存的上下文部分排除实例标识及查询调用额度，其他模型参数保持。
+模型前的输入专用token验证仍需显式上下文；离线接线的[CPU证据与剩余项](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#offline-model-context)
+不包含真实模型资格。
+[CPU范围与剩余项](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#异步模型上下文的-cpu-候选)
+不包含真实模型或性能资格。
+
+普通Core与`PreparedRecordsCore`均提供只读`model_ready`，读取不会分配模型。
+token wrapper在独立查询的`start()`仍只返回延迟分配声明；实际回执在原`evaluate()`返回、
+迭代器开始提交前核对，作为启动声明中的`query_model_ready`保存，不把启动阶段改报为模型加载。
+空查询须有完整零调用证据才可没有模型回执，不能借此接受未知或缺失回执。
+有限IMLane的链host/backend及cascade host/worker将省略／null上下文归一到原4096，显式值保持；
+该兼容转换不进入异步SemLoom。独审发现与当前修订见
+[兼容记录](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)。
+
+
+
 ## records Core 可选动态接纳
 
 `lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。

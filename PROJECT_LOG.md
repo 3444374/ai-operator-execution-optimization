@@ -2,6 +2,37 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-03：修正上下文候选的owner与IMLane兼容
+
+按独审反例另开工作区，保留原候选与失败证据。token wrapper通过只读回执接口接线，
+独立查询继续在查询内分配模型；有限IMLane保留原省略值语义，不恢复异步4096。
+新增反例与实际CPU子进程回归、历史来源保留及待复审项见
+[当前记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)。
+
+## 2026-11-03：离线校准使用执行owner的实际上下文
+
+在保留01297ff的独立分支中补ready接线，复用首个已声明样本取得模型解析值，
+每个执行owner在生成前核对自身回执。缓存命中仍如实记该确认样本成本；显式上下文及同步参照保持。
+没有改每轮token专线或启动真实模型；作者CPU证据和待独审项统一见
+[当前记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md#offline-model-context)。
+
+
+## 2026-11-03：按执行目标核查配置与上下文
+
+保留暂停时工作区，另以已发布b018建立独立候选；配置提取与上下文行为分别提供CPU证据。
+验收逐项对应合法依赖与原数据、准备／传输／模型／消费、输入／方法状态／结果预算、未知结果责任、
+vLLM内部默认及完整查询时钟／质量，并分别标明单卡既有实现、CPU候选与多卡设计。
+[主报告](experiments/results/diagnostics/records_config_refactor_20261103/README.md)为本轮唯一结果入口，
+[代码状态](code/INFRA_STATUS.md#records-model-context-cpu)列接纳范围；尚未独审、推送或合并。
+
+## 2026-11-03：渐进整理 Records 配置传递
+
+按用户要求另建独立工作区，以已发布PR #90准确源码盘点配置与执行职责。
+先将普通运行和Session共用的配置解释移出运行器，保留旧导入与原执行；
+上下文默认委托属于后续独立行为变更，显存比例与dtype本轮不改。
+源码、CPU证据与待实机项见[重构记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md)，
+待独审与统一Git整合，不推送或合并main。
+
 ## 2026-11-03：独立 HTTP 配置修复与 PG 协议分别处理
 
 按当前授权在独立工作树修复请求期限和逐响应额度传递；PG 现有 wire profile 保持原帧上限，

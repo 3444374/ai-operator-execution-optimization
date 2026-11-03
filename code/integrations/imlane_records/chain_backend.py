@@ -49,6 +49,7 @@ class IMLaneChainBackend:
 
     def __init__(self, *, engine, resources, author_args, model_environment, cancelled=None):
         self.engine = EngineSpec.from_dict(asdict(engine))
+        self.engine = replace(self.engine, max_model_len=self.engine.legacy_max_model_len)
         self.resources = RecordsResources(**asdict(resources))
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
                 or resources.model_batch_rows > 16 or resources.max_active_batches > 2):

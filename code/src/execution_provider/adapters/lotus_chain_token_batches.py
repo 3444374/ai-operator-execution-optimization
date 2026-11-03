@@ -80,6 +80,9 @@ class PreparedTokenOrganizer:
                 row, generation = value['row'], value['generation']
                 _, conversations = _prepared([row])
                 prompt = chat_token_count(self.tokenizer, conversations[0])
+                from src.serving.backends.model_context import model_context_limit
+                if prompt + generation['max_tokens'] > model_context_limit(owner.engine, owner._actors.model_ready):
+                    raise ValueError('prepared prompt and output cap exceed effective model context')
                 snapshot = {name: row[name] for name in (*IDENTITY_FIELDS, 'messages_json')}
                 item = dict(request_id='f'*32+':'+str((1 << 63)-1), row=snapshot)
                 single = len(_frame(dict(op='submit', **item, generation=generation,
@@ -880,7 +883,8 @@ class RequestSupplyFeedback(BatchSupplyFeedback):
         # descriptors still validate changed work/cache mix in the controller.
         self._hint_identity = (None if not uid else identity_signature(dict(
             hardware=dict(owner_engine_uid=uid, native_capacity=ready.get('native_capacity')),
-            model=asdict(self.owner.engine),
+            model=dict(asdict(self.owner.engine), **({} if self.owner.engine.max_model_len is not None else
+                dict(model_context=ready.get('model_context')))),
             generation=dict(stages=[asdict(self.owner._stage_bindings[s].generation) for s in stream._stage_ids]),
             execution=dict(options=asdict(self.config), B=asdict(self.owner.prepared_batching),
                            capacity=asdict(self.owner.core.capacity.limits),

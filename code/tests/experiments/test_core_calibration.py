@@ -15,6 +15,22 @@ from src.experiments.calibration.contracts import core_identity_signature, load_
 
 
 class CoreCalibrationTests(unittest.TestCase):
+    def test_delegated_context_identity_needs_actual_ready_observation(self):
+        from src.serving.backends.model_context import model_context_record
+        from src.serving.backends.vllm_engine import EngineSpec
+        plan=deepcopy(self.plan)
+        plan['engine'].pop('max_model_len')
+        engine=EngineSpec.from_dict(plan['engine'])
+        with self.assertRaises(RuntimeError):
+            core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,software=self.software)
+        def identity(length):
+            ready=dict(engine_uid='CPU-offline-context',
+                model_context=model_context_record(engine,'CPU-offline-context',length))
+            return core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,
+                software=self.software,model_ready=ready)
+        self.assertNotEqual(core_identity_signature(identity(2048)),core_identity_signature(identity(32768)))
+        self.assertEqual(identity(32768)['execution']['model_context']['max_model_len'],32768)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

@@ -83,14 +83,18 @@ class ModelGpuIdentityTests(unittest.TestCase):
         engine = object.__new__(VllmAsyncEngine)
         engine._closed, engine._feedback, engine._reserved_model_calls = False, None, 0
         engine.engine_uid = "e" * 32
-        engine.spec = SimpleNamespace(max_model_calls=4, enable_mfu_metrics=False)
-        engine._llm = SimpleNamespace(vllm_config=None)
+        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        engine.spec = EngineSpec('/tmp/CPU-context', '/tmp/CPU-model-python', '/tmp/CPU-driver-python', max_model_calls=4)
+        engine.generation = GenerationSpec()
+        engine._context_observed = None
+        engine._llm = SimpleNamespace(vllm_config=SimpleNamespace(model_config=SimpleNamespace(max_model_len=32768)))
         identity = dict(status="observed_actual_CUDA_device", gpu_uuids=[GPU])
         engine._gpu_identity = identity
         with patch("src.infrastructure.gpu_allocation.current_cuda_gpu_identity", side_effect=AssertionError("API process must not probe CUDA")) as observe:
             first, second = engine.ready(), engine.ready()
         observe.assert_not_called()
         self.assertEqual(first["native_gpu_identity"], identity)
+        self.assertEqual(first["model_context"]["max_model_len"], 32768)
         self.assertEqual(second["native_gpu_identity"], identity)
 
 

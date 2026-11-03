@@ -43,6 +43,11 @@ class PreparedRecordsCore:
         return dict(no_session_model=True, model_startup_scope='inside finite record-chain evaluate',
                     record_batching=deepcopy(self.execution_profile['record_batching']))
 
+    @property
+    def model_ready(self):
+        """None until this wrapper's existing query allocation has a model."""
+        return None if self.owner is None else deepcopy(self.owner._actors.model_ready)
+
     def execution_metadata(self):
         return dict({} if self.owner is None else self.owner._actors.execution_metadata(),
             execution_profile=deepcopy(self.execution_profile),

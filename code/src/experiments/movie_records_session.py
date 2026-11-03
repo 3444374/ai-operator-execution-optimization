@@ -48,7 +48,11 @@ def check_plan(plan):
         raise ValueError("native_single_thread_session requires daft and its explicit different native profile")
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
     resources = RecordsResources(**plan["resources"])
-    if generation.max_tokens > engine.max_model_len:
+    from src.execution_provider.adapters.lotus_records_core import expand_core_profile
+    declared_profile = expand_core_profile(plan['profile']) if plan['backend'] == 'semloom-core' else None
+    async_context = type(declared_profile) is dict and declared_profile.get('mode') == 'async'
+    context_limit = engine.max_model_len if async_context else engine.legacy_max_model_len
+    if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
@@ -64,7 +68,10 @@ def check_plan(plan):
         raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
+        from src.experiments.movie_records_config import (
+            record_batching_options as _record_batching_options,
+            core_capacity as _core_capacity, async_limits as _async_limits,
+        )
         capacity = _core_capacity(plan)
         core_profile = resolve_core_profile(engine, resources, plan["profile"],
             rolling_refill=plan.get('rolling_refill', False), capacity=capacity)
@@ -145,6 +152,22 @@ class _MovieDriver:
         self.core_execution = None
         self.imlane_guard = None
         self.imlane_handlers = {}
+        self._model_ready = self._owner_ready = None
+
+    def _check_core_model_ready(self, ready):
+        from src.experiments.calibration.core import core_model_ready
+        binding = self.context['plan_binding']
+        expected = self.context.get('core_model_context_ready', binding['observed'].get('model_ready'))
+        if expected is None and binding.get('resolve_model_context') is not True:
+            raise RuntimeError('calibrated execution requires its observed model context')
+        current = core_model_ready(self.plan, ready, expected=expected)
+        if self._model_ready is not None and current['engine_uid'] != self._model_ready['engine_uid']:
+            raise ValueError('calibrated query model owner changed after readiness')
+        self._model_ready = current
+        self.context['core_model_context_ready'] = current
+        if self._owner_ready.get('no_session_model') is True:
+            self._owner_ready['query_model_ready'] = current
+        return current
 
     def start(self):
         from src.baselines.text.movie_tasks import MovieTask
@@ -218,7 +241,10 @@ class _MovieDriver:
         if backend in {"semloom-core", "semloom-static-reference"}:
             if backend == "semloom-core":
                 from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
-                from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
+                from src.experiments.movie_records_config import (
+                    record_batching_options as _record_batching_options,
+                    core_capacity as _core_capacity, async_limits as _async_limits,
+                )
                 self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
                     rolling_refill=self.plan.get('rolling_refill', False), capacity=_core_capacity(self.plan))
                 options = _record_batching_options(self.plan)
@@ -232,6 +258,10 @@ class _MovieDriver:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
             ready = self.owner.start()
+            self._owner_ready = ready
+            if backend == 'semloom-core' and self.engine.max_model_len is None and 'plan_binding' in self.context:
+                if ready.get('no_session_model') is not True:
+                    self._check_core_model_ready(ready)
             if self.plan["lifecycle"] != "resident":
                 return ready
             # Preserve the original Core receipt and observe its real process
@@ -293,7 +323,16 @@ class _MovieDriver:
             self.imlane_guard()
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
         elif backend == "semloom-core":
-            execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"], method=method, **query_options)
+            observed_context = self.engine.max_model_len is None and 'plan_binding' in self.context
+            if observed_context and (self.owner.model_ready is not None or self._model_ready is not None):
+                self._check_core_model_ready(self.owner.model_ready)
+            def execute():
+                stream = self.owner.evaluate(source, query_id=spec['query_id'], method=method, **query_options)
+                if observed_context:
+                    current = self.owner.model_ready
+                    if current is not None or source.expected(spec['query_id']):
+                        self._check_core_model_ready(current)
+                return stream
         elif backend == "semloom-static-reference":
             if method != self.owner.method:
                 raise ValueError("a static reference session retains one method instruction")
@@ -313,7 +352,7 @@ class _MovieDriver:
         try:
             if self.plan.get("admission_cache") is not None:
                 from src.experiments.movie_matrix_support import run_record_admission
-                from src.experiments.lotus_records_movie import _record_admission_cache
+                from src.experiments.movie_records_config import record_admission_cache as _record_admission_cache
                 def execute_query(window, *, allow_exploration, search_hint=None):
                     query_options.update(max_inflight=window, allow_exploration=allow_exploration,
                                          search_hint=search_hint)
@@ -322,7 +361,9 @@ class _MovieDriver:
                 self.last_query_report = run_record_admission(_record_admission_cache(self.plan,
                     resources=self.resources, resolved=self.core_execution),
                     self.core_execution, source, method, self.generation, self.engine, self.resources,
-                    execute_query, warmup=spec["phase"] == "warmup")
+                    execute_query, warmup=spec["phase"] == "warmup",
+                    **(dict(model_ready=self.owner.model_ready)
+                       if self.engine.max_model_len is None else {}))
             else:
                 self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
                                        query_id=spec["query_id"], observer=emit)

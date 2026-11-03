@@ -13,6 +13,7 @@ from src.serving.backends.vllm_engine import _prepared
 
 class FixtureEngine:
     def __init__(self, spec, generation, *, limits):
+        self.spec = spec
         self.config = json.loads(Path(spec.model_path).read_text())
         self.log = Path(spec.model_path + ".events")
         self.engine_uid = "sections-cpu-" + str(os.getpid())
@@ -25,7 +26,9 @@ class FixtureEngine:
             stream.write(json.dumps(dict(event=name, at=time.monotonic(), **values)) + "\n")
 
     def ready(self):
-        return dict(engine_uid=self.engine_uid, physical_gpu=False)
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid=self.engine_uid, physical_gpu=False,
+            model_context=model_context_record(self.spec, self.engine_uid, self.spec.max_model_len or 32768))
 
     async def generate_prepared(self, row, *, request_id, generation, deadline_monotonic):
         identity = _prepared([row])[0][0]

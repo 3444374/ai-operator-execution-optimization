@@ -17,10 +17,17 @@ from src.baselines.text.sembench_movie import (
 )
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
 
+# Compatibility imports for existing callers of this runner.
+from src.experiments.movie_records_config import (
+    ASYNC_CORE_BACKEND as _ASYNC_BACKEND,
+    core_capacity as _core_capacity, async_limits as _async_limits,
+    core_profile as _core_profile, record_batching_options as _record_batching_options,
+    record_admission_cache as _record_admission_cache,
+)
+
 
 BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daft-native-local-model",
             "semloom-local-model-core", "semloom-local-model-core-async")
-_ASYNC_BACKEND = "semloom-local-model-core-async"
 CASCADE_BACKENDS = ("ray-data-local-model-cascade", "daft-native-local-model-cascade",
                     "semloom-local-model-core-cascade")
 
@@ -298,101 +305,6 @@ def fixed_response_qualification(source, checkout, method, generation, responses
     return report
 
 
-def _core_capacity(config):
-    from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-
-    if "core_capacity" not in config:
-        return None
-    value = config["core_capacity"]
-    if type(value) is not dict:
-        raise ValueError("core_capacity must be an object")
-    return CoreRecordsCapacity(**value)
-
-
-def _async_limits(config, *, resources=None, resolved=None):
-    from src.execution_provider.adapters.lotus_records_core import (
-        CoreRecordsCapacity, resolve_core_profile, resolve_records_async_limits,
-    )
-
-    declared = "async_limits" in config
-    if not declared and "core_capacity" not in config:
-        return None  # The records factory binds defaults to this owner and Core capacity.
-    value = config.get("async_limits", {})
-    if type(value) is not dict:
-        raise ValueError("async_limits must be an object")
-    if resources is None:
-        resources = RecordsResources(**config.get("resources", {}))
-    if resolved is None:
-        from src.serving.backends.vllm_engine import EngineSpec
-        resolved = resolve_core_profile(EngineSpec.from_dict(config["engine"]), resources,
-            _core_profile(config), rolling_refill=config.get('rolling_refill', False), capacity=_core_capacity(config))
-    if resolved["mode"] != "async":
-        if declared:
-            raise ValueError("async_limits requires the explicit async backend or async Core profile")
-        return None
-    effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
-    capacity = _core_capacity(config) or CoreRecordsCapacity()
-    limits = resolve_records_async_limits(effective, capacity, value)
-    if capacity.budget is not None and config.get('prepared_batching') is not None:
-        capacity.method_capacity(effective, capacity.method_limits(1))
-    return limits if declared else None
-
-
-def _record_admission_cache(config, *, resources, resolved):
-    """Bind effective storage/IPC choices; equivalent defaults keep old identity."""
-    from copy import deepcopy
-    from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity, resolve_records_async_limits
-
-    cache = config.get("admission_cache")
-    if cache is None or not set(config) & {"core_capacity", "async_limits"}:
-        return cache
-    capacity = _core_capacity(config) or CoreRecordsCapacity()
-    effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
-    limits = resolve_records_async_limits(effective, capacity,
-        _async_limits(config, resources=resources, resolved=resolved))
-    default = CoreRecordsCapacity()
-    if capacity == default and limits == resolve_records_async_limits(effective, default):
-        return cache
-    cache = deepcopy(cache)
-    cache["identity"]["execution"]["records_capacity_v1"] = dict(
-        core=dict(asdict(capacity), poll_interval_s=float(capacity.poll_interval_s)),
-        IPC=dict(asdict(limits), feedback_interval_s=float(limits.feedback_interval_s)))
-    return cache
-
-
-def _core_profile(config):
-    from src.execution_provider.adapters.lotus_records_core import expand_core_profile
-    profile = expand_core_profile(config.get("core_profile"))
-    if config["backend"] == _ASYNC_BACKEND:
-        if profile is not None and (type(profile) is not dict or profile.get("mode", "async") != "async"):
-            raise ValueError("the explicit async backend requires async Core mode")
-        profile = dict(profile or {}, mode="async")
-    return profile
-
-
-def _record_batching_options(config):
-    """Only explicit application token batches select the existing chain core."""
-    if not (set(config) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                           'experimental_skip_token_packing'}):
-        return {}
-    from src.semantic_methods.lotus.prepared_batching import PreparedBatching
-    value = config.get('prepared_batching')
-    if value is not None:
-        if type(value) is not dict:
-            raise ValueError('prepared_batching must be an object or null')
-        value = PreparedBatching(**value)
-    options = dict(prepared_batching=value, batch_concurrency=config.get('batch_concurrency'))
-    if 'rolling_refill' in config:
-        options['rolling_refill'] = config['rolling_refill']
-    if 'experimental_skip_token_packing' in config:
-        options['experimental_skip_token_packing'] = config['experimental_skip_token_packing']
-    if 'batch_feedback' in config:
-        from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
-        feedback = config['batch_feedback']
-        options['batch_feedback'] = None if feedback is None else SupplyFeedbackConfig.from_dict(feedback)
-    return options
-
-
 def read_config(path):
     from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -497,7 +409,7 @@ def read_cascade_config(path):
     if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
         raise ValueError("cascade requires distinct explicit main and helper model paths")
     for role in engines:
-        if generations[role].max_tokens > engines[role].max_model_len:
+        if generations[role].max_tokens > engines[role].legacy_max_model_len:
             raise ValueError("cascade max_tokens exceeds max_model_len")
     return value, method, generations, resources, engines, args
 
@@ -691,6 +603,17 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
         runtime_seconds = time.monotonic() - runtime_started
         emit("runtime_setup_end")
         query_options = {}
+        def create_core_owner():
+            from src.execution_provider.adapters.lotus_records_core import create_records_core
+            return create_records_core(method, engine, generation, resources,
+                profile=profile, async_limits=async_limits, capacity=_core_capacity(config),
+                **_record_batching_options(config))
+        def resolve_context():
+            nonlocal owner
+            if owner is None:
+                model_preflight(source, checkout, method, generation, engine)
+                owner = create_core_owner()
+            return owner.start()
         def execute():
             nonlocal owner
             if config["backend"] == "daft-native-local-model":
@@ -700,16 +623,21 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
             if is_core:
-                from src.execution_provider.adapters.lotus_records_core import create_records_core
-                owner = create_records_core(method, engine, generation, resources,
-                                             profile=profile, async_limits=async_limits,
-                                             capacity=_core_capacity(config),
-                                             **_record_batching_options(config))
+                if owner is None:
+                    owner = create_core_owner()
                 return owner.evaluate(source, query_id=config["query_id"], **query_options)
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
             return owner.evaluate(source, query_id=config["query_id"])
-        if config.get("admission_cache") is not None:
+        empty_context_query = (is_async and engine.max_model_len is None
+            and config.get("admission_cache") is not None and not source.expected(config['query_id']))
+        if empty_context_query:
+            query_options['allow_exploration'] = False
+            report = run_movie_query(source, checkout, method, generation, execute,
+                                     query_id=config['query_id'], observer=observer)
+            report['admission_selection'] = dict(cache_hit=False, configuration_source='empty_query',
+                cache_read_or_write=False, scan_cost=dict(wall_s=0., samples=0))
+        elif config.get("admission_cache") is not None:
             from src.experiments.movie_matrix_support import run_record_admission
             resolved = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False),
                 capacity=_core_capacity(config))
@@ -719,7 +647,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 return run_movie_query(source, checkout, method, generation, execute,
                                        query_id=config["query_id"], observer=observer)
             report = run_record_admission(_record_admission_cache(config, resources=resources, resolved=resolved),
-                resolved, source, method, generation, engine, resources, execute_query)
+                resolved, source, method, generation, engine, resources, execute_query,
+                **(dict(resolve_model_context=resolve_context) if is_async and engine.max_model_len is None else {}))
         else:
             report = run_movie_query(source, checkout, method, generation, execute,
                                      query_id=config["query_id"], observer=observer)

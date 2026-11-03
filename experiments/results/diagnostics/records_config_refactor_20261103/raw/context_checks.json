@@ -1,0 +1,161 @@
+{
+  "run_id": "records-model-context-b018-20261103",
+  "base_commit": "b018d88a5615433b1efb708fc04e57be85719b01",
+  "configuration_commit": "5fbf5a1429a535fc8ac73d9a6c7268081c07d5b1",
+  "scope": "CPU fixtures, existing driver SDKs, private IPC and fixed-tag vLLM source/MessagePack probes; no model, real Ray or GPU runtime",
+  "coverage": {
+    "selected_unique_methods": 404,
+    "observed_method_outcomes": 400,
+    "successful_methods": 372,
+    "existing_failed_methods": 6,
+    "method_errors": 0,
+    "skipped_methods": 22,
+    "selected_without_method_outcome": [
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_callback_failure_keeps_known_work_and_does_not_start_target_or_retry",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_increasing_search_uses_public_runtime_and_existing_CLI_slots_then_zero_scan_hit",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_public_runtime_miss_hit_and_fixed_mode_through_actual_cli_and_cpu_core",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_sync_calibration_rejects_before_allocating_a_budget"
+    ]
+  },
+  "baseline_failed_methods": [
+    "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model",
+    "tests.execution_provider.test_lotus_record_local_query.QueryOwnerTests.test_cancel_stops_progress_and_retires_only_after_same_producer_closes",
+    "tests.execution_provider.test_lotus_record_local_query.QueryOwnerTests.test_close_collects_late_known_receipt_without_parser_or_successor_replay",
+    "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+    "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_cancel_unknown_preserves_receipt_and_stops_successors",
+    "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+  ],
+  "new_failures": 0,
+  "pending": [
+    "Fixed SemBench assets and opted-in actual SDK composition are not supplied to these suites.",
+    "Public offline calibration entry does not yet arrange model readiness for omitted context; missing observation is rejected.",
+    "Pre-start input-only token validation still requires explicit context.",
+    "Six selected old failures and ten old historical mismatches remain."
+  ],
+  "unchanged_runtime_sources_across_qualifying_runs": true,
+  "method_source_matches_final": true,
+  "changed_code_sha256": {
+    "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "33799fe0c110b465165b5bf71f4dd45daeceeb0e40169ae97bdc1627b5364f82",
+    "code/src/baselines/text/frameworks/daft_lotus_chain.py": "fd94bb81cc7eb4fc6e6ca7569c6ee9064d3190a3056895ddad6dc3288f9cf18b",
+    "code/src/baselines/text/frameworks/daft_lotus_records.py": "37460c8595f681cf7e0d41e8b21214488be83952f004323d187030e3ca1d0dd0",
+    "code/src/baselines/text/frameworks/daft_lotus_session.py": "31a87ba68b21972f754fa100eafe1fc783655be8ab8e7db4b850ac885758a9c5",
+    "code/src/baselines/text/frameworks/lotus_native_local_model.py": "f544052e3d848b01d9ee7d5e107f59add2b0e2b614c0e187f3a60d3684396e68",
+    "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "f360d5d9654e48b634973abb896225446f58f08a0c323229435dfaf4568eb6dc",
+    "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "2af9477095f02ef317aed3ce8f10a0e41e1c036eb2f7bdf0c96fa28f5e1a3e94",
+    "code/src/execution_provider/adapters/lotus_chain_token_batches.py": "0f9cfd80ab451d0275cdc00651dd87bce97f28f971c8c6504c5839bf928d6f96",
+    "code/src/execution_provider/adapters/lotus_chain_token_budget.py": "1dd69edf10434e8f34077e5ef03f19f010c21c1768021f84106b1355a1bfda4b",
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "c6050d8b214f2e22df15f889016fd608412b17c78886c18e6acbfa973192247d",
+    "code/src/execution_provider/adapters/lotus_records_async_actor.py": "6210f6f7a54c59434b88d8561112e23cff8402e668b11a7d7459432e2fe3716e",
+    "code/src/execution_provider/method_workers/lotus_chain_batch.py": "69a1d4ad0ee3d1692b44cfba2c9070835fb023bb5334f9216edc3499efab5d42",
+    "code/src/experiments/calibration/core.py": "0434361cb5a2054f831eda18e0ae41de75f322fd83f1501183801981d130e469",
+    "code/src/experiments/lotus_records_cascade.py": "0f0b5af5b35daea5ebd2c862d89d084c8f2c322044a163a939cae32a5f132304",
+    "code/src/experiments/lotus_records_chain.py": "d9a0bff0133e2aa39b4f3186ca0b46f9bb5db13d646ab4bdd4f8ca080846b7d4",
+    "code/src/experiments/lotus_records_movie.py": "39c993a526c55d02a69563be02c7cf065a093c381a120fb1ef9f96a08c065114",
+    "code/src/experiments/movie_matrix_support.py": "ca680d928bdf0c1f941769bc09429d69c2c7e562ce56f6fe1e77fc544a141d7d",
+    "code/src/experiments/movie_records_session.py": "cffc9bd7e16328a93a3b5b5050181e7d1f084dcaefb1daf7063e6c15d28a8a8b",
+    "code/src/experiments/record_chain_validation.py": "f91720c02521f7ef79ebb0eea176ce4036ca9c9e6bc7db87521e8001ac20dd3b",
+    "code/src/serving/backends/async_engine_process.py": "f1bbf55f339354697bd029b4ac54127a53356f0cacb3b127861042690e650568",
+    "code/src/serving/backends/model_context.py": "90d48da1b450380ea6079b38a444ad193b0e14bf4b6b5b0984013a2dcc3508e4",
+    "code/src/serving/backends/vllm_async_engine.py": "7676cd6ab8daad4c58471dd742fd199d666a3047d8d57fe4a3ce0bc3f06e3d75",
+    "code/src/serving/backends/vllm_engine.py": "dcfd69236bf8bc0ebac3e030806afbd548a702587e9c1943048fa60b503cfedc",
+    "code/tests/execution_provider/chain_token_child_fixture.py": "ae7799b2362bd6e576a521659b552cf3ef49cad2a8a92761d7878a62b4b25ce8",
+    "code/tests/execution_provider/section_child_fixture.py": "cdf0008be0c1f3233d72c91623cd9a6708365a10be5801af2247854be2db384d",
+    "code/tests/execution_provider/test_lotus_chain_token_budget.py": "375e05466801b0b2f4746d5e0e8cd3dd327690c5c3bc7dc282bcebfb3a8f1c08",
+    "code/tests/experiments/test_core_calibration.py": "fb7c2dfbb4024eed83fa301f722c8110723dd1815ca2466368be6040543ab385",
+    "code/tests/experiments/test_records_capacity_config.py": "1372b4729b08b8d01df051f30808b3092be9670b218cdfa2e443914fd7a2e17d",
+    "code/tests/experiments/test_records_online_config.py": "9118d3cb19c2ee68b1c4d8c6c6f23d0a01cc7abcc9d3105b7b0a8f07025d8f2d",
+    "code/tests/infrastructure/test_model_gpu_identity.py": "90acf4c9dc2168b9b945f4cb25a01ffeecb5df48f1908012e07c826d8e3e1c2a",
+    "code/tests/serving/async_engine_fixture.py": "dc53b2933561af2b6c92ecb39974ff37ea793ca00194989e077115b524ce4536",
+    "code/tests/serving/test_model_context.py": "a3e229ce2c9ad42107f5b134c95057009d6ee0ee38849e255bba3ff2e1971cf0",
+    "code/tests/serving/test_vllm_sequence_defaults.py": "53dd5bfdab0dbb473f3251ce5c6b190f46e830ef07f3dce72165ede8dd59168c"
+  },
+  "historical_bindings": {
+    "total": 3010,
+    "baseline_mismatches": 10,
+    "candidate_mismatches": 10,
+    "new_mismatches": 0,
+    "preserved_old_files": 3,
+    "added_overrides": 15,
+    "old_hashes_and_projection_ids_unchanged": true
+  },
+  "case_scope": {
+    "requested_contexts": [
+      null,
+      1024
+    ],
+    "observed_contexts": [
+      2048,
+      32768,
+      1024
+    ],
+    "native_constructor_omission": true,
+    "full_rendered_prompt_plus_output_cap_checked": true,
+    "unknown_context_rejected": true,
+    "live_cache_identity_binds_effective_context": true,
+    "original_failure_without_query_time_preserved": true,
+    "empty_query_allocates_no_model": true
+  },
+  "artifact_receipts": {
+    "b018-context-full.json": {
+      "bytes": 271432,
+      "sha256": "ed8d2a2dc6d47b15f2aafc7d754bc4fa362af21891e0157738719b06b3db76da"
+    },
+    "b018-context-full.log": {
+      "bytes": 83660,
+      "sha256": "fa9c799786e06eac23d598a5a17e3000a1614bcaba22ac12bd1d34af7b70bec6"
+    },
+    "b018-context-token-budget.json": {
+      "bytes": 164116,
+      "sha256": "d7b45e7bc7b987eff9b3ca2847ac0274999aa2271b88ab97f8ccbb838066ecef"
+    },
+    "b018-context-token-budget.log": {
+      "bytes": 6423,
+      "sha256": "8822cfb2ab8be23e197185ab6f3ca98306df5411baf420d378d67f073f2f471d"
+    },
+    "b018-daft-session.json": {
+      "bytes": 161128,
+      "sha256": "1810e2a82f97694db797650258e92af9c84b528ad83b325cf6598636766b682c"
+    },
+    "b018-daft-session.log": {
+      "bytes": 2674,
+      "sha256": "b0643c7ded3d61c1d0c3b84b424f7d63178743b77c88eaa4236efed3f703aa45"
+    },
+    "b018-context-protocol-r2.json": {
+      "bytes": 163427,
+      "sha256": "d7c62c70554ff09c7ad229b07469ab95eb1e18a2784979554092460d257a9b19"
+    },
+    "b018-context-protocol-r2.log": {
+      "bytes": 4136,
+      "sha256": "bbf5a87fc540a34541b9399a99c0422f0b195fc26c093ad981bcab56f2a3712b"
+    },
+    "b018-known-base-failures.json": {
+      "bytes": 164319,
+      "sha256": "f19ee9a1a537130601530d5efa562961e6227153f211f9f92f6524af9fca9d83"
+    },
+    "b018-known-base-failures.log": {
+      "bytes": 7560,
+      "sha256": "1357732f6542748ba1c8b95bb2941d7cac2f488325915e7bbcbb0cd914c0d47e"
+    },
+    "b018-context-target.json": {
+      "bytes": 185824,
+      "sha256": "58bbea819ce98c19b325c07965a3db77d38212eec32f6dd668c041b8542745d5"
+    },
+    "b018-context-target.log": {
+      "bytes": 20181,
+      "sha256": "03499b733ab75bf91a3840ea1c50b50ddd9173c5d249954267bc66a7976a74f6"
+    },
+    "b018-context-ready-recheck.json": {
+      "bytes": 158136,
+      "sha256": "b60717c34c19796730796855c25cb7e556bfe7e15e2064ed11beba9737a2daf9"
+    },
+    "b018-context-ready-recheck.log": {
+      "bytes": 323,
+      "sha256": "4891811f9b8a6a052b141f01b5c0f54adc2fe114e1371c00fb6a003bb55d400c"
+    }
+  },
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "publication": "not published"
+}

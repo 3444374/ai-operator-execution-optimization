@@ -253,7 +253,8 @@ class AsyncEngineProcess:
             raise TypeError("generation must be GenerationSpec")
         effective = common.GenerationSpec.from_dict(asdict(effective))
         effective.kwargs()
-        if effective.max_tokens > self.spec.max_model_len:
+        from .model_context import model_context_limit
+        if effective.max_tokens > model_context_limit(self.spec, getattr(self, 'ready_report', None)):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared([row])
         identity = identities[0]
@@ -298,7 +299,8 @@ class AsyncEngineProcess:
             return BatchSubmitResult("backpressure", reason="member request capacity exhausted")
         effective = common.GenerationSpec.from_dict(asdict(generation))
         effective.kwargs()
-        if effective.max_tokens > self.spec.max_model_len:
+        from .model_context import model_context_limit
+        if effective.max_tokens > model_context_limit(self.spec, getattr(self, 'ready_report', None)):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared(list(rows))
         for identity in identities:
@@ -443,6 +445,11 @@ class AsyncEngineProcess:
             elif op == "ready":
                 if self.ready_report is not None:
                     raise ValueError("duplicate model ready")
+                from .model_context import checked_model_context
+                if self.spec.max_model_len is None or 'model_context' in value['report']:
+                    context = checked_model_context(self.spec, value['report'])
+                    if self.generation.max_tokens > context['max_model_len']:
+                        raise ValueError('generation exceeds effective model context')
                 self.ready_report = value["report"]
                 if self.spec.enable_mfu_metrics:
                     self._native_mfu = self.ready_report.get("native_mfu_initial")

@@ -4,6 +4,42 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+
+<a id="records-model-context-cpu"></a>
+## 异步上下文解析候选（2026-11-03）
+
+基于已发布 b018 与独立配置提取，异步 SemLoom 未指定／null 的 `max_model_len` 省略传入vLLM，
+在原模型 ready 回执绑定实际解析长度；提示加输出上限、通信、工作量与 live cache 身份使用该值。
+未知或不匹配值拒绝；没有异步4096影子值。同步／native的旧缺省、历史显式值、数据精度和显存比例保持。
+首个上下文切片01297ff仅有CPU证据：去重后372个方法成功，6项既有失败在b018独立复现，22个方法跳过，另1类4方法未运行；
+最新方法级错误为0，失败／缺依赖／fixture修正原件保留。尚待独审与统一整合，未推送、合并或运行模型。
+后续独立增量已补公共离线校准接线：省略上下文时先复用首个已声明样本的实际owner回执，
+在生成前核对每个执行owner；缓存命中也明确记录该确认样本的调用与耗时。显式上下文保留原缓存流程。
+cc9eeb2切片选择214个方法，206成功、1个方法跳过，另2类7方法因固定资产缺失未运行，无新用例失败；
+缺DuckDB的初轮记录保留，已有完整CPU环境复核后无该错误。独审、真实模型与模型前输入专用token验证仍pending，
+不能据此声称完整查询加速。
+独审随后发现token wrapper的常驻／独立查询接线及有限IMLane省略值兼容问题，另有本地修订待复审：
+通过owner只读`model_ready`取得回执，保留独立查询内的延迟分配，在迭代提交前核对；
+IMLane只在有限适配层归一原4096默认，异步委托不变。此修订250项选择中242成功、1方法跳过，另2类7方法未运行；
+9项新增反例通过。旧失败、首次fixture问题和独审原件保留，未推送、合并或运行模型。
+[修订与证据](../experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)
+分列真实CPU子进程与尚未验证的原生IMLane／vLLM。
+[职责与验收](../experiments/results/diagnostics/records_config_refactor_20261103/README.md#目标到实现的验收)、
+[实际接口](src/execution_provider/adapters/README.md#records-model-context)及
+[首个切片证据](../experiments/results/diagnostics/records_config_refactor_20261103/raw/context_checks.json)与
+[离线接线](../experiments/results/diagnostics/records_config_refactor_20261103/README.md#offline-model-context)记录各自范围。
+
+<a id="records-config-refactor-cpu"></a>
+## Records 配置模块整理候选（2026-11-03）
+
+基于 PR #90 的 `b018d88`，普通 Movie 运行器的五个配置 helper 移入共享模块，
+Session 直接使用该模块；旧导入名保留。请求准备、接纳、派发、结果消费及 baseline 执行保持原实现。
+55组配置的返回、异常、缓存身份及输入可变性逐字节一致；同一187个方法选择中，unittest运行183项，181个方法成功、2个方法跳过，另1个测试类跳过。
+沙箱首次两轮因临时 Unix socket 拒绝而报错的记录保留；允许本地 socket 的重跑没有失败。
+本候选没有模型、GPU、真实 Ray 或查询耗时资格，仍待独审与统一整合。
+来源及适用范围见[主报告](../experiments/results/diagnostics/records_config_refactor_20261103/README.md)；
+上下文委托的行为变化另行实现和验证，不以结构整理推定已完成。
+
 <a id="http-call-configuration-cpu"></a>
 ## 独立 HTTP 请求配置候选（2026-11-03）
 

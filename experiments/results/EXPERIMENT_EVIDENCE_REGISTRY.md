@@ -1,5 +1,56 @@
 # 实验与机制证据台账
 
+<a id="records-owner-context-compat-cpu"></a>
+## 2026-11-03：独审反例后的owner与IMLane上下文兼容
+
+以cc9eeb2为父提交的独立修订，通过真实wrapper取得实际回执，在原延迟分配后、提交前核对，
+有限IMLane保留原4096省略值。独审原件、改前复现及初轮fixture问题均保留。
+[主记录](diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)与
+[机器摘要](diagnostics/records_config_refactor_20261103/raw/owner_compat_checks.json)：
+250个方法选择中242成功、1方法跳过，另2类7方法缺固定资产未运行；9项新增反例全部通过。
+原审查wrapper探针两种生命周期均完成，IMLane三例接受原有限值；这些只是CPU／配置接线证据。
+四份旧源与20条映射使3010条绑定保持原10处不匹配，未改写旧失败、跳过或历史摘要。
+本修订尚待独立复审、448c组合和真实库／模型验证，未推送或合并。
+
+<a id="records-offline-context-cpu"></a>
+## 2026-11-03：离线校准实际owner就绪接线
+
+基于本地01297ff的独立增量，从首个已声明完整样本取得实际解析长度，
+在所有执行owner生成前复核；未知与失败不构造可复用身份，不回退4096。
+缓存命中仍记录确认调用与耗时，未命中复用原样本一次，显式上下文与原同步参照保持。
+[当前报告](diagnostics/records_config_refactor_20261103/README.md#offline-model-context)及
+[机器摘要](diagnostics/records_config_refactor_20261103/raw/offline_context_checks.json)：
+214个方法选择中206成功、1个方法跳过，另2类7方法缺固定SemBench资产未运行；
+14项新增用例全部通过，无新方法失败或错误。初轮缺DuckDB的类启动错误保留，已有完整CPU环境复核后仅余资产缺项。
+首个切片的6项既有失败和历史10处来源不匹配未改写，本增量历史新增不匹配0。
+这里只含CPU替身、实际私有CPU子进程通信和已有同步环境；独审及真实vLLM／Ray／GPU尚未完成。
+
+
+<a id="records-model-context-cpu"></a>
+## 2026-11-03：异步上下文能力回执与配置身份
+
+候选基于已发布 b018 和配置提取 `5fbf5a1429a535fc8ac73d9a6c7268081c07d5b1`，
+采用原模型ready与私有通信，不增加控制器或任意计数策略。
+[主报告](diagnostics/records_config_refactor_20261103/README.md#异步模型上下文的-cpu-候选)与
+[机器可读证据](diagnostics/records_config_refactor_20261103/raw/context_checks.json)分列构造省略、实际长度、
+全提示加输出上限、未知拒绝、缓存隔离、完整启动成本、同步参照与历史来源检查。
+404个方法选择中400个有方法级回执：372成功、6个失败、22个方法跳过；另1类4方法因资产缺失未运行。
+六项失败均在未修改b018复现，本次新增失败0；最新方法级错误0。各回执有重叠，按方法与实际来源去重。
+3010条历史绑定保持原10处不匹配，新增加0；三份准确旧源由五份投影共享15条新增映射。
+没有真实Ray、模型、GPU或数据库运行，不给查询耗时或质量结论；独审与实际比较pending。
+原始失败、缺依赖与fixture修正、读取现成CPU依赖的实际范围及校验值由主报告定位。
+
+<a id="records-config-refactor-cpu"></a>
+## 2026-11-03：Records 配置模块整理的 CPU 证据
+
+候选底稿为 PR #90 已发布 `b018d88a5615433b1efb708fc04e57be85719b01`，
+只提取普通 Movie 运行器的配置 helper，Session 直接复用，旧导入名保持。
+[主报告](diagnostics/records_config_refactor_20261103/README.md)保存实际调用图、差分摘要及后续范围；
+55组配置在改前与改后产生相同返回、异常、缓存身份与输入可变性结果。
+同一187个方法选择在改前与改后均为：unittest运行183项，181个方法成功、2个方法跳过，另1个测试类跳过；沙箱报错及原始缺项保留。
+没有真实Ray、模型或GPU运行，不能据此判断完整查询耗时；尚未独审、发布或合入main。
+历史投影的十条受影响入口映射已存在且摘要匹配；未修改旧来源、摘要或证据。
+
 <a id="http-call-configuration-cpu"></a>
 ## 2026-11-03：独立 HTTP 请求配置的 CPU 检查
 

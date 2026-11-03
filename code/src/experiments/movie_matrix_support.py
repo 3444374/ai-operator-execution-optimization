@@ -146,7 +146,7 @@ def core_observations(cfg, packet, gpu):
 
 def materialize_core_plan(base, group, index, binding, *, source_revision, checked=None):
     """Rebuild only declared candidate parameters; cache/proof validation is shared."""
-    from src.experiments.calibration.core import build_core_identity,core_candidate_plan
+    from src.experiments.calibration.core import build_core_identity,core_candidate_plan,core_context_plan
     from src.scheduling.runtime.calibration import resolve_calibration
     if checked is None:
         from src.experiments.movie_records_session import check_plan
@@ -154,7 +154,6 @@ def materialize_core_plan(base, group, index, binding, *, source_revision, check
     observed=binding['observed']
     if observed['software']['source_revision']!=source_revision:
         raise ValueError('Core calibration source differs')
-    identity=build_core_identity(base,checked,**observed)
     if binding['kind']=='scan':
         jobs=scan_jobs(group,index)
         job=next((j for j in jobs if j['sample_id']==binding['sample_id']),None)
@@ -162,13 +161,21 @@ def materialize_core_plan(base, group, index, binding, *, source_revision, check
             raise ValueError('scan job was not predeclared')
         sample_id=job['sample_id']
     elif binding['kind']=='selected':
+        identity=build_core_identity(base,checked,**observed)
         proof=resolve_calibration(Path(binding['selection_path']),identity,policy=binding['policy'])
         if (proof['status']!='ready' or proof['selection_sha256']!=binding['selection_sha256']
                 or proof['candidate']!=binding['configuration']):
             raise ValueError('Core measured selection proof differs')
         sample_id=None
     else:raise ValueError('unsupported Core plan binding')
-    result=core_candidate_plan(base,checked,binding['configuration'],identity=identity)
+    if binding.get('resolve_model_context') is True:
+        if binding['kind']!='scan' or binding['sample_id']!=scan_jobs(group,index)[0]['sample_id']:
+            raise ValueError('only the first declared scan sample can confirm omitted context')
+        result=core_context_plan(base,checked,binding['configuration'],**observed)
+    else:
+        identity=build_core_identity(base,checked,**observed)
+        result=core_candidate_plan(base,checked,binding['configuration'],identity=identity,
+            model_ready=observed.get('model_ready'))
     if sample_id is not None:result['queries']=sample_queries(result,sample_id)
     return result
 
@@ -322,7 +329,7 @@ def validate_record_admission_cache(value, resolved):
 
 
 def run_record_admission(cache, resolved, source, method, generation, engine, resources,
-                         execute_query, *, warmup=False):
+                         execute_query, *, warmup=False, model_ready=None, resolve_model_context=None):
     """Cache only after the existing complete query callback returns and drains.
 
     The caller still owns model startup/final close and actual return timing.
@@ -343,8 +350,19 @@ def run_record_admission(cache, resolved, source, method, generation, engine, re
         result['admission_selection']=dict(cache_hit=False,configuration_source='warmup_initial',
             cache_read_or_write=False,scan_cost=dict(wall_s=0.,samples=0))
         return result
+    context = None
+    context_startup_s = 0.
+    if engine.max_model_len is None:
+        from src.serving.backends.model_context import model_context_identity
+        if model_ready is None and resolve_model_context is not None:
+            started = time.monotonic()
+            model_ready = resolve_model_context()
+            context_startup_s = time.monotonic() - started
+        context = model_context_identity(engine, model_ready)
     identity=deepcopy(cache['identity'])
     identity['model']=dict(declared=identity['model'],actual=asdict(engine))
+    if context is not None:
+        identity['model']['effective_context_v1'] = context
     identity['generation']=dict(declared=identity['generation'],actual=asdict(generation))
     identity['execution']=dict(declared=identity['execution'],profile=resolved['requested'],
                                resources=asdict(resources))
@@ -352,6 +370,11 @@ def run_record_admission(cache, resolved, source, method, generation, engine, re
                              method=asdict(method))
     def execute(window, *, allow_exploration, search_hint=None):
         result=execute_query(window,allow_exploration=allow_exploration,search_hint=search_hint)
+        if context_startup_s:
+            result['model_context_startup_seconds'] = context_startup_s
+            if type(result.get('query_seconds')) in (int,float):
+                result['query_seconds'] += context_startup_s
+            result['query_timing_scope'] = result.get('query_timing_scope', '') + '; includes earlier model readiness for context resolution'
         close=result.get('backend_close') or {}
         usage=close.get('core_usage') or {}
         counts=(result.get('calls') or {}).get('counts') or {}

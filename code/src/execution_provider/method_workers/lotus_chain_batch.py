@@ -103,6 +103,8 @@ class FusedChainBatch:
         self.chain, self.expected, self.initial_parents, self.columns = _phase_values(
             chain, expected, initial_parents, columns, allow_nulls)
         self.engine_spec = EngineSpec.from_dict(engine)
+        if self.engine_spec.max_model_len is None:
+            self.engine_spec = replace(self.engine_spec, max_model_len=self.engine_spec.legacy_max_model_len)
         self.prepared_batching, self._request_batcher = None, None
         self._source_flush_reason = self._source_prepared_group = None
         if prepared_batching is not None:

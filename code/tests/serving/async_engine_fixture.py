@@ -13,13 +13,16 @@ from src.serving.backends.vllm_engine import _prepared
 
 class FixtureEngine:
     def __init__(self, spec, generation, *, limits):
+        self.spec = spec
         self.engine_uid = "cpu-fixture-" + str(os.getpid())
         self.gates = {}
         self.stalled_aborts = set()
         self.closed = False
 
     def ready(self):
-        return dict(engine_uid=self.engine_uid, physical_gpu=False, inference_calls=0)
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid=self.engine_uid, physical_gpu=False, inference_calls=0,
+            model_context=model_context_record(self.spec, self.engine_uid, self.spec.max_model_len or 32768))
 
     async def generate_prepared(self, row, *, request_id, generation, deadline_monotonic):
         text = json.loads(row["messages_json"])[0]["content"]

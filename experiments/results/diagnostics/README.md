@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[Records 配置模块整理](records_config_refactor_20261103/README.md)：普通运行与 Session 共享配置解释，
+保留旧导入与执行职责；源码、55组差分回放、CPU检查及后续上下文设计分别记录。
+
 [后继策略、records 入口及 token 候选](../EXPERIMENT_EVIDENCE_REGISTRY.md)的运行身份、失败与停止原因由证据台账维护；
 main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 

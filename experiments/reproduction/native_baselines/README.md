@@ -1,5 +1,12 @@
 # 原生基线与具名 Core 历史复现
 
+
+上下文解析候选另保存准确`826ab3a1`的`experiments/lotus_records_chain.py`、
+`experiments/lotus_records_cascade.py`与CPU异步引擎fixture三份旧源，五个variant仅追加15条来源映射。
+原逐文件摘要、投影标识、来源版本和已有映射保持；完整3010条绑定仍有原10处差异，本次新增0。
+候选源码和CPU检查见[主记录](../../results/diagnostics/records_config_refactor_20261103/README.md)，
+保存文件只供历史还原，维护路径不导入它们。
+
 异步默认序列参数修正为共享的`vllm_engine.py`和`experiments/calibration/core.py`保留准确
 `5ff54bfe`原件，五份投影只追加十条override；原逐文件SHA、投影ID、来源及旧显式配置不变。
 这些副本只供历史还原，维护版异步路径不导入它们；未指定参数交vLLM解析不追认为旧实验设置。
@@ -83,3 +90,7 @@ PYTHONPATH=code python3 -B code/scripts/experiments/materialize_native_baseline.
 Kalypso为独立作者原生服务，不是LOTUS后端；见 `code/src/baselines/text/frameworks/kalypso_native/` 的适配、命令和未绑定项。
 
 历史variant中的README按原字节保留，其相对链接属于当时文档语境；差异覆盖目录不是完整源码/文档树。materialize只保证manifest列出的代码投影与摘要，不承诺未列历史文档链接可用。当前维护入口与CPU资产路径说明见[代码入口](../../../code/README.md)及[CPU绑定](../../../code/tests/records_cpu.md)。
+
+上下文兼容修订另将四份IMLane原host/backend/worker源按准确b018字节保存到`historical_sources/b018d88a/`，
+五份投影只追加20条对应override；旧expected SHA、projection ID、source revision及已有路由保持。
+全部3010条绑定仍仅有原10处不匹配，新增0；本修订不将完整历史还原写成通过。

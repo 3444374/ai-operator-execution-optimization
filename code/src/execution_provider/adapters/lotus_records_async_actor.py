@@ -245,7 +245,7 @@ class AsyncCoreModelActor:
             from .lotus_chain_token_budget import verify_cost
             if type(rows) is not list or len(rows) != 1:
                 raise ValueError("prepared Core calls need one occurrence")
-            verify_cost(rows[0], generation, token_cost, engine=self.spec)
+            verify_cost(rows[0], generation, token_cost, engine=self.spec, model_ready=self.engine.ready_report)
         return generation
 
     def try_submit_core(self, rows, deadline, maximum, request_key):
@@ -741,6 +741,9 @@ class AsyncRecordsActorOwner(_ActorOwner):
                                                   else 'resources.model_rpc_workers'),
                         model_rpc_control_reserve=self.control_rpc_reserve,
                         model_rpc_handoff='nonblocking_submit_poll_ack')
+        if type(self.model_ready) is dict and 'model_context' in self.model_ready:
+            from src.serving.backends.model_context import checked_model_context
+            metadata['model_context'] = checked_model_context(self.engine, self.model_ready)
         if self._prepared_only:
             metadata.update(preparation_scope="caller_prepared_messages",
                             prepare_actor_count=len(self.prepare_actors))

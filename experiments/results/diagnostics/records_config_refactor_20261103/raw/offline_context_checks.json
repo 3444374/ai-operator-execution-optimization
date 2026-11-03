@@ -1,0 +1,163 @@
+{
+  "run_id": "records-offline-model-context-20261103",
+  "base_commit": "01297ff05b60c91dbd355bb50917f58e6dfeb2f6",
+  "base_tree": "f0028f3b734770014708c356eccc4c777b31ac84",
+  "coverage": {
+    "selected_unique_methods": 214,
+    "method_outcomes": 207,
+    "successful_methods": 206,
+    "failed_methods": 0,
+    "method_errors": 0,
+    "method_skips": 1,
+    "class_skips": [
+      {
+        "id": "setUpClass (tests.experiments.test_movie_calibration_cli.CLIIntegrationTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      },
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      }
+    ],
+    "selected_without_method_outcome": [
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_callback_failure_keeps_known_work_and_does_not_start_target_or_retry",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_increasing_search_uses_public_runtime_and_existing_CLI_slots_then_zero_scan_hit",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_public_runtime_miss_hit_and_fixed_mode_through_actual_cli_and_cpu_core",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_sync_calibration_rejects_before_allocating_a_budget",
+      "tests.experiments.test_static_reference_session.StaticSessionTests.test_direct_static_start_is_idempotent_and_does_not_close_at_query_eof",
+      "tests.experiments.test_static_reference_session.StaticSessionTests.test_maintained_cli_first_reuse_share_one_sync_model_and_native_batches",
+      "tests.experiments.test_static_reference_session.StaticSessionTests.test_static_rejects_method_switch_and_core_does_not_gain_batch_support"
+    ],
+    "new_tests": 14
+  },
+  "qualification": "CPU mocks, real private CPU child IPC, public selector/cache and held-owner checks; no actual vLLM, Ray or GPU runtime",
+  "previous_slice_counts_are_not_replaced": true,
+  "prior_unresolved_failures_not_retested": [
+    "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model",
+    "tests.execution_provider.test_lotus_record_local_query.QueryOwnerTests.test_cancel_stops_progress_and_retires_only_after_same_producer_closes",
+    "tests.execution_provider.test_lotus_record_local_query.QueryOwnerTests.test_close_collects_late_known_receipt_without_parser_or_successor_replay",
+    "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+    "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_cancel_unknown_preserves_receipt_and_stops_successors",
+    "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+  ],
+  "historical_bindings": {
+    "total": 3010,
+    "base_mismatches": 10,
+    "candidate_mismatches": 10,
+    "new_mismatches": 0,
+    "manifest_unchanged": true
+  },
+  "peer": {
+    "commit": "448c2ab3e250a9fbf4f3aaf6630a4bb5d2f38aec",
+    "tree": "ca3dee515677e73a964c24640b65caa262617a2b",
+    "existing_slice_file_overlap": [
+      "code/INFRA_STATUS.md",
+      "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "code/src/execution_provider/adapters/README.md",
+      "code/src/serving/backends/vllm_async_engine.py",
+      "code/src/serving/backends/vllm_engine.py",
+      "code/tests/serving/test_vllm_sequence_defaults.py"
+    ],
+    "increment_production_overlap": []
+  },
+  "changed_code_sha256": {
+    "code/src/experiments/calibration/core.py": "d09189e2f6280f7026f5eec592e850104d39e57da01fb78350b918ad29fc733b",
+    "code/src/experiments/movie_matrix_support.py": "a358128686881f344a0df6b33bdae130344d10502132d9e185671f53e862ebf3",
+    "code/src/experiments/movie_records_matrix.py": "fb45692488b8bbc704024a95d6c3aaa68e810759a83d20ce786104e2640e6136",
+    "code/src/experiments/movie_records_session.py": "1d1cc931a7ad3b28602129741893bf257e6e92f90b92c37b1981c2980552a412",
+    "code/src/serving/backends/model_context.py": "968a0153197703921476174bdb6a8330779a04f83d59f140baaf0f8457460ce8",
+    "code/tests/experiments/test_offline_model_context.py": "283f428124f00e6b1c1538ab22b9ab6632c228d799a85e6134483050324936bd"
+  },
+  "source_unchanged_during_suites": true,
+  "Python_source_hashes_match_current": true,
+  "behavior": {
+    "omitted_and_null_context_confirmed": true,
+    "explicit_context_original_zero_scan_hit": true,
+    "confirmation_uses_first_declared_sample": true,
+    "confirmation_receipt_reused_once_on_miss": true,
+    "confirmation_calls_retained_on_hit": true,
+    "each_executing_owner_checked_before_query": true,
+    "recorded_calls_bind_owner_engine_uid": true,
+    "failed_or_unknown_confirmation_has_no_identity": true,
+    "unknown_call_costs_retained": true,
+    "original_failure_preserved": true,
+    "closed_model_rejected": true,
+    "native_prompt_plus_output_checks": "existing test_model_context cases rerun",
+    "context_identity_ignores_only_instance_and_call_quota": true,
+    "unknown_physical_cleanup_stops_before_selector_and_target": true
+  },
+  "pending": [
+    "Independent review and integration with 448c; original EngineSpec/native constructor overlap must be combined carefully.",
+    "Eight selected methods need pinned SemBench assets; one method skip and two skipped classes containing seven methods.",
+    "Pre-start input-only token validation still requires explicit context.",
+    "Actual vLLM model resolution, supervised real Ray/GPU execution, matched complete query time and quality comparisons.",
+    "Prior six selected failures and ten historical mismatches remain outside this increment."
+  ],
+  "real_model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "publication": "not pushed or merged",
+  "artifacts": {
+    "offline-affected-r4.json": {
+      "bytes": 214901,
+      "sha256": "c0af10a5476a88c812c1744acf0e649c14c8e4fc9066b04cdea6eff09c906ad7"
+    },
+    "offline-affected-r4.log": {
+      "bytes": 41432,
+      "sha256": "9017e410ddadbbcdf51833876c326db18c74e90fbc16265e099fc533b477be64"
+    },
+    "offline-baseline-environment-r5.json": {
+      "bytes": 161092,
+      "sha256": "4fb466b3714fffd5fca2fd4f57b4111170ab26a159aaa04e9d14bbd5fe6a5f7e"
+    },
+    "offline-baseline-environment-r5.log": {
+      "bytes": 1660,
+      "sha256": "884f360ea4be4505802ab1c8a910cdc3833a651b02bbb032a24bcc1b0ff8f0ee"
+    },
+    "offline-context-initial.json": {
+      "bytes": 161272,
+      "sha256": "8d99f28789b29bccb166b6aa7b159c78e04500bc10a89c33f3b73d1c0d814396"
+    },
+    "offline-context-initial.log": {
+      "bytes": 3633,
+      "sha256": "02a5427ec74112d307142f4f76549ed6969591bcd7ec97e234cd7ede5a6e6a3d"
+    },
+    "offline-context-r2.json": {
+      "bytes": 160195,
+      "sha256": "20f1a72051d50c1235e15011f2f9108a87c376dbae65c78178e630c00298e85f"
+    },
+    "offline-context-r2.log": {
+      "bytes": 1872,
+      "sha256": "a5f31511d8be1cda4c55419cfd4b895d58a04678f10ed04b9d9c1d875922ba34"
+    },
+    "offline-context-r3.json": {
+      "bytes": 161377,
+      "sha256": "1528012347236863becfd9a5f01c5a5d5edea4e908829f99d8f2261035b8cd3a"
+    },
+    "offline-context-r3.log": {
+      "bytes": 2774,
+      "sha256": "d64461e8649922ccb38f3421a00b9447d82f8ae14b246c6d1145746568b8259c"
+    },
+    "offline-core-initial.json": {
+      "bytes": 173402,
+      "sha256": "f0c72394aa5fb1c6988fffebee4dd1302b7e28cd5b9e33f14c5bee562a94c616"
+    },
+    "offline-core-initial.log": {
+      "bytes": 11603,
+      "sha256": "7f359a1390ed7c8ec9bab546bea13608e354d99cbd6aebad1ebd596636aeda97"
+    },
+    "offline-context-lifecycle-r6.json": {
+      "bytes": 161953,
+      "sha256": "67da334b7ec10e7e09941ab151393b5ec776916da495d08c7d5a8c1eaa1d965f"
+    },
+    "offline-context-lifecycle-r6.log": {
+      "bytes": 3198,
+      "sha256": "a2432dbb5b9fd6fd16f8d20ec2c78e1c98ac71132b496f41569b653a9188f2cb"
+    }
+  },
+  "method_source_matches_current": true,
+  "all_production_Python_hashes_invariant_across_qualifying_runs": true
+}
