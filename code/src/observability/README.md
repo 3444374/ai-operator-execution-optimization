@@ -19,13 +19,43 @@ over the execution policy it observes.
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
 
-Records `MetricSources` owns one locked cumulative host CPU counter baseline. Successive calls on
-different RPC threads share that baseline and its monotonic clock; the first observation, counter
-rollback or invalid interval stays unknown. The feedback audit retains the raw interval, rejection
-reason and source sequence even when the unchanged measurement-window check rejects the CPU value.
-Standalone legacy `host_metadata()` callers keep their existing reader. CPU regressions live in
-[`test_host_cpu_counter_source.py`](../../tests/observability/test_host_cpu_counter_source.py).
-This ownership fix does not change sample cadence, the feedback window, actor concurrency or policy.
+Records `MetricSources` owns one locked cumulative CPU counter baseline. In a visible Linux cgroup,
+`AllocatedCPUCounterSource` reads group CPU time and divides its rate by the smaller of process
+affinity and visible CPU quotas, preserving fractional CPUs. It also checks usage of capped ancestors
+and retains the largest observed percentage, so sibling usage of a shared quota is visible. The source
+reports group CPU pressure rather than an actor's CPU time or a per-core maximum. Separate v1 cpuacct
+groups cannot establish the same quota membership and remain unknown. Without cgroup scoping, host
+counters are restricted to process affinity. Legacy `host_metadata()` callers retain their reader.
+
+Successive calls on different RPC threads share the counter and monotonic clock. First reads, counter
+rollback, allocation changes and invalid intervals stay unknown. The feedback report retains interval,
+source, effective CPUs and quota; the existing field `host_peak_cpu_pct` carries the qualified CPU
+percentage for compatibility. Host RAM remains explicitly host context, with separately named visible
+cgroup memory limit and headroom. The latter also checks ancestor usage; host available RAM is never
+reported as container headroom. Kernel interfaces follow [cgroup v2](https://docs.kernel.org/admin-guide/cgroup-v2.html)
+and [v1 bandwidth control](https://docs.kernel.org/scheduler/sched-bwc.html). Tests and limits are listed
+in the [CPU check record](../../tests/records_cpu.md#resource-allocation-cpu).
+
+With native feedback enabled, `worker_extension_cls` registers
+`src.infrastructure.gpu_allocation.SemLoomGpuIdentityWorkerExtension` before engine construction.
+Startup calls the named `semloom_gpu_identity` method through ordinary `collective_rpc`; request
+arguments and the reply contain primitive values. The original callable request was rejected by the
+fixed default encoder and has been replaced. Default serialization settings remain unchanged.
+Only an already initialized single CUDA device is read. The private readiness frame carries its UUID
+to the actor's existing sampler. `sources.gpu.binding_source` distinguishes `native_worker_receipt`
+from `cuda_visibility_without_worker_receipt`; the latter retains the prior explicit UUID mask or
+unambiguous single-NVML-device resolution, and does not claim a worker receipt. Numeric multi-device
+ambiguity stays unknown. Feedback off registers no extension and adds no native observation RPC.
+
+The RPC carries `timeout=1.0`; the current uni executor does not enforce it around synchronous worker
+code. The 1.5-second `asyncio.wait_for` bounds local client waiting, not worker completion or physical
+termination. Timeout leaves the optional identity unknown; existing model ownership and cleanup apply.
+The supported interface is verified against the fixed [worker extension implementation](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/worker_base.py),
+[default encoder](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/serial_utils.py) and
+[uni executor](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/executor/uniproc_executor.py).
+The [CPU source probe](../../tests/serving/test_vllm_identity_protocol.py) runs real MessagePack with
+hash-checked source definitions and CPU model substitutes. Full vLLM, real Ray and GPU execution of
+this candidate remain pending.
 
 The request-feedback report also keeps `recent_RPC_attempts` for the current bound Core session:
 at most 64 fixed-metadata records plus cumulative `RPC_counts` for returned resource attempts,

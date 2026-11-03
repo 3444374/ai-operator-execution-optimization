@@ -127,6 +127,8 @@ def core_observations(cfg, packet, gpu):
     """Reuse fresh host/model preflight, never infer a measured performance value."""
     from src.infrastructure.environment import observe_machine
     machine=observe_machine()
+    if machine.cpu_slots is None:
+        raise ValueError("Core calibration requires an observed effective CPU allocation")
     shared=declared_shared_resources(cfg,packet)
     receipt=packet.read(packet.HERE/'runtime/model-preflight.json')
     if (receipt['status']!='passed' or receipt['source_commit']!=packet.COMMIT

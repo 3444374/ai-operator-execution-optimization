@@ -43,15 +43,55 @@ def _probe_uuid(token):
     return values[0]
 
 
-def cuda_visible_gpu_uuids(visibility):
+def current_cuda_gpu_identity():
+    """Observe a model child's actual single CUDA device after engine startup.
+
+    This helper is called in the model process only, never in a driver/actor.
+    Failures are optional telemetry, not an inference startup failure.
+    """
+    try:
+        import torch
+        if not torch.cuda.is_initialized():
+            return dict(status="unavailable:CUDA_not_initialized_in_this_process", gpu_uuids=None)
+        if torch.cuda.device_count() != 1:
+            raise ValueError("single CUDA device required")
+        raw = str(torch.cuda.get_device_properties(0).uuid)
+        match = re.fullmatch(r"(?:GPU-)?([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})", raw)
+        if match is None:
+            raise ValueError("complete physical CUDA GPU UUID unavailable")
+        return dict(status="observed_actual_CUDA_device", gpu_uuids=["GPU-" + match[1].lower()])
+    except Exception as error:
+        return dict(status="unavailable:" + type(error).__name__, gpu_uuids=None)
+
+
+VLLM_GPU_IDENTITY_METHOD = "semloom_gpu_identity"
+VLLM_GPU_IDENTITY_EXTENSION = "src.infrastructure.gpu_allocation.SemLoomGpuIdentityWorkerExtension"
+
+
+class SemLoomGpuIdentityWorkerExtension:
+    """A named read-only method for vLLM's ordinary worker extension interface."""
+
+    def semloom_gpu_identity(self):
+        return current_cuda_gpu_identity()
+
+
+def cuda_visible_gpu_uuids(visibility, *, assigned_gpu_uuids=None):
     """Bind telemetry to CUDA visibility without treating ordinals as NVML IDs.
 
     UUID masks are already unambiguous. The only numeric case we can resolve
     without initializing CUDA is ordinal zero with exactly one NVML device.
-    Other numeric masks require an explicit UUID deployment binding.
+    Other numeric masks require the actual CUDA UUID receipt from the model
+    child which inherited that mask. Numeric values are never NVML indices.
     """
     tokens = _tokens(visibility, "CUDA_VISIBLE_DEVICES")
-    if all(token.startswith("GPU-") for token in tokens):
+    if assigned_gpu_uuids is not None:
+        uuids = _tokens(assigned_gpu_uuids, "actual CUDA GPU UUIDs")
+        if (len(uuids) != 1 or len(tokens) != 1
+                or not re.fullmatch(r"GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", uuids[0])):
+            raise ValueError("actual model allocation requires one complete physical CUDA UUID")
+        if tokens[0].startswith("GPU-") and tokens[0].lower() != uuids[0].lower():
+            raise ValueError("CUDA mask differs from the model child's assigned UUID")
+    elif all(token.startswith("GPU-") for token in tokens):
         uuids = tokens
     else:
         uuids = _single_cuda_gpu_uuid(tokens)

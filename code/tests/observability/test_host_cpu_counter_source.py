@@ -51,6 +51,8 @@ class CrossThreadMetricSourcesTests(unittest.TestCase):
                 second_done.set()
 
         with patch('src.observability.records_telemetry.gpu_metadata', return_value={}), \
+                patch('src.infrastructure.cgroup.controller_hierarchy', return_value=(0, ())), \
+                patch('os.sched_getaffinity', return_value={0}, create=True), \
                 patch('psutil.cpu_percent', return_value=[20.]), \
                 patch('psutil.cpu_times', side_effect=read), \
                 patch('psutil.virtual_memory', return_value=SimpleNamespace(percent=40, available=1024**3)), \

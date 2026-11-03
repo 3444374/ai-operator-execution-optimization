@@ -103,7 +103,7 @@ def build_core_identity(plan, checked, *, hardware, model, software):
     ):
         if type(value) is not dict or any(not value.get(key) for key in fields):
             raise ValueError("observed Core identity is missing " + ", ".join(fields))
-    _positive_integer(hardware["cpu_limit"], "hardware.cpu_limit")
+    _seconds(hardware["cpu_limit"], "hardware.cpu_limit")
     if plan["backend"] != "semloom-core" or plan["profile"].get("mode") != "async":
         raise ValueError("offline Core selection requires the existing async Core path")
     if (plan["resources"]["prepare_batch_rows"] != 1

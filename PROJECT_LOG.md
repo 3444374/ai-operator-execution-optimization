@@ -44,6 +44,18 @@
 双50%只用于物理大步试探的判断，另以默认关闭的native_only选项隔离其作用；
 [选项与CPU范围](code/INFRA_STATUS.md#physical-probe-policy-cpu)独立审阅，不删默认检查或替换阈值。
 
+## 2026-11-03：资源归属候选按独审修订
+
+复现 `9b731ab9` 的函数 RPC 默认编码拒绝后，改为固定 vLLM 版本支持的具名 worker 扩展；客户端等待与 worker 完成分别表述。
+历史校准源码按准确旧字节共享，只追加五条来源映射，原哈希和结果保持。
+当前源码与检查分别见[代码状态](code/INFRA_STATUS.md#resource-allocation-candidate)、[历史复现说明](experiments/reproduction/native_baselines/README.md)及[CPU 记录](code/tests/records_cpu.md#resource-allocation-cpu)，尚待复审与实机验证。
+
+## 2026-11-03：资源归属按实际分配核对
+
+独立候选将可见 CPU 配额用于机器观测、SemLoom records 启动检查和校准身份，保留主机／容器观测的不同含义；
+GPU 采样通过现有原生 worker 接口传递实际设备身份，缺少证明时继续缺测。
+实现与验证范围归[代码状态](code/INFRA_STATUS.md#resource-allocation-candidate)和[检查记录](code/tests/records_cpu.md#resource-allocation-cpu)，本次不发布或运行真实模型。
+
 ## 2026-10-28：完整F/M查询token配置的独立本地接线
 
 将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。

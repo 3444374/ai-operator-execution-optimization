@@ -91,6 +91,16 @@ class CoreCalibrationTests(unittest.TestCase):
         self.assertEqual(selected["scan_cost"]["wall_s"], 2345)
         self.assertFalse(selected["scan_cost"]["target_measurement_included"])
 
+    def test_fractional_observed_CPU_capacity_is_signed_without_rounding_up(self):
+        hardware = dict(self.hardware, cpu_limit=3.5)
+        identity = core.build_core_identity(self.plan, self.checked, hardware=hardware,
+            model=self.model, software=self.software)
+        self.assertEqual(identity["hardware"]["cpu_limit"], 3.5)
+        core.core_candidate_plan(self.plan, self.checked, dict(max_inflight=1, cpu_workers=1), identity=identity)
+        with self.assertRaisesRegex(ValueError, "CPU allocation"):
+            core.core_candidate_plan(self.plan, self.checked, dict(max_inflight=1, cpu_workers=2), identity=identity)
+        self.assertNotEqual(core.core_identity_signature(identity), core.core_identity_signature(self.identity))
+
     def test_candidate_values_and_near_peak_ratio_are_configurable(self):
         scan = self.scan({(1, 1): [10.2] * 3, (3, 1): [10] * 3})
         self.assertEqual(core.build_core_selection(**scan)["selection"]["max_inflight"], 1)

@@ -217,7 +217,10 @@ class BatchSupplyFeedback:
             # The shared reader aggregates multiple devices. Its mean cannot
             # establish that every device is idle; this owner uses one GPU.
             number(values.get('gpu_utilization_pct')) if len(devices) == 1 else None,
-            number(values.get('host_cpu_per_core_max_pct')) if host.get('cpu_percent_interval_s') is not None else None)
+            number(host.get('cpu_allocation_utilization_pct')
+                   if host.get('cpu_observation_scope') == 'current_cgroup_per_effective_CPU'
+                   else values.get('host_cpu_per_core_max_pct'))
+            if host.get('cpu_percent_interval_s') is not None else None)
 
     def _read_resource(self, packet, *, request_index, requested_at_s, received_at_s):
         view = self._resource_view(packet, request_index=request_index,
@@ -256,6 +259,8 @@ class BatchSupplyFeedback:
             host_cpu_interval_type=type(host.get('cpu_percent_interval_s')).__name__,
             host_cpu_source={name: host[name] for name in ('cpu_metrics_status',
                 'cpu_baseline_scope', 'cpu_counter_sample_sequence', 'cpu_sample_thread_id',
+                'cpu_observation_scope', 'cpu_effective_slots', 'cpu_quota_slots',
+                'cpu_allocation_busy_cores', 'cpu_allocation_utilization_pct', 'cpu_allocation_status',
                 'cpu_counter_read_start_monotonic_ns', 'cpu_counter_read_end_monotonic_ns')
                 if name in host and (type(host[name]) in (str, int) or
                     (type(host[name]) is float and math.isfinite(host[name])))},
