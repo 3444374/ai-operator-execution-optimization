@@ -687,7 +687,7 @@ class _RecordLocalRows:
         from src.semantic_methods.driver import RowIdentity
 
         if self._phase_eof:
-            return
+            return False
         if self.pending is None:
             try:
                 self.pending = self._pull_source() if self._using_source else next(self._phase_source)
@@ -695,7 +695,7 @@ class _RecordLocalRows:
                 self._phase_eof = True
                 _check(self.owner.deadline, self.cancelled)
                 self.driver.end_input()
-                return
+                return False
         row = self.pending
         if self.section is not None:
             accepted = self.driver.offer_record(row,
@@ -708,6 +708,7 @@ class _RecordLocalRows:
         if accepted:
             self._phase_count += 1
             self.pending = None
+        return accepted
 
     def _history(self, session_id, inputs):
         self.owner.phase_history.append(dict(phase_stage_ids=list(self._stage_ids),
@@ -743,7 +744,8 @@ class _RecordLocalRows:
             return
         if self.owner._async_token_batches:
             while not self._phase_eof and self.driver.active_rows < self.owner.resources.max_active_batches:
-                self._fill()
+                if not self._fill():
+                    break  # Bytes or a held result can bind before the row grant.
         else:
             self._fill()
         _check(self.owner.deadline, self.cancelled)

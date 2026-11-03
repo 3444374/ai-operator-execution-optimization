@@ -240,6 +240,10 @@ Core单项与总量、IPC单项／槽位与总量分别推导，显式小额度�
 [容量身份CPU测试](tests/experiments/test_core_capacity_identity.py)覆盖缓存命中／隔离、默认归一和候选约束；
 仅授予本地组合接线验证，不继承真实模型或GPU性能资格。
 
+记录链补料被拒后保留单个pending输入，结束本轮补料并沿原advance／wake等待；方法结果消费释放预算时通知原wake。
+[CPU拒绝／唤醒反例](tests/execution_provider/test_lotus_chain_refill_wait.py)覆盖慢消费、可重试拒绝与unknown责任；
+这是独立字节预算迁移的先决修复，尚不等于容量解耦或物理内存边界已完成。
+
 本地可选`rolling_refill=True`候选复用同一路径，以既有请求窗口R滚动补交token批；慢成员不再占一个整批供给槽阻塞已释放请求额度。
 默认关闭，原C_batch模式保留；启用时省略`batch_concurrency`，并拒绝混入`batch_feedback`。
 B只组织每次传输，批成员提交后不追加；请求、驻留、字节、ACK/unknown与Extract屏障责任保持。
