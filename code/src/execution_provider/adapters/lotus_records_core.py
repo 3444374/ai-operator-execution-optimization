@@ -47,7 +47,7 @@ def expand_core_profile(profile):
         poll_interval_s=0.1, window_s=0.25, min_samples=16, min_remaining=64,
         exploration_s=10.0, max_changes=8, allow_exploration=True,
         min_gain=0.03, work_tolerance=0.03, max_candidate_attempts=2,
-        memory_floor_bytes=0)
+        memory_floor_bytes=0, pressure_response="window")
     if profile == "computed-work-local-pairs":
         admission.update(work_basis="computed", work_comparison="local_pairs")
     return dict(mode="async", max_inflight=8, stage_timing=True, admission=admission)
@@ -105,6 +105,8 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
             if maximum != 1:
                 raise ValueError('rolling request feedback starts at one without a historical search hint')
             config = replace(default_request_feedback_options(), **options)
+            if config.memory_floor_bytes:
+                raise ValueError('rolling memory_floor_bytes requires a memory signal source; none is connected')
             if config.poll_interval_s > config.window_s:
                 raise ValueError('request feedback poll interval must fit the measurement window')
         else:
@@ -1319,7 +1321,8 @@ class _CoreFeedback:
         stream._admission_report = dict(self.controller.report(), samples=self.samples,
             snapshot_requests=self.snapshot_requests, exploration_enabled=self.options.allow_exploration,
             exploration_poll_interval_s=self.options.poll_interval_s,
-            protection_poll_interval_s=max(self.options.poll_interval_s,self.options.window_s),
+            protection_poll_interval_s=(self.options.poll_interval_s if self.options.pressure_response == 'sample'
+                                        else max(self.options.poll_interval_s, self.options.window_s)),
             source_stale_after_s=self.provider.stale_after_s,
             sample_errors=self.sample_errors, peak_native_running=self.peak_native_running,
             sampling_paused=True, sampler_scope="model_owner", sampler_stopped=not self.provider.is_running)

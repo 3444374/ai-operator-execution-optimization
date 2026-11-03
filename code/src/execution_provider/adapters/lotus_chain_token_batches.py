@@ -926,7 +926,8 @@ class RequestSupplyFeedback(BatchSupplyFeedback):
             physical_samples=tuple(self.resource_samples),
             preemption_increased=(o.preemptions_total is not None and preemptions is not None
                                   and o.preemptions_total > preemptions),
-            low_kv_usage=self.controller.config.low_load_kv_usage)
+            low_kv_usage=self.controller.config.low_load_kv_usage,
+            physical_probe_policy=self.options.physical_probe_policy)
         return self.controller.update_supply(o, supply, resource_step=step, resource_opportunity=opportunity)
 
     def end_phase(self):

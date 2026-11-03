@@ -917,6 +917,8 @@ class SemLoomRecordChainCore:
             from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
             if type(request_feedback) is not ResourceFeedbackConfig:
                 raise TypeError('request_feedback must be ResourceFeedbackConfig')
+            if request_feedback.memory_floor_bytes:
+                raise ValueError('rolling memory_floor_bytes requires a memory signal source; none is connected')
             if experimental_skip_token_packing:
                 raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
             if (not self._async_token_batches or not rolling_refill

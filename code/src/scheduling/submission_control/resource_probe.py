@@ -48,7 +48,8 @@ def _finite(value):
 def resource_probe_opportunity(observation: AdmissionObservation, supply: SupplyState, *,
         current_window, hard_limit, max_age_s, expected_engine_uid, expected_session_id,
         physical_samples: tuple[ResourceProbeView, ...] = (),
-        preemption_increased=False, low_kv_usage=.5) -> ResourceOpportunity:
+        preemption_increased=False, low_kv_usage=.5,
+        physical_probe_policy="idle_majority") -> ResourceOpportunity:
     """Authorize a *trial opportunity*, leaving legal candidates to the caller.
 
     Native headroom permits geometric probing without a cost estimate. Two
@@ -61,10 +62,12 @@ def resource_probe_opportunity(observation: AdmissionObservation, supply: Supply
             or not 1 <= current_window <= hard_limit
             or not _finite(max_age_s) or max_age_s <= 0
             or not _finite(low_kv_usage) or not 0 <= low_kv_usage <= 1
-            or type(preemption_increased) is not bool):
+            or type(preemption_increased) is not bool
+            or physical_probe_policy not in ("idle_majority", "native_only")):
         raise ValueError("valid request/age/KV bounds and preemption flag required")
     o, s = observation, supply
     evidence = dict(tentative=True, cost_model_required=False,
+        physical_probe_policy=physical_probe_policy,
         observed_request_window=current_window,
         full_query_benefit_proven=False, capacity_estimate=False,
         physical_scope="UUID-bound device peak busy and host-wide per-CPU peak busy",
@@ -114,6 +117,8 @@ def resource_probe_opportunity(observation: AdmissionObservation, supply: Supply
         evidence["physical_qualification"] = reason
         return decision("native_headroom", reason)
 
+    if physical_probe_policy == "native_only":
+        return regular("physical_acceleration_disabled")
     if type(physical_samples) is not tuple or not physical_samples:
         return regular("physical_samples_unavailable")
     indexed = {}

@@ -203,6 +203,25 @@ Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`�
 缓存写入是查询局部资格，不证明物理 GPU/后代退出；unknown、held、借用未释放或账本不完整
 不会发布新 hint。原冻结来源的功能实测与当前代码整合分别判断，见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)；短查询提示复用不证明反馈调节或搜索收益。
 
+<a id="pressure-sample-response"></a>
+### 压力采样与吞吐测量的时钟
+
+`ResourceFeedbackConfig.pressure_response="sample"`使明确的抢占计数增量、
+`memory_pressure=True`在新鲜采样到达后先处理，不等待`window_s`的吞吐测量。
+同一个provider接纳的采样带单调递增`sample_sequence`；重复或倒序读取不再次调整额度。
+直接调用且不提供该序号时，用采样时刻去重。缺失或过期反馈不作为新压力或资源充裕的依据。
+KV占用的两窗确认和性能比较仍走原测量流程；单个高KV读数不变成即时抢占事件。
+
+采样响应模式在停止性能探索后仍按`poll_interval_s`读取，复用既有采样器和单个在途snapshot RPC。
+`pressure_response="window"`保留原窗口响应及保护采样节奏；
+`delivered-work-scan`、`computed-work-local-pairs`两个具名历史配置显式选择此模式。
+压力缩小的是后续接纳额度，已经提交的请求和其字节／结果责任继续保留到原确认流程结束。
+
+rolling目前只有原生queue、KV与抢占信号，尚未接入可用内存的保护源。
+因此`memory_floor_bytes>0`在profile解析和直接owner配置时明确拒绝，不将`None`解释为内存充裕。
+普通非rolling的现有设备内存读取未改接到此路径。
+以上为源码修复与CPU行为验证；真实Ray、模型及完整查询性能尚未验证。
+
 ### rolling 请求的上探与条件续扫
 
 显式 rolling `admission.kind="resource_feedback"` 使用
@@ -251,6 +270,15 @@ CPU测量区间和RPC数据年龄分别受限，不声称整个历史取样区�
 已有pressure ceiling／尝试预算／字节边界仍优先。普通几何探测继续作为无合格物理证据时的回退。
 50%是这条加速提案的工程资格判据，不是硬件平台或总体探索停止线；新目标仍须有可比收益才能保留。
 两次读取的NVML内部采样区间可能重叠，不称统计独立。物理值缺失或单独GPU busy低不生成此大步目标。
+
+<a id="physical-probe-policy"></a>
+`physical_probe_policy="idle_majority"`保留上述双50%判据；当前默认未改。
+显式rolling／ascending配置可选`physical_probe_policy="native_only"`，只关闭物理读数产生的大步目标，
+继续使用原生反馈与普通几何候选。此比较候选默认关闭，没有新增利用率阈值。
+请求上限、KV／抢占／内存压力、传输与消费背压、真实ready供给及工作量比较仍先检查；
+没有已测参考时不会仅因资源信号就增加额度。可用的原生KV成本提案仍按原流程处理。
+采样通道及资源读数的归属未因这个选项改变，配置进入原有提示身份，不能复用不同策略的查询提示。
+此选项仅有CPU反例与adapter接线检查；尚无真实资源或完整查询性能结论。
 
 新机会可唤醒旧选择；相同资源状态的反复轮询不自动反复扫描。
 未知／弱覆盖不会清掉上次合格物理条件；同设备联合空闲份额相对其已测试条件超过`min_gain`才触发新的余量条件，

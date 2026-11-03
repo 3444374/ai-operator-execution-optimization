@@ -162,6 +162,8 @@ class NonBlockingObservationProviderTests(unittest.TestCase):
         self.assertFalse(repeated.fresh)
         self.assertAlmostEqual(repeated.sample_age_s, 0.1)
         self.assertEqual(repeated.waiting, 0)
+        self.assertIsNotNone(first.sample_sequence)
+        self.assertEqual(first.sample_sequence, repeated.sample_sequence)
 
     def test_latest_never_waits_for_blocked_sampler(self) -> None:
         sampler_entered = threading.Event()

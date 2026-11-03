@@ -38,6 +38,27 @@ LOTUS 本地模型启动、Kalypso 或现有 PG wire schema。
 绑定报告 `historical_audit.json` 为 `b784d71976f45ba5042176cf4a6256827bb4ef69972ba26b5dd251b172adaae3`；
 失败与成功日志按此运行标识分别保存，原独审报告及 `b16b5a95` 记录保持。
 
+<a id="pressure-sample-cpu-fix"></a>
+## 2026-11-03：压力响应与 rolling 内存配置的 CPU 修复
+
+来源为`5ff54bfe`后继源码和确定性CPU fixture，未运行GPU、真实Ray或模型。
+[实现范围](../../code/INFRA_STATUS.md#pressure-sample-cpu-fix)包含采样前置响应、重复读取去重、
+Core旧任务正常结算与无内存源配置拒绝；具名历史策略继续用原窗口响应。
+292项定向CPU检查通过，包含历史源码差分、采样器、控制器、配置与Core会话；无跳过。
+首次复现确认压力等待吞吐窗口及无来源的内存配置被接受；修复不证明性能改善。
+完整rolling SDK集成检查的本地LOTUS依赖尚缺；已执行的状态机和Core检查不代替该路径验收。
+局部失败输出及依赖预检记录保留在本次工作目录的忽略产物中，交接时提供路径与摘要。
+
+<a id="physical-probe-policy-cpu"></a>
+## 2026-11-03：物理大步试探的独立 CPU 比较选项
+
+来源为压力修复`e0f3e710`后继源码与CPU fixture；原双50%未删除或改值。
+[默认关闭的native_only选项](../../code/INFRA_STATUS.md#physical-probe-policy-cpu)仅移除物理大步目标，
+原生反馈、普通几何试探及压力／供给／字节检查继续使用原流程。
+50项定向CPU检查通过，包含默认行为、压力与未知反馈、无参考、策略提示隔离和实际adapter接线。
+最终与压力修复组合后342项CPU回归通过，无跳过；该计数不与前述292项或50项重复累加。
+没有真实Ray／模型／GPU运行或性能证据；资源归属修复单独处理。
+
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界
 

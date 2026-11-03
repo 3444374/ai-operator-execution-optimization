@@ -262,6 +262,8 @@ class ResourceFeedbackConfig:
     work_basis: str = "delivered"
     work_comparison: str = "envelope"
     search_policy: str = "reference"
+    pressure_response: str = "sample"
+    physical_probe_policy: str = "idle_majority"
 
     def __post_init__(self):
         for name in ("poll_interval_s", "window_s", "exploration_s"):
@@ -302,6 +304,12 @@ class ResourceFeedbackConfig:
             raise ValueError("search_policy must be reference or ascending")
         if self.search_policy == "ascending" and self.work_comparison != "local_pairs":
             raise ValueError("ascending search requires computed local pairs")
+        if self.pressure_response not in ("sample", "window"):
+            raise ValueError("pressure_response must be sample or window")
+        if self.physical_probe_policy not in ("idle_majority", "native_only"):
+            raise ValueError("physical_probe_policy must be idle_majority or native_only")
+        if self.physical_probe_policy != "idle_majority" and self.search_policy != "ascending":
+            raise ValueError("physical probe policy requires ascending request search")
 
 
 def _local_pair_evidence(reference, candidate, margin):
@@ -525,6 +533,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         self._reference_recheck_used = False
         self._confirmed_window = initial_window
         self._preemptions = None
+        self._pressure_sample_sequence = self._pressure_sample_at = None
         self._needs_settle = False
         self._pressure_windows = self._cooldown = 0
         self._changes = self._decisions = self._accepted_steps = 0
@@ -599,6 +608,8 @@ class ResourceFeedbackController(AimdAdmissionController):
         return limit is None or self._changes + reserve <= limit
 
     def sampling_interval_s(self, pending_items):
+        if self.options.pressure_response == "sample":
+            return self.options.poll_interval_s
         has_candidate = bool(self._search.available()) if self._search is not None else self.current_window < self.config.max_window
         exploring = (self.options.allow_exploration and not self._growth_stopped
             and (self._probe_at is not None or has_candidate)
@@ -870,12 +881,59 @@ class ResourceFeedbackController(AimdAdmissionController):
     def _pressure_event(self, observation):
         """Confirmed pressure invalidates evidence even at the minimum quota."""
 
+    def _new_pressure_sample(self, o):
+        if o.sample_sequence is not None:
+            return (self._pressure_sample_sequence is None
+                    or o.sample_sequence > self._pressure_sample_sequence)
+        sampled_at = o.observed_at_s - (o.sample_age_s or 0.)
+        return self._pressure_sample_at is None or sampled_at > self._pressure_sample_at + 1e-9
+
+    def _remember_pressure_sample(self, o):
+        if o.sample_sequence is not None:
+            self._pressure_sample_sequence = o.sample_sequence
+        self._pressure_sample_at = o.observed_at_s - (o.sample_age_s or 0.)
+        if o.preemptions_total is not None:
+            self._preemptions = o.preemptions_total
+
+    def _reduce_for_pressure(self, o):
+        self._end_probe(o.observed_at_s)
+        self._reference = None
+        if self.options.pressure_response == "sample":
+            self._anchor, self._windows = None, []
+        lower = max(1, int(self.current_window*self.config.multiplicative_decrease))
+        self._confirmed_window = lower
+        if self._search is not None:
+            if self.options.work_basis == "computed":
+                self._search.record_pressure(self.current_window, lower)
+            else:
+                self._search.finish(self.current_window, "pressure")
+            self._search.verified_window = None
+            self._search.ceiling = min(self._search.ceiling, max(1, self.current_window-1))
+            self._growth_stopped, self._stop_reason = True, "resource_pressure"
+        self._pressure_event(o)
+        return (self._change(lower, "resource_pressure", o) if lower < self.current_window
+                else self._hold("at_minimum"))
+
     def _update(self, o):
-        if not o.fresh or not o.has_service_metrics:
+        sample_clock = self.options.pressure_response == "sample"
+        stale_age = (sample_clock and o.sample_age_s is not None
+                     and o.sample_age_s > min(o.observed_at_s, self.options.window_s))
+        if not o.fresh or not o.has_service_metrics or stale_age:
             if self._probe_at is not None and self._exploration_time_left(o.observed_at_s) <= 0:
                 return self._stop("exploration_budget",o,rollback=True)
             return self._hold("missing_or_stale_feedback")
         now = o.observed_at_s
+        if sample_clock:
+            if not self._new_pressure_sample(o):
+                if self._probe_at is not None and self._exploration_time_left(now) <= 0:
+                    return self._stop("exploration_budget", o, rollback=True)
+                return self._hold("repeated_feedback_sample")
+            preempted = (o.preemptions_total is not None and self._preemptions is not None
+                         and o.preemptions_total > self._preemptions)
+            self._remember_pressure_sample(o)
+            if preempted or o.memory_pressure is True:
+                self._window_at = now
+                return self._reduce_for_pressure(o)
         if self._preemptions is None:
             self._preemptions = o.preemptions_total
         if now-self._window_at < self.options.window_s:
@@ -896,20 +954,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if pressured:
             if self._pressure_windows < 2 and not preempted and o.memory_pressure is not True:
                 return self._hold("confirming_pressure")
-            self._end_probe(now)
-            self._reference = None
-            lower = max(1,int(self.current_window*self.config.multiplicative_decrease))
-            self._confirmed_window = lower
-            if self._search is not None:
-                if self.options.work_basis == "computed":
-                    self._search.record_pressure(self.current_window, lower)
-                else:
-                    self._search.finish(self.current_window,"pressure")
-                self._search.verified_window = None
-                self._search.ceiling = min(self._search.ceiling,max(1,self.current_window-1))
-                self._growth_stopped, self._stop_reason = True, "resource_pressure"
-            self._pressure_event(o)
-            return self._change(lower,"resource_pressure",o) if lower < self.current_window else self._hold("at_minimum")
+            return self._reduce_for_pressure(o)
         if (self.options.work_basis == "computed" and self._search.pressure_recovery is not None
                 and self.options.allow_exploration and o.waiting == 0
                 and o.kv_usage <= self.config.low_load_kv_usage
