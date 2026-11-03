@@ -162,25 +162,30 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
-                        resident=False, experimental_skip_token_packing=False):
+                        resident=False, experimental_skip_token_packing=False, capacity=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
     resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill)
     batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill,
                                       experimental_skip_token_packing)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
+    capacity = CoreRecordsCapacity() if capacity is None else capacity
+    if type(capacity) is not CoreRecordsCapacity:
+        raise TypeError("Core records capacity must be CoreRecordsCapacity")
+    if resolved["mode"] == "async":
+        async_limits = resolve_records_async_limits(effective, capacity, async_limits)
+    elif async_limits is not None:
+        raise ValueError("async_limits requires async Core execution")
     if batching is not None:
         from .lotus_records_batches import PreparedRecordsCore
         return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits,
-                                   resident=resident)
-    options = {}
+                                   resident=resident, capacity=capacity)
+    options = dict(capacity=capacity)
     actors = None
     if resolved["mode"] == "async":
         from .lotus_records_async_actor import AsyncRecordsActorOwner
         actors = options["actor_owner"] = AsyncRecordsActorOwner(
             method, engine, generation, effective, limits=async_limits,
         )
-    elif async_limits is not None:
-        raise ValueError("async_limits requires async Core execution")
     if "admission" in resolved:
         options["admission"] = resolved["admission"]
     if resolved["stage_timing"]:
@@ -275,6 +280,40 @@ class CoreRecordsCapacity:
             wait_timeout_s=resources.query_timeout_s, poll_interval_s=self.poll_interval_s,
             timeouts=SessionTimeouts(),
         )
+
+
+def resolve_records_async_limits(resources, capacity, overrides=None):
+    """Bind IPC defaults to this owner, retaining independent explicit byte caps.
+
+    Core totals remain R times its per-task allowances. IPC counts and per-item
+    allowances default from that declaration; IPC totals cover its own items and
+    result slots, rather than reusing a Core total as an IPC per-item allowance.
+    """
+    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+    from src.serving.backends.vllm_engine import _integer
+
+    if type(capacity) is not CoreRecordsCapacity:
+        raise TypeError("Core records capacity must be CoreRecordsCapacity")
+    if type(overrides) is AsyncEngineLimits:
+        limits = overrides
+    else:
+        if overrides is not None and type(overrides) is not dict:
+            raise TypeError("async_limits must be AsyncEngineLimits or an object")
+        maximum = resources.max_active_batches
+        values = dict(max_inflight=maximum, result_slots=maximum, command_slots=maximum,
+            item_input_bytes=capacity.item_input_bytes, item_result_bytes=capacity.item_result_bytes,
+            control_slots=max(16, maximum * 2))
+        values.update(overrides or {})
+        for name in ("item_input_bytes", "item_result_bytes", "result_slots"):
+            _integer(values[name], name, minimum=1)
+        values.setdefault("input_bytes", maximum * values["item_input_bytes"])
+        values.setdefault("result_bytes", values["result_slots"] * values["item_result_bytes"])
+        limits = AsyncEngineLimits(**values)
+    if limits.max_inflight != resources.max_active_batches:
+        raise ValueError("async_limits must match the Core owner request limit")
+    if limits.result_slots < limits.max_inflight:
+        raise ValueError("async_limits need one result slot per Core request")
+    return limits
 
 
 def _encode(value, maximum):

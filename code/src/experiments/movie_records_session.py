@@ -7,7 +7,7 @@ Ray can reuse its runtime while each native Dataset still owns a new model.
 The explicit ``isolated`` mode retains per-query driver startup and shutdown.
 """
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 import time
 import traceback
@@ -34,7 +34,7 @@ def check_plan(plan):
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
     optional = {'admission_cache', 'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                'experimental_skip_token_packing'}
+                'experimental_skip_token_packing', 'core_capacity', 'async_limits'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
@@ -53,7 +53,10 @@ def check_plan(plan):
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
     core_profile = None
+    capacity = async_limits = None
     batching = None
+    if plan['backend'] != 'semloom-core' and set(plan) & {'core_capacity', 'async_limits'}:
+        raise ValueError('core_capacity and async_limits require semloom-core')
     if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
                                                        'experimental_skip_token_packing'}):
         raise ValueError('record batching options require semloom-core')
@@ -61,9 +64,11 @@ def check_plan(plan):
         raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        from src.experiments.lotus_records_movie import _record_batching_options
+        from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
         core_profile = resolve_core_profile(engine, resources, plan["profile"],
             rolling_refill=plan.get('rolling_refill', False))
+        capacity = _core_capacity(plan)
+        async_limits = _async_limits(plan, resources=resources, resolved=core_profile)
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
         if batching is not None and (plan.get('admission_cache') is not None
                 or plan['lifecycle'] != 'isolated' and not (
@@ -90,7 +95,6 @@ def check_plan(plan):
         checked.append(dict(query, expected_calls=len(source.expected(query["query_id"])),
                             manifest_sha256=inputs["manifest_sha256"]))
     if plan["backend"] == "imlane":
-        from dataclasses import asdict
         if (plan["profile"] != asdict(resources) or resources.cpu_workers != 1
                 or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
                 or resources.max_active_batches > 2):
@@ -122,7 +126,9 @@ def check_plan(plan):
                 native_single_thread_session=plan["lifecycle"] == "native_single_thread_session",
                 supports_runtime_reuse_only=plan["backend"] == "ray-data",
                 resident_support_scope="implemented adapter paths; not a general vendor capability claim",
-                core_execution=core_profile, **({} if batching is None else dict(record_batching=batching)))
+                core_execution=core_profile, **({} if batching is None else dict(record_batching=batching)),
+                **({} if capacity is None else dict(core_capacity=asdict(capacity))),
+                **({} if async_limits is None else dict(async_limits=asdict(async_limits))))
 
 
 class _MovieDriver:
@@ -208,14 +214,16 @@ class _MovieDriver:
         if backend in {"semloom-core", "semloom-static-reference"}:
             if backend == "semloom-core":
                 from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
-                from src.experiments.lotus_records_movie import _record_batching_options
+                from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
                 self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
                     rolling_refill=self.plan.get('rolling_refill', False))
                 options = _record_batching_options(self.plan)
                 if options.get('rolling_refill') and self.plan['lifecycle'] == 'resident':
                     options['resident'] = True
                 self.owner = create_records_core(method, self.engine, self.generation, self.resources,
-                                                 profile=self.plan["profile"], **options)
+                    profile=self.plan["profile"], capacity=_core_capacity(self.plan),
+                    async_limits=_async_limits(self.plan, resources=self.resources, resolved=self.core_execution),
+                    **options)
             else:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
@@ -301,12 +309,14 @@ class _MovieDriver:
         try:
             if self.plan.get("admission_cache") is not None:
                 from src.experiments.movie_matrix_support import run_record_admission
+                from src.experiments.lotus_records_movie import _record_admission_cache
                 def execute_query(window, *, allow_exploration, search_hint=None):
                     query_options.update(max_inflight=window, allow_exploration=allow_exploration,
                                          search_hint=search_hint)
                     return run_movie_query(source, checkout, method, self.generation, execute,
                                           query_id=spec["query_id"], observer=emit)
-                self.last_query_report = run_record_admission(self.plan["admission_cache"],
+                self.last_query_report = run_record_admission(_record_admission_cache(self.plan,
+                    resources=self.resources, resolved=self.core_execution),
                     self.core_execution, source, method, self.generation, self.engine, self.resources,
                     execute_query, warmup=spec["phase"] == "warmup")
             else:

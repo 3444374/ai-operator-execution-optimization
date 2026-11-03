@@ -105,6 +105,33 @@ R 是原工厂解析后的请求容量，同时仍限制resident行。没有每�
 iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
 默认批模式不支持逐请求admission；admission cache、stage_timing、非rolling resident或受行帽限制的组合仍在预检拒绝。显式rolling resident见下文。
 
+### SemLoom records 的 Core／IPC 容量
+
+普通 Movie 配置和 `semloom-core` Session plan 可在根部声明 `core_capacity`，
+异步模式另可声明部分 `async_limits`；其他 baseline 不接收这两个字段。例如：
+
+```json
+{
+  "core_capacity": {"item_input_bytes": 4194304, "item_result_bytes": 2097152},
+  "async_limits": {"feedback_interval_s": 0.1}
+}
+```
+
+`core_capacity`复用`CoreRecordsCapacity`，上述两个字段是单任务完整输入／结果的字节额度。
+Core总量仍按解析后的owner请求额度R分别乘以单项；动态C的初始值不代替R。
+IPC单项默认取对应Core单项，请求／结果／命令槽默认取R；IPC输入总量默认是R乘IPC输入单项，
+结果总量默认是IPC结果槽乘IPC结果单项。部分配置先补这些默认，再保留显式字段；
+`{}`或仅反馈参数不会采用`AsyncEngineLimits`独立构造时的8请求默认。
+显式较小的IPC总量或单项不会被扩大：总量至少须容纳一个声明单项，其余由原有背压限制实际接纳。
+IPC保留原结果／控制帧最小值与最终编码校验；Core和IPC分别校验自己的完整表示，并非同一份字节账。
+省略容量字段时原Core单项2MiB及其owner默认保持，模型、提示、生成参数、B和完成／unknown责任不变。
+
+普通admission cache对显式容量将实际Core／IPC配置纳入既有execution身份；
+未声明新容量字段时旧身份保持。离线calibration对这些新字段的身份接线尚待独立集成，
+本候选不认证自定义容量与离线缓存选择的组合。
+[CPU配置与边界检查](../../tests/experiments/test_records_capacity_config.py)覆盖部分配置、独立字节限额、
+3MiB输入／结果、unknown预留、普通／常驻入口和查询账本重置；未新增真实Ray、模型或GPU运行。
+
 ### 固定 rolling 的 B 切包消融（仅实验）
 
 固定 rolling 配置在普通 Movie `check/run` 或 Session plan 根部可显式加入
