@@ -84,6 +84,7 @@ class ModelGpuIdentityTests(unittest.TestCase):
         engine._closed, engine._feedback, engine._reserved_model_calls = False, None, 0
         engine.engine_uid = "e" * 32
         engine.spec = SimpleNamespace(max_model_calls=4, enable_mfu_metrics=False)
+        engine._llm = SimpleNamespace(vllm_config=None)
         identity = dict(status="observed_actual_CUDA_device", gpu_uuids=[GPU])
         engine._gpu_identity = identity
         with patch("src.infrastructure.gpu_allocation.current_cuda_gpu_identity", side_effect=AssertionError("API process must not probe CUDA")) as observe:
