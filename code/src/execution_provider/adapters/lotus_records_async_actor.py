@@ -20,7 +20,8 @@ from src.serving.backends.vllm_engine import (
 )
 
 from .lotus_records_actor_owner import _deadline, _runtime_env
-from .lotus_records_core import _ActorOwner, _capacity_failure, _check_result_capacity, _encode, _measure
+from .lotus_records_core import (CoreRecordsCapacity, resolve_records_async_limits,
+    _ActorOwner, _capacity_failure, _check_result_capacity, _encode, _measure)
 
 
 def _request_key(value):
@@ -685,17 +686,26 @@ class AsyncRecordsActorOwner(_ActorOwner):
     # independent control (snapshot, abort or ACK) must be able to coexist.
     control_rpc_reserve = 2
 
-    def __init__(self, method, engine, generation, resources, *, limits=None, _prepared_only=False):
+    def __init__(self, method, engine, generation, resources, *, limits=None, _prepared_only=False, capacity=None):
         super().__init__(method, engine, generation, resources, _prepared_only=_prepared_only)
         if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
             raise ValueError("Async Core requires prepare_batch_rows=model_batch_rows=1")
         maximum = resources.max_active_batches
+        if capacity is not None and type(capacity) is not CoreRecordsCapacity:
+            raise TypeError('capacity must be CoreRecordsCapacity')
+        if capacity is not None and capacity.budget is not None and limits is None:
+            raise ValueError('explicit resource budgets require explicit finite IPC limits')
+        if capacity is not None and capacity.budget is not None and maximum != capacity.budget.active_requests:
+            raise ValueError('actor resources must match the declared hard request budget')
         self.limits = AsyncEngineLimits(max_inflight=maximum, result_slots=maximum,
             command_slots=maximum, input_bytes=maximum * 2 * 1024**2,
             result_bytes=maximum * 2 * 1024**2, control_slots=max(16, maximum * 2)) if limits is None else limits
-        if type(self.limits) is not AsyncEngineLimits or self.limits.max_inflight != maximum:
+        independent = capacity is not None and capacity.budget is not None
+        if independent:
+            resolve_records_async_limits(resources, capacity, self.limits)
+        elif type(self.limits) is not AsyncEngineLimits or self.limits.max_inflight != maximum:
             raise ValueError("Async actor input capacity must match the Core request limit")
-        if self.limits.result_slots < maximum:
+        if not independent and self.limits.result_slots < maximum:
             raise ValueError("Async actor needs one reserved result per Core request")
         self.rpc_workers = resources.cpu_workers if resources.model_rpc_workers is None else resources.model_rpc_workers
         self._rpc_loop = self._rpc_wake = None
@@ -704,13 +714,13 @@ class AsyncRecordsActorOwner(_ActorOwner):
         self._rpc_state_lock = threading.Condition()
 
     @classmethod
-    def for_prepared(cls, engine, generation, resources, *, limits=None):
+    def for_prepared(cls, engine, generation, resources, *, limits=None, capacity=None):
         """Own one model for caller-prepared calls, without a Filter formatter.
 
         The caller owns method/source validation and supplies generation options
         through submit_prepared_core. No preparation actor is allocated here.
         """
-        return cls(None, engine, generation, resources, limits=limits, _prepared_only=True)
+        return cls(None, engine, generation, resources, limits=limits, _prepared_only=True, capacity=capacity)
 
     def _model_actor_type(self):
         return AsyncCoreModelActor

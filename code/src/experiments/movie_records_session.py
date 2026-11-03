@@ -65,9 +65,9 @@ def check_plan(plan):
     if plan["backend"] == "semloom-core":
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
         from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
-        core_profile = resolve_core_profile(engine, resources, plan["profile"],
-            rolling_refill=plan.get('rolling_refill', False))
         capacity = _core_capacity(plan)
+        core_profile = resolve_core_profile(engine, resources, plan["profile"],
+            rolling_refill=plan.get('rolling_refill', False), capacity=capacity)
         async_limits = _async_limits(plan, resources=resources, resolved=core_profile)
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
         if batching is not None and (plan.get('admission_cache') is not None
@@ -216,7 +216,7 @@ class _MovieDriver:
                 from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
                 from src.experiments.lotus_records_movie import _record_batching_options, _core_capacity, _async_limits
                 self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
-                    rolling_refill=self.plan.get('rolling_refill', False))
+                    rolling_refill=self.plan.get('rolling_refill', False), capacity=_core_capacity(self.plan))
                 options = _record_batching_options(self.plan)
                 if options.get('rolling_refill') and self.plan['lifecycle'] == 'resident':
                     options['resident'] = True

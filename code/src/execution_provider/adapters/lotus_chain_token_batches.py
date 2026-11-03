@@ -21,7 +21,7 @@ class PreparedTokenOrganizer:
         self.selected = self.peak_batches = self.peak_requests = 0
         self.selected_seal_reason_counts = dict(token_budget=0, request_capacity=0,
             frame_bytes=0, compatibility=0, ready_frontier_exhausted=0)
-        self.request_window = owner.resources.max_active_batches
+        self.request_window = getattr(owner, 'request_window', owner.resources.max_active_batches)
         self.history = []
 
     def usage(self):

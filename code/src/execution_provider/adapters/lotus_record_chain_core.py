@@ -622,7 +622,7 @@ class _RecordLocalRows:
         return record
 
     def _begin_phase(self):
-        from src.semantic_methods.budget import MethodBudgetPool, MethodCapacity, row_reservation
+        from src.semantic_methods.budget import MethodBudgetPool
         from src.semantic_methods.driver import MethodDriver
         from src.semantic_methods.lotus.record_continuation import PreparedCallProgram
         from .lotus_record_chain_fifo import LotusChainFIFO
@@ -671,8 +671,7 @@ class _RecordLocalRows:
         if self.owner._supply_feedback is not None:
             self.owner._supply_feedback.bind(self)
         limits = self.owner.method_limits
-        capacity = MethodCapacity(self.owner.resources.max_active_batches,
-                                  self.owner.resources.max_active_batches * row_reservation(limits))
+        capacity = self.owner.capacity.method_capacity(self.owner.resources, limits)
         self.pool = MethodBudgetPool(capacity)
         budget = self.pool.allocate(capacity)
         self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget,
@@ -743,7 +742,7 @@ class _RecordLocalRows:
             self._begin_phase()
             return
         if self.owner._async_token_batches:
-            while not self._phase_eof and self.driver.active_rows < self.owner.resources.max_active_batches:
+            while not self._phase_eof and self.driver.active_rows < self.pool.capacity.runs:
                 if not self._fill():
                     break  # Bytes or a held result can bind before the row grant.
         else:
@@ -842,7 +841,7 @@ class SemLoomRecordChainCore:
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
                  batch_feedback=None, rolling_refill=False, request_feedback=None, resident=False,
-                 experimental_skip_token_packing=False):
+                 experimental_skip_token_packing=False, request_window=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -920,6 +919,10 @@ class SemLoomRecordChainCore:
                     or request_feedback.poll_interval_s > request_feedback.window_s):
                 raise ValueError('request feedback requires rolling token batches and native ready clocks')
         self.request_feedback = request_feedback
+        self.request_window = resources.max_active_batches if request_window is None else request_window
+        if (type(self.request_window) is not int or not 1 <= self.request_window <= resources.max_active_batches
+                or request_window is not None and not rolling_refill):
+            raise ValueError('request_window must be a positive rolling window within the hard request capacity')
         if type(resident) is not bool or resident and not (self._async_token_batches and rolling_refill):
             raise ValueError('resident token owner requires record-local rolling refill')
         self.resident = resident
@@ -977,6 +980,13 @@ class SemLoomRecordChainCore:
             self.capacity = CoreRecordsCapacity() if capacity is None else capacity
             if type(self.capacity) is not CoreRecordsCapacity:
                 raise TypeError("record-local sections capacity must be CoreRecordsCapacity")
+            if self.capacity.budget is not None:
+                if not self._async_token_batches or not rolling_refill or progression != 'record':
+                    raise ValueError('independent resource budgets require rolling record token execution')
+                if resources.max_active_batches != self.capacity.budget.active_requests:
+                    raise ValueError('owner resources must match the declared hard request budget')
+                if request_window is None and request_feedback is None:
+                    raise ValueError('independent rolling resources require an explicit request_window')
             if method_limits is not None and type(method_limits) is not MethodLimits:
                 raise TypeError("record-local method limits must be MethodLimits")
             if actor_owner is not None and (not isinstance(actor_owner, AsyncRecordsActorOwner)
@@ -1373,7 +1383,6 @@ class SemLoomRecordChainCore:
         return self.last_close_report
 
     def _evaluate_record_local(self, records, chain, expected, query_id, cancelled, columns):
-        from src.semantic_methods.continuation import MethodLimits
         from .lotus_records_async_actor import AsyncRecordsActorOwner
 
         if self._closing or self._active is not None and not (
@@ -1411,10 +1420,10 @@ class SemLoomRecordChainCore:
         SessionSpec(query_id, "chain-section-0", "lotus-record-prepared-v1",
             task_profiles=tuple(TaskProfile(stage.stage_id, "prepared-chain") for stage in chain.stages))
         if self.method_limits is None:
-            size = self.capacity.item_input_bytes + len(chain.stages) * self.capacity.item_result_bytes
-            self.method_limits = MethodLimits(self.capacity.item_input_bytes, 2 * size, size, len(chain.stages))
+            self.method_limits = self.capacity.method_limits(len(chain.stages))
         if self.method_limits.stages < len(chain.stages):
             raise ValueError("method stage reservation must cover the complete finite plan")
+        self.capacity.method_capacity(self.resources, self.method_limits)
         if self._active is not None:
             self._active = None
             self._contexts.clear()
@@ -1430,7 +1439,8 @@ class SemLoomRecordChainCore:
         _check(self.deadline, cancelled)
         if self._actors is None:
             self._actors = AsyncRecordsActorOwner.for_prepared(
-                self.engine, chain.stages[0].generation, self.resources)
+                self.engine, chain.stages[0].generation, self.resources,
+                **({} if self.capacity.budget is None else dict(capacity=self.capacity)))
         elif self._actors.generation != chain.stages[0].generation:
             raise ValueError("prepared owner's default generation differs from the initial stage")
         self._actors.close_deadline = None
@@ -1586,6 +1596,8 @@ class SemLoomRecordChainCore:
             model_retained=retain_model and status == 'closed', model_owner_query_count=self._query_count,
             whole_query_rss_bounded=False,
             driver_retention="finite expected relation, current full relation, parsed call and raw receipt audit",
+            **({} if self.capacity.budget is None else dict(resource_budget=asdict(self.capacity.budget),
+                resource_budget_source='explicit logical deployment declaration; excludes Python/Ray RSS overhead')),
             prepare_actor_count=0, prepare_worker_pool_used=False,
             progression=dict(policy=self.progression, batch_rows=self.progression_batch_rows,
                 scope="successor submission over the same single-row async model path"),

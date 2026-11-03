@@ -58,12 +58,15 @@ def _records_capacity_policy(plan):
     resources = RecordsResources(**plan["resources"])
     engine = EngineSpec.from_dict(plan["engine"])
     resolved = resolve_core_profile(engine, resources, plan["profile"],
-        rolling_refill=plan.get("rolling_refill", False))
+        rolling_refill=plan.get("rolling_refill", False), capacity=capacity)
     owner = resolved.get("owner_max_inflight", resolved["max_inflight"])
     overrides = plan.get("async_limits", {})
     actual = asdict(resolve_records_async_limits(
         replace(resources, max_active_batches=owner), capacity, overrides))
     actual["feedback_interval_s"] = float(actual["feedback_interval_s"])
+    if capacity.budget is not None:
+        return dict(core=dict(asdict(capacity), poll_interval_s=float(capacity.poll_interval_s)),
+                    IPC_overrides=actual)
     upper = min(resources.max_active_batches, engine.max_num_seqs) \
         if engine.max_num_seqs is not None else resources.max_active_batches
     bounds = (owner, owner) if "admission" in resolved else (1, upper)
@@ -128,6 +131,8 @@ def build_core_identity(plan, checked, *, hardware, model, software):
     capacity = _records_capacity_policy(plan)
     if capacity is not None:
         identity["execution"]["records_capacity_policy_v1"] = capacity
+        if capacity['core'].get('budget') is not None:
+            identity['execution']['resources']['max_active_batches'] = capacity['core']['budget']['active_requests']
     core_identity_signature(identity)
     return identity
 
@@ -152,7 +157,8 @@ def _candidate_key(candidate, identity):
         from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity, resolve_records_async_limits
         from src.semantic_methods.lotus.records import RecordsResources
 
-        owner = execution["resources"]["max_active_batches"] if execution["profile"].get("admission") else maximum
+        owner = (policy['core']['budget']['active_requests'] if policy['core'].get('budget') is not None
+                 else execution["resources"]["max_active_batches"] if execution["profile"].get("admission") else maximum)
         resources = RecordsResources(**dict(execution["resources"], cpu_workers=workers, max_active_batches=owner))
         resolve_records_async_limits(resources, CoreRecordsCapacity(**policy["core"]), policy["IPC_overrides"])
     return maximum, workers

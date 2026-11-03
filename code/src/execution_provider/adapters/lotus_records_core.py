@@ -53,7 +53,7 @@ def expand_core_profile(profile):
     return dict(mode="async", max_inflight=8, stage_timing=True, admission=admission)
 
 
-def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=False):
+def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=False, capacity=None):
     """Resolve an explicit execution profile, without probing or allocating hardware.
 
     Auto is a bound on caller-declared capacity, not a throughput tuner. Device
@@ -64,6 +64,12 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
         raise ValueError("Core profile accepts mode, max_inflight, stage_timing and optional admission only")
     mode = profile.get("mode", "sync")
     request_feedback = rolling_refill and profile.get('admission') is not None
+    budget = None if capacity is None else capacity.budget
+    legacy_request_budget = resources.max_active_batches
+    if budget is not None:
+        if mode != 'async' or 'max_inflight' not in profile and not request_feedback:
+            raise ValueError('explicit resource budgets require async execution and an explicit C or rolling admission')
+        resources = replace(resources, max_active_batches=budget.active_requests)
     requested = profile.get("max_inflight", 1 if request_feedback else resources.max_active_batches)
     timing = profile.get("stage_timing", False)
     if mode not in ("sync", "async") or type(timing) is not bool:
@@ -107,6 +113,10 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
                 raise ValueError('ascending request search requires rolling_refill')
         result.update(owner_max_inflight=resources.max_active_batches,
             initial_window=maximum, admission=dict(kind="resource_feedback", gpu_ids=list(gpu_ids), **asdict(config)))
+    if budget is not None:
+        result.update(owner_max_inflight=budget.active_requests,
+            declared_legacy_request_budget=legacy_request_budget,
+            resource_budget=asdict(budget), resource_budget_source='explicit deployment declaration; logical bounds, not measured RSS')
     return result
 
 
@@ -129,6 +139,8 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
         raise ValueError('record batching requires token_budget with max_rows=None')
     if resolved['mode'] != 'async' or ('admission' in resolved and not rolling_refill) or resolved['stage_timing']:
         raise ValueError('record batching requires async execution; admission requires rolling_refill, stage_timing is unsupported')
+    if 'resource_budget' in resolved and not rolling_refill:
+        raise ValueError('explicit resource budgets currently support ordinary requests or rolling token requests')
     if experimental_skip_token_packing and 'admission' in resolved:
         raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
     requests = resolved.get('owner_max_inflight', resolved['max_inflight'])
@@ -154,9 +166,12 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
     return dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
         request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,
         row_cap=None, W=None, batch_unit='application transport batch with unsettled compute members',
-        request_unit=('single complete model request; soft C_request, independent resident R'
+        request_unit=('single complete model request; C gates new admission; explicit independent storage budgets'
+                      if 'resource_budget' in resolved else
+                      'single complete model request; soft C_request, independent resident R'
                       if 'request_feedback' in feedback else
                       'single complete model request; also the inherited resident-row limit'), **feedback,
+        **({} if 'resource_budget' not in resolved else dict(resource_budget=resolved['resource_budget'])),
         **(dict(experimental_skip_token_packing=True) if experimental_skip_token_packing else {}))
 
 
@@ -164,18 +179,20 @@ def create_records_core(method, engine, generation, resources, *, profile=None, 
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
                         resident=False, experimental_skip_token_packing=False, capacity=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
-    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill)
-    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill,
-                                      experimental_skip_token_packing)
-    effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     capacity = CoreRecordsCapacity() if capacity is None else capacity
     if type(capacity) is not CoreRecordsCapacity:
         raise TypeError("Core records capacity must be CoreRecordsCapacity")
+    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill, capacity=capacity)
+    batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill,
+                                      experimental_skip_token_packing)
+    effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if resolved["mode"] == "async":
         async_limits = resolve_records_async_limits(effective, capacity, async_limits)
     elif async_limits is not None:
         raise ValueError("async_limits requires async Core execution")
     if batching is not None:
+        if capacity.budget is not None:
+            capacity.method_capacity(effective, capacity.method_limits(1))
         from .lotus_records_batches import PreparedRecordsCore
         return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits,
                                    resident=resident, capacity=capacity)
@@ -185,6 +202,7 @@ def create_records_core(method, engine, generation, resources, *, profile=None, 
         from .lotus_records_async_actor import AsyncRecordsActorOwner
         actors = options["actor_owner"] = AsyncRecordsActorOwner(
             method, engine, generation, effective, limits=async_limits,
+            **({} if capacity.budget is None else dict(capacity=capacity)),
         )
     if "admission" in resolved:
         options["admission"] = resolved["admission"]
@@ -251,6 +269,22 @@ async def _await_result(value):
 
 
 @dataclass(frozen=True)
+class RecordsCapacityBudget:
+    """Explicit finite logical grants from deployment, never inferred free memory."""
+    held_tasks: int
+    input_bytes: int
+    result_bytes: int
+    active_requests: int
+    method_runs: int
+    method_bytes: int
+
+    def __post_init__(self):
+        for name, value in vars(self).items():
+            if type(value) is not int or value <= 0:
+                raise ValueError('resource budget '+name+' must be a positive integer')
+
+
+@dataclass(frozen=True)
 class CoreRecordsCapacity:
     """Per-row logical storage, bounded actions, and poll interval; not RSS caps."""
 
@@ -259,6 +293,7 @@ class CoreRecordsCapacity:
     metadata_bytes: int = 2048
     step_actions: int = 16
     poll_interval_s: float = 0.01
+    budget: RecordsCapacityBudget | None = None
 
     def __post_init__(self):
         for name in ("item_input_bytes", "item_result_bytes", "metadata_bytes", "step_actions"):
@@ -268,18 +303,43 @@ class CoreRecordsCapacity:
         if (type(self.poll_interval_s) not in (int, float)
                 or not math.isfinite(self.poll_interval_s) or self.poll_interval_s <= 0):
             raise ValueError("poll_interval_s must be finite and positive")
+        if type(self.budget) is dict:
+            object.__setattr__(self, 'budget', RecordsCapacityBudget(**self.budget))
+        if self.budget is not None:
+            if type(self.budget) is not RecordsCapacityBudget:
+                raise ValueError('budget must be a complete RecordsCapacityBudget or object')
+            if (self.budget.input_bytes < self.item_input_bytes
+                    or self.budget.result_bytes < self.item_result_bytes):
+                raise ValueError('resource byte budgets must fit their declared Core item')
 
     def limits(self, resources):
         maximum = resources.max_active_batches
+        budget = self.budget
         return SessionLimits(
-            held_tasks=maximum, input_bytes=maximum * self.item_input_bytes,
-            result_bytes=maximum * self.item_result_bytes,
-            active_requests=maximum, active_work=maximum, offer_tasks=1,
+            held_tasks=maximum if budget is None else budget.held_tasks,
+            input_bytes=maximum * self.item_input_bytes if budget is None else budget.input_bytes,
+            result_bytes=maximum * self.item_result_bytes if budget is None else budget.result_bytes,
+            active_requests=maximum if budget is None else budget.active_requests,
+            active_work=maximum if budget is None else budget.active_requests, offer_tasks=1,
             item_input_bytes=self.item_input_bytes, item_result_bytes=self.item_result_bytes,
             metadata_bytes=self.metadata_bytes, step_actions=self.step_actions,
             wait_timeout_s=resources.query_timeout_s, poll_interval_s=self.poll_interval_s,
             timeouts=SessionTimeouts(),
         )
+
+    def method_capacity(self, resources, limits):
+        from src.semantic_methods.budget import MethodCapacity, row_reservation
+        budget = self.budget
+        result = (MethodCapacity(resources.max_active_batches, resources.max_active_batches * row_reservation(limits))
+                  if budget is None else MethodCapacity(budget.method_runs, budget.method_bytes))
+        if result.bytes < row_reservation(limits):
+            raise ValueError('method byte budget cannot hold one complete continuation envelope')
+        return result
+
+    def method_limits(self, stage_count):
+        from src.semantic_methods.continuation import MethodLimits
+        size = self.item_input_bytes + stage_count * self.item_result_bytes
+        return MethodLimits(self.item_input_bytes, 2 * size, size, stage_count)
 
 
 def resolve_records_async_limits(resources, capacity, overrides=None):
@@ -299,6 +359,9 @@ def resolve_records_async_limits(resources, capacity, overrides=None):
     else:
         if overrides is not None and type(overrides) is not dict:
             raise TypeError("async_limits must be AsyncEngineLimits or an object")
+        if capacity.budget is not None and not {'max_inflight', 'result_slots', 'command_slots',
+                'control_slots', 'input_bytes', 'result_bytes'} <= set(overrides or {}):
+            raise ValueError('explicit resource budgets require explicit finite IPC counts and byte totals')
         maximum = resources.max_active_batches
         values = dict(max_inflight=maximum, result_slots=maximum, command_slots=maximum,
             item_input_bytes=capacity.item_input_bytes, item_result_bytes=capacity.item_result_bytes,
@@ -309,9 +372,9 @@ def resolve_records_async_limits(resources, capacity, overrides=None):
         values.setdefault("input_bytes", maximum * values["item_input_bytes"])
         values.setdefault("result_bytes", values["result_slots"] * values["item_result_bytes"])
         limits = AsyncEngineLimits(**values)
-    if limits.max_inflight != resources.max_active_batches:
+    if capacity.budget is None and limits.max_inflight != resources.max_active_batches:
         raise ValueError("async_limits must match the Core owner request limit")
-    if limits.result_slots < limits.max_inflight:
+    if capacity.budget is None and limits.result_slots < limits.max_inflight:
         raise ValueError("async_limits need one result slot per Core request")
     return limits
 
@@ -861,6 +924,8 @@ class SemLoomRecordsCore:
         self.capacity = CoreRecordsCapacity() if capacity is None else capacity
         if type(self.capacity) is not CoreRecordsCapacity:
             raise TypeError("Core records capacity must be CoreRecordsCapacity")
+        if self.capacity.budget is not None and self.resources.max_active_batches != self.capacity.budget.active_requests:
+            raise ValueError('owner resources must match the declared hard request budget')
         if actor_owner is not None:
             if not isinstance(actor_owner, RecordsActorOwner):
                 raise TypeError("actor_owner must be RecordsActorOwner")
@@ -1005,11 +1070,14 @@ class SemLoomRecordsCore:
                 endpoint = EndpointSnapshot("local-model", "local://model", "local", "0",
                                             True, 0, 0, None, time.monotonic())
                 policies = SessionPolicies(self._feedback.gate if self._feedback is not None
-                                           else StaticAdmissionController(limits.active_requests),
+                                           else StaticAdmissionController(query_profile['max_inflight']),
                                            RoundRobinEndpointRouter(),
                                            TopologySnapshot((endpoint,), time.monotonic()), "local")
                 self.transport = _RecordTransport(self._actors, limits.held_tasks, lambda: self.core.wake.notify())
                 self.core = SessionEngine(limits, self.transport.backend, policies)
+            if self.capacity.budget is not None and self._feedback is None:
+                self.core.policies = replace(self.core.policies,
+                    admission=StaticAdmissionController(query_profile['max_inflight']))
             self.transport.deadline = deadline
             self.transport.timings = _StageTimings() if self.stage_timing else None
             self._active = _CoreRows(self, frame.iter_rows(results_buffer_size=1), expected,
