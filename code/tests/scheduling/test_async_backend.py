@@ -37,6 +37,33 @@ class AsyncBackendTests(unittest.TestCase):
                 self.fail("asynchronous fixture did not progress")
             time.sleep(0.001)
 
+    def test_zero_timeout_keeps_pending_work_and_recognizes_an_already_stopped_transport(self):
+        entered, gates = threading.Event(), []
+        async def execute(request, endpoint):
+            gate = asyncio.Event()
+            gates.append(gate)
+            entered.set()
+            await gate.wait()
+            return b"ok"
+        backend = BoundedAsyncBackend(execute, max_tasks=1, notify=lambda: None)
+        backend.try_submit(task(0), "local")
+        try:
+            self.assertTrue(entered.wait(2))
+            future = backend._slots[task(0).key].future
+            self.assertFalse(backend.close(0, wait_pending=True))
+            self.assertFalse(future.done())
+            self.assertEqual(len(backend._slots), 1)
+            backend._loop.call_soon_threadsafe(gates[0].set)
+            self.assertEqual(future.result(2), b"ok")
+            self.assertTrue(backend.close(2, wait_pending=True))
+            self.assertTrue(backend.close(0, wait_pending=True))
+            with self.assertRaises(ValueError):
+                backend.close(-1, wait_pending=True)
+        finally:
+            if gates and backend._thread.is_alive():
+                backend._loop.call_soon_threadsafe(gates[0].set)
+            backend.close(2, wait_pending=True)
+
     def test_slots_and_reverse_completion(self):
         entered = threading.Event()
         gates = {}

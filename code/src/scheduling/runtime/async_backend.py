@@ -259,8 +259,9 @@ class BoundedAsyncBackend:
         return count
 
     def close(self, timeout: float = 5.0, *, wait_pending=False) -> bool:
-        if timeout <= 0:
-            raise ValueError("close timeout must be positive")
+        """Stop settled local I/O; zero permits only a nonblocking close check."""
+        if timeout < 0:
+            raise ValueError("close timeout must be nonnegative")
         until = time.monotonic()+timeout if wait_pending else None
         if wait_pending:
             with self._lock:

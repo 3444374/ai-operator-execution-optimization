@@ -1,11 +1,13 @@
 # 原生基线与具名 Core 历史复现
 
-
 上下文解析候选另保存准确`826ab3a1`的`experiments/lotus_records_chain.py`、
 `experiments/lotus_records_cascade.py`与CPU异步引擎fixture三份旧源，五个variant仅追加15条来源映射。
 原逐文件摘要、投影标识、来源版本和已有映射保持；完整3010条绑定仍有原10处差异，本次新增0。
 候选源码和CPU检查见[主记录](../../results/diagnostics/records_config_refactor_20261103/README.md)，
 保存文件只供历史还原，维护路径不导入它们。
+
+取消收尾修订为五份历史投影共用的 `test_async_backend.py` 保留准确 `5ff54bfe` 原件，只追加五条来源映射。
+维护测试覆盖剩余 deadline 与零等待，历史测试、逐文件摘要及投影身份保持原状；不改历史结果或关闭既有失配。
 
 异步默认序列参数修正为共享的`vllm_engine.py`和`experiments/calibration/core.py`保留准确
 `5ff54bfe`原件，五份投影只追加十条override；原逐文件SHA、投影ID、来源及旧显式配置不变。
