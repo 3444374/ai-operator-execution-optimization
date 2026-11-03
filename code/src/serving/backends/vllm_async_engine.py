@@ -101,13 +101,14 @@ class VllmAsyncEngine:
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
             dtype=self.spec.dtype, max_model_len=self.spec.max_model_len,
-            max_num_seqs=self.spec.max_num_seqs,
             max_num_batched_tokens=self.spec.max_num_batched_tokens,
             gpu_memory_utilization=self.spec.gpu_memory_utilization, seed=self.spec.seed,
             tensor_parallel_size=1, pipeline_parallel_size=1,
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
+            **({"max_num_seqs": self.spec.max_num_seqs}
+               if self.spec.max_num_seqs is not None else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
         ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
               if self._feedback is not None else {}))

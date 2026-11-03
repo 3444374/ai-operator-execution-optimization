@@ -149,7 +149,7 @@ class EngineSpec:
     tokenizer_path: str | None = None
     dtype: str = "bfloat16"
     max_model_len: int = 4096
-    max_num_seqs: int = 8
+    max_num_seqs: int | None = None
     max_num_batched_tokens: int = 4096
     gpu_memory_utilization: float = 0.8
     seed: int = 0
@@ -166,8 +166,10 @@ class EngineSpec:
             _string(self.tokenizer_path, "tokenizer_path")
         if self.dtype not in {"auto", "half", "float16", "bfloat16", "float", "float32"}:
             raise ValueError("unsupported dtype")
-        for name in ("max_model_len", "max_num_seqs", "max_num_batched_tokens"):
+        for name in ("max_model_len", "max_num_batched_tokens"):
             _integer(getattr(self, name), name, minimum=1)
+        if self.max_num_seqs is not None:
+            _integer(self.max_num_seqs, "max_num_seqs", minimum=1)
         _integer(self.seed, "seed")
         _number(self.gpu_memory_utilization, "gpu_memory_utilization", low=0.0,
                 high=1.0, inclusive_low=False)
@@ -181,6 +183,11 @@ class EngineSpec:
         if not isinstance(value, dict):
             raise TypeError("engine must be an object")
         return cls(**value)
+
+    @property
+    def legacy_max_num_seqs(self) -> int:
+        """Retain the existing sync/native reference default outside async Core."""
+        return 8 if self.max_num_seqs is None else self.max_num_seqs
 
     def validate_local(self) -> dict:
         """Read local artifacts and probe environments without loading either ML stack."""
@@ -429,7 +436,7 @@ class VllmEngine:
         self._llm = vllm.LLM(
             model=engine.model_path, tokenizer=engine.tokenizer_path or engine.model_path,
             dtype=engine.dtype, max_model_len=engine.max_model_len,
-            max_num_seqs=engine.max_num_seqs,
+            max_num_seqs=engine.legacy_max_num_seqs,
             max_num_batched_tokens=engine.max_num_batched_tokens,
             gpu_memory_utilization=engine.gpu_memory_utilization, seed=engine.seed,
             chat_template=engine.chat_template, tensor_parallel_size=1,

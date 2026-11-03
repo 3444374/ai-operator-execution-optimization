@@ -18,7 +18,9 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
 records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
 显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
-`max_num_seqs` 保持原引擎配置，普通同步默认不变。CPU 检查覆盖高于引擎每轮
+`max_num_seqs` 的显式值保留；本地默认修正候选在未指定／null时让SemLoom异步 Core
+省略参数，交vLLM 0.25.1自行解析；有限同步引擎和LOTUS原生HTTP参照默认8保持，Kalypso不改。尚无真实模型资格；
+这不是自动性能调优，不改token/context/memory或外层额度，历史显式设置及原回执保留。CPU 检查覆盖高于引擎每轮
 序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
 完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
 生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。

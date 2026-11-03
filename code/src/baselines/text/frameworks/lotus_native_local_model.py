@@ -70,7 +70,7 @@ class LocalService:
             "--host", "127.0.0.1", "--port", str(self.port),
             "--model", e.model_path, "--tokenizer", e.tokenizer_path or e.model_path,
             "--served-model-name", self.model, "--dtype", e.dtype,
-            "--max-model-len", str(e.max_model_len), "--max-num-seqs", str(e.max_num_seqs),
+            "--max-model-len", str(e.max_model_len), "--max-num-seqs", str(e.legacy_max_num_seqs),
             "--max-num-batched-tokens", str(e.max_num_batched_tokens),
             "--gpu-memory-utilization", str(e.gpu_memory_utilization), "--seed", str(e.seed),
             "--tensor-parallel-size", "1", "--pipeline-parallel-size", "1",

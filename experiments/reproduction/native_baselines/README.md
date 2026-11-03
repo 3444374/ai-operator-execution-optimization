@@ -1,5 +1,9 @@
 # 原生基线与具名 Core 历史复现
 
+异步默认序列参数修正为共享的`vllm_engine.py`和`experiments/calibration/core.py`保留准确
+`5ff54bfe`原件，五份投影只追加十条override；原逐文件SHA、投影ID、来源及旧显式配置不变。
+这些副本只供历史还原，维护版异步路径不导入它们；未指定参数交vLLM解析不追认为旧实验设置。
+
 未接入维护执行入口的 `scheduling/runtime/saor_pipeline.py` 与纯 CPU 微基准
 `experiments/saor/control_benchmark.py` 已退出 `code/`，其实现、专属测试及原 runtime 包导出
 按准确 `54ff2324` 字节保存在 `historical_sources/54ff2324/`。

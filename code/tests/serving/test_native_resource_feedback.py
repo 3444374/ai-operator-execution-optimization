@@ -209,20 +209,30 @@ class NativeFeedbackTests(unittest.TestCase):
                 vllm_config=SimpleNamespace(scheduler_config=SimpleNamespace(max_num_seqs=7,max_num_batched_tokens=999),
                     model_config=SimpleNamespace(max_model_len=2048),cache_config=SimpleNamespace(block_size=16,num_gpu_blocks=None)))
         modules['vllm.v1.engine.async_llm'].AsyncLLM=SimpleNamespace(from_engine_args=create)
-        async def construct(enabled):
-            return kernel.VllmAsyncEngine(EngineSpec('/tmp/CPU','/tmp/model','/tmp/driver'),GenerationSpec(),
+        async def construct(enabled, **options):
+            return kernel.VllmAsyncEngine(EngineSpec('/tmp/CPU','/tmp/model','/tmp/driver',**options),GenerationSpec(),
                 limits=AsyncEngineLimits(feedback_interval_s=.1 if enabled else 0))
         with patch.dict(sys.modules,modules),patch.object(EngineSpec,'validate_local',return_value={}), \
                 patch.object(kernel.common,'_validate_current_runtime'), \
                 patch.object(kernel.importlib.metadata,'version',return_value='0.25.1'), \
                 patch.object(kernel.VllmAsyncEngine,'_sampling',return_value=None):
             plain=asyncio.run(construct(False));feedback=asyncio.run(construct(True))
+            explicit=asyncio.run(construct(False,max_num_seqs=128))
+            null=asyncio.run(construct(False,max_num_seqs=None))
+            single=asyncio.run(construct(False,max_num_seqs=1))
         self.assertNotIn('stat_loggers',calls[0][1]);self.assertTrue(calls[1][0].disable_log_stats)
         logger=calls[1][1]['stat_loggers'][0](None,0)
         self.assertIs(logger,feedback._feedback)
         self.assertIsNone(plain.feedback_snapshot())
         self.assertEqual(calls[0][0].model,calls[1][0].model)
-        self.assertEqual(calls[0][0].max_num_seqs,calls[1][0].max_num_seqs)
+        self.assertNotIn('max_num_seqs',vars(calls[0][0]))
+        self.assertNotIn('max_num_seqs',vars(calls[1][0]))
+        self.assertEqual(calls[2][0].max_num_seqs,128)
+        self.assertNotIn('max_num_seqs',vars(calls[3][0]))
+        self.assertEqual(calls[4][0].max_num_seqs,1)
+        self.assertIsNone(null.spec.max_num_seqs)
+        self.assertEqual(single.spec.max_num_seqs,1)
         self.assertNotIn('native_capacity',plain.ready())
         self.assertEqual(feedback.ready()['native_capacity']['max_num_seqs'],7)
-        self.assertNotEqual(feedback.ready()['native_capacity']['max_num_seqs'],calls[1][0].max_num_seqs)
+        self.assertIsNone(feedback.spec.max_num_seqs)
+        self.assertEqual(explicit.spec.max_num_seqs,128)

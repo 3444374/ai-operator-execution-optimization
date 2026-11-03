@@ -425,7 +425,7 @@ class QueryOwnerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.owner(base, C=0)
             larger = self.owner(base, C=9)
-            self.assertEqual(larger.engine.max_num_seqs, 8)
+            self.assertIsNone(larger.engine.max_num_seqs)
             self.assertEqual(larger._actors.limits.max_inflight, 9)
             self.assertEqual(runtime.async_actors, [])
             larger.close()

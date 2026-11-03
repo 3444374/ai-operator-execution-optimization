@@ -226,7 +226,7 @@ Native/Ray/Daft/IMLane 的原生生命周期和调度未修改。
 - task / input profile 仍由 MovieTask 和 source manifest 选择。Q1/Q2/Q3 的原提示、普通谓词、
   head5/COUNT 和评价是任务语义；120 是当前输入筛选结果，不是所有 Q2/Q3 的运行常数。
 - Core `profile.mode` / `max_inflight` 和 `resources.cpu_workers` 沿用现有 factory/actor 通路。
-  `max_inflight="auto"` 仅取声明的 Core 容量和 `engine.max_num_seqs` 的较小值，不是硬件自动调优。
+  `max_inflight="auto"` 只取声明的 Core 请求容量，与原生引擎序列配置分开，不是硬件自动调优。
   prepare 仍每 actor 1 CPU；模型 actor 1 CPU / 1 GPU，Core 每次准备/模型调用仍为 1 条。
   当前协议明确只支持 `gpu_workers=1` / TP1，0/2 会拒绝，未添加多卡能力。
 - 新建 campaign 的额度、查询数、launch/cleanup 时间由现有 matrix/scope 一致绑定；每 query 的

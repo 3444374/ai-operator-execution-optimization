@@ -84,7 +84,11 @@ def _candidate_key(candidate, identity):
     maximum = _positive_integer(candidate["max_inflight"], "max_inflight")
     workers = _positive_integer(candidate["cpu_workers"], "cpu_workers")
     execution = identity["execution"]
-    if maximum > min(execution["engine"]["max_num_seqs"], execution["resources"]["max_active_batches"]):
+    capacity = execution["resources"]["max_active_batches"]
+    native_sequences = execution["engine"].get("max_num_seqs")
+    if native_sequences is not None:
+        capacity = min(native_sequences, capacity)
+    if maximum > capacity:
         raise ValueError("candidate exceeds declared Core/model capacity")
     # Match the existing session's Ray allocation: prepare + model + driver.
     if workers + execution["resources"]["gpu_workers"] + 1 > identity["hardware"]["cpu_limit"]:

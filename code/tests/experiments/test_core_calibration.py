@@ -96,6 +96,36 @@ class CoreCalibrationTests(unittest.TestCase):
         self.assertEqual(core.build_core_selection(**scan)["selection"]["max_inflight"], 1)
         self.assertEqual(core.build_core_selection(**scan, near_peak_ratio=0.999)["selection"]["max_inflight"], 3)
 
+    def test_unspecified_native_sequences_keep_Core_capacity_and_isolate_old_identity(self):
+        explicit_signature = core.core_identity_signature(self.identity)
+        for missing in (False, True):
+            with self.subTest(missing=missing):
+                plan = deepcopy(self.plan)
+                if missing:
+                    plan['engine'].pop('max_num_seqs')
+                else:
+                    plan['engine']['max_num_seqs'] = None
+                identity = core.build_core_identity(plan, self.checked,
+                    hardware=self.hardware, model=self.model, software=self.software)
+                self.assertNotEqual(core.core_identity_signature(identity), explicit_signature)
+                chosen = core.core_candidate_plan(plan, self.checked, dict(max_inflight=8, cpu_workers=1), identity=identity)
+                self.assertEqual(chosen['profile']['max_inflight'], 8)
+                self.assertEqual(chosen['resources']['max_active_batches'], 8)
+                self.assertEqual(chosen['engine'], plan['engine'])
+                with self.assertRaisesRegex(ValueError, 'capacity'):
+                    core.core_candidate_plan(plan, self.checked, dict(max_inflight=9, cpu_workers=1), identity=identity)
+                with self.assertRaisesRegex(ValueError, 'CPU'):
+                    core.core_candidate_plan(plan, self.checked, dict(max_inflight=1, cpu_workers=7), identity=identity)
+
+    def test_explicit_native_sequence_capacity_still_bounds_calibration_candidates(self):
+        plan = deepcopy(self.plan); plan['engine']['max_num_seqs'] = 2
+        identity = core.build_core_identity(plan, self.checked,
+            hardware=self.hardware, model=self.model, software=self.software)
+        self.assertEqual(core.core_candidate_plan(plan, self.checked, dict(max_inflight=2, cpu_workers=1),
+            identity=identity)['engine']['max_num_seqs'], 2)
+        with self.assertRaisesRegex(ValueError, 'capacity'):
+            core.core_candidate_plan(plan, self.checked, dict(max_inflight=3, cpu_workers=1), identity=identity)
+
     def test_equal_capacity_prefers_fewer_prepare_workers(self):
         selected = core.build_core_selection(**self.scan({(3, 2): [10] * 3, (3, 1): [10.1] * 3}))
         self.assertEqual((selected["selection"]["max_inflight"], selected["selection"]["cpu_workers"]), (3, 1))
