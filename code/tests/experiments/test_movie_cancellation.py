@@ -13,7 +13,8 @@ from unittest.mock import patch
 
 from src.experiments import movie_cancellation as subject
 from src.experiments import movie_cancellation_probe as probe
-from src.experiments.attempt_ledger import BudgetError
+from src.experiments.attempt_ledger import AttemptBudget, BudgetError
+from src.experiments.cell_budget import CellBudgetLedger
 from src.serving.backends.vllm_engine import EngineSpec
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
 from tests.experiments.movie_token_resident_fixture import MovieTokenResidentFixture, with_actual_cpu_pid
@@ -172,6 +173,121 @@ class CancellationEntryTests(unittest.TestCase):
                     with self.subTest(defect=defect),self.assertRaises(ValueError):
                         subject.verify_cancellation_cell(config,output.parent,dict(counts,unknown_records=0) if defect=='counts' else counts)
                 (output/'session.json').write_text(original)
+
+    def prepaid_context(self, fixture, plan, context):
+        ledger=CellBudgetLedger.create(fixture.root/'budget.sqlite',AttemptBudget('cancel-fixture',4),deadline_utc=None)
+        for query in plan['queries']:ledger.reserve_unit(query['query_id'],2)
+        context['claims']={query['query_id']:ledger.claim_unit(query['query_id']) for query in plan['queries']}
+        return ledger
+
+    def assert_stopped_before_recovery(self, fixture, plan, context, ledger, before, result):
+        self.assertEqual(result['status'],'failed',result)
+        self.assertNotIn('recovery_phase',result)
+        self.assertEqual(sum(e['event']=='construct' for e in fixture.events()),1)
+        records=subject._records(result['cancel_phase'])
+        self.assertEqual([r['status'] for r in records],['unknown','unknown'])
+        self.assertEqual(sum(r['total_tokens'] for r in records),28)
+        self.assertEqual(ledger.snapshot(),before)  # Neither unknowns nor unexecuted recovery refund the claim.
+        with self.assertRaises(BudgetError):context['claims'][plan['queries'][0]['query_id']].bind_execution()
+        context['claims'][plan['queries'][1]['query_id']].bind_execution()
+
+    def test_cancel_receipt_write_failure_stops_before_recovery_without_refunding_unknowns(self):
+        from src.experiments import native_query_lifecycle as lifecycle
+        for receipt, writer in (('session.json','write_private_json'),('query-0.json','publish_private_json')):
+            with self.subTest(receipt=receipt):
+                fixture,plan,context=self.fixture()
+                ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
+                original=getattr(lifecycle,writer)
+                def fail(path,value):
+                    if Path(path).name==receipt and Path(path).parent.name=='cancel':
+                        raise OSError('CPU injected cancel phase receipt write failure')
+                    return original(path,value)
+                with self.cpu_boundaries(fixture),patch.object(lifecycle,writer,fail):
+                    result=subject.run_movie_cancellation(plan,context,fixture.root/'session')
+                self.assert_stopped_before_recovery(fixture,plan,context,ledger,before,result)
+                self.assertFalse((fixture.root/'session/cancel'/receipt).exists())
+                self.assertIn('OSError',' '.join(result['cancel_exception']['notes']))
+
+    def test_secondary_cleanup_interrupt_stops_before_recovery_with_original_failure_evidence(self):
+        fixture,plan,context=self.fixture()
+        ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
+        interrupted=[]
+        def observer(event):
+            if event['event']=='session_owner_closed' and not interrupted:
+                interrupted.append(event['query_id'])
+                raise KeyboardInterrupt('CPU injected interrupt after requested cancellation')
+        with self.cpu_boundaries(fixture):
+            result=subject.run_movie_cancellation(plan,context,fixture.root/'session',observer=observer)
+        self.assert_stopped_before_recovery(fixture,plan,context,ledger,before,result)
+        self.assertEqual(result['cancel_phase']['cleanup_failure']['error_type'],'KeyboardInterrupt')
+        self.assertEqual(result['cancel_exception']['error_type'],'InterruptedError')
+        self.assertIn('KeyboardInterrupt',' '.join(result['cancel_exception']['notes']))
+
+    def test_missing_original_cancel_receipt_stops_even_without_exception_notes(self):
+        from src.experiments import movie_records_session as session
+        for receipt in ('session.json','query-0.json','owner-ready-0.json','owner-0/query-0/query-accounting-final.json'):
+            with self.subTest(receipt=receipt):
+                fixture,plan,context=self.fixture()
+                ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
+                run=session.run_movie_session
+                def missing(value,context,output,**kwargs):
+                    try:return run(value,context,output,**kwargs)
+                    except InterruptedError:
+                        (output/receipt).unlink()
+                        raise
+                with self.cpu_boundaries(fixture),patch.object(session,'run_movie_session',missing):
+                    result=subject.run_movie_cancellation(plan,context,fixture.root/'session')
+                self.assert_stopped_before_recovery(fixture,plan,context,ledger,before,result)
+                self.assertEqual(result['cancel_exception']['notes'],[])
+
+    def test_unexpected_primary_interrupt_is_not_an_expected_cancel_or_recovery(self):
+        from src.experiments import movie_records_session as session
+        fixture,plan,context=self.fixture()
+        ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
+        run=session.run_movie_session
+        def interrupted(*args,**kwargs):
+            try:return run(*args,**kwargs)
+            except InterruptedError as original:
+                error=KeyboardInterrupt('CPU injected unrelated primary interrupt')
+                error.session_report=original.session_report
+                raise error from original
+        output=fixture.root/'session'
+        with self.cpu_boundaries(fixture),patch.object(session,'run_movie_session',interrupted):
+            with self.assertRaises(KeyboardInterrupt):subject.run_movie_cancellation(plan,context,output)
+        result=json.loads((output/'session.json').read_text())
+        self.assert_stopped_before_recovery(fixture,plan,context,ledger,before,result)
+        self.assertEqual(result['cancel_exception']['error_type'],'KeyboardInterrupt')
+
+    def test_guard_requires_original_phase_receipts_and_no_secondary_cancellation_failures(self):
+        fixture,plan,context=self.fixture();output=fixture.root/'session'
+        with self.cpu_boundaries(fixture):result=subject.run_movie_cancellation(plan,context,output)
+        self.assertEqual(result['status'],'completed',result)
+        config=dict(movie_plan=plan,workload=dict(kind='movie_session',qualification=subject.QUALIFICATION),
+                    observation=dict(mode='off',max_events_per_process=1000,max_event_bytes=1000))
+        counts=dict(observed_records=4,missing_claimed=0,failed=0,unknown_records=2,succeeded=2)
+        for phase in ('cancel','recovery'):
+            for receipt in ('session.json','query-0.json','owner-ready-0.json','owner-0/query-0/query-accounting-final.json'):
+                path=output/phase/receipt;hidden=path.with_name(path.name+'.held')
+                path.rename(hidden)
+                try:
+                    with self.subTest(phase=phase,receipt=receipt),self.assertRaises(ValueError):
+                        subject.verify_cancellation_cell(config,output.parent,counts)
+                finally:hidden.rename(path)
+        original=(output/'session.json').read_text()
+        for defect in ('missing_exception','exception_notes','exception_type','exception_module',
+                       'cleanup_failure','query_notes','observer_errors'):
+            bad=deepcopy(result)
+            if defect=='missing_exception':bad.pop('cancel_exception',None)
+            elif defect=='exception_notes':bad.setdefault('cancel_exception',{})['notes']=['session recording also failed: OSError']
+            elif defect=='exception_type':bad['cancel_exception']['type_qualname']='KeyboardInterrupt'
+            elif defect=='exception_module':bad['cancel_exception']['type_module']='unrelated_module'
+            elif defect=='cleanup_failure':bad['cancel_phase']['cleanup_failure']={'error_type':'KeyboardInterrupt'}
+            elif defect=='query_notes':bad['cancel_phase']['queries'][0]['failure']['notes']=['additional failure']
+            else:bad['cancel_phase']['observer_errors']=[{'error_type':'OSError'}]
+            (output/'session.json').write_text(json.dumps(bad))
+            with self.subTest(defect=defect),self.assertRaises(ValueError):
+                subject.verify_cancellation_cell(config,output.parent,counts)
+        (output/'session.json').write_text(original)
 
     def test_fast_natural_completion_is_not_cancellation_and_never_starts_recovery(self):
         fixture,plan,context=self.fixture()

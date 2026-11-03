@@ -182,6 +182,8 @@ Core 已接受、已排队的 cancel intent 或完成后的 no-op 都不算覆�
 `session.json` 的 `cancellation_qualification` 单列覆盖与预期 unknown；新 owner 恢复段仍走原查询和质量评价。
 guard 重读原生证据及两段账目后，才允许这类明确声明的功能格带预期取消 unknown 通过；
 `unknown_records`、`unknown_responsibilities`、保守计费和提交数未知语义保持原值。
+恢复前和 guard 复核均要求原阶段的 session、query、owner-ready 与收尾账目原件齐全；
+只接纳无附加异常注记、收尾或观测失败的内置 `InterruptedError`，不以外层重写收据补齐缺件。
 任何其他失败、未知、缺回执、Core／Method 逻辑额度、数据 RPC 或本地交付责任未清零都停止恢复／后续格。
 API 收尾之外仍须由原 host supervisor 确认进程、GPU、lease 和临时目录责任；逻辑字节清零不表示 RSS 清零。
 功能通过不替代 gold 全对、性能比较或其他故障路径的验收。

@@ -11,7 +11,8 @@ import time
 from unittest.mock import patch
 
 from src.infrastructure.private_artifacts import new_private_directory, write_private_json
-from src.infrastructure.redact import redact_text
+from src.infrastructure.redact import redact_json_values, redact_text
+from src.experiments.native_query_lifecycle import _failure
 
 QUALIFICATION = 'inflight_cancel_then_recover'
 _EXPECTED_UNKNOWN = {'AbortNotConfirmed', 'CancelledError', 'ClosedWithoutConfirmedTerminal'}
@@ -150,6 +151,8 @@ class NativeGate:
 
 
 def _clean_phase(phase):
+    if phase.get('cleanup_failure') or phase.get('observer_errors'):
+        raise ValueError('the phase contains an additional cleanup or observation failure')
     owners = phase.get('owners', [])
     if len(owners) != 1 or owners[0].get('status') != 'closed':
         raise ValueError('the phase owner did not confirm cleanup')
@@ -172,15 +175,56 @@ def _records(phase):
     return ((query.get('backend_report') or {}).get('calls') or {}).get('records', [])
 
 
-def validate_cancel(phase, gate):
+def _exception_evidence(error):
+    # Lifecycle receipts can precede recording/cleanup notes added to the primary
+    # exception. Capture the actual propagated exception after that work finishes.
+    return dict(_failure(error), type_module=type(error).__module__, type_qualname=type(error).__qualname__)
+
+
+def _phase_receipts(directory, phase):
+    """Require original lifecycle publications, not just this wrapper's copies."""
+    def read(name):
+        path = directory/name
+        try:
+            if path.is_symlink():
+                raise ValueError('phase receipt must not be a symlink')
+            return json.loads(path.read_text())
+        except (OSError, ValueError) as error:
+            raise ValueError('original phase receipt is missing or invalid: '+name) from error
+    expected = redact_json_values(phase)
+    if read('session.json') != expected:
+        raise ValueError('original session receipt differs from the retained phase')
+    query = expected['queries'][0]
+    published = read('query-0.json')
+    # The original query receipt precedes owner close. Late call receipts may
+    # update only its backend accounting; require that final publication too.
+    if ({k:v for k,v in published.items() if k != 'backend_report'} !=
+            {k:v for k,v in query.items() if k != 'backend_report'}
+            or read('owner-0/query-0/query-accounting-final.json') != query['backend_report']):
+        raise ValueError('original query/final accounting receipts differ from the phase')
+    ready = read('owner-ready-0.json')
+    owner = expected['owners'][0]
+    if (ready.get('session_id') != expected['session_id'] or ready.get('owner_id') != owner['owner_id']
+            or ready.get('ready') != owner['ready']):
+        raise ValueError('original readiness receipt differs from the phase owner')
+
+
+def validate_cancel(phase, gate, *, raised):
+    if (not isinstance(raised, dict) or raised.get('type_module') != 'builtins'
+            or raised.get('type_qualname') != 'InterruptedError'
+            or raised.get('error_type') != 'InterruptedError' or raised.get('notes') != []):
+        raise ValueError('only an expected cancellation without additional failures permits recovery')
     model = _clean_phase(phase)
     state = gate.state(complete=True)
     aborted_calls = {state['binding'][key] for key in state['aborted']}
     if not gate.triggered or aborted_calls != gate.expected:
         raise ValueError('in-flight native cancellation was not covered; no recovery or retry permitted')
     query = phase['queries'][0]
-    failure = query.get('failure') or {}
-    if phase.get('status') != 'failed' or failure.get('error_type') != 'InterruptedError':
+    failures = (phase.get('failure') or {}, query.get('failure') or {})
+    if (phase.get('status') != 'failed' or query.get('status') != 'failed'
+            or query.get('checkpoint_failure')
+            or any(f.get('error_type') != 'InterruptedError' or f.get('notes') != []
+                   or f.get('error') != raised.get('error') for f in failures)):
         raise ValueError('the original query cancellation did not propagate')
     records = _records(phase)
     if {r['call_id'] for r in records} != gate.expected or len(records) != len(gate.expected):
@@ -252,11 +296,17 @@ def run_movie_cancellation(plan, context, output, *, observer=None):
             try:
                 phase = run_phase(0)
             except BaseException as error:
+                report['cancel_exception'] = _exception_evidence(error)
                 phase = getattr(error, 'session_report', None)
-                if phase is None:
+                if phase is not None:
+                    preserve(0, phase)
+                if type(error) is not InterruptedError or phase is None:
                     raise
-        preserve(0, phase)
-        report['cancellation_qualification'] = validate_cancel(phase, gate)
+        if 'cancel_phase' not in report:
+            preserve(0, phase)
+        qualification = validate_cancel(phase, gate, raised=report.get('cancel_exception'))
+        _phase_receipts(root/'cancel', phase)
+        report['cancellation_qualification'] = qualification
         try:
             recovery = run_phase(1)
         except BaseException as error:
@@ -265,6 +315,7 @@ def run_movie_cancellation(plan, context, output, *, observer=None):
             raise
         preserve(1, recovery)
         _clean_phase(recovery)
+        _phase_receipts(root/'recovery', recovery)
         recovered = _records(recovery)
         if recovery['status'] != 'completed' or len(recovered) != checked['queries'][1]['expected_calls'] or any(r['status'] != 'succeeded' for r in recovered):
             raise ValueError('the fresh recovery owner did not complete every declared call')
@@ -273,9 +324,12 @@ def run_movie_cancellation(plan, context, output, *, observer=None):
         if cancel_uid == recovery_uid:
             raise ValueError('cancelled owner was reused instead of retired')
         report.update(status='completed', recovery_owner_new=True)
-    except Exception as error:
+    except BaseException as error:
         report['error_type'] = type(error).__name__
         report['error'] = redact_text(str(error))
+        report['failure'] = _exception_evidence(error)
+        if not isinstance(error, Exception):
+            raise
     finally:
         write_private_json(root/'session.json', report)
     return report
@@ -297,7 +351,7 @@ def verify_cancellation_cell(config, root, counts):
     gate.ready = lambda: phase['owners'][0]['ready']
     gate.trigger_ns = value['cancellation_qualification']['trigger_ns']
     gate.triggered = type(gate.trigger_ns) is int and gate.trigger_ns > 0
-    qualification = validate_cancel(phase, gate)
+    qualification = validate_cancel(phase, gate, raised=value.get('cancel_exception'))
     recovery = value['recovery_phase']
     _clean_phase(recovery)
     records = _records(recovery)
@@ -316,6 +370,7 @@ def verify_cancellation_cell(config, root, counts):
             or counts.get('succeeded') + len(expected_unknown) != checked['expected_calls']):
         raise ValueError('cancellation/recovery evidence does not reconcile with the unchanged call ledger')
     for index, item in enumerate((phase, recovery)):
+        _phase_receipts(root/('cancel' if index == 0 else 'recovery'), item)
         published = json.loads((root/('query-'+str(index)+'.json')).read_text())
         if published != item['queries'][0]:
             raise ValueError('published call accounting differs from the verified phase evidence')
