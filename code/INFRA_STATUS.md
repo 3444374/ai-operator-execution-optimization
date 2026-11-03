@@ -4,6 +4,13 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+<a id="resource-allocation-candidate"></a>
+资源归属候选以 `5ff54bfe` 为底座独立修改，尚待独审。机器观测、SemLoom records 启动声明与校准身份使用有效 CPU 配额；
+反馈使用可见 cgroup 的用量／配额，并单独报告主机内存和容器内存余量。
+原生反馈的启动回执增加实际单设备 UUID 的只读传递，缺测保留；没有修改双 50% 策略、请求额度、模型参数或原生 baseline。
+本轮仅本地 CPU／替身／真实本地进程通信检查，真实 Ray、模型和 GPU 验证仍 pending。
+检查、环境错误与原基线复核见[记录](tests/records_cpu.md#resource-allocation-cpu)。
+
 固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
 只跳过 B 封包，C_request=R 且禁止动态请求反馈组合。FIFO、兼容性、成员/驻留与字节容量、
 独立结果和收尾责任不变，fused/默认路径不变。

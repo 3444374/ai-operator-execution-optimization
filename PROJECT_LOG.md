@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-03：资源归属按实际分配核对
+
+独立候选将可见 CPU 配额用于机器观测、SemLoom records 启动检查和校准身份，保留主机／容器观测的不同含义；
+GPU 采样通过现有原生 worker 接口传递实际设备身份，缺少证明时继续缺测。
+实现与验证范围归[代码状态](code/INFRA_STATUS.md#resource-allocation-candidate)和[检查记录](code/tests/records_cpu.md#resource-allocation-cpu)，本次不发布或运行真实模型。
+
 ## 2026-10-28：完整F/M查询token配置的独立本地接线
 
 将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。

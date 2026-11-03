@@ -213,6 +213,11 @@ class CoreReadinessTests(unittest.TestCase):
 
 class PlanTests(unittest.TestCase):
     def setUp(self):
+        from src.infrastructure.cpu_allocation import CpuCapacity
+        cpu = patch('src.infrastructure.cpu_allocation.observe_cpu_capacity',
+                    return_value=CpuCapacity(64, None, 64, 'CPU_session_fixture'))
+        cpu.start()
+        self.addCleanup(cpu.stop)
         from src.baselines.text.movie_records import prepare_movie_source
         import csv
         import hashlib

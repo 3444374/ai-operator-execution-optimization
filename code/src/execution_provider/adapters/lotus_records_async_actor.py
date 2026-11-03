@@ -132,14 +132,17 @@ class AsyncCoreModelActor:
             from src.observability.records_telemetry import MetricSources
             with self._resource_lock:
                 if self._resource_sources is None:
-                    self._resource_sources = MetricSources.from_cuda_visibility()
+                    identity = (self.engine.ready_report or {}).get('native_gpu_identity') or {}
+                    binding = identity.get('gpu_uuids')
+                    self._resource_sources = MetricSources.from_cuda_visibility(
+                        **({} if binding is None else dict(assigned_gpu_uuids=binding)))
                 sample = self._resource_sources()
                 devices = self._resource_sources.gpu_ids
             return dict(engine_uid=(self.engine.ready_report or {}).get('engine_uid'),
                 session_id=session_id, source_elapsed_s=time.monotonic()-started,
                 gpu_uuids=list(devices), sample=sample,
                 status='observed_or_partial',
-                scope='model actor allocation; single-device busy and host-wide CPU; no capacity estimate')
+                scope='model actor GPU UUID; cgroup CPU per effective quota or affinity host context; no request capacity estimate')
         except Exception as error:
             return dict(status='unavailable', error_type=type(error).__name__,
                         source_elapsed_s=time.monotonic()-started)

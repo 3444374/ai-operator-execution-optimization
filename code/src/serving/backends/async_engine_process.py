@@ -674,6 +674,8 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         spec = common.EngineSpec.from_dict(opening["engine"])
         generation = common.GenerationSpec.from_dict(opening["generation"])
         engine = engine_factory(spec, generation, limits=limits)
+        if callable(getattr(engine, "observe_gpu_identity", None)):
+            await engine.observe_gpu_identity()
         await loop.sock_sendall(control, _frame(dict(op="ready", report=engine.ready()), limits.control_frame_bytes))
         control_queue = asyncio.Queue(maxsize=limits.control_slots)
         result_queue = asyncio.Queue(maxsize=limits.result_slots)

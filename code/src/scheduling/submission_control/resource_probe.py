@@ -19,7 +19,8 @@ class ResourceProbeView:
 
     source_elapsed_s is an actor-local duration, never an absolute cross-host
     clock. GPU busy is the maximum over the bound physical devices; host peak
-    CPU is host-wide per-CPU peak busy, not process CPU or controller CPU time.
+    CPU is source-qualified cgroup utilization per effective CPU, or an affinity
+    CPU peak for an unscoped host. It is not an actor's own CPU time.
     """
     engine_uid: str | None
     session_id: int | None

@@ -538,7 +538,11 @@ def _cascade_model_worker(config, source, checkout, method, generations, resourc
         models = _cascade_lms(config, method, generations, engines)
         if config["backend"] != "daft-native-local-model-cascade":
             import ray
-            ray.init(address="local", num_cpus=resources.cpu_workers + resources.gpu_workers + 1,
+            slots = resources.cpu_workers + resources.gpu_workers + 1
+            if config["backend"] == "semloom-local-model-core-cascade":
+                from src.infrastructure.cpu_allocation import checked_local_cpu_slots
+                slots = checked_local_cpu_slots(slots)
+            ray.init(address="local", num_cpus=slots,
                      num_gpus=1, include_dashboard=False,
                      runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                          "LITELLM_LOCAL_MODEL_COST_MAP": "True", "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
@@ -633,7 +637,11 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
         if config["backend"] != "daft-native-local-model":
             import ray
 
-            ray.init(address="local", num_cpus=resources.cpu_workers + resources.gpu_workers + 1,
+            slots = resources.cpu_workers + resources.gpu_workers + 1
+            if is_core or config["backend"] == "semloom-local-model-static-reference":
+                from src.infrastructure.cpu_allocation import checked_local_cpu_slots
+                slots = checked_local_cpu_slots(slots)
+            ray.init(address="local", num_cpus=slots,
                      num_gpus=1, include_dashboard=False,
                      runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                                                  "LITELLM_LOCAL_MODEL_COST_MAP": "True",

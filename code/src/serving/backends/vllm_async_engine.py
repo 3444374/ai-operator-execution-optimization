@@ -127,10 +127,33 @@ class VllmAsyncEngine:
         params.output_kind = self._final_only
         return params
 
+    async def observe_gpu_identity(self):
+        """One bounded startup observation in the already-running model worker."""
+        self._control()
+        if self._feedback is None:
+            self._gpu_identity = dict(status="unavailable:not_requested", gpu_uuids=None)
+            return
+        from src.infrastructure.gpu_allocation import worker_cuda_gpu_identity
+        try:
+            replies = await asyncio.wait_for(
+                self._llm.collective_rpc(worker_cuda_gpu_identity, timeout=1.0), timeout=1.5)
+            if (not isinstance(replies, (tuple, list)) or len(replies) != 1
+                    or not isinstance(replies[0], dict)
+                    or replies[0].get("status") != "observed_actual_CUDA_device"
+                    or not isinstance(replies[0].get("gpu_uuids"), (tuple, list))):
+                raise ValueError("actual single-worker CUDA UUID unavailable")
+            from src.infrastructure.gpu_allocation import cuda_visible_gpu_uuids
+            devices = cuda_visible_gpu_uuids(os.environ.get("CUDA_VISIBLE_DEVICES", ""),
+                                            assigned_gpu_uuids=replies[0].get("gpu_uuids"))
+            self._gpu_identity = dict(status="observed_actual_CUDA_device", gpu_uuids=list(devices))
+        except Exception as error:
+            self._gpu_identity = dict(status="unavailable:" + type(error).__name__, gpu_uuids=None)
+
     def ready(self):
         from src.observability.metrics.mfu import configuration_snapshot
         from src.observability.metrics.vllm import effective_capacity_snapshot
         return dict(engine_uid=self.engine_uid, pid=os.getpid(), python=sys.executable,
+                    native_gpu_identity=dict(getattr(self, "_gpu_identity", dict(status="unavailable:not_observed", gpu_uuids=None))),
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
                     reserved_model_calls=self._reserved_model_calls,

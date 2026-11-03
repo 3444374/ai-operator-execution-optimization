@@ -11,6 +11,7 @@ import unittest
 from unittest import mock
 
 from src.infrastructure.environment import CheckResult, MachineObservation, check_environment, missing_install_specs
+from src.infrastructure.cpu_allocation import CpuCapacity
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -32,6 +33,8 @@ class CapabilityRequirementsTests(unittest.TestCase):
         self.env["GPU_IDS"] = "0"
         self.stack.enter_context(mock.patch("src.infrastructure.environment.platform.system", return_value="Linux"))
         self.stack.enter_context(mock.patch("src.infrastructure.environment.os.cpu_count", return_value=64))
+        self.stack.enter_context(mock.patch("src.infrastructure.environment.observe_cpu_capacity",
+            return_value=CpuCapacity(64, None, 64, "CPU_fixture")))
         self.stack.enter_context(mock.patch("src.infrastructure.environment.os.sched_getaffinity",
                                            return_value=set(range(64)), create=True))
         self.stack.enter_context(mock.patch("src.infrastructure.environment.shutil.disk_usage",

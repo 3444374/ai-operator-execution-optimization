@@ -1,5 +1,10 @@
 # AI 任务研究工程
 
+资源归属修复候选复用机器观测与显式 CPU（主机处理器）预算：有效核数取进程 affinity 与可见 cgroup 配额的较小值，
+保留小数；SemLoom records 普通／常驻入口在启动 Ray 前核对声明，额度不足或缺测时报错。
+GPU（图形处理器）采样可接收实际模型 worker 返回的 UUID（设备唯一标识），不按数字 ordinal 猜物理卡号。
+接口与缺测规则见[观测说明](src/observability/README.md)，验证状态见[CPU 检查记录](tests/records_cpu.md#resource-allocation-cpu)。
+
 本页说明目录、接口与执行流程；接纳及验证范围见[实现状态](INFRA_STATUS.md)，
 运行命令只在[脚本入口](scripts/README.md)维护，方法与后端细节从所属模块读取。
 

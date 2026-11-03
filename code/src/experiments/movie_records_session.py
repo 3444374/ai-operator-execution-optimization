@@ -195,8 +195,12 @@ class _MovieDriver:
             import ray
             if ray.is_initialized():
                 raise RuntimeError("session refuses an existing Ray runtime; use its private supervised worker")
+            slots = self.resources.cpu_workers + self.resources.gpu_workers + 1
+            if backend != "ray-data":
+                from src.infrastructure.cpu_allocation import checked_local_cpu_slots
+                slots = checked_local_cpu_slots(slots)
             self.ray, self.created_ray = ray, True
-            ray.init(address="local", num_cpus=self.resources.cpu_workers + self.resources.gpu_workers + 1,
+            ray.init(address="local", num_cpus=slots,
                      num_gpus=1, include_dashboard=False,
                      runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                          "LITELLM_LOCAL_MODEL_COST_MAP": "True", "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})

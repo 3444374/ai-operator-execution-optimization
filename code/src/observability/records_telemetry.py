@@ -21,14 +21,15 @@ from src.baselines.common.private_artifacts import (
 )
 from src.baselines.common.redact import redact_json_values, redact_text
 from src.observability.metrics.resources import (
-    HostCPUCounterSource, gpu_metadata, host_metadata, resource_sample_stats,
+    AllocatedCPUCounterSource, gpu_metadata, host_metadata, resource_sample_stats,
 )
 from src.observability.metrics.vllm import scrape_prometheus_metrics
 
 
 GPU_FIELDS = ("gpu_utilization_pct", "gpu_memory_used_mib", "gpu_memory_total_mib", "gpu_power_w")
 HOST_FIELDS = ("host_cpu_busy_cores", "host_cpu_per_core_max_pct",
-               "host_memory_used_pct", "host_memory_available_mib")
+               "host_memory_used_pct", "host_memory_available_mib",
+               "cpu_allocation_busy_cores", "cpu_allocation_utilization_pct")
 NATIVE_FIELDS = {
     "vllm_num_requests_running": "vllm:num_requests_running",
     "vllm_num_requests_waiting": "vllm:num_requests_waiting",
@@ -138,7 +139,7 @@ class MetricSources:
     def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None):
         self.gpu_ids, self.native_metrics_url = tuple(gpu_ids), native_metrics_url
         self.gpu_binding_error = gpu_binding_error
-        self._cpu_source = HostCPUCounterSource()
+        self._cpu_source = AllocatedCPUCounterSource()
         if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
         if native_metrics_url is not None:
@@ -148,12 +149,13 @@ class MetricSources:
                 raise ValueError("native metrics URL must be an explicitly supplied credential-free loopback HTTP URL")
 
     @classmethod
-    def from_cuda_visibility(cls, visibility=None):
+    def from_cuda_visibility(cls, visibility=None, *, assigned_gpu_uuids=None):
         """Resolve once; the UUID-only reader still verifies every sample."""
         from src.infrastructure.gpu_allocation import cuda_visible_gpu_uuids
         try:
             ids = cuda_visible_gpu_uuids(os.environ.get("CUDA_VISIBLE_DEVICES", "")
-                                         if visibility is None else visibility)
+                                         if visibility is None else visibility,
+                                         assigned_gpu_uuids=assigned_gpu_uuids)
         except Exception as error:
             return cls((), gpu_binding_error="unavailable:CUDA_UUID_binding:" + _error(error))
         return cls(ids)
@@ -182,10 +184,15 @@ class MetricSources:
         sources["gpu"]["physical_gpu_uuids"] = list(self.gpu_ids)
         host = collect("host", HOST_FIELDS,
                        lambda: host_metadata(include_status=True, cpu_source=self._cpu_source))
+        from src.infrastructure.cgroup import memory_observation
         sources["host"].update({name: value for name, value in host.items() if name.startswith("cpu_")})
+        sources["host"].update(memory_observation(), memory_observation_scope="host_context_and_separate_cgroup_headroom")
         for field in HOST_FIELDS[:2]:
             if values[field] is None and host.get("cpu_metrics_status"):
-                missing[field] = host["cpu_metrics_status"]
+                missing[field] = ("cpu_per_core_unavailable_in_cgroup_scope"
+                    if host.get("cpu_metrics_status") == "observed"
+                    and host.get("cpu_observation_scope") == "current_cgroup_per_effective_CPU"
+                    else host["cpu_metrics_status"])
 
         def native():
             if self.native_metrics_url is None:

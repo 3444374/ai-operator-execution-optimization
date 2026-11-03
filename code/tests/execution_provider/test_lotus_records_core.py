@@ -218,6 +218,9 @@ class Runtime:
             sys.modules[name] = module
         self.stack.enter_context(patch.object(daft_runtime, "_configured", None))
         self.stack.enter_context(patch.dict(os.environ))
+        from src.infrastructure.cpu_allocation import CpuCapacity
+        self.stack.enter_context(patch('src.infrastructure.cpu_allocation.observe_cpu_capacity',
+            return_value=CpuCapacity(64, None, 64, 'CPU_graph_fixture')))
         from src.observability.records_telemetry import MetricSources
         self.stack.enter_context(patch.object(MetricSources, 'from_cuda_visibility',
             side_effect=lambda: MetricSources((), gpu_binding_error='unavailable:CPU_inference_fixture')))
