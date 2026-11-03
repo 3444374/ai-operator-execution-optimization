@@ -118,7 +118,7 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 ```
 
 `core_capacity`复用`CoreRecordsCapacity`，上述两个字段是单任务完整输入／结果的字节额度。
-Core总量仍按解析后的owner请求额度R分别乘以单项；动态C的初始值不代替R。
+未声明下述独立`budget`时，Core总量仍按解析后的owner请求额度R分别乘以单项；动态C的初始值不代替R。
 IPC单项默认取对应Core单项，请求／结果／命令槽默认取R；IPC输入总量默认是R乘IPC输入单项，
 结果总量默认是IPC结果槽乘IPC结果单项。部分配置先补这些默认，再保留显式字段；
 `{}`或仅反馈参数不会采用`AsyncEngineLimits`独立构造时的8请求默认。
@@ -128,13 +128,51 @@ IPC保留原结果／控制帧最小值与最终编码校验；Core和IPC分别�
 
 普通admission cache将有效Core／IPC配置纳入既有execution身份；省略、空对象与等效默认配置保持旧身份。
 离线Core calibration另绑定容量的派生规则，避免把某次扫描C对应的总量固化进身份。
-默认IPC槽位／总量仍随owner R推导；显式计数或总量只有在整个合法候选范围内等效才归一，
+旧路径默认IPC槽位／总量仍随owner R推导；显式计数或总量只有在整个合法候选范围内等效才归一，
 否则作为固定约束保留。例如显式`max_inflight=4`即使匹配当前C，也不能与随C派生的默认策略共用身份；
 候选不匹配时在创建owner前拒绝。不同有效字节／槽位／轮询配置隔离缓存，等效数值表示归一。
 该组合仅完成本地CPU接线验证，尚无自定义容量的实机性能资格。
 [CPU配置与边界检查](../../tests/experiments/test_records_capacity_config.py)覆盖部分配置、独立字节限额、
 3MiB输入／结果、unknown预留、普通／常驻入口和查询账本重置；未新增真实Ray、模型或GPU运行。
 缓存等价／隔离和扫描约束见[容量身份测试](../../tests/experiments/test_core_capacity_identity.py)。
+
+#### 显式独立资源预算（默认关闭，本地CPU候选）
+
+在`core_capacity`中提供完整`budget`对象才启用新路径；省略或`null`保留原R推导。
+预算须来自部署明确声明的有限额度，不能由本次输入N、历史最佳并发或任意大数代替。
+当前不自动发现可用内存；未给完整预算拒绝。以下是字段和单位，表中没有通用推荐值：
+
+| `core_capacity.budget`字段 | 约束对象 |
+|---|---|
+| `held_tasks` | Core排队、运行及交付租约的任务槽；保留有限对象数量保护 |
+| `input_bytes` | Core已接纳的完整编码输入字节总量 |
+| `result_bytes` | Core在执行前预留、交付后至消费释放的结果上界总量 |
+| `active_requests` | owner硬请求槽；与性能窗口C分开 |
+| `method_runs` | 方法驱动器驻留行槽；与C及Core任务槽分开 |
+| `method_bytes` | 原`MethodBudgetPool`的序列化输入／状态／结果保守预留总量 |
+
+六项均须为正整数；输入／结果总量须容纳其Core单项额度，方法字节须容纳完整continuation上界。
+`async_limits`另须显式给齐`max_inflight`、`result_slots`、`command_slots`、`control_slots`、
+`input_bytes`、`result_bytes`。这些IPC槽／字节预算独立生效，允许少于Core硬请求槽；
+IPC单项继承Core单项或显式覆盖，原最小帧及编码检查保留，不会为匹配C而扩大额度。
+
+普通Movie的`core_profile.max_inflight`／Session的`profile.max_inflight`只控制新请求准入；
+固定模式须显式声明C，rolling资源反馈仍从原冷起点1出发。C变化不重算存储、状态或IPC预算，
+缩容只停新准入，不取消已借用请求。旧`resources.max_active_batches`保留在声明元数据中，
+在此显式路径由`budget.active_requests`提供owner硬额度，不再借旧R决定全部容量。
+token B继续只组织提交；驻留已满／字节不足保留单个pending输入并沿原advance／wake等待，消费释放后重试。
+
+当前范围为普通async Filter及rolling token请求，可沿正常Movie `check/run`、isolated／resident Session进入。
+sync、fused和非rolling的批槽组合不接此预算候选。合法后继与Extract关系屏障保持，完整查询审计／关系仍可能materialize。
+直接构造`SemLoomRecordsCore`时，新预算必须配已有async actor owner，禁止自动或显式采用同步owner；
+完整C／IPC配置资格仍由上述工厂和入口校验。普通owner跨查询保留硬容量，首查询C不锁定后续查询窗口。
+Core输入与IPC编码体积可实计；结果及方法状态是保守预留，不代表Python／Ray对象、socket缓冲或RSS实测。
+unknown、失联、取消请求及未消费结果不能按空闲释放；只有原终态／消费ACK／生产者退出证明结清相应责任。
+新预算及token组批／rolling／切包消融路径进入现有校准身份；C扫描不改变该身份，
+预算或组织方式变化不得复用旧选择。token配置先按已有`PreparedBatching`校验和补齐默认字段，
+省略`max_rows`与显式`null`等有效配置共用同一身份。
+[配置／容量边界CPU检查](../../tests/experiments/test_records_resource_budget.py)和
+[CPU子进程IPC检查](../../tests/execution_provider/test_lotus_resource_budget_runtime.py)不授予真实模型、内存容量或性能资格。
 
 ### 固定 rolling 的 B 切包消融（仅实验）
 

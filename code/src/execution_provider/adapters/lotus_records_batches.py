@@ -120,7 +120,8 @@ class PreparedRecordsCore:
 
     def _new_owner(self, tokenizer):
         batching = self.execution_profile['record_batching']
-        actors = AsyncRecordsActorOwner.for_prepared(self.engine, self.generation, self.resources, limits=self._limits)
+        actors = AsyncRecordsActorOwner.for_prepared(self.engine, self.generation, self.resources, limits=self._limits,
+            **({} if self.capacity is None or self.capacity.budget is None else dict(capacity=self.capacity)))
         feedback = None
         request_feedback = None
         if 'feedback' in batching:
@@ -134,6 +135,8 @@ class PreparedRecordsCore:
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
             rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback,
             resident=self.resident,
+            **({} if self.capacity is None or self.capacity.budget is None
+               else dict(request_window=self.execution_profile['max_inflight'])),
             experimental_skip_token_packing=batching.get('experimental_skip_token_packing', False))
 
     def _ordinary(self, receipt):
@@ -167,7 +170,7 @@ class PreparedRecordsCore:
                 window = actual.get('C_request')
                 valid_window = (actual.get('rolling_refill') is True and actual['concurrency'] is None
                     and (type(window) is int and 1 <= window <= requested['R'] if 'request_feedback' in requested
-                         else window == requested['R']) and actual['peak_requests'] <= requested['R']
+                         else window == requested['C_request']) and actual['peak_requests'] <= requested['R']
                     and actual['peak_batches'] <= requested['R'])
             else:
                 upper = requested.get('feedback', {}).get('max_batches', requested['C_batch'])

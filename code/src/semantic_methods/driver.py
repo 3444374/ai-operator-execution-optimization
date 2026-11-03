@@ -339,6 +339,7 @@ class MethodDriver:
             raise ValueError("result is not held by this consumer")
         del self._rows[row.sequence]
         self.budget.release(self._reservation)
+        self.session.engine.wake.notify()
 
     def _abort(self, error):
         # Do not retain arbitrary callback payloads through exception messages.

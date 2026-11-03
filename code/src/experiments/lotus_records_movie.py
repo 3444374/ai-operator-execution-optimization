@@ -325,13 +325,16 @@ def _async_limits(config, *, resources=None, resolved=None):
     if resolved is None:
         from src.serving.backends.vllm_engine import EngineSpec
         resolved = resolve_core_profile(EngineSpec.from_dict(config["engine"]), resources,
-            _core_profile(config), rolling_refill=config.get('rolling_refill', False))
+            _core_profile(config), rolling_refill=config.get('rolling_refill', False), capacity=_core_capacity(config))
     if resolved["mode"] != "async":
         if declared:
             raise ValueError("async_limits requires the explicit async backend or async Core profile")
         return None
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
-    limits = resolve_records_async_limits(effective, _core_capacity(config) or CoreRecordsCapacity(), value)
+    capacity = _core_capacity(config) or CoreRecordsCapacity()
+    limits = resolve_records_async_limits(effective, capacity, value)
+    if capacity.budget is not None and config.get('prepared_batching') is not None:
+        capacity.method_capacity(effective, capacity.method_limits(1))
     return limits if declared else None
 
 
@@ -417,7 +420,8 @@ def read_config(path):
     engine = EngineSpec.from_dict(value["engine"])
     if is_core:
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        resolved = resolve_core_profile(engine, resources, _core_profile(value), rolling_refill=value.get('rolling_refill', False))
+        resolved = resolve_core_profile(engine, resources, _core_profile(value),
+            rolling_refill=value.get('rolling_refill', False), capacity=_core_capacity(value))
         _core_capacity(value)
         _async_limits(value, resources=resources, resolved=resolved)
         batching = resolve_record_batching(resolved, **_record_batching_options(value))
@@ -664,7 +668,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     try:
         if is_core:
             from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
-            is_async = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False))["mode"] == "async"
+            is_async = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False),
+                capacity=_core_capacity(config))["mode"] == "async"
         if is_async:
             async_limits = _async_limits(config)
         if config["backend"] != "daft-native-local-model":
@@ -698,7 +703,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             return owner.evaluate(source, query_id=config["query_id"])
         if config.get("admission_cache") is not None:
             from src.experiments.movie_matrix_support import run_record_admission
-            resolved = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False))
+            resolved = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False),
+                capacity=_core_capacity(config))
             def execute_query(window, *, allow_exploration, search_hint=None):
                 query_options.update(max_inflight=window, allow_exploration=allow_exploration,
                                      search_hint=search_hint)
@@ -887,7 +893,7 @@ def main(argv=None):
     if config["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND):
         from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
         preflight["core_execution"] = resolve_core_profile(engine, resources, _core_profile(config),
-            rolling_refill=config.get('rolling_refill', False))
+            rolling_refill=config.get('rolling_refill', False), capacity=_core_capacity(config))
         if "core_capacity" in config:
             preflight["core_capacity"] = asdict(_core_capacity(config))
         batching = resolve_record_batching(preflight['core_execution'], **_record_batching_options(config))
