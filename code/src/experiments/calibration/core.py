@@ -133,6 +133,10 @@ def build_core_identity(plan, checked, *, hardware, model, software):
         identity["execution"]["records_capacity_policy_v1"] = capacity
         if capacity['core'].get('budget') is not None:
             identity['execution']['resources']['max_active_batches'] = capacity['core']['budget']['active_requests']
+            identity['execution']['record_organization_v1'] = dict(
+                prepared_batching=deepcopy(plan.get('prepared_batching')),
+                rolling_refill=plan.get('rolling_refill', False),
+                experimental_skip_token_packing=plan.get('experimental_skip_token_packing', False))
     core_identity_signature(identity)
     return identity
 

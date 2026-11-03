@@ -166,7 +166,8 @@ token B继续只组织提交；驻留已满／字节不足保留单个pending输
 sync、fused和非rolling的批槽组合不接此预算候选。合法后继与Extract关系屏障保持，完整查询审计／关系仍可能materialize。
 Core输入与IPC编码体积可实计；结果及方法状态是保守预留，不代表Python／Ray对象、socket缓冲或RSS实测。
 unknown、失联、取消请求及未消费结果不能按空闲释放；只有原终态／消费ACK／生产者退出证明结清相应责任。
-新预算进入现有校准身份；C扫描不改变该身份，预算变化不得复用旧选择。
+新预算及token组批／rolling／切包消融路径进入现有校准身份；C扫描不改变该身份，
+预算或组织方式变化不得复用旧选择。
 [配置／容量边界CPU检查](../../tests/experiments/test_records_resource_budget.py)和
 [CPU子进程IPC检查](../../tests/execution_provider/test_lotus_resource_budget_runtime.py)不授予真实模型、内存容量或性能资格。
 

@@ -271,6 +271,17 @@ class ResourceBudgetIdentityTests(unittest.TestCase):
         plan['async_limits']['result_slots'] = 2
         self.assertNotEqual(calibration.core_identity_signature(self.identity(plan)), initial)
 
+    def test_packing_and_rolling_paths_do_not_share_a_capacity_selection(self):
+        ordinary = self.identity()
+        plan = dict(self.plan, rolling_refill=True,
+            prepared_batching=dict(policy='token_budget', max_rows=None, token_budget=10000))
+        initial = self.identity(plan)
+        self.assertNotEqual(initial, ordinary)
+        larger = deepcopy(plan)
+        larger['prepared_batching']['token_budget'] = 20000
+        self.assertNotEqual(self.identity(larger), initial)
+        self.assertNotEqual(self.identity(dict(plan, experimental_skip_token_packing=True)), initial)
+
 
 if __name__ == '__main__':
     unittest.main()
