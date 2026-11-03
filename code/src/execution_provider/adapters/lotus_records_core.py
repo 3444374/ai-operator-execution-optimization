@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import contextmanager, nullcontext
+from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
 import hashlib
 import inspect
@@ -965,6 +966,11 @@ class SemLoomRecordsCore:
 
     def execution_metadata(self):
         return dict(self._actors.execution_metadata(), execution_profile=dict(self.execution_profile))
+
+    @property
+    def model_ready(self):
+        """Observe the existing model receipt without allocating an owner."""
+        return deepcopy(self._actors.model_ready)
 
     def _control(self):
         if threading.get_ident() != self._thread:

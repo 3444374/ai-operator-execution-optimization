@@ -184,20 +184,39 @@ def core_session_model_ready(plan, report, *, expected=None):
         raise RuntimeError('Core context confirmation requires session owners')
     ready_by_owner = {}
     first = None
+    def empty_query(query):
+        raw = query.get('backend_report') or {}
+        calls = raw.get('calls', {})
+        counts = calls.get('counts', {})
+        return (query.get('status') == raw.get('status') == 'completed'
+            and query.get('complete_result_observed') is True and calls.get('records') == []
+            and all(type(counts.get(k)) is int and counts[k] == 0
+                for k in ('expected', 'recorded', 'succeeded', 'failed', 'unknown', 'missing', 'submission_unconfirmed')))
     for owner in owners:
         if type(owner) is not dict:
             raise ValueError('Core context confirmation requires owner records')
         owner_id = owner.get('owner_id')
         if type(owner_id) is not str or not owner_id or owner_id in ready_by_owner:
             raise ValueError('Core context confirmation requires unique owner identities')
-        ready = core_model_ready(plan, owner.get('ready'), expected=expected if first is None else first)
+        observed = owner.get('ready')
+        if type(observed) is dict and observed.get('no_session_model') is True:
+            observed = observed.get('query_model_ready')
+            if observed is None:
+                queries = [q for q in report.get('queries', []) if q.get('owner_id') == owner_id]
+                if not queries or not all(empty_query(q) for q in queries):
+                    raise RuntimeError('deferred model context was not confirmed for a nonempty query')
+                ready_by_owner[owner_id] = None
+                continue
+        ready = core_model_ready(plan, observed, expected=expected if first is None else first)
         ready_by_owner[owner_id] = ready
         if first is None:
             first = ready
     for query in report.get('queries', []):
+        if query.get('owner_id') not in ready_by_owner:
+            raise ValueError('query is missing its actual model owner')
         ready = ready_by_owner.get(query.get('owner_id'))
         if ready is None:
-            raise ValueError('query is missing its actual model owner')
+            continue  # Only a completed zero-call deferred query was accepted above.
         calls = (query.get('backend_report') or {}).get('calls', {})
         records = calls.get('records', [])
         recorded = calls.get('counts', {}).get('recorded', 0)
@@ -205,6 +224,8 @@ def core_session_model_ready(plan, report, *, expected=None):
             raise ValueError('context confirmation requires every recorded model call')
         if any(row.get('engine_uid') != ready['engine_uid'] for row in records):
             raise ValueError('query call changed the executing model identity')
+    if first is None:
+        raise RuntimeError('Core context confirmation did not observe a model')
     return first
 
 

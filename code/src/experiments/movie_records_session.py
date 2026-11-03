@@ -152,6 +152,22 @@ class _MovieDriver:
         self.core_execution = None
         self.imlane_guard = None
         self.imlane_handlers = {}
+        self._model_ready = self._owner_ready = None
+
+    def _check_core_model_ready(self, ready):
+        from src.experiments.calibration.core import core_model_ready
+        binding = self.context['plan_binding']
+        expected = self.context.get('core_model_context_ready', binding['observed'].get('model_ready'))
+        if expected is None and binding.get('resolve_model_context') is not True:
+            raise RuntimeError('calibrated execution requires its observed model context')
+        current = core_model_ready(self.plan, ready, expected=expected)
+        if self._model_ready is not None and current['engine_uid'] != self._model_ready['engine_uid']:
+            raise ValueError('calibrated query model owner changed after readiness')
+        self._model_ready = current
+        self.context['core_model_context_ready'] = current
+        if self._owner_ready.get('no_session_model') is True:
+            self._owner_ready['query_model_ready'] = current
+        return current
 
     def start(self):
         from src.baselines.text.movie_tasks import MovieTask
@@ -242,14 +258,10 @@ class _MovieDriver:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
             ready = self.owner.start()
+            self._owner_ready = ready
             if backend == 'semloom-core' and self.engine.max_model_len is None and 'plan_binding' in self.context:
-                from src.experiments.calibration.core import core_model_ready
-                binding = self.context['plan_binding']
-                expected = self.context.get('core_model_context_ready', binding['observed'].get('model_ready'))
-                if expected is None and binding.get('resolve_model_context') is not True:
-                    raise RuntimeError('calibrated execution requires its observed model context')
-                self._model_ready = core_model_ready(self.plan, ready, expected=expected)
-                self.context['core_model_context_ready'] = self._model_ready
+                if ready.get('no_session_model') is not True:
+                    self._check_core_model_ready(ready)
             if self.plan["lifecycle"] != "resident":
                 return ready
             # Preserve the original Core receipt and observe its real process
@@ -311,12 +323,16 @@ class _MovieDriver:
             self.imlane_guard()
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
         elif backend == "semloom-core":
-            if self.engine.max_model_len is None and 'plan_binding' in self.context:
-                from src.experiments.calibration.core import core_model_ready
-                current = core_model_ready(self.plan, self.owner._actors.model_ready, expected=self._model_ready)
-                if current['engine_uid'] != self._model_ready['engine_uid']:
-                    raise ValueError('calibrated query model owner changed after readiness')
-            execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"], method=method, **query_options)
+            observed_context = self.engine.max_model_len is None and 'plan_binding' in self.context
+            if observed_context and (self.owner.model_ready is not None or self._model_ready is not None):
+                self._check_core_model_ready(self.owner.model_ready)
+            def execute():
+                stream = self.owner.evaluate(source, query_id=spec['query_id'], method=method, **query_options)
+                if observed_context:
+                    current = self.owner.model_ready
+                    if current is not None or source.expected(spec['query_id']):
+                        self._check_core_model_ready(current)
+                return stream
         elif backend == "semloom-static-reference":
             if method != self.owner.method:
                 raise ValueError("a static reference session retains one method instruction")
@@ -346,7 +362,7 @@ class _MovieDriver:
                     resources=self.resources, resolved=self.core_execution),
                     self.core_execution, source, method, self.generation, self.engine, self.resources,
                     execute_query, warmup=spec["phase"] == "warmup",
-                    **(dict(model_ready=self.owner._actors.model_ready)
+                    **(dict(model_ready=self.owner.model_ready)
                        if self.engine.max_model_len is None else {}))
             else:
                 self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,

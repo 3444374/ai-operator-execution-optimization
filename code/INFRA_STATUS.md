@@ -15,9 +15,15 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 最新方法级错误为0，失败／缺依赖／fixture修正原件保留。尚待独审与统一整合，未推送、合并或运行模型。
 后续独立增量已补公共离线校准接线：省略上下文时先复用首个已声明样本的实际owner回执，
 在生成前核对每个执行owner；缓存命中也明确记录该确认样本的调用与耗时。显式上下文保留原缓存流程。
-本增量选择214个方法，206成功、1个方法跳过，另2类7方法因固定资产缺失未运行，无新用例失败；
+cc9eeb2切片选择214个方法，206成功、1个方法跳过，另2类7方法因固定资产缺失未运行，无新用例失败；
 缺DuckDB的初轮记录保留，已有完整CPU环境复核后无该错误。独审、真实模型与模型前输入专用token验证仍pending，
 不能据此声称完整查询加速。
+独审随后发现token wrapper的常驻／独立查询接线及有限IMLane省略值兼容问题，另有本地修订待复审：
+通过owner只读`model_ready`取得回执，保留独立查询内的延迟分配，在迭代提交前核对；
+IMLane只在有限适配层归一原4096默认，异步委托不变。此修订250项选择中242成功、1方法跳过，另2类7方法未运行；
+9项新增反例通过。旧失败、首次fixture问题和独审原件保留，未推送、合并或运行模型。
+[修订与证据](../experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)
+分列真实CPU子进程与尚未验证的原生IMLane／vLLM。
 [职责与验收](../experiments/results/diagnostics/records_config_refactor_20261103/README.md#目标到实现的验收)、
 [实际接口](src/execution_provider/adapters/README.md#records-model-context)及
 [首个切片证据](../experiments/results/diagnostics/records_config_refactor_20261103/raw/context_checks.json)与

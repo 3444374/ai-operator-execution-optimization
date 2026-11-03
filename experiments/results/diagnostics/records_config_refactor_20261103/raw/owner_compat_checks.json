@@ -1,0 +1,182 @@
+{
+  "run_id": "records-context-owner-compat-20261103",
+  "base_commit": "cc9eeb240cb99188000902ef1d653ddc052e5037",
+  "base_tree": "6190613e112b5757909ca9e1c284758e78226cdd",
+  "review_findings": [
+    "CTX-TOKEN-OWNER",
+    "CTX-IMLANE"
+  ],
+  "coverage": {
+    "selected_unique_methods": 250,
+    "method_outcomes": 243,
+    "successful_methods": 242,
+    "failed_methods": 0,
+    "method_errors": 0,
+    "method_skips": 1,
+    "class_skips": [
+      {
+        "id": "setUpClass (tests.experiments.test_movie_calibration_cli.CLIIntegrationTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      },
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      }
+    ],
+    "selected_without_method_outcome": [
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_callback_failure_keeps_known_work_and_does_not_start_target_or_retry",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_increasing_search_uses_public_runtime_and_existing_CLI_slots_then_zero_scan_hit",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_public_runtime_miss_hit_and_fixed_mode_through_actual_cli_and_cpu_core",
+      "tests.experiments.test_movie_calibration_cli.CLIIntegrationTests.test_sync_calibration_rejects_before_allocating_a_budget",
+      "tests.experiments.test_static_reference_session.StaticSessionTests.test_direct_static_start_is_idempotent_and_does_not_close_at_query_eof",
+      "tests.experiments.test_static_reference_session.StaticSessionTests.test_maintained_cli_first_reuse_share_one_sync_model_and_native_batches",
+      "tests.experiments.test_static_reference_session.StaticSessionTests.test_static_rejects_method_switch_and_core_does_not_gain_batch_support"
+    ],
+    "new_tests": 9
+  },
+  "source_hashes_match_current": true,
+  "changed_code_sha256": {
+    "code/integrations/imlane_records/cascade_host.py": "e0714775599370428fdf003eb4ac2022bca71494fdf2d867884dc6ac7034954b",
+    "code/integrations/imlane_records/cascade_udf.py": "a27acc432aeddecd34a06125f18213cc8196f55fabd5d10e1e15d84467216b7e",
+    "code/integrations/imlane_records/chain_backend.py": "11513d9c6c7fc8748281c510c4db4b50e447e379277857474772bde1c020f91b",
+    "code/integrations/imlane_records/chain_host.py": "b35205a6ea57c493090283b63d1356ec2429a6ac86f8cd277b1c942b2f6a4d44",
+    "code/src/execution_provider/adapters/lotus_records_batches.py": "dcbedd7ce11bfd350cf652cbe62cb63eca808b43a0fff1592b3b221965948f22",
+    "code/src/execution_provider/adapters/lotus_records_core.py": "865594c35988b2567ef36692a02ab3ef947b1d9b3dee01eb6d50c788a5a1135e",
+    "code/src/experiments/calibration/core.py": "a6219b9c5bff262aec16bd9da3454275edbb5b22f36c414fae8291de8f3aaade",
+    "code/src/experiments/movie_records_session.py": "8860e9d86804094aac317ba7973585ef13a7fad0e51501997d5bc44b82e5ca18",
+    "code/tests/experiments/test_context_owner_compatibility.py": "f0d8f682ccfb988f65f59b041dfcda4b8871161599d1e049e1e03d9385d93d31"
+  },
+  "owner_method_equivalence": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "all_existing_methods_AST_unchanged": true,
+      "new_methods": [
+        "model_ready"
+      ]
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_batches.py",
+      "all_existing_methods_AST_unchanged": true,
+      "new_methods": [
+        "model_ready"
+      ]
+    }
+  ],
+  "behavior": {
+    "resident_token_owner_reuses_actual_model": true,
+    "isolated_token_owner_allocates_inside_query": true,
+    "check_before_first_model_submission": true,
+    "public_readiness_view_does_not_allocate_or_mutate_owner": true,
+    "deferred_startup_scope_retained": true,
+    "lazy_actual_receipt_stored_as_query_model_ready": true,
+    "completed_zero_call_isolated_query_does_not_require_a_model": true,
+    "unknown_calls_never_qualify_as_empty": true,
+    "context_mismatch_generates_no_requests": true,
+    "IMLane_finite_omission_and_null_match_explicit4096": true,
+    "IMLane_explicit8192_preserved": true,
+    "IMLane_explicit_output_overflow_rejected": true,
+    "delegated_async_context_has_no_legacy_fallback": true
+  },
+  "historic_sources": {
+    "total": 3010,
+    "base_mismatches": 10,
+    "candidate_mismatches": 10,
+    "new_mismatches": 0,
+    "additional_snapshot_files": 4,
+    "additional_source_mappings": 20,
+    "old_hashes_projection_ids_and_mappings_preserved": true
+  },
+  "original_review_probe": {
+    "prepared_lifecycles": "both complete; original probe unchanged",
+    "IMLane_cases": "three accepted at finite4096; only old failure assertions replaced in external replay copy"
+  },
+  "pending": [
+    "Independent review of this exact increment and combination with 448c.",
+    "Eight selected methods need fixed SemBench assets; one method skip and two skipped classes with seven methods.",
+    "Prior six failures and ten historical source mismatches remain; previous counts are not replaced.",
+    "Pre-start input-only token validation still requires explicit context.",
+    "Actual vLLM/Ray/GPU, native IMLane/author execution, quality and complete query performance remain unverified."
+  ],
+  "real_model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending recheck",
+  "publication": "not pushed or merged",
+  "artifacts": {
+    "before-owner-compat.json": {
+      "bytes": 175751,
+      "sha256": "9c94b682e560fe804db3e2139f550a17dd7169cd9272b4a24a9122639c7db235"
+    },
+    "before-owner-compat.log": {
+      "bytes": 22298,
+      "sha256": "fc8887b41fdac45c6bf55a1ace0f0830f4ada843a9640267127cbff4d6d8b367"
+    },
+    "before-imlane-fixture-corrected.json": {
+      "bytes": 164350,
+      "sha256": "874529e3e39271e5bd234115760a1893c82da32a432c96601e720e52eb2569b9"
+    },
+    "before-imlane-fixture-corrected.log": {
+      "bytes": 9419,
+      "sha256": "755c69e42a8526f73e75b0f8fbdfa9359fe24d34dd8104bc7b43366d8053e885"
+    },
+    "after-owner-compat-initial.json": {
+      "bytes": 160450,
+      "sha256": "9fec5059872e1e5ce54d57ff1eca04bf107dd80932576731150e4c4d8fbc33e2"
+    },
+    "after-owner-compat-initial.log": {
+      "bytes": 1902,
+      "sha256": "7a7755a2166515a7a724cea1d5276e19f0d543518b1d2c39e0b5846371818f6a"
+    },
+    "owner-compat-affected.json": {
+      "bytes": 225354,
+      "sha256": "e889d4dd53a96d26acd19f473ca466a30847999ec7dc9c0661dce23b1ff1df07"
+    },
+    "owner-compat-affected.log": {
+      "bytes": 49006,
+      "sha256": "1ec8be0125e644b185d2e58bc97b5efbb093a5a7367edd1a66719d54645d8423"
+    },
+    "owner-compat-sync-recheck.json": {
+      "bytes": 161219,
+      "sha256": "6fe534765f70ac09322ba40294a3c29f2efdf41aab2831ef350416aad6ebcf83"
+    },
+    "owner-compat-sync-recheck.log": {
+      "bytes": 1660,
+      "sha256": "909a275f8839286fa77aff953384d9d6359021a91e5bdac40bc1ddcbfcd968a8"
+    },
+    "prepared-review-probe-replay.json": {
+      "bytes": 612,
+      "sha256": "31ad4916b92a6bfa526a201370d1f7385e69185b9cd54c5d236667d9673474ff"
+    },
+    "prepared-review-probe-replay.log": {
+      "bytes": 419,
+      "sha256": "1d0959aa689845bbcfee01b883e19d639a9247ebc4e1472f206997779478e44b"
+    },
+    "imlane-review-probe-replay.json": {
+      "bytes": 672,
+      "sha256": "f05cb63c43aa6afc4b8428d3c5cc538172ccb286830cc349669836cc893109ad"
+    },
+    "imlane-review-probe-replay.log": {
+      "bytes": 474,
+      "sha256": "98477d0801ab2f7c577df83d86213687fa1b76bcb8cdcbbdc5883a98143bb8f5"
+    },
+    "history-retention.json": {
+      "bytes": 4943,
+      "sha256": "58f7af409a0dd3c197e69b823cc77e7042804d2bbce2bb4c25196a477dca81ab"
+    },
+    "history-audit.json": {
+      "bytes": 2646,
+      "sha256": "8a3f3c6f5c265a64d2990bead26d49b9c0065d8d748c3bb5b7c5011d241e89d1"
+    },
+    "owner-compat-counterexamples-final.json": {
+      "bytes": 160775,
+      "sha256": "a6e0c207032f7af3b111b24b789a78410907f4d10c1ee32efc1038327e075b0c"
+    },
+    "owner-compat-counterexamples-final.log": {
+      "bytes": 2139,
+      "sha256": "6a17c4f51a38ebe135e537c4b6c3949057237dc48c17165ef8e421ed5b124b73"
+    }
+  },
+  "method_source_provenance_matches_final": true
+}

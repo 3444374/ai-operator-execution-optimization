@@ -1,5 +1,17 @@
 # 实验与机制证据台账
 
+<a id="records-owner-context-compat-cpu"></a>
+## 2026-11-03：独审反例后的owner与IMLane上下文兼容
+
+以cc9eeb2为父提交的独立修订，通过真实wrapper取得实际回执，在原延迟分配后、提交前核对，
+有限IMLane保留原4096省略值。独审原件、改前复现及初轮fixture问题均保留。
+[主记录](diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)与
+[机器摘要](diagnostics/records_config_refactor_20261103/raw/owner_compat_checks.json)：
+250个方法选择中242成功、1方法跳过，另2类7方法缺固定资产未运行；9项新增反例全部通过。
+原审查wrapper探针两种生命周期均完成，IMLane三例接受原有限值；这些只是CPU／配置接线证据。
+四份旧源与20条映射使3010条绑定保持原10处不匹配，未改写旧失败、跳过或历史摘要。
+本修订尚待独立复审、448c组合和真实库／模型验证，未推送或合并。
+
 <a id="records-offline-context-cpu"></a>
 ## 2026-11-03：离线校准实际owner就绪接线
 

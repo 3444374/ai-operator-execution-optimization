@@ -2,7 +2,7 @@
 
 本记录属于源码审计与 CPU fixture 验证。底稿为 PR #90 已发布
 `b018d88a5615433b1efb708fc04e57be85719b01`，tree 为 `dfdaa15a4b694d934d6523e8ba3014917a31708c`；
-本轮核查时 PR 仍为 Draft、未合并。候选尚待独审与统一整合。
+本轮核查时 PR 仍为 Draft、未合并。独审反馈与后续修订见末节，当前修订尚待复审与统一整合。
 
 ## 实际调用与职责
 
@@ -144,3 +144,35 @@ CPU 验证按方法与最后有效回执去重：选择404个方法，其中400�
 `semloom-offline-context-evidence-20261103`交接目录。独审和与448c的准确组合仍pending。
 固定SemBench资产／完整CLI路径、模型启动前输入专用token验证，以及真实vLLM解析值、
 Ray／GPU、完整查询质量与耗时比较尚未验证；本轮没有推送或合并。
+
+<a id="owner-context-compatibility"></a>
+## 独审反例后的owner与IMLane兼容修订
+
+独审在准确`cc9eeb240cb99188000902ef1d653ddc052e5037`上指出两项此前回归未覆盖的问题：
+普通Core的私有actor布局被用于token wrapper，常驻查询访问不存在的字段，独立查询又把延迟分配声明当成实际ready；
+有限IMLane的四处host/backend/worker检查仍直接使用可为空的上下文值。原审查、反例和改前失败保持，
+本修订在独立分支接续，不重写前面的提交或CPU摘要。
+
+普通Core与`PreparedRecordsCore`新增只读`model_ready`；原有start/evaluate/close及其他方法的AST逐项保持。
+驱动在原owner分配处核回执，不再穿过wrapper访问`_actors`。独立token查询的start仍不创建模型，
+原evaluate完成准备和实际ready后、第一次迭代提交前执行配置／实例／长度检查。
+`no_session_model`及原`model_startup_scope`保持，实际回执另记为`query_model_ready`，
+保留启动阶段、查询内模型创建和完整查询时钟的真实含义。上下文不符时在首个模型请求前停止并按原owner清理。
+独立空查询只有完整成功且预期／实际／失败／未知调用均为零时可没有回执；不会由空值推导无限长度。
+
+IMLane链host/backend及cascade host/worker仅在其有限适配层将省略／null转换为原4096，
+显式8192等值不改，输出上限超限仍拒绝；caller的EngineSpec不修改，异步SemLoom仍由实际ready解析。
+同步native、LOTUS、Kalypso、vLLM构造、生成／方法参数、资源控制、取消与未知回执责任没有新增策略。
+
+新增9项CPU反例覆盖两种生命周期、实际回执归属、首次提交前检查、只读访问不创建模型、
+空查询与未知调用的区别、IMLane省略／null／显式值及超限拒绝。改前8项初版不能通过；
+其中cascade fixture还误将单条stage额度设成4，修正为实际记录数后，改前IMLane仍复现省略值问题。
+修订后按方法去重选择250项：242成功、1个方法跳过，另2类7方法缺固定SemBench资产未运行。
+原审查wrapper脚本未改即两例完成；IMLane回放仅在仓库外副本把旧错误预期改为接受原4096，三例通过。
+同步Daft的6项CPU检查通过；均计入上述总数，不和此前214／404项选择相加。
+
+四份IMLane旧源按准确b018字节保存，五份具名投影仅加20条来源映射，原摘要、身份与路由保持。
+3010条绑定仍是原10处不匹配，新增0。证据摘要见[`raw/owner_compat_checks.json`](raw/owner_compat_checks.json)，
+原件位于`semloom-context-owner-compat-evidence-20261103`交接目录；独审输入另以原件摘要登记。
+六项既有失败未在本修订处理，旧跳过统计也不改写。修订尚待复审与448c准确组合；
+原生IMLane作者运行、真实vLLM／Ray／GPU、质量与完整查询耗时仍未验证，模型前输入专用token检查仍需显式上下文。

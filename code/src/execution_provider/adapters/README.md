@@ -865,6 +865,14 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 [CPU范围与剩余项](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#异步模型上下文的-cpu-候选)
 不包含真实模型或性能资格。
 
+普通Core与`PreparedRecordsCore`均提供只读`model_ready`，读取不会分配模型。
+token wrapper在独立查询的`start()`仍只返回延迟分配声明；实际回执在原`evaluate()`返回、
+迭代器开始提交前核对，作为启动声明中的`query_model_ready`保存，不把启动阶段改报为模型加载。
+空查询须有完整零调用证据才可没有模型回执，不能借此接受未知或缺失回执。
+有限IMLane的链host/backend及cascade host/worker将省略／null上下文归一到原4096，显式值保持；
+该兼容转换不进入异步SemLoom。独审发现与当前修订见
+[兼容记录](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)。
+
 
 
 ## records Core 可选动态接纳

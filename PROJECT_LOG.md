@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-03：修正上下文候选的owner与IMLane兼容
+
+按独审反例另开工作区，保留原候选与失败证据。token wrapper通过只读回执接口接线，
+独立查询继续在查询内分配模型；有限IMLane保留原省略值语义，不恢复异步4096。
+新增反例与实际CPU子进程回归、历史来源保留及待复审项见
+[当前记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)。
+
 ## 2026-11-03：离线校准使用执行owner的实际上下文
 
 在保留01297ff的独立分支中补ready接线，复用首个已声明样本取得模型解析值，

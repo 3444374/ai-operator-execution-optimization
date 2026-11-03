@@ -1,6 +1,7 @@
 """A fixed cascade role executed by the author's CPython executor."""
 
 from copy import deepcopy
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -27,6 +28,7 @@ class CascadeWorker(FilterWorker):
     def __init__(self, config, *, prepare_type=None, engine_type=None):
         self.stage = stage_values(config["stage"])
         self.engine = EngineSpec.from_dict(config["engine"])
+        self.engine = replace(self.engine, max_model_len=self.engine.legacy_max_model_len)
         self.generation = local_generation(self.stage)
         self.resources = RecordsResources(**config["resources"])
         self.query_id, self.deadline = config["query_id"], config["deadline_monotonic"]
