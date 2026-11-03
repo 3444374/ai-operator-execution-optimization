@@ -20,6 +20,24 @@ LOTUS 本地模型启动、Kalypso 或现有 PG wire schema。
 机器可读摘要 `related_3.json` 为 `3be592829aa994a2e24eaa4e383598757ad92ecdac624db9e4fe47a7dad1f308`；
 以该运行标识和校验值定位本地原件，不将缺依赖检查视作真实库验收。
 
+独审 `b16b5a95` 发现组织化 PG 的准备函数仍给任务预留 1 MiB，以及九份共享源改变引入
+45 处历史绑定不匹配。修订使三种组织模式的任务额度与 result work 同取用户配置；新增
+[组织化 4 KiB 检查](../../code/tests/execution_provider/test_organized_response_capacity.py)覆盖准备、接纳和替身交付。
+按准确 `5ff54bfe` 保存上述九份及新增受影响的 `map_organization.py`，五份投影只追加 50 条来源映射，
+未改旧摘要、投影标识、来源版本、已有映射或原始证据。
+[HTTP 历史来源检查](../../code/tests/experiments/test_http_historical_bindings.py)只还原明确选定的十份源，
+使用自身的子集内容标识；不宣称五份完整投影已通过。
+
+修订运行 `http-config-20261103-revision-related-r2` 共 228 个不同方法，181 通过、47 跳过：
+34 项缺 LOTUS、12 项缺 Daft，另 1 项真实 CPU Ray 资格未选择。另一扩大检查的 4 项 records
+因现有环境缺 LOTUS 在类初始化停止，日志保留；未安装依赖，也未启动真实 Ray、模型或数据库。
+全量 3010 条绑定在 `5ff54bfe` 有 10 处旧不匹配、`b16b5a95` 有 55 处、修订后为同样的 10 处，新增为 0。
+旧问题来自 `code/src/observability/metrics/resources.py` 和 `code/src/scheduling/core/session_policy.py`，
+各影响五份投影；原完整还原检查仍有两个方法报错，其中一方法含五个投影子用例，未改检查或转记为通过。
+修订成功日志 `related_r2.txt` 的 SHA-256 为 `67cc0127a43edb904175c2511a04f6e9cbc290485f7a5af62b29c0cb9d0c7cd6`，
+绑定报告 `historical_audit.json` 为 `b784d71976f45ba5042176cf4a6256827bb4ef69972ba26b5dd251b172adaae3`；
+失败与成功日志按此运行标识分别保存，原独审报告及 `b16b5a95` 记录保持。
+
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界
 

@@ -10,7 +10,6 @@ from ...modalities.text.contracts import build_text_work_descriptor, text_work_c
 from ...modalities.text.tokenization import chat_token_count
 from ...scheduling.organization.session_window import WorkWindowOrganizer
 from .incremental_execution import build_fixed_model_execution, prepare_map_task
-from .model_config import MAX_MODEL_RESPONSE_BYTES
 
 
 @dataclass(frozen=True)
@@ -128,9 +127,10 @@ def organization_factory(config, *, tokenizer=None):
             prompt_bytes = sum(len(m['content'].encode('utf-8')) for m in request.canonical_messages)
             work = build_text_work_descriptor(
                 prompt_tokens=prompt_tokens, estimated_output_tokens=max_new, prompt_bytes=prompt_bytes,
-                result_bytes_upper=MAX_MODEL_RESPONSE_BYTES, calibration_signature=signature,
+                result_bytes_upper=model_config.max_response_bytes, calibration_signature=signature,
             )
-            task = prepare_map_task(request, sequence, describe_work=lambda _: work)
+            task = prepare_map_task(request, sequence, describe_work=lambda _: work,
+                                    max_result_bytes=model_config.max_response_bytes)
             if observer:
                 observer(dict(event='map_work_described', sequence=sequence,
                               semantic_payload_digest=request.semantic_payload_digest,

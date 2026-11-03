@@ -9,6 +9,10 @@
 候选支持范围与 CPU／依赖缺项分别见[代码状态](code/INFRA_STATUS.md#http-call-configuration-cpu)和
 [证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#http-call-configuration-cpu)；本次不推送、合并或运行模型。
 
+后续独审发现组织化 PG 的小额度传递遗漏和新增历史来源不匹配，修订分别补齐自定义准备函数与准确旧源映射。
+只处理本次引入的差异，旧摘要与原证据保留；基线已有的十处历史不匹配继续单列，完整还原仍未通过。
+新的本地候选交复审，实际 CPU 结果与缺项沿用上述代码状态和台账记录。
+
 ## 2026-10-28：完整F/M查询token配置的独立本地接线
 
 将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。

@@ -1,5 +1,12 @@
 # 原生基线与具名 Core 历史复现
 
+独立 HTTP 配置修订将十份受影响的共享旧源按准确 `5ff54bfe` 字节保存在
+[历史来源](historical_sources/5ff54bfe/)；五份投影追加 50 条来源映射，包含组织化 PG 的准备函数。
+原逐文件摘要、投影标识、来源版本及已有映射保持，维护运行时不导入这些副本。
+本次新增绑定不匹配已清零；`resources.py` 与 `session_policy.py` 的基线既有十处不匹配仍单列，
+完整还原尚未通过，未修改其 expected 摘要或原检查。实际检查范围见
+[HTTP 证据记录](../../results/EXPERIMENT_EVIDENCE_REGISTRY.md#http-call-configuration-cpu)。
+
 未接入维护执行入口的 `scheduling/runtime/saor_pipeline.py` 与纯 CPU 微基准
 `experiments/saor/control_benchmark.py` 已退出 `code/`，其实现、专属测试及原 runtime 包导出
 按准确 `54ff2324` 字节保存在 `historical_sources/54ff2324/`。

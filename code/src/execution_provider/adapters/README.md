@@ -33,6 +33,12 @@ Worker identity includes the configured response capacity, so a changed capacity
 matching worker pool. [CPU configuration cases](../../../tests/execution_provider/test_http_configuration.py)
 use in-memory responses and Core; actual Ray, model and PG execution require separate checks.
 
+`organization_factory` passes the configured response allowance to both prepared task reservation
+and the typed result-work description in all three Map organization modes. A small PG allowance
+therefore uses the same storage budget through preparation and intake.
+[Organization quota cases](../../../tests/execution_provider/test_organized_response_capacity.py)
+cover preparation, acceptance and fixture result delivery at 4 KiB without raising the quota.
+
 `NativeTaskSession` registers a query Job and one operator flow. `offer` transfers only its
 accepted prefix, leaving the caller responsible for the suffix; offering sends no request.
 `advance` returns completion-order deliveries, and `wait` uses Core progress and deadlines.
