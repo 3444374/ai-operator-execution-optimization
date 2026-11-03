@@ -221,6 +221,8 @@ class NativeFeedbackTests(unittest.TestCase):
             null=asyncio.run(construct(False,max_num_seqs=None))
             single=asyncio.run(construct(False,max_num_seqs=1))
             feedback_explicit=asyncio.run(construct(True,max_num_seqs=128))
+            for maximum in (None,1,4096,8192):
+                asyncio.run(construct(False,max_num_batched_tokens=maximum))
             modules['vllm'].__version__='0.25.0'
             with self.assertRaisesRegex(RuntimeError, 'exactly vllm==0.25.1'):
                 asyncio.run(construct(True))
@@ -243,7 +245,14 @@ class NativeFeedbackTests(unittest.TestCase):
         self.assertEqual(calls[5][0].max_num_seqs,128)
         self.assertEqual(calls[5][0].worker_extension_cls,VLLM_GPU_IDENTITY_EXTENSION)
         self.assertIsNotNone(feedback_explicit._feedback)
-        self.assertNotIn('native_capacity',plain.ready())
+        self.assertNotIn('max_num_batched_tokens',vars(calls[0][0]))
+        self.assertNotIn('max_num_batched_tokens',vars(calls[6][0]))
+        self.assertEqual([call[0].max_num_batched_tokens for call in calls[7:]], [1,4096,8192])
+        self.assertEqual(plain.ready()['native_capacity']['max_num_batched_tokens'],999)
         self.assertEqual(feedback.ready()['native_capacity']['max_num_seqs'],7)
         self.assertIsNone(feedback.spec.max_num_seqs)
         self.assertEqual(explicit.spec.max_num_seqs,128)
+        plain._llm.vllm_config=None
+        unavailable=plain.ready()['native_capacity']
+        self.assertEqual(unavailable['status'],'partial_or_unavailable')
+        self.assertIsNone(unavailable['max_num_batched_tokens'])
