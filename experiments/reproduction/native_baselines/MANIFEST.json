@@ -685,7 +685,17 @@
         "code/src/experiments/saor/control_benchmark.py": "historical_sources/54ff2324/code/src/experiments/saor/control_benchmark.py",
         "code/src/scheduling/runtime/__init__.py": "historical_sources/54ff2324/code/src/scheduling/runtime/__init__.py",
         "code/src/serving/backends/vllm_engine.py": "historical_sources/5ff54bfe/code/src/serving/backends/vllm_engine.py",
-        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py"
+        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py",
+        "code/src/execution_provider/adapters/incremental_execution.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/incremental_execution.py",
+        "code/src/execution_provider/adapters/map_organization.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/map_organization.py",
+        "code/src/execution_provider/adapters/model_config.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/model_config.py",
+        "code/src/execution_provider/adapters/native_tasks.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/native_tasks.py",
+        "code/src/execution_provider/adapters/openai_compatible_fixed.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/openai_compatible_fixed.py",
+        "code/src/execution_provider/server.py": "historical_sources/5ff54bfe/code/src/execution_provider/server.py",
+        "code/src/semantic_methods/lotus/batch.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/batch.py",
+        "code/src/semantic_methods/lotus/driver.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/driver.py",
+        "code/src/semantic_methods/lotus/limits.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/limits.py",
+        "code/src/semantic_methods/lotus/sdk.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/sdk.py"
       },
       "default_selected": false
     },
@@ -1399,7 +1409,17 @@
         "code/src/experiments/saor/control_benchmark.py": "historical_sources/54ff2324/code/src/experiments/saor/control_benchmark.py",
         "code/src/scheduling/runtime/__init__.py": "historical_sources/54ff2324/code/src/scheduling/runtime/__init__.py",
         "code/src/serving/backends/vllm_engine.py": "historical_sources/5ff54bfe/code/src/serving/backends/vllm_engine.py",
-        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py"
+        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py",
+        "code/src/execution_provider/adapters/incremental_execution.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/incremental_execution.py",
+        "code/src/execution_provider/adapters/map_organization.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/map_organization.py",
+        "code/src/execution_provider/adapters/model_config.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/model_config.py",
+        "code/src/execution_provider/adapters/native_tasks.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/native_tasks.py",
+        "code/src/execution_provider/adapters/openai_compatible_fixed.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/openai_compatible_fixed.py",
+        "code/src/execution_provider/server.py": "historical_sources/5ff54bfe/code/src/execution_provider/server.py",
+        "code/src/semantic_methods/lotus/batch.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/batch.py",
+        "code/src/semantic_methods/lotus/driver.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/driver.py",
+        "code/src/semantic_methods/lotus/limits.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/limits.py",
+        "code/src/semantic_methods/lotus/sdk.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/sdk.py"
       },
       "default_selected": false
     },
@@ -2123,7 +2143,17 @@
         "code/src/experiments/saor/control_benchmark.py": "historical_sources/54ff2324/code/src/experiments/saor/control_benchmark.py",
         "code/src/scheduling/runtime/__init__.py": "historical_sources/54ff2324/code/src/scheduling/runtime/__init__.py",
         "code/src/serving/backends/vllm_engine.py": "historical_sources/5ff54bfe/code/src/serving/backends/vllm_engine.py",
-        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py"
+        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py",
+        "code/src/execution_provider/adapters/incremental_execution.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/incremental_execution.py",
+        "code/src/execution_provider/adapters/map_organization.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/map_organization.py",
+        "code/src/execution_provider/adapters/model_config.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/model_config.py",
+        "code/src/execution_provider/adapters/native_tasks.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/native_tasks.py",
+        "code/src/execution_provider/adapters/openai_compatible_fixed.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/openai_compatible_fixed.py",
+        "code/src/execution_provider/server.py": "historical_sources/5ff54bfe/code/src/execution_provider/server.py",
+        "code/src/semantic_methods/lotus/batch.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/batch.py",
+        "code/src/semantic_methods/lotus/driver.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/driver.py",
+        "code/src/semantic_methods/lotus/limits.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/limits.py",
+        "code/src/semantic_methods/lotus/sdk.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/sdk.py"
       },
       "default_selected": false
     },
@@ -2848,7 +2878,17 @@
         "code/src/experiments/saor/control_benchmark.py": "historical_sources/54ff2324/code/src/experiments/saor/control_benchmark.py",
         "code/src/scheduling/runtime/__init__.py": "historical_sources/54ff2324/code/src/scheduling/runtime/__init__.py",
         "code/src/serving/backends/vllm_engine.py": "historical_sources/5ff54bfe/code/src/serving/backends/vllm_engine.py",
-        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py"
+        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py",
+        "code/src/execution_provider/adapters/incremental_execution.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/incremental_execution.py",
+        "code/src/execution_provider/adapters/map_organization.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/map_organization.py",
+        "code/src/execution_provider/adapters/model_config.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/model_config.py",
+        "code/src/execution_provider/adapters/native_tasks.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/native_tasks.py",
+        "code/src/execution_provider/adapters/openai_compatible_fixed.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/openai_compatible_fixed.py",
+        "code/src/execution_provider/server.py": "historical_sources/5ff54bfe/code/src/execution_provider/server.py",
+        "code/src/semantic_methods/lotus/batch.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/batch.py",
+        "code/src/semantic_methods/lotus/driver.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/driver.py",
+        "code/src/semantic_methods/lotus/limits.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/limits.py",
+        "code/src/semantic_methods/lotus/sdk.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/sdk.py"
       },
       "default_selected": false
     },
@@ -3578,7 +3618,17 @@
         "code/src/experiments/saor/control_benchmark.py": "historical_sources/54ff2324/code/src/experiments/saor/control_benchmark.py",
         "code/src/scheduling/runtime/__init__.py": "historical_sources/54ff2324/code/src/scheduling/runtime/__init__.py",
         "code/src/serving/backends/vllm_engine.py": "historical_sources/5ff54bfe/code/src/serving/backends/vllm_engine.py",
-        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py"
+        "code/src/experiments/calibration/core.py": "historical_sources/5ff54bfe/code/src/experiments/calibration/core.py",
+        "code/src/execution_provider/adapters/incremental_execution.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/incremental_execution.py",
+        "code/src/execution_provider/adapters/map_organization.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/map_organization.py",
+        "code/src/execution_provider/adapters/model_config.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/model_config.py",
+        "code/src/execution_provider/adapters/native_tasks.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/native_tasks.py",
+        "code/src/execution_provider/adapters/openai_compatible_fixed.py": "historical_sources/5ff54bfe/code/src/execution_provider/adapters/openai_compatible_fixed.py",
+        "code/src/execution_provider/server.py": "historical_sources/5ff54bfe/code/src/execution_provider/server.py",
+        "code/src/semantic_methods/lotus/batch.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/batch.py",
+        "code/src/semantic_methods/lotus/driver.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/driver.py",
+        "code/src/semantic_methods/lotus/limits.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/limits.py",
+        "code/src/semantic_methods/lotus/sdk.py": "historical_sources/5ff54bfe/code/src/semantic_methods/lotus/sdk.py"
       },
       "default_selected": false
     }

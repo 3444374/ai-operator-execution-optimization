@@ -267,7 +267,7 @@ class OpenAICompatibleFixedAdapter:
                 else:
                     code = "MODEL_RESPONSE_INVALID"
                 raise CompletionAdapterError(code)
-            response_bytes = _read_response(response, deadline)
+            response_bytes = _read_response(response, deadline, self._config.max_response_bytes)
             terminal_response = True
         except (TimeoutError, socket.timeout):
             raise CompletionAdapterError(
@@ -330,14 +330,15 @@ def _connect_resolved(
 def _read_response(
     response: http.client.HTTPResponse,
     deadline: _RequestDeadline,
+    max_response_bytes: int,
 ) -> bytes:
     buffer = bytearray()
-    while len(buffer) <= MAX_MODEL_RESPONSE_BYTES:
+    while len(buffer) <= max_response_bytes:
         deadline.remaining_seconds()
         chunk = response.read1(
             min(
                 _RESPONSE_READ_BYTES,
-                MAX_MODEL_RESPONSE_BYTES + 1 - len(buffer),
+                max_response_bytes + 1 - len(buffer),
             )
         )
         deadline.remaining_seconds()
@@ -349,7 +350,7 @@ def _read_response(
         deadline.remaining_seconds()
     if deadline.expired:
         raise TimeoutError
-    if len(buffer) > MAX_MODEL_RESPONSE_BYTES:
+    if len(buffer) > max_response_bytes:
         raise CompletionAdapterError("MODEL_RESPONSE_INVALID", remote_outcome_unknown=True)
     return bytes(buffer)
 

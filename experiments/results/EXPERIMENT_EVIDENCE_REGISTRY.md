@@ -1,5 +1,43 @@
 # 实验与机制证据台账
 
+<a id="http-call-configuration-cpu"></a>
+## 2026-11-03：独立 HTTP 请求配置的 CPU 检查
+
+候选基于 `5ff54bfe774f5cdabb5b67bb5a2696dca2b84e08`；适用接口见
+[代码状态](../../code/INFRA_STATUS.md#http-call-configuration-cpu)。
+运行 `http-config-20261103-related-3` 共 221 项，174 通过、47 跳过；其中
+[HTTP 配置检查](../../code/tests/execution_provider/test_http_configuration.py)与
+[期限检查](../../code/tests/semantic_methods/test_lotus_http_deadlines.py)合计 19 项，使用内存 HTTP、SDK 替身与真实 Core，
+旧 HTTP／PG Python 协议使用回环 HTTP／临时 Unix socket，未启动数据库或写入外部服务。
+覆盖 120／180 秒声明、较短调用方期限、1 MiB 前后结果、显式小额度、单项／总量、结果租约、
+格式错误及未知结果占用；没有模型、GPU 或真实 Ray 请求，也不支持性能结论。
+首次普通沙箱回归的 16 个回环端口错误与后续缺少 `pyarrow` 的 records 导入错误均保留，未改成通过。
+47 项跳过包含缺少固定版本 LOTUS 的 34 项、缺少 Daft／Arrow 的 12 项及未选择真实 CPU Ray 资格的 1 项；
+真实库与数据库验证仍 pending。
+完整日志及运行器按运行标识经本地 artifact 交接，失败与成功记录各自保存；未改 baseline graph、
+LOTUS 本地模型启动、Kalypso 或现有 PG wire schema。
+成功日志 `related_3.txt` 的 SHA-256 为 `e69b30e75ba066b2df1011c7851b62d57904f56144734dad2b31938e7f6cf581`，
+机器可读摘要 `related_3.json` 为 `3be592829aa994a2e24eaa4e383598757ad92ecdac624db9e4fe47a7dad1f308`；
+以该运行标识和校验值定位本地原件，不将缺依赖检查视作真实库验收。
+
+独审 `b16b5a95` 发现组织化 PG 的准备函数仍给任务预留 1 MiB，以及九份共享源改变引入
+45 处历史绑定不匹配。修订使三种组织模式的任务额度与 result work 同取用户配置；新增
+[组织化 4 KiB 检查](../../code/tests/execution_provider/test_organized_response_capacity.py)覆盖准备、接纳和替身交付。
+按准确 `5ff54bfe` 保存上述九份及新增受影响的 `map_organization.py`，五份投影只追加 50 条来源映射，
+未改旧摘要、投影标识、来源版本、已有映射或原始证据。
+[HTTP 历史来源检查](../../code/tests/experiments/test_http_historical_bindings.py)只还原明确选定的十份源，
+使用自身的子集内容标识；不宣称五份完整投影已通过。
+
+修订运行 `http-config-20261103-revision-related-r2` 共 228 个不同方法，181 通过、47 跳过：
+34 项缺 LOTUS、12 项缺 Daft，另 1 项真实 CPU Ray 资格未选择。另一扩大检查的 4 项 records
+因现有环境缺 LOTUS 在类初始化停止，日志保留；未安装依赖，也未启动真实 Ray、模型或数据库。
+全量 3010 条绑定在 `5ff54bfe` 有 10 处旧不匹配、`b16b5a95` 有 55 处、修订后为同样的 10 处，新增为 0。
+旧问题来自 `code/src/observability/metrics/resources.py` 和 `code/src/scheduling/core/session_policy.py`，
+各影响五份投影；原完整还原检查仍有两个方法报错，其中一方法含五个投影子用例，未改检查或转记为通过。
+修订成功日志 `related_r2.txt` 的 SHA-256 为 `67cc0127a43edb904175c2511a04f6e9cbc290485f7a5af62b29c0cb9d0c7cd6`，
+绑定报告 `historical_audit.json` 为 `b784d71976f45ba5042176cf4a6256827bb4ef69972ba26b5dd251b172adaae3`；
+失败与成功日志按此运行标识分别保存，原独审报告及 `b16b5a95` 记录保持。
+
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界
 

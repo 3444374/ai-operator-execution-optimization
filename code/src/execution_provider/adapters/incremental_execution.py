@@ -25,7 +25,7 @@ from ..completion import CompletionRequest
 from ..limits import MAX_INCREMENTAL_TASKS
 from ..wire.framing import MAX_FRAME_BYTES
 from .async_fixed_model import AsyncFixedModelTransport
-from .model_config import MAX_MODEL_RESPONSE_BYTES
+from .model_config import MAX_MODEL_RESPONSE_BYTES, check_pg_response_capacity
 
 
 @dataclass(frozen=True)
@@ -86,7 +86,8 @@ def request_count_work(request: CompletionRequest) -> WorkDescriptor:
     return WorkDescriptor((StageWork("model", 1, "work_units"),), "model", "request-count")
 
 
-def prepare_map_task(request, sequence, *, describe_work=request_count_work):
+def prepare_map_task(request, sequence, *, describe_work=request_count_work,
+                     max_result_bytes=MAX_MODEL_RESPONSE_BYTES):
     # Policy describes demand/locality; the canonical model input remains unchanged.
     payload = json.dumps(
         {
@@ -102,7 +103,7 @@ def prepare_map_task(request, sequence, *, describe_work=request_count_work):
         sequence,
         payload,
         work.primary.units,
-        MAX_MODEL_RESPONSE_BYTES,
+        max_result_bytes,
         info=TaskInfo(
             "pg-filter" if request.protocol_version == 3 else "pg-map", sequence, "model", work
         ),
@@ -131,7 +132,9 @@ def build_fixed_model_execution(
     preparation_factory=None,
 ):
     """PG/default assembly retains its fixed protocol request capacity."""
+    check_pg_response_capacity(config)
     return _build_model_execution(config, item_input_bytes=MAX_FRAME_BYTES,
+        item_result_bytes=config.max_response_bytes,
         execute=execute, observer=observer, max_tasks=max_tasks,
         max_active_requests=max_active_requests, input_bytes=input_bytes, result_bytes=result_bytes,
         policies=policies, organize=organize, describe_work=describe_work,
@@ -145,6 +148,7 @@ def _build_model_execution(
     config,
     *,
     item_input_bytes,
+    item_result_bytes=MAX_MODEL_RESPONSE_BYTES,
     execute=None,
     observer=None,
     max_tasks=1,
@@ -178,12 +182,12 @@ def _build_model_execution(
     limits = SessionLimits(
         held_tasks=max_tasks,
         input_bytes=max_tasks * item_input_bytes if input_bytes is None else input_bytes,
-        result_bytes=max_tasks * MAX_MODEL_RESPONSE_BYTES if result_bytes is None else result_bytes,
+        result_bytes=max_tasks * item_result_bytes if result_bytes is None else result_bytes,
         active_requests=max_active_requests,
         active_work=max_active_requests if active_work is None else active_work,
         offer_tasks=max_tasks,
         item_input_bytes=item_input_bytes,
-        item_result_bytes=MAX_MODEL_RESPONSE_BYTES,
+        item_result_bytes=item_result_bytes,
         metadata_bytes=1024,
         step_actions=8,
         wait_timeout_s=drain_timeout_s,
@@ -265,7 +269,7 @@ def _build_model_execution(
         return backend.close(timeout)
     return IncrementalExecution(
         engine,
-        partial(prepare_map_task, describe_work=describe_work),
+        partial(prepare_map_task, describe_work=describe_work, max_result_bytes=item_result_bytes),
         close if preparation is not None else backend.close,
         drain_timeout_s,
         work_unit,

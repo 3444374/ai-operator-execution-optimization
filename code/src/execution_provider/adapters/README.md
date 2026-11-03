@@ -20,6 +20,25 @@ The three private assembly factories form one capacity closure;
 [boundary and lifecycle qualification](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)
 keeps logical input, prepared suffix, SDK/proxy copies and process RSS distinct.
 
+`FixedModelConfig.max_response_bytes` defaults to 1 MiB and accepts 1 byte through 8 MiB.
+For native execution it selects `SessionLimits.item_result_bytes`; selecting more than 1 MiB
+requires an explicit `result_bytes` total fitting at least one complete result before transport
+creation. A producer still declares each task's `max_result_bytes` within that item capacity.
+Complete HTTP results charge metadata and body together, and stay charged until consumer release.
+The synchronous `OpenAICompatibleFixedAdapter` instead applies the same configuration field to
+the raw HTTP body it reads. Overflow reports an error and keeps unknown remote work charged.
+Increasing the total alone retains the default per-item capacity. PG factories and the gateway
+reject configured responses above 1 MiB; a larger PG representation requires a new wire profile.
+Worker identity includes the configured response capacity, so a changed capacity requires a
+matching worker pool. [CPU configuration cases](../../../tests/execution_provider/test_http_configuration.py)
+use in-memory responses and Core; actual Ray, model and PG execution require separate checks.
+
+`organization_factory` passes the configured response allowance to both prepared task reservation
+and the typed result-work description in all three Map organization modes. A small PG allowance
+therefore uses the same storage budget through preparation and intake.
+[Organization quota cases](../../../tests/execution_provider/test_organized_response_capacity.py)
+cover preparation, acceptance and fixture result delivery at 4 KiB without raising the quota.
+
 `NativeTaskSession` registers a query Job and one operator flow. `offer` transfers only its
 accepted prefix, leaving the caller responsible for the suffix; offering sends no request.
 `advance` returns completion-order deliveries, and `wait` uses Core progress and deadlines.

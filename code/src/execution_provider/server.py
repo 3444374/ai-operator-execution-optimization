@@ -17,7 +17,7 @@ from .adapters.golden import GoldenCompletionAdapter
 from .adapters.openai_compatible_fixed import (
     OpenAICompatibleFixedAdapter,
 )
-from .adapters.model_config import load_fixed_model_config
+from .adapters.model_config import load_fixed_model_config, check_pg_response_capacity
 from .completion import CompletionAdapter
 from .completion import Completion
 from .gateway_runtime import GatewayLimits, GatewayRuntime
@@ -235,6 +235,10 @@ def main(
             fixed_config = load_fixed_model_config(args.fixed_model_config)
         except ValueError:
             raise SystemExit("invalid fixed model configuration") from None
+        try:
+            check_pg_response_capacity(fixed_config)
+        except ValueError as error:
+            raise SystemExit(str(error)) from None
         if args.incremental_map:
             from .multiplexed_gateway import MultiSessionMapGateway
 

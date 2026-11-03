@@ -32,9 +32,9 @@ def iter_two_map_rows(
     if (
         type(timeout_s) not in (int, float)
         or not math.isfinite(timeout_s)
-        or not 0 < timeout_s <= 120
+        or timeout_s <= 0
     ):
-        raise ValueError("LOTUS chain timeout must be at most 120 seconds")
+        raise ValueError("LOTUS chain timeout must be finite and positive")
     pool = MethodBudgetPool(capacity)
     job, session, _budget = execution.open_job(
         query_id,

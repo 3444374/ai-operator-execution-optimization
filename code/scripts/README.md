@@ -612,6 +612,11 @@ extension CLI/import 别名已删除。Python 调用方直接导入 `src.executi
 golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
 model、timeout 和 bearer-token 环境变量名不进入仓库。
 
+fixed JSON 的可选 `max_response_bytes` 声明逐响应额度，默认 1 MiB；PG gateway 允许显式调小，
+超过 1 MiB 则在创建传输前报错。`--result-buffer-bytes` 只设置增量路径的总预算，不自动放大单条额度。
+独立 Python HTTP／native 接点可显式使用更大结果，接口与支持范围见
+[执行层说明](../src/execution_provider/adapters/README.md#python-consumer)。
+
 默认同步模式下，`--max-connections`（默认8）限制同时存活会话，`--max-active-requests`（默认1）独立限制活跃或
 远端终态未知的模型请求；没有待执行任务队列。连接满时新连接关闭，请求满时返回
 `MODEL_REQUEST_REJECTED`。每会话仍同步逐项执行，空闲会话不占模型请求名额。

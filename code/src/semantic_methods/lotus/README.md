@@ -29,6 +29,17 @@ HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，�
 取消与本地 iterator 关闭不证明远端模型停止；未确认的工作保留原 ownership，执行 owner 负责 drain。
 完整响应字节预算不等于进程 RSS 上限。接口和完整响应基础见[执行层说明](../../execution_provider/adapters/README.md)。
 
+独立 SemLoom HTTP 接点的请求期限由 `FixedModelConfig.timeout_ms`、SDK 的 `timeout` 与
+`LotusCallLimits.request_timeout_s` 一致声明；允许显式 180 秒，仍要求有限正数及模型配置匹配。
+`LotusBatchExecutor.timeout_s` 和 `iter_two_map_rows.timeout_s` 保留 120 秒默认，可显式设为更长期限；
+较短的批／查询期限仍先停止新增工作。批期限仍可显式为 `None`，表示由调用方监督完成与清理。
+单条结果额度由模型配置的 `max_response_bytes` 传入 native Engine 和默认 HTTP call profile；
+显式非默认值超过已有 Engine 容量时提前拒绝，显式 `LotusCallLimits` 仍须满足其单项和整批额度。
+本项没有修改 Daft／Ray Data baseline graph、`LotusNativeBatchExecutor` 或其 `NativeCall` 的
+120 秒接收范围，也没有修改 LOTUS 本地模型启动、records vLLM 路径或 Kalypso。
+[CPU 期限检查](../../../tests/semantic_methods/test_lotus_http_deadlines.py)使用 SDK 转换替身；
+本候选的固定版本 LOTUS／LiteLLM／OpenAI SDK、真实模型与数据库检查尚未完成。
+
 <a id="finite-chain-result-index"></a>
 ## 有限链共享结果关联索引
 

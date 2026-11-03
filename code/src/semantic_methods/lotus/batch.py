@@ -8,6 +8,7 @@ import math
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from ...scheduling.core.session_contract import SessionLimits, State
 from ...execution_provider.adapters.full_response import decode_full_response
+from ...execution_provider.adapters.model_config import MAX_MODEL_RESPONSE_BYTES
 from .sdk import (
     LotusResponseReplay,
     check_message_profile,
@@ -53,9 +54,9 @@ class LotusBatchExecutor:
         if timeout_s is not None and (
             type(timeout_s) not in (int, float)
             or not math.isfinite(timeout_s)
-            or not 0 < timeout_s <= 120
+            or timeout_s <= 0
         ):
-            raise ValueError("LOTUS batch timeout must be at most 120 seconds")
+            raise ValueError("LOTUS batch timeout must be finite and positive")
         if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
         if session_factory is not None and not callable(session_factory):
@@ -74,10 +75,13 @@ class LotusBatchExecutor:
             if session_limits is not None:
                 raise ValueError("local LOTUS capacity comes from its Engine")
             available = execution.engine.capacity.limits
+        response_bytes = model_config.max_response_bytes
+        if response_bytes == MAX_MODEL_RESPONSE_BYTES:
+            response_bytes = min(response_bytes, available.item_result_bytes)
         self.call_limits = call_limits or LotusCallLimits(
             model_config.timeout_ms / 1000,
             max_request_bytes=min(1024 * 1024, available.item_input_bytes),
-            max_response_bytes=min(1024 * 1024, available.item_result_bytes),
+            max_response_bytes=response_bytes,
             max_batch_rows=max_batch_rows,
             max_batch_response_bytes=max_batch_result_bytes,
             batch_timeout_s=timeout_s,
