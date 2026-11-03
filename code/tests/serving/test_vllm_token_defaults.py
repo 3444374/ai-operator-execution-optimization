@@ -20,12 +20,14 @@ from src.serving.backends import vllm_engine as common
 
 class NativeTokenDefaultTests(unittest.TestCase):
     def spec(self, **values):
+        # Isolate iteration-token defaults from delegated context confirmation.
+        values.setdefault('max_model_len', 4096)
         return common.EngineSpec('/tmp/token-budget-fixture', '/tmp/model-python',
                                  '/tmp/driver-python', **values)
 
     def test_missing_null_and_explicit_values_survive_config_and_wire_copies(self):
         required = dict(model_path='/tmp/token-budget-fixture', model_python='/tmp/model-python',
-                        driver_python='/tmp/driver-python')
+                        driver_python='/tmp/driver-python', max_model_len=4096)
         for extra in ({}, {'max_num_batched_tokens': None}, {'max_num_batched_tokens': 1},
                       {'max_num_batched_tokens': 4096}, {'max_num_batched_tokens': 8192}):
             with self.subTest(extra=extra):
@@ -183,6 +185,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
             for maximum in ('omitted', None, 1, 4096, 8192):
                 with self.subTest(lifecycle=lifecycle, maximum=maximum):
                     plan = deepcopy(helper.plan); plan['lifecycle'] = lifecycle
+                    plan['engine']['max_model_len'] = 4096
                     plan['resources']['max_active_batches'] = 3
                     plan['profile'] = dict(mode='async', max_inflight=2)
                     if maximum == 'omitted':
