@@ -342,7 +342,10 @@ class SupplyFeedbackController(ResourceFeedbackController):
         elif native_valid and state != 'resource_pressure':
             # Low-pressure frames count even while no measurement is eligible.
             self._pressure_windows = 0
-            self._preemptions = o.preemptions_total
+            if self.options.pressure_response == 'window':
+                self._preemptions = o.preemptions_total
+            elif self._new_pressure_sample(o):
+                self._remember_pressure_sample(o)
         self.supply_states[state] = self.supply_states.get(state, 0)+1
         if (decision.action != 'hold' or self._supply_anchor is None
                 or supply.observed_at_s-self._supply_anchor.observed_at_s >= self.options.window_s):

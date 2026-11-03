@@ -4,6 +4,18 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+<a id="pressure-sample-cpu-fix"></a>
+## 压力采样与 rolling 内存配置（本地 CPU 修复）
+
+基于`5ff54bfe`的独立候选将新鲜抢占增量／明确内存压力的响应放在吞吐窗口之前，
+按provider采样序号去重；无序号的直接调用按采样时刻去重。新模式停止探索后继续按采样间隔读取，
+具名历史配置保留原窗口响应和节奏。旧在途任务与字节责任仍按原结果确认流程结算。
+rolling未接内存保护源，正值`memory_floor_bytes`在配置阶段拒绝。
+[策略与适用范围](src/scheduling/runtime/calibration.README.md#pressure-sample-response)、
+[压力与记账用例](tests/scheduling/test_resource_pressure_clock.py)及
+[配置检查](tests/execution_provider/test_rolling_feedback_signals.py)只支持CPU行为判断；
+真实Ray／模型／GPU及完整查询性能尚未验证，独审待完成。
+
 固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
 只跳过 B 封包，C_request=R 且禁止动态请求反馈组合。FIFO、兼容性、成员/驻留与字节容量、
 独立结果和收尾责任不变，fused/默认路径不变。

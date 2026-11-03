@@ -203,6 +203,25 @@ Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`�
 缓存写入是查询局部资格，不证明物理 GPU/后代退出；unknown、held、借用未释放或账本不完整
 不会发布新 hint。原冻结来源的功能实测与当前代码整合分别判断，见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)；短查询提示复用不证明反馈调节或搜索收益。
 
+<a id="pressure-sample-response"></a>
+### 压力采样与吞吐测量的时钟
+
+`ResourceFeedbackConfig.pressure_response="sample"`使明确的抢占计数增量、
+`memory_pressure=True`在新鲜采样到达后先处理，不等待`window_s`的吞吐测量。
+同一个provider接纳的采样带单调递增`sample_sequence`；重复或倒序读取不再次调整额度。
+直接调用且不提供该序号时，用采样时刻去重。缺失或过期反馈不作为新压力或资源充裕的依据。
+KV占用的两窗确认和性能比较仍走原测量流程；单个高KV读数不变成即时抢占事件。
+
+采样响应模式在停止性能探索后仍按`poll_interval_s`读取，复用既有采样器和单个在途snapshot RPC。
+`pressure_response="window"`保留原窗口响应及保护采样节奏；
+`delivered-work-scan`、`computed-work-local-pairs`两个具名历史配置显式选择此模式。
+压力缩小的是后续接纳额度，已经提交的请求和其字节／结果责任继续保留到原确认流程结束。
+
+rolling目前只有原生queue、KV与抢占信号，尚未接入可用内存的保护源。
+因此`memory_floor_bytes>0`在profile解析和直接owner配置时明确拒绝，不将`None`解释为内存充裕。
+普通非rolling的现有设备内存读取未改接到此路径。
+以上为源码修复与CPU行为验证；真实Ray、模型及完整查询性能尚未验证。
+
 ### rolling 请求的上探与条件续扫
 
 显式 rolling `admission.kind="resource_feedback"` 使用

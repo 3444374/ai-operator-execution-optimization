@@ -294,6 +294,7 @@ class NonBlockingMetricsObservationProvider:
             completed_output_work_total=None if snapshot is None else snapshot.completed_output_work_total,
             completed_computed_input_work_total=None if snapshot is None else snapshot.completed_computed_input_work_total,
             completed_cached_input_work_total=None if snapshot is None else snapshot.completed_cached_input_work_total,
+            sample_sequence=sample_generation if snapshot is not None else None,
         )
 
     def close(self) -> None:

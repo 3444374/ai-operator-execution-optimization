@@ -1,5 +1,16 @@
 # 实验与机制证据台账
 
+<a id="pressure-sample-cpu-fix"></a>
+## 2026-11-03：压力响应与 rolling 内存配置的 CPU 修复
+
+来源为`5ff54bfe`后继源码和确定性CPU fixture，未运行GPU、真实Ray或模型。
+[实现范围](../../code/INFRA_STATUS.md#pressure-sample-cpu-fix)包含采样前置响应、重复读取去重、
+Core旧任务正常结算与无内存源配置拒绝；具名历史策略继续用原窗口响应。
+292项定向CPU检查通过，包含历史源码差分、采样器、控制器、配置与Core会话；无跳过。
+首次复现确认压力等待吞吐窗口及无来源的内存配置被接受；修复不证明性能改善。
+完整rolling SDK集成检查的本地LOTUS依赖尚缺；已执行的状态机和Core检查不代替该路径验收。
+局部失败输出及依赖预检记录保留在本次工作目录的忽略产物中，交接时提供路径与摘要。
+
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界
 

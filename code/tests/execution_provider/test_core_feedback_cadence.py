@@ -53,6 +53,12 @@ class CadenceTests(unittest.TestCase):
         f.gate.decide(1)
         self.assertEqual(f.provider.calls,2)
 
+    def test_sample_response_keeps_pressure_polling_independent_of_performance_window(self):
+        f = self.make()
+        f.progress = (0, 90, 0, False)
+        self.assertIsNotNone(f.sample())
+        self.assertEqual(f.provider.poll_interval_s, .1)
+
     def test_query_restart_has_no_cadence_or_window_left_from_previous_query(self):
         f=self.make();f.gate.clock=lambda:0.
         f.gate.decide(0);before=f.provider.calls
@@ -66,7 +72,7 @@ class CadenceTests(unittest.TestCase):
         for total,pending,initial,extra in [(3,3,2,{}),(100,2,2,dict(allow_exploration=True,min_remaining=4)),
                 (100,90,8,dict(allow_exploration=True)),(100,90,2,{})]:
             with self.subTest(total=total,pending=pending,initial=initial,extra=extra):
-                f=self.make(total,initial,**extra);f.progress=(0,pending,0,False)
+                f=self.make(total,initial,pressure_response='window',**extra);f.progress=(0,pending,0,False)
                 self.assertIsNotNone(f.sample())
                 self.assertEqual(f.provider.poll_interval_s,1.)
                 self.assertEqual(len(self.refs),1)
@@ -98,7 +104,7 @@ class CadenceTests(unittest.TestCase):
         self.assertTrue(all(e['reason']=='resource_pressure' for e in c.history))
 
     def test_protection_poll_loop_issues_one_snapshot_per_window(self):
-        f=self.make();f.progress=(0,90,0,False)
+        f=self.make(pressure_response='window');f.progress=(0,90,0,False)
         elapsed=0.
         while elapsed<1.:
             f.sample()

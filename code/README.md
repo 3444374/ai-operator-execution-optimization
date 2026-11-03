@@ -6,6 +6,7 @@
 | 对象 | 接口说明 |
 |---|---|
 | 执行优化的配置与开关 | [统一总览](../docs/执行配置与优化开关.md)：默认、开启时机、组合限制、实测效果及开发中边界 |
+| 提交反馈的压力采样 | [采样时钟与内存配置](src/scheduling/runtime/calibration.README.md#pressure-sample-response) |
 | LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
 | Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
 | 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) |

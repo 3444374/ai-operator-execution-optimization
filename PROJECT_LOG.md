@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-03：将明确压力响应与性能测量分开
+
+提交控制修复复用原控制器和采样器，具名历史配置保留原时钟；rolling缺少内存保护源时提前拒绝配置。
+[实现与CPU范围](code/INFRA_STATUS.md#pressure-sample-cpu-fix)和
+[证据身份](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#pressure-sample-cpu-fix)分列。
+本候选不修改vLLM或GPU资源归属，不启动真实Ray／模型／GPU实验。
+
 ## 2026-10-28：完整F/M查询token配置的独立本地接线
 
 将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。
