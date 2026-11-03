@@ -61,7 +61,7 @@ class VllmAsyncEngine:
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         values = self.generation.kwargs()
-        if self.generation.max_tokens > self.spec.max_model_len:
+        if self.spec.max_model_len is not None and self.generation.max_tokens > self.spec.max_model_len:
             raise ValueError("max_tokens exceeds max_model_len")
         identity = self.spec.validate_local()
         common._validate_current_runtime(identity)
@@ -91,6 +91,7 @@ class VllmAsyncEngine:
         self._closed = self._unhealthy = self._shutdown_failed = False
         self._closing_task = None
         self._requests = {}
+        self._context_observed = None
         self._reserved_model_calls = self._input_bytes = 0
         self._loop = asyncio.get_running_loop()
         self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics) \
@@ -101,13 +102,15 @@ class VllmAsyncEngine:
         from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_EXTENSION
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
-            dtype=self.spec.dtype, max_model_len=self.spec.max_model_len,
+            dtype=self.spec.dtype,
             max_num_batched_tokens=self.spec.max_num_batched_tokens,
             gpu_memory_utilization=self.spec.gpu_memory_utilization, seed=self.spec.seed,
             tensor_parallel_size=1, pipeline_parallel_size=1,
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
+            **({"max_model_len": self.spec.max_model_len}
+               if self.spec.max_model_len is not None else {}),
             **({"max_num_seqs": self.spec.max_num_seqs}
                if self.spec.max_num_seqs is not None else {}),
             **({"worker_extension_cls": VLLM_GPU_IDENTITY_EXTENSION}
@@ -153,10 +156,21 @@ class VllmAsyncEngine:
         except Exception as error:
             self._gpu_identity = dict(status="unavailable:" + type(error).__name__, gpu_uuids=None)
 
+    def _context_report(self):
+        from .model_context import model_context_record
+        if self._context_observed is None:
+            model = getattr(getattr(self._llm, 'vllm_config', None), 'model_config', None)
+            context = model_context_record(self.spec, self.engine_uid, getattr(model, 'max_model_len', None))
+            if self.generation.max_tokens > context['max_model_len']:
+                raise ValueError('max_tokens exceeds effective model context')
+            self._context_observed = context
+        return dict(self._context_observed)
+
     def ready(self):
         from src.observability.metrics.mfu import configuration_snapshot
         from src.observability.metrics.vllm import effective_capacity_snapshot
-        return dict(engine_uid=self.engine_uid, pid=os.getpid(), python=sys.executable,
+        context = self._context_report()
+        return dict(engine_uid=self.engine_uid, model_context=context, pid=os.getpid(), python=sys.executable,
                     native_gpu_identity=dict(getattr(self, "_gpu_identity", dict(status="unavailable:not_observed", gpu_uuids=None))),
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
@@ -179,7 +193,8 @@ class VllmAsyncEngine:
         if not isinstance(effective, common.GenerationSpec):
             raise TypeError("generation must be GenerationSpec")
         effective = common.GenerationSpec.from_dict(asdict(effective))
-        if effective.max_tokens > self.spec.max_model_len:
+        context = self._context_report()
+        if effective.max_tokens > context['max_model_len']:
             raise ValueError("max_tokens exceeds max_model_len")
         sampling = self._sampling(effective.kwargs())
         identities, conversations = common._prepared([row])
@@ -210,6 +225,8 @@ class VllmAsyncEngine:
             expected_ids = common._token_ids(prompts[0].get("prompt_token_ids"), "rendered token IDs")
             if not expected_ids:
                 raise ValueError("chat renderer did not provide token IDs")
+            if len(expected_ids) + effective.max_tokens > context['max_model_len']:
+                raise ValueError('rendered prompt and output cap exceed effective model context')
             state["expected_ids"] = expected_ids
             expired = time.monotonic() >= deadline_monotonic
             if state["abort_requested"] or expired or self._closing_task is not None:

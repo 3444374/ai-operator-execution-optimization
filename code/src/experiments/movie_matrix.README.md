@@ -112,6 +112,11 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 
 ### SemLoom records 的 Core／IPC 容量
 
+
+异步上下文的请求值与模型实际解析值分别记录；`max_model_len`省略／null在异步路径委托vLLM，
+实际ready回执进入长度检查与运行中的缓存身份。离线校准缺实际回执时拒绝，不以未知值代替无限。
+接口、同步参照兼容及剩余项见[上下文说明](../execution_provider/adapters/README.md#records-model-context)。
+
 普通 Movie 配置和 `semloom-core` Session plan 可在根部声明 `core_capacity`，
 异步模式另可声明部分 `async_limits`；其他 baseline 不接收这两个字段。例如：
 

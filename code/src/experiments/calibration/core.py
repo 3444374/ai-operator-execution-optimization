@@ -89,7 +89,7 @@ def _records_capacity_policy(plan):
     return dict(core=core, IPC_overrides=normalized)
 
 
-def build_core_identity(plan, checked, *, hardware, model, software):
+def build_core_identity(plan, checked, *, hardware, model, software, model_ready=None):
     """Bind fixed execution and checked input bytes; ignore IDs and scanned knobs.
 
     hardware comes from existing host checks (selected devices and resource caps).
@@ -128,6 +128,11 @@ def build_core_identity(plan, checked, *, hardware, model, software):
         workload=dict(queries=schedule),
         measurement=dict(objective="sum_measured_full_query_seconds", warmup="explicit_plan_queries", work_unit="model_calls"),
     )
+    from src.serving.backends.vllm_engine import EngineSpec
+    engine = EngineSpec.from_dict(plan['engine'])
+    if engine.max_model_len is None:
+        from src.serving.backends.model_context import model_context_identity
+        identity['execution']['model_context'] = model_context_identity(engine, model_ready)
     capacity = _records_capacity_policy(plan)
     if capacity is not None:
         identity["execution"]["records_capacity_policy_v1"] = capacity

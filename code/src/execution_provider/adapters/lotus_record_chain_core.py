@@ -1047,7 +1047,10 @@ class SemLoomRecordChainCore:
         if not self.resident or self._closing or self._actors is None:
             raise RuntimeError('only an open resident prepared owner can preload its model')
         self._configure_record_feedback()
-        return self._actors.start(time.monotonic()+self.resources.startup_timeout_s)
+        ready = self._actors.start(time.monotonic()+self.resources.startup_timeout_s)
+        if self.token_budget is not None:
+            self.token_budget.bind_model_context(ready)
+        return ready
 
     def finish_query(self, *, timeout=None):
         self._control()
@@ -1188,7 +1191,7 @@ class SemLoomRecordChainCore:
             raise ValueError('prepared_batching currently requires Filter/Map with one model role')
         if self._streaming_tokens and len(chain.stages) != 1:
             raise ValueError('cross-read token batching currently requires a single Filter or Map stage')
-        if any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages):
+        if any(stage.generation.max_tokens > self.engine.legacy_max_model_len for stage in chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
         expected = tuple(RecordOccurrence.from_dict(record.describe()) for record in expected)
         for name in ("row_id", "source_position"):
@@ -1405,7 +1408,7 @@ class SemLoomRecordChainCore:
         chain = LotusRecordChain.from_dict(chain.describe())
         if chain.query_id != query_id or len({s.method.model_name for s in chain.stages}) != 1:
             raise ValueError("record-local query requires one query and one model deployment")
-        if any(s.generation.max_tokens > self.engine.max_model_len for s in chain.stages):
+        if self.engine.max_model_len is not None and any(s.generation.max_tokens > self.engine.max_model_len for s in chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
         if self.progression == "batch_stage" and (any(s.kind not in ("filter", "map") for s in chain.stages)
                 or len({s.model_role for s in chain.stages}) != 1):
@@ -1493,6 +1496,12 @@ class SemLoomRecordChainCore:
             self._active = _RecordLocalRows(self, records, run, cancelled)
             if expected:
                 self._actors.start(min(self.deadline, time.monotonic() + self.resources.startup_timeout_s), cancelled)
+                from src.serving.backends.model_context import model_context_limit
+                context_limit = model_context_limit(self.engine, self._actors.model_ready)
+                if any(stage.generation.max_tokens > context_limit for stage in chain.stages):
+                    raise ValueError('chain output cap exceeds effective model context')
+                if self.token_budget is not None:
+                    self.token_budget.bind_model_context(self._actors.model_ready)
             self._query_count += 1
         except BaseException as error:
             error.add_note("record-local startup cleanup: " + str(self.close()))

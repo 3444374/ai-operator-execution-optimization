@@ -148,7 +148,7 @@ class EngineSpec:
     driver_python: str
     tokenizer_path: str | None = None
     dtype: str = "bfloat16"
-    max_model_len: int = 4096
+    max_model_len: int | None = None
     max_num_seqs: int | None = None
     max_num_batched_tokens: int = 4096
     gpu_memory_utilization: float = 0.8
@@ -166,8 +166,9 @@ class EngineSpec:
             _string(self.tokenizer_path, "tokenizer_path")
         if self.dtype not in {"auto", "half", "float16", "bfloat16", "float", "float32"}:
             raise ValueError("unsupported dtype")
-        for name in ("max_model_len", "max_num_batched_tokens"):
-            _integer(getattr(self, name), name, minimum=1)
+        _integer(self.max_num_batched_tokens, "max_num_batched_tokens", minimum=1)
+        if self.max_model_len is not None:
+            _integer(self.max_model_len, "max_model_len", minimum=1)
         if self.max_num_seqs is not None:
             _integer(self.max_num_seqs, "max_num_seqs", minimum=1)
         _integer(self.seed, "seed")
@@ -188,6 +189,11 @@ class EngineSpec:
     def legacy_max_num_seqs(self) -> int:
         """Retain the existing sync/native reference default outside async Core."""
         return 8 if self.max_num_seqs is None else self.max_num_seqs
+
+    @property
+    def legacy_max_model_len(self) -> int:
+        """Keep the existing finite context in sync/native reference execution."""
+        return 4096 if self.max_model_len is None else self.max_model_len
 
     def validate_local(self) -> dict:
         """Read local artifacts and probe environments without loading either ML stack."""
@@ -400,7 +406,7 @@ class VllmEngine:
         generation_kwargs = generation.kwargs()
         identity = engine.validate_local()
         _validate_current_runtime(identity)
-        if generation.max_tokens > engine.max_model_len:
+        if generation.max_tokens > engine.legacy_max_model_len:
             raise ValueError("max_tokens exceeds max_model_len")
         # Local directories plus offline flags forbid fallback model/tokenizer downloads.
         os.environ["HF_HUB_OFFLINE"] = "1"
@@ -425,7 +431,7 @@ class VllmEngine:
         self._closed = False
         self._close_attempt = 0
         self._shutdown_failed = False
-        self._max_model_len = engine.max_model_len
+        self._max_model_len = engine.legacy_max_model_len
         self._max_model_calls = engine.max_model_calls
         self._reserved_model_calls = 0
         self._lock = threading.Lock()
@@ -435,7 +441,7 @@ class VllmEngine:
             install(self.engine_uid)
         self._llm = vllm.LLM(
             model=engine.model_path, tokenizer=engine.tokenizer_path or engine.model_path,
-            dtype=engine.dtype, max_model_len=engine.max_model_len,
+            dtype=engine.dtype, max_model_len=engine.legacy_max_model_len,
             max_num_seqs=engine.legacy_max_num_seqs,
             max_num_batched_tokens=engine.max_num_batched_tokens,
             gpu_memory_utilization=engine.gpu_memory_utilization, seed=engine.seed,

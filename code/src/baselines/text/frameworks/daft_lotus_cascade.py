@@ -403,7 +403,7 @@ class DaftCascadeBackend:
                 lm.model, binding.instruction, binding.default, binding.system_prompt,
                 binding.output_tokens, effective[role], (), binding.resolved_input_columns)
             generation = local_generation(dummy)
-            if generation.max_tokens > spec.max_model_len:
+            if generation.max_tokens > spec.legacy_max_model_len:
                 raise ValueError("cascade max_tokens exceeds max_model_len")
             methods[role], scans[role] = binding, scan
             instructions[role] = nle2str(binding.instruction, list(binding.resolved_input_columns))
@@ -440,7 +440,7 @@ class DaftCascadeBackend:
         spec = self.engines[stage.model_role]
         if spec.max_model_calls is not None and spec.max_model_calls < len(calls):
             raise ValueError("engine lifetime budget cannot cover this cascade stage")
-        if generation.max_tokens > spec.max_model_len:
+        if generation.max_tokens > spec.legacy_max_model_len:
             raise ValueError("cascade max_tokens exceeds max_model_len")
         spec = replace(spec, max_model_calls=len(calls))
         control = Path(tempfile.mkdtemp(prefix="daft-cascade-stage-"))

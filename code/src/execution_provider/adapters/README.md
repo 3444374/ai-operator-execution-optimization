@@ -843,6 +843,25 @@ remain unchanged. The priority path above has no cross-query resident reuse, so 
 historical first/reuse runs are not reproduced merely by exposing this option.
 
 
+<a id="records-model-context"></a>
+## 异步模型上下文
+
+SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineArgs`省略该关键字，
+由固定版本vLLM解析。原模型ready回执新增`semloom.model_context.v1`，包含请求值、实际正整数长度、
+实际引擎身份、配置摘要与观测内容摘要；私有通信在接纳请求前核对，不从缺测推导无限长度。
+原生渲染后的完整提示加输出上限仍须适合实际长度，超限不截断或拆分请求。
+应用token组织、可选在途工作量与已启动模型的接纳缓存使用该回执，外层额度与原未知结果记录不变。
+
+显式正整数精确保留；同步SemLoom／LOTUS／Ray／Daft参照通过`legacy_max_model_len`保留原4096缺省，
+显存比例、数据精度、方法／生成参数及单GPU支持保持。每轮token修正属于独立候选。
+普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
+公共离线calibration入口的ready安排仍pending，底层`build_core_identity(..., model_ready=...)`缺回执拒绝；
+模型前的输入专用token验证仍需显式上下文。
+[CPU范围与剩余项](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#异步模型上下文的-cpu-候选)
+不包含真实模型或性能资格。
+
+
+
 ## records Core 可选动态接纳
 
 `lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。

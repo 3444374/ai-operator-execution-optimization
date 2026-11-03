@@ -50,6 +50,33 @@ class Handle:
         return SimpleNamespace(remote=remote)
 
 class ChainTokens(unittest.TestCase):
+    def test_model_resolved_context_is_required_and_bound_into_token_work(self):
+        from dataclasses import replace
+        from src.serving.backends.model_context import model_context_record
+        row, generation = self.prepared()
+        engine = replace(self.model, max_model_len=None)
+        def budget(limit):
+            value = ChainTokenBudget(self.tok, engine, active_tokens=100000,
+                tokenizer_signature=fingerprint(self.tok.backend_tokenizer.to_str()),
+                template_signature=fingerprint(TEMPLATE),
+                expected_output={s.stage_id:OutputTokenEstimate(2,'CPU context fixture') for s in self.stages})
+            if limit is not None:
+                value.bind_model_context(dict(engine_uid='cpu-context',
+                    model_context=model_context_record(engine,'cpu-context',limit)))
+            return value
+        with self.assertRaises(RuntimeError):
+            budget(None).estimate(row,generation)
+        small, large = budget(2048), budget(32768)
+        cost = small.estimate(row,generation)
+        small.validate(row,generation,cost)
+        self.assertNotEqual(small.signature,large.signature)
+        with self.assertRaises(ValueError):
+            large.validate(row,generation,cost)
+        reservation = cost['reserved_tokens']
+        budget(reservation).estimate(row,generation)
+        with self.assertRaises(ValueError):
+            budget(reservation-1).estimate(row,generation)
+
     def setUp(self):
         import lotus
         scope=lotus.settings.context(enable_cache=False)

@@ -48,7 +48,11 @@ def check_plan(plan):
         raise ValueError("native_single_thread_session requires daft and its explicit different native profile")
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
     resources = RecordsResources(**plan["resources"])
-    if generation.max_tokens > engine.max_model_len:
+    from src.execution_provider.adapters.lotus_records_core import expand_core_profile
+    declared_profile = expand_core_profile(plan['profile']) if plan['backend'] == 'semloom-core' else None
+    async_context = type(declared_profile) is dict and declared_profile.get('mode') == 'async'
+    context_limit = engine.max_model_len if async_context else engine.legacy_max_model_len
+    if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
@@ -328,7 +332,9 @@ class _MovieDriver:
                 self.last_query_report = run_record_admission(_record_admission_cache(self.plan,
                     resources=self.resources, resolved=self.core_execution),
                     self.core_execution, source, method, self.generation, self.engine, self.resources,
-                    execute_query, warmup=spec["phase"] == "warmup")
+                    execute_query, warmup=spec["phase"] == "warmup",
+                    **(dict(model_ready=self.owner._actors.model_ready)
+                       if self.engine.max_model_len is None else {}))
             else:
                 self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
                                        query_id=spec["query_id"], observer=emit)

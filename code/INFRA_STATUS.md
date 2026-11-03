@@ -4,6 +4,20 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+
+<a id="records-model-context-cpu"></a>
+## 异步上下文解析候选（2026-11-03）
+
+基于已发布 b018 与独立配置提取，异步 SemLoom 未指定／null 的 `max_model_len` 省略传入vLLM，
+在原模型 ready 回执绑定实际解析长度；提示加输出上限、通信、工作量与 live cache 身份使用该值。
+未知或不匹配值拒绝；没有异步4096影子值。同步／native的旧缺省、历史显式值、数据精度和显存比例保持。
+本轮仅CPU候选：去重后372个方法成功，6项既有失败在b018独立复现，22个方法跳过，另1类4方法未运行；
+最新方法级错误为0，失败／缺依赖／fixture修正原件保留。尚待独审与统一整合，未推送、合并或运行模型。
+公共离线校准的ready安排和模型前输入专用token验证仍有明确pending，不能据此声称完整查询加速。
+[职责与验收](../experiments/results/diagnostics/records_config_refactor_20261103/README.md#目标到实现的验收)、
+[实际接口](src/execution_provider/adapters/README.md#records-model-context)及
+[CPU证据](../experiments/results/diagnostics/records_config_refactor_20261103/raw/context_checks.json)记录当前范围。
+
 <a id="records-config-refactor-cpu"></a>
 ## Records 配置模块整理候选（2026-11-03）
 

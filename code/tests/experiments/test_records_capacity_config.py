@@ -22,6 +22,7 @@ from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.async_engine_process import AsyncEngineProcess, _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.model_context import model_context_record
 from tests.experiments import test_movie_records_session as fixtures
 from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime, Source
 from tests.serving.test_async_engine_process import row
@@ -33,6 +34,8 @@ def queued_process(spec, limits):
     """Exercise real submit/encoding/charging without allocating a child."""
     value = object.__new__(AsyncEngineProcess)
     value.spec, value.generation, value.limits = spec, GenerationSpec(), limits
+    value.ready_report = dict(engine_uid='cpu-queued-fixture',
+        model_context=model_context_record(spec, 'cpu-queued-fixture', spec.max_model_len or 32768))
     value._condition, value._io_done = threading.Condition(), threading.Event()
     value.process = SimpleNamespace(poll=lambda: None)
     value._broken, value._closing, value._query_id = None, False, None
@@ -322,7 +325,9 @@ class CapacityMovieEntryTests(unittest.TestCase):
                 run_record_admission(cache, resolved,
                     SimpleNamespace(manifest_path=Path(plan['queries'][0]['manifest'])),
                     MovieTask(1).method(plan['model_name']), GenerationSpec(), engine, resources,
-                    Mock(side_effect=AssertionError('no query execution')))
+                    Mock(side_effect=AssertionError('no query execution')),
+                    model_ready=dict(engine_uid='CPU-capacity-cache', model_context=model_context_record(
+                        engine,'CPU-capacity-cache',32768)))
             identities.append(select.call_args.args[0])
         self.assertNotEqual(calibration.identity_signature(identities[0]),
                             calibration.identity_signature(identities[1]))

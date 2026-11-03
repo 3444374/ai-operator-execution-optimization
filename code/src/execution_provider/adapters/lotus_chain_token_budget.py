@@ -67,7 +67,7 @@ def audit_chain_call(expected, result=None):
     CallLedger([canonical], 1).record(dict(result, call_id=canonical["call_id"]))
 
 
-def verify_cost(row, generation, cost, *, engine):
+def verify_cost(row, generation, cost, *, engine, model_ready=None):
     """Associate an estimate with exactly the messages/identity/options submitted.
 
     This validates transfer and units; it is not proof of native token IDs.
@@ -76,6 +76,12 @@ def verify_cost(row, generation, cost, *, engine):
     keys = {"scope", "input_tokens", "expected_output_tokens", "output_cap",
             "reserved_tokens", "output_estimate_provenance", "tokenizer_signature",
             "template_signature", "engine_signature", "prepared_sha256"}
+    if engine.max_model_len is None:
+        from src.serving.backends.model_context import model_context_identity
+        keys.add('model_context_signature')
+        context_signature = fingerprint(model_context_identity(engine, model_ready))
+        if type(cost) is not dict or cost.get('model_context_signature') != context_signature:
+            raise ValueError('prepared token estimate changed its effective model context')
     if (type(cost) is not dict or set(cost) != keys
             or cost["scope"] != "driver_tokenizer_estimate_not_native_usage"
             or not _positive(cost["input_tokens"]) or not _positive(cost["output_cap"])
@@ -116,11 +122,27 @@ class ChainTokenBudget:
         self.tokenizer, self.engine, self.active_tokens = tokenizer, engine, active_tokens
         self.tokenizer_signature, self.template_signature = tokenizer_signature, template_signature
         self.expected_output = MappingProxyType(dict(expected_output))
+        self._model_ready = None
         self.signature = fingerprint(dict(engine=asdict(engine), tokenizer=tokenizer_signature,
             template=template_signature,
             output={k:asdict(v) for k,v in self.expected_output.items()}))
 
+    def bind_model_context(self, ready):
+        from src.serving.backends.model_context import checked_model_context, model_context_identity
+        if self.engine.max_model_len is not None and 'model_context' not in ready:
+            return  # Existing explicit finite fixtures need no inferred value.
+        context = checked_model_context(self.engine, ready)
+        if self._model_ready is not None and self._model_ready['model_context'] != context:
+            raise ValueError('token budget cannot change its bound model context')
+        self._model_ready = dict(engine_uid=ready['engine_uid'], model_context=context)
+        if self.engine.max_model_len is None:
+            self.signature = fingerprint(dict(engine=asdict(self.engine), tokenizer=self.tokenizer_signature,
+                template=self.template_signature, output={k:asdict(v) for k,v in self.expected_output.items()},
+                model_context=model_context_identity(self.engine, self._model_ready)))
+
     def estimate(self, row, generation):
+        from src.serving.backends.model_context import model_context_limit, model_context_identity
+        context_limit = model_context_limit(self.engine, self._model_ready)
         _, conversations = _prepared([row])
         expected = self.expected_output[row["algorithm_stage"]]
         if expected.tokens > generation.max_tokens:
@@ -133,19 +155,23 @@ class ChainTokenBudget:
             output_estimate_provenance=expected.provenance,
             tokenizer_signature=self.tokenizer_signature, template_signature=self.template_signature,
             engine_signature=fingerprint(asdict(self.engine)), prepared_sha256=prepared_sha)
-        verify_cost(row, generation, cost, engine=self.engine)
-        if cost["reserved_tokens"] > min(self.active_tokens, self.engine.max_model_len):
+        if self.engine.max_model_len is None:
+            cost['model_context_signature'] = fingerprint(model_context_identity(self.engine, self._model_ready))
+        verify_cost(row, generation, cost, engine=self.engine, model_ready=self._model_ready)
+        if cost["reserved_tokens"] > min(self.active_tokens, context_limit):
             raise ValueError("one prepared request exceeds W or the model context capacity")
         return cost
 
     def validate(self, row, generation, cost):
-        verify_cost(row, generation, cost, engine=self.engine)
+        from src.serving.backends.model_context import model_context_limit
+        context_limit = model_context_limit(self.engine, self._model_ready)
+        verify_cost(row, generation, cost, engine=self.engine, model_ready=self._model_ready)
         expected = self.expected_output[row["algorithm_stage"]]
         if (cost["tokenizer_signature"] != self.tokenizer_signature
                 or cost["template_signature"] != self.template_signature
                 or cost["expected_output_tokens"] != expected.tokens
                 or cost["output_estimate_provenance"] != expected.provenance
-                or cost["reserved_tokens"] > min(self.active_tokens, self.engine.max_model_len)):
+                or cost["reserved_tokens"] > min(self.active_tokens, context_limit)):
             raise ValueError("prepared estimate does not belong to this token configuration")
 
     def describe_work(self, identity, stage, request):

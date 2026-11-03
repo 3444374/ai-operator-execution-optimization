@@ -14,7 +14,7 @@ GPU（图形处理器）采样可接收实际模型 worker 返回的 UUID（设�
 | 提交反馈的压力采样 | [采样时钟与内存配置](src/scheduling/runtime/calibration.README.md#pressure-sample-response) |
 | LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
 | Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
-| 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) |
+| 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) 、[上下文回执](src/execution_provider/adapters/README.md#records-model-context) |
 | PG 载体与 SQL 支持形状 | [extension](postgres/semloom_pg/README.md) |
 | 观测定义与离线结果 | [observability](src/observability/README.md)、[离线工具](scripts/analysis/OFFLINE_RESULTS.md) |
 

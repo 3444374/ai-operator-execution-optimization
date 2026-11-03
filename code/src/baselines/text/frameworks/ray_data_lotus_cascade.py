@@ -343,7 +343,7 @@ class RayCascadeBackend:
                                  role, lm.model, binding.instruction, binding.default,
                                  binding.system_prompt, binding.output_tokens,
                                  effective[role], (), binding.resolved_input_columns)
-            if local_generation(dummy).max_tokens > spec.max_model_len:
+            if local_generation(dummy).max_tokens > spec.legacy_max_model_len:
                 raise ValueError("cascade max_tokens exceeds max_model_len")
             self._methods[role] = binding
             self._instructions[role] = nle2str(binding.instruction, list(binding.resolved_input_columns))

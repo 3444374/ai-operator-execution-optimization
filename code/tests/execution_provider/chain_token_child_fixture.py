@@ -13,12 +13,15 @@ from chain_tokenizer_fixture import tokenizer
 
 class FixtureEngine:
     def __init__(self, spec, generation, *, limits):
+        self.spec = spec
         self.engine_uid = 'cpu-chain-' + str(os.getpid())
         self.tokenizer = tokenizer()
         self.gates = {}
 
     def ready(self):
-        return dict(engine_uid=self.engine_uid, physical_gpu=False, inference_calls=0)
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid=self.engine_uid, physical_gpu=False, inference_calls=0,
+            model_context=model_context_record(self.spec, self.engine_uid, self.spec.max_model_len or 32768))
 
     async def generate_prepared(self, row, *, request_id, generation, deadline_monotonic):
         identities, messages = _prepared([row])

@@ -54,7 +54,7 @@ def read_config(path):
         raise ValueError("the IMLane selector requires one executor/GPU, batch rows 1..16 and pending at most two")
     if (engine.max_model_calls is None or engine.max_model_calls > 4096
             or len({stage.method.model_name for stage in chain.stages}) != 1
-            or any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages)):
+            or any(stage.generation.max_tokens > engine.legacy_max_model_len for stage in chain.stages)):
         raise ValueError("one deployment and a finite compatible engine lifetime allowance are required")
     return value, chain, engine, resources
 

@@ -34,6 +34,90 @@ class CPUFeedbackWithBirth(CPUFeedbackProcess):
 
 
 class OnlineConfigurationTests(unittest.TestCase):
+    def test_unknown_native_context_stops_before_cache_lookup(self):
+        resolved=core.resolve_core_profile(self.engine,self.resources,self.profile)
+        with patch('src.scheduling.runtime.calibration.run_admission_query') as lookup:
+            with self.assertRaises(RuntimeError):
+                run_record_admission(self.cache,resolved,self.source,self.method,GenerationSpec(),
+                    self.engine,self.resources,lambda *a,**k:None)
+        lookup.assert_not_called()
+        self.assertFalse((self.root/'admission-cache').exists())
+
+    def test_ready_context_separates_cached_native_lengths(self):
+        resolved=core.resolve_core_profile(self.engine,self.resources,self.profile)
+        identities=[]
+        def policy(identity,*args,**kwargs):
+            identities.append(identity)
+            return dict(result=dict(query_report=dict(status='CPU-capture')))
+        with patch('src.scheduling.runtime.calibration.run_admission_query',side_effect=policy):
+            for length in (2048,32768):
+                run_record_admission(self.cache,resolved,self.source,self.method,GenerationSpec(),
+                    self.engine,self.resources,lambda *a,**k:None,model_ready=self.context_ready(length=length))
+        from src.scheduling.runtime.calibration import identity_signature
+        self.assertNotEqual(identity_signature(identities[0]),identity_signature(identities[1]))
+        self.assertEqual(identities[1]['model']['effective_context_v1']['max_model_len'],32768)
+
+    def test_context_resolution_cost_and_lookup_order_are_retained(self):
+        resolved=core.resolve_core_profile(self.engine,self.resources,self.profile)
+        events=[]
+        def ready():
+            events.append('ready')
+            return self.context_ready()
+        def execute(*args,**kwargs):
+            events.append('execute')
+            return dict(status='completed',query_seconds=6.,calls=dict(counts=dict(failed=0,unknown=0,missing=0)),
+                backend_close=dict(status='closed',source_closed=True,cleanup_errors=[],core_usage=dict(held_tasks=0)))
+        def policy(identity,callback,**kwargs):
+            events.append('lookup')
+            return dict(result=callback(kwargs['initial_window'],allow_exploration=False))
+        with patch('src.scheduling.runtime.calibration.run_admission_query',side_effect=policy), \
+                patch('time.monotonic',side_effect=(10.,11.,12.,13.)):
+            result=run_record_admission(self.cache,resolved,self.source,self.method,GenerationSpec(),
+                self.engine,self.resources,execute,resolve_model_context=ready)
+        self.assertEqual(events,['ready','lookup','execute'])
+        self.assertEqual(result['model_context_startup_seconds'],1.)
+        self.assertEqual(result['query_seconds'],7.)
+        self.assertEqual(result['admission_selection']['entry_work_wall_s'],3.)
+
+    def test_empty_ordinary_query_needs_no_model_or_cache_lookup(self):
+        runtime=SimpleNamespace(init=lambda **kwargs:None,is_initialized=lambda:False)
+        source=SimpleNamespace(task=self.source.task,expected=lambda query_id:[])
+        directory=self.root/'empty'
+        directory.mkdir()
+        with patch.dict('sys.modules',{'ray':runtime}), \
+                patch.object(movie,'run_movie_query',return_value=dict(status='completed',query_seconds=0.)), \
+                patch.object(core,'create_records_core') as allocate, \
+                patch.object(movie,'model_preflight') as preflight, \
+                patch('src.scheduling.runtime.calibration.run_admission_query') as lookup:
+            movie._model_worker(self.config(),source,'CPU-upstream',self.method,GenerationSpec(),
+                self.resources,self.engine,directory)
+        result=json.loads((directory/'query.json').read_text())
+        allocate.assert_not_called()
+        preflight.assert_not_called()
+        lookup.assert_not_called()
+        self.assertFalse(result['admission_selection']['cache_read_or_write'])
+
+    def test_context_startup_does_not_replace_an_original_failure_without_query_time(self):
+        resolved=core.resolve_core_profile(self.engine,self.resources,self.profile)
+        def policy(identity,callback,**kwargs):
+            return dict(result=callback(kwargs['initial_window'],allow_exploration=False))
+        def execute(*args,**kwargs):
+            return dict(status='failed',error_type='OriginalFailure')
+        with patch('src.scheduling.runtime.calibration.run_admission_query',side_effect=policy), \
+                patch('time.monotonic',side_effect=(10.,11.,12.,13.)):
+            result=run_record_admission(self.cache,resolved,self.source,self.method,GenerationSpec(),
+                self.engine,self.resources,execute,resolve_model_context=self.context_ready)
+        self.assertEqual(result['status'],'failed')
+        self.assertEqual(result['error_type'],'OriginalFailure')
+        self.assertNotIn('query_seconds',result)
+        self.assertEqual(result['model_context_startup_seconds'],1.)
+
+    def context_ready(self, engine=None, length=32768):
+        from src.serving.backends.model_context import model_context_record
+        engine = self.engine if engine is None else engine
+        return dict(engine_uid='CPU-cache-context',
+            model_context=model_context_record(engine,'CPU-cache-context',length))
+
     def setUp(self):
         self.fixture=session_fixtures.PlanTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
         self.root=Path(self.fixture.manifests['movie-q3']).parent.parent
@@ -142,7 +226,7 @@ class OnlineConfigurationTests(unittest.TestCase):
                     backend_close=dict(status='closed',source_closed=True,cleanup_errors=[],
                         core_usage=dict(held_tasks=int(reason=='held'))))
             result=run_record_admission(self.cache,resolved,self.source,self.method,GenerationSpec(),
-                self.engine,self.resources,execute)
+                self.engine,self.resources,execute,model_ready=self.context_ready())
             self.assertEqual(len(calls),1)
             self.assertNotIn('saved_hint',result['admission_selection'])
             self.assertFalse((self.root/'admission-cache').exists())
@@ -160,7 +244,7 @@ class OnlineConfigurationTests(unittest.TestCase):
                 (self.method,replace(GenerationSpec(),max_tokens=16),self.engine),
                 (self.method,GenerationSpec(),replace(self.engine,model_path='/tmp/other-model'))):
                 run_record_admission(self.cache,resolved,self.source,method,generation,engine,
-                                     self.resources,lambda *a,**k:None)
+                                     self.resources,lambda *a,**k:None,model_ready=self.context_ready(engine))
         from src.scheduling.runtime.calibration import identity_signature
         self.assertEqual(len({identity_signature(value) for value in captured}),4)
         self.assertEqual(captured[0]['workload']['manifest_sha256'],

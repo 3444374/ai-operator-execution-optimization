@@ -322,7 +322,7 @@ def validate_record_admission_cache(value, resolved):
 
 
 def run_record_admission(cache, resolved, source, method, generation, engine, resources,
-                         execute_query, *, warmup=False):
+                         execute_query, *, warmup=False, model_ready=None, resolve_model_context=None):
     """Cache only after the existing complete query callback returns and drains.
 
     The caller still owns model startup/final close and actual return timing.
@@ -343,8 +343,19 @@ def run_record_admission(cache, resolved, source, method, generation, engine, re
         result['admission_selection']=dict(cache_hit=False,configuration_source='warmup_initial',
             cache_read_or_write=False,scan_cost=dict(wall_s=0.,samples=0))
         return result
+    context = None
+    context_startup_s = 0.
+    if engine.max_model_len is None:
+        from src.serving.backends.model_context import model_context_identity
+        if model_ready is None and resolve_model_context is not None:
+            started = time.monotonic()
+            model_ready = resolve_model_context()
+            context_startup_s = time.monotonic() - started
+        context = model_context_identity(engine, model_ready)
     identity=deepcopy(cache['identity'])
     identity['model']=dict(declared=identity['model'],actual=asdict(engine))
+    if context is not None:
+        identity['model']['effective_context_v1'] = context
     identity['generation']=dict(declared=identity['generation'],actual=asdict(generation))
     identity['execution']=dict(declared=identity['execution'],profile=resolved['requested'],
                                resources=asdict(resources))
@@ -352,6 +363,11 @@ def run_record_admission(cache, resolved, source, method, generation, engine, re
                              method=asdict(method))
     def execute(window, *, allow_exploration, search_hint=None):
         result=execute_query(window,allow_exploration=allow_exploration,search_hint=search_hint)
+        if context_startup_s:
+            result['model_context_startup_seconds'] = context_startup_s
+            if type(result.get('query_seconds')) in (int,float):
+                result['query_seconds'] += context_startup_s
+            result['query_timing_scope'] = result.get('query_timing_scope', '') + '; includes earlier model readiness for context resolution'
         close=result.get('backend_close') or {}
         usage=close.get('core_usage') or {}
         counts=(result.get('calls') or {}).get('counts') or {}

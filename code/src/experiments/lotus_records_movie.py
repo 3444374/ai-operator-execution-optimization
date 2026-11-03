@@ -409,7 +409,7 @@ def read_cascade_config(path):
     if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
         raise ValueError("cascade requires distinct explicit main and helper model paths")
     for role in engines:
-        if generations[role].max_tokens > engines[role].max_model_len:
+        if generations[role].max_tokens > engines[role].legacy_max_model_len:
             raise ValueError("cascade max_tokens exceeds max_model_len")
     return value, method, generations, resources, engines, args
 
@@ -603,6 +603,17 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
         runtime_seconds = time.monotonic() - runtime_started
         emit("runtime_setup_end")
         query_options = {}
+        def create_core_owner():
+            from src.execution_provider.adapters.lotus_records_core import create_records_core
+            return create_records_core(method, engine, generation, resources,
+                profile=profile, async_limits=async_limits, capacity=_core_capacity(config),
+                **_record_batching_options(config))
+        def resolve_context():
+            nonlocal owner
+            if owner is None:
+                model_preflight(source, checkout, method, generation, engine)
+                owner = create_core_owner()
+            return owner.start()
         def execute():
             nonlocal owner
             if config["backend"] == "daft-native-local-model":
@@ -612,16 +623,21 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
             if is_core:
-                from src.execution_provider.adapters.lotus_records_core import create_records_core
-                owner = create_records_core(method, engine, generation, resources,
-                                             profile=profile, async_limits=async_limits,
-                                             capacity=_core_capacity(config),
-                                             **_record_batching_options(config))
+                if owner is None:
+                    owner = create_core_owner()
                 return owner.evaluate(source, query_id=config["query_id"], **query_options)
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
             return owner.evaluate(source, query_id=config["query_id"])
-        if config.get("admission_cache") is not None:
+        empty_context_query = (is_async and engine.max_model_len is None
+            and config.get("admission_cache") is not None and not source.expected(config['query_id']))
+        if empty_context_query:
+            query_options['allow_exploration'] = False
+            report = run_movie_query(source, checkout, method, generation, execute,
+                                     query_id=config['query_id'], observer=observer)
+            report['admission_selection'] = dict(cache_hit=False, configuration_source='empty_query',
+                cache_read_or_write=False, scan_cost=dict(wall_s=0., samples=0))
+        elif config.get("admission_cache") is not None:
             from src.experiments.movie_matrix_support import run_record_admission
             resolved = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False),
                 capacity=_core_capacity(config))
@@ -631,7 +647,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 return run_movie_query(source, checkout, method, generation, execute,
                                        query_id=config["query_id"], observer=observer)
             report = run_record_admission(_record_admission_cache(config, resources=resources, resolved=resolved),
-                resolved, source, method, generation, engine, resources, execute_query)
+                resolved, source, method, generation, engine, resources, execute_query,
+                **(dict(resolve_model_context=resolve_context) if is_async and engine.max_model_len is None else {}))
         else:
             report = run_movie_query(source, checkout, method, generation, execute,
                                      query_id=config["query_id"], observer=observer)
