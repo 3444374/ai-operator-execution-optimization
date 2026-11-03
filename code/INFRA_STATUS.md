@@ -4,6 +4,22 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+<a id="http-call-configuration-cpu"></a>
+## 独立 HTTP 请求配置候选（2026-11-03）
+
+本地候选基于 `5ff54bfe`，尚未合入：独立 LOTUS HTTP 接点接受显式 180 秒请求／批／两阶段查询期限，
+有限正数、模型匹配、较短调用方期限及未知结果责任保持。fixed HTTP 读取层采用可配置单条响应额度；
+native Engine 同步单项额度与显式总预算。PG 现有帧保持 1 MiB，更大配置在创建传输前拒绝。
+接口与适用范围见 [HTTP 说明](src/execution_provider/adapters/README.md#python-consumer)和
+[LOTUS 接点](src/semantic_methods/lotus/README.md#接口与所有权)。
+
+本地 CPU 回归 174 项通过；34 项缺少固定版本 LOTUS、12 项缺少 Daft／Arrow，另 1 项真实 CPU Ray
+资格未选择，共跳过 47 项。新增 19 项使用内存 HTTP 响应、SDK 转换替身和真实 Core。
+旧同步 HTTP／PG Python 协议亦用回环 fixture 检查。
+扩大检查中的 records 导入因缺少 `pyarrow` 单列 pending；没有安装依赖或执行数据库写入。
+模型、GPU、真实 Ray、数据库运行及性能资格尚未完成；baseline 执行与本地模型启动不变。
+源码与证据身份见[台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#http-call-configuration-cpu)。
+
 固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
 只跳过 B 封包，C_request=R 且禁止动态请求反馈组合。FIFO、兼容性、成员/驻留与字节容量、
 独立结果和收尾责任不变，fused/默认路径不变。

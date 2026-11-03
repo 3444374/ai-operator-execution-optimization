@@ -1,5 +1,25 @@
 # 实验与机制证据台账
 
+<a id="http-call-configuration-cpu"></a>
+## 2026-11-03：独立 HTTP 请求配置的 CPU 检查
+
+候选基于 `5ff54bfe774f5cdabb5b67bb5a2696dca2b84e08`；适用接口见
+[代码状态](../../code/INFRA_STATUS.md#http-call-configuration-cpu)。
+运行 `http-config-20261103-related-3` 共 221 项，174 通过、47 跳过；其中
+[HTTP 配置检查](../../code/tests/execution_provider/test_http_configuration.py)与
+[期限检查](../../code/tests/semantic_methods/test_lotus_http_deadlines.py)合计 19 项，使用内存 HTTP、SDK 替身与真实 Core，
+旧 HTTP／PG Python 协议使用回环 HTTP／临时 Unix socket，未启动数据库或写入外部服务。
+覆盖 120／180 秒声明、较短调用方期限、1 MiB 前后结果、显式小额度、单项／总量、结果租约、
+格式错误及未知结果占用；没有模型、GPU 或真实 Ray 请求，也不支持性能结论。
+首次普通沙箱回归的 16 个回环端口错误与后续缺少 `pyarrow` 的 records 导入错误均保留，未改成通过。
+47 项跳过包含缺少固定版本 LOTUS 的 34 项、缺少 Daft／Arrow 的 12 项及未选择真实 CPU Ray 资格的 1 项；
+真实库与数据库验证仍 pending。
+完整日志及运行器按运行标识经本地 artifact 交接，失败与成功记录各自保存；未改 baseline graph、
+LOTUS 本地模型启动、Kalypso 或现有 PG wire schema。
+成功日志 `related_3.txt` 的 SHA-256 为 `e69b30e75ba066b2df1011c7851b62d57904f56144734dad2b31938e7f6cf581`，
+机器可读摘要 `related_3.json` 为 `3be592829aa994a2e24eaa4e383598757ad92ecdac624db9e4fe47a7dad1f308`；
+以该运行标识和校验值定位本地原件，不将缺依赖检查视作真实库验收。
+
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界
 

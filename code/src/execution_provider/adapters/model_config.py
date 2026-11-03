@@ -11,7 +11,9 @@ from urllib import parse
 
 VLLM_CHOICE_FORMAT = "vllm_structured_outputs"
 MAX_MODEL_RESPONSE_BYTES = 1_048_576
-_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms", "bearer_token_env", "choice_format"}
+MAX_SUPPORTED_MODEL_RESPONSE_BYTES = 8 * 1024 * 1024
+_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms", "bearer_token_env", "choice_format",
+                  "max_response_bytes"}
 _REQUIRED_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms"}
 _ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 
@@ -25,6 +27,7 @@ class FixedModelConfig:
     timeout_ms: int
     bearer_token: str | None = field(default=None, repr=False)
     choice_format: str | None = None
+    max_response_bytes: int = MAX_MODEL_RESPONSE_BYTES
 
     def __post_init__(self) -> None:
         if self.choice_format is not None and self.choice_format != VLLM_CHOICE_FORMAT:
@@ -52,6 +55,9 @@ class FixedModelConfig:
             raise ValueError("model_id length is outside the plan contract")
         if type(self.timeout_ms) is not int or not (1 <= self.timeout_ms <= 300_000):
             raise ValueError("timeout_ms must be an integer from 1 to 300000")
+        if (type(self.max_response_bytes) is not int
+                or not 1 <= self.max_response_bytes <= MAX_SUPPORTED_MODEL_RESPONSE_BYTES):
+            raise ValueError("max_response_bytes must be an integer from 1 byte to 8 MiB")
         if self.bearer_token is not None and (
             not isinstance(self.bearer_token, str) or not self.bearer_token
         ):
@@ -91,4 +97,11 @@ def load_fixed_model_config(
         timeout_ms=value["timeout_ms"],
         bearer_token=bearer_token,
         choice_format=value.get("choice_format"),
+        max_response_bytes=value.get("max_response_bytes", MAX_MODEL_RESPONSE_BYTES),
     )
+
+
+def check_pg_response_capacity(config: FixedModelConfig) -> None:
+    """The existing PG profiles do not negotiate a larger wire representation."""
+    if config.max_response_bytes > MAX_MODEL_RESPONSE_BYTES:
+        raise ValueError("PG profiles support at most 1 MiB per response; larger results require a new wire profile")

@@ -240,8 +240,8 @@ def prepare_call(lm, messages, all_kwargs, *, message_profile="text") -> Prepare
     if type(api_key) is not str or not api_key:
         raise ValueError("LOTUS adapter requires an explicit API key")
     timeout = kwargs.get("timeout")
-    if type(timeout) not in (float, int) or not math.isfinite(timeout) or not 0 < timeout <= 120:
-        raise ValueError("LOTUS adapter requires a finite timeout of at most 120 seconds")
+    if type(timeout) not in (float, int) or not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("LOTUS adapter requires a finite positive timeout")
     generation = {k: v for k, v in kwargs.items() if k in GENERATION_PARAMS}
     if "response_format" in generation and (
         type(generation["response_format"]) is not dict

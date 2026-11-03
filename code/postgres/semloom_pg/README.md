@@ -582,6 +582,14 @@ SET semloom_pg.gateway_socket = '/absolute/path/semloom-model.sock';
 SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
 ```
 
+The optional fixed-model JSON field `max_response_bytes` defaults to 1048576 and may select a
+smaller positive HTTP response capacity. The PG gateway and public PG factories reject values
+above 1 MiB before transport creation. Existing wire profiles retain their 1 MiB frame limit;
+identity fields and JSON escaping also occupy that frame, so the HTTP read allowance does not
+guarantee that every output fits the PG result representation. A larger representation needs
+a separately versioned PG profile and carrier checks. The standalone Python HTTP/native API
+can explicitly select up to 8 MiB with its own result budget; that does not change PG support.
+
 After building a repository-external reference artifact for the same semantic plan, model, provider profile,
 workload distribution, and service signature, select it before planning:
 

@@ -35,19 +35,27 @@ def build_native_execution(config, *, physical: RayMapConfig | None, execute=Non
         raise ValueError("native request capacity must be between one byte and eight MiB")
     if 'item_input_bytes' in options:
         raise ValueError("native item capacity is selected only by max_request_bytes")
+    if 'item_result_bytes' in options:
+        raise ValueError("native item result capacity comes from max_response_bytes in model configuration")
     if max_request_bytes != MAX_FRAME_BYTES:
         total = options.get('input_bytes')
         if type(total) is not int or total < max_request_bytes:
             raise ValueError("nondefault native request capacity requires explicit total input_bytes fitting one item")
+    if config.max_response_bytes > MAX_MODEL_RESPONSE_BYTES:
+        total = options.get('result_bytes')
+        if type(total) is not int or total < config.max_response_bytes:
+            raise ValueError("larger native response capacity requires explicit total result_bytes fitting one item")
     if physical is None:
-        execution = _build_model_execution(config, item_input_bytes=max_request_bytes, execute=execute,
+        execution = _build_model_execution(config, item_input_bytes=max_request_bytes,
+            item_result_bytes=config.max_response_bytes, execute=execute,
             transport_factory=transport_factory or (None if execute else FullResponseTransport), **options)
     else:
         if execute is not None or transport_factory is not None or type(physical) is not RayMapConfig:
             raise ValueError("native Ray execution requires RayMapConfig and its own transport")
         selected = _ray_transport_options(replace(physical, response_mode="full"), max_request_bytes)
         selected.update(options)
-        execution = _build_model_execution(config, item_input_bytes=max_request_bytes, **selected)
+        execution = _build_model_execution(config, item_input_bytes=max_request_bytes,
+            item_result_bytes=config.max_response_bytes, **selected)
 
     def close(timeout=5.0):
         # Backend teardown cannot claim service cleanup while a flow or unknown

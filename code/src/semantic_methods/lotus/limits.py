@@ -33,9 +33,9 @@ class LotusCallLimits:
             () if self.batch_timeout_s is None else (self.batch_timeout_s,)
         )
         for value in timeouts:
-            if type(value) not in (int, float) or not math.isfinite(value) or not 0 < value <= 120:
+            if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError(
-                    "LOTUS request and batch deadlines must be finite and at most 120 seconds"
+                    "LOTUS request and batch deadlines must be finite and positive"
                 )
 
     def check_model(self, model_config):
