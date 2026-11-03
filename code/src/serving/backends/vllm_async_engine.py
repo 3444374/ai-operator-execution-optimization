@@ -98,6 +98,7 @@ class VllmAsyncEngine:
         if self.spec.enable_mfu_metrics:
             from src.observability.metrics.mfu_trace import install
             install(self.engine_uid)
+        from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_EXTENSION
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
             dtype=self.spec.dtype, max_model_len=self.spec.max_model_len,
@@ -108,6 +109,8 @@ class VllmAsyncEngine:
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
+            **({"worker_extension_cls": VLLM_GPU_IDENTITY_EXTENSION}
+               if self._feedback is not None else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
         ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
               if self._feedback is not None else {}))
@@ -128,15 +131,15 @@ class VllmAsyncEngine:
         return params
 
     async def observe_gpu_identity(self):
-        """One bounded startup observation in the already-running model worker."""
+        """One startup observation; the client timeout does not stop worker code."""
         self._control()
         if self._feedback is None:
             self._gpu_identity = dict(status="unavailable:not_requested", gpu_uuids=None)
             return
-        from src.infrastructure.gpu_allocation import worker_cuda_gpu_identity
+        from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_METHOD
         try:
             replies = await asyncio.wait_for(
-                self._llm.collective_rpc(worker_cuda_gpu_identity, timeout=1.0), timeout=1.5)
+                self._llm.collective_rpc(VLLM_GPU_IDENTITY_METHOD, timeout=1.0), timeout=1.5)
             if (not isinstance(replies, (tuple, list)) or len(replies) != 1
                     or not isinstance(replies[0], dict)
                     or replies[0].get("status") != "observed_actual_CUDA_device"

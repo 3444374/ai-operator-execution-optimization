@@ -217,12 +217,18 @@ class NativeFeedbackTests(unittest.TestCase):
                 patch.object(kernel.importlib.metadata,'version',return_value='0.25.1'), \
                 patch.object(kernel.VllmAsyncEngine,'_sampling',return_value=None):
             plain=asyncio.run(construct(False));feedback=asyncio.run(construct(True))
+            modules['vllm'].__version__='0.25.0'
+            with self.assertRaisesRegex(RuntimeError, 'exactly vllm==0.25.1'):
+                asyncio.run(construct(True))
         self.assertNotIn('stat_loggers',calls[0][1]);self.assertTrue(calls[1][0].disable_log_stats)
         logger=calls[1][1]['stat_loggers'][0](None,0)
         self.assertIs(logger,feedback._feedback)
         self.assertIsNone(plain.feedback_snapshot())
         self.assertEqual(calls[0][0].model,calls[1][0].model)
         self.assertEqual(calls[0][0].max_num_seqs,calls[1][0].max_num_seqs)
+        from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_EXTENSION
+        self.assertFalse(hasattr(calls[0][0], 'worker_extension_cls'))
+        self.assertEqual(calls[1][0].worker_extension_cls, VLLM_GPU_IDENTITY_EXTENSION)
         self.assertNotIn('native_capacity',plain.ready())
         self.assertEqual(feedback.ready()['native_capacity']['max_num_seqs'],7)
         self.assertNotEqual(feedback.ready()['native_capacity']['max_num_seqs'],calls[1][0].max_num_seqs)

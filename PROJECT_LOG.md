@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-03：资源归属候选按独审修订
+
+复现 `9b731ab9` 的函数 RPC 默认编码拒绝后，改为固定 vLLM 版本支持的具名 worker 扩展；客户端等待与 worker 完成分别表述。
+历史校准源码按准确旧字节共享，只追加五条来源映射，原哈希和结果保持。
+当前源码与检查分别见[代码状态](code/INFRA_STATUS.md#resource-allocation-candidate)、[历史复现说明](experiments/reproduction/native_baselines/README.md)及[CPU 记录](code/tests/records_cpu.md#resource-allocation-cpu)，尚待复审与实机验证。
+
 ## 2026-11-03：资源归属按实际分配核对
 
 独立候选将可见 CPU 配额用于机器观测、SemLoom records 启动检查和校准身份，保留主机／容器观测的不同含义；

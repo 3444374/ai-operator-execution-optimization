@@ -1,5 +1,10 @@
 # 原生基线与具名 Core 历史复现
 
+资源归属候选修改了维护版 `experiments/calibration/core.py` 的 CPU 配额类型检查。
+五份投影共享[准确 5ff54bfe 原件](historical_sources/5ff54bfe/code/src/experiments/calibration/core.py)，只追加五条来源映射；
+原逐文件 SHA、投影 ID、来源版本和既有映射保持。旧投影仍使用原整核校准检查，维护代码继续使用小数配额检查；
+本次保留旧字节不修改历史结果或扩大实机资格。检查状态见[CPU 记录](../../../code/tests/records_cpu.md#resource-allocation-cpu)。
+
 未接入维护执行入口的 `scheduling/runtime/saor_pipeline.py` 与纯 CPU 微基准
 `experiments/saor/control_benchmark.py` 已退出 `code/`，其实现、专属测试及原 runtime 包导出
 按准确 `54ff2324` 字节保存在 `historical_sources/54ff2324/`。

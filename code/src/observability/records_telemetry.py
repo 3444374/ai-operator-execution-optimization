@@ -136,9 +136,11 @@ class TelemetryEvents:
 class MetricSources:
     """Reuse the existing GPU/host/Prometheus readers without a model endpoint."""
 
-    def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None):
+    def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None,
+                 gpu_binding_source="explicit_gpu_ids"):
         self.gpu_ids, self.native_metrics_url = tuple(gpu_ids), native_metrics_url
         self.gpu_binding_error = gpu_binding_error
+        self.gpu_binding_source = gpu_binding_source
         self._cpu_source = AllocatedCPUCounterSource()
         if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
@@ -157,8 +159,10 @@ class MetricSources:
                                          if visibility is None else visibility,
                                          assigned_gpu_uuids=assigned_gpu_uuids)
         except Exception as error:
-            return cls((), gpu_binding_error="unavailable:CUDA_UUID_binding:" + _error(error))
-        return cls(ids)
+            return cls((), gpu_binding_error="unavailable:CUDA_UUID_binding:" + _error(error),
+                       gpu_binding_source="unavailable_cuda_binding")
+        return cls(ids, gpu_binding_source=("native_worker_receipt" if assigned_gpu_uuids is not None
+                                           else "cuda_visibility_without_worker_receipt"))
 
     def __call__(self):
         values, missing, sources = {}, {}, {}
@@ -182,6 +186,7 @@ class MetricSources:
         collect("gpu", GPU_FIELDS, lambda: dict(gpu_metrics_status=self.gpu_binding_error)
                 if self.gpu_binding_error is not None else gpu_metadata(self.gpu_ids, use_nvml=True))
         sources["gpu"]["physical_gpu_uuids"] = list(self.gpu_ids)
+        sources["gpu"]["binding_source"] = self.gpu_binding_source
         host = collect("host", HOST_FIELDS,
                        lambda: host_metadata(include_status=True, cpu_source=self._cpu_source))
         from src.infrastructure.cgroup import memory_observation

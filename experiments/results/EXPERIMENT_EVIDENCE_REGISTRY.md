@@ -3,8 +3,9 @@
 <a id="resource-allocation-cpu"></a>
 ## 2026-11-03：资源归属修复的 CPU 检查
 
-以 `5ff54bfe` 为底座的独立候选，来源为源码核对、官方接口与本地 CPU 替身；尚待独审，未发布。
-[检查记录](../../code/tests/records_cpu.md#resource-allocation-cpu)保留运行清单、环境错误和原基线复核。
+以 `5ff54bfe` 为底座的独立候选，来源为源码核对、官方接口与本地 CPU 替身；`9b731ab9` 独审确认函数 RPC 编码拒绝与五处新增历史绑定差异。
+修订使用具名只读 worker 扩展及准确历史源码映射，等待复审，未发布。
+[检查记录](../../code/tests/records_cpu.md#resource-allocation-cpu)保留默认编码器反例、支持版本探针、历史绑定核对、环境错误及原基线复核。
 本轮只支持配额读取、缺测处理、启动前预算检查与设备身份传递的工程判断，不增加真实 Ray／模型／GPU 或性能资格。
 
 <a id="record-layout-comparison-interpretation"></a>

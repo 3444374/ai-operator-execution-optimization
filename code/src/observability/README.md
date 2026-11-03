@@ -36,14 +36,26 @@ reported as container headroom. Kernel interfaces follow [cgroup v2](https://doc
 and [v1 bandwidth control](https://docs.kernel.org/scheduler/sched-bwc.html). Tests and limits are listed
 in the [CPU check record](../../tests/records_cpu.md#resource-allocation-cpu).
 
-With native feedback enabled, startup obtains one optional GPU UUID receipt from the actual model
-worker using vLLM 0.25.1's existing `collective_rpc`, with a one-second worker timeout and a 1.5-second
-client timeout. Only an already initialized single CUDA device is read. The private readiness frame
-carries this receipt to the actor's existing UUID/NVML sampler; no ordinal is mapped to an NVML index.
-Missing, ambiguous or mismatched identity stays unknown. Feedback off adds no native observation RPC.
-This uses the upstream [worker RPC interface](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/executor/abstract.py)
-and [async forwarding path](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/core_client.py),
-without changing serving policy. Real Ray/GPU verification of this candidate is pending.
+With native feedback enabled, `worker_extension_cls` registers
+`src.infrastructure.gpu_allocation.SemLoomGpuIdentityWorkerExtension` before engine construction.
+Startup calls the named `semloom_gpu_identity` method through ordinary `collective_rpc`; request
+arguments and the reply contain primitive values. The original callable request was rejected by the
+fixed default encoder and has been replaced. Default serialization settings remain unchanged.
+Only an already initialized single CUDA device is read. The private readiness frame carries its UUID
+to the actor's existing sampler. `sources.gpu.binding_source` distinguishes `native_worker_receipt`
+from `cuda_visibility_without_worker_receipt`; the latter retains the prior explicit UUID mask or
+unambiguous single-NVML-device resolution, and does not claim a worker receipt. Numeric multi-device
+ambiguity stays unknown. Feedback off registers no extension and adds no native observation RPC.
+
+The RPC carries `timeout=1.0`; the current uni executor does not enforce it around synchronous worker
+code. The 1.5-second `asyncio.wait_for` bounds local client waiting, not worker completion or physical
+termination. Timeout leaves the optional identity unknown; existing model ownership and cleanup apply.
+The supported interface is verified against the fixed [worker extension implementation](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/worker_base.py),
+[default encoder](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/serial_utils.py) and
+[uni executor](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/executor/uniproc_executor.py).
+The [CPU source probe](../../tests/serving/test_vllm_identity_protocol.py) runs real MessagePack with
+hash-checked source definitions and CPU model substitutes. Full vLLM, real Ray and GPU execution of
+this candidate remain pending.
 
 The request-feedback report also keeps `recent_RPC_attempts` for the current bound Core session:
 at most 64 fixed-metadata records plus cumulative `RPC_counts` for returned resource attempts,

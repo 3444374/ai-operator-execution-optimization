@@ -5,9 +5,10 @@
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
 <a id="resource-allocation-candidate"></a>
-资源归属候选以 `5ff54bfe` 为底座独立修改，尚待独审。机器观测、SemLoom records 启动声明与校准身份使用有效 CPU 配额；
+资源归属候选以 `5ff54bfe` 为底座独立修改；`9b731ab9` 经独审后修订，当前等待复审。机器观测、SemLoom records 启动声明与校准身份使用有效 CPU 配额；
 反馈使用可见 cgroup 的用量／配额，并单独报告主机内存和容器内存余量。
-原生反馈的启动回执增加实际单设备 UUID 的只读传递，缺测保留；没有修改双 50% 策略、请求额度、模型参数或原生 baseline。
+原生反馈通过已注册的具名 worker 方法传递实际单设备 UUID，缺测保留；函数对象 RPC 已移除，默认序列化设置保持。
+五份历史校准投影只追加准确旧源的映射，旧哈希与投影 ID 保持。双 50% 策略、请求额度、模型参数与原生 baseline 不变。
 本轮仅本地 CPU／替身／真实本地进程通信检查，真实 Ray、模型和 GPU 验证仍 pending。
 检查、环境错误与原基线复核见[记录](tests/records_cpu.md#resource-allocation-cpu)。
 

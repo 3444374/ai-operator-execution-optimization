@@ -7,7 +7,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-from src.infrastructure.gpu_allocation import current_cuda_gpu_identity, cuda_visible_gpu_uuids
+from src.infrastructure.gpu_allocation import (
+    current_cuda_gpu_identity, cuda_visible_gpu_uuids,
+    SemLoomGpuIdentityWorkerExtension, VLLM_GPU_IDENTITY_METHOD,
+)
 
 
 GPU = "GPU-12345678-abcd-1234-abcd-123456789012"
@@ -41,6 +44,14 @@ class ModelGpuIdentityTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True), patch.dict("sys.modules", pynvml=None):
             self.assertEqual(cuda_visible_gpu_uuids("1", assigned_gpu_uuids=[GPU]), (GPU,))
             self.assertEqual(cuda_visible_gpu_uuids("0", assigned_gpu_uuids=[OTHER]), (OTHER,))
+
+    def test_worker_receipt_provenance_is_distinct_from_prior_visibility_resolution(self):
+        from src.observability.records_telemetry import MetricSources
+        with patch.dict(os.environ, {}, clear=True), patch.dict("sys.modules", pynvml=None):
+            native = MetricSources.from_cuda_visibility("1", assigned_gpu_uuids=[GPU])
+            prior = MetricSources.from_cuda_visibility(GPU)
+        self.assertEqual(native.gpu_binding_source, "native_worker_receipt")
+        self.assertEqual(prior.gpu_binding_source, "cuda_visibility_without_worker_receipt")
 
     def test_actual_identity_cannot_widen_inherited_UUID_mask(self):
         with patch.dict(os.environ, dict(NVIDIA_VISIBLE_DEVICES=OTHER), clear=True):
@@ -97,7 +108,8 @@ class NativeIdentityRpcTests(unittest.IsolatedAsyncioTestCase):
             get_device_properties=Mock(return_value=SimpleNamespace(uuid=GPU[4:])))
         async def worker_rpc(method, *, timeout):
             self.assertEqual(timeout, 1)
-            return [method(SimpleNamespace())]
+            self.assertEqual(method, VLLM_GPU_IDENTITY_METHOD)
+            return [getattr(SemLoomGpuIdentityWorkerExtension(), method)()]
         engine._llm.collective_rpc.side_effect = worker_rpc
         with patch.dict(os.environ, dict(CUDA_VISIBLE_DEVICES="1"), clear=True), \
                 patch.dict("sys.modules", torch=SimpleNamespace(cuda=cuda), pynvml=None):
@@ -105,6 +117,22 @@ class NativeIdentityRpcTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(engine._gpu_identity["gpu_uuids"], [GPU])
         engine._llm.collective_rpc.assert_awaited_once()
         cuda.get_device_properties.assert_called_once_with(0)
+
+    async def test_new_RPC_uses_only_primitive_wire_arguments_and_retains_default_security(self):
+        engine = self.engine([dict(status="observed_actual_CUDA_device", gpu_uuids=[GPU])])
+        before = os.environ.get("VLLM_ALLOW_INSECURE_SERIALIZATION")
+        with patch.dict(os.environ, dict(CUDA_VISIBLE_DEVICES="0")):
+            await engine.observe_gpu_identity()
+        args, kwargs = engine._llm.collective_rpc.call_args
+        self.assertEqual(args, (VLLM_GPU_IDENTITY_METHOD,))
+        self.assertEqual(kwargs, dict(timeout=1.0))
+        self.assertEqual(os.environ.get("VLLM_ALLOW_INSECURE_SERIALIZATION"), before)
+
+    def test_model_worker_extension_is_a_named_no_argument_read_only_method(self):
+        result = dict(status="unavailable:fixture", gpu_uuids=None)
+        with patch("src.infrastructure.gpu_allocation.current_cuda_gpu_identity", return_value=result) as read:
+            self.assertEqual(SemLoomGpuIdentityWorkerExtension().semloom_gpu_identity(), result)
+        read.assert_called_once_with()
 
     async def test_feedback_off_has_no_native_observation_RPC(self):
         engine = self.engine(None)

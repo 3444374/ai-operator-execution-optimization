@@ -64,9 +64,15 @@ def current_cuda_gpu_identity():
         return dict(status="unavailable:" + type(error).__name__, gpu_uuids=None)
 
 
-def worker_cuda_gpu_identity(_worker):
-    """Callable for the existing vLLM collective_rpc worker API."""
-    return current_cuda_gpu_identity()
+VLLM_GPU_IDENTITY_METHOD = "semloom_gpu_identity"
+VLLM_GPU_IDENTITY_EXTENSION = "src.infrastructure.gpu_allocation.SemLoomGpuIdentityWorkerExtension"
+
+
+class SemLoomGpuIdentityWorkerExtension:
+    """A named read-only method for vLLM's ordinary worker extension interface."""
+
+    def semloom_gpu_identity(self):
+        return current_cuda_gpu_identity()
 
 
 def cuda_visible_gpu_uuids(visibility, *, assigned_gpu_uuids=None):
