@@ -1,4 +1,5 @@
 """Whole-query Core/actor/child IPC; only Ray RPC and inference are substitutes."""
+import asyncio
 from copy import deepcopy
 from dataclasses import replace
 import json
@@ -13,6 +14,8 @@ from unittest.mock import patch
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore, CoreChainCapacity
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters import lotus_record_chain_core as chain_core
+from src.scheduling.runtime import async_backend
 from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.async_engine_process import AsyncEngineProcess
@@ -314,6 +317,60 @@ class QueryOwnerTests(unittest.TestCase):
                 self.assertEqual(first["core_usage"]["held_tasks"], 1)
             finally:
                 release.set()
+                owner.close(timeout=3)
+
+    def test_close_waits_for_local_delivery_after_model_RPCs_have_finished(self):
+        plan, rows = fixture.chain_for("MF"), fixture.source_rows(size=1)
+        config = self.config_for(plan, rows)
+        config["responses"]["step_0|occ-0"].update(status="unknown")
+        self.config.write_text(json.dumps(config))
+        reached, gates, waited = threading.Event(), [], []
+        execute = chain_core._SectionTransport._execute
+        wait = async_backend.wait
+        async def hold_local_delivery(transport, *args):
+            try:
+                return await execute(transport, *args)
+            finally:
+                gate = asyncio.Event()
+                gates.append(gate)
+                reached.set()
+                await gate.wait()
+        with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
+                patch.object(chain_core._SectionTransport, "_execute", hold_local_delivery):
+            owner = self.owner(plan, C=1)
+            stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
+            try:
+                until = time.monotonic() + 4
+                while not reached.is_set():
+                    stream._tick()
+                    if time.monotonic() >= until:
+                        self.fail("CPU receipt did not reach the local delivery boundary")
+                def finish_delivery(futures, *, timeout):
+                    self.assertTrue(owner._actors._model_close_report["engine_api_shutdown_confirmed"])
+                    with owner._actors._rpc_state_lock:
+                        self.assertEqual(owner._actors._rpc_pending, 0)
+                    self.assertTrue(any(not future.done() for future in futures))
+                    waited.append(True)
+                    owner.transport.backend._loop.call_soon_threadsafe(gates[0].set)
+                    return wait(futures, timeout=timeout)
+                with patch.object(async_backend, "wait", finish_delivery):
+                    report = owner.close(timeout=3)
+                self.assertTrue(report["transport_closed"])
+                self.assertEqual(waited, [True])
+                self.assertEqual(report["status"], "closed")
+                self.assertEqual(report["core_usage"]["held_tasks"], 0)
+                self.assertEqual(report["retained_remote_inputs"], 0)
+                self.assertFalse(report["producer_retirement"]["outcome_confirmation"])
+                self.assertEqual([(call["status"], call["total_tokens"]) for call in owner.calls], [("unknown", 14)])
+                self.assertFalse(report["query_completed"])
+                self.assertEqual(stream.run.position, 0)
+                self.assertEqual(stream.run.stats, {})
+                self.assertEqual(owner.close(timeout=3)["core_usage"]["held_tasks"], 0)
+                self.assertEqual(len(owner.calls), 1)
+            finally:
+                if gates and owner.transport.backend._thread.is_alive():
+                    owner.transport.backend._loop.call_soon_threadsafe(gates[0].set)
+                owner.transport.backend.close(3, wait_pending=True)
                 owner.close(timeout=3)
 
     def test_foreign_close_receipt_cannot_be_assigned_by_reused_call_id(self):

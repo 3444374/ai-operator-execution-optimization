@@ -889,9 +889,10 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
     transport_closed = True
     retirement = None
     if transport is not None:
-        transport_closed = (transport.backend.close(timeout=0.05, wait_pending=True)
-                            if getattr(transport, 'supports_batch_submit', False)
-                            else transport.backend.close(timeout=0.05))
+        # A terminal data RPC may still be finishing its local delivery Future.
+        # Single requests and batches share the caller's remaining cleanup time.
+        remaining = max(0., actors.close_deadline - time.monotonic())
+        transport_closed = transport.backend.close(timeout=remaining, wait_pending=True)
         proof = actor_report.get("producer_quiescence")
         if transport_closed and proof is not None:
             try:

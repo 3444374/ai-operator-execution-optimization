@@ -8,7 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 import asyncio
 import json
 import threading
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from src.execution_provider.adapters import lotus_records_core as core
 from src.execution_provider.adapters import lotus_records_actor_owner as actors
@@ -103,6 +104,45 @@ class IPCProducerRetirementTests(unittest.TestCase):
 
 
 class CoreProducerRetirementTests(unittest.TestCase):
+    def test_expired_query_does_not_unconfirm_a_stopped_transport_on_repeated_close(self):
+        rows = fixture.AsyncCoreCompositionTests().rows(["fast"])
+        with fixture.ThreadedRuntime(rows):
+            owner = fixture.AsyncCoreCompositionTests().owner()
+            try:
+                list(owner.evaluate(fixture.Source(rows), query_id="already-closed"))
+                first = owner.close(timeout=3)
+                self.assertEqual(first["status"], "closed")
+                with patch.object(core, "time", SimpleNamespace(monotonic=lambda: owner._deadline + 1)):
+                    repeated = owner.close()
+                self.assertEqual(repeated["status"], "closed")
+                self.assertEqual(repeated["producer_retirement"], first["producer_retirement"])
+                self.assertEqual(repeated["core_usage"]["held_tasks"], 0)
+            finally:
+                owner.close(timeout=2)
+
+    def test_local_delivery_uses_only_the_remaining_cleanup_deadline(self):
+        backend = Mock()
+        backend.close.return_value = True
+        transport = SimpleNamespace(backend=backend, recover_actor_receipts=lambda receipts: [])
+        owner = SimpleNamespace(close=lambda: dict(cleanup_errors=[], status="closed"))
+        with patch.object(core, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 21.5]))):
+            report = core.close_prepared_core(owner, transport, None, core.CoreRecordsCapacity(),
+                                              deadline=100., timeout=2.)
+        backend.close.assert_called_once_with(timeout=0.5, wait_pending=True)
+        self.assertTrue(report["transport_closed"])
+
+    def test_spent_actor_cleanup_deadline_cannot_start_an_extra_transport_wait(self):
+        backend = Mock()
+        backend.close.return_value = False
+        transport = SimpleNamespace(backend=backend, recover_actor_receipts=lambda receipts: [])
+        owner = SimpleNamespace(close=lambda: dict(cleanup_errors=[], status="closed"))
+        with patch.object(core, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 22.]))):
+            report = core.close_prepared_core(owner, transport, None, core.CoreRecordsCapacity(),
+                                              deadline=100., timeout=2.)
+        backend.close.assert_called_once_with(timeout=0., wait_pending=True)
+        self.assertFalse(report["transport_closed"])
+        self.assertIsNone(report["producer_retirement"])
+
     def test_prepare_not_yet_in_actor_retains_until_local_delivery_stops(self):
         for preparation_fails in (False, True):
             with self.subTest(preparation_fails=preparation_fails):
