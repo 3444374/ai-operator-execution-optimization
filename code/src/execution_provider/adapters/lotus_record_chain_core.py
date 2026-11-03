@@ -544,6 +544,18 @@ class _SectionTransport(LotusChainActorBackend):
         self.owner._register_local_task(task, self._request(task))
         return super()._submit_task(task, timings, prepare_method)
 
+    def recover_actor_receipts(self, receipts):
+        errors = super().recover_actor_receipts(receipts)
+        # A failed bulk reply may have ended every local result reader. Core
+        # can then ACK retirement and remove these transport receipts without
+        # _result_transferred running. Transfer the validated audit first.
+        for key, payload in self.failure_receipts():
+            try:
+                self.on_result(key, json.loads(payload))
+            except BaseException as error:
+                errors.append('actor_close_receipt_sink: '+type(error).__name__)
+        return errors
+
 
 class _RecordLocalRows:
     """Coordinate existing row programs and complete Extracts on one model owner."""
@@ -1515,7 +1527,12 @@ class SemLoomRecordChainCore:
         if (any(value["row"].get(name) != canonical[name] for name in IDENTITY_FIELDS)
                 or GenerationSpec.from_dict(value["generation"]) != stage.generation):
             raise ValueError("prepared request differs from the immutable query stage binding")
-        context = dict(identity=canonical, parent_call_ids=list(value["parent_call_ids"]))
+        context = dict(identity=canonical, parent_call_ids=list(value["parent_call_ids"]),
+                       core_task_key=dict(session_id=task.key.session_id, sequence=task.key.sequence))
+        if "token_cost" in value:
+            context["token_estimate"] = deepcopy(value["token_cost"])
+        if task.member is not None:
+            context["transport_batch"] = asdict(task.member)
         with self._receipt_lock:
             if task.key in self._contexts and self._contexts[task.key] != context:
                 raise ValueError("prepared task key changed its query association")
@@ -1526,7 +1543,8 @@ class SemLoomRecordChainCore:
             context = self._contexts[key]
             if any(value.get(name) != context["identity"][name] for name in IDENTITY_FIELDS):
                 raise ValueError("prepared receipt changed its registered query task")
-            receipt = dict(deepcopy(value), parent_call_ids=list(context["parent_call_ids"]))
+            receipt = dict(deepcopy(value), **{name:deepcopy(item) for name,item in context.items()
+                                             if name != "identity"})
             previous = self._raw_receipts.get(key)
             if previous is not None:
                 for name in (*IDENTITY_FIELDS, "status", "text", "prompt_tokens", "completion_tokens",

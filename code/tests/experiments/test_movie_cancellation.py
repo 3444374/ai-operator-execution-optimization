@@ -8,6 +8,7 @@ import importlib.util
 import json
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -179,6 +180,63 @@ class CancellationEntryTests(unittest.TestCase):
         for query in plan['queries']:ledger.reserve_unit(query['query_id'],2)
         context['claims']={query['query_id']:ledger.claim_unit(query['query_id']) for query in plan['queries']}
         return ledger
+
+    def test_cancel_close_recovers_actor_receipts_after_bulk_result_readers_failed(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport
+        fixture,plan,context=self.fixture()
+        ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
+        poll=AsyncCoreModelActor.poll_prepared_batch
+        execute=_SectionTransport._execute
+        recover=_SectionTransport.recover_actor_receipts
+        failed_readers=set();lock=threading.Lock();readers_done=threading.Event();bridges=[]
+        def failed_close_poll(actor,*args):
+            with actor._condition:closing=actor._closing
+            if closing:
+                raise RuntimeError('CPU injected lost bulk result reply during close')
+            return poll(actor,*args)
+        async def observe_failed_reader(transport,task,*args):
+            try:return await execute(transport,task,*args)
+            except RuntimeError:
+                with lock:
+                    failed_readers.add(task.key)
+                    if len(failed_readers)==2:readers_done.set()
+                raise
+        def after_failed_readers(transport,receipts):
+            if receipts:
+                self.assertTrue(readers_done.wait(3),'CPU close did not reach the failed local-reader boundary')
+                self.assertEqual([r['result']['status'] for r in receipts],['unknown','unknown'])
+            errors=recover(transport,receipts)
+            if receipts:
+                bridges.append(dict(actor_receipts=len(receipts),retained=len(transport.failure_receipts()),
+                                    owner_calls=len(transport.owner.calls)))
+            return errors
+        output=fixture.root/'session'
+        with self.cpu_boundaries(fixture),patch.object(AsyncCoreModelActor,'poll_prepared_batch',failed_close_poll), \
+                patch.object(_SectionTransport,'_execute',observe_failed_reader), \
+                patch.object(_SectionTransport,'recover_actor_receipts',after_failed_readers):
+            result=subject.run_movie_cancellation(plan,context,output)
+        self.assertEqual(result['status'],'completed',dict(result=result,bridge=bridges))
+        self.assertTrue(bridges)
+        self.assertEqual(bridges[0],dict(actor_receipts=2,retained=2,owner_calls=2))
+        records=subject._records(result['cancel_phase'])
+        self.assertEqual([r['status'] for r in records],['unknown','unknown'])
+        self.assertTrue(all(r['submission_confirmed'] and r['engine_terminal_confirmed'] is False for r in records))
+        self.assertTrue(all(r['error_type']=='AbortNotConfirmed' and r.get('chain_call_id') for r in records))
+        self.assertEqual(sum(r['total_tokens'] for r in records),28)
+        self.assertTrue(all(r.get('core_task_key') and r.get('transport_batch') for r in records))
+        self.assertEqual(result['cancel_phase']['queries'][0]['backend_report']['runner_unconfirmed_call_ids'],[])
+        closed=result['cancel_phase']['owners'][0]['close']['receipts']['model']
+        self.assertFalse(closed['query_completed'])
+        self.assertFalse(closed['producer_retirement']['outcome_confirmation'])
+        self.assertTrue(all(value==0 for value in closed['core_usage'].values()))
+        self.assertEqual(closed['retained_remote_inputs'],0)
+        self.assertEqual([r['status'] for r in subject._records(result['recovery_phase'])],['succeeded','succeeded'])
+        self.assertEqual(sum(e['event']=='construct' for e in fixture.events()),2)
+        self.assertEqual(ledger.snapshot(),before)
+        config=dict(movie_plan=plan,workload=dict(kind='movie_session',qualification=subject.QUALIFICATION),
+                    observation=dict(mode='off',max_events_per_process=1000,max_event_bytes=1000))
+        counts=dict(observed_records=4,missing_claimed=0,failed=0,unknown_records=2,succeeded=2)
+        self.assertEqual(subject.verify_cancellation_cell(config,output.parent,counts)['status'],'passed')
 
     def assert_stopped_before_recovery(self, fixture, plan, context, ledger, before, result):
         self.assertEqual(result['status'],'failed',result)
