@@ -526,9 +526,14 @@ class _SectionTransport(LotusChainActorBackend):
         self.poll_interval_s = owner.capacity.poll_interval_s
 
     def try_submit_batch(self, tasks, endpoint):
+        values = []
         for task in tasks:
-            self.owner._register_local_task(task, self._request(task))
-        outcome = super().try_submit_batch(tasks, endpoint)
+            value = self._request(task)
+            self.owner._register_local_task(task, value)
+            values.append(value)
+        # Task bytes and the stage binding are immutable; the owner registration
+        # above only reads this parse. Reuse it within this handoff, not a cache.
+        outcome = super()._try_submit_batch(tasks, endpoint, values=values)
         if outcome.acceptance == Acceptance.NOT_ACCEPTED:
             with self.owner._receipt_lock:
                 for task in tasks:

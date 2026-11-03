@@ -78,13 +78,17 @@ class LotusChainActorBackend(_RecordTransport):
             self._bulk.pop(group, None)
 
     def try_submit_batch(self, tasks, endpoint):
+        return self._try_submit_batch(tasks, endpoint)
+
+    def _try_submit_batch(self, tasks, endpoint, *, values=None):
         if not self.supports_batch_submit or not tasks or any(t.member is None for t in tasks):
             raise ValueError('bulk handoff requires an organized prepared batch')
         group = tasks[0].member.batch_key
         if (group in self._bulk or any(t.member.batch_key != group for t in tasks)
                 or tuple(t.member.index for t in tasks) != tuple(range(len(tasks)))):
             raise ValueError('bulk handoff changed ordered membership')
-        values = [self._request(t) for t in tasks]
+        if values is None:
+            values = [self._request(t) for t in tasks]
         context = dict(tasks={t.key: t for t in tasks}, values={t.key: v for t, v in zip(tasks, values)},
                        members=frozenset(t.key for t in tasks), futures={t.key: Future() for t in tasks},
                        started=False, driver_done=False)
