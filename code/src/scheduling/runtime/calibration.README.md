@@ -257,7 +257,8 @@ ascending 的唯一 snapshot RPC 可附带读取模型 actor 分配设备的 NVM
 默认固定、reference 及探索关闭路径不调用物理读取器，没有新采样线程／模型进程或HTTP探针。
 设备优先采用同一模型 worker 的具名只读 UUID 回执；缺失时仅走已有安全 CUDA visibility 映射，不能证明则缺测。序号／engine／session、driver issue→receive包络及
 actor内采样耗时用于校验来源和新鲜度，无需假定两个主机的单调时钟绝对值相同。
-CPU计数按采样线程预热，过长／未知测量区间保持unknown。cgroup可用时按有效CPU配额归一，非cgroup时取分配affinity范围的核峰值；不是全机余量或单进程CPU占用。
+CPU计数的累计差分基线由采样器实例保存；实例首样本建立基线，后续RPC线程共享该基线，过长／未知测量区间保持unknown。
+cgroup可用时按有效CPU配额归一，非cgroup时取分配affinity范围的核峰值；不是全机余量或单进程CPU占用。
 CPU测量区间和RPC数据年龄分别受限，不声称整个历史取样区间都落在最后一个性能窗口内。
 当前owner是一张GPU；多个设备的均值不能证明每卡空闲，因此不据其均值加大步幅。
 

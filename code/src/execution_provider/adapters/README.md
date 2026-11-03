@@ -854,15 +854,18 @@ historical first/reuse runs are not reproduced merely by exposing this option.
 名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
 `profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
 显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
-不是另一个执行器。`C0` 是起始软窗口，owner 上界为声明的
-`RecordsResources.max_active_batches`；prepare 数、模型配置和 actor/IPC 容量在启动前确定。
+不是另一个执行器。`C0` 是起始软窗口；旧预算（`capacity.budget=None`）下，owner 硬请求额度 R
+取 `RecordsResources.max_active_batches`，显式独立 budget 下取 `budget.active_requests`，C0 不得超过 R。
+prepare 数、模型配置和 actor/IPC 容量在启动前确定。
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 未指定／null时，
 异步 Core 不传该引擎参数，交由安装的 vLLM 0.25.1 解析；显式正整数原样传入。
 LOTUS 原生 HTTP 服务与有限同步 `VllmEngine` 单独保留旧默认8，其他baseline默认不在本次修正范围。
 实际引擎容量须从构造后的配置读回；未指定不表示无限容量或自动性能调优，也不改变外层 C/B、token/context/memory 参数。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
-显式 `async_limits.max_inflight/result_slots` 必须覆盖该 owner 上界，不是只覆盖 C0。
+旧预算下，`async_limits.max_inflight` 必须等于 R，`result_slots` 至少为 R，不能只按 C0 配置。
+[显式独立预算](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选)要求完整有限 IPC 额度，
+允许 IPC 请求／结果槽位小于 R；实际接纳继续受这些槽位和字节预算背压，并非无限供给。
 
 异步 Core 的 RPC 线程预算与上述驻留槽位分开。`RecordsResources.model_rpc_workers`
 是可选正整数；省略时沿用调用方声明的 `cpu_workers` 作为数据 RPC 并发预算，不读取

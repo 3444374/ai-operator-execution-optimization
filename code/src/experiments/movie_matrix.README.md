@@ -179,7 +179,9 @@ unknown、失联、取消请求及未消费结果不能按空闲释放；只有�
 固定 rolling 配置在普通 Movie `check/run` 或 Session plan 根部可显式加入
 `"experimental_skip_token_packing": true`。仍提供原来合法的正值 B 和
 `max_rows:null`，同时 `rolling_refill:true`；此模式不允许
-`core_profile.admission`、batch_feedback 或批数并发，C_request 固定为工厂解析后的 R。
+`core_profile.admission`、batch_feedback 或批数并发。旧预算（`core_capacity.budget`省略／null）
+固定 C_request=R；[显式独立资源预算](#显式独立资源预算默认关闭本地cpu候选)允许固定 C_request<R，
+硬请求额度 R 由 `budget.active_requests` 声明，IPC 另按其有限额度背压。
 只旁路 token 切包，仍按当前合法 ready、兼容性、C/R 空位及 RPC/IPC 字节硬限提交，
 ready 只有一条就发一条，不等待凑满或上一包全部结束。成员/驻留、输入/结果、单请求 context
 及引擎容量保护不变。R 与 native max_num_seqs 独立，后者不是应用批大小。
@@ -202,7 +204,8 @@ ready 只有一条就发一条，不等待凑满或上一包全部结束。成�
 
 沿同一个普通Movie工厂／Session入口执行。`max_inflight`省略或显式为1时从1请求开始；
 既有`"auto"`在R=1时也接纳并解析为1，R>1时拒绝，实际起点和容量边界没有改变。
-R仍由`resources.max_active_batches`声明，并保留原驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
+旧预算下R由`resources.max_active_batches`声明；显式独立budget下R取`budget.active_requests`，
+两者均保留各自的驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
 旧预算模式下其C_request=R且不安装反馈；显式独立budget按配置的C与硬R分别校验。启用反馈后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
 完成一条可立即补位，合法后继不等慢同伴。缩容只阻止新准入，已有在途及已选择待后端接收的成员有界排空，
 不取消、不拆改既定批成员；待提交责任和真实inflight分别记录。
