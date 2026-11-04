@@ -288,3 +288,24 @@ fixture 替换，这不是上下文长度或真实模型支持更长输入的证
 [组合记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#capacity-source-clock-composition)
 保留运行身份与未执行项。绑定只覆盖同机已验证来源；固定输入回放不能作为吞吐或查询时间结论。
 新实现须用不同声明源码身份或新缓存；本批没有模型或正式缓存复用运行。
+
+
+## 2026-11-04 服务进程内独占载荷授予
+
+[静态分配检查](execution_provider/test_records_service_budget.py)覆盖并发领取、不同实例的互不重复额度、
+只读计划、复制／序列化／跨进程拒绝及关闭不强行回收。
+[实际 owner 检查](execution_provider/test_records_service_owner.py)沿公共工厂和真实本机 CPU 私有管道，
+覆盖无手填 R／槽数、同一模型跨查询、现代反馈仍从一开始、构造失败归还、ready 来源、未知清理、
+空查询及成功／unknown 结果只转交一次。Ray、Daft、LOTUS formatter 与模型执行由 fixture 替换。
+已有默认、原生 baseline 和历史来源检查继续使用，不将旧未运行项改报成功。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
+LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
+  tests.execution_provider.test_records_service_budget \
+  tests.execution_provider.test_records_service_owner -v
+```
+
+[本轮记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants)
+说明实际选择、反例与未执行项。总字节仍须由服务配置提供，不代表实际 RAM、Ray 对象或 GPU／KV，
+本批没有真实 Ray 或模型资格。CLI、prepared／rolling 和跨进程授予未接入。

@@ -690,3 +690,11 @@ provider 实际声明的 stale_after_s，工作测量仍用原 window_s；未绑
 分别记录原输入回放与实际组合回归；固定输入上的四次调整不是新查询或性能结果。
 后续运行须声明新的 execution.source_revision 或使用新缓存，当前提示键不自动散列实现源码。
 异机来源时钟、真实 Ray／模型／GPU 和自动服务授予仍未验证。
+
+
+普通 async SDK 另有服务载荷授予候选：`RecordsPayloadPool` 在一个服务进程内原子分配互不重复的有限字节，
+工厂领取后才建立实际 owner，R／结果槽从已有字节预留派生；未配置服务池的现行缺省不变。
+ready 的模型与 producer 身份、未确认清理及未取走结果共同决定授予是否保留；不新增请求控制器。
+[接线与 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants)
+仍是待独审候选。总字节来自服务声明，不是自动硬件探测；CLI／session、rolling、多进程恢复、
+真实 Ray／模型／GPU 和完整查询内存尚待后续，不能据此宣布整个重构完成。

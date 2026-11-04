@@ -1141,3 +1141,54 @@ fused worker 不再把省略上下文改成 4096；首次模型调用前核实�
 明确保留原参数和 `LLM.chat`；共用 IPC、方法、结果与清理。旧导入和历史具名原件保持。
 [CPU 检查与原始缺项](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_default_checks.json)
 分别记录新行为、原生对照和来源核对；真实模型／GPU、自动容量、geometric 及计算中关闭仍待验证。
+
+
+<a id="service-payload-grants"></a>
+### Exclusive payload grants inside one service process
+
+`RecordsPayloadPool(total_bytes)` accepts a finite amount assigned by service configuration.
+The ordinary async `create_records_core(..., service_budget=pool, capacity=shape)` now allocates
+one disjoint grant before constructing its model owner. Resources may be omitted on this path;
+explicit resources must use single-row preparation/model calls and `max_active_batches=None`.
+No R or result-slot value is supplied by the caller. The existing byte conversion and IPC
+reservations derive finite counts; modern request feedback still begins at one.
+
+The immutable plan separately charges Core input/results/metadata, a pending source item,
+one ordinary continuation envelope, both IPC endpoints' input/result/control allowances,
+actor and transport prepared/result allowances, and retained closing results. Its largest
+complete plan must fit the available pool bytes. Existing IPC frame sizes and control reserves
+are protocol declarations, not new request-window policy. `preview(shape)` acquires nothing.
+`service_allocation_bytes` can limit one instance's share when the service creates several owners;
+allocating one grant never grants the same bytes to another owner. Pools and grant capabilities
+cannot be copied, serialized or used from a forked process. This is a static engineering choice,
+not a second request controller or a replacement for Core/Method/IPC task accounting.
+
+```python
+from src.execution_provider.adapters.records_service_budget import RecordsPayloadPool
+from src.execution_provider.adapters.lotus_records_core import create_records_core
+
+pool = RecordsPayloadPool(service_config.payload_bytes)
+owner = create_records_core(method, engine, generation, service_budget=pool, capacity=shape)
+```
+
+The service must keep the actual owner and close it. Its ready receipt binds the grant to both
+the actual engine and producer IDs; reuse keeps those IDs and the grant. Unconfirmed RPC,
+producer cleanup or Core storage retains all grant bytes. Model API shutdown does not prove
+GPU exit. An empty query supplies no invented model identity. `pool.close()` stops allocation
+and reports pending until its existing owners return their grants; it does not force reclaim.
+
+Closing a query may retain actual call receipts. `owner.take_unconsumed_results()` transfers
+those receipts once after the query closes, without parsing, retrying or changing unknown
+outcomes. A service owner cannot replace that query before transfer. The grant returns only
+after owner close is confirmed, Core/transport/RPC are clear and retained receipts have been
+transferred. Previously returned report snapshots remain intact. A cancelled query can also
+transfer its receipts before reusing the same live owner; the grant then remains assigned.
+
+The pool is exclusive only among owners sharing that pool in that process. Its bytes are
+declared logical payload allowances, not acquired RAM, observed host/cgroup free memory,
+Python/Ray RSS, preparation/serialization scratch, full relations/audits or GPU/KV storage.
+The service must supply the total; no automatic hardware discovery is implemented. CLI/session
+bootstrap, prepared/rolling owners, cross-process allocation and restart recovery are pending.
+This opt-in SDK path rejects historical profiles and IPC overrides; all callers without a pool
+retain their existing settings, including ordinary R=2 and default IPC result slots=8.
+See [CPU scope and evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants).

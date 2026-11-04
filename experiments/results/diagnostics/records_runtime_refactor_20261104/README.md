@@ -30,6 +30,7 @@ flowchart LR
     CORE --> RESULT["方法推进 / 结果消费与归还"]
     MODEL -. "观测" .-> FEEDBACK["反馈 owner / 纯解析 / 现有控制器"]
     FEEDBACK -. "接纳额度" .-> HANDOFF
+    PAYLOAD["服务进程内声明载荷字节池"] -. "可选普通 async 授予" .-> HOST
     IMG["图像 workload"] --> IMAGE["现有图像执行器 / typed CLIP actor"]
     IMAGE --> IMGRESULT["图像结果 / sink"]
     BASE["LOTUS / Ray / Daft 原生 baseline"] --> BASERESULT["独立运行结果 / 统一指标"]
@@ -41,7 +42,7 @@ flowchart LR
 | 方法语义、prompt/parser、合法后继 | `semantic_methods` 与已有 compatibility adapter；LOTUS 不替代数据库语义 | 否 |
 | 组织、准入与任务责任 | 共享 Core、`SessionCapacity`、既有组织器与策略 | 否 |
 | records 查询编排 | 记录链 owner 与 record-local 迭代已分开；普通 Core 与 `PreparedRecordsCore` 继续存在 | 已拆开组装与迭代，推进顺序保持 |
-| 配置和容量解析 | 普通／Session 共用解析；普通 async Filter／rolling 的存储与 R 已在 CPU 候选分开 | 请求 R 可来自完整独立预算；自动容量仍未完成，大单项修正已组合，待复审 |
+| 配置和容量解析 | 普通／Session 共用解析；普通 async Filter／rolling 的存储与 R 已在 CPU 候选分开 | 普通 async SDK 新增服务进程内互不重复的载荷授予候选；CLI、rolling 授予和硬件探测仍未完成 |
 | 快照观测 | 原 owner 仍负责锁、时钟和采样；本次提取纯解析与报告字段 | 已拆分纯函数，控制算法未变 |
 | 模型适配与传输 | 共用编码、actor 与传输不再依赖单 Filter 查询 host | 已拆开依赖方向，原交接实现保持 |
 | 原生模型服务 | 共享请求值与同步／异步实例分开，原 actor／IPC 与 vLLM 继续执行 | 当前同步缺省、完整提示和 fused 实际上下文已有 CPU 候选；原生对照显式保留原参数，真实模型及计算中关闭仍待检查 |
@@ -67,7 +68,7 @@ flowchart LR
 | Core 责任：`scheduling/core` | 复用单一 `SessionCapacity.records`、租约与已确认终态；避免第二套记账 | 受新能力影响时补旧路径检查，不为统一外观重写 |
 | 组织：`scheduling/organization` | 复用 ready 选择、token／字节组批、帧与候选计量缓存 | 不改变已提交批成员；准备交错需完整查询计时 |
 | 动态接纳：`submission_control` | 专项重构现代资源策略；旧算法退出普通入口前必须有替代 | 动态会话拥有四个策略文件与专项测试，保留 `update_supply(...)` |
-| 容量／资源责任 | 本会话集中 Core／Method／IPC 解析；R、结果、续算和字节分别表达 | 普通默认存储已分开；请求 R 仍来自声明或完整独立预算；自动容量尚未接入 |
+| 容量／资源责任 | 本会话集中 Core／Method／IPC 解析；R、结果、续算和字节分别表达 | 普通 async SDK 可从同一服务池领取互不重复的逻辑字节；未配置池的旧缺省保留，实际硬件容量尚未接入 |
 | 路由／多 Job：`endpoint_routing` 与公共 runtime | 复用现行路由和公平性接口；清理前核对普通、诊断、历史调用 | 多副本／多卡结论仍需真实部署资格 |
 | 异步 runtime：`scheduling/runtime` | 复用已有 backend、wake、借用与退休证据；缩减反向依赖 | 共享字段变化由双方先协调，unknown 不提前归还 |
 | 模型适配：`records_model_adapter` 与 actor owner | 本批解除 async actor 对 query host 的反向引用，保留类身份 | 真 Ray 序列化和服务运行仍需独立资格 |
@@ -1153,3 +1154,43 @@ faab48cd350963bd788cb6d379ed3ab9ba3a8a81，原树 a92a1da87390c192de321ff551eee3
 新的 trace 另记 controller.source_stale_after_s，不能仅从原 options 推断实际来源期限。
 本批未运行正式查询或复用持久缓存；真实 Ray、模型、GPU、全查询内存和服务独占字节授予仍未验证。
 普通默认 R=2／结果槽=8 未由此删除，整个项目重构仍未完成。
+
+
+<a id="service-payload-grants"></a>
+### 普通 async 的服务进程内载荷授予
+
+在 7a4338547a95f9bf88f05793b423c5808a09b5fa 上新增静态分配接线，未改动态专项四份源码或
+_CoreFeedback 的语法树。原共享 Core 的 Job 授予仍只管理其自身任务；本批把一个服务进程声明的
+载荷总额分给实际 records 模型 owner，不建立未使用的 Core，也不复制逐任务责任表。
+[接口与范围](../../../../code/src/execution_provider/adapters/README.md#service-payload-grants)说明现用入口。
+
+新 RecordsPayloadPool 在同一进程内原子分配互不重复的逻辑字节。计划分别计入 Core、待提交输入、
+一份最低续算额度、IPC 两端、actor／transport 的声明副本和关闭结果，完整计划须容纳于池的剩余额度。
+普通 Filter 仍用既有 Core／IPC；这份最低续算额度只保留其完整预算声明，不声称创建了 MethodDriver。
+这不是 RAM 预留、空闲内存观察或第二个请求控制器。跨实例须共用同一池，不能各自宣称拥有整份总额。
+准备／序列化临时对象、整份关系、审计对象、Python／Ray RSS 和模型／GPU／KV 不由该逻辑总额代表。
+
+服务池经公共 create_records_core 显式启用后，可省略 resources；原 R=2／结果槽=8 不参与该路径。
+显式 resources 须给 max_active_batches=None，R 和槽数经现有字节预留派生；现代接纳仍从一开始。
+池或授予句柄拒绝复制、序列化和跨进程使用；模型 ready 必须提供同一实际 engine／producer 身份。
+实例跨查询复用不重新领取；清理未知、RPC 未返回、Core／transport 仍持有或真实回执未转交时，授予继续保留。
+take_unconsumed_results 只转交一次已关闭查询的回执，保留 unknown 和既有用量，不执行 parser 或后继；
+旧报告快照保持。服务关闭只停止新分配，未完成授予不强行回收。
+
+[检查摘要](raw/service_payload_checks.json)与[逐方法公开记录](raw/service_payload_methods.json.gz)保存九次运行。
+首次缺模块、首次工厂缺参数两项新功能反例，以及之后的相关检查均保留。
+完整组合首次在沙箱中运行时，既有 Unix socket 与进程身份读取报权限错误，记录 13 份断言失败、
+50 份错误条目，部分属于同一方法的不同子场景，不能把这些条目相加为方法数。
+随后获准在同一准确源码和选择上运行本机 CPU fixture：2043 项选中、2035 运行、1998 成功，无失败错误。
+37 方法及两个类的八方法未执行，共 45 项，其中六项需真实 Ray；原固定 SDK／源码／SemBench 缺项保留。
+本批新增 24 方法全通过；各轮选择重叠，不累计成功数。
+
+最终 1319 个代码文件的摘要与完整组合一致，五份具名历史投影的 3010 条来源准确匹配，原生模型参数和
+baseline 源码未改。原全仓失败、跳过及早期历史十处差异的记录不重写，也不被本次选择覆盖。
+公开归档只规范化首次权限失败中的 106 处个人 home 前缀；原件私有保存并分别记录原件和公开摘要。
+归档沿用 source_delta 格式，可恢复全部公开 JSON；original_json 校验字段指该公开副本，
+private_original 校验字段指规范化前原件，失败身份、栈行号、代码摘要和用量不改。
+
+本批仍待准确提交独审，没有推送或合并。CLI／session 服务启动、prepared／rolling、多进程共享与重启恢复
+尚未接入；无池旧入口仍为原缺省。自动硬件容量、真实 Ray／模型／GPU、异机时钟、全查询内存与性能未验证。
+来源期限候选在此次 CPU 选择通过，不据此宣布全部 geometric 时序问题或整个项目重构完成。

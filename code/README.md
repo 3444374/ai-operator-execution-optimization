@@ -732,3 +732,8 @@ performance claims require the real PostgreSQL source and vLLM endpoint.
 阅读当前路径先核对源码与实现状态，再沿任务生成、提交、外部执行、返回和写回定位耗时。
 SQL、Ray任务、模型服务与结果消费具有各自的生命周期，不能把一个阶段的完成当成完整查询完成。
 原生候选由被测执行引擎拥有执行与调度；项目内部策略对照从原始身份和来源记录解释。
+
+
+普通 async records 的可选[服务载荷授予](src/execution_provider/adapters/README.md#service-payload-grants)
+将同一服务进程的有限字节分给实际模型 owner，再经原有 Core 和 IPC 派生请求与结果计数。
+无服务池的旧入口和参数保留；该 SDK 候选不探测硬件，也未接 CLI／rolling 或多进程服务。

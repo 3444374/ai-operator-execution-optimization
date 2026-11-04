@@ -52,11 +52,26 @@ from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, R
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlockingMetricsObservationProvider
 
 
-def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
+def create_records_core(method, engine, generation, resources=None, *, profile=None, async_limits=None,
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
                         resident=False, experimental_skip_token_packing=False, capacity=None,
-                        interleaved_preparation=False, event_driven_preparation=False):
+                        interleaved_preparation=False, event_driven_preparation=False,
+                        service_budget=None, service_allocation_bytes=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
+    if service_budget is not None:
+        from .records_service_budget import create_service_records_core
+        return create_service_records_core(method, engine, generation, resources,
+            service_budget, service_allocation_bytes, capacity=capacity, profile=profile,
+            async_limits=async_limits, prepared_batching=prepared_batching,
+            batch_concurrency=batch_concurrency, batch_feedback=batch_feedback,
+            rolling_refill=rolling_refill, resident=resident,
+            experimental_skip_token_packing=experimental_skip_token_packing,
+            interleaved_preparation=interleaved_preparation,
+            event_driven_preparation=event_driven_preparation)
+    if resources is None:
+        raise TypeError('records resources or an explicit service payload pool are required')
+    if service_allocation_bytes is not None:
+        raise ValueError('service_allocation_bytes requires a service payload pool')
     if type(interleaved_preparation) is not bool or type(event_driven_preparation) is not bool:
         raise TypeError('preparation options must be boolean')
     if (interleaved_preparation or event_driven_preparation) and prepared_batching is None:
@@ -430,13 +445,17 @@ class SemLoomRecordsCore:
         self._closing = False
         self._deadline = None
         self.last_query_report = self.last_close_report = None
+        self._service_allocation = None
 
     @property
     def production_core_connected(self):
         return isinstance(self.core, SessionEngine)
 
     def execution_metadata(self):
-        return dict(self._actors.execution_metadata(), execution_profile=dict(self.execution_profile))
+        value = dict(self._actors.execution_metadata(), execution_profile=dict(self.execution_profile))
+        if getattr(self, '_service_allocation', None) is not None:
+            value['service_allocation'] = self._service_allocation.describe()
+        return value
 
     @property
     def model_ready(self):
@@ -457,7 +476,10 @@ class SemLoomRecordsCore:
             raise RuntimeError("Core records already owns an active query")
         deadline = time.monotonic() + self.resources.startup_timeout_s
         self._deadline = deadline
-        return self._actors.start(deadline)
+        ready = self._actors.start(deadline)
+        if self._service_allocation is not None:
+            self._service_allocation.observe_ready(self)
+        return ready
 
     def evaluate(self, source, *, query_id, method: FilterMethod | None = None,
                  cancelled: Callable[[], bool] | None = None, max_inflight: int | None = None,
@@ -494,6 +516,8 @@ class SemLoomRecordsCore:
             # A cancelled flow can settle after its iterator closes. Preserve
             # its compact receipts before a new query replaces that flow.
             self._active.close()
+            if self._service_allocation is not None and self._active.unconsumed_call_results:
+                raise RuntimeError('take unconsumed results before replacing their service query')
         deadline = time.monotonic() + self.resources.query_timeout_s
         self._deadline = deadline
         from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
@@ -545,6 +569,8 @@ class SemLoomRecordsCore:
             if expected:
                 self._actors.start(min(deadline, time.monotonic() + self.resources.startup_timeout_s),
                                    cancelled)
+                if self._service_allocation is not None:
+                    self._service_allocation.observe_ready(self)
             else:
                 self._actors.ray = ray
             if self._feedback is not None:
@@ -593,6 +619,8 @@ class SemLoomRecordsCore:
         if self._active is not None:
             self._active.collect_receipts()
             if self.last_query_report is not None:
+                if getattr(self, '_service_allocation', None) is not None:
+                    self.last_query_report = deepcopy(self.last_query_report)
                 self.last_query_report["unconsumed_call_results"] = list(self._active.unconsumed_call_results)
                 self.last_query_report["core_usage"] = asdict(self.core.capacity.usage())
                 if self._active.timings is not None:
@@ -614,7 +642,32 @@ class SemLoomRecordsCore:
                 or not self._feedback.provider.is_running,
             "work_unit": "model_calls",
         }
+        if getattr(self, '_service_allocation', None) is not None:
+            self._service_allocation.settle(self)
+            self.last_close_report['service_allocation'] = self._service_allocation.describe()
         return self.last_close_report
+
+    def take_unconsumed_results(self):
+        """Transfer the closed query's retained receipts once, without parsing them."""
+        self._control()
+        if self._active is None:
+            return []
+        if not self._active.finished:
+            raise RuntimeError('close the query before taking its retained receipts')
+        self._active.collect_receipts()
+        taken = deepcopy(self._active.unconsumed_call_results)
+        query = deepcopy(self.last_query_report)
+        if query is not None:
+            query['unconsumed_call_results'] = []
+        report = None if self.last_close_report is None else dict(self.last_close_report,
+            last_query_report=query)
+        self._active.unconsumed_call_results = []
+        self.last_query_report = self._active.last_close_report = query
+        self.last_close_report = report
+        if getattr(self, '_service_allocation', None) is not None and report is not None:
+            self._service_allocation.settle(self)
+            report['service_allocation'] = self._service_allocation.describe()
+        return taken
 
 
 class _CoreFeedback:
