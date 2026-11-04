@@ -10962,3 +10962,13 @@ ready 与 run_prepared 共享实际模型上下文检查，在 chat／调用数�
 [修订记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#public-cpu-evidence-copy)
 保存首次失败与复查，不增加真实模型、Ray／Daft、GPU 或性能资格。旧本地版本继续保留，
 发布内容另建不包含旧个人路径节点的候选提交；未经复审不推送或合并。
+
+## 2026-11-04 核对计算中关闭与实际容量来源
+
+在公开证据修正候选之外追加独立 CPU 行为检查，实际子进程计算未结束时首次 close 保留额度，
+取得同一生产者停止证据后才归还；晚到成功、失败与 unknown 均保留原结果和用量，不解释、不重放、不补报查询完成。
+FIFO／后继优先共三项方法六个场景，66 项相关检查通过，运行时代码未变，仍待独审。
+[本轮记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#computing-close-cpu)
+保留首次测试读取报告层级错误，不声称旧关闭问题或真实 Ray／模型／GPU 退出已经全部解决。
+容量来源核对确认已有 Core Job、Method pool 和 IPC 授予可复用，但普通 records 尚未接收服务独占字节授予；
+R=2／默认结果槽=8 和 geometric 旧不稳定继续保留，未改成其他猜测数值。

@@ -1055,3 +1055,32 @@ ACK 负例由当前用例反向替换一个 wait 并核对原方法语法树摘�
 未发布的旧版本与原件留在本地；发布候选应从已核对的 PR 起点建立相同修订内容，避免把旧个人路径
 所在的本地节点一同推送。新提交与树仍须复审。R=2、默认 IPC 结果槽=8、自动物理字节授予、
 旧 geometric 不稳定、计算中关闭和实际模型／GPU／完整查询比较仍未由本轮补全。
+
+<a id="computing-close-cpu"></a>
+### 计算中关闭的独立 CPU 检查
+
+[新增用例](../../../../code/tests/execution_provider/test_computing_query_close.py)保留此前确认成功但延迟交付的检查，
+另外让实际 CPU 子进程在首次 close 时仍停留于计算。FIFO 与后继优先分别覆盖晚到成功、失败和 unknown；
+三项方法包含六个场景。首次短等待返回 unknown 时，原请求／输入／结果额度仍被持有。
+同一子进程结束并取得清理证据后才归还，实际结果和用量只记录一次；不解释结果、不推进后继、不补报查询完成。
+重复 close 不新增调用。Ray RPC 由线程替换，推理由明确的 CPU fixture 替换，Core 与本地 IPC 使用实际实现。
+
+[检查摘要](raw/computing_close_checks.json)及[逐方法原记录](raw/computing_close_methods.json.gz)
+保留首次六个报告层级读取错误、三项复查和最终 66 项相关回归。首次错误来自测试把 process_exit_confirmed
+读取在 ipc_close 之上一层，只修正该读取；生产代码没有改变。三项新增方法已包含在 66 项中，不重复相加。
+源码摘要按既有 source_delta 格式复用 pending_frame_final_methods.json.gz，可准确恢复三份原始 JSON。
+已有 489 份运行时 Python 文件与父候选相同，最终 1311 份代码摘要匹配；仅有 CPU 资格，仍需独审。
+
+这六个受控场景不证明所有关闭竞争均已解决，也不确定旧偶发失败的唯一原因；实际 Ray、模型和 GPU 退出尚未验证。
+原 geometric 不稳定、原失败输出及未执行项继续保留，不据本批检查宣称整个重构完成。
+
+### 自动容量的实际来源
+
+[源码核对](raw/service_grant_source_audit.json)区分三个已有负责者：共享 Core 的 JobRegistry 核对服务存储授予，
+MethodBudgetPool 管理续算载荷的生存期，IPC 保留自己的输入／结果／命令额度。增量 provider 已从同一 Core
+分配 Job；私有 records 查询仍自行建立 Core 和 Method pool，尚未接收同一服务拥有的字节授予。
+
+下一步应复用这些负责者，把服务实际控制的有限字节分别分给同时存在的输入、序列化副本、未消费结果和 unknown
+持有。不能让每个副本都取得整份额度，也不能用共享 cgroup 余量、RSS 看门狗、模型长度或 vLLM 配置声称已有独占授予。
+未知或外来授予应在工作进程创建前拒绝，连续／并行查询、慢消费及部分清理须各自检查。
+这是源码与待接线事项的记录，没有实现自动硬件容量；普通 R=2、默认 IPC 结果槽=8 继续存在，未用其他固定数替换。

@@ -241,3 +241,22 @@ keeps all earlier failed runs, skips and the new exact-source result separately.
 优先级路径的延迟关闭检查改为复用已有“确认模型成功后延迟交付”的用例，保留 successor_first 设置，
 核对结果／用量、未完成查询、Core 持有和无 parser／后继重放。原接纳确认不能证明模型成功，
 旧完整回归的一次失败和父候选／当前候选的单次对照均保留；接纳但仍计算的关闭情况仍未由此用例证明。
+
+
+## 2026-11-04 计算中关闭与晚到结果
+
+[计算中关闭用例](execution_provider/test_computing_query_close.py)复用实际 Core、actor owner、线程 RPC 与
+本地 CPU 子进程，替换 Ray 和模型执行。用文件控制计算结束，同时保持 abort／close 回执未返回，
+确认首次短等待时计算尚未结束、额度仍被持有；结束后保留成功、失败或 unknown 的原结果与用量。
+每种结果分别检查 FIFO 和后继优先，不解析结果、不启动后继、不补报完整查询，并检查重复关闭。
+三项方法包含六个场景，不能把它们相加成九项。旧的已确认成功但延迟交付用例继续保留。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
+LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
+  tests.execution_provider.test_computing_query_close -v
+```
+
+[检查记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/computing_close_checks.json)
+保留首次读取报告层级错误及复查。本批没有修改生产关闭代码，也没有执行真实 Ray、模型或 GPU；
+这些受控场景不能证明全部关闭竞争已经解决。

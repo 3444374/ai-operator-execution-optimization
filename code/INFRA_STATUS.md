@@ -661,3 +661,11 @@ interleaved／event_driven 复用已审 SDK，只支持固定 rolling token 请�
 先校验原始源码字节；两个原生源文件先前私有副本多一个尾部换行，选定方法的语法树一致。
 [公开修订记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#public-cpu-evidence-copy)
 区分原 f577 检查、修订复查和缺项；已有 489 份运行时 Python 文件保持，未增加模型、Ray／Daft 或 GPU 资格。
+
+计算中关闭另补明确的 CPU 行为检查：FIFO 与后继优先分别覆盖晚到成功、失败和 unknown，
+计算未结束的首次短等待保留 Core 请求／输入／结果额度；同一生产者停止后收集真实回执并归还，
+不解释结果、不推进后继、不补报查询完成，重复 close 不新增调用。三项方法包含六个场景，
+初次检查误读已有报告层级的错误保留；本批不修改运行时，不证明真实 Ray／模型／GPU 退出。
+[关闭检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#computing-close-cpu)
+与[容量来源核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/service_grant_source_audit.json)
+分别记录 CPU 资格及源码判断，普通 R=2／默认结果槽=8 和自动授予仍未处理。

@@ -1412,3 +1412,9 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 同步证据的[公开副本修订](diagnostics/records_runtime_refactor_20261104/README.md#public-cpu-evidence-copy)
 保留 24 份私有原件的摘要，将个人 home 前缀从公开副本移除，并增加固定源码／ACK 受控检查的仓内复算入口。
 两种摘要与恢复含义分别登记；原失败和独审的 Ray／Daft 缺项保持，53 项相关检查与四项最终检查不重复相加。
+
+计算中关闭的[CPU 检查](diagnostics/records_runtime_refactor_20261104/README.md#computing-close-cpu)
+覆盖 FIFO／后继优先与晚到成功／失败／unknown，共三项方法六个场景，已包含于 66 项相关检查。
+首次报告层级读取错误和三份原始方法记录保留；489 份运行时代码保持，不作生产修复或真实模型退出结论。
+[容量来源](diagnostics/records_runtime_refactor_20261104/raw/service_grant_source_audit.json)只登记已有授予与缺少的接线，
+普通 R=2、默认结果槽=8、自动容量和 geometric 旧不稳定仍开放。

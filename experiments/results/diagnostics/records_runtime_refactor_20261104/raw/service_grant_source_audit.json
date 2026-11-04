@@ -1,0 +1,92 @@
+{
+  "schema": "semloom.service_grant_source_audit.v1",
+  "source_commit": "55d8776d50511898fe0459ddbee38289b154361e",
+  "source_type": "read-only source audit; no automatic capacity implementation",
+  "sources": [
+    {
+      "role": "records deployment declaration",
+      "path": "code/src/execution_provider/adapters/records_capacity.py",
+      "symbols": [
+        "RecordsCapacityBudget",
+        "CoreRecordsCapacity",
+        "independent_default_capacity"
+      ],
+      "sha256": "e9f5bcd4a9685f012d11a63eb13238745851db1ebab8b2052056bbec4c03708f",
+      "source_reading": "Finite logical fields or existing IPC declarations. Ordinary request capacity still comes from RecordsResources; not a physical grant."
+    },
+    {
+      "role": "registered service Job storage",
+      "path": "code/src/scheduling/core/session_jobs.py",
+      "symbols": [
+        "JobRegistry.register",
+        "JobHandle",
+        "JobBudget"
+      ],
+      "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+      "source_reading": "Actual process-local membership and sum of storage grants checked against an existing Core; compute remains globally checked. Does not discover physical bytes."
+    },
+    {
+      "role": "service Method payload pool",
+      "path": "code/src/semantic_methods/budget.py",
+      "symbols": [
+        "MethodBudgetPool",
+        "MethodBudget",
+        "row_reservation"
+      ],
+      "sha256": "832c23d79b768bfd127a651ccfefee1ead1095ddf4469279af5f84a1147fb6cf",
+      "source_reading": "Allocates lifetime payload envelopes including siblings; actual row charges last through release. Does not cover whole process RSS."
+    },
+    {
+      "role": "incremental provider assembly",
+      "path": "code/src/execution_provider/adapters/incremental_execution.py",
+      "symbols": [
+        "IncrementalExecution.open_job",
+        "IncrementalExecution.open_query_job"
+      ],
+      "sha256": "187175941b71beb72de7c8f417dbb9b8bc4750808e5e9bd3c8cd633d908a99a7",
+      "source_reading": "Uses one existing service Core and partitions a Job grant across dependent flows. This is a different owner from the private records query Core."
+    },
+    {
+      "role": "private records query assembly",
+      "path": "code/src/execution_provider/adapters/records_query_runtime.py",
+      "symbols": [
+        "_RecordLocalRows._begin_phase"
+      ],
+      "sha256": "80bc07970410a8df29105b8f7ac3e0bcf52897013eeefa4e9da6994cf16e09eb",
+      "source_reading": "Currently creates its own MethodBudgetPool from the query capacity. No supplied service Job capability is used here."
+    },
+    {
+      "role": "child IPC declarations",
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "symbols": [
+        "AsyncEngineLimits"
+      ],
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8",
+      "source_reading": "Own finite request, input, result and control declarations. Their defaults are not observed available memory."
+    }
+  ],
+  "ordinary_R": 2,
+  "default_IPC_result_slots": 8,
+  "automatic_physical_grant_implemented": false,
+  "existing_components_to_reuse": [
+    "SessionEngine and JobRegistry membership and storage checks",
+    "MethodBudgetPool lifetime allocation and release",
+    "Existing IPC input, result, command and control reservations"
+  ],
+  "missing": [
+    "A service/deployment owner that actually controls an exclusive finite byte assignment for all concurrent records owners.",
+    "Wire that assignment into the existing Core and Method grants and child IPC declarations without giving each simultaneous copy the entire assignment.",
+    "Account simultaneous prepared input, serialized RPC/IPC copies, unconsumed results and unknown work until their existing owners release them.",
+    "Reject unavailable or foreign grant evidence before starting workers; test sibling queries, model-owner changes, slow consumers and partial cleanup."
+  ],
+  "not_grant_sources": [
+    "Shared cgroup limit or observed headroom",
+    "RSS watchdog or incomplete kernel memory observation",
+    "vLLM scheduler settings, model context or a requested R",
+    "A user-created copy of a visible JobHandle label"
+  ],
+  "qualification": "The source audit identifies reusable owners and missing wiring. It neither assigns hardware capacity nor changes current request defaults.",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}
