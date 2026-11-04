@@ -364,6 +364,12 @@ Extract retains its complete-relation barrier. The ordinary records factory,
 Movie JSON `check/run` and isolated-session plan accept the same boolean option.
 Explicit `CoreRecordsCapacity.budget` separates the fixed request window C, hard request slots R,
 method residency and IPC grants; see the [budget fields](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选).
+Declarations and IPC resolution live in [records_capacity.py](records_capacity.py);
+execution selection and historical options live in [records_profile.py](records_profile.py).
+The original `lotus_records_core` imports and serialized capacity locations remain compatible.
+Legacy defaults still derive several grants from R; the extraction changes no allocation policy.
+The [capacity ownership inventory and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
+separate that remaining work from the independent budgets already supported.
 Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and

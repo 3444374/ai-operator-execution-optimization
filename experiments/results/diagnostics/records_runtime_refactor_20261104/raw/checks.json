@@ -1,0 +1,79 @@
+{
+  "run_id": "semloom-runtime-refactor-20261104",
+  "base_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a",
+  "base_tree": "c8a86b0bcff8bf0161dcbbd005bc2660060d228e",
+  "author_CPU_only": true,
+  "independent_review": "pending",
+  "published": false,
+  "merged": false,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "capacity": {
+    "base": {
+      "selected": 145,
+      "passed": 144,
+      "failures": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model"
+      ],
+      "errors": 0,
+      "skipped": 0
+    },
+    "candidate": {
+      "selected": 149,
+      "passed": 148,
+      "failures": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model"
+      ],
+      "errors": 0,
+      "skipped": 0
+    },
+    "source_unchanged_during_suites": true,
+    "matrix_cases": 402,
+    "matrix_differences": 0,
+    "pickle_bytes_identical": true,
+    "AST": {
+      "RecordsCapacityBudget": true,
+      "CoreRecordsCapacity": true,
+      "resolve_records_async_limits": true,
+      "expand_core_profile": true,
+      "resolve_core_profile": true,
+      "resolve_record_batching": true,
+      "all_other_Core_definitions_unchanged": true,
+      "lotus_records_async_actor.py_definitions_unchanged": true,
+      "lotus_record_chain_core.py_definitions_unchanged": true
+    }
+  },
+  "historical": {
+    "bindings": 3010,
+    "inherited_mismatches": 10,
+    "new_mismatches": 0,
+    "manifest_changed": false
+  },
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "daft": null,
+    "ray": null,
+    "pyarrow": "24.0.0",
+    "litellm": "1.95.0",
+    "openai": "2.50.0"
+  },
+  "Python": "3.12.6",
+  "platform": "Darwin",
+  "evidence_sha256": {
+    "run_cpu.py": "36730e6c9175cf3363fc623af6d5e1e2e0ab87cd5dcce761aa9088b45eaacad5",
+    "capacity_matrix.py": "c68804a204bb34dc679647e8042d874f947de541eaa20918367db02946839646",
+    "base_capacity.json": "0655a23432bf22a05094de82fd55cba5d2c7b9c8fc54f2b3f426fb23cf533299",
+    "base_capacity.log": "d33a2395a272ef5e1ce7789e2eb71923702c3492b87eb92ef8b8d586103b1716",
+    "candidate_capacity.json": "36a2b9d766081a1e47db28aa14b6b54fb0b142b4ca3c61362bd243245d09aebb",
+    "candidate_capacity.log": "84999b721012000f92891eb5924a36412494c745c27f9e1379d567b57b899c9a",
+    "capacity_modules.json": "2dbddf2096e1730f1e7a69e877a8c336e8e264c6781f0044e8010a662a222d51",
+    "capacity_modules.log": "6490ce1ab7722059314624afb6d1d580872fc1f2cacc30a81ade2b430290110b",
+    "capacity_ast.json": "ffff599042d1024d90e26aca70b957af294c1e176961e65062b95c4346cd546e",
+    "base_matrix.json": "d693809b1f30ed170bcd54f14931e9c42ad7f7d25c693f9c5de1b31321606932",
+    "candidate_matrix.json": "d693809b1f30ed170bcd54f14931e9c42ad7f7d25c693f9c5de1b31321606932",
+    "base_matrix_pickle.json": "77509b8136ec7563f3a4b6ab379c0650d9db26048c7314f15030387f03f7393d",
+    "candidate_matrix_pickle.json": "77509b8136ec7563f3a4b6ab379c0650d9db26048c7314f15030387f03f7393d",
+    "history.json": "ae93c8e0ed9380ea10c861f77e04445f3479d5a769952edf16452cc794aa462e"
+  }
+}

@@ -1,5 +1,15 @@
 # 实验与机制证据台账
 
+<a id="records-runtime-modules-cpu"></a>
+## 2026-11-04：Records 容量责任与执行模块整理
+
+以 PR90 bfb 为基准的结构提取保留外部行为，旧默认的 R 耦合另列为待处理事项。
+[主记录](diagnostics/records_runtime_refactor_20261104/README.md)及
+[机器摘要](diagnostics/records_runtime_refactor_20261104/raw/checks.json)：402 组配置回放无差异，
+原 145 项为 144 成功、1 既有失败；候选加 4 项为 148 成功、相同 1 项失败，错误／跳过均为 0。
+历史绑定保持原 10 处不匹配，未改旧摘要或 manifest。CPU fixture 不能证明模型、真实 Ray、多卡或性能；
+候选待独审与统一 Git 整合，未推送或合并。具体资源归属和后续分工由主记录维护。
+
 <a id="records-owner-context-compat-cpu"></a>
 ## 2026-11-03：独审反例后的owner与IMLane上下文兼容
 

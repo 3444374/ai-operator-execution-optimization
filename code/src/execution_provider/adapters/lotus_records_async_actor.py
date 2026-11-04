@@ -20,8 +20,8 @@ from src.serving.backends.vllm_engine import (
 )
 
 from .lotus_records_actor_owner import _deadline, _runtime_env
-from .lotus_records_core import (CoreRecordsCapacity, resolve_records_async_limits,
-    _ActorOwner, _capacity_failure, _check_result_capacity, _encode, _measure)
+from .records_capacity import CoreRecordsCapacity, resolve_records_async_limits
+from .lotus_records_core import _ActorOwner, _capacity_failure, _check_result_capacity, _encode, _measure
 
 
 def _request_key(value):

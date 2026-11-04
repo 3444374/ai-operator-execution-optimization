@@ -4,6 +4,16 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+<a id="records-runtime-modules-cpu"></a>
+## Records 容量与执行配置模块整理（2026-11-04）
+
+以 PR90 bfb 为基准，将容量声明／IPC 解析与执行选项移入独立模块，原导入及序列化位置保持。
+旧默认仍从 R 换算多种额度；显式预算已有的 Core、Method、IPC 分别记账与归还不变，未新增控制器。
+402 组配置差分为 0；同条件原 145 项为 144 成功、1 既有失败，候选加 4 项为 148 成功、相同 1 项失败。
+历史 3010 条绑定保持原 10 处不匹配，新增 0。尚待独审与统一整合，未推送或合并；模型／真实 Ray／GPU 为 0。
+[主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
+列容量归属、可达执行链、并行分工及后续默认 R 解耦，不以提取代码声称完整资源处理已完成。
+
 
 <a id="records-model-context-cpu"></a>
 ## 异步上下文解析候选（2026-11-03）

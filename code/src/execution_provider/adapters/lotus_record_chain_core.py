@@ -45,7 +45,8 @@ from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 from .lotus_chain_actor_backend import LotusChainActorBackend
-from .lotus_records_core import CoreRecordsCapacity, close_prepared_core
+from .records_capacity import CoreRecordsCapacity
+from .lotus_records_core import close_prepared_core
 
 
 @dataclass(frozen=True)
