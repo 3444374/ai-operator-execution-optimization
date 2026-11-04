@@ -27,6 +27,7 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 `qualify/prepare/check/run/manifest/verify`：采集代码和 CPU 检查随同一提交同步，私有配置与原件留仓外。
 复用已审采集器、既有 Git 身份、lease、预算、supervisor 和私有产物工具；不向生产代码引入采集依赖。
 最小 on/off 配置、两种源码身份、运行及完整字节回收检查见[所属说明](profiling/record_observation/README.md)。
+同目录的 [`processor_receipt.py`](profiling/record_observation/processor_receipt.py)只观察服务的 processor 与模型身份；启动绑定和首次 POST 前的回执核对要求见[说明](profiling/record_observation/README.md#service-processor-model)。
 这次 Git 迁移仅有本地 CPU 资格，不能继承旧私有包的 Ray/GPU 或性能结论。
 
 ## 通过 Git 同步完整记录查询检查

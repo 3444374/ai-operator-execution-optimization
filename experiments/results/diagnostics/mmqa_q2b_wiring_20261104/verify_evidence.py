@@ -22,9 +22,11 @@ def relative_path(root, name):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--original-root", type=Path)
+    parser.add_argument("--map", type=Path, default=Path("evidence-map.json"))
+    parser.add_argument("--validation", type=Path, default=Path("validation.json"))
     args = parser.parse_args()
     root = Path(__file__).resolve().parent
-    mapping = json.loads((root / "evidence-map.json").read_text())
+    mapping = json.loads((root / args.map).read_text())
     published = originals = 0
     for artifact_id, artifact in mapping["artifacts"].items():
         archive = relative_path(root, artifact["path"])
@@ -49,15 +51,18 @@ def main():
             check(relative_path(args.original_root, name).read_bytes(), entry["original_identity"], name)
             originals += 1
     entries = {entry["original_relative_path"]: entry for entry in mapping["entries"]}
-    validation = json.loads((root / "validation.json").read_text())
-    references = [run["log"] for run in validation["cpu_runs"].values()]
-    references += [validation["cli_supervised_fixture"][key]
-                   for key in ("original_preflight", "summary", "footer", "supervisor")]
-    repair = validation["review_repair"]
-    references += [repair["tests_log"], repair["privacy_probe"]["log"]]
-    references += [repair["cli_supervised_fixture"][key]
-                   for key in ("original_preflight", "summary", "footer", "supervisor")]
-    references.append(validation["author_local_cli_checks"]["log"])
+    validation = json.loads((root / args.validation).read_text())
+    if "evidence_references" in validation:
+        references = validation["evidence_references"]
+    else:
+        references = [run["log"] for run in validation["cpu_runs"].values()]
+        references += [validation["cli_supervised_fixture"][key]
+                       for key in ("original_preflight", "summary", "footer", "supervisor")]
+        repair = validation["review_repair"]
+        references += [repair["tests_log"], repair["privacy_probe"]["log"]]
+        references += [repair["cli_supervised_fixture"][key]
+                       for key in ("original_preflight", "summary", "footer", "supervisor")]
+        references.append(validation["author_local_cli_checks"]["log"])
     for reference in references:
         source = entries[reference["evidence_original"]]["original_identity"]
         if source != {key: reference[key] for key in ("sha256", "bytes")}:

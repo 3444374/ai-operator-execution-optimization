@@ -34,7 +34,7 @@ SemBench 固定为 `c814e3807e72d4cf876b852b17e77f3cc94575c2`，
 模型响应由 localhost fixture 提供，GPU 不可见，模型服务与 Ray 均未启动。作者目标 driver 的原运行记录为 51 项通过，其中 15 项是 Q2b 用例，另 36 项覆盖复用的预算与监督组件；这不是其他环境的通过声明。
 选择性 fixture 为 3 图×2 行：6 次 Join、3 次 Extract；全匹配为 6＋6 次，达到完整保守额度。
 检查完整颜色评价、相同内容的多个发生项、HTTP 错误不重试、输入与枚举变化拒绝、观察器恢复、字节上限、
-必需记录器报错和监督超时后关闭预算。本项全部真实模型请求为 0。
+必需记录器报错和监督超时后关闭预算。上述 CPU 核验的真实模型请求为 0；首次 GPU 失败及辅助观测器修正见后文。
 
 原实现遇到空 Join 时，Extract 没有新增 `color` 列，最后投影抛 `KeyError`。
 本入口保存该失败并停止，没有伪造空结果或修改上游任务。模型服务返回内容错误或 JSON 解析失败时亦保留原行为。
@@ -113,14 +113,78 @@ python3 experiments/results/diagnostics/mmqa_q2b_wiring_20261104/verify_evidence
 本次完整调用上限为 325 次 Join＋最多 325 次 Extract＝650；数据准备和 preflight 的模型调用均为 0。
 该 manifest 同时绑定原源码、目录枚举、图片内容和表摘要；移动路径或重生成后须重新核对，不能复制旧摘要作为新输入身份。
 
-## 下一次 GPU 观察
+<a id="service-observer-capacity"></a>
+## 服务辅助观测器容量修正
+
+首次真实模型观察使用 `130aa647642dddc367dee356a328db1d43face78`。
+查询预留 650 次、实际扣计 325 次：252 次 HTTP 200，72 次 HTTP 500，1 次没有完整响应。
+Join 未完成，Extract 为 0，没有完整查询结果或质量分数；这次运行不支持完整链功能或性能结论。
+只读复核原件清单的 37 项全部摘要匹配；旧 summary、轨迹、响应和预算数据库均保留。
+
+原因来自服务启动时借用的辅助 `processor_receipt`，原源码摘要为
+`3b6468274bebe2ce5b8e9605c9ed3fd0d14a6c764eda3082a53e1c81148174e3`。
+记录器共 256 个不同配置名额，实际为 3 条 processor 身份、1 条已加载模型配置和 252 条逐请求 UUID。
+后续 72 个完整 HTTP 错误的消息均为 `runtime observer distinct-profile cap reached`。
+另一条 gateway 记录为 `ServerDisconnectedError`，没有完整上游响应，继续按未知请求计费；
+不能凭同批其他错误推定它没有执行。全部 325 次尝试和 73 个失败或未知数不退还、不重写，
+旧预算已关闭，未用的 325 次不能自动用于重试。
+失败阶段的 `model_calls=0` 来自只在阶段成功结束时写入的计数；它不能替代查询 summary、
+共享账本和 HTTP 轨迹中的 325 次实际尝试。324 份完整响应与 1 条未知分别保存。
+
+独立修正新增[版本化模块](../../../../code/scripts/profiling/record_observation/processor_receipt.py)，
+只保留 processor 工厂与已加载模型配置观察，不再导入或改写原生 UUID 处理函数；原有容量数值不变。
+身份字段、去重、写入格式及首次 POST 前核对实际回执的要求保持。
+原 Q2b 查询、模型参数、请求／响应轨迹、阶段记录和生产调度源码没有改动。
+服务启动改用[版本化模块路径](../../../../code/scripts/profiling/record_observation/README.md#service-processor-model)，
+不能仅把新文件放入 checkout 后仍加载旧临时路径。
+
+准确源码提交为 `0c6759ab6a84ae8815e6d77291989ad0dc136a43`，原三个身份记录函数的抽象语法树
+与保留的旧源码一致；只有安装的观察项减少。作者目标 driver 的预检通过，依赖版本、
+七个测试模块及完整 50 个用例清单见[本轮核验](observer-validation.json)。
+50 项通过、0 失败、0 跳过；它与前文旧 55 项使用不同的选择清单，不能相加或声称全仓库覆盖。
+
+| CPU 检查 | 结果 |
+|---|---|
+| 精确旧模块，651 个不同 UUID | 252 次返回后，399 次因记录容量抛错；记录达到 256 条 |
+| 修正模块，相同 651 次调用 | 全部返回原对象，固定身份保持 4 条；原生异常仍原样抛出 |
+| 原生 Q2b，25 图×13 行合成输入，全匹配 | 325 次 Join＋325 次 JSON Extract；完整请求、响应、HTTP 轨迹各 650 条，原评价器实际调用 |
+| 325 次 HTTP 故障注入 | 252 成功、72 错误、1 次断连；全部扣计，无重试，关闭后不能再发送，fixture socket 回收 |
+| 相同准确提交，独立 worker 的完整 CLI | 预留及实际均 650；4 条身份记录，失败或未知 0，worker 退出 0、残留子进程为空、预算关闭、lease 归还 |
+
+首次 6 项检查中的故障用例没有收集预期断连，5 项通过、1 项报错；其中完整 650 次原生查询已经通过。
+修正测试客户端的收集和 `finally` 收尾后，重跑上述 50 项通过。首次 CLI fixture 因错误序列化
+模型配置的字段，在 worker 和 HTTP 前被拒绝；修正私有 fixture 配置后另建运行目录完成核验。
+两次失败日志均保存。进程内 SDK 的 socket `ResourceWarning` 与既有记录一致；
+独立 CLI 的子进程退出和回收另有证据，不据此声称 SDK 长期复用的资源性质已经验证。
+
+本轮 artifact 身份为 `semloom.mmqa_q2b.observer_cpu.20261104`，
+[公开归档](raw/observer-cpu-evidence-20261104.tar.gz)含 32 份脱敏副本，包括保留的精确旧模块、
+首次失败、50 项回归、完整 CLI 轨迹及原 GPU 失败的只读统计投影；没有下载或公开旧 GPU 的请求正文与图片。
+[逐项映射](observer-evidence-map.json)登记 33 份原件及各副本摘要，事务数据库仅保留原件。
+私有原件已取回逐项核验；获取方式仍为向维护者提供 artifact 身份和 `original_relative_path`。
+默认核验命令继续检查此前 63 份副本，新一轮使用：
+
+```sh
+python3 experiments/results/diagnostics/mmqa_q2b_wiring_20261104/verify_evidence.py \
+  --map observer-evidence-map.json --validation observer-validation.json
+```
+
+取得私有原件后可追加 `--original-root "$OBSERVER_ORIGINAL_ROOT"`，核对全部 33 份原件。
+如需重现旧容量问题，将公开归档解到仓库外目录，设置
+`SEMLOOM_TEST_PROCESSOR_RECEIPT_BEFORE` 指向其中 `processor_receipt_before.py`；测试会先核对旧摘要。
+`SEMLOOM_TEST_SEMBENCH_ROOT` 指向前文固定的上游 checkout，在已预检 driver 中运行
+`PYTHONPATH=code python -B -m unittest tests.experiments.test_processor_receipt tests.experiments.test_mmqa_service_observer -v`。
+新修正尚待独立复审，没有启动 vLLM、模型或 GPU；真实 processor 身份、JSON Extract 和 GPU 完整链复验仍 pending。
+
+## 后续 GPU 观察的准备
 
 由 GPU 会话重新核对服务器空闲、独立源码版本、原始数据 manifest、模型与 processor revision、tokenizer 摘要、
-服务参数和资源上限后运行。首轮只做一个 native Q2b，不附加优化臂，不隐藏 warm-up，不自动重试或调整参数。
+服务参数和资源上限后运行。下次仍只做一个 native Q2b，不附加优化臂，不隐藏 warm-up，不自动重试或调整参数。
 本入口要求显式并发、输出 token、单请求字节、每阶段准备消息字节、结果字节与总时长；实际 GPU 配置由该次计划记录。
 
 观察包括原生图片准备、Join 候选与实际消息、HTTP 提交及完整响应、Join 结果形成时刻、Extract 消费和完整查询时间。
 完整查询、准备、评价及应用收尾分别记录。HTTP 与阶段时间使用同一 worker 的 monotonic clock；
 媒体准备是调用墙钟时间，不能当作 CPU 核占用。逻辑结果返回不证明物理内存释放；GPU、HBM、队列和实际传输另采或记 unavailable。
 必须检查事件、请求、响应、summary 与 footer 的摘要，并保留未知尝试和失败。
+先复审辅助观测器修正和完整预算的 CPU 证据，再由 GPU 会话协调新运行；本次工程修正不直接重跑。
 只有两个原语义算子实际执行并通过原评价与资源核对后，才报告该路径的真实模型功能观察；不能外推完整系统或优化收益。

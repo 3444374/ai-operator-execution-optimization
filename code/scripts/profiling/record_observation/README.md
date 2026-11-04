@@ -1,5 +1,35 @@
 # Git 同步的记录查询资源观测
 
+<a id="service-processor-model"></a>
+## 服务 processor 与模型身份
+
+[`processor_receipt.py`](processor_receipt.py)只安装 HF processor 工厂和 vLLM 已加载模型配置的观察。
+它保留原身份字段、去重和容量检查；不安装 `BaseRenderer._process_mm_uuids` 钩子。
+逐请求身份继续由请求／gateway 轨迹保存，不占用固定配置的记录容量。
+本模块按一次独立服务进程安装；读取失败、写入失败或缺少实际身份记录时，调用方必须在首个 POST 前停止。
+`Q7_PROCESSOR_RECEIPT` 是已有环境变量的兼容名称，指向该次运行的新私有 JSONL 文件。
+
+在独立且已核对的工具 checkout 中，服务启动绑定使用本目录，替换旧临时目录的同名模块。
+下列代码放入既有服务启动命令的 Python bootstrap，其余 vLLM 参数和环境按原计划传入：
+
+```python
+import os
+import runpy
+import sys
+
+sys.path.insert(0, os.environ["PROCESSOR_RECEIPT_TOOL_DIR"])
+import processor_receipt
+processor_receipt.install()
+sys.argv = ["vllm.entrypoints.openai.api_server", *sys.argv[1:]]
+runpy.run_module("vllm.entrypoints.openai.api_server", run_name="__main__")
+```
+
+安装本模块不启动服务，不检查真实身份，也不表示允许运行模型。
+使用者仍核对准确 Git 提交、模块摘要和真实 processor／模型回执；完整 CPU 反例及旧失败记账见
+[MMQA Q2b 报告](../../../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#service-observer-capacity)。
+
+## 记录查询采集器
+
 采集器和检查入口随仓库提交同步；模型、数据、机器绑定和全部回执留在 Git 外。后续更新不需要
 重新上传 Python 包、手工填写七份代码摘要或复制 CPU 资格材料。入口只做配置、观察与证据校验，
 不增加生产依赖或调度策略。来源为已审采集器 `3b7991c1`，逐文件来源见 [SOURCE.json](SOURCE.json)。

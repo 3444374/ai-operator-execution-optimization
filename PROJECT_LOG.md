@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-11-04：独立修正 MMQA 服务辅助记录
+
+首次真实模型观察因逐请求 UUID 占满辅助配置记录而在 Join 停止，旧 325 次尝试与其中 1 次未知保留计费。独立实验分支把仅记录 processor／模型身份的模块纳入版本管理，保留原查询、服务语义、阶段及请求轨迹，不提高旧容量数值；原件复核与 CPU 验证见[同一接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#service-observer-capacity)。本次不重跑 GPU，也不合入 main。
+
 ## 2026-11-04：修正 Q2b 异常记录与证据获取
 
 独审后在新增 CLI 输出处复用异常脱敏，保留原查询与非零退出；另取回旧 CPU/CLI 原件并补公开脱敏副本、逐项摘要映射和核验入口。作者目标环境、独审环境缺依赖导致的未完成项及修正后复审状态分列，不转授模型或 GPU 资格；具体结果见[同一接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
