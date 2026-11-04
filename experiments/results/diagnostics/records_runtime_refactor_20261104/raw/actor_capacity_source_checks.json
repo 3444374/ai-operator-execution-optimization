@@ -428,7 +428,7 @@
       }
     ],
     "source_unchanged": true,
-    "qualification": "Exact final code bytes; existing capacity methods are AST-identical to the expanded selection. The added method and the changed actor source are exercised together."
+    "qualification": "First composed check before adding the repository retention reproducer. Retained as its original run; see latest_combination for the final code."
   },
   "direct_owner_fix": {
     "original": "A direct async owner rebuilt 2 MiB defaults and ignored an explicitly supplied Core item shape.",
@@ -482,7 +482,8 @@
     "imported_fixture_methods": 12,
     "counts_not_summed_with_related_runs": true,
     "initial_loader_path_error_preserved": true,
-    "protective_markers_not_deleted": true
+    "protective_markers_not_deleted": true,
+    "tracked_reproducer": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_successful_queries_do_not_accumulate_consumed_task_markers"
   },
   "history": {
     "named_projections": 5,
@@ -511,5 +512,33 @@
   "real_Ray_runs": 0,
   "GPU_runs": 0,
   "pushed": false,
-  "merged": false
+  "merged": false,
+  "latest_combination": {
+    "selected": 144,
+    "run": 144,
+    "passed": 143,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [
+      {
+        "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+        "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+        "scope": "method"
+      }
+    ],
+    "source_unchanged": true,
+    "code_files": 1313,
+    "all_final_code_hashes_match": true,
+    "tested_source_commit": "2c4575087698176ea8f2460250f3474662f7d1d7",
+    "tracked_retention_reproducer": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_successful_queries_do_not_accumulate_consumed_task_markers",
+    "archive": {
+      "path": "raw/actor_capacity_followup_methods.json.gz",
+      "bytes": 8725,
+      "sha256": "31e52fcb7485d0fcf20ebfc5785881643a03eb87353225b975c1e010c5b69a33",
+      "decoded_bytes": 55280,
+      "decoded_sha256": "aecbdd3a1c67f0bbac53d9d3a34f74927ab0f33fd645501b0fb0d2cd62022b78",
+      "original_JSON_restored": 1,
+      "personal_home_prefix_hits": 0
+    }
+  }
 }

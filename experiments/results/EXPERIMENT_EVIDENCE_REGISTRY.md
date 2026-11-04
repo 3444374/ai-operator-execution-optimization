@@ -1424,3 +1424,6 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 较大选择 1916 方法成功、40 方法未执行；新增字节转换的准确组合为 142 成功、1 项未运行，选择不相加。
 同一实例 CPU IPC 与 Method pool 检查支持已有逻辑字节下的计数派生，不支持自动硬件容量或全查询内存结论；
 服务独占授予、普通默认 R／结果槽和实际模型资格仍待处理，历史 3010 条来源及原始失败保留。
+
+成功查询保留检查已进入现用仓内测试；同一[容量记录](diagnostics/records_runtime_refactor_20261104/README.md#actor-capacity-source)
+追加准确组合 144 项、143 成功、1 项未运行及原始来源，先前各选择保留原身份，不与新轮次相加。

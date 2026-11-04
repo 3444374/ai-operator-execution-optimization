@@ -126,6 +126,24 @@ class QueryMethodReuseTests(unittest.TestCase):
         self.assertEqual(initial[0]['messages_json'],restored[0]['messages_json'])
         self.assertEqual(other[0]['messages_json'],repeated[0]['messages_json'])
 
+    def test_successful_queries_do_not_accumulate_consumed_task_markers(self):
+        with ThreadedRuntime(self.rows) as runtime:
+            self.real_formatting(runtime)
+            owner = self.owner()
+            try:
+                for index in range(4):
+                    values = list(owner.evaluate(self.sources[1], query_id='consumed-' + str(index)))
+                    self.assertEqual(len(values), 3)
+                    self.assertEqual(owner.transport._consumed_receipts, set())
+                    self.assertEqual(owner.transport._requests, {})
+                    self.assertEqual(owner.transport._outcomes, {})
+                    self.assertEqual(owner.transport.retained_refs(), 0)
+                    self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
+                self.assertEqual(len(runtime.async_actors), 1)
+                self.assertEqual(runtime.async_actors[0].instance.engine._sequence, 12)
+            finally:
+                self.assertEqual(owner.close(timeout=3)['status'], 'closed')
+
     def test_active_query_or_other_model_cannot_rebind_the_resident_owner(self):
         with ThreadedRuntime(self.rows) as runtime:
             self.real_formatting(runtime)
