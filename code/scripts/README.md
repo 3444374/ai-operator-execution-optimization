@@ -230,6 +230,39 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --
 缩小 arm／query／repeat 时同步重算，不能把软件测试样本替换成原数据却沿用原资格。
 接口、owner、容量与 completion 监督边界见[LOTUS 模块](../src/semantic_methods/lotus/README.md)。
 
+<a id="mmqa-q2b"></a>
+## MMQA 原版 Q2b Join→Extract
+
+[`experiments/run_sembench_mmqa.py`](experiments/run_sembench_mmqa.py)独立执行原 exact Q2b，
+源程序、完整调用上限、原颜色评价、CPU 结果及模型观察要求见[接线报告](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
+不接入 SemLoom 调度器，不修改现有 Movie／Animals 默认。机器准备仍按 runtime 手册使用
+`core,text,image,semantic-benchmarks`，driver 与 serving 环境分开。
+
+先把[官方原压缩包](../../data/README.md#mmqa-source)放在仓库外并保留，再将其中 `mmqa_data/` 安全解开。
+`--prepare`调用原生成器的固定表复制与图片选择方法，接受原 scale factor 25～64；
+输出路径与原始数据路径须满足上游未加引号的复制命令所能表示的字符要求。
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_mmqa.py \
+  --checkout "$SEMBENCH_CHECKOUT" --prepare --source-data "$MMQA_SOURCE_DATA" \
+  --source-archive "$MMQA_SOURCE_ARCHIVE" --scale-factor 25 --output "$MMQA_PREPARED"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_mmqa.py \
+  --checkout "$SEMBENCH_CHECKOUT" --preflight --manifest "$MMQA_MANIFEST" \
+  --manifest-digest "$MMQA_MANIFEST_SHA256"
+```
+
+`--execute`要求上述 manifest、`--output`、`--model`、`--tokenizer`、`--model-profile`、
+`--lease-root`、`--repository-commit`，以及显式 `--max-attempts`、`--concurrency`、`--max-tokens`、
+`--max-request-bytes`、`--max-prepared-bytes`、`--max-result-bytes`、`--deadline-seconds`。
+完整额度必须等于 preflight 的 `budget.total_maximum`；不允许只预留 Join 或只按预计匹配行数计算。
+模型 profile 记录 `model.id/revision/dtype`、`generation`、`service_preprocess.processor_revision/parameters`
+与 `tokenizer_sha256`；生成参数必须为显式输出上限、temperature 0、top_p 1、retries 0。
+该声明还需 GPU 会话对照实际服务核验，不能把声明文件当作服务探针。
+
+执行时核对干净 Git 代码身份，取得现有 host lease，预留一次完整额度并启动独立 worker。
+原生请求经过保留原 HTTP 内容的观察 proxy；失败、总时长到达或取消后关闭预算，监督器回收本地 worker。
+每次使用新的仓库外输出目录，不覆盖或重用先前预算。`--preflight`与`--prepare`均不调用模型。
+
 ## Animals 原版图文 Q1
 
 `experiments/run_sembench_animals.py`要求`--checkout`、`--manifest`和`--manifest-digest`。

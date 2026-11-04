@@ -1,0 +1,128 @@
+{
+  "schema": "semloom.mmqa_q2b_wiring_validation.v1",
+  "status": "CPU_and_original_inputs_passed_GPU_pending",
+  "upstream": {
+    "schema": "semloom.mmqa_q2b_preflight.v1",
+    "status": "passed",
+    "role": "upstream_generated_q2b_slice",
+    "manifest_digest": "b9600fef2b884b7729292bac91dba3c79d4312d92b6d693587831e2e97475511",
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "source_sha256": {
+      "src/scenario/mmqa/runner/lotus_runner/lotus_runner.py": "ffd7c9dfa278189f21fd54f99d035f2727906911fdf959322bdfab1d75639fb0",
+      "src/scenario/mmqa/preparation/generate_data.py": "c5be0db146cb301ee4445e227b0cda36349ea100ced6802a5b7790e1aa4fe6bd",
+      "src/scenario/mmqa/evaluation/evaluate.py": "53a9f05864c731209ccee3a74711566c91ddcc39dffe6c665b402ee8b6a504b7",
+      "files/mmqa/query/natural_language/q2b.json": "f78f8bfa1d00ea2d0bbbf1b6408ffd9eb6a01cb6c81beefcc52fe65c453776ef",
+      "src/runner/generic_lotus_runner/generic_lotus_runner.py": "57c272a5461ea309ffa38ee6a23c0dae7d06505afe04cce4b541bd4b4dbff154",
+      "src/runner/generic_runner.py": "8adf80b5817de78bd6f182d2d850815675140151498e5139d2c6024f01dcda96",
+      "src/evaluator/generic_evaluator.py": "86ecdcc408e86fb95eaa81bdc01cf2b274c80784a0d915f8943190a427dead3d"
+    },
+    "images": 25,
+    "table_rows": 13,
+    "budget": {
+      "join": 325,
+      "extract_maximum": 325,
+      "total_maximum": 650,
+      "rule": "native exact cartesian Join plus at most one Extract per matched pair",
+      "warmup": 0,
+      "retries": 0
+    },
+    "model_calls": 0,
+    "scope": "original Q2b on a finite external relation; no PostgreSQL integration claim"
+  },
+  "original_archive": {
+    "sha256": "c3dcb4902955e6da8a7170002f9036cc6ffb471c3ee112855425ef0789badf52",
+    "bytes": 41688191,
+    "original_images": 1000,
+    "eligible_images": 925,
+    "table_rows": 13
+  },
+  "source_files": {
+    "code/src/baselines/image/sembench_mmqa.py": {
+      "sha256": "cfb89c17414485dcfee8a9d9da10c89c958c08b192c5c8cded759e94550a909f",
+      "bytes": 11773
+    },
+    "code/src/experiments/mmqa_q2b_observation.py": {
+      "sha256": "76d0c1d39a42ba08af837cb4c80ad7317efadbea77a959bc9c5760da84d4f23e",
+      "bytes": 9211
+    },
+    "code/src/experiments/sembench_mmqa.py": {
+      "sha256": "fbbf4e79cedb8838651c9e98543a5625273f52fe2276427d73800cbed2e541ba",
+      "bytes": 16254
+    },
+    "code/scripts/experiments/run_sembench_mmqa.py": {
+      "sha256": "517eb6bcbef72592887c4670dd63a3e657f23ad5dd29275c5bd82d371e195101",
+      "bytes": 295
+    },
+    "code/tests/experiments/test_sembench_mmqa.py": {
+      "sha256": "cf603827c83c78bfc9354d67fc926ca50f25a9e301833020c0d9254aed0aa113",
+      "bytes": 14706
+    }
+  },
+  "cpu_runs": {
+    "cpu-r1": {
+      "exit": 1,
+      "seconds": 19.320453334599733,
+      "real_model_calls": 0,
+      "tests": 11,
+      "log": {
+        "sha256": "f97b280da20587cf43d35f0b53fdbab40b4ac8e1805d18643592dff1d5c14fef",
+        "bytes": 7560
+      }
+    },
+    "cpu-r2": {
+      "exit": 1,
+      "seconds": 15.072410246357322,
+      "real_model_calls": 0,
+      "tests": 11,
+      "log": {
+        "sha256": "2ea75957f2324dd88fb8b2fa8c44efc038056274f15c6594466b69ac5ede8ee3",
+        "bytes": 8648
+      }
+    },
+    "cpu-r3": {
+      "exit": 0,
+      "seconds": 17.522185223177075,
+      "real_model_calls": 0,
+      "tests": 12,
+      "log": {
+        "sha256": "47bb75c2ffc9290ee5119080d96173e239159502dbde117c06be933bd7b0c14c",
+        "bytes": 5126
+      }
+    },
+    "cpu-r4": {
+      "exit": 1,
+      "seconds": 22.181694594211876,
+      "real_model_calls": 0,
+      "tests": 41,
+      "log": {
+        "sha256": "a822edf09fa35973d9f812d3563936d6758e98ac7a6bb7a5aa9484ff6a8dd2b4",
+        "bytes": 5997
+      }
+    },
+    "cpu-r5": {
+      "exit": 0,
+      "seconds": 19.952109238132834,
+      "real_model_calls": 0,
+      "tests": 51,
+      "log": {
+        "sha256": "0f2910f3205e49d7f70348f74caa4509e4247234eb60610f03d7a5d000180b11",
+        "bytes": 5495
+      }
+    }
+  },
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "pandas": "2.3.3",
+    "Pillow": "12.2.0",
+    "tokenizers": "0.22.2"
+  },
+  "total_real_model_requests": 0,
+  "model_services_started": 0,
+  "Ray_started": false,
+  "GPU_visible_to_tests": false,
+  "original_data_prepare_exit": 0,
+  "cli_supervised_fixture": "pending",
+  "GPU_observation": "pending"
+}

@@ -159,3 +159,19 @@ Legacy: the older `sharegpt_burstgpt` workload (previously rows=1024, doc_id
 starting at 1000000, target_output_tokens up to 2048, filtered by
 `prompt_tokens + completion_max_tokens <= 2048`) is retained in the database
 for 0725-0728 experiment reproduction but is no longer the main workload.
+
+<a id="mmqa-source"></a>
+## SemBench MMQA Q2b 原始数据
+
+固定 SemBench `c814e3807e72d4cf876b852b17e77f3cc94575c2` 的
+[原生成器](https://github.com/SemBench/SemBench/blob/c814e3807e72d4cf876b852b17e77f3cc94575c2/src/scenario/mmqa/preparation/generate_data.py)
+指定[公共源压缩包](https://drive.google.com/uc?id=1oHXq5oxIfsyoNy9aCQ0V9G3W4puqHC6i)。
+2026-11-04 从同一文件的 `drive.usercontent.google.com` 下载域名获取，ZIP 完整性核对通过；
+41,688,191 bytes，实测 SHA-256 为 `c3dcb4902955e6da8a7170002f9036cc6ffb471c3ee112855425ef0789badf52`。
+这是本次官方来源下载的实测摘要，作者没有提供独立摘要。
+
+压缩包含原 `ap_warrior.csv` 13 行、1000 张图片及 macOS 元数据。
+原程序只选择小写 `.png/.jpg`，实际候选为 925 张；不重命名其他后缀以扩大候选。
+[Q2b 准备入口](../code/scripts/README.md#mmqa-q2b)核对原压缩包及实际使用的提取文件，调用未改写的图片生成方法，
+保留完整表、固定八图、原 seed 42 与源目录枚举。原始压缩包、提取目录及生成 manifest 都留在仓库外。
+下载完成不代表模型、质量、资源或性能检查通过，实际状态见[接线报告](../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。

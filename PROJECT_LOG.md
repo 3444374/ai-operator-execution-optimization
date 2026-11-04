@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-11-04：独立补齐 MMQA Q2b 实验入口
+
+在独立 worktree 增加原 Q2b 的有限数据准备、exact Join→JSON Extract、原三元组评价和阶段观察，复用既有预算、proxy 与进程监督。只做 CPU 功能核验，真实模型观察交给 GPU 会话协调，未修改重构工作树或合并 main。实现和失败证据见[接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
+
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
 ## 2026-10-28：完整F/M查询token配置的独立本地接线

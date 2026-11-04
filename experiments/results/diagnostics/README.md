@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[MMQA Q2b 接线与 CPU 核验](mmqa_q2b_wiring_20261104/README.md)：原 exact Join→JSON Extract、有限输入、完整调用预算和原颜色评价；真实模型观察另行记录。
+
 [后继策略、records 入口及 token 候选](../EXPERIMENT_EVIDENCE_REGISTRY.md)的运行身份、失败与停止原因由证据台账维护；
 main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 
