@@ -15,7 +15,7 @@ from src.execution_provider.adapters.lotus_records_actor_owner import (
     RecordsActorOwner, _ModelActor, _PrepareActor, _check, _runtime_env,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 class _StaticRows(Iterator[dict[str, Any]]):

@@ -93,8 +93,17 @@ class ResourceBudgetTests(unittest.TestCase):
         self.assertEqual(owner.capacity.limits(owner.resources).held_tasks, 9)
         self.assertEqual(owner.capacity.limits(owner.resources).result_bytes, 2*ITEM)
 
-    def test_missing_IPC_budget_is_not_derived_from_C_or_infinity(self):
-        for limits in (None, {}, dict(feedback_interval_s=.1), dict(ipc(), input_bytes=None)):
+    def test_omitted_IPC_defaults_use_complete_budget_and_unknown_bytes_still_reject(self):
+        value = capacity()
+        for options in (None, {}, dict(feedback_interval_s=.1)):
+            owner = self.owner(1, async_limits=options)
+            limits = owner._actors.limits
+            self.assertEqual(limits.max_inflight, value.budget.active_requests)
+            self.assertEqual(limits.result_slots, value.budget.held_tasks)
+            self.assertEqual((limits.input_bytes, limits.result_bytes),
+                             (value.budget.input_bytes, value.budget.result_bytes))
+            self.assertIsNone(owner._actors.model_actor)
+        for limits in (dict(input_bytes=None), dict(ipc(), input_bytes=None)):
             with self.subTest(limits=limits), self.assertRaises((ValueError, TypeError)):
                 self.owner(1, async_limits=limits)
 
@@ -106,10 +115,12 @@ class ResourceBudgetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'rolling'):
             self.owner(1, prepared_batching=PreparedBatching('token_budget', None, 10000))
 
-    def test_default_path_retains_R_derived_limits_and_strict_IPC_count_guard(self):
+    def test_default_allocations_no_longer_scale_storage_from_request_R(self):
+        from src.serving.backends.vllm_async_engine import AsyncEngineLimits
         owner = self.owner(1, capacity=None, async_limits=None)
-        self.assertEqual((owner.resources.max_active_batches, owner._actors.limits.result_slots), (1, 1))
-        self.assertEqual(owner.capacity.limits(owner.resources).input_bytes, 2*1024**2)
+        self.assertEqual((owner.resources.max_active_batches, owner._actors.limits.result_slots),
+                         (1, AsyncEngineLimits().result_slots))
+        self.assertEqual(owner.capacity.limits(owner.resources).input_bytes, AsyncEngineLimits().input_bytes)
         with self.assertRaises(ValueError):
             self.owner(1, capacity=None, async_limits=ipc())
 

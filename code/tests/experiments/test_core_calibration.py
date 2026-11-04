@@ -143,14 +143,19 @@ class CoreCalibrationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'CPU'):
                     core.core_candidate_plan(plan, self.checked, dict(max_inflight=1, cpu_workers=7), identity=identity)
 
-    def test_explicit_native_sequence_capacity_still_bounds_calibration_candidates(self):
+    def test_native_iteration_capacity_is_separate_from_new_Core_request_candidates(self):
         plan = deepcopy(self.plan); plan['engine']['max_num_seqs'] = 2
         identity = core.build_core_identity(plan, self.checked,
             hardware=self.hardware, model=self.model, software=self.software)
         self.assertEqual(core.core_candidate_plan(plan, self.checked, dict(max_inflight=2, cpu_workers=1),
             identity=identity)['engine']['max_num_seqs'], 2)
-        with self.assertRaisesRegex(ValueError, 'capacity'):
-            core.core_candidate_plan(plan, self.checked, dict(max_inflight=3, cpu_workers=1), identity=identity)
+        chosen=core.core_candidate_plan(plan,self.checked,dict(max_inflight=3,cpu_workers=1),identity=identity)
+        self.assertEqual(chosen['profile']['max_inflight'],3)
+        self.assertEqual(chosen['engine']['max_num_seqs'],2)
+        plan['profile']['admission']=dict(kind='legacy_resource_feedback')
+        legacy=core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,software=self.software)
+        with self.assertRaisesRegex(ValueError,'capacity'):
+            core.core_candidate_plan(plan,self.checked,dict(max_inflight=3,cpu_workers=1),identity=legacy)
 
     def test_equal_capacity_prefers_fewer_prepare_workers(self):
         selected = core.build_core_selection(**self.scan({(3, 2): [10] * 3, (3, 1): [10.1] * 3}))
@@ -414,7 +419,9 @@ class CoreCalibrationTests(unittest.TestCase):
             records_core.create_records_core(FilterMethod("cpu-fixture-model", instruction="Keep {reviewText}"), EngineSpec.from_dict(selected["engine"]),
                 GenerationSpec.from_dict(selected["generation"]), resources, profile=selected["profile"])
         effective = actor.call_args.args[3]
-        self.assertEqual((effective.max_active_batches, effective.cpu_workers), (3, 1))
+        self.assertEqual((effective.max_active_batches, effective.cpu_workers),
+                         (selected['resources']['max_active_batches'], 1))
+        self.assertEqual(owner.return_value.execution_profile['max_inflight'],3)
         self.assertEqual(owner.call_args.args[3], effective)
 
     def test_corrupt_or_unmeasured_artifact_cannot_be_reported_as_tuned(self):

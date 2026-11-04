@@ -40,7 +40,10 @@ class AuditLifetimeTests(unittest.TestCase):
     def batch_type(self, plan=None, close_report=None):
         plan, created = plan or self.plan, self.created
         class Engine:
-            def __init__(self, *_args):
+            def __init__(self, spec, *_args):
+                from src.serving.backends.model_context import model_context_record
+                self.ready_report = dict(engine_uid='CPU-audit', model_context=model_context_record(
+                    spec, 'CPU-audit', spec.max_model_len or 32768))
                 self.infer = fixture.ResponseFixture(plan)
             def run_prepared(self, rows, *, generation):
                 return self.infer(rows, generation=generation)
@@ -128,6 +131,9 @@ class AuditLifetimeTests(unittest.TestCase):
             return values
         engine = SimpleNamespace(run_prepared=unknown,
             close=lambda: dict(status="unknown", cleanup_errors=[]))
+        from src.serving.backends.model_context import model_context_record
+        engine.ready_report = dict(engine_uid='CPU-audit-unknown', model_context=model_context_record(
+            batch.engine_spec, 'CPU-audit-unknown', 32768))
         batch.engine = engine
         first = batch.run_rows([record_row(r) for r in self.rows])
         self.assertIsNotNone(first["error_type"])
@@ -192,7 +198,9 @@ class AuditLifetimeTests(unittest.TestCase):
                     expected=self.rows, query_id=self.plan.query_id, control_dir=self.control,
                     release_completed_audit=enabled)
                 cls, kwargs = captured[0]
-                self.assertIs(cls, worker.FusedChainBatch)
+                from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch
+                self.assertIs(cls, ReferenceFusedChainBatch)
+                self.assertTrue(issubclass(cls, worker.FusedChainBatch))
                 self.assertEqual(kwargs["fn_constructor_kwargs"]["release_completed_audit"], enabled)
                 # Instantiate the captured native constructor with only inference replaced.
                 batch = self.batch_type()(**kwargs["fn_constructor_kwargs"])

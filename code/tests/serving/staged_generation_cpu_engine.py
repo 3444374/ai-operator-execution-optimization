@@ -10,10 +10,13 @@ from src.serving.backends.vllm_engine import IDENTITY_FIELDS
 
 class FixtureEngine:
     def __init__(self, engine, generation):
+        self.spec = engine
         self.generation = generation
 
     def ready(self):
-        return dict(engine_uid="CPU-stage-pipe", pid=os.getpid())
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid="CPU-stage-pipe", pid=os.getpid(),
+            model_context=model_context_record(self.spec, 'CPU-stage-pipe', self.spec.max_model_len or 32768))
 
     def run_prepared(self, rows, *, generation, deadline_monotonic):
         return [dict({key: row[key] for key in IDENTITY_FIELDS}, status="succeeded",

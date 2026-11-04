@@ -1,0 +1,202 @@
+{
+  "base": "b67a500300234124c727d4fe879f2a5bbb16737e",
+  "scope": "ordinary Core and rolling token public factory; source-bound request policy; explicit historical selector",
+  "policy_candidate": "b99d9f05ee1b9741228cc873d763327e010322d0",
+  "reviewed_policy_three_files_byte_identical": true,
+  "legacy_Core_feedback_original_method_AST_unchanged": true,
+  "source_pair": "observation and its immutable sample captured by one provider read; never bind a newer last_native to an older observation",
+  "permit": "actual owner/Core/IPC/result reservations only; not physical capacity; native rejection counter remains unknown",
+  "default_request_start": 1,
+  "cross_query_hints": false,
+  "legacy_selector": "legacy_resource_feedback; two named historical profiles retain all numerical choices",
+  "ordinary_default_R_decoupled": false,
+  "preparation_interleaving_combined": false,
+  "CPU": {
+    "public_request_wiring_first": {
+      "selected": 62,
+      "passed": 60,
+      "failure_methods": [],
+      "error_methods": [
+        "tests.execution_provider.test_records_request_feedback.RequestPolicyWiringTests.test_public_defaults_select_the_reviewed_policy_and_reject_legacy_thresholds",
+        "tests.execution_provider.test_records_request_feedback.RequestPolicyWiringTests.test_rolling_uses_ready_source_and_grows_past_old_KV_cutoff_with_existing_credit"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "9f1bb572bfa0e7aa8384469bcbcb9b87e6fb606f9604608d916f9247d7629a3f",
+        ".log": "47a204dbdf9307eee1125fb5e7a8aa9966bd83b414d1f86890eaa7e25b42ddae"
+      }
+    },
+    "public_request_wiring_second": {
+      "selected": 58,
+      "passed": 44,
+      "failure_methods": [
+        "tests.execution_provider.test_core_feedback_cadence.CachedProtectionTests.test_exact_cache_hit_applies_capacity_without_exploring_or_reprocessing"
+      ],
+      "error_methods": [
+        "tests.experiments.test_core_execution_profile.CoreProfileTests.test_async_request_budget_can_exceed_engine_iteration_capacity",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_cancel_stops_sampler_keeps_known_usage_and_original_cleanup",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_cli_and_both_session_lifecycles_keep_soft_start_separate_from_owner_capacity",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_missing_stats_preserve_initial_limit_without_waiting_or_retrying",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_owner_reuses_model_but_resets_feedback_and_query_window",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_public_exact_cache_initializes_window_without_ordinary_query_scans",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_short_and_empty_queries_do_not_explore_or_create_extra_model_work",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_short_query_hint_stays_unresolved_without_repeating_calls_or_probes",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results",
+        "tests.execution_provider.test_core_geometric_admission.CoreGeometricTests.test_new_mode_cancellation_keeps_usage_and_existing_producer_retirement",
+        "tests.execution_provider.test_core_geometric_admission.CoreGeometricTests.test_new_mode_reaches_existing_model_submission_and_keeps_original_prompts",
+        "tests.execution_provider.test_core_geometric_admission.CoreGeometricTests.test_public_callback_and_exact_hint_reuse_one_model_without_duplicate_rows"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "6e7b020d63cdbbd6b21fa6143848c6827f2a9d87d5bb1c3f32cfa087baac7563",
+        ".log": "2e1d3a27d8d7c016329142969b5553e9f1ce01a0b2ec40c1423a1528757e08f5"
+      }
+    },
+    "public_request_wiring_legacy": {
+      "selected": 144,
+      "passed": 138,
+      "failure_methods": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results",
+        "tests.execution_provider.test_core_geometric_admission.CoreGeometricTests.test_new_mode_reaches_existing_model_submission_and_keeps_original_prompts"
+      ],
+      "error_methods": [
+        "tests.experiments.test_movie_ascending_feedback.MovieAscendingFeedbackTests.test_changed_controller_configuration_cannot_load_the_previous_query_hint",
+        "tests.experiments.test_movie_ascending_feedback.MovieAscendingFeedbackTests.test_downstream_interpretation_or_selection_failure_discards_staged_evidence (boundary='interpret')",
+        "tests.experiments.test_movie_ascending_feedback.MovieAscendingFeedbackTests.test_downstream_interpretation_or_selection_failure_discards_staged_evidence (boundary='selection')",
+        "tests.experiments.test_movie_ascending_feedback.MovieAscendingFeedbackTests.test_normal_movie_entry_qualifies_a_selection_reuses_it_and_preserves_it_through_empty_query"
+      ],
+      "skipped": [
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "e90a65372252428aa62ce4f4c321f334a584912268da858719d804c1edf82c96",
+        ".log": "e9d4d71671c7b621b64b7536f8ef30479d1d8da077f0b605108912e86daa66f6"
+      }
+    },
+    "original_two_growth_probes": {
+      "selected": 2,
+      "passed": 2,
+      "failure_methods": [],
+      "error_methods": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "2923c5fd4d6e5fada7bd363f8de111fec28485ed8b1b86881a9c401af65b1370",
+        ".log": "c950e6c4861381e470d6c02423d15b3b766bd62c1c414b415533cd86242ce57c"
+      }
+    },
+    "public_request_wiring_targets": {
+      "selected": 19,
+      "passed": 19,
+      "failure_methods": [],
+      "error_methods": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "51b126e46b0bb50893c4496e6ed74e828ff75b1a393b62ccb144c529423b621d",
+        ".log": "b465c2d829807ca1ce460c2085d08f7b60b5ffe6cbc67d504ff4ada5d0219492"
+      }
+    },
+    "public_request_wiring_final": {
+      "selected": 292,
+      "passed": 290,
+      "failure_methods": [],
+      "error_methods": [
+        "unittest.loader._FailedTest.test_admission"
+      ],
+      "skipped": [
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "261bd85b3992058b0c40a61b645168f47d49c26e085a0df0376d803a55a0ecfa",
+        ".log": "c2ad05203f6d97f83ffb0f346c14ac9a730d4c9399e2009d09a3d46cdb959777"
+      }
+    },
+    "public_request_wiring_qualified": {
+      "selected": 309,
+      "passed": 308,
+      "failure_methods": [],
+      "error_methods": [],
+      "skipped": [
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "sha256": {
+        ".json": "420dd7fdd400f43816a5c88d016a9d874d647c88fdd3e670b6e50050f339e09e",
+        ".log": "7c6defe2d962dfcd51f822b9c918b5545148d0599d5368b011f79c8c954d4509"
+      }
+    }
+  },
+  "historical_bindings": {
+    "count": 3010,
+    "existing_mismatches": [
+      [
+        "native_isolated_and_imlane",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "native_isolated_and_imlane",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/scheduling/core/session_policy.py"
+      ]
+    ],
+    "new_mismatches": 0,
+    "manifest_unchanged": true
+  },
+  "old_timing_growth_qualification": "two pre-wiring probes passed in isolation; broad earlier candidate run failed them, later target and final union passed. Timing issue remains unresolved, not proven pre-existing or fixed.",
+  "initial_fixture_issue": "logical Movie frontier patched old module only; now injects same source clock into sampler; original assertions unchanged",
+  "independent_review": "pending actual combined tree review",
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "pushed": false,
+  "merged": false
+}

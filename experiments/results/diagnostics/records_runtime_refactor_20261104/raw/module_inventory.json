@@ -101,7 +101,7 @@
       ]
     },
     "execution_provider": {
-      "Python_files": 60,
+      "Python_files": 62,
       "files": [
         "code/src/execution_provider/__init__.py",
         "code/src/execution_provider/adapters/__init__.py",
@@ -134,7 +134,9 @@
         "code/src/execution_provider/adapters/records_capacity.py",
         "code/src/execution_provider/adapters/records_feedback_observation.py",
         "code/src/execution_provider/adapters/records_model_adapter.py",
+        "code/src/execution_provider/adapters/records_native_sampler.py",
         "code/src/execution_provider/adapters/records_profile.py",
+        "code/src/execution_provider/adapters/records_query_runtime.py",
         "code/src/execution_provider/adapters/records_transport.py",
         "code/src/execution_provider/adapters/semantic_session.py",
         "code/src/execution_provider/completion.py",
@@ -662,7 +664,7 @@
     },
     {
       "path": "code/scripts/analysis/estimate_operator_cost.py",
-      "lines": 397,
+      "lines": 389,
       "local_imports": [
         "src.planning.costs.regression"
       ],
@@ -692,9 +694,13 @@
       "local_imports": [
         "src.observability.metrics"
       ],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain saved-vector quality evaluation"
     },
     {
       "path": "code/scripts/analysis/multicard_ramp_aggregate.py",
@@ -733,9 +739,13 @@
       "local_imports": [
         "src.experiments.saor.trace_replay"
       ],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain noncausal offline aggregate trace replay"
     },
     {
       "path": "code/scripts/analysis/restore_result_evidence.py",
@@ -816,11 +826,15 @@
       "path": "code/scripts/analysis/summarize_image_multijob.py",
       "lines": 260,
       "local_imports": [],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [
         "experiments/results/image_native_four_job_observation_20260810/README.md"
       ],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain historical matched image-job audit"
     },
     {
       "path": "code/scripts/analysis/summarize_offline_results.py",
@@ -853,9 +867,13 @@
       "path": "code/scripts/analysis/summarize_project_multijob_eager.py",
       "lines": 436,
       "local_imports": [],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain indirect current config/test arm-ID relationship"
     },
     {
       "path": "code/scripts/analysis/summarize_project_short_all_at_t0.py",
@@ -2519,13 +2537,17 @@
     },
     {
       "path": "code/scripts/profiling/pgai_sql_operator_profile.py",
-      "lines": 254,
+      "lines": 258,
       "local_imports": [],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [
         "experiments/results/diagnostics/trigger_surface_validation_20260714.md"
       ],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain SQL profiling; defer optional database import"
     },
     {
       "path": "code/scripts/profiling/postgres_ai_operator_profile.py",
@@ -2648,9 +2670,13 @@
       "local_imports": [
         "src.modalities.image.clip"
       ],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain explicit historical pt preprocessing diagnosis"
     },
     {
       "path": "code/scripts/profiling/profile_clip_transfer_ceiling.py",
@@ -2950,7 +2976,9 @@
       "path": "code/scripts/services/local_embedding_server.py",
       "lines": 162,
       "local_imports": [],
-      "current_literal_references": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
       "result_literal_references": [
         "experiments/results/motivation/cpu/cpu_vs_gpu_embed_comparison_20260712.md",
         "experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.md",
@@ -2958,7 +2986,9 @@
         "experiments/results/motivation/gpu/pgai_integrated_key_rerun_20260714.md",
         "experiments/results/motivation/gpu/pgvector_writeback_20260714.md"
       ],
-      "historical_literal_references": []
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain existing local embedding-service profiling support"
     },
     {
       "path": "code/scripts/services/run_execution_provider_gateway.py",
@@ -2981,5 +3011,5 @@
     }
   ],
   "limitations": "Literal references and static imports only; no references alone do not prove an entry unused. Historical raw evidence and opening archives not scanned.",
-  "source_inventory_stage": "post-transport extraction candidate; scripts retain the earlier literal-reference audit"
+  "source_inventory_stage": "native sampler extraction before modern factory wiring"
 }

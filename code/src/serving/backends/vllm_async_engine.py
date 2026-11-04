@@ -15,7 +15,7 @@ import sys
 import time
 import uuid
 
-from . import vllm_engine as common
+from . import vllm_protocol as common
 
 
 @dataclass(frozen=True)
@@ -131,7 +131,7 @@ class VllmAsyncEngine:
             raise RuntimeError("async engine requires its owning event loop")
 
     def _sampling(self, values):
-        params = common.VllmEngine._new_sampling(self, values)
+        params = common.sampling_params(values, self._sampling_type, self._structured_outputs_type)
         params.output_kind = self._final_only
         return params
 
@@ -174,6 +174,9 @@ class VllmAsyncEngine:
         return dict(engine_uid=self.engine_uid, model_context=context, pid=os.getpid(), python=sys.executable,
                     native_gpu_identity=dict(getattr(self, "_gpu_identity", dict(status="unavailable:not_observed", gpu_uuids=None))),
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
+                    resource_owner=dict(schema='semloom.model_resource_owner.v1', engine_uid=self.engine_uid,
+                        request_memory_owner='vllm',
+                        native_feedback_clock='private_child_and_model_actor.monotonic'),
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
                     reserved_model_calls=self._reserved_model_calls,
                     native_abort_is_terminal_confirmation=False,

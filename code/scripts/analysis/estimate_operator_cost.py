@@ -121,14 +121,6 @@ def scenario_group(row: dict[str, str]) -> str:
     return hashlib.sha256(signature.encode("utf-8")).hexdigest()[:16]
 
 
-def _signature(row: dict[str, str], fields: tuple[str, ...]) -> str:
-    payload = json.dumps(
-        {field: row.get(field, "") for field in fields},
-        ensure_ascii=False,
-        sort_keys=True,
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
-
 
 def _payload_signature(payload: dict[str, str]) -> str:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True)

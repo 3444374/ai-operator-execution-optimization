@@ -1,5 +1,23 @@
 # 原生基线与具名 Core 历史复现
 
+## 当前源码恢复状态（2026-11-04）
+
+五份完整代码投影现已按原逐文件 SHA 全部恢复：3010 条来源不匹配为 0。
+原十处问题对应两份缺少恢复映射的文件；从原仓库历史找到准确字节后，增加十条共享映射，
+原预期摘要、投影 ID、原始来源版本及既有映射不改。准确来源分别为
+`e8eb34555ad39d575a5d86b54260eca0e72cf701` 的资源观测文件与
+`219094151c59346f106c77545730f6941e15821b` 的 session policy 文件。
+51 项 CPU 检查全部成功，包含五份完整投影实际构造及每个输出文件摘要核对；
+没有模型、真实 Ray、GPU、下载或服务访问。环境、数据、模型质量和性能资格不由此补全。
+[修复记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md#历史源码缺失映射修复)
+保留原失败和准确源证明；下方各历史阶段的失败数字仍按当时状态解释。
+
+同步参数职责迁移另为三份旧文件保留准确 129c5555 原件，由五份投影按需共享十一条新增映射；
+原逐文件 SHA、投影身份、来源版本和既有映射保持。新增压缩原件位于
+[historical_sources/129c5555/](historical_sources/129c5555/)，维护版不导入它们。
+完整构造仍逐项核对 3010 条来源；[本轮记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md#sync-default-ownership)
+保留首次组合漏映射的错误与修正后的证据，不把当前默认行为写入历史投影。
+
 <a id="retired-ucb"></a>
 ## 未接入运行入口的 UCB 原型
 
@@ -112,3 +130,47 @@ Kalypso为独立作者原生服务，不是LOTUS后端；见 `code/src/baselines
 上下文兼容修订另将四份IMLane原host/backend/worker源按准确b018字节保存到`historical_sources/b018d88a/`，
 五份投影只追加20条对应override；旧expected SHA、projection ID、source revision及已有路由保持。
 全部3010条绑定仍仅有原10处不匹配，新增0；本修订不将完整历史还原写成通过。
+
+旧脚本整理为 `estimate_operator_cost.py` 与 `pgai_sql_operator_profile.py` 保存准确 bfb 原件，
+位置为 `historical_sources/bfb9100e/code/scripts/`。五份投影各增加两条来源映射，原摘要、投影身份和已有映射保持。
+维护版本移除无调用私有签名 helper，并将可选数据库驱动延迟到实际连接时导入；旧投影继续执行原字节。
+相关 20 项 CPU 检查及七项 CLI 解析检查见[整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md)。
+
+
+<a id="retired-saor-launchers"></a>
+## 历史 SAOR 启动脚本
+
+三条只服务于旧 Project 机制、直接供给上限和供给间隙实验的启动脚本退出维护目录：
+
+- `code/scripts/experiments/run_saor_project_mechanism.py`
+- `code/scripts/experiments/run_saor_feeding_ceiling.py`
+- `code/scripts/experiments/run_saor_feeding_gap_diagnostic.py`
+
+准确 bfb 原件保存在 `historical_sources/bfb9100e/code/scripts/experiments/` 的 gzip 文件；
+manifest 的 `source_formats` 记录压缩摘要、准确解码长度，原逐文件 SHA 与投影 ID 不改。
+五份投影新增十五条来源映射。现用 materialize 在写出前核验压缩摘要、长度及原字节摘要，
+拒绝损坏、截断、越位路径或未知编码；已有输出目录不修改。普通来源继续使用原复制方式。
+也可使用标准 gzip 读取单份原件；解码后的字节与旧 Git 来源一致，不能据此宣称完整旧环境已恢复。
+
+维护的离线结果分析、原始数据和 native baseline 保留。这三条旧命令只属于历史运行，
+现行入口见[脚本说明](../../../code/scripts/README.md#current-entry-roles)。
+相关 CPU 与三个恢复后 CLI 解析检查见[整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md#历史启动脚本退出维护目录)。
+3010 条来源仍有原十处不匹配，完整历史还原仍报告这些问题，不改报全部通过。
+
+
+<a id="retired-oneoff-tools"></a>
+## 一次性工具的准确历史来源
+
+以下入口退出维护目录，准确原字节以 gzip 保存在 `historical_sources/4fec5472/` 的对应路径：
+
+| 旧路径 | 当前处理 |
+|---|---|
+| `code/scripts/profiling/daft_text_organizer_smoke.py` | 生产组织器与维护行为测试保持；旧入门 CSV 探针只供明确历史恢复 |
+| `code/scripts/baselines/time_duckdb_ai_baseline.py` | 原生 DuckDB adapter 与统一 baseline 入口保持；旧单分片外推探针仅作历史来源 |
+| `code/scripts/data/build_opening_multijob_manifests.py` | 原短长 Job 选择算法保留准确来源；不把另一数据生成器当作等价替换 |
+
+五份投影只新增十五条来源映射，原逐文件摘要、投影身份和既有映射不改。恢复时继续核对
+压缩摘要、原长度和解码摘要；原始 manifest 与实验结果不变。维护生产路径不导入这些原件。
+当前指引从[脚本入口](../../../code/scripts/README.md#current-entry-roles)查找；
+[逐文件清单](../../results/diagnostics/records_runtime_refactor_20261104/raw/entry_inventory.json.gz)为静态调用与文档证据，
+不能代替仓库外调用检查或真实模型资格。

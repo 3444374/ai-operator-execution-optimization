@@ -248,6 +248,10 @@ class NonBlockingMetricsObservationProvider:
     def latest(
         self, inflight: int, *, hol_age_s: float | None = None
     ) -> AdmissionObservation:
+        return self.latest_with_source(inflight, hol_age_s=hol_age_s)[0]
+
+    def latest_with_source(self, inflight: int, *, hol_age_s: float | None = None):
+        """Return the observation and the same immutable source read under lock."""
         now = self.clock()
         with self._lock:
             snapshot = self._snapshot
@@ -265,7 +269,7 @@ class NonBlockingMetricsObservationProvider:
                       else "stale_snapshot" if sampled_at_s is None or not 0 <= now-sampled_at_s <= self.stale_after_s
                       else "already_delivered_generation")
         self._observe(snapshot, stage="consumer", accepted=fresh, reason=reason, at_s=now)
-        return AdmissionObservation(
+        observation = AdmissionObservation(
             observed_at_s=now,
             fresh=fresh,
             inflight=inflight,
@@ -296,6 +300,7 @@ class NonBlockingMetricsObservationProvider:
             completed_cached_input_work_total=None if snapshot is None else snapshot.completed_cached_input_work_total,
             sample_sequence=sample_generation if snapshot is not None else None,
         )
+        return observation, snapshot
 
     def close(self) -> None:
         self._stop.set()

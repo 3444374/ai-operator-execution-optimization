@@ -148,7 +148,8 @@ class RuntimeConfigurationTests(unittest.TestCase):
                 self.assertEqual({next(stream)['source_position'],next(stream)['source_position']},{2,3})
                 self.assertEqual(runtime.async_actors[0].instance.engine._sequence,4)
                 self.assertEqual(runtime.async_actors[0].instance.engine.snapshot()['active_requests'],2)
-                self.assertLessEqual(stream.peak_usage['held_tasks'],3)
+                self.assertLessEqual(stream.peak_usage['held_tasks'],owner.capacity.limits(owner.resources).held_tasks)
+                self.assertLessEqual(stream.peak_usage['active_requests'],3)
                 for sequence in (0,1):
                     owner._actors.cancel_core(TaskKey(stream.session.session_id,sequence)).future().result(2)
                 self.assertEqual({r['source_position'] for r in stream},{0,1})
@@ -195,7 +196,8 @@ class RuntimeConfigurationTests(unittest.TestCase):
                 self.assertIsNone(engine.tokenizer_path)
                 self.assertEqual(generation.max_tokens,17)
                 self.assertEqual(resources.cpu_workers,3)
-                self.assertEqual(resources.max_active_batches,3)
+                self.assertEqual(resources.max_active_batches,7)
+                self.assertEqual(d.core_execution['max_inflight'],3)
 
     def test_configured_timeouts_and_output_scratch_replace_input_size_heuristic(self):
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{}):

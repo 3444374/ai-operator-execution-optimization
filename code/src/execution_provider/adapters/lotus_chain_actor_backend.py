@@ -12,17 +12,20 @@ import json
 import math
 
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission, TaskKey, Terminal
-from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
+from src.serving.backends.vllm_protocol import GenerationSpec, IDENTITY_FIELDS, _prepared
 from .records_model_adapter import _check_result_capacity
 from .records_transport import _RecordTransport, _await_result
 
 
 class LotusChainActorBackend(_RecordTransport):
-    def __init__(self, actors, maximum, notify, *, deadline_monotonic, on_result, token_budget=None, bulk=False):
+    def __init__(self, actors, maximum, notify, *, deadline_monotonic, on_result, token_budget=None, bulk=False,
+                 handoff_progress=False):
         if not math.isfinite(deadline_monotonic) or deadline_monotonic <= 0:
             raise ValueError("a finite request deadline is required")
         if not callable(on_result):
             raise TypeError("an owner-held receipt sink is required")
+        if handoff_progress and not bulk:
+            raise ValueError('handoff progress requires prepared bulk transport')
         if token_budget is not None:
             from .lotus_chain_token_budget import ChainTokenBudget
             if type(token_budget) is not ChainTokenBudget or token_budget.engine != actors.engine:
@@ -35,6 +38,38 @@ class LotusChainActorBackend(_RecordTransport):
         self.data_batch_rpcs = self.peak_result_frame_bytes = 0
         self._batch_submits_started = 0
         self._batch_ack_counts = dict(accepted=0, rejected=0, unknown=0)
+        self._observe_handoff = handoff_progress
+        self._handoff_notify = notify
+        self._handoff_pending = self._handoff_generation = 0
+        self._handoff_stalled = False
+        self._handoff_observer_error = None
+        self._rpc_subscription = None
+        if handoff_progress:
+            try:
+                self._rpc_subscription = actors._bind_rpc_progress(notify)
+            except BaseException as error:
+                if not self.backend.close():
+                    error.add_note('new handoff backend cleanup remains unconfirmed')
+                raise
+
+    def _publish_handoff(self):
+        try:
+            self._handoff_notify()
+        except Exception as error:
+            self._handoff_observer_error = type(error).__name__
+
+    def prepared_supply_opportunity(self):
+        """Cheap hint, including host handoffs not yet registered at the RPC gate.
+
+        The two snapshots can race; neither grants compute or RPC capacity.
+        Existing Core and RPC gates remain the final admission checks.
+        """
+        rpc = self.actors._data_rpc_progress()
+        with self._lock:
+            unregistered = max(0, self._handoff_pending-rpc.batch_submits_pending)
+            available = (self._observe_handoff and not self._handoff_stalled
+                and not rpc.unconfirmed and rpc.workers-rpc.pending-unregistered > 0)
+            return available, (self._handoff_generation, rpc.generation)
 
     def batch_handoff_report(self):
         """First actor ACK per logical submit, separate from per-member results.
@@ -49,9 +84,15 @@ class LotusChainActorBackend(_RecordTransport):
                 actor_ack_counts=counts,
                 pending_actor_acks=self._batch_submits_started-sum(counts.values()))
 
-    def _count_batch_ack(self, outcome):
+    def _count_batch_ack(self, outcome, context=None):
         with self._lock:
             self._batch_ack_counts[outcome] += 1
+            if self._observe_handoff and context.pop('handoff_pending', False):
+                self._handoff_pending -= 1
+                self._handoff_stalled |= outcome != 'accepted'
+                self._handoff_generation += 1
+        if self._observe_handoff:
+            self._publish_handoff()
 
     def recover_actor_receipts(self, receipts):
         errors = super().recover_actor_receipts(receipts)
@@ -73,6 +114,8 @@ class LotusChainActorBackend(_RecordTransport):
             await asyncio.gather(*tasks)
         # Backend close calls this only after all member executions stopped.
         self._bulk.clear()
+        if self._rpc_subscription is not None:
+            self.actors._unbind_rpc_progress(self._rpc_subscription)
 
     def _retire_batch(self, group, context):
         if context['driver_done'] and not context['futures']:
@@ -95,6 +138,10 @@ class LotusChainActorBackend(_RecordTransport):
                        started=False, driver_done=False)
         self._bulk[group] = context
         with self._lock:
+            if self._observe_handoff:
+                context['handoff_pending'] = True
+                self._handoff_pending += 1
+                self._handoff_generation += 1
             for task, value in zip(tasks, values):
                 self._requests[task.key] = {n: value['row'][n] for n in IDENTITY_FIELDS}, task.task.max_result_bytes
                 self._refs[task.key] = (value['row'],)
@@ -102,8 +149,13 @@ class LotusChainActorBackend(_RecordTransport):
         if outcome.acceptance == Acceptance.NOT_ACCEPTED:
             del self._bulk[group]
             with self._lock:
+                if context.pop('handoff_pending', False):
+                    self._handoff_pending -= 1
+                    self._handoff_generation += 1
                 for task in tasks:
                     self._requests.pop(task.key, None); self._refs.pop(task.key, None)
+            if self._observe_handoff:
+                self._publish_handoff()
         return outcome
 
     async def _drive_batch(self, group, context):
@@ -126,7 +178,7 @@ class LotusChainActorBackend(_RecordTransport):
             status = response.get('status') if type(response) is dict else None
             ack_pending = False
             self._count_batch_ack(status if type(status) is str and status in ('accepted', 'rejected')
-                                  else 'unknown')
+                                  else 'unknown', context)
             pending = set(context['members'])
             while pending:
                 pending = {member for member in pending if (future := context['futures'].get(member)) is not None
@@ -177,7 +229,7 @@ class LotusChainActorBackend(_RecordTransport):
                         pass
         finally:
             if ack_pending:
-                self._count_batch_ack('unknown')
+                self._count_batch_ack('unknown', context)
             # A fast RPC may finish before the backend schedules every local
             # member. Keep only their charged result futures until transfer.
             context['driver_done'] = True

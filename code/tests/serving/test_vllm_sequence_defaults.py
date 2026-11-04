@@ -54,6 +54,7 @@ class SequenceDefaultTests(unittest.TestCase):
                         self.assertEqual(command[command.index(flag)+1], str(expected))
 
     def test_finite_synchronous_constructor_retains_its_old_default_and_explicit_values(self):
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs:kwargs
@@ -65,7 +66,7 @@ class SequenceDefaultTests(unittest.TestCase):
                 patch.object(common, '_validate_current_runtime'), \
                 patch.object(common.importlib.metadata, 'version', return_value=common.VLLM_VERSION):
             for value in (None, 1, 128):
-                common.VllmEngine(self.spec(max_num_seqs=value), common.GenerationSpec())
+                ReferenceVllmEngine(self.spec(max_num_seqs=value), common.GenerationSpec())
         self.assertEqual([v['max_num_seqs'] for v in calls], [8, 1, 128])
         for kwargs in calls:
             self.assertEqual(kwargs['max_model_len'], 4096)
@@ -75,6 +76,7 @@ class SequenceDefaultTests(unittest.TestCase):
     def test_unspecified_native_sequences_do_not_remove_owner_or_IPC_bounds(self):
         from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
         from src.semantic_methods.lotus.records import FilterMethod
+        from src.serving.backends.vllm_async_engine import AsyncEngineLimits
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=3)
         engine = self.spec()
         resolved = resolve_core_profile(engine, resources, dict(mode='async', max_inflight='auto'))
@@ -86,7 +88,7 @@ class SequenceDefaultTests(unittest.TestCase):
         try:
             self.assertIsNone(owner._actors.engine.max_num_seqs)
             self.assertEqual(owner._actors.limits.max_inflight, 3)
-            self.assertEqual(owner._actors.limits.result_slots, 3)
+            self.assertEqual(owner._actors.limits.result_slots, AsyncEngineLimits().result_slots)
             self.assertEqual(owner.capacity.limits(owner.resources).active_requests, 3)
         finally:
             owner.close(timeout=.1)
@@ -141,4 +143,4 @@ class SequenceDefaultTests(unittest.TestCase):
                         driver.start()
                     expected = None if maximum == 'omitted' else maximum
                     self.assertEqual(actors.call_args.args[1].max_num_seqs, expected)
-                    self.assertEqual(actors.call_args.args[3].max_active_batches, 2)
+                    self.assertEqual(actors.call_args.args[3].max_active_batches, 3)

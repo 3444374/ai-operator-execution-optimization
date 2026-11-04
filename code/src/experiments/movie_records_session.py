@@ -29,12 +29,12 @@ def check_plan(plan):
     from src.baselines.text.movie_records import MovieRecordSource
     from src.baselines.text.movie_tasks import MovieTask
     from src.semantic_methods.lotus.records import RecordsResources
-    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
     optional = {'admission_cache', 'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                'experimental_skip_token_packing', 'core_capacity', 'async_limits'}
+                'experimental_skip_token_packing', 'core_capacity', 'async_limits', 'preparation_mode'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
@@ -48,10 +48,8 @@ def check_plan(plan):
         raise ValueError("native_single_thread_session requires daft and its explicit different native profile")
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
     resources = RecordsResources(**plan["resources"])
-    from src.execution_provider.adapters.lotus_records_core import expand_core_profile
-    declared_profile = expand_core_profile(plan['profile']) if plan['backend'] == 'semloom-core' else None
-    async_context = type(declared_profile) is dict and declared_profile.get('mode') == 'async'
-    context_limit = engine.max_model_len if async_context else engine.legacy_max_model_len
+    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference')
+                     else engine.legacy_max_model_len)
     if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
@@ -62,20 +60,24 @@ def check_plan(plan):
     if plan['backend'] != 'semloom-core' and set(plan) & {'core_capacity', 'async_limits'}:
         raise ValueError('core_capacity and async_limits require semloom-core')
     if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                                                       'experimental_skip_token_packing'}):
+                                                       'experimental_skip_token_packing', 'preparation_mode'}):
         raise ValueError('record batching options require semloom-core')
-    if plan["backend"] == "semloom-static-reference" and plan["profile"] != {"mode": "sync"}:
-        raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
+    if plan["backend"] == "semloom-static-reference":
+        resources.request_capacity()
+        if plan["profile"] != {"mode": "sync"}:
+            raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
+        from src.execution_provider.adapters.records_profile import resolve_record_batching
         from src.experiments.movie_records_config import (
             record_batching_options as _record_batching_options,
-            core_capacity as _core_capacity, async_limits as _async_limits,
+            records_runtime as _records_runtime,
         )
-        capacity = _core_capacity(plan)
-        core_profile = resolve_core_profile(engine, resources, plan["profile"],
-            rolling_refill=plan.get('rolling_refill', False), capacity=capacity)
-        async_limits = _async_limits(plan, resources=resources, resolved=core_profile)
+        configured = _records_runtime(plan, resources=resources, engine=engine)
+        capacity = (configured.capacity if 'core_capacity' in plan or configured.capacity.budget is not None
+                    else None)
+        core_profile = configured.profile
+        async_limits = (configured.async_limits if 'async_limits' in plan or configured.capacity.budget is not None
+                        else None)
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
         if batching is not None and (plan.get('admission_cache') is not None
                 or plan['lifecycle'] != 'isolated' and not (
@@ -172,12 +174,26 @@ class _MovieDriver:
     def start(self):
         from src.baselines.text.movie_tasks import MovieTask
         from src.semantic_methods.lotus.records import RecordsResources
-        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
-        new_private_directory(self.directory)
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
         self.engine = EngineSpec.from_dict(self.plan["engine"])
         self.generation = GenerationSpec.from_dict(self.plan["generation"])
         self.resources = RecordsResources(**self.plan["resources"])
         backend = self.plan["backend"]
+        if backend != 'semloom-core' and 'preparation_mode' in self.plan:
+            raise ValueError('preparation_mode requires semloom-core')
+        if backend == 'semloom-static-reference':
+            self.resources.request_capacity()
+        elif backend == 'semloom-core':
+            from src.experiments.movie_records_config import (
+                records_runtime as _records_runtime,
+                record_batching_options as _record_batching_options,
+            )
+            from src.execution_provider.adapters.records_profile import resolve_record_batching
+            configured = _records_runtime(self.plan, resources=self.resources, engine=self.engine)
+            self.core_execution = configured.profile
+            options = _record_batching_options(self.plan)
+            resolve_record_batching(self.core_execution, **options)
+        new_private_directory(self.directory)
         method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"])
         if backend == "daft" and self.plan["lifecycle"] == "native_single_thread_session":
             from src.baselines.text.frameworks.daft_lotus_session import DaftNativeSession
@@ -240,19 +256,15 @@ class _MovieDriver:
                             runtime_identity=self.ray_identity)
         if backend in {"semloom-core", "semloom-static-reference"}:
             if backend == "semloom-core":
-                from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
+                from src.execution_provider.adapters.lotus_records_core import create_records_core
                 from src.experiments.movie_records_config import (
-                    record_batching_options as _record_batching_options,
-                    core_capacity as _core_capacity, async_limits as _async_limits,
+                    core_capacity as _core_capacity,
                 )
-                self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"],
-                    rolling_refill=self.plan.get('rolling_refill', False), capacity=_core_capacity(self.plan))
-                options = _record_batching_options(self.plan)
                 if options.get('rolling_refill') and self.plan['lifecycle'] == 'resident':
                     options['resident'] = True
                 self.owner = create_records_core(method, self.engine, self.generation, self.resources,
                     profile=self.plan["profile"], capacity=_core_capacity(self.plan),
-                    async_limits=_async_limits(self.plan, resources=self.resources, resolved=self.core_execution),
+                    async_limits=configured.async_limits,
                     **options)
             else:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
@@ -461,7 +473,7 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
     from src.baselines.text.movie_tasks import MovieTask
     from src.experiments.lotus_records_movie import model_preflight
     from integrations.imlane_records.chain_runtime import check_external_lease
-    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
     checked = check_plan(plan)
     check_external_lease(context["owner_context"])
     engine = EngineSpec.from_dict(plan["engine"])

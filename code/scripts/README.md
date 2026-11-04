@@ -1,5 +1,49 @@
 # SemLoom 脚本入口
 
+<a id="current-entry-roles"></a>
+## 现用入口职责
+
+| 任务 | 入口 |
+|---|---|
+| PostgreSQL 外部执行服务 | [run_execution_provider_gateway.py](services/run_execution_provider_gateway.py) |
+| 单次 Movie records 预检与执行 | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) |
+| Movie 矩阵与连续查询 session | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) |
+| 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) |
+| 同步 CPU 补充证据复算 | [check_sync_cpu_evidence.py](analysis/check_sync_cpu_evidence.py) |
+| 明确选择的历史代码恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) |
+
+旧 SAOR 的 Project 机制、供给上限和供给间隙启动脚本已从当前目录移除；
+准确原件和逐文件恢复信息见[历史来源](../../experiments/reproduction/native_baselines/README.md#retired-saor-launchers)。
+离线分析、原生 baseline 和其他仍有调用的入口保持；历史命令不自动成为新实验待办。
+
+### 已退出维护的一次性工具
+
+入门 Daft smoke、单分片 DuckDB 耗时探针和旧短长 Job manifest 生成器已从当前目录移除。
+组织器与其行为测试、DuckDB 原生 adapter 和统一 baseline 入口继续保留；旧 manifest 选择算法
+没有被声称为另一生成器的等价功能。准确原件与五份具名代码投影的恢复方式见
+[历史工具说明](../../experiments/reproduction/native_baselines/README.md#retired-oneoff-tools)。
+逐文件调用、文档、历史来源和保留／退出决定见
+[清理摘要](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/entry_slimming_checks.json)。
+所有既有测试和 fixture 保留；短 CLI 若仍有调用就继续作为现用入口。
+
+### 同步 CPU 补充检查复算
+
+`analysis/check_sync_cpu_evidence.py` 只复算固定原生函数体和受控 ACK 回执时序，禁止实际模型导入与 Ray 初始化。
+输出须为 Git 目录外尚不存在的文件；不下载源码、模型或数据。`native-pipeline` 使用本地 vLLM v0.25.1 的
+`vllm/entrypoints/llm.py` 与 `offline_utils.py`，先按[固定哈希](../tests/serving/sync_native_source_fixture.py)核对字节，
+再运行明确的 CPU renderer／queue 替身。原始 URL、哈希和适用范围见
+[复算记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_supplemental_reproduction.json)。
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/analysis/check_sync_cpu_evidence.py native-pipeline \
+  --source-root "$VLLM_0251_SOURCE_ROOT" --output "$PRIVATE_NATIVE_CHECK"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/analysis/check_sync_cpu_evidence.py ack-order \
+  --output "$PRIVATE_ACK_CHECK"
+```
+
+ACK 检查从当前用例反向替换一个 wait 调用，并确认语法树摘要等于原 129c 用例，再运行两个受控负例和
+当前成功例；无需取得未发布的旧 Git 提交。条件组、用例数与模型实验分别解释，不把它们相加。
+
 ## Movie records生产闭包候选
 
 CSV／本地records预检使用`core,text,semantic-benchmarks`，不要求PG。SQL数据源显式选择`database`／`sql-readers`；配置缺失或语法无效会失败，检查不替代真实SQL连接验收，见[运行时能力说明](../../deploy/runtime/README.md)。
@@ -860,7 +904,7 @@ exact reference，不产生第二物理路径。接口和使用条件见
 
 | 工作 | 主要脚本与事实入口 |
 |---|---|
-| SAOR 机制与原生系统检查 | `analysis/audit_saor_*.py`、`analysis/summarize_saor_*.py`、`experiments/run_saor_*.py`；当前状态及各检查的作用见[SAOR 模块](../src/experiments/saor/README.md)和[实验状态](../../experiments/plans/archive/进度汇总_20261001.md) |
+| SAOR 机制与原生系统检查 | 离线 `analysis/audit_saor_*.py`、`analysis/summarize_saor_*.py` 和仍有调用的 `run_saor_native_system_matched.py`；三条旧启动命令从历史来源恢复，实际用途见[SAOR 模块](../src/experiments/saor/README.md)和[实验状态](../../experiments/plans/archive/进度汇总_20261001.md) |
 | 图像与多 Job 画像 | `experiments/run_image_*.py`、`profiling/profile_clip_*.py`、`analysis/summarize_image_*.py`；身份与可比性见[baseline 说明](../src/baselines/README.md)和[图像结果](../../experiments/results/README.md) |
 | 已退役开题流程 | 专用矩阵与汇总器从[固定历史源码](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts)恢复；结果仍按[开题材料](../../docs/archive/opening/README.md)和对应报告读取 |
 
@@ -876,12 +920,30 @@ PostgreSQL 内置语义算子的验证结果。
 
 | 用途 | 入口与说明 |
 |---|---|
-| 外部画像、Daft 组织与指标 | `profiling/postgres_ai_operator_profile.py`、`profiling/daft_text_organizer_smoke.py`；模块职责见[观测说明](../src/observability/README.md)，结果见[动机画像](../../experiments/results/motivation/README.md) |
+| 外部画像、Daft 组织与指标 | `profiling/postgres_ai_operator_profile.py`；Daft 组织行为由[维护测试](../tests/planning/test_organizers.py)检查，模块职责见[观测说明](../src/observability/README.md)，结果见[动机画像](../../experiments/results/motivation/README.md) |
 | 单作业场景编排 | `experiments/run_ai_operator_scenarios.py`；按固定种子保存次序、成功记录和失败事件，恢复时重新核对配置与既有记录 |
 | 共享服务多 Job | `experiments/run_shared_vllm_experiment.py`；配置与运行步骤见[AutoDL 手册](../../deploy/autodl/README.md)，模块职责见[共享服务说明](../src/experiments/shared_vllm/README.md) |
 | 官方 baseline 与 SQuAD 能力检查 | `baselines/run_official_baseline.py`、`baselines/squad_capability_gate.py`、`baselines/squad_database_e2e_runner.py`；系统职责见[baseline 说明](../src/baselines/README.md)，每次结果见[可行性记录](../../experiments/results/diagnostics/README.md) |
 | 工作量准备与代价分析 | `data/import_ai_complete_workload.py`、`analysis/estimate_operator_cost.py`、`analysis/compare_cost_estimators_full.py`、`analysis/compare_cost_estimators_contextloo.py`；输入筛选、模型与机器身份以目标计划和结果报告为准 |
 | 状态变化实验 | `data/prepare_phase_change_workload.py`、`experiments/run_phase_change.py`、`analysis/audit_phase_change.py`；只从[目标手册](../../deploy/autodl/phase_change_state_aware_RUNBOOK.md)选择步骤，历史实现见[SAOR 说明](../src/experiments/saor/README.md) |
+
+### 旧脚本逐项核对（2026-11-04）
+
+以下入口此前没有现行文件名引用；源码、输入／结果与间接调用核对后保留，不按名称搜索结果删除：
+
+| 入口 | 保留用途 |
+|---|---|
+| `analysis/evaluate_embedding_retrieval.py` | 读取已有向量与明确相关性，评价检索质量 |
+| `analysis/replay_saor_capacity.py` | 离线聚合 trace 回放；输出保持非因果回放身份，不提供在线性能证据 |
+| `analysis/summarize_image_multijob.py` | 按原固定组数核对历史图像单／多 Job 结果及 exactly-once |
+| `analysis/summarize_project_multijob_eager.py` | 当前配置测试仍使用其同组场景 ID，保留原匹配汇总 |
+| `profiling/pgai_sql_operator_profile.py` | pgai SQL 调用画像；数据库驱动延迟到实际连接时加载 |
+| `profiling/profile_clip_preproc_stages.py` | 历史 `return_tensors="pt"` 的预处理子阶段诊断，维持原测量身份 |
+| `services/local_embedding_server.py` | 既有画像所用本地 embedding 服务，模型运行另按环境规则执行 |
+
+七项 `--help` 检查均通过，检查阻止执行框架、数据库驱动、网络、监听和子进程；不作为实际模型／数据库资格。
+`analysis/estimate_operator_cost.py` 的无调用私有 `_signature` 已移除，现行 context／candidate 使用 `_payload_signature`。
+两份受影响脚本的准确原件由[历史投影](../../experiments/reproduction/native_baselines/README.md)保留，原摘要与输入身份保持。
 
 增量导入 ShareGPT/BurstGPT 时，`--source-row-offset` 在全部筛选后才生效；追加前应以相同
 原始文件、tokenizer 与筛选条件验证既有前缀，再使用 `--append-only`。仅改变
@@ -889,3 +951,19 @@ PostgreSQL 内置语义算子的验证结果。
 
 早期逐参数清单和机器专用命令保存在 Git 版本 `d32366de` 的本文件中；历史结论、
 原始运行及失败记录仍在各[结果目录](../../experiments/results/README.md)。
+
+
+### 旧入口的后续来源核对
+
+[逐文件后续审计](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/entry_capacity_source_audit.json)
+与[补充调用清单](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/entry_inventory_followup.json.gz)
+补查同目录脚本导入与包内相对导入，首轮原件继续保留。图像 bottleneck helper 仍由两个
+预处理检查入口导入；原生基线请求一致性检查仍被现用 provenance 要求。旧数据变换、
+embedding 离线质量检查和 SAOR 结果校验仍有独有行为，尚无等价替代，不按文件年龄或短小删除。
+未找到命令调用的校验职责另记为执行接线待查；这不同于已证明该校验没有用途。
+
+
+Movie records 的现用 check/run 与矩阵 session 现可显式选择默认关闭的准备模式候选；
+只增加 JSON 配置选项，不新建脚本或执行循环。serial 保持当前路径，其他模式只支持固定 rolling token 请求，
+取值、错误查询的合法前缀用量与 CPU 使用范围见
+[准备模式说明](../src/experiments/movie_matrix.README.md#record-preparation-mode)。

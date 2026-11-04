@@ -16,12 +16,18 @@ from .lotus_records_async_actor import AsyncRecordsActorOwner
 
 class PreparedRecordsCore:
     def __init__(self, method, engine, generation, resources, profile, batching, limits, *, resident=False,
-                 capacity=None):
+                 capacity=None, interleaved_preparation=False, event_driven_preparation=False):
         if type(resident) is not bool or resident and not batching.get('rolling_refill'):
             raise ValueError('resident token records require rolling_refill')
+        from .records_profile import checked_preparation_options
+        preparation = checked_preparation_options(batching, interleaved_preparation=interleaved_preparation,
+                                                  event_driven_preparation=event_driven_preparation)
+        self.interleaved_preparation = interleaved_preparation
+        self.event_driven_preparation = event_driven_preparation
         self.resident = resident
         self.method = FilterMethod.from_dict(asdict(method))
         self.execution_profile = dict(profile, record_batching=deepcopy(batching))
+        self.execution_profile['record_batching'].update(preparation)
         self.resources, self.engine, self.generation = resources, engine, generation
         self.capacity = capacity
         self.owner = self._active = None
@@ -133,9 +139,11 @@ class PreparedRecordsCore:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
             feedback = SupplyFeedbackConfig.from_dict(batching['feedback'])
         if 'request_feedback' in batching:
-            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
-            request_feedback = ResourceFeedbackConfig(**batching['request_feedback'])
-        return SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
+            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
+            config_type = (ResourceFeedbackConfig if batching.get('request_feedback_kind') == 'legacy_resource_feedback'
+                           else ResourceRequestConfig)
+            request_feedback = config_type(**batching['request_feedback'])
+        owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, capacity=self.capacity, prepared_batching=PreparedBatching(**batching['prepared_batching']),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
             rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback,
@@ -143,6 +151,9 @@ class PreparedRecordsCore:
             **({} if self.capacity is None or self.capacity.budget is None
                else dict(request_window=self.execution_profile['max_inflight'])),
             experimental_skip_token_packing=batching.get('experimental_skip_token_packing', False))
+        owner._interleaved_preparation = self.interleaved_preparation
+        owner._event_driven_preparation = self.event_driven_preparation
+        return owner
 
     def _ordinary(self, receipt):
         expected = self._expected.get(receipt['row_id'])
@@ -184,6 +195,10 @@ class PreparedRecordsCore:
             if (actual['policy'] != requested['prepared_batching'] or not valid_window
                     or actual.get('experimental_skip_token_packing', False)
                        != requested.get('experimental_skip_token_packing', False)
+                    or actual.get('interleaved_preparation', False)
+                       != requested.get('interleaved_preparation', False)
+                    or actual.get('event_driven_preparation', False)
+                       != requested.get('event_driven_preparation', False)
                     or actual['request_limit'] != requested['R'] or sum(map(len, groups.values())) != len(self._expected)
                     or actual['data_batch_rpcs'] != len(groups)):
                 raise ValueError('actual token batch execution differs from the selected factory configuration')

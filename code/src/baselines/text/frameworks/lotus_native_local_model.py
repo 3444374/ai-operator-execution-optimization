@@ -46,7 +46,7 @@ from src.semantic_methods.lotus.engine import (
     lm_report, make_lm, validate_filter_source, validate_generation,
 )
 from src.semantic_methods.lotus.records import CallLedger, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, VLLM_VERSION, _prepared
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, VLLM_VERSION, _prepared
 
 
 class LocalService:

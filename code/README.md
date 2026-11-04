@@ -14,7 +14,7 @@ GPU（图形处理器）采样可接收实际模型 worker 返回的 UUID（设�
 | 提交反馈的压力采样 | [采样时钟与内存配置](src/scheduling/runtime/calibration.README.md#pressure-sample-response) |
 | LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
 | Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
-| 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) 、[上下文回执](src/execution_provider/adapters/README.md#records-model-context) |
+| 模型引擎 | [共享请求值](src/serving/backends/vllm_protocol.py)、[同步实例](src/serving/backends/vllm_engine.py)、[异步实例](src/serving/backends/vllm_async_engine.py)、[上下文回执](src/execution_provider/adapters/README.md#records-model-context) |
 | PG 载体与 SQL 支持形状 | [extension](postgres/semloom_pg/README.md) |
 | 观测定义与离线结果 | [observability](src/observability/README.md)、[离线工具](scripts/analysis/OFFLINE_RESULTS.md) |
 
@@ -144,6 +144,12 @@ code/
 `semantic_methods/lotus/`拥有原方法与SDK解释，`execution_provider/adapters/lotus_*core*.py`属于SemLoom适配，`baselines/text/frameworks/`保留原生系统执行owner。普通records在worker准备／执行，查询调用方收齐并重排完整回执后调用原LOTUS parser。Kalypso是独立作者系统；五份具名历史树含两种Core版本，是还原材料，不是native backend注册目录。
 
 PR56已将纯结果模块归位到`semantic_methods/lotus/record_results.py`；同步模型进程与阶段清理分别归`serving/backends/vllm_sync_process.py`和`stage_process_cleanup.py`，旧import与同步进程CLI保留。逐阶段生成进程归`serving/backends/staged_generation_process.py`，Core／Ray／Daft共用的链worker归`execution_provider/method_workers/lotus_chain_batch.py`；旧路径只作同对象导入及历史命令兼容，不保存第二份执行实现。三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG，对应能力预检修复已随PR52接纳；旧SQL路径保留为显式可选接入，实际实现和验证范围仍从源码及报告读取。
+
+当前 SemLoom 同步与异步构造都省略未指定的上下文、序列数及组批 token 参数，实际值由对应引擎解析。
+同步完整提示只经原生渲染一次，先核对提示加输出上限，再调用原生请求队列；fused worker 记录同一模型的 ready 身份。
+原生 Ray／Daft／IMLane 对照显式选择[历史参数所有者](src/baselines/text/frameworks/sync_reference_engine.py)，
+原生链另有[参数适配](src/baselines/text/frameworks/reference_chain_batch.py)，共用方法、IPC 和清理，不复制执行器。
+接口与 CPU 范围见[同步参数说明](src/execution_provider/adapters/README.md#sync-native-context-ownership)；自动容量仍未实现。
 
 通用[脱敏](src/infrastructure/redact.py)和[私有产物 I/O](src/infrastructure/private_artifacts.py)归`infrastructure/`；旧`baselines/common`路径保留兼容转发。两种工作负载格式的公开摘要仍在原模块，不进入通用文件工具。
 

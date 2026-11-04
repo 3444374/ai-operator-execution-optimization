@@ -95,7 +95,7 @@ def _generation_options(effective):
 
 def local_generation(stage):
     """Map only supported effective LM options; unsupported options fail before allocation."""
-    from src.serving.backends.vllm_engine import GenerationSpec
+    from src.serving.backends.vllm_protocol import GenerationSpec
 
     options = _generation_options(stage.effective_kwargs)
     return GenerationSpec(**options)
@@ -115,7 +115,7 @@ def _effective(lm, model_kwargs, logprobs):
                              ", ".join(sorted(values.keys() - allowed)))
     # Validate ordinary values without requiring local helper execution support.
     # A backend then validates actual logprobs capability before model allocation.
-    from src.serving.backends.vllm_engine import GenerationSpec
+    from src.serving.backends.vllm_protocol import GenerationSpec
     GenerationSpec(**dict(_generation_options(options), logprobs=None))
     return options
 

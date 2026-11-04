@@ -32,7 +32,7 @@ from src.semantic_methods.lotus.cascade import (
     CascadeStage, IDENTITY_FIELDS, _StageCalls, cascade_identity, local_generation,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_protocol import EngineSpec
 
 from .lotus_records_core import (
     CoreRecordsCapacity, SemLoomRecordsCore, _ActorOwner, _CoreModelActor, _check,

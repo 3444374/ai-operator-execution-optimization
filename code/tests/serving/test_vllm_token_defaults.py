@@ -41,6 +41,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
                 self.spec(max_num_batched_tokens=invalid)
 
     def test_sync_and_LOTUS_native_preserve_old_default_and_explicit_values(self):
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs: kwargs
@@ -55,7 +56,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
             for maximum in (None, 1, 4096, 8192):
                 with self.subTest(maximum=maximum):
                     spec = self.spec(max_num_batched_tokens=maximum)
-                    common.VllmEngine(spec, common.GenerationSpec())
+                    ReferenceVllmEngine(spec, common.GenerationSpec())
                     service = LocalService(spec, 'fixture-model', RecordsResources(), Path(folder), 'fixture-device')
                     service.port = 39282
                     command = service.command()
@@ -152,7 +153,13 @@ class NativeTokenDefaultTests(unittest.TestCase):
         cache = dict(identity=identity, cache_dir=str(Path(directory.name)/'cache'))
         original = deepcopy(cache)
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=2)
-        profile = dict(mode='async', max_inflight=1, admission=dict(kind='resource_feedback'))
+        profile = dict(mode='async', max_inflight=1, admission=dict(kind='legacy_resource_feedback'))
+        modern = resolve_core_profile(self.spec(), resources,
+            dict(profile, admission=dict(kind='resource_feedback')))
+        with self.assertRaisesRegex(ValueError, 'requires explicit legacy_resource_feedback'):
+            run_record_admission(cache, modern, SimpleNamespace(manifest_path=manifest),
+                FilterMethod('fixture', 'Keep {reviewText}'), common.GenerationSpec(), self.spec(),
+                resources, lambda *args, **kwargs:self.fail('no query execution'))
         signatures = []
         for maximum in ('omitted', None, 4096, 8192):
             with self.subTest(maximum=maximum):
@@ -204,4 +211,4 @@ class NativeTokenDefaultTests(unittest.TestCase):
                     engine = actors.call_args.args[1]
                     self.assertEqual(engine.max_num_batched_tokens, None if maximum == 'omitted' else maximum)
                     self.assertEqual(engine.max_model_len, 4096)
-                    self.assertEqual(actors.call_args.args[3].max_active_batches, 2)
+                    self.assertEqual(actors.call_args.args[3].max_active_batches, 3)

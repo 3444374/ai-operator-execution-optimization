@@ -367,7 +367,11 @@ method residency and IPC grants; see the [budget fields](../../experiments/movie
 Declarations and IPC resolution live in [records_capacity.py](records_capacity.py);
 execution selection and historical options live in [records_profile.py](records_profile.py).
 The original `lotus_records_core` imports and serialized capacity locations remain compatible.
-Legacy defaults still derive several grants from R; the extraction changes no allocation policy.
+Low-level direct constructors and nonrolling whole batches retain the old R translation.
+The ordinary async Filter/rolling factory now resolves default storage from existing
+IPC byte declarations and per-item envelopes via `resolve_records_runtime`. Soft C
+does not resize those allocations. Explicit complete budgets and typed IPC fields
+retain their values. Request R remains caller-declared; no physical capacity is detected.
 The [capacity ownership inventory and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
 separate that remaining work from the independent budgets already supported.
 Pure resource parsing and copied snapshot report fields live in
@@ -382,6 +386,15 @@ Both records query hosts use that module; the chain backend and host can load
 without importing the single-filter query host. Old transport imports and serialized
 helper locations remain available. Capacity, unknown results and receipt ACKs retain
 the same owners; this extraction introduces no scheduling loop or counter.
+Record-local source validation, MethodDriver progress, complete Extracts and result
+consumption live in [records_query_runtime.py](records_query_runtime.py). The chain
+owner assembles its model, transport and capacity; the iterator loads independently
+of those constructors and retains its original import and serialized location.
+Its preparation order, deadlines, cancellation and result release are unchanged.
+The retained single native snapshot RPC and its cancellation/audit state live in
+[records_native_sampler.py](records_native_sampler.py). Feedback policies reuse
+that sampler; it imports no query constructors or window controller. Existing
+source qualification, close and unknown-RPC ownership remain unchanged.
 Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and
@@ -535,52 +548,38 @@ performance. Eight free slots with eight members exactly reaching B cannot admit
 a ninth member even when the token sealing reason occurs. Real-model query and
 quality qualification remain pending.
 
-### Optional dynamic request permits for rolling refill (local CPU candidate)
+### Optional request resource feedback (local CPU candidate)
 
-With token `prepared_batching` and `rolling_refill=true`, the same ordinary
-`core_profile.admission={"kind":"resource_feedback"}` opts into rolling request-level
-supply feedback. `max_inflight` may be omitted or explicitly 1 at startup. The
-existing `"auto"` value is also accepted when R=1, resolving to the same initial
-window of 1; it is rejected for R>1. This does not bypass capacity. Without an explicit
-resource budget, `resources.max_active_batches` remains the hard R for compute and
-resident rows; explicit budgets separate these grants. Omission/null admission retains fixed rolling (C_request=R with legacy budgets) and
-installs no sampler. Batch concurrency/feedback cannot be combined with rolling.
-The Python chain accepts `request_feedback=default_request_feedback_options()`;
-the normal Movie/Session factory resolves the existing admission object.
+Ordinary Core and rolling token factories select `ResourceRequestConfig` and the
+reviewed `ResourceRequestController` for `admission={"kind":"resource_feedback"}`.
+Omitted admission remains fixed. An enabled query starts at one request and uses
+only actual ready work, source-qualified native frames and applied owner/Core/IPC
+and result reservations. These declarations are not measured GPU capacity.
+The same retained snapshot RPC supplies native and optional physical observations.
+Source age is conservatively mapped to driver time. Observation and source are
+read together; neither a new RPC nor a newer cached frame refreshes an old source.
 
-The default ascending candidate reuses the existing work-aware measurements,
-typed ready-work/demand gates and repaired single-RPC sampler. Explicit
-`search_policy="reference"` retains the old reference-recheck policy. Without a
-qualified resident hint the soft C_request starts at one; B stays fixed and
-C_batch is null. Each terminal member releases its own
-permit; a slow batch peer cannot retain the permit of a finished member or block
-its legal successor. A selected immutable group already owns its member permits,
-including when the transport temporarily returns NOT_ACCEPTED. Shrinking stops
-new selections; previously admitted requests drain without cancellation or group
-splitting. Pending-selection permits are reported separately from actual compute
-inflight; they never masquerade as native requests or spare capacity. A blocked
-handoff holds exploration with `submission_backpressure`, not a performance claim.
-Core R/input/result/state, transport slots/bytes and unknown ownership remain.
+The adapter retains original completion receipts, legal successors, independent
+member refill, Extract relations, unknown work and ACK ownership. A smaller
+window stops future selection. Already accepted requests drain under their
+original ownership. Native rejection counts remain unknown where no source is
+connected. Requiring an independent memory-pressure source rejects configuration
+until one is connected. No KV/busy percentage cutoff or cross-query learned hint
+enters this policy. Missing backend ready capability fails explicitly.
 
-Default request supply options use computed work, local pairs and geometric
-trials, without time/change/attempt budgets or task-wide token/gold references.
-The existing fresh-feedback/settling/three-window measurement still applies.
-Comparable gains continue upward without a mandatory reference revisit after
-each gain; flat/regressed/incomparable evidence gets local confirmation. Joint
-native/supply/physical observations can propose larger, headroom-sized tentative
-targets. Missing physical readings retain ordinary geometric exploration; they
-do not erase a previous qualified resource condition. The policy and exact
-probe-position heuristic are defined in the
-[ascending policy contract](../../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫).
-Joint B adjustment remains unimplemented.
-Explicit option overrides retain their existing meaning and online cost. Reports
-use `owner_close.request_supply_feedback`, retain exploration/transition costs,
-snapshot terminal/unknown receipts and real batch/request counts, and never call
-a configured ceiling a measured platform. Source-qualified UUID-bound NVML busy
-and host CPU reads feed tentative probes; physical free memory, MFU/HBM and real
-query benefit are not inferred from those reads. See the
-[request mechanism and ownership tests](../../../tests/execution_provider/test_lotus_request_supply_feedback.py)
-and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedback_entry.py).
+The implementation is [records_request_feedback.py](records_request_feedback.py).
+[Public wiring evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/public_request_wiring_checks.json)
+records 309 selected CPU methods, 308 successes and one upstream-checkout skip.
+Model, real Ray and GPU qualification remain pending.
+
+Explicit `kind="legacy_resource_feedback"`, named `delivered-work-scan` and
+`computed-work-local-pairs`, and direct typed `ResourceFeedbackConfig` retain the
+historical policy settings. The Python rolling compatibility helper
+`default_request_feedback_options()` still returns that legacy type. Only this
+explicit path supports the old hint/cache and KV/busy tuning options. Historical
+restoration keeps original source hashes and numerical settings. Fixed-B batch
+feedback is a separate explicit option; its older rules below do not describe
+the current request policy. Joint B adjustment is unimplemented.
 
 <a id="resident-rolling-token-owner"></a>
 ### Resident rolling token model owner (local CPU candidate)
@@ -589,7 +588,8 @@ and [ordinary entry tests](../../../tests/experiments/test_movie_request_feedbac
 retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
 queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
 schema or model pool is introduced. Fixed rolling RF retains its configured C (legacy budgets use R); RD uses the
-same admission configuration above. Ascending RD starts from a compatible,
+same admission configuration above. Current RD starts from one for every query.
+Explicit legacy ascending RD starts from a compatible,
 explicitly committed healthy hint when available, validates current work and
 conditions, then holds or conditionally continues. No hint starts at one; the
 explicit reference policy continues to reset each query. C_batch is null.
@@ -872,8 +872,8 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 原生渲染后的完整提示加输出上限仍须适合实际长度，超限不截断或拆分请求。
 应用token组织、可选在途工作量与已启动模型的接纳缓存使用该回执，外层额度与原未知结果记录不变。
 
-显式正整数精确保留；同步SemLoom／LOTUS／Ray／Daft参照通过`legacy_max_model_len`保留原4096缺省，
-显存比例、数据精度、方法／生成参数及单GPU支持保持。每轮token修正属于独立候选。
+显式正整数精确保留；当前同步 SemLoom 的省略行为见[同步参数所有权](#sync-native-context-ownership)。
+LOTUS／Ray／Daft 原生对照保留原 4096 缺省；显存比例、数据精度、方法／生成参数及单 GPU 支持保持。
 普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
 公共离线calibration在省略上下文时复用首个已声明完整样本的实际owner回执，随后构造身份；
 每个执行owner仍须在生成前核对自身ready及解析长度，逐调用记录须对应其引擎身份。
@@ -897,27 +897,31 @@ token wrapper在独立查询的`start()`仍只返回延迟分配声明；实际�
 
 ## records Core 可选动态接纳
 
+普通 `resource_feedback` 选择上述资源请求策略，从一开始且不支持旧推荐缓存；
+以下旧单遍参数只属于显式 `legacy_resource_feedback` 或两种具名历史选项。
+
 `lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。
 可显式选择 `profile="delivered-work-scan"` 或 `profile="computed-work-local-pairs"`；
 这两个名称是 legacy 实验参数对照，不推荐其
-10秒／剩余64条等限制作为新的资源平台研究配置。冻结历史源码仍从具名复现还原。
+10秒／剩余64条等设置作为新的资源平台研究配置。历史源码仍从具名复现还原。
 名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
-`profile={"mode":"async","max_inflight": C0,"admission": {"kind":"resource_feedback", ...}}`
+`profile={"mode":"async","max_inflight": C0,"admission": {"kind":"legacy_resource_feedback", ...}}`
 显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
 不是另一个执行器。`C0` 是起始软窗口；旧预算（`capacity.budget=None`）下，owner 硬请求额度 R
 取 `RecordsResources.max_active_batches`，显式独立 budget 下取 `budget.active_requests`，C0 不得超过 R。
 prepare 数、模型配置和 actor/IPC 容量在启动前确定。
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 或
 `max_num_batched_tokens` 未指定／null时，异步 Core 不传对应引擎参数，交由安装的
-vLLM 0.25.1 解析；显式正整数原样传入。LOTUS 原生 HTTP 服务与有限同步 `VllmEngine`
-分别保留旧默认8个序列、4096 token，其他baseline默认不在本次修正范围。
+vLLM 0.25.1 解析；显式正整数原样传入。当前同步 `VllmEngine` 也省略这两项；
+LOTUS 原生 HTTP 与显式选择 `ReferenceVllmEngine` 的原生图继续保留原参数。
 启动回执的 `native_capacity` 从构造后的配置读回，即使未开启反馈；缺失字段保持未知。
 未指定不表示无限容量或自动性能调优，也不改变外层 C/B/W、上下文长度或显存比例。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
 旧预算下，`async_limits.max_inflight` 必须等于 R，`result_slots` 至少为 R，不能只按 C0 配置。
-[显式独立预算](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选)要求完整有限 IPC 额度，
-允许 IPC 请求／结果槽位小于 R；实际接纳继续受这些槽位和字节预算背压，并非无限供给。
+[显式独立预算](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选)可为省略的 IPC 字段提供有限缺省值：
+请求／命令槽来自 `active_requests`，结果槽来自 `held_tasks`，总字节来自对应预算，控制预留沿原协议公式。
+显式 IPC 值保持，可小于 R；两层仍分别记账，实际接纳继续受槽位及字节背压。
 
 异步 Core 的 RPC 线程预算与上述驻留槽位分开。`RecordsResources.model_rpc_workers`
 是可选正整数；省略时沿用调用方声明的 `cpu_workers` 作为数据 RPC 并发预算，不读取
@@ -966,3 +970,142 @@ resident 在查询前调用原模型 owner 的 start，两次完整查询复用�
 session 结束一次原 close。不同 FilterMethod 指令明确拒绝，不能复用旧 formatter 冒称支持。
 准备批、原有限模型批、原 LOTUS parser、身份和未确认关闭责任不变。
 本接线已做维护 CLI/CPU first-reuse 与失败边界检查，真实模型/物理退出仍需本候选单独资格。
+
+
+The optional [native source clock](records_native_source.py) validates the actual
+vLLM ready owner and model-actor source age before converting a native sample
+to driver time. Repeated source identities retain their first mapped timestamp.
+Missing or conflicting source data cannot qualify request growth. The existing
+public feedback selection is unchanged in this increment; no physical request
+capacity is inferred. CPU scope is recorded in the
+[source check summary](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/native_source_checks.json).
+
+
+The public default-capacity resolver and Movie preflight/session/calibration share
+one `RecordsRuntimeConfig`. Core and Method count guards sit above the byte-based
+whole-item allowance; result slots remain an independent IPC declaration. A smaller
+explicit IPC frame/total is preserved and does not shrink a different Core item's
+required reservation. Ordinary calibration records `records_capacity_policy_v2`;
+explicit historical profiles retain their earlier allocation and cache rules.
+[Default-capacity evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/default_capacity_checks.json)
+records 388 selected CPU methods, 387 successes and one upstream-checkout skip.
+Direct low-level constructors, nonrolling batch defaults and sync/async model-spec
+separation remain separate work. No automatic hardware grant or model performance
+qualification is claimed.
+
+
+### Unspecified legacy request count with complete grants
+
+`RecordsResources(max_active_batches=None)` preserves an unspecified legacy R.
+The ordinary async and rolling factories can resolve it from an existing complete
+`RecordsCapacityBudget`; Core, Method residency and IPC retain their own finite
+allocations. The caller's declaration stays None in `declared_legacy_request_budget`,
+while the applied owner count comes from `budget.active_requests`. Missing grants
+raise before actor allocation, including profiles requesting `max_inflight="auto"`.
+
+This is explicit-budget support, with CPU checks for config, CLI, session, query
+reuse and offline identity. The ordinary omitted default is still2, and default
+IPC result slots are still8. Automatic resource allocation and default migration
+remain unfinished; None does not mean unlimited memory or measured GPU capacity.
+See [the check summary](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/unspecified_request_checks.json).
+
+
+### Native safety while model work is unknown
+
+The accepted native frame keeps its own freshness when a retained failed or
+unknown receipt has no usable token work. Performance comparison can pause
+without suppressing source-qualified pressure. Sequence/time checks still reject
+old or repeated pressure increments. Core unknown ownership, receipt retention,
+consumer delivery, ACK and release are unchanged. The reviewed two-file repair
+is composed with the complete-budget None support; [combined CPU scope](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/capacity_pressure_composition_checks.json)
+does not qualify a real model or automatic hardware capacity.
+
+
+### 同步模型的上下文回执
+
+同步 `VllmEngine.ready()` 现从同一实例的 `LLM.model_config.max_model_len` 构造
+`model_context`，沿用已有引擎／配置身份与摘要格式。缺失、非正整数、与显式值不符、
+输出上限不容纳或同一实例内变化时拒绝 ready；不会从旧缺省补出观察值。
+无效 ready 后已分配的实例仍由原 owner 关闭，私有管道继续传递原错误结果。
+关闭未确认时不再发布 ready；重试确认后仍可查询已关闭实例的上下文。
+接口依据为[vLLM 0.25.1 原生实现](https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/entrypoints/llm.py)。
+
+本节记录早期只补同步回执的增量：当时原 `LLM` 构造参数、`chat`、结果转换和关闭实现保持，
+4096／8／4096 及链传播尚待迁移；后续当前实现见[同步参数所有权](#sync-native-context-ownership)。CPU native-API stub
+刻意允许原生报告与配置缺省不同，以检查来源；这不表示真实 vLLM 会忽略显式参数。
+[CPU 检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_context_checks.json)
+包含原生 API stub、实际本机私有管道、失败 ready 与子进程回收，不证明真实模型资格。
+
+
+### 当前模块中的准备与派发交错候选
+
+`create_records_core` 可显式传 `interleaved_preparation=True` 与
+`event_driven_preparation=True`，只支持预检完整有限 source 的固定 rolling token 请求，
+默认均为 False；Movie JSON／CLI 不接收这些选项。实现沿用 `b258c575` 的已审机制，
+查询循环位于 `records_query_runtime`，继续使用原 MethodDriver、Core、RPC 接纳及结果消费。
+不改变 LOTUS 请求、Filter→Map 原数据、Extract 的完整关系条件、单记录补位或原生引擎参数。
+
+当前组合将准备行数判断改为 MethodBudgetPool 的实际行数，字节不足时保留原退让；
+Core 的 held_tasks 不再被用作是否订阅 RPC 通知的请求容量判断。RPC 快照只描述已有许可状态，
+ACK 不归还 compute／结果／unknown。原帧头及逐候选计量缓存继续使用，附带原生上下文校验。
+关闭、拒绝、重绑和不确定回执仍由各自原管理对象处理。
+
+[组合记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/prepared_supply_composition_checks.json)
+包含显式独立预算、Method 行／字节先于请求额度用完、held_tasks=1、None 加完整预算的公共工厂
+检查。继承测试不全部算作新方法；默认关闭的回归另核。旧候选一次单许可 CPU 查询明显变慢，
+原结果保留，局部较早派发不证明完整查询变快。没有真实模型、Ray 或 GPU 资格。
+
+
+### legacy 资源反馈的等待中快照
+
+旧反馈适配器保留同一模型、同一查询中仍可使用的原始帧，供已有非阻塞观察者处理序号去重和一次消费。
+新 RPC 等待期间不清掉尚未消费的帧；没有有效来源、响应错误、请求到期、模型／查询变化仍清除。
+缓存不刷新时间、速率或采样代数，缺少原始序号的帧不重复发布；原公开 sample 仍在等待时返回空值。
+到期取消后继续持有同一未完成 RPC，不因此释放不确定请求或模型资源。
+现代 RecordsNativeSampler 已有等待中保留处理，本批不改其实现或公共观察者对空返回的解释。
+[检查摘要](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/pending_frame_checks.json)
+保存原反例和 geometric 的独立年龄问题；保留帧不保证控制器接受超出自身设置年龄的输入。
+
+
+### Movie 配置到已有准备选项的接线
+
+Movie 入口新增默认关闭的 preparation_mode，serial 与省略相同；interleaved／event_driven
+映射到上面的 SDK 选项。纯组批解析与 PreparedRecordsCore 使用同一准备选项检查；配置、预检、
+工厂、实际回执及校准身份相互对应。只支持已实现的固定 rolling token 路径，不接动态反馈。
+详细取值与后期提示错误可能保留合法前缀用量的说明见
+[Movie 配置](../../experiments/movie_matrix.README.md#record-preparation-mode)；
+[CPU 接线检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)
+不扩大到真实模型、任意链、自动容量或性能结论。
+
+
+### 同步逐调用的实际长度检查
+
+共享同步内核现使 ready 和 run_prepared 使用同一模型上下文核对。即使调用者没有先读 ready，
+也须在 chat 与调用数预留之前确认实际长度；同一实例的长度变化、未知值或显式配置不匹配均拒绝。
+实际长度替换内核运行中的旧长度缓存，关闭未确认／已关闭／忙碌的拒绝行为继续保留。
+[逐调用 CPU 检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_generation_checks.json)
+包含省略／显式配置、大小上下文、不同阶段输出及调用额度。本节对应只补逐调用检查的早期增量；
+同步构造、fused 与完整提示的后续迁移分别由[同步参数所有权](#sync-native-context-ownership)说明。
+
+<a id="sync-native-context-ownership"></a>
+### 同步参数所有权与完整提示检查
+
+当前 SemLoom 的同步 `VllmEngine` 仅向 vLLM 0.25.1 传显式指定的 max_model_len、max_num_seqs、
+max_num_batched_tokens；省略／null 时由实际模型和引擎解析。ready 同时记录 requested spec、实际上下文、
+实际构造参数和 native_capacity；后者是配置观测，空闲内存仍未知。BF16、显存比例 0.8 与单卡支持范围保持。
+
+同步调用使用同一 LLM 的原生聊天渲染，核对每条完整提示 tokens 加 max_tokens 后再加入原生队列，
+不重新套模板、不截断原文。渲染或总长预检失败是明确未提交，调用数不增加；进入原生队列后异常仍为
+unknown，预留不退。回执 token IDs 与预检输入不同则失败并保留实际用量。原生 API 来自固定版本的
+[离线方法](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/offline_utils.py)和
+[LLM](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/llm.py)；未修改 vLLM 源码。
+
+fused worker 不再把省略上下文改成 4096；首次模型调用前核实同一 spec／engine_uid 的成功 ready，
+各阶段与关系复用继续检查实际值。组批回执记录实际上下文摘要和模型身份，缓存不跨模型复用；
+未知或错误 ready 拒绝提交，模型分配和清理的不确定性仍单独保留。普通与 static session 的当前 SemLoom
+预检也仅对显式上下文提前检查，实际值仍需 ready 后核实，CPU 计划检查不是模型就绪证明。
+
+原生 Ray／Daft／IMLane 对照改由 baselines 的 ReferenceVllmEngine／ReferenceFusedChainBatch
+明确保留原参数和 `LLM.chat`；共用 IPC、方法、结果与清理。旧导入和历史具名原件保持。
+[CPU 检查与原始缺项](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_default_checks.json)
+分别记录新行为、原生对照和来源核对；真实模型／GPU、自动容量、geometric 及计算中关闭仍待验证。

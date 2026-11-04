@@ -1,0 +1,636 @@
+{
+  "schema": "semloom.sync_default_ownership_cpu.v1",
+  "base": "129c5555092facf3582266d1a17feebf0184f55f",
+  "scope": "Current synchronous omission, complete native prompt preflight, fused actual-context binding and explicit native-reference parameters over shared execution.",
+  "implementation": {
+    "current_omitted": [
+      "max_model_len",
+      "max_num_seqs",
+      "max_num_batched_tokens"
+    ],
+    "explicit_values_preserved": true,
+    "complete_rendered_prompt_plus_output_guard": true,
+    "native_render_once": true,
+    "native_request_queue_and_wait": true,
+    "unknown_enqueue_keeps_reservations": true,
+    "fused_omitted_context_is_not_rewritten": true,
+    "fused_ready_checked_before_submission": true,
+    "failed_ready_is_known_unsubmitted": true,
+    "uncertain_allocation_cleanup_kept": true,
+    "native_reference_defaults": {
+      "max_model_len": 4096,
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 4096
+    },
+    "native_reference_uses_original_chat": true,
+    "shared_process_method_result_and_cleanup": true
+  },
+  "CPU": {
+    "fused_ready_and_migration": {
+      "selected": 90,
+      "run": 90,
+      "passed": 88,
+      "failed_records": 1,
+      "error_records": 1,
+      "failed_methods": [
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_unknown_keeps_usage_and_failure_receipt_without_retry"
+      ],
+      "error_methods": [
+        "tests.serving.test_fused_model_context.FusedModelContextTests.test_batch_estimates_are_reported_with_actual_owner_and_context_identity"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 16.218921542167664
+    },
+    "fused_ready_fixture_migration": {
+      "selected": 39,
+      "run": 39,
+      "passed": 39,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 20.038247999968007
+    },
+    "fused_ready_recheck": {
+      "selected": 33,
+      "run": 33,
+      "passed": 33,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 5.804515084018931
+    },
+    "fused_related_before": {
+      "selected": 81,
+      "run": 81,
+      "passed": 66,
+      "failed_records": 14,
+      "error_records": 15,
+      "failed_methods": [
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_daft_public_graph_receives_option_and_shared_worker",
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_dirty_unknown_close_keeps_audit_but_clean_close_releases",
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_ray_public_graph_receives_option_and_shared_worker",
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_unknown_keeps_usage_and_failure_receipt_without_retry",
+        "tests.execution_provider.test_chain_result_index.AssociationCollisionTests.test_real_integer_hash_collision_keeps_full_identity_and_order",
+        "tests.execution_provider.test_chain_result_index.CommonKernelTests.test_engine_and_publisher_failures",
+        "tests.execution_provider.test_chain_result_index.CommonKernelTests.test_linear_valid_identity_path",
+        "tests.execution_provider.test_chain_result_index.CommonKernelTests.test_valid_sizes_and_reordered_outputs"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_core_public_entry_keeps_results_usage_parents_and_relation_phases",
+        "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_success_rebind_keeps_envelope_disk_and_two_consumers",
+        "tests.execution_provider.test_chain_result_index.AssociationCollisionTests.test_cancel_during_partial_result_keeps_known_usage_and_unknown",
+        "tests.execution_provider.test_chain_result_index.CommonKernelTests.test_all_identity_fields_participate",
+        "tests.execution_provider.test_lotus_record_local_query.QueryOwnerTests.test_default_fused_owner_matches_shared_kernel_reference",
+        "tests.experiments.test_record_chain_validation.ExecutionComparisonTests.test_C1_pair_uses_real_query_owners_and_one_model_per_query",
+        "tests.semantic_methods.test_lotus_chain_composition_oracle.CompositionOracleTests.test_deployment_change_after_EOF_is_rejected_without_mutating_resident_phase"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 16.31764266686514
+    },
+    "sync_defaults_after": {
+      "selected": 4,
+      "run": 4,
+      "passed": 4,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.03276320802979171
+    },
+    "sync_defaults_before": {
+      "selected": 4,
+      "run": 4,
+      "passed": 1,
+      "failed_records": 0,
+      "error_records": 3,
+      "failed_methods": [],
+      "error_methods": [
+        "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_current_omission_does_not_supply_legacy_capacity_parameters",
+        "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_native_reference_keeps_explicit_values_and_early_output_check",
+        "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_native_reference_owns_its_original_optional_defaults"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.01210333313792944
+    },
+    "sync_defaults_combined": {
+      "selected": 1936,
+      "run": 1928,
+      "passed": 1891,
+      "failed_records": 0,
+      "error_records": 11,
+      "failed_methods": [],
+      "error_methods": [
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes",
+        "tests.experiments.test_native_query_lifecycle.FiniteRayKernelLifecycleTests.test_two_isolated_queries_keep_new_engine_identity_and_close_each_engine",
+        "tests.experiments.test_native_query_lifecycle.RayDriverReuseTests.test_changed_runtime_is_rejected_and_not_shutdown_as_our_original",
+        "tests.experiments.test_native_query_lifecycle.RayDriverReuseTests.test_existing_isolated_mode_still_creates_and_closes_two_runtimes",
+        "tests.experiments.test_native_query_lifecycle.RayDriverReuseTests.test_query_error_preserves_original_failure_and_stops_before_next_graph",
+        "tests.experiments.test_native_query_lifecycle.RayDriverReuseTests.test_real_driver_reuses_runtime_but_native_kernel_is_new_and_closed_per_query",
+        "tests.experiments.test_native_query_lifecycle.RayDriverReuseTests.test_shutdown_return_does_not_claim_success_if_runtime_remains_initialized"
+      ],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 251.3877664168831
+    },
+    "sync_defaults_final": {
+      "selected": 1936,
+      "run": 1928,
+      "passed": 1897,
+      "failed_records": 1,
+      "error_records": 0,
+      "failed_methods": [
+        "tests.execution_provider.test_event_state_preparation.EventPreparationTests.test_partial_ready_uses_other_RPC_permits_while_first_ack_is_delayed"
+      ],
+      "error_methods": [],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 253.79530237498693
+    },
+    "sync_defaults_verified": {
+      "selected": 1936,
+      "run": 1928,
+      "passed": 1898,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 261.7197127500549
+    },
+    "sync_entry_preflight": {
+      "selected": 21,
+      "run": 21,
+      "passed": 18,
+      "failed_records": 0,
+      "error_records": 4,
+      "failed_methods": [],
+      "error_methods": [
+        "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_defers_omitted_context_to_actual_readiness",
+        "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_keeps_explicit_context_presubmit_check",
+        "tests.experiments.test_movie_records_session.PlanTests.test_native_session_retains_its_original_context_default"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 4.003500416874886
+    },
+    "sync_history_and_lifecycle": {
+      "selected": 29,
+      "run": 29,
+      "passed": 29,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 1.8710617909673601
+    },
+    "sync_native_related": {
+      "selected": 76,
+      "run": 76,
+      "passed": 55,
+      "failed_records": 14,
+      "error_records": 22,
+      "failed_methods": [
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_cancel_between_batches_preserves_returned_prefix_without_later_model_calls",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_failed_native_batch_keeps_prefix_unknown_and_never_submits_suffix",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_idle_reaper_first_after_buffer_error_confirms_API_and_preserves_prefix",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_invalid_success_stops_following_native_groups_before_stage_parsing",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_later_buffer_failure_keeps_the_completed_prefix_and_stops_submission",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_malformed_batch_does_not_erase_known_prefix_or_trigger_more_batches",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_no_row_cap_keeps_oversize_EOF_cancel_and_unknown_semantics",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_no_row_cap_retains_the_separate_byte_guard",
+        "tests.serving.test_shared_chain_migration.WorkerLifecycleTests.test_completed_source_keeps_calls_audit_and_closes_model_once",
+        "tests.serving.test_shared_chain_migration.WorkerLifecycleTests.test_open_relation_phase_reuses_one_process_and_rejects_stage_reuse"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_disabled_batching_retains_original_read_batches_and_needs_no_tokenizer",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_empty_source_and_all_filtered_rows_complete_without_phantom_calls",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_multi_stage_token_mode_rejects_before_source_and_model",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_no_row_cap_at_B17506_is_not_replaced_by_128_or_read_chunk_size",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_read_chunk_sizes_do_not_change_short_long_or_mixed_model_groups",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_real_native_facing_batch_boundaries_change_without_changing_semantics",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_row_and_byte_guards_are_independent_and_report_why_they_flush",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_single_stage_relation_flag_keeps_the_token_row_guard_in_core",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_tail_merges_across_reads_and_larger_B_changes_groups_at_constant_C",
+        "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_token_batch_can_exceed_64_reads_and_engine_sequence_capacity",
+        "tests.serving.test_shared_chain_migration.WorkerLifecycleTests.test_failed_method_preserves_usage_cleanup_and_does_not_submit_queued_batch"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 15.068841541185975
+    },
+    "sync_native_rendered": {
+      "selected": 21,
+      "run": 21,
+      "passed": 21,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.05677312519401312
+    },
+    "sync_reference_routes": {
+      "selected": 28,
+      "run": 28,
+      "passed": 24,
+      "failed_records": 0,
+      "error_records": 5,
+      "failed_methods": [],
+      "error_methods": [
+        "tests.serving.test_sync_model_context.SyncContextPipeTests.test_invalid_native_context_never_produces_ready_and_the_child_is_collected",
+        "tests.serving.test_sync_model_context.SyncContextPipeTests.test_ready_context_crosses_the_existing_private_pipe_with_its_identity",
+        "tests.serving.test_sync_reference_routes.SyncReferenceRouteTests.test_both_reference_child_entries_transmit_their_actual_ready_context",
+        "tests.serving.test_sync_reference_routes.SyncReferenceRouteTests.test_record_adapters_select_native_reference_owner"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.4684311249293387
+    },
+    "sync_reference_routes_recheck": {
+      "selected": 15,
+      "run": 15,
+      "passed": 15,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 1.2492928749416023
+    },
+    "sync_session_preflight_final": {
+      "selected": 8,
+      "run": 8,
+      "passed": 8,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.1476671660784632
+    },
+    "sync_session_preflight_recheck": {
+      "selected": 8,
+      "run": 8,
+      "passed": 6,
+      "failed_records": 2,
+      "error_records": 0,
+      "failed_methods": [
+        "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_keeps_explicit_context_presubmit_check",
+        "tests.experiments.test_movie_records_session.PlanTests.test_native_session_retains_its_original_context_default"
+      ],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.14433704200200737
+    }
+  },
+  "new_feature_methods": [
+    "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_defers_omitted_context_to_actual_readiness",
+    "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_keeps_explicit_context_presubmit_check",
+    "tests.experiments.test_movie_records_session.PlanTests.test_native_session_retains_its_original_context_default",
+    "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_current_explicit_parameters_are_forwarded_exactly",
+    "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_current_omission_does_not_supply_legacy_capacity_parameters",
+    "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_native_reference_keeps_explicit_values_and_early_output_check",
+    "tests.serving.test_sync_default_ownership.SyncDefaultOwnershipTests.test_native_reference_owns_its_original_optional_defaults",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_deadline_after_rendering_prevents_submission",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_exact_total_length_is_allowed_and_native_rendering_occurs_once",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_later_oversize_member_cannot_enqueue_an_earlier_valid_member",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_native_reference_keeps_original_chat_API_and_messages",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_native_renderer_exception_does_not_reserve_or_submit",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_native_submission_exception_retains_unknown_and_call_reservations",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_one_token_over_is_known_unsubmitted_without_spending_a_call",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_returned_prompt_mismatch_keeps_observed_usage_and_fails",
+    "tests.serving.test_sync_native_rendering.SyncNativeRenderingTests.test_unavailable_rendering_is_known_unsubmitted",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_batch_estimates_are_reported_with_actual_owner_and_context_identity",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_context_failure_keeps_allocation_cleanup_unknown",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_explicit_context_is_checked_against_the_same_process",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_later_stage_output_is_checked_before_the_first_model_call",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_missing_failed_closed_or_foreign_ready_never_submits",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_native_reference_specialization_keeps_original_fused_context",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_omission_retains_requested_identity_and_actual_large_context",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_relation_phase_reuse_rechecks_context_without_mutating_the_phase",
+    "tests.serving.test_fused_model_context.FusedModelContextTests.test_separate_owners_do_not_reuse_another_context_observation",
+    "tests.serving.test_sync_reference_routes.SyncReferenceRouteTests.test_author_environment_keeps_native_reference_processes",
+    "tests.serving.test_sync_reference_routes.SyncReferenceRouteTests.test_both_reference_child_entries_transmit_their_actual_ready_context",
+    "tests.serving.test_sync_reference_routes.SyncReferenceRouteTests.test_model_side_reference_entry_does_not_import_driver_or_policy",
+    "tests.serving.test_sync_reference_routes.SyncReferenceRouteTests.test_record_adapters_select_native_reference_owner"
+  ],
+  "new_feature_method_count": 29,
+  "all_code_fingerprints": 1306,
+  "all_final_code_hashes_match": true,
+  "unchanged_sources": {
+    "base": "129c5555092facf3582266d1a17feebf0184f55f",
+    "files": [
+      {
+        "path": "code/src/serving/backends/vllm_protocol.py",
+        "sha256": "a570b9e4e41738d51da975319c6366d2b9efd7026ae57c563bc6562bd6cd9a70"
+      },
+      {
+        "path": "code/src/serving/backends/vllm_async_engine.py",
+        "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8"
+      },
+      {
+        "path": "code/src/scheduling/submission_control/adaptive.py",
+        "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+      },
+      {
+        "path": "code/src/scheduling/submission_control/request_scan.py",
+        "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+      },
+      {
+        "path": "code/src/scheduling/submission_control/resource_probe.py",
+        "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+      },
+      {
+        "path": "code/src/scheduling/submission_control/stage_work.py",
+        "sha256": "d80e199974f6015071832031c79fdaa8274a2568c16e1541e4526e3d802f697d"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/records_capacity.py",
+        "sha256": "e9f5bcd4a9685f012d11a63eb13238745851db1ebab8b2052056bbec4c03708f"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+        "sha256": "d834ecb65b7ddb9e58937aa9485ea70420fe1c34c2b241f2a45f66032d9516cc"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "sha256": "13551c804d4c0e5eda28291739c8dbbe533a9619d8f568a2b59b967688288405"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "sha256": "a53b335dc8fabe23e6ef1aceff56a2793defb6dd8a777f8a42b3448fd3a01350"
+      },
+      {
+        "path": "code/tests/execution_provider/test_core_geometric_admission.py",
+        "sha256": "d29fd8c07142e25ce56326ec6783ed0c61969e51de55bdaef1129b7c9bb84d34"
+      },
+      {
+        "path": "code/tests/execution_provider/test_lotus_record_local_priority.py",
+        "sha256": "d4e593ed1a4d6ee104e6ef55b37db2d83800165b6addc6e6d1f85486f245bf9c"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/records_query_runtime.py",
+        "sha256": "80bc07970410a8df29105b8f7ac3e0bcf52897013eeefa4e9da6994cf16e09eb"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_chain_token_batches.py",
+        "sha256": "8c85aa3397e69aef41f62cc21d05ca573c980b34b1b72b43576643e5abff04b2"
+      },
+      {
+        "path": "code/src/scheduling/runtime/async_backend.py",
+        "sha256": "a4259e036f9b1eeb182e53037de5c098ce3eb0e3ac7584eaf833d74258c4a074"
+      }
+    ],
+    "method_AST": [
+      {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "unchanged_methods": [
+          "mfu_snapshot",
+          "_new_sampling",
+          "_context_report",
+          "_result",
+          "close"
+        ]
+      },
+      {
+        "path": "code/src/serving/backends/vllm_sync_process.py",
+        "unchanged_methods": [
+          "__init__",
+          "_command",
+          "_check",
+          "_exchange",
+          "run_prepared",
+          "mfu_snapshot",
+          "_reap_idle",
+          "_run_prepared",
+          "_result_failure",
+          "close",
+          "_close"
+        ]
+      },
+      {
+        "path": "code/src/serving/backends/staged_generation_process.py",
+        "unchanged_methods": [
+          "_command",
+          "_check",
+          "run_prepared"
+        ]
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+        "unchanged_class": "_SectionTransport"
+      }
+    ]
+  },
+  "compressed_methods": {
+    "path": "raw/sync_default_methods.json.gz",
+    "decoded_bytes": 1937259,
+    "decoded_sha256": "6939adb4182421110523f74cd82a391080a9da7808d22154d33e21c37339b88a",
+    "archive_bytes": 319952,
+    "archive_sha256": "7097e81d9f08b39bcb398fdee2a75f2e5211b035d44f7389eb9156022ca7d9a3",
+    "run_count": 17,
+    "all_public_copies_exactly_reconstruct": true,
+    "private_originals_preserved": true,
+    "original_recovery_requires_private_archive": true,
+    "normalization": "raw/cpu_public_path_normalization.json"
+  },
+  "history": {
+    "schema": "semloom.sync_native_history_sources.v1",
+    "base": "129c5555092facf3582266d1a17feebf0184f55f",
+    "prior_new_mismatches": 11,
+    "exact_originals": [
+      {
+        "path": "experiments/reproduction/native_baselines/historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
+        "decoded_bytes": 6088,
+        "decoded_sha256": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+        "archive_sha256": "d79035cd95fb80c4660bdb76c8832de4fbe9a9eafb7d81a0bf1e1cf4f1ee391b"
+      },
+      {
+        "path": "experiments/reproduction/native_baselines/historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "decoded_bytes": 1654,
+        "decoded_sha256": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+        "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+      },
+      {
+        "path": "experiments/reproduction/native_baselines/historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz",
+        "decoded_bytes": 24608,
+        "decoded_sha256": "541dcdf79e9a9a93caaea73eb7e7c4d4621268c06921242d784edc0416eb85b4",
+        "archive_sha256": "4632c549b1cacd40cb4262e4e6b00d6ff79d0141afdc95b0d11ffa9efb3f22b7"
+      }
+    ],
+    "new_override_mappings": [
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/integrations/imlane_records/chain_udf.py",
+        "expected_sha256": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz"
+      },
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/integrations/imlane_records/model_process.py",
+        "expected_sha256": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/integrations/imlane_records/chain_udf.py",
+        "expected_sha256": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/integrations/imlane_records/model_process.py",
+        "expected_sha256": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/integrations/imlane_records/chain_udf.py",
+        "expected_sha256": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/integrations/imlane_records/model_process.py",
+        "expected_sha256": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/integrations/imlane_records/chain_udf.py",
+        "expected_sha256": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/integrations/imlane_records/model_process.py",
+        "expected_sha256": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/tests/experiments/test_native_query_lifecycle.py",
+        "expected_sha256": "541dcdf79e9a9a93caaea73eb7e7c4d4621268c06921242d784edc0416eb85b4",
+        "override": "historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/integrations/imlane_records/chain_udf.py",
+        "expected_sha256": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/integrations/imlane_records/model_process.py",
+        "expected_sha256": "12e8ae85abbf53bdaa9531fb11549b9653410198f6e2c4801c808b31799d2a00",
+        "override": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+      }
+    ],
+    "bindings": 3010,
+    "mismatches_after": 0,
+    "old_expected_hashes_projection_ids_source_revisions_and_mappings_preserved": true
+  },
+  "native_pipeline_source_check": "raw/sync_native_pipeline_source_check.json",
+  "ack_order_control": "raw/sync_ack_order_control.json",
+  "source_capacity_audit": "raw/sync_capacity_sources.json",
+  "original_failures": {
+    "initial_constructor_counterexamples": true,
+    "obsolete_ready_fixture_protocols": true,
+    "fixture_import_and_error_text_assumptions_corrected": true,
+    "sandbox_process_identity_access": "Original restricted-run errors retained; same methods passed with approved local CPU process observation.",
+    "first_full_combination": "Native fixture patched the previous shared class and three historical sources needed original-byte mappings; errors retained and expected historical hashes unchanged.",
+    "delayed_ack_fixture": "The next combination observed RPC wrapper entry before the actual held reply; the fixture now waits for that reply event. Production ordering, waits and capacity are unchanged."
+  },
+  "automatic_capacity": {
+    "implemented": false,
+    "ordinary_R": 2,
+    "default_IPC_result_slots": 8,
+    "missing": "Authoritative, exclusively owned service/deployment byte grant; shared headroom and native configuration are not that grant."
+  },
+  "geometric": {
+    "fixed": false,
+    "original_failure_and_negative_timing_retained": true,
+    "passed_in_final_CPU_run": true
+  },
+  "limitations": [
+    "CPU substitutions and local private pipes only; real vLLM/model, Ray/GPU, PG integration and performance unverified.",
+    "Method skips and class-level unexecuted methods remain; all selected methods are not qualified.",
+    "BF16, memory ratio 0.8, ordinary R2 and default IPC result slots8 remain; automatic capacity is not implemented.",
+    "Original geometric instability and accepted-but-still-computing shutdown remain open.",
+    "Current sync pre-renders its finite ready batch before enqueue; native baselines retain their original chat path."
+  ],
+  "independent_review": "pending exact final tree",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

@@ -11,7 +11,7 @@ from urllib import error, request
 _LE_LABEL = re.compile(r'(?:^|,)le="([^"]+)"(?:,|$)')
 
 
-def effective_capacity_snapshot(config):
+def effective_capacity_snapshot(config, *, source=None):
     """Read the constructed engine's config, never fill from launch requests.
 
     KV blocks may still be unknown in the AsyncLLM parent. Even known blocks
@@ -35,7 +35,8 @@ def effective_capacity_snapshot(config):
         status="observed_effective_config" if all(values[k] is not None for k in (
             "max_num_seqs", "max_num_batched_tokens", "max_model_len")) else "partial_or_unavailable",
         **values, kv_free_bytes=None, physical_free_bytes=None,
-        source="constructed AsyncLLM.vllm_config; not free capacity or a measured performance plateau")
+        source=("constructed AsyncLLM.vllm_config; not free capacity or a measured performance plateau"
+                if source is None else source))
 
 
 def parse_prometheus_metrics(text: str) -> dict[str, float]:

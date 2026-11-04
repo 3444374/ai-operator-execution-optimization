@@ -43,6 +43,15 @@ class _Pending:
     producer_stopped: bool = False
 
 
+@dataclass(frozen=True)
+class BackendProgress:
+    """Notification state only; it neither grants nor releases task capacity."""
+
+    generation: int
+    pending: bool
+    contended: bool
+
+
 class BoundedAsyncBackend:
     """Bound coroutine and result slots; responses and confirmed failures produce terminals.
 
@@ -69,6 +78,10 @@ class BoundedAsyncBackend:
         self._cancel_pending = cancel_pending
         self._maximum, self._notify = max_tasks, notify
         self._lock = threading.Lock()
+        # Completion callbacks may run synchronously while _lock is held.
+        self._progress_lock = threading.Lock()
+        self._progress_generation = 0
+        self._progress_pending = self._progress_contended = False
         self._slots: dict[TaskKey, _Pending] = {}
         self._loop = asyncio.new_event_loop()
         self._ready = threading.Event()
@@ -91,7 +104,19 @@ class BoundedAsyncBackend:
 
     def _completed(self, key: TaskKey) -> None:
         self._slots[key].completed_order = next(self._completion_counter)
+        self._publish_progress()
+
+    def _publish_progress(self):
+        with self._progress_lock:
+            self._progress_generation += 1
+            self._progress_pending = True
+            self._progress_contended = False
         self._notify()
+
+    def progress(self) -> BackendProgress:
+        with self._progress_lock:
+            return BackendProgress(self._progress_generation,
+                                   self._progress_pending, self._progress_contended)
 
     def try_submit(self, task: BackendTask, endpoint: str) -> Submission:
         if not self._lock.acquire(blocking=False):
@@ -154,7 +179,10 @@ class BoundedAsyncBackend:
     ) -> tuple[Terminal | Uncertain, ...]:
         if type(max_events) is not int or max_events <= 0:
             raise ValueError("max_events must be positive")
+        observed = self.progress().generation
         if not self._lock.acquire(blocking=False):
+            with self._progress_lock:
+                self._progress_contended = True
             return ()
         try:
             events = []
@@ -222,6 +250,12 @@ class BoundedAsyncBackend:
             for event in result:
                 if type(event) is Terminal:
                     del self._slots[event.key]
+            with self._progress_lock:
+                if self._progress_generation == observed:
+                    # A full poll conservatively retains a drain obligation.
+                    # A later empty poll may settle it; contention never does.
+                    self._progress_pending = len(result) == max_events
+                    self._progress_contended = False
             return result
         finally:
             self._lock.release()
@@ -255,7 +289,7 @@ class BoundedAsyncBackend:
             count = sum(not slot.producer_stopped for slot in slots)
             for slot in slots:
                 slot.producer_stopped = True
-        self._notify()
+        self._publish_progress()
         return count
 
     def close(self, timeout: float = 5.0, *, wait_pending=False) -> bool:

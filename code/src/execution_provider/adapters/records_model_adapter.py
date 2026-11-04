@@ -7,7 +7,7 @@ from contextlib import nullcontext
 import json
 
 from src.semantic_methods.lotus.records import CallLedger, identity
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 from .lotus_records_actor_owner import RecordsActorOwner, _ModelActor
 

@@ -33,7 +33,7 @@ class FeedbackLifetimeTests(unittest.TestCase):
             _actors=SimpleNamespace(model_ready=dict(engine_uid='same-model'),
                 model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
                 ray=SimpleNamespace(cancel=lambda ref,**kw:self.cancels.append(ref))))
-        options=dict(kind='resource_feedback',poll_interval_s=.01)
+        options=dict(kind='legacy_resource_feedback',poll_interval_s=.01)
         if gpu:options['gpu_ids']=['GPU-CPU-fixture']
         fb=core._CoreFeedback(owner,options)
         patcher=patch.object(core,'NonBlockingMetricsObservationProvider',Provider)

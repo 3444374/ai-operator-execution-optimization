@@ -15,7 +15,7 @@ import time
 from src.semantic_methods.lotus.records import CallLedger
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import (
+from src.serving.backends.vllm_protocol import (
     EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared, result_record,
 )
 
@@ -45,6 +45,18 @@ class _Call:
     poll_exposed: bool = False
     max_result_bytes: int | None = None
     deadline: float | None = None
+
+
+@dataclass(frozen=True)
+class DataRpcProgress:
+    """Read-only handoff opportunity; the existing RPC gate retains every permit."""
+
+    generation: int
+    workers: int
+    pending: int
+    inflight: int
+    batch_submits_pending: int
+    unconfirmed: int
 
 
 class AsyncCoreModelActor:
@@ -120,6 +132,13 @@ class AsyncCoreModelActor:
                 closing=self._closing, unhealthy=self._unhealthy,
                 active_readers=self._readers,
                 ipc=None if self.engine is None else self.engine.snapshot())
+            if self.engine is not None:
+                from .records_native_source import native_sample_age
+                ipc = value['ipc']
+                age = native_sample_age(ipc.get('native_feedback') if isinstance(ipc, dict) else None,
+                    self.engine.ready_report, captured_at_s=time.monotonic())
+                if age is not None:
+                    value['native_sample_age'] = age
         if observe_resources:
             # The same owned RPC reads the model actor's allocated device, not
             # a driver's potentially different host. Never hold the model's
@@ -715,6 +734,55 @@ class AsyncRecordsActorOwner(_ActorOwner):
         self._rpc_pending = self._rpc_inflight = 0
         self._rpc_unconfirmed = {}
         self._rpc_state_lock = threading.Condition()
+        self._rpc_observer = None
+        self._rpc_generation = self._rpc_batch_submits_pending = 0
+        self._rpc_subscription = self._rpc_unsubscribe = None
+        self._rpc_observer_error = None
+
+    def _bind_rpc_progress(self, notify):
+        if not callable(notify):
+            raise TypeError('RPC progress observer must be callable')
+        with self._rpc_state_lock:
+            if self._rpc_pending:
+                raise RuntimeError('RPC progress cannot rebind while calls are pending')
+            token = object()
+            def current():
+                with self._rpc_state_lock:
+                    if self._rpc_subscription is not token:
+                        return
+                notify()
+            self._rpc_observer = current
+            self._rpc_subscription, self._rpc_unsubscribe = token, None
+            self._rpc_generation += 1
+            return token
+
+    def _unbind_rpc_progress(self, token):
+        with self._rpc_state_lock:
+            if self._rpc_subscription is not token:
+                return False
+            if self._rpc_pending:
+                self._rpc_unsubscribe = token
+                return False
+            self._rpc_observer = self._rpc_subscription = self._rpc_unsubscribe = None
+            return True
+
+    def _publish_rpc_progress(self, observer):
+        if observer is not None:
+            try:
+                observer()
+            except Exception as error:
+                self._rpc_observer_error = type(error).__name__
+
+    def _rpc_changed_locked(self):
+        if self._rpc_observer is not None:
+            self._rpc_generation += 1
+        return self._rpc_observer
+
+    def _data_rpc_progress(self):
+        with self._rpc_state_lock:
+            return DataRpcProgress(self._rpc_generation, self.rpc_workers,
+                self._rpc_pending, self._rpc_inflight, self._rpc_batch_submits_pending,
+                len(self._rpc_unconfirmed))
 
     @classmethod
     def for_prepared(cls, engine, generation, resources, *, limits=None, capacity=None):
@@ -777,6 +845,8 @@ class AsyncRecordsActorOwner(_ActorOwner):
                 self._rpc_loop = loop
                 self._rpc_wake = asyncio.Event()
             self._rpc_pending += 1
+            tracked_batch = self._rpc_observer is not None and method == 'try_submit_prepared_batch'
+            self._rpc_batch_submits_pending += int(tracked_batch)
             wake = self._rpc_wake
         acquired = issued = finished = False
         ref = None
@@ -788,11 +858,17 @@ class AsyncRecordsActorOwner(_ActorOwner):
                     return
                 finished = True
                 self._rpc_pending -= 1
+                self._rpc_batch_submits_pending -= int(tracked_batch)
                 if acquired:
                     self._rpc_inflight -= 1
                 self._rpc_unconfirmed.pop(id(ref), None)
+                if (not self._rpc_pending and self._rpc_unsubscribe is not None
+                        and self._rpc_unsubscribe is self._rpc_subscription):
+                    self._rpc_observer = self._rpc_subscription = self._rpc_unsubscribe = None
+                observer = self._rpc_changed_locked()
                 self._rpc_state_lock.notify_all()
             self._notify_rpc(loop, wake)
+            self._publish_rpc_progress(observer)
 
         def unconfirmed():
             with self._rpc_state_lock:
@@ -801,8 +877,10 @@ class AsyncRecordsActorOwner(_ActorOwner):
                 # Only observer failures retain opaque RPC refs, at most the
                 # data worker budget; model requests still use held/tickets.
                 self._rpc_unconfirmed[id(ref)] = (ref, release)
+                observer = self._rpc_changed_locked()
                 self._rpc_state_lock.notify_all()
             self._notify_rpc(loop, wake)
+            self._publish_rpc_progress(observer)
 
         def terminal(future):
             if future.cancelled():

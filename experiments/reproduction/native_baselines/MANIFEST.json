@@ -706,9 +706,68 @@
         "code/tests/scheduling/test_async_backend.py": "historical_sources/5ff54bfe/code/tests/scheduling/test_async_backend.py",
         "code/src/scheduling/submission_control/ucb.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py",
         "code/src/scheduling/__init__.py": "historical_sources/bfb9100e/code/src/scheduling/__init__.py",
-        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py",
+        "code/scripts/analysis/estimate_operator_cost.py": "historical_sources/bfb9100e/code/scripts/analysis/estimate_operator_cost.py",
+        "code/scripts/profiling/pgai_sql_operator_profile.py": "historical_sources/bfb9100e/code/scripts/profiling/pgai_sql_operator_profile.py",
+        "code/scripts/experiments/run_saor_project_mechanism.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_project_mechanism.py.gz",
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_ceiling.py.gz",
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_gap_diagnostic.py.gz",
+        "code/src/observability/metrics/resources.py": "historical_sources/e8eb3455/code/src/observability/metrics/resources.py",
+        "code/src/scheduling/core/session_policy.py": "historical_sources/21909415/code/src/scheduling/core/session_policy.py",
+        "code/tests/execution_provider/test_core_query_capacity.py": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+        "code/src/experiments/sembench_records_formal.py": "historical_sources/29de82be/code/src/experiments/sembench_records_formal.py",
+        "code/src/semantic_methods/lotus/record_relation.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/record_relation.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "historical_sources/29de82be/code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+        "code/src/semantic_methods/lotus/cascade.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/cascade.py",
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": "historical_sources/4fec5472/code/scripts/baselines/time_duckdb_ai_baseline.py.gz",
+        "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
+        "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
+        "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
       },
-      "default_selected": false
+      "default_selected": false,
+      "source_formats": {
+        "code/scripts/experiments/run_saor_project_mechanism.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3293,
+          "archive_sha256": "73756121d36cb3fcb4c026270c1e5d2174c1b36ae8f4106f5db7a96704f06d7d"
+        },
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2929,
+          "archive_sha256": "c2f9dc2c537dc7e295843dcca1a7fdbcbb6e1679af2d609572a7c424306f2f1d"
+        },
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3851,
+          "archive_sha256": "45ff13e5b2c3793092d1e45d1f25d667c25720019fc99ccdfc2094d29682ea7f"
+        },
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7580,
+          "archive_sha256": "b8bcbc3aacc4d9293aa0b9da1e716e64a47bab43224b6465db6b399fddffd457"
+        },
+        "code/scripts/data/build_opening_multijob_manifests.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7034,
+          "archive_sha256": "28084131fb403ccae05b65c841d92029c56626afa8d2abe781a7dbddf78408e2"
+        },
+        "code/scripts/profiling/daft_text_organizer_smoke.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4022,
+          "archive_sha256": "901652265a073f5494405792ddda11461d14c17a6a4dbed04e6bd1317c9b07b5"
+        },
+        "code/integrations/imlane_records/chain_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6088,
+          "archive_sha256": "d79035cd95fb80c4660bdb76c8832de4fbe9a9eafb7d81a0bf1e1cf4f1ee391b"
+        },
+        "code/integrations/imlane_records/model_process.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1654,
+          "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        }
+      }
     },
     "core_original_dynamic": {
       "original_source_revision": "snapshot:sha256:79e8f10349cff6b754a299c39982731da0cf023997f28ce5f3b52b1aa9da8eb3",
@@ -1441,9 +1500,68 @@
         "code/tests/scheduling/test_async_backend.py": "historical_sources/5ff54bfe/code/tests/scheduling/test_async_backend.py",
         "code/src/scheduling/submission_control/ucb.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py",
         "code/src/scheduling/__init__.py": "historical_sources/bfb9100e/code/src/scheduling/__init__.py",
-        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py",
+        "code/scripts/analysis/estimate_operator_cost.py": "historical_sources/bfb9100e/code/scripts/analysis/estimate_operator_cost.py",
+        "code/scripts/profiling/pgai_sql_operator_profile.py": "historical_sources/bfb9100e/code/scripts/profiling/pgai_sql_operator_profile.py",
+        "code/scripts/experiments/run_saor_project_mechanism.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_project_mechanism.py.gz",
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_ceiling.py.gz",
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_gap_diagnostic.py.gz",
+        "code/src/observability/metrics/resources.py": "historical_sources/e8eb3455/code/src/observability/metrics/resources.py",
+        "code/src/scheduling/core/session_policy.py": "historical_sources/21909415/code/src/scheduling/core/session_policy.py",
+        "code/tests/execution_provider/test_core_query_capacity.py": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+        "code/src/experiments/sembench_records_formal.py": "historical_sources/29de82be/code/src/experiments/sembench_records_formal.py",
+        "code/src/semantic_methods/lotus/record_relation.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/record_relation.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "historical_sources/29de82be/code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+        "code/src/semantic_methods/lotus/cascade.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/cascade.py",
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": "historical_sources/4fec5472/code/scripts/baselines/time_duckdb_ai_baseline.py.gz",
+        "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
+        "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
+        "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
       },
-      "default_selected": false
+      "default_selected": false,
+      "source_formats": {
+        "code/scripts/experiments/run_saor_project_mechanism.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3293,
+          "archive_sha256": "73756121d36cb3fcb4c026270c1e5d2174c1b36ae8f4106f5db7a96704f06d7d"
+        },
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2929,
+          "archive_sha256": "c2f9dc2c537dc7e295843dcca1a7fdbcbb6e1679af2d609572a7c424306f2f1d"
+        },
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3851,
+          "archive_sha256": "45ff13e5b2c3793092d1e45d1f25d667c25720019fc99ccdfc2094d29682ea7f"
+        },
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7580,
+          "archive_sha256": "b8bcbc3aacc4d9293aa0b9da1e716e64a47bab43224b6465db6b399fddffd457"
+        },
+        "code/scripts/data/build_opening_multijob_manifests.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7034,
+          "archive_sha256": "28084131fb403ccae05b65c841d92029c56626afa8d2abe781a7dbddf78408e2"
+        },
+        "code/scripts/profiling/daft_text_organizer_smoke.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4022,
+          "archive_sha256": "901652265a073f5494405792ddda11461d14c17a6a4dbed04e6bd1317c9b07b5"
+        },
+        "code/integrations/imlane_records/chain_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6088,
+          "archive_sha256": "d79035cd95fb80c4660bdb76c8832de4fbe9a9eafb7d81a0bf1e1cf4f1ee391b"
+        },
+        "code/integrations/imlane_records/model_process.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1654,
+          "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        }
+      }
     },
     "core_local_window_pairs": {
       "original_source_revision": "snapshot:sha256:5007e95b37703458acd5ea3af9731d19240eeb6fe1a4239e196075ab5a10742d",
@@ -2186,9 +2304,68 @@
         "code/tests/scheduling/test_async_backend.py": "historical_sources/5ff54bfe/code/tests/scheduling/test_async_backend.py",
         "code/src/scheduling/submission_control/ucb.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py",
         "code/src/scheduling/__init__.py": "historical_sources/bfb9100e/code/src/scheduling/__init__.py",
-        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py",
+        "code/scripts/analysis/estimate_operator_cost.py": "historical_sources/bfb9100e/code/scripts/analysis/estimate_operator_cost.py",
+        "code/scripts/profiling/pgai_sql_operator_profile.py": "historical_sources/bfb9100e/code/scripts/profiling/pgai_sql_operator_profile.py",
+        "code/scripts/experiments/run_saor_project_mechanism.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_project_mechanism.py.gz",
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_ceiling.py.gz",
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_gap_diagnostic.py.gz",
+        "code/src/observability/metrics/resources.py": "historical_sources/e8eb3455/code/src/observability/metrics/resources.py",
+        "code/src/scheduling/core/session_policy.py": "historical_sources/21909415/code/src/scheduling/core/session_policy.py",
+        "code/tests/execution_provider/test_core_query_capacity.py": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+        "code/src/experiments/sembench_records_formal.py": "historical_sources/29de82be/code/src/experiments/sembench_records_formal.py",
+        "code/src/semantic_methods/lotus/record_relation.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/record_relation.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "historical_sources/29de82be/code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+        "code/src/semantic_methods/lotus/cascade.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/cascade.py",
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": "historical_sources/4fec5472/code/scripts/baselines/time_duckdb_ai_baseline.py.gz",
+        "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
+        "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
+        "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
       },
-      "default_selected": false
+      "default_selected": false,
+      "source_formats": {
+        "code/scripts/experiments/run_saor_project_mechanism.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3293,
+          "archive_sha256": "73756121d36cb3fcb4c026270c1e5d2174c1b36ae8f4106f5db7a96704f06d7d"
+        },
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2929,
+          "archive_sha256": "c2f9dc2c537dc7e295843dcca1a7fdbcbb6e1679af2d609572a7c424306f2f1d"
+        },
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3851,
+          "archive_sha256": "45ff13e5b2c3793092d1e45d1f25d667c25720019fc99ccdfc2094d29682ea7f"
+        },
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7580,
+          "archive_sha256": "b8bcbc3aacc4d9293aa0b9da1e716e64a47bab43224b6465db6b399fddffd457"
+        },
+        "code/scripts/data/build_opening_multijob_manifests.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7034,
+          "archive_sha256": "28084131fb403ccae05b65c841d92029c56626afa8d2abe781a7dbddf78408e2"
+        },
+        "code/scripts/profiling/daft_text_organizer_smoke.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4022,
+          "archive_sha256": "901652265a073f5494405792ddda11461d14c17a6a4dbed04e6bd1317c9b07b5"
+        },
+        "code/integrations/imlane_records/chain_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6088,
+          "archive_sha256": "d79035cd95fb80c4660bdb76c8832de4fbe9a9eafb7d81a0bf1e1cf4f1ee391b"
+        },
+        "code/integrations/imlane_records/model_process.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1654,
+          "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        }
+      }
     },
     "ray_runtime_reuse": {
       "original_source_revision": "snapshot:sha256:e7090055b0f475e314380e0cb23e7f85ef6b294f8dd7c3cbc79247a32915f28c",
@@ -2932,9 +3109,74 @@
         "code/tests/scheduling/test_async_backend.py": "historical_sources/5ff54bfe/code/tests/scheduling/test_async_backend.py",
         "code/src/scheduling/submission_control/ucb.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py",
         "code/src/scheduling/__init__.py": "historical_sources/bfb9100e/code/src/scheduling/__init__.py",
-        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py",
+        "code/scripts/analysis/estimate_operator_cost.py": "historical_sources/bfb9100e/code/scripts/analysis/estimate_operator_cost.py",
+        "code/scripts/profiling/pgai_sql_operator_profile.py": "historical_sources/bfb9100e/code/scripts/profiling/pgai_sql_operator_profile.py",
+        "code/scripts/experiments/run_saor_project_mechanism.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_project_mechanism.py.gz",
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_ceiling.py.gz",
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_gap_diagnostic.py.gz",
+        "code/src/observability/metrics/resources.py": "historical_sources/e8eb3455/code/src/observability/metrics/resources.py",
+        "code/src/scheduling/core/session_policy.py": "historical_sources/21909415/code/src/scheduling/core/session_policy.py",
+        "code/tests/execution_provider/test_core_query_capacity.py": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+        "code/src/experiments/sembench_records_formal.py": "historical_sources/29de82be/code/src/experiments/sembench_records_formal.py",
+        "code/src/semantic_methods/lotus/record_relation.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/record_relation.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "historical_sources/29de82be/code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+        "code/src/semantic_methods/lotus/cascade.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/cascade.py",
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": "historical_sources/4fec5472/code/scripts/baselines/time_duckdb_ai_baseline.py.gz",
+        "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
+        "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
+        "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/tests/experiments/test_native_query_lifecycle.py": "historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz"
       },
-      "default_selected": false
+      "default_selected": false,
+      "source_formats": {
+        "code/scripts/experiments/run_saor_project_mechanism.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3293,
+          "archive_sha256": "73756121d36cb3fcb4c026270c1e5d2174c1b36ae8f4106f5db7a96704f06d7d"
+        },
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2929,
+          "archive_sha256": "c2f9dc2c537dc7e295843dcca1a7fdbcbb6e1679af2d609572a7c424306f2f1d"
+        },
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3851,
+          "archive_sha256": "45ff13e5b2c3793092d1e45d1f25d667c25720019fc99ccdfc2094d29682ea7f"
+        },
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7580,
+          "archive_sha256": "b8bcbc3aacc4d9293aa0b9da1e716e64a47bab43224b6465db6b399fddffd457"
+        },
+        "code/scripts/data/build_opening_multijob_manifests.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7034,
+          "archive_sha256": "28084131fb403ccae05b65c841d92029c56626afa8d2abe781a7dbddf78408e2"
+        },
+        "code/scripts/profiling/daft_text_organizer_smoke.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4022,
+          "archive_sha256": "901652265a073f5494405792ddda11461d14c17a6a4dbed04e6bd1317c9b07b5"
+        },
+        "code/integrations/imlane_records/chain_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6088,
+          "archive_sha256": "d79035cd95fb80c4660bdb76c8832de4fbe9a9eafb7d81a0bf1e1cf4f1ee391b"
+        },
+        "code/integrations/imlane_records/model_process.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1654,
+          "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        },
+        "code/tests/experiments/test_native_query_lifecycle.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 24608,
+          "archive_sha256": "4632c549b1cacd40cb4262e4e6b00d6ff79d0141afdc95b0d11ffa9efb3f22b7"
+        }
+      }
     },
     "daft_single_thread_session": {
       "original_source_revision": "snapshot:sha256:65114360117229ee9b76ad04d4db52f87b4f51355df8212dc138c7a91b75a61f",
@@ -3683,9 +3925,68 @@
         "code/tests/scheduling/test_async_backend.py": "historical_sources/5ff54bfe/code/tests/scheduling/test_async_backend.py",
         "code/src/scheduling/submission_control/ucb.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py",
         "code/src/scheduling/__init__.py": "historical_sources/bfb9100e/code/src/scheduling/__init__.py",
-        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+        "code/src/scheduling/submission_control/pid.py": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py",
+        "code/scripts/analysis/estimate_operator_cost.py": "historical_sources/bfb9100e/code/scripts/analysis/estimate_operator_cost.py",
+        "code/scripts/profiling/pgai_sql_operator_profile.py": "historical_sources/bfb9100e/code/scripts/profiling/pgai_sql_operator_profile.py",
+        "code/scripts/experiments/run_saor_project_mechanism.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_project_mechanism.py.gz",
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_ceiling.py.gz",
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_gap_diagnostic.py.gz",
+        "code/src/observability/metrics/resources.py": "historical_sources/e8eb3455/code/src/observability/metrics/resources.py",
+        "code/src/scheduling/core/session_policy.py": "historical_sources/21909415/code/src/scheduling/core/session_policy.py",
+        "code/tests/execution_provider/test_core_query_capacity.py": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+        "code/src/experiments/sembench_records_formal.py": "historical_sources/29de82be/code/src/experiments/sembench_records_formal.py",
+        "code/src/semantic_methods/lotus/record_relation.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/record_relation.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "historical_sources/29de82be/code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+        "code/src/semantic_methods/lotus/cascade.py": "historical_sources/29de82be/code/src/semantic_methods/lotus/cascade.py",
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": "historical_sources/4fec5472/code/scripts/baselines/time_duckdb_ai_baseline.py.gz",
+        "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
+        "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
+        "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
       },
-      "default_selected": false
+      "default_selected": false,
+      "source_formats": {
+        "code/scripts/experiments/run_saor_project_mechanism.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3293,
+          "archive_sha256": "73756121d36cb3fcb4c026270c1e5d2174c1b36ae8f4106f5db7a96704f06d7d"
+        },
+        "code/scripts/experiments/run_saor_feeding_ceiling.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2929,
+          "archive_sha256": "c2f9dc2c537dc7e295843dcca1a7fdbcbb6e1679af2d609572a7c424306f2f1d"
+        },
+        "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3851,
+          "archive_sha256": "45ff13e5b2c3793092d1e45d1f25d667c25720019fc99ccdfc2094d29682ea7f"
+        },
+        "code/scripts/baselines/time_duckdb_ai_baseline.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7580,
+          "archive_sha256": "b8bcbc3aacc4d9293aa0b9da1e716e64a47bab43224b6465db6b399fddffd457"
+        },
+        "code/scripts/data/build_opening_multijob_manifests.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7034,
+          "archive_sha256": "28084131fb403ccae05b65c841d92029c56626afa8d2abe781a7dbddf78408e2"
+        },
+        "code/scripts/profiling/daft_text_organizer_smoke.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4022,
+          "archive_sha256": "901652265a073f5494405792ddda11461d14c17a6a4dbed04e6bd1317c9b07b5"
+        },
+        "code/integrations/imlane_records/chain_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6088,
+          "archive_sha256": "d79035cd95fb80c4660bdb76c8832de4fbe9a9eafb7d81a0bf1e1cf4f1ee391b"
+        },
+        "code/integrations/imlane_records/model_process.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1654,
+          "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        }
+      }
     }
   }
 }

@@ -5,7 +5,7 @@ import json
 
 from src.modalities.text.tokenization import chat_token_count
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
-from src.serving.backends.vllm_engine import _prepared
+from src.serving.backends.vllm_protocol import _prepared
 
 
 def preparation_signature(stage, engine, batching):

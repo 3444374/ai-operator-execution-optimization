@@ -15,7 +15,7 @@ from src.semantic_methods.lotus.records import RecordsResources
 from src.semantic_methods.lotus.record_chain import (
     LotusRecordChain, RecordOccurrence, _ordered_columns, records_to_frame, validate_chain_source,
 )
-from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_protocol import EngineSpec
 
 BACKENDS = ("imlane-author-local-model-chain",)
 _DTYPES = {"object", "string", "bool", "boolean", "int64", "Int64", "uint64", "UInt64", "float64", "Float64"}

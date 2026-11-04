@@ -441,7 +441,7 @@ class LegacyFeedbackContracts(unittest.TestCase):
         for view in (self.target, self.ee39):
             core = view.core_contract_nodes()
             engine, resources = SimpleNamespace(max_num_seqs=12), SimpleNamespace(max_active_batches=8)
-            options = dict(kind="resource_feedback", search_mode="geometric",
+            options = dict(kind=('legacy_resource_feedback' if view is self.target else 'resource_feedback'), search_mode="geometric",
                            work_basis="computed", work_comparison="local_pairs")
             profile = core.resolve_core_profile(engine, resources,
                                                 dict(mode="async", max_inflight=3, admission=options))
@@ -515,8 +515,10 @@ class LegacyFeedbackContracts(unittest.TestCase):
                 stream.expected = {v["call_id"]: v for v in identities}
                 stream.received = set()
                 stream.completed_work = stream.completed_effective_work = (0, 0, 0)
-                stream.owner = SimpleNamespace(_feedback=SimpleNamespace(
-                    options=SimpleNamespace(work_basis="computed"), observe=lambda _: None))
+                feedback = SimpleNamespace(options=SimpleNamespace(work_basis="computed"), observe=lambda _: None)
+                if view is self.target:
+                    feedback.uses_computed_work = True
+                stream.owner = SimpleNamespace(_feedback=feedback)
                 value = dict(identities[1], status="succeeded", prompt_tokens=10,
                              completion_tokens=1, prompt_computed_tokens=4, prompt_cached_tokens=6)
                 stream._value(json.dumps(value))

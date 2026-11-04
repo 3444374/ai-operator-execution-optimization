@@ -10,7 +10,7 @@ import hashlib
 import json
 
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity, _ordered_columns, _parent_seeds
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
 class ChainExecutionError(RuntimeError):

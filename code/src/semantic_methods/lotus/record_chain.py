@@ -20,7 +20,7 @@ from .engine import (
 )
 from .records import FilterMethod, _resolved_columns
 from .sdk import SOURCE_HASHES
-from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
+from src.serving.backends.vllm_protocol import GenerationSpec, IDENTITY_FIELDS, _prepared
 
 # The old import and serialized tag remain readable; Filter has one value type.
 TextFilterMethod = FilterMethod

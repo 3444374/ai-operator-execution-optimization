@@ -57,15 +57,17 @@ class CapacityFactoryTests(unittest.TestCase):
             profile=dict(mode='async', max_inflight=maximum), async_limits=overrides,
             capacity=capacity, **options)
 
-    def test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight(self):
+    def test_omitted_empty_and_feedback_only_limits_separate_soft_window_and_storage(self):
         for maximum in (1, 3, 11):
             for overrides in (None, {}, dict(feedback_interval_s=.1)):
                 with self.subTest(maximum=maximum, overrides=overrides):
                     owner = self.owner(maximum=maximum, overrides=overrides)
                     limits = owner._actors.limits
                     self.assertEqual((limits.max_inflight, limits.result_slots, limits.command_slots),
-                                     (maximum, maximum, maximum))
-                    self.assertEqual((limits.input_bytes, limits.result_bytes), (maximum*2*MIB,)*2)
+                                     (self.resources.max_active_batches, AsyncEngineLimits().result_slots, self.resources.max_active_batches))
+                    self.assertEqual((limits.input_bytes, limits.result_bytes),
+                                     (AsyncEngineLimits().input_bytes, AsyncEngineLimits().result_bytes))
+                    self.assertEqual(owner.execution_profile['max_inflight'],maximum)
                     self.assertEqual(limits.feedback_interval_s, .1 if overrides else 0.)
                     self.assertIsNone(owner._actors.model_actor)
 
@@ -73,13 +75,14 @@ class CapacityFactoryTests(unittest.TestCase):
         capacity = core.CoreRecordsCapacity(item_input_bytes=6*MIB, item_result_bytes=7*MIB)
         owner = self.owner(capacity=capacity, overrides=dict(item_input_bytes=MIB,
             item_result_bytes=65536, result_slots=5))
-        self.assertIs(owner.capacity, capacity)
-        grants = capacity.limits(owner.resources)
-        self.assertEqual((grants.input_bytes, grants.result_bytes), (18*MIB, 21*MIB))
+        self.assertEqual(owner.capacity.item_input_bytes,capacity.item_input_bytes)
+        self.assertEqual(owner.capacity.item_result_bytes,capacity.item_result_bytes)
+        grants = owner.capacity.limits(owner.resources)
+        self.assertEqual((grants.input_bytes, grants.result_bytes), (16*MIB, 16*MIB))
         limits = owner._actors.limits
-        self.assertEqual((limits.item_input_bytes, limits.input_bytes), (MIB, 3*MIB))
-        self.assertEqual((limits.item_result_bytes, limits.result_bytes), (65536, 5*65536))
-        self.assertEqual((limits.max_inflight, limits.result_slots), (3, 5))
+        self.assertEqual((limits.item_input_bytes, limits.input_bytes), (MIB, 16*MIB))
+        self.assertEqual((limits.item_result_bytes, limits.result_bytes), (65536, 16*MIB))
+        self.assertEqual((limits.max_inflight, limits.result_slots), (11, 5))
 
     def test_explicit_small_totals_are_not_expanded_to_R_times_item(self):
         capacity = core.CoreRecordsCapacity(item_input_bytes=4*MIB, item_result_bytes=4*MIB)
@@ -87,23 +90,31 @@ class CapacityFactoryTests(unittest.TestCase):
                        result_bytes=4096)
         limits = self.owner(capacity=capacity, overrides=options)._actors.limits
         self.assertEqual({k:getattr(limits, k) for k in options}, options)
-        self.assertEqual(limits.max_inflight, 3)
+        self.assertEqual(limits.max_inflight, 11)
 
     def test_small_Core_result_and_IPC_minimum_remain_independent(self):
         owner = self.owner(capacity=core.CoreRecordsCapacity(item_result_bytes=1024),
             overrides=dict(item_result_bytes=4096))
-        self.assertEqual(owner.capacity.limits(owner.resources).result_bytes, 3072)
+        self.assertEqual(owner.capacity.limits(owner.resources).result_bytes, AsyncEngineLimits().result_bytes)
         self.assertEqual(owner._actors.limits.item_result_bytes, 4096)
-        self.assertEqual(owner._actors.limits.result_bytes, 12288)
+        self.assertEqual(owner._actors.limits.result_bytes, AsyncEngineLimits().result_bytes)
 
     def test_explicit_counts_and_invalid_totals_reject_before_actor_construction(self):
-        for overrides in (dict(max_inflight=8), dict(result_slots=2), dict(input_bytes=MIB),
+        for overrides in (dict(input_bytes=MIB),
                           dict(result_bytes=1024), dict(item_result_bytes=1024),
                           dict(item_input_bytes='4096'), dict(result_slots='three')):
             with self.subTest(overrides=overrides), patch.object(actors, 'AsyncRecordsActorOwner') as allocate:
                 with self.assertRaises(ValueError):
                     self.owner(overrides=overrides)
                 allocate.assert_not_called()
+
+    def test_explicit_IPC_request_and_result_counts_are_not_forced_to_match_R(self):
+        for overrides in (dict(max_inflight=8),dict(result_slots=2)):
+            owner=self.owner(overrides=overrides)
+            try:
+                for name,value in overrides.items():self.assertEqual(getattr(owner._actors.limits,name),value)
+                self.assertEqual(owner.capacity.budget.active_requests,11)
+            finally:owner.close(timeout=1)
 
     def test_explicit_typed_limits_are_preserved(self):
         explicit = AsyncEngineLimits(max_inflight=3, result_slots=3, command_slots=1,
@@ -116,9 +127,10 @@ class CapacityFactoryTests(unittest.TestCase):
             prepared_batching=PreparedBatching('token_budget', None, 100000), rolling_refill=True,
             resident=True)
         chain = owner._new_owner(SimpleNamespace())
-        self.assertIs(chain.capacity, capacity)
+        self.assertEqual(chain.capacity.item_input_bytes,capacity.item_input_bytes)
+        self.assertEqual(chain.capacity,owner.capacity)
         self.assertEqual(chain._actors.limits.item_input_bytes, 4*MIB)
-        self.assertEqual(chain._actors.limits.input_bytes, 12*MIB)
+        self.assertEqual(chain._actors.limits.input_bytes, AsyncEngineLimits().input_bytes)
         self.assertIsNone(chain._actors.model_actor)
 
     def test_three_MiB_requires_both_declared_input_allowances(self):
@@ -191,8 +203,9 @@ class CapacityFactoryTests(unittest.TestCase):
                     sessions.append(stream.session.session_id)
                     self.assertEqual(len(results), 2)
                     self.assertEqual({r['query_id'] for r in results}, {'query-'+str(index)})
-                    self.assertEqual(stream.session.limits.input_bytes, maximum*4*MIB)
-                    self.assertEqual(stream.session.limits.result_bytes, maximum*65536)
+                    self.assertEqual(stream.session.limits.input_bytes, 4*MIB)
+                    self.assertEqual(stream.session.limits.result_bytes, 65536)
+                    self.assertEqual(owner.core.policies.admission.limit,maximum)
                     self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
                     self.assertEqual(owner.transport.retained_refs(), 0)
                 self.assertNotEqual(*sessions)
@@ -231,9 +244,9 @@ class CapacityMovieEntryTests(unittest.TestCase):
         parsed, _, _, resources, _ = movie.read_config(self.save(config))
         self.assertEqual(parsed, json.loads(json.dumps(config)))
         limits = movie._async_limits(parsed)
-        self.assertEqual((limits.max_inflight, limits.result_slots), (3, 3))
-        self.assertEqual((limits.item_input_bytes, limits.input_bytes), (4*MIB, 12*MIB))
-        self.assertEqual((limits.item_result_bytes, limits.result_bytes), (65536, 3*65536))
+        self.assertEqual((limits.max_inflight, limits.result_slots), (11, AsyncEngineLimits().result_slots))
+        self.assertEqual((limits.item_input_bytes, limits.input_bytes), (4*MIB, AsyncEngineLimits().input_bytes))
+        self.assertEqual((limits.item_result_bytes, limits.result_bytes), (65536, AsyncEngineLimits().result_bytes))
         self.assertEqual(resources.max_active_batches, 11)
 
     def test_session_accepts_config_for_resident_and_isolated_lifetimes(self):
@@ -242,7 +255,7 @@ class CapacityMovieEntryTests(unittest.TestCase):
                 self.plan['lifecycle'] = lifecycle
                 checked = session.check_plan(self.plan)
                 self.assertEqual(checked['core_capacity']['item_input_bytes'], 4*MIB)
-                self.assertEqual(checked['async_limits']['max_inflight'], 3)
+                self.assertEqual(checked['async_limits']['max_inflight'], 11)
                 self.assertEqual(checked['async_limits']['feedback_interval_s'], .1)
 
     def test_ordinary_check_reports_capacity_without_allocating_an_owner(self):
@@ -255,8 +268,8 @@ class CapacityMovieEntryTests(unittest.TestCase):
         allocate.assert_not_called()
         checked = json.loads(output.getvalue())
         self.assertEqual(checked['core_capacity']['item_input_bytes'], 4*MIB)
-        self.assertEqual(checked['requested_async_limits']['max_inflight'], 3)
-        self.assertEqual(checked['requested_async_limits']['input_bytes'], 12*MIB)
+        self.assertEqual(checked['requested_async_limits']['max_inflight'], 11)
+        self.assertEqual(checked['requested_async_limits']['input_bytes'], AsyncEngineLimits().input_bytes)
 
     def test_rolling_feedback_uses_hard_owner_R_instead_of_initial_C(self):
         self.plan.update(profile=dict(mode='async', admission=dict(kind='resource_feedback')),
@@ -265,7 +278,7 @@ class CapacityMovieEntryTests(unittest.TestCase):
         checked = session.check_plan(self.plan)
         self.assertEqual(checked['core_execution']['initial_window'], 1)
         self.assertEqual(checked['async_limits']['max_inflight'], 11)
-        self.assertEqual(checked['async_limits']['input_bytes'], 44*MIB)
+        self.assertEqual(checked['async_limits']['input_bytes'], AsyncEngineLimits().input_bytes)
 
     def test_other_baselines_and_sync_limits_reject_new_async_fields(self):
         for backend in ('lotus-native', 'semloom-static-reference', 'ray-data', 'daft'):
@@ -278,7 +291,7 @@ class CapacityMovieEntryTests(unittest.TestCase):
 
     def test_small_budget_and_bad_capacity_reject_during_preflight(self):
         for changes in (dict(async_limits=dict(input_bytes=MIB)),
-                        dict(async_limits=dict(max_inflight=8)),
+                        dict(async_limits=dict(max_inflight=0)),
                         dict(core_capacity=dict(item_input_bytes=0)),
                         dict(core_capacity=dict(input_bytes=4*MIB))):
             with self.subTest(changes=changes), self.assertRaises((ValueError, TypeError)):
@@ -301,14 +314,14 @@ class CapacityMovieEntryTests(unittest.TestCase):
                     driver.start()
                 self.assertEqual(allocate.call_args.kwargs['capacity'].item_input_bytes, 4*MIB)
                 limits = model.call_args.kwargs['limits']
-                self.assertEqual((limits.max_inflight, limits.input_bytes), (3, 12*MIB))
-                self.assertEqual(limits.result_bytes, 3*65536)
+                self.assertEqual((limits.max_inflight, limits.input_bytes), (11, AsyncEngineLimits().input_bytes))
+                self.assertEqual(limits.result_bytes, AsyncEngineLimits().result_bytes)
 
     def test_explicit_capacities_change_existing_admission_identity_without_mutating_config(self):
         from src.experiments.movie_matrix_support import run_record_admission
         from src.scheduling.runtime import calibration
         plan = deepcopy(self.plan)
-        plan['profile'] = dict(mode='async', max_inflight=3, admission=dict(kind='resource_feedback'))
+        plan['profile'] = dict(mode='async', max_inflight=3, admission=dict(kind='legacy_resource_feedback'))
         plan['admission_cache'] = dict(cache_dir=str(self.root/'cache'), identity={
             name:dict(fixture=True) for name in ('hardware', 'model', 'generation', 'execution', 'workload', 'measurement')})
         plan['admission_cache']['identity']['measurement']['work_unit'] = 'rows'

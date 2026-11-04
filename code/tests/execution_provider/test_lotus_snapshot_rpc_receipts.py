@@ -1,5 +1,6 @@
 """Snapshot RPC ownership and terminal receipts; no model, Ray or GPU required."""
 from concurrent.futures import Future
+from contextlib import contextmanager
 from copy import deepcopy
 import inspect
 import json
@@ -15,6 +16,15 @@ from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec
+
+
+@contextmanager
+def feedback_clock(value):
+    from unittest.mock import patch
+    from src.execution_provider.adapters import lotus_chain_token_batches as batching
+    from src.execution_provider.adapters import records_native_sampler as sampling
+    with patch.object(batching, 'time', value), patch.object(sampling, 'time', value):
+        yield
 
 
 class SnapshotRPCReceiptTests(unittest.TestCase):
@@ -330,15 +340,13 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         json.dumps(report, allow_nan=False)
 
     def test_issue_receipt_clock_failure_keeps_the_single_RPC_accounted_for(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         feedback, refs, _ = self.sampler()
         monotonic, attempts = time.monotonic, []
         def clock():
             attempts.append(1)
             if len(attempts) == 1:raise RuntimeError('fixture issue timestamp unavailable')
             return monotonic()
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=clock)):
+        with feedback_clock(SimpleNamespace(monotonic=clock)):
             feedback.sample()
         self.assertEqual(len(refs), 1)
         refs[0][1].set_result(self.frame()); feedback.close()
@@ -352,7 +360,6 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
 
     def _owner_close_with_failed_receipt_clock(self, *, cached):
         from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         from src.execution_provider.adapters import lotus_record_chain_core as owner_module
         feedback, refs, _ = self.sampler()
         feedback.sample(); refs[0][1].set_result(self.frame())
@@ -364,7 +371,7 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         class CleanupError(Exception):pass
         cleanup_error = CleanupError('fixture original cleanup error')
         def unavailable_clock():raise RuntimeError('fixture receipt timestamp unavailable')
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=unavailable_clock)), \
+        with feedback_clock(SimpleNamespace(monotonic=unavailable_clock)), \
                 patch.object(owner_module, 'close_prepared_core', side_effect=cleanup_error) as cleanup:
             if cached:
                 result = owner._close_record_local()
@@ -388,12 +395,10 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         self._owner_close_with_failed_receipt_clock(cached=False)
 
     def test_receipt_clock_failure_preserves_terminal_RPC_exception(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         feedback, refs, _ = self.sampler()
         feedback.sample(); refs[0][1].set_exception(ValueError('fixture RPC exception'))
         def unavailable_clock():raise RuntimeError('fixture receipt timestamp unavailable')
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=unavailable_clock)):
+        with feedback_clock(SimpleNamespace(monotonic=unavailable_clock)):
             feedback.close()
         row, = feedback.report()['snapshot_rpc_receipts']
         self.assertEqual((row['rpc_terminal_status'], row['rpc_error_type']), ('raised', 'ValueError'))
@@ -436,7 +441,6 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
 
     def test_supply_provenance_reaches_actual_provider_freshness_decisions(self):
         from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
         feedback, refs, _ = self.sampler(); events, now = [], [10.]
         feedback.owner._actors.model_ready['engine_uid'] = 'a'*32
@@ -445,7 +449,7 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
                 clock=lambda:now[0], stale_after_s=1, observer=events.append)
         provider._thread.is_alive.return_value = False
         self.addCleanup(provider.close); feedback.provider = provider
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+        with feedback_clock(SimpleNamespace(monotonic=lambda:now[0])):
             feedback.sample(); frame = self.frame(uid='a'*32)
             frame['ipc']['native_feedback']['observed_at_s'] = 10.
             refs[0][1].set_result(frame)
@@ -506,11 +510,9 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         return feedback, refs, events
 
     def test_ready_notification_exposes_wait_without_changing_two_poll_dispatch(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         feedback, refs, events = self.timing_sampler(); now = [0.]
         frame = self.frame(); frame['ipc']['native_feedback']['observed_at_s'] = 0.
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+        with feedback_clock(SimpleNamespace(monotonic=lambda:now[0])):
             feedback.sample()
             self.assertEqual(len(refs[0][1]._done_callbacks), 1)
             now[0] = .01; refs[0][1].set_result(frame)
@@ -534,13 +536,11 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
             self.assertEqual(feedback.report()['snapshot_rpc_pending']['issued_at_s'], .5)
 
     def test_timing_off_has_no_callback_and_preserves_results_and_ownership(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         results = []
         for enabled in (False, True):
             feedback, refs, _ = self.timing_sampler(enabled); now = [0.]
             frame = self.frame(); frame['ipc']['native_feedback']['observed_at_s'] = 0.
-            with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+            with feedback_clock(SimpleNamespace(monotonic=lambda:now[0])):
                 feedback.sample()
                 self.assertEqual(len(refs[0][1]._done_callbacks), int(enabled))
                 now[0] = .01; refs[0][1].set_result(frame)
@@ -559,7 +559,6 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
 
     def test_duplicate_source_keeps_consumer_identity_of_the_adopted_RPC(self):
         from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
         feedback, refs, _ = self.sampler(); events, now = [], [10.]
         with patch('src.scheduling.runtime.observations.threading.Thread'):
@@ -568,7 +567,7 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         provider._thread.is_alive.return_value = False
         self.addCleanup(provider.close); feedback.provider = provider
         frame = self.frame(); frame['ipc']['native_feedback']['observed_at_s'] = 10.
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])), \
+        with feedback_clock(SimpleNamespace(monotonic=lambda:now[0])), \
                 patch.object(provider._stop, 'wait', return_value=True):
             feedback.sample(); now[0] = 10.01; refs[0][1].set_result(frame)
             now[0] = 10.25; provider._sample_loop()
@@ -595,10 +594,8 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         refs[0][1].set_result(self.frame())
 
     def test_already_done_registration_does_not_invent_an_earlier_ready_time(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         feedback, refs, _ = self.timing_sampler(False); now = [0.]
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+        with feedback_clock(SimpleNamespace(monotonic=lambda:now[0])):
             feedback.sample(); now[0] = .01; refs[0][1].set_result(self.frame())
             feedback.provider.observer = lambda event:None
             now[0] = .25; feedback.sample()
@@ -608,10 +605,8 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         self.assertNotEqual(row['future_ready_observed_at_s'], .01)
 
     def test_late_old_notification_cannot_rewrite_terminal_or_the_next_RPC(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         feedback, refs, _ = self.timing_sampler(False); callbacks = []; now = [0.]
-        with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:now[0])):
+        with feedback_clock(SimpleNamespace(monotonic=lambda:now[0])):
             feedback.sample(); refs[0][1].add_done_callback = callbacks.append
             feedback.provider.observer = lambda event:None
             now[0] = .01; feedback.sample()
@@ -627,8 +622,6 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         self.assertIsNone(after['snapshot_rpc_pending']['future_ready_observed_at_s'])
 
     def test_optional_ready_observer_failures_do_not_discard_known_results(self):
-        from unittest.mock import patch
-        from src.execution_provider.adapters import lotus_chain_token_batches as batching
         for fault in ('registration', 'clock_exception', 'clock_nan'):
             with self.subTest(fault=fault):
                 feedback, refs, _ = self.timing_sampler(False)
@@ -639,10 +632,10 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
                 feedback.sample()
                 frame = self.frame()
                 if fault == 'clock_exception':
-                    with patch.object(batching, 'time', SimpleNamespace(monotonic=failed)):
+                    with feedback_clock(SimpleNamespace(monotonic=failed)):
                         refs[0][1].set_result(frame)
                 elif fault == 'clock_nan':
-                    with patch.object(batching, 'time', SimpleNamespace(monotonic=lambda:float('nan'))):
+                    with feedback_clock(SimpleNamespace(monotonic=lambda:float('nan'))):
                         refs[0][1].set_result(frame)
                 else:refs[0][1].set_result(frame)
                 self.assertIsNotNone(feedback.sample())

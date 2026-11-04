@@ -12,8 +12,10 @@ import argparse
 import csv
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import psycopg
+if TYPE_CHECKING:
+    import psycopg
 
 
 SCHEMA_SQL = """
@@ -58,6 +60,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def connect(database_url: str) -> psycopg.Connection:
+    import psycopg
+
     return psycopg.connect(database_url)
 
 

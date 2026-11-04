@@ -17,7 +17,7 @@ import uuid
 from src.semantic_methods.lotus.record_chain import (
     LotusRecordChain, RecordOccurrence, _ordered_columns, _parent_seeds,
 )
-from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, IDENTITY_FIELDS
 from src.semantic_methods.lotus.record_results import _json, _source_binding
 
 
@@ -83,6 +83,9 @@ class FusedChainBatch:
     _engine_type = None
     prepared_batching = None
 
+    def _engine_specification(self, value):
+        return EngineSpec.from_dict(value)
+
     def __init__(self, chain, engine, expected, control, deadline, startup_timeout_s,
                  driver_host, control_token, *, initial_parents=None, columns=None,
                  allow_nulls=False, close_on_source_complete=True, release_completed_audit=False,
@@ -102,9 +105,7 @@ class FusedChainBatch:
             raise TypeError("close_on_source_complete must be a boolean")
         self.chain, self.expected, self.initial_parents, self.columns = _phase_values(
             chain, expected, initial_parents, columns, allow_nulls)
-        self.engine_spec = EngineSpec.from_dict(engine)
-        if self.engine_spec.max_model_len is None:
-            self.engine_spec = replace(self.engine_spec, max_model_len=self.engine_spec.legacy_max_model_len)
+        self.engine_spec = self._engine_specification(engine)
         self.prepared_batching, self._request_batcher = None, None
         self._source_flush_reason = self._source_prepared_group = None
         if prepared_batching is not None:
@@ -115,7 +116,8 @@ class FusedChainBatch:
             if (any(stage.kind not in ('filter', 'map') for stage in self.chain.stages)
                     or len({stage.model_role for stage in self.chain.stages}) != 1):
                 raise ValueError('prepared_batching requires Filter/Map with one model role')
-        if any(stage.generation.max_tokens > self.engine_spec.max_model_len for stage in self.chain.stages):
+        if self.engine_spec.max_model_len is not None and any(
+                stage.generation.max_tokens > self.engine_spec.max_model_len for stage in self.chain.stages):
             raise ValueError("chain max_tokens exceeds max_model_len")
         self.allow_nulls, self.close_on_source_complete = allow_nulls, close_on_source_complete
         self._phase_options = initial_parents is not None or columns is not None or allow_nulls
@@ -126,6 +128,8 @@ class FusedChainBatch:
         self.received = set()
         self.deadline, self.startup_timeout_s = deadline, startup_timeout_s
         self.engine = None
+        self._model_context = None
+        self._request_batcher_context = None
         self._engine_start_attempted = False
         self.failed = False
         self.worker_report = self.control / ("chain-worker-" + uuid.uuid4().hex + ".json")
@@ -143,9 +147,12 @@ class FusedChainBatch:
         next_chain, bindings, parents, schema = _phase_values(
             chain, expected, initial_parents, columns, allow_nulls)
         ids = {stage.stage_id for stage in next_chain.stages}
+        context_limit = (self._bind_model_context()['max_model_len'] if self.engine is not None
+                         else self.engine_spec.max_model_len)
         if (next_chain.query_id != self.chain.query_id or ids & self._used_stage_ids
                 or next_chain.stages[0].method.model_name != self._model_name
-                or any(stage.generation.max_tokens > self.engine_spec.max_model_len for stage in next_chain.stages)):
+                or context_limit is not None and any(
+                    stage.generation.max_tokens > context_limit for stage in next_chain.stages)):
             raise ValueError("relation phase changed query, stage IDs, deployment or model context")
         self.chain, self.expected, self.initial_parents, self.columns = next_chain, bindings, parents, schema
         self.allow_nulls, self.received = allow_nulls, set()
@@ -153,6 +160,21 @@ class FusedChainBatch:
         self._phase_stage_ids = [stage.stage_id for stage in next_chain.stages]
         self._used_stage_ids.update(ids)
         self._phase_cleanup_errors = []
+
+    def _bind_model_context(self):
+        from src.serving.backends.model_context import checked_model_context
+        ready = getattr(self.engine, 'ready_report', None)
+        if type(ready) is dict and (ready.get('kind', 'ready') != 'ready'
+                                   or ready.get('closed', False) is not False):
+            raise RuntimeError('fused worker requires a successful open model ready receipt')
+        observed = checked_model_context(self.engine_spec, ready)
+        if self._model_context is not None and observed != self._model_context:
+            raise RuntimeError('fused worker model context changed during its engine lifetime')
+        if any(stage.generation.max_tokens > observed['max_model_len'] for stage in self.chain.stages):
+            raise ValueError('chain max_tokens exceeds resolved model context')
+        self._model_context = observed
+        self._request_batcher_context = observed['observation_signature']
+        return dict(observed)
 
     def _infer(self, prepared, *, generation):
         from src.serving.backends.vllm_sync_process import _publish
@@ -220,8 +242,19 @@ class FusedChainBatch:
                     except BaseException as recording:
                         self._audit_errors.append('call_ledger_write: ' + type(recording).__name__)
                 raise
-        results = (self.engine.run_prepared(prepared, generation=generation) if groups is None else
-                   self._infer_groups(groups, declared, generation, audit))
+        try:
+            audit['model_context'] = self._bind_model_context()
+        except Exception as exc:
+            # Readiness failed before any stage request entered the model API.
+            # Engine cleanup still owns any allocation uncertainty separately.
+            results = [dict({name: row[name] for name in IDENTITY_FIELDS}, status='failed',
+                submission_confirmed=False, text=None, error_type='ModelContextUnavailable',
+                cause_type=type(exc).__name__, prompt_tokens=None,
+                completion_tokens=None, total_tokens=None) for row in prepared]
+        else:
+            _publish(self._audit_path, audit)
+            results = (self.engine.run_prepared(prepared, generation=generation) if groups is None else
+                       self._infer_groups(groups, declared, generation, audit))
         raw = _associate_declared_results(declared, results)
         try:
             _publish(self._audit_path, dict(audit, raw_results=raw))
@@ -261,7 +294,9 @@ class FusedChainBatch:
                 flush_reason=group.reason, oversize=group.oversize,
                 cost_scope='local_tokenizer_estimate_not_native_usage',
                 submission_scope='synchronous_engine_batch_api',
-                submission_confirmation='per_call_ledger')
+                submission_confirmation='per_call_ledger',
+                model_context_signature=self._request_batcher_context,
+                engine_uid=self._model_context['engine_uid'])
             self._request_batches.append(receipt)
             _publish(self._audit_path, audit)
             batch_results = self.engine.run_prepared(list(group.rows), generation=generation)

@@ -1,0 +1,74 @@
+{
+  "base": "ffb6095",
+  "removed_private_helper": {
+    "original_sha256": "f7a8996f54261b6911979457ee7e01f8d76e0d7399b35c76e93b2fbd4c6b596c",
+    "archived_source": "experiments/reproduction/native_baselines/historical_sources/bfb9100e/code/scripts/analysis/estimate_operator_cost.py",
+    "remaining_AST_identical": true,
+    "original_helper_lines": 7,
+    "historical_new_overrides": 5,
+    "expected_hashes_unchanged": true
+  },
+  "lazy_database_import": {
+    "original_sha256": "34493b0c49972a68028ab5add3d36d66ef237d4c559dbffd6e7f7d23e3d0bb22",
+    "archived_source": "experiments/reproduction/native_baselines/historical_sources/bfb9100e/code/scripts/profiling/pgai_sql_operator_profile.py",
+    "historical_new_overrides": 5,
+    "expected_hashes_unchanged": true
+  },
+  "CPU": {
+    "selected": 20,
+    "passed": 20,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "CLI_before": {
+    "selected": 7,
+    "passed": 6,
+    "failures": [
+      {
+        "path": "code/scripts/profiling/pgai_sql_operator_profile.py",
+        "returncode": 1,
+        "cause": "optional psycopg unavailable at top-level import"
+      }
+    ]
+  },
+  "CLI_after": {
+    "selected": 7,
+    "passed": 7,
+    "forbidden_imports": [
+      "ray",
+      "vllm",
+      "torch",
+      "transformers",
+      "psycopg"
+    ],
+    "forbidden_operations": [
+      "socket.connect",
+      "socket.bind",
+      "subprocess.Popen"
+    ]
+  },
+  "historical": {
+    "bindings": 3010,
+    "original_mismatches": 10,
+    "new_mismatches": 0,
+    "new_mappings": 10,
+    "expected_and_projection_unchanged": true,
+    "previous_overrides_unchanged": true,
+    "pgai_non_connect_functions_AST_unchanged": true
+  },
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "database_connections": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "unused_script_helper_after.json": "b106232e46e4115138ed8196c77a2c722b028dc090c3bc7159171a82d354c268",
+    "unused_script_helper_after.log": "ad390dfb31964d42db25409e3bf092fac6450910287944b3601a7feac1bd2f5b",
+    "retained_script_help_after.json": "646719cc4a2b3096b545d88f000a92f187a3633d072ceb67ce0409947209580f",
+    "script_cleanup_history.json": "fbfed348c9bafa26ce2a1951ae453e2d8f9c69c24fcbc35de6ead6159850f165",
+    "retained_script_help.json": "4da2e5cec8eaefed5f5d667e79aeeb4bc558cf4a8a1232e49605ae712b0f713d"
+  }
+}

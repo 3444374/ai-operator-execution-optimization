@@ -48,11 +48,11 @@ class QueryWindowReuseTests(unittest.TestCase):
                     self.assertEqual(owner.transport.retained_refs(), 0)
                     self.assertEqual(owner.core.capacity.limits, owner.capacity.limits(owner.resources))
                 self.assertEqual([peak for _,peak in samples], [1, 3, 1])
-                self.assertEqual([gate for gate,_ in samples], [1, 3, 1] if independent else [3, 3, 3])
+                self.assertEqual([gate for gate,_ in samples], [1, 3, 1])
             finally:
                 self.assertEqual(owner.close(timeout=3)['status'], 'closed')
 
-    def test_first_low_C_does_not_lock_legacy_or_explicit_owner(self):
+    def test_first_low_C_does_not_lock_default_or_explicit_owner(self):
         for independent in (False, True):
             with self.subTest(independent=independent):
                 self.run_queries(independent=independent)

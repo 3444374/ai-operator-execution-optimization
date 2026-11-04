@@ -20,7 +20,7 @@ import threading
 import time
 import uuid
 
-from . import vllm_engine as common
+from . import vllm_protocol as common
 from .vllm_async_engine import AsyncEngineLimits, VllmAsyncEngine, result_record
 
 _HEADER = struct.Struct("!I")

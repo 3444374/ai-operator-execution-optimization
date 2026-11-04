@@ -13,13 +13,16 @@ from src.serving.backends.vllm_engine import _prepared, result_from_output
 
 class Engine:
     def __init__(self, spec, generation):
+        self.spec = spec
         self.config = json.loads(Path(spec.model_path).read_text())
         self.log = Path(spec.model_path + '.batches')
         self.count = 0
         self.uid = 'CPU-prepared-batch-' + str(os.getpid())
 
     def ready(self):
-        return dict(engine_uid=self.uid, physical_gpu=False)
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid=self.uid, physical_gpu=False,
+            model_context=model_context_record(self.spec, self.uid, self.spec.max_model_len or 32768))
 
     def run_prepared(self, rows, *, generation, deadline_monotonic):
         identities, conversations = _prepared(rows)

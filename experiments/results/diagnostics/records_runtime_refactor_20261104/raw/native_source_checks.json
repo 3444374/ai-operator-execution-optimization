@@ -1,0 +1,69 @@
+{
+  "base": "70ab2cac1aaa1690f5dbc8666ffeabb2528ae530",
+  "CPU": {
+    "selected": 51,
+    "passed": 51,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "backend_capability": "actual vLLM ready identifies allocation and failure owner; no measured capacity claim",
+  "source_clock": "private child and model actor share host monotonic; map duration conservatively from driver RPC issue; repeat source retains original time",
+  "current_public_policy_changed": false,
+  "historical_bindings": {
+    "count": 3010,
+    "existing_mismatches": [
+      [
+        "native_isolated_and_imlane",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "native_isolated_and_imlane",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/scheduling/core/session_policy.py"
+      ]
+    ],
+    "new_mismatches": 0,
+    "manifest_changed": false
+  },
+  "real_Ray": 0,
+  "model_calls": 0,
+  "GPU": 0,
+  "independent_review": "pending",
+  "artifacts": {
+    "native_source_bridge.json": "57d2bd8dda723a650cd5e9c1bedbea1f8a5b5622da0ccdc9dcb59e1262b580ad",
+    "native_source_bridge.log": "4fd65bca6a0e010ba368cd0ebfdd2ebe70a38bc4be16de60a4dbfa563c43aafa"
+  }
+}

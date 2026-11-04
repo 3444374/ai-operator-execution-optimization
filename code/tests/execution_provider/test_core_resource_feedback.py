@@ -94,7 +94,7 @@ class CoreFeedbackTests(unittest.TestCase):
 
     def owner(self,*,initial=1,maximum=4,admission=True,options=None,method=None):
         profile=dict(mode='async',max_inflight=initial)
-        if admission:profile['admission']=dict(dict(kind='resource_feedback',poll_interval_s=.003,
+        if admission:profile['admission']=dict(dict(kind='legacy_resource_feedback',poll_interval_s=.003,
             window_s=.01,min_samples=2,min_remaining=4,exploration_s=4,allow_exploration=True),**(options or {}))
         return core.create_records_core(method or FilterMethod('fixture', 'Evaluate {reviewText}'),
             EngineSpec('/tmp/CPU-fixture','/tmp/model-python','/tmp/driver-python',max_num_seqs=8),
@@ -137,7 +137,9 @@ class CoreFeedbackTests(unittest.TestCase):
                         self.assertTrue(feedback['sampling_paused'])
                         self.assertEqual(feedback['sample_errors'],0)
                         self.assertEqual(owner.resources.max_active_batches,4)
-                    else:self.assertEqual(owner.resources.max_active_batches,1)
+                    else:
+                        self.assertEqual(owner.resources.max_active_batches,4)
+                        self.assertEqual(owner.execution_profile['max_inflight'],1)
                 finally:self.assertEqual(owner.close(timeout=3)['status'],'closed')
         self.assertEqual(outputs[0],outputs[1]);self.assertEqual(prompts[0],prompts[1])
         self.assertEqual(sum(text=='True' for _,text,_ in outputs[1]),32)
@@ -211,9 +213,9 @@ class CoreFeedbackTests(unittest.TestCase):
     def test_sync_or_invalid_admission_rejects_without_model(self):
         spec=EngineSpec('/tmp/cpu','/tmp/model','/tmp/driver')
         resources=RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=4)
-        for value in (dict(mode='sync',admission=dict(kind='resource_feedback')),
+        for value in (dict(mode='sync',admission=dict(kind='legacy_resource_feedback')),
                       dict(mode='async',admission=dict(kind='other')),
-                      dict(mode='async',admission=dict(kind='resource_feedback',window_s=0))):
+                      dict(mode='async',admission=dict(kind='legacy_resource_feedback',window_s=0))):
             with self.assertRaises((ValueError,TypeError)):core.resolve_core_profile(spec,resources,value)
 
     def test_cli_and_both_session_lifecycles_keep_soft_start_separate_from_owner_capacity(self):
@@ -225,7 +227,7 @@ class CoreFeedbackTests(unittest.TestCase):
         from src.execution_provider.adapters import lotus_records_async_actor as async_actor
         from src.experiments import lotus_records_movie as movie,movie_records_session as session
         from tests.experiments.test_movie_records_session import PlanTests
-        profile=dict(mode='async',max_inflight=2,admission=dict(kind='resource_feedback'))
+        profile=dict(mode='async',max_inflight=2,admission=dict(kind='legacy_resource_feedback'))
         fixture=PlanTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         for lifecycle in ('isolated','resident'):
             plan=deepcopy(fixture.plan);plan['lifecycle']=lifecycle
@@ -240,7 +242,7 @@ class CoreFeedbackTests(unittest.TestCase):
                 owner.return_value.start.return_value=dict(pid=41,engine_uid='CPU-fixture')
                 driver=session._MovieDriver(plan,{},directory,plan['queries'][0]);driver.start()
                 self.assertEqual(actor.call_args.args[3].max_active_batches,4)
-                self.assertEqual(owner.call_args.kwargs['admission']['kind'],'resource_feedback')
+                self.assertEqual(owner.call_args.kwargs['admission']['kind'],'legacy_resource_feedback')
                 self.assertEqual(driver.core_execution['initial_window'],2)
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'config.json'

@@ -181,7 +181,7 @@ class CachedProtectionTests(unittest.TestCase):
         from tests.execution_provider.test_lotus_records_core import Source
         from tests.serving.test_native_resource_feedback import CPUFeedbackProcess
         rows=[dict(row_id='r'+str(i),source_position=i,reviewId='review-'+str(i),id='taken_3',reviewText='fast') for i in range(48)]
-        profile=dict(mode='async',max_inflight=1,admission=dict(kind='resource_feedback',
+        profile=dict(mode='async',max_inflight=1,admission=dict(kind='legacy_resource_feedback',
             poll_interval_s=.003,window_s=.01,min_samples=2,min_remaining=4,exploration_s=4))
         identity=dict(hardware=dict(fixture=True),model=dict(revision='CPU-only'),generation=dict(fixed=True),
             execution=dict(policy='pressure-default-cadence-v2',capacity=4),

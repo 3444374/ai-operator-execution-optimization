@@ -26,6 +26,10 @@ LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)�
 
 已接纳接点的Ray `runtime_reuse_only`和Daft `native_single_thread_session`是生命周期配置，不是新的执行层级；同题比较须同时记录输入边界、方法owner、模型owner和计时边界。
 PR52已接纳的共享`lotus_chain_batch`及私有模型process也被Core引用；它们属于无策略共享接点，不能因兼容入口在本目录就算作native专属。
+当前原生 Ray／Daft records、session、chain、cascade 与有限 IMLane 路径使用
+[同步参数所有者](text/frameworks/sync_reference_engine.py)和[链参数适配](text/frameworks/reference_chain_batch.py)，
+继续显式传原 4096／8／4096 或用户指定值，沿用原 `LLM.chat`。当前 SemLoom 同步省略行为与它们分别记录；
+两者共用有限方法、私有 IPC、结果和关闭实现，旧公开导入仍指向原共享类型。
 五个共享文件已按职责归位：结果合同在`semantic_methods/lotus/record_results.py`，同步IPC、阶段生成IPC及清理在`serving/backends/`，有限链worker在`execution_provider/method_workers/`；此共享包不导入Core策略。清楚的vendor wrapper、旧request桥与稳定CLI保留。逐项采用决定见[命名与迁移清单](../../../experiments/plans/系统架构.md#code-directory-boundaries)，历史复现字节保持。
 共享有限链的[结果关联索引](../semantic_methods/lotus/README.md#finite-chain-result-index)与[可选审计引用释放](../semantic_methods/lotus/README.md#completed-chain-audit-lifetime)的适用范围见方法说明。
 

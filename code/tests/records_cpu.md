@@ -127,3 +127,117 @@ CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code 
 全部早期输出保留；最终输出 `final-verified.log` 的 SHA-256 为 `b167e35e961180b5d307f8319627d533c78c540b2eb600441534381dcf3211d9`，
 原基线复核 `baseline-three.log` 为 `b3ce460f5158aa2dbd56f5e3989a1450558c75e8948b6a2d8bc3c2fc9e38a78f`。
 通过运行标识与摘要从本地工作树取得；这些输出不作为 GPU 资格或性能证据。
+
+
+### Unspecified R with existing complete grants
+
+The CPU suite `tests.execution_provider.test_records_unspecified_requests` covers
+None declarations through ordinary/rolling factories, CLI checks, session, query
+reuse and offline identity. Missing grants reject before actor startup. Related
+checks total167 successful methods; no model, real Ray or GPU ran. Default-R and
+automatic-resource work remain pending. [Summary](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/unspecified_request_checks.json).
+
+
+### Native pressure with unknown work
+
+`tests.execution_provider.test_records_request_feedback_safety` runs accepted Core
+tasks, retained CPU receipts, typed observations and the current request policy.
+It covers fresh pressure with unavailable work, sequence deduplication and unknown
+responsibility. [Combined scope](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/capacity_pressure_composition_checks.json)
+records the exact source and skipped real-runtime checks.
+
+
+### Retired one-off tools and retained regression tests
+
+The maintained organizer and DuckDB adapter tests remain active. Existing native
+projection tests restore all five historical trees and verify every original file
+digest, including the retired tools. No test or fixture was removed by this cleanup.
+[Checks](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/entry_slimming_checks.json)
+separate current code checks, exact historical restoration and untested model work.
+
+
+### Session request-capacity preflight
+
+`tests.experiments.test_session_capacity_preflight` checks resident/isolated static
+None rejection before frameworks, private output creation or Ray. It also checks
+unchecked Core startup, explicit static values and actual ordinary/rolling public
+factories with complete independent budgets. Ray and model startup remain inert.
+[Scope and outputs](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/static_capacity_preflight_checks.json)
+retain the original reproduction and the separate geometric handoff investigation.
+
+
+### Synchronous native-context readiness
+
+`tests.serving.test_sync_model_context` checks native-API stub values, spec/owner
+identity, unknown or changed context, output allowance and retained cleanup after
+ready failure. It also sends the real ready packet through the existing local
+private pipe and confirms failed startup collects the CPU child. Unconfirmed
+shutdown rejects ready until cleanup is confirmed; closed metadata remains available.
+Related checks selected146 methods and ran143 successfully, with one three-method class skipped
+for its missing upstream checkout. [Evidence](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_context_checks.json)
+keeps source/API checks distinct from real vLLM and model validation.
+
+
+### Session batching preflight
+
+`tests.experiments.test_session_batching_preflight` checks direct startup with
+invalid batch concurrency, incompatible rolling options and a missing batching
+policy. Rejection precedes private directory creation and any inert Ray call.
+A positive case retains deferred model startup and the actual factory settings.
+[Evidence](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/session_batching_preflight_checks.json)
+keeps the original failure and a command containing a nonexistent test-module name.
+
+
+### Prepared supply with independent declarations
+
+The reviewed ready/event/supply and backend-progress modules are ported from
+`b258c575`; inherited rolling cases remain distinct from new methods.
+`tests.execution_provider.test_prepared_supply_budgets` exercises the actual
+public factory, an unspecified R with complete finite declarations, independent
+Method row and byte grants, and a single held-task grant with RPC notifications.
+The two existing clock fixtures now patch the current query module; assertion
+ASTs are unchanged. A new ordinary positive fixture uses its actual Filter stage.
+[Evidence](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/prepared_supply_composition_checks.json)
+retains initial failures and original performance limitations.
+
+
+### Combined follow-up source
+
+The final combination includes prepared-supply notifications, independent
+resource grants, both reviewed readiness/preflight repairs, and direct session
+batching validation. It also runs the existing allocated-resource and cgroup
+CPU fixtures; these checks do not allocate automatic capacity or measure the
+target server. [Combined evidence](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/system_followup_checks.json)
+keeps all earlier failed runs, skips and the new exact-source result separately.
+
+
+## 2026-11-04 legacy 等待中帧交接
+
+[确定性用例](execution_provider/test_core_pending_frame_handoff.py)用 Future 与手动时钟检查未消费帧、
+原时间／序号／一次消费、RPC 到期／错误、模型／查询变化和缺少序号。保留帧仍可被控制器按其原年龄规则拒绝。
+该组及原来源身份／几何 trace 合计 34 方法通过；
+[交接摘要](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/pending_frame_checks.json)
+另列相关完整复查和原 geometric 集成失败。新修正不扩大观察时长、不改动态阈值、不启动真实 Ray 或模型。
+
+
+## 2026-11-04 Movie 准备模式接线
+
+[入口用例](experiments/test_movie_preparation_mode.py)覆盖默认等价、非法模式、固定 rolling 限定、
+直接 start 提前拒绝、check／worker CLI、resident 同模型复用、校准身份及 None 加完整独立预算。
+后期上下文错误另核对原 CPU 子进程的成功事件与保留回执／用量，并保持查询失败。
+[检查摘要](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)
+保留原反例及两处新增 fixture 修正，不把某一 fixture 中零前缀推成所有默认路径零提交的要求。
+
+
+## 2026-11-04 同步逐调用实际上下文
+
+[逐调用用例](serving/test_sync_generation_context.py)检查省略与显式上下文、小／大模型解析值、
+没有先读取 ready 的调用、上下文变化、调用数不被拒绝项消耗及关闭／不确定／忙碌状态。
+这是 CPU 原生 API stub；构造和 chat 参数保持，真实模型与完整提示长度资格尚未获得。
+[检查摘要](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_generation_checks.json)
+保留第一轮反例和本地 psutil 进程身份读取受限的原错误，后续本机 CPU 回归不改判这些记录。
+
+
+优先级路径的延迟关闭检查改为复用已有“确认模型成功后延迟交付”的用例，保留 successor_first 设置，
+核对结果／用量、未完成查询、Core 持有和无 parser／后继重放。原接纳确认不能证明模型成功，
+旧完整回归的一次失败和父候选／当前候选的单次对照均保留；接纳但仍计算的关闭情况仍未由此用例证明。

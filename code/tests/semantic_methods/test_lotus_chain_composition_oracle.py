@@ -172,6 +172,7 @@ class CompositionOracleTests(unittest.TestCase):
         worker._owner_close_started=False;worker.close_on_source_complete=False
         worker._used_stage_ids={s.stage_id for s in first.stages};worker._model_name=first.stages[0].method.model_name
         worker.engine_spec=SimpleNamespace(max_model_len=4096);worker.deadline=time.monotonic()+10
+        worker.engine=None
         before=deepcopy(first.describe());ids=set(worker._used_stage_ids)
         with tempfile.TemporaryDirectory() as directory:
             worker.control=Path(directory)

@@ -12,7 +12,7 @@ from types import MappingProxyType
 
 from src.modalities.text.tokenization import chat_token_count
 from src.planning.work import StageWork, WorkDescriptor
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, _prepared
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prepared
 def fingerprint(value, *, maximum_bytes=None):
     digest, size = hashlib.sha256(), 0
     for piece in json.JSONEncoder(sort_keys=True, ensure_ascii=False,
@@ -50,7 +50,7 @@ def audit_chain_call(expected, result=None):
     """Keep the existing chain namespace and reuse records' usage validation."""
     from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
     from src.semantic_methods.lotus.records import CallLedger, identity
-    from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+    from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
     record = RecordOccurrence(expected["row_id"], expected["source_position"], 0, {})
     declared = stage_identity(expected["query_id"], record, expected["algorithm_stage"],
         model_role=expected["model_role"], call_index=expected["call_index"])

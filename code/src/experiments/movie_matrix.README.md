@@ -1,6 +1,7 @@
 # Movie 有限矩阵维护入口（CPU 候选）
 
 普通运行与 Session 的配置解释由 [`movie_records_config.py`](movie_records_config.py) 共用，
+其容量／执行声明直接读取 `records_capacity`／`records_profile`，预检不导入查询或模型 owner。
 包括 Core profile、任务与 IPC 容量、应用批选项及 admission cache 身份。
 它只调用既有类型与 resolver，不创建运行时、模型或控制器；原运行器中的五个私有导入名保留兼容。
 配置到执行的职责及本轮差分检查见[重构记录](../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md)。
@@ -133,29 +134,31 @@ iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原�
 ```
 
 `core_capacity`复用`CoreRecordsCapacity`，上述两个字段是单任务完整输入／结果的字节额度。
-未声明下述独立`budget`时，Core总量仍按解析后的owner请求额度R分别乘以单项；动态C的初始值不代替R。
-IPC单项默认取对应Core单项，请求／结果／命令槽默认取R；IPC输入总量默认是R乘IPC输入单项，
-结果总量默认是IPC结果槽乘IPC结果单项。部分配置先补这些默认，再保留显式字段；
-`{}`或仅反馈参数不会采用`AsyncEngineLimits`独立构造时的8请求默认。
-显式较小的IPC总量或单项不会被扩大：总量至少须容纳一个声明单项，其余由原有背压限制实际接纳。
-IPC保留原结果／控制帧最小值与最终编码校验；Core和IPC分别校验自己的完整表示，并非同一份字节账。
-省略容量字段时原Core单项2MiB及其owner默认保持，模型、提示、生成参数、B和完成／unknown责任不变。
+普通 async Filter 与 rolling token 工厂在未给完整 `budget` 时，按已有 IPC 总字节声明和 Core 单项
+形成独立存储额度，静态 C 与硬请求 R 分开。IPC 省略项使用 `AsyncEngineLimits` 的有限缓冲声明，
+请求／命令许可仍来自 R，结果槽和输入／结果字节各用自己的声明；显式字段原样保留。
+Core 总量至少容纳自己的一个单项，不为此扩大较小的显式 IPC 总量或单项。
+Method 驻留按单阶段完整 continuation 与输入／结果的整项字节容量推导；任务／行数保护位于字节可容纳数之上。
+这不代表实测 RSS、空闲内存或模型容量。R 默认仍是调用方声明值，没有自动硬件额度探测。
+IPC 的最小帧、最终编码和未知责任保持；源、提示、生成规则和 B 不变。
 
-普通admission cache将有效Core／IPC配置纳入既有execution身份；省略、空对象与等效默认配置保持旧身份。
-离线Core calibration另绑定容量的派生规则，避免把某次扫描C对应的总量固化进身份。
-旧路径默认IPC槽位／总量仍随owner R推导；显式计数或总量只有在整个合法候选范围内等效才归一，
-否则作为固定约束保留。例如显式`max_inflight=4`即使匹配当前C，也不能与随C派生的默认策略共用身份；
-候选不匹配时在创建owner前拒绝。不同有效字节／槽位／轮询配置隔离缓存，等效数值表示归一。
-该组合仅完成本地CPU接线验证，尚无自定义容量的实机性能资格。
+普通 Movie、session、工厂和离线校准复用 `resolve_records_runtime`；
+`check` 给出有效 Core budget 和 `resolved_async_limits_before_feedback`，统计采样间隔仍由反馈接线配置。
+新默认校准使用 `records_capacity_policy_v2` 绑定真实解析结果，C 扫描不重算存储或 IPC；
+显式计数可独立小于 R，不再因为不等于 C 而拒绝。引擎每轮序列参数与外层请求候选分开。
+不同有效资源值隔离缓存，等效数值表示归一；新身份不复用旧 R 派生结果。
+显式历史策略及具名参数沿用旧分配／缓存身份；同步、非 rolling 整批和低层直接构造仍待分批迁移。
+当前只有 CPU 接线检查，实际内存、模型和完整查询性能未验证。
 [CPU配置与边界检查](../../tests/experiments/test_records_capacity_config.py)覆盖部分配置、独立字节限额、
 3MiB输入／结果、unknown预留、普通／常驻入口和查询账本重置；未新增真实Ray、模型或GPU运行。
 缓存等价／隔离和扫描约束见[容量身份测试](../../tests/experiments/test_core_capacity_identity.py)。
 
-#### 显式独立资源预算（默认关闭，本地CPU候选）
+<a id="显式独立资源预算默认关闭本地cpu候选"></a>
+#### 独立资源预算与显式覆盖（本地 CPU 候选）
 
-在`core_capacity`中提供完整`budget`对象才启用新路径；省略或`null`保留原R推导。
+`core_capacity` 可提供完整 `budget` 显式覆盖；普通工厂的省略／null 默认已按上方规则生成独立额度。
 预算须来自部署明确声明的有限额度，不能由本次输入N、历史最佳并发或任意大数代替。
-当前不自动发现可用内存；未给完整预算拒绝。以下是字段和单位，表中没有通用推荐值：
+当前不自动发现可用内存；显式 budget 仍须给全六项。以下是字段和单位，表中没有通用推荐值：
 
 | `core_capacity.budget`字段 | 约束对象 |
 |---|---|
@@ -167,9 +170,12 @@ IPC保留原结果／控制帧最小值与最终编码校验；Core和IPC分别�
 | `method_bytes` | 原`MethodBudgetPool`的序列化输入／状态／结果保守预留总量 |
 
 六项均须为正整数；输入／结果总量须容纳其Core单项额度，方法字节须容纳完整continuation上界。
-`async_limits`另须显式给齐`max_inflight`、`result_slots`、`command_slots`、`control_slots`、
-`input_bytes`、`result_bytes`。这些IPC槽／字节预算独立生效，允许少于Core硬请求槽；
+已有完整独立`budget`时，`async_limits`可以省略或只覆盖部分字段：请求／命令槽取`active_requests`，
+结果槽取`held_tasks`，输入／结果总字节取对应预算；控制槽继续原协议预留公式，以`active_requests`为参数。
+所有数值仍须有限；显式字段优先，完整显式对象保持原值，可以少于Core硬请求槽。
 IPC单项继承Core单项或显式覆盖，原最小帧及编码检查保留，不会为匹配C而扩大额度。
+Core与IPC仍分别核对和持有自己的表示，两层使用相同默认数值不合并记账，也不表示实测进程内存。
+上述 IPC 缺省推导属于调用方给出完整 budget 的路径；普通省略预算使用前述独立默认规则。
 
 普通Movie的`core_profile.max_inflight`／Session的`profile.max_inflight`只控制新请求准入；
 固定模式须显式声明C，rolling资源反馈仍从原冷起点1出发。C变化不重算存储、状态或IPC预算，
@@ -217,25 +223,18 @@ ready 只有一条就发一条，不等待凑满或上一包全部结束。成�
 }
 ```
 
-沿同一个普通Movie工厂／Session入口执行。`max_inflight`省略或显式为1时从1请求开始；
-既有`"auto"`在R=1时也接纳并解析为1，R>1时拒绝，实际起点和容量边界没有改变。
-旧预算下R由`resources.max_active_batches`声明；显式独立budget下R取`budget.active_requests`，
-两者均保留各自的驻留及字节／IPC责任。省略或null `admission`保持固定rolling，
-旧预算模式下其C_request=R且不安装反馈；显式独立budget按配置的C与硬R分别校验。启用反馈后只调单请求额度C_request，B固定只组织本次提交，C_batch=null；
-完成一条可立即补位，合法后继不等慢同伴。缩容只阻止新准入，已有在途及已选择待后端接收的成员有界排空，
-不取消、不拆改既定批成员；待提交责任和真实inflight分别记录。
-现有请求扫描、同session新鲜反馈、单RPC、需求／资源门控和三窗性能确认复用，缺帧／重复／排队／供给不足／尾部均不会当空闲。
-新路径默认computed／local_pairs／geometric／`search_policy="ascending"`，`exploration_s/max_changes/max_candidate_attempts=null,min_remaining=0`；
-可在同一`admission`对象显式覆盖既有`ResourceFeedbackConfig`选项，不继承旧命名profile的10秒／64待办默认。
-`check`报告初始C_request、B、R及解析选项；关闭回执为`request_supply_feedback`，含在线探索成本和RPC终态／unknown。
-新策略有收益继续上探，平台／退化／冲突时局部确认；显式`search_policy="reference"`保留旧策略。
-同 resident owner 的兼容完整查询成功后可复用已确认档位／未完进度，新鲜工作量重验证，不能只凭模型EOF提交。
-阶段关闭与下次查询可续探分别记账；磁盘`admission_cache`仍拒绝。固定／非token／批槽默认不变。
-同一snapshot RPC在模型actor读其分配GPU的NVML及cgroup／affinity CPU范围；多个新鲜信号与实际ready供给支持时，
-联合空闲程度决定有界试探目标，可跨多个档位，不限于额外一个几何点。
-精确成本估计可辅助步幅，缺失不禁止资源观测触发探索；来源、未知值和采纳理由在回执分别记录。
-现仅CPU合成资源事实验证接线，尚无真实硬件采样／性能或动态B资格。见[完整策略和资源边界](../scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
-非空`admission.gpu_ids`仍拒绝：新读取器绑定的是模型actor的实际CUDA分配，不能用driver的设备列表冒充；原普通非token请求路径保留。
+该入口使用 `ResourceRequestConfig` 与已审请求策略，从一开始，不支持跨查询 hint 或磁盘 admission cache。
+实际请求许可来自当前 Core／IPC／结果预留，不把 R 当作实测显存容量；原生样本绑定同一实例及 Core session。
+采样间隔、窗口、样本年龄与三窗比较分别保留，旧 `search_policy`、KV／busy 百分比选项在当前入口拒绝。
+新鲜原生反馈和可选的 actor 分配设备／CPU 读数只支持可撤回试探，不构成性能收益或硬件容量证明。
+缺失的独立内存保护或原生拒绝计数不填零；要求尚未接入的独立内存来源时配置拒绝。
+B 固定，C_batch 为 null；已接纳请求、合法后继、未消费结果、unknown 与 ACK 继续由原组件结算。
+缩小 C 只停未来选择，不取消已借用成员。初始 C、B、硬 R 与统计回执分别记录。
+
+显式 `legacy_resource_feedback` 或直接传旧 typed 选项才保留历史 ascending／reference 与条件续扫；
+其原数值及成功查询后确认 hint 的规则保持。同步／native baseline 和非 rolling 批槽策略不借用新请求策略。
+[当前配置与旧策略说明](../scheduling/runtime/calibration.README.md#resource-request-public-current)分别说明有效选项；
+本批没有真实 Ray／模型／GPU 或动态 B、准备交错组合的资格。
 
 另一种与rolling互斥的模式，在原批配置中显式加入以下片段，选择固定B、从一批起步的供给反馈候选：
 
@@ -394,3 +393,56 @@ worker 在 claim 前复核，token 审计读取同一有效计划，支持扫描
 维护 CLI 现有隔离 sample 生命周期保持不变；普通公共回调可用查询额度复用一个模型 owner。
 模型 `max_num_seqs` 的变化仍需新 owner、身份和缓存。该增量仅 CPU 验证，
 未部署、未改全局默认，未继承旧候选的 GPU 资格或性能结果。
+
+
+### 静态与 Core 容量预检
+
+static session 的 CPU 检查现要求已有有限请求额度；显式 `R=None` 不能通过该旧静态路径。
+`_MovieDriver.start` 也在创建私有目录、读取 Ray 状态和初始化 runtime 前验证 static 额度，
+并提前调用同一个纯 Core 配置解析器。这样即使绕过 `check_plan`，未解析或非法容量也不会
+先启动 Ray。没有新增计数上限或硬件探测，普通 async／rolling 的 None 加完整独立预算仍可用，
+Core、Method 和显式 IPC 值保持，见[预检检查](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/static_capacity_preflight_checks.json)。
+
+旧 geometric 的完整资格仍未通过。公共观测组件把 regular poll 的空返回当不可用，并保留
+已见序号；独审已有确定性回放，新增实际 CPU 跟踪也观察到 pending RPC 的空返回。
+不能把它解释成无害抖动，也不能由不同控制器推断所有新路径均不受影响。
+[交接调查](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/geometric_source_handoff_checks.json)
+记录实际调用点、语义核对和未证明的原失败唯一原因；本次没有改 provider 或控制器阈值。
+
+
+### 直接 session 启动的组批校验
+
+`_MovieDriver.start()` 也在私有目录与 Ray 初始化前调用现有 `resolve_record_batching`，
+并复用同一次选项解析供原工厂使用。非法 `batch_concurrency`（含布尔值）、rolling 与批并发
+冲突、缺少 `prepared_batching` 的批选项会提前拒绝；合法固定批仍是原来的延后模型启动，
+rolling 完整预算与显式容量的行为保持。
+[CPU 摘要](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/session_batching_preflight_checks.json)
+分别保存正常预检、直接启动及 inert Ray 调用证据，不表示所有未验证输入都已提前检查。
+
+
+<a id="record-preparation-mode"></a>
+### Movie 准备模式的显式选择
+
+普通 `run_lotus_records_movie.py check/run` 配置和 `semloom-core` session plan 可增加一个字段：
+
+```json
+{"preparation_mode": "event_driven"}
+```
+
+这是已有完整配置的补充，不是一份可独立执行的计划。取值为 serial、interleaved 或 event_driven；
+省略等同 serial，保持现有配置和校准身份。interleaved 使用既有准备／派发交错；event_driven
+还使用既有完成与 RPC 可用通知。它们映射到 SDK 的两个既有选项，不创建第二执行器或控制器。
+
+这两个显式模式目前只支持固定 rolling token 请求：保留正数 B、token_budget、无单批行帽、
+async 与 rolling_refill=true；不与逐请求／批反馈、其他 backend 或 stage_timing 混用。
+原生 baseline 参数和调度仍由各 baseline 负责，公共入口没有因此支持任意链或 DAG。
+同一字段适用于隔离和 resident 查询；resident 仍先取得同一模型 ready，再逐查询完成并在 session 结束时关闭。
+预检和实际 record_batching 回执记录有效选项，模式变化会改变校准身份；None 加完整独立预算仍使用有限额度。
+
+准备模式不会承诺错误查询零提交：原始 source 预检不预先构造所有未来提示。后面的提示超长或
+结果处理报错时，前面合法请求可能已经完成并产生用量；失败查询保留这些结果和用量，不能标为完成。
+不同准备顺序下的合法前缀可能不同，不能声称严格错误副作用等价。已接受但结果不确定的请求仍由原管理对象持有。
+
+本批只有明确替身的 CPU CLI worker、连续查询及回归检查，模型、Ray RPC 和外部资格读取使用原 fixture；
+不提供真实模型、GPU 或查询加速结论。原 geometric 不稳定与负计时记录继续保留，
+详细来源见[接线检查](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)。

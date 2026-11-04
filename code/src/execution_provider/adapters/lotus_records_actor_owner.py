@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
@@ -131,6 +131,7 @@ class RecordsActorOwner:
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.generation = GenerationSpec.from_dict(asdict(generation))
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         self.ray = None
         self.prepare_actors: list[Any] = []
         self.model_actor = None

@@ -20,7 +20,7 @@ from src.semantic_methods.lotus.cascade import (
     CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 from .daft_lotus_records import DEFAULT_PREPARED_BATCH_BYTES, _DaftRows, _check
 from src.serving.backends.stage_process_cleanup import StageEngineCleanup
@@ -117,7 +117,7 @@ def _stage_graph(source, stage, engine, generation, resources, deadline, control
                 raise BufferError("actual Daft cascade batch exceeds its logical input allowance")
             _check(deadline, control)
             if self.kernel is None:
-                from src.serving.backends.vllm_sync_process import EngineProcess
+                from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
 
                 self.kernel = (engine_type or EngineProcess)(
                     EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),

@@ -1,0 +1,163 @@
+{
+  "schema": "semloom.entry_slimming_cpu.v1",
+  "base": "4fec5472313196e3e9bca377c7c178bd1bd49b93",
+  "status": "local CPU checks passed; independent review pending",
+  "removed": [
+    {
+      "path": "code/scripts/baselines/time_duckdb_ai_baseline.py",
+      "decision": "retire_historical_timing_probe",
+      "reason": "Single-shard extrapolation probe with no maintained runtime or test caller; native baseline uses the shared official runner and the same unchanged product adapter. Historical probe outputs keep their original meaning.",
+      "lines": 207,
+      "bytes": 7580,
+      "sha256": "552b44eab62726312832f488065a01a038d1b18b704af4a6bf551665ea5d93e5",
+      "source_commit": "4fec5472313196e3e9bca377c7c178bd1bd49b93",
+      "source_archive": "experiments/reproduction/native_baselines/historical_sources/4fec5472/code/scripts/baselines/time_duckdb_ai_baseline.py.gz",
+      "archive_bytes": 2753,
+      "archive_sha256": "b8bcbc3aacc4d9293aa0b9da1e716e64a47bab43224b6465db6b399fddffd457",
+      "current_runtime_imports": [],
+      "test_imports": [],
+      "current_docs": [],
+      "current_plans": [
+        "experiments/plans/reference/对照规范.md"
+      ],
+      "CI": [],
+      "maintained_sources": [
+        "code/scripts/baselines/run_official_baseline.py",
+        "code/src/baselines/text/products/duckdb_ai.py",
+        "code/tests/baselines/text/test_duckdb_ai_adapter.py"
+      ],
+      "historical_variants": [
+        "native_isolated_and_imlane",
+        "core_original_dynamic",
+        "core_local_window_pairs",
+        "ray_runtime_reuse",
+        "daft_single_thread_session"
+      ]
+    },
+    {
+      "path": "code/scripts/data/build_opening_multijob_manifests.py",
+      "decision": "retire_historical_manifest_generator",
+      "reason": "Old fixed short/long job selection for historical experiments, with no maintained runtime, test or current plan caller. No replacement is claimed equivalent; exact selector and manifest identity remain recoverable.",
+      "lines": 166,
+      "bytes": 7034,
+      "sha256": "f2e682285ffae51c0752a06be4cdd8e91d4cb7fc3c726d4de627febcca055100",
+      "source_commit": "4fec5472313196e3e9bca377c7c178bd1bd49b93",
+      "source_archive": "experiments/reproduction/native_baselines/historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
+      "archive_bytes": 2287,
+      "archive_sha256": "28084131fb403ccae05b65c841d92029c56626afa8d2abe781a7dbddf78408e2",
+      "current_runtime_imports": [],
+      "test_imports": [],
+      "current_docs": [],
+      "current_plans": [],
+      "CI": [],
+      "maintained_sources": [
+        "experiments/reproduction/native_baselines/MANIFEST.json"
+      ],
+      "historical_variants": [
+        "native_isolated_and_imlane",
+        "core_original_dynamic",
+        "core_local_window_pairs",
+        "ray_runtime_reuse",
+        "daft_single_thread_session"
+      ]
+    },
+    {
+      "path": "code/scripts/profiling/daft_text_organizer_smoke.py",
+      "decision": "retire_redundant_smoke_entry",
+      "reason": "Standalone introductory Arrow/Daft smoke; production organizer and maintained behavior tests cover the row/batch path. Exact old CLI remains recoverable.",
+      "lines": 129,
+      "bytes": 4022,
+      "sha256": "fbf9630d30ae70673991f4d2f94af6c16b8984631f8ca8b837116d5722091f06",
+      "source_commit": "4fec5472313196e3e9bca377c7c178bd1bd49b93",
+      "source_archive": "experiments/reproduction/native_baselines/historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
+      "archive_bytes": 1652,
+      "archive_sha256": "901652265a073f5494405792ddda11461d14c17a6a4dbed04e6bd1317c9b07b5",
+      "current_runtime_imports": [],
+      "test_imports": [],
+      "current_docs": [
+        "code/scripts/README.md"
+      ],
+      "current_plans": [],
+      "CI": [],
+      "maintained_sources": [
+        "code/src/data/materializers/text.py",
+        "code/tests/planning/test_organizers.py"
+      ],
+      "historical_variants": [
+        "native_isolated_and_imlane",
+        "core_original_dynamic",
+        "core_local_window_pairs",
+        "ray_runtime_reuse",
+        "daft_single_thread_session"
+      ]
+    }
+  ],
+  "active_lines_removed": 502,
+  "archive_bytes": 6692,
+  "inventory": {
+    "path": "entry_inventory.json.gz",
+    "entries": 641,
+    "scripts": 132,
+    "tests": 509,
+    "decisions": {
+      "keep_package": 8,
+      "keep_current_entry": 116,
+      "retain_pending_use_review": 5,
+      "retire_historical_timing_probe": 1,
+      "retire_historical_manifest_generator": 1,
+      "retire_redundant_smoke_entry": 1,
+      "keep_regression_or_fixture": 509
+    },
+    "inventory_bytes": 1074831,
+    "inventory_sha256": "a7ee0e8b7b76fde2a3dbca14acdadbe9e1117cb74713efbd63e785c3d61980ec",
+    "archive_bytes": 70674,
+    "archive_sha256": "3a724a5c058e5a705c569d3c890d171a1083f6616fde81a43ec7f9c58f4daf77"
+  },
+  "existing_tests_removed": 0,
+  "tests": {
+    "selected": 46,
+    "run": 46,
+    "passed": 46,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true,
+    "all_code_hashes_matched": 1288,
+    "modules": [
+      "tests.planning.test_organizers",
+      "tests.baselines.text.test_duckdb_ai_adapter",
+      "tests.baselines.text.test_official_baseline_cli",
+      "tests.experiments.test_native_baseline_reproduction",
+      "tests.experiments.test_retired_saor_entries",
+      "tests.scheduling.test_archived_control_sources"
+    ]
+  },
+  "historical": {
+    "bindings": 3010,
+    "mismatches": 0,
+    "projections": 5,
+    "CLI_help_checks": 15,
+    "CLI_help_failures": 0,
+    "original_expected_hashes_and_projection_ids_unchanged": true
+  },
+  "artifacts": {
+    "entry_inventory.json": "a7ee0e8b7b76fde2a3dbca14acdadbe9e1117cb74713efbd63e785c3d61980ec",
+    "entry_inventory.json.gz": "3a724a5c058e5a705c569d3c890d171a1083f6616fde81a43ec7f9c58f4daf77",
+    "entry_slimming_related.json": "29789e637545448b8a41b535fc9fc6280d1f28c729fd845745a2ba18deaf84a7",
+    "entry_slimming_related.log": "6ac96583cb94e4cfce04ccc73932e5ed88002ad54569d585184ef4712bb774d0",
+    "restored_tool_checks.json": "356b4c0dad9e7920a0cfb8d229cfd22fe905250d6a12cef2ed6bee28f3dd0851",
+    "inventory_entries.py": "4ff47a486731d3969f4dbb98f0315ffb7ccada47a30a634ca22ca146a446f758",
+    "retire_entries.py": "b16b3df415e3e8bc2b1458faa18af913d7df230de10e0c8f7888cdd56e9d0c1c"
+  },
+  "remaining": [
+    "five script entries have no maintained caller established by static scan; retain pending individual unique-use review",
+    "sync defaults and automatic resource allocation are outside this cleanup increment",
+    "original full-tree failures, skips and source identities are retained; these tests are scoped cleanup qualification"
+  ],
+  "evidence_run_id": "semloom-entry-slimming-20261104",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

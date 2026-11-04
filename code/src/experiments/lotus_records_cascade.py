@@ -16,7 +16,7 @@ from src.baselines.common.redact import redact_text
 from src.experiments.lotus_records_chain import read_relation, _frame_result
 from src.semantic_methods.lotus.engine import bind_filter_method, make_lm, validate_generation
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 BACKEND = "imlane-author-local-model-cascade"

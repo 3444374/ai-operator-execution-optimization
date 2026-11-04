@@ -73,7 +73,10 @@ class CommonKernelTests(unittest.TestCase):
         p,r=fixtures(3)
         self.equivalent(p,r,error=RuntimeError('CPU model failure'))
         self.equivalent(p,r,fail_at=1)
-        o=self.equivalent(p,r,fail_at=2)
+        pending=self.equivalent(p,r,fail_at=2)
+        self.assertEqual(pending['error'][0],'OSError')
+        self.assertEqual(pending['model_invocations'],0)
+        o=self.equivalent(p,r,fail_at=3)
         self.assertIn('call_ledger_write: OSError',o['audit_errors'])
     def test_no_model_call_after_existing_stop(self):
         from pathlib import Path

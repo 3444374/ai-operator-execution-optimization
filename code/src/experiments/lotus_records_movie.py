@@ -23,6 +23,7 @@ from src.experiments.movie_records_config import (
     core_capacity as _core_capacity, async_limits as _async_limits,
     core_profile as _core_profile, record_batching_options as _record_batching_options,
     record_admission_cache as _record_admission_cache,
+    records_runtime as _records_runtime,
 )
 
 
@@ -306,10 +307,10 @@ def fixed_response_qualification(source, checkout, method, generation, responses
 
 
 def read_config(path):
-    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -325,17 +326,15 @@ def read_config(path):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
     is_core = value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND)
     if not is_core and (set(value) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                                     'experimental_skip_token_packing'}):
+                                     'experimental_skip_token_packing', 'preparation_mode'}):
         raise ValueError('record batching options require a Core backend')
     if not is_core and set(value) & {"async_limits", "core_capacity"}:
         raise ValueError("async_limits and core_capacity require a Core backend")
     engine = EngineSpec.from_dict(value["engine"])
     if is_core:
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        resolved = resolve_core_profile(engine, resources, _core_profile(value),
-            rolling_refill=value.get('rolling_refill', False), capacity=_core_capacity(value))
-        _core_capacity(value)
-        _async_limits(value, resources=resources, resolved=resolved)
+        from src.execution_provider.adapters.records_profile import resolve_record_batching
+        configured = _records_runtime(value, resources=resources, engine=engine)
+        resolved = configured.profile
         batching = resolve_record_batching(resolved, **_record_batching_options(value))
         if batching is not None and value.get('admission_cache') is not None:
             raise ValueError('record token batching does not support admission_cache')
@@ -370,7 +369,7 @@ def read_cascade_config(path):
     from lotus.types import CascadeArgs
     from src.semantic_methods.lotus.cascade import cascade_identity
     from src.semantic_methods.lotus.engine import validate_generation
-    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
     required = {"schema", "backend", "query_id", "method", "helper_model_name", "engines",
@@ -409,7 +408,9 @@ def read_cascade_config(path):
     if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
         raise ValueError("cascade requires distinct explicit main and helper model paths")
     for role in engines:
-        if generations[role].max_tokens > engines[role].legacy_max_model_len:
+        limit = (engines[role].max_model_len if value['backend'] == 'semloom-local-model-core-cascade'
+                 else engines[role].legacy_max_model_len)
+        if limit is not None and generations[role].max_tokens > limit:
             raise ValueError("cascade max_tokens exceeds max_model_len")
     return value, method, generations, resources, engines, args
 
@@ -583,11 +584,10 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     emit("runtime_setup_start")
     try:
         if is_core:
-            from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
-            is_async = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False),
-                capacity=_core_capacity(config))["mode"] == "async"
+            configured = _records_runtime(config, resources=resources, engine=engine)
+            is_async = configured.profile['mode'] == 'async'
         if is_async:
-            async_limits = _async_limits(config)
+            async_limits = configured.async_limits
         if config["backend"] != "daft-native-local-model":
             import ray
 
@@ -639,8 +639,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 cache_read_or_write=False, scan_cost=dict(wall_s=0., samples=0))
         elif config.get("admission_cache") is not None:
             from src.experiments.movie_matrix_support import run_record_admission
-            resolved = resolve_core_profile(engine, resources, profile, rolling_refill=config.get('rolling_refill', False),
-                capacity=_core_capacity(config))
+            resolved = configured.profile
             def execute_query(window, *, allow_exploration, search_hint=None):
                 query_options.update(max_inflight=window, allow_exploration=allow_exploration,
                                      search_hint=search_hint)
@@ -784,7 +783,7 @@ def main(argv=None):
         return 0
     source = MovieRecordSource.from_manifest(args.source_manifest)
     if args.action == "fixture":
-        from src.serving.backends.vllm_engine import GenerationSpec
+        from src.serving.backends.vllm_protocol import GenerationSpec
         method, generation = source.task.method(args.model_name), GenerationSpec()
         root = Path(args.output_dir).resolve()
         new_private_directory(root)
@@ -828,17 +827,18 @@ def main(argv=None):
         raise ValueError("execution configuration task differs from its source binding")
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
     if config["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND):
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        preflight["core_execution"] = resolve_core_profile(engine, resources, _core_profile(config),
-            rolling_refill=config.get('rolling_refill', False), capacity=_core_capacity(config))
-        if "core_capacity" in config:
-            preflight["core_capacity"] = asdict(_core_capacity(config))
+        from src.execution_provider.adapters.records_profile import resolve_record_batching
+        configured = _records_runtime(config, resources=resources, engine=engine)
+        preflight['core_execution'] = configured.profile
+        if 'core_capacity' in config or configured.capacity.budget is not None:
+            preflight['core_capacity'] = asdict(configured.capacity)
         batching = resolve_record_batching(preflight['core_execution'], **_record_batching_options(config))
         if batching is not None:
             preflight['record_batching'] = batching
         if preflight["core_execution"]["mode"] == "async":
             limits = _async_limits(config)
             preflight["requested_async_limits"] = None if limits is None else asdict(limits)
+            preflight['resolved_async_limits_before_feedback'] = asdict(configured.async_limits)
     if args.action == "check" or not args.execute_model:
         print(json.dumps(preflight, ensure_ascii=False))
         return 0

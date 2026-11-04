@@ -17,7 +17,7 @@ import threading
 import time
 
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
 DEFAULT_PREPARED_BATCH_BYTES = 64 * 1024**2
@@ -95,7 +95,7 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                 raise BufferError("actual Daft inference batch exceeds its logical input allowance")
             _check(deadline, control)
             if self.kernel is None:
-                from src.serving.backends.vllm_sync_process import EngineProcess
+                from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
 
                 self.kernel = (engine_type or EngineProcess)(
                     EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),

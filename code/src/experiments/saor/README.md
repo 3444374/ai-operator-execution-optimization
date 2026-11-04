@@ -1,9 +1,9 @@
-# SAOR experiment cores
+# Historical SAOR experiment evidence
 
 This package contains reusable, typed experiment contracts and offline evidence
 logic. Command-line scripts under `code/scripts/` must remain thin wrappers.
 
-For the current multi-Job comparison:
+The following modules retain historical multi-Job comparison and offline evidence roles:
 
 - `native_system_contract.py` and `native_system_parser.py` define the five-arm
   PostgreSQL-source-to-completion identity, typed Job releases, and MFU contract.
@@ -48,3 +48,10 @@ exact 54ff2324 sources, dedicated tests and original package exports remain in
 [historical reproduction sources](../../../../experiments/reproduction/native_baselines/README.md).
 The live capacity controller and stage broker remain maintained; this retirement
 does not change their execution or establish a performance improvement.
+
+The Project-mechanism, feeding-ceiling and feeding-gap launch scripts have left
+the maintained entry directory. No current Python, test or configured invocation
+imports those three launchers. Their exact compressed sources and restoration
+metadata are in the [historical source index](../../../../experiments/reproduction/native_baselines/README.md#retired-saor-launchers).
+Offline validation, summaries, raw evidence and native backends remain available.
+This package is not an implicit request to rerun the historical matrices.

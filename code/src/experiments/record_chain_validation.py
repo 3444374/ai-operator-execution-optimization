@@ -12,7 +12,7 @@ from src.execution_provider.adapters.lotus_chain_token_budget import ChainTokenB
 from src.semantic_methods.driver import SuccessorFirst
 from src.semantic_methods.budget import row_reservation
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec, MapMethod, FilterMethod
-from src.serving.backends.vllm_engine import _prepared
+from src.serving.backends.vllm_protocol import _prepared
 
 
 def make_chain(model_name, generation):
@@ -191,7 +191,7 @@ def compare(root, config, *, config_sha256=None):
     matched = config.get('suite') == 'matched-execution'
     if matched:
         from src.semantic_methods.lotus.records import RecordsResources
-        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
         resources = RecordsResources(**config['resources'])
         engine = json.loads(json.dumps(asdict(EngineSpec.from_dict(config['engine']))))
         generation = json.loads(json.dumps(asdict(GenerationSpec.from_dict(config['generation']))))
@@ -203,7 +203,7 @@ def compare(root, config, *, config_sha256=None):
     progression = config.get('suite') == 'progression'
     if progression:
         from src.semantic_methods.lotus.records import RecordsResources
-        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
         resources = RecordsResources(**config['resources'])
         group = config.get('progression_batch_rows')
         if (type(group) is not int or not 1 <= group <= resources.max_active_batches <= 4 or

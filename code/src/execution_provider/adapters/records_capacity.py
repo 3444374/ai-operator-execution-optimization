@@ -6,7 +6,7 @@ retain independent counts and bytes. No hardware observation or scheduling.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 
 from src.scheduling.core.session_contract import SessionLimits, SessionTimeouts
 
@@ -57,8 +57,8 @@ class CoreRecordsCapacity:
                 raise ValueError('resource byte budgets must fit their declared Core item')
 
     def limits(self, resources):
-        maximum = resources.max_active_batches
         budget = self.budget
+        maximum = resources.request_capacity() if budget is None else budget.active_requests
         return SessionLimits(
             held_tasks=maximum if budget is None else budget.held_tasks,
             input_bytes=maximum * self.item_input_bytes if budget is None else budget.input_bytes,
@@ -74,7 +74,7 @@ class CoreRecordsCapacity:
     def method_capacity(self, resources, limits):
         from src.semantic_methods.budget import MethodCapacity, row_reservation
         budget = self.budget
-        result = (MethodCapacity(resources.max_active_batches, resources.max_active_batches * row_reservation(limits))
+        result = (MethodCapacity(resources.request_capacity(), resources.request_capacity() * row_reservation(limits))
                   if budget is None else MethodCapacity(budget.method_runs, budget.method_bytes))
         if result.bytes < row_reservation(limits):
             raise ValueError('method byte budget cannot hold one complete continuation envelope')
@@ -88,40 +88,89 @@ class CoreRecordsCapacity:
 
 
 def resolve_records_async_limits(resources, capacity, overrides=None):
-    """Bind IPC defaults to this owner, retaining independent explicit byte caps.
+    """Bind finite IPC defaults to declared grants; explicit fields take priority.
 
-    Core totals remain R times its per-task allowances. IPC counts and per-item
-    allowances default from that declaration; IPC totals cover its own items and
-    result slots, rather than reusing a Core total as an IPC per-item allowance.
+    Legacy totals retain their R-based translation. With an independent budget,
+    request slots come from active_requests, result slots from held_tasks and
+    byte totals from their corresponding budgets. These are logical allocations,
+    not observed memory or sustainable model capacity. IPC continues enforcing
+    its own per-item, result, command and control reservations.
     """
     from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-    from src.serving.backends.vllm_engine import _integer
+    from src.serving.backends.vllm_protocol import _integer
 
     if type(capacity) is not CoreRecordsCapacity:
         raise TypeError("Core records capacity must be CoreRecordsCapacity")
+    if capacity.budget is None:
+        resources.request_capacity()
     if type(overrides) is AsyncEngineLimits:
         limits = overrides
     else:
         if overrides is not None and type(overrides) is not dict:
             raise TypeError("async_limits must be AsyncEngineLimits or an object")
-        if capacity.budget is not None and not {'max_inflight', 'result_slots', 'command_slots',
-                'control_slots', 'input_bytes', 'result_bytes'} <= set(overrides or {}):
-            raise ValueError('explicit resource budgets require explicit finite IPC counts and byte totals')
-        maximum = resources.max_active_batches
-        values = dict(max_inflight=maximum, result_slots=maximum, command_slots=maximum,
+        budget = capacity.budget
+        maximum = resources.max_active_batches if budget is None else budget.active_requests
+        values = dict(max_inflight=maximum,
+            result_slots=maximum if budget is None else budget.held_tasks, command_slots=maximum,
             item_input_bytes=capacity.item_input_bytes, item_result_bytes=capacity.item_result_bytes,
             control_slots=max(16, maximum * 2))
         values.update(overrides or {})
         for name in ("item_input_bytes", "item_result_bytes", "result_slots"):
             _integer(values[name], name, minimum=1)
-        values.setdefault("input_bytes", maximum * values["item_input_bytes"])
-        values.setdefault("result_bytes", values["result_slots"] * values["item_result_bytes"])
+        values.setdefault("input_bytes", maximum * values["item_input_bytes"]
+                          if budget is None else budget.input_bytes)
+        values.setdefault("result_bytes", values["result_slots"] * values["item_result_bytes"]
+                          if budget is None else budget.result_bytes)
         limits = AsyncEngineLimits(**values)
     if capacity.budget is None and limits.max_inflight != resources.max_active_batches:
         raise ValueError("async_limits must match the Core owner request limit")
     if capacity.budget is None and limits.result_slots < limits.max_inflight:
         raise ValueError("async_limits need one result slot per Core request")
     return limits
+
+
+def independent_default_capacity(resources, capacity, overrides=None):
+    """Use existing finite IPC declarations for ordinary single-stage storage.
+
+    Request permission still belongs to resources.max_active_batches. Result
+    reservation bytes bound resident Core tasks and Method envelopes. Their
+    count guards sit one above that byte allowance so they cannot become a
+    hidden request-window policy. Method sizes use the actual single-stage
+    envelope; multi-stage low-level owners retain their explicit declarations.
+    These are logical allocations, not available RAM or measured model limits.
+    """
+    from src.semantic_methods.budget import row_reservation
+    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+
+    if type(capacity) is not CoreRecordsCapacity or capacity.budget is not None:
+        raise ValueError('independent defaults require a Core capacity without a complete budget')
+    resources.request_capacity()
+    if type(overrides) is AsyncEngineLimits:
+        limits = overrides
+    else:
+        if overrides is not None and type(overrides) is not dict:
+            raise TypeError('async_limits must be AsyncEngineLimits or an object')
+        defaults = AsyncEngineLimits()
+        values = asdict(defaults)
+        values.update(max_inflight=resources.max_active_batches,
+            item_input_bytes=capacity.item_input_bytes, item_result_bytes=capacity.item_result_bytes,
+            command_slots=resources.max_active_batches,
+            control_slots=max(defaults.control_slots, 2*resources.max_active_batches))
+        explicit = overrides or {}
+        values.update(explicit)
+        for total, item in (('input_bytes', 'item_input_bytes'),
+                            ('result_bytes', 'item_result_bytes')):
+            if total not in explicit and type(values[item]) is int:
+                values[total] = max(values[total], values[item])
+        limits = AsyncEngineLimits(**values)
+    input_bytes = max(limits.input_bytes, capacity.item_input_bytes)
+    result_bytes = max(limits.result_bytes, capacity.item_result_bytes)
+    rows = result_bytes // capacity.item_result_bytes
+    method_rows = min(rows, input_bytes // capacity.item_input_bytes)
+    envelope = row_reservation(capacity.method_limits(1))
+    budget = RecordsCapacityBudget(rows+1, input_bytes, result_bytes,
+        resources.max_active_batches, method_rows+1, method_rows*envelope)
+    return replace(capacity, budget=budget), limits
 
 
 

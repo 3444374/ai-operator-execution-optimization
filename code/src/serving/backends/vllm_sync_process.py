@@ -19,7 +19,7 @@ import uuid
 from dataclasses import asdict
 from copy import deepcopy
 
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
 MAX_MESSAGE_BYTES = 64 * 1024**2
@@ -234,7 +234,7 @@ class EngineProcess:
                 return
 
     def _run_prepared(self, rows):
-        from src.serving.backends.vllm_engine import _prepared
+        from src.serving.backends.vllm_protocol import _prepared
 
         identities, _ = _prepared(rows)
         self._last_raw_response_json = None
@@ -434,10 +434,11 @@ class EngineProcess:
         return self.last_close_report
 
 
-def serve(result_fd):
+def serve(result_fd, *, engine_factory=None):
     """Run in model_python; the driver/LOTUS environment is never imported."""
     from src.serving.backends.vllm_engine import VllmEngine
 
+    engine_factory = VllmEngine if engine_factory is None else engine_factory
     engine = None
     with os.fdopen(result_fd, "wb", buffering=0) as output:
         def send(value):
@@ -452,7 +453,7 @@ def serve(result_fd):
                     raise ValueError("engine IPC request exceeds its byte limit")
                 value = json.loads(raw)
                 if engine is None and value["op"] == "open":
-                    engine = VllmEngine(EngineSpec.from_dict(value["engine"]),
+                    engine = engine_factory(EngineSpec.from_dict(value["engine"]),
                                         GenerationSpec.from_dict(value["generation"]))
                     send(dict(kind="ready", **engine.ready()))
                 elif engine is not None and value["op"] == "run":

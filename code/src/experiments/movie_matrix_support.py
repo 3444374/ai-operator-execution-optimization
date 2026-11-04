@@ -108,8 +108,8 @@ def validate_core_scan(plan, group, index, cpu_limit):
     """Validate declared capacities without pretending to observe hardware."""
     jobs=scan_jobs(group,index)
     if not jobs:return
-    from src.execution_provider.adapters.lotus_records_core import expand_core_profile, resolve_core_profile
-    from src.serving.backends.vllm_engine import EngineSpec
+    from src.execution_provider.adapters.records_profile import expand_core_profile, resolve_core_profile
+    from src.serving.backends.vllm_protocol import EngineSpec
     from src.semantic_methods.lotus.records import RecordsResources
     profile=expand_core_profile(plan['profile'])
     if profile.get('admission') is not None:
@@ -320,6 +320,8 @@ def validate_record_admission_cache(value, resolved):
         raise ValueError('admission_cache needs identity, absolute cache_dir and optional boolean reuse')
     if resolved is None or resolved.get('mode')!='async' or 'admission' not in resolved:
         raise ValueError('admission_cache requires explicit async resource-feedback admission')
+    if resolved['admission'].get('kind') != 'legacy_resource_feedback':
+        raise ValueError('cross-query admission_cache requires explicit legacy_resource_feedback')
     from src.scheduling.runtime.calibration import identity_signature
     identity_signature(value['identity'])
     if resolved['admission'].get('work_basis') == 'computed' or 'workload_features' in value:

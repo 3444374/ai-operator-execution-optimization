@@ -1,5 +1,6 @@
 """Deterministic CPU lifecycle tests; real model/network/process startup forbidden."""
 
+from copy import deepcopy
 from dataclasses import asdict, replace
 import importlib.util
 import json
@@ -256,6 +257,30 @@ class PlanTests(unittest.TestCase):
         self.plan["engine"]["max_model_calls"] = 2
         with self.assertRaisesRegex(ValueError, "whole session"):
             session.check_plan(self.plan)
+
+    def test_current_sync_session_defers_omitted_context_to_actual_readiness(self):
+        for backend in ('semloom-core', 'semloom-static-reference'):
+            with self.subTest(backend=backend):
+                plan = deepcopy(self.plan)
+                plan.update(backend=backend, profile=dict(mode='sync'))
+                plan['generation']['max_tokens'] = 8192
+                checked = session.check_plan(plan)
+                self.assertEqual(checked['status'], 'checked_cpu_only')
+                self.assertEqual(checked['inference_calls'], 0)
+
+    def test_current_sync_session_keeps_explicit_context_presubmit_check(self):
+        plan = deepcopy(self.plan)
+        plan['engine']['max_model_len'] = 4096
+        plan['generation']['max_tokens'] = 8192
+        with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
+            session.check_plan(plan)
+
+    def test_native_session_retains_its_original_context_default(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='ray-data', lifecycle='isolated', profile={})
+        plan['generation']['max_tokens'] = 8192
+        with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
+            session.check_plan(plan)
 
     def test_owner_api_validates_fresh_claims_before_allocating_and_restores_device_environment(self):
         from contextlib import ExitStack

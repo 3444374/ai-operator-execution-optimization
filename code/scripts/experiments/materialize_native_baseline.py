@@ -4,10 +4,12 @@ The maintained implementation stays in code/. Only files that differ are stored
 in the reproduction directory. Selection is explicit and runs in a separate tree.
 """
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
 import shutil
+import zlib
 
 
 def digest(path):
@@ -24,7 +26,39 @@ def member(root, name):
     return path
 
 
+def read_source(repository, manifest_dir, spec, name):
+    """Read one exact source, including declared, length-checked gzip archives."""
+    source = (member(manifest_dir, spec['overrides'][name])
+              if name in spec['overrides'] else member(repository, name))
+    if not source.is_file():
+        raise ValueError('reproduction source differs: ' + name)
+    formats = spec.get('source_formats', {})
+    if type(formats) is not dict:
+        raise ValueError('reproduction source formats must be an object')
+    encoding = formats.get(name)
+    if encoding is None:
+        data = source.read_bytes()
+    else:
+        if (name not in spec['overrides'] or type(encoding) is not dict
+                or set(encoding) != {'encoding', 'decoded_bytes', 'archive_sha256'}
+                or encoding['encoding'] != 'gzip' or type(encoding['decoded_bytes']) is not int
+                or encoding['decoded_bytes'] < 1 or digest(source) != encoding['archive_sha256']):
+            raise ValueError('invalid reproduction source archive: '+name)
+        try:
+            with gzip.open(source, 'rb') as stream:
+                data = stream.read(encoding['decoded_bytes']+1)
+        except (OSError, EOFError, zlib.error) as error:
+            raise ValueError('invalid reproduction source archive: '+name) from error
+        if len(data) != encoding['decoded_bytes']:
+            raise ValueError('reproduction source archive length differs: '+name)
+    if hashlib.sha256(data).hexdigest() != spec['code_files_sha256'][name]:
+        raise ValueError('reproduction source differs: '+name)
+    return data
+
+
 def materialize(repository, manifest_dir, variant, output):
+    if output.exists():
+        raise FileExistsError(output)
     manifest = json.loads((manifest_dir / 'MANIFEST.json').read_text())
     if variant not in manifest['variants']:
         raise ValueError('select a declared variant explicitly')
@@ -32,15 +66,18 @@ def materialize(repository, manifest_dir, variant, output):
     selected = []
     for name, expected in spec['code_files_sha256'].items():
         destination = member(output, name)
+        data = read_source(repository, manifest_dir, spec, name)
         source = (member(manifest_dir, spec['overrides'][name])
                   if name in spec['overrides'] else member(repository, name))
-        if not source.is_file() or digest(source) != expected:
-            raise ValueError('reproduction source differs: ' + name)
-        selected.append((source, destination, name, expected))
+        selected.append((data if name in spec.get('source_formats', {}) else None,
+                         source, destination, name, expected))
     output.mkdir(parents=True, exist_ok=False)
-    for source, destination, _, _ in selected:
+    for data, source, destination, _, _ in selected:
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
+        if data is None:
+            shutil.copy2(source, destination)
+        else:
+            destination.write_bytes(data)
     receipt = dict(schema='semloom.native_baseline.code_projection.v1', variant=variant,
         original_source_revision=spec['original_source_revision'],
         identity_scope='exact declared code projection; content ID is not a Git commit',

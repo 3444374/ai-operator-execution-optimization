@@ -1,0 +1,51 @@
+{
+  "base": "eb8c3836eed56d9ca279f74c593f19783176dd18",
+  "scope": "configuration import direction only; no changed defaults or factory behavior",
+  "AST": {
+    "movie_records_config.py": "all non-import AST identical",
+    "movie_records_session.py": "all non-import AST identical",
+    "movie_matrix_support.py": "all non-import AST identical"
+  },
+  "CPU": {
+    "config_capacity_before": {
+      "selected": 107,
+      "passed": 107,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "config_import_before": {
+      "selected": 2,
+      "passed": 0,
+      "failures": [
+        "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_capacity_profile_IPC_and_cache_helpers_do_not_load_owners",
+        "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_public_session_check_reads_fixture_sources_without_loading_owners"
+      ],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "config_import_after": {
+      "selected": 167,
+      "passed": 167,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    }
+  },
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "config_capacity_before.json": "f8f08f394eb1cd441b226d2b7665df753e65b1201676e56061b3fa3daff73693",
+    "config_capacity_before.log": "474378d7629cf7327ab10db54c1d0e4126f3d9f51c4cb43a9a8ea87772b53ff8",
+    "config_import_before.json": "612d73acb78bdbccd3942b92ccfde8273cab29854c289e55ca18d14f1339a5d5",
+    "config_import_before.log": "22843508a7fc3c644eae0729e0dc53b65a92991a34855815a0be00b424f1427c",
+    "config_import_after.json": "157d02b9b9fbbdc397570dc3dbce3b0cfa726954b7a7237dbacabab6974d2e2c",
+    "config_import_after.log": "52d694202d8a21edd9c4464cf0a8beffd8f3e92bbb9ed8ff23e745f8773fd896"
+  }
+}

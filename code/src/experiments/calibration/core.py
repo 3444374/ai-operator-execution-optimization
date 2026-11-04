@@ -43,13 +43,24 @@ def _records_capacity_policy(plan):
     Only drop an override equal to its default throughout the eligible C range.
     The existing resolver's defaults are monotone in owner R, so endpoints suffice.
     """
+    from src.experiments.movie_records_config import records_runtime
+    configured = records_runtime(plan)
+    raw_capacity = plan.get('core_capacity', {})
+    derived = (configured.capacity.budget is not None and type(raw_capacity) is dict
+               and raw_capacity.get('budget') is None)
+    if derived:
+        return dict(version=2,
+            core=dict(asdict(configured.capacity), poll_interval_s=float(configured.capacity.poll_interval_s)),
+            IPC_overrides=dict(asdict(configured.async_limits),
+                feedback_interval_s=float(configured.async_limits.feedback_interval_s)),
+            source=configured.profile['resource_budget_source'])
     if not set(plan) & {"core_capacity", "async_limits"}:
         return None
     from src.execution_provider.adapters.lotus_records_core import (
         CoreRecordsCapacity, resolve_core_profile, resolve_records_async_limits,
     )
     from src.semantic_methods.lotus.records import RecordsResources
-    from src.serving.backends.vllm_engine import EngineSpec
+    from src.serving.backends.vllm_protocol import EngineSpec
 
     for name in ("core_capacity", "async_limits"):
         if type(plan.get(name, {})) is not dict:
@@ -130,7 +141,8 @@ def _core_identity_fields(plan, checked, *, hardware, model, software):
     )
     capacity = _records_capacity_policy(plan)
     if capacity is not None:
-        identity["execution"]["records_capacity_policy_v1"] = capacity
+        key = 'records_capacity_policy_v2' if capacity.get('version') == 2 else 'records_capacity_policy_v1'
+        identity['execution'][key] = capacity
         if capacity['core'].get('budget') is not None:
             from src.semantic_methods.lotus.prepared_batching import PreparedBatching
             batching = plan.get('prepared_batching')
@@ -140,12 +152,20 @@ def _core_identity_fields(plan, checked, *, hardware, model, software):
                 prepared_batching=batching,
                 rolling_refill=plan.get('rolling_refill', False),
                 experimental_skip_token_packing=plan.get('experimental_skip_token_packing', False))
+    if 'preparation_mode' in plan:
+        from src.experiments.movie_records_config import record_batching_options, records_runtime
+        from src.execution_provider.adapters.records_profile import resolve_record_batching
+        preparation = resolve_record_batching(records_runtime(plan).profile, **record_batching_options(plan))
+        flags = {name: preparation[name] for name in ('interleaved_preparation', 'event_driven_preparation')
+                 if preparation is not None and name in preparation}
+        if flags:
+            identity['execution']['record_preparation_v1'] = flags
     return identity
 
 
 def build_core_identity(plan, checked, *, hardware, model, software, model_ready=None):
     identity = _core_identity_fields(plan, checked, hardware=hardware, model=model, software=software)
-    from src.serving.backends.vllm_engine import EngineSpec
+    from src.serving.backends.vllm_protocol import EngineSpec
     engine = EngineSpec.from_dict(plan['engine'])
     if engine.max_model_len is None:
         from src.serving.backends.model_context import model_context_identity
@@ -156,7 +176,7 @@ def build_core_identity(plan, checked, *, hardware, model, software, model_ready
 
 def core_context_plan(plan, checked, candidate, *, hardware, model, software):
     """Prepare the first declared sample, without claiming an observed identity."""
-    from src.serving.backends.vllm_engine import EngineSpec
+    from src.serving.backends.vllm_protocol import EngineSpec
     if EngineSpec.from_dict(plan['engine']).max_model_len is not None:
         raise ValueError('context confirmation is only needed for omitted context')
     fields = _core_identity_fields(plan, checked, hardware=hardware, model=model, software=software)
@@ -166,7 +186,7 @@ def core_context_plan(plan, checked, candidate, *, hardware, model, software):
 
 def core_model_ready(plan, ready, *, expected=None):
     """Check the executing owner; another owner's observation is only an expectation."""
-    from src.serving.backends.vllm_engine import EngineSpec
+    from src.serving.backends.vllm_protocol import EngineSpec
     from src.serving.backends.model_context import checked_model_context, model_context_identity
     engine = EngineSpec.from_dict(plan['engine'])
     if type(ready) is dict and (ready.get('closed') is True or ready.get('status') in {'failed', 'unknown'}):
@@ -254,15 +274,15 @@ def _candidate_key(candidate, identity):
     workers = _positive_integer(candidate["cpu_workers"], "cpu_workers")
     execution = identity["execution"]
     capacity = execution["resources"]["max_active_batches"]
+    policy = execution.get('records_capacity_policy_v2') or execution.get('records_capacity_policy_v1')
     native_sequences = execution["engine"].get("max_num_seqs")
-    if native_sequences is not None:
+    if native_sequences is not None and (policy is None or policy['core'].get('budget') is None):
         capacity = min(native_sequences, capacity)
     if maximum > capacity:
         raise ValueError("candidate exceeds declared Core/model capacity")
     # Match the existing session's Ray allocation: prepare + model + driver.
     if workers + execution["resources"]["gpu_workers"] + 1 > identity["hardware"]["cpu_limit"]:
         raise ValueError("candidate exceeds the observed CPU allocation")
-    policy = execution.get("records_capacity_policy_v1")
     if policy is not None:
         from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity, resolve_records_async_limits
         from src.semantic_methods.lotus.records import RecordsResources

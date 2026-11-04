@@ -81,8 +81,10 @@ assert sync.CODE_ROOT == pathlib.Path(sys.argv[1])
 
     def test_native_adapters_share_worker_without_importing_core_policy(self):
         from src.baselines.text.frameworks import daft_lotus_chain, ray_data_lotus_chain
-        self.assertIs(daft_lotus_chain.FusedChainBatch, worker.FusedChainBatch)
-        self.assertIs(ray_data_lotus_chain.FusedChainBatch, worker.FusedChainBatch)
+        from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch
+        self.assertIs(daft_lotus_chain.FusedChainBatch, ReferenceFusedChainBatch)
+        self.assertIs(ray_data_lotus_chain.FusedChainBatch, ReferenceFusedChainBatch)
+        self.assertTrue(issubclass(ReferenceFusedChainBatch, worker.FusedChainBatch))
 
     def test_spawn_unpickles_the_same_shared_types(self):
         context = multiprocessing.get_context("spawn")
@@ -219,6 +221,9 @@ class FixtureChain:
 
 class FixtureProcess:
     def __init__(self, *args):
+        from src.serving.backends.model_context import model_context_record
+        self.ready_report = dict(engine_uid='CPU-worker', model_context=model_context_record(
+            args[0], 'CPU-worker', args[0].max_model_len or 32768))
         self.closes = 0
         self.calls = []
 

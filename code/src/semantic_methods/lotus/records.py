@@ -132,7 +132,7 @@ class RecordsResources:
     gpu_workers: int = 1
     prepare_batch_rows: int = 4
     model_batch_rows: int = 4
-    max_active_batches: int = 2
+    max_active_batches: int | None = 2
     query_timeout_s: float = 60
     startup_timeout_s: float = 120
     model_rpc_workers: int | None = None
@@ -140,11 +140,13 @@ class RecordsResources:
     def __post_init__(self):
         for name in (
             "cpu_workers", "gpu_workers", "prepare_batch_rows", "model_batch_rows",
-            "max_active_batches",
         ):
             value = getattr(self, name)
             if type(value) is not int or value < 1:
                 raise ValueError("records capacity must be a positive integer: " + name)
+        if self.max_active_batches is not None and (
+                type(self.max_active_batches) is not int or self.max_active_batches < 1):
+            raise ValueError("max_active_batches must be a positive integer or None")
         if self.gpu_workers != 1:
             raise ValueError("records currently require one GPU worker and TP1")
         if self.model_rpc_workers is not None and (
@@ -162,6 +164,12 @@ class RecordsResources:
     def describe(self):
         self.__post_init__()
         return asdict(self)
+
+    def request_capacity(self):
+        """Read an applied finite grant; None records an unresolved declaration."""
+        if self.max_active_batches is None:
+            raise ValueError("request capacity is unresolved; a complete resource budget is required")
+        return self.max_active_batches
 
 
 def identity(query_id, row_id, source_position, call_index=0, *,

@@ -250,7 +250,7 @@ class RayDriverReuseTests(unittest.TestCase):
         stack.enter_context(patch.object(chain_runtime,'check_external_lease',return_value={}))
         stack.enter_context(patch.object(movie,'run_movie_query',side_effect=collect))
         stack.enter_context(patch.object(native,'evaluate',side_effect=graph))
-        stack.enter_context(patch('src.serving.backends.vllm_engine.VllmEngine',Kernel))
+        stack.enter_context(patch('src.baselines.text.frameworks.sync_reference_engine.ReferenceVllmEngine',Kernel))
         output=Path(case.manifests['movie-q1']).parent.parent/'ray-run'
         return case,context,state,output
 
@@ -343,7 +343,7 @@ class FiniteRayKernelLifecycleTests(unittest.TestCase):
                 return dict(status='completed',results=result)
             def close(self):return dict(status='closed',cleanup_errors=[])
 
-        with tempfile.TemporaryDirectory() as directory,patch('src.serving.backends.vllm_engine.VllmEngine',Kernel):
+        with tempfile.TemporaryDirectory() as directory,patch('src.baselines.text.frameworks.sync_reference_engine.ReferenceVllmEngine',Kernel):
             report=run_sequence([dict(query_id=name,task='arbitrary-task-'+name,phase='measured')
                 for name in ('alpha','beta')],Driver,Path(directory)/'run',backend='ray-data',lifecycle='isolated')
         self.assertEqual(report['status'],'completed');self.assertEqual(report['owner_start_count'],2)

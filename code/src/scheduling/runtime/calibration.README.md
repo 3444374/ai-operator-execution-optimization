@@ -116,7 +116,44 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 不会因外层选参就伪称该工厂曾主动测量硬件。
 
 
-## 可选单遍动态接纳与参数提示复用
+<a id="resource-request-public-current"></a>
+## 当前资源请求接纳
+
+普通 Core 与 rolling token 的 `admission.kind="resource_feedback"` 使用
+`ResourceRequestConfig` 和 `ResourceRequestController`，省略 admission 仍走固定路径。
+当前可直接解析的配置如下；启用后从一个请求开始，不接受跨查询 `search_hint` 或 `admission_cache`：
+
+```json
+{
+  "mode": "async",
+  "max_inflight": 1,
+  "admission": {
+    "kind": "resource_feedback",
+    "poll_interval_s": 0.25,
+    "window_s": 1.0,
+    "max_sample_age_s": 1.0,
+    "min_samples": 16,
+    "measurement_windows": 3,
+    "min_gain": 0.03,
+    "allow_exploration": true
+  }
+}
+```
+
+这些采样与比较值是工程缺省值，不表示硬件容量或已验证的性能选择。
+请求许可只来自实际 owner／Core／IPC／结果预留；未消费结果、unknown、ACK 与取消责任保持。
+vLLM ready 只声明实例归属，原生序列／token／上下文参数另由引擎解析；未知值不作为无限容量。
+普通默认 R 仍是调用方声明值，没有自动探测硬件额度。公共 async Filter／rolling 工厂的
+默认存储现从已有 IPC 字节及单项声明推导，低层直接构造和非 rolling 整批仍保留旧解释。
+新校准身份 `records_capacity_policy_v2` 记录实际资源值，不复用旧的 C／R 派生身份。
+`require_memory_feedback=true` 在尚未接入独立内存来源时拒绝；原生拒绝计数未知时不捏造零。
+当前策略不接受旧 KV／busy 百分比、`search_mode` 或 `search_policy` 选项，也不保存跨查询推荐。
+准确 CPU 与实机未测范围见[接线记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#公共工厂与实际资源许可接线)。
+
+以下单遍、压力模式和条件续扫说明只属于显式 `legacy_resource_feedback`、具名历史配置
+或直接传入旧 typed 配置对象的路径；它们的数值与历史复现材料继续保留。
+
+## 显式历史单遍接纳与参数提示复用
 
 `run_admission_query` 保留已交付工作量扫描（原 cfdc/79e8），并接回计算工作量／局部配对版本（原 ee39/5007）的完整反馈与 hint 状态。
 它与上述 `run_query(mode="query"/"offline"/"online")` 并存：后者调用完整工作负载测量回调，
@@ -129,7 +166,7 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 `create_records_core(..., profile=name)`、普通 Movie 的 `core_profile` 和 session 的 `profile`
 均接受以下名称；显式字典配置仍可使用，普通 sync/fixed 默认不变。
 两个名称保留 **legacy 实验参数对照**；它们不是新研究
-配置的推荐，也不证明这些数值得到资源平台验证。新探索使用下面的显式字典配置。
+配置的推荐，也不证明这些数值得到资源平台验证。下方字典只选择相同的历史策略。
 
 | 名称 | 对应历史实现 | 工作量与比较方式 |
 |---|---|---|
@@ -145,7 +182,7 @@ max_changes=None`，不按10秒、32／64条或8次变更停止。采样与比�
 
 ```python
 profile = {"mode": "async", "max_inflight": C0,
-           "admission": {"kind": "resource_feedback", "allow_exploration": True,
+           "admission": {"kind": "legacy_resource_feedback", "allow_exploration": True,
                          "search_mode": "geometric"}}
 ```
 
@@ -224,10 +261,10 @@ rolling目前只有原生queue、KV与抢占信号，尚未接入可用内存的
 
 ### rolling 请求的上探与条件续扫
 
-显式 rolling `admission.kind="resource_feedback"` 使用
+显式历史 rolling `admission.kind="legacy_resource_feedback"` 使用
 [`AscendingRequestController`](../submission_control/request_scan.py)；解析后的
 `search_policy="ascending"` 区分新策略与 `search_policy="reference"` 的旧回访策略。
-普通非 token、批槽反馈及具名历史配置仍使用 reference，默认固定路径不安装反馈。
+此段的 reference／ascending 仅属于历史策略；当前请求策略使用上方配置，默认固定路径不安装反馈。
 新策略复用现有需求／字节背压、新鲜 native 反馈、窗口采集、工作量配对和几何进度；
 有可比收益就在候选档确认并继续上探，不逐档强制 A-B-A，也不在接受后重跑整段参考测量。
 平台、回退或不可比／冲突证据才触发局部确认；真实压力仍收缩新请求额度，让已归属成员排空。

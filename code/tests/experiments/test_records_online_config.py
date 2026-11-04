@@ -126,7 +126,7 @@ class OnlineConfigurationTests(unittest.TestCase):
         self.engine=EngineSpec('/tmp/CPU','/tmp/model','/tmp/driver',max_num_seqs=4,max_model_calls=4)
         self.resources=RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=4,
             startup_timeout_s=5,query_timeout_s=10)
-        self.profile=dict(mode='async',max_inflight=2,admission=dict(kind='resource_feedback',
+        self.profile=dict(mode='async',max_inflight=2,admission=dict(kind='legacy_resource_feedback',
             search_mode='geometric',allow_exploration=True,poll_interval_s=.003,
             window_s=.01,min_samples=2,min_remaining=32,exploration_s=1))
         self.cache=dict(cache_dir=str(self.root/'admission-cache'),reuse=True,

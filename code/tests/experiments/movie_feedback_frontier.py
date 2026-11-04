@@ -234,6 +234,8 @@ def logical_request_frontier():
 
         try:
             with patch.object(batches, 'time', SimpleNamespace(monotonic=lambda: service.now)), \
+                    patch('src.execution_provider.adapters.records_native_sampler.time',
+                        SimpleNamespace(monotonic=lambda: service.now)), \
                     patch('src.scheduling.submission_control.request_scan.AscendingRequestController',
                         lambda maximum, config: AscendingRequestController(
                             maximum, config, clock=lambda: service.now)), \

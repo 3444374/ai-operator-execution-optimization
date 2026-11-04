@@ -68,7 +68,7 @@ class MovieTokenResidentFixture:
             raise ValueError('declare RF fixed rolling or RD request feedback')
         config = self.helper.rolling_config()
         if mode == 'RD':
-            config['core_profile'] = dict(mode='async', admission=dict(kind='resource_feedback'))
+            config['core_profile'] = dict(mode='async', admission=dict(kind='legacy_resource_feedback'))
         plan = dict(schema='semloom.movie_session_plan.v1', backend='semloom-core',
             lifecycle=lifecycle, model_name='openai/cpu-fixture',
             generation=deepcopy(config['generation']), engine=deepcopy(config['engine']),

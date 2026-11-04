@@ -15,7 +15,7 @@ from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.method_owner import owned_worker, slot as _slot
 from integrations.imlane_records.model_lifecycle import close_owned_model, model_closed
-from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch as FusedChainBatch
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 

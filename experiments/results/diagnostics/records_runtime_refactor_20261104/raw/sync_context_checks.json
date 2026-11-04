@@ -1,0 +1,169 @@
+{
+  "schema": "semloom.sync_model_context_cpu.v1",
+  "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+  "runs": [
+    {
+      "run_id": "sync_context_before",
+      "selected": 6,
+      "run": 6,
+      "passed": 0,
+      "failure_records": 8,
+      "error_records": 6,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "03a1ac900e9218e6f21995c31e7a59bee164bc67ce893d77dfc3a4b142c48303",
+      "log_sha256": "f7318f45d1affd4e9c3bba262c9ad1105a777a38e4f7e47250f524883e702864"
+    },
+    {
+      "run_id": "sync_context_after",
+      "selected": 8,
+      "run": 8,
+      "passed": 8,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "088e4585f0581295556a30f37bda8c51d5d01201c1e24c86a81a44566e35e280",
+      "log_sha256": "36917d8c74d5df868c09022a5ef5c2b8928cd3788df5ddbca13231780377d8fa"
+    },
+    {
+      "run_id": "sync_context_related",
+      "selected": 143,
+      "run": 140,
+      "passed": 138,
+      "failure_records": 0,
+      "error_records": 5,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "aa172bae42c125d0b86b461349240d86af51435e6ec83a9feee23cdfb49ab1d9",
+      "log_sha256": "dac9d18f4a0db9742f1c7f88064f02a8e85c70179f008e7023d1d153f1643e71"
+    },
+    {
+      "run_id": "sync_context_qualified",
+      "selected": 145,
+      "run": 142,
+      "passed": 142,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "json_sha256": "ca0c92b7c44fb187b3b1fb8dd90794e3f0ce2748efc8ff0f77868676f4b93b16",
+      "log_sha256": "a2cb5ed2d23e9d114299c2a122e0486159ea76a99fc3b9f00f41a762347d9d21"
+    },
+    {
+      "run_id": "sync_context_final",
+      "selected": 145,
+      "run": 142,
+      "passed": 142,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "json_sha256": "08a5ecdc09b61137fdf3c711576475d3d8a16ea956a404d410ae3261e0ec59a1",
+      "log_sha256": "58a46297d1dcc60bba7c8c8441275424d30eedd247ebbda6636aa1c295b59d28"
+    },
+    {
+      "run_id": "sync_cleanup_ready_before",
+      "selected": 1,
+      "run": 1,
+      "passed": 0,
+      "failure_records": 1,
+      "error_records": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "bf093eb17943ee79d47d4efed984762d6fbd882f1a1277c7a8e4d69a17377c29",
+      "log_sha256": "ba59b5a506af9105902885d00f17f81b132b1b8d810974385e9dc5ee947ccdf9"
+    },
+    {
+      "run_id": "sync_cleanup_ready_after",
+      "selected": 1,
+      "run": 1,
+      "passed": 1,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "4448ee735d10f642c87eb88dadb6f488c2b684e1370a5ea7214c822590a27a29",
+      "log_sha256": "2b00395e5850d823d9a40666b7ec690d7d20141f2cf8f3da9b15b3a3c3147c70"
+    },
+    {
+      "run_id": "sync_context_cleanup_final",
+      "selected": 146,
+      "run": 143,
+      "passed": 143,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "json_sha256": "78294702b753c4dd9bef487b734947d10ccbdfe7a8dad77e9a93a40e115d0a38",
+      "log_sha256": "c6a15547ce2eabb4217f9d935dd05cfa8bae459d04e68e5284329dd7ba86cb35"
+    }
+  ],
+  "proof": {
+    "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+    "unchanged_methods": [
+      "run_prepared",
+      "_new_sampling",
+      "close",
+      "mfu_snapshot",
+      "_result"
+    ],
+    "vllm_LLM_constructor_call_AST_unchanged": true,
+    "history_bindings": 3010,
+    "history_mismatches": 0,
+    "source": "official fixed tag v0.25.1",
+    "URL": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/entrypoints/llm.py",
+    "source_symbol": "LLM.model_config",
+    "lookup": "model_config.max_model_len after initialization",
+    "verification": "official source plus CPU native-API stubs; no actual model runtime"
+  },
+  "scope": [
+    "actual native context publication in sync ready",
+    "positive integer and explicit value checks",
+    "same engine/spec identity and lifetime stability",
+    "invalid ready retains an allocated owner for close",
+    "actual local pipe success/failure and child collection",
+    "unconfirmed shutdown rejects ready; confirmed cleanup permits closed metadata"
+  ],
+  "unchanged": [
+    "legacy sync constructor defaults4096/8/4096",
+    "native LLM.chat execution and result conversion",
+    "close implementation and process supervisor",
+    "dtype BF16 and gpu fraction0.8",
+    "async kernel and controller files"
+  ],
+  "pending": [
+    "sync default omission and full context propagation into chain and cache",
+    "constructor failure after partial native allocation",
+    "automatic R allocation and ordinary default migration",
+    "independent review and real vLLM/model checks"
+  ],
+  "original_failures": "Initial six new methods, the unconfirmed-shutdown counterexample, and minimal-environment lifecycle/dependency errors are retained. The complete CPU interpreter and process inspection permissions resolved the environment issues; the missing upstream checkout remains an explicit three-method class skip.",
+  "evidence_run_id": "semloom-sync-readiness-20261104",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "final_run": "sync_context_cleanup_final",
+  "code_files_matching_final_run": 1290,
+  "production_lines_added": 16
+}

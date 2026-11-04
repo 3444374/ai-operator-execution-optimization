@@ -1,21 +1,63 @@
 """Prepared-request organization for the existing Core/async owner, not an executor."""
 from dataclasses import asdict
-from concurrent.futures import CancelledError
 import json
-import math
-from threading import Event, Lock
 import time
-import weakref
 
 from src.modalities.text.tokenization import chat_token_count
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_process import _frame
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS, _prepared
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS, _prepared
 
 from .records_feedback_observation import (
-    audit_integer, qualify_resource_observation, resource_probe_view,
-    snapshot_response_header, snapshot_rpc_report,
+    audit_integer as audit_integer, qualify_resource_observation as qualify_resource_observation,
+    resource_probe_view as resource_probe_view, snapshot_response_header as snapshot_response_header,
+    snapshot_rpc_report,
 )
+from .records_native_sampler import RecordsNativeSampler
+
+
+class _PreparedPrefix:
+    """Incremental organization prediction; no task leases or capacity grants."""
+
+    def __init__(self, organizer, available):
+        self.organizer, self.available = organizer, available
+        self.sequence = organizer._prefix_sequence
+        organizer._prefix_sequence += 1
+        self.skip_tokens = getattr(organizer.owner, 'experimental_skip_token_packing', False)
+        self.builder = PendingBatchBuilder(available if self.skip_tokens else None,
+            0 if self.skip_tokens else organizer.owner.prepared_batching.token_budget)
+        self.chosen = []
+        self.compatibility = None
+        self.wire_bytes = self.rpc_bytes = 0
+        self.reason, self.closed = 'ready_frontier_exhausted', False
+
+    def consider(self, candidate):
+        organizer, limits = self.organizer, self.organizer.owner._actors.limits
+        call_id, prompt, output, key, size, rpc_item = organizer._estimate(candidate)
+        extra, header, rpc_header = organizer._header_sizes(candidate.key.session_id, key[-1], limits)
+        if size+extra > limits.item_input_bytes or max(size, rpc_item) > limits.input_bytes:
+            raise ValueError('async engine IPC item exceeds its byte capacity')
+        arrival = RowArrival(call_id, 0., prompt, output, '', candidate.key)
+        if self.chosen and key != self.compatibility:
+            self.reason, self.closed = 'compatibility', True
+            return
+        if self.builder.would_exceed_token_budget(arrival):
+            self.reason, self.closed = 'token_budget', True
+            return
+        proposed = header+size if not self.chosen else self.wire_bytes+1+size
+        rpc_proposed = rpc_header+rpc_item if not self.chosen else self.rpc_bytes+1+rpc_item
+        if max(proposed, rpc_proposed) > min(limits.input_bytes, (1 << 32)-1):
+            if not self.chosen:
+                raise BufferError('complete prepared request exceeds the batch frame allowance')
+            self.reason, self.closed = 'frame_bytes', True
+            return
+        self.compatibility, self.wire_bytes, self.rpc_bytes = key, proposed, rpc_proposed
+        self.chosen.append(candidate.key)
+        full = self.builder.add(arrival)
+        if full and not self.skip_tokens:
+            self.reason, self.closed = 'token_budget', True
+        elif len(self.chosen) == self.available:
+            self.reason, self.closed = 'request_capacity', True
 
 
 class PreparedTokenOrganizer:
@@ -28,6 +70,9 @@ class PreparedTokenOrganizer:
             frame_bytes=0, compatibility=0, ready_frontier_exhausted=0)
         self.request_window = getattr(owner, 'request_window', owner.resources.max_active_batches)
         self.history = []
+        self._prefix = self._prefix_context = None
+        self._frontier, self._frontier_set = [], set()
+        self._prefix_sequence = 0
 
     def usage(self):
         active = [r for r in self.owner.core.capacity.records.values() if r.compute]
@@ -53,87 +98,138 @@ class PreparedTokenOrganizer:
             self._header_context = context
         return self._header_estimate
 
-    def __call__(self, candidates):
-        owner = self.owner
-        active_batches, active_requests = self.usage()
-        # Rolling mode uses the existing per-request compute and resident grants.
-        # Every new batch still needs live, reserved member tasks; B only packs
-        # this handoff and a slow peer does not retain the whole supply window.
+    def _estimate(self, candidate):
+        limits = self.owner._actors.limits
+        if candidate.key not in self._estimates:
+            value = json.loads(candidate.task.payload)
+            row, generation = value['row'], value['generation']
+            _, conversations = _prepared([row])
+            prompt = chat_token_count(self.tokenizer, conversations[0])
+            from src.serving.backends.model_context import model_context_limit
+            if prompt + generation['max_tokens'] > model_context_limit(self.owner.engine, self.owner._actors.model_ready):
+                raise ValueError('prepared prompt and output cap exceed effective model context')
+            snapshot = {name: row[name] for name in (*IDENTITY_FIELDS, 'messages_json')}
+            item = dict(request_id='f'*32+':'+str((1 << 63)-1), row=snapshot)
+            single = len(_frame(dict(op='submit', **item, generation=generation,
+                deadline=self.owner.deadline), limits.item_input_bytes))-4
+            key = tuple(row[n] for n in ('query_id', 'algorithm_stage', 'model_role')) + (json.dumps(generation, sort_keys=True),)
+            extra, _, _ = self._header_sizes(candidate.key.session_id, key[-1], limits)
+            size = single-extra
+            if size > limits.input_bytes:
+                raise ValueError('async engine IPC item exceeds its byte capacity')
+            rpc_item = len(_frame(dict(row=row, generation=generation,
+                maximum=candidate.task.max_result_bytes,
+                request_key=[candidate.key.session_id, candidate.key.sequence]), limits.input_bytes))-4
+            self._estimates[candidate.key] = (row['call_id'], prompt, generation['max_tokens'], key,
+                size, rpc_item)
+        return self._estimates[candidate.key]
+
+    def _available(self, active_requests, active_batches=0):
+        owner, limits = self.owner, self.owner._actors.limits
         if not owner.rolling_refill and active_batches >= self.concurrency:
-            return ()
-        limits = owner._actors.limits
+            return 0
         available = min(owner.resources.max_active_batches-active_requests, limits.max_inflight,
                         limits.result_slots, limits.result_bytes//limits.item_result_bytes)
         if owner.rolling_refill:
-            # Core calls organize only after the prior immutable selection has
-            # been accepted/drained. Selection acquires individual permits;
-            # a later shrink stops new selections without cancelling old ones.
             available = min(available, self.request_window-active_requests)
-        if available <= 0:
+        return max(0, available)
+
+    def _context(self, available):
+        owner, limits = self.owner, self.owner._actors.limits
+        return (available, owner.deadline, owner.prepared_batching.token_budget,
+                getattr(owner, 'experimental_skip_token_packing', False),
+                limits.input_bytes, limits.item_input_bytes)
+
+    def _plan(self, candidates, available):
+        prefix = _PreparedPrefix(self, available)
+        for candidate in candidates:
+            prefix.consider(candidate)
+            if prefix.closed:
+                break
+        return prefix
+
+    def refresh_prefix(self, candidates, active_requests):
+        """Reconcile a prediction after authoritative Core progress, not per row."""
+        live = self.owner.core.capacity.records
+        self._estimates = {key: value for key, value in self._estimates.items() if key in live}
+        if not live:
+            self._header_estimate = self._header_context = None
+        available = self._available(active_requests)
+        keys = [candidate.key for candidate in candidates]
+        context = self._context(available)
+        if self._prefix is not None and context == self._prefix_context and keys == self._frontier:
+            return
+        self._frontier, self._frontier_set = keys, set(keys)
+        self._prefix_context = context
+        self._prefix = self._plan(candidates, available) if available else None
+
+    def append_ready(self, candidates):
+        """Append new FIFO Core keys; payload ownership remains in Core."""
+        for candidate in candidates:
+            if candidate.key in self._frontier_set:
+                continue
+            self._frontier.append(candidate.key)
+            self._frontier_set.add(candidate.key)
+            if self._prefix is not None and not self._prefix.closed:
+                self._prefix.consider(candidate)
+
+    def dispatch_token(self, can_prepare, active_requests):
+        prefix = self._prefix
+        if prefix is None or not prefix.chosen:
+            return None
+        if prefix.closed or not can_prepare or active_requests == 0:
+            return (prefix.sequence, len(prefix.chosen), prefix.reason, self._prefix_context)
+        ready, version = self.owner.transport.prepared_supply_opportunity()
+        if ready:
+            return (prefix.sequence, len(prefix.chosen), prefix.reason, self._prefix_context, version)
+        return None
+
+    def _defer_partial(self, active_requests, can_prepare):
+        if not active_requests or not can_prepare:
+            return False
+        if getattr(self.owner, '_event_driven_preparation', False):
+            return not self.owner.transport.prepared_supply_opportunity()[0]
+        return True
+
+    def __call__(self, candidates):
+        owner = self.owner
+        active_batches, active_requests = self.usage()
+        available = self._available(active_requests, active_batches)
+        if not available:
             return ()
         live = owner.core.capacity.records
         self._estimates = {k: v for k, v in self._estimates.items() if k in live}
         if not live:
             self._header_estimate = self._header_context = None
-        skip_tokens = getattr(owner, 'experimental_skip_token_packing', False)
-        builder = PendingBatchBuilder(available if skip_tokens else None,
-                                      0 if skip_tokens else owner.prepared_batching.token_budget)
-        chosen, compatibility, wire_bytes, reason = [], None, 0, 'ready_frontier_exhausted'
-        for candidate in candidates:
-            if candidate.key not in self._estimates:
-                value = json.loads(candidate.task.payload)
-                row, generation = value['row'], value['generation']
-                _, conversations = _prepared([row])
-                prompt = chat_token_count(self.tokenizer, conversations[0])
-                from src.serving.backends.model_context import model_context_limit
-                if prompt + generation['max_tokens'] > model_context_limit(owner.engine, owner._actors.model_ready):
-                    raise ValueError('prepared prompt and output cap exceed effective model context')
-                snapshot = {name: row[name] for name in (*IDENTITY_FIELDS, 'messages_json')}
-                item = dict(request_id='f'*32+':'+str((1 << 63)-1), row=snapshot)
-                single = len(_frame(dict(op='submit', **item, generation=generation,
-                    deadline=owner.deadline), limits.item_input_bytes))-4
-                key = tuple(row[n] for n in ('query_id', 'algorithm_stage', 'model_role')) + (json.dumps(generation, sort_keys=True),)
-                extra, _, _ = self._header_sizes(candidate.key.session_id, key[-1], limits)
-                size = single-extra
-                if size > limits.input_bytes:
-                    raise ValueError('async engine IPC item exceeds its byte capacity')
-                rpc_item = len(_frame(dict(row=row, generation=generation,
-                    maximum=candidate.task.max_result_bytes,
-                    request_key=[candidate.key.session_id, candidate.key.sequence]), limits.input_bytes))-4
-                self._estimates[candidate.key] = (row['call_id'], prompt, generation['max_tokens'], key,
-                    size, rpc_item)
-            call_id, prompt, output, key, size, rpc_item = self._estimates[candidate.key]
-            extra, header, rpc_header = self._header_sizes(candidate.key.session_id, key[-1], limits)
-            if size+extra > limits.item_input_bytes or max(size, rpc_item) > limits.input_bytes:
-                raise ValueError('async engine IPC item exceeds its byte capacity')
-            arrival = RowArrival(call_id, 0., prompt, output, '', candidate.key)
-            if chosen and key != compatibility:
-                reason = 'compatibility'; break
-            if builder.would_exceed_token_budget(arrival):
-                reason = 'token_budget'; break
-            proposed = header+size if not chosen else wire_bytes+1+size
-            rpc_proposed = rpc_header+rpc_item if not chosen else rpc_bytes+1+rpc_item
-            if max(proposed, rpc_proposed) > min(limits.input_bytes, (1 << 32)-1):
-                if not chosen:
-                    raise BufferError('complete prepared request exceeds the batch frame allowance')
-                reason = 'frame_bytes'; break
-            compatibility, wire_bytes, rpc_bytes = key, proposed, rpc_proposed
-            chosen.append(candidate.key)
-            full = builder.add(arrival)
-            if full and not skip_tokens:
-                reason = 'token_budget'; break
-            if len(chosen) == available:
-                reason = 'request_capacity'; break
-        if not chosen:
+        incremental = getattr(owner, '_event_driven_preparation', False)
+        context = self._context(available)
+        if (incremental and self._prefix is not None and context == self._prefix_context
+                and tuple(self._frontier) == tuple(candidate.key for candidate in candidates)):
+            prefix = self._prefix
+        else:
+            prefix = self._plan(candidates, available)
+        if not prefix.chosen:
             return ()
-        batch = builder.close()
+        if (getattr(owner, '_interleaved_preparation', False)
+                and prefix.reason == 'ready_frontier_exhausted'
+                and self._defer_partial(active_requests, getattr(owner._active, 'can_prepare', False))):
+            if incremental:
+                self._prefix, self._prefix_context = prefix, context
+                self._frontier = [candidate.key for candidate in candidates]
+                self._frontier_set = set(self._frontier)
+            return ()
+        batch = prefix.builder.close()
         self.selected += 1
-        self.selected_seal_reason_counts[reason] += 1
-        self.history = (self.history + [dict(members=len(chosen), tokens=batch.estimated_total_tokens,
-            reason=reason, ipc_frame_bytes_upper_bound=wire_bytes, data_rpc_bytes_upper_bound=rpc_bytes,
+        self.selected_seal_reason_counts[prefix.reason] += 1
+        self.history = (self.history + [dict(members=len(prefix.chosen), tokens=batch.estimated_total_tokens,
+            reason=prefix.reason, ipc_frame_bytes_upper_bound=prefix.wire_bytes,
+            data_rpc_bytes_upper_bound=prefix.rpc_bytes,
             **(dict(C_request=self.request_window, requests_before=active_requests)
                if owner.request_feedback is not None else {}))])[-64:]
-        return tuple(chosen)
+        if incremental:
+            self._prefix = self._prefix_context = None
+            self._frontier, self._frontier_set = [], set()
+        return tuple(prefix.chosen)
 
     def report(self):
         batches, requests = self.usage()
@@ -145,35 +241,26 @@ class PreparedTokenOrganizer:
             peak_batches=self.peak_batches, peak_requests=self.peak_requests, selected_batches=self.selected,
             selected_seal_reason_counts=dict(self.selected_seal_reason_counts),
             recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent', **rolling,
+            **(dict(interleaved_preparation=True) if getattr(self.owner, '_interleaved_preparation', False) else {}),
+            **(dict(event_driven_preparation=True, partial_frontier_flush='data_rpc_opportunity')
+               if getattr(self.owner, '_event_driven_preparation', False) else {}),
             **(dict(experimental_skip_token_packing=True)
                if getattr(self.owner, 'experimental_skip_token_packing', False) else {}))
 
 
-class BatchSupplyFeedback:
+class BatchSupplyFeedback(RecordsNativeSampler):
     """Observe the existing owner and change only its organizer's batch window."""
     report_field = 'batch_supply_feedback'
     request_control = False
 
     def __init__(self, owner, config):
-        self.owner, self.config = owner, config
-        self.provider = self.controller = self.ref = self.future = None
-        self.session_id = None
-        self.last_native = None
-        self.resource_samples = []
-        self.resource_audit = []
-        self.resource_rpc_audit = []
-        self.resource_rpc_counts = dict(total=0, native_eligible=0, actor_unbound=0,
-            session_mismatch=0, native_missing=0, CPU_qualified=0, CPU_rejected=0, evicted=0, errors=0)
-        self.prepared = self.submitted = self.requests = self.errors = 0
-        self.closed = False
+        self.config = config
+        super().__init__(owner)
+        self.controller = None
+        self.prepared = self.submitted = 0
         self.phases = []
         self.transition = set()
         self.next_poll = 0.
-        self.snapshot_rpc_receipts = []
-        self._snapshot_request = None
-        self._snapshot_lock = Lock()
-        self._snapshot_ready = None
-        self._collected_ready = None
 
     @property
     def options(self):
@@ -204,89 +291,6 @@ class BatchSupplyFeedback:
         return (self.request_control and self.options.search_policy == 'ascending'
                 and self.options.allow_exploration)
 
-    @staticmethod
-    def _resource_view(packet, *, request_index, requested_at_s, received_at_s):
-        return resource_probe_view(packet, request_index=request_index,
-            requested_at_s=requested_at_s, received_at_s=received_at_s)
-
-    def _read_resource(self, packet, *, request_index, requested_at_s, received_at_s):
-        view = self._resource_view(packet, request_index=request_index,
-            requested_at_s=requested_at_s, received_at_s=received_at_s)
-        return qualify_resource_observation(packet, view, window_s=self.options.window_s)
-
-    @staticmethod
-    def _audit_integer(value, *, minimum=0):
-        return audit_integer(value, minimum=minimum)
-
-    def _audit_resource_rpc(self, row, *, native, disposition, reason, request_index,
-                            request_session_id, response_session_id, requested_at_s, received_at_s):
-        # Only fixed metadata fields leave this boundary; never retain the RPC
-        # payload, arbitrary metric dictionaries, prompt or model output.
-        source = row['host_cpu_source']
-        cpu_reason = row['host_cpu_reject_reason']
-        allowed_reasons = {'cpu_interval_missing_or_invalid', 'cpu_interval_nonpositive',
-            'cpu_interval_exceeds_feedback_window', 'cpu_value_unavailable',
-            'cpu_percent_baseline_priming', 'cpu_counter_clock_invalid',
-            'cpu_percent_nonpositive_interval', 'cpu_counter_shape_changed',
-            'cpu_counter_regressed', 'cpu_counter_delta_invalid'}
-        if cpu_reason is not None and cpu_reason not in allowed_reasons:
-            cpu_reason = 'cpu_source_unavailable'
-        invalid = []
-        def integer(name, value, *, minimum=0):
-            bounded = self._audit_integer(value, minimum=minimum)
-            if value is not None and bounded is None:
-                invalid.append(name)
-            return bounded
-        def clock(name, value, *, signed=False):
-            if type(value) is int:
-                return integer(name, value, minimum=-(1 << 64)+1 if signed else 0)
-            if type(value) is float and math.isfinite(value) and (signed or value >= 0):
-                return value
-            if value is not None:
-                invalid.append(name)
-            return None
-        resource_uid = row['view']['engine_uid']
-        if not (type(resource_uid) is str and len(resource_uid) == 32
-                and all(c in '0123456789abcdef' for c in resource_uid)):
-            if resource_uid is not None:
-                invalid.append('resource_engine_uid')
-            resource_uid = None
-        cpu_interval = clock('host_cpu_raw_interval_s', row['host_cpu_raw_interval_s'], signed=True)
-        if cpu_interval is None and cpu_reason is None:
-            cpu_reason = 'cpu_interval_missing_or_invalid'
-        with self._snapshot_lock:
-            attempt = dict(request_index=integer('request_index', request_index),
-                request_session_id=integer('request_session_id', request_session_id, minimum=-1),
-                current_session_id=integer('current_session_id', self.session_id, minimum=-1),
-                response_session_id=integer('response_session_id', response_session_id, minimum=-1),
-                requested_at_s=clock('requested_at_s', requested_at_s),
-                received_at_s=clock('received_at_s', received_at_s),
-                request_clock_domain='driver.time.monotonic seconds',
-                resource_counter_clock_domain='model actor time.monotonic_ns',
-                native_clock_domain='native-engine NativeStats.clock seconds',
-                frame_disposition=disposition, native_reason=reason,
-                actor_unbound=response_session_id == -1,
-                native_frame_present=native is not None,
-                native_validation_accepted=disposition == 'eligible_for_provider',
-                resource_engine_uid=resource_uid,
-                resource_session_id=integer('resource_session_id', row['view']['session_id'], minimum=-1),
-                host_cpu_raw_interval_s=cpu_interval,
-                host_cpu_qualified=cpu_reason is None,
-                host_cpu_reject_reason=cpu_reason,
-                host_cpu_counter_sequence=integer('host_cpu_counter_sequence', source.get('cpu_counter_sample_sequence')),
-                host_cpu_read_start_ns=integer('host_cpu_read_start_ns', source.get('cpu_counter_read_start_monotonic_ns')),
-                host_cpu_read_end_ns=integer('host_cpu_read_end_ns', source.get('cpu_counter_read_end_monotonic_ns')),
-                audit_only=True, invalid_fields=tuple(invalid))
-            counts = self.resource_rpc_counts
-            counts['total'] += 1
-            counts['native_eligible'] += attempt['native_validation_accepted']
-            counts['actor_unbound'] += attempt['actor_unbound']
-            counts['session_mismatch'] += disposition == 'stale_session'
-            counts['native_missing'] += native is None
-            counts['CPU_qualified' if attempt['host_cpu_qualified'] else 'CPU_rejected'] += 1
-            counts['evicted'] += len(self.resource_rpc_audit) == 64
-            self.resource_rpc_audit = (self.resource_rpc_audit + [attempt])[-64:]
-        return attempt
 
     def _decide(self, observation, supply, live, queued, admitted):
         return self.controller.update_supply(observation, supply)
@@ -301,337 +305,17 @@ class BatchSupplyFeedback:
 
     def bind(self, stream):
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
-        with self._snapshot_lock:
-            self.session_id = stream.session.session_id
-            self.last_native = None
-            self.resource_samples = []
-            self.resource_rpc_audit = []
-            self.resource_rpc_counts = dict.fromkeys(self.resource_rpc_counts, 0)
-            self.started = time.monotonic()
+        self._reset_sampling_phase(stream.session.session_id)
         self.prepared = self.submitted = 0
         self.transition.clear()
         self.controller = self._new_controller()
         # Declaration bounds possible calls; no token reference or gold is read.
         self._reset_controller(stream)
-        if self.provider is None and self.owner._expected_count:
-            self._snapshot_ready = Event()
-            self.provider = NonBlockingMetricsObservationProvider(self.sample,
-                poll_interval_s=self.options.poll_interval_s,
-                stale_after_s=self.options.window_s,
-                close_timeout_s=self.options.poll_interval_s,
-                ready_event=self._snapshot_ready, collect_ready=self.collect_ready)
-        elif self.provider is not None:
-            self.provider.resume()
+        self._start_sampling(self.owner._expected_count, NonBlockingMetricsObservationProvider)
 
-    def sample(self):
-        if self.closed or self.session_id is None:
-            return None
-        with self._snapshot_lock:
-            collected, self._collected_ready = self._collected_ready, None
-        if collected is not None:
-            session, snapshot = collected
-            return snapshot if session == self.session_id else None
-        try:
-            if self.ref is None and self._snapshot_request is None:
-                remote = self.owner._actors.model_actor.snapshot.remote
-                ready = getattr(self.owner._actors, 'model_ready', None) or {}
-                uid = ready.get('engine_uid')
-                issued_at, clock_error = self._snapshot_clock()
-                with self._snapshot_lock:
-                    self.sample_session = self.session_id
-                    self.requests += 1
-                    self.errors += int(clock_error is not None)
-                    self._snapshot_request = dict(request_index=self.requests,
-                        request_session_id=self.sample_session, issued_at_s=issued_at,
-                        issued_at_error_type=clock_error,
-                        expected_engine_uid=uid if type(uid) is str else None,
-                        cancel_requested=False, cancel_reason=None, cancel_error_type=None,
-                        future_access_error_type=None, dispatch_error_type=None, poll_error_type=None,
-                        client_future_cancelled=False)
-                ref = remote(observe_resources=True) if self._observes_resources() else remote()
-                with self._snapshot_lock:
-                    self.ref = ref
-                self.expiry = time.monotonic()+self.options.window_s
-                self.expired = False
-            if self.ref is None:
-                return None  # Dispatch outcome without a handle remains unknown.
-            acquired = None
-            if self.future is None:
-                future = self.ref.future()
-                with self._snapshot_lock:
-                    self.future = future
-                acquired = future
-            snapshot = self._consume_snapshot(cancel_pending=True)
-            if acquired is not None and self.future is acquired:
-                self._watch_snapshot_ready(acquired)
-            return snapshot
-        except Exception as error:
-            with self._snapshot_lock:
-                self.errors += 1
-                if self._snapshot_request is not None:
-                    field = 'dispatch_error_type' if self.ref is None else 'future_access_error_type'
-                    self._snapshot_request = dict(self._snapshot_request, **{field:type(error).__name__})
-            return None
+    def _latest(self, inflight):
+        return self.provider.latest(inflight)
 
-    def _watch_snapshot_ready(self, future):
-        if self._snapshot_ready is None:
-            return
-        index = self._snapshot_request['request_index']
-        owner = weakref.ref(self)
-        def notify(completed):
-            feedback = owner()
-            if feedback is not None:
-                feedback._snapshot_ready.set()
-        try:
-            future.add_done_callback(notify)
-        except Exception as error:
-            self._note_future_timing(index, future_wakeup_error_type=type(error).__name__)
-
-    def collect_ready(self):
-        # Only the provider thread consumes. A notification never issues a new
-        # RPC, and local Future cancellation still retains the original ref.
-        if self.closed or self.future is None:
-            return None
-        session = self.sample_session
-        snapshot = self._consume_snapshot()
-        with self._snapshot_lock:
-            if self.ref is not None:
-                return None
-            # The next regular tick spends the turn that used to collect this
-            # result. Publishing early therefore does not increase RPC cadence.
-            self._collected_ready = (session, snapshot)
-        return snapshot
-
-    def _cancel_snapshot(self, reason):
-        with self._snapshot_lock:
-            ref = self.ref
-            if ref is None or self._snapshot_request['cancel_requested']:
-                return
-            self._snapshot_request = dict(self._snapshot_request, cancel_requested=True, cancel_reason=reason)
-        try:
-            self.owner._actors.ray.cancel(ref, force=False)
-        except Exception as error:
-            with self._snapshot_lock:
-                self.errors += 1
-                self._snapshot_request = dict(self._snapshot_request, cancel_error_type=type(error).__name__)
-
-    @staticmethod
-    def _snapshot_clock():
-        # Receipt timestamps are optional evidence, not a prerequisite for
-        # collecting a known RPC result or for the owner's required cleanup.
-        try:
-            observed = time.monotonic()
-            if type(observed) not in (int, float) or not math.isfinite(observed):
-                raise ValueError('receipt clock is not finite')
-            return observed, None
-        except Exception as error:
-            return None, type(error).__name__
-
-    def _note_future_timing(self, index, **values):
-        with self._snapshot_lock:
-            request = self._snapshot_request
-            if request is not None and request['request_index'] == index:
-                self._snapshot_request = dict(request, **values)
-
-    def _observe_future_ready(self, done):
-        # Observation only: no wakeup, extra RPC, result read or ownership release.
-        # A callback observes local readiness; it is not remote terminal proof.
-        try:
-            enabled = callable(getattr(self.provider, 'observer', None))
-        except Exception:
-            return
-        if not enabled:
-            return
-        polled, poll_error = self._snapshot_clock()
-        with self._snapshot_lock:
-            request = self._snapshot_request
-            if request is None:
-                return
-            request = dict(request, future_poll_observed_at_s=polled,
-                future_poll_clock_error_type=poll_error, future_polled_done=done,
-                future_poll_count=request.get('future_poll_count', 0)+1)
-            if not done:
-                request['future_last_pending_poll_observed_at_s'] = polled
-            self._snapshot_request = request
-            if request.get('future_timing_enabled'):
-                return
-            index, future = request['request_index'], self.future
-            self._snapshot_request = dict(request, future_timing_enabled=True,
-                future_timing_clock='driver.time.monotonic seconds',
-                future_ready_observed_at_s=None, future_ready_clock_error_type=None,
-                future_observer_error_type=None)
-        registered, clock_error = self._snapshot_clock()
-        try:
-            self._note_future_timing(index, future_registered_at_s=registered,
-                future_registration_clock_error_type=clock_error,
-                future_done_before_registration=done)
-            owner = weakref.ref(self)
-            def notified(completed):
-                feedback = owner()
-                if feedback is not None:
-                    observed, error = feedback._snapshot_clock()
-                    feedback._note_future_timing(index, future_ready_observed_at_s=observed,
-                        future_ready_clock_error_type=error)
-            future.add_done_callback(notified)
-        except Exception as error:
-            self._note_future_timing(index, future_observer_error_type=type(error).__name__)
-
-    @staticmethod
-    def _snapshot_header(value):
-        return snapshot_response_header(value)
-
-    def _finish_snapshot(self, status, disposition, *, value=None, error=None):
-        observed_at, clock_error = self._snapshot_clock()
-        header = self._snapshot_header(value)
-        with self._snapshot_lock:
-            self.errors += int(clock_error is not None)+int(header['response_source_observed_at_error_type'] is not None)
-            self.snapshot_rpc_receipts.append(dict(self._snapshot_request,
-                rpc_terminal_status=status, future_done_confirmed=True,
-                terminal_observed_at_s=observed_at, terminal_observed_at_error_type=clock_error,
-                rpc_error_type=error, frame_disposition=disposition, **header))
-            self.ref = self.future = self._snapshot_request = None
-
-    def _consume_snapshot(self, *, cancel_pending=False):
-        from src.scheduling.runtime.observations import ServiceMetricsSnapshot
-        try:
-            done = self.future.done()
-        except Exception as error:
-            with self._snapshot_lock:
-                self.errors += 1
-                self._snapshot_request = dict(self._snapshot_request, poll_error_type=type(error).__name__)
-            return None
-        self._observe_future_ready(done)
-        if not done:
-            if cancel_pending and self.closed:
-                self._cancel_snapshot('close')
-            elif cancel_pending and not self.expired and time.monotonic() >= self.expiry:
-                self.expired = True
-                self._cancel_snapshot('expired')
-            # Cancel requested/failed is not terminal proof. The same ref owns
-            # this slot; duplicate native sequences keep their original age.
-            with self._snapshot_lock:
-                native = self.last_native
-                return (native if not self.closed and native is not None
-                        and native.source_session_id == self.session_id else None)
-        with self._snapshot_lock:
-            index = self._snapshot_request['request_index']
-            request_session_id = self._snapshot_request['request_session_id']
-            timing = self._snapshot_request.get('future_timing_enabled', False)
-            issued_at_s = self._snapshot_request.get('issued_at_s')
-        if timing:
-            observed, error = self._snapshot_clock()
-            self._note_future_timing(index, future_collect_started_at_s=observed,
-                future_collect_clock_error_type=error)
-        try:
-            value = self.future.result()
-        except CancelledError:
-            # A cancelled local read Future is not the ObjectRef's remote
-            # return/exception. Keep the same RPC ownership explicitly unknown.
-            with self._snapshot_lock:
-                self._snapshot_request = dict(self._snapshot_request, client_future_cancelled=True)
-            if timing:
-                observed, error = self._snapshot_clock()
-                self._note_future_timing(index, future_result_observed_at_s=observed,
-                    future_result_clock_error_type=error)
-            return None
-        except Exception as error:
-            if timing:
-                observed, clock_error = self._snapshot_clock()
-                self._note_future_timing(index, future_result_observed_at_s=observed,
-                    future_result_clock_error_type=clock_error)
-            if not self.closed:
-                self.errors += 1
-            self._finish_snapshot('raised', 'rpc_error', error=type(error).__name__)
-            return None
-        received_at_s, received_clock_error = self._snapshot_clock()
-        if timing:
-            self._note_future_timing(index, future_result_observed_at_s=received_at_s,
-                future_result_clock_error_type=received_clock_error)
-        snapshot, disposition, reason = None, 'invalid_frame', 'invalid_native_frame'
-        native, response_session = None, None
-        try:
-            if isinstance(value, dict):
-                response_session = value.get('session_id')
-                ipc = value.get('ipc')
-                native = ipc.get('native_feedback') if isinstance(ipc, dict) else None
-            if self.closed:
-                disposition, reason = 'closed', 'feedback_closed'
-            elif self.expired:
-                disposition, reason = 'expired', 'expired_RPC'
-            elif self.sample_session != self.session_id or value.get('session_id') != self.session_id:
-                disposition = 'stale_session'
-                reason = ('sampling_session_changed' if self.sample_session != self.session_id
-                          else 'session_mismatch')
-            elif native is None:
-                disposition, reason = 'missing_native', 'native_frame_missing'
-            elif native.get('engine_uid') != self.owner._actors.model_ready['engine_uid']:
-                disposition, reason = 'wrong_engine', 'engine_uid_mismatch'
-            elif native.get('observed_at_s', -1) < self.started:
-                disposition, reason = 'stale_source', 'source_predates_query'
-            else:
-                snapshot = ServiceMetricsSnapshot(native['running'], native['waiting'], native['kv_usage'],
-                    source_uid=native['engine_uid'], source_session_id=response_session,
-                    received_at_s=received_at_s, control_request_index=index,
-                    source_clock_domain='native-engine NativeStats.clock seconds',
-                    received_clock_domain='driver.time.monotonic seconds',
-                    completed_tokens_total=native['generation_tokens_total'],
-                    preemptions_total=native['preemptions_total'], source_sequence=native['sequence'],
-                    source_observed_at_s=native['observed_at_s'])
-                disposition, reason = 'eligible_for_provider', 'RPC_sample_valid'
-        except Exception:
-            self.errors += 1
-            disposition, reason = 'invalid_frame', 'invalid_native_frame'
-        self._finish_snapshot('returned', disposition, value=value)
-        resource_attempt = resource_read = None
-        if self._observes_resources():
-            try:
-                resource_read = self._read_resource(value.get('resources') if isinstance(value, dict) else None,
-                    request_index=index, requested_at_s=issued_at_s, received_at_s=received_at_s)
-                resource_attempt = self._audit_resource_rpc(resource_read[1], native=native,
-                    disposition=disposition, reason=reason, request_index=index,
-                    request_session_id=request_session_id,
-                    response_session_id=response_session if type(response_session) is int else None,
-                    requested_at_s=issued_at_s, received_at_s=received_at_s)
-            except Exception:
-                with self._snapshot_lock:
-                    self.resource_rpc_counts['total'] += 1
-                    self.resource_rpc_counts['errors'] += 1
-                # Diagnostic failure cannot change the known RPC or native eligibility.
-        try:
-            audit = getattr(self.provider, 'observe_native', None)
-            if callable(audit):
-                audit(native, session_id=response_session, received_at_s=received_at_s,
-                    accepted=snapshot is not None, reason=reason, control_request_index=index,
-                    source_clock_domain='native-engine NativeStats.clock seconds',
-                    received_clock_domain='driver.time.monotonic seconds',
-                    **(dict(resource_attempt=dict(resource_attempt)) if resource_attempt is not None else {}))
-        except Exception:
-            pass  # Optional audit cannot change the RPC receipt or valid feedback.
-        if snapshot is not None:
-            with self._snapshot_lock:
-                # Audit runs outside the ownership lock and may span bind().
-                # A known old RPC return must not seed the next Core session.
-                if self.closed or snapshot.source_session_id != self.session_id:
-                    return None
-                self.last_native = snapshot
-                if self._observes_resources():
-                    view, resource = resource_read or self._read_resource(value.get('resources'), request_index=index,
-                        requested_at_s=issued_at_s, received_at_s=received_at_s)
-                    self.resource_samples = (self.resource_samples + [view])[-2:]
-                    self.resource_audit = (self.resource_audit + [resource])[-64:]
-        return snapshot
-
-    def _reap_stopped_snapshot(self, *, cancel=False):
-        # The existing provider is the single writer while sampling. Never
-        # race it or wait for RPC completion on the query/close thread.
-        if self.provider is not None and self.provider.is_running:
-            return
-        if self.future is not None:
-            self._consume_snapshot()
-        if cancel and self.ref is not None:
-            self._cancel_snapshot('close')
-            if self.future is not None:
-                self._consume_snapshot()  # Collect an immediately terminal cancel.
 
     def update(self, stream):
         from dataclasses import replace
@@ -660,7 +344,7 @@ class BatchSupplyFeedback:
         # Timestamp after local counter capture, never count a later receipt
         # against an earlier window end. Invalid metric clocks remain unknown.
         try:
-            o = (self.provider.latest(inflight) if self.provider is not None else
+            o = (self._latest(inflight) if self.provider is not None else
                  AdmissionObservation(time.monotonic(), False, inflight, None, None, None))
         except ValueError:
             self.errors += 1
@@ -720,11 +404,7 @@ class BatchSupplyFeedback:
             self.provider.pause()
 
     def close(self):
-        with self._snapshot_lock:
-            self.closed = True
-        if self.provider is not None:
-            self.provider.close()
-        self._reap_stopped_snapshot(cancel=True)
+        self._close_sampling()
         self.end_phase()
 
     def report(self):

@@ -10,14 +10,21 @@ from src.baselines.text.movie_records import MovieRecordSource
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.execution_provider.adapters.lotus_records_core import create_records_core
 from tests.experiments import test_movie_async_token_entry as entry
+from tests.execution_provider import test_records_request_feedback as request_fixture
 
 
 class RequestEntryTests(unittest.TestCase):
     setUp = entry.AsyncTokenEntryTests.setUp
     config = entry.AsyncTokenEntryTests.config
     save = entry.AsyncTokenEntryTests.save
-    runtime = entry.AsyncTokenEntryTests.runtime
     rolling_config = entry.AsyncTokenEntryTests.rolling_config
+
+    def runtime(self):
+        runtime = entry.AsyncTokenEntryTests.runtime(self)
+        actor = request_fixture.AsyncCoreModelActor
+        process = patch.object(actor, '_process_type', return_value=request_fixture.CPUResourceProcess)
+        process.start(); self.addCleanup(process.stop)
+        return runtime
 
     def dynamic_config(self):
         config = self.rolling_config()
@@ -36,10 +43,11 @@ class RequestEntryTests(unittest.TestCase):
         selected = report['record_batching']
         self.assertEqual((selected['B'], selected['C_request'], selected['C_batch'], selected['R']), (100000, 1, None, 2))
         options = selected['request_feedback']
-        self.assertEqual((options['search_mode'], options['work_basis'], options['work_comparison']),
-                         ('geometric', 'computed', 'local_pairs'))
+        self.assertNotIn('search_policy', options)
+        self.assertNotIn('pressure_kv_usage', options)
+        self.assertEqual(options['measurement_windows'], 3)
         self.assertTrue(options['allow_exploration'])
-        for field in ('exploration_s', 'max_changes', 'max_candidate_attempts'):self.assertIsNone(options[field])
+        for field in ('exploration_s', 'max_changes'):self.assertIsNone(options[field])
         self.assertEqual(options['min_remaining'], 0)
         self.assertEqual(report['core_execution']['owner_max_inflight'], 2)
         self.assertEqual(report['core_execution']['initial_window'], 1)

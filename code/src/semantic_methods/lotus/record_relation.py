@@ -10,7 +10,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 
 from .record_chain import RecordOccurrence, StageSpec, _name, stage_identity
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
 @dataclass(frozen=True)

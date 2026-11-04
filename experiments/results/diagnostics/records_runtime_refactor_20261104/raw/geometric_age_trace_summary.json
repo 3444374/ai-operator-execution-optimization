@@ -1,0 +1,178 @@
+{
+  "label": "one original128-row CPU workload with the earlier sampler draft and input-only controller observation",
+  "source_commit": "64193c1effb6a8bdc97f73f431795de9ff45a471",
+  "search": {
+    "kind": "resource_feedback",
+    "strategy": "onepass_geometric_v1",
+    "window": 1,
+    "capacity": 4,
+    "total_items": 128,
+    "changes": 2,
+    "decision_calls": 416,
+    "control_seconds": 0.0031890871468931437,
+    "reasons": {
+      "missing_or_stale_feedback": 407,
+      "priming_measurement": 1,
+      "initial_progress_window": 1,
+      "confirming_performance": 2,
+      "performance_probe": 1,
+      "transition_settled": 2,
+      "exploration_budget": 1,
+      "cooldown": 1
+    },
+    "history": [
+      {
+        "at_s": 3.229750166879967,
+        "before": 1,
+        "window": 2,
+        "reason": "performance_probe",
+        "inflight": 0,
+        "kv_usage": 0.1,
+        "waiting": 0,
+        "control_phase_id": 1,
+        "completed_items_total": 64
+      },
+      {
+        "at_s": 4.00371174979955,
+        "before": 2,
+        "window": 1,
+        "reason": "exploration_budget",
+        "inflight": 0,
+        "kv_usage": 0.1,
+        "waiting": 0,
+        "control_phase_id": 2,
+        "completed_items_total": 94
+      }
+    ],
+    "measurements": [
+      {
+        "window": 1,
+        "rate": 19.086409901819025,
+        "rate_min": 14.554804866057703,
+        "rate_max": 22.80682397662305,
+        "input_min": 11.0,
+        "input_max": 11.0,
+        "output_min": 1.0,
+        "output_max": 1.0,
+        "hol_max": 0.03719316585920751,
+        "samples": 3,
+        "completed": 20,
+        "elapsed_s": 1.0478660000953823
+      }
+    ],
+    "evaluations": [
+      {
+        "kind": "probe_cost_estimate",
+        "window": 1,
+        "candidate": 2,
+        "remaining_items": 64,
+        "estimated_remaining_s": 3.3531712003052236,
+        "optimistic_saved_s": 1.6765856001526118,
+        "trial_allowance_s": 0.1771799000143074,
+        "remaining_after_reference_progress": 60.618271801963616,
+        "reference_comparison_eligible": true,
+        "optimistic_saved_after_trial_s": 1.587995650145458,
+        "incremental_controller_estimate_s": 0.00043230245268567467,
+        "unpredicted_trial_costs": "transition/IPC/observation losses; full query still measures them",
+        "assumption": "reference-rate useful progress during trial, then ideal scaling; not measured benefit"
+      }
+    ],
+    "accepted_steps": 0,
+    "recommended_window": 1,
+    "unconfirmed_trial": false,
+    "stop_reason": "exploration_budget",
+    "exploration_censored": true,
+    "incomplete_reason": "exploration_budget",
+    "search_state": {
+      "schema": "semloom.admission_search.v1",
+      "origin": 1,
+      "maximum": 4,
+      "attempt_limit": 2,
+      "ceiling": 4,
+      "points": [
+        {
+          "window": 2,
+          "attempts": 1,
+          "outcome": "pending"
+        },
+        {
+          "window": 4,
+          "attempts": 0,
+          "outcome": "pending"
+        }
+      ]
+    },
+    "can_continue": true,
+    "invalidated_comparisons": 0,
+    "exploration_wall_s": 0.7739615829195827,
+    "exploration_already_in_query_wall": true,
+    "estimated_stable_trial_loss_s": 0.0,
+    "recommendation_scope": "same-query stable delivery windows; not a measured fixed full-query cache entry",
+    "work_basis": "delivered",
+    "work_comparison": "envelope",
+    "provisional_trials": 0,
+    "reference_rechecks": 0,
+    "comparable_selection": false,
+    "learned_global_optimum": false,
+    "samples": 648,
+    "snapshot_requests": 649,
+    "exploration_enabled": true,
+    "exploration_poll_interval_s": 0.003,
+    "protection_poll_interval_s": 0.003,
+    "source_stale_after_s": 0.5,
+    "sample_errors": 0,
+    "peak_native_running": 2,
+    "sampling_paused": true,
+    "sampler_scope": "model_owner",
+    "sampler_stopped": false
+  },
+  "semantics": {
+    "returned": 128,
+    "unique_calls": 128,
+    "engine_requests": 128,
+    "held_tasks": 0,
+    "retained_refs": 0
+  },
+  "controller_inputs": 416,
+  "reasons": {
+    "missing_or_stale_feedback": 407,
+    "priming_measurement": 1,
+    "initial_progress_window": 1,
+    "confirming_performance": 2,
+    "performance_probe": 1,
+    "transition_settled": 2,
+    "exploration_budget": 1,
+    "cooldown": 1
+  },
+  "fresh_service_inputs": 221,
+  "fresh_but_older_than_controller_window": 212,
+  "within_controller_window": 9,
+  "age_min": 0.008251499850302935,
+  "age_max": 0.041104541160166264,
+  "fresh_age_rejection_reasons": {
+    "missing_or_stale_feedback": 212
+  },
+  "trace": {
+    "decoded_bytes": 282260,
+    "sha256": "48b9fd76d17243699dcbbb333a08ccb90cd0e453f9cc3e99a4bac7ebefaf1b33",
+    "archive_bytes": 18208,
+    "archive_sha256": "8f39049472a391294b10608927a337de5cd98b2fe73db376983d5e6c1563a0f5",
+    "path": "raw/geometric_age_trace.json.gz"
+  },
+  "limitations": [
+    "Observation can affect scheduling; this is not a performance comparison.",
+    "It classifies this observed run, not the unique cause of an earlier untraced failure.",
+    "The original integration uses a10ms window, a25ms CPU replacement delay, and a4s exploration budget; no production setting was changed.",
+    "The trace used an uncommitted sampler draft and did not fingerprint code before/after; the final suite separately qualifies the final source hashes."
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "sampler_draft": {
+    "base": "64193c1effb6a8bdc97f73f431795de9ff45a471",
+    "adjacent_run": "pending_frame_after",
+    "reconstructed_sha256": "3c0f09c44cb77a4cbf4045f2a1b0d1df819dcc435d581a228f27b8c7dcab4eb2",
+    "pre_post_trace_fingerprints": false,
+    "later_change": "Final candidate additionally excludes unsequenced frames from the pending cache."
+  }
+}

@@ -530,8 +530,10 @@ class QueryOwnerTests(unittest.TestCase):
         from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
         from tests.semantic_methods.test_lotus_record_chain import engine_result
         class Engine:
-            def __init__(self, *_args):
-                pass
+            def __init__(self, spec, *_args):
+                from src.serving.backends.model_context import model_context_record
+                self.ready_report = dict(engine_uid='CPU-local-query', model_context=model_context_record(
+                    spec, 'CPU-local-query', spec.max_model_len or 32768))
             def run_prepared(self, prepared, *, generation):
                 return [engine_result(row, config["responses"][row["algorithm_stage"] + "|" + row["row_id"]]["text"])
                         for row in reversed(prepared)]

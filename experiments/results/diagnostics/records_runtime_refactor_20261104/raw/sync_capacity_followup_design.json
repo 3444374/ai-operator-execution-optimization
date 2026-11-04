@@ -1,0 +1,334 @@
+{
+  "schema": "semloom.sync_capacity_followup_design.v1",
+  "source_commit": "64193c1effb6a8bdc97f73f431795de9ff45a471",
+  "evidence_kind": "local source inspection, fixed-tag official API inspection, and implementation plan; no new runtime capability",
+  "source_hashes": {
+    "code/src/serving/backends/vllm_engine.py": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed",
+    "code/src/serving/backends/vllm_async_engine.py": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8",
+    "code/src/serving/backends/model_context.py": "968a0153197703921476174bdb6a8330779a04f83d59f140baaf0f8457460ce8",
+    "code/src/serving/backends/vllm_sync_process.py": "166638f46f3f610d3115cbf4a618c1ceb4ae158670835ed4c225f03852cc91a2",
+    "code/src/serving/backends/staged_generation_process.py": "ea2a88dd77e16eeb4a49f46b2cf54a1c95351223ffb78f0b9892128f9afff2fb",
+    "code/src/execution_provider/method_workers/lotus_chain_batch.py": "0b3f1e14c5d48dd5709778f8abc3a64a48c7e281524a4f1481ebb955bf11e3b6",
+    "code/src/infrastructure/cgroup.py": "ca12e7a4dec9ac5ad55e659b0271c882784dbd8c9d41d3a677a9e0cbea0c7e60",
+    "code/src/observability/metrics/vllm.py": "5c90cb67843907cbdb28c67c2acdc794f2e8dfd09ee4b50069e34a7d7f1a2d3b",
+    "code/src/execution_provider/adapters/records_capacity.py": "e9f5bcd4a9685f012d11a63eb13238745851db1ebab8b2052056bbec4c03708f"
+  },
+  "legacy_reads": [
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+      "line": 443,
+      "scope": "DaftCascadeBackend.__call__",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "95f6e3d5df5bddbf1f29c8038c7803913fb1d224675643bc20434a5571094042"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+      "line": 406,
+      "scope": "DaftCascadeBackend.preflight",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "95f6e3d5df5bddbf1f29c8038c7803913fb1d224675643bc20434a5571094042"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "line": 310,
+      "scope": "evaluate",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "23ec3db56f5d9073ead44db575421844300bf8f7ba96febe74b958c8b52bd8ca"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_records.py",
+      "line": 386,
+      "scope": "evaluate",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "8ad001e5ee5131a28bfa6b43c8aca3b781513c635cc0c1811058d1d59b195e3a"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_session.py",
+      "line": 27,
+      "scope": "DaftNativeSession.__init__",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "f76b8e76a5bc84b308f741a88488c87353d0b0be4a987d9c20dd37fec1afc7de"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 478,
+      "scope": "run",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "a53b335dc8fabe23e6ef1aceff56a2793defb6dd8a777f8a42b3448fd3a01350"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 73,
+      "scope": "LocalService.command",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "a53b335dc8fabe23e6ef1aceff56a2793defb6dd8a777f8a42b3448fd3a01350"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 73,
+      "scope": "LocalService.command",
+      "attribute": "legacy_max_num_seqs",
+      "role": "native_baseline",
+      "source_sha256": "a53b335dc8fabe23e6ef1aceff56a2793defb6dd8a777f8a42b3448fd3a01350"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 74,
+      "scope": "LocalService.command",
+      "attribute": "legacy_max_num_batched_tokens",
+      "role": "native_baseline",
+      "source_sha256": "a53b335dc8fabe23e6ef1aceff56a2793defb6dd8a777f8a42b3448fd3a01350"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+      "line": 346,
+      "scope": "RayCascadeBackend.preflight",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "0e0e585b1aacf86f170060864794d5db57e3caa8949d855db7da8b9ca7536ca2"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "line": 325,
+      "scope": "evaluate",
+      "attribute": "legacy_max_model_len",
+      "role": "native_baseline",
+      "source_sha256": "9790854ac682239f77919cc65c6d0fbcf889403e4ea2e4a0c2fccdb0dee538db"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "line": 956,
+      "scope": "SemLoomRecordChainCore.evaluate",
+      "attribute": "legacy_max_model_len",
+      "role": "current_fused_core",
+      "source_sha256": "801e7a75f85592399a42340b2061cb203d09cac2b9e047aecc38ac3fc67370c0"
+    },
+    {
+      "path": "code/src/execution_provider/method_workers/lotus_chain_batch.py",
+      "line": 107,
+      "scope": "FusedChainBatch.__init__",
+      "attribute": "legacy_max_model_len",
+      "role": "shared_worker",
+      "source_sha256": "0b3f1e14c5d48dd5709778f8abc3a64a48c7e281524a4f1481ebb955bf11e3b6"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_cascade.py",
+      "line": 74,
+      "scope": "read_config",
+      "attribute": "legacy_max_model_len",
+      "role": "experiment_entry",
+      "source_sha256": "b0aabc3aa8aac79165d969883845852d4bcf53d1ad41e1c26dc17310cf851af9"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_chain.py",
+      "line": 57,
+      "scope": "read_config",
+      "attribute": "legacy_max_model_len",
+      "role": "experiment_entry",
+      "source_sha256": "d4d16b7f176f44dedf25b4855eed85835f04e6d4d7f1f8cc9cac9571877009b1"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_movie.py",
+      "line": 411,
+      "scope": "read_cascade_config",
+      "attribute": "legacy_max_model_len",
+      "role": "experiment_entry",
+      "source_sha256": "3c933ea9741c5148c7a0a9b0a25a0748d5ddefec727843873d6aeaf9bc089847"
+    },
+    {
+      "path": "code/src/experiments/movie_records_session.py",
+      "line": 54,
+      "scope": "check_plan",
+      "attribute": "legacy_max_model_len",
+      "role": "experiment_entry",
+      "source_sha256": "8b398638d5565f2f0eb657ebd97c9dd34f48330427414f35c10f00d4bd530e0c"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "line": 74,
+      "scope": "VllmEngine.__init__",
+      "attribute": "legacy_max_model_len",
+      "role": "current_engine",
+      "source_sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "line": 48,
+      "scope": "VllmEngine.__init__",
+      "attribute": "legacy_max_model_len",
+      "role": "current_engine",
+      "source_sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "line": 84,
+      "scope": "VllmEngine.__init__",
+      "attribute": "legacy_max_model_len",
+      "role": "current_engine",
+      "source_sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "line": 85,
+      "scope": "VllmEngine.__init__",
+      "attribute": "legacy_max_num_seqs",
+      "role": "current_engine",
+      "source_sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "line": 86,
+      "scope": "VllmEngine.__init__",
+      "attribute": "legacy_max_num_batched_tokens",
+      "role": "current_engine",
+      "source_sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    }
+  ],
+  "sync": {
+    "native_defaults_migrated": false,
+    "constructor_still_supplies": {
+      "max_model_len": 4096,
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 4096
+    },
+    "constructor_values_scope": "Only when unspecified. Explicit values retain their configured identity.",
+    "found_shadow_paths": [
+      "VllmEngine constructor/output check uses legacy context; ready reports actual native context but does not replace the earlier _max_model_len.",
+      "FusedChainBatch rewrites unspecified context to explicit4096, before lazy private model startup and token grouping.",
+      "SemLoomRecordChainCore fused preflight and shared experiment preflight still read legacy context.",
+      "Native Daft/Ray/LOTUS and IMLane reproduction retain legacy checks; they must not inherit a new current-engine default silently."
+    ],
+    "verified_fixed_tag_sources": [
+      {
+        "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/entrypoints/llm.py",
+        "symbols": [
+          "LLM.__init__",
+          "LLM.chat"
+        ],
+        "finding": "Constructed LLM exposes its actual model_config; chat delegates rendering and execution to its offline mixin."
+      },
+      {
+        "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/entrypoints/offline_utils.py",
+        "symbols": [
+          "OfflineInferenceMixin._run_chat",
+          "OfflineInferenceMixin._add_chat_requests"
+        ],
+        "finding": "Chat preprocessing and request addition are coupled. A total-length check must establish exact native rendering without partially adding a batch or applying a different template."
+      },
+      {
+        "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/v1/engine/input_processor.py",
+        "symbols": [
+          "InputProcessor.process_inputs",
+          "InputProcessor._validate_prompt_len"
+        ],
+        "finding": "This prompt-length validator checks the prompt and at least one output position. The explicit max_tokens sum is not checked in this function; its existence cannot stand in for SemLoom pre-submission total-length validation."
+      }
+    ],
+    "implementation_sequence": [
+      {
+        "step": "Make native baseline parameters explicit at baseline-owned construction sites",
+        "files": [
+          "code/src/baselines/text/frameworks/daft_lotus_records.py",
+          "code/src/baselines/text/frameworks/daft_lotus_session.py",
+          "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+          "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+          "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+          "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+          "code/src/baselines/text/frameworks/lotus_native_local_model.py"
+        ],
+        "acceptance": "Original native engine arguments, batches, methods, lifecycle and historical projection IDs remain comparable; actual requested/derived values remain distinguishable."
+      },
+      {
+        "step": "Migrate current synchronous engine omission and same-instance readiness",
+        "files": [
+          "code/src/serving/backends/vllm_engine.py"
+        ],
+        "acceptance": "Only explicit optional engine fields are sent. Readiness and every generation check use validated actual context; missing, changed or mismatched observations reject without fallback. Dtype and memory ratio are unchanged by this scope."
+      },
+      {
+        "step": "Propagate readiness through shared fused preparation and relation reuse",
+        "files": [
+          "code/src/execution_provider/method_workers/lotus_chain_batch.py",
+          "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+          "code/src/experiments/movie_records_session.py"
+        ],
+        "acceptance": "No shadow4096. Preserve early explicit checks; bind actual context before length-dependent batching and cache identities. Reuse the same owner/spec observation across relations; failed ready keeps existing process cleanup and ownership reporting."
+      },
+      {
+        "step": "Verify actual rendered prompt plus requested output before submission",
+        "files": [
+          "code/src/serving/backends/vllm_engine.py",
+          "code/src/execution_provider/method_workers/lotus_chain_batch.py"
+        ],
+        "acceptance": "Choose and source-check the fixed native render/submit API first; no guessed or duplicated chat template, silent truncation, speculative submission or pretending unknown context is unlimited. Any response after partial acceptance remains unknown until confirmed."
+      }
+    ],
+    "required_checks": [
+      "omitted versus explicit three fields",
+      "actual small and large model contexts",
+      "invalid or missing ready with child cleanup",
+      "per-call generation beyond actual context",
+      "prompt plus output exactly at limit and one token over",
+      "same owner across relation/query reuse and changed model context",
+      "native baseline argument/behavior comparison",
+      "exact historical materialization"
+    ],
+    "API_status": "Actual model_config readiness API is supported by the pinned source; remaining render/submit migration is engineering work, not a proved external API blocker.",
+    "actual_model_verified": false
+  },
+  "automatic_capacity": {
+    "implemented": false,
+    "ordinary_R": 2,
+    "default_IPC_result_slots": 8,
+    "None_semantics": "None is accepted only with complete finite independent budgets; it is not unlimited or automatic capacity.",
+    "observed_sources": [
+      {
+        "path": "code/src/infrastructure/cgroup.py",
+        "symbol": "memory_observation",
+        "provides": "visible ancestor group memory limit/headroom",
+        "missing": "exclusive service-owned payload grant; shared driver/model/other processes may use the same headroom"
+      },
+      {
+        "path": "code/src/observability/metrics/vllm.py",
+        "symbol": "effective_capacity_snapshot",
+        "provides": "actual constructed scheduler/context/KV-pool configuration",
+        "missing": "free KV bytes, physical free bytes and host buffer grant; those free-byte fields remain None"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/records_capacity.py",
+        "symbol": "RecordsCapacityBudget/CoreRecordsCapacity/independent_default_capacity",
+        "provides": "finite separate Core, Method and IPC logical allowances",
+        "missing": "a measured or exclusively assigned deployment memory grant"
+      }
+    ],
+    "implementation_sequence": [
+      "Establish an actual deployment/service byte grant and its owner/version; detect sharing instead of spending host or cgroup headroom once per buffer.",
+      "Use the existing Core/Method/IPC reservation owners and complete item envelopes, accounting for simultaneously retained input, continuation, prepared data and unconsumed results. Add no second scheduler or pressure controller.",
+      "Remove ordinary request-count policy only after storage admission can derive finite permissible work from that grant. Keep vLLM responsible for in-instance tokens/KV, and keep update_supply as the existing feedback seam.",
+      "Check the grant after model initialization and when owner/model identity changes. Unknown work, cancel and ACK retain their existing distinct responsibilities; no byte grant means capacity unavailable, not infinite and not an invented small count.",
+      "Validate local logical accounting separately from actual memory high-water marks; no RSS or hardware-capacity claim follows from serialized payload size alone."
+    ],
+    "required_checks": [
+      "grant absent/shared/changed",
+      "one item larger than available grant",
+      "slow consumer with unconsumed results",
+      "unknown, cancel and delayed receipt retain responsibility",
+      "input/prepared/result simultaneous ownership without duplicated grant spending",
+      "explicit budget/native baseline compatibility",
+      "no hard-coded count or percentage used as hardware capacity"
+    ],
+    "unresolved_implementation": "No maintained deployment source currently grants an exclusive service byte pool. The data source and reservation composition must be implemented before enabling automatic capacity; this report adds no dormant helper or manual parameter list."
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

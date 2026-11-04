@@ -385,7 +385,11 @@ class ExecutionComparisonTests(unittest.TestCase):
         events = []
 
         class Engine:
-            def __init__(self, *args): events.append('construct')
+            def __init__(self, spec, *args):
+                from src.serving.backends.model_context import model_context_record
+                self.ready_report = dict(engine_uid='CPU-comparison', model_context=model_context_record(
+                    spec, 'CPU-comparison', spec.max_model_len or 32768))
+                events.append('construct')
             def run_prepared(self, prepared, *, generation):
                 from src.serving.backends.vllm_engine import _prepared
                 identities, _ = _prepared(prepared)

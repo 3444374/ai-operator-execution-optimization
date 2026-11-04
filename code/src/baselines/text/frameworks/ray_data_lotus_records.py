@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterator
 
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[4]
@@ -75,7 +75,7 @@ class InferBatch:
         deadline: float,
         startup_timeout_s: float,
     ):
-        from src.serving.backends.vllm_engine import VllmEngine
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine as VllmEngine
 
         _check_deadline(deadline)
         self.deadline = deadline

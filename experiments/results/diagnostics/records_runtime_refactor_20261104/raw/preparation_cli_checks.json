@@ -1,0 +1,258 @@
+{
+  "schema": "semloom.preparation_cli_cpu.v1",
+  "base": "e60c860bdde697fa22067c04ab9223848c9fe744",
+  "implementation": "Movie run/check and session JSON select serial/interleaved/event_driven; existing SDK and execution loop are reused, default serial remains unchanged.",
+  "production_files": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_batches.py",
+      "sha256": "af6e031bafe9fb465116aa8b3ff90f7d6b215e07f8d77e78b46da2352ef09c76"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_profile.py",
+      "sha256": "99ba3fcd0c2590081d85c2816691ab53f802576c2228c4edbb55a64ac8207193"
+    },
+    {
+      "path": "code/src/experiments/calibration/core.py",
+      "sha256": "c40c832aa59638ed3300af4202f61061d39772b326e54af442e6e3400ef5d095"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_movie.py",
+      "sha256": "ad9cebd2fd8c15ce08310a11b7c6772879a860993b594fcfc1d6a0af74949dd7"
+    },
+    {
+      "path": "code/src/experiments/movie_records_config.py",
+      "sha256": "4dc46a6d41984e3f6291ecf7bb10be0c97f78f8e594537ae644dbaf035479c39"
+    },
+    {
+      "path": "code/src/experiments/movie_records_session.py",
+      "sha256": "4b71eea1a36525cb1c1e2fc0d1dcfd3f1e46e4ed224a778e2f22ac39573267c3"
+    }
+  ],
+  "public_option": {
+    "name": "preparation_mode",
+    "default": "serial",
+    "values": [
+      "serial",
+      "interleaved",
+      "event_driven"
+    ],
+    "scope": "explicit fixed rolling token requests through Movie; arbitrary chains and dynamic feedback not enabled"
+  },
+  "normalized_default_identity_unchanged": true,
+  "enabled_modes_have_distinct_calibration_identities": true,
+  "invalid_direct_start_rejects_before_directory_and_Ray": true,
+  "None_with_complete_finite_independent_budgets_tested": true,
+  "late_error_semantics": "Raw source validation does not prepare every future prompt. A later context error can follow a legal completed prefix in either scheduling mode; preserve its native terminal receipts and usage, and never mark the query completed.",
+  "CPU": {
+    "preparation_entry_before": {
+      "selected": 8,
+      "run": 8,
+      "passed": 2,
+      "failed_records": 8,
+      "error_records": 11,
+      "failed_methods": [
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_calibration_identity_separates_preparation_and_normalizes_serial",
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_direct_start_rejects_invalid_mode_before_directory_or_Ray",
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_unknown_or_nonstring_mode_is_rejected_before_owner_allocation"
+      ],
+      "error_methods": [
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_check_CLI_reports_each_mode_without_creating_an_owner",
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_direct_start_rejects_invalid_mode_before_directory_or_Ray",
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_resident_queries_reuse_one_owner_with_original_prompts_and_generations",
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_run_worker_CLI_reaches_existing_factory_and_preserves_results"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.10459987493231893
+    },
+    "preparation_entry_after": {
+      "selected": 8,
+      "run": 8,
+      "passed": 8,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 5.352017665980384
+    },
+    "preparation_entry_targeted": {
+      "selected": 31,
+      "run": 31,
+      "passed": 31,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 11.083432791987434
+    },
+    "preparation_entry_lifecycle": {
+      "selected": 11,
+      "run": 11,
+      "passed": 10,
+      "failed_records": 0,
+      "error_records": 3,
+      "failed_methods": [],
+      "error_methods": [
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_late_context_error_keeps_legal_prefix_receipts_and_never_completes_query"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 5.431827082997188
+    },
+    "preparation_late_context_corrected": {
+      "selected": 1,
+      "run": 1,
+      "passed": 0,
+      "failed_records": 1,
+      "error_records": 0,
+      "failed_methods": [
+        "tests.experiments.test_movie_preparation_mode.PreparationModeEntryTests.test_late_context_error_keeps_legal_prefix_receipts_and_never_completes_query"
+      ],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 3.3207082499284297
+    },
+    "preparation_late_prefix_receipts": {
+      "selected": 1,
+      "run": 1,
+      "passed": 1,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 3.317613124847412
+    },
+    "preparation_cli_final": {
+      "selected": 1826,
+      "run": 1818,
+      "passed": 1788,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 247.1515981669072
+    }
+  },
+  "all_code_fingerprints": 1299,
+  "all_final_code_hashes_match": true,
+  "compressed_methods": {
+    "path": "raw/preparation_cli_methods.json.gz",
+    "decoded_bytes": 561445,
+    "decoded_sha256": "051d2db01fbd117ae516e9d7ea9705e9bacaac4eea9abe634cf232f03a469dcc",
+    "archive_bytes": 94880,
+    "archive_sha256": "0ae5dd0331a7bd9558ad53d4cbb587e7983d852ea989dbc917e105510bb8af78",
+    "all_original_runs_exactly_reconstruct": true
+  },
+  "fixture_corrections": [
+    {
+      "run": "preparation_entry_lifecycle",
+      "issue": "New fixture used sentiment1, outside the existing source schema; preparation stopped before the intended context error.",
+      "change": "Use the existing POSITIVE fixture value; production validation remains unchanged."
+    },
+    {
+      "run": "preparation_late_context_corrected",
+      "issue": "New assertion assumed serial always submits zero rows before a late error; the actual Movie CLI fixture completed four legal prefix rows.",
+      "change": "Check retained prefix against independent native terminal events, keep query failure and usage, and require a nonempty event-mode witness. No source/controller/threshold change was used to pass."
+    },
+    {
+      "run": "preparation_entry_before",
+      "issue": "Initial tests also produced secondary key lookups after a failed subtest and one unsupported baseline spelling.",
+      "change": "Add explicit completeness assertions and use the maintained daft-native-local-model spelling; retain initial errors."
+    }
+  ],
+  "unchanged_sources": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "sha256": "d834ecb65b7ddb9e58937aa9485ea70420fe1c34c2b241f2a45f66032d9516cc"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/stage_work.py",
+      "sha256": "d80e199974f6015071832031c79fdaa8274a2568c16e1541e4526e3d802f697d"
+    },
+    {
+      "path": "code/tests/execution_provider/test_core_geometric_admission.py",
+      "sha256": "d29fd8c07142e25ce56326ec6783ed0c61969e51de55bdaef1129b7c9bb84d34"
+    }
+  ],
+  "history": {
+    "bindings": 3010,
+    "mismatches": 0,
+    "all_five_materialization_methods_passed": true
+  },
+  "e60_independent_review": {
+    "head": "e60c860bdde697fa22067c04ab9223848c9fe744",
+    "tree": "1161c80bb0e12ca13215d63fe573e1641327bc51",
+    "passed": 67,
+    "real_Ray_skips": 5,
+    "new_findings": 0,
+    "scope": "legacy pending frame only; geometric root cause remains open"
+  },
+  "geometric": {
+    "passed_in_final_CPU_run": true,
+    "fixed": false,
+    "original_failure_and_negative_timing_retained": true
+  },
+  "automatic_capacity": false,
+  "ordinary_R": 2,
+  "default_IPC_result_slots": 8,
+  "sync_default_migration": false,
+  "limitations": [
+    "CPU fixture qualification only; actual models, Ray/GPU and full-query performance remain unverified.",
+    "Thirty method skips and two classes with eight unexecuted methods remain.",
+    "Existing source validity and complete-query quality checks still apply; no claim of strict error side-effect equivalence.",
+    "No automatic hardware capacity, default request removal or synchronous native default migration in this change."
+  ],
+  "independent_review": "pending exact candidate",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

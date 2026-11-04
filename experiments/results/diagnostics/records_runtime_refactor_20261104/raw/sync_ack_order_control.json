@@ -1,0 +1,37 @@
+{
+  "schema": "semloom.cpu_ack_order.v2",
+  "verified_original_source_commit": "129c5555092facf3582266d1a17feebf0184f55f",
+  "original_method_AST_sha256": "8aa327701ad8be9f225d7e3c62ea433945d34c406089f8757952b6fa1f735124",
+  "candidate_method_AST_sha256": "3de49c4a4682e2dfa1903c49c6c88a1b9ad292d83787457933dd82eef1c281ca",
+  "derived_fixture_changed_call_sites": 1,
+  "scope": "Same production async pipeline; only the verified fixture wait is replaced for the negative control.",
+  "outcomes": [
+    {
+      "role": "original",
+      "run": 1,
+      "successful": false,
+      "failures": [
+        {
+          "id": "tests.execution_provider.ack_order_fixture.OriginalAckOrdering.test_partial_ready_uses_other_RPC_permits_while_first_ack_is_delayed (workers=2)",
+          "traceback": "Traceback (most recent call last):\n  File \"ack_order_before_wait\", line 28, in test_partial_ready_uses_other_RPC_permits_while_first_ack_is_delayed\n    kwargs['event_driven_preparation'] = True\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true\n"
+        },
+        {
+          "id": "tests.execution_provider.ack_order_fixture.OriginalAckOrdering.test_partial_ready_uses_other_RPC_permits_while_first_ack_is_delayed (workers=4)",
+          "traceback": "Traceback (most recent call last):\n  File \"ack_order_before_wait\", line 28, in test_partial_ready_uses_other_RPC_permits_while_first_ack_is_delayed\n    kwargs['event_driven_preparation'] = True\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true\n"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "role": "candidate",
+      "run": 1,
+      "successful": true,
+      "failures": [],
+      "errors": []
+    }
+  ],
+  "production_code_changed_for_this_case": false,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}

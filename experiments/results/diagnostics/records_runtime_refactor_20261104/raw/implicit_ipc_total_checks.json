@@ -1,0 +1,40 @@
+{
+  "base": "1318232e18fa6b1295be97c9addd2630fdc631ca",
+  "fix": "only omitted input/result total fits its effective IPC item before typed validation",
+  "explicit_totals_unchanged": true,
+  "typed_limits_unchanged": true,
+  "invalid_types_rejected": true,
+  "ordinary_and_rolling": true,
+  "ordinary_and_session_helpers": true,
+  "model_defaults_unchanged": true,
+  "CPU": {
+    "selected": 107,
+    "passed": 107,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "before": {
+    "methods": 4,
+    "passed": 2,
+    "error_methods": 2,
+    "error_subcases": 28
+  },
+  "reviewer_probe_replayed": {
+    "cases": 16,
+    "accepted": 16,
+    "models_allocated": 0,
+    "reviewer_code_modified": false,
+    "independently_reviewed": false
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "artifacts": {
+    "implicit_totals_after.json": "f1d76d314c14349f67b7e5670e70f0ae3a25e4bf17dcc9f0cf6de9e51d8a3604",
+    "implicit_totals_before.json": "3b9ec4074cf8826ddd2daa7498e55115f5543d0ae2f891672bae27d3c08a8f49",
+    "review_probe_after.json": "04bdc413df4a44c06a93a86dd6e7e285562ed39b2d37674faf55707464b9e57c"
+  }
+}

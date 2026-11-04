@@ -365,7 +365,7 @@ class MovieMatrix:
         from src.experiments.calibration.core import (
             build_core_identity,core_measurement,core_runtime_measurement,core_session_model_ready,core_context_failure,
         )
-        from src.serving.backends.vllm_engine import EngineSpec
+        from src.serving.backends.vllm_protocol import EngineSpec
         spec=group['calibration'];base=self.packet.read(self.packet.HERE/group['plan']);checked=check_plan(base)
         require_outside_git(Path(spec['cache_dir']))
         observed=core_observations(cfg,self.packet,self.host.assigned_gpu(cfg))

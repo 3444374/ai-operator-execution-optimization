@@ -8,8 +8,10 @@ from src.execution_provider.adapters.lotus_records_core import (
 )
 from src.experiments.calibration import core
 from src.experiments.lotus_records_movie import _async_limits, _record_admission_cache
+from src.experiments.movie_records_config import records_runtime as movie_runtime
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from tests.experiments import test_core_calibration as fixtures
 
 
@@ -49,8 +51,8 @@ class CoreCapacityIdentityTests(unittest.TestCase):
                 self.assertNotEqual(self.signature(dict(self.plan, core_capacity={name:value})), self.signature())
 
     def test_each_nondefault_IPC_field_is_bound(self):
-        values = dict(max_inflight=4, input_bytes=16*1024**2, item_input_bytes=1024**2,
-            result_slots=5, result_bytes=16*1024**2, item_result_bytes=65536,
+        values = dict(max_inflight=4, input_bytes=32*1024**2, item_input_bytes=1024**2,
+            result_slots=5, result_bytes=32*1024**2, item_result_bytes=65536,
             command_slots=1, control_slots=3, control_frame_bytes=4096, feedback_interval_s=.1)
         for name, value in values.items():
             with self.subTest(field=name):
@@ -65,11 +67,11 @@ class CoreCapacityIdentityTests(unittest.TestCase):
             item_result_bytes=2*1024**2, feedback_interval_s=0.0)
         self.assertEqual(self.signature(explicit), self.signature())
 
-    def test_explicit_total_derived_from_fixed_result_slots_is_redundant(self):
+    def test_explicit_total_is_independent_of_result_slot_count(self):
         self.plan['async_limits'] = dict(result_slots=5, item_result_bytes=65536)
         explicit = deepcopy(self.plan)
         explicit['async_limits']['result_bytes'] = 5*65536
-        self.assertEqual(self.signature(explicit), self.signature())
+        self.assertNotEqual(self.signature(explicit), self.signature())
 
     def test_feedback_interval_integer_and_float_have_one_identity(self):
         self.assertEqual(self.signature(dict(self.plan, async_limits=dict(feedback_interval_s=1))),
@@ -100,24 +102,20 @@ class CoreCapacityIdentityTests(unittest.TestCase):
                 resources = RecordsResources(**plan['resources'])
                 resolved = resolve_core_profile(EngineSpec.from_dict(plan['engine']), resources, plan['profile'])
                 limits = _async_limits(plan, resources=resources, resolved=resolved)
-                self.assertEqual(limits.max_inflight, maximum)
-                self.assertEqual(limits.input_bytes, maximum*4*1024**2)
-                self.assertEqual(limits.result_bytes, maximum*65536)
+                self.assertEqual(limits.max_inflight,resources.max_active_batches)
+                self.assertEqual(limits.input_bytes,AsyncEngineLimits().input_bytes)
+                self.assertEqual(limits.result_bytes,AsyncEngineLimits().result_bytes)
 
     def test_explicit_count_matching_current_C_is_not_a_derived_policy(self):
         self.plan['async_limits'] = dict(max_inflight=4)
         self.assertNotEqual(self.signature(), self.signature(self.fixture.plan))
         self.assertEqual(self.candidate(4)['async_limits'], dict(max_inflight=4))
-        with self.assertRaisesRegex(ValueError, 'owner request limit'):
-            self.candidate(2)
-        with self.assertRaisesRegex(ValueError, 'owner request limit'):
-            core.build_core_selection(self.identity(), [dict(max_inflight=2, cpu_workers=1)], [], scan_wall_s=0)
+        self.assertEqual(self.candidate(2)['async_limits'],dict(max_inflight=4))
 
-    def test_explicit_result_slots_remain_a_candidate_constraint(self):
+    def test_explicit_result_slots_remain_independent_of_soft_candidates(self):
         self.plan['async_limits'] = dict(result_slots=4)
         self.candidate(2)
-        with self.assertRaisesRegex(ValueError, 'result slot'):
-            self.candidate(8)
+        self.assertEqual(self.candidate(8)['async_limits'],dict(result_slots=4))
 
     def test_explicit_totals_matching_current_C_remain_distinct(self):
         limits = asdict(resolve_records_async_limits(
@@ -128,12 +126,27 @@ class CoreCapacityIdentityTests(unittest.TestCase):
 
     def test_single_candidate_capacity_defaults_can_fully_normalize(self):
         self.plan['resources']['max_active_batches'] = self.plan['profile']['max_inflight'] = 1
-        resources = RecordsResources(**self.plan['resources'])
-        limits = asdict(resolve_records_async_limits(resources, CoreRecordsCapacity()))
+        configured = movie_runtime(self.plan)
+        limits = asdict(configured.async_limits)
         self.assertEqual(self.signature(dict(self.plan, async_limits=limits)), self.signature())
 
+    def test_new_default_identity_binds_actual_resources_and_allows_more_than_native_iteration(self):
+        self.plan['engine']['max_num_seqs']=2
+        identity=self.identity()
+        policy=identity['execution']['records_capacity_policy_v2']
+        configured=movie_runtime(self.plan)
+        self.assertEqual(policy['core']['budget'],asdict(configured.capacity.budget))
+        self.assertEqual(policy['IPC_overrides'],asdict(configured.async_limits))
+        before=deepcopy(self.plan)
+        self.assertEqual(self.candidate(8)['profile']['max_inflight'],8)
+        self.assertEqual(self.plan,before)
+        self.plan['profile']['admission']=dict(kind='legacy_resource_feedback')
+        legacy=self.identity()
+        self.assertNotIn('records_capacity_policy_v2',legacy['execution'])
+        self.assertNotEqual(core.core_identity_signature(identity),core.core_identity_signature(legacy))
+
     def test_fixed_owner_feedback_defaults_do_not_bind_initial_C(self):
-        self.plan['profile']['admission'] = dict(kind='resource_feedback')
+        self.plan['profile']['admission'] = dict(kind='legacy_resource_feedback')
         resources = RecordsResources(**self.plan['resources'])
         explicit = dict(self.plan, async_limits=asdict(resolve_records_async_limits(resources, CoreRecordsCapacity())))
         self.assertEqual(self.signature(explicit), self.signature())
@@ -164,7 +177,7 @@ class CoreCapacityIdentityTests(unittest.TestCase):
     def test_invalid_capacity_is_rejected_before_a_measurement_or_cache_hit(self):
         for changes in (dict(core_capacity=None), dict(async_limits=None),
                 dict(core_capacity=dict(metadata_bytes=0)),
-                dict(async_limits=dict(max_inflight=3)),
+                dict(async_limits=dict(max_inflight=0)),
                 dict(async_limits=dict(input_bytes=1)), dict(async_limits=dict(unknown=1))):
             with self.subTest(changes=changes), self.assertRaises((ValueError, TypeError)):
                 self.identity(dict(self.plan, **changes))
@@ -175,7 +188,7 @@ class CoreCapacityIdentityTests(unittest.TestCase):
         return _record_admission_cache(plan, resources=resources, resolved=resolved)
 
     def test_online_admission_omitted_and_full_equivalent_defaults_share_identity(self):
-        self.plan['profile']['admission'] = dict(kind='resource_feedback')
+        self.plan['profile']['admission'] = dict(kind='legacy_resource_feedback')
         self.plan['admission_cache'] = dict(identity=dict(execution=dict(fixture=True)))
         cache = self.online_cache(self.plan)
         resources = RecordsResources(**self.plan['resources'])
@@ -186,6 +199,7 @@ class CoreCapacityIdentityTests(unittest.TestCase):
                 self.assertEqual(self.online_cache(dict(self.plan, **changes)), cache)
 
     def test_online_custom_capacity_is_canonical_and_does_not_mutate_input(self):
+        self.plan['profile']['admission'] = dict(kind='legacy_resource_feedback')
         self.plan.update(core_capacity=dict(poll_interval_s=1), async_limits=dict(feedback_interval_s=1),
             admission_cache=dict(identity=dict(execution=dict(fixture=True))))
         original = deepcopy(self.plan)

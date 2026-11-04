@@ -14,7 +14,7 @@ import sys
 import time
 
 from .vllm_sync_process import EngineProcess, MAX_MESSAGE_BYTES, _encode
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, _prepared
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prepared
 
 
 class ChainEngineProcess(EngineProcess):
@@ -57,10 +57,11 @@ class ChainEngineProcess(EngineProcess):
                         for item in identities]
 
 
-def serve(result_fd):
+def serve(result_fd, *, engine_factory=None):
     """Execute in model_python, without importing LOTUS or Ray."""
     from src.serving.backends.vllm_engine import VllmEngine
 
+    engine_factory = VllmEngine if engine_factory is None else engine_factory
     engine = None
     with os.fdopen(result_fd, "wb", buffering=0) as output:
         def send(value):
@@ -72,7 +73,7 @@ def serve(result_fd):
                     raise ValueError("engine IPC request exceeds its byte limit")
                 value = json.loads(raw)
                 if engine is None and value["op"] == "open":
-                    engine = VllmEngine(EngineSpec.from_dict(value["engine"]),
+                    engine = engine_factory(EngineSpec.from_dict(value["engine"]),
                                         GenerationSpec.from_dict(value["generation"]))
                     send(dict(kind="ready", **engine.ready()))
                 elif engine is not None and value["op"] == "run":

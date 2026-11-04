@@ -23,7 +23,7 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 from src.semantic_methods.lotus.record_chain import RecordOccurrence
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 from src.experiments.record_chain_validation import (
     make_chain, make_budget, run_case, replay_native_answers, compare,
 )

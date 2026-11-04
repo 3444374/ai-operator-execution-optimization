@@ -22,7 +22,7 @@ from src.baselines.text.movie_records import MovieRecordSource
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 REPO = Path(__file__).resolve().parents[3]
 CONFIG_ROOT = REPO / "deploy/autodl/sembench_records"

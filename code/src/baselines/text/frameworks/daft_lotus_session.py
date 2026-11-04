@@ -8,7 +8,7 @@ import time
 from .daft_lotus_records import _DaftRows, _graph, _check, DEFAULT_PREPARED_BATCH_BYTES
 from src.baselines.common.private_artifacts import new_private_directory
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 class DaftNativeSession:
@@ -62,7 +62,7 @@ class DaftNativeSession:
                     # Single instance is required; never load a second model if a
                     # different wrapper instance unexpectedly executes this session.
                     (control/'model-started').touch(mode=0o600,exist_ok=False)
-                    from src.serving.backends.vllm_sync_process import EngineProcess
+                    from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
                     self.kernel=(engine_type or EngineProcess)(engine,generation,control,deadline,
                                                               resources.startup_timeout_s)
                 results=self.kernel.run_prepared(rows)

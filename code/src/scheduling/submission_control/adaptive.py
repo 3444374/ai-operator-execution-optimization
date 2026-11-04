@@ -312,6 +312,52 @@ class ResourceFeedbackConfig:
             raise ValueError("physical probe policy requires ascending request search")
 
 
+@dataclass(frozen=True)
+class ResourceRequestConfig:
+    """Sampling and comparison choices for the independent request policy.
+
+    Durations use driver seconds; min_samples counts completed model receipts.
+    No elapsed/change/tail budget applies unless explicitly requested. These
+    measurement choices are engineering settings, not hardware capacity facts.
+    """
+    poll_interval_s: float = .25
+    window_s: float = 1.
+    max_sample_age_s: float = 1.
+    min_samples: int = 16
+    measurement_windows: int = 3
+    min_gain: float = .03
+    min_remaining: int = 0
+    exploration_s: float | None = None
+    max_changes: int | None = None
+    require_memory_feedback: bool = False
+    allow_exploration: bool = True
+
+    def __post_init__(self):
+        for name in ('poll_interval_s', 'window_s', 'max_sample_age_s', 'exploration_s'):
+            value = getattr(self, name)
+            if name == 'exploration_s' and value is None:
+                continue
+            if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+                raise ValueError(name+' must be finite and positive')
+        if self.poll_interval_s > self.window_s:
+            raise ValueError('sampling must be at least as frequent as measurement')
+        if self.poll_interval_s > self.max_sample_age_s:
+            raise ValueError('sampling must fit the requested feedback age')
+        for name, minimum in (('min_samples', 1), ('measurement_windows', 2),
+                              ('min_remaining', 0), ('max_changes', 1)):
+            value = getattr(self, name)
+            if name == 'max_changes' and value is None:
+                continue
+            if type(value) is not int or value < minimum:
+                raise ValueError(name+' must be an integer at least '+str(minimum))
+        if (type(self.min_gain) not in (int, float) or not math.isfinite(self.min_gain)
+                or not 0 <= self.min_gain < 1):
+            raise ValueError('min_gain must be finite and between zero and one')
+        for name in ('require_memory_feedback', 'allow_exploration'):
+            if type(getattr(self, name)) is not bool:
+                raise ValueError(name+' must be boolean')
+
+
 def _local_pair_evidence(reference, candidate, margin):
     """Match work direction before reading rate, never fit token-cost weights.
 

@@ -18,7 +18,7 @@ from src.semantic_methods.lotus.cascade import (
     CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_protocol import EngineSpec
 
 from .ray_data_lotus_records import _RayRows, _CLOSE_COLUMN, _check_deadline, _runtime_env, _table
 from src.serving.backends.stage_process_cleanup import StageEngineCleanup
@@ -52,8 +52,8 @@ class InferCascade:
     """Ray Data's GPU callable owns a private, supervised local engine process."""
 
     def __init__(self, engine, generation, expected_count, deadline, startup_timeout_s, control):
-        from src.serving.backends.vllm_sync_process import EngineProcess
-        from src.serving.backends.vllm_engine import GenerationSpec
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
+        from src.serving.backends.vllm_protocol import GenerationSpec
 
         _check_deadline(deadline)
         self.deadline, self.expected_count = deadline, expected_count

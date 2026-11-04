@@ -31,7 +31,7 @@ from src.scheduling.runtime.async_backend import (
 )
 from src.scheduling.submission_control.admission import StaticAdmissionController, DynamicAdmissionGate
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 from .lotus_records_actor_owner import RecordsActorOwner
 from .records_capacity import (
@@ -43,6 +43,7 @@ from .records_model_adapter import (
 )
 from .records_profile import (
     expand_core_profile as expand_core_profile, resolve_core_profile, resolve_record_batching,
+    resolve_records_runtime,
 )
 from .records_transport import (
     _await_result as _await_result, _check, _RecordTransport, close_prepared_core,
@@ -53,25 +54,28 @@ from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlock
 
 def create_records_core(method, engine, generation, resources, *, profile=None, async_limits=None,
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
-                        resident=False, experimental_skip_token_packing=False, capacity=None):
+                        resident=False, experimental_skip_token_packing=False, capacity=None,
+                        interleaved_preparation=False, event_driven_preparation=False):
     """Select existing ownership; both Movie lifecycles use this same factory."""
-    capacity = CoreRecordsCapacity() if capacity is None else capacity
-    if type(capacity) is not CoreRecordsCapacity:
-        raise TypeError("Core records capacity must be CoreRecordsCapacity")
-    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill, capacity=capacity)
+    if type(interleaved_preparation) is not bool or type(event_driven_preparation) is not bool:
+        raise TypeError('preparation options must be boolean')
+    if (interleaved_preparation or event_driven_preparation) and prepared_batching is None:
+        raise ValueError('interleaved preparation requires fixed rolling token requests')
+    configured = resolve_records_runtime(engine, resources, profile, capacity=capacity, async_limits=async_limits,
+        prepared_batching=prepared_batching, rolling_refill=rolling_refill)
+    capacity, resolved, async_limits = configured.capacity, configured.profile, configured.async_limits
     batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill,
                                       experimental_skip_token_packing)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
-    if resolved["mode"] == "async":
-        async_limits = resolve_records_async_limits(effective, capacity, async_limits)
-    elif async_limits is not None:
-        raise ValueError("async_limits requires async Core execution")
     if batching is not None:
         if capacity.budget is not None:
             capacity.method_capacity(effective, capacity.method_limits(1))
         from .lotus_records_batches import PreparedRecordsCore
         return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits,
-                                   resident=resident, capacity=capacity)
+                                   resident=resident, capacity=capacity,
+                                   **(dict(interleaved_preparation=interleaved_preparation,
+                                       event_driven_preparation=event_driven_preparation)
+                                      if interleaved_preparation or event_driven_preparation else {}))
     options = dict(capacity=capacity)
     actors = None
     if resolved["mode"] == "async":
@@ -233,7 +237,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
             input_work += value["prompt_tokens"]
             output_work += value["completion_tokens"]
         self.completed_work = (len(self.received) + 1, input_work, output_work)
-        if self.owner._feedback is not None and self.owner._feedback.options.work_basis == "computed":
+        if self.owner._feedback is not None and self.owner._feedback.uses_computed_work:
             _, computed, cached = self.completed_effective_work
             new_computed, new_cached = value.get("prompt_computed_tokens"), value.get("prompt_cached_tokens")
             valid = (value["status"] == "succeeded" and computed is not None
@@ -246,6 +250,38 @@ class _CoreRows(Iterator[dict[str, Any]]):
         if self.owner._feedback is not None:
             self.owner._feedback.observe(self)
         return value
+
+    def completed_model_work(self):
+        """Combine delivered totals with validated retained receipts, without consuming them."""
+        completed, input_work, output_work = self.completed_work
+        effective_count, computed, cached = self.completed_effective_work
+        work = dict(completed_items_total=completed, completed_input_work_total=input_work,
+            completed_output_work_total=output_work,
+            completed_computed_input_work_total=computed if effective_count == completed else None,
+            completed_cached_input_work_total=cached if effective_count == completed else None)
+        fields = (('completed_input_work_total', 'prompt_tokens'),
+                  ('completed_output_work_total', 'completion_tokens'),
+                  ('completed_computed_input_work_total', 'prompt_computed_tokens'),
+                  ('completed_cached_input_work_total', 'prompt_cached_tokens'))
+        for key, payload in self.owner.transport.failure_receipts():
+            if key.session_id != self.session.session_id:
+                continue
+            value = json.loads(payload)
+            if value['call_id'] in self.received:
+                continue
+            if value['status'] != 'succeeded':
+                work.update({target: None for target, _ in fields})
+                continue
+            work['completed_items_total'] += 1
+            computed, cached = value.get('prompt_computed_tokens'), value.get('prompt_cached_tokens')
+            if (type(computed) is not int or type(cached) is not int or min(computed, cached) < 0
+                    or computed + cached != value.get('prompt_tokens')):
+                value['prompt_computed_tokens'] = value['prompt_cached_tokens'] = None
+            for target, source in fields:
+                item = value.get(source)
+                work[target] = (work[target]+item if work[target] is not None
+                                and type(item) is int and item >= 0 else None)
+        return work
 
     def __next__(self):
         self.owner._control()
@@ -385,7 +421,10 @@ class SemLoomRecordsCore:
                 dict(mode=self.execution_profile["mode"], admission=admission))
             self._actors.limits = replace(self._actors.limits,
                 feedback_interval_s=configured["admission"]["poll_interval_s"])
-            self._feedback = _CoreFeedback(self, configured["admission"])
+            from .records_request_feedback import CoreResourceRequestFeedback
+            feedback_type = (_CoreFeedback if configured['admission']['kind'] == 'legacy_resource_feedback'
+                             else CoreResourceRequestFeedback)
+            self._feedback = feedback_type(self, configured["admission"])
             self.execution_profile.update(configured)
         self.core = self.transport = self._active = None
         self._closing = False
@@ -431,7 +470,7 @@ class SemLoomRecordsCore:
             raise RuntimeError("Core records already owns an active query")
         query_limits, query_profile = None, dict(self.execution_profile)
         if search_hint is not None and (self._feedback is None or
-                self._feedback.base_options.search_mode != "geometric"):
+                getattr(self._feedback.base_options, 'search_mode', None) != "geometric"):
             raise ValueError("search_hint requires geometric resource feedback")
         if allow_exploration is not None:
             if self._feedback is None or type(allow_exploration) is not bool:
@@ -441,6 +480,9 @@ class SemLoomRecordsCore:
             if (query_profile["mode"] != "async" or type(max_inflight) is not int
                     or not 1 <= max_inflight <= query_profile.get("owner_max_inflight", query_profile["max_inflight"])):
                 raise ValueError("query in-flight must fit the existing async model owner")
+            if (self._feedback is not None and getattr(self._feedback, 'initial_window_required', None) == 1
+                    and max_inflight != 1):
+                raise ValueError('resource requests start at one without cross-query hints')
             if self._feedback is None:
                 query_limits = self.capacity.limits(replace(self.resources, max_active_batches=max_inflight))
             query_profile.update(owner_max_inflight=query_profile.get("owner_max_inflight", query_profile["max_inflight"]),
@@ -577,6 +619,9 @@ class SemLoomRecordsCore:
 
 class _CoreFeedback:
     """Query-scoped observation; Core remains the only admission/credit owner."""
+    @property
+    def uses_computed_work(self):
+        return self.options.work_basis == 'computed'
     def __init__(self, owner, admission):
         self.owner = owner
         self.options = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
@@ -591,12 +636,14 @@ class _CoreFeedback:
         self.generation = 0
         self.ref_deadline = None
         self.ref_expired = False
+        self._provider_frame = self._sample_pending_generation = None
         self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
 
     def begin(self, total, initial, *, allow_exploration=None, search_hint=None):
         self.options = (self.base_options if allow_exploration is None else
                         replace(self.base_options, allow_exploration=allow_exploration))
         self.generation += 1
+        self._provider_frame = self._sample_pending_generation = None
         self.started = time.monotonic()
         self.stream = None
         self.progress = (0, total, 0, False)
@@ -607,7 +654,7 @@ class _CoreFeedback:
         self.controller = ResourceFeedbackController(self.owner.resources.max_active_batches, initial, self.options)
         self.controller.reset(initial, total, search_hint=search_hint)
         if self.provider is None:
-            self.provider = NonBlockingMetricsObservationProvider(self.sample,
+            self.provider = NonBlockingMetricsObservationProvider(self._sample_for_provider,
                 poll_interval_s=self.options.poll_interval_s,
                 # Delivery already consumes up to two poll periods; allow one
                 # more for the gate's scheduled consumption of the source frame.
@@ -627,6 +674,33 @@ class _CoreFeedback:
         timings = getattr(getattr(self.owner, "transport", None), "timings", None)
         with _measure(timings, "feedback_poll"):
             return self._sample()
+
+    def _sample_for_provider(self):
+        generation = self.generation
+        self._sample_pending_generation = None
+        sample = self.sample()
+        if generation != self.generation:
+            return None
+        if sample is not None:
+            try:
+                eligible = (isinstance(sample, ServiceMetricsSnapshot)
+                    and sample.source_sequence is not None
+                    and sample.source_observed_at_s is not None
+                    and sample.source_observed_at_s <= self.provider.clock())
+            except Exception:
+                eligible = False  # Optional cache metadata cannot discard a returned frame.
+            self._provider_frame = (generation, sample) if eligible else None
+            return sample
+        if self._sample_pending_generation != generation:
+            self._provider_frame = None
+            return None
+        cached, stream = self._provider_frame, self.stream
+        ready = getattr(self.owner._actors, 'model_ready', None) or {}
+        if (cached is None or cached[0] != generation or stream is None
+                or cached[1].source_session_id != stream.session.session_id
+                or cached[1].source_uid != ready.get('engine_uid')):
+            return None
+        return cached[1]
 
     def _observe_native(self,snapshot,value,received_at_s,*,accepted,reason):
         audit=getattr(self.provider,"observe_native",None)
@@ -654,6 +728,8 @@ class _CoreFeedback:
                         self.owner._actors.ray.cancel(self.ref, force=False)
                     except Exception:
                         self.sample_errors += 1
+                if not self.ref_expired:
+                    self._sample_pending_generation = generation
                 return None
             if self.ref_expired:
                 self.ref = self.future = None
@@ -738,6 +814,7 @@ class _CoreFeedback:
 
     def pause(self):
         self.generation += 1
+        self._provider_frame = self._sample_pending_generation = None
         if self.provider is not None:
             self.provider.pause()
         if self.ref is not None and not self.ref_expired:
