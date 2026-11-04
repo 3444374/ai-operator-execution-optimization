@@ -12,6 +12,10 @@ UCB 实现、原 `scheduling/__init__.py` 和完整原测试文件均可按 SHA-
 完整历史仍有原十处不匹配；本次保留恢复材料不把它们改报通过。
 [当前整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md)分别说明删除范围、整体结构与剩余项。
 
+维护版 PID 现在拒绝小数／布尔请求窗口及布尔数值参数。准确 bfb 的 `pid.py` 另保存在同一历史目录，
+五份投影只追加五条 override；原逐文件 SHA 与投影 ID 不变。旧配置的原解释由原源码恢复，
+维护版有效配置的 16 条轨迹保持一致，检查见当前整理记录。
+
 上下文解析候选另保存准确`826ab3a1`的`experiments/lotus_records_chain.py`、
 `experiments/lotus_records_cascade.py`与CPU异步引擎fixture三份旧源，五个variant仅追加15条来源映射。
 原逐文件摘要、投影标识、来源版本和已有映射保持；完整3010条绑定仍有原10处差异，本次新增0。

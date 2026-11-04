@@ -1,0 +1,58 @@
+{
+  "base": "a5ecf59",
+  "changed_behavior": "invalid PID numeric and request-count configuration rejected before controller state",
+  "defaults_changed": false,
+  "valid_traces": 16,
+  "valid_decisions": 112,
+  "valid_trace_differences": 0,
+  "algorithm_AST_unchanged": {
+    "update": true,
+    "_hold": true,
+    "_clamp": true
+  },
+  "before_rejection_probe": {
+    "selected": 3,
+    "passed": 0,
+    "failure_events": 16,
+    "error_events": 20
+  },
+  "CPU": {
+    "selected": 195,
+    "passed": 195,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "historical": {
+    "bindings": 3010,
+    "inherited_mismatches": 10,
+    "new_mismatches": 0,
+    "new_overrides": 5
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "pid_configuration_final.json": "c540c5bdc5f02ecb5846b5a86b0e1364d29b188e96915537f407b5ed96970379",
+    "pid_configuration_final.log": "effe31cdcea5ba705014e4d55da914bfa80d4c95f3aa68fd5b66f124ee9d0cb8",
+    "pid_invalid_before.json": "421079b193a3df2cf90f5717a54268b4e4b062168bb68bacf68f7c21d6a50cbe",
+    "pid_invalid_before.log": "d36d6c96df3eb208936efe1d4aec7ed73e9180a140dcfeb34ab794e5b8f6a2af",
+    "pid_valid_traces.py": "8a040f320f190c3570d345e53a638a89a0d5a9835feaadbefd46ee6d4422208d",
+    "pid_valid_before.json": "494218f44f0fdee42af03d0a532385ff2bf752b72686353565bb1468514adea0",
+    "pid_valid_after.json": "494218f44f0fdee42af03d0a532385ff2bf752b72686353565bb1468514adea0",
+    "pid_history.json": "2317f4536f3f61395e772e0914aff416d9b0f91497fbcef932f96a824754c10f",
+    "pid_count_overflow_before.json": "3ed36b9e17ba17adbe912c03985d663d14faa797763ad94333fe6891f11c6d78",
+    "pid_count_overflow_before.log": "5af3eb0eceacd1445b5045a858da3028a4d57dc4c6172089623577163017ea86",
+    "pid_configuration_verified.json": "8a0c8039bf62c8dc203ba62b49afd7ee930444c4a678d182a29a0d5200f775b6",
+    "pid_configuration_verified.log": "33aad3bf54c802036d12fbfcbd361180866db67de31f960aa450c9840a438027",
+    "pid_valid_verified.json": "494218f44f0fdee42af03d0a532385ff2bf752b72686353565bb1468514adea0"
+  },
+  "count_representation_probe": {
+    "before_failed": 1,
+    "reason": "max_window integer overflow in PID floating-point representation",
+    "arbitrary_numeric_cap_added": false
+  }
+}

@@ -8,6 +8,15 @@ from dataclasses import dataclass
 from ..core.models import AdmissionObservation, ControlDiagnostics, WindowDecision
 
 
+def _finite_number(value):
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 @dataclass(frozen=True)
 class PidConfig:
     min_window: int = 2
@@ -19,8 +28,11 @@ class PidConfig:
     integral_limit: float = 20.0
 
     def __post_init__(self) -> None:
-        if self.min_window <= 0 or self.max_window < self.min_window:
+        if (type(self.min_window) is not int or type(self.max_window) is not int
+                or self.min_window <= 0 or self.max_window < self.min_window):
             raise ValueError("window bounds must satisfy 0 < min_window <= max_window")
+        if not all(_finite_number(value) for value in (self.min_window, self.max_window)):
+            raise ValueError("window bounds must be finite")
         values = (
             self.target_waiting,
             self.proportional_gain,
@@ -28,7 +40,9 @@ class PidConfig:
             self.derivative_gain,
             self.integral_limit,
         )
-        if any(not math.isfinite(value) for value in values):
+        if any(type(value) not in (int, float) for value in values):
+            raise ValueError("PID parameters must be real numbers")
+        if not all(_finite_number(value) for value in values):
             raise ValueError("PID parameters must be finite")
         if self.target_waiting < 0:
             raise ValueError("target_waiting must be non-negative")
@@ -50,7 +64,7 @@ class PidAdmissionController:
     ):
         self.config = config or PidConfig()
         initial = self.config.min_window if initial_window is None else initial_window
-        if not self.config.min_window <= initial <= self.config.max_window:
+        if type(initial) is not int or not self.config.min_window <= initial <= self.config.max_window:
             raise ValueError("initial_window must be within configured bounds")
         self.current_window = initial
         self._window_value = float(initial)

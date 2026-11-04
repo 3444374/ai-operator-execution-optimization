@@ -22,6 +22,9 @@
 初次源码位置检查失败已修正并保留原输出，六份提取定义及其余运行定义的语法树不变。
 [该批机器摘要](diagnostics/records_runtime_refactor_20261104/raw/model_adapter_checks.json)
 与全模块／127 脚本清单由同一主报告登记；未启动真实 Ray、模型或 GPU，尚待独审。
+继续 PID 配置切片拒绝非法计数和数值，16 条有效轨迹／112 次决定不变；相关 195 项成功，无失败、错误或跳过。
+[该批摘要](diagnostics/records_runtime_refactor_20261104/raw/pid_configuration_checks.json)保留改前问题，
+五条历史映射只增加原件来源，原十处不匹配未改报通过。
 
 <a id="records-owner-context-compat-cpu"></a>
 ## 2026-11-03：独审反例后的owner与IMLane上下文兼容
