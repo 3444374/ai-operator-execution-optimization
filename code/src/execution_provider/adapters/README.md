@@ -1044,6 +1044,14 @@ IPC defaults; a verified exclusive service allocation is not implemented by this
 Caller-owned relations, retained audit data, Python/Ray objects and model memory are outside
 these logical byte amounts. Actual hardware capacity and full query memory qualification remain pending.
 
+The legacy feedback adapter now binds `ResourceFeedbackController.source_stale_after_s`
+to the existing provider's declared `stale_after_s`. Sample recency uses that source duration;
+`window_s` still measures work. Direct callers that omit the binding retain the old age rule,
+and historical `pressure_response="window"` is unchanged. Modern request feedback is a separate path.
+This same-machine change does not map native clocks across hosts. Fixed-input replay remains
+an off-policy decision check. New executions must declare a distinct `execution.source_revision`
+or use a separate admission cache: the existing key does not automatically hash controller code.
+
 
 ### 同步模型的上下文回执
 

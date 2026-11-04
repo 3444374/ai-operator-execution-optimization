@@ -682,3 +682,11 @@ R=None；Core、续算和 IPC 继续分别记账，原六字段显式预算不�
 续算计数由合法最小预留推导，实际字节检查先起作用。没有新增控制器、物理探测或 CLI 开关。
 [字节派生说明](src/execution_provider/adapters/README.md#byte-derived-records-capacity)明确调用方仍须拥有真实授予；
 独占性、跨实例归属及全查询保留未由该转换证明，普通未配置路径仍为 R=2／默认结果槽=8。
+
+已审 faab48cd 来源期限修正另与当前容量候选组合：legacy_resource_feedback 的 sample 响应使用同一
+provider 实际声明的 stale_after_s，工作测量仍用原 window_s；未绑定的直接调用及历史 window 响应保持。
+五个接入文件与已审候选逐字节一致；现代请求策略、模型参数和容量／unknown 责任未随来源判断修改。
+[组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#capacity-source-clock-composition)
+分别记录原输入回放与实际组合回归；固定输入上的四次调整不是新查询或性能结果。
+后续运行须声明新的 execution.source_revision 或使用新缓存，当前提示键不自动散列实现源码。
+异机来源时钟、真实 Ray／模型／GPU 和自动服务授予仍未验证。

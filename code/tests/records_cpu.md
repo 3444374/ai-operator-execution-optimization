@@ -278,3 +278,13 @@ fixture 替换，这不是上下文长度或真实模型支持更长输入的证
 不同结果容量经 R=None 进入普通和 rolling 工厂、现代反馈仍从一次请求开始，以及实际 Method pool
 先触及字节额度。两次 CPU 查询复用同一实例并保留超过八行，检查原结果、唯一关联和归还。
 这只证明已给定逻辑字节下的转换；没有自动取得硬件容量，也没有删除普通路径的原缺省值。
+
+
+## 2026-11-04 来源期限与容量的组合
+
+[来源时钟用例](scheduling/test_resource_feedback_source_clock.py)以仓内 474 份原输入核对未绑定直接调用的
+精确决定，并以原 provider 期限核对绑定后的决定。输入年龄、计数、测量窗和探索时间不改，
+压力降档不提前归还未知计算。原几何查询 fixture、容量派生和普通／rolling 入口在实际组合上另行检查。
+[组合记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#capacity-source-clock-composition)
+保留运行身份与未执行项。绑定只覆盖同机已验证来源；固定输入回放不能作为吞吐或查询时间结论。
+新实现须用不同声明源码身份或新缓存；本批没有模型或正式缓存复用运行。

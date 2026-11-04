@@ -1427,3 +1427,9 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 
 成功查询保留检查已进入现用仓内测试；同一[容量记录](diagnostics/records_runtime_refactor_20261104/README.md#actor-capacity-source)
 追加准确组合 144 项、143 成功、1 项未运行及原始来源，先前各选择保留原身份，不与新轮次相加。
+
+容量候选与已审来源期限修正的[准确组合](diagnostics/records_runtime_refactor_20261104/README.md#capacity-source-clock-composition)
+选中 2019、运行 2011，1974 方法成功，37 方法及两个类共八方法未执行，共 45 项；含六项真实 Ray 方法。
+已审五文件保持原字节，1316 个代码摘要匹配，原 3010 条历史来源不改。
+474 份旧输入的未绑定决定精确匹配，绑定原来源期限后的四次调整属于固定输入回放，不能作为查询性能结论。
+异机时钟、真实模型、服务独占授予及全查询内存仍未验证；新执行必须有新声明源码身份或独立缓存，组合待独审。
