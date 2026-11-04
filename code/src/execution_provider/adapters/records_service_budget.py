@@ -139,6 +139,68 @@ class RecordsPayloadPool:
                 status=('pending' if self._grants else 'closed') if self._closing else 'open',
                 grants=[g.describe() for g in self._grants.values()])
 
+    @staticmethod
+    def _runtime_observation(owner):
+        """Observe an already-connected runtime without importing or starting Ray."""
+        import sys
+
+        ray = owner._actors.ray
+        try:
+            if (ray is None or sys.modules.get('ray') is not ray
+                    or not callable(getattr(ray, 'is_initialized', None))
+                    or ray.is_initialized() is not True
+                    or not callable(getattr(ray, 'get_runtime_context', None))):
+                return None
+            context = ray.get_runtime_context()
+            identity = dict(job_id=context.get_job_id(), node_id=context.get_node_id())
+            if any(type(value) is not str or not value.strip() for value in identity.values()):
+                return None
+            return ray, identity
+        except Exception:
+            return None
+
+    def _recovery_owner(self, allocation_id):
+        self._process()
+        if type(allocation_id) is not str or not allocation_id:
+            raise ValueError('recovery requires a registered allocation ID')
+        with self._lock:
+            grant = self._grants.get(allocation_id)
+            if grant is None:
+                raise ValueError('unregistered service payload allocation')
+            self._registered(grant)
+            owner = grant._owner
+            if owner is None:
+                raise RuntimeError('unbound allocation requires its original grant cancel operation')
+            owner._control()
+            return grant, owner
+
+    def retry_cleanup(self, allocation_id, *, timeout=None):
+        """Retry the original owner's close; retained results are not transferred."""
+        import math
+
+        grant, owner = self._recovery_owner(allocation_id)
+        if timeout is not None:
+            try:
+                valid = type(timeout) in (int, float) and math.isfinite(timeout) and timeout > 0
+            except OverflowError:
+                valid = False
+            if not valid:
+                raise ValueError('cleanup timeout must be finite and positive')
+        actors = owner._actors
+        if (actors.ray is not None or actors.model_actor is not None
+                or actors.prepare_actors or actors.model_ready is not None):
+            observed = self._runtime_observation(owner)
+            if (grant._runtime_identity is None or observed is None
+                    or observed[0] is not grant._runtime_module
+                    or observed[1] != grant._runtime_identity):
+                raise RuntimeError('original Ray runtime identity is unavailable or changed; recovery cannot reconnect it')
+        return owner.close(timeout=timeout)
+
+    def take_unconsumed_results(self, allocation_id):
+        """Explicitly transfer the original owner's local results to the caller."""
+        _, owner = self._recovery_owner(allocation_id)
+        return owner.take_unconsumed_results()
+
     def close(self):
         self._process()
         with self._lock:
@@ -160,6 +222,7 @@ class RecordsPayloadGrant:
         self._owner = self._released_owner = None
         self._released = False
         self._identity = None
+        self._runtime_module = self._runtime_identity = None
 
     def __getstate__(self):
         raise TypeError('payload pool and grant capabilities cannot be serialized or copied')
@@ -227,6 +290,13 @@ class RecordsPayloadGrant:
             identity = {n: ready[n] for n in names}
             if self._identity is not None and self._identity != identity:
                 raise ValueError('payload allocation cannot replace its actual model or producer identity')
+            observed = self._pool._runtime_observation(owner)
+            if self._identity is None:
+                if observed is not None:
+                    self._runtime_module, self._runtime_identity = observed
+            elif self._runtime_identity is not None and (observed is None
+                    or observed[0] is not self._runtime_module or observed[1] != self._runtime_identity):
+                raise ValueError('payload allocation cannot replace its original Ray runtime identity')
             self._identity = identity
 
     def settle(self, owner):
