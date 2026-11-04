@@ -33,15 +33,21 @@ def resolve_join_strategy(value):
     return ReasoningStrategy.ZS_COT
 
 
-@contextmanager
-def q2b_join_compatibility():
-    """Map one original call in its isolated worker; restore on every exit."""
+def validate_strategy_source():
+    """Verify the common formatter/parser and the enum/Join implementation."""
     resolved = resolve_join_strategy("zs-cot")
     validate_source(message_profile=IMAGE_TEXT_PROFILE)
     root = Path(importlib.import_module("lotus").__file__).parent
     for relative, expected in STRATEGY_SOURCES.items():
         if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
             raise ValueError("Q2b strategy source differs at lotus/" + relative)
+    return resolved
+
+
+@contextmanager
+def q2b_join_compatibility():
+    """Map one original call in its isolated worker; restore on every exit."""
+    resolved = validate_strategy_source()
     Join = importlib.import_module("lotus.sem_ops.sem_join").SemJoinDataframe
     original = Join.__call__
     if getattr(original, "_mmqa_q2b_compat", False) is True:
