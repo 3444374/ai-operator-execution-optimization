@@ -12,6 +12,11 @@ from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_process import _frame
 from src.serving.backends.vllm_engine import IDENTITY_FIELDS, _prepared
 
+from .records_feedback_observation import (
+    audit_integer, qualify_resource_observation, resource_probe_view,
+    snapshot_response_header, snapshot_rpc_report,
+)
+
 
 class PreparedTokenOrganizer:
     def __init__(self, owner, tokenizer, concurrency):
@@ -201,77 +206,17 @@ class BatchSupplyFeedback:
 
     @staticmethod
     def _resource_view(packet, *, request_index, requested_at_s, received_at_s):
-        from src.scheduling.submission_control.resource_probe import ResourceProbeView
-        packet = packet if isinstance(packet, dict) else {}
-        sample = packet.get('sample')
-        sample = sample if isinstance(sample, dict) else {}
-        values, sources = sample.get('values'), sample.get('sources')
-        values = values if isinstance(values, dict) else {}
-        sources = sources if isinstance(sources, dict) else {}
-        host = sources.get('host')
-        host = host if isinstance(host, dict) else {}
-        devices = packet.get('gpu_uuids') or ()
-        devices = (tuple(devices) if isinstance(devices, (tuple, list))
-                   and all(isinstance(uid, str) for uid in devices) else ())
-        def number(value):
-            return value if type(value) in (int, float) and math.isfinite(value) and value >= 0 else None
-        return ResourceProbeView(packet.get('engine_uid'), packet.get('session_id'), request_index,
-            requested_at_s, received_at_s, number(packet.get('source_elapsed_s')), devices,
-            # The shared reader aggregates multiple devices. Its mean cannot
-            # establish that every device is idle; this owner uses one GPU.
-            number(values.get('gpu_utilization_pct')) if len(devices) == 1 else None,
-            number(host.get('cpu_allocation_utilization_pct')
-                   if host.get('cpu_observation_scope') == 'current_cgroup_per_effective_CPU'
-                   else values.get('host_cpu_per_core_max_pct'))
-            if host.get('cpu_percent_interval_s') is not None else None)
+        return resource_probe_view(packet, request_index=request_index,
+            requested_at_s=requested_at_s, received_at_s=received_at_s)
 
     def _read_resource(self, packet, *, request_index, requested_at_s, received_at_s):
         view = self._resource_view(packet, request_index=request_index,
             requested_at_s=requested_at_s, received_at_s=received_at_s)
-        # Retain source evidence even when the CPU interval is not
-        # eligible for the unchanged feedback measurement window.
-        packet = packet if isinstance(packet, dict) else {}
-        sample = packet.get('sample')
-        sample = sample if isinstance(sample, dict) else {}
-        sources = sample.get('sources')
-        sources = sources if isinstance(sources, dict) else {}
-        host = sources.get('host')
-        host = host if isinstance(host, dict) else {}
-        interval = host.get('cpu_percent_interval_s')
-        raw_interval = interval if type(interval) in (int, float) and math.isfinite(interval) else None
-        cpu_reject = host.get('cpu_metrics_status')
-        if cpu_reject == 'observed':
-            cpu_reject = None
-        if raw_interval is None:
-            cpu_reject = cpu_reject or 'cpu_interval_missing_or_invalid'
-        elif raw_interval <= 0:
-            cpu_reject = 'cpu_interval_nonpositive'
-        elif raw_interval > self.options.window_s:
-            cpu_reject = 'cpu_interval_exceeds_feedback_window'
-        else:
-            cpu_reject = None if view.host_peak_cpu_pct is not None else (cpu_reject or 'cpu_value_unavailable')
-        if raw_interval is None or not 0 < raw_interval <= self.options.window_s:
-            from dataclasses import replace
-            view = replace(view, host_peak_cpu_pct=None)
-            interval = None
-        return view, dict(view=asdict(view),
-            status=packet.get('status', 'unavailable'), missing=sample.get('missing') or {},
-            error_type=packet.get('error_type'), observed_values=sample.get('values') or {},
-            host_cpu_interval_s=interval,
-            host_cpu_raw_interval_s=raw_interval, host_cpu_reject_reason=cpu_reject,
-            host_cpu_interval_type=type(host.get('cpu_percent_interval_s')).__name__,
-            host_cpu_source={name: host[name] for name in ('cpu_metrics_status',
-                'cpu_baseline_scope', 'cpu_counter_sample_sequence', 'cpu_sample_thread_id',
-                'cpu_observation_scope', 'cpu_effective_slots', 'cpu_quota_slots',
-                'cpu_allocation_busy_cores', 'cpu_allocation_utilization_pct', 'cpu_allocation_status',
-                'cpu_counter_read_start_monotonic_ns', 'cpu_counter_read_end_monotonic_ns')
-                if name in host and (type(host[name]) in (str, int) or
-                    (type(host[name]) is float and math.isfinite(host[name])))},
-            busy_period_scope='NVML internal period; distinct RPC reads need not be independent samples')
+        return qualify_resource_observation(packet, view, window_s=self.options.window_s)
 
     @staticmethod
     def _audit_integer(value, *, minimum=0):
-        return value if type(value) is int and minimum <= value < 1 << 64 else None
+        return audit_integer(value, minimum=minimum)
 
     def _audit_resource_rpc(self, row, *, native, disposition, reason, request_index,
                             request_session_id, response_session_id, requested_at_s, received_at_s):
@@ -533,23 +478,7 @@ class BatchSupplyFeedback:
 
     @staticmethod
     def _snapshot_header(value):
-        ipc = value.get('ipc') if isinstance(value, dict) else None
-        native = ipc.get('native_feedback') if isinstance(ipc, dict) else None
-        native = native if isinstance(native, dict) else {}
-        session = value.get('session_id') if isinstance(value, dict) else None
-        uid, sequence, at = (native.get(n) for n in ('engine_uid', 'sequence', 'observed_at_s'))
-        clock_error = None
-        if type(at) in (int, float):
-            try:
-                if not math.isfinite(at):raise ValueError('non-finite source timestamp')
-            except (OverflowError, ValueError) as error:
-                at, clock_error = None, type(error).__name__
-        else:
-            at = None
-        return dict(response_session_id=session if type(session) is int else None,
-            response_engine_uid=uid if type(uid) is str else None,
-            response_source_sequence=sequence if type(sequence) is int else None,
-            response_source_observed_at_s=at, response_source_observed_at_error_type=clock_error)
+        return snapshot_response_header(value)
 
     def _finish_snapshot(self, status, disposition, *, value=None, error=None):
         observed_at, clock_error = self._snapshot_clock()
@@ -811,21 +740,11 @@ class BatchSupplyFeedback:
             ref_retained, future_retained = self.ref is not None, self.future is not None
             resource_attempts = [dict(row) for row in self.resource_rpc_audit]
             resource_counts = {name:self._audit_integer(value) for name, value in self.resource_rpc_counts.items()}
-        pending = (None if request is None else
-                   dict(request, rpc_terminal_status='unknown',
-                        unresolved_reason=('client_future_cancelled_no_rpc_result'
-                            if request['client_future_cancelled'] else 'terminal_not_collected')))
-        complete = (closed and stopped and pending is None and not ref_retained
-                    and not future_retained and len(receipts) == requests)
+        snapshot = snapshot_rpc_report(request=request, receipts=receipts, requests=requests,
+            errors=errors, closed=closed, ref_retained=ref_retained, future_retained=future_retained,
+            sampler_stopped=stopped)
         return dict(**self._report_identity(), fixed_B=self.owner.prepared_batching.token_budget,
-            phases=list(self.phases), snapshot_requests=requests, sample_errors=errors,
-            snapshot_ref_retained=ref_retained,
-            sampler_stopped=stopped, snapshot_rpc_cleanup_status=(
-                'open' if not closed else 'closed' if complete else 'unknown'),
-            snapshot_rpc_terminal_evidence_complete=complete,
-            snapshot_rpc_receipts=[dict(row) for row in receipts],
-            snapshot_rpc_pending=pending,
-            snapshot_rpc_clock='driver monotonic seconds; response source timestamp is engine-supplied',
+            phases=list(self.phases), **snapshot,
             resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
                 recent_RPC_attempts=resource_attempts, RPC_counts=resource_counts,
                 RPC_audit_session_id=self._audit_integer(self.session_id, minimum=-1), RPC_audit_capacity=64,

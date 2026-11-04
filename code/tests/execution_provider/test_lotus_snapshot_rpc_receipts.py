@@ -254,6 +254,7 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         self.assertEqual(before['snapshot_rpc_cleanup_status'], 'unknown')
 
     def test_late_future_terminal_during_report_keeps_one_ownership_snapshot(self):
+        from src.execution_provider.adapters.records_feedback_observation import snapshot_rpc_report
         from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
         def line_of(method, text):
             lines, start = inspect.getsourcelines(method)
@@ -264,7 +265,7 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
                 feedback.sample()
                 entered, release = threading.Event(), threading.Event()
                 poll_line = line_of(feedback._consume_snapshot, 'done = self.future.done()')
-                report_line = line_of(feedback.report, pause_at)
+                report_line = line_of(snapshot_rpc_report, pause_at)
                 def worker_trace(frame, event, arg):
                     if (event == 'line' and frame.f_code is feedback._consume_snapshot.__func__.__code__
                             and frame.f_lineno == poll_line):
@@ -281,7 +282,7 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
                 paused = False
                 def report_trace(frame, event, arg):
                     nonlocal paused
-                    if (event == 'line' and frame.f_code is feedback.report.__func__.__code__
+                    if (event == 'line' and frame.f_code is snapshot_rpc_report.__code__
                             and frame.f_lineno == report_line and not paused):
                         paused = True
                         refs[0][1].set_result(self.frame())

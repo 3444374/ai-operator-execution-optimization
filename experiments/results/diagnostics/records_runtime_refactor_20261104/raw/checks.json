@@ -48,7 +48,8 @@
     "bindings": 3010,
     "inherited_mismatches": 10,
     "new_mismatches": 0,
-    "manifest_changed": false
+    "manifest_changed": false,
+    "matched_bfb_and_candidate": true
   },
   "versions": {
     "lotus-ai": "1.2.4",
@@ -80,7 +81,30 @@
     "bfb_remaining.json": "04019bc9df04b52ebd02017b61815b0f4cc3d983c19e9f8f8396bb810fdeb0c1",
     "bfb_remaining.log": "7c1de7ecbb8f070bb6b8a294bb94ec2ad563e01fe4ad91e7f956bba5a0dccc68",
     "base_feedback.json": "7e3fdfb536a8819c8f026658256666051c3735081261e4c540298d310d128316",
-    "base_feedback.log": "b29c65f207e3ae7a1fda187ca57d2c7b7692527693fae0203bde54532fb6494d"
+    "base_feedback.log": "b29c65f207e3ae7a1fda187ca57d2c7b7692527693fae0203bde54532fb6494d",
+    "feedback_matrix.py": "75bfa8d2ffd8ba934fc900f5a0a138b3c6e15c74cfbe76b06ef0d89f43b80540",
+    "base_observation_matrix.json": "586cb7dd0ef1655b42b6b8e5f1083f4860c80e6654b6d83533585bd04ba3ea8c",
+    "candidate_observation_matrix.json": "586cb7dd0ef1655b42b6b8e5f1083f4860c80e6654b6d83533585bd04ba3ea8c",
+    "feedback_ast.json": "764e4ec4f2c0c8f95da1513af76f4314772309be52581b4ba88627db3d1d040c",
+    "candidate_feedback.json": "1610440cc0e08d58e97dd533c4d0d75a6b3de0532b9be4ac2dc4d64dcdb4675b",
+    "candidate_feedback.log": "cd58a14635fd36e169318504ca16246a8cb3063a651e8a64c833dfc4a683b209",
+    "feedback_report_race.json": "a5104aa1c409a54745c1ac21252191128ac0c09fa71c74220d42918016a4bb28",
+    "feedback_report_race.log": "08e1f9b21f8165e12e1624a648e26277933e6104e8a0087e93e2bbe8f49b2aa6",
+    "final_related.json": "0d1ce85224db7c5387c64f720a3c105a18004d5360c633fcd0834be4cafa1b9f",
+    "final_related.log": "daa9f3435ac15ff2f71690f869c25dcf8469c9688b6403121e07f015066950da",
+    "bfb_full_related.json": "f90ab5944e3bd28fe166875b0a4785c72aa6f45140d290df45d69d5488786d7a",
+    "bfb_full_related.log": "675a5b147f243b2375d101ca2e96fff4a1fe93ca644316e61d04e37e359c1ad4",
+    "history_final.json": "b465ad0ffdf305ff4b8fd28ae5e20eab79da400b001aabbf66d92e1e1cbe41ca",
+    "compatibility_entries.json": "9489c241412c6dfeeae6106b662f1c77eb97d042981eba477813d78fdfa45b71",
+    "compatibility_entries.log": "8fb2ee2a2d0153457266d905c6ca5d099471c5383765145b6770edd1ed349088",
+    "bfb_growth_1.json": "8d63e6ca1f900715499b21475020a9f4c6cfbf6f9c7b66a039467e2d3c977ed5",
+    "bfb_growth_1.log": "f4582addb0800729b1a285cc62aefc1c9ed8382b92281bbfc2052b60f5da8aa9",
+    "candidate_growth_1.json": "87091c133f4707745f95b270be71ca18c38f9b77fee87800867bb1cef0cdead7",
+    "candidate_growth_1.log": "52d3608dcab752aab6df10118697f00b2b9284aa4ef706db72fc26390fc2ade5",
+    "bfb_growth_2.json": "a664747a27b65b202041e6dc91b1a5c474ca2dd3e6ff12f6d18bf283830c925b",
+    "bfb_growth_2.log": "e6de94d3fdf6d8aba4ac3c3bf77d52d855ffaa5d68b9a128477d400ab57582aa",
+    "candidate_growth_2.json": "9f5e6ec079d53b0437e7fd0a620801765f4a1368e830e5c647670578a1b12eb9",
+    "candidate_growth_2.log": "ec822b99dc4e565ec46acd30666cf8ccd1244d126ae84b3880a1daf6e5c447e7"
   },
   "profile_test_source_repair": {
     "initial_new_failures": [
@@ -111,5 +135,254 @@
     ],
     "error_events": 68,
     "source_unchanged_during_suite": true
-  }
+  },
+  "feedback": {
+    "matrix_cases": 1234,
+    "matrix_differences": 0,
+    "AST": {
+      "PreparedTokenOrganizer": true,
+      "RequestSupplyFeedback": true,
+      "all_stateful_methods_unchanged": true,
+      "report_lock_scope_unchanged": true,
+      "resource_probe_view_AST_unchanged": true,
+      "audit_integer_AST_unchanged": true,
+      "snapshot_response_header_AST_unchanged": true
+    },
+    "concurrency_test_assertions_unchanged": true,
+    "initial_before": {
+      "selected": 177,
+      "testsRun": 177,
+      "passed": 164,
+      "failure_methods": [
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_delivery_prefix_counts_out_of_order_duplicates_and_invalid_work",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_profile_options_and_invalid_combinations_match_ee39",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_public_profile_names_expand_to_the_retained_experiment_options",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_sampler_requires_the_exact_same_delivered_prefix_and_generation"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_UTF8_escaping_nested_metadata_and_frame_boundaries_are_byte_exact",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_backpressure_retries_reuse_member_metrics_and_live_cache_is_bounded",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_deadline_session_and_generation_headers_refresh_without_retokenizing_members",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_members_order_all_flush_reasons_and_oversize_B_match_frozen_oracle",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_randomized_ready_prefixes_generations_and_boundaries_match",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_single_item_and_RPC_overflow_reject_at_the_same_candidate"
+      ],
+      "failure_events": 6,
+      "error_events": 68,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged_during_suite": true,
+      "source_commit": "8eee2481b19c0df82dd674995d3e8c4a3c6b045a"
+    },
+    "initial_candidate": {
+      "selected": 177,
+      "testsRun": 177,
+      "passed": 167,
+      "failure_methods": [
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_UTF8_escaping_nested_metadata_and_frame_boundaries_are_byte_exact",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_backpressure_retries_reuse_member_metrics_and_live_cache_is_bounded",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_deadline_session_and_generation_headers_refresh_without_retokenizing_members",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_members_order_all_flush_reasons_and_oversize_B_match_frozen_oracle",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_randomized_ready_prefixes_generations_and_boundaries_match",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_single_item_and_RPC_overflow_reject_at_the_same_candidate",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_late_future_terminal_during_report_keeps_one_ownership_snapshot"
+      ],
+      "failure_events": 2,
+      "error_events": 70,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged_during_suite": true,
+      "source_commit": "a90a4146ac23da763f836f5d327a8aa850fc1d64"
+    },
+    "report_race_after_test_location_repair": {
+      "selected": 52,
+      "testsRun": 52,
+      "passed": 52,
+      "failure_methods": [],
+      "error_methods": [],
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged_during_suite": true,
+      "source_commit": "a90a4146ac23da763f836f5d327a8aa850fc1d64"
+    }
+  },
+  "related_final": {
+    "bfb": {
+      "selected": 322,
+      "testsRun": 322,
+      "passed": 312,
+      "failure_methods": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_UTF8_escaping_nested_metadata_and_frame_boundaries_are_byte_exact",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_backpressure_retries_reuse_member_metrics_and_live_cache_is_bounded",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_deadline_session_and_generation_headers_refresh_without_retokenizing_members",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_members_order_all_flush_reasons_and_oversize_B_match_frozen_oracle",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_randomized_ready_prefixes_generations_and_boundaries_match",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_single_item_and_RPC_overflow_reject_at_the_same_candidate"
+      ],
+      "failure_events": 3,
+      "error_events": 68,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged_during_suite": true,
+      "source_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a"
+    },
+    "candidate": {
+      "selected": 326,
+      "testsRun": 326,
+      "passed": 315,
+      "failure_methods": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_UTF8_escaping_nested_metadata_and_frame_boundaries_are_byte_exact",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_backpressure_retries_reuse_member_metrics_and_live_cache_is_bounded",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_deadline_session_and_generation_headers_refresh_without_retokenizing_members",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_members_order_all_flush_reasons_and_oversize_B_match_frozen_oracle",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_randomized_ready_prefixes_generations_and_boundaries_match",
+        "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_single_item_and_RPC_overflow_reject_at_the_same_candidate"
+      ],
+      "failure_events": 4,
+      "error_events": 68,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged_during_suite": true,
+      "source_commit": "a90a4146ac23da763f836f5d327a8aa850fc1d64"
+    }
+  },
+  "growth_assertion": {
+    "status": "unresolved; combined candidate suite failed once; do not classify as inherited",
+    "additional_failure": "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results",
+    "observed": {
+      "changes": 0,
+      "decision_calls": 232,
+      "missing_or_stale_feedback": 229
+    },
+    "fixed_two_pairs": [
+      {
+        "bfb": {
+          "selected": 1,
+          "testsRun": 1,
+          "passed": 1,
+          "failure_methods": [],
+          "error_methods": [],
+          "failure_events": 0,
+          "error_events": 0,
+          "skipped": [],
+          "source_unchanged_during_suite": true,
+          "source_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a"
+        },
+        "candidate": {
+          "selected": 1,
+          "testsRun": 1,
+          "passed": 1,
+          "failure_methods": [],
+          "error_methods": [],
+          "failure_events": 0,
+          "error_events": 0,
+          "skipped": [],
+          "source_unchanged_during_suite": true,
+          "source_commit": "a90a4146ac23da763f836f5d327a8aa850fc1d64"
+        }
+      },
+      {
+        "bfb": {
+          "selected": 1,
+          "testsRun": 1,
+          "passed": 1,
+          "failure_methods": [],
+          "error_methods": [],
+          "failure_events": 0,
+          "error_events": 0,
+          "skipped": [],
+          "source_unchanged_during_suite": true,
+          "source_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a"
+        },
+        "candidate": {
+          "selected": 1,
+          "testsRun": 1,
+          "passed": 1,
+          "failure_methods": [],
+          "error_methods": [],
+          "failure_events": 0,
+          "error_events": 0,
+          "skipped": [],
+          "source_unchanged_during_suite": true,
+          "source_commit": "a90a4146ac23da763f836f5d327a8aa850fc1d64"
+        }
+      }
+    ],
+    "release_ready": false
+  },
+  "compatibility_entries": {
+    "selected": 81,
+    "testsRun": 81,
+    "passed": 80,
+    "failure_methods": [],
+    "error_methods": [],
+    "failure_events": 0,
+    "error_events": 0,
+    "skipped": [
+      {
+        "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "method"
+      }
+    ],
+    "source_unchanged_during_suite": true,
+    "source_commit": "a90a4146ac23da763f836f5d327a8aa850fc1d64"
+  },
+  "compatibility_environment": {
+    "Python": "3.12.6",
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "pyarrow": "24.0.0",
+      "litellm": "1.95.0",
+      "openai": "2.50.0"
+    }
+  },
+  "PR90": {
+    "observed_at_UTC": "2026-11-04 02:20:25",
+    "head": "bfb9100e2f3fa090fdf2304359979b853236e06a",
+    "state": "open",
+    "draft": true,
+    "merged": false
+  },
+  "release_status": "pending independent review and unresolved growth timing; no push or merge"
 }

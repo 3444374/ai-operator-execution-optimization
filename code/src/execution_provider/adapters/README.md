@@ -370,6 +370,9 @@ The original `lotus_records_core` imports and serialized capacity locations rema
 Legacy defaults still derive several grants from R; the extraction changes no allocation policy.
 The [capacity ownership inventory and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
 separate that remaining work from the independent budgets already supported.
+Pure resource parsing and copied snapshot report fields live in
+[records_feedback_observation.py](records_feedback_observation.py). The existing sampler
+retains locks, clocks, consumption and decisions; the organizer and its frame-size cache are unchanged.
 Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and
