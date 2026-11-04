@@ -84,7 +84,7 @@ class MmqaInputsTests(unittest.TestCase):
 
 
 @contextmanager
-def fixture_server(*, mode="selective", status=200):
+def fixture_server(*, mode="selective", status=200, cot=False):
     calls, lock = [], threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
@@ -98,6 +98,9 @@ def fixture_server(*, mode="selective", status=200):
             extracting = value.get("response_format") == {"type": "json_object"}
             content = (json.dumps(dict(color="white")) if extracting else
                        "Answer: " + str(mode == "positive" or mode == "selective" and "fixture-keep" in str(value["messages"])))
+            if cot and not extracting:
+                # Opposite labels in reasoning must not replace the final Answer.
+                content = "Reasoning:\nBoth True and False are considered.\n\n" + content
             response = (dict(error=dict(message="software auth fixture", type="auth")) if status != 200 else
                 dict(id="fixture", object="chat.completion", created=1, model="fixture-mmqa",
                     choices=[dict(index=0, message=dict(role="assistant", content=content), finish_reason="stop")],

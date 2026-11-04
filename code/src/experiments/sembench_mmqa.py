@@ -1,4 +1,4 @@
-"""Bounded original MMQA Q2b: native LOTUS exact Join, then native JSON Extract."""
+"""Bounded Q2b: explicit native CoT strategy compatibility, then JSON Extract."""
 
 import argparse
 import base64
@@ -15,6 +15,7 @@ from src.baselines.common.private_artifacts import (file_identity, new_private_d
     publish_private_json, write_private_json)
 from src.baselines.common.redact import redact_text
 from src.baselines.image.sembench_mmqa import (MmqaDataset, evaluate_original, prepare_dataset, run_original_query)
+from src.baselines.image.sembench_mmqa_compat import strategy_profile
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.mmqa_q2b_observation import Q2bObservation
@@ -68,6 +69,7 @@ def run_query(dataset, model, *, output, unit, tokenizer, profile, concurrency, 
     new_private_directory(output)
     summary = dict(schema="semloom.mmqa_q2b_observation.v1", status="failed", preflight=preflight,
         arm="lotus-native", scheduler_owner="lotus_native_lm_and_vllm", profile=profile,
+        strategy_compatibility=strategy_profile(),
         native_sources=sources, concurrency=concurrency, max_tokens=max_tokens,
         max_request_bytes=max_request_bytes, max_prepared_bytes=max_prepared_bytes,
         max_result_bytes=max_result_bytes, warmup_model_calls=0, retries=0, query_count=1,

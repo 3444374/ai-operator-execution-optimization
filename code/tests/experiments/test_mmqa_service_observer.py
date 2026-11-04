@@ -185,6 +185,9 @@ class MmqaServiceNativeTests(unittest.TestCase):
             self.assertEqual((result["status"], result["model_calls"], result["unknown_or_failed_attempts"]), ("completed", 650, 0))
             self.assertEqual([s["input_members"] for s in result["stages"]], [325, 325])
             self.assertEqual([s["output_rows"] for s in result["stages"]], [325, 325])
+            self.assertEqual(result["strategy_compatibility"]["sdk_strategy"], "ReasoningStrategy.ZS_COT")
+            self.assertTrue(all("Let's think step by step." in c["messages"][0]["content"]
+                                for c in calls if c.get("response_format") != {"type": "json_object"}))
             for name in ("requests.jsonl", "responses.jsonl", "http-trace.jsonl"):
                 self.assertEqual(len((root / "result" / name).read_text().splitlines()), 650)
             footer = json.loads((root / "result/observation-footer.json").read_text())

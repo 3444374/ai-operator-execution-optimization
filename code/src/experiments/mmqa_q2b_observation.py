@@ -1,4 +1,4 @@
-"""Passive, process-local observation of the two unchanged Q2b operators."""
+"""Passive process-local observation of the declared Q2b strategy profile."""
 
 from collections import Counter
 from contextlib import contextmanager
@@ -9,6 +9,7 @@ import threading
 import time
 
 from src.baselines.common.private_artifacts import content_digest
+from src.baselines.image.sembench_mmqa_compat import resolve_join_strategy, PROFILE_ID
 
 
 class Q2bObservation:
@@ -68,15 +69,18 @@ class Q2bObservation:
         Join, Extract = join_module.SemJoinDataframe, extract_module.SemExtractDataFrame
         original_join, original_extract, original_lm = Join.__call__, Extract.__call__, LM.__call__
         original_low_join, original_fetch = join_module.sem_join, image_module.fetch_image
+        expected_strategy = resolve_join_strategy("zs-cot")
         if any(getattr(fn, "_mmqa_observed", False) for fn in (original_join, original_extract, original_lm)):
             raise RuntimeError("nested Q2b observation requires an isolated process")
 
         def join(accessor, other, instruction, *args, **kwargs):
             if (accessor._obj["image_filepath"].tolist() != self.image_paths or not other.equals(self.table)
                     or instruction != "{image} shows the logo of horse racetrack {Track}"
-                    or args or kwargs != dict(strategy="zs-cot")):
+                    or args or kwargs != dict(strategy=expected_strategy)):
                 raise ValueError("Q2b exact original Join inputs or policy differ")
             self.begin("join", self.pairs)
+            self.stages[-1].update(strategy="ReasoningStrategy.ZS_COT", execution_profile=PROFILE_ID)
+            self.emit("join_strategy_accepted", strategy="ReasoningStrategy.ZS_COT", execution_profile=PROFILE_ID)
             result = original_join(accessor, other, instruction, *args, **kwargs)
             if self.matched is None:
                 raise ValueError("original exact Join result observation is missing")

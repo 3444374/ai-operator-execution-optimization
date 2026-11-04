@@ -1,4 +1,4 @@
-"""Original finite MMQA Q2b inputs, query and evaluator; no execution policy."""
+"""Finite MMQA Q2b inputs, explicit LOTUS compatibility and original evaluator."""
 
 from dataclasses import asdict, dataclass
 import hashlib
@@ -12,6 +12,7 @@ from types import SimpleNamespace
 
 from src.baselines.common.private_artifacts import content_digest, file_identity, new_private_directory, open_private_text, write_private_json
 from src.baselines.image.sembench_animals import image_identity, upstream_bytes
+from src.baselines.image.sembench_mmqa_compat import PROFILE_ID, q2b_join_compatibility
 from src.baselines.text.sembench_movie import SEMBENCH_COMMIT, _load, verify_checkout
 
 
@@ -174,6 +175,7 @@ class MmqaDataset:
             manifest_digest=self.expected_digest, sembench_commit=SEMBENCH_COMMIT, source_sha256=sources,
             images=len(value["images"]), table_rows=len(self.table_frame(value)),
             budget=call_budget(len(value["images"]), len(self.table_frame(value))), model_calls=0,
+            execution_profile=PROFILE_ID,
             scope="original Q2b on a finite external relation; no PostgreSQL integration claim")
 
 
@@ -189,7 +191,8 @@ def run_original_query(dataset):
 
     owner = SimpleNamespace(load_data=load, data_path=value["data_path"], policy="exact")
     owner._configure_lotus_for_join_type = lambda kind: module.LotusRunner._configure_lotus_for_join_type(owner, kind)
-    return module.LotusRunner._execute_q2b(owner)
+    with q2b_join_compatibility():
+        return module.LotusRunner._execute_q2b(owner)
 
 
 def evaluate_original(checkout, result, output):
