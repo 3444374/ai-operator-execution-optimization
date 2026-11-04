@@ -35,6 +35,9 @@
 共享传输继续切片解除链 backend／host 对单 Filter host 的导入依赖，原四份定义语法树与交接责任保持。
 相关 215 项全部成功，无失败、错误或跳过；[摘要](diagnostics/records_runtime_refactor_20261104/raw/transport_checks.json)
 保留初轮导出／mock 位置问题及两个旧暂停点修正，原断言和历史十处不匹配保持，仍待独审。
+最终 `f548d4ed` 上合并去重检查：752 个不同方法中 751 成功、1 个真实 Ray 资格跳过，无失败或错误；
+[最终摘要](diagnostics/records_runtime_refactor_20261104/raw/final_engineering_checks.json)记录准确源码与输出摘要。
+原零升档失败继续保留，不将本轮通过解读为时序问题已解决；默认 R 与公共工厂切换未完成。
 
 <a id="records-owner-context-compat-cpu"></a>
 ## 2026-11-03：独审反例后的owner与IMLane上下文兼容

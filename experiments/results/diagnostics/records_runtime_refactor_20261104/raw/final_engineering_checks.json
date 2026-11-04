@@ -1,0 +1,113 @@
+{
+  "source_commit": "f548d4ed4678b9229cf5c840ae0219d7ea467d5a",
+  "source_tree": "5a8cb33ccded60158130d7838db594ef15cb410d",
+  "unique_selected": 752,
+  "passed": 751,
+  "failure_methods": [],
+  "error_methods": [],
+  "skipped": [
+    {
+      "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+      "reason": "explicit real Ray CPU driver required",
+      "scope": "method"
+    }
+  ],
+  "elapsed_s": 99.59904462494887,
+  "source_unchanged": true,
+  "Python_files_match_tested_source": true,
+  "old_growth_failure_preserved": true,
+  "old_growth_timing_issue_resolved": false,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "published": false,
+  "historical": {
+    "bindings": 3010,
+    "expected_source_revision_and_projection_unchanged": true,
+    "prior_overrides_unchanged": true,
+    "new_overrides": 15,
+    "overrides": [
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/scheduling/submission_control/ucb.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py"
+      },
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/scheduling/__init__.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/__init__.py"
+      },
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/scheduling/submission_control/pid.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/scheduling/submission_control/ucb.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/scheduling/__init__.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/__init__.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/scheduling/submission_control/pid.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/scheduling/submission_control/ucb.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/scheduling/__init__.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/__init__.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/scheduling/submission_control/pid.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/scheduling/submission_control/ucb.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/scheduling/__init__.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/__init__.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/scheduling/submission_control/pid.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/scheduling/submission_control/ucb.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/ucb.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/scheduling/__init__.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/__init__.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/scheduling/submission_control/pid.py",
+        "source": "historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py"
+      }
+    ]
+  },
+  "artifact_sha256": {
+    "final_engineering_union.json": "b149ff683319956c027d47f97be7ce1126083998370cdf5a4d7d7294425eed14",
+    "final_engineering_union.log": "7fd82135eb70b1ce2f0ae097c08b35f37d9b37a15c801bfd9018391fdd98f6a6",
+    "final_history_checks.json": "527a8b9e5502ed375ef0e7d44fb4c1935af22ff9b36c0de89f0bc9aaa0a1d055"
+  }
+}
