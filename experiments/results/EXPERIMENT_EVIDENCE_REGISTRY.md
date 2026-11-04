@@ -1439,3 +1439,7 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 属于 CPU 工程证据：同一进程池向实际模型 owner 分配互不重复的有限逻辑字节，保留未知清理和未转交回执。
 完整选择 2043 项、1998 成功、45 未执行，新增 24 项均通过；首次权限失败和私有／公开摘要分别保存。
 这不支持自动 RAM 探测、GPU 容量或性能结论；CLI／rolling／跨进程授予及实际模型运行仍未完成。
+
+真实 Ray 前置检查暴露的[provider 替身修订](diagnostics/records_runtime_refactor_20261104/README.md#ray-provider-fixture)
+仅修改测试构造参数保存；原服务器五项中四成功一报错、模型未启动的结果继续保留。
+本地 CPU 选择 143 成功、五项真实 Ray 未执行；补丁需独审和专用环境续测，不提供模型或性能结论。

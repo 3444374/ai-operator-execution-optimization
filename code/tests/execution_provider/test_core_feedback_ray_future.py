@@ -16,7 +16,11 @@ from src.execution_provider.adapters import lotus_records_core as core
 
 class IdleProvider:
     is_running = False
-    def __init__(self, *args, **kwargs): pass
+    def __init__(self, sampler, *, poll_interval_s, stale_after_s, close_timeout_s):
+        self.sampler = sampler
+        self.poll_interval_s = poll_interval_s
+        self.stale_after_s = stale_after_s
+        self.close_timeout_s = close_timeout_s
     def pause(self): pass
     def resume(self): pass
     def close(self): pass
@@ -30,6 +34,42 @@ class CountedRef:
         value = self.raw.future()
         self.futures.append(value)
         return value
+
+
+class ProviderShapeTests(unittest.TestCase):
+    def feedback(self):
+        owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=4))
+        with patch.object(core, 'NonBlockingMetricsObservationProvider', IdleProvider):
+            value = core._CoreFeedback(owner, dict(poll_interval_s=.25))
+            value.begin(100, 2)
+        self.addCleanup(value.stop)
+        return value
+
+    def test_idle_fixture_keeps_the_provider_source_duration_separate_from_work_window(self):
+        feedback = self.feedback()
+        self.assertEqual(feedback.provider.stale_after_s, .75)
+        self.assertEqual(feedback.provider.poll_interval_s, .25)
+        self.assertEqual(feedback.controller.source_stale_after_s, feedback.provider.stale_after_s)
+        self.assertNotEqual(feedback.options.window_s, feedback.provider.stale_after_s)
+
+    def test_next_query_keeps_the_same_provider_and_its_actual_declared_duration(self):
+        feedback = self.feedback()
+        provider = feedback.provider
+        self.assertEqual(provider.stale_after_s, .75)
+        provider.stale_after_s = .125
+        feedback.pause()
+        feedback.begin(100, 3)
+        self.assertIs(feedback.provider, provider)
+        self.assertEqual(feedback.controller.source_stale_after_s, .125)
+        self.assertEqual(feedback.controller.current_window, 3)
+
+    def test_finish_reports_the_duration_from_the_existing_provider(self):
+        feedback = self.feedback()
+        stream = feedback.stream = SimpleNamespace()
+        report = feedback.finish(stream)
+        self.assertEqual(report['source_stale_after_s'], feedback.provider.stale_after_s)
+        self.assertTrue(report['sampling_paused'])
+        self.assertTrue(report['sampler_stopped'])
 
 
 @unittest.skipUnless(os.environ.get('SEMLOOM_REAL_RAY_CPU') == '1', 'explicit real Ray CPU driver required')

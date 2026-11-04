@@ -11005,3 +11005,10 @@ R=2／默认结果槽=8 和 geometric 旧不稳定继续保留，未改成其他
 [本轮记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants)
 覆盖首次反例、权限失败及相同源码的本机 CPU 重跑：1998 成功、45 未执行，新增 24 项全通过；历史来源匹配。
 候选待独审，不推送或合并 main。总字节并非硬件探测，CLI／rolling／跨进程恢复和实机验证仍未完成。
+
+## 2026-11-04 补齐真实 Ray 检查的 provider 替身字段
+
+IdleProvider 先前忽略来源期限参数，导致下一查询复用时报缺字段；生产 provider 已有该字段。
+本批仅修测试替身并加三项默认 CPU 反例，相关 143 项成功、五项真实 Ray 未运行。
+[原失败和本地检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-provider-fixture)
+均保留；待独审后由专用会话按准确新源码续测，模型尚未在本批启动。

@@ -1194,3 +1194,22 @@ private_original 校验字段指规范化前原件，失败身份、栈行号、
 本批仍待准确提交独审，没有推送或合并。CLI／session 服务启动、prepared／rolling、多进程共享与重启恢复
 尚未接入；无池旧入口仍为原缺省。自动硬件容量、真实 Ray／模型／GPU、异机时钟、全查询内存与性能未验证。
 来源期限候选在此次 CPU 选择通过，不据此宣布全部 geometric 时序问题或整个项目重构完成。
+
+<a id="ray-provider-fixture"></a>
+### 真实 Ray 前置检查中的 provider 替身修订
+
+专用执行会话在 7a4338547a95f9bf88f05793b423c5808a09b5fa 上报告：五项真实 Ray CPU 方法执行，
+四项成功，取消失败后复用查询的一项因 IdleProvider 缺少 stale_after_s 报错，另有一项尚未执行；模型生成尚未开始。
+原报告和停止记录保留，其摘要登记于[检查记录](raw/ray_provider_fixture_checks.json)，本地未重复真实 Ray。
+
+源码确认生产 NonBlockingMetricsObservationProvider 在启动采样线程前已保存构造时的 stale_after_s。
+测试替身先前丢弃全部构造参数；本批只让它保存相同的采样函数、轮询间隔、来源期限和关闭等待，继续不启动后台线程。
+不为生产实现补猜测值，也不改变取消、Future、来源年龄或模型行为。
+
+三个默认运行的 CPU 反例检查初次来源期限、下一查询复用同一 provider 的实际期限，以及 finish 报告。
+首次新增检查中两项复现缺字段，另一项读取了错误的控制器属性；原件保留，观测字段已改为 current_window。
+随后将父提交的准确 IdleProvider 类语法树在内存中代入同一组正确检查，三项均复现缺字段；磁盘源码未换回旧实现。
+[逐方法原记录](raw/ray_provider_fixture_methods.json.gz)沿原 source_delta 格式保存并可准确恢复三轮 JSON。
+修订后的相关选择为 148 项、143 成功、五项真实 Ray 方法未执行，无失败错误；全部 1316 个代码摘要匹配。
+生产源码保持不变；这不补报本地真实 Ray 或模型资格，也不解决另行审查的服务池未确认观测 RPC 问题。
+补丁仍待独审及专用会话在后续准确源码上续测，不推送或合并 main。
