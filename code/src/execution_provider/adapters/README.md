@@ -377,6 +377,11 @@ Shared result encoding and bounded model-owner adaptation live in
 [records_model_adapter.py](records_model_adapter.py). Async actor imports no longer
 load the records query host. Original actor imports and serialized locations remain available;
 the transport, result reservations, ACK and shutdown behavior are unchanged.
+Shared records I/O and producer cleanup live in [records_transport.py](records_transport.py).
+Both records query hosts use that module; the chain backend and host can load
+without importing the single-filter query host. Old transport imports and serialized
+helper locations remain available. Capacity, unknown results and receipt ACKs retain
+the same owners; this extraction introduces no scheduling loop or counter.
 Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and

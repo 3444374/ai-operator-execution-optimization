@@ -190,15 +190,16 @@ class QueryPriorityTests(unittest.TestCase):
         plan, rows = fixture.chain_for("MM"), fixture.source_rows(size=1)
         self.config_for(plan, rows)
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        original = AsyncCoreModelActor._try_core
         def hold_delivery(actor, *args):
             value = original(actor, *args)
-            ready.set()
-            if not release.wait(5):
-                raise TimeoutError("CPU test did not release the late receipt")
+            if value['status'] == 'accepted':
+                ready.set()
+                if not release.wait(5):
+                    raise TimeoutError("CPU test did not release the late receipt")
             return value
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=query_fixture.Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_delivery):
+                patch.object(AsyncCoreModelActor, "_try_core", hold_delivery):
             owner = self.owner(plan, C=1, **self.priority())
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:

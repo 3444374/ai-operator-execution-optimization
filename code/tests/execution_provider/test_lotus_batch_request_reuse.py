@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_chain_actor_backend as backend
-from src.execution_provider.adapters import lotus_records_core as records
+from src.execution_provider.adapters import records_transport as records
 from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport, SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.scheduling.core.session_contract import (

@@ -1,0 +1,158 @@
+{
+  "base": "37dead6",
+  "structural_AST": {
+    "extracted_definitions": [
+      "_RecordTransport",
+      "_await_result",
+      "_check",
+      "close_prepared_core"
+    ],
+    "extracted_AST_unchanged": true,
+    "remaining_filter_host_AST_unchanged": true,
+    "chain_methods_unchanged_except_profile_import": true
+  },
+  "test_assertions": {
+    "code/tests/execution_provider/test_async_producer_retirement.py": {
+      "existing_methods": 13,
+      "original_assertions_AST_unchanged": true
+    },
+    "code/tests/execution_provider/test_lotus_batch_request_reuse.py": {
+      "existing_methods": 9,
+      "original_assertions_AST_unchanged": true
+    },
+    "code/tests/execution_provider/test_lotus_record_local_priority.py": {
+      "existing_methods": 8,
+      "original_assertions_AST_unchanged": true
+    },
+    "code/tests/execution_provider/test_lotus_record_local_token_priority.py": {
+      "existing_methods": 5,
+      "original_assertions_AST_unchanged": true
+    }
+  },
+  "CPU": {
+    "transport_import_probe": {
+      "selected": 2,
+      "passed": 2,
+      "failure_methods": [],
+      "error_methods": [],
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "transport_lifecycle_verified": {
+      "selected": 215,
+      "passed": 196,
+      "failure_methods": [
+        "tests.execution_provider.test_async_producer_retirement.CoreProducerRetirementTests.test_local_delivery_uses_only_the_remaining_cleanup_deadline",
+        "tests.execution_provider.test_async_producer_retirement.CoreProducerRetirementTests.test_spent_actor_cleanup_deadline_cannot_start_an_extra_transport_wait",
+        "tests.execution_provider.test_lotus_record_local_priority.QueryPriorityTests.test_unconfirmed_close_retains_remote_work_until_late_receipt_without_replay",
+        "tests.execution_provider.test_lotus_record_local_token_priority.JointTokenPriorityTests.test_joint_W_limits_native_supply_below_C_without_reordering_accepted_calls"
+      ],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_async_member_registration_retains_its_independent_binding_validation",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_bare_backend_preserves_its_preparse_membership_checks",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_final_owner_frame_limit_still_fails_before_the_RPC",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_only_initial_handoff_parse_is_removed_and_no_new_state_fields_appear",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_owner_registration_does_not_mutate_parsed_request_or_generation",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_payload_owner_binding_and_membership_errors_keep_the_same_first_error",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_rejection_rolls_back_and_a_retry_reads_fresh_immutable_task_bytes",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_success_membership_frames_and_generation_match_frozen_oracle",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_unknown_and_backend_error_keep_owned_contexts_and_cancel_routing",
+        "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_actual_unknown_receipt_is_never_upgraded_by_close",
+        "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_full_task_key_excludes_previous_session_with_same_query_and_call",
+        "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_idempotent_known_receipt_cannot_replace_conflicting_outcome",
+        "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_invalid_key_or_identity_does_not_hide_later_valid_usage",
+        "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_known_receipt_transfers_once_and_keeps_input_responsibility",
+        "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_oversized_receipt_retains_usage_in_reserved_failure_bytes"
+      ],
+      "failure_events": 4,
+      "error_events": 26,
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "transport_fixture_targets": {
+      "selected": 21,
+      "passed": 21,
+      "failure_methods": [],
+      "error_methods": [],
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "transport_lifecycle_final": {
+      "selected": 215,
+      "passed": 215,
+      "failure_methods": [],
+      "error_methods": [],
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged": true
+    }
+  },
+  "initial_regressions": "TaskKey export restored; BoundedAsyncBackend and cleanup clock patch targets updated to the defining module; two earlier priority tests attached to current accepted handoff",
+  "historical": {
+    "bindings": 3010,
+    "original_mismatches": [
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/observability/metrics/resources.py"
+      },
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/scheduling/core/session_policy.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/observability/metrics/resources.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/scheduling/core/session_policy.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/observability/metrics/resources.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/scheduling/core/session_policy.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/observability/metrics/resources.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/scheduling/core/session_policy.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/observability/metrics/resources.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/scheduling/core/session_policy.py"
+      }
+    ],
+    "new_mismatches": 0,
+    "manifest_unchanged": true
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "transport_import_probe.json": "84ac1c95fa32954edf539bd2058bd340567d3d885d473267e2120d57af34211f",
+    "transport_import_probe.log": "e217bb9f96f1c87bfc11d84f4263600668822f32357226672d4a7df8a341af63",
+    "transport_lifecycle_verified.json": "27a0decb7450cef27ee799452c5afac6463c5d0c31d594679a3636bd8422a83c",
+    "transport_lifecycle_verified.log": "557d28f5f48d4be26a58f6895ca21a5ca028433c9d74a6fb04721ae9a56a6691",
+    "transport_fixture_targets.json": "576c780402e443ea83cad6b1c7042dfa4dc94e39da1313ec99d62eaeaa7973f6",
+    "transport_fixture_targets.log": "84734e3030714a9ce6ec0d590157133f64ec71ad74a6504b5f2d9101c95ab8d6",
+    "transport_lifecycle_final.json": "0c38995d566361f1d455e71fba992ee76f7004307d59f339c10379635f069eaa",
+    "transport_lifecycle_final.log": "b1bf14f445fb7108398600457e3a3f1ef521b3bbf4e580655beac7919f3213e0"
+  }
+}

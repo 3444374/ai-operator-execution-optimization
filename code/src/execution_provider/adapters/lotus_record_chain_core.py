@@ -46,7 +46,7 @@ from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTIT
 
 from .lotus_chain_actor_backend import LotusChainActorBackend
 from .records_capacity import CoreRecordsCapacity
-from .lotus_records_core import close_prepared_core
+from .records_transport import close_prepared_core
 
 
 @dataclass(frozen=True)
@@ -1023,7 +1023,7 @@ class SemLoomRecordChainCore:
         else:
             from src.semantic_methods.continuation import MethodLimits
             from .lotus_records_async_actor import AsyncRecordsActorOwner
-            from .lotus_records_core import resolve_core_profile
+            from .records_profile import resolve_core_profile
             if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
                 raise ValueError("record-local sections require prepare_batch_rows=model_batch_rows=1")
             resolve_core_profile(self.engine, self.resources, dict(mode="async"))

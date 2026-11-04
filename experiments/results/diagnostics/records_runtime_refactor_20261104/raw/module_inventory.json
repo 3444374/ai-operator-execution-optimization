@@ -101,7 +101,7 @@
       ]
     },
     "execution_provider": {
-      "Python_files": 59,
+      "Python_files": 60,
       "files": [
         "code/src/execution_provider/__init__.py",
         "code/src/execution_provider/adapters/__init__.py",
@@ -135,6 +135,7 @@
         "code/src/execution_provider/adapters/records_feedback_observation.py",
         "code/src/execution_provider/adapters/records_model_adapter.py",
         "code/src/execution_provider/adapters/records_profile.py",
+        "code/src/execution_provider/adapters/records_transport.py",
         "code/src/execution_provider/adapters/semantic_session.py",
         "code/src/execution_provider/completion.py",
         "code/src/execution_provider/connection_capacity.py",
@@ -2979,5 +2980,6 @@
       "historical_literal_references": []
     }
   ],
-  "limitations": "Literal references and static imports only; no references alone do not prove an entry unused. Historical raw evidence and opening archives not scanned."
+  "limitations": "Literal references and static imports only; no references alone do not prove an entry unused. Historical raw evidence and opening archives not scanned.",
+  "source_inventory_stage": "post-transport extraction candidate; scripts retain the earlier literal-reference audit"
 }

@@ -19,8 +19,9 @@ flowchart LR
     CFG --> HOST["records 查询编排"]
     HOST --> METHOD["MethodDriver / ChainRun"]
     METHOD --> CORE
-    CORE --> HANDOFF["组织 / transport / async actor"]
-    HANDOFF --> MODEL["私有服务进程 / native vLLM"]
+    CORE --> HANDOFF["组织 / records_transport"]
+    HANDOFF --> ACTOR["records_model_adapter / async actor"]
+    ACTOR --> MODEL["私有服务进程 / native vLLM"]
     MODEL --> CORE
     CORE --> RESULT["方法推进 / 结果消费与归还"]
     MODEL -. "观测" .-> FEEDBACK["反馈 owner / 纯解析 / 现有控制器"]
@@ -38,15 +39,16 @@ flowchart LR
 | records 查询编排 | 普通 owner、`PreparedRecordsCore`、`SemLoomRecordChainCore` 仍同时存在 | 否 |
 | 配置和容量解析 | 原普通／Session 共用 `movie_records_config.py`；本次新增容量与执行选项模块 | 已拆分职责，默认行为未变 |
 | 快照观测 | 原 owner 仍负责锁、时钟和采样；本次提取纯解析与报告字段 | 已拆分纯函数，控制算法未变 |
+| 模型适配与传输 | 共用编码、actor 与传输不再依赖单 Filter 查询 host | 已拆开依赖方向，原交接实现保持 |
 | 原生模型服务 | 原 async actor／IPC 与 vLLM，实例内 token／KV 由引擎管理 | 否 |
 | 图像与其他后端 | 原有实现和各自 baseline 继续保留 | 否 |
 | 未接入的 UCB 原型 | 当前模块与导出已退出，准确原件及五项原测试保留供历史恢复 | 仅清理无运行入口的原型 |
 
-因此，目前成果是可核验的结构整理和一项原型清理，不能写成整个 SemLoom 已经重构完成。
+因此，目前成果是可核验的结构整理、参数校验修正和一项原型清理，不能写成整个 SemLoom 已经重构完成。
 
 ### 全模块实施清单
 
-当前静态清单覆盖 `code/src` 的 455 个 Python 文件和 127 个脚本入口，另列 PG C 载体与测试。
+当前静态清单覆盖 `code/src` 的 456 个 Python 文件和 127 个脚本入口，另列 PG C 载体与测试。
 目录和脚本的逐文件信息见 [module_inventory.json](raw/module_inventory.json)。
 字面引用扫描区分现行、结果、历史文件；没有引用不是删除证据，动态导入和仓库外调用仍需人工核对。
 
@@ -137,6 +139,24 @@ prompt 审计改读实际 `try_submit_core` 事件，并要求覆盖全部输入
 初次错误、旧三项失败及全部重跑原件继续保留，不能把本轮写成整体通过。
 本批只修改测试，四份受影响历史投影原件保持，未增映射或改写旧摘要。
 [机器摘要](raw/fixture_checks.json)记录原断言核对、定向结果与完整重跑。
+
+### 继续批次：链执行与共享传输
+
+原 `LotusChainActorBackend` 和链查询 host 都要导入单 Filter 查询 host 才能取得传输与清理函数。
+现由 [records_transport.py](../../../../code/src/execution_provider/adapters/records_transport.py)
+集中原传输、异步等待、期限检查与 producer 清理；两个查询 host 依赖该模块，链 backend 直接使用共享模型 helper。
+四份提取定义保持原语法树；单 Filter host 的其余定义保持，链 host 只改配置来源导入。
+没有第二个执行循环、额外容量账本或新的重试规则。
+
+新进程检查确认链 backend 与 host 能在禁止加载单 Filter host 时导入；原导入与序列化位置保持。
+初轮回归暴露遗漏 `TaskKey` 导出，现已恢复，并保留原 backend／失败类型导出。
+清理时钟和 backend mock 接到实际定义模块，断言保持；另两个旧优先级测试的暂停点接到当前 accepted 交接，
+原 W、提交顺序、unknown 和迟到结果断言保持。
+
+定向 21 项成功后，生命周期／历史对照完整 215 项全部成功，无失败、错误或跳过，运行中源码保持。
+原初轮 4 个失败方法、15 个错误方法的输出保留，不能把它们从记录中移除。
+历史 3010 条绑定仍为原十处不匹配，manifest 保持；本批仍只取得 CPU 资格。
+[机器摘要](raw/transport_checks.json)列原断言核对、早期问题与最终检查。
 
 ### 主要结构问题
 

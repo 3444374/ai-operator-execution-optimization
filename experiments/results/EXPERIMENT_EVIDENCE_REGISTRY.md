@@ -32,6 +32,9 @@
 完整 668 个不同方法为 666 成功、1 个动态增长失败、1 个真实 Ray 资格跳过，错误为零；
 [摘要](diagnostics/records_runtime_refactor_20261104/raw/fixture_checks.json)保留全部早期输出摘要和原断言核对。
 采样时序问题仍未解决，不能以本轮修复 prompt 审计和 token 暂停点声称整体通过。
+共享传输继续切片解除链 backend／host 对单 Filter host 的导入依赖，原四份定义语法树与交接责任保持。
+相关 215 项全部成功，无失败、错误或跳过；[摘要](diagnostics/records_runtime_refactor_20261104/raw/transport_checks.json)
+保留初轮导出／mock 位置问题及两个旧暂停点修正，原断言和历史十处不匹配保持，仍待独审。
 
 <a id="records-owner-context-compat-cpu"></a>
 ## 2026-11-03：独审反例后的owner与IMLane上下文兼容

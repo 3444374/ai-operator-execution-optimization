@@ -13,7 +13,8 @@ import math
 
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission, TaskKey, Terminal
 from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
-from .lotus_records_core import _RecordTransport, _check_result_capacity, _await_result
+from .records_model_adapter import _check_result_capacity
+from .records_transport import _RecordTransport, _await_result
 
 
 class LotusChainActorBackend(_RecordTransport):

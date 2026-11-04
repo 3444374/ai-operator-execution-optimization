@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters import records_transport as transport_module
 from src.execution_provider.adapters import lotus_records_actor_owner as actors
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
@@ -125,7 +126,7 @@ class CoreProducerRetirementTests(unittest.TestCase):
         backend.close.return_value = True
         transport = SimpleNamespace(backend=backend, recover_actor_receipts=lambda receipts: [])
         owner = SimpleNamespace(close=lambda: dict(cleanup_errors=[], status="closed"))
-        with patch.object(core, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 21.5]))):
+        with patch.object(transport_module, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 21.5]))):
             report = core.close_prepared_core(owner, transport, None, core.CoreRecordsCapacity(),
                                               deadline=100., timeout=2.)
         backend.close.assert_called_once_with(timeout=0.5, wait_pending=True)
@@ -136,7 +137,7 @@ class CoreProducerRetirementTests(unittest.TestCase):
         backend.close.return_value = False
         transport = SimpleNamespace(backend=backend, recover_actor_receipts=lambda receipts: [])
         owner = SimpleNamespace(close=lambda: dict(cleanup_errors=[], status="closed"))
-        with patch.object(core, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 22.]))):
+        with patch.object(transport_module, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 22.]))):
             report = core.close_prepared_core(owner, transport, None, core.CoreRecordsCapacity(),
                                               deadline=100., timeout=2.)
         backend.close.assert_called_once_with(timeout=0., wait_pending=True)
