@@ -4,6 +4,8 @@
 SemLoom 面向 LOTUS 等语义 API 与数据库前端；各前端拥有语义与查询生命周期，执行层组织合法工作。
 近期问题与推进顺序由[项目大纲](PROJECT_OUTLINE.md)维护。
 
+[MMQA Q2b 实验接线](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)提供原生 Join→Extract 的独立观察入口，实际验证范围从报告核对。
+
 ## 内容与文档职责
 
 | 要查什么 | 唯一维护位置 |

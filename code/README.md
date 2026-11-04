@@ -1,5 +1,7 @@
 # AI 任务研究工程
 
+[MMQA Q2b 实验接线](../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)新增独立原生 Join→Extract 观察入口；用法见[脚本说明](scripts/README.md#mmqa-q2b)。
+
 本页说明目录、接口与执行流程；接纳及验证范围见[实现状态](INFRA_STATUS.md)，
 运行命令只在[脚本入口](scripts/README.md)维护，方法与后端细节从所属模块读取。
 

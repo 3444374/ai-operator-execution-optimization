@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-11-04：增加独立 Join 提示诊断入口
+
+从已审运行源码 `2ad0032b` 建立独立代码分支，新增固定 24 次、两种提示、单请求和禁止 Extract 的诊断；复用原 formatter／parser、持久记账与监督，正式 Q2b 不改。新增原始 CPU 记录留在仓外供独审，代码发布不携带额外证据归档，真实模型尚未运行。[入口与保存说明](code/scripts/README.md#mmqa-join-diagnostic)。
+
+## 2026-11-04：独立修正 MMQA 服务辅助记录
+
+首次真实模型观察因逐请求 UUID 占满辅助配置记录而在 Join 停止，旧 325 次尝试与其中 1 次未知保留计费。独立实验分支把仅记录 processor／模型身份的模块纳入版本管理，保留原查询、服务语义、阶段及请求轨迹，不提高旧容量数值；原件复核与 CPU 验证见[同一接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#service-observer-capacity)。本次不重跑 GPU，也不合入 main。
+
+## 2026-11-04：修正 Q2b 异常记录与证据获取
+
+独审后在新增 CLI 输出处复用异常脱敏，保留原查询与非零退出；另取回旧 CPU/CLI 原件并补公开脱敏副本、逐项摘要映射和核验入口。作者目标环境、独审环境缺依赖导致的未完成项及修正后复审状态分列，不转授模型或 GPU 资格；具体结果见[同一接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
+
+## 2026-11-04：独立补齐 MMQA Q2b 实验入口
+
+在独立 worktree 增加原 Q2b 的有限数据准备、exact Join→JSON Extract、原三元组评价和阶段观察，复用既有预算、proxy 与进程监督。只做 CPU 功能核验，真实模型观察交给 GPU 会话协调，未修改重构工作树或合并 main。实现和失败证据见[接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
+
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
 ## 2026-10-28：完整F/M查询token配置的独立本地接线

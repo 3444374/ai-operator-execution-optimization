@@ -27,6 +27,7 @@ Kalypso的`run_kalypso_native_server.py`、`run_kalypso_sembench_query.py`和`ch
 `qualify/prepare/check/run/manifest/verify`：采集代码和 CPU 检查随同一提交同步，私有配置与原件留仓外。
 复用已审采集器、既有 Git 身份、lease、预算、supervisor 和私有产物工具；不向生产代码引入采集依赖。
 最小 on/off 配置、两种源码身份、运行及完整字节回收检查见[所属说明](profiling/record_observation/README.md)。
+同目录的 [`processor_receipt.py`](profiling/record_observation/processor_receipt.py)只观察服务的 processor 与模型身份；启动绑定和首次 POST 前的回执核对要求见[说明](profiling/record_observation/README.md#service-processor-model)。
 这次 Git 迁移仅有本地 CPU 资格，不能继承旧私有包的 Ray/GPU 或性能结论。
 
 ## 通过 Git 同步完整记录查询检查
@@ -229,6 +230,84 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --
 示例预算35,840次，来自四臂×（1次warm-up+3次measurement）×（2000+120+120）；
 缩小 arm／query／repeat 时同步重算，不能把软件测试样本替换成原数据却沿用原资格。
 接口、owner、容量与 completion 监督边界见[LOTUS 模块](../src/semantic_methods/lotus/README.md)。
+
+<a id="mmqa-q2b"></a>
+## MMQA 原版 Q2b Join→Extract
+
+[`experiments/run_sembench_mmqa.py`](experiments/run_sembench_mmqa.py)独立执行原 exact Q2b，
+源程序、完整调用上限、原颜色评价、CPU 结果及模型观察要求见[接线报告](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
+不接入 SemLoom 调度器，不修改现有 Movie／Animals 默认。机器准备仍按 runtime 手册使用
+`core,text,image,semantic-benchmarks`，driver 与 serving 环境分开。
+
+先把[官方原压缩包](../../data/README.md#mmqa-source)放在仓库外并保留，再将其中 `mmqa_data/` 安全解开。
+`--prepare`调用原生成器的固定表复制与图片选择方法，接受原 scale factor 25～64；
+输出路径与原始数据路径须满足上游未加引号的复制命令所能表示的字符要求。
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_mmqa.py \
+  --checkout "$SEMBENCH_CHECKOUT" --prepare --source-data "$MMQA_SOURCE_DATA" \
+  --source-archive "$MMQA_SOURCE_ARCHIVE" --scale-factor 25 --output "$MMQA_PREPARED"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_mmqa.py \
+  --checkout "$SEMBENCH_CHECKOUT" --preflight --manifest "$MMQA_MANIFEST" \
+  --manifest-digest "$MMQA_MANIFEST_SHA256"
+```
+
+`--execute`要求上述 manifest、`--output`、`--model`、`--tokenizer`、`--model-profile`、
+`--lease-root`、`--repository-commit`，以及显式 `--max-attempts`、`--concurrency`、`--max-tokens`、
+`--max-request-bytes`、`--max-prepared-bytes`、`--max-result-bytes`、`--deadline-seconds`。
+完整额度必须等于 preflight 的 `budget.total_maximum`；不允许只预留 Join 或只按预计匹配行数计算。
+模型 profile 记录 `model.id/revision/dtype`、`generation`、`service_preprocess.processor_revision/parameters`
+与 `tokenizer_sha256`；生成参数必须为显式输出上限、temperature 0、top_p 1、retries 0。
+该声明还需 GPU 会话对照实际服务核验，不能把声明文件当作服务探针。
+
+执行时核对干净 Git 代码身份，取得现有 host lease，预留一次完整额度并启动独立 worker。
+原生请求经过保留原 HTTP 内容的观察 proxy；失败、总时长到达或取消后关闭预算，监督器回收本地 worker。
+每次使用新的仓库外输出目录，不覆盖或重用先前预算。`--preflight`与`--prepare`均不调用模型。
+新增 CLI 在最终异常输出处先脱敏再写 stderr，保留错误类型与退出状态；原 Python 查询 API 继续向调用方抛出原异常。CPU 原件、副本与核验入口见[证据映射](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#evidence-retrieval)。
+
+<a id="mmqa-join-diagnostic"></a>
+## MMQA 两种提示的 Join 诊断
+
+[`run_mmqa_join_diagnostic.py`](experiments/run_mmqa_join_diagnostic.py)是独立诊断入口，
+不运行完整 Q2b。它从已核对的父 manifest 中显式选择两张图，保留全部六种不同 Track，
+每种提示各 12 次请求，共用新建的 24 次持久预算。CSV 中相同 Track 的来源行仍登记在选择文件中。
+两种提示为 LOTUS 1.2.4 的原字符串分支与明确的 `ZS_COT` 枚举分支；仅系统提示不同。
+固定单请求执行，在相邻 pair 间交替两臂先后；调度归该诊断循环，不作为原 Q2b 或性能比较。
+
+先由调用方指定两张原图；诊断建议中的一张原 gold 图片和一张旧观察的非 gold 图片需要按既有记录选择，
+入口不会猜图片名或运行额外模型探针。父数据、原源码、图片身份、六种 Track 和两臂都由选择摘要绑定：
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_mmqa_join_diagnostic.py \
+  --checkout "$SEMBENCH_CHECKOUT" --manifest "$MMQA_MANIFEST" --manifest-digest "$MMQA_MANIFEST_SHA256" \
+  --prepare-selection --images "$FIRST_IMAGE_NAME" "$SECOND_IMAGE_NAME" --output "$JOIN_SELECTION_JSON"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_mmqa_join_diagnostic.py \
+  --checkout "$SEMBENCH_CHECKOUT" --manifest "$MMQA_MANIFEST" --manifest-digest "$MMQA_MANIFEST_SHA256" \
+  --preflight --selection "$JOIN_SELECTION_JSON" --selection-digest "$JOIN_SELECTION_SHA256"
+```
+
+`JOIN_SELECTION_SHA256` 取第一条命令输出。上述两条均为零模型准备，preflight 只核对输入。
+真实运行前仍按 runtime 流程检查独立 driver、服务、实际模型与 processor 身份，并使用准确且干净的 Git 版本。
+父 manifest 的完整 Q2b 额度不作为本诊断额度；旧关闭预算不能复用。执行使用新输出目录和明确上限：
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_mmqa_join_diagnostic.py \
+  --checkout "$SEMBENCH_CHECKOUT" --manifest "$MMQA_MANIFEST" --manifest-digest "$MMQA_MANIFEST_SHA256" \
+  --execute --selection "$JOIN_SELECTION_JSON" --selection-digest "$JOIN_SELECTION_SHA256" \
+  --output "$JOIN_DIAGNOSTIC_OUTPUT" --repository-commit "$VERIFIED_COMMIT" --lease-root "$JOIN_QUERY_LEASE_ROOT" \
+  --model "$MODEL_CONFIG_JSON" --model-profile "$MODEL_PROFILE_JSON" --tokenizer "$TOKENIZER_JSON" \
+  --max-attempts 24 --concurrency 1 --max-tokens "$MAX_OUTPUT_TOKENS" \
+  --max-request-bytes "$MAX_REQUEST_BYTES" --max-prepared-bytes "$MAX_PREPARED_BYTES" \
+  --max-result-bytes "$MAX_RESULT_BYTES" --deadline-seconds "$DIAGNOSTIC_DEADLINE_SECONDS"
+```
+
+总时长须为 1～1200 秒，输出 token 为 1～8192，字节上限为正整数；分别检查单请求、全部准备消息和单响应的逻辑大小，不等于硬 RSS 限额。没有隐藏预热或自动重试。
+外层服务控制会话持有实际主机租约时，`JOIN_QUERY_LEASE_ROOT` 使用该运行内的查询租约目录。
+每次推理发送前持久扣计；HTTP 错误、未知响应或解析异常停止后续 pair，已扣计不退还。
+所有请求须与当前选定 pair 的原生 formatter 消息一致，参数跨臂一致，`response_format` 被拒绝；
+Extract accessor 同时被禁止。失败响应的落盘副本脱敏并登记原字节摘要，发给原 SDK 的字节保持原样。
+summary／footer、预算、worker 与租约须一并核对；客户端退出不证明远端 GPU 已停止。
+新 CPU 原始记录保留仓外，本次 Git 只保存代码、测试与使用说明；[实现与诊断定位](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#join-only-diagnostic)。
 
 ## Animals 原版图文 Q1
 

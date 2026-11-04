@@ -29,6 +29,8 @@ PR52已接纳的共享`lotus_chain_batch`及私有模型process也被Core引用�
 五个共享文件已按职责归位：结果合同在`semantic_methods/lotus/record_results.py`，同步IPC、阶段生成IPC及清理在`serving/backends/`，有限链worker在`execution_provider/method_workers/`；此共享包不导入Core策略。清楚的vendor wrapper、旧request桥与稳定CLI保留。逐项采用决定见[命名与迁移清单](../../../experiments/plans/系统架构.md#code-directory-boundaries)，历史复现字节保持。
 共享有限链的[结果关联索引](../semantic_methods/lotus/README.md#finite-chain-result-index)与[可选审计引用释放](../semantic_methods/lotus/README.md#completed-chain-audit-lifetime)的适用范围见方法说明。
 
+`image/sembench_mmqa.py`核对原 MMQA Q2b 有限输入，调用不改写的 exact Join→JSON Extract 及原颜色三元组评价；[接线与验证](../../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)说明实际范围。
+
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
 `text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；
 `text/frameworks/ray_data_pg_http.py`使用Ray2.56.1的SQL reader与HTTP Processor。

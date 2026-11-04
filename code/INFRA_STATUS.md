@@ -4,6 +4,13 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+[MMQA Join-only 诊断](scripts/README.md#mmqa-join-diagnostic)在独立入口中固定两图、六种不同 Track 和两种提示，总预算 24，逐请求记账、错误或未知停止、禁止 Extract。它使用已审的 LOTUS 1.2.4 策略解释与原 formatter／parser，不改变完整 Q2b；新 CPU 回归与准确 CLI 核验的原始记录由维护者在仓外保留，真实模型验证尚未进行。
+
+[MMQA Q2b 独立接线](../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)保留原生 exact Join→JSON Extract、完整调用上限与原颜色评价。当前验证范围按报告区分 CPU fixture、原数据和真实模型；不修改生产控制器，尚未合入 main。 CLI 最终 traceback 已补脱敏，原记录与公开副本有逐项映射；作者目标 driver 与独审本地的覆盖分别记录，修正后的独立复审与 GPU 资格仍 pending。
+
+[服务辅助观测器修正](../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#service-observer-capacity)移除逐请求 UUID 的配置记录，保留 processor 与模型身份及原请求轨迹。旧 GPU 失败的 325 次尝试、72 次 HTTP 错误与 1 次未知继续保存；完整链尚未完成，修正后的 GPU 复验 pending。
+准确源码 `0c6759ab` 的作者目标 CPU 检查为 50 项通过，并通过独立 worker 的 650 次 fixture CLI 和回收；新旧记录、副本及摘要分列，独立复审 pending。
+
 records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
 显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
 `max_num_seqs` 保持原引擎配置，普通同步默认不变。CPU 检查覆盖高于引擎每轮

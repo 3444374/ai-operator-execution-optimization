@@ -1,0 +1,549 @@
+{
+  "schema": "semloom.mmqa_q2b.evidence_map.v1",
+  "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+  "artifacts": {
+    "semloom.mmqa_q2b.observer_cpu.20261104": {
+      "path": "raw/observer-cpu-evidence-20261104.tar.gz",
+      "identity": {
+        "bytes": 215860,
+        "sha256": "184e5367eb037f445c4405c0f9b11efad6becbaf2fdcb192f28b54a28a87c671"
+      },
+      "scope": "Redacted CPU observer/function/CLI evidence and read-only failed GPU accounting projection; no original real-GPU request payloads."
+    }
+  },
+  "retrieval": {
+    "public": "Read the tracked archive and verify with verify_evidence.py --map observer-evidence-map.json --validation observer-validation.json.",
+    "originals": "Request the project maintainer with artifact_id plus original_relative_path; verify original_identity. Private handoff retains server/local original locations.",
+    "original_bundle": {
+      "artifact_id": "semloom.mmqa_q2b.observer_cpu_originals.20261104",
+      "identity": {
+        "sha256": "7810fbfd13c7defcfafbd3073a19bbc5a040db9dd7e66e4bbea821e6d083efd9",
+        "bytes": 241945
+      },
+      "member_layout": "original_relative_path plus CPU-ORIGINALS.json"
+    }
+  },
+  "entries": [
+    {
+      "original_relative_path": "preflight.json",
+      "original_identity": {
+        "sha256": "01e567a82b1eb4bce8ce7dc269124fdfbe5de577d4292b9695d36711f81ebfe5",
+        "bytes": 5477
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "preflight.json",
+        "identity": {
+          "sha256": "a4e066e9bcc514c336cc36f1688b01ef228da562a886274a131c8a46fd9c4995",
+          "bytes": 5403
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "preflight.log",
+      "original_identity": {
+        "sha256": "01e567a82b1eb4bce8ce7dc269124fdfbe5de577d4292b9695d36711f81ebfe5",
+        "bytes": 5477
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "preflight.log",
+        "identity": {
+          "sha256": "a4e066e9bcc514c336cc36f1688b01ef228da562a886274a131c8a46fd9c4995",
+          "bytes": 5403
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "targeted.json",
+      "original_identity": {
+        "sha256": "2f8ca25584667b1e870fa1809f024b53666e0ce1f80b33c448d9128b63f3603c",
+        "bytes": 99
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "targeted.json",
+        "identity": {
+          "sha256": "2f8ca25584667b1e870fa1809f024b53666e0ce1f80b33c448d9128b63f3603c",
+          "bytes": 99
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "targeted.log",
+      "original_identity": {
+        "sha256": "a6988b78fa2e5c75ffccbe4dbebe5ff909788a418a80995899488b4d2cbe7a67",
+        "bytes": 5976
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "targeted.log",
+        "identity": {
+          "sha256": "b46742380f791e678ae5b86abc3117cd2ce19632f1f0d4844417a6d6e6bd35c2",
+          "bytes": 5906
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "regression.json",
+      "original_identity": {
+        "sha256": "a1528c620bc2b789abd5981c6e7936f28f4807d33f765080d27b881ea715c97f",
+        "bytes": 99
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "regression.json",
+        "identity": {
+          "sha256": "a1528c620bc2b789abd5981c6e7936f28f4807d33f765080d27b881ea715c97f",
+          "bytes": 99
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "regression.log",
+      "original_identity": {
+        "sha256": "a7443153270bde1e8697ad15fcce3b91f96daca7eb6a25467059e2d80cf5113b",
+        "bytes": 16206
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "regression.log",
+        "identity": {
+          "sha256": "082ed43a522a8d02ae840ce7a95c8290fa95143e8850b9e713ebf716bac47b01",
+          "bytes": 16134
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "source-delta.json",
+      "original_identity": {
+        "sha256": "2b3a1994c07cc4153f28bc1a9835467286c9fe5b92f7fb6f225eb549ed9c11d1",
+        "bytes": 1839
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "source-delta.json",
+        "identity": {
+          "sha256": "2b3a1994c07cc4153f28bc1a9835467286c9fe5b92f7fb6f225eb549ed9c11d1",
+          "bytes": 1839
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "processor_receipt_before.py",
+      "original_identity": {
+        "sha256": "3b6468274bebe2ce5b8e9605c9ed3fd0d14a6c764eda3082a53e1c81148174e3",
+        "bytes": 3469
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "processor_receipt_before.py",
+        "identity": {
+          "sha256": "3b6468274bebe2ce5b8e9605c9ed3fd0d14a6c764eda3082a53e1c81148174e3",
+          "bytes": 3469
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "failed-gpu-audit.json",
+      "original_identity": {
+        "sha256": "5a63e3ba577e363466d93ff4dabcbd11cb4185e40d599d24e6a949f3b3542fa0",
+        "bytes": 2566
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "failed-gpu-audit.json",
+        "identity": {
+          "sha256": "5a63e3ba577e363466d93ff4dabcbd11cb4185e40d599d24e6a949f3b3542fa0",
+          "bytes": 2566
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "verification-summary.json",
+      "original_identity": {
+        "sha256": "a911f0a78284722b8ee6d864af3e860cd64111ecb154cc4d8c5e0d3e2318b41f",
+        "bytes": 15772
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "verification-summary.json",
+        "identity": {
+          "bytes": 15788,
+          "sha256": "e1aec599b319ca7227eef1d1e6d675a09dce8e7e166341e7d31146f93b246db7"
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate. HTTP status fields use separated names in the published summary."
+    },
+    {
+      "original_relative_path": "exact-cli.log",
+      "original_identity": {
+        "sha256": "4c5e8cc8b6f67c06c7978c889e4306366d9551fcd4053ece6466a2af68987a3b",
+        "bytes": 709
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli.log",
+        "identity": {
+          "sha256": "90476b170399c612e99517787ca4d0c0be2de7f938aa556e7c8dcdd5fced3d73",
+          "bytes": 628
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-error.log",
+      "original_identity": {
+        "sha256": "08f12988b139bcc225e43c34dfdde86843b5d8cb2bda20fc6783a322cc51a310",
+        "bytes": 1107
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-error.log",
+        "identity": {
+          "sha256": "393221260dfaa068a48453d738abc80b6642e1b64688ac92ad2d3fbbbb8e0bbf",
+          "bytes": 999
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2.log",
+      "original_identity": {
+        "sha256": "af830312ba5f64bc742aa8c6f05dcf6a1532c020bf491f89c83610fa27d12f15",
+        "bytes": 4781
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2.log",
+        "identity": {
+          "sha256": "af830312ba5f64bc742aa8c6f05dcf6a1532c020bf491f89c83610fa27d12f15",
+          "bytes": 4781
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2-result.json",
+      "original_identity": {
+        "sha256": "22d5d01cbaf5eb3354d5199cbfb02f212726c15c867559d48504fa70570d0575",
+        "bytes": 1275
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2-result.json",
+        "identity": {
+          "sha256": "22d5d01cbaf5eb3354d5199cbfb02f212726c15c867559d48504fa70570d0575",
+          "bytes": 1275
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "run-exact-cli.py",
+      "original_identity": {
+        "sha256": "9831a56ec48358953a6a2963b50d44c73fe0d42b442c5b8090e4299505ecf8c8",
+        "bytes": 4216
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "run-exact-cli.py",
+        "identity": {
+          "sha256": "9831a56ec48358953a6a2963b50d44c73fe0d42b442c5b8090e4299505ecf8c8",
+          "bytes": 4216
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "run-exact-cli-r2.py",
+      "original_identity": {
+        "sha256": "65c90bdc7a0f146c79fe4056f71320ae374358ce4bc9aeb64ae38394aa2433f0",
+        "bytes": 4304
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "run-exact-cli-r2.py",
+        "identity": {
+          "sha256": "65c90bdc7a0f146c79fe4056f71320ae374358ce4bc9aeb64ae38394aa2433f0",
+          "bytes": 4304
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/budget.sqlite",
+      "original_identity": {
+        "sha256": "842fcd8aaaf4de66587623303d127444ebe261348ad77103ccaf024ae4ed3714",
+        "bytes": 106496
+      },
+      "published_copy": null,
+      "transformation": "Private transactional original retained; no public database copy."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/run-config.json",
+      "original_identity": {
+        "sha256": "c84034866e08f57b0c5a03986df51451e457cd468234316ef4808d455d73d046",
+        "bytes": 2274
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/run-config.json",
+        "identity": {
+          "sha256": "c84034866e08f57b0c5a03986df51451e457cd468234316ef4808d455d73d046",
+          "bytes": 2274
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/worker.log",
+      "original_identity": {
+        "sha256": "c67ba8f5808b99eb57a64ada0636c5af89412bb2f974a937c6a438677600eee3",
+        "bytes": 994
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/worker.log",
+        "identity": {
+          "sha256": "37fd5de285f9a24158159dd69fcd312f40ebfc5a9363951407ac44b8a700b65d",
+          "bytes": 972
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/supervisor.json",
+      "original_identity": {
+        "sha256": "7e969e22eb5e41202a2ddc8e9d3ea7ceebadc43527598e9ca7c5d3028835f79c",
+        "bytes": 178
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/supervisor.json",
+        "identity": {
+          "sha256": "7e969e22eb5e41202a2ddc8e9d3ea7ceebadc43527598e9ca7c5d3028835f79c",
+          "bytes": 178
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/unit-reserved.json",
+      "original_identity": {
+        "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+        "bytes": 23
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/unit-reserved.json",
+        "identity": {
+          "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+          "bytes": 23
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/events.jsonl",
+      "original_identity": {
+        "sha256": "8c1f39d973f7cec27564e4c749f57eadec89642d6c7da88071057a6204153785",
+        "bytes": 121413
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/events.jsonl",
+        "identity": {
+          "sha256": "8c1f39d973f7cec27564e4c749f57eadec89642d6c7da88071057a6204153785",
+          "bytes": 121413
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/requests.jsonl",
+      "original_identity": {
+        "sha256": "3ac5dea5012916626801e1b7ebca681df20040809e040517d55b1abbb30c6575",
+        "bytes": 814089
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/requests.jsonl",
+        "identity": {
+          "sha256": "3ac5dea5012916626801e1b7ebca681df20040809e040517d55b1abbb30c6575",
+          "bytes": 814089
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/responses.jsonl",
+      "original_identity": {
+        "sha256": "2719d7581f2c18aac88f527eef934d44a9b7e0689ff2f6a3886385a3c86591b7",
+        "bytes": 351000
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/responses.jsonl",
+        "identity": {
+          "sha256": "2719d7581f2c18aac88f527eef934d44a9b7e0689ff2f6a3886385a3c86591b7",
+          "bytes": 351000
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/http-trace.jsonl",
+      "original_identity": {
+        "sha256": "ec1caf89fe0a85d51a1c0cc54548ed81345114931ca99a6747bb11df9c1bcf84",
+        "bytes": 1626750
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/http-trace.jsonl",
+        "identity": {
+          "sha256": "ec1caf89fe0a85d51a1c0cc54548ed81345114931ca99a6747bb11df9c1bcf84",
+          "bytes": 1626750
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/started.json",
+      "original_identity": {
+        "sha256": "2dbd873e70010fc05e6389d50181a144f94bcb99b3a7e768d19a503fed4f73fd",
+        "bytes": 37
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/started.json",
+        "identity": {
+          "sha256": "2dbd873e70010fc05e6389d50181a144f94bcb99b3a7e768d19a503fed4f73fd",
+          "bytes": 37
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/execution.json",
+      "original_identity": {
+        "sha256": "7bc6b4bb852cbf8654764cdaeaa874bbde7396f25e940d7b8e22e9207f8eebd1",
+        "bytes": 39
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/execution.json",
+        "identity": {
+          "sha256": "7bc6b4bb852cbf8654764cdaeaa874bbde7396f25e940d7b8e22e9207f8eebd1",
+          "bytes": 39
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/original-result.json",
+      "original_identity": {
+        "sha256": "bb08a4ab9bdc0c9506b081107e80e26985e9b51816e18d0b4d01e398883cbc71",
+        "bytes": 19754
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/original-result.json",
+        "identity": {
+          "sha256": "bb08a4ab9bdc0c9506b081107e80e26985e9b51816e18d0b4d01e398883cbc71",
+          "bytes": 19754
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/original-gold.json",
+      "original_identity": {
+        "sha256": "f78f8bfa1d00ea2d0bbbf1b6408ffd9eb6a01cb6c81beefcc52fe65c453776ef",
+        "bytes": 539
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/original-gold.json",
+        "identity": {
+          "sha256": "f78f8bfa1d00ea2d0bbbf1b6408ffd9eb6a01cb6c81beefcc52fe65c453776ef",
+          "bytes": 539
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/summary.json",
+      "original_identity": {
+        "sha256": "01ff6485a8a839497b74b410f85a9a853f9f31651958ca4376e156d9135e87c5",
+        "bytes": 4780
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/summary.json",
+        "identity": {
+          "sha256": "01ff6485a8a839497b74b410f85a9a853f9f31651958ca4376e156d9135e87c5",
+          "bytes": 4780
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/run/unit/q0/observation-footer.json",
+      "original_identity": {
+        "sha256": "c203e15f6d42f95e69900ae6667eb5d407f50297499bdd2e74ee17926627e301",
+        "bytes": 610
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/run/unit/q0/observation-footer.json",
+        "identity": {
+          "sha256": "c203e15f6d42f95e69900ae6667eb5d407f50297499bdd2e74ee17926627e301",
+          "bytes": 610
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "exact-cli-r2/profiles.jsonl",
+      "original_identity": {
+        "sha256": "fcbcd6ebedd53380915ea72d472d3133205196993cd7f2f0122f310f7d2cda2e",
+        "bytes": 1798
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "exact-cli-r2/profiles.jsonl",
+        "identity": {
+          "sha256": "fcbcd6ebedd53380915ea72d472d3133205196993cd7f2f0122f310f7d2cda2e",
+          "bytes": 1798
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    },
+    {
+      "original_relative_path": "CPU-ORIGINALS.json",
+      "original_identity": {
+        "sha256": "c4dfebd300f7fd57ae23dc1f5a7f83c94d79070191f4609cdc95772e86d376e0",
+        "bytes": 5265
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+        "member": "CPU-ORIGINALS.json",
+        "identity": {
+          "sha256": "c4dfebd300f7fd57ae23dc1f5a7f83c94d79070191f4609cdc95772e86d376e0",
+          "bytes": 5265
+        }
+      },
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+    }
+  ]
+}

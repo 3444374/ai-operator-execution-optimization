@@ -1,5 +1,9 @@
 # Feasibility Results
 
+[MMQA Q2b 接线与 CPU 核验](mmqa_q2b_wiring_20261104/README.md)：原 exact Join→JSON Extract、完整调用预算和原颜色评价；已记录辅助观测器容量导致的 Join 失败及独立 CPU 修正，完整模型链仍待复验。
+
+[固定 24 次 Join 诊断](mmqa_q2b_wiring_20261104/README.md#join-only-diagnostic)是两种提示的独立检查入口，禁止 Extract，新增 CPU 原件保留仓外。
+
 [后继策略、records 入口及 token 候选](../EXPERIMENT_EVIDENCE_REGISTRY.md)的运行身份、失败与停止原因由证据台账维护；
 main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 

@@ -1,5 +1,15 @@
 # 实验与机制证据台账
 
+<a id="mmqa-q2b-wiring"></a>
+## 2026-11-04：MMQA Q2b 独立实验接线
+
+[Join-only 诊断入口](diagnostics/mmqa_q2b_wiring_20261104/README.md#join-only-diagnostic)使用独立总 24 次预算检查两图、六种不同 Track 与两种提示，保留原生 formatter／parser，禁止 Extract。新增 CPU 原件身份为 `semloom.mmqa_join_diagnostic.cpu.20261104`，由维护者在仓外保存；本次公开变更仅含必要代码、测试和说明，没有新模型或 GPU 运行。
+
+[辅助观测器容量诊断](diagnostics/mmqa_q2b_wiring_20261104/README.md#service-observer-capacity)记录首次真实模型观察在 Join 中止：325 次尝试，252 次 HTTP 成功、72 次 HTTP 错误、1 次未知，Extract 为 0。原因是逐请求 UUID 占满固定配置的记录名额，不能视为原 Q2b 方法或 GPU 容量的负结论；完整结果与质量尚未取得。独立修正保持原请求轨迹、身份字段与全部历史费用，尚未重跑 GPU。
+本轮 CPU 证据身份为 `semloom.mmqa_q2b.observer_cpu.20261104`；50 项检查及准确提交 `0c6759ab` 的完整 650 次 fixture CLI 通过，原 GPU 失败、首次 CPU 失败、33 份原件映射和 32 份公开副本分别保存。它只支持辅助观测器功能与回收判断，独立复审及 GPU 完整链仍 pending。
+
+[原生 Join→Extract 接线报告](diagnostics/mmqa_q2b_wiring_20261104/README.md)记录固定 SemBench 方法与原评价器、完整调用上限、阶段观察和 CPU localhost 核验。工程分支独立于重构，生产调度器未改；输入准备、真实模型与 GPU 观察的实际资格按报告和来源记录判断。CPU fixture 不作为语义质量或性能证据。 本轮补 CLI 最终异常脱敏及可取得的公开证据映射；作者目标 driver 与独审缺依赖环境的结果分列，修正后的独立复审和 GPU 资格仍 pending。
+
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界
 

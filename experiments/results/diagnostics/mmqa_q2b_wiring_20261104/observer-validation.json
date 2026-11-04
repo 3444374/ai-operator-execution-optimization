@@ -1,0 +1,416 @@
+{
+  "schema": "semloom.mmqa_q2b.observer_validation.v1",
+  "source_commit": "0c6759ab6a84ae8815e6d77291989ad0dc136a43",
+  "test_modules": [
+    "tests.experiments.test_processor_receipt",
+    "tests.experiments.test_mmqa_service_observer",
+    "tests.experiments.test_sembench_mmqa",
+    "tests.experiments.test_sembench_mmqa_cli",
+    "tests.experiments.test_cell_budget",
+    "tests.experiments.test_shared_request_budget",
+    "tests.experiments.test_query_supervisor"
+  ],
+  "tests_run": 50,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "test_method_inventory": [
+    "tests.experiments.test_processor_receipt.ProcessorReceiptTests.test_651_distinct_native_uuids_do_not_consume_fixed_profiles_or_change_results.test_651_distinct_native_uuids_do_not_consume_fixed_profiles_or_change_results",
+    "tests.experiments.test_processor_receipt.ProcessorReceiptTests.test_actual_old_uuid_binding_fails_after_252_successful_requests.test_actual_old_uuid_binding_fails_after_252_successful_requests",
+    "tests.experiments.test_processor_receipt.ProcessorReceiptTests.test_identity_sink_failure_keeps_native_return_but_has_no_ready_receipt.test_identity_sink_failure_keeps_native_return_but_has_no_ready_receipt",
+    "tests.experiments.test_processor_receipt.ProcessorReceiptTests.test_request_exception_and_result_identity_are_owned_by_native_renderer.test_request_exception_and_result_identity_are_owned_by_native_renderer",
+    "tests.experiments.test_mmqa_service_observer.MmqaServiceAccountingTests.test_325_attempts_keep_72_http_errors_and_one_unconfirmed_response_without_retry.test_325_attempts_keep_72_http_errors_and_one_unconfirmed_response_without_retry",
+    "tests.experiments.test_mmqa_service_observer.MmqaServiceNativeTests.test_original_325_join_and_325_extract_keep_all_request_traces_and_cleanup.test_original_325_join_and_325_extract_keep_all_request_traces_and_cleanup",
+    "tests.experiments.test_sembench_mmqa.MmqaInputsTests.test_added_image_cannot_silently_expand_cartesian_join.test_added_image_cannot_silently_expand_cartesian_join",
+    "tests.experiments.test_sembench_mmqa.MmqaInputsTests.test_call_cap_covers_all_positive_join_including_extract.test_call_cap_covers_all_positive_join_including_extract",
+    "tests.experiments.test_sembench_mmqa.MmqaInputsTests.test_changed_table_is_rejected_before_native_calls.test_changed_table_is_rejected_before_native_calls",
+    "tests.experiments.test_sembench_mmqa.MmqaInputsTests.test_fixture_cannot_claim_official_generated_inputs.test_fixture_cannot_claim_official_generated_inputs",
+    "tests.experiments.test_sembench_mmqa.MmqaInputsTests.test_manifest_enumeration_is_checked_without_sorting_the_native_query.test_manifest_enumeration_is_checked_without_sorting_the_native_query",
+    "tests.experiments.test_sembench_mmqa.MmqaInputsTests.test_modified_image_is_rejected.test_modified_image_is_rejected",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_all_positive_join_consumes_the_complete_conservative_cap.test_all_positive_join_consumes_the_complete_conservative_cap",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_empty_join_preserves_upstream_missing_color_error_without_fabricating_results.test_empty_join_preserves_upstream_missing_color_error_without_fabricating_results",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_http_failure_is_charged_once_and_never_releases_extract.test_http_failure_is_charged_once_and_never_releases_extract",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_native_observers_are_restored_after_failure.test_native_observers_are_restored_after_failure",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_original_evaluator_checks_color_against_unchanged_full_gold.test_original_evaluator_checks_color_against_unchanged_full_gold",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_prepared_byte_limit_stops_before_any_http_dispatch.test_prepared_byte_limit_stops_before_any_http_dispatch",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_required_event_sink_error_stops_before_http_and_preserves_failed_footer.test_required_event_sink_error_stops_before_http_and_preserves_failed_footer",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_selective_original_join_only_releases_matches_to_json_extract_and_original_evaluator.test_selective_original_join_only_releases_matches_to_json_extract_and_original_evaluator",
+    "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_supervisor_deadline_closes_budget_and_cleans_local_worker.test_supervisor_deadline_closes_budget_and_cleans_local_worker",
+    "tests.experiments.test_sembench_mmqa_cli.MmqaCLIErrorTests.test_exception_chain_and_notes_are_redacted_without_losing_failure_identity.test_exception_chain_and_notes_are_redacted_without_losing_failure_identity",
+    "tests.experiments.test_sembench_mmqa_cli.MmqaCLIErrorTests.test_explicit_exit_codes_are_preserved_and_text_exit_is_redacted.test_explicit_exit_codes_are_preserved_and_text_exit_is_redacted",
+    "tests.experiments.test_sembench_mmqa_cli.MmqaCLIErrorTests.test_keyboard_interrupt_retains_interrupt_exit_status.test_keyboard_interrupt_retains_interrupt_exit_status",
+    "tests.experiments.test_sembench_mmqa_cli.MmqaCLIErrorTests.test_supervisor_persists_only_the_redacted_worker_traceback.test_supervisor_persists_only_the_redacted_worker_traceback",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_concurrent_requests_share_one_unit_limit.test_concurrent_requests_share_one_unit_limit",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_crash_before_first_send_does_not_refund_or_restore_claim.test_crash_before_first_send_does_not_refund_or_restore_claim",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_full_reservation_counts_even_when_only_partially_consumed.test_full_reservation_counts_even_when_only_partially_consumed",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_invalid_digest_or_expiry_never_authorizes_a_send.test_invalid_digest_or_expiry_never_authorizes_a_send",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_missing_corrupt_alias_wrong_budget_and_overwrite_rejected.test_missing_corrupt_alias_wrong_budget_and_overwrite_rejected",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_one_claim_wins_and_restart_cannot_claim_again.test_one_claim_wins_and_restart_cannot_claim_again",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_one_hundred_thousand_sends_have_no_history_io.test_one_hundred_thousand_sends_have_no_history_io",
+    "tests.experiments.test_cell_budget.CellBudgetTests.test_unit_cannot_be_copied_or_used_in_another_process.test_unit_cannot_be_copied_or_used_in_another_process",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_bad_or_unbounded_input_never_partially_charges.test_bad_or_unbounded_input_never_partially_charges",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_close_and_deadline_stop_new_batches_without_refund.test_close_and_deadline_stop_new_batches_without_refund",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_commit_failure_returns_no_permission_and_preserves_actual_commit.test_commit_failure_returns_no_permission_and_preserves_actual_commit",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_crash_after_commit_does_not_reissue_attempts.test_crash_after_commit_does_not_reissue_attempts",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_insert_failure_rolls_back_entire_batch.test_insert_failure_rolls_back_entire_batch",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_insufficient_quota_rejects_whole_batch_and_tail_can_spend.test_insufficient_quota_rejects_whole_batch_and_tail_can_spend",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_order_duplicate_bodies_and_single_tail_survive_reopen.test_order_duplicate_bodies_and_single_tail_survive_reopen",
+    "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_parallel_single_and_batch_calls_have_unique_numbers_and_finite_total.test_parallel_single_and_batch_calls_have_unique_numbers_and_finite_total",
+    "tests.experiments.test_shared_request_budget.SharedRequestBudgetTests.test_cancelled_unit_cannot_send_queued_worker_requests.test_cancelled_unit_cannot_send_queued_worker_requests",
+    "tests.experiments.test_shared_request_budget.SharedRequestBudgetTests.test_deadline_no_refund_and_missing_file_fail_closed.test_deadline_no_refund_and_missing_file_fail_closed",
+    "tests.experiments.test_shared_request_budget.SharedRequestBudgetTests.test_existing_process_claim_is_not_shareable.test_existing_process_claim_is_not_shareable",
+    "tests.experiments.test_shared_request_budget.SharedRequestBudgetTests.test_processes_cannot_overspend_or_reclaim.test_processes_cannot_overspend_or_reclaim",
+    "tests.experiments.test_query_supervisor.QuerySupervisorTests.test_budget_close_failure_still_stops_worker.test_budget_close_failure_still_stops_worker",
+    "tests.experiments.test_query_supervisor.QuerySupervisorTests.test_hung_query_is_stopped_and_queued_posts_are_closed.test_hung_query_is_stopped_and_queued_posts_are_closed",
+    "tests.experiments.test_query_supervisor.QuerySupervisorTests.test_normal_worker_exits_without_cancellation.test_normal_worker_exits_without_cancellation",
+    "tests.experiments.test_query_supervisor.QuerySupervisorTests.test_overall_duration_is_not_reset_when_query_phase_starts.test_overall_duration_is_not_reset_when_query_phase_starts",
+    "tests.experiments.test_query_supervisor.QuerySupervisorTests.test_report_failure_does_not_replace_worker_failure.test_report_failure_does_not_replace_worker_failure"
+  ],
+  "regression": {
+    "exit_code": 0,
+    "seconds": 33.991602420806885,
+    "GPU_visible": "",
+    "real_model_calls": 0
+  },
+  "old_counterexample": {
+    "requests": 651,
+    "native_UUID_successes": 252,
+    "observer_exceptions": 399,
+    "fixed_profiles": 4,
+    "final_profile_records": 256
+  },
+  "new_counterexample": {
+    "requests": 651,
+    "fixed_profiles": 4,
+    "observer_exceptions": 0,
+    "native_result_identity_preserved": true
+  },
+  "fault_fixture": {
+    "attempts": 325,
+    "HTTP_status_200": 252,
+    "HTTP_status_500": 72,
+    "unconfirmed_response": 1,
+    "profiles": 4,
+    "retries": 0,
+    "all_attempts_charged": true,
+    "closed_unit_rejects_more_sends": true,
+    "fixture_server_socket_closed": true
+  },
+  "first_targeted_run": {
+    "tests": 6,
+    "errors": 1,
+    "native_full650_passed": true,
+    "reason": "Expected disconnect propagated by preserve_http; test client now records this outcome and still checks all325 attempts."
+  },
+  "first_CLI_attempt": {
+    "status": "failed_before_worker_and_POST",
+    "reason": "Private fixture serialized dataclass bearer_token instead of the strict external config fields.",
+    "model_requests": 0,
+    "query_output_created": false
+  },
+  "setup_command_failure": {
+    "exit": 127,
+    "reason": "Read-only summary invocation used a mistyped interpreter path; corrected without changing environment."
+  },
+  "exact_cli": {
+    "status": "passed",
+    "repository_commit": "0c6759ab6a84ae8815e6d77291989ad0dc136a43",
+    "seconds": 33.64909648895264,
+    "real_model_calls": 0,
+    "fixture_HTTP_POSTs": 650,
+    "Join": 325,
+    "Extract": 325,
+    "allocated_attempts": 650,
+    "actual_attempts": 650,
+    "unknown_or_failed": 0,
+    "identity_receipts": 4,
+    "worker_exit": 0,
+    "remaining_owned_pids": [],
+    "lease_released": true,
+    "budget_closed": true,
+    "footer_verified": true,
+    "files": {
+      "summary.json": {
+        "sha256": "01ff6485a8a839497b74b410f85a9a853f9f31651958ca4376e156d9135e87c5",
+        "bytes": 4780
+      },
+      "observation-footer.json": {
+        "sha256": "c203e15f6d42f95e69900ae6667eb5d407f50297499bdd2e74ee17926627e301",
+        "bytes": 610
+      },
+      "requests.jsonl": {
+        "sha256": "3ac5dea5012916626801e1b7ebca681df20040809e040517d55b1abbb30c6575",
+        "bytes": 814089
+      },
+      "responses.jsonl": {
+        "sha256": "2719d7581f2c18aac88f527eef934d44a9b7e0689ff2f6a3886385a3c86591b7",
+        "bytes": 351000
+      },
+      "http-trace.jsonl": {
+        "sha256": "ec1caf89fe0a85d51a1c0cc54548ed81345114931ca99a6747bb11df9c1bcf84",
+        "bytes": 1626750
+      }
+    },
+    "scope": "exact candidate; original native Q2b and evaluator; 25-image/13-row software fixture; no real model or GPU"
+  },
+  "source_delta": {
+    "unchanged_function_AST": {
+      "record": true,
+      "observe_factory": true,
+      "observe_model_init": true
+    },
+    "old_source_sha256": "3b6468274bebe2ce5b8e9605c9ed3fd0d14a6c764eda3082a53e1c81148174e3",
+    "new_functions": [
+      "record",
+      "observe_factory",
+      "observe_model_init",
+      "install"
+    ],
+    "source_commit": "0c6759ab6a84ae8815e6d77291989ad0dc136a43",
+    "source_files": {
+      "code/scripts/profiling/record_observation/processor_receipt.py": {
+        "sha256": "3d0ddc37101d648fb8541ca272e8d5a6073d52589a6a0839977d20ac79ce7ac3",
+        "bytes": 3268
+      },
+      "code/tests/experiments/test_processor_receipt.py": {
+        "sha256": "ab17c25a8546d398b59527b94b7af0c0fba8fd11b932b21d5cebad0e87f26bf2",
+        "bytes": 7715
+      },
+      "code/tests/experiments/test_mmqa_service_observer.py": {
+        "sha256": "0a5d2f0440b5dfefee33a5cd0048838caa1b79ae8bafb8bdc0fe553193dcb836",
+        "bytes": 11452
+      },
+      "code/src/baselines/image/sembench_mmqa.py": {
+        "sha256": "cfb89c17414485dcfee8a9d9da10c89c958c08b192c5c8cded759e94550a909f",
+        "bytes": 11773
+      },
+      "code/src/experiments/mmqa_q2b_observation.py": {
+        "sha256": "76d0c1d39a42ba08af837cb4c80ad7317efadbea77a959bc9c5760da84d4f23e",
+        "bytes": 9211
+      },
+      "code/src/experiments/sembench_mmqa.py": {
+        "sha256": "fbbf4e79cedb8838651c9e98543a5625273f52fe2276427d73800cbed2e541ba",
+        "bytes": 16254
+      },
+      "code/scripts/experiments/run_sembench_mmqa.py": {
+        "sha256": "5335a7af3e436eca3525eaa641f26b0cd57fc09e792e477df40aa1b879430c36",
+        "bytes": 946
+      }
+    },
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "overrides": "7.7.0",
+      "cdlib": "0.4.1",
+      "Pillow": "12.2.0",
+      "aiohttp": "3.14.3",
+      "pandas": "2.3.3",
+      "psutil": "7.2.2"
+    },
+    "real_model_calls": 0
+  },
+  "cleanup": {
+    "owned_runners": {
+      "RUNNING.json": {
+        "pid": 223561,
+        "still_present": false
+      },
+      "REGRESSION-RUNNING.json": {
+        "pid": 224932,
+        "still_present": false
+      },
+      "EXACT-CLI-RUNNING.json": {
+        "pid": 227367,
+        "still_present": false
+      },
+      "EXACT-CLI-R2-RUNNING.json": {
+        "pid": 227494,
+        "still_present": false
+      }
+    },
+    "no_owned_runners_remaining": true
+  },
+  "model_calls": 0,
+  "protocol": {
+    "baseline": "Retained exact old service observer plus fixed observer using identical CPU renderer/processor/model stubs; actual original LOTUS and SemBench query/evaluator for650 HTTP calls.",
+    "GPU_visible": "",
+    "model_service_started": false,
+    "Ray_started": false,
+    "fixture_native_call_cap": 650,
+    "unittest_timeout_s": 300,
+    "CLI_total_deadline_s": 120,
+    "CLI_outer_timeout_s": 140,
+    "stop": "Stop on assertion/import/source mismatch/timeout, close durable unit and owned HTTP service, preserve failure records.",
+    "scope": "CPU functional and observation checks only; no real model quality/performance or new GPU qualification"
+  },
+  "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
+  "GPU_rerun": "not performed; independent review pending",
+  "evidence_references": [
+    {
+      "evidence_original": "preflight.json",
+      "sha256": "01e567a82b1eb4bce8ce7dc269124fdfbe5de577d4292b9695d36711f81ebfe5",
+      "bytes": 5477
+    },
+    {
+      "evidence_original": "preflight.log",
+      "sha256": "01e567a82b1eb4bce8ce7dc269124fdfbe5de577d4292b9695d36711f81ebfe5",
+      "bytes": 5477
+    },
+    {
+      "evidence_original": "targeted.json",
+      "sha256": "2f8ca25584667b1e870fa1809f024b53666e0ce1f80b33c448d9128b63f3603c",
+      "bytes": 99
+    },
+    {
+      "evidence_original": "targeted.log",
+      "sha256": "a6988b78fa2e5c75ffccbe4dbebe5ff909788a418a80995899488b4d2cbe7a67",
+      "bytes": 5976
+    },
+    {
+      "evidence_original": "regression.json",
+      "sha256": "a1528c620bc2b789abd5981c6e7936f28f4807d33f765080d27b881ea715c97f",
+      "bytes": 99
+    },
+    {
+      "evidence_original": "regression.log",
+      "sha256": "a7443153270bde1e8697ad15fcce3b91f96daca7eb6a25467059e2d80cf5113b",
+      "bytes": 16206
+    },
+    {
+      "evidence_original": "source-delta.json",
+      "sha256": "2b3a1994c07cc4153f28bc1a9835467286c9fe5b92f7fb6f225eb549ed9c11d1",
+      "bytes": 1839
+    },
+    {
+      "evidence_original": "processor_receipt_before.py",
+      "sha256": "3b6468274bebe2ce5b8e9605c9ed3fd0d14a6c764eda3082a53e1c81148174e3",
+      "bytes": 3469
+    },
+    {
+      "evidence_original": "failed-gpu-audit.json",
+      "sha256": "5a63e3ba577e363466d93ff4dabcbd11cb4185e40d599d24e6a949f3b3542fa0",
+      "bytes": 2566
+    },
+    {
+      "evidence_original": "verification-summary.json",
+      "sha256": "a911f0a78284722b8ee6d864af3e860cd64111ecb154cc4d8c5e0d3e2318b41f",
+      "bytes": 15772
+    },
+    {
+      "evidence_original": "exact-cli.log",
+      "sha256": "4c5e8cc8b6f67c06c7978c889e4306366d9551fcd4053ece6466a2af68987a3b",
+      "bytes": 709
+    },
+    {
+      "evidence_original": "exact-cli-error.log",
+      "sha256": "08f12988b139bcc225e43c34dfdde86843b5d8cb2bda20fc6783a322cc51a310",
+      "bytes": 1107
+    },
+    {
+      "evidence_original": "exact-cli-r2.log",
+      "sha256": "af830312ba5f64bc742aa8c6f05dcf6a1532c020bf491f89c83610fa27d12f15",
+      "bytes": 4781
+    },
+    {
+      "evidence_original": "exact-cli-r2-result.json",
+      "sha256": "22d5d01cbaf5eb3354d5199cbfb02f212726c15c867559d48504fa70570d0575",
+      "bytes": 1275
+    },
+    {
+      "evidence_original": "run-exact-cli.py",
+      "sha256": "9831a56ec48358953a6a2963b50d44c73fe0d42b442c5b8090e4299505ecf8c8",
+      "bytes": 4216
+    },
+    {
+      "evidence_original": "run-exact-cli-r2.py",
+      "sha256": "65c90bdc7a0f146c79fe4056f71320ae374358ce4bc9aeb64ae38394aa2433f0",
+      "bytes": 4304
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/budget.sqlite",
+      "sha256": "842fcd8aaaf4de66587623303d127444ebe261348ad77103ccaf024ae4ed3714",
+      "bytes": 106496
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/run-config.json",
+      "sha256": "c84034866e08f57b0c5a03986df51451e457cd468234316ef4808d455d73d046",
+      "bytes": 2274
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/worker.log",
+      "sha256": "c67ba8f5808b99eb57a64ada0636c5af89412bb2f974a937c6a438677600eee3",
+      "bytes": 994
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/supervisor.json",
+      "sha256": "7e969e22eb5e41202a2ddc8e9d3ea7ceebadc43527598e9ca7c5d3028835f79c",
+      "bytes": 178
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/unit-reserved.json",
+      "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+      "bytes": 23
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/events.jsonl",
+      "sha256": "8c1f39d973f7cec27564e4c749f57eadec89642d6c7da88071057a6204153785",
+      "bytes": 121413
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/requests.jsonl",
+      "sha256": "3ac5dea5012916626801e1b7ebca681df20040809e040517d55b1abbb30c6575",
+      "bytes": 814089
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/responses.jsonl",
+      "sha256": "2719d7581f2c18aac88f527eef934d44a9b7e0689ff2f6a3886385a3c86591b7",
+      "bytes": 351000
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/http-trace.jsonl",
+      "sha256": "ec1caf89fe0a85d51a1c0cc54548ed81345114931ca99a6747bb11df9c1bcf84",
+      "bytes": 1626750
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/started.json",
+      "sha256": "2dbd873e70010fc05e6389d50181a144f94bcb99b3a7e768d19a503fed4f73fd",
+      "bytes": 37
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/execution.json",
+      "sha256": "7bc6b4bb852cbf8654764cdaeaa874bbde7396f25e940d7b8e22e9207f8eebd1",
+      "bytes": 39
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/original-result.json",
+      "sha256": "bb08a4ab9bdc0c9506b081107e80e26985e9b51816e18d0b4d01e398883cbc71",
+      "bytes": 19754
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/original-gold.json",
+      "sha256": "f78f8bfa1d00ea2d0bbbf1b6408ffd9eb6a01cb6c81beefcc52fe65c453776ef",
+      "bytes": 539
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/summary.json",
+      "sha256": "01ff6485a8a839497b74b410f85a9a853f9f31651958ca4376e156d9135e87c5",
+      "bytes": 4780
+    },
+    {
+      "evidence_original": "exact-cli-r2/run/unit/q0/observation-footer.json",
+      "sha256": "c203e15f6d42f95e69900ae6667eb5d407f50297499bdd2e74ee17926627e301",
+      "bytes": 610
+    },
+    {
+      "evidence_original": "exact-cli-r2/profiles.jsonl",
+      "sha256": "fcbcd6ebedd53380915ea72d472d3133205196993cd7f2f0122f310f7d2cda2e",
+      "bytes": 1798
+    },
+    {
+      "evidence_original": "CPU-ORIGINALS.json",
+      "sha256": "c4dfebd300f7fd57ae23dc1f5a7f83c94d79070191f4609cdc95772e86d376e0",
+      "bytes": 5265
+    }
+  ]
+}
