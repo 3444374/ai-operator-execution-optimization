@@ -16,6 +16,7 @@ import weakref
 from typing import TYPE_CHECKING
 
 from .records_capacity import CoreRecordsCapacity, resolve_records_async_limits
+from .records_runtime_identity import observe_ray_runtime
 
 if TYPE_CHECKING:
     from src.serving.backends.vllm_async_engine import AsyncEngineLimits
@@ -142,22 +143,9 @@ class RecordsPayloadPool:
     @staticmethod
     def _runtime_observation(owner):
         """Observe an already-connected runtime without importing or starting Ray."""
-        import sys
+        return RecordsPayloadPool._ray_runtime_observation(owner._actors.ray)
 
-        ray = owner._actors.ray
-        try:
-            if (ray is None or sys.modules.get('ray') is not ray
-                    or not callable(getattr(ray, 'is_initialized', None))
-                    or ray.is_initialized() is not True
-                    or not callable(getattr(ray, 'get_runtime_context', None))):
-                return None
-            context = ray.get_runtime_context()
-            identity = dict(job_id=context.get_job_id(), node_id=context.get_node_id())
-            if any(type(value) is not str or not value.strip() for value in identity.values()):
-                return None
-            return ray, identity
-        except Exception:
-            return None
+    _ray_runtime_observation = staticmethod(observe_ray_runtime)
 
     def _recovery_owner(self, allocation_id):
         self._process()
@@ -186,13 +174,16 @@ class RecordsPayloadPool:
                 valid = False
             if not valid:
                 raise ValueError('cleanup timeout must be finite and positive')
+        if owner.cleanup_confirmed():
+            return owner.last_close_report
         actors = owner._actors
         if (actors.ray is not None or actors.model_actor is not None
                 or actors.prepare_actors or actors.model_ready is not None):
             observed = self._runtime_observation(owner)
-            if (grant._runtime_identity is None or observed is None
-                    or observed[0] is not grant._runtime_module
-                    or observed[1] != grant._runtime_identity):
+            original = ((grant._runtime_module, grant._runtime_identity)
+                        if grant._runtime_identity is not None else getattr(owner, '_model_runtime', None))
+            if (original is None or observed is None
+                    or observed[0] is not original[0] or observed[1] != original[1]):
                 raise RuntimeError('original Ray runtime identity is unavailable or changed; recovery cannot reconnect it')
         return owner.close(timeout=timeout)
 
@@ -291,6 +282,12 @@ class RecordsPayloadGrant:
             if self._identity is not None and self._identity != identity:
                 raise ValueError('payload allocation cannot replace its actual model or producer identity')
             observed = self._pool._runtime_observation(owner)
+            if getattr(owner, '_model_runtime_capture_attempted', False):
+                original = owner._model_runtime
+                if original is None:
+                    observed = None
+                elif (observed is None or observed[0] is not original[0] or observed[1] != original[1]):
+                    raise ValueError('payload allocation changed its startup Ray runtime identity')
             if self._identity is None:
                 if observed is not None:
                     self._runtime_module, self._runtime_identity = observed
@@ -345,36 +342,12 @@ class RecordsPayloadGrant:
 
 def create_service_records_core(method, engine, generation, resources, pool, maximum, **options):
     """Bind one static service allocation before the existing factory can start work."""
-    from src.semantic_methods.lotus.records import RecordsResources
     from .lotus_records_core import create_records_core
+    from .records_service_config import service_record_options
 
     if type(pool) is not RecordsPayloadPool:
         raise TypeError('service_budget must be a process-local RecordsPayloadPool')
-    resources = (RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=None)
-                 if resources is None else resources)
-    if (type(resources) is not RecordsResources or resources.max_active_batches is not None
-            or resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
-        raise ValueError('service allocation requires ordinary resources with max_active_batches=None')
-    if (options['async_limits'] is not None or options['prepared_batching'] is not None
-            or options['batch_concurrency'] is not None or options['batch_feedback'] is not None
-            or options['rolling_refill'] is not False
-            or options['experimental_skip_token_packing'] is not False
-            or options['interleaved_preparation'] is not False
-            or options['event_driven_preparation'] is not False):
-        raise ValueError('service payload grants currently support ordinary async requests without IPC overrides')
-    profile = options['profile']
-    if profile is not None and type(profile) is not dict:
-        raise ValueError('service payload grants require an explicit ordinary async profile')
-    profile = {} if profile is None else dict(profile)
-    profile.setdefault('mode', 'async')
-    if profile.get('mode') != 'async':
-        raise ValueError('service payload grants require async execution')
-    if profile.get('admission') is None and 'max_inflight' not in profile:
-        profile['max_inflight'] = 'auto'
-    if (type(profile.get('admission')) is dict
-            and profile['admission'].get('kind') == 'legacy_resource_feedback'):
-        raise ValueError('historical feedback profiles retain their own explicit resource declarations')
-    shape = CoreRecordsCapacity() if options['capacity'] is None else options['capacity']
+    resources, profile, shape = service_record_options(resources, options)
     grant = pool.allocate(shape, max_bytes=maximum)
     try:
         options.update(profile=profile, capacity=grant.plan.capacity, async_limits=grant.plan.ipc_limits)
@@ -386,5 +359,6 @@ def create_service_records_core(method, engine, generation, resources, pool, max
         grant.cancel()
         raise
     owner.execution_profile.update(service_payload_plan=grant.plan.describe(),
+        service_payload_bytes=pool.total_bytes, service_allocation_acquired=True,
         resource_budget_source='exclusive service-process declared payload allocation; not measured RAM or model capacity')
     return owner

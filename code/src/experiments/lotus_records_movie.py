@@ -24,6 +24,8 @@ from src.experiments.movie_records_config import (
     core_profile as _core_profile, record_batching_options as _record_batching_options,
     record_admission_cache as _record_admission_cache,
     records_runtime as _records_runtime,
+    records_resources as _records_resources,
+    records_service_pool as _records_service_pool,
 )
 
 
@@ -310,7 +312,7 @@ def read_config(path):
     from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode", "service_payload_bytes"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -320,7 +322,7 @@ def read_config(path):
     method = FilterMethod.from_dict(value["method"])
     _fixed_method(method, value.get("task", "movie-q3"))
     generation = GenerationSpec.from_dict(value.get("generation", {}))
-    resources = RecordsResources(**value.get("resources", {}))
+    resources = _records_resources(value)
     if value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND) and (
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
@@ -328,6 +330,8 @@ def read_config(path):
     if not is_core and (set(value) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
                                      'experimental_skip_token_packing', 'preparation_mode'}):
         raise ValueError('record batching options require a Core backend')
+    if not is_core and 'service_payload_bytes' in value:
+        raise ValueError('service_payload_bytes requires an async Core backend')
     if not is_core and set(value) & {"async_limits", "core_capacity"}:
         raise ValueError("async_limits and core_capacity require a Core backend")
     engine = EngineSpec.from_dict(value["engine"])
@@ -578,19 +582,37 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     is_core = config["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND)
     profile = _core_profile(config) if is_core else None
     is_async = False
+    service_pool = None
+    service_runtime = None
+    service_runtime_event = 'runtime_not_started'
     failure = None
     report = {}
     runtime_started = time.monotonic()
     emit("runtime_setup_start")
+    def create_core_owner():
+        from src.execution_provider.adapters.lotus_records_core import create_records_core
+        options = dict(profile=profile, capacity=_core_capacity(config), **_record_batching_options(config))
+        if service_pool is not None:
+            options['service_budget'] = service_pool
+        else:
+            options['async_limits'] = async_limits
+        return create_records_core(method, engine, generation, resources, **options)
     try:
         if is_core:
             configured = _records_runtime(config, resources=resources, engine=engine)
             is_async = configured.profile['mode'] == 'async'
         if is_async:
             async_limits = configured.async_limits
+        if 'service_payload_bytes' in config:
+            service_pool = _records_service_pool(config)
+            owner = create_core_owner()
+            from .movie_records_service import verify_service_owner
+            verify_service_owner(owner, configured)
         if config["backend"] != "daft-native-local-model":
             import ray
 
+            if service_pool is not None and ray.is_initialized():
+                raise RuntimeError('service worker refuses an existing Ray runtime')
             slots = resources.cpu_workers + resources.gpu_workers + 1
             if is_core or config["backend"] == "semloom-local-model-static-reference":
                 from src.infrastructure.cpu_allocation import checked_local_cpu_slots
@@ -600,14 +622,13 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                      runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                                                  "LITELLM_LOCAL_MODEL_COST_MAP": "True",
                                                  "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
+            if service_pool is not None:
+                from .movie_records_service import service_runtime_identity
+                service_runtime = service_runtime_identity(ray)
+                owner.bind_model_runtime(service_runtime)
         runtime_seconds = time.monotonic() - runtime_started
         emit("runtime_setup_end")
         query_options = {}
-        def create_core_owner():
-            from src.execution_provider.adapters.lotus_records_core import create_records_core
-            return create_records_core(method, engine, generation, resources,
-                profile=profile, async_limits=async_limits, capacity=_core_capacity(config),
-                **_record_batching_options(config))
         def resolve_context():
             nonlocal owner
             if owner is None:
@@ -660,7 +681,11 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     finally:
         try:
             if owner is not None:
-                report["owner_close"] = owner.close(timeout=20) if is_async else owner.close()
+                if service_pool is not None:
+                    from .movie_records_service import close_service_owner
+                    report['owner_close'] = close_service_owner(owner, ray, service_runtime, timeout=20)
+                else:
+                    report["owner_close"] = owner.close(timeout=20) if is_async else owner.close()
                 if (report["owner_close"].get("cleanup_errors")
                         or is_async and report["owner_close"].get("status") != "closed"):
                     raise RuntimeError(("async Core" if is_async else "static") + " owner cleanup remains unconfirmed")
@@ -710,10 +735,39 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                     failure = cleanup
                 else:
                     failure.add_note("async execution metadata also failed: " + type(cleanup).__name__)
+        if service_pool is not None:
+            try:
+                if owner is not None and type(report.get('calls')) is dict:
+                    from .movie_records_service import accept_service_results
+                    transfer = accept_service_results(owner, report, source.expected(config['query_id']), root,
+                                                       primary=failure)
+                    if transfer is not None:
+                        report['service_result_transfer'] = transfer
+                        report['owner_close'] = owner.last_close_report
+                        report['execution_metadata'] = owner.execution_metadata()
+                report['service_payload_pool'] = service_pool.close()
+            except BaseException as cleanup:
+                report['status'] = 'failed'
+                report['service_result_transfer_error_type'] = type(cleanup).__name__
+                report['service_payload_pool'] = service_pool.close()
+                if failure is None:
+                    failure = cleanup
+                else:
+                    failure.add_note('service result acceptance failed: ' + type(cleanup).__name__)
         try:
-            if ray is not None and ray.is_initialized():
+            if service_pool is not None and ray is not None:
+                from .movie_records_service import finish_service_runtime
+                report['service_runtime_close'] = finish_service_runtime(ray, service_runtime, owner)
+                if report['service_runtime_close']['status'] == 'closed':
+                    service_runtime_event = 'runtime_closed'
+                else:
+                    service_runtime_event = 'runtime_retained'
+                    raise RuntimeError('original Ray retained for pending owner cleanup')
+            elif ray is not None and ray.is_initialized():
                 ray.shutdown()
         except BaseException as cleanup:
+            if service_pool is not None and service_runtime_event != 'runtime_retained':
+                service_runtime_event = 'runtime_close_unconfirmed'
             report.update(status="failed", ray_close_error_type=type(cleanup).__name__)
             if failure is None:
                 failure = cleanup
@@ -721,7 +775,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 failure.add_note("Ray close also failed: " + type(cleanup).__name__)
         report["independent_gpu_process_exit_check"] = False
         try:
-            emit("runtime_closed")
+            emit(service_runtime_event if service_pool is not None else 'runtime_closed')
         except BaseException as observation:
             report.setdefault("observer_errors", []).append(redact_text(str(observation)))
             report["status"] = "failed"
@@ -738,6 +792,14 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 failure.add_note("query report also failed: " + type(recording).__name__)
     if failure is not None:
         failure.query_report = report
+        if service_pool is not None:
+            failure.records_payload_pool = service_pool
+            failure.records_owner = owner
+            failure.records_runtime = service_runtime
+            from functools import partial
+            from .movie_records_service import finish_service_runtime
+            failure.records_finish_runtime = (None if ray is None else
+                partial(finish_service_runtime, ray, service_runtime, owner))
         raise failure
 
 

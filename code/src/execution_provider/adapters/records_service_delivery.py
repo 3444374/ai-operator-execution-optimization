@@ -232,10 +232,13 @@ def check_ordinary_receipts(declaration, receipts, *, complete=False):
             or type(complete) is not bool or len(receipts) > declaration.count
             or complete and len(receipts) != declaration.count):
         raise ValueError('ordinary delivery array quantity differs from its declaration')
-    seen = set()
+    seen, item_bytes = set(), 0
     for receipt in receipts:
-        _checked_receipt(declaration, receipt)
+        item_bytes += _checked_receipt(declaration, receipt)
         if receipt['call_id'] in seen:
             raise ValueError('ordinary delivery array repeats a call identity')
         seen.add(receipt['call_id'])
-    return len(_encode(receipts, declaration.array_bytes))
+    size = _array_bytes(item_bytes, len(receipts))
+    if size > declaration.array_bytes:
+        raise ValueError('records bytes exceed the reserved item capacity')
+    return size

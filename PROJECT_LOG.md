@@ -11021,3 +11021,14 @@ IdleProvider 先前忽略来源期限参数，导致下一查询复用时报缺�
 [完整组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
 包含独立测试替身修订：2005 项成功、45 未执行，历史来源及实际模型设置保持；候选待复审，未推送或合并。
 CLI／session、rolling 的实际结果授予、恢复和实机验证仍未完成。
+
+
+## 2026-11-04 接通普通服务入口并保留原实例清理能力
+
+从 bd527 另建候选，统一服务配置预检与工厂；普通 CLI 和连续 session 可从声明字节派生请求／结果计数，
+实际领取先于 Ray，未知清理及未转交结果继续持有。启动／清理检查原连接，重复关闭只复用完整实际证明；
+保存及文件／目录同步先于精确结果接受。未决 RPC 保留原 Ray，Ray 结束失败不丢 driver；字节归还独立处理。
+prepared 结果另减少无用拷贝和关闭迭代引用，未接 rolling 授予或重连。
+[实际证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
+为 2083 成功、45 未执行；代码摘要、历史来源保持，原错误与网络警告不改写。
+候选待最终树独审，未推送或合并；真实模型、自动物理容量及其余工程重构仍未完成。

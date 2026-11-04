@@ -328,3 +328,36 @@ LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
 
 [本轮记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
 保留四项原反例。真实 Ray、模型及自动 RAM 探测不由该检查证明。
+
+
+## 2026-11-04 普通服务入口、原实例恢复与结果保存
+
+[普通入口](experiments/test_records_service_entry.py)沿原 CLI worker 和 resident／isolated session，
+验证预检不领取、实际领取先于 Ray、原结果、池共享／归属、部分占用拒绝和原 runtime 清理身份。
+[保存检查](experiments/test_movie_service_receipts.py)控制存储失败、目录同步失败、精确接受失败及完整重试，
+不丢失部分写入或修改 unknown。已关闭模型仅本地结果待转交时不依赖已结束的 Ray。
+[同进程恢复](execution_provider/test_records_service_recovery.py)复用原真实 CPU 管道／Core 与 Ray 替身，
+检查原实例、job／node、线程和保留的 RPC；不建立替代 runtime。
+[完整交付计量](execution_provider/test_records_service_delivery.py)使用原编码及实际 ordinary 投影，
+逐查询核对完整结果数组声明。此模块尚未接入 rolling 实例，不代表其完整结果已被服务授予覆盖。
+[启动身份检查](execution_provider/test_core_startup_runtime.py)覆盖已创建 actor 但 ready／启动报错时原连接丢失，
+确认无替代 RPC／初始化、原错误保留及可核验连接上的原实例清理；首次身份不可用不被后来连接补认。
+另保留两个重复关闭的原错误反例；完整原证明可在连接结束后复用，本地结果仍持有至明确转交，
+错误 producer 证明、未决 RPC、错误线程及非法等待时间不能靠旧 closed 字样通过。
+原 snapshot RPC 仍等待时，driver 保留原 Ray，收到原回执后在同一实例重试；Ray 关闭首次报错时，
+已归还字节不会使 driver 句柄提前消失。普通 worker 的事件和显式连接结束函数另有反例检查。
+[结果拷贝检查](execution_provider/test_prepared_delivery_copies.py)验证提前关闭、稳定 EOF 的实际证明，
+以及缺证明、resident 两查询、unknown 晚到回执和原快照保留；没有改变 ACK 或资源释放。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
+LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
+  tests.experiments.test_records_service_entry \
+  tests.experiments.test_movie_service_receipts \
+  tests.execution_provider.test_records_service_recovery \
+  tests.execution_provider.test_core_startup_runtime \
+  tests.execution_provider.test_records_service_delivery -v
+```
+
+[来源与缺项](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
+分别记录相关选择和实际组合，不把旧 Ray／SDK／模型缺项改报成功。

@@ -1449,3 +1449,10 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 修正采样线程停止后仍有原 RPC 等待却归还字节的问题；四项原反例和独审探针保持。
 实际组合另含测试替身修订，CPU 2005 成功、45 未执行，七项新增检查均通过。
 只支持 CPU 工程判断，不提供真实 Ray／模型、自动 RAM 或完整项目完成结论。
+
+
+普通服务入口与原实例恢复的[组合检查](diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
+覆盖服务字节预检／领取、CLI／session、原 Ray 身份、结果持久接受、重复关闭和连接结束失败的独立责任，
+以及 prepared 普通结果拷贝清理。最终 2083 方法成功、45 未执行，78 个新增方法通过；
+旧失败、权限错误及成本表网络尝试保持原记录，不把各轮成功数相加。只支持 CPU 工程判断；
+rolling 服务授予、自动物理容量、跨进程恢复和真实 Ray／模型／GPU 仍待处理，候选未推送或合并。

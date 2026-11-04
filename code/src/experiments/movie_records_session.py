@@ -28,13 +28,13 @@ def check_plan(plan):
     """Read-only CPU validation; never imports execution frameworks or a model."""
     from src.baselines.text.movie_records import MovieRecordSource
     from src.baselines.text.movie_tasks import MovieTask
-    from src.semantic_methods.lotus.records import RecordsResources
     from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
     optional = {'admission_cache', 'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                'experimental_skip_token_packing', 'core_capacity', 'async_limits', 'preparation_mode'}
+                'experimental_skip_token_packing', 'core_capacity', 'async_limits', 'preparation_mode',
+                'service_payload_bytes'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
@@ -47,7 +47,8 @@ def check_plan(plan):
             or plan["profile"] != DAFT_SESSION_PROFILE):
         raise ValueError("native_single_thread_session requires daft and its explicit different native profile")
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
-    resources = RecordsResources(**plan["resources"])
+    from src.experiments.movie_records_config import records_resources
+    resources = records_resources(plan)
     context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference')
                      else engine.legacy_max_model_len)
     if context_limit is not None and generation.max_tokens > context_limit:
@@ -57,6 +58,8 @@ def check_plan(plan):
     core_profile = None
     capacity = async_limits = None
     batching = None
+    if plan['backend'] != 'semloom-core' and 'service_payload_bytes' in plan:
+        raise ValueError('service_payload_bytes requires semloom-core')
     if plan['backend'] != 'semloom-core' and set(plan) & {'core_capacity', 'async_limits'}:
         raise ValueError('core_capacity and async_limits require semloom-core')
     if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
@@ -155,6 +158,9 @@ class _MovieDriver:
         self.imlane_guard = None
         self.imlane_handlers = {}
         self._model_ready = self._owner_ready = None
+        self.payload_pool = None
+        self.service_runtime = None
+        self._close_attempted = False
 
     def _check_core_model_ready(self, ready):
         from src.experiments.calibration.core import core_model_ready
@@ -173,12 +179,14 @@ class _MovieDriver:
 
     def start(self):
         from src.baselines.text.movie_tasks import MovieTask
-        from src.semantic_methods.lotus.records import RecordsResources
         from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+        from src.experiments.movie_records_config import records_resources, records_service_pool
         self.engine = EngineSpec.from_dict(self.plan["engine"])
         self.generation = GenerationSpec.from_dict(self.plan["generation"])
-        self.resources = RecordsResources(**self.plan["resources"])
+        self.resources = records_resources(self.plan)
         backend = self.plan["backend"]
+        if backend != 'semloom-core' and 'service_payload_bytes' in self.plan:
+            raise ValueError('service_payload_bytes requires semloom-core')
         if backend != 'semloom-core' and 'preparation_mode' in self.plan:
             raise ValueError('preparation_mode requires semloom-core')
         if backend == 'semloom-static-reference':
@@ -193,8 +201,23 @@ class _MovieDriver:
             self.core_execution = configured.profile
             options = _record_batching_options(self.plan)
             resolve_record_batching(self.core_execution, **options)
+        method = None
+        if 'service_payload_bytes' in self.plan:
+            from src.execution_provider.adapters.lotus_records_core import create_records_core
+            from src.experiments.movie_records_config import core_capacity
+            self.payload_pool = records_service_pool(self.plan, self.context)
+            method = MovieTask.from_config(self.first_query['task']).method(self.plan['model_name'])
+            self.owner = create_records_core(method, self.engine, self.generation, self.resources,
+                profile=self.plan['profile'], capacity=core_capacity(self.plan),
+                service_budget=self.payload_pool, **options)
+            from .movie_records_service import verify_service_owner
+            verify_service_owner(self.owner, configured)
+            self.core_execution = self.owner.execution_profile
+            allocation_id = self.owner._service_allocation.allocation_id
+            self.context.setdefault('_records_payload_drivers', {})[allocation_id] = self
         new_private_directory(self.directory)
-        method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"])
+        if method is None:
+            method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"])
         if backend == "daft" and self.plan["lifecycle"] == "native_single_thread_session":
             from src.baselines.text.frameworks.daft_lotus_session import DaftNativeSession
             deadline = (time.monotonic() + self.resources.startup_timeout_s
@@ -249,6 +272,10 @@ class _MovieDriver:
                      num_gpus=1, include_dashboard=False,
                      runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                          "LITELLM_LOCAL_MODEL_COST_MAP": "True", "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
+            if self.payload_pool is not None:
+                from .movie_records_service import service_runtime_identity
+                self.service_runtime = service_runtime_identity(ray)
+                self.owner.bind_model_runtime(self.service_runtime)
             if backend == "ray-data":
                 import os
                 self.ray_identity = dict(driver_pid=os.getpid(), node_id=ray.get_runtime_context().get_node_id())
@@ -262,10 +289,10 @@ class _MovieDriver:
                 )
                 if options.get('rolling_refill') and self.plan['lifecycle'] == 'resident':
                     options['resident'] = True
-                self.owner = create_records_core(method, self.engine, self.generation, self.resources,
-                    profile=self.plan["profile"], capacity=_core_capacity(self.plan),
-                    async_limits=configured.async_limits,
-                    **options)
+                if self.owner is None:
+                    self.owner = create_records_core(method, self.engine, self.generation, self.resources,
+                        profile=self.plan["profile"], capacity=_core_capacity(self.plan),
+                        async_limits=configured.async_limits, **options)
             else:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
@@ -400,12 +427,25 @@ class _MovieDriver:
 
     def close(self):
         receipts, errors = {}, []
+        repeated = self._close_attempted
+        self._close_attempted = True
         for name, resource in (("model", self.owner), ("http_service", self.service)):
             if resource is not None:
                 try:
-                    receipts[name] = (resource.close(timeout=20)
-                        if name == "model" and self.core_execution is not None
-                        and self.core_execution["mode"] == "async" else resource.close())
+                    if name == 'model' and self.payload_pool is not None and repeated:
+                        grant = resource._service_allocation
+                        if not resource.cleanup_confirmed() and grant.describe()['status'] != 'released':
+                            receipts[name] = self.payload_pool.retry_cleanup(grant.allocation_id, timeout=20)
+                        else:
+                            from .movie_records_service import close_service_owner
+                            receipts[name] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+                    elif name == 'model' and self.payload_pool is not None:
+                        from .movie_records_service import close_service_owner
+                        receipts[name] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+                    else:
+                        receipts[name] = (resource.close(timeout=20)
+                            if name == "model" and self.core_execution is not None
+                            and self.core_execution["mode"] == "async" else resource.close())
                     if receipts[name].get("status") != "closed" or receipts[name].get("cleanup_errors"):
                         errors.append(name + " cleanup unconfirmed")
                 except BaseException as error:
@@ -419,18 +459,38 @@ class _MovieDriver:
                     merge_unconsumed_call_results(self.last_query_report, self.last_expected, late,
                                                   primary=self.last_query_failure)
                     receipts["final_query_accounting"] = self.last_query_report
-                    write_private_json(self.last_query_directory / "query-accounting-final.json",
-                                       redact_json_values(self.last_query_report))
+                    if self.payload_pool is None:
+                        write_private_json(self.last_query_directory / "query-accounting-final.json",
+                                           redact_json_values(self.last_query_report))
             except BaseException as error:
                 receipts["accounting_failure"] = _failure(error)
                 errors.append("post-close query accounting failed")
-        # This driver only initializes a fresh local runtime in its private worker.
-        if self.created_ray and self.ray.is_initialized():
+        if self.payload_pool is not None and self.owner is not None:
             try:
-                if (self.plan["backend"] == "ray-data" and self.ray_identity is not None
+                if self.last_query_report is not None and not errors:
+                    from .movie_records_service import accept_service_results
+                    transfer = accept_service_results(self.owner, self.last_query_report, self.last_expected,
+                        self.last_query_directory, primary=self.last_query_failure)
+                    if transfer is not None:
+                        receipts['service_result_transfer'] = transfer
+                        receipts['model'] = self.owner.last_close_report
+                receipts['service_payload_pool'] = self.payload_pool.snapshot()
+            except BaseException as error:
+                receipts['service_acceptance_failure'] = _failure(error)
+                errors.append('service result acceptance failed')
+        # This driver only initializes a fresh local runtime in its private worker.
+        if self.created_ray and (self.payload_pool is not None or self.ray.is_initialized()):
+            try:
+                if self.payload_pool is not None:
+                    from .movie_records_service import finish_service_runtime
+                    receipts['ray'] = finish_service_runtime(self.ray, self.service_runtime, self.owner)
+                    if receipts['ray']['status'] != 'closed':
+                        errors.append('original Ray retained for pending owner cleanup')
+                elif (self.plan["backend"] == "ray-data" and self.ray_identity is not None
                         and self.ray.get_runtime_context().get_node_id() != self.ray_identity["node_id"]):
                     raise RuntimeError("Ray runtime identity changed; replacement runtime left untouched")
-                self.ray.shutdown()
+                else:
+                    self.ray.shutdown()
                 if self.plan["backend"] == "ray-data":
                     stopped = not self.ray.is_initialized()
                     receipts["ray"] = dict(status="closed" if stopped else "unknown",
@@ -456,6 +516,9 @@ class _MovieDriver:
             for number, handler in self.imlane_handlers.items():
                 signal.signal(number, handler)
             self.imlane_handlers = {}
+        if (self.payload_pool is not None and self.owner is not None and not errors
+                and self.owner._service_allocation.describe()['status'] == 'released'):
+            self.context.get('_records_payload_drivers', {}).pop(self.owner._service_allocation.allocation_id, None)
         return dict(status="closed" if not errors else "unknown", cleanup_errors=errors,
                     receipts=receipts, independent_gpu_exit_confirmed=None)
 
@@ -496,6 +559,7 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
     # call the HTTP per-POST reserve hook, without inventing model attempts.
     for query in checked["queries"]:
         context["claims"][query["query_id"]].bind_execution()
+    pool_owned = 'service_payload_bytes' in plan and context.get('_records_payload_pool') is None
     context = dict(context, checked_queries={query["query_id"]: query for query in checked["queries"]})
     # Explicitly bind the assigned device before a local Ray model actor starts.
     import os
@@ -517,9 +581,36 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
                 query_state="fresh source, expected calls, ledger, results and evaluation for each query",
                 model_internal_cache="native backend owns KV/prefix policy; cache hits unavailable"))
         setup["preflight_seconds"] = (setup["preflight_end_ns"] - preflight_started) / 1e9
-        report = run_sequence(plan["queries"], lambda directory, spec: _MovieDriver(plan, context, directory, spec),
-            output, backend=plan["backend"], lifecycle=plan["lifecycle"], observer=observer,
-            setup=setup, checkpoint=checkpoint)
+        try:
+            report = run_sequence(plan["queries"], lambda directory, spec: _MovieDriver(plan, context, directory, spec),
+                output, backend=plan["backend"], lifecycle=plan["lifecycle"], observer=observer,
+                setup=setup, checkpoint=checkpoint)
+        except BaseException as error:
+            pool = context.get('_records_payload_pool')
+            if pool is not None:
+                error.records_payload_pool = pool
+                error.records_payload_drivers = dict(context.get('_records_payload_drivers', {}))
+                try:
+                    if getattr(error, 'session_report', None) is not None:
+                        from .movie_records_service import finish_service_pool
+                        snapshot, artifact = finish_service_pool(pool, output, owned=pool_owned)
+                        error.session_report.update(service_payload_pool=snapshot, service_payload_pool_artifact=artifact)
+                except BaseException as recording:
+                    error.add_note('service pool evidence: '+type(recording).__name__)
+            raise
+        pool = context.get('_records_payload_pool')
+        if pool is not None:
+            from .movie_records_service import finish_service_pool
+            try:
+                snapshot, artifact = finish_service_pool(pool, output, owned=pool_owned)
+                report.update(service_payload_pool=snapshot, service_payload_pool_artifact=artifact)
+            except BaseException as error:
+                report.update(status='failed', service_pool_evidence_error=_failure(error),
+                    service_payload_pool=pool.close() if pool_owned else pool.snapshot())
+                error.session_report = report
+                error.records_payload_pool = pool
+                error.records_payload_drivers = dict(context.get('_records_payload_drivers', {}))
+                raise
         return report
     finally:
         for key, value in before.items():

@@ -33,7 +33,7 @@ from src.scheduling.submission_control.admission import StaticAdmissionControlle
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
-from .lotus_records_actor_owner import RecordsActorOwner
+from .lotus_records_actor_owner import RecordsActorOwner, _deadline as _actor_deadline
 from .records_capacity import (
     CoreRecordsCapacity, RecordsCapacityBudget as RecordsCapacityBudget, resolve_records_async_limits,
 )
@@ -48,6 +48,7 @@ from .records_profile import (
 from .records_transport import (
     _await_result as _await_result, _check, _RecordTransport, close_prepared_core,
 )
+from .records_runtime_identity import observe_ray_runtime
 from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlockingMetricsObservationProvider
 
@@ -446,6 +447,8 @@ class SemLoomRecordsCore:
         self._deadline = None
         self.last_query_report = self.last_close_report = None
         self._service_allocation = None
+        self._model_runtime = None
+        self._model_runtime_capture_attempted = False
 
     @property
     def production_core_connected(self):
@@ -466,6 +469,44 @@ class SemLoomRecordsCore:
         if threading.get_ident() != self._thread:
             raise RuntimeError("Core records owner requires its single control thread")
 
+    def bind_model_runtime(self, observed=None):
+        """Bind once to an existing connection; an unavailable first read stays unknown."""
+        self._control()
+        if observed is not None and (type(observed) is not tuple or len(observed) != 2
+                or type(observed[1]) is not dict or set(observed[1]) != {'job_id', 'node_id'}
+                or any(type(value) is not str or not value.strip() for value in observed[1].values())):
+            raise ValueError('model runtime requires the observed module, job and node identity')
+        if self._model_runtime_capture_attempted:
+            original = self._model_runtime
+            if observed is not None and (original is None or observed[0] is not original[0]
+                    or observed[1] != original[1]):
+                raise RuntimeError('model runtime cannot be rebound after its first observation')
+            try:
+                self._check_model_runtime()
+            except RuntimeError as error:
+                allocation = self._service_allocation
+                if allocation is not None and allocation._runtime_identity is not None:
+                    raise ValueError('payload allocation cannot replace its original Ray runtime identity') from error
+                raise
+            return
+        if observed is None:
+            import sys
+            current = observe_ray_runtime(sys.modules.get('ray'))
+        else:
+            current = observe_ray_runtime(observed[0])
+            if current is None or current[0] is not observed[0] or current[1] != observed[1]:
+                raise RuntimeError('supplied model runtime identity is unavailable or changed')
+        self._model_runtime_capture_attempted = True
+        self._model_runtime = None if current is None else (current[0], dict(current[1]))
+
+    def _check_model_runtime(self):
+        original = self._model_runtime
+        if original is None:
+            return  # Preserve existing callers which supplied no observable runtime identity.
+        current = observe_ray_runtime(original[0])
+        if current is None or current[0] is not original[0] or current[1] != original[1]:
+            raise RuntimeError('original model Ray runtime is unavailable or changed')
+
     def start(self):
         """Load the existing model owner without reading or executing a query."""
         self._control()
@@ -476,7 +517,9 @@ class SemLoomRecordsCore:
             raise RuntimeError("Core records already owns an active query")
         deadline = time.monotonic() + self.resources.startup_timeout_s
         self._deadline = deadline
+        self.bind_model_runtime()
         ready = self._actors.start(deadline)
+        self._check_model_runtime()
         if self._service_allocation is not None:
             self._service_allocation.observe_ready(self)
         return ready
@@ -567,8 +610,10 @@ class SemLoomRecordsCore:
         frame = frame.select("row_id", "source_position", *scan.payload_columns)
         try:
             if expected:
+                self.bind_model_runtime()
                 self._actors.start(min(deadline, time.monotonic() + self.resources.startup_timeout_s),
                                    cancelled)
+                self._check_model_runtime()
                 if self._service_allocation is not None:
                     self._service_allocation.observe_ready(self)
             else:
@@ -596,12 +641,71 @@ class SemLoomRecordsCore:
                                      None if query_method == self._actors.method else query_method,
                                      query_limits, query_profile)
         except BaseException as error:
-            error.add_note("Core startup cleanup: " + str(self.close()))
+            try:
+                error.add_note("Core startup cleanup: " + str(self.close()))
+            except BaseException as cleanup:
+                error.add_note('Core startup cleanup failed: ' + type(cleanup).__name__ + ': ' + str(cleanup))
             raise
         return self._active
 
+    def cleanup_confirmed(self):
+        """Read original terminal proof; local retained results still need acceptance."""
+        self._control()
+        report = self.last_close_report or {}
+        if type(report) is not dict:
+            return False
+        actor = report.get('model_owner') or {}
+        actual = self._actors.last_close_report or {}
+        if type(actor) is not dict or type(actual) is not dict:
+            return False
+        if (not self._closing or report.get('status') != 'closed' or report.get('cleanup_errors')
+                or actor.get('status') != 'closed' or actor.get('cleanup_errors')
+                or actual.get('status') != 'closed' or actual.get('cleanup_errors')
+                or actor.get('actor_kill_requests_confirmed') is not True
+                or actual.get('actor_kill_requests_confirmed') is not True
+                or report.get('transport_closed') is not True or report.get('retained_remote_inputs') != 0):
+            return False
+        try:
+            ready = self._actors.model_ready
+            if actor.get('model_ready') != ready or actual.get('model_ready') != ready:
+                return False
+            allocation = self._service_allocation
+            if allocation is not None and allocation._identity is not None and any(
+                    (ready or {}).get(name) != value for name, value in allocation._identity.items()):
+                return False
+            if self._actors.model_actor is not None:
+                if (actual.get('engine_close_report') or {}).get('engine_api_shutdown_confirmed') is not True:
+                    return False
+            elif self._actors._start_failed:
+                return False
+            if self.core is not None and any(asdict(self.core.capacity.usage()).values()):
+                return False
+            if self.transport is not None and (self.transport.retained_refs()
+                    or self.transport.backend._closed is not True or self.transport.backend._thread.is_alive()):
+                return False
+            progress = getattr(self._actors, '_data_rpc_progress', None)
+            if callable(progress):
+                rpc = progress()
+                if rpc.pending or rpc.inflight or rpc.batch_submits_pending or rpc.unconfirmed:
+                    return False
+            if self._feedback is not None:
+                proof = getattr(self._feedback, 'snapshot_rpc_report', None)
+                if not callable(proof) or proof().get('snapshot_rpc_terminal_evidence_complete') is not True:
+                    return False
+            return True
+        except Exception:
+            return False
+
     def close(self, *, timeout=None):
         self._control()
+        if timeout is not None:
+            _actor_deadline(timeout)
+        if self.cleanup_confirmed():
+            return self.last_close_report
+        actors = self._actors
+        if (actors.ray is not None or actors.model_actor is not None
+                or actors.prepare_actors or actors.model_ready is not None):
+            self._check_model_runtime()
         self._closing = True
         errors = []
         if self._active is not None:
@@ -660,15 +764,19 @@ class SemLoomRecordsCore:
             self.last_close_report['service_allocation'] = self._service_allocation.describe()
         return self.last_close_report
 
-    def take_unconsumed_results(self):
+    def take_unconsumed_results(self, *, expected=None):
         """Transfer the closed query's retained receipts once, without parsing them."""
         self._control()
         if self._active is None:
+            if expected is not None and (type(expected) is not list or expected):
+                raise ValueError('retained receipts changed before consumer acceptance')
             return []
         if not self._active.finished:
             raise RuntimeError('close the query before taking its retained receipts')
         self._active.collect_receipts()
         taken = deepcopy(self._active.unconsumed_call_results)
+        if expected is not None and (type(expected) is not list or taken != expected):
+            raise ValueError('retained receipts changed before consumer acceptance')
         query = deepcopy(self.last_query_report)
         if query is not None:
             query['unconsumed_call_results'] = []

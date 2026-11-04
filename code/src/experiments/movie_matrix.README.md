@@ -446,3 +446,38 @@ async 与 rolling_refill=true；不与逐请求／批反馈、其他 backend 或
 本批只有明确替身的 CPU CLI worker、连续查询及回归检查，模型、Ray RPC 和外部资格读取使用原 fixture；
 不提供真实模型、GPU 或查询加速结论。原 geometric 不稳定与负计时记录继续保留，
 详细来源见[接线检查](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)。
+
+
+<a id="record-service-payload"></a>
+### 普通 async 的服务载荷声明
+
+普通 Movie Core 配置和 semloom-core session plan 可以显式给 service_payload_bytes 正整数字节。
+这是完整配置上的可选字段；数值由调用方服务实际配置提供，不从硬件或历史实验猜测。
+resources 可为空对象，prepare_batch_rows／model_batch_rows 此时为 1、max_active_batches 为 None；
+core_capacity 只描述单项字节及原有工作设置，不另提供 budget。预检复用工厂的纯解析，
+check 不领取字节或创建 owner，实际计划核对及领取发生在 Ray 初始化前。
+
+此路径只支持普通 async Filter；prepared_batching、rolling_refill、批反馈、准备交错、显式 IPC、
+admission_cache、legacy profile 和其他 backend 会在 CPU 预检拒绝。它不改变未配置服务字节的旧入口。
+R／结果槽按服务已给字节和原 IPC 完整预留计算；未给 admission 时沿用静态许可，
+显式选择现代逐请求反馈时软窗口仍从一开始。不能把该计数称为实测模型并发。
+当前服务声明不要求手填 R 或结果槽，但服务总字节仍须明确，不提供自动 RAM 预留或 GPU 探测。
+
+普通 CLI worker 使用一个私有池。session 的 resident／isolated 查询共享同一进程池；
+调用方 context 若已给 _records_payload_pool，须为同一个真实池且总额一致，session 不替调用方关闭它。
+若外来池已占用而无法领取完整预检计划，执行在目录创建及 Ray 初始化前拒绝，不能静默缩小并发。
+返回报告记录真实分配计划、关闭及池状态。session 的最终池记录存于独立私有文件，返回对象提供其摘要，
+先前 session.json 时间线不被倒写。最终记录报错时异常仍带完整 session_report 和原池／driver 句柄。
+
+晚到回执先合并到原查询用量，再将完整保留结果及账目存入内容命名私有文件并同步文件及父目录，
+最后接受同一回执快照。存储、接受或清理不确定时继续持有字节；成功、失败和 unknown 不互相改写。
+同进程 retry_cleanup 仅操作原 owner，使用过 Ray 后须核对原 module／job／node；原 runtime 结束或被换时拒绝远端清理。
+入口在初始化后立即绑定同一已验证身份，Core 在 actor 启动及清理前再次核对；启动清理报错只附注到原异常。
+failed-ready 实例只有保留启动前已验证身份时才能在原连接重试清理，不能从后来出现的连接补认。
+未决计算／观测 RPC 使原 Ray 连接继续保留，关闭回执为 unknown；原 RPC 返回后可在同一 driver 上再次关闭。
+字节已归还而 Ray 关闭报错时也保留该 driver，避免把两种责任重新绑在同一计数上。
+普通 worker 的异常另带 records_runtime 和 records_finish_runtime()，供同进程在原 owner 清理完成后结束原连接。
+保留连接时不发 runtime_closed 事件；CLI 私有 worker 退出后这些 Python 句柄不可恢复。
+只剩本地结果转交时可在 Ray shutdown 后重试保存。socketpair、Future 或进程 PID 不提供跨进程重连，
+不支持从快照重建空池或重启后自动回收。真实模型及 GPU 检查仍由专用执行会话完成。
+详见[实际 CPU 记录](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)。

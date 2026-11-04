@@ -1187,9 +1187,11 @@ transfer its receipts before reusing the same live owner; the grant then remains
 The pool is exclusive only among owners sharing that pool in that process. Its bytes are
 declared logical payload allowances, not acquired RAM, observed host/cgroup free memory,
 Python/Ray RSS, preparation/serialization scratch, full relations/audits or GPU/KV storage.
-The service must supply the total; no automatic hardware discovery is implemented. CLI/session
-bootstrap, prepared/rolling owners, cross-process allocation and restart recovery are pending.
-This opt-in SDK path rejects historical profiles and IPC overrides; all callers without a pool
+The service must supply the total; no automatic hardware discovery is implemented. Ordinary
+Movie CLI/session entries can now declare `service_payload_bytes`; see
+[entry settings](../../experiments/movie_matrix.README.md#record-service-payload).
+Prepared/rolling owners, cross-process allocation and restart recovery remain pending.
+This opt-in path rejects historical profiles and IPC overrides; all callers without a pool
 retain their existing settings, including ordinary R=2 and default IPC result slots=8.
 See [CPU scope and evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants).
 
@@ -1209,3 +1211,69 @@ RPC exception can complete this proof without changing model outcomes. Core/Meth
 unconsumed-result responsibilities still apply independently. The legacy feedback implementation,
 source-duration policy and native model settings are unchanged.
 See [CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention).
+
+### Original-owner cleanup and complete delivery declarations
+
+`pool.retry_cleanup(allocation_id, timeout=...)` only retries close on its registered original
+owner in the same process. When remote cleanup is still needed, the connected module, job and node must
+match the identity verified before startup or at the original ready receipt. Missing identity, shutdown,
+replacement or a reinitialized runtime is rejected without importing or initializing Ray.
+An unbound grant still uses its original `cancel()`. A query with only local results to accept
+does not need another remote cleanup attempt: `pool.take_unconsumed_results(allocation_id)`
+transfers the original owner's closed-query receipts, even after Ray shutdown. It does not
+persist them for the caller. Retired history, foreign grants and copied handles are not recovery.
+
+The normal Movie driver saves complete retained receipts and query accounting into a private
+content-named file, synchronizes the file and its directory, then explicitly accepts that exact
+receipt snapshot. Failed storage, failed acceptance, unknown producer/RPC cleanup or a changed
+snapshot retains the grant. A complete earlier artifact can be reused; partial failed writes
+remain as evidence. The returned report links the pool-status artifact. It does not retroactively
+rewrite the earlier session timeline. Driver shutdown also checks its original Ray identity.
+
+Core records its first observable connection before actor startup, verifies it again after
+startup and before remote cleanup, and never replaces an unavailable first observation with
+a later connection. Entries bind the verified connection immediately after their own Ray
+initialization; a replacement before the first model start is rejected too. This read-only
+operation lives in `records_runtime_identity.py`, separately from optional byte allocation.
+Startup cleanup errors are notes on the original exception. Old fixtures without an observable
+identity retain normal operation but provide no reconnect proof. A never-started owner still
+can close locally. These checks do not establish actual Ray recovery or physical GPU exit.
+
+`cleanup_confirmed()` reads the actual actor identity and API/kill-request proof, empty data RPC,
+stopped transport, zero Core usage and complete modern snapshot proof. A cached `closed` status
+alone is insufficient; a wrong producer report must remain repairable on the original runtime.
+Direct repeated `close()` and a registered pool cleanup can reuse that complete original proof
+after Ray stops, while local unconsumed receipts keep their allocation. This path performs no
+remote action, result acceptance or grant return. Wrong-thread calls still fail, and cleanup
+timeouts are checked before actions. A legacy sampler without terminal proof cannot use this path.
+
+An entry keeps its original Ray connection while owner cleanup is unconfirmed, including a
+pending observation RPC after model API close. It reports `retained` and an unknown teardown,
+then can retry the same owner after the original RPC returns. Merely local result persistence
+does not require keeping Ray alive. The session driver registry is retired only after teardown
+succeeds, even when the byte grant returned earlier. A shutdown error therefore preserves the
+same driver for another close attempt. The ordinary worker exposes its original runtime tuple
+and `error.records_finish_runtime()` on the live exception; call it after original-owner cleanup
+has completed. Its observer reports `runtime_retained` or `runtime_close_unconfirmed` instead
+of `runtime_closed` when appropriate. These Python capabilities work only in that still-live
+process; a private CLI worker's exit does not provide a resumable service or socket reconnect.
+
+`records_service_delivery.py` provides a separate pure declaration for one ordinary prepared
+Filter's complete receipt array, using every actual query/row identity and the existing codec.
+It checks projected fields and actual encoded bytes without mutating results. A consecutive
+session uses the largest actual array declaration, rather than combining one query's row count
+with another query's identity. Each independent complete-array copy needs its own allowance.
+This declaration is not wired to rolling owners yet; ordinary service grants do not claim to
+fund an arbitrary prepared owner's unconsumed results, Python RSS or full relation/audit copies.
+Socketpair and original Future/ref handles are local capabilities; no cross-process reconnect
+or restart-safe allocator is implemented. See
+[checks and remaining work](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery).
+
+The prepared ordinary wrapper also avoids copying an entire `calls` field which it immediately
+replaces with its ordinary projection. Permanent close clears its extra iteration references.
+After healthy EOF it may iterate the original close-call snapshot only if the actual stream,
+successful report, zero Core use, transport refs, data RPC and audit handoff all agree; otherwise
+it reads live calls as before. Previous external snapshots and late unknown receipts remain.
+The pure complete-array check sums already-validated item encodings plus the same codec's array
+punctuation, avoiding another whole-array encode. These changes perform no new dispatch, ACK
+or grant return. They do not eliminate all full-result copies or implement rolling grants.

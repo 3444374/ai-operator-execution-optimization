@@ -11,6 +11,35 @@ from src.semantic_methods.lotus.records import RecordsResources
 ASYNC_CORE_BACKEND = "semloom-local-model-core-async"
 
 
+def records_resources(config):
+    """Only an explicit service declaration omits the inherited row/request settings."""
+    values = config.get('resources', {})
+    if type(values) is not dict:
+        raise ValueError('resources must be an object')
+    if 'service_payload_bytes' in config:
+        values = dict(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=None) | values
+    return RecordsResources(**values)
+
+
+def records_service_pool(config, context=None):
+    """One actual process-local pool shared by this entry's successive owners."""
+    if 'service_payload_bytes' not in config:
+        return None
+    from src.execution_provider.adapters.records_service_budget import RecordsPayloadPool
+    total = config['service_payload_bytes']
+    if type(total) is not int or total <= 0:
+        raise ValueError('service_payload_bytes must be positive integer payload bytes')
+    if context is None:
+        return RecordsPayloadPool(config['service_payload_bytes'])
+    pool = context.get('_records_payload_pool')
+    if pool is None:
+        pool = context['_records_payload_pool'] = RecordsPayloadPool(config['service_payload_bytes'])
+    if type(pool) is not RecordsPayloadPool or pool.total_bytes != config['service_payload_bytes']:
+        raise ValueError('session must retain its original service payload pool')
+    pool.snapshot()  # Enforce the original process before an owner is allocated.
+    return pool
+
+
 def core_capacity(config):
     from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity
 
@@ -37,11 +66,20 @@ def records_runtime(config, *, resources=None, engine=None):
     from src.execution_provider.adapters.records_profile import resolve_records_runtime
     from src.serving.backends.vllm_protocol import EngineSpec
 
-    resources = RecordsResources(**config.get('resources', {})) if resources is None else resources
+    resources = records_resources(config) if resources is None else resources
     engine = EngineSpec.from_dict(config['engine']) if engine is None else engine
     profile = config.get('profile') if 'profile' in config else core_profile(config)
     if 'async_limits' in config and type(config['async_limits']) is not dict:
         raise ValueError('async_limits must be an object')
+    if 'service_payload_bytes' in config:
+        if config.get('backend') not in ('semloom-core', 'semloom-local-model-core', ASYNC_CORE_BACKEND):
+            raise ValueError('service_payload_bytes requires an async Core backend')
+        if config.get('admission_cache') is not None:
+            raise ValueError('service payload plans do not yet support admission_cache')
+        from src.execution_provider.adapters.records_service_config import preview_service_records_runtime
+        return preview_service_records_runtime(engine, resources, config['service_payload_bytes'],
+            profile=profile, capacity=core_capacity(config), async_limits=config.get('async_limits'),
+            **record_batching_options(config))
     configured = resolve_records_runtime(engine, resources, profile, capacity=core_capacity(config),
         async_limits=config.get('async_limits'), prepared_batching=config.get('prepared_batching'),
         rolling_refill=config.get('rolling_refill', False))

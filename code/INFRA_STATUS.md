@@ -704,3 +704,19 @@ ready 的模型与 producer 身份、未确认清理及未取走结果共同决�
 未确认观测 RPC 使关闭继续报告 unknown；授予归还再次核对实时证明，不以采样线程停止或旧查询报告代替。
 [修订记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
 保存原独审反例与 CPU 检查。测试替身的来源期限字段另有修订；两者均仍需后续准确组合审查和专用环境续测。
+
+
+服务字节授予继续接入普通 Movie CLI／session：显式 service_payload_bytes 由纯预检生成计划，
+实际领取在 Ray 初始化前完成；同进程逐次查询共用原池，外来池不由 session 关闭。
+配置提取到 records_service_config，原始 R／结果槽缺省只在未配置池的路径保留。
+同进程清理使用原 owner、Ray module／job／node 身份，不初始化或连接替代 runtime；
+已确认关闭而仅结果待保存时可在 Ray 结束后继续本地转交。文件及父目录同步先于精确回执接受，
+写入失败、未知清理和未确认 RPC 继续保留授予与恢复句柄。
+[接线与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
+另有完整结果数组的纯计量与验证；尚未接 rolling 的实际 Method／结果持有，不能声称该路径已支持服务授予。
+本批未运行真实 Ray／模型／GPU，不提供物理 RAM 探测或跨进程重连；整个重构仍有未完成项。
+
+prepared 普通结果另减少重复拷贝：报告不再复制随后马上覆盖的 calls；永久关闭清除额外迭代引用，
+只在同一实际流健康 EOF 且 Core／transport／data RPC／审计交接均清空时借用原稳定结果快照。
+unknown 或缺证明时继续读取实时调用；完整交付字节由已核每项长度及原编码标点求和，不再编码整数组。
+这些操作不新增派发、接受或释放动作；服务 rolling 授予仍未接入，完整结果及保存所需载荷仍须另计。

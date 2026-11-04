@@ -207,7 +207,8 @@ class PreparedRecordsCore:
                 if (sorted(m['member']['index'] for m in members) != list(range(size))
                         or any(m['member']['size'] != size or not m['submission_confirmed'] for m in members)):
                     raise ValueError('completed transport batch has incomplete or changed membership')
-        return dict(deepcopy(report), calls=calls,
+        snapshot = deepcopy({name: value for name, value in report.items() if name != 'calls'})
+        return dict(snapshot, calls=calls,
             record_batching=deepcopy(self.execution_profile['record_batching']),
             transport_batches=[dict(batch_key=list(key), receipt_members=members) for key,members in groups.items()],
             unconsumed_call_results=[c for c in calls if c['call_id'] not in self._delivered],
@@ -219,9 +220,13 @@ class PreparedRecordsCore:
 
     def close(self, *, timeout=None):
         self._closed = True
-        if self.owner is not None:
-            self.owner.close(timeout=timeout)
-        return self.last_close_report
+        try:
+            if self.owner is not None:
+                self.owner.close(timeout=timeout)
+            return self.last_close_report
+        finally:
+            if self._active is not None:
+                self._active._clear_iteration()
 
 
 class _OrdinaryResults:
@@ -232,19 +237,54 @@ class _OrdinaryResults:
     def __iter__(self):
         return self
 
+    def _clear_iteration(self):
+        self.results = self.stream = None
+
+    def _completed_calls(self):
+        """Borrow the inner EOF snapshot only after its data ownership drains."""
+        inner, stream = self.owner.owner, self.stream
+        report = inner.last_close_report
+        if (stream is not inner._active or not stream.completed or stream.error is not None
+                or report is not stream.last_close_report or report is None
+                or report.get('status') != 'closed' or report.get('query_completed') is not True
+                or report.get('source_closed') is not True or report.get('source_exhausted') is not True
+                or report.get('model_retained') is not self.owner.resident
+                or (report.get('model_owner') or {}).get('status')
+                   != ('retained' if self.owner.resident else 'closed')):
+            return None
+        calls = report.get('calls')
+        if (type(calls) is not list or len(calls) != len(self.owner._expected)
+                or any(call.get('status') != 'succeeded' for call in calls)):
+            return None
+        # A successful report alone does not certify callbacks queued after it.
+        # These existing observations read the actual query owners, without
+        # changing any permit, acknowledgement or close responsibility.
+        try:
+            usage = asdict(inner.core.capacity.usage())
+            rpc = inner._actors._data_rpc_progress()
+            handoff = inner.transport.audit_handoff_report()
+            if (any(usage.values()) or inner.transport.retained_refs()
+                    or rpc.pending or rpc.inflight or rpc.batch_submits_pending or rpc.unconfirmed
+                    or handoff['pending_receipts'] or handoff['deferred_core_acks']):
+                return None
+        except Exception:
+            return None
+        return calls
+
     def __next__(self):
         if self.owner._closed or self.finished:
             raise StopIteration
         if self.results is None:
             for _ in self.stream:
                 pass  # The existing chain owns all per-member execution/progression.
-            self.results = iter(self.owner.owner.calls)
+            calls = self._completed_calls()
+            self.results = iter(self.owner.owner.calls if calls is None else calls)
         try:
             value = self.owner._ordinary(next(self.results))
         except StopIteration:
             self.finished = True
             self._report = deepcopy(self.owner.last_close_report)
-            self.results = self.stream = None
+            self._clear_iteration()
             raise
         self.owner._delivered.add(value['call_id'])
         return value

@@ -736,4 +736,6 @@ SQL、Ray任务、模型服务与结果消费具有各自的生命周期，不�
 
 普通 async records 的可选[服务载荷授予](src/execution_provider/adapters/README.md#service-payload-grants)
 将同一服务进程的有限字节分给实际模型 owner，再经原有 Core 和 IPC 派生请求与结果计数。
-无服务池的旧入口和参数保留；该 SDK 候选不探测硬件，也未接 CLI／rolling 或多进程服务。
+无服务池的旧入口和参数保留；普通 Movie CLI／session 已有显式字节声明接线，
+同进程恢复只使用原 owner／Ray 身份，结果保存后才明确转交。该候选不探测硬件，
+rolling 完整结果授予、多进程服务及重启恢复仍未接入。
