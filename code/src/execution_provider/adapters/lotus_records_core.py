@@ -651,14 +651,17 @@ class _CoreFeedback:
         self.completed_effective_work = (0, None, None)
         self.transition_keys.clear()
         self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
-        self.controller = ResourceFeedbackController(self.owner.resources.max_active_batches, initial, self.options)
+        source_age_limit = (max(.5, self.options.poll_interval_s * 3) if self.provider is None
+                            else self.provider.stale_after_s)
+        self.controller = ResourceFeedbackController(self.owner.resources.max_active_batches, initial, self.options,
+            source_stale_after_s=source_age_limit)
         self.controller.reset(initial, total, search_hint=search_hint)
         if self.provider is None:
             self.provider = NonBlockingMetricsObservationProvider(self._sample_for_provider,
                 poll_interval_s=self.options.poll_interval_s,
                 # Delivery already consumes up to two poll periods; allow one
                 # more for the gate's scheduled consumption of the source frame.
-                stale_after_s=max(.5, self.options.poll_interval_s * 3), close_timeout_s=.1)
+                stale_after_s=source_age_limit, close_timeout_s=.1)
         else:
             self.provider.poll_interval_s = self.options.poll_interval_s
             self.provider.resume()

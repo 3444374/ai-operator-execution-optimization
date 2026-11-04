@@ -563,10 +563,18 @@ class ResourceFeedbackController(AimdAdmissionController):
     min/max bands are conservative local evidence, never confidence intervals.
     """
 
-    def __init__(self, maximum, initial_window, options, *, clock=None):
+    def __init__(self, maximum, initial_window, options, *, clock=None, source_stale_after_s=None):
         import time
+        try:
+            valid_age = (source_stale_after_s is None or type(source_stale_after_s) in (int, float)
+                         and math.isfinite(source_stale_after_s) and source_stale_after_s >= 0)
+        except OverflowError:
+            valid_age = False
+        if not valid_age:
+            raise ValueError('source_stale_after_s must be finite and non-negative or unspecified')
         super().__init__(AimdConfig(min_window=1, max_window=maximum,
             low_load_running=maximum), initial_window)
+        self.source_stale_after_s = source_stale_after_s
         self.options, self.clock = options, clock or time.monotonic
         self.reset(initial_window, 0)
 
@@ -962,8 +970,11 @@ class ResourceFeedbackController(AimdAdmissionController):
 
     def _update(self, o):
         sample_clock = self.options.pressure_response == "sample"
+        # A bound provider owns source recency; the work window measures progress.
+        # Unbound callers keep the existing age rule until they supply that limit.
+        age_limit = self.options.window_s if self.source_stale_after_s is None else self.source_stale_after_s
         stale_age = (sample_clock and o.sample_age_s is not None
-                     and o.sample_age_s > min(o.observed_at_s, self.options.window_s))
+                     and o.sample_age_s > min(o.observed_at_s, age_limit))
         if not o.fresh or not o.has_service_metrics or stale_age:
             if self._probe_at is not None and self._exploration_time_left(o.observed_at_s) <= 0:
                 return self._stop("exploration_budget",o,rollback=True)
