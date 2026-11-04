@@ -7,6 +7,7 @@ import sys
 import uuid
 
 from src.baselines.common.private_artifacts import content_digest, file_identity, write_private_json
+from src.infrastructure.json_content import json_content_equal
 from src.execution_provider.adapters.records_runtime_identity import observe_ray_runtime
 
 
@@ -68,7 +69,7 @@ def _persist_snapshot(directory, prefix, snapshot):
             path = path.with_name(path.stem+'-'+uuid.uuid4().hex+path.suffix)
             write_private_json(path, snapshot)
             existing = snapshot
-        if existing != snapshot:
+        if not json_content_equal(existing, snapshot):
             raise ValueError('existing service accounting differs from its receipt snapshot')
     else:
         write_private_json(path, snapshot)

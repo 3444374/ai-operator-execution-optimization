@@ -18,6 +18,7 @@ import threading
 import time
 from typing import Any, Callable, Iterator
 
+from src.infrastructure.json_content import json_content_equal
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
@@ -775,7 +776,7 @@ class SemLoomRecordsCore:
             raise RuntimeError('close the query before taking its retained receipts')
         self._active.collect_receipts()
         taken = deepcopy(self._active.unconsumed_call_results)
-        if expected is not None and (type(expected) is not list or taken != expected):
+        if expected is not None and (type(expected) is not list or not json_content_equal(taken, expected)):
             raise ValueError('retained receipts changed before consumer acceptance')
         query = deepcopy(self.last_query_report)
         if query is not None:
