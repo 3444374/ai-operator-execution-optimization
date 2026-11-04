@@ -210,9 +210,13 @@ class MmqaNativeTests(unittest.TestCase):
         join = importlib.import_module("lotus.sem_ops.sem_join").SemJoinDataframe
         extract = importlib.import_module("lotus.sem_ops.sem_extract").SemExtractDataFrame
         saved = join.__call__, extract.__call__, LM.__call__
-        with fixture_server(status=401) as (endpoint, _):
+        with fixture_server(status=401) as (endpoint, calls):
             with self.assertRaises(Exception):
                 self.execute(endpoint)
+        self.assertGreater(len(calls), 0, "the test must reach native HTTP, not pass on an import error")
+        summary = json.loads((self.root / "result/summary.json").read_text())
+        self.assertEqual(summary["model_calls"], len(calls))
+        self.assertGreater(summary["unknown_or_failed_attempts"], 0)
         self.assertEqual((join.__call__, extract.__call__, LM.__call__), saved)
 
     def test_original_evaluator_checks_color_against_unchanged_full_gold(self):
