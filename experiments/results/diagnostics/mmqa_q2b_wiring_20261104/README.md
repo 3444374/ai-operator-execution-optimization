@@ -4,6 +4,26 @@
 用途是为不同于 Animals Q7 的 Join→Extract 依赖链准备一次有限观察；没有方法性能结论。
 输入、真实模型及正式观察的实际状态以本页证据为准。
 
+<a id="join-only-diagnostic"></a>
+## 固定 24 次的 Join 提示诊断入口
+
+[独立 CLI](../../../../code/scripts/experiments/run_mmqa_join_diagnostic.py)从现有父数据中选择两张原图，
+覆盖全部六种不同 Track，两种提示各 12 次，共用新的总 24 次预算；不是原 Q2b 子集成绩。
+它对每个 pair 调用固定 SDK 的原生单 pair `sem_join`，保留 formatter、parser 和原默认布尔行为，
+分别记录旧字符串提示与明确的 CoT 枚举提示。两臂参数及 user 内容相同，先后顺序在相邻 pair 间交替。
+完整 Q2b 的策略参数解释由[适配模块](../../../../code/src/baselines/image/sembench_mmqa_compat.py)拥有，
+诊断不调用 `_execute_q2b`、不放行 Extract，也不把父数据的完整额度改成 24。
+
+选择文件绑定父 manifest、原源码、图片、全部六种 Track 及其来源行；执行校验准确源码与新预算。
+错误、未知、集合外请求及记录错误都停止后续调用，已扣计不退还，预热与重试为 0。
+HTTP 失败响应副本用既有 redactor 清洗后落盘，原摘要分列；网关退出或清理失败时整体记录为失败。
+真实模型和服务身份仍由实际运行会话先核对，worker 监督与输出、预算及租约按原有组件处理。
+
+[用法与全部参数](../../../../code/scripts/README.md#mmqa-join-diagnostic)及
+[CPU 用例](../../../../code/tests/experiments/test_mmqa_join_diagnostic.py)随代码发布；
+新增 CPU 日志、请求及监督原件保留仓外，维护者可按 `semloom.mmqa_join_diagnostic.cpu.20261104` 提供摘要匹配的记录。
+这不发布新的证据归档，不作质量或性能判断；新策略的真实功能观察仍待协调。
+
 SemBench 固定为 `c814e3807e72d4cf876b852b17e77f3cc94575c2`，
 调用[官方 `_execute_q2b`](https://github.com/SemBench/SemBench/blob/c814e3807e72d4cf876b852b17e77f3cc94575c2/src/scenario/mmqa/runner/lotus_runner/lotus_runner.py)。
 上游声明 LOTUS 1.1.3，本入口选择已有可核源码的 LOTUS 1.2.4、LiteLLM 1.95.0 与 OpenAI 2.50.0，
@@ -176,7 +196,9 @@ python3 experiments/results/diagnostics/mmqa_q2b_wiring_20261104/verify_evidence
 `PYTHONPATH=code python -B -m unittest tests.experiments.test_processor_receipt tests.experiments.test_mmqa_service_observer -v`。
 新修正尚待独立复审，没有启动 vLLM、模型或 GPU；真实 processor 身份、JSON Extract 和 GPU 完整链复验仍 pending。
 
-## 后续 GPU 观察的准备
+## 完整 Q2b 的后续观察要求
+
+下述条款适用于需要完整 Q2b 的运行，不替代上面的固定 24 次提示诊断。
 
 由 GPU 会话重新核对服务器空闲、独立源码版本、原始数据 manifest、模型与 processor revision、tokenizer 摘要、
 服务参数和资源上限后运行。下次仍只做一个 native Q2b，不附加优化臂，不隐藏 warm-up，不自动重试或调整参数。

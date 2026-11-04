@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-11-04：增加独立 Join 提示诊断入口
+
+从已审运行源码 `2ad0032b` 建立独立代码分支，新增固定 24 次、两种提示、单请求和禁止 Extract 的诊断；复用原 formatter／parser、持久记账与监督，正式 Q2b 不改。新增原始 CPU 记录留在仓外供独审，代码发布不携带额外证据归档，真实模型尚未运行。[入口与保存说明](code/scripts/README.md#mmqa-join-diagnostic)。
+
 ## 2026-11-04：独立修正 MMQA 服务辅助记录
 
 首次真实模型观察因逐请求 UUID 占满辅助配置记录而在 Join 停止，旧 325 次尝试与其中 1 次未知保留计费。独立实验分支把仅记录 processor／模型身份的模块纳入版本管理，保留原查询、服务语义、阶段及请求轨迹，不提高旧容量数值；原件复核与 CPU 验证见[同一接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#service-observer-capacity)。本次不重跑 GPU，也不合入 main。

@@ -265,6 +265,50 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_mmqa.p
 每次使用新的仓库外输出目录，不覆盖或重用先前预算。`--preflight`与`--prepare`均不调用模型。
 新增 CLI 在最终异常输出处先脱敏再写 stderr，保留错误类型与退出状态；原 Python 查询 API 继续向调用方抛出原异常。CPU 原件、副本与核验入口见[证据映射](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#evidence-retrieval)。
 
+<a id="mmqa-join-diagnostic"></a>
+## MMQA 两种提示的 Join 诊断
+
+[`run_mmqa_join_diagnostic.py`](experiments/run_mmqa_join_diagnostic.py)是独立诊断入口，
+不运行完整 Q2b。它从已核对的父 manifest 中显式选择两张图，保留全部六种不同 Track，
+每种提示各 12 次请求，共用新建的 24 次持久预算。CSV 中相同 Track 的来源行仍登记在选择文件中。
+两种提示为 LOTUS 1.2.4 的原字符串分支与明确的 `ZS_COT` 枚举分支；仅系统提示不同。
+固定单请求执行，在相邻 pair 间交替两臂先后；调度归该诊断循环，不作为原 Q2b 或性能比较。
+
+先由调用方指定两张原图；诊断建议中的一张原 gold 图片和一张旧观察的非 gold 图片需要按既有记录选择，
+入口不会猜图片名或运行额外模型探针。父数据、原源码、图片身份、六种 Track 和两臂都由选择摘要绑定：
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_mmqa_join_diagnostic.py \
+  --checkout "$SEMBENCH_CHECKOUT" --manifest "$MMQA_MANIFEST" --manifest-digest "$MMQA_MANIFEST_SHA256" \
+  --prepare-selection --images "$FIRST_IMAGE_NAME" "$SECOND_IMAGE_NAME" --output "$JOIN_SELECTION_JSON"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_mmqa_join_diagnostic.py \
+  --checkout "$SEMBENCH_CHECKOUT" --manifest "$MMQA_MANIFEST" --manifest-digest "$MMQA_MANIFEST_SHA256" \
+  --preflight --selection "$JOIN_SELECTION_JSON" --selection-digest "$JOIN_SELECTION_SHA256"
+```
+
+`JOIN_SELECTION_SHA256` 取第一条命令输出。上述两条均为零模型准备，preflight 只核对输入。
+真实运行前仍按 runtime 流程检查独立 driver、服务、实际模型与 processor 身份，并使用准确且干净的 Git 版本。
+父 manifest 的完整 Q2b 额度不作为本诊断额度；旧关闭预算不能复用。执行使用新输出目录和明确上限：
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_mmqa_join_diagnostic.py \
+  --checkout "$SEMBENCH_CHECKOUT" --manifest "$MMQA_MANIFEST" --manifest-digest "$MMQA_MANIFEST_SHA256" \
+  --execute --selection "$JOIN_SELECTION_JSON" --selection-digest "$JOIN_SELECTION_SHA256" \
+  --output "$JOIN_DIAGNOSTIC_OUTPUT" --repository-commit "$VERIFIED_COMMIT" --lease-root "$JOIN_QUERY_LEASE_ROOT" \
+  --model "$MODEL_CONFIG_JSON" --model-profile "$MODEL_PROFILE_JSON" --tokenizer "$TOKENIZER_JSON" \
+  --max-attempts 24 --concurrency 1 --max-tokens "$MAX_OUTPUT_TOKENS" \
+  --max-request-bytes "$MAX_REQUEST_BYTES" --max-prepared-bytes "$MAX_PREPARED_BYTES" \
+  --max-result-bytes "$MAX_RESULT_BYTES" --deadline-seconds "$DIAGNOSTIC_DEADLINE_SECONDS"
+```
+
+总时长须为 1～1200 秒，输出 token 为 1～8192，字节上限为正整数；分别检查单请求、全部准备消息和单响应的逻辑大小，不等于硬 RSS 限额。没有隐藏预热或自动重试。
+外层服务控制会话持有实际主机租约时，`JOIN_QUERY_LEASE_ROOT` 使用该运行内的查询租约目录。
+每次推理发送前持久扣计；HTTP 错误、未知响应或解析异常停止后续 pair，已扣计不退还。
+所有请求须与当前选定 pair 的原生 formatter 消息一致，参数跨臂一致，`response_format` 被拒绝；
+Extract accessor 同时被禁止。失败响应的落盘副本脱敏并登记原字节摘要，发给原 SDK 的字节保持原样。
+summary／footer、预算、worker 与租约须一并核对；客户端退出不证明远端 GPU 已停止。
+新 CPU 原始记录保留仓外，本次 Git 只保存代码、测试与使用说明；[实现与诊断定位](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#join-only-diagnostic)。
+
 ## Animals 原版图文 Q1
 
 `experiments/run_sembench_animals.py`要求`--checkout`、`--manifest`和`--manifest-digest`。

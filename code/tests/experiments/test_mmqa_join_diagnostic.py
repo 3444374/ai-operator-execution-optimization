@@ -1,6 +1,7 @@
 """Exactly24 synthetic Join calls, transport stops, no Extract and unchanged Q2b."""
 
 from collections import Counter
+import base64
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib
@@ -21,7 +22,7 @@ from tests.experiments.test_mmqa_service_observer import full_fixture_dataset
 
 
 @contextmanager
-def diagnostic_server(*, fail_at=None, unknown=False):
+def diagnostic_server(*, fail_at=None, unknown=False, error_status=500, error_bytes=None):
     calls = []
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -35,14 +36,14 @@ def diagnostic_server(*, fail_at=None, unknown=False):
                 self.connection.shutdown(socket.SHUT_RDWR)
                 self.connection.close()
                 return
-            status = 500 if number == fail_at else 200
+            status = error_status if number == fail_at else 200
             cot = "Let's think step by step." in value["messages"][0]["content"]
             content = "Reasoning:\nTrue is rejected.\n\nAnswer: False" if cot else "Answer: True"
-            response = (dict(error=dict(message="fixture transport failure", type="fixture")) if status == 500 else
+            response = (dict(error=dict(message="password=synthetic-diagnostic-sensitive-value", type="fixture")) if number == fail_at else
                 dict(id=f"fixture-{number}", object="chat.completion", created=1, model="fixture-mmqa",
                     choices=[dict(index=0, message=dict(role="assistant", content=content), finish_reason="stop")],
                     usage=dict(prompt_tokens=2, completion_tokens=1, total_tokens=3)))
-            raw = json.dumps(response).encode()
+            raw = error_bytes if number == fail_at and error_bytes is not None else json.dumps(response).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(raw)))
@@ -159,6 +160,13 @@ class DiagnosticNativeTests(unittest.TestCase):
         self.assertEqual((value["status"], value["known_http_completed"], value["unknown_or_failed_attempts"]), ("failed", 6, 1))
         self.assertEqual(len(value["results"]), 6)
         self.assertEqual(value["extract_calls"], 0)
+        rows = [json.loads(s) for s in (self.root / "result/responses.jsonl").read_text().splitlines()]
+        error = next(r for r in rows if r["status"] == 500)
+        saved = base64.b64decode(error["body_base64"]).decode()
+        self.assertNotIn("synthetic-diagnostic-sensitive-value", saved)
+        self.assertIn("password=***", saved)
+        self.assertTrue(error["failure_copy_redacted"])
+        self.assertEqual(len(error["original_response_sha256"]), 64)
 
     def test_unknown_response_stops_without_retry_or_refund(self):
         with diagnostic_server(fail_at=7, unknown=True) as (endpoint, calls):
@@ -170,6 +178,36 @@ class DiagnosticNativeTests(unittest.TestCase):
         trace = [json.loads(s) for s in (self.root / "result/http-trace.jsonl").read_text().splitlines()]
         self.assertEqual(len(trace), 7)
         self.assertTrue(all(r["retry_count"] == 0 for r in trace))
+
+    def test_cleanup_failure_keeps_summary_and_footer_failed_after_all24_calls(self):
+        from src.observability.request_gateway import ObservationGateway
+        original = ObservationGateway.__exit__
+        def failed_exit(gateway, *args):
+            original(gateway, *args)
+            raise RuntimeError("fixture gateway cleanup failure")
+        with diagnostic_server() as (endpoint, calls), patch.object(ObservationGateway, "__exit__", failed_exit):
+            with self.assertRaisesRegex(RuntimeError, "cleanup failure"):
+                self.execute(endpoint)
+        self.assertEqual((len(calls), self.unit.attempts), (24, 24))
+        for name in ("summary.json", "observation-footer.json"):
+            self.assertEqual(json.loads((self.root / "result" / name).read_text())["status"], "failed")
+
+    def test_error_body_is_sanitized_for_success_status_or_opaque_failure(self):
+        original_root = self.root
+        for label, status, raw in (("status200", 200, None),
+                                   ("opaque500", 500, b'\xffpassword=synthetic-diagnostic-sensitive-value')):
+            with self.subTest(label=label):
+                self.root = original_root / label
+                self.root.mkdir()
+                with diagnostic_server(fail_at=1, error_status=status, error_bytes=raw) as (endpoint, calls):
+                    with self.assertRaises(Exception):
+                        self.execute(endpoint)
+                self.assertEqual((len(calls), self.unit.attempts), (1, 1))
+                row = json.loads((self.root / "result/responses.jsonl").read_text().splitlines()[0])
+                saved = base64.b64decode(row["body_base64"]).decode()
+                self.assertNotIn("synthetic-diagnostic-sensitive-value", saved)
+                self.assertTrue(row["failure_copy_redacted"])
+                self.assertIsInstance(json.loads(saved), dict)
 
     def test_extract_guard_restores_after_exception(self):
         Extract = importlib.import_module("lotus.sem_ops.sem_extract").SemExtractDataFrame

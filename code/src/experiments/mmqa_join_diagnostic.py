@@ -14,7 +14,7 @@ import time
 
 from src.baselines.common.private_artifacts import (content_digest, file_identity, new_private_directory,
     open_private_text, publish_private_json, write_private_json)
-from src.baselines.common.redact import redact_text
+from src.baselines.common.redact import redact_text, redact_json_values
 from src.baselines.image.sembench_mmqa import MmqaDataset
 from src.baselines.image.sembench_mmqa_compat import PROFILE_ID, validate_strategy_source
 from src.experiments.attempt_ledger import AttemptBudget
@@ -158,10 +158,27 @@ def run_diagnostic(dataset, selection, model, *, output, unit, tokenizer, profil
             def after(_route, body, response, status):
                 if len(response) > max_result_bytes:
                     raise ValueError("diagnostic response exceeds the declared maximum")
+                saved = response
+                error_response = not 200 <= status < 300
+                try:
+                    text = response.decode("utf-8")
+                    try:
+                        structured = json.loads(text)
+                    except json.JSONDecodeError:
+                        structured = None
+                    error_response = error_response or isinstance(structured, dict) and structured.get("error") is not None
+                    if error_response:
+                        saved = (json.dumps(redact_json_values(structured), ensure_ascii=False).encode("utf-8")
+                                 if structured is not None else redact_text(text).encode("utf-8"))
+                except UnicodeDecodeError:
+                    if error_response:
+                        saved = b'{"error_body_omitted":"non-UTF8 response; original identity retained"}'
                 responses.write(json.dumps(dict(index=state["active"]["index"], status=status,
-                    request_sha256=hashlib.sha256(body).hexdigest(), body_base64=base64.b64encode(response).decode(),
+                    request_sha256=hashlib.sha256(body).hexdigest(), body_base64=base64.b64encode(saved).decode(),
+                    original_response_sha256=hashlib.sha256(response).hexdigest(), original_response_bytes=len(response),
+                    failure_copy_redacted=error_response,
                     observed_monotonic_ns=time.monotonic_ns())) + "\n")
-                state["http_failed"] = not 200 <= status < 300
+                state["http_failed"] = error_response
 
             with ObservationGateway(routes=(GatewayRoute("join-diagnostic", "model", model.endpoint_url),),
                     trace_path=output / "http-trace.jsonl", request_timeout_s=model.timeout_ms / 1000,
@@ -203,7 +220,7 @@ def run_diagnostic(dataset, selection, model, *, output, unit, tokenizer, profil
             unknown_or_failed_attempts=unit.attempts - sum(r["status"] == "completed" for r in trace),
             unconfirmed_responses=sum(r["forwarded"] and r["upstream_response_status"] is None for r in trace))
         if failure is not None:
-            summary.update(error_type=type(failure).__name__, error=redact_text(str(failure)))
+            summary.update(status="failed", error_type=type(failure).__name__, error=redact_text(str(failure)))
         try:
             write_private_json(output / "summary.json", summary)
             write_private_json(output / "observation-footer.json", dict(status=summary["status"],
