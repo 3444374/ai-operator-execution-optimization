@@ -25,6 +25,9 @@
 继续 PID 配置切片拒绝非法计数和数值，16 条有效轨迹／112 次决定不变；相关 195 项成功，无失败、错误或跳过。
 [该批摘要](diagnostics/records_runtime_refactor_20261104/raw/pid_configuration_checks.json)保留改前问题，
 五条历史映射只增加原件来源，原十处不匹配未改报通过。
+请求准入计数继续切片拒绝布尔／小数计数与非法间隔，相关 291 项成功，无失败、错误或跳过；
+[检查摘要](diagnostics/records_runtime_refactor_20261104/raw/admission_count_checks.json)
+保留改前反例，原额度、间隔默认值及控制算法保持，仍待独审。
 
 <a id="records-owner-context-compat-cpu"></a>
 ## 2026-11-03：独审反例后的owner与IMLane上下文兼容
