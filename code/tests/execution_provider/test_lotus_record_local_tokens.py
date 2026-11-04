@@ -185,20 +185,21 @@ class QueryTokenTests(unittest.TestCase):
         costs = [budget.estimate(row, plan.stages[0].generation)["reserved_tokens"] for row in run.prepared]
         W = max(costs)
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        original = AsyncCoreModelActor._try_core
         def hold_first(actor, *args):
             result = original(actor, *args)
-            if args[0][0]["source_position"] == 0:
+            if result['status'] == 'accepted' and args[0][0]["source_position"] == 0:
                 ready.set()
                 if not release.wait(5):
                     raise TimeoutError("CPU test did not release the first receipt")
             return result
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_first):
+                patch.object(AsyncCoreModelActor, "_try_core", hold_first):
             owner = self.owner(plan, budget=self.budget(plan, W))
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
                 self.until(stream, ready.is_set)
+                self.until(stream, lambda: any(e['event'] == 'start' for e in self.events()))
                 for _ in range(6):
                     stream._tick()
                 usage = owner.core.capacity.usage()
@@ -283,15 +284,16 @@ class QueryTokenTests(unittest.TestCase):
         plan, rows = fixture.chain_for("MM"), fixture.source_rows(size=1)
         self.responses(plan, rows)
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        original = AsyncCoreModelActor._try_core
         def hold_delivery(actor, *args):
             value = original(actor, *args)
-            ready.set()
-            if not release.wait(5):
-                raise TimeoutError("CPU test did not release the late receipt")
+            if value['status'] == 'accepted':
+                ready.set()
+                if not release.wait(5):
+                    raise TimeoutError("CPU test did not release the late receipt")
             return value
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_delivery):
+                patch.object(AsyncCoreModelActor, "_try_core", hold_delivery):
             owner = self.owner(plan, budget=self.budget(plan), C=1)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:

@@ -13,7 +13,7 @@ from src.scheduling.core.session_policy import TaskCandidate
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.serving.backends.async_engine_process import _frame
-from src.serving.backends.vllm_engine import GenerationSpec
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.scheduling.test_incremental_session import setup
 
 
@@ -46,9 +46,11 @@ def organizer(rows, *, skip=False, C=16, active=0, R=128, B=4096, **limits):
     actor_limits = dict(max_inflight=R, result_slots=R, result_bytes=R*8192,
                         item_result_bytes=8192, input_bytes=2**20, item_input_bytes=2**18)
     actor_limits.update(limits)
-    owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=R),
+    engine = EngineSpec('/tmp/token-packing-model', sys.executable, sys.executable,
+        max_model_len=4096)  # Explicit synthetic context, no native model readiness.
+    owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=R), engine=engine,
         core=SimpleNamespace(capacity=SimpleNamespace(records=records)),
-        _actors=SimpleNamespace(limits=SimpleNamespace(**actor_limits)),
+        _actors=SimpleNamespace(limits=SimpleNamespace(**actor_limits), model_ready=None),
         prepared_batching=PreparedBatching('token_budget', None, B), rolling_refill=True,
         request_feedback=None, deadline=1e9, experimental_skip_token_packing=skip)
     tokens = WordCountTokenizer()

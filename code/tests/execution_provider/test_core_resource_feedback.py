@@ -110,8 +110,18 @@ class CoreFeedbackTests(unittest.TestCase):
                 try:
                     stream=owner.evaluate(Source(rows),query_id='same-input');values=list(stream)
                     outputs.append([(r['source_position'],r['text'],r['total_tokens']) for r in sorted(values,key=lambda r:r['source_position'])])
-                    prompts.append([row['messages_json'] for e in fake.events if e[:2]==('submit','AsyncCoreModelActor.run_core')
-                        for row in e[3][0].value.result(2)])
+                    prepared = {}
+                    for event in fake.events:
+                        if event[:2] != ('submit', 'AsyncCoreModelActor.try_submit_core'):
+                            continue
+                        for row in event[3][0].value.result(2):
+                            occurrence = tuple(row[name] for name in
+                                ('query_id', 'row_id', 'source_position', 'call_index'))
+                            if occurrence in prepared:
+                                self.assertEqual(prepared[occurrence], row['messages_json'])
+                            prepared[occurrence] = row['messages_json']
+                    self.assertEqual(len(prepared), len(rows))
+                    prompts.append(prepared)
                     self.assertEqual(len(values),64);self.assertEqual(len({r['call_id'] for r in values}),64)
                     self.assertEqual(fake.async_actors[0].instance.engine._sequence,64)
                     self.assertEqual(owner.core.capacity.usage().held_tasks,0)
@@ -294,10 +304,11 @@ class CoreFeedbackTests(unittest.TestCase):
                     qid='method-'+str(index)
                     stream=owner.evaluate(Source(rows),query_id=qid,method=method)
                     values=list(stream)
-                    prepared=[row for event in fake.events if event[:2]==('submit','AsyncCoreModelActor.run_core')
+                    prepared=[row for event in fake.events if event[:2]==('submit','AsyncCoreModelActor.try_submit_core')
                               for row in event[3][0].value.result(2) if row['query_id']==qid]
                     expected=formatter(bind(method)).prepare_rows([dict(row,**identity(qid,row['row_id'],row['source_position'])) for row in rows])
                     actual={row['row_id']:row['messages_json'] for row in prepared}
+                    self.assertEqual(set(actual), {row['row_id'] for row in rows})
                     self.assertEqual(actual,{row['row_id']:row['messages_json'] for row in expected})
                     captured.append(actual['r0']);self.assertEqual(len(values),4)
                 self.assertNotEqual(captured[0],captured[1]);self.assertNotEqual(captured[1],captured[2])

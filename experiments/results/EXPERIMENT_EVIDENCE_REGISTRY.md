@@ -28,6 +28,10 @@
 请求准入计数继续切片拒绝布尔／小数计数与非法间隔，相关 291 项成功，无失败、错误或跳过；
 [检查摘要](diagnostics/records_runtime_refactor_20261104/raw/admission_count_checks.json)
 保留改前反例，原额度、间隔默认值及控制算法保持，仍待独审。
+测试接线继续切片保留原断言，修正 fixture 与已替换接口的差异；生产代码未改。
+完整 668 个不同方法为 666 成功、1 个动态增长失败、1 个真实 Ray 资格跳过，错误为零；
+[摘要](diagnostics/records_runtime_refactor_20261104/raw/fixture_checks.json)保留全部早期输出摘要和原断言核对。
+采样时序问题仍未解决，不能以本轮修复 prompt 审计和 token 暂停点声称整体通过。
 
 <a id="records-owner-context-compat-cpu"></a>
 ## 2026-11-03：独审反例后的owner与IMLane上下文兼容

@@ -2,6 +2,7 @@
 from dataclasses import asdict, replace
 import json
 import random
+import sys
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -11,7 +12,7 @@ from src.scheduling.core.session_contract import TaskKey
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_process import _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS, _prepared
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
 
 
 # Frozen 72fe2ed9 selection oracle; production never imports this implementation.
@@ -105,11 +106,17 @@ def candidate(index, *, session=1, text='full 雪🙂\n"\\\t prompt', stage='sta
         task=SimpleNamespace(payload=json.dumps(payload, ensure_ascii=False).encode(), max_result_bytes=8192))
 
 
-def organizer(candidates, *, legacy=False, B=1000000, R=None, limits=None, rolling=False, deadline=123.456):
+def organizer(candidates, *, legacy=False, B=1000000, R=None, limits=None, rolling=False,
+              deadline=123.456, context_length=4096):
     R = max(1, len(candidates)) if R is None else R
     limits = limits or AsyncEngineLimits(max_inflight=R, result_slots=R, result_bytes=R*8192,
         item_result_bytes=8192, input_bytes=64*1024**2, item_input_bytes=2*1024**2)
-    owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=R), _actors=SimpleNamespace(limits=limits),
+    # Frame tests declare a finite synthetic model context; no model is started
+    # and no native ready receipt is fabricated for the pre-start checks.
+    engine = EngineSpec('/tmp/frame-metering-model', sys.executable, sys.executable,
+        max_model_len=context_length)
+    owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=R), engine=engine,
+        _actors=SimpleNamespace(limits=limits, model_ready=None),
         core=SimpleNamespace(capacity=SimpleNamespace(records={c.key: SimpleNamespace(compute=False, member=None)
             for c in candidates})), prepared_batching=SimpleNamespace(token_budget=B),
         rolling_refill=rolling, request_feedback=None, deadline=deadline)
@@ -134,6 +141,20 @@ def replay(candidates, **options):
 
 
 class RequestFrameMeteringTests(unittest.TestCase):
+    def test_complete_request_still_rejects_explicit_context_overflow(self):
+        values = [candidate(0, text='word '*5000)]
+        value = organizer(values)
+        with self.assertRaisesRegex(ValueError, 'context'):
+            value(values)
+        self.assertEqual(value.selected, 0)
+        self.assertEqual(value._estimates, {})
+
+    def test_omitted_context_without_ready_is_not_treated_as_unlimited(self):
+        values = [candidate(0)]
+        value = organizer(values, context_length=None)
+        with self.assertRaisesRegex(RuntimeError, 'effective model context'):
+            value(values)
+
     def assert_replay(self, candidates, **options):
         expected = replay(candidates, legacy=True, **options)
         self.assertEqual(replay(candidates, **options), expected)
