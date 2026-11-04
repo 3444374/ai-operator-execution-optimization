@@ -11,7 +11,7 @@ import weakref
 
 from .records_feedback_observation import (
     audit_integer, qualify_resource_observation, resource_probe_view,
-    snapshot_response_header,
+    snapshot_response_header, snapshot_rpc_report as _snapshot_rpc_report,
 )
 
 
@@ -62,6 +62,16 @@ class RecordsNativeSampler:
         if self.provider is not None:
             self.provider.close()
         self._reap_stopped_snapshot(cancel=True)
+
+    def snapshot_rpc_report(self):
+        """Read current RPC proof, collecting only after the existing sampler stops."""
+        self._reap_stopped_snapshot()
+        with self._snapshot_lock:
+            return _snapshot_rpc_report(
+                request=None if self._snapshot_request is None else dict(self._snapshot_request),
+                receipts=list(self.snapshot_rpc_receipts), requests=self.requests, errors=self.errors,
+                closed=self.closed, ref_retained=self.ref is not None, future_retained=self.future is not None,
+                sampler_stopped=self.provider is None or not self.provider.is_running)
 
     def _sample_age_limit(self):
         return self.options.window_s

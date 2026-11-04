@@ -309,3 +309,22 @@ LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
 [本轮记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants)
 说明实际选择、反例与未执行项。总字节仍须由服务配置提供，不代表实际 RAM、Ray 对象或 GPU／KV，
 本批没有真实 Ray 或模型资格。CLI、prepared／rolling 和跨进程授予未接入。
+
+
+## 2026-11-04 服务授予等待观测 RPC
+
+[观测持有检查](execution_provider/test_service_feedback_rpc_retention.py)使用实际 Core／actor／CPU 私有管道，
+控制原 snapshot RPC 的返回；Ray、模型及资源负责者元数据是显式 fixture。
+检查线程已停但 RPC 未结束、仅本地 Future 取消、原 RPC 抛错、两个半额 owner 和晚到终态；
+查询的旧报告保持，关闭时读取当前 sampler，不能把停止或取消当成额度已归还。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
+LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
+  tests.execution_provider.test_service_feedback_rpc_retention \
+  tests.execution_provider.test_records_service_budget \
+  tests.execution_provider.test_records_service_owner -v
+```
+
+[本轮记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
+保留四项原反例。真实 Ray、模型及自动 RAM 探测不由该检查证明。

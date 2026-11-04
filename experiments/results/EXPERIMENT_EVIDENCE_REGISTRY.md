@@ -1443,3 +1443,9 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 真实 Ray 前置检查暴露的[provider 替身修订](diagnostics/records_runtime_refactor_20261104/README.md#ray-provider-fixture)
 仅修改测试构造参数保存；原服务器五项中四成功一报错、模型未启动的结果继续保留。
 本地 CPU 选择 143 成功、五项真实 Ray 未执行；补丁需独审和专用环境续测，不提供模型或性能结论。
+
+
+服务授予的[观测 RPC 持有修订](diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
+修正采样线程停止后仍有原 RPC 等待却归还字节的问题；四项原反例和独审探针保持。
+实际组合另含测试替身修订，CPU 2005 成功、45 未执行，七项新增检查均通过。
+只支持 CPU 工程判断，不提供真实 Ray／模型、自动 RAM 或完整项目完成结论。

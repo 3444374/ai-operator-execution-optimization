@@ -245,6 +245,16 @@ class RecordsPayloadGrant:
             model = report.get('model_owner') or {}
             usage = None if owner.core is None else asdict(owner.core.capacity.usage())
             rpc = owner._actors._data_rpc_progress()
+            feedback = owner._feedback
+            if feedback is not None:
+                snapshot_report = getattr(feedback, 'snapshot_rpc_report', None)
+                if not callable(snapshot_report):
+                    return False
+                try:
+                    if snapshot_report().get('snapshot_rpc_terminal_evidence_complete') is not True:
+                        return False
+                except Exception:
+                    return False
             closed_identity = model.get('model_ready') or {}
             if (not owner._closing or report.get('status') != 'closed'
                     or model.get('status') != 'closed'

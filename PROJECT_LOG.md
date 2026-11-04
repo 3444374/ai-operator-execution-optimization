@@ -11012,3 +11012,12 @@ IdleProvider 先前忽略来源期限参数，导致下一查询复用时报缺�
 本批仅修测试替身并加三项默认 CPU 反例，相关 143 项成功、五项真实 Ray 未运行。
 [原失败和本地检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-provider-fixture)
 均保留；待独审后由专用会话按准确新源码续测，模型尚未在本批启动。
+
+
+## 2026-11-04 服务载荷授予保留至观测 RPC 终态
+
+按独审反例补查 sampler 的当前 RPC 终态，线程停止或本地 Future 取消不再提前归还服务字节。
+关闭报告与授予归还复用原 sampler／Future，旧查询报告保留，不发替代请求。
+[完整组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
+包含独立测试替身修订：2005 项成功、45 未执行，历史来源及实际模型设置保持；候选待复审，未推送或合并。
+CLI／session、rolling 的实际结果授予、恢复和实机验证仍未完成。

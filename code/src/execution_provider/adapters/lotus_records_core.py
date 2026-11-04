@@ -616,6 +616,17 @@ class SemLoomRecordsCore:
         actor_report = closed["model_owner"]
         transport_closed, retirement = closed["transport_closed"], closed["producer_retirement"]
         errors.extend(closed["cleanup_errors"])
+        feedback_close = None
+        snapshot_report = getattr(self._feedback, 'snapshot_rpc_report', None)
+        if callable(snapshot_report):
+            try:
+                feedback_close = snapshot_report()
+                if feedback_close.get('snapshot_rpc_terminal_evidence_complete') is not True:
+                    errors.append('feedback_snapshot_rpc_terminal_unconfirmed')
+            except BaseException as error:
+                errors.append('feedback_snapshot_report: ' + type(error).__name__)
+                feedback_close = dict(snapshot_rpc_terminal_evidence_complete=False,
+                                      report_error_type=type(error).__name__)
         if self._active is not None:
             self._active.collect_receipts()
             if self.last_query_report is not None:
@@ -642,6 +653,8 @@ class SemLoomRecordsCore:
                 or not self._feedback.provider.is_running,
             "work_unit": "model_calls",
         }
+        if feedback_close is not None:
+            self.last_close_report['feedback_close'] = feedback_close
         if getattr(self, '_service_allocation', None) is not None:
             self._service_allocation.settle(self)
             self.last_close_report['service_allocation'] = self._service_allocation.describe()

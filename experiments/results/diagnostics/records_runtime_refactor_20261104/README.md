@@ -1213,3 +1213,35 @@ private_original 校验字段指规范化前原件，失败身份、栈行号、
 修订后的相关选择为 148 项、143 成功、五项真实 Ray 方法未执行，无失败错误；全部 1316 个代码摘要匹配。
 生产源码保持不变；这不补报本地真实 Ray 或模型资格，也不解决另行审查的服务池未确认观测 RPC 问题。
 补丁仍待独审及专用会话在后续准确源码上续测，不推送或合并 main。
+
+
+<a id="service-snapshot-retention"></a>
+### 服务授予等待原观测 RPC 的终态证明
+
+3f47 独审发现旧反例：采样线程已停、计算 RPC 已归还，但原 snapshot RPC 的 Future 仍未结束时，
+授予却被归还，8,274,688 字节可被另一 owner 重领。原探针、失败和审查保留，摘要见
+[本轮检查](raw/service_snapshot_checks.json)。这是真实 Core／actor／CPU 私有管道加显式 Ray／模型替身的工程反例，
+没有据此声称发生真实 Ray、模型或 RAM 行为。
+
+本批在 3f47 上先组合 c7ba0740 的测试替身修订，三个文档的追加段落均保留；其测试源码逐字节相同。
+随后复用 records_feedback_observation.snapshot_rpc_report 纯解析及 RecordsNativeSampler 的原 Future 收取过程，
+新增同名方法只在原采样线程停止后收取，并在原锁中读当前请求／引用／终态回执。
+现代普通 Core 关闭使用该实时证明；未完整时继续报告 unknown。授予归还再次核对实时 sampler，
+不读取旧查询 finish 报告来猜测已完成，也不把仅本地 Future 的取消当成远端返回。
+实际返回或抛错后，可以在其他持有与结果转交均完成时归还；不发替代 RPC，不改模型结果或动态策略。
+
+[四项常驻反例](../../../../code/tests/execution_provider/test_service_feedback_rpc_retention.py)修订前均复现错误关闭，
+修订后覆盖原 RPC 仍等待、真实异常终态、取消本地读 Future、第二 owner 及两个半额 owner 的字节责任。
+取消读 Future 的用例最后只恢复同一原 RPC Future 来收取已返回的 CPU 证据，没有实现跨进程恢复。
+旧查询报告继续保留当时未完整的状态，关闭报告单独记录 feedback_close 当前证明。
+[逐方法原记录](raw/service_snapshot_methods.json.gz)准确保存修订前、相关检查及完整组合三次运行。
+
+准确完整组合为 2050 项选中、2042 运行、2005 成功，无失败或错误；37 方法及两个类的八方法未执行，共 45 项。
+其中六项需要真实 Ray，其余固定 SDK／源码／SemBench 等缺项保持原原因。四项新 RPC 检查和三项替身检查均通过；
+各轮选择重叠，不能累计成功数。全部 1320 个代码摘要匹配；五份历史投影的 3010 条来源准确，原失败记录不改写。
+_CoreFeedback 的语法树、四份动态专项源码、原生模型参数和 baseline 源码保持。
+
+本组合仍待独审，未推送或合并。CLI／session、rolling 和恢复仍未接入；不能把逻辑授予当自动 RAM 探测。
+rolling 还须对实际 Method 驻留及整份未消费原回执另行授予，不能仅沿用 R 份结果；完整投影也含身份和传输元数据。
+当前私有通道只有创建时的 socketpair，无跨进程重连证明；快照或 PID 消失不能恢复为空池。
+真实 Ray／模型／GPU 和全查询内存继续由后续准确源码的专用检查处理，整个重构未完成。

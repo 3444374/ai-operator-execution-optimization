@@ -698,3 +698,9 @@ ready 的模型与 producer 身份、未确认清理及未取走结果共同决�
 [接线与 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants)
 仍是待独审候选。总字节来自服务声明，不是自动硬件探测；CLI／session、rolling、多进程恢复、
 真实 Ray／模型／GPU 和完整查询内存尚待后续，不能据此宣布整个重构完成。
+
+
+服务载荷候选补充观测 RPC 的归还检查：普通现代反馈 owner 关闭时读取既有 sampler 当前终态证明，
+未确认观测 RPC 使关闭继续报告 unknown；授予归还再次核对实时证明，不以采样线程停止或旧查询报告代替。
+[修订记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
+保存原独审反例与 CPU 检查。测试替身的来源期限字段另有修订；两者均仍需后续准确组合审查和专用环境续测。

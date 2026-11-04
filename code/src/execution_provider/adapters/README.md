@@ -1192,3 +1192,20 @@ bootstrap, prepared/rolling owners, cross-process allocation and restart recover
 This opt-in SDK path rejects historical profiles and IPC overrides; all callers without a pool
 retain their existing settings, including ordinary R=2 and default IPC result slots=8.
 See [CPU scope and evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants).
+
+
+### Service grants also retain the original observation RPC
+
+The ordinary modern request-feedback owner now uses `RecordsNativeSampler.snapshot_rpc_report()`
+at close. The method collects only after the existing sampler has stopped and reads the original
+request, retained ref/Future and terminal receipts under its lock. It reuses the sampler's existing
+terminal proof; it dispatches no replacement snapshot and does not treat client cancellation as
+a remote return. A stopped observation thread alone cannot prove complete cleanup.
+
+Owner close reports `feedback_close` separately from the earlier per-query admission report.
+Until `snapshot_rpc_terminal_evidence_complete` is true, close remains unknown and the service
+grant remains allocated. Grant settlement checks the current sampler again. A known return or
+RPC exception can complete this proof without changing model outcomes. Core/Method/IPC and
+unconsumed-result responsibilities still apply independently. The legacy feedback implementation,
+source-duration policy and native model settings are unchanged.
+See [CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention).

@@ -12,7 +12,6 @@ from src.scheduling.submission_control.stage_work import SupplyState
 from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
 
 from .lotus_chain_token_batches import BatchSupplyFeedback
-from .records_feedback_observation import snapshot_rpc_report
 from .records_native_sampler import RecordsNativeSampler
 from .records_native_source import NativeSourceClock, backend_manages_request_memory
 
@@ -214,12 +213,7 @@ class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
         if self._stream is not stream:
             return getattr(stream, '_admission_report', None)
         self.pause()
-        with self._snapshot_lock:
-            rpc = snapshot_rpc_report(
-                request=None if self._snapshot_request is None else dict(self._snapshot_request),
-                receipts=list(self.snapshot_rpc_receipts), requests=self.requests, errors=self.errors,
-                closed=self.closed, ref_retained=self.ref is not None, future_retained=self.future is not None,
-                sampler_stopped=self.provider is None or not self.provider.is_running)
+        rpc = self.snapshot_rpc_report()
         policy = (dict(strategy='resource_request_v1', initial_window=1, window=1,
                        can_continue=False, empty_query=True, cross_query_hints_supported=False)
                   if self.controller is None else self.controller.report())
