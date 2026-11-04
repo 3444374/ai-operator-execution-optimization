@@ -75,7 +75,7 @@ class QueryMethodReuseTests(unittest.TestCase):
     def assert_prompts(self, runtime, queries):
         observed = {}
         for event in runtime.events:
-            if event[0]=='submit' and event[1]=='AsyncCoreModelActor.run_core':
+            if event[0]=='submit' and event[1]=='AsyncCoreModelActor.try_submit_core':
                 for row in event[3][0].value.result(2):
                     observed.setdefault(row['query_id'],[]).append(row)
         for query_id, task in queries:
@@ -164,7 +164,7 @@ class QueryMethodReuseTests(unittest.TestCase):
                         [row for row in self.rows if row['id']=='taken_3'],self.sources[3].expected('repeat'),strict=True)])
                 prepared=[]
                 for event in runtime.events:
-                    if (event[0]=='submit' and event[1]=='AsyncCoreModelActor.run_core'
+                    if (event[0]=='submit' and event[1]=='AsyncCoreModelActor.try_submit_core'
                             and event[3][3][0]==second.session.session_id):
                         prepared.extend(event[3][0].value.result(2))
                 self.assertEqual({row['call_id']:row['messages_json'] for row in prepared},
@@ -222,8 +222,10 @@ class QueryMethodReuseTests(unittest.TestCase):
                 actor=runtime.async_actors[0].instance
                 self.assertGreaterEqual(actor.engine._sequence,6)
                 self.assertGreaterEqual(actor.engine.snapshot()['active_requests'],1)
-                self.assertEqual(stream.peak_usage['held_tasks'],4)
-                self.assertEqual(owner.transport.backend._maximum,4)
+                self.assertLessEqual(stream.peak_usage['held_tasks'], owner.core.capacity.limits.held_tasks)
+                self.assertLessEqual(stream.peak_usage['active_requests'], owner.resources.max_active_batches)
+                self.assertEqual(owner.transport.backend._maximum, owner.core.capacity.limits.held_tasks)
+                self.assertGreater(owner.core.capacity.limits.held_tasks, owner.resources.max_active_batches)
                 owner._actors.cancel_core(TaskKey(stream.session.session_id,0)).future().result(2)
                 rest=list(stream)
                 self.assertEqual({row['source_position'] for row in fast+rest},set(range(7)))

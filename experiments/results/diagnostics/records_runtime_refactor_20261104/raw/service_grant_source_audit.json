@@ -88,5 +88,73 @@
   "qualification": "The source audit identifies reusable owners and missing wiring. It neither assigns hardware capacity nor changes current request defaults.",
   "model_calls": 0,
   "real_Ray_runs": 0,
-  "GPU_runs": 0
+  "GPU_runs": 0,
+  "followup": {
+    "source_type": "Engineering design from current source; no physical allocation source is implemented",
+    "implemented": [
+      {
+        "path": "code/src/execution_provider/adapters/records_capacity.py",
+        "symbol": "CoreRecordsCapacity.with_storage_bytes",
+        "sha256": "53b43927da451ccda5609df1e42709dfb5ad37a9fba8b0f808c8799ac1fd5f17",
+        "scope": "Convert already-assigned input/result/Method payload bytes to an existing complete logical budget. Does not acquire an allocation."
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "symbol": "AsyncRecordsActorOwner.__init__",
+        "sha256": "d89148a1b76c2f3ac001696222ae3db5f8f49774c5c70d103720e4115e38efd6",
+        "scope": "Direct owner and factory use the same IPC default resolver; explicit IPC is preserved."
+      }
+    ],
+    "actual_call_chain": [
+      "Deployment/service owner supplies assigned storage; authoritative source still missing.",
+      "records_capacity converts assigned bytes without probing RAM.",
+      "records_profile resolves one set of Core and IPC values before actor construction.",
+      "Existing actor ready binds actual model identity; Core and Method retain their current result and unknown rules."
+    ],
+    "missing_owner_facts": [
+      "The service or deployment allocator actually controls the allocation, rather than merely observes shared headroom.",
+      "The allocation is claimed by the actual owner once; its service, model instance and generation can be verified.",
+      "Concurrent model owners cannot each spend the same whole allocation.",
+      "Allocated scope explicitly includes simultaneous input/state/result copies, or states what is caller-owned and separately accounted."
+    ],
+    "existing_service_reuse": "PG JobRegistry storage shares are real only on that same shared Core. The private records owners currently build different Cores/backends; copying a Job label or creating an unused Core cannot establish global compute or storage ownership for them.",
+    "lifetime_checks": [
+      "Claim before workers or model construction.",
+      "Bind successful ready to the same actual owner/model; a path or requested spec alone is insufficient.",
+      "Uncertain startup and unknown computation keep their allocation until the existing producer evidence is confirmed.",
+      "Unconsumed results and local borrowing keep their respective allocations; model close alone is not result-consumption acknowledgement.",
+      "Resident queries may reuse the same claimed instance; a replacement owner needs a distinct allocation or proved complete release."
+    ],
+    "next_files": [
+      {
+        "path": "code/src/experiments/movie_records_config.py",
+        "action": "Consume a supplied verified allocation in pure preflight, rather than infer it from defaults."
+      },
+      {
+        "path": "code/src/experiments/movie_records_session.py",
+        "action": "Obtain and claim it from the service/deployment owner before Ray and carry the same allocation through the session."
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "action": "Bind the allocation to the actual ready model and preserve uncertain startup evidence."
+      },
+      {
+        "path": "code/src/execution_provider/adapters/records_transport.py",
+        "action": "Retain existing ACK and producer proof; release allocation only after the matching producer and consumer holdings settle."
+      }
+    ],
+    "required_CPU_counterexamples": [
+      "Missing/foreign/copied allocation before startup",
+      "Double claim and concurrent owner spending",
+      "Model-owner change across queries",
+      "Partial startup with uncertain child ownership",
+      "Slow consumer and retained results",
+      "Unknown computation and unconfirmed close",
+      "Same-instance query reuse and final release"
+    ],
+    "automatic_physical_capacity": false,
+    "ordinary_defaults_changed": false,
+    "new_controller": false,
+    "manual_R_required_with_assigned_bytes": false
+  }
 }

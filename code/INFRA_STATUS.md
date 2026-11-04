@@ -669,3 +669,16 @@ interleaved／event_driven 复用已审 SDK，只支持固定 rolling token 请�
 [关闭检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#computing-close-cpu)
 与[容量来源核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/service_grant_source_audit.json)
 分别记录 CPU 资格及源码判断，普通 R=2／默认结果槽=8 和自动授予仍未处理。
+
+直接 async actor owner 的缺省 IPC 组装现复用公共容量解析器；旧副本会忽略显式 Core 单项大小，
+固定回到 2 MiB，已由小项未拒绝及大项被拒绝两项实际 CPU IPC 反例复现。显式 IPC 对象、
+独立预算要求和原省略值保持，未改动态控制器。
+[容量来源检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actor-capacity-source)
+另保留父候选上同样失败的三项旧检查：提示观测移到实际 try_submit_core，驻留与请求分别核对。
+原历史投影和失败不改报；此处统一逻辑额度来源，不提供物理内存自动授予。
+
+CoreRecordsCapacity.with_storage_bytes 另可从已经授予的三份有限载荷字节推导计数，沿现有公共工厂使用
+R=None；Core、续算和 IPC 继续分别记账，原六字段显式预算不改。请求数来自 IPC 的完整结果预留，
+续算计数由合法最小预留推导，实际字节检查先起作用。没有新增控制器、物理探测或 CLI 开关。
+[字节派生说明](src/execution_provider/adapters/README.md#byte-derived-records-capacity)明确调用方仍须拥有真实授予；
+独占性、跨实例归属及全查询保留未由该转换证明，普通未配置路径仍为 R=2／默认结果槽=8。

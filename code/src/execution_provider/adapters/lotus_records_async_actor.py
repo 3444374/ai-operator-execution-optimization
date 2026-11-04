@@ -719,9 +719,8 @@ class AsyncRecordsActorOwner(_ActorOwner):
             raise ValueError('explicit resource budgets require explicit finite IPC limits')
         if capacity is not None and capacity.budget is not None and maximum != capacity.budget.active_requests:
             raise ValueError('actor resources must match the declared hard request budget')
-        self.limits = AsyncEngineLimits(max_inflight=maximum, result_slots=maximum,
-            command_slots=maximum, input_bytes=maximum * 2 * 1024**2,
-            result_bytes=maximum * 2 * 1024**2, control_slots=max(16, maximum * 2)) if limits is None else limits
+        self.limits = (resolve_records_async_limits(resources,
+            CoreRecordsCapacity() if capacity is None else capacity) if limits is None else limits)
         independent = capacity is not None and capacity.budget is not None
         if independent:
             resolve_records_async_limits(resources, capacity, self.limits)

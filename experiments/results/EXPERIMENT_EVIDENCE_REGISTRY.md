@@ -1418,3 +1418,9 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 首次报告层级读取错误和三份原始方法记录保留；489 份运行时代码保持，不作生产修复或真实模型退出结论。
 [容量来源](diagnostics/records_runtime_refactor_20261104/raw/service_grant_source_audit.json)只登记已有授予与缺少的接线，
 普通 R=2、默认结果槽=8、自动容量和 geometric 旧不稳定仍开放。
+
+[直接 actor 容量与字节派生](diagnostics/records_runtime_refactor_20261104/README.md#actor-capacity-source)
+保留显式缓冲被旧默认覆盖的 CPU 反例、父候选上同样失败的三项维护检查及实际迁移。
+较大选择 1916 方法成功、40 方法未执行；新增字节转换的准确组合为 142 成功、1 项未运行，选择不相加。
+同一实例 CPU IPC 与 Method pool 检查支持已有逻辑字节下的计数派生，不支持自动硬件容量或全查询内存结论；
+服务独占授予、普通默认 R／结果槽和实际模型资格仍待处理，历史 3010 条来源及原始失败保留。

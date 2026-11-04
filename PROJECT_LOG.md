@@ -10972,3 +10972,14 @@ FIFO／后继优先共三项方法六个场景，66 项相关检查通过，运�
 保留首次测试读取报告层级错误，不声称旧关闭问题或真实 Ray／模型／GPU 退出已经全部解决。
 容量来源核对确认已有 Core Job、Method pool 和 IPC 授予可复用，但普通 records 尚未接收服务独占字节授予；
 R=2／默认结果槽=8 和 geometric 旧不稳定继续保留，未改成其他猜测数值。
+
+## 2026-11-04 统一直接 actor 的 IPC 来源并支持字节派生
+
+直接 async owner 改用公共 IPC 容量解析器，修正显式 Core 单项大小被旧 2 MiB 副本覆盖的问题；
+原省略值、显式 IPC 和控制保护保持。新增 CoreRecordsCapacity.with_storage_bytes 只转换已有有限载荷字节，
+无需再手填 R／槽数即可经 R=None 进入既有工厂，不提供实际服务独占授予或物理内存探测。
+[本轮记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actor-capacity-source)
+保留原反例、父候选同样失败的三项旧检查、迁移及最终组合；较大选择 1916 成功、40 未运行，
+组合 142 成功、1 未运行，方法数不相加。实际动态文件、vLLM 参数和历史 3010 条来源保持。
+四轮 CPU 查询未发现已消费标记累积，没有删除保护代码。普通 R=2／默认结果槽=8、服务独占授予、
+全查询保留和实际 Ray／模型／GPU 验证仍未完成；候选待独审，不推送或合并 main。

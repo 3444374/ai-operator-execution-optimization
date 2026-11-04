@@ -85,6 +85,33 @@ class CoreRecordsCapacity:
         size = self.item_input_bytes + stage_count * self.item_result_bytes
         return MethodLimits(self.item_input_bytes, 2 * size, size, stage_count)
 
+    def with_storage_bytes(self, *, input_bytes, result_bytes, method_bytes):
+        """Derive finite count guards from already-assigned payload storage.
+
+        IPC reserves item_result_bytes before every request. MethodDriver uses
+        row_reservation for each live continuation; positive MethodLimits give
+        its minimum possible reservation. Their byte checks remain independent.
+        This conversion does not acquire an exclusive service allocation or
+        discover RAM, and does not cover Python/Ray objects or caller audits.
+        """
+        from src.semantic_methods.budget import row_reservation
+        from src.semantic_methods.continuation import MethodLimits
+
+        if self.budget is not None:
+            raise ValueError('storage bytes cannot replace an existing resource budget')
+        if any(type(value) is not int or value <= 0
+               for value in (input_bytes, result_bytes, method_bytes)):
+            raise ValueError('assigned storage bytes must be positive integers')
+        if input_bytes < self.item_input_bytes or result_bytes < self.item_result_bytes:
+            raise ValueError('assigned storage bytes must fit one declared Core item')
+        if method_bytes < row_reservation(self.method_limits(1)):
+            raise ValueError('method byte budget cannot hold one complete continuation envelope')
+        results = result_bytes // self.item_result_bytes
+        minimum_method = row_reservation(MethodLimits(1, 1, 1, 1))
+        budget = RecordsCapacityBudget(results + 1, input_bytes, result_bytes, results,
+            method_bytes // minimum_method + 1, method_bytes)
+        return replace(self, budget=budget)
+
 
 
 def resolve_records_async_limits(resources, capacity, overrides=None):

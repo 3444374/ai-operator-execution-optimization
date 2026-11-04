@@ -260,3 +260,21 @@ LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
 [检查记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/computing_close_checks.json)
 保留首次读取报告层级错误及复查。本批没有修改生产关闭代码，也没有执行真实 Ray、模型或 GPU；
 这些受控场景不能证明全部关闭竞争已经解决。
+
+
+## 2026-11-04 直接 actor 的容量来源
+
+[容量来源用例](execution_provider/test_actor_capacity_source.py)检查自定义 Core 单项大小确实进入直接 actor 的 IPC，
+包括实际 CPU 子进程拒绝超过小项的提示、接受超过旧 2 MiB 但仍处于声明内的提示。模型与 tokenization 均由
+fixture 替换，这不是上下文长度或真实模型支持更长输入的证明。显式 IPC 保留同一对象；普通省略值逐字段保持，
+独立预算仍要求显式有限 IPC。
+
+[常驻查询用例](execution_provider/test_core_query_method_reuse.py)继续比较同一实例上的原提示及用量，
+观测实际 try_submit_core，分别检查驻留存储和请求许可；原父候选的三项失败保留。
+[检查记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/actor_capacity_source_checks.json)
+区分配置反例、父候选对照、旧测试迁移和最终相关回归，不改历史源摘要或任何 baseline 参数。
+
+[字节派生用例](execution_provider/test_byte_derived_records_capacity.py)检查已有有限字节保持原值、
+不同结果容量经 R=None 进入普通和 rolling 工厂、现代反馈仍从一次请求开始，以及实际 Method pool
+先触及字节额度。两次 CPU 查询复用同一实例并保留超过八行，检查原结果、唯一关联和归还。
+这只证明已给定逻辑字节下的转换；没有自动取得硬件容量，也没有删除普通路径的原缺省值。

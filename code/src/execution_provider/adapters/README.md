@@ -1020,6 +1020,30 @@ consumer delivery, ACK and release are unchanged. The reviewed two-file repair
 is composed with the complete-budget None support; [combined CPU scope](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/capacity_pressure_composition_checks.json)
 does not qualify a real model or automatic hardware capacity.
 
+<a id="byte-derived-records-capacity"></a>
+### Counts derived from assigned records storage
+
+`CoreRecordsCapacity.with_storage_bytes(input_bytes=..., result_bytes=..., method_bytes=...)`
+returns a new complete budget while preserving the per-item declarations and the assigned bytes.
+It requires all three positive integer amounts and rejects an existing explicit budget or storage
+that cannot hold one declared item and the ordinary continuation envelope. It never acquires RAM
+or establishes an allocation's provenance, exclusivity or ownership across service instances.
+
+IPC reserves one full `item_result_bytes` before each model request. The derived request count
+uses the complete reservations that fit `result_bytes`; Core and IPC result count guards sit one
+above that number. Input backpressure still uses the actual encoded bytes, independently.
+Method count uses the minimum `row_reservation` allowed by positive `MethodLimits`, with its guard
+one above that byte allowance, so actual continuation sizes hit their byte grant first.
+The existing Core, Method pool, actor and IPC keep their own release and unknown handling.
+
+The returned budget works with `RecordsResources(max_active_batches=None)` and the existing
+async factory, including `max_inflight="auto"` or modern admission starting at one. Explicit
+six-field budgets and IPC objects keep their meaning. No new controller, CLI option or native
+vLLM setting is introduced. Ordinary omitted configuration still uses R=2 and the existing
+IPC defaults; a verified exclusive service allocation is not implemented by this conversion.
+Caller-owned relations, retained audit data, Python/Ray objects and model memory are outside
+these logical byte amounts. Actual hardware capacity and full query memory qualification remain pending.
+
 
 ### 同步模型的上下文回执
 

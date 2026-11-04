@@ -1,0 +1,515 @@
+{
+  "schema": "semloom.records_capacity_source_checks.v1",
+  "base": "9fc7873136469d7db0f38acb972f8041df871288",
+  "scope": "Shared direct-owner IPC defaults, byte-derived SDK capacity and maintained test migration; not an exclusive physical allocation source",
+  "CPU": [
+    {
+      "label": "actor_capacity_before",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 6,
+      "run": 6,
+      "passed": 3,
+      "failed_ids": [
+        "tests.execution_provider.test_actor_capacity_source.ActorCapacitySourceTests.test_actual_CPU_IPC_accepts_a_prompt_above_the_old_two_MiB_default",
+        "tests.execution_provider.test_actor_capacity_source.ActorCapacitySourceTests.test_actual_CPU_IPC_rejects_a_prompt_above_the_declared_small_item",
+        "tests.execution_provider.test_actor_capacity_source.ActorCapacitySourceTests.test_direct_owner_uses_custom_items_from_the_shared_resolver (input_bytes=4096, result_bytes=8192)",
+        "tests.execution_provider.test_actor_capacity_source.ActorCapacitySourceTests.test_direct_owner_uses_custom_items_from_the_shared_resolver (input_bytes=3145728, result_bytes=5242880)"
+      ],
+      "error_ids": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "ca2f0842fc6e8c0d600044905e198de0dcc34ab40a1b53534fdf7fd7e5739d96"
+    },
+    {
+      "label": "actor_capacity_after",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 40,
+      "run": 40,
+      "passed": 36,
+      "failed_ids": [
+        "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_async4_refills_after_fast_results_while_first_call_still_active",
+        "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_same_query_id_new_method_uses_new_task_session_and_rejects_old_submission"
+      ],
+      "error_ids": [
+        "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_q1_q3_q2_q3_keep_one_model_and_each_original_prompt"
+      ],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+          "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "0e562ff2c27870250f2e7850089f8ceed26a8c6ec0cf9c4bda983b17509458f9"
+    },
+    {
+      "label": "actor_capacity_baseline_reuse",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 3,
+      "run": 3,
+      "passed": 0,
+      "failed_ids": [
+        "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_async4_refills_after_fast_results_while_first_call_still_active",
+        "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_same_query_id_new_method_uses_new_task_session_and_rejects_old_submission"
+      ],
+      "error_ids": [
+        "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_q1_q3_q2_q3_keep_one_model_and_each_original_prompt"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1311,
+      "original_json_sha256": "6f912acbc04be99c8aa699197070ea54c203e18941fd939ac626988c118b1c78"
+    },
+    {
+      "label": "actor_capacity_migrated",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 74,
+      "run": 74,
+      "passed": 73,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+          "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "d301765bafe1dcdbbb2290d32bd0c0779b45a0611fa722883e1e3d8a24a23d16"
+    },
+    {
+      "label": "actor_capacity_final",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 1956,
+      "run": 1948,
+      "passed": 1916,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        },
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        },
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_closed_endpoint_and_real_read_timeout_keep_native_exception_and_usage",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_compressed_response_and_native_sdk_redirect_behavior_match",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_invalid_parameters_and_cancellation_before_preparation_send_zero_posts",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_map_and_cache_usage_logprobs_match_original_without_parser_http",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_observation_modes_keep_full_sem_map_results_errors_usage_and_cleanup",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_original_http_json_and_missing_content_errors_keep_type_and_usage",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_sem_map_cache_states_keep_original_miss_batches_and_usage",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_staged_two_map_keeps_whole_stage_wait_and_original_prompts",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_id_counts_must_agree_with_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_birth_change_blocks_later_sends_and_keeps_first_receipt",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_posts_use_fresh_checks_without_repeated_discovery",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_bad_authoritative_usage_fails_even_if_native_parser_accepts_text",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_boolean_token_id_is_a_protocol_error",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_controller_physical_gpu_uuid_is_forwarded_without_ordinal_remapping",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_duplicate_message_HTTP_failure_stays_unknown_with_all_wire_receipts",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_empty_original_query_returns_zero_without_service_or_inference",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluation_and_end_observer_failure_preserves_original_error",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluator_failure_retains_count_usage_and_restores_observers",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_final_accounting_failure_keeps_primary_and_validated_receipts",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_full_120_occurrence_native_http_profiles_match_original_q3",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_http_failure_keeps_every_native_receipt_and_never_retries",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_invalid_profile_budget_or_lease_precedes_service_construction",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_missing_actual_ids_fails_without_retokenizing_or_losing_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_original_accessor_lm_thread_pool_decisions_usage_and_quality",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_requests_observation_ids_and_preserves_authoritative_wire_arrays",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_result_observer_failure_still_retains_complete_count_and_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_transport_failure_keeps_successes_and_unknown_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_unconfirmed_cleanup_fails_with_completed_known_result_retained",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        },
+        {
+          "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+          "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.serving.test_sync_supplemental_evidence.NativePipelineSourceTests.test_pinned_upstream_function_bodies_match_the_current_native_inputs",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the pinned source; no source download is performed",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "60dbdcbbf29fcbf34fc286812e0bdc54a2f2c0be4c8f78f073e2bd12be7d3e69"
+    },
+    {
+      "label": "consumed_retention_probe",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 1,
+      "run": 1,
+      "passed": 0,
+      "failed_ids": [],
+      "error_ids": [
+        "unittest.loader._FailedTest./tmp/semloom-ipc-capacity-source-evidence-20261104/probe_consumed_retention"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "b0c7484cb176796d3a083ef5a6546f730ba3d9d0e0ecb0b898bf6871c1ccb93d"
+    },
+    {
+      "label": "consumed_retention_recheck",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 13,
+      "run": 13,
+      "passed": 13,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "81fbd49d5bbe65cfcdfc7a70a3759a1a729252a62845e8af20c78bc55b3d2775"
+    },
+    {
+      "label": "byte_derived_before",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 1,
+      "run": 1,
+      "passed": 0,
+      "failed_ids": [],
+      "error_ids": [
+        "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_assigned_bytes_are_unchanged_and_counters_follow_result_storage (results=1)",
+        "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_assigned_bytes_are_unchanged_and_counters_follow_result_storage (results=3)",
+        "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_assigned_bytes_are_unchanged_and_counters_follow_result_storage (results=19)",
+        "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_assigned_bytes_are_unchanged_and_counters_follow_result_storage (results=137)"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "c63d9f712c5a8c54d9e68aed3b98cf84bbbd5d4840bb3ce60caebd20d75aa0ca"
+    },
+    {
+      "label": "byte_derived_after",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 46,
+      "run": 46,
+      "passed": 46,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1312,
+      "original_json_sha256": "788b1bb9365a33d359d1e5e7e699d972c006be316a7b3cd62dbb9741b61e4ca6"
+    },
+    {
+      "label": "capacity_sources_combined",
+      "source_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+      "selected": 143,
+      "run": 143,
+      "passed": 142,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+          "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "code_files": 1313,
+      "original_json_sha256": "a9d13324bfc77cfbddce44511fbdf1f5865e11794649aafdbb43b42c1408a5e8"
+    }
+  ],
+  "counts_overlap_do_not_sum": true,
+  "final_code_files": 1313,
+  "final_code_hashes_match": true,
+  "existing_runtime_Python_files": 489,
+  "runtime_Python_changed": [
+    "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+    "code/src/execution_provider/adapters/records_capacity.py"
+  ],
+  "untouched_owners": [
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/scheduling/submission_control/stage_work.py",
+      "sha256": "d80e199974f6015071832031c79fdaa8274a2568c16e1541e4526e3d802f697d",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "sha256": "a570b9e4e41738d51da975319c6366d2b9efd7026ae57c563bc6562bd6cd9a70",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "sha256": "8e6ecb31d23eebc26846851c0dc02775db19f2f8de57eafb27902bd56093c6d8",
+      "same_as_base": true
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_transport.py",
+      "sha256": "c790f3e6229566ab27ba516fd06ee3169b73a8de3d828108b2a52978c11e7a93",
+      "same_as_base": true
+    }
+  ],
+  "first_expanded_selection": {
+    "selected": 1956,
+    "run": 1948,
+    "passed": 1916,
+    "method_skips": 32,
+    "class_skips": [
+      {
+        "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+        "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+        "scope": "class"
+      },
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      }
+    ],
+    "class_methods_unexecuted": 8,
+    "total_unexecuted": 40,
+    "qualification": "Before the additive byte-derivation method. Not relabelled as an expanded run on the final composition."
+  },
+  "final_combination": {
+    "selected": 143,
+    "run": 143,
+    "passed": 142,
+    "skipped": [
+      {
+        "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+        "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+        "scope": "method"
+      }
+    ],
+    "source_unchanged": true,
+    "qualification": "Exact final code bytes; existing capacity methods are AST-identical to the expanded selection. The added method and the changed actor source are exercised together."
+  },
+  "direct_owner_fix": {
+    "original": "A direct async owner rebuilt 2 MiB defaults and ignored an explicitly supplied Core item shape.",
+    "counterexamples": [
+      "Small declared IPC item accepted an oversized input.",
+      "Larger declared IPC item rejected an input that fit that declaration."
+    ],
+    "preserved": [
+      "Legacy omission values",
+      "Explicit IPC object and fields",
+      "Explicit independent budget requires finite IPC",
+      "Native model parameters and control reservations"
+    ]
+  },
+  "byte_conversion": {
+    "API": "CoreRecordsCapacity.with_storage_bytes",
+    "input": "Already-assigned input/result/Method payload bytes",
+    "output": "Existing complete RecordsCapacityBudget; no new allocator or controller",
+    "count_derivation": "Requests follow full IPC result reservations. Core/result guards are one above that byte allowance. Method count follows the minimum reservation permitted by positive MethodLimits; actual row bytes bind first.",
+    "tested": [
+      "R=None through ordinary and rolling factories",
+      "Modern feedback starts at one with the finite byte-derived owner permission",
+      "Two actual CPU IPC queries on one model fixture, 14 rows each, more than eight resident rows",
+      "MethodBudgetPool byte backpressure and complete release",
+      "Reject missing, invalid, too-small bytes or replacement of an explicit budget"
+    ],
+    "exclusive_service_source_implemented": false,
+    "physical_memory_observed": false,
+    "CLI_defaults_changed": false
+  },
+  "original_test_migration": {
+    "baseline_commit": "9fc7873136469d7db0f38acb972f8041df871288",
+    "baseline_failed_methods": 3,
+    "preserved_parent_run": "actor_capacity_baseline_reuse",
+    "reason": "Two prompt checks watched the replaced run_core RPC; refill checks equated held storage and transport capacity with request capacity.",
+    "new_checks": "Observe actual try_submit_core inputs and preserve exact prompt equality, same-instance identity and refill before a held peer ends. Check each finite storage/request allowance separately.",
+    "old_f577_selection_excluded_this_module": true,
+    "old_f577_numbers_not_rewritten": true,
+    "all_other_known_original_failures_not_reclassified": true
+  },
+  "consumed_marker_probe": {
+    "queries": 4,
+    "rows_per_query": 3,
+    "consumed_markers_after_each_query": 0,
+    "registered_after_each_query": 0,
+    "outcomes_after_each_query": 0,
+    "refs_after_each_query": 0,
+    "held_after_each_query": 0,
+    "probe_method_count": 1,
+    "discovered_methods": 13,
+    "imported_fixture_methods": 12,
+    "counts_not_summed_with_related_runs": true,
+    "initial_loader_path_error_preserved": true,
+    "protective_markers_not_deleted": true
+  },
+  "history": {
+    "named_projections": 5,
+    "source_bindings": 3010,
+    "mismatches": 0,
+    "original_expected_hashes_and_projection_ids_preserved": true,
+    "new_overrides": 0
+  },
+  "archive": {
+    "path": "raw/actor_capacity_source_methods.json.gz",
+    "bytes": 119783,
+    "sha256": "bb57545bc62667b24844e4d5ebb1fb637fbfbeae8d4920c241a7e5e415d3c84a",
+    "decoded_bytes": 793770,
+    "decoded_sha256": "742029e84653df9440d826515eb594e4f93e0b0993f00fac404932de6ded708d",
+    "original_JSON_restored": 10,
+    "personal_home_prefix_hits": 0
+  },
+  "remaining": [
+    "The byte conversion does not acquire or verify a service-exclusive allocation.",
+    "Ordinary default R=2 and default IPC result slots=8 still exist without an assigned allocation.",
+    "Caller relations, audit retention, Python/Ray objects and model memory are not covered by these logical byte amounts.",
+    "Actual Ray/vLLM/model/GPU, full query memory and performance remain unqualified.",
+    "Dynamic specialist owns the captured geometric failure and the four strategy files."
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}
