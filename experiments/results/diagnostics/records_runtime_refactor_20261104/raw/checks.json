@@ -74,6 +74,42 @@
     "candidate_matrix.json": "d693809b1f30ed170bcd54f14931e9c42ad7f7d25c693f9c5de1b31321606932",
     "base_matrix_pickle.json": "77509b8136ec7563f3a4b6ab379c0650d9db26048c7314f15030387f03f7393d",
     "candidate_matrix_pickle.json": "77509b8136ec7563f3a4b6ab379c0650d9db26048c7314f15030387f03f7393d",
-    "history.json": "ae93c8e0ed9380ea10c861f77e04445f3479d5a769952edf16452cc794aa462e"
+    "history.json": "ae93c8e0ed9380ea10c861f77e04445f3479d5a769952edf16452cc794aa462e",
+    "profile_source_location.json": "8accfca5e9a7718a2a21c9023c0f061e7644e96a5925ecc10bc1df1de317e7cc",
+    "profile_source_location.log": "4169fb37362d75a2ff5298feb863e09ebf5f41784ba286dadfe6e3f0ccf391e1",
+    "bfb_remaining.json": "04019bc9df04b52ebd02017b61815b0f4cc3d983c19e9f8f8396bb810fdeb0c1",
+    "bfb_remaining.log": "7c1de7ecbb8f070bb6b8a294bb94ec2ad563e01fe4ad91e7f956bba5a0dccc68",
+    "base_feedback.json": "7e3fdfb536a8819c8f026658256666051c3735081261e4c540298d310d128316",
+    "base_feedback.log": "b29c65f207e3ae7a1fda187ca57d2c7b7692527693fae0203bde54532fb6494d"
+  },
+  "profile_test_source_repair": {
+    "initial_new_failures": [
+      "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_delivery_prefix_counts_out_of_order_duplicates_and_invalid_work",
+      "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_profile_options_and_invalid_combinations_match_ee39",
+      "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_public_profile_names_expand_to_the_retained_experiment_options",
+      "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_sampler_requires_the_exact_same_delivered_prefix_and_generation"
+    ],
+    "fixed_selected": 18,
+    "fixed_passed": 18,
+    "fixed_errors": 0
+  },
+  "bfb_remaining": {
+    "commit": "bfb9100e2f3fa090fdf2304359979b853236e06a",
+    "selected": 36,
+    "passed": 28,
+    "failure_ids": [
+      "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+      "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+    ],
+    "error_methods": [
+      "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_UTF8_escaping_nested_metadata_and_frame_boundaries_are_byte_exact",
+      "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_backpressure_retries_reuse_member_metrics_and_live_cache_is_bounded",
+      "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_deadline_session_and_generation_headers_refresh_without_retokenizing_members",
+      "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_members_order_all_flush_reasons_and_oversize_B_match_frozen_oracle",
+      "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_randomized_ready_prefixes_generations_and_boundaries_match",
+      "tests.execution_provider.test_lotus_request_frame_metering.RequestFrameMeteringTests.test_single_item_and_RPC_overflow_reject_at_the_same_candidate"
+    ],
+    "error_events": 68,
+    "source_unchanged_during_suite": true
   }
 }

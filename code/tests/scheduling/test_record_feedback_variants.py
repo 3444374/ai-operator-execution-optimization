@@ -95,8 +95,16 @@ class SourceView(importlib.abc.MetaPathFinder):
         optional = {"expand_core_profile"}
         nodes = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))
                  and node.name in names | optional]
+        if self.manifest is None and any(isinstance(node, ast.ImportFrom)
+                and node.level == 1 and node.module == "records_profile" for node in tree.body):
+            profile = self.path("code/src/execution_provider/adapters/records_profile.py")
+            profile_tree = ast.parse(profile.read_text(), filename=str(profile))
+            nodes.extend(node for node in profile_tree.body if isinstance(node, ast.FunctionDef)
+                         and node.name in names | optional)
         if not names <= {node.name for node in nodes}:
             raise AssertionError("Production core node moved: adapt extraction explicitly")
+        if len(nodes) != len({node.name for node in nodes}):
+            raise AssertionError("Ambiguous production core definitions")
         records = self.module("semantic_methods.lotus.records")
         observations = self.module("scheduling.runtime.observations")
         namespace = dict(__name__=self.label + "._core_nodes", Iterator=Iterator, Any=Any,

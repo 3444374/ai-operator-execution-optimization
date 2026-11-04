@@ -13,6 +13,8 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 历史 3010 条绑定保持原 10 处不匹配，新增 0。尚待独审与统一整合，未推送或合并；模型／真实 Ray／GPU 为 0。
 [主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
 列容量归属、可达执行链、并行分工及后续默认 R 解耦，不以提取代码声称完整资源处理已完成。
+扩大检查后已修正历史策略测试的源码位置提取，18 项通过；初次 4 项新失败保留。
+独立 bfb 复现的 2 项 token 失败与 6 个帧计量方法错误另列，未纳入通过数。
 
 
 <a id="records-model-context-cpu"></a>
