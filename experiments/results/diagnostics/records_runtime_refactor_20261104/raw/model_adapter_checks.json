@@ -1,0 +1,103 @@
+{
+  "run_id": "semloom-model-adapter-20261104",
+  "base": "ee3678612477ba18f2213e386b1560c77138b33f",
+  "tests": {
+    "before_model_adapter": {
+      "selected": 110,
+      "passed": 110,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "unchanged_during_suite": true
+    },
+    "model_adapter_before_probe": {
+      "selected": 2,
+      "passed": 0,
+      "failures": [
+        "tests.execution_provider.test_records_model_adapter.RecordsModelAdapterTests.test_async_actor_does_not_import_query_host"
+      ],
+      "errors": [
+        "tests.execution_provider.test_records_model_adapter.RecordsModelAdapterTests.test_original_actor_locations_and_helpers_keep_the_same_objects"
+      ],
+      "skipped": [],
+      "unchanged_during_suite": true
+    },
+    "model_adapter_after_probe": {
+      "selected": 2,
+      "passed": 2,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "unchanged_during_suite": true
+    },
+    "after_model_adapter": {
+      "selected": 130,
+      "passed": 126,
+      "failures": [
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_delivery_prefix_counts_out_of_order_duplicates_and_invalid_work",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_profile_options_and_invalid_combinations_match_ee39",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_public_profile_names_expand_to_the_retained_experiment_options",
+        "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts.test_sampler_requires_the_exact_same_delivered_prefix_and_generation"
+      ],
+      "errors": [],
+      "skipped": [],
+      "unchanged_during_suite": true
+    },
+    "after_model_adapter_fixed_source_probe": {
+      "selected": 20,
+      "passed": 20,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "unchanged_during_suite": true
+    },
+    "model_adapter_final": {
+      "selected": 130,
+      "passed": 130,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "unchanged_during_suite": true
+    }
+  },
+  "moved_AST": {
+    "_measure": true,
+    "_encode": true,
+    "_capacity_failure": true,
+    "_check_result_capacity": true,
+    "_CoreModelActor": true,
+    "_ActorOwner": true
+  },
+  "remaining_AST": {
+    "lotus_records_core.py_other_definitions_unchanged": true,
+    "lotus_records_async_actor.py_other_definitions_unchanged": true
+  },
+  "source_groups": 12,
+  "source_Python_files": 455,
+  "scripts": 127,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "published": false,
+  "merged": false,
+  "evidence_sha256": {
+    "before_model_adapter.json": "638798e65bcbc05c1bcf3f42aca4abe573219e8e39cf523d36b316c85aa04192",
+    "before_model_adapter.log": "776edfd3d18d29f505c89e722993bed598be0cbf56733c7c96b3d778207df88e",
+    "model_adapter_before_probe.json": "2781e5b66958cd52c580d2eb4457f8e6b74837cd6f001eb86097cdaa698c1c13",
+    "model_adapter_before_probe.log": "07a76a6cab2691afdb9aa8c3e1f8ec7dcc4151680869d9ca946041be1c84b294",
+    "model_adapter_after_probe.json": "e785733544adf6da72b9646c84c9dfccbc2a292fdc2d7d5f87dfae543b13f650",
+    "model_adapter_after_probe.log": "26b2eeb8d10b54f06c8095bfe6679d481e0b35a590577a82b3c8086750ed88a2",
+    "after_model_adapter.json": "7178d6a487eb7692e0cf0e99bb42fdfb0b9b3df01e8007c9893d33bf84bcde55",
+    "after_model_adapter.log": "89825d5152b799b0bc8077e9d785336345286a9b75a7013123759914bd80da09",
+    "after_model_adapter_fixed_source_probe.json": "20a4f4e389a9e5dcf0042341d9019884e2f78a0a2d17aa8ffb09328bf8df8fcb",
+    "after_model_adapter_fixed_source_probe.log": "2886055094a9207aa06dd4247e71c20c91d80836b969aa33487ee51900629f2b",
+    "model_adapter_final.json": "85f7d48569323a54b7f84bcf695696eb9cdf0d26f8828f5220542e676294d7bc",
+    "model_adapter_final.log": "eb52fcf12d6af9500d5822b2b012f95fe3c4907210975c60f691adb56fccdd4d",
+    "run_cpu.py": "36730e6c9175cf3363fc623af6d5e1e2e0ab87cd5dcce761aa9088b45eaacad5",
+    "model_adapter_before_AST.json": "4674283734562d231c360468af22fb73bd93c8720a8f318e6060731c919a74c7",
+    "model_adapter_AST_checks.json": "b62123fd9a90f90492d04c3bdf07cff1a208b6f745562a75125161fd869df102",
+    "model_adapter_remaining_AST.json": "160fa2f57cbd4d25137a8204f208235c576fff4e4ea26a8f54b2ec34a81fbac2",
+    "module_inventory.json": "d9ed27cd4d4e2f62caf18aa31e63ea62e7839792e18c817ade5e3ef1cb78f5b5"
+  }
+}

@@ -373,6 +373,10 @@ separate that remaining work from the independent budgets already supported.
 Pure resource parsing and copied snapshot report fields live in
 [records_feedback_observation.py](records_feedback_observation.py). The existing sampler
 retains locks, clocks, consumption and decisions; the organizer and its frame-size cache are unchanged.
+Shared result encoding and bounded model-owner adaptation live in
+[records_model_adapter.py](records_model_adapter.py). Async actor imports no longer
+load the records query host. Original actor imports and serialized locations remain available;
+the transport, result reservations, ACK and shutdown behavior are unchanged.
 Legacy-budget receipts report `rolling_refill=true`, `C_request=R`, `C_batch=null`; observed
 batch/member counts remain separate. W, dynamic request-window feedback and
 joint B/C control are not enabled by this option. Full expected relations and

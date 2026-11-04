@@ -9,7 +9,7 @@ reference. This module never calls that reference's iterator or scheduler.
 from __future__ import annotations
 
 import asyncio
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import asdict, replace
 import hashlib
@@ -31,11 +31,19 @@ from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
 from src.scheduling.submission_control.admission import StaticAdmissionController, DynamicAdmissionGate
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
-from .lotus_records_actor_owner import RecordsActorOwner, _ModelActor
-from .records_capacity import CoreRecordsCapacity, RecordsCapacityBudget, resolve_records_async_limits
-from .records_profile import expand_core_profile, resolve_core_profile, resolve_record_batching
+from .lotus_records_actor_owner import RecordsActorOwner
+from .records_capacity import (
+    CoreRecordsCapacity, RecordsCapacityBudget as RecordsCapacityBudget, resolve_records_async_limits,
+)
+from .records_model_adapter import (
+    _ActorOwner, _CoreModelActor as _CoreModelActor, _capacity_failure,
+    _check_result_capacity, _encode, _measure,
+)
+from .records_profile import (
+    expand_core_profile as expand_core_profile, resolve_core_profile, resolve_record_batching,
+)
 from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlockingMetricsObservationProvider
 
@@ -124,24 +132,9 @@ class _StageTimings:
                         pure_GPU_compute_ns=None)
 
 
-def _measure(timings, name):
-    return nullcontext() if timings is None else timings.measure(name)
-
-
 async def _await_result(value):
     """Wait in the existing transport loop, never in a Ray data thread."""
     return await value if inspect.isawaitable(value) else await asyncio.wrap_future(value.future())
-
-
-def _encode(value, maximum):
-    encoded = bytearray()
-    encoder = json.JSONEncoder(ensure_ascii=False, allow_nan=False, separators=(",", ":"))
-    for piece in encoder.iterencode(value):
-        piece = piece.encode("utf-8")
-        if len(encoded) + len(piece) > maximum:
-            raise ValueError("records bytes exceed the reserved item capacity")
-        encoded.extend(piece)
-    return bytes(encoded)
 
 
 def _check(deadline, cancelled=None):
@@ -149,58 +142,6 @@ def _check(deadline, cancelled=None):
         raise InterruptedError("LOTUS Core records cancelled")
     if time.monotonic() >= deadline:
         raise TimeoutError("LOTUS Core records deadline expired")
-
-
-def _capacity_failure(value):
-    """Keep identity and known usage when a full result cannot fit its reservation."""
-    occurrence = {name:value[name] for name in IDENTITY_FIELDS}
-    return dict(
-        occurrence, status="unknown" if value["status"] == "unknown" else "failed",
-        text=None, prompt_tokens=value.get("prompt_tokens"),
-        completion_tokens=value.get("completion_tokens"), total_tokens=value.get("total_tokens"),
-        submission_confirmed=value.get("submission_confirmed", value["status"] == "succeeded"),
-        error_type="ResultCapacityExceeded", result_fields_omitted=True,
-    )
-
-
-def _check_result_capacity(occurrence, maximum):
-    # Real token counts are lengths of finite Python sequences. Reserve their
-    # widest supported representation before allowing this call to be sent.
-    value = dict(occurrence, status="unknown", prompt_tokens=(1 << 64) - 1,
-                 completion_tokens=(1 << 64) - 1, total_tokens=(1 << 65) - 2)
-    _encode(_capacity_failure(value), maximum)
-
-
-class _CoreModelActor(_ModelActor):
-    def run_core(self, rows, deadline, maximum):
-        result = self.run(rows, deadline)
-        if type(result) is not list or len(result) != 1:
-            raise RuntimeError("single-row model completion is unconfirmed")
-        value = result[0]
-        occurrence = identity(rows[0]["query_id"], rows[0]["row_id"],
-                              rows[0]["source_position"], rows[0]["call_index"])
-        audit = CallLedger([occurrence], 1)
-        audit.record(value)
-        # The driver and Core receive only bounded bytes. The small failure
-        # representation was checked before dispatch and retains known billing.
-        try:
-            return _encode(value, maximum)
-        except ValueError:
-            return _encode(_capacity_failure(value), maximum)
-
-
-class _ActorOwner(RecordsActorOwner):
-    """Reuse only actor allocation and shutdown, with a bounded result method."""
-
-    close_deadline = None
-
-    def _model_actor_type(self):
-        return _CoreModelActor
-
-    def wait_ready(self, ref, deadline, cancelled=None):
-        if self.close_deadline is not None:
-            deadline = min(deadline, self.close_deadline)
-        return super().wait_ready(ref, deadline, cancelled)
 
 
 class _RecordTransport:

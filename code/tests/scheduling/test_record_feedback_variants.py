@@ -95,12 +95,19 @@ class SourceView(importlib.abc.MetaPathFinder):
         optional = {"expand_core_profile"}
         nodes = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))
                  and node.name in names | optional]
-        if self.manifest is None and any(isinstance(node, ast.ImportFrom)
-                and node.level == 1 and node.module == "records_profile" for node in tree.body):
-            profile = self.path("code/src/execution_provider/adapters/records_profile.py")
-            profile_tree = ast.parse(profile.read_text(), filename=str(profile))
-            nodes.extend(node for node in profile_tree.body if isinstance(node, ast.FunctionDef)
-                         and node.name in names | optional)
+        if self.manifest is None:
+            providers = {
+                "records_profile": {"resolve_core_profile", "expand_core_profile"},
+                "records_model_adapter": {"_measure"},
+            }
+            for module, provided in providers.items():
+                if not any(isinstance(node, ast.ImportFrom) and node.level == 1
+                           and node.module == module for node in tree.body):
+                    continue
+                path = self.path("code/src/execution_provider/adapters/"+module+".py")
+                provider = ast.parse(path.read_text(), filename=str(path))
+                nodes.extend(node for node in provider.body if isinstance(node, ast.FunctionDef)
+                             and node.name in provided)
         if not names <= {node.name for node in nodes}:
             raise AssertionError("Production core node moved: adapt extraction explicitly")
         if len(nodes) != len({node.name for node in nodes}):
