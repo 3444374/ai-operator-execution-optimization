@@ -166,13 +166,19 @@ def run_diagnostic(dataset, selection, model, *, output, unit, tokenizer, profil
                         structured = json.loads(text)
                     except json.JSONDecodeError:
                         structured = None
+                        error_response = True
                     error_response = error_response or isinstance(structured, dict) and structured.get("error") is not None
+                    choices = structured.get("choices") if isinstance(structured, dict) else None
+                    valid_completion = isinstance(choices, list) and bool(choices) and all(
+                        isinstance(choice, dict) and isinstance(choice.get("message"), dict)
+                        and isinstance(choice["message"].get("content"), str) for choice in choices)
+                    error_response = error_response or not valid_completion
                     if error_response:
                         saved = (json.dumps(redact_json_values(structured), ensure_ascii=False).encode("utf-8")
                                  if structured is not None else redact_text(text).encode("utf-8"))
                 except UnicodeDecodeError:
-                    if error_response:
-                        saved = b'{"error_body_omitted":"non-UTF8 response; original identity retained"}'
+                    error_response = True
+                    saved = b'{"error_body_omitted":"non-UTF8 response; original identity retained"}'
                 responses.write(json.dumps(dict(index=state["active"]["index"], status=status,
                     request_sha256=hashlib.sha256(body).hexdigest(), body_base64=base64.b64encode(saved).decode(),
                     original_response_sha256=hashlib.sha256(response).hexdigest(), original_response_bytes=len(response),

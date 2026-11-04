@@ -195,7 +195,10 @@ class DiagnosticNativeTests(unittest.TestCase):
     def test_error_body_is_sanitized_for_success_status_or_opaque_failure(self):
         original_root = self.root
         for label, status, raw in (("status200", 200, None),
-                                   ("opaque500", 500, b'\xffpassword=synthetic-diagnostic-sensitive-value')):
+                ("opaque500", 500, b'\xffpassword=synthetic-diagnostic-sensitive-value'),
+                ("plain200", 200, b'password=synthetic-diagnostic-sensitive-value'),
+                ("opaque200", 200, b'\xffpassword=synthetic-diagnostic-sensitive-value'),
+                ("wrongshape200", 200, b'{"note":"password=synthetic-diagnostic-sensitive-value"}')):
             with self.subTest(label=label):
                 self.root = original_root / label
                 self.root.mkdir()
@@ -207,7 +210,10 @@ class DiagnosticNativeTests(unittest.TestCase):
                 saved = base64.b64decode(row["body_base64"]).decode()
                 self.assertNotIn("synthetic-diagnostic-sensitive-value", saved)
                 self.assertTrue(row["failure_copy_redacted"])
-                self.assertIsInstance(json.loads(saved), dict)
+                if label == "plain200":
+                    self.assertIn("password=***", saved)
+                else:
+                    self.assertIsInstance(json.loads(saved), dict)
 
     def test_extract_guard_restores_after_exception(self):
         Extract = importlib.import_module("lotus.sem_ops.sem_extract").SemExtractDataFrame
