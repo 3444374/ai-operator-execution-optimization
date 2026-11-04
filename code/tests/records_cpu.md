@@ -361,3 +361,33 @@ LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
 
 [来源与缺项](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
 分别记录相关选择和实际组合，不把旧 Ray／SDK／模型缺项改报成功。
+
+
+## 2026-11-04 严格 JSON 回执与 rolling 服务交付
+
+[严格类型比较](infrastructure/test_json_content.py)覆盖数字／布尔值、整数／浮点、对象键序、
+数组顺序、非 JSON、非有限和循环输入；[两处接受反例](experiments/test_service_json_snapshot.py)
+用实际 CPU 回执验证文件或 expected 中的 false 不能接受数字 0，结果和字节继续保留。
+[容量及预检](execution_provider/test_rolling_service_budget.py)验证完整交付与请求／Method 额度分开，
+实际 query 身份和每个具体副本角色进入计划；缺少声明在 owner 创建前拒绝。
+[实际池组合](execution_provider/test_rolling_service_owner.py)使用原 chain、Core、Method 和 CPU 私有通信，
+验证 R=1 时多于 R 的完整结果仍有独立额度、resident 原实例、未消费和未知清理的保留，
+以及证书污染、部分退休重试和循环引用清理。
+[私有结果退休](execution_provider/test_rolling_private_payloads.py)在 GC 关闭、两处中断及真实 unknown 异常下核对原数组转交，保留外部报告。
+[生命周期检查](execution_provider/test_rolling_service_lifecycle.py)单独替代授予能力接点，核对模型
+ready、原 Ray 身份、晚到回执、严格接受及调用方旧快照；它不代替实际池组合。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
+LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
+  tests.infrastructure.test_json_content tests.experiments.test_service_json_snapshot \
+  tests.execution_provider.test_rolling_service_budget \
+  tests.execution_provider.test_rolling_service_owner \
+  tests.execution_provider.test_rolling_service_lifecycle -v
+```
+
+[本轮来源与结果](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery)
+保留原独审反例和所有早期错误；CPU 替身不能证明实际 Ray、物理容量、模型质量、GPU 耗时或跨进程恢复。
+
+旧 snapshot close 的现有反例还验证未带新服务字段的 owner：只有存在实际服务 runtime 绑定时才检查
+该绑定及 actor 字段；非服务关闭不要求旧 actor 新增属性。完整回归发现的三项原错误和修订后检查均保留。

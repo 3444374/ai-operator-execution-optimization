@@ -11032,3 +11032,17 @@ prepared 结果另减少无用拷贝和关闭迭代引用，未接 rolling 授�
 [实际证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
 为 2083 成功、45 未执行；代码摘要、历史来源保持，原错误与网络警告不改写。
 候选待最终树独审，未推送或合并；真实模型、自动物理容量及其余工程重构仍未完成。
+
+
+## 2026-11-04 严格 JSON 接受与 rolling 服务交付继续重构
+
+将数字／布尔值快照接受修复单独保存为 3a3a589d，原失败和准确修复记录保持。
+rolling Python SDK 接入实际完整 query 交付声明，实例 R／Method／IPC 与完整未消费结果分别计量；
+原 producer 与未知责任保留，同进程部分退休可用原对象续退，私有整批结果在归还前显式清理。
+[本轮来源、检查和未完成项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery)
+同时保存循环引用反例、物理容量／恢复源码调查和全部旧失败。未推送、未合并，也未运行真实 Ray／模型／GPU；
+rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工作继续处理。
+
+最终 181 模块相关选择 2172 项、2127 成功，45 未执行；44 新方法通过，五个原独审反例在最终源码复放通过。
+修复完整检查暴露的旧 owner 三项服务属性访问错误；首轮权限／断言失败及一次中断保持原身份。
+全部 1337 代码摘要与 3010 具名历史来源匹配；公开归档一份本机路径脱敏副本，私有原件未变。候选待独审。

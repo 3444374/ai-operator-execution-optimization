@@ -720,3 +720,14 @@ prepared 普通结果另减少重复拷贝：报告不再复制随后马上覆�
 只在同一实际流健康 EOF 且 Core／transport／data RPC／审计交接均清空时借用原稳定结果快照。
 unknown 或缺证明时继续读取实时调用；完整交付字节由已核每项长度及原编码标点求和，不再编码整数组。
 这些操作不新增派发、接受或释放动作；服务 rolling 授予仍未接入，完整结果及保存所需载荷仍须另计。
+
+
+rolling 普通 Filter 的 Python SDK 候选现接收服务池和实际完整交付声明：R、Method 与 IPC 的实例额度
+由同一有限逻辑字节计划派生，整查询结果按实际发生项独立计入；resident 查询结束仍保留实例授予。
+最终关闭及结果转交后显式清理后台整批结果引用，保留 metadata；unknown／未消费结果不提前归还。
+同一原 chain 的部分退休可在当前进程重试，改变 producer 或证书不能接替原授予。
+[接口](src/execution_provider/adapters/README.md#rolling-service-grants)与
+[检查记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery)
+更新此前 1ae 阶段的“未接 rolling SDK”状态；普通无池缺省、原生模型参数及历史路径未随此变更。
+此前独审发现的数字／布尔值快照混淆另由共享严格 JSON 比较修复，原失败保留。
+候选尚待准确组合独审；rolling CLI 保存、自动物理 RAM、跨进程恢复和真实 Ray／模型／GPU 仍未完成。

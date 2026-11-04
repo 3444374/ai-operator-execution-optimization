@@ -58,13 +58,13 @@ def create_records_core(method, engine, generation, resources=None, *, profile=N
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
                         resident=False, experimental_skip_token_packing=False, capacity=None,
                         interleaved_preparation=False, event_driven_preparation=False,
-                        service_budget=None, service_allocation_bytes=None):
+                        service_budget=None, service_allocation_bytes=None, service_delivery=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
     if service_budget is not None:
         from .records_service_budget import create_service_records_core
         return create_service_records_core(method, engine, generation, resources,
             service_budget, service_allocation_bytes, capacity=capacity, profile=profile,
-            async_limits=async_limits, prepared_batching=prepared_batching,
+            async_limits=async_limits, prepared_batching=prepared_batching, service_delivery=service_delivery,
             batch_concurrency=batch_concurrency, batch_feedback=batch_feedback,
             rolling_refill=rolling_refill, resident=resident,
             experimental_skip_token_packing=experimental_skip_token_packing,
@@ -72,6 +72,8 @@ def create_records_core(method, engine, generation, resources=None, *, profile=N
             event_driven_preparation=event_driven_preparation)
     if resources is None:
         raise TypeError('records resources or an explicit service payload pool are required')
+    if service_delivery is not None:
+        raise ValueError('service_delivery requires an actual service_budget')
     if service_allocation_bytes is not None:
         raise ValueError('service_allocation_bytes requires a service payload pool')
     if type(interleaved_preparation) is not bool or type(event_driven_preparation) is not bool:

@@ -28,6 +28,7 @@ import tempfile
 import threading
 import time
 import uuid
+import weakref
 
 from src.infrastructure.private_artifacts import require_outside_git
 from src.planning.work import StageWork, WorkDescriptor
@@ -780,6 +781,10 @@ class SemLoomRecordChainCore:
         self._source_expected, self._current_relation = (), ()
         self._expected_count = 0
         self.phase_history = []
+        self._service_runtime_binding = self._service_ready_observer = None
+        self._service_wrapper_ref = self._service_retired_stream_ref = None
+        self._service_payloads_retired = False
+        self._service_payloads_certificate = None
 
     @property
     def production_core_connected(self):
@@ -809,10 +814,117 @@ class SemLoomRecordChainCore:
         if not self.resident or self._closing or self._actors is None:
             raise RuntimeError('only an open resident prepared owner can preload its model')
         self._configure_record_feedback()
-        ready = self._actors.start(time.monotonic()+self.resources.startup_timeout_s)
+        ready = self._start_record_actors(time.monotonic()+self.resources.startup_timeout_s)
         if self.token_budget is not None:
             self.token_budget.bind_model_context(ready)
         return ready
+
+    def _start_record_actors(self, deadline, cancelled=None):
+        self._service_before_start()
+        ready = self._actors.start(deadline, cancelled)
+        self._service_after_start()
+        return ready
+
+    def _record_startup_cleanup(self, error):
+        try:
+            error.add_note('record-local startup cleanup: ' + str(self.close()))
+        except BaseException as cleanup:
+            error.add_note('record-local startup cleanup failed: ' + type(cleanup).__name__ + ': ' + str(cleanup))
+
+    def _service_before_start(self):
+        if self._service_runtime_binding is not None:
+            self._service_runtime_binding.bind()
+            self._service_runtime_binding.check(require_identity=True)
+
+    def _service_after_start(self):
+        if self._service_runtime_binding is not None:
+            self._service_runtime_binding.check(require_identity=True)
+            self._service_ready_observer()
+
+    def _service_cleanup_confirmed(self, *, expected_identity=None):
+        from .records_runtime_identity import prepared_cleanup_confirmed
+        return prepared_cleanup_confirmed(self._actors, self.transport, self.core, self.last_close_report,
+            closing=self._closing, feedback=self._supply_feedback, expected_identity=expected_identity)
+
+    def _service_retire_stream(self, stream, report):
+        for name in ('source', 'run', 'section', 'error', 'driver', 'session', 'pending',
+                     'pool', '_output', '_phase_source', 'cancelled', 'owner'):
+            setattr(stream, name, None)
+        stream.bindings, stream.offered = {}, set()
+        stream._phase_bindings, stream._prepared, stream._extract_results = {}, {}, []
+        stream.last_close_report = report
+
+    def _service_retire_payloads(self, metadata, certificate):
+        """Detach private query data only after its exact service handoff."""
+        self._control()
+        wrapper = None if self._service_wrapper_ref is None else self._service_wrapper_ref()
+        if (wrapper is None or wrapper.owner is not self or not wrapper._closed
+                or wrapper._retired_report is not metadata
+                or wrapper._service_retirement is not certificate
+                or certificate is None or not wrapper.cleanup_confirmed() or wrapper.has_unconsumed_results()
+                or self._service_payloads_certificate is not None
+                   and self._service_payloads_certificate is not certificate):
+            raise RuntimeError('private payload retirement requires the original certified result transfer')
+        from .records_runtime_identity import retired_close_metadata
+        # The actual ready receipt contains model/control metadata, not query
+        # results. Keep it complete for the existing exact cleanup comparison.
+        report = retired_close_metadata(metadata)
+        report.update(payload_transferred=True, cleanup_confirmed=True,
+                      calls_count=metadata['calls_count'], unconsumed_call_results=[])
+        actor = retired_close_metadata(dict(model_owner=self._actors.last_close_report))['model_owner']
+        actor.update(model_ready=self._actors.model_ready, cleanup_errors=[],
+                     gpu_exit_confirmed=self._actors.last_close_report.get('gpu_exit_confirmed'))
+        report['model_owner'] = actor
+        stream = self._active
+        if stream is not None:
+            self._service_retired_stream_ref = weakref.ref(stream)
+        elif self._service_retired_stream_ref is not None:
+            stream = self._service_retired_stream_ref()
+        self._service_payloads_certificate = certificate
+        self.last_close_report = report
+        if stream is not None:
+            self._service_retire_stream(stream, report)
+        with self._receipt_lock:
+            self._raw_receipts, self._contexts = {}, {}
+        self._root_run = self._active = self.results = None
+        self._expected_bindings, self._accountants = {}, {}
+        self._source_expected, self._current_relation = (), ()
+        self._phase_parents = self._phase_columns = None
+        self.phase_history = []
+        if self.transport is not None:
+            with self.transport._lock:
+                self.transport._outcomes, self.transport._requests, self.transport._refs = {}, {}, {}
+                self.transport._consumed_receipts, self.transport._bulk = set(), {}
+        organizer = getattr(self, '_token_organizer', None)
+        if organizer is not None:
+            organizer._prefix = organizer._prefix_context = None
+            organizer._estimates, organizer._frontier, organizer._frontier_set = {}, [], set()
+            organizer._header_estimate = organizer._header_context = None
+            self._token_organizer = None
+            self.core.policies = replace(self.core.policies, organize=None)
+        self._actors.last_close_report = actor
+        self._actors._model_close_report = actor.get('engine_close_report')
+        self._actors._model_close_ref = None
+        self._service_payloads_retired = True
+
+    def _service_payloads_retired_confirmed(self):
+        """Read the actual detached fields; a marker alone never returns bytes."""
+        if (not self._service_payloads_retired or self._raw_receipts or self._contexts
+                or self._root_run is not None or self._active is not None
+                or self._source_expected or self._current_relation or self._expected_bindings
+                or 'calls' in (self.last_close_report or {})):
+            return False
+        stream = None if self._service_retired_stream_ref is None else self._service_retired_stream_ref()
+        if stream is not None:
+            if (any(getattr(stream, name, None) is not None for name in
+                    ('source', 'run', 'section', 'error', 'driver', 'session', 'pending',
+                     'pool', '_output', '_phase_source', 'owner'))
+                    or stream.bindings or getattr(stream, '_phase_bindings', {})
+                    or getattr(stream, '_prepared', {}) or getattr(stream, '_extract_results', [])
+                    or 'calls' in (stream.last_close_report or {})):
+                return False
+        return all(not ({'unconsumed_call_results', 'unconsumed_core_results', 'calls'} & set(value or {}))
+                   for value in (self._actors.last_close_report, self._actors._model_close_report))
 
     def finish_query(self, *, timeout=None):
         self._control()
@@ -1158,6 +1270,8 @@ class SemLoomRecordChainCore:
     def _evaluate_record_local(self, records, chain, expected, query_id, cancelled, columns):
         from .lotus_records_async_actor import AsyncRecordsActorOwner
 
+        if self._service_runtime_binding is not None:
+            self._service_runtime_binding.check()
         if self._closing or self._active is not None and not (
                 self.resident and (self.last_close_report or {}).get('query_completed')
                 and self.last_close_report.get('model_retained')):
@@ -1219,6 +1333,16 @@ class SemLoomRecordChainCore:
         self._actors.close_deadline = None
         self._actors.peak_prepared_batch_rpc_bytes = 0
         feedback_options = self._configure_record_feedback()
+        if expected and self._service_runtime_binding is not None:
+            # No task producer exists before ready. A failed ready receipt can
+            # therefore close its actual actor without retiring an empty Core
+            # against a model identity which the caller never received.
+            try:
+                self._start_record_actors(min(self.deadline,
+                    time.monotonic() + self.resources.startup_timeout_s), cancelled)
+            except BaseException as error:
+                self._record_startup_cleanup(error)
+                raise
         limits = self.capacity.limits(self.resources)
         if self.token_budget is not None:
             limits = replace(limits, active_work=self.token_budget.active_tokens)
@@ -1262,7 +1386,9 @@ class SemLoomRecordChainCore:
         try:
             self._active = _RecordLocalRows(self, records, run, cancelled)
             if expected:
-                self._actors.start(min(self.deadline, time.monotonic() + self.resources.startup_timeout_s), cancelled)
+                if self._service_runtime_binding is None:
+                    self._start_record_actors(min(self.deadline,
+                        time.monotonic() + self.resources.startup_timeout_s), cancelled)
                 from src.serving.backends.model_context import model_context_limit
                 context_limit = model_context_limit(self.engine, self._actors.model_ready)
                 if any(stage.generation.max_tokens > context_limit for stage in chain.stages):
@@ -1271,7 +1397,7 @@ class SemLoomRecordChainCore:
                     self.token_budget.bind_model_context(self._actors.model_ready)
             self._query_count += 1
         except BaseException as error:
-            error.add_note("record-local startup cleanup: " + str(self.close()))
+            self._record_startup_cleanup(error)
             raise
         return self._active
 
@@ -1327,12 +1453,19 @@ class SemLoomRecordChainCore:
         return sorted(calls.values(), key=lambda v: (order[v["algorithm_stage"]], v["source_position"], v["call_index"]))
 
     def _close_record_local(self, *, timeout=None, retain_model=False):
+        binding = getattr(self, '_service_runtime_binding', None)
+        runtime_owned = (binding is not None and self._actors is not None and (self._actors.ray is not None
+                         or self._actors.model_actor is not None or self._actors.model_ready is not None))
+        if (binding is not None and not self._service_cleanup_confirmed()
+                and runtime_owned):
+            binding.check(require_identity=True)
         if not retain_model:
             self._closing = True
         if self._supply_feedback is not None:
             self._supply_feedback.close()
         if (self.last_close_report is not None and self.last_close_report["status"] == "closed"
-                and (retain_model or not self.last_close_report.get('model_retained'))):
+                and (retain_model or not self.last_close_report.get('model_retained'))
+                and (binding is None or retain_model or self._service_cleanup_confirmed())):
             if self._supply_feedback is not None:
                 self.last_close_report = dict(self.last_close_report,
                     **{self._supply_feedback.report_field: self._supply_feedback.report()})
@@ -1344,6 +1477,8 @@ class SemLoomRecordChainCore:
         else:
             closed = close_prepared_core(self._actors, self.transport, self.core, self.capacity,
                 deadline=self.deadline, timeout=timeout, retain_model=retain_model)
+            if binding is not None and runtime_owned:
+                binding.check(require_identity=True)
         errors += closed["cleanup_errors"]
         if self.transport is not None:
             try:
@@ -1391,7 +1526,7 @@ class SemLoomRecordChainCore:
             progression=dict(policy=self.progression, batch_rows=self.progression_batch_rows,
                 scope="successor submission over the same single-row async model path"),
             work_unit="model_calls" if self.token_budget is None else "tokens")
-        if self._async_token_batches and hasattr(self, '_token_organizer'):
+        if self._async_token_batches and getattr(self, '_token_organizer', None) is not None:
             self.last_close_report['async_token_batches'] = dict(self._token_organizer.report(),
                 data_batch_rpcs=self.transport.data_batch_rpcs,
                 batch_handoff=self.transport.batch_handoff_report(),

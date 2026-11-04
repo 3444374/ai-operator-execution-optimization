@@ -1456,3 +1456,12 @@ Movie preparation_mode 的[接线检查](diagnostics/records_runtime_refactor_20
 以及 prepared 普通结果拷贝清理。最终 2083 方法成功、45 未执行，78 个新增方法通过；
 旧失败、权限错误及成本表网络尝试保持原记录，不把各轮成功数相加。只支持 CPU 工程判断；
 rolling 服务授予、自动物理容量、跨进程恢复和真实 Ray／模型／GPU 仍待处理，候选未推送或合并。
+
+
+严格 JSON 与 rolling 服务交付的[CPU 组合](diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery)
+保留数字／布尔值误接受的原反例、实际完整结果独立额度、同实例责任和 GC 关闭时的私有结果清理检查。
+各轮源码和失败分别保存；逻辑授予不代表物理 RAM 或真实模型能力。
+同报告登记 27 份准确源码的物理容量／恢复调查，状态为 design_only；rolling CLI 保存与跨进程恢复仍未实现。
+
+上述最终相关选择为 2172 项、2127 成功、45 未执行，失败／错误为零；44 新方法全部通过。
+1337 个代码摘要和 3010 条具名历史来源准确。原失败、一次执行中断及一份脱敏公开副本的原件摘要均保持。

@@ -6,12 +6,17 @@ iterable after the chain's normal traversal; execution still completes per membe
 """
 from copy import deepcopy
 from dataclasses import asdict
+import threading
+import weakref
 
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, StageSpec
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, identity
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from .lotus_record_chain_core import SemLoomRecordChainCore
 from .lotus_records_async_actor import AsyncRecordsActorOwner
+from .records_runtime_identity import retired_close_metadata as _retired_metadata
+
+
 
 
 class PreparedRecordsCore:
@@ -34,18 +39,49 @@ class PreparedRecordsCore:
         self._limits, self._closed = limits, False
         self._expected = {}
         self._delivered = set()
+        self._thread = threading.get_ident()
+        self._service_allocation = self._runtime_binding = self._delivery = None
+        self._retired_report = self._service_retirement = None
+
+    def _control(self):
+        if threading.get_ident() != self._thread:
+            raise RuntimeError('prepared records owner requires its single control thread')
+
+    def bind_model_runtime(self, observed=None):
+        self._control()
+        if self._runtime_binding is None:
+            from .records_runtime_identity import ModelRuntimeBinding
+            self._runtime_binding = ModelRuntimeBinding()
+        self._runtime_binding.bind(observed)
+
+    @property
+    def _model_runtime(self):
+        return None if self._runtime_binding is None else self._runtime_binding.original
+
+    @property
+    def _model_runtime_capture_attempted(self):
+        return self._runtime_binding is not None and self._runtime_binding.attempted
+
+    def _service_ready(self):
+        self._service_allocation.observe_ready(self)
 
     @property
     def production_core_connected(self):
         return self.owner is not None and self.owner.production_core_connected
 
     def start(self):
+        self._control()
         if self._closed:
             raise RuntimeError('record token owner is closing')
         if self.resident:
-            if self.owner is None:
-                self.owner = self._new_owner(self._tokenizer())
-            return self.owner.start()
+            try:
+                if self.owner is None:
+                    self.owner = self._new_owner(self._tokenizer())
+                return self.owner.start()
+            except BaseException as error:
+                if self._service_allocation is not None:
+                    self._startup_cleanup(error)
+                raise
         return dict(no_session_model=True, model_startup_scope='inside finite record-chain evaluate',
                     record_batching=deepcopy(self.execution_profile['record_batching']))
 
@@ -73,6 +109,7 @@ class PreparedRecordsCore:
         return self.owner.confirm_query_feedback(completed=bool(completed and fully_delivered))
 
     def evaluate(self, source, *, query_id, method=None, cancelled=None):
+        self._control()
         if self._closed or self._active is not None and not (self.resident and self._active.finished):
             raise ValueError('record token owner has an active query or is closed')
         query_method = self.method if method is None else FilterMethod.from_dict(asdict(method))
@@ -83,6 +120,19 @@ class PreparedRecordsCore:
         scan.describe()
         expected = source.expected(query_id)
         CallLedger(expected, max(1, len(expected)))
+        if self._service_allocation is not None:
+            from .records_service_delivery import (
+                OrdinaryDeliveryDeclaration, OrdinaryDeliverySession, declare_ordinary_delivery)
+            delivery = self._service_allocation.plan.delivery
+            if type(delivery) is OrdinaryDeliverySession:
+                delivery = delivery.for_query(query_id)
+            actual = declare_ordinary_delivery(query_id, expected, item_result_bytes=self.capacity.item_result_bytes)
+            if type(delivery) is not OrdinaryDeliveryDeclaration or actual != delivery:
+                raise ValueError('actual source identity differs from its service delivery declaration')
+            if self._active is not None and self.has_unconsumed_results():
+                raise RuntimeError('take unconsumed results before replacing their service query')
+        else:
+            delivery = None
         expected_by_id = {v['row_id']: v for v in expected}
         if len(expected_by_id) != len(expected):
             raise ValueError('finite source requires unique row occurrences')
@@ -105,24 +155,27 @@ class PreparedRecordsCore:
         if len(records) != len(expected) or len({r.row_id for r in records}) != len(records):
             raise ValueError('finite source has missing or duplicate occurrences')
         chain = LotusRecordChain((StageSpec('filter', query_method, self.generation),), query_id=query_id)
-        if self.owner is None:
-            if self.resident:
-                self.start()
-            else:
-                self.owner = self._new_owner(self._tokenizer() if records else None)
-        self._expected, self._delivered = expected_by_id, set()
         try:
+            if self.owner is None:
+                if self.resident:
+                    self.start()
+                else:
+                    self.owner = self._new_owner(self._tokenizer() if records else None)
             stream = self.owner.evaluate(iter(records), chain, expected=records,
                                          columns=scan.payload_columns, query_id=query_id, cancelled=cancelled)
+            self._expected, self._delivered, self._delivery = expected_by_id, set(), delivery
         except BaseException as error:
-            self._closed = True
-            try:
-                self.owner.close(timeout=self.resources.startup_timeout_s)
-            except BaseException as cleanup:
-                error.add_note('resident token startup close: '+type(cleanup).__name__)
+            self._startup_cleanup(error)
             raise
         self._active = _OrdinaryResults(self, stream)
         return self._active
+
+    def _startup_cleanup(self, error):
+        self._closed = True
+        try:
+            self.close(timeout=self.resources.startup_timeout_s)
+        except BaseException as cleanup:
+            error.add_note('prepared startup cleanup: ' + type(cleanup).__name__ + ': ' + str(cleanup))
 
     def _tokenizer(self):
         from transformers import AutoTokenizer
@@ -153,20 +206,92 @@ class PreparedRecordsCore:
             experimental_skip_token_packing=batching.get('experimental_skip_token_packing', False))
         owner._interleaved_preparation = self.interleaved_preparation
         owner._event_driven_preparation = self.event_driven_preparation
+        if self._service_allocation is not None:
+            from .records_runtime_identity import ModelRuntimeBinding
+            if self._runtime_binding is None:
+                self._runtime_binding = ModelRuntimeBinding()
+            self.owner = owner
+            owner._service_wrapper_ref = weakref.ref(self)
+            self._service_allocation.adopt_producer(self, owner)
+            owner._service_runtime_binding = self._runtime_binding
+            owner._service_ready_observer = self._service_ready
         return owner
 
     def _ordinary(self, receipt):
         expected = self._expected.get(receipt['row_id'])
         if (expected is None or any(receipt.get(k) != expected[k] for k in expected if k != 'call_id')):
             raise ValueError('chain receipt changed its ordinary Filter identity')
-        return dict(deepcopy(receipt), chain_call_id=receipt['call_id'], **expected)
+        value = dict(deepcopy(receipt), chain_call_id=receipt['call_id'], **expected)
+        if getattr(self, '_delivery', None) is not None:
+            from .records_service_delivery import check_ordinary_receipt
+            check_ordinary_receipt(self._delivery, value)
+        return value
+
+    def has_unconsumed_results(self):
+        self._control()
+        return self.owner is not None and any(self._ordinary(c)['call_id'] not in self._delivered
+                                             for c in self.owner.calls)
+
+    def cleanup_confirmed(self):
+        self._control()
+        if not self._closed:
+            return False
+        if self.owner is None:
+            return True
+        identity = None if self._service_allocation is None else self._service_allocation._identity
+        return self.owner._service_cleanup_confirmed(expected_identity=identity)
+
+    def take_unconsumed_results(self, *, expected=None):
+        self._control()
+        if not self._closed and self._active is not None and not self._active.finished:
+            raise RuntimeError('close the query before taking its retained receipts')
+        report = self.last_close_report
+        taken = [] if report is None else report.get('unconsumed_call_results', [])
+        if expected is not None:
+            from src.infrastructure.json_content import json_content_equal
+            if type(expected) is not list or not json_content_equal(taken, expected):
+                raise ValueError('retained receipts changed before consumer acceptance')
+        self._delivered.update(c['call_id'] for c in taken)
+        if self._active is not None and self._active._report is not None:
+            self._active._report = dict(self._active._report, unconsumed_call_results=[])
+        if self._service_allocation is not None and self._closed:
+            self._retire_delivered_producer(report)
+            self._service_allocation.settle(self)
+        return taken
+
+    def _retire_delivered_producer(self, report):
+        if (self._service_allocation is None or self.owner is None or not self._closed
+                or not self.cleanup_confirmed() or self.has_unconsumed_results()):
+            return
+        child = self.owner
+        metadata = self._retired_report
+        if metadata is None:
+            metadata = _retired_metadata(report)
+            metadata.update(payload_transferred=True, cleanup_confirmed=True,
+                            calls_count=len(report.get('calls', [])), unconsumed_call_results=[])
+        certificate = self._service_allocation.retire_producer(self, child)
+        if self._service_retirement is not None and certificate is not self._service_retirement:
+            raise RuntimeError('payload retirement cannot replace its original certificate')
+        self._service_retirement, self._retired_report = certificate, metadata
+        if self._active is not None:
+            self._active._clear_iteration()
+        child._service_retire_payloads(metadata, certificate)
+        if not child._service_payloads_retired_confirmed():
+            raise RuntimeError('original producer still retains private query payloads')
+        self.owner = self._active = self._delivery = None
+        self._expected, self._delivered = {}, set()
 
     @property
     def last_close_report(self):
+        if self._retired_report is not None:
+            return dict(deepcopy(self._retired_report), service_allocation=self._service_allocation.describe())
         if self.owner is None:
-            return (dict(status='closed', cleanup_errors=[], source_closed=True, unconsumed_call_results=[],
+            value = (dict(status='closed', cleanup_errors=[], source_closed=True, unconsumed_call_results=[],
                 record_batching=deepcopy(self.execution_profile['record_batching']),
                 model_allocated=False, production_core_connected=False) if self._closed else None)
+            if value is not None and self._service_allocation is not None:
+                value['service_allocation'] = self._service_allocation.describe()
+            return value
         report = self.owner.last_close_report
         if report is None:
             return None
@@ -208,25 +333,42 @@ class PreparedRecordsCore:
                         or any(m['member']['size'] != size or not m['submission_confirmed'] for m in members)):
                     raise ValueError('completed transport batch has incomplete or changed membership')
         snapshot = deepcopy({name: value for name, value in report.items() if name != 'calls'})
-        return dict(snapshot, calls=calls,
+        value = dict(snapshot, calls=calls,
             record_batching=deepcopy(self.execution_profile['record_batching']),
             transport_batches=[dict(batch_key=list(key), receipt_members=members) for key,members in groups.items()],
             unconsumed_call_results=[c for c in calls if c['call_id'] not in self._delivered],
             source_closed=report['source_closed'])
+        if self._service_allocation is not None:
+            value['service_allocation'] = self._service_allocation.describe()
+        return value
 
     @property
     def last_query_report(self):
         return self.last_close_report
 
     def close(self, *, timeout=None):
+        self._control()
         self._closed = True
+        active = self._active
         try:
+            if self._service_allocation is not None and self.cleanup_confirmed():
+                report = self.last_close_report
+                self._retire_delivered_producer(report)
+                self._service_allocation.settle(self)
+                report['service_allocation'] = self._service_allocation.describe()
+                return report
             if self.owner is not None:
                 self.owner.close(timeout=timeout)
+            if self._service_allocation is not None:
+                report = self.last_close_report
+                self._retire_delivered_producer(report)
+                self._service_allocation.settle(self)
+                report['service_allocation'] = self._service_allocation.describe()
+                return report
             return self.last_close_report
         finally:
-            if self._active is not None:
-                self._active._clear_iteration()
+            if active is not None:
+                active._clear_iteration()
 
 
 class _OrdinaryResults:
@@ -299,6 +441,8 @@ class _OrdinaryResults:
 
     @property
     def last_close_report(self):
+        if self.owner._service_allocation is not None and self.owner._active is self:
+            return self.owner.last_close_report
         return deepcopy(self._report) if self._report is not None else self.owner.last_close_report
 
     def close(self):

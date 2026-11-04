@@ -1301,3 +1301,68 @@ startup 原反例中后续七个资源不足错误来自首个失败后复用同
 候选仍待准确最终树独审，未推送或合并；bd527 的发布许可不被此变更代替。
 真实 Ray／vLLM／GPU、异机时钟、geometric 实际查询时序、自动物理容量、rolling 服务授予和跨进程恢复仍未完成。
 本批属于 CPU 工程证据，不提供性能、PG 接入或完整项目完成结论。
+
+
+<a id="rolling-service-delivery"></a>
+### 严格 JSON 快照与 rolling 服务交付
+
+对 1ae92934 的独审发现：Python 相等判断会把 JSON 数字 0 与 false 认成相同，
+持久文件复用和 expected 回执接受两处可能因此接受不同快照。独立修复 3a3a589d1724540935a60d03c197d48919de563a
+使用中性 json_content_equal，保留 scalar 类型、数组顺序与对象内容，拒绝非 JSON、非有限或循环输入。
+两处原反例和新的 completion_tokens=0 反例均先复现，修复后原选择 16 与相关选择 155 均通过；
+选择重叠，不累计为总数。旧文件污染时不覆盖、不接受、不归还；对象键序变化仍可接受。
+原独审及修复前失败保留，不能把原 1ae 候选当成已经通过此项检查。
+
+本轮另将完整交付声明接到 rolling 普通 Filter 的实际 SDK 工厂及原 chain，
+[调用方式](../../../../code/src/execution_provider/adapters/README.md#rolling-service-grants)使用一个有限服务字节池，
+按实际 source／query 身份声明完整结果；R、Method 和 IPC 由同一计划解析，完整 N 份结果单独计量。
+十一项完整数组角色分别覆盖 raw、parsed、adoption、failure raw、error calls、chain／stream close、
+ordinary projection、merged getter、consumer snapshot 和 transfer；两个单项 codec 空间另计。
+它们对应具体持有或工作副本，不是给请求窗口任意乘一个比例。连续 session 使用每个实际 query 中最大的完整数组。
+R=1 的 CPU 用例仍能保留完整十二项结果，在只消费一项后将另外十一项明确转交；不会把整查询结果缩成 R 项。
+
+授予绑定 actual unstarted child，ready 读取实际模型／producer，并在模型操作前核对原 Ray module／job／node。
+resident 查询完成仍保留同一模型及授予；最终 actual cleanup、RPC、Core、transport 与结果转交共同决定归还。
+部分退休保留原 child 弱引用及原证书，只能同一对象续退；证书污染或替换 producer 保持占用。
+服务关闭先准备可独立持有的完整报告，再显式解除私有 N 结果数组与原 iterator 引用，
+不依赖垃圾回收；后续 wrapper 报告只保留计数、清理和身份 metadata。调用方已有报告与行值保持原样。
+unknown／未消费结果不会提前退休或归还，也没有请求重放和第二套调度控制器。
+
+预审抓到的原循环引用反例也保留：关闭后池为零而原 child 的 raw 与 close arrays 各有两项，
+即使后台传输线程已停也不能据此免费保留。修正以关闭 GC 的实际 Pool／CPU 通信反例核对后台数组移除。
+首轮 actualPool 的七个错误来自新增 fixture 未初始化假 Ray 及非法 CSV sentiment；
+修正 fixture 后通过，没有放宽生产身份规则。其他早期错误、被误写的选择器及原断点记录均独立保存。
+
+[本轮检查](raw/rolling_service_checks.json)和[逐方法／日志原记录](raw/rolling_service_methods.json.gz)
+给出实际组合选择、全部 source SHA 和未运行项；先前各轮与本轮有重叠，不累计通过数。
+[物理容量与恢复调查](raw/physical_capacity_recovery_design.json)基于 1ae 的 27 份准确源码，状态是 design_only，
+不是物理容量实现。cgroup limit／usage 是观测；只有 payload 真正使用已成功取得的独占存储才能声称物理授予。
+额外占一块空内存、同时继续在 Python／Ray 分配原副本不能证明此事。
+
+匿名 socketpair、PID 和进程内 owner 句柄不能重建已退出的 owner；客户端重连也需要原服务仍活着及新增监听接线。
+当前 actor ACK 可早于 durable 服务结果，fsync-before-take 不足以保证 owner 死亡后的结果恢复。
+未来必须先保留持久结果与消费 ACK 的原身份和顺序，未知调用不自动重放，也不能凭描述文件恢复为空池。
+这些条件是现有源码与工程判断，不是方法性能结论；后续反例清单和实施顺序已列在同一调查文件。
+
+本轮没有接 rolling Movie CLI／session 的完整保存副本，也没有自动物理容量或跨进程重启恢复。
+既有 prepared source 仍物化整份 source／expected relation；这部分、Python／Ray 开销及调用方审计副本没有
+被本批交付授予覆盖，不能宣称完整查询内存已受服务池保护。
+无服务池的默认 R／结果槽、原生模型与 baseline 参数保持；真实 Ray、模型、GPU、实际进程退出、
+geometric 查询时序及其余全项目重构仍未完成。候选待准确最终树独审，未推送或合并 main。
+
+本轮首个完整选择记录三项旧 snapshot close 的新增属性错误，以及本机进程／socket 权限错误和派生断言。
+关闭路径现仅在实际服务 runtime 绑定存在时检查相应 actor 字段，保留旧 owner 构造和原断言；
+相关 48 项通过后，再在获准的 CPU 环境重查最终源码。首轮不改报通过，也不把新增属性错误归因于环境。
+
+最终 181 模块选择 2172 方法、运行 2164，2127 成功，失败／错误为零。
+37 个方法及两个类的八方法未运行，共 45 项，含六项真实 Ray；原原因逐方法保留。44 个本批新增方法均成功，
+原严格 JSON 两反例与原退休三反例另在最终源码上全部通过，不与完整选择累加。全部 1337 个 code 文件摘要
+与运行记录一致；原生模型／baseline、四份动态专项、legacy feedback AST 和五份历史投影的 3010 条来源保持。
+完整选择仍不是整个仓库所有测试，旧失败、旧跳过及历史差异不由本轮改写。
+
+第一次完整执行的通道中断，没有最终 JSON／日志，检查确认无同名原进程后才用新标识重跑；它没有通过数。
+第二份完整输出保留 13 个失败和 53 个错误记录，含 subtest；其中三项是已修的新属性错误，其余包含权限错误
+及派生断言。最终获准 CPU 环境的准确源码检查以新标识保存，没有覆盖它们。
+33 份原运行及日志已无损归档；一份权限失败记录包含个人本机路径，公开副本另行脱敏，私有原件字节／摘要保留。
+source_delta v2 可恢复每份公开 JSON／日志并核对公开摘要；未脱敏的 32 份与原件字节相同，脱敏一份另外登记原件摘要。
+公开解压内容没有个人 home 前缀，公开副本不用于重建被移除的个人路径。

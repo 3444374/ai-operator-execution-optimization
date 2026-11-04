@@ -1263,8 +1263,9 @@ Filter's complete receipt array, using every actual query/row identity and the e
 It checks projected fields and actual encoded bytes without mutating results. A consecutive
 session uses the largest actual array declaration, rather than combining one query's row count
 with another query's identity. Each independent complete-array copy needs its own allowance.
-This declaration is not wired to rolling owners yet; ordinary service grants do not claim to
-fund an arbitrary prepared owner's unconsumed results, Python RSS or full relation/audit copies.
+The rolling SDK path described below consumes this declaration; the Movie CLI still accepts
+service grants only for its ordinary nonrolling path. Neither path claims to fund Python RSS,
+caller-owned relation/audit copies or an undeclared arbitrary prepared query.
 Socketpair and original Future/ref handles are local capabilities; no cross-process reconnect
 or restart-safe allocator is implemented. See
 [checks and remaining work](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery).
@@ -1276,4 +1277,57 @@ successful report, zero Core use, transport refs, data RPC and audit handoff all
 it reads live calls as before. Previous external snapshots and late unknown receipts remain.
 The pure complete-array check sums already-validated item encodings plus the same codec's array
 punctuation, avoiding another whole-array encode. These changes perform no new dispatch, ACK
-or grant return. They do not eliminate all full-result copies or implement rolling grants.
+or grant return. They do not eliminate all full-result copies; rolling allocation is a
+separate service-only operation below.
+
+
+<a id="rolling-service-grants"></a>
+## Rolling ordinary Filter service payload grants
+
+`create_records_core` accepts `service_budget=RecordsPayloadPool(total_bytes)` and
+`service_delivery=declare_ordinary_delivery(query_id, source.expected(query_id),
+item_result_bytes=shape.item_result_bytes)` with the existing async profile,
+`PreparedBatching`, `rolling_refill=True` and a per-item `CoreRecordsCapacity` shape.
+Omit `resources` to use single-row preparation/model requests and no legacy R declaration.
+A resident owner can instead receive `declare_ordinary_session` for every actual query.
+The declaration covers one ordinary Filter, finite distinct occurrences and their exact
+query identities; an undeclared source/query fails before actor allocation. A pure
+`preview_service_records_runtime` validates the same shape without allocating an owner.
+
+The service supplies a finite logical byte total. The pool derives the instance request
+slots, Method storage and both IPC endpoints together, then charges the complete query
+result arrays separately. Eleven named array roles cover raw and parsed receipts,
+Method adoption, failure raw results and error calls, chain/stream close snapshots,
+ordinary projection, merged-getter work, consumer snapshot and transfer work. Each uses
+the largest actual query array in a consecutive session. Codec text/bytes have their own
+single-item allowance. These payload envelopes exclude the existing complete source/expected
+relations, Python/Ray overhead, caller audit copies and model/KV memory. The finite prepared
+source still materializes its complete relation; this is not whole-query RAM or a GPU grant.
+There is no guessed request-count ceiling and no hardware discovery. Without a service
+pool the existing R/result defaults still apply. Model-generation and native baseline
+settings are unchanged.
+
+The wrapper binds its actual unstarted chain to the grant, observes the actual model and
+producer ready identities, and checks the original Ray module/job/node before model actions.
+Consecutive queries retain one resident grant; query completion alone does not return it.
+Unknown data/observation RPCs and unconsumed results keep all granted bytes. An explicit
+`take_unconsumed_results(expected=...)` preserves JSON scalar types before accepting a
+snapshot, including boolean versus integer values.
+
+Final service close first creates an independent caller report. Complete actual cleanup
+and result transfer then allow retirement of the private chain/iterator payload references;
+the wrapper retains only scalar cleanup metadata, `calls_count` and `payload_transferred`.
+Later reports therefore do not retain full `calls` arrays. Previously returned reports and
+rows keep their values. Private cyclic references must release their arrays explicitly,
+without waiting for Python garbage collection, before the pool can return bytes. A same-process
+interruption after the original retirement proof can continue only with that original chain
+and unmodified certificate; a replacement owner cannot inherit its allocation.
+
+This SDK path does not wire rolling result persistence through the Movie CLI/session.
+Their current whole-report persistence copies need separate complete declarations first.
+A cgroup limit/headroom observation is not exclusive physical RAM, and the current anonymous
+socketpairs have no reconnect listener or durable owner/result journal. Original-owner restart,
+client reconnect and automatic physical capacity remain pending. Actor acknowledgement can
+precede durable service storage, so the existing fsync-before-result-acceptance operation is
+not an owner-death exactly-once guarantee. See the
+[CPU evidence and remaining work](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery).
