@@ -48,7 +48,9 @@
     "bindings": 3010,
     "inherited_mismatches": 10,
     "new_mismatches": 0,
-    "manifest_changed": false,
+    "new_override_mappings": 10,
+    "manifest_changed": true,
+    "original_expected_and_projection_unchanged": true,
     "matched_bfb_and_candidate": true
   },
   "versions": {
@@ -104,7 +106,15 @@
     "bfb_growth_2.json": "a664747a27b65b202041e6dc91b1a5c474ca2dd3e6ff12f6d18bf283830c925b",
     "bfb_growth_2.log": "e6de94d3fdf6d8aba4ac3c3bf77d52d855ffaa5d68b9a128477d400ab57582aa",
     "candidate_growth_2.json": "9f5e6ec079d53b0437e7fd0a620801765f4a1368e830e5c647670578a1b12eb9",
-    "candidate_growth_2.log": "ec822b99dc4e565ec46acd30666cf8ccd1244d126ae84b3880a1daf6e5c447e7"
+    "candidate_growth_2.log": "ec822b99dc4e565ec46acd30666cf8ccd1244d126ae84b3880a1daf6e5c447e7",
+    "before_retired_UCB.json": "ca8c50698391492b5708b63c178b7a6aab9a486e7b1b5208ef554de70fc9544f",
+    "before_retired_UCB.log": "11267db4cbd6f093b020b2cb360067518a19319ae233d3e651bbe991b23e3930",
+    "after_retired_UCB.json": "17e7eb2b36938cb0502238a552a89f560bfba015d3ae3321606fdf15b03edbbd",
+    "after_retired_UCB.log": "ed4f4a415169bf4c1f0364543081c4522bb824893abf6318029812b0c5b726e4",
+    "history_cleanup.json": "b71b928d73f46ee705c828177812376c2a4e5da429ccdc4011b093c34b1421ee",
+    "pid_declaration_probe.json": "623bdb977f5397e4ec812df075192aa6cfb659c4a97cb1243dc5f231a1e7bde5",
+    "resource_peer_overlap.json": "014471c082bdbaf6401a5b0a1e4a01fef7e40ae9e43de3ba3f852c6ba1e57309",
+    "resource_peer_snapshot.patch": "681c7a9df085ab5b5e33d9d2fb93b116070dcc21b6fb6b8fb33e543e75d2f9f9"
   },
   "profile_test_source_repair": {
     "initial_new_failures": [
@@ -384,5 +394,86 @@
     "draft": true,
     "merged": false
   },
-  "release_status": "pending independent review and unresolved growth timing; no push or merge"
+  "release_status": "pending independent review and unresolved growth timing; no push or merge",
+  "retired_UCB": {
+    "before": {
+      "selected": 43,
+      "passed": 43,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged_during_suite": true
+    },
+    "after": {
+      "selected": 61,
+      "passed": 61,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged_during_suite": true
+    },
+    "original_five_checks_executed_inside_one_recovery_test": true,
+    "removed_runtime_file": "code/src/scheduling/submission_control/ucb.py",
+    "removed_public_exports": [
+      "UcbConfig",
+      "UcbAdmissionController",
+      "SloRewardInput",
+      "slo_constrained_reward"
+    ],
+    "archive_prefix": "experiments/reproduction/native_baselines/historical_sources/bfb9100e/",
+    "production_callers_found": 0,
+    "source_tests_and_facade_preserved": true
+  },
+  "legacy_PID_probe": {
+    "status": "defect confirmed by read-only CPU declarations; not modified",
+    "cases": [
+      {
+        "case": "fractional_window",
+        "accepted": true,
+        "window": 2.5,
+        "window_type": "float"
+      },
+      {
+        "case": "boolean_window",
+        "accepted": true,
+        "window": true,
+        "window_type": "bool"
+      },
+      {
+        "case": "boolean_gain",
+        "accepted": true,
+        "window": 2,
+        "window_type": "int"
+      }
+    ]
+  },
+  "peer_integration": {
+    "peer_head": "bfb9100e2f3fa090fdf2304359979b853236e06a",
+    "peer_uncommitted": true,
+    "shared_file": "code/src/execution_provider/adapters/lotus_chain_token_batches.py",
+    "snapshot_patch_sha256": "681c7a9df085ab5b5e33d9d2fb93b116070dcc21b6fb6b8fb33e543e75d2f9f9",
+    "snapshot_apply_check_exit_code": 0,
+    "actual_apply_performed": false,
+    "combined_tests_performed": false
+  },
+  "whole_system_status": "module refactors and one prototype retirement completed; query host, default R decoupling and modern control replacement remain pending",
+  "coordination": {
+    "source_sha256": "fd0692c4bc334cd4fcd48ad841ac07d928245cdc9f2a358dc17f04a002640d92",
+    "controller_files": [
+      "adaptive.py",
+      "request_scan.py",
+      "resource_probe.py",
+      "stage_work.py"
+    ],
+    "refactor_scope": [
+      "records_capacity.py",
+      "records_profile.py",
+      "records_feedback_observation.py",
+      "adapter/factory integration",
+      "legacy UCB/PID/export maintenance"
+    ],
+    "shared_update_interface": "update_supply(observation, supply, resource_step=..., resource_opportunity=...)",
+    "declared_R_is_physical_capacity": false,
+    "source_peer_actual_apply": false
+  }
 }

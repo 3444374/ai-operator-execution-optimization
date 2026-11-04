@@ -2,7 +2,8 @@
 
 Importing one policy must not load every legacy policy or runtime adapter. New
 code should import from the owning submodule; these lazy exports preserve the
-existing package-level API while the runners migrate.
+maintained package-level API while the runners migrate. The unused UCB
+prototype is retained only in historical reproduction sources.
 """
 
 from __future__ import annotations
@@ -148,12 +149,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "StaticTokenBudgetController",
         "TokenBudgetDecision",
         "TokenBudgetObservation",
-    ),
-    ".submission_control.ucb": (
-        "SloRewardInput",
-        "UcbAdmissionController",
-        "UcbConfig",
-        "slo_constrained_reward",
     ),
 }
 

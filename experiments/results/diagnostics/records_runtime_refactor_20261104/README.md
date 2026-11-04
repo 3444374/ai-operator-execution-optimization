@@ -7,6 +7,113 @@
 机器摘要见 [checks.json](raw/checks.json)，完整输出通过运行标识
 `semloom-runtime-refactor-20261104` 和其中的 SHA-256 交接。
 
+## 整个 SemLoom 的当前结构与替换范围
+
+这是当前源码的职责图，不代表所有入口已经完成相同的实机资格。PG 增量路径、外部 records workload
+与图像路径分别保留自身接入身份；原生 baseline 自己执行和调度。
+
+```mermaid
+flowchart LR
+    PG["PG 增量 gateway"] --> CORE["SessionEngine / SessionCapacity"]
+    REC["records workload / session"] --> CFG["movie_records_config / records_profile / records_capacity"]
+    CFG --> HOST["records 查询编排"]
+    HOST --> METHOD["MethodDriver / ChainRun"]
+    METHOD --> CORE
+    CORE --> HANDOFF["组织 / transport / async actor"]
+    HANDOFF --> MODEL["私有服务进程 / native vLLM"]
+    MODEL --> CORE
+    CORE --> RESULT["方法推进 / 结果消费与归还"]
+    MODEL -. "观测" .-> FEEDBACK["反馈 owner / 纯解析 / 现有控制器"]
+    FEEDBACK -. "接纳额度" .-> HANDOFF
+    IMG["图像 workload"] --> IMAGE["现有图像执行器 / typed CLIP actor"]
+    IMAGE --> IMGRESULT["图像结果 / sink"]
+    BASE["LOTUS / Ray / Daft 原生 baseline"] --> BASERESULT["独立运行结果 / 统一指标"]
+```
+
+| 部分 | 现在的实际状态 | 本次是否替换执行实现 |
+|---|---|---|
+| SQL、快照、权限与查询生命周期 | 数据库与已有 gateway／carrier 负责；各接入路径分别验证 | 否 |
+| 方法语义、prompt/parser、合法后继 | `semantic_methods` 与已有 compatibility adapter；LOTUS 不替代数据库语义 | 否 |
+| 组织、准入与任务责任 | 共享 Core、`SessionCapacity`、既有组织器与策略 | 否 |
+| records 查询编排 | 普通 owner、`PreparedRecordsCore`、`SemLoomRecordChainCore` 仍同时存在 | 否 |
+| 配置和容量解析 | 原普通／Session 共用 `movie_records_config.py`；本次新增容量与执行选项模块 | 已拆分职责，默认行为未变 |
+| 快照观测 | 原 owner 仍负责锁、时钟和采样；本次提取纯解析与报告字段 | 已拆分纯函数，控制算法未变 |
+| 原生模型服务 | 原 async actor／IPC 与 vLLM，实例内 token／KV 由引擎管理 | 否 |
+| 图像与其他后端 | 原有实现和各自 baseline 继续保留 | 否 |
+| 未接入的 UCB 原型 | 当前模块与导出已退出，准确原件及五项原测试保留供历史恢复 | 仅清理无运行入口的原型 |
+
+因此，目前成果是可核验的结构整理和一项原型清理，不能写成整个 SemLoom 已经重构完成。
+
+### 主要结构问题
+
+- 查询 host 同时处理 source、方法阶段、准备填充、派发、结果、取消和关闭，仍有跨类私有属性依赖。
+  `_RecordLocalRows._tick` 先填充再推进的行为也没有因本次提取而改变。
+- R 的默认换算仍混合请求、驻留与存储；完整独立预算虽已支持，普通入口仍不够清楚。
+  完整关系和审计对象不都计入现有逻辑字节额度。
+- 现代请求反馈仍沿 `AscendingRequestController → SupplyFeedbackController → ResourceFeedbackController → AimdAdmissionController`
+  继承。源码中的 `low_load_kv_usage`、`congestion_kv_usage`、增减步长仍有实际读取，
+  不能说旧 AIMD 已经被完全替换，也不能删除基类后留下唯一调用路径无法执行。
+- 快照资格、压力、性能试探和历史兼容交织；一次 10 毫秒测试未升档不能单凭结果判定硬件不足或算法错误。
+  本次保留了整组额外失败，尚无原因已查清的结论。
+- 一些旧研究原型仍放在生产目录。UCB 已清理；`BoundedStageWorkController` 仅见测试与历史材料，
+  但与当前资源控制共用文件，本轮先列交集，不同时修改该专责会话负责的方法。
+- 配置校验并不一致：只读 CPU 声明探针确认 PID 接受小数或布尔窗口，并可输出同类型窗口。
+  这是待修缺陷，不是已实施的修改；有效旧配置与历史原件须分别验证。
+
+### 两条实施路线
+
+| 路线 | 可执行起点 | 收益与主要风险 | 判断 |
+|---|---|---|---|
+| 扩大渐进重构 | 先拆部署容量与请求策略，再拆查询 host，接着将现代反馈改为独立策略输入／输出；每批以原路径作对照 | 能复用已有任务责任、IPC、取消、方法语义与测试；若只搬函数而不解除职责耦合，问题会继续存在 | 当前优先 |
+| 并行新实现 | 在独立工作树实现新的 SemLoom query runtime，先接 sealed-task producer 和合成 backend，再逐条接原 provider | 可以重新组织模块；需重新证明所有晚到终态、未消费结果、取消、重排和质量行为，不能假定重写后更快 | 保留为替代方案 |
+
+推荐继续较大范围渐进重构，同时允许用一个独立的新 host 切片检验接口设计；不用新旧两个控制器共同决定同一请求。
+当前源码不能支持“删除整个仓库即可解决问题”的判断。若新 host 仍必须读取旧 owner 的大量私有状态，
+应以该具体阻断评估独立实现，而不是继续增加薄 wrapper。
+
+迁移按职责逐批推进：
+
+1. 先交本页全貌、已改／未改和失败原件；当前候选保持可恢复，停止无证据的大量删除。
+2. 与资源控制专责统一现代策略的输入、压力证据及容量来源；把仍有效的保护与旧试探规则分别核对，
+   有可测试替代后再退出旧生产分支，历史具名选项从原投影恢复。
+3. 将准备、接纳、派发、消费编排聚合到单一 query runtime，复用方法与 Core 的现有事实记录，避免第二套任务账本。
+4. 用同一输入运行同步 reference 与候选，核 Filter→Map 原数据、合法后继、Extract 关系、关联、顺序、NULL／错误、
+   exactly-once、未消费结果、unknown 与迟到终态；PG 接入另验 accepted-prefix、快照和取消。
+5. CPU／SDK 通过并独审后，由唯一实机会话比较同模型、生成、服务和资源配置下的完整查询时钟与质量。
+   首次／复用和 source、准备、传输、排队、模型、消费分列；不把 CPU 或单次组件检查当性能收益。
+6. 逐入口替换后删除无调用的旧分支和配置；实验 CLI 先查调用、文档、CI 与历史恢复，再决定保留、归档或删除。
+
+以上两条路线都保留原生 baseline 的执行所有权、历史摘要、失败证据与恢复材料。
+本次没有启动新的 Ray／模型／GPU 实验，也没有删除用户原仓库或其未提交文件。
+
+### 已实际完成的旧原型清理
+
+对 UCB 查过维护代码、脚本、公开导出、文档与历史投影：未发现运行调用，profiler 也未提供该选项。
+仓库无 `.github` workflow；现有 `pyproject.toml` 为代码检查配置，未发现 UCB 的 CI 执行入口。
+理论文献中的 UCB 名称与旧研究计划仍保留各自用途，不据此删除文献或历史结果。
+
+本批删除当前 `code/src/scheduling/submission_control/ucb.py`、四项公共导出及当前测试文件中的五项原型用例。
+先核对并保存准确 bfb 的实现、原导出和完整原测试文件，再修改当前路径；没有丢弃唯一字节。
+五份历史投影共追加十条来源映射，原 expected 摘要和投影 ID 不变。
+原五项用例仍从准确旧源运行；归档不是算法被现代控制器等价替换的证明。
+
+清理前相关 43 项全部成功；清理后现行控制、历史策略、阶段工作与归档恢复共 61 项全部成功。
+61 项包含一个内部运行原五项用例的恢复检查，不另外相加。完整 3010 条历史绑定保持原十处不匹配，新增为零。
+PID 校验探针只记录缺陷，未改该控制器；仍在执行的 AIMD／EWMA／HOL-age／PID 未删除。
+古早脚本仍需按实际调用与恢复关系逐项审查，本轮没有无证据地批量删除，也不声称整个项目已清理完成。
+
+### 与动态专项的实际交集
+
+只读核对 `/tmp/semloom-capacity-bfb-integration-20261104` 时，该工作树以 bfb 为父提交，
+正在修改 `adaptive.py`、`request_scan.py`、`stage_work.py`、`resource_probe.py`、
+`scheduling/core/models.py`、`scheduling/runtime/observations.py`、`lotus_chain_token_batches.py` 及三个专项测试。
+这是未提交候选，不能写成 PR 已有能力。本次不修改其工作树，也不继续编辑这些策略文件。
+
+与本会话已经提交的第二批只有 `lotus_chain_token_batches.py` 存在文件交集，
+本会话集中在纯解析／报告与薄委托，原状态方法保持；整合者仍需对照专项的新调用与报告字段逐方法处理。
+当前 UCB 清理文件与上述只读清单没有交集。
+容量解析先接兼容导入，再接观测纯函数，随后整合动态专项；默认 R 的行为迁移须单独验证，不能混入移动代码。
+
 ## 容量实际归属
 
 以下为源码核对结果。R 是旧 `RecordsResources.max_active_batches`，C 是查询接纳窗口；
@@ -29,7 +136,7 @@ IPC 表示模型进程间通信。已有独立资源对象继续负责记账，�
 
 ## 可达执行链与验收
 
-维护配置经 `records_configuration`、`create_records_core` 进入普通 Core 或
+维护配置经 `movie_records_config`、`create_records_core` 进入普通 Core 或
 `PreparedRecordsCore`。后者复用 `SemLoomRecordChainCore`：方法产生合法 ready 请求，
 `PreparedTokenOrganizer` 组织传输批，原 transport、async actor 与私有模型进程负责交接，
 Core 处理逐成员终态和结果，Method 推进合法后继，消费者归还最终行。
@@ -121,7 +228,7 @@ Core 处理逐成员终态和结果，Method 推进合法后继，消费者归�
 | 准备／派发交错 | `_RecordLocalRows._tick` 仍先填充再推进；变更会影响调度与完整耗时，不能作为单纯移动代码处理 | 已有准备交错会话负责行为候选 |
 | 压力样本消费 | 待 RPC 时清除未消费样本的候选已有独立证据；提取不改 `_consume_snapshot` | 已有压力会话负责修正 |
 | 取消与审计交付 | bfb 保留被接收方暂拒的审计回执；计算退休、审计交付和 ACK 分别核对 | 已有生命周期会话继续负责 |
-| `adaptive.py` | Aimd、EwmaAimd、HolAgeAimd 在 PG profiler 可达；ResourceFeedbackController 在普通 records 可达 | 不按文件大小删除 |
+| `adaptive.py` | Aimd、EwmaAimd、HolAgeAimd 在 PG profiler 可达；ResourceFeedbackController 在普通 records 可达 | 动态专项负责替换前的核对，本会话不并行修改 |
 | `request_scan.py` | AscendingRequestController 在 request feedback 可达，并复用原几何搜索／成对证据 | 先列现行和历史调用方，再决定是否归并 |
 | 帧与候选计量 | 原 `_header_sizes` 缓存及已有重复计量修正保持 | 不重新实现同类缓存 |
 | Git 与实机 | 每批 CPU 证据交独审，准确候选交唯一 Git 整合；GPU 会话独立使用服务与测试计划 | 本会话不推送或合并、不启动模型／Ray／GPU |

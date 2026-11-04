@@ -1,5 +1,17 @@
 # 原生基线与具名 Core 历史复现
 
+<a id="retired-ucb"></a>
+## 未接入运行入口的 UCB 原型
+
+当前生产目录移除 `scheduling/submission_control/ucb.py` 及公共 facade 的四项 UCB 导出。
+它只具有 CPU 策略测试，没有 profiler reward epoch 或维护执行调用；现行 AIMD／EWMA／HOL-age／PID 入口保持。
+准确 bfb 原件保存在 [historical_sources/bfb9100e/](historical_sources/bfb9100e/)：
+UCB 实现、原 `scheduling/__init__.py` 和完整原测试文件均可按 SHA-256 核对。
+五份历史投影各增加两条 override，共十条；原逐文件摘要、投影身份和既有映射不变。
+原五项 UCB 测试从准确副本读取并在原算法上运行，当前运行时不导入该副本。
+完整历史仍有原十处不匹配；本次保留恢复材料不把它们改报通过。
+[当前整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md)分别说明删除范围、整体结构与剩余项。
+
 上下文解析候选另保存准确`826ab3a1`的`experiments/lotus_records_chain.py`、
 `experiments/lotus_records_cascade.py`与CPU异步引擎fixture三份旧源，五个variant仅追加15条来源映射。
 原逐文件摘要、投影标识、来源版本和已有映射保持；完整3010条绑定仍有原10处差异，本次新增0。

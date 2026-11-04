@@ -496,7 +496,7 @@ The live stage broker and capacity adapter remain; retiring these prototypes doe
 change their execution, establish a resource-feedback loop or prove image performance.
 
 The package facade resolves compatibility exports lazily, so importing SAOR does not
-load AIMD/PID/UCB or Ray adapters. Maintained Core and native model-process consumers
+load AIMD/PID or Ray adapters. Maintained Core and native model-process consumers
 import the shared `serving/backends/` implementations directly; the old baseline modules
 retain import, child-process entry and pickle compatibility. Diagnostic experiment callers
 retain their own explicit policies. Retirement requires checking each entry's callers and
@@ -623,9 +623,10 @@ task/actor scheduler. Service metrics are sampled by a background provider, so
 network scrapes never run on the admission-decision path. Stale samples do not
 update controller state; every decision can be written to a control-trace CSV
 with the exact sample age. The legacy `queue_adaptive` branch remains an
-explicit baseline. UCB has a tested finite-action policy and SLO-aware reward,
-but is not exposed in the profiler until epoch-level request metrics are
-available. None of these code tests is evidence of a throughput or latency
+explicit baseline. The unused UCB prototype and its four package exports have
+left the maintained runtime; its exact source and five original CPU checks are
+retained in [historical reproduction sources](../experiments/reproduction/native_baselines/README.md#retired-ucb).
+None of these code tests is evidence of a throughput or latency
 improvement.
 
 Static token budget remains the default. The optional `service_quantum`
