@@ -87,8 +87,8 @@
   },
   "fault_fixture": {
     "attempts": 325,
-    "HTTP200": 252,
-    "HTTP500": 72,
+    "HTTP_status_200": 252,
+    "HTTP_status_500": 72,
     "unconfirmed_response": 1,
     "profiles": 4,
     "retries": 0,

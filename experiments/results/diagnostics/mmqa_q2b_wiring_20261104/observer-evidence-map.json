@@ -5,8 +5,8 @@
     "semloom.mmqa_q2b.observer_cpu.20261104": {
       "path": "raw/observer-cpu-evidence-20261104.tar.gz",
       "identity": {
-        "sha256": "e441edb94cf24922309dc7ed833a6198ae91b4576634eb61d1e537e514c3eff2",
-        "bytes": 215855
+        "bytes": 215860,
+        "sha256": "184e5367eb037f445c4405c0f9b11efad6becbaf2fdcb192f28b54a28a87c671"
       },
       "scope": "Redacted CPU observer/function/CLI evidence and read-only failed GPU accounting projection; no original real-GPU request payloads."
     }
@@ -178,11 +178,11 @@
         "artifact_id": "semloom.mmqa_q2b.observer_cpu.20261104",
         "member": "verification-summary.json",
         "identity": {
-          "sha256": "a911f0a78284722b8ee6d864af3e860cd64111ecb154cc4d8c5e0d3e2318b41f",
-          "bytes": 15772
+          "bytes": 15788,
+          "sha256": "e1aec599b319ca7227eef1d1e6d675a09dce8e7e166341e7d31146f93b246db7"
         }
       },
-      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate."
+      "transformation": "Existing free-text redactor and filesystem prefix aliases; original and copy identities are separate. HTTP status fields use separated names in the published summary."
     },
     {
       "original_relative_path": "exact-cli.log",
