@@ -123,6 +123,36 @@
   "Ray_started": false,
   "GPU_visible_to_tests": false,
   "original_data_prepare_exit": 0,
-  "cli_supervised_fixture": "pending",
+  "cli_supervised_fixture": {
+    "status": "passed",
+    "real_model_requests": 0,
+    "repository_commit": "d02b4fe0a154dc54f87a4be240250b1f9f1708bb",
+    "fixture_HTTP_POSTs": 9,
+    "allocated_attempts": 12,
+    "actual_attempts": 9,
+    "known_http_completed": 9,
+    "unknown_or_failed_attempts": 0,
+    "worker_exit": 0,
+    "remaining_owned_pids": [],
+    "lease_released": true,
+    "budget_closed": true,
+    "original_preflight": {
+      "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
+      "bytes": 1476
+    },
+    "summary": {
+      "sha256": "4335456112cd9c77c5dcd616b905181a87925a65e76da5a1acef719647b270f9",
+      "bytes": 4738
+    },
+    "footer": {
+      "sha256": "0234b48e63d6a88d0a7aed7fbe4af369d11ad62d535b78c344b6c64b30c92e9d",
+      "bytes": 603
+    },
+    "supervisor": {
+      "sha256": "3cab88a39fa6ccbba414048e287ef9d1acc49de8bba37b21f579bb6ce03234dd",
+      "bytes": 178
+    },
+    "seconds": 117.7463611792773
+  },
   "GPU_observation": "pending"
 }

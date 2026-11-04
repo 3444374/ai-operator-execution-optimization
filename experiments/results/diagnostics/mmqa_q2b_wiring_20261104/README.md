@@ -45,6 +45,12 @@ SemBench 固定为 `c814e3807e72d4cf876b852b17e77f3cc94575c2`，
 [validation.json](validation.json)。早期失败包括 Extract 类名、namespace 包来源检查和关闭后读取 proxy 状态，
 修复后重跑对应项；一次组合命令选错测试模块名的失败同样保留。
 
+精确提交 `d02b4fe0a154dc54f87a4be240250b1f9f1708bb` 另通过完整 CLI 核验：
+真实官方数据的 `--preflight` 为零调用，固定响应执行预留 12 次、实际 9 次 HTTP，成功 9、失败或未知 0；
+本地 worker 退出码为 0、残留子进程为空、预算已关闭、lease 已归还。该检查没有真实模型或 GPU 调用。
+其中每条原生查询使用独立 worker，完整 worker 启动到退出由 supervisor 的起止时刻覆盖；
+worker 内应用时间与原查询时间另列，不把准备或评价从完整过程隐去，也不把 fixture 时间当成模型性能。
+
 ## 原数据核对
 
 已从官方来源取得并保留原 ZIP，字节、摘要与实际图片后缀见[数据说明](../../../../data/README.md#mmqa-source)。
