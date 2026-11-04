@@ -3,7 +3,7 @@
 <a id="mmqa-q2b-wiring"></a>
 ## 2026-11-04：MMQA Q2b 独立实验接线
 
-[原生 Join→Extract 接线报告](diagnostics/mmqa_q2b_wiring_20261104/README.md)记录固定 SemBench 方法与原评价器、完整调用上限、阶段观察和 CPU localhost 核验。工程分支独立于重构，生产调度器未改；输入准备、真实模型与 GPU 观察的实际资格按报告和来源记录判断。CPU fixture 不作为语义质量或性能证据。
+[原生 Join→Extract 接线报告](diagnostics/mmqa_q2b_wiring_20261104/README.md)记录固定 SemBench 方法与原评价器、完整调用上限、阶段观察和 CPU localhost 核验。工程分支独立于重构，生产调度器未改；输入准备、真实模型与 GPU 观察的实际资格按报告和来源记录判断。CPU fixture 不作为语义质量或性能证据。 本轮补 CLI 最终异常脱敏及可取得的公开证据映射；作者目标 driver 与独审缺依赖环境的结果分列，修正后的独立复审和 GPU 资格仍 pending。
 
 <a id="record-layout-comparison-interpretation"></a>
 ## 2026-10-29：416调用布局对照的解释边界

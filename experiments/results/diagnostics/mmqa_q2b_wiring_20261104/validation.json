@@ -1,6 +1,6 @@
 {
   "schema": "semloom.mmqa_q2b_wiring_validation.v1",
-  "status": "CPU_and_original_inputs_passed_GPU_pending",
+  "status": "author_target_CPU_passed_independent_environment_partial_GPU_pending",
   "upstream": {
     "schema": "semloom.mmqa_q2b_preflight.v1",
     "status": "passed",
@@ -66,7 +66,8 @@
       "tests": 11,
       "log": {
         "sha256": "f97b280da20587cf43d35f0b53fdbab40b4ac8e1805d18643592dff1d5c14fef",
-        "bytes": 7560
+        "bytes": 7560,
+        "evidence_original": "cpu-r1.log"
       }
     },
     "cpu-r2": {
@@ -76,7 +77,8 @@
       "tests": 11,
       "log": {
         "sha256": "2ea75957f2324dd88fb8b2fa8c44efc038056274f15c6594466b69ac5ede8ee3",
-        "bytes": 8648
+        "bytes": 8648,
+        "evidence_original": "cpu-r2.log"
       }
     },
     "cpu-r3": {
@@ -86,7 +88,8 @@
       "tests": 12,
       "log": {
         "sha256": "47bb75c2ffc9290ee5119080d96173e239159502dbde117c06be933bd7b0c14c",
-        "bytes": 5126
+        "bytes": 5126,
+        "evidence_original": "cpu-r3.log"
       }
     },
     "cpu-r4": {
@@ -96,7 +99,8 @@
       "tests": 41,
       "log": {
         "sha256": "a822edf09fa35973d9f812d3563936d6758e98ac7a6bb7a5aa9484ff6a8dd2b4",
-        "bytes": 5997
+        "bytes": 5997,
+        "evidence_original": "cpu-r4.log"
       }
     },
     "cpu-r5": {
@@ -106,7 +110,8 @@
       "tests": 51,
       "log": {
         "sha256": "0f2910f3205e49d7f70348f74caa4509e4247234eb60610f03d7a5d000180b11",
-        "bytes": 5495
+        "bytes": 5495,
+        "evidence_original": "cpu-r5.log"
       }
     }
   },
@@ -138,21 +143,182 @@
     "budget_closed": true,
     "original_preflight": {
       "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
-      "bytes": 1476
+      "bytes": 1476,
+      "evidence_original": "exact-official-preflight.log"
     },
     "summary": {
       "sha256": "4335456112cd9c77c5dcd616b905181a87925a65e76da5a1acef719647b270f9",
-      "bytes": 4738
+      "bytes": 4738,
+      "evidence_original": "cli-case/unit/q0/summary.json"
     },
     "footer": {
       "sha256": "0234b48e63d6a88d0a7aed7fbe4af369d11ad62d535b78c344b6c64b30c92e9d",
-      "bytes": 603
+      "bytes": 603,
+      "evidence_original": "cli-case/unit/q0/observation-footer.json"
     },
     "supervisor": {
       "sha256": "3cab88a39fa6ccbba414048e287ef9d1acc49de8bba37b21f579bb6ce03234dd",
-      "bytes": 178
+      "bytes": 178,
+      "evidence_original": "cli-case/supervisor.json"
     },
     "seconds": 117.7463611792773
   },
-  "GPU_observation": "pending"
+  "GPU_observation": "pending",
+  "evidence_map": "evidence-map.json",
+  "independent_review_environment": {
+    "source_head": "439c499a7dbfc5258863cade3026bf67354de9db",
+    "source_review_sha256": "1c2326c84d2e87cb32cbe01b37c2fc5b23de6f10ba3fe10257c5cf61c16e9961",
+    "selected_methods": 51,
+    "literal_passed": 44,
+    "intended_behaviors_verified": 43,
+    "intended_methods_incomplete": 8,
+    "missing_dependencies": [
+      "overrides",
+      "cdlib"
+    ],
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "pandas": "2.3.3",
+      "Pillow": "13.0.0",
+      "tokenizers": "0.22.2",
+      "pyarrow": "24.0.0",
+      "cdlib": null,
+      "overrides": null,
+      "ray": null,
+      "daft": null
+    },
+    "qualification": "original independent environment remains partial; no repaired-code independent rerun claimed",
+    "unresolved_intended_methods": [
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_all_positive_join_consumes_the_complete_conservative_cap",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_empty_join_preserves_upstream_missing_color_error_without_fabricating_results",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_http_failure_is_charged_once_and_never_releases_extract",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_native_observers_are_restored_after_failure",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_original_evaluator_checks_color_against_unchanged_full_gold",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_prepared_byte_limit_stops_before_any_http_dispatch",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_required_event_sink_error_stops_before_http_and_preserves_failed_footer",
+      "tests.experiments.test_sembench_mmqa.MmqaNativeTests.test_selective_original_join_only_releases_matches_to_json_extract_and_original_evaluator"
+    ],
+    "models": 0,
+    "Ray": 0,
+    "GPU": 0
+  },
+  "review_repair": {
+    "schema": "semloom.mmqa_q2b_review_repair.v1",
+    "source_commit": "f4f723fc01f5ea6f1477e507bcfc3728d49a6c48",
+    "tests": 55,
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0,
+    "source_files": {
+      "code/src/baselines/image/sembench_mmqa.py": {
+        "bytes": 11773,
+        "sha256": "cfb89c17414485dcfee8a9d9da10c89c958c08b192c5c8cded759e94550a909f"
+      },
+      "code/src/experiments/mmqa_q2b_observation.py": {
+        "bytes": 9211,
+        "sha256": "76d0c1d39a42ba08af837cb4c80ad7317efadbea77a959bc9c5760da84d4f23e"
+      },
+      "code/src/experiments/sembench_mmqa.py": {
+        "bytes": 16254,
+        "sha256": "fbbf4e79cedb8838651c9e98543a5625273f52fe2276427d73800cbed2e541ba"
+      },
+      "code/scripts/experiments/run_sembench_mmqa.py": {
+        "bytes": 946,
+        "sha256": "5335a7af3e436eca3525eaa641f26b0cd57fc09e792e477df40aa1b879430c36"
+      },
+      "code/tests/experiments/test_sembench_mmqa.py": {
+        "bytes": 15024,
+        "sha256": "b7f851cd06f135792de4edcb0900d1f31b2dfa9475db05b100f8019b97d92c94"
+      },
+      "code/tests/experiments/test_sembench_mmqa_cli.py": {
+        "bytes": 3553,
+        "sha256": "ab387bb7668251388d80e96f57a7917438b178e45cafbe87484bd212c49e281e"
+      }
+    },
+    "preflight_exit": 0,
+    "dependencies": {
+      "overrides": "7.7.0",
+      "cdlib": "0.4.1",
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "pandas": "2.3.3",
+      "Pillow": "12.2.0",
+      "psutil": "7.2.2"
+    },
+    "model_calls": 0,
+    "scope": "author target driver CPU fixture; independent local review environment has separate incomplete coverage",
+    "status": "target_driver_validated_waiting_independent_rereview",
+    "tests_evidence_original": "review-repair-r1/tests.log",
+    "tests_log": {
+      "sha256": "ffee3ac0c88dc08348b0612c17473422cf64e2aba9dc6a795ac161b5162fcf20",
+      "bytes": 5425,
+      "evidence_original": "review-repair-r1/tests.log"
+    },
+    "privacy_probe": {
+      "status": "passed",
+      "worker_exit": 1,
+      "error_type": "ValueError",
+      "sentinel_absent": true,
+      "redacted_assignment_present": true,
+      "remaining_owned_pids": [],
+      "model_requests": 0,
+      "scope": "actual new CLI final exception rendering persisted by unchanged supervisor",
+      "log": {
+        "bytes": 717,
+        "sha256": "f0765d8d1cfb30a1415fd9e93c592f744ba35b24d0919f245acba383a3e087a8",
+        "evidence_original": "review-repair-r1/privacy-probe/worker.log"
+      },
+      "evidence_original": "review-repair-r1/privacy-probe/worker.log"
+    },
+    "cli_supervised_fixture": {
+      "status": "passed",
+      "real_model_requests": 0,
+      "repository_commit": "f4f723fc01f5ea6f1477e507bcfc3728d49a6c48",
+      "fixture_HTTP_POSTs": 9,
+      "allocated_attempts": 12,
+      "actual_attempts": 9,
+      "known_http_completed": 9,
+      "unknown_or_failed_attempts": 0,
+      "worker_exit": 0,
+      "remaining_owned_pids": [],
+      "lease_released": true,
+      "budget_closed": true,
+      "original_preflight": {
+        "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
+        "bytes": 1476,
+        "evidence_original": "review-repair-r1/exact-official-preflight.log"
+      },
+      "summary": {
+        "sha256": "745a20a96ef55ae93598de58cb53d81cb1fa21af3629f840bff432e6cd91719a",
+        "bytes": 4738,
+        "evidence_original": "review-repair-r1/cli-case/unit/q0/summary.json"
+      },
+      "footer": {
+        "sha256": "e52ecd6441702a881c6ed327c27fd5f9bbae704fbc54e65372a1621ffc7f25ce",
+        "bytes": 603,
+        "evidence_original": "review-repair-r1/cli-case/unit/q0/observation-footer.json"
+      },
+      "supervisor": {
+        "sha256": "586a8444ebf6e885c2108f22c0e7003fd09b980b09ccfac7dddb7c9752e59b7b",
+        "bytes": 178,
+        "evidence_original": "review-repair-r1/cli-case/supervisor.json"
+      },
+      "seconds": 24.54333468619734,
+      "evidence_original": "review-repair-r1/exact-cli-complete.json"
+    }
+  },
+  "author_local_cli_checks": {
+    "selected": 3,
+    "exit": 0,
+    "scope": "CLI rendering subprocesses only; no HTTP/model/GPU/Ray",
+    "native_query_suite": "not run in this local interpreter",
+    "log": {
+      "sha256": "b0736d45235075faa960d928787f9cba13ee227afb983ddd0295939e002824e7",
+      "bytes": 101,
+      "evidence_original": "author-local/local-cli-tests.log"
+    }
+  }
 }

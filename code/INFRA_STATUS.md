@@ -4,7 +4,7 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
-[MMQA Q2b 独立接线](../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)保留原生 exact Join→JSON Extract、完整调用上限与原颜色评价。当前验证范围按报告区分 CPU fixture、原数据和真实模型；不修改生产控制器，尚未合入 main。
+[MMQA Q2b 独立接线](../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)保留原生 exact Join→JSON Extract、完整调用上限与原颜色评价。当前验证范围按报告区分 CPU fixture、原数据和真实模型；不修改生产控制器，尚未合入 main。 CLI 最终 traceback 已补脱敏，原记录与公开副本有逐项映射；作者目标 driver 与独审本地的覆盖分别记录，修正后的独立复审与 GPU 资格仍 pending。
 
 records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
 显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，

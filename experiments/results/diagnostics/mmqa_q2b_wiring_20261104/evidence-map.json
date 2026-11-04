@@ -1,0 +1,1064 @@
+{
+  "schema": "semloom.mmqa_q2b.evidence_map.v1",
+  "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+  "artifacts": {
+    "semloom.mmqa_q2b.cpu_evidence.20261104": {
+      "path": "raw/cpu-evidence-20261104.tar.gz",
+      "identity": {
+        "sha256": "ee465b61174167c9b678e765fc25e402e763c52021e10f9cca7e0901d64113b0",
+        "bytes": 29778
+      },
+      "scope": "redacted CPU/CLI evidence copies, including retained failed runs; no model/GPU performance evidence"
+    }
+  },
+  "retrieval": {
+    "public": "Read the tracked archive at artifacts[artifact_id].path and verify with verify_evidence.py; no server login is needed.",
+    "originals": "Request the project maintainer using artifact_id plus original_relative_path; verify original_identity before use. The private handoff records the storage root and local original archive. No host/address/account is published.",
+    "identity_rule": "Original and published-copy digests are separate; formatting/path redaction never establishes byte equality.",
+    "original_bundle": {
+      "artifact_id": "semloom.mmqa_q2b.cpu_originals.20261104",
+      "identity": {
+        "sha256": "39e5d4e0b4d99fc93fce099b32cef64e4038aff5a54731558b0291f725f212e6",
+        "bytes": 58348
+      },
+      "member_layout": "original_relative_path; private retrieval through the project maintainer"
+    }
+  },
+  "entries": [
+    {
+      "original_relative_path": "author-local/local-cli-tests.json",
+      "original_identity": {
+        "sha256": "2dd26d1414f42abba48c7d52260c19f985ecdbb9e2a9fb74723620c081eec229",
+        "bytes": 153
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "author-local/local-cli-tests.json",
+        "identity": {
+          "sha256": "4325181874d3caba5e39a3d5baea1fde21a01d19778b6ea6896408a402fef907",
+          "bytes": 163
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "author-local/local-cli-tests.log",
+      "original_identity": {
+        "sha256": "b0736d45235075faa960d928787f9cba13ee227afb983ddd0295939e002824e7",
+        "bytes": 101
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "author-local/local-cli-tests.log",
+        "identity": {
+          "sha256": "b0736d45235075faa960d928787f9cba13ee227afb983ddd0295939e002824e7",
+          "bytes": 101
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "cli-case/budget.sqlite",
+      "original_identity": {
+        "sha256": "1d28f8dd338c479639602bd357b0b5f8e3b6b3d2ba2f1feda1af1bc0b90464aa",
+        "bytes": 40960
+      },
+      "published_copy": null,
+      "transformation": "private original retained; portable copies are not runnable input manifests or transactional databases"
+    },
+    {
+      "original_relative_path": "cli-case/run-config.json",
+      "original_identity": {
+        "sha256": "b0827b1c8db440150b78b05091f802522ea4ccab09a9f2dafbe4e282914b6d2c",
+        "bytes": 2264
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/run-config.json",
+        "identity": {
+          "sha256": "b0827b1c8db440150b78b05091f802522ea4ccab09a9f2dafbe4e282914b6d2c",
+          "bytes": 2264
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/supervisor.json",
+      "original_identity": {
+        "sha256": "3cab88a39fa6ccbba414048e287ef9d1acc49de8bba37b21f579bb6ce03234dd",
+        "bytes": 178
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/supervisor.json",
+        "identity": {
+          "sha256": "3cab88a39fa6ccbba414048e287ef9d1acc49de8bba37b21f579bb6ce03234dd",
+          "bytes": 178
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/events.jsonl",
+      "original_identity": {
+        "sha256": "d07189795b1e218b3efe84ccc383acca815291df29e8ecf024dc6809b9895b9e",
+        "bytes": 3404
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/events.jsonl",
+        "identity": {
+          "sha256": "d07189795b1e218b3efe84ccc383acca815291df29e8ecf024dc6809b9895b9e",
+          "bytes": 3404
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/execution.json",
+      "original_identity": {
+        "sha256": "835b0746e31d8d7480d39dfebe399e97b98fc49dd76e973afcd10f51695de85d",
+        "bytes": 39
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/execution.json",
+        "identity": {
+          "sha256": "835b0746e31d8d7480d39dfebe399e97b98fc49dd76e973afcd10f51695de85d",
+          "bytes": 39
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/http-trace.jsonl",
+      "original_identity": {
+        "sha256": "2b60e45964808703bc822d8ead18e378701c781ba18cc7042cabbac018c2427a",
+        "bytes": 22510
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/http-trace.jsonl",
+        "identity": {
+          "sha256": "2b60e45964808703bc822d8ead18e378701c781ba18cc7042cabbac018c2427a",
+          "bytes": 22510
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/observation-footer.json",
+      "original_identity": {
+        "sha256": "0234b48e63d6a88d0a7aed7fbe4af369d11ad62d535b78c344b6c64b30c92e9d",
+        "bytes": 603
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/observation-footer.json",
+        "identity": {
+          "sha256": "0234b48e63d6a88d0a7aed7fbe4af369d11ad62d535b78c344b6c64b30c92e9d",
+          "bytes": 603
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/original-gold.json",
+      "original_identity": {
+        "sha256": "f78f8bfa1d00ea2d0bbbf1b6408ffd9eb6a01cb6c81beefcc52fe65c453776ef",
+        "bytes": 539
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/original-gold.json",
+        "identity": {
+          "sha256": "0db6f538fe746da27f0ce7c8ba63a14363f6008acc70888db9634fc05f31c8ab",
+          "bytes": 643
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/original-result.json",
+      "original_identity": {
+        "sha256": "70ceed58a6492f6bad55b7fd2e6369d9c025a1c017b7c121d8935037fabb493c",
+        "bytes": 271
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/original-result.json",
+        "identity": {
+          "sha256": "70ceed58a6492f6bad55b7fd2e6369d9c025a1c017b7c121d8935037fabb493c",
+          "bytes": 271
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/requests.jsonl",
+      "original_identity": {
+        "sha256": "68eb0283af0eaf9b41a3989e5b79a435d4eb789c250da43d5fa074c878b14263",
+        "bytes": 10893
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/requests.jsonl",
+        "identity": {
+          "sha256": "68eb0283af0eaf9b41a3989e5b79a435d4eb789c250da43d5fa074c878b14263",
+          "bytes": 10893
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/responses.jsonl",
+      "original_identity": {
+        "sha256": "d7112747cb56e5e84e812aba10ce99e3db5847b9a4fa21c92bb0cfe279178992",
+        "bytes": 4788
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/responses.jsonl",
+        "identity": {
+          "sha256": "d7112747cb56e5e84e812aba10ce99e3db5847b9a4fa21c92bb0cfe279178992",
+          "bytes": 4788
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/started.json",
+      "original_identity": {
+        "sha256": "fe60172bed466f622ce4457cf7a45d3cb659048d66c0712fcca29b3337f50201",
+        "bytes": 37
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/started.json",
+        "identity": {
+          "sha256": "fe60172bed466f622ce4457cf7a45d3cb659048d66c0712fcca29b3337f50201",
+          "bytes": 37
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/q0/summary.json",
+      "original_identity": {
+        "sha256": "4335456112cd9c77c5dcd616b905181a87925a65e76da5a1acef719647b270f9",
+        "bytes": 4738
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/q0/summary.json",
+        "identity": {
+          "sha256": "4335456112cd9c77c5dcd616b905181a87925a65e76da5a1acef719647b270f9",
+          "bytes": 4738
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/unit/unit-reserved.json",
+      "original_identity": {
+        "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+        "bytes": 23
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/unit/unit-reserved.json",
+        "identity": {
+          "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+          "bytes": 23
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cli-case/worker.log",
+      "original_identity": {
+        "sha256": "f6b9cef5e6003dadae9207e86ad27d45e9a1e2717308982f356ca8ef634db5fe",
+        "bytes": 888
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cli-case/worker.log",
+        "identity": {
+          "sha256": "691838a48b5953e81c854f4e11dee5b06ee805b46f280bf25f434d001b1b65dd",
+          "bytes": 838
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "cpu-r1-complete.json",
+      "original_identity": {
+        "sha256": "9296a6838943fa9b254cb70d6776d852bf948127642ba4f6e2534f4a3a45be3c",
+        "bytes": 65
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r1-complete.json",
+        "identity": {
+          "sha256": "735b461b5134ebc336d0dd973b9c79ec2b8a644feb2e73d62559fb5855ca7c28",
+          "bytes": 74
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cpu-r1.log",
+      "original_identity": {
+        "sha256": "f97b280da20587cf43d35f0b53fdbab40b4ac8e1805d18643592dff1d5c14fef",
+        "bytes": 7560
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r1.log",
+        "identity": {
+          "sha256": "5feda2022d77ec4980620819def9fb588104cc777f52b12a4327fad642bb454a",
+          "bytes": 7158
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "cpu-r2-complete.json",
+      "original_identity": {
+        "sha256": "13573ca7512605a561fd6cbe893fa0a53dc9ca06939502e78bd98170d856bc91",
+        "bytes": 65
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r2-complete.json",
+        "identity": {
+          "sha256": "3307780eb6bb50c1d71574cde43136dde9e150d9416169f32ee8439a08309ba0",
+          "bytes": 74
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cpu-r2.log",
+      "original_identity": {
+        "sha256": "2ea75957f2324dd88fb8b2fa8c44efc038056274f15c6594466b69ac5ede8ee3",
+        "bytes": 8648
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r2.log",
+        "identity": {
+          "sha256": "37214926a9ecd65f88b2c28d7d5143c5cf0c7e0a7050fb621a840816857a566a",
+          "bytes": 8127
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "cpu-r3-complete.json",
+      "original_identity": {
+        "sha256": "81a49105bd70bf8ebaeb25d4f379ba1830077363fc02eba1744d7bcd3f7643d9",
+        "bytes": 65
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r3-complete.json",
+        "identity": {
+          "sha256": "d09563f1f110d61592598af5779e19c2918aa7b3e1e393306011c89723290a32",
+          "bytes": 74
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cpu-r3.log",
+      "original_identity": {
+        "sha256": "47bb75c2ffc9290ee5119080d96173e239159502dbde117c06be933bd7b0c14c",
+        "bytes": 5126
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r3.log",
+        "identity": {
+          "sha256": "e49c2f409af0bddac9dde0e925c27af0ea21acc7c5a9c06d09a918a136319dfb",
+          "bytes": 4975
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "cpu-r4-complete.json",
+      "original_identity": {
+        "sha256": "2dc4ed01d118c2438ec084a619eb81b368f6c25764eb4ddd3a0c6a1523405e38",
+        "bytes": 65
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r4-complete.json",
+        "identity": {
+          "sha256": "c55526f1efdbc495480952a193f765b4f780d3bc08100caa6a5f50a07f0906ab",
+          "bytes": 74
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cpu-r4.log",
+      "original_identity": {
+        "sha256": "a822edf09fa35973d9f812d3563936d6758e98ac7a6bb7a5aa9484ff6a8dd2b4",
+        "bytes": 5997
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r4.log",
+        "identity": {
+          "sha256": "61f318cc5b998b0f72978ab6766f0538e25dcdef507362d6280ef4bb42524adb",
+          "bytes": 5845
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "cpu-r5-complete.json",
+      "original_identity": {
+        "sha256": "1bdf943ada8dc1bd6c7876121e62123383ce01de15252b08f94e82054592d977",
+        "bytes": 65
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r5-complete.json",
+        "identity": {
+          "sha256": "6cbc64034e54010211ba6725eb152ecdcef4d326c450d12375b46cbaca602a26",
+          "bytes": 74
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "cpu-r5.log",
+      "original_identity": {
+        "sha256": "0f2910f3205e49d7f70348f74caa4509e4247234eb60610f03d7a5d000180b11",
+        "bytes": 5495
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "cpu-r5.log",
+        "identity": {
+          "sha256": "56be4c63fdee9320da9f2e3b5e888a990b358dcd4414599cb7930d251e3ada74",
+          "bytes": 5343
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "exact-cli-complete.json",
+      "original_identity": {
+        "sha256": "9255bf0d644eb4776427dac020b8220cbcbca848f551b17c162f6aeb6d233a7a",
+        "bytes": 887
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "exact-cli-complete.json",
+        "identity": {
+          "sha256": "9255bf0d644eb4776427dac020b8220cbcbca848f551b17c162f6aeb6d233a7a",
+          "bytes": 887
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "exact-cli-controller.log",
+      "original_identity": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "exact-cli-controller.log",
+        "identity": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "exact-cli.log",
+      "original_identity": {
+        "sha256": "3fca03042069ee8e39903e60fe27debe8c01571298c21953a28a173ee00967cb",
+        "bytes": 4907
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "exact-cli.log",
+        "identity": {
+          "sha256": "3fca03042069ee8e39903e60fe27debe8c01571298c21953a28a173ee00967cb",
+          "bytes": 4907
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "exact-official-preflight.log",
+      "original_identity": {
+        "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
+        "bytes": 1476
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "exact-official-preflight.log",
+        "identity": {
+          "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
+          "bytes": 1476
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "independent-review/REVIEW.json",
+      "original_identity": {
+        "sha256": "1c2326c84d2e87cb32cbe01b37c2fc5b23de6f10ba3fe10257c5cf61c16e9961",
+        "bytes": 7572
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "independent-review/environment-summary.json",
+        "identity": {
+          "sha256": "9e29a45b2e40f6e0a7b008e907e4eba3b15778fe989db472faaaeead289e0aef",
+          "bytes": 1830
+        }
+      },
+      "transformation": "explicit environment/coverage projection; full original separately retained"
+    },
+    {
+      "original_relative_path": "preflight-r1.json",
+      "original_identity": {
+        "sha256": "a6807c0cacbef100a7331a9da97093c92645c3c9ef908380846b192d53c293b5",
+        "bytes": 5417
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "preflight-r1.json",
+        "identity": {
+          "sha256": "d9c2ecf394842daeb90293ce807acf70f5697970f23c47699d9ff32482e12414",
+          "bytes": 5377
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "prepare-r5.log",
+      "original_identity": {
+        "sha256": "2b36da55b674e48c784abc576485f554436d84dbfc5a172bb40f460341922d96",
+        "bytes": 102
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "prepare-r5.log",
+        "identity": {
+          "sha256": "2b36da55b674e48c784abc576485f554436d84dbfc5a172bb40f460341922d96",
+          "bytes": 102
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "prepared-sf25/manifest.json",
+      "original_identity": {
+        "sha256": "4bc70d8583bd526f1c7a1e9e51e7d9f5ba45fd81a101b159f169d2ac474c48a9",
+        "bytes": 52834
+      },
+      "published_copy": null,
+      "transformation": "private original retained; portable copies are not runnable input manifests or transactional databases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/bundle-checkout.log",
+      "original_identity": {
+        "sha256": "57b25f538a521e92fa31905d068d9700d9145e719492a7508dbc5187731e2e1a",
+        "bytes": 400
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/bundle-checkout.log",
+        "identity": {
+          "sha256": "aa6918f9bdd01bb31189ad1c1c75926d16fdba8259571708a2d2bf7b5ec6d38c",
+          "bytes": 378
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/budget.sqlite",
+      "original_identity": {
+        "sha256": "defbc577cca84b6f507300a2d28790991dc1a553ffb5272b6b700c92f27e2aa0",
+        "bytes": 40960
+      },
+      "published_copy": null,
+      "transformation": "private original retained; portable copies are not runnable input manifests or transactional databases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/run-config.json",
+      "original_identity": {
+        "sha256": "7954c4e118d94c1c92de8e3ab691fa8d8abcdcd8992a2a644f31d7a28ae4f751",
+        "bytes": 2264
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/run-config.json",
+        "identity": {
+          "sha256": "7954c4e118d94c1c92de8e3ab691fa8d8abcdcd8992a2a644f31d7a28ae4f751",
+          "bytes": 2264
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/supervisor.json",
+      "original_identity": {
+        "sha256": "586a8444ebf6e885c2108f22c0e7003fd09b980b09ccfac7dddb7c9752e59b7b",
+        "bytes": 178
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/supervisor.json",
+        "identity": {
+          "sha256": "586a8444ebf6e885c2108f22c0e7003fd09b980b09ccfac7dddb7c9752e59b7b",
+          "bytes": 178
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/events.jsonl",
+      "original_identity": {
+        "sha256": "a195d9d8f56add3c4ed0f7317128e36ae80a25c58f043e46455a9d5cb63c7d6d",
+        "bytes": 3404
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/events.jsonl",
+        "identity": {
+          "sha256": "a195d9d8f56add3c4ed0f7317128e36ae80a25c58f043e46455a9d5cb63c7d6d",
+          "bytes": 3404
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/execution.json",
+      "original_identity": {
+        "sha256": "a1f09a6fb735e02f045716d9983cca0948f754ad11f66d69a07777d375935e3b",
+        "bytes": 39
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/execution.json",
+        "identity": {
+          "sha256": "a1f09a6fb735e02f045716d9983cca0948f754ad11f66d69a07777d375935e3b",
+          "bytes": 39
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/http-trace.jsonl",
+      "original_identity": {
+        "sha256": "714df89f70d288e500925bd43d370259bc0f75e9f568385749d9e0fa079f3c2d",
+        "bytes": 22507
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/http-trace.jsonl",
+        "identity": {
+          "sha256": "714df89f70d288e500925bd43d370259bc0f75e9f568385749d9e0fa079f3c2d",
+          "bytes": 22507
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/observation-footer.json",
+      "original_identity": {
+        "sha256": "e52ecd6441702a881c6ed327c27fd5f9bbae704fbc54e65372a1621ffc7f25ce",
+        "bytes": 603
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/observation-footer.json",
+        "identity": {
+          "sha256": "e52ecd6441702a881c6ed327c27fd5f9bbae704fbc54e65372a1621ffc7f25ce",
+          "bytes": 603
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/original-gold.json",
+      "original_identity": {
+        "sha256": "f78f8bfa1d00ea2d0bbbf1b6408ffd9eb6a01cb6c81beefcc52fe65c453776ef",
+        "bytes": 539
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/original-gold.json",
+        "identity": {
+          "sha256": "0db6f538fe746da27f0ce7c8ba63a14363f6008acc70888db9634fc05f31c8ab",
+          "bytes": 643
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/original-result.json",
+      "original_identity": {
+        "sha256": "70ceed58a6492f6bad55b7fd2e6369d9c025a1c017b7c121d8935037fabb493c",
+        "bytes": 271
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/original-result.json",
+        "identity": {
+          "sha256": "70ceed58a6492f6bad55b7fd2e6369d9c025a1c017b7c121d8935037fabb493c",
+          "bytes": 271
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/requests.jsonl",
+      "original_identity": {
+        "sha256": "5cd18f1be124105e00a2d1d0bf0be0a3c09cf5505525a78cf3d93a3b0f1a9132",
+        "bytes": 10893
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/requests.jsonl",
+        "identity": {
+          "sha256": "5cd18f1be124105e00a2d1d0bf0be0a3c09cf5505525a78cf3d93a3b0f1a9132",
+          "bytes": 10893
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/responses.jsonl",
+      "original_identity": {
+        "sha256": "a81951b129fb43fcf311158e643ddf12db5fdbd0ab9fd4a856004d2c77bcc3dc",
+        "bytes": 4788
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/responses.jsonl",
+        "identity": {
+          "sha256": "a81951b129fb43fcf311158e643ddf12db5fdbd0ab9fd4a856004d2c77bcc3dc",
+          "bytes": 4788
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON lines formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/started.json",
+      "original_identity": {
+        "sha256": "585cf3ac0146fed650087826e2536dd9f2cd53942ed059fa73349d42686b6727",
+        "bytes": 37
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/started.json",
+        "identity": {
+          "sha256": "585cf3ac0146fed650087826e2536dd9f2cd53942ed059fa73349d42686b6727",
+          "bytes": 37
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/q0/summary.json",
+      "original_identity": {
+        "sha256": "745a20a96ef55ae93598de58cb53d81cb1fa21af3629f840bff432e6cd91719a",
+        "bytes": 4738
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/q0/summary.json",
+        "identity": {
+          "sha256": "745a20a96ef55ae93598de58cb53d81cb1fa21af3629f840bff432e6cd91719a",
+          "bytes": 4738
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/unit/unit-reserved.json",
+      "original_identity": {
+        "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+        "bytes": 23
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/unit/unit-reserved.json",
+        "identity": {
+          "sha256": "49a6c70aca44aabb1bfc443ef6e6c43581a9cfa2e54f3c0131459c63febe81e4",
+          "bytes": 23
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/cli-case/worker.log",
+      "original_identity": {
+        "sha256": "fd4a94153c3af9f9f920fb6b1d8040e13151174e9ced6520a08cb046bf5d197f",
+        "bytes": 888
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/cli-case/worker.log",
+        "identity": {
+          "sha256": "d66ff5e5ceef31c9d94418c3632ce09357e88520fa8dbffde08b63eee77844f4",
+          "bytes": 838
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/clone-attempt.json",
+      "original_identity": {
+        "sha256": "aed6e91d777cd92064a125945208b971d8282e7975b187e40b3e9bc2a6183fda",
+        "bytes": 120
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/clone-attempt.json",
+        "identity": {
+          "sha256": "aed6e91d777cd92064a125945208b971d8282e7975b187e40b3e9bc2a6183fda",
+          "bytes": 120
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/dependency-versions.json",
+      "original_identity": {
+        "sha256": "25d6cf8b11d914019a41629ab1cdb694fe98d505b8057f9f9865983e242c1a17",
+        "bytes": 179
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/dependency-versions.json",
+        "identity": {
+          "sha256": "25d6cf8b11d914019a41629ab1cdb694fe98d505b8057f9f9865983e242c1a17",
+          "bytes": 179
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/exact-cli-complete.json",
+      "original_identity": {
+        "sha256": "0605b4d6e739d527e5486fbdb93b77d641478e9490925e5509e011c691a15a47",
+        "bytes": 887
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/exact-cli-complete.json",
+        "identity": {
+          "sha256": "0605b4d6e739d527e5486fbdb93b77d641478e9490925e5509e011c691a15a47",
+          "bytes": 887
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/exact-cli-controller.log",
+      "original_identity": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/exact-cli-controller.log",
+        "identity": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/exact-cli.log",
+      "original_identity": {
+        "sha256": "973bc7ffe6623a2c79b1900d75ff391754a34496269dd162dde2b388e9ad89fb",
+        "bytes": 4739
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/exact-cli.log",
+        "identity": {
+          "sha256": "973bc7ffe6623a2c79b1900d75ff391754a34496269dd162dde2b388e9ad89fb",
+          "bytes": 4739
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/exact-official-preflight.log",
+      "original_identity": {
+        "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
+        "bytes": 1476
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/exact-official-preflight.log",
+        "identity": {
+          "sha256": "3a1974b12f61c066d277c98706b06cf04e6525bf8a821d9b68cd57339c2b0752",
+          "bytes": 1476
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/preflight.json",
+      "original_identity": {
+        "sha256": "e7d05d0154d52c2d064c48effe6040f28bf0f443b1a0894137bb5d1800e163fa",
+        "bytes": 5451
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/preflight.json",
+        "identity": {
+          "sha256": "320c9b5ffb4c68f8f5d4a6e42c5b1c7837fdd9ba60e1a8fb7fe2be7918936d7f",
+          "bytes": 5411
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/preflight.log",
+      "original_identity": {
+        "sha256": "e7d05d0154d52c2d064c48effe6040f28bf0f443b1a0894137bb5d1800e163fa",
+        "bytes": 5451
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/preflight.log",
+        "identity": {
+          "sha256": "320c9b5ffb4c68f8f5d4a6e42c5b1c7837fdd9ba60e1a8fb7fe2be7918936d7f",
+          "bytes": 5411
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/privacy-probe/result.json",
+      "original_identity": {
+        "sha256": "5aa70aaab09645b67dbeec0d52212094d11a4ef278d02652cb0aee4e8365a407",
+        "bytes": 398
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/privacy-probe/result.json",
+        "identity": {
+          "sha256": "5aa70aaab09645b67dbeec0d52212094d11a4ef278d02652cb0aee4e8365a407",
+          "bytes": 398
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/privacy-probe/supervisor.json",
+      "original_identity": {
+        "sha256": "c810fef833f76302e613cf75ceb9507bb6fde04e7a3522d174eda577a08218a5",
+        "bytes": 279
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/privacy-probe/supervisor.json",
+        "identity": {
+          "sha256": "c810fef833f76302e613cf75ceb9507bb6fde04e7a3522d174eda577a08218a5",
+          "bytes": 279
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/privacy-probe/worker.log",
+      "original_identity": {
+        "sha256": "f0765d8d1cfb30a1415fd9e93c592f744ba35b24d0919f245acba383a3e087a8",
+        "bytes": 717
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/privacy-probe/worker.log",
+        "identity": {
+          "sha256": "1aee81770ad89d77e48638f7cdba2c747fb291cf694a432497bcc3377b140b9c",
+          "bytes": 692
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "review-repair-r1/repair-summary.json",
+      "original_identity": {
+        "sha256": "21a8e4ce47eb8433e9091c6b753f0ff58358a82a323e83e737a2a4ce9c72cd66",
+        "bytes": 1565
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/repair-summary.json",
+        "identity": {
+          "sha256": "21a8e4ce47eb8433e9091c6b753f0ff58358a82a323e83e737a2a4ce9c72cd66",
+          "bytes": 1565
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/tests-complete.json",
+      "original_identity": {
+        "sha256": "4852b15e2b6526475d4bd29643f4696682d2afb3a184a63a8a44034028309940",
+        "bytes": 63
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/tests-complete.json",
+        "identity": {
+          "sha256": "a0f9256222504c8973adcaac2ae4565728e145df1208585538fcc134460c29c8",
+          "bytes": 72
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    },
+    {
+      "original_relative_path": "review-repair-r1/tests.log",
+      "original_identity": {
+        "sha256": "ffee3ac0c88dc08348b0612c17473422cf64e2aba9dc6a795ac161b5162fcf20",
+        "bytes": 5425
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "review-repair-r1/tests.log",
+        "identity": {
+          "sha256": "659ba8f92f5b15e10a293e70e71b9644267d5bd14cf5e651c4e7a22f4bcd2f6a",
+          "bytes": 5274
+        }
+      },
+      "transformation": "existing free-text redactor; filesystem prefix aliases"
+    },
+    {
+      "original_relative_path": "validation-r5-public.json",
+      "original_identity": {
+        "sha256": "44d639856e0e2b33b7d99c977dbe8f4197262700cc2ef2e517c532502883e3d7",
+        "bytes": 4410
+      },
+      "published_copy": {
+        "artifact_id": "semloom.mmqa_q2b.cpu_evidence.20261104",
+        "member": "validation-r5-public.json",
+        "identity": {
+          "sha256": "44d639856e0e2b33b7d99c977dbe8f4197262700cc2ef2e517c532502883e3d7",
+          "bytes": 4410
+        }
+      },
+      "transformation": "existing structured redactor; filesystem prefix aliases; JSON formatting"
+    }
+  ]
+}

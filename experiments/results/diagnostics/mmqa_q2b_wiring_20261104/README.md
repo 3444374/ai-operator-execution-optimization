@@ -31,7 +31,7 @@ SemBench 固定为 `c814e3807e72d4cf876b852b17e77f3cc94575c2`，
 ## 验证与证据
 
 [CPU 用例](../../../../code/tests/experiments/test_sembench_mmqa.py)使用真实 LOTUS、原查询和原评价器，
-模型响应由 localhost fixture 提供，GPU 不可见，模型服务与 Ray 均未启动。最终 51 项检查全部通过，其中 15 项是本次 Q2b 用例，另 36 项覆盖复用的预算与监督组件。
+模型响应由 localhost fixture 提供，GPU 不可见，模型服务与 Ray 均未启动。作者目标 driver 的原运行记录为 51 项通过，其中 15 项是 Q2b 用例，另 36 项覆盖复用的预算与监督组件；这不是其他环境的通过声明。
 选择性 fixture 为 3 图×2 行：6 次 Join、3 次 Extract；全匹配为 6＋6 次，达到完整保守额度。
 检查完整颜色评价、相同内容的多个发生项、HTTP 错误不重试、输入与枚举变化拒绝、观察器恢复、字节上限、
 必需记录器报错和监督超时后关闭预算。本项全部真实模型请求为 0。
@@ -41,8 +41,8 @@ SemBench 固定为 `c814e3807e72d4cf876b852b17e77f3cc94575c2`，
 进程内 CPU 检查观察到 SDK socket 的 `ResourceWarning`；实际执行入口每条查询使用独立 worker，
 进程退出证据与客户端复用的长期资源性质分别判断。
 
-机器报告、每轮失败与成功日志、源码摘要及输入获取记录留在仓库外运行目录；紧凑核验记录见
-[validation.json](validation.json)。早期失败包括 Extract 类名、namespace 包来源检查和关闭后读取 proxy 状态，
+机器报告、每轮失败与成功日志、源码摘要及输入获取记录保留原件；紧凑核验记录见
+[validation.json](validation.json)，原件与公开副本的身份及获取方式见下文。早期失败包括 Extract 类名、namespace 包来源检查和关闭后读取 proxy 状态，
 修复后重跑对应项；一次组合命令选错测试模块名的失败同样保留。
 
 精确提交 `d02b4fe0a154dc54f87a4be240250b1f9f1708bb` 另通过完整 CLI 核验：
@@ -50,6 +50,59 @@ SemBench 固定为 `c814e3807e72d4cf876b852b17e77f3cc94575c2`，
 本地 worker 退出码为 0、残留子进程为空、预算已关闭、lease 已归还。该检查没有真实模型或 GPU 调用。
 其中每条原生查询使用独立 worker，完整 worker 启动到退出由 supervisor 的起止时刻覆盖；
 worker 内应用时间与原查询时间另列，不把准备或评价从完整过程隐去，也不把 fixture 时间当成模型性能。
+
+## 独审修正与环境分列
+
+独审确认原 summary 已脱敏，但原 CLI 把同一异常再次交给 Python 默认 traceback，导致它进入 `worker.log`。
+提交 `f4f723fc01f5ea6f1477e507bcfc3728d49a6c48` 在新增 CLI 最终异常输出处复用既有 redactor，
+保留异常类型、原因链、notes、非零退出以及整数退出码；KeyboardInterrupt 仍为 130。
+未修改原查询、gold、预算或共享 supervisor。合成探针实际经新 CLI 与原 supervisor 落盘，
+保留 `ValueError`、退出码 1 和 `password=***`，合成敏感值没有进入日志，残留子进程为空。
+
+测试结果按环境分别解释：
+
+| 环境与来源 | 完成情况 | 未完成部分 |
+|---|---|---|
+| 作者原目标 driver，原记录 | 51 项通过，原件引用摘要已在本轮取回核对 | 不替代独审环境运行 |
+| 独审本地环境，原报告 | 44 项字面通过，其中 43 项完整触及预期行为 | 8 项预期行为未完成；缺 overrides/cdlib，另有 localhost/进程权限造成的早期错误 |
+| 本次作者目标 driver | 已声明依赖检查通过；55 项通过，包含新增 4 项 CLI 检查；真实模型请求 0 | 修正后的独立复审和 GPU 资格仍 pending |
+| 本次作者本地解释器 | 3 项无 HTTP 的 CLI 子进程检查通过 | 未在该解释器运行完整 native 查询套件 |
+
+目标 driver 已有 overrides 7.7.0、cdlib 0.4.1、Pillow 12.2.0；独审本地 Pillow 为 13.0.0，
+且缺前两项依赖，不能称同环境。没有为独审环境混装包，也不把两轮数量相加或把导入异常算作 HTTP 行为通过。
+原 observer 恢复用例现要求实际发出 HTTP，并核对失败尝试计数，避免缺依赖时仅因抛异常而字面通过。
+
+修正提交另完成完整 CLI 固定响应复验：12 次预留、9 次实际 HTTP、9 次成功、失败或未知 0，
+worker 退出码 0、预算关闭、lease 归还、残留子进程为空。官方输入 preflight 仍为零调用。
+这只是作者目标环境的 CPU 功能证据；未替代独立复审，也没有真实模型或 GPU 运行。
+
+<a id="evidence-retrieval"></a>
+## 原件、副本与获取
+
+稳定 artifact 身份为 `semloom.mmqa_q2b.cpu_evidence.20261104`。
+[映射清单](evidence-map.json)逐项记录运行名、原件相对路径、原摘要、公开归档成员及脱敏后摘要；
+[公开归档](raw/cpu-evidence-20261104.tar.gz)保存 63 份可直接取得的脱敏副本，包含旧失败、CPU 日志、
+完整 CLI summary/footer/supervisor、新脱敏探针及目标环境版本。它不是原件逐字节副本。
+原件 66 份均已取回本地并核对；事务数据库与含机器路径的可运行输入 manifest 继续只保留原件。
+
+从本提交取 Git 文件后，不需要服务器账号即可核验公开副本和 validation 的 16 个来源引用：
+
+```sh
+python3 experiments/results/diagnostics/mmqa_q2b_wiring_20261104/verify_evidence.py
+```
+
+如需对照旧 validation 的原摘要，向项目维护者提供上述 artifact 身份及 `original_relative_path`。
+维护者通过仓外交接清单的存储登记取得对应原件或原归档，交付前核对 `original_identity`；
+接收方按清单相对路径放置后运行：
+
+```sh
+python3 experiments/results/diagnostics/mmqa_q2b_wiring_20261104/verify_evidence.py \
+  --original-root "$ORIGINAL_EVIDENCE_ROOT"
+```
+
+本轮该检查核对了 63 份公开副本、66 份原件和 16 个来源引用。
+副本使用既有 redactor，并以占位符替换机器路径；原摘要与副本摘要分列，不能互换。
+独审环境的记录以明确投影单列，原审查报告的摘要与私有获取映射同样保留；没有据此声称该环境已完成复验。
 
 ## 原数据核对
 

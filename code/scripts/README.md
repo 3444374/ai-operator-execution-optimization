@@ -262,6 +262,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_sembench_mmqa.p
 执行时核对干净 Git 代码身份，取得现有 host lease，预留一次完整额度并启动独立 worker。
 原生请求经过保留原 HTTP 内容的观察 proxy；失败、总时长到达或取消后关闭预算，监督器回收本地 worker。
 每次使用新的仓库外输出目录，不覆盖或重用先前预算。`--preflight`与`--prepare`均不调用模型。
+新增 CLI 在最终异常输出处先脱敏再写 stderr，保留错误类型与退出状态；原 Python 查询 API 继续向调用方抛出原异常。CPU 原件、副本与核验入口见[证据映射](../../experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md#evidence-retrieval)。
 
 ## Animals 原版图文 Q1
 

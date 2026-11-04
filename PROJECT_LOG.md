@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-11-04：修正 Q2b 异常记录与证据获取
+
+独审后在新增 CLI 输出处复用异常脱敏，保留原查询与非零退出；另取回旧 CPU/CLI 原件并补公开脱敏副本、逐项摘要映射和核验入口。作者目标环境、独审环境缺依赖导致的未完成项及修正后复审状态分列，不转授模型或 GPU 资格；具体结果见[同一接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
+
 ## 2026-11-04：独立补齐 MMQA Q2b 实验入口
 
 在独立 worktree 增加原 Q2b 的有限数据准备、exact Join→JSON Extract、原三元组评价和阶段观察，复用既有预算、proxy 与进程监督。只做 CPU 功能核验，真实模型观察交给 GPU 会话协调，未修改重构工作树或合并 main。实现和失败证据见[接线报告](experiments/results/diagnostics/mmqa_q2b_wiring_20261104/README.md)。
