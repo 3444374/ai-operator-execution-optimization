@@ -2,6 +2,14 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-05：多任务共享额度与 SAOR 一起独立维护
+
+按用户要求，将两者整理到[独立研究包](code/src/research/multitask/README.md)，
+与 records 单查询的配置、执行导入和核心测试分开。研究消费者直接迁移，旧路径不留转发壳；
+Session 与反馈控制器本轮只读，并保留核心线程已发布的拆分。
+实现、声明和历史证据保持，未来拆仓所需的数据适配另列；
+源码与 CPU 核对见[整理记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)。
+
 ## 2026-11-05：精简普通 records 的重复处理
 
 基于已发布 9da299e9 独立整理等待期限、服务额度属性访问和交付声明的身份处理；

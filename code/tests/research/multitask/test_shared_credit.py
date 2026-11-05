@@ -12,11 +12,11 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.submission_control.shared_credit import (  # noqa: E402
+from src.research.multitask.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
 )
-from src.scheduling.submission_control.credit_policies import _GuardHold  # noqa: E402
-from src.scheduling.submission_control.saor import (  # noqa: E402
+from src.research.multitask.credit_policies import _GuardHold  # noqa: E402
+from src.research.multitask.saor import (  # noqa: E402
     SaorReleaseConfig,
 )
 

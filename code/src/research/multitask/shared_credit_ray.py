@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ..submission_control.shared_credit import FairEndpointCreditCoordinator
-from ..submission_control.saor import SaorReleaseConfig
+from .shared_credit import FairEndpointCreditCoordinator
+from .saor import SaorReleaseConfig
 
 
 class _FairCreditActor:

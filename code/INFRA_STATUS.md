@@ -7,6 +7,11 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+SAOR 与通用多任务共享额度已迁入[独立研究包](src/research/multitask/README.md)，
+普通 records 默认与核心调度测试不依赖研究策略；原同步调度／shared-vLLM 研究接线保留。
+本批不改 Session 或反馈实现，并无冲突组合核心线程的最新拆分；
+源码保持核对与 CPU 范围见[整理记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)。
+
 本地资源大步候选移除“两份物理样本／只首次大步／后续最多翻倍”限制；按真实许可、ready前沿和合格资源余量试探，
 旧慢成员未完成不单独挡住资源试探，性能确认仍基于真实可比完成工作。压力回退保留全部既有责任和查询成本，
 静态默认、B和Core／IPC硬预算不变；[规则与CPU边界](src/scheduling/runtime/calibration.README.md#当前资源请求接纳)不代表实机收益。

@@ -26,8 +26,6 @@ from src.scheduling.runtime.execution import SynchronousExecutionEngine
 from src.scheduling.runtime.ray_adapter import RaySubmissionAdapter
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.submission_control.admission import StaticAdmissionController
-from src.scheduling.submission_control.saor import SaorReleaseConfig
-from src.scheduling.runtime.shared_credit_ray import get_or_create_shared_credit_client
 
 
 DEFAULT_POOL_ID = "default"
@@ -129,6 +127,10 @@ def _shared_credit_client(
 ):
     if not config:
         return None
+
+    from src.research.multitask.saor import SaorReleaseConfig
+    from src.research.multitask.shared_credit_ray import get_or_create_shared_credit_client
+
     capacities = {
         endpoint_id: (
             config["request_limit"],

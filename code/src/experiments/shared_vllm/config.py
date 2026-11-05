@@ -17,7 +17,7 @@ from src.experiments.calibration.contracts import (
 from src.experiments.scenarios.core import validate_service_metadata
 from src.infrastructure.config_env import expand_scalar, expand_text
 from src.scheduling.core.control import CapacityArm
-from src.scheduling.runtime.saor_capacity import (
+from src.research.multitask.saor_capacity import (
     LinearCostFeature,
     SaorArmEstimate,
     SaorObservationModel,

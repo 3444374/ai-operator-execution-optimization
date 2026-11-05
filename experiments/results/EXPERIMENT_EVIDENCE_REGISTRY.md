@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-05：SAOR 与多任务共享额度独立维护
+
+与核心线程 `7d34d447` 无冲突组合的 `6c8aad0d` 通过 308 项去重 CPU 方法；
+[范围、首次错误与来源记录](diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)
+保留两项旧模板路径错误、独立基底复现，以及补源后原十处历史不匹配且零新增的事实。
+此项只支持模块隔离、现用协议接线与来源保持，不支持真实模型或性能判断。
+
 新接线准备按准确 b99 字节导入策略和测试，当前底稿 327 项全部成功，无失败、错误或跳过；
 [摘要](diagnostics/records_runtime_refactor_20261104/raw/policy_import_checks.json)解释五项 UCB 历史选择差额。
 此初轮导入时尚未切换公共工厂；后续接线范围与默认变化见下方新记录，历史原十处不匹配保持。

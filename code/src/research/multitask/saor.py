@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass, replace
 from typing import Literal, Mapping
 
-from ..core.control import CapacityArm
+from src.scheduling.core.control import CapacityArm
 
 
 @dataclass(frozen=True)

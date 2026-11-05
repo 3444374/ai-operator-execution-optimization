@@ -12,10 +12,10 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.runtime.shared_credit_ray import (  # noqa: E402
+from src.research.multitask.shared_credit_ray import (  # noqa: E402
     get_or_create_shared_credit_client,
 )
-from src.scheduling.submission_control.saor import (  # noqa: E402
+from src.research.multitask.saor import (  # noqa: E402
     SaorReleaseConfig,
 )
 

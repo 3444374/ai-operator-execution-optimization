@@ -13,8 +13,8 @@ from src.infrastructure.runtime_env import ray_runtime_env
 from src.modalities.text.contracts import build_text_runtime_snapshot
 from src.observability.metrics import gpu_metadata, scrape_prometheus_metrics
 from src.observability.metrics.resources import host_metadata
-from src.scheduling.runtime.shared_credit_ray import get_or_create_shared_credit_client
-from src.scheduling.submission_control.saor import SaorReleaseConfig
+from src.research.multitask.shared_credit_ray import get_or_create_shared_credit_client
+from src.research.multitask.saor import SaorReleaseConfig
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]

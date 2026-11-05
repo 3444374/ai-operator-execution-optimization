@@ -1,0 +1,1956 @@
+{
+  "schema": "semloom.saor_multitask_isolation.cpu.v1",
+  "source": {
+    "run_id": "saor-multitask-isolation-20261105",
+    "timestamp_utc": "2026-11-05T12:10:12.214888+00:00",
+    "base_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+    "core_integration_revision": "7d34d4478ec91937a67188e9e3b11db912dc01ac",
+    "implementation_index_tree": "66be98bc2dc2112c73b1f49b599edc2e73796c90",
+    "source_fingerprint_sha256": "d94983fa17d5e68a90dfe525b454e115394ce8f40858bf2d37128d27ccb0e239",
+    "python_version": "3.12.6",
+    "source_file_count": 944,
+    "module_migrations": [
+      {
+        "source": "code/src/scheduling/submission_control/saor.py",
+        "destination": "code/src/research/multitask/saor.py",
+        "non_import_ast_equal": true
+      },
+      {
+        "source": "code/src/scheduling/submission_control/shared_credit.py",
+        "destination": "code/src/research/multitask/shared_credit.py",
+        "non_import_ast_equal": true
+      },
+      {
+        "source": "code/src/scheduling/submission_control/credit_policies.py",
+        "destination": "code/src/research/multitask/credit_policies.py",
+        "non_import_ast_equal": true
+      },
+      {
+        "source": "code/src/scheduling/submission_control/ordered_release.py",
+        "destination": "code/src/research/multitask/ordered_release.py",
+        "non_import_ast_equal": true
+      },
+      {
+        "source": "code/src/scheduling/runtime/saor_capacity.py",
+        "destination": "code/src/research/multitask/saor_capacity.py",
+        "non_import_ast_equal": true
+      },
+      {
+        "source": "code/src/scheduling/runtime/shared_credit_ray.py",
+        "destination": "code/src/research/multitask/shared_credit_ray.py",
+        "non_import_ast_equal": true
+      }
+    ],
+    "test_migrations": [
+      {
+        "module": "test_saor.py",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_shared_credit.py",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_shared_credit_ray.py",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_ordered_release.py",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_saor_capacity_runtime.py",
+        "ast_equal_except_import_destinations": true
+      }
+    ],
+    "relocated_test_methods": [
+      {
+        "module": "test_scheduler.py",
+        "method": "test_shared_credit_rejects_oversized_request_before_submit",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_scheduler.py",
+        "method": "test_bounded_priority_requires_arrival_epoch_and_acquire_timeout",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_incremental_session.py",
+        "method": "test_existing_local_credit_waits_for_remote_terminal_before_finish",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_incremental_session.py",
+        "method": "test_credit_retirement_errors_keep_finally_cleanup",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_incremental_session.py",
+        "method": "test_not_accepted_returns_existing_credit_and_preserves_task",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_incremental_session.py",
+        "method": "test_retired_local_fifo_credit_does_not_accumulate_job_history",
+        "ast_equal_except_import_destinations": true
+      },
+      {
+        "module": "test_incremental_session.py",
+        "method": "test_retirement_cannot_erase_live_credit_or_legacy_history",
+        "ast_equal_except_import_destinations": true
+      }
+    ],
+    "byte_unchanged_paths": [
+      "code/src/execution_provider/__init__.py",
+      "code/src/execution_provider/adapters/__init__.py",
+      "code/src/execution_provider/adapters/async_fixed_model.py",
+      "code/src/execution_provider/adapters/completion_response.py",
+      "code/src/execution_provider/adapters/full_response.py",
+      "code/src/execution_provider/adapters/golden.py",
+      "code/src/execution_provider/adapters/image_execution.py",
+      "code/src/execution_provider/adapters/image_method.py",
+      "code/src/execution_provider/adapters/incremental_execution.py",
+      "code/src/execution_provider/adapters/incremental_session.py",
+      "code/src/execution_provider/adapters/lotus_cascade_core.py",
+      "code/src/execution_provider/adapters/lotus_chain_actor_backend.py",
+      "code/src/execution_provider/adapters/lotus_chain_fused_runtime.py",
+      "code/src/execution_provider/adapters/lotus_chain_token_batches.py",
+      "code/src/execution_provider/adapters/lotus_chain_token_budget.py",
+      "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "code/src/execution_provider/adapters/lotus_record_chain_fifo.py",
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "code/src/execution_provider/adapters/lotus_records_batches.py",
+      "code/src/execution_provider/adapters/lotus_records_core.py",
+      "code/src/execution_provider/adapters/lotus_records_static.py",
+      "code/src/execution_provider/adapters/map_organization.py",
+      "code/src/execution_provider/adapters/map_preparation.py",
+      "code/src/execution_provider/adapters/model_config.py",
+      "code/src/execution_provider/adapters/native_tasks.py",
+      "code/src/execution_provider/adapters/openai_compatible_fixed.py",
+      "code/src/execution_provider/adapters/ray_map_transport.py",
+      "code/src/execution_provider/adapters/recording.py",
+      "code/src/execution_provider/adapters/records_async_model.py",
+      "code/src/execution_provider/adapters/records_capacity.py",
+      "code/src/execution_provider/adapters/records_feedback_observation.py",
+      "code/src/execution_provider/adapters/records_memory_pressure.py",
+      "code/src/execution_provider/adapters/records_model_adapter.py",
+      "code/src/execution_provider/adapters/records_native_sampler.py",
+      "code/src/execution_provider/adapters/records_native_source.py",
+      "code/src/execution_provider/adapters/records_profile.py",
+      "code/src/execution_provider/adapters/records_query_runtime.py",
+      "code/src/execution_provider/adapters/records_request_feedback.py",
+      "code/src/execution_provider/adapters/records_runtime_identity.py",
+      "code/src/execution_provider/adapters/records_service_budget.py",
+      "code/src/execution_provider/adapters/records_service_config.py",
+      "code/src/execution_provider/adapters/records_service_delivery.py",
+      "code/src/execution_provider/adapters/records_transport.py",
+      "code/src/execution_provider/adapters/semantic_session.py",
+      "code/src/execution_provider/completion.py",
+      "code/src/execution_provider/connection_capacity.py",
+      "code/src/execution_provider/gateway_runtime.py",
+      "code/src/execution_provider/generation_profile.py",
+      "code/src/execution_provider/image_gateway.py",
+      "code/src/execution_provider/limits.py",
+      "code/src/execution_provider/message_encoding.py",
+      "code/src/execution_provider/method_workers/__init__.py",
+      "code/src/execution_provider/method_workers/lotus_chain_batch.py",
+      "code/src/execution_provider/multiplexed_gateway.py",
+      "code/src/execution_provider/query_registration.py",
+      "code/src/execution_provider/request_admission.py",
+      "code/src/execution_provider/semantic_image.py",
+      "code/src/execution_provider/semantic_map.py",
+      "code/src/execution_provider/server.py",
+      "code/src/execution_provider/session_dispatch.py",
+      "code/src/execution_provider/wire/__init__.py",
+      "code/src/execution_provider/wire/framing.py",
+      "code/src/execution_provider/wire/image.py",
+      "code/src/execution_provider/wire/map_codec.py",
+      "code/src/execution_provider/wire/semantic.py",
+      "code/src/execution_provider/wire/v2.py",
+      "code/src/execution_provider/wire/v3.py",
+      "code/src/execution_provider/wire/v4.py",
+      "code/src/execution_provider/wire/v5.py",
+      "code/src/execution_provider/wire/v6.py",
+      "code/src/experiments/movie_records_config.py",
+      "code/src/scheduling/core/__init__.py",
+      "code/src/scheduling/core/control.py",
+      "code/src/scheduling/core/errors.py",
+      "code/src/scheduling/core/execution.py",
+      "code/src/scheduling/core/lifecycle.py",
+      "code/src/scheduling/core/models.py",
+      "code/src/scheduling/core/policy_contracts.py",
+      "code/src/scheduling/core/ready_window.py",
+      "code/src/scheduling/core/scheduler.py",
+      "code/src/scheduling/core/scheduler_types.py",
+      "code/src/scheduling/core/session.py",
+      "code/src/scheduling/core/session_capacity.py",
+      "code/src/scheduling/core/session_contract.py",
+      "code/src/scheduling/core/session_dispatch.py",
+      "code/src/scheduling/core/session_jobs.py",
+      "code/src/scheduling/core/session_policy.py",
+      "code/src/scheduling/core/task_info.py",
+      "code/src/scheduling/core/topology.py",
+      "code/src/scheduling/submission_control/adaptive.py",
+      "experiments/saor/saor_active_set_formal.env.example",
+      "experiments/saor/saor_active_set_release.example.json",
+      "experiments/saor/saor_bounded_priority.example.json",
+      "experiments/saor/saor_bounded_ready.example.json",
+      "experiments/saor/saor_capacity_development.example.json",
+      "experiments/saor/saor_feeding_gap_diagnostic.example.json",
+      "experiments/saor/saor_feeding_gap_diagnostic_contract.json",
+      "experiments/saor/saor_matched_ready_selector_ablation.example.json",
+      "experiments/saor/saor_native_system_matched.env.example",
+      "experiments/saor/saor_priority_reachability.example.json",
+      "experiments/saor/saor_project_feeding_ceiling.example.json",
+      "experiments/saor/saor_project_mechanism_formal.example.json",
+      "experiments/saor/saor_project_mechanism_formal_contract.json",
+      "experiments/saor/saor_ready_observation_bridge.example.json"
+    ],
+    "initial_environment_note": "One expanded import probe first used system Python without optional pyarrow and errored. No production failure; final records probes use the existing isolated driver. The committed architecture test remains usable without pyarrow.",
+    "real_model_calls": 0,
+    "real_ray_initializations": 0,
+    "hardware_experiments": 0,
+    "scope": "CPU fixtures and source/import isolation only; no GPU, service startup or performance qualification.",
+    "implementation_revision": "6c8aad0de343f588f5dace41eebcfaa03b4641db",
+    "implementation_tree": "66be98bc2dc2112c73b1f49b599edc2e73796c90"
+  },
+  "final_run": {
+    "distinct_methods": 308,
+    "passed": 308,
+    "failed": 0,
+    "errored": 0,
+    "skipped": 0,
+    "groups": {
+      "research": {
+        "modules": [
+          "tests.research.multitask.test_saor",
+          "tests.research.multitask.test_shared_credit",
+          "tests.research.multitask.test_shared_credit_ray",
+          "tests.research.multitask.test_ordered_release",
+          "tests.research.multitask.test_saor_capacity_runtime",
+          "tests.research.multitask.test_incremental_session",
+          "tests.research.multitask.test_scheduler",
+          "tests.research.multitask.test_historical_recipes",
+          "tests.research.multitask.test_profiler_integration"
+        ],
+        "tests_run": 80,
+        "counts": {
+          "passed": 80,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0
+        },
+        "records": [
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_action_builder_rejects_missing_cost_configuration",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_allows_only_one_discrete_crossing_quantum",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_counts_foreign_residual_debt_growth",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_counts_ordinary_own_inflight_repayment",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_debt_recovery_precedes_slo_priority",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_holds_only_for_concrete_debt_head",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_keeps_recovery_mode_while_debt_is_critical",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_priority_uses_priority_then_remaining_budget",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_recomputes_share_when_active_set_changes",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_rejects_oversized_head_and_missing_priority_slo",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_bounded_release_unready_debt_and_nonfitting_priority_do_not_hold",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_fairness_debt_breaks_equal_queue_tie",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_fixed_envelope_release_ignores_nonfitting_underentitled_head",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_fixed_envelope_release_reclaims_future_share_for_new_job",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_policy_uses_predicted_service_not_release_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_single_release_actions_respect_request_and_work_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_stale_state_fails_closed_to_fallback",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor.SaorPolicyTests.test_weighted_fairness_debt_uses_only_active_jobs",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_finish_job_emits_explicit_lifecycle_event",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_bounds_multiple_recovery_leases_by_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_completion_correction_reenters_recovery",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_debt_uses_actual_completion_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_hold_event_is_auditable_and_capacity_is_safe",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_reclaim_hold_targets_ready_head_then_resumes",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_recovery_reduces_debt_during_overlap",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_rejects_oversized_work_before_queueing",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_requires_explicit_stable_job_contract",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_underestimate_exits_and_records_overrun",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_unready_debt_and_nonfitting_priority_do_not_hold",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_ready_policy_uses_bounded_priority_selector",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_cancel_waiter_removes_timed_out_request_and_guard_hold",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_capacity_downshift_drains_active_leases_without_revocation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_fifo_policy_preserves_global_waiter_order",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_finish_job_rejects_outstanding_credit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_hold_start_marks_nonconcrete_guard_as_avoidable_idle",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_idempotent_polling_does_not_double_count_grants",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_invalid_completion_work_preserves_lease_for_corrected_retry",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_job_weight_must_remain_stable",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_matched_ready_fifo_records_selector_neutral_lifecycle",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_native_style_fifo_does_not_record_project_ready_events",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_request_ids_are_isolated_between_jobs",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_saor_reclaims_only_future_credit_for_new_active_job",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_saor_single_job_borrows_and_reborrows_full_envelope",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_single_job_borrows_all_idle_endpoint_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_single_request_cannot_exceed_endpoint_work_limit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_snapshot_tracks_waiting_request_and_work_by_job",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_strict_priority_holds_bulk_during_foreground_refill_gap",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_strict_priority_reclaims_future_releases_without_preemption",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_strict_priority_requires_stable_job_priority",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_vtc_reactivated_job_is_lifted_to_active_floor",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_vtc_reactivation_lift_uses_normalized_weighted_service",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_vtc_selects_least_attained_service_and_corrects_actual_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_waiting_jobs_receive_credit_after_completion",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit.SharedCreditCoordinatorTests.test_work_cap_blocks_large_head_until_capacity_is_released",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_bounded_saor_events_cross_actor_boundary_once_in_order",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_existing_actor_rejects_mismatched_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_existing_actor_rejects_mismatched_policy",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_named_actor_is_reused_and_tracks_jobs_independently",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_previous_non_saor_actor_configuration_is_compatible",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_ready_lifecycle_identity_cannot_be_changed_on_actor_reuse",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_shared_credit_ray.SharedCreditRayTests.test_runtime_capacity_update_preserves_creation_identity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_ordered_release.OrderedReleaseCoordinatorTests.test_capacity_is_checked_before_state_mutation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_ordered_release.OrderedReleaseCoordinatorTests.test_completion_releases_capacity_and_reports_actual_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_ordered_release.OrderedReleaseCoordinatorTests.test_invalid_completion_work_does_not_release_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_ordered_release.OrderedReleaseCoordinatorTests.test_publish_preserves_job_head_and_assigns_monotonic_sequence",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_ordered_release.OrderedReleaseCoordinatorTests.test_publish_rejects_non_head_request_without_mutating_queue",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_ordered_release.OrderedReleaseCoordinatorTests.test_same_core_accepts_non_token_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor_capacity_runtime.SaorCapacityRuntimeTest.test_observation_model_requires_every_configured_feature",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor_capacity_runtime.SaorCapacityRuntimeTest.test_stale_state_falls_back_without_learning",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_saor_capacity_runtime.SaorCapacityRuntimeTest.test_uses_priors_then_updates_current_arm_from_observation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_incremental_session.SharedCreditSessionTests.test_credit_retirement_errors_keep_finally_cleanup",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_incremental_session.SharedCreditSessionTests.test_existing_local_credit_waits_for_remote_terminal_before_finish",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_incremental_session.SharedCreditSessionTests.test_not_accepted_returns_existing_credit_and_preserves_task",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_incremental_session.SharedCreditSessionTests.test_retired_local_fifo_credit_does_not_accumulate_job_history",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_incremental_session.SharedCreditSessionTests.test_retirement_cannot_erase_live_credit_or_legacy_history",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_scheduler.SharedCreditSchedulerTests.test_bounded_priority_requires_arrival_epoch_and_acquire_timeout",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_scheduler.SharedCreditSchedulerTests.test_shared_credit_rejects_oversized_request_before_submit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_historical_recipes.HistoricalRecipeTests.test_committed_dual_gpu_templates_expand_and_validate",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_historical_recipes.HistoricalRecipeTests.test_project_short_all_at_t0_diagnostic_is_eager_input_only",
+            "status": "passed"
+          },
+          {
+            "id": "tests.research.multitask.test_profiler_integration.ProfilerCreditIntegrationTests.test_explicit_saor_configuration_acquires_and_returns_shared_capacity",
+            "status": "passed"
+          }
+        ],
+        "output_sha256": "e2b3f9dc9ac9eb631f8e783c6c428b1eb75f704c2d64ed41c04cb556f8a88b59",
+        "failures": [],
+        "errors": [],
+        "success": true
+      },
+      "core": {
+        "modules": [
+          "tests.scheduling.test_scheduler",
+          "tests.scheduling.test_incremental_session",
+          "tests.scheduling.test_multisession",
+          "tests.scheduling.test_shared_compute",
+          "tests.scheduling.test_input_preparation",
+          "tests.scheduling.test_organized_session",
+          "tests.scheduling.test_capacity_controller",
+          "tests.execution_provider.test_module_ownership",
+          "tests.architecture.test_architecture_boundaries"
+        ],
+        "tests_run": 134,
+        "counts": {
+          "passed": 134,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0
+        },
+        "records": [
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_active_work_cap_releases_credit_on_each_completion",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_collects_ready_completion_while_source_waits_for_next_arrival",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_execution_engine_accepts_grouped_scheduler_config",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_failed_completion_releases_shared_credit_once",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_fixed_pool_waits_when_only_another_pool_has_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_least_queued_tracks_scheduler_local_inflight",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_observed_endpoint_work_counts_toward_work_cap",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_per_endpoint_admission_applies_independent_windows",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_per_endpoint_admission_requires_complete_topology_mapping",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_per_endpoint_limit_must_be_positive",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_per_endpoint_limit_prevents_one_endpoint_from_consuming_global_k",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_pinned_endpoint_keeps_its_pool_while_capacity_is_full",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_pinned_endpoint_waits_for_its_own_work_credit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_completes_each_request_once_with_bounded_inflight",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_composes_request_pool_and_endpoint_routing",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_fails_when_initial_admission_cannot_progress",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_normalizes_out_of_order_fanin_to_submission_order",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_preserves_failed_completion_without_retry",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_records_failed_submission_without_retry",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_records_submission_lifecycle_in_source_order",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_scheduler_rejects_completion_for_different_request",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_credit_is_acquired_before_submit_and_released_after",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_credit_preserves_negative_slo_slack",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_credit_release_receives_actual_completed_token_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_credit_uses_epoch_arrival_for_remaining_slo_budget",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_credit_wait_times_out_without_silent_fallback",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_ready_window_cancels_all_waiters_on_timeout",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_ready_window_does_not_release_submitted_credit_on_abort",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_ready_window_registers_multiple_candidates_before_waiting",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_scheduler.SchedulerTests.test_shared_ready_window_rejects_unbounded_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_backend_timeout_retains_compute",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_bad_release_is_atomic_and_cross_session_rejected",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_binary_execution_preserves_payload_and_neutral_work_identity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_boolean_terminal_identity_cannot_alias_integer_key",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_cancel_keeps_leases_and_unknown_compute",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_consumer_timeout_does_not_discard_lease",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_delivery_construction_failure_preserves_only_returned_leases",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_delivery_reports_new_consumer_deadline",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_duplicate_after_last_release_is_detected_by_reap",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_empty_release_preserves_progress_but_keeps_schema_and_closed_checks",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_generation_prevents_lost_wakeup",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_legacy_and_incremental_share_routing_decisions",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_long_stream_has_no_history_table",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_not_accepted_does_not_reset_capacity_deadline",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_offer_wakes_only_when_it_transfers_a_real_prefix",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_old_session_terminal_reaps_without_entering_new_session",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_one_action_steps_eventually_deliver_and_finish",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_other_thread_only_requests_cancel",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_oversized_completion_fails_after_terminal_settlement",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_partial_delivery_commit_rolls_back_unreturned_leases",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_phase_deadlines_keep_their_own_start_and_resource_ownership",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_poll_only_backend_supplies_finite_next_deadline",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_prefix_transfer_release_backpressure_and_no_eager_dispatch",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_queue_does_not_inherit_backend_timeout",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_reentrant_backend_is_rejected_before_nested_offer",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_reverse_completions_and_identical_payloads",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_selector_cannot_dispatch_unaccepted_task",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_sink_failure_publishes_no_unobservable_lease",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_smaller_session_limits_and_single_session_ownership",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_task_selection_changes_order_without_changing_ownership",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unknown_duplicate_and_conflicting_events_fail_closed",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unknown_submit_exception_retains_no_handle_reservation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unsealed_idle_and_sealed_finished",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_whole_batch_permanent_validation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_backend_rejection_has_a_retry_deadline_without_busy_loop",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_cancelling_one_job_keeps_late_work_and_other_job_live",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_consumer_close_reclaims_leases_but_keeps_remote_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_continued_global_ticks_preserve_other_job_and_cancel_opportunities",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_global_budget_exhaustion_reports_dispatch_without_a_new_wake",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_identified_uncertainty_does_not_poison_other_job",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_invalid_job_selection_cannot_dispatch_foreign_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_job_intake_cannot_take_other_jobs_reserved_storage",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_job_selector_can_be_replaced_without_changing_accounting",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_late_invalid_result_has_job_scope_after_session_close",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_membership_is_capability_not_a_label",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_public_failure_is_local_to_the_flow",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_queued_but_capacity_blocked_waits_until_completion",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_queued_terminal_cannot_erase_an_expired_backend_deadline",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_ready_results_do_not_claim_work_the_global_tick_cannot_do",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_shared_identity_conflict_stops_every_session",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_single_item_larger_than_job_storage_is_permanently_rejected",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_storage_refusal_reports_condition_without_self_waking",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_multisession.MultiSessionTests.test_two_flows_do_not_double_job_opportunities",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_competing_jobs_rotate_and_resume_at_next_release",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_flow_partition_does_not_multiply_job_compute_limit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_idle_registered_jobs_do_not_strand_compute",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_original_equal_share_policy_remains_fixed",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_retired_jobs_free_membership_for_more_than_maximum_over_time",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_shared_work_limit_binds_before_request_count_and_recovers",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_slow_consumer_retains_only_its_storage",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_storage_must_support_full_declared_request_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_shared_compute.SharedComputeTests.test_unknown_compute_is_not_reborrowed_after_cancel",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_cancel_notification_precedes_retained_input_retries",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_closed_consumer_retains_local_input_until_reap_confirms_release",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_confirmed_model_result_waits_for_transient_preparation_release",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_dispatch_gate_also_prevents_early_preparation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_invalid_or_raised_preparation_acceptance_keeps_input_until_confirmed",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_job_cancel_notifies_later_flow_before_earlier_input_retries",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_local_reap_reaches_later_input_when_earlier_release_is_unknown",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_one_action_tick_does_not_starve_a_ready_model_request",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_only_accepted_prefix_can_be_borrowed_without_compute",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_partial_preparation_prefix_is_retried_without_duplicate_borrowing",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_preparation_advances_while_model_capacity_is_full",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_retained_input_in_one_flow_does_not_hide_later_releasable_flow",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_cancelled_group_late_response_cannot_reach_new_session",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_group_membership_survives_capacity_and_backend_rejection",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_invalid_metadata_rejects_whole_input_before_transfer",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_invalid_organization_cannot_dispatch_or_transfer_extra_tasks",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_member_failure_cancels_remaining_requests_without_early_credit_return",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_methods_produce_stages_in_the_same_organized_window",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_partial_intake_grouping_multiple_requests_and_reverse_row_correlation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_reordered_small_member_reports_immediate_progress",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_router_receives_typed_locality_and_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_organized_session.OrganizedSessionTests.test_work_target_preserves_complete_oversized_tasks",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_bootstraps_one_calibrated_arm_before_rate_is_available",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_calibrated_initial_arm_can_ramp_to_safe_fallback",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_decreases_after_persistent_service_queue",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_holds_without_real_upstream_demand",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_increases_after_persistent_feed_limited_samples",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_kv_pressure_is_a_congestion_guard",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_missing_rate_never_bootstraps_without_ready_backlog",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_stale_state_falls_back",
+            "status": "passed"
+          },
+          {
+            "id": "tests.scheduling.test_capacity_controller.BoundedCapacityControllerTests.test_upshift_can_use_shorter_hysteresis_than_downshift",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_module_ownership.ModuleOwnershipTests.test_incremental_imports_do_not_load_legacy_implementations",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_module_ownership.ModuleOwnershipTests.test_legacy_exports_are_aliases_not_duplicate_types",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_modality_adapters_do_not_implement_scheduling",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_multitask_research_has_no_core_shims_or_core_test_dependency",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_native_baselines_do_not_import_project_scheduling",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_planning_layer_does_not_own_execution_engines",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_records_defaults_do_not_require_multitask_research",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_removed_compatibility_modules_do_not_return",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_saor_import_does_not_load_legacy_policies",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_scheduling_core_is_engine_and_modality_independent",
+            "status": "passed"
+          },
+          {
+            "id": "tests.architecture.test_architecture_boundaries.ArchitectureBoundaryTests.test_scripts_and_tests_do_not_return_to_flat_layout",
+            "status": "passed"
+          }
+        ],
+        "output_sha256": "4d81be3e6c5ea085236ea38c93e88fbc6adadbc7b2a912c401d2a76b2fbf2450",
+        "failures": [],
+        "errors": [],
+        "success": true
+      },
+      "consumers": {
+        "modules": [
+          "tests.experiments.test_saor_trace_replay",
+          "tests.experiments.test_saor_feeding_gap_diagnostic",
+          "tests.experiments.test_image_multijob_contract",
+          "tests.observability.test_ray_scheduler_profile",
+          "tests.experiments.test_experiment_scenarios",
+          "tests.experiments.test_retired_saor_entries"
+        ],
+        "tests_run": 53,
+        "counts": {
+          "passed": 53,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0
+        },
+        "records": [
+          {
+            "id": "tests.experiments.test_saor_trace_replay.SaorTraceReplayTest.test_requires_every_arm_in_each_paired_sample",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_trace_replay.SaorTraceReplayTest.test_uses_only_prior_sample_and_reports_heldout_regret",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_complete_matrix_attributes_a_work_envelope_gap",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_config_freezes_d0_d1_p0_without_job_fairness_in_d1",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_four_way_classification_is_frozen",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_malformed_threshold_and_metric_fail_closed",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_repository_contract_preserves_failed_feeding_lock",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_structured_clean_gate_requires_all_three_subsystems",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_saor_feeding_gap_diagnostic.FeedingGapDiagnosticTests.test_text_contract_hash_ignores_only_crlf_translation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_image_multijob_contract.ImageMultiJobContractTests.test_manifest_rejects_overlapping_ranges",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_image_multijob_contract.ImageMultiJobContractTests.test_native_command_uses_shared_ray_and_contains_no_project_control",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_image_multijob_contract.ImageMultiJobContractTests.test_one_manifest_drives_native_and_project_contracts",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_image_multijob_contract.ImageMultiJobContractTests.test_project_config_rejects_nondivisible_static_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_image_multijob_contract.ImageMultiJobContractTests.test_runners_record_the_checkout_commit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_bounded_ready_window_is_derived_from_existing_k_and_w",
+            "status": "passed"
+          },
+          {
+            "id": "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_endpoint_topology_pairs_ids_and_urls_in_default_pool",
+            "status": "passed"
+          },
+          {
+            "id": "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_endpoint_topology_preserves_pool_and_gpu_assignments",
+            "status": "passed"
+          },
+          {
+            "id": "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_endpoint_topology_rejects_mismatched_inputs",
+            "status": "passed"
+          },
+          {
+            "id": "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_run_scheduler_consumes_a_single_pass_lazy_iterable",
+            "status": "passed"
+          },
+          {
+            "id": "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_scheduler_metrics_preserve_existing_profiler_schema",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_different_seed_changes_formal_order",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_parse_args_rejects_empty_metrics_url_list",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_schedule_is_reproducible_and_interleaves_formal_scenarios",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_schedule_rejects_invalid_inputs",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_accepts_utilization_upper_boundary",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_rejects_each_missing_required_key",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_rejects_empty_required_strings",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_rejects_invalid_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_rejects_invalid_utilization",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_rejects_non_boolean_flags",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_rejects_unknown_capacity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_service_metadata_requires_execution_parameters",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_wait_for_idle_reports_metrics_fetch_failure",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_wait_for_idle_requires_both_idle_metrics",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_config_expands_explicit_environment_references",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_config_rejects_empty_ray_address_before_execution",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_config_rejects_prefix_cache_row_metadata_mismatch",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_config_rejects_stale_calibration_before_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_config_rejects_unset_environment_reference",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_config_validates_calibration_contract_before_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_parse_recover_stale_lease_requires_resume",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_runner_holds_lease_during_profiler_and_releases_after",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_runner_invokes_reproducible_schedule_and_writes_manifest",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_runner_resume_can_prune_failed_scenario",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_runner_resume_skips_completed_runs_and_recovers_failure",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_runner_stops_after_first_subprocess_failure",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.ScenarioRunnerTests.test_runner_validates_opted_in_metadata_before_external_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.VerifyServiceFlagsMatchLiveTests.test_returns_cleanly_when_no_live_vllm_or_unsupported_host",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_experiment_scenarios.VerifyServiceFlagsMatchLiveTests.test_skips_when_nothing_declared",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_retired_saor_entries.RetiredEntryTests.test_archive_damage_wrong_size_and_unsupported_format_fail_before_any_output",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_retired_saor_entries.RetiredEntryTests.test_existing_output_is_never_touched_even_with_bad_sources",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_retired_saor_entries.RetiredEntryTests.test_materialization_retains_source_ID_and_plain_bytes",
+            "status": "passed"
+          },
+          {
+            "id": "tests.experiments.test_retired_saor_entries.RetiredEntryTests.test_retired_launchers_restore_original_bytes_in_every_named_projection",
+            "status": "passed"
+          }
+        ],
+        "output_sha256": "bda4202ac733fcd78e5b64513d468e9215d3ed6b75f32f30f57ef96a1fc6807e",
+        "failures": [],
+        "errors": [],
+        "success": true
+      },
+      "records": {
+        "modules": [
+          "tests.execution_provider.test_lotus_records_core"
+        ],
+        "tests_run": 41,
+        "counts": {
+          "passed": 41,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0
+        },
+        "records": [
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_actual_unknown_receipt_is_never_upgraded_by_close",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_full_task_key_excludes_previous_session_with_same_query_and_call",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_idempotent_known_receipt_cannot_replace_conflicting_outcome",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_invalid_key_or_identity_does_not_hide_later_valid_usage",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_known_receipt_transfers_once_and_keeps_input_responsibility",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.ActorCloseReceiptTests.test_oversized_receipt_retains_usage_in_reserved_failure_bytes",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_bad_suffix_does_not_erase_already_delivered_prefix",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_cancel_hook_keeps_full_session_key_and_does_not_release_active_work",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_cancel_signal_and_absolute_deadline_stop_input_without_reset",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_cancellation_observed_at_source_eof_prevents_dispatch",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_connection_metadata_requires_actual_core_and_is_read_only",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_control_advance_does_not_wait_for_slow_ray_submit",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_duplicate_or_changed_result_identity_is_not_delivered_or_retried",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_early_close_retains_compute_until_real_terminal_and_no_new_input",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_empty_input_creates_no_model_and_closes_transport",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_injected_owner_configuration_is_checked_before_allocation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_injected_owner_uses_real_core_and_cannot_override_connection_facts",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_iterator_rejects_foreign_thread_before_pulling_records",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_late_cancelled_receipt_is_retained_in_old_report_and_not_next_query",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_matching_single_row_static_reference_has_same_result_and_usage",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_model_failure_preserves_success_prefix_and_stops_new_calls",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_non_single_row_configuration_is_explicitly_rejected",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_oversized_result_preserves_known_usage_in_bounded_failure_receipt",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_oversized_unknown_keeps_both_known_usage_and_unknown_reservations",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_owner_rejects_cross_thread_operation_before_source_access",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_preflight_runner_and_identity_checks_precede_actor_creation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_preparation_exception_is_unconfirmed_and_never_calls_model",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_real_core_path_leases_identity_and_no_prepared_driver_get",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_rejected_oversize_raw_input_never_enters_core_or_model",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_reverse_completion_keeps_original_occurrence_and_each_lease_once",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_shared_owner_keeps_constructor_failure_unconfirmed",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_shared_owner_wait_keeps_the_core_cleanup_deadline_clamp",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_slow_consumer_limits_source_pull_and_core_reservations",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_source_close_failure_remains_visible_and_does_not_leak_leases",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_source_preflight_failure_has_no_core_connection_metadata",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_too_small_result_reservation_is_rejected_before_model_allocation",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_two_queries_share_one_model_but_keep_call_and_session_identity",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_unconfirmed_model_close_retries_original_actor_and_preserves_scope",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.CoreRecordsTests.test_unknown_model_response_retains_reservations_and_usage_receipt",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.RuntimeModuleIsolationTests.test_nested_fixture_restores_outer_stubs_after_exception",
+            "status": "passed"
+          },
+          {
+            "id": "tests.execution_provider.test_lotus_records_core.RuntimeModuleIsolationTests.test_only_owned_stub_modules_are_restored_and_normal_imports_survive",
+            "status": "passed"
+          }
+        ],
+        "output_sha256": "bee8888e0e5a22cc5399bacd3a766f46a2413c6c9e9878a8cc8e8edd4ae91315",
+        "failures": [],
+        "errors": [],
+        "success": true
+      }
+    }
+  },
+  "import_probes": [
+    {
+      "name": "ordinary_records_without_research",
+      "script": "import importlib.abc\nimport sys\nclass RejectRuntime(importlib.abc.MetaPathFinder):\n    def find_spec(self, fullname, path=None, target=None):\n        if fullname.split('.')[0] in ('ray', 'vllm', 'torch', 'transformers'):\n            raise AssertionError(fullname)\nsys.meta_path.insert(0, RejectRuntime())\n\nclass RejectResearch(importlib.abc.MetaPathFinder):\n    def find_spec(self, fullname, path=None, target=None):\n        if fullname == 'src.research' or fullname.startswith('src.research.'):\n            raise AssertionError(fullname)\nsys.meta_path.insert(0, RejectResearch())\nimport src.execution_provider.adapters.lotus_records_core\nimport src.execution_provider.adapters.lotus_record_chain_core\nimport src.execution_provider.adapters.records_query_runtime\nfrom src.experiments import movie_records_config\nfrom src.observability.profiling.ray_scheduler import _static_scheduler_options, _SchedulerOptions\nfrom src.scheduling.core.scheduler_types import SchedulerConfig\nassert movie_records_config.core_profile({'backend': movie_records_config.ASYNC_CORE_BACKEND}) == {'mode': 'async'}\nassert _static_scheduler_options(None, ['e1'], 1, _SchedulerOptions(), None).shared_credit is None\nassert SchedulerConfig().shared_credit.policy is None",
+      "returncode": 0,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output": ""
+    },
+    {
+      "name": "pure_research_without_session_or_runtime",
+      "script": "import importlib.abc\nimport sys\nclass RejectRuntime(importlib.abc.MetaPathFinder):\n    def find_spec(self, fullname, path=None, target=None):\n        if fullname.split('.')[0] in ('ray', 'vllm', 'torch', 'transformers'):\n            raise AssertionError(fullname)\nsys.meta_path.insert(0, RejectRuntime())\n\nimport src.research.multitask.saor\nimport src.research.multitask.shared_credit\nfor name in ('src.scheduling.core.session', 'src.scheduling.core.scheduler',\n             'src.scheduling.runtime', 'src.observability.profiling.ray_scheduler'):\n    assert name not in sys.modules, name",
+      "returncode": 0,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output": ""
+    },
+    {
+      "name": "explicit_research_consumers_without_services",
+      "script": "import importlib.abc\nimport sys\nclass RejectRuntime(importlib.abc.MetaPathFinder):\n    def find_spec(self, fullname, path=None, target=None):\n        if fullname.split('.')[0] in ('ray', 'vllm', 'torch', 'transformers'):\n            raise AssertionError(fullname)\nsys.meta_path.insert(0, RejectRuntime())\n\nimport src.experiments.shared_vllm.config\nimport src.experiments.shared_vllm.runtime\nimport src.experiments.image_multijob.project\nimport src.experiments.saor.trace_replay\nimport src.research.multitask.ordered_release\nimport src.research.multitask.saor_capacity\nimport src.research.multitask.shared_credit_ray",
+      "returncode": 0,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output": ""
+    }
+  ],
+  "historical_recipe_method_checks": [
+    {
+      "method": "test_committed_dual_gpu_templates_expand_and_validate",
+      "ast_equal_except_archive_directory": true
+    },
+    {
+      "method": "test_project_short_all_at_t0_diagnostic_is_eager_input_only",
+      "ast_equal_except_archive_directory": true
+    }
+  ],
+  "prior_errors": {
+    "initial_consumer_run": {
+      "tests_run": 55,
+      "counts": {
+        "passed": 53,
+        "failed": 0,
+        "errored": 2,
+        "skipped": 0
+      },
+      "errored_methods": [
+        "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate",
+        "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_project_short_all_at_t0_diagnostic_is_eager_input_only"
+      ],
+      "error_records": [
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_capacity_scaling.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_capacity_scaling.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_token_budget_curve.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_token_budget_curve.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_data_organization.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_data_organization.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_submission_policy.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_submission_policy.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_request_replay.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_request_replay.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_active_work_curve.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_active_work_curve.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_actor_pool_shape.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_actor_pool_shape.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_static_k_workload_surface.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_static_k_workload_surface.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_static_credit_prompt_length_gate.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_endpoint_adaptive_gate.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_service_quantum.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_service_quantum.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_slo_ewma_flush.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_slo_ewma_flush.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_cost_profile_formal.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_cost_profile_formal.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_token_budget_curve.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_project_short_all_at_t0_diagnostic_is_eager_input_only",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json'"
+        }
+      ],
+      "output_sha256": "a45536d035f533a708297a00bcbbb892a77ad409d53960a4104d430c81451a9a"
+    },
+    "exact_b089_baseline": {
+      "tests_run": 2,
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "errored": 2,
+        "skipped": 0
+      },
+      "errored_methods": [
+        "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate",
+        "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_project_short_all_at_t0_diagnostic_is_eager_input_only"
+      ],
+      "error_records": [
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_capacity_scaling.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_capacity_scaling.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_token_budget_curve.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_token_budget_curve.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_data_organization.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_data_organization.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_submission_policy.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_submission_policy.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_request_replay.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_request_replay.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_active_work_curve.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_active_work_curve.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_actor_pool_shape.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_actor_pool_shape.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_static_k_workload_surface.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_static_k_workload_surface.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_static_credit_prompt_length_gate.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_endpoint_adaptive_gate.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_service_quantum.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_service_quantum.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_slo_ewma_flush.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_slo_ewma_flush.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate (filename='dual_gpu_cost_profile_formal.example.json')",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_cost_profile_formal.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_committed_dual_gpu_templates_expand_and_validate",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/dual_gpu_token_budget_curve.example.json'"
+        },
+        {
+          "id": "tests.experiments.test_experiment_scenarios.ExperimentScenarioTests.test_project_short_all_at_t0_diagnostic_is_eager_input_only",
+          "reason": "FileNotFoundError: [Errno 2] No such file or directory: '<repository>/deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json'"
+        }
+      ],
+      "output_sha256": "7c08f6278107a24eb01439bf98cfc7446b9e3ae621187ae66a0ae917cefdb63d"
+    }
+  },
+  "historical_sources": {
+    "total_bindings": 3010,
+    "remaining_mismatches": [
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/scheduling/core/task_info.py",
+        "error": "reproduction source differs: code/src/scheduling/core/task_info.py"
+      },
+      {
+        "variant": "native_isolated_and_imlane",
+        "path": "code/src/scheduling/submission_control/__init__.py",
+        "error": "reproduction source differs: code/src/scheduling/submission_control/__init__.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/scheduling/core/task_info.py",
+        "error": "reproduction source differs: code/src/scheduling/core/task_info.py"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "path": "code/src/scheduling/submission_control/__init__.py",
+        "error": "reproduction source differs: code/src/scheduling/submission_control/__init__.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/scheduling/core/task_info.py",
+        "error": "reproduction source differs: code/src/scheduling/core/task_info.py"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "path": "code/src/scheduling/submission_control/__init__.py",
+        "error": "reproduction source differs: code/src/scheduling/submission_control/__init__.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/scheduling/core/task_info.py",
+        "error": "reproduction source differs: code/src/scheduling/core/task_info.py"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "path": "code/src/scheduling/submission_control/__init__.py",
+        "error": "reproduction source differs: code/src/scheduling/submission_control/__init__.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/scheduling/core/task_info.py",
+        "error": "reproduction source differs: code/src/scheduling/core/task_info.py"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "path": "code/src/scheduling/submission_control/__init__.py",
+        "error": "reproduction source differs: code/src/scheduling/submission_control/__init__.py"
+      }
+    ],
+    "new_mismatches": 0,
+    "new_source_routes": 45,
+    "archives": [
+      {
+        "path": "code/src/experiments/image_multijob/project.py",
+        "archive": "historical_sources/b08936d2/code/src/experiments/image_multijob/project.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "268fc60f9f747f9de76b7fa125feafa2fa3cdda9edf3864f0ba9e3a8c3fcef59",
+        "decoded_bytes": 34736,
+        "archive_sha256": "c3e956d4e5bda6991020b9149449f0c18c2a5fee4816faedf894645f9ef041b4",
+        "archive_bytes": 8266,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/experiments/saor/trace_replay.py",
+        "archive": "historical_sources/b08936d2/code/src/experiments/saor/trace_replay.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "10c9b3417f545cf368f503cd81d95491fa06881e7588e94710d4038218de6fe1",
+        "decoded_bytes": 10686,
+        "archive_sha256": "4ca596ce35bd131f8dc08843b2992ddde7e185f26ef9b3285e3e521bfd6be620",
+        "archive_bytes": 2740,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/experiments/shared_vllm/config.py",
+        "archive": "historical_sources/b08936d2/code/src/experiments/shared_vllm/config.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "8143401bb305ea5ceb9e021f4b11ce161077a472738b8073ef8cc8c3f4ebb802",
+        "decoded_bytes": 62474,
+        "archive_sha256": "7f8f11ca7fbce40e628d8cb7466ad58082690d8b38ea4dcd4dd82bf276f6feeb",
+        "archive_bytes": 11873,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/experiments/shared_vllm/runtime.py",
+        "archive": "historical_sources/b08936d2/code/src/experiments/shared_vllm/runtime.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "767f8bf42205c8eafdd8f05978c5a7a3184b82606fb6cbe018d39d7dc2da9636",
+        "decoded_bytes": 13199,
+        "archive_sha256": "5600216f1297c239c725d1090be9fc36385e6397d6269c3291be30c61926f00f",
+        "archive_bytes": 3191,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/scheduling/runtime/saor_capacity.py",
+        "archive": "historical_sources/b08936d2/code/src/scheduling/runtime/saor_capacity.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "59fd8970d9072fd6d3bd88eb19cf166b02e85534c9cd30269c0685f9d449871f",
+        "decoded_bytes": 10353,
+        "archive_sha256": "54e5e482c4f8de52b6e6b107507c94980e00bdafe48e201b70e30a18aa472527",
+        "archive_bytes": 2518,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/scheduling/runtime/shared_credit_ray.py",
+        "archive": "historical_sources/b08936d2/code/src/scheduling/runtime/shared_credit_ray.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "4af9a7292b65de8e9f604d456b92556db95198ce038b4b9879aa4acd06bbaf7a",
+        "decoded_bytes": 6300,
+        "archive_sha256": "e80691fee663a577398c87a472193008996cf0e81f5d1429d846596f3b04904e",
+        "archive_bytes": 1368,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/scheduling/submission_control/ordered_release.py",
+        "archive": "historical_sources/b08936d2/code/src/scheduling/submission_control/ordered_release.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "3a72de14d9be99b9534633ed7bc95fd83bee3472435f0eb19f6f611d21d37149",
+        "decoded_bytes": 9933,
+        "archive_sha256": "f31c12a2e3902068b878b44edc29cbb2d1d2c67ca93c90ca39c2ca3de2a1a4fa",
+        "archive_bytes": 2235,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/src/scheduling/submission_control/saor.py",
+        "archive": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "37465c3ed9ba3185f8122168f98a47d25c2f7e0aa7669bf65ded7dd1c64ecdc4",
+        "decoded_bytes": 29467,
+        "archive_sha256": "00e33699a55787b40290de2f2242720a7ccb9109f9e45c84ebe05b6ca976d482",
+        "archive_bytes": 6392,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      },
+      {
+        "path": "code/tests/scheduling/test_scheduler.py",
+        "archive": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz",
+        "source_revision": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c",
+        "decoded_bytes": 41938,
+        "archive_sha256": "db71f0b2ddf1fd3196b955fffc1e704233c126c2974edd8c549f59bd61183b04",
+        "archive_bytes": 5706,
+        "variants": [
+          "native_isolated_and_imlane",
+          "core_original_dynamic",
+          "core_local_window_pairs",
+          "ray_runtime_reuse",
+          "daft_single_thread_session"
+        ]
+      }
+    ],
+    "identities_and_existing_routes_unchanged": true,
+    "decoded_secret_scan_passed": true,
+    "initial_before_repair": {
+      "prior_mismatches": 10,
+      "current_mismatches": 55,
+      "new_mismatches": 45
+    }
+  },
+  "static_checks": {
+    "qualified_python_files_unchanged": 944,
+    "added_or_changed_local_links": 28,
+    "local_links_and_anchors_passed": true,
+    "diff_check_passed": true,
+    "source_and_decoded_archive_secret_scans_passed": true
+  }
+}

@@ -6,8 +6,8 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Mapping
 
-from ..core.control import CapacityArm
-from ..core.models import PayloadEnvelope
+from src.scheduling.core.control import CapacityArm
+from src.scheduling.core.models import PayloadEnvelope
 from .saor import (
     SaorDecision,
     SaorJobState,

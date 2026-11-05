@@ -1,6 +1,8 @@
 # SAOR 历史研究与离线证据
 
 当前保留 SAOR 调度算法、研究方案、合同、离线分析与历史证据。
+通用共享额度与 SAOR 策略一起位于[独立研究组件](../../research/multitask/README.md)，
+本目录只编排、校验与分析，不向普通 records 注入研究策略。
 14 份原实验声明位于[独立材料](../../../../experiments/saor/README.md)，
 其原路径与逐文件摘要见[资产清单](../../../../experiments/reproduction/legacy_recipes_20261105/MANIFEST.json)。
 

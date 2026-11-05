@@ -26,6 +26,7 @@
 | LOTUS 方法 | [semantic_methods/lotus](src/semantic_methods/lotus/README.md) | formatter、parser、方法状态、关系屏障与逐行结果合同 |
 | SemLoom 执行适配 | [execution_provider/adapters](src/execution_provider/adapters/README.md) | Core／有限链／rolling／admission 与结果交付接线 |
 | 调度与资源责任 | [scheduling](src/scheduling) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
+| 独立多任务研究 | [research/multitask](src/research/multitask/README.md) | 通用共享额度与 SAOR 策略；普通 records 不依赖它 |
 | 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态及进程清理 |
 | 模态公共能力 | [modalities](src/modalities) | 文本／图像合同、成本、共享 CLIP workers；不拥有 baseline 图 |
 | 通用观测和工具 | [observability](src/observability)、[infrastructure](src/infrastructure) | 时钟、来源、审计、脱敏、文件／预算／运行环境 |
@@ -59,7 +60,8 @@ PG 扩展 C／SQL、部署源和实验接线按准确 Git 树归档，**暂停�
 不把历史源重新加入当前生产搜索路径。逐文件摘要与恢复方法见
 [归档索引](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。
 
-SAOR 的调度算法、离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
+SAOR 与多任务共享额度一起由 [research/multitask](src/research/multitask/README.md) 维护，
+离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
 当前源码不再承诺这些旧命令可运行。独立 PG provider／通用传输内核和有研究价值的模态／调度组件若仍有消费者则保留，
 不因停止旧实验而删除其公共合同，也不宣称它们已接入当前 SemBench。
 
@@ -83,8 +85,9 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 完整显式 `AsyncEngineLimits` 现在可为 `R=None` 提供有限请求数；默认 R=2 和物理容量问题仍待处理。
 
 
-共享额度的租约、队列、容量与公共事件留在 `shared_credit.py`，策略选择、VTC 入队修正及完成记账集中到
-[credit_policies.py](src/scheduling/submission_control/credit_policies.py)；原公开类型和调用方式保持，没有新增账本或代理。
+共享额度的租约、队列、容量与公共事件归于研究包的 `shared_credit.py`，策略选择、VTC 入队修正及完成记账集中到
+[credit_policies.py](src/research/multitask/credit_policies.py)；旧 scheduling 策略导入和提前导出已移除，
+现用研究调用方已迁移。执行层只消费原 credit 协议，没有新增账本或代理。
 Session 的 registered Job 关闭状态只由 JobRegistry 保存，legacy Job 仍记住待回收身份。
 [源码与 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
 保存释放顺序修正、重复检查清理及 140 项组合结果；物理容量、R 和反馈试探不属于本批。
