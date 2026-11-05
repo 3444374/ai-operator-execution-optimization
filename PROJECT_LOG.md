@@ -11250,3 +11250,11 @@ owner 上限与字节／结果持有保持。原五树身份不改，新增 40 �
 [反例与 151 项 CPU 回归](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
 保留改前失败，C／auto、准备交错、会话和校准身份继续检查。生产模块净减 15 行。
 R 默认仍为 2，省略存储随声明请求数变化；物理容量、完整关系持有和剩余大文件尚未完成，未取得实机性能结论。
+
+
+## 2026-11-05 整合容量修正与共享额度统计
+
+两份已审源码机械整合；共享额度去除三段重复租约汇总，保留 SAOR 的方法、每轮取值与授予顺序。
+[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
+保存改前后 37 项及最终组合 47 项，重复方法不相加。两个生产文件共减 31 行，不把移动或文档计作减代码。
+默认 R 与物理容量、完整关系持有和其他大文件仍未完成；本批没有模型或服务器实验，不合并 main。

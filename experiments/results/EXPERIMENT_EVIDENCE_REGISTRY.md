@@ -1595,3 +1595,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [普通 IPC 省略配置修正](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
 保存 e7 来源、改前反例、实际容量推导和 CPU 回归范围。显式资源及 unknown 责任保持；
 省略存储随声明请求补齐，物理容量和整体 R 迁移尚未完成，不提供模型性能结论。
+
+
+[容量与共享额度组合](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
+关联两份已审生产源码、共享额度改前后记录及组合 CPU 原件；统计去重保留 SAOR 方法，
+普通 IPC 省略值修正不提供物理容量或性能结论。

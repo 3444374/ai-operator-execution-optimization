@@ -464,3 +464,8 @@ Kalypso registry fixture 提供现行公开启动字段，生产校验不改。a
 `test_records_capacity_config` 可单独检查普通／session 配置与本地提交；
 `test_records_capacity_defaults`、`test_lotus_resource_budget_runtime` 继续检查独立预算和资源归还。
 测试仅用 CPU fixture；真实 Ray、模型、GPU 与性能未测。
+
+
+同批共享额度去重沿用原 37 项检查，未新增源码形状用例；与容量修正整合后的 47 项也全部通过，
+[来源与计数](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
+分别记录，不累计重复方法。真实 Ray／模型仍未运行。

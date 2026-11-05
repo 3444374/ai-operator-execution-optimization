@@ -1,0 +1,167 @@
+{
+  "base": "e7e593d620c82e7870793aaf20314cadd9ed3aae",
+  "tested_composition_commit": "f9e317a0a55488c671ec6e8244dbd54318910cbd",
+  "components": {
+    "capacity": "d40207f19debe06ea7ae0c2d12968125b897b9d4",
+    "shared_credit": "db6d766ea11e5066c417f788727fdc2a9adf98bc"
+  },
+  "production_files": [
+    {
+      "component": "d40207f19debe06ea7ae0c2d12968125b897b9d4",
+      "path": "code/src/execution_provider/adapters/records_capacity.py",
+      "byte_equal": true,
+      "sha256": "85cb28b9f7b85b18ae637c9f6db26d2a1b50c5c19e2b95d60d8396d4135336b8"
+    },
+    {
+      "component": "db6d766ea11e5066c417f788727fdc2a9adf98bc",
+      "path": "code/src/scheduling/submission_control/shared_credit.py",
+      "byte_equal": true,
+      "sha256": "d41edd7e8331241ad391c3ab56a9c093bb25dc64a2f0562cee473095f58ac666"
+    }
+  ],
+  "scope": "Compose the declared IPC omission repair with same-time endpoint active-lease aggregation reuse. No new controller or runtime check.",
+  "capacity_evidence": "ordinary_ipc_omissions_checks.json",
+  "CPU": {
+    "capacity_distinct_methods": 151,
+    "shared_credit_before_methods": 37,
+    "shared_credit_after_methods": 37,
+    "composition_methods": 47,
+    "composition_passed": 47,
+    "composition_failures": 0,
+    "composition_errors": 0,
+    "composition_skipped": 0,
+    "modules": [
+      "tests.scheduling.test_shared_credit",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_existing_local_credit_waits_for_remote_terminal_before_finish",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_not_accepted_returns_existing_credit_and_preserves_task",
+      "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_IPC_grants_admit_more_than_eight_declared_requests",
+      "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_partial_IPC_request_count_supplies_its_own_omitted_storage",
+      "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_small_IPC_total_keeps_unknown_input_and_result_charged",
+      "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_rolling_feedback_uses_hard_owner_R_instead_of_initial_C",
+      "tests.execution_provider.test_records_capacity_defaults.DerivedIPCRuntimeTests"
+    ],
+    "counts_overlap_not_added": true,
+    "source_unchanged_during_composition": true,
+    "current_python_matches_composition": true
+  },
+  "independent_reviews": [
+    {
+      "sha256": "08a65c15803786ed135b7cb4a7823e2f4d5bc5ef68854da5d01b16680f024239",
+      "result": "no new substantive finding",
+      "scope": "capacity"
+    },
+    {
+      "sha256": "e6b93c90f3f0ea27c2996a14c38b0fce811cf5e573bfd6a67ae1d13b3c0cc88e",
+      "result": "no new substantive finding",
+      "scope": "shared_credit"
+    }
+  ],
+  "size": {
+    "scope": "Physical Python lines including blanks/comments; exclude tests/docs/gzip originals. Core excludes experiments and baselines.",
+    "current": {
+      "core": {
+        "files": 250,
+        "physical_lines": 60163
+      },
+      "src_all": {
+        "files": 470,
+        "physical_lines": 115164
+      },
+      "scripts": {
+        "files": 130,
+        "physical_lines": 31563
+      }
+    },
+    "production_delta_vs_e7": -31,
+    "core_delta_vs_3fd": -1465,
+    "src_and_scripts_delta_vs_3fd": -2918,
+    "core_delta_vs_main": 6072,
+    "src_and_scripts_delta_vs_main": 6392
+  },
+  "shared_credit_preserved": [
+    "Active leases filtered by endpoint",
+    "Original estimated_work accounting",
+    "Recalculation in every SAOR grant iteration",
+    "Existing caller timing and serial use; no new thread-safety guarantee",
+    "Original snapshots, selection, events and release behavior"
+  ],
+  "not_added": [
+    "tests for the statistics extraction",
+    "cache",
+    "retained state",
+    "runtime checks",
+    "locks",
+    "controller",
+    "model arguments"
+  ],
+  "remaining": [
+    "Ordinary R defaults to 2; omitted storage now fits the declaration, so smaller R also uses smaller default storage",
+    "Automatic physical capacity and complete R separation are unfinished",
+    "Standalone IPC defaults remain unchanged",
+    "Complete relation/audit storage and cohesive large-file work remain",
+    "Actual Ray, vLLM, models, GPU, server and performance not run"
+  ],
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "PYTHONPATH": "code:code/scripts/experiments"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.scheduling.test_shared_credit",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_existing_local_credit_waits_for_remote_terminal_before_finish",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_not_accepted_returns_existing_credit_and_preserves_task",
+      "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_IPC_grants_admit_more_than_eight_declared_requests",
+      "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_partial_IPC_request_count_supplies_its_own_omitted_storage",
+      "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_small_IPC_total_keeps_unknown_input_and_result_charged",
+      "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_rolling_feedback_uses_hard_owner_R_instead_of_initial_C",
+      "tests.execution_provider.test_records_capacity_defaults.DerivedIPCRuntimeTests"
+    ]
+  },
+  "raw": {
+    "path": "ordinary_ipc_shared_composition_raw.json.gz",
+    "bytes": 199881,
+    "sha256": "370091d6e38267385e6fb1368e59704b8b47c81766168f1ca5187038e516b975",
+    "decoded_bytes": 532025,
+    "decoded_sha256": "183c5698bfeb869a2800b2a7d58fb3033461340d34dd63b8310c9b7c1d93c266"
+  },
+  "private_originals": {
+    "before-shared-active-usage.json": {
+      "bytes": 176691,
+      "sha256": "f66435b96aa7499d5aa0662a8dc37df2bf9f76cb13041eabfda85fb0ba832a2c"
+    },
+    "before-shared-active-usage.log": {
+      "bytes": 7081,
+      "sha256": "7a4e46a38e74a6675d3b2709a6e6d7cbb675092ce2a356c0cf4c9e5c4445b4cc"
+    },
+    "after-shared-active-usage.json": {
+      "bytes": 176690,
+      "sha256": "1e2be5bb5aabd1c6fa7edfcaa6edffe6508b7468ab61fed8a83784a63b7ed38d"
+    },
+    "after-shared-active-usage.log": {
+      "bytes": 7081,
+      "sha256": "7a4e46a38e74a6675d3b2709a6e6d7cbb675092ce2a356c0cf4c9e5c4445b4cc"
+    },
+    "ipc-shared-composition.json": {
+      "bytes": 180313,
+      "sha256": "1cd15218120cddc812b08c92d123000408d88b83cd8d48e3b5b950a11c637440"
+    },
+    "ipc-shared-composition.log": {
+      "bytes": 9274,
+      "sha256": "32b8cf446e34db61c36be1535d06ffac0d534250c50835bf62b1d599bf2056fb"
+    }
+  },
+  "real_execution": {
+    "Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "server": 0
+  },
+  "pushed": false,
+  "merged": false
+}

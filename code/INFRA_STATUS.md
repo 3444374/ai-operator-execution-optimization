@@ -871,3 +871,8 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 完整预算和显式存储可独立设置，尚非物理容量探测或完整 R 解耦。
 [原反例和 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
 保存两个改前失败、改后通过与 151 个相关方法通过；真实模型、Ray、GPU 和性能未测。
+
+
+同批 `shared_credit.py` 已合并三处相同的活动租约统计；端点／Job 筛选、工作量和 SAOR 逐轮授予保持，
+没有新增缓存、状态或检查。两份生产源码已审，组合检查与可比代码量见
+[组合记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)。
