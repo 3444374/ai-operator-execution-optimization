@@ -1681,3 +1681,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [同步调度输入职责与重复逻辑清理](diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
 保留相同 76 个 CPU 方法改前／改后全部通过的来源，输入生产原类和常量保持；没有新增测试或容量。
 原五份具名版本继续读取其原调度器副本，十处旧来源差异保持；未运行真实 Ray、模型、GPU 或性能实验。
+
+
+[本地占用投影的职责整理](diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
+保留同一组 89 个 CPU 方法改前／改后全部通过，未新增测试方法；原函数体及另 14 个调度方法保持对应行为。
+五份历史版本增加准确旧 topology 来源，原十处差异未变；本批是源码职责调整，没有物理容量或性能结论。

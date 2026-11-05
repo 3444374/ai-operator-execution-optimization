@@ -1007,3 +1007,10 @@ sink 拒收、unknown 用量和模型借用责任保持。已完成查询先排�
 接纳、额度与 unknown 清理保持。[本批检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
 记录同一组 76 项 CPU 改前／改后全部通过，生产 Python 净减 2 行；历史仍有十处旧来源差异。
 没有修改并行结果 poll／ACK 文件或研究策略，原 socket／sysctl 未验证项保持，未运行真实模型或服务器。
+
+
+本地在途占用投影归入已有 topology 模块，调度器三个实际调用和既有测试已迁移，旧静态方法删除。
+原端点查询、投影函数体、端点接纳及指标采样顺序保持，没有代理或额外状态。
+[同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
+记录改前／改后各 89 项 CPU 通过、历史五条来源映射及原十处差异；本批没有改 R、资源授予或物理容量。
+生产 Python 净增 5 行；未运行真实 Ray、模型、GPU 或服务器，原 socket／sysctl 未验证状态保持。

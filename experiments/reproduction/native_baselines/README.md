@@ -315,3 +315,15 @@ git worktree add --detach /tmp/semloom-movie-http-history-646216fa 646216faa98e0
 旧Movie HTTP和PG／HTTP实验入口继续退役；[逐文件归档](../paused_pg_and_retired_http_20261105/README.md)保留PG恢复来源。
 本组合将原生LOTUS Movie以原LM＋本地模型IPC接回普通session，只有CPU资格，非旧HTTP owner复活；
 Q2b视觉非HTTP替换未完成。历史原始ID／SHA保持，优先复用已公开的压缩旧源，不复制第二份同字节来源。
+
+
+<a id="local-occupancy-projection"></a>
+## 本地占用投影整理前的 topology 源码
+
+当前实现将同步调度的纯本地占用投影放入已有 topology 模块，删除调度器的旧静态方法。
+五份历史版本共用[准确原件](historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz)，
+来自 `1d38e256bf3d5abf52ed6cc9af9814362bf93297`；解码 691 字节，与原预期 SHA-256 相同。
+只增加五条来源和相应 gzip 格式记录，原 3,010 个文件摘要、五个投影身份及其他映射保持。
+历史调度器与测试继续读既有原件，不导入新函数；十处旧来源差异保留，完整恢复仍未通过。
+[本批职责和检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
+不提供模型环境、真实 Ray 或查询性能结论。

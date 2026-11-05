@@ -91,6 +91,9 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 两条调度路径共用服务池选择，仍各自计算实际端点容量；窗口路径不再先创建一份未使用账本。
 [同选择 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
 记录改前／改后各 76 项通过，两个文件合计净减 2 行，没有改变策略或容量。
+端点查询与本地占用投影共用已有 [topology.py](src/scheduling/core/topology.py)，三处调度调用直接使用它；
+原静态方法已删除，端点接纳的时钟／策略回调仍归调度器。[本批 89 项检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
+保留原函数体及历史来源，本批生产 Python 净增 5 行，不计作减少代码。
 
 
 链查询 owner 负责配置、组装、阶段选择、结果记账与模型资源生命周期；融合批传输、输入阶段和结果迭代在

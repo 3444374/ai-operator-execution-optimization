@@ -11395,3 +11395,13 @@ Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan
 [源码与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
 保存同一组 76 项改前／改后全部通过。调度文件 981→897 行，输入模块 82 行，生产 Python 合计净减 2 行。
 并行 poll／ACK、原研究模块和历史副本未改，原十处来源差异及 socket／sysctl 未验证状态保持；整体重构继续。
+
+
+## 2026-11-05 将本地占用投影归入现有拓扑模块
+
+调度器三处实际调用直接使用 topology.with_local_inflight，旧静态实现和测试接点已迁移，没有保留转发壳。
+原函数体、参数和返回值保持，端点接纳的时钟与策略回调、结果和额度处理仍归调度器。
+五份历史投影先补准确 1d38 topology 原件及来源映射，原文件摘要和投影身份不改。
+[源码和 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
+保存同选择的 89 项改前／改后全部通过。调度文件 897→844 行，topology 25→83 行，总生产 Python 净增 5 行；
+本批没有减少总代码或改容量，原十处历史差异和权限未验证项保持，其他核心职责整理继续。
