@@ -282,6 +282,20 @@ class PlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
             session.check_plan(plan)
 
+    def test_lotus_HTTP_session_uses_only_explicit_context_for_preflight(self):
+        for lifecycle in ('resident', 'isolated'):
+            with self.subTest(lifecycle=lifecycle):
+                plan = deepcopy(self.plan)
+                plan.update(backend='lotus-native', lifecycle=lifecycle,
+                            profile=dict(native_lm_max_batch_size=4))
+                plan['generation']['max_tokens'] = 8192
+                for context in (None, 16384):
+                    plan['engine']['max_model_len'] = context
+                    self.assertEqual(session.check_plan(plan)['inference_calls'], 0)
+                plan['engine']['max_model_len'] = 4096
+                with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
+                    session.check_plan(plan)
+
     def test_owner_api_validates_fresh_claims_before_allocating_and_restores_device_environment(self):
         from contextlib import ExitStack
         import os

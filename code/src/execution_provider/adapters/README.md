@@ -900,7 +900,8 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 应用token组织、可选在途工作量与已启动模型的接纳缓存使用该回执，外层额度与原未知结果记录不变。
 
 显式正整数精确保留；当前同步 SemLoom 的省略行为见[同步参数所有权](#sync-native-context-ownership)。
-LOTUS／Ray／Daft 原生对照保留原 4096 缺省；显存比例、数据精度、方法／生成参数及单 GPU 支持保持。
+Ray／Daft 的原生同步对照保留原 4096 缺省；LOTUS 原生 HTTP 仅转发显式上下文，
+省略时由实际服务解析并校验请求。显存比例、数据精度、方法／生成参数及单 GPU 支持保持。
 普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
 公共离线calibration在省略上下文时复用首个已声明完整样本的实际owner回执，随后构造身份；
 每个执行owner仍须在生成前核对自身ready及解析长度，逐调用记录须对应其引擎身份。
@@ -933,8 +934,10 @@ owner 的请求总额、准备参数及 actor／IPC 容量在启动前解析；�
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 或
 `max_num_batched_tokens` 未指定／null时，异步 Core 不传对应引擎参数，交由安装的
 vLLM 0.25.1 解析；显式正整数原样传入。当前同步 `VllmEngine` 也省略这两项；
-LOTUS 原生 HTTP 与显式选择 `ReferenceVllmEngine` 的原生图继续保留原参数。
+LOTUS 原生 HTTP 也仅转发显式值，省略时不再补入项目旧默认；
+显式选择 `ReferenceVllmEngine` 的原生图继续保留原参数。
 启动回执的 `native_capacity` 从构造后的配置读回，即使未开启反馈；缺失字段保持未知。
+HTTP 路径当前的 `command`／请求 `model_config` 不等于上述原生容量读回，未测字段保持未知。
 未指定不表示无限容量或自动性能调优，也不改变外层 C/B/W、上下文长度或显存比例。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。

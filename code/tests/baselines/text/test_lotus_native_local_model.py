@@ -2,6 +2,7 @@
 
 import csv
 from copy import deepcopy
+from dataclasses import replace
 import hashlib
 import importlib.util
 import json
@@ -567,6 +568,35 @@ class OwnershipTests(unittest.TestCase):
                             ("--pipeline-parallel-size", "1"), ("--chat-template", "{{ messages }}")):
             self.assertEqual(command[command.index(flag) + 1], value)
         self.assertIn("--no-enable-log-requests", command)
+
+    def test_omitted_context_reaches_native_preflight_without_legacy_limit(self):
+        source = source_fixture(Path(self.temp.name))
+        budget = ClaimedUnit(Reservation("q", 1, 4), None)
+        stopped = RuntimeError("CPU fixture stops before service allocation")
+        with patch.object(MovieRecordSource, 'preflight', side_effect=stopped) as preflight, \
+                patch.object(native, 'LocalService') as allocate:
+            with self.assertRaises(RuntimeError) as caught:
+                native.run(source, 'unused-checkout', MovieTask(3).method('openai/local-fixture'),
+                    GenerationSpec(max_tokens=8192), self.engine, RecordsResources(), query_id='q',
+                    profile=dict(native_lm_max_batch_size=4), context=dict(claimed_budget=budget))
+        self.assertIs(caught.exception, stopped)
+        preflight.assert_called_once()
+        allocate.assert_not_called()
+        self.assertEqual(budget.attempts, 0)
+
+    def test_explicit_context_still_rejects_output_before_preflight_or_allocation(self):
+        source = source_fixture(Path(self.temp.name))
+        budget = ClaimedUnit(Reservation("q", 1, 4), None)
+        with patch.object(MovieRecordSource, 'preflight') as preflight, \
+                patch.object(native, 'LocalService') as allocate:
+            with self.assertRaisesRegex(ValueError, 'native max_tokens exceeds max_model_len'):
+                native.run(source, 'unused-checkout', MovieTask(3).method('openai/local-fixture'),
+                    GenerationSpec(max_tokens=8192), replace(self.engine, max_model_len=4096),
+                    RecordsResources(), query_id='q', profile=dict(native_lm_max_batch_size=4),
+                    context=dict(claimed_budget=budget))
+        preflight.assert_not_called()
+        allocate.assert_not_called()
+        self.assertEqual(budget.attempts, 0)
 
     def test_foreign_listener_is_rejected_without_http_contact_or_foreign_signal(self):
         import psutil

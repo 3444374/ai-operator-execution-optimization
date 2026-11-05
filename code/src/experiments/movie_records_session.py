@@ -49,7 +49,7 @@ def check_plan(plan):
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
     from src.experiments.movie_records_config import records_resources
     resources = records_resources(plan)
-    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference')
+    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference', 'lotus-native')
                      else engine.legacy_max_model_len)
     if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")

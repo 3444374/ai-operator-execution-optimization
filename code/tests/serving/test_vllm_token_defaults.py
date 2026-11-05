@@ -40,7 +40,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.spec(max_num_batched_tokens=invalid)
 
-    def test_sync_and_LOTUS_native_preserve_old_default_and_explicit_values(self):
+    def test_sync_reference_keeps_legacy_default_while_HTTP_omits_unspecified_budget(self):
         from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
@@ -61,7 +61,10 @@ class NativeTokenDefaultTests(unittest.TestCase):
                     service.port = 39282
                     command = service.command()
                     expected = 4096 if maximum is None else maximum
-                    self.assertEqual(command[command.index('--max-num-batched-tokens')+1], str(expected))
+                    if maximum is None:
+                        self.assertNotIn('--max-num-batched-tokens', command)
+                    else:
+                        self.assertEqual(command[command.index('--max-num-batched-tokens')+1], str(maximum))
                     self.assertEqual(calls[-1]['max_num_batched_tokens'], expected)
                     self.assertEqual(calls[-1]['max_model_len'], 4096)
                     self.assertEqual(calls[-1]['gpu_memory_utilization'], .8)

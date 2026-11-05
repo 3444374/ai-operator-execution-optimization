@@ -26,6 +26,13 @@ LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)�
 
 已接纳接点的Ray `runtime_reuse_only`和Daft `native_single_thread_session`是生命周期配置，不是新的执行层级；同题比较须同时记录输入边界、方法owner、模型owner和计时边界。
 PR52已接纳的共享`lotus_chain_batch`及私有模型process也被Core引用；它们属于无策略共享接点，不能因兼容入口在本目录就算作native专属。
+LOTUS 原生 HTTP 的 `LocalService` 仅在用户显式设置时传入 `max_model_len`、
+`max_num_seqs`、`max_num_batched_tokens`；省略或 null 交给安装的 vLLM 解析，
+不再由项目包装补入 4096／8／4096。冷查询和常驻 owner 共用这条启动命令。
+未显式指定上下文时，本地预检不假定 4096，完整请求的长度由实际 HTTP 服务校验。
+ready 中的 `command` 记录实际启动参数，`model_config` 记录请求配置，不替代原生解析值读回；
+当前未读回的实际容量仍为未知。显存比例、精度、seed、任务生成参数及 LOTUS 的批大小保持配置原义，
+历史显式配置和既有结果不改。
 当前原生 Ray／Daft records、session、chain、cascade 与有限 IMLane 路径使用
 [同步参数所有者](text/frameworks/sync_reference_engine.py)和[链参数适配](text/frameworks/reference_chain_batch.py)，
 继续显式传原 4096／8／4096 或用户指定值，沿用原 `LLM.chat`。当前 SemLoom 同步省略行为与它们分别记录；

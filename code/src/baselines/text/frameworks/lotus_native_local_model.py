@@ -70,12 +70,14 @@ class LocalService:
             "--host", "127.0.0.1", "--port", str(self.port),
             "--model", e.model_path, "--tokenizer", e.tokenizer_path or e.model_path,
             "--served-model-name", self.model, "--dtype", e.dtype,
-            "--max-model-len", str(e.legacy_max_model_len), "--max-num-seqs", str(e.legacy_max_num_seqs),
-            "--max-num-batched-tokens", str(e.legacy_max_num_batched_tokens),
             "--gpu-memory-utilization", str(e.gpu_memory_utilization), "--seed", str(e.seed),
             "--tensor-parallel-size", "1", "--pipeline-parallel-size", "1",
             "--distributed-executor-backend", "uni", "--generation-config", "vllm",
             "--no-enable-log-requests"]
+        for name in ("max_model_len", "max_num_seqs", "max_num_batched_tokens"):
+            value = getattr(e, name)
+            if value is not None:
+                command += ["--" + name.replace("_", "-"), str(value)]
         if e.chat_template is not None:
             command += ["--chat-template", e.chat_template]
         if e.enable_mfu_metrics:
@@ -475,7 +477,7 @@ def run(source, checkout, method, generation, engine, resources, *,
         validate_generation(method, generation)
         resources.describe()
         engine.__post_init__()
-        if generation.max_tokens > engine.legacy_max_model_len:
+        if engine.max_model_len is not None and generation.max_tokens > engine.max_model_len:
             raise ValueError("native max_tokens exceeds max_model_len")
         if not method.model_name.startswith("openai/") or not method.model_name[len("openai/"):]:
             raise ValueError("native local HTTP requires an explicit openai/ model identity")
