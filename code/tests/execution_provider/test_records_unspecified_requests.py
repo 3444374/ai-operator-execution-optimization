@@ -1,20 +1,29 @@
 """Unspecified legacy request count uses complete grants; CPU fixtures only."""
 from copy import deepcopy
 from dataclasses import asdict, replace
+import sys
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from src.baselines.text.movie_tasks import MovieTask
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters.records_profile import resolve_records_runtime
 from src.experiments import movie_records_config as config
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import GenerationSpec
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from tests.experiments import test_records_resource_budget as budget_fixture
 from tests.experiments import test_records_budget_query_identity as identity_fixture
-from tests.experiments.test_records_resource_budget import capacity, ipc
+from tests.experiments.test_records_resource_budget import capacity, ipc, ITEM
 from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime, Source
+
+
+def typed_ipc():
+    return AsyncEngineLimits(max_inflight=5, result_slots=1, input_bytes=2*ITEM,
+        item_input_bytes=ITEM, result_bytes=ITEM, item_result_bytes=ITEM,
+        command_slots=3, control_slots=2)
 
 
 class UnspecifiedRequestTests(unittest.TestCase):
@@ -111,6 +120,138 @@ class UnspecifiedRequestTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'in-flight limit'):
                 case.owner(5)
             actor.assert_not_called()
+
+    def test_complete_typed_IPC_resolves_None_in_ordinary_and_rolling_CPU_preflight(self):
+        case, limits = self.fixture(), typed_ipc()
+        shape = core.CoreRecordsCapacity(item_input_bytes=ITEM, item_result_bytes=ITEM)
+        before = asdict(case.resources)
+        ray = SimpleNamespace(init=Mock(side_effect=AssertionError('Ray must not initialize in preflight')))
+        with patch.dict(sys.modules, {'ray': ray}), patch(
+                'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
+            for rolling in (False, True):
+                with self.subTest(rolling=rolling):
+                    resolved = resolve_records_runtime(case.engine, case.resources,
+                        dict(mode='async', max_inflight='auto'), capacity=shape,
+                        async_limits=limits, rolling_refill=rolling)
+                    self.assertIs(resolved.async_limits, limits)
+                    self.assertEqual(resolved.capacity.budget.active_requests, 5)
+                    self.assertEqual((resolved.capacity.budget.input_bytes,
+                                      resolved.capacity.budget.result_bytes), (2*ITEM, ITEM))
+                    self.assertIsNone(resolved.profile['declared_legacy_request_budget'])
+                    self.assertEqual(resolved.profile['owner_max_inflight'], 5)
+            actor.assert_not_called()
+            ray.init.assert_not_called()
+        self.assertEqual(asdict(case.resources), before)
+
+    def test_public_factory_uses_the_typed_IPC_grant_without_rewriting_explicit_storage(self):
+        case, limits = self.fixture(), typed_ipc()
+        shape = core.CoreRecordsCapacity(item_input_bytes=ITEM, item_result_bytes=ITEM)
+        for C in (1, 3, 'auto'):
+            with self.subTest(C=C):
+                owner = case.owner(C, capacity=shape, async_limits=limits)
+                try:
+                    self.assertEqual(owner.resources.max_active_batches, 5)
+                    self.assertEqual(owner.execution_profile['max_inflight'], 5 if C == 'auto' else C)
+                    self.assertIs(owner._actors.limits, limits)
+                    self.assertEqual(owner.capacity.budget.held_tasks, 2)
+                    self.assertEqual(owner.capacity.budget.method_runs, 2)
+                    self.assertEqual(owner.capacity.budget.result_bytes, ITEM)
+                    self.assertEqual(owner.engine, case.engine)
+                    self.assertIsNone(owner.engine.max_num_seqs)
+                    self.assertIsNone(owner.engine.max_num_batched_tokens)
+                    self.assertIsNone(owner.engine.max_model_len)
+                    self.assertIsNone(owner._actors.model_actor)
+                finally:
+                    owner.close(timeout=1)
+
+    def test_rolling_factory_uses_the_same_typed_grant_with_or_without_token_packing(self):
+        case, limits = self.fixture(), typed_ipc()
+        shape = core.CoreRecordsCapacity(item_input_bytes=ITEM, item_result_bytes=ITEM)
+        for batching in (None, PreparedBatching('token_budget', None, 10000)):
+            for feedback in (False, True):
+                profile = (dict(mode='async', admission=dict(kind='resource_feedback'))
+                           if feedback else dict(mode='async', max_inflight='auto'))
+                with self.subTest(batching=batching, feedback=feedback):
+                    owner = case.owner(1, capacity=shape, async_limits=limits, profile=profile,
+                        prepared_batching=batching, rolling_refill=True,
+                        interleaved_preparation=True, event_driven_preparation=True)
+                    chain = owner._new_owner(None)
+                    try:
+                        self.assertEqual((chain.resources.max_active_batches, chain.request_window),
+                                         (5, 1 if feedback else 5))
+                        self.assertIs(chain._actors.limits, limits)
+                        self.assertEqual(chain.capacity, owner.capacity)
+                        self.assertIsNone(owner.execution_profile['declared_legacy_request_budget'])
+                        self.assertIsNone(chain._actors.model_actor)
+                    finally:
+                        chain.close(timeout=1)
+                        owner.close(timeout=1)
+
+    def test_missing_or_dictionary_IPC_is_not_a_substitute_for_a_finite_None_grant(self):
+        case = self.fixture()
+        ray = SimpleNamespace(init=Mock(side_effect=AssertionError('Ray must not initialize on rejection')))
+        with patch.dict(sys.modules, {'ray': ray}), patch(
+                'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
+            for limits in (None, {}, dict(max_inflight=5), asdict(typed_ipc())):
+                for rolling in (False, True):
+                    with self.subTest(limits=limits, rolling=rolling), self.assertRaisesRegex(
+                            ValueError, 'request capacity.*unresolved'):
+                        case.owner(1, capacity=None, async_limits=limits, rolling_refill=rolling)
+            actor.assert_not_called()
+            ray.init.assert_not_called()
+
+    def test_explicit_R_and_complete_budget_take_precedence_over_the_IPC_request_count(self):
+        case, limits = self.fixture(), typed_ipc()
+        case.resources = replace(case.resources, max_active_batches=3)
+        for declared in (None, capacity()):
+            with self.subTest(capacity=declared):
+                owner = case.owner(1, capacity=declared, async_limits=limits)
+                try:
+                    self.assertEqual(owner.resources.max_active_batches, 3 if declared is None else 4)
+                    self.assertIs(owner._actors.limits, limits)
+                    self.assertEqual(owner.capacity.budget.active_requests, 3 if declared is None else 4)
+                    if declared is not None:
+                        self.assertEqual(owner.capacity, declared)
+                finally:
+                    owner.close(timeout=1)
+
+    def test_typed_IPC_does_not_allow_sync_or_a_window_above_its_finite_request_grant(self):
+        case, limits = self.fixture(), typed_ipc()
+        ray = SimpleNamespace(init=Mock(side_effect=AssertionError('Ray must not initialize on rejection')))
+        with patch.dict(sys.modules, {'ray': ray}), patch(
+                'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
+            for profile in (None, dict(mode='sync', max_inflight=1), dict(mode='async', max_inflight=6)):
+                with self.subTest(profile=profile), self.assertRaises(ValueError):
+                    case.owner(1, profile=profile, capacity=None, async_limits=limits)
+            with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
+                case.owner(1, capacity=None, async_limits=limits,
+                           prepared_batching=PreparedBatching('token_budget', None, 10000))
+            actor.assert_not_called()
+            ray.init.assert_not_called()
+
+    def test_typed_IPC_None_query_reuse_keeps_one_result_slot_and_ACK_cleanup(self):
+        rows = [dict(row_id='typed-'+str(i), source_position=i, reviewId='repeat', id='taken_3',
+                     reviewText='fast') for i in range(5)]
+        case, limits = self.fixture(), typed_ipc()
+        shape = core.CoreRecordsCapacity(item_input_bytes=ITEM, item_result_bytes=ITEM)
+        with ThreadedRuntime(rows) as runtime:
+            owner = case.owner('auto', capacity=shape, async_limits=limits)
+            try:
+                engine_uids = set()
+                for index in range(2):
+                    stream = owner.evaluate(Source(rows), query_id='typed-'+str(index))
+                    values = list(stream)
+                    self.assertEqual(len(values), len(rows))
+                    self.assertEqual(len({v['call_id'] for v in values}), len(rows))
+                    engine_uids.update(v['engine_uid'] for v in values)
+                    self.assertLessEqual(stream.peak_usage['active_requests'], owner.capacity.budget.active_requests)
+                    self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
+                    self.assertEqual(owner.transport.retained_refs(), 0)
+                    self.assertEqual(runtime.async_actors[0].instance.engine.snapshot()['held_requests'], 0)
+                self.assertEqual(len(engine_uids), 1)
+                self.assertEqual(len(runtime.async_actors), 1)
+            finally:
+                self.assertEqual(owner.close(timeout=3)['status'], 'closed')
 
     def test_real_CPU_IPC_query_reuse_keeps_results_ACK_and_counting(self):
         rows = [dict(row_id='r'+str(i), source_position=i, reviewId='repeat', id='taken_3',

@@ -127,7 +127,7 @@ class IndependentSupplyTests(unittest.TestCase):
             finally:
                 owner.close(timeout=3)
 
-    def test_public_factory_accepts_explicit_candidate_with_None_and_complete_budget(self):
+    def test_public_factory_accepts_None_with_complete_budget_or_typed_IPC(self):
         original = base.fixture.chain_for('F').stages[0]
         plan = LotusRecordChain((StageSpec('filter', original.method, original.generation),),
             query_id='ordinary-independent-supply')
@@ -143,25 +143,28 @@ class IndependentSupplyTests(unittest.TestCase):
             rows=lambda: iter(rows))
         with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type',
                 return_value=base.query_fixture.Process):
-            ordinary = create_records_core(plan.stages[0].method, engine, plan.stages[0].generation,
-                replace(resources, max_active_batches=None), capacity=capacity, async_limits=limits,
-                profile=dict(mode='async', max_inflight=2),
-                prepared_batching=PreparedBatching('token_budget', None, 1000000), rolling_refill=True,
-                interleaved_preparation=True, event_driven_preparation=True)
-            try:
-                with patch.object(ordinary, '_tokenizer', return_value=base.CountingTokenizer()):
-                    receipts = list(ordinary.evaluate(source, query_id=plan.query_id))
-                self.assertEqual(len(receipts), len(records))
-                self.assertEqual(len({row['call_id'] for row in receipts}), len(records))
-                self.assertIsNone(ordinary.execution_profile['declared_legacy_request_budget'])
-                report = ordinary.last_close_report
-                self.assertTrue(report['query_completed'])
-                self.assertTrue(report['async_token_batches']['event_driven_preparation'])
-                self.assertEqual(report['async_token_batches']['C_request'], 2)
-                self.assertEqual(report['async_token_batches']['request_limit'], 4)
-                self.assertFalse(any(report['core_usage'].values()))
-            finally:
-                ordinary.close(timeout=3)
+            for shape, batching in product((capacity, replace(capacity, budget=None)),
+                    (None, PreparedBatching('token_budget', None, 1000000))):
+                with self.subTest(complete_budget=shape.budget is not None, token_packing=batching is not None):
+                    ordinary = create_records_core(plan.stages[0].method, engine, plan.stages[0].generation,
+                        replace(resources, max_active_batches=None), capacity=shape, async_limits=limits,
+                        profile=dict(mode='async', max_inflight=2),
+                        prepared_batching=batching, rolling_refill=True,
+                        interleaved_preparation=True, event_driven_preparation=True)
+                    try:
+                        with patch.object(ordinary, '_tokenizer', return_value=base.CountingTokenizer()):
+                            receipts = list(ordinary.evaluate(source, query_id=plan.query_id))
+                        self.assertEqual(len(receipts), len(records))
+                        self.assertEqual(len({row['call_id'] for row in receipts}), len(records))
+                        self.assertIsNone(ordinary.execution_profile['declared_legacy_request_budget'])
+                        report = ordinary.last_close_report
+                        self.assertTrue(report['query_completed'])
+                        self.assertTrue(report['async_token_batches']['event_driven_preparation'])
+                        self.assertEqual(report['async_token_batches']['C_request'], 2)
+                        self.assertEqual(report['async_token_batches']['request_limit'], 4)
+                        self.assertFalse(any(report['core_usage'].values()))
+                    finally:
+                        ordinary.close(timeout=3)
 
     def test_public_factory_rejects_unusable_candidate_before_allocating_an_actor(self):
         plan = base.fixture.chain_for('F')

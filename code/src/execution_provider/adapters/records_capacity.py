@@ -168,20 +168,26 @@ def independent_default_capacity(resources, capacity, overrides=None):
     count guards sit one above that byte allowance so they cannot become a
     hidden request-window policy. Method sizes use the actual single-stage
     envelope; multi-stage low-level owners retain their explicit declarations.
+    With R omitted, a complete typed IPC declaration supplies its finite
+    request count; partial dictionaries do not establish that grant.
     These are logical allocations, not available RAM or measured model limits.
     """
     from src.semantic_methods.budget import row_reservation
+    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 
     if type(capacity) is not CoreRecordsCapacity or capacity.budget is not None:
         raise ValueError('independent defaults require a Core capacity without a complete budget')
-    limits = _ipc_limits(capacity, resources.request_capacity(), overrides)
+    requests = (overrides.max_inflight
+                if resources.max_active_batches is None and type(overrides) is AsyncEngineLimits
+                else resources.request_capacity())
+    limits = _ipc_limits(capacity, requests, overrides)
     input_bytes = max(limits.input_bytes, capacity.item_input_bytes)
     result_bytes = max(limits.result_bytes, capacity.item_result_bytes)
     rows = result_bytes // capacity.item_result_bytes
     method_rows = min(rows, input_bytes // capacity.item_input_bytes)
     envelope = row_reservation(capacity.method_limits(1))
     budget = RecordsCapacityBudget(rows+1, input_bytes, result_bytes,
-        resources.max_active_batches, method_rows+1, method_rows*envelope)
+        requests, method_rows+1, method_rows*envelope)
     return replace(capacity, budget=budget), limits
 
 
