@@ -74,6 +74,12 @@ class ResourceBudgetTests(unittest.TestCase):
         value = core.CoreRecordsCapacity(**raw)
         with self.assertRaisesRegex(ValueError, 'continuation envelope'):
             value.method_capacity(self.resources, MethodLimits(ITEM, ITEM, ITEM, 1))
+        for batching in (None, PreparedBatching('token_budget', None, 10000)):
+            with self.subTest(batching=batching), patch(
+                    'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as allocate:
+                with self.assertRaisesRegex(ValueError, 'continuation envelope'):
+                    self.owner(1, capacity=value, prepared_batching=batching, rolling_refill=True)
+                allocate.assert_not_called()
 
     def test_C_and_legacy_R_do_not_resize_explicit_storage(self):
         expected = capacity().limits(self.resources)
@@ -223,7 +229,7 @@ class ResourceBudgetEntryTests(unittest.TestCase):
         self.assertEqual(checked['core_execution']['owner_max_inflight'], 4)
 
     def test_other_baselines_do_not_accept_resource_budget(self):
-        for backend in ('lotus-native', 'ray-data', 'daft', 'semloom-static-reference'):
+        for backend in ('ray-data', 'daft', 'semloom-static-reference'):
             with self.subTest(backend=backend), self.assertRaisesRegex(ValueError, 'semloom-core'):
                 session.check_plan(dict(self.plan, backend=backend, lifecycle='isolated'))
 

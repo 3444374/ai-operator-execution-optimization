@@ -2,7 +2,7 @@
 
 普通运行与 Session 的配置解释由 [`movie_records_config.py`](movie_records_config.py) 共用，
 其容量／执行声明直接读取 `records_capacity`／`records_profile`，预检不导入查询或模型 owner。
-包括 Core profile、任务与 IPC 容量、应用批选项及 admission cache 身份。
+包括 Core profile、任务与 IPC 容量、应用批选项和准备模式；旧 admission cache 已退役。
 它只调用既有类型与 resolver，不创建运行时、模型或控制器；原运行器中的五个私有导入名保留兼容。
 配置到执行的职责及本轮差分检查见[重构记录](../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md)。
 
@@ -19,10 +19,9 @@
 execution_enabled=false、分配0。该显式上下文封包的缓存命中只执行目标240调用；潜在扫描预留不伪装实际模型调用。
 新目录和新 budget ID 必须由新封包显式绑定，不能运行已花费的旧 packet 取得新额度。
 
-正式封包检查还要求新封包源码树的`deploy/autodl/sembench_records/`提供
-`source.lock.json`、`tasks.json`、`comparison.json`；本review候选不携带这些运行绑定文件。
-普通records/Core工厂不依赖它们，formal/sealed检查缺配置会在模型前失败。
-这些文件必须由运行owner在新的仓库外sealed源码副本中生成并锁定当前源码/输入/环境，不能复制已花费旧packet或据`--help`通过推断可执行。
+当前维护入口读取调用方指定的 packet、输入与运行绑定，不再依赖已退役的旧 campaign，
+也不要求仓库中存在旧 `deploy/autodl/sembench_records/` 配置目录。新运行仍须提供匹配当前源码、
+输入和环境的完整声明；旧 packet 与已花费预算不可复用。旧源码仅按历史来源恢复，不作为当前备用入口。
 
 ## 命令与输入
 
@@ -109,7 +108,7 @@ backend，并增加以下字段。省略新字段仍走原工厂和默认路径�
 B 是每批完整模板 prompt token 加各请求阶段输出上限；C_batch 是仍有未结算计算成员的应用传输批数；
 R 是原工厂解析后的请求容量，同时仍限制resident行。没有每批行数帽，native `max_num_seqs`／
 iteration token容量单独记录。默认B/C_batch固定，W关闭；不把原逐请求扫描C改名为批并发。
-默认批模式不支持逐请求admission；admission cache、stage_timing、非rolling resident或受行帽限制的组合仍在预检拒绝。显式rolling resident见下文。
+默认批模式不支持逐请求 admission；旧 admission cache 已退役，stage_timing、非 rolling resident 或受行帽限制的组合仍在预检拒绝。显式rolling resident见下文。
 
 ### SemLoom records 的 Core／IPC 容量
 
@@ -149,7 +148,7 @@ IPC 的最小帧、最终编码和未知责任保持；源、提示、生成规�
 新默认校准使用 `records_capacity_policy_v2` 绑定真实解析结果，C 扫描不重算存储或 IPC；
 显式计数可独立小于 R，不再因为不等于 C 而拒绝。引擎每轮序列参数与外层请求候选分开。
 不同有效资源值隔离缓存，等效数值表示归一；新身份不复用旧 R 派生结果。
-显式历史策略及具名参数沿用旧分配／缓存身份；同步、非 rolling 整批和低层直接构造仍待分批迁移。
+旧请求策略及缓存从当前入口退役，历史源码可通过 Git 恢复；同步、非 rolling 整批和低层直接构造的原分配分别保留。
 当前只有 CPU 接线检查，实际内存、模型和完整查询性能未验证。
 [CPU配置与边界检查](../../tests/experiments/test_records_capacity_config.py)覆盖部分配置、独立字节限额、
 3MiB输入／结果、unknown预留、普通／常驻入口和查询账本重置；未新增真实Ray、模型或GPU运行。
@@ -201,8 +200,8 @@ unknown、失联、取消请求及未消费结果不能按空闲释放；只有�
 
 固定 rolling 配置在普通 Movie `check/run` 或 Session plan 根部可显式加入
 `"experimental_skip_token_packing": true`。仍提供原来合法的正值 B 和
-`max_rows:null`，同时 `rolling_refill:true`；此模式不允许
-`core_profile.admission`、batch_feedback 或批数并发。旧预算（`core_capacity.budget`省略／null）
+`max_rows:null`，同时 `rolling_refill:true`；可独立选择当前 `resource_feedback`，不允许
+`batch_feedback` 或批数并发。旧预算（`core_capacity.budget`省略／null）
 固定 C_request=R；[显式独立资源预算](#显式独立资源预算默认关闭本地cpu候选)允许固定 C_request<R，
 硬请求额度 R 由 `budget.active_requests` 声明，IPC 另按其有限额度背压。
 只旁路 token 切包，仍按当前合法 ready、兼容性、C/R 空位及 RPC/IPC 字节硬限提交，
@@ -216,7 +215,7 @@ ready 只有一条就发一条，不等待凑满或上一包全部结束。成�
 
 ### 请求级动态 rolling 补位（本地CPU候选）
 
-在已声明B及硬容量R的完整配置中，移除`batch_concurrency`和`batch_feedback`，加入：
+在已声明请求和存储额度的完整配置中，B 可省略；移除 `batch_concurrency` 和 `batch_feedback`，加入：
 
 ```json
 {
@@ -230,11 +229,11 @@ ready 只有一条就发一条，不等待凑满或上一包全部结束。成�
 采样间隔、窗口、样本年龄与三窗比较分别保留，旧 `search_policy`、KV／busy 百分比选项在当前入口拒绝。
 新鲜原生反馈和可选的 actor 分配设备／CPU 读数只支持可撤回试探，不构成性能收益或硬件容量证明。
 缺失的独立内存保护或原生拒绝计数不填零；要求尚未接入的独立内存来源时配置拒绝。
-B 固定，C_batch 为 null；已接纳请求、合法后继、未消费结果、unknown 与 ACK 继续由原组件结算。
+显式 B 保持固定，省略时不按 token 切包；C_batch 为 null；已接纳请求、合法后继、未消费结果、unknown 与 ACK 继续由原组件结算。
 缩小 C 只停未来选择，不取消已借用成员。初始 C、B、硬 R 与统计回执分别记录。
 
-显式 `legacy_resource_feedback` 或直接传旧 typed 选项才保留历史 ascending／reference 与条件续扫；
-其原数值及成功查询后确认 hint 的规则保持。同步／native baseline 和非 rolling 批槽策略不借用新请求策略。
+`legacy_resource_feedback`、旧 ascending 控制器与 hint 缓存已退出当前入口，原机制按准确 Git 来源恢复。
+同步／native baseline 和非 rolling 批槽策略不借用当前请求策略。
 [当前配置与旧策略说明](../scheduling/runtime/calibration.README.md#resource-request-public-current)分别说明有效选项；
 本批没有真实 Ray／模型／GPU 或动态 B、准备交错组合的资格。
 
@@ -435,8 +434,9 @@ rolling 完整预算与显式容量的行为保持。
 省略等同 serial，保持现有配置和校准身份。interleaved 使用既有准备／派发交错；event_driven
 还使用既有完成与 RPC 可用通知。它们映射到 SDK 的两个既有选项，不创建第二执行器或控制器。
 
-这两个显式模式支持固定许可或当前 `resource_feedback` 的 rolling token 请求：
-保留正数 B、token_budget、无单批行帽、async 与 rolling_refill=true；
+这两个显式模式支持固定许可或当前 `resource_feedback` 的 rolling 请求：
+使用 async 与 `rolling_refill=true`；`prepared_batching` 可省略或为 null，此时 B 为 null，不按 token 切包。
+显式设置正数 B 时仍使用 token_budget 且无单批行帽；
 历史逐请求反馈、批反馈、其他 backend 和 stage_timing 继续沿用原检查。
 当前反馈仍从一个请求许可开始，通过原控制器调整许可；准备模式不改变其策略或资源持有。
 原生 baseline 参数和调度仍由各 baseline 负责，公共入口没有因此支持任意链或 DAG。
@@ -485,3 +485,25 @@ failed-ready 实例只有保留启动前已验证身份时才能在原连接重�
 只剩本地结果转交时可在 Ray shutdown 后重试保存。socketpair、Future 或进程 PID 不提供跨进程重连，
 不支持从快照重建空池或重启后自动回收。真实模型及 GPU 检查仍由专用执行会话完成。
 详见[实际 CPU 记录](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)。
+
+
+### 不按 token 切包的 rolling 请求
+
+已有普通 Movie 配置可省略 `prepared_batching`，或显式设为 null，并选择：
+
+```json
+{
+  "rolling_refill": true,
+  "preparation_mode": "event_driven",
+  "core_profile": {"mode": "async", "admission": {"kind": "resource_feedback"}}
+}
+```
+
+Session plan 对应字段为 `profile`；其余方法、输入、引擎及资源声明仍由完整计划提供。
+此时回执中的 B 和 packing policy 为 null，`C_batch` 为 null，C 管理当前请求许可，
+R 及各项存储／IPC 声明继续分别生效；这不等于自动探测内存或取消真实容量保护。
+不需要实验 bypass 标记，也不会由这些设置生成 vLLM token、sequence 或 context 参数。
+模型实际上下文、完整请求及结果额度继续检查。当前服务 SDK 可配完整 delivery 声明，
+但 rolling service Movie CLI 尚未提供该声明，仍在启动前拒绝。
+[CPU 范围及仍在处理的组合检查](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+不代表真实 Ray、模型或性能通过。

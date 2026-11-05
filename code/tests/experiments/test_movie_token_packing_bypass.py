@@ -3,7 +3,7 @@ import json
 import unittest
 
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
-from src.execution_provider.adapters.lotus_records_core import resolve_record_batching
+from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
@@ -25,13 +25,12 @@ class TokenPackingBypassEntryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             PreparedBatching('token_budget', None, 0)
 
-    def test_opt_in_rejects_fused_nonrolling_missing_batching_and_nonboolean(self):
+    def test_opt_in_rejects_fused_nonrolling_and_nonboolean(self):
         engine = EngineSpec('/tmp/cpu-fixture-model', '/tmp/cpu-model-python', '/tmp/cpu-driver-python')
         resources = RecordsResources()
         for options, error in (
             (dict(prepared_batching=PreparedBatching('token_budget', None, 4096)), ValueError),
             (dict(execution='record_local_sections', prepared_batching=PreparedBatching('token_budget', None, 4096)), ValueError),
-            (dict(execution='record_local_sections', rolling_refill=True), ValueError),
             (dict(experimental_skip_token_packing=1), TypeError)):
             with self.subTest(options=options):
                 params = dict(experimental_skip_token_packing=True)
@@ -45,15 +44,13 @@ class TokenPackingBypassEntryTests(unittest.TestCase):
                     resolve_record_batching(resolved, experimental_skip_token_packing=True, **options)
         with self.assertRaises(TypeError):
             resolve_record_batching(resolved, experimental_skip_token_packing=1)
-        with self.assertRaisesRegex(ValueError, 'fixed rolling'):
-            resolve_record_batching(dict(resolved, admission={}),
-                PreparedBatching('token_budget', None, 4096), rolling_refill=True,
-                experimental_skip_token_packing=True)
-        from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
-        with self.assertRaisesRegex(ValueError, 'fixed rolling'):
-            SemLoomRecordChainCore(engine, resources, execution='record_local_sections', rolling_refill=True,
-                prepared_batching=PreparedBatching('token_budget', None, 4096),
-                experimental_skip_token_packing=True, request_feedback=ResourceFeedbackConfig())
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=4)
+        resolved = resolve_core_profile(engine, resources,
+            dict(mode='async', admission=dict(kind='resource_feedback')))
+        selected = resolve_record_batching(resolved, PreparedBatching('token_budget', None, 4096),
+            rolling_refill=True, experimental_skip_token_packing=True)
+        self.assertEqual(selected['request_feedback_kind'], 'resource_feedback')
+        self.assertTrue(selected['experimental_skip_token_packing'])
 
     def test_normal_movie_config_preflight_retains_positive_B_and_opt_in(self):
         fixture = MovieTokenResidentFixture(self)
@@ -67,6 +64,39 @@ class TokenPackingBypassEntryTests(unittest.TestCase):
         self.assertIs(options['experimental_skip_token_packing'], True)
         self.assertGreater(options['prepared_batching'].token_budget, 0)
         self.assertEqual(len(fixture.runtime.async_actors), 0)
+
+    def test_no_B_preparation_and_dynamic_feedback_use_normal_and_resident_entries(self):
+        for mode in ('interleaved', 'event_driven'):
+            with self.subTest(mode=mode):
+                fixture = MovieTokenResidentFixture(self)
+                config = fixture.helper.rolling_config()
+                config.pop('prepared_batching')
+                config['preparation_mode'] = mode
+                config['core_profile'] = dict(mode='async', max_inflight='auto', admission=dict(kind='resource_feedback'))
+                for field in ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens'):
+                    config['engine'].pop(field, None)
+                parsed = movie.read_config(fixture.helper.save(config))[0]
+                self.assertIsNone(movie._record_batching_options(parsed)['prepared_batching'])
+                plan = fixture.plan('RD')
+                plan.pop('prepared_batching')
+                plan['profile']['max_inflight'] = 'auto'
+                plan['engine'] = config['engine']
+                plan['preparation_mode'] = mode
+                checked = session.check_plan(plan)
+                self.assertIsNone(checked['record_batching']['B'])
+                self.assertEqual(checked['record_batching']['request_feedback_kind'], 'resource_feedback')
+                self.assertEqual(len(fixture.runtime.async_actors), 0)
+                report = fixture.run(plan)
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(sum(e['event']=='construct' for e in fixture.events()), 1)
+                self.assertEqual(sum(e['event']=='close' for e in fixture.events()), 1)
+                for query in report['queries']:
+                    close = query_close(query)
+                    self.assertTrue(close['query_completed'])
+                    self.assertIsNone(close['async_token_batches']['policy'])
+                    self.assertEqual(close['core_usage']['held_tasks'], 0)
+                    self.assertEqual(query['backend_report']['result'], {'reviewId': ['1']})
+                    self.assertEqual(len(query_calls(query)), 2)
 
     def test_same_public_resident_factory_runs_two_queries_and_keeps_payloads(self):
         results = {}

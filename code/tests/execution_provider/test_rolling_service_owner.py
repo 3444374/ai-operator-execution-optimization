@@ -18,7 +18,8 @@ from tests.experiments.test_records_service_entry import runtime_identity
 
 
 class RollingServiceOwnerTests(unittest.TestCase):
-    def prepare(self, queries=('rolling-service',), *, resident=False, rows=None, one_request=False):
+    def prepare(self, queries=('rolling-service',), *, resident=False, rows=None, one_request=False,
+                token_packing=True, **options):
         fixture=MovieTokenResidentFixture(self)
         runtime_identity(fixture.runtime)
         plan=fixture.plan('RF')
@@ -37,10 +38,10 @@ class RollingServiceOwnerTests(unittest.TestCase):
         maximum=_plan(shape,1,declaration).bytes if one_request else None
         engine=replace(EngineSpec.from_dict(plan['engine']),max_model_calls=len(source.expected(queries[0]))*len(queries))
         owner=create_records_core(MovieTask(1).method(plan['model_name']),engine,
-            GenerationSpec.from_dict(plan['generation']),profile=dict(mode='async'),
-            prepared_batching=PreparedBatching(**plan['prepared_batching']),rolling_refill=True,
+            GenerationSpec.from_dict(plan['generation']),profile=options.pop('profile',dict(mode='async')),
+            prepared_batching=PreparedBatching(**plan['prepared_batching']) if token_packing else None,rolling_refill=True,
             resident=resident,capacity=shape,service_budget=pool,service_delivery=declaration,
-            service_allocation_bytes=maximum)
+            service_allocation_bytes=maximum, **options)
         fixture.runtime.ray.init()
         self.addCleanup(owner.close,timeout=3)
         return fixture,source,pool,owner,declaration
@@ -73,6 +74,24 @@ class RollingServiceOwnerTests(unittest.TestCase):
         self.assertEqual(len(taken),11)
         self.assertEqual(len(report['unconsumed_call_results']),11)
         self.assertEqual(owner.take_unconsumed_results(),[])
+        self.assertEqual(pool.snapshot()['allocations'],0)
+        self.assertEqual(len(fixture.runtime.async_actors),1)
+
+    def test_no_B_event_feedback_keeps_complete_unconsumed_delivery_charged(self):
+        rows=[(str(n),'taken_3','review '+str(n),'POSITIVE') for n in range(12)]
+        fixture,source,pool,owner,declaration=self.prepare(rows=rows,one_request=True,
+            token_packing=False, interleaved_preparation=True, event_driven_preparation=True,
+            profile=dict(mode='async',admission=dict(kind='resource_feedback')))
+        stream=owner.evaluate(source,query_id=declaration.query_id)
+        first=next(stream)
+        self.assertEqual(owner.capacity.budget.active_requests,1)
+        report=owner.close(timeout=3)
+        self.assertIsNone(report['async_token_batches']['policy'])
+        self.assertEqual(report['request_supply_feedback']['kind'],'resource_request_feedback')
+        self.assertEqual(len(report['unconsumed_call_results']),11)
+        self.assertNotIn(first['call_id'],[r['call_id'] for r in report['unconsumed_call_results']])
+        self.assertEqual(pool.snapshot()['allocations'],1)
+        self.assertEqual(len(owner.take_unconsumed_results(expected=report['unconsumed_call_results'])),11)
         self.assertEqual(pool.snapshot()['allocations'],0)
         self.assertEqual(len(fixture.runtime.async_actors),1)
 

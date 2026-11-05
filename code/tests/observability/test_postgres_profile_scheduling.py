@@ -28,10 +28,14 @@ from scripts.experiments.run_ai_operator_scenarios import _load_config  # noqa: 
 from src.baselines.common.contracts import ChatRequest  # noqa: E402
 from src.baselines.common.manifests import write_manifest  # noqa: E402
 from src.observability.profiling import ray as profile_ray  # noqa: E402
+from src.observability.profiling import ray_scheduler as profile_ray_scheduler  # noqa: E402
 from src.observability.profiling import replay as profile_replay  # noqa: E402
 from src.observability.profiling import config as profile_config  # noqa: E402
 from src.scheduling.submission_control.adaptive import AimdAdmissionController  # noqa: E402
-from src.scheduling.submission_control.admission import DynamicAdmissionGate  # noqa: E402
+from src.scheduling.submission_control.admission import (  # noqa: E402
+    DynamicAdmissionGate,
+    StaticAdmissionController,
+)
 from src.scheduling.core.models import (  # noqa: E402
     SubmissionCompletion,
     SubmissionLifecycleEvent,
@@ -1353,7 +1357,7 @@ class ProfilerEnvelopeTests(unittest.TestCase):
         self.assertEqual(quanta, [(10, 2, False), (7, 1, False)])
 
     def test_endpoint_topology_pairs_ids_and_urls_in_default_pool(self) -> None:
-        topology = profile_ray._endpoint_topology(
+        topology = profile_ray_scheduler._endpoint_topology(
             endpoint_ids=["endpoint-0", "endpoint-1"],
             endpoint_urls=["http://one", "http://two"],
         )
@@ -1368,10 +1372,10 @@ class ProfilerEnvelopeTests(unittest.TestCase):
 
     def test_endpoint_topology_rejects_mismatched_inputs(self) -> None:
         with self.assertRaisesRegex(ValueError, "same length"):
-            profile_ray._endpoint_topology(["endpoint-0"], [])
+            profile_ray_scheduler._endpoint_topology(["endpoint-0"], [])
 
     def test_endpoint_topology_preserves_pool_and_gpu_assignments(self) -> None:
-        topology = profile_ray._endpoint_topology(
+        topology = profile_ray_scheduler._endpoint_topology(
             ["endpoint-0", "endpoint-1"],
             ["http://one", "http://two"],
             pool_ids=["short", "long"],
@@ -1395,7 +1399,7 @@ class ProfilerEnvelopeTests(unittest.TestCase):
             submit_s=0.05,
         )
 
-        metrics = profile_ray._scheduler_metrics(result)
+        metrics = profile_ray_scheduler._scheduler_metrics(result)
 
         self.assertEqual(
             set(metrics),
@@ -1426,7 +1430,7 @@ class ProfilerEnvelopeTests(unittest.TestCase):
 
     def test_bounded_ready_window_is_derived_from_existing_k_and_w(self) -> None:
         self.assertEqual(
-            profile_ray._shared_ready_window_limits(
+            profile_ray_scheduler._shared_ready_window_limits(
                 256,
                 ["endpoint-0", "endpoint-1"],
                 {
@@ -1441,7 +1445,7 @@ class ProfilerEnvelopeTests(unittest.TestCase):
             (256, 131072, 1048576),
         )
         self.assertEqual(
-            profile_ray._shared_ready_window_limits(
+            profile_ray_scheduler._shared_ready_window_limits(
                 256,
                 ["endpoint-0", "endpoint-1"],
                 {"policy": "saor_bounded_priority", "work_limit": 65536},
@@ -3841,19 +3845,21 @@ class ProfilerDryRunContractTests(unittest.TestCase):
             yield envelope
 
         remote = _RecordingRemote()
-        topology = profile_ray._endpoint_topology(
+        topology = profile_ray_scheduler._endpoint_topology(
             ["endpoint-0"],
             ["ray://task/0"],
         )
 
         lifecycle_events = []
-        results, metrics = profile_ray._run_scheduler(
+        results, metrics = profile_ray_scheduler._run_scheduler_with_options(
             _ImmediateRay,
             envelopes(),
             topology,
             {"endpoint-0": lambda payload: remote.remote(payload)},
-            profile_ray.StaticAdmissionController(1),
-            submission_lifecycle_sink=lifecycle_events,
+            StaticAdmissionController(1),
+            profile_ray_scheduler._SchedulerOptions(
+                submission_lifecycle_sink=lifecycle_events,
+            ),
         )
 
         self.assertEqual(consumed, ["started"])

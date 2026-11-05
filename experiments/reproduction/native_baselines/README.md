@@ -206,3 +206,61 @@ git worktree add --detach /tmp/semloom-request-history-9da 9da299e90f79fd0b71f2a
 不要将个别旧文件复制回维护树。原五份具名投影、已有逐文件摘要及恢复映射不改；它们与整个 9da 树用途不同。
 [本批清单](../../results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
 记录逐文件／方法摘要、保留的现代行为及未完成的真实运行检查。
+
+
+<a id="ray-profiler-layout"></a>
+### Ray 画像模块职责整理的历史来源
+
+维护版将调度器组装移到 `ray_scheduler.py`，任务和 actor 提交保留在 `ray.py`，并删除无生产调用的旧参数包装。
+五份具名投影继续使用[准确 965 原件](historical_sources/9652108d/code/src/observability/profiling/ray.py.gz)；
+只新增五条来源映射及 gzip 格式记录，原逐文件摘要、投影 ID 和既有映射不改。
+恢复出的旧 `ray.py` 包含其原函数，不导入新模块；本批前后五份历史树均逐文件重建通过。
+[职责与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#ray-profiler-layout)
+不代表旧模型环境、真实 Ray 或性能已经验证。
+
+
+<a id="scheduler-types-layout"></a>
+### 调度类型整理的准确历史来源
+
+维护版将七个配置、结果及提交接口类型移到 `scheduler_types.py`，原模块直接导入同一类型。
+五份历史投影共用[原调度器](historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz)
+和[原执行接点](historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz)两份准确 965 字节。
+只新增十条来源映射及 gzip 格式记录，原摘要、投影身份和既有映射保持；旧树不依赖新类型文件。
+[职责与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-types-layout)
+记录改前／改后完整恢复，不增加真实 Ray 或模型资格。
+
+
+<a id="neutral-shared-tool-imports"></a>
+### 共用工具消费者的原始导入
+
+当前执行与观测消费者直接使用已有 infrastructure 工具；五份具名投影仍恢复原 baseline 导入。
+只有原先直接读取维护树的
+[image worker identity](historical_sources/d559b942/code/src/modalities/image/worker_identity.py.gz)与
+[process recorder](historical_sources/d559b942/code/src/observability/process_resources/recorder.py.gz)
+需要保存准确 d559 原件，新增 10 条来源／gzip 格式记录。原投影身份和逐文件摘要不改，完整五树重建通过。
+[首次元数据错误与修正](../../results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+保留原检查结果；当前实现没有复制工具函数或增加旧路径包装。
+
+
+<a id="movie-http-retirement"></a>
+### 旧 Movie LOTUS HTTP 与固定 campaign 已退役
+
+当前树删除旧 `lotus_native_local_model`、固定 `sembench_records_formal`、其资源采样器／脚本及专属测试。
+Movie Session 不再接受旧 `lotus-native` backend；Animals 的同名选项、PG HTTP、Reference、Kalypso 与 SAOR 保持独立。
+现用 Matrix 的 read／sha／validate_result 原函数归 `movie_matrix_support`，QueryClock 原类归
+`observability.native_query_timing`，没有复制执行器或将旧 35 单元实验改成另一套实验。
+
+需要重查原机制或此前 HTTP 参数修订时，使用准确 Git 源码：
+
+```sh
+git worktree add --detach /tmp/semloom-movie-http-history-646216fa 646216faa98e0a1a234c7fc74f9f3c0d216e96b2
+```
+
+目标须为新目录；此命令只恢复源码，不启动模型或服务器。原专属命令、38 个退役测试和结果说明在该树读取。
+现有五份具名投影已经保有其准确旧 HTTP 实现；新增保存仍直接读取维护树的
+[旧脚本](historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py.gz)、
+[旧资源采样器](historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py.gz)和
+[原 Matrix 测试](historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py.gz)，
+只增加 15 条来源与 gzip 格式记录，原摘要和投影身份不改。
+[本次组合记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md#current-runtime-cleanup-composition)
+分别解释删除、迁移、保留和仍待验证的内容。

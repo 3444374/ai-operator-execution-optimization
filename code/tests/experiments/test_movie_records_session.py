@@ -282,19 +282,17 @@ class PlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
             session.check_plan(plan)
 
-    def test_lotus_HTTP_session_uses_only_explicit_context_for_preflight(self):
-        for lifecycle in ('resident', 'isolated'):
-            with self.subTest(lifecycle=lifecycle):
-                plan = deepcopy(self.plan)
-                plan.update(backend='lotus-native', lifecycle=lifecycle,
-                            profile=dict(native_lm_max_batch_size=4))
-                plan['generation']['max_tokens'] = 8192
-                for context in (None, 16384):
-                    plan['engine']['max_model_len'] = context
-                    self.assertEqual(session.check_plan(plan)['inference_calls'], 0)
-                plan['engine']['max_model_len'] = 4096
-                with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
-                    session.check_plan(plan)
+    def test_removed_Movie_HTTP_backend_rejects_before_owner_or_output_creation(self):
+        plan = dict(self.plan, backend='lotus-native', profile=dict(native_lm_max_batch_size=4))
+        with self.assertRaisesRegex(ValueError, 'explicit Movie session plan'):
+            session.check_plan(plan)
+        output = Path(self.manifests['movie-q1']).parent / 'retired-http-output'
+        with patch.object(session, '_MovieDriver') as owner:
+            with self.assertRaisesRegex(ValueError, 'unsupported backend'):
+                session.run_sequence(plan['queries'], owner, output,
+                                     backend='lotus-native', lifecycle='isolated')
+        owner.assert_not_called()
+        self.assertFalse(output.exists())
 
     def test_owner_api_validates_fresh_claims_before_allocating_and_restores_device_environment(self):
         from contextlib import ExitStack

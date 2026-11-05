@@ -291,7 +291,7 @@ class CapacityMovieEntryTests(unittest.TestCase):
         self.assertEqual(checked['async_limits']['input_bytes'], AsyncEngineLimits().input_bytes)
 
     def test_other_baselines_and_sync_limits_reject_new_async_fields(self):
-        for backend in ('lotus-native', 'semloom-static-reference', 'ray-data', 'daft'):
+        for backend in ('semloom-static-reference', 'ray-data', 'daft'):
             with self.subTest(backend=backend), self.assertRaisesRegex(ValueError, 'semloom-core'):
                 session.check_plan(dict(self.plan, backend=backend, lifecycle='isolated'))
         config = self.config()

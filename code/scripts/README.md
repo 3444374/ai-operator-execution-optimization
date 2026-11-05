@@ -964,6 +964,14 @@ embedding 离线质量检查和 SAOR 结果校验仍有独有行为，尚无等�
 
 
 Movie records 的现用 check/run 与矩阵 session 现可显式选择默认关闭的准备模式候选；
-只增加 JSON 配置选项，不新建脚本或执行循环。serial 保持当前路径，其他模式只支持固定 rolling token 请求，
+只增加 JSON 配置选项，不新建脚本或执行循环。serial 保持当前路径，其他模式支持无 B 或显式 B 的 rolling 请求，
+可组合固定许可或当前 resource_feedback，
 取值、错误查询的合法前缀用量与 CPU 使用范围见
 [准备模式说明](../src/experiments/movie_matrix.README.md#record-preparation-mode)。
+
+
+旧 Movie HTTP 的 `run_sembench_records_formal.py` 固定实验入口已删除。当前有限矩阵继续使用
+[run_movie_records_matrix.py](experiments/run_movie_records_matrix.py)，普通本地模型查询继续使用
+[run_lotus_records_movie.py](experiments/run_lotus_records_movie.py)。
+[退役与源码恢复](../../experiments/reproduction/native_baselines/README.md#movie-http-retirement)
+保留旧配置和专属测试，当前入口不保留隐藏回退路由。

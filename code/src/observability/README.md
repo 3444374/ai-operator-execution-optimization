@@ -15,6 +15,10 @@ over the execution policy it observes.
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
 - `profiling/` contains the PostgreSQL AI operator profiler's stable result schema and helpers.
+  `profiling/ray.py` owns public task/actor submission, invocation values and legacy polling.
+  `profiling/ray_scheduler.py` assembles endpoint topology, routing/admission options, the existing
+  scheduler and result metrics. Policy and execution remain implemented in `src/scheduling/`;
+  the two profiler modules share the existing scheduler rather than maintaining another one.
 
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
@@ -173,3 +177,9 @@ t=2.776，不属于本次跨档错误。
 [`test_statistics.py`](../../tests/observability/test_statistics.py)，覆盖 df 档位、极小与大样本、
 非法 df/非有限观测及实际 CSV 调用者的 warm-up 排除、分组计数和配对退化统计。
 另覆盖接近浮点上限的可序列化区间，以及极小非正规数的非零区间。
+
+
+共用脱敏和私有文件输出直接依赖 `src.infrastructure.redact`、`src.infrastructure.private_artifacts`，
+与现有实现使用同一对象；baseline 的原公开导出仍供比较和历史调用使用。
+[本次消费者迁移](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+只调整导入归属，不增加观测、落盘步骤或执行策略。

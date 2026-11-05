@@ -1,0 +1,63 @@
+{
+  "base": "d559b942f795af30baa3491be1b57e3af0616853",
+  "production_files": {
+    "code/src/execution_provider/adapters/lotus_chain_token_batches.py": "e29fd1c85272f5cee62b1c02fc40cfa67f1cb8e38eb44be0b8602c4adacf7f8b",
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "dd5b3a1c0126ef072584149f0201b9d3cf665a72a0e2b9f96cfdb146b306fc3e",
+    "code/src/execution_provider/adapters/lotus_records_batches.py": "01d1808f188ad6fe48b97614b8b0c8c7de894e7c94030221d1f0a4e7e8fe9dfa",
+    "code/src/execution_provider/adapters/lotus_records_core.py": "2bae1711d219afcd35a83561224f2ff4d1fb70197a7e789cbf245d7c2bf615ea",
+    "code/src/execution_provider/adapters/records_profile.py": "e518e6c7ec38916ae11bc95cb76bfcd00b5f38cb1a1139abc43ec1f5bb27a895",
+    "code/src/execution_provider/adapters/records_service_config.py": "afc7e5cdebd4cd697242427bd8d3af4b1d31a5912e5092175271cefb4879dd49",
+    "code/src/experiments/movie_records_config.py": "61bc3e08ec66a7943d9772527f50eeee5476298daf4663e49870704483332624"
+  },
+  "new_execution_loops": 0,
+  "new_controllers": 0,
+  "new_check_frameworks": 0,
+  "new_test_methods": 4,
+  "configuration_replay": {
+    "cases": 4,
+    "before_accepted": 0,
+    "after_accepted": 4,
+    "actor_constructions": 0
+  },
+  "CPU": {
+    "final_selected": 197,
+    "final_passed": 195,
+    "final_failed_methods": 2,
+    "final_skipped": 0,
+    "source_unchanged_during_suite": true,
+    "service_increment_selected": 21,
+    "service_increment_passed": 21,
+    "isolated_reference_methods_passed": 2,
+    "overlapping_runs_not_summed": true
+  },
+  "scope": [
+    "rolling prepared transport accepts omitted or null B with fixed or modern resource-feedback admission",
+    "interleaved/event-driven preparation reuse existing MethodDriver and Core",
+    "request and IPC byte/result grants remain independent",
+    "actual model prompt+output context check remains, unknown does not mean unlimited",
+    "shared single-stage Method capacity check before allocation; duplicate callers removed",
+    "service full-delivery grant retained; redundant token-bypass prohibition removed"
+  ],
+  "unchanged": [
+    "ordinary requests without rolling_refill",
+    "explicit positive B and named historical projections",
+    "engine capacity fields, dtype/memory defaults and native runtime implementations"
+  ],
+  "remaining": [
+    "Two Reference fixture methods fail in the combined order despite passing alone; original failures retained",
+    "Complete source relation and ordinary result delivery still materialize; CSV read is not interleaved",
+    "Rolling service Movie CLI still lacks complete-delivery declaration; early rejection retained",
+    "Actual Ray/model/GPU/performance and physical automatic capacity are unverified",
+    "Ruff unavailable in the existing selected environment"
+  ],
+  "pushed": false,
+  "merged": false,
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "raw": {
+    "path": "prepared_requests_no_token_packing_raw.json.gz",
+    "bytes": 78554,
+    "sha256": "23f2f3a32083ce8814ca2e208474da44c5b355922e87187ab9a2416f6deaf69b"
+  }
+}

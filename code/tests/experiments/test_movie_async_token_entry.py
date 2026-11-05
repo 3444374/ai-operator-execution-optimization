@@ -97,7 +97,7 @@ class AsyncTokenEntryTests(unittest.TestCase):
         self.assertEqual((selected['B'], selected['C_request'], selected['R']), (100000, 2, 2))
         self.assertIsNone(selected['C_batch'])
         for change in (dict(batch_concurrency=1), dict(batch_feedback=dict(max_batches=2)),
-                       dict(rolling_refill=1), dict(rolling_refill=None), dict(prepared_batching=None)):
+                       dict(rolling_refill=1), dict(rolling_refill=None)):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 movie.read_config(self.save(dict(config, **change)))
 

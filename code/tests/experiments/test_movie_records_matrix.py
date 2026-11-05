@@ -520,12 +520,12 @@ class SharedLaunchTests(unittest.TestCase):
             budget_path=self.root/'never-opened-budget.sqlite', budget_id='fixture')
 
     def test_complete_configuration_and_optional_imlane_fields(self):
-        for backend in ('lotus-native', 'semloom-core', 'ray-data', 'daft', 'imlane'):
+        for backend in ('semloom-core', 'semloom-static-reference', 'ray-data', 'daft', 'imlane'):
             support.validate_launch_context(self.context, self.output, backend)
         context = copy.deepcopy(self.context)
         for name in ('imlane_artifact_root','imlane_author_root','imlane_method_python','imlane_bridge_binary','runtime_preflight_report'):
             context['runtime_binding'].pop(name)
-        support.validate_launch_context(context, self.output, 'lotus-native')
+        support.validate_launch_context(context, self.output, 'daft')
         with self.assertRaises(ValueError):
             support.validate_launch_context(context, self.output, 'imlane')
 

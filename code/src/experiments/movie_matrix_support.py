@@ -8,9 +8,54 @@ import sys
 import json
 from copy import deepcopy
 import math
-from src.experiments.sembench_records_formal import sha
+import hashlib
+from src.semantic_methods.lotus.records import CallLedger
 from src.baselines.common.private_artifacts import content_digest
 from src.observability.records_telemetry import RecordsTelemetry
+
+
+def read(path, *, max_bytes=8 * 1024**2):
+    path = Path(path)
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > max_bytes:
+        raise ValueError("a bounded regular JSON file is required")
+    def reject(value):
+        raise ValueError("nonfinite JSON: " + value)
+    return json.loads(path.read_text(), parse_constant=reject)
+
+def sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+def validate_result(report, expected, *, source=None):
+    if report.get("status") != "completed":
+        raise ValueError("query did not complete")
+    if report.get("inference_calls") == 0 or report.get("execution_kind") == "fixed-response software qualification":
+        raise ValueError("CPU/preflight evidence cannot qualify a model execution")
+    ledger = CallLedger(expected, max_calls=len(expected))
+    for row in report["calls"]["records"]:
+        ledger.record(row)
+    calls = ledger.report()
+    if calls["counts"]["succeeded"] != len(expected) or calls["counts"]["missing"] or calls["usage"]["total_tokens"] is None:
+        raise ValueError("query has failed/unknown/missing calls or incomplete usage")
+    if any(type(row.get("text")) is not str or row.get("finish_reason") not in ("stop", "length")
+            or row.get("total_tokens") != row["prompt_tokens"] + row["completion_tokens"] for row in calls["records"]):
+        raise ValueError("successful calls require real terminal text/finish and consistent usage")
+    if any(type(row.get("messages_sha256")) is not str or len(row["messages_sha256"]) != 64
+            or any(c not in "0123456789abcdef" for c in row["messages_sha256"]) for row in calls["records"]):
+        raise ValueError("actual per-call untemplated message identities are required")
+    decisions = report["decisions"]
+    if (len(decisions) != len(expected) or len({r["row_id"] for r in decisions}) != len(expected)
+            or {r["row_id"] for r in decisions} != {r["row_id"] for r in expected}
+            or any(type(r["decision"]) is not bool for r in decisions)
+            or "original_metric" not in report["quality"]):
+        raise ValueError("complete row decisions and original evaluation required")
+    if source is None:
+        if report["result"].get("positive_review_cnt") != sum(r["decision"] for r in decisions):
+            raise ValueError("COUNT differs from complete decisions")
+    else:
+        source.task.validate_result(report["result"], source.rows(), decisions)
+    return dict(decisions=sorted((r["row_id"], r["decision"]) for r in decisions),
+        messages=sorted((r["row_id"], r["messages_sha256"]) for r in calls["records"]),
+        result=report["result"], original_metric=report["quality"]["original_metric"])
 
 def _diagnostic_warning(phase,error):
     try:print(json.dumps(dict(event='diagnostic_warning',phase=phase,error_type=type(error).__name__)),file=sys.stderr,flush=True)
@@ -204,11 +249,11 @@ def bootstrap_context(context, output):
 
 
 def owner_context_contract(context):
-    """Native additionally requires the exact normal lease_path before startup."""
+    """Require the exact normal lease_path before startup."""
     from src.infrastructure.runner_lease import HOST_SCOPE_DIR_NAME,LEASE_NAME
     value=context.get('owner_context')
     if type(value) is not dict or any(key not in value for key in ('lease_path','lease_sha256','artifact_root','gpu_idle_max_mib','owner_resource_limits')):
-        raise ValueError('complete shared and Native owner context required')
+        raise ValueError('complete shared owner context required')
     expected=Path(value['artifact_root'])/HOST_SCOPE_DIR_NAME/LEASE_NAME
     path=Path(value['lease_path'])
     if (not path.is_absolute() or path!=expected or path.is_symlink() or not path.is_file()

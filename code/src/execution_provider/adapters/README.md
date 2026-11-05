@@ -523,15 +523,16 @@ Counter qualification is CPU-only; no new model performance evidence is implied.
 ### Fixed rolling token-packing ablation (CPU experiment only)
 
 The same factory and record-local organizer accept
-`experimental_skip_token_packing=True` only with fixed `rolling_refill=True`.
+`experimental_skip_token_packing=True` with `rolling_refill=True`.
 Keep the ordinary positive-B `PreparedBatching('token_budget', None, B)` config:
 the experimental option bypasses only token-based packet sealing. Legacy budgets use C_request=R;
 the existing FIFO/compatibility, resident/member/result capacity and exact RPC/IPC
 byte bounds remain. A nonempty ready frontier is sent immediately; neither a full
-packet nor the previous packet's final member is required. The flag rejects
-request-feedback admission and non-rolling/fused paths; omission/false leaves
-their existing behavior and configuration receipts unchanged. It installs no
+packet nor the previous packet's final member is required. The flag rejects non-rolling/fused paths; current request feedback may be selected
+independently. Omission/false retains explicit B packing. The flag installs no
 dynamic B/C controller and does not merge R with native engine sequence capacity.
+To omit token packing entirely, leave `prepared_batching` unset as described below;
+a manufactured B or experimental flag is unnecessary.
 
 `B` remains declared in the receipt, accompanied by the explicit experimental
 flag when bypassed. This changes packet membership, unlike preparation or dispatch
@@ -1085,9 +1086,9 @@ uses its bound native and independent safety sources as described above.
 ### 当前模块中的准备与派发交错候选
 
 `create_records_core` 可显式传 `interleaved_preparation=True` 与
-`event_driven_preparation=True`，支持预检完整有限 source 的 rolling token 请求，
-可使用固定许可或当前 `resource_feedback`，
-默认均为 False；Movie JSON／CLI 不接收这些选项。实现沿用 `b258c575` 的已审机制，
+`event_driven_preparation=True`，支持预检完整有限 source 的 rolling 请求，
+可使用固定许可或当前 `resource_feedback`；B 可以省略或显式设置。
+默认均为 False；Movie JSON／CLI 通过 `preparation_mode` 接入。实现沿用 `b258c575` 的已审机制，
 查询循环位于 `records_query_runtime`，继续使用原 MethodDriver、Core、RPC 接纳及结果消费。
 不改变 LOTUS 请求、Filter→Map 原数据、Extract 的完整关系条件、单记录补位或原生引擎参数。
 
@@ -1117,7 +1118,7 @@ ACK 不归还 compute／结果／unknown。原帧头及逐候选计量缓存继�
 
 Movie 入口新增默认关闭的 preparation_mode，serial 与省略相同；interleaved／event_driven
 映射到上面的 SDK 选项。纯组批解析与 PreparedRecordsCore 使用同一准备选项检查；配置、预检、
-工厂、实际回执及校准身份相互对应。rolling token 路径可组合固定许可或当前 `resource_feedback`。
+工厂、实际回执及校准身份相互对应。rolling 路径可组合固定许可或当前 `resource_feedback`，无需设置 B。
 详细取值与后期提示错误可能保留合法前缀用量的说明见
 [Movie 配置](../../experiments/movie_matrix.README.md#record-preparation-mode)；
 [CPU 接线检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)
@@ -1365,3 +1366,27 @@ Internal rolling producer retirement now carries only the original object marker
 The grant already owns allocation and model identity; duplicated mutable metadata and mirror checks were removed.
 Actual producer cleanup, unconsumed results and pending RPC still retain the grant; see the
 [focused CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retirement-marker-simplify).
+
+
+<a id="prepared-requests-without-token-packing"></a>
+### Rolling prepared requests without token packing
+
+Set `rolling_refill=True` and omit `prepared_batching` or pass `None` to
+`create_records_core`. The existing prepared-request pipeline supports fixed request
+permits or `resource_feedback`, with either explicit preparation mode. Its receipts
+show `B=None` and `policy=None`; no positive B or bypass flag is manufactured.
+The older `async_token_batches` report key remains, with a null policy.
+
+The same Core, MethodDriver, transport and model owner remain responsible for work.
+Complete requests are grouped by available request permits, compatibility and RPC/IPC
+bytes. Token counts still verify prompt plus output against the model's confirmed
+context; they do not seal packets or become native iteration parameters. Explicit
+engine parameters retain their own meaning and are not derived from B, C or R.
+
+The finite source is still read into a complete relation before this pipeline starts,
+and ordinary ledger delivery follows traversal. Preparation interleaving concerns
+method/prompt preparation and dispatch. It does not claim CSV-read overlap or lower
+complete-query latency. The service SDK additionally requires its complete delivery
+declaration; rolling service Movie CLI persistence remains pending.
+[Implementation and retained CPU failures](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+separate this local candidate from actual model and performance results.

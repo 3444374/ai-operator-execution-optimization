@@ -185,7 +185,7 @@ class RayRuntimeReuseTests(unittest.TestCase):
         self.assertEqual([d.closes for d in case.drivers],[1])
 
     def test_runtime_reuse_is_only_exposed_for_verified_ray_adapter(self):
-        for backend in ('daft','semloom-core','lotus-native','imlane'):
+        for backend in ('daft','semloom-core','imlane'):
             case=self.fixture()
             with self.subTest(backend=backend),self.assertRaisesRegex(ValueError,'runtime_reuse_only.*ray-data'):
                 run_sequence(case.queries,case.factory,case.output,backend=backend,

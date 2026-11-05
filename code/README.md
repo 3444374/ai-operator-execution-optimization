@@ -14,6 +14,7 @@ GPU（图形处理器）采样可接收实际模型 worker 返回的 UUID（设�
 | 提交反馈的压力采样 | [采样时钟与内存配置](src/scheduling/runtime/calibration.README.md#pressure-sample-response) |
 | LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
 | Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
+| 同步调度接口与执行 | [配置／结果／后端接口](src/scheduling/core/scheduler_types.py)、[原调度器](src/scheduling/core/scheduler.py)与[执行接点](src/scheduling/runtime/execution.py)；原公开导入继续可用 |
 | 模型引擎 | [共享请求值](src/serving/backends/vllm_protocol.py)、[同步实例](src/serving/backends/vllm_engine.py)、[异步实例](src/serving/backends/vllm_async_engine.py)、[上下文回执](src/execution_provider/adapters/README.md#records-model-context) |
 | PG 载体与 SQL 支持形状 | [extension](postgres/semloom_pg/README.md) |
 | 观测定义与离线结果 | [observability](src/observability/README.md)、[离线工具](scripts/analysis/OFFLINE_RESULTS.md) |
@@ -512,9 +513,10 @@ retain their own explicit policies. Retirement requires checking each entry's ca
 historical reproduction mappings, rather than migrating every path to SAOR.
 The [archived development lines](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-work-line-archives)
 preserve source history; they did not retire all shared request execution or cleanup.
-The old online comparison controller is still reachable through explicit feedback
-configuration. This import cleanup does not implement resource-guided fast scanning or
-conditional reuse/rescanning; replacing that strategy needs separate validation.
+The old online comparison controller and its profile selectors have left the current entry points.
+Records request feedback uses `ResourceRequestController`; optional application token packing
+is independent of rolling preparation and request feedback. SAOR remains an explicitly selected
+research policy, with its existing module and historical sources retained.
 
 Endpoint state separates service health (`healthy`) from request-specific
 admission capacity (`available`). Routers use `schedulable_endpoints()` for
@@ -741,4 +743,10 @@ SQL、Ray任务、模型服务与结果消费具有各自的生命周期，不�
 将同一服务进程的有限字节分给实际模型 owner，再经原有 Core 和 IPC 派生请求与结果计数。
 无服务池的旧入口和参数保留；普通 Movie CLI／session 已有显式字节声明接线，
 同进程恢复只使用原 owner／Ray 身份，结果保存后才明确转交。该候选不探测硬件，
-rolling 完整结果授予、多进程服务及重启恢复仍未接入。
+rolling 服务 SDK 已支持完整结果授予；Movie CLI 的 rolling 保存接线、多进程服务及重启恢复仍未完成。
+
+
+当前执行、方法与观测中的 11 个共用工具消费者直接导入 `infrastructure.redact` 与
+`infrastructure.private_artifacts`；实现和公开旧导出保持同一对象，没有再经 baseline 路径转接。
+[实际范围和未迁移依赖](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+区分工具归属与仍需单独整理的 NativeCall、图像预测器和画像 manifest 接点；不据此声称所有语义优化已接入。

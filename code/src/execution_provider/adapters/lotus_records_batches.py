@@ -185,7 +185,9 @@ class PreparedRecordsCore:
             from src.scheduling.submission_control.adaptive import ResourceRequestConfig
             request_feedback = ResourceRequestConfig(**batching['request_feedback'])
         owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
-            actor_owner=actors, capacity=self.capacity, prepared_batching=PreparedBatching(**batching['prepared_batching']),
+            actor_owner=actors, capacity=self.capacity,
+            prepared_batching=(None if batching['prepared_batching'] is None
+                               else PreparedBatching(**batching['prepared_batching'])),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,
             rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback,
             resident=self.resident,

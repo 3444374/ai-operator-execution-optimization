@@ -11181,3 +11181,63 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 
 退役组合再接到无重叠的 9652108d 租约修复；完整 `code/src` 与 e4b09dcf 已测组合相同，
 原修复三文件逐字节保留，仅补跑一个租约 CPU 用例通过。实际来源证明见同一主记录，未推送或合并。
+
+
+## 2026-11-05 按职责拆分 Ray 画像适配文件
+
+以 9652108d 建独立树，待审旧反馈退役候选及工作树保持不变。
+原 1,064 行文件分成 670 行提交模块和 357 行调度组装模块，直接复用已有执行器，删除旧参数包装；
+净减 37 行，迁移部分不算删除。公开函数、指标、旧轮询及五份历史投影保持。
+[改前／改后同 194 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-profiler-layout)
+均通过，没有新增测试方法；独立复核未发现新增问题。当前 Ruff 未安装，真实 Ray／模型／GPU 未运行。
+候选未推送或合并，两批实际整合后的代码量另行复算。
+
+
+## 2026-11-05 分离 Core 调度值与执行循环
+
+在独立 965 底稿上把七个配置／结果／提交接口类型移到 `scheduler_types.py`，保留原公开导入及唯一执行器。
+原调度文件从 1,125 行变为 981 行，新增类型模块 165 行；三个生产路径合计净增 17 行必要导入／说明。
+[改前／改后同 236 项检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-types-layout)
+通过，原默认对象还原与五份历史摘要保持。本批未叠加两份旧候选，未推送、合并或运行真实 Ray／模型／GPU。
+
+
+## 2026-11-05 组合最新底稿上的文件职责整理
+
+保留独立 Ray 画像与 Core 类型候选，在已发布 d559b942 之上合成；追加记录保留双方事实，
+历史恢复映射取无冲突并集，原身份和摘要不改。六个源码／测试文件逐字节保持各自已审候选，
+17 个已发布旧代码清理生产文件保持。
+[236 项 CPU 检查与可比统计](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#layout-d559-composition)
+全部通过；本批结构整理净减 20 行，核心相对 3fd 共减 1,457 行，较固定 main 仍多 6,080 行。
+当前只交付可审候选，未推送或合并；真实 Ray、模型、GPU 和性能未测，配置耦合另树修复。
+
+
+## 2026-11-05 将 prepared rolling 与应用 token 切包分开
+
+当前准备与派发沿原执行链复用，B 可省略或为 null，固定或现代动态许可均可组合两种准备方式。
+七个生产文件处理配置、工厂及可空报告；已有上下文／字节／结果保护保留，重复 Method 预检集中到公共解析。
+[源码、失败与 CPU 范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+记录四种配置前拒绝后可解析、197 方法中 195 成功与 2 项未解决的 Reference 夹具组合失败，服务增量 21 项通过。
+没有新执行器、控制器或形式化测试包装，未推送或合并。按用户最新要求先清退不用的旧 LOTUS HTTP 接线，
+共享引擎默认值草案保留，不继续修补旧 HTTP；PG 与仍有研究用途的独立模块另行核实。
+
+
+## 2026-11-05 当前执行直接使用中性共用工具
+
+11 个执行、方法和观测消费者改为直接导入现有 infrastructure 脱敏／私有文件实现，
+不再经过 baseline 导出；无新增工具、包装、校验或测试方法，生产代码行数不变。
+[检查与遗留项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+记录 117 项中 115 成功、首次历史格式字段错误及 4 项恢复重跑通过，另一项原 Kalypso 夹具问题保留。
+只调整导入所属层次，原 NativeCall／图像预测器等实际功能依赖仍待单独迁移；不声称完整继承算子优化。
+未推送或合并，没有模型、真实 Ray、GPU 或服务器操作。
+
+
+## 2026-11-05 组合当前运行链与旧 Movie 路径退役
+
+以最新已发布 646216fa 组合四份本地已审切片：画像／Core 文件职责、无 B 准备反馈、
+废弃 Movie HTTP／固定 campaign 删除，以及共用工具直接导入。现用 Matrix 四个共用定义迁移原样，
+Reference、PG、图像、Kalypso、SAOR 与 LOTUS 有效算法保持；没有临时实现 Join／Top-K／Group-by。
+[完整范围及检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#current-runtime-cleanup-composition)
+记录首轮 721 方法、26／1／84 项必要补跑及原始失败，重叠不相加。auto 与请求反馈的初始值冲突已修，
+owner 上限与字节／结果持有保持。原五树身份不改，新增 40 来源记录和 8 个准确 gzip 原件。
+核心相对 3fd 减 1,434 行，全部 src＋scripts 减 2,887 行；较固定 main 分别仍多 6,103／6,423 行。
+物理容量、完整关系存储、剩余大文件及 SDK 精简仍待后续，真实运行未测，未推送或合并。

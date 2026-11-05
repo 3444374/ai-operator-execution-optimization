@@ -70,6 +70,9 @@ def stubs():
 
 class CaptureTests(unittest.TestCase):
     def setUp(self):
+        script_path = patch.object(sys, 'path', [str(ROOT), *sys.path])
+        script_path.start()
+        self.addCleanup(script_path.stop)
         provider=sys.modules.get('src.scheduling.runtime.observations')
         self.feedback_provider=None if provider is None else provider.NonBlockingMetricsObservationProvider
         self.feedback_constructor=None if provider is None else self.feedback_provider.__init__
@@ -493,7 +496,7 @@ class PlanTests(unittest.TestCase):
             helper_path=root/'helper.py';helper_path.write_text('# CPU host boundary\n')
             config=deepcopy(self.base)
             config.update(artifact_root=str(root),units={'native-query':1},observer_sha256={},
-                movie_plan=dict(backend='lotus-native',engine=dict(driver_python=sys.executable)),
+                movie_plan=dict(backend='ray-data',engine=dict(driver_python=sys.executable)),
                 workload=dict(name='native-quality',kind='movie_session',expected_calls=1),
                 host_helpers=dict(path=str(helper_path),sha256=hashlib.sha256(helper_path.read_bytes()).hexdigest()),
                 host_config={},limits=dict(worker_timeout_s=10,controller_timeout_s=30,

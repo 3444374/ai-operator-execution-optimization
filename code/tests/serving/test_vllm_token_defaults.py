@@ -8,12 +8,11 @@ import io
 import json
 from pathlib import Path
 import sys
-import tempfile
 from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.frameworks.lotus_native_local_model import LocalService
+from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends import vllm_engine as common
 
@@ -40,16 +39,14 @@ class NativeTokenDefaultTests(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.spec(max_num_batched_tokens=invalid)
 
-    def test_sync_reference_keeps_legacy_default_while_HTTP_omits_unspecified_budget(self):
-        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
+    def test_sync_reference_preserves_old_default_and_explicit_values(self):
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs: kwargs
         sampling.StructuredOutputsParams = lambda **kwargs: kwargs
         calls = []
         vllm.LLM = lambda **kwargs: calls.append(kwargs) or SimpleNamespace()
-        with tempfile.TemporaryDirectory() as folder, \
-                patch.dict(sys.modules, {'vllm': vllm, 'vllm.sampling_params': sampling}), \
+        with patch.dict(sys.modules, {'vllm': vllm, 'vllm.sampling_params': sampling}), \
                 patch.object(common.EngineSpec, 'validate_local', return_value={}), \
                 patch.object(common, '_validate_current_runtime'), \
                 patch.object(common.importlib.metadata, 'version', return_value=common.VLLM_VERSION):
@@ -57,14 +54,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
                 with self.subTest(maximum=maximum):
                     spec = self.spec(max_num_batched_tokens=maximum)
                     ReferenceVllmEngine(spec, common.GenerationSpec())
-                    service = LocalService(spec, 'fixture-model', RecordsResources(), Path(folder), 'fixture-device')
-                    service.port = 39282
-                    command = service.command()
                     expected = 4096 if maximum is None else maximum
-                    if maximum is None:
-                        self.assertNotIn('--max-num-batched-tokens', command)
-                    else:
-                        self.assertEqual(command[command.index('--max-num-batched-tokens')+1], str(maximum))
                     self.assertEqual(calls[-1]['max_num_batched_tokens'], expected)
                     self.assertEqual(calls[-1]['max_model_len'], 4096)
                     self.assertEqual(calls[-1]['gpu_memory_utilization'], .8)

@@ -51,7 +51,7 @@ def organizer(rows, *, skip=False, C=16, active=0, R=128, B=4096, **limits):
     owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=R), engine=engine,
         core=SimpleNamespace(capacity=SimpleNamespace(records=records)),
         _actors=SimpleNamespace(limits=SimpleNamespace(**actor_limits), model_ready=None),
-        prepared_batching=PreparedBatching('token_budget', None, B), rolling_refill=True,
+        prepared_batching=None if B is None else PreparedBatching('token_budget', None, B), rolling_refill=True,
         request_feedback=None, deadline=1e9, experimental_skip_token_packing=skip)
     tokens = WordCountTokenizer()
     value = PreparedTokenOrganizer(owner, tokens, None)
@@ -127,6 +127,23 @@ class TokenPackingBypassTests(unittest.TestCase):
         self.assertEqual(a.history[0]['tokens'], 4096)
         self.assertEqual(a.history[0]['reason'], 'token_budget')
         self.assertEqual(b.history[0]['reason'], 'request_capacity')
+
+    def test_omitted_B_groups_complete_requests_using_C_and_IPC_without_token_splitting(self):
+        rows = candidates([480]*9)
+        value, tokens = organizer(rows, B=None, C=9)
+        payloads = tuple(row.task.payload for row in rows)
+        self.assertEqual(value(rows), tuple(row.key for row in rows))
+        self.assertEqual(value.history[0]['reason'], 'request_capacity')
+        self.assertIsNone(value.report()['policy'])
+        self.assertNotIn('experimental_skip_token_packing', value.report())
+        self.assertEqual(tokens.calls, len(rows))
+        self.assertEqual(payloads, tuple(row.task.payload for row in rows))
+        value, _ = organizer(rows, B=None, C=9, result_slots=2)
+        self.assertEqual(value(rows), tuple(row.key for row in rows[:2]))
+        oversize = candidates([4090])
+        value, _ = organizer(oversize, B=None)
+        with self.assertRaisesRegex(ValueError, 'model context'):
+            value(oversize)
 
     def test_B_removes_members_only_when_another_legal_member_fits_C(self):
         for costs, B in (([480]*24, 4096), ([10, 1800, 15, 1900, 1000, 10], 4096), ([2000, 10, 10], 1024)):

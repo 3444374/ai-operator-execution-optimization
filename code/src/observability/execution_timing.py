@@ -18,7 +18,7 @@ import time
 import uuid
 
 from .buffered_events import BufferedEvents
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 
 
 _identity = ContextVar("execution_timing_identity", default={})

@@ -1,0 +1,190 @@
+{
+  "base": "d559b942f795af30baa3491be1b57e3af0616853",
+  "components": [
+    "b591abd113b8f91c0d053f317972ad612dcc6680",
+    "9127e11e918079624d674f463dc3539794f5622e"
+  ],
+  "source_files": {
+    "code/src/observability/profiling/ray.py": {
+      "source_commit": "b591abd113b8f91c0d053f317972ad612dcc6680",
+      "sha256": "d003db2e0a7acbd8264d40502855e8199a99a56715d5c7d5112d067c7e264db9",
+      "identical": true
+    },
+    "code/src/observability/profiling/ray_scheduler.py": {
+      "source_commit": "b591abd113b8f91c0d053f317972ad612dcc6680",
+      "sha256": "4778a3d8a4974fe4e96afe513f967700f99d1e9dd02c108b2001c9b167a8510d",
+      "identical": true
+    },
+    "code/tests/observability/test_postgres_profile_scheduling.py": {
+      "source_commit": "b591abd113b8f91c0d053f317972ad612dcc6680",
+      "sha256": "044082b79cbe5f22472469641eb5055316aa6084aed1f93dc811995cd6cb9851",
+      "identical": true
+    },
+    "code/src/scheduling/core/scheduler.py": {
+      "source_commit": "9127e11e918079624d674f463dc3539794f5622e",
+      "sha256": "8a7ce3f95ab69d8353c6f971020ae9ee0950942a6f9f9114410fe63d2f567ac3",
+      "identical": true
+    },
+    "code/src/scheduling/core/scheduler_types.py": {
+      "source_commit": "9127e11e918079624d674f463dc3539794f5622e",
+      "sha256": "6c461b98b0e690c2e1802ba7679272fdb48a0d88b96ab1f233359ae9f80b4984",
+      "identical": true
+    },
+    "code/src/scheduling/runtime/execution.py": {
+      "source_commit": "9127e11e918079624d674f463dc3539794f5622e",
+      "sha256": "050b660a1ca436f5b39e57a1659b6ed94f836ba2e6f19c94a22f209354159398",
+      "identical": true
+    }
+  },
+  "published_cleanup_files_unchanged": 17,
+  "CPU": {
+    "selected": 236,
+    "passed": 236,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged": true,
+    "counts_not_added_to_standalone_runs": true
+  },
+  "history": {
+    "variants": 5,
+    "new_original_source_routes": 15,
+    "prior_mappings_and_identities_unchanged": true
+  },
+  "local_change": {
+    "core_physical_lines": -20,
+    "ray_submission_lines": 670,
+    "ray_assembly_lines": 357,
+    "scheduler_loop_lines": 981,
+    "scheduler_values_lines": 165
+  },
+  "size": {
+    "main": {
+      "core": {
+        "files": 227,
+        "physical_lines": 54091,
+        "nonempty_lines": 48889,
+        "files_over_1000": 7,
+        "functions_over_100": 50,
+        "non_nested_functions_over_100": 48,
+        "functions_over_100_with_decorators": 50
+      },
+      "src_all": {
+        "files": 444,
+        "physical_lines": 109118,
+        "nonempty_lines": 99548,
+        "files_over_1000": 15,
+        "functions_over_100": 134,
+        "non_nested_functions_over_100": 131,
+        "functions_over_100_with_decorators": 134
+      },
+      "scripts": {
+        "files": 134,
+        "physical_lines": 31217,
+        "nonempty_lines": 28486,
+        "files_over_1000": 3,
+        "functions_over_100": 45,
+        "non_nested_functions_over_100": 45,
+        "functions_over_100_with_decorators": 45
+      }
+    },
+    "bfb": {
+      "core": {
+        "files": 232,
+        "physical_lines": 57793,
+        "nonempty_lines": 52338,
+        "files_over_1000": 7,
+        "functions_over_100": 54,
+        "non_nested_functions_over_100": 52,
+        "functions_over_100_with_decorators": 54
+      },
+      "src_all": {
+        "files": 452,
+        "physical_lines": 113820,
+        "nonempty_lines": 103919,
+        "files_over_1000": 15,
+        "functions_over_100": 143,
+        "non_nested_functions_over_100": 140,
+        "functions_over_100_with_decorators": 143
+      },
+      "scripts": {
+        "files": 135,
+        "physical_lines": 32218,
+        "nonempty_lines": 29415,
+        "files_over_1000": 3,
+        "functions_over_100": 46,
+        "non_nested_functions_over_100": 46,
+        "functions_over_100_with_decorators": 46
+      }
+    },
+    "3fd": {
+      "core": {
+        "files": 248,
+        "physical_lines": 61628,
+        "nonempty_lines": 55819,
+        "files_over_1000": 9,
+        "functions_over_100": 57,
+        "non_nested_functions_over_100": 55,
+        "functions_over_100_with_decorators": 57
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 118067,
+        "nonempty_lines": 107770,
+        "files_over_1000": 17,
+        "functions_over_100": 146,
+        "non_nested_functions_over_100": 143,
+        "functions_over_100_with_decorators": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46,
+        "non_nested_functions_over_100": 46,
+        "functions_over_100_with_decorators": 46
+      }
+    },
+    "current_worktree": {
+      "core": {
+        "files": 250,
+        "physical_lines": 60171,
+        "nonempty_lines": 54438,
+        "files_over_1000": 5,
+        "functions_over_100": 55,
+        "non_nested_functions_over_100": 53,
+        "functions_over_100_with_decorators": 55
+      },
+      "src_all": {
+        "files": 473,
+        "physical_lines": 116424,
+        "nonempty_lines": 106217,
+        "files_over_1000": 13,
+        "functions_over_100": 143,
+        "non_nested_functions_over_100": 140,
+        "functions_over_100_with_decorators": 143
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46,
+        "non_nested_functions_over_100": 46,
+        "functions_over_100_with_decorators": 46
+      }
+    }
+  },
+  "not_run": [
+    "Actual Ray, model, GPU, server and performance runs",
+    "Ruff is absent from the unchanged selected environment"
+  ],
+  "pushed": false,
+  "merged": false,
+  "raw": {
+    "path": "layout_d559_composition_raw.json.gz",
+    "bytes": 80148,
+    "sha256": "cf081ea0bac683f89e49fd4f661539ee58ea0a50a13371b1a0320d8db394e229"
+  }
+}

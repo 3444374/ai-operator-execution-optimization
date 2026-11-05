@@ -723,7 +723,15 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
+        "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
+        "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
+        "code/src/modalities/image/worker_identity.py": "historical_sources/d559b942/code/src/modalities/image/worker_identity.py.gz",
+        "code/src/observability/process_resources/recorder.py": "historical_sources/d559b942/code/src/observability/process_resources/recorder.py.gz",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py.gz",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -766,6 +774,46 @@
           "encoding": "gzip",
           "decoded_bytes": 1654,
           "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        },
+        "code/src/observability/profiling/ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 36895,
+          "archive_sha256": "ce33ce87031587decb41adf4deeef44abd4ef075025dfba44343615b14e5fdd8"
+        },
+        "code/src/scheduling/core/scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 44091,
+          "archive_sha256": "6ff7ca9845c81fd627b2e52fe923ed445e50a67160fad384110b44833fb30aa9"
+        },
+        "code/src/scheduling/runtime/execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1397,
+          "archive_sha256": "8e5679d85b0bc7c8affb3a9ed448a51de60a10a344814db111e5d11f54c4da9b"
+        },
+        "code/src/modalities/image/worker_identity.py": {
+          "encoding": "gzip",
+          "archive_sha256": "7363bf9e0547f25a2d46bab17171b72bb52c6a4247e6195616584f2d1b5dc751",
+          "decoded_bytes": 3607
+        },
+        "code/src/observability/process_resources/recorder.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b037a376923f8dff648dafa742093f5a89842f7481fc81b563b19f495d675fb1",
+          "decoded_bytes": 13908
+        },
+        "code/scripts/experiments/run_sembench_records_formal.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b41e2791cb7efe6df620a8fc02afe21130f82277a2d8530464e1284d6ab22239",
+          "decoded_bytes": 528
+        },
+        "code/src/experiments/sembench_records_formal_resources.py": {
+          "encoding": "gzip",
+          "archive_sha256": "50effeca5b6fbd14e1eea170107ef71cc01dc071c52ac916e65b0b6bbbb42565",
+          "decoded_bytes": 2919
+        },
+        "code/tests/experiments/test_movie_records_matrix.py": {
+          "encoding": "gzip",
+          "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
+          "decoded_bytes": 37997
         }
       }
     },
@@ -1517,7 +1565,15 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
+        "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
+        "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
+        "code/src/modalities/image/worker_identity.py": "historical_sources/d559b942/code/src/modalities/image/worker_identity.py.gz",
+        "code/src/observability/process_resources/recorder.py": "historical_sources/d559b942/code/src/observability/process_resources/recorder.py.gz",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py.gz",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1560,6 +1616,46 @@
           "encoding": "gzip",
           "decoded_bytes": 1654,
           "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        },
+        "code/src/observability/profiling/ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 36895,
+          "archive_sha256": "ce33ce87031587decb41adf4deeef44abd4ef075025dfba44343615b14e5fdd8"
+        },
+        "code/src/scheduling/core/scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 44091,
+          "archive_sha256": "6ff7ca9845c81fd627b2e52fe923ed445e50a67160fad384110b44833fb30aa9"
+        },
+        "code/src/scheduling/runtime/execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1397,
+          "archive_sha256": "8e5679d85b0bc7c8affb3a9ed448a51de60a10a344814db111e5d11f54c4da9b"
+        },
+        "code/src/modalities/image/worker_identity.py": {
+          "encoding": "gzip",
+          "archive_sha256": "7363bf9e0547f25a2d46bab17171b72bb52c6a4247e6195616584f2d1b5dc751",
+          "decoded_bytes": 3607
+        },
+        "code/src/observability/process_resources/recorder.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b037a376923f8dff648dafa742093f5a89842f7481fc81b563b19f495d675fb1",
+          "decoded_bytes": 13908
+        },
+        "code/scripts/experiments/run_sembench_records_formal.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b41e2791cb7efe6df620a8fc02afe21130f82277a2d8530464e1284d6ab22239",
+          "decoded_bytes": 528
+        },
+        "code/src/experiments/sembench_records_formal_resources.py": {
+          "encoding": "gzip",
+          "archive_sha256": "50effeca5b6fbd14e1eea170107ef71cc01dc071c52ac916e65b0b6bbbb42565",
+          "decoded_bytes": 2919
+        },
+        "code/tests/experiments/test_movie_records_matrix.py": {
+          "encoding": "gzip",
+          "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
+          "decoded_bytes": 37997
         }
       }
     },
@@ -2321,7 +2417,15 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
+        "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
+        "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
+        "code/src/modalities/image/worker_identity.py": "historical_sources/d559b942/code/src/modalities/image/worker_identity.py.gz",
+        "code/src/observability/process_resources/recorder.py": "historical_sources/d559b942/code/src/observability/process_resources/recorder.py.gz",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py.gz",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2364,6 +2468,46 @@
           "encoding": "gzip",
           "decoded_bytes": 1654,
           "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        },
+        "code/src/observability/profiling/ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 36895,
+          "archive_sha256": "ce33ce87031587decb41adf4deeef44abd4ef075025dfba44343615b14e5fdd8"
+        },
+        "code/src/scheduling/core/scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 44091,
+          "archive_sha256": "6ff7ca9845c81fd627b2e52fe923ed445e50a67160fad384110b44833fb30aa9"
+        },
+        "code/src/scheduling/runtime/execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1397,
+          "archive_sha256": "8e5679d85b0bc7c8affb3a9ed448a51de60a10a344814db111e5d11f54c4da9b"
+        },
+        "code/src/modalities/image/worker_identity.py": {
+          "encoding": "gzip",
+          "archive_sha256": "7363bf9e0547f25a2d46bab17171b72bb52c6a4247e6195616584f2d1b5dc751",
+          "decoded_bytes": 3607
+        },
+        "code/src/observability/process_resources/recorder.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b037a376923f8dff648dafa742093f5a89842f7481fc81b563b19f495d675fb1",
+          "decoded_bytes": 13908
+        },
+        "code/scripts/experiments/run_sembench_records_formal.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b41e2791cb7efe6df620a8fc02afe21130f82277a2d8530464e1284d6ab22239",
+          "decoded_bytes": 528
+        },
+        "code/src/experiments/sembench_records_formal_resources.py": {
+          "encoding": "gzip",
+          "archive_sha256": "50effeca5b6fbd14e1eea170107ef71cc01dc071c52ac916e65b0b6bbbb42565",
+          "decoded_bytes": 2919
+        },
+        "code/tests/experiments/test_movie_records_matrix.py": {
+          "encoding": "gzip",
+          "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
+          "decoded_bytes": 37997
         }
       }
     },
@@ -3127,7 +3271,15 @@
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
         "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
-        "code/tests/experiments/test_native_query_lifecycle.py": "historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz"
+        "code/tests/experiments/test_native_query_lifecycle.py": "historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz",
+        "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
+        "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
+        "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
+        "code/src/modalities/image/worker_identity.py": "historical_sources/d559b942/code/src/modalities/image/worker_identity.py.gz",
+        "code/src/observability/process_resources/recorder.py": "historical_sources/d559b942/code/src/observability/process_resources/recorder.py.gz",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py.gz",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3175,6 +3327,46 @@
           "encoding": "gzip",
           "decoded_bytes": 24608,
           "archive_sha256": "4632c549b1cacd40cb4262e4e6b00d6ff79d0141afdc95b0d11ffa9efb3f22b7"
+        },
+        "code/src/observability/profiling/ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 36895,
+          "archive_sha256": "ce33ce87031587decb41adf4deeef44abd4ef075025dfba44343615b14e5fdd8"
+        },
+        "code/src/scheduling/core/scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 44091,
+          "archive_sha256": "6ff7ca9845c81fd627b2e52fe923ed445e50a67160fad384110b44833fb30aa9"
+        },
+        "code/src/scheduling/runtime/execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1397,
+          "archive_sha256": "8e5679d85b0bc7c8affb3a9ed448a51de60a10a344814db111e5d11f54c4da9b"
+        },
+        "code/src/modalities/image/worker_identity.py": {
+          "encoding": "gzip",
+          "archive_sha256": "7363bf9e0547f25a2d46bab17171b72bb52c6a4247e6195616584f2d1b5dc751",
+          "decoded_bytes": 3607
+        },
+        "code/src/observability/process_resources/recorder.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b037a376923f8dff648dafa742093f5a89842f7481fc81b563b19f495d675fb1",
+          "decoded_bytes": 13908
+        },
+        "code/scripts/experiments/run_sembench_records_formal.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b41e2791cb7efe6df620a8fc02afe21130f82277a2d8530464e1284d6ab22239",
+          "decoded_bytes": 528
+        },
+        "code/src/experiments/sembench_records_formal_resources.py": {
+          "encoding": "gzip",
+          "archive_sha256": "50effeca5b6fbd14e1eea170107ef71cc01dc071c52ac916e65b0b6bbbb42565",
+          "decoded_bytes": 2919
+        },
+        "code/tests/experiments/test_movie_records_matrix.py": {
+          "encoding": "gzip",
+          "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
+          "decoded_bytes": 37997
         }
       }
     },
@@ -3942,7 +4134,15 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
+        "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
+        "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
+        "code/src/modalities/image/worker_identity.py": "historical_sources/d559b942/code/src/modalities/image/worker_identity.py.gz",
+        "code/src/observability/process_resources/recorder.py": "historical_sources/d559b942/code/src/observability/process_resources/recorder.py.gz",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py.gz",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3985,6 +4185,46 @@
           "encoding": "gzip",
           "decoded_bytes": 1654,
           "archive_sha256": "4c1d3a72526fea6362d5dba6a8360bf202af3c8fefeef0a956dca92492a5c51d"
+        },
+        "code/src/observability/profiling/ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 36895,
+          "archive_sha256": "ce33ce87031587decb41adf4deeef44abd4ef075025dfba44343615b14e5fdd8"
+        },
+        "code/src/scheduling/core/scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 44091,
+          "archive_sha256": "6ff7ca9845c81fd627b2e52fe923ed445e50a67160fad384110b44833fb30aa9"
+        },
+        "code/src/scheduling/runtime/execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1397,
+          "archive_sha256": "8e5679d85b0bc7c8affb3a9ed448a51de60a10a344814db111e5d11f54c4da9b"
+        },
+        "code/src/modalities/image/worker_identity.py": {
+          "encoding": "gzip",
+          "archive_sha256": "7363bf9e0547f25a2d46bab17171b72bb52c6a4247e6195616584f2d1b5dc751",
+          "decoded_bytes": 3607
+        },
+        "code/src/observability/process_resources/recorder.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b037a376923f8dff648dafa742093f5a89842f7481fc81b563b19f495d675fb1",
+          "decoded_bytes": 13908
+        },
+        "code/scripts/experiments/run_sembench_records_formal.py": {
+          "encoding": "gzip",
+          "archive_sha256": "b41e2791cb7efe6df620a8fc02afe21130f82277a2d8530464e1284d6ab22239",
+          "decoded_bytes": 528
+        },
+        "code/src/experiments/sembench_records_formal_resources.py": {
+          "encoding": "gzip",
+          "archive_sha256": "50effeca5b6fbd14e1eea170107ef71cc01dc071c52ac916e65b0b6bbbb42565",
+          "decoded_bytes": 2919
+        },
+        "code/tests/experiments/test_movie_records_matrix.py": {
+          "encoding": "gzip",
+          "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
+          "decoded_bytes": 37997
         }
       }
     }

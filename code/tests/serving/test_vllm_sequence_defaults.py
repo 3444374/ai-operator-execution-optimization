@@ -6,12 +6,11 @@ import io
 import json
 from pathlib import Path
 import sys
-import tempfile
 from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.frameworks.lotus_native_local_model import LocalService
+from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
 from src.serving.backends import vllm_engine as common
 from src.semantic_methods.lotus.records import RecordsResources
 
@@ -39,30 +38,7 @@ class SequenceDefaultTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.spec(max_num_seqs=value)
 
-    def test_native_HTTP_omits_unspecified_capacity_and_keeps_explicit_overrides(self):
-        with tempfile.TemporaryDirectory() as folder:
-            for values in ({}, dict(max_model_len=None, max_num_seqs=None, max_num_batched_tokens=None),
-                           dict(max_num_seqs=1),
-                           dict(max_model_len=4096, max_num_seqs=8, max_num_batched_tokens=4096),
-                           dict(max_model_len=32768, max_num_seqs=128, max_num_batched_tokens=2048)):
-                with self.subTest(values=values):
-                    spec = self.spec(**values)
-                    service = LocalService(spec, 'fixture-model', RecordsResources(), Path(folder), 'fixture-device')
-                    service.port = 39282
-                    command = service.command()
-                    for name in ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens'):
-                        flag = '--' + name.replace('_', '-')
-                        expected = getattr(spec, name)
-                        if expected is None:
-                            self.assertNotIn(flag, command)
-                        else:
-                            self.assertEqual(command.count(flag), 1)
-                            self.assertEqual(command[command.index(flag)+1], str(expected))
-                    self.assertEqual(command[command.index('--gpu-memory-utilization')+1],
-                                     str(spec.gpu_memory_utilization))
-
     def test_finite_synchronous_constructor_retains_its_old_default_and_explicit_values(self):
-        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs:kwargs

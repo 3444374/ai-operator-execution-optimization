@@ -140,13 +140,6 @@ class UnitTests(unittest.TestCase):
         samples=model_API_samples('semloom-core',dict(calls=dict(records=rows)))
         self.assertEqual(len(samples),4);self.assertEqual({x['status'] for x in samples},{'succeeded','failed','unknown'})
 
-    def test_HTTP_and_LM_batch_are_different_units(self):
-        report=dict(http_receipts=[dict(attempt=1,http_started=True,http_status=200,
-            external_HTTP_timing=dict(complete=True,started_ns=100,finished_ns=300,elapsed_s=.0000002))],
-            comparison_timing=dict(native_batch_API=[dict(input_records=4,elapsed_s=1.)]))
-        samples=model_API_samples('lotus-native',report)
-        self.assertEqual(len(samples),1);self.assertEqual(samples[0]['unit'],'HTTP_POST')
-
     def test_duplicate_offline_event_charged_once(self):
         event=dict(event_id='scan',actual_scan_calls=10,actual_scan_wall_s=2.)
         self.assertEqual(offline_scan_total([event,dict(event)]),dict(events=1,calls=10,wall_s=2.))

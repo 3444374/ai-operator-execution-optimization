@@ -20,12 +20,13 @@ import psutil
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.movie_records_session import check_plan, run_movie_session
-from src.experiments.sembench_records_formal import validate_result, QueryClock, read, sha
+from src.observability.native_query_timing import QueryClock
 from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.common.private_artifacts import require_outside_git,write_private_json,content_digest
 from src.semantic_methods.lotus.records import CallLedger
 from src.observability.records_telemetry import TelemetryEvents
 from src.experiments.movie_matrix_support import (
+    validate_result, read, sha,
     _diagnostic_warning, build_launch_context, validate_launch_context,
     unit_final, optional_performance, matrix_budget, audit_tokenizer, declared_shared_resources,
     scan_jobs,group_slots,planned_queries,validate_core_scan,core_observations,materialize_core_plan,

@@ -1,0 +1,217 @@
+{
+  "base": "646216faa98e0a1a234c7fc74f9f3c0d216e96b2",
+  "components": [
+    "7487dc1b353bffd0706837b8687c2974d2b66311",
+    "77c80775263f7f3e223a92b2bf272fceeff2d064",
+    "57bd2b6d3efce67497e12f1fda582f760b2938ab",
+    "f1878a3b6ea3503935c6af2aa0545071096c922e"
+  ],
+  "CPU": {
+    "modules": 43,
+    "first_selected": 721,
+    "first_passed": 717,
+    "initial_failed_methods": 4,
+    "affected_rerun_selected": 26,
+    "affected_rerun_passed": 26,
+    "relation_rerun_selected": 1,
+    "relation_rerun_passed": 1,
+    "distinct_selected_with_passing_receipts": 721,
+    "unresolved_selected_methods": 0,
+    "skipped": 0,
+    "production_python_changed_after_first_suite": [
+      "code/src/execution_provider/adapters/records_profile.py"
+    ],
+    "auto_C_increment_selected": 84,
+    "auto_C_increment_passed": 84,
+    "six_test_files_migrated": true,
+    "no_second_full_suite_run": true,
+    "repeated_methods_not_added": true
+  },
+  "scope": {
+    "retired_files": [
+      "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "code/src/experiments/sembench_records_formal.py",
+      "code/src/experiments/sembench_records_formal_resources.py",
+      "code/scripts/experiments/run_sembench_records_formal.py",
+      "code/tests/baselines/text/test_lotus_native_local_model.py"
+    ],
+    "moved_definitions": [
+      "read",
+      "sha",
+      "validate_result",
+      "QueryClock"
+    ],
+    "auto_feedback_initial_C": 1,
+    "owner_and_IPC_ceiling_unchanged": true,
+    "neutral_import_consumers": 11,
+    "new_execution_loops": 0,
+    "new_controllers": 0
+  },
+  "size": {
+    "main": {
+      "core": {
+        "files": 227,
+        "physical_lines": 54091,
+        "nonempty_lines": 48889,
+        "files_over_1000": 7,
+        "functions_over_100": 50,
+        "non_nested_functions_over_100": 48,
+        "functions_over_100_with_decorators": 50
+      },
+      "src_all": {
+        "files": 444,
+        "physical_lines": 109118,
+        "nonempty_lines": 99548,
+        "files_over_1000": 15,
+        "functions_over_100": 134,
+        "non_nested_functions_over_100": 131,
+        "functions_over_100_with_decorators": 134
+      },
+      "scripts": {
+        "files": 134,
+        "physical_lines": 31217,
+        "nonempty_lines": 28486,
+        "files_over_1000": 3,
+        "functions_over_100": 45,
+        "non_nested_functions_over_100": 45,
+        "functions_over_100_with_decorators": 45
+      }
+    },
+    "bfb": {
+      "core": {
+        "files": 232,
+        "physical_lines": 57793,
+        "nonempty_lines": 52338,
+        "files_over_1000": 7,
+        "functions_over_100": 54,
+        "non_nested_functions_over_100": 52,
+        "functions_over_100_with_decorators": 54
+      },
+      "src_all": {
+        "files": 452,
+        "physical_lines": 113820,
+        "nonempty_lines": 103919,
+        "files_over_1000": 15,
+        "functions_over_100": 143,
+        "non_nested_functions_over_100": 140,
+        "functions_over_100_with_decorators": 143
+      },
+      "scripts": {
+        "files": 135,
+        "physical_lines": 32218,
+        "nonempty_lines": 29415,
+        "files_over_1000": 3,
+        "functions_over_100": 46,
+        "non_nested_functions_over_100": 46,
+        "functions_over_100_with_decorators": 46
+      }
+    },
+    "3fd": {
+      "core": {
+        "files": 248,
+        "physical_lines": 61628,
+        "nonempty_lines": 55819,
+        "files_over_1000": 9,
+        "functions_over_100": 57,
+        "non_nested_functions_over_100": 55,
+        "functions_over_100_with_decorators": 57
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 118067,
+        "nonempty_lines": 107770,
+        "files_over_1000": 17,
+        "functions_over_100": 146,
+        "non_nested_functions_over_100": 143,
+        "functions_over_100_with_decorators": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46,
+        "non_nested_functions_over_100": 46,
+        "functions_over_100_with_decorators": 46
+      }
+    },
+    "current_worktree": {
+      "core": {
+        "files": 250,
+        "physical_lines": 60194,
+        "nonempty_lines": 54457,
+        "files_over_1000": 5,
+        "functions_over_100": 55,
+        "non_nested_functions_over_100": 53,
+        "functions_over_100_with_decorators": 55
+      },
+      "src_all": {
+        "files": 470,
+        "physical_lines": 115195,
+        "nonempty_lines": 105052,
+        "files_over_1000": 13,
+        "functions_over_100": 141,
+        "non_nested_functions_over_100": 138,
+        "functions_over_100_with_decorators": 141
+      },
+      "scripts": {
+        "files": 130,
+        "physical_lines": 31563,
+        "nonempty_lines": 28833,
+        "files_over_1000": 3,
+        "functions_over_100": 46,
+        "non_nested_functions_over_100": 46,
+        "functions_over_100_with_decorators": 46
+      }
+    }
+  },
+  "published_base_size": {
+    "commit": "646216faa98e0a1a234c7fc74f9f3c0d216e96b2",
+    "metrics": {
+      "core": {
+        "files": 248,
+        "physical_lines": 60191,
+        "nonempty_lines": 54464
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 116446,
+        "nonempty_lines": 106245
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845
+      }
+    }
+  },
+  "history": {
+    "variants": 5,
+    "new_source_routes": 40,
+    "new_original_archives": 8,
+    "original_ids_and_expected_hashes_unchanged": true,
+    "manifest_sha256": "ff812ae5e3ed89563b8c8758341972680c2af3c75f2b221cdb76cfb4388b7879",
+    "manifest_outside_CPU_code_hash_scope": true
+  },
+  "remaining": [
+    "Default R and IPC declarations remain finite; no automatic physical capacity or RSS guarantee",
+    "Complete relation/source/audit materialization remains",
+    "Five core Python files still exceed 1000 lines; cohesive decomposition remains",
+    "LOTUS SDK duplicate validation/strong source binding audit is read-only, not implemented",
+    "Shared dtype/GPU-memory default draft is unverified and not included",
+    "NativeCall/image predictor/profiler domain dependencies remain",
+    "Join/Top-K/Group-by are not implemented in records StageSpec; existing Filter cascade is preserved",
+    "No actual Ray, model, GPU, server or performance run; no claim all repository historical failures were fixed",
+    "Ruff unavailable in the unchanged selected environment"
+  ],
+  "pushed": false,
+  "merged": false,
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "raw": {
+    "path": "current_runtime_cleanup_composition_raw.json.gz",
+    "bytes": 164333,
+    "sha256": "bdce2d992315a421e71751ca8c91a78bfa25db6176bff589a0be7c8303959215"
+  }
+}

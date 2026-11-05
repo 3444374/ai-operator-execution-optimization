@@ -25,7 +25,7 @@ from pathlib import Path
 import tempfile
 import time
 
-from src.baselines.common.private_artifacts import file_identity, open_private_text
+from src.infrastructure.private_artifacts import file_identity, open_private_text
 from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
 from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 from src.semantic_methods.lotus.cascade import (
