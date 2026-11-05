@@ -9,6 +9,7 @@
 | 任务 | 入口 | 范围 |
 |---|---|---|
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
+| SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
 | 补充 Movie／MMQA 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 作者服务、默认与任务适配保持 |
@@ -81,6 +82,31 @@ CLI 只允许四种已接通对照；Kalypso Map／MMQA 不设替代算法，Q4 
 上游原 LM 上限为8192且无换行 stop；若选择该原始配置，应对每条同题 baseline 一致声明。
 旧短 Filter 的8 token／换行 stop 不可直接移给 JSON Extract，也不能把更改生成配置后的差异归因于执行加速。
 只有显式上下文才提前做上限检查；未指定的实际容量与物理退出仍由模型 ready 和外部 supervisor 验证。
+
+<a id="sembench-image-preparation"></a>
+## SemBench 图像查询准备
+
+[check_sembench_image_query.py](experiments/check_sembench_image_query.py)只检查实际输入、原查询范围与预算，
+不启动模型、不创建额度。`--output-dir` 必须是 Git 外尚未存在的目录。
+
+```bash
+python code/scripts/experiments/check_sembench_image_query.py \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --scenario animals --query Q3 \
+  --manifest "$ANIMALS_MANIFEST" --manifest-digest "$ANIMALS_MANIFEST_DIGEST" \
+  --output-dir "$NEW_CHECK_DIR"
+
+python code/scripts/experiments/check_sembench_image_query.py \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --scenario mmqa --query Q2b \
+  --data-dir "$MMQA_IMAGE_DATA_DIR" --output-dir "$NEW_OTHER_CHECK_DIR"
+```
+
+Animals 使用现有官方 sf64／软件夹具 manifest，复核编码与原 RGB 像素，不 resize；支持 Q1/Q3/Q7/Q10。
+MMQA 读取 `ap_warrior.csv` 和 `images/`，保留原 `os.listdir` 顺序及 `.png/.jpg` 选择规则，
+按实际图数×表行数核算 exact Join；Q2b 的后续 Extract 预算上界相同，实际次数取决于匹配行。
+Q7 改读 `tampa_international_airport.csv`，仍用同一 `images/`；原代码无欧洲目的地预筛，检查结果明确记录差异。
+`check.json` 中五条 baseline 结果均为空，并明确当前本地视觉 provider 尚未接通。
+已有原查询／评价可由调用者配置原生 LOTUS LM 后调用；CPU 夹具与旧 HTTP 历史不授予当前 VLM owner 的模型资格。
+完整范围与大 Join／TopK 预算见[基线说明](../src/baselines/README.md#sembench-image-preparation)。
 
 ## 原生 LOTUS CLIP 查询
 

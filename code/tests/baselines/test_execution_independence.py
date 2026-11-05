@@ -30,6 +30,9 @@ class NativeExecutionIndependenceTests(unittest.TestCase):
     def test_native_paths_import_without_core_execution_or_scheduling(self):
         self.probe("""
 for name in (
+    'src.baselines.image.sembench_animals',
+    'src.baselines.image.sembench_mmqa',
+    'src.experiments.sembench_image_query',
     'src.baselines.text.sembench_source',
     'src.baselines.text.sembench_mmqa',
     'src.baselines.text.sembench_text',

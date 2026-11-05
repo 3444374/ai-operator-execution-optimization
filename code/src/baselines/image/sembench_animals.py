@@ -1,4 +1,8 @@
-"""Pinned Animals Q1/Q7, original evaluators, and frozen image inputs."""
+"""Pinned Animals image queries, original evaluators, and frozen inputs.
+
+Query preparation is independent of the caller's LM. A current local visual
+model provider is not supplied by this adapter.
+"""
 
 from dataclasses import asdict, dataclass
 import hashlib
@@ -8,7 +12,7 @@ import subprocess
 from types import SimpleNamespace
 
 from src.infrastructure.private_artifacts import content_digest
-from src.baselines.text.sembench_movie import SEMBENCH_COMMIT, _load, verify_checkout
+from src.baselines.text.sembench_source import SEMBENCH_COMMIT, load_module, verify_checkout
 
 
 SOURCE_FILES = (
@@ -21,6 +25,7 @@ SOURCE_FILES = (
     "files/animals/query/gold_sql/Q1.sql",
 )
 MANIFEST_SCHEMA = "semloom.sembench_animals.v1"
+IMAGE_QUERY_IDS = (1, 3, 7, 10)
 
 
 def upstream_bytes(checkout, relative):
@@ -37,10 +42,10 @@ def upstream_bytes(checkout, relative):
 
 
 def verify_animals_checkout(checkout, query_id=1):
-    if type(query_id) is not int or query_id not in (1, 7):
-        raise ValueError("only original Animals Q1/Q7 are supported")
+    if type(query_id) is not int or query_id not in IMAGE_QUERY_IDS:
+        raise ValueError("only original Animals image queries Q1/Q3/Q7/Q10 are supported")
     root = verify_checkout(checkout)
-    # Include the sparse SQL path: the shared Movie verifier only covers Movie SQL.
+    # Include Animals SQL, which is outside the shared source verifier's roots.
     dirty = subprocess.check_output(
         [
             "git",
@@ -59,7 +64,7 @@ def verify_animals_checkout(checkout, query_id=1):
     )
     if dirty:
         raise ValueError("Animals SQL checkout is modified")
-    files = SOURCE_FILES + (("files/animals/query/gold_sql/Q7.sql",) if query_id == 7 else ())
+    files = SOURCE_FILES + ((f"files/animals/query/gold_sql/Q{query_id}.sql",) if query_id != 1 else ())
     return {name: hashlib.sha256(upstream_bytes(root, name)).hexdigest() for name in files}
 
 
@@ -128,9 +133,10 @@ class AnimalsDataset:
                 raise ValueError("Animals source occurrence, bytes or pixels differ")
         return value
 
-    def preflight(self):
-        sources = verify_animals_checkout(self.checkout)
+    def preflight(self, query_id=1):
+        sources = verify_animals_checkout(self.checkout, query_id)
         value = self.read()
+        passes = 2 if query_id == 7 else 1
         if value["role"] == "official_animals_sf64":
             if value["provenance"].get("generator_sha256") != sources[SOURCE_FILES[2]]:
                 raise ValueError("Animals generation source is not the pinned upstream function")
@@ -141,10 +147,16 @@ class AnimalsDataset:
             role=value["role"],
             manifest_digest=value["sha256"],
             rows=len(value["rows"]),
+            query_id=query_id,
+            query="Q" + str(query_id),
+            native_filter_passes=passes,
+            expected_model_calls=len(value["rows"]) * passes,
+            call_count_scope="uncached complete image Filter on every pass; repeated occurrences retained",
             source_sha256=sources,
             upstream_lotus_version="1.1.3",
             selected_lotus_version="1.2.4",
             model_calls=0,
+            local_vision_provider_status="unwired",
             input_scope="finite external ImageArray relation; no database claim",
         )
 
@@ -162,9 +174,9 @@ class AnimalsDataset:
 
 
 def run_original_query(checkout, load_images, query_id=1):
-    """Call unchanged upstream Q1 or explicit Q7, without constructor warmup."""
+    """Call an unchanged upstream image query, without constructor warmup."""
     verify_animals_checkout(checkout, query_id)
-    module = _load(
+    module = load_module(
         checkout,
         "sembench_animals_lotus",
         "src/scenario/animals/runner/lotus_runner/lotus_runner.py",
@@ -172,7 +184,7 @@ def run_original_query(checkout, load_images, query_id=1):
 
     def load(name):
         if name != "image_data.csv":
-            raise ValueError("unexpected Animals Q1 source")
+            raise ValueError("unexpected source requested by the original Animals query")
         frame = load_images()
         if "Species" in frame.columns:
             raise ValueError("reference Species must not enter the semantic query")
@@ -190,7 +202,7 @@ def evaluate_original(checkout, result, labeled_images, query_id=1):
     with duckdb.connect() as connection:
         connection.register("ImageData", labeled_images)
         truth = connection.execute(sql).fetchdf()
-    module = _load(
+    module = load_module(
         checkout, "sembench_animals_evaluator", "src/scenario/animals/evaluation/evaluate.py"
     )
     evaluator = object.__new__(module.AnimalsEvaluator)
@@ -198,6 +210,9 @@ def evaluate_original(checkout, result, labeled_images, query_id=1):
     if query_id == 7:
         return dict(original_metric=asdict(metric), ground_truth=sorted(truth.iloc[:, 0].tolist()),
                     predicted=result.iloc[:, 0].tolist(), sembench_commit=SEMBENCH_COMMIT)
+    if query_id in (3, 10):
+        return dict(original_metric=asdict(metric), ground_truth=truth.to_dict(orient="records"),
+                    predicted=result.to_dict(orient="records"), sembench_commit=SEMBENCH_COMMIT)
     return dict(
         original_metric=asdict(metric),
         ground_truth=int(truth.iloc[0, 0]),

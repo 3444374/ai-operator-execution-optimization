@@ -12,21 +12,27 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 
 SemBench 补充接线从 PR90 `0677c7a3` 独立推进：普通 Movie task 增加 Q4，保持其原提示、
 完整 eligible Filter 和 positivity ratio；Q1/Q2/Q3 的入口、默认与输出不变。
-Movie 原查询／评价适配另接 Q8、Q10；Q10 必须提供原 `Movies.csv.audienceScore` 金标，
+Movie 原查询／评价适配另接 Q8、Q9-map、Q10；Q10 必须提供原 `Movies.csv.audienceScore` 金标，
 不能用评论情感或模型评分代替。Map 的执行接线另走已存在的记录方法，不扩大普通 Filter 类型。
 MMQA 的十二道文本查询、各变体原 JSON 评价和原文本生成方法见
 [MMQA 适配](src/baselines/text/sembench_mmqa.py)。现成原资产可在 CPU 生成 sf25，
 三张文本表各25行、Q4 原预筛24行，每个 baseline 完整十二题预计299次调用；不生成图像或下载。
 本轮仍为 CPU 准备范围，真实模型、作者启动、质量及性能不因此通过；现有测试入口保留。
 
-[新增文本入口](scripts/experiments/run_sembench_text_query.py)现将十五道原查询的单个 F/M/E 接到
+[新增文本入口](scripts/experiments/run_sembench_text_query.py)现将十六道原查询的单个 F/M/E 接到
 原生 LOTUS、已有的 Ray／Daft 有限记录图和 IMLane 作者链；未重写执行器或引入 Core。
 真实 LOTUS1.2.4／LiteLLM1.95.1／OpenAI2.50.0 的离线 CPU 差分覆盖原查询、共享方法和
-原 accessor 内存传输的完整结果、提示与顺序；十五道 `check/fixture` CLI 及原评价也已运行。
+原 accessor 内存传输的完整结果、提示与顺序；十六道 `check/fixture` CLI 及原评价也已运行。
 这是本地 CPU 软件组合，不是服务器 Linux LiteLLM1.95.0 或真实模型资格。
 真实 MMQA sf25 的 Q6 包含一个缺失目的地；DEFAULT 逐单元文本表示在原数据保留 NaN 的同时
 产生与原 SDK 相同的 `nan` 消息，未填值或删行。输入、限制及图像准备见
 [SemBench 扩展范围](src/baselines/README.md#additional-sembench-text)。
+
+[图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
+原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；
+本地 VLM provider、实际 processor／JSON Extract 和物理关闭尚未接通或实机验证，不能以 CLIP 或旧 HTTP 结果补齐。
+Movie Q9 新有限链明确使用原 Map，不替换原 TopK；精确 Join／TopK 预算与缺失数据分开见
+[逐项限制](src/baselines/README.md#sembench-image-preparation)。本批没有运行模型或 GPU。
 
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
 HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；本轮配置组合代码为 `6ac1fe56`。

@@ -109,6 +109,7 @@ Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们
 |---|---|---|---:|
 | Movie | Q4 | taken_3 正面比例，Filter 后用完整分母 | 120 |
 | Movie | Q8 | 原 POSITIVE／NEGATIVE Map 后计数 | 120 |
+| Movie | Q9 map | Ant-Man 评论的原 rubric Map，保留原无效值回退3.0 | 当前 packet 为256，实际 CSV 由 check 核算 |
 | Movie | Q10 | 全评论 Map 打分、原无效评分回退及电影汇总 | 2000 |
 | MMQA | Q1 | 整张描述表 Extract 后与演员表关联 | 25 |
 | MMQA | Q3a | 喜剧 Filter | 25 |
@@ -123,21 +124,25 @@ Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们
 | MMQA | Q6b | 德国航线 Filter | 25 |
 | MMQA | Q6c | 欧洲航线 Filter | 25 |
 
-每个 baseline 的 MMQA 十二题合计299次，Movie 三题合计2240次。
+每个 baseline 的 MMQA 十二题合计299次，先前 Movie Q4/Q8/Q10 三题合计2240次。
+Q9 新入口明确选择原 `ranking=map`，逐条评分与 TopK 排名不是同一算法。现有 packet 的 Ant-Man
+切片为256行、128个唯一 reviewId；保留全部256个 occurrence，不能按 reviewId 去重。
+该 packet 与先前 `Reviews.csv` 的编码字节摘要不同，运行前须用 `check` 冻结实际输入与调用数，
+不能把两份来源直接合成同一精确输入签名。
 sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍为 NaN，记录 wire 仅保留
 原 DEFAULT formatter 的 `nan` 文字呈现。真实25行的原 SDK、记录方法和原生内存传输已逐消息相等；
 没有填目的地、删除行或扩大到其他序列化格式。更换规模／资产须由 `check` 重新计算，不能沿用常数24／299。
 
 | 对照 | 本轮接线范围 | 未验证／留空原因 |
 |---|---|---|
-| 原生 LOTUS | 上述十五题，原 accessor／LM 路径 | CPU 原查询差分通过；新的实际模型与完整生命周期未跑 |
-| Ray Data | 上述十五题，既有 Dataset／actor 有限图 | SDK／分发合同 CPU 通过；新图的实际 Ray／模型未跑 |
-| Daft | 上述十五题，既有 native class／batch 有限图 | SDK／分发合同 CPU 通过；实际 Daft／模型未跑 |
-| IMLane | 上述十五题的原作者有限记录链 | 作者构建、Arrow ABI、显式有限容量及实际启动仍需绑定／验证 |
+| 原生 LOTUS | 上述十六题，原 accessor／LM 路径 | CPU 原查询差分通过；新的实际模型与完整生命周期未跑 |
+| Ray Data | 上述十六题，既有 Dataset／actor 有限图 | SDK／分发合同 CPU 通过；新图的实际 Ray／模型未跑 |
+| Daft | 上述十六题，既有 native class／batch 有限图 | SDK／分发合同 CPU 通过；实际 Daft／模型未跑 |
+| IMLane | 上述十六题的原作者有限记录链 | 作者构建、Arrow ABI、显式有限容量及实际启动仍需绑定／验证 |
 | Kalypso | 旧 Movie Filter 路径可组合 Q4 ratio，CPU 辅助按显式任务清单检查 | 当前原生绑定没有 Movie Map 或 MMQA；不新增算法补齐，相关项留空 |
 
 这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
-软件回复差分与全部十五题 CLI fixture 均运行；真实模型逐行一致性仍待实机检查。
+软件回复差分与全部十六题 CLI fixture 均运行；真实模型逐行一致性仍待实机检查。
 原 aggregate 分数不能排除相抵的分类错误，保留原调用文本和旧普通 Filter 的逐行审计供核对。
 Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFrame；Extract 保留实际额外／碰撞 key
 和原 Index label 写入，不补未返回的声明字段。后处理失败仍保留已完成调用与关闭回执。
@@ -149,28 +154,71 @@ Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFr
 
 | 现象与根因 | 处理与验证 |
 |---|---|
-| MMQA 原 runner 的 `src.runner` 与 SemLoom 已加载的 `src` 冲突，首轮无法导入。 | 仅在原模块加载期映射同一已验证上游 runner，随后恢复；十五题原查询／方法／accessor 差分及别名恢复检查通过。 |
+| MMQA 原 runner 的 `src.runner` 与 SemLoom 已加载的 `src` 冲突，首轮无法导入。 | 仅在原模块加载期映射同一已验证上游 runner，随后恢复；十六题原查询／方法／accessor 差分及别名恢复检查通过。 |
 | sf25 Q6 有 NaN，最初的纯字符串接纳误拒绝原 SDK 可序列化输入。 | 在文本 wire 边界保留原 DEFAULT cell 呈现；真实三题各25行完整消息与结果顺序相同，原 CSV 不变。 |
 | Extract 成功后原关系后处理可能因 `{}` 缺列失败，旧的新接线未把已完成算子报告附给该异常。 | 保留原 KeyError 并转交已知调用与关闭证据；不补字段把失败变成成功。 |
 | Movie 适配扩展使五份历史投影从维护版读取旧摘要失败。 | 保存单份准确原源并补五条来源／格式映射；原3010条摘要与投影 ID 不变，完整 materialize 通过。 |
 
+<a id="sembench-image-preparation"></a>
 ### 图像查询准备范围
 
-| 原查询 | 现成资产与预计工作 | 当前接线限制 |
-|---|---|---|
-| Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64个图像输入 | 现用原查询 helper 仅 Q1/Q7，Q3/Q10 上游存在；当前视觉 provider 需另验 |
-| Animals Q7 | 同一64图，两遍原 Filter，约128个输入 | 不能用 CLIP 检索替代 VLM Filter |
-| MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 新非 HTTP 视觉 provider 尚未接通 |
-| MMQA Q2b | 同一切片，Join 后按匹配对 Extract，最多650次 | preset 单次 Extract 不是完整 Join→Extract 通过 |
-| E-Commerce／Cars 图像 | 原实现存在；本轮已查目录未定位成套数据 | 数据和每条 baseline 视觉路径待确认 |
+[Animals 原查询](image/sembench_animals.py)接通 Q1/Q3/Q7/Q10 的原函数、金标 SQL 和原评价；
+[MMQA 原视觉查询](image/sembench_mmqa.py)直接调用完整 Q2a/Q2b/Q7，固定 exact policy 和原 `zs-cot`，
+不运行构造器、不预设匹配，不在两阶段之间手工去重图片；比较配置显式关闭原生缓存。
+[CPU 检查入口](../../scripts/experiments/check_sembench_image_query.py)只读取实际文件／RGB 像素摘要和计算单遍预算，
+结果统一为空且标记待验证；它不申请额度、不初始化 framework 或模型，也没有运行 GPU 的选项。
+命令见[脚本说明](../../scripts/README.md#sembench-image-preparation)。
 
-90个现有文件（64 Animals图、25 MMQA图及表文件）的当前摘要与清单相符。
+| 原查询 | 现成资产与单遍模型请求预算 | 当前接线限制 |
+|---|---|---|
+| Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64次 Filter | 原查询／原评价 CPU 接通；本地 VLM provider 尚未接通 |
+| Animals Q7 | 同一64图，两遍完整原 Filter，共128次 | 两遍原模型输入都保留，不能替为 CLIP 检索 |
+| MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 原生 Join／评价 CPU 接通；本地 VLM provider 尚未接通 |
+| MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 通过；preset 单次 Extract 仍不构成完整模型资格 |
+| MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；仍待原生视觉服务 |
+| E-Commerce／Cars 图像 | 原实现存在；此前已查目录未定位成套数据 | 数据缺口与视觉 provider 缺口分别记录，不能记零分 |
+
+上述预算不含暖机、重试或重复；Animals 四题与 MMQA Q2a/Q2b 共970到1295次，Q2b 的匹配数由真正的 Join 决定。
+Q7 需把已由原 generator 准备的机场表与同一图像切片绑定到一份输入目录，额外625次；
+当前两组资产不在同一准备目录，不能把可组合视为已经在服务器运行。
+90个现有文件（64 Animals图、25 MMQA图及表文件）的既有只读摘要检查相符；本轮没有重新复制图像或加载权重。
 Qwen2-VL-2B-Instruct 的配置、processor、索引及两个权重分片齐全，权重合计4,418,050,768字节；
-本轮未重新哈希整份权重或加载模型。历史身份为 revision `895c3a49bc3fa70a340399125c650a463535e71c`、BF16。
-历史 Animals 的 `max_pixels=1003520` 与 MMQA／原 processor 的 `12845056` 不同，须冻结为明确的比较配置。
-Animals Q3/Q10 在此64图有三个并列最大项，保留原评价对并列项的接受行为，不强求某一精确结果帧。
-Ray／Daft 的现有 CLIP 检索、LOTUS SDK 的 image-text profile，均不能自动授予上述 VLM 查询资格；
-IMLane／Kalypso 当前视觉绑定未验证。原 LOTUS 明确不支持的音频题留空，其他系统未验证能力另记，均不计作零分。
+已有 revision `895c3a49bc3fa70a340399125c650a463535e71c`、BF16 身份不代替新 provider 的实际加载资格。
+历史 Animals 的 `max_pixels=1003520` 与 MMQA／原 processor 的 `12845056` 不同，须显式冻结为可比较配置。
+Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一个合法第一，不强求某一结果帧或同时输出全部第一。
+
+当前 `serving/backends/vllm_protocol.py` 的记录模型通道只接文本，sync 引擎也按 token-only 渲染；
+LOTUS 的 `IMAGE_TEXT_PROFILE` 没有当前生产调用者，其旧 prepared-call seam 也不接 Extract 的 `json_object`。
+本次不修改文字 IPC。真正的本地 VLM owner、原 PNG 内容、JSON Extract、有效 processor／generation 与完整关闭还需接线及实机验证。
+原生 LOTUS 也可由原 LM SDK 直接访问独立官方 VLM 兼容服务，复用现有 `native_http_observer.observe_native_httpx`
+观察完整原请求及每次尝试；这不是已退役的 SemLoom HTTP 代理，也不需要改变算子。该服务的配置、模型身份与生命周期仍待机器绑定。
+Ray／Daft 已有 CLIP 图不构成上述 VLM Filter／Join／Extract 支持；IMLane／Kalypso 当前视觉绑定未建立，
+不由此推断整个上游系统永远不支持视觉。原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
+
+CPU 视觉夹具使用真实 ImageArray、原 PNG 格式化、原 Filter／Join／Extract 解析与关系结果。
+MMQA 同一图片的多个匹配行仍逐个 Extract，JSON response_format 保留原值。
+原 Q2b 在无匹配或 Extract 返回 `{}` 时可能因 `color` 缺列抛出 KeyError；测试保留原异常，
+不补字段把失败变为成功。这些软件回复不构成 VLM 质量或性能结果。
+
+### 后续 Join、TopK 与缺失数据
+
+Movie Q5/Q6/Q7 的原 exact Join 入口和原评价已可直接选择；现有单个 F/M/E worker 不因此支持 Join。
+现有 Ant-Man256行的每题是65536个候选对，模型之后才剔除相同 reviewId 的512对；
+Q5/Q6 的 LIMIT10 也在完整 Join 之后，不能预裁剪、去重或按十次调用申请预算。
+原 LOTUS1.2.4 会先 materialize 全部 pair 的 prompt，须单独验证主机内存、启动／查询期限与原生模型 owner；
+三题单遍预算196608次，暂未申请或运行。
+
+Q9 原 TopK 仍须显式选择 `ranking=topk`，不能借用本次 Map 的256次资格。
+其 `quick` 路径随机选 pivot；完整 N=256 排序的候选比较数上界32640，精确次数依赖 pivot 和模型判断，
+不能把 SDK safe-mode 估算当实际消耗或额度上界。LM seed 不设置 NumPy pivot RNG。
+MMQA Q5 使用原分层 `sem_agg`；调用数依赖上下文分块与中间生成长度，现有单 F/M/E 链未接，不能按输入行数猜次数。
+其余纯文本候选为 E-Commerce Q1/Q3/Q5、Cars Q1/Q4/Q10、Medical Q1/Q4/Q10。
+三组当前没有已核实的成套输入；先定位原 Parquet／CSV，再复用原 generator 的采样入口。
+Cars／Medical 的普通准备会顺带下载图音素材，文本准备不可盲跑整套 setup；有完整原 CSV 时调用原采样，不重写采样。
+E-Commerce 的嵌套 `productDescriptors` 保留原 DEFAULT 的整对象字符串，不能抽取一个 description 字段代替；
+E-Commerce Q3／Cars Q10 的 keyword Extract、E-Commerce Q5 的 Map suffix 需要单独绑定，当前有限 hook 尚未接这些参数。
+这些属于待接线／待数据，不是系统缺少原算法。E-Commerce、Cars 和 Medical 的其他原实现按各自文件与能力准备；
+此前限定目录中未找到的数据只记待定位，不推断全服务器没有，也不下载或改写算子凑结果。
 
 ## 已退役和暂停
 
