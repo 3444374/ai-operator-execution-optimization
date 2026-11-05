@@ -14,11 +14,14 @@ over the execution policy it observes.
   `request_identity.py` owns task-local observation identity. Durable experiment ledgers remain in
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
-- `profiling/` contains the PostgreSQL AI operator profiler's stable result schema and helpers.
+- `profiling/` contains stable result schemas and directly imported profiling helpers.
   `profiling/ray.py` owns public task/actor submission, invocation values and legacy polling.
   `profiling/ray_scheduler.py` assembles endpoint topology, routing/admission options, the existing
   scheduler and result metrics. Policy and execution remain implemented in `src/scheduling/`;
   the two profiler modules share the existing scheduler rather than maintaining another one.
+  The unused PostgreSQL profiler argument parser has been retired with the old entry;
+  its [exact historical source](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)
+  preserves the original arguments. Callers supply already constructed admission objects to the SDK.
 
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.

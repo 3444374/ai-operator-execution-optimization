@@ -317,3 +317,76 @@ class LotusChainActorBackend(_RecordTransport):
         return dict(retained_refs=self.retained_refs(),
             retained_results=[dict(core_task_key=dict(session_id=key.session_id, sequence=key.sequence),
                                    result=json.loads(value)) for key,value in self.failure_receipts()])
+
+
+class _SectionTransport(LotusChainActorBackend):
+    """Register the existing transport's exact prepared calls before its RPC."""
+
+    def __init__(self, owner, maximum):
+        self.owner = owner
+        self._audit_pending = {}
+        super().__init__(owner._actors, maximum, lambda: owner.core.wake.notify(),
+                         deadline_monotonic=owner.deadline, on_result=owner._record_local_receipt,
+                         token_budget=owner.token_budget, bulk=owner._async_token_batches,
+                         handoff_progress=getattr(owner, '_event_driven_preparation', False))
+        self.poll_interval_s = owner.capacity.poll_interval_s
+
+    def try_submit_batch(self, tasks, endpoint):
+        values = []
+        for task in tasks:
+            value = self._request(task)
+            self.owner._register_local_task(task, value)
+            values.append(value)
+        # Task bytes and the stage binding are immutable; the owner registration
+        # above only reads this parse. Reuse it within this handoff, not a cache.
+        outcome = super()._try_submit_batch(tasks, endpoint, values=values)
+        if outcome.acceptance == Acceptance.NOT_ACCEPTED:
+            with self.owner._receipt_lock:
+                for task in tasks:
+                    self.owner._contexts.pop(task.key, None)
+        return outcome
+
+    def _submit_task(self, task, timings, prepare_method):
+        self.owner._register_local_task(task, self._request(task))
+        return super()._submit_task(task, timings, prepare_method)
+
+    def recover_actor_receipts(self, receipts):
+        errors = super().recover_actor_receipts(receipts)
+        # A failed bulk reply may have ended every local result reader. Core
+        # can then ACK retirement and remove these transport receipts without
+        # _result_transferred running. Transfer the validated audit first.
+        return errors + self.transfer_audit_receipts()
+
+    def transfer_audit_receipts(self):
+        for key, payload in self.failure_receipts():
+            try:
+                self.on_result(key, json.loads(payload))
+            except BaseException as error:
+                with self._lock:
+                    pending = self._audit_pending.setdefault(key, dict(ack_deferred=False))
+                    pending['error'] = 'actor_close_receipt_sink: '+type(error).__name__
+            else:
+                with self._lock:
+                    pending = self._audit_pending.pop(key, None)
+                if pending is not None and pending['ack_deferred']:
+                    super().acknowledge(key)
+        with self._lock:
+            return [v['error'] for v in self._audit_pending.values()]
+
+    def acknowledge(self, key):
+        with self._lock:
+            pending = self._audit_pending.get(key)
+            if pending is not None:
+                # Core may retire compute while the same bounded result and
+                # registered byte/identity context still await the audit sink.
+                pending['ack_deferred'] = True
+                return
+        super().acknowledge(key)
+
+    def audit_handoff_report(self):
+        with self._lock:
+            return dict(pending_receipts=len(self._audit_pending),
+                deferred_core_acks=sum(v['ack_deferred'] for v in self._audit_pending.values()),
+                retained_result_bytes=sum(len(self._outcomes[key]) for key in self._audit_pending),
+                registered_requests=sum(key in self._requests for key in self._audit_pending),
+                scope='encoded retained audit receipts; not compute ownership or RSS')

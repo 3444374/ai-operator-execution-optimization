@@ -15,7 +15,7 @@ from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecor
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
 from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
-from src.execution_provider.adapters import lotus_record_chain_core as chain_core
+from src.execution_provider.adapters import lotus_chain_actor_backend as chain_backend
 from src.scheduling.runtime import async_backend
 from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.records import RecordsResources
@@ -326,7 +326,7 @@ class QueryOwnerTests(unittest.TestCase):
         config["responses"]["step_0|occ-0"].update(status="unknown")
         self.config.write_text(json.dumps(config))
         reached, gates, waited = threading.Event(), [], []
-        execute = chain_core._SectionTransport._execute
+        execute = chain_backend._SectionTransport._execute
         wait = async_backend.wait
         async def hold_local_delivery(transport, *args):
             try:
@@ -337,7 +337,7 @@ class QueryOwnerTests(unittest.TestCase):
                 reached.set()
                 await gate.wait()
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(chain_core._SectionTransport, "_execute", hold_local_delivery):
+                patch.object(chain_backend._SectionTransport, "_execute", hold_local_delivery):
             owner = self.owner(plan, C=1)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:

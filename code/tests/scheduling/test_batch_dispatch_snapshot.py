@@ -10,7 +10,8 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from src.scheduling.core import session as session_module
+from src.scheduling.core import session_dispatch as dispatch_module
+from src.scheduling.core.session_dispatch import _dispatch_batch, _next_record
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_capacity import SessionCapacity
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission, SessionSpec, State, Terminal
@@ -54,8 +55,8 @@ def fixture(*, requests=64, work=256, admission=64):
 def dispatch(session, now=1.0):
     with session.engine._operation():
         if not session._pending_members:
-            session._next_record(tuple(r for r in session._records() if r.phase == "QUEUED"))
-        return session._dispatch_batch(now)
+            _next_record(session, tuple(r for r in session._records() if r.phase == "QUEUED"))
+        return _dispatch_batch(session, now)
 
 
 def state(engine, session, backend):
@@ -83,7 +84,7 @@ class CountingRecords(dict):
 
 class BatchDispatchSnapshotTests(unittest.TestCase):
     def paired(self, replay):
-        with patch.object(session_module, "_batch_dispatch_snapshot", return_value=None) as oracle:
+        with patch.object(dispatch_module, "_batch_dispatch_snapshot", return_value=None) as oracle:
             old = replay()
             self.assertGreater(oracle.call_count, 0)
         new = replay()
@@ -287,8 +288,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                                 return super().can_dispatch(record, limits)
                         e.capacity = CustomCapacity(e.capacity.limits)
                     s.offer(tuple(task(i) for i in range(3)))
-                    s._next_record(s._records())
-                    self.assertIsNone(session_module._batch_dispatch_snapshot(
+                    _next_record(s, s._records())
+                    self.assertIsNone(dispatch_module._batch_dispatch_snapshot(
                         e.capacity, e.policies, session_id=s.session_id, limits=s.limits,
                         job_id=s.spec.job_id, member_count=len(s._pending_members), now=1.0))
                     try:
@@ -322,13 +323,13 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
 
     def test_capacity_table_scans_are_constant_per_batch(self):
         scans = {}
-        snapshot = session_module._batch_dispatch_snapshot
+        snapshot = dispatch_module._batch_dispatch_snapshot
         for fast in (False, True):
             e, s, _, _ = fixture()
             s.offer(tuple(task(i) for i in range(32)))
-            s._next_record(s._records())
+            _next_record(s, s._records())
             e.capacity.records = CountingRecords(e.capacity.records)
-            with patch.object(session_module, "_batch_dispatch_snapshot",
+            with patch.object(dispatch_module, "_batch_dispatch_snapshot",
                               side_effect=snapshot if fast else None,
                               return_value=None) as projection:
                 self.assertTrue(dispatch(s))

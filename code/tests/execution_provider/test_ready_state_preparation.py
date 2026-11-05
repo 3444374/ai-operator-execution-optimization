@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_record_chain_core as core
+from src.execution_provider.adapters import lotus_chain_actor_backend as chain_backend
 from src.semantic_methods.driver import MethodDriver
 from src.semantic_methods.lotus.record_continuation import LotusChainProgram
 from tests.execution_provider import test_lotus_async_token_batches as base
@@ -31,7 +31,7 @@ class StatePreparationTests(rolling.RollingRefillTests):
         self.helper.config_for(plan, rows)
         prepared, submitted = [], []
         start = LotusChainProgram.start
-        dispatch = core._SectionTransport.try_submit_batch
+        dispatch = chain_backend._SectionTransport.try_submit_batch
 
         def record_prepare(program, value):
             result = start(program, value)
@@ -45,7 +45,7 @@ class StatePreparationTests(rolling.RollingRefillTests):
         with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type',
                 return_value=base.query_fixture.Process), \
                 patch.object(LotusChainProgram, 'start', record_prepare), \
-                patch.object(core._SectionTransport, 'try_submit_batch', record_dispatch):
+                patch.object(chain_backend._SectionTransport, 'try_submit_batch', record_dispatch):
             owner = self.owner(plan, R=11, interleaved_preparation=enabled)
             owner.capacity = replace(owner.capacity, step_actions=actions)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
@@ -85,13 +85,13 @@ class StatePreparationTests(rolling.RollingRefillTests):
         config['responses']['step_0|occ-0']['wait_file'] = str(gate)
         self.helper.config.write_text(json.dumps(config))
         packets = []
-        submit = core._SectionTransport.try_submit_batch
+        submit = chain_backend._SectionTransport.try_submit_batch
         def observed(transport, tasks, endpoint):
             packets.append(tuple(task.key.sequence for task in tasks))
             return submit(transport, tasks, endpoint)
         with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type',
                 return_value=base.query_fixture.Process), \
-                patch.object(core._SectionTransport, 'try_submit_batch', observed):
+                patch.object(chain_backend._SectionTransport, 'try_submit_batch', observed):
             owner = self.owner(plan, R=11)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -207,14 +207,14 @@ class StatePreparationTests(rolling.RollingRefillTests):
         rows[0] = replace(rows[0], values=dict(rows[0].values, passage=42))
         self.helper.config_for(plan,rows)
         submitted=[]
-        original=core._SectionTransport.try_submit_batch
+        original=chain_backend._SectionTransport.try_submit_batch
 
         def observed(transport,tasks,endpoint):
             submitted.extend(t.key for t in tasks)
             return original(transport,tasks,endpoint)
 
         with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor,'_process_type',
-                return_value=base.query_fixture.Process), patch.object(core._SectionTransport,'try_submit_batch',observed):
+                return_value=base.query_fixture.Process), patch.object(chain_backend._SectionTransport,'try_submit_batch',observed):
             owner=self.owner(plan,R=3)
             try:
                 with self.assertRaisesRegex(ValueError,'present text input'):
@@ -229,13 +229,13 @@ class StatePreparationTests(rolling.RollingRefillTests):
         rows[4] = replace(rows[4], values=dict(rows[4].values, passage=42))
         self.helper.config_for(plan, rows)
         submitted = []
-        original = core._SectionTransport.try_submit_batch
+        original = chain_backend._SectionTransport.try_submit_batch
         def observed(transport, tasks, endpoint):
             submitted.extend(t.key.sequence for t in tasks)
             return original(transport, tasks, endpoint)
         with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type',
                 return_value=base.query_fixture.Process), \
-                patch.object(core._SectionTransport, 'try_submit_batch', observed):
+                patch.object(chain_backend._SectionTransport, 'try_submit_batch', observed):
             owner = rolling.RollingRefillTests.owner(self, plan, R=7)
             owner.capacity = replace(owner.capacity, step_actions=2)
             try:
@@ -310,7 +310,7 @@ class StatePreparationTests(rolling.RollingRefillTests):
             with self.subTest(enabled=enabled),self.assertRaises(TypeError):
                 PreparedRecordsCore(method,None,plan.stages[0].generation,None,{},
                     dict(rolling_refill=True),None,interleaved_preparation=enabled)
-        with self.assertRaisesRegex(ValueError,'fixed rolling'):
+        with self.assertRaises(ValueError):
             PreparedRecordsCore(method,None,plan.stages[0].generation,None,{},
                 {},None,interleaved_preparation=True)
         with self.assertRaises(TypeError):

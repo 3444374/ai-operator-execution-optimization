@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_record_chain_core as core
+from src.execution_provider.adapters import lotus_chain_actor_backend as chain_backend
 from src.execution_provider.adapters import records_query_runtime as query_runtime
 from src.execution_provider.adapters import lotus_records_batches as ordinary_module
 from src.execution_provider.adapters import lotus_chain_token_batches as packing
@@ -129,13 +129,13 @@ class EventPreparationTests(state.StatePreparationTests):
                 plan,rows=base.fixture.chain_for('M'),base.fixture.source_rows(size=22)
                 self.helper.config_for(plan,rows)
                 packets,entries=[],[]
-                submit=core._SectionTransport.try_submit_batch
+                submit=chain_backend._SectionTransport.try_submit_batch
                 def packet(transport,tasks,endpoint):
                     packets.append((transport.owner._active._phase_count,len(tasks)))
                     return submit(transport,tasks,endpoint)
                 with base.ThreadedRuntime([]),patch.object(base.AsyncCoreModelActor,'_process_type',
                         return_value=base.query_fixture.Process),first_actor_ack_gate() as (entered,ack), \
-                        patch.object(core._SectionTransport,'try_submit_batch',packet):
+                        patch.object(chain_backend._SectionTransport,'try_submit_batch',packet):
                     actor_submit=base.AsyncCoreModelActor.try_submit_prepared_batch
                     def record(actor,payload):
                         entries.append(True)
@@ -168,13 +168,13 @@ class EventPreparationTests(state.StatePreparationTests):
         config['responses']['step_0|occ-0']['wait_file']=str(gate)
         self.helper.config.write_text(json.dumps(config))
         packets=[]
-        submit=core._SectionTransport.try_submit_batch
+        submit=chain_backend._SectionTransport.try_submit_batch
         def observed(transport,tasks,endpoint):
             packets.append((transport.owner._active._phase_count,tuple(t.key.sequence for t in tasks)))
             return submit(transport,tasks,endpoint)
         with base.ThreadedRuntime([]),patch.object(base.AsyncCoreModelActor,'_process_type',
                 return_value=base.query_fixture.Process),first_actor_ack_gate() as (entered,ack), \
-                patch.object(core._SectionTransport,'try_submit_batch',observed):
+                patch.object(chain_backend._SectionTransport,'try_submit_batch',observed):
             owner=self.owner(plan,R=11)
             stream=owner.evaluate(iter(rows),plan,expected=rows,query_id=plan.query_id)
             try:
@@ -273,14 +273,14 @@ class EventPreparationTests(state.StatePreparationTests):
         plan,rows = base.fixture.chain_for('FM'),base.fixture.source_rows(size=22)
         self.helper.config_for(plan,rows)
         reference = {}
-        tick = core._RecordLocalRows._tick
+        tick = query_runtime._RecordLocalRows._tick
         def observed(stream):
             result = tick(stream)
             for key,value in asdict(stream.owner.core.capacity.usage()).items():
                 reference[key] = max(reference.get(key,0),value)
             return result
         with base.ThreadedRuntime([]),patch.object(base.AsyncCoreModelActor,'_process_type',
-                return_value=base.query_fixture.Process),patch.object(core._RecordLocalRows,'_tick',observed):
+                return_value=base.query_fixture.Process),patch.object(query_runtime._RecordLocalRows,'_tick',observed):
             owner = self.owner(plan,R=11)
             stream = owner.evaluate(iter(rows),plan,expected=rows,query_id=plan.query_id)
             try:

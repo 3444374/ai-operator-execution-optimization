@@ -91,3 +91,13 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 Session 的 registered Job 关闭状态只由 JobRegistry 保存，legacy Job 仍记住待回收身份。
 [源码与 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
 保存释放顺序修正、重复检查清理及 140 项组合结果；物理容量、R 和反馈试探不属于本批。
+
+
+Session 的成员选择、单请求和原子批接收集中到
+[session_dispatch.py](src/scheduling/core/session_dispatch.py)，flow 生命周期和唯一任务表保持原 owner；
+成功接收后的游标前移只处理一次。链的 record-local 传输类与其实现同在
+[lotus_chain_actor_backend.py](src/execution_provider/adapters/lotus_chain_actor_backend.py)，实际测试接点同步。
+旧 profiler 解析器已退役，准确原件与恢复说明见
+[历史入口](../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)。
+[本批源码、检查与总量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
+保留原失败；当前多任务／SAOR 隔离由另一专项继续，本批未修改其研究策略或接线。

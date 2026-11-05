@@ -11312,3 +11312,13 @@ Session 投影归入既有策略模块并迁移原扫描 oracle；有限 typed I
 legacy 待回收身份和未决责任保持。[140 项组合结果及行数](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
 保存原失败、独审与同口径统计；本批生产 Python 净增 49 行，职责整理不能算作减少代码。
 R、物理容量和反馈试探未改，实际模型、Ray 与 GPU 尚未验证，未合并 main。
+
+
+## 2026-11-05 整理派发职责并退役无调用解析器
+
+Session 的成员选择及单请求／原子批接收移入实际派发模块，原 flow 和任务表保持一份；
+删除两处重复游标更新和立即清理前的重复清空。链的现有传输类归回 backend，实际导入与观测接点同步。
+退役无调用的 581 行 profiler parser，保留准确源，并修正上一批新增测试遗漏的五条历史来源。
+[源码与各次原件](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
+记录本批生产 Python 净减 570 行；保留 b089 的并行试探实现，未改共享额度或 SAOR。
+144 项 Session 与组合上的 65 项链检查通过；原内存等待和十处旧历史来源问题仍在，未据此宣称性能改善。

@@ -1638,3 +1638,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [共享额度与 Session 职责整理](diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
 记录原释放顺序的十二个失败子例、纠正后重试与单次 140 项组合通过；策略迁移和两类重复状态／检查的清理分别可查。
 原误选方法、组件结果和独审来源保留，重复选择不累计；没有实际 Ray、模型、GPU 或性能结论。
+
+
+[Session／传输职责与旧解析器清理](diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
+保留相同 144 项前后结果、原链 59／61 和后续 65 项通过，以及一次未复现的内存等待诊断；不将该旧问题写成已修复。
+历史来源从 15 处差异减为 10 处，其中新增测试漏映射的五处已补准确原件；完整五树恢复未通过，无模型或性能结论。

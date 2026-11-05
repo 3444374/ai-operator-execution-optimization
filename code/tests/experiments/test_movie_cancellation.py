@@ -183,7 +183,7 @@ class CancellationEntryTests(unittest.TestCase):
         return ledger
 
     def test_cancel_close_recovers_actor_receipts_after_bulk_result_readers_failed(self):
-        from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport
+        from src.execution_provider.adapters.lotus_chain_actor_backend import _SectionTransport
         fixture,plan,context=self.fixture()
         ledger=self.prepaid_context(fixture,plan,context);before=ledger.snapshot()
         poll=AsyncCoreModelActor.poll_prepared_batch
@@ -251,7 +251,8 @@ class CancellationEntryTests(unittest.TestCase):
         context['claims'][plan['queries'][1]['query_id']].bind_execution()
 
     def test_audit_sink_failure_survives_retirement_until_retry_succeeds(self):
-        from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport, SemLoomRecordChainCore
+        from src.execution_provider.adapters.lotus_chain_actor_backend import _SectionTransport
+        from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
         for failed_positions,error_type in (((0,),OSError),((0,1),OSError),((0,1),KeyboardInterrupt)):
             with self.subTest(failed_positions=failed_positions,error_type=error_type.__name__):
                 fixture,plan,context=self.fixture()
