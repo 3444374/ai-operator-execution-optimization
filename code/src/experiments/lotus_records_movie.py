@@ -406,8 +406,7 @@ def read_cascade_config(path):
     if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
         raise ValueError("cascade requires distinct explicit main and helper model paths")
     for role in engines:
-        limit = (engines[role].max_model_len if value['backend'] == 'semloom-local-model-core-cascade'
-                 else engines[role].legacy_max_model_len)
+        limit = engines[role].max_model_len
         if limit is not None and generations[role].max_tokens > limit:
             raise ValueError("cascade max_tokens exceeds max_model_len")
     return value, method, generations, resources, engines, args

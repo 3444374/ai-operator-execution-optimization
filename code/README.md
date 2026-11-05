@@ -49,9 +49,10 @@ IMLane 保留作者桥接；它们可共享 LOTUS 方法、模型内核、IPC �
 不通过减去估算启动成本构造查询时间，也不把旧 API 包络当作新查询时钟。
 输入、输出质量、请求／token 工作量、缓存和实测版本仍是比较条件。
 
-原生 Ray／Daft／IMLane 保留各自的参数所有者；[sync_reference_engine.py](src/baselines/text/frameworks/sync_reference_engine.py)
-和[reference_chain_batch.py](src/baselines/text/frameworks/reference_chain_batch.py)记录其历史显式参数。
-本次清理不改作者 Kalypso 调度、不改模型提示或输出上限，也不把基线改成 SemLoom。
+原生 Ray／Daft／IMLane 的 [sync_reference_engine.py](src/baselines/text/frameworks/sync_reference_engine.py)
+和 [reference_chain_batch.py](src/baselines/text/frameworks/reference_chain_batch.py)保留原生 chat 调用。
+三项 vLLM 容量未指定时交引擎解析，显式值保持；[参数归属](src/baselines/README.md#共享层和参数)
+区分模型容量、LOTUS 客户端批大小和原生图批大小。作者 Kalypso 调度、模型提示和输出上限保持。
 
 ## 退役、暂停和研究保留
 

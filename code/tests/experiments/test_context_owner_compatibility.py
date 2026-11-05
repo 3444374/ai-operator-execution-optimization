@@ -120,7 +120,7 @@ class IMLaneFiniteContextTests(unittest.TestCase):
     def engine(self, extra=None, *, path='model'):
         return EngineSpec(str(self.root/path),sys.executable,sys.executable,max_model_calls=4,**(extra or {}))
 
-    def test_chain_configuration_omitted_and_null_match_explicit_legacy_values(self):
+    def test_chain_configuration_preserves_optional_and_explicit_context(self):
         from integrations.imlane_records import chain_host
         configs=[]
         for index,extra in enumerate(({},dict(max_model_len=None),dict(max_model_len=4096),dict(max_model_len=8192))):
@@ -129,21 +129,21 @@ class IMLaneFiniteContextTests(unittest.TestCase):
                     patch.object(EngineSpec,'validate_driver_environment',return_value={}):
                 config=chain_host.configuration(self.chain,engine,self.resources,self.rows,
                     control_dir=control,deadline=time.monotonic()+5,model_environment={})
-            self.assertEqual(config['engine']['max_model_len'],extra.get('max_model_len') or 4096)
+            self.assertEqual(config['engine']['max_model_len'],extra.get('max_model_len'))
             self.assertEqual(engine.max_model_len,extra.get('max_model_len'))
             configs.append({k:v for k,v in config.items() if k not in
                 ('control_dir','deadline_monotonic','control_token','driver_host')})
-        self.assertEqual(configs[0],configs[1]);self.assertEqual(configs[0],configs[2])
+        self.assertEqual(configs[0],configs[1]);self.assertNotEqual(configs[0],configs[2])
         self.assertEqual(configs[3]['engine']['max_model_len'],8192)
 
-    def test_chain_backend_retains_finite_context_and_rejects_explicit_output_overflow(self):
+    def test_chain_backend_retains_unspecified_context_and_rejects_explicit_output_overflow(self):
         from integrations.imlane_records.chain_backend import IMLaneChainBackend
         args=SimpleNamespace(output=self.root,stop_budget=SimpleNamespace(stopped=threading.Event()))
         for extra in ({},dict(max_model_len=None),dict(max_model_len=8192)):
             with self.subTest(extra=extra):
                 backend=IMLaneChainBackend(engine=self.engine(extra),resources=self.resources,author_args=args,
                     model_environment={'CUDA_VISIBLE_DEVICES':'0'})
-                self.assertEqual(backend.engine.max_model_len,extra.get('max_model_len') or 4096)
+                self.assertEqual(backend.engine.max_model_len,extra.get('max_model_len'))
         backend=IMLaneChainBackend(engine=self.engine(dict(max_model_len=1)),resources=self.resources,
             author_args=args,model_environment={'CUDA_VISIBLE_DEVICES':'0'})
         with patch.object(backend,'_open_phase',side_effect=AssertionError('author allocated')), \
@@ -156,22 +156,22 @@ class IMLaneFiniteContextTests(unittest.TestCase):
             ('True','False'),dict(max_completion_tokens=output,temperature=0,top_p=1,logprobs=False),
             (row,),('reviewText',))
 
-    def test_cascade_worker_normalizes_finite_context_before_generation_check(self):
+    def test_cascade_worker_keeps_unspecified_context_before_generation_check(self):
         from integrations.imlane_records.cascade_udf import CascadeWorker
         for extra in ({},dict(max_model_len=None),dict(max_model_len=8192)):
             with self.subTest(extra=extra):
-                config=dict(schema='imlane.cascade.stage.v1',stage=asdict(self.stage()),
+                config=dict(schema='imlane.cascade.stage.v1',stage=asdict(self.stage(output=8192)),
                     engine=asdict(replace(self.engine(extra),max_model_calls=1)),
                     resources=asdict(self.resources),query_id='CPU-cascade',deadline_monotonic=time.monotonic()+5,
                     control_dir=str(self.root),model_environment={'CUDA_VISIBLE_DEVICES':'0'})
                 worker=CascadeWorker(config,prepare_type=lambda _:object())
-                self.assertEqual(worker.engine.max_model_len,extra.get('max_model_len') or 4096)
+                self.assertEqual(worker.engine.max_model_len,extra.get('max_model_len'))
                 self.assertIsNone(worker.kernel)
         config['engine']=asdict(replace(self.engine(dict(max_model_len=1)),max_model_calls=1))
         with self.assertRaisesRegex(ValueError,'finite bound role'):
             CascadeWorker(config,prepare_type=lambda _:object())
 
-    def test_cascade_backend_roles_keep_legacy_context_without_loading_models(self):
+    def test_cascade_backend_roles_keep_optional_context_without_loading_models(self):
         from integrations.imlane_records.cascade_host import IMLaneCascadeBackend
         args=SimpleNamespace(output=self.root,stop_budget=SimpleNamespace(check=lambda:None))
         source=SimpleNamespace()
@@ -180,7 +180,7 @@ class IMLaneFiniteContextTests(unittest.TestCase):
                 backend=IMLaneCascadeBackend(source,engines=dict(main=self.engine(extra,path='main'),
                     helper=self.engine(extra,path='helper')),resources=self.resources,author_args=args,
                     model_environment={'CUDA_VISIBLE_DEVICES':'0'})
-                self.assertEqual({e.max_model_len for e in backend.engines.values()},{extra.get('max_model_len') or 4096})
+                self.assertEqual({e.max_model_len for e in backend.engines.values()},{extra.get('max_model_len')})
                 self.assertFalse(backend._checked)
 
 

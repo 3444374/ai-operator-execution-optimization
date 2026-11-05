@@ -31,8 +31,13 @@ SemLoom Core 的实现位于 `execution_provider/adapters/lotus_records_core.py`
 
 原生 LOTUS 的 `native_lm_max_batch_size` 是原 LM 客户端的并发批设置，必须显式声明；
 它不是 vLLM 内部批大小，也不是 Core 的 C／R。模型引擎未指定的参数交引擎解析，实际值从 owner ready 回执取得。
-原生 Ray／Daft／IMLane 的[历史同步参数所有者](text/frameworks/sync_reference_engine.py)和
-[有限链参数适配](text/frameworks/reference_chain_batch.py)保持，不在本次清理中重调基线。
+原生 Ray／Daft／IMLane 的[同步模型入口](text/frameworks/sync_reference_engine.py)与
+[有限链入口](text/frameworks/reference_chain_batch.py)继续选择原生 `LLM.chat`，不导入 Core 执行或调度。
+`max_model_len`、`max_num_seqs`、`max_num_batched_tokens` 省略／null 时不传给 vLLM；
+显式正整数原样传入。原 4096／8／4096 隐式补值及链、cascade、IMLane 中的上下文重写已移除。
+模型 ready 后按实际上下文检查输出上限，显式上下文仍可在分配模型前检查。
+这三项是模型容量配置，与 LOTUS 客户端 `native_lm_max_batch_size`、原生图 `model_batch_rows`、
+模型生命周期的调用总额 `max_model_calls` 分别记录；省略不代表无限容量或已找到最优值。
 
 `text/movie_records.py`、`movie_tasks.py` 和 `sembench_movie.py` 是 SemBench 工作负载／原评价适配，
 由实验入口使用，不是 Core 的策略依赖。原生 LOTUS 的结果缓存在本次矩阵查询中显式关闭，

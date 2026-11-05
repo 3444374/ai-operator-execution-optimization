@@ -39,7 +39,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.spec(max_num_batched_tokens=invalid)
 
-    def test_sync_reference_preserves_old_default_and_explicit_values(self):
+    def test_sync_reference_omits_unknown_token_budget_and_keeps_explicit_values(self):
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs: kwargs
@@ -54,8 +54,10 @@ class NativeTokenDefaultTests(unittest.TestCase):
                 with self.subTest(maximum=maximum):
                     spec = self.spec(max_num_batched_tokens=maximum)
                     ReferenceVllmEngine(spec, common.GenerationSpec())
-                    expected = 4096 if maximum is None else maximum
-                    self.assertEqual(calls[-1]['max_num_batched_tokens'], expected)
+                    if maximum is None:
+                        self.assertNotIn('max_num_batched_tokens', calls[-1])
+                    else:
+                        self.assertEqual(calls[-1]['max_num_batched_tokens'], maximum)
                     self.assertEqual(calls[-1]['max_model_len'], 4096)
                     self.assertEqual(calls[-1]['gpu_memory_utilization'], .8)
 

@@ -82,9 +82,6 @@ class FusedChainBatch:
 
     _engine_type = None
 
-    def _engine_specification(self, value):
-        return EngineSpec.from_dict(value)
-
     def __init__(self, chain, engine, expected, control, deadline, startup_timeout_s,
                  driver_host, control_token, *, initial_parents=None, columns=None,
                  allow_nulls=False, close_on_source_complete=True, release_completed_audit=False,
@@ -104,7 +101,7 @@ class FusedChainBatch:
             raise TypeError("close_on_source_complete must be a boolean")
         self.chain, self.expected, self.initial_parents, self.columns = _phase_values(
             chain, expected, initial_parents, columns, allow_nulls)
-        self.engine_spec = self._engine_specification(engine)
+        self.engine_spec = EngineSpec.from_dict(engine)
         self._configure_batching(prepared_batching)
         if self.engine_spec.max_model_len is not None and any(
                 stage.generation.max_tokens > self.engine_spec.max_model_len for stage in self.chain.stages):

@@ -1,4 +1,4 @@
-"""Current synchronous omission and explicit native-reference capacity; CPU only."""
+"""Synchronous native omission, exact explicit capacity and ready context; CPU only."""
 import unittest
 
 from src.serving.backends import vllm_engine as sync
@@ -30,16 +30,18 @@ class SyncDefaultOwnershipTests(unittest.TestCase):
             finally:
                 owner.close(timeout=1)
 
-    def test_native_reference_owns_its_original_optional_defaults(self):
+    def test_native_reference_omits_unset_capacity_and_uses_native_ready_context(self):
         from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
-        with native_api(actual=4096) as (calls, closes):
-            owner = ReferenceVllmEngine(self.spec(), sync.GenerationSpec())
+        with native_api(actual=32768) as (calls, closes):
+            owner = ReferenceVllmEngine(self.spec(), sync.GenerationSpec(max_tokens=8192))
             try:
-                self.assertEqual({name:calls[0][name] for name in
-                    ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens')},
-                    dict(max_model_len=4096, max_num_seqs=8, max_num_batched_tokens=4096))
-                self.assertIsNone(owner.ready()['model_context']['requested_max_model_len'])
-                self.assertEqual(owner.ready()['constructor_policy'], 'native_reference_capacity')
+                for name in ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens'):
+                    self.assertNotIn(name, calls[0])
+                ready = owner.ready()
+                self.assertEqual(ready['constructor_parameters'], {})
+                self.assertEqual(ready['model_context']['max_model_len'], 32768)
+                self.assertIsNone(ready['model_context']['requested_max_model_len'])
+                self.assertEqual(ready['constructor_policy'], 'native_optional_capacity')
             finally:
                 owner.close(timeout=1)
 
@@ -56,9 +58,20 @@ class SyncDefaultOwnershipTests(unittest.TestCase):
                 owner.close(timeout=1)
         with native_api(actual=32768) as (calls, closes):
             with self.assertRaisesRegex(ValueError, 'max_tokens exceeds max_model_len'):
-                ReferenceVllmEngine(self.spec(), sync.GenerationSpec(max_tokens=8192))
+                ReferenceVllmEngine(self.spec(max_model_len=4096), sync.GenerationSpec(max_tokens=8192))
             self.assertEqual(calls, [])
 
+    def test_native_reference_rejects_generation_beyond_actual_context_at_ready(self):
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
+        with native_api(actual=2048) as (calls, closes):
+            owner = ReferenceVllmEngine(self.spec(), sync.GenerationSpec(max_tokens=8192))
+            try:
+                self.assertNotIn('max_model_len', calls[0])
+                with self.assertRaisesRegex(ValueError, 'resolved model context'):
+                    owner.ready()
+            finally:
+                owner.close(timeout=1)
+            self.assertEqual(len(closes), 1)
 
 if __name__ == '__main__':
     unittest.main()

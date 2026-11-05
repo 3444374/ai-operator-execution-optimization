@@ -124,8 +124,6 @@ class IMLaneCascadeBackend:
         if type(engines) is not dict or set(engines) != {"main", "helper"}:
             raise ValueError("cascade needs explicit helper and main deployments")
         self.engines = {role: EngineSpec.from_dict(asdict(spec)) for role,spec in engines.items()}
-        self.engines = {role: replace(spec, max_model_len=spec.legacy_max_model_len)
-                        for role,spec in self.engines.items()}
         if Path(self.engines["main"].model_path).resolve() == Path(self.engines["helper"].model_path).resolve():
             raise ValueError("cascade requires distinct explicit helper and main model paths")
         self.resources = RecordsResources(**asdict(resources))

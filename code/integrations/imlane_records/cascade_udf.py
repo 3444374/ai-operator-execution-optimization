@@ -1,7 +1,6 @@
 """A fixed cascade role executed by the author's CPython executor."""
 
 from copy import deepcopy
-from dataclasses import replace
 import hashlib
 import json
 import os
@@ -28,7 +27,6 @@ class CascadeWorker(FilterWorker):
     def __init__(self, config, *, prepare_type=None, engine_type=None):
         self.stage = stage_values(config["stage"])
         self.engine = EngineSpec.from_dict(config["engine"])
-        self.engine = replace(self.engine, max_model_len=self.engine.legacy_max_model_len)
         self.generation = local_generation(self.stage)
         self.resources = RecordsResources(**config["resources"])
         self.query_id, self.deadline = config["query_id"], config["deadline_monotonic"]
@@ -39,7 +37,7 @@ class CascadeWorker(FilterWorker):
                 or self.resources.cpu_workers != 1 or self.resources.model_batch_rows > 16
                 or self.resources.prepare_batch_rows > 16 or self.resources.max_active_batches > 2
                 or self.engine.max_model_calls != len(self.stage.records)
-                or self.generation.max_tokens > self.engine.max_model_len):
+                or self.engine.max_model_len is not None and self.generation.max_tokens > self.engine.max_model_len):
             raise ValueError("cascade worker requires one finite bound role, stage and query")
         self.prepare = (prepare_type or CascadePreparer)(self.stage)
         self.engine_type, self.kernel = engine_type, None

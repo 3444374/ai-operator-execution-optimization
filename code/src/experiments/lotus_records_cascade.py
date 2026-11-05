@@ -71,7 +71,7 @@ def read_config(path):
         raise ValueError("both model lifetimes need explicit caps at most 4096")
     if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
         raise ValueError("distinct explicit helper and main deployment paths are required")
-    if any(generations[role].max_tokens > engines[role].legacy_max_model_len for role in engines):
+    if any(engines[role].max_model_len is not None and generations[role].max_tokens > engines[role].max_model_len for role in engines):
         raise ValueError("cascade max_tokens exceeds its deployment max_model_len")
     return value, method, generations, resources, engines, args
 

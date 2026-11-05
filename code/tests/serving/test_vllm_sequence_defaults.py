@@ -38,7 +38,7 @@ class SequenceDefaultTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.spec(max_num_seqs=value)
 
-    def test_finite_synchronous_constructor_retains_its_old_default_and_explicit_values(self):
+    def test_finite_synchronous_constructor_omits_unknown_capacity_and_keeps_explicit_values(self):
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs:kwargs
@@ -51,10 +51,11 @@ class SequenceDefaultTests(unittest.TestCase):
                 patch.object(common.importlib.metadata, 'version', return_value=common.VLLM_VERSION):
             for value in (None, 1, 128):
                 ReferenceVllmEngine(self.spec(max_num_seqs=value), common.GenerationSpec())
-        self.assertEqual([v['max_num_seqs'] for v in calls], [8, 1, 128])
+        self.assertNotIn('max_num_seqs', calls[0])
+        self.assertEqual([v['max_num_seqs'] for v in calls[1:]], [1, 128])
         for kwargs in calls:
-            self.assertEqual(kwargs['max_model_len'], 4096)
-            self.assertEqual(kwargs['max_num_batched_tokens'], 4096)
+            self.assertNotIn('max_model_len', kwargs)
+            self.assertNotIn('max_num_batched_tokens', kwargs)
             self.assertEqual(kwargs['gpu_memory_utilization'], .8)
 
     def test_unspecified_native_sequences_do_not_remove_owner_or_IPC_bounds(self):

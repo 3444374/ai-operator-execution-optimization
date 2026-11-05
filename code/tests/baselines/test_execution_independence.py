@@ -72,7 +72,7 @@ import lotus
 class CPUProcess:
     def __init__(self, spec, *args):
         self.ready_report = dict(engine_uid='CPU-native',
-            model_context=model_context_record(spec, 'CPU-native', spec.max_model_len))
+            model_context=model_context_record(spec, 'CPU-native', 32768 if spec.max_model_len is None else spec.max_model_len))
         self.batches, self.closes = [], 0
     def run_prepared(self, rows, *, generation):
         self.batches.append([row['row_id'] for row in rows])

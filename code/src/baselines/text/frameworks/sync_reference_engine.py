@@ -1,7 +1,7 @@
-"""Native baseline capacity parameters over the shared synchronous lifecycle.
+"""Original native chat calls over the shared synchronous model lifecycle.
 
-This model-side module imports no LOTUS, Ray or fused worker. Reference graph
-owners select it explicitly; current SemLoom construction uses native omission.
+Unset capacity parameters belong to vLLM; explicit values pass through unchanged.
+This module imports no LOTUS, Ray, Core worker or scheduling policy.
 """
 import sys
 
@@ -11,13 +11,6 @@ from src.serving.backends.staged_generation_process import ChainEngineProcess
 
 
 class ReferenceVllmEngine(VllmEngine):
-    constructor_policy = 'native_reference_capacity'
-
-    def _capacity_kwargs(self, engine):
-        return dict(max_model_len=engine.legacy_max_model_len,
-                    max_num_seqs=engine.legacy_max_num_seqs,
-                    max_num_batched_tokens=engine.legacy_max_num_batched_tokens)
-
     def _prepare_native(self, conversations, generation, context):
         return conversations, None
 

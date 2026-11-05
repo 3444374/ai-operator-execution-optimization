@@ -7,6 +7,18 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+原生 baseline 容量修正基于 PR90 `4376d927`：ReferenceVllmEngine 原先把未指定的三项 vLLM
+容量补成 4096 上下文／8 序列／4096 token，链、cascade 与 IMLane 还会重写上下文或据此提前拒绝。
+当前删除隐式补值和无人使用的 legacy 属性／覆盖点；省略／null 保留至引擎构造，显式正整数原样透传。
+就绪后仍核对实际上下文，原生 `LLM.chat`、LOTUS 客户端批大小和框架组批职责保持；
+实现与检查入口见[参数归属](src/baselines/README.md#共享层和参数)。
+下方早期切片中“原生参照保留原参数”只描述当时版本；历史冻结源码及结果身份不因此重写。
+CPU 扩大回归为 819 成功、15 跳过、1 失败；失败是 ACK 历史派生方法的 AST 摘要检查，
+在未修改的 `4376d927` 单独复跑同样失败，本轮未修改该方法、夹具或断言。
+跳过项为原生 Daft 图像 SDK 5 项、未指定 SemBench checkout 3 项、processor 专项 1 项及未指定固定 vLLM 源码 6 项。
+历史 3010 条绑定匹配，五套完整 materialize 通过；28 份修改的 Python 文件无新增 Ruff 诊断，原有 73 条保持。
+本轮只做 CPU 验证，实际 vLLM 解析容量、服务器模型可用性、SemBench 质量与性能仍待实机确认。
+
 本批精简 handoff 观测：删除 poll 的重复 Future 适配／完成订阅，成员通知、driver 交接和 Core key
 时点复用原有有界缓冲，不再在该模式逐成员扫描全量 usage。事件保留入队时钟／phase，缺失 usage
 记为未知；full 模式保留详细采集，关闭仍核对 drain、fsync、错误与丢弃，见[观测说明](scripts/profiling/record_observation/README.md)。

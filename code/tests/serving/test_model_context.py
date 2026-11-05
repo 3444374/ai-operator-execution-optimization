@@ -70,7 +70,6 @@ class ModelContextTests(unittest.TestCase):
         self.assertEqual(EngineSpec.from_dict(asdict(omitted)), omitted)
         self.assertEqual(spec(max_model_len=None), omitted)
         self.assertEqual(spec(max_model_len=8192).max_model_len, 8192)
-        self.assertEqual(omitted.legacy_max_model_len, 4096)
         for value in (0, -1, True, 'auto', '8192'):
             with self.subTest(value=value), self.assertRaises((TypeError, ValueError)):
                 spec(max_model_len=value)

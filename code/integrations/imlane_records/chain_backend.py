@@ -49,7 +49,6 @@ class IMLaneChainBackend:
 
     def __init__(self, *, engine, resources, author_args, model_environment, cancelled=None):
         self.engine = EngineSpec.from_dict(asdict(engine))
-        self.engine = replace(self.engine, max_model_len=self.engine.legacy_max_model_len)
         self.resources = RecordsResources(**asdict(resources))
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
                 or resources.model_batch_rows > 16 or resources.max_active_batches > 2):
@@ -91,7 +90,7 @@ class IMLaneChainBackend:
             raise ValueError("IMLane finite chains require one explicit model deployment")
         if (self.engine.max_model_calls is None or self.engine.max_model_calls > 4096
                 or len(expected)*len(chain.stages) > self.engine.max_model_calls
-                or any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages)):
+                or self.engine.max_model_len is not None and any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages)):
             raise ValueError("IMLane chain exceeds its finite model context or permanent call allowance")
         self.engine.validate_driver_environment()
         schema = _ordered_columns(sorted(expected,key=lambda row:row.source_position),columns)

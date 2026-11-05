@@ -46,18 +46,15 @@ class VllmEngine:
 
     constructor_policy = 'native_optional_capacity'
 
-    def _capacity_kwargs(self, engine):
-        return {name: getattr(engine, name) for name in
-                ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens')
-                if getattr(engine, name) is not None}
-
     def __init__(self, engine: EngineSpec, generation: GenerationSpec):
         if not isinstance(engine, EngineSpec) or not isinstance(generation, GenerationSpec):
             raise TypeError("engine and generation must use their typed specs")
         generation_kwargs = generation.kwargs()
         identity = engine.validate_local()
         _validate_current_runtime(identity)
-        capacity_kwargs = self._capacity_kwargs(engine)
+        capacity_kwargs = {name: getattr(engine, name) for name in
+                           ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens')
+                           if getattr(engine, name) is not None}
         requested_context = capacity_kwargs.get('max_model_len')
         if requested_context is not None and generation.max_tokens > requested_context:
             raise ValueError("max_tokens exceeds max_model_len")

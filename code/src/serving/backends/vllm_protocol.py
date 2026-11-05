@@ -178,21 +178,6 @@ class EngineSpec:
             raise TypeError("engine must be an object")
         return cls(**value)
 
-    @property
-    def legacy_max_num_seqs(self) -> int:
-        """Retain the existing sync/native reference default outside async Core."""
-        return 8 if self.max_num_seqs is None else self.max_num_seqs
-
-    @property
-    def legacy_max_num_batched_tokens(self) -> int:
-        """Retain the existing sync/native token budget outside async Core."""
-        return 4096 if self.max_num_batched_tokens is None else self.max_num_batched_tokens
-
-    @property
-    def legacy_max_model_len(self) -> int:
-        """Keep the existing finite context in sync/native reference execution."""
-        return 4096 if self.max_model_len is None else self.max_model_len
-
     def validate_local(self) -> dict:
         """Read local artifacts and probe environments without loading either ML stack."""
         self.__post_init__()

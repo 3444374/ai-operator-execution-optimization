@@ -956,7 +956,7 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 应用token组织、可选在途工作量与已启动模型的接纳缓存使用该回执，外层额度与原未知结果记录不变。
 
 显式正整数精确保留；当前同步 SemLoom 的省略行为见[同步参数所有权](#sync-native-context-ownership)。
-Ray／Daft 的原生同步对照保留原 4096 缺省；旧 Movie HTTP 包装和入口已退役，
+原生 Ray／Daft／IMLane 同步对照也保留省略／null，见[同步参数所有权](#sync-native-context-ownership)；旧 Movie HTTP 包装和入口已退役，
 历史原配置从[恢复记录](../../../../experiments/reproduction/native_baselines/README.md#retired-movie-http)读取。
 显存比例、数据精度、方法／生成参数及单 GPU 支持保持。
 普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
@@ -974,8 +974,8 @@ Ray／Daft 的原生同步对照保留原 4096 缺省；旧 Movie HTTP 包装和
 token wrapper在独立查询的`start()`仍只返回延迟分配声明；实际回执在原`evaluate()`返回、
 迭代器开始提交前核对，作为启动声明中的`query_model_ready`保存，不把启动阶段改报为模型加载。
 空查询须有完整零调用证据才可没有模型回执，不能借此接受未知或缺失回执。
-有限IMLane的链host/backend及cascade host/worker将省略／null上下文归一到原4096，显式值保持；
-该兼容转换不进入异步SemLoom。独审发现与当前修订见
+有限 IMLane 的链 host/backend 及 cascade host/worker 不再将省略／null 上下文改成 4096，
+显式值保持，实际长度由模型 owner 确认。原转换的独审与历史修订见
 [兼容记录](../../../../experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)。
 
 
@@ -990,8 +990,8 @@ owner 的请求总额、准备参数及 actor／IPC 容量在启动前解析；�
 
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 或
 `max_num_batched_tokens` 未指定／null时，异步 Core 不传对应引擎参数，交由安装的
-vLLM 0.25.1 解析；显式正整数原样传入。当前同步 `VllmEngine` 也省略这两项；
-显式选择 `ReferenceVllmEngine` 的原生图继续保留原参数。旧 Movie HTTP 入口已退出维护版。
+vLLM 0.25.1 解析；显式正整数原样传入。当前同步 `VllmEngine` 和原生图的
+`ReferenceVllmEngine` 也省略这两项。旧 Movie HTTP 入口已退出维护版。
 启动回执的 `native_capacity` 从构造后的配置读回，即使未开启反馈；缺失字段保持未知。
 未指定不表示无限容量或自动性能调优，也不改变外层 C/B/W、上下文长度或显存比例。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
@@ -1193,7 +1193,7 @@ Movie 入口新增默认关闭的 preparation_mode，serial 与省略相同；in
 <a id="sync-native-context-ownership"></a>
 ### 同步参数所有权与完整提示检查
 
-当前 SemLoom 的同步 `VllmEngine` 仅向 vLLM 0.25.1 传显式指定的 max_model_len、max_num_seqs、
+当前同步 `VllmEngine` 和原生 baseline 的 `ReferenceVllmEngine` 仅向 vLLM 0.25.1 传显式指定的 max_model_len、max_num_seqs、
 max_num_batched_tokens；省略／null 时由实际模型和引擎解析。ready 同时记录 requested spec、实际上下文、
 实际构造参数和 native_capacity；后者是配置观测，空闲内存仍未知。BF16、显存比例 0.8 与单卡支持范围保持。
 
@@ -1208,10 +1208,16 @@ fused worker 不再把省略上下文改成 4096；首次模型调用前核实�
 未知或错误 ready 拒绝提交，模型分配和清理的不确定性仍单独保留。普通与 static session 的当前 SemLoom
 预检也仅对显式上下文提前检查，实际值仍需 ready 后核实，CPU 计划检查不是模型就绪证明。
 
-原生 Ray／Daft／IMLane 对照改由 baselines 的 ReferenceVllmEngine／ReferenceFusedChainBatch
-明确保留原参数和 `LLM.chat`；共用 IPC、方法、结果与清理。旧导入和历史具名原件保持。
+原生 Ray／Daft／IMLane 对照由 baselines 的 ReferenceVllmEngine／ReferenceFusedChainBatch
+选择 `LLM.chat`；共用 IPC、方法、结果与清理。省略容量不再由独立入口补 4096／8／4096，
+链、cascade、session 与 IMLane 仅对显式上下文做模型启动前检查。LOTUS 客户端批大小及原生图批大小独立保留。
+旧导入和历史具名原件保持。
 [CPU 检查与原始缺项](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_default_checks.json)
-分别记录新行为、原生对照和来源核对；真实模型／GPU、自动容量、geometric 及计算中关闭仍待验证。
+记录早期 SemLoom 迁移、当时仍补值的原生对照和来源核对；当前 baseline 省略行为由
+[构造与 ready 回归](../../../tests/serving/test_sync_default_ownership.py)、
+[进程入口回归](../../../tests/serving/test_sync_reference_routes.py)及
+[IMLane 配置回归](../../../tests/experiments/test_context_owner_compatibility.py)覆盖。
+真实模型／GPU、自动容量、geometric 及计算中关闭仍待验证。
 
 
 <a id="service-payload-grants"></a>

@@ -1,4 +1,4 @@
-"""Native graphs select their original sync parameters without model imports."""
+"""Native graphs omit unspecified capacity without importing execution policy."""
 from dataclasses import asdict
 from pathlib import Path
 import subprocess
@@ -21,7 +21,7 @@ def cpu_bootstrap(process_type):
 from tests.serving.test_sync_model_context import native_api
 module,flag,descriptor=sys.argv[1:]
 sys.argv=[module,flag,descriptor]
-with native_api(actual=4096):
+with native_api(actual=32768):
     runpy.run_module(module,run_name='__main__')
 '''
     class Process(process_type):
@@ -38,13 +38,13 @@ class SyncReferenceRouteTests(unittest.TestCase):
         from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
         from tests.serving.test_sync_model_context import native_api
         spec = EngineSpec('/tmp/CPU-ray-reference', sys.executable, sys.executable)
-        with native_api(actual=4096) as (calls, closes):
+        with native_api(actual=32768) as (calls, closes):
             batch = InferBatch(asdict(spec), asdict(GenerationSpec()), 1, time.monotonic()+10, 3)
             try:
                 self.assertIsInstance(batch.engine, ReferenceVllmEngine)
-                self.assertEqual({name:calls[0][name] for name in
-                    ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens')},
-                    dict(max_model_len=4096, max_num_seqs=8, max_num_batched_tokens=4096))
+                for name in ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens'):
+                    self.assertNotIn(name, calls[0])
+                self.assertEqual(batch.engine.ready()['model_context']['max_model_len'], 32768)
             finally:
                 batch.engine.close(timeout=1)
 
@@ -64,7 +64,7 @@ class Guard(importlib.abc.MetaPathFinder):
             raise AssertionError('unexpected model-side import: '+fullname)
 sys.meta_path.insert(0,Guard())
 from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
-assert ReferenceVllmEngine.constructor_policy=='native_reference_capacity'
+assert ReferenceVllmEngine.constructor_policy=='native_optional_capacity'
 '''
         result = subprocess.run([sys.executable, '-I', '-B', '-c', program, str(CODE)],
             capture_output=True, text=True, timeout=15)
@@ -79,10 +79,9 @@ assert ReferenceVllmEngine.constructor_policy=='native_reference_capacity'
                 try:
                     ready = process.ready_report
                     self.assertEqual(ready['kind'], 'ready')
-                    self.assertEqual(ready['constructor_policy'], 'native_reference_capacity')
-                    self.assertEqual(ready['constructor_parameters'],
-                        dict(max_model_len=4096, max_num_seqs=8, max_num_batched_tokens=4096))
-                    self.assertEqual(ready['model_context']['max_model_len'], 4096)
+                    self.assertEqual(ready['constructor_policy'], 'native_optional_capacity')
+                    self.assertEqual(ready['constructor_parameters'], {})
+                    self.assertEqual(ready['model_context']['max_model_len'], 32768)
                     self.assertIsNone(ready['model_context']['requested_max_model_len'])
                     report = process.close(3)
                     self.assertTrue(report['process_exit_confirmed'], report)

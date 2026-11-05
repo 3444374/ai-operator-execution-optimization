@@ -383,7 +383,7 @@ def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: Gener
     if not set(method.resolved_input_columns).issubset(scan.payload_columns):
         raise ValueError("record scan omits Filter input columns")
     validate_lm(make_lm(method, generation), method, generation)
-    if generation.max_tokens > engine.legacy_max_model_len:
+    if engine.max_model_len is not None and generation.max_tokens > engine.max_model_len:
         raise ValueError("max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
     expected = source.expected(query_id)

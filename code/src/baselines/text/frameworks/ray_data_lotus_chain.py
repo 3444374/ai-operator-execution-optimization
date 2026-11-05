@@ -323,7 +323,7 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
             raise ValueError("streaming chain requires globally unique " + name)
     if chain.relation_barriers or columns is not None:
         columns = _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
-    if any(stage.generation.max_tokens > engine.legacy_max_model_len for stage in chain.stages):
+    if engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
     if cancelled is not None and cancelled():

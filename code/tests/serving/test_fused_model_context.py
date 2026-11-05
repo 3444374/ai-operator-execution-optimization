@@ -163,14 +163,15 @@ class FusedModelContextTests(unittest.TestCase):
         self.assertEqual(receipt['engine_uid'], owner.engine.ready_report['engine_uid'])
         self.assertIsNone(owner.engine_spec.max_model_len)
 
-    def test_native_reference_specialization_keeps_original_fused_context(self):
+    def test_native_reference_specialization_keeps_context_unspecified_until_ready(self):
         from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch
         owner = self.owner(cls=ReferenceFusedChainBatch)
-        self.assertEqual(owner.engine_spec.max_model_len, 4096)
+        self.assertIsNone(owner.engine_spec.max_model_len)
         self.assertIsNone(self.run_rows(owner)['error_type'])
-        self.assertEqual(owner._model_context['requested_max_model_len'], 4096)
+        self.assertIsNone(owner._model_context['requested_max_model_len'])
+        self.assertEqual(owner._model_context['max_model_len'], 32768)
         with self.assertRaisesRegex(ValueError, 'chain max_tokens exceeds'):
-            self.owner(self.chain(output=8192), cls=ReferenceFusedChainBatch)
+            self.owner(self.chain(output=8192), spec=replace(self.spec,max_model_len=4096), cls=ReferenceFusedChainBatch)
 
     def test_start_report_failure_does_not_become_a_model_construction_failure(self):
         from transformers import AutoTokenizer

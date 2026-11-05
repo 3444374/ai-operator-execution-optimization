@@ -1,7 +1,7 @@
 """Author-owned submission/collection around the shared finite chain kernel."""
 
 from contextlib import nullcontext
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import json
 import math
 from pathlib import Path
@@ -27,7 +27,6 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
     """Freeze caller values and preflight before constructing an author owner."""
     chain = LotusRecordChain.from_dict(chain.describe())
     engine, resources = EngineSpec.from_dict(asdict(engine)), RecordsResources(**asdict(resources))
-    engine = replace(engine, max_model_len=engine.legacy_max_model_len)
     if resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.max_active_batches > 2:
         raise ValueError("IMLane finite chain requires one worker, 1..16 batch rows and at most two pending blocks")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
@@ -41,7 +40,7 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
     if (engine.max_model_calls is None or engine.max_model_calls > 4096
             or len(expected) * len(chain.stages) > engine.max_model_calls):
         raise ValueError("reserve the finite chain's worst case request allowance before author allocation")
-    if any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
+    if engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
     if type(deadline) not in (int, float) or not math.isfinite(deadline) or deadline <= time.monotonic():
         raise ValueError("finite chain needs an absolute finite work deadline")
