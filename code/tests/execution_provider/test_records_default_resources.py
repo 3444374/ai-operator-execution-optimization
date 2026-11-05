@@ -1,4 +1,4 @@
-"""Finite ordinary defaults from applied IPC declarations, independent of R."""
+"""Finite ordinary defaults and independent explicit IPC storage declarations."""
 from dataclasses import asdict, replace
 import sys
 import unittest
@@ -18,8 +18,7 @@ class DefaultResourceTests(unittest.TestCase):
         self.engine = EngineSpec('/tmp/default-resource-model', sys.executable, sys.executable)
         self.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=11)
 
-    def test_changing_request_R_leaves_Core_Method_and_result_allocations_identical(self):
-        compared=[]
+    def test_omitted_storage_follows_requests_for_ordinary_and_rolling(self):
         for requests in (1, 2, 21):
             resources=replace(self.resources, max_active_batches=requests)
             for rolling in (False, True):
@@ -28,16 +27,18 @@ class DefaultResourceTests(unittest.TestCase):
                 budget=configured.capacity.budget
                 self.assertEqual(budget.active_requests, requests)
                 self.assertEqual(configured.async_limits.max_inflight, requests)
-                compared.append(tuple(getattr(budget,k) for k in
-                    ('held_tasks','input_bytes','result_bytes','method_runs','method_bytes'))+
-                    tuple(getattr(configured.async_limits,k) for k in ('result_slots','input_bytes','result_bytes')))
+                ipc=configured.async_limits
+                self.assertEqual(ipc.result_slots,requests)
+                self.assertEqual(ipc.input_bytes,requests*ipc.item_input_bytes)
+                self.assertEqual(ipc.result_bytes,requests*ipc.item_result_bytes)
+                self.assertEqual((budget.input_bytes,budget.result_bytes),
+                                 (ipc.input_bytes,ipc.result_bytes))
                 rows=budget.result_bytes//configured.capacity.item_result_bytes
                 self.assertGreater(budget.held_tasks, rows)
                 method_rows=min(rows,budget.input_bytes//configured.capacity.item_input_bytes)
                 self.assertGreater(budget.method_runs, method_rows)
                 self.assertEqual(budget.method_bytes, method_rows*row_reservation(configured.capacity.method_limits(1)))
                 self.assertIn('existing IPC', configured.profile['resource_budget_source'])
-        self.assertEqual(len(set(compared)),1)
         self.assertIsNone(self.engine.max_model_len)
         self.assertIsNone(self.engine.max_num_seqs)
         self.assertIsNone(self.engine.max_num_batched_tokens)
