@@ -39,6 +39,7 @@ from src.scheduling.core.scheduler import (  # noqa: E402
     SharedCreditConfig,
     SynchronousScheduler,
 )
+from src.scheduling.core.topology import with_local_inflight  # noqa: E402
 from src.scheduling.runtime.execution import (  # noqa: E402
     SynchronousExecutionEngine,
 )
@@ -496,7 +497,7 @@ class SchedulerTests(unittest.TestCase):
             1.0,
         )
 
-        capped = SynchronousScheduler._topology_with_local_inflight(
+        capped = with_local_inflight(
             observed,
             {},
             per_endpoint_work_limit=20,

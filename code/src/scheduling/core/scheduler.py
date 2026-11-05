@@ -36,6 +36,7 @@ from .scheduler_types import (
     SubmissionAdapter as SubmissionAdapter,
 )
 from .ready_window import BoundedReadyWindow, ReadySubmission
+from .topology import with_local_inflight
 from .envelope_source import _ConcurrentEnvelopeSource
 
 
@@ -227,7 +228,7 @@ class SynchronousScheduler:
                 globally_allowed = self.admission.decide(
                     ledger.inflight_count, hol_age_s=hol_age_s
                 ).allowed
-                capacity_topology = self._topology_with_local_inflight(
+                capacity_topology = with_local_inflight(
                     topology,
                     ledger.contexts,
                     per_endpoint_limit=self.per_endpoint_limit,
@@ -621,7 +622,7 @@ class SynchronousScheduler:
             **ledger.contexts,
             **ready.routing_contexts(),
         }
-        routing_topology = self._topology_with_local_inflight(
+        routing_topology = with_local_inflight(
             topology,
             routing_context,
         )
@@ -681,7 +682,7 @@ class SynchronousScheduler:
             hol_age_s=hol_age_s,
         ).allowed:
             return False
-        capacity_topology = self._topology_with_local_inflight(
+        capacity_topology = with_local_inflight(
             topology,
             ledger.contexts,
             per_endpoint_limit=self.per_endpoint_limit,
@@ -760,60 +761,6 @@ class SynchronousScheduler:
             "priority_window_s": self.job_priority_window_s,
             "fairness_debt_cap": self.job_fairness_debt_cap,
         }
-
-    @staticmethod
-    def _topology_with_local_inflight(
-        topology: TopologySnapshot,
-        submission_context: Mapping[str, SubmissionContext],
-        *,
-        per_endpoint_limit: int | None = None,
-        per_endpoint_work_limit: int | None = None,
-        request_work: int = 0,
-    ) -> TopologySnapshot:
-        inflight_by_endpoint: dict[str, int] = {}
-        work_by_endpoint: dict[str, int] = {}
-        for item in submission_context.values():
-            endpoint_id = item.endpoint_id
-            inflight_by_endpoint[endpoint_id] = inflight_by_endpoint.get(endpoint_id, 0) + 1
-            work_by_endpoint[endpoint_id] = (
-                work_by_endpoint.get(endpoint_id, 0) + item.estimated_work
-            )
-        return replace(
-            topology,
-            endpoints=tuple(
-                replace(
-                    endpoint,
-                    available=(
-                        endpoint.available
-                        and (
-                            per_endpoint_limit is None
-                            or inflight_by_endpoint.get(endpoint.endpoint_id, 0)
-                            < per_endpoint_limit
-                        )
-                        and (
-                            per_endpoint_work_limit is None
-                            or (
-                                endpoint.estimated_active_work
-                                + work_by_endpoint.get(endpoint.endpoint_id, 0)
-                                == 0
-                            )
-                            or (
-                                endpoint.estimated_active_work
-                                + work_by_endpoint.get(endpoint.endpoint_id, 0)
-                                + request_work
-                                <= per_endpoint_work_limit
-                            )
-                        )
-                    ),
-                    running=(endpoint.running + inflight_by_endpoint.get(endpoint.endpoint_id, 0)),
-                    estimated_active_work=(
-                        endpoint.estimated_active_work
-                        + work_by_endpoint.get(endpoint.endpoint_id, 0)
-                    ),
-                )
-                for endpoint in topology.endpoints
-            ),
-        )
 
     def _topology_with_endpoint_admission(
         self,
