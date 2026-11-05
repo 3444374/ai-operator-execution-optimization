@@ -246,7 +246,7 @@ class HolAgeAimdAdmissionController:
 
 @dataclass(frozen=True)
 class ResourceFeedbackConfig:
-    """Opt-in feedback; explicit legacy budgets are not platform criteria."""
+    """Shared measured-work feedback options."""
     poll_interval_s: float = 0.25
     window_s: float = 1.0
     min_samples: int = 16
@@ -261,9 +261,7 @@ class ResourceFeedbackConfig:
     max_candidate_attempts: int | None = 2
     work_basis: str = "delivered"
     work_comparison: str = "envelope"
-    search_policy: str = "reference"
     pressure_response: str = "sample"
-    physical_probe_policy: str = "idle_majority"
 
     def __post_init__(self):
         for name in ("poll_interval_s", "window_s", "exploration_s"):
@@ -300,16 +298,8 @@ class ResourceFeedbackConfig:
             raise ValueError("work_comparison must be envelope or local_pairs")
         if self.work_comparison == "local_pairs" and self.work_basis != "computed":
             raise ValueError("local pairs require measured computed work")
-        if self.search_policy not in ("reference", "ascending"):
-            raise ValueError("search_policy must be reference or ascending")
-        if self.search_policy == "ascending" and self.work_comparison != "local_pairs":
-            raise ValueError("ascending search requires computed local pairs")
         if self.pressure_response not in ("sample", "window"):
             raise ValueError("pressure_response must be sample or window")
-        if self.physical_probe_policy not in ("idle_majority", "native_only"):
-            raise ValueError("physical_probe_policy must be idle_majority or native_only")
-        if self.physical_probe_policy != "idle_majority" and self.search_policy != "ascending":
-            raise ValueError("physical probe policy requires ascending request search")
 
 
 @dataclass(frozen=True)

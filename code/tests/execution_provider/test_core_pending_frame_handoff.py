@@ -1,16 +1,22 @@
-"""Keep an original source frame across a pending legacy RPC; CPU only."""
+"""Keep original native identity and age across a pending RPC; CPU only."""
 from concurrent.futures import Future
-from dataclasses import replace
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters import records_native_sampler as sampling
+from src.execution_provider.adapters import records_request_feedback as wiring
+from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider
+from tests.execution_provider.test_core_feedback_ray_future import (
+    bind_feedback, eligible_samples, make_feedback, native_frame,
+)
 
 
 class PendingFrameTests(unittest.TestCase):
     def setUp(self):
-        self.enterContext(patch.object(core, 'time', SimpleNamespace(monotonic=lambda: self.now)))
+        clock = SimpleNamespace(monotonic=lambda: self.now)
+        self.enterContext(patch.object(sampling, 'time', clock))
+        self.enterContext(patch.object(wiring, 'time', clock))
         self.make_feedback()
 
     def make_feedback(self):
@@ -25,20 +31,17 @@ class PendingFrameTests(unittest.TestCase):
             _actors=SimpleNamespace(model_ready=dict(engine_uid='CPU-pending-model'),
                 model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
                 ray=SimpleNamespace(cancel=lambda ref, **kw: cancels.append(ref))))
-        self.feedback = core._CoreFeedback(self.owner,
-            dict(kind='legacy_resource_feedback', poll_interval_s=.01))
         with patch('src.scheduling.runtime.observations.threading.Thread'):
-            self.feedback.begin(128, 2)
-        self.feedback.stream = SimpleNamespace(session=SimpleNamespace(session_id=7))
+            self.feedback = make_feedback(self.owner,session=7,poll_interval_s=.01,
+                max_sample_age_s=.5,provider_type=NonBlockingMetricsObservationProvider)
         self.provider = self.feedback.provider
         self.provider.clock = lambda: self.now
         self.provider._thread.is_alive.return_value = False
         self.addCleanup(self.feedback.stop)
 
     def frame(self, *, sequence=1, stamp=None, session=7, uid='CPU-pending-model'):
-        return dict(session_id=session, ipc=dict(native_feedback=dict(engine_uid=uid,
-            sequence=sequence, observed_at_s=self.now if stamp is None else stamp,
-            running=2, waiting=0, kv_usage=.1, preemptions_total=0, generation_tokens_total=16)))
+        return native_frame(session=session,uid=uid,sequence=sequence,
+            source_at_s=self.now if stamp is None else stamp,captured_at_s=self.now)
 
     def tick(self):
         self.provider._sample_once(self.provider.sampler)
@@ -65,7 +68,7 @@ class PendingFrameTests(unittest.TestCase):
         self.assertIs(self.feedback.ref, ref)
         self.assertIs(self.feedback.future, future)
         self.assertFalse(future.done())
-        self.assertEqual(self.feedback.snapshot_requests, 2)
+        self.assertEqual(self.feedback.requests, 2)
 
     def test_pending_polls_never_refresh_age_rate_or_consume_once_generation(self):
         self.publish()
@@ -83,54 +86,42 @@ class PendingFrameTests(unittest.TestCase):
             self.assertEqual(self.provider._service_rate_tokens_s_per_endpoint, rate)
         self.now = 10.6
         self.assertFalse(self.provider.latest(2).fresh)
-        self.assertEqual(self.feedback.samples, 1)
+        self.assertEqual(eligible_samples(self.feedback), 1)
         self.assertEqual(len(self.refs), 2)
-
-    def test_retained_age_still_allows_the_controller_to_reject_an_old_frame(self):
-        self.publish()
-        self.now = 10.02
-        self.tick()
-        observation = self.provider.latest(2)
-        self.assertTrue(observation.fresh)
-        self.assertAlmostEqual(observation.sample_age_s, .02)
-        options = replace(self.feedback.options, search_mode='geometric',
-            pressure_response='sample', window_s=.01, allow_exploration=True)
-        controller = core.ResourceFeedbackController(4, 2, options, clock=lambda: self.now)
-        controller.reset(2, 128)
-        decision = controller.update(observation)
-        self.assertEqual(decision.reason, 'missing_or_stale_feedback')
-        self.assertEqual(decision.window, 2)
-        self.assertEqual(controller.report()['changes'], 0)
 
     def test_a_frame_without_sequence_is_not_republished_as_another_sample(self):
         self.publish(self.frame(sequence=None))
-        self.assertTrue(self.provider.latest(2).fresh)
+        self.assertFalse(self.provider.latest(2).fresh)
         self.now = 10.02
         self.tick()
         self.assertIsNone(self.provider._snapshot)
         self.assertFalse(self.provider.latest(2).fresh)
 
-    def test_public_sample_retains_its_pending_None_result(self):
+    def test_public_sample_reuses_the_original_native_identity_while_pending(self):
         self.publish()
+        original = self.feedback.last_native
         for _ in range(3):
-            self.assertIsNone(self.feedback.sample())
+            self.assertIs(self.feedback.sample(), original)
         self.tick()
         self.assertTrue(self.provider.latest(2).fresh)
 
-    def test_expired_pending_RPC_clears_observation_but_keeps_its_original_ref(self):
+    def test_expired_pending_RPC_keeps_its_ref_without_refreshing_prior_source_age(self):
         self.publish()
+        original = self.provider._snapshot
         self.now = 10.02
         self.tick()
         ref, future = self.refs[-1]
-        self.feedback.ref_deadline = self.now
+        self.feedback.expiry = self.now
         self.tick(); self.tick()
-        self.assertFalse(self.provider.latest(2).fresh)
-        self.assertIsNone(self.provider._snapshot)
+        self.assertIs(self.provider._snapshot, original)
+        self.assertAlmostEqual(self.provider.latest(2).sample_age_s, .02)
         self.assertEqual(self.cancels, [ref])
         self.assertIs(self.feedback.ref, ref)
         self.assertIs(self.feedback.future, future)
         self.assertFalse(future.done())
         self.assertEqual(len(self.refs), 2)
+        self.now = 10.6
+        self.assertFalse(self.provider.latest(2).fresh)
 
     def test_invalid_return_or_exception_does_not_restore_an_older_frame(self):
         for kind in ('missing', 'session', 'model', 'exception'):
@@ -152,26 +143,23 @@ class PendingFrameTests(unittest.TestCase):
                 self.assertFalse(self.provider.latest(2).fresh)
                 self.assertIsNone(self.provider._snapshot)
 
-    def test_model_change_and_new_query_cannot_republish_previous_source(self):
+    def test_new_query_cannot_republish_the_previous_source(self):
         self.publish()
-        self.owner._actors.model_ready['engine_uid'] = 'new-CPU-model'
         self.now = 10.02
         self.tick()
-        self.assertIsNone(self.provider._snapshot)
         self.feedback.pause()
-        self.feedback.begin(128, 2)
-        self.feedback.stream = SimpleNamespace(session=SimpleNamespace(session_id=8))
+        bind_feedback(self.feedback, 8)
         old = self.refs[-1][1]
         old.set_result(self.frame())
         self.tick(); self.tick()
         self.assertIsNone(self.provider._snapshot)
-        self.refs[-1][1].set_result(self.frame(session=8, uid='new-CPU-model'))
+        self.refs[-1][1].set_result(self.frame(session=8))
         self.tick()
         self.tick()
         observation, source = self.provider.latest_with_source(2)
         self.assertTrue(observation.fresh)
         self.assertEqual(source.source_session_id, 8)
-        self.assertEqual(source.source_uid, 'new-CPU-model')
+        self.assertEqual(source.source_uid, 'CPU-pending-model')
 
     def test_rejected_future_timestamp_cannot_become_fresh_during_a_later_pending_read(self):
         self.publish(self.frame(stamp=10.03))
@@ -183,16 +171,20 @@ class PendingFrameTests(unittest.TestCase):
         self.assertFalse(self.provider.latest(2).fresh)
         self.assertIsNone(self.provider._snapshot)
 
-    def test_optional_receipt_clock_error_does_not_remove_a_valid_pending_frame(self):
+    def test_receipt_clock_error_collects_known_RPC_without_qualifying_unknown_age(self):
         self.tick()
         self.refs[0][1].set_result(self.frame())
-        with patch.object(core.time, 'monotonic', side_effect=RuntimeError('CPU audit clock unavailable')):
+        with patch.object(sampling.time, 'monotonic', side_effect=RuntimeError('CPU audit clock unavailable')):
             self.tick()
+        self.assertIsNone(self.feedback.ref)
+        receipt, = self.feedback.snapshot_rpc_receipts
+        self.assertTrue(receipt['future_done_confirmed'])
+        self.assertEqual(receipt['rpc_terminal_status'], 'returned')
+        self.assertEqual(receipt['frame_disposition'], 'invalid_frame')
         self.now = 10.02
         self.tick()
-        self.assertTrue(self.provider.latest(2).fresh)
-        self.assertIsNone(self.provider._snapshot.received_at_s)
-        self.assertEqual(self.feedback.sample_errors, 0)
+        self.assertFalse(self.provider.latest(2).fresh)
+        self.assertIsNone(self.feedback.last_native)
 
 
 if __name__ == '__main__':

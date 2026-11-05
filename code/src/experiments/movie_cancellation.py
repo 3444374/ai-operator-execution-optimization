@@ -38,7 +38,7 @@ def check_cancellation_plan(plan):
     if (plan['backend'] != 'semloom-core' or plan['lifecycle'] != 'resident'
             or plan.get('rolling_refill') is not True or not plan.get('prepared_batching')
             or len(plan['queries']) != 2 or any(q['phase'] != 'measured' for q in plan['queries'])
-            or plan.get('admission_cache') is not None or plan.get('batch_feedback') is not None
+            or plan.get('batch_feedback') is not None
             or type(plan['profile']) is not dict or plan['profile'].get('admission') is not None
             or plan['profile'].get('mode') != 'async'):
         raise ValueError('cancellation qualification requires two fixed async Core queries, without warmup or search')

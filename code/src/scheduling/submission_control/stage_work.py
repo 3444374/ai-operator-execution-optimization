@@ -19,11 +19,6 @@ def default_supply_feedback_options():
         work_basis="computed", work_comparison="local_pairs", max_candidate_attempts=None)
 
 
-def default_request_feedback_options():
-    """Rolling requests ascend on gains; the batch/reference policy stays explicit."""
-    return replace(default_supply_feedback_options(), search_policy="ascending")
-
-
 @dataclass(frozen=True)
 class SupplyFeedbackConfig:
     """Explicit operational ceiling; no task reference or historical optimum."""
@@ -35,8 +30,6 @@ class SupplyFeedbackConfig:
             raise ValueError("max_batches must be a positive operational ceiling")
         if type(self.options) is not ResourceFeedbackConfig:
             raise TypeError("options must be ResourceFeedbackConfig")
-        if self.options.search_policy != 'reference':
-            raise ValueError('ascending search controls rolling requests, not batch slots')
         if self.options.poll_interval_s > self.options.window_s:
             raise ValueError("poll interval must fit the measurement window")
 
@@ -290,20 +283,3 @@ class SupplyFeedbackController(ResourceFeedbackController):
                     control_seconds_scope='existing trial-controller calls only; gating/sampling stay in outer query wall',
                     CPU_GPU_utilization_and_physical_memory="not sampled; unknown",
                     capacity_is_performance_platform=False)
-
-
-class RequestSupplyFeedbackController(SupplyFeedbackController):
-    """Apply the same demand gates and request trials to individual requests.
-
-    B remains an organization budget. The caller supplies real request inflight
-    counts separately from transport-batch counts and retains its hard capacity.
-    """
-    control_unit = 'single_model_requests'
-
-    def __init__(self, max_requests, options=None, *, clock=None):
-        if type(max_requests) is not int or max_requests < 1:
-            raise ValueError('max_requests must be a positive operational capacity')
-        options = default_supply_feedback_options() if options is None else options
-        if type(options) is not ResourceFeedbackConfig or options.poll_interval_s > options.window_s:
-            raise ValueError('request feedback requires valid options and a poll interval within the window')
-        self._initialize_supply(max_requests, options, clock)

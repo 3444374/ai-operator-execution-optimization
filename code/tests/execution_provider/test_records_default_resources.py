@@ -2,9 +2,8 @@
 from dataclasses import asdict, replace
 import sys
 import unittest
-from unittest.mock import patch
 
-from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, RecordsCapacityBudget, resolve_records_async_limits
+from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, RecordsCapacityBudget
 from src.execution_provider.adapters.records_profile import resolve_core_profile, resolve_records_runtime
 from src.execution_provider.adapters.lotus_records_core import create_records_core
 from src.experiments.movie_records_config import records_runtime
@@ -83,21 +82,6 @@ class DefaultResourceTests(unittest.TestCase):
         self.assertEqual(configured.profile['resource_budget_source'],
                          'explicit deployment declaration; logical bounds, not measured RSS')
 
-    def test_sync_explicit_legacy_and_nonrolling_batch_declarations_remain_unchanged(self):
-        for profile in (dict(mode='sync',max_inflight=1),
-                        dict(mode='async',max_inflight=2,admission=dict(kind='legacy_resource_feedback')),
-                        'computed-work-local-pairs','delivered-work-scan'):
-            with self.subTest(profile=profile):
-                expected=resolve_core_profile(self.engine,self.resources,profile)
-                configured=resolve_records_runtime(self.engine,self.resources,profile)
-                self.assertIsNone(configured.capacity.budget)
-                self.assertEqual(configured.profile,expected)
-                if expected['mode']=='async':
-                    effective=replace(self.resources,max_active_batches=expected.get('owner_max_inflight',expected['max_inflight']))
-                    self.assertEqual(configured.async_limits,resolve_records_async_limits(effective,CoreRecordsCapacity()))
-        configured=resolve_records_runtime(self.engine,self.resources,dict(mode='async'),prepared_batching=object())
-        self.assertIsNone(configured.capacity.budget)
-
     def test_ordinary_and_session_helpers_use_the_same_complete_resolution(self):
         for key,backend in (('core_profile','semloom-local-model-core-async'),('profile','semloom-core')):
             config=dict(backend=backend,engine=asdict(self.engine),resources=asdict(self.resources),
@@ -108,12 +92,18 @@ class DefaultResourceTests(unittest.TestCase):
             self.assertEqual(actual.async_limits.result_slots,1)
             self.assertGreater(actual.capacity.budget.held_tasks,1)
 
-    def test_insufficient_bytes_fail_before_actor_construction(self):
-        with patch('src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as allocate:
-            with self.assertRaises(ValueError):
-                create_records_core(FilterMethod('fixture','Keep {reviewText}'),self.engine,GenerationSpec(),
-                    self.resources,profile=dict(mode='async'),async_limits=dict(input_bytes=2048,item_input_bytes=4096))
-        allocate.assert_not_called()
+    def test_sync_and_nonrolling_batch_declarations_remain_unchanged(self):
+        profile=dict(mode='sync',max_inflight=1)
+        expected=resolve_core_profile(self.engine,self.resources,profile)
+        configured=resolve_records_runtime(self.engine,self.resources,profile)
+        self.assertIsNone(configured.capacity.budget)
+        self.assertEqual(configured.profile,expected)
+        configured=resolve_records_runtime(self.engine,self.resources,dict(mode='async'),prepared_batching=object())
+        self.assertIsNone(configured.capacity.budget)
+        for retired in ('computed-work-local-pairs','delivered-work-scan',
+                        dict(mode='async',admission=dict(kind='legacy_resource_feedback'))):
+            with self.subTest(retired=retired), self.assertRaises(ValueError):
+                resolve_records_runtime(self.engine,self.resources,retired)
 
 
 if __name__=='__main__':

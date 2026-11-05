@@ -7,8 +7,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
 from tests.execution_provider import test_actor_resource_probe as fixture
+from tests.execution_provider.resource_request_sampler_fixture import ready, frame_age
 
 
 UID = 'a' * 32
@@ -17,7 +17,9 @@ UID = 'a' * 32
 class RejectedResourceAuditTests(unittest.TestCase):
     def feedback(self, *, reference=False, observer=None):
         feedback, calls, futures = fixture.ActorResourceProbeTests().feedback(reference=reference)
-        feedback.owner._actors.model_ready['engine_uid'] = UID
+        feedback.owner._actors.model_ready = ready(UID)
+        if not reference:
+            feedback._bind_request_policy(7, 1)
         self.addCleanup(feedback.close)
         if observer is not None:
             feedback.provider = SimpleNamespace(observe_native=observer, is_running=False,
@@ -30,10 +32,10 @@ class RejectedResourceAuditTests(unittest.TestCase):
         packet['sample']['sources']['host'].update(cpu_metrics_status='observed',
             cpu_counter_sample_sequence=2, cpu_counter_read_start_monotonic_ns=100,
             cpu_counter_read_end_monotonic_ns=200)
-        return dict(session_id=session, resources=packet,
+        return frame_age(dict(session_id=session, resources=packet,
             ipc=dict(native_feedback=(dict(engine_uid=UID, sequence=12,
                 observed_at_s=time.monotonic(), running=1, waiting=0, kv_usage=.1,
-                generation_tokens_total=4, preemptions_total=0) if native else None)))
+                generation_tokens_total=4, preemptions_total=0) if native else None))))
 
     def receive(self, feedback, futures, frame):
         self.assertIsNone(feedback.sample())

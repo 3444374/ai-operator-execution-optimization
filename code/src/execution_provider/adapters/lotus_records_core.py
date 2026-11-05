@@ -30,7 +30,7 @@ from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import (
     BoundedAsyncBackend as BoundedAsyncBackend, ConfirmedTaskFailure as ConfirmedTaskFailure,
 )
-from src.scheduling.submission_control.admission import StaticAdmissionController, DynamicAdmissionGate
+from src.scheduling.submission_control.admission import StaticAdmissionController
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
@@ -43,15 +43,13 @@ from .records_model_adapter import (
     _check_result_capacity, _encode, _measure,
 )
 from .records_profile import (
-    expand_core_profile as expand_core_profile, resolve_core_profile, resolve_record_batching,
+    resolve_core_profile, resolve_record_batching,
     resolve_records_runtime,
 )
 from .records_transport import (
     _await_result as _await_result, _check, _RecordTransport, close_prepared_core,
 )
 from .records_runtime_identity import observe_ray_runtime
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
-from src.scheduling.runtime.observations import ServiceMetricsSnapshot, NonBlockingMetricsObservationProvider
 
 
 def create_records_core(method, engine, generation, resources=None, *, profile=None, async_limits=None,
@@ -441,9 +439,7 @@ class SemLoomRecordsCore:
             self._actors.limits = replace(self._actors.limits,
                 feedback_interval_s=configured["admission"]["poll_interval_s"])
             from .records_request_feedback import CoreResourceRequestFeedback
-            feedback_type = (_CoreFeedback if configured['admission']['kind'] == 'legacy_resource_feedback'
-                             else CoreResourceRequestFeedback)
-            self._feedback = feedback_type(self, configured["admission"])
+            self._feedback = CoreResourceRequestFeedback(self, configured["admission"])
             self.execution_profile.update(configured)
         self.core = self.transport = self._active = None
         self._closing = False
@@ -529,7 +525,7 @@ class SemLoomRecordsCore:
 
     def evaluate(self, source, *, query_id, method: FilterMethod | None = None,
                  cancelled: Callable[[], bool] | None = None, max_inflight: int | None = None,
-                 allow_exploration: bool | None = None, search_hint: dict | None = None):
+                 allow_exploration: bool | None = None):
         self._control()
         if self._closing or (self.core is not None and
                              (self.core.error or self.core.capacity.usage().held_tasks)):
@@ -537,9 +533,6 @@ class SemLoomRecordsCore:
         if self._active is not None and not self._active.finished:
             raise RuntimeError("Core records already owns an active query")
         query_limits, query_profile = None, dict(self.execution_profile)
-        if search_hint is not None and (self._feedback is None or
-                getattr(self._feedback.base_options, 'search_mode', None) != "geometric"):
-            raise ValueError("search_hint requires geometric resource feedback")
         if allow_exploration is not None:
             if self._feedback is None or type(allow_exploration) is not bool:
                 raise ValueError("per-query exploration requires resource feedback and a boolean")
@@ -548,8 +541,7 @@ class SemLoomRecordsCore:
             if (query_profile["mode"] != "async" or type(max_inflight) is not int
                     or not 1 <= max_inflight <= query_profile.get("owner_max_inflight", query_profile["max_inflight"])):
                 raise ValueError("query in-flight must fit the existing async model owner")
-            if (self._feedback is not None and getattr(self._feedback, 'initial_window_required', None) == 1
-                    and max_inflight != 1):
+            if self._feedback is not None and max_inflight != 1:
                 raise ValueError('resource requests start at one without cross-query hints')
             if self._feedback is None:
                 query_limits = self.capacity.limits(replace(self.resources, max_active_batches=max_inflight))
@@ -623,7 +615,7 @@ class SemLoomRecordsCore:
                 self._actors.ray = ray
             if self._feedback is not None:
                 self._feedback.begin(len(expected), query_profile["max_inflight"],
-                                     allow_exploration=allow_exploration,search_hint=search_hint)
+                                     allow_exploration=allow_exploration)
             if self.core is None:
                 limits = self.capacity.limits(self.resources)
                 endpoint = EndpointSnapshot("local-model", "local://model", "local", "0",
@@ -792,234 +784,3 @@ class SemLoomRecordsCore:
             self._service_allocation.settle(self)
             report['service_allocation'] = self._service_allocation.describe()
         return taken
-
-
-class _CoreFeedback:
-    """Query-scoped observation; Core remains the only admission/credit owner."""
-    @property
-    def uses_computed_work(self):
-        return self.options.work_basis == 'computed'
-    def __init__(self, owner, admission):
-        self.owner = owner
-        self.options = ResourceFeedbackConfig(**{k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")})
-        self.base_options = self.options
-        self.gpu_ids = admission.get("gpu_ids", ())
-        self.gate = self.provider = self.stream = self.ref = self.future = None
-        self.controller = None
-        self.progress = (0, 0, 0, False)
-        self.completed_work = (0, None, None)
-        self.completed_effective_work = (0, None, None)
-        self.transition_keys = set()
-        self.generation = 0
-        self.ref_deadline = None
-        self.ref_expired = False
-        self._provider_frame = self._sample_pending_generation = None
-        self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
-
-    def begin(self, total, initial, *, allow_exploration=None, search_hint=None):
-        self.options = (self.base_options if allow_exploration is None else
-                        replace(self.base_options, allow_exploration=allow_exploration))
-        self.generation += 1
-        self._provider_frame = self._sample_pending_generation = None
-        self.started = time.monotonic()
-        self.stream = None
-        self.progress = (0, total, 0, False)
-        self.completed_work = (0, None, None)
-        self.completed_effective_work = (0, None, None)
-        self.transition_keys.clear()
-        self.samples = self.snapshot_requests = self.sample_errors = self.peak_native_running = 0
-        source_age_limit = (max(.5, self.options.poll_interval_s * 3) if self.provider is None
-                            else self.provider.stale_after_s)
-        self.controller = ResourceFeedbackController(self.owner.resources.max_active_batches, initial, self.options,
-            source_stale_after_s=source_age_limit)
-        self.controller.reset(initial, total, search_hint=search_hint)
-        if self.provider is None:
-            self.provider = NonBlockingMetricsObservationProvider(self._sample_for_provider,
-                poll_interval_s=self.options.poll_interval_s,
-                # Delivery already consumes up to two poll periods; allow one
-                # more for the gate's scheduled consumption of the source frame.
-                stale_after_s=source_age_limit, close_timeout_s=.1)
-        else:
-            self.provider.poll_interval_s = self.options.poll_interval_s
-            self.provider.resume()
-        if self.gate is None:
-            self.gate = DynamicAdmissionGate(self.controller, self.provider, trace_sink=self.changed,
-                min_update_interval_s=self.options.poll_interval_s)
-        else:
-            self.gate.controller, self.gate.observation_provider, self.gate.limit = self.controller, self.provider, initial
-            self.gate.reset_cadence()
-        self.last_window = initial
-
-    def sample(self):
-        timings = getattr(getattr(self.owner, "transport", None), "timings", None)
-        with _measure(timings, "feedback_poll"):
-            return self._sample()
-
-    def _sample_for_provider(self):
-        generation = self.generation
-        self._sample_pending_generation = None
-        sample = self.sample()
-        if generation != self.generation:
-            return None
-        if sample is not None:
-            try:
-                eligible = (isinstance(sample, ServiceMetricsSnapshot)
-                    and sample.source_sequence is not None
-                    and sample.source_observed_at_s is not None
-                    and sample.source_observed_at_s <= self.provider.clock())
-            except Exception:
-                eligible = False  # Optional cache metadata cannot discard a returned frame.
-            self._provider_frame = (generation, sample) if eligible else None
-            return sample
-        if self._sample_pending_generation != generation:
-            self._provider_frame = None
-            return None
-        cached, stream = self._provider_frame, self.stream
-        ready = getattr(self.owner._actors, 'model_ready', None) or {}
-        if (cached is None or cached[0] != generation or stream is None
-                or cached[1].source_session_id != stream.session.session_id
-                or cached[1].source_uid != ready.get('engine_uid')):
-            return None
-        return cached[1]
-
-    def _observe_native(self,snapshot,value,received_at_s,*,accepted,reason):
-        audit=getattr(self.provider,"observe_native",None)
-        if callable(audit):
-            try:audit(snapshot,session_id=value.get("session_id"),received_at_s=received_at_s,
-                      accepted=accepted,reason=reason)
-            except Exception:pass
-
-    def _sample(self):
-        generation, stream = self.generation, self.stream
-        if stream is None:
-            return None
-        try:
-            if self.ref is None:
-                self.ref = self.owner._actors.model_actor.snapshot.remote()
-                self.snapshot_requests += 1
-                self.future = self.ref.future()
-                self.ref_deadline = time.monotonic() + max(.1, self.options.poll_interval_s * 2)
-                self.ref_expired = False
-            future = self.future
-            if not future.done():
-                if not self.ref_expired and time.monotonic() >= self.ref_deadline:
-                    self.ref_expired = True
-                    try:
-                        self.owner._actors.ray.cancel(self.ref, force=False)
-                    except Exception:
-                        self.sample_errors += 1
-                if not self.ref_expired:
-                    self._sample_pending_generation = generation
-                return None
-            if self.ref_expired:
-                self.ref = self.future = None
-                return None
-            value = future.result()
-            try:received_at_s = time.monotonic()
-            except Exception:received_at_s = None
-            if generation != self.generation:
-                return None
-            self.ref = self.future = None
-            ipc = value.get("ipc") or {}
-            snapshot = ipc.get("native_feedback")
-            if snapshot is None:
-                self._observe_native(None,value,received_at_s,accepted=False,reason="native_frame_missing")
-                return None
-            expected = self.owner._actors.model_ready["engine_uid"]
-            reason = ("engine_uid_mismatch" if snapshot.get("engine_uid") != expected else
-                      "session_mismatch" if value.get("session_id") != stream.session.session_id else
-                      "source_predates_query" if snapshot.get("observed_at_s", -1) < self.started else "RPC_sample_valid")
-            self._observe_native(snapshot,value,received_at_s,accepted=reason=="RPC_sample_valid",reason=reason)
-            if reason != "RPC_sample_valid":
-                return None
-            completed, pending, transition, backpressure = self.progress
-            work_count, input_work, output_work = self.completed_work
-            if work_count != completed:
-                input_work = output_work = None
-            effective_count, computed_work, cached_work = self.completed_effective_work
-            if effective_count != completed:
-                computed_work = cached_work = None
-            pressure = None
-            if self.gpu_ids:
-                from src.observability.metrics.resources import gpu_metadata
-                gpu = gpu_metadata(self.gpu_ids, use_nvml=True)
-                if gpu["gpu_memory_used_mib"] and gpu["gpu_memory_total_mib"]:
-                    free = (float(gpu["gpu_memory_total_mib"]) - float(gpu["gpu_memory_used_mib"])) * 1024**2
-                    pressure = free < self.options.memory_floor_bytes if self.options.memory_floor_bytes else None
-            if generation != self.generation:
-                return None
-            self.samples += 1
-            self.peak_native_running = max(self.peak_native_running, snapshot["running"])
-            return ServiceMetricsSnapshot(snapshot["running"], snapshot["waiting"], snapshot["kv_usage"],
-                source_uid=snapshot["engine_uid"], source_session_id=value["session_id"], received_at_s=received_at_s,
-                completed_tokens_total=snapshot["generation_tokens_total"],
-                source_sequence=snapshot["sequence"], source_observed_at_s=snapshot["observed_at_s"],
-                completed_items_total=completed, pending_items=pending,
-                preemptions_total=snapshot["preemptions_total"], memory_pressure=pressure,
-                transition_pending=transition, consumer_backpressure=backpressure,
-                completed_input_work_total=input_work, completed_output_work_total=output_work,
-                completed_computed_input_work_total=computed_work,
-                completed_cached_input_work_total=cached_work)
-        except Exception:
-            if generation == self.generation:
-                self.ref = self.future = None
-                self.sample_errors += 1
-            return None
-        finally:
-            if generation == self.generation and self.provider is not None:
-                self.provider.poll_interval_s = (self.options.poll_interval_s if self.ref is not None
-                    else self.controller.sampling_interval_s(self.progress[1]))
-
-    def observe(self, stream):
-        if self.stream is not stream:
-            return
-        if self.transition_keys:
-            records = self.owner.core.capacity.records
-            self.transition_keys = {key for key in self.transition_keys
-                                    if key in records and records[key].compute}
-        records = tuple(r for r in self.owner.core.capacity.records.values()
-                        if r.key.session_id == stream.session.session_id)
-        unsubmitted = len(stream.expected) - len(stream.offered) + sum(r.phase == "QUEUED" for r in records)
-        ready = sum(r.phase in ("READY", "LEASED") for r in records)
-        self.progress = (len(stream.received), unsubmitted, len(self.transition_keys),
-                         ready >= self.controller.current_window)
-        self.completed_work = stream.completed_work
-        self.completed_effective_work = stream.completed_effective_work
-
-    def changed(self, event):
-        if event.window != self.last_window:
-            self.last_window = event.window
-            self.transition_keys = {r.key for r in self.owner.core.capacity.records.values() if r.compute}
-            self.observe(self.stream)
-
-    def pause(self):
-        self.generation += 1
-        self._provider_frame = self._sample_pending_generation = None
-        if self.provider is not None:
-            self.provider.pause()
-        if self.ref is not None and not self.ref_expired:
-            self.ref_expired = True
-            try:
-                self.owner._actors.ray.cancel(self.ref, force=False)
-            except Exception:
-                self.sample_errors += 1
-
-    def stop(self):
-        self.pause()
-        if self.provider is not None:
-            self.provider.close()
-
-    def finish(self, stream):
-        if self.stream is not stream:
-            return getattr(stream, "_admission_report", None)
-        self.pause()
-        stream._admission_report = dict(self.controller.report(), samples=self.samples,
-            snapshot_requests=self.snapshot_requests, exploration_enabled=self.options.allow_exploration,
-            exploration_poll_interval_s=self.options.poll_interval_s,
-            protection_poll_interval_s=(self.options.poll_interval_s if self.options.pressure_response == 'sample'
-                                        else max(self.options.poll_interval_s, self.options.window_s)),
-            source_stale_after_s=self.provider.stale_after_s,
-            sample_errors=self.sample_errors, peak_native_running=self.peak_native_running,
-            sampling_paused=True, sampler_scope="model_owner", sampler_stopped=not self.provider.is_running)
-        self.stream = None
-        return stream._admission_report

@@ -4,10 +4,25 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+<a id="legacy-request-retirement"></a>
+## 旧请求反馈入口退役（2026-11-05，本地候选）
+
+首个退役候选 `e70d11ff` 基于已发布的 `3fd3887e`；后续组合 `678250ee`，105 项相关 CPU 通过；再接入无重叠的 `9652108d` 租约修复，定向 1 项通过。
+当前组合未推送、未合并，等待最终独审。普通、rolling、Movie 与
+session 的请求反馈只接受显式 `resource_feedback`，默认固定请求策略保持。旧 `legacy_resource_feedback`、
+两个具名 profile、跨查询推荐缓存和专用回调从现用入口删除；共享批反馈与计量继续使用原实现。
+[逐文件清单、检查与代码量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+说明本批实际范围，早期段落中的旧入口均按当时版本解释。
+
+空查询不加载模型或开始资源采样，常驻查询清除上一查询的采样来源。合法依赖、原始数据、
+未消费结果与未知请求责任保持。本批没有实现物理 RAM 授予，也没有取消模型、IPC 或字节容量。
+历史机制及原测试从[准确 Git 来源](../experiments/reproduction/native_baselines/README.md#retired-request-feedback)
+独立恢复，不能将旧文件叠加回当前运行器。9da 服务器对照和原生 baseline 未修改。
+
 <a id="records-runtime-modules-cpu"></a>
 ## Records 执行模块整理与独立预算（2026-11-04）
 
-当前 PR90 仍为 bfb；本地整理候选尚未进入该 PR，未推送或合并，仍待独审与统一整合。
+这一早期批次开始时 PR90 为 bfb；下列数字按该批本地整理候选解释。后续状态见本页最新记录。
 上一批完整受测源码 `ce75c7c5`，tree `aa69f857bd9c16626e544d9dd35b613416853b98`。
 [主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)维护完整职责图、
 457 个源码 Python 文件／127 个脚本／22 类模块的复用、重构、退出与待做清单。
@@ -101,21 +116,17 @@ native Engine 同步单项额度与显式总预算。PG 现有帧保持 1 MiB，
 <a id="pressure-sample-cpu-fix"></a>
 ## 压力采样与 rolling 内存配置（本地 CPU 修复）
 
-基于`5ff54bfe`的独立候选将新鲜抢占增量／明确内存压力的响应放在吞吐窗口之前，
-按provider采样序号去重；无序号的直接调用按采样时刻去重。新模式停止探索后继续按采样间隔读取，
-具名历史配置保留原窗口响应和节奏。旧在途任务与字节责任仍按原结果确认流程结算。
-rolling未接内存保护源，正值`memory_floor_bytes`在配置阶段拒绝。
-[策略与适用范围](src/scheduling/runtime/calibration.README.md#pressure-sample-response)、
+这一历史候选先将新鲜抢占／内存压力的响应提前，并保持旧任务的资源责任；
+后来请求路径已由当前资源策略取代。旧双 50% 试探、`physical_probe_policy` 与具名策略不再接受配置。
+[当前采样说明](src/scheduling/runtime/calibration.README.md#pressure-sample-response)、
 [压力与记账用例](tests/scheduling/test_resource_pressure_clock.py)及
-[配置检查](tests/execution_provider/test_rolling_feedback_signals.py)只支持CPU行为判断；
-真实Ray／模型／GPU及完整查询性能尚未验证，独审待完成。
+[公共配置检查](tests/execution_provider/test_records_request_feedback.py)仍维护。
+本轮只提供 CPU 行为证据，真实 Ray、模型、GPU 与完整查询性能另行验证。
 
 <a id="physical-probe-policy-cpu"></a>
-双50%继续作为物理大步试探的默认启发式，未作为总探索停止线或安全上限。
-独立、默认关闭的`physical_probe_policy="native_only"`仅关闭这条捷径，保留原生反馈、
-普通候选与原请求／字节保护；资源归属代码不在此候选中修改。
-[选项与适用范围](src/scheduling/runtime/calibration.README.md#physical-probe-policy)及
-[CPU反例](tests/scheduling/test_resource_probe_policy.py)不支持真实资源或性能结论，独审待完成。
+旧物理试探选项随旧请求入口退役；当时源码、说明和专属测试从
+[准确历史来源](../experiments/reproduction/native_baselines/README.md#retired-request-feedback)读取。
+实际资源观测、现代许可和独立批反馈没有因此删除。
 
 <a id="resource-allocation-candidate"></a>
 资源归属候选以 `5ff54bfe` 为底座独立修改；`9b731ab9` 经独审后修订，当前等待复审。机器观测、SemLoom records 启动声明与校准身份使用有效 CPU 配额；
@@ -396,8 +407,8 @@ B只组织每次传输，批成员提交后不追加；请求、驻留、字节�
 CPU 区间归属修复改为采集器实例累计计数器差分，并保留拒绝的原始间隔／原因；不改采样频率、1 秒资格或 actor 并发。
 该增量有无模型 CPU 回归，新增真实 Ray 组合资格和模型 LIGHT 复验仍待执行；历史 21 条被拒间隔的原值无法补作已知。
 具体判据、边界与旧动态负结果见[策略说明](src/scheduling/runtime/calibration.README.md#rolling-请求的上探与条件续扫)。
-新策略仅有[CPU状态机](tests/scheduling/test_ascending_request_scan.py)、[成本边界](tests/scheduling/test_resource_step.py)
-和[完整查询入口](tests/experiments/test_movie_ascending_feedback.py)、[资源触发链](tests/experiments/test_movie_resource_probe.py)
+当时策略的[CPU状态机](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/tests/scheduling/test_ascending_request_scan.py)、[成本反例](tests/scheduling/test_resource_step.py)
+和[完整查询入口](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/tests/experiments/test_movie_ascending_feedback.py)、[资源触发链](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/tests/experiments/test_movie_resource_probe.py)
 验证，待复审及真实Ray／模型／性能复验；旧实测不改标本候选。
 
 准确`41ce4c24`的真实Ray/模型功能范围独审通过：198条提交含174成功、17项预期确认容量失败、7项取消unknown；覆盖129+1组批、后继提前推进、关系屏障、取消、关闭分页7→3→0及ACK释放。unknown不计为成功或确认失败。
@@ -459,7 +470,7 @@ close报告另列首次actor批ACK的accepted/rejected/unknown与尚待确认数
 RF 保持声明的请求容量。模型原生缓存仍可能跨查询保留，不能将其计算复用直接算作调度收益。
 
 [`movie_records_session.check_plan()`](src/experiments/movie_records_session.py)只放行上述 rolling resident 组合；批槽反馈、admission cache 及非 rolling token resident 仍拒绝。不同模型身份或运行绑定拒绝；更换部署／生成／容量配置须创建新的 owner。执行失败、取消、提前关闭或未确认排空会关闭当前 owner 并禁止继续复用，不清零 unknown。
-[复用 CPU 测试](tests/experiments/test_movie_token_resident_session.py)覆盖连续查询、不同合法 Filter 指令、空查询、账本／原生请求身份隔离、显式旧策略重置以及失败／取消和最终关闭；[新策略入口](tests/experiments/test_movie_ascending_feedback.py)另核验条件续扫及完整结果处理后才提交提示。模型为 CPU 子进程替代，Ray 为 threaded fixture。这不是新策略 GPU 常驻或加速证据，也不开放任意链、动态 B 或跨 owner 学习。
+[复用 CPU 测试](tests/experiments/test_movie_token_resident_session.py)覆盖连续查询、不同合法 Filter 指令、空查询、账本／原生请求身份隔离、显式旧策略重置以及失败／取消和最终关闭；[新策略入口](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/tests/experiments/test_movie_ascending_feedback.py)另核验条件续扫及完整结果处理后才提交提示。模型为 CPU 子进程替代，Ray 为 threaded fixture。这不是新策略 GPU 常驻或加速证据，也不开放任意链、动态 B 或跨 owner 学习。
 已测首次查询按原边界保留，不能从时间中减去估计加载成本后补成复用成绩；Movie 与历史 `802b0b50` 的口径见[对照规范](../experiments/plans/reference/对照规范.md#movie-session-query-timing)。
 
 <a id="batch-supply-feedback"></a>
@@ -764,7 +775,7 @@ Ray 资格入口另修正测试总数写死为五项的问题：按实际方法�
 
 未接入现用执行链的 `BoundedStageWorkController` 和专用 `WorkCreditDecision` 已移出生产模块；
 原三项行为测试检查已有历史原件，五份具名代码投影保持准确字节。供给／请求控制器和
-显式 `legacy_resource_feedback`／具名 profile 仍有实际接线，本批保留。
+显式历史 profile 在这一早期批次仍保留；后续已按本页退役记录移出现用入口。
 [退役清单及 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
 同时记录两项旧测试字段断言的更新，没有改变模型、资源或查询条件。
 

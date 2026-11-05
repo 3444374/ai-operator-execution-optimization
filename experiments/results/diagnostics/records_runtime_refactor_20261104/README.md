@@ -1699,3 +1699,99 @@ Core／Method／IPC 的许可及结果责任仍由原实现管理，关闭后使
 101 项有结果、日志与运行脚本；12 项后测来自当次会话转录，没有独立执行日志；早期失败仅有结构化摘录。
 这只是 CPU fixture 组合验证：没有真实 Ray、模型、GPU 或 PostgreSQL 运行，也没有性能／质量结论。
 完整 source／expected 仍沿用已有有限输入声明，本次没有实现通用流式 source 或任意 DAG 编译。
+<a id="legacy-request-retirement"></a>
+## 旧请求反馈与缓存接线退出当前路径
+
+首个退役候选 `e70d11ff` 基于已发布 PR 90 的 `3fd3887eddc8e185d8b954ac713c26f60eafbdba`，以实际调用关系删除旧机制，
+没有重写现代控制器、增加控制层或修改模型参数。候选尚未推送或合并，完整组合仍待独立审查。
+[机器摘要](raw/legacy_entry_retirement_checks.json)与[压缩原始记录](raw/legacy_entry_retirement_raw.json.gz)
+保存逐文件摘要、逐方法处理、全部首轮失败、后续修正及可比代码量。
+
+| 生产文件（相对 `code/src/`） | 实际处理 |
+|---|---|
+| `execution_provider/adapters/records_profile.py` | 删除两个具名历史 profile、旧 kind 与旧专属参数分支；当前请求配置只解析 `ResourceRequestConfig` |
+| `execution_provider/adapters/lotus_records_core.py` | 删除旧 `_CoreFeedback` 和跨查询 hint 参数，普通路径只组装现代反馈；唯一类型判断直接表达 |
+| `execution_provider/adapters/records_request_feedback.py` | 不再过滤旧 GPU 配置；空查询不绑定模型来源，下一查询重新绑定实际 owner |
+| `execution_provider/adapters/lotus_records_batches.py` | 删除旧请求类型选择和 hint 确认转发 |
+| `execution_provider/adapters/lotus_record_chain_core.py` | 删除旧请求适配选择、跨查询推荐状态及其确认回调；任务 ACK、结果转交和未知 RPC 结算保持 |
+| `execution_provider/adapters/lotus_chain_token_batches.py` | 删除被现代实现替代的 `RequestSupplyFeedback`；批量反馈保留 |
+| `execution_provider/adapters/records_service_config.py` | 去掉重复的旧路径专属检查，由当前配置解析一次拒绝 |
+| `scheduling/submission_control/request_scan.py` | 删除 `AscendingRequestController`；现代 `ResourceRequestController` 保持原算法 |
+| `scheduling/submission_control/resource_probe.py` | 删除只由旧请求适配器调用的资源试探函数；现代许可及共享观测保留 |
+| `scheduling/submission_control/stage_work.py` | 删除旧请求控制子类及旧默认生成器，独立批反馈保留 |
+| `scheduling/submission_control/adaptive.py` | 删除旧请求专属的 `search_policy`、`physical_probe_policy` 字段；共享批反馈和几何／局部工作量比较保留 |
+| `scheduling/runtime/calibration.py` | 删除旧单遍推荐缓存执行及其身份 helper；一般校准与离线 Core 校准保留 |
+| `experiments/lotus_records_movie.py` | 删除旧缓存创建、验证和查询 hint 回调接线 |
+| `experiments/movie_records_config.py` | 删除 `admission_cache` 配置及旧专属 helper；复用完整运行配置 |
+| `experiments/movie_records_session.py` | session 不再装配旧缓存或确认旧推荐 |
+| `experiments/movie_matrix_support.py` | 删除旧缓存绑定与查找函数，不增加替代执行器 |
+| `experiments/movie_cancellation.py` | 删除已由公开配置解析拒绝的旧缓存检查；取消和批反馈规则保持 |
+
+当前 `resource_feedback` 仍须显式选择，从一个请求开始；默认固定策略不变。显式 `gpu_ids` 不再属于该配置，
+来源取实际模型 actor 的就绪及采样报告。独立 `batch_feedback`、实际资源许可、输入／结果预算、合法后继、
+Filter→Map 原数据、Extract 完整关系处理与未决请求责任均保留。没有借此取消 R、IPC 或模型实际容量，
+也没有把逻辑字节授予变成物理内存保证。
+
+首次迁移发现真实空输入问题：rolling 仍试图在没有模型时绑定 ready。修正后零工作不启动模型或采样，
+普通查询记自己的真实 session，常驻后续查询不沿用旧资源来源。独立 CPU 演练完成空→非空→空→非空，
+四个查询使用四个 session、一个模型替身，最终清理成功；这不是实际模型运行。
+
+测试同步迁移到原有 `RecordsNativeSampler` 和现代反馈 owner，删除 24 个只服务旧机制的测试／夹具文件；
+共享行为断言与删除项分别登记。逐断言复核发现一个现代配置用例未被等价覆盖，已逐字恢复并单独通过，
+没有用相似测试名代替实际覆盖。另一项同分支的分配前字节拒绝检查作为重复清理登记。
+旧机制整体从[准确 9da 树](../../../reproduction/native_baselines/README.md#retired-request-feedback)恢复；
+退役时已有后续修订的测试按清单中的 3fd 来源恢复，不能将全部原件写成来自 9da。
+原五份具名投影及其摘要、原生 baseline 和 9da 服务器对照未修改。
+
+组合首次选择 566 项：559 成功、6 项真实 Ray 跳过、1 个预算身份迁移用例失败。
+该用例错误要求身份包含实验累计调用预算，修正后定向通过；此前另一轮的历史字段及身份预期失败也保留。
+随后唯一反馈类型判断的精简有 24 项相关回归通过，恢复的原现代用例 1 项通过。
+后续只重跑受影响项。按实际方法 ID 去重，首个候选检查过 567 项，561 成功、6 项真实 Ray 未运行；
+首轮与修订分别保存。五项 Future 真实 Ray 方法名称与资格脚本引用保持，另一项主机 CPU Ray 测试也保留。
+四个原生历史恢复用例和 474 帧原样回放均在本轮通过范围内，既有历史差异与早期失败记录不改判。
+
+### 可比生产代码量
+
+物理行包括空行、注释和文档字符串；核心仅为 `code/src/**/*.py`，排除 `experiments` 与 `baselines`。
+所有源码包括这两目录；脚本另列，不含测试、结果、文档和历史恢复副本。统计使用准确 Git 来源及候选文件字节，
+千行文件按大于 1000 行，百行函数按 AST 起止行差计算，含方法和嵌套，不含装饰器。
+
+| 来源 | 核心物理行 | 所有源码物理行 | 脚本物理行 | 核心千行文件 | 核心百行函数 |
+|---|---:|---:|---:|---:|---:|
+| 固定 main `6a8a2d7b` | 54,091 | 109,118 | 31,217 | 7 | 50 |
+| 本批起点 `3fd3887e` | 61,628 | 118,067 | 31,578 | 9 | 57 |
+| 首个退役候选 `e70d11ff` | 60,177 | 116,430 | 31,578 | 7 | 55 |
+| 已发布准备交错 `678250ee` | 61,641 | 118,080 | 31,578 | 9 | 57 |
+| 当前组合候选 | 60,191 | 116,444 | 31,578 | 7 | 55 |
+
+首个退役候选相对 3fd 核心净减 1,451 行，所有源码净减 1,637 行；当前组合保留 678 的准备交错并恢复一项实际使用的报告字段。
+当前相对最新 678，核心净减 **1,450 行**，所有源码净减 **1,636 行**；相对 3fd 分别净减 **1,437 行**和 **1,623 行**。
+脚本没有变化，移动文件和测试删除不计入生产减少。相对固定 main，当前核心仍多 **6,100 行**、所有源码仍多 **7,326 行**，
+因此整个项目尚未变小或完成重构。核心文件数仍为 248；后续按真实职责整理大文件，避免无意义包装。
+
+尚未完成：物理 RAM 授予、完整关系存储与跨进程恢复；剩余大文件的职责整理；准确组合的真实 Ray、
+模型、GPU 和完整查询比较。`_RecordLocalRows` 已在 `records_query_runtime.py`，不会再次提取同一职责；
+`_SectionTransport` 可移到现有 actor 传输模块，但该文件正被另一实验使用，先协调实际版本，不并行覆盖。
+现代请求控制器剩余的无推荐占位接口及共享几何代码的职责也继续单独核查，不为历史复现复制第二套生产实现。
+
+
+### 与已发布准备交错的准确组合
+
+交付前 PR 90 已推进到 `678250ee341cfa710ab9a0a05c63ce67b6e3ed67`。保留首个退役候选和原证据，
+在独立工作树组合；三份文档的追加冲突保留双方记录，最新 `code/AGENTS.md` 保持原字节。
+新版本的准备模式检查和公开报告实际使用 `request_feedback_kind`，因此从已验证配置恢复这个字段；
+其值仍只能是当前 `resource_feedback`，没有重开旧策略。`records_query_runtime.py` 和 Movie 准备模式测试
+均与 678 逐字节相同，其他十六份退役生产文件与首个候选相同。
+
+[组合摘要](raw/legacy_preparation_composition_checks.json)和[完整方法结果、来源及复核](raw/legacy_preparation_composition_raw.json.gz)
+记录 105 个不同 CPU 方法通过，无实际用例失败或跳过。首次清单误写一个测试模块目录，99 个方法先通过，
+该导入错误保持；只对正确目录下的 6 个方法补跑，不重复已通过部分。这 105 项与首个候选有重叠，不相加。
+独立复核确认报告字段有真实消费者，现代允许项与旧策略拒绝项一致。当前组合仍需最终独审，未推送或合并；
+原六项真实 Ray 和模型／GPU 检查仍待运行，没有借原 9da 对照取得新源码资格。
+
+
+交付检查期间远端又追加 `9652108d` 的租约路径修复；与本批无文件重叠。最终候选以该提交为源，
+完整 `code/src` Git 子树与已测 `e4b09dcf` 组合相同，三个新增修复文件保留原字节。
+仅补跑租约转交的一个 CPU 替身用例并通过，没有重复 105 项。
+[来源证明及定向结果](raw/legacy_latest_source_checks.json)记录子树摘要与准确方法；上述核心及源码行数不变，
+脚本的同一行增加字段也不改变物理行数。最终整树仍待独审，未推送或合并。

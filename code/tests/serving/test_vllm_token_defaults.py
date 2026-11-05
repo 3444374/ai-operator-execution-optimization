@@ -97,21 +97,24 @@ class NativeTokenDefaultTests(unittest.TestCase):
         from src.experiments.calibration import core
         from tests.experiments.test_core_calibration import CoreCalibrationTests
         helper = CoreCalibrationTests(); helper.setUp(); self.addCleanup(helper.doCleanups)
-        explicit = core.core_identity_signature(helper.identity)
-        for missing in (False, True):
-            with self.subTest(missing=missing):
+        signatures = []
+        for maximum in ('omitted', None, 4096, 8192):
+            with self.subTest(maximum=maximum):
                 plan = deepcopy(helper.plan)
-                if missing:
+                if maximum == 'omitted':
                     plan['engine'].pop('max_num_batched_tokens')
                 else:
-                    plan['engine']['max_num_batched_tokens'] = None
+                    plan['engine']['max_num_batched_tokens'] = maximum
+                original = deepcopy(plan)
                 identity = core.build_core_identity(plan, helper.checked,
                     hardware=helper.hardware, model=helper.model, software=helper.software)
-                self.assertNotEqual(core.core_identity_signature(identity), explicit)
+                signatures.append(core.core_identity_signature(identity))
                 selected = core.core_candidate_plan(plan, helper.checked,
                     dict(max_inflight=8, cpu_workers=1), identity=identity)
                 self.assertEqual(selected['engine'], plan['engine'])
                 self.assertEqual(selected['profile']['max_inflight'], 8)
+                self.assertEqual(plan, original)
+        self.assertEqual(len(set(signatures)), 4)
 
     def test_Movie_check_preserves_missing_null_and_explicit_budgets(self):
         from src.experiments import lotus_records_movie as movie
@@ -138,50 +141,6 @@ class NativeTokenDefaultTests(unittest.TestCase):
                 report = json.loads(output.getvalue())
                 self.assertEqual(report['record_batching']['B'], 100000)
                 self.assertEqual(report['record_batching']['R'], 2)
-
-    def test_existing_admission_binding_isolates_native_budget_without_changing_cache_format(self):
-        from src.experiments.movie_matrix_support import run_record_admission
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile
-        from src.semantic_methods.lotus.records import FilterMethod
-        from src.scheduling.runtime import calibration
-        from src.scheduling.runtime.calibration import identity_signature
-        identity = {group: {'fixture': group} for group in
-            ('hardware', 'model', 'generation', 'execution', 'workload', 'measurement')}
-        identity['measurement']['work_unit'] = 'model_calls'
-        directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
-        manifest = Path(directory.name)/'fixture-manifest.json'; manifest.write_text('{}')
-        cache = dict(identity=identity, cache_dir=str(Path(directory.name)/'cache'))
-        original = deepcopy(cache)
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=2)
-        profile = dict(mode='async', max_inflight=1, admission=dict(kind='legacy_resource_feedback'))
-        modern = resolve_core_profile(self.spec(), resources,
-            dict(profile, admission=dict(kind='resource_feedback')))
-        with self.assertRaisesRegex(ValueError, 'requires explicit legacy_resource_feedback'):
-            run_record_admission(cache, modern, SimpleNamespace(manifest_path=manifest),
-                FilterMethod('fixture', 'Keep {reviewText}'), common.GenerationSpec(), self.spec(),
-                resources, lambda *args, **kwargs:self.fail('no query execution'))
-        signatures = []
-        for maximum in ('omitted', None, 4096, 8192):
-            with self.subTest(maximum=maximum):
-                engine = asdict(self.spec())
-                if maximum == 'omitted':
-                    engine.pop('max_num_batched_tokens')
-                else:
-                    engine['max_num_batched_tokens'] = maximum
-                spec = common.EngineSpec.from_dict(engine)
-                resolved = resolve_core_profile(spec, resources, profile)
-                with patch.object(calibration, 'run_admission_query',
-                        return_value=dict(result=dict(query_report=dict(status='CPU fixture')))) as select:
-                    run_record_admission(cache, resolved, SimpleNamespace(manifest_path=manifest),
-                        FilterMethod('fixture', 'Keep {reviewText}'), common.GenerationSpec(), spec,
-                        resources, lambda *args, **kwargs:self.fail('no query execution'))
-                bound = select.call_args.args[0]
-                self.assertEqual(bound['model']['actual']['max_num_batched_tokens'],
-                    None if maximum == 'omitted' else maximum)
-                signatures.append(identity_signature(bound))
-                self.assertEqual(cache, original)
-        self.assertEqual(signatures[0], signatures[1])
-        self.assertEqual(len(set(signatures)), 3)
 
     def test_resident_and_isolated_sessions_forward_unspecified_and_explicit_budgets(self):
         from src.experiments import movie_records_session as session

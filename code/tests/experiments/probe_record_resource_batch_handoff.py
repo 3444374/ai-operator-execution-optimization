@@ -134,16 +134,15 @@ assert len(received)==3 and not backend._bulk and backend.retained_refs()==0
 resource_probe_supported='observe_resources'in inspect.signature(native.AsyncCoreModelActor.snapshot).parameters
 feedback_report=None
 if resource_probe_supported:
-    from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
-    from src.scheduling.submission_control.stage_work import default_request_feedback_options
+    sys.path.insert(1,str(Path(__file__).resolve().parents[1]/'execution_provider'))
+    from resource_request_sampler_fixture import request_sampler
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
     # Actual production sampler/observed actor; IPC/Futures/readings are CPU fixtures.
     owner.model_ready=dict(actor.engine.ready_report)
     owner.engine=engine;owner.prepared_batching=PreparedBatching('token_budget',None,256)
     owner.ray=SimpleNamespace(cancel=lambda *a,**k:None)
-    feedback=RequestSupplyFeedback(SimpleNamespace(_actors=owner,engine=engine,resources=owner.resources,
-        prepared_batching=owner.prepared_batching),default_request_feedback_options())
-    feedback.session_id=1;feedback.started=time.monotonic()
+    feedback=request_sampler(SimpleNamespace(_actors=owner,engine=engine,resources=owner.resources,
+        prepared_batching=owner.prepared_batching),1,started_at_s=time.monotonic())
     packet=dict(engine_uid='CPU-engine',session_id=1,source_elapsed_s=0,
         gpu_uuids=['GPU-00000000-0000-0000-0000-000000000001'],status='CPU-fixture',
         sample=dict(values=dict(gpu_utilization_pct=10,host_cpu_per_core_max_pct=20),

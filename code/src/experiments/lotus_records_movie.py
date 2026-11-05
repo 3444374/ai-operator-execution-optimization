@@ -17,12 +17,11 @@ from src.baselines.text.sembench_movie import (
 )
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
 
-# Compatibility imports for existing callers of this runner.
+# Shared configuration for this runner and session execution.
 from src.experiments.movie_records_config import (
     ASYNC_CORE_BACKEND as _ASYNC_BACKEND,
-    core_capacity as _core_capacity, async_limits as _async_limits,
+    core_capacity as _core_capacity,
     core_profile as _core_profile, record_batching_options as _record_batching_options,
-    record_admission_cache as _record_admission_cache,
     records_runtime as _records_runtime,
     records_resources as _records_resources,
     records_service_pool as _records_service_pool,
@@ -312,7 +311,7 @@ def read_config(path):
     from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "admission_cache", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode", "service_payload_bytes"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode", "service_payload_bytes"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -339,12 +338,7 @@ def read_config(path):
         from src.execution_provider.adapters.records_profile import resolve_record_batching
         configured = _records_runtime(value, resources=resources, engine=engine)
         resolved = configured.profile
-        batching = resolve_record_batching(resolved, **_record_batching_options(value))
-        if batching is not None and value.get('admission_cache') is not None:
-            raise ValueError('record token batching does not support admission_cache')
-    if value.get("admission_cache") is not None:
-        from src.experiments.movie_matrix_support import validate_record_admission_cache
-        validate_record_admission_cache(value["admission_cache"], resolved if is_core else None)
+        resolve_record_batching(resolved, **_record_batching_options(value))
     query_id = value["query_id"]
     # Validate query identity even for empty source relations.
     from src.semantic_methods.lotus.records import identity
@@ -628,13 +622,6 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 owner.bind_model_runtime(service_runtime)
         runtime_seconds = time.monotonic() - runtime_started
         emit("runtime_setup_end")
-        query_options = {}
-        def resolve_context():
-            nonlocal owner
-            if owner is None:
-                model_preflight(source, checkout, method, generation, engine)
-                owner = create_core_owner()
-            return owner.start()
         def execute():
             nonlocal owner
             if config["backend"] == "daft-native-local-model":
@@ -646,32 +633,12 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             if is_core:
                 if owner is None:
                     owner = create_core_owner()
-                return owner.evaluate(source, query_id=config["query_id"], **query_options)
+                return owner.evaluate(source, query_id=config["query_id"])
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
             return owner.evaluate(source, query_id=config["query_id"])
-        empty_context_query = (is_async and engine.max_model_len is None
-            and config.get("admission_cache") is not None and not source.expected(config['query_id']))
-        if empty_context_query:
-            query_options['allow_exploration'] = False
-            report = run_movie_query(source, checkout, method, generation, execute,
-                                     query_id=config['query_id'], observer=observer)
-            report['admission_selection'] = dict(cache_hit=False, configuration_source='empty_query',
-                cache_read_or_write=False, scan_cost=dict(wall_s=0., samples=0))
-        elif config.get("admission_cache") is not None:
-            from src.experiments.movie_matrix_support import run_record_admission
-            resolved = configured.profile
-            def execute_query(window, *, allow_exploration, search_hint=None):
-                query_options.update(max_inflight=window, allow_exploration=allow_exploration,
-                                     search_hint=search_hint)
-                return run_movie_query(source, checkout, method, generation, execute,
-                                       query_id=config["query_id"], observer=observer)
-            report = run_record_admission(_record_admission_cache(config, resources=resources, resolved=resolved),
-                resolved, source, method, generation, engine, resources, execute_query,
-                **(dict(resolve_model_context=resolve_context) if is_async and engine.max_model_len is None else {}))
-        else:
-            report = run_movie_query(source, checkout, method, generation, execute,
-                                     query_id=config["query_id"], observer=observer)
+        report = run_movie_query(source, checkout, method, generation, execute,
+                                 query_id=config["query_id"], observer=observer)
         report.update(backend=config["backend"], runtime_setup_seconds=runtime_seconds,
                       execution_kind="synchronous local-model qualification", performance_claim=False)
     except BaseException as error:

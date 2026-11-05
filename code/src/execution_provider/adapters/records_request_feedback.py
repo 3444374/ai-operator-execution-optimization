@@ -98,8 +98,11 @@ class ResourceRequestSupplyFeedback(_RequestSource, BatchSupplyFeedback):
         return None
 
     def _reset_controller(self, stream):
-        self._bind_request_policy(stream.session.session_id,
-            len(stream.run.current)*len(stream._stage_ids))
+        total = len(stream.run.current)*len(stream._stage_ids)
+        if total:
+            self._bind_request_policy(stream.session.session_id, total)
+        else:
+            self.native_source_clock = self.memory_pressure_binding = self._control_source = None
         self._set_window(1)
 
     def _inflight(self, batches, requests):
@@ -123,12 +126,11 @@ class ResourceRequestSupplyFeedback(_RequestSource, BatchSupplyFeedback):
 class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
     """Ordinary Core uses its existing gate; observation never owns task credit."""
     uses_computed_work = True
-    initial_window_required = 1
 
     def __init__(self, owner, admission):
         super().__init__(owner)
         self.base_options = self.options = ResourceRequestConfig(**{
-            k: v for k, v in admission.items() if k not in ('kind', 'gpu_ids')})
+            k: v for k, v in admission.items() if k != 'kind'})
         self.gate = StaticAdmissionController(1)
         self._stream = None
         self.controller = None
@@ -145,9 +147,11 @@ class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
     @stream.setter
     def stream(self, stream):
         self._stream = stream
-        if stream is None or not self._total:
+        if stream is None:
             return
         self._reset_sampling_phase(stream.session.session_id)
+        if not self._total:
+            return
         self._bind_request_policy(stream.session.session_id, self._total)
         if not self._sink_installed:
             previous = self.owner.core.sink
@@ -160,12 +164,13 @@ class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
             self._sink_installed = True
         self._start_sampling(self._total, NonBlockingMetricsObservationProvider)
 
-    def begin(self, total, initial, *, allow_exploration=None, search_hint=None):
-        if initial != 1 or search_hint is not None:
+    def begin(self, total, initial, *, allow_exploration=None):
+        if initial != 1:
             raise ValueError('resource requests start at one without cross-query hints')
         self.options = (self.base_options if allow_exploration is None else
                         replace(self.base_options, allow_exploration=allow_exploration))
         self._total, self._stream = total, None
+        self.native_source_clock = self.memory_pressure_binding = self._control_source = None
         self.transition_keys.clear()
         self.submitted = 0
         self.controller = None

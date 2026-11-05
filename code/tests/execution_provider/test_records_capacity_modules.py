@@ -13,8 +13,7 @@ from tests.experiments.test_records_resource_budget import capacity as declared,
 class CapacityModuleTests(unittest.TestCase):
     def test_original_imports_refer_to_the_same_types_and_resolvers(self):
         for module, names in ((capacity, ('RecordsCapacityBudget', 'CoreRecordsCapacity',
-                'resolve_records_async_limits')), (profile, ('expand_core_profile',
-                'resolve_core_profile', 'resolve_record_batching'))):
+                'resolve_records_async_limits')), (profile, ('resolve_core_profile', 'resolve_record_batching'))):
             for name in names:
                 with self.subTest(name=name):
                     self.assertIs(getattr(public, name), getattr(module, name))

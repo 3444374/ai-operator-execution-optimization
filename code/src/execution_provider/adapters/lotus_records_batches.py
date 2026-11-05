@@ -97,16 +97,6 @@ class PreparedRecordsCore:
                 else 'fresh finite query owner'),
             raw_ledger_delivery='after normal chain traversal; member compute completion remains independent')
 
-    def confirm_query_feedback(self, *, completed):
-        """Caller acknowledgement after ordinary parsing/projection, not model EOF."""
-        if type(completed) is not bool:
-            raise TypeError('completed must be the explicit complete-query outcome')
-        options = self.execution_profile['record_batching'].get('request_feedback') or {}
-        if options.get('search_policy') != 'ascending' or self.owner is None:
-            return None
-        fully_delivered = (self._active is not None and self._active.finished
-                           and self._delivered == {v['call_id'] for v in self._expected.values()})
-        return self.owner.confirm_query_feedback(completed=bool(completed and fully_delivered))
 
     def evaluate(self, source, *, query_id, method=None, cancelled=None):
         self._control()
@@ -192,10 +182,8 @@ class PreparedRecordsCore:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
             feedback = SupplyFeedbackConfig.from_dict(batching['feedback'])
         if 'request_feedback' in batching:
-            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
-            config_type = (ResourceFeedbackConfig if batching.get('request_feedback_kind') == 'legacy_resource_feedback'
-                           else ResourceRequestConfig)
-            request_feedback = config_type(**batching['request_feedback'])
+            from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+            request_feedback = ResourceRequestConfig(**batching['request_feedback'])
         owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, capacity=self.capacity, prepared_batching=PreparedBatching(**batching['prepared_batching']),
             batch_concurrency=batching['C_batch'], batching_tokenizer=tokenizer, batch_feedback=feedback,

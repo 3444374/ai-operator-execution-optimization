@@ -23,8 +23,6 @@ class FeedbackGuideTests(unittest.TestCase):
             self.assertEqual(result['admission']['kind'],'resource_feedback')
             self.assertNotIn('search_mode',result['admission'])
             self.assertNotIn('search_policy',result['admission'])
-        self.assertIn('不接受跨查询',section)
-        self.assertIn('legacy_resource_feedback',section)
 
 
 if __name__=='__main__':unittest.main()

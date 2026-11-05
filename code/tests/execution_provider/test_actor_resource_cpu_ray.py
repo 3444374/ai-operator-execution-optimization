@@ -11,20 +11,20 @@ import time
 from types import SimpleNamespace
 import unittest
 
-from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot
-from src.scheduling.submission_control.stage_work import default_request_feedback_options
+from src.scheduling.submission_control.adaptive import ResourceRequestConfig
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from tests.execution_provider.resource_request_sampler_fixture import ready, frame_age, request_sampler
 
 UID, OWNER = 'a'*32, 'b'*32
 
 
 class CPUFeedbackEngine:
     """Native-shaped idle engine fixture; never starts a model process."""
-    ready_report = dict(engine_uid=UID)
+    ready_report = ready(UID)
 
     def __init__(self):
         self.sequence, self.closed = 0, False
@@ -84,10 +84,12 @@ def collect_resource_snapshot(feedback, refs, *, timeout=10):
 
 class SnapshotCollectionTimingTests(unittest.TestCase):
     def collect_case(self, *, immediate, cached):
-        packet = dict(session_id=7, ipc=CPUFeedbackEngine().snapshot(), resources=dict(
+        engine = CPUFeedbackEngine()
+        engine.snapshot()  # Cached source sequence precedes the next returned frame.
+        packet = frame_age(dict(session_id=7, ipc=engine.snapshot(), resources=dict(
             engine_uid=UID, session_id=7, source_elapsed_s=0, gpu_uuids=[],
             status='CPU-fixture', sample=dict(values=dict(host_cpu_per_core_max_pct=20),
-                sources=dict(host=dict(cpu_percent_interval_s=.25)), missing={})))
+                sources=dict(host=dict(cpu_percent_interval_s=.25)), missing={}))))
 
         class CompleteWhenWaited(Future):
             """Keep initial polling pending; release only at the witness wait."""
@@ -115,11 +117,11 @@ class SnapshotCollectionTimingTests(unittest.TestCase):
         owner = SimpleNamespace(resources=RecordsResources(max_active_batches=128), engine=spec,
             prepared_batching=PreparedBatching('token_budget', None, 4096),
             _actors=SimpleNamespace(model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
-                model_ready=dict(engine_uid=UID), limits=AsyncEngineLimits(max_inflight=128),
+                model_ready=ready(UID), limits=AsyncEngineLimits(max_inflight=128),
                 ray=SimpleNamespace(cancel=lambda *_a, **_kw: self.fail('completed RPC must not be cancelled'))))
-        feedback = RequestSupplyFeedback(owner, default_request_feedback_options())
-        feedback.session_id, feedback.started = 7, 0.
-        previous = ServiceMetricsSnapshot(0, 0, 0., source_uid=UID, source_session_id=7, source_sequence=0)
+        feedback = request_sampler(owner, 7)
+        previous = ServiceMetricsSnapshot(0, 0, 0., source_uid=UID, source_session_id=7,
+            source_sequence=1, source_observed_at_s=time.monotonic()-.01)
         if cached:
             feedback.last_native = previous
         native_sample, observed_returns = feedback.sample, []
@@ -133,7 +135,7 @@ class SnapshotCollectionTimingTests(unittest.TestCase):
         try:
             raw, snapshot = collect_resource_snapshot(feedback, refs, timeout=1)
             self.assertIs(raw, packet)
-            self.assertEqual((snapshot.source_uid, snapshot.source_session_id, snapshot.source_sequence), (UID, 7, 1))
+            self.assertEqual((snapshot.source_uid, snapshot.source_session_id, snapshot.source_sequence), (UID, 7, 2))
             self.assertEqual(len(observed_returns), 1 if immediate else 2)
             if not immediate:
                 self.assertIs(observed_returns[0], previous if cached else None)
@@ -174,7 +176,7 @@ class RealRayHostCPUResourceTests(unittest.TestCase):
             raise RuntimeError('a fresh isolated Ray 2.56.1 driver is required')
         code = Path(__file__).resolve().parents[2]
         observer_code = code/'scripts/profiling/record_observation'
-        limits, options = AsyncEngineLimits(max_inflight=128), default_request_feedback_options()
+        limits, options = AsyncEngineLimits(max_inflight=128), ResourceRequestConfig(poll_interval_s=.1, window_s=.25, max_sample_age_s=.25)
         spec = EngineSpec('/tmp/zero-model-resource-fixture', sys.executable, sys.executable)
         refs, attempts, packets, phases = [], [], [], []
         concurrency = limits.max_inflight+2
@@ -241,10 +243,9 @@ class RealRayHostCPUResourceTests(unittest.TestCase):
                     owner = SimpleNamespace(resources=RecordsResources(max_active_batches=128), engine=spec,
                         prepared_batching=PreparedBatching('token_budget', None, 4096),
                         _actors=SimpleNamespace(model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
-                            model_ready=dict(engine_uid=UID), limits=limits,
+                            model_ready=ready(UID), limits=limits,
                             ray=SimpleNamespace(cancel=lambda ref, **kw: ray.cancel(ref.raw, **kw))))
-                    feedback = RequestSupplyFeedback(owner, options)
-                    feedback.session_id, feedback.started = session, time.monotonic()
+                    feedback = request_sampler(owner, session, options=options, started_at_s=time.monotonic())
                     try:
                         for _ in range(4):
                             packet, snapshot = collect_resource_snapshot(feedback, refs)

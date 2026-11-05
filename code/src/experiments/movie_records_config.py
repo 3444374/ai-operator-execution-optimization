@@ -4,7 +4,7 @@ Both run and session entries use these helpers without importing their execution
 runner. This module starts no runtime, model, data scan or request controller.
 """
 
-from dataclasses import asdict, replace
+from dataclasses import replace
 
 from src.semantic_methods.lotus.records import RecordsResources
 
@@ -51,16 +51,6 @@ def core_capacity(config):
     return CoreRecordsCapacity(**value)
 
 
-
-def async_limits(config, *, resources=None, resolved=None):
-    declared = "async_limits" in config
-    value = config.get("async_limits", {})
-    if type(value) is not dict:
-        raise ValueError("async_limits must be an object")
-    configured = records_runtime(config, resources=resources)
-    return configured.async_limits if declared else None
-
-
 def records_runtime(config, *, resources=None, engine=None):
     """Shared pure resolution for ordinary Movie, Session, check and startup."""
     from src.execution_provider.adapters.records_profile import resolve_records_runtime
@@ -74,8 +64,6 @@ def records_runtime(config, *, resources=None, engine=None):
     if 'service_payload_bytes' in config:
         if config.get('backend') not in ('semloom-core', 'semloom-local-model-core', ASYNC_CORE_BACKEND):
             raise ValueError('service_payload_bytes requires an async Core backend')
-        if config.get('admission_cache') is not None:
-            raise ValueError('service payload plans do not yet support admission_cache')
         from src.execution_provider.adapters.records_service_config import preview_service_records_runtime
         return preview_service_records_runtime(engine, resources, config['service_payload_bytes'],
             profile=profile, capacity=core_capacity(config), async_limits=config.get('async_limits'),
@@ -89,39 +77,13 @@ def records_runtime(config, *, resources=None, engine=None):
     return configured
 
 
-
-def record_admission_cache(config, *, resources, resolved):
-    """Bind effective storage/IPC choices; equivalent defaults keep old identity."""
-    from copy import deepcopy
-    from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, resolve_records_async_limits
-
-    cache = config.get("admission_cache")
-    if cache is None or not set(config) & {"core_capacity", "async_limits"}:
-        return cache
-    capacity = core_capacity(config) or CoreRecordsCapacity()
-    effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
-    limits = resolve_records_async_limits(effective, capacity,
-        async_limits(config, resources=resources, resolved=resolved))
-    default = CoreRecordsCapacity()
-    if capacity == default and limits == resolve_records_async_limits(effective, default):
-        return cache
-    cache = deepcopy(cache)
-    cache["identity"]["execution"]["records_capacity_v1"] = dict(
-        core=dict(asdict(capacity), poll_interval_s=float(capacity.poll_interval_s)),
-        IPC=dict(asdict(limits), feedback_interval_s=float(limits.feedback_interval_s)))
-    return cache
-
-
-
 def core_profile(config):
-    from src.execution_provider.adapters.records_profile import expand_core_profile
-    profile = expand_core_profile(config.get("core_profile"))
+    profile = config.get("core_profile")
     if config["backend"] == ASYNC_CORE_BACKEND:
         if profile is not None and (type(profile) is not dict or profile.get("mode", "async") != "async"):
             raise ValueError("the explicit async backend requires async Core mode")
         profile = dict(profile or {}, mode="async")
     return profile
-
 
 
 def record_batching_options(config):

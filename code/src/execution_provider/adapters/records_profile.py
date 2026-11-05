@@ -1,4 +1,4 @@
-"""Records execution selection and compatibility profiles, without actor allocation."""
+"""Records execution selection, without actor allocation."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
@@ -9,24 +9,7 @@ from .records_capacity import CoreRecordsCapacity, independent_default_capacity,
 if TYPE_CHECKING:
     from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
-
-
-def expand_core_profile(profile):
-    """Retain named legacy experiment settings; ordinary defaults stay fixed."""
-    if type(profile) is not str:
-        return profile
-    if profile not in ("delivered-work-scan", "computed-work-local-pairs"):
-        raise ValueError("unknown Core query feedback profile")
-    admission = dict(kind="legacy_resource_feedback", search_mode="geometric",
-        poll_interval_s=0.1, window_s=0.25, min_samples=16, min_remaining=64,
-        exploration_s=10.0, max_changes=8, allow_exploration=True,
-        min_gain=0.03, work_tolerance=0.03, max_candidate_attempts=2,
-        memory_floor_bytes=0, pressure_response="window")
-    if profile == "computed-work-local-pairs":
-        admission.update(work_basis="computed", work_comparison="local_pairs")
-    return dict(mode="async", max_inflight=8, stage_timing=True, admission=admission)
-
+from src.scheduling.submission_control.adaptive import ResourceRequestConfig
 
 
 def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=False, capacity=None,
@@ -38,13 +21,11 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
     """
     if type(derived_capacity) is not bool:
         raise TypeError('derived_capacity must describe a boolean resolver choice')
-    profile = {} if profile is None else expand_core_profile(profile)
+    profile = {} if profile is None else profile
     if type(profile) is not dict or set(profile) - {"mode", "max_inflight", "stage_timing", "admission"}:
         raise ValueError("Core profile accepts mode, max_inflight, stage_timing and optional admission only")
     mode = profile.get("mode", "sync")
-    request_feedback = rolling_refill and profile.get('admission') is not None
     admission = profile.get('admission')
-    modern_feedback = type(admission) is dict and admission.get('kind') == 'resource_feedback'
     budget = None if capacity is None else capacity.budget
     legacy_request_budget = resources.max_active_batches
     if budget is not None:
@@ -53,7 +34,7 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
         resources = replace(resources, max_active_batches=budget.active_requests)
     if resources.max_active_batches is None:
         raise ValueError('request capacity is unresolved; a complete resource budget is required')
-    requested = profile.get("max_inflight", 1 if request_feedback or modern_feedback else resources.max_active_batches)
+    requested = profile.get("max_inflight", 1 if admission is not None else resources.max_active_batches)
     timing = profile.get("stage_timing", False)
     if mode not in ("sync", "async") or type(timing) is not bool:
         raise ValueError("Core requires sync/async mode and boolean stage_timing")
@@ -76,38 +57,16 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
     admission = profile.get("admission")
     if admission is not None:
         if (mode != "async" or type(admission) is not dict
-                or admission.get("kind") not in ('resource_feedback', 'legacy_resource_feedback')):
+                or admission.get("kind") != 'resource_feedback'):
             raise ValueError("resource feedback requires explicit async Core admission")
-        gpu_ids = admission.get("gpu_ids", ())
-        if not isinstance(gpu_ids, (list, tuple)) or any(not isinstance(v, str) or not v.startswith("GPU-") for v in gpu_ids):
-            raise ValueError("feedback GPU IDs must be physical UUIDs when supplied")
-        options = {k: v for k, v in admission.items() if k not in ("kind", "gpu_ids")}
-        if modern_feedback:
-            if gpu_ids:
-                raise ValueError('resource requests sample the actual model actor allocation')
-            if maximum != 1:
-                raise ValueError('resource requests start at one without cross-query hints')
-            try:
-                config = ResourceRequestConfig(**options)
-            except TypeError as error:
-                raise ValueError('unsupported resource request option; historical policies require explicit legacy_resource_feedback') from error
-        elif request_feedback:
-            from src.scheduling.submission_control.stage_work import default_request_feedback_options
-            if gpu_ids:
-                raise ValueError('rolling request feedback uses native stats; physical GPU UUID sampling is not connected')
-            if maximum != 1:
-                raise ValueError('rolling request feedback starts at one without a historical search hint')
-            config = replace(default_request_feedback_options(), **options)
-            if config.memory_floor_bytes:
-                raise ValueError('rolling memory_floor_bytes requires a memory signal source; none is connected')
-            if config.poll_interval_s > config.window_s:
-                raise ValueError('request feedback poll interval must fit the measurement window')
-        else:
-            config = ResourceFeedbackConfig(**options)
-            if config.search_policy != 'reference':
-                raise ValueError('ascending request search requires rolling_refill')
+        if maximum != 1:
+            raise ValueError('resource requests start at one without cross-query hints')
+        try:
+            config = ResourceRequestConfig(**{k: v for k, v in admission.items() if k != 'kind'})
+        except TypeError as error:
+            raise ValueError('unsupported resource request option') from error
         result.update(owner_max_inflight=resources.max_active_batches,
-            initial_window=maximum, admission=dict(kind=admission['kind'], gpu_ids=list(gpu_ids), **asdict(config)))
+            initial_window=maximum, admission=dict(kind='resource_feedback', **asdict(config)))
     if budget is not None:
         result.update(owner_max_inflight=budget.active_requests,
             declared_legacy_request_budget=legacy_request_budget,
@@ -132,15 +91,13 @@ def resolve_records_runtime(engine, resources, profile=None, *, capacity=None, a
     capacity = CoreRecordsCapacity() if capacity is None else capacity
     if type(capacity) is not CoreRecordsCapacity:
         raise TypeError('Core records capacity must be CoreRecordsCapacity')
-    expanded = expand_core_profile(profile)
-    mode = expanded.get('mode', 'sync') if type(expanded) is dict else 'sync'
-    admission = expanded.get('admission') if type(expanded) is dict else None
-    historical = type(admission) is dict and admission.get('kind') == 'legacy_resource_feedback'
-    derived = (mode == 'async' and not historical and capacity.budget is None
+    profile = {} if profile is None else profile
+    mode = profile.get('mode', 'sync') if type(profile) is dict else 'sync'
+    derived = (mode == 'async' and capacity.budget is None
                and (prepared_batching is None or rolling_refill))
     if derived:
         capacity, async_limits = independent_default_capacity(resources, capacity, async_limits)
-    resolved = resolve_core_profile(engine, resources, expanded, rolling_refill=rolling_refill,
+    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill,
                                     capacity=capacity, derived_capacity=derived)
     effective = replace(resources, max_active_batches=resolved.get('owner_max_inflight', resolved['max_inflight']))
     if resolved['mode'] == 'async':
@@ -212,7 +169,7 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
             if resolved['max_inflight'] != 1:
                 raise ValueError('rolling request feedback starts at one')
             feedback['request_feedback'] = {k: v for k, v in resolved['admission'].items()
-                                            if k not in ('kind', 'gpu_ids')}
+                                            if k != 'kind'}
             feedback['request_feedback_kind'] = resolved['admission']['kind']
     batching = dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
         request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,

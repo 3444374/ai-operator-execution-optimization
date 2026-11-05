@@ -1,7 +1,7 @@
 """Optional actor resource packets; CPU objects/futures only, no hardware reads."""
 from concurrent.futures import Future
 from copy import deepcopy
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import json
 import sys
 import time
@@ -9,13 +9,14 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from src.execution_provider.adapters.lotus_chain_token_batches import RequestSupplyFeedback
+from src.execution_provider.adapters.lotus_chain_token_batches import BatchSupplyFeedback
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
-from src.scheduling.submission_control.stage_work import default_request_feedback_options
+from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from tests.execution_provider.resource_request_sampler_fixture import ready, frame_age, request_sampler
 
 
 UID = 'cpu-resource-engine'
@@ -98,24 +99,22 @@ class ActorResourceProbeTests(unittest.TestCase):
 
         owner = SimpleNamespace(
             _actors=SimpleNamespace(model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
-                model_ready=dict(engine_uid=UID), ray=SimpleNamespace(cancel=lambda *a, **k: None),
+                model_ready=ready(UID), ray=SimpleNamespace(cancel=lambda *a, **k: None),
                 limits=AsyncEngineLimits()),
             prepared_batching=PreparedBatching('token_budget', None, 256),
             resources=RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=4),
             engine=EngineSpec('/tmp/resource-receiver-fixture', sys.executable, sys.executable))
-        options = default_request_feedback_options()
-        if reference:
-            options = replace(options, search_policy='reference')
-        feedback = RequestSupplyFeedback(owner, options)
+        feedback = (BatchSupplyFeedback(owner, SupplyFeedbackConfig(4)) if reference
+                    else request_sampler(owner, 7))
         feedback.session_id, feedback.started = 7, 0.
         return feedback, calls, futures
 
     def receive(self, packet, *, reference=False):
         feedback, calls, futures = self.feedback(reference=reference)
         self.assertIsNone(feedback.sample())
-        futures[0].set_result(dict(session_id=7, resources=packet, ipc=dict(native_feedback=dict(
+        futures[0].set_result(frame_age(dict(session_id=7, resources=packet, ipc=dict(native_feedback=dict(
             engine_uid=UID, sequence=12, observed_at_s=time.monotonic(), running=1, waiting=0,
-            kv_usage=.1, generation_tokens_total=4, preemptions_total=0))))
+            kv_usage=.1, generation_tokens_total=4, preemptions_total=0)))))
         snapshot = feedback.sample()
         self.assertIsNotNone(snapshot, 'malformed optional resource fields cannot erase valid native feedback')
         self.assertEqual((snapshot.source_uid, snapshot.source_session_id), (UID, 7))

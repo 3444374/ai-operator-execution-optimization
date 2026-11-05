@@ -22,7 +22,7 @@ from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.experiments import test_movie_async_token_entry as entry
-from tests.execution_provider.test_lotus_record_local_query import Process
+from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
 
 
 def with_actual_cpu_pid(process_type):
@@ -43,7 +43,7 @@ class MovieTokenResidentFixture:
         self.manifests = dict(helper.helper.manifests)
         self.owners, self.outputs = [], []
         self.runtime = helper.runtime()
-        ready = patch.object(AsyncCoreModelActor, '_process_type', return_value=with_actual_cpu_pid(Process))
+        ready = patch.object(AsyncCoreModelActor, '_process_type', return_value=with_actual_cpu_pid(CPUResourceProcess))
         ready.start()
         helper.addCleanup(ready.stop)
         rows = MovieRecordSource.from_manifest(self.manifests['movie-q1']).rows()
@@ -68,7 +68,7 @@ class MovieTokenResidentFixture:
             raise ValueError('declare RF fixed rolling or RD request feedback')
         config = self.helper.rolling_config()
         if mode == 'RD':
-            config['core_profile'] = dict(mode='async', admission=dict(kind='legacy_resource_feedback'))
+            config['core_profile'] = dict(mode='async', admission=dict(kind='resource_feedback'))
         plan = dict(schema='semloom.movie_session_plan.v1', backend='semloom-core',
             lifecycle=lifecycle, model_name='openai/cpu-fixture',
             generation=deepcopy(config['generation']), engine=deepcopy(config['engine']),

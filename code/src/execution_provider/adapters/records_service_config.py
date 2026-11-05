@@ -36,9 +36,6 @@ def service_record_options(resources, options):
         raise ValueError('service payload grants require async execution')
     if profile.get('admission') is None and 'max_inflight' not in profile:
         profile['max_inflight'] = 'auto'
-    if (type(profile.get('admission')) is dict
-            and profile['admission'].get('kind') == 'legacy_resource_feedback'):
-        raise ValueError('historical feedback profiles retain their own explicit resource declarations')
     shape = CoreRecordsCapacity() if options.get('capacity') is None else options['capacity']
     if type(shape) is not CoreRecordsCapacity or shape.budget is not None:
         raise ValueError('service allocation requires a per-item shape without an existing budget')

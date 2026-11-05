@@ -7,9 +7,7 @@ from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.submission_control.adaptive import (
     ResourceFeedbackConfig, ResourceFeedbackController,
 )
-from src.scheduling.submission_control.stage_work import SupplyState
 from src.scheduling.submission_control.admission import DynamicAdmissionGate
-from tests.scheduling.test_ascending_request_scan import ScanTrace
 from tests.scheduling.test_incremental_session import setup, task
 
 
@@ -108,34 +106,6 @@ class ResourcePressureClockTests(unittest.TestCase):
                 self.assertEqual(self.controller.report()['changes'], 0)
 
 
-class AscendingPressureClockTests(unittest.TestCase):
-    def test_early_pressure_clears_reference_even_with_no_ready_work_and_replays_once(self):
-        trace = ScanTrace()
-        trace.run_until(lambda report, _: report['window'] >= 4)
-        controller = trace.controller
-        before, measured = controller.current_window, len(controller.measurements)
-        trace.now += .01
-        observation = AdmissionObservation(trace.now, True, before, before, 0, .1,
-            sample_age_s=0, sample_sequence=1000, memory_pressure=True,
-            completed_items_total=trace.completed, pending_items=10000,
-            preemptions_total=0, transition_pending=before)
-        supply = SupplyState(trace.now, 0, trace.completed, trace.completed, 1,
-            True, False, capacity_blocked='result_bytes', active_requests=before)
-        decision = controller.update_supply(observation, supply)
-        self.assertEqual((decision.window, decision.reason), (before//2, 'resource_pressure'))
-        self.assertIsNone(controller._reference)
-        self.assertEqual(len(controller.measurements), measured)
-        repeated = controller.update_supply(replace(observation, observed_at_s=trace.now+.01),
-            replace(supply, observed_at_s=trace.now+.01))
-        self.assertEqual((repeated.window, repeated.reason), (before//2, 'repeated_feedback_sample'))
-
-    def test_missing_native_feedback_does_not_clear_a_prior_pressure_sample(self):
-        trace = ScanTrace()
-        trace.run_until(lambda report, _: report['window'] >= 4)
-        controller = trace.controller
-        before = controller.current_window
-        self.assertEqual(trace.tick(0, memory_pressure=True).window, before//2)
-        self.assertEqual(trace.tick(0, fresh=False, memory_pressure=True).window, before//2)
 
 
 class SessionPressureAccountingTests(unittest.TestCase):

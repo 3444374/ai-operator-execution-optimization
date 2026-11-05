@@ -1,8 +1,4 @@
-"""RF/RD session reuse contract; resident cases are intentionally red on e737.
-
-Exercise existing check_plan/run_movie_session and real CPU IPC. These tests do
-not implement reuse, bypass its preflight, or turn the resident gate into a skip.
-"""
+"""Movie session lifetimes with local CPU IPC; Ray and inference are fixtures."""
 import asyncio
 from copy import deepcopy
 import json
@@ -13,14 +9,12 @@ from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.text.movie_tasks import MovieTask
 from src.experiments import movie_records_session as session
 from src.execution_provider.adapters.lotus_records_core import create_records_core
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 from tests.experiments.movie_token_resident_fixture import (
     MovieTokenResidentFixture, query_calls, query_close,
-    with_actual_cpu_pid,
 )
 
 
@@ -202,37 +196,6 @@ class MovieTokenResidentTests(unittest.TestCase):
                         self.assertEqual(batching['peak_requests'], 2)
                         self.assertEqual(batching['recent_batches'][0]['members'], 2)
 
-    def test_explicit_reference_policy_resets_first_submission_after_prior_cpu_feedback_trial(self):
-        # Existing logical observation clock, real CPU IPC and actual controller;
-        # this is a reset/ownership test, never a real-time or GPU benefit claim.
-        from src.execution_provider.adapters import lotus_chain_token_batches as batches
-        from src.scheduling.submission_control.stage_work import RequestSupplyFeedbackController
-        from tests.execution_provider.test_lotus_batch_supply_feedback import logical_feedback_frontier
-        from tests.execution_provider.test_lotus_request_supply_feedback import CPUWorkProcess
-        fixture = MovieTokenResidentFixture(self)
-        fixture.manifests['movie-q1'] = fixture.source_manifest('many', [
-            [str(i+1), 'taken_3', 'good' if i % 2 == 0 else 'bad',
-             'POSITIVE' if i % 2 == 0 else 'NEGATIVE'] for i in range(48)], task='movie-q1')
-        plan = fixture.plan('RD')
-        plan['resources']['max_active_batches'] = 8
-        plan['profile']['admission'].update(poll_interval_s=.002, min_samples=1, search_policy='reference')
-        with logical_feedback_frontier(), \
-                patch('src.scheduling.submission_control.stage_work.RequestSupplyFeedbackController',
-                      lambda maximum, config: RequestSupplyFeedbackController(
-                          maximum, config, clock=lambda: batches.time.monotonic())), \
-                patch.object(AsyncCoreModelActor, '_process_type', return_value=with_actual_cpu_pid(CPUWorkProcess)):
-            report = fixture.run(plan)
-        self.assertEqual(report['status'], 'completed')
-        self.assertEqual(len(fixture.runtime.async_actors), 1)
-        self.assertEqual(len({c['engine_uid'] for q in report['queries'] for c in query_calls(q)}), 1)
-        first, second = [query_close(q) for q in report['queries']]
-        self.assertTrue(any(b['C_request'] > 1 for b in first['async_token_batches']['recent_batches']))
-        self.assertGreater(first['request_supply_feedback']['phases'][0]['changes'], 0)
-        for close in (first, second):
-            self.assertEqual(close['async_token_batches']['recent_batches'][0]['C_request'], 1)
-            self.assertEqual(close['request_supply_feedback']['initial_requests'], 1)
-            self.assertEqual(len(close['calls']), 48)
-            self.assertEqual(close['core_usage']['held_tasks'], 0)
 
     def test_failure_preserves_completed_query_and_unknown_receipt_without_running_next(self):
         for mode in ('RF', 'RD'):

@@ -14,7 +14,7 @@ from src.execution_provider.adapters.records_profile import resolve_core_profile
 from src.execution_provider.adapters.records_request_feedback import (
     CoreResourceRequestFeedback, ResourceRequestSupplyFeedback, applied_request_limit,
 )
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider, ServiceMetricsSnapshot
@@ -166,7 +166,9 @@ class RequestPolicyWiringTests(unittest.TestCase):
                 report = stream.last_close_report['admission_feedback']
                 self.assertTrue(report['empty_query'])
                 self.assertEqual(report['snapshot_requests'], 0)
-                self.assertIsNone(owner._feedback.session_id)
+                self.assertEqual(owner._feedback.session_id, stream.session.session_id)
+                self.assertIsNone(owner._feedback.native_source_clock)
+                self.assertIsNone(owner._feedback.memory_pressure_binding)
             finally:owner.close(timeout=3)
 
     def test_public_defaults_select_the_reviewed_policy_and_reject_legacy_thresholds(self):
@@ -181,16 +183,21 @@ class RequestPolicyWiringTests(unittest.TestCase):
             self.assertNotIn('pressure_kv_usage', options)
             self.assertNotIn('search_policy', options)
             self.assertEqual(options['measurement_windows'], 3)
+            self.assertIs(options['require_memory_feedback'], False)
             for forbidden in (dict(high_kv_usage=.85), dict(physical_probe_policy='idle_majority'),
-                              dict(search_policy='ascending')):
+                              dict(search_policy='ascending'), dict(memory_floor_bytes=1024)):
                 with self.subTest(rolling=rolling, forbidden=forbidden), self.assertRaises(ValueError):
                     resolve_core_profile(engine, resources,
                         dict(mode='async', admission=dict(kind='resource_feedback', **forbidden)),
                         rolling_refill=rolling)
-        legacy = resolve_core_profile(engine, replace(resources, max_active_batches=8), 'computed-work-local-pairs')
-        self.assertEqual(legacy['admission']['kind'], 'legacy_resource_feedback')
-        self.assertEqual(legacy['admission']['work_basis'], 'computed')
-        self.assertEqual(legacy['admission']['max_changes'], 8)
+        plan=base.fixture.chain_for('M')
+        with self.assertRaises(TypeError):
+            base.AsyncTokenBatchTests.owner(self,plan,R=4,C=None,rolling_refill=True,
+                request_feedback=ResourceFeedbackConfig())
+        for retired in ('computed-work-local-pairs','delivered-work-scan',
+                        dict(mode='async',admission=dict(kind='legacy_resource_feedback'))):
+            with self.subTest(retired=retired), self.assertRaises(ValueError):
+                resolve_core_profile(engine, resources, retired)
 
     def test_rolling_uses_ready_source_and_grows_past_old_KV_cutoff_with_existing_credit(self):
         plan, rows = base.fixture.chain_for('MM'), base.fixture.source_rows(size=4)
@@ -254,7 +261,7 @@ class RequestPolicyWiringTests(unittest.TestCase):
                 self.assertEqual(len(runtime.async_actors), 1)
                 with self.assertRaises(ValueError):
                     owner.evaluate(Source(raw), query_id='bad-window', max_inflight=2)
-                with self.assertRaises(ValueError):
+                with self.assertRaises(TypeError):
                     owner.evaluate(Source(raw), query_id='bad-hint', search_hint={})
             finally:
                 report=owner.close(timeout=3)

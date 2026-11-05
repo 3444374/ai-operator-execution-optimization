@@ -243,7 +243,7 @@ class CapacityMovieEntryTests(unittest.TestCase):
         config = self.config()
         parsed, _, _, resources, _ = movie.read_config(self.save(config))
         self.assertEqual(parsed, json.loads(json.dumps(config)))
-        limits = movie._async_limits(parsed)
+        limits = movie._records_runtime(parsed).async_limits
         self.assertEqual((limits.max_inflight, limits.result_slots), (11, AsyncEngineLimits().result_slots))
         self.assertEqual((limits.item_input_bytes, limits.input_bytes), (4*MIB, AsyncEngineLimits().input_bytes))
         self.assertEqual((limits.item_result_bytes, limits.result_bytes), (65536, AsyncEngineLimits().result_bytes))
@@ -327,41 +327,23 @@ class CapacityMovieEntryTests(unittest.TestCase):
                 self.assertEqual((limits.max_inflight, limits.input_bytes), (11, AsyncEngineLimits().input_bytes))
                 self.assertEqual(limits.result_bytes, AsyncEngineLimits().result_bytes)
 
-    def test_explicit_capacities_change_existing_admission_identity_without_mutating_config(self):
-        from src.experiments.movie_matrix_support import run_record_admission
-        from src.scheduling.runtime import calibration
-        plan = deepcopy(self.plan)
-        plan['profile'] = dict(mode='async', max_inflight=3, admission=dict(kind='legacy_resource_feedback'))
-        plan['admission_cache'] = dict(cache_dir=str(self.root/'cache'), identity={
-            name:dict(fixture=True) for name in ('hardware', 'model', 'generation', 'execution', 'workload', 'measurement')})
-        plan['admission_cache']['identity']['measurement']['work_unit'] = 'rows'
-        original = deepcopy(plan)
-        resources = RecordsResources(**plan['resources'])
-        engine = EngineSpec.from_dict(plan['engine'])
-        resolved = core.resolve_core_profile(engine, resources, plan['profile'])
-        identities = []
-        for total in (65536, 131072):
-            plan['async_limits'] = dict(item_result_bytes=65536, result_bytes=total)
-            cache = movie._record_admission_cache(plan, resources=resources, resolved=resolved)
-            with patch.object(calibration, 'run_admission_query',
-                    return_value=dict(result=dict(query_report=dict(status='CPU-fixture')))) as select:
-                run_record_admission(cache, resolved,
-                    SimpleNamespace(manifest_path=Path(plan['queries'][0]['manifest'])),
-                    MovieTask(1).method(plan['model_name']), GenerationSpec(), engine, resources,
-                    Mock(side_effect=AssertionError('no query execution')),
-                    model_ready=dict(engine_uid='CPU-capacity-cache', model_context=model_context_record(
-                        engine,'CPU-capacity-cache',32768)))
-            identities.append(select.call_args.args[0])
-        self.assertNotEqual(calibration.identity_signature(identities[0]),
-                            calibration.identity_signature(identities[1]))
-        self.assertEqual(plan['admission_cache'], original['admission_cache'])
-        self.assertEqual(identities[0]['execution']['declared']['records_capacity_v1']['IPC']['result_bytes'], 65536)
-
-    def test_default_admission_identity_is_unchanged_when_capacity_fields_are_absent(self):
-        plan = dict(self.plan, admission_cache=dict(identity=dict(execution=dict(fixture=True))))
-        plan.pop('core_capacity')
-        plan.pop('async_limits')
-        self.assertIs(movie._record_admission_cache(plan, resources=None, resolved=None), plan['admission_cache'])
+    def test_retired_feedback_options_reject_in_both_entries_before_owner_allocation(self):
+        variants = [dict(admission_cache=None), dict(admission_cache={}),
+            dict(core_profile='delivered-work-scan'), dict(core_profile='computed-work-local-pairs'),
+            dict(core_profile=dict(mode='async', max_inflight=3,
+                                   admission=dict(kind='legacy_resource_feedback')))]
+        with patch.object(core, 'create_records_core') as allocate:
+            for changes in variants:
+                config = dict(self.config(), **changes)
+                plan = deepcopy(self.plan)
+                for name, value in changes.items():
+                    plan['profile' if name == 'core_profile' else name] = value
+                with self.subTest(changes=changes):
+                    with self.assertRaises(ValueError):
+                        movie.read_config(self.save(config))
+                    with self.assertRaises(ValueError):
+                        session.check_plan(plan)
+            allocate.assert_not_called()
 
 
 if __name__ == '__main__':

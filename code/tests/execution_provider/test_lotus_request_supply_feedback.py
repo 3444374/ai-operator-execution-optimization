@@ -1,27 +1,20 @@
 """Request actuation and real Core/CPU IPC; no resource-benefit claim."""
-from dataclasses import replace
+from dataclasses import asdict
 import json
 from pathlib import Path
-import sys
 import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_chain_token_batches as batches
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission
-from src.scheduling.submission_control.stage_work import default_supply_feedback_options, RequestSupplyFeedbackController
-from src.serving.backends.async_engine_process import AsyncEngineProcess
+from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.execution_provider.adapters.records_request_feedback import ResourceRequestSupplyFeedback
 from tests.execution_provider import test_lotus_async_token_batches as base
 from tests.execution_provider import test_lotus_token_rolling_refill as rolling
-from tests.execution_provider.test_lotus_batch_supply_feedback import logical_feedback_frontier
+from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
+from tests.execution_provider.resource_request_sampler_fixture import ready as source_ready, frame_age, request_sampler
 from tests.execution_provider import test_lotus_feedback_ready_collection as ready
 from tests.execution_provider import test_lotus_snapshot_rpc_receipts as rpc
-
-
-class CPUWorkProcess(AsyncEngineProcess):
-    @staticmethod
-    def _command(spec, descriptors):
-        return [sys.executable, str(Path(__file__).with_name('request_feedback_child_fixture.py')),
-                *map(str, descriptors)]
 
 
 class RequestRollingTests(unittest.TestCase):
@@ -30,7 +23,8 @@ class RequestRollingTests(unittest.TestCase):
 
     def owner(self, plan, **options):
         return base.AsyncTokenBatchTests.owner(self, plan, C=None, rolling_refill=True,
-            request_feedback=options.pop('request_feedback', default_supply_feedback_options()), **options)
+            request_feedback=options.pop('request_feedback', ResourceRequestConfig(allow_exploration=False,
+                poll_interval_s=.01, window_s=.25, max_sample_age_s=.25)), **options)
 
     def actuate(self, owner, value):
         # Isolate the admission mechanism. Policy and single-RPC tests below
@@ -53,7 +47,7 @@ class RequestRollingTests(unittest.TestCase):
         config = self.helper.config_for(plan, rows)
         for i in range(3):config['responses']['step_0|occ-'+str(i)]['wait_file'] = str(gate)
         self.helper.config.write_text(json.dumps(config))
-        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=base.query_fixture.Process):
+        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess):
             owner = self.owner(plan, R=4)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -81,7 +75,7 @@ class RequestRollingTests(unittest.TestCase):
         config = self.helper.config_for(plan, rows)
         config['responses']['step_0|occ-0']['wait_file'] = str(gate)
         self.helper.config.write_text(json.dumps(config))
-        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=base.query_fixture.Process):
+        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess):
             owner = self.owner(plan, R=3)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -102,7 +96,7 @@ class RequestRollingTests(unittest.TestCase):
         config = self.helper.config_for(plan, rows)
         for i in range(2):config['responses']['step_0|occ-'+str(i)]['wait_file'] = str(gate)
         self.helper.config.write_text(json.dumps(config))
-        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=base.query_fixture.Process):
+        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess):
             owner = self.owner(plan, R=3)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -112,8 +106,10 @@ class RequestRollingTests(unittest.TestCase):
                     self.assertEqual(len(stream.session._pending_members), 2)
                     self.assertEqual(owner.core.capacity.usage().active_requests, 0)
                     owner._supply_feedback.next_poll = 0
-                    owner._supply_feedback.update(stream)
-                    state, = owner._supply_feedback.controller.report()['demand_windows']
+                    with patch.object(owner._supply_feedback.controller, 'update_supply',
+                                      wraps=owner._supply_feedback.controller.update_supply) as decide:
+                        owner._supply_feedback.update(stream)
+                    state = asdict(decide.call_args.args[1])
                     self.assertEqual(state['local_capacity']['pending_admission_requests'], 2)
                     self.assertEqual(state['local_capacity']['charged_requests'], 2)
                 self.actuate(owner, 1)
@@ -131,7 +127,7 @@ class RequestRollingTests(unittest.TestCase):
         plan, rows = base.fixture.chain_for('M'), base.fixture.source_rows(size=4)
         self.helper.config_for(plan, rows, hold=['step_0|occ-0', 'step_0|occ-1'])
         from src.scheduling.core.models import AdmissionObservation
-        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=base.query_fixture.Process):
+        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess):
             owner = self.owner(plan, R=4)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -141,11 +137,14 @@ class RequestRollingTests(unittest.TestCase):
                 def latest(inflight):
                     seen.append(inflight)
                     return AdmissionObservation(batches.time.monotonic(), False, inflight, None, None, None)
-                with patch.object(owner._supply_feedback.provider, 'latest', latest):
+                with patch.object(owner._supply_feedback.provider, 'latest_with_source',
+                                  side_effect=lambda inflight:(latest(inflight), None)), \
+                        patch.object(owner._supply_feedback.controller, 'update_supply',
+                                     wraps=owner._supply_feedback.controller.update_supply) as decide:
                     owner._supply_feedback.next_poll = 0
                     owner._supply_feedback.update(stream)
                 self.assertEqual(seen, [2])
-                state, = owner._supply_feedback.controller.report()['demand_windows']
+                state = asdict(decide.call_args.args[1])
                 self.assertEqual((state['active_requests'], state['active_batches']), (2, 1))
                 self.assertEqual(state['local_capacity']['limits']['active_requests'], 4)
             finally:
@@ -157,8 +156,15 @@ class RequestRollingTests(unittest.TestCase):
             for enabled in (False, True):
                 plan, rows = base.relation.relation_chain(pattern), base.fixture.source_rows(size=3)
                 self.helper.config_for(plan, rows)
-                with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=base.query_fixture.Process):
-                    owner = self.owner(plan, R=3, request_feedback=default_supply_feedback_options() if enabled else None)
+                original_snapshot = base.AsyncCoreModelActor.snapshot
+                def missing_native(actor, **kwargs):
+                    value = original_snapshot(actor, **kwargs)
+                    value['ipc']['native_feedback'] = None
+                    value['native_sample_age'] = None
+                    return value
+                with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess), \
+                        patch.object(base.AsyncCoreModelActor, 'snapshot', missing_native):
+                    owner = self.owner(plan, R=3, request_feedback=ResourceRequestConfig(allow_exploration=False) if enabled else None)
                     results.append(list(owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)))
                     self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
                     if enabled:
@@ -177,7 +183,7 @@ class RequestRollingTests(unittest.TestCase):
                 config = self.helper.config_for(plan, rows, hold=['step_0|occ-0'] if mode=='cancel' else [])
                 if mode!='cancel':config['responses']['step_0|occ-0']['status'] = mode
                 self.helper.config.write_text(json.dumps(config))
-                with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=base.query_fixture.Process):
+                with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess):
                     owner = self.owner(plan, R=3)
                     def cancelled():return mode=='cancel' and owner.core is not None and owner.core.capacity.usage().active_requests > 0
                     try:
@@ -199,45 +205,52 @@ class RequestRollingTests(unittest.TestCase):
             self.assertEqual(runtime.async_actors, [])
             self.assertEqual(owner.last_close_report['request_supply_feedback']['snapshot_requests'], 0)
 
-    def test_real_CPU_snapshot_path_drives_measured_request_trial_with_logical_frontiers(self):
-        outputs = []
-        for enabled in (False, True):
-            plan, rows = base.fixture.chain_for('M'), base.fixture.source_rows(size=96)
-            self.helper.config_for(plan, rows)
-            options = replace(default_supply_feedback_options(), poll_interval_s=.002, min_samples=1)
-            with logical_feedback_frontier(), \
-                    patch('src.scheduling.submission_control.stage_work.RequestSupplyFeedbackController',
-                        lambda maximum, config:RequestSupplyFeedbackController(maximum, config, clock=lambda:batches.time.monotonic())), \
-                    base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUWorkProcess):
-                owner = self.owner(plan, R=8, B=256, request_feedback=options if enabled else None)
-                try:
-                    outputs.append(list(owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)))
-                    if enabled:
-                        f = owner.last_close_report['request_supply_feedback']
-                        phase, = f['phases']
-                        self.assertGreater(phase['changes'], 0, phase)
-                        self.assertTrue(any(h['reason']=='performance_probe' for h in phase['history']), phase)
-                        self.assertGreater(phase['exploration_wall_s'], 0)
-                        self.assertTrue(f['sampler_stopped'])
-                        self.assertGreater(f['snapshot_requests'], 0)
-                        self.assertLessEqual(owner._token_organizer.peak_requests, 8)
-                        self.assertTrue(all(h['requests_before']+h['members'] <= h['C_request'] for h in owner._token_organizer.history))
-                        self.assertEqual(phase['control_unit'], 'single_model_requests')
-                finally:owner.close(timeout=3)
-        self.assertEqual(outputs[0], outputs[1])
+        rows = base.fixture.source_rows(size=2)
+        self.helper.config_for(plan, rows)
+        with base.ThreadedRuntime([]) as runtime, patch.object(
+                base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess):
+            owner = self.owner(plan, R=4, resident=True)
+            try:
+                first = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
+                self.assertEqual(len(list(first)), 2)
+                first_session = first.session.session_id
+                model = owner._actors.model_actor
+                self.assertIsNotNone(owner._supply_feedback.native_source_clock)
+                snapshots = sum(e[:2] == ('submit', 'AsyncCoreModelActor.snapshot') for e in runtime.events)
+                empty = owner.evaluate(iter(()), plan, expected=[], query_id=plan.query_id)
+                self.assertEqual(list(empty), [])
+                self.assertEqual(sum(e[:2] == ('submit', 'AsyncCoreModelActor.snapshot')
+                    for e in runtime.events), snapshots)
+                feedback = owner._supply_feedback
+                self.assertGreater(feedback.session_id, first_session)
+                self.assertIs(owner._actors.model_actor, model)
+                self.assertEqual(len(runtime.async_actors), 1)
+                self.assertEqual(feedback.requests, 0)
+                self.assertIsNone(feedback.provider)
+                self.assertIsNone(feedback.controller)
+                self.assertIsNone(feedback.native_source_clock)
+                self.assertIsNone(feedback._control_source)
+                self.assertIsNone(feedback.last_native)
+                self.assertEqual(feedback.resource_samples, [])
+            finally:
+                owner.close(timeout=3)
 
 
 class RequestSnapshotTests(ready.FeedbackReadyCollectionTests):
     """Run the existing ready/session/single-RPC contract on request control too."""
     def bound_sampler(self, **kwargs):
         result = super().bound_sampler(request_control=True, **kwargs)
-        self.assertIsInstance(result[0], batches.RequestSupplyFeedback)
+        self.assertIsInstance(result[0], ResourceRequestSupplyFeedback)
         return result
+
+    def frame(self, **options):
+        return frame_age(super().frame(**options))
 
 
 class RequestRPCReceiptTests(unittest.TestCase):
     """Keep unknown/terminal ownership contracts on the real request sampler."""
-    frame = rpc.SnapshotRPCReceiptTests.frame
+    def frame(self, **options):
+        return frame_age(rpc.SnapshotRPCReceiptTests.frame(self, **options))
     # Remaining ready contracts run above. These selected RPC boundaries have
     # no assumptions about the controlled window or the sampler's unit.
     test_close_collects_terminal = rpc.SnapshotRPCReceiptTests.test_close_collects_an_already_terminal_future_without_cancel
@@ -246,6 +259,6 @@ class RequestRPCReceiptTests(unittest.TestCase):
 
     def sampler(self, **options):
         old, refs, cancels = rpc.SnapshotRPCReceiptTests().sampler(**options)
-        feedback = batches.RequestSupplyFeedback(old.owner, default_supply_feedback_options())
-        feedback.session_id, feedback.started = 1, 0.
+        old.owner._actors.model_ready = source_ready(old.owner._actors.model_ready['engine_uid'])
+        feedback = request_sampler(old.owner, 1, options=ResourceRequestConfig(allow_exploration=False))
         return feedback, refs, cancels

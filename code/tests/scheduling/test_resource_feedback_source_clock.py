@@ -10,7 +10,6 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
-from src.execution_provider.adapters.lotus_records_core import _CoreFeedback
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.core.session_contract import Uncertain
 from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
@@ -24,8 +23,11 @@ FIXTURE = Path(__file__).with_name('fixtures')/'geometric_feedback_saved_input.j
 def saved_replay(data, *, source_stale_after_s=None):
     origin = data['origin']
     clock = dict(now=origin['started'])
+    # These selectors belonged to the retired request adapter, not this controller.
+    options = {key: value for key, value in origin['options'].items()
+               if key not in {'search_policy', 'physical_probe_policy'}}
     controller = ResourceFeedbackController(origin['maximum'], origin['initial'],
-        ResourceFeedbackConfig(**origin['options']), clock=lambda: clock['now'],
+        ResourceFeedbackConfig(**options), clock=lambda: clock['now'],
         source_stale_after_s=source_stale_after_s)
     controller.reset(origin['initial'], origin['total'])
     decisions = []
@@ -155,22 +157,6 @@ class ResourceFeedbackSourceClockTests(unittest.TestCase):
         self.assertIs(engine.capacity.records[key], record)
         self.assertTrue(record.compute)
         self.assertEqual(tuple(backend.cancelled), cancellations)
-
-
-class CoreSourceClockBindingTests(unittest.TestCase):
-    def test_begin_binds_the_existing_provider_budget_and_retains_it_on_query_reuse(self):
-        owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=4))
-        feedback = _CoreFeedback(owner, dict(kind='legacy_resource_feedback', search_mode='geometric',
-            poll_interval_s=.003, window_s=.01, allow_exploration=True))
-        self.addCleanup(feedback.stop)
-        feedback.begin(128, 1)
-        provider = feedback.provider
-        self.assertEqual(provider.stale_after_s, .5)
-        self.assertEqual(feedback.controller.source_stale_after_s, provider.stale_after_s)
-        provider.stale_after_s = .25
-        feedback.begin(128, 1)
-        self.assertIs(feedback.provider, provider)
-        self.assertEqual(feedback.controller.source_stale_after_s, .25)
 
 
 if __name__ == '__main__':

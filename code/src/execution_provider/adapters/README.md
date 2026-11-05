@@ -591,14 +591,20 @@ runs only through already enabled `MetricSources` reads, adds kernel-file I/O to
 that measured path and starts no extra thread or RPC. See the
 [source and CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure).
 
-Explicit `kind="legacy_resource_feedback"`, named `delivered-work-scan` and
-`computed-work-local-pairs`, and direct typed `ResourceFeedbackConfig` retain the
-historical policy settings. The Python rolling compatibility helper
-`default_request_feedback_options()` still returns that legacy type. Only this
-explicit path supports the old hint/cache and KV/busy tuning options. Historical
-restoration keeps original source hashes and numerical settings. Fixed-B batch
-feedback is a separate explicit option; its older rules below do not describe
-the current request policy. Joint B adjustment is unimplemented.
+<a id="retired-request-feedback"></a>
+The previous request strategy, its named profiles, cross-query hints and request
+admission cache are retired from current entry points. Recover their exact
+implementation and instructions from commit `9da299e90f79fd0b71f2a4983a90884f8ba960b5`:
+[adapter notes](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/src/execution_provider/adapters/README.md), [runtime notes](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/src/scheduling/runtime/calibration.README.md) and
+[configuration guide](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/docs/%E6%89%A7%E8%A1%8C%E9%85%8D%E7%BD%AE%E4%B8%8E%E4%BC%98%E5%8C%96%E5%BC%80%E5%85%B3.md). No compatibility execution route
+is installed for these retired interfaces. The earlier five named source
+projections retain their separate [recovery records](../../../../experiments/reproduction/native_baselines/README.md).
+Fixed-B `batch_feedback` remains supported with its existing
+`SupplyFeedbackConfig` and batch trial implementation. Its `ResourceFeedbackConfig`
+and `ResourceFeedbackController` do not enable the retired request entry.
+The shared work-comparison function remains used by current request and batch
+controllers; the finite point-search helper remains used by batch feedback.
+Joint B adjustment is unimplemented.
 
 <a id="resident-rolling-token-owner"></a>
 ### Resident rolling token model owner (local CPU candidate)
@@ -606,14 +612,11 @@ the current request policy. Joint B adjustment is unimplemented.
 `create_records_core(..., prepared_batching=batching, rolling_refill=True, resident=True)`
 retains a compatible prepared model/engine/worker/IPC across sequential ordinary Filter
 queries. The existing Movie Session selects it with `lifecycle="resident"`; no new plan
-schema or model pool is introduced. Fixed rolling RF retains its configured C (legacy budgets use R); RD uses the
-same admission configuration above. Current RD starts from one for every query.
-Explicit legacy ascending RD starts from a compatible,
-explicitly committed healthy hint when available, validates current work and
-conditions, then holds or conditionally continues. No hint starts at one; the
-explicit reference policy continues to reset each query. C_batch is null.
-Non-rolling token batches, batch feedback and admission
-cache remain excluded. Default `resident=False` preserves the single-query lifetime.
+schema or model pool is introduced. Fixed rolling RF retains its declared C;
+request feedback uses the admission configuration above and starts from one for
+every query. It retains no cross-query search state. C_batch is null.
+Non-rolling token batches and batch feedback remain excluded from this resident
+path. Default `resident=False` preserves the single-query lifetime.
 
 ```python
 owner = create_records_core(method, engine, generation, resources, profile=profile,
@@ -622,17 +625,16 @@ try:
     model_ready = owner.start()  # Original native readiness; no application inference.
     first = list(owner.evaluate(first_source, query_id="first"))
     first_result = interpret_complete_result(first)  # Caller owns business parsing/projection.
-    owner.confirm_query_feedback(completed=True)  # Only after the full result succeeds.
     reused = list(owner.evaluate(next_source, query_id="reused", method=compatible_method))
     reused_result = interpret_complete_result(reused)
-    owner.confirm_query_feedback(completed=True)
 finally:
     owner.close()  # Final model/IPC shutdown, separate from healthy query EOF.
 ```
 
 Queries retain fresh sources, ledgers, result consumers, token organizers and
-measurement state. Prior rate bands only invalidate conditions, never score the
-new query. The existing SessionEngine keeps monotonically increasing numeric session IDs.
+measurement state. Request measurements reset for each query; the caller owns
+business parsing and closes the owner if that parsing fails. The existing
+SessionEngine keeps monotonically increasing numeric session IDs.
 Normal EOF proves query transport/Core/actor/IPC responsibility and feedback RPCs are
 drained before reporting `model_retained=true`, `model_owner.status="retained"`.
 Completed iterator reports remain independent snapshots. Failure, cancellation, early
@@ -776,8 +778,8 @@ query. A resolved adjacent point permits the next geometric point; an unresolved
 adjacent point cannot be skipped. The operational batch ceiling and original
 request/byte capacities remain finite. A finite attempt limit is an explicit
 legacy budget choice and exhaustion is reported as censored, not as a platform.
-The retained request-controller `ResourceFeedbackConfig()` still defaults to two
-candidate attempts; passing that whole options object selects its full settings.
+The batch trial `ResourceFeedbackConfig()` defaults to two candidate attempts;
+passing that whole options object selects its full settings.
 Partial JSON options inherit the supply defaults, including the null attempt
 limit. Python callers can likewise replace fields on `SupplyFeedbackConfig(M).options`
 or use `SupplyFeedbackConfig.from_dict` without importing legacy budget defaults.
@@ -916,19 +918,12 @@ token wrapper在独立查询的`start()`仍只返回延迟分配声明；实际�
 
 ## records Core 可选动态接纳
 
-普通 `resource_feedback` 选择上述资源请求策略，从一开始且不支持旧推荐缓存；
-以下旧单遍参数只属于显式 `legacy_resource_feedback` 或两种具名历史选项。
+`create_records_core` 的固定默认与 sync/async 入口保持。显式
+`profile={"mode":"async","admission":{"kind":"resource_feedback"}}`
+启用[当前请求反馈](#optional-request-resource-feedback-local-cpu-candidate)，每个查询从一个请求开始。
+owner 的请求总额、准备参数及 actor／IPC 容量在启动前解析；反馈只调整该范围内的后续接纳。
+已退役请求策略的原参数、提示与缓存说明从[准确历史版本](#retired-request-feedback)恢复。
 
-`lotus_records_core.create_records_core` 的固定默认与 sync/async 既有路径保持。
-可显式选择 `profile="delivered-work-scan"` 或 `profile="computed-work-local-pairs"`；
-这两个名称是 legacy 实验参数对照，不推荐其
-10秒／剩余64条等设置作为新的资源平台研究配置。历史源码仍从具名复现还原。
-名称与原实验参数、首次／复用条件的唯一映射见[配置说明](../../scheduling/runtime/calibration.README.md#原实验配置选项)。
-`profile={"mode":"async","max_inflight": C0,"admission": {"kind":"legacy_resource_feedback", ...}}`
-显式接回原单遍 native-feedback admission；选项来自现有 `ResourceFeedbackConfig`，
-不是另一个执行器。`C0` 是起始软窗口；旧预算（`capacity.budget=None`）下，owner 硬请求额度 R
-取 `RecordsResources.max_active_batches`，显式独立 budget 下取 `budget.active_requests`，C0 不得超过 R。
-prepare 数、模型配置和 actor/IPC 容量在启动前确定。
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 或
 `max_num_batched_tokens` 未指定／null时，异步 Core 不传对应引擎参数，交由安装的
 vLLM 0.25.1 解析；显式正整数原样传入。当前同步 `VllmEngine` 也省略这两项；
@@ -937,7 +932,7 @@ LOTUS 原生 HTTP 与显式选择 `ReferenceVllmEngine` 的原生图继续保留
 未指定不表示无限容量或自动性能调优，也不改变外层 C/B/W、上下文长度或显存比例。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
 原 Core、actor、IPC 的请求／结果槽位与字节预留约束；这不表示这些请求同时在 GPU 上运行。
-旧预算下，`async_limits.max_inflight` 必须等于 R，`result_slots` 至少为 R，不能只按 C0 配置。
+未采用独立预算的兼容路径中，`async_limits.max_inflight` 必须等于 R，`result_slots` 至少为 R，不能只按初始 C 配置。
 [显式独立预算](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选)可为省略的 IPC 字段提供有限缺省值：
 请求／命令槽来自 `active_requests`，结果槽来自 `held_tasks`，总字节来自对应预算，控制预留沿原协议公式。
 显式 IPC 值保持，可小于 R；两层仍分别记账，实际接纳继续受槽位及字节背压。
@@ -965,20 +960,13 @@ ACK 继续拥有请求与结果，无第二套队列或责任计数。取消不�
 [线程与责任回归](../../../tests/execution_provider/test_lotus_rpc_capacity.py)仅为 CPU 资格；
 真实 Ray 的线程池、控制进展及 2,000 条模型提交仍待独立实机验收。
 
-`allow_exploration=True` 显式允许单遍性能试探；不设 admission 时保持固定且不启动 native
-反馈采样。当前显式字典的默认 `exploration_s=None, min_remaining=0, max_changes=None`
-不设内部总探索期限、剩余条数门槛或变更次数上限；正值仅供显式 legacy 预算对照。
-`max_inflight="auto"` 仅在显式 async 下选择声明的 Core request budget，
-不是实测调优，也不自动扩大调用方额度。同步 Core 仍只
-接收 model batch 1；有限同步批参照 `lotus_records_static` 不冒称 Core 批处理。
-当前反馈只调未完成请求窗口 C；每批行数或累计 token 工作预算 B 是组批边界，
-不是这个窗口。当前 records Core 仍为 B1，没有扫描 B 或按 token 组批与动态反馈联动。
-
-普通查询可用同一公共 `scheduling.runtime.calibration.run_admission_query` 接精确配置复用。
-Movie 的薄配置槽及计时/资格边界见 [calibration.README](../../scheduling/runtime/calibration.README.md)。
-恢复的是两版旧策略本身，历史波动和负结果保留；旧短查询功能实测的边界见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)。
-两版原参数的同条件首次／复用模型验收须另列，不能以开关能运行或短查询返回替代。
-
+`allow_exploration=True` 允许当前控制器进行可逆性能试探；省略 admission 时保持固定路径，
+不启动该反馈采样。可选时间、变更次数与尾部工作预算由调用者显式声明，不作为硬件性能结论。
+`max_inflight="auto"` 只在 async 模式下选用声明的 Core 请求额度，不测量或扩大实际资源。
+同步 Core 继续按完整请求执行；有限同步批参照由 `lotus_records_static` 单独提供。
+请求反馈调整单请求窗口 C；每批 token 工作预算 B 由组批选项声明。非 rolling 的
+`batch_feedback` 调整应用批窗口，联合调整 B 尚未实现。当前配置及其采样时钟见
+[运行时说明](../../scheduling/runtime/calibration.README.md#resource-request-public-current)。
 
 ### 静态参照的显式 session
 
@@ -1063,14 +1051,9 @@ IPC defaults; a verified exclusive service allocation is not implemented by this
 Caller-owned relations, retained audit data, Python/Ray objects and model memory are outside
 these logical byte amounts. Actual hardware capacity and full query memory qualification remain pending.
 
-The legacy feedback adapter now binds `ResourceFeedbackController.source_stale_after_s`
-to the existing provider's declared `stale_after_s`. Sample recency uses that source duration;
-`window_s` still measures work. Direct callers that omit the binding retain the old age rule,
-and historical `pressure_response="window"` is unchanged. Modern request feedback is a separate path.
-This same-machine change does not map native clocks across hosts. Fixed-input replay remains
-an off-policy decision check. New executions must declare a distinct `execution.source_revision`
-or use a separate admission cache: the existing key does not automatically hash controller code.
-
+The retired request adapter's source-age rules are available in the
+[exact historical notes](#retired-request-feedback). Current request feedback
+uses its bound native and independent safety sources as described above.
 
 ### 同步模型的上下文回执
 
@@ -1113,16 +1096,11 @@ ACK 不归还 compute／结果／unknown。原帧头及逐候选计量缓存继�
 原结果保留，局部较早派发不证明完整查询变快。没有真实模型、Ray 或 GPU 资格。
 
 
-### legacy 资源反馈的等待中快照
+### 已退役请求反馈的原始说明
 
-旧反馈适配器保留同一模型、同一查询中仍可使用的原始帧，供已有非阻塞观察者处理序号去重和一次消费。
-新 RPC 等待期间不清掉尚未消费的帧；没有有效来源、响应错误、请求到期、模型／查询变化仍清除。
-缓存不刷新时间、速率或采样代数，缺少原始序号的帧不重复发布；原公开 sample 仍在等待时返回空值。
-到期取消后继续持有同一未完成 RPC，不因此释放不确定请求或模型资源。
-现代 RecordsNativeSampler 已有等待中保留处理，本批不改其实现或公共观察者对空返回的解释。
-[检查摘要](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/pending_frame_checks.json)
-保存原反例和 geometric 的独立年龄问题；保留帧不保证控制器接受超出自身设置年龄的输入。
-
+旧适配器的等待中快照与采样修订按[固定历史文档](#retired-request-feedback)追溯。
+原失败、原件与具名来源不改写；现用采样继续由 `RecordsNativeSampler` 持有同一个 RPC，
+未知结果保留原责任，不因教程退役而减少收尾检查。
 
 ### Movie 配置到已有准备选项的接线
 

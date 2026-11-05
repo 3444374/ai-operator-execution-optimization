@@ -185,6 +185,24 @@ manifest 的 `source_formats` 记录压缩摘要、准确解码长度，原逐�
 五份投影的文件摘要、恢复映射和投影 ID 均不改。
 原三项行为测试改为读取这份历史源码，不为当前执行保留兼容导出。
 维护模块不再支持旧类型直接导入或任意旧 pickle 对象恢复；具名历史树保留原类路径与字节。
-维护版供给／请求反馈、实际 stage broker 和显式历史 profile 仍有调用，继续保留；
+维护版供给／请求反馈与实际 stage broker 保留；显式历史 profile 随后按下节移出现用入口；
 [逐项依据与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
 区分本次退役与仍需兼容的内容。
+
+
+<a id="retired-request-feedback"></a>
+## 旧请求反馈的 Git 恢复
+
+维护代码已删除旧 `legacy_resource_feedback`、`delivered-work-scan`、`computed-work-local-pairs`、
+`AscendingRequestController`、旧请求适配器、跨查询 hint 缓存及其专属测试。当前请求策略使用
+`resource_feedback`；独立批反馈、共享工作量比较、资源采样和现代请求控制器保持。
+旧机制不是当前运行器的兼容开关。需要重查原行为时使用准确完整 Git 树：
+
+```sh
+git worktree add --detach /tmp/semloom-request-history-9da 9da299e90f79fd0b71f2a4983a90884f8ba960b5
+```
+
+目标目录须为新目录；这里只恢复源码，不启动 Ray、模型或服务器。旧机制的配置、说明与测试在该树按原实现读取；退役时已做后续校正的测试按逐项清单的 `3fd3887e` 来源恢复。
+不要将个别旧文件复制回维护树。原五份具名投影、已有逐文件摘要及恢复映射不改；它们与整个 9da 树用途不同。
+[本批清单](../../results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+记录逐文件／方法摘要、保留的现代行为及未完成的真实运行检查。

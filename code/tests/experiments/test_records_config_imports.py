@@ -28,27 +28,25 @@ class RecordsConfigImportTests(unittest.TestCase):
             text=True, capture_output=True, timeout=20)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_capacity_profile_IPC_and_cache_helpers_do_not_load_owners(self):
+    def test_capacity_profile_and_IPC_helpers_do_not_load_owners(self):
         self.probe('''
 from dataclasses import asdict
 from src.experiments import movie_records_config as config
-from src.execution_provider.adapters.records_profile import resolve_core_profile
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 engine = EngineSpec('/tmp/config-only-model', sys.executable, sys.executable)
 resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=7)
 value = dict(backend=config.ASYNC_CORE_BACKEND, engine=asdict(engine),
-    core_profile=dict(mode='async', max_inflight=3, admission=dict(kind='legacy_resource_feedback')),
+    core_profile=dict(mode='async', max_inflight=3),
     core_capacity=dict(item_input_bytes=65536, item_result_bytes=65536),
-    async_limits={}, admission_cache=dict(identity=dict(execution={})))
+    async_limits={})
 capacity = config.core_capacity(value)
-resolved = resolve_core_profile(engine, resources, config.core_profile(value), capacity=capacity)
-limits = config.async_limits(value, resources=resources, resolved=resolved)
+configured = config.records_runtime(value, resources=resources, engine=engine)
+limits = configured.async_limits
 assert limits.max_inflight == 7
-assert limits.input_bytes == 7*65536
-cache = config.record_admission_cache(value, resources=resources, resolved=resolved)
-assert cache['identity']['execution']['records_capacity_v1']['IPC']['max_inflight'] == 7
-assert value['admission_cache']['identity']['execution'] == {}
+assert limits.input_bytes == configured.capacity.budget.input_bytes
+assert configured.capacity.budget.active_requests == 7
+assert value['async_limits'] == {}
 ''')
 
     def test_public_session_check_reads_fixture_sources_without_loading_owners(self):

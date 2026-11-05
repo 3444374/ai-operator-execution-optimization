@@ -108,12 +108,12 @@ def validate_core_scan(plan, group, index, cpu_limit):
     """Validate declared capacities without pretending to observe hardware."""
     jobs=scan_jobs(group,index)
     if not jobs:return
-    from src.execution_provider.adapters.records_profile import expand_core_profile, resolve_core_profile
+    from src.execution_provider.adapters.records_profile import resolve_core_profile
     from src.serving.backends.vllm_protocol import EngineSpec
     from src.semantic_methods.lotus.records import RecordsResources
-    profile=expand_core_profile(plan['profile'])
-    if profile.get('admission') is not None:
-        raise ValueError('fixed Core calibration cannot also run online admission')
+    profile=plan['profile']
+    if type(profile) is not dict or profile.get('admission') is not None:
+        raise ValueError('fixed Core calibration requires a profile object without online admission')
     if plan['backend']!='semloom-core' or profile.get('mode')!='async':
         raise ValueError('measured Core selection currently supports async only; fixed sync remains available')
     resources=RecordsResources(**plan['resources']);engine=EngineSpec.from_dict(plan['engine'])
@@ -307,90 +307,3 @@ def declared_shared_resources(cfg,packet):
     if 'shared_resources' in cfg:
         return cfg['shared_resources']
     return packet.read(packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']
-
-
-def validate_record_admission_cache(value, resolved):
-    """Validate metadata only; policy validation remains in the public Core API."""
-    if value is None:
-        return None
-    if (type(value) is not dict or set(value) - {'identity','cache_dir','reuse','workload_features'}
-            or not {'identity','cache_dir'}.issubset(value)
-            or type(value.get('reuse',True)) is not bool
-            or type(value['cache_dir']) is not str or not Path(value['cache_dir']).is_absolute()):
-        raise ValueError('admission_cache needs identity, absolute cache_dir and optional boolean reuse')
-    if resolved is None or resolved.get('mode')!='async' or 'admission' not in resolved:
-        raise ValueError('admission_cache requires explicit async resource-feedback admission')
-    if resolved['admission'].get('kind') != 'legacy_resource_feedback':
-        raise ValueError('cross-query admission_cache requires explicit legacy_resource_feedback')
-    from src.scheduling.runtime.calibration import identity_signature
-    identity_signature(value['identity'])
-    if resolved['admission'].get('work_basis') == 'computed' or 'workload_features' in value:
-        from src.scheduling.runtime.calibration import admission_identity
-        admission_identity(value['identity'], workload_features=value.get('workload_features'))
-    return value
-
-
-def run_record_admission(cache, resolved, source, method, generation, engine, resources,
-                         execute_query, *, warmup=False, model_ready=None, resolve_model_context=None):
-    """Cache only after the existing complete query callback returns and drains.
-
-    The caller still owns model startup/final close and actual return timing.
-    Identity metadata is supplied by the run manifest; actual source, method,
-    generation and configured capacities are additionally bound below.
-    """
-    from dataclasses import asdict
-    import time
-    from src.scheduling.runtime.calibration import run_admission_query
-    from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
-    entered=time.monotonic()
-    cache=validate_record_admission_cache(cache,resolved)
-    options=ResourceFeedbackConfig(**{k:v for k,v in resolved['admission'].items()
-                                     if k not in ('kind','gpu_ids')})
-    initial,maximum=resolved['max_inflight'],resolved['owner_max_inflight']
-    if warmup:
-        result=execute_query(initial,allow_exploration=False,search_hint=None)
-        result['admission_selection']=dict(cache_hit=False,configuration_source='warmup_initial',
-            cache_read_or_write=False,scan_cost=dict(wall_s=0.,samples=0))
-        return result
-    context = None
-    context_startup_s = 0.
-    if engine.max_model_len is None:
-        from src.serving.backends.model_context import model_context_identity
-        if model_ready is None and resolve_model_context is not None:
-            started = time.monotonic()
-            model_ready = resolve_model_context()
-            context_startup_s = time.monotonic() - started
-        context = model_context_identity(engine, model_ready)
-    identity=deepcopy(cache['identity'])
-    identity['model']=dict(declared=identity['model'],actual=asdict(engine))
-    if context is not None:
-        identity['model']['effective_context_v1'] = context
-    identity['generation']=dict(declared=identity['generation'],actual=asdict(generation))
-    identity['execution']=dict(declared=identity['execution'],profile=resolved['requested'],
-                               resources=asdict(resources))
-    identity['workload']=dict(declared=identity['workload'],manifest_sha256=sha(source.manifest_path),
-                             method=asdict(method))
-    def execute(window, *, allow_exploration, search_hint=None):
-        result=execute_query(window,allow_exploration=allow_exploration,search_hint=search_hint)
-        if context_startup_s:
-            result['model_context_startup_seconds'] = context_startup_s
-            if type(result.get('query_seconds')) in (int,float):
-                result['query_seconds'] += context_startup_s
-            result['query_timing_scope'] = result.get('query_timing_scope', '') + '; includes earlier model readiness for context resolution'
-        close=result.get('backend_close') or {}
-        usage=close.get('core_usage') or {}
-        counts=(result.get('calls') or {}).get('counts') or {}
-        eligible=(result.get('status')=='completed' and close.get('status')=='closed'
-                  and usage.get('held_tasks')==0 and close.get('source_closed') is True
-                  and not close.get('cleanup_errors')
-                  and all(counts.get(k)==0 for k in ('failed','unknown','missing')))
-        return dict(status=result.get('status'),reuse_eligible=eligible,
-            admission_feedback=close.get('admission_feedback'),query_report=result)
-    selection=run_admission_query(identity,execute,initial_window=initial,maximum=maximum,
-        cache_dir=cache['cache_dir'],reuse=cache.get('reuse',True),options=options,
-        workload_features=cache.get('workload_features'), request_started_monotonic=entered)
-    result=selection.pop('result')['query_report']
-    result['admission_selection']=selection
-    selection['entry_work_wall_s']=time.monotonic()-entered
-    selection['entry_work_scope']='binding through complete query and cache write, before payload return; caller measures actual return'
-    return result

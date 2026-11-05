@@ -1,12 +1,9 @@
-"""CPU differential contracts against both retained historical feedback sources.
+"""CPU behavior comparisons for shared measured-work feedback.
 
-The target is the current exported source. Both oracles are resolved file by
-file through native_baselines/MANIFEST.json, and every loaded oracle file is
-SHA256 checked. No model, Ray, vLLM, database or network is instantiated.
-
-The core delivery/profile/sampling nodes are compiled verbatim from their AST
-to avoid importing unrelated runtime dependencies. These are method contracts;
-the existing CPU IPC/lifecycle tests remain necessary integration coverage.
+Historical oracles use the retained manifest and exact source hashes. Current
+shared algorithms and receipt parsing run through their maintained modules;
+only the historical receipt node is isolated from its old runtime imports.
+No model, Ray runtime, database or network is instantiated.
 """
 
 from __future__ import annotations
@@ -88,38 +85,16 @@ class SourceView(importlib.abc.MetaPathFinder):
         return importlib.import_module(self.label + "." + name)
 
     def core_contract_nodes(self):
-        logical = "code/src/execution_provider/adapters/lotus_records_core.py"
-        location = self.path(logical)
-        tree = ast.parse(location.read_text(), filename=str(location))
-        names = {"_measure", "resolve_core_profile", "_CoreRows", "_CoreFeedback"}
-        optional = {"expand_core_profile"}
-        nodes = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))
-                 and node.name in names | optional]
         if self.manifest is None:
-            providers = {
-                "records_profile": {"resolve_core_profile", "expand_core_profile"},
-                "records_model_adapter": {"_measure"},
-            }
-            for module, provided in providers.items():
-                if not any(isinstance(node, ast.ImportFrom) and node.level == 1
-                           and node.module == module for node in tree.body):
-                    continue
-                path = self.path("code/src/execution_provider/adapters/"+module+".py")
-                provider = ast.parse(path.read_text(), filename=str(path))
-                nodes.extend(node for node in provider.body if isinstance(node, ast.FunctionDef)
-                             and node.name in provided)
-        if not names <= {node.name for node in nodes}:
-            raise AssertionError("Production core node moved: adapt extraction explicitly")
-        if len(nodes) != len({node.name for node in nodes}):
-            raise AssertionError("Ambiguous production core definitions")
+            return importlib.import_module('src.execution_provider.adapters.lotus_records_core')
+        location = self.path("code/src/execution_provider/adapters/lotus_records_core.py")
+        tree = ast.parse(location.read_text(), filename=str(location))
+        nodes = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))
+                 and node.name in {"_measure", "_CoreRows"}]
         records = self.module("semantic_methods.lotus.records")
-        observations = self.module("scheduling.runtime.observations")
         namespace = dict(__name__=self.label + "._core_nodes", Iterator=Iterator, Any=Any,
                          asdict=asdict, replace=replace, json=json, time=time,
-                         nullcontext=nullcontext, CallLedger=records.CallLedger,
-                         ResourceFeedbackConfig=self.adaptive.ResourceFeedbackConfig,
-                         ResourceFeedbackController=self.adaptive.ResourceFeedbackController,
-                         ServiceMetricsSnapshot=observations.ServiceMetricsSnapshot)
+                         nullcontext=nullcontext, CallLedger=records.CallLedger)
         selected = ast.Module(body=[ast.ImportFrom(module="__future__", names=[
             ast.alias(name="annotations")], level=0), *nodes], type_ignores=[])
         exec(compile(ast.fix_missing_locations(selected), str(location), "exec"), namespace)
@@ -229,17 +204,6 @@ class LegacyFeedbackContracts(unittest.TestCase):
         expected, actual = oracle.c.report(), target.c.report()
         self.assertEqual(project_legacy(actual, expected) if legacy else actual, expected)
 
-    def test_work_comparison_node_is_exact_ee39_ast(self):
-        logical = "code/src/scheduling/submission_control/adaptive.py"
-        # Search now supports an optional unlimited budget and interruption
-        # recovery. Finite legacy behavior remains covered by trace differentials.
-        names = {"_local_pair_evidence"}
-        def nodes(view):
-            tree = ast.parse(view.path(logical).read_text())
-            return {node.name: ast.dump(node, include_attributes=False) for node in tree.body
-                    if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name in names}
-        self.assertEqual(set(nodes(self.target)), names)
-        self.assertEqual(nodes(self.target), nodes(self.ee39))
 
     def test_current_feedback_defaults_have_no_implicit_exploration_cutoffs(self):
         cfg = self.target.adaptive.ResourceFeedbackConfig()
@@ -307,26 +271,6 @@ class LegacyFeedbackContracts(unittest.TestCase):
         self.assertEqual(report['incomplete_reason'], 'no_pending_work')
         self.assertFalse(report['learned_global_optimum'])
 
-    def test_old_budgeted_hint_does_not_alias_unbudgeted_policy(self):
-        old = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric', window_s=1,
-            min_samples=2, min_remaining=64, exploration_s=10, max_changes=8, allow_exploration=True)
-        current = replace(old, min_remaining=0, exploration_s=None, max_changes=None)
-        identity = {name: dict(fixture=name) for name in
-                    ('hardware', 'model', 'generation', 'execution', 'workload', 'measurement')}
-        identity['measurement']['work_unit'] = 'rows'
-        with tempfile.TemporaryDirectory() as directory:
-            reports = []
-            for options in (old, current, current):
-                def execute(window, *, allow_exploration, search_hint):
-                    trace = Trace(self.target, initial=window, maximum=6,
-                        options=replace(options, allow_exploration=allow_exploration), hint=search_hint)
-                    if allow_exploration:
-                        trace.run()
-                    return dict(status='completed', reuse_eligible=True, admission_feedback=trace.c.report())
-                reports.append(self.target.calibration.run_admission_query(identity, execute,
-                    initial_window=3, maximum=6, cache_dir=directory, options=options))
-            self.assertEqual([report['cache_hit'] for report in reports], [False, False, True])
-            self.assertNotEqual(reports[0]['saved_hint']['path'], reports[1]['saved_hint']['path'])
 
     def test_delivered_defaults_preserve_cfdc_decisions_existing_fields_and_state(self):
         for mode in ("gain", "regression", "noise", "cache_only"):
@@ -437,42 +381,7 @@ class LegacyFeedbackContracts(unittest.TestCase):
         self.assertEqual(self.target.adaptive._local_pair_evidence(before, after, 0), expected)
         self.assertEqual(expected["support_pairs"], 0)
 
-    def test_profile_options_and_invalid_combinations_match_ee39(self):
-        for view in (self.target, self.ee39):
-            core = view.core_contract_nodes()
-            engine, resources = SimpleNamespace(max_num_seqs=12), SimpleNamespace(max_active_batches=8)
-            options = dict(kind=('legacy_resource_feedback' if view is self.target else 'resource_feedback'), search_mode="geometric",
-                           work_basis="computed", work_comparison="local_pairs")
-            profile = core.resolve_core_profile(engine, resources,
-                                                dict(mode="async", max_inflight=3, admission=options))
-            self.assertEqual(profile["max_inflight"], 3)
-            self.assertEqual(profile["owner_max_inflight"], 8)
-            self.assertEqual(profile["admission"]["work_comparison"], "local_pairs")
-            for invalid in (dict(work_basis="computed"), dict(work_comparison="local_pairs"),
-                            dict(work_basis="invented"), dict(work_comparison="invented")):
-                with self.assertRaises(ValueError):
-                    view.adaptive.ResourceFeedbackConfig(**invalid)
 
-    def test_public_profile_names_expand_to_the_retained_experiment_options(self):
-        core = self.target.core_contract_nodes()
-        engine, resources = SimpleNamespace(max_num_seqs=64), SimpleNamespace(max_active_batches=64)
-        for name, basis, comparison in (("delivered-work-scan", "delivered", "envelope"),
-                                        ("computed-work-local-pairs", "computed", "local_pairs")):
-            result = core.resolve_core_profile(engine, resources, name)
-            self.assertEqual((result["mode"], result["initial_window"], result["owner_max_inflight"]),
-                             ("async", 8, 64))
-            self.assertTrue(result["stage_timing"])
-            options = result["admission"]
-            self.assertEqual({key: options[key] for key in (
-                "poll_interval_s", "window_s", "min_samples", "min_remaining", "exploration_s",
-                "max_changes", "max_candidate_attempts", "work_basis", "work_comparison")}, dict(
-                poll_interval_s=.1, window_s=.25, min_samples=16, min_remaining=64,
-                exploration_s=10., max_changes=8, max_candidate_attempts=2,
-                work_basis=basis, work_comparison=comparison))
-            self.assertFalse(result["performance_tuned"])
-        self.assertNotIn("admission", core.resolve_core_profile(engine, resources))
-        with self.assertRaises(ValueError):
-            core.expand_core_profile("invented")
 
     def test_per_call_request_output_measurement_does_not_fabricate_cache_zero(self):
         for cached in (6, 0, None, -1, 11, True, 1.5, "absent"):
@@ -544,121 +453,7 @@ class LegacyFeedbackContracts(unittest.TestCase):
                 stream._value(json.dumps(value))
                 self.assertEqual(stream.completed_effective_work, (3, None, None))
 
-    def test_sampler_requires_the_exact_same_delivered_prefix_and_generation(self):
-        for view in (self.target, self.ee39):
-            nodes = view.core_contract_nodes()
-            for effective_count, session_id, generation_changed in (
-                    (10, "session", False), (11, "session", False),
-                    (10, "foreign", False), (10, "session", True)):
-                feedback = object.__new__(nodes._CoreFeedback)
-                feedback.generation = 1
-                feedback.stream = SimpleNamespace(session=SimpleNamespace(session_id="session"))
-                feedback.owner = SimpleNamespace(transport=None, _actors=SimpleNamespace(
-                    model_ready=dict(engine_uid="CPU")))
-                feedback.options = SimpleNamespace(poll_interval_s=.1)
-                feedback.gpu_ids = []
-                feedback.started = 0
-                feedback.ref, feedback.ref_expired = object(), False
-                feedback.progress = (10, 90, 0, False)
-                feedback.completed_work = (10, 100, 10)
-                feedback.completed_effective_work = (effective_count, 40, 60)
-                feedback.samples = feedback.sample_errors = feedback.peak_native_running = 0
-                feedback.provider = None
-                snapshot = dict(engine_uid="CPU", observed_at_s=1, running=3, waiting=0,
-                                kv_usage=.1, generation_tokens_total=10, sequence=1,
-                                preemptions_total=0)
-                def result():
-                    if generation_changed:
-                        feedback.generation += 1
-                    return dict(session_id=session_id, ipc=dict(native_feedback=snapshot))
-                feedback.future = SimpleNamespace(done=lambda: True, result=result)
-                value = feedback.sample()
-                self.assertEqual(feedback.sample_errors, 0)
-                if session_id != "session" or generation_changed:
-                    self.assertIsNone(value)
-                else:
-                    self.assertIsNotNone(value)
-                    self.assertEqual(value.completed_computed_input_work_total,
-                                     40 if effective_count == 10 else None)
 
-    def test_admission_feature_identity_and_cross_query_hints_match_ee39(self):
-        summaries = []
-        for view in (self.target, self.ee39):
-            identity = {key: {"CPU": "v1"} for key in (
-                "hardware", "model", "generation", "execution", "workload", "measurement")}
-            identity["measurement"]["work_unit"] = "model_calls"
-            features = dict(work_unit="tokens", input_work=dict(mean=100, p95=100),
-                            output_work=dict(limit=4), cache=dict(enabled=True, scope="model_owner"))
-            summary = []
-            with tempfile.TemporaryDirectory() as folder:
-                for pairs in (False, True):
-                    # Each policy iteration starts with a distinct raw task identity;
-                    # the prior iteration intentionally renamed its workload.
-                    identity["workload"] = dict(query_id="original-" + str(pairs),
-                                                path="path-a", rows=137)
-                    base = Trace(view, maximum=6, computed=True, pairs=pairs)
-                    calls = []
-                    def invoke(*, features_value=features, failed=False, pressure=False):
-                        def execute(window, *, allow_exploration, search_hint):
-                            calls.append((window, allow_exploration, deepcopy(search_hint)))
-                            trace = Trace(view, initial=window, maximum=6,
-                                          hint=search_hint, options=replace(
-                                              base.options, allow_exploration=allow_exploration))
-                            if pressure:
-                                trace.tick(0, kv=.99)
-                                trace.tick(0, kv=.99)
-                            else:
-                                trace.run()
-                            return dict(status="failed" if failed else "completed",
-                                        reuse_eligible=not failed, admission_feedback=trace.c.report())
-                        return view.calibration.run_admission_query(identity, execute, initial_window=3,
-                            maximum=6, cache_dir=Path(folder) / str(pairs), options=base.options,
-                            workload_features=features_value)
-                    original = deepcopy(identity)
-                    changed = deepcopy(identity)
-                    changed["workload"] = dict(query_id="new", path="other", rows=19)
-                    self.assertNotEqual(view.calibration.identity_signature(identity),
-                                        view.calibration.identity_signature(changed))
-                    self.assertNotEqual(view.calibration.identity_signature(identity),
-                        view.calibration.identity_signature(view.calibration.admission_identity(
-                            identity, workload_features=features)))
-                    self.assertEqual(view.calibration.admission_identity(identity, workload_features=features),
-                                     view.calibration.admission_identity(changed, workload_features=features))
-                    self.assertEqual(identity, original)
-                    first = invoke()
-                    identity["workload"] = changed["workload"]
-                    second = invoke()
-                    self.assertEqual([first["cache_hit"], second["cache_hit"]], [False, True])
-                    self.assertEqual(second["result"]["admission_feedback"]["changes"], 0)
-                    self.assertTrue(calls[-1][1])  # Fresh work validation even for a complete hint.
-                    pressure_report = invoke(pressure=True)
-                    third = invoke()
-                    self.assertTrue(third["revalidate_prior_pressure"])
-                    self.assertEqual(third["historical_evidence"]["search_state"],
-                                     pressure_report["result"]["admission_feedback"]["search_state"])
-                    different = deepcopy(features)
-                    different["input_work"]["mean"] = 200
-                    self.assertFalse(invoke(features_value=different)["cache_hit"])
-                    for group in ("hardware", "model", "generation", "execution", "measurement"):
-                        previous = deepcopy(identity[group])
-                        identity[group]["version"] = "changed"
-                        self.assertFalse(invoke()["cache_hit"])
-                        identity[group] = previous
-                    summary.append(dict(first=first["result"]["admission_feedback"],
-                                        second=second["result"]["admission_feedback"],
-                                        third=third["result"]["admission_feedback"], calls=calls))
-                    with self.assertRaises(ValueError):
-                        view.calibration.run_admission_query(identity, lambda *_: None,
-                            initial_window=3, maximum=6, cache_dir=folder, options=base.options)
-                with tempfile.TemporaryDirectory() as failed_folder:
-                    def failed_execute(window, *, allow_exploration, search_hint):
-                        return dict(status="failed", reuse_eligible=False)
-                    view.calibration.run_admission_query(identity, failed_execute,
-                        initial_window=3, maximum=6, cache_dir=failed_folder,
-                        options=base.options, workload_features=features)
-                    self.assertEqual(list(Path(failed_folder).iterdir()), [])
-            summaries.append(summary)
-        self.assertEqual(*summaries)
 
 
 if __name__ == "__main__":

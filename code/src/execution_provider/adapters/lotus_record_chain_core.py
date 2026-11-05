@@ -673,11 +673,9 @@ class SemLoomRecordChainCore:
                 raise ValueError('batch feedback requires token batches starting at one, a ceiling within R and native ready clocks')
         self.batch_feedback, self._supply_feedback = batch_feedback, None
         if request_feedback is not None:
-            from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
-            if type(request_feedback) not in (ResourceFeedbackConfig, ResourceRequestConfig):
-                raise TypeError('request_feedback must be a typed current or explicit legacy request policy')
-            if type(request_feedback) is ResourceFeedbackConfig and request_feedback.memory_floor_bytes:
-                raise ValueError('rolling memory_floor_bytes requires a memory signal source; none is connected')
+            from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+            if type(request_feedback) is not ResourceRequestConfig:
+                raise TypeError('request_feedback must be ResourceRequestConfig')
             if experimental_skip_token_packing:
                 raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
             if (not self._async_token_batches or not rolling_refill
@@ -695,9 +693,6 @@ class SemLoomRecordChainCore:
             raise ValueError('resident token owner requires record-local rolling refill')
         self.resident = resident
         self._query_count = 0
-        self._request_scan_hints = {}
-        self._request_scan_pending = {}
-        self._request_scan_acknowledged = True
         self._feedback_sink_installed = False
         self.token_budget = None
         if token_budget is not None:
@@ -1274,12 +1269,6 @@ class SemLoomRecordChainCore:
                 self.resident and (self.last_close_report or {}).get('query_completed')
                 and self.last_close_report.get('model_retained')):
             raise RuntimeError("Core chain owner already used or closing")
-        if not self._request_scan_acknowledged:
-            # A prior model EOF is not proof that its complete query callback
-            # succeeded. Uncommitted pending evidence cannot seed another query.
-            self._request_scan_hints.clear()
-            self._request_scan_pending.clear()
-        self._request_scan_acknowledged = False
         chain = LotusRecordChain.from_dict(chain.describe())
         if chain.query_id != query_id or len({s.method.model_name for s in chain.stages}) != 1:
             raise ValueError("record-local query requires one query and one model deployment")
@@ -1364,12 +1353,9 @@ class SemLoomRecordChainCore:
             # The previous query has closed its transport and released every credit.
             self.core.backend, self.core.policies = self.transport, policies
         if feedback_options is not None:
-            from .lotus_chain_token_batches import BatchSupplyFeedback, RequestSupplyFeedback
+            from .lotus_chain_token_batches import BatchSupplyFeedback
             from .records_request_feedback import ResourceRequestSupplyFeedback
-            from src.scheduling.submission_control.adaptive import ResourceRequestConfig
-            request_type = (ResourceRequestSupplyFeedback if type(self.request_feedback) is ResourceRequestConfig
-                            else RequestSupplyFeedback)
-            self._supply_feedback = (request_type(self, self.request_feedback)
+            self._supply_feedback = (ResourceRequestSupplyFeedback(self, self.request_feedback)
                 if self.request_feedback is not None else BatchSupplyFeedback(self, self.batch_feedback))
             if not self._feedback_sink_installed:
                 previous_sink = self.core.sink
@@ -1547,39 +1533,3 @@ class SemLoomRecordChainCore:
             if stream.error is not None:
                 stream.error.chain_calls = self.calls
         return self.last_close_report
-
-    def confirm_query_feedback(self, *, completed):
-        """Commit only after the caller's complete result interpretation succeeds.
-
-        Model/transport EOF only stages a hint. The caller owns parsing,
-        projection and final result validation; failure explicitly discards it.
-        This state is in-memory and scoped to this compatible resident owner.
-        """
-        if type(completed) is not bool:
-            raise TypeError('completed must be the explicit complete-query outcome')
-        close = self.last_close_report or {}
-        feedback = close.get('request_supply_feedback') or {}
-        eligible = (completed and self.resident and close.get('query_completed') is True
-            and close.get('status') == 'closed' and close.get('model_retained') is True
-            and close.get('source_closed') is True and not close.get('cleanup_errors')
-            and (close.get('core_usage') or {}).get('held_tasks') == 0
-            and feedback.get('snapshot_rpc_terminal_evidence_complete') is True
-            and all(call.get('status') == 'succeeded' for call in self.calls))
-        committed = bool(eligible and self._request_scan_pending)
-        if committed:
-            self._request_scan_hints = deepcopy(self._request_scan_pending)
-        elif not eligible or any(phase.get('feedback_gaps', 0)
-                or phase.get('stop_reason') == 'resource_pressure'
-                or (phase.get('reasons') or {}).get('at_minimum', 0) or any(
-                row.get('reason') == 'resource_pressure' for row in phase.get('history', ()))
-                for phase in feedback.get('phases', ())):
-            self._request_scan_hints.clear()
-        self._request_scan_pending.clear()
-        self._request_scan_acknowledged = True
-        receipt = dict(scope='compatible resident model owner; no disk cache or historical rate reuse',
-            full_query_completed=completed, reuse_eligible=eligible, committed=committed,
-            qualified_phase_hints=len(self._request_scan_hints),
-            policy='ascending_request_work_v1')
-        if self.last_close_report is not None:
-            self.last_close_report = dict(self.last_close_report, request_scan_reuse=receipt)
-        return deepcopy(receipt)

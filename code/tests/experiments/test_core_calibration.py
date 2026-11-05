@@ -153,9 +153,8 @@ class CoreCalibrationTests(unittest.TestCase):
         self.assertEqual(chosen['profile']['max_inflight'],3)
         self.assertEqual(chosen['engine']['max_num_seqs'],2)
         plan['profile']['admission']=dict(kind='legacy_resource_feedback')
-        legacy=core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,software=self.software)
-        with self.assertRaisesRegex(ValueError,'capacity'):
-            core.core_candidate_plan(plan,self.checked,dict(max_inflight=3,cpu_workers=1),identity=legacy)
+        with self.assertRaises(ValueError):
+            core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,software=self.software)
 
     def test_equal_capacity_prefers_fewer_prepare_workers(self):
         selected = core.build_core_selection(**self.scan({(3, 2): [10] * 3, (3, 1): [10.1] * 3}))

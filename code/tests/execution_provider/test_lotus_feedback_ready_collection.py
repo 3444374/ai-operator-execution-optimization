@@ -4,13 +4,19 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_chain_token_batches as batching
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
+from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
 from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
 from tests.execution_provider import test_lotus_snapshot_rpc_receipts as receipts
+from tests.execution_provider.resource_request_sampler_fixture import ready, request_sampler
 
 
 class FeedbackReadyCollectionTests(unittest.TestCase):
+    def frame(self, *, observed_at_s=None, **options):
+        value = receipts.SnapshotRPCReceiptTests.frame(self, **options)
+        if observed_at_s is not None:
+            value['ipc']['native_feedback']['observed_at_s'] = observed_at_s
+        return value
+
     def bound_sampler(self, *, observer=False, poll_interval_s=3, request_control=False):
         helper = receipts.SnapshotRPCReceiptTests()
         feedback, refs, cancels = helper.sampler()
@@ -18,7 +24,9 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         # performance threshold. No production default or policy is overridden.
         config = ResourceFeedbackConfig(poll_interval_s=poll_interval_s, window_s=3)
         if request_control:
-            feedback = batching.RequestSupplyFeedback(feedback.owner, config)
+            feedback.owner._actors.model_ready = ready(feedback.owner._actors.model_ready['engine_uid'])
+            feedback = request_sampler(feedback.owner, 1, options=ResourceRequestConfig(
+                allow_exploration=False, poll_interval_s=poll_interval_s, window_s=3, max_sample_age_s=3))
         else:
             feedback.config = SupplyFeedbackConfig(4, config)
         feedback.owner._expected_count = 1
@@ -53,7 +61,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         thread.start()
         try:
             self.assertTrue(first.wait(1), 'initial regular sample must return before completing the RPC')
-            frame = receipts.SnapshotRPCReceiptTests().frame()
+            frame = self.frame()
             refs[0][1].set_result(frame)
             self.assertTrue(published.wait(.5), 'completed RPC stayed asleep until the next dispatch tick')
             self.assertEqual(len(refs), 1, 'completion wake must not dispatch another RPC')
@@ -80,7 +88,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
 
     def test_early_collection_spends_the_original_regular_turn_without_extra_RPCs(self):
         feedback, refs, _ = self.manual_sampler()
-        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        feedback.sample(); refs[0][1].set_result(self.frame())
         feedback.provider._sample_once(feedback.collect_ready, ready=True)
         self.assertTrue(feedback.provider.latest(1).fresh)
         for _ in range(5):
@@ -110,7 +118,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
             before = deepcopy(feedback.report())
             self.assertEqual(before['snapshot_rpc_cleanup_status'], 'unknown')
             self.assertEqual(cancels, [refs[0][0]])
-            refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+            refs[0][1].set_result(self.frame())
             self.assertEqual(before['snapshot_rpc_receipts'], [])
             after = feedback.report()
             self.assertEqual(after['snapshot_rpc_cleanup_status'], 'closed')
@@ -139,7 +147,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
             refs[-1][1].add_done_callback = unavailable
             return ref
         feedback.owner._actors.model_actor.snapshot.remote = create
-        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        feedback.sample(); refs[0][1].set_result(self.frame())
         self.assertFalse(feedback._snapshot_ready.is_set())
         self.assertIsNotNone(feedback.sample())
         row, = feedback.report()['snapshot_rpc_receipts']
@@ -149,7 +157,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
 
     def test_phase_resume_does_not_reintroduce_an_early_old_session_frame(self):
         feedback, refs, _ = self.manual_sampler()
-        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        feedback.sample(); refs[0][1].set_result(self.frame())
         feedback.provider._sample_once(feedback.collect_ready, ready=True)
         self.assertTrue(feedback.provider.latest(1).fresh)
         feedback.end_phase()
@@ -163,14 +171,15 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
 
     def test_early_collection_does_not_refresh_source_age_or_relax_freshness(self):
         feedback, refs, _ = self.manual_sampler()
-        frame = receipts.SnapshotRPCReceiptTests().frame()
-        frame['ipc']['native_feedback']['observed_at_s'] = feedback.started
+        frame = self.frame(observed_at_s=feedback.started)
         feedback.provider.clock = lambda:feedback.started+10
         feedback.sample(); refs[0][1].set_result(frame)
         feedback.provider._sample_once(feedback.collect_ready, ready=True)
         observed = feedback.provider.latest(1)
         self.assertFalse(observed.fresh)
-        self.assertEqual(observed.sample_age_s, 10)
+        source_at = (feedback.snapshot_rpc_receipts[0]['issued_at_s']
+                     if feedback.request_control else feedback.started)
+        self.assertEqual(observed.sample_age_s, feedback.provider.clock()-source_at)
         self.assertEqual(feedback.provider.stale_after_s, 3)
 
     def test_inline_terminal_and_stale_notification_do_not_clear_a_valid_sample(self):
@@ -178,7 +187,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         remote = feedback.owner._actors.model_actor.snapshot.remote
         def create():
             ref = remote()
-            refs[-1][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+            refs[-1][1].set_result(self.frame())
             return ref
         feedback.owner._actors.model_actor.snapshot.remote = create
         feedback.provider._sample_once(feedback.sample)
@@ -194,7 +203,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
                 feedback, refs, _ = self.manual_sampler()
                 feedback.sample()
                 if result == 'raised':refs[0][1].set_exception(ValueError('fixture RPC failed'))
-                else:refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame(session=999))
+                else:refs[0][1].set_result(self.frame(session=999))
                 self.assertIsNone(feedback.collect_ready())
                 row, = feedback.report()['snapshot_rpc_receipts']
                 self.assertEqual(row['rpc_terminal_status'], 'raised' if result == 'raised' else 'returned')
@@ -212,7 +221,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         owner = weakref.ref(feedback)
         del feedback, thread; gc.collect()
         self.assertIsNone(owner())
-        refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        refs[0][1].set_result(self.frame())
 
     def test_audit_phase_change_cannot_publish_old_native_into_a_pending_new_session(self):
         feedback, refs, _, first, _, _, thread = self.bound_sampler(poll_interval_s=.01)
@@ -234,7 +243,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         thread.start()
         try:
             self.assertTrue(first.wait(1))
-            refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+            refs[0][1].set_result(self.frame())
             self.assertTrue(in_audit.wait(1))
             feedback.end_phase()
             feedback.bind(SimpleNamespace(session=SimpleNamespace(session_id=2),
@@ -251,7 +260,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
 
     def test_pending_new_session_cannot_reuse_a_stale_native_cache(self):
         feedback, refs, _ = self.manual_sampler()
-        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        feedback.sample(); refs[0][1].set_result(self.frame())
         native = feedback.sample()
         feedback.bind(SimpleNamespace(session=SimpleNamespace(session_id=2),
             run=SimpleNamespace(current=[None]), _stage_ids=['map0']))
@@ -264,7 +273,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
 
     def test_pending_same_session_keeps_original_native_identity_and_age(self):
         feedback, refs, _ = self.manual_sampler()
-        feedback.sample(); refs[0][1].set_result(receipts.SnapshotRPCReceiptTests().frame())
+        feedback.sample(); refs[0][1].set_result(self.frame())
         native = feedback.sample()
         self.assertIs(feedback.sample(), native)
         self.assertEqual(len(refs), 2)

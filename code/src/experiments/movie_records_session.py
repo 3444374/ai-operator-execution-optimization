@@ -32,7 +32,7 @@ def check_plan(plan):
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
-    optional = {'admission_cache', 'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
+    optional = {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
                 'experimental_skip_token_packing', 'core_capacity', 'async_limits', 'preparation_mode',
                 'service_payload_bytes'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
@@ -82,13 +82,9 @@ def check_plan(plan):
         async_limits = (configured.async_limits if 'async_limits' in plan or configured.capacity.budget is not None
                         else None)
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
-        if batching is not None and (plan.get('admission_cache') is not None
-                or plan['lifecycle'] != 'isolated' and not (
+        if batching is not None and (plan['lifecycle'] != 'isolated' and not (
                     plan['lifecycle'] == 'resident' and batching.get('rolling_refill'))):
-            raise ValueError('record token batches require isolated or rolling resident owners without admission_cache')
-    if plan.get("admission_cache") is not None:
-        from src.experiments.movie_matrix_support import validate_record_admission_cache
-        validate_record_admission_cache(plan["admission_cache"], core_profile)
+            raise ValueError('record token batches require isolated or rolling resident owners')
     if type(plan["queries"]) is not list or not plan["queries"]:
         raise ValueError("declare every complete warmup and measured query")
     checked, ids = [], set()
@@ -357,7 +353,6 @@ class _MovieDriver:
             engine = replace(self.engine, max_model_calls=binding["expected_calls"])
             return run(source, checkout, method, self.generation, engine, self.resources,
                 query_id=spec["query_id"], profile=self.plan["profile"], context=context, observer=emit)
-        query_options = {}
         if backend == "imlane":
             self.imlane_guard()
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
@@ -366,7 +361,7 @@ class _MovieDriver:
             if observed_context and (self.owner.model_ready is not None or self._model_ready is not None):
                 self._check_core_model_ready(self.owner.model_ready)
             def execute():
-                stream = self.owner.evaluate(source, query_id=spec['query_id'], method=method, **query_options)
+                stream = self.owner.evaluate(source, query_id=spec['query_id'], method=method)
                 if observed_context:
                     current = self.owner.model_ready
                     if current is not None or source.expected(spec['query_id']):
@@ -389,36 +384,13 @@ class _MovieDriver:
         self.last_query_failure = None
         self.last_query_report = None
         try:
-            if self.plan.get("admission_cache") is not None:
-                from src.experiments.movie_matrix_support import run_record_admission
-                from src.experiments.movie_records_config import record_admission_cache as _record_admission_cache
-                def execute_query(window, *, allow_exploration, search_hint=None):
-                    query_options.update(max_inflight=window, allow_exploration=allow_exploration,
-                                         search_hint=search_hint)
-                    return run_movie_query(source, checkout, method, self.generation, execute,
-                                          query_id=spec["query_id"], observer=emit)
-                self.last_query_report = run_record_admission(_record_admission_cache(self.plan,
-                    resources=self.resources, resolved=self.core_execution),
-                    self.core_execution, source, method, self.generation, self.engine, self.resources,
-                    execute_query, warmup=spec["phase"] == "warmup",
-                    **(dict(model_ready=self.owner.model_ready)
-                       if self.engine.max_model_len is None else {}))
-            else:
-                self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
+            self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
                                        query_id=spec["query_id"], observer=emit)
             if backend == "semloom-core":
                 from src.experiments.movie_matrix_support import record_core_selection
                 record_core_selection(self.last_query_report,self.context)
-                confirm = getattr(self.owner, 'confirm_query_feedback', None)
-                if confirm is not None:
-                    reuse = confirm(completed=self.last_query_report.get('status') == 'completed')
-                    if reuse is not None:
-                        self.last_query_report['request_scan_reuse'] = reuse
             return self.last_query_report
         except BaseException as error:
-            confirm = getattr(self.owner, 'confirm_query_feedback', None)
-            if backend == 'semloom-core' and confirm is not None:
-                confirm(completed=False)
             if backend == "imlane" and self.owner is not None:
                 self.owner.broken = True
             self.last_query_failure = error

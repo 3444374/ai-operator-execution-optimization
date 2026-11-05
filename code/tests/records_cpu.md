@@ -119,7 +119,8 @@ CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code 
   tests.execution_provider.test_lotus_records_async_core tests.execution_provider.test_lotus_records_actor_owner \
   tests.execution_provider.test_lotus_records_core tests.execution_provider.test_core_feedback_cadence \
   tests.execution_provider.test_core_resource_feedback tests.execution_provider.test_resource_rpc_rejection_audit \
-  tests.experiments.test_movie_records_session tests.experiments.test_records_online_config \
+  tests.experiments.test_movie_records_session tests.experiments.test_offline_model_context \
+  tests.experiments.test_movie_request_feedback_entry \
   tests.infrastructure.test_gpu_allocation
 ```
 
@@ -425,3 +426,14 @@ CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code 
 仅显式内存要求由上述压力参与控制，缺省仍为 false。MetricSources 已开启时采集新内核字段，其读文件成本
 保留在原采样路径内；没有新增采样线程或 RPC。这不限制进程 RSS、不发放物理 RAM，也不证明避免所有分配错误。
 真实 Linux cgroup、Ray／vLLM 和模型性能资格仍待分别验证。
+
+
+<a id="legacy-request-retirement"></a>
+## 旧请求入口的测试迁移
+
+普通和 rolling 用例现在使用实际 `CoreResourceRequestFeedback`、`ResourceRequestSupplyFeedback`
+和原 `RecordsNativeSampler`；不再仿造已删除的旧采样器。五项真实 Ray 方法名称保持，另一项主机 CPU
+Ray 用例也保留。本地组合只收集并跳过这六项，没有启动真实 Ray 或模型。
+旧缓存、跨查询 hint 和旧上探状态机的专属测试退出维护；共享批反馈、474 帧原样回放、未知请求、
+分页、ACK、完整语义结果及原生默认配置继续检查。[逐项迁移与原失败](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+分别记录；旧机制从 9da 恢复，后续修订的测试按逐项清单的 3fd 来源恢复，不把删除旧专属测试称为新通过。

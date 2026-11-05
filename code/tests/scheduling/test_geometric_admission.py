@@ -6,7 +6,6 @@ import tempfile
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
-from src.scheduling.runtime.calibration import run_admission_query
 from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController, _GeometricSearch
 
 
@@ -161,81 +160,5 @@ class GeometricAdmissionTests(unittest.TestCase):
         self.assertEqual(t.c.current_window,8)
         estimate=next(r for r in t.c.report()['evaluations'] if r['kind']=='probe_cost_estimate')
         self.assertAlmostEqual(estimate['trial_allowance_s'],3*(100/800)+.2)
-
-
-class GeometricReuseTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
-        self.identity={k:{'CPU':'v1'} for k in ('hardware','model','generation','execution','workload','measurement')}
-        self.identity['measurement']['work_unit']='model_calls'
-        self.options=Trace().options;self.calls=[]
-
-    def invoke(self,execute,**kwargs):
-        return run_admission_query(self.identity,execute,initial_window=4,maximum=8,
-            cache_dir=self.tmp.name,options=kwargs.pop('options',self.options),**kwargs)
-
-    def execute_noise(self,window,*,allow_exploration,search_hint):
-        self.calls.append((window,allow_exploration,deepcopy(search_hint)))
-        t=Trace(maximum=8,initial=window,options=replace(self.options,allow_exploration=allow_exploration),hint=search_hint)
-        if allow_exploration:t.run({4:10,8:[8,12,9,11]})
-        return dict(status='completed',reuse_eligible=True,admission_feedback=t.c.report())
-
-    def test_noise_is_unresolved_but_retries_do_not_restart_forever(self):
-        first=self.invoke(self.execute_noise);second=self.invoke(self.execute_noise);third=self.invoke(self.execute_noise)
-        self.assertEqual([r[1] for r in self.calls],[True,True,False])
-        self.assertEqual(first['result']['admission_feedback']['stop_reason'],'continuation_required')
-        report=second['result']['admission_feedback']
-        self.assertEqual(report['stop_reason'],'search_exhausted')
-        self.assertTrue(report['exploration_censored']);self.assertFalse(report['can_continue'])
-        self.assertEqual(self.calls[2][2]['points'][0]['attempts'],2)
-        self.assertTrue(third['cache_hit']);self.assertTrue(third['reused_hint_unmodified'])
-
-    def test_cached_progress_has_no_old_rates_or_work_reference(self):
-        first=self.invoke(self.execute_noise)
-        state=first['result']['admission_feedback']['search_state']
-        self.assertEqual(set(state['points'][0]),{'window','attempts','outcome'})
-        self.assertNotIn('reference',state)
-        self.assertNotIn('rate',state)
-
-    def test_each_effective_policy_and_performance_identity_change_misses(self):
-        self.invoke(self.execute_noise)
-        for changed in (replace(self.options,window_s=.5),replace(self.options,max_changes=10),
-                replace(self.options,work_tolerance=.04),replace(self.options,max_candidate_attempts=3)):
-            self.assertFalse(self.invoke(self.execute_noise,options=changed)['cache_hit'])
-        self.identity['execution']['source']='changed-source'
-        self.assertFalse(self.invoke(self.execute_noise)['cache_hit'])
-
-    def test_malformed_progress_does_not_repeat_business_execution(self):
-        first=self.invoke(self.execute_noise);path=Path(first['saved_hint']['path'])
-        import json
-        value=json.loads(path.read_text());value['evidence']['search_state']['points'][0]['attempts']=999
-        path.write_text(json.dumps(value));count=len(self.calls)
-        second=self.invoke(self.execute_noise)
-        self.assertEqual(len(self.calls),count+1);self.assertFalse(second['cache_hit'])
-        self.assertIsNotNone(second['lookup_error'])
-
-    def test_ineligible_and_exception_cannot_publish_a_completed_selection(self):
-        def failed(window,**kwargs):return dict(status='failed',reuse_eligible=False)
-        self.assertNotIn('saved_hint',self.invoke(failed))
-        calls=[]
-        def raises(window,**kwargs):calls.append(window);raise RuntimeError('original')
-        with self.assertRaisesRegex(RuntimeError,'original'):self.invoke(raises)
-        self.assertEqual(calls,[4]);self.assertEqual(list(Path(self.tmp.name).iterdir()),[])
-
-    def test_full_return_includes_probe_and_resume_without_double_counting(self):
-        now=[10.]
-        def execute(window,**kwargs):
-            now[0]+=7
-            return dict(status='completed',reuse_eligible=False,
-                        admission_feedback=dict(exploration_wall_s=3))
-        value=self.invoke(execute,clock=lambda:now[0],request_started_monotonic=8.)
-        self.assertEqual((value['total_wall_s'],value['request_wait_s'],value['online_exploration_s']),(7,9,3))
-        self.assertTrue(value['online_exploration_already_in_total'])
-
-    def test_explicit_pressure_only_options_never_enable_exploration_on_miss(self):
-        self.options=replace(self.options,allow_exploration=False)
-        self.invoke(self.execute_noise);self.invoke(self.execute_noise)
-        self.assertEqual([r[1] for r in self.calls],[False,False])
-
 
 if __name__=='__main__':unittest.main()

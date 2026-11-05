@@ -2,6 +2,7 @@
 
 The proxy counts calls but returns Ray's actual new concurrent Future each time.
 A constant-Future stub would miss the production notification loss.
+Metrics, ready and age packets are CPU fixtures; the ObjectRef/Future is real.
 """
 import os
 from pathlib import Path
@@ -11,12 +12,16 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters import records_request_feedback as wiring
+from src.execution_provider.adapters.records_native_source import native_sample_age
+from tests.scheduling.test_incremental_session import setup
 
 
 class IdleProvider:
+    """Tests drive the sampler directly; this provider starts no thread."""
     is_running = False
-    def __init__(self, sampler, *, poll_interval_s, stale_after_s, close_timeout_s):
+    def __init__(self, sampler, *, poll_interval_s, stale_after_s, close_timeout_s,
+                 ready_event=None, collect_ready=None):
         self.sampler = sampler
         self.poll_interval_s = poll_interval_s
         self.stale_after_s = stale_after_s
@@ -24,6 +29,46 @@ class IdleProvider:
     def pause(self): pass
     def resume(self): pass
     def close(self): pass
+
+
+def ready(uid):
+    return dict(engine_uid=uid, batch_mode='independent_final_results', closed=False,
+        resource_owner=dict(schema='semloom.model_resource_owner.v1', engine_uid=uid,
+            request_memory_owner='vllm', native_feedback_clock='private_child_and_model_actor.monotonic'))
+
+
+def native_frame(*, session=7, uid='real-Ray-CPU-fixture', sequence=1,
+                 source_at_s=None, captured_at_s=None):
+    captured = time.monotonic() if captured_at_s is None else captured_at_s
+    native = dict(engine_uid=uid, sequence=sequence,
+        observed_at_s=captured if source_at_s is None else source_at_s,
+        running=1, waiting=0, kv_usage=.1, preemptions_total=0, generation_tokens_total=4)
+    return dict(session_id=session, ipc=dict(native_feedback=native),
+        native_sample_age=native_sample_age(native, ready(uid), captured_at_s=captured))
+
+
+def bind_feedback(feedback, session):
+    feedback.begin(100, 1)
+    feedback.stream = SimpleNamespace(session=SimpleNamespace(session_id=session))
+
+
+def make_feedback(owner, *, session=7, poll_interval_s=.25, max_sample_age_s=.75,
+                  provider_type=IdleProvider):
+    owner.core, _, _, _ = setup(held_tasks=4, input_bytes=4096, result_bytes=4096,
+        item_input_bytes=1024, item_result_bytes=1024, active_requests=4, active_work=4)
+    owner._actors.model_ready = ready(owner._actors.model_ready['engine_uid'])
+    owner._actors.limits = SimpleNamespace(max_inflight=4, result_slots=4,
+        result_bytes=4096, item_result_bytes=1024)
+    feedback = wiring.CoreResourceRequestFeedback(owner, dict(kind='resource_feedback',
+        poll_interval_s=poll_interval_s, max_sample_age_s=max_sample_age_s, allow_exploration=False))
+    with patch.object(wiring, 'NonBlockingMetricsObservationProvider', provider_type):
+        bind_feedback(feedback, session)
+    return feedback
+
+
+def eligible_samples(feedback):
+    return sum(row['frame_disposition'] == 'eligible_for_provider'
+               for row in feedback.snapshot_rpc_receipts)
 
 
 class CountedRef:
@@ -38,10 +83,9 @@ class CountedRef:
 
 class ProviderShapeTests(unittest.TestCase):
     def feedback(self):
-        owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=4))
-        with patch.object(core, 'NonBlockingMetricsObservationProvider', IdleProvider):
-            value = core._CoreFeedback(owner, dict(poll_interval_s=.25))
-            value.begin(100, 2)
+        owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=4),
+            _actors=SimpleNamespace(model_ready=dict(engine_uid='CPU-provider-shape')))
+        value = make_feedback(owner)
         self.addCleanup(value.stop)
         return value
 
@@ -49,23 +93,23 @@ class ProviderShapeTests(unittest.TestCase):
         feedback = self.feedback()
         self.assertEqual(feedback.provider.stale_after_s, .75)
         self.assertEqual(feedback.provider.poll_interval_s, .25)
-        self.assertEqual(feedback.controller.source_stale_after_s, feedback.provider.stale_after_s)
+        self.assertEqual(feedback.options.max_sample_age_s, feedback.provider.stale_after_s)
         self.assertNotEqual(feedback.options.window_s, feedback.provider.stale_after_s)
 
     def test_next_query_keeps_the_same_provider_and_its_actual_declared_duration(self):
         feedback = self.feedback()
         provider = feedback.provider
         self.assertEqual(provider.stale_after_s, .75)
-        provider.stale_after_s = .125
         feedback.pause()
-        feedback.begin(100, 3)
+        bind_feedback(feedback, 8)
         self.assertIs(feedback.provider, provider)
-        self.assertEqual(feedback.controller.source_stale_after_s, .125)
-        self.assertEqual(feedback.controller.current_window, 3)
+        self.assertEqual(feedback.provider.stale_after_s, .75)
+        self.assertEqual(feedback.controller.current_window, 1)
+        self.assertEqual(feedback.native_source_clock.session_id, 8)
 
     def test_finish_reports_the_duration_from_the_existing_provider(self):
         feedback = self.feedback()
-        stream = feedback.stream = SimpleNamespace()
+        stream = feedback.stream
         report = feedback.finish(stream)
         self.assertEqual(report['source_stale_after_s'], feedback.provider.stale_after_s)
         self.assertTrue(report['sampling_paused'])
@@ -100,9 +144,7 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
                 index = self.calls
                 self.calls += 1
                 event = self.events[index] = asyncio.Event()
-                value = dict(session_id=self.session, ipc=dict(native_feedback=dict(
-                    engine_uid='real-Ray-CPU-fixture', sequence=index+1, observed_at_s=time.monotonic(),
-                    running=1, waiting=0, kv_usage=.1, preemptions_total=0, generation_tokens_total=4)))
+                value = native_frame(session=self.session, sequence=index+1)
                 fail = self.fail
                 await event.wait()
                 if fail:
@@ -134,18 +176,11 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=4),
             _actors=SimpleNamespace(model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
                 ray=SimpleNamespace(cancel=cancel), model_ready=dict(engine_uid='real-Ray-CPU-fixture')))
-        with patch.object(core, 'NonBlockingMetricsObservationProvider', IdleProvider):
-            self.feedback = core._CoreFeedback(owner, dict(poll_interval_s=.25))
-            self.feedback.begin(100, 2)
-        self.feedback.stream = self.stream(7)
+        self.feedback = make_feedback(owner)
 
     def tearDown(self):
         self.feedback.stop()
         self.ray.kill(self.actor, no_restart=True)
-
-    @staticmethod
-    def stream(session):
-        return SimpleNamespace(session=SimpleNamespace(session_id=session))
 
     def entered(self, count):
         deadline = time.monotonic() + 5
@@ -175,7 +210,7 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         self.assertEqual(len(self.refs[0].futures), 1)
         self.release(0)
         self.assertIsNotNone(f.sample())
-        self.assertEqual(f.samples, 1)
+        self.assertEqual(eligible_samples(f), 1)
         self.assertIsNone(f.ref)
         self.assertIsNone(f.future)
         self.assertEqual(len(self.refs), 1)
@@ -186,7 +221,7 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         self.assertIsNone(f.sample())
         self.release(0, failed=True)
         self.assertIsNone(f.sample())
-        self.assertEqual(f.sample_errors, 1)
+        self.assertEqual(f.errors, 1)
         self.assertIsNone(f.ref)
         self.assertIsNone(f.future)
         self.ray.get(self.actor.configure.remote(7), timeout=5)
@@ -199,7 +234,7 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
     def test_expired_real_ray_request_is_cancelled_once_then_drained(self):
         f = self.feedback
         f.sample(); self.entered(1)
-        f.ref_deadline = time.monotonic()-1
+        f.expiry = time.monotonic()-1
         self.assertIsNone(f.sample())
         witness = self.refs[0].futures[0]
         with self.assertRaises(Exception): witness.result(timeout=5)
@@ -207,17 +242,17 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         self.assertEqual(self.cancels, [self.refs[0]])
         self.assertIsNone(f.ref)
         self.assertIsNone(f.future)
-        self.assertEqual(f.samples, 0)
+        self.assertEqual(eligible_samples(f), 0)
 
     def test_cancel_failure_retains_pair_across_query_until_old_read_settles(self):
         f = self.feedback
         f.sample(); self.entered(1)
         old = self.refs[0]
         self.cancel_error = True
-        f.ref_deadline = time.monotonic()-1
+        f.expiry = time.monotonic()-1
         self.assertIsNone(f.sample())
-        self.assertEqual(f.sample_errors, 1)
-        f.pause(); f.begin(100, 3); f.stream = self.stream(8)
+        self.assertEqual(f.errors, 1)
+        f.pause(); bind_feedback(f, 8)
         self.ray.get(self.actor.configure.remote(8), timeout=5)
         for _ in range(5): self.assertIsNone(f.sample())
         self.assertEqual(self.refs, [old]); self.assertEqual(self.cancels, [old])
@@ -228,7 +263,7 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         self.assertIsNone(f.sample())
         self.release(1)
         self.assertIsNotNone(f.sample())
-        self.assertEqual(f.samples, 1)
+        self.assertEqual(eligible_samples(f), 1)
         self.assertEqual(len(self.refs), 2)
 
     def test_wrong_query_snapshot_releases_pair_without_delivering_then_new_query_succeeds(self):
@@ -236,10 +271,10 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         self.ray.get(self.actor.configure.remote(900), timeout=5)
         f.sample(); self.release(0)
         self.assertIsNone(f.sample())
-        self.assertEqual(f.samples, 0)
+        self.assertEqual(eligible_samples(f), 0)
         self.assertIsNone(f.ref); self.assertIsNone(f.future)
         self.ray.get(self.actor.configure.remote(7), timeout=5)
         f.sample(); self.release(1)
         self.assertIsNotNone(f.sample())
-        self.assertEqual(f.samples, 1)
+        self.assertEqual(eligible_samples(f), 1)
         self.assertTrue(all(len(ref.futures) == 1 for ref in self.refs))

@@ -1523,3 +1523,19 @@ Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_202
 复用现有独立预算和管理对象；先推进结果，再更新许可及前缀，等待使用原反馈时限。
 101 项综合 CPU 检查及后续 12 项目标检查均通过，共 103 个不同方法；重叠不累计。
 原导入错误、取消 fixture 超时和测试时序修订保留。没有真实 Ray／模型／GPU 运行或性能结论。
+<a id="legacy-request-retirement"></a>
+旧请求反馈、两个具名 profile 及推荐缓存的[退役记录](diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+以已发布 3fd3887e 为源，17 个生产文件净减 1,637 行，其中核心净减 1,451 行。原生 baseline、五份具名投影及
+9da 对照不改；[机器摘要](diagnostics/records_runtime_refactor_20261104/raw/legacy_entry_retirement_checks.json)
+去重记录 561 成功、6 项真实 Ray 未运行及全部初轮失败。恢复了复核发现不等价的现代测试，没有删除失败证据。
+这不是全系统完成或 GPU 性能结论，最终候选仍待独立审查，尚未推送或合并。
+
+
+退役候选另与最新已发布 678250ee 的准备交错组合；原候选 e70d11ff 保持。
+[组合记录](diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+保留最新运行时及真实使用的策略报告字段，105 个不同 CPU 方法通过；一项目录误写的原导入错误保留。
+相对 678 核心净减 1,450 行，相对 3fd 净减 1,437 行，较固定 main 仍多 6,100 行。
+当前组合仍待最终独审，真实 Ray、模型、GPU、推送和合并未执行。
+
+最终候选再以无重叠的 9652108d 为源，完整 `code/src` 与已测组合相同，租约转交定向 1 项通过。
+[准确子树和方法](diagnostics/records_runtime_refactor_20261104/raw/legacy_latest_source_checks.json)保留来源，未重复原 105 项，仍待最终独审。

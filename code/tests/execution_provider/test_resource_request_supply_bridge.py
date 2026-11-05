@@ -17,7 +17,10 @@ from src.scheduling.submission_control.adaptive import ResourceRequestConfig
 from src.scheduling.submission_control.admission import StaticAdmissionController
 from src.scheduling.submission_control.request_scan import ResourceRequestController
 from src.scheduling.submission_control.resource_probe import ResourceProbeView, ResourceRequestPermit
-from src.scheduling.submission_control.stage_work import default_request_feedback_options
+from tests.execution_provider.resource_request_sampler_fixture import ready, request_sampler
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+from src.serving.backends.vllm_engine import EngineSpec
+import sys
 from tests.scheduling.test_incremental_session import setup, task
 
 
@@ -47,8 +50,12 @@ class ResourceRequestSupplyBridgeTests(unittest.TestCase):
             engine.capacity.usage().active_requests, engine.capacity.usage().active_requests))
         owner = SimpleNamespace(core=engine, resources=SimpleNamespace(max_active_batches=maximum),
             _token_organizer=organizer, _receipt_lock=threading.Lock(), _raw_receipts={}, _expected_count=rows)
-        feedback = batching.RequestSupplyFeedback(owner, default_request_feedback_options())
-        feedback.controller, feedback.session_id, feedback.started = controller, session.session_id, 10.
+        owner._actors = SimpleNamespace(limits=AsyncEngineLimits(max_inflight=maximum, result_slots=maximum),
+                                        model_ready=ready('CPU-builder'))
+        owner.engine = EngineSpec('CPU-builder', sys.executable, sys.executable)
+        owner.prepared_batching = SimpleNamespace(token_budget=256)
+        feedback = request_sampler(owner, session.session_id, started_at_s=10.)
+        feedback.controller = controller
         feedback.prepared = rows
         driver = SimpleNamespace(ready_observer_error=None, active_rows=rows, _rows={})
         stream = SimpleNamespace(driver=driver, _phase_eof=True, offered=set(range(rows)))
@@ -60,7 +67,7 @@ class ResourceRequestSupplyBridgeTests(unittest.TestCase):
             return AdmissionObservation(clock.now, True, inflight, inflight, 0, .99,
                 sample_age_s=0., sample_sequence=sequence, preemptions_total=0)
 
-        feedback.provider = SimpleNamespace(latest=latest)
+        feedback.provider = SimpleNamespace(latest_with_source=lambda inflight: (latest(inflight), None))
         observed = []
 
         def decide(observation, supply, *_args):

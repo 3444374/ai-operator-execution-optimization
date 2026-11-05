@@ -20,7 +20,7 @@ from src.serving.backends.model_context import model_context_identity, model_con
 from src.serving.backends.vllm_engine import EngineSpec
 from tests.experiments import test_core_calibration as fixtures
 from tests.experiments import test_movie_records_session as session_fixtures
-from tests.experiments import test_records_online_config as online_fixtures
+from tests.experiments.movie_records_cpu_fixture import MovieRecordsCPUFixture
 
 
 def ready(plan, uid='CPU-offline-owner', length=32768):
@@ -294,7 +294,7 @@ class ExecutingOwnerTests(unittest.TestCase):
 
 class CPUChildSessionTests(unittest.TestCase):
     def setUp(self):
-        self.fixture=online_fixtures.OnlineConfigurationTests();self.fixture.setUp()
+        self.fixture=MovieRecordsCPUFixture();self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
 
     def session_fixture(self,lifecycle):
