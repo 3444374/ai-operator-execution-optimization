@@ -61,11 +61,11 @@ class FeedingGapDiagnosticTests(unittest.TestCase):
     def test_repository_contract_preserves_failed_feeding_lock(self) -> None:
         diagnostic = load_diagnostic_contract(
             REPOSITORY
-            / "deploy/autodl/saor_feeding_gap_diagnostic_contract.json"
+            / "experiments/saor/saor_feeding_gap_diagnostic_contract.json"
         )
         prior = (
             REPOSITORY
-            / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+            / "experiments/saor/saor_project_mechanism_formal_contract.json"
         )
 
         self.assertEqual(validate_prior_failed_lock(diagnostic, prior), [])
@@ -199,11 +199,11 @@ class FeedingGapDiagnosticTests(unittest.TestCase):
     def test_complete_matrix_attributes_a_work_envelope_gap(self) -> None:
         contract_path = (
             REPOSITORY
-            / "deploy/autodl/saor_feeding_gap_diagnostic_contract.json"
+            / "experiments/saor/saor_feeding_gap_diagnostic_contract.json"
         )
         prior_path = (
             REPOSITORY
-            / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+            / "experiments/saor/saor_project_mechanism_formal_contract.json"
         )
         contract = load_diagnostic_contract(contract_path)
         with TemporaryDirectory() as directory:
@@ -317,11 +317,11 @@ class FeedingGapDiagnosticTests(unittest.TestCase):
     def test_malformed_threshold_and_metric_fail_closed(self) -> None:
         contract_path = (
             REPOSITORY
-            / "deploy/autodl/saor_feeding_gap_diagnostic_contract.json"
+            / "experiments/saor/saor_feeding_gap_diagnostic_contract.json"
         )
         prior_path = (
             REPOSITORY
-            / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+            / "experiments/saor/saor_project_mechanism_formal_contract.json"
         )
         contract = load_diagnostic_contract(contract_path)
         malformed_contract = {
