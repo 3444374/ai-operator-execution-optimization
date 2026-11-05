@@ -391,3 +391,13 @@ LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
 
 旧 snapshot close 的现有反例还验证未带新服务字段的 owner：只有存在实际服务 runtime 绑定时才检查
 该绑定及 actor 字段；非服务关闭不要求旧 actor 新增属性。完整回归发现的三项原错误和修订后检查均保留。
+
+
+## 2026-11-05 rolling 结果返回与可重试清理
+
+[结果交接反例](execution_provider/test_rolling_transfer_recovery.py)使用实际 Pool／chain／CPU 通信：
+无 prior snapshot 取回在返回行前不调用退休；随后 RuntimeError／KeyboardInterrupt 清理失败时，调用方已有结果，
+原授予保留并可继续。同一测试还注入本地交付写入中断、最后 producer 写入及提前 iterator 解除中断，
+核对原数据、原对象和后续资源归还。显式 expected 的原控制与严格 JSON 比较仍使用原用例。
+[修订记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-transfer-repair)
+分别保留原三项失败，以及无 expected 取回现在先交付、再独立清理的 API 行为改变；不改写旧失败。

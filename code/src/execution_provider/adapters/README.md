@@ -1190,7 +1190,8 @@ Python/Ray RSS, preparation/serialization scratch, full relations/audits or GPU/
 The service must supply the total; no automatic hardware discovery is implemented. Ordinary
 Movie CLI/session entries can now declare `service_payload_bytes`; see
 [entry settings](../../experiments/movie_matrix.README.md#record-service-payload).
-Prepared/rolling owners, cross-process allocation and restart recovery remain pending.
+Rolling Movie CLI/session persistence-copy grants, cross-process allocation and restart
+recovery remain pending. Finite ordinary Filter rolling SDK grants are described below.
 This opt-in path rejects historical profiles and IPC overrides; all callers without a pool
 retain their existing settings, including ordinary R=2 and default IPC result slots=8.
 See [CPU scope and evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants).
@@ -1312,7 +1313,14 @@ producer ready identities, and checks the original Ray module/job/node before mo
 Consecutive queries retain one resident grant; query completion alone does not return it.
 Unknown data/observation RPCs and unconsumed results keep all granted bytes. An explicit
 `take_unconsumed_results(expected=...)` preserves JSON scalar types before accepting a
-snapshot, including boolean versus integer values.
+snapshot, including boolean versus integer values. When a rolling service caller omits
+`expected` and receives nonempty results, `take_unconsumed_results()` only transfers those
+local rows; it performs no fallible retirement and retains the grant. The caller next invokes
+`owner.close()` or registered `pool.retry_cleanup(allocation_id)` after it has the returned
+rows. A cleanup error then cannot hide an unreturned result. A local transfer interrupted
+before returning restores its prior delivered/report state. An explicit expected snapshot
+already belongs to the caller, so its existing acceptance/retirement path remains available.
+An empty retry can finish outstanding cleanup because it transfers no unique payload.
 
 Final service close first creates an independent caller report. Complete actual cleanup
 and result transfer then allow retirement of the private chain/iterator payload references;
@@ -1321,7 +1329,9 @@ Later reports therefore do not retain full `calls` arrays. Previously returned r
 rows keep their values. Private cyclic references must release their arrays explicitly,
 without waiting for Python garbage collection, before the pool can return bytes. A same-process
 interruption after the original retirement proof can continue only with that original chain
-and unmodified certificate; a replacement owner cannot inherit its allocation.
+and unmodified certificate; a replacement owner cannot inherit its allocation. Wrapper
+iteration and delivery references are removed before its producer reference, so interruption
+at the final producer store leaves a locally finishable state.
 
 This SDK path does not wire rolling result persistence through the Movie CLI/session.
 Their current whole-report persistence copies need separate complete declarations first.

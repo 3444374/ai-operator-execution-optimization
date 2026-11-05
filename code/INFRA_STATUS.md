@@ -731,3 +731,9 @@ rolling 普通 Filter 的 Python SDK 候选现接收服务池和实际完整交�
 更新此前 1ae 阶段的“未接 rolling SDK”状态；普通无池缺省、原生模型参数及历史路径未随此变更。
 此前独审发现的数字／布尔值快照混淆另由共享严格 JSON 比较修复，原失败保留。
 候选尚待准确组合独审；rolling CLI 保存、自动物理 RAM、跨进程恢复和真实 Ray／模型／GPU 仍未完成。
+
+rolling 结果交接修订候选另从 99aa 建树：无 expected 的非空取回先返回行，后续 close／原池 retry_cleanup
+才执行可能失败的退休；内部取回中断会恢复原交付状态。显式 expected 仍表示调用方已有该快照。
+清理现最后才解除 producer，避免中间中断留下不可继续的 iterator／授予。
+[修订及原反例](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-transfer-repair)
+保留 99aa 和独审证据，未改变普通无池、原生 baseline、模型参数或未知 RPC 的责任。

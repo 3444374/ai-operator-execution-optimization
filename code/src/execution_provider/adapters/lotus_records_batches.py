@@ -251,13 +251,29 @@ class PreparedRecordsCore:
             from src.infrastructure.json_content import json_content_equal
             if type(expected) is not list or not json_content_equal(taken, expected):
                 raise ValueError('retained receipts changed before consumer acceptance')
-        self._delivered.update(c['call_id'] for c in taken)
-        if self._active is not None and self._active._report is not None:
-            self._active._report = dict(self._active._report, unconsumed_call_results=[])
-        if self._service_allocation is not None and self._closed:
-            self._retire_delivered_producer(report)
-            self._service_allocation.settle(self)
-        return taken
+        previous_delivered = self._delivered
+        active = self._active
+        previous_report = None if active is None else active._report
+        delivered = previous_delivered | {c['call_id'] for c in taken}
+        updated_report = (None if previous_report is None
+                          else dict(previous_report, unconsumed_call_results=[]))
+        try:
+            self._delivered = delivered
+            if active is not None and updated_report is not None:
+                active._report = updated_report
+            # A caller without an expected snapshot first needs its only result
+            # copy returned. Fallible cleanup belongs to a subsequent close.
+            if (self._service_allocation is not None and self._closed
+                    and (expected is not None or not taken)):
+                self._retire_delivered_producer(report)
+                self._service_allocation.settle(self)
+            return taken
+        except BaseException:
+            if expected is None and taken:
+                self._delivered = previous_delivered
+                if active is not None:
+                    active._report = previous_report
+            raise
 
     def _retire_delivered_producer(self, report):
         if (self._service_allocation is None or self.owner is None or not self._closed
@@ -278,8 +294,11 @@ class PreparedRecordsCore:
         child._service_retire_payloads(metadata, certificate)
         if not child._service_payloads_retired_confirmed():
             raise RuntimeError('original producer still retains private query payloads')
-        self.owner = self._active = self._delivery = None
+        self._active = self._delivery = None
         self._expected, self._delivered = {}, set()
+        # Keep the original producer available until all wrapper payload
+        # references are gone, so an interrupted close can resume its cleanup.
+        self.owner = None
 
     @property
     def last_close_report(self):
