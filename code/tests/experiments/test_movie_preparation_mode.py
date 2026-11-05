@@ -69,7 +69,7 @@ class PreparationModeEntryTests(unittest.TestCase):
                     self.assertIs(batching.get(name, False), expected)
                 self.assertEqual(batching['B'], case.rolling_config()['prepared_batching']['token_budget'])
 
-    def test_fixed_rolling_only_and_no_new_options_for_other_backends(self):
+    def test_rolling_required_and_no_legacy_feedback_or_other_backends(self):
         with fixture() as case:
             config = dict(case.rolling_config(), preparation_mode='event_driven')
             variants = [dict(config, rolling_refill=False), dict(config, prepared_batching=None),
@@ -79,6 +79,25 @@ class PreparationModeEntryTests(unittest.TestCase):
             for value in variants:
                 with self.subTest(value=value), self.assertRaises(ValueError):
                     movie.read_config(case.save(value))
+
+    def test_check_CLI_combines_existing_preparation_modes_with_current_feedback(self):
+        with fixture() as case:
+            for mode in ('interleaved', 'event_driven'):
+                config = dict(case.rolling_config(), preparation_mode=mode,
+                    core_profile=dict(mode='async', admission=dict(kind='resource_feedback')))
+                path = case.save(config)
+                output = io.StringIO()
+                with self.subTest(mode=mode), patch.object(movie, 'model_preflight',
+                        return_value=dict(status='CPU-only', inference_calls=0)), \
+                        patch.object(core, 'create_records_core') as allocate, redirect_stdout(output):
+                    self.assertEqual(movie.main(['check', '--source-manifest', case.helper.manifests['movie-q1'],
+                        '--sembench-checkout', str(case.root), '--config', str(path)]), 0)
+                allocate.assert_not_called()
+                batching = json.loads(output.getvalue())['record_batching']
+                self.assertEqual(batching['request_feedback_kind'], 'resource_feedback')
+                self.assertEqual(batching['C_request'], 1)
+                for name, expected in self.options(mode).items():
+                    self.assertIs(batching.get(name, False), expected)
 
     def test_run_worker_CLI_reaches_existing_factory_and_preserves_results(self):
         results = {}

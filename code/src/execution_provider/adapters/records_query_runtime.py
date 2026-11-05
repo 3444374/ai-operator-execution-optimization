@@ -262,6 +262,7 @@ class _RecordLocalRows:
         notification = backend.progress()
         now = time.monotonic()
         organizer = self.owner._token_organizer
+        feedback = self.owner._supply_feedback
         token = organizer.dispatch_token(self.can_prepare, self._last_compute)
         deadline_due = self._core_due_at is not None and now >= self._core_due_at
         service = (notification.generation != self._backend_seen
@@ -311,6 +312,15 @@ class _RecordLocalRows:
                 self._end_input_pending = True
         if service:
             organizer.usage()
+        if feedback is not None:
+            # Observe after result/continuation progress, as in the ordinary
+            # loop; an unfinished continuation is not exhausted source work.
+            previous_window = organizer.request_window
+            feedback.update(self)
+            if organizer.request_window != previous_window:
+                # A permit change can enable queued work without a backend event.
+                organizer.refresh_prefix(tuple(r for r in self.session._records()
+                    if r.phase == 'QUEUED'), self._last_compute)
         if self.driver.finished:
             self._finish_phase()
         elif not prepared and not consumed:
@@ -327,6 +337,8 @@ class _RecordLocalRows:
                     deadlines.append(self._core_due_at)
                 if self._method_results_pending:
                     deadlines.append(self._consumer_due_at)
+                if feedback is not None and feedback.controller is not None:
+                    deadlines.append(feedback.next_poll)
                 # Keep the existing owner cancellation/consumer wait bound.
                 deadlines.append(time.monotonic()+self.owner.capacity.poll_interval_s)
                 self.owner.core.wake.wait(generation, max(0., min(deadlines)-time.monotonic()))
