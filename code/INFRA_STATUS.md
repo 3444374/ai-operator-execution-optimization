@@ -30,11 +30,11 @@ MMQA 的十二道文本查询、各变体原 JSON 评价和原文本生成方法
 
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
 HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；此前配置组合代码为 `6ac1fe56`。
-本轮代码为 `42253a56`：旧 IMLane 桥按显式请求数配置并在 ready 回执中核对，正常 Movie、chain 和 cascade 入口已迁移；
+本轮代码为 `015c3095`，已保留 `08c3ebf5` 的原查询接线与数值精度修正：旧 IMLane 桥按显式请求数配置并在 ready 回执中核对，正常 Movie、chain 和 cascade 入口已迁移；
 IPC 父进程管理、子进程循环与共享帧编码分属各自文件，现用导入和观测接点同步。
 查询验证表逐条放开已读取的旧记录引用，保留原比较时点；记录反序列化删除外层重复复制。
 [组合源码与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
-记录 355 项 CPU 通过和准确历史来源；真实 IPC、完整作者桥与模型尚未验证，物理 RAM 授予未实现。
+记录最新组合381项 CPU 通过和准确历史来源；真实 IPC、完整作者桥与模型尚未验证，物理 RAM 授予未实现。
 仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。
 代理退役切片的 11 项 CPU 通过，独立复核无需修正；代码仍在开发 PR，未合并 main。
 [具体改动、剩余文件与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)

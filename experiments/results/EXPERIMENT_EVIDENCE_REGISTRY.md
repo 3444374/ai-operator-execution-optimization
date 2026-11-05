@@ -1724,6 +1724,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 
 [记录持有、IPC职责与旧桥容量](diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
-记录准确42253a56组合355个不同CPU方法通过及五份3010文件恢复，保留初稿漏接线与原反例。
+记录初始42253a56组合355项、保留远端08c3后的准确015c3095组合381个不同CPU方法通过及五份3010文件恢复，保留初稿漏接线与原反例。
 桥接收显式请求数并在ready核对，记录验证逐条放开引用，IPC父／子／帧实现分开且迁移真实消费者。
 仅标准C++组件编译执行，完整作者桥与真实IPC／模型尚未验证，物理RAM授予及完整查询RSS计量仍未实现；拆文件不记为总代码缩减。

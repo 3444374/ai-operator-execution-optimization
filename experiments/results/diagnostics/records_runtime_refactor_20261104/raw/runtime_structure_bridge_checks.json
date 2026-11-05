@@ -1,20 +1,49 @@
 {
-  "base": "9ae2957953a8cca2cb7a63e375dc69a681022de6",
-  "candidate": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
-  "tree": "85a62d2972316181d05e075bab868dadcc5724bb",
-  "recorded_source_commit": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
-  "source_files": 1032,
+  "base": "08c3ebf57d5d1a382b54ff7a35266862549d0321",
+  "initial_base": "9ae2957953a8cca2cb7a63e375dc69a681022de6",
+  "candidate": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+  "tree": "8bbaf4900ff5d844ed71987009b815cb19a53d9f",
+  "recorded_source_commit": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+  "source_files": 1045,
   "mismatches": [],
   "source_unchanged_during_suite": true,
   "CPU": {
-    "selected": 355,
-    "executed": 355,
-    "passed": 355,
+    "selected": 381,
+    "executed": 381,
+    "passed": 381,
     "failure_events": 0,
     "error_events": 0,
     "skipped": 0
   },
   "schema": "semloom.runtime_structure_bridge.combination.v1",
+  "original_combination": {
+    "base": "9ae2957953a8cca2cb7a63e375dc69a681022de6",
+    "candidate": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
+    "tree": "85a62d2972316181d05e075bab868dadcc5724bb",
+    "recorded_source_commit": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
+    "source_files": 1032,
+    "mismatches": [],
+    "source_unchanged_during_suite": true,
+    "CPU": {
+      "selected": 355,
+      "executed": 355,
+      "passed": 355,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": 0
+    }
+  },
+  "source_merge": {
+    "upstream": "08c3ebf57d5d1a382b54ff7a35266862549d0321",
+    "preserved_integration_branch": "refactor/semloom-runtime-structure-08c3-20261105",
+    "preserved_commit": "9e8457649548ccfe203d145a0ca5eea83ee3588f",
+    "candidate": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+    "tree": "8bbaf4900ff5d844ed71987009b815cb19a53d9f",
+    "history_manifest_keeps_both_source_additions": true,
+    "refactor_paths_matching_original_candidate": 60,
+    "upstream_paths_preserved_without_conflict": 26,
+    "only_combined_data_file": "experiments/reproduction/native_baselines/MANIFEST.json"
+  },
   "component_commits": {
     "bridge": "42db2365d7a87ece2433ddeb1130f9ced83851c3",
     "retention": "266650c9069e945f54d3e199a8d54065c1255dc5",
@@ -70,6 +99,13 @@
       "decision": "no_source_changes_requested_for_this_combination",
       "findings": [],
       "sha256": "5ea678aec6d0095d370b4ba28f05d0f75deb5136ddaa56c101c369fab6eed20a"
+    },
+    "latest-combination": {
+      "decision": "no_changes_requested_for_reviewed_source_and_delivery_snapshot",
+      "findings": [],
+      "tested_source": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+      "original_sha256": "70ad91d1f46fe92b0826c9e4283c1a9a3bb750a4bfceaf67d5b922add61abb1c",
+      "original_record": "semloom-runtime-structure-015c-review-20261105/HANDOFF.json"
     }
   },
   "code_size": {
@@ -179,10 +215,26 @@
           "code/src/serving/backends/async_engine_process.py": 920
         }
       },
+      "upstream": {
+        "commit": "08c3ebf57d5d1a382b54ff7a35266862549d0321",
+        "core_python_lines": 57106,
+        "src_and_scripts_python_lines": 113859,
+        "integration_Python_CPP_header_lines": 4522,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 920
+        }
+      },
       "candidate": {
-        "commit": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
+        "commit": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
         "core_python_lines": 57124,
-        "src_and_scripts_python_lines": 112964,
+        "src_and_scripts_python_lines": 113883,
         "integration_Python_CPP_header_lines": 4561,
         "core_functions_over_100": 44,
         "core_files_over_1000": [
@@ -201,15 +253,20 @@
     "deltas": {
       "main": {
         "core_python_lines": 3033,
-        "src_and_scripts_python_lines": -27371,
+        "src_and_scripts_python_lines": -26452,
         "integration_Python_CPP_header_lines": 40
       },
       "3fd": {
         "core_python_lines": -4504,
-        "src_and_scripts_python_lines": -36681,
+        "src_and_scripts_python_lines": -35762,
         "integration_Python_CPP_header_lines": 33
       },
       "base": {
+        "core_python_lines": 18,
+        "src_and_scripts_python_lines": 943,
+        "integration_Python_CPP_header_lines": 39
+      },
+      "upstream": {
         "core_python_lines": 18,
         "src_and_scripts_python_lines": 24,
         "integration_Python_CPP_header_lines": 39
@@ -428,9 +485,33 @@
       "bytes": 388,
       "sha256": "05688858336d37bb15a51c295124c5e6716a9604482e2f603c8150a590365508"
     },
+    "combination/DELIVERY_CHECKS.json": {
+      "bytes": 180,
+      "sha256": "3ee2af49d50248b3fdad9ca6cd2891f4e0b58a5d247ad83929bc24b3e93100aa"
+    },
+    "combination/LATEST_CODE_SIZE.json": {
+      "bytes": 5179,
+      "sha256": "04d715e228bf8974bf7d32cc3f793444bcfbc6487fd006ce920cb3f7e515409d"
+    },
+    "combination/LATEST_COMBINED_SOURCE.json": {
+      "bytes": 531,
+      "sha256": "473cb3e016f8929abda3ba412bab90608f813abcc47c7e2af66ec38f762dea07"
+    },
+    "combination/LATEST_MANIFEST_MERGE.json": {
+      "bytes": 9658,
+      "sha256": "8bf21d017975b8ec5b5d812e3ba97d26869c5fc99a263b1bbdb454c6141d3cb8"
+    },
+    "combination/LATEST_SOURCE.json": {
+      "bytes": 573,
+      "sha256": "32a02f72c83d7d8a499ec029331d4b67d486c9f58072109825b7e4e9f0dd3598"
+    },
     "combination/SOURCE_PRIVACY_SCAN.json": {
       "bytes": 128,
       "sha256": "cc2b1ceef843ea8705831ca89f59677c58fa3410b47679bb0b6d77ed73805d44"
+    },
+    "combination/STAGED_PRIVACY_SCAN.json": {
+      "bytes": 171,
+      "sha256": "8a9f4634be415565e23f6a0ca857c8f498d3a0ec3601f70f5ffd1c20ea43c8e9"
     },
     "combination/cold-import-final.json": {
       "bytes": 326,
@@ -443,6 +524,18 @@
     "combination/combined-final.log": {
       "bytes": 75593,
       "sha256": "399a759af121112b50fa5a72d1c1d4118c768d2d442473f408cfb0b391a88cd5"
+    },
+    "combination/latest-combined.json": {
+      "bytes": 250663,
+      "sha256": "3e4d2589b72db6dda1b355bc6b3b89361313f6121bdeaed5daba28df4d4ad6c6"
+    },
+    "combination/latest-combined.log": {
+      "bytes": 81095,
+      "sha256": "54c88cf7c4a6ee87d966f25ec9971ed62318dcdbc8e1d4814b3003d233817abd"
+    },
+    "combination/latest-selection.json": {
+      "bytes": 9049,
+      "sha256": "b219afc9312bed9a99aadd32c6faca298c19b58924617b1b3e55f33ffd462327"
     },
     "combination/selection.json": {
       "bytes": 8945,
@@ -468,6 +561,10 @@
       "bytes": 4276,
       "sha256": "5ea678aec6d0095d370b4ba28f05d0f75deb5136ddaa56c101c369fab6eed20a"
     },
+    "reviews/initial-documentation/FINAL_HANDOFF.json": {
+      "bytes": 8385,
+      "sha256": "65b0ebd6761c914f765677f7044f83568caf541260c092275e33d234e8c25556"
+    },
     "physical-audit/HANDOFF.json": {
       "bytes": 14380,
       "sha256": "80b6d325ff6ffa98e0a511f7cf4b13e5542f4496cd25639306fa11180e79a494"
@@ -475,9 +572,9 @@
   },
   "raw": {
     "file": "runtime_structure_bridge_raw.json.gz",
-    "bytes": 145972,
-    "sha256": "f2b560590a534bba274a678d51f3aeee8a5feb4c3505c412153a237407417c00",
-    "decoded_sha256": "a1aff1e6e8ae73ff98e187e442145bc33bb99d795a39cf42068be2966249beeb"
+    "bytes": 181303,
+    "sha256": "0b349ad4042b0d233b2e1642f591c09884a53bb280765b3112ca22e222933c5d",
+    "decoded_sha256": "7f0a038b9fc0c1f569a94b07a100b3dd8299d594222f24fd19f80e61ebc98aaf"
   },
   "remaining": [
     "Automatic physical RAM allocation, complete source/expected relations and whole-query RSS accounting are not implemented.",
