@@ -7,7 +7,12 @@ SemLoom 执行适配直接依赖本层，
 
 ## 当前入口和所有权
 
-- [engine.py](engine.py)、[record_chain.py](record_chain.py)保留实际 LOTUS formatter／parser 和方法状态。
+- [engine.py](engine.py)维护单 Filter 的原生 formatter／parser 与 LM 记账。
+- [record_types.py](record_types.py)维护方法／阶段及记录身份的序列化合同；
+  [record_method.py](record_method.py)调用单阶段 LOTUS formatter／parser；
+  [record_chain.py](record_chain.py)维护有限链推进、失败快照及逐记录交接。
+- [record_relation.py](record_relation.py)维护 Extract 的完整关系赋值与最终 DataFrame 组装。
+  旧 `record_chain` 类型与函数导入直接指向同一实现，JSON 标签和字段保持。
 - [record_results.py](record_results.py)拥有调用／父关联、coverage、失败和 unknown 合同；不拥有模型或调度。
 - `execution_provider/adapters/lotus_records_core.py` 与有限链适配属于 SemLoom，负责供给、推进和背压。
 - `baselines/text/frameworks/` 中原生 Ray／Daft 图负责自己的 worker、批次与调度；不注入 Core credit。
