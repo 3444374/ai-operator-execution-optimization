@@ -533,7 +533,8 @@ def run_suite(output):
     repo = Path(__file__).resolve().parents[3]
     sources = ('code/src/experiments/gateway_isolation_probe.py', 'code/src/experiments/map_observation_probe.py',
                'code/src/execution_provider/multiplexed_gateway.py',
-               'code/src/execution_provider/adapters/ray_map_transport.py', 'code/src/scheduling/core/session.py')
+               'code/src/execution_provider/adapters/ray_map_transport.py',
+               'code/src/scheduling/core/session.py', 'code/src/scheduling/core/session_flow.py')
     metadata = dict(schema='semloom.gateway-isolation.suite.v1', reference_commit=subprocess.check_output(
         ['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip(),
         source_sha256={name: hashlib.sha256((repo / name).read_bytes()).hexdigest() for name in sources},

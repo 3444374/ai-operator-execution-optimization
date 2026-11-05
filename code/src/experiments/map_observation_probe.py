@@ -452,7 +452,8 @@ def run_probe(output):
                'code/src/experiments/shared_request_budget.py', 'code/src/experiments/buffered_events.py',
                'code/src/execution_provider/adapters/ray_map_transport.py',
                'code/src/execution_provider/adapters/incremental_execution.py',
-               'code/src/scheduling/core/session.py', 'code/src/scheduling/runtime/async_backend.py')
+               'code/src/scheduling/core/session.py', 'code/src/scheduling/core/session_flow.py',
+               'code/src/scheduling/runtime/async_backend.py')
     report = dict(schema='semloom.map_observation_probe.v1', status='running',
         reference_commit=subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip(),
         source_sha256={name: hashlib.sha256((repo / name).read_bytes()).hexdigest() for name in sources},

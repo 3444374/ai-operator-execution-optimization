@@ -451,7 +451,7 @@ class IncrementalSessionTests(unittest.TestCase):
         b.complete(TaskKey(0, 0))
         old = s.advance(1).deliveries[0]
         b.complete(TaskKey(0, 1))
-        with patch("src.scheduling.core.session.Delivery", side_effect=MemoryError):
+        with patch("src.scheduling.core.session_flow.Delivery", side_effect=MemoryError):
             with self.assertRaises(MemoryError):
                 s.advance(1)
         self.assertEqual(s.close().status, "WAITING_FOR_RELEASE")

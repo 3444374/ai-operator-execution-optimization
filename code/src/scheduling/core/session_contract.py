@@ -23,6 +23,9 @@ class State(str, Enum):
     FAILED = "FAILED"
 
 
+TERMINAL_STATES = (State.CANCELLED, State.FAILED, State.FINISHED)
+
+
 class Acceptance(str, Enum):
     ACCEPTED = "ACCEPTED"
     NOT_ACCEPTED = "NOT_ACCEPTED"
