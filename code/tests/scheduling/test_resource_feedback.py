@@ -4,7 +4,8 @@ import time
 import unittest
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider, ServiceMetricsSnapshot
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
+from src.scheduling.submission_control.adaptive import ResourceFeedbackController
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig
 
 
 class FeedbackControlTests(unittest.TestCase):

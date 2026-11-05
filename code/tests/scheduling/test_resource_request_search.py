@@ -6,7 +6,7 @@ from dataclasses import replace
 import math
 import unittest
 
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from src.scheduling.submission_control.resource_step import (
     NativeKVFrame, RequestKVWork, propose_kv_window,
 )

@@ -15,8 +15,6 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.scheduling.submission_control.adaptive import (  # noqa: E402
     AimdAdmissionController,
-    HolAgeAimdAdmissionController,
-    HolAgeAimdConfig,
 )
 from src.scheduling.submission_control.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.core.models import (  # noqa: E402
@@ -27,6 +25,7 @@ from src.scheduling.core.models import (  # noqa: E402
     PayloadEnvelope,
     SubmissionCompletion,
     TopologySnapshot,
+    WindowDecision,
 )
 from src.scheduling.runtime.observations import (  # noqa: E402
     CachedMetricsObservationProvider,
@@ -413,22 +412,25 @@ class DynamicAdmissionGateTests(unittest.TestCase):
             clock=clock,
         )
         traces: list = []
+        observations: list = []
+
+        class Controller:
+            current_window = 4
+
+            def update(self, observation):
+                observations.append(observation)
+                return WindowDecision(4, "hold", "fixture")
+
         gate = DynamicAdmissionGate(
-            HolAgeAimdAdmissionController(
-                HolAgeAimdConfig(min_window=2, max_window=8),
-                initial_window=4,
-            ),
+            Controller(),
             provider,
             trace_sink=traces.append,
         )
 
-        low = gate.decide(inflight=2, hol_age_s=0.1)
-        congested = gate.decide(inflight=2, hol_age_s=3.0)
+        gate.decide(inflight=2, hol_age_s=0.1)
+        gate.decide(inflight=2, hol_age_s=3.0)
 
-        self.assertEqual(low.limit, 6)
-        self.assertEqual(low.reason, "hol_age_low_load")
-        self.assertEqual(congested.limit, 3)
-        self.assertEqual(congested.reason, "hol_age_congestion")
+        self.assertEqual([item.hol_age_s for item in observations], [0.1, 3.0])
         self.assertEqual([item.hol_age_s for item in traces], [0.1, 3.0])
 
 

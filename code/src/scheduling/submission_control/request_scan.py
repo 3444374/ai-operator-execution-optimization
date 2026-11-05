@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import asdict
 import math
 
-from .adaptive import _local_pair_evidence
+from .feedback_work import _local_pair_evidence
 from .resource_probe import request_supply_blocked
 from ..runtime.calibration import select_near_peak
 
@@ -25,7 +25,7 @@ class ResourceRequestController:
 
     def __init__(self, max_requests, options=None, *, clock=None):
         import time
-        from .adaptive import ResourceRequestConfig
+        from .feedback_options import ResourceRequestConfig
         if type(max_requests) is not int or max_requests < 1:
             raise ValueError('max_requests must be the positive applied owner maximum')
         self.options = ResourceRequestConfig() if options is None else options

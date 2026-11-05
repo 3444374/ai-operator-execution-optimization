@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal
 from ..core.models import AdmissionObservation
 
 if TYPE_CHECKING:
-    from .stage_work import SupplyState
+    from .feedback_work import SupplyState
 
 
 @dataclass(frozen=True)

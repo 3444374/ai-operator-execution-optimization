@@ -15,7 +15,7 @@ from src.execution_provider.adapters.records_transport import _RecordTransport
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.core.session_contract import SessionSpec, TaskKey, Uncertain
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from src.semantic_methods.lotus.records import identity
 from tests.scheduling.test_incremental_session import setup, task
 from tests.scheduling.test_resource_request_controller import ResourceTrace

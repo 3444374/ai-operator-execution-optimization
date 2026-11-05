@@ -26,9 +26,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
     ".submission_control.adaptive": (
         "AimdAdmissionController",
         "AimdConfig",
-        "EwmaAimdAdmissionController",
-        "HolAgeAimdAdmissionController",
-        "HolAgeAimdConfig",
     ),
     ".submission_control.admission": (
         "DynamicAdmissionGate",

@@ -3,7 +3,7 @@ from src.execution_provider.adapters.records_native_source import (
     PRIVATE_CLOCK, RESOURCE_OWNER_SCHEMA, native_sample_age,
 )
 from src.execution_provider.adapters.records_request_feedback import ResourceRequestSupplyFeedback
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from tests.scheduling.test_incremental_session import setup
 
 

@@ -2,7 +2,7 @@
 import unittest
 from dataclasses import replace
 
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from src.scheduling.submission_control.admission import StaticAdmissionController
 from tests.scheduling.test_incremental_session import setup, task
 from tests.scheduling.test_resource_request_controller import ResourceTrace

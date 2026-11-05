@@ -9,7 +9,7 @@ from .records_capacity import CoreRecordsCapacity, independent_default_capacity,
 if TYPE_CHECKING:
     from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 
 
 def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=False, capacity=None,

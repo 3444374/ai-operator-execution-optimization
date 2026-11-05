@@ -250,7 +250,7 @@ class IndependentSupplyTests(unittest.TestCase):
                         gate.touch(); owner.close(timeout=3)
 
     def test_event_feedback_cancel_preserves_unknown_and_stops_the_sampler(self):
-        from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+        from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
         from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
         plan, records = base.fixture.chain_for('MM'), base.fixture.source_rows(size=2)
         config = self.helper.config_for(plan, records, hold=['step_0|occ-0'])

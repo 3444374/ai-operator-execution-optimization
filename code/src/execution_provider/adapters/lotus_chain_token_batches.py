@@ -323,7 +323,7 @@ class BatchSupplyFeedback(RecordsNativeSampler):
         from dataclasses import replace
         from src.planning.work import StageWork
         from src.scheduling.core.models import AdmissionObservation
-        from src.scheduling.submission_control.stage_work import SupplyState
+        from src.scheduling.submission_control.feedback_work import SupplyState
         now = time.monotonic()
         if self.controller is None or not self._control_due(now):
             return

@@ -12,7 +12,8 @@ import unittest
 
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.core.session_contract import Uncertain
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController
+from src.scheduling.submission_control.adaptive import ResourceFeedbackController
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig
 from src.scheduling.submission_control.admission import DynamicAdmissionGate
 from tests.scheduling.test_incremental_session import setup, task
 

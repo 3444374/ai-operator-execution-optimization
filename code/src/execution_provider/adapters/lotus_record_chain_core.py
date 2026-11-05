@@ -169,7 +169,7 @@ class SemLoomRecordChainCore:
                 raise ValueError('batch feedback requires token batches starting at one, a ceiling within R and native ready clocks')
         self.batch_feedback, self._supply_feedback = batch_feedback, None
         if request_feedback is not None:
-            from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+            from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
             if type(request_feedback) is not ResourceRequestConfig:
                 raise TypeError('request_feedback must be ResourceRequestConfig')
             if (not self._async_token_batches or not rolling_refill

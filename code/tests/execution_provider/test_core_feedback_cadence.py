@@ -4,7 +4,8 @@ from types import SimpleNamespace
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig,ResourceFeedbackController
+from src.scheduling.submission_control.adaptive import ResourceFeedbackController
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig
 from src.scheduling.submission_control.admission import DynamicAdmissionGate
 from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider,ServiceMetricsSnapshot
 from tests.execution_provider.test_core_feedback_ray_future import make_feedback,native_frame

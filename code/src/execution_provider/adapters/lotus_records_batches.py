@@ -183,7 +183,7 @@ class PreparedRecordsCore:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
             feedback = SupplyFeedbackConfig.from_dict(batching['feedback'])
         if 'request_feedback' in batching:
-            from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+            from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
             request_feedback = ResourceRequestConfig(**batching['request_feedback'])
         owner = SemLoomRecordChainCore(self.engine, self.resources, execution='record_local_sections',
             actor_owner=actors, capacity=self.capacity,

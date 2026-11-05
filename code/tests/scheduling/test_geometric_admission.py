@@ -6,7 +6,8 @@ import tempfile
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceFeedbackController, _GeometricSearch
+from src.scheduling.submission_control.adaptive import ResourceFeedbackController, _GeometricSearch
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig
 
 
 class Trace:

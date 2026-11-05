@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import unittest
 
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits

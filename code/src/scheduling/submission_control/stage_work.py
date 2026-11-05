@@ -1,4 +1,4 @@
-"""Engine-independent demand-gated supply and request feedback.
+"""Demand-gated batch feedback over shared work observations.
 
 Controllers reuse measured-work trials without treating hardware utilization
 as evidence of spare capacity or a performance benefit.
@@ -6,11 +6,11 @@ as evidence of spare capacity or a performance benefit.
 
 from __future__ import annotations
 
-import math
 from dataclasses import asdict, dataclass, field, replace
 
-from ...planning.work import StageWork
-from .adaptive import ResourceFeedbackConfig, ResourceFeedbackController
+from .adaptive import ResourceFeedbackController
+from .feedback_options import ResourceFeedbackConfig
+from .feedback_work import SupplyState
 
 
 def default_supply_feedback_options():
@@ -48,38 +48,6 @@ class SupplyFeedbackConfig:
         except TypeError as error:
             raise ValueError('unsupported batch_feedback option') from error
         return cls(config.max_batches, options)
-
-
-@dataclass(frozen=True)
-class SupplyState:
-    """Control-thread demand at the end of the same native measurement window.
-
-    Counts describe actual prepared/admitted work, not potential future model
-    calls. StageWork retains declared units, not calibrated hardware cost.
-    """
-    observed_at_s: float
-    ready_items: int
-    prepared_total: int
-    submitted_total: int
-    active_batches: int
-    upstream_pending: bool
-    exhausted: bool
-    capacity_blocked: str | None = None
-    ready_work: tuple[StageWork, ...] = ()
-    local_capacity: dict = field(default_factory=dict)
-    source_exhausted: bool = False
-    active_requests: int | None = None
-
-    def __post_init__(self):
-        if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
-            raise ValueError("supply timestamp must be finite and non-negative")
-        for name in ("ready_items", "prepared_total", "submitted_total", "active_batches"):
-            if type(getattr(self, name)) is not int or getattr(self, name) < 0:
-                raise ValueError(name + " must be a non-negative integer")
-        if self.active_requests is not None and (type(self.active_requests) is not int or self.active_requests < 0):
-            raise ValueError('active_requests must be a non-negative integer or unknown')
-        if any(type(v) is not bool for v in (self.upstream_pending, self.exhausted, self.source_exhausted)):
-            raise TypeError("supply state flags must be boolean")
 
 
 class SupplyFeedbackController(ResourceFeedbackController):

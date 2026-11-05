@@ -56,6 +56,10 @@ class SourceView(importlib.abc.MetaPathFinder):
         sys.modules[self.label] = package
         sys.meta_path.insert(0, self)
         self.adaptive = self.module("scheduling.submission_control.adaptive")
+        self.feedback_options = (self.adaptive if variant is not None else
+                                 self.module("scheduling.submission_control.feedback_options"))
+        self.feedback_work = (self.adaptive if variant is not None else
+                              self.module("scheduling.submission_control.feedback_work"))
         self.models = self.module("scheduling.core.models")
         self.calibration = self.module("scheduling.runtime.calibration")
 
@@ -112,7 +116,7 @@ class Trace:
                   min_remaining=4, exploration_s=100, max_changes=8, allow_exploration=True)
         if computed:
             kw.update(work_basis="computed", work_comparison="local_pairs" if pairs else "envelope")
-        self.options = options or view.adaptive.ResourceFeedbackConfig(**kw)
+        self.options = options or view.feedback_options.ResourceFeedbackConfig(**kw)
         self.effective = getattr(self.options, "work_basis", "delivered") == "computed"
         self.c = view.adaptive.ResourceFeedbackController(maximum, initial, self.options,
                                                         clock=lambda: self.now)
@@ -206,16 +210,16 @@ class LegacyFeedbackContracts(unittest.TestCase):
 
 
     def test_current_feedback_defaults_have_no_implicit_exploration_cutoffs(self):
-        cfg = self.target.adaptive.ResourceFeedbackConfig()
+        cfg = self.target.feedback_options.ResourceFeedbackConfig()
         self.assertEqual((cfg.exploration_s, cfg.min_remaining, cfg.max_changes), (None, 0, None))
         self.assertFalse(cfg.allow_exploration)
         for invalid in (dict(exploration_s=0), dict(exploration_s=float('inf')),
                         dict(min_remaining=-1), dict(min_remaining=True), dict(max_changes=0)):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
-                self.target.adaptive.ResourceFeedbackConfig(**invalid)
+                self.target.feedback_options.ResourceFeedbackConfig(**invalid)
 
     def test_unbudgeted_scan_can_start_after_ten_seconds_with_fewer_than_sixty_four_pending(self):
-        options = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric',
+        options = self.target.feedback_options.ResourceFeedbackConfig(search_mode='geometric',
             window_s=1, min_samples=2, allow_exploration=True)
         trace = Trace(self.target, initial=4, maximum=8, total=60, options=options)
         trace.tick(6, pending=50)
@@ -231,7 +235,7 @@ class LegacyFeedbackContracts(unittest.TestCase):
         self.assertNotIn('short_tail_or_fixed', trace.c.reasons)
 
     def test_unrequested_change_budget_does_not_stop_measured_growth(self):
-        options = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric',
+        options = self.target.feedback_options.ResourceFeedbackConfig(search_mode='geometric',
             window_s=1, min_samples=2, allow_exploration=True)
         trace = Trace(self.target, initial=1, maximum=2048, total=1000000000, options=options)
         for _ in range(200):
@@ -248,7 +252,7 @@ class LegacyFeedbackContracts(unittest.TestCase):
 
     def test_short_work_without_comparison_is_censored_even_without_a_probe(self):
         for mode in ('local', 'geometric'):
-            options = self.target.adaptive.ResourceFeedbackConfig(search_mode=mode,
+            options = self.target.feedback_options.ResourceFeedbackConfig(search_mode=mode,
                 min_remaining=32, allow_exploration=True)
             trace = Trace(self.target, initial=3, maximum=6, total=3, options=options)
             trace.tick(0, pending=0)
@@ -260,7 +264,7 @@ class LegacyFeedbackContracts(unittest.TestCase):
                 self.assertFalse(report['can_continue'])
 
     def test_missing_pending_work_is_unknown_and_zero_pending_is_not_a_platform(self):
-        options = self.target.adaptive.ResourceFeedbackConfig(search_mode='geometric',
+        options = self.target.feedback_options.ResourceFeedbackConfig(search_mode='geometric',
             window_s=1, min_samples=2, allow_exploration=True)
         trace = Trace(self.target, initial=3, maximum=6, total=3, options=options)
         self.assertEqual(trace.tick(0, pending=None).reason, 'missing_pending_feedback')
@@ -283,8 +287,8 @@ class LegacyFeedbackContracts(unittest.TestCase):
                     for trace in traces:
                         trace.run(mode)
                     self.assert_trace_equal(*traces, legacy=True)
-        self.assertEqual(self.target.adaptive.ResourceFeedbackConfig().work_basis, "delivered")
-        self.assertEqual(self.target.adaptive.ResourceFeedbackConfig().work_comparison, "envelope")
+        self.assertEqual(self.target.feedback_options.ResourceFeedbackConfig().work_basis, "delivered")
+        self.assertEqual(self.target.feedback_options.ResourceFeedbackConfig().work_comparison, "envelope")
 
     def test_computed_and_pairs_match_ee39_full_report_and_discriminating_outcomes(self):
         for mode, pairs, selected, accepted in (
@@ -368,8 +372,8 @@ class LegacyFeedbackContracts(unittest.TestCase):
              point([(100, 20, 4)] * 3, [5] * 3, 1), "regression"),
         ]
         for before, after, outcome in cases:
-            expected = self.ee39.adaptive._local_pair_evidence(before, after, 0)
-            actual = self.target.adaptive._local_pair_evidence(before, after, 0)
+            expected = self.ee39.feedback_work._local_pair_evidence(before, after, 0)
+            actual = self.target.feedback_work._local_pair_evidence(before, after, 0)
             self.assertEqual(actual, expected)
             self.assertEqual(actual["outcome"], outcome)
         before = point([(100, 60, 4)] * 3, [10] * 3, 0)
@@ -377,8 +381,8 @@ class LegacyFeedbackContracts(unittest.TestCase):
         for i, (a, b) in enumerate(zip(before["windows"], after["windows"])):
             a.update(completed_begin=i * 20, completed_end=(i + 1) * 20)
             b.update(completed_begin=i * 20, completed_end=(i + 1) * 20)
-        expected = self.ee39.adaptive._local_pair_evidence(before, after, 0)
-        self.assertEqual(self.target.adaptive._local_pair_evidence(before, after, 0), expected)
+        expected = self.ee39.feedback_work._local_pair_evidence(before, after, 0)
+        self.assertEqual(self.target.feedback_work._local_pair_evidence(before, after, 0), expected)
         self.assertEqual(expected["support_pairs"], 0)
 
 

@@ -7,7 +7,7 @@ from src.scheduling.submission_control.resource_probe import (
     ResourceProbeView, ResourceRequestPermit, resource_request_opportunity,
 )
 from src.scheduling.submission_control.resource_step import NativeKVFrame, RequestKVWork, propose_kv_window
-from src.scheduling.submission_control.stage_work import SupplyState
+from src.scheduling.submission_control.feedback_work import SupplyState
 
 
 class ResourceRequestProbeTests(unittest.TestCase):

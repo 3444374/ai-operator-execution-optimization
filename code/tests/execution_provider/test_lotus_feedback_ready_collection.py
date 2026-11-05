@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig, ResourceRequestConfig
 from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
 from src.scheduling.core.session import WakeSignal
 from tests.execution_provider import test_lotus_snapshot_rpc_receipts as receipts

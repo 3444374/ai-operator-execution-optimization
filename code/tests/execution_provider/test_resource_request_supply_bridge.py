@@ -13,7 +13,7 @@ from src.execution_provider.adapters import lotus_chain_token_batches as batchin
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.core.session_contract import TaskInfo
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from src.scheduling.submission_control.admission import StaticAdmissionController
 from src.scheduling.submission_control.request_scan import ResourceRequestController
 from src.scheduling.submission_control.resource_probe import ResourceProbeView, ResourceRequestPermit

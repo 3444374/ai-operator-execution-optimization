@@ -14,7 +14,7 @@ from src.execution_provider.adapters.records_profile import resolve_core_profile
 from src.execution_provider.adapters.records_request_feedback import (
     CoreResourceRequestFeedback, ResourceRequestSupplyFeedback, applied_request_limit,
 )
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig, ResourceRequestConfig
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider, ServiceMetricsSnapshot

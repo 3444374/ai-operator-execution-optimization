@@ -4,10 +4,10 @@ from dataclasses import replace
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
-from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 from src.scheduling.submission_control.request_scan import ResourceRequestController
 from src.scheduling.submission_control.resource_probe import ResourceRequestPermit, ResourceProbeView
-from src.scheduling.submission_control.stage_work import SupplyState
+from src.scheduling.submission_control.feedback_work import SupplyState
 
 
 class ResourceTrace:

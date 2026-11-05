@@ -3,8 +3,9 @@ from dataclasses import asdict, replace
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
-from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig, SupplyFeedbackController, SupplyState
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig
+from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig, SupplyFeedbackController
+from src.scheduling.submission_control.feedback_work import SupplyState
 
 
 class SupplyFeedbackTests(unittest.TestCase):
