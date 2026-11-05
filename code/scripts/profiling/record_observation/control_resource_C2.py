@@ -23,6 +23,17 @@ def checked_json(binding):
     return json.loads(path.read_text())
 
 
+def owner_resource_context(config, host):
+    """Carry declared host limits to the native author owner without new defaults."""
+    if (config.get('movie_plan') or {}).get('backend') != 'imlane':
+        return {}
+    shared = host['shared_resources']
+    return dict(gpu_idle_max_mib=host['gpu_idle_max_mib'],
+        owner_resource_limits=dict(cpu_cores=len(config['cpu_affinity']),
+            rss_bytes=shared['max_sampled_owned_rss_bytes'],
+            shm_bytes=shared['max_owned_shm_bytes']))
+
+
 def source_identity(config):
     root=Path(config['source_root'])
     def git(*args):return subprocess.check_output(['git',*args],cwd=root,text=True).strip()
@@ -129,7 +140,8 @@ def main(root, *, monitor=None):
                                      repository_commit=identity['head'],recover_stale=False)
         before=H.snapshot(api,host,'resource-capture-before',owned);write('BEFORE.json',before);H.assert_idle(before,host)
         config=dict(prepared,execution_enabled=True,external_owner=dict(lease_path=str(lease.path),artifact_root=str(lease.path.parent.parent),
-                    lease_sha256=hashlib.sha256(lease.path.read_bytes()).hexdigest()))
+                    lease_sha256=hashlib.sha256(lease.path.read_bytes()).hexdigest(),
+                    **owner_resource_context(prepared,host)))
         write('config.json',config)
         cap=config['workload']['expected_calls']
         ledger=api.CellBudgetLedger.create(root/'budget.sqlite',api.AttemptBudget(config['run_id'],cap),

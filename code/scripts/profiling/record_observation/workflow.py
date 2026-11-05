@@ -117,6 +117,8 @@ def validate_base(config):
             raise ValueError('private input changed')
     elif config['workload']['kind'] != 'movie_session':
         raise ValueError('use an existing Movie session or finite record chain')
+    if (config.get('movie_plan') or {}).get('backend') == 'imlane':
+        controller.owner_resource_context(config, controller.checked_json(config['host_config']))
     return git_identity(config['source_root'], config['expected_source'])
 
 

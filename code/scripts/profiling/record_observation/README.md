@@ -99,6 +99,12 @@ GPU／进程空闲及 lease 已释放。下列入口继续领取原 lease 和额
 控制端将当前 `lease_path`、租约 SHA-256 和 artifact 根目录经 Movie worker 转交给原生入口；
 沿用同一租约及原监督／释放责任。CPU 接线测试使用替身，真实 Native／模型启动尚待复验。
 
+IMLane 还消费已有 host 配置中的 `gpu_idle_max_mib` 和 `shared_resources` 的 RSS／SHM 声明。
+控制端将它们传入同一 `external_owner`，CPU 数量取本次 `cpu_affinity` 的长度，
+不继承旧 packet 的固定 8 CPU 或 echo verifier 的资源缺省。
+这两项分别用于作者进程资源核验和 GPU 退出；不是模型容量或 IMLane 调度参数。
+CPU 准备阶段读取同一接线，缺少真实声明时不会填新阈值或等到模型启动后才发现。
+
 ### 多格共用的操作守卫
 
 需要整轮调用／墙钟／原件上限时，可用 [campaign_guard.py](campaign_guard.py) 包住既有入口，

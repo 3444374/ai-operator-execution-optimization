@@ -5,6 +5,7 @@ from copy import deepcopy
 import hashlib
 import importlib.util
 import io
+from itertools import product
 import json
 import os
 from pathlib import Path
@@ -458,8 +459,8 @@ class PlanTests(unittest.TestCase):
         )
         from src.experiments import lotus_records_supervisor as supervisor
         cached_supervise = supervisor.supervise
-        for mode in ('standalone', 'monitor', 'stop'):
-            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+        for backend, mode in product(('ray-data', 'imlane'), ('standalone', 'monitor', 'stop')):
+            with self.subTest(backend=backend, mode=mode), tempfile.TemporaryDirectory() as directory:
                 root=Path(directory)
                 artifacts=root/'artifacts'
                 leases=[];received=[]
@@ -477,6 +478,10 @@ class PlanTests(unittest.TestCase):
                     self.assertEqual(owner['artifact_root'],str(artifacts))
                     self.assertEqual(owner['lease_sha256'],
                         hashlib.sha256(Path(owner['lease_path']).read_bytes()).hexdigest())
+                    if backend == 'imlane':
+                        self.assertEqual(owner['owner_resource_limits'],
+                            dict(cpu_cores=2, rss_bytes=123456, shm_bytes=654321))
+                        self.assertEqual(owner['gpu_idle_max_mib'], 17)
                     received.append(owner)
                     return dict(status='completed')
                 def supervise(command,output,**kwargs):
@@ -500,10 +505,10 @@ class PlanTests(unittest.TestCase):
                 helper_path=root/'helper.py';helper_path.write_text('# CPU host boundary\n')
                 config=deepcopy(self.base)
                 config.update(artifact_root=str(root),units={'native-query':1},observer_sha256={},
-                    movie_plan=dict(backend='ray-data',engine=dict(driver_python=sys.executable)),
+                    movie_plan=dict(backend=backend,engine=dict(driver_python=sys.executable)),
                     workload=dict(name='native-quality',kind='movie_session',expected_calls=1),
                     host_helpers=dict(path=str(helper_path),sha256=hashlib.sha256(helper_path.read_bytes()).hexdigest()),
-                    host_config={},limits=dict(worker_timeout_s=10,controller_timeout_s=30,
+                    host_config={},cpu_affinity=[101,103],limits=dict(worker_timeout_s=10,controller_timeout_s=30,
                         cleanup_grace_s=1,natural_exit_grace_s=1))
                 (root/'PREPARED-CONFIG.json').write_text(json.dumps(config))
                 spec=SimpleNamespace(loader=SimpleNamespace(exec_module=Mock()))
@@ -512,7 +517,11 @@ class PlanTests(unittest.TestCase):
                 callback = Mock(side_effect=stop)
                 with patch.object(self.controller,'check_material'), \
                         patch.object(self.controller,'source_identity',return_value=dict(head='fixture',tree='fixture')), \
-                        patch.object(self.controller,'checked_json',return_value=dict(lease_scope=str(artifacts/HOST_SCOPE_DIR_NAME))), \
+                        patch.object(self.controller,'checked_json',return_value=dict(
+                            lease_scope=str(artifacts/HOST_SCOPE_DIR_NAME), gpu_idle_max_mib=17,
+                            shared_resources=dict(cpu_affinity_slots=[11,13,17,19],
+                                max_sampled_owned_rss_bytes=123456, max_owned_shm_bytes=654321))), \
+                        patch.object(self.controller.os,'sched_setaffinity',create=True), \
                         patch.object(self.controller.importlib.util,'spec_from_file_location',return_value=spec), \
                         patch.object(self.controller.importlib.util,'module_from_spec',return_value=helper), \
                         patch.object(self.controller,'worker_environment',return_value=dict(os.environ)), \
@@ -542,6 +551,34 @@ class PlanTests(unittest.TestCase):
                     ledger.claim_unit.assert_not_called()
                 else:
                     ledger.claim_unit.assert_called_once_with('native-query')
+
+
+    def test_imlane_owner_context_reaches_native_preflight_and_gpu_exit_guard(self):
+        from integrations.imlane_records import chain_runtime as native
+        host = dict(gpu_idle_max_mib=17, shared_resources=dict(
+            max_sampled_owned_rss_bytes=123456, max_owned_shm_bytes=654321))
+        config = dict(movie_plan=dict(backend='imlane'), cpu_affinity=[101, 103])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report = root / 'preflight.json'
+            report.write_text(json.dumps(dict(status='ok')))
+            value = dict(self.controller.owner_resource_context(config, host),
+                preflight_report=str(report), author_root=str(root / 'author'),
+                bridge_binary=str(root / 'bridge'), method_python=sys.executable,
+                model_environment=dict(CUDA_VISIBLE_DEVICES='CPU-fixture'))
+            args = SimpleNamespace(scopes=[], stop_budget=SimpleNamespace(check=Mock()))
+            engine = SimpleNamespace(validate_driver_environment=lambda: {})
+            with patch.object(native, 'check_external_lease', return_value={}), \
+                    patch.object(native.os, 'sched_getaffinity', return_value={101, 103}, create=True), \
+                    patch.object(native, 'validate_author_build', return_value={}), \
+                    patch.object(native, 'preflight_method', return_value={}), \
+                    patch.object(native, 'gpu_snapshot', return_value=dict(
+                        uuid='CPU-device', memory_mib=5, compute_processes=[])):
+                observed = native.preflight_owner(value, engine, chain=False)
+                self.assertEqual(observed['owner_resource_limits'], value['owner_resource_limits'])
+                guard = native.AuthorRunGuard(value, args)
+                self.assertFalse(guard())
+                self.assertTrue(guard.finish()['gpu_exit_confirmed'])
 
 
     def test_off_has_no_observer_env_profile_or_import(self):
