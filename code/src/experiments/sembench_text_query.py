@@ -83,7 +83,7 @@ def _frame_value(frame):
     import pandas as pd
     if isinstance(frame, pd.Series):
         frame = frame.to_frame()
-    return json.loads(frame.to_json(orient='split'))
+    return json_metric(frame.to_dict(orient='split'))
 
 
 def run_query(config, query, engine, resources, directory, *, budget=None, context=None,

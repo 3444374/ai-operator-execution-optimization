@@ -104,6 +104,13 @@ class TextEntryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'every original operator input'):
             entry.fixture({},query,['one'],Path('/tmp'))
 
+    def test_result_projection_preserves_original_ratio_precision(self):
+        import pandas as pd
+        value=2/3
+        report=entry._frame_value(pd.DataFrame({'positivity_ratio':[value]}))
+        self.assertEqual(report['data'],[[value]])
+        self.assertEqual(json.loads(json.dumps(report))['data'],[[value]])
+
     def test_missing_occurrence_fails_before_evaluation_and_keeps_backend_evidence(self):
         query=SimpleNamespace(describe=lambda:dict(expected_model_calls=2),
             operation=SimpleNamespace(records=[SimpleNamespace(row_id='r0',source_position=0),
