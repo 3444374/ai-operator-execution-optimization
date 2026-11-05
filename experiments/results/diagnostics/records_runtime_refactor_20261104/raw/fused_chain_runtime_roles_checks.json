@@ -119,5 +119,22 @@
     "GPU": 0,
     "database": 0
   },
-  "main_merged": false
+  "main_merged": false,
+  "current_physical_Python_lines": {
+    "source_commit": "c77ac753623853ae11432c4d7bddaba0d1ae74ec",
+    "scope": "Physical Python lines including blank lines/comments. Exclude tests/docs/archive. Core excludes experiments and baselines; wider metric is live code/src plus code/scripts. Directory moves to history reduce live scope but not repository history size.",
+    "core": 59118,
+    "src_and_scripts": 114921,
+    "vs_3fd": {
+      "core": -2510,
+      "src_and_scripts": -34724
+    },
+    "vs_main": {
+      "core": 5027,
+      "src_and_scripts": -25414
+    },
+    "main": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+    "3fd": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+    "major_retirement_work_belongs_to_previous_batches": true
+  }
 }
