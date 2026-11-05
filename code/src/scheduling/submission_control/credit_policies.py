@@ -238,8 +238,6 @@ def _active_vtc_normalized_counters(
 def _grant_saor_waiters(credit, endpoint_id: str) -> None:
     """Grant fitting Job heads using fixed-envelope active-set release."""
 
-    if credit._saor_release_config is None:
-        raise RuntimeError("SAOR release configuration is missing")
     request_limit, work_limit = credit._capacities[endpoint_id]
     while credit._active_requests[endpoint_id] < request_limit:
         ordered_jobs = [
@@ -304,8 +302,6 @@ def _grant_saor_waiters(credit, endpoint_id: str) -> None:
 def _grant_bounded_saor_waiters(credit, endpoint_id: str) -> None:
     """Apply debt recovery, bounded SLO priority, then SAOR fallback."""
 
-    if credit._saor_release_config is None:
-        raise RuntimeError("SAOR release configuration is missing")
     request_limit, work_limit = credit._capacities[endpoint_id]
     while credit._active_requests[endpoint_id] < request_limit:
         if _resume_guard_hold(credit, endpoint_id):

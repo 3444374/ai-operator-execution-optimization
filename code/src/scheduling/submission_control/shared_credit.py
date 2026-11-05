@@ -462,10 +462,6 @@ class FairEndpointCreditCoordinator:
         """
         if not self.incremental_safe or job_id not in self._finished_jobs:
             raise ValueError("only finished incremental FIFO jobs can be forgotten")
-        if any(lease.job_id == job_id for lease in self._active.values()) or any(
-            queues.get(job_id) for queues in self._waiting.values()
-        ):
-            raise ValueError("cannot forget outstanding credit")
         for mapping in (
             self._weights, self._priorities, self._saor_slo_target_s,
             self._priority_windows_s, self._fairness_debt_caps,
