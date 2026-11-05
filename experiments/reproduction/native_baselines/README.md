@@ -357,3 +357,17 @@ Q2b视觉非HTTP替换未完成。历史原始ID／SHA保持，优先复用已�
 维护 SDK 不再提供这些旧私有函数或参数；调用方提供的 typed replay_envelopes 与共享调度算法继续保留。
 [当前改动和 CPU 检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
 不表示完整历史环境、模型或性能已恢复。
+
+
+<a id="retired-ray-http-polling"></a>
+## 旧 Ray HTTP metrics 轮询的来源
+
+现用 `profiling/ray.py` 只保留 static 与调用方提供 admission 对象的提交；旧字典轮询及独占的
+`RoundRobinSubmitter` 已删除，旧字典与旧类的仓外直接调用不再兼容。
+`ray.py` 仍使用五份投影原有的准确 965 gzip 来源；原 expected 摘要和投影身份不变。
+原 `ray_adapter.py` 为 17,434 字节，SHA-256 为
+`ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef`，单份准确原件保存于
+[历史 gzip](historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz)，五份投影仅增加该路径及 gzip 格式记录。
+现用 actor worker 轮转和记账继续维护，不从历史文件导入。
+[行为与完整恢复检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
+记录最终 29 项 CPU 和五份共 3,010 文件的完整恢复；这不是历史模型环境验证。

@@ -1,6 +1,6 @@
 # Learning Figures
 
-本目录保存学习讲解文档引用的项目级图表。后续 learning、开题、中期汇报和毕业论文如需要复用这些图，应从根目录 `figures/` 引用，不再在 `PROJECT_INDEX.md#内容与文档职责figures/` 维护单独副本。
+本目录保存学习讲解文档使用的图表，项目入口见[图资产说明](../README.md)。复用时引用这里的原件，并按下列记录区分历史用途。
 
 ## 当前图表
 
@@ -25,3 +25,11 @@ GPU embedding 链路拆分图由下面脚本生成：
 ```text
 experiments/results/README.md#历史实验解读
 ```
+
+
+## 历史请求流程示意
+
+[普通 PNG](request_shape_evolution.png)与[两倍 PNG](request_shape_evolution@2x.png)
+描绘旧 PG profiler、token 切分与 HTTP metrics 轮询，保留为历史学习素材，不能说明当前 SemLoom 实现或性能。
+[生成脚本](../scripts/generate_request_shape_evolution.py)已标注历史用途；本次未覆盖原导出。
+[来源与保留说明](../audit/request_shape_evolution_history_20261105.md)记录替代关系和检查范围。

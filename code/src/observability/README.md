@@ -13,7 +13,8 @@ over the execution policy it observes.
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
 - `profiling/` contains stable result schemas and directly imported profiling helpers.
-  `profiling/ray.py` owns public task/actor submission, invocation values and legacy polling.
+  `profiling/ray.py` owns public task/actor submission and invocation values. The old dictionary-based
+  HTTP metrics polling is retired; adaptive callers provide admission objects explicitly.
   `profiling/ray_scheduler.py` assembles endpoint topology, routing/admission options, the existing
   scheduler and result metrics. Policy and execution remain implemented in `src/scheduling/`;
   the two profiler modules share the existing scheduler rather than maintaining another one.

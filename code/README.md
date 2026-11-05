@@ -147,3 +147,8 @@ Session 的成员选择、单请求和原子批接收集中到
 仅服务旧实验的 HTTP 观测转发代理及其回环测试已退役，原 trace 摘要迁为不启动服务的 CPU 用例。
 现用 HTTPX 被动观测、request identity 和 Unix 执行接口保持；[准确恢复与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
 记录最新组合 11 项 CPU 通过、生产 Python 净减 779 行，当前模型资格按实际受测版本分别说明。
+
+Ray 画像 SDK 的旧字典 HTTP metrics 轮询和仅供其使用的独立轮转状态也已退役；
+static 与显式全局／端点 admission 对象、caller replay 及 actor worker 状态继续使用同一现有调度器。
+[本批代码与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
+记录生产 Python 再减 262 行、最终 29 项 CPU 通过及准确历史来源；不保留旧符号转发层。

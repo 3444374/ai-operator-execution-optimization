@@ -10,9 +10,10 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="current-refactor-status"></a>
 ## 当前收尾状态（2026-11-05）
 
-当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复；HTTP 观测退役代码候选为 `7a23e6dc`。
+当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
+HTTP 代理退役代码为 `7a23e6dc`，后续旧 Ray 轮询退役整合代码为 `a8c7dd87`。
 仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。
-最新组合 11 项 CPU 通过，独立复核无需修正；代码仍在开发 PR，未合并 main。
+代理退役切片的 11 项 CPU 通过，独立复核无需修正；代码仍在开发 PR，未合并 main。
 [具体改动、剩余文件与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
 区分旧组件选择、最新组合及实际模型结果，没有累计重叠检查。
 
@@ -22,7 +23,10 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 
 普通 R 缺省仍为 2；独立预算和 R=None 可用，auto 依据声明额度，不是物理 RAM 授予或完整查询 RSS 保证。
 三项引擎上限可省略；BF16／显存比例 0.8 的共享缺省仍需另批处理。现用路径、配置及模型验收尚未全部完成。
-剩余大文件按实际职责继续整理；旧 Ray 字典配置仍可进入 HTTP metrics 轮询，须核实际调用后再处理。
+剩余大文件按实际职责继续整理。旧 Ray 字典 HTTP metrics 轮询及其独占轮转状态已退役，
+static／全局与端点 admission 对象继续使用原调度器；不含 admission 对象的旧字典在提交前直接报错。
+[同组选例与准确历史来源](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
+记录旧实现参照 27 项和最终 29 项通过，没有为文档链接改动重复运行。
 
 原生 baseline 容量修正基于 PR90 `4376d927`：ReferenceVllmEngine 原先把未指定的三项 vLLM
 容量补成 4096 上下文／8 序列／4096 token，链、cascade 与 IMLane 还会重写上下文或据此提前拒绝。

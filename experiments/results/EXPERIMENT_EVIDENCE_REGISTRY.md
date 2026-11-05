@@ -1703,3 +1703,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 保留组件同选四项前后通过、dad4／4376 组合各十一项及 8a2b 最新组合十一项通过；重复方法不累计。
 完整原件在准确 7bf1 Git 树恢复，共享 trace 摘要与被动观测继续使用原实现。新基底已补齐旧来源，最新 3,010 项全部匹配，
 较早十处差异按当时证据保留；本批没有真实 Ray／模型运行，旧 a1b5 Q1 结果不转用于新提交。
+
+
+[旧 Ray HTTP metrics 轮询退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
+记录旧生产有效路径 27 项、修改后 28 项和最终 29 项全部通过；重叠结果不累计。
+现用 SDK 的 static／typed admission、actor 状态和任务值保持，旧字典及独占轮转状态退出维护。
+五份原投影共 3,010 文件实际恢复通过，原摘要和身份不变；生产 Python 再减 262 行，没有真实模型或性能结果。

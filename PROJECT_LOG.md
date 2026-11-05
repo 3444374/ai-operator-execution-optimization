@@ -11436,3 +11436,14 @@ Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan
 [源码、恢复与状态记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
 列出源版本、最早私有 runner 启动错误和模型资格；最新 3,010 项历史来源均匹配，旧失败仍保留。
 本批生产 Python 净减 779 行，最终组合核心为 57,278 行；R 默认、共享引擎缺省和完整物理容量仍待处理，未合并 main。
+
+
+## 2026-11-05 退役 Ray 旧 HTTP 轮询并保留现用提交
+
+旧字典 HTTP metrics 轮询只由退役 PG profiler 构造，删除其六个定义、两处分派、专属轮转类／状态和旧导出。
+static、全局／端点 admission、replay 单次消费、跨调用 actor state 与 worker 记账继续使用原实现，没有新增调度器或兼容壳。
+[同组行为与恢复记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
+保留旧生产 27 项及最终 29 项通过，五份历史代码共 3,010 文件实际恢复；准确旧原件单独索引。
+正常 actor 主流程减少一层嵌套，ray.py 从 670 行降至 451 行，本批生产净减 262 行；
+两批 HTTP 清理共减 1,041 行，当前核心为 57,016 行，测试与图说明单列。
+旧学习图只标注历史用途、保留原 PNG；模型资格、R／物理容量和原未验证项不改报完成，未合并 main。
