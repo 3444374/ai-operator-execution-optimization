@@ -114,10 +114,23 @@ class CoreRecordsCapacity:
 
 
 
+def _complete_ipc_limits(overrides):
+    """Materialize complete JSON grants; partial overrides retain their owner defaults."""
+    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+
+    if type(overrides) is dict:
+        allocation_fields = {field.name for field in fields(AsyncEngineLimits)
+                             if field.name != 'feedback_interval_s'}
+        if allocation_fields <= overrides.keys():
+            return AsyncEngineLimits(**overrides)
+    return overrides
+
+
 def _ipc_limits(capacity, maximum, overrides):
     from src.serving.backends.vllm_async_engine import AsyncEngineLimits
     from src.serving.backends.vllm_protocol import _integer
 
+    overrides = _complete_ipc_limits(overrides)
     if type(overrides) is AsyncEngineLimits:
         return overrides
     if overrides is not None and type(overrides) is not dict:
@@ -128,7 +141,8 @@ def _ipc_limits(capacity, maximum, overrides):
         budget = capacity.budget
         values.update(result_slots=budget.held_tasks,
                       input_bytes=budget.input_bytes, result_bytes=budget.result_bytes)
-    values.update(overrides or {})
+    values.update({name: value for name, value in (overrides or {}).items()
+                   if value is not None or name not in ('result_slots', 'command_slots')})
     values.setdefault('result_slots', values['max_inflight'])
     for name in ('max_inflight', 'item_input_bytes', 'item_result_bytes', 'result_slots'):
         _integer(values[name], name, minimum=1)
@@ -177,11 +191,7 @@ def independent_default_capacity(resources, capacity, overrides=None):
 
     if type(capacity) is not CoreRecordsCapacity or capacity.budget is not None:
         raise ValueError('independent defaults require a Core capacity without a complete budget')
-    if resources.max_active_batches is None and type(overrides) is dict:
-        allocation_fields = {field.name for field in fields(AsyncEngineLimits)
-                             if field.name != 'feedback_interval_s'}
-        if allocation_fields <= overrides.keys():
-            overrides = AsyncEngineLimits(**overrides)
+    overrides = _complete_ipc_limits(overrides)
     requests = (overrides.max_inflight
                 if resources.max_active_batches is None and type(overrides) is AsyncEngineLimits
                 else resources.request_capacity())
