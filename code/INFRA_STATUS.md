@@ -979,3 +979,9 @@ socket 测试夹具现在先报告启动原异常再交出路径，启动失败�
 [一次最小检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
 明确停在 `listener.bind()` 的 `EPERM`，不再误报为客户端 `FileNotFoundError`；五个原 socket 方法仍未通过。
 一个模拟启动失败的行为测试通过，未重试实际绑定或 sysctl，未改生产代码、时限或跳过规则。
+
+
+普通 Filter 输入／结果迭代已从模型 owner 移入 records_filter_runtime，原 factory、26 个方法、ACK、租约与收尾处理保持。
+[同选择 CPU 记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
+保存改前／改后各 81 项通过；没有新增测试或资格条件。原 socket 与 sysctl 未验证状态不变，没有重试被拒操作。
+owner 781→539 行，运行模块 259 行，生产 Python 净增 17 行；历史来源仍有十处旧差异，未改策略或配置。

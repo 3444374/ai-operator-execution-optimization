@@ -11365,3 +11365,13 @@ SessionEngine 保留回执、准备借用和单一任务表，SchedulingSession 
 [唯一实际检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
 确认 `listener.bind()` 被系统以 EPERM 拒绝，原五项 socket 功能仍未通过，没有重试被拒操作或 sysctl。
 本批只改测试夹具和行为测试，生产 Python、配置、超时及资格判断均未变化。
+
+
+## 2026-11-05 分开普通 Filter 查询迭代与模型管理
+
+普通 Filter 的输入接纳、回执校验、交付与查询收尾实现在 records_filter_runtime.py，原 owner 保留模型复用和资源管理。
+移动的是原实际类，owner 直接使用该类；原 factory 和 26 个方法保持，没有代理或第二份状态。
+清掉仅供旧迭代类使用的导入，保留有调用方的 TaskKey／模型／transport 导出；历史 AST 和具名原件路径没有机械迁移。
+[本批源码和证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
+保存相同 81 项改前／改后全部通过。owner 781→539 行，新运行模块 259 行，生产 Python 净增 17 行，未声称减少总代码。
+原 socket 和 sysctl 拒绝未重试，策略、容量、模型配置与研究模块保持；整体重构继续。
