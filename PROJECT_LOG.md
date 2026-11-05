@@ -11513,3 +11513,11 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 [准确记录与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)区分55d旧演示源码与5a删除前版本；现用入口改走标准unittest。
 [整体完成清单](code/INFRA_STATUS.md#refactor-completion-checklist)区分已整理模块、关闭ACK待处理、实机待验及后续研究能力。
 整合后相同四项仍3成功／1跳过，1055摘要匹配7c，未转授上游模型资格。核心56,980行未变，src＋scripts114,209行，本批相对1596减51行，测试另减94行，上游另增317行；不合并main。
+
+## 2026-11-05 修正关闭结果与批ACK交接
+
+28ba77ca基于f973，将关闭审计实际返回的成员登记为已暴露结果，并在结果actor释放前恢复交接和排空ACK；已知结果预排空及resident路径保持。
+回调抛错或中断仍执行原清理，异步owner在finally保留RPC终态，unknown不改确认；不新增控制器、参数或推理重试。
+[原失败、79项CPU与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)分别记录1055文件源码对应、3010历史恢复、初稿遗漏和夹具迁移。
+服务器1596第一项原异常已确认来自关闭ACK拒绝；第二项加异常捕获后一次通过，先前原因尚未解明，新版本实际IPC和Ray／模型仍待验证。
+核心57,011行、src＋scripts114,240行，本批各增31行，测试另增141行，不计为瘦身；当前不合并main。

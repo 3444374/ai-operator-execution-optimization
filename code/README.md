@@ -107,8 +107,9 @@ owner 保留服务交接和真实资源清理确认，没有新增状态副本�
 [本批职责与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
 记录中断重试、完整 Extract 及仍受系统权限影响的同步子进程用例。
 容量、模型适配及传输对象的新序列化直接使用定义模块，不再通过修改 __module__ 回指单Filter查询host；现有公共导入仍是同一对象。
-关闭失败保留原异常原因，外层错误消息及资源责任保持；[本批验证与未解决IPC错误](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
-不等同于真实Ray或模型资格。
+关闭失败保留原异常原因，外层错误消息及资源责任保持；此前的[异常链修正](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)不等同于真实Ray或模型资格。
+关闭审计实际返回的回执现在登记为可交接结果；模型API停止后，先恢复结果并排空ACK，再释放actor。
+[79项CPU回归与服务器原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)区分本地修正、已确认原因及尚未解明的取消用例；unknown和真实RPC终态继续单独判断。
 普通 owner 的阶段计时与反馈选项一次解析；链 owner 只检查自身的配置组合，不调用后丢弃普通 profile。
 [本批反例与行为回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)记录直接构造器报告修正与保留的必要检查。
 融合批 close 在私有控制目录删除成功后才保存 closed 报告，删除异常仍向调用方传出，重试沿用原模型关闭凭据。

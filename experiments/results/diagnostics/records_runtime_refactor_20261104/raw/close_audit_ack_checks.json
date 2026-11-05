@@ -1,0 +1,566 @@
+{
+  "schema": "semloom.close_audit_ack.checks.v1",
+  "source": {
+    "schema": "semloom.close_audit_ack.source.v1",
+    "base": "f97318b438184bbb1703d0abb11f55b4889464bb",
+    "candidate": "28ba77ca7a5076209a7c1b1c1497b2016ce52059",
+    "candidate_tree": "454d272116bef182ae6416bebf6e909dace37211",
+    "candidate_code_files": 1055,
+    "candidate_code_manifest_sha256": "56a565ea9b51fa7b0b7b2a0886403ce2fc5f05015570e946794546bf3f43b973",
+    "changed_production": [
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "code/src/execution_provider/adapters/records_async_model.py",
+      "code/src/execution_provider/adapters/records_transport.py"
+    ],
+    "runs": {
+      "baseline-close-recheck": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 2,
+        "passed": 0,
+        "failed_methods": [
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_close_recovers_inflight_members_before_stopping_the_result_actor (status='succeeded')",
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_close_recovers_inflight_members_before_stopping_the_result_actor (status='unknown')"
+        ],
+        "error_methods": [
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_empty_owner_closes_without_allocating_or_importing_ray"
+        ],
+        "failure_records": 2,
+        "error_records": 1,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "ef81f35819fa060995d879fa25167617d0fb4cf6427bf5dbf5eae938b458db64",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": true
+      },
+      "callback-rpc-gap": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 1,
+        "passed": 0,
+        "failed_methods": [],
+        "error_methods": [
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_failed_or_interrupted_delivery_still_releases_actor_and_reports_RPC_state (error='KeyboardInterrupt')",
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_failed_or_interrupted_delivery_still_releases_actor_and_reports_RPC_state (error='OSError')"
+        ],
+        "failure_records": 0,
+        "error_records": 2,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "9d297e64405d0c668d332e1366902d91042df636df40f7de4fb27e21497d3ad8",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": false
+      },
+      "close-composition-regression": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 78,
+        "passed": 59,
+        "failed_methods": [
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_close_recovers_inflight_members_before_stopping_the_result_actor (status='succeeded')",
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_close_recovers_inflight_members_before_stopping_the_result_actor (status='unknown')"
+        ],
+        "error_methods": [
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_actor_kill_failure_is_retryable_without_reclosing_engine",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_all_preflight_failures_precede_actor_allocation (failure='driver')",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_all_preflight_failures_precede_actor_allocation (failure='generation')",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_all_preflight_failures_precede_actor_allocation (failure='method')",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_all_preflight_failures_precede_actor_allocation (failure='ray-uninitialized')",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_all_preflight_failures_precede_actor_allocation (failure='ray-version')",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_cancelled_expired_and_nonfinite_deadlines_allocate_nothing",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_confirmed_api_and_kill_requests_close_only_the_declared_scope",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_constructor_failure_stays_unknown_without_reconstruction_or_model_kill",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_empty_owner_closes_without_allocating_or_importing_ray",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_injected_base_owner_honors_cleanup_deadline_and_keeps_the_same_close_ref",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_model_actor_factory_selects_trusted_override_and_dynamic_default",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_partial_allocation_without_model_handle_never_claims_an_empty_exit",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_prepared_objectref_is_not_fetched_on_driver",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_private_process_owner_has_a_bounded_teardown_window",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_shared_owner_does_not_own_query_or_session_reports",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_start_failure_retains_ownership_for_explicit_close",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_start_reuses_one_engine_and_preserves_fixed_worker_settings",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_timed_out_close_waits_on_the_same_ref_on_retry",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_trusted_owner_changes_only_model_host_and_keeps_default_preparation",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_truthy_api_values_never_confirm_shutdown_or_permit_model_kill (value='true')",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_truthy_api_values_never_confirm_shutdown_or_permit_model_kill (value=1)",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_truthy_api_values_never_confirm_shutdown_or_permit_model_kill (value=None)",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_truthy_api_values_never_confirm_shutdown_or_permit_model_kill (value=[])",
+          "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_unconfirmed_engine_close_can_retry_without_claiming_gpu_exit"
+        ],
+        "failure_records": 2,
+        "error_records": 25,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "cabf37f5efdbaece2d50a4d5ca99a9e502b7b8c15d64072096bd3beb0fdf827e",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": false
+      },
+      "close-regression-fixed": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 78,
+        "passed": 78,
+        "failed_methods": [],
+        "error_methods": [],
+        "failure_records": 0,
+        "error_records": 0,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "17c3cba31e3fad0cf5d57a79b4633693c463c74a562e3f347ec8df13810b62b3",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": false
+      },
+      "final-close-regression": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 79,
+        "passed": 79,
+        "failed_methods": [],
+        "error_methods": [],
+        "failure_records": 0,
+        "error_records": 0,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "56a565ea9b51fa7b0b7b2a0886403ce2fc5f05015570e946794546bf3f43b973",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": true,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": false
+      },
+      "fixed-close-composition": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 5,
+        "passed": 5,
+        "failed_methods": [],
+        "error_methods": [],
+        "failure_records": 0,
+        "error_records": 0,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "e7389a7cac3ec0a3bc55bff9cd811356cd993d49bc50df20bf6da4351e4b7c3c",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": false
+      },
+      "original-close-audit": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 1,
+        "passed": 0,
+        "failed_methods": [],
+        "error_methods": [
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=False, unknown=False)",
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=False, unknown=True)",
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=True, unknown=False)",
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=True, unknown=True)"
+        ],
+        "failure_records": 0,
+        "error_records": 4,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "5c5db0a8393643cd158438d1a289ce6a9f837a51b4d77c9f21aa08062f229b36",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": true
+      },
+      "original-close-composition": {
+        "recorded_head": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "selected": 2,
+        "passed": 0,
+        "failed_methods": [
+          "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_inflight_close_keeps_result_actor_until_transport_delivery_finishes"
+        ],
+        "error_methods": [
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=False, unknown=False)",
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=False, unknown=True)",
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=True, unknown=False)",
+          "tests.execution_provider.test_lotus_closed_batch_pages.ClosedBatchPagesTests.test_close_audit_receipts_can_be_acknowledged_without_polling_again (producer_stopped=True, unknown=True)"
+        ],
+        "failure_records": 1,
+        "error_records": 4,
+        "skipped": [],
+        "source_files": 1055,
+        "source_manifest_sha256": "9aeca67a5082fd597e44a45f3ae47e9043cea5f9c1f3b99a4436be2765ad986c",
+        "source_unchanged_during_suite": true,
+        "matches_exact_code": {
+          "f97318b438184bbb1703d0abb11f55b4889464bb": false,
+          "28ba77ca7a5076209a7c1b1c1497b2016ce52059": false,
+          "1596321139e2ed8a661f0bcf4777c4bcdabd64e6": false
+        },
+        "changed_production_matches_base": true
+      }
+    },
+    "server_original": {
+      "actual_source": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+      "compared_source": "f97318b438184bbb1703d0abb11f55b4889464bb",
+      "all_code_src_bytes_identical": true,
+      "compared_files": 427
+    },
+    "notes": [
+      "The final run recorded the precommit f973 HEAD. All code files match the committed candidate exactly.",
+      "Early reproductions include evolving test overlays. Their original selected methods, failures and source digests are preserved; test text is not claimed identical.",
+      "The 1596 server runs retain 1596 identity. Runtime byte equality with f973 does not relabel the run.",
+      "No actual Ray runtime, model, GPU or CPU IPC was started by these local selections."
+    ]
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "f97318b438184bbb1703d0abb11f55b4889464bb",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 114209,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 114260,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "28ba77ca7a5076209a7c1b1c1497b2016ce52059",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114240,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2920,
+        "src_and_scripts_python_lines": -26095,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4617,
+        "src_and_scripts_python_lines": -35405,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": 31,
+        "src_and_scripts_python_lines": 31,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": 31,
+        "src_and_scripts_python_lines": -20,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "review": {
+    "decision": "本批源码复核通过；未发现需再次修正的问题。",
+    "commit": "28ba77ca7a5076209a7c1b1c1497b2016ce52059",
+    "tree": "454d272116bef182ae6416bebf6e909dace37211",
+    "findings": [],
+    "original_sha256": "811a1e46cc4d27be945e3f9c78d7c2a40ff2bde4dc73e907aaf75be724f5b9ab"
+  },
+  "server_original": {
+    "status": "TWO_EXISTING_CPU_IPC_FAILURES_REPRODUCED_PHYSICAL_CLEANUP_CONFIRMED",
+    "source": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+    "tree": "739992068efd6aaddf07bf845918970ce5c9bccb",
+    "real_model_calls": 0,
+    "real_Ray_started": false,
+    "first_case_cause": "ValueError from records_async_model.poll_prepared_batch: closed batch ACK precedes result exposure or changed batch; RuntimeError raised from finalizer_error",
+    "actual_first_RPC": "wait_prepared_batch -> _data_rpc(poll_prepared_batch), not a separately observed ack_prepared_batch call",
+    "second_case": "TypeError from last_close_report=None; earlier close cause not exposed by standard unittest output, so same cause not proved",
+    "physical_cleanup_confirmed": true,
+    "lease_released": true,
+    "files": "RESULTS.json and CASE1/CASE2-REDACTED.log; complete available standard chains, redacted before server writes",
+    "inference_scope": "CPU fixture with ThreadedRuntime; actual production actor method rejected the call, but real Ray kill behavior not measured. No production change or merge.",
+    "f973": "User states relevant runtime Python identical to159; this run itself remains exact159, no results transferred to another full tree"
+  },
+  "server_second_diagnostic": {
+    "status": "SECOND_CASE_PASSED_ONCE_NO_CLOSE_EXCEPTION_CAPTURED_ORIGINAL_FAILURE_UNRESOLVED",
+    "source": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+    "tree": "739992068efd6aaddf07bf845918970ce5c9bccb",
+    "method": "tests.execution_provider.test_lotus_batch_supply_feedback.BatchSupplyIntegrationTests.test_cancel_while_members_are_held_stops_sampler_and_retires_original_credits",
+    "tests_run": 1,
+    "close_events": [
+      {
+        "status": "returned",
+        "elapsed_s": 0.09795084036886692
+      }
+    ],
+    "real_model_calls": 0,
+    "real_Ray_started": false,
+    "physical_cleanup_confirmed": true,
+    "lease_released": true,
+    "original_failures": "../HANDOFF.json and ../CASE2-REDACTED.log unchanged",
+    "interpretation": "This single temporary-wrapper run did not reproduce the earlier error. No earlier cause was captured; no fix or historical root cause established. The wrapper can affect timing; intermittency is unresolved.",
+    "source_changed": false,
+    "more_tests_or_models_started": false,
+    "files": [
+      "RESULTS.json",
+      "STANDARD.log",
+      "CLOSE-CAUSE.log"
+    ]
+  },
+  "private_originals": {
+    "execution/original-close-audit.json": {
+      "bytes": 136876,
+      "sha256": "cdc7e82a78fece3ff8709a0bae1004e09f4a230645de2178b8f529581435205d"
+    },
+    "execution/original-close-audit.log": {
+      "bytes": 5716,
+      "sha256": "4b48d8d67c6ab573c07d553a9633dcb9c4dbeb06043e8ff5ac3c009936a71693"
+    },
+    "execution/original-close-composition.json": {
+      "bytes": 138449,
+      "sha256": "33139e14622f1b9d17c87d8c1646a9ed8a5e72bddb22b7eda135cb664762d99b"
+    },
+    "execution/original-close-composition.log": {
+      "bytes": 7375,
+      "sha256": "77d751d042c2154587b3fbb7d4d7f15310236d6038163b10bb2bf2bfe0edb13f"
+    },
+    "execution/fixed-close-composition.json": {
+      "bytes": 134691,
+      "sha256": "d0e339d32fdc074d5b749e96eeafb2f650be32af1b2278933dfd4532bcad0ec2"
+    },
+    "execution/fixed-close-composition.log": {
+      "bytes": 1268,
+      "sha256": "68e217b2b682b31c1e3cc634faf45a64590e641c91d8c0fe398dea1e9d733726"
+    },
+    "execution/callback-rpc-gap.json": {
+      "bytes": 134478,
+      "sha256": "3992513ae4df4acf833e3eae7b0906afdd5f37b690de7c3506b1daa6a04f0362"
+    },
+    "execution/callback-rpc-gap.log": {
+      "bytes": 2511,
+      "sha256": "8912781b83b18c30f35b225a8f57d51135f6d469d19289d1c6fbfd8aba313ba3"
+    },
+    "execution/close-composition-regression.json": {
+      "bytes": 185811,
+      "sha256": "22d20756f8fbc1a23e60f1dbadaf7a087f96b597b9fc3136ec0ef15a64f87a1d"
+    },
+    "execution/close-composition-regression.log": {
+      "bytes": 55526,
+      "sha256": "dd748879030e45171d4b98e878ca6a16f00dab6e2ad11ddcb5d9c8dbaee866bb"
+    },
+    "execution/baseline-close-recheck.json": {
+      "bytes": 135961,
+      "sha256": "ed5e45d41fc2df15d11d6c0c7fb9f9abbdd9c2ba08ceb94758070268dc7f7b04"
+    },
+    "execution/baseline-close-recheck.log": {
+      "bytes": 3996,
+      "sha256": "9aa05a4b76aae2f0d28a08a9c22572e0a4e45eb5352270d43b7b682d65bc7b02"
+    },
+    "execution/close-regression-fixed.json": {
+      "bytes": 156571,
+      "sha256": "d167d0d170183470e8b98c8c604e6ee0bce5a7288b9f1f2aeb6b3e39a11b253c"
+    },
+    "execution/close-regression-fixed.log": {
+      "bytes": 16936,
+      "sha256": "4bad6e258936fe5438fa4bde37b2c64e13113e9aab2f90f9ea54e597dff33e34"
+    },
+    "execution/final-close-regression.json": {
+      "bytes": 157044,
+      "sha256": "083cf57278ccde49d9927b3a8d05b8667c37b142116c2a05f582135832dab9a7"
+    },
+    "execution/final-close-regression.log": {
+      "bytes": 17169,
+      "sha256": "15689986c10acfe4d81c7642de9afcd899d869d15317242009f4b38cfdeab2b1"
+    },
+    "execution/SOURCE_IDENTITY.json": {
+      "bytes": 14067,
+      "sha256": "fae8cbbe8658c39fb0d8d2b413b051d4d90a6329d73bd5e4fc98254892fcde52"
+    },
+    "execution/CODE_SIZE.json": {
+      "bytes": 5062,
+      "sha256": "6cc779313dac10cea8d77d6faba6768f0eb7e6163140174aeae8e7ad9f5a84c4"
+    },
+    "audit/PRE_REVIEW.json": {
+      "bytes": 3622,
+      "sha256": "aa76553487446656eda37591ac90dcec0d1dc862784934f016008b25e6a19f1a"
+    },
+    "audit/SOURCE_FINAL_REVIEW.json": {
+      "bytes": 4143,
+      "sha256": "811a1e46cc4d27be945e3f9c78d7c2a40ff2bde4dc73e907aaf75be724f5b9ab"
+    },
+    "audit/SOURCE_REVIEW_28ba.json": {
+      "bytes": 1897,
+      "sha256": "f8a8d471f5105909824c3b0b8c1d41bd58c653f24c1d596120fbe2dd5c9068d6"
+    },
+    "server-original/HANDOFF.json": {
+      "bytes": 1291,
+      "sha256": "bdfccdee9e73f340ed8e37891b9c9ec9f94e14ebcae8380f55265c622d8ced20"
+    },
+    "server-original/RESULTS.json": {
+      "bytes": 6855,
+      "sha256": "27a7d17678545796ae2cd1fd74baf7ef8700d989285c6b349217d8c2b7064858"
+    },
+    "server-original/CASE1-REDACTED.log": {
+      "bytes": 4736,
+      "sha256": "e3d001947144433890900f2e0f868d8c3e03b0fbf24d3fddb06b19675cc33561"
+    },
+    "server-original/CASE2-REDACTED.log": {
+      "bytes": 1220,
+      "sha256": "6f1eee2487ce0742869b94a5e7608de5b66cd62db4aed4dae3579e0c4abac64b"
+    },
+    "server-original/case2-cause-r1/HANDOFF.json": {
+      "bytes": 1165,
+      "sha256": "f46fa7689a7ea1dc69f33d560b5cabc7f9decf7e8d0ed184aef4244746da262c"
+    },
+    "server-original/case2-cause-r1/RESULTS.json": {
+      "bytes": 1969,
+      "sha256": "1404cc55dd24ff3ff558673b2694afe7bdb8ef84c480695dfda55ef58f2e327f"
+    },
+    "server-original/case2-cause-r1/STANDARD.log": {
+      "bytes": 348,
+      "sha256": "fe394e1c184ce8de815528a62623c292dd38275a48e8d5cf3ea525b7428a0a48"
+    },
+    "server-original/case2-cause-r1/CLOSE-CAUSE.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "notes": [
+    "All local failures are retained with their actual selected methods and source digests. No run counts are added together.",
+    "The final 79-method run predates the commit and records f973 HEAD. All 1055 code file hashes match 28ba exactly.",
+    "The unchanged server 1596 execution remains 1596. All 427 runtime files match f973, without relabeling either run.",
+    "The first original server error is a poll_prepared_batch refusal of closed receipt ACK exposure. The second original error remains unexplained after one successful diagnostic run.",
+    "The composed local owner/transport test uses actual classes with an in-memory engine, thread/Future RPCs and a minimal fake Core. It does not prove full Core or real Ray behavior.",
+    "Server retest of this candidate, actual Ray serialization, model execution and physical cleanup are not supplied by these local results."
+  ],
+  "raw": {
+    "file": "close_audit_ack_raw.json.gz",
+    "bytes": 27614,
+    "sha256": "740958aa6c5ac93c0f26920b9cf8060144e8fbf4d5c0972cc6d121ad044713d3",
+    "decoded_sha256": "39382c00fd3e5c9ad7a124934d0c6b416db615ff3c05d5fd226e3b9d874f51c7"
+  }
+}

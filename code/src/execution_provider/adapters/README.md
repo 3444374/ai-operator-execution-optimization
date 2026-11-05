@@ -1533,8 +1533,14 @@ while current public imports still expose the same objects. Actual Ray actor ser
 Transport close preserves a finalizer's original exception as its cause and keeps the existing outer RuntimeError message.
 Local stop/join and retry behavior, remote terminal evidence, result ACKs and unknown responsibility keep their existing rules.
 The exact-RecordOccurrence source path copies through the original constructor using dataclasses.replace, without an intermediate describe dictionary.
-[Source, regression results and open IPC cases](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
-separate these verified changes from the two still-unclassified IPC close failures.
+[Source and original close errors](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
+retain the earlier diagnostic scope. The subsequent [close-audit repair](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)
+registers only receipts actually returned by the actor's close audit as exposed. An in-flight batch closes its model API,
+recovers those results and drains delivery/ACKs while the result actor remains callable, then requests actor release.
+Known local results still drain before the model-close call. A failed or interrupted handoff keeps its original exception,
+unknown cleanup and actual RPC terminal report; a local Future cancellation does not confirm remote completion.
+The first original server failure is explained by the closed-receipt ACK rejection. The second remains intermittent and unresolved;
+79 passing local CPU methods do not establish actual Ray/model shutdown or qualify the new server version.
 
 ### Feedback data and policy imports
 
