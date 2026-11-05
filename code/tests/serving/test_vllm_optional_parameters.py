@@ -73,7 +73,7 @@ class NativeOptionalParameterTests(unittest.TestCase):
         for options in OPTIONS:
             with self.subTest(options=options), native_stub(8192) as captured:
                 async def run():
-                    owner = asynchronous.VllmAsyncEngine(spec(**options), sync.GenerationSpec())
+                    owner = asynchronous.VllmAsyncEngine(spec(**options), sync.GenerationSpec(), limits=asynchronous.AsyncEngineLimits(max_inflight=8))
                     try:
                         native = resolved_config(owner._llm.model_config, options)
                         owner._llm.vllm_config = native

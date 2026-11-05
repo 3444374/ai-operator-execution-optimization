@@ -120,11 +120,10 @@ class AsyncEngineProcess:
     This component never retries, chooses batch membership or selects routing/scheduling policy.
     """
 
-    def __init__(self, engine, generation, *, limits=None, startup_timeout_s=120):
+    def __init__(self, engine, generation, *, limits, startup_timeout_s=120):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
-        self.generation.kwargs()
-        self.limits = AsyncEngineLimits() if limits is None else limits
+        self.limits = limits
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         common._number(startup_timeout_s, "startup timeout", low=0, inclusive_low=False)
@@ -252,7 +251,6 @@ class AsyncEngineProcess:
         if not isinstance(effective, common.GenerationSpec):
             raise TypeError("generation must be GenerationSpec")
         effective = common.GenerationSpec.from_dict(asdict(effective))
-        effective.kwargs()
         from .model_context import model_context_limit
         if effective.max_tokens > model_context_limit(self.spec, getattr(self, 'ready_report', None)):
             raise ValueError("max_tokens exceeds max_model_len")
@@ -298,15 +296,12 @@ class AsyncEngineProcess:
         if not rows or len(rows) > self.limits.max_inflight:
             return BatchSubmitResult("backpressure", reason="member request capacity exhausted")
         effective = common.GenerationSpec.from_dict(asdict(generation))
-        effective.kwargs()
         from .model_context import model_context_limit
         if effective.max_tokens > model_context_limit(self.spec, getattr(self, 'ready_report', None)):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared(list(rows))
         for identity in identities:
             self._check_receipt_capacity(identity)
-        if len({r['call_id'] for r in identities}) != len(identities):
-            raise ValueError("batch call identities must be distinct")
         if len({r['query_id'] for r in identities}) != 1:
             raise ValueError("batch members must belong to one query")
         snapshots = [{name: row[name] for name in (*common.IDENTITY_FIELDS, "messages_json")} for row in rows]

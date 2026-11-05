@@ -35,7 +35,7 @@ class CascadeWorker(FilterWorker):
                 or any(r["query_id"] != self.query_id for r in self.stage.records)
                 or not self.control.is_dir() or not time.monotonic() < self.deadline < float("inf")
                 or self.resources.cpu_workers != 1 or self.resources.model_batch_rows > 16
-                or self.resources.prepare_batch_rows > 16 or self.resources.max_active_batches > 2
+                or self.resources.prepare_batch_rows > 16 or self.resources.request_capacity() > 2
                 or self.engine.max_model_calls != len(self.stage.records)
                 or self.engine.max_model_len is not None and self.generation.max_tokens > self.engine.max_model_len):
             raise ValueError("cascade worker requires one finite bound role, stage and query")

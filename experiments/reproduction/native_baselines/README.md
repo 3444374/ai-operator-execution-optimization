@@ -389,3 +389,9 @@ Q2b视觉非HTTP替换未完成。历史原始ID／SHA保持，优先复用已�
 五份具名投影继续使用既有准确旧来源，没有把 None 写回旧文件或改写旧成绩。
 [组合 CPU 与完整恢复](../../results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
 核对五份共 3,010 文件及原身份；这不表示历史模型环境已重演。
+
+
+SDK 的 R 省略及底层 IPC 默认现已调整；五份投影继续使用准确旧源码。
+`resident_udf.py` 的旧文件从已发布 0677 保存到[原件 gzip](historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz)，
+manifest 为五份投影各增加一条旧源路由及对应格式，原 expected 摘要和投影身份保持。
+[317 项组合检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)含五份共3,010文件完整恢复；没有重演历史模型环境。

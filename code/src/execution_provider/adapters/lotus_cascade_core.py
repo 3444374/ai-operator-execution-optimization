@@ -359,6 +359,7 @@ class CoreCascadeBackend:
         if Path(self.engines["main"].model_path).resolve() == Path(self.engines["helper"].model_path).resolve():
             raise ValueError("cascade deployments require distinct explicit model paths")
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
             raise ValueError("cascade Core requires prepare_batch_rows=model_batch_rows=1")
         self.capacity = CoreRecordsCapacity() if capacity is None else capacity

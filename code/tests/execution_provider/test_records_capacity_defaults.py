@@ -52,7 +52,7 @@ class IndependentIPCDefaultTests(unittest.TestCase):
     def test_unknown_or_too_small_explicit_bytes_reject_before_actor_allocation(self):
         case = budget_fixture.ResourceBudgetTests()
         case.setUp()
-        for options in (dict(input_bytes=None), dict(result_bytes=ITEM-1),
+        for options in (dict(input_bytes=0), dict(result_bytes=ITEM-1),
                         dict(item_input_bytes=4*ITEM), dict(result_slots=True)):
             with self.subTest(options=options), patch(
                     'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as allocate:

@@ -33,7 +33,7 @@ def resource_packet(*, interval=.1):
 class ActorResourceProbeTests(unittest.TestCase):
     def actor(self):
         spec = EngineSpec('/tmp/actor-resource-cpu-fixture', sys.executable, sys.executable)
-        actor = AsyncCoreModelActor(asdict(spec), asdict(GenerationSpec()), 1, asdict(AsyncEngineLimits()))
+        actor = AsyncCoreModelActor(asdict(spec), asdict(GenerationSpec()), 1, asdict(AsyncEngineLimits(max_inflight=8)))
         actor._session = 7
         native = dict(engine_uid=UID, sequence=1, running=1, waiting=0, kv_usage=.1)
         snapshot = dict(owner_uid='cpu-producer-owner', native_feedback=native,
@@ -100,7 +100,7 @@ class ActorResourceProbeTests(unittest.TestCase):
         owner = SimpleNamespace(
             _actors=SimpleNamespace(model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
                 model_ready=ready(UID), ray=SimpleNamespace(cancel=lambda *a, **k: None),
-                limits=AsyncEngineLimits()),
+                limits=AsyncEngineLimits(max_inflight=8)),
             prepared_batching=PreparedBatching('token_budget', None, 256),
             resources=RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=4),
             engine=EngineSpec('/tmp/resource-receiver-fixture', sys.executable, sys.executable))

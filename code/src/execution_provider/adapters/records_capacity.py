@@ -142,7 +142,8 @@ def _ipc_limits(capacity, maximum, overrides):
         values.update(result_slots=budget.held_tasks,
                       input_bytes=budget.input_bytes, result_bytes=budget.result_bytes)
     values.update({name: value for name, value in (overrides or {}).items()
-                   if value is not None or name not in ('result_slots', 'command_slots')})
+                   if value is not None or name not in
+                   ('result_slots', 'command_slots', 'input_bytes', 'result_bytes')})
     values.setdefault('result_slots', values['max_inflight'])
     for name in ('max_inflight', 'item_input_bytes', 'item_result_bytes', 'result_slots'):
         _integer(values[name], name, minimum=1)
@@ -182,8 +183,8 @@ def independent_default_capacity(resources, capacity, overrides=None):
     count guards sit one above that byte allowance so they cannot become a
     hidden request-window policy. Method sizes use the actual single-stage
     envelope; multi-stage low-level owners retain their explicit declarations.
-    With R omitted, a complete typed or JSON IPC declaration supplies its
-    finite request count; partial dictionaries do not establish that grant.
+    With R omitted, typed limits or an explicit JSON max_inflight supplies its
+    finite request count; other partial fields do not establish that count.
     These are logical allocations, not available RAM or measured model limits.
     """
     from src.semantic_methods.budget import row_reservation
@@ -192,9 +193,14 @@ def independent_default_capacity(resources, capacity, overrides=None):
     if type(capacity) is not CoreRecordsCapacity or capacity.budget is not None:
         raise ValueError('independent defaults require a Core capacity without a complete budget')
     overrides = _complete_ipc_limits(overrides)
-    requests = (overrides.max_inflight
-                if resources.max_active_batches is None and type(overrides) is AsyncEngineLimits
-                else resources.request_capacity())
+    requests = resources.max_active_batches
+    if requests is None:
+        if type(overrides) is AsyncEngineLimits:
+            requests = overrides.max_inflight
+        elif type(overrides) is dict and 'max_inflight' in overrides:
+            requests = overrides['max_inflight']
+        else:
+            requests = resources.request_capacity()
     limits = _ipc_limits(capacity, requests, overrides)
     input_bytes = max(limits.input_bytes, capacity.item_input_bytes)
     result_bytes = max(limits.result_bytes, capacity.item_result_bytes)

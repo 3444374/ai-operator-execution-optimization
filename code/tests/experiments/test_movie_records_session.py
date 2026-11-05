@@ -236,7 +236,7 @@ class PlanTests(unittest.TestCase):
         self.plan = dict(schema="semloom.movie_session_plan.v1", backend="semloom-core", lifecycle="resident",
             model_name="openai/cpu-fixture", generation=asdict(GenerationSpec()),
             engine=asdict(EngineSpec("/tmp/model", "/tmp/model-python", "/tmp/driver-python", max_model_calls=4)),
-            resources=asdict(RecordsResources(prepare_batch_rows=1, model_batch_rows=1)), profile={},
+            resources=asdict(RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)), profile={},
             queries=[dict(query_id="q1", task="movie-q1", manifest=manifests["movie-q1"], phase="warmup"),
                      dict(query_id="q2", task="movie-q2", manifest=manifests["movie-q2"], phase="measured")])
         self.manifests = manifests

@@ -2935,3 +2935,67 @@ SDK 的 RecordsResources 全局默认仍为 2，静态、非 rolling prepared �
 当前版本没有新的真实模型／质量／性能资格；旧 a1b5 Q1 结果及一条 Filter 判断差异仍属于其原源码。
 并行基底的既有 ACK AST 断言失败、缺少 SemBench checkout 的部分用例及受限系统检查没有由这些 CPU 结果改报通过。
 PR 仍为开发草稿，未合并 main。
+
+
+<a id="sdk-ipc-capacity-followup"></a>
+## SDK 与模型 IPC 的请求额度
+
+本组合基于已发布 `0677c7a3ef98f946d3b00772169ec636e6f1a309`，准确测试代码为
+`6ac1fe566ac69aa4004e61377fb895bed2e94697`，树 `5cbe818ad1f5aa1ad213a5028ea18caef29be7d6`。
+SDK、IPC 和重复检查分开提交与独立复核，整合时没有生产冲突；仅给一处仍假定旧2的测试夹具补明原声明。
+
+| 组件 | 实际变化 | 保存的 CPU 选择 |
+|---|---|---:|
+| `06e10b80` | IPC 请求数必填、两个引擎接收明确 limits；总字节按槽数及完整单项推导，显式小额度保留 | 199 |
+| `86def138` | 删除三次解析后丢弃的 kwargs、重复 call_id 扫描及不可变 EngineSpec 重验，共六行；实际文件／环境检查保留 | 30 |
+| `668287fb` | SDK 默认 R=None、删除 Movie 专用补值与资源 describe 重验；有限消费者提前解析，原生 baseline 不加无用 R 要求 | 107 与41，143个不同方法 |
+| `6ac1fe56` | 部分 JSON 的显式 max_inflight 可提供请求数，不再要求重复九字段；缺请求数仍拒绝，原优先关系保持 | 最终组合317 |
+
+[检查摘要](raw/sdk_ipc_capacity_followup_checks.json)与[脱敏原始记录](raw/sdk_ipc_capacity_followup_raw.json.gz)
+保存最终317个不同方法全部通过、无失败／错误／跳过，1,026个 code 文件摘要与准确提交一致，运行期间没有改源。
+前面各选择有重叠，不能累计。完整历史恢复包含其中：五份共3,010文件保持原 expected 摘要和投影身份；
+仅为 resident_udf 的旧文件新增五条路由及五条格式记录，没有重跑历史模型环境。
+
+改前的 IPC 行为反例、一次省略值夹具修正、SDK 迁移中 matrix 属性取值错误及修复均保留。
+组合最初316项中一项旧总字节夹具仍假定默认R2，产生四个子错误；明确原来的2后1090提交316项通过。
+部分JSON的新行为用例在该源码上因未识别其显式请求数而报错；修正解析后最终6ac1为317项通过，不以其中一次结果替换原错误。
+没有为六行精简新增同义测试，没有真实 Ray、模型、GPU、数据库或服务器运行，也没有重试受限的 socket／系统进程检查。
+
+### 声明与结果预留
+
+`RecordsResources` 的 R 默认在 SDK 和配置入口统一为 None。普通 async 及已支持 rolling 先解析完整 Core 预算、
+typed IPC、JSON 显式请求数或服务 payload 声明；未解析值不参与乘法或在途比较，也不启动 owner／Ray 再报错。
+直接静态、非 rolling prepared、chain／fused／cascade 仍需各自支持的有限声明，None 不表示无限。
+完整 Core 预算保留原 owner 优先关系；显式 R 仍可保留其 owner 作用，不被部分 JSON 改写。
+
+底层 `AsyncEngineLimits` 不再给请求数8，两种引擎构造必须传入明确 limits。
+省略或 null 的输入总字节按请求数×单项输入计算，结果总字节按结果槽×单项结果计算；结果／命令槽仍可独立显式指定。
+部分 JSON 的 null 总字节继承所属 Core 的已有默认，完整 JSON 与 typed 相同。显式较小总字节不会被扩大。
+显式声明16请求且省略总字节时，CPU submit可接纳16个，第17个受压；显式16MiB结果额度仍只容八份2MiB完整预留。
+完成但未消费的结果继续占用额度；poll／ACK／unknown及关闭责任保持，未用完成数冒充已消费数。
+单项2MiB、控制槽／帧及最小回执保护仍保留；本轮没有将这些数值说成模型容量或物理内存最优值。
+
+原生 LOTUS 本地 provider 仍以原 LM concurrency 推导请求／结果／命令槽、单项字节总额和两倍控制槽；
+现在一次构造，不再先建8再覆盖。Daft／LOTUS 不消费的 R 不变成新要求，Ray 可交原生 ActorPoolStrategy 处理 None。
+这些 CPU 检查不是作者执行图、实际 vLLM、质量或性能的新资格。
+
+### 尚未完成的物理容量与整理
+
+IMLane 仓内诊断桥仍用 `Limits` 的两块在途默认，Python 当前接线也据此限制；这是尚缺显式容量接线，
+不是作者执行器只能处理2。C++类型可接受更大声明，后续需把真实声明接入桥并验证，不能仅删Python条件冒充完成。
+
+cgroup／PSI是观测，进程内服务池是声明额度，均不等于自动物理 RAM 授予。
+当前池未覆盖完整 source／expected 关系、Python／Ray 副本、调用方审计和模型／KV；
+查询 runtime 还持有 run.current 索引与阶段输入快照。应先明确真实 buffer／副本及工作区的持有和最后使用，
+再接入可独占的实际分配来源，不能拿瞬时 headroom 乘百分比替代。
+
+本批没有机械拆大文件。异步 IPC 的父进程 owner、子进程 serve 和共享帧处理是可继续整理的职责，
+但现用 record_ipc_observer 直接安装帧／读取／serve 接点，抽出时须迁移这些真实消费者。
+adaptive.py 仍为1,157行，百行以上核心函数仍44个，后续按实际职责处理。
+
+当前核心 Python 57,106行，src＋scripts 112,940行；相较本批基底增9／6行，不称代码瘦身。
+核心排除 experiments／baselines、包含独立研究；较宽口径含两者和 scripts，不计测试、资料、历史副本及 integrations。
+相较 main，核心多3,015行、较宽少27,395行；相较3fd分别少4,522／36,705行。比较包含空行和注释，移动文件不计作删除。
+
+旧 ACK AST 断言、缺少 SemBench checkout 的部分选择及受限系统检查仍按原版本保留；
+旧 a1b5 Q1 的一条 Filter 判断差异不被本次CPU结果覆盖。PR仍为开发草稿，未合并main。

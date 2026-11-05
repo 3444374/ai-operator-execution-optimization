@@ -68,7 +68,7 @@ class PacketOwner:
     submit_prepared_batch = AsyncRecordsActorOwner.submit_prepared_batch
 
     def __init__(self, maximum):
-        self.limits = AsyncEngineLimits(input_bytes=maximum, item_input_bytes=maximum)
+        self.limits = AsyncEngineLimits(max_inflight=8, input_bytes=maximum, item_input_bytes=maximum)
         self.packets, self.cancelled = [], []
 
     def cancel_core(self, key):

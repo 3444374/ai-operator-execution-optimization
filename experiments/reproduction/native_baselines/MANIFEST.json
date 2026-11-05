@@ -892,7 +892,8 @@
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
         "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
-        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz",
+        "code/integrations/imlane_records/resident_udf.py": "historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1075,6 +1076,11 @@
           "encoding": "gzip",
           "decoded_bytes": 5736,
           "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
+        },
+        "code/integrations/imlane_records/resident_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11609,
+          "archive_sha256": "5a7b35b2679792773a0e1b6c72db3d2dc80ae98ee610c5dc3b459f6e62c9f036"
         }
       }
     },
@@ -1995,7 +2001,8 @@
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
         "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
-        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz",
+        "code/integrations/imlane_records/resident_udf.py": "historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2178,6 +2185,11 @@
           "encoding": "gzip",
           "decoded_bytes": 5736,
           "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
+        },
+        "code/integrations/imlane_records/resident_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11609,
+          "archive_sha256": "5a7b35b2679792773a0e1b6c72db3d2dc80ae98ee610c5dc3b459f6e62c9f036"
         }
       }
     },
@@ -3108,7 +3120,8 @@
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
         "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
-        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz",
+        "code/integrations/imlane_records/resident_udf.py": "historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3291,6 +3304,11 @@
           "encoding": "gzip",
           "decoded_bytes": 5736,
           "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
+        },
+        "code/integrations/imlane_records/resident_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11609,
+          "archive_sha256": "5a7b35b2679792773a0e1b6c72db3d2dc80ae98ee610c5dc3b459f6e62c9f036"
         }
       }
     },
@@ -4223,7 +4241,8 @@
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
         "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
-        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz",
+        "code/integrations/imlane_records/resident_udf.py": "historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4411,6 +4430,11 @@
           "encoding": "gzip",
           "decoded_bytes": 5736,
           "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
+        },
+        "code/integrations/imlane_records/resident_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11609,
+          "archive_sha256": "5a7b35b2679792773a0e1b6c72db3d2dc80ae98ee610c5dc3b459f6e62c9f036"
         }
       }
     },
@@ -5347,7 +5371,8 @@
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
         "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
-        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz",
+        "code/integrations/imlane_records/resident_udf.py": "historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5530,6 +5555,11 @@
           "encoding": "gzip",
           "decoded_bytes": 5736,
           "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
+        },
+        "code/integrations/imlane_records/resident_udf.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11609,
+          "archive_sha256": "5a7b35b2679792773a0e1b6c72db3d2dc80ae98ee610c5dc3b459f6e62c9f036"
         }
       }
     }

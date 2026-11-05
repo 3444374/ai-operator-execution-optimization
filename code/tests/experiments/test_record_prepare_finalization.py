@@ -55,7 +55,7 @@ class PrepareFinalizationTests(unittest.TestCase):
                 ref=SimpleNamespace(resolve=test.actor.close_observation);test.refs.append(ref);return ref
         self.handle=SimpleNamespace(close_observation=Method())
         self.owner=owners.RecordsActorOwner(FilterMethod('fixture',instruction='Keep {reviewText}'),
-            EngineSpec('/tmp/fixture',sys.executable,sys.executable),GenerationSpec(),RecordsResources())
+            EngineSpec('/tmp/fixture',sys.executable,sys.executable),GenerationSpec(),RecordsResources(max_active_batches=2))
         self.owner.prepare_actors=[self.handle]
         def kill(actor,**kwargs):
             test.events.append(('kill',test.footer_path().exists()))

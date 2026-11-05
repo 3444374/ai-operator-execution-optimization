@@ -322,6 +322,8 @@ def read_config(path):
     _fixed_method(method, value.get("task", "movie-q3"))
     generation = GenerationSpec.from_dict(value.get("generation", {}))
     resources = _records_resources(value)
+    if value['backend'] == 'semloom-local-model-static-reference':
+        resources.request_capacity()
     if value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND) and (
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
@@ -397,6 +399,8 @@ def read_cascade_config(path):
         raise ValueError("max_calls must be a positive integer")
     cascade_identity(value["query_id"], "preflight", 0, 0, model_role="helper", stage="helper_score")
     resources = RecordsResources(**value["resources"])
+    if value['backend'] == 'semloom-local-model-core-cascade':
+        resources.request_capacity()
     if value["backend"] == "semloom-local-model-core-cascade" and (
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("cascade Core requires prepare_batch_rows=model_batch_rows=1")
@@ -477,6 +481,8 @@ def _cascade_backend(config, source, engines, resources):
 
 
 def _cascade_model_worker(config, source, checkout, method, generations, resources, engines, cascade_args, root):
+    if config['backend'] == 'semloom-local-model-core-cascade':
+        resources.request_capacity()
     import lotus
     from .lotus_cascade_movie import run_movie_cascade_query
 
@@ -568,6 +574,8 @@ def _cascade_model_worker(config, source, checkout, method, generations, resourc
 def _model_worker(config, source, checkout, method, generation, resources, engine, root, *, observer=None):
     if config.get("task", "movie-q3") != source.task.name:
         raise ValueError("execution configuration task differs from its source binding")
+    if config['backend'] == 'semloom-local-model-static-reference':
+        resources.request_capacity()
     emit = observer if observer is not None else lambda _event: None
     ray = None
     owner = None

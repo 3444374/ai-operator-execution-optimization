@@ -385,13 +385,13 @@ Low-level direct constructors and nonrolling whole batches retain the old R tran
 The ordinary async Filter/rolling factory now resolves default storage from existing
 IPC byte declarations and per-item envelopes via `resolve_records_runtime`. Soft C
 does not resize those allocations. Explicit complete budgets and typed IPC fields
-retain their values. With `R=None`, a complete typed or JSON `AsyncEngineLimits` declaration
-supplies its finite request count. Complete JSON is parsed once into the same type;
-partial overrides inherit the owner defaults, including null result/command slots.
-Ordinary unbatched async Movie/Session and supported rolling entries now treat omitted R
-as None. Missing grants fail before startup; an explicit R retains its original priority.
-The SDK-wide default remains 2, as do unchanged static, nonrolling prepared and low-level
-paths. None of these declarations detects physical capacity.
+retain their values. With `R=None`, typed limits or an explicit JSON `max_inflight` supplies
+the request count; other partial fields do not supply one. Complete JSON is parsed once
+into the same type. Partial null slots and input/result totals inherit their owner defaults.
+The SDK and Movie/Session now share the default R=None. Supported ordinary async and rolling
+paths resolve existing finite grants; missing sources fail before startup. An explicit R
+retains its original owner priority. Direct static, nonrolling prepared and low-level paths
+require their supported finite declaration. These declarations do not detect physical capacity.
 The [capacity ownership inventory and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
 separate that remaining work from the independent budgets already supported.
 Pure resource parsing and copied snapshot report fields live in
@@ -1117,8 +1117,8 @@ The existing Core, Method pool, actor and IPC keep their own release and unknown
 The returned budget works with `RecordsResources(max_active_batches=None)` and the existing
 async factory, including `max_inflight="auto"` or modern admission starting at one. Explicit
 six-field budgets and IPC objects keep their meaning. No new controller, CLI option or native
-vLLM setting is introduced. Ordinary omitted configuration still uses R=2 and the existing
-IPC defaults; a verified exclusive service allocation is not implemented by this conversion.
+vLLM setting is introduced. SDK and ordinary omitted configuration now use R=None and must
+resolve a supported finite source; this conversion does not acquire physical memory.
 Caller-owned relations, retained audit data, Python/Ray objects and model memory are outside
 these logical byte amounts. Actual hardware capacity and full query memory qualification remain pending.
 
@@ -1462,22 +1462,20 @@ separate this local candidate from actual model and performance results.
 <a id="ordinary-ipc-omissions"></a>
 ### Ordinary IPC omissions follow the actual declaration
 
-Ordinary async and rolling factories no longer copy the standalone `AsyncEngineLimits()`
-8-slot/16-MiB defaults into a different declared request capacity. Both allocation paths use
-one parser: omitted result and command slots follow the final IPC `max_inflight`; omitted
-input bytes fit that request count times `item_input_bytes`, and omitted result bytes fit
-`result_slots` times `item_result_bytes`. A partial override is applied before deriving totals.
-Explicit totals/counts and complete typed objects retain their values. Complete Core budgets
-keep their own held-task, input and result grants. The direct legacy owner retains its original
-request-matching rules; a standalone IPC object without a caller declaration still has its
-original finite defaults. No extra runtime check, controller or model argument is added.
+Both factories and direct IPC objects derive omitted totals from declared request/result
+slots and complete item sizes. `AsyncEngineLimits(max_inflight=...)` requires that count;
+both engine constructors require its explicit limits object. There is no fallback of eight
+requests or fixed 16-MiB totals. Null slots and totals mean omitted values; partial JSON
+inherits the existing Core budget before defaults are resolved. Explicit counts and smaller
+byte totals remain independent and are never enlarged to match C.
 
-This removes the accidental ceiling of 8 when R is larger. It also changes omitted storage
-for smaller R; the ordinary R=2 default remains. This is a declared logical allocation, not
-physical RAM discovery, a process RSS cap or the completion of default R separation. An
-explicit storage grant may still admit fewer requests than R. Confirmed delivery, ACK and
-unknown responsibility are unchanged. [CPU scope and original failures](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
-include final-count overrides, actual local IPC accounting, preparation, query reuse and cache identity.
+The SDK-wide R default is None. Ordinary async and supported rolling paths can use a full
+Core budget, typed IPC, an explicit request count in partial JSON, or service payload grants.
+Other direct paths require their supported finite declaration before startup. Per-item limits,
+control quotas, confirmed delivery, ACK and unknown responsibility remain. These are logical
+allocations; physical RAM, complete query relations and RSS are still outside this account.
+[Current CPU scope and original failures](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)
+cover omission, explicit smaller reservations, startup rejection, native construction and reuse.
 
 
 ### Query runtime data ownership

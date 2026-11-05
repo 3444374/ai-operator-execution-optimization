@@ -154,7 +154,7 @@ class MemoryPressureIntegrationTests(unittest.TestCase):
                 started_at_s=feedback.started,max_age_s=feedback.options.max_sample_age_s)
             model=kernel.root/'model.json';model.write_text('{}')
             actor=AsyncCoreModelActor(asdict(EngineSpec(str(model),sys.executable,sys.executable)),
-                asdict(GenerationSpec()),1,asdict(AsyncEngineLimits()))
+                asdict(GenerationSpec()),1,asdict(AsyncEngineLimits(max_inflight=8)))
             actor._session=7
             actor.engine=SimpleNamespace(ready_report=fixture.feedback.owner._actors.model_ready,
                 snapshot=lambda:dict(owner_uid='CPU-producer',native_feedback=None))

@@ -208,7 +208,7 @@ def compare(root, config, *, config_sha256=None):
         from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
         resources = RecordsResources(**config['resources'])
         group = config.get('progression_batch_rows')
-        if (type(group) is not int or not 1 <= group <= resources.max_active_batches <= 4 or
+        if (type(group) is not int or not 1 <= group <= resources.request_capacity() <= 4 or
                 type(config_sha256) is not str or len(config_sha256) != 64 or
                 [(c['case_id'], c.get('progression'), c.get('progression_batch_rows'), c['token'], c['successor'])
                  for c in config['cases']] !=

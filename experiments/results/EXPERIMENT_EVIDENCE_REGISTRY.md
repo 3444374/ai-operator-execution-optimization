@@ -1715,3 +1715,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录引擎两字段省略、完整 JSON 额度、普通 async 省略 R、typed IPC 槽位及 null 覆盖一致性五项修正。
 组件检查按各自源码保存；统一组合 108 项全部通过，含五份共 3,010 文件的完整历史恢复，重叠选择不累计。
 辅助清单与两处早期夹具读取错误分别保留，不当作生产回归；未进行真实模型、质量或性能验证。
+
+
+[SDK 省略值与底层 IPC 额度组合](diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)
+记录 SDK 默认None、启动前有限解析、IPC必填请求数和按槽数推导总字节，以及六行重复校验精简。
+准确6ac1组合317项通过；原316选择中的一项旧fixture错误、SDK迁移错误和部分JSON反例分别保留，不累计重叠次数。
+五份3010文件恢复保持原身份；IMLane诊断桥仍2、物理容量及当前真实模型资格尚未完成。

@@ -186,7 +186,6 @@ class EngineSpec:
 
     def validate_local(self) -> dict:
         """Read local artifacts and probe environments without loading either ML stack."""
-        self.__post_init__()
         for name in ("model_path", "tokenizer_path"):
             value = getattr(self, name)
             if value is not None and (not Path(value).is_absolute() or not Path(value).is_dir()):

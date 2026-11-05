@@ -128,7 +128,7 @@ class IMLaneCascadeBackend:
             raise ValueError("cascade requires distinct explicit helper and main model paths")
         self.resources = RecordsResources(**asdict(resources))
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
-                or resources.model_batch_rows > 16 or resources.max_active_batches > 2):
+                or resources.model_batch_rows > 16 or resources.request_capacity() > 2):
             raise ValueError("IMLane uses one author executor, 1..16 rows and at most two pending blocks")
         self.author_args, self.model_environment = author_args, assigned_environment(model_environment)
         require_outside_git(Path(author_args.output))

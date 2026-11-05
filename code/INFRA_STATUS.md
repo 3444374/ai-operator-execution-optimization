@@ -29,7 +29,7 @@ MMQA 的十二道文本查询、各变体原 JSON 评价和原文本生成方法
 [SemBench 扩展范围](src/baselines/README.md#additional-sembench-text)。
 
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
-HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；本轮配置组合代码为 `5175cab0`。
+HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；本轮配置组合代码为 `6ac1fe56`。
 仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。
 代理退役切片的 11 项 CPU 通过，独立复核无需修正；代码仍在开发 PR，未合并 main。
 [具体改动、剩余文件与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
@@ -40,10 +40,12 @@ HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c
 本轮没有启动真实 Ray、模型、GPU 或服务器。原 socket／sysctl 与缺少 SemBench checkout 的用例仍未在这里验证。
 
 普通 Movie／Session 的未组批 async 及已支持 rolling 入口，省略 R 现按 None 解析已有有限额度；显式 R 保持原规则，缺额度在启动前拒绝。
-SDK 全局、静态、非 rolling prepared 和低层链的旧默认未改；auto 仍依据声明额度，不是物理 RAM 授予或整查询 RSS 保证。
+SDK 全局 R 也已改为 None，删除 Movie 按后端补值及不可变资源对象的重复检查；静态、非 rolling prepared、直接链／cascade 仍需其支持的有限声明，缺来源先拒绝再启动。
+底层 IPC 删除隐式请求数 8；总字节省略时按声明请求／结果槽及单项大小计算，显式额度保持。JSON 有显式 max_inflight 即可提供请求数，无须重复填九字段。
+auto 仍依据声明额度，不是物理 RAM 授予或整查询 RSS 保证；旧 IMLane 诊断桥内部仍给两块在途，尚未接入更大声明。
 五项可选引擎参数均可省略；dtype／显存比例不再补 BF16／0.8，显式值原样保留，ready 读取实际原生配置。
-当前组合 108 项 CPU 通过，包含五份共 3,010 文件的完整历史恢复；真实 vLLM 解析、模型质量及物理容量尚未验证。
-[配置修正及剩余项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)区分入口、声明、观察和真实资源。
+此前参数组合通过 108 项；本次准确 6ac1 组合 317 项 CPU 全通过，含五份共 3,010 文件完整历史恢复。真实 vLLM、模型质量及物理容量尚未验证。
+[配置修正及剩余项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)区分入口、声明、观察和真实资源。
 剩余大文件按实际职责继续整理。旧 Ray 字典 HTTP metrics 轮询及其独占轮转状态已退役，
 static／全局与端点 admission 对象继续使用原调度器；不含 admission 对象的旧字典在提交前直接报错。
 [同组选例与准确历史来源](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)

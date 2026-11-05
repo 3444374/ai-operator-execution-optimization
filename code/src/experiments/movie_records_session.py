@@ -109,7 +109,7 @@ def check_plan(plan):
     if plan["backend"] == "imlane":
         if (plan["profile"] != asdict(resources) or resources.cpu_workers != 1
                 or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-                or resources.max_active_batches > 2):
+                or resources.request_capacity() > 2):
             raise ValueError("IMLane retains its one author worker and existing batch/backpressure capacities")
         if plan["lifecycle"] == "resident" and (len(checked) > 62
                 or any(not 0 < query["expected_calls"] <= 4094 for query in checked)
@@ -183,7 +183,7 @@ class _MovieDriver:
             raise ValueError('service_payload_bytes requires semloom-core')
         if backend != 'semloom-core' and 'preparation_mode' in self.plan:
             raise ValueError('preparation_mode requires semloom-core')
-        if backend == 'semloom-static-reference':
+        if backend in ('semloom-static-reference', 'imlane'):
             self.resources.request_capacity()
         elif backend == 'semloom-core':
             from src.experiments.movie_records_config import (

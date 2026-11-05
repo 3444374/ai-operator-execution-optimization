@@ -1,0 +1,366 @@
+{
+  "schema": "semloom.sdk_ipc_capacity.combination.v1",
+  "base": "0677c7a3ef98f946d3b00772169ec636e6f1a309",
+  "candidate": "6ac1fe566ac69aa4004e61377fb895bed2e94697",
+  "tree": "5cbe818ad1f5aa1ad213a5028ea18caef29be7d6",
+  "runs": {
+    "combined": {
+      "source_commit": "c97db17273e4377a35dc2c1a47ea7794e56a23bf",
+      "source_files": 1026,
+      "different_from_current_source": [
+        "code/src/execution_provider/adapters/records_capacity.py",
+        "code/tests/execution_provider/test_records_implicit_ipc_totals.py",
+        "code/tests/execution_provider/test_records_sdk_resources.py",
+        "code/tests/execution_provider/test_records_unspecified_requests.py"
+      ],
+      "source_unchanged_during_suite": true,
+      "selected": 316,
+      "executed": 316,
+      "passed": 315,
+      "failure_events": 0,
+      "error_events": 4,
+      "skipped": 0
+    },
+    "final": {
+      "source_commit": "1090b78cd455e49e209aade75a1459106843fe59",
+      "source_files": 1026,
+      "different_from_current_source": [
+        "code/src/execution_provider/adapters/records_capacity.py",
+        "code/tests/execution_provider/test_records_sdk_resources.py",
+        "code/tests/execution_provider/test_records_unspecified_requests.py"
+      ],
+      "source_unchanged_during_suite": true,
+      "selected": 316,
+      "executed": 316,
+      "passed": 316,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": 0
+    },
+    "partial-JSON-before": {
+      "source_commit": "1090b78cd455e49e209aade75a1459106843fe59",
+      "source_files": 1026,
+      "different_from_current_source": [
+        "code/src/execution_provider/adapters/records_capacity.py",
+        "code/tests/execution_provider/test_records_sdk_resources.py",
+        "code/tests/execution_provider/test_records_unspecified_requests.py"
+      ],
+      "source_unchanged_during_suite": true,
+      "selected": 1,
+      "executed": 1,
+      "passed": 0,
+      "failure_events": 0,
+      "error_events": 1,
+      "skipped": 0
+    },
+    "partial-JSON-after": {
+      "source_commit": "1090b78cd455e49e209aade75a1459106843fe59",
+      "source_files": 1026,
+      "different_from_current_source": [
+        "code/tests/execution_provider/test_records_sdk_resources.py"
+      ],
+      "source_unchanged_during_suite": true,
+      "selected": 53,
+      "executed": 53,
+      "passed": 53,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": 0
+    },
+    "final-declarations": {
+      "source_commit": "6ac1fe566ac69aa4004e61377fb895bed2e94697",
+      "source_files": 1026,
+      "different_from_current_source": [],
+      "source_unchanged_during_suite": true,
+      "selected": 317,
+      "executed": 317,
+      "passed": 317,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": 0
+    }
+  },
+  "CPU": {
+    "source_commit": "6ac1fe566ac69aa4004e61377fb895bed2e94697",
+    "source_files": 1026,
+    "different_from_current_source": [],
+    "source_unchanged_during_suite": true,
+    "selected": 317,
+    "executed": 317,
+    "passed": 317,
+    "failure_events": 0,
+    "error_events": 0,
+    "skipped": 0
+  },
+  "code_size": {
+    "scope": "Physical Python lines with comments/blanks. Core is code/src excluding experiments and baselines, including research. Wider is code/src plus code/scripts. Tests, docs, historical copies and code/integrations are excluded.",
+    "base": {
+      "core_python_lines": 57097,
+      "src_and_scripts_python_lines": 112934,
+      "core_functions_over_100": 44,
+      "core_files_over_1000": [
+        {
+          "path": "code/src/scheduling/submission_control/adaptive.py",
+          "lines": 1157
+        }
+      ]
+    },
+    "candidate": {
+      "core_python_lines": 57106,
+      "src_and_scripts_python_lines": 112940,
+      "core_functions_over_100": 44,
+      "core_files_over_1000": [
+        {
+          "path": "code/src/scheduling/submission_control/adaptive.py",
+          "lines": 1157
+        }
+      ]
+    },
+    "core_delta": 9,
+    "wide_delta": 6,
+    "core_delta_from_main": 3015,
+    "core_delta_from_3fd": -4522,
+    "wide_delta_from_main": -27395,
+    "wide_delta_from_3fd": -36705
+  },
+  "history": {
+    "full_restore_passed": true,
+    "variants": 5,
+    "expected_files": 3010,
+    "resident_old_source_retrievable": true,
+    "original_expected_hashes_and_projection_ids_unchanged": true,
+    "new_historical_model_execution": false
+  },
+  "new_real_Ray_model_GPU_database_server_operations": 0,
+  "remaining": [
+    "Physical RAM allocation and complete query/RSS accounting are not implemented.",
+    "Per-item 2MiB payload and finite control frame/slot declarations remain. Explicit result byte limits can still admit fewer requests.",
+    "Direct static, nonrolling prepared, fused, chain and cascade require their supported finite declaration; None is never infinite.",
+    "IMLane diagnostic bridge still supplies max_pending_blocks=2 internally; this is not an author executor limit.",
+    "True private socket/child checks and actual model/vLLM remain unverified in this task. Older ACK AST and system restrictions are not reclassified.",
+    "No large-file extraction performed; active observer frame/serve hooks must migrate with parent/child separation."
+  ],
+  "overlapping_runs_not_added": true,
+  "reviews": {
+    "ipc": {
+      "requires_correction": false,
+      "findings": [],
+      "sha256": "acfd98662f016787761d13e19263751590752bf01e90eb93b51ddbb012151754"
+    },
+    "cleanup": {
+      "requires_correction": false,
+      "findings": [],
+      "sha256": "3577e717fb6bc3a9781eb19c1feb2c5b9a7befd1ba076d9a05085312ac36831c"
+    },
+    "sdk": {
+      "requires_correction": false,
+      "findings": [],
+      "sha256": "4e7d4bd3dbae3333b411e5635dcbcf4ad34b2fb0005918403832fa2c134b2753"
+    },
+    "combination": {
+      "requires_correction": false,
+      "findings": [],
+      "sha256": "6cf6f1fde130faeb1307b6d829b997941909e2ca4e70e58a5adcb89a38909505"
+    }
+  },
+  "private_originals": {
+    "ipc/CLEANUP_SOURCE.json": {
+      "bytes": 616,
+      "sha256": "2d6a0431384caccee999c5d648276b02f1f387b1e405d783856417d0b5452106"
+    },
+    "ipc/PHYSICAL_CAPACITY_FOLLOWUP.json": {
+      "bytes": 2503,
+      "sha256": "a46d760b1e026368a345052196ef0c669d60894ce1a5207ca42ca9292a6a6e72"
+    },
+    "ipc/SOURCE_IDENTITY.json": {
+      "bytes": 4155,
+      "sha256": "5947b1cb76d7d469ba252dbd26f7671dc549e4e2129a17d78b81d4eeaa220fee"
+    },
+    "ipc/candidate.json": {
+      "bytes": 137787,
+      "sha256": "095ab0cfd8a4abaa5919d740d62d5b73d5753d402192596481a1169786e081ed"
+    },
+    "ipc/candidate.log": {
+      "bytes": 6069,
+      "sha256": "f0e91cc530d6a870935b8a1b7986b31d7751d2a58cf581bfdb75813b2f720788"
+    },
+    "ipc/final.json": {
+      "bytes": 192948,
+      "sha256": "9018f01ae18163fe762b33d0d6c912174f1cac6bcdb7003655a54bbb7cf5221a"
+    },
+    "ipc/final.log": {
+      "bytes": 42841,
+      "sha256": "9b957288cebd21a04b95b258895470815be8459e15f52609f071350e367b3ea5"
+    },
+    "ipc/focused.json": {
+      "bytes": 130424,
+      "sha256": "5cb9f9c18533f71b3354fd762f2d66af30d9f0ab182dc5d67185f7de3b6d98a9"
+    },
+    "ipc/focused.log": {
+      "bytes": 768,
+      "sha256": "8a740aa5edf92732e329ded176374e7ea6fd9f088a0daeeb3b986e0817ef7d2f"
+    },
+    "ipc/original-behavior.json": {
+      "bytes": 135895,
+      "sha256": "28b0a252a7210178caa2dfdc01d64d64216285b57812b8f40686774a3f0634c4"
+    },
+    "ipc/original-behavior.log": {
+      "bytes": 9787,
+      "sha256": "02d806f989ccdecee9def5e0da377803bb12eb8926f1cf653b4b6279b91886a2"
+    },
+    "ipc/original-corrected-fixture.json": {
+      "bytes": 136160,
+      "sha256": "e691a481a7975a11590bd07a6edae88c8f99e9699eb26c186d3a33046b6f985f"
+    },
+    "ipc/original-corrected-fixture.log": {
+      "bytes": 10021,
+      "sha256": "7b2aa264bef7b523747768283056e2047bceee1c3bab965bf0a36a6284286a15"
+    },
+    "ipc/selection.json": {
+      "bytes": 5943,
+      "sha256": "4fc23f55cdfcc7c675ef05b2179da6a1d5b683f20c66fdead81990b1207b2632"
+    },
+    "ipc/validation-cleanup.json": {
+      "bytes": 138106,
+      "sha256": "061ce8f4eabeedfe41eed22027b83d172e5ca43a2fb39fc74f4801d8cce24954"
+    },
+    "ipc/validation-cleanup.log": {
+      "bytes": 6563,
+      "sha256": "73422e614def06b6f0420b0962fa9057c1c8757ae77de93574f4a066e49097d9"
+    },
+    "sdk/HANDOFF.json": {
+      "bytes": 32442,
+      "sha256": "b68df2a78a961a7d5b4191d7252827439dfd4ad03b0fa73f9fa297697bc06c14"
+    },
+    "sdk/final-sdk-core-entry.json": {
+      "bytes": 163452,
+      "sha256": "ab9da8d99a02e33c9b683d3fabce3db20b1a7c94821ba72919f18a0aaf4525bb"
+    },
+    "sdk/final-sdk-core-entry.log": {
+      "bytes": 22609,
+      "sha256": "b0e9fa5cfdd1ffdedd11481c25c207b0f605f67843c24c863431e3738dec8e6e"
+    },
+    "sdk/original-historical-sources.json": {
+      "bytes": 479,
+      "sha256": "c6b862410933fd143cfff3d7bb194fc833121925725f8aafac8e5bd3ee36320c"
+    },
+    "sdk/original-reproduction.json": {
+      "bytes": 138197,
+      "sha256": "7aaeacf40de077090a14022b198a8837382b6478cbee74e74ceed63d5ff08830"
+    },
+    "sdk/original-reproduction.log": {
+      "bytes": 11832,
+      "sha256": "375738ff7960d48c38f7f3d91768096acd4bbfa8419ecfeae02a9881098e474e"
+    },
+    "sdk/sdk-affected-fixtures.json": {
+      "bytes": 142682,
+      "sha256": "8bad06d20202c45adbcb628d9c885b3cf5cd290970a805eec11cf459a18b1f3e"
+    },
+    "sdk/sdk-affected-fixtures.log": {
+      "bytes": 8838,
+      "sha256": "f60a767110739501e875b4408ba956a815349a02cbda5864c004d587792c14dc"
+    },
+    "sdk/sdk-core-entry.json": {
+      "bytes": 164126,
+      "sha256": "fbb239dc66575bd9cbf3dfcdeb6854d9fc7f936a14c861b33f1ce3c1b74bd535"
+    },
+    "sdk/sdk-core-entry.log": {
+      "bytes": 23599,
+      "sha256": "0089d4a4fd07341be49baae5aff97af58b78f14df084c794e528d8665623217f"
+    },
+    "sdk/sdk-default-None.json": {
+      "bytes": 130382,
+      "sha256": "ee63eea0309206ee0593fa84c64393fefcf481df3b3c413441b9c3a5ce27cd9f"
+    },
+    "sdk/sdk-default-None.log": {
+      "bytes": 920,
+      "sha256": "f7c57d459403babcc5538158e35c50ddf7baffe0a1d50ff7e6463f9872e20cbf"
+    },
+    "combination/COMBINED_SOURCE.json": {
+      "bytes": 5252,
+      "sha256": "0006af90d71d83ed4d0212fbeb3764188833cc6a02664ec16dc253068c78c946"
+    },
+    "combination/combined.json": {
+      "bytes": 235445,
+      "sha256": "d2e803fdd35b3c7f9f921572c865454a3fe4687a2b669d1ef31e8c3b3192e72e"
+    },
+    "combination/combined.log": {
+      "bytes": 76296,
+      "sha256": "1f3027ff04626e4acf09675d3cb61346b4e389b434328f5d3af8399458492977"
+    },
+    "combination/final-declarations.json": {
+      "bytes": 228315,
+      "sha256": "4be9a30a98a4cb363265f881aef83368f4b3fab17c4b3e74a053946b38fe8919"
+    },
+    "combination/final-declarations.log": {
+      "bytes": 67290,
+      "sha256": "2371ee41b2ee90146da7ac3370de39f551aa12e0d167288e3cfde3580bb8adc0"
+    },
+    "combination/final.json": {
+      "bytes": 227993,
+      "sha256": "004994bc6f6b56ae40e8e9a3c020171fa98d2d86c2ffd0645bdb9fd8e32ec49c"
+    },
+    "combination/final.log": {
+      "bytes": 67059,
+      "sha256": "c65ff9d90c5919373e9da374af88acc510e3c96338f4ff445dd8e594146ce1ee"
+    },
+    "combination/partial-JSON-after.json": {
+      "bytes": 145853,
+      "sha256": "f781891e79dff074b9bd0d5933ef9a752ecde5115519ddc49bda56ca4664375f"
+    },
+    "combination/partial-JSON-after.log": {
+      "bytes": 11905,
+      "sha256": "f26440b695742df7eb2c4aaf5d2f1035d6a8d744206a4b0990ed2304c009224d"
+    },
+    "combination/partial-JSON-before.json": {
+      "bytes": 131741,
+      "sha256": "66515e7a225f9f0a82c3a33efff4f3f02ea3757b9af33940f7965b60c5ebf0bb"
+    },
+    "combination/partial-JSON-before.log": {
+      "bytes": 2960,
+      "sha256": "7791b6ff577f9cae82d52e7a93b5c288f16fd0d48c17c28697c59cc8783b088b"
+    },
+    "combination/selection.json": {
+      "bytes": 7991,
+      "sha256": "05652a9f988d30da9c520294247ea3240e98cd6479715945e98b961c7e1a4c02"
+    },
+    "reviews/ipc/HANDOFF.json": {
+      "bytes": 3548,
+      "sha256": "acfd98662f016787761d13e19263751590752bf01e90eb93b51ddbb012151754"
+    },
+    "reviews/ipc/SOURCE-EVIDENCE.json": {
+      "bytes": 56901,
+      "sha256": "9326484ccaf66d7095d91703f650b0d3596dd467573bbb8c53ecb9824233550a"
+    },
+    "reviews/cleanup/HANDOFF.json": {
+      "bytes": 2189,
+      "sha256": "3577e717fb6bc3a9781eb19c1feb2c5b9a7befd1ba076d9a05085312ac36831c"
+    },
+    "reviews/cleanup/SOURCE-EVIDENCE.json": {
+      "bytes": 4240,
+      "sha256": "1e3cd77e7f235800d7673fe179bf14fe958e8c89cf0fd06bc12e92696dc3156a"
+    },
+    "reviews/sdk/HANDOFF.json": {
+      "bytes": 3696,
+      "sha256": "4e7d4bd3dbae3333b411e5635dcbcf4ad34b2fb0005918403832fa2c134b2753"
+    },
+    "reviews/sdk/SOURCE-EVIDENCE.json": {
+      "bytes": 63342,
+      "sha256": "f29f58455081278f13e9f08929842fb00e985fde4fedd44bef4c035f99aee6f8"
+    },
+    "reviews/combination/HANDOFF.json": {
+      "bytes": 2917,
+      "sha256": "6cf6f1fde130faeb1307b6d829b997941909e2ca4e70e58a5adcb89a38909505"
+    },
+    "reviews/combination/SOURCE-EVIDENCE.json": {
+      "bytes": 157509,
+      "sha256": "9963db4bfde63b2878adcff8ea874487e76b7b40cb2a9fd7ef0f65533d4e1602"
+    }
+  },
+  "raw": {
+    "file": "sdk_ipc_capacity_followup_raw.json.gz",
+    "bytes": 167814,
+    "sha256": "828fc4ac5dd9b5589fd785f4d8b9aea0205b51afdc0154f76662c29d5c892d03",
+    "decoded_sha256": "f1debce76bdd2c1d6c3173a1c6acc309caf227fb1b8c141fed0c5240505851b0"
+  }
+}

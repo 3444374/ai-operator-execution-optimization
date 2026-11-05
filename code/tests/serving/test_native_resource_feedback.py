@@ -211,7 +211,7 @@ class NativeFeedbackTests(unittest.TestCase):
         modules['vllm.v1.engine.async_llm'].AsyncLLM=SimpleNamespace(from_engine_args=create)
         async def construct(enabled, **options):
             return kernel.VllmAsyncEngine(EngineSpec('/tmp/CPU','/tmp/model','/tmp/driver',**options),GenerationSpec(),
-                limits=AsyncEngineLimits(feedback_interval_s=.1 if enabled else 0))
+                limits=AsyncEngineLimits(max_inflight=8, feedback_interval_s=.1 if enabled else 0))
         with patch.dict(sys.modules,modules),patch.object(EngineSpec,'validate_local',return_value={}), \
                 patch.object(kernel.common,'_validate_current_runtime'), \
                 patch.object(kernel.importlib.metadata,'version',return_value='0.25.1'), \

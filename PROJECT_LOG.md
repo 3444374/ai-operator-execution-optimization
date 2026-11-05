@@ -11458,3 +11458,13 @@ ready 从实际 model/cache config 读取配置，未知不回填，也不表示
 [源码、108 项组合 CPU 与历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
 记录各组件反例及修正过的辅助，不累计重叠测试。当前核心 57,097 行、src＋scripts 112,934 行，本批分别增 23／29 行，不计作代码缩减。
 SDK 全局默认 2、低层 16MiB／2MiB 完整结果预留、物理 RAM／全查询 RSS 及实际模型资格仍未解决，未合并 main。
+
+
+## 2026-11-05 统一 SDK 请求省略与 IPC 额度来源
+
+SDK 默认R=None，删除Movie专用补值和不可变值的重复检查；有限消费者缺来源在启动前报错。
+底层IPC请求数必填、引擎接收明确limits，总输入／结果字节按已声明槽数及单项大小推导，显式小额度保留。
+JSON只要显式请求数便可复用其余默认，不要求重复九字段；完整Core预算与显式R的原优先关系保持。
+[准确代码、317项CPU与历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)保留原失败，records SDK／模型IPC不再补2／8。
+六行重复校验删除，没有新增同义测试；本批核心57106行、src＋scripts112940行，分别增9／6行，不称瘦身。
+旧诊断桥内部2、完整关系／副本的物理内存持有及实际模型资格仍待后续处理；未合并main。

@@ -58,6 +58,21 @@ class FixtureCase(unittest.TestCase):
 
 class NativeLocalProviderTests(FixtureCase):
 
+    def test_constructor_uses_native_concurrency_and_preserves_explicit_transport(self):
+        for concurrency in (1, 16):
+            with self.subTest(concurrency=concurrency):
+                owner = self.owner(concurrency)
+                self.assertEqual((owner.limits.max_inflight, owner.limits.result_slots,
+                                  owner.limits.command_slots), (concurrency,)*3)
+                self.assertEqual(owner.limits.input_bytes, concurrency*owner.limits.item_input_bytes)
+                self.assertEqual(owner.limits.result_bytes, concurrency*owner.limits.item_result_bytes)
+                self.assertEqual(owner.limits.control_slots, 2*concurrency)
+                self.assertIsNone(owner.transport)
+        explicit = native.AsyncEngineLimits(max_inflight=1, result_slots=1)
+        owner = self.owner(16, limits=explicit)
+        self.assertIs(owner.limits, explicit)
+        self.assertIsNone(owner.transport)
+
     def execute(self, texts, owner=None, query='q'):
         from lotus.models import LM
         import lotus.models.lm as lm_module
@@ -173,7 +188,7 @@ class NativeLocalProviderTests(FixtureCase):
         self.assertEqual(owner.close()['status'],'closed')
 
     def test_native_workers_retry_only_backpressure_without_recounting_attempts(self):
-        limits=replace(native.AsyncEngineLimits(),max_inflight=1,result_slots=1,command_slots=1)
+        limits=replace(native.AsyncEngineLimits(max_inflight=8),max_inflight=1,result_slots=1,command_slots=1)
         owner=self.owner(4,limits=limits)
         result,_,_,report,_,budget,_=self.execute(['slow good','bad','good','bad'],owner)
         self.assertEqual(list(result['_execution_row_id']),['0','2'])
@@ -183,7 +198,7 @@ class NativeLocalProviderTests(FixtureCase):
         self.assertEqual(owner.transport.snapshot()['held_requests'],0)
 
     def test_explicit_input_byte_limit_rejects_without_false_success_or_usage(self):
-        limits=replace(native.AsyncEngineLimits(),item_input_bytes=1024)
+        limits=replace(native.AsyncEngineLimits(max_inflight=8),item_input_bytes=1024)
         owner=self.owner(limits=limits)
         lm=make_lm(self.method,self.generation)
         budget=ClaimedUnit(Reservation('bytes',1,1),None)

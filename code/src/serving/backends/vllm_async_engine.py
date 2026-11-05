@@ -20,11 +20,12 @@ from . import vllm_protocol as common
 
 @dataclass(frozen=True)
 class AsyncEngineLimits:
-    max_inflight: int = 8
-    input_bytes: int = 16 * 1024**2
+    """Caller-declared requests; omitted totals reserve their complete items."""
+    max_inflight: int
+    input_bytes: int | None = None
     item_input_bytes: int = 2 * 1024**2
     result_slots: int | None = None
-    result_bytes: int = 16 * 1024**2
+    result_bytes: int | None = None
     item_result_bytes: int = 2 * 1024**2
     command_slots: int | None = None
     control_slots: int = 16
@@ -36,11 +37,18 @@ class AsyncEngineLimits:
             if getattr(self, name) is None:
                 object.__setattr__(self, name, self.max_inflight)
         for name, value in vars(self).items():
+            if name in ('input_bytes', 'result_bytes') and value is None:
+                continue
             if name == "feedback_interval_s":
                 common._number(value, name, low=0)
                 continue
             if type(value) is not int or value <= 0:
                 raise ValueError(name + " must be a positive integer")
+        for name, count, item in (
+                ('input_bytes', self.max_inflight, self.item_input_bytes),
+                ('result_bytes', self.result_slots, self.item_result_bytes)):
+            if getattr(self, name) is None:
+                object.__setattr__(self, name, count * item)
         if self.input_bytes < self.item_input_bytes or self.result_bytes < self.item_result_bytes:
             raise ValueError("total bytes must fit one reserved item")
         if self.item_result_bytes < 4096 or self.control_frame_bytes < 4096:
@@ -57,10 +65,10 @@ class VllmAsyncEngine:
     """Single-event-loop engine; generation is per request, not per drained batch."""
 
     def __init__(self, engine: common.EngineSpec, generation: common.GenerationSpec,
-                 *, limits: AsyncEngineLimits | None = None):
+                 *, limits: AsyncEngineLimits):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
-        self.limits = AsyncEngineLimits() if limits is None else limits
+        self.limits = limits
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         values = self.generation.kwargs()

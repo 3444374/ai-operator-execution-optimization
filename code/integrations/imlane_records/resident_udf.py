@@ -32,7 +32,7 @@ class ResidentWorker:
                 or type(self.deadline) not in (float, int) or not time.monotonic() < self.deadline < float("inf")
                 or self.engine.max_model_calls is None or self.engine.max_model_calls > 4096
                 or self.resources.cpu_workers != 1 or self.resources.prepare_batch_rows > 16
-                or self.resources.model_batch_rows > 16 or self.resources.max_active_batches > 2):
+                or self.resources.model_batch_rows > 16 or self.resources.request_capacity() > 2):
             raise ValueError("resident Filter requires the existing finite one-executor capacities")
         self.environment = dict(config["model_environment"])
         self.engine_type, self.prepare_type = engine_type, prepare_type

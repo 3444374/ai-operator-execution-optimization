@@ -27,7 +27,7 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
     """Freeze caller values and preflight before constructing an author owner."""
     chain = LotusRecordChain.from_dict(chain.describe())
     engine, resources = EngineSpec.from_dict(asdict(engine)), RecordsResources(**asdict(resources))
-    if resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.max_active_batches > 2:
+    if resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.request_capacity() > 2:
         raise ValueError("IMLane finite chain requires one worker, 1..16 batch rows and at most two pending blocks")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("IMLane finite chain requires one model deployment")

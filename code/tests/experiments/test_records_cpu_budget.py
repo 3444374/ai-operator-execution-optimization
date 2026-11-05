@@ -15,7 +15,7 @@ from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 class RecordsCpuBudgetTests(unittest.TestCase):
     def setUp(self):
-        self.resources = RecordsResources(cpu_workers=2)
+        self.resources = RecordsResources(max_active_batches=2, cpu_workers=2)
         self.engine = EngineSpec("/tmp/fixture", sys.executable, sys.executable)
         self.generation = GenerationSpec()
         self.ray = SimpleNamespace(is_initialized=lambda: False, init=Mock(), shutdown=Mock(),

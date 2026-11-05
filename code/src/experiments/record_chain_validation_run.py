@@ -44,6 +44,7 @@ def make_resources(config):
     if suite not in ('options', 'matched-execution', 'progression'):
         raise ValueError('unknown validation suite')
     resources = RecordsResources(**config['resources'])
+    resources.request_capacity()
     if suite != 'progression':
         capacity = 1 if suite == 'matched-execution' else 4
         if resources.max_active_batches != capacity:

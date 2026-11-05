@@ -104,7 +104,7 @@ class ModelContextTests(unittest.TestCase):
         for requested, actual in ((None, 2048), (None, 32768), (1024, 1024)):
             with self.subTest(requested=requested, actual=actual), native_stub(actual) as calls:
                 async def run():
-                    engine = kernel.VllmAsyncEngine(spec(max_model_len=requested), GenerationSpec())
+                    engine = kernel.VllmAsyncEngine(spec(max_model_len=requested), GenerationSpec(), limits=kernel.AsyncEngineLimits(max_inflight=8))
                     self.assertEqual(engine.ready()['model_context']['max_model_len'], actual)
                     self.assertEqual(engine.spec.max_model_len, requested)
                 asyncio.run(run())
@@ -119,7 +119,7 @@ class ModelContextTests(unittest.TestCase):
         for requested, actual in ((None,None),(None,True),(None,0),(1024,2048)):
             with self.subTest(requested=requested, actual=actual), native_stub(actual):
                 async def run():
-                    engine = kernel.VllmAsyncEngine(spec(max_model_len=requested), GenerationSpec())
+                    engine = kernel.VllmAsyncEngine(spec(max_model_len=requested), GenerationSpec(), limits=kernel.AsyncEngineLimits(max_inflight=8))
                     with self.assertRaises(ValueError):
                         engine.ready()
                 asyncio.run(run())
@@ -127,7 +127,7 @@ class ModelContextTests(unittest.TestCase):
     def test_default_generation_must_fit_native_limit_before_ready(self):
         with native_stub(2048):
             async def run():
-                engine = kernel.VllmAsyncEngine(spec(), GenerationSpec(max_tokens=2049))
+                engine = kernel.VllmAsyncEngine(spec(), GenerationSpec(max_tokens=2049), limits=kernel.AsyncEngineLimits(max_inflight=8))
                 with self.assertRaisesRegex(ValueError, 'effective model context'):
                     engine.ready()
             asyncio.run(run())
@@ -137,7 +137,7 @@ class ModelContextTests(unittest.TestCase):
                 (32768,5000,8,True),(32768,32760,8,True),(32768,32761,8,False)):
             with self.subTest(limit=limit,prompt=prompt), native_stub(limit,prompt_tokens=prompt) as calls:
                 async def run():
-                    engine = kernel.VllmAsyncEngine(spec(), GenerationSpec(max_tokens=cap))
+                    engine = kernel.VllmAsyncEngine(spec(), GenerationSpec(max_tokens=cap), limits=kernel.AsyncEngineLimits(max_inflight=8))
                     engine.ready()
                     result = await engine.generate_prepared(row(0,'fixture'), request_id='cpu-row',
                         deadline_monotonic=time.monotonic()+3)

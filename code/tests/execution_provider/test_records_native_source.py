@@ -104,7 +104,7 @@ class NativeSourceTests(unittest.TestCase):
         actor._held, actor._early_cancels = {}, {}
         actor._session, actor._readers = 7, 0
         actor._closing = actor._unhealthy = False
-        actor.limits = AsyncEngineLimits()
+        actor.limits = AsyncEngineLimits(max_inflight=8)
         native, _ = frame()
         actor.engine = SimpleNamespace(ready_report=ready(), snapshot=lambda:dict(native_feedback=native))
         with patch.object(actors, 'time', SimpleNamespace(monotonic=lambda:10000.5)):

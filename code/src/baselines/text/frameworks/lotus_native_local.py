@@ -7,7 +7,7 @@ constructed here. Native provider registration is scoped to an isolated query.
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import json
 import threading
 import time
@@ -43,11 +43,7 @@ class LocalNativeModel:
         self.engine, self.generation, self.resources = engine, generation, resources
         self.concurrency = concurrency
         if limits is None:
-            item = AsyncEngineLimits()
-            limits = replace(item, max_inflight=concurrency, result_slots=concurrency,
-                command_slots=concurrency, control_slots=2 * concurrency,
-                input_bytes=concurrency * item.item_input_bytes,
-                result_bytes=concurrency * item.item_result_bytes)
+            limits = AsyncEngineLimits(max_inflight=concurrency, control_slots=2 * concurrency)
         if type(limits) is not AsyncEngineLimits:
             raise TypeError('native model limits must be AsyncEngineLimits')
         self.limits, self.transport = limits, None

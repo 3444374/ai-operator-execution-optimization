@@ -139,3 +139,8 @@ Extract仍用完整关系：真实EOF、所有前段结果与调用责任检查�
 原`StageSpec`、`ChainRun`／`MethodRun`、格式器和解析保持。组内过滤终结、尾组和取消不产生不存在的后继。
 这只改变提交放行时刻，不表示native请求已经按token组批；跨查询模型借用尚未实现。
 接口、范围及与原fused完整路径的区别见[同异步后端推进策略](../../execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)。
+
+
+`records.py` 的 `RecordsResources` 默认保留 R=None，由实际消费者解析已有有限额度；
+它不探测硬件，也不把 None 当无限。普通异步支持 Core／IPC／服务声明，其他有限入口缺来源时在启动前拒绝。
+不可变资源值在构造时检查，`describe()` 只复制其字段；[当前范围](../../../INFRA_STATUS.md)区分原生 baseline、SDK 和诊断桥。

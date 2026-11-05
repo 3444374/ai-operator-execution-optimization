@@ -338,7 +338,7 @@ class MovieInputBindingTests(unittest.TestCase):
             engine=asdict(EngineSpec(str(model),sys.executable,sys.executable,max_model_calls=2))
             plan=dict(schema='semloom.movie_session_plan.v1',backend='semloom-core',lifecycle='isolated',
                 model_name='openai/cpu-fixture',generation=asdict(GenerationSpec(max_tokens=4)),engine=engine,
-                resources=asdict(RecordsResources(prepare_batch_rows=1,model_batch_rows=1)),
+                resources=asdict(RecordsResources(max_active_batches=2, prepare_batch_rows=1,model_batch_rows=1)),
                 profile=dict(mode='async',max_inflight=1),queries=[dict(query_id='q1',task='movie-q1',
                     manifest=str(manifests[0]),phase='measured')])
             config=dict(source_root=str(workflow.REPO),movie_plan=plan,
