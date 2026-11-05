@@ -1405,3 +1405,34 @@ wrapper 先解除 iterator、delivery 和查询跟踪，最后才解除原 produ
 四份完整 JSON／日志的 source_delta 可还原原字节，新增逃出 unittest 的中断仍只有已知退出 130、没有方法通过数。
 四份动态专项、模型／baseline 和历史投影来源保持；只读预审未发现新增问题，仍待准确最终树独审。
 本批不为未完成的保存编码或整个项目重构提供通过结论。
+
+<a id="bulk-probe-ready-report"></a>
+### 批量 CPU 探针补齐异步就绪报告
+
+服务器对较早 c7ba0740 的检查报告：原真实 Ray 五项及资源采样一项通过，标准 CPU 205 项中两项失败，
+未启动模型。原件由执行会话保存；本处只读核对其交接，不把服务器报告计作本次本机运行。
+两个失败均为批量公开探针的 off/on：模拟 IPC 缺少 ready_report，实际 actor 在 snapshot 内读取它，
+采样器记录 AttributeError 并保留未确认调用。实际 AsyncEngineProcess 始终创建该属性并在就绪后使用报告；
+现有真实 Ray 夹具也提供它，没有据此证明生产实现存在同类缺陷。
+
+本批另从 5175fa10 建树，先复现同样两项失败。六份相关测试／源码在 c7ba0740 与 5175fa10 相同，
+因此较新组合也受夹具遗漏影响。修订只给模拟 IPC 增加实际协议已有的 engine UID、请求内存归属、
+就绪状态和单调时钟字段，owner 复用同一报告。保留同一次真实 actor snapshot 的返回值，检查年龄与
+原生引擎、序号、源时间及声明时钟一致；不为探针增加第二次 RPC。
+生产采样、默认参数和原始批成员／generation、分页、丢 ACK 重放、各成员一次完成、事件与关闭断言保持。
+本轮改动没有真实 Ray、模型或 GPU 调用，未修改受审 5175 工作树或证据，没有推送或合并。
+
+本机完整 workflow.TESTS 的九模块、205 方法全部通过，无失败、错误或跳过；四个独立公开探针
+single-off、single-on、batch-off、batch-on 全部通过。批量两种模式均只有一次 snapshot RPC，
+年龄证明通过且采样终态已收集。另有九项集中检查全部通过，其中两项与完整选择重叠，不累计为额外成功。
+[检查摘要](raw/bulk_probe_ready_checks.json)与[原失败／方法／探针记录](raw/bulk_probe_ready_methods.json.gz)
+保存实际来源和每次运行。测试记录中的 HEAD 是建树来源；运行期间无代码变化，最终代码摘要与记录逐项核对，
+提交身份另由交接提供，没有把未提交修改称为一次 clean workflow.qualify。
+
+归档保存 29 个公开文件，原两项失败未改写；全部公开副本与私有原件字节相同，源码摘要复用已保存的
+pending_frame_final_methods.json.gz。按归档 source_basis 取 source_sha256，对每份 json_source_delta
+应用 changed／removed，再排序 source_sha256，用 ensure_ascii=False、indent=2 加末尾换行编码；
+其余文件按 text 的 UTF-8 直接恢复。每份都核对 public_bytes 与 public_sha256，29 份均匹配。
+可在同一 CPU 环境复跑 workflow.py 的 TESTS 模块和两个 probe_record_resource*_handoff.py 的 off/on；
+服务器仍需在经过独审的准确整合源码上重跑标准检查，再由其原计划决定后续模型运行。
+rolling CLI 保存、整关系存储、物理容量授予和跨进程恢复仍是其他未完成工作。

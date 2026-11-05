@@ -737,3 +737,9 @@ rolling 结果交接修订候选另从 99aa 建树：无 expected 的非空取�
 清理现最后才解除 producer，避免中间中断留下不可继续的 iterator／授予。
 [修订及原反例](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-transfer-repair)
 保留 99aa 和独审证据，未改变普通无池、原生 baseline、模型参数或未知 RPC 的责任。
+
+批量观察 CPU 探针另修模拟 IPC 缺少 ready_report 的问题：与实际异步引擎共享就绪字段的含义，
+同一 owner、原生样本和年龄证明一并核对；原 off/on 失败及修订后的检查分别保存。
+仅修改测试夹具与检查，没有放宽生产采样、批分页、ACK 或未知 RPC 的处理。
+[诊断记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
+说明服务器较早源码的失败及最新组合的复现；5175 原候选及其独审证据保持不变。

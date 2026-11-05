@@ -60,6 +60,10 @@ engine=EngineSpec(str(model),sys.executable,sys.executable,max_num_seqs=1)
 actor=ObservedAsyncCoreModelActor(asdict(engine),asdict(generation),1,asdict(limits))
 submitted=[];events=[]
 class IPC:
+    # Same owner/clock fields as the actual async engine's ready report.
+    ready_report=dict(engine_uid='CPU-engine',batch_mode='independent_final_results',closed=False,
+        resource_owner=dict(schema='semloom.model_resource_owner.v1',engine_uid='CPU-engine',
+            request_memory_owner='vllm',native_feedback_clock='private_child_and_model_actor.monotonic'))
     def snapshot(self):
         return dict(owner_uid='CPU-producer',native_feedback=dict(engine_uid='CPU-engine',sequence=1,
             observed_at_s=time.monotonic(),running=1,waiting=0,kv_usage=.1,
@@ -73,7 +77,7 @@ class IPC:
     def poll(self,maximum):
         result=events[:maximum];del events[:maximum];return result
 actor.engine=IPC()
-references=[];poll_pages=[];ack_attempts=Counter();acked=[];native_methods=[]
+references=[];poll_pages=[];ack_attempts=Counter();acked=[];native_methods=[];model_snapshots=[]
 class Reference:
     def __init__(self,value,label):
         self.value=Future();self.value.set_result(value);self.label=label;self.calls=0
@@ -86,6 +90,8 @@ class Remote:
         return Reference(self.method(*a,**k),self.label)
 def poll(key):
     value=actor.poll_prepared_batch(key);poll_pages.append(json.loads(value));return value
+def model_snapshot(**kwargs):
+    value=actor.snapshot(**kwargs);model_snapshots.append(value);return value
 def ack(key):
     key=tuple(key);ack_attempts[key]+=1
     if key==(1,0)and ack_attempts[key]==1:return False  # First ACK never reaches actor.
@@ -98,7 +104,7 @@ owner.model_actor=SimpleNamespace(
     submit_prepared_batch=Remote(actor.submit_prepared_batch,'submit'),
     try_submit_prepared_batch=Remote(getattr(actor,'try_submit_prepared_batch',actor.submit_prepared_batch),'submit'),
     poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'),
-    snapshot=Remote(actor.snapshot,'snapshot'))
+    snapshot=Remote(model_snapshot,'snapshot'))
 notified=threading.Event();received=[]
 backend=LotusChainActorBackend(owner,3,notified.set,deadline_monotonic=time.monotonic()+20,
     on_result=lambda key,value:received.append((key,value)),bulk=True)
@@ -132,7 +138,7 @@ if resource_probe_supported:
     from src.scheduling.submission_control.stage_work import default_request_feedback_options
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
     # Actual production sampler/observed actor; IPC/Futures/readings are CPU fixtures.
-    owner.model_ready=dict(engine_uid='CPU-engine')
+    owner.model_ready=dict(actor.engine.ready_report)
     owner.engine=engine;owner.prepared_batching=PreparedBatching('token_budget',None,256)
     owner.ray=SimpleNamespace(cancel=lambda *a,**k:None)
     feedback=RequestSupplyFeedback(SimpleNamespace(_actors=owner,engine=engine,resources=owner.resources,
@@ -159,6 +165,12 @@ if resource_probe_supported:
     assert feedback_report['snapshot_rpc_receipts'][0]['frame_disposition']=='eligible_for_provider'
     assert feedback_report['sample_errors']==0 and native_methods.count('snapshot')==1
     assert [r.calls for r in references if r.label=='snapshot']==[1]
+    assert len(model_snapshots)==1
+    captured=model_snapshots[0];age=captured['native_sample_age'];source=captured['ipc']['native_feedback']
+    assert age['engine_uid']==source['engine_uid']==owner.model_ready['engine_uid']
+    assert age['source_sequence']==source['sequence'] and age['source_observed_at_s']==source['observed_at_s']
+    assert age['clock_domain']==owner.model_ready['resource_owner']['native_feedback_clock']
+    assert age['age_s']==age['captured_at_s']-source['observed_at_s']>=0
 close=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
     confirmed=True,input_gate_closed=True,active_readers=0))
 with patch.object(native.AsyncCoreModelActor,'close',return_value=close):assert actor.close(1)is close
@@ -189,6 +201,7 @@ report=dict(status='passed_actual_public_bulk_owner_actor_transport',mode=args.m
     outputs_preserved=True,native_ACK_once_per_member=True,native_close_report_identity_preserved=True,
     ascending_resource_snapshot_and_close=resource_probe_supported,
     resource_snapshot_status='passed_CPU_fixture'if resource_probe_supported else'not_supported_by_target',
+    native_source_age_qualified=True if resource_probe_supported else None,
     snapshot_RPC_requests=None if feedback_report is None else feedback_report['snapshot_requests'],
     snapshot_RPC_terminal_complete=None if feedback_report is None else feedback_report['snapshot_rpc_terminal_evidence_complete'],
     event_counts={k:sum(e['event']==k for e in markers)for k in expected},

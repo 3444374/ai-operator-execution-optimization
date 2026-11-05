@@ -224,6 +224,8 @@ class PublicBulkProbeIntegrationTests(unittest.TestCase):
             self.assertTrue(report['outputs_preserved'])
             self.assertTrue(report['lost_ACK_replayed_without_duplicate_member_completion'])
             self.assertTrue(report['snapshot_RPC_terminal_complete'])
+            self.assertTrue(report['native_source_age_qualified'])
+            self.assertEqual(report['snapshot_RPC_requests'],1)
             self.assertFalse(report['real_Ray_RPC'])
             self.assertEqual(report['real_model_calls'],0)
 
