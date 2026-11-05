@@ -11,14 +11,15 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_chain_actor_backend as backend
 from src.execution_provider.adapters import records_transport as records
-from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport, SemLoomRecordChainCore
+from src.execution_provider.adapters.lotus_chain_actor_backend import _SectionTransport
+from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.scheduling.core.session_contract import (
     Acceptance, BackendTask, BatchKey, BatchMember, BatchSubmission, OfferedTask, SessionSpec, TaskKey,
 )
-from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
+from src.semantic_methods.lotus.record_types import RecordOccurrence, stage_identity
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import GenerationSpec, IDENTITY_FIELDS
 
 
 # Frozen 5ff54bfe methods; test-only, no production dependency on the oracle.

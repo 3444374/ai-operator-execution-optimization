@@ -182,7 +182,7 @@ class IndependentSupplyTests(unittest.TestCase):
     def test_public_feedback_interleaves_preparation_progresses_results_and_reacts_to_memory(self):
         from src.observability.metrics import memory_pressure
         from src.semantic_methods.lotus.record_continuation import LotusChainProgram
-        from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport
+        from src.execution_provider.adapters.lotus_chain_actor_backend import _SectionTransport
         from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
         from tests.observability.memory_pressure_fixture import KernelMemoryFixture
         for event_driven, batching in product((False, True),
