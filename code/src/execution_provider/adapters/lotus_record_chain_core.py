@@ -332,14 +332,6 @@ class SemLoomRecordChainCore:
         return prepared_cleanup_confirmed(self._actors, self.transport, self.core, self.last_close_report,
             closing=self._closing, feedback=self._supply_feedback, expected_identity=expected_identity)
 
-    def _service_retire_stream(self, stream, report):
-        for name in ('source', 'run', 'section', 'error', 'driver', 'session', 'pending',
-                     'pool', '_output', '_phase_source', 'cancelled', 'owner'):
-            setattr(stream, name, None)
-        stream.bindings, stream.offered = {}, set()
-        stream._phase_bindings, stream._prepared, stream._extract_results = {}, {}, []
-        stream.last_close_report = report
-
     def _service_retire_payloads(self, metadata, certificate):
         """Detach private query data only after its exact service handoff."""
         self._control()
@@ -369,7 +361,7 @@ class SemLoomRecordChainCore:
         self._service_payloads_certificate = certificate
         self.last_close_report = report
         if stream is not None:
-            self._service_retire_stream(stream, report)
+            stream.release_query_payloads(report)
         with self._receipt_lock:
             self._raw_receipts, self._contexts = {}, {}
         self._root_run = self._active = self.results = None
@@ -401,14 +393,8 @@ class SemLoomRecordChainCore:
                 or 'calls' in (self.last_close_report or {})):
             return False
         stream = None if self._service_retired_stream_ref is None else self._service_retired_stream_ref()
-        if stream is not None:
-            if (any(getattr(stream, name, None) is not None for name in
-                    ('source', 'run', 'section', 'error', 'driver', 'session', 'pending',
-                     'pool', '_output', '_phase_source', 'owner'))
-                    or stream.bindings or getattr(stream, '_phase_bindings', {})
-                    or getattr(stream, '_prepared', {}) or getattr(stream, '_extract_results', [])
-                    or 'calls' in (stream.last_close_report or {})):
-                return False
+        if stream is not None and not stream.query_payloads_retired():
+            return False
         return all(not ({'unconsumed_call_results', 'unconsumed_core_results', 'calls'} & set(value or {}))
                    for value in (self._actors.last_close_report, self._actors._model_close_report))
 

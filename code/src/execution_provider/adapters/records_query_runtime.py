@@ -33,6 +33,10 @@ class _RecordLocalRows:
         self.source_eof = self.source_closed = self.finished = self.completed = False
         self.driver = self.session = self.section = self.pending = None
         self.pool = None
+        self._phase_source = None
+        self._phase_bindings = {}
+        self._prepared = {}
+        self._extract_results = []
         self._output = None
         self._output_exhausted = self._method_complete = self._root_failed = False
         self._source_errors = []
@@ -431,7 +435,21 @@ class _RecordLocalRows:
     def close(self, *, timeout=None):
         return self.owner.close(timeout=timeout)
 
+    def release_query_payloads(self, report):
+        """Drop this runtime's query data after its owner authorizes transfer."""
+        self.source = self.run = self.section = self.error = None
+        self.driver = self.session = self.pending = self.pool = None
+        self._output = self._phase_source = self.cancelled = self.owner = None
+        self.bindings, self.offered = {}, set()
+        self._phase_bindings, self._prepared, self._extract_results = {}, {}, []
+        self.last_close_report = report
 
-# Retain old imports and serialized locations while separating query iteration.
-_check.__module__ = "src.execution_provider.adapters.lotus_record_chain_core"
-_RecordLocalRows.__module__ = "src.execution_provider.adapters.lotus_record_chain_core"
+    def query_payloads_retired(self):
+        """Read the actual retained data, without a second retirement marker."""
+        return all(value is None for value in (
+            self.source, self.run, self.section, self.error, self.driver, self.session,
+            self.pending, self.pool, self._output, self._phase_source, self.owner,
+        )) and not (
+            self.bindings or self._phase_bindings or self._prepared or self._extract_results
+            or 'calls' in (self.last_close_report or {})
+        )

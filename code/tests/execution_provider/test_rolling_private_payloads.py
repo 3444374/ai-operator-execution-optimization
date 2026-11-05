@@ -72,11 +72,12 @@ class RollingPrivatePayloadTests(unittest.TestCase):
         _, owner, source, grant, _ = self.setup_owner()
         values = list(owner.evaluate(source, query_id='service-first'))
         child = owner.owner
-        original = child._service_retire_stream
+        stream = child._active
+        original = stream.release_query_payloads
         def interrupted(*args):
             original(*args)
             raise KeyboardInterrupt('CPU interruption after stream detach')
-        with patch.object(child, '_service_retire_stream', side_effect=interrupted):
+        with patch.object(stream, 'release_query_payloads', side_effect=interrupted):
             with self.assertRaises(KeyboardInterrupt):
                 owner.close(timeout=3)
         certificate = owner._service_retirement
