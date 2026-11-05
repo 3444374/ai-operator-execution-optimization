@@ -890,7 +890,8 @@
         "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
-        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1063,6 +1064,11 @@
           "encoding": "gzip",
           "decoded_bytes": 357,
           "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
+        },
+        "code/src/scheduling/runtime/ray_adapter.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
         }
       }
     },
@@ -1981,7 +1987,8 @@
         "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
-        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2154,6 +2161,11 @@
           "encoding": "gzip",
           "decoded_bytes": 357,
           "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
+        },
+        "code/src/scheduling/runtime/ray_adapter.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
         }
       }
     },
@@ -3082,7 +3094,8 @@
         "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
-        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3255,6 +3268,11 @@
           "encoding": "gzip",
           "decoded_bytes": 357,
           "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
+        },
+        "code/src/scheduling/runtime/ray_adapter.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
         }
       }
     },
@@ -4185,7 +4203,8 @@
         "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
-        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4363,6 +4382,11 @@
           "encoding": "gzip",
           "decoded_bytes": 357,
           "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
+        },
+        "code/src/scheduling/runtime/ray_adapter.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
         }
       }
     },
@@ -5297,7 +5321,8 @@
         "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
-        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5470,6 +5495,11 @@
           "encoding": "gzip",
           "decoded_bytes": 357,
           "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
+        },
+        "code/src/scheduling/runtime/ray_adapter.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
         }
       }
     }

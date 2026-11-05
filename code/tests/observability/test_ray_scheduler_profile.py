@@ -1,11 +1,16 @@
 """Current Ray scheduler/metrics behavior retained from the retired SQL profiler harness."""
 import unittest
+from types import SimpleNamespace
 import pyarrow as pa
+from src.observability.profiling import ray as profile_ray
 from src.observability.profiling import ray_scheduler as profile_ray_scheduler
 from src.observability.profiling import batch_envelopes as profile_batches
 from src.scheduling.core.models import SubmissionCompletion
 from src.scheduling.core.scheduler import SchedulerResult
-from src.scheduling.submission_control.admission import StaticAdmissionController
+from src.scheduling.runtime.observations import CachedMetricsObservationProvider
+from src.scheduling.runtime.ray_adapter import ActorSubmissionState
+from src.scheduling.submission_control.adaptive import AimdAdmissionController, AimdConfig
+from src.scheduling.submission_control.admission import DynamicAdmissionGate, StaticAdmissionController
 
 class _ImmediateRef:
     def __init__(self, result: object):
@@ -32,7 +37,115 @@ class _RecordingRemote:
         return _ImmediateRef({"call_index": len(self.calls) - 1})
 
 
+def _admission_config(scope, endpoint_ids):
+    if scope == "static":
+        return None
+    events = []
+
+    def gate(endpoint_id=None):
+        return DynamicAdmissionGate(
+            AimdAdmissionController(AimdConfig(min_window=1, max_window=2), 1),
+            CachedMetricsObservationProvider(lambda: None),
+            trace_sink=events.append,
+            endpoint_id=endpoint_id,
+        )
+
+    if scope == "global":
+        return {"admission_gate": gate(), "trace_events": events}
+    return {"per_endpoint_gates": {key: gate(key) for key in endpoint_ids},
+            "trace_events": events, "max_window": 2}
+
+
 class RaySchedulerProfileTests(unittest.TestCase):
+    def test_public_SDK_rejects_retired_dictionary_before_submission(self):
+        for executor in ("actor", "task"):
+            with self.subTest(executor=executor):
+                remote = _RecordingRemote()
+                batches = [pa.table({"doc_id": [1], "prompt_tokens": [3]})]
+                with self.assertRaisesRegex(ValueError, "HTTP metrics polling is retired"):
+                    if executor == "actor":
+                        profile_ray.submit_with_backpressure(
+                            _ImmediateRay, actors=[SimpleNamespace(complete=remote)],
+                            batches=batches, method_name="complete", adaptive_config={},
+                        )
+                    else:
+                        profile_ray.submit_ray_tasks(
+                            _ImmediateRay, remote, batches, 1, "ai_complete", 0,
+                            "fake", [], "fixture-model", None, 2.0, 8,
+                            adaptive_config={},
+                        )
+                self.assertEqual(remote.calls, [])
+
+    def test_actor_SDK_reuses_worker_state_and_consumes_caller_replay_once(self):
+        for scope in ("static", "global", "local"):
+            with self.subTest(scope=scope):
+                remotes = [_RecordingRemote(), _RecordingRemote()]
+                pools = {"e0": [SimpleNamespace(complete=remote) for remote in remotes]}
+                state = ActorSubmissionState(pools, "complete")
+                admission = _admission_config(scope, pools)
+                submissions = []
+                for index in range(2):
+                    batch = pa.table({"doc_id": [index], "prompt_tokens": [3]})
+                    envelope = profile_batches._batch_envelopes(
+                        [batch], job_id=f"actor-{index}", operator="ai_complete",
+                        completion_max_tokens=8,
+                    )[0]
+                    consumed = []
+
+                    def replay():
+                        consumed.append("started")
+                        yield envelope
+
+                    results, metrics = profile_ray.submit_with_backpressure(
+                        _ImmediateRay, actor_pools=pools,
+                        endpoint_urls={"e0": "ray://fixture/e0"},
+                        method_name="complete", max_inflight=2,
+                        adaptive_config=admission, replay_envelopes=replay(),
+                        submission_state=state,
+                    )
+                    self.assertEqual(consumed, ["started"])
+                    self.assertEqual(results, [{"call_index": 0}])
+                    self.assertEqual(metrics["operator_invocations"], 1)
+                    submissions.append(metrics["actor_worker_submission_counts"])
+                self.assertEqual(submissions, ["1;0", "0;1"])
+                self.assertEqual([len(remote.calls) for remote in remotes], [1, 1])
+                self.assertEqual([row.completed for row in state.pool_submitters["e0"].snapshots()],
+                                 [1, 1])
+
+    def test_task_SDK_preserves_invocation_values_and_caller_replay(self):
+        urls = ["http://localhost:8000", "http://localhost:8001"]
+        for scope in ("static", "global", "local"):
+            with self.subTest(scope=scope):
+                remote = _RecordingRemote()
+                batches = [pa.table({"doc_id": [index], "prompt_tokens": [3]})
+                           for index in range(2)]
+                envelopes = profile_batches._batch_envelopes(
+                    batches, job_id="task", operator="ai_complete", completion_max_tokens=11,
+                )
+                consumed, lifecycle = [], []
+
+                def replay():
+                    consumed.append("started")
+                    yield from envelopes
+
+                results, metrics = profile_ray.submit_ray_tasks(
+                    _ImmediateRay, remote, (), 2, "ai_complete", 0,
+                    "compatible_http", urls, "fixture-model", None, 2.0, 11,
+                    adaptive_config=_admission_config(scope, ["task-0", "task-1"]),
+                    replay_envelopes=replay(), submission_lifecycle_sink=lifecycle,
+                    completion_return_token_ids=True, completion_temperature=0.25,
+                    completion_ignore_eos=True,
+                )
+                self.assertEqual(consumed, ["started"])
+                self.assertEqual(results, [{"call_index": 0}, {"call_index": 1}])
+                self.assertEqual(metrics["operator_invocations"], 2)
+                self.assertEqual([event.submission_id for event in lifecycle],
+                                 [envelope.request.request_id for envelope in envelopes])
+                for batch, url, call in zip(batches, urls, remote.calls):
+                    self.assertIs(call[0], batch)
+                    self.assertEqual(call[1:], (url, "fixture-model", None, 2.0, 11,
+                                               True, "raw", 0.25, "completions", True))
+
     def test_endpoint_topology_pairs_ids_and_urls_in_default_pool(self) -> None:
         topology = profile_ray_scheduler._endpoint_topology(
             endpoint_ids=["endpoint-0", "endpoint-1"],
