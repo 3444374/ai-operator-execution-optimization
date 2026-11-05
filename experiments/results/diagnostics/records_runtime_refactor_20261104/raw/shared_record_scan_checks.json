@@ -1,0 +1,346 @@
+{
+  "schema": "semloom.shared_record_scan.checks.v1",
+  "base": "56facbdac20884fd13a0dcef2b94378a9cc419b5",
+  "candidate": "a73c9f55293afca4a2f9017b96184f1c76a649a3",
+  "tree": "38fdf6f32a9dd6278763878ec56618d15122659a",
+  "runs": {
+    "records-scan-before": {
+      "selected": 111,
+      "executed": 108,
+      "passed": 108,
+      "failed": 0,
+      "errors": 0,
+      "class_skip_records": 1,
+      "selected_not_run": 3,
+      "unexecuted_selected_method_ids": [
+        "tests.experiments.test_static_reference_session.StaticSessionTests.test_direct_static_start_is_idempotent_and_does_not_close_at_query_eof",
+        "tests.experiments.test_static_reference_session.StaticSessionTests.test_maintained_cli_first_reuse_share_one_sync_model_and_native_batches",
+        "tests.experiments.test_static_reference_session.StaticSessionTests.test_static_rejects_method_switch_and_core_does_not_gain_batch_support"
+      ],
+      "skip_records": [
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true
+    },
+    "records-scan-after": {
+      "selected": 111,
+      "executed": 108,
+      "passed": 108,
+      "failed": 0,
+      "errors": 0,
+      "class_skip_records": 1,
+      "selected_not_run": 3,
+      "unexecuted_selected_method_ids": [
+        "tests.experiments.test_static_reference_session.StaticSessionTests.test_direct_static_start_is_idempotent_and_does_not_close_at_query_eof",
+        "tests.experiments.test_static_reference_session.StaticSessionTests.test_maintained_cli_first_reuse_share_one_sync_model_and_native_batches",
+        "tests.experiments.test_static_reference_session.StaticSessionTests.test_static_rejects_method_switch_and_core_does_not_gain_batch_support"
+      ],
+      "skip_records": [
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true
+    }
+  },
+  "same_selected_and_executed_methods": true,
+  "overlapping_runs_not_added": true,
+  "tests_added": 0,
+  "source_files_before": 1016,
+  "source_files_after": 1017,
+  "source_identity": "After source hashes match candidate; recorded checkout HEAD was the base before committing. CPU fixture durations are not query-performance measurements.",
+  "method_comparison": {
+    "base": "56facbdac20884fd13a0dcef2b94378a9cc419b5",
+    "methods_changed": [
+      "SemLoomRecordsCore.evaluate",
+      "SemLoomRecordsStaticReference.evaluate"
+    ],
+    "other_methods_unchanged": 28,
+    "source_sizes": {
+      "code/src/execution_provider/adapters/lotus_records_core.py": {
+        "before": 539,
+        "after": 518,
+        "evaluate_before": 119,
+        "evaluate_after": 98
+      },
+      "code/src/execution_provider/adapters/lotus_records_static.py": {
+        "before": 303,
+        "after": 279,
+        "evaluate_before": 67,
+        "evaluate_after": 43
+      }
+    },
+    "shared_scan_lines": 32
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "retained_comparison_source_sha256": "88862d9836423a6c3cf0d512c8e9703556f10c941b88076e833179f8c04fb1bc",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "56facbdac20884fd13a0dcef2b94378a9cc419b5",
+        "metrics": {
+          "core": {
+            "files": 254,
+            "physical_lines": 58615
+          },
+          "main_runtime": {
+            "files": 246,
+            "physical_lines": 55607
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 396,
+            "physical_lines": 92273
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114425,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 51
+      },
+      "current": {
+        "commit": "a73c9f55293afca4a2f9017b96184f1c76a649a3",
+        "metrics": {
+          "core": {
+            "files": 255,
+            "physical_lines": 58602
+          },
+          "main_runtime": {
+            "files": 247,
+            "physical_lines": 55594
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 397,
+            "physical_lines": 92260
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114412,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "older_differences": 10,
+    "added_differences": 0,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "complete_restoration_passed": false
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_core.py": "9d5e5cabfb2e841dd73ea3bdfe0ffa8e2d9871362619b54c413262f23da91894",
+    "code/src/execution_provider/adapters/lotus_records_static.py": "0a1d7d7b4431c998da192956f27480619c2505791f117955e9bf5d4ad488a554",
+    "code/src/execution_provider/adapters/records_scan.py": "c390bb5930da3a45c20b8d477342f9e23bc5d70d6f556e747f188b5f370830b6"
+  },
+  "production_python_delta": -13,
+  "static_owns_original_iterator_and_batching": true,
+  "concurrent_poll_ACK_files_changed": false,
+  "new_policy_or_configuration": false,
+  "known_unqualified_checks": "Three CLI cases need the pinned SEMBENCH_CHECKOUT. Five earlier socket methods and two sysctl checks remain unqualified and were not selected or retried.",
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "independent_review_sha256": "4a4a15ff039ee313b624f66d71862dbfbdf911263e56e46fd496a43f3a231dc1",
+  "design_review_sha256": "2ad8d5bb1783b8140b57c8ee15c60696f72290b8c079152ef775c873d6c287fd",
+  "private_originals": {
+    "records-scan-before.json": {
+      "bytes": 161089,
+      "sha256": "53b2ec3165ef6523727497374b0d49fadb06a92a86ff9d8181411673b6e9c7b7"
+    },
+    "records-scan-before.log": {
+      "bytes": 23560,
+      "sha256": "306a547ffcbbe88a83b1409e5399168025bf36ff36a1dcf5b782db99b01543c9"
+    },
+    "records-scan-after.json": {
+      "bytes": 161217,
+      "sha256": "9f1d3ced02a60085175009b611e4eb819ae1c1f87572d77fe221bdd19cb4d395"
+    },
+    "records-scan-after.log": {
+      "bytes": 23560,
+      "sha256": "622df466c0605b04c39c50743df35859396bd24caa4217581c29bd2b24c882c9"
+    },
+    "METHOD_COMPARISON.json": {
+      "bytes": 596,
+      "sha256": "b64d7975e85980d66641227114437551d5cc46e82f07f7ce282d26eb200962c5"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5395,
+      "sha256": "eb79763bf8a899ec3c3a65f9e9174eaa729608905b2ffb167a0266160baf96ad"
+    },
+    "records-scan-history.json": {
+      "bytes": 6859,
+      "sha256": "4fe5829d4582406aee561f3c15099d8dd75473c1610fd8bc3c1b977b5a803368"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 3762,
+      "sha256": "4a4a15ff039ee313b624f66d71862dbfbdf911263e56e46fd496a43f3a231dc1"
+    },
+    "design/HANDOFF.json": {
+      "bytes": 8165,
+      "sha256": "2ad8d5bb1783b8140b57c8ee15c60696f72290b8c079152ef775c873d6c287fd"
+    }
+  },
+  "raw": {
+    "file": "shared_record_scan_raw.json.gz",
+    "bytes": 16363,
+    "sha256": "963b48e9f1d450f6c4ead2da14c48a8e0fa35ef6c493d06c66ebea7a6f4c6357",
+    "decoded_sha256": "114139d91c47bf2dc697907b35b2278beb5f215ca3c3d7a8baafa068f5d61583"
+  }
+}

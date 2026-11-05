@@ -11375,3 +11375,13 @@ SessionEngine 保留回执、准备借用和单一任务表，SchedulingSession 
 [本批源码和证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
 保存相同 81 项改前／改后全部通过。owner 781→539 行，新运行模块 259 行，生产 Python 净增 17 行，未声称减少总代码。
 原 socket 和 sysctl 拒绝未重试，策略、容量、模型配置与研究模块保持；整体重构继续。
+
+
+## 2026-11-05 收敛两条 records 路径的扫描准备
+
+Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan，重复块与旧专用导入删除。
+保留懒导入、runner 选择、schema／predicate／projection、原错误文字及空输入的同一 Ray 模块；
+语义预检、模型和调度仍留在各自 owner。与并行结果 poll／ACK 的四份生产文件没有重叠。
+[源码与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
+保存相同选择的 108 项改前／改后通过，以及三项因未配置上游 checkout 未运行。
+本批生产 Python 净减 13 行，Core evaluate 119→98 行，超过百行的核心函数由 51 个变为 50 个；未重试被拒操作，整体重构继续。

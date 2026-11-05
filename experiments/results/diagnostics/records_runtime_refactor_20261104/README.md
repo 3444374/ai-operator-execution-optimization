@@ -2547,3 +2547,44 @@ fused 改前另选三项：一个内存引擎阶段用例通过，两个同步 C
 超过千行的核心文件仍有 adaptive 1,157 行，超过百行函数仍为 51 个；本批没有改其策略。
 现有 owner／运行器仍共享同一 Core、transport 和模型资源，未宣称完全独立，也没有查询性能结论。
 未运行真实 Ray、模型、GPU、数据库或外部服务器；整体核心重构尚未完成，未合并 main。
+
+
+<a id="shared-record-scan"></a>
+## 两条 records 路径复用原扫描准备
+
+本批基于 `56facbdac20884fd13a0dcef2b94378a9cc419b5`，代码候选为
+`a73c9f55293afca4a2f9017b96184f1c76a649a3`，树 `38fdf6f32a9dd6278763878ec56618d15122659a`。
+此后只同步说明与公开证据，运行源码保持上述候选。
+
+Core 与静态 reference 原有的两段各 12 条扫描准备语句，除错误文字前缀外相同，现由
+`records_scan.prepare_native_records_scan` 实际执行。两份旧块及仅供它们使用的 os 导入已删除。
+该函数只做原懒导入、caller-owned Ray／Daft 检查、Native runner 选择、CSV schema、predicate 和 projection，
+返回原 frame 与 Ray 模块。owner_name 仅保留原错误前缀，不是用户配置或新策略。
+
+source 与 scan 原对象进入函数，csv_path 仍在环境／runner 检查后才读取；导入及 DataType 求值次序保持。
+原 deadline／取消检查、语义预检、expected、model bind 和模型启动的异常处理位置仍在各自 caller，
+没有把 Core 的 CallLedger／SessionSpec 检查加给 reference。static 的原 iterator／batching 和 Core 的调度仍各自拥有。
+另外 28 个方法保持，没有改结果领取、ACK、IPC 或并行工作树；历史原件及五份具名投影也未改动。
+
+[机器摘要](raw/shared_record_scan_checks.json)与[脱敏原件](raw/shared_record_scan_raw.json.gz)
+保存相同 12 个模块、111 个选中方法的改前／改后记录：两次均实际执行 108 项、全部通过，无失败或错误。
+StaticSessionTests 在 setUpClass 因未配置 `SEMBENCH_CHECKOUT` 跳过，涉及三项 CLI 用例；不是只少跑一个方法，不能写成 111 项通过。
+未配置替代 checkout 或改写跳过条件。现有单行对照用例实际执行了两个 owner，仍不代替完整 CLI／模型验证。
+前后记录重叠，不累计覆盖；没有新增测试、资格文件、超时或校验条件。
+独立复核确认两个准确版本的文件摘要、旧扫描语句与共享实现及异常处理位置保持，没有重跑测试。
+原先被系统拒绝的 Unix socket 和 sysctl 操作没有选择或重试，相关功能及先前 unknown 保持。
+历史来源仍为 3,010 项中 3,000 匹配、十处旧差异，没有新增差异，完整恢复未通过。
+
+| 生产 Python 口径 | 改前 | 当前 |
+|---|---:|---:|
+| Core owner | 539 | 518 |
+| static owner | 303 | 279 |
+| 共享扫描准备 | 0 | 32 |
+| 可比核心，含独立研究 | 58,615 | 58,602 |
+| 现用 src＋scripts，含独立研究 | 114,425 | 114,412 |
+
+本批净减 13 行，Core evaluate 119→98 行、static evaluate 67→43 行；超过百行的核心函数由 51 个变为 50 个。
+统计含空白与注释，排除测试、说明和历史副本；可比核心排除 experiments／baselines，继续包含独立 research。
+固定比较提交为 main `6a8a2d7b` 和 `3fd3887e`：核心分别多 4,511／少 3,026 行，较宽口径分别少 25,923／35,233 行。
+超过千行的核心文件仍有 adaptive 1,157 行；调度器与 IPC 的职责整理尚未完成，没有性能结论。
+本批未运行真实 Ray、模型、GPU、数据库或外部服务器；PR 保持草稿，未合并 main。

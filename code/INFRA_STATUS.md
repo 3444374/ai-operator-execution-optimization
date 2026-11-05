@@ -985,3 +985,10 @@ socket 测试夹具现在先报告启动原异常再交出路径，启动失败�
 [同选择 CPU 记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
 保存改前／改后各 81 项通过；没有新增测试或资格条件。原 socket 与 sysctl 未验证状态不变，没有重试被拒操作。
 owner 781→539 行，运行模块 259 行，生产 Python 净增 17 行；历史来源仍有十处旧差异，未改策略或配置。
+
+
+Core 与静态 reference 的 Native CSV 扫描准备共用 records_scan，原重复块和专用 os 导入已删除。
+[本批检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
+记录同选择的 108 项改前／改后通过、一个类级跳过对应三项未运行；原因是没有配置 SEMBENCH_CHECKOUT。
+Core evaluate 119→98 行，生产 Python 净减 13 行；原方法预检、模型启动、迭代及批次不变，未触碰并行 poll／ACK 文件。
+原 socket／sysctl 拒绝没有重试，历史来源仍有十处旧差异，未取得模型或性能结论。
