@@ -42,7 +42,8 @@ def _check(deadline, control):
         raise TimeoutError("Daft LOTUS chain query deadline expired")
 
 
-def _native_runner(runner_threads):
+def configure_native_runner(runner_threads=None):
+    """Select native threads before creating a source DataFrame."""
     from daft.runners import _get_runner, get_or_create_runner
     from src.infrastructure import daft_runtime
 
@@ -66,7 +67,7 @@ def _graph(frame, chain, engine, resources, expected, control, deadline, control
 
     if daft.__version__ != DAFT_VERSION:
         raise RuntimeError("chain requires exactly Daft Native " + DAFT_VERSION)
-    _native_runner(runner_threads)
+    configure_native_runner(runner_threads)
     if not expected:
         @daft.func.batch(return_dtype=daft.DataType.string(),
                          batch_size=resources.model_batch_rows, max_retries=0)

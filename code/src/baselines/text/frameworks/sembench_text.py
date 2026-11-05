@@ -38,7 +38,8 @@ def execute_records(operation, *, backend, engine, resources, query_id, profile,
             report['scheduler_owner'] = 'Ray Data Dataset / ActorPoolStrategy'
         elif backend == 'daft':
             import daft
-            from .daft_lotus_chain import evaluate
+            from .daft_lotus_chain import configure_native_runner, evaluate
+            configure_native_runner(profile.get('runner_threads'))
             frame = daft.from_pylist([dict(record_json=json.dumps(row.describe(), ensure_ascii=False))
                                       for row in records])
             stream = evaluate(frame, chain, engine, resources, expected=records,

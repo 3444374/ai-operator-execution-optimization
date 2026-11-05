@@ -152,10 +152,11 @@ class SemBenchTextBackendTests(unittest.TestCase):
         return ray, state, dataset
 
     def install_daft(self):
-        state, frame = SimpleNamespace(payload=None), object()
+        state, frame = SimpleNamespace(payload=None, events=[]), object()
         daft = ModuleType("daft")
 
         def from_pylist(payload):
+            state.events.append("source")
             state.payload = payload
             return frame
 
@@ -163,6 +164,10 @@ class SemBenchTextBackendTests(unittest.TestCase):
         scope = patch.dict(sys.modules, {"daft": daft})
         scope.start()
         self.addCleanup(scope.stop)
+        configure = patch.object(daft_graph, "configure_native_runner",
+            side_effect=lambda threads: state.events.append(("native_runner", threads)))
+        configure.start()
+        self.addCleanup(configure.stop)
         return daft, state, frame
 
     def run_operator(self, operation, backend, *, profile=None, context=None):
@@ -217,6 +222,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
         self.assert_payload_only(state.payload, operation)
         self.assert_graph_binding(evaluate.call_args, operation, frame)
         self.assertEqual(evaluate.call_args.kwargs["runner_threads"], profile["runner_threads"])
+        self.assertEqual(state.events, [("native_runner", 2), "source"])
         expected = operation.frame.copy()
         expected["_map"] = ["first", "second", "third"]
         pd.testing.assert_frame_equal(report["frame"], expected)
@@ -258,10 +264,11 @@ class SemBenchTextBackendTests(unittest.TestCase):
     def test_incomplete_eof_never_publishes_a_successful_relation(self):
         operation = self.operation()
         stream = StreamFixture(operation.records, self.calls(operation), complete=False)
-        self.install_daft()
+        _, state, _ = self.install_daft()
         with patch.object(daft_graph, "evaluate", return_value=stream), \
                 self.assertRaisesRegex(RuntimeError, "complete successful EOF") as caught:
             self.run_operator(operation, "daft")
+        self.assertEqual(state.events, [("native_runner", None), "source"])
         report = caught.exception.operator_report
         self.assertEqual(report["status"], "failed")
         self.assertNotIn("frame", report)
@@ -348,7 +355,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
     def test_empty_relations_do_not_allocate_any_framework_or_model(self):
         operation = self.operation(empty=True)
         ray, state, _ = self.install_ray(initialized=True)
-        daft, _, _ = self.install_daft()
+        daft, daft_state, _ = self.install_daft()
         forbidden = AssertionError("empty relation allocated a framework")
         with patch.object(ray, "init", side_effect=forbidden), \
                 patch.object(ray.data, "from_items", side_effect=forbidden), \
@@ -365,6 +372,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
                     pd.testing.assert_frame_equal(report["frame"], operation.frame)
         self.assertTrue(state.initialized)
         self.assertFalse(state.shutdown_requested)
+        self.assertEqual(daft_state.events, [])
 
 
 if __name__ == "__main__":

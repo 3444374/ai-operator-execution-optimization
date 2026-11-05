@@ -273,7 +273,7 @@ class AuditLifetimeTests(unittest.TestCase):
                     native_types.append(cls)
                     return lambda: SimpleNamespace(run=lambda _col: Expression())
                 return decorate
-            with patch.object(daft_chain, "_native_runner"), \
+            with patch.object(daft_chain, "configure_native_runner"), \
                  patch.object(daft, "__version__", daft_chain.DAFT_VERSION), \
                  patch.object(daft, "cls", native_class), \
                  patch.object(daft.method, "batch", lambda **_: lambda fn: fn), \

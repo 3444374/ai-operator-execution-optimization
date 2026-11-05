@@ -13,6 +13,56 @@ import unittest
     "actual pinned Daft and Arrow are required",
 )
 class DaftRuntimeCompositionTests(unittest.TestCase):
+    def test_chain_selects_explicit_threads_before_source_and_reuses_them(self):
+        code = """
+import daft
+from daft.runners import _get_runner
+from src.baselines.text.frameworks.daft_lotus_chain import configure_native_runner
+from src.infrastructure import daft_runtime
+assert _get_runner() is None
+configure_native_runner(2)
+frame = daft.from_pylist([{'record_json':'first'},{'record_json':'second'}])
+configure_native_runner(2)
+assert daft_runtime._configured == ('native',2)
+assert frame.to_pylist() == [{'record_json':'first'},{'record_json':'second'}]
+print('CHAIN_NATIVE_EXPLICIT_THREADS_PASS')
+"""
+        self._check_driver(code, "CHAIN_NATIVE_EXPLICIT_THREADS_PASS")
+
+    def test_chain_default_does_not_supply_threads_and_reuses_external_native_source(self):
+        code = """
+from unittest.mock import patch
+import daft
+from src.baselines.text.frameworks.daft_lotus_chain import configure_native_runner
+from src.infrastructure import daft_runtime
+with patch.object(daft,'set_runner_native',wraps=daft.set_runner_native) as setup:
+    configure_native_runner()
+    setup.assert_called_once_with()
+frame = daft.from_pylist([{'record_json':'default'}])
+configure_native_runner()
+assert daft_runtime._configured == ('native',None)
+assert frame.to_pylist() == [{'record_json':'default'}]
+print('CHAIN_NATIVE_DEFAULT_THREADS_PASS')
+"""
+        self._check_driver(code, "CHAIN_NATIVE_DEFAULT_THREADS_PASS")
+        external = """
+import daft
+from src.baselines.text.frameworks.daft_lotus_chain import configure_native_runner
+from src.infrastructure import daft_runtime
+frame = daft.from_pylist([{'record_json':'external'}])
+assert daft_runtime._configured is None
+configure_native_runner()
+try:
+    configure_native_runner(2)
+except RuntimeError as error:
+    assert 'externally selected' in str(error)
+else:
+    raise AssertionError('late thread override was silently accepted')
+assert frame.to_pylist() == [{'record_json':'external'}]
+print('CHAIN_EXTERNAL_NATIVE_THREADS_PASS')
+"""
+        self._check_driver(external, "CHAIN_EXTERNAL_NATIVE_THREADS_PASS")
+
     def test_native_runtime_then_sealed_payload_keeps_complete_rows_in_one_driver(self):
         code = """
 from src.infrastructure.daft_runtime import configure_daft_runner
