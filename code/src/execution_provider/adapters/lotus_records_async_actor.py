@@ -38,6 +38,7 @@ class AsyncRecordsActorOwner(_ActorOwner):
     model_batch_mode = "independent_final_results"
     native_engine_abort_supported = True
     nonblocking_core_handoff = True
+    supports_prepared_batch_ack = True
     # Protocol roles, not model request capacity: shutdown/drain and one
     # independent control (snapshot, abort or ACK) must be able to coexist.
     control_rpc_reserve = 2
@@ -317,11 +318,19 @@ class AsyncRecordsActorOwner(_ActorOwner):
                 return response
             await asyncio.sleep(.01)
 
-    def poll_prepared_batch(self, batch_key):
-        return self.model_actor.poll_prepared_batch.remote(batch_key)
+    def poll_prepared_batch(self, batch_key, acknowledgements=None):
+        if acknowledgements is None:
+            return self.model_actor.poll_prepared_batch.remote(batch_key)
+        return self.model_actor.poll_prepared_batch.remote(batch_key, acknowledgements)
 
-    async def wait_prepared_batch(self, batch_key):
-        return await self._data_rpc('poll_prepared_batch', batch_key)
+    async def wait_prepared_batch(self, batch_key, acknowledgements=()):
+        if not acknowledgements:
+            return await self._data_rpc('poll_prepared_batch', batch_key)
+        # A subset of an accepted batch's keys is smaller than that batch's
+        # original calls. Keep the same byte bound and tracked data-RPC gate.
+        payload = _encode(dict(batch_key=list(batch_key), acknowledgements=[
+            [key.session_id, key.sequence] for key in acknowledgements]), self.limits.input_bytes)
+        return await self._data_rpc('poll_prepared_batch', batch_key, payload)
 
     def cancel_core(self, key):
         if self.model_actor is not None:

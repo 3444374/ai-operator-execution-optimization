@@ -360,6 +360,20 @@ byte/result reservations and unknown responsibility are unchanged. A submitted
 group remains immutable: refill creates another transport batch, not new members
 inside the old batch or a change to vLLM's native continuous batching. B only
 organizes each handoff, and the ready-frontier/EOF tail does not wait to fill B.
+Prepared async transport now carries successfully stored member ACKs on its next
+bounded result poll, including a final poll after the last member transfer.
+The actor applies the validated ACK set before selecting the next page. A lost
+response can repeat the ACKs; an unacknowledged page remains readable. The result
+frame and its byte limit are unchanged. ACK metadata is bounded by the original
+accepted batch and the existing input-byte limit; it does not cache another result
+copy. Post-transfer ACK responsibility can outlive the corresponding Core terminal.
+An unknown receipt may advance delivery while retaining its model borrowing.
+Sink rejection never queues an ACK. Existing single-request/custom actor handoffs
+keep their own ACK interface. A settled query drains final ACKs before actor kill;
+unfinished work retains producer-first cancellation and receipt recovery. All drain
+waits use the existing cleanup deadline. The
+[ACK/page cases](../../../tests/execution_provider/test_lotus_batch_poll_ack.py)
+cover these CPU mechanisms; real Ray/GPU latency still requires a matched run.
 Extract retains its complete-relation barrier. The ordinary records factory,
 Movie JSON `check/run` and isolated-session plan accept the same boolean option.
 Explicit `CoreRecordsCapacity.budget` separates the fixed request window C, hard request slots R,

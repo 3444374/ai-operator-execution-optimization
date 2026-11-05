@@ -332,12 +332,17 @@ def __getattr__(name):
             emit('actor_result_return',key=key,identities=ids(rows),
                  scope='before native reader guard releases; Ray serialization/return still follow')
             return result
-        def poll_prepared_batch(self,batch_key):
-            if not handoff_profile():return super().poll_prepared_batch(batch_key)
+        def poll_prepared_batch(self,batch_key,acknowledgements=None):
+            extra=()if acknowledgements is None else(acknowledgements,)
+            if not handoff_profile():
+                result=super().poll_prepared_batch(batch_key,*extra)
+                if acknowledgements is not None and self.last_close_report is not None:
+                    self._finalize_record_sink(self.last_close_report)
+                return result
             # Reuse the native first-exposure/ACK frontier, not an observer ledger.
             # Its condition is reentrant; no native ownership fields are changed.
             with self._condition:
-                if getattr(self,'_record_sink_finalized',False):return super().poll_prepared_batch(batch_key)
+                if getattr(self,'_record_sink_finalized',False):return super().poll_prepared_batch(batch_key,*extra)
                 pending=None
                 try:
                     group=tuple(batch_key)if core_key(batch_key)is not None else None
@@ -349,7 +354,7 @@ def __getattr__(name):
                                 and self._closed_pending.get(key)is False):
                             pending[key]=receipt['result']
                 except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
-                try:result=super().poll_prepared_batch(batch_key)
+                try:result=super().poll_prepared_batch(batch_key,*extra)
                 except BaseException as error:
                     emit('actor_batch_poll_raise',batch_key=core_key(batch_key),error_type=type(error).__name__)
                     raise
@@ -365,6 +370,8 @@ def __getattr__(name):
                     emit('actor_batch_poll_return',batch_key=core_key(batch_key),members=exposed,
                          members_complete=False,scope='newly exposed members only; replay/empty pages are not new completions')
                 except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+                if acknowledgements is not None and self.last_close_report is not None:
+                    self._finalize_record_sink(self.last_close_report)
                 return result
         def _finalize_record_sink(self,report):
             if not ENABLED:return

@@ -34,6 +34,7 @@ class LotusChainActorBackend(_RecordTransport):
         super().__init__(actors, maximum, notify, finalize=self._finish_batches if bulk else None)
         self.deadline = deadline_monotonic
         self.supports_batch_submit = bulk
+        self._batch_poll_ack = bulk and getattr(actors, 'supports_prepared_batch_ack', False)
         self._bulk = {}
         self.data_batch_rpcs = self.peak_result_frame_bytes = 0
         self._batch_submits_started = 0
@@ -112,14 +113,35 @@ class LotusChainActorBackend(_RecordTransport):
         tasks = [c['driver'] for c in self._bulk.values() if 'driver' in c]
         if tasks:
             await asyncio.gather(*tasks)
+        for group, context in tuple(self._bulk.items()):
+            if context['acks']:
+                await self._poll_batch(group, context)
         # Backend close calls this only after all member executions stopped.
         self._bulk.clear()
         if self._rpc_subscription is not None:
             self.actors._unbind_rpc_progress(self._rpc_subscription)
 
     def _retire_batch(self, group, context):
-        if context['driver_done'] and not context['futures']:
+        if context['driver_done'] and not context['futures'] and not context['acks']:
             self._bulk.pop(group, None)
+
+    async def _poll_batch(self, group, context):
+        key = (group.session_id, group.sequence)
+        acknowledgements = tuple(context['acks'])
+        if acknowledgements:
+            ref = self.actors.wait_prepared_batch(key, acknowledgements)
+        else:
+            ref = (self.actors.wait_prepared_batch(key)
+                   if callable(getattr(self.actors, 'wait_prepared_batch', None))
+                   else self.actors.poll_prepared_batch(key))
+        raw = await _await_result(ref)
+        self.peak_result_frame_bytes = max(self.peak_result_frame_bytes, len(raw))
+        response = json.loads(raw)
+        # Keep the ACK intent if the RPC/response fails. Its original receipt
+        # already lives in the owner sink; replay never resubmits model work.
+        for member in acknowledgements:
+            context['acks'].pop(member, None)
+        return response
 
     def try_submit_batch(self, tasks, endpoint):
         return self._try_submit_batch(tasks, endpoint)
@@ -135,7 +157,7 @@ class LotusChainActorBackend(_RecordTransport):
             values = [self._request(t) for t in tasks]
         context = dict(tasks={t.key: t for t in tasks}, values={t.key: v for t, v in zip(tasks, values)},
                        members=frozenset(t.key for t in tasks), futures={t.key: Future() for t in tasks},
-                       started=False, driver_done=False)
+                       started=False, driver_done=False, accepted=False, acks={})
         self._bulk[group] = context
         with self._lock:
             if self._observe_handoff:
@@ -179,24 +201,27 @@ class LotusChainActorBackend(_RecordTransport):
             ack_pending = False
             self._count_batch_ack(status if type(status) is str and status in ('accepted', 'rejected')
                                   else 'unknown', context)
+            context['accepted'] = status == 'accepted'
             pending = set(context['members'])
-            while pending:
+            while pending or self._batch_poll_ack and (context['futures'] or context['acks']):
                 pending = {member for member in pending if (future := context['futures'].get(member)) is not None
                            and not future.done()}
-                if not pending:
+                if not pending and not self._batch_poll_ack:
                     break
+                if not pending and not context['acks']:
+                    if not context['futures']:
+                        break
+                    # Raw result readiness is not a sink-transfer proof. Let
+                    # the existing member coroutines finish before final ACK.
+                    await asyncio.sleep(self.poll_interval_s)
+                    continue
                 if response['status'] == 'accepted':
-                    ref = (self.actors.wait_prepared_batch(key)
-                           if callable(getattr(self.actors, 'wait_prepared_batch', None))
-                           else self.actors.poll_prepared_batch(key))
-                    raw = await _await_result(ref)
-                    self.peak_result_frame_bytes = max(self.peak_result_frame_bytes, len(raw))
-                    response = json.loads(raw)
+                    response = await self._poll_batch(group, context)
                 for receipt in response.get('results', ()):
                     task_key = TaskKey(*receipt['request_key'])
                     if task_key not in context['members']:
                         raise ValueError('bulk result belongs to another group')
-                    if task_key not in pending and task_key not in context['futures']:
+                    if not self._batch_poll_ack and task_key not in pending and task_key not in context['futures']:
                         # A lost ACK can hold a later bounded page behind this
                         # receipt. Retry only after audit/sink transfer removed
                         # its future, never just because the future is ready.
@@ -210,11 +235,11 @@ class LotusChainActorBackend(_RecordTransport):
                         except InvalidStateError:
                             pass  # A validated close receipt may already have transferred it.
                         pending.remove(task_key)
-                if not pending:
+                if not pending and not self._batch_poll_ack:
                     break
-                if response.get('closed') and type(response.get('more_results')) is not bool:
+                if pending and response.get('closed') and type(response.get('more_results')) is not bool:
                     raise ValueError('closed bulk reply has no bounded-page frontier')
-                if (response.get('closed') and not response['more_results']
+                if pending and (response.get('closed') and not response['more_results']
                         or response.get('status') == 'rejected'):
                     raise RuntimeError('bulk producer closed without all member receipts')
                 raw = receipt = future = None
@@ -293,11 +318,28 @@ class LotusChainActorBackend(_RecordTransport):
         if task.member is not None:
             receipt['transport_batch'] = asdict(task.member)
         self.on_result(task.key, receipt)
-        if task.member is not None:
+        if task.member is not None and not self._batch_poll_ack:
             context = self._bulk.get(task.member.batch_key)
             if context is not None:
                 context['futures'].pop(task.key, None)
                 self._retire_batch(task.member.batch_key, context)
+
+    def _acknowledge_result(self, task):
+        if not self._batch_poll_ack:
+            return super()._acknowledge_result(task)
+        context = self._bulk[task.member.batch_key]
+        if context['accepted']:
+            context['acks'][task.key] = None
+
+    async def _execute(self, task, endpoint):
+        try:
+            return await super()._execute(task, endpoint)
+        finally:
+            if self._batch_poll_ack:
+                context = self._bulk.get(task.member.batch_key)
+                if context is not None:
+                    context['futures'].pop(task.key, None)
+                    self._retire_batch(task.member.batch_key, context)
 
     def poll(self, handles, max_events):
         events = self.backend.poll(handles, max_events)

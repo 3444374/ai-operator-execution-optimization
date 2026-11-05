@@ -128,7 +128,7 @@ class DeliveryDeclarationTests(unittest.TestCase):
                     SemLoomRecordChainCore._register_local_task(owner, task, value)
                     def transfer(key, receipt):
                         SemLoomRecordChainCore._record_local_receipt(owner, key, receipt)
-                    backend = SimpleNamespace(on_result=transfer, _bulk={})
+                    backend = SimpleNamespace(on_result=transfer, _bulk={}, _batch_poll_ack=False)
                     raw = dict(chain, status=status, submission_confirmed=True, text='',
                         prompt_tokens=3, completion_tokens=1, total_tokens=4)
                     raw['text'] = 'x' * (declaration.item_result_bytes - len(_encode(raw, declaration.item_result_bytes)))

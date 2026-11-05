@@ -90,6 +90,9 @@ class _RecordTransport:
     def _result_transferred(self, task, value):
         """Optional adapter sink, after retention and before the actor ack."""
 
+    def _acknowledge_result(self, task):
+        self.actors.acknowledge_core(task.key)
+
     async def _execute(self, task, endpoint):
         timings = self.timings  # Keep late work attached to its original query.
         binding = self._query_binding
@@ -114,7 +117,7 @@ class _RecordTransport:
                     self._refs.pop(task.key, None)
             self._result_transferred(task, value)
             # Transfer before the actor may discard its copy; unknown still owns refs.
-            self.actors.acknowledge_core(task.key)
+            self._acknowledge_result(task)
         if value["status"] == "unknown":
             raise RuntimeError("local model work has no confirmed terminal")
         if value["status"] == "failed":
@@ -246,7 +249,8 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
     else:
         actors.close_deadline = deadline
     if retain_model:
-        transport_closed = transport is None or transport.backend.close(timeout=0.05, wait_pending=True)
+        remaining = max(0., actors.close_deadline - time.monotonic())
+        transport_closed = transport is None or transport.backend.close(timeout=remaining, wait_pending=True)
         if core is not None:
             core.reap(capacity.step_actions)
         if (not transport_closed or transport is not None and transport.retained_refs()
@@ -255,7 +259,15 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
         actor_report = actors.drain_query(actors.close_deadline)
         return dict(model_owner=actor_report, transport_closed=transport_closed,
                     producer_retirement=None, cleanup_errors=actor_report['cleanup_errors'])
-    actor_report = actors.close()
+    try:
+        if (transport is not None and getattr(transport, '_batch_poll_ack', False)
+                and core is not None and not any(record.compute for record in core.capacity.records.values())):
+            # Known local results may still owe their final batched ACK. Drain
+            # it before killing the producer; unfinished/unknown work still
+            # needs the original producer-first cancellation/recovery below.
+            transport.backend.close(timeout=max(0., actors.close_deadline-time.monotonic()), wait_pending=True)
+    finally:
+        actor_report = actors.close()
     errors.extend(actor_report["cleanup_errors"])
     if transport is not None:
         errors.extend(transport.recover_actor_receipts(

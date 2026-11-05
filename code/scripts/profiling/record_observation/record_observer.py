@@ -457,8 +457,8 @@ def install_driver():
     poll=getattr(async_owner.AsyncRecordsActorOwner,'poll_prepared_batch',None)
     if callable(poll):
         @functools.wraps(poll)
-        def batch_poll(self,batch_key):
-            result=poll(self,batch_key)
+        def batch_poll(self,batch_key,*args,**kwargs):
+            result=poll(self,batch_key,*args,**kwargs)
             observe_ref_ready(result,None,None,batch_key=core_key(batch_key),
                 scope='Ray poll Future notification only; no result read, member count or unique page pairing')
             return result

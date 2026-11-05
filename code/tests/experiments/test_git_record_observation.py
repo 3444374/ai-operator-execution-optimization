@@ -228,7 +228,7 @@ class PublicBulkProbeIntegrationTests(unittest.TestCase):
             report=json.loads((output/'PUBLIC-BATCH-HANDOFF.json').read_text())
             self.assertEqual(report['status'],'passed_actual_public_bulk_owner_actor_transport')
             self.assertTrue(report['outputs_preserved'])
-            self.assertTrue(report['lost_ACK_replayed_without_duplicate_member_completion'])
+            self.assertTrue(report['confirmed_ACKs_carried_by_poll'])
             self.assertTrue(report['snapshot_RPC_terminal_complete'])
             self.assertTrue(report['native_source_age_qualified'])
             self.assertEqual(report['snapshot_RPC_requests'],1)

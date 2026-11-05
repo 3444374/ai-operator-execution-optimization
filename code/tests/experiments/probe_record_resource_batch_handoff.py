@@ -88,8 +88,16 @@ class Remote:
     def remote(self,*a,**k):
         native_methods.append(self.label)
         return Reference(self.method(*a,**k),self.label)
-def poll(key):
-    value=actor.poll_prepared_batch(key);poll_pages.append(json.loads(value));return value
+def poll(key,*args):
+    if args:
+        keys=[tuple(k)for k in json.loads(args[0])['acknowledgements']]
+        assert all(TaskKey(*k)in {r[0]for r in received}for k in keys),'ACK before owner sink'
+    else:keys=[]
+    value=actor.poll_prepared_batch(key,*args)
+    for key in keys:
+        ack_attempts[key]+=1
+        if key not in actor._held:acked.append(key)
+    poll_pages.append(json.loads(value));return value
 def model_snapshot(**kwargs):
     value=actor.snapshot(**kwargs);model_snapshots.append(value);return value
 def ack(key):
@@ -100,6 +108,7 @@ def ack(key):
     return value
 owner=native.AsyncRecordsActorOwner.for_prepared(engine,generation,
     RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=3),limits=limits)
+coalesced_ACK=getattr(owner,'supports_prepared_batch_ack',False)
 owner.model_actor=SimpleNamespace(
     submit_prepared_batch=Remote(actor.submit_prepared_batch,'submit'),
     try_submit_prepared_batch=Remote(getattr(actor,'try_submit_prepared_batch',actor.submit_prepared_batch),'submit'),
@@ -127,7 +136,8 @@ assert len(submitted)==1 and native_methods.count('submit')==1
 assert [results[TaskKey(1,i)]for i in range(3)]==replies
 assert len(poll_pages)>=2 and all(len(p['results'])<3 for p in poll_pages)
 page_keys=[tuple(v['request_key'])for page in poll_pages for v in page['results']]
-assert page_keys.count((1,0))==2 and set(page_keys)=={(1,i)for i in range(3)}
+assert page_keys.count((1,0))==(1 if coalesced_ACK else 2)and set(page_keys)=={(1,i)for i in range(3)}
+assert native_methods.count('ack')==(0 if coalesced_ACK else 4)
 assert Counter(acked)==Counter({(1,i):1 for i in range(3)})and not actor._held
 assert len(received)==3 and not backend._bulk and backend.retained_refs()==0
 # Historical targets without this native keyword retain their bulk-only probe.
@@ -196,7 +206,8 @@ if args.mode=='on':
 report=dict(status='passed_actual_public_bulk_owner_actor_transport',mode=args.mode,
     bulk_handoff_qualified=True,members=3,data_batch_RPCS=1,poll_RPCS=len(poll_pages),
     returned_page_member_occurrences=len(page_keys),first_actor_member_markers=3 if args.mode=='on'else 0,
-    lost_ACK_replayed_without_duplicate_member_completion=True,original_generation_and_rows_preserved=True,
+    lost_ACK_replayed_without_duplicate_member_completion=not coalesced_ACK,
+    confirmed_ACKs_carried_by_poll=coalesced_ACK,original_generation_and_rows_preserved=True,
     outputs_preserved=True,native_ACK_once_per_member=True,native_close_report_identity_preserved=True,
     ascending_resource_snapshot_and_close=resource_probe_supported,
     resource_snapshot_status='passed_CPU_fixture'if resource_probe_supported else'not_supported_by_target',

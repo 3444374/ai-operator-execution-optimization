@@ -26,7 +26,12 @@ class RollingRefillTests(unittest.TestCase):
             self.assertLessEqual(stream.driver.active_rows, owner.resources.max_active_batches)
             self.assertLessEqual(usage.input_bytes, owner.core.capacity.limits.input_bytes)
             self.assertLessEqual(usage.result_bytes, owner.core.capacity.limits.result_bytes)
-            self.assertLessEqual(len(owner.transport._bulk), owner.resources.max_active_batches)
+            contexts = tuple(owner.transport._bulk.values())
+            self.assertLessEqual(sum(len(c['futures']) for c in contexts), owner.resources.max_active_batches)
+            # Post-transfer ACKs retain only original member keys, not another
+            # model request or result. Actor slots and tracked RPCs bound them.
+            self.assertLessEqual(sum(len(c['acks']) for c in contexts),
+                owner.resources.max_active_batches*(owner._actors.rpc_workers+1))
 
     def test_fast_final_refills_new_source_rows_while_slow_peer_is_unfinished(self):
         plan, rows = base.fixture.chain_for('M'), base.fixture.source_rows(size=6)

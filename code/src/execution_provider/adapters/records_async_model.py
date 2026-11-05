@@ -366,9 +366,38 @@ class AsyncCoreModelActor:
             self._condition.notify_all()
             return dict(status='accepted')
 
-    def poll_prepared_batch(self, batch_key):
+    def poll_prepared_batch(self, batch_key, acknowledgements=None):
         batch_key = _request_key(batch_key)
+        keys = ()
+        if acknowledgements is not None:
+            if type(acknowledgements) is not bytes or len(acknowledgements) > self.limits.input_bytes:
+                raise ValueError('batch ACK payload exceeds its input reservation')
+            packet = json.loads(acknowledgements)
+            if (type(packet) is not dict or set(packet) != {'batch_key', 'acknowledgements'}
+                    or _request_key(packet['batch_key']) != batch_key
+                    or type(packet['acknowledgements']) is not list
+                    or len(packet['acknowledgements']) > self.limits.max_inflight):
+                raise ValueError('batch ACK requires its bounded original membership')
+            keys = tuple(_request_key(key) for key in packet['acknowledgements'])
+            if len(set(keys)) != len(keys) or any(key[0] != batch_key[0] for key in keys):
+                raise ValueError('batch ACK keys must be unique and belong to its session')
         with self._condition:
+            if keys:
+                closed_keys = {tuple(v['request_key']) for v in
+                    (self.last_close_report or {}).get('unconsumed_core_results', ())
+                    if tuple(v.get('batch_key', ())) == batch_key}
+                for key in keys:
+                    call = self._held.get(key)
+                    if call is not None:
+                        if call.batch_key != batch_key or not call.poll_exposed:
+                            raise ValueError('batch ACK precedes result exposure or belongs to another batch')
+                    elif self._closed_pending is not None and key in self._closed_pending:
+                        if key not in closed_keys or self._closed_pending[key] is not True:
+                            raise ValueError('closed batch ACK precedes result exposure or changed batch')
+                # Validate the complete ACK packet before releasing anything.
+                # Repeating a committed ACK is harmless after a lost poll reply.
+                for key in keys:
+                    self._acknowledge_core_locked(key)
             if self.engine is not None and not self._closing:
                 self._collect()
                 # Nonblocking data calls leave abort retries and late terminal
@@ -536,23 +565,26 @@ class AsyncCoreModelActor:
     def acknowledge_core(self, request_key):
         key = _request_key(request_key)
         with self._condition:
-            call = self._held.get(key)
-            closed_ack = self._closed_pending is not None and self._closed_pending.get(key) is True
-            if closed_ack:
-                del self._closed_pending[key]
-            if call is None:
-                return closed_ack
-            if call.batch_key is not None and call.poll_exposed:
-                # Only the consumer ACK establishes delivery of a bulk reply.
-                # A lost/failed RPC remains readable without resubmitting work.
-                call.delivered = True
-            if not call.delivered or not call.confirmed:
-                return False
-            del self._held[key]
-            if call.ticket is not None:
-                self._tickets.pop(call.ticket, None)
-            self._condition.notify_all()
-            return True
+            return self._acknowledge_core_locked(key)
+
+    def _acknowledge_core_locked(self, key):
+        call = self._held.get(key)
+        closed_ack = self._closed_pending is not None and self._closed_pending.get(key) is True
+        if closed_ack:
+            del self._closed_pending[key]
+        if call is None:
+            return closed_ack
+        if call.batch_key is not None and call.poll_exposed:
+            # Delivery and engine termination are distinct: an unknown receipt
+            # may advance the result page while its request stays borrowed.
+            call.delivered = True
+        if not call.delivered or not call.confirmed:
+            return False
+        del self._held[key]
+        if call.ticket is not None:
+            self._tickets.pop(call.ticket, None)
+        self._condition.notify_all()
+        return True
 
     def close(self, timeout):
         _deadline(timeout)

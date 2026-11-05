@@ -979,3 +979,11 @@ socket 测试夹具现在先报告启动原异常再交出路径，启动失败�
 [一次最小检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
 明确停在 `listener.bind()` 的 `EPERM`，不再误报为客户端 `FileNotFoundError`；五个原 socket 方法仍未通过。
 一个模拟启动失败的行为测试通过，未重试实际绑定或 sysctl，未改生产代码、时限或跳过规则。
+
+异步 prepared 批的已保存成员 ACK 合并到下一次有界 poll，末页也确认排空；页内容、重读、
+sink 拒收、unknown 用量和模型借用责任保持。已完成查询先排空最终 ACK 再关闭 actor，
+中断仍执行原清理，未完成工作保留原取消／回执恢复顺序。没有新增容量、策略或 CLI 开关。
+[定向机制测试](tests/execution_provider/test_lotus_batch_poll_ack.py)及观测开关／footer 检查纳入
+354 项 CPU 选择：349 通过，四个同步 prepared-reuse 方法和一个实验控制入口方法在准确基底
+`d0b19dbb` 同样受 PermissionError 影响，未算通过。3010 条历史绑定仍有原十处失配，无新增。
+本批未运行真实 Ray、模型或 GPU，不能据此认定原 Q1 时间差已消除；同步热点日志尚未改动。

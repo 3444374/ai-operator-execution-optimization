@@ -111,7 +111,7 @@ class BatchAckCounterTests(unittest.IsolatedAsyncioTestCase):
         context = dict(tasks={r.key: r for r in rows},
             values={r.key: json.loads(r.task.payload) for r in rows},
             members=frozenset(r.key for r in rows), futures={r.key: Future() for r in rows},
-            started=True, driver_done=False)
+            started=True, driver_done=False, accepted=False, acks={})
         value._bulk[group] = context
         return value, group, context
 

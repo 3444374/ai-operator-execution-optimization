@@ -221,6 +221,24 @@ class HandoffTests(unittest.TestCase):
         self.assertTrue(any(e['event']=='handoff_probe_unknown'for e in self.events()))
         self.assertFalse(any(e['event']=='actor_result_return'for e in self.events()))
 
+    def test_final_ACK_carried_by_poll_finishes_existing_actor_footer(self):
+        for profile in ('full','handoff'):
+            with self.subTest(profile=profile):
+                self.observer.settings()['profile']=profile
+                ipc,actor,base=self.actor();key=(1,0);group=(1,7)
+                report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
+                    confirmed=True,input_gate_closed=True,active_readers=0))
+                actor.last_close_report=report;actor._closed_pending={key:True}
+                payload=b'CPU-bounded-ACK-packet';value=object()
+                def poll(instance,batch,ack):
+                    self.assertEqual((batch,ack),(group,payload))
+                    instance._closed_pending.clear();return value
+                with patch.object(base,'poll_prepared_batch',poll,create=True), \
+                     patch.object(ipc,'close_events')as close_sink:
+                    self.assertIs(actor.poll_prepared_batch(group,payload),value)
+                    self.assertIs(actor.poll_prepared_batch(group,payload),value)
+                    close_sink.assert_called_once_with()
+
     def test_closed_batch_receipts_remain_observable_until_last_native_ACK(self):
         ipc,actor,base=self.actor();key=(1,0);group=(1,7)
         report=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
