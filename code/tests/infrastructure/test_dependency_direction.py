@@ -21,11 +21,10 @@ class DependencyDirectionTests(unittest.TestCase):
     def test_runtime_sources_do_not_import_tests_scripts_or_experiment_entry_points(self):
         # The baseline orchestration package and two explicit legacy comparison
         # entry points are harnesses; their callers choose a comparison run.
-        compatibility = "baselines/text/products/project_static.py"
         violations = []
         for path in (CODE / "src").rglob("*.py"):
             relative = str(path.relative_to(CODE / "src"))
-            if relative.startswith(("experiments/", "baselines/text/orchestration/")) or relative == compatibility:
+            if relative.startswith(("experiments/", "baselines/text/orchestration/")):
                 continue
             tree = ast.parse(path.read_text())
             cli_compatibility = set()

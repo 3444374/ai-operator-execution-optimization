@@ -32,6 +32,21 @@ AIMD、批反馈及原生 vLLM 的 `--scheduling-policy fcfs` 保留。
 当前 3,010 条来源中有 3,000 条匹配，剩余十处位于 `task_info.py` 和
 `submission_control/__init__.py`；完整五树恢复仍未通过。下文 2026-11-04 的零差异数字只描述当时源码。
 
+## 原生 baseline 依赖边界拆分的历史来源
+
+时钟身份从 Core transport 抽出后，五份历史投影仍须取得原 `ray_map_transport.py` 字节。
+准确 `7f0b6d42` 原件保存为[单份 gzip](historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz)，
+解压 SHA256 为 `d58de2fdfae52162713e0429d60b427471699acf1645eae9690c64fa0f94431e`。
+五份投影只增加来源／gzip 格式记录，原 3010 个 expected SHA、投影 ID、来源版本及已有映射保持。
+首次五项 materialize 的摘要失配保留为失败；修复不把当前生产时钟或 worker 写入历史投影。
+
+完整恢复继续检查时，还确认基底 `7f0b6d42` 已有十条来源失配，分别是五份投影的
+`task_info.py` 与 `submission_control/__init__.py`。准确旧源来自
+`070cda9fe93ca23cbbf8602bc4158d547e4d0fe8` 与 `b59ce7ee938791a3a0396e08f10567b493ac4b4c`，
+分别保存于 [task info 原件](historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz)和
+[原包导出](historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz)。
+只增加十条来源／格式映射，未改当前调度源码或旧预期。两次恢复失败和修正后的检查分别保留。
+
 ## 重复源码的共享保存
 
 五份投影中内容相同的源码改由 `MANIFEST.json` 指向同一精确副本，删除 88 份重复文件，

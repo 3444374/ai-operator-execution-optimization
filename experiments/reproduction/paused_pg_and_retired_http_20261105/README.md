@@ -12,6 +12,15 @@
 后续清理也移除残留的 PG C 编译／静态检查及其夹具；原件与上述完整来源树一致，
 恢复 PG 时使用该树中的配套测试。仍有用途的 Python plan、generation 和 wire 合约测试继续维护。
 
+原生 baseline 依赖审查又清除了两份只针对已退役接口的残留测试；它们在五份历史投影的
+3010 个绑定中均无引用，字节与上述 `7bf1d92b` 完整来源树相同。恢复时从该树取配套实现与测试，
+不把旧 HTTP 适配或 project_static 调度重新加入当前 baseline：
+
+| 原路径 | SHA256 |
+|---|---|
+| `code/tests/baselines/text/test_official_runtime_adapters.py` | `fbfbea403db419bd1bcb20b8c6d53c3deb40ed35aa466b35004e45d2f64881e9` |
+| `code/tests/baselines/text/test_project_static.py` | `b39d62860e9f5bd43e6d079d8cf72d5cb89b4b48d9c6557fb6d484f0c268fc85` |
+
 | 处理 | 内容 |
 |---|---|
 | 退出当前执行入口 | 旧 Movie HTTP、固定五后端矩阵、prepared-call HTTP 图、PG／HTTP 查询／画像及旧部署配置 |

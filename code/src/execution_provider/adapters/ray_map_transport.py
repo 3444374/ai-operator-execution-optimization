@@ -9,7 +9,6 @@ from functools import partial
 import hashlib
 import inspect
 import json
-import os
 from pathlib import Path
 import re
 import time
@@ -21,6 +20,7 @@ from ...scheduling.runtime.async_backend import ConfirmedTaskFailure
 from ...scheduling.runtime.stage_broker import StageBrokerLimits
 from .async_fixed_model import AsyncFixedModelTransport, exception_details
 from .full_response import FullResponseTransport
+from src.observability.clock import monotonic_clock_domain as _clock_domain
 
 
 @dataclass(frozen=True)
@@ -76,17 +76,6 @@ class _RemoteFailure:
     key: object
     stage: str
     reason: dict
-
-
-def _clock_domain():
-    """Identify a shared Linux monotonic clock without exposing host identity."""
-    try:
-        value = (Path('/proc/sys/kernel/random/boot_id').read_bytes()
-                 + os.readlink('/proc/self/ns/time').encode()
-                 + time.get_clock_info('monotonic').implementation.encode())
-    except OSError:
-        return None
-    return hashlib.sha256(value).hexdigest()
 
 
 class _RemoteResult(NamedTuple):
