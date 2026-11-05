@@ -12,6 +12,7 @@ from ...planning.work import WorkDescriptor
 
 
 MAX_TASK_PROFILES = 32
+UINT64_MAX = (1 << 64) - 1
 
 
 class State(str, Enum):

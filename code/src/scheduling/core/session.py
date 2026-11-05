@@ -36,6 +36,7 @@ from .session_contract import (
     Terminal,
     Uncertain,
     Usage,
+    UINT64_MAX,
 )
 from .session_policy import IncrementalCreditPolicy, SessionPolicies, _batch_dispatch_snapshot
 from .task_info import _TaskInfoChecks, validate_task_info
@@ -49,7 +50,6 @@ from .session_jobs import (
     round_robin_flow,
 )
 
-UINT64_MAX = (1 << 64) - 1
 TERMINAL_STATES = (State.CANCELLED, State.FAILED, State.FINISHED)
 
 
