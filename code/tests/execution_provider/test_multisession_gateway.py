@@ -95,14 +95,15 @@ def service(
 
         worker = threading.Thread(target=serve)
         worker.start()
-        assert ready.wait(3)
-        if not instances:
-            raise failures[0]
         try:
+            assert ready.wait(3)
+            if failures:
+                raise failures[0]
             yield path, instances[0], events
         finally:
             stop.set()
-            instances[0].request_stop()
+            if instances:
+                instances[0].request_stop()
             worker.join(6)
             assert not worker.is_alive()
         if unknown:
@@ -147,6 +148,25 @@ class Client:
 
     def close(self):
         self.socket.close()
+
+
+class ServiceStartupTests(unittest.TestCase):
+    def test_listener_start_failure_is_reported_before_yield_and_resources_are_closed(self):
+        for operation in ("bind", "listen"):
+            with self.subTest(operation=operation):
+                failure = PermissionError("synthetic listener startup refusal")
+                with patch(__name__ + ".socket.socket") as create_listener, \
+                     patch(__name__ + ".MultiSessionMapGateway") as create_gateway:
+                    listener, gateway = create_listener.return_value, create_gateway.return_value
+                    getattr(listener, operation).side_effect = failure
+                    with self.assertRaises(PermissionError) as raised:
+                        with service(None):
+                            self.fail("fixture yielded after listener startup failed")
+                    self.assertIs(raised.exception, failure)
+                    gateway.serve.assert_not_called()
+                    listener.close.assert_called_once_with()
+                    gateway.request_stop.assert_called_once_with()
+                    gateway.close.assert_called_once_with()
 
 
 class MultiSessionGatewayTests(unittest.TestCase):
