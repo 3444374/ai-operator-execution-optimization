@@ -1453,3 +1453,12 @@ physical RAM discovery, a process RSS cap or the completion of default R separat
 explicit storage grant may still admit fewer requests than R. Confirmed delivery, ACK and
 unknown responsibility are unchanged. [CPU scope and original failures](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
 include final-count overrides, actual local IPC accounting, preparation, query reuse and cache identity.
+
+
+### Query runtime data ownership
+
+`records_query_runtime` releases and observes its own query payloads after the owner validates service transfer and cleanup.
+`lotus_chain_fused_runtime` ends the consumed input/session and opens the next relation input; the query owner selects the
+next phase and assembles its result accountant. No extra owner, copy of the data ledger or facade is introduced.
+[CPU scope, interruption recovery and pending OS checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
+retain the original failures. Private old pickle locations are no longer forced through fake module metadata.

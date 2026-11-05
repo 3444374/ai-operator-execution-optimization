@@ -75,9 +75,12 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 [重构证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 本次清理没有把这些改动退回旧默认或重新引入另一份实现。
 
-链查询 owner 负责配置、组装、关系阶段及资源生命周期；融合批传输与结果迭代集中到
-[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)，
-记录级 MethodDriver 推进仍在原有 `records_query_runtime.py`。此次整理不增加控制器或改变执行顺序。
+链查询 owner 负责配置、组装、阶段选择、结果记账与模型资源生命周期；融合批传输、输入阶段和结果迭代在
+[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)。
+记录级 MethodDriver 推进及查询数据清理在 `records_query_runtime.py`；运行器操作自己持有的数据，
+owner 保留服务交接和真实资源清理确认，没有新增状态副本或转发层。
+[本批职责与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
+记录中断重试、完整 Extract 及仍受系统权限影响的同步子进程用例。
 
 异步模型 actor 的请求／回执与 IPC 实现在
 [records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC

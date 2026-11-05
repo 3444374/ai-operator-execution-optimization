@@ -1650,3 +1650,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [Session／传输职责与旧解析器清理](diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
 保留相同 144 项前后结果、原链 59／61 和后续 65 项通过，以及一次未复现的内存等待诊断；不将该旧问题写成已修复。
 历史来源从 15 处差异减为 10 处，其中新增测试漏映射的五处已补准确原件；完整五树恢复未通过，无模型或性能结论。
+
+
+[运行器持有查询数据和关系输入](diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
+记录清理／实际持有判断和完整 Extract 交接的职责调整，保留真实凭证及中断重试。
+最新研究隔离组合上的 50 项通过；两项同步 CPU 子进程检查因 sysctl EPERM 尚未验证，unknown 没有改成成功。
+一项只固定私有旧 pickle 位置的测试明确退役，原 3,010 个历史来源仍有十处差异；无模型或性能结论。

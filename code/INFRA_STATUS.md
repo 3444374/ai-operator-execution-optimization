@@ -959,3 +959,10 @@ Session 派发与 flow 生命周期分文件，单请求游标前移收敛到实
 [本批证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
 记录 Session 144 项与最新试探组合上的链 65 项通过；原内存反馈超时原因仍未确定，完整历史恢复仍有十处来源差异。
 本批生产 Python 净减 570 行，未运行模型或服务器；多任务／SAOR 独立整理另行推进。
+
+
+链 owner 不再直接读写运行器的三个阶段数据容器；record-local 清理与实际持有判断、fused 输入／session 转换各归其运行器。
+owner 保留阶段选择、结果记账、原交接凭证和真实清理确认。根规则的脱敏路径已指向现用实现。
+[准确组合与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
+保存 50 项组合全部通过、一个私有旧 pickle 专属测试退役及两项同步 CPU 子进程检查的 sysctl EPERM。
+原 unknown 与十处历史来源差异保持，未运行模型、GPU 或服务器，未改研究策略。

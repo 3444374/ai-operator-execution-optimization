@@ -11336,3 +11336,13 @@ Session 的成员选择及单请求／原子批接收移入实际派发模块，
 
 根规则改为指向现用 [redact.py](code/src/infrastructure/redact.py)，清掉已删除目录的旧路径。
 脱敏要求保持，代码与当前 CPU 辅助已经使用该现用实现；本次没有修改脱敏逻辑。
+
+
+## 2026-11-05 让查询运行器管理自己的数据和阶段输入
+
+record-local 运行器负责释放及检查自己的查询数据，owner 不再反射改写其私有字段；
+fused 运行器结束旧输入／session 并开始新关系输入，owner 保留阶段选择和结果记账。
+原交接凭证、弱引用、中断重试、完整 Extract 和 unknown 责任保持；移除私有旧 pickle 的伪装元数据和专属测试。
+[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
+保存 50 项通过及 sysctl 权限拒绝的原结果。本批生产 Python 净增 15 行，链 owner 从 1,028 行降为 985 行，
+不把拆分记为减少总代码；保留 e3533fbb 的独立研究模块与策略，未合并 main。
