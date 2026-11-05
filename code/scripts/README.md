@@ -313,9 +313,10 @@ kernel peer为fixture，真实平台/SQL收益不据此推断；[主报告](../.
 ## 同机共享预付计数原型
 
 `profiling/mapped_request_probe.py --output /path/to/new-private-probe`用现有SQLite单元预付与本地共享映射，
-比较1／4进程逐条领取；固定16,384次组件领取、每次30秒及整体5分钟，首次错误保存并停。
+比较1／4进程逐条领取；固定16,384次组件领取，共用5分钟运行截止，首次错误保存并停。
 `profiling/mapped_core_probe.py`以同样的`--output`参数比较真实Core／Map循环中的观察方式，
-厂商表和worker仍为替身，固定8,224次模拟调用、每次60秒及整体5分钟。两者HTTP／模型／PG均为0。
+厂商表和worker仍为替身，固定8,224次模拟调用，同样共用5分钟运行截止。两者HTTP／模型／PG均为0。
+后续单项使用实际剩余时间，不提前预留完整单项时长；停止新增工作后仍执行取消与清理，预付计数不退还。
 设置`PYTHONPATH=code`，输出在Git外且尚不存在；不安装依赖、不运行厂商SDK。
 候选仅接本地诊断API，正式查询配置与计费不变，实际范围及后续服务器条件见[报告](../../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)。
 2026-10-04已补观察器的descriptor调用范围与Linux/Ray无模型检查；这是程序API，没有新增正式CLI计数模式。
@@ -327,7 +328,8 @@ kernel peer为fixture，真实平台/SQL收益不据此推断；[主报告](../.
 
 `profiling/map_observation_probe.py --output /path/to/new-private-probe`运行真实Core、异步backend和Map传输循环，
 用有限表与独立线程worker替身比较持久／内存计数和内存事件／`BufferedEvents`投影写入。
-固定20次执行、16,448次模拟调用、每次60秒与整体5分钟，首次错误保存后停止；HTTP、PG与模型均为0。
+固定20次执行、16,448次模拟调用，共用5分钟运行截止，后续单项使用实际剩余时间；首次错误保存后停止。
+停止新增工作后仍结清已知回复并保存清理记录，结果不明时保留原计费；HTTP、PG与模型均为0。
 只用现有Python标准库，不运行Ray/Daft/Arrow、不安装依赖；设置`PYTHONPATH=code`，输出须在Git外且尚不存在。
 最终计数、全部事件与原始账本保留，范围和取舍见[主报告](../../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。
 内存臂仅作诊断，真实计费与生产默认保持。

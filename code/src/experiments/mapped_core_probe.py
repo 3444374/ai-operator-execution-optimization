@@ -29,16 +29,18 @@ def run_probe(output):
         synthetic_call_limit=8224, max_seconds=300, http_requests=0, model_requests=0, pg_queries=0, runs=[])
     write_private_json(output / 'manifest.json', summary)
     began = time.monotonic()
+    deadline = began + summary['max_seconds']
     try:
         for phase, repeat in (('check', -1), ('warmup', 0), ('measurement', 1),
                               ('measurement', 2), ('measurement', 3)):
             modes = ('durable', 'mapped') if repeat <= 0 or repeat % 2 else ('mapped', 'durable')
             for mode in modes:
-                if time.monotonic() - began >= 240:
+                if time.monotonic() >= deadline:
                     raise TimeoutError('Core diagnosis overall deadline')
                 identity = f'{phase}-{repeat}-{mode}'
                 summary['active_run'] = identity
-                result = run_case(output / identity, mode, 'buffered', rows=16 if phase == 'check' else 1024)
+                result = run_case(output / identity, mode, 'buffered',
+                                  rows=16 if phase == 'check' else 1024, deadline=deadline)
                 summary['runs'].append(dict(run_id=identity, phase=phase, repeat=repeat, **result))
                 print(json.dumps({key: result[key] for key in ('accounting', 'query_seconds',
                     'accounting_setup_seconds', 'preparation_windows', 'core_active_mean',
