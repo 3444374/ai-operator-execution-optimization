@@ -34,7 +34,6 @@ class NativeTokenDefaultTests(unittest.TestCase):
                 copied = common.EngineSpec.from_dict(json.loads(json.dumps(asdict(spec))))
                 self.assertEqual(copied.max_num_batched_tokens, extra.get('max_num_batched_tokens'))
                 self.assertEqual(copied.max_model_len, 4096)
-                self.assertEqual(copied.gpu_memory_utilization, .8)
         for invalid in (False, True, 0, -1, 'auto', '4096', 1.5):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.spec(max_num_batched_tokens=invalid)
@@ -59,7 +58,6 @@ class NativeTokenDefaultTests(unittest.TestCase):
                     else:
                         self.assertEqual(calls[-1]['max_num_batched_tokens'], maximum)
                     self.assertEqual(calls[-1]['max_model_len'], 4096)
-                    self.assertEqual(calls[-1]['gpu_memory_utilization'], .8)
 
     def test_request_context_and_W_checks_remain_independent_of_native_iteration_budget(self):
         from src.execution_provider.adapters import lotus_chain_token_budget as tokens

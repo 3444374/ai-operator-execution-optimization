@@ -23,6 +23,8 @@ def effective_capacity_snapshot(config, *, source=None):
         "max_model_len": ("model_config", "max_model_len"),
         "kv_cache_blocks": ("cache_config", "num_gpu_blocks"),
         "kv_cache_block_tokens": ("cache_config", "block_size"),
+        "dtype": ("model_config", "dtype"),
+        "gpu_memory_utilization": ("cache_config", "gpu_memory_utilization"),
     }
     values = {}
     for name, (group, attribute) in fields.items():
@@ -30,7 +32,12 @@ def effective_capacity_snapshot(config, *, source=None):
             value = getattr(getattr(config, group, None), attribute, None)
         except Exception:
             value = None
-        values[name] = value if type(value) is int and value > 0 else None
+        if name == "dtype":
+            values[name] = None if value is None else str(value)
+        elif name == "gpu_memory_utilization":
+            values[name] = value if type(value) in (int, float) and 0 < value <= 1 else None
+        else:
+            values[name] = value if type(value) is int and value > 0 else None
     return dict(schema="semloom.native_effective_capacity.v1",
         status="observed_effective_config" if all(values[k] is not None for k in (
             "max_num_seqs", "max_num_batched_tokens", "max_model_len")) else "partial_or_unavailable",

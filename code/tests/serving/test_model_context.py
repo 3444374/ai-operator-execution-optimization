@@ -95,6 +95,10 @@ class ModelContextTests(unittest.TestCase):
         a = model_context_identity(engine, ready('first', 2048))
         self.assertEqual(a, model_context_identity(engine, ready('second', 2048)))
         self.assertNotEqual(a, model_context_identity(engine, ready('first', 32768)))
+        for changes in ({'dtype': 'auto'}, {'dtype': 'float32'}, {'gpu_memory_utilization': .8}):
+            changed = spec(**changes)
+            report = dict(engine_uid='first', model_context=model_context_record(changed, 'first', 2048))
+            self.assertNotEqual(a, model_context_identity(changed, report))
 
     def test_async_constructor_omits_unknown_context_and_keeps_explicit_value(self):
         for requested, actual in ((None, 2048), (None, 32768), (1024, 1024)):
@@ -109,8 +113,6 @@ class ModelContextTests(unittest.TestCase):
                     self.assertNotIn('max_model_len', kwargs)
                 else:
                     self.assertEqual(kwargs['max_model_len'], requested)
-                self.assertEqual(kwargs['dtype'], 'bfloat16')
-                self.assertEqual(kwargs['gpu_memory_utilization'], .8)
                 self.assertEqual((kwargs['tensor_parallel_size'], kwargs['pipeline_parallel_size']), (1,1))
 
     def test_unknown_invalid_or_different_native_limit_cannot_be_ready(self):

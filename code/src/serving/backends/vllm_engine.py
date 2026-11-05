@@ -52,10 +52,8 @@ class VllmEngine:
         generation_kwargs = generation.kwargs()
         identity = engine.validate_local()
         _validate_current_runtime(identity)
-        capacity_kwargs = {name: getattr(engine, name) for name in
-                           ('max_model_len', 'max_num_seqs', 'max_num_batched_tokens')
-                           if getattr(engine, name) is not None}
-        requested_context = capacity_kwargs.get('max_model_len')
+        optional_kwargs = engine.optional_kwargs()
+        requested_context = optional_kwargs.get('max_model_len')
         if requested_context is not None and generation.max_tokens > requested_context:
             raise ValueError("max_tokens exceeds max_model_len")
         # Local directories plus offline flags forbid fallback model/tokenizer downloads.
@@ -83,7 +81,7 @@ class VllmEngine:
         self._shutdown_failed = False
         self._context_observed = None
         self._max_model_len = requested_context
-        self._constructor_parameters = dict(capacity_kwargs)
+        self._constructor_parameters = optional_kwargs
         self._max_model_calls = engine.max_model_calls
         self._reserved_model_calls = 0
         self._lock = threading.Lock()
@@ -93,8 +91,7 @@ class VllmEngine:
             install(self.engine_uid)
         self._llm = vllm.LLM(
             model=engine.model_path, tokenizer=engine.tokenizer_path or engine.model_path,
-            dtype=engine.dtype, **capacity_kwargs,
-            gpu_memory_utilization=engine.gpu_memory_utilization, seed=engine.seed,
+            **optional_kwargs, seed=engine.seed,
             chat_template=engine.chat_template, tensor_parallel_size=1,
             pipeline_parallel_size=1, distributed_executor_backend="uni",
             trust_remote_code=False, generation_config="vllm",

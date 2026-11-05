@@ -56,7 +56,6 @@ class SequenceDefaultTests(unittest.TestCase):
         for kwargs in calls:
             self.assertNotIn('max_model_len', kwargs)
             self.assertNotIn('max_num_batched_tokens', kwargs)
-            self.assertEqual(kwargs['gpu_memory_utilization'], .8)
 
     def test_unspecified_native_sequences_do_not_remove_owner_or_IPC_bounds(self):
         from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile

@@ -142,11 +142,11 @@ class EngineSpec:
     model_python: str
     driver_python: str
     tokenizer_path: str | None = None
-    dtype: str = "bfloat16"
+    dtype: str | None = None
     max_model_len: int | None = None
     max_num_seqs: int | None = None
     max_num_batched_tokens: int | None = None
-    gpu_memory_utilization: float = 0.8
+    gpu_memory_utilization: float | None = None
     seed: int = 0
     chat_template: str | None = None
     max_model_calls: int | None = None
@@ -159,18 +159,24 @@ class EngineSpec:
             _string(getattr(self, name), name)
         if self.tokenizer_path is not None:
             _string(self.tokenizer_path, "tokenizer_path")
-        if self.dtype not in {"auto", "half", "float16", "bfloat16", "float", "float32"}:
+        if self.dtype is not None and self.dtype not in {"auto", "half", "float16", "bfloat16", "float", "float32"}:
             raise ValueError("unsupported dtype")
         for name in ("max_model_len", "max_num_seqs", "max_num_batched_tokens"):
             if getattr(self, name) is not None:
                 _integer(getattr(self, name), name, minimum=1)
         _integer(self.seed, "seed")
-        _number(self.gpu_memory_utilization, "gpu_memory_utilization", low=0.0,
-                high=1.0, inclusive_low=False)
+        if self.gpu_memory_utilization is not None:
+            _number(self.gpu_memory_utilization, "gpu_memory_utilization", low=0.0,
+                    high=1.0, inclusive_low=False)
         if self.chat_template is not None:
             _string(self.chat_template, "chat_template")
         if self.max_model_calls is not None:
             _integer(self.max_model_calls, "max_model_calls", minimum=1)
+
+    def optional_kwargs(self) -> dict:
+        return {name: getattr(self, name) for name in (
+            "dtype", "max_model_len", "max_num_seqs", "max_num_batched_tokens",
+            "gpu_memory_utilization") if getattr(self, name) is not None}
 
     @classmethod
     def from_dict(cls, value: dict) -> EngineSpec:

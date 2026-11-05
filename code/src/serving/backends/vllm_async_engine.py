@@ -102,20 +102,14 @@ class VllmAsyncEngine:
         from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_EXTENSION
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
-            dtype=self.spec.dtype,
-            gpu_memory_utilization=self.spec.gpu_memory_utilization, seed=self.spec.seed,
+            seed=self.spec.seed,
             tensor_parallel_size=1, pipeline_parallel_size=1,
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
-            **({"max_model_len": self.spec.max_model_len}
-               if self.spec.max_model_len is not None else {}),
-            **({"max_num_seqs": self.spec.max_num_seqs}
-               if self.spec.max_num_seqs is not None else {}),
+            **self.spec.optional_kwargs(),
             **({"worker_extension_cls": VLLM_GPU_IDENTITY_EXTENSION}
                if self._feedback is not None else {}),
-            **({"max_num_batched_tokens": self.spec.max_num_batched_tokens}
-               if self.spec.max_num_batched_tokens is not None else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
         ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
               if self._feedback is not None else {}))
@@ -174,6 +168,7 @@ class VllmAsyncEngine:
         return dict(engine_uid=self.engine_uid, model_context=context, pid=os.getpid(), python=sys.executable,
                     native_gpu_identity=dict(getattr(self, "_gpu_identity", dict(status="unavailable:not_observed", gpu_uuids=None))),
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
+                    constructor_parameters=self.spec.optional_kwargs(),
                     resource_owner=dict(schema='semloom.model_resource_owner.v1', engine_uid=self.engine_uid,
                         request_memory_owner='vllm',
                         native_feedback_clock='private_child_and_model_actor.monotonic'),
