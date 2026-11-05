@@ -1700,6 +1700,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 
 [旧 HTTP 观测代理退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
-保留组件同选四项前后通过、dad4 初步组合十一项及 4376 最新组合十一项通过；重复方法不累计。
+保留组件同选四项前后通过、dad4／4376 组合各十一项及 8a2b 最新组合十一项通过；重复方法不累计。
 完整原件在准确 7bf1 Git 树恢复，共享 trace 摘要与被动观测继续使用原实现。新基底已补齐旧来源，最新 3,010 项全部匹配，
 较早十处差异按当时证据保留；本批没有真实 Ray／模型运行，旧 a1b5 Q1 结果不转用于新提交。
