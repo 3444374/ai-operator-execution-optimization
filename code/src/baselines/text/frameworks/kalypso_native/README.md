@@ -33,3 +33,24 @@ attached比较编排使用实验层的 `native_query_lifecycle` 和公共 `nativ
 本地回归覆盖参数省略/旧覆盖拒绝、固定作者源码检查（含`vllm/config`及`arg_utils`）、实际值只读回执、三处标准CLI、输入完整发生项与质量记录，以及原观察异常/unknown与历史投影。真实作者环境CPU解析、worker初始化和完整SemBench新运行尚待验证；本地替身不授予GPU资格。
 
 外层既有owner可调用`src.experiments.kalypso_query_lifecycle.owner_cli_bindings(cfg)`取得server/CPU/query命令前缀、Git模块PYTHONPATH和实际旁录模块路径；`native_cpu_evidence`必须指向新CPU检查结果，不能继续匹配旧参考目录。该函数只返回命令数据，不启动进程、取得lease、调整超时或接管清理。owner继续在原timeout前缀、进程出生身份监督、TIME_WAIT端口检查与finally物理清理内调用这些命令；源文件仍写死私有模块路径时，需要显式替换相应接点。历史owner的campaign根、已过期限和账本身份不能重放成新运行，本接线不修改或放宽这些保护。
+
+## 外置 owner 辅助的退役引用迁移
+
+服务器零模型预检发现，外置 `q3_host → q3_packet.read` 仍导入退役的
+`sembench_records_formal`；修正这条导入后，host 顶层还有退役资源采样器的引用。
+普通 JSON 读写改用现行 `src.infrastructure.private_artifacts`，脱敏改用
+`src.infrastructure.redact`。仍被使用的 58 行资源观察器迁到
+`src.observability.process_resources.supervised`，原算法语法树不变，未恢复旧 HTTP／固定 campaign。
+
+[导入迁移补丁](../../../../../../deploy/autodl/kalypso_owner_imports.patch)只修改
+`q3_packet.py`、`q3_host.py`、`host_helpers.py` 的普通导入，覆盖延迟读取报告的接点。
+在**新的私有 packet 副本**、冻结其新摘要之前执行：
+
+```sh
+patch --batch -p1 -d "$NEW_PRIVATE_PACKET" -i "$VERIFIED_REPO/deploy/autodl/kalypso_owner_imports.patch"
+```
+
+新 packet 的源码、CPU evidence、账本与时限仍按本次运行绑定；不修改历史副本、冻结摘要或旧成绩。
+补丁不改变作者服务、提示、生成、parser、容量、CPU placement 或清理规则。
+实际辅助源码的隔离副本已完成 CPU 导入检查：禁止 Core／调度、退役模块、模型库、子进程与网络，
+仍能加载 host、读取原 scope 配置并取得公共监督 API。此检查不启动作者服务，也不提供 GPU 资格。

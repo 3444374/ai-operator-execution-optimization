@@ -5,6 +5,11 @@ over the execution policy it observes.
 
 - `metrics/` contains reusable metric collectors and summaries.
 - `clock.py` owns the shared monotonic-clock identity without loading an execution adapter.
+- `process_resources/supervised.py` samples the supervisor's birth-matched process RSS,
+  declared affinity and host SHM delta under an exclusive lease. Its `ResourceMonitor`
+  preserves the original implementation used by the external Kalypso owner helper;
+  it imports no execution provider or retired experiment. Limits come from that owner.
+  Host SHM delta is not creator attribution, and summed RSS can count shared pages twice.
 - `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,
   bounded event output and weak model-reuse observations. Existing experiment imports share the same
   module objects; enabling flags, schemas and failure handling remain unchanged.

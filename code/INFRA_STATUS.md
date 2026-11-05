@@ -28,6 +28,17 @@ static／全局与端点 admission 对象继续使用原调度器；不含 admis
 [同组选例与准确历史来源](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
 记录旧实现参照 27 项和最终 29 项通过，没有为文档链接改动重复运行。
 
+原生 owner 启动修正基于 PR90 `4f409aa4`：通用观测控制器为 IMLane 传递既有 host 的
+RSS／SHM 声明、GPU idle allowance 与本次 affinity 数量，CPU 准备和真实启动复用同一接线。
+字段确有资源采样／退出核验消费者，没有填旧 echo／8 CPU 缺省或新增容量门槛。
+Kalypso 外置辅助的 reader、writer、脱敏及延迟报告读取改指当前公共层；仍被使用的
+资源观察器按原 AST 迁到中性观测目录。真实辅助的独立副本已通过禁止 Core、退役模块、
+模型库、子进程与网络的 CPU bootstrap 检查；原私有文件保持。补丁与新绑定要求见
+[外置辅助迁移](src/baselines/text/frameworks/kalypso_native/README.md#外置-owner-辅助的退役引用迁移)。
+相关 CPU 回归 202 项、98 个 subtest 通过，无失败／跳过；历史 3010 条绑定匹配、五套完整恢复通过。
+新增观察器及其测试 Ruff 通过，三个既有修改文件的 186 条旧诊断无新增；五份 Markdown 本地链接通过。
+本轮不启动 GPU，不改作者算法或既有结果；实际作者环境、模型初始化及余下两项 SemBench 仍待服务器验证。
+
 原生 baseline 容量修正基于 PR90 `4376d927`：ReferenceVllmEngine 原先把未指定的三项 vLLM
 容量补成 4096 上下文／8 序列／4096 token，链、cascade 与 IMLane 还会重写上下文或据此提前拒绝。
 当前删除隐式补值和无人使用的 legacy 属性／覆盖点；省略／null 保留至引擎构造，显式正整数原样透传。
