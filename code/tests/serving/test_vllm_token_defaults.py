@@ -61,11 +61,11 @@ class NativeTokenDefaultTests(unittest.TestCase):
 
     def test_request_context_and_W_checks_remain_independent_of_native_iteration_budget(self):
         from src.execution_provider.adapters import lotus_chain_token_budget as tokens
-        from src.serving.backends.vllm_async_engine import VllmAsyncEngine
+        from src.serving.backends.vllm_async_engine import AsyncEngineLimits, VllmAsyncEngine
         from tests.serving.test_async_engine_process import row
 
         async def too_long(spec):
-            VllmAsyncEngine(spec, common.GenerationSpec(max_tokens=4097))
+            VllmAsyncEngine(spec, common.GenerationSpec(max_tokens=4097), limits=AsyncEngineLimits(max_inflight=8))
 
         for maximum in (None, 1, 8192):
             with self.subTest(maximum=maximum):

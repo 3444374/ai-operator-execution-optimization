@@ -61,7 +61,7 @@ class ImplicitIPCTotalTests(unittest.TestCase):
                         result_bytes=4096, item_result_bytes=4096)
         self.assertTrue(all(getattr(self.resolve(capacity, explicit).async_limits,k)==v
                             for k,v in explicit.items()))
-        typed = AsyncEngineLimits(**explicit)
+        typed = AsyncEngineLimits(max_inflight=8, **explicit)
         self.assertIs(self.resolve(capacity, typed).async_limits, typed)
 
     def test_invalid_item_types_still_fail_before_actor_allocation(self):

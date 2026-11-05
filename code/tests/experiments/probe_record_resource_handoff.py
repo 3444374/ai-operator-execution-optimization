@@ -42,7 +42,7 @@ reply=result_record(prepared,engine_uid='CPU-engine',start=1,end=2,status='succe
 reply.update(text=secret,prompt_tokens=1,completion_tokens=1,total_tokens=2,engine_terminal_confirmed=True)
 payload=json.dumps(reply).encode();model=out/'CPU-model.json';model.write_text('{}')
 engine=EngineSpec(str(model),sys.executable,sys.executable,max_num_seqs=128)
-actor=ObservedAsyncCoreModelActor(asdict(engine),asdict(generation),1,asdict(AsyncEngineLimits()))
+actor=ObservedAsyncCoreModelActor(asdict(engine),asdict(generation),1,asdict(AsyncEngineLimits(max_inflight=8)))
 native_calls=[];reader_at_return=[]
 def native_run(instance,rows,deadline,maximum,request_key,actual_generation=None):
     native_calls.append((rows,request_key,actual_generation));reader_at_return.append(instance._readers)

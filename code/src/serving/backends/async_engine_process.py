@@ -120,11 +120,11 @@ class AsyncEngineProcess:
     This component never retries, chooses batch membership or selects routing/scheduling policy.
     """
 
-    def __init__(self, engine, generation, *, limits=None, startup_timeout_s=120):
+    def __init__(self, engine, generation, *, limits, startup_timeout_s=120):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
         self.generation.kwargs()
-        self.limits = AsyncEngineLimits() if limits is None else limits
+        self.limits = limits
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         common._number(startup_timeout_s, "startup timeout", low=0, inclusive_low=False)

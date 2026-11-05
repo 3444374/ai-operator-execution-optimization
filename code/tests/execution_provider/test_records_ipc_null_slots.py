@@ -22,7 +22,8 @@ class RecordsIPCNullSlotTests(unittest.TestCase):
         self.addCleanup(self.case.doCleanups)
 
     def test_complete_JSON_null_slots_match_typed_grants_with_or_without_Core_budget(self):
-        raw = dict(asdict(fixtures.typed_ipc()), result_slots=None, command_slots=None)
+        raw = dict(asdict(fixtures.typed_ipc()), result_slots=None, command_slots=None,
+                   input_bytes=None, result_bytes=None)
         typed = AsyncEngineLimits(**raw)
         shape = core.CoreRecordsCapacity(item_input_bytes=budget_fixture.ITEM,
                                          item_result_bytes=budget_fixture.ITEM)
@@ -52,24 +53,25 @@ class RecordsIPCNullSlotTests(unittest.TestCase):
                     dict(mode='async', max_inflight=1), capacity=capacity)
                 actual = resolve_records_runtime(self.case.engine, self.case.resources,
                     dict(mode='async', max_inflight=1), capacity=capacity,
-                    async_limits=dict(result_slots=None, command_slots=None))
+                    async_limits=dict(result_slots=None, command_slots=None, input_bytes=None, result_bytes=None))
                 self.assertEqual(actual, expected)
         with patch('src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
-            for overrides in (dict(input_bytes=None), dict(control_slots=None),
+            for overrides in (dict(input_bytes=0), dict(control_slots=None),
                               dict(feedback_interval_s=None), dict(result_slots=0), dict(command_slots=False)):
                 with self.subTest(overrides=overrides), self.assertRaises(ValueError):
                     self.case.owner(1, capacity=shape, async_limits=overrides)
             self.case.resources = replace(self.case.resources, max_active_batches=None)
             with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
                 self.case.owner(1, capacity=shape,
-                    async_limits=dict(result_slots=None, command_slots=None))
+                    async_limits=dict(result_slots=None, command_slots=None, input_bytes=None, result_bytes=None))
             actor.assert_not_called()
 
     def test_Movie_and_Session_preflight_accept_complete_JSON_null_slots_without_allocation(self):
         entry = fixtures.UnspecifiedEntryTests()
         entry.setUp()
         self.addCleanup(entry.doCleanups)
-        raw = dict(asdict(fixtures.typed_ipc()), result_slots=None, command_slots=None)
+        raw = dict(asdict(fixtures.typed_ipc()), result_slots=None, command_slots=None,
+                   input_bytes=None, result_bytes=None)
         typed = AsyncEngineLimits(**raw)
         with patch.object(core, 'create_records_core') as allocate:
             for omitted in (False, True):

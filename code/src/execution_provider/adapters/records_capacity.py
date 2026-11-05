@@ -142,7 +142,8 @@ def _ipc_limits(capacity, maximum, overrides):
         values.update(result_slots=budget.held_tasks,
                       input_bytes=budget.input_bytes, result_bytes=budget.result_bytes)
     values.update({name: value for name, value in (overrides or {}).items()
-                   if value is not None or name not in ('result_slots', 'command_slots')})
+                   if value is not None or name not in
+                   ('result_slots', 'command_slots', 'input_bytes', 'result_bytes')})
     values.setdefault('result_slots', values['max_inflight'])
     for name in ('max_inflight', 'item_input_bytes', 'item_result_bytes', 'result_slots'):
         _integer(values[name], name, minimum=1)
