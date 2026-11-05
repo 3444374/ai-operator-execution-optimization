@@ -160,7 +160,7 @@ class ChainBatchResults:
                 self._failure_errors.append("non-successful or protocol-marked call")
             if call["call_id"] in self._call_records:
                 if recovering:
-                    from src.baselines.common.redact import redact_json_values
+                    from src.infrastructure.redact import redact_json_values
 
                     previous = self._call_records[call["call_id"]]
                     if call.get("error_type") == "NativeTaskUnconfirmed":
@@ -249,7 +249,7 @@ class ChainBatchResults:
         key = (record["batch_id"], record["raw_stage_id"])
         previous_priority = self._raw_priorities.get(key, 0)
         if priority == previous_priority:
-            from src.baselines.common.redact import redact_json_values
+            from src.infrastructure.redact import redact_json_values
 
             if redact_json_values(self.raw_result_batches[key]) != redact_json_values(record["raw_results"]):
                 raise ValueError("conflicting recovered raw response snapshot")

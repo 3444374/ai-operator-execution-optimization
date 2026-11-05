@@ -18,7 +18,7 @@ from PIL import Image
 from src.experiments import image_reuse as reuse
 from src.modalities.image.clip import ClipTensorActor
 from src.modalities.image.contracts import ImageEmbeddingBatch
-from src.baselines.image.frameworks.ray_data import RayDataClipPredictor
+from src.modalities.image.clip_batch_workers import RayDataClipPredictor
 from src.semantic_methods.lotus.image_backend import RayDataImageExecutor
 
 
