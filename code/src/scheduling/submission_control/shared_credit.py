@@ -421,26 +421,26 @@ class FairEndpointCreditCoordinator:
     ) -> None:
         request_key = (job_id, request_id)
         try:
-            lease = self._active.pop(request_key)
+            lease = self._active[request_key]
         except KeyError as exc:
             raise ValueError(
                 f"request has no active lease: {job_id}/{request_id}"
             ) from exc
+        if actual_work is not None and (
+            not isinstance(actual_work, int)
+            or isinstance(actual_work, bool)
+            or actual_work <= 0
+        ):
+            raise ValueError("actual_work must be a positive integer when present")
+        del self._active[request_key]
         endpoint_id = lease.endpoint_id
         self._active_requests[endpoint_id] -= 1
         self._active_work[endpoint_id] -= lease.estimated_work
-        if actual_work is not None:
-            if (
-                not isinstance(actual_work, int)
-                or isinstance(actual_work, bool)
-                or actual_work <= 0
-            ):
-                raise ValueError("actual_work must be a positive integer when present")
-            if self._policy == "vtc":
-                counters = self._attained_service[endpoint_id]
-                counters[job_id] = counters.get(job_id, 0) + (
-                    actual_work - lease.estimated_work
-                )
+        if actual_work is not None and self._policy == "vtc":
+            counters = self._attained_service[endpoint_id]
+            counters[job_id] = counters.get(job_id, 0) + (
+                actual_work - lease.estimated_work
+            )
         recovery_estimated_work = 0
         if self._policy in {
             "saor",

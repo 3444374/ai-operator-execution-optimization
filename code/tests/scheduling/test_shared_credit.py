@@ -22,6 +22,36 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_invalid_completion_work_preserves_lease_for_corrected_retry(self) -> None:
+        for policy in ("fifo", "vtc", "saor_bounded_priority"):
+            for actual in (0, -1, True, 1.5):
+                with self.subTest(policy=policy, actual=actual):
+                    options = (dict(saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0))
+                               if policy == "saor_bounded_priority" else {})
+                    coordinator = FairEndpointCreditCoordinator(
+                        {"gpu0": (1, 10)}, quantum=5, policy=policy,
+                        clock=lambda: 10.0, epoch_clock=lambda: 10.0, **options,
+                    )
+                    self.assertTrue(coordinator.try_acquire(
+                        request_id="a", job_id="first", endpoint_id="gpu0", estimated_work=5))
+                    self.assertFalse(coordinator.try_acquire(
+                        request_id="b", job_id="second", endpoint_id="gpu0", estimated_work=5))
+                    before = coordinator.snapshot("gpu0")
+                    with self.assertRaisesRegex(ValueError, "actual_work"):
+                        coordinator.release("a", job_id="first", actual_work=actual)
+                    self.assertEqual(coordinator.snapshot("gpu0"), before)
+                    with self.assertRaisesRegex(ValueError, "no active lease"):
+                        coordinator.release("missing", job_id="first", actual_work=actual)
+                    coordinator.release("a", job_id="first", actual_work=7)
+                    self.assertTrue(coordinator.try_acquire(
+                        request_id="b", job_id="second", endpoint_id="gpu0", estimated_work=5))
+                    after = coordinator.snapshot("gpu0")
+                    self.assertEqual((after.active_requests, after.active_work), (1, 5))
+                    self.assertEqual(dict(after.granted_requests_by_job), {"first": 1, "second": 1})
+                    if policy == "vtc":
+                        self.assertEqual(dict(after.attained_service_by_job)["first"], 7)
+                    coordinator.release("b", job_id="second")
+
     def test_hold_start_marks_nonconcrete_guard_as_avoidable_idle(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (1, 100)},
