@@ -20,7 +20,7 @@ from .sembench_source import SEMBENCH_COMMIT, verify_checkout
 
 
 _OPERATOR_SCOPE = threading.RLock()
-MOVIE_QUERY_IDS = ('4', '8', '10')
+MOVIE_QUERY_IDS = ('4', '8', '9', '10')
 
 
 @dataclass(frozen=True)
@@ -130,7 +130,7 @@ class SemBenchTextQuery:
         query = str(query_id).lower().removeprefix('q')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
                 or (scenario == 'mmqa' and query in TEXT_QUERY_IDS)):
-            raise ValueError('this entry supports Movie Q4/Q8/Q10 and the twelve ordinary MMQA text queries')
+            raise ValueError('this entry supports Movie Q4/Q8/Q9-map/Q10 and the twelve ordinary MMQA text queries')
         if type(execution_id) is not str or not execution_id.strip():
             raise ValueError('each execution needs a nonempty independent query_id')
         self.checkout = verify_checkout(checkout)
@@ -179,7 +179,9 @@ class SemBenchTextQuery:
     def _original(self):
         if self.scenario == 'movie':
             from .sembench_movie import run_original_lotus_query
-            return run_original_lotus_query(self.checkout, int(self.query), lambda: self._load('Reviews.csv'))
+            ranking = dict(ranking='map') if self.query == '9' else {}
+            return run_original_lotus_query(self.checkout, int(self.query),
+                lambda: self._load('Reviews.csv'), **ranking)
         from .sembench_mmqa import run_original_query
         return run_original_query(self.checkout, self.query, self._load)
 
@@ -188,6 +190,7 @@ class SemBenchTextQuery:
         return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
             scenario=self.scenario, query='Q' + self.query, query_id=self.query_id,
             files=self.files, operation=operation,
+            **(dict(ranking='map') if self.scenario == 'movie' and self.query == '9' else {}),
             expected_model_calls=0 if operation is None else operation['expected_model_calls'],
             policy='original exact ordinary operator; result cache disabled; no warmup or retry',
             label_scope='original evaluation only; Movie labels excluded from execution input',

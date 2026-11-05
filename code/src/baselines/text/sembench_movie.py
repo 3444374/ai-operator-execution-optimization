@@ -1,11 +1,10 @@
 """Pinned SemBench Movie query/evaluator entry points and separate row audits.
 
 The public checkout supplies unchanged query methods and original evaluators.
-This adapter supplies raw PG input and result schemas; it owns no scheduler.
+This adapter supplies raw Movie input and result schemas; it owns no scheduler.
 """
 from dataclasses import asdict
 from pathlib import Path
-from types import SimpleNamespace
 
 from .sembench_source import (
     SEMBENCH_COMMIT as SEMBENCH_COMMIT,
@@ -13,26 +12,37 @@ from .sembench_source import (
     verify_checkout as verify_checkout,
 )
 
-def run_original_lotus_query(checkout, query_id, load_reviews):
-    """Caller configures the native LM; query code loads PG rows after release."""
-    if query_id not in (1,2,3,4,8,10):
-        raise ValueError('supported original Movie queries are Q1/Q2/Q3/Q4/Q8/Q10')
-    import pandas as pd
+def run_original_lotus_query(checkout, query_id, load_reviews, *, ranking=None):
+    """Invoke the unchanged exact query without constructor setup or warmup.
+
+    Q9 must explicitly select its Map or native TopK algorithm. Opening the
+    original source entry does not qualify a Join/TopK execution backend.
+    """
+    if query_id not in (1,2,3,4,5,6,7,8,9,10):
+        raise ValueError('supported original Movie queries are Q1 through Q10')
+    if query_id == 9:
+        if ranking not in ('map', 'topk'):
+            raise ValueError('original Movie Q9 requires explicit ranking=map or ranking=topk')
+    elif ranking is not None:
+        raise ValueError('ranking applies only to original Movie Q9')
     module = _load(checkout,'sembench_movie_lotus',
                    'src/scenario/movie/runner/lotus_runner/lotus_runner.py')
     def load_data(name):
         if name != 'Reviews.csv':
             raise ValueError('unexpected source requested by original Movie query')
         return load_reviews()
-    owner = SimpleNamespace(load_data=load_data,_get_empty_results_dataframe=lambda _:pd.DataFrame())
     # Do not call the benchmark constructor: its setup/warmup/approximate-model
     # initialization belongs outside query execution and this fixed-model task.
+    owner = object.__new__(module.LotusRunner)
+    owner.load_data, owner.policy = load_data, 'exact'
+    if query_id == 9:
+        owner.ranking = ranking
     return getattr(module.LotusRunner,f'_execute_q{query_id}')(owner)
 
 
 def evaluate_original(checkout, query_id, system_results, labeled_reviews, *, labeled_movies=None):
     """Use original gold SQL and original Movie evaluator, only after execution."""
-    if query_id not in (1,2,3,4,8,10):
+    if query_id not in (1,2,3,4,5,6,7,8,9,10):
         raise ValueError('unsupported original Movie evaluator')
     if query_id == 10 and labeled_movies is None:
         raise ValueError('Movie Q10 requires original Movies.csv audienceScore ground truth')

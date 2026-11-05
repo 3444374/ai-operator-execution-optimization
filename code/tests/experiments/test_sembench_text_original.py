@@ -88,16 +88,23 @@ class OriginalSemBenchTextTests(unittest.TestCase):
             self.assertIs(sys.modules.get(name, self.absent), self.original_aliases[name])
 
     def _write_inputs(self):
-        pd.DataFrame([
+        reviews = pd.DataFrame([
             ("duplicate", "taken_3", "same review", "NEGATIVE", 1),
             ("other", "other_movie", "invalid numeric review", "POSITIVE", 5),
             ("duplicate", "taken_3", "same review", "POSITIVE", 5),
             ("third", "taken_3", "out of range review", "NEGATIVE", 2),
             ("fourth", "other_movie", "one star review", "NEUTRAL", 3),
             ("fifth", "other_movie", "nan numeric review", "POSITIVE", 4),
-        ], columns=["reviewId", "id", "reviewText", "scoreSentiment", "score"]).to_csv(
-            self.data / "Reviews.csv", index=False)
-        pd.DataFrame(dict(id=["taken_3", "other_movie"], audienceScore=[10, 20])).to_csv(
+            ("ant-duplicate", "ant_man_and_the_wasp_quantumania", "antman positive review", "POSITIVE", 5),
+            ("ant-negative", "ant_man_and_the_wasp_quantumania", "antman negative review", "NEGATIVE", 1),
+            ("ant-duplicate", "ant_man_and_the_wasp_quantumania", "antman invalid review", "NEUTRAL", 3),
+            ("ant-range", "ant_man_and_the_wasp_quantumania", "antman out of range review", "NEUTRAL", 3),
+            ("ant-nan", "ant_man_and_the_wasp_quantumania", "antman nan review", "NEUTRAL", 3),
+        ], columns=["reviewId", "id", "reviewText", "scoreSentiment", "score"])
+        reviews['originalScore'] = reviews['score'].map(lambda value: str(value) + '/5')
+        reviews.to_csv(self.data / "Reviews.csv", index=False)
+        pd.DataFrame(dict(id=["taken_3", "other_movie", "ant_man_and_the_wasp_quantumania"],
+            audienceScore=[10, 20, 30])).to_csv(
             self.data / "Movies.csv", index=False)
         pd.DataFrame(dict(Title=["Target Film", "Another Film"],
             Role=["Bob Whitewood", "Other Role"])).to_csv(self.data / "ben_piazza.csv", index=False)
@@ -306,11 +313,13 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertIs(module.GenericLotusRunner, canonical.GenericLotusRunner)
         self.assertEqual(source.read_bytes(), original_bytes)
 
-    def test_all_fifteen_original_queries_match_native_accessor_and_record_chain(self):
+    def test_all_sixteen_original_queries_match_native_accessor_and_record_chain(self):
         movie = {
             "4": ["True", "True", "False"],
             "8": ["POSITIVE", "POSITIVE", "NEGATIVE"],
-            "10": ["5", "not-a-number", "5", "9", "1", "NaN"],
+            "9": ["5", "1", "not-a-number", "9", "NaN"],
+            "10": ["5", "not-a-number", "5", "9", "1", "NaN",
+                   "5", "1", "not-a-number", "9", "NaN"],
         }
         mmqa = {"1": [json.dumps(dict(director=value)) for value in
                        ("Unused Director", "Expected Director", "Another Director")],
@@ -332,14 +341,21 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                         if scenario == "movie":
                             self.assertNotIn("scoreSentiment", query.operation.frame.columns)
                             self.assertNotIn("score", query.operation.frame.columns)
+                            self.assertNotIn("originalScore", query.operation.frame.columns)
                         if (scenario, key) == ("movie", "4"):
                             self.assertAlmostEqual(result["positivity_ratio"].iloc[0], 2 / 3)
                         elif (scenario, key) == ("movie", "8"):
                             self.assertEqual(dict(zip(result["scoreSentiment"], result["count"])),
                                              {"NEGATIVE": 1, "POSITIVE": 2})
+                        elif (scenario, key) == ("movie", "9"):
+                            self.assertEqual(query.describe()['ranking'], 'map')
+                            self.assertEqual(result['reviewScore'].tolist(), [5.0, 1.0, 3.0, 3.0, 3.0])
+                            self.assertEqual(result['reviewId'].tolist(),
+                                ['ant-duplicate', 'ant-negative', 'ant-duplicate', 'ant-range', 'ant-nan'])
                         elif (scenario, key) == ("movie", "10"):
                             self.assertEqual(dict(zip(result["movieId"], result["movieScore"])),
-                                             {"other_movie": 2.33, "taken_3": 4.33})
+                                             {"other_movie": 2.33, "taken_3": 4.33,
+                                              'ant_man_and_the_wasp_quantumania': 3.0})
                         elif (scenario, key) == ("mmqa", "1"):
                             self.assertIsInstance(result, pd.Series)
                             self.assertEqual(result.name, "director")
