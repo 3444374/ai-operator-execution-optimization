@@ -60,8 +60,9 @@ SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1
 原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
 本轮固定Daft0.7.21的连接工厂返回SQLAlchemy Connection；psycopg通过NullPool的creator接入，只读和statement timeout仍明确设置。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
-能力组的import检查不是上述接点的完整版本资格：当前LOTUS文本records／SDK来源guard还要求
-`litellm==1.95.0`与`openai==2.50.0`，仅安装`lotus-ai==1.2.4`不会自动锁定这两个版本；
+能力组的import检查不是上述接点的完整版本资格。现有LOTUS文本records／SDK的CPU资格使用
+`lotus-ai==1.2.4`、`litellm==1.95.0`与`openai==2.50.0`；来源报告记录实际版本及源码摘要，
+普通执行不再强制这些版本／字节相等，其他版本仍须各自验证。仅安装LOTUS不会锁定整个组合，
 已有可导入模块也不会由`install-python`自动纠正。运行前保留[原入口的来源与环境预检](../../code/src/experiments/lotus_records_movie.py)。
 机器profile的Python3.10下界也不证明所有可选路径可用：当前[异步HTTP transport](../../code/src/execution_provider/adapters/async_fixed_model.py)
 使用Python3.11新增的`asyncio.timeout`。选择该路径须使用满足此API的解释器；机器check未做此路径的API资格检查。

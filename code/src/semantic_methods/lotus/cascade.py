@@ -8,38 +8,25 @@ no module, installed file, LM instance method, or threshold algorithm is patched
 from copy import deepcopy
 from dataclasses import dataclass
 from importlib import import_module
-from importlib.metadata import distribution
-import hashlib
 import json
 import math
 from types import FunctionType, SimpleNamespace
 
 from .engine import (
-    FILTER_SOURCE_HASHES, engine_response, lm_report, validate_engine_protocol, validate_filter_source,
+    engine_response, lm_report, validate_engine_protocol,
 )
 from .records import FilterMethod
-from .sdk import LOTUS_COMMIT
+from .source import CASCADE_FILES, source_report
 
 
-CASCADE_SOURCE_HASHES = dict(FILTER_SOURCE_HASHES, **{
-    "sem_ops/cascade_utils.py": "14fc1140939567559abde71976c1f3d21906864d720aa324f983f9dc8cf3b594",
-    "types.py": "73b0ebb4a8a9606cdec6df27353d57fb28ce6e2f5800c539caee892eb4f2cc6b",
-    "utils.py": "2d8d38af8230f447a354f460e25a8f523f1dc1aa5edebf977a8297ed04458ebe",
-})
 STAGES = ("helper_score", "threshold_sample", "fallback")
 IDENTITY_FIELDS = ("query_id", "model_role", "algorithm_stage", "row_id",
                    "source_position", "call_index", "call_id")
 
 
 def validate_cascade_source():
-    validate_filter_source()
-    root = distribution("lotus-ai").locate_file("lotus")
-    for relative, expected in CASCADE_SOURCE_HASHES.items():
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
-            raise ValueError("records cascade source differs at lotus/" + relative)
-    return dict(profile="lotus-helper-cascade-records-v2", lotus_commit=LOTUS_COMMIT,
-                source_hashes=dict(CASCADE_SOURCE_HASHES),
-                control="original accessor and learner code objects; private records globals")
+    evidence = source_report("lotus-helper-cascade-records-v2", CASCADE_FILES)
+    return dict(evidence, control="original accessor and learner code objects; private records globals")
 
 
 def cascade_identity(query_id, row_id, source_position, call_index, *, model_role, stage):
@@ -153,7 +140,6 @@ def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, instruction, ma
     from lotus.models import LM
     from lotus.types import CascadeArgs, ProxyModel, SerializationFormat
 
-    validate_cascade_source()
     if (not isinstance(main_lm, LM) or not isinstance(helper_lm, LM)
             or main_lm is helper_lm):
         raise ValueError("distinct original main and helper LM objects are required")
@@ -550,7 +536,6 @@ class CascadePreparer:
     """Original dtype-aware formatter instantiated only inside a backend CPU worker."""
 
     def __init__(self, stage):
-        validate_cascade_source()
         import lotus
         from lotus.cache import InMemoryCache
         from lotus.models import LM

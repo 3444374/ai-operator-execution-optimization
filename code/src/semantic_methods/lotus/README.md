@@ -1,6 +1,7 @@
 # LOTUS 方法与执行接点
 
-这里维护 LOTUS 1.2.4 的提示构造、解析、有限方法与结果合同。SemLoom 执行适配直接依赖本层，
+这里调用已安装 LOTUS 的提示构造、解析、有限方法与结果合同；现有资格环境为 LOTUS 1.2.4。
+SemLoom 执行适配直接依赖本层，
 不从 baseline 获得生产实现；公共 Core 不选择 Movie、字段或标签默认。
 `FilterMethod(model_name, instruction)` 的 instruction 由调用方显式绑定。
 
@@ -25,6 +26,20 @@ Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代�
 查询结果以实际 `result_ready` 为边界；原评价、API 返回、owner 关闭及模型复用成本另记。
 新原生 LOTUS 非 HTTP 路径只有 CPU 资格，完整官方 Q123 和真实模型尚待其依赖与实际环境检查。
 
+## 来源记录与运行合同
+
+[source.py](source.py)记录实际安装的 LOTUS、LiteLLM、OpenAI 版本及可读取源码的摘要。
+旧 `validate_*_source` 导入继续返回来源报告，但不再将固定版本或源码字节相等作为执行门槛；
+缺失的元数据或源码明确列为不可用。`lotus_commit`／图像的 `commit` 为未知值，
+`reference_lotus_commit` 只标识既有资格所用的参考实现，不能冒充当前安装包的 Git 身份。
+现有历史结果及其固定版本要求保持原身份；本次变化不证明其他发行版已经兼容。
+
+普通 formatter、方法绑定和 SDK 请求准备不读取这些来源摘要。实际调用继续使用 LOTUS 原实现；
+输入列、DEFAULT 序列化、适用的缓存／重试政策、生成选项、请求／结果身份、用量和资源边界继续校验。
+Filter cascade 仍使用原 accessor 和阈值学习器的私有全局绑定，保留后端准备原始记录的接点。
+这处代码对象耦合仍在：直接换成公开 DataFrame 调用会把完整提示展开移到 driver，
+不能算等价简化。同进程并发 cascade 的随机数与 LM 记账隔离尚未验证。
+
 <a id="finite-chain-result-index"></a>
 ## 有限链共享结果关联索引
 
@@ -46,7 +61,7 @@ Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代�
 <a id="filter-execution-boundary"></a>
 ## 原生 CLIP 图像检索
 
-`image_source.py`核对原LOTUS1.2.4；`image_identity.py`绑定模型参数、processor内容与版本。
+`image_source.py`记录实际LOTUS来源；`image_identity.py`绑定模型参数、processor内容与版本。
 `image_rm.py`把完整图像批交给原执行owner，保留RGB／源字节内容、行ID、shape／finite及独立矩阵所有权；
 `image_workflow.py`保留原生FAISS建库、重载、完整检索结果和settings恢复。
 `image_backend.py`提供固定单worker的Direct、SemLoom static／静态HSE和Ray fused／staged；

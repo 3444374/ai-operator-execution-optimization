@@ -7,6 +7,12 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+LOTUS 语义层候选将固定版本／源码摘要相等检查改为实际安装来源记录；参考 commit 与未知的
+安装包 commit 分开，普通绑定、formatter 和 SDK 准备不读取来源摘要。
+既有 67 项与新增 4 项来源／执行边界 CPU 检查通过，环境仍为 LOTUS1.2.4／LiteLLM1.95.0／OpenAI2.50.0。
+Filter cascade 的原 accessor／学习器私有绑定保留；其他版本、同进程并发 cascade、真实模型与服务器资格仍待验证。
+接口与来源字段见[LOTUS 说明](src/semantic_methods/lotus/README.md#来源记录与运行合同)。
+
 本地反馈节拍候选修正提前回收后重复占用下一派发 tick；验证后的 provider 新帧复用现有 Core wake，
 可在控制轮询期限前由原控制线程消费。策略、默认、准入与未知责任不变；
 具体条件与未覆盖范围见[采样与控制接点](src/execution_provider/adapters/README.md#snapshot-rpc-ownership)。

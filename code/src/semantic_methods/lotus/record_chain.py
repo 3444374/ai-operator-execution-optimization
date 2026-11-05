@@ -7,8 +7,6 @@ owns their physical batching, model instance and lifetime.
 
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field, replace
-import hashlib
-from importlib.metadata import distribution
 import json
 from numbers import Integral
 import os
@@ -16,21 +14,14 @@ import time
 
 from .engine import (
     _FilterFormatter, _input_instruction, bind_filter_method, engine_response, lm_report,
-    validate_engine_protocol, validate_filter_source, validate_generation,
+    validate_engine_protocol, validate_generation,
 )
 from .records import FilterMethod, _resolved_columns
-from .sdk import SOURCE_HASHES
+from .source import CHAIN_FILES, source_report
 from src.serving.backends.vllm_protocol import GenerationSpec, IDENTITY_FIELDS, _prepared
 
 # The old import and serialized tag remain readable; Filter has one value type.
 TextFilterMethod = FilterMethod
-
-
-CHAIN_SOURCE_HASHES = {
-    "sem_ops/sem_map.py": SOURCE_HASHES["sem_ops/sem_map.py"],
-    "sem_ops/sem_extract.py": "0f58eda86d645b85b8659591d61366a86809a4d189dbec6c491fe5b4628c163a",
-    "types.py": "73b0ebb4a8a9606cdec6df27353d57fb28ce6e2f5800c539caee892eb4f2cc6b",
-}
 
 
 def _name(value, label):
@@ -71,13 +62,8 @@ def _ordered_columns(records, columns):
 
 
 def validate_chain_source():
-    evidence = validate_filter_source()
-    root = distribution("lotus-ai").locate_file("lotus")
-    for relative, digest in CHAIN_SOURCE_HASHES.items():
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
-            raise ValueError("records chain source differs at lotus/" + relative)
-    return dict(evidence, profile="lotus-ordinary-record-methods-v1",
-                source_hashes={**evidence["source_hashes"], **CHAIN_SOURCE_HASHES})
+    """Compatibility entry for observed sources, independent of method execution."""
+    return source_report("lotus-ordinary-record-methods-v1", CHAIN_FILES)
 
 
 @dataclass(frozen=True)
@@ -218,7 +204,6 @@ class StageSpec:
     def bind(self):
         """Resolve caller-owned Filter/Map order; Extract already declares order."""
         self.__post_init__()
-        validate_chain_source()
         if type(self.method) is FilterMethod:
             method = bind_filter_method(self.method)
         elif type(self.method) is MapMethod:
@@ -251,7 +236,6 @@ class LotusRecordMethod:
         from lotus.types import SerializationFormat
 
         stage.__post_init__()
-        validate_chain_source()
         if lotus.settings.enable_cache or lotus.settings.serialization_format != SerializationFormat.DEFAULT:
             raise ValueError("record methods require caching disabled and DEFAULT serialization")
         self.stage = StageSpec.from_dict(stage.describe())
