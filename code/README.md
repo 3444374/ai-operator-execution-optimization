@@ -81,6 +81,12 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 [同选择检查与代码总量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
 记录改前／改后各 81 项通过，不将这次拆分记为减少总代码或性能改善。
 
+两条 records 路径的 Daft Native 扫描准备现在共用 [records_scan.py](src/execution_provider/adapters/records_scan.py)，
+语义预检、模型启动和各自迭代仍由原 owner 处理；重复扫描块已删除。
+[本批同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
+记录 108 项通过、3 项因未配置 SemBench checkout 未运行，生产 Python 净减 13 行。
+
+
 链查询 owner 负责配置、组装、阶段选择、结果记账与模型资源生命周期；融合批传输、输入阶段和结果迭代在
 [lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)。
 记录级 MethodDriver 推进及查询数据清理在 `records_query_runtime.py`；运行器操作自己持有的数据，

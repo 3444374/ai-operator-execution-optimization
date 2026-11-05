@@ -1476,6 +1476,12 @@ Ordinary Filter input, receipt validation, delivery and query-side cleanup live 
 management, and imports the actual iterator class it constructs. [Matching before/after CPU cases and source totals](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
 record the class move and retained historical source paths.
 
+`records_scan.prepare_native_records_scan` now owns the common Daft Native CSV schema, predicate and projection setup
+for Core and the static reference. Both owners retain their original method checks, model startup, iterator and batching.
+The helper returns the existing frame and caller-owned Ray module; it introduces no runtime owner or configuration knob.
+[Matching CPU scope and missing CLI checkout](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
+keep the unexecuted cases explicit.
+
 `records_query_runtime` releases and observes its own query payloads after the owner validates service transfer and cleanup.
 `lotus_chain_fused_runtime` ends the consumed input/session and opens the next relation input; the query owner selects the
 next phase and assembles its result accountant. No extra owner, copy of the data ledger or facade is introduced.

@@ -9,7 +9,6 @@ from __future__ import annotations
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import asdict, replace
-import os
 import threading
 import time
 from typing import Callable
@@ -46,6 +45,7 @@ from .records_transport import (
 )
 from .records_runtime_identity import observe_ray_runtime
 from .records_filter_runtime import _CoreRows
+from .records_scan import prepare_native_records_scan
 
 
 def create_records_core(method, engine, generation, resources=None, *, profile=None, async_limits=None,
@@ -334,28 +334,7 @@ class SemLoomRecordsCore:
         # Core's fixed-size session identity is checked before actors are allocated.
         spec = SessionSpec(query_id, "lotus-records-filter", "lotus-records-local-model-v1")
         _check(deadline, cancelled)
-        import daft
-        import ray
-        from daft.runners import _get_runner, get_or_create_runner
-        from src.infrastructure.daft_runtime import configure_daft_runner
-        if ray.__version__ != "2.56.1" or not ray.is_initialized():
-            raise RuntimeError("Core records requires caller-owned Ray 2.56.1")
-        if daft.__version__ != "0.7.21":
-            raise RuntimeError("Core records requires Daft 0.7.21 Native")
-        if _get_runner() is None:
-            if os.environ.get("DAFT_RUNNER") not in (None, "native"):
-                raise RuntimeError("Core records requires an explicit Daft Native configuration")
-            configure_daft_runner("native")
-        if get_or_create_runner().name != "native":
-            raise RuntimeError("Core records requires Daft 0.7.21 Native")
-        types = {"string": daft.DataType.string(), "int64": daft.DataType.int64()}
-        frame = daft.read_csv(str(source.csv_path), infer_schema=False, schema={
-            name: types[dtype] for name, dtype in scan.csv_schema
-        })
-        if scan.predicate is not None:
-            column, value = scan.predicate
-            frame = frame.filter(daft.col(column) == value)
-        frame = frame.select("row_id", "source_position", *scan.payload_columns)
+        frame, ray = prepare_native_records_scan(source, scan, owner_name="Core records")
         try:
             if expected:
                 self.bind_model_runtime()

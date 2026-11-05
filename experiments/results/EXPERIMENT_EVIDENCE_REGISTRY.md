@@ -1671,3 +1671,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [普通 Filter owner 与运行器职责整理](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
 保留同一组 81 个 CPU 方法改前／改后全部通过，原 factory 和 26 个方法保持；运行之间不累计覆盖。
 历史 3,010 个来源仍有十处旧差异，原 socket／sysctl 未验证项不变；没有实际模型或性能结论。
+
+
+[共享 records 扫描准备](diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
+保留 111 个选中方法中 108 个实际执行并通过、三项因缺少 SemBench checkout 未运行的前后记录；不称为 111 项通过。
+两条路径只复用原 Native 扫描代码，调度与模型管理仍各自拥有；无新增资格条件、无模型或性能结论。
