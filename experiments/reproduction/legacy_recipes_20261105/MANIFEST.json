@@ -1,0 +1,539 @@
+{
+  "schema": "semloom.historical_experiment_recipes.v1",
+  "source_commit": "b1429923caa886c4b8cd91996fc88372c2304c60",
+  "source_tree": "26851f66486f61a5ab45591669ec93dd12c0e8db",
+  "purpose": "Historical research assets; not maintained SemBench execution configurations",
+  "paths_resolved_in": "Original isolated Git tree, not the retained asset directory",
+  "assets": [
+    {
+      "original_path": "deploy/autodl/dual_gpu_active_work_curve.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_active_work_curve.example.json",
+      "bytes": 3552,
+      "sha256": "657d4bcdd34322ccc23e931ac91b3909fc3a1cca31c811b7a84d7f960aa3cbc0",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_actor_pool_shape.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_actor_pool_shape.example.json",
+      "bytes": 3904,
+      "sha256": "bd6039a61019be38cc171073a6f8160c64b33dbcd822eda0183645e2d1d80b0d",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_capacity_scaling.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_capacity_scaling.example.json",
+      "bytes": 4225,
+      "sha256": "7e26bcca2a464bd63ddd0b0e8244b6497aeb016d3d069d59a2d5b097ddecc7ba",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_completions_baseline_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_completions_baseline_gate.example.json",
+      "bytes": 1373,
+      "sha256": "4b0800ae70acb265ce09f80340be6b38316d40e5d1d01c158df820cf6e53d135",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_cost_profile_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_cost_profile_formal.example.json",
+      "bytes": 29709,
+      "sha256": "a36c4c96f103f06df06fc201327d7ac535bdcec90770cdf92073c4219a268ef5",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_cost_profile_pilot.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_cost_profile_pilot.example.json",
+      "bytes": 2952,
+      "sha256": "def2e850259489a7325b8f0b4d18b403e40acf068c844c76d02d06fca81c5282",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_data_organization.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_data_organization.example.json",
+      "bytes": 4086,
+      "sha256": "ae42790f339908d4f4ee0df9b7557c255dc6ad478b0fe3c9512ab0cc64058cc2",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_duckdb_ai_capability_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_duckdb_ai_capability_gate.example.json",
+      "bytes": 1926,
+      "sha256": "6761bc6157a22b718c323e2ec2469686dd7e48c5b6cb7b9e932dccd6a65a53c6",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_endpoint_adaptive_gate.example.json",
+      "bytes": 3819,
+      "sha256": "1c63e5b01926c9466e164ddaa445c554368ded1604af3dcf8accf6e60260941e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_official_baseline_calibration.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_official_baseline_calibration.example.json",
+      "bytes": 3091,
+      "sha256": "5090b24d107338a3979508de6809d4a2788411c17f426f8b939a49844997064c",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_official_baseline_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_official_baseline_gate.example.json",
+      "bytes": 2208,
+      "sha256": "c83af9f107032227248e3bc98e71118d5fc56fb6d7be71531436f748d59e288f",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_project_chat_feeding.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_project_chat_feeding.example.json",
+      "bytes": 4265,
+      "sha256": "9104a7c32697e93d901ed5931e3e434cd13fb372fe3357caa9e2295d1fb92d40",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_project_completions_feeding.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_project_completions_feeding.example.json",
+      "bytes": 3226,
+      "sha256": "fe8ff7b10391e2bb0a923877208c9c26b90f9c35d055f7a66e8d4758c271499d",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_request_replay.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_request_replay.example.json",
+      "bytes": 3858,
+      "sha256": "ae119a2516b6f7ed82576cb1ac377b18de81f234ebbf4662d0cd644c46f27057",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_same_condition_project_calibration.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_same_condition_project_calibration.example.json",
+      "bytes": 3782,
+      "sha256": "c62f975ce422af8e374b61298e4d733d70ee6848f7e264d59f66804d0e9ded3c",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json",
+      "bytes": 2855,
+      "sha256": "c2135a8c5515dd677a6cb1b65002dc1be406f7e4897e474aa23c809dd03eec3e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_same_condition_project_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_same_condition_project_formal.example.json",
+      "bytes": 2986,
+      "sha256": "00165e3a03ccb779d78842e9aa994a8d147489fad6b1b4ccdc0723aeca1ccc39",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_service_quantum.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_service_quantum.example.json",
+      "bytes": 3841,
+      "sha256": "eaf2094db84149f963b0039c9709852733ecf84f8e3462def77022c5c972b8c9",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_shared_vllm_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_shared_vllm_formal.example.json",
+      "bytes": 4329,
+      "sha256": "4dcf915bd1a7dd53816f954dba31584ac0dccc94ceb432918885838d39a0d116",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_shared_vllm_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_shared_vllm_gate.example.json",
+      "bytes": 3126,
+      "sha256": "0d8c27d87b5b707369de00b5df182a93f49cd78c58bc43772bdc3255ca155ad3",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_shared_vllm_j4_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_shared_vllm_j4_formal.example.json",
+      "bytes": 3733,
+      "sha256": "0ab88335a3a1b80eaae9095bad235b6563178783844b523b25eca367a6859d84",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_shared_vllm_j4_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_shared_vllm_j4_gate.example.json",
+      "bytes": 3038,
+      "sha256": "b053044f2d7953f26780a1edcb15beda9e66c369e6584a56708fe78bddc908f3",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_slo_ewma_flush.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_slo_ewma_flush.example.json",
+      "bytes": 4230,
+      "sha256": "0c4226ee433b44290940c70d8a133152773ef4c8647e8e863fb2f74439b7ea13",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_static_credit_prompt_length_gate.example.json",
+      "bytes": 4621,
+      "sha256": "a743e0b6f773804cf6af2871dd5960bdd83dd568126c82f58c6aba0f436cd5ef",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_static_k_workload_surface.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_static_k_workload_surface.example.json",
+      "bytes": 4279,
+      "sha256": "0f2d598fcabfd2fa565b9a16dd7de9d7a36b22d5a10789206c25af70604d613d",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_submission_policy.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_submission_policy.example.json",
+      "bytes": 6187,
+      "sha256": "ee7f0b5331db11de9fddbf05325f33b183d1dfb280744cd6fcd0949cd44dda4e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_text_native_baseline_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_text_native_baseline_formal.example.json",
+      "bytes": 3509,
+      "sha256": "6f54d89a933767717e3aa4be9207201868d9d8dd3f3938463c7134511e7d78b3",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/dual_gpu_token_budget_curve.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/dual_gpu_token_budget_curve.example.json",
+      "bytes": 3450,
+      "sha256": "450abcb2e6a41e0274b7db25d72896e4eb47ecd9dc0126e3f7398f03bb90004b",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/image_2arm_60k_matched_resource.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/image_2arm_60k_matched_resource.example.json",
+      "bytes": 1260,
+      "sha256": "902fb6ccff5b89886ed822eb58fd77b935950accd2e470cafd23106c641eae46",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/image_3arm_12k_consistency.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/image_3arm_12k_consistency.example.json",
+      "bytes": 1111,
+      "sha256": "fbc3926683611725d880032db17d35bc30533e2e8885f8d1208b71ce6f2eac98",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/image_3arm_schema_v12_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/image_3arm_schema_v12_gate.example.json",
+      "bytes": 1110,
+      "sha256": "292154b79ac5bcf12a599aec0d504520f7239c3f7b2513614b69fd9fa46593b4",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/image_project_static_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/image_project_static_formal.example.json",
+      "bytes": 1223,
+      "sha256": "77da4048d949e601670dd9aa0e52c027ea71a73f45f542aa400558cced6ca186",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/image_ray_data_native_crosscheck.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/image_ray_data_native_crosscheck.example.json",
+      "bytes": 1077,
+      "sha256": "dc492bde249621185108d967f0b310e5d20da0d205ce0e547ffc20007b77c129",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/multicard_concurrency_sweep.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/multicard_concurrency_sweep.example.json",
+      "bytes": 3088,
+      "sha256": "fcdccdb69e56b558d7e5dab82efb66c9f07e2867042fdd842065a9c46aaf67f4",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/multicard_lbrr_scale_ramp.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/multicard_lbrr_scale_ramp.example.json",
+      "bytes": 3349,
+      "sha256": "027f709ad27c0a0081b02902295be5795e3a18d422f906ae1d467e15dca6b8d7",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/multicard_scale_ramp.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/multicard_scale_ramp.example.json",
+      "bytes": 1893,
+      "sha256": "abbeb5609afc973d619b1db1fb57679ea04357d65fcbc4cb36efd563c2e20a1b",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_duckdb_fourjob.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_duckdb_fourjob.example.json",
+      "bytes": 2646,
+      "sha256": "16e6adaa571bc5d0e25d587598a8ebabb53c22e93060f0d027509f2268c8f2aa",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_image_native_fourjob.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_image_native_fourjob.example.json",
+      "bytes": 2603,
+      "sha256": "25ae20c8824de75717b3553d408eb538cddb78002e5afb8690b5653b3b51695e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_image_project_fourjob.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_image_project_fourjob.example.json",
+      "bytes": 1446,
+      "sha256": "d7ca87894a7fd637607d726dcbdba097c49ff12c482beaed215bf53bbf98837c",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_multijob_minimal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_multijob_minimal.example.json",
+      "bytes": 3636,
+      "sha256": "d8da32672dda420ff488755c4f52a3a683234e25169bee57a29a5fe5909d0e8f",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_project_fourjob_all_at_t0_diagnostic.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_project_fourjob_all_at_t0_diagnostic.example.json",
+      "bytes": 6244,
+      "sha256": "ed88feb164147f66cb814cedd6186d7fe313ae4130f563d09ac463469d32fdcf",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_project_multijob_all_at_t0_diagnostic.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_project_multijob_all_at_t0_diagnostic.example.json",
+      "bytes": 4092,
+      "sha256": "7a2c838ce9383a0dafbeb39eb470dfab6f83fea0a8ce54665506f5766d06821f",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_project_short_all_at_t0_diagnostic.example.json",
+      "bytes": 3094,
+      "sha256": "cbcd4fdb20f85380eefa042f903b2e5f178a2c227ba80420a1f075da8dd6d2b9",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_project_short_half_pool_all_at_t0_diagnostic.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_project_short_half_pool_all_at_t0_diagnostic.example.json",
+      "bytes": 3389,
+      "sha256": "3430033528094e10566f3edd6ae9ec70ce6ed4083cfda4308b2adf2e1ae1860e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_short_job_controls.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_short_job_controls.example.json",
+      "bytes": 3541,
+      "sha256": "32f3d519a735a15d19391221a90d9cf764fd4b38c12fc9cc65f1bed807df26ee",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_short_job_native_controls.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_short_job_native_controls.example.json",
+      "bytes": 2424,
+      "sha256": "caa873aeeef59206239b851e3eedd922377ada1f1b043d52042d86425657d62e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_text_native_fourjob.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_text_native_fourjob.example.json",
+      "bytes": 7405,
+      "sha256": "a20c0182dc7c016653843676185c087fa034ba2e13d44f29426fe901f131c3e8",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_text_native_matrix.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_text_native_matrix.example.json",
+      "bytes": 2720,
+      "sha256": "3b04a8c80ecc568ef29cc15918db4f995efbfe26abf422756fc2c1d0152a053e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/opening_text_native_multijob.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/opening_text_native_multijob.example.json",
+      "bytes": 2225,
+      "sha256": "823ce9e13683e9de0ff77d486a71abefaf649df6510c29c30cb72967533903a7",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/phase_change_a_only_calibration.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/phase_change_a_only_calibration.example.json",
+      "bytes": 3470,
+      "sha256": "ac9c7aeb55df8cc1adfbd508cb27e95c5bc341a7bbe5adbca6bf082561d22393",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/phase_change_action_gate.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/phase_change_action_gate.example.json",
+      "bytes": 4258,
+      "sha256": "dc04fb50564651696b3de92a58e0439d7e16989969bcab7874ab131d3b60de53",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/phase_change_formal.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/phase_change_formal.example.json",
+      "bytes": 5311,
+      "sha256": "818424a193d3ca2302f9360a745c4fff73bbc74d467627ca9ef0d685a716b308",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/phase_change_pressure_calibration.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/phase_change_pressure_calibration.example.json",
+      "bytes": 3686,
+      "sha256": "34045851d19926c8ab43f8c92051fe5020d517b55c4d2f7d8e1bb09aacb68d3e",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/sembench_lotus_queries.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/sembench_lotus_queries.example.json",
+      "bytes": 1131,
+      "sha256": "a244a790b7449aa2b92524f16ad5c3e465ce3910a9a4761bda2cf7a1c0f69123",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/vtc_compatible_on_off_overload.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/vtc_compatible_on_off_overload.example.json",
+      "bytes": 5612,
+      "sha256": "c1d7c3c70d9fdfee0e751ab48466201ef56561bb415023a7a02b473550386b16",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/vtc_compatible_overload_multi.example.json",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/vtc_compatible_overload_multi.example.json",
+      "bytes": 7925,
+      "sha256": "f79ca50f9db652212c63570eddeda4d6863e78e542d12d0c5e16220cd40e7198",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_active_set_formal.env.example",
+      "retained_path": "experiments/saor/saor_active_set_formal.env.example",
+      "bytes": 3594,
+      "sha256": "b8cc7c37de29e59db6fb9e32226e62ffbd6ee02c5d1af524de20c684857e4d8f",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_active_set_release.example.json",
+      "retained_path": "experiments/saor/saor_active_set_release.example.json",
+      "bytes": 6918,
+      "sha256": "28a21a8c6a932c293cde7ab0d3914bbaa1eee3e31426a6b9fa67989e110e4a5f",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_bounded_priority.example.json",
+      "retained_path": "experiments/saor/saor_bounded_priority.example.json",
+      "bytes": 5602,
+      "sha256": "70b107f6037b694fac24acce8afdbcb3ec4e400cfbd2519eaf2371d071dd1546",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_bounded_ready.example.json",
+      "retained_path": "experiments/saor/saor_bounded_ready.example.json",
+      "bytes": 5737,
+      "sha256": "d25237a51a2043ba1f7f119aea81bf84f1c6a13d389701d33d048004481278f1",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_capacity_development.example.json",
+      "retained_path": "experiments/saor/saor_capacity_development.example.json",
+      "bytes": 6742,
+      "sha256": "8e12c089cf9c9815da6db300d782fb85f78d1ee841846267b76e0f7cdd7d4801",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_feeding_gap_diagnostic.example.json",
+      "retained_path": "experiments/saor/saor_feeding_gap_diagnostic.example.json",
+      "bytes": 4902,
+      "sha256": "e7d93cca2898a208ccbad3e45e63fb7962e87aead05c9bdc7d4e80a890f2e9d0",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_feeding_gap_diagnostic_contract.json",
+      "retained_path": "experiments/saor/saor_feeding_gap_diagnostic_contract.json",
+      "bytes": 3198,
+      "sha256": "24897d26ee541ba93a6e1bc407fce8082b1d56fa00c01597538defff60be9e32",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_matched_ready_selector_ablation.example.json",
+      "retained_path": "experiments/saor/saor_matched_ready_selector_ablation.example.json",
+      "bytes": 6693,
+      "sha256": "9c10e20a43fc94469a02bb3de0b2299d442cb7b64d7424dc157c3e2d9e8e11aa",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_native_system_matched.env.example",
+      "retained_path": "experiments/saor/saor_native_system_matched.env.example",
+      "bytes": 4213,
+      "sha256": "00bb6221d681180c487937c40978c5e9d1bde4882f1551795b7cf3db61836196",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_priority_reachability.example.json",
+      "retained_path": "experiments/saor/saor_priority_reachability.example.json",
+      "bytes": 4955,
+      "sha256": "a8d0367de371a409c1f85f861a1a3156324b7eef38304a16fb43da918a317e79",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_project_feeding_ceiling.example.json",
+      "retained_path": "experiments/saor/saor_project_feeding_ceiling.example.json",
+      "bytes": 4479,
+      "sha256": "eca442cff77109b6b02663fde34244cc05a9a08d156ef25af817bbe4a584d527",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_project_mechanism_formal.example.json",
+      "retained_path": "experiments/saor/saor_project_mechanism_formal.example.json",
+      "bytes": 6778,
+      "sha256": "2a38363494935bbefd8ca830bb0795d478b33b4753415d07c8bb156c33e54ae5",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_project_mechanism_formal_contract.json",
+      "retained_path": "experiments/saor/saor_project_mechanism_formal_contract.json",
+      "bytes": 6176,
+      "sha256": "f09d1eab14f45d088e4059a2b5a5bd20297206fe77b3ddba895911657025e6e7",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/saor_ready_observation_bridge.example.json",
+      "retained_path": "experiments/saor/saor_ready_observation_bridge.example.json",
+      "bytes": 5219,
+      "sha256": "1097b2cbf7123742de5988ae6c301abe41123fa262b88f67cb92e19b01353f81",
+      "encoding": "identity"
+    },
+    {
+      "original_path": "deploy/autodl/README.md",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/README.md.gz",
+      "bytes": 162101,
+      "sha256": "b47ee8aaff1ae6b2472f069d1d1bb0ea31d48b7e6dcb16eede857273fce8a519",
+      "encoding": "gzip",
+      "archive_sha256": "46e3bce356ac107141f89411e25fffec9b4886d6bba8f6276445d51516a9fad6"
+    },
+    {
+      "original_path": "deploy/autodl/text_serving.md",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/text_serving.md.gz",
+      "bytes": 10546,
+      "sha256": "7764f69b57505227937ef6fd1cbdd9ee6a5fd56869b548c5633c00f2e3a25df9",
+      "encoding": "gzip",
+      "archive_sha256": "7953245700a76592ff686205cc73773472802ae17ed9ce92a7e035cb76200715"
+    },
+    {
+      "original_path": "deploy/autodl/image_serving.md",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/image_serving.md.gz",
+      "bytes": 32995,
+      "sha256": "40ea627bfeb17d0c22acaca0f7f5acd08319f77ee081b7a173ffe59a2d70b76a",
+      "encoding": "gzip",
+      "archive_sha256": "e3f409b2b1773e3aa1947d8d39a4af93ec74d0dcf2bbc354b9f568e4cf08c5e9"
+    },
+    {
+      "original_path": "deploy/autodl/phase_change_state_aware_RUNBOOK.md",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/phase_change_state_aware_RUNBOOK.md.gz",
+      "bytes": 11140,
+      "sha256": "9f84348650928ea0b106cf4287dbc63421c500aed55d021ed212505e9b2bb455",
+      "encoding": "gzip",
+      "archive_sha256": "babaa20a1e22af90add04a0a6fc4ec28b4496edd0be1bcaf174315d53f1ea219"
+    },
+    {
+      "original_path": "deploy/autodl/autodl.env.example",
+      "retained_path": "experiments/reproduction/legacy_recipes_20261105/autodl/autodl.env.example.gz",
+      "bytes": 5494,
+      "sha256": "ac8d17b94d3c79fe50d95aa87a509c87d905499c12a3d5182b0544263433d2a0",
+      "encoding": "gzip",
+      "archive_sha256": "77d2412a63332f6b9e15a1bd6b850f31e242f4dbca8f89bafb601c8a26e22aaa"
+    }
+  ]
+}

@@ -49,3 +49,11 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 
 SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本保留；依赖旧 HTTP／PG 启动器的部分随归档隔离。
 已有成绩、成本、失败和 unknown 不修改；新 CPU 测试不构成模型或查询加速证据。
+
+## 独立研究与离线分析
+
+SAOR 声明与合同见[独立材料](../../experiments/saor/README.md)，旧双卡、开题和 phase-change 配方见
+[精确归档](../../experiments/reproduction/legacy_recipes_20261105/README.md)。
+`analysis/summarize_saor_*.py`、`replay_saor_capacity.py`及既有成本／静态曲线分析继续读取历史结果；
+`run_ai_operator_scenarios.py`保留显式 profiler 装配与 CPU 行为核验用途，旧 PG profiler 已归档，
+不能直接用旧配置恢复当前实验。历史方案、原始结果和必要失败证据保持。
