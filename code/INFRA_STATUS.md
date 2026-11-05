@@ -29,7 +29,8 @@ Core／Method／IPC 仍分别记账；未消费结果、unknown、ACK 和 produc
 区分本轮成功与尚未解决的 10 毫秒增长时序问题。模型／真实 Ray／GPU／SQL／服务运行为零。
 
 尚余普通默认 R、查询私有状态依赖及历史脚本逐项整理。
-b99 动态策略的公共工厂组合现有 CPU 证据，整树仍待独审；b258 准备交错尚未与当前预算组合。
+当前资源请求反馈已与准备交错及独立预算接通，保留原 Method／Core／IPC 管理对象，
+相关 CPU 范围见[组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-feedback-interleave)。
 CPU 证据不证明完整查询性能、真实模型或多卡能力。
 下一阶段独立树已按准确 b99 字节导入三个策略文件及三个测试文件，当前 327 项成功，无失败、错误或跳过。
 原选择多出的五项 UCB 原型用例已有独立归档恢复；此导入尚未切换公共工厂或容量默认值。

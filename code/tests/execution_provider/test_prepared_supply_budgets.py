@@ -43,7 +43,7 @@ class IndependentSupplyTests(unittest.TestCase):
             max_model_len=4096)
         return engine, resources, capacity, limits
 
-    def owner(self, plan, *, window=2, **options):
+    def owner(self, plan, *, window=2, request_feedback=None, **options):
         engine, resources, capacity, limits = self.declarations(plan, **options)
         actors = AsyncRecordsActorOwner.for_prepared(engine, plan.stages[0].generation,
             resources, limits=limits, capacity=capacity)
@@ -51,7 +51,7 @@ class IndependentSupplyTests(unittest.TestCase):
             execution='record_local_sections', actor_owner=actors,
             prepared_batching=PreparedBatching('token_budget', None, 1000000),
             batching_tokenizer=base.CountingTokenizer(), rolling_refill=True,
-            request_window=window)
+            request_window=window, request_feedback=request_feedback)
         # Only already-declared fixtures use the direct-chain coordination seam.
         owner._interleaved_preparation = owner._event_driven_preparation = True
         return owner
@@ -174,3 +174,112 @@ class IndependentSupplyTests(unittest.TestCase):
                     create_records_core(plan.stages[0].method, engine, plan.stages[0].generation,
                         resources, **options)
                 allocate.assert_not_called()
+
+    def test_public_feedback_interleaves_preparation_progresses_results_and_reacts_to_memory(self):
+        from src.observability.metrics import memory_pressure
+        from src.semantic_methods.lotus.record_continuation import LotusChainProgram
+        from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport
+        from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
+        from tests.observability.memory_pressure_fixture import KernelMemoryFixture
+        for event_driven in (False, True):
+            with self.subTest(event_driven=event_driven):
+                original = base.fixture.chain_for('F').stages[0]
+                plan = LotusRecordChain((StageSpec('filter', original.method, original.generation),),
+                    query_id='prepared-feedback-'+str(event_driven))
+                records = base.fixture.source_rows(size=12)
+                config = self.helper.config_for(plan, records)
+                gate = Path(str(self.helper.config)+'.feedback-release')
+                if gate.exists():gate.unlink()
+                config['responses']['filter|occ-0']['wait_file'] = str(gate)
+                self.helper.config.write_text(json.dumps(config))
+                source = self.ordinary_source(records)
+                engine, resources, capacity, limits = self.declarations(plan)
+                prepared, submitted = [], []
+                start, submit = LotusChainProgram.start, _SectionTransport.try_submit_batch
+                def prepare(program, value):
+                    result = start(program, value)
+                    prepared.append(json.loads(value)['record']['source_position'])
+                    return result
+                def dispatch(transport, tasks, endpoint):
+                    submitted.append((len(prepared), len(tasks)))
+                    return submit(transport, tasks, endpoint)
+                with KernelMemoryFixture() as kernel, base.ThreadedRuntime([]), \
+                        patch.object(base.AsyncCoreModelActor, '_process_type', return_value=CPUResourceProcess), \
+                        patch.object(memory_pressure, 'CgroupMemoryPressureSource', return_value=kernel.source), \
+                        patch.object(LotusChainProgram, 'start', prepare), \
+                        patch.object(_SectionTransport, 'try_submit_batch', dispatch):
+                    kernel.source.clock = time.monotonic
+                    owner = create_records_core(original.method, engine, original.generation, resources,
+                        capacity=capacity, async_limits=limits,
+                        profile=dict(mode='async', admission=dict(kind='resource_feedback',
+                            require_memory_feedback=True, poll_interval_s=.01, window_s=.04,
+                            max_sample_age_s=.3, min_samples=1, measurement_windows=2)),
+                        prepared_batching=PreparedBatching('token_budget', None, 1000000), rolling_refill=True,
+                        interleaved_preparation=True, event_driven_preparation=event_driven)
+                    try:
+                        with patch.object(owner, '_tokenizer', return_value=base.CountingTokenizer()):
+                            result = owner.evaluate(source, query_id=plan.query_id)
+                        stream = result.stream
+                        self.until(stream, lambda: owner.owner._token_organizer.request_window > 1)
+                        self.assertEqual(submitted[0], (1, 1))
+                        self.until(stream, lambda: any(c['row_id'] != 'occ-0' for c in owner.owner.calls))
+                        self.assertFalse(any(c['row_id'] == 'occ-0' for c in owner.owner.calls))
+                        feedback = owner.owner._supply_feedback
+                        kernel.write(kernel.leaf, high=1)
+                        self.until(stream, lambda: feedback.controller.report()['reasons'].get('resource_pressure', 0))
+                        self.assertEqual(owner.owner._token_organizer.request_window, 1)
+                        self.assertGreater(owner.owner.core.capacity.usage().active_requests, 0)
+                        gate.touch()
+                        receipts = list(result)
+                        self.assertEqual(len(receipts), len(records))
+                        self.assertEqual(len({row['call_id'] for row in receipts}), len(records))
+                        self.assertEqual(prepared, list(range(len(records))))
+                        report = owner.last_close_report
+                        self.assertTrue(report['query_completed'])
+                        self.assertTrue(report['request_supply_feedback']['sampler_stopped'])
+                        self.assertFalse(any(report['core_usage'].values()))
+                        self.assertEqual(stream.pool.used, (0, 0))
+                    finally:
+                        gate.touch(); owner.close(timeout=3)
+
+    def test_event_feedback_cancel_preserves_unknown_and_stops_the_sampler(self):
+        from src.scheduling.submission_control.adaptive import ResourceRequestConfig
+        from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
+        plan, records = base.fixture.chain_for('MM'), base.fixture.source_rows(size=2)
+        config = self.helper.config_for(plan, records, hold=['step_0|occ-0'])
+        config['responses']['step_0|occ-0']['status'] = 'unknown'
+        self.helper.config.write_text(json.dumps(config))
+        cancelled = [False]
+        options = ResourceRequestConfig(poll_interval_s=.01, window_s=.04,
+            max_sample_age_s=.3, min_samples=1, measurement_windows=2)
+        with base.ThreadedRuntime([]), patch.object(base.AsyncCoreModelActor, '_process_type',
+                return_value=CPUResourceProcess):
+            owner = self.owner(plan, window=1, request_feedback=options)
+            stream = owner.evaluate(iter(records), plan, expected=records,
+                query_id=plan.query_id, cancelled=lambda: cancelled[0])
+            try:
+                self.until(stream, lambda: any(e['event'] == 'start'
+                    and e.get('token') == 'step_0|occ-0' for e in self.helper.events()))
+                cancelled[0] = True
+                with self.assertRaises(InterruptedError):next(stream)
+                report = owner.close(timeout=3)
+                self.assertEqual(report['status'], 'closed')
+                self.assertFalse(report['query_completed'])
+                self.assertEqual(sum(c['status'] == 'unknown' for c in owner.calls), 1)
+                self.assertFalse(any(c['algorithm_stage'] == 'step_1' and c['row_id'] == 'occ-0'
+                    for c in owner.calls))
+                self.assertTrue(report['request_supply_feedback']['sampler_stopped'])
+                self.assertFalse(any(report['core_usage'].values()))
+                self.assertEqual(stream.pool.used, (0, 0))
+            finally:
+                owner.close(timeout=3)
+
+    @staticmethod
+    def ordinary_source(records):
+        rows = [dict(row_id=row.row_id, source_position=row.source_position,
+            passage=row.values['passage']) for row in records]
+        return SimpleNamespace(preflight=lambda method: None,
+            scan_spec=lambda method: RecordScan((('row_id', 'string'), ('source_position', 'int64'),
+                ('passage', 'string')), ('passage',)),
+            expected=lambda query: [identity(query, row['row_id'], row['source_position']) for row in rows],
+            rows=lambda: iter(rows))

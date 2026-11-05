@@ -1091,7 +1091,8 @@ or use a separate admission cache: the existing key does not automatically hash 
 ### 当前模块中的准备与派发交错候选
 
 `create_records_core` 可显式传 `interleaved_preparation=True` 与
-`event_driven_preparation=True`，只支持预检完整有限 source 的固定 rolling token 请求，
+`event_driven_preparation=True`，支持预检完整有限 source 的 rolling token 请求，
+可使用固定许可或当前 `resource_feedback`，
 默认均为 False；Movie JSON／CLI 不接收这些选项。实现沿用 `b258c575` 的已审机制，
 查询循环位于 `records_query_runtime`，继续使用原 MethodDriver、Core、RPC 接纳及结果消费。
 不改变 LOTUS 请求、Filter→Map 原数据、Extract 的完整关系条件、单记录补位或原生引擎参数。
@@ -1100,6 +1101,11 @@ or use a separate admission cache: the existing key does not automatically hash 
 Core 的 held_tasks 不再被用作是否订阅 RPC 通知的请求容量判断。RPC 快照只描述已有许可状态，
 ACK 不归还 compute／结果／unknown。原帧头及逐候选计量缓存继续使用，附带原生上下文校验。
 关闭、拒绝、重绑和不确定回执仍由各自原管理对象处理。
+
+当前资源反馈在结果及后继推进之后更新；窗口变化会重新检查已准备前缀，
+等待也使用反馈已有的下一次轮询时间。准备、Core 存储、请求与 RPC 许可分别保留原持有者。
+扩缩窗及取消的 [CPU 组合记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-feedback-interleave)
+不表示真实模型吞吐或完整查询已经加速。
 
 [组合记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/prepared_supply_composition_checks.json)
 包含显式独立预算、Method 行／字节先于请求额度用完、held_tasks=1、None 加完整预算的公共工厂
@@ -1122,7 +1128,7 @@ ACK 不归还 compute／结果／unknown。原帧头及逐候选计量缓存继�
 
 Movie 入口新增默认关闭的 preparation_mode，serial 与省略相同；interleaved／event_driven
 映射到上面的 SDK 选项。纯组批解析与 PreparedRecordsCore 使用同一准备选项检查；配置、预检、
-工厂、实际回执及校准身份相互对应。只支持已实现的固定 rolling token 路径，不接动态反馈。
+工厂、实际回执及校准身份相互对应。rolling token 路径可组合固定许可或当前 `resource_feedback`。
 详细取值与后期提示错误可能保留合法前缀用量的说明见
 [Movie 配置](../../experiments/movie_matrix.README.md#record-preparation-mode)；
 [CPU 接线检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)
