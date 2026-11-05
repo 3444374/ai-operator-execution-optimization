@@ -3091,3 +3091,90 @@ IPC父文件920→610行，新worker301行、wire28行，合计939，比原文�
 `adaptive.py`仍1,157行，44个核心函数超过100行；本批未改反馈策略或SAOR研究接线。
 完整IPC启动、作者桥重建及实际更大在途、当前真实模型质量与性能仍待服务器验证。
 旧ACK抽象语法树（AST）摘要断言、未配置SemBench checkout及受限系统检查继续按原记录解释；没有合并main，也不表示全项目重构完成。
+
+
+<a id="feedback-duties-and-record-copies"></a>
+## 反馈职责分离、旧变体退役与记录复制
+
+本批初始来源为 `cde87a55cc4795e33aa07d07f53adc922d8ee71c`，最终组合保留远端
+`5849807ca743ca2c92665d3d699f8fe285ae219e` 的十五份并行文件。
+准确受测代码为 `b50d0b1be07d95a319ca6081fbbf31082c7b681d`，tree为`10e5b8155369c534a95e84734e219d47093f7dcd`。
+[结构化记录](raw/feedback_duties_clones_checks.json)及[脱敏原始记录 gzip](raw/feedback_duties_clones_raw.json.gz)
+保留每次方法选择、版本、结果、日志、源码摘要、复核、计数脚本和私有原件SHA-256；重叠选择不相加。
+私有原件按运行标识保存在项目工作区外，可按公开记录摘要核对；公开材料去除本机路径。
+
+### 单查询是否需要额外物理内存管理器
+
+本批源码与[既有架构计划](../../../plans/系统架构.md#chain-continuation-ownership)核查没有发现普通单查询必须先新增独占RAM管理器的需求。
+保留部署提供的有限声明、Core／方法／IPC的数据与结果接纳、unknown责任及vLLM内部KV管理，复用已有统一解析入口即可。
+Core预算、typed／JSON IPC和服务payload字节是可选的已有来源，不要求同时手填多组重复参数。
+
+cgroup余量／PSI是观察，进程内服务池是逻辑分配；它们没有获得实际物理RAM分配权，也不完整覆盖source／expected关系、
+Python／Ray副本、解析工作区、审计或模型／KV。当前auto仍按声明解析，不宣称物理自动探测。
+真正物理自动授予尚未实现；有明确空间管理需求后，再解决完整持有计量、共享表示和实际分配来源，
+不从瞬时headroom、任意百分比或引擎seq制造“安全容量”，也不为本轮重构新增第二个内存控制器。
+架构中的持有、剩余预留与增量峰值研究继续保留，不把这项未来研究变成普通运行的前置步骤。
+
+### 实际修改
+
+| 位置 | 当前职责及处理 |
+|---|---|
+| `feedback_options.py` | 两条现用反馈路径的配置类型；从控制器文件迁出，字段、默认与校验原样保持 |
+| `feedback_work.py` | SupplyState和共享成对计量；不拥有策略或资源分配 |
+| `request_scan.py`及records适配 | 直接导入公共配置／工作数据；顶层和首次采样的局部导入都已迁移 |
+| `adaptive.py`、`stage_work.py` | 保留实际批反馈、几何候选和仍被使用的AIMD基类；旧位置未用属性删除，不保留转发壳 |
+| 旧EWMA／HOL变体 | 无生产／CLI／研究构造点，仅包导出和测试；删除两控制器、一配置及三个导出，八项专属测试随机制退役 |
+| 混合测试 | gate继续验证队首等待值传给控制器与trace；当前SourceView用新定义位置，历史variant仍用自己的旧adaptive |
+| `record_chain.py` | 三处已确认RecordOccurrence的内部快照用dataclasses.replace，不先生成describe临时字典；外部dict／JSON恢复保留from_dict |
+
+记录的row_id为精确str，source_index为精确str或int，source_position为精确int；三个可变dict继续由原构造器deepcopy。
+caller、run、section与待采用结果之间的嵌套字段隔离保持，不新增copy包装类型或重复校验。
+这项修改减少临时复制步骤，没有测量RSS、回收字节或查询加速。源验证继续逐条读取后放开旧记录引用，未改其比较时点。
+
+冷导入实查显示：普通请求入口原先同时加载adaptive与stage_work，现在两者均不加载；默认选项、初始窗口及SupplyState JSON一致。
+该检查不启动模型、Ray或socket，也没有改变请求／批数的含义、反馈数值、超时或试探算法。
+还在使用的批反馈不是废弃代码；其他EWMA计量与HOL观察字段继续保留。
+
+### 检查与未解决结果
+
+准确组合 **328个不同纯对象／fixture方法通过**，无失败、错误或跳过，1,052个code文件摘要匹配受测提交，执行期间源码未变。
+本地Python为3.12.6；这是离线工程检查，没有真实模型、GPU或Ray初始化，不等于服务器功能或性能结果。
+
+| 记录 | 结果与适用范围 |
+|---|---|
+| 未改cde的扩大选择390项 | 388成功、2项关闭错误；包含本地进程间通信（IPC）fixture子进程，不能写成全部通过或全部纯对象 |
+| 反馈移动后的纯对象选择309项 | 全通过；随后仅修改两模块说明及删两行未用导入，309不冒充准确146整树验证 |
+| typed复制前19项 | 原生产代码加快照行为用例，19通过；两个快照用例已包含在这19项中 |
+| typed复制后20项 | 同19项加完整历史恢复，全通过；外部字典恢复与语义不改 |
+| 最新组合328项 | 反馈309与typed20交叠一个历史恢复方法，去重为328；准确绑定b50d0b1b，未重跑前述实际IPC关闭用例 |
+
+未改cde中的两项错误完整保留：
+`RequestRollingTests.test_observation_counts_requests_separately_from_batches_and_R`在close时报asynchronous transport finalization failed；
+`BatchSupplyIntegrationTests.test_cancel_while_members_are_held_stops_sampler_and_retires_original_credits`读取尚为None的关闭报告时报错。
+尚未定位为实现问题、夹具问题或时序波动，本批没有修复，也不以不同选择的328通过覆盖它们；后续由统一服务器验证关注实际IPC关闭。
+旧ACK摘要检查、缺少checkout和受限系统检查仍保留原状态。
+
+两个组件生产无交叠，最新组合37条路径与组件字节一致；十五份上游文件原样保留。
+五份历史投影共3,010文件完整恢复通过，已有36条相关准确路由足够，manifest、原摘要和投影身份未改。
+[旧机制恢复说明](../../../reproduction/native_baselines/README.md#retired-admission-variants)保留准确旧源码和测试；当前不承诺旧直接导入或旧pickle兼容。
+
+### 代码量
+
+含注释与空行，核心为code/src Python，排除experiments／baselines、包含研究包；宽口径为code/src＋code/scripts Python。
+测试、资料、历史副本和integrations另属其范围，本批没有改integrations。
+
+| 准确Git来源 | 核心Python行 | src＋scripts Python行 | 核心千行文件 | 核心百行函数 |
+|---|---:|---:|---:|---:|
+| main `6a8a2d7b` | 54,091 | 140,335 | 7 | 50 |
+| 清理起点`3fd3887e` | 61,628 | 149,645 | 9 | 57 |
+| 本批初始`cde87a55` | 57,124 | 113,883 | 1 | 44 |
+| 最新远端`5849807c` | 57,124 | 114,085 | 1 | 44 |
+| 受测`b50d0b1b` | 57,003 | 113,964 | 0 | 44 |
+
+本批相对最新远端两种口径均**净减121行**；相对初始cde的宽口径多81行，其中并行接线另增202行。
+核心相对main仍多2,912行、相对3fd少4,625行；宽口径分别少26,371／35,681行，不把无关新增或移动记作删除。
+反馈四文件合计1,442→1,323行，减119；删除包导出再减3，typed复制导入增1，总计减121。
+adaptive为1,157→870行，stage_work为285→252行，新options108行、work93行；这次减少来自旧机制删除与去冗余。
+
+仍有44个核心函数超过100行，后续按实际职责评估，不为行数制造包装。真实IPC关闭、完整作者桥与当前模型质量／性能仍待服务器；
+物理RAM自动授予不列为本轮普通单查询重构必须新增的功能，相关研究能力继续单独保留。PR保持草稿，不合并main。

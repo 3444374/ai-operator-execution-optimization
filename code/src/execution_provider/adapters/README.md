@@ -1513,3 +1513,13 @@ Observers and fixtures import the implementation they exercise; old serve import
 [Combined source and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
 record unchanged result/unknown responsibility and the remaining real worker/socket checks. The three files total 939 lines,
 compared with 920 before the split; the smaller parent file is a responsibility change, not a code-size reduction.
+
+### Feedback data and policy imports
+
+Request and batch option types live in [feedback_options.py](../../scheduling/submission_control/feedback_options.py).
+The common SupplyState and paired-work measurement live in [feedback_work.py](../../scheduling/submission_control/feedback_work.py).
+The modern request adapter and its shared sampling method import those definitions directly, including the local update path;
+they no longer load adaptive or stage_work merely to obtain data. Explicit batch feedback continues to use its existing policy.
+The unused EWMA/HOL variants and their old package exports are retired; their accurate historical sources remain recoverable.
+[Behavior, source identities and unresolved IPC checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
+separate unchanged policy behavior from code organization and memory-copy work.

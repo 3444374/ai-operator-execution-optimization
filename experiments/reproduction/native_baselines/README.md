@@ -407,3 +407,14 @@ manifest 仅增加30条来源和30条格式记录，五份投影身份、原3,01
 IPC 拆分涉及的四个历史文件继续使用已有19条准确路由，没有重复复制或新增同字节原件。
 [组合源码及完整恢复](../../results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
 覆盖五份投影；旧模型环境与作者桥未运行。
+
+<a id="retired-admission-variants"></a>
+## 旧 EWMA／HOL 控制器恢复
+
+无人使用的 EwmaAimdAdmissionController、HolAgeAimdAdmissionController 及 HolAgeAimdConfig 已退出当前导出，
+八项专属测试随机制退役；通用 gate 的队首等待值传递检查继续保留，不再依赖旧策略。
+五份具名投影的 adaptive／包导出继续使用原有准确来源，三定义可在这些旧文件中恢复，未新增副本或改写原摘要。
+完整清理前代码和测试从[准确 cde87a55 Git 树](https://github.com/3444374/ai-operator-execution-optimization/tree/cde87a55cc4795e33aa07d07f53adc922d8ee71c)
+在独立树恢复，不把旧策略重新加入当前搜索路径，也不自动恢复历史模型环境。
+[本批源码、328项检查及原失败](../../results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
+包含全部五份共3,010文件的完整恢复；现用批反馈、AIMD基类、其他平滑统计与观察字段保持。

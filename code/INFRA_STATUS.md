@@ -10,6 +10,16 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="current-refactor-status"></a>
 ## 当前收尾状态（2026-11-05）
 
+最新核心重构代码为 `b50d0b1b`，保留已发布 `5849807c` 的原查询与图像准备接线。
+共享反馈配置、供给状态和成对计量移至各自文件；现代请求路径不再加载批反馈实现。
+退役无现用构造点的旧平滑／队首等待控制器及其专属导出／测试，现用批策略、加性增加和乘性降低基类及观察字段保持。
+三个内部记录快照使用既有构造器直接复制，不先生成临时describe字典；外部JSON恢复保持。
+[模块职责与组合证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
+记录准确328项纯对象／fixture通过、完整历史恢复和原390选择中的两项IPC关闭错误；两项尚未定位为实现或夹具问题，不被新结果覆盖。
+
+普通单查询不以新增独占RAM管理器为完成条件：继续由部署给有限额度，已有Core／方法／IPC和模型分别负责接纳、数据、结果与KV。
+当前auto解析已有声明，cgroup／PSI只提供观察；真正物理RAM自动授予与完整查询内存计量仍未实现，有实际管理需求时另行实施。
+
 SemBench 补充接线从 PR90 `0677c7a3` 独立推进：普通 Movie task 增加 Q4，保持其原提示、
 完整 eligible Filter 和 positivity ratio；Q1/Q2/Q3 的入口、默认与输出不变。
 Movie 原查询／评价适配另接 Q8、Q9-map、Q10；Q10 必须提供原 `Movies.csv.audienceScore` 金标，
@@ -36,7 +46,7 @@ Movie Q9 新有限链明确使用原 Map，不替换原 TopK；精确 Join／Top
 
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
 HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；此前配置组合代码为 `6ac1fe56`。
-本轮代码为 `015c3095`，已保留 `08c3ebf5` 的原查询接线与数值精度修正：旧 IMLane 桥按显式请求数配置并在 ready 回执中核对，正常 Movie、chain 和 cascade 入口已迁移；
+上一批代码为 `015c3095`，已保留 `08c3ebf5` 的原查询接线与数值精度修正：旧 IMLane 桥按显式请求数配置并在 ready 回执中核对，正常 Movie、chain 和 cascade 入口已迁移；
 IPC 父进程管理、子进程循环与共享帧编码分属各自文件，现用导入和观测接点同步。
 查询验证表逐条放开已读取的旧记录引用，保留原比较时点；记录反序列化删除外层重复复制。
 [组合源码与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)

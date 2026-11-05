@@ -27,6 +27,10 @@ SemLoom 执行适配直接依赖本层，
 `RecordOccurrence.from_dict` 由同一构造器校验并复制 values、source_refs、index_updates，不再先对完整字典重复深拷贝。
 返回的 describe 与调用方可变输入仍相互独立，检查见[记录持有与组合回归](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)。
 
+`ChainRun`、内部记录段及待采用结果的已确认类型快照直接用 `dataclasses.replace` 调用同一构造器，
+不再为复制先生成完整 describe 字典。三个可变字段仍独立复制，外部字典和历史恢复继续用 from_dict。
+[同选择隔离检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)不提供RSS或查询性能结论。
+
 旧 `LotusBatchExecutor`／`LotusNativeBatchExecutor` 完整 HTTP 前端及 PG／HTTP 实验入口已退役，
 源码、接线和历史测试从[精确归档](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)恢复。
 `sdk.py` 的仍用方法／响应工具与有研究价值的独立模块保留；不把历史 HTTP 接点说成当前 records 模型连接。

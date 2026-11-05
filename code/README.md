@@ -27,7 +27,7 @@
 |---|---|---|
 | LOTUS 方法 | [semantic_methods/lotus](src/semantic_methods/lotus/README.md) | formatter、parser、方法状态、关系屏障与逐行结果合同 |
 | SemLoom 执行适配 | [execution_provider/adapters](src/execution_provider/adapters/README.md) | Core／有限链／rolling／admission 与结果交付接线 |
-| 调度与资源责任 | [scheduling](src/scheduling) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
+| 调度与资源责任 | [scheduling](src/scheduling)、[反馈模块职责](src/scheduling/submission_control/README.md) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
 | 独立多任务研究 | [research/multitask](src/research/multitask/README.md) | 通用共享额度与 SAOR 策略；普通 records 不依赖它 |
 | 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态、无调度的有限链计算及进程清理 |
 | 模态公共能力 | [modalities](src/modalities) | 文本／图像合同、成本、共享 CLIP workers；不拥有 baseline 图 |
