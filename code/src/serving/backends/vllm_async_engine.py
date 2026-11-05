@@ -358,6 +358,10 @@ class VllmAsyncEngine:
     def feedback_snapshot(self):
         return None if self._feedback is None else self._feedback.snapshot()
 
+    async def wait_for_first_feedback(self):
+        """Wait for an actual scheduler record on this engine's event loop."""
+        await self._feedback.first_sample_ready.wait()
+
 
     def mfu_snapshot(self):
         return (dict(status="disabled") if not self.spec.enable_mfu_metrics
@@ -371,6 +375,7 @@ class NativeStats:
         self.engine_uid, self.clock = engine_uid, clock
         self.sequence = self.preemptions = self.finished = self.tokens = 0
         self.latest = None
+        self.first_sample_ready = asyncio.Event()
         from src.observability.metrics.mfu import NativeMfuTotals
         self.mfu = NativeMfuTotals(engine_uid, clock=clock) if enable_mfu_metrics else None
 
@@ -389,6 +394,8 @@ class NativeStats:
                 waiting=scheduler_stats.num_waiting_reqs, kv_usage=scheduler_stats.kv_cache_usage,
                 preemptions_total=self.preemptions, finished_total=self.finished,
                 generation_tokens_total=self.tokens)
+            if self.sequence == 1:
+                self.first_sample_ready.set()
 
     def log_engine_initialized(self):
         pass
