@@ -23,15 +23,18 @@ class AsyncEngineLimits:
     max_inflight: int = 8
     input_bytes: int = 16 * 1024**2
     item_input_bytes: int = 2 * 1024**2
-    result_slots: int = 8
+    result_slots: int | None = None
     result_bytes: int = 16 * 1024**2
     item_result_bytes: int = 2 * 1024**2
-    command_slots: int = 8
+    command_slots: int | None = None
     control_slots: int = 16
     control_frame_bytes: int = 64 * 1024
     feedback_interval_s: float = 0.0
 
     def __post_init__(self):
+        for name in ("result_slots", "command_slots"):
+            if getattr(self, name) is None:
+                object.__setattr__(self, name, self.max_inflight)
         for name, value in vars(self).items():
             if name == "feedback_interval_s":
                 common._number(value, name, low=0)
