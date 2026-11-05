@@ -92,11 +92,11 @@ class FirstNativeFeedbackTests(unittest.TestCase):
 
 class FirstNativeSourceTests(unittest.IsolatedAsyncioTestCase):
     async def test_real_scheduler_record_signals_once_and_keeps_its_source_time(self):
-        event = asyncio.Event()
         now = [10.]
-        stats = NativeStats('fixture-engine', clock=lambda: now[0], first_sample_ready=event)
+        stats = NativeStats('fixture-engine', clock=lambda: now[0])
+        event = stats.first_sample_ready
         engine = object.__new__(VllmAsyncEngine)
-        engine._first_feedback = event
+        engine._feedback = stats
         waiting = asyncio.create_task(engine.wait_for_first_feedback())
         await asyncio.sleep(0)
         self.assertFalse(waiting.done())
