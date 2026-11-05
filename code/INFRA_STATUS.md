@@ -10,6 +10,15 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="current-refactor-status"></a>
 ## 当前收尾状态（2026-11-05）
 
+SemBench 补充接线从 PR90 `0677c7a3` 独立推进：普通 Movie task 增加 Q4，保持其原提示、
+完整 eligible Filter 和 positivity ratio；Q1/Q2/Q3 的入口、默认与输出不变。
+Movie 原查询／评价适配另接 Q8、Q10；Q10 必须提供原 `Movies.csv.audienceScore` 金标，
+不能用评论情感或模型评分代替。Map 的执行接线另走已存在的记录方法，不扩大普通 Filter 类型。
+MMQA 的十二道文本查询、各变体原 JSON 评价和原文本生成方法见
+[MMQA 适配](src/baselines/text/sembench_mmqa.py)。现成原资产可在 CPU 生成 sf25，
+三张文本表各25行、Q4 原预筛24行，每个 baseline 完整十二题预计299次调用；不生成图像或下载。
+本轮仍为 CPU 准备范围，真实模型、作者启动、质量及性能不因此通过；现有测试入口保留。
+
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
 HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；本轮配置组合代码为 `5175cab0`。
 仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。

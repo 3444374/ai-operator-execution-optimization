@@ -788,7 +788,7 @@ def main(argv=None):
     prepare.add_argument("--input-sha256", required=True)
     prepare.add_argument("--max-rows", type=int, required=True)
     prepare.add_argument("--role", choices=("software_fixture", "sembench_movie_subset", "sembench_movie_official"), required=True)
-    prepare.add_argument("--task", choices=("movie-q1", "movie-q2", "movie-q3"), default=None)
+    prepare.add_argument("--task", choices=("movie-q1", "movie-q2", "movie-q3", "movie-q4"), default=None)
     prepare.add_argument("--output-dir", required=True)
     for name in ("check", "run", "fixture", "cascade-check", "cascade-run"):
         command = commands.add_parser(name)

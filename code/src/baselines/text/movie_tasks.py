@@ -7,6 +7,7 @@ from src.semantic_methods.lotus.records import CallLedger, FilterMethod
 
 MOVIE_Q3_INSTRUCTION = 'Determine if the following review is clearly positive. Review: {reviewText}'
 RETRIEVAL_INSTRUCTION = 'Determine if the following movie review is clearly positive. Review: "{reviewText}".'
+RATIO_INSTRUCTION = 'Determine if the following review is clearly positive. Review: {reviewText}.'
 
 
 @dataclass(frozen=True)
@@ -14,13 +15,13 @@ class MovieTask:
     query: int = 3
 
     def __post_init__(self):
-        if type(self.query) is not int or self.query not in (1, 2, 3):
-            raise ValueError("supported Movie tasks are Q1/Q2/Q3 ordinary Filter only")
+        if type(self.query) is not int or self.query not in (1, 2, 3, 4):
+            raise ValueError("supported ordinary Filter Movie tasks are Q1/Q2/Q3/Q4")
 
     @classmethod
     def from_config(cls, value="movie-q3"):
-        if type(value) is not str or value not in ("movie-q1", "movie-q2", "movie-q3"):
-            raise ValueError("task must explicitly select movie-q1, movie-q2 or movie-q3")
+        if type(value) is not str or value not in ("movie-q1", "movie-q2", "movie-q3", "movie-q4"):
+            raise ValueError("task must explicitly select movie-q1, movie-q2, movie-q3 or movie-q4")
         return cls(int(value[-1]))
 
     @property
@@ -29,6 +30,8 @@ class MovieTask:
 
     @property
     def instruction(self):
+        if self.query == 4:
+            return RATIO_INSTRUCTION
         return MOVIE_Q3_INSTRUCTION if self.query == 3 else RETRIEVAL_INSTRUCTION
 
     @property
@@ -53,7 +56,8 @@ class MovieTask:
     def describe(self):
         return dict(schema="semloom.movie_task.v1", name=self.name, query=self.query,
             operator="ordinary_filter", predicate=self.predicate, instruction=self.instruction,
-            output=(dict(operation="count", column="positive_review_cnt") if self.query == 3 else
+            output=(dict(operation="ratio", column="positivity_ratio", denominator="eligible_rows") if self.query == 4 else
+                    dict(operation="count", column="positive_review_cnt") if self.query == 3 else
                     dict(operation="source_order_head", limit=5, column="reviewId")),
             evaluator="MovieEvaluator._evaluate_q" + str(self.query), scheduling_owner="selected backend")
 
@@ -68,10 +72,16 @@ class MovieTask:
         positive = [row for row in expected if values[row["row_id"]]]
         if self.query == 3:
             return pd.DataFrame({"positive_review_cnt": [len(positive)]})
+        if self.query == 4:
+            return pd.DataFrame({"positivity_ratio": [len(positive) / len(expected) if expected else 0.0]})
         # reviewId is a business column and is not unique: preserve occurrences.
         return pd.DataFrame({"reviewId": [row["reviewId"] for row in positive[:5]]})
 
     def encode_result(self, frame):
+        if self.query == 4:
+            if list(frame.columns) != ["positivity_ratio"] or len(frame) != 1:
+                raise ValueError("Q4 must return one complete positivity ratio")
+            return dict(positivity_ratio=float(frame.iloc[0, 0]))
         if self.query == 3:
             if list(frame.columns) != ["positive_review_cnt"] or len(frame) != 1:
                 raise ValueError("Q3 must return one complete COUNT")
