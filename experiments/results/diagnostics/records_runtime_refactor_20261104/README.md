@@ -1436,3 +1436,57 @@ pending_frame_final_methods.json.gz。按归档 source_basis 取 source_sha256�
 可在同一 CPU 环境复跑 workflow.py 的 TESTS 模块和两个 probe_record_resource*_handoff.py 的 off/on；
 服务器仍需在经过独审的准确整合源码上重跑标准检查，再由其原计划决定后续模型运行。
 rolling CLI 保存、整关系存储、物理容量授予和跨进程恢复仍是其他未完成工作。
+
+<a id="host-memory-pressure"></a>
+### 独立内核内存压力与物理存储前置工作
+
+本批从 9da299e9 独立建树；只读核对 PR90 当时同为该准确提交，Draft、未合并。
+Q2b 并行工作使用 MMQA 诊断入口，本批不修改其脚本／实验实现，已有候选与流式保存工作树保持。
+主机可用字节或 cgroup headroom 仍只是观测：当前 RecordsPayloadPool 划分声明载荷额度，
+实际 Python／Core／IPC／Ray 仍各有存储，不能把这份逻辑计划称为物理 RAM 授予或常驻内存（RSS）上限。
+
+本批先完成已有独立 safety 输入的实际来源。新 CgroupMemoryPressureSource 只读当前进程可见 cgroup v2
+的 memory.pressure 与 memory.events，逐层检查祖先；压力停顿统计（PSI）只使用累计停顿时间，事件使用回收／内存耗尽（OOM）的计数增量。
+这些字段含义来自 [Linux cgroup v2 文档](https://docs.kernel.org/admin-guide/cgroup-v2.html#memory)和
+[PSI 文档](https://docs.kernel.org/accounting/psi.html)，采用为工程实现选择，不据此声称研究创新或性能收益。
+没有新增利用率百分比、空闲字节阈值、硬件请求数、控制器、线程或 RPC，也不写实际内核文件。
+
+一个上锁的源在连续读取间保留基线、实际序号、进程与层级身份。首次、缺 PSI／事件、权限错误、计数回退、
+读取途中迁移和不支持的平台保持未知，不把局部清洁值补为完整 false；层级／计数身份变化另起 source UID。
+清洁值只表示两次读取之间没有观测到事件／停顿增量，不证明内存充足，也不保证未来分配成功。
+MetricSources 已启用时，将该报告放到 sources.host.memory_pressure；新内核文件读取的成本在原采样路径内。
+
+实际模型 actor 的同一个资源 snapshot RPC 带 PID、Core 查询身份和捕获时钟，新的 MemoryPressureBinding
+核对这些字段与独立源的 UID、序号、时钟和区间，保守映射到驱动单调时钟。重复样本保留原时间，
+新序号不能重新标记旧源时间；同序号内容冲突或本查询中更换来源后继续拒绝该来源。
+即使本次原生推理统计缺失，已确认的同源内存压力仍能交给已有 ResourceRequestController；不改它的算法。
+降档只影响后续提交，原有 Core 任务、未知调用、未消费结果和 RPC 责任没有被归还。
+
+现有 require_memory_feedback=true 从原先配置拒绝改为显式可选接线，普通／rolling 工厂均支持，缺省仍是 false。
+来源未知只阻止增长，初始一个请求或原已验证窗口仍可能继续；它不会暂停全部工作或防止所有 OOM。
+采样范围是模型 actor 的可见层级，可能包含兄弟进程；driver、Ray 和该层级外的模型 worker 不因此取得内存保护。
+原生引擎参数、四份动态策略实现、普通无池 R 的原解释与各 baseline 没有随本批修改。
+
+分层检查覆盖内核计数、来源／查询、实际 actor、控制消费、公开工厂、resident 跨查询与关闭。
+82 项集中选择全部通过；其中新增方法与后续完整选择重叠，不累计为额外成功。
+首轮一项收尾断言在采样器未关闭时误要求完整证明，另两条生命周期曾用错测试驱动 API／控制线程，
+原输出保留；修订只纠正测试清理与推进方式，没有放宽生产线程要求或原结果断言。
+只读预审未确认新增生产缺陷；曾提出的年龄疑问经实际同步读取调用核对后撤回，不列为已修缺陷。
+最终 184 模块选择 2201 项、运行 2193 项，2156 成功，无失败或错误；25 个新增方法全部成功。
+37 个方法和两个类的八方法未运行，共 45 项；原跳过原因及六项真实 Ray 选择保留。
+标准 workflow.TESTS 205 项与四个公开探针在最终代码上再次通过，检查不重复累计。
+全部 1343 个代码文件摘要与最终运行记录匹配；没有据此扩大到真实 Linux、Ray／vLLM、GPU 或性能资格。
+
+首轮完整选择有 13 条失败、50 条错误记录，涉及 41 个方法，原因包含本机 Unix socket／进程检查权限及连带断言。
+在获准的本地 CPU 环境重跑后，这 41 个方法均通过；两轮 Python 源码相同，之间只补了两份 Markdown 的缩写说明。
+[完整检查](raw/host_memory_pressure_checks.json)和[逐方法／原失败记录](raw/host_memory_pressure_methods.json.gz)
+保留上述差别，不将首轮改报为成功。70 个公开文件均可按归档说明准确恢复；两份公开副本删除个人 home 前缀，
+对应私有原件字节／SHA 保留，其余 68 份字节相同。源码摘要复用已有 pending_frame_final_methods.json.gz，
+还原方法与前一节相同。只读检查未发现以本候选源码路径启动的 Python 子进程残留，没有终止其他进程。
+
+物理容量的剩余依赖是：让实际载荷读写使用受授予的 backing store，覆盖完整 source／expected 和原始关系，
+分别确认 driver／Ray／模型进程的实际存储与最后消费者，并在真实环境验证取得、错误及回收。
+只设置 cgroup 最大值或另外分配一块未使用的 buffer 都不能替代上述工作；持久副本与恢复也需保留原结果责任。
+因此物理 RAM 授予、自动容量、整关系存储、rolling CLI 保存和跨进程恢复仍未完成。
+[依赖及准确源码](raw/host_memory_physical_dependencies.json)记录当前实际存储落点和缺项；目标服务器 cgroup 版本及各进程
+实际归属仍需由环境执行会话核对。本批候选待准确最终树独审，不推送或合并。

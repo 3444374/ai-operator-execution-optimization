@@ -146,7 +146,10 @@ vLLM ready 只声明实例归属，原生序列／token／上下文参数另由�
 普通默认 R 仍是调用方声明值，没有自动探测硬件额度。公共 async Filter／rolling 工厂的
 默认存储现从已有 IPC 字节及单项声明推导，低层直接构造和非 rolling 整批仍保留旧解释。
 新校准身份 `records_capacity_policy_v2` 记录实际资源值，不复用旧的 C／R 派生身份。
-`require_memory_feedback=true` 在尚未接入独立内存来源时拒绝；原生拒绝计数未知时不捏造零。
+`require_memory_feedback=true` 现显式使用模型 actor 可见 cgroup v2 的内存停顿／回收事件，缺省仍为 false。
+首次读取、缺项、来源变化和不支持的环境保持未知，不据此增长；原生拒绝计数未知时不捏造零。
+此反馈不发放 RAM、不限制 RSS，也不保证避免所有分配错误；初始一个请求和原已验证窗口仍可能继续。
+驱动、Ray 和可见层级以外的模型进程内存仍需分别管理，不能据此宣称自动容量已完成。
 当前策略不接受旧 KV／busy 百分比、`search_mode` 或 `search_policy` 选项，也不保存跨查询推荐。
 准确 CPU 与实机未测范围见[接线记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#公共工厂与实际资源许可接线)。
 

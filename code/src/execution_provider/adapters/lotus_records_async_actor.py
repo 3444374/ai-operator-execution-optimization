@@ -147,6 +147,8 @@ class AsyncCoreModelActor:
         return value
 
     def _resource_snapshot(self, session_id):
+        import os
+        from .records_native_source import PRIVATE_CLOCK
         started = time.monotonic()
         try:
             from src.observability.records_telemetry import MetricSources
@@ -160,6 +162,7 @@ class AsyncCoreModelActor:
                 devices = self._resource_sources.gpu_ids
             return dict(engine_uid=(self.engine.ready_report or {}).get('engine_uid'),
                 session_id=session_id, source_elapsed_s=time.monotonic()-started,
+                actor_pid=os.getpid(), captured_at_s=time.monotonic(), clock_domain=PRIVATE_CLOCK,
                 gpu_uuids=list(devices), sample=sample,
                 status='observed_or_partial',
                 scope='model actor GPU UUID; cgroup CPU per effective quota or affinity host context; no request capacity estimate')

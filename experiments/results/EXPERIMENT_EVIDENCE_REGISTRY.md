@@ -1478,3 +1478,12 @@ rolling 服务授予、自动物理容量、跨进程恢复和真实 Ray／模�
 就绪报告。[修订与完整记录](diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
 保留原失败，205 项 workflow 及四个公开 off/on 单项／批量探针通过，未放宽生产采样或原批量断言。
 本次没有真实 Ray、模型或 GPU 运行；较早服务器通过项仅按原执行会话交接引用，模型停止记录不变。
+
+9da 后续的[独立内存压力 CPU 候选](diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure)
+使用真实生产采样／消费实现与临时内核形状文件，接现有显式内存要求；缺省值、原生参数、控制算法及责任保持。
+清洁区间不是空闲容量；物理 backing store、driver／Ray／模型进程的实际存储、整关系及跨进程恢复仍未完成。
+仅本地 CPU 资格，没有实际 Linux cgroup 写入、模型／真实 Ray／GPU 运行或性能结论。
+
+该候选最终 2201 项选择中 2156 成功、45 未运行，无失败或错误；25 个新方法、标准 205 项及四个公开探针通过。
+原权限错误、连带断言和测试驱动错误均保留，未改变原跳过原因；1343 个最终代码摘要匹配。
+两份公开文件删除个人 home 前缀并登记原件摘要，准确提交仍待独审，未推送或合并。

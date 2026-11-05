@@ -1,4 +1,5 @@
 """Public policy selection and actual Core/CPU IPC resource ownership."""
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import json
 from pathlib import Path
@@ -34,6 +35,88 @@ class CPUResourceProcess(AsyncEngineProcess):
 class RequestPolicyWiringTests(unittest.TestCase):
     setUp = base.AsyncTokenBatchTests.setUp
     tick_until = rolling.RollingRefillTests.tick_until
+
+    def test_required_kernel_memory_source_reaches_rolling_public_owner(self):
+        from src.observability.metrics import memory_pressure
+        from tests.observability.memory_pressure_fixture import KernelMemoryFixture
+        plan, rows = base.fixture.chain_for('M'), base.fixture.source_rows(size=4)
+        gate = Path(str(self.helper.config)+'.memory-release')
+        config = self.helper.config_for(plan, rows)
+        config['responses']['step_0|occ-0']['wait_file'] = str(gate)
+        self.helper.config.write_text(json.dumps(config))
+        options = ResourceRequestConfig(require_memory_feedback=True,allow_exploration=False,
+            poll_interval_s=.01,window_s=.04,max_sample_age_s=.3,min_samples=1,measurement_windows=2)
+        with KernelMemoryFixture() as kernel, ThreadedRuntime([]), \
+                patch.object(AsyncCoreModelActor,'_process_type',return_value=CPUResourceProcess), \
+                patch.object(memory_pressure,'CgroupMemoryPressureSource',return_value=kernel.source):
+            kernel.source.clock=time.monotonic
+            owner = base.AsyncTokenBatchTests.owner(self,plan,R=4,C=None,rolling_refill=True,request_feedback=options)
+            stream = owner.evaluate(iter(rows),plan,expected=rows,query_id=plan.query_id)
+            try:
+                self.tick_until(stream,lambda:owner._supply_feedback is not None
+                    and getattr(owner._supply_feedback,'memory_pressure_binding',None) is not None
+                    and owner._supply_feedback.memory_pressure_binding.report()['sample'] is not None
+                    and owner._supply_feedback.memory_pressure_binding.report()['sample']['memory_pressure'] is False)
+                guard=owner._supply_feedback.memory_pressure_binding.report()
+                self.assertEqual(guard['engine_uid'],owner._actors.model_ready['engine_uid'])
+                self.assertEqual(guard['session_id'],stream.session.session_id)
+                gate.touch()
+                self.assertEqual(len(list(stream)),4)
+                report=owner.last_close_report
+                self.assertTrue(report['request_supply_feedback']['memory_feedback']['enabled'])
+                self.assertEqual(report['core_usage']['held_tasks'],0)
+            finally:
+                gate.touch();owner.close(timeout=3)
+
+    def test_required_kernel_memory_source_rebinds_ordinary_resident_query(self):
+        from src.observability.metrics import memory_pressure
+        from tests.observability.memory_pressure_fixture import KernelMemoryFixture
+        raw = [dict(row_id='row-'+str(i),source_position=i,reviewId=str(i),id='taken_3',reviewText='fast') for i in range(3)]
+        gate=Path(str(self.helper.config)+'.ordinary-memory-release')
+        self.helper.config.write_text(json.dumps(dict(responses={
+            'filter|'+r['row_id']:dict(text='True',wait_file=str(gate)) for r in raw})))
+        engine=EngineSpec(str(self.helper.config),sys.executable,sys.executable,max_model_len=4096)
+        resources=RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=3,
+            query_timeout_s=10,startup_timeout_s=8)
+        profile=dict(mode='async',admission=dict(kind='resource_feedback',require_memory_feedback=True,
+            allow_exploration=False,poll_interval_s=.01,window_s=.04,max_sample_age_s=.3,
+            min_samples=1,measurement_windows=2))
+        with KernelMemoryFixture() as kernel,ThreadedRuntime(raw) as runtime, \
+                patch.object(AsyncCoreModelActor,'_process_type',return_value=CPUResourceProcess), \
+                patch.object(memory_pressure,'CgroupMemoryPressureSource',return_value=kernel.source):
+            kernel.source.clock=time.monotonic
+            owner=create_records_core(FilterMethod('fixture',instruction='Keep {reviewText}'),engine,
+                GenerationSpec(),resources,profile=profile)
+            guards=[]
+            try:
+                for query in ('memory-one','memory-two'):
+                    if gate.exists():gate.unlink()
+                    stream=owner.evaluate(Source(raw),query_id=query)
+                    def release_after_memory():
+                        try:
+                            deadline=time.monotonic()+5
+                            while True:
+                                current=getattr(owner._feedback,'memory_pressure_binding',None)
+                                guard=None if current is None else current.report()
+                                if (guard is not None and guard['sample'] is not None
+                                        and guard['sample']['memory_pressure'] is False
+                                        and guard['session_id'] not in {g['session_id'] for g in guards}):
+                                    return guard
+                                self.assertLess(time.monotonic(),deadline,guard)
+                                time.sleep(.001)
+                        finally:gate.touch()
+                    with ThreadPoolExecutor(max_workers=1) as observer:
+                        proof=observer.submit(release_after_memory)
+                        self.assertEqual(len(list(stream)),3)
+                        guards.append(proof.result(timeout=1))
+                    self.assertEqual(guards[-1]['session_id'],stream.session.session_id)
+                    self.assertTrue(stream.last_close_report['admission_feedback']['memory_feedback']['enabled'])
+                    self.assertEqual(owner.core.capacity.usage().held_tasks,0)
+                self.assertNotEqual(guards[0]['session_id'],guards[1]['session_id'])
+                self.assertEqual(guards[0]['engine_uid'],guards[1]['engine_uid'])
+                self.assertEqual(len(runtime.async_actors),1)
+            finally:
+                gate.touch();owner.close(timeout=3)
 
     def test_observation_and_permission_keep_the_same_source_during_new_publication(self):
         first = ServiceMetricsSnapshot(1, 0, .96, source_sequence=1, source_uid='same-owner',
@@ -99,7 +182,7 @@ class RequestPolicyWiringTests(unittest.TestCase):
             self.assertNotIn('search_policy', options)
             self.assertEqual(options['measurement_windows'], 3)
             for forbidden in (dict(high_kv_usage=.85), dict(physical_probe_policy='idle_majority'),
-                              dict(require_memory_feedback=True), dict(search_policy='ascending')):
+                              dict(search_policy='ascending')):
                 with self.subTest(rolling=rolling, forbidden=forbidden), self.assertRaises(ValueError):
                     resolve_core_profile(engine, resources,
                         dict(mode='async', admission=dict(kind='resource_feedback', **forbidden)),

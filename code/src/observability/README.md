@@ -47,6 +47,24 @@ from `cuda_visibility_without_worker_receipt`; the latter retains the prior expl
 unambiguous single-NVML-device resolution, and does not claim a worker receipt. Numeric multi-device
 ambiguity stays unknown. Feedback off registers no extension and adds no native observation RPC.
 
+`metrics/memory_pressure.py` reads memory pressure stall information (PSI, 内核压力停顿统计)
+and reclaim/out-of-memory (OOM, 内存耗尽) event
+counters from the current process's visible cgroup v2 hierarchy. The first read,
+unsupported systems, incomplete ancestors, I/O errors, counter reversals and
+membership changes stay unknown. One source owns its locked baseline across RPC
+threads; a hierarchy change starts a new source identity. No kernel files are
+written and no total/headroom value becomes a storage grant.
+
+`MetricSources` retains the kernel report under `sources.host.memory_pressure`.
+Its false value means no observed increments between consecutive reads. This is
+neither an absence-of-OOM guarantee nor measured spare capacity. A model actor
+adds its actual PID, query identity and capture clock in the existing resource
+RPC. The records adapter checks that identity and conservatively maps source age;
+optional guard use is separate from these passive readings. Cgroup siblings can
+contribute pressure, and allocations outside this hierarchy are not covered.
+The [CPU record](../../tests/records_cpu.md#host-memory-pressure) covers the reader,
+binding and existing public owners; real Linux/Ray/model validation is pending.
+
 The RPC carries `timeout=1.0`; the current uni executor does not enforce it around synchronous worker
 code. The 1.5-second `asyncio.wait_for` bounds local client waiting, not worker completion or physical
 termination. Timeout leaves the optional identity unknown; existing model ownership and cleanup apply.

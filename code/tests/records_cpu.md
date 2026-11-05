@@ -401,3 +401,27 @@ LITELLM_LOCAL_MODEL_COST_MAP=True "$DRIVER_PYTHON" -m unittest \
 核对原数据、原对象和后续资源归还。显式 expected 的原控制与严格 JSON 比较仍使用原用例。
 [修订记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-transfer-repair)
 分别保留原三项失败，以及无 expected 取回现在先交付、再独立清理的 API 行为改变；不改写旧失败。
+
+<a id="host-memory-pressure"></a>
+## 2026-11-05：独立内核内存压力
+
+这组检查使用临时 cgroup 形状文件、真实 Core、实际 CPU IPC 及明确的模型替身，不读写实际内核配置，
+不初始化真实 Ray 或模型。普通与 rolling 两条公开工厂验证显式 require_memory_feedback、同模型复用、
+新查询身份和关闭；普通 owner 仍由其原单一控制线程推进。
+
+内核层覆盖首次／清洁区间、压力停顿统计（PSI）、回收与内存耗尽（OOM）计数、祖先共享压力、计数回退、迁移、权限／缺项和并发基线。
+来源层覆盖 actor／查询／PID／时钟、旧序号、内容冲突与重复样本时间保持；实际 actor 的同一个 snapshot RPC
+验证原生统计缺失时独立压力仍可降档。先收到压力、再缺内存或返回旧查询时，健康原生统计不能授权增长，
+已有任务和未消费结果保持原占用。原失败与修订后的完整选择见[检查记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure)。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
+"$DRIVER_PYTHON" -B -m unittest \
+  tests.observability.test_memory_pressure \
+  tests.execution_provider.test_records_memory_pressure \
+  tests.execution_provider.test_records_request_feedback
+```
+
+仅显式内存要求由上述压力参与控制，缺省仍为 false。MetricSources 已开启时采集新内核字段，其读文件成本
+保留在原采样路径内；没有新增采样线程或 RPC。这不限制进程 RSS、不发放物理 RAM，也不证明避免所有分配错误。
+真实 Linux cgroup、Ray／vLLM 和模型性能资格仍待分别验证。

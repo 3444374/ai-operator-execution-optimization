@@ -14,6 +14,7 @@ from src.scheduling.runtime.observations import NonBlockingMetricsObservationPro
 from .lotus_chain_token_batches import BatchSupplyFeedback
 from .records_native_sampler import RecordsNativeSampler
 from .records_native_source import NativeSourceClock, backend_manages_request_memory
+from .records_memory_pressure import MemoryPressureBinding
 
 
 def applied_request_limit(owner):
@@ -42,9 +43,10 @@ class _RequestSource:
         ready = self.owner._actors.model_ready
         if not backend_manages_request_memory(ready):
             raise ValueError('resource request feedback requires the actual backend resource owner ready')
-        if self.options.require_memory_feedback:
-            raise ValueError('an independent memory-pressure source is not connected')
         self.native_source_clock = NativeSourceClock(ready['engine_uid'], session_id)
+        self.memory_pressure_binding = (MemoryPressureBinding(ready['engine_uid'], session_id,
+            started_at_s=self.started, max_age_s=self.options.max_sample_age_s)
+            if self.options.require_memory_feedback else None)
         self._control_source = None
         self.controller = ResourceRequestController(applied_request_limit(self.owner), self.options)
         self.controller.reset(1, total, resource_identity=(ready['engine_uid'], session_id))
@@ -54,7 +56,17 @@ class _RequestSource:
         return observation
 
     def _observes_resources(self):
-        return self.options.allow_exploration
+        return self.options.allow_exploration or self.options.require_memory_feedback
+
+    def _read_resource(self, packet, **timing):
+        binding = getattr(self, 'memory_pressure_binding', None)
+        if binding is not None:
+            binding.observe(packet, requested_at_s=timing['requested_at_s'], received_at_s=timing['received_at_s'])
+        return super()._read_resource(packet, **timing)
+
+    def _memory_report(self):
+        binding = getattr(self, 'memory_pressure_binding', None)
+        return dict(enabled=False) if binding is None else binding.report()
 
     def _decide_request(self, observation, supply):
         ready = self.owner._actors.model_ready
@@ -65,7 +77,9 @@ class _RequestSource:
             observation.sample_sequence, source.source_sequence if bound else None,
             observed_at_s=observation.observed_at_s,
             request_limit=applied_request_limit(self.owner), local_limits_enforced=True,
-            backend_owns_memory=backend_manages_request_memory(ready))
+            backend_owns_memory=backend_manages_request_memory(ready),
+            **({} if getattr(self, 'memory_pressure_binding', None) is None else
+               self.memory_pressure_binding.permit_fields(ready['engine_uid'], self.session_id)))
         return self.controller.update_supply(observation, supply, resource_permit=permit,
             physical_samples=tuple(self.resource_samples))
 
@@ -102,7 +116,8 @@ class ResourceRequestSupplyFeedback(_RequestSource, BatchSupplyFeedback):
 
     def _report_identity(self):
         return dict(kind='resource_request_feedback', initial_requests=1,
-            max_requests=applied_request_limit(self.owner), cross_query_hints_supported=False)
+            max_requests=applied_request_limit(self.owner), cross_query_hints_supported=False,
+            memory_feedback=self._memory_report())
 
 
 class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
@@ -220,6 +235,7 @@ class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
         stream._admission_report = dict(policy, **rpc,
             sampling_paused=True,
             source_stale_after_s=self.options.max_sample_age_s,
-            source_clock_domain=self._source_clock_domain(), physical_capacity_known=False)
+            source_clock_domain=self._source_clock_domain(), physical_capacity_known=False,
+            memory_feedback=self._memory_report())
         self._stream = None
         return stream._admission_report

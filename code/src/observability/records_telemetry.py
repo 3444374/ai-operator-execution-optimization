@@ -142,6 +142,8 @@ class MetricSources:
         self.gpu_binding_error = gpu_binding_error
         self.gpu_binding_source = gpu_binding_source
         self._cpu_source = AllocatedCPUCounterSource()
+        from src.observability.metrics.memory_pressure import CgroupMemoryPressureSource
+        self._memory_source = CgroupMemoryPressureSource()
         if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
         if native_metrics_url is not None:
@@ -192,6 +194,7 @@ class MetricSources:
         from src.infrastructure.cgroup import memory_observation
         sources["host"].update({name: value for name, value in host.items() if name.startswith("cpu_")})
         sources["host"].update(memory_observation(), memory_observation_scope="host_context_and_separate_cgroup_headroom")
+        sources["host"]["memory_pressure"] = self._memory_source()
         for field in HOST_FIELDS[:2]:
             if values[field] is None and host.get("cpu_metrics_status"):
                 missing[field] = ("cpu_per_core_unavailable_in_cgroup_scope"

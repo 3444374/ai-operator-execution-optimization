@@ -91,8 +91,6 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
                 config = ResourceRequestConfig(**options)
             except TypeError as error:
                 raise ValueError('unsupported resource request option; historical policies require explicit legacy_resource_feedback') from error
-            if config.require_memory_feedback:
-                raise ValueError('an independent memory-pressure source is not connected')
         elif request_feedback:
             from src.scheduling.submission_control.stage_work import default_request_feedback_options
             if gpu_ids:

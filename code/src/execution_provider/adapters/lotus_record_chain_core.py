@@ -678,8 +678,6 @@ class SemLoomRecordChainCore:
                 raise TypeError('request_feedback must be a typed current or explicit legacy request policy')
             if type(request_feedback) is ResourceFeedbackConfig and request_feedback.memory_floor_bytes:
                 raise ValueError('rolling memory_floor_bytes requires a memory signal source; none is connected')
-            if type(request_feedback) is ResourceRequestConfig and request_feedback.require_memory_feedback:
-                raise ValueError('an independent memory-pressure source is not connected')
             if experimental_skip_token_packing:
                 raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
             if (not self._async_token_batches or not rolling_refill

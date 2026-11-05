@@ -11066,3 +11066,17 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 [本轮证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
 记录完整 workflow 205 项和四个公开探针通过，原失败、服务器模型停止及 5175 独审候选保持。
 只修改测试夹具与说明，没有修改生产逻辑、运行模型、推送或合并；剩余整体重构继续单独处理。
+
+
+## 2026-11-05 继续主机内存来源与公开路径接线
+
+以准确远端 9da 建立独立候选，避开 Q2b 的 MMQA 入口。先接 cgroup v2 内核停顿／回收增量、
+同一实际 actor RPC 的独立来源与查询时钟，再接既有 require_memory_feedback；缺省要求保持关闭。
+[分层实现和证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure)
+区分压力反馈和实际物理授予，记录原失败与 ordinary／rolling／resident 检查，不把逻辑载荷额度称为 RSS 上限。
+没有修改控制算法、模型参数、baseline 或 Q2b 实现，没有模型／真实 Ray／GPU 调用、推送或合并。
+物理存储授予、完整关系、持久副本与恢复继续作为未完成工作处理。
+
+最终 184 模块选择 2201 项，2156 成功，45 未运行；25 个新方法全部通过。
+标准 205 项和四个公开探针在最终代码上通过，1343 个代码摘要匹配。首轮权限与连带失败保持原身份，
+获准的 CPU 重跑没有失败或错误；只读核对没有本候选路径启动的 Python 子进程残留。准确候选待独审。

@@ -563,14 +563,33 @@ The adapter retains original completion receipts, legal successors, independent
 member refill, Extract relations, unknown work and ACK ownership. A smaller
 window stops future selection. Already accepted requests drain under their
 original ownership. Native rejection counts remain unknown where no source is
-connected. Requiring an independent memory-pressure source rejects configuration
-until one is connected. No KV/busy percentage cutoff or cross-query learned hint
+connected. The existing `require_memory_feedback=true` option now requires a
+source-qualified cgroup v2 kernel interval for growth. It remains false by default.
+No KV/busy percentage cutoff or cross-query learned hint
 enters this policy. Missing backend ready capability fails explicitly.
 
 The implementation is [records_request_feedback.py](records_request_feedback.py).
 [Public wiring evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/public_request_wiring_checks.json)
 records 309 selected CPU methods, 308 successes and one upstream-checkout skip.
 Model, real Ray and GPU qualification remain pending.
+
+The same resource RPC reads kernel memory stalls and reclaim events in the model
+actor's visible cgroup hierarchy, including ancestors. Source/PID/query identity,
+sequence and source time are checked independently of native inference progress.
+A repeated sample retains its original driver time. Missing data, unsupported
+systems, first reads and reader errors remain unknown; changing the source in a
+query cannot clear previously bound pressure. Known pressure uses the existing
+controller's reduction, preserving all accepted task/result ownership.
+
+This is interval feedback, not a RAM allocation or RSS ceiling. A clean interval
+does not establish free bytes. Unknown feedback prevents growth; an initial one
+request or the existing verified window may continue. It cannot prevent every
+allocation failure, stop all work, or cover driver/Ray/model-worker allocations
+outside the observed hierarchy. Independent physical backing storage, complete
+relation accounting and cross-process recovery remain pending. The kernel reader
+runs only through already enabled `MetricSources` reads, adds kernel-file I/O to
+that measured path and starts no extra thread or RPC. See the
+[source and CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure).
 
 Explicit `kind="legacy_resource_feedback"`, named `delivered-work-scan` and
 `computed-work-local-pairs`, and direct typed `ResourceFeedbackConfig` retain the

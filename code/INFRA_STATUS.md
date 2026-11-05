@@ -743,3 +743,9 @@ rolling 结果交接修订候选另从 99aa 建树：无 expected 的非空取�
 仅修改测试夹具与检查，没有放宽生产采样、批分页、ACK 或未知 RPC 的处理。
 [诊断记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
 说明服务器较早源码的失败及最新组合的复现；5175 原候选及其独审证据保持不变。
+
+主机内存继续重构候选从 9da 独立建树：现有 require_memory_feedback 选项可接模型 actor 可见 cgroup v2
+的内核停顿／回收事件，保留单一 snapshot RPC、实际查询／来源时钟与独立 safety 序号。默认要求仍关闭。
+首次、缺项、旧来源及读取错误不授权增长；原生统计未更新也可接收已确认的独立压力，已有任务／结果占用保持。
+[实现和分层检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure)
+不提供物理 RAM 授予、RSS 上限、完整关系存储或跨进程恢复；真实 Linux、Ray 和模型验证仍未完成。
