@@ -1496,3 +1496,20 @@ keep the unexecuted cases explicit.
 next phase and assembles its result accountant. No extra owner, copy of the data ledger or facade is introduced.
 [CPU scope, interruption recovery and pending OS checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
 retain the original failures. Private old pickle locations are no longer forced through fake module metadata.
+
+The record-local source table now releases each expected record reference after the corresponding input passes the original
+lazy comparison. Keys and offered IDs still verify duplicates and complete input; unread rows are not serialized at startup.
+`RecordOccurrence.from_dict` delegates copying mutable fields to its existing constructor instead of copying the whole input first.
+Other query relations and their owners remain unchanged. This is a reference-lifetime correction, not measured RSS reduction.
+
+<a id="async-ipc-layout"></a>
+### IPC process and wire responsibilities
+
+[async_engine_process.py](../../serving/backends/async_engine_process.py) keeps the actual parent owner, input and result
+accounting, poll/ACK and teardown. [async_engine_worker.py](../../serving/backends/async_engine_worker.py) owns the actual child
+loop and inherited-descriptor CLI; the parent launches that module. Shared packet encoding and compact result projection live in
+[async_engine_wire.py](../../serving/backends/async_engine_wire.py), used directly by parent, worker and candidate sizing.
+Observers and fixtures import the implementation they exercise; old serve imports and duplicate forwarding functions are absent.
+[Combined source and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+record unchanged result/unknown responsibility and the remaining real worker/socket checks. The three files total 939 lines,
+compared with 920 before the split; the smaller parent file is a responsibility change, not a code-size reduction.

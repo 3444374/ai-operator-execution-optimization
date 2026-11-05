@@ -11468,3 +11468,14 @@ JSON只要显式请求数便可复用其余默认，不要求重复九字段；�
 [准确代码、317项CPU与历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)保留原失败，records SDK／模型IPC不再补2／8。
 六行重复校验删除，没有新增同义测试；本批核心57106行、src＋scripts112940行，分别增9／6行，不称瘦身。
 旧诊断桥内部2、完整关系／副本的物理内存持有及实际模型资格仍待后续处理；未合并main。
+
+
+## 2026-11-05 整理记录持有、IPC文件职责与旧桥容量
+
+受测组合42253a56从已发布9ae29579推进：旧IMLane桥按资源声明传入请求数、ready核对同一数量，
+正常Movie／chain／cascade与host／worker同步迁移，内部两块默认及128上限删除，原查询／字节保护保留。
+IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移；记录验证逐条放开旧对象引用，反序列化删除外层重复复制。
+[源码、原失败及355项CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+保留初稿漏接线、历史恢复错误及修正，五份3010文件恢复不改原身份；完整作者桥、真实IPC和模型尚未验证。
+本批核心57124行、src＋scripts112964行，分别增18／24行，不能以拆分冒充代码缩减。
+物理RAM授予与完整查询RSS仍未实现；剩余adaptive及长函数继续按实际职责整理，未合并main。

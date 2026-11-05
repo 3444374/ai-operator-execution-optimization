@@ -108,9 +108,15 @@ owner 保留服务交接和真实资源清理确认，没有新增状态副本�
 [最小反例和回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
 保存改前失败和改后 10 项 CPU 通过，未增加清理状态或模型重启。
 
-异步模型 actor 的请求／回执与 IPC 实现在
+异步模型 actor 的请求／回执接线在
 [records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC
 终态许可仍由原 owner 管理。Session 的批占用投影集中到既有 `session_policy.py`，预留与回退仍在 Session。
+本地 IPC 的父进程管理在 [async_engine_process.py](src/serving/backends/async_engine_process.py)，
+子进程循环与入口在 [async_engine_worker.py](src/serving/backends/async_engine_worker.py)，
+共享帧编码在 [async_engine_wire.py](src/serving/backends/async_engine_wire.py)；旧 worker 导入与观测接点已迁移。
+IMLane 桥的在途数量由当前资源声明传入，ready 回执核对同一数值，Python 不再另补两块窗口；实际桥需重新构建。
+[源码、355 项 CPU 与尚未验证项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+区分标准 C++ 组件编译、完整作者桥和真实模型，不将拆文件算作总代码减少。
 SDK 与 Movie／Session 的 R 默认均为 None；普通 async 及已支持 rolling 从完整 Core 预算、typed IPC、JSON 中显式的 `max_inflight` 或服务 payload 声明解析有限请求数，缺来源在启动前拒绝。
 底层 IPC 必须接收明确额度，省略的总字节按声明槽数及完整单项计算；显式小额度保留。静态／低层链仍需其支持的有限声明。[当前范围与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)不表示自动物理容量。
 

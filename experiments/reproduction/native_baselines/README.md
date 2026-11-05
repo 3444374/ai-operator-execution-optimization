@@ -395,3 +395,15 @@ SDK 的 R 省略及底层 IPC 默认现已调整；五份投影继续使用准�
 `resident_udf.py` 的旧文件从已发布 0677 保存到[原件 gzip](historical_sources/0677c7a3/code/integrations/imlane_records/resident_udf.py.gz)，
 manifest 为五份投影各增加一条旧源路由及对应格式，原 expected 摘要和投影身份保持。
 [317 项组合检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)含五份共3,010文件完整恢复；没有重演历史模型环境。
+
+<a id="imlane-explicit-capacity-sources"></a>
+## IMLane 显式容量接线前的准确源码
+
+当前桥的 CLI、ready 与结果 carrier 改为使用同一显式请求数；五份具名版本继续使用旧代码。
+六份准确旧源保存于 `historical_sources/9ae29579/code/integrations/imlane_records/`：
+`client.py`、`imlane_records.cpp`、`method_environment.py`、`record_dbend_adapter.hpp`、`records_checks.cpp`、`records_host.py`。
+来源为 `9ae2957953a8cca2cb7a63e375dc69a681022de6`，各 gzip 解码后仍匹配原 expected 摘要；
+manifest 仅增加30条来源和30条格式记录，五份投影身份、原3,010文件摘要保持。
+IPC 拆分涉及的四个历史文件继续使用已有19条准确路由，没有重复复制或新增同字节原件。
+[组合源码及完整恢复](../../results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+覆盖五份投影；旧模型环境与作者桥未运行。
