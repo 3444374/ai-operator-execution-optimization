@@ -773,6 +773,21 @@ cover readiness, configured dispatch ticks, close, unknown cancellation and phas
 including an unfinished first model request and no repeated control notification;
 real-backend latency and overhead on this exact new source still require validation.
 
+The optional child IPC publisher now waits for the first actual `NativeStats.record`
+scheduler sample and sends that first frame without the mandatory interval sleep.
+Later publications retain `feedback_interval_s`, source sequence/time and the same
+single-packet/control-byte bounds. No synthetic idle frame is created. Shutdown
+cancels a wait that has not received any source; feedback disabled starts no publisher.
+This follows the fixed [vLLM 0.25.1 output-handler stat-logger seam](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/async_llm.py#L590-L653),
+which receives actual [scheduler output statistics](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/sched/scheduler.py#L1692-L1703).
+Those sources may only become available after a model step: availability before
+the first model request finishes is not guaranteed. Actor session switches still
+require actual admitted model work; unbound/previous-session replies are rejected.
+The [CPU IPC first-source cases](../../../tests/serving/test_native_first_feedback.py)
+hold the first fixture generation pending while its true fixture statistics cross
+the real local sockets, and cover missing sources, disabled feedback, notification
+failure, abort and close. They do not establish first-frame timing on real vLLM/Ray.
+
 The separate `last_native` fallback commits and reuses frames only for the current
 Core session, under the same lock as `bind`'s session/cache reset. If audit spans a
 phase change, the old RPC remains a known terminal receipt, but its frame cannot

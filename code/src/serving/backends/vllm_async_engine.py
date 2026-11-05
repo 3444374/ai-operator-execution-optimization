@@ -94,7 +94,9 @@ class VllmAsyncEngine:
         self._context_observed = None
         self._reserved_model_calls = self._input_bytes = 0
         self._loop = asyncio.get_running_loop()
-        self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics) \
+        self._first_feedback = asyncio.Event()
+        self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics,
+            first_sample_ready=self._first_feedback) \
             if self.limits.feedback_interval_s or self.spec.enable_mfu_metrics else None
         if self.spec.enable_mfu_metrics:
             from src.observability.metrics.mfu_trace import install
@@ -358,6 +360,10 @@ class VllmAsyncEngine:
     def feedback_snapshot(self):
         return None if self._feedback is None else self._feedback.snapshot()
 
+    async def wait_for_first_feedback(self):
+        """Wait for an actual scheduler record on this engine's event loop."""
+        await self._first_feedback.wait()
+
 
     def mfu_snapshot(self):
         return (dict(status="disabled") if not self.spec.enable_mfu_metrics
@@ -367,10 +373,12 @@ class VllmAsyncEngine:
 class NativeStats:
     """Constant-size vLLM 0.25.1 stat logger; no I/O in the output handler."""
 
-    def __init__(self, engine_uid, *, clock=time.monotonic, enable_mfu_metrics=False):
+    def __init__(self, engine_uid, *, clock=time.monotonic, enable_mfu_metrics=False,
+                 first_sample_ready=None):
         self.engine_uid, self.clock = engine_uid, clock
         self.sequence = self.preemptions = self.finished = self.tokens = 0
         self.latest = None
+        self._first_sample_ready = first_sample_ready
         from src.observability.metrics.mfu import NativeMfuTotals
         self.mfu = NativeMfuTotals(engine_uid, clock=clock) if enable_mfu_metrics else None
 
@@ -389,6 +397,9 @@ class NativeStats:
                 waiting=scheduler_stats.num_waiting_reqs, kv_usage=scheduler_stats.kv_cache_usage,
                 preemptions_total=self.preemptions, finished_total=self.finished,
                 generation_tokens_total=self.tokens)
+            if self._first_sample_ready is not None:
+                self._first_sample_ready.set()
+                self._first_sample_ready = None
 
     def log_engine_initialized(self):
         pass

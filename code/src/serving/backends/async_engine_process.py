@@ -713,8 +713,18 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         async def feedback_updates():
             nonlocal feedback_packet
             latest_sequence = None
+            wait_first = getattr(engine, 'wait_for_first_feedback', None)
+            if callable(wait_first):
+                try:
+                    await wait_first()
+                except Exception:
+                    pass  # Optional notification failure retains periodic sampling.
+            first = True
             while not closing.is_set():
-                await asyncio.sleep(limits.feedback_interval_s)
+                if first:
+                    first = False
+                else:
+                    await asyncio.sleep(limits.feedback_interval_s)
                 # One optional packet at most, leaving a slot for critical control.
                 if feedback_packet is not None or control_queue.qsize() >= control_queue.maxsize - 1:
                     continue

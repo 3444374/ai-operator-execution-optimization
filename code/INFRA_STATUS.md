@@ -7,6 +7,10 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+首帧发布本地候选：异步 IPC 等待实际 scheduler 统计就绪后立即发送第一帧，后续保持原周期；
+不制造 idle、零完成或当前 session。CPU socket 检查覆盖首个请求未结束时的统计交付与关闭，
+真实 vLLM／Ray 的首帧时刻及早期扩张仍待实机复验，见[采样接点](src/execution_provider/adapters/README.md#snapshot-rpc-ownership)。
+
 LOTUS 语义层候选将固定版本／源码摘要相等检查改为实际安装来源记录；参考 commit 与未知的
 安装包 commit 分开，普通绑定、formatter 和 SDK 准备不读取来源摘要。
 既有 67 项与新增 4 项来源／执行边界 CPU 检查通过，环境仍为 LOTUS1.2.4／LiteLLM1.95.0／OpenAI2.50.0。
