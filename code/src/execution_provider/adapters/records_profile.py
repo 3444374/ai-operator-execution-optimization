@@ -54,7 +54,6 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
                 model_batch_rows=1,
                 model_batch_mode="independent_final_results" if mode == "async" else "finite_synchronous_single_row",
                 performance_tuned=False)
-    admission = profile.get("admission")
     if admission is not None:
         if (mode != "async" or type(admission) is not dict
                 or admission.get("kind") != 'resource_feedback'):

@@ -179,21 +179,20 @@ class SemLoomRecordsCore:
         self._thread = threading.get_ident()
         self._actors = (actor_owner if actor_owner is not None else
                         _ActorOwner(self.method, self.engine, self.generation, self.resources))
-        self.execution_profile = resolve_core_profile(
-            self.engine, self.resources, dict(stage_timing=stage_timing))
         actual_mode = self._actors.execution_metadata()["model_batch_mode"]
-        self.execution_profile.update(
-            mode="async" if actual_mode == "independent_final_results" else "sync",
-            model_batch_mode=actual_mode)
+        mode = "async" if actual_mode == "independent_final_results" else "sync"
+        profile = dict(stage_timing=stage_timing)
+        if admission is not None:
+            profile.update(mode=mode, admission=admission)
+        self.execution_profile = resolve_core_profile(self.engine, self.resources, profile)
+        self.execution_profile.update(mode=mode, model_batch_mode=actual_mode)
         self._feedback = None
         if admission is not None:
-            configured = resolve_core_profile(self.engine, self.resources,
-                dict(mode=self.execution_profile["mode"], admission=admission))
+            configured = self.execution_profile["admission"]
             self._actors.limits = replace(self._actors.limits,
-                feedback_interval_s=configured["admission"]["poll_interval_s"])
+                feedback_interval_s=configured["poll_interval_s"])
             from .records_request_feedback import CoreResourceRequestFeedback
-            self._feedback = CoreResourceRequestFeedback(self, configured["admission"])
-            self.execution_profile.update(configured)
+            self._feedback = CoreResourceRequestFeedback(self, configured)
         self.core = self.transport = self._active = None
         self._closing = False
         self._deadline = None
