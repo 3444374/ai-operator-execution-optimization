@@ -1627,3 +1627,4 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [融合批执行职责整理](diagnostics/records_runtime_refactor_20261104/README.md#fused-chain-runtime-roles)
 关联原样迁移的传输／迭代与现有 11 项 CPU 行为检查；改前改后各自通过，重复方法不相加。
 这是文件职责调整，生产行数增加 18 行，不提供瘦身或性能结论。
+后续 f23 组合改用值模块的直接导入，相同 11 项再次通过；原件并入同一主报告，重复选择不相加。

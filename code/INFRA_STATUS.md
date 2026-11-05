@@ -923,3 +923,6 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 融合批传输与迭代已从链查询 owner 拆到 `lotus_chain_fused_runtime.py`；查询配置、组装、
 阶段切换和最终资源清理保持原 owner。[职责整理检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-chain-runtime-roles)
 使用相同的现有 CPU 行为用例，未新增控制器、策略或容量，未验证模型与性能。
+
+该职责切片已与 f23 的 LOTUS 方法／值整理组合，新模块直接采用 `record_types`；
+相同 11 项 CPU 行为再次通过。生产默认与资源责任保持，详见同一记录的后续组合。

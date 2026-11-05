@@ -136,5 +136,78 @@
     "main": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
     "3fd": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
     "major_retirement_work_belongs_to_previous_batches": true
+  },
+  "f23_integration": {
+    "upstream": "f23ffb62a10e87ad377b51c97ce168d4e7051e28",
+    "production_checkpoint": "a66b33ee0e35744a2c1c6cef9d056c97d9c1b518",
+    "reviewed_component": "043a8a38274d990b8b59a04749211c9c4fec9daa",
+    "change": "Preserve the new semantic-method split and use its canonical record_types import in the new fused runtime.",
+    "CPU": {
+      "selected": 11,
+      "passed": 11,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "source_unchanged_during_suite": true,
+      "current_Python_matches_run": true,
+      "same_selection_not_added_to_prior_11": true
+    },
+    "source_sha256": {
+      "code/src/execution_provider/adapters/lotus_chain_fused_runtime.py": "4ca4efd9a9bcdab481f1881a0600fa496301670dab0432f1699a3512cfd2e9c0",
+      "code/src/execution_provider/adapters/lotus_record_chain_core.py": "f727f1a159ec5166a8c3a1d8a51988372806f959376702e0b452f9f3692f600d",
+      "code/src/execution_provider/adapters/records_query_runtime.py": "de9790ca2eb2dcb4d30a8631b3ce873569432d4333ca3b011aef62f7df8b51ef",
+      "code/src/execution_provider/method_workers/lotus_chain_batch.py": "de2586c995014a0aaa0dae3656cbab8d51ac28525649d31e78e3785c531db0f2",
+      "code/src/semantic_methods/lotus/engine.py": "5287a812a12bfeacac17c39286bf0222f66a9cd73c08e9ad5771b5fec35be1ed",
+      "code/src/semantic_methods/lotus/record_chain.py": "84afde24059819f3023e49b866c59ff4ae838bc579851733e9d7a42e87db771b",
+      "code/src/semantic_methods/lotus/record_method.py": "fa6b36ec9ac2821a5b1ff6c669762aee429ba5ad9a6466d688031de8fe3212f1",
+      "code/src/semantic_methods/lotus/record_relation.py": "f1be3a93c0acfb296cd957de66bbfbfc85063545a63174b37a554a018e629aee",
+      "code/src/semantic_methods/lotus/record_types.py": "cb87ab01526236638d7c836107f266709c187b551c81fc16d386744234e3a976",
+      "code/src/semantic_methods/lotus/sdk.py": "1f83e75775e7396ee30bc1125255eda32c52946eb53daf80ccf8294e1a5385e2",
+      "code/tests/execution_provider/test_chain_audit_lifetime.py": "1f51358cdc9be69d4cd8a6ee88a418e4ed8054a1d05155d89cb5d03c94f5d52a",
+      "code/tests/execution_provider/test_lotus_prepared_batching.py": "3109bb8368b4693739d6fc3696685b1360a23926ab4c5f700ebed0f471b34ee1",
+      "code/tests/execution_provider/test_lotus_prepared_reuse.py": "e3fe3cebdfd07e480cc415193cae9c50c2e92febef2bb15dc70a9432fef97156",
+      "code/tests/execution_provider/test_records_query_runtime.py": "2ed1ec8595c5d32ffc67b5f731a74fdd834aba3cdae7651607946e7f6cf52204",
+      "code/tests/execution_provider/test_records_transport.py": "026ab99e0c93bdca87fc707bfd06a32b9cec23008cd17c4a422eeafb05fac661",
+      "code/tests/semantic_methods/test_lotus_record_results.py": "734c95bf05de79717105834af06bba6d97d21ce37ee64a2f938daf1931dc53ae"
+    },
+    "raw": {
+      "path": "fused_chain_runtime_f23_raw.json.gz",
+      "bytes": 2017,
+      "sha256": "c9b268c82742dc5e7f4b8ad2169370e81a4a38c4f6e6899a6e42d7dbd798219a",
+      "decoded_bytes": 10103,
+      "decoded_sha256": "cb318609048f955a4046c65f52e1aa349b6f20131380ee6dec65686a3afc3d49"
+    },
+    "private_originals": {
+      "fused-f23-combination.json": {
+        "bytes": 131698,
+        "sha256": "bfc87218de6236326f641f5934dd27532091724c99ddb1c0b7efbd31ee5e9581"
+      },
+      "fused-f23-combination.log": {
+        "bytes": 2566,
+        "sha256": "b73c35785057b4f2e43e6228145df21d7bf366135edc4f526b7b14ce90215dc3"
+      },
+      "fused-f23-combination.console.log": {
+        "bytes": 12647,
+        "sha256": "074b358e395acfdd6ca6c26fd28261ae5a1a743ee9bcbf05bb76a99738398754"
+      }
+    },
+    "owner_lines": 1101,
+    "upstream_owner_lines": 1536,
+    "runtime_lines": 453,
+    "batch_production_net_lines": 18,
+    "current_physical_Python_lines": {
+      "core": 59100,
+      "src_and_scripts": 114907,
+      "vs_3fd": {
+        "core": -2528,
+        "src_and_scripts": -34738
+      },
+      "vs_main": {
+        "core": 5009,
+        "src_and_scripts": -25428
+      }
+    },
+    "reference_cleanup": "The moved bodies have one definition; the new runtime follows the canonical value import. No unused import binding, private-object CLI/config route or new wrapper remains.",
+    "limits": "The selected methods exercise this composition; they do not replace upstream cascade/source qualification or real model/Ray/GPU checks."
   }
 }
