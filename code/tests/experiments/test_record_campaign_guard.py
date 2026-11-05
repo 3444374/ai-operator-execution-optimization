@@ -382,7 +382,8 @@ class CampaignEntryTests(CampaignFixture):
         self.clock.now += 200
         self.cpu_fake_ray_ready(guard)
 
-        def cpu_controller(root):
+        def cpu_controller(root, *, monitor):
+            monitor(())
             self.assertGreater(guard.work_deadline-guard.clock(), 0)
             self.assertLess(guard.work_deadline-guard.clock(), 480)
             self.query_report(root, [self.record('q:'+str(i)) for i in range(3)])
@@ -394,7 +395,8 @@ class CampaignEntryTests(CampaignFixture):
                 patch.object(controller, 'worker_environment', return_value={}), \
                 patch.object(controller, 'main', side_effect=cpu_controller) as execute:
             guard_module.run_cell(guard, 'first')
-        execute.assert_called_once_with(cell_root)
+        execute.assert_called_once()
+        self.assertEqual(execute.call_args.args, (cell_root,))
         self.assertEqual(json.loads((guard.root / 'first-GUARD-END.json').read_text())['status'], 'passed')
 
     def test_run_cell_cpu_boundary_claims_once_restores_environment_and_publishes_complete_counts(self):
@@ -404,14 +406,14 @@ class CampaignEntryTests(CampaignFixture):
         original = supervisor.supervise
         calls = []
 
-        def cpu_controller(root):
+        def cpu_controller(root, *, monitor):
             # This executes a real CPU subprocess, not the formal model controller.
             self.assertEqual(root, cell_root)
             calls.append(root)
             os.environ['CPU_CAMPAIGN_BOUNDARY'] = 'changed inside CPU fixture'
             os.environ.pop('CPU_CAMPAIGN_KEEP', None)
             result = supervisor.supervise([sys.executable, '-c', 'print("CPU boundary only")'],
-                root / 'cpu-supervision', timeout_s=3, grace_s=.5)
+                root / 'cpu-supervision', timeout_s=3, grace_s=.5, monitor=monitor)
             self.assertTrue(result['observed_owned_exit_confirmed'])
             records = [self.record('q:'+str(i)) for i in range(3)]
             (root / 'WORKER-RESULT.json').write_text(json.dumps(dict(calls=records)))
@@ -452,7 +454,8 @@ class CampaignEntryTests(CampaignFixture):
                 guard, cell_root, config = self.entry('bad-'+name.split('.')[0])
                 self.cpu_fake_ray_ready(guard)
 
-                def malformed_controller(root):
+                def malformed_controller(root, *, monitor):
+                    monitor(())
                     os.environ['CPU_CAMPAIGN_BOUNDARY'] = 'must be restored after error'
                     (root / name).write_text('{not valid JSON')
 

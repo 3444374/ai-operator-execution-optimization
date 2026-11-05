@@ -391,8 +391,7 @@ def run_cell(guard, cell_id):
     saved_environment = dict(os.environ)
     error = None
     try:
-        with guard.supervision():
-            controller.main(path.parent)  # Original lease, worker, monitor, cleanup and footer owner.
+        controller.main(path.parent, monitor=lambda _: guard.check())
         guard.check(force=True)
     except BaseException as caught:
         error = caught

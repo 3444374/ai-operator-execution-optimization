@@ -109,7 +109,7 @@ def capture_status(root):
                 scope='observed sink receipts only; inspect profiler export/drop diagnostics and process identities before qualification')
 
 
-def main(root):
+def main(root, *, monitor=None):
     root=Path(root);prepared=json.loads((root/'PREPARED-CONFIG.json').read_text())
     check_material(prepared);identity=source_identity(prepared)
     binding=prepared['host_helpers'];path=Path(binding['path'])
@@ -146,8 +146,9 @@ def main(root):
         os.environ.clear();os.environ.update(env)
         if prepared.get('cpu_affinity') is not None:os.sched_setaffinity(0,set(prepared['cpu_affinity']))
         last_sample=[0.0];snapshots=[]
-        def monitor(identities):
+        def worker_monitor(identities):
             owned.update(identities);H.check_lease(lease)
+            if monitor is not None:monitor(identities)
             if time.monotonic()-started>config['limits']['controller_timeout_s']:raise TimeoutError('controller operational timeout')
             if profiled(config):
                 directories={root/'trace',Path(config['nsys_tmp'])}
@@ -161,7 +162,7 @@ def main(root):
                     snapshots.append(dict(lower_monotonic_ns=lower,upper_monotonic_ns=time.monotonic_ns(),values=sample.stdout.strip()))
                     (root/'GPU-SNAPSHOTS.json').write_text(json.dumps(snapshots));last_sample[0]=time.monotonic()
         supervision=api.supervise(command,root/'supervision',timeout_s=config['limits']['worker_timeout_s'],
-                   grace_s=config['limits']['cleanup_grace_s'],natural_exit_grace_s=config['limits']['natural_exit_grace_s'],monitor=monitor)
+                   grace_s=config['limits']['cleanup_grace_s'],natural_exit_grace_s=config['limits']['natural_exit_grace_s'],monitor=worker_monitor)
         owned.update(H.report_identities(supervision))
         report=json.loads((root/'WORKER-RESULT.json').read_text())
         result.update(status=report['status'],actual_known_model_requests=report['actual_calls'],actual_call_count_complete=report['actual_call_count_complete'])
