@@ -749,3 +749,8 @@ rolling 结果交接修订候选另从 99aa 建树：无 expected 的非空取�
 首次、缺项、旧来源及读取错误不授权增长；原生统计未更新也可接收已确认的独立压力，已有任务／结果占用保持。
 [实现和分层检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure)
 不提供物理 RAM 授予、RSS 上限、完整关系存储或跨进程恢复；真实 Linux、Ray 和模型验证仍未完成。
+
+Ray 资格入口另修正测试总数写死为五项的问题：按实际方法结果确认原五项及其他选中方法均通过，
+不再解析日志的总数；监督、完整输出和原清理责任保留。
+[修订与本地检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
+不修改服务器此前停止记录，也没有在本机运行真实 Ray、模型或 GPU。

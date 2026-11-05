@@ -22,6 +22,13 @@ SPEC = importlib.util.spec_from_file_location('record_campaign_guard_tests_targe
 guard_module = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = guard_module
 SPEC.loader.exec_module(guard_module)
+import ray_future_qualification as ray_qualification
+
+
+def ray_result(*, extra=(), omitted=(), unsuccessful=False):
+    selected = sorted(ray_qualification.REQUIRED)+list(extra)
+    return dict(schema='semloom.ray_future_tests.v1',selected_test_ids=selected,
+        passed_test_ids=[name for name in selected if name not in omitted],successful=not unsuccessful)
 
 
 class Clock:
@@ -362,7 +369,7 @@ class CampaignEntryTests(CampaignFixture):
         log.parent.mkdir()
         log.write_text('CPU FAKE qualification log; no actual Ray execution\n'
                        'Ran 5 tests in 0.001s\n\nOK\n')
-        marker = dict(status='passed', source=guard.manifest['source'], tests=5, skips=0,
+        marker = dict(status='passed', source=guard.manifest['source'], **ray_result(),
             log_sha256=hashlib.sha256(log.read_bytes()).hexdigest(),
             evidence_scope='explicit CPU fake for guard orchestration, not real Ray qualification')
         (guard.root / 'REAL-RAY-READY.json').write_text(json.dumps(marker))
@@ -474,14 +481,25 @@ class CampaignEntryTests(CampaignFixture):
         guard_module._check_gate(guard, next_cell)
         self.assertFalse(any(unit['claimed'] for unit in guard.ledger.snapshot()['units']))
 
-    def test_run_cpu_ray_requires_all_five_without_skips_and_restores_environment_without_claims(self):
+    def test_run_cpu_ray_requires_actual_method_results_without_a_text_count(self):
         import workflow
-        cases = [('four', 'Ran 4 tests in 0.001s\n\nOK\n', True, False),
-                 ('skipped', 'Ran 5 tests in 0.001s\n\nOK (skipped=1)\n', True, False),
-                 ('truncated', 'Ran 5 tests in 0.001s\n\nOK\n', False, False),
-                 ('complete', 'Ran 5 tests in 0.001s\n\nOK\n', True, True)]
+        extra = [ray_qualification.MODULE+'.ProviderShapeTests.'+name for name in (
+            'test_finish_reports_the_duration_from_the_existing_provider',
+            'test_idle_fixture_keeps_the_provider_source_duration_separate_from_work_window',
+            'test_next_query_keeps_the_same_provider_and_its_actual_declared_duration')]
+        complete_result = ray_result(extra=extra)
+        skipped = ray_result(omitted=(sorted(ray_qualification.REQUIRED)[0],))
+        cases = [('missing-required',ray_result(),True,'passed',False),
+                 ('skipped',skipped,True,'passed',False),
+                 ('extra-skipped',ray_result(extra=extra,omitted=(extra[0],)),True,'passed',False),
+                 ('teardown-error',ray_result(unsuccessful=True),True,'passed',False),
+                 ('worker-cleanup-failed',complete_result,True,'failed',False),
+                 ('truncated',complete_result,False,'passed',False),
+                 ('complete',complete_result,True,'passed',True)]
+        cases[0][1]['selected_test_ids'].pop()
+        cases[0][1]['passed_test_ids'].pop()
         original = supervisor.supervise
-        for label, text, complete, accepted in cases:
+        for label, evidence, complete, status, accepted in cases:
             with self.subTest(qualification=label):
                 guard, _, _ = self.entry('ray-'+label)
                 base = dict(movie_plan=dict(engine=dict(driver_python=sys.executable)),
@@ -500,8 +518,9 @@ class CampaignEntryTests(CampaignFixture):
                     self.assertFalse(any(k.startswith('SEM_RECORD_') for k in os.environ))
                     self.assertNotIn('SEMLOOM_MFU_TRACE_DIR', os.environ)
                     output.mkdir()
-                    (output / 'worker.log').write_text(text)
-                    return dict(status='passed', output_capture=dict(complete=complete))
+                    (output / 'worker.log').write_text('CPU fixture log, actual results are separate\nRan 8 tests in 0.001s\n\nOK\n')
+                    (output / 'RAY-TEST-RESULT.json').write_text(json.dumps(evidence))
+                    return dict(status=status, output_capture=dict(complete=complete))
 
                 with patch.dict(os.environ, RAY_ADDRESS='CPU-sentinel', SEM_RECORD_TEST='CPU-only',
                                 SEMLOOM_MFU_TRACE_DIR='CPU-trace-sentinel'):
@@ -522,12 +541,15 @@ class CampaignEntryTests(CampaignFixture):
                 if accepted:
                     ready = json.loads(marker.read_text())
                     log = guard.root / 'CPU-ray-first' / 'worker.log'
-                    self.assertEqual((ready['status'], ready['tests'], ready['skips']), ('passed', 5, 0))
+                    self.assertEqual(ready['status'],'passed')
+                    self.assertEqual(len(ready['selected_test_ids']),8)
+                    self.assertTrue(ray_qualification.qualified(ready))
                     self.assertEqual(ready['source'], guard.manifest['source'])
                     self.assertEqual(ready['log_sha256'], hashlib.sha256(log.read_bytes()).hexdigest())
                     guard_module._check_ray(guard)
                 self.assertEqual(len(observed), 1)
-                self.assertIn('tests.execution_provider.test_core_feedback_ray_future', observed[0])
+                self.assertTrue(observed[0][2].endswith('ray_future_qualification.py'))
+                self.assertEqual(observed[0][-2],'--output')
                 snapshot = guard.ledger.snapshot()
                 self.assertEqual(snapshot['allocated_requests'], 7)
                 self.assertFalse(any(unit['claimed'] for unit in snapshot['units']))
@@ -655,6 +677,7 @@ class CampaignCoverageTests(CampaignFixture):
             observed.append(dict(os.environ))
             output.mkdir()
             (output / 'worker.log').write_text('CPU FAKE only\nRan 5 tests in 0.001s\n\nOK\n')
+            (output / 'RAY-TEST-RESULT.json').write_text(json.dumps(ray_result()))
             return dict(status='passed', output_capture=dict(complete=True))
 
         base = dict(movie_plan=dict(engine=dict(driver_python=sys.executable)),

@@ -29,6 +29,7 @@ from src.baselines.common.private_artifacts import (
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments import lotus_records_supervisor as supervision
+from ray_future_qualification import qualified as qualified_ray_tests
 
 
 class GuardStop(RuntimeError):
@@ -357,7 +358,7 @@ def _check_ray(guard):
     value = json.loads(marker.read_text())
     log = guard.root/('CPU-ray-'+guard.manifest['cells'][0]['id'])/'worker.log'
     if (value.get('status')!='passed' or value.get('source')!=guard.manifest['source']
-            or value.get('tests')!=5 or value.get('skips')!=0 or not log.is_file()
+            or not qualified_ray_tests(value) or not log.is_file()
             or hashlib.sha256(log.read_bytes()).hexdigest()!=value.get('log_sha256')):
         raise BudgetError('the real Ray qualification receipt or complete log changed')
 
@@ -462,8 +463,10 @@ def run_cpu(guard, kind, cell_id=None):
     driver = base['movie_plan']['engine']['driver_python']
     command = [driver, '-B']
     tool = str(HERE/'workflow.py')
+    label = 'CPU-'+kind+'-'+cell['id']
     if kind == 'ray':
-        command += ['-m','unittest','-v','tests.execution_provider.test_core_feedback_ray_future']
+        command += [str(HERE/'ray_future_qualification.py'),'--output',
+                    str(guard.root/label/'RAY-TEST-RESULT.json')]
     elif kind == 'qualify':
         command += [tool,'qualify','--config',str(base_path),'--output-root',cell['ready_dir'],
                     '--tool-commit',guard.manifest['source']['head']]
@@ -475,7 +478,6 @@ def run_cpu(guard, kind, cell_id=None):
         command += [tool,'check','--config',cell['prepared_config']]
     else:
         raise ValueError('use an existing Ray, qualify, prepare or check CPU entry')
-    label = 'CPU-'+kind+'-'+cell['id']
     env = dict(os.environ)
     for key in tuple(os.environ):
         if key.startswith('SEM_RECORD_') or key in ('RAY_ADDRESS','SEMLOOM_MFU_TRACE_DIR','SEMLOOM_MFU_TRACE_MILESTONES'):
@@ -494,14 +496,12 @@ def run_cpu(guard, kind, cell_id=None):
                 grace_s=base['limits']['cleanup_grace_s'],
                 natural_exit_grace_s=base['limits'].get('natural_exit_grace_s', 0))
         if kind=='ray':
-            log = (guard.root/label/'worker.log').read_text()
-            if (not result['output_capture']['complete']
-                    or re.search(r'^Ran 5 tests in ', log, flags=re.MULTILINE) is None
-                    or re.search(r'^OK\s*$',log,flags=re.MULTILINE) is None
-                    or re.search(r'\(skipped=|^FAILED',log,flags=re.MULTILINE)):
-                raise RuntimeError('five actual Ray tests without skips must be evidenced')
+            evidence = json.loads((guard.root/label/'RAY-TEST-RESULT.json').read_text())
+            if (result['status'] != 'passed' or not result['output_capture']['complete']
+                    or not qualified_ray_tests(evidence)):
+                raise RuntimeError('required Ray tests and all selected tests must actually pass')
             write_private_json(guard.root/'REAL-RAY-READY.json', dict(status='passed',
-                source=guard.manifest['source'], tests=5, skips=0,
+                source=guard.manifest['source'], **evidence,
                 log_sha256=hashlib.sha256((guard.root/label/'worker.log').read_bytes()).hexdigest()))
         guard.check(force=True)
     except BaseException as error:
