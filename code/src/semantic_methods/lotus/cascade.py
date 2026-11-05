@@ -1,4 +1,4 @@
-"""Pinned LOTUS helper-LM control with a records-only evaluation seam.
+"""Native LOTUS helper-LM control with a records-only evaluation seam.
 
 The installed accessor and threshold learner execute their original code objects
 with private globals. Only document expansion and model evaluation are replaced;
@@ -218,12 +218,15 @@ def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, instruction, ma
 
 def cascade_response(result, lm, *, logprobs):
     """Preserve original LM extraction while requiring real helper token metadata."""
-    from litellm.types.utils import ModelResponse
-
     response = engine_response(result, lm)
     validate_engine_protocol(result)
-    if not logprobs:
-        return response
+    return _helper_response(result, response) if logprobs else response
+
+
+def _helper_response(result, response):
+    """Attach validated helper metadata to an already validated engine response."""
+    from litellm.types.utils import ModelResponse
+
     content = json.loads(result.get("logprobs_json", "null"))
     token_ids = json.loads(result.get("output_token_ids_json", "null"))
     if (type(content) is not list or not content or type(token_ids) is not list
@@ -395,10 +398,12 @@ class CascadeRun:
             model._update_stats(response, is_cached=False)
         if failures:
             raise RuntimeError("cascade stage contains failed, unknown or malformed engine output") from failures[0]
-        try:
-            responses = [cascade_response(result, model, logprobs=logprobs) for result in results]
-        except (ValueError, TypeError, KeyError) as exc:
-            raise RuntimeError("cascade stage contains malformed token metadata") from exc
+        if logprobs:
+            try:
+                responses = [_helper_response(result, response)
+                             for result, response in zip(results, responses, strict=True)]
+            except (ValueError, TypeError, KeyError) as exc:
+                raise RuntimeError("cascade stage contains malformed token metadata") from exc
         texts = [model._get_top_choice(response) for response in responses]
         parsed = filter_postprocess(texts, model, default, output_tokens=output_tokens)
         logs = [model._get_top_choice_logprobs(response) for response in responses] if logprobs else None

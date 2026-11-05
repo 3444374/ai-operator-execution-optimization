@@ -45,6 +45,12 @@ Filter cascade 仍使用原 accessor 和阈值学习器的私有全局绑定，�
 这处代码对象耦合仍在：直接换成公开 DataFrame 调用会把完整提示展开移到 driver，
 不能算等价简化。同进程并发 cascade 的随机数与 LM 记账隔离尚未验证。
 
+[cascade 差分检查](../../../tests/semantic_methods/test_lotus_cascade.py)用确定性 CPU 响应核对原生
+accessor 与 records 接点的完整提示、固定／学习阈值、重复抽样记录、fallback、决策与 LM 用量。
+helper 元数据无效时仍保留已知用量并让查询失败。阶段解释复用首次验证的响应，
+只为 helper 附加 logprobs，避免重复构造普通响应；未改原生校准、抽样和阈值算法。
+这些检查不执行模型，也不提供真实 helper 质量、服务器性能或其他发行版的资格。
+
 <a id="finite-chain-result-index"></a>
 ## 有限链共享结果关联索引
 
