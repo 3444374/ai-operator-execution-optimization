@@ -602,6 +602,12 @@ projections retain their separate [recovery records](../../../../experiments/rep
 Fixed-B `batch_feedback` remains supported with its existing
 `SupplyFeedbackConfig` and batch trial implementation. Its `ResourceFeedbackConfig`
 and `ResourceFeedbackController` do not enable the retired request entry.
+Previously saved full `batch_feedback.options` objects must drop the obsolete
+`search_policy="reference"` and `physical_probe_policy="idle_majority"` fields;
+the current parser rejects those selectors. Keep `max_batches` and every other
+declared batch option unchanged. Removing just these two inert defaults produces
+the same current default configuration; it does not replace custom options with
+defaults or translate retired request strategies into batch feedback.
 The shared work-comparison function remains used by current request and batch
 controllers; the finite point-search helper remains used by batch feedback.
 Joint B adjustment is unimplemented.
@@ -992,8 +998,10 @@ The public default-capacity resolver and Movie preflight/session/calibration sha
 one `RecordsRuntimeConfig`. Core and Method count guards sit above the byte-based
 whole-item allowance; result slots remain an independent IPC declaration. A smaller
 explicit IPC frame/total is preserved and does not shrink a different Core item's
-required reservation. Ordinary calibration records `records_capacity_policy_v2`;
-explicit historical profiles retain their earlier allocation and cache rules.
+required reservation. Ordinary calibration records `records_capacity_policy_v2`.
+The retired request profiles and admission cache retain their earlier allocation
+and cache rules only in the [fixed-source recovery records](../../../../experiments/reproduction/native_baselines/README.md#retired-request-feedback).
+The ordinary measured-configuration calibration cache remains supported.
 [Default-capacity evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/default_capacity_checks.json)
 records 388 selected CPU methods, 387 successes and one upstream-checkout skip.
 Direct low-level constructors, nonrolling batch defaults and sync/async model-spec

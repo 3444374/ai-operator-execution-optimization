@@ -23,7 +23,7 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
 ```
 
 `qualify` 跑本仓 CPU fixture、单请求及 token 批路径的 off/on 公共基类探针，不启动 Ray RPC、真实模型或 GPU。
-批探针还串起真实 `RequestSupplyFeedback` 的资源 snapshot 调用和 RPC 收尾；IPC、Future 与资源读数
+批探针还串起当前 `ResourceRequestSupplyFeedback` 的资源 snapshot 调用和 RPC 收尾；IPC、Future 与资源读数
 仍为 CPU fixture，不能据此声称真实 Ray、硬件采样或模型查询已验收。
 旧版被测源码没有批 API 时，该探针明确报告不支持，`CPU-READY.handoff_CPU_paths.token_batch=false`，
 不能将单请求资格解释成该版本的批路径资格。
@@ -41,7 +41,7 @@ SEMLOOM_REAL_RAY_RESOURCE_RECEIPT="$NEW_RECEIPT_JSON" PYTHONPATH=code \
   "$DRIVER_PYTHON" -B -m unittest -v tests.execution_provider.test_actor_resource_cpu_ray
 ```
 
-它最多发出 10 次 snapshot RPC，组合实际 `RequestSupplyFeedback`、观察 wrapper、host CPU 计数器、
+它最多发出 10 次 snapshot RPC，组合当前 `ResourceRequestSupplyFeedback`、观察 wrapper、host CPU 计数器、
 Ray Future 和 light sink 收尾。引擎及 native 统计是 CPU fixture，不加载模型、生成 token 或分配 GPU；
 不覆盖真实 vLLM、物理大步探测或查询性能。原 5 项 Future 检查保留为独立入口，本命令不额外运行它们。
 必须显式开启才运行；本地缺 Ray 的 skip 不能写作该资格通过。
