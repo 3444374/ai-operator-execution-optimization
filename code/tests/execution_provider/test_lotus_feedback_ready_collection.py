@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig, ResourceRequestConfig
 from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
+from src.scheduling.core.session import WakeSignal
 from tests.execution_provider import test_lotus_snapshot_rpc_receipts as receipts
 from tests.execution_provider.resource_request_sampler_fixture import ready, request_sampler
 
@@ -29,6 +30,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
                 allow_exploration=False, poll_interval_s=poll_interval_s, window_s=3, max_sample_age_s=3))
         else:
             feedback.config = SupplyFeedbackConfig(4, config)
+            feedback.owner.core = SimpleNamespace(wake=WakeSignal())
         feedback.owner._expected_count = 1
         feedback.owner._token_organizer = SimpleNamespace(concurrency=1)
         stream = SimpleNamespace(session=SimpleNamespace(session_id=1),
@@ -86,7 +88,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         self.addCleanup(feedback.close)
         return feedback, refs, cancels
 
-    def test_early_collection_spends_the_original_regular_turn_without_extra_RPCs(self):
+    def test_early_collection_leaves_the_next_regular_turn_free_for_dispatch(self):
         feedback, refs, _ = self.manual_sampler()
         feedback.sample(); refs[0][1].set_result(self.frame())
         feedback.provider._sample_once(feedback.collect_ready, ready=True)
@@ -96,7 +98,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         self.assertEqual(len(refs), 1)
         feedback.provider._sample_once(feedback.sample)
         self.assertFalse(feedback.provider.latest(1).fresh, 'cached collection cannot refresh the source')
-        self.assertEqual(len(refs), 1)
+        self.assertEqual(len(refs), 2)
         feedback.sample()
         self.assertEqual(len(refs), 2)
         self.assertIs(feedback.ref, refs[1][0])
@@ -165,7 +167,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
             run=SimpleNamespace(current=[None]), _stage_ids=['map0']))
         feedback.provider._sample_once(feedback.sample)
         self.assertIsNone(feedback.provider.latest(1).running)
-        self.assertEqual(len(refs), 1)
+        self.assertEqual(len(refs), 2)
         feedback.sample()
         self.assertEqual(feedback.report()['snapshot_rpc_pending']['request_session_id'], 2)
 
@@ -195,9 +197,10 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
         feedback.provider._sample_once(feedback.collect_ready, ready=True)
         self.assertTrue(feedback.provider.latest(1).fresh)
         self.assertEqual(len(refs), 1)
-        self.assertIsNone(feedback._collected_ready)
+        self.assertIsNone(feedback.ref)
+        self.assertEqual(len(feedback.snapshot_rpc_receipts), 1)
 
-    def test_invalid_or_raised_early_result_also_spends_the_original_collect_turn(self):
+    def test_invalid_or_raised_early_result_leaves_next_turn_free_without_replacing_pending_RPC(self):
         for result in ('invalid', 'raised'):
             with self.subTest(result=result):
                 feedback, refs, _ = self.manual_sampler()
@@ -208,7 +211,7 @@ class FeedbackReadyCollectionTests(unittest.TestCase):
                 row, = feedback.report()['snapshot_rpc_receipts']
                 self.assertEqual(row['rpc_terminal_status'], 'raised' if result == 'raised' else 'returned')
                 self.assertIsNone(feedback.sample())
-                self.assertEqual(len(refs), 1)
+                self.assertEqual(len(refs), 2)
                 feedback.sample()
                 self.assertEqual(len(refs), 2)
 

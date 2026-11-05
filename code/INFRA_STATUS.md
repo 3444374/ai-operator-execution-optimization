@@ -7,6 +7,11 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+本地反馈节拍候选修正提前回收后重复占用下一派发 tick；验证后的 provider 新帧复用现有 Core wake，
+可在控制轮询期限前由原控制线程消费。策略、默认、准入与未知责任不变；
+具体条件与未覆盖范围见[采样与控制接点](src/execution_provider/adapters/README.md#snapshot-rpc-ownership)。
+仅 CPU 场景验证，不代表真实 Ray／GPU 延迟或查询收益已经通过。
+
 <a id="legacy-request-retirement"></a>
 当前组合以已发布 646216fa 为源：旧 Movie HTTP 与固定 campaign 退役，普通本地 IPC、
 原 LOTUS 方法和现用 Matrix 保留；无 B 的准备／请求反馈组合与目录职责整理另见页末本轮记录。

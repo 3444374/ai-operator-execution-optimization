@@ -181,9 +181,8 @@ class CoreResourceRequestFeedback(_RequestSource, RecordsNativeSampler):
         if self._stream is not stream or self.controller is None:
             return
         now = time.monotonic()
-        if self.closed or now < self.next_poll:
+        if not self._control_due(now):
             return
-        self.next_poll = now + self.options.poll_interval_s
         records = tuple(r for r in self.owner.core.capacity.records.values()
                         if r.key.session_id == self.session_id)
         queued = tuple(r for r in records if r.phase == 'QUEUED')

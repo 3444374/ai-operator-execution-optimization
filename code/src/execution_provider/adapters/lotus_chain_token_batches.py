@@ -325,9 +325,8 @@ class BatchSupplyFeedback(RecordsNativeSampler):
         from src.scheduling.core.models import AdmissionObservation
         from src.scheduling.submission_control.stage_work import SupplyState
         now = time.monotonic()
-        if self.closed or self.controller is None or now < self.next_poll:
+        if self.controller is None or not self._control_due(now):
             return
-        self.next_poll = now+self.options.poll_interval_s
         records = self.owner.core.capacity.records
         live = [r for r in records.values() if r.key.session_id == self.session_id]
         queued = [r for r in live if r.phase == 'QUEUED']
