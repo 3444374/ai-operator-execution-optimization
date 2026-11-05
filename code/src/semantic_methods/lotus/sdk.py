@@ -1,37 +1,15 @@
-"""Use the pinned provider SDK to prepare complete LOTUS calls without submitting them."""
+"""Use the installed provider SDK to prepare complete LOTUS calls without submitting them."""
 
 from dataclasses import dataclass, field
-from functools import lru_cache
-import hashlib
-from importlib import import_module
-from importlib.metadata import version
 import json
-from pathlib import Path
 import math
 from urllib.parse import urlsplit
 
 
-LOTUS_COMMIT = "b1a85fd7a66fabed8a1585d44d7597d592b4433f"
-SOURCE_HASHES = {
-    "models/lm.py": "83e843ee8b381757525130ff09b0134fa77d3688a4321a9170e88ce79030e0e3",
-    "sem_ops/sem_map.py": "bfa7465c0cb2c0440e9c0cfb9ea3f394afa60b93c593472c2cab55994a456b16",
-    "templates/task_instructions.py": "059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3",
-    "sem_ops/postprocessors.py": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
-    "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
-    "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
-    "nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
-    "pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
-}
-IMAGE_SOURCE_HASHES = {
-    "utils.py": "2d8d38af8230f447a354f460e25a8f523f1dc1aa5edebf977a8297ed04458ebe",
-    "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
-    "sem_ops/sem_filter.py": "ae20bcb11b8750a9283a988ad2233d2f9a8b755f57a65c47b37029b1e70be7c7",
-}
+from .source import SDK_FILES, source_report
+
+
 IMAGE_TEXT_PROFILE = "lotus-image-text-v1"
-LITELLM_SOURCE_HASHES = {
-    "llms/openai/chat/gpt_transformation.py": "5a19feeb4b9957b8d2fb7c941ef0573e4e3b2931ae85db7609f876cff9e07016",
-    "utils.py": "8ef5db22a20cd45740788756aabc0e394efe20877311f0eff4ce491c94335d2a",
-}
 GENERATION_PARAMS = frozenset(
     {
         "temperature",
@@ -59,23 +37,13 @@ def check_message_profile(profile):
     return profile
 
 
-@lru_cache(maxsize=4)
 def validate_source(*, message_profile="text"):
-    """A wheel version alone does not establish the source used by this private seam."""
+    """Compatibility entry for source reporting; no version or hash acceptance gate."""
     check_message_profile(message_profile)
-    for package, expected in (("lotus-ai", "1.2.4"), ("litellm", "1.95.0"), ("openai", "2.50.0")):
-        if version(package) != expected:
-            raise ValueError(f"LOTUS adapter requires {package} {expected}")
-    for package, hashes in (("lotus", SOURCE_HASHES), ("litellm", LITELLM_SOURCE_HASHES)):
-        root = Path(import_module(package).__file__).parent
-        for relative, digest in hashes.items():
-            if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
-                raise ValueError(f"LOTUS adapter source differs at {package}/{relative}")
+    files = SDK_FILES
     if message_profile == IMAGE_TEXT_PROFILE:
-        root = Path(import_module("lotus").__file__).parent
-        for relative, digest in IMAGE_SOURCE_HASHES.items():
-            if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
-                raise ValueError(f"LOTUS image adapter source differs at lotus/{relative}")
+        files = (*files, "utils.py", "dtype_extensions/image.py", "sem_ops/sem_filter.py")
+    return source_report("lotus-sdk-" + message_profile, files, provider_sources=True)
 
 
 @dataclass(frozen=True)
@@ -200,10 +168,6 @@ def validate_batch(
 def prepare_call(lm, messages, all_kwargs, *, message_profile="text") -> PreparedLotusCall:
     """Mirror the ordinary OpenAI provider's nonstreaming transformation, before I/O."""
     check_message_profile(message_profile)
-    if message_profile == "text":
-        validate_source()
-    else:
-        validate_source(message_profile=message_profile)
     from litellm import OpenAIConfig
     from litellm.utils import get_optional_params
     from litellm.utils import ProviderConfigManager
@@ -375,10 +339,7 @@ class LotusResponseReplay:
         )
 
     def parse(self, lm, messages, all_kwargs, prepared, full, transport_error=""):
-        if prepared.message_profile == "text":
-            validate_source()
-        else:
-            validate_source(message_profile=prepared.message_profile)
+        check_message_profile(prepared.message_profile)
         import httpx
         from openai import OpenAI
         from litellm import completion
@@ -446,7 +407,7 @@ class LotusResponseReplay:
 def parse_lotus_response(
     lm, messages, all_kwargs, prepared, full, transport_error="", *, replay=None
 ):
-    """Use the pinned SDK without HTTP; callers may own one replay per batch."""
+    """Use the installed SDK without HTTP; callers may own one replay per batch."""
     if replay is not None:
         return replay.parse(lm, messages, all_kwargs, prepared, full, transport_error)
     owned = LotusResponseReplay()

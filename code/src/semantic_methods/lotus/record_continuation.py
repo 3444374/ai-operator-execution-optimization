@@ -4,7 +4,8 @@ from dataclasses import asdict
 import json
 
 from src.semantic_methods.continuation import Continue, Final, Request
-from .record_chain import ChainRun, RecordOccurrence, _parent_seeds
+from .record_chain import ChainRun
+from .record_types import RecordOccurrence, _parent_seeds
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 

@@ -6,7 +6,7 @@ import base64
 from copy import deepcopy
 
 from ..continuation import Continue, Final, Request
-from .sdk import check_model_config, decode_lotus_response, prepare_call, validate_source
+from .sdk import check_model_config, decode_lotus_response, prepare_call
 
 
 def encode(value):
@@ -64,7 +64,6 @@ def staged_two_map(frame, lm, stages):
     """Unmodified LOTUS calls preserve each stage's whole-frame completion wait."""
     import lotus
 
-    validate_source()
     _validate_stages(stages)
     if lotus.settings.enable_cache:
         raise ValueError("two-Map paired execution requires cache disabled")
@@ -86,7 +85,6 @@ class LotusTwoMapMethod:
         import lotus
         from lotus.sem_ops.postprocessors import map_postprocess
 
-        validate_source()
         _validate_stages(stages)
         if postprocessor is not None and postprocessor is not map_postprocess:
             raise ValueError("custom postprocessors require a separate method adapter")

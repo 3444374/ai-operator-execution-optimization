@@ -1,12 +1,18 @@
 # LOTUS 方法与执行接点
 
-这里维护 LOTUS 1.2.4 的提示构造、解析、有限方法与结果合同。SemLoom 执行适配直接依赖本层，
+这里调用已安装 LOTUS 的提示构造、解析、有限方法与结果合同；现有资格环境为 LOTUS 1.2.4。
+SemLoom 执行适配直接依赖本层，
 不从 baseline 获得生产实现；公共 Core 不选择 Movie、字段或标签默认。
 `FilterMethod(model_name, instruction)` 的 instruction 由调用方显式绑定。
 
 ## 当前入口和所有权
 
-- [engine.py](engine.py)、[record_chain.py](record_chain.py)保留实际 LOTUS formatter／parser 和方法状态。
+- [engine.py](engine.py)维护单 Filter 的原生 formatter／parser 与 LM 记账。
+- [record_types.py](record_types.py)维护方法／阶段及记录身份的序列化合同；
+  [record_method.py](record_method.py)调用单阶段 LOTUS formatter／parser；
+  [record_chain.py](record_chain.py)维护有限链推进、失败快照及逐记录交接。
+- [record_relation.py](record_relation.py)维护 Extract 的完整关系赋值与最终 DataFrame 组装。
+  旧 `record_chain` 类型与函数导入直接指向同一实现，JSON 标签和字段保持。
 - [record_results.py](record_results.py)拥有调用／父关联、coverage、失败和 unknown 合同；不拥有模型或调度。
 - `execution_provider/adapters/lotus_records_core.py` 与有限链适配属于 SemLoom，负责供给、推进和背压。
 - `baselines/text/frameworks/` 中原生 Ray／Daft 图负责自己的 worker、批次与调度；不注入 Core credit。
@@ -24,6 +30,38 @@ Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代�
 
 查询结果以实际 `result_ready` 为边界；原评价、API 返回、owner 关闭及模型复用成本另记。
 新原生 LOTUS 非 HTTP 路径只有 CPU 资格，完整官方 Q123 和真实模型尚待其依赖与实际环境检查。
+
+## 来源记录与运行合同
+
+[source.py](source.py)记录实际安装的 LOTUS、LiteLLM、OpenAI 版本及可读取源码的摘要。
+旧 `validate_*_source` 导入继续返回来源报告，但不再将固定版本或源码字节相等作为执行门槛；
+缺失的元数据或源码明确列为不可用。`lotus_commit`／图像的 `commit` 为未知值，
+`reference_lotus_commit` 只标识既有资格所用的参考实现，不能冒充当前安装包的 Git 身份。
+现有历史结果及其固定版本要求保持原身份；本次变化不证明其他发行版已经兼容。
+
+普通 formatter、方法绑定和 SDK 请求准备不读取这些来源摘要。实际调用继续使用 LOTUS 原实现；
+输入列、DEFAULT 序列化、适用的缓存／重试政策、生成选项、请求／结果身份、用量和资源边界继续校验。
+Filter cascade 仍使用原 accessor 和阈值学习器的私有全局绑定，保留后端准备原始记录的接点。
+这处代码对象耦合仍在：直接换成公开 DataFrame 调用会把完整提示展开移到 driver，
+不能算等价简化。同进程并发 cascade 的随机数与 LM 记账隔离尚未验证。
+
+[cascade 差分检查](../../../tests/semantic_methods/test_lotus_cascade.py)用确定性 CPU 响应核对原生
+accessor 与 records 接点的完整提示、固定／学习阈值、重复抽样记录、fallback、决策与 LM 用量。
+helper 元数据无效时仍保留已知用量并让查询失败。阶段解释复用首次验证的响应，
+只为 helper 附加 logprobs，避免重复构造普通响应；未改原生校准、抽样和阈值算法。
+这些检查不执行模型，也不提供真实 helper 质量、服务器性能或其他发行版的资格。
+
+## 排查与回归记录
+
+下列记录保留可复核的触发条件、原因和处理，供后续兼容性与性能排查使用；依据为改动前源码及本批 CPU 检查。
+
+| 问题与触发条件 | 原因与处理 | 必要验证与边界 |
+|---|---|---|
+| 旧接点在安装版本或源码字节与固定列表不等时，于方法绑定／准备前拒绝执行，即使差异不影响所用语义。 | 实验来源相等被用作普通运行的接纳条件。现由 `source.py` 记录实际来源，执行边界继续验证真实输入、请求与结果合同。 | [来源边界测试](../../../tests/semantic_methods/test_lotus_source.py)核对变化的版本元数据、源码及缺失元数据不会充当拒绝条件，非法请求选项仍拒绝；未安装验证其他版本。 |
+| 旧 cascade 的每个成功响应在阶段解释中转换为原生响应两次。 | `dispatch` 为记账先转换，随后 `cascade_response` 再转换一次。现在复用首次验证的响应，仅为 helper 附加 token 元数据。 | [原生差分](../../../tests/semantic_methods/test_lotus_cascade.py)核对固定／学习阈值、重复抽样、fallback、提示、决策和用量，并覆盖 helper 元数据失败后的记账。没有查询耗时或性能收益实测。 |
+
+本地消费端首次检查另出现进程查看权限错误，启用该权限后的同范围重跑通过；这是环境限制，
+原失败与重跑分列保留，不将其写成算法或清理协议缺陷。状态入口见[实现状态](../../../INFRA_STATUS.md)。
 
 <a id="finite-chain-result-index"></a>
 ## 有限链共享结果关联索引
@@ -46,7 +84,7 @@ Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代�
 <a id="filter-execution-boundary"></a>
 ## 原生 CLIP 图像检索
 
-`image_source.py`核对原LOTUS1.2.4；`image_identity.py`绑定模型参数、processor内容与版本。
+`image_source.py`记录实际LOTUS来源；`image_identity.py`绑定模型参数、processor内容与版本。
 `image_rm.py`把完整图像批交给原执行owner，保留RGB／源字节内容、行ID、shape／finite及独立矩阵所有权；
 `image_workflow.py`保留原生FAISS建库、重载、完整检索结果和settings恢复。
 `image_backend.py`提供固定单worker的Direct、SemLoom static／静态HSE和Ray fused／staged；

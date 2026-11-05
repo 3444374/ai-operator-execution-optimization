@@ -9,7 +9,7 @@ from copy import deepcopy
 import hashlib
 import json
 
-from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity, _ordered_columns, _parent_seeds
+from .record_types import RecordOccurrence, stage_identity, _ordered_columns, _parent_seeds
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
