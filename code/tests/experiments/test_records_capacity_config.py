@@ -19,7 +19,8 @@ from src.execution_provider.adapters import lotus_records_async_actor as actors
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.async_engine_process import AsyncEngineProcess, _frame
+from src.serving.backends.async_engine_process import AsyncEngineProcess
+from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from src.serving.backends.model_context import model_context_record

@@ -2,7 +2,7 @@
 import asyncio
 import sys
 
-from src.serving.backends.async_engine_process import serve
+from src.serving.backends.async_engine_worker import serve
 from src.serving.backends.vllm_async_engine import NativeStats
 from tests.serving.async_engine_fixture import FixtureEngine as BaseEngine
 from tests.serving.resource_feedback_fixture import FixtureEngine as FeedbackEngine

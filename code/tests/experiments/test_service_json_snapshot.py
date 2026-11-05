@@ -71,7 +71,7 @@ class ServiceTypedSnapshotTests(unittest.TestCase):
 
 if __name__ == '__main__':
     import asyncio
-    from src.serving.backends.async_engine_process import serve
+    from src.serving.backends.async_engine_worker import serve
     from tests.serving.async_engine_fixture import FixtureEngine
 
     class ZeroCompletionEngine(FixtureEngine):

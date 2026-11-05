@@ -50,16 +50,16 @@ template<class F> void rejects(F&& f) {
 int main() {
     try {
         auto in = input();
-        auto ids = validate_input(in, "query", Limits{});
+        auto ids = validate_input(in, "query", Limits{2});
         require(ids.size() == 2 && row_at(in, 0) == row_at(in, 1), "repeat source positions were lost");
         std::vector<std::shared_ptr<arrow::Field>> fields;
         for (const auto& field : in->schema()->fields()) fields.push_back(field->WithNullable(false));
-        validate_input(arrow::Table::Make(arrow::schema(fields), in->columns()), "query", Limits{});
-        rejects([&] { validate_input(in, "wrong-query", Limits{}); });
-        auto small = Limits{}; small.max_input_bytes = 1;
+        validate_input(arrow::Table::Make(arrow::schema(fields), in->columns()), "query", Limits{2});
+        rejects([&] { validate_input(in, "wrong-query", Limits{2}); });
+        auto small = Limits{2}; small.max_input_bytes = 1;
         rejects([&] { validate_input(in, "query", small); });
         auto empty = in->Slice(0, 0);
-        rejects([&] { validate_input(empty, "query", Limits{}); });
+        rejects([&] { validate_input(empty, "query", Limits{2}); });
         IMLane::DBEnd::TableConverter<arrow::Table, ExchangeResult> converter;
         auto lane = output(in);
         auto result = std::make_shared<ExchangeResult>(); result->input = in; result->max_output_bytes = 1048576;

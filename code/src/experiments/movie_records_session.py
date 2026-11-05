@@ -107,9 +107,9 @@ def check_plan(plan):
         checked.append(dict(query, expected_calls=len(source.expected(query["query_id"])),
                             manifest_sha256=inputs["manifest_sha256"]))
     if plan["backend"] == "imlane":
+        resources.request_capacity()
         if (plan["profile"] != asdict(resources) or resources.cpu_workers != 1
-                or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-                or resources.request_capacity() > 2):
+                or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16):
             raise ValueError("IMLane retains its one author worker and existing batch/backpressure capacities")
         if plan["lifecycle"] == "resident" and (len(checked) > 62
                 or any(not 0 < query["expected_calls"] <= 4094 for query in checked)

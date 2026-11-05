@@ -10,7 +10,7 @@ from unittest.mock import patch
 from src.execution_provider.adapters import lotus_chain_token_batches as batching
 from src.scheduling.core.session_contract import TaskKey
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
-from src.serving.backends.async_engine_process import _frame
+from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
 
@@ -119,7 +119,8 @@ def organizer(candidates, *, legacy=False, B=1000000, R=None, limits=None, rolli
         _actors=SimpleNamespace(limits=limits, model_ready=None),
         core=SimpleNamespace(capacity=SimpleNamespace(records={c.key: SimpleNamespace(compute=False, member=None)
             for c in candidates})), prepared_batching=SimpleNamespace(token_budget=B),
-        rolling_refill=rolling, request_feedback=None, deadline=deadline)
+        rolling_refill=rolling, request_feedback=None, experimental_skip_token_packing=False,
+        deadline=deadline)
     return (LegacyOrganizer if legacy else batching.PreparedTokenOrganizer)(owner, CountingTokenizer(), R)
 
 

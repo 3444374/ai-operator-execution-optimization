@@ -20,10 +20,9 @@ allocates a model, a worker pool or a vendor scheduler.
 """
 
     def __init__(self, rows, client, *, query_id, mapping, stage_id, block_prefix, control_dir, deadline,
-                 close_owner, block_rows=4, max_pending=2, cleanup_scope=nullcontext,
+                 close_owner, block_rows=4, cleanup_scope=nullcontext,
                  close_timeout_s=MODEL_CLOSE_GRACE_S):
         if (type(block_rows) is not int or not 0 < block_rows <= 16
-                or type(max_pending) is not int or not 0 < max_pending <= 2
                 or not callable(close_owner) or not callable(cleanup_scope)
                 or type(close_timeout_s) not in (int, float) or not math.isfinite(close_timeout_s)
                 or not MODEL_CLOSE_GRACE_S <= close_timeout_s <= 600
@@ -36,7 +35,7 @@ allocates a model, a worker pool or a vendor scheduler.
         self.query_id, self.control = query_id, Path(control_dir)
         self.deadline, self.close_owner = deadline, close_owner
         self.cleanup_scope, self.close_timeout_s = cleanup_scope, close_timeout_s
-        self.block_rows, self.max_pending = block_rows, max_pending
+        self.block_rows, self.max_pending = block_rows, client.meta['max_pending_blocks']
         self.pending, self.index = {}, 0
         self.exhausted = self.failed = self.started = self.closed = False
         self.primary = None

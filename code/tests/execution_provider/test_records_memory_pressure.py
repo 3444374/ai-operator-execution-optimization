@@ -14,7 +14,7 @@ from src.execution_provider.adapters.records_profile import resolve_core_profile
 from src.observability.records_telemetry import MetricSources
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
-from src.serving.backends.async_engine_process import AsyncEngineLimits
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from tests.execution_provider import test_records_request_feedback_safety as safety
 from tests.observability.memory_pressure_fixture import KernelMemoryFixture, resource_packet
 

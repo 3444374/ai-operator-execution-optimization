@@ -1,0 +1,587 @@
+{
+  "base": "08c3ebf57d5d1a382b54ff7a35266862549d0321",
+  "initial_base": "9ae2957953a8cca2cb7a63e375dc69a681022de6",
+  "candidate": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+  "tree": "8bbaf4900ff5d844ed71987009b815cb19a53d9f",
+  "recorded_source_commit": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+  "source_files": 1045,
+  "mismatches": [],
+  "source_unchanged_during_suite": true,
+  "CPU": {
+    "selected": 381,
+    "executed": 381,
+    "passed": 381,
+    "failure_events": 0,
+    "error_events": 0,
+    "skipped": 0
+  },
+  "schema": "semloom.runtime_structure_bridge.combination.v1",
+  "original_combination": {
+    "base": "9ae2957953a8cca2cb7a63e375dc69a681022de6",
+    "candidate": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
+    "tree": "85a62d2972316181d05e075bab868dadcc5724bb",
+    "recorded_source_commit": "42253a569ca1dcf80ccdb1ab4de92e629ab75394",
+    "source_files": 1032,
+    "mismatches": [],
+    "source_unchanged_during_suite": true,
+    "CPU": {
+      "selected": 355,
+      "executed": 355,
+      "passed": 355,
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": 0
+    }
+  },
+  "source_merge": {
+    "upstream": "08c3ebf57d5d1a382b54ff7a35266862549d0321",
+    "preserved_integration_branch": "refactor/semloom-runtime-structure-08c3-20261105",
+    "preserved_commit": "9e8457649548ccfe203d145a0ca5eea83ee3588f",
+    "candidate": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+    "tree": "8bbaf4900ff5d844ed71987009b815cb19a53d9f",
+    "history_manifest_keeps_both_source_additions": true,
+    "refactor_paths_matching_original_candidate": 60,
+    "upstream_paths_preserved_without_conflict": 26,
+    "only_combined_data_file": "experiments/reproduction/native_baselines/MANIFEST.json"
+  },
+  "component_commits": {
+    "bridge": "42db2365d7a87ece2433ddeb1130f9ced83851c3",
+    "retention": "266650c9069e945f54d3e199a8d54065c1255dc5",
+    "ipc": "12385df05750107e36543c90267261ecf202d741",
+    "lazy_source_release": "42253a569ca1dcf80ccdb1ab4de92e629ab75394"
+  },
+  "reviews": {
+    "bridge-original": {
+      "decision": "changes_required_before_publish",
+      "findings": [
+        {
+          "id": "isolated_movie_callers_not_migrated",
+          "importance": "blocks_existing_execution",
+          "locations": [
+            "code/src/experiments/imlane_movie_formal.py:97",
+            "code/src/experiments/imlane_movie_formal.py:113",
+            "code/src/experiments/imlane_movie_formal.py:121"
+          ],
+          "reachability": "MovieRecordsSession dispatches the isolated imlane backend to imlane_movie_formal.run at code/src/experiments/movie_records_session.py:358. _open_filter is its actual execution callback.",
+          "problem": "This active caller still launches the old five-element argv: PROTOCOL now occupies MAX_PENDING_BLOCKS and is rejected by the new numeric parser. It also omits the newly required RecordsBridge max_pending keyword, and passes the removed max_pending keyword through FilterResults to RecordsResults. Python construction can fail after owner/process startup.",
+          "requested_change": "Pass resources.request_capacity() to the new CLI position and RecordsBridge. Remove the independent FilterResults max_pending keyword so the carrier reads the verified ready count. Add a focused stub-only _open_filter call test that checks these three arguments without starting an author process."
+        },
+        {
+          "id": "active_configuration_still_caps_pending_at_two",
+          "importance": "blocks_the_new_capacity_in_normal_entries",
+          "locations": [
+            "code/src/experiments/movie_records_session.py:112",
+            "code/src/experiments/lotus_records_chain.py:53",
+            "code/src/experiments/lotus_records_cascade.py:67"
+          ],
+          "problem": "All three active configuration parsers still reject resources.request_capacity() > 2. The newly supported finite pending value therefore works in the direct backend fixture but remains unavailable through ordinary Movie, chain and cascade entries.",
+          "requested_change": "Remove only the old numeric pending comparison in these three entries while retaining explicit request_capacity() resolution and their worker, row, model and query conditions. Cover finite values above two and unresolved None through existing no-start configuration cases."
+        }
+      ],
+      "sha256": "f8c01fdff6605c1de6af0c7d3cb40a1c25f8d006c1b51789e2d8a247b9e7d2f3"
+    },
+    "bridge-fixed": {
+      "decision": "both_previous_findings_resolved_no_new_changes_requested",
+      "findings": [],
+      "sha256": "420ec4a821f47af567d57aa9ae0e9a02efa066ffc32c7dc532bf7bc27ec7bc65"
+    },
+    "retention-original": {
+      "decision": "no_changes_requested_for_this_batch",
+      "findings": [],
+      "sha256": "dd8152ed695025930f0a64a7e046249cef0e12453833ed6204c77bdc090cf100"
+    },
+    "ipc": {
+      "decision": "no_code_changes_requested_for_this_batch",
+      "findings": [],
+      "sha256": "1c51e2b7eb1c62f16e03198b6dc537c25b3963bff93d5b54a3818f81af8f4ee8"
+    },
+    "combination": {
+      "decision": "no_source_changes_requested_for_this_combination",
+      "findings": [],
+      "sha256": "5ea678aec6d0095d370b4ba28f05d0f75deb5136ddaa56c101c369fab6eed20a"
+    },
+    "latest-combination": {
+      "decision": "no_changes_requested_for_reviewed_source_and_delivery_snapshot",
+      "findings": [],
+      "tested_source": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+      "original_sha256": "70ad91d1f46fe92b0826c9e4283c1a9a3bb750a4bfceaf67d5b922add61abb1c",
+      "original_record": "semloom-runtime-structure-015c-review-20261105/HANDOFF.json"
+    }
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "9ae2957953a8cca2cb7a63e375dc69a681022de6",
+        "core_python_lines": 57106,
+        "src_and_scripts_python_lines": 112940,
+        "integration_Python_CPP_header_lines": 4522,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 920
+        }
+      },
+      "upstream": {
+        "commit": "08c3ebf57d5d1a382b54ff7a35266862549d0321",
+        "core_python_lines": 57106,
+        "src_and_scripts_python_lines": 113859,
+        "integration_Python_CPP_header_lines": 4522,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 920
+        }
+      },
+      "candidate": {
+        "commit": "015c3095e07d7e00f9ec63f7c0407ea21d9bcc83",
+        "core_python_lines": 57124,
+        "src_and_scripts_python_lines": 113883,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 3033,
+        "src_and_scripts_python_lines": -26452,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4504,
+        "src_and_scripts_python_lines": -35762,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": 18,
+        "src_and_scripts_python_lines": 943,
+        "integration_Python_CPP_header_lines": 39
+      },
+      "upstream": {
+        "core_python_lines": 18,
+        "src_and_scripts_python_lines": 24,
+        "integration_Python_CPP_header_lines": 39
+      }
+    }
+  },
+  "history": {
+    "variants": 5,
+    "source_entries": 3010,
+    "complete_restore_passed": true,
+    "new_unique_old_source_archives": 6,
+    "new_source_routes": 30,
+    "new_format_routes": 30,
+    "original_expected_and_projection_ids_unchanged": true
+  },
+  "cold_import": {
+    "imported": [
+      "src.serving.backends.async_engine_process",
+      "src.serving.backends.async_engine_worker",
+      "src.serving.backends.async_engine_wire"
+    ],
+    "forbidden_runtime_imports": [],
+    "frame_round_trip": true,
+    "actual_worker_started": false,
+    "socket_operations": 0,
+    "model_calls": 0,
+    "Ray_runs": 0
+  },
+  "overlapping_runs_not_added": true,
+  "private_originals": {
+    "bridge/ENTRY_SOURCE_IDENTITY.json": {
+      "bytes": 1011,
+      "sha256": "744c968125602392019f8283553a1e74f2733b76057ad5d3f8bfc10faad0d5d8"
+    },
+    "bridge/HISTORICAL_SOURCES.json": {
+      "bytes": 5541,
+      "sha256": "c4f65f5cba3620e135272f8f30d6249a9ca725185c90eb7c1314ca6ea23da6c2"
+    },
+    "bridge/SOURCE_IDENTITY.json": {
+      "bytes": 6892,
+      "sha256": "11e1fa113b325da16cca92556f71e82eaad433446a3c2826e273835514b05ed8"
+    },
+    "bridge/final-entries.json": {
+      "bytes": 230511,
+      "sha256": "2c793d33789857b28752297c61d77c4d0d60bb343e9868f7d930c01b3f1b16d5"
+    },
+    "bridge/final-entries.log": {
+      "bytes": 68561,
+      "sha256": "e9d25646aec2f1b949dcf7b69c7f90afd1983bb593a43dd21a3adb2ac653d362"
+    },
+    "bridge/final.json": {
+      "bytes": 229899,
+      "sha256": "233855c594099722f1a31fd0c0a29f4bdf928072d66aa76f2d97f5b4553f01ed"
+    },
+    "bridge/final.log": {
+      "bytes": 68117,
+      "sha256": "1056b9fd34f0db85a15323d674aaf82efe662dbd0699c09cf389d2a753b095e8"
+    },
+    "bridge/focused.json": {
+      "bytes": 130488,
+      "sha256": "c0ea314fd9927e9aa4d59ef373a4ee67092c5944d3608e485e5039cc1b8ab97a"
+    },
+    "bridge/focused.log": {
+      "bytes": 702,
+      "sha256": "7deeb1132d5881ff21464acd8a330ea9714e4fe0d020a032fd809fe73b42e206"
+    },
+    "bridge/historical-restored.json": {
+      "bytes": 130071,
+      "sha256": "230cca38d49e5e2029c5b9be96706430f1eb9ea15ac0ea768020b03689a20467"
+    },
+    "bridge/historical-restored.log": {
+      "bytes": 330,
+      "sha256": "db70407591397b60899c74b3f10518802dff8c73a38d629400a7ea9410ccc856"
+    },
+    "bridge/integration.json": {
+      "bytes": 235258,
+      "sha256": "de9f5f48e31724d6bb8c44885275c183e4696d31b0f0ac7a4ed27f3bac406532"
+    },
+    "bridge/integration.log": {
+      "bytes": 75878,
+      "sha256": "872850bc9ea4ea28288d6b0b35071bc9e43981f50c553d0ecadb4efdc74d10c1"
+    },
+    "bridge/original-bridge.json": {
+      "bytes": 134451,
+      "sha256": "e83cfb050871ff277475db8e121cab377d71130bd5d381c03f6d9644e0bad498"
+    },
+    "bridge/original-bridge.log": {
+      "bytes": 8265,
+      "sha256": "0375d26bf2b8c2901eaeed746b6820f6c22d1b3ffaded5a3a43cf307016c3980"
+    },
+    "bridge/original-public-entry.json": {
+      "bytes": 132336,
+      "sha256": "59e4f341fd4e1ca79f35abe81d8adb5a85f58ccb26fb6a82f6d80664364484c8"
+    },
+    "bridge/original-public-entry.log": {
+      "bytes": 3263,
+      "sha256": "b96d99819d374ba532c37748e306c7573cb451b50aa2c5eb8a43aeaa764be1b6"
+    },
+    "bridge/public-entry-corrected.json": {
+      "bytes": 131405,
+      "sha256": "32357766e3844252793427c3d3a1bdf1e2401c4a9a6ee41bd9583403ac7d08a2"
+    },
+    "bridge/public-entry-corrected.log": {
+      "bytes": 1369,
+      "sha256": "3460fdaceca91e1ccd14341ebef34e556be096b82c0f5a64801786642b8c203d"
+    },
+    "bridge/public-entry-fix.json": {
+      "bytes": 131827,
+      "sha256": "e828a6f06a75fd20ced442a2ec6a728a2f7ddf6ab97b58744b6e602d826bcef6"
+    },
+    "bridge/public-entry-fix.log": {
+      "bytes": 2110,
+      "sha256": "2b1172282553de796a3c30f0e4671ad31519edbd0149c791e598d13630c795ab"
+    },
+    "bridge/selection.json": {
+      "bytes": 8050,
+      "sha256": "304315cd559c7b78bb304e99e748bff0ed0a3cc7080c9b7eba238f7f0901c2ed"
+    },
+    "retention/ORIGINAL_SOURCE.json": {
+      "bytes": 711,
+      "sha256": "09de906ee9c7c24f61a1bcc2e030832c59e044f9c67c91366d6f09ef8e7ced60"
+    },
+    "retention/original-source-retention.json": {
+      "bytes": 131085,
+      "sha256": "6362db9fcf0f6cd05ef087868fb35f7d716b7647fc2fa67ef5e12bfce2b63633"
+    },
+    "retention/original-source-retention.log": {
+      "bytes": 1755,
+      "sha256": "fc1b291efe8532056ba11dc132be12a1fe3bbd7aa1770144d96d89b291329d52"
+    },
+    "retention/source-retention-fixed.json": {
+      "bytes": 136268,
+      "sha256": "5a281d9a7084c549c4164c968cb6e610d0f550c2b46d7a56d48414536028a83f"
+    },
+    "retention/source-retention-fixed.log": {
+      "bytes": 4882,
+      "sha256": "421a1201cb9e65fb2785a756baf2523f6ab7f224d72f41fbfeb859ca0369d539"
+    },
+    "ipc/DIFF_CHECK_FIX.json": {
+      "bytes": 183,
+      "sha256": "69cec5201ef49aa023ce6cf24e8bf3ff926cb6f6593543ed254243ccdabcbb21"
+    },
+    "ipc/MOVED_FUNCTIONS.json": {
+      "bytes": 88,
+      "sha256": "103f5bbffc8274be5812a80dd32fac05a715b341255bc4a3cc741906a8240123"
+    },
+    "ipc/ORIGINAL_IMPORTS.json": {
+      "bytes": 10415,
+      "sha256": "8f15afd1b98c1c8753cd7ac063c4d0b04385c0391e26b676abe097d84a2d3e91"
+    },
+    "ipc/PRIVACY_SCAN.json": {
+      "bytes": 253,
+      "sha256": "1da9068ddfa3a1fe9b465a258e8ed63c74f5f6a96655919a6831a3edc8287530"
+    },
+    "ipc/UNCHANGED_PARENT_FUNCTIONS.json": {
+      "bytes": 706,
+      "sha256": "8e3f80a393a0ea8b7b2730848ccc1850f6af432a82333eff172f988eebb74e80"
+    },
+    "ipc/cold-import-final.json": {
+      "bytes": 326,
+      "sha256": "f00198e1184a19e06fe4e2f49ddfe01e161cf51331421d2e2e30b314ca727712"
+    },
+    "ipc/cold-import.json": {
+      "bytes": 326,
+      "sha256": "f00198e1184a19e06fe4e2f49ddfe01e161cf51331421d2e2e30b314ca727712"
+    },
+    "ipc/final-clean-ipc-layout.json": {
+      "bytes": 136996,
+      "sha256": "052f5260194b451a0dc4fedbfa76e5fd754d19c6ede000353a2b599e48660000"
+    },
+    "ipc/final-clean-ipc-layout.log": {
+      "bytes": 4941,
+      "sha256": "c1f38c51ce71c6caf9c4586d2679872b30bbbab3c9d0ec2d630c57f2bfce53d5"
+    },
+    "ipc/final-ipc-layout.json": {
+      "bytes": 136990,
+      "sha256": "8b26bfcdba6f6bb8521c3e6b901862575d6d14fd56120a77215866db05824773"
+    },
+    "ipc/final-ipc-layout.log": {
+      "bytes": 4941,
+      "sha256": "1e5053af86a467a40b0dd993c2536b194d40c452e8f4c75b35d906ef8a1013c3"
+    },
+    "ipc/ipc-layout-focused.json": {
+      "bytes": 136518,
+      "sha256": "1487533305d0a7f01299f2371a1c413f07551fa6418923b250512a795cf6a3a4"
+    },
+    "ipc/ipc-layout-focused.log": {
+      "bytes": 4708,
+      "sha256": "708544f434324a99f988b95418706e8d020142ac801940b4424c2d03bbf00b1c"
+    },
+    "ipc/original-frame-fixture-corrected.json": {
+      "bytes": 131856,
+      "sha256": "312e0def4d0d4a3c1e5ce3313aec99a9e17b5cde6c4d36a1819cd3d37b87a136"
+    },
+    "ipc/original-frame-fixture-corrected.log": {
+      "bytes": 1950,
+      "sha256": "8c7bce4dd675e2f7fdc0d309ff63e2637e94b4c16e8c95fe937ba71cae1c18ef"
+    },
+    "ipc/original-ipc-layout.json": {
+      "bytes": 263528,
+      "sha256": "e7079da05aebd9bee6f1d4459b46016bdfad399d9f926fd22cd03a55a54dd0a6"
+    },
+    "ipc/original-ipc-layout.log": {
+      "bytes": 158375,
+      "sha256": "0d9bb79ca0b7c9ee18673b2114f082098e4fa150db7a1c07728e44750dc063d5"
+    },
+    "combination/CODE_SIZE.json": {
+      "bytes": 4528,
+      "sha256": "43ebdacf6dec78f926249d359c952d6ce044339311f0b8cf22bd02c2a1ba67a4"
+    },
+    "combination/COMBINED_SOURCE.json": {
+      "bytes": 469,
+      "sha256": "ffe7c027dd943497333243313c85a670a7129eae2439463a37c2c3dd9857df0f"
+    },
+    "combination/COMPONENTS.json": {
+      "bytes": 388,
+      "sha256": "05688858336d37bb15a51c295124c5e6716a9604482e2f603c8150a590365508"
+    },
+    "combination/DELIVERY_CHECKS.json": {
+      "bytes": 180,
+      "sha256": "3ee2af49d50248b3fdad9ca6cd2891f4e0b58a5d247ad83929bc24b3e93100aa"
+    },
+    "combination/LATEST_CODE_SIZE.json": {
+      "bytes": 5179,
+      "sha256": "04d715e228bf8974bf7d32cc3f793444bcfbc6487fd006ce920cb3f7e515409d"
+    },
+    "combination/LATEST_COMBINED_SOURCE.json": {
+      "bytes": 531,
+      "sha256": "473cb3e016f8929abda3ba412bab90608f813abcc47c7e2af66ec38f762dea07"
+    },
+    "combination/LATEST_MANIFEST_MERGE.json": {
+      "bytes": 9658,
+      "sha256": "8bf21d017975b8ec5b5d812e3ba97d26869c5fc99a263b1bbdb454c6141d3cb8"
+    },
+    "combination/LATEST_SOURCE.json": {
+      "bytes": 573,
+      "sha256": "32a02f72c83d7d8a499ec029331d4b67d486c9f58072109825b7e4e9f0dd3598"
+    },
+    "combination/SOURCE_PRIVACY_SCAN.json": {
+      "bytes": 128,
+      "sha256": "cc2b1ceef843ea8705831ca89f59677c58fa3410b47679bb0b6d77ed73805d44"
+    },
+    "combination/STAGED_PRIVACY_SCAN.json": {
+      "bytes": 171,
+      "sha256": "8a9f4634be415565e23f6a0ca857c8f498d3a0ec3601f70f5ffd1c20ea43c8e9"
+    },
+    "combination/cold-import-final.json": {
+      "bytes": 326,
+      "sha256": "f00198e1184a19e06fe4e2f49ddfe01e161cf51331421d2e2e30b314ca727712"
+    },
+    "combination/combined-final.json": {
+      "bytes": 241476,
+      "sha256": "63cb14b90ca0bb3be32f6f5b396069aab5be9502b041dec4df594a9e7cbf7fc1"
+    },
+    "combination/combined-final.log": {
+      "bytes": 75593,
+      "sha256": "399a759af121112b50fa5a72d1c1d4118c768d2d442473f408cfb0b391a88cd5"
+    },
+    "combination/latest-combined.json": {
+      "bytes": 250663,
+      "sha256": "3e4d2589b72db6dda1b355bc6b3b89361313f6121bdeaed5daba28df4d4ad6c6"
+    },
+    "combination/latest-combined.log": {
+      "bytes": 81095,
+      "sha256": "54c88cf7c4a6ee87d966f25ec9971ed62318dcdbc8e1d4814b3003d233817abd"
+    },
+    "combination/latest-selection.json": {
+      "bytes": 9049,
+      "sha256": "b219afc9312bed9a99aadd32c6faca298c19b58924617b1b3e55f33ffd462327"
+    },
+    "combination/selection.json": {
+      "bytes": 8945,
+      "sha256": "ade1edccab6cb8fe40ac14fd679efb0670f1b94a303c5657c236870d93c9f0ad"
+    },
+    "reviews/bridge-original/HANDOFF.json": {
+      "bytes": 6607,
+      "sha256": "f8c01fdff6605c1de6af0c7d3cb40a1c25f8d006c1b51789e2d8a247b9e7d2f3"
+    },
+    "reviews/bridge-fixed/HANDOFF.json": {
+      "bytes": 4939,
+      "sha256": "420ec4a821f47af567d57aa9ae0e9a02efa066ffc32c7dc532bf7bc27ec7bc65"
+    },
+    "reviews/retention-original/HANDOFF.json": {
+      "bytes": 5124,
+      "sha256": "dd8152ed695025930f0a64a7e046249cef0e12453833ed6204c77bdc090cf100"
+    },
+    "reviews/ipc/HANDOFF.json": {
+      "bytes": 5759,
+      "sha256": "1c51e2b7eb1c62f16e03198b6dc537c25b3963bff93d5b54a3818f81af8f4ee8"
+    },
+    "reviews/combination/HANDOFF.json": {
+      "bytes": 4276,
+      "sha256": "5ea678aec6d0095d370b4ba28f05d0f75deb5136ddaa56c101c369fab6eed20a"
+    },
+    "reviews/initial-documentation/FINAL_HANDOFF.json": {
+      "bytes": 8385,
+      "sha256": "65b0ebd6761c914f765677f7044f83568caf541260c092275e33d234e8c25556"
+    },
+    "physical-audit/HANDOFF.json": {
+      "bytes": 14380,
+      "sha256": "80b6d325ff6ffa98e0a511f7cf4b13e5542f4496cd25639306fa11180e79a494"
+    }
+  },
+  "raw": {
+    "file": "runtime_structure_bridge_raw.json.gz",
+    "bytes": 181303,
+    "sha256": "0b349ad4042b0d233b2e1642f591c09884a53bb280765b3112ca22e222933c5d",
+    "decoded_sha256": "7f0a038b9fc0c1f569a94b07a100b3dd8299d594222f24fd19f80e61ebc98aaf"
+  },
+  "remaining": [
+    "Automatic physical RAM allocation, complete source/expected relations and whole-query RSS accounting are not implemented.",
+    "IMLane requires rebuilding the changed bridge against the actual author and Arrow environment. Actual counts above two are not yet qualified.",
+    "The new IPC worker CLI, actual inherited sockets, real Ray and model behavior remain unverified in this local task.",
+    "Existing bridge rows, query and byte protections remain. Explicit capacity does not mean unbounded operation.",
+    "Prior ACK AST checks, unavailable SemBench checkout and denied live-system tests retain their original status.",
+    "adaptive.py remains 1157 lines; this batch does not change the feedback strategy or claim the full refactor is complete."
+  ]
+}

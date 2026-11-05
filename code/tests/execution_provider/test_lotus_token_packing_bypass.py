@@ -12,7 +12,7 @@ from src.scheduling.core.session_contract import Acceptance, BatchSubmission, Of
 from src.scheduling.core.session_policy import TaskCandidate
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
-from src.serving.backends.async_engine_process import _frame
+from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.scheduling.test_incremental_session import setup
 

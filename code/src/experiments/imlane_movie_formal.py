@@ -94,7 +94,8 @@ def _open_filter(args, value, components, query_id, report):
         deadline_monotonic=deadline, control_dir=str(control), scan=scan.describe(),
         model_environment=value["model_environment"]))
     scope.__enter__()
-    process = Popen([str(args.bridge_binary), str(scope.port), str(udf), "infer_records", PROTOCOL],
+    process = Popen([str(args.bridge_binary), str(scope.port), str(udf),
+        "infer_records", str(resources.request_capacity()), PROTOCOL],
         env=scope.env, cwd=scope.root, stdin=PIPE, stdout=PIPE, stderr=PIPE, start_new_session=True)
     scope.track_root(process)
     writer = verify._capture_stderr(process.stderr, scope.root / "bridge-stderr.log", report)
@@ -111,14 +112,15 @@ def _open_filter(args, value, components, query_id, report):
             raise RuntimeError("Filter scope resources remain unconfirmed")
 
     client = RecordsBridge(process, abort_owner=abort_owner,
-        timeout_s=min(60, resources.query_timeout_s), protocol=PROTOCOL)
+        timeout_s=min(60, resources.query_timeout_s), protocol=PROTOCOL,
+        max_pending=resources.request_capacity())
     rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
                  **{name: row[name] for name in scan.payload_columns})
             for row in source.rows() if scan.predicate is None or row[scan.predicate[0]] == scan.predicate[1])
     return FilterResults(rows, client, query_id=query_id, max_calls=engine.max_model_calls,
         columns=scan.payload_columns, cleanup_scope=args.stop_budget.cleanup,
         control_dir=control, deadline=deadline, close_owner=finish_owner,
-        block_rows=resources.prepare_batch_rows, max_pending=resources.max_active_batches)
+        block_rows=resources.prepare_batch_rows)
 
 
 def _validate_calls(report, expected):

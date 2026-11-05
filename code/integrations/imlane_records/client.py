@@ -13,9 +13,10 @@ class RecordsRejected(RuntimeError):
 
 
 class RecordsBridge:
-    def __init__(self, process, *, abort_owner: Callable[[], None], timeout_s=10.0, log=None,
+    def __init__(self, process, *, abort_owner: Callable[[], None], max_pending, timeout_s=10.0, log=None,
                  protocol="imlane.records.v1"):
-        if not callable(abort_owner) or not 0 < timeout_s <= 600:
+        if (not callable(abort_owner) or not 0 < timeout_s <= 600
+                or type(max_pending) is not int or max_pending <= 0):
             raise ValueError("records bridge requires a supervisor and finite timeout")
         if protocol not in ("imlane.records.v1", "imlane.records.v2"):
             raise ValueError("unsupported records protocol")
@@ -27,7 +28,9 @@ class RecordsBridge:
             os.set_blocking(process.stdin.fileno(), False)
             os.set_blocking(process.stdout.fileno(), False)
             self.meta = self._read(time.monotonic() + timeout_s)
-            if self.meta.get("event") != "ready" or self.meta.get("protocol") != protocol:
+            if (self.meta.get("event") != "ready" or self.meta.get("protocol") != protocol
+                    or type(self.meta.get('max_pending_blocks')) is not int
+                    or self.meta['max_pending_blocks'] != max_pending):
                 raise RuntimeError("records bridge startup differs")
         except BaseException as error:
             self._terminal = True

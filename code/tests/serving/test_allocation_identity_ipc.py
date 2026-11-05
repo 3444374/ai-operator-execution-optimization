@@ -6,7 +6,9 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from src.serving.backends.async_engine_process import AsyncEngineProcess, serve
+from src.serving.backends.async_engine_process import AsyncEngineProcess
+from src.serving.backends.async_engine_worker import serve
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.serving.async_engine_fixture import FixtureEngine
 
@@ -33,7 +35,7 @@ class AllocationIdentityIpcTests(unittest.TestCase):
     def test_startup_observation_precedes_ready_and_keeps_CPU_fixture_identity(self):
         with patch.object(EngineSpec, "validate_driver_environment", return_value={}):
             owner = IdentityProcess(EngineSpec("/tmp/CPU-fixture", sys.executable, sys.executable),
-                                    GenerationSpec(), startup_timeout_s=5)
+                                    GenerationSpec(), limits=AsyncEngineLimits(max_inflight=8), startup_timeout_s=5)
         try:
             self.assertTrue(owner.ready_report["fixture_observation_ran"])
             self.assertFalse(owner.ready_report["physical_gpu"])

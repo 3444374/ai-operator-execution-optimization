@@ -1721,3 +1721,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录 SDK 默认None、启动前有限解析、IPC必填请求数和按槽数推导总字节，以及六行重复校验精简。
 准确6ac1组合317项通过；原316选择中的一项旧fixture错误、SDK迁移错误和部分JSON反例分别保留，不累计重叠次数。
 五份3010文件恢复保持原身份；IMLane诊断桥仍2、物理容量及当前真实模型资格尚未完成。
+
+
+[记录持有、IPC职责与旧桥容量](diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+记录初始42253a56组合355项、保留远端08c3后的准确015c3095组合381个不同CPU方法通过及五份3010文件恢复，保留初稿漏接线与原反例。
+桥接收显式请求数并在ready核对，记录验证逐条放开引用，IPC父／子／帧实现分开且迁移真实消费者。
+仅标准C++组件编译执行，完整作者桥与真实IPC／模型尚未验证，物理RAM授予及完整查询RSS计量仍未实现；拆文件不记为总代码缩减。

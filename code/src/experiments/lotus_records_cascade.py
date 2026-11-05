@@ -63,9 +63,10 @@ def read_config(path):
     if type(value["max_calls"]) is not int or not 1 <= value["max_calls"] <= 12288:
         raise ValueError("the finite global max_calls must be 1..12288")
     resources = RecordsResources(**value["resources"])
+    resources.request_capacity()
     if (resources.cpu_workers != 1 or resources.gpu_workers != 1 or resources.prepare_batch_rows > 16
-            or resources.model_batch_rows > 16 or resources.request_capacity() > 2):
-        raise ValueError("IMLane needs one executor/GPU, 1..16 rows and pending at most two")
+            or resources.model_batch_rows > 16):
+        raise ValueError("IMLane needs one executor/GPU, 1..16 rows and finite pending capacity")
     engines = {role: EngineSpec.from_dict(raw) for role, raw in value["engines"].items()}
     if any(spec.max_model_calls is None or spec.max_model_calls > 4096 for spec in engines.values()):
         raise ValueError("both model lifetimes need explicit caps at most 4096")

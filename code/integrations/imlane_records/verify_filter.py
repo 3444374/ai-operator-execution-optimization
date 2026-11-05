@@ -54,8 +54,9 @@ def configuration(value):
     engine = EngineSpec.from_dict(value["engine"])
     generation = GenerationSpec.from_dict(value["generation"])
     resources = RecordsResources(**value["resources"])
+    resources.request_capacity()
     if (resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.prepare_batch_rows > 16
-            or resources.request_capacity() > 2):
+           ):
         raise ValueError("this CPython slice requires one worker and the existing finite bridge capacities")
     queries = value["query_ids"]
     if (type(queries) is not list or not 1 <= len(queries) <= 2 or len(set(queries)) != len(queries)
@@ -129,7 +130,8 @@ def run_one(args, value, report, components, query_id):
         scope.__enter__()
         def execute():
             nonlocal iterator
-            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(udf), "infer_records", PROTOCOL],
+            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(udf),
+                "infer_records", str(resources.request_capacity()), PROTOCOL],
                 env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, start_new_session=True)
             scope.track_root(process)
@@ -144,7 +146,7 @@ def run_one(args, value, report, components, query_id):
                 if not state["resources_confirmed"]:
                     raise RuntimeError("Filter scope resources remain unconfirmed")
             client = RecordsBridge(process, abort_owner=abort_owner, timeout_s=min(60, resources.query_timeout_s),
-                                   protocol=PROTOCOL)
+                                   protocol=PROTOCOL, max_pending=resources.request_capacity())
             rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
                          **{name: row[name] for name in scan.payload_columns})
                     for row in source.rows() if scan.predicate is None
@@ -152,7 +154,7 @@ def run_one(args, value, report, components, query_id):
             iterator = FilterResults(rows, client, query_id=query_id, max_calls=engine.max_model_calls,
                 columns=scan.payload_columns, cleanup_scope=args.stop_budget.cleanup,
                 control_dir=control, deadline=deadline, close_owner=finish_owner,
-                block_rows=resources.prepare_batch_rows, max_pending=resources.max_active_batches)
+                block_rows=resources.prepare_batch_rows)
             return iterator
         result = run_movie_query(source, value["sembench_checkout"], method, generation, execute, query_id=query_id)
         report["queries"].append(result)

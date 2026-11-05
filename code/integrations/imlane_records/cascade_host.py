@@ -46,7 +46,7 @@ class CascadeResults(RecordsResults):
             mapping=CascadeOccurrences(stage), stage_id=stage.name, block_prefix="cascade-" + stage.name,
             control_dir=control, deadline=backend.deadline, close_owner=close_owner,
             cleanup_scope=backend.author_args.stop_budget.cleanup,
-            block_rows=backend.resources.prepare_batch_rows, max_pending=backend.resources.max_active_batches)
+            block_rows=backend.resources.prepare_batch_rows)
 
     def __next__(self):
         self.backend.check_lifecycle()
@@ -127,9 +127,10 @@ class IMLaneCascadeBackend:
         if Path(self.engines["main"].model_path).resolve() == Path(self.engines["helper"].model_path).resolve():
             raise ValueError("cascade requires distinct explicit helper and main model paths")
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
-                or resources.model_batch_rows > 16 or resources.request_capacity() > 2):
-            raise ValueError("IMLane uses one author executor, 1..16 rows and at most two pending blocks")
+                or resources.model_batch_rows > 16):
+            raise ValueError("IMLane uses one author executor, 1..16 rows and a finite pending declaration")
         self.author_args, self.model_environment = author_args, assigned_environment(model_environment)
         require_outside_git(Path(author_args.output))
         if not Path(author_args.output).is_dir():
@@ -281,7 +282,8 @@ class IMLaneCascadeBackend:
         scope = CascadeScope(args, "cpython-cascade", owner, self.author_report, kernel=kernel)
         try:
             scope.__enter__()
-            process = subprocess.Popen([str(args.bridge_binary),str(scope.port),str(kernel),"infer_records",PROTOCOL],
+            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(kernel),
+                "infer_records", str(self.resources.request_capacity()), PROTOCOL],
                 env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, start_new_session=True)
             scope.track_root(process)
@@ -300,7 +302,7 @@ class IMLaneCascadeBackend:
                 if not state["resources_confirmed"]:
                     raise RuntimeError("cascade author scope resources remain unconfirmed")
             return RecordsBridge(process, abort_owner=abort, timeout_s=min(60,self.resources.query_timeout_s),
-                                 protocol=PROTOCOL), finalizer
+                                 protocol=PROTOCOL,max_pending=self.resources.request_capacity()), finalizer
         except BaseException as error:
             try:
                 scope.close()

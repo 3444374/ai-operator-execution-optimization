@@ -6,7 +6,7 @@ import os
 import sys
 import time
 
-from src.serving.backends.async_engine_process import serve
+from src.serving.backends.async_engine_worker import serve
 from src.serving.backends.vllm_async_engine import result_record
 from src.serving.backends.vllm_engine import _prepared
 

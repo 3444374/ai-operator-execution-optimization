@@ -10,6 +10,12 @@
 不要求为了重现旧代码把测试工具覆盖进旧 checkout。controller 也在被测解释器的新进程中运行，
 不复用工具进程缓存的 `src` 模块。
 
+本地 IPC 的[父进程 owner](../../../src/serving/backends/async_engine_process.py)、
+[子进程服务](../../../src/serving/backends/async_engine_worker.py)和
+[共享编码](../../../src/serving/backends/async_engine_wire.py)各自维护其职责。
+模型 bootstrap 先安装观测，再导入 worker 的 `serve`。采集器只包装父／worker 的实际接点，
+共享 wire 的候选计量保持纯计算；编码记录不代表已发送，收发字节仍来自原 socket 返回值。
+
 ## 同步、资格和最小 on/off 配置
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：

@@ -35,7 +35,12 @@ Movie Q9 新有限链明确使用原 Map，不替换原 TopK；精确 Join／Top
 [逐项限制](src/baselines/README.md#sembench-image-preparation)。本批没有运行模型或 GPU。
 
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
-HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；本轮配置组合代码为 `6ac1fe56`。
+HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；此前配置组合代码为 `6ac1fe56`。
+本轮代码为 `015c3095`，已保留 `08c3ebf5` 的原查询接线与数值精度修正：旧 IMLane 桥按显式请求数配置并在 ready 回执中核对，正常 Movie、chain 和 cascade 入口已迁移；
+IPC 父进程管理、子进程循环与共享帧编码分属各自文件，现用导入和观测接点同步。
+查询验证表逐条放开已读取的旧记录引用，保留原比较时点；记录反序列化删除外层重复复制。
+[组合源码与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+记录最新组合381项 CPU 通过和准确历史来源；真实 IPC、完整作者桥与模型尚未验证，物理 RAM 授予未实现。
 仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。
 代理退役切片的 11 项 CPU 通过，独立复核无需修正；代码仍在开发 PR，未合并 main。
 [具体改动、剩余文件与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
@@ -48,7 +53,7 @@ HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c
 普通 Movie／Session 的未组批 async 及已支持 rolling 入口，省略 R 现按 None 解析已有有限额度；显式 R 保持原规则，缺额度在启动前拒绝。
 SDK 全局 R 也已改为 None，删除 Movie 按后端补值及不可变资源对象的重复检查；静态、非 rolling prepared、直接链／cascade 仍需其支持的有限声明，缺来源先拒绝再启动。
 底层 IPC 删除隐式请求数 8；总字节省略时按声明请求／结果槽及单项大小计算，显式额度保持。JSON 有显式 max_inflight 即可提供请求数，无须重复填九字段。
-auto 仍依据声明额度，不是物理 RAM 授予或整查询 RSS 保证；旧 IMLane 诊断桥内部仍给两块在途，尚未接入更大声明。
+auto 仍依据声明额度，不是物理 RAM 授予或整查询 RSS 保证；IMLane 桥不再内部补两块在途，必须传入有限声明并重建实际桥程序。
 五项可选引擎参数均可省略；dtype／显存比例不再补 BF16／0.8，显式值原样保留，ready 读取实际原生配置。
 此前参数组合通过 108 项；本次准确 6ac1 组合 317 项 CPU 全通过，含五份共 3,010 文件完整历史恢复。真实 vLLM、模型质量及物理容量尚未验证。
 [配置修正及剩余项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)区分入口、声明、观察和真实资源。

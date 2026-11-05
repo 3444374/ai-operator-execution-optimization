@@ -7,7 +7,7 @@ import asyncio
 import sys
 from tests.execution_provider.section_child_fixture import FixtureEngine
 from src.observability.native_model_api_trace import writer
-from src.serving.backends.async_engine_process import serve
+from src.serving.backends.async_engine_worker import serve
 
 
 class Engine(FixtureEngine):

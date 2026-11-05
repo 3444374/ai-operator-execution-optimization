@@ -48,10 +48,10 @@ def read_config(path):
     with lotus.settings.context(enable_cache=False):
         chain = LotusRecordChain.from_dict(value["chain"])
     engine, resources = EngineSpec.from_dict(value["engine"]), RecordsResources(**value["resources"])
+    resources.request_capacity()
     if (resources.cpu_workers != 1 or resources.gpu_workers != 1
-            or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-            or resources.request_capacity() > 2):
-        raise ValueError("the IMLane selector requires one executor/GPU, batch rows 1..16 and pending at most two")
+            or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16):
+        raise ValueError("the IMLane selector requires one executor/GPU, batch rows 1..16 and finite pending capacity")
     if (engine.max_model_calls is None or engine.max_model_calls > 4096
             or len({stage.method.model_name for stage in chain.stages}) != 1
             or engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages)):

@@ -3,7 +3,7 @@ import asyncio
 import sys
 from types import SimpleNamespace
 
-from src.serving.backends.async_engine_process import serve
+from src.serving.backends.async_engine_worker import serve
 from src.serving.backends.vllm_async_engine import NativeStats
 from tests.execution_provider.section_child_fixture import FixtureEngine as BaseEngine
 

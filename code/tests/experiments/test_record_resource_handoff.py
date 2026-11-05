@@ -315,8 +315,9 @@ class HandoffTests(unittest.TestCase):
         self.observer.memory_snapshot('probe')
         self.assertNotIn('cpu',self.observer._installed);self.assertNotIn('model',self.observer._installed)
         ipc=fixtures.load('record_ipc_observer');native=sys.modules['src.serving.backends.async_engine_process']
-        original=native._frame;ipc.install_transport(child=False)
-        self.assertIs(native._frame,original);self.assertFalse(ipc._installed)
+        for child,module in ((False,native),(True,sys.modules['src.serving.backends.async_engine_worker'])):
+            original=module._frame;ipc.install_transport(child=child)
+            self.assertIs(module._frame,original);self.assertFalse(ipc._installed)
         value=ipc.ObservedAsyncEngineProcess();expected=object()
         with patch.object(native.AsyncEngineProcess,'_io',lambda self:expected,create=True):self.assertIs(value._io(),expected)
         with patch.object(native.AsyncEngineProcess,'_receive',lambda self,value,**kwargs:value,create=True):

@@ -5,7 +5,7 @@ import time
 
 from src.modalities.text.tokenization import chat_token_count
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
-from src.serving.backends.async_engine_process import _frame
+from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS, _prepared
 
 from .records_feedback_observation import (

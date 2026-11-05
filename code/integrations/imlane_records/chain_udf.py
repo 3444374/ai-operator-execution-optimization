@@ -25,8 +25,9 @@ class ChainWorker:
         from integrations.imlane_records.model_process import IMLaneChainEngineProcess
 
         resources = RecordsResources(**config["resources"])
+        resources.request_capacity()
         engine = EngineSpec.from_dict(config["engine"])
-        if (resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.request_capacity() > 2
+        if (resources.cpu_workers != 1 or resources.model_batch_rows > 16
                 or engine.max_model_calls is None or engine.max_model_calls > 4096):
             raise ValueError("IMLane chain requires one bounded worker and finite model allowance")
         environment = dict(config["model_environment"])
