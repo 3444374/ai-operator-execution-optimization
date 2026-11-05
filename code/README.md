@@ -72,3 +72,7 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 [执行适配说明](src/execution_provider/adapters/README.md)和
 [重构证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 本次清理没有把这些改动退回旧默认或重新引入另一份实现。
+
+链查询 owner 负责配置、组装、关系阶段及资源生命周期；融合批传输与结果迭代集中到
+[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)，
+记录级 MethodDriver 推进仍在原有 `records_query_runtime.py`。此次整理不增加控制器或改变执行顺序。

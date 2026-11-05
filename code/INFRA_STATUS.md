@@ -918,3 +918,11 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 本地 IPC 及旧路径退役。[最终组合记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
 提供 147 项 CPU 检查及按同一口径的代码量，未据此验证模型或查询性能。默认 R、物理容量授予
 和剩余大文件整理仍未完成。
+
+
+融合批传输与迭代已从链查询 owner 拆到 `lotus_chain_fused_runtime.py`；查询配置、组装、
+阶段切换和最终资源清理保持原 owner。[职责整理检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-chain-runtime-roles)
+使用相同的现有 CPU 行为用例，未新增控制器、策略或容量，未验证模型与性能。
+
+该职责切片已与 f23 的 LOTUS 方法／值整理组合，新模块直接采用 `record_types`；
+相同 11 项 CPU 行为再次通过。生产默认与资源责任保持，详见同一记录的后续组合。
