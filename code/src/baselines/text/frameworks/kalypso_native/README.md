@@ -47,7 +47,7 @@ attached比较编排使用实验层的 `native_query_lifecycle` 和公共 `nativ
 在**新的私有 packet 副本**、冻结其新摘要之前执行：
 
 ```sh
-patch --batch -p1 -d "$NEW_PRIVATE_PACKET" -i "$VERIFIED_REPO/deploy/autodl/kalypso_owner_imports.patch"
+patch --batch --forward -p1 -d "$NEW_PRIVATE_PACKET" -i "$VERIFIED_REPO/deploy/autodl/kalypso_owner_imports.patch"
 ```
 
 新 packet 的源码、CPU evidence、账本与时限仍按本次运行绑定；不修改历史副本、冻结摘要或旧成绩。
