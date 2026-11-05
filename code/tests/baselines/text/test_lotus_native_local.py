@@ -23,8 +23,8 @@ from src.baselines.text.frameworks import lotus_native_local as native
 from src.infrastructure.request_budget import ClaimedUnit, Reservation
 from src.semantic_methods.lotus.engine import make_lm, observe_filter_rows
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
-from src.serving.backends.async_engine_process import AsyncEngineProcess
-from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+from src.serving.backends.async_engine_process import AsyncEngineProcess, SubmitResult, TerminalEvent
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prepared, result_record
 
 
 class FixtureProcess(AsyncEngineProcess):
@@ -126,6 +126,10 @@ class NativeLocalProviderTests(FixtureCase):
         self.assertEqual(owner.ready_report['transport_limits']['max_inflight'],2)
         self.assertEqual(list(result['_execution_row_id']), ['1'])
         self.assertEqual(report['calls']['counts']['succeeded'], 2)
+        closed=owner.close(timeout=2)
+        self.assertEqual(closed['status'],'closed')
+        self.assertIsNone(closed['native_final_accounting'])
+        self.assertIsNone(owner._last_native_binding)
 
     def test_registration_and_kwargs_restore_after_an_operator_exception(self):
         owner=self.owner();lm=make_lm(self.method,self.generation);kwargs=dict(lm.kwargs)
@@ -402,3 +406,144 @@ class RunLifecycleContractTests(FixtureCase):
                     with self.assertRaises(ValueError):
                         native.run(source,'/tmp/CPU',source.task.method(self.method.model_name),
                             self.generation,self.engine,self.resources,**options)
+
+    def failed_resident_query_with_late_transport(self,*,close_actions=(),terminal='succeeded',
+                                                  resident=True,emit_during_unknown_close=False):
+        """The SDK times out first; serving returns its receipt only at close."""
+        class LateTransport:
+            ready_report=dict(engine_uid='CPU-late-owner')
+            def __init__(self):
+                self.row=None;self.events=[];self.emitted=False;self.actions=list(close_actions)
+            def submit(self,row,**_kwargs):
+                self.row=dict(row)
+                return SubmitResult('queued','CPU-late-request')
+            def poll(self,maximum):
+                events,self.events=self.events[:maximum],self.events[maximum:]
+                return tuple(events)
+            def abort(self,request_id):
+                return True
+            def wait(self,timeout):
+                raise TimeoutError('CPU SDK stops before serving returns its terminal')
+            def close(self,timeout):
+                action=self.actions.pop(0) if self.actions else 'closed'
+                if isinstance(action,BaseException):raise action
+                if (action=='closed' or emit_during_unknown_close) and not self.emitted:
+                    self.emitted=True
+                    identity=_prepared([self.row])[0][0]
+                    result=result_record(identity,engine_uid='CPU-late-owner',start=1.,end=2.,
+                        status=terminal,submitted=True)
+                    result.update(text='Answer: True',prompt_tokens=11,completion_tokens=2,total_tokens=13,
+                        engine_request_id='CPU-late-request',finish_reason='stop')
+                    self.events.append(TerminalEvent('CPU-late-request',identity,result,terminal!='unknown',None))
+                return dict(status=action,cleanup_errors=[] if action=='closed' else ['CPU cleanup incomplete'])
+        transport=LateTransport();owner=self.owner()
+        with tempfile.TemporaryDirectory() as name:
+            source=self.source(Path(name),1,[('r0','taken_3','good','POSITIVE')])
+            budget=ClaimedUnit(Reservation('late',1,1),None)
+            with patch.object(native,'AsyncEngineProcess',return_value=transport):
+                with self.assertRaises(Exception) as caught:
+                    native.run(source,'/tmp/CPU-query-callback',source.task.method(self.method.model_name),
+                        self.generation,self.engine,self.resources,query_id='late',
+                        profile=dict(native_lm_max_batch_size=4),context=dict(claimed_budget=budget),
+                        shared_model=owner if resident else None)
+        initial=caught.exception.query_report
+        self.assertEqual(initial['calls']['counts']['unknown'],1)
+        self.assertEqual(initial['calls']['counts']['succeeded'],0)
+        self.assertEqual(initial['native_transport_receipts'][0]['total_tokens'],None)
+        self.assertEqual(budget.attempts,1)
+        return owner,initial,budget
+
+    def assert_late_accounting(self,receipt):
+        accounting=receipt['native_final_accounting']
+        self.assertEqual(accounting['query_id'],'late')
+        self.assertEqual(accounting['calls']['counts']['unknown'],1)
+        self.assertEqual(accounting['calls']['counts']['succeeded'],0)
+        self.assertEqual(len(accounting['native_transport_receipts']),1)
+        self.assertEqual(len(accounting['late_native_receipts']),1)
+        self.assertEqual(accounting['late_native_receipts'][0]['total_tokens'],13)
+        return accounting
+
+    def test_resident_close_transfers_late_usage_without_changing_source_unknown(self):
+        import weakref
+        owner,initial,budget=self.failed_resident_query_with_late_transport()
+        retained=weakref.ref(owner._last_native_binding)
+        receipt=owner.close(timeout=2)
+        self.assertEqual(receipt['status'],'closed')
+        self.assert_late_accounting(receipt)
+        self.assertEqual(initial['calls']['counts']['unknown'],1)
+        self.assertIsNone(owner.last_native_query_report)
+        self.assertIsNone(owner._last_native_binding)
+        self.assertNotIn('native_final_accounting',owner.last_close_report)
+        # The error object may retain a frame for caller debugging; the binding
+        # itself has explicitly released all original prompt/result containers.
+        if retained() is not None:
+            self.assertFalse(retained().expected)
+            self.assertFalse(retained().receipts)
+            self.assertFalse(retained().bound)
+            self.assertFalse(retained().late_receipts)
+            self.assertFalse(retained()._pending)
+            self.assertFalse(retained()._prompts)
+        self.assertEqual(budget.attempts,1)
+        repeated=owner.close(timeout=2)
+        self.assertEqual(repeated['status'],'closed')
+        self.assertIsNone(repeated['native_final_accounting'])
+
+    def test_resident_unknown_terminal_stays_unknown_with_known_late_usage(self):
+        owner,_,_=self.failed_resident_query_with_late_transport(terminal='unknown')
+        receipt=owner.close(timeout=2)
+        accounting=self.assert_late_accounting(receipt)
+        self.assertEqual(accounting['late_native_receipts'][0]['status'],'unknown')
+        self.assertEqual(receipt['status'],'closed')
+
+    def test_resident_unknown_close_retains_binding_and_retry_transfers_once(self):
+        for late_before_close_confirmation in (False,True):
+            with self.subTest(late=late_before_close_confirmation):
+                owner,_,_=self.failed_resident_query_with_late_transport(close_actions=('unknown','closed'),
+                    emit_during_unknown_close=late_before_close_confirmation)
+                first=owner.close(timeout=2)
+                self.assertEqual(first['status'],'unknown')
+                self.assertIsNotNone(owner._last_native_binding)
+                self.assertIsNotNone(owner.last_native_query_report)
+                self.assertEqual(len(first['native_final_accounting']['late_native_receipts']),
+                                 int(late_before_close_confirmation))
+                second=owner.close(timeout=2)
+                self.assertEqual(second['status'],'closed')
+                self.assert_late_accounting(second)
+                self.assertIsNone(owner._last_native_binding)
+
+    def test_resident_close_exception_or_interrupt_keeps_accounting_for_retry(self):
+        for error in (OSError('CPU close I/O failure'),KeyboardInterrupt('CPU close interrupted')):
+            with self.subTest(error=type(error).__name__):
+                owner,_,_=self.failed_resident_query_with_late_transport(close_actions=(error,'closed'))
+                with self.assertRaises(type(error)) as caught:owner.close(timeout=2)
+                self.assertIs(caught.exception,error)
+                self.assertIsNotNone(owner._last_native_binding)
+                self.assert_late_accounting(owner.close(timeout=2))
+
+    def test_resident_accounting_error_after_physical_close_keeps_original_binding(self):
+        owner,_,_=self.failed_resident_query_with_late_transport()
+        binding=owner._last_native_binding
+        with patch.object(binding,'report',side_effect=OSError('CPU audit snapshot failure')):
+            with self.assertRaises(OSError) as caught:owner.close(timeout=2)
+        self.assertEqual(caught.exception.native_close_report['model_close_status'],'closed')
+        self.assertEqual(owner.last_close_report['status'],'unknown')
+        self.assertIs(owner._last_native_binding,binding)
+        self.assert_late_accounting(owner.close(timeout=2))
+
+    def test_cold_failure_returns_close_accounting_without_masking_sdk_exception(self):
+        _,report,budget=self.failed_resident_query_with_late_transport(resident=False)
+        self.assertEqual(report['status'],'failed')
+        self.assert_late_accounting(report['backend_close'])
+        self.assertEqual(report['late_native_receipts'][0]['total_tokens'],13)
+        self.assertEqual(budget.attempts,1)
+
+    def test_concurrent_close_transfers_the_retained_accounting_once(self):
+        owner,_,budget=self.failed_resident_query_with_late_transport()
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            receipts=list(executor.map(lambda _:owner.close(timeout=2),range(2)))
+        self.assertTrue(all(r['status']=='closed' for r in receipts))
+        transferred=[r for r in receipts if r['native_final_accounting'] is not None]
+        self.assertEqual(len(transferred),1)
+        self.assert_late_accounting(transferred[0])
+        self.assertIsNone(owner._last_native_binding)
+        self.assertEqual(budget.attempts,1)

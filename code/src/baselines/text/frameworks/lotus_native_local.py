@@ -55,6 +55,7 @@ class LocalNativeModel:
         self.provider_name = 'lotus_local_' + uuid.uuid4().hex
         self._state_lock = threading.RLock()
         self._active_query = None
+        self._last_native_binding = None
         self._tainted = self._closing = False
 
     def start(self):
@@ -84,15 +85,45 @@ class LocalNativeModel:
     def close(self, timeout=15):
         with self._state_lock:
             self._closing = True
-            binding, transport = self._active_query, self.transport
-        if binding is not None:
-            binding.stop()
-        if transport is None:
-            self.last_close_report = dict(status='closed', process_exit_confirmed=True,
-                gpu_exit_confirmed=None, cleanup_scope='no model process allocated', cleanup_errors=[])
-        else:
-            self.last_close_report = transport.close(timeout=timeout)
-        return deepcopy(self.last_close_report)
+            binding = self._active_query or self._last_native_binding
+            if binding is not None:
+                binding.stop()
+            if self.transport is None:
+                receipt = dict(status='closed', process_exit_confirmed=True,
+                    gpu_exit_confirmed=None, cleanup_scope='no model process allocated', cleanup_errors=[])
+            else:
+                receipt = self.transport.close(timeout=timeout)
+            # Physical close/poll are the existing authoritative terminal path.
+            # Source occurrences unreturned by the SDK remain unconfirmed.
+            self.last_close_report = deepcopy(receipt)
+            try:
+                accounting = None if binding is None else self._native_accounting(binding)
+            except BaseException as error:
+                self.last_close_report.update(status='unknown', model_close_status=receipt['status'],
+                    native_accounting_status='retained',
+                    cleanup_errors=[*receipt.get('cleanup_errors', []), 'native accounting: '+type(error).__name__])
+                error.native_close_report = deepcopy(self.last_close_report)
+                raise
+            if binding is not None and receipt['status'] == 'closed' and binding is not self._active_query:
+                self._last_native_binding = None
+                binding.release()
+            self.last_close_report['native_accounting_status'] = ('not_needed' if binding is None else
+                'retained' if self._last_native_binding is not None or self._active_query is not None else 'transferred')
+            # The caller owns this final snapshot and its persistence. Keep no
+            # raw accounting history in the owner after successful transfer.
+            return dict(receipt, native_final_accounting=accounting,
+                native_accounting_status=self.last_close_report['native_accounting_status'])
+
+    @staticmethod
+    def _native_accounting(binding):
+        return dict(binding.report(), schema='semloom.lotus_native_final_accounting.v1',
+            query_id=binding.query_id)
+
+    @property
+    def last_native_query_report(self):
+        """Current retained failure audit; final closed snapshots belong to close's caller."""
+        with self._state_lock:
+            return None if self._last_native_binding is None else self._native_accounting(self._last_native_binding)
 
     @contextmanager
     def query(self, lm, expected, budget, *, query_id):
@@ -138,6 +169,9 @@ class LocalNativeModel:
                     values[:] = [value for value in values if value != self.provider_name]
                 with self._state_lock:
                     self._active_query = None
+                    if self._tainted or binding._pending:
+                        if self.last_close_report is None or self.last_close_report['status'] != 'closed':
+                            self._last_native_binding = binding
 
 
 class _LocalProvider(CustomLLM):
@@ -152,6 +186,7 @@ class _LocalProvider(CustomLLM):
         self._prompts = deque()
         self._sequence = 0
         self._stopped = False
+        self._released = False
 
     def capture_prompts(self, prompts):
         """Receive the original operator's actual messages before LM execution."""
@@ -288,6 +323,8 @@ class _LocalProvider(CustomLLM):
                     self.owner.transport.abort(request_id)
 
     def report(self):
+        if self._released:
+            raise RuntimeError('native final accounting was transferred by close')
         with self._condition:
             if self.owner.transport is not None:
                 self._collect()
@@ -305,6 +342,15 @@ class _LocalProvider(CustomLLM):
         return dict(calls=ledger.report(), native_transport_receipts=deepcopy(list(self.receipts.values())),
             late_native_receipts=deepcopy(list(self.late_receipts.values())),
             source_binding='known native ordered returns only; unassociated calls stay unknown')
+
+    def release(self):
+        """Drop only an inactive, physically closed query's original data."""
+        with self._condition:
+            self._released = True
+            self._prompts.clear()
+            for values in (self._pending, self.receipts, self.bound, self.late_receipts, self.expected):
+                values.clear()
+            self.lm = self.budget = self.owner = None
 
 
 def run(source, checkout, method, generation, engine, resources, *, query_id, profile,
@@ -416,7 +462,9 @@ def run(source, checkout, method, generation, engine, resources, *, query_id, pr
             report['backend_close'] = dict(status='retained', engine_uid=
                 None if model.ready_report is None else model.ready_report['engine_uid'])
         if binding is not None:
-            report.update(binding.report())
+            final = report.get('backend_close', {}).get('native_final_accounting')
+            report.update({key: value for key, value in final.items() if key not in ('schema', 'query_id')}
+                          if final is not None else binding.report())
         if lm is not None:
             report['lm'] = lm_report(lm)
         report['query_seconds'] = time.monotonic() - started
