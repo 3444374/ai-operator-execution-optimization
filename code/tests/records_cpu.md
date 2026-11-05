@@ -9,6 +9,22 @@ Daft session回归使用真实Daft CPU图和合成kernel。其本机Unix socket�
 
 普通合成fixture无需这份真实CSV。与本页相关的全部CPU通过仍不替代当前生产源码的独立source/input/token/model/env/ledger/owner绑定和GPU资格。
 
+<a id="sync-native-source-check"></a>
+### 同步原生函数体与现用 ACK 检查
+
+固定公开 vLLM 源码检查直接使用已有测试，无须一次性 CLI；源码目录由调用者提供，不下载：
+
+```sh
+PYTHONPATH=code VLLM_0251_SOURCE_ROOT="$PINNED_VLLM_SOURCE" \
+"$DRIVER_PYTHON" -m unittest tests.serving.test_sync_supplemental_evidence
+```
+
+未提供目录时，固定源码的正例明确跳过；源码字节变化的拒绝检查、公开 CPU 副本恢复继续运行。
+直接 ACK 行为检查仍在 `test_event_state_preparation.EventPreparationTests.test_partial_ready_uses_other_RPC_permits_while_first_ack_is_delayed`；
+它使用真实本地 CPU IPC，应在已允许该通信的环境运行。
+旧测试改写和摘要锁定重放已从日常套件移除；[准确历史源码](../../experiments/reproduction/native_baselines/README.md#retired-ack-source-replay)保留原演示与运行记录。
+本批相关检查3成功、1项未提供固定源码而跳过，包含五份共3010文件完整恢复；未重跑直接IPC行为，不把删除旧检查算作ACK实现修复。
+
 ### 2026-11-05：旧夹具与失效测试清理
 
 两个无引用夹具已删除；UCB／旧 stage-work 原型的五个维护测试及依赖已移走 PG C 源码的

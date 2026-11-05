@@ -1743,3 +1743,7 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [一次解析记录执行配置](diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)
 记录直接 owner 的计时／反馈报告反例、单次解析及链内部重复检查清理；相关31项和保留2950后的整合42项分别通过，未运行真实IPC／Ray／模型。
 公共工厂和实际计时保持，历史来源及原关闭错误沿既有记录，未以长函数数量强行拆分调度循环。
+
+[历史ACK语法树重放退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)
+记录原5a19摘要错误、96d保留选择3成功／1缺固定源码跳过及3010文件完整恢复。
+直接ACK行为测试与原始结果保持，旧演示按完整55d版本恢复；整体收尾仍有关闭ACK及实机验证事项，未改报已修复。

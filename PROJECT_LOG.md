@@ -11505,3 +11505,11 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 链 owner 删除未使用的普通 profile 调用、不可变分包配置重建和重复周期检查，保留资源交接、外部归一化及可变预算复制。
 [反例、31项相关回归及整合42项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)分别按1053文件摘要关联准确源码；未运行真实IPC／Ray／模型，原关闭错误仍待定位。
 核心56,980行、src＋scripts113,943行，本批相对2950各减5行，测试增加21行；上游基线另增两行，没有为缩短文件拆开调度循环，不合并main。
+
+## 2026-11-05 退役历史测试改写并建立收尾清单
+
+96d4a809删除旧ACK语法树改写helper、一次性证据包装脚本及一个专属重放方法；保留直接事件ACK、固定公开源码和公开归档恢复检查。
+原摘要错误保留，相关选择3成功、1缺固定源码跳过，含3010文件完整恢复；运行时源码未改，未将删除旧测试表述为ACK实现修复。
+[准确记录与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)区分55d旧演示源码与5a删除前版本；现用入口改走标准unittest。
+[整体完成清单](code/INFRA_STATUS.md#refactor-completion-checklist)区分已整理模块、关闭ACK待处理、实机待验及后续研究能力。
+核心56,980行未变，src＋scripts113,892行，本批减51行，测试另减94行；不合并main。

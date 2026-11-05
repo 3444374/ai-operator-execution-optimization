@@ -1044,8 +1044,8 @@ BF16、显存比例 0.8、单卡支持、普通 R=2 与默认结果槽=8 仍保�
 使用 public_json_* 核对；original_json_* 继续指向仓库外原件，原 v1 压缩包与未改的来源清单可恢复其准确字节。
 公开包不包含反向推导个人路径所需的值。当前报告内压缩 JSON 和普通 JSON 均已检查个人 home 前缀。
 
-[仓内入口](../../../../code/scripts/analysis/check_sync_cpu_evidence.py)分别运行 native-pipeline 和 ack-order，
-用法见[脚本说明](../../../../code/scripts/README.md#同步-cpu-补充检查复算)。
+[当时的仓内入口](https://github.com/3444374/ai-operator-execution-optimization/blob/55d8776d50511898fe0459ddbee38289b154361e/code/scripts/analysis/check_sync_cpu_evidence.py)分别运行 native-pipeline 和 ack-order。
+该一次性脚本现已[退役](../../../reproduction/native_baselines/README.md#retired-ack-source-replay)；当前固定源检查由[标准 unittest](../../../../code/tests/records_cpu.md#sync-native-source-check)运行。
 [复算来源](raw/sync_supplemental_reproduction.json)给出固定 vLLM v0.25.1 的 URL 和字节摘要；
 原私有准备文件比官方文件多一个尾部换行，11 个方法的语法树摘要相同，现在按官方原始字节校验。
 ACK 负例由当前用例反向替换一个 wait 并核对原方法语法树摘要，无需访问本地未发布 Git 节点。
@@ -3284,3 +3284,28 @@ actor会拒绝；先实际poll同一关闭结果再ACK则可完成。真实Ray�
 沿用前文统计口径，整合后核心Python为56,980行、src＋scripts为113,943行；本批相对2950各净减5行，测试新增21行。上游基线增加的两行单独计入宽口径，未把文件迁移计作减少。
 核心较main多2,889行、较3fd少4,648行，宽口径分别少26,392／35,702行；integrations未变。44个百行以上函数数目保持，后续仍按实际职责判断。
 本批只改变直接构造器报告及重复解析，不提供查询速度或物理内存改进证据；PR保持草稿，不合并main。
+
+<a id="retired-ack-source-replay"></a>
+## 退役历史 ACK 语法树重放并明确收尾事项（2026-11-05）
+
+源码候选 `96d4a809a1ca8331d2741eff2cf31f344077fa9d`，tree `34a85a67afc7bd3b2665ddce7546fce87aef4f3d`，基于已发布5a19。
+删除 `ack_order_fixture.py`、`check_sync_cpu_evidence.py` 及其一个专属重放方法：它们把当前测试的一处等待反向改写，再与旧语法树摘要比较。
+正常模块整理已改变这份测试的代码写法，旧摘要不再相等；这种错误不表示当前运行时 ACK 行为失败。
+全仓只找到上述测试和包装脚本两个代码消费者，现用说明已迁移。仓外后续编排也应使用保留的标准 unittest；运行中的旧版本不受此源码改动影响。
+
+原5a19生产／测试文件未改时，一个重放方法报摘要不匹配，记录继续保留。退役后的四项选择为 **3成功、1跳过**，
+跳过原因是未提供固定 vLLM 源码目录，不当作通过；成功项包括来源变化拒绝、公开 CPU 副本恢复和五份共3,010文件完整恢复。
+执行时HEAD仍为5a19，原运行1,053份 code 摘要匹配5a19；保留选择的1,051份摘要匹配96d，执行期间源码不变。
+[准确来源、原错误与保留选择](raw/retired_ack_replay_checks.json)及[脱敏记录与复算入口](raw/retired_ack_replay_raw.json.gz)保存各自身份。
+
+直接事件 ACK 行为测试、固定公开 vLLM 方法检查、全部运行时源码和原结果归档保持；没有新增测试方法，也没有重跑真实 IPC、Ray、模型、GPU或系统探测。
+删除前文件摘要及旧演示的完整55d源码入口见[同版本恢复](../../../reproduction/native_baselines/README.md#retired-ack-source-replay)；
+静态核对55d的派生摘要仍匹配原记录，不宣称本轮重跑该历史演示。
+
+整体清单由[代码状态](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)统一维护：当前还需处理关闭审计恢复结果与批ACK的接合，
+并在正常环境复核原两项IPC错误、当前Ray序列化和受影响入口。不能把本批旧测试退役当作这些运行问题已修复。
+自动物理RAM授予、跨进程重连、额外Join／TopK及研究拆仓保持未实现或后续状态，不为本轮重构新增推测性的管理层。
+
+沿既有口径，核心Python仍56,980行，本批未减；src＋scripts为113,892行，净减51行，测试另减94行，两者共减145行。
+核心较main仍多2,889行、较清理起点3fd少4,648行；src＋scripts分别少26,443／35,753行。44个长函数保留，不以行数决定继续拆分。
+PR保持草稿，未合并main；CPU检查和静态历史核对均不提供查询性能或真实退出结论。

@@ -17,7 +17,9 @@
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
 | 实验原件恢复 | [restore_result_evidence.py](analysis/restore_result_evidence.py) | 按存储清单恢复原路径和字节，不重跑实验 |
-| 同步 CPU 证据复算 | [check_sync_cpu_evidence.py](analysis/check_sync_cpu_evidence.py) | 固定来源、替身和 ACK 受控行为；不是性能测试 |
+
+同步原生函数体检查从[现有 unittest](../tests/records_cpu.md#sync-native-source-check)运行。
+旧 ACK 语法树重放及其一次性包装脚本已退役，[同版本恢复](../../experiments/reproduction/native_baselines/README.md#retired-ack-source-replay)保留原演示。
 
 CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／driver Python、源码身份、
 资源所有权、持久次数额度和最终关闭证据；`--help`／CPU 检查不证明这些实际环境已可运行。

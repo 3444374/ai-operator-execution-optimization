@@ -248,6 +248,24 @@ manifest 的 `source_formats` 记录压缩摘要、准确解码长度，原逐�
 不能代替仓库外调用检查或真实模型资格。
 
 
+<a id="retired-ack-source-replay"></a>
+### 旧 ACK 语法树重放的同版本恢复
+
+日常套件已移除 `code/tests/execution_provider/ack_order_fixture.py`、
+`code/scripts/analysis/check_sync_cpu_evidence.py` 和一个专属重放测试。
+它们以当前方法为模板反向改写一次等待，再核对旧语法树摘要；测试正常整理后摘要已不匹配，不能据此判断当前 ACK 行为。
+当前直接事件 ACK 测试、固定公开 vLLM 方法检查和公开 CPU 副本恢复继续保留。
+
+删除前完整字节来自 `5a19221be439d9b6d7027cef21766e4293ffb257`，文件长度／SHA在[本批记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)保存。
+旧演示应使用完整 `55d8776d50511898fe0459ddbee38289b154361e` 树；静态核对该树改写后的摘要仍为原 `8aa32770…`，本批没有重跑其 IPC 演示。
+
+```sh
+git worktree add --detach "$REPLAY_CHECKOUT" 55d8776d50511898fe0459ddbee38289b154361e
+```
+
+目标须为新目录；命令只恢复源码。原命令、依赖和原结果按该版本读取，不将旧 helper 拷回当前套件。
+原[受控时序记录](../../results/diagnostics/records_runtime_refactor_20261104/raw/sync_ack_order_control.json)及失败、公开归档均未改写。
+
 <a id="retired-stage-work-controller"></a>
 ### 旧工作量控制原型退出生产目录
 

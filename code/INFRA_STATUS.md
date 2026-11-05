@@ -10,6 +10,26 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="current-refactor-status"></a>
 ## 当前收尾状态（2026-11-05）
 
+<a id="refactor-completion-checklist"></a>
+### 整体完成清单与收尾事项
+
+下表覆盖当前支持的 records 单查询执行及保留的对照；“已整理”指源码职责和已有 CPU 行为检查，不表示当前整库已在服务器通过，也不宣称新增数据库接入完成。
+ACK指结果已交接的确认，IPC指进程间通信；未消费结果和未知远端执行继续分别保留责任。
+
+| 模块 | 已整理 | 仍需处理或验证 |
+|---|---|---|
+| 配置与容量 | 中性规范、一次解析、未指定参数保留；普通 async／rolling 的 C／R／结果槽／字节分别负责 | 低层直接链与非 rolling 整批仍用其显式有限声明；引擎 ready 仍需对应版本实机核对，物理 RAM 自动授予未实现 |
+| Session 与查询推进 | Session、owner、数据运行器分工；逐记录、交错准备和完整 Extract | 关闭审计恢复结果与批 ACK 的接合仍需处理，不以本地完成代替远端结果已交接 |
+| 模型与 IPC | sync／async 构造分开，父进程／worker／帧编码分工，序列化使用定义模块 | 两项原实际 IPC 关闭错误、当前 Ray actor 序列化仍待服务器；不能把纯对象探针当实机归因 |
+| 算子与结果 | 共享 LOTUS 方法、F／M／E、原数据、记录身份、可变快照、未消费结果和 unknown 责任 | 关闭 ACK 同上；Join／TopK 等未接入能力不列为已完成 |
+| 研究隔离 | SAOR／多任务实现独立，核心只消费可选中性协议 | 独立拆仓可后续做，不让研究配置进入单查询默认路径 |
+| 旧入口与脚本 | 旧 PG／HTTP 实验、旧动态变体和重复导出退出当前入口；历史源码可恢复 | 本批退役旧 ACK 语法树重放及一次性 CLI，现用直接行为检查保留 |
+| 观测与验证 | 来源／时钟、真实压力与声明额度分开；每次 CPU 记录关联准确源码 | 真实 Daft 线程、当前模型质量／性能和完整作者桥按各自计划继续，不由本批补全 |
+
+收尾先处理受支持关闭路径的结果／ACK问题，再在正常服务器环境复核原两项 IPC 错误、当前序列化和受影响入口；失败、跳过和 unknown 保留实际身份。
+没有明确重复、职责混杂或正确性问题的长函数可以保留。自动物理容量、额外算子和独立研究拆仓是尚未实现或后续工作，不为完成本轮重构临时新增控制层。
+[本批历史检查退役与准确检查结果](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)记录删除范围，不代表运行时 ACK 问题已修复。PR继续为草稿，不合并main。
+
 最新核心代码为 `91fb08d1`，已保留并行基线提交 `295065c6`：普通 owner 只解析一次执行配置，直接构造时的阶段计时选项与动态反馈报告一致；公共工厂的最终报告与实际计时行为保持。
 链 owner 删除未使用的普通 profile 解析及已由类型构造器完成的重复检查，直接保存不可变分包配置；资源、模型与可变 token 预算的归一化和复制保持。
 [原反例、31项相关回归及整合后42项检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)
@@ -832,9 +852,10 @@ interleaved／event_driven 复用已审 SDK，只支持固定 rolling token 请�
 记录实际 CPU 范围；BF16／0.8、普通 R=2、默认结果槽=8、自动容量和旧 geometric／关闭问题没有由此解决。
 
 同步公开证据另有修订：两份 CPU 归档只规范化公开副本的个人 home 前缀，保留 24 份私有原件的摘要、
-公开副本摘要及对应关系；失败身份、栈行号、用量和代码来源不改。仓内
-[补充检查入口](scripts/analysis/check_sync_cpu_evidence.py)可复算固定上游函数体与受控 ACK 时序，
-先校验原始源码字节；两个原生源文件先前私有副本多一个尾部换行，选定方法的语法树一致。
+公开副本摘要及对应关系；失败身份、栈行号、用量和代码来源不改。
+当时的补充脚本现已[退役并保留准确源码](../experiments/reproduction/native_baselines/README.md#retired-ack-source-replay)；
+固定上游函数体继续从[现用 unittest](tests/records_cpu.md#sync-native-source-check)核对，不再改写当前测试去适配旧 ACK 演示。
+两个原生源文件先前私有副本多一个尾部换行，选定方法的语法树一致。
 [公开修订记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#public-cpu-evidence-copy)
 区分原 f577 检查、修订复查和缺项；已有 489 份运行时 Python 文件保持，未增加模型、Ray／Daft 或 GPU 资格。
 
