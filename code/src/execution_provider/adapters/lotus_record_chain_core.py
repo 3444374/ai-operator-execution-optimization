@@ -456,34 +456,10 @@ class SemLoomRecordChainCore:
     def _advance_relation_phase(self, stream):
         """Cross one complete Extract relation on the single Core control thread."""
         from src.semantic_methods.lotus.record_results import ChainBatchResults
-        from src.semantic_methods.lotus.record_relation import complete_extract_relation
 
         self._control()
-        _check(self.deadline, stream.cancelled)
-        usage = asdict(self.core.capacity.usage())
-        if (not stream.source_eof or stream.pending is not None
-                or self.results.pending or any(usage.values())
-                or not self.transport.phase_drained()):
-            raise RuntimeError("Core relation phase still owns source, delivery or transport work")
-        self.results.verify_success(source_exhausted=True)
-        errors = stream._close_source()
-        if errors:
-            raise stream._source_close_error
-        retired = stream.session.close()
-        if retired.status != "CLOSED" or any(asdict(retired.usage).values()):
-            raise RuntimeError("Core relation session did not retire completely")
-        completed = complete_extract_relation(
-            stream._phase_records, columns=self.results.columns,
-            extract_stage=self.chain.stages[-1], query_id=self.query_chain.query_id,
-            calls=self.calls, source_exhausted=True,
-        )
-        _check(self.deadline, stream.cancelled)
-        self.phase_history.append(dict(
-            phase_stage_ids=list(self.phase_stage_ids), source_exhausted=True,
-            session_id=stream.session.session_id, received_occurrences=len(self.results.received),
-            output_occurrences=len(completed.records), core_usage=usage,
-            barrier="complete_extract_relation", verified_success=True,
-        ))
+        completed, history = stream.finish_relation()
+        self.phase_history.append(history)
         self._phase_index += 1
         self.chain = self._segments[self._phase_index]
         self._current_relation = completed.records
@@ -494,12 +470,7 @@ class SemLoomRecordChainCore:
                                          initial_parents=self._phase_parents,
                                          columns=self._phase_columns)
         self._accountants[self.phase_stage_ids] = self.results
-        stream.source = iter(completed.records)
-        stream.source_eof = stream.source_closed = False
-        stream.offered, stream.sequence, stream.pending = set(), 0, None
-        stream._phase_records = []
-        stream.session = self.core.open(
-            self._phase_spec(), self._fused_limits(len(self.chain.stages)))
+        stream.begin_relation(completed.records)
 
     def evaluate(self, records, chain, *, expected, query_id, cancelled=None, columns=None):
         """Return a single-pass relation iterator; publish its frame after completed EOF.

@@ -220,6 +220,46 @@ class _CoreChainRows:
         self._source_close_error = None
         self._token_batches = None
 
+    def finish_relation(self):
+        """Retire the consumed input and assemble its complete Extract relation."""
+        from src.semantic_methods.lotus.record_relation import complete_extract_relation
+
+        owner = self.owner
+        _check(owner.deadline, self.cancelled)
+        usage = asdict(owner.core.capacity.usage())
+        if (not self.source_eof or self.pending is not None
+                or owner.results.pending or any(usage.values())
+                or not owner.transport.phase_drained()):
+            raise RuntimeError("Core relation phase still owns source, delivery or transport work")
+        owner.results.verify_success(source_exhausted=True)
+        errors = self._close_source()
+        if errors:
+            raise self._source_close_error
+        retired = self.session.close()
+        if retired.status != "CLOSED" or any(asdict(retired.usage).values()):
+            raise RuntimeError("Core relation session did not retire completely")
+        completed = complete_extract_relation(
+            self._phase_records, columns=owner.results.columns,
+            extract_stage=owner.chain.stages[-1], query_id=owner.query_chain.query_id,
+            calls=owner.calls, source_exhausted=True,
+        )
+        _check(owner.deadline, self.cancelled)
+        history = dict(
+            phase_stage_ids=list(owner.phase_stage_ids), source_exhausted=True,
+            session_id=self.session.session_id, received_occurrences=len(owner.results.received),
+            output_occurrences=len(completed.records), core_usage=usage,
+            barrier="complete_extract_relation", verified_success=True,
+        )
+        return completed, history
+
+    def begin_relation(self, records):
+        self.source = iter(records)
+        self.source_eof = self.source_closed = False
+        self.offered, self.sequence, self.pending = set(), 0, None
+        self._phase_records = []
+        self.session = self.owner.core.open(
+            self.owner._phase_spec(), self.owner._fused_limits(len(self.owner.chain.stages)))
+
     @property
     def production_core_connected(self):
         return isinstance(self.owner.core, SessionEngine)
