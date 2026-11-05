@@ -701,6 +701,7 @@ form a new measurement. Empty ready supply, stale feedback, queue/capacity and
 tail boundaries retain their existing guards. A window change still clears the
 partial measurements and waits for transition/settling before measuring anew.
 
+<a id="snapshot-rpc-ownership"></a>
 Control RPC evidence uses the existing normal query close receipt at
 `owner_close.batch_supply_feedback`. `snapshot_rpc_receipts` records each collected
 return or result exception, its local request index/session, driver timestamps,
@@ -746,19 +747,30 @@ The existing batch-feedback sampler separately signals a coalescing Event when i
 original Future completes, with observation on or off. The same provider thread
 can then collect and publish a valid result during its regular wait. The callback
 only signals: it never reads a result, releases a reference or issues another RPC.
-The next regular tick consumes the already-collected value (including a rejected
-or raised result), preserving the original dispatch turn and RPC issue frequency.
-Duplicate notifications cannot create RPCs or refresh a source sequence/age.
-Early-collected values are session-tagged; the next regular tick discards them
-if the current session differs. Missing wake registration falls
+An early-collected result no longer consumes the next regular dispatch turn.
+That turn can issue the next RPC if the previous one reached a known terminal;
+with a 0.25s poll and a promptly returned RPC, issues therefore occur every 0.25s
+instead of every 0.5s. Completion alone never dispatches another RPC. Duplicate
+notifications cannot create RPCs or refresh a source sequence/age. Current
+session/engine/age validation still applies before publication. Missing wake registration falls
 back to the original periodic poll, with an explicit receipt error. Close wakes
 the wait; cancellation and late terminal evidence keep the existing ownership
-rules. This is an engineering collection fix, not a freshness or resource-policy
-change. Provider-to-policy polling and three-window/finite-tail limits remain.
+rules. An accepted provider generation also signals the existing Core wake;
+ordinary and rolling feedback can consume it before their next control-poll
+deadline. Only the owner control thread decides or submits work. The unchanged
+request policy may make a provisional trial before the first model completion
+when its existing source, ready-work, pressure and capacity requirements hold;
+this is not measured performance gain or hardware-capacity discovery. Ongoing
+RPCs, local cancellation and unknown outcomes still retain the original reference.
+CPU preparation, consumer pauses and existing Core retry deadlines can delay
+control or submission. First snapshots from an actor's previous/unbound session
+remain rejected. No sampling/configuration threshold or policy default changed.
 The optional request-supply path above reuses these same collection and session
 ownership rules; fixed rolling without admission still installs no sampler.
 The [CPU collection cases](../../../tests/execution_provider/test_lotus_feedback_ready_collection.py)
-cover readiness, unchanged issue turns, close, unknown cancellation and phase reuse;
+and [cadence/control cases](../../../tests/execution_provider/test_records_feedback_cadence.py)
+cover readiness, configured dispatch ticks, close, unknown cancellation and phase reuse,
+including an unfinished first model request and no repeated control notification;
 real-backend latency and overhead on this exact new source still require validation.
 
 The separate `last_native` fallback commits and reuses frames only for the current

@@ -21,7 +21,7 @@ class IdleProvider:
     """Tests drive the sampler directly; this provider starts no thread."""
     is_running = False
     def __init__(self, sampler, *, poll_interval_s, stale_after_s, close_timeout_s,
-                 ready_event=None, collect_ready=None):
+                 ready_event=None, collect_ready=None, on_sample=None):
         self.sampler = sampler
         self.poll_interval_s = poll_interval_s
         self.stale_after_s = stale_after_s

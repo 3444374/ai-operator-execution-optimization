@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_chain_token_batches as batches
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission
+from src.scheduling.core.models import WindowDecision
 from src.scheduling.submission_control.adaptive import ResourceRequestConfig
 from src.execution_provider.adapters.records_request_feedback import ResourceRequestSupplyFeedback
 from tests.execution_provider import test_lotus_async_token_batches as base
@@ -38,7 +39,8 @@ class RequestRollingTests(unittest.TestCase):
                 self.actuate(owner, value)
             feedback.bind = bound
         else:
-            feedback.next_poll = float('inf')
+            self.enterContext(patch.object(feedback.controller, 'update_supply',
+                return_value=WindowDecision(value, 'hold', 'fixture_manual_request_window')))
             feedback._set_window(value)
 
     def test_grow_and_shrink_stop_new_admission_without_cancelling_owned_requests(self):

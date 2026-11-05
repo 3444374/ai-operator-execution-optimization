@@ -34,7 +34,7 @@ class RecordsNativeSampler:
         self._snapshot_request = None
         self._snapshot_lock = Lock()
         self._snapshot_ready = None
-        self._collected_ready = None
+        self._control_ready = Event()
 
     def _reset_sampling_phase(self, session_id):
         with self._snapshot_lock:
@@ -44,6 +44,7 @@ class RecordsNativeSampler:
             self.resource_rpc_audit = []
             self.resource_rpc_counts = dict.fromkeys(self.resource_rpc_counts, 0)
             self.started = time.monotonic()
+            self._control_ready.clear()
 
     def _start_sampling(self, expected_count, provider_type):
         if self.provider is None and expected_count:
@@ -52,16 +53,34 @@ class RecordsNativeSampler:
                 poll_interval_s=self.options.poll_interval_s,
                 stale_after_s=self._sample_age_limit(),
                 close_timeout_s=self.options.poll_interval_s,
-                ready_event=self._snapshot_ready, collect_ready=self.collect_ready)
+                ready_event=self._snapshot_ready, collect_ready=self.collect_ready,
+                on_sample=self._sample_published)
         elif self.provider is not None:
             self.provider.resume()
 
     def _close_sampling(self):
         with self._snapshot_lock:
             self.closed = True
+            self._control_ready.clear()
         if self.provider is not None:
             self.provider.close()
         self._reap_stopped_snapshot(cancel=True)
+
+    def _sample_published(self, snapshot):
+        # Only accepted provider generations wake control. The Future callback
+        # wakes collection alone; it is neither a native sample nor a decision.
+        with self._snapshot_lock:
+            if self.closed or snapshot.source_session_id != self.session_id:
+                return
+            self._control_ready.set()
+        self.owner.core.wake.notify()
+
+    def _control_due(self, now):
+        if self.closed or (now < self.next_poll and not self._control_ready.is_set()):
+            return False
+        self._control_ready.clear()
+        self.next_poll = now + self.options.poll_interval_s
+        return True
 
     def snapshot_rpc_report(self):
         """Read current RPC proof, collecting only after the existing sampler stops."""
@@ -169,11 +188,6 @@ class RecordsNativeSampler:
     def sample(self):
         if self.closed or self.session_id is None:
             return None
-        with self._snapshot_lock:
-            collected, self._collected_ready = self._collected_ready, None
-        if collected is not None:
-            session, snapshot = collected
-            return snapshot if session == self.session_id else None
         try:
             if self.ref is None and self._snapshot_request is None:
                 remote = self.owner._actors.model_actor.snapshot.remote
@@ -235,14 +249,10 @@ class RecordsNativeSampler:
         # RPC, and local Future cancellation still retains the original ref.
         if self.closed or self.future is None:
             return None
-        session = self.sample_session
         snapshot = self._consume_snapshot()
         with self._snapshot_lock:
             if self.ref is not None:
                 return None
-            # The next regular tick spends the turn that used to collect this
-            # result. Publishing early therefore does not increase RPC cadence.
-            self._collected_ready = (session, snapshot)
         return snapshot
 
     def _cancel_snapshot(self, reason):

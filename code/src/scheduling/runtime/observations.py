@@ -202,6 +202,7 @@ class NonBlockingMetricsObservationProvider:
         observer=None,
         ready_event: threading.Event | None = None,
         collect_ready: Callable[[], ServiceMetricsSnapshot | None] | None = None,
+        on_sample: Callable[[ServiceMetricsSnapshot], None] | None = None,
     ):
         if poll_interval_s <= 0:
             raise ValueError("poll_interval_s must be positive")
@@ -218,6 +219,7 @@ class NonBlockingMetricsObservationProvider:
         self.close_timeout_s = close_timeout_s
         self.observer = observer
         self._ready_event, self._collect_ready = ready_event, collect_ready
+        self._on_sample = on_sample
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._sampled = threading.Event()
@@ -385,6 +387,11 @@ class NonBlockingMetricsObservationProvider:
                 reason = "sampling_generation_invalidated"
         self._observe(observed_snapshot, stage="sample", accepted=accepted, reason=reason, at_s=now)
         self._sampled.set()
+        if accepted and self._on_sample is not None:
+            try:
+                self._on_sample(snapshot)
+            except Exception:
+                _logger.warning("metrics sample notification failed", exc_info=True)
 
     def _sample_loop(self) -> None:
         while not self._stop.is_set():
