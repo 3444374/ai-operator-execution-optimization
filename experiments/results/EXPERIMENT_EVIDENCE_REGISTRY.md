@@ -1491,3 +1491,9 @@ rolling 服务授予、自动物理容量、跨进程恢复和真实 Ray／模�
 Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
 移除写死五项的日志判断，保留所需方法、全部选中方法、监督与完整输出的实际成功要求。
 本机 73 项相关 CPU 检查通过，原权限错误及服务器八项通过后误停的记录保留；未运行真实 Ray 或模型。
+
+
+准备交错与当前资源反馈的[独立组合](diagnostics/records_runtime_refactor_20261104/README.md#prepared-feedback-interleave)
+复用现有独立预算和管理对象；先推进结果，再更新许可及前缀，等待使用原反馈时限。
+101 项综合 CPU 检查及后续 12 项目标检查均通过，共 103 个不同方法；重叠不累计。
+原导入错误、取消 fixture 超时和测试时序修订保留。没有真实 Ray／模型／GPU 运行或性能结论。

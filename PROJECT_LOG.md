@@ -11087,3 +11087,12 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 保留所需五项、其他选中方法、监督清理和完整输出要求，不增加执行策略或自动重试。
 [本地相关 73 项检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
 全部通过；原权限错误、服务器停止与累计调用记录保持。此批先独立交付，其余精简另行处理。
+
+
+## 2026-11-05 接通准备交错与当前资源反馈
+
+以 #90 `c5ebddc8` 新建独立工作树，复用既有工厂、准备循环、资源请求策略和独立预算。
+事件循环先处理结果与后继，再更新反馈；窗口变化后重查准备前缀，并按原轮询时间等待。
+[CPU 组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-feedback-interleave)
+含 101 项综合检查和调整测试稳定性后的 12 项目标检查，共 103 个不同方法全部通过。
+默认及历史路径保持；原失败保留，没有额外参数、策略阈值或资源账本。未推送、合并或启动真实模型。

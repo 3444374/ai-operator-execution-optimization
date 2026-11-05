@@ -1,0 +1,74 @@
+{
+  "base": "c5ebddc817e291492540bc2383d3892032d4c8b1",
+  "scope": "CPU fixtures with actual Core/Method/IPC; Ray RPC and inference are substitutes",
+  "production_changed": [
+    "code/src/execution_provider/adapters/records_profile.py",
+    "code/src/execution_provider/adapters/records_query_runtime.py"
+  ],
+  "production_sha256": {
+    "code/src/execution_provider/adapters/records_profile.py": "9edbaeeb43a27fcf55a8a78a7dc06d30fe5995ae99e51589a273af219942d14b",
+    "code/src/execution_provider/adapters/records_query_runtime.py": "36b34a0778f208ebbbbee0f21236ba4914a2f3ee661e37f9eefb5e40c5ed9229"
+  },
+  "full_CPU": {
+    "modules": [
+      "tests.execution_provider.test_records_preparation_profile",
+      "tests.execution_provider.test_prepared_supply_budgets",
+      "tests.execution_provider.test_ready_state_preparation",
+      "tests.execution_provider.test_event_state_preparation",
+      "tests.execution_provider.test_records_request_feedback",
+      "tests.execution_provider.test_records_request_feedback_safety",
+      "tests.execution_provider.test_records_memory_pressure",
+      "tests.experiments.test_movie_preparation_mode"
+    ],
+    "tests": 101,
+    "passed": 101,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_s": 39.66876708297059,
+    "source_unchanged": true
+  },
+  "final_target_CPU": {
+    "modules": [
+      "tests.execution_provider.test_records_preparation_profile",
+      "tests.execution_provider.test_prepared_supply_budgets"
+    ],
+    "tests": 12,
+    "passed": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_s": 8.35
+  },
+  "distinct_successful_methods": 103,
+  "repeated_methods_counted_once": true,
+  "changes_after_full": [
+    "code/tests/execution_provider/test_prepared_supply_budgets.py",
+    "code/tests/execution_provider/test_records_preparation_profile.py"
+  ],
+  "changes_after_full_scope": "only two retested test files; production bytes identical",
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "tokenizers": "0.22.2",
+    "pandas": "2.3.3",
+    "pyarrow": "24.0.0",
+    "psutil": "7.2.2"
+  },
+  "review": {
+    "standards_blocking_findings": 0,
+    "spec_blocking_findings": 0,
+    "timing_test_concern_resolved": true
+  },
+  "retained_failure_kinds": [
+    "missing local tokenizers",
+    "early fixture growth assumption",
+    "timing-dependent wait expectation"
+  ],
+  "real_Ray": 0,
+  "real_model": 0,
+  "GPU": 0,
+  "dependencies_installed": false,
+  "performance_claim": false
+}

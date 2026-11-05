@@ -160,8 +160,9 @@ def checked_preparation_options(batching, *, interleaved_preparation=False, even
     if event_driven_preparation and not interleaved_preparation:
         raise ValueError('event preparation requires explicit interleaved preparation')
     if interleaved_preparation and (batching is None or not batching.get('rolling_refill')
-            or 'feedback' in batching or 'request_feedback' in batching):
-        raise ValueError('interleaved preparation requires fixed rolling token requests')
+            or 'feedback' in batching or ('request_feedback' in batching
+                and batching.get('request_feedback_kind') != 'resource_feedback')):
+        raise ValueError('interleaved preparation requires fixed rolling token requests or resource feedback')
     return dict(**(dict(interleaved_preparation=True) if interleaved_preparation else {}),
                 **(dict(event_driven_preparation=True) if event_driven_preparation else {}))
 

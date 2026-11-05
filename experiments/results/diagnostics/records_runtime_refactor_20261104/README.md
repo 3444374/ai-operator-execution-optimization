@@ -1508,3 +1508,28 @@ MetricSources 已启用时，将该报告放到 sources.host.memory_pressure；�
 [方法与日志](raw/ray_qualification_methods.json.gz)保存两轮原件的脱敏副本与原摘要，
 [检查摘要](raw/ray_qualification_checks.json)记录源码及适用范围；不额外重跑无关的完整项目测试。
 服务器须使用经独审的新源码另建运行标识，继续原计划；本次没有推送、合并或启动模型。
+
+
+<a id="prepared-feedback-interleave"></a>
+### 准备交错与当前资源请求反馈组合
+
+从准确的 #90 `c5ebddc8` 独立工作树接通既有 `interleaved_preparation`、
+`event_driven_preparation` 与当前 `resource_feedback`。原检查仅允许固定许可，事件循环也未调用反馈更新；
+因此只删除拒绝条件不能得到动态执行。现在先推进结果与后继，再调用原反馈，窗口变化后重新检查
+已准备前缀，等待时间取现有反馈的下一轮询时间。没有新控制器、资源账本、策略阈值或准备模式。
+默认准备选项、历史策略检查、模型参数、完整请求和 unknown 的持有责任保持。
+
+8 模块综合 CPU 检查为 101 项全部通过；按独立审查建议，将等待检查改为固定时钟和稳定通知状态后，
+两个受影响模块的 12 项目标检查全部通过，其中新增 2 项，合计 103 个不同方法。两轮重叠不累计。
+它们覆盖公共工厂、两种既有准备模式的 Movie 预检、准备一条后的首发、慢请求期间的其他结果推进、
+内存压力导致的缩窗、无新 backend 通知的窗口增长、反馈时限、取消后的 unknown 和采样器退出。
+Core／Method／IPC 的许可及结果责任仍由原实现管理，关闭后使用量回到零。
+
+原取消 fixture 曾等待极短链先扩窗完成某个后继，但控制器可在没有待提交工作时回退；该前提不属于
+现有策略的承诺。原超时及诊断保留，改为在真实 fixture 请求开始后触发取消，没有修改策略来满足测试假设。
+本机项目 Python 缺少 tokenizers 的导入错误也保留；后续使用已有隔离 CPU 环境，未安装依赖。
+独立审查提出的自然等待时序问题已用单步状态检查消除，不要求任意机器都在同一位置睡眠。
+
+[检查摘要](raw/prepared_feedback_interleave_checks.json)记录每轮范围、重叠、版本和准确实现摘要。
+这只是 CPU fixture 组合验证：没有真实 Ray、模型、GPU 或 PostgreSQL 运行，也没有性能／质量结论。
+完整 source／expected 仍沿用已有有限输入声明，本次没有实现通用流式 source 或任意 DAG 编译。

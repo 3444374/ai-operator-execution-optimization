@@ -433,8 +433,10 @@ rolling 完整预算与显式容量的行为保持。
 省略等同 serial，保持现有配置和校准身份。interleaved 使用既有准备／派发交错；event_driven
 还使用既有完成与 RPC 可用通知。它们映射到 SDK 的两个既有选项，不创建第二执行器或控制器。
 
-这两个显式模式目前只支持固定 rolling token 请求：保留正数 B、token_budget、无单批行帽、
-async 与 rolling_refill=true；不与逐请求／批反馈、其他 backend 或 stage_timing 混用。
+这两个显式模式支持固定许可或当前 `resource_feedback` 的 rolling token 请求：
+保留正数 B、token_budget、无单批行帽、async 与 rolling_refill=true；
+历史逐请求反馈、批反馈、其他 backend 和 stage_timing 继续沿用原检查。
+当前反馈仍从一个请求许可开始，通过原控制器调整许可；准备模式不改变其策略或资源持有。
 原生 baseline 参数和调度仍由各 baseline 负责，公共入口没有因此支持任意链或 DAG。
 同一字段适用于隔离和 resident 查询；resident 仍先取得同一模型 ready，再逐查询完成并在 session 结束时关闭。
 预检和实际 record_batching 回执记录有效选项，模式变化会改变校准身份；None 加完整独立预算仍使用有限额度。
