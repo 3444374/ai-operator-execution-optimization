@@ -8,7 +8,9 @@ from dataclasses import asdict, replace
 import random
 import threading
 import unittest
+from unittest.mock import patch
 
+from src.scheduling.core import session as session_module
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_capacity import SessionCapacity
 from src.scheduling.core.session_contract import Acceptance, BatchSubmission, SessionSpec, State, Terminal
@@ -18,7 +20,7 @@ from src.scheduling.submission_control.admission import StaticAdmissionControlle
 from tests.scheduling.test_incremental_session import setup, task
 
 
-def fixture(*, fast=True, requests=64, work=256, admission=64):
+def fixture(*, requests=64, work=256, admission=64):
     engine, session, backend, clock = setup(
         held_tasks=64, input_bytes=512, result_bytes=512, active_requests=requests,
         active_work=work, offer_tasks=64, metadata_bytes=1024, step_actions=64)
@@ -46,8 +48,6 @@ def fixture(*, fast=True, requests=64, work=256, admission=64):
         return BatchSubmission(Acceptance.ACCEPTED, replies)
 
     backend.try_submit_batch = submit
-    if not fast:
-        session._batch_dispatch_snapshot = lambda now: None
     return engine, session, backend, clock
 
 
@@ -83,8 +83,10 @@ class CountingRecords(dict):
 
 class BatchDispatchSnapshotTests(unittest.TestCase):
     def paired(self, replay):
-        old = replay(False)
-        new = replay(True)
+        with patch.object(session_module, "_batch_dispatch_snapshot", return_value=None) as oracle:
+            old = replay()
+            self.assertGreater(oracle.call_count, 0)
+        new = replay()
         self.assertEqual(new, old)
         return new
 
@@ -97,8 +99,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                 order = list(range(len(works)))
                 rng.shuffle(order)
 
-                def replay(fast):
-                    e, s, b, _ = fixture(fast=fast, requests=requests, work=work, admission=admission)
+                def replay():
+                    e, s, b, _ = fixture(requests=requests, work=work, admission=admission)
                     s.limits = replace(s.limits, active_requests=max(1, requests - 1),
                                        active_work=max(8, work - 3))
                     e.policies = replace(e.policies, organize=lambda rows: tuple(rows[i].key for i in order))
@@ -113,7 +115,7 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
         for scope in ("global_requests", "session_requests", "job_requests",
                       "global_work", "session_work", "job_work", "fits"):
             with self.subTest(scope=scope):
-                def replay(fast):
+                def replay():
                     template, previous, backend, clock = fixture()
                     previous.close()
                     e = SessionEngine(template.capacity.limits, backend, template.policies,
@@ -140,8 +142,6 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                         e.capacity.limits = replace(e.capacity.limits, active_work=9)
                     elif scope == "session_work":
                         s.limits = replace(s.limits, active_work=5)
-                    if not fast:
-                        s._batch_dispatch_snapshot = lambda now: None
                     result = dispatch(s)
                     self.assertEqual(result, scope == "fits")
                     if not result:
@@ -156,8 +156,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                     BatchSubmission(Acceptance.NOT_ACCEPTED, ("unexpected",)), object())
         for outcome in outcomes:
             with self.subTest(outcome=type(outcome).__name__):
-                def replay(fast):
-                    e, s, b, clock = fixture(fast=fast)
+                def replay():
+                    e, s, b, clock = fixture()
                     s.offer(tuple(task(i) for i in range(3)))
                     clock.now = 1.0
                     b.batch_outcome = outcome
@@ -180,8 +180,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                 self.paired(replay)
 
     def test_completions_deliver_out_of_order_and_next_call_rebuilds_snapshot(self):
-        def replay(fast):
-            e, s, b, clock = fixture(fast=fast, requests=3)
+        def replay():
+            e, s, b, clock = fixture(requests=3)
             s.offer(tuple(task(i) for i in range(3)))
             self.assertTrue(dispatch(s))
             observed = [state(e, s, b)]
@@ -201,8 +201,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
         self.paired(replay)
 
     def test_pending_completion_cannot_reenter_owner_during_batch_handoff(self):
-        def replay(fast):
-            e, s, b, _ = fixture(fast=fast)
+        def replay():
+            e, s, b, _ = fixture()
             s.offer((task(0), task(1)))
             errors = []
 
@@ -230,8 +230,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
         self.paired(replay)
 
     def test_cancellation_flag_from_another_thread_rolls_back_unsent_reservations(self):
-        def replay(fast):
-            e, s, b, _ = fixture(fast=fast)
+        def replay():
+            e, s, b, _ = fixture()
             s.offer((task(0), task(1)))
             worker = threading.Thread(target=s.request_cancel)
             worker.start()
@@ -246,8 +246,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
     def test_custom_policies_and_general_routes_use_original_path(self):
         for kind in ("admission", "router", "pool", "multi_endpoint", "policy", "capacity"):
             with self.subTest(kind=kind):
-                def replay(fast):
-                    e, s, b, _ = fixture(fast=fast)
+                def replay():
+                    e, s, b, _ = fixture()
                     calls = []
                     policy = e.policies
                     if kind == "admission":
@@ -288,7 +288,9 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                         e.capacity = CustomCapacity(e.capacity.limits)
                     s.offer(tuple(task(i) for i in range(3)))
                     s._next_record(s._records())
-                    self.assertIsNone(s._batch_dispatch_snapshot(1.0))
+                    self.assertIsNone(session_module._batch_dispatch_snapshot(
+                        e.capacity, e.policies, session_id=s.session_id, limits=s.limits,
+                        job_id=s.spec.job_id, member_count=len(s._pending_members), now=1.0))
                     try:
                         result = dispatch(s)
                     except ValueError as error:
@@ -302,8 +304,8 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
     def test_unavailable_or_unhealthy_endpoint_preserves_rejection_and_error(self):
         for change in ({"available": False}, {"healthy": False}, {"pool_id": "other"}):
             with self.subTest(change=change):
-                def replay(fast):
-                    e, s, b, _ = fixture(fast=fast)
+                def replay():
+                    e, s, b, _ = fixture()
                     topology = e.policies.topology
                     e.policies = replace(e.policies, topology=replace(topology,
                         endpoints=(replace(topology.endpoints[0], **change),)))
@@ -320,12 +322,17 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
 
     def test_capacity_table_scans_are_constant_per_batch(self):
         scans = {}
+        snapshot = session_module._batch_dispatch_snapshot
         for fast in (False, True):
-            e, s, _, _ = fixture(fast=fast)
+            e, s, _, _ = fixture()
             s.offer(tuple(task(i) for i in range(32)))
             s._next_record(s._records())
             e.capacity.records = CountingRecords(e.capacity.records)
-            self.assertTrue(dispatch(s))
+            with patch.object(session_module, "_batch_dispatch_snapshot",
+                              side_effect=snapshot if fast else None,
+                              return_value=None) as projection:
+                self.assertTrue(dispatch(s))
+                self.assertEqual(projection.call_count, 1)
             scans[fast] = e.capacity.records.scans
         self.assertEqual(scans[False], 32 * 3)
         self.assertEqual(scans[True], 3)

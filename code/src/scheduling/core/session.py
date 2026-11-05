@@ -37,7 +37,7 @@ from .session_contract import (
     Uncertain,
     Usage,
 )
-from .session_policy import IncrementalCreditPolicy, SessionPolicies
+from .session_policy import IncrementalCreditPolicy, SessionPolicies, _batch_dispatch_snapshot
 from .task_info import _TaskInfoChecks, validate_task_info
 from .session_jobs import (
     JobBudget,
@@ -851,42 +851,6 @@ class SchedulingSession:
         engine._emit("submitted", record.key)
         return True
 
-    def _batch_dispatch_snapshot(self, now):
-        """Derive call-local counts only for the fixed, single-endpoint policy.
-
-        The non-reentrant owner cannot settle completions during reservation.
-        Custom policies retain the record-based path, including their callbacks.
-        """
-        if len(self._pending_members) < 2:
-            return None
-        from ..endpoint_routing.policies import RoundRobinEndpointRouter
-        from ..submission_control.admission import StaticAdmissionController
-
-        capacity, policies = self.engine.capacity, self.engine.policies
-        if (type(capacity) is not SessionCapacity or type(policies) is not SessionPolicies
-                or type(policies.admission) is not StaticAdmissionController
-                or type(policies.router) is not RoundRobinEndpointRouter
-                or policies.pool_router is not None or len(policies.topology.endpoints) != 1):
-            return None
-        scopes = [(capacity.usage(), capacity.limits),
-                  (capacity.usage(self.session_id), self.limits)]
-        if self.spec.job_id in capacity.job_limits:
-            scopes.append((capacity.usage(job_id=self.spec.job_id),
-                           capacity.job_limits[self.spec.job_id]))
-        bounds = [[usage.active_requests, usage.active_work, limits] for usage, limits in scopes]
-        endpoint = policies.topology.endpoints[0]
-        running = work = 0
-        oldest = 0.0
-        for record in capacity.records.values():
-            if record.compute:
-                oldest = max(oldest, now - record.since)
-                if record.endpoint == endpoint.endpoint_id:
-                    running += 1
-                    work += record.task.estimated_work
-        endpoint = replace(endpoint, running=endpoint.running + running,
-                           estimated_active_work=endpoint.estimated_active_work + work)
-        return bounds, endpoint, oldest
-
     def _dispatch_batch(self, now):
         """Optional atomic transport handoff over existing per-member reservations."""
         engine = self.engine
@@ -894,7 +858,9 @@ class SchedulingSession:
             raise ValueError("atomic transport batches do not support shared-credit routing")
         records = tuple(engine.capacity.records[key] for key in self._pending_members)
         reserved = []
-        snapshot = self._batch_dispatch_snapshot(now)
+        snapshot = _batch_dispatch_snapshot(
+            engine.capacity, engine.policies, session_id=self.session_id, limits=self.limits,
+            job_id=self.spec.job_id, member_count=len(self._pending_members), now=now)
         if snapshot is not None:
             bounds, occupied_endpoint, oldest = snapshot
         try:
