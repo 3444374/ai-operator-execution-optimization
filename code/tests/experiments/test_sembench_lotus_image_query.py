@@ -58,6 +58,10 @@ class NativeHTTPReplies:
         self.case.assertTrue(all(uri.startswith("data:image/png;base64,") for uri in uris))
         self.case.assertNotIn("REFERENCE_ONLY_", json.dumps(body))
         self.case.assertEqual(body.get("max_tokens", body.get("max_completion_tokens")), 32)
+        if self.scenario == "mmqa" and body.get("response_format") != {"type": "json_object"}:
+            from lotus.templates.task_instructions import cot_prompt_formatter
+            expected = cot_prompt_formatter(answer_instructions="The answer should be either True or False")
+            self.case.assertIn(expected, body["messages"][0]["content"])
         self.case.assertEqual(body.get("stop", []), [])
         pixels = []
         for uri in uris:
@@ -82,8 +86,9 @@ class NativeHTTPReplies:
                 pixel in ((255, 0, 0), (0, 128, 0))
             text = "True" if keep else "False"
         else:
-            text = "Reasoning: deterministic CPU fixture.\nAnswer: " + (
-                "False" if self.mode == "no_matches" else "True")
+            text = ("Reasoning:\nThe word True is in this software reasoning, not the decision.\n\nAnswer: False"
+                if self.mode == "distracting_reasoning" else
+                "Reasoning: deterministic CPU fixture.\nAnswer: " + ("False" if self.mode == "no_matches" else "True"))
         return httpx.Response(200, request=request, json=dict(
             id=request_id, object="chat.completion", created=1,
             model=self.response_model or "local-image-fixture",
@@ -301,6 +306,7 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                 self.assertEqual(claim.attempts, 8 if query == "Q2b" else 4)
                 self.assertEqual(report["quality"]["sembench_commit"], animals.SEMBENCH_COMMIT)
                 self.assertEqual(report["inputs"]["join_strategy"], "zs-cot")
+                self.assertEqual(report["inputs"]["native_join_strategy"], "ReasoningStrategy.ZS_COT")
                 if query == "Q2b":
                     self.assertEqual([stage["kind"] for stage in report["native_lm_calls"]],
                         ["filter_or_join", "extract"])
@@ -313,6 +319,18 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                     self.assertEqual({row["Airlines"] for row in self.result_rows(report)},
                         {"DomesticOnly", "EuropeanLine"})
                     self.assertTrue(report["inputs"]["original_source_difference"])
+                self.assert_audit(report, directory, replies)
+
+    def test_mmqa_native_parser_uses_final_answer_without_rewriting_reasoning(self):
+        inputs = self.mmqa_inputs()
+        for query in ("Q2a", "Q7"):
+            with self.subTest(query=query):
+                config, _ = self.config("mmqa", query)
+                replies = NativeHTTPReplies(self, "mmqa", mode="distracting_reasoning")
+                report, directory, claim = self.invoke(config, inputs, replies)
+                self.assertEqual(report["status"], "completed")
+                self.assertEqual(report["result"]["data"], [])
+                self.assertEqual(claim.attempts, 4)
                 self.assert_audit(report, directory, replies)
 
     def test_api_or_transport_failure_keeps_first_attempt_without_sdk_retries(self):

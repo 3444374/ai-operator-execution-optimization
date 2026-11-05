@@ -80,6 +80,11 @@ Daft 补充文本图现先配置 Native runner、再创建 source DataFrame，�
 与5a19221b合并后的修复组合310项CPU通过，包含真实Daft0.7.21和12项原生视觉SDK/软件HTTP集成；原3010历史绑定匹配。
 这仍是本地CPU资格，实际Linux软件组合、VLM加载、质量及物理服务清理待服务器验证。
 
+MMQA Q2a/Q2b/Q7 另修复原 `"zs-cot"` 字符串在 LOTUS1.2.4 枚举接口静默进入非 CoT 提示的问题：
+仅在独立查询调用边界映射为 `ReasoningStrategy.ZS_COT`，保留原 Join／Extract／解析与评价。
+65项相关离线CPU检查通过、无跳过，含原生 API 枚举、实际 HTTP 消息完整 CoT 提示、正常／异常恢复及原最终 Answer 解析；
+未访问网络、加载模型或操作服务器。现象与修复见[基线说明](src/baselines/README.md#sembench-image-preparation)，三题模型验证仍待服务器执行。
+
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；
 原生 VLM 服务、实际 processor／JSON Extract 和物理关闭尚未实机验证，不能以 CLIP 或旧 HTTP 结果补齐。

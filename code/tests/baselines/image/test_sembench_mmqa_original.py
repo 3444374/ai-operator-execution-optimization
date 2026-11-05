@@ -95,6 +95,41 @@ class OriginalMMQAImageTests(unittest.TestCase):
         self.assertEqual(set(result["image_id"]), {GOLD_IMAGE})
         self.assertEqual(evaluate_original(CHECKOUT, "2a", result)["original_metric"]["f1_score"], 1)
 
+    def test_all_visual_joins_request_native_zero_shot_cot(self):
+        import pandas as pd
+        from lotus.templates.task_instructions import cot_prompt_formatter
+
+        (self.data / "images" / "other.jpg").unlink()
+        pd.DataFrame({"ID": [0], "Track": ["software racetrack"]}).to_csv(
+            self.data / "ap_warrior.csv", index=False)
+        pd.DataFrame({"Airlines": ["software airline"], "Destinations": ["London"]}).to_csv(
+            self.data / "tampa_international_airport.csv", index=False)
+        expected = cot_prompt_formatter(answer_instructions="The answer should be either True or False")
+        for query in ("2a", "2b", "7"):
+            with self.subTest(query=query):
+                _, batches = self._run(query)
+                for message in batches[0][0]:
+                    self.assertIn(expected, message[0]["content"])
+
+    def test_native_join_receives_enum_and_restores_its_accessor_on_success_and_failure(self):
+        from lotus.sem_ops.sem_join import SemJoinDataframe
+        from lotus.types import ReasoningStrategy
+
+        original, seen = SemJoinDataframe.__call__, []
+
+        def observe(accessor, *args, **kwargs):
+            seen.append(kwargs["strategy"])
+            return original(accessor, *args, **kwargs)
+
+        with patch.object(SemJoinDataframe, "__call__", observe):
+            self._run("2a")
+            self.assertIs(SemJoinDataframe.__call__, observe)
+            with self.assertRaises(KeyError):
+                self._run("2b", extract_text="{}")
+            self.assertIs(SemJoinDataframe.__call__, observe)
+        self.assertIs(SemJoinDataframe.__call__, original)
+        self.assertEqual(seen, [ReasoningStrategy.ZS_COT, ReasoningStrategy.ZS_COT])
+
     def test_q2b_runs_join_then_extract_for_every_actual_match(self):
         result, batches = self._run("2b")
         self.assertEqual([len(messages) for messages, _ in batches], [10, 5])

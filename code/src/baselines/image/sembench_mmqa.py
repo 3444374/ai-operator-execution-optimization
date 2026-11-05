@@ -5,7 +5,9 @@ its native LM; this module neither creates a model nor implements a provider.
 """
 
 import csv
+from contextlib import contextmanager
 from dataclasses import asdict
+from functools import wraps
 import os
 from pathlib import Path
 
@@ -54,10 +56,32 @@ def describe_inputs(checkout, data_dir, query_id):
         original_source_difference=("Q7 native implementation joins all airline rows; it does not apply "
             "the natural-language question's Europe destination restriction" if query == "7" else None),
         policy="exact", join_strategy="zs-cot", warmup_calls=0, retries=0,
+        native_join_strategy="ReasoningStrategy.ZS_COT",
         model_calls=0, join_left="table" if query == "7" else "images",
         execution_order=("table rows outer; original os.listdir images inner" if query == "7" else
                          "original os.listdir images outer; table rows inner"),
         budget_scope="one pass; Q2b Extract count equals actual Join matches, including repeated images")
+
+
+@contextmanager
+def _native_join_strategy():
+    """Bind the pinned runner's spelling to the current SDK in its isolated worker."""
+    from lotus.sem_ops.sem_join import SemJoinDataframe
+    from lotus.types import ReasoningStrategy
+
+    original = SemJoinDataframe.__call__
+
+    @wraps(original)
+    def call(accessor, *args, **kwargs):
+        if kwargs.get("strategy") == "zs-cot":
+            kwargs["strategy"] = ReasoningStrategy.ZS_COT
+        return original(accessor, *args, **kwargs)
+
+    SemJoinDataframe.__call__ = call
+    try:
+        yield
+    finally:
+        SemJoinDataframe.__call__ = original
 
 
 def run_original_query(checkout, data_dir, query_id):
@@ -78,7 +102,8 @@ def run_original_query(checkout, data_dir, query_id):
         return pd.read_csv(data / name, **kwargs)
 
     owner.load_data = load
-    return getattr(owner, "_execute_q" + query)()
+    with _native_join_strategy():
+        return getattr(owner, "_execute_q" + query)()
 
 
 def evaluate_original(checkout, query_id, result):
