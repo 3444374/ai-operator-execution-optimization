@@ -102,6 +102,9 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 owner 保留服务交接和真实资源清理确认，没有新增状态副本或转发层。
 [本批职责与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
 记录中断重试、完整 Extract 及仍受系统权限影响的同步子进程用例。
+融合批 close 在私有控制目录删除成功后才保存 closed 报告，删除异常仍向调用方传出，重试沿用原模型关闭凭据。
+[最小反例和回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
+保存改前失败和改后 10 项 CPU 通过，未增加清理状态或模型重启。
 
 异步模型 actor 的请求／回执与 IPC 实现在
 [records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC

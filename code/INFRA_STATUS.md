@@ -1014,3 +1014,9 @@ sink 拒收、unknown 用量和模型借用责任保持。已完成查询先排�
 [同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
 记录改前／改后各 89 项 CPU 通过、历史五条来源映射及原十处差异；本批没有改 R、资源授予或物理容量。
 生产 Python 净增 5 行；未运行真实 Ray、模型、GPU 或服务器，原 socket／sysctl 未验证状态保持。
+
+
+融合批关闭先完成原私有目录删除，再保存 closed 报告，修正删除异常后重试直接返回旧成功报告的问题。
+[最小 CPU 反例](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
+在原生产代码上失败，修正后与原九项审计生命周期用例合计十项通过；确认目录被再次删除、调用记录和原模型关闭凭据保持。
+生产只移动两行，没有增加状态或检查，没有改 prepared／常驻模型关闭；真实 Ray、模型及原权限未验证项保持。

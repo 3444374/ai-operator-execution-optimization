@@ -11405,3 +11405,12 @@ Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan
 [源码和 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
 保存同选择的 89 项改前／改后全部通过。调度文件 897→844 行，topology 25→83 行，总生产 Python 净增 5 行；
 本批没有减少总代码或改容量，原十处历史差异和权限未验证项保持，其他核心职责整理继续。
+
+
+## 2026-11-05 修正融合批关闭的私有目录重试
+
+新增一个沿用进程内 fake Engine 的反例，确认目录删除异常后 close 错误地返回先前缓存的 closed，只有一次删除尝试。
+把原两行目录删除移到成功报告保存前，原异常、原模型关闭 Future、调用记录和额度处理保持，不新增状态或重试控制器。
+[改前失败与改后检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
+记录十项审计生命周期 CPU 通过，确认第二次删除同目录且不再次关闭模型；其余 31 个 owner 方法未改。
+生产 Python 总量保持，owner 仍为 985 行；这次优先修实际问题，未为降低单文件行数增加包装，其他职责和旧路径继续核对。

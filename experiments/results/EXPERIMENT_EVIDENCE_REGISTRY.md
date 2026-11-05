@@ -1686,3 +1686,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [本地占用投影的职责整理](diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
 保留同一组 89 个 CPU 方法改前／改后全部通过，未新增测试方法；原函数体及另 14 个调度方法保持对应行为。
 五份历史版本增加准确旧 topology 来源，原十处差异未变；本批是源码职责调整，没有物理容量或性能结论。
+
+
+[融合批私有目录删除失败后的关闭重试](diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
+以一个新增进程内反例确认原成功缓存阻止重试，保留一次改前失败和修正后的十项通过；不是两组相同选择，也不累计为十一项覆盖。
+文件错误由测试注入，只有 CPU 替身，没有实际模型或 GPU 终态结论；原十处历史来源差异和环境未验证项保持。
