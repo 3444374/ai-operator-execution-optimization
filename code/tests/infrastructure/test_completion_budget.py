@@ -79,4 +79,3 @@ class CompletionBudgetTests(unittest.TestCase):
                 connection.execute("UPDATE budget SET schema=?", (SCHEMA,))
             with self.assertRaises(BudgetError):
                 CellBudgetLedger(path, budget)
-

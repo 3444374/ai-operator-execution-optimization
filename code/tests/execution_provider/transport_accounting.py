@@ -33,4 +33,3 @@ def ray_transport_accounting(events, requests):
     return dict(completed_requests=len(completed), object_blocks=len(seen),
                 peak_arrow_buffer_bytes=peak, final_arrow_buffer_bytes=0,
                 scope='owned Arrow backing buffers; not total process or Ray object-store memory')
-
