@@ -898,7 +898,7 @@ def main(argv=None):
         if batching is not None:
             preflight['record_batching'] = batching
         if preflight["core_execution"]["mode"] == "async":
-            limits = _async_limits(config)
+            limits = configured.async_limits if 'async_limits' in config else None
             preflight["requested_async_limits"] = None if limits is None else asdict(limits)
             preflight['resolved_async_limits_before_feedback'] = asdict(configured.async_limits)
     if args.action == "check" or not args.execute_model:

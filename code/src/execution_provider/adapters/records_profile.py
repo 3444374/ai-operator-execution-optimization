@@ -140,7 +140,7 @@ def resolve_records_runtime(engine, resources, profile=None, *, capacity=None, a
                and (prepared_batching is None or rolling_refill))
     if derived:
         capacity, async_limits = independent_default_capacity(resources, capacity, async_limits)
-    resolved = resolve_core_profile(engine, resources, profile, rolling_refill=rolling_refill,
+    resolved = resolve_core_profile(engine, resources, expanded, rolling_refill=rolling_refill,
                                     capacity=capacity, derived_capacity=derived)
     effective = replace(resources, max_active_batches=resolved.get('owner_max_inflight', resolved['max_inflight']))
     if resolved['mode'] == 'async':

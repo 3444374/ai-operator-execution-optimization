@@ -258,7 +258,7 @@ class RecordsPayloadGrant:
         self._identity = None
         self._runtime_module = self._runtime_identity = None
         self._producer = None
-        self._retirement = self._retirement_values = None
+        self._retirement = None
         self._retiring_producer_ref = None
 
     def __getstate__(self):
@@ -365,49 +365,29 @@ class RecordsPayloadGrant:
             if self._identity is not None and any(ready.get(n) != value for n,value in self._identity.items()):
                 raise RuntimeError('terminal model identity differs from the registered service producer')
             if self._retirement is not None:
-                marker = getattr(owner, '_service_retirement', None)
-                if not self._retirement_valid() or not (marker is None or marker is self._retirement):
+                marker = owner._service_retirement
+                if marker is not None and marker is not self._retirement:
                     raise RuntimeError('the original producer retirement proof changed')
                 self._producer = None
                 return self._retirement
-            certificate = dict(allocation_id=self.allocation_id,
-                plan_signature=self.plan.signature, producer_id=hex(id(producer)),
-                model_identity=None if self._identity is None else dict(self._identity),
-                cleanup_confirmed=True)
-            # Keep no chain or N-result array in this proof. Only the registered
-            # wrapper can finish transferring its own references after this call.
-            self._retirement_values = (self.allocation_id, self.plan.signature,
-                certificate['producer_id'], None if self._identity is None else tuple(sorted(self._identity.items())))
+            # The registered grant already owns these identities. The private
+            # handoff needs only the same marker, without mutable metadata.
+            marker = object()
             self._retiring_producer_ref = weakref.ref(producer)
-            self._retirement = certificate
+            self._retirement = marker
             self._producer = None
-            return certificate
+            return marker
 
     def _owns_producer(self, producer):
         if producer is self._producer:
             return True
-        return (self._producer is None and self._retiring_producer_ref is not None
-                and self._retiring_producer_ref() is producer and self._retirement_valid())
-
-    def _retirement_valid(self):
-        certificate = self._retirement
-        if (type(certificate) is not dict or set(certificate) != {
-                    'allocation_id', 'plan_signature', 'producer_id', 'model_identity', 'cleanup_confirmed'}
-                or certificate.get('cleanup_confirmed') is not True):
-            return False
-        identity = certificate.get('model_identity')
-        if identity is not None and (type(identity) is not dict
-                or any(type(k) is not str or type(v) is not str for k,v in identity.items())):
-            return False
-        values = (certificate.get('allocation_id'), certificate.get('plan_signature'),
-            certificate.get('producer_id'), None if identity is None else tuple(sorted(identity.items())))
-        return (all(type(v) is str for v in values[:3])
-                and values == self._retirement_values)
+        return (self._producer is None and self._retirement is not None
+                and self._retiring_producer_ref is not None and self._retiring_producer_ref() is producer)
 
     def _retirement_confirmed(self, owner):
-        wrapper_done = (self._retirement_valid() and owner._service_retirement is self._retirement
+        wrapper_done = (self._retirement is not None and owner._service_retirement is self._retirement
                 and owner.owner is None and owner._active is None
-                and type(getattr(owner, '_retired_report', None)) is dict
+                and type(owner._retired_report) is dict
                 and owner._retired_report.get('payload_transferred') is True)
         if not wrapper_done or self._retiring_producer_ref is None:
             return False

@@ -17,6 +17,7 @@ from src.infrastructure.private_artifacts import (
     write_private_json,
 )
 from src.infrastructure.redact import redact_text
+from src.infrastructure.json_content import json_content_equal
 import control_resource_C2 as controller
 
 TESTS = ('tests.experiments.test_record_resource_capture',
@@ -222,7 +223,7 @@ def check(config_path):
         return value
     if (ready['tool_source'] != config['tool_source']
             or ready['public_source'] != config['expected_source']
-            or business(base) != business(config)
+            or not json_content_equal(business(base), business(config))
             or ready['input_binding'] != input_binding(config)):
         raise ValueError('CPU source binding changed')
     return config

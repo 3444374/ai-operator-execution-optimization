@@ -9,6 +9,18 @@
 [源码范围与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ownership-simplify)
 说明 151 项相关检查及尚未验证的实机路径；本地候选未推送或合并。
 
+## 2026-11-05：删除同次配置检查中的重复解析
+
+CLI 复用已解析的 IPC 值，共享解析器复用已展开的 profile；保留兼容入口、历史身份和启动前检查。
+[改动与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#config-parse-simplify)
+保存 21 项相关检查及其他检查的保留原因；独立本地候选未推送或合并。
+
+## 2026-11-05：观察流程保持业务配置的 JSON 类型
+
+以独立候选修正 Python 相等比较接受 0／false 的问题，复用现有 JSON 比较，不增加检查层。
+[原反例与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#workflow-json-types)
+保留旧失败和 27 项成功；本批未运行模型或真实 Ray，未推送或合并。
+
 ## 2026-11-04：接入已审资源策略的准备
 
 核对上一批准确 HEAD，并保留其干净审查树。新树导入 b99 三个策略文件与三个测试文件，字节和补丁摘要相同。
@@ -11118,3 +11130,21 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 [本次 73 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)
 通过；清理 Python 与原 317 项通过的准确候选相同，不重复执行或累计数字。
 原候选、第二轮候选及 9da 对照均保持；未推送、合并或运行真实 Ray／模型／GPU。
+
+
+## 2026-11-05 第二轮精简内部退役交接
+
+核对实际消费者后，以无载荷原对象标记取代内部可变字典，删除其镜像字段和内容形状校验。
+实际 producer、未消费结果、私有载荷和未决 RPC 的检查保持，不另建控制结构。
+[相关 97 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retirement-marker-simplify)
+通过；没有新增测试方法或修改原 9da 对照，其他配置精简另行处理。本批待独审，未推送或合并。
+
+
+## 2026-11-05 组合第二轮已审精简
+
+在完整第一批 0f2e2141 上组合 b7e47a99、8fe566cf、a4d693ad，保留其 c5e 资格修复祖先。
+源码没有冲突，文档保留各批来源；[170 项组合 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#second-cleanup-composition)
+全部通过，没有新增测试方法。整合前远端仍 c5e、第一批发布进行中；本地候选未推送或合并，
+原候选、反例和 9da 服务器对照保持，真实 Ray／模型／GPU 未运行。
+
+交付前远端已确认 0f2e2141，第二轮候选以该准确提交为父提交。

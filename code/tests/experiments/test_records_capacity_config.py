@@ -259,17 +259,27 @@ class CapacityMovieEntryTests(unittest.TestCase):
                 self.assertEqual(checked['async_limits']['feedback_interval_s'], .1)
 
     def test_ordinary_check_reports_capacity_without_allocating_an_owner(self):
-        output = io.StringIO()
-        with patch.object(movie, 'model_preflight', return_value=dict(inference_calls=0)), \
-                patch.object(core, 'create_records_core') as allocate, redirect_stdout(output):
-            status = movie.main(['check', '--source-manifest', self.plan['queries'][0]['manifest'],
-                '--sembench-checkout', str(self.root), '--config', str(self.save(self.config()))])
-        self.assertEqual(status, 0)
-        allocate.assert_not_called()
-        checked = json.loads(output.getvalue())
-        self.assertEqual(checked['core_capacity']['item_input_bytes'], 4*MIB)
-        self.assertEqual(checked['requested_async_limits']['max_inflight'], 11)
-        self.assertEqual(checked['requested_async_limits']['input_bytes'], AsyncEngineLimits().input_bytes)
+        for declared, overrides in ((False, None), (True, {}), (True, dict(feedback_interval_s=.1))):
+            with self.subTest(declared=declared, overrides=overrides):
+                config = self.config()
+                if declared:
+                    config['async_limits'] = overrides
+                else:
+                    config.pop('async_limits')
+                output = io.StringIO()
+                with patch.object(movie, 'model_preflight', return_value=dict(inference_calls=0)), \
+                        patch.object(core, 'create_records_core') as allocate, redirect_stdout(output):
+                    status = movie.main(['check', '--source-manifest', self.plan['queries'][0]['manifest'],
+                        '--sembench-checkout', str(self.root), '--config', str(self.save(config))])
+                self.assertEqual(status, 0)
+                allocate.assert_not_called()
+                checked = json.loads(output.getvalue())
+                self.assertEqual(checked['core_capacity']['item_input_bytes'], 4*MIB)
+                limits = checked['resolved_async_limits_before_feedback']
+                self.assertEqual(limits['max_inflight'], 11)
+                self.assertEqual(limits['input_bytes'], AsyncEngineLimits().input_bytes)
+                self.assertEqual(limits['feedback_interval_s'], .1 if overrides else 0.)
+                self.assertEqual(checked['requested_async_limits'], limits if declared else None)
 
     def test_rolling_feedback_uses_hard_owner_R_instead_of_initial_C(self):
         self.plan.update(profile=dict(mode='async', admission=dict(kind='resource_feedback')),

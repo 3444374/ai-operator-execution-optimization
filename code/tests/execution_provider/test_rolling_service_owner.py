@@ -141,7 +141,7 @@ class RollingServiceOwnerTests(unittest.TestCase):
         self.assertEqual(final['service_allocation']['status'],'released')
         self.assertEqual(pool.snapshot()['allocated_bytes'],0)
 
-    def test_a_modified_retirement_certificate_does_not_return_bytes(self):
+    def test_a_foreign_retirement_marker_does_not_return_bytes(self):
         _,source,pool,owner,declaration=self.prepare()
         list(owner.evaluate(source,query_id=declaration.query_id))
         grant=owner._service_allocation
@@ -149,17 +149,13 @@ class RollingServiceOwnerTests(unittest.TestCase):
             report=owner.close(timeout=3)
         self.assertEqual(report['service_allocation']['status'],'bound')
         self.assertIsNone(owner.owner)
-        certificate=owner._service_retirement
-        original=dict(certificate)
-        for name,value in (('producer_id',False),('cleanup_confirmed',1),
-                           ('model_identity',dict(certificate['model_identity'],engine_uid='replacement'))):
-            certificate.update(original)
-            certificate[name]=value
-            with self.subTest(name=name):
+        marker=owner._service_retirement
+        for replacement in (object(), {}, None):
+            owner._service_retirement=replacement
+            with self.subTest(replacement_type=type(replacement).__name__):
                 self.assertFalse(grant.settle(owner))
                 self.assertEqual(pool.snapshot()['allocations'],1)
-        certificate.clear()
-        certificate.update(original)
+        owner._service_retirement=marker
         self.assertTrue(grant.settle(owner))
         self.assertEqual(pool.snapshot()['allocations'],0)
 

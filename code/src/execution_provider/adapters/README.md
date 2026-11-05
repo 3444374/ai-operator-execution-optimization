@@ -1364,3 +1364,9 @@ client reconnect and automatic physical capacity remain pending. Actor acknowled
 precede durable service storage, so the existing fsync-before-result-acceptance operation is
 not an owner-death exactly-once guarantee. See the
 [CPU evidence and remaining work](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery).
+
+
+Internal rolling producer retirement now carries only the original object marker.
+The grant already owns allocation and model identity; duplicated mutable metadata and mirror checks were removed.
+Actual producer cleanup, unconsumed results and pending RPC still retain the grant; see the
+[focused CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retirement-marker-simplify).

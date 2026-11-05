@@ -778,3 +778,23 @@ Ray 资格入口另修正测试总数写死为五项的问题：按实际方法�
 [新来源组合](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)
 完成 73 项相关 CPU 检查；清理部分八份 Python 与原 317 项通过的候选相同，不重复运行同一组。
 第二轮内部标记、配置解析及 JSON 类型候选仍未混入；原 9da 服务器对照保持。
+
+
+服务 rolling 的内部退役交接另去掉可变字典及其镜像校验：只保留原对象标记，
+实际 producer、完整未消费结果、RPC 终态与私有载荷清理仍由原路径确认。
+[第二轮精简检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retirement-marker-simplify)
+覆盖原对象重试、不同标记、未消费结果和 unknown；没有增加控制器或修改容量配置。
+
+配置解析另有最小精简候选：CLI 复用同次 IPC 解析结果，共享解析器复用已展开的 profile。
+显式／省略报告、兼容 helper 及启动前检查保持；21 项相关 CPU 检查通过，未推送或合并。
+[实际改动与保留原因](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#config-parse-simplify)。
+
+观察工作流的配置核对另修数值／布尔值误判：复用既有 JSON 比较，拒绝 seed 从 0 改为 false 后借用旧回执。
+原失败与改后 27 项 CPU 成功见[诊断记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#workflow-json-types)；
+相同配置及键顺序变化仍通过，本地候选未推送或合并。
+
+
+第二轮三个已审候选另在包含第一批的 0f2e2141 上组合：内部退役标记、配置复用和工作流 JSON 类型比较
+保持各自已审字节，第一批和已发布 Ray 资格修复保留。
+[170 项组合 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#second-cleanup-composition)
+全部通过；没有新增测试方法、控制器或配置项，未改变 9da 服务器对照。

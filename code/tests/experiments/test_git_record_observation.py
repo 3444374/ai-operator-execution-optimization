@@ -118,13 +118,19 @@ class PrivateCaptureFlowTests(unittest.TestCase):
     def test_prepared_generation_or_C_change_cannot_borrow_original_ready(self):
         path = self.prepare()
         original = json.loads(path.read_text())
-        for key, value in (('generation',dict(seed=99)),('resources',dict(max_active_batches=3))):
+        self.assertEqual(workflow.check(path), original)
+        for section, key, value in (('generation', 'seed', 99),
+                                    ('resources', 'max_active_batches', 3),
+                                    ('generation', 'seed', False)):
             changed = deepcopy(original)
-            changed[key] = value
+            changed[section][key] = value
             path.write_text(json.dumps(changed))
-            with patch.object(workflow.subprocess, 'run') as controller:
-                with self.assertRaises(ValueError): workflow.run(path)
-                controller.assert_not_called()
+            with self.subTest(section=section, key=key, value=value):
+                with patch.object(workflow.subprocess, 'run') as controller:
+                    with self.assertRaises(ValueError): workflow.run(path)
+                    controller.assert_not_called()
+        path.write_text(json.dumps(original, sort_keys=True, indent=2))
+        self.assertEqual(workflow.check(path), original)
 
     def test_changed_cell_or_run_identity_is_rejected_again_before_execution(self):
         path=self.prepare()

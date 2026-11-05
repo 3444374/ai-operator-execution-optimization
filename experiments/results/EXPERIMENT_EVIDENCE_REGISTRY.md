@@ -1507,3 +1507,13 @@ Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_202
 已审清理另接到 c5ebddc8 的[准确来源组合](diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)，
 保留已发布资格修复的七份原文件，73 项相关 CPU 检查通过。
 清理的八份 Python 与原 317 项通过的候选相同；该组未重复执行，不合计为本次运行数量。
+
+
+服务退役的[内部标记精简](diagnostics/records_runtime_refactor_20261104/README.md#retirement-marker-simplify)
+删除无独立消费者的可变元数据及镜像校验，原对象、结果和 RPC 责任保持。
+97 项相关 CPU 检查通过，没有新增测试方法；内部返回表示改变，不提供实际 Ray／模型或性能结论。
+
+
+第二轮三个已审候选的[本地组合](diagnostics/records_runtime_refactor_20261104/README.md#second-cleanup-composition)
+保留第一批和资格修复，四份生产 Python、三份测试 Python 沿用已审字节。
+170 个不同方法的 CPU 检查全部通过，原配置类型反例及各批结果独立保留；没有新增检查层或真实模型结果。

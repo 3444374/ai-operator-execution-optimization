@@ -30,6 +30,8 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
 失败输出保留，未通过不产生 `CPU-READY.json`。工具提交、被测源码、基准配置和七份 runtime
 代码摘要都绑定在该新回执中，后续变化须重新资格检查。Movie 路径在被测源码的新进程中调用原
 `check_plan` 零模型预检，冻结每个 manifest／输入的摘要和完整调用数；不只冻结文件路径。
+准备后的业务配置使用既有 JSON 内容比较函数核对值及类型；数值 0 与 false 不能借用同一回执。
+对象键顺序和 JSON 排版变化仍可接受，原来源、输入与操作身份检查保持。
 
 CPU 区间归属另有显式零模型 Ray 组合检查，在干净的同版本 Ray 2.56.1 driver 中运行：
 

@@ -144,6 +144,8 @@ IPC 的最小帧、最终编码和未知责任保持；源、提示、生成规�
 
 普通 Movie、session、工厂和离线校准复用 `resolve_records_runtime`；
 `check` 给出有效 Core budget 和 `resolved_async_limits_before_feedback`，统计采样间隔仍由反馈接线配置。
+同一次 CLI 检查复用已经解析的 IPC 值：未指定时 `requested_async_limits` 为 null，
+显式空对象或部分字段仍报告完整解析值；具名 profile 只展开一次，历史参数保持。
 新默认校准使用 `records_capacity_policy_v2` 绑定真实解析结果，C 扫描不重算存储或 IPC；
 显式计数可独立小于 R，不再因为不等于 C 而拒绝。引擎每轮序列参数与外层请求候选分开。
 不同有效资源值隔离缓存，等效数值表示归一；新身份不复用旧 R 派生结果。
