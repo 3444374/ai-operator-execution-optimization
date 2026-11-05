@@ -10,7 +10,6 @@ from dataclasses import asdict, dataclass, field, replace
 
 from .adaptive import ResourceFeedbackController
 from .feedback_options import ResourceFeedbackConfig
-from .feedback_work import SupplyState
 
 
 def default_supply_feedback_options():

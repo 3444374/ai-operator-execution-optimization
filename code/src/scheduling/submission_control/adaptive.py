@@ -10,7 +10,6 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from .feedback_options import ResourceFeedbackConfig
 from .feedback_work import _local_pair_evidence
 
 from ..core.models import (
