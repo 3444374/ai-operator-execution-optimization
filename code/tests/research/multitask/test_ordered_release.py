@@ -15,10 +15,10 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.scheduling.core.control import CapacityArm  # noqa: E402
 from src.scheduling.core.models import BatchRequest, PayloadEnvelope  # noqa: E402
-from src.scheduling.submission_control.ordered_release import (  # noqa: E402
+from src.research.multitask.ordered_release import (  # noqa: E402
     OrderedReleaseCoordinator,
 )
-from src.scheduling.submission_control.saor import (  # noqa: E402
+from src.research.multitask.saor import (  # noqa: E402
     SaorAction,
     SaorDecision,
     SaorReleaseCandidate,

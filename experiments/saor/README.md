@@ -11,6 +11,7 @@
 
 保留的研究内容从以下入口定位：
 
+- [多任务共享服务与 SAOR 实现](../../code/src/research/multitask/README.md)，与普通 records 单查询分开维护。
 - [SAOR 证据模块](../../code/src/experiments/saor/README.md)及[离线脚本](../../code/scripts/README.md#独立研究与离线分析)。
 - [历史研究方案](../plans/archive/README.md)和[现行方案](../plans/README.md)。
 - [历史结果](../results/README.md)与[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。

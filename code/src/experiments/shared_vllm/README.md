@@ -1,6 +1,10 @@
 # Shared vLLM experiment modules
 
-This package keeps experiment orchestration separate from reusable metric derivation:
+This package keeps experiment orchestration separate from reusable metric derivation.
+
+Shared-service coordination and SAOR policies belong to
+[research/multitask](../../research/multitask/README.md). This package explicitly imports those
+research components; ordinary records execution does not.
 
 - `config.py` and `cli.py` load the experiment contract and construct Job commands.
 - `runner.py`, `runtime.py`, and `direct_control.py` execute groups and collect raw evidence.

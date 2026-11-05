@@ -4,7 +4,7 @@ import unittest
 
 from src.planning.work import RuntimeStateSnapshot, StageStateSnapshot
 from src.scheduling.core.control import CapacityArm
-from src.scheduling.runtime.saor_capacity import (
+from src.research.multitask.saor_capacity import (
     LinearCostFeature,
     SaorArmEstimate,
     SaorCapacityController,

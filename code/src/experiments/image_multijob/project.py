@@ -44,7 +44,7 @@ from src.modalities.image.source import (
     read_image_source_metadata,
 )
 from src.planning.work import WorkDescriptor
-from src.scheduling.submission_control.shared_credit import FairEndpointCreditCoordinator
+from src.research.multitask.shared_credit import FairEndpointCreditCoordinator
 from .manifest import (
     ImageJobManifest,
     load_image_job_manifest,
