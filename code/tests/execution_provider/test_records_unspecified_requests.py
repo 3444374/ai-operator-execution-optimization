@@ -230,14 +230,14 @@ class UnspecifiedRequestTests(unittest.TestCase):
                         chain.close(timeout=1)
                         owner.close(timeout=1)
 
-    def test_missing_or_partial_dictionary_IPC_is_not_a_finite_None_grant(self):
+    def test_partial_IPC_without_requests_does_not_supply_a_finite_None_grant(self):
         case = self.fixture()
         partial = asdict(typed_ipc())
-        partial.pop('control_frame_bytes')
+        partial.pop('max_inflight')
         ray = SimpleNamespace(init=Mock(side_effect=AssertionError('Ray must not initialize on rejection')))
         with patch.dict(sys.modules, {'ray': ray}), patch(
                 'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
-            for limits in (None, {}, dict(max_inflight=5), partial):
+            for limits in (None, {}, dict(feedback_interval_s=.1), partial):
                 for rolling in (False, True):
                     with self.subTest(limits=limits, rolling=rolling), self.assertRaisesRegex(
                             ValueError, 'request capacity.*unresolved'):

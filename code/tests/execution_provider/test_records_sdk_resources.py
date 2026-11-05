@@ -27,6 +27,42 @@ class SDKResourcesTests(unittest.TestCase):
         self.case.setUp()
         self.addCleanup(self.case.doCleanups)
 
+    def test_partial_JSON_can_declare_requests_without_repeating_default_fields(self):
+        self.case.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        item = budget_fixture.ITEM
+        shape = core.CoreRecordsCapacity(item_input_bytes=item, item_result_bytes=item)
+        declaration = dict(max_inflight=5, result_slots=3,
+                           input_bytes=2*item, result_bytes=2*item)
+        for capacity, expected_requests in ((shape, 5), (budget_fixture.capacity(), 4)):
+            with self.subTest(expected_requests=expected_requests):
+                owner = self.case.owner(1, capacity=capacity, async_limits=declaration)
+                try:
+                    self.assertEqual(owner.resources.request_capacity(), expected_requests)
+                    self.assertEqual(owner._actors.limits.max_inflight, 5)
+                    self.assertEqual(owner._actors.limits.result_slots, 3)
+                    self.assertEqual(owner._actors.limits.command_slots, 5)
+                    self.assertEqual((owner._actors.limits.input_bytes, owner._actors.limits.result_bytes),
+                                     (2*item, 2*item))
+                    self.assertIsNone(owner._actors.model_actor)
+                finally:
+                    owner.close(timeout=1)
+        self.assertEqual(declaration, dict(max_inflight=5, result_slots=3,
+                                          input_bytes=2*item, result_bytes=2*item))
+        owner = self.case.owner(1, capacity=shape, async_limits=dict(max_inflight=5))
+        try:
+            self.assertEqual(owner.resources.request_capacity(), 5)
+            self.assertEqual((owner._actors.limits.result_slots, owner._actors.limits.command_slots), (5, 5))
+            self.assertEqual((owner._actors.limits.input_bytes, owner._actors.limits.result_bytes),
+                             (5*item, 5*item))
+            self.assertIsNone(owner._actors.model_actor)
+        finally:
+            owner.close(timeout=1)
+        with patch('src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
+            for invalid in (None, True, 0, -1, '5'):
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    self.case.owner(1, capacity=shape, async_limits=dict(max_inflight=invalid))
+            actor.assert_not_called()
+
     def test_default_None_uses_complete_Core_or_typed_IPC_without_an_actor(self):
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
         self.assertIsNone(resources.max_active_batches)
