@@ -1424,6 +1424,12 @@
       "category": "retired_http_experiment"
     },
     {
+      "path": "code/src/observability/request_gateway.py",
+      "bytes": 38221,
+      "sha256": "0672373690db7f45aa2139732cde6677c69860e71f3362202e7d7fd25ae6ecad",
+      "category": "retired_http_experiment"
+    },
+    {
       "path": "code/src/semantic_methods/lotus/batch.py",
       "bytes": 14607,
       "sha256": "f711bfd5eda2856788ad76ac0406c748673752f6686b92dbd203336ba5849ce3",
@@ -1931,6 +1937,12 @@
       "path": "code/tests/observability/test_profile_manifest_guard.py",
       "bytes": 13588,
       "sha256": "0c9add7890768617242ad922dc22ee2ccbbc1b72b5597512e38ff6e46eca8740",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/observability/test_request_gateway.py",
+      "bytes": 49736,
+      "sha256": "5398653cb119510f6dcb06d38bdad936e6670064c8a62a120f5e735d8ad859fe",
       "category": "retired_http_experiment"
     },
     {

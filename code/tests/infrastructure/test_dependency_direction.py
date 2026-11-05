@@ -117,7 +117,7 @@ for module in ('src.observability.execution_timing', 'src.observability.model_re
                'src.observability.native_query_timing',
                'src.observability.buffered_events', 'src.observability.httpx_observer',
                'src.infrastructure.request_budget', 'src.modalities.image.clip',
-               'src.observability.request_gateway', 'src.semantic_methods.lotus.image_rm',
+               'src.semantic_methods.lotus.image_rm',
                'src.semantic_methods.lotus.image_backend', 'src.baselines.image.frameworks.daft_clip',
                'src.modalities.image.clip_batch_workers'):
     importlib.import_module(module)
