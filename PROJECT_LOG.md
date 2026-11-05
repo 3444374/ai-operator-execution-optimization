@@ -11096,3 +11096,5 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 [CPU 组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-feedback-interleave)
 含 101 项综合检查和调整测试稳定性后的 12 项目标检查，共 103 个不同方法全部通过。
 默认及历史路径保持；原失败保留，没有额外参数、策略阈值或资源账本。未推送、合并或启动真实模型。
+
+补充同题证据来源索引，仅登记归档／成员摘要及获取方式；区分完整日志、会话转录与失败摘录，未复制日志或重跑相同检查。

@@ -1530,6 +1530,7 @@ Core／Method／IPC 的许可及结果责任仍由原实现管理，关闭后使
 本机项目 Python 缺少 tokenizers 的导入错误也保留；后续使用已有隔离 CPU 环境，未安装依赖。
 独立审查提出的自然等待时序问题已用单步状态检查消除，不要求任意机器都在同一位置睡眠。
 
-[检查摘要](raw/prepared_feedback_interleave_checks.json)记录每轮范围、重叠、版本和准确实现摘要。
+[检查摘要](raw/prepared_feedback_interleave_checks.json)的 provenance 索引记录私有归档身份、SHA-256、各轮成员及获取方式。
+101 项有结果、日志与运行脚本；12 项后测来自当次会话转录，没有独立执行日志；早期失败仅有结构化摘录。
 这只是 CPU fixture 组合验证：没有真实 Ray、模型、GPU 或 PostgreSQL 运行，也没有性能／质量结论。
 完整 source／expected 仍沿用已有有限输入声明，本次没有实现通用流式 source 或任意 DAG 编译。

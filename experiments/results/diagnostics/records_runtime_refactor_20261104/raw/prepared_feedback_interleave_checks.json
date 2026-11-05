@@ -70,5 +70,49 @@
   "real_model": 0,
   "GPU": 0,
   "dependencies_installed": false,
-  "performance_claim": false
+  "performance_claim": false,
+  "provenance": {
+    "artifact_id": "semloom.prepared_feedback_interleave.cpu.20261105.04c1e6c",
+    "archive": {
+      "name": "CPU-evidence-04c1e6c.tar.gz",
+      "bytes": 249253,
+      "sha256": "b50d5481ae0aa0887c2b0720d7b0cc1f90adca7c223c052ece225cbb188dac8f"
+    },
+    "index": {
+      "member": "EVIDENCE-INDEX.json",
+      "sha256": "9d150e1392ec40ed7e7ec4584bb43c6595f7ecc49e5e8f593a4683d731998604"
+    },
+    "runs": {
+      "full_CPU": {
+        "members": [
+          "CPU.json",
+          "CPU.log",
+          "run_cpu.py"
+        ],
+        "record_kind": "actual unittest result, execution log and runner; source hashes in CPU.json"
+      },
+      "final_target_CPU": {
+        "members": [
+          "target-latest.json"
+        ],
+        "record_kind": "actual unittest execution in session transcript; IDs inventoried afterward; no separate execution log retained"
+      },
+      "retained_failures": {
+        "members": [
+          "retained-failures.json"
+        ],
+        "record_kind": "structured extracts of session errors and diagnostics; not complete historical logs"
+      }
+    },
+    "member_sha256": {
+      "CPU.json": "b972422db3dce08a104e411bdbf8b11888b6cfd7790e661e407f6b5a2b4a1f1d",
+      "CPU.log": "fceeafba2f299f47e1fe54854a8c5c48fe0dd5eecccb1465e4122fea766a3507",
+      "run_cpu.py": "280224f516200b98e67c81c4bd6a3b50ba2d13b85c4b2aaffffeef124144cd2d",
+      "target-latest.json": "19093dcd76e33f9ad26e060daebfd57592331d1720c933518e4c17683e06db00",
+      "retained-failures.json": "388c20f6b81dd1efa39e206f14485db8afba64ad28297daccd2e4deb08ff5003",
+      "final-python-files.json": "0a2c3b0766ba51a65534253dae8dc5af304549ced8edd27e99ce007ef731c274"
+    },
+    "final_source_manifest": "final-python-files.json",
+    "retrieval": "向项目维护者提供 artifact_id 与归档 SHA-256，按同名任务交接中的仓外原件映射获取该归档；原始日志和机器路径不进入公开仓库。"
+  }
 }
