@@ -122,7 +122,10 @@ GUARD=code/scripts/profiling/record_observation/campaign_guard.py
 "$DRIVER_PYTHON" -B "$GUARD" collect --root "$CAMPAIGN_ROOT"
 ```
 
-CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU；真实 Ray 命令须有五项无跳过通过的原始输出。
+CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU。Ray 检查记录实际选中与通过的方法名：
+原有五项真实 Ray 方法必须通过，其他选中的方法也须通过；不再按日志中的测试总数判断。
+`ray_future_qualification.py` 运行原模块并写入 `RAY-TEST-RESULT.json`，
+原监督结果、完整日志、准确源码及资源清理检查继续保留；跳过、失败和错误不能产生通过回执。
 `run-cell` 每格只 claim 一次全局 `CellBudgetLedger` 额度，不能重新建账本退还失败或未知调用。
 格按 manifest 顺序执行，前格必须完整成功；跨 `stage` 还须由检查者写入 `GATE-<上一stage>.json`，
 其 `status=passed`、`source` 和 `cells`（上一阶段各 `GUARD-END.json` 的 SHA256）必须匹配。

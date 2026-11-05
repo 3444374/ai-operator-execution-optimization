@@ -1,0 +1,48 @@
+{
+  "base": "9da299e90f79fd0b71f2a4983a90884f8ba960b5",
+  "original_server_handoff_sha256": "512ec8307c23d52b1aa3ea32282dc397c6baac5f8a8287e9688455d023b91cab",
+  "original_server_report": {
+    "selected": 8,
+    "passed": 8,
+    "qualification_rejected": true,
+    "model_calls": 0,
+    "source": "Independent execution-session report; not rerun here"
+  },
+  "local_cpu": {
+    "modules": [
+      "tests.experiments.test_record_campaign_guard",
+      "tests.experiments.test_ray_future_qualification",
+      "tests.experiments.test_movie_cancellation",
+      "tests.experiments.test_git_record_observation"
+    ],
+    "selected": 73,
+    "passed": 73,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged_during_suite": true,
+    "final_python_bytes_match": true,
+    "documentation_updated_after_suite": true,
+    "initial_permission_errors": [
+      "tests.experiments.test_record_campaign_guard.CampaignEntryTests.test_run_cell_cpu_boundary_claims_once_restores_environment_and_publishes_complete_counts",
+      "tests.experiments.test_record_campaign_guard.CampaignSupervisionTests.test_monitor_guard_failure_cleans_owned_child_and_preserves_foreign_process"
+    ]
+  },
+  "archive": {
+    "path": "raw/ray_qualification_methods.json.gz",
+    "bytes": 142628,
+    "sha256": "0d91d9bb84fbeb84d80e922cd64eb3f77c867118484ab91a99fb52b7bbce3ac8",
+    "decoded_bytes": 429997,
+    "files": 4,
+    "restoration_verified": true
+  },
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "remaining": [
+    "Independent review of exact source",
+    "Server qualification on reviewed source under its existing plan"
+  ]
+}

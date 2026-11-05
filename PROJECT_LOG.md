@@ -11066,3 +11066,10 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 [本轮证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
 记录完整 workflow 205 项和四个公开探针通过，原失败、服务器模型停止及 5175 独审候选保持。
 只修改测试夹具与说明，没有修改生产逻辑、运行模型、推送或合并；剩余整体重构继续单独处理。
+
+## 2026-11-05 修正 Ray 资格测试总数误判
+
+服务器原模块八项通过仍被固定五项日志判断拒绝，模型未启动。修订按实际方法成功结果判断，
+保留所需五项、其他选中方法、监督清理和完整输出要求，不增加执行策略或自动重试。
+[本地相关 73 项检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
+全部通过；原权限错误、服务器停止与累计调用记录保持。此批先独立交付，其余精简另行处理。

@@ -743,3 +743,8 @@ rolling 结果交接修订候选另从 99aa 建树：无 expected 的非空取�
 仅修改测试夹具与检查，没有放宽生产采样、批分页、ACK 或未知 RPC 的处理。
 [诊断记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
 说明服务器较早源码的失败及最新组合的复现；5175 原候选及其独审证据保持不变。
+
+Ray 资格入口另修正测试总数写死为五项的问题：按实际方法结果确认原五项及其他选中方法均通过，
+不再解析日志的总数；监督、完整输出和原清理责任保留。
+[修订与本地检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
+不修改服务器此前停止记录，也没有在本机运行真实 Ray、模型或 GPU。

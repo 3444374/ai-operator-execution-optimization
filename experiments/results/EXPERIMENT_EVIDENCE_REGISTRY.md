@@ -1478,3 +1478,7 @@ rolling 服务授予、自动物理容量、跨进程恢复和真实 Ray／模�
 就绪报告。[修订与完整记录](diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
 保留原失败，205 项 workflow 及四个公开 off/on 单项／批量探针通过，未放宽生产采样或原批量断言。
 本次没有真实 Ray、模型或 GPU 运行；较早服务器通过项仅按原执行会话交接引用，模型停止记录不变。
+
+Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
+移除写死五项的日志判断，保留所需方法、全部选中方法、监督与完整输出的实际成功要求。
+本机 73 项相关 CPU 检查通过，原权限错误及服务器八项通过后误停的记录保留；未运行真实 Ray 或模型。
