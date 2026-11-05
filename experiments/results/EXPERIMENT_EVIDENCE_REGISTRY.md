@@ -1605,3 +1605,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [编排最长时间误用修正](diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
 记录 600／480 秒反例、原权限错误及必要复跑；实际总时限、进程清理和 unknown 责任保持，
 仅提供 CPU 编排行为证据，不是模型实验。
+
+
+[整轮监控直接接线](diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+补齐 d05 独审发现的私有监督函数别名问题，保存真实 CPU 子进程与监控／停止用例；
+移除全局函数替换及其专属恢复测试，源码恢复点和当前选择分别记录。

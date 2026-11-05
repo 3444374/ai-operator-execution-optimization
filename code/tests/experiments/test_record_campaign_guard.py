@@ -310,20 +310,18 @@ class CampaignSupervisionTests(CampaignFixture):
                 foreign.kill()
             foreign.wait(timeout=2)
         self.addCleanup(reap_foreign)
-        original = supervisor.supervise
         called = []
 
         def monitor(identities):
             called.append(tuple(identities))
             self.clock.now = 250.
+            guard.check()
 
         try:
             with self.assertRaises(guard_module.GuardStop) as stopped:
-                with guard.supervision():
-                    supervisor.supervise([sys.executable, '-c',
-                        'import threading; threading.Event().wait()'], self.base / 'supervision',
-                        timeout_s=4, grace_s=1, monitor=monitor)
-            self.assertIs(supervisor.supervise, original)
+                supervisor.supervise([sys.executable, '-c',
+                    'import threading; threading.Event().wait()'], self.base / 'supervision',
+                    timeout_s=4, grace_s=1, monitor=monitor)
             self.assertTrue(called)
             report = stopped.exception.report
             self.assertTrue(report['observed_owned_exit_confirmed'])
@@ -335,16 +333,6 @@ class CampaignSupervisionTests(CampaignFixture):
             if foreign.poll() is None:
                 foreign.kill()
             foreign.wait(timeout=2)
-
-    def test_supervision_restores_the_original_function_after_an_unrelated_body_exception(self):
-        guard = self.create()
-        original = supervisor.supervise
-        with self.assertRaisesRegex(ValueError, 'CPU-only caller error'):
-            with guard.supervision():
-                self.assertIsNot(supervisor.supervise, original)
-                raise ValueError('CPU-only caller error')
-        self.assertIs(supervisor.supervise, original)
-
 
 class CampaignEntryTests(CampaignFixture):
     """Guard orchestration with explicit CPU replacements for model boundaries."""
@@ -403,7 +391,6 @@ class CampaignEntryTests(CampaignFixture):
         import workflow
         import control_resource_C2 as controller
         guard, cell_root, config = self.entry('normal-entry')
-        original = supervisor.supervise
         calls = []
 
         def cpu_controller(root, *, monitor):
@@ -433,7 +420,6 @@ class CampaignEntryTests(CampaignFixture):
                 self.cpu_fake_ray_ready(guard)
                 guard_module.run_cell(guard, 'first')
             self.assertEqual(dict(os.environ), before)
-        self.assertIs(supervisor.supervise, original)
         self.assertEqual(calls, [cell_root])
         end = json.loads((guard.root / 'first-GUARD-END.json').read_text())
         self.assertEqual(end['status'], 'passed')

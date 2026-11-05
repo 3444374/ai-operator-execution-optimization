@@ -5,7 +5,6 @@ not filesystem quotas: cleanup can add evidence after a stop. Never delete it.
 """
 import argparse
 from contextlib import contextmanager
-from functools import wraps
 import fcntl
 import hashlib
 import json
@@ -245,26 +244,6 @@ class Guard:
         validate_coverage(self.manifest)
         return self.ledger.claim_unit(cell_id)
 
-    @contextmanager
-    def supervision(self, *, collection=False):
-        original = supervision.supervise
-        if getattr(original, '_campaign_guard', False):
-            raise RuntimeError('a campaign guard cannot be nested')
-        @wraps(original)
-        def bounded(*args, **kwargs):
-            previous = kwargs.get('monitor')
-            def monitor(identities):
-                self.check(collection=collection)
-                if previous is not None:
-                    previous(identities)
-            return original(*args, **dict(kwargs, monitor=monitor))
-        bounded._campaign_guard = True
-        supervision.supervise = bounded
-        try:
-            yield
-        finally:
-            supervision.supervise = original
-
     def save_metrics(self, label):
         write_private_json(self.root/(label+'-GUARD-METRICS.json'),
             dict(self.metrics, last_observation=self.observation,
@@ -485,11 +464,11 @@ def run_cpu(guard, kind, cell_id=None):
         PYTHONDONTWRITEBYTECODE='1')
     try:
         guard.check(force=True)
-        with guard.supervision():
-            result = supervision.supervise(command, guard.root/label,
-                timeout_s=min(base['limits']['worker_timeout_s'], guard.work_deadline-guard.clock()),
-                grace_s=base['limits']['cleanup_grace_s'],
-                natural_exit_grace_s=base['limits'].get('natural_exit_grace_s', 0))
+        result = supervision.supervise(command, guard.root/label,
+            timeout_s=min(base['limits']['worker_timeout_s'], guard.work_deadline-guard.clock()),
+            grace_s=base['limits']['cleanup_grace_s'],
+            natural_exit_grace_s=base['limits'].get('natural_exit_grace_s', 0),
+            monitor=lambda _: guard.check())
         if kind=='ray':
             evidence = json.loads((guard.root/label/'RAY-TEST-RESULT.json').read_text())
             if (result['status'] != 'passed' or not result['output_capture']['complete']
@@ -526,9 +505,9 @@ def collect(guard):
             command += ['--output' if action=='manifest' else '--manifest',str(manifest)]
             guard.check(force=True, collection=True)
             remaining = guard.deadline-guard.clock()
-            with guard.supervision(collection=True):
-                supervision.supervise(command,guard.root/('COLLECT-'+action+'-'+cell['id']),
-                    timeout_s=remaining, grace_s=min(guard.manifest['collection_reserve_s']/3,remaining/3))
+            supervision.supervise(command,guard.root/('COLLECT-'+action+'-'+cell['id']),
+                timeout_s=remaining, grace_s=min(guard.manifest['collection_reserve_s']/3,remaining/3),
+                monitor=lambda _: guard.check(collection=True))
     guard.check(force=True, collection=True)
     guard.save_metrics('COLLECTION')
 

@@ -11266,3 +11266,11 @@ R 默认仍为 2，省略存储随声明请求数变化；物理容量、完整�
 在最窄的 `code/AGENTS.md` 第 6 节记入真实结果与时间安排规则。
 [CPU 反例与必要复跑](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
 保留原权限错误，没有通过修改清理逻辑规避。其他时间问题另树处理，本次不触碰运行中的 GPU 任务。
+
+
+## 2026-11-05 将编排监控接到实际执行者
+
+独审发现模块函数替换不能证明私有监督函数别名接入整轮监控，已改为三处显式回调。
+删除全局替换及防嵌套检查；controller 先登记进程身份再调用回调，原资源清理保持。
+[源码与 CPU 原件](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+保留 59／58 项及退役测试的 Git 恢复点，未把不同选择相加，也未触碰运行中的 GPU 任务。

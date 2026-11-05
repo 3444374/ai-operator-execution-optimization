@@ -883,3 +883,8 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 `campaign_guard` 不再因剩余工作时间小于单项最大时限而拒绝启动，实际整轮监控与清理保持。
 [反例与 CPU 范围](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
 分别记录初轮权限错误和复跑；其他实验入口另行核查，不影响运行中的 GPU 任务。
+
+
+整轮监控现通过 controller／CPU／collect 的实际监督调用显式传递，不再改写模块全局函数，
+也不保留该旧机制的防嵌套检查。[增量记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+说明独审发现、缓存函数别名、已观察进程登记及原清理；真实服务器与模型仍待单独验证。
