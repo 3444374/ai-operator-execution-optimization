@@ -89,6 +89,42 @@ def finish_sections(run, replies):
 
 
 class RecordLocalAdoptionTests(unittest.TestCase):
+    def test_relation_and_section_snapshots_keep_nested_fields_independent(self):
+        plan = relation.relation_chain('FM')
+        source = fixture.source_rows(size=1)[0]
+        source = replace(source, source_index='source-label',
+            values=dict(source.values, nested=[dict(value='original')]),
+            source_refs=dict(origin=dict(keys=['original'])))
+        expected = source.describe()
+        run = plan.start_relation([source])
+        section = run.delegate_record_local()
+        source.values['nested'][0]['value'] = 'caller changed'
+        source.source_refs['origin']['keys'].append('caller changed')
+        source.index_updates['later'] = [dict(value='caller changed')]
+        self.assertEqual(run.current[0].describe(), expected)
+        self.assertEqual(section.records[0].describe(), expected)
+        run.current[0].values['nested'][0]['value'] = 'run changed'
+        run.current[0].source_refs['origin']['keys'].append('run changed')
+        run.current[0].index_updates['later'] = [dict(value='run changed')]
+        self.assertEqual(section.records[0].describe(), expected)
+
+    def test_adopted_rows_are_independent_of_retained_section_results(self):
+        plan = relation.relation_chain('FM')
+        source = fixture.source_rows(size=1)[0]
+        source = replace(source, values=dict(source.values, nested=[dict(value='original')]),
+            source_refs=dict(origin=dict(keys=['original'])))
+        run = plan.start_relation([source])
+        section = run.delegate_record_local()
+        replies = fixture.ResponseFixture(plan, all_true=True)
+        section.accept(row_envelope(section, section.records[0], replies))
+        pending = section._results.pending[0]
+        expected = pending.describe()
+        run.adopt_record_local(section, source_exhausted=True)
+        pending.values['nested'][0]['value'] = 'result changed'
+        pending.source_refs['origin']['keys'].append('result changed')
+        pending.index_updates['later'] = [dict(value='result changed')]
+        self.assertEqual(run.current[0].describe(), expected)
+
     def setUp(self):
         import lotus
         scope = lotus.settings.context(enable_cache=False)

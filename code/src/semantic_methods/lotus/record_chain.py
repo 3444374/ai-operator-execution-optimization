@@ -6,6 +6,7 @@ Existing record_chain imports resolve to the same types and functions.
 """
 
 from copy import deepcopy
+from dataclasses import replace
 
 from .engine import lm_report
 from .records import FilterMethod as FilterMethod
@@ -143,7 +144,7 @@ class RecordLocalSection:
         from .record_results import ChainBatchResults
 
         self.chain, self._start, self._stop = chain, start, stop
-        self.records = tuple(RecordOccurrence.from_dict(r.describe()) for r in records)
+        self.records = tuple(replace(r) for r in records)
         keys = [(r.row_id, r.source_position) for r in self.records]
         self.initial_parents = _parent_seeds(keys, {key: parents[key] for key in keys})
         self.columns, self.allow_nulls = tuple(columns), allow_nulls
@@ -167,7 +168,7 @@ class RecordLocalSection:
                 or self.initial_parents != {key: run.parents[key] for key in self.initial_parents}
                 or self.columns != tuple(run.columns) or self.allow_nulls != run.allow_nulls):
             raise ValueError("record-local section changed its input or parent binding")
-        records = sorted([RecordOccurrence.from_dict(r.describe()) for r in self._results.pending],
+        records = sorted([replace(r) for r in self._results.pending],
                          key=lambda r: r.source_position)
         originals = {r.row_id: r for r in self.records}
         written = {stage.method.output_column for stage in self.chain.stages if stage.kind == "map"}
@@ -223,7 +224,7 @@ class ChainRun:
         self._relation_stage = None
         self._relation_failed = False
         self._local_section = None
-        self.current = [RecordOccurrence.from_dict(r.describe()) for r in records]
+        self.current = [replace(r) for r in records]
         self.parents = _parent_seeds(self.keys, initial_parents)
         self.columns = _ordered_columns(self.current, columns)
         if not _relation_execution:
