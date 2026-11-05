@@ -97,8 +97,12 @@ Session 的 registered Job 关闭状态只由 JobRegistry 保存，legacy Job �
 
 
 Session 的成员选择、单请求和原子批接收集中到
-[session_dispatch.py](src/scheduling/core/session_dispatch.py)，flow 生命周期和唯一任务表保持原 owner；
-成功接收后的游标前移只处理一次。链的 record-local 传输类与其实现同在
+[session_dispatch.py](src/scheduling/core/session_dispatch.py)，成功接收后的游标前移只处理一次。
+[session.py](src/scheduling/core/session.py) 管理服务回执、准备借用和单一任务表；
+[session_flow.py](src/scheduling/core/session_flow.py) 管理每个 flow 的接纳、交付租约、取消和消费者关闭。
+现有 `session.SchedulingSession` 导入取得同一个实际类，没有添加 owner、代理或状态副本。
+[本批检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
+保留未通过的 socket 原底稿及尚未验证的子进程用例。链的 record-local 传输类与其实现同在
 [lotus_chain_actor_backend.py](src/execution_provider/adapters/lotus_chain_actor_backend.py)，实际测试接点同步。
 旧 profiler 解析器已退役，准确原件与恢复说明见
 [历史入口](../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)。

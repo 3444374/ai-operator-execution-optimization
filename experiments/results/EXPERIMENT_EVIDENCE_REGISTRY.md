@@ -1656,3 +1656,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录清理／实际持有判断和完整 Extract 交接的职责调整，保留真实凭证及中断重试。
 最新研究隔离组合上的 50 项通过；两项同步 CPU 子进程检查因 sysctl EPERM 尚未验证，unknown 没有改成成功。
 一项只固定私有旧 pickle 位置的测试明确退役，原 3,010 个历史来源仍有十处差异；无模型或性能结论。
+
+
+[Session 服务与 flow 职责整理](diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
+记录 176 项同选择回归及另 25 项通过，保留改前五项 socket 错误与更早的 sysctl 未验证项。
+未新增测试方法或控制器，原租约和 unknown 责任保持；历史来源仍为十处旧差异，无模型或性能结论。

@@ -11346,3 +11346,13 @@ fused 运行器结束旧输入／session 并开始新关系输入，owner 保留
 [组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
 保存 50 项通过及 sysctl 权限拒绝的原结果。本批生产 Python 净增 15 行，链 owner 从 1,028 行降为 985 行，
 不把拆分记为减少总代码；保留 e3533fbb 的独立研究模块与策略，未合并 main。
+
+
+## 2026-11-05 按服务与消费者拆分 Session 实现
+
+SessionEngine 保留回执、准备借用和单一任务表，SchedulingSession 的真实接纳、租约与消费者关闭实现在 session_flow.py。
+公共类导入保持；同一存储增量和重复类型判断收敛，真实交接与 unknown 检查保留。
+旧测试接点、共享常量导入和两份诊断来源清单已经迁移。
+[本批源码和检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
+保存 201 个不同方法通过，以及改前五项 socket 错误。核心 Python 总量保持 58,598 行，src＋scripts 净增两行，
+原 1,004 行文件变为 560 行服务与 442 行 flow，未把移动实现算作减少总代码。

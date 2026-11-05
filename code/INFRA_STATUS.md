@@ -966,3 +966,10 @@ owner 保留阶段选择、结果记账、原交接凭证和真实清理确认�
 [准确组合与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
 保存 50 项组合全部通过、一个私有旧 pickle 专属测试退役及两项同步 CPU 子进程检查的 sysctl EPERM。
 原 unknown 与十处历史来源差异保持，未运行模型、GPU 或服务器，未改研究策略。
+
+
+SessionEngine 与 flow 的实际实现按服务回执和消费者生命周期分文件，仍使用同一任务表；
+接纳中的三个存储用量递增收敛为一个表达式，严格工作量类型检查只做一次。
+[本批记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
+保存原成功 176 项的同选择回归、另 25 项交付／额度检查和五项改前 socket 错误；不把未运行部分算作通过。
+公开类导入和运行时类型注解保持，两处诊断源码清单与真实测试接点已迁移；未改策略、容量或默认配置。
