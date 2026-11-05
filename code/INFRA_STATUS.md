@@ -44,9 +44,17 @@ MMQA 的十二道文本查询、各变体原 JSON 评价和原文本生成方法
 产生与原 SDK 相同的 `nan` 消息，未填值或删行。输入、限制及图像准备见
 [SemBench 扩展范围](src/baselines/README.md#additional-sembench-text)。
 
+Daft 补充文本图现先配置 Native runner、再创建 source DataFrame，修复显式 `runner_threads` 的启动顺序错误；
+省略参数继续使用 Daft 原生默认，不修改已有 runner 或原生执行图。
+[原生 LOTUS 视觉运行](scripts/experiments/run_sembench_lotus_image_query.py)已接原 LM SDK 到独立 VLM 服务，
+保留原 PNG／Join／JSON Extract、既有持久预算和查询子进程监督；实际模型与服务生命周期仍待服务器验证。
+该入口不启动或停止模型服务，既有 `check_sembench_image_query.py` 保持零模型预检职责。
+当前修复组合309项CPU通过，包含真实Daft0.7.21和12项原生视觉SDK/软件HTTP集成；原3010历史绑定匹配。
+这仍是本地CPU资格，实际Linux软件组合、VLM加载、质量及物理服务清理待服务器验证。
+
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；
-本地 VLM provider、实际 processor／JSON Extract 和物理关闭尚未接通或实机验证，不能以 CLIP 或旧 HTTP 结果补齐。
+原生 VLM 服务、实际 processor／JSON Extract 和物理关闭尚未实机验证，不能以 CLIP 或旧 HTTP 结果补齐。
 Movie Q9 新有限链明确使用原 Map，不替换原 TopK；精确 Join／TopK 预算与缺失数据分开见
 [逐项限制](src/baselines/README.md#sembench-image-preparation)。本批没有运行模型或 GPU。
 

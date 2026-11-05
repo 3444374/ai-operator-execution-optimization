@@ -9,6 +9,7 @@
 | 任务 | 入口 | 范围 |
 |---|---|---|
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
+| 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
 | 补充 Movie／MMQA 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
@@ -107,6 +108,41 @@ Q7 改读 `tampa_international_airport.csv`，仍用同一 `images/`；原代码
 `check.json` 中五条 baseline 结果均为空，并明确当前本地视觉 provider 尚未接通。
 已有原查询／评价可由调用者配置原生 LOTUS LM 后调用；CPU 夹具与旧 HTTP 历史不授予当前 VLM owner 的模型资格。
 完整范围与大 Join／TopK 预算见[基线说明](../src/baselines/README.md#sembench-image-preparation)。
+
+<a id="sembench-native-vlm-run"></a>
+## 原生 LOTUS 视觉运行
+
+[run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py)直接调用 LOTUS 的原 LM、
+原算子与原 SemBench 查询／评价；支持 Animals Q1/Q3/Q7/Q10、MMQA Q2a/Q2b/Q7。
+原 `check_sembench_image_query.py` 继续只做输入检查，其 `execution_enabled=False` 表示没有执行模型。
+实际服务运行使用这个新入口，`check` 或 `run` 不带 `--execute-model` 均不连服务、不消费额度。
+
+配置格式见[示例](../configs/sembench_lotus_image.example.json)，复制到 Git 外后填写实际服务和已预留预算。
+API key 从 `api_key_env` 指定的环境变量读取，不能写入配置；本地无鉴权服务也由操作者显式配置该变量。
+`service_profile` 是声明的模型／revision／dtype／processor 配置，不自动修改服务或冒充测得 ready 回执；
+启动服务的 host owner 核对实际值并负责最终 GPU 清理。原生 SDK 的 `native_lm_max_batch_size` 与引擎容量分开。
+
+```bash
+python code/scripts/experiments/run_sembench_lotus_image_query.py check \
+  --config "$NATIVE_VLM_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" \
+  --manifest "$ANIMALS_MANIFEST" --manifest-digest "$ANIMALS_MANIFEST_DIGEST"
+
+python code/scripts/experiments/run_sembench_lotus_image_query.py run --execute-model \
+  --config "$NATIVE_VLM_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" \
+  --manifest "$ANIMALS_MANIFEST" --manifest-digest "$ANIMALS_MANIFEST_DIGEST" \
+  --output-dir "$NEW_QUERY_DIR"
+```
+
+MMQA 配置改为 `scenario=mmqa`、选择 `Q2a/Q2b/Q7`，参数改用 `--data-dir "$MMQA_IMAGE_DATA_DIR"`，
+省略 Animals 的两个 manifest 参数。Q7 的机场表须与选定图片放在同一准备目录，不重新抽样；上游欧洲预筛差异保留。
+
+入口只 claim 既有 SQLite 预留单元，不创建、追加或退回额度；Q2b 按 `2×图数×表行数` 覆盖最大完整调用量。
+原生 SDK 在每条 POST 前消费次数，自动重试和结果缓存关闭；Extract 的 JSON 格式仍由原算子指定。
+生成参数未声明时沿用原 SemBench 的8192 token／无 stop，显式值原样保留；不会借用短文本 Filter 的8 token／换行截断。
+结果保留原质量、完整阶段调用数和未知／失败责任；私有 `native-http.jsonl` 保留请求内容摘要、文本消息、响应与图片 URI 摘要，
+不把大幅 base64 图片反复写入事件队列。`query.json` 仅为本次结果，实际服务身份与物理关闭另由 host 回执证明。
+`query_timeout_s` 是此 CLI 的整体监督预算，包含既有清理预留；查询内部仍记录数据扫描／PNG 格式化、
+原算子、解析与关系结果的时间，评价另计。外部服务启动不计入该查询时钟。
 
 ## 原生 LOTUS CLIP 查询
 

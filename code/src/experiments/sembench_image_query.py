@@ -27,15 +27,15 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
     return dict(schema="semloom.sembench_image_query_check.v1", status="prepared_cpu_only",
         scenario=scenario, query=inputs["query"], inputs=inputs,
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,
-        native_lotus_query="original query/evaluator wired; visual model transport unbound",
+        native_lotus_query="original query/evaluator and native SDK service entry wired; service qualification pending",
         baseline_states={
-            "lotus-native": "original visual operators present; current local VLM provider unbound",
+            "lotus-native": "run_sembench_lotus_image_query.py binds the original SDK; actual VLM service not checked here",
             "ray-data": "existing CLIP graph does not establish VLM Filter/Join/Extract support",
             "daft": "existing CLIP graph does not establish VLM Filter/Join/Extract support",
             "imlane": "current author bridge visual binding not established",
             "kalypso": "current author bridge visual binding not established"},
         results={name: None for name in ("lotus-native", "ray-data", "daft", "imlane", "kalypso")},
-        pending=["bind and qualify native visual model transport without changing original operators",
+        pending=["qualify the configured native VLM service, original PNG requests and JSON Extract responses",
             "freeze model/revision/dtype/processor/max_pixels/generation and actual ready configuration",
             "use existing host supervisor for startup, query deadline and physical cleanup"],
         qualification_scope="file/pixel identities and one complete query's declared work; no model quality or performance")
