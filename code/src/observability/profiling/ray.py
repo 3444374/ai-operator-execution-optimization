@@ -22,7 +22,7 @@ from .ray_scheduler import (
     _run_static_scheduler,
     _static_scheduler_options,
 )
-from .replay import _batch_envelopes
+from .batch_envelopes import _batch_envelopes
 
 
 DEFAULT_METRICS_TIMEOUT_S = 1.0

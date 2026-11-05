@@ -2,7 +2,7 @@
 import unittest
 import pyarrow as pa
 from src.observability.profiling import ray_scheduler as profile_ray_scheduler
-from src.observability.profiling import replay as profile_batches
+from src.observability.profiling import batch_envelopes as profile_batches
 from src.scheduling.core.models import SubmissionCompletion
 from src.scheduling.core.scheduler import SchedulerResult
 from src.scheduling.submission_control.admission import StaticAdmissionController
