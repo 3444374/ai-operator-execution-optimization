@@ -476,6 +476,62 @@ class IncrementalSessionTests(unittest.TestCase):
         self.assertEqual(credit.snapshot("e1").active_requests, 0)
         self.assertNotIn("job", e._retired_jobs)
 
+    def test_credit_retirement_errors_keep_finally_cleanup(self):
+        from src.scheduling.core.session_jobs import equal_share_job_budget
+        from src.scheduling.submission_control.shared_credit import FairEndpointCreditCoordinator
+
+        for registered in (False, True):
+            for failing in ("finish", "forget"):
+                with self.subTest(registered=registered, failing=failing):
+                    e, s, b, _ = setup()
+                    if registered:
+                        s.close()
+                        job = e.register_job("registered", equal_share_job_budget(e))
+                        s = e.open(SessionSpec("ignored", "flow", "fixture"), job=job)
+                    credit = FairEndpointCreditCoordinator(
+                        {"e1": (1, 2), "e2": (1, 2)}, quantum=1, policy="fifo"
+                    )
+                    e.credit = credit
+                    s.offer([task(0)])
+                    (e.advance if registered else s.advance)(1)
+                    calls = []
+                    original_finish = credit.finish_job
+                    original_forget = credit.forget_finished_job
+
+                    def finish(job_id):
+                        calls.append(("finish", job_id, e.capacity.usage(job_id=job_id).held_tasks))
+                        if failing == "finish":
+                            raise RuntimeError("fixture finish failure")
+                        return original_finish(job_id)
+
+                    def forget(job_id):
+                        calls.append(("forget", job_id, e.capacity.usage(job_id=job_id).held_tasks))
+                        if failing == "forget":
+                            raise RuntimeError("fixture forget failure")
+                        return original_forget(job_id)
+
+                    with patch.object(credit, "finish_job", side_effect=finish), patch.object(
+                        credit, "forget_finished_job", side_effect=forget
+                    ):
+                        if registered:
+                            e.close_job(job)
+                        s.close()
+                        self.assertEqual(calls, [])
+                        b.complete(TaskKey(s.session_id, 0), status="cancelled")
+                        e.reap(1)
+                        expected = [("finish", s.spec.job_id, 0)]
+                        if failing == "forget":
+                            expected.append(("forget", s.spec.job_id, 0))
+                        self.assertEqual(calls, expected)
+                        self.assertEqual(e.error, "credit finish failed")
+                        self.assertEqual(e.capacity.usage().held_tasks, 0)
+                        self.assertEqual(credit.snapshot("e1").active_requests, 0)
+                        if registered:
+                            with self.assertRaises(ValueError):
+                                e.jobs.require(job)
+                        e.reap(1)
+                        self.assertEqual(calls, expected)
+
     def test_not_accepted_returns_existing_credit_and_preserves_task(self):
         from src.scheduling.submission_control.shared_credit import FairEndpointCreditCoordinator
 

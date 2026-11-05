@@ -117,6 +117,7 @@ class SessionEngine:
         self._next_ready = 0
         self._owner = threading.get_ident()
         self._busy = False
+        # Legacy IDs remain until their session and borrowed work are gone.
         self._retired_jobs: set[str] = set()
 
     @contextmanager
@@ -397,14 +398,20 @@ class SessionEngine:
                 self._fault("observation sink failed")
 
     def _finish_retired(self) -> None:
-        for handle, registered in tuple(self.jobs.jobs.items()):
-            if registered.closing and not any(s.job is handle for s in self._sessions.values()):
-                self._retired_jobs.add(handle.job_id)
-        for job in tuple(self._retired_jobs):
-            if any(s.spec.job_id == job for s in self._sessions.values()):
+        closing = {handle.job_id: handle for handle, registered in self.jobs.jobs.items()
+                   if registered.closing}
+        retiring = self._retired_jobs.union(closing)
+        if not retiring:
+            return
+        live_jobs = {session.spec.job_id for session in self._sessions.values()}
+        retiring.difference_update(live_jobs)
+        if not retiring:
+            return
+        held_jobs = {record.spec.job_id for record in self.capacity.records.values()}
+        for job in retiring:
+            if job in held_jobs:
                 continue
-            if any(r.spec.job_id == job for r in self.capacity.records.values()):
-                continue
+            handle = closing.get(job)
             try:
                 if self.credit:
                     self.credit.finish_job(job)
@@ -412,11 +419,11 @@ class SessionEngine:
             except Exception:
                 self._fault("credit finish failed")
             finally:
-                self._retired_jobs.remove(job)
-                for handle in tuple(self.jobs.jobs):
-                    if handle.job_id == job:
-                        self.jobs.finish(handle)
-                        self._last_flow.pop(job, None)
+                if handle is None:
+                    self._retired_jobs.remove(job)
+                else:
+                    self.jobs.finish(handle)
+                    self._last_flow.pop(job, None)
 
     def _terminal(self, event: Terminal) -> None:
         record = self.capacity.records.get(event.key)
@@ -1168,7 +1175,7 @@ class SchedulingSession:
         if report.status == "CLOSED":
             self._closed = report
             self.engine._sessions.pop(self.session_id, None)
-            if self.job is None or self.engine.jobs.require(self.job).closing:
+            if self.job is None:
                 self.engine._retired_jobs.add(self.spec.job_id)
             self.engine._finish_retired()
         return report
