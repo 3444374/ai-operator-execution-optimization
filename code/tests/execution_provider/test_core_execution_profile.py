@@ -99,6 +99,27 @@ class ProfiledAsyncCoreTests(async_fixture.AsyncCoreCompositionTests):
 
 
 class OptionalStageTimingTests(unittest.TestCase):
+    def test_direct_async_owner_preserves_stage_timing_with_feedback(self):
+        method = FilterMethod("fixture", instruction="Keep {reviewText}")
+        engine = EngineSpec("cpu-profile-fixture", sys.executable, sys.executable)
+        generation = GenerationSpec()
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
+                                     max_active_batches=3)
+        for timing in (False, True):
+            with self.subTest(stage_timing=timing):
+                actors = async_actor.AsyncRecordsActorOwner(method, engine, generation, resources)
+                owner = core.SemLoomRecordsCore(method, engine, generation, resources,
+                    actor_owner=actors, stage_timing=timing,
+                    admission=dict(kind="resource_feedback"))
+                try:
+                    profile = owner.execution_metadata()["execution_profile"]
+                    self.assertEqual(profile["mode"], "async")
+                    self.assertEqual(profile["stage_timing"], timing)
+                    self.assertEqual(profile["admission"]["kind"], "resource_feedback")
+                    self.assertIsNone(actors.model_actor)
+                finally:
+                    owner.close(timeout=1)
+
     def run_sync(self, *, timing, broken_clock=False):
         fixture = sync_fixture.CoreRecordsTests()
         fixture.setUp()

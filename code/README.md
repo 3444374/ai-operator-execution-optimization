@@ -109,6 +109,8 @@ owner 保留服务交接和真实资源清理确认，没有新增状态副本�
 容量、模型适配及传输对象的新序列化直接使用定义模块，不再通过修改 __module__ 回指单Filter查询host；现有公共导入仍是同一对象。
 关闭失败保留原异常原因，外层错误消息及资源责任保持；[本批验证与未解决IPC错误](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
 不等同于真实Ray或模型资格。
+普通 owner 的阶段计时与反馈选项一次解析；链 owner 只检查自身的配置组合，不调用后丢弃普通 profile。
+[本批反例与行为回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)记录直接构造器报告修正与保留的必要检查。
 融合批 close 在私有控制目录删除成功后才保存 closed 报告，删除异常仍向调用方传出，重试沿用原模型关闭凭据。
 [最小反例和回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
 保存改前失败和改后 10 项 CPU 通过，未增加清理状态或模型重启。

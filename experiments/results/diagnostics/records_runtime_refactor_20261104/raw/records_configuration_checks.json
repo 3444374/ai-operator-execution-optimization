@@ -1,0 +1,395 @@
+{
+  "base": "a5d7f4ef21739c1d7989985844f2b6bbbf7d5b8f",
+  "candidate": "546ad8ec5b713bdf4b4992a6ec7a9e0ecc72108b",
+  "tree": "8ac4b9c665b419d0e01886279787cd52d1ab18f0",
+  "original": {
+    "recorded_head": "a5d7f4ef21739c1d7989985844f2b6bbbf7d5b8f",
+    "production_files_match_base": true,
+    "test_overlay": [
+      "code/tests/execution_provider/test_core_execution_profile.py"
+    ]
+  },
+  "CPU": {
+    "fixed-direct-profile": {
+      "passed": 1,
+      "selected": 1,
+      "recorded_head": "a5d7f4ef21739c1d7989985844f2b6bbbf7d5b8f",
+      "source_unchanged": true,
+      "files": 1053,
+      "hashes_match_candidate": true
+    },
+    "configuration-regression": {
+      "passed": 31,
+      "selected": 31,
+      "recorded_head": "a5d7f4ef21739c1d7989985844f2b6bbbf7d5b8f",
+      "source_unchanged": true,
+      "files": 1053,
+      "hashes_match_candidate": true
+    }
+  },
+  "scope": "Direct ordinary constructor metadata fix and removal of repeated typed chain configuration checks. Factory metadata and stage measurement execution remain unchanged.",
+  "not_run": [
+    "actual IPC",
+    "Ray runtime",
+    "model",
+    "GPU",
+    "database",
+    "server",
+    "system probes"
+  ],
+  "historical_sources_changed": [],
+  "engine_parameters_changed": [],
+  "controller_rules_changed": false,
+  "integration": {
+    "candidate": "91fb08d129bc13c62c4e7fbc7bcc4f95a2ac439f",
+    "tree": "4e430002531b77572117a8b039e83ead94495335",
+    "upstream": "295065c6692de2b3a9a92d4e4709dd8ea7fbc32e",
+    "original_candidate_files_match": true,
+    "upstream_files_match": true,
+    "overlapping_files": [],
+    "CPU": {
+      "passed": 42,
+      "selected": 42,
+      "recorded_head": "91fb08d129bc13c62c4e7fbc7bcc4f95a2ac439f",
+      "source_unchanged": true,
+      "files": 1053,
+      "hashes_match_candidate": true
+    },
+    "selection": "The original 31 plus ten in-memory SemBench dispatch tests and one shared Daft worker fixture. Not actual native-runner thread composition."
+  },
+  "schema": "semloom.records_configuration.combination.v1",
+  "review": {
+    "schema": "semloom.chain_options.independent_review.v1",
+    "decision": "no_changes_requested_for_546ad8ec",
+    "findings": [],
+    "candidate": {
+      "commit": "546ad8ec5b713bdf4b4992a6ec7a9e0ecc72108b",
+      "tree": "8ac4b9c665b419d0e01886279787cd52d1ab18f0",
+      "base": "a5d7f4ef21739c1d7989985844f2b6bbbf7d5b8f",
+      "production_files": 3,
+      "test_files": 1,
+      "worktree_note": "Uncommitted Markdown delivery edits are present; tested production and test code remains unchanged."
+    },
+    "scope": "Read-only review of the exact four-file candidate and existing CPU records. No project imports, tests, actor startup, Ray, IPC, models or system probes run.",
+    "assessment": [
+      "The chain removes only the unused fixed-async profile parse, exact frozen PreparedBatching reconstruction and interval relation already established by exact ResourceRequestConfig. External EngineSpec/RecordsResources normalization, mutable token context, actual native-sample checks, mode combinations, owner matching and finite capacity remain.",
+      "The direct ordinary constructor now resolves its profile once using actual actor mode. With admission, timing remains in effective and requested metadata, and the same parsed options configure feedback. Without admission, the previous requested shape and mode update are retained.",
+      "The original defect is reported metadata: the second parse defaulted timing to false. Actual self.stage_timing and timing collection are unchanged; the public factory still overwrites the profile with its already-resolved result afterward. No engine, policy or allocation rule changes.",
+      "Feedback construction does not read owner.execution_profile, so making the complete profile available earlier adds no policy action. Its source remains identical. Invalid mode/admission and mismatched-owner errors remain before startup.",
+      "The resolver drops only a repeated get on an unmodified exact dictionary. AST comparison confirms the rest of that module is unchanged. All ordinary factory/functions and methods outside this constructor are also AST-identical."
+    ],
+    "records": {
+      "original": {
+        "methods": 1,
+        "successful_methods": 0,
+        "failure_events": 1,
+        "failed_subcase": "stage_timing=True",
+        "source": "Three production files match a5d7; the single new test overlay matches the candidate."
+      },
+      "fixed": {
+        "methods": 1,
+        "passed": 1
+      },
+      "related": {
+        "methods": 31,
+        "passed": 31,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "source_identity": "Both successful runs name precommit a5d7 HEAD. Their identical 1053-file hash maps match exact 546ad8ec blobs and stayed stable during execution. The one focused method is included in 31, not added to it.",
+      "scope": "Configuration, no-model metadata, timing and prestart/empty fixtures. No real IPC, Ray or model startup is established."
+    },
+    "history": {
+      "manifest_unchanged": true,
+      "existing_routes_verified": 15,
+      "new_routes_needed": 0,
+      "full_3010_restoration_rerun": false,
+      "note": "The 31-method selection does not rerun complete materialization. All affected projected paths already use unchanged accurate old sources; their bytes were verified here."
+    },
+    "size": {
+      "core_lines": 56980,
+      "src_and_scripts_lines": 113941,
+      "both_deltas_vs_base": -5,
+      "remaining_long_functions": 44,
+      "note": "Small duplicate removal and a report fix; long loops and whole-project refactoring are not declared finished."
+    },
+    "pending": "Delivery text needs the direct-constructor scope and retained factory behavior. Existing IPC errors, actual Ray/model execution and physical-memory behavior remain outside this change.",
+    "evidence": {
+      "file": "REVIEW_SOURCE.json",
+      "sha256": "d9576f6446e161ea814783ba965deb644e8fc50b378a0539130766770d119496"
+    }
+  },
+  "integration_review": {
+    "schema": "semloom.records_configuration.integration_review.v1",
+    "decision": "no_changes_requested_for_mechanical_integration",
+    "findings": [],
+    "candidate": {
+      "commit": "91fb08d129bc13c62c4e7fbc7bcc4f95a2ac439f",
+      "tree": "4e430002531b77572117a8b039e83ead94495335",
+      "parent": "295065c6692de2b3a9a92d4e4709dd8ea7fbc32e",
+      "reviewed_component": "546ad8ec5b713bdf4b4992a6ec7a9e0ecc72108b",
+      "documentation_state": "Markdown/public-record changes in progress; not reviewed in this increment."
+    },
+    "scope": "Read-only mechanical integration and exact 42-method record review. Prior four-file code review reused; no test rerun, project import, native runner, IPC, Ray, model or system probe.",
+    "assessment": [
+      "The integrated commit has exactly the four reviewed component paths, each identical to 546ad8ec. All five upstream paths remain identical to 295065c6. There is no overlap or additional production edit.",
+      "All 42 selected method identities are successful, with no failure, error or skip. They are the prior 31 plus ten in-memory SemBench dispatch cases and one Daft shared-worker fixture, counted once. All 1053 hashes match exact 91fb08d1 Git blobs and source stayed unchanged during the run.",
+      "The two real Daft runner-thread subprocess methods are not in this selection. The added dispatch/worker fixtures do not prove native-runner thread composition. Existing real IPC close failures, model execution and target Ray behavior remain unverified.",
+      "The reproduction manifest is identical to both component and upstream. No complete 3010-file materialization method was selected or claimed here.",
+      "Core remains 56980 lines. Wider source/scripts count is 113943: upstream contributes two lines relative to a5d7, while this component removes five relative to 295065c6. The old 546 size record is retained separately and matches its earlier public digest."
+    ],
+    "records": {
+      "selected": 42,
+      "passed": 42,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "recorded_head": "91fb08d129bc13c62c4e7fbc7bcc4f95a2ac439f",
+      "files": 1053,
+      "all_hashes_match": true,
+      "source_unchanged": true
+    },
+    "pending": "Delivery summaries still need the 91fb source, 42-method scope and wider-count update. Neither pending documentation nor new runtime qualification is approved by this mechanical check. No push or merge was performed.",
+    "evidence": {
+      "file": "INTEGRATION_SOURCE.json",
+      "sha256": "b5fa09990f11d86e5fccd8b872a9bbfff7cb8c951769e297f93ff911ff7c3d91"
+    }
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "a5d7f4ef21739c1d7989985844f2b6bbbf7d5b8f",
+        "core_python_lines": 56985,
+        "src_and_scripts_python_lines": 113946,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "295065c6692de2b3a9a92d4e4709dd8ea7fbc32e",
+        "core_python_lines": 56985,
+        "src_and_scripts_python_lines": 113948,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "91fb08d129bc13c62c4e7fbc7bcc4f95a2ac439f",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 113943,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2889,
+        "src_and_scripts_python_lines": -26392,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4648,
+        "src_and_scripts_python_lines": -35702,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": -5,
+        "src_and_scripts_python_lines": -3,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": -5,
+        "src_and_scripts_python_lines": -5,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "original_failure": [
+    {
+      "id": "tests.execution_provider.test_core_execution_profile.OptionalStageTimingTests.test_direct_async_owner_preserves_stage_timing_with_feedback (stage_timing=True)",
+      "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 117, in test_direct_async_owner_preserves_stage_timing_with_feedback\n    self.assertEqual(profile[\"stage_timing\"], timing)\nAssertionError: False != True\n"
+    }
+  ],
+  "private_originals": {
+    "execution/original-direct-profile.json": {
+      "bytes": 133446,
+      "sha256": "862ed02ede336ab193051b29c50fce5cbb1c64c1b370a4f3be73826f0871ca34"
+    },
+    "execution/original-direct-profile.log": {
+      "bytes": 1238,
+      "sha256": "97282a7f1c714a066588ac1306022a938025da41ccde217013691c65624da89c"
+    },
+    "execution/fixed-direct-profile.json": {
+      "bytes": 133059,
+      "sha256": "e8319513b89282f70bab2a952847512dbc74972bc7279fa686909761b29b56cd"
+    },
+    "execution/fixed-direct-profile.log": {
+      "bytes": 306,
+      "sha256": "bd0e51280111d9b5d0473ba33c0fbb5e0d41e8ba849227592a44a9f4b5117ebf"
+    },
+    "execution/configuration-regression.json": {
+      "bytes": 142781,
+      "sha256": "b9f56a88d4f0cd80b693ba968304be55260ababe13253011b0727c0335be3340"
+    },
+    "execution/configuration-regression.log": {
+      "bytes": 6864,
+      "sha256": "13eb565f810e676182a7d8a0279c606cf8dfb5a6a6969910fe8be7ff48cb336d"
+    },
+    "execution/integrated-configuration-regression.json": {
+      "bytes": 146282,
+      "sha256": "a36d5a9b9d03dab62ee170dae79d4eca601a47b27f8ab789b691241c5fc14f53"
+    },
+    "execution/integrated-configuration-regression.log": {
+      "bytes": 9273,
+      "sha256": "6e77bccdbeceb9ab7576de9fc3d01c39f71bc664040d90731994a55c41205313"
+    },
+    "execution/SOURCE_IDENTITY.json": {
+      "bytes": 1988,
+      "sha256": "2de2461a3b11318239864b354f30ee05bedec0e74d2c5bb676680731e2dfeb7a"
+    },
+    "execution/SOURCE_IDENTITY.original.json": {
+      "bytes": 1302,
+      "sha256": "99c3bd5dbb4fccaf92b19f5209693178630f48d6504bde3a2edec885a608eb2e"
+    },
+    "execution/CODE_SIZE.json": {
+      "bytes": 5061,
+      "sha256": "e2193d8236fe343e15788d027507d9ff19a247298c4e8333d9d1d5d2c2b58d92"
+    },
+    "execution/CODE_SIZE.original.json": {
+      "bytes": 5061,
+      "sha256": "1255e47b8c78b5ba36b328f793b5172474da853e650e32767e2984476975e969"
+    },
+    "audit/HANDOFF.json": {
+      "bytes": 11410,
+      "sha256": "295e926011895dd5497b3f7402873fc43191d773025380f253cd49f8f13ca8e7"
+    },
+    "audit/HISTORY.json": {
+      "bytes": 2909,
+      "sha256": "c0a049ad53c55c4b8d96ee280f4bd52653ada93244f58808a96900bb5adc7616"
+    },
+    "audit/REVIEW.json": {
+      "bytes": 3871,
+      "sha256": "0e711ed878cbece3911f875529d49d6d621187fab67bce928420851484a7cb60"
+    },
+    "audit/INTEGRATION_REVIEW.json": {
+      "bytes": 2549,
+      "sha256": "37a446a5950d63d2bf84dab85b46f6a4ced0ba8a2b7e423243e26b2e1e14a7f5"
+    }
+  },
+  "raw": {
+    "file": "records_configuration_raw.json.gz",
+    "bytes": 14617,
+    "sha256": "65a7b2605dc2f21c6272696ef6bb267ddbe921b1a1db2b84ca9c5b2aa4147237",
+    "decoded_sha256": "aaf6a3de8e9f0e530853c49ca314444700adc76211e20c0acb585a1ccd2799ed"
+  },
+  "delivery_review": {
+    "decision": "no_changes_requested_for_integrated_delivery",
+    "original_sha256": "e096ac65f4a9eabd24d637d18b882515a831d2d0d9c61d6fba8dbe3082dda362"
+  }
+}

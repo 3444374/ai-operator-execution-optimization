@@ -10,7 +10,12 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="current-refactor-status"></a>
 ## 当前收尾状态（2026-11-05）
 
-最新核心代码为 `9de3db29`：删除八处假模块身份赋值，类型／函数及容量值的新序列化使用实际定义模块，不再加载单Filter查询host；现有公共导入和同对象关系保持。
+最新核心代码为 `91fb08d1`，已保留并行基线提交 `295065c6`：普通 owner 只解析一次执行配置，直接构造时的阶段计时选项与动态反馈报告一致；公共工厂的最终报告与实际计时行为保持。
+链 owner 删除未使用的普通 profile 解析及已由类型构造器完成的重复检查，直接保存不可变分包配置；资源、模型与可变 token 预算的归一化和复制保持。
+[原反例、31项相关回归及整合后42项检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)
+按准确源码记录，未运行真实 IPC、Ray 或模型；原两项关闭错误仍待定位。
+
+上一批核心代码为 `9de3db29`：删除八处假模块身份赋值，类型／函数及容量值的新序列化使用实际定义模块，不再加载单Filter查询host；现有公共导入和同对象关系保持。
 关闭finalizer失败保留原异常原因，外层消息及stop／join、重试和unknown责任沿原规则；源读取的已确认记录类型去掉一轮临时describe字典复制。
 [源码与69项回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
 记录原9项中的3个反例、修改后9项和相关69项通过，1053源码摘要匹配及五份3010文件恢复。
@@ -49,7 +54,7 @@ Daft 补充文本图现先配置 Native runner、再创建 source DataFrame，�
 [原生 LOTUS 视觉运行](scripts/experiments/run_sembench_lotus_image_query.py)已接原 LM SDK 到独立 VLM 服务，
 保留原 PNG／Join／JSON Extract、既有持久预算和查询子进程监督；实际模型与服务生命周期仍待服务器验证。
 该入口不启动或停止模型服务，既有 `check_sembench_image_query.py` 保持零模型预检职责。
-当前修复组合309项CPU通过，包含真实Daft0.7.21和12项原生视觉SDK/软件HTTP集成；原3010历史绑定匹配。
+与5a19221b合并后的修复组合310项CPU通过，包含真实Daft0.7.21和12项原生视觉SDK/软件HTTP集成；原3010历史绑定匹配。
 这仍是本地CPU资格，实际Linux软件组合、VLM加载、质量及物理服务清理待服务器验证。
 
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。

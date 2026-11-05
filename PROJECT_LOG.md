@@ -11498,3 +11498,10 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 [69项回归、反例与原关闭线索](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
 保留原两项实际IPC错误及模拟差别，不声称根因已修或真实Ray验证通过。历史3010恢复、原摘要及manifest保持。
 核心56,985行、src＋scripts113,946行，本批均净减18行；剩余44个长函数继续按职责处理，不合并main。
+
+## 2026-11-05 一次解析记录执行配置
+
+91fb08d1保留并行基线295065c6，将普通 owner 的计时和反馈选项合为一次解析，修正直接构造器报告字段与实际计时属性不一致；公共工厂结果保持。
+链 owner 删除未使用的普通 profile 调用、不可变分包配置重建和重复周期检查，保留资源交接、外部归一化及可变预算复制。
+[反例、31项相关回归及整合42项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)分别按1053文件摘要关联准确源码；未运行真实IPC／Ray／模型，原关闭错误仍待定位。
+核心56,980行、src＋scripts113,943行，本批相对2950各减5行，测试增加21行；上游基线另增两行，没有为缩短文件拆开调度循环，不合并main。

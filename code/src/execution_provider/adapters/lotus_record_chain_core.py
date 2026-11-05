@@ -133,7 +133,7 @@ class SemLoomRecordChainCore:
             if (prepared_batching.policy == 'fixed_rows'
                     and prepared_batching.max_rows > self.resources.model_batch_rows):
                 raise ValueError('prepared batching max_rows cannot exceed model_batch_rows')
-            self.prepared_batching = PreparedBatching(**asdict(prepared_batching))
+            self.prepared_batching = prepared_batching
         self._streaming_tokens = (self.prepared_batching is not None
                                   and self.prepared_batching.policy == 'token_budget' and execution == 'fused')
         self._async_token_batches = ((self.prepared_batching is not None or rolling_refill)
@@ -173,8 +173,7 @@ class SemLoomRecordChainCore:
             if type(request_feedback) is not ResourceRequestConfig:
                 raise TypeError('request_feedback must be ResourceRequestConfig')
             if (not self._async_token_batches or not rolling_refill
-                    or ready_clock is not None or on_ready_event is not None
-                    or request_feedback.poll_interval_s > request_feedback.window_s):
+                    or ready_clock is not None or on_ready_event is not None):
                 raise ValueError('request feedback requires rolling requests and native ready clocks')
         self.request_feedback = request_feedback
         self._interleaved_preparation = False
@@ -230,10 +229,8 @@ class SemLoomRecordChainCore:
         else:
             from src.semantic_methods.continuation import MethodLimits
             from .lotus_records_async_actor import AsyncRecordsActorOwner
-            from .records_profile import resolve_core_profile
             if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
                 raise ValueError("record-local sections require prepare_batch_rows=model_batch_rows=1")
-            resolve_core_profile(self.engine, self.resources, dict(mode="async"))
             self.capacity = CoreRecordsCapacity() if capacity is None else capacity
             if type(self.capacity) is not CoreRecordsCapacity:
                 raise TypeError("record-local sections capacity must be CoreRecordsCapacity")
