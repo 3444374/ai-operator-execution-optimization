@@ -11322,3 +11322,9 @@ Session 的成员选择及单请求／原子批接收移入实际派发模块，
 [源码与各次原件](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
 记录本批生产 Python 净减 570 行；保留 b089 的并行试探实现，未改共享额度或 SAOR。
 144 项 Session 与组合上的 65 项链检查通过；原内存等待和十处旧历史来源问题仍在，未据此宣称性能改善。
+
+
+## 2026-11-05 修正长期规则中的脱敏工具路径
+
+根规则改为指向现用 [redact.py](code/src/infrastructure/redact.py)，清掉已删除目录的旧路径。
+脱敏要求保持，代码与当前 CPU 辅助已经使用该现用实现；本次没有修改脱敏逻辑。
