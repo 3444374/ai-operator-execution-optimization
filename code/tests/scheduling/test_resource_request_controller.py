@@ -22,7 +22,8 @@ class ResourceTrace:
         self.guard_times = {}
 
     def tick(self, count=0, *, elapsed=.25, work=(100, 4, 80, 20),
-             observation=None, supply=None, permit=None, physical=False, resource_step=None):
+             observation=None, supply=None, permit=None, physical=False, resource_step=None,
+             physical_count=2):
         self.now += elapsed
         self.sequence += 1
         self.completed += count
@@ -51,7 +52,7 @@ class ResourceTrace:
             busy = (20., 20.) if physical is True else physical
             views = tuple(ResourceProbeView('CPU-engine', 7, self.sequence*2+i,
                 self.now-.20+i*.05, self.now-.10+i*.05, .01,
-                ('GPU-cpu-fixture',), *busy) for i in (0, 1))
+                ('GPU-cpu-fixture',), *busy) for i in range(physical_count))
         self.permit = p
         step = resource_step(o, s, p) if callable(resource_step) else resource_step
         return self.controller.update_supply(o, s, resource_permit=p, physical_samples=views,
@@ -528,7 +529,7 @@ class ResourceRequestTests(unittest.TestCase):
         permit = {'sample_sequence': None, 'native_sequence': None,
                   'safety_sequence': 20, 'memory_pressure': True}
         result = trace.tick(elapsed=.001, observation=values, permit=permit)
-        self.assertEqual((result.window, result.reason), (before//2, 'resource_pressure'))
+        self.assertEqual((result.window, result.reason), (1, 'resource_pressure'))
         changes = trace.controller.report()['changes']
         for _ in range(3): trace.tick(elapsed=.001, observation=values, permit=permit)
         self.assertEqual(trace.controller.report()['changes'], changes)
@@ -540,7 +541,7 @@ class ResourceRequestTests(unittest.TestCase):
         result = trace.tick(elapsed=.001, observation={'fresh': False, 'sample_sequence': 1},
             permit={'sample_sequence': 1, 'native_sequence': 1, 'safety_sequence': 11,
                     'rejection_feedback_required': True, 'rejected_requests_total': 1})
-        self.assertEqual((result.window, result.reason), (before//2, 'resource_pressure'))
+        self.assertEqual((result.window, result.reason), (1, 'resource_pressure'))
         self.assertIsNone(trace.controller.report()['measured_window'])
 
     def test_unknown_required_guard_or_lost_permission_is_checked_before_cached_native_metrics(self):
@@ -681,7 +682,7 @@ class ResourceRequestTests(unittest.TestCase):
         trace = ResourceTrace()
         before = trace.tick(physical=True).window
         result = trace.tick(elapsed=.001, observation={'memory_pressure': True})
-        self.assertEqual(result.window, before//2)
+        self.assertEqual(result.window, 1)
         changes = trace.controller.report()['changes']
         for index in range(4):
             trace.tick(elapsed=.001, observation={'memory_pressure': True, 'sample_age_s': .001*(index+1)},
@@ -710,7 +711,7 @@ class ResourceRequestTests(unittest.TestCase):
         before = trace.tick(physical=True).window
         result = trace.tick(elapsed=.001, permit={'observed_at_s': 0., 'safety_sequence': 10,
             'memory_pressure': True})
-        self.assertEqual((result.window, result.reason), (before//2, 'resource_pressure'))
+        self.assertEqual((result.window, result.reason), (1, 'resource_pressure'))
 
     def test_queued_native_work_can_trigger_a_smaller_trial_and_a_measured_reference_return(self):
         trace = ResourceTrace(maximum=16)

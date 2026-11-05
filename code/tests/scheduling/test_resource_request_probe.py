@@ -44,13 +44,19 @@ class ResourceRequestProbeTests(unittest.TestCase):
         self.assertLess(latest.probe_target_window, pair.probe_target_window)
         self.assertEqual([v['request_index'] for v in latest.evidence['physical_samples']], [2, 3])
 
-    def test_physical_busy_does_not_shrink_a_qualified_native_geometric_trial(self):
+    def test_zero_or_subrequest_spare_keeps_only_the_native_trial(self):
         native = self.opportunity()
-        for busy in (99., 99.99, 100.):
+        for busy in (99.99, 100.):
             with self.subTest(busy=busy):
                 physical = self.opportunity(tuple(self.view(i, gpu_busy_pct=busy) for i in (1, 2)))
-                self.assertGreaterEqual(physical.probe_target_window, native.probe_target_window)
+                self.assertEqual(physical.kind, 'native_headroom')
+                self.assertEqual(physical.probe_target_window, native.probe_target_window)
                 self.assertFalse(physical.evidence['physical_capacity_known'])
+
+    def test_a_previous_window_stale_view_does_not_disqualify_the_current_view(self):
+        result = self.opportunity((self.view(1, requested_at_s=1.), self.view(2)), after_s=19.7)
+        self.assertEqual(result.kind, 'idle_device_headroom')
+        self.assertEqual([v['request_index'] for v in result.evidence['physical_samples']], [2])
 
     def test_prefix_metadata_separates_available_work_from_geometric_spacing(self):
         opportunity = self.opportunity(supply=replace(self.supply, ready_items=1))
@@ -71,11 +77,12 @@ class ResourceRequestProbeTests(unittest.TestCase):
                 self.assertNotIn('physical_samples', result.evidence)
 
     def test_duplicate_or_conflicting_RPC_identity_does_not_make_two_samples(self):
-        for samples in ((self.view(1), self.view(1)),
-                        (self.view(1), self.view(2), self.view(2, gpu_busy_pct=0.))):
-            with self.subTest(samples=samples):
-                result = self.opportunity(samples)
-                self.assertEqual((result.kind, result.probe_target_window), ('native_headroom', 4))
+        one = self.opportunity((self.view(1),))
+        repeated = self.opportunity((self.view(1), self.view(1)))
+        self.assertEqual(one.probe_target_window, repeated.probe_target_window)
+        self.assertEqual(len(repeated.evidence['physical_samples']), 1)
+        result = self.opportunity((self.view(1), self.view(2), self.view(2, gpu_busy_pct=0.)))
+        self.assertEqual((result.kind, result.probe_target_window), ('native_headroom', 4))
 
     def test_actual_pending_and_ready_work_bound_any_large_position(self):
         result = self.opportunity((self.view(1), self.view(2)),

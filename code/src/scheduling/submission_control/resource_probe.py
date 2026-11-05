@@ -114,18 +114,19 @@ def request_supply_blocked(supply):
 
 def resource_request_opportunity(observation, supply, *, current_window, hard_limit,
         max_age_s, expected_engine_uid, expected_session_id, permit,
-        physical_samples=(), resource_step=None, require_memory_feedback=False):
+        physical_samples=(), resource_step=None, require_memory_feedback=False, after_s=None):
     """Choose a reversible position without the historical KV/busy cutoffs.
 
     Missing physical data uses a bounded native trial, never an idle-device
-    assertion. Two qualified physical samples continuously position the trial
+    assertion. Qualified physical observations continuously position the trial
     within the actually ready, operationally permitted prefix. This is an
     engineering search rule, not a sustainable-capacity or benefit estimate.
     """
     if (type(current_window) is not int or type(hard_limit) is not int
             or not 1 <= current_window <= hard_limit
             or not _finite(max_age_s) or max_age_s <= 0
-            or type(require_memory_feedback) is not bool):
+            or type(require_memory_feedback) is not bool
+            or after_s is not None and (not _finite(after_s) or after_s < 0)):
         raise ValueError('valid current window, maximum, age and memory choice required')
     o, s = observation, supply
     evidence = dict(tentative=True, physical_capacity_known=False,
@@ -166,9 +167,11 @@ def resource_request_opportunity(observation, supply, *, current_window, hard_li
     if (s.exhausted or not s.ready_items or o.pending_items is None
             or o.pending_items <= 0):
         return result('no_known_ready_pending_work')
-    if (o.transition_pending or o.inflight < current_window
-            or type(s.active_requests) is not int or s.active_requests < current_window):
+    if (o.inflight != current_window
+            or type(s.active_requests) is not int or s.active_requests != current_window):
         return result('current_window_not_saturated')
+    if after_s is not None and o.observed_at_s-o.sample_age_s < after_s:
+        return result('native_predates_current_window')
     ends = dict(owner=permit.request_limit, ready=current_window+s.ready_items,
                 pending=current_window+o.pending_items)
     end = min(hard_limit, *ends.values())
@@ -196,7 +199,7 @@ def resource_request_opportunity(observation, supply, *, current_window, hard_li
             if target < native_target:
                 evidence['clip_causes'].append('costed_ready_prefix')
             return result('costed_ready_prefix_trial', target=target)
-    fallback = min(end, current_window*2)
+    fallback = None if o.transition_pending else min(end, current_window*2)
     if type(physical_samples) is not tuple or not physical_samples:
         return result('protected_native_trial', target=fallback)
     indexed = {}
@@ -206,9 +209,12 @@ def resource_request_opportunity(observation, supply, *, current_window, hard_li
                 or view.request_index in indexed and indexed[view.request_index] != view):
             return result('physical_identity_invalid_native_trial', target=fallback)
         indexed[view.request_index] = view
-    if len(indexed) < 2:
-        return result('physical_pair_missing_native_trial', target=fallback)
     pair = [indexed[key] for key in sorted(indexed)[-2:]]
+    if after_s is not None:
+        pair = [view for view in pair if not (
+            _finite(view.requested_at_s) and view.requested_at_s < after_s)]
+        if not pair:
+            return result('physical_predates_current_window_native_trial', target=fallback)
     devices = None
     for view in pair:
         if ((view.engine_uid, view.session_id) != (permit.engine_uid, permit.session_id)
@@ -231,11 +237,13 @@ def resource_request_opportunity(observation, supply, *, current_window, hard_li
             return result('physical_time_or_values_invalid_native_trial', target=fallback)
     idle = min(1-max(v.gpu_busy_pct for v in pair)/100,
                1-max(v.host_peak_cpu_pct for v in pair)/100)
-    physical_target = current_window+max(1, math.floor((end-current_window)*idle))
-    target = max(fallback, physical_target)
+    physical_target = current_window+math.floor((end-current_window)*idle)
+    if physical_target <= current_window:
+        return result('no_observed_joint_spare_native_trial', target=fallback)
+    target = physical_target
     evidence.update(physical_samples=[asdict(v) for v in pair], joint_idle_share=idle,
         physical_target=physical_target,
-        rule='max(native_trial_target, C + max(1, floor((permitted_ready_end-C)*joint_idle_share)))',
+        rule='C + floor((permitted_ready_end-C)*joint_idle_share)',
         interpretation='tentative search position; utilization is not MFU or a resource grant')
     return result('continuous_resource_trial', target=target, physical=True, devices=devices, idle_share=idle)
 

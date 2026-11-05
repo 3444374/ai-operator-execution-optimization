@@ -201,12 +201,12 @@ class ResourceRequestSearchTests(unittest.TestCase):
                 self.assertIsNone(trace.controller.report()['verified_performance_window'])
                 self.assertIsNone(trace.controller.report()['censored_frontier'])
 
-    def test_first_resource_action_is_not_repeated_after_reference_loss(self):
+    def test_fresh_resources_can_probe_again_after_reference_loss_without_claiming_gain(self):
         trace = ResourceTrace(maximum=256)
         trace.tick(physical=(20., 10.))
         self.assertEqual(trace.tick(observation={'preemptions_total': None}).window, 1)
         trace.until(lambda r, _: r['window'] > 1, count=256, physical=(0., 0.))
-        self.assertEqual(trace.controller.current_window, 2)
+        self.assertEqual(trace.controller.current_window, 256)
 
     def test_explicit_time_budget_reverts_an_unmeasured_large_trial(self):
         trace = ResourceTrace(maximum=256, options=ResourceRequestConfig(exploration_s=3.))
