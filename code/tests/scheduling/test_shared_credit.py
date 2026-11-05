@@ -14,8 +14,8 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
-    _GuardHold,
 )
+from src.scheduling.submission_control.credit_policies import _GuardHold  # noqa: E402
 from src.scheduling.submission_control.saor import (  # noqa: E402
     SaorReleaseConfig,
 )
