@@ -154,6 +154,7 @@ Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFr
 
 | 现象与根因 | 处理与验证 |
 |---|---|
+| Daft source DataFrame 提前选择 Native runner，随后显式线程配置被当成外部覆盖而拒绝，发生在模型启动前。 | 在创建 DataFrame 前调用同一个 Native 配置入口；省略时保持 Daft 默认，已有 runner 仍不被暗中重配。原失败及零模型复现保留，原生图／核不改。 |
 | MMQA 原 runner 的 `src.runner` 与 SemLoom 已加载的 `src` 冲突，首轮无法导入。 | 仅在原模块加载期映射同一已验证上游 runner，随后恢复；十六题原查询／方法／accessor 差分及别名恢复检查通过。 |
 | sf25 Q6 有 NaN，最初的纯字符串接纳误拒绝原 SDK 可序列化输入。 | 在文本 wire 边界保留原 DEFAULT cell 呈现；真实三题各25行完整消息与结果顺序相同，原 CSV 不变。 |
 | Extract 成功后原关系后处理可能因 `{}` 缺列失败，旧的新接线未把已完成算子报告附给该异常。 | 保留原 KeyError 并转交已知调用与关闭证据；不补字段把失败变成成功。 |
@@ -171,11 +172,11 @@ Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFr
 
 | 原查询 | 现成资产与单遍模型请求预算 | 当前接线限制 |
 |---|---|---|
-| Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64次 Filter | 原查询／原评价 CPU 接通；本地 VLM provider 尚未接通 |
+| Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64次 Filter | 原查询／原评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
 | Animals Q7 | 同一64图，两遍完整原 Filter，共128次 | 两遍原模型输入都保留，不能替为 CLIP 检索 |
-| MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 原生 Join／评价 CPU 接通；本地 VLM provider 尚未接通 |
+| MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 原生 Join／评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
 | MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 通过；preset 单次 Extract 仍不构成完整模型资格 |
-| MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；仍待原生视觉服务 |
+| MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；原生服务入口已接，实际服务待绑定／验证 |
 | E-Commerce／Cars 图像 | 原实现存在；此前已查目录未定位成套数据 | 数据缺口与视觉 provider 缺口分别记录，不能记零分 |
 
 上述预算不含暖机、重试或重复；Animals 四题与 MMQA Q2a/Q2b 共970到1295次，Q2b 的匹配数由真正的 Join 决定。
@@ -189,9 +190,15 @@ Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一
 
 当前 `serving/backends/vllm_protocol.py` 的记录模型通道只接文本，sync 引擎也按 token-only 渲染；
 LOTUS 的 `IMAGE_TEXT_PROFILE` 没有当前生产调用者，其旧 prepared-call seam 也不接 Extract 的 `json_object`。
-本次不修改文字 IPC。真正的本地 VLM owner、原 PNG 内容、JSON Extract、有效 processor／generation 与完整关闭还需接线及实机验证。
+[原生 LOTUS 视觉运行入口](../../scripts/experiments/run_sembench_lotus_image_query.py)已将这些原查询直接接到原 LM SDK 的 OpenAI-compatible 服务。
+原生 SDK 保留 PNG 消息、并发批调用、`zs-cot` 和 Extract `json_object`，不用 prepared-call seam 或文本 IPC。
+本地多模态 IPC owner 仍未接通；本次服务入口的真实模型、processor／generation 与物理服务关闭待机器验证。
 原生 LOTUS 也可由原 LM SDK 直接访问独立官方 VLM 兼容服务，复用现有 `native_http_observer.observe_native_httpx`
-观察完整原请求及每次尝试；这不是已退役的 SemLoom HTTP 代理，也不需要改变算子。该服务的配置、模型身份与生命周期仍待机器绑定。
+观察完整原请求及每次尝试；这不是已退役的 SemLoom HTTP 代理，也不需要改变算子。该服务的配置、模型身份与生命周期仍待机器绑定。入口读取已有预算的预留单元，每次真正的 HTTP POST 先消费，
+不分配或退回额度；Q2b 按完整 Join＋最多同等数目的 Extract 预留。原失败与已发送单元不得重置。
+服务启动和 GPU 归外部 host owner，入口仅监督查询子进程；该计时为已有服务上的完整查询，不能混入文本冷模型启动成绩。
+私有审计保留原 POST 的内容摘要和 PNG URI 摘要，避免在事件队列复制整幅 base64 图像；原请求字节不变。
+生成配置未给出的值按原 SemBench 8192 token／无 stop 解析，显式值保持，不继承短文本 Filter 的8 token／换行截断。
 Ray／Daft 已有 CLIP 图不构成上述 VLM Filter／Join／Extract 支持；IMLane／Kalypso 当前视觉绑定未建立，
 不由此推断整个上游系统永远不支持视觉。原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
 

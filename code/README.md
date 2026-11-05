@@ -13,7 +13,8 @@
 | 完整查询矩阵／连续查询 | [run_movie_records_matrix.py](scripts/experiments/run_movie_records_matrix.py) | 显式 backend、生命周期、额度与时钟 |
 | 原生 LOTUS 对照 | [lotus_native_local.py](src/baselines/text/frameworks/lotus_native_local.py) | 原算子／LM／LiteLLM batch_completion；仅 provider 使用现有模型 IPC |
 | 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |
-| SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals 四题与 MMQA Q2a/Q2b/Q7 的输入／预算检查；视觉模型执行仍待接通 |
+| 原生 LOTUS 图像查询 | [run_sembench_lotus_image_query.py](scripts/experiments/run_sembench_lotus_image_query.py) | 已有独立 VLM 服务上的原查询、评价、逐 POST 预算和查询监督 |
+| SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals 四题与 MMQA Q2a/Q2b/Q7 的输入／预算检查；原生 LOTUS 服务运行入口已接；当前模型实机资格待验证 |
 | LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
 | 观测与有限测试 | [record_observation](scripts/profiling/record_observation/README.md) | 使用既有监督与回执，不增加执行容量 |
 
