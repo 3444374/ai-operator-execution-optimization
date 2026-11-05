@@ -366,7 +366,8 @@ class NormalPrepareEntryTests(unittest.TestCase):
             root=Path(directory);reports=[]
             for scenario in ('off','on','prepare_error','prepare_error_off'):
                 result=subprocess.run([sys.executable,'-B',str(script),str(public),str(root/scenario),scenario],
-                    text=True,capture_output=True,timeout=90)
+                    text=True,capture_output=True,
+                    timeout=RecordsResources().startup_timeout_s+RecordsResources().query_timeout_s)
                 self.assertEqual(result.returncode,0,result.stdout+'\n'+result.stderr)
                 reports.append(json.loads((root/scenario/'PUBLIC-PREPARE.json').read_text()))
             self.assertEqual(reports[0]['business_sha256'],reports[1]['business_sha256'])

@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+import warnings
 from unittest.mock import Mock, patch
 
 from src.baselines.text.movie_records import MovieRecordSource
@@ -37,8 +38,9 @@ class AsyncTokenEntryTests(unittest.TestCase):
         self.model = self.root / 'native.json'
         self.engine = EngineSpec(str(self.model), sys.executable, sys.executable,
             tokenizer_path=str(self.root / 'tokenizer'), max_model_len=4096, max_num_seqs=1, max_model_calls=4)
+        # Cold SDK binding uses the ordinary startup budget; this is no speed test.
         self.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
-            max_active_batches=2, startup_timeout_s=8, query_timeout_s=15)
+            max_active_batches=2, query_timeout_s=15)
 
     def config(self, task='movie-q1'):
         return dict(schema='semloom.movie_records_run.v1', backend='semloom-local-model-core-async',
@@ -52,6 +54,9 @@ class AsyncTokenEntryTests(unittest.TestCase):
 
     def runtime(self):
         stack = ExitStack(); self.addCleanup(stack.close)
+        stack.enter_context(warnings.catch_warnings())
+        warnings.filterwarnings('ignore', category=UserWarning, module=r'lotus\.models\.lm',
+            message=r'No pricing information available for model openai/cpu-fixture\.')
         formatter, binder = methods.LotusFilterMethod, methods.bind_filter_method
         runtime = stack.enter_context(ThreadedRuntime([]))
         initialized = [False]

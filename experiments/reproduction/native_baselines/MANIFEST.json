@@ -872,7 +872,9 @@
         "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
         "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
         "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
-        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py"
+        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py",
+        "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
+        "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -955,6 +957,16 @@
           "encoding": "gzip",
           "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
           "decoded_bytes": 37997
+        },
+        "code/src/semantic_methods/lotus/image_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1703,
+          "archive_sha256": "9b13a1f85ddb43ac59d829ff18c7b42fb604898d01b65e5e78f07f6eeb626532"
+        },
+        "code/src/semantic_methods/lotus/maps.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5897,
+          "archive_sha256": "b2b56901eeebbda76043a4f2d644a108ad6666cd9f4a5b13fb2b900431c39e4f"
         }
       }
     },
@@ -1855,7 +1867,9 @@
         "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
         "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
         "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
-        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py"
+        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py",
+        "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
+        "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1938,6 +1952,16 @@
           "encoding": "gzip",
           "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
           "decoded_bytes": 37997
+        },
+        "code/src/semantic_methods/lotus/image_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1703,
+          "archive_sha256": "9b13a1f85ddb43ac59d829ff18c7b42fb604898d01b65e5e78f07f6eeb626532"
+        },
+        "code/src/semantic_methods/lotus/maps.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5897,
+          "archive_sha256": "b2b56901eeebbda76043a4f2d644a108ad6666cd9f4a5b13fb2b900431c39e4f"
         }
       }
     },
@@ -2848,7 +2872,9 @@
         "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
         "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
         "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
-        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py"
+        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py",
+        "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
+        "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2931,6 +2957,16 @@
           "encoding": "gzip",
           "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
           "decoded_bytes": 37997
+        },
+        "code/src/semantic_methods/lotus/image_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1703,
+          "archive_sha256": "9b13a1f85ddb43ac59d829ff18c7b42fb604898d01b65e5e78f07f6eeb626532"
+        },
+        "code/src/semantic_methods/lotus/maps.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5897,
+          "archive_sha256": "b2b56901eeebbda76043a4f2d644a108ad6666cd9f4a5b13fb2b900431c39e4f"
         }
       }
     },
@@ -3843,7 +3879,9 @@
         "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
         "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
         "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
-        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py"
+        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py",
+        "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
+        "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3931,6 +3969,16 @@
           "encoding": "gzip",
           "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
           "decoded_bytes": 37997
+        },
+        "code/src/semantic_methods/lotus/image_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1703,
+          "archive_sha256": "9b13a1f85ddb43ac59d829ff18c7b42fb604898d01b65e5e78f07f6eeb626532"
+        },
+        "code/src/semantic_methods/lotus/maps.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5897,
+          "archive_sha256": "b2b56901eeebbda76043a4f2d644a108ad6666cd9f4a5b13fb2b900431c39e4f"
         }
       }
     },
@@ -4847,7 +4895,9 @@
         "code/src/observability/profiling/ray.py": "historical_sources/9652108d/code/src/observability/profiling/ray.py.gz",
         "code/src/scheduling/core/scheduler.py": "historical_sources/9652108d/code/src/scheduling/core/scheduler.py.gz",
         "code/src/scheduling/runtime/execution.py": "historical_sources/9652108d/code/src/scheduling/runtime/execution.py.gz",
-        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py"
+        "code/src/scheduling/submission_control/shared_credit.py": "historical_sources/7bf1d92b/code/src/scheduling/submission_control/shared_credit.py",
+        "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
+        "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4930,6 +4980,16 @@
           "encoding": "gzip",
           "archive_sha256": "0827d28f38e153f1a81426d9794ca24bdac9631a726087663e9e32530cf30930",
           "decoded_bytes": 37997
+        },
+        "code/src/semantic_methods/lotus/image_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1703,
+          "archive_sha256": "9b13a1f85ddb43ac59d829ff18c7b42fb604898d01b65e5e78f07f6eeb626532"
+        },
+        "code/src/semantic_methods/lotus/maps.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5897,
+          "archive_sha256": "b2b56901eeebbda76043a4f2d644a108ad6666cd9f4a5b13fb2b900431c39e4f"
         }
       }
     }

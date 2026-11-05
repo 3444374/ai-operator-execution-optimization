@@ -14,6 +14,7 @@
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
+| 实验原件恢复 | [restore_result_evidence.py](analysis/restore_result_evidence.py) | 按存储清单恢复原路径和字节，不重跑实验 |
 | 同步 CPU 证据复算 | [check_sync_cpu_evidence.py](analysis/check_sync_cpu_evidence.py) | 固定来源、替身和 ACK 受控行为；不是性能测试 |
 
 CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／driver Python、源码身份、
@@ -64,3 +65,16 @@ SAOR 声明与方法说明见[独立材料](../../experiments/saor/README.md)，
 `analysis/summarize_saor_*.py`、`replay_saor_capacity.py`及既有成本／静态曲线分析继续读取历史结果；
 `run_ai_operator_scenarios.py`保留显式 profiler 装配与 CPU 行为核验用途，旧 PG profiler 已归档，
 不能直接用旧配置恢复当前实验。历史方案、原始结果和必要失败证据保持。
+
+<a id="实验结果恢复"></a>
+## 实验结果恢复
+
+结果的 `raw/storage-manifest.jsonl` 记录原路径、字节数、摘要与共享保存位置。
+从仓库根目录恢复到新的仓库外目录：
+
+```sh
+PYTHONPATH=code python code/scripts/analysis/restore_result_evidence.py \
+  experiments/results/<result>/raw/storage-manifest.jsonl --output /tmp/<fresh-result-directory>
+```
+
+恢复会核对每个文件和归档对象的原字节；已存在的输出目录保持不变。此操作不启动模型或实验。

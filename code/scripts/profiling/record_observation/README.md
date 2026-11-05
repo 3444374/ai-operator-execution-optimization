@@ -51,6 +51,9 @@ Ray Future 和 light sink 收尾。引擎及 native 统计是 CPU fixture，不�
 - `source_root`、`expected_source.head/tree`：独立、干净的被测 Git checkout。
 - `host_helpers`、`host_config` 的路径／SHA：既有站点适配及配置，含设备与监督绑定；不进仓库，
   不随每次测试重传，也不把它们改造成新的主机控制框架。
+  仓库模块迁移时同步核对实际 helper 的导入；共享私有文件与脱敏工具现归
+  `src.infrastructure.private_artifacts`、`src.infrastructure.redact`。
+  已绑定 helper 的修订保存为新副本，在新配置中更新路径与 SHA；旧绑定、失败回执与账本保留。
 - `engine`／`generation`／`resources`／`ray_options`／`runtime_binding`／`environment`：原部署、
   输入和并发配置。Movie 使用原 `movie_plan`；有限链使用原 CSV／SHA／列绑定及完整方法。
 - `workload.expected_calls`、`units`、`limits`：完整调用上限和原操作时限；native call cap 必须
