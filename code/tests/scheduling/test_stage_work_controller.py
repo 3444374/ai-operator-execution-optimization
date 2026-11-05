@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from runpy import run_path
 import unittest
 from pathlib import Path
 
@@ -16,9 +17,14 @@ from src.planning.work import (  # noqa: E402
     RuntimeStateSnapshot,
     StageStateSnapshot,
 )
-from src.scheduling.submission_control.stage_work import (  # noqa: E402
-    BoundedStageWorkController,
+# This prototype is retained for historical experiments, outside production.
+HISTORICAL_SOURCE = CODE_ROOT.parent / (
+    "experiments/reproduction/native_baselines/historical_sources/6a8a2d7b/"
+    "code/src/scheduling/submission_control/stage_work.py"
 )
+BoundedStageWorkController = run_path(
+    str(HISTORICAL_SOURCE), run_name="src.scheduling.submission_control.historical_stage_work"
+)["BoundedStageWorkController"]
 
 
 def _state(

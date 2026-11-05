@@ -318,9 +318,12 @@ now lives under `code/src/`:
   per-Job ready queues, active work and monotonic `release_seq`. Neither module contains
   K128/K160, KV thresholds, endpoint counts or text/image branches: calibrated arms,
   predicted service and admissible actions are caller inputs.
-  `submission_control/stage_work.py` is a bounded candidate that moves only one
-  offline-calibrated work-credit step and falls back to the workload-specific
-  static point on stale or mismatched state; it is not yet a performance claim.
+  `submission_control/stage_work.py` owns maintained supply and request feedback.
+  The unused offline work-credit prototype now lives only in the
+  [historical source](../experiments/reproduction/native_baselines/README.md#retired-stage-work-controller);
+  its three behavior checks use that copy, outside the production import path.
+  Direct imports of those retired symbols and arbitrary old pickle instances
+  are no longer supported by the maintained module; exact historical projections retain their original paths.
   Duplicate root compatibility modules have been removed. The formal
   payload/execution path remains Daft -> Arrow -> Ray.
 

@@ -459,7 +459,7 @@ class SemLoomRecordsCore:
 
     def execution_metadata(self):
         value = dict(self._actors.execution_metadata(), execution_profile=dict(self.execution_profile))
-        if getattr(self, '_service_allocation', None) is not None:
+        if self._service_allocation is not None:
             value['service_allocation'] = self._service_allocation.describe()
         return value
 
@@ -737,7 +737,7 @@ class SemLoomRecordsCore:
         if self._active is not None:
             self._active.collect_receipts()
             if self.last_query_report is not None:
-                if getattr(self, '_service_allocation', None) is not None:
+                if self._service_allocation is not None:
                     self.last_query_report = deepcopy(self.last_query_report)
                 self.last_query_report["unconsumed_call_results"] = list(self._active.unconsumed_call_results)
                 self.last_query_report["core_usage"] = asdict(self.core.capacity.usage())
@@ -762,7 +762,7 @@ class SemLoomRecordsCore:
         }
         if feedback_close is not None:
             self.last_close_report['feedback_close'] = feedback_close
-        if getattr(self, '_service_allocation', None) is not None:
+        if self._service_allocation is not None:
             self._service_allocation.settle(self)
             self.last_close_report['service_allocation'] = self._service_allocation.describe()
         return self.last_close_report
@@ -788,7 +788,7 @@ class SemLoomRecordsCore:
         self._active.unconsumed_call_results = []
         self.last_query_report = self._active.last_close_report = query
         self.last_close_report = report
-        if getattr(self, '_service_allocation', None) is not None and report is not None:
+        if self._service_allocation is not None and report is not None:
             self._service_allocation.settle(self)
             report['service_allocation'] = self._service_allocation.describe()
         return taken

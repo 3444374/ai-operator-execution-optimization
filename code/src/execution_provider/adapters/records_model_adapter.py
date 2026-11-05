@@ -73,11 +73,6 @@ class _ActorOwner(RecordsActorOwner):
     def _model_actor_type(self):
         return _CoreModelActor
 
-    def wait_ready(self, ref, deadline, cancelled=None):
-        if self.close_deadline is not None:
-            deadline = min(deadline, self.close_deadline)
-        return super().wait_ready(ref, deadline, cancelled)
-
 
 # Preserve the original class locations used by serialized actor descriptions.
 _CoreModelActor.__module__ = "src.execution_provider.adapters.lotus_records_core"

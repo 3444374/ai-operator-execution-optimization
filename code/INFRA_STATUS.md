@@ -754,3 +754,27 @@ Ray 资格入口另修正测试总数写死为五项的问题：按实际方法�
 不再解析日志的总数；监督、完整输出和原清理责任保留。
 [修订与本地检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
 不修改服务器此前停止记录，也没有在本机运行真实 Ray、模型或 GPU。
+
+普通 records 所有权另有小批精简候选：等待期限由原基类统一处理，服务额度读取已初始化字段，
+结果声明只整理一次身份。151 项相关 CPU 夹具检查通过，公共导入、异常类型及未消费结果责任保持。
+[实际范围与暂缓项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ownership-simplify)
+保留运行时绑定的错误处理差异；此批未推送、合并或运行真实 Ray／模型／GPU。
+
+
+未接入现用执行链的 `BoundedStageWorkController` 和专用 `WorkCreditDecision` 已移出生产模块；
+原三项行为测试检查已有历史原件，五份具名代码投影保持准确字节。供给／请求控制器和
+显式 `legacy_resource_feedback`／具名 profile 仍有实际接线，本批保留。
+[退役清单及 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
+同时记录两项旧测试字段断言的更新，没有改变模型、资源或查询条件。
+
+
+已单独独审的普通 records 精简与旧工作量原型退役现组合到 a255574f；八份 Python 文件与各自已审候选
+逐字节相同，文档保留两批和内存压力的各自记录。
+[组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#reviewed-cleanup-composition)
+的 21 模块 317 项通过。测试资格修复和第二轮精简保持独立，没有混入本次组合。
+
+
+上述已审清理随后接到已发布的 c5ebddc8，保留其 Ray 资格修复七份文件的原字节。
+[新来源组合](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)
+完成 73 项相关 CPU 检查；清理部分八份 Python 与原 317 项通过的候选相同，不重复运行同一组。
+第二轮内部标记、配置解析及 JSON 类型候选仍未混入；原 9da 服务器对照保持。

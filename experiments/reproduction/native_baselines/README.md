@@ -174,3 +174,17 @@ manifest 的 `source_formats` 记录压缩摘要、准确解码长度，原逐�
 当前指引从[脚本入口](../../../code/scripts/README.md#current-entry-roles)查找；
 [逐文件清单](../../results/diagnostics/records_runtime_refactor_20261104/raw/entry_inventory.json.gz)为静态调用与文档证据，
 不能代替仓库外调用检查或真实模型资格。
+
+
+<a id="retired-stage-work-controller"></a>
+### 旧工作量控制原型退出生产目录
+
+`BoundedStageWorkController` 与 `WorkCreditDecision` 已从维护版 `stage_work.py` 移除；
+当前执行入口没有使用这两项。准确原件继续保存在
+[既有历史源码](historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py)，
+五份投影的文件摘要、恢复映射和投影 ID 均不改。
+原三项行为测试改为读取这份历史源码，不为当前执行保留兼容导出。
+维护模块不再支持旧类型直接导入或任意旧 pickle 对象恢复；具名历史树保留原类路径与字节。
+维护版供给／请求反馈、实际 stage broker 和显式历史 profile 仍有调用，继续保留；
+[逐项依据与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
+区分本次退役与仍需兼容的内容。

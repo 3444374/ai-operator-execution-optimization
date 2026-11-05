@@ -189,6 +189,8 @@ class DeliveryDeclarationTests(unittest.TestCase):
         expected = self.expected()
         declaration = self.declare(expected=expected)
         self.assertEqual(declaration, self.declare(expected=expected[::-1]))
+        immutable = tuple(tuple(v[n] for n in self.module().IDENTITY_FIELDS) for v in expected[::-1])
+        self.assertEqual(declaration, self.module().OrdinaryDeliveryDeclaration('q', immutable, 4096))
         changed = expected[:-1] + [identity('q', 'different-row', 2)]
         self.assertNotEqual(declaration.identity_sha256, self.declare(expected=changed).identity_sha256)
 
@@ -198,10 +200,14 @@ class DeliveryDeclarationTests(unittest.TestCase):
             [identity('q', 'map', 0, algorithm_stage='map')],
             [identity('q', 'role', 0, model_role='helper')],
             [identity('q', 'repeat', 0, call_index=1)], [dict(first, extra=True)],
-            [dict(first, source_position=True)], [identity('other-query', 'row-0', 0)]]
+            [dict(first, source_position=True)], [identity('other-query', 'row-0', 0)],
+            [None], [tuple(first.values())], [{n: v for n, v in first.items() if n != 'call_id'}]]
         for expected in invalid:
             with self.subTest(expected=expected), self.assertRaises(ValueError):
                 self.declare(expected=expected)
+        for expected in (None, {}, iter([first])):
+            with self.subTest(expected_type=type(expected).__name__), self.assertRaises(ValueError):
+                self.module().declare_ordinary_delivery('q', expected, item_result_bytes=4096)
 
     def test_missing_invalid_storage_or_unrepresentable_identity_is_rejected(self):
         for maximum in (None, True, 0, -1, 2.5, float('inf')):

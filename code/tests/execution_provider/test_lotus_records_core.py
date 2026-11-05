@@ -426,13 +426,14 @@ class CoreRecordsTests(unittest.TestCase):
     def test_shared_owner_wait_keeps_the_core_cleanup_deadline_clamp(self):
         owner = self.owner()
         ref = object()
-        with patch.object(RecordsActorOwner, "wait_ready", return_value={}) as wait:
+        with patch('src.execution_provider.adapters.lotus_records_actor_owner.time.monotonic',
+                   return_value=150.0):
             owner._actors.close_deadline = 100.0
-            owner._actors.wait_ready(ref, 200.0)
-            wait.assert_called_once_with(ref, 100.0, None)
-            wait.reset_mock()
-            owner._actors.wait_ready(ref, 50.0)
-            wait.assert_called_once_with(ref, 50.0, None)
+            with self.assertRaises(TimeoutError):
+                owner._actors.wait_ready(ref, 200.0)
+            owner._actors.close_deadline = 200.0
+            with self.assertRaises(TimeoutError):
+                owner._actors.wait_ready(ref, 100.0)
         owner.close()
 
     def test_slow_consumer_limits_source_pull_and_core_reservations(self):

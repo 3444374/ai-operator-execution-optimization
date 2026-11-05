@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-05：精简普通 records 的重复处理
+
+基于已发布 9da299e9 独立整理等待期限、服务额度属性访问和交付声明的身份处理；
+保留实际输入检查、未知请求与未消费结果责任。运行时绑定和不同 owner 的清理差异暂不合并。
+[源码范围与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ownership-simplify)
+说明 151 项相关检查及尚未验证的实机路径；本地候选未推送或合并。
+
 ## 2026-11-04：接入已审资源策略的准备
 
 核对上一批准确 HEAD，并保留其干净审查树。新树导入 b99 三个策略文件与三个测试文件，字节和补丁摘要相同。
@@ -11087,3 +11094,27 @@ rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工�
 保留所需五项、其他选中方法、监督清理和完整输出要求，不增加执行策略或自动重试。
 [本地相关 73 项检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
 全部通过；原权限错误、服务器停止与累计调用记录保持。此批先独立交付，其余精简另行处理。
+
+## 2026-11-05 将未接入执行链的工作量原型移出生产模块
+
+核对全仓引用后移除 `BoundedStageWorkController`、专用返回类型与孤立导入；
+原三项测试改查已有历史源码，维护版供给／请求代码和五份具名投影保持。
+[逐项处理与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
+记录 141 项相关 CPU 通过及两项旧测试在原 9da 的复现，不改生产配置或服务器对照条件。
+仍有实际调用的显式历史策略和准备 broker 保留；后续整合、其他精简和全项目剩余工作继续单独处理。
+
+
+## 2026-11-05 组合两份已审生产清理
+
+从当时 PR 90 的准确 a255574f 建独立工作树，组合 0a2faf31、bb9ca00a；
+源码无需冲突处理，文档保留内存压力和两批清理记录。旧类型直接导入与任意旧 pickle 不再保证，
+准确历史树继续恢复原实现。[317 项组合 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#reviewed-cleanup-composition)
+全部通过；未混入测试资格修复及第二轮候选，没有模型／真实 Ray／GPU、推送或合并。
+
+
+## 2026-11-05 将已审清理接到最新已发布修复
+
+新工作树从 PR 90 的 c5ebddc8 接入原 99fa8a9 增量，保留已发布资格修复和完整文档记录。
+[本次 73 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)
+通过；清理 Python 与原 317 项通过的准确候选相同，不重复执行或累计数字。
+原候选、第二轮候选及 9da 对照均保持；未推送、合并或运行真实 Ray／模型／GPU。

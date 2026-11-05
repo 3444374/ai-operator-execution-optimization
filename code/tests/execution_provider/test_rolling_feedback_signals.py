@@ -17,9 +17,9 @@ class RollingFeedbackSignalTests(unittest.TestCase):
         self.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
                                           max_active_batches=8)
 
-    def test_profile_rejects_memory_floor_without_a_rolling_memory_source(self):
+    def test_modern_profile_rejects_the_historical_memory_floor_option(self):
         profile = dict(mode='async', admission=dict(kind='resource_feedback', memory_floor_bytes=1024))
-        with self.assertRaisesRegex(ValueError, 'memory.*source'):
+        with self.assertRaisesRegex(ValueError, 'unsupported resource request option'):
             resolve_core_profile(self.engine, self.resources, profile, rolling_refill=True)
 
     def test_direct_owner_rejects_the_same_missing_memory_source(self):
@@ -33,7 +33,8 @@ class RollingFeedbackSignalTests(unittest.TestCase):
     def test_default_rolling_profile_keeps_memory_signal_unknown(self):
         profile = dict(mode='async', admission=dict(kind='resource_feedback'))
         resolved = resolve_core_profile(self.engine, self.resources, profile, rolling_refill=True)
-        self.assertEqual(resolved['admission']['memory_floor_bytes'], 0)
+        self.assertNotIn('memory_floor_bytes', resolved['admission'])
+        self.assertIs(resolved['admission']['require_memory_feedback'], False)
 
     def test_named_historical_profiles_retain_the_window_pressure_clock(self):
         for name in ('delivered-work-scan', 'computed-work-local-pairs'):

@@ -44,13 +44,9 @@ def _expected(query_id, occurrences):
     if type(query_id) is not str or not query_id.strip():
         raise ValueError('ordinary delivery requires its actual query identity')
     SessionSpec(query_id, 'chain-section-0', 'lotus-record-prepared-v1')
-    if type(occurrences) not in (list, tuple):
-        raise ValueError('ordinary delivery occurrences must be a finite list or tuple')
     values = []
     rows = set()
     for occurrence in occurrences:
-        if type(occurrence) is not dict or set(occurrence) != set(IDENTITY_FIELDS):
-            raise ValueError('ordinary delivery requires complete occurrence identities only')
         canonical = identity(query_id, occurrence['row_id'], occurrence['source_position'])
         if any(type(occurrence[n]) is not type(canonical[n]) or occurrence[n] != canonical[n]
                for n in IDENTITY_FIELDS):
@@ -166,7 +162,12 @@ class OrdinaryDeliverySession:
 
 
 def declare_ordinary_delivery(query_id, expected, *, item_result_bytes):
-    return OrdinaryDeliveryDeclaration(query_id, _expected(query_id, expected), item_result_bytes)
+    if type(expected) not in (list, tuple):
+        raise ValueError('ordinary delivery occurrences must be a finite list or tuple')
+    if any(type(v) is not dict or set(v) != set(IDENTITY_FIELDS) for v in expected):
+        raise ValueError('ordinary delivery requires complete occurrence identities only')
+    occurrences = tuple(tuple(v[n] for n in IDENTITY_FIELDS) for v in expected)
+    return OrdinaryDeliveryDeclaration(query_id, occurrences, item_result_bytes)
 
 
 def declare_ordinary_session(queries, *, item_result_bytes):

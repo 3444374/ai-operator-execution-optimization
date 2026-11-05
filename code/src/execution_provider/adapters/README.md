@@ -1313,6 +1313,10 @@ A resident owner can instead receive `declare_ordinary_session` for every actual
 The declaration covers one ordinary Filter, finite distinct occurrences and their exact
 query identities; an undeclared source/query fails before actor allocation. A pure
 `preview_service_records_runtime` validates the same shape without allocating an owner.
+Dictionary inputs and direct immutable-tuple construction use the declaration's same identity
+validation and ordering once. Public signatures, identity fingerprints and byte totals remain;
+[CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ownership-simplify)
+also cover inherited cleanup deadlines and ordinary service result ownership.
 
 The service supplies a finite logical byte total. The pool derives the instance request
 slots, Method storage and both IPC endpoints together, then charges the complete query

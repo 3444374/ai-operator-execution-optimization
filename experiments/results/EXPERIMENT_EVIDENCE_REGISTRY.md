@@ -1491,3 +1491,19 @@ rolling 服务授予、自动物理容量、跨进程恢复和真实 Ray／模�
 Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
 移除写死五项的日志判断，保留所需方法、全部选中方法、监督与完整输出的实际成功要求。
 本机 73 项相关 CPU 检查通过，原权限错误及服务器八项通过后误停的记录保留；未运行真实 Ray 或模型。
+
+
+旧工作量原型的[退役检查](diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
+确认当前生产无调用后移除两个声明，保留原三项历史行为检查及五份准确代码投影。
+相关 141 项 CPU 检查通过；两项旧字段断言在原 9da 的失败另行保留并修订测试，生产策略保持。
+显式历史 profile 仍在使用，未被本批声称为已删除；没有真实 Ray、模型或 GPU 结果。
+
+
+两份已审清理候选在 a255 的[准确组合](diagnostics/records_runtime_refactor_20261104/README.md#reviewed-cleanup-composition)
+完成 21 模块、317 个不同方法的 CPU 检查；源码沿用已审字节，五份历史投影保持。
+测试资格修复和第二轮候选未混入，真实 Ray／模型／GPU 仍未运行。
+
+
+已审清理另接到 c5ebddc8 的[准确来源组合](diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)，
+保留已发布资格修复的七份原文件，73 项相关 CPU 检查通过。
+清理的八份 Python 与原 317 项通过的候选相同；该组未重复执行，不合计为本次运行数量。
