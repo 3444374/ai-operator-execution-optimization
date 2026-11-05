@@ -1633,3 +1633,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [actor／Session 职责与声明去重](diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
 记录模型端与 driver 分离、现用调用迁移、共享额度出口清理、有限 IPC 声明复用和两项旧预期更新。
 408 个不同 CPU 方法均有通过记录，原组合失败及单项补跑分别保留；不提供真实 Ray、模型或性能结论。
+
+
+[共享额度与 Session 职责整理](diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
+记录原释放顺序的十二个失败子例、纠正后重试与单次 140 项组合通过；策略迁移和两类重复状态／检查的清理分别可查。
+原误选方法、组件结果和独审来源保留，重复选择不累计；没有实际 Ray、模型、GPU 或性能结论。

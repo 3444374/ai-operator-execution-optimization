@@ -11303,3 +11303,12 @@ Session 投影归入既有策略模块并迁移原扫描 oracle；有限 typed I
 [源码、原失败和组合 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
 保留 407／408 及唯一受影响方法修正后通过，未重跑整套或改变生产来满足旧断言。
 本批现用生产 Python 净增 21 行，职责划分和声明去重有所推进，物理容量及其他大文件仍未完成；未合并 main。
+
+
+## 2026-11-05 整理共享额度策略与 Session 收尾
+
+共享账本保留租约、容量与公共事件，策略选择和完成记账直接进入单独模块，删除被迁走的方法而不留代理。
+修复非法完成值先释放占用的问题，并删除已由构造／完成流程保证的重复检查。Session 的 registered 关闭状态只保存一份，
+legacy 待回收身份和未决责任保持。[140 项组合结果及行数](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
+保存原失败、独审与同口径统计；本批生产 Python 净增 49 行，职责整理不能算作减少代码。
+R、物理容量和反馈试探未改，实际模型、Ray 与 GPU 尚未验证，未合并 main。

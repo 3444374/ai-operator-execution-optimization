@@ -936,3 +936,10 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 Session 的无状态占用投影归入既有策略模块，整数身份上限共用原协议定义。`R=None` 可复用完整 typed IPC 声明，
 默认 R 仍为 2，尚非自动物理容量。[本轮源码和组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
 保留 408 项中的原失败及单项修正，未运行本候选的真实模型或服务器测试。
+
+
+共享额度按账本与策略职责分文件，公开事件仍由原 coordinator 生成；非法完成工作量先拒绝，租约可用正确值重试。
+删除已完成 Job 的重复占用扫描及两处内部配置检查；Session 不再复制 registered Job 的关闭标记。
+[准确源码与组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
+记录 140 项全部通过，unknown、结果租约和既有异常收尾保持。本批没有改变 R、反馈试探或物理容量，
+未运行实际 Ray、模型或服务器，其他大文件仍需继续整理。

@@ -81,3 +81,10 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 [records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC
 终态许可仍由原 owner 管理。Session 的批占用投影集中到既有 `session_policy.py`，预留与回退仍在 Session。
 完整显式 `AsyncEngineLimits` 现在可为 `R=None` 提供有限请求数；默认 R=2 和物理容量问题仍待处理。
+
+
+共享额度的租约、队列、容量与公共事件留在 `shared_credit.py`，策略选择、VTC 入队修正及完成记账集中到
+[credit_policies.py](src/scheduling/submission_control/credit_policies.py)；原公开类型和调用方式保持，没有新增账本或代理。
+Session 的 registered Job 关闭状态只由 JobRegistry 保存，legacy Job 仍记住待回收身份。
+[源码与 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
+保存释放顺序修正、重复检查清理及 140 项组合结果；物理容量、R 和反馈试探不属于本批。

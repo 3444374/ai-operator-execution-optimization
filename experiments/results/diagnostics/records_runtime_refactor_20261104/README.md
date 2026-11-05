@@ -2220,3 +2220,66 @@ Session 的 9／19／4 项均分别记录，重叠不相加。组合实际选择
 旧入口退役来自此前各批，Git 历史和原始证据继续保存。超过千行的核心文件由 5 个变为 4 个；
 共享额度 1,397 行、Session 1,174 行及其他大文件仍需继续按实际职责简化。
 本候选未运行真实 Ray 类分发、模型、GPU、数据库或服务器，也不提供性能结论，未合并 main。
+
+
+<a id="credit-session-duties"></a>
+## 共享额度策略与 Session 收尾按职责整理
+
+从已发布 `73e686aa` 开始，生产检查点为 `1d92a2df698896e241fb1985b9c46d29b03e72fe`，
+树为 `b0c6e90b15d502ba922788e266bc62f77dc08f60`。后续仅整理说明与公开证据，不改测试过的生产源码。
+
+原共享额度在 `release(actual_work=0)` 时先删除租约和占用，再抛错；用正确值重试也无法恢复。
+现有输入规则移到状态修改之前，未知请求仍先报告没有租约。一个新增行为方法覆盖三种策略、四种非法值，
+原源码的十二个子例全部失败；修正后保持完整快照，正确重试只记账／派发一次。
+这项错误修正与后续结构迁移分为独立提交。
+
+`shared_credit.py` 保留唯一租约、等待队列、容量、公开值、公共事件和激活动作。
+`credit_policies.py` 集中 FIFO／DRR／VTC／优先级与 SAOR 的选择、授予及完成记账；VTC 入队 floor 也归入同一职责。
+十二个旧私有方法直接迁成函数，调用方和一个私有测试导入同步更新，没有代理、mixin、镜像状态或新控制器。
+`SaorReleaseEvent` 虽带历史方法名，仍服务普通 ready 生命周期，保留原类型和原模块；SAOR 纯算法未改。
+删除已完成 Job 再扫活动租约／等待者的检查，以及两处构造已保证的 SAOR 配置检查；外部输入和未完成请求检查保持。
+
+Session 的 registered Job 关闭状态只由 JobRegistry 保存；legacy Job 仍保留待回收身份，直到迟到工作结清。
+每次收尾读取活跃 flow 和持有记录各至多一次，使用已知 handle 完成回收。多 flow、unknown、结果租约、准备数据持有，
+以及 credit finish／forget 异常处理保持原行为；公开调用和运行时类型注解不变。
+
+[机器摘要](raw/credit_session_duties_checks.json)及[紧凑脱敏原件](raw/credit_session_duties_raw.json.gz)
+保存原十二个失败子例、63 项额度改后检查、63 项结构检查、Session 原 78 项和改后 79 项。
+一次准确组合选择 **140 个不同 CPU 方法，全部通过，无失败、错误或跳过**，运行前后 1,003 个代码文件哈希一致。
+最初误选了不存在的方法：60 项成功、一个 loader 错误；改选两个现有收尾方法后通过，原记录没有删除。
+各运行重叠，不相加；63 项早期记录的 HEAD 字段早于提交，其源码内容由逐文件哈希对应。
+早期结构运行后另有格式、私有注解及上述检查精简；最终源码以 140 项组合记录核对。
+Session 与额度分别独审，未发现新增问题；Session 审查另用两个小场景核对多 flow／unknown／lease 和 legacy ID 复用，未重跑整组。
+
+从仓库根、在已有 driver 依赖环境中可复算组合行为：
+
+```sh
+PYTHONPATH=code python -m unittest -v \
+  tests.scheduling.test_shared_credit \
+  tests.scheduling.test_shared_credit_ray \
+  tests.scheduling.test_saor \
+  tests.scheduling.test_incremental_session \
+  tests.scheduling.test_multisession \
+  tests.scheduling.test_shared_compute \
+  tests.scheduling.test_input_preparation
+```
+
+其中 Ray 模块使用既有进程内替身；本次运行另阻止真实 Ray 初始化和 vLLM 导入。
+私有完整原件继续保存，公开副本记录组名、文件名、原件 SHA-256 与公开校验值，按组名和校验值取回，不公开个人路径。
+
+| 文件／范围 | 73e | 当前 | 说明 |
+|---|---:|---:|---|
+| 共享额度账本 | 1,397 | 833 | 租约、容量、公共事件和生命周期 |
+| 策略集成 | 0 | 606 | 原有选择、授予、完成记账 |
+| Session | 1,174 | 1,181 | 少一份 registered 关闭状态，局部集合取代重复扫描 |
+| 核心 Python | 59,130 | 59,179 | 本批净增 49 行 |
+| 现用 src＋scripts Python | 114,938 | 114,987 | 本批净增 49 行 |
+
+仍按物理行统计，包含空白和注释，排除测试、文档和历史副本；核心额外排除 experiments／baselines。
+当前核心较固定 main 的 54,091 行多 5,088 行，较 3fd 的 61,628 行少 2,449 行；现用 src＋scripts
+较两者分别少 25,348／34,658 行。旧入口退役来自此前各批，不能计作此次拆文件的贡献。
+超过千行的核心文件为 main 7 个、3fd 9 个、73e 4 个、当前 3 个；超过百行的函数分别为 50／57／53／53。
+Session 1,181 行、adaptive 1,157 行和链 owner 1,101 行仍需按职责继续简化，不以移动文件代替减少复杂度。
+
+本批未改 R、IPC 预算、反馈试探、模型默认值、LOTUS 语义或原生对照；前述并行工作保持。
+没有运行实际 Ray、模型、GPU、数据库或服务器，不提供性能结果，未合并 main。
