@@ -50,9 +50,10 @@ class IMLaneChainBackend:
     def __init__(self, *, engine, resources, author_args, model_environment, cancelled=None):
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
-                or resources.model_batch_rows > 16 or resources.request_capacity() > 2):
-            raise ValueError("IMLane chains require one author executor, 1..16 rows and at most two pending blocks")
+                or resources.model_batch_rows > 16):
+            raise ValueError("IMLane chains require one author executor, 1..16 rows and a finite pending declaration")
         self.args, self.environment, self.cancelled = author_args, assigned_environment(model_environment), cancelled
         require_outside_git(Path(author_args.output))
         if not Path(author_args.output).is_dir():
@@ -147,7 +148,8 @@ class IMLaneChainBackend:
 
         try:
             scope.__enter__()
-            process = subprocess.Popen([str(args.bridge_binary),str(scope.port),str(kernel),"infer_records",PROTOCOL],
+            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(kernel),
+                "infer_records", str(self.resources.request_capacity()), PROTOCOL],
                 env=scope.env,cwd=scope.root,stdin=subprocess.PIPE,stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,start_new_session=True)
             scope.track_root(process)
@@ -161,7 +163,7 @@ class IMLaneChainBackend:
                     raise RuntimeError("IMLane chain author scope remains unconfirmed")
 
             return RecordsBridge(process,abort_owner=abort,timeout_s=min(60,self.resources.query_timeout_s),
-                                 protocol=PROTOCOL),finalizer,physical
+                                 protocol=PROTOCOL,max_pending=self.resources.request_capacity()),finalizer,physical
         except BaseException as error:
             try:
                 finalizer()

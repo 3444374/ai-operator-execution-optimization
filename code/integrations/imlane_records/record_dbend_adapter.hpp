@@ -1,4 +1,5 @@
 #pragma once
+#include "record_limits.hpp"
 #include <arrow/api.h>
 #include <arrow/io/api.h>
 #include <arrow/ipc/api.h>
@@ -28,21 +29,6 @@ template<class T> T take(arrow::Result<T> result) {
     if (!result.ok()) throw std::runtime_error(result.status().ToString());
     return std::move(result).ValueOrDie();
 }
-inline void require(bool value, const char* message) {
-    if (!value) throw std::invalid_argument(message);
-}
-struct Limits {
-    int64_t max_block_rows = 16;
-    size_t max_pending_blocks = 2, max_query_rows = 4096, max_queries = 64;
-    size_t max_input_bytes = 65536, max_output_bytes = 1048576;
-    void validate() const {
-        require(max_block_rows > 0 && max_block_rows <= 4096 && max_pending_blocks > 0 &&
-            max_pending_blocks <= 128 && max_query_rows > 0 && max_query_rows <= 1048576 &&
-            max_queries > 0 && max_queries <= 4096 && max_input_bytes > 0 &&
-            max_input_bytes <= 16777216 && max_output_bytes > 0 && max_output_bytes <= 16777216,
-            "records capacities must be positive and finite");
-    }
-};
 inline void schema(const Table& table, const std::vector<std::string>& names,
                    const std::vector<std::shared_ptr<arrow::DataType>>& types) {
     require(bool(table), "missing records table");
@@ -227,7 +213,7 @@ class Session {
     bool poisoned_ = false;
     bool terminals_v2_ = false;
 public:
-    Session(std::shared_ptr<dbend::DBEndContext> context, std::string alias, Limits limits = {},
+    Session(std::shared_ptr<dbend::DBEndContext> context, std::string alias, Limits limits,
             bool terminals_v2 = false)
         : context_(std::move(context)), alias_(std::move(alias)), limits_(limits),
           terminals_v2_(terminals_v2) { limits_.validate(); }

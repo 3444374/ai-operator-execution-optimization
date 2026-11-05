@@ -127,7 +127,7 @@ class RecordOccurrence:
 
     @classmethod
     def from_dict(cls, value):
-        return cls(**deepcopy(value))
+        return cls(**value)
 
 
 def stage_identity(query_id, record, stage_id, *, model_role="main", call_index=0):

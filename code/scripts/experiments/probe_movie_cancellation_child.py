@@ -27,6 +27,6 @@ def install(directory):
 
 if __name__ == '__main__':
     import asyncio
-    from src.serving.backends.async_engine_process import serve
+    from src.serving.backends.async_engine_worker import serve
     install(sys.argv[1])
     asyncio.run(serve(*map(int, sys.argv[2:])))

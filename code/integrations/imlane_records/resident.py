@@ -74,8 +74,9 @@ class IMLaneResidentSession:
 
     def __init__(self, engine, generation, resources, *, author_args, model_environment,
                  deadline_monotonic, observer=None):
+        resources.request_capacity()
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-                or resources.request_capacity() > 2 or engine.max_model_calls is None
+                or engine.max_model_calls is None
                 or engine.max_model_calls > 4096 or type(deadline_monotonic) not in (int, float)
                 or not time.monotonic() < deadline_monotonic < float("inf")):
             raise ValueError("resident Filter requires an explicit finite session within the existing native capacities")
@@ -168,7 +169,8 @@ class IMLaneResidentSession:
         self.scope = verify_filter.FilterScope(args, "cpython-filter", owner, self.author_report, kernel=udf)
         try:
             self.scope.__enter__()
-            self.process = Popen([str(args.bridge_binary), str(self.scope.port), str(udf), "infer_records", PROTOCOL],
+            self.process = Popen([str(args.bridge_binary), str(self.scope.port), str(udf),
+                "infer_records", str(self.resources.request_capacity()), PROTOCOL],
                 env=self.scope.env, cwd=self.scope.root, stdin=PIPE, stdout=PIPE, stderr=PIPE, start_new_session=True)
             self.scope.track_root(self.process)
             writer = verify._capture_stderr(self.process.stderr, self.scope.root / "bridge-stderr.log", self.author_report)
@@ -181,7 +183,7 @@ class IMLaneResidentSession:
                     raise RuntimeError("resident author resources remain unconfirmed")
 
             self.client = RecordsBridge(self.process, abort_owner=abort, timeout_s=min(600, self.resources.startup_timeout_s),
-                                        protocol=PROTOCOL)
+                                        protocol=PROTOCOL, max_pending=self.resources.request_capacity())
             query = self.session_id + ":startup"
             self.client.begin(query)
             self.native_query = query
@@ -218,7 +220,7 @@ class IMLaneResidentSession:
         self.active = _QueryResults(rows, _QueryBridge(self, config), query_id=query_id, max_calls=len(expected),
             columns=scan.payload_columns, control_dir=control, deadline=deadline,
             close_owner=lambda: {}, cleanup_scope=self.args.stop_budget.cleanup,
-            block_rows=self.resources.prepare_batch_rows, max_pending=self.resources.max_active_batches, session=self)
+            block_rows=self.resources.prepare_batch_rows, session=self)
         self.query_bindings.append(config)
         return self.active
 

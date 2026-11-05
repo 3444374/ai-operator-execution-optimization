@@ -36,7 +36,7 @@ from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChain
 from src.semantic_methods.lotus.record_chain import RecordOccurrence,stage_identity
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec,_prepared,result_record
-from src.serving.backends.async_engine_process import AsyncEngineLimits
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.scheduling.core.session_contract import Acceptance,BatchKey,BatchMember,TaskKey,Terminal
 import record_observer as observer
 observer.install_driver()

@@ -29,13 +29,14 @@ class CascadeWorker(FilterWorker):
         self.engine = EngineSpec.from_dict(config["engine"])
         self.generation = local_generation(self.stage)
         self.resources = RecordsResources(**config["resources"])
+        self.resources.request_capacity()
         self.query_id, self.deadline = config["query_id"], config["deadline_monotonic"]
         self.control, self.model_environment = Path(config["control_dir"]), dict(config["model_environment"])
         if (config.get("schema") != "imlane.cascade.stage.v1" or not self.stage.records
                 or any(r["query_id"] != self.query_id for r in self.stage.records)
                 or not self.control.is_dir() or not time.monotonic() < self.deadline < float("inf")
                 or self.resources.cpu_workers != 1 or self.resources.model_batch_rows > 16
-                or self.resources.prepare_batch_rows > 16 or self.resources.request_capacity() > 2
+                or self.resources.prepare_batch_rows > 16
                 or self.engine.max_model_calls != len(self.stage.records)
                 or self.engine.max_model_len is not None and self.generation.max_tokens > self.engine.max_model_len):
             raise ValueError("cascade worker requires one finite bound role, stage and query")

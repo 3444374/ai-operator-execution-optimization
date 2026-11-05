@@ -197,7 +197,7 @@ def run_case(args, helper, report, function):
     client = None
     try:
         scope.__enter__()
-        process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(OWNED / "echo_udf.py"), function],
+        process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(OWNED / "echo_udf.py"), function, "2"],
             env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, start_new_session=True)
         scope.track_root(process)
@@ -212,7 +212,7 @@ def run_case(args, helper, report, function):
             with (scope.root / "bridge-stdout.log").open("a") as stream:
                 stream.write(redact_text(line) + "\n")
         client = RecordsBridge(process, abort_owner=abort_owner, timeout_s=5,
-                               log=save_line)
+                               log=save_line, max_pending=2)
         assert 0 < client.meta["native_task_threads"] <= 8
         if function == "infer_records":
             case.update(healthy(client))

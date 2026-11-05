@@ -102,7 +102,10 @@ def install_transport(*,child):
     global _installed
     if not ENABLED or handoff_profile() or _installed:return
     _installed=True
-    from src.serving.backends import async_engine_process as module
+    if child:
+        from src.serving.backends import async_engine_worker as module
+    else:
+        from src.serving.backends import async_engine_process as module
     original=module._frame
     @functools.wraps(original)
     def frame(value,maximum):

@@ -29,6 +29,7 @@ def load(name):
 def stubs():
     modules={}
     names=['src','src.serving','src.serving.backends','src.serving.backends.async_engine_process',
+           'src.serving.backends.async_engine_worker','src.serving.backends.async_engine_wire',
            'src.execution_provider','src.execution_provider.adapters','src.execution_provider.adapters.lotus_records_async_actor',
            'src.execution_provider.adapters.records_async_model',
            'src.execution_provider.adapters.lotus_records_actor_owner','src.semantic_methods','src.semantic_methods.lotus',
@@ -45,16 +46,19 @@ def stubs():
         def _ready_event(self,row,action,reason=None,key=None):
             return self.callback(row,action,reason,key)
     modules['src.semantic_methods.driver'].MethodDriver=Driver
-    native.socket=socket;native.json=json
+    worker=modules['src.serving.backends.async_engine_worker']
+    wire=modules['src.serving.backends.async_engine_wire']
+    native.socket=worker.socket=socket
+    native.json=worker.json=wire.json=json
     def frame(value,maximum):
         payload=json.dumps(value,ensure_ascii=False,separators=(',',':')).encode()
         if len(payload)>maximum:raise ValueError('fixture bound')
         return len(payload).to_bytes(4,'big')+payload
-    native._frame=frame
+    native._frame=worker._frame=wire._frame=frame
     async def read_frame(sock,maximum):return {},1
-    native._read_frame=read_frame
-    async def serve(*args,**kwargs):return args
-    native.serve=serve
+    worker._read_frame=read_frame
+    async def serve(*args,**kwargs):return args,kwargs
+    worker.serve=serve
     modules['src.execution_provider.adapters.records_async_model'].AsyncCoreModelActor=Base
     modules['src.execution_provider.adapters.lotus_records_actor_owner']._PrepareActor=Base
     class Worker:
@@ -270,13 +274,30 @@ class CaptureTests(unittest.TestCase):
         finally:left.close();right.close()
 
     def test_encode_json_decode_preserves_payload_and_options(self):
-        ipc=load('record_ipc_observer');native=sys.modules['src.serving.backends.async_engine_process']
-        value=dict(op='submit',request_id='r',generation={'stop':[SECRET]},row={'messages_json':SECRET})
-        before=deepcopy(value);ipc.install_transport(child=False)
-        packet=native._frame(value,4096);decoded=native.json.loads(packet[4:])
-        self.assertEqual(value,before);self.assertEqual(decoded,before)
-        self.assertNotIn(SECRET,json.dumps(self.events()))
-        self.assertFalse(any(isinstance(v,bytes) for row in ipc._frames.values() for v in row.values()))
+        wire=sys.modules['src.serving.backends.async_engine_wire']
+        original=wire._frame
+        for child in (False,True):
+            with self.subTest(child=child):
+                ipc=load('record_ipc_observer')
+                native=sys.modules['src.serving.backends.async_engine_'+('worker' if child else 'process')]
+                value=dict(op='submit',request_id='r',generation={'stop':[SECRET]},row={'messages_json':SECRET})
+                before=deepcopy(value);ipc.install_transport(child=child)
+                packet=native._frame(value,4096);decoded=native.json.loads(packet[4:])
+                self.assertEqual(value,before);self.assertEqual(decoded,before)
+                self.assertIs(wire._frame,original)
+                events=len(self.events())
+                self.assertEqual(wire._frame(value,4096),packet)
+                self.assertEqual(len(self.events()),events)
+                self.assertNotIn(SECRET,json.dumps(self.events()))
+                self.assertFalse(any(isinstance(v,bytes) for row in ipc._frames.values() for v in row.values()))
+                if child:
+                    factory=object();call=native.serve(10,11,12,engine_factory=factory)
+                    with self.assertRaises(StopIteration) as done:call.send(None)
+                    self.assertEqual(done.exception.value[0],(10,11,12))
+                    self.assertIs(done.exception.value[1]['engine_factory'],factory)
+                    call=native._read_frame(ipc.ObservedSocket(object(),'data'),4096)
+                    with self.assertRaises(StopIteration) as done:call.send(None)
+                    self.assertEqual(done.exception.value,({},1))
 
     def test_sink_caps_and_flush_report_are_explicit(self):
         self.observer.settings()['max_events_per_process']=1

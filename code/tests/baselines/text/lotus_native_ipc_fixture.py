@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 import time
 
-from src.serving.backends.async_engine_process import serve
+from src.serving.backends.async_engine_worker import serve
 from src.serving.backends.vllm_protocol import _prepared, result_record
 
 

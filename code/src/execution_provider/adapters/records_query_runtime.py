@@ -12,6 +12,7 @@ import json
 import time
 
 from src.scheduling.core.session_contract import SessionSpec, TaskKey, TaskProfile
+from src.semantic_methods.lotus.record_results import _source_binding
 from src.semantic_methods.lotus.record_types import RecordOccurrence
 
 
@@ -84,8 +85,6 @@ class _RecordLocalRows:
             raise
 
     def _pull_source(self):
-        from src.semantic_methods.lotus.record_results import _source_binding
-
         _check(self.owner.deadline, self.cancelled)
         try:
             record = next(self.source)
@@ -106,6 +105,7 @@ class _RecordLocalRows:
                 or _source_binding(record) != _source_binding(self.bindings[record.row_id])):
             raise ValueError("record-local source changed or duplicated an occurrence")
         self.offered.add(record.row_id)
+        self.bindings[record.row_id] = None
         return record
 
     def _begin_phase(self):
@@ -144,7 +144,6 @@ class _RecordLocalRows:
             self._phase_source = iter(self.run.current)
         else:
             self.section = self.run.delegate_record_local()
-            from src.semantic_methods.lotus.record_results import _source_binding
             self._phase_bindings = {row.row_id: _source_binding(row) for row in self.section.records}
             stages = self.section.chain.stages
             self._stage_ids = tuple(stage.stage_id for stage in stages)

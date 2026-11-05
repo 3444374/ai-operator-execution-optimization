@@ -18,6 +18,11 @@ from tests.serving.test_async_engine_process import row
 
 
 class AsyncEngineSlotDefaultsTests(unittest.TestCase):
+    def test_default_worker_command_keeps_the_declared_interpreter_and_descriptor_order(self):
+        spec = SimpleNamespace(model_python='/tmp/model-python')
+        self.assertEqual(AsyncEngineProcess._command(spec, [10, 11, 12]),
+            [spec.model_python, '-m', 'src.serving.backends.async_engine_worker', '--serve', '10', '11', '12'])
+
     def test_transport_requires_a_declared_request_count_before_any_startup(self):
         with self.assertRaises(TypeError):
             AsyncEngineLimits()

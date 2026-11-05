@@ -22,7 +22,8 @@ def validate_author_build(author_root, bridge_binary):
     source = Path(__file__).parent
     if (built.get("upstream_commit") != owner.AUTHOR or built.get("binary_sha256") != owner.digest(binary)
             or built.get("sources_sha256") != {path.name: owner.digest(path) for path in (
-                source / "imlane_records.cpp", source / "record_dbend_adapter.hpp")}):
+                source / "imlane_records.cpp", source / "record_dbend_adapter.hpp",
+                source / "record_limits.hpp")}):
         raise ValueError("the bridge binary is not bound to these reviewed v2 source bytes")
     return dict(author_commit=owner.AUTHOR, bridge_binary_sha256=built["binary_sha256"])
 
