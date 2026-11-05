@@ -876,7 +876,16 @@
         "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
         "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz",
         "code/src/observability/profiling/cli.py": "historical_sources/46795c0f/code/src/observability/profiling/cli.py.gz",
-        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz"
+        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz",
+        "code/src/experiments/image_multijob/project.py": "historical_sources/b08936d2/code/src/experiments/image_multijob/project.py.gz",
+        "code/src/experiments/saor/trace_replay.py": "historical_sources/b08936d2/code/src/experiments/saor/trace_replay.py.gz",
+        "code/src/experiments/shared_vllm/config.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/config.py.gz",
+        "code/src/experiments/shared_vllm/runtime.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/runtime.py.gz",
+        "code/src/scheduling/runtime/saor_capacity.py": "historical_sources/b08936d2/code/src/scheduling/runtime/saor_capacity.py.gz",
+        "code/src/scheduling/runtime/shared_credit_ray.py": "historical_sources/b08936d2/code/src/scheduling/runtime/shared_credit_ray.py.gz",
+        "code/src/scheduling/submission_control/ordered_release.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/ordered_release.py.gz",
+        "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
+        "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -979,6 +988,51 @@
           "encoding": "gzip",
           "decoded_bytes": 26626,
           "archive_sha256": "2cf9bc564fdce07a41f004d97a4a601d7897139377934f00e1f94a09e7ea7e11"
+        },
+        "code/src/experiments/image_multijob/project.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 34736,
+          "archive_sha256": "c3e956d4e5bda6991020b9149449f0c18c2a5fee4816faedf894645f9ef041b4"
+        },
+        "code/src/experiments/saor/trace_replay.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10686,
+          "archive_sha256": "4ca596ce35bd131f8dc08843b2992ddde7e185f26ef9b3285e3e521bfd6be620"
+        },
+        "code/src/experiments/shared_vllm/config.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 62474,
+          "archive_sha256": "7f8f11ca7fbce40e628d8cb7466ad58082690d8b38ea4dcd4dd82bf276f6feeb"
+        },
+        "code/src/experiments/shared_vllm/runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 13199,
+          "archive_sha256": "5600216f1297c239c725d1090be9fc36385e6397d6269c3291be30c61926f00f"
+        },
+        "code/src/scheduling/runtime/saor_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10353,
+          "archive_sha256": "54e5e482c4f8de52b6e6b107507c94980e00bdafe48e201b70e30a18aa472527"
+        },
+        "code/src/scheduling/runtime/shared_credit_ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6300,
+          "archive_sha256": "e80691fee663a577398c87a472193008996cf0e81f5d1429d846596f3b04904e"
+        },
+        "code/src/scheduling/submission_control/ordered_release.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9933,
+          "archive_sha256": "f31c12a2e3902068b878b44edc29cbb2d1d2c67ca93c90ca39c2ca3de2a1a4fa"
+        },
+        "code/src/scheduling/submission_control/saor.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29467,
+          "archive_sha256": "00e33699a55787b40290de2f2242720a7ccb9109f9e45c84ebe05b6ca976d482"
+        },
+        "code/tests/scheduling/test_scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 41938,
+          "archive_sha256": "db71f0b2ddf1fd3196b955fffc1e704233c126c2974edd8c549f59bd61183b04"
         }
       }
     },
@@ -1883,7 +1937,16 @@
         "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
         "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz",
         "code/src/observability/profiling/cli.py": "historical_sources/46795c0f/code/src/observability/profiling/cli.py.gz",
-        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz"
+        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz",
+        "code/src/experiments/image_multijob/project.py": "historical_sources/b08936d2/code/src/experiments/image_multijob/project.py.gz",
+        "code/src/experiments/saor/trace_replay.py": "historical_sources/b08936d2/code/src/experiments/saor/trace_replay.py.gz",
+        "code/src/experiments/shared_vllm/config.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/config.py.gz",
+        "code/src/experiments/shared_vllm/runtime.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/runtime.py.gz",
+        "code/src/scheduling/runtime/saor_capacity.py": "historical_sources/b08936d2/code/src/scheduling/runtime/saor_capacity.py.gz",
+        "code/src/scheduling/runtime/shared_credit_ray.py": "historical_sources/b08936d2/code/src/scheduling/runtime/shared_credit_ray.py.gz",
+        "code/src/scheduling/submission_control/ordered_release.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/ordered_release.py.gz",
+        "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
+        "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1986,6 +2049,51 @@
           "encoding": "gzip",
           "decoded_bytes": 26626,
           "archive_sha256": "2cf9bc564fdce07a41f004d97a4a601d7897139377934f00e1f94a09e7ea7e11"
+        },
+        "code/src/experiments/image_multijob/project.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 34736,
+          "archive_sha256": "c3e956d4e5bda6991020b9149449f0c18c2a5fee4816faedf894645f9ef041b4"
+        },
+        "code/src/experiments/saor/trace_replay.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10686,
+          "archive_sha256": "4ca596ce35bd131f8dc08843b2992ddde7e185f26ef9b3285e3e521bfd6be620"
+        },
+        "code/src/experiments/shared_vllm/config.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 62474,
+          "archive_sha256": "7f8f11ca7fbce40e628d8cb7466ad58082690d8b38ea4dcd4dd82bf276f6feeb"
+        },
+        "code/src/experiments/shared_vllm/runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 13199,
+          "archive_sha256": "5600216f1297c239c725d1090be9fc36385e6397d6269c3291be30c61926f00f"
+        },
+        "code/src/scheduling/runtime/saor_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10353,
+          "archive_sha256": "54e5e482c4f8de52b6e6b107507c94980e00bdafe48e201b70e30a18aa472527"
+        },
+        "code/src/scheduling/runtime/shared_credit_ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6300,
+          "archive_sha256": "e80691fee663a577398c87a472193008996cf0e81f5d1429d846596f3b04904e"
+        },
+        "code/src/scheduling/submission_control/ordered_release.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9933,
+          "archive_sha256": "f31c12a2e3902068b878b44edc29cbb2d1d2c67ca93c90ca39c2ca3de2a1a4fa"
+        },
+        "code/src/scheduling/submission_control/saor.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29467,
+          "archive_sha256": "00e33699a55787b40290de2f2242720a7ccb9109f9e45c84ebe05b6ca976d482"
+        },
+        "code/tests/scheduling/test_scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 41938,
+          "archive_sha256": "db71f0b2ddf1fd3196b955fffc1e704233c126c2974edd8c549f59bd61183b04"
         }
       }
     },
@@ -2900,7 +3008,16 @@
         "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
         "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz",
         "code/src/observability/profiling/cli.py": "historical_sources/46795c0f/code/src/observability/profiling/cli.py.gz",
-        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz"
+        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz",
+        "code/src/experiments/image_multijob/project.py": "historical_sources/b08936d2/code/src/experiments/image_multijob/project.py.gz",
+        "code/src/experiments/saor/trace_replay.py": "historical_sources/b08936d2/code/src/experiments/saor/trace_replay.py.gz",
+        "code/src/experiments/shared_vllm/config.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/config.py.gz",
+        "code/src/experiments/shared_vllm/runtime.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/runtime.py.gz",
+        "code/src/scheduling/runtime/saor_capacity.py": "historical_sources/b08936d2/code/src/scheduling/runtime/saor_capacity.py.gz",
+        "code/src/scheduling/runtime/shared_credit_ray.py": "historical_sources/b08936d2/code/src/scheduling/runtime/shared_credit_ray.py.gz",
+        "code/src/scheduling/submission_control/ordered_release.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/ordered_release.py.gz",
+        "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
+        "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3003,6 +3120,51 @@
           "encoding": "gzip",
           "decoded_bytes": 26626,
           "archive_sha256": "2cf9bc564fdce07a41f004d97a4a601d7897139377934f00e1f94a09e7ea7e11"
+        },
+        "code/src/experiments/image_multijob/project.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 34736,
+          "archive_sha256": "c3e956d4e5bda6991020b9149449f0c18c2a5fee4816faedf894645f9ef041b4"
+        },
+        "code/src/experiments/saor/trace_replay.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10686,
+          "archive_sha256": "4ca596ce35bd131f8dc08843b2992ddde7e185f26ef9b3285e3e521bfd6be620"
+        },
+        "code/src/experiments/shared_vllm/config.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 62474,
+          "archive_sha256": "7f8f11ca7fbce40e628d8cb7466ad58082690d8b38ea4dcd4dd82bf276f6feeb"
+        },
+        "code/src/experiments/shared_vllm/runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 13199,
+          "archive_sha256": "5600216f1297c239c725d1090be9fc36385e6397d6269c3291be30c61926f00f"
+        },
+        "code/src/scheduling/runtime/saor_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10353,
+          "archive_sha256": "54e5e482c4f8de52b6e6b107507c94980e00bdafe48e201b70e30a18aa472527"
+        },
+        "code/src/scheduling/runtime/shared_credit_ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6300,
+          "archive_sha256": "e80691fee663a577398c87a472193008996cf0e81f5d1429d846596f3b04904e"
+        },
+        "code/src/scheduling/submission_control/ordered_release.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9933,
+          "archive_sha256": "f31c12a2e3902068b878b44edc29cbb2d1d2c67ca93c90ca39c2ca3de2a1a4fa"
+        },
+        "code/src/scheduling/submission_control/saor.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29467,
+          "archive_sha256": "00e33699a55787b40290de2f2242720a7ccb9109f9e45c84ebe05b6ca976d482"
+        },
+        "code/tests/scheduling/test_scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 41938,
+          "archive_sha256": "db71f0b2ddf1fd3196b955fffc1e704233c126c2974edd8c549f59bd61183b04"
         }
       }
     },
@@ -3919,7 +4081,16 @@
         "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
         "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz",
         "code/src/observability/profiling/cli.py": "historical_sources/46795c0f/code/src/observability/profiling/cli.py.gz",
-        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz"
+        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz",
+        "code/src/experiments/image_multijob/project.py": "historical_sources/b08936d2/code/src/experiments/image_multijob/project.py.gz",
+        "code/src/experiments/saor/trace_replay.py": "historical_sources/b08936d2/code/src/experiments/saor/trace_replay.py.gz",
+        "code/src/experiments/shared_vllm/config.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/config.py.gz",
+        "code/src/experiments/shared_vllm/runtime.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/runtime.py.gz",
+        "code/src/scheduling/runtime/saor_capacity.py": "historical_sources/b08936d2/code/src/scheduling/runtime/saor_capacity.py.gz",
+        "code/src/scheduling/runtime/shared_credit_ray.py": "historical_sources/b08936d2/code/src/scheduling/runtime/shared_credit_ray.py.gz",
+        "code/src/scheduling/submission_control/ordered_release.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/ordered_release.py.gz",
+        "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
+        "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4027,6 +4198,51 @@
           "encoding": "gzip",
           "decoded_bytes": 26626,
           "archive_sha256": "2cf9bc564fdce07a41f004d97a4a601d7897139377934f00e1f94a09e7ea7e11"
+        },
+        "code/src/experiments/image_multijob/project.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 34736,
+          "archive_sha256": "c3e956d4e5bda6991020b9149449f0c18c2a5fee4816faedf894645f9ef041b4"
+        },
+        "code/src/experiments/saor/trace_replay.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10686,
+          "archive_sha256": "4ca596ce35bd131f8dc08843b2992ddde7e185f26ef9b3285e3e521bfd6be620"
+        },
+        "code/src/experiments/shared_vllm/config.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 62474,
+          "archive_sha256": "7f8f11ca7fbce40e628d8cb7466ad58082690d8b38ea4dcd4dd82bf276f6feeb"
+        },
+        "code/src/experiments/shared_vllm/runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 13199,
+          "archive_sha256": "5600216f1297c239c725d1090be9fc36385e6397d6269c3291be30c61926f00f"
+        },
+        "code/src/scheduling/runtime/saor_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10353,
+          "archive_sha256": "54e5e482c4f8de52b6e6b107507c94980e00bdafe48e201b70e30a18aa472527"
+        },
+        "code/src/scheduling/runtime/shared_credit_ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6300,
+          "archive_sha256": "e80691fee663a577398c87a472193008996cf0e81f5d1429d846596f3b04904e"
+        },
+        "code/src/scheduling/submission_control/ordered_release.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9933,
+          "archive_sha256": "f31c12a2e3902068b878b44edc29cbb2d1d2c67ca93c90ca39c2ca3de2a1a4fa"
+        },
+        "code/src/scheduling/submission_control/saor.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29467,
+          "archive_sha256": "00e33699a55787b40290de2f2242720a7ccb9109f9e45c84ebe05b6ca976d482"
+        },
+        "code/tests/scheduling/test_scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 41938,
+          "archive_sha256": "db71f0b2ddf1fd3196b955fffc1e704233c126c2974edd8c549f59bd61183b04"
         }
       }
     },
@@ -4947,7 +5163,16 @@
         "code/src/semantic_methods/lotus/image_source.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz",
         "code/src/semantic_methods/lotus/maps.py": "historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz",
         "code/src/observability/profiling/cli.py": "historical_sources/46795c0f/code/src/observability/profiling/cli.py.gz",
-        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz"
+        "code/tests/scheduling/test_incremental_session.py": "historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz",
+        "code/src/experiments/image_multijob/project.py": "historical_sources/b08936d2/code/src/experiments/image_multijob/project.py.gz",
+        "code/src/experiments/saor/trace_replay.py": "historical_sources/b08936d2/code/src/experiments/saor/trace_replay.py.gz",
+        "code/src/experiments/shared_vllm/config.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/config.py.gz",
+        "code/src/experiments/shared_vllm/runtime.py": "historical_sources/b08936d2/code/src/experiments/shared_vllm/runtime.py.gz",
+        "code/src/scheduling/runtime/saor_capacity.py": "historical_sources/b08936d2/code/src/scheduling/runtime/saor_capacity.py.gz",
+        "code/src/scheduling/runtime/shared_credit_ray.py": "historical_sources/b08936d2/code/src/scheduling/runtime/shared_credit_ray.py.gz",
+        "code/src/scheduling/submission_control/ordered_release.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/ordered_release.py.gz",
+        "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
+        "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5050,6 +5275,51 @@
           "encoding": "gzip",
           "decoded_bytes": 26626,
           "archive_sha256": "2cf9bc564fdce07a41f004d97a4a601d7897139377934f00e1f94a09e7ea7e11"
+        },
+        "code/src/experiments/image_multijob/project.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 34736,
+          "archive_sha256": "c3e956d4e5bda6991020b9149449f0c18c2a5fee4816faedf894645f9ef041b4"
+        },
+        "code/src/experiments/saor/trace_replay.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10686,
+          "archive_sha256": "4ca596ce35bd131f8dc08843b2992ddde7e185f26ef9b3285e3e521bfd6be620"
+        },
+        "code/src/experiments/shared_vllm/config.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 62474,
+          "archive_sha256": "7f8f11ca7fbce40e628d8cb7466ad58082690d8b38ea4dcd4dd82bf276f6feeb"
+        },
+        "code/src/experiments/shared_vllm/runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 13199,
+          "archive_sha256": "5600216f1297c239c725d1090be9fc36385e6397d6269c3291be30c61926f00f"
+        },
+        "code/src/scheduling/runtime/saor_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10353,
+          "archive_sha256": "54e5e482c4f8de52b6e6b107507c94980e00bdafe48e201b70e30a18aa472527"
+        },
+        "code/src/scheduling/runtime/shared_credit_ray.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6300,
+          "archive_sha256": "e80691fee663a577398c87a472193008996cf0e81f5d1429d846596f3b04904e"
+        },
+        "code/src/scheduling/submission_control/ordered_release.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9933,
+          "archive_sha256": "f31c12a2e3902068b878b44edc29cbb2d1d2c67ca93c90ca39c2ca3de2a1a4fa"
+        },
+        "code/src/scheduling/submission_control/saor.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29467,
+          "archive_sha256": "00e33699a55787b40290de2f2242720a7ccb9109f9e45c84ebe05b6ca976d482"
+        },
+        "code/tests/scheduling/test_scheduler.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 41938,
+          "archive_sha256": "db71f0b2ddf1fd3196b955fffc1e704233c126c2974edd8c549f59bd61183b04"
         }
       }
     }

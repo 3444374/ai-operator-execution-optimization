@@ -1,5 +1,17 @@
 # 原生基线与具名 Core 历史复现
 
+## SAOR 与多任务研究迁移的原源码
+
+SAOR／共享额度迁入[独立研究包](../../../code/src/research/multitask/README.md)后，
+四份旧策略／适配、四份研究消费者和一份原同步调度测试不再从当前路径取历史字节。
+九份准确 `b08936d2808999a3d9da7ca47e8a940207d99184` 原件按各自路径以 gzip 保存在
+`historical_sources/b08936d2/`，五份投影仅增加 45 条来源／格式映射；
+原 3,010 条文件 SHA、投影身份、来源版本和已有映射均未改。
+
+迁移前后逐项核对仍为原十处不匹配，无新增不匹配；不宣称五份完整树已恢复成功。
+具体检查与首次发现的路径缺项由[整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)
+保留。归档源码只用于隔离历史恢复，当前导入不加载它们。
+
 <a id="retired-profiler-parser"></a>
 ## 旧 profiler 参数解析的准确来源
 
