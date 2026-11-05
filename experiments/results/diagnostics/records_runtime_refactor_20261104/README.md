@@ -2875,3 +2875,63 @@ static／全局及端点 admission 对象、caller replay、actor state 复用�
 本批没有新的 Ray、模型、GPU、数据库或服务器运行，也不提供查询加速、质量等价或自动物理容量结论。
 R 缺省 2、共享 BF16／显存比例 0.8、完整物理容量授予和当前模型资格仍待处理；
 较早受限的 socket／进程用例及并行基底既有 ACK AST 失败保持原状态，PR 未合并 main。
+
+
+<a id="native-defaults-capacity-combination"></a>
+## 原生引擎省略值与请求额度接线
+
+本组合基于 `a895fe36945fcc4e4ee931bc9e8462aeec2ac4e4`，准确代码为
+`5175cab0f5f6594ac5b643b24542d7c401268b4e`，树 `a56409e96081ac2b03109a5deb2e2dad8eb66b8e`。
+五份组件分别保存和独立复核，未覆盖上一批清理或并行基线的源码。
+此前基于 4f40 的 c7bca970 组合通过 105 项；本次保留远端三项进程观测／Kalypso 导入改动，生产文件无重叠。
+
+| 改动及组件提交 | 结果 | 所选 CPU |
+|---|---|---:|
+| 引擎 `99d204ae` | dtype／显存比例省略或 null 时不传，显式值保留；两条构造共用可选参数提取，ready 只读实际原生配置 | 54 |
+| 完整 JSON `33e1d88e` | R=None 时，完整九字段 IPC JSON 与 typed 对象使用同一有限额度 | 26 |
+| 普通入口 `58bd495a` | Movie／Session 未组批 async、已支持 rolling 省略 R 归一为 None；显式值保持，无来源早报错 | 36 |
+| typed 槽位 `b739716d` | result／command slots 未指定时跟随声明的请求数，显式值和所有字节额度保留 | 17 |
+| JSON null `e1b5ae16` | 完整对象只构造一次；部分槽位 null 不覆盖已有预算，其他字段原校验保留 | 31 |
+
+[组合检查摘要](raw/native_defaults_capacity_checks.json)与[脱敏原始记录](raw/native_defaults_capacity_raw.json.gz)
+保存准确代码上 108 项方法全部通过、无失败／错误／跳过，1,025 个文件摘要匹配且运行期间保持。
+组件和组合选择有重叠，不能相加。完整历史恢复是其中一个既有方法，实际核对五份共 3,010 文件，
+原 expected 摘要、投影身份和 manifest 保持；没有执行历史模型环境。
+
+三个新增引擎行为用例在改前不满足目标省略语义，也未提供新增观察字段；这不是旧完整套件回归失败。
+各组件的原反例、初次读取错误字段的夹具及修正后的记录按版本保留。
+组合清单初次误用不存在的 selection 文件，两次辅助在测试加载前停止；更正为读取实际 final 结果中的方法选择后才执行原组合 105 项。
+最新整合复用这 105 项并加入三项纯进程观测夹具，合计 108 项；没有重复累计。
+首次启动误用缺 Ray 的系统 Python，在加载测试前停止；项目原 venv 的三项构造探针也单列保留。
+最终 108 项复用原非模型环境，版本与原组合一致；这些启动记录和探针不能替代最终完整选择。
+没有启动真实 Ray、模型、GPU、数据库或服务器，没有重试此前受限的 socket／进程检查。
+
+### 省略与显式值的职责
+
+五项可选 vLLM 参数现在统一省略未指定值，保留显式配置。现有生成语义、seed、单卡支持及实际提示＋输出长度检查不改。
+`constructor_parameters` 记录传入的可选参数，可能包含显式 dtype／显存比例；不能再用整份字典为空推断三项容量都省略。
+`native_capacity.dtype`／`gpu_memory_utilization` 只读实际 model/cache config，未知为 None，不从请求参数补旧值；
+它们不表示空闲 GPU 内存、硬件授予或稳定性能平台。真实 vLLM 解析后的值仍须在对应源码上实机读取。
+
+普通 async 主入口不再因省略 R 自动得到 2；它使用已有完整 Core 预算、完整 IPC 声明或 service payload 字节来源。
+原先无有限来源却省略 R 的普通 async 配置现在会在 owner／Ray／模型启动前报 request capacity is unresolved。
+这是按用户目标做出的默认行为变化，未改成另一固定数、输入总数、native seq 或无限值。
+完整 Core 预算保留原优先关系；无完整 Core 预算的完整 IPC 场景保留显式 R 对 owner 的原作用。
+服务 rolling 仍需实际 delivery 声明，缺失时拒绝，不因本次修改扩大支持。
+
+### 仍然存在的额度与待办
+
+SDK 的 RecordsResources 全局默认仍为 2，静态、非 rolling prepared 和低层 chain／fused 的既有支持未改。
+单独构造 AsyncEngineLimits 的 max_inflight 仍为 8；结果／命令槽可跟随调用方给出的更大请求数，
+但默认 result_bytes=16MiB、item_result_bytes=2MiB 仍只容八份完整结果预留。槽位修正没有放大这些额度，不能称实际并发已放开。
+显式字节／槽数、未消费结果和 unknown／ACK 责任继续独立生效；目前声明额度与压力采样都不是自动物理 RAM 授予。
+全查询关系、Python／Ray 副本与 RSS 尚未完整记入服务池，物理容量仍待后续实现，不能以扩大某个数字冒充完成。
+
+当前核心 Python 为 57,097 行、src＋scripts 为 112,934 行，含独立研究、排除测试／文档／历史副本；
+相较本批基底分别增 23／29 行，用于默认行为及配置一致性修正，不计作瘦身。
+相较 main 核心多 3,006 行、较宽口径少 27,401 行；相较 3fd 分别少 4,531／36,711 行。
+超过百行的核心函数仍为 44 个，超过千行仍有 adaptive.py 1,157 行；后续按真实职责处理，未机械拆分。
+
+当前版本没有新的真实模型／质量／性能资格；旧 a1b5 Q1 结果及一条 Filter 判断差异仍属于其原源码。
+并行基底的既有 ACK AST 断言失败、缺少 SemBench checkout 的部分用例及受限系统检查没有由这些 CPU 结果改报通过。
+PR 仍为开发草稿，未合并 main。

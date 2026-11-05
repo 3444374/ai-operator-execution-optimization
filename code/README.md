@@ -110,7 +110,8 @@ owner 保留服务交接和真实资源清理确认，没有新增状态副本�
 异步模型 actor 的请求／回执与 IPC 实现在
 [records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC
 终态许可仍由原 owner 管理。Session 的批占用投影集中到既有 `session_policy.py`，预留与回退仍在 Session。
-完整显式 `AsyncEngineLimits` 现在可为 `R=None` 提供有限请求数；默认 R=2 和物理容量问题仍待处理。
+完整 typed／JSON `AsyncEngineLimits` 可为 `R=None` 提供有限请求数；普通 Movie／Session 的未组批 async 及已支持 rolling 入口省略 R 时也走该解析，缺额度会在启动前拒绝。
+显式 R、静态／非 rolling prepared／低层链及 SDK 全局默认保留；[实际范围和组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)不表示自动物理容量。
 
 
 共享额度的租约、队列、容量与公共事件归于研究包的 `shared_credit.py`，策略选择、VTC 入队修正及完成记账集中到

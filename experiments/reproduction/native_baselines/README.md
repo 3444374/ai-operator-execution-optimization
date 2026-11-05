@@ -371,3 +371,11 @@ Q2b视觉非HTTP替换未完成。历史原始ID／SHA保持，优先复用已�
 现用 actor worker 轮转和记账继续维护，不从历史文件导入。
 [行为与完整恢复检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
 记录最终 29 项 CPU 和五份共 3,010 文件的完整恢复；这不是历史模型环境验证。
+
+
+## 当前引擎省略值与历史参数
+
+当前 dtype／显存比例的省略行为、普通 async 的 R 入口及 typed IPC 默认已在维护版调整；
+五份具名投影继续使用既有准确旧来源，没有把 None 写回旧文件或改写旧成绩。
+[组合 CPU 与完整恢复](../../results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
+核对五份共 3,010 文件及原身份；这不表示历史模型环境已重演。

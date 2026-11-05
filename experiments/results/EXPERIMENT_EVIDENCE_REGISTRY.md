@@ -1709,3 +1709,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录旧生产有效路径 27 项、修改后 28 项和最终 29 项全部通过；重叠结果不累计。
 现用 SDK 的 static／typed admission、actor 状态和任务值保持，旧字典及独占轮转状态退出维护。
 五份原投影共 3,010 文件实际恢复通过，原摘要和身份不变；生产 Python 再减 262 行，没有真实模型或性能结果。
+
+
+[原生引擎省略值与请求额度组合](diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
+记录引擎两字段省略、完整 JSON 额度、普通 async 省略 R、typed IPC 槽位及 null 覆盖一致性五项修正。
+组件检查按各自源码保存；统一组合 108 项全部通过，含五份共 3,010 文件的完整历史恢复，重叠选择不累计。
+辅助清单与两处早期夹具读取错误分别保留，不当作生产回归；未进行真实模型、质量或性能验证。

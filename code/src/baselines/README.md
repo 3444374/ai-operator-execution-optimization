@@ -87,3 +87,10 @@ PG 查询矩阵与其专用脚本／测试／配置已从现用树移除。PG �
 
 SAOR 调度算法与离线研究材料保留；依赖退役 HTTP 的历史启动胶水隔离恢复。
 公开结果／来源门槛见[历史复现](../../../experiments/reproduction/native_baselines/README.md)。
+
+
+原生本地文本对照共享中性 EngineSpec：dtype、显存比例及三项 vLLM 容量未指定时均保留省略，
+显式合法值仍原样传递；没有改作者图、LM 客户端批大小、提示或生成设置。
+ready 的精度／显存比例来自实际原生配置，缺测保持未知；CPU 构造替身不是实际 vLLM、质量或性能资格。
+[当前配置修正记录](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
+保留独立 source、所选测试和未完成范围，历史具名投影继续读取准确旧参数。

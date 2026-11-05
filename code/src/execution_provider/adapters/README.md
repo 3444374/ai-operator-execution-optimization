@@ -385,10 +385,13 @@ Low-level direct constructors and nonrolling whole batches retain the old R tran
 The ordinary async Filter/rolling factory now resolves default storage from existing
 IPC byte declarations and per-item envelopes via `resolve_records_runtime`. Soft C
 does not resize those allocations. Explicit complete budgets and typed IPC fields
-retain their values. With `R=None`, a complete explicit `AsyncEngineLimits` object can
-supply its finite `max_inflight`, so the same request grant need not be declared twice.
-Missing or dictionary-only limits still require a complete budget, service grant or R.
-The default R remains 2; this resolution does not detect physical capacity.
+retain their values. With `R=None`, a complete typed or JSON `AsyncEngineLimits` declaration
+supplies its finite request count. Complete JSON is parsed once into the same type;
+partial overrides inherit the owner defaults, including null result/command slots.
+Ordinary unbatched async Movie/Session and supported rolling entries now treat omitted R
+as None. Missing grants fail before startup; an explicit R retains its original priority.
+The SDK-wide default remains 2, as do unchanged static, nonrolling prepared and low-level
+paths. None of these declarations detects physical capacity.
 The [capacity ownership inventory and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
 separate that remaining work from the independent budgets already supported.
 Pure resource parsing and copied snapshot report fields live in
@@ -1193,9 +1196,11 @@ Movie 入口新增默认关闭的 preparation_mode，serial 与省略相同；in
 <a id="sync-native-context-ownership"></a>
 ### 同步参数所有权与完整提示检查
 
-当前同步 `VllmEngine` 和原生 baseline 的 `ReferenceVllmEngine` 仅向 vLLM 0.25.1 传显式指定的 max_model_len、max_num_seqs、
-max_num_batched_tokens；省略／null 时由实际模型和引擎解析。ready 同时记录 requested spec、实际上下文、
-实际构造参数和 native_capacity；后者是配置观测，空闲内存仍未知。BF16、显存比例 0.8 与单卡支持范围保持。
+同步 `VllmEngine`、原生 baseline 的 `ReferenceVllmEngine` 及异步引擎只传显式指定的五项可选参数：
+max_model_len、max_num_seqs、max_num_batched_tokens、dtype 和 gpu_memory_utilization；省略／null 时交给实际 vLLM。
+两条构造路径使用共享 EngineSpec 的可选参数提取，没有同步层的 BF16／0.8 补值。
+ready 记录请求参数、实际上下文及 native_capacity；精度与显存比例从实际 model/cache config 读取，缺测保留 None，
+不当作空闲内存或可用请求数。显式参数、生成语义及现有单卡支持范围保持。
 
 同步调用使用同一 LLM 的原生聊天渲染，核对每条完整提示 tokens 加 max_tokens 后再加入原生队列，
 不重新套模板、不截断原文。渲染或总长预检失败是明确未提交，调用数不增加；进入原生队列后异常仍为

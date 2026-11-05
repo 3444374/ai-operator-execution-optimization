@@ -196,3 +196,9 @@ t=2.776，不属于本次跨档错误。
 与现有实现使用同一对象；baseline 的原公开导出仍供比较和历史调用使用。
 [本次消费者迁移](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
 只调整导入归属，不增加观测、落盘步骤或执行策略。
+
+
+Native startup reports also expose dtype and GPU memory utilization from the constructed
+model/cache configuration through the existing `native_capacity` snapshot. Missing fields remain
+null. These values describe engine settings; they neither grant RAM nor report free GPU memory.
+Requested optional parameters stay separate in `constructor_parameters`.

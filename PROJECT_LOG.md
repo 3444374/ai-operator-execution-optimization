@@ -11447,3 +11447,14 @@ static、全局／端点 admission、replay 单次消费、跨调用 actor state
 正常 actor 主流程减少一层嵌套，ray.py 从 670 行降至 451 行，本批生产净减 262 行；
 两批 HTTP 清理共减 1,041 行，当前核心为 57,016 行，测试与图说明单列。
 旧学习图只标注历史用途、保留原 PNG；模型资格、R／物理容量和原未验证项不改报完成，未合并 main。
+
+
+## 2026-11-05 修正原生参数与普通 async 的额度省略
+
+共享 EngineSpec 的 dtype／显存比例未指定时不再补 BF16／0.8，同步与异步直接复用五项可选参数提取；
+ready 从实际 model/cache config 读取配置，未知不回填，也不表示物理可用量。
+普通 Movie／Session 的未组批 async 与已支持 rolling 入口省略 R 时复用已有有限额度；无额度在启动前报错。
+完整 JSON 和 typed IPC 使用同一路径，partial 槽位 null 视未覆盖；typed 默认槽数跟随声明请求数，显式值和字节保护保留。
+[源码、108 项组合 CPU 与历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
+记录各组件反例及修正过的辅助，不累计重叠测试。当前核心 57,097 行、src＋scripts 112,934 行，本批分别增 23／29 行，不计作代码缩减。
+SDK 全局默认 2、低层 16MiB／2MiB 完整结果预留、物理 RAM／全查询 RSS 及实际模型资格仍未解决，未合并 main。
