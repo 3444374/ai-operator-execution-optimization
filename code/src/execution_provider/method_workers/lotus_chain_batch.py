@@ -14,8 +14,9 @@ import socket
 import time
 import uuid
 
-from src.semantic_methods.lotus.record_chain import (
-    LotusRecordChain, RecordOccurrence, _ordered_columns, _parent_seeds,
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import (
+    RecordOccurrence, _ordered_columns, _parent_seeds,
 )
 from src.serving.backends.vllm_protocol import EngineSpec, IDENTITY_FIELDS
 from src.semantic_methods.lotus.record_results import _json, _source_binding

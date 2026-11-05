@@ -41,7 +41,8 @@ from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
 from src.scheduling.submission_control.admission import StaticAdmissionController
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, ChainRun, stage_identity
+from src.semantic_methods.lotus.record_chain import LotusRecordChain, ChainRun
+from src.semantic_methods.lotus.record_types import RecordOccurrence, stage_identity
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 

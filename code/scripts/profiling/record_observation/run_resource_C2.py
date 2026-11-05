@@ -86,12 +86,11 @@ def movie_session(config,ledger,*,entry=None,checker=None):
 
 
 def record_chain(config,ledger):
-    from dataclasses import asdict
     import csv
     import itertools
     from src.experiments.record_chain_validation import make_chain,replay_native_answers
     from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
-    from src.semantic_methods.lotus.record_chain import RecordOccurrence
+    from src.semantic_methods.lotus.record_types import RecordOccurrence
     from src.semantic_methods.lotus.records import RecordsResources
     from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec
     from transformers import AutoTokenizer

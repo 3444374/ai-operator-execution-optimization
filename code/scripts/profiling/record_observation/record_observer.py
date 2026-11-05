@@ -325,7 +325,9 @@ def observe_method(cls, name, operation, members):
 def install_cpu_hooks():
     if not ENABLED or handoff_profile() or 'cpu' in _installed:return
     _installed.add('cpu')
-    from src.semantic_methods.lotus.record_chain import LotusRecordMethod,ChainRun,stage_identity
+    from src.semantic_methods.lotus.record_method import LotusRecordMethod
+    from src.semantic_methods.lotus.record_chain import ChainRun
+    from src.semantic_methods.lotus.record_types import stage_identity
     from src.semantic_methods.lotus import engine
     def chain_members(self,records,args,kwargs):
         if not isinstance(records,(list,tuple)):return None

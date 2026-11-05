@@ -13,6 +13,7 @@ SemLoom 执行适配直接依赖本层，
   [record_chain.py](record_chain.py)维护有限链推进、失败快照及逐记录交接。
 - [record_relation.py](record_relation.py)维护 Extract 的完整关系赋值与最终 DataFrame 组装。
   旧 `record_chain` 类型与函数导入直接指向同一实现，JSON 标签和字段保持。
+  内部 worker、执行适配、对照图和脚本已按所属模块导入这些合同／方法，旧路径留作公共兼容入口。
 - [record_results.py](record_results.py)拥有调用／父关联、coverage、失败和 unknown 合同；不拥有模型或调度。
 - `execution_provider/adapters/lotus_records_core.py` 与有限链适配属于 SemLoom，负责供给、推进和背压。
 - `baselines/text/frameworks/` 中原生 Ray／Daft 图负责自己的 worker、批次与调度；不注入 Core credit。

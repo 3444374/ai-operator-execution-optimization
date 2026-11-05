@@ -21,16 +21,17 @@ import threading
 import time
 import uuid
 
-from src.semantic_methods.lotus.record_chain import (
-    LotusRecordChain, RecordOccurrence, stage_identity, _ordered_columns,
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import (
+    RecordOccurrence, _ordered_columns,
 )
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.vllm_protocol import EngineSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec
 
 
 from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch as FusedChainBatch
 from src.semantic_methods.lotus.record_results import (
-    ChainBatchResults, _json, _metadata, _source_binding, record_row,
+    ChainBatchResults, _json, _source_binding, record_row,
 )
 
 

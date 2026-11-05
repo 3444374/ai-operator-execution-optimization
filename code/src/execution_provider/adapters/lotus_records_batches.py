@@ -9,7 +9,8 @@ from dataclasses import asdict
 import threading
 import weakref
 
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, StageSpec
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import RecordOccurrence, StageSpec
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, identity
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from .lotus_record_chain_core import SemLoomRecordChainCore

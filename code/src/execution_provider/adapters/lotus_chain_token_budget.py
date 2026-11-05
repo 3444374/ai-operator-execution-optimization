@@ -48,7 +48,7 @@ class OutputTokenEstimate:
 
 def audit_chain_call(expected, result=None):
     """Keep the existing chain namespace and reuse records' usage validation."""
-    from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
+    from src.semantic_methods.lotus.record_types import RecordOccurrence, stage_identity
     from src.semantic_methods.lotus.records import CallLedger, identity
     from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
     record = RecordOccurrence(expected["row_id"], expected["source_position"], 0, {})

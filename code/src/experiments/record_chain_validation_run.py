@@ -13,7 +13,6 @@ import itertools
 import json
 import os
 import subprocess
-import sys
 import time
 import traceback
 
@@ -21,7 +20,7 @@ from src.infrastructure.private_artifacts import (
     file_identity, require_outside_git, write_private_json,
 )
 from src.infrastructure.redact import redact_text
-from src.semantic_methods.lotus.record_chain import RecordOccurrence
+from src.semantic_methods.lotus.record_types import RecordOccurrence
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 from src.experiments.record_chain_validation import (

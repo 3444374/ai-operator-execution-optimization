@@ -168,7 +168,7 @@ def run_query(config, relation, method, generations, resources, engines, args,
     import lotus
     from src.baselines.text.cascade_records_source import MaterializedCascadeSource
     from src.semantic_methods.lotus.cascade import run_cascade
-    from src.semantic_methods.lotus.record_chain import records_to_frame
+    from src.semantic_methods.lotus.record_relation import records_to_frame
 
     report = dict(status="failed", query_id=config["query_id"], calls=None)
     backend = primary = None

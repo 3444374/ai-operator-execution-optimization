@@ -11,7 +11,9 @@ from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecor
 from src.execution_provider.adapters.lotus_chain_token_budget import ChainTokenBudget, OutputTokenEstimate, fingerprint
 from src.semantic_methods.driver import SuccessorFirst
 from src.semantic_methods.budget import row_reservation
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec, MapMethod, FilterMethod
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import StageSpec, MapMethod
+from src.semantic_methods.lotus.records import FilterMethod
 from src.serving.backends.vllm_protocol import _prepared
 
 

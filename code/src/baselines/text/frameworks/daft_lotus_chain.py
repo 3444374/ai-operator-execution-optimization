@@ -17,7 +17,8 @@ import threading
 import time
 import uuid
 
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import RecordOccurrence, _ordered_columns
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec
 from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S

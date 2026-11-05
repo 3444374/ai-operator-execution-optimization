@@ -15,7 +15,7 @@ import sys
 from src.scheduling.core.session import UINT64_MAX
 from src.scheduling.core.session_contract import BatchKey, BatchMember, SessionSpec, TaskKey
 from src.semantic_methods.driver import RowIdentity
-from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
+from src.semantic_methods.lotus.record_types import RecordOccurrence, stage_identity
 from src.semantic_methods.lotus.records import CallLedger, identity
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 

@@ -12,7 +12,7 @@ import json
 import time
 
 from src.scheduling.core.session_contract import SessionSpec, TaskKey, TaskProfile
-from src.semantic_methods.lotus.record_chain import RecordOccurrence
+from src.semantic_methods.lotus.record_types import RecordOccurrence
 
 
 def _check(deadline, cancelled=None):
