@@ -473,3 +473,16 @@ Kalypso registry fixture 提供现行公开启动字段，生产校验不改。a
 PG／旧HTTP专用用例按[准确来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)归档。
 原生LOTUS本地IPC的新增CPU用例在`tests.baselines.text.test_lotus_native_local`，完整官方Q123和实机待验。
 旧PG画像大文件中的当前Ray scheduler用例已独立迁出；不能因历史文件名就删除现用算法覆盖。
+
+
+### 编排最长时限与实际剩余时间
+
+[本批原件](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
+保留 600／480 秒误拒、31 个相关方法的结果及两项进程查询权限错误。只复跑受影响的两项，
+没有改变生产清理逻辑或跳过原检查。运行 `test_record_campaign_guard` 与
+`test_ray_future_qualification` 可复算；两项清理用例需要允许查询其临时子进程，模型／真实 Ray 均未启动。
+
+
+整轮监控的[直接接线检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+实际调用 controller，并经预先取得的监督函数运行 CPU 子进程；覆盖不传回调、回调和回调抛错。
+原 59 项与最终 58 项分别保存；退出的一项只检验已删除的全局函数替换机制，不计为通过。

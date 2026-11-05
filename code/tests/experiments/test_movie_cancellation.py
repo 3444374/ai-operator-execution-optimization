@@ -592,7 +592,8 @@ class GuardQualificationTests(unittest.TestCase):
             helper.cpu_fake_ray_ready(guard)
             if selection!='ordinary':config['workload']['qualification']=subject.QUALIFICATION
             records=[helper.record('q:0',status='unknown',submission_confirmed=False),helper.record('q:1'),helper.record('q:2')]
-            def controller_fixture(path):
+            def controller_fixture(path, *, monitor):
+                monitor(())
                 (path/'WORKER-RESULT.json').write_text(json.dumps(dict(calls=records)))
                 (path/'RESULT.json').write_text(json.dumps(dict(status='completed',physical_cleanup_confirmed=True,lease_released=True)))
             verifier=(lambda *a: {'schema':'CPU-verifier-fixture','status':'passed'}) if selection=='verified' else (lambda *a: (_ for _ in ()).throw(ValueError('invalid native proof')))

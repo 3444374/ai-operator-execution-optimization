@@ -119,7 +119,7 @@
 [代码状态](../../code/INFRA_STATUS.md#http-call-configuration-cpu)。
 运行 `http-config-20261103-related-3` 共 221 项，174 通过、47 跳过；其中
 [HTTP 配置检查](../../code/tests/execution_provider/test_http_configuration.py)与
-[期限检查](../../code/tests/semantic_methods/test_lotus_http_deadlines.py)合计 19 项，使用内存 HTTP、SDK 替身与真实 Core，
+[历史期限检查](https://github.com/3444374/ai-operator-execution-optimization/blob/7bf1d92baf2611925c608cfe76b4a766855bd77e/code/tests/semantic_methods/test_lotus_http_deadlines.py)合计 19 项，使用内存 HTTP、SDK 替身与真实 Core，
 旧 HTTP／PG Python 协议使用回环 HTTP／临时 Unix socket，未启动数据库或写入外部服务。
 覆盖 120／180 秒声明、较短调用方期限、1 MiB 前后结果、显式小额度、单项／总量、结果租约、
 格式错误及未知结果占用；没有模型、GPU 或真实 Ray 请求，也不支持性能结论。
@@ -1607,3 +1607,12 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [主报告与脱敏回执](diagnostics/runtime_entry_cleanup_20261105/README.md)记录具体方法集合、
 归档／历史绑定和未运行项；未运行模型、Ray、GPU或查询性能实验。
+
+[编排最长时间误用修正](diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
+记录 600／480 秒反例、原权限错误及必要复跑；实际总时限、进程清理和 unknown 责任保持，
+仅提供 CPU 编排行为证据，不是模型实验。
+
+
+[整轮监控直接接线](diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+补齐 d05 独审发现的私有监督函数别名问题，保存真实 CPU 子进程与监控／停止用例；
+移除全局函数替换及其专属恢复测试，源码恢复点和当前选择分别记录。

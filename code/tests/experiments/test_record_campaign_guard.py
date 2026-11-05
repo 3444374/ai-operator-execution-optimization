@@ -310,20 +310,18 @@ class CampaignSupervisionTests(CampaignFixture):
                 foreign.kill()
             foreign.wait(timeout=2)
         self.addCleanup(reap_foreign)
-        original = supervisor.supervise
         called = []
 
         def monitor(identities):
             called.append(tuple(identities))
             self.clock.now = 250.
+            guard.check()
 
         try:
             with self.assertRaises(guard_module.GuardStop) as stopped:
-                with guard.supervision():
-                    supervisor.supervise([sys.executable, '-c',
-                        'import threading; threading.Event().wait()'], self.base / 'supervision',
-                        timeout_s=4, grace_s=1, monitor=monitor)
-            self.assertIs(supervisor.supervise, original)
+                supervisor.supervise([sys.executable, '-c',
+                    'import threading; threading.Event().wait()'], self.base / 'supervision',
+                    timeout_s=4, grace_s=1, monitor=monitor)
             self.assertTrue(called)
             report = stopped.exception.report
             self.assertTrue(report['observed_owned_exit_confirmed'])
@@ -336,22 +334,12 @@ class CampaignSupervisionTests(CampaignFixture):
                 foreign.kill()
             foreign.wait(timeout=2)
 
-    def test_supervision_restores_the_original_function_after_an_unrelated_body_exception(self):
-        guard = self.create()
-        original = supervisor.supervise
-        with self.assertRaisesRegex(ValueError, 'CPU-only caller error'):
-            with guard.supervision():
-                self.assertIsNot(supervisor.supervise, original)
-                raise ValueError('CPU-only caller error')
-        self.assertIs(supervisor.supervise, original)
-
-
 class CampaignEntryTests(CampaignFixture):
     """Guard orchestration with explicit CPU replacements for model boundaries."""
 
-    def entry(self, label):
+    def entry(self, label, **campaign_options):
         self.root = self.base / label
-        manifest = self.manifest()
+        manifest = self.manifest(**campaign_options)
         cell_root = self.artifacts / label
         cell_root.mkdir()
         manifest['cells'][0]['prepared_config'] = str(cell_root / 'PREPARED-CONFIG.json')
@@ -374,21 +362,45 @@ class CampaignEntryTests(CampaignFixture):
             evidence_scope='explicit CPU fake for guard orchestration, not real Ray qualification')
         (guard.root / 'REAL-RAY-READY.json').write_text(json.dumps(marker))
 
+    def test_cell_may_finish_with_less_time_than_its_maximum_timeout(self):
+        import workflow
+        import control_resource_C2 as controller
+        guard, cell_root, config = self.entry('cell-timeout-is-an-upper-limit', wall_seconds=600)
+        config['limits']['controller_timeout_s'] = 480
+        self.clock.now += 200
+        self.cpu_fake_ray_ready(guard)
+
+        def cpu_controller(root, *, monitor):
+            monitor(())
+            self.assertGreater(guard.work_deadline-guard.clock(), 0)
+            self.assertLess(guard.work_deadline-guard.clock(), 480)
+            self.query_report(root, [self.record('q:'+str(i)) for i in range(3)])
+            (root / 'RESULT.json').write_text(json.dumps(dict(status='completed',
+                physical_cleanup_confirmed=True, lease_released=True)))
+
+        with patch.object(workflow, 'check', return_value=config), \
+                patch.object(controller, 'profiled', return_value=False), \
+                patch.object(controller, 'worker_environment', return_value={}), \
+                patch.object(controller, 'main', side_effect=cpu_controller) as execute:
+            guard_module.run_cell(guard, 'first')
+        execute.assert_called_once()
+        self.assertEqual(execute.call_args.args, (cell_root,))
+        self.assertEqual(json.loads((guard.root / 'first-GUARD-END.json').read_text())['status'], 'passed')
+
     def test_run_cell_cpu_boundary_claims_once_restores_environment_and_publishes_complete_counts(self):
         import workflow
         import control_resource_C2 as controller
         guard, cell_root, config = self.entry('normal-entry')
-        original = supervisor.supervise
         calls = []
 
-        def cpu_controller(root):
+        def cpu_controller(root, *, monitor):
             # This executes a real CPU subprocess, not the formal model controller.
             self.assertEqual(root, cell_root)
             calls.append(root)
             os.environ['CPU_CAMPAIGN_BOUNDARY'] = 'changed inside CPU fixture'
             os.environ.pop('CPU_CAMPAIGN_KEEP', None)
             result = supervisor.supervise([sys.executable, '-c', 'print("CPU boundary only")'],
-                root / 'cpu-supervision', timeout_s=3, grace_s=.5)
+                root / 'cpu-supervision', timeout_s=3, grace_s=.5, monitor=monitor)
             self.assertTrue(result['observed_owned_exit_confirmed'])
             records = [self.record('q:'+str(i)) for i in range(3)]
             (root / 'WORKER-RESULT.json').write_text(json.dumps(dict(calls=records)))
@@ -408,7 +420,6 @@ class CampaignEntryTests(CampaignFixture):
                 self.cpu_fake_ray_ready(guard)
                 guard_module.run_cell(guard, 'first')
             self.assertEqual(dict(os.environ), before)
-        self.assertIs(supervisor.supervise, original)
         self.assertEqual(calls, [cell_root])
         end = json.loads((guard.root / 'first-GUARD-END.json').read_text())
         self.assertEqual(end['status'], 'passed')
@@ -429,7 +440,8 @@ class CampaignEntryTests(CampaignFixture):
                 guard, cell_root, config = self.entry('bad-'+name.split('.')[0])
                 self.cpu_fake_ray_ready(guard)
 
-                def malformed_controller(root):
+                def malformed_controller(root, *, monitor):
+                    monitor(())
                     os.environ['CPU_CAMPAIGN_BOUNDARY'] = 'must be restored after error'
                     (root / name).write_text('{not valid JSON')
 

@@ -287,7 +287,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | LOTUS 原 RM／FAISS 建库／检索与显式单卡入口 | [CLIP 接纳与资格](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)；默认精度失败、HSE 环境缺项与多卡未验证分列 |
 | 可选 vLLM 部署资源解析与身份核验 | [服务及原查询单卡复验](../experiments/results/diagnostics/main_service_auto_20261015/README.md)；不借此认证 CLIP、多卡或其他平台 |
 | 公共统计与离线结果工具 | [统计定义](src/observability/README.md#repeat-mean-confidence)、[离线输入与 CPU 范围](scripts/analysis/OFFLINE_RESULTS.md) |
-| PG 同步／增量 Map、受限 Filter→Map 与 query-job | [extension 支持形状](postgres/semloom_pg/README.md#supported-query-shapes)、[增量执行](README.md#当前-postgresql-文本-map-的执行流程)及对应报告；更宽 SQL 与真实匹配 Filter 校准另验 |
+| 旧 PG 同步／增量 Map、受限 Filter→Map 与 query-job | 集成分支已暂停该接线；[准确来源和恢复说明](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)保留原形态及报告，不表示当前入口可直接执行 |
 
 接口说明只解释相应路径，模型结果仍按报告固定源码、输入、质量和生命周期使用。
 未列为 main 接纳的集成能力从[固定 9c59dc9b 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)回查。
@@ -879,3 +879,15 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 同批 `shared_credit.py` 已合并三处相同的活动租约统计；端点／Job 筛选、工作量和 SAOR 逐轮授予保持，
 没有新增缓存、状态或检查。两份生产源码已审，组合检查与可比代码量见
 [组合记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)。
+
+
+### 测试与实验的时间安排
+
+`campaign_guard` 不再因剩余工作时间小于单项最大时限而拒绝启动，实际整轮监控与清理保持。
+[反例与 CPU 范围](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
+分别记录初轮权限错误和复跑；其他实验入口另行核查，不影响运行中的 GPU 任务。
+
+
+整轮监控现通过 controller／CPU／collect 的实际监督调用显式传递，不再改写模块全局函数，
+也不保留该旧机制的防嵌套检查。[增量记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+说明独审发现、缓存函数别名、已观察进程登记及原清理；真实服务器与模型仍待单独验证。
