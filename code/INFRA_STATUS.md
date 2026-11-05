@@ -947,3 +947,10 @@ Session 的无状态占用投影归入既有策略模块，整数身份上限共
 [准确源码与组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
 记录 140 项全部通过，unknown、结果租约和既有异常收尾保持。本批没有改变 R、反馈试探或物理容量，
 未运行实际 Ray、模型或服务器，其他大文件仍需继续整理。
+
+
+Session 派发与 flow 生命周期分文件，单请求游标前移收敛到实际接收后；record-local 传输类迁到既有 backend 文件。
+无调用的 581 行 profiler 解析器退出维护源码，准确源继续可恢复；近期测试扩展漏补的五条历史来源已修正。
+[本批证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
+记录 Session 144 项与最新试探组合上的链 65 项通过；原内存反馈超时原因仍未确定，完整历史恢复仍有十处来源差异。
+本批生产 Python 净减 570 行，未运行模型或服务器；多任务／SAOR 独立整理另行推进。
