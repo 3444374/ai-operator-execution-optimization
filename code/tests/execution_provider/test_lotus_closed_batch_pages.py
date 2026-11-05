@@ -85,6 +85,25 @@ class ClosedBatchPagesTests(unittest.TestCase):
                 self.assertEqual(repeated['unconsumed_core_results'], audit['unconsumed_core_results'],
                                  'a close retry must preserve receipts already acknowledged for delivery')
 
+    def test_close_audit_receipts_can_be_acknowledged_without_polling_again(self):
+        for stopped in (False, True):
+            for unknown in (False, True):
+                with self.subTest(producer_stopped=stopped, unknown=unknown):
+                    calls = self.calls()[:2]
+                    value = self.close_actor(calls, producer_stopped=stopped, unknown=unknown)
+                    audit = deepcopy(value.last_close_report)
+                    receipts = audit['unconsumed_core_results']
+                    for call, item in zip(calls, receipts, strict=True):
+                        audit_chain_call(call['row'], item['result'])
+                    packet = _encode(dict(batch_key=[0, 0], acknowledgements=[
+                        item['request_key'] for item in receipts]), value.limits.input_bytes)
+                    response = json.loads(value.poll_prepared_batch((0, 0), packet))
+                    self.assertEqual(response['results'], [])
+                    self.assertEqual(value.last_close_report, audit)
+                    if unknown and not stopped:
+                        self.assertEqual(len(value._held), 2)
+                        self.assertTrue(all(not call.confirmed for call in value._held.values()))
+
     def run_transport(self, missing=False, drop_first_ack=False):
         value = [None]
         ack_attempts = {}

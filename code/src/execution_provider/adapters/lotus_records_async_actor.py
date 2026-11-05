@@ -347,13 +347,17 @@ class AsyncRecordsActorOwner(_ActorOwner):
         return self._rpc_cleanup_status(
             self.wait_ready(self.model_actor.drain_query.remote(deadline), deadline), deadline=deadline)
 
-    def close(self):
+    def close(self, *, before_actor_release=None):
         deadline = (self.close_deadline if self.close_deadline is not None else
                     time.monotonic() + self._model_close_timeout_s() + 1.)
-        report = super().close()
-        report["unconsumed_call_results"] = (report.get("engine_close_report") or {}).get(
-            "unconsumed_call_results", [])
-        report["unconsumed_core_results"] = (report.get("engine_close_report") or {}).get(
-            "unconsumed_core_results", [])
-        report["producer_quiescence"] = (report.get("engine_close_report") or {}).get("producer_quiescence")
-        return self._rpc_cleanup_status(report, deadline=deadline)
+        try:
+            return super().close(before_actor_release=before_actor_release)
+        finally:
+            report = self.last_close_report
+            if report is not None:
+                report["unconsumed_call_results"] = (report.get("engine_close_report") or {}).get(
+                    "unconsumed_call_results", [])
+                report["unconsumed_core_results"] = (report.get("engine_close_report") or {}).get(
+                    "unconsumed_core_results", [])
+                report["producer_quiescence"] = (report.get("engine_close_report") or {}).get("producer_quiescence")
+                self._rpc_cleanup_status(report, deadline=deadline)

@@ -259,28 +259,38 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
         actor_report = actors.drain_query(actors.close_deadline)
         return dict(model_owner=actor_report, transport_closed=transport_closed,
                     producer_retirement=None, cleanup_errors=actor_report['cleanup_errors'])
+    transport_closed = transport is None
+    drain_before_release = transport is not None and getattr(transport, '_batch_poll_ack', False)
+
+    def drain_receipts(report):
+        nonlocal transport_closed
+        if transport is not None:
+            errors.extend(transport.recover_actor_receipts(
+                (report or {}).get("unconsumed_core_results", [])))
+        if core is not None:
+            core.reap(capacity.step_actions)
+        if transport is not None:
+            remaining = max(0., actors.close_deadline - time.monotonic())
+            transport_closed = transport.backend.close(timeout=remaining, wait_pending=True)
+
     try:
         if (transport is not None and getattr(transport, '_batch_poll_ack', False)
                 and core is not None and not any(record.compute for record in core.capacity.records.values())):
             # Known local results may still owe their final batched ACK. Drain
             # it before killing the producer; unfinished/unknown work still
             # needs the original producer-first cancellation/recovery below.
-            transport.backend.close(timeout=max(0., actors.close_deadline-time.monotonic()), wait_pending=True)
+            drain_before_release = False
+            transport_closed = transport.backend.close(
+                timeout=max(0., actors.close_deadline-time.monotonic()), wait_pending=True)
+            drain_before_release = not transport_closed
     finally:
-        actor_report = actors.close()
-    errors.extend(actor_report["cleanup_errors"])
-    if transport is not None:
-        errors.extend(transport.recover_actor_receipts(
-            actor_report.get("unconsumed_core_results", [])))
-    if core is not None:
-        core.reap(capacity.step_actions)
-    transport_closed = True
+        actor_report = (actors.close(before_actor_release=drain_receipts)
+                        if drain_before_release else actors.close())
+    errors[:0] = actor_report["cleanup_errors"]
+    if not drain_before_release:
+        drain_receipts(actor_report)
     retirement = None
     if transport is not None:
-        # A terminal data RPC may still be finishing its local delivery Future.
-        # Single requests and batches share the caller's remaining cleanup time.
-        remaining = max(0., actors.close_deadline - time.monotonic())
-        transport_closed = transport.backend.close(timeout=remaining, wait_pending=True)
         proof = actor_report.get("producer_quiescence")
         if transport_closed and proof is not None:
             try:

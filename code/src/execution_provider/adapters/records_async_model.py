@@ -700,9 +700,6 @@ class AsyncCoreModelActor:
                             schema="semloom.async_actor_quiescence.v1", confirmed=True,
                             ipc=proof, input_gate_closed=True, active_readers=0, requests=requests,
                             outcome_confirmation=False)
-                        self._held.clear()
-                        self._tickets.clear()
-                        self._early_cancels.clear()
                     elif self._readers:
                         report.update(status="unknown", engine_api_shutdown_confirmed=False)
                         report["cleanup_errors"].append("async_actor_readers_still_active")
@@ -710,7 +707,20 @@ class AsyncCoreModelActor:
             if handoff_errors:
                 report.update(status="unknown", engine_api_shutdown_confirmed=False)
                 report["cleanup_errors"].extend("abort_handoff: " + error for error in handoff_errors)
-            self.last_close_report = report
+            with self._condition:
+                # The returned close audit exposes these bounded receipts,
+                # just as a poll page does. Unknown stays unconfirmed.
+                for receipt in report['unconsumed_core_results']:
+                    key = tuple(receipt['request_key'])
+                    if key in self._held:
+                        self._held[key].poll_exposed = True
+                    if key in self._closed_pending:
+                        self._closed_pending[key] = True
+                if report.get('producer_quiescence') is not None:
+                    self._held.clear()
+                    self._tickets.clear()
+                    self._early_cancels.clear()
+                self.last_close_report = report
             return report
         finally:
             self._close_lock.release()

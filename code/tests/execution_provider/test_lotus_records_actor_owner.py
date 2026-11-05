@@ -153,7 +153,7 @@ class RecordsActorOwnerTests(unittest.TestCase):
         return actors.RecordsActorOwner(
             FilterMethod("openai/fixture", instruction="Keep {reviewText}"),
             EngineSpec("/tmp/fixture-model", "/tmp/model python", "/tmp/driver python"),
-            GenerationSpec(), RecordsResources(**resources),
+            GenerationSpec(), RecordsResources(**{"max_active_batches": 2, **resources}),
         )
 
     def test_import_and_model_actor_construction_need_no_vendor_or_method_runtime(self):

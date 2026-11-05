@@ -282,11 +282,133 @@ class BatchPollAckRpcTests(unittest.IsolatedAsyncioTestCase):
 
 
 class BatchPollAckCloseTests(unittest.TestCase):
+    def test_close_recovers_inflight_members_before_stopping_the_result_actor(self):
+        from tests.execution_provider.test_lotus_rpc_capacity import fixture
+        from unittest.mock import patch
+
+        for status in ('succeeded', 'unknown'):
+            with self.subTest(status=status):
+                owner, actor = fixture(2, workers=2)
+                engine, handle = actor.engine, owner.model_actor
+                owner.model_ready = actor._ready_report()
+                killed, saved = [], {}
+                def kill(value, **kwargs):
+                    killed.append(True)
+                    value.pool.shutdown(wait=False)
+                owner.ray = SimpleNamespace(wait=lambda refs, **kwargs:(refs, []),
+                    get=lambda ref:ref.future().result(2), kill=kill)
+                def abort(ticket):
+                    engine.finish(ticket, status)
+                    return True
+                engine.abort = abort
+                readable = threading.Event()
+                poll = actor.poll_prepared_batch
+                def delayed_poll(*args):
+                    return poll(*args) if readable.is_set() else _encode(
+                        dict(results=[], closed=False, more_results=False), actor.limits.item_result_bytes)
+                def sink(key, value):
+                    self.assertFalse(killed)
+                    saved[key] = value
+                    if len(saved) == 2:
+                        readable.set()
+                transport = LotusChainActorBackend(owner, 2, lambda:None,
+                    deadline_monotonic=time.monotonic()+5, on_result=sink, bulk=True)
+                transport.poll_interval_s = .001
+                tasks = []
+                for i in range(2):
+                    task = backend_task(i)
+                    row = {key:value for key,value in receipt(i).items() if key in IDENTITY_FIELDS}
+                    row['messages_json'] = '[{"role":"user","content":"complete original request"}]'
+                    tasks.append(replace(task, key=TaskKey(1,i), member=BatchMember(BatchKey(1,0),i,2),
+                        task=replace(task.task, profile_name='stage', max_result_bytes=4096,
+                            payload=json.dumps(dict(row=row, generation={}, parent_call_ids=[])).encode())))
+                core = SimpleNamespace(capacity=SimpleNamespace(records={
+                    task.key:SimpleNamespace(key=task.key, compute=True) for task in tasks}), reap=lambda maximum:None)
+                try:
+                    with patch.object(actor, 'poll_prepared_batch', delayed_poll):
+                        transport.try_submit_batch(tuple(tasks), 'endpoint')
+                        self.assertTrue(engine.all_submitted.wait(2))
+                        report = close_prepared_core(owner, transport, core, SimpleNamespace(step_actions=4),
+                                                     deadline=time.monotonic()+3)
+                    self.assertTrue(report['transport_closed'])
+                    self.assertFalse(report['cleanup_errors'])
+                    self.assertTrue(report['producer_retirement']['confirmed'])
+                    self.assertEqual({value['status'] for value in saved.values()}, {status})
+                    self.assertEqual(len(saved), 2)
+                    self.assertFalse(actor._closed_pending)
+                    self.assertEqual(transport.retained_refs(), 0)
+                    self.assertEqual(owner._rpc_pending, 0)
+                    self.assertEqual(engine.sequence, 2)
+                    self.assertEqual(killed, [True])
+                finally:
+                    readable.set()
+                    transport.backend.close(3, wait_pending=True)
+                    handle.pool.shutdown()
+
+    def actual_owner(self):
+        from src.semantic_methods.lotus.records import RecordsResources
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+        import sys
+
+        events, stopped = [], []
+        report = dict(status='closed', engine_api_shutdown_confirmed=True, cleanup_errors=[],
+                      unconsumed_core_results=[])
+        def model_close(timeout):
+            events.append('model_close')
+            return report
+        owner = AsyncRecordsActorOwner.for_prepared(
+            EngineSpec('CPU-close-order', sys.executable, sys.executable), GenerationSpec(),
+            RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=1))
+        owner.model_actor = SimpleNamespace(close=SimpleNamespace(remote=model_close))
+        owner.ray = SimpleNamespace(wait=lambda refs, **kwargs: (refs, []), get=lambda value:value,
+                                    kill=lambda *args, **kwargs:stopped.append(True))
+        return owner, events, stopped
+
+    def test_inflight_close_keeps_result_actor_until_transport_delivery_finishes(self):
+        owner, events, stopped = self.actual_owner()
+        def finish_transport(**kwargs):
+            self.assertFalse(stopped, 'the result actor must still serve the last ACK')
+            events.append('transport_delivery')
+            return True
+        transport = SimpleNamespace(_batch_poll_ack=True, backend=SimpleNamespace(close=finish_transport),
+                                    recover_actor_receipts=lambda values:[])
+        core = SimpleNamespace(capacity=SimpleNamespace(records={TaskKey(1, 0):SimpleNamespace(compute=True)}),
+                               reap=lambda maximum:None)
+        result = close_prepared_core(owner, transport, core, SimpleNamespace(step_actions=1),
+                                     deadline=time.monotonic()+2)
+        self.assertEqual(events, ['model_close', 'transport_delivery'])
+        self.assertEqual(stopped, [True])
+        self.assertTrue(result['model_owner']['actor_kill_requests_confirmed'])
+        self.assertEqual(result['model_owner']['data_rpc_pending'], 0)
+
+    def test_failed_or_interrupted_delivery_still_releases_actor_and_reports_RPC_state(self):
+        for error in (OSError('receipt delivery failed'), KeyboardInterrupt('receipt delivery interrupted')):
+            with self.subTest(error=type(error).__name__):
+                owner, events, stopped = self.actual_owner()
+                def fail_delivery(**kwargs):
+                    self.assertFalse(stopped)
+                    raise error
+                transport = SimpleNamespace(_batch_poll_ack=True,
+                    backend=SimpleNamespace(close=fail_delivery), recover_actor_receipts=lambda values:[])
+                core = SimpleNamespace(capacity=SimpleNamespace(records={TaskKey(1, 0):SimpleNamespace(compute=True)}),
+                                       reap=lambda maximum:None)
+                with self.assertRaises(type(error)) as raised:
+                    close_prepared_core(owner, transport, core, SimpleNamespace(step_actions=1),
+                                        deadline=time.monotonic()+2)
+                self.assertIs(raised.exception, error)
+                self.assertEqual(stopped, [True])
+                self.assertEqual(events, ['model_close'])
+                self.assertEqual(owner.last_close_report['status'], 'unknown')
+                self.assertEqual(owner.last_close_report['data_rpc_pending'], 0)
+
     def owner_and_core(self, compute=False):
         calls = []
-        def close_actor():
+        def close_actor(*, before_actor_release=None):
             calls.append('actor_close')
-            return dict(cleanup_errors=[], unconsumed_core_results=[])
+            report = dict(cleanup_errors=[], unconsumed_core_results=[])
+            if before_actor_release is not None:
+                before_actor_release(report)
+            return report
         actors = SimpleNamespace(close=close_actor)
         core = SimpleNamespace(capacity=SimpleNamespace(records={TaskKey(1, 0):SimpleNamespace(compute=compute)}),
                                reap=lambda n:None)
