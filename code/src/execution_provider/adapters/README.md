@@ -957,7 +957,7 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 
 显式正整数精确保留；当前同步 SemLoom 的省略行为见[同步参数所有权](#sync-native-context-ownership)。
 原生 Ray／Daft／IMLane 同步对照也保留省略／null，见[同步参数所有权](#sync-native-context-ownership)；旧 Movie HTTP 包装和入口已退役，
-历史原配置从[恢复记录](../../../../experiments/reproduction/native_baselines/README.md#retired-movie-http)读取。
+历史原配置从[恢复记录](../../../../experiments/reproduction/native_baselines/README.md#movie-http-retirement)读取。
 显存比例、数据精度、方法／生成参数及单 GPU 支持保持。
 普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
 公共离线calibration在省略上下文时复用首个已声明完整样本的实际owner回执，随后构造身份；
