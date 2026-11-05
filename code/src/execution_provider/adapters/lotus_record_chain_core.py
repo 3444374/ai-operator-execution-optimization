@@ -30,7 +30,7 @@ from src.infrastructure.private_artifacts import require_outside_git
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import (
-    Acceptance, SessionLimits, SessionSpec, SessionTimeouts, TaskProfile,
+    SessionLimits, SessionSpec, SessionTimeouts, TaskProfile,
 )
 from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
