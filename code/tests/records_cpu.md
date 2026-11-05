@@ -22,13 +22,13 @@ export SEMBENCH_CHECKOUT="$PINNED_SEMBENCH_CHECKOUT"
   --output-dir "$NEW_CPU_INPUT_OUTPUT"
 export SEMBENCH_Q3_MANIFEST="$NEW_CPU_INPUT_OUTPUT/manifest.json"
 "$DRIVER_PYTHON" -B -m unittest \
-  tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_full_120_occurrence_native_http_profiles_match_original_q3 -v
+  tests.experiments.test_movie_records_matrix -v
 ```
 
 调用者须提供真实CSV、固定源码及新目录变量。prepare验证CSV摘要，再由`MovieRecordSource`核对原CSV、records、references、行序和120个发生项；不伪造缺失资产，不修改旧manifest或参考标签。资产或固定SDK缺失时，既有可选用例明确skip；一旦提供无效路径/摘要，应失败，不能把失败改成skip。
 
-该用例使用原LOTUS和SemBench方法/评价器，但响应来自`httpx.MockTransport`与`FixtureService`。
-它对比并发4/8下的120发生项、消息、原parser、调用关联及合成usage；不认证模型质量、真实token、GPU性能或正式预算资格。
+旧Movie HTTP专用FixtureService/MockTransport用例随入口退役，准确旧版本从[历史恢复](../../experiments/reproduction/native_baselines/README.md#retired-movie-http)读取。
+上面当前矩阵用例仅验证CPU控制流程，不构成模型质量、真实token、GPU性能或正式预算资格。
 如需保存脱敏CPU回执，可显式设置`NATIVE_CPU_EVIDENCE_DIR`，调用者须先创建新的私有目录；省略该变量不写该份回执。
 
 Daft session回归使用真实Daft CPU图和合成kernel。其本机Unix socket须由运行环境允许；沙箱拒绝bind是环境错误，应保留失败记录并在获准的CPU环境重跑，不能替换原生图或跳过断言取得通过。

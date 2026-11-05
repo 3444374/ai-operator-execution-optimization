@@ -206,3 +206,22 @@ git worktree add --detach /tmp/semloom-request-history-9da 9da299e90f79fd0b71f2a
 不要将个别旧文件复制回维护树。原五份具名投影、已有逐文件摘要及恢复映射不改；它们与整个 9da 树用途不同。
 [本批清单](../../results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
 记录逐文件／方法摘要、保留的现代行为及未完成的真实运行检查。
+
+<a id="retired-movie-http"></a>
+## 退役的 Movie HTTP 与旧固定矩阵
+
+当前 Movie 不再注册 `lotus-native` HTTP backend，删除其私有HTTP模型owner、专用测试、
+失效的 `sembench_records_formal` 五后端固定执行器及CLI/资源monitor。其固定配置目录早已不在维护树；
+不重建或修改旧配置来使过时计划假装可运行。
+当前矩阵使用的 `validate_query_result` 在 `baselines/text/movie_tasks.py`，`QueryClock` 在
+`observability/native_query_timing.py`，`read_json/file_sha256` 在 `infrastructure/private_artifacts.py`；
+没有保留旧执行器的兼容导入或新增调度器。
+
+完整退役前源码由准确公开提交
+[`646216faa98e0a1a234c7fc74f9f3c0d216e96b2`](https://github.com/3444374/ai-operator-execution-optimization/tree/646216faa98e0a1a234c7fc74f9f3c0d216e96b2)恢复。
+五份既有投影继续使用原Movie HTTP历史源；对本批另外三份受影响旧文件只追加15条override，
+对应准确字节存于 `historical_sources/646216fa/`，原投影ID、expected摘要和既有映射均保留。
+恢复旧实验须选择整份准确历史树或明确投影，维护运行时不导入归档。旧失败、费用与质量结果不删改。
+
+原生LOTUS Q2b独立对照与新Core功能检查不混称同一路径；原生LOTUS非HTTP模型连接尚未恢复。
+PG工作按用户要求暂停/归档，保留后续恢复所需研究方案、接线与来源，不等于永久放弃PG；SAOR研究方案保留。

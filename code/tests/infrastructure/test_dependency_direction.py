@@ -123,7 +123,6 @@ for module in ('src.observability.execution_timing', 'src.observability.model_re
                'src.observability.request_gateway', 'src.semantic_methods.lotus.image_rm',
                'src.semantic_methods.lotus.image_backend', 'src.baselines.image.frameworks.daft_clip',
                'src.baselines.text.frameworks.native_calls',
-               'src.baselines.text.frameworks.lotus_native_local_model',
                'src.baselines.text.frameworks.ray_data_pg_http'):
     importlib.import_module(module)
 from src.observability.execution_timing import timing_span

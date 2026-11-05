@@ -2,7 +2,7 @@
 
 This worker is called inside the existing owner's lease/resource supervisor.
 It creates no lease, budget, retries, detached workers, or performance claims.
-Native, Core and opt-in IMLane CPython sessions expose reusable model owners.
+Core and opt-in IMLane CPython sessions expose reusable model owners.
 Ray can reuse its runtime while each native Dataset still owns a new model.
 The explicit ``isolated`` mode retains per-query driver startup and shutdown.
 """
@@ -49,7 +49,7 @@ def check_plan(plan):
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
     from src.experiments.movie_records_config import records_resources
     resources = records_resources(plan)
-    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference', 'lotus-native')
+    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference')
                      else engine.legacy_max_model_len)
     if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")
@@ -118,12 +118,6 @@ def check_plan(plan):
             raise ValueError("a static reference session retains one method instruction")
     if engine.max_model_calls is None or engine.max_model_calls < total:
         raise ValueError("max_model_calls must explicitly cover the whole session, including warmup")
-    if plan["backend"] == "lotus-native":
-        profile = plan["profile"]
-        if (not plan["model_name"].startswith("openai/") or not plan["model_name"][7:]
-                or type(profile) is not dict or set(profile) != {"native_lm_max_batch_size"}
-                or type(profile["native_lm_max_batch_size"]) is not int or profile["native_lm_max_batch_size"] < 1):
-            raise ValueError("Native retains the explicit OpenAI identity and original LM batch profile")
     return dict(schema="semloom.movie_session_check.v1", status="checked_cpu_only",
                 inference_calls=0, expected_calls=total, queries=checked,
                 model_cache_scope=("model owner shared by resident session; actual KV hits unavailable"
@@ -145,7 +139,7 @@ class _MovieDriver:
     def __init__(self, plan, context, directory, first_query):
         self.plan, self.context, self.directory = plan, context, Path(directory)
         self.first_query = first_query
-        self.owner = self.service = self.ray = None
+        self.owner = self.ray = None
         self.created_ray = False
         self.ray_identity = None
         self.last_query_report = self.last_query_failure = self.last_query_directory = None
@@ -221,11 +215,6 @@ class _MovieDriver:
             self.owner = DaftNativeSession(self.engine, self.generation, self.resources,
                 control_dir=self.directory / "model", deadline_monotonic=deadline)
             return self.owner.start()
-        if backend == "lotus-native" and self.plan["lifecycle"] == "resident":
-            from src.baselines.text.frameworks.lotus_native_local_model import LocalService
-            self.service = LocalService(self.engine, self.plan["model_name"][7:], self.resources,
-                                        self.directory, self.context["runtime_binding"]["cuda_visible_devices"])
-            return self.service.start()
         if backend == "imlane" and self.plan["lifecycle"] == "resident":
             import signal
             import threading
@@ -343,11 +332,6 @@ class _MovieDriver:
         if backend == "ray-data" and (not self.ray.is_initialized()
                 or self.ray.get_runtime_context().get_node_id() != self.ray_identity["node_id"]):
             raise RuntimeError("owned Ray runtime changed before query execution")
-        if backend == "lotus-native":
-            from src.baselines.text.frameworks.lotus_native_local_model import run
-            return run(source, checkout, method, self.generation, self.engine, self.resources,
-                query_id=spec["query_id"], profile=self.plan["profile"], context=context,
-                observer=emit, shared_service=self.service)
         if backend == "imlane" and self.plan["lifecycle"] == "isolated":
             from src.experiments.imlane_movie_formal import run
             engine = replace(self.engine, max_model_calls=binding["expected_calls"])
@@ -401,28 +385,28 @@ class _MovieDriver:
         receipts, errors = {}, []
         repeated = self._close_attempted
         self._close_attempted = True
-        for name, resource in (("model", self.owner), ("http_service", self.service)):
-            if resource is not None:
-                try:
-                    if name == 'model' and self.payload_pool is not None and repeated:
-                        grant = resource._service_allocation
-                        if not resource.cleanup_confirmed() and grant.describe()['status'] != 'released':
-                            receipts[name] = self.payload_pool.retry_cleanup(grant.allocation_id, timeout=20)
-                        else:
-                            from .movie_records_service import close_service_owner
-                            receipts[name] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
-                    elif name == 'model' and self.payload_pool is not None:
-                        from .movie_records_service import close_service_owner
-                        receipts[name] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+        resource = self.owner
+        if resource is not None:
+            try:
+                if self.payload_pool is not None and repeated:
+                    grant = resource._service_allocation
+                    if not resource.cleanup_confirmed() and grant.describe()['status'] != 'released':
+                        receipts["model"] = self.payload_pool.retry_cleanup(grant.allocation_id, timeout=20)
                     else:
-                        receipts[name] = (resource.close(timeout=20)
-                            if name == "model" and self.core_execution is not None
-                            and self.core_execution["mode"] == "async" else resource.close())
-                    if receipts[name].get("status") != "closed" or receipts[name].get("cleanup_errors"):
-                        errors.append(name + " cleanup unconfirmed")
-                except BaseException as error:
-                    receipts[name] = _failure(error)
-                    errors.append(name + " close failed")
+                        from .movie_records_service import close_service_owner
+                        receipts["model"] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+                elif self.payload_pool is not None:
+                    from .movie_records_service import close_service_owner
+                    receipts["model"] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+                else:
+                    receipts["model"] = (resource.close(timeout=20)
+                        if self.core_execution is not None
+                        and self.core_execution["mode"] == "async" else resource.close())
+                if receipts["model"].get("status") != "closed" or receipts["model"].get("cleanup_errors"):
+                    errors.append("model cleanup unconfirmed")
+            except BaseException as error:
+                receipts["model"] = _failure(error)
+                errors.append("model close failed")
         if self.owner is not None and self.last_query_report is not None:
             from src.experiments.lotus_records_movie import merge_unconsumed_call_results
             try:

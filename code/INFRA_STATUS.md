@@ -151,7 +151,7 @@ native Engine 同步单项额度与显式总预算。PG 现有帧保持 1 MiB，
 records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
 显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
 `max_num_seqs` 的显式值保留；本地默认修正候选在未指定／null时让SemLoom异步 Core
-省略参数，交vLLM 0.25.1自行解析；当前SemLoom同步及LOTUS原生HTTP也只转发显式值。
+省略参数，交vLLM 0.25.1自行解析；当前SemLoom同步也只转发显式值；旧Movie HTTP入口已退役。
 显式选择原生同步ReferenceVllmEngine的对照仍保留旧默认8，Kalypso不改。尚无新增真实模型资格；
 这不是自动性能调优，不改token/context/memory或外层额度，历史显式设置及原回执保留。CPU 检查覆盖高于引擎每轮
 序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
@@ -159,11 +159,11 @@ records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上�
 由安装的 vLLM 解析有限预算；显式正值保留，启动回执始终读回实际配置，缺失仍记未知。
 普通 Movie admission 原有身份绑定完整 EngineSpec；驻留 ascending 继续绑定实际 native 配置，
 未指定与历史显式4096不会匹配同一提示身份，无需新增缓存格式。
-当前SemLoom同步及LOTUS原生HTTP的未指定token预算也由vLLM解析；
+当前SemLoom同步的未指定token预算也由vLLM解析；
 ReferenceVllmEngine对照保留旧默认4096，Kalypso与历史显式配置不变。
-LOTUS HTTP同时省略未显式设置的max_model_len，冷查询和常驻会话的预检不再假定4096；
-显式上下文的早拒绝保留，实际完整请求仍由HTTP服务校验。CPU检查覆盖启动参数和这两个入口，
-未读回的HTTP实际容量保持未知；没有真实vLLM／模型资格，不改B/W或显存比例，不构成性能结论。
+旧Movie HTTP owner、专用测试及失效五后端固定矩阵已移出维护入口。当前矩阵仍用的结果校验、查询时钟与JSON/摘要工具分别归位到Movie任务、observability与infrastructure。
+[历史恢复](../experiments/reproduction/native_baselines/README.md#retired-movie-http)保留原版本与五份精确投影；非HTTP原生LOTUS对照尚未恢复。
+本批只做CPU验证，不修改现有Core模型策略或将旧HTTP成绩外推为当前性能。
 完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
 生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。
 同一候选继续取消显式动态配置隐含的10秒、剩余32／64条与8次调整截止，默认改为

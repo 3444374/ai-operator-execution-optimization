@@ -17,7 +17,6 @@ LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)�
 |---|---|---|---|
 | `baselines/text/frameworks/native_calls.py`、`prepared_map.py` | main已有 | 外部已准备完整HTTP call；Daft/Ray Data原生图拥有执行/背压，SDK接回完整响应 | 框架已接管原LOTUS扫描、提示准备或跨算子推进 |
 | `baselines/text/frameworks/{daft,ray_data}_pg_http.py` | main已有 | 原生SQL reader读取源行，在图内构造同应用请求并消费；是源数据流入口 | 仅因最终走HTTP就归为prepared-call，或称它执行了原LOTUS records方法 |
-| `baselines/text/frameworks/lotus_native_local_model.py` | main已接纳（PR52） | 原LOTUS/LiteLLM执行完整查询，私有或借用的HTTP模型服务；保留原方法/调度 | 原生LOTUS调用数就是GPU批次，或借服务ready证明模型启动在计时外 |
 | `baselines/text/frameworks/ray_data_lotus_records.py`、`daft_lotus_records.py` | main已接纳（PR52） | 原始records与显式方法配置；方法准备与模型调用在原生worker路径，框架拥有图/worker；查询调用方收齐并重排完整回执后调用原LOTUS parser | 与上面的同名Ray/Daft请求接点相同，或使用SemLoom Core策略 |
 | `baselines/text/frameworks/daft_lotus_session.py` | main已接纳（PR52） | 明确的Daft单线程session配置；与isolated配置分别命名/比较 | Daft所有原生配置都跨查询常驻，或仅删close即可保留模型 |
 | `baselines/text/frameworks/{ray_data,daft}_lotus_chain.py`、`*_lotus_cascade.py` | main已接纳（PR52） | 原方法链/级联的原生执行；保留合法关系/全局屏障和算法状态 | 现有接口等于任意DAG、group提前闭合或新FIFO优化已通过 |
@@ -26,13 +25,10 @@ LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)�
 
 已接纳接点的Ray `runtime_reuse_only`和Daft `native_single_thread_session`是生命周期配置，不是新的执行层级；同题比较须同时记录输入边界、方法owner、模型owner和计时边界。
 PR52已接纳的共享`lotus_chain_batch`及私有模型process也被Core引用；它们属于无策略共享接点，不能因兼容入口在本目录就算作native专属。
-LOTUS 原生 HTTP 的 `LocalService` 仅在用户显式设置时传入 `max_model_len`、
-`max_num_seqs`、`max_num_batched_tokens`；省略或 null 交给安装的 vLLM 解析，
-不再由项目包装补入 4096／8／4096。冷查询和常驻 owner 共用这条启动命令。
-未显式指定上下文时，本地预检不假定 4096，完整请求的长度由实际 HTTP 服务校验。
-ready 中的 `command` 记录实际启动参数，`model_config` 记录请求配置，不替代原生解析值读回；
-当前未读回的实际容量仍为未知。显存比例、精度、seed、任务生成参数及 LOTUS 的批大小保持配置原义，
-历史显式配置和既有结果不改。
+旧 Movie HTTP owner、对应 `lotus-native` Movie 入口和失效五后端固定矩阵已退役。
+当前 Movie 主线使用 LOTUS 方法层与 SemLoom Core 的非 HTTP 模型连接；原生 Q2b 与 Kalypso 对照单独记录，不能借它们声称 Movie HTTP 路径仍在使用。
+历史实现及投影从[恢复记录](../../../experiments/reproduction/native_baselines/README.md#retired-movie-http)读取。
+原生 LOTUS 非 HTTP 对照尚未恢复，不将 Core 执行当作原生 LOTUS 调度。
 当前原生 Ray／Daft records、session、chain、cascade 与有限 IMLane 路径使用
 [同步参数所有者](text/frameworks/sync_reference_engine.py)和[链参数适配](text/frameworks/reference_chain_batch.py)，
 继续显式传原 4096／8／4096 或用户指定值，沿用原 `LLM.chat`。当前 SemLoom 同步省略行为与它们分别记录；

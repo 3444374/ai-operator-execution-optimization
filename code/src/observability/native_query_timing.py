@@ -3,9 +3,9 @@
 Install only around the original frozen worker in a future packet. HTTP clocks
 come from the existing authoritative observer, never a new HTTP client.
 """
-from contextlib import contextmanager
 from collections import defaultdict
 import time
+from src.infrastructure.redact import redact_text
 
 
 class ObservationStore:
@@ -65,71 +65,6 @@ def timed_driver_type(base,store):
     return TimedDriver
 
 
-@contextmanager
-def native_observation(native_module,lm_module,store):
-    """Retain existing POST clocks and time the unchanged native LM batch call.
-
-    Pass the already-loaded native adapter and lotus.models.lm modules. Nothing
-    here reads payloads, makes a request, reserves a call, or changes HTTP options.
-    """
-    cls=native_module._Calls
-    old_receipts,old_batch=cls.receipts,cls.observe_batch
-
-    def receipts(self):
-        original=old_receipts(self)
-        try:
-            for row in original:
-                events=self.events.get(row['attempt'],{})
-                started=events.get('http_started',{}).get('monotonic_ns')
-                response=events.get('http_response',{}).get('monotonic_ns')
-                finished=events.get('http_finished',{}).get('monotonic_ns')
-                complete=(type(started) is int and type(finished) is int and finished>=started)
-                row['external_HTTP_timing']=dict(started_ns=started,response_observed_ns=response,
-                    finished_ns=finished,complete=complete,
-                    elapsed_s=(finished-started)/1e9 if complete else None,
-                    scope='existing observer http_started through http_finished; response read/receipt JSON included',
-                    records_per_POST=1)
-        except Exception as error:
-            store.warnings.append(type(error).__name__)
-        return original
-
-    @contextmanager
-    def batch(self):
-        with old_batch(self):
-            original=lm_module.batch_completion
-
-            def observed(*args,**kwargs):
-                started=store.now()
-                failure=None
-                try:
-                    return original(*args,**kwargs)
-                except BaseException as error:
-                    failure=error
-                    raise
-                finally:
-                    ended=store.now()
-                    try:
-                        qid=self.expected[0]['query_id'] if self.expected else None
-                        store.batches[qid].append(dict(kind='LOTUS_native_batch_completion',
-                            query_id=qid,started_ns=started,finished_ns=ended,
-                            input_records=len(self.expected),status='failed' if failure else 'succeeded',
-                            error_type=type(failure).__name__ if failure else None,
-                            elapsed_s=(ended-started)/1e9
-                                if started is not None and ended is not None and ended>=started else None,
-                            scope='one original LM batch_completion invocation, not per-row or per-POST latency'))
-                    except Exception as error:
-                        store.warnings.append(type(error).__name__)
-            lm_module.batch_completion=observed
-            try:
-                yield
-            finally:
-                lm_module.batch_completion=original
-
-    cls.receipts,cls.observe_batch=receipts,batch
-    try:
-        yield
-    finally:
-        cls.receipts,cls.observe_batch=old_receipts,old_batch
 
 
 def query_timing(query):
@@ -218,3 +153,34 @@ def offline_scan_total(events):
         unique[key]=event
     return dict(events=len(unique),calls=sum(x['actual_scan_calls'] for x in unique.values()),
                 wall_s=sum(x['actual_scan_wall_s'] for x in unique.values()))
+
+
+class QueryClock:
+    def __init__(self, *, event_sink=None):
+        self.events = []
+        self.event_sink, self.event_sink_errors = event_sink, []
+
+    def __call__(self, event):
+        self.record(dict(event=event, monotonic_ns=time.monotonic_ns()))
+
+    def record(self, entry):
+        """Observe an existing owner timestamp without retiming session/query events."""
+        if (type(entry) is not dict or type(entry.get("event")) is not str
+                or type(entry.get("monotonic_ns")) is not int or entry["monotonic_ns"] < 0):
+            raise ValueError("owner event requires an event name and monotonic timestamp")
+        entry = dict(entry)
+        self.events.append(entry)
+        if self.event_sink is not None:
+            try:
+                self.event_sink(dict(entry, epoch_ns=entry.get("epoch_ns", time.time_ns())))
+            except Exception as error:
+                self.event_sink_errors.append(redact_text(type(error).__name__ + ": " + str(error)))
+
+    def result(self, invoked_ns, finished_ns):
+        found = [e["monotonic_ns"] for e in self.events if e["event"] == "result_ready"]
+        if len(found) != 1 or not invoked_ns <= found[0] <= finished_ns:
+            raise ValueError("one complete pre-evaluation result_ready timestamp is required")
+        return dict(query_result_seconds=(found[0] - invoked_ns) / 1e9,
+            application_e2e_seconds=(finished_ns - invoked_ns) / 1e9, events=self.events,
+            scope="worker invocation through complete task result; application includes worker-owned evaluation/close",
+            resident_query_seconds=None)

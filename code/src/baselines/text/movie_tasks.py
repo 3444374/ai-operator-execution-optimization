@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from src.semantic_methods.lotus.records import FilterMethod
+from src.semantic_methods.lotus.records import CallLedger, FilterMethod
 
 
 MOVIE_Q3_INSTRUCTION = 'Determine if the following review is clearly positive. Review: {reviewText}'
@@ -85,3 +85,36 @@ class MovieTask:
     def validate_result(self, result, rows, decisions):
         if result != self.encode_result(self.result_frame(rows, decisions)):
             raise ValueError("task result differs from complete decisions and source-order projection")
+
+
+def validate_query_result(report, expected, *, source=None):
+    if report.get("status") != "completed":
+        raise ValueError("query did not complete")
+    if report.get("inference_calls") == 0 or report.get("execution_kind") == "fixed-response software qualification":
+        raise ValueError("CPU/preflight evidence cannot qualify a model execution")
+    ledger = CallLedger(expected, max_calls=len(expected))
+    for row in report["calls"]["records"]:
+        ledger.record(row)
+    calls = ledger.report()
+    if calls["counts"]["succeeded"] != len(expected) or calls["counts"]["missing"] or calls["usage"]["total_tokens"] is None:
+        raise ValueError("query has failed/unknown/missing calls or incomplete usage")
+    if any(type(row.get("text")) is not str or row.get("finish_reason") not in ("stop", "length")
+            or row.get("total_tokens") != row["prompt_tokens"] + row["completion_tokens"] for row in calls["records"]):
+        raise ValueError("successful calls require real terminal text/finish and consistent usage")
+    if any(type(row.get("messages_sha256")) is not str or len(row["messages_sha256"]) != 64
+            or any(c not in "0123456789abcdef" for c in row["messages_sha256"]) for row in calls["records"]):
+        raise ValueError("actual per-call untemplated message identities are required")
+    decisions = report["decisions"]
+    if (len(decisions) != len(expected) or len({r["row_id"] for r in decisions}) != len(expected)
+            or {r["row_id"] for r in decisions} != {r["row_id"] for r in expected}
+            or any(type(r["decision"]) is not bool for r in decisions)
+            or "original_metric" not in report["quality"]):
+        raise ValueError("complete row decisions and original evaluation required")
+    if source is None:
+        if report["result"].get("positive_review_cnt") != sum(r["decision"] for r in decisions):
+            raise ValueError("COUNT differs from complete decisions")
+    else:
+        source.task.validate_result(report["result"], source.rows(), decisions)
+    return dict(decisions=sorted((r["row_id"], r["decision"]) for r in decisions),
+        messages=sorted((r["row_id"], r["messages_sha256"]) for r in calls["records"]),
+        result=report["result"], original_metric=report["quality"]["original_metric"])

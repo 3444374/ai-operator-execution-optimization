@@ -8,7 +8,7 @@ import sys
 import json
 from copy import deepcopy
 import math
-from src.experiments.sembench_records_formal import sha
+from src.infrastructure.private_artifacts import file_sha256 as sha
 from src.baselines.common.private_artifacts import content_digest
 from src.observability.records_telemetry import RecordsTelemetry
 

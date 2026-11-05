@@ -77,3 +77,16 @@ def publish_private_json(path: Path, value: object) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def read_json(path, *, max_bytes=8 * 1024**2):
+    path = Path(path)
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > max_bytes:
+        raise ValueError("a bounded regular JSON file is required")
+    def reject(value):
+        raise ValueError("nonfinite JSON: " + value)
+    return json.loads(path.read_text(), parse_constant=reject)
+
+
+def file_sha256(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()

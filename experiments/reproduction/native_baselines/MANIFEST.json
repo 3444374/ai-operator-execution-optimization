@@ -723,7 +723,10 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py"
       },
       "default_selected": false,
       "source_formats": {
@@ -1517,7 +1520,10 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py"
       },
       "default_selected": false,
       "source_formats": {
@@ -2321,7 +2327,10 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py"
       },
       "default_selected": false,
       "source_formats": {
@@ -3127,7 +3136,10 @@
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
         "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
-        "code/tests/experiments/test_native_query_lifecycle.py": "historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz"
+        "code/tests/experiments/test_native_query_lifecycle.py": "historical_sources/129c5555/code/tests/experiments/test_native_query_lifecycle.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py"
       },
       "default_selected": false,
       "source_formats": {
@@ -3942,7 +3954,10 @@
         "code/scripts/data/build_opening_multijob_manifests.py": "historical_sources/4fec5472/code/scripts/data/build_opening_multijob_manifests.py.gz",
         "code/scripts/profiling/daft_text_organizer_smoke.py": "historical_sources/4fec5472/code/scripts/profiling/daft_text_organizer_smoke.py.gz",
         "code/integrations/imlane_records/chain_udf.py": "historical_sources/129c5555/code/integrations/imlane_records/chain_udf.py.gz",
-        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz"
+        "code/integrations/imlane_records/model_process.py": "historical_sources/129c5555/code/integrations/imlane_records/model_process.py.gz",
+        "code/src/experiments/sembench_records_formal_resources.py": "historical_sources/646216fa/code/src/experiments/sembench_records_formal_resources.py",
+        "code/scripts/experiments/run_sembench_records_formal.py": "historical_sources/646216fa/code/scripts/experiments/run_sembench_records_formal.py",
+        "code/tests/experiments/test_movie_records_matrix.py": "historical_sources/646216fa/code/tests/experiments/test_movie_records_matrix.py"
       },
       "default_selected": false,
       "source_formats": {
