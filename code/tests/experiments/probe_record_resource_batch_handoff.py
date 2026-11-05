@@ -80,9 +80,11 @@ actor.engine=IPC()
 references=[];poll_pages=[];ack_attempts=Counter();acked=[];native_methods=[];model_snapshots=[]
 class Reference:
     def __init__(self,value,label):
-        self.value=Future();self.value.set_result(value);self.label=label;self.calls=0
+        self.value=value;self.label=label;self.calls=0
         references.append(self)
-    def future(self):self.calls+=1;return self.value
+    def future(self):
+        self.calls+=1
+        future=Future();future.set_result(self.value);return future
 class Remote:
     def __init__(self,method,label):self.method=method;self.label=label
     def remote(self,*a,**k):
@@ -187,14 +189,14 @@ observer.close_events()
 markers=[json.loads(line)for p in(out/'events').glob('*.jsonl')for line in p.read_text().splitlines()]
 assert secret not in json.dumps(markers)
 expected={'actor_result_return':3,'driver_future_done':3,'driver_result_audit_enter':3,
-          'Ray_result_to_Core':3,'driver_batch_future_done':len(poll_pages)}
+          'Ray_result_to_Core':3,'driver_batch_future_done':0}
 (out/'OBSERVED-COUNTS.json').write_text(json.dumps(dict(
     event_counts={k:sum(e['event']==k for e in markers)for k in expected},
     members=3,poll_RPCS=len(poll_pages),page_member_occurrences=len(page_keys),
     business_results_and_ACKs_passed=True),indent=2)+'\n')
 for name,count in expected.items():
     assert sum(e['event']==name for e in markers)==(count if args.mode=='on'else 0),name
-assert all(r.calls==(2 if args.mode=='on'else 1)for r in references if r.label=='poll')
+assert all(r.calls==1 for r in references if r.label=='poll')
 if args.mode=='on':
     for name in ('actor_result_return','driver_future_done','Ray_result_to_Core'):
         found=[e for e in markers if e['event']==name]

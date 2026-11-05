@@ -268,16 +268,6 @@ class HandoffTests(unittest.TestCase):
                 self.assertIs(actor.poll_prepared_batch([1,7]),value)
         self.assertEqual(calls,[[1,7],[1,7]]);self.assertGreaterEqual(self.observer._errors,2)
 
-    def test_batch_future_notification_never_reads_payload_or_counts_members(self):
-        future=Future();future.set_result(fixtures.SECRET)
-        ref=SimpleNamespace(future=lambda:future)
-        with patch.object(future,'result',side_effect=AssertionError('observer consumed RPC')):
-            self.observer.observe_ref_ready(ref,None,None,batch_key=dict(session_id=1,sequence=7))
-        event=self.events()[-1];self.assertEqual(event['event'],'driver_batch_future_done')
-        self.assertIsNone(event['key']);self.assertIsNone(event['identities'])
-        self.assertEqual(event['batch_key'],dict(session_id=1,sequence=7))
-        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
-
     def test_future_notification_does_not_consume_result_or_change_exception(self):
         for error in (None,ValueError(fixtures.SECRET)):
             future=Future();calls=[]
@@ -290,6 +280,7 @@ class HandoffTests(unittest.TestCase):
                 future.set_exception(error)
                 with self.assertRaises(ValueError)as caught:future.result()
                 self.assertIs(caught.exception,error)
+        self.observer.close_events()
         markers=[e for e in self.events()if e['event']=='driver_future_done']
         self.assertEqual(len(markers),2);self.assertEqual(markers[0]['key'],{'session_id':1,'sequence':2})
         self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
@@ -306,6 +297,7 @@ class HandoffTests(unittest.TestCase):
             row=dict(fixtures.IDENTITY,call_id='call-'+str(i))
             self.observer.observe_ref_ready(SimpleNamespace(future=lambda f=future:f),{'session_id':1,'sequence':i},[row])
         futures[1].set_result(b'B');futures[0].set_result(b'A')
+        self.observer.close_events()
         rows=[e for e in self.events()if e['event']=='driver_future_done']
         self.assertEqual([(e['key']['sequence'],e['identities'][0]['call_id'])for e in rows],[(1,'call-1'),(0,'call-0')])
 

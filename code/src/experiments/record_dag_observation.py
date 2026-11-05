@@ -10,6 +10,14 @@ def _number(value):
     return type(value) in (int, float) and math.isfinite(value)
 
 
+def _event_time(event):
+    written = event.get('monotonic_ns')
+    if 'observation_ns' not in event:
+        return written
+    observed = event['observation_ns']
+    return (observed if _number(observed) and _number(written) and 0 <= observed <= written else None)
+
+
 def _opaque(value):
     return hashlib.sha256(str(value).encode()).hexdigest()
 
@@ -239,9 +247,9 @@ def summarize_capture(root, description, *, cpu_spans=()):
                          and buffer.get('remaining') == 0)):
                 footer_sources.add(path)
             else: issues.append('sink_incomplete')
-    for e in sorted(events, key=lambda e: (e['_domain'], e.get('monotonic_ns')
-                    if _number(e.get('monotonic_ns')) else math.inf)):
-        t, d = e.get('monotonic_ns'), e['_domain']
+    for e in sorted(events, key=lambda e: (e['_domain'], _event_time(e)
+                    if _number(_event_time(e)) else math.inf)):
+        t, d = _event_time(e), e['_domain']
         if not _number(t) or t < 0:
             issues.append('event_clock_unknown'); continue
         name = e.get('event')

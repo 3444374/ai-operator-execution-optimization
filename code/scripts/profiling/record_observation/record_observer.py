@@ -52,6 +52,7 @@ _buffer_lock = threading.Lock()
 _buffer_closed = False
 _buffer_dropped = _buffer_errors = _buffer_drained = _buffer_peak = 0
 _buffer_attempts = _buffer_enqueued = 0
+_buffer_wall = _buffer_cpu = 0
 
 
 def emit_feedback(event, **values):
@@ -94,26 +95,35 @@ def emit_feedback(event, **values):
 
 
 def emit_buffered(event, **values):
-    """Metadata only; no file I/O or sink lock on a feedback/decision thread.
+    """Metadata only; no file I/O or sink lock on a producer thread.
 
     Existing event/packet bounds also bound this buffer. close_events drains it
     through the original sink; observation_ns is the enqueue clock, while the
     ordinary event timestamp is the later sink-write clock.
     """
     global _buffer_dropped, _buffer_errors, _buffer_peak, _buffer_attempts, _buffer_enqueued
+    global _buffer_wall, _buffer_cpu
     if not ENABLED:return
     with _buffer_lock:_buffer_attempts+=1
     try:
+        started=time.monotonic_ns();cpu=time.thread_time_ns()
         limits = _settings_cache
         if limits is None:raise RuntimeError('observer settings not initialized')
-        raw = dict(event=event,observation_ns=time.monotonic_ns())
+        raw = dict(event=event,observation_ns=started,phase=_phase)
         raw.update({k:_safe(v) for k,v in values.items() if k in _ALLOWED})
         packet = json.dumps(raw,allow_nan=False,separators=(',',':')).encode()
         with _buffer_lock:
             if (_buffer_closed or len(_buffer)>=limits['max_events_per_process']
                     or len(packet)>limits['max_event_bytes']):
-                _buffer_dropped += 1;return
-            _buffer.append(packet);_buffer_enqueued+=1;_buffer_peak=max(_buffer_peak,len(_buffer))
+                _buffer_dropped += 1
+            else:
+                _buffer.append(packet);_buffer_enqueued+=1;_buffer_peak=max(_buffer_peak,len(_buffer))
+            # Commit cost with the event so close cannot drain an accepted
+            # packet before its enqueue bookkeeping has finished.
+            try:
+                _buffer_wall+=time.monotonic_ns()-started
+                _buffer_cpu+=time.thread_time_ns()-cpu
+            except Exception:_buffer_errors+=1
     except Exception:
         with _buffer_lock:_buffer_errors += 1
 
@@ -156,7 +166,7 @@ def core_key(value):
 def observe_ref_ready(ref, key, identities, *, batch_key=None, scope=None):
     if not handoff_profile():return
     def completed(unused):
-        emit('driver_batch_future_done'if key is None else 'driver_future_done',
+        emit_buffered('driver_future_done',
              key=key,identities=identities,batch_key=batch_key,
              scope=scope or 'Python Future completion notification; original await determines outcome')
     try:ref.future().add_done_callback(completed)
@@ -257,6 +267,8 @@ def _close_events():
             drained=_buffer_drained,dropped=_buffer_dropped,errors=_buffer_errors,
             peak_events=_buffer_peak,remaining=len(_buffer),closed=_buffer_closed,
             event_limit=settings()['max_events_per_process'],packet_byte_limit=settings()['max_event_bytes'],
+            enqueue_wall_ns=_buffer_wall if not _buffer_errors else None,
+            enqueue_thread_cpu_ns=_buffer_cpu if not _buffer_errors else None,
             drain_complete=not _buffer and not _buffer_dropped and not _buffer_errors)
         footer_written=False
         try:
@@ -393,6 +405,8 @@ def install_ready_hook():
 def install_driver():
     if not ENABLED or 'driver' in _installed:return
     _installed.add('driver');install_cpu_hooks()
+    handoff=handoff_profile()
+    point=emit_buffered if handoff else emit
     install_ready_hook()
     install_feedback_observer()
     from src.execution_provider.adapters import lotus_records_actor_owner as owner,lotus_records_async_actor as async_owner
@@ -420,8 +434,10 @@ def install_driver():
             try:
                 reference_reader=getattr(transport,'retained_refs',None)
                 references=reference_reader() if callable(reference_reader) else None
-                emit('Core_'+kind,key=asdict(key),usage=asdict(core.capacity.usage()),retained_refs=references)
-            except Exception as error:emit('core_observation_unavailable',error_type=type(error).__name__)
+                point('Core_'+kind,key=asdict(key),
+                    usage=None if handoff else asdict(core.capacity.usage()),retained_refs=references,
+                    scope='Core key transition; per-event usage sampled only in full profile')
+            except Exception as error:point('core_observation_unavailable',error_type=type(error).__name__)
         core.sink=sink
     # Both public owners create their Core lazily. Observe the real construction
     # once, before open/offer, rather than dereferencing owner.core in __init__.
@@ -441,33 +457,24 @@ def install_driver():
             members=ids([json.loads(task.task.payload)['row']])
             member=getattr(task,'member',None)
             batch=None if member is None else asdict(member.batch_key)
-            emit('Ray_submit_start',identities=members,key=asdict(task.key),batch_key=batch,
+            point('Ray_submit_start',identities=members,key=asdict(task.key),batch_key=batch,
                  logical_input_bytes=len(task.task.payload),
                  scope='member transport entry; bulk data RPC is owned by the existing batch driver')
-        except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+        except Exception as error:point('handoff_probe_unknown',error_type=type(error).__name__)
         result=original(self,task,*args,**kwargs)
         try:
-            emit('Ray_submit_return',key=asdict(task.key),batch_key=batch,retained_refs=self.retained_refs())
+            point('Ray_submit_return',key=asdict(task.key),batch_key=batch,retained_refs=self.retained_refs())
             if handoff_profile():observe_ref_ready(result,asdict(task.key),members,batch_key=batch,
                 scope=('local member Future ready after native batch-page decode; not Ray RPC completion'
                        if batch is not None else None))
-        except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+        except Exception as error:point('handoff_probe_unknown',error_type=type(error).__name__)
         return result
     LotusChainActorBackend._submit_task=submit
-    poll=getattr(async_owner.AsyncRecordsActorOwner,'poll_prepared_batch',None)
-    if callable(poll):
-        @functools.wraps(poll)
-        def batch_poll(self,batch_key,*args,**kwargs):
-            result=poll(self,batch_key,*args,**kwargs)
-            observe_ref_ready(result,None,None,batch_key=core_key(batch_key),
-                scope='Ray poll Future notification only; no result read, member count or unique page pairing')
-            return result
-        async_owner.AsyncRecordsActorOwner.poll_prepared_batch=batch_poll
     original_audit=LotusChainActorBackend._audit_result
     @functools.wraps(original_audit)
     def audit(self,expected,value):
         if handoff_profile():
-            emit('driver_result_audit_enter',identities=ids([value]),
+            point('driver_result_audit_enter',identities=ids([value]),
                  scope='after decode, before native audit; recovery may also enter this hook')
         return original_audit(self,expected,value)
     LotusChainActorBackend._audit_result=audit
@@ -475,7 +482,7 @@ def install_driver():
     @functools.wraps(transferred)
     def transfer(self,task,value):
         member=getattr(task,'member',None)
-        emit('Ray_result_to_Core',identities=ids([value]),key=asdict(task.key),
+        point('Ray_result_to_Core',identities=ids([value]),key=asdict(task.key),
              batch_key=None if member is None else asdict(member.batch_key),retained_refs=self.retained_refs())
         return transferred(self,task,value)
     LotusChainActorBackend._result_transferred=transfer

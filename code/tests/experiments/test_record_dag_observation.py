@@ -98,6 +98,24 @@ class DAGObservationTests(unittest.TestCase):
         self.assertEqual((w['start_ns'], w['end_ns'], w['backpressure_events']), (1, 6, 1))
         self.assertEqual(w['reason'], 'Core_backpressure_observed_constraint_unknown')
 
+    def test_buffered_ready_points_use_enqueue_clock_instead_of_later_write_order(self):
+        a = call()
+        events = [dict(event='method_ready_boundary', action=action, monotonic_ns=written,
+                       observation_ns=observed, session_id=1, method_row_ref='rowref', stage_index=0,
+                       **(dict(key=a['core_task_key']) if action == 'Core_offer_accepted' else {}))
+                  for action, observed, written in [('method_ready', 1, 100), ('Core_offer_accepted', 6, 90)]]
+        result = self.run_capture([a], events)
+        wait = result['stages'][0]['waits'][0]
+        self.assertEqual((wait['start_ns'], wait['end_ns']), (1, 6))
+
+    def test_invalid_buffer_clock_and_missing_usage_remain_unknown(self):
+        for observed in (None, True, -1, 11):
+            with self.subTest(observation_ns=observed):
+                result = self.run_capture([call()], [dict(event='Core_released', monotonic_ns=10,
+                    observation_ns=observed, usage=None)])
+                self.assertIn('event_clock_unknown', result['issues'])
+                self.assertIsNone(result['Core_usage_peaks']['values'])
+
     def test_logical_capacity_and_native_API_peak_are_not_physical_release(self):
         a, b = call(), call('b', 'filter', 1)
         events = [native('open', 1, a), native('open', 2, b), native('close', 4, a), native('close', 5, b),

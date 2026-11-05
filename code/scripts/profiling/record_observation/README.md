@@ -250,14 +250,25 @@ API 关闭当作刷盘成功。重复关闭不重复派发，未取到的 RPC �
 不是 sink 已完成。跨进程仅使用同机 monotonic 边界，同线程才解释 thread CPU，重叠区间取并集。
 light 不能给出 GPU 忙／闲、硬件瓶颈或 Ray/Core 因果结论；on/off 需保留额外观察开销和所有重复。
 
-token 批路径沿用原 `submit_prepared_batch`／`poll_prepared_batch` 和逐成员 ACK。`actor_result_return`
+token 批路径沿用原 `submit_prepared_batch`／`poll_prepared_batch` 和 sink 成功后的成员 ACK；
+支持的异步 owner 将 ACK 携带到下一次有界 poll，包括最终排空。`actor_result_return`
 在原 poll 锁内、Ray 返回前按成员首次暴露记一次，附原 Core `key`、`batch_key` 和请求身份；
 复用原 `poll_exposed`／关闭后待 ACK 状态，不另建完成台账，重读分页和重复 ACK 不增加成员完成数。
 这只是首次尝试返回，不能证明该 RPC 已送达。`actor_batch_poll_return.members` 仅列首次暴露子集，
-不冒充完整页成员；`driver_batch_future_done` 每次 poll RPC 通知只带批身份，不读取 Future 结果，
-不能按该事件数统计成员或唯一配对重读页。批模式的 `driver_future_done` 则是原批 driver 解码后
+不冒充完整页成员。多余的 `driver_batch_future_done` 通知已经退出新捕获：旧包装为同一
+ObjectRef 额外调用一次 `future()`，而 [Ray 2.56.1 的实现](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/includes/object_ref.pxi#L122)
+每次都会新建适配器和完成订阅，且该事件没有
+唯一 RPC 配对。poll 返回计数继续来自 actor 事件，历史通知也不统计为成员完成。
+批模式的 `driver_future_done` 则是原批 driver 解码后
 本地成员 Future 就绪，不当作 Ray RPC 完成。actor 关闭后仍有批 ACK 待处理时 sink 不宣称收尾；
 缺失后续 ACK、sink 或有效时钟仍是未知，不能据此宣称完整捕获。
+
+handoff 的 driver 成员通知、submit/audit/transfer 和 Core key 时点复用下述有界缓冲，
+回调和 Core 操作中不做日志文件写入。Core 事件的 `usage=null` 明确表示未逐项采集，
+不再为每个成员重复扫描全部容量记录；它不是零用量或逐事件峰值证明。需要容量峰值时使用
+查询 owner 原有报告并保留其范围；full 模式继续显式采集原逐事件 usage 和详细 span。
+读取 buffered 时点使用 `observation_ns`，无该字段的历史事件仍用 `monotonic_ns`；非法入队时钟
+记录未知，不以刷盘时钟补成有效事件。时间线先按该时点在同一域内排序，不以文件写入顺序推因果。
 
 ## 设备绑定与 native 反馈审计
 
@@ -271,12 +282,16 @@ NVML GPU 活动率使用设备内部的采样周期，不能将每次轮询当�
 SM 占用或 HBM 带宽瓶颈证明。原 `nvidia-smi` 时间序列仍是另一份有起止括号的设备观察，
 不能与 NVML 或 CUDA trace 重复计数。handoff 模式不启动这些物理资源采样。
 
-观察开启时，native 反馈元数据复用原事件 sink，先写有界内存缓冲，`close_events` 再排空和 fsync；
-反馈/决策线程不写文件，也不等待 sink 的写锁。缓冲条数与单包字节分别受既有
+观察开启时，native 反馈元数据和 handoff driver 时点复用原事件 sink，先写有界内存缓冲，
+`close_events` 再排空和 fsync；入队不写文件，也不等待 sink 的写锁。缓冲条数与单包字节分别受既有
 `max_events_per_process`／`max_event_bytes` 限制；达到边界丢弃新观察并在 footer 记数，不覆盖旧证据。
 footer 的 `feedback_buffer` 保存 attempted/enqueued/drained/dropped/errors、峰值、剩余与边界；
 `drain_complete` 和 sink 的 flush/error/drop 需分别核对，均不代替原生产者退出和未决 RPC 证明。
-`observation_ns` 是入缓冲时钟，普通事件时钟是随后写 sink 的时间；来源时钟、接收时间分别保存。
+`observation_ns` 和 phase 保存在入队时，普通事件时钟是随后写 sink 的时间；来源时钟、接收时间分别保存。
+footer 另列 `enqueue_wall_ns`／`enqueue_thread_cpu_ns`；sink 的 emit 成本仍保留。跨线程 wall 可重叠，
+不相加当作查询耗时。详细 span 的 thread CPU 仍只按原同步点解释，不能使用 buffered 事件的刷盘线程
+替代生产者线程。缓冲编码、保留元数据和最终刷盘仍有成本；将工作移到结果之后不构成执行加速结论，
+对照须使用相同 observer 版本／模式，并保留 query、关闭和完整生命周期各自时间。
 
 `native_feedback_frame` 的 `IPC_cache` 只表示原客户端接受/拒绝缓存帧；`actor_snapshot` 带实际
 Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feedback_consumption` 分别记录

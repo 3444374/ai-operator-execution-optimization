@@ -23,6 +23,7 @@ import control_resource_C2 as controller
 TESTS = ('tests.experiments.test_record_resource_capture',
          'tests.experiments.test_record_dag_observation',
          'tests.experiments.test_record_resource_handoff',
+         'tests.experiments.test_record_handoff_passivity',
          'tests.experiments.test_record_prepare_finalization',
          'tests.experiments.test_git_record_observation',
          'tests.observability.test_records_telemetry',
