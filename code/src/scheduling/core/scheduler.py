@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import statistics
-import threading
 import time
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
-from queue import Empty, Full, Queue
-from typing import Callable, Iterable, Iterator
+from dataclasses import replace
+from typing import Callable, Iterable
 
 from .errors import EndpointCapacityUnavailable
 from .execution import SubmissionContext, SubmissionExecutionLedger
@@ -38,78 +36,7 @@ from .scheduler_types import (
     SubmissionAdapter as SubmissionAdapter,
 )
 from .ready_window import BoundedReadyWindow, ReadySubmission
-
-
-SOURCE_QUEUE_PUT_TIMEOUT_S = 0.01
-SOURCE_THREAD_CLOSE_TIMEOUT_S = 0.1
-
-
-@dataclass(frozen=True)
-class _SourceFailure:
-    error: BaseException
-
-
-class _ConcurrentEnvelopeSource:
-    """Expose a blocking input iterator without blocking completion polling."""
-
-    _END = object()
-    _POLL = object()
-
-    def __init__(
-        self,
-        envelopes: Iterable[PayloadEnvelope],
-        *,
-        poll_interval_s: float,
-    ) -> None:
-        self._queue: Queue[object] = Queue(maxsize=1)
-        self._cancelled = threading.Event()
-        self._poll_interval_s = poll_interval_s
-        self._thread = threading.Thread(
-            target=self._produce,
-            args=(envelopes,),
-            daemon=True,
-            name="scheduler-envelope-source",
-        )
-        self._thread.start()
-
-    def __iter__(self) -> Iterator[object]:
-        try:
-            while True:
-                try:
-                    item = self._queue.get(timeout=self._poll_interval_s)
-                except Empty:
-                    yield self._POLL
-                    continue
-                if item is self._END:
-                    return
-                if isinstance(item, _SourceFailure):
-                    raise item.error
-                yield item
-        finally:
-            self.close()
-
-    def close(self) -> None:
-        self._cancelled.set()
-        self._thread.join(timeout=SOURCE_THREAD_CLOSE_TIMEOUT_S)
-
-    def _produce(self, envelopes: Iterable[PayloadEnvelope]) -> None:
-        try:
-            for envelope in envelopes:
-                if not self._put(envelope):
-                    return
-        except BaseException as exc:
-            self._put(_SourceFailure(exc))
-        finally:
-            self._put(self._END)
-
-    def _put(self, item: object) -> bool:
-        while not self._cancelled.is_set():
-            try:
-                self._queue.put(item, timeout=SOURCE_QUEUE_PUT_TIMEOUT_S)
-                return True
-            except Full:
-                continue
-        return False
+from .envelope_source import _ConcurrentEnvelopeSource
 
 
 class SynchronousScheduler:
@@ -241,9 +168,6 @@ class SynchronousScheduler:
         envelopes: Iterable[PayloadEnvelope],
         topology: TopologySnapshot,
     ) -> SchedulerResult:
-        ledger = SubmissionExecutionLedger(
-            actual_work_extractor=self.actual_work_extractor,
-        )
         endpoints_by_id = {endpoint.endpoint_id: endpoint for endpoint in topology.endpoints}
         unknown_admission_endpoints = set(self.per_endpoint_admission) - set(endpoints_by_id)
         if unknown_admission_endpoints:
@@ -263,6 +187,9 @@ class SynchronousScheduler:
                 topology,
                 endpoints_by_id,
             )
+        ledger = SubmissionExecutionLedger(
+            actual_work_extractor=self.actual_work_extractor,
+        )
         max_inflight_seen = 0
         max_active_work_per_endpoint_seen = 0
         bounded_wait_samples: list[float] = []
@@ -316,18 +243,8 @@ class SynchronousScheduler:
                     endpoint.healthy and endpoint.available
                     for endpoint in capacity_topology.endpoints
                 ):
-                    preferred_endpoint = endpoints_by_id.get(envelope.request.preferred_endpoint_id)
-                    pool_id = (
-                        preferred_endpoint.pool_id
-                        if preferred_endpoint is not None
-                        else (
-                            self.pool_router.route(
-                                envelope.request,
-                                capacity_topology,
-                            ).pool_id
-                            if self.pool_router is not None
-                            else self.pool_id
-                        )
+                    pool_id = self._select_pool(
+                        envelope.request, capacity_topology, endpoints_by_id
                     )
                     try:
                         route = self.router.route(
@@ -460,10 +377,6 @@ class SynchronousScheduler:
         it does not speculate beyond the configured request/work window.
         """
 
-        if self.shared_credit is None:
-            raise AssertionError("ready-window execution requires shared credit")
-        if self.shared_ready_work_limit is None:
-            raise AssertionError("ready-window execution requires a work limit")
         ledger = SubmissionExecutionLedger(
             actual_work_extractor=self.actual_work_extractor,
         )
@@ -683,6 +596,19 @@ class SynchronousScheduler:
             ready_payload_bytes_transition_samples=tuple(ready_payload_bytes_transition_samples),
         )
 
+    def _select_pool(
+        self,
+        request: BatchRequest,
+        topology: TopologySnapshot,
+        endpoints_by_id: Mapping[str, EndpointSnapshot],
+    ) -> str:
+        preferred_endpoint = endpoints_by_id.get(request.preferred_endpoint_id)
+        if preferred_endpoint is not None:
+            return preferred_endpoint.pool_id
+        if self.pool_router is not None:
+            return self.pool_router.route(request, topology).pool_id
+        return self.pool_id
+
     def _register_ready_candidate(
         self,
         envelope: PayloadEnvelope,
@@ -699,18 +625,8 @@ class SynchronousScheduler:
             topology,
             routing_context,
         )
-        preferred_endpoint = endpoints_by_id.get(envelope.request.preferred_endpoint_id)
-        pool_id = (
-            preferred_endpoint.pool_id
-            if preferred_endpoint is not None
-            else (
-                self.pool_router.route(
-                    envelope.request,
-                    routing_topology,
-                ).pool_id
-                if self.pool_router is not None
-                else self.pool_id
-            )
+        pool_id = self._select_pool(
+            envelope.request, routing_topology, endpoints_by_id
         )
         route = self.router.route(
             envelope.request,
