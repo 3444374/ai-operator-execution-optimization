@@ -336,7 +336,7 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
         raise ValueError("Ray LOTUS chain requires a single local Ray node")
     control = Path(tempfile.mkdtemp(prefix="ray-lotus-chain-", dir=control_dir))
     try:
-        from src.baselines.common.private_artifacts import require_outside_git
+        from src.infrastructure.private_artifacts import require_outside_git
 
         require_outside_git(control)
         os.chmod(control, 0o700)

@@ -156,7 +156,7 @@ def main(root):
     from integrations.imlane_records.chain_runtime import check_external_lease
     from src.experiments.attempt_ledger import AttemptBudget
     from src.experiments.cell_budget import CellBudgetLedger
-    from src.baselines.common.private_artifacts import write_private_json
+    from src.infrastructure.private_artifacts import write_private_json
     check_external_lease(config['external_owner'])
     config['worker_entry_ns']=started
     os.environ.update(observer_environment(config))

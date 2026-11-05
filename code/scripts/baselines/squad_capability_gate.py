@@ -7,7 +7,7 @@ database-system ranking is produced here.
 
 Fixes per codex sixth review:
   * command redaction: ``sys.argv`` is redacted via the shared
-    ``src.baselines.common.redact`` module (DB-URL password stripped,
+    ``src.infrastructure.redact`` module (DB-URL password stripped,
     ``--api-key`` -> ``***``); no raw secret reaches evidence.
   * ``--mode full`` is fail-closed: verifies row_count == expected (10570),
     unique doc_id, unique source_example_id, non-empty reference_answers, AND
@@ -61,7 +61,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.common.contracts import ChatRequest  # noqa: E402
-from src.baselines.common.redact import (  # noqa: E402
+from src.infrastructure.redact import (  # noqa: E402
     redact_argument_list,
     redact_database_url,
     redact_text,

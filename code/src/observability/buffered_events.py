@@ -8,7 +8,7 @@ import queue
 import threading
 import time
 
-from src.baselines.common.private_artifacts import require_outside_git
+from src.infrastructure.private_artifacts import require_outside_git
 
 
 class EventRecordingError(RuntimeError):

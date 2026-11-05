@@ -19,8 +19,8 @@ sys.path.insert(0, str(CODE))
 from integrations.imlane_records import owner as tools
 from integrations.imlane_records.client import RecordsBridge, RecordsRejected
 from integrations.imlane_records.resource_limits import check_resources, owner_limits
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 from src.infrastructure.runner_lease import (
     HOST_SCOPE_DIR_NAME, HOST_SCOPE_FINGERPRINT, acquire_runner_lease,
 )

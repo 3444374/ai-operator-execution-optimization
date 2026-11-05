@@ -8,8 +8,8 @@ import sys
 
 OWNED = Path(__file__).resolve().parent
 sys.path.insert(0, str(OWNED.parents[1]))
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 
 AUTHOR = "072f8257db80569e42c9f5727d839587df529652"
 

@@ -12,7 +12,7 @@ from src.execution_provider.adapters.incremental_execution import build_fixed_mo
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig, RayMapTransport
 from src.experiments.map_observation_probe import SyntheticTable, WORK
-from src.experiments.postgresql.query_evaluation import ray_transport_accounting
+from tests.execution_provider.transport_accounting import ray_transport_accounting
 from src.scheduling.core.session_contract import SessionLimits, SessionSpec, TaskInfo, TaskKey
 from src.scheduling.runtime.stage_broker import StageBrokerLimits
 from tests.execution_provider.test_ray_map_transport import FakeRay, task

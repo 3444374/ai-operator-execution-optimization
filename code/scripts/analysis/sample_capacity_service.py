@@ -11,7 +11,7 @@ import time
 import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from src.baselines.common.private_artifacts import open_private_text, write_private_json
+from src.infrastructure.private_artifacts import open_private_text, write_private_json
 
 METRICS = re.compile(r'^vllm:(?:num_requests_(?:running|waiting)|kv_cache_usage_perc|'
                      r'prefix_cache_(?:queries|hits)_total|prompt_tokens_total|generation_tokens_total)(?:\{| )')

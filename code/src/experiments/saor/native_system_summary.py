@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 from src.baselines.common.database_identity import DatabaseIdentity
 from src.baselines.common.manifests import read_manifest
-from src.baselines.common.redact import redact_text
+from src.infrastructure.redact import redact_text
 
 from .native_system_matched import (
     FORMAL_AUTHORIZATION_SCOPE,

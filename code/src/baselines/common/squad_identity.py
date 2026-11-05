@@ -19,7 +19,7 @@ import socket
 import subprocess
 from pathlib import Path
 
-from .redact import redact_text
+from src.infrastructure.redact import redact_text
 
 # Must equal import_squad_workload.EXPECTED_DEV_COUNT and the importer's
 # compute_content_hash definition. Pinned by test_content_hash_matches_importer.

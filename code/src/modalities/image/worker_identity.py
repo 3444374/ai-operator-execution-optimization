@@ -23,7 +23,7 @@ def _canonical_gpu_uuid(value, *, nvml=False):
 
 @contextmanager
 def resource_record_directory(root):
-    from src.baselines.common.private_artifacts import require_outside_git
+    from src.infrastructure.private_artifacts import require_outside_git
     require_outside_git(root)
     previous = os.environ.get("SEMLOOM_IMAGE_RESOURCE_DIR")
     os.environ["SEMLOOM_IMAGE_RESOURCE_DIR"] = str(root)
@@ -49,7 +49,7 @@ def record_worker_identity(record):
     directory = os.environ.get("SEMLOOM_IMAGE_RESOURCE_DIR")
     if directory is None:
         return
-    from src.baselines.common.private_artifacts import require_outside_git
+    from src.infrastructure.private_artifacts import require_outside_git
     root = Path(directory)
     require_outside_git(root)
     root.mkdir(parents=True, exist_ok=True)

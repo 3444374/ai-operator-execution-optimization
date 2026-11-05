@@ -39,8 +39,8 @@ def _encode(value):
 
 
 def _publish(path, value):
-    from src.baselines.common.private_artifacts import write_private_json
-    from src.baselines.common.redact import redact_json_values
+    from src.infrastructure.private_artifacts import write_private_json
+    from src.infrastructure.redact import redact_json_values
 
     temporary = path.with_suffix(".tmp")
     write_private_json(temporary, redact_json_values(value))

@@ -9,8 +9,8 @@ import sys
 import time
 
 from integrations.imlane_records.chain_runtime import digest, read_json, read_owner, preflight_owner, AuthorRunGuard
-from src.baselines.common.private_artifacts import new_private_directory, require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import new_private_directory, require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 from src.semantic_methods.lotus.records import RecordsResources
 from src.semantic_methods.lotus.record_chain import (
     LotusRecordChain, RecordOccurrence, _ordered_columns, records_to_frame, validate_chain_source,

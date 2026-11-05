@@ -2,7 +2,7 @@
 
 This worker is called inside the existing owner's lease/resource supervisor.
 It creates no lease, budget, retries, detached workers, or performance claims.
-Core and opt-in IMLane CPython sessions expose reusable model owners.
+Core, native LOTUS and opt-in IMLane CPython sessions expose reusable model owners.
 Ray can reuse its runtime while each native Dataset still owns a new model.
 The explicit ``isolated`` mode retains per-query driver startup and shutdown.
 """
@@ -13,8 +13,8 @@ import time
 import traceback
 import uuid
 
-from src.baselines.common.private_artifacts import new_private_directory, write_private_json, publish_private_json
-from src.baselines.common.redact import redact_json_values
+from src.infrastructure.private_artifacts import new_private_directory, write_private_json, publish_private_json
+from src.infrastructure.redact import redact_json_values
 
 
 # Compatibility exports: existing callers retain their module API.
@@ -49,12 +49,17 @@ def check_plan(plan):
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
     from src.experiments.movie_records_config import records_resources
     resources = records_resources(plan)
-    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference')
+    context_limit = (engine.max_model_len if plan['backend'] in ('semloom-core', 'semloom-static-reference', 'lotus-native')
                      else engine.legacy_max_model_len)
     if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
+    if plan["backend"] == "lotus-native" and (
+            type(plan["profile"]) is not dict or set(plan["profile"]) != {"native_lm_max_batch_size"}
+            or type(plan["profile"]["native_lm_max_batch_size"]) is not int
+            or plan["profile"]["native_lm_max_batch_size"] < 1):
+        raise ValueError("native LOTUS requires an explicit native_lm_max_batch_size")
     core_profile = None
     capacity = async_limits = None
     batching = None
@@ -208,6 +213,11 @@ class _MovieDriver:
         new_private_directory(self.directory)
         if method is None:
             method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"])
+        if backend == "lotus-native" and self.plan["lifecycle"] == "resident":
+            from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+            self.owner = LocalNativeModel(self.engine, self.generation, self.resources,
+                self.plan["profile"]["native_lm_max_batch_size"])
+            return self.owner.start()
         if backend == "daft" and self.plan["lifecycle"] == "native_single_thread_session":
             from src.baselines.text.frameworks.daft_lotus_session import DaftNativeSession
             deadline = (time.monotonic() + self.resources.startup_timeout_s
@@ -309,7 +319,6 @@ class _MovieDriver:
     def query(self, spec, emit):
         from src.baselines.text.movie_records import MovieRecordSource
         from src.baselines.text.movie_tasks import MovieTask
-        from src.experiments.lotus_records_movie import run_movie_query
         from integrations.imlane_records.chain_runtime import check_external_lease
         check_external_lease(self.context["owner_context"])
         # Every query reopens and verifies the original/materialized CSV input.
@@ -329,6 +338,20 @@ class _MovieDriver:
         context["output_dir"] = directory
         checkout = self.context["sembench_checkout"]
         backend = self.plan["backend"]
+        if backend == "lotus-native":
+            from src.baselines.text.frameworks.lotus_native_local import run
+            self.last_expected, self.last_query_directory = source.expected(spec["query_id"]), directory
+            self.last_query_failure = self.last_query_report = None
+            try:
+                self.last_query_report = run(source, checkout, method, self.generation, self.engine,
+                    self.resources, query_id=spec["query_id"], profile=self.plan["profile"],
+                    observer=emit, context=context, shared_model=self.owner)
+                return self.last_query_report
+            except BaseException as error:
+                self.last_query_failure = error
+                self.last_query_report = getattr(error, "query_report", None)
+                raise
+        from src.experiments.lotus_records_movie import run_movie_query
         if backend == "ray-data" and (not self.ray.is_initialized()
                 or self.ray.get_runtime_context().get_node_id() != self.ray_identity["node_id"]):
             raise RuntimeError("owned Ray runtime changed before query execution")
@@ -408,10 +431,22 @@ class _MovieDriver:
                 receipts["model"] = _failure(error)
                 errors.append("model close failed")
         if self.owner is not None and self.last_query_report is not None:
-            from src.experiments.lotus_records_movie import merge_unconsumed_call_results
             try:
-                late = getattr(self.owner, "last_query_report", None)
-                if late is not None:
+                if self.plan['backend'] == 'lotus-native':
+                    final = receipts.get('model', {}).get('native_final_accounting')
+                    if final is not None:
+                        if final['query_id'] != self.last_query_report['query_id']:
+                            raise ValueError('native closing accounting belongs to another query')
+                        # Source occurrences that the original SDK did not return
+                        # stay unknown. Native late usage is separate evidence.
+                        self.last_query_report['native_final_accounting'] = final
+                        del receipts['model']['native_final_accounting']
+                    if 'native_final_accounting' in self.last_query_report:
+                        receipts['final_query_accounting'] = self.last_query_report
+                        publish_private_json(self.last_query_directory / 'query-accounting-final.json',
+                                             redact_json_values(self.last_query_report))
+                elif (late := getattr(self.owner, "last_query_report", None)) is not None:
+                    from src.experiments.lotus_records_movie import merge_unconsumed_call_results
                     merge_unconsumed_call_results(self.last_query_report, self.last_expected, late,
                                                   primary=self.last_query_failure)
                     receipts["final_query_accounting"] = self.last_query_report

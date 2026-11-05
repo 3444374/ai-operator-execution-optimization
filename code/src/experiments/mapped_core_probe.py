@@ -9,8 +9,8 @@ import sqlite3
 import subprocess
 import time
 
-from src.baselines.common.private_artifacts import new_private_directory, write_private_json
-from src.baselines.common.redact import redact_json_values
+from src.infrastructure.private_artifacts import new_private_directory, write_private_json
+from src.infrastructure.redact import redact_json_values
 from .map_observation_probe import run_case
 
 

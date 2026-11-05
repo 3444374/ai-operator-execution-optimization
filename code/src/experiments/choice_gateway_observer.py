@@ -27,8 +27,8 @@ from src.experiments.attempt_ledger import (
     observe_async_http_posts,
 )
 from src.experiments.gateway_observer import ObservedAdapter, SessionObserver
-from src.baselines.common.redact import redact_json_values
-from src.baselines.common.private_artifacts import content_digest, open_private_text, write_private_json, require_outside_git
+from src.infrastructure.redact import redact_json_values
+from src.infrastructure.private_artifacts import content_digest, open_private_text, write_private_json, require_outside_git
 from src.experiments.expected_requests import ExpectedRequests
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.buffered_events import BufferedEvents, compact_event

@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 import sys
 
-from src.baselines.common.private_artifacts import open_private_text
+from src.infrastructure.private_artifacts import open_private_text
 from src.experiments import movie_records_service as service_results
 from src.experiments import movie_records_session as session
 from src.semantic_methods.lotus.records import CallLedger

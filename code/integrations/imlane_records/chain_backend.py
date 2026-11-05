@@ -11,7 +11,7 @@ from integrations.imlane_records.chain_host import ChainResults, ChainScope, con
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.model_process import assigned_environment
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.baselines.text.frameworks.lotus_chain_native_relation import NativeExtractRelationRows
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns
 from src.semantic_methods.lotus.records import RecordsResources

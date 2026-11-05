@@ -9,8 +9,8 @@ import signal
 import threading
 from types import SimpleNamespace
 
-from src.baselines.common.private_artifacts import require_outside_git
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git
+from src.infrastructure.redact import redact_text
 
 
 def run_owned_query(root, owner, *, query_id, backend, required_requests, preflight,

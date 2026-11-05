@@ -24,7 +24,7 @@ from src.baselines.text.movie_tasks import validate_query_result as validate_res
 from src.observability.native_query_timing import QueryClock
 from src.infrastructure.private_artifacts import read_json as read, file_sha256 as sha
 from src.baselines.text.movie_records import MovieRecordSource
-from src.baselines.common.private_artifacts import require_outside_git,write_private_json,content_digest
+from src.infrastructure.private_artifacts import require_outside_git,write_private_json,content_digest
 from src.semantic_methods.lotus.records import CallLedger
 from src.observability.records_telemetry import TelemetryEvents
 from src.experiments.movie_matrix_support import (

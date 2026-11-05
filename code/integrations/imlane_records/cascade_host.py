@@ -18,7 +18,7 @@ from integrations.imlane_records.model_lifecycle import model_closed
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.records_host import RecordsResults
 from integrations.imlane_records.verify_filter import FilterScope
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.semantic_methods.lotus.cascade import CascadeStage, local_generation
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec

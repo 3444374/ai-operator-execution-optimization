@@ -7,10 +7,10 @@ from pathlib import Path
 import time
 import traceback
 import uuid
-from src.baselines.common.private_artifacts import new_private_directory, publish_private_json, write_private_json
-from src.baselines.common.redact import redact_json_values
+from src.infrastructure.private_artifacts import new_private_directory, publish_private_json, write_private_json
+from src.infrastructure.redact import redact_json_values
 
-RESIDENT = frozenset({"semloom-core", "semloom-static-reference", "imlane"})
+RESIDENT = frozenset({"semloom-core", "semloom-static-reference", "lotus-native", "imlane"})
 BACKENDS = RESIDENT | {"ray-data", "daft", "imlane"}
 LIFECYCLES = {"resident", "isolated", "runtime_reuse_only", "native_single_thread_session"}
 DAFT_SESSION_PROFILE = dict(native_threads=1, use_process=False, max_concurrency=None)

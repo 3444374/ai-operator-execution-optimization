@@ -16,8 +16,8 @@ import time
 CODE_ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").is_dir())
 sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.common.private_artifacts import require_outside_git
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git
+from src.infrastructure.redact import redact_text
 from src.modalities.image.clip import decode_rgb_image, configure_torch_thread_pools
 from src.modalities.image.file_source import load_image_file_manifest
 from src.semantic_methods.lotus.image_backend import DirectImageExecutor, SemLoomImageExecutor, RayDataImageExecutor

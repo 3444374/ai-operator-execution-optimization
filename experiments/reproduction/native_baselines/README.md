@@ -223,5 +223,9 @@ git worktree add --detach /tmp/semloom-request-history-9da 9da299e90f79fd0b71f2a
 对应准确字节存于 `historical_sources/646216fa/`，原投影ID、expected摘要和既有映射均保留。
 恢复旧实验须选择整份准确历史树或明确投影，维护运行时不导入归档。旧失败、费用与质量结果不删改。
 
-原生LOTUS Q2b独立对照与新Core功能检查不混称同一路径；原生LOTUS非HTTP模型连接尚未恢复。
+原生LOTUS Q2b独立对照与新Core功能检查不混称同一路径。Movie 原生LOTUS现以原LM＋本地模型IPC恢复到普通session；只有CPU资格，官方完整Q123依赖和实机待验。
 PG工作按用户要求暂停/归档，保留后续恢复所需研究方案、接线与来源，不等于永久放弃PG；SAOR研究方案保留。
+
+## PG 暂停与旧 HTTP 实验归档（2026-11-05）
+
+[逐文件来源索引](../paused_pg_and_retired_http_20261105/README.md)记录退役的旧PG／HTTP源码、测试、脚本和配置。生产与基线直接使用同一职责共享层；旧工具的别名不作为当前生产依赖。五份投影原摘要与ID保持，只追加必要精确旧字节来源。

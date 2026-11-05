@@ -1,3 +1,7 @@
+> 当前实验入口统一见 [SemBench 脚本](../../code/scripts/README.md)。本 runbook 保留环境、网络与磁盘约定。
+> 已退役 PG／HTTP 对照的命令和旧 native-system JSON 只在[准确冻结树](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)恢复，
+> 不代表当前可执行配置；PG 研究暂停而非放弃。
+
 # AutoDL 云部署指南
 
 LOTUS 原版 Movie 的 main 四臂配置见[示例](sembench_lotus_queries.example.json)，

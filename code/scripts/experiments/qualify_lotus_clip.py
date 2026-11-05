@@ -12,8 +12,8 @@ sys.path.insert(0, str(CODE_ROOT))
 
 import numpy as np
 from PIL import Image
-from src.baselines.common.private_artifacts import require_outside_git
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git
+from src.infrastructure.redact import redact_text
 from src.modalities.image.clip import configure_torch_thread_pools, decode_rgb_image
 from src.modalities.image.file_source import load_image_file_manifest
 from src.semantic_methods.lotus.image_backend import DirectImageExecutor

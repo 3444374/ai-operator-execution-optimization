@@ -10,10 +10,10 @@ import time
 
 import psutil
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.private_artifacts import (
     new_private_directory, open_private_text, require_outside_git, write_private_json,
 )
-from src.baselines.common.redact import redact_argument_list, redact_json_values, redact_text
+from src.infrastructure.redact import redact_argument_list, redact_json_values, redact_text
 from src.infrastructure.owned_processes import (
     _exit_wait_identity, _live, _observe, _seconds, _signal, _wait,
 )

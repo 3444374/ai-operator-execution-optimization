@@ -92,6 +92,25 @@ class UnitTests(unittest.TestCase):
         samples=model_API_samples('lotus-native',report)
         self.assertEqual(len(samples),1);self.assertEqual(samples[0]['unit'],'HTTP_POST')
 
+    def test_local_native_uses_actual_independent_model_receipts(self):
+        report = dict(protocol='local_async_model_IPC', native_transport_receipts=[
+                          dict(row, submission_confirmed=True) for row in self.rows()],
+                      calls=dict(records=[]))
+        samples = model_API_samples('lotus-native', report)
+        self.assertEqual(len(samples), 4)
+        self.assertTrue(all(row['unit'] == 'single_generate' and row['records'] == 1 for row in samples))
+        self.assertTrue(all(row['elapsed_s'] == 1 for row in samples))
+
+    def test_local_native_keeps_presubmit_rejections_without_counting_model_API_calls(self):
+        for submitted in (False, None):
+            report = dict(protocol='local_async_model_IPC', native_transport_receipts=[
+                dict(self.rows('failed')[0], submission_confirmed=submitted)])
+            sample = model_API_samples('lotus-native', report)[0]
+            self.assertFalse(sample['countable_API_unit'])
+            self.assertEqual(sample['status'], 'not_sent' if submitted is False else 'unknown')
+            self.assertIsNone(sample['elapsed_s'])
+            self.assertIsNone(sample['start_ns'])
+
     def test_duplicate_offline_event_charged_once(self):
         event=dict(event_id='scan',actual_scan_calls=10,actual_scan_wall_s=2.)
         self.assertEqual(offline_scan_total([event,dict(event)]),dict(events=1,calls=10,wall_s=2.))

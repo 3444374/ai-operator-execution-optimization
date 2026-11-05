@@ -107,9 +107,11 @@ def model_API_samples(backend,report):
     Core rows are independent calls. Native POST attempts are independent calls.
     Only original chat(list) rows are grouped by shared engine+interval receipt.
     """
-    rows=report.get('calls',{}).get('records',[])
+    native_local = backend == 'lotus-native' and report.get('protocol') == 'local_async_model_IPC'
+    rows = (report.get('native_transport_receipts', []) if native_local else
+            report.get('calls',{}).get('records',[]))
     samples=[]
-    if backend=='lotus-native':
+    if backend=='lotus-native' and not native_local:
         for receipt in report.get('http_receipts',[]):
             timing=receipt.get('external_HTTP_timing',{})
             sent=bool(receipt.get('http_started'))
@@ -124,7 +126,7 @@ def model_API_samples(backend,report):
     grouped=defaultdict(list)
     for index,row in enumerate(rows):
         start,end=row.get('model_start_monotonic'),row.get('model_end_monotonic')
-        if backend=='semloom-core':
+        if backend=='semloom-core' or native_local:
             key=('independent',row.get('call_id',index))
         elif start is None or end is None:
             key=('unresolved_batch_identity',row.get('engine_uid'))
@@ -134,10 +136,17 @@ def model_API_samples(backend,report):
     for key,batch in grouped.items():
         first=batch[0];start=first.get('model_start_monotonic');end=first.get('model_end_monotonic')
         complete=isinstance(start,(int,float)) and isinstance(end,(int,float)) and end>=start
+        countable = key[0]!='unresolved_batch_identity'
         statuses={x.get('status','unknown') for x in batch}
         status='succeeded' if statuses=={'succeeded'} else 'failed' if 'failed' in statuses else 'unknown'
-        samples.append(dict(api_id=repr(key),unit='single_generate' if backend=='semloom-core' else 'native_chat_batch',
-            countable_API_unit=key[0]!='unresolved_batch_identity',
+        if native_local:
+            submitted = first.get('submission_confirmed')
+            countable = submitted is True
+            if not countable:
+                status = 'not_sent' if submitted is False else 'unknown'
+                complete = False  # Local rejection intervals are not model API durations.
+        samples.append(dict(api_id=repr(key),unit='single_generate' if backend=='semloom-core' or native_local else 'native_chat_batch',
+            countable_API_unit=countable,
             records=len(batch),status=status,start_ns=int(start*1e9) if complete else None,
             end_ns=int(end*1e9) if complete else None,elapsed_s=end-start if complete else None,
             row_ids=[x.get('row_id') for x in batch]))

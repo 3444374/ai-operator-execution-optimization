@@ -6,7 +6,7 @@ from pathlib import Path
 import time
 
 from .daft_lotus_records import _DaftRows, _graph, _check, DEFAULT_PREPARED_BATCH_BYTES
-from src.baselines.common.private_artifacts import new_private_directory
+from src.infrastructure.private_artifacts import new_private_directory
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import threading
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
 from src.semantic_methods.lotus.records import RecordScan, identity

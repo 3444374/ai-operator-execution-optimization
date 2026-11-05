@@ -562,12 +562,12 @@ class HandoffTests(unittest.TestCase):
         runner=fixtures.load('run_resource_C2');modules={}
         for name in ('integrations','integrations.imlane_records','integrations.imlane_records.chain_runtime',
                      'src.experiments','src.experiments.attempt_ledger','src.experiments.cell_budget',
-                     'src.baselines','src.baselines.common','src.baselines.common.private_artifacts'):
+                     'src.baselines','src.baselines.common','src.infrastructure.private_artifacts'):
             module=ModuleType(name);module.__path__=[];modules[name]=module
         leases=[];modules['integrations.imlane_records.chain_runtime'].check_external_lease=leases.append
         modules['src.experiments.attempt_ledger'].AttemptBudget=lambda *a:a
         modules['src.experiments.cell_budget'].CellBudgetLedger=lambda *a:object()
-        modules['src.baselines.common.private_artifacts'].write_private_json=lambda p,v:Path(p).write_text(json.dumps(v))
+        modules['src.infrastructure.private_artifacts'].write_private_json=lambda p,v:Path(p).write_text(json.dumps(v))
         config=dict(execution_enabled=True,source_root='/fixture-source',cell_id='fixture-cell',artifact_root=str(self.fixture.directory),external_owner={'test':'lease'},
             observation=dict(self.observer.settings(),mode='on'),workload=dict(kind='record_chain',name='MMF',expected_calls=12),
             run_id='fixture',expected_source={'head':'frozen'},engine={'max_num_seqs':128,'max_model_calls':12},generation={'stop':[fixtures.SECRET]})

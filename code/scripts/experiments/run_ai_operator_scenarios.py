@@ -35,7 +35,7 @@ from src.experiments.scenarios.core import (  # noqa: E402
     validate_service_metadata,
 )
 from src.experiments.shared_vllm.preflight import wait_for_idle  # noqa: E402
-from src.baselines.common.redact import (  # noqa: E402
+from src.infrastructure.redact import (  # noqa: E402
     redact_argument_list as _redact_argument_list,
     redact_database_url as _redact_database_url,
 )

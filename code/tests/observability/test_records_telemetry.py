@@ -155,7 +155,7 @@ class RecordsTelemetryTests(unittest.TestCase):
             path = Path(name) / "events.jsonl"
             sink = TelemetryEvents(path)
             sink.mark("owner_start")
-            with patch("src.baselines.common.private_artifacts.os.fsync",
+            with patch("src.infrastructure.private_artifacts.os.fsync",
                        side_effect=OSError("fixture fsync failure")):
                 sink.close()
             self.assertTrue(sink._stream.closed)
@@ -171,7 +171,7 @@ class RecordsTelemetryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             telemetry = RecordsTelemetry(Path(name) / "perf", gpu_ids=("GPU-fixture",), sample_fn=sample).start()
             self.assertTrue(ready.wait(2))
-            with patch("src.baselines.common.private_artifacts.os.fsync",
+            with patch("src.infrastructure.private_artifacts.os.fsync",
                        side_effect=OSError("fixture fsync failure")):
                 report = telemetry.close()
             self.assertTrue(report["collector_thread_stopped"])

@@ -19,7 +19,7 @@ from src.baselines.common.database_identity import (
     DatabaseIdentityError,
 )
 from src.baselines.common.manifests import read_manifest
-from src.baselines.common.redact import redact_text
+from src.infrastructure.redact import redact_text
 from src.infrastructure.runner_lease import acquire_host_runner_lease
 from src.infrastructure.vllm_preflight import validate_service_identity
 from src.experiments.saor.native_system_contract import (

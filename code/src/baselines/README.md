@@ -1,81 +1,47 @@
-# Baseline and comparison harnesses
+# 独立对照与公共语义
 
-[原生CLIP检索](../semantic_methods/lotus/README.md#原生-clip-图像检索)使用[Daft CLIP UDF](image/frameworks/daft_clip.py)与Ray CLIP predictor；图与模型批次仍由原生系统拥有，main570四路径40行严格单卡实机按同题报告解释，未认证HSE／多卡。
-
-本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
-
-运行所需观测、预付额度和Map请求值分别复用`observability/`、`infrastructure/request_budget.py`和`execution_provider/semantic_map.py`，不从实验入口取得实现。旧`text/products/project_static.py`只保留比较编排的兼容API，维护实现在`src/experiments/project_static.py`；原画像CLI、实验名与计时含义保持。
-
-LOTUS链的[纯结果身份合同](../semantic_methods/lotus/record_results.py)归方法公共层，Ray Data/Daft与Core直接复用；旧`text/frameworks/lotus_chain_results.py`仅重导出同一类型/函数，原生图、批次与模型生命周期不变。同步模型进程及阶段清理已归[同步IPC](../serving/backends/vllm_sync_process.py)和[进程清理](../serving/backends/stage_process_cleanup.py)，旧路径保留同对象导出与原同步进程CLI；逐阶段生成进程归[阶段生成IPC](../serving/backends/staged_generation_process.py)，链worker归[共享方法worker](../execution_provider/method_workers/lotus_chain_batch.py)；两份旧模块直接重导出同一对象，旧进程CLI仍可用。
+本目录保留原生系统的执行图、作者桥接和对照任务。LOTUS 方法、模型传输、结果合同、观测和通用文件工具
+放在所属共享层，SemLoom 与对照分别依赖这些组件；生产主线不导入 baseline 实现。
 
 <a id="text-execution-boundaries"></a>
-## 文本入口按交接边界分类
+## 文本执行边界
 
-框架名、HTTP传输或“native”字样不决定层级。表内标注PR52的接点已进入main，PR56另归位共享结果模块；[原45d184df实机来源](https://github.com/3444374/ai-operator-execution-optimization/tree/45d184dfaf0ef3a85ccccc805be7fc38e646b527)保持不变。当前实现、历史投影及实机资格分别解释，源码接纳不等于每条路径都已取得模型或性能资格。
-
-| 路径（相对 `code/src/`） | 来源状态 | 进入接点的单位与owner | 不能据此声称 |
+| 对照 | 真实入口／实现 | 谁拥有执行 | 当前限制 |
 |---|---|---|---|
-| `baselines/text/frameworks/native_calls.py`、`prepared_map.py` | main已有 | 外部已准备完整HTTP call；Daft/Ray Data原生图拥有执行/背压，SDK接回完整响应 | 框架已接管原LOTUS扫描、提示准备或跨算子推进 |
-| `baselines/text/frameworks/{daft,ray_data}_pg_http.py` | main已有 | 原生SQL reader读取源行，在图内构造同应用请求并消费；是源数据流入口 | 仅因最终走HTTP就归为prepared-call，或称它执行了原LOTUS records方法 |
-| `baselines/text/frameworks/ray_data_lotus_records.py`、`daft_lotus_records.py` | main已接纳（PR52） | 原始records与显式方法配置；方法准备与模型调用在原生worker路径，框架拥有图/worker；查询调用方收齐并重排完整回执后调用原LOTUS parser | 与上面的同名Ray/Daft请求接点相同，或使用SemLoom Core策略 |
-| `baselines/text/frameworks/daft_lotus_session.py` | main已接纳（PR52） | 明确的Daft单线程session配置；与isolated配置分别命名/比较 | Daft所有原生配置都跨查询常驻，或仅删close即可保留模型 |
-| `baselines/text/frameworks/{ray_data,daft}_lotus_chain.py`、`*_lotus_cascade.py` | main已接纳（PR52） | 原方法链/级联的原生执行；保留合法关系/全局屏障和算法状态 | 现有接口等于任意DAG、group提前闭合或新FIFO优化已通过 |
-| `execution_provider/adapters/lotus_records_core.py`、`lotus_record_chain_core.py` | main已接纳（PR52） | LOTUS→SemLoom Core的执行适配，属于项目方法；此处仅导航，不是本包native执行器 | 将Core credit/router注入原生baseline后仍称native |
-| `baselines/text/frameworks/kalypso_native/` | main已接纳（PR52） | SemBench任务/评价适配与外部作者服务；作者prompt/parser/执行调度独立 | LOTUS后端或严格同请求调度消融；客户端close等于作者服务退出 |
+| 原生 LOTUS | [lotus_native_local.py](text/frameworks/lotus_native_local.py)，普通 Movie session 的 `backend=lotus-native` | 原算子、`LM.__call__`、`_process_uncached_messages`、LiteLLM `batch_completion`；公共 provider 只接本地模型 IPC | 新非 HTTP 路径只有 CPU 资格，官方完整 Q123 依赖及实机待验 |
+| Daft | [daft_lotus_records.py](text/frameworks/daft_lotus_records.py) | `read_csv`、原生 class／batch UDF 与模型 class 生命周期 | 明确的隔离配置；可选[单线程 session](text/frameworks/daft_lotus_session.py)单独比较 |
+| Ray Data | [ray_data_lotus_records.py](text/frameworks/ray_data_lotus_records.py) | Dataset、`map_batches`、ActorPoolStrategy 与原生图 | runtime 复用不等于跨查询模型复用 |
+| IMLane | [resident.py](../../integrations/imlane_records/resident.py)、[隔离入口](../experiments/imlane_movie_formal.py) | 作者 CPython Filter 桥接与作者执行；共享方法／模型内核 | 原生作者能力和有限桥接合同保留，不等于任意 DAG |
+| Kalypso | [kalypso_native](text/frameworks/kalypso_native/README.md) | 固定上游作者服务和原生默认 | 独立语义系统；作者的 HTTP 服务边界不是退役 Movie HTTP 模型 owner |
 
-已接纳接点的Ray `runtime_reuse_only`和Daft `native_single_thread_session`是生命周期配置，不是新的执行层级；同题比较须同时记录输入边界、方法owner、模型owner和计时边界。
-PR52已接纳的共享`lotus_chain_batch`及私有模型process也被Core引用；它们属于无策略共享接点，不能因兼容入口在本目录就算作native专属。
-旧 Movie HTTP owner、对应 `lotus-native` Movie 入口和失效五后端固定矩阵已退役。
-当前 Movie 主线使用 LOTUS 方法层与 SemLoom Core 的非 HTTP 模型连接；原生 Q2b 与 Kalypso 对照单独记录，不能借它们声称 Movie HTTP 路径仍在使用。
-历史实现及投影从[恢复记录](../../../experiments/reproduction/native_baselines/README.md#retired-movie-http)读取。
-原生 LOTUS 非 HTTP 对照尚未恢复，不将 Core 执行当作原生 LOTUS 调度。
-当前原生 Ray／Daft records、session、chain、cascade 与有限 IMLane 路径使用
-[同步参数所有者](text/frameworks/sync_reference_engine.py)和[链参数适配](text/frameworks/reference_chain_batch.py)，
-继续显式传原 4096／8／4096 或用户指定值，沿用原 `LLM.chat`。当前 SemLoom 同步省略行为与它们分别记录；
-两者共用有限方法、私有 IPC、结果和关闭实现，旧公开导入仍指向原共享类型。
-五个共享文件已按职责归位：结果合同在`semantic_methods/lotus/record_results.py`，同步IPC、阶段生成IPC及清理在`serving/backends/`，有限链worker在`execution_provider/method_workers/`；此共享包不导入Core策略。清楚的vendor wrapper、旧request桥与稳定CLI保留。逐项采用决定见[命名与迁移清单](../../../experiments/plans/系统架构.md#code-directory-boundaries)，历史复现字节保持。
-共享有限链的[结果关联索引](../semantic_methods/lotus/README.md#finite-chain-result-index)与[可选审计引用释放](../semantic_methods/lotus/README.md#completed-chain-audit-lifetime)的适用范围见方法说明。
+SemLoom Core 的实现位于 `execution_provider/adapters/lotus_records_core.py` 和有限链适配，
+它是项目方法，被比较时单独命名，不列作原生 LOTUS 后端。
+普通单 Filter、有限链／cascade、图像查询不能互授支持范围和 GPU 资格。
 
-`text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
-`text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；
-`text/frameworks/ray_data_pg_http.py`使用Ray2.56.1的SQL reader与HTTP Processor。
-`text/frameworks/daft_pg_http.py`使用Daft0.7.21原生SQL reader与单行异步batch UDF，
-由Daft拥有执行并行；它只复用同语义HTTP工作函数与观测，不接SemLoom执行核心。
-该路径不是旧`daft_prompt.py`的内置prompt结果。主表、消融及语义系统缺项见
-[当前覆盖审计](../../../experiments/plans/reference/对照规范.md#current-map-coverage)。
-原生系统拥有批次/并发，实际HTTP计数和观测在统一查询时间内；
-[受控验证](../../../experiments/results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
+## 共享层和参数
 
-`text/squad_map.py` 负责当前 PG Map 的 SQuAD 双消息输入身份、context 分组划分和预测关联，
-复用既有答案评分；离线入口见 `code/scripts/baselines/squad_pg_map_pilot.py`。它不拥有执行或调度。
+- LOTUS formatter／parser／方法与[结果身份合同](../semantic_methods/lotus/record_results.py)归 `semantic_methods/lotus/`。
+- 模型进程、阶段清理和 IPC 归 `serving/backends/`；共享有限链 worker 归 `execution_provider/method_workers/`。
+- [脱敏](../infrastructure/redact.py)、[私有文件和摘要](../infrastructure/private_artifacts.py)归通用层。
+- [CLIP batch workers](../modalities/image/clip_batch_workers.py)归图像公共层；
+  [Daft](image/frameworks/daft_clip.py)和[Ray 图](image/frameworks/ray_data.py)保留原生图所有权。
 
-`text/squad_capacity.py` 先统计全部完整消息的输入 tokens，再按 context 分区选取自然/分层样本，
-记录种子与未修改的原文。`code/scripts/baselines/map_capacity.py` 装配独立 direct 客户端或真实 PG Map；
-查询与评价分别记录时间和进程内存，配置与说明见[容量单元入口](../../scripts/README.md#单-map-容量单元)。
+原生 LOTUS 的 `native_lm_max_batch_size` 是原 LM 客户端的并发批设置，必须显式声明；
+它不是 vLLM 内部批大小，也不是 Core 的 C／R。模型引擎未指定的参数交引擎解析，实际值从 owner ready 回执取得。
+原生 Ray／Daft／IMLane 的[历史同步参数所有者](text/frameworks/sync_reference_engine.py)和
+[有限链参数适配](text/frameworks/reference_chain_batch.py)保持，不在本次清理中重调基线。
 
-`common/private_artifacts.py` 原样保存仓库外私有文件，公开摘要只含计数与哈希；
-该模块也拥有分块文件身份 `file_identity` 与保留非有限评价含义的 `json_metric`。
-两者只依赖标准库；旧 `postgresql.query_workloads`／`query_evaluation` 直接重导出同一函数，供尚未迁移的外部复现使用。
-`text/sharegpt_inputs.py` 选择首个 human 原文，`text/map_inputs.py` 核对文本往返和完整消息上下文。
-ShareGPT 数据选择与任务提示分别指定；接口见[脚本说明](../../scripts/README.md#squad-pg-map-数据准备与离线评价)。
+`text/movie_records.py`、`movie_tasks.py` 和 `sembench_movie.py` 是 SemBench 工作负载／原评价适配，
+由实验入口使用，不是 Core 的策略依赖。原生 LOTUS 的结果缓存在本次矩阵查询中显式关闭，
+原缓存实现仍在 LOTUS；模型驻留、KV／prefix cache 和调度状态复用须分别记录。
 
-## 分层
+## 已退役和暂停
 
-| 层 | 模块 | 角色 |
-|---|---|---|
-| 共享合同 | `common/{contracts,manifests,results,gate,provenance,database_identity,redact}.py` | immutable input、exactly-once、公共指标、数据库版本身份与脱敏检查 |
-| 文本服务上限 | `text/ceilings/vllm_bench.py` | 官方 vLLM Bench；不是数据库/框架 baseline |
-| 文本直接控制 | `text/controls/` | 项目自写强客户端；不是 native baseline |
-| 文本框架原生 | `text/frameworks/` | Daft prompt / Ray Data vendor API graph |
-| 文本数据库产品 | `text/products/oceanbase.py` | OceanBase 原生 SQL `AI_COMPLETE` adapter |
-| 文本编排 | `text/orchestration/` | PostgreSQL manifest、双 endpoint gate、counter 和 CLI |
-| 图像框架原生 | `image/frameworks/` | Daft built-in / Ray Data native graph |
-| 图像身份检查 | `image/provenance.py` | image arm scheduler owner 与 formal eligibility |
+旧 `native_calls` prepared-HTTP 图、`*_pg_http`、Daft prompt／Ray HTTP 对照、Movie HTTP owner、
+PG 查询矩阵与其专用脚本／测试／配置已从现用树移除。PG 后续仍可恢复；
+准确来源、SHA 与范围见[归档索引](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。
+原生 Q2b 位于独立实验分支，旧路径仍曾使用 HTTP；本次 Movie 非 HTTP 适配没有完成其视觉 provider 替换。
+不删除其历史对照，也不声称它已随此清理恢复。
 
-`text/frameworks/` 和 `image/frameworks/` 内只允许 payload/response adapter 与 vendor
-API graph。需要 active-work、K、
-router、flush、shared credit 或自定义 actor pool 的代码属于项目方法，应放在
-`src/scheduling/` / `src/observability/profiling/`，不能倒流进 native baseline。
-
-复测合同见
-`experiments/plans/completed/文本原生对照_20260802.md`。
+SAOR 调度算法与离线研究材料保留；依赖退役 HTTP 的历史启动胶水隔离恢复。
+公开结果／来源门槛见[历史复现](../../../experiments/reproduction/native_baselines/README.md)。

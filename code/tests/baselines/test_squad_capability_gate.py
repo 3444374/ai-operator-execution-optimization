@@ -384,7 +384,7 @@ class RedactionWiringTests(unittest.TestCase):
         # Pins that the function the gate stores in report.json["command"]
         # strips the DB-URL password and masks --api-key. Regression guard
         # against a revert to raw list(sys.argv).
-        from src.baselines.common.redact import redact_argument_list
+        from src.infrastructure.redact import redact_argument_list
         argv = [
             "python", "squad_capability_gate.py",
             "--database-url", "postgresql://postgres:postgres@localhost:5432/ai_operator",

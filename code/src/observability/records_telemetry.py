@@ -16,10 +16,10 @@ import threading
 import time
 from urllib.parse import urlsplit
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
-from src.baselines.common.redact import redact_json_values, redact_text
+from src.infrastructure.redact import redact_json_values, redact_text
 from src.observability.metrics.resources import (
     AllocatedCPUCounterSource, gpu_metadata, host_metadata, resource_sample_stats,
 )

@@ -18,7 +18,7 @@ from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.method_environment import preflight_method, validate_author_build
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S, model_closed
 from integrations.imlane_records.model_process import assigned_environment
-from src.baselines.common.private_artifacts import write_private_json
+from src.infrastructure.private_artifacts import write_private_json
 from src.semantic_methods.lotus.records import identity
 
 

@@ -6,7 +6,7 @@ import csv
 import json
 from pathlib import Path
 
-from src.baselines.common.redact import redact_text
+from src.infrastructure.redact import redact_text
 
 
 RANKING_OUTPUT_NAMES = (

@@ -9,7 +9,7 @@ import json
 from copy import deepcopy
 import math
 from src.infrastructure.private_artifacts import file_sha256 as sha
-from src.baselines.common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from src.observability.records_telemetry import RecordsTelemetry
 
 def _diagnostic_warning(phase,error):

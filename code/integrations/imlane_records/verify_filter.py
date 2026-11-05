@@ -28,8 +28,8 @@ from integrations.imlane_records.method_environment import preflight_method, val
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.resource_limits import owner_limits, gpu_snapshot, gpu_exited
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
-from src.baselines.common.redact import redact_json_values, redact_text
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.redact import redact_json_values, redact_text
 from src.baselines.text.movie_records import MovieRecordSource
 from src.experiments.lotus_records_movie import run_movie_query
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity

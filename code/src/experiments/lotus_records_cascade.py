@@ -11,8 +11,8 @@ import time
 from integrations.imlane_records.chain_runtime import (
     AuthorRunGuard, read_json, read_owner, preflight_owner,
 )
-from src.baselines.common.private_artifacts import new_private_directory, require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import new_private_directory, require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 from src.experiments.lotus_records_chain import read_relation, _frame_result
 from src.semantic_methods.lotus.engine import bind_filter_method, make_lm, validate_generation
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources

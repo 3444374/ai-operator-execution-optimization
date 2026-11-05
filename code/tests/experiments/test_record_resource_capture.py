@@ -70,6 +70,8 @@ def stubs():
 
 class CaptureTests(unittest.TestCase):
     def setUp(self):
+        self.script_path = patch.object(sys, 'path', [str(ROOT), *sys.path])
+        self.script_path.start()
         provider=sys.modules.get('src.scheduling.runtime.observations')
         self.feedback_provider=None if provider is None else provider.NonBlockingMetricsObservationProvider
         self.feedback_constructor=None if provider is None else self.feedback_provider.__init__
@@ -85,7 +87,7 @@ class CaptureTests(unittest.TestCase):
     def tearDown(self):
         self.observer.close_events()
         if self.feedback_provider is not None:self.feedback_provider.__init__=self.feedback_constructor
-        self.modules.stop();self.env.stop();self.tmp.cleanup()
+        self.modules.stop();self.env.stop();self.tmp.cleanup();self.script_path.stop()
 
     def events(self):
         return [json.loads(line) for path in (self.directory/'events').glob('*.jsonl') for line in path.read_text().splitlines()]

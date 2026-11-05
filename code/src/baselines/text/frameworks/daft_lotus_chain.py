@@ -320,7 +320,7 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
         raise ValueError("Daft chain input requires exactly one string record_json column")
     control = Path(tempfile.mkdtemp(prefix="daft-lotus-chain-", dir=control_dir))
     try:
-        from src.baselines.common.private_artifacts import require_outside_git
+        from src.infrastructure.private_artifacts import require_outside_git
 
         require_outside_git(control)
         os.chmod(control, 0o700)

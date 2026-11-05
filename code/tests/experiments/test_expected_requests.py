@@ -9,7 +9,7 @@ import unittest
 import time
 from unittest.mock import patch
 
-from src.baselines.common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger, BudgetError
 from src.experiments.choice_gateway_observer import main
 from src.experiments.expected_requests import ExpectedRequests, expected_request_manifest

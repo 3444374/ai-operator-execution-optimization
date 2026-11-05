@@ -450,7 +450,7 @@ class CoreCalibrationTests(unittest.TestCase):
             load_calibration_contract(path, {"max_inflight": 2})
 
     def test_public_signature_reuses_the_existing_canonical_digest_bytes(self):
-        from src.baselines.common.private_artifacts import content_digest
+        from src.infrastructure.private_artifacts import content_digest
 
         identity = deepcopy(self.identity)
         identity["workload"]["unicode_identity"] = "输入数据"

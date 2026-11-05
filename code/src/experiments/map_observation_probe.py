@@ -21,8 +21,8 @@ import time
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from src.baselines.common.private_artifacts import new_private_directory, write_private_json
-from src.baselines.common.redact import redact_json_values
+from src.infrastructure.private_artifacts import new_private_directory, write_private_json
+from src.infrastructure.redact import redact_json_values
 from src.execution_provider.adapters.incremental_execution import build_fixed_model_execution
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig, RayMapTransport, _RemoteResult

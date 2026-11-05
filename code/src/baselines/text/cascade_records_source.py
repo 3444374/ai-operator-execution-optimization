@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import stat
 
-from src.baselines.common.private_artifacts import open_private_text, require_outside_git
+from src.infrastructure.private_artifacts import open_private_text, require_outside_git
 from src.semantic_methods.lotus.record_chain import RecordOccurrence
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, identity
 

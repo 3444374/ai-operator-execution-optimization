@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src.baselines.common.redact import redact_argument_list, redact_text
+from src.infrastructure.redact import redact_argument_list, redact_text
 
 
 def atomic_json(path: Path, payload: object) -> None:

@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 import uuid
 
-from src.baselines.common.private_artifacts import content_digest, file_identity, write_private_json
+from src.infrastructure.private_artifacts import content_digest, file_identity, write_private_json
 from src.infrastructure.json_content import json_content_equal
 from src.execution_provider.adapters.records_runtime_identity import observe_ray_runtime
 

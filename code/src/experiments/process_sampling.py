@@ -4,7 +4,7 @@ from pathlib import Path
 import threading
 import time
 
-from src.baselines.common.private_artifacts import open_private_text
+from src.infrastructure.private_artifacts import open_private_text
 import json
 
 

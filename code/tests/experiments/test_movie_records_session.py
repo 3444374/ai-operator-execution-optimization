@@ -258,6 +258,113 @@ class PlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "whole session"):
             session.check_plan(self.plan)
 
+    def test_native_lotus_plan_requires_its_native_profile_without_core_options(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        plan['generation']['max_tokens'] = 8192
+        self.assertTrue(session.check_plan(plan)['supports_resident'])
+        for profile in ({}, {'native_lm_max_batch_size': True}, {'mode': 'async'}):
+            with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'native_lm_max_batch_size'):
+                session.check_plan(dict(plan, profile=profile))
+        with self.assertRaisesRegex(ValueError, 'record batching options'):
+            session.check_plan(dict(plan, rolling_refill=True))
+
+    def test_normal_driver_routes_native_queries_to_one_local_owner_and_closes_it(self):
+        from src.baselines.text.frameworks import lotus_native_local as native
+        from integrations.imlane_records import chain_runtime
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        checked = session.check_plan(plan)
+        claims = {row['query_id']: object() for row in plan['queries']}
+        context = dict(owner_context={}, claims=claims, sembench_checkout='CPU-callback',
+            checked_queries={row['query_id']: row for row in checked['queries']})
+        seen = []
+        class Owner:
+            def __init__(self, *args):
+                self.args, self.closes = args, 0
+            def start(self):
+                return {'engine_uid': 'CPU-local-owner', 'protocol': 'local_async_model_IPC'}
+            def close(self):
+                self.closes += 1
+                return {'status': 'closed', 'cleanup_errors': []}
+        def query(*args, **kwargs):
+            seen.append(kwargs)
+            kwargs['observer']('result_ready')
+            return {'status': 'completed', 'query_id': kwargs['query_id']}
+        directory = Path(self.manifests['movie-q1']).parent.parent / 'native-driver'
+        with patch.object(native, 'LocalNativeModel', Owner), patch.object(native, 'run', query), \
+                patch.object(chain_runtime, 'check_external_lease', return_value={}):
+            driver = session._MovieDriver(plan, context, directory, plan['queries'][0])
+            ready = driver.start()
+            events = []
+            for spec in plan['queries']:
+                self.assertEqual(driver.query(spec, events.append)['query_id'], spec['query_id'])
+            self.assertEqual(driver.close()['status'], 'closed')
+        self.assertEqual(ready['protocol'], 'local_async_model_IPC')
+        self.assertEqual(driver.owner.closes, 1)
+        self.assertTrue(all(call['shared_model'] is driver.owner for call in seen))
+        self.assertEqual([call['context']['claimed_budget'] for call in seen], list(claims.values()))
+        self.assertEqual(events, ['result_ready', 'result_ready'])
+
+    def test_native_lotus_isolated_driver_leaves_model_lifecycle_inside_query(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', lifecycle='isolated', profile={'native_lm_max_batch_size': 3})
+        directory = Path(self.manifests['movie-q1']).parent.parent / 'native-isolated'
+        driver = session._MovieDriver(plan, {}, directory, plan['queries'][0])
+        self.assertTrue(driver.start()['no_session_model'])
+        self.assertIsNone(driver.owner)
+        self.assertEqual(driver.close()['status'], 'closed')
+
+    def test_native_late_closing_usage_is_saved_without_promoting_source_unknown(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        driver = session._MovieDriver(plan, {}, Path(self.manifests['movie-q1']).parent.parent,
+                                      plan['queries'][0])
+        source_calls = {'counts': {'unknown': 1, 'succeeded': 0}}
+        driver.last_query_report = {'query_id': 'q1', 'calls': deepcopy(source_calls),
+            'native_transport_receipts': [{'status': 'unknown', 'total_tokens': None}]}
+        driver.last_query_directory = driver.directory
+        final = dict(schema='native-final-accounting', query_id='q1', calls=source_calls,
+            late_native_receipts=[{'status': 'succeeded', 'total_tokens': 13}])
+        class Owner:
+            def close(self):
+                return dict(status='closed', cleanup_errors=[], native_final_accounting=final)
+        driver.owner = Owner()
+        report = driver.close()
+        self.assertEqual(report['status'], 'closed')
+        self.assertEqual(driver.last_query_report['calls'], source_calls)
+        self.assertEqual(driver.last_query_report['native_transport_receipts'][0]['status'], 'unknown')
+        self.assertEqual(driver.last_query_report['native_final_accounting'], final)
+        self.assertNotIn('native_final_accounting', report['receipts']['model'])
+        saved = json.loads((driver.directory / 'query-accounting-final.json').read_text())
+        self.assertEqual(saved['native_final_accounting']['late_native_receipts'][0]['total_tokens'], 13)
+
+    def test_native_final_accounting_survives_a_failed_publication_and_retries_without_model_work(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        directory = Path(self.manifests['movie-q1']).parent.parent
+        driver = session._MovieDriver(plan, {}, directory, plan['queries'][0])
+        driver.last_query_report = dict(query_id='q1', calls={'counts': {'unknown': 1, 'succeeded': 0}})
+        driver.last_query_directory = directory
+        final = dict(query_id='q1', late_native_receipts=[{'total_tokens': 13}])
+        class Owner:
+            def __init__(self):
+                self.calls = 0
+            def close(self):
+                self.calls += 1
+                return dict(status='closed', cleanup_errors=[],
+                    **({'native_final_accounting': final} if self.calls == 1 else {}))
+        driver.owner = Owner()
+        with patch.object(session, 'publish_private_json', side_effect=OSError('fixture disk failure')):
+            first = driver.close()
+        self.assertEqual(first['status'], 'unknown')
+        self.assertIs(first['receipts']['final_query_accounting'], driver.last_query_report)
+        self.assertEqual(driver.last_query_report['native_final_accounting'], final)
+        self.assertEqual(driver.close()['status'], 'closed')
+        saved = json.loads((directory / 'query-accounting-final.json').read_text())
+        self.assertEqual(saved['calls']['counts'], {'unknown': 1, 'succeeded': 0})
+        self.assertEqual(saved['native_final_accounting'], final)
+
     def test_current_sync_session_defers_omitted_context_to_actual_readiness(self):
         for backend in ('semloom-core', 'semloom-static-reference'):
             with self.subTest(backend=backend):

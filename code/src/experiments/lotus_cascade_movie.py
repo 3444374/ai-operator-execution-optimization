@@ -2,8 +2,8 @@
 
 import time
 
-from src.baselines.common.private_artifacts import json_metric
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import json_metric
+from src.infrastructure.redact import redact_text
 from src.baselines.text.movie_tasks import MovieTask
 from src.baselines.text.sembench_movie import classification_audit, evaluate_original, verify_checkout
 from src.semantic_methods.lotus.cascade import run_cascade

@@ -20,8 +20,8 @@ from integrations.imlane_records.chain_runtime import AuthorRunGuard, check_exte
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_host import FilterResults
 from integrations.imlane_records.filter_workload import PROTOCOL, validate_terminal
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 from src.baselines.text.movie_records import MovieRecordSource
 from src.experiments.cell_budget import ClaimedUnit
 from src.experiments.lotus_records_movie import run_movie_query

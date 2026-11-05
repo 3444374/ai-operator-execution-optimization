@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 from types import SimpleNamespace
 
-from src.baselines.common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from src.baselines.text.sembench_movie import SEMBENCH_COMMIT, _load, verify_checkout
 
 

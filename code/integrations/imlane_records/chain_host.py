@@ -15,7 +15,7 @@ from integrations.imlane_records.method_environment import preflight_method
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.records_host import RecordsResults
-from src.baselines.common.private_artifacts import require_outside_git
+from src.infrastructure.private_artifacts import require_outside_git
 from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults, _source_binding
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns, _parent_seeds
 from src.semantic_methods.lotus.records import RecordsResources

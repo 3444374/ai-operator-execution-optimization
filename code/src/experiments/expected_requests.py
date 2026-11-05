@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import threading
 
-from src.baselines.common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from src.experiments.attempt_ledger import BudgetError
 
 SCHEMA = "semloom.expected_model_requests.v1"

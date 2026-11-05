@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from unittest.mock import patch
 
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 
 
 class NoModel(importlib.abc.MetaPathFinder):

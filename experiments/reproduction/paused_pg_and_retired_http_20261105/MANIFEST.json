@@ -1,0 +1,2075 @@
+{
+  "schema": "semloom.retired_source_index.v1",
+  "source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
+  "source_tree": "7c173c960426365f62b2a21e1e729b5184d25559",
+  "status": "not active Python/CLI/deployment entry points; restore only into an isolated exact Git tree",
+  "future_postgresql_work": "paused, not abandoned; source/config/build/tests remain in source_commit",
+  "historical_results_changed": false,
+  "model_calls": 0,
+  "paths": [
+    {
+      "path": "code/postgres/README.md",
+      "bytes": 307,
+      "sha256": "51d3947b3ddea4824a07cfd5aa5d60184b07df3d8e13909154118d15f6467ed0",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/.gitattributes",
+      "bytes": 40,
+      "sha256": "fd821b12102065e4e693a55c0da8af80767a61eced1ad6d94b0d553a125f2943",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/.gitignore",
+      "bytes": 99,
+      "sha256": "8f6d777150d8b2dbc99c74261752cedd941a5bcd068b325f4ffe80a1c331e432",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/Makefile",
+      "bytes": 2167,
+      "sha256": "7afd73c9de875157dd2ef21cba0278758ba3cbe9195fed053d5f555ede23ddaf",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/README.md",
+      "bytes": 53380,
+      "sha256": "ea48dda12e2dcd071af37d895be429086b0317e999a516a9181695f828a0c2d0",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/expected/semloom_pg.out",
+      "bytes": 5095,
+      "sha256": "ca119e46b41474e118084fca7a91f228a2b0b103bf965e3bbdb67fa239386d1f",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/semloom_pg.control",
+      "bytes": 173,
+      "sha256": "829eb3ab0c66d2fe55982885b0c698a43e78c526ba393661b9285552b2c1076d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/sql/semloom_pg--0.1.0--0.2.0.sql",
+      "bytes": 394,
+      "sha256": "efcbf04365c97f2c904c9fe7e88b9d31e9d6461785ab6053339b86807497df92",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/sql/semloom_pg--0.1.0.sql",
+      "bytes": 1031,
+      "sha256": "89791186a3aae18613f8a0b3cb844bc6a25005240ca8d7c07dfab7902ef80538",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/sql/semloom_pg--0.2.0--0.3.0.sql",
+      "bytes": 348,
+      "sha256": "0a1322264367bd7f123201b9ecaa6aa4d5a20e99e82c2beb5f24bd6423b7edca",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/sql/semloom_pg--0.2.0.sql",
+      "bytes": 1401,
+      "sha256": "b3fd9def890e38c053e4a5a81e1f90866862303e0162f4550fbbc7ae0d18c4fb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/sql/semloom_pg--0.3.0.sql",
+      "bytes": 1750,
+      "sha256": "3dfb634c9f9158968c9d4b17b6b49e39f2bf764560d4675c9e253cfc8384bb85",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/sql/semloom_pg.sql",
+      "bytes": 3007,
+      "sha256": "14b90892dc4335bf775f68011fa4b91d3aab1b1e6da3a3ed4aa68996ac364762",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/pg_query_job.c",
+      "bytes": 8438,
+      "sha256": "c5098654c4dec69d5a71de300aeb68a485616e2d9e2afa3731ef8811c339ea53",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/pg_query_job.h",
+      "bytes": 552,
+      "sha256": "81d4a2bd72815aa0ade66db5cb058140757067fe6b9323be54e351aba0765782",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/pg_semantic_runtime.c",
+      "bytes": 33503,
+      "sha256": "bf1fe1bf3641ace21bd917b5d4c56bcc6286e809e388d9d004fb72c53bcc0a97",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/pg_semantic_runtime.h",
+      "bytes": 2124,
+      "sha256": "aea42cea088adf577ce68ab5b26242f27fbc67cfe670e46f56620d3d34db4784",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_prefetch.c",
+      "bytes": 4140,
+      "sha256": "e23a555d57845d55a39e2ea3302608517fd9440ad76c3ca8ee0081f592c757ae",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_prefetch.h",
+      "bytes": 265,
+      "sha256": "1b550e5759fd51f715bc3490768993fc984f641d6a1aea24122c4d36bf202b31",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_pump.c",
+      "bytes": 37913,
+      "sha256": "b6f0e78c42d8a1a812b6e2957c69ced1dacbd540d62517a944c52fa0a040c2ee",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_pump.h",
+      "bytes": 884,
+      "sha256": "722aca9eccdd5f7ee2c69a47409f08377314ea2ec7ee4b11d303f776b50cba39",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_scan.c",
+      "bytes": 4402,
+      "sha256": "7df811ed1e09738f189e9a49c24fb9e3b07fc33b32d95c3585cb5bb98517cc08",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_scan.h",
+      "bytes": 417,
+      "sha256": "099c54cad2b190978f2807d22c3e00b17b78c2dbb790c77428a31d30f6ec5b3b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_window_memory.c",
+      "bytes": 2346,
+      "sha256": "233b729b2f038377dfbf894b7c5281de02b525a14724d2824391cd18dddca7da",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/executor/sem_window_memory.h",
+      "bytes": 557,
+      "sha256": "4b648cdb40b7f531fcc35468667496a4447d4c9c9db38908915f645968546605",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/extension.c",
+      "bytes": 10770,
+      "sha256": "5a3cf8a3782fa16f1f587f4bef8b49033eed723549b6d2e5e83c8c3c5c7b8373",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/extension_config.h",
+      "bytes": 1531,
+      "sha256": "c53c399e39941c6657d4678cdb19c270a15eaafe51c253ceff2f051d27664a06",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/marker.c",
+      "bytes": 995,
+      "sha256": "a52d2989ff7a9bc6d171774f61d7ee0bc719bb6b065252fd248f78a902683314",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/marker_identity.c",
+      "bytes": 2202,
+      "sha256": "8e3cf66f9738a621e2f86da7e80d58bd6d87b9fa9aba795570dde3525a223237",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/marker_identity.h",
+      "bytes": 472,
+      "sha256": "463c62d2ecd01efe29a7e78581caf8bc71e35317205fcd91aec5bfde9674f957",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/paths.h",
+      "bytes": 575,
+      "sha256": "07119b9b398d0614d14e2c5a07173e7e49663bc217cbf009151495bec6e07a4e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_calibration.c",
+      "bytes": 23382,
+      "sha256": "4d64cf2979d03cfe3b05dd78a60982fcfb2a9c3335cf3c79062f0d2181986fa5",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_calibration.h",
+      "bytes": 1320,
+      "sha256": "f1e1f13db0a871b257ef54a9efdd88cb981a8ac80d8f78e414ac369987bcf709",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_call.c",
+      "bytes": 9412,
+      "sha256": "8071e4c228301a7519bfb7e4c811d0bf1f7875b3f313f6114e9e9b978399b615",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_call.h",
+      "bytes": 732,
+      "sha256": "6502056b935bfc1c9f409c2f95a9eaa0ee4e3547292d5d32485c7f2ad7dc7ad8",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_cost.c",
+      "bytes": 17206,
+      "sha256": "eeec189124189e7b68d71e2d22d52e1f787549e2a7cdb7435b9d9e4a9561af53",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_cost.h",
+      "bytes": 1262,
+      "sha256": "9b1b1bd63cface74bb752067b2bd868ba44a15383460a25b123e51c5aa7629b7",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_filter_path.c",
+      "bytes": 20730,
+      "sha256": "a96d0f9bec9349d53dbb75ec6b91855cdb5b48574d2e825659f937d2ef809321",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_image_plan.c",
+      "bytes": 10354,
+      "sha256": "13298ca495241d8df3d900a76f67cc295efee9eecd030d8b55b2b5d8edc18345",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_image_plan.h",
+      "bytes": 454,
+      "sha256": "177567e3b5e9e745cc23618ad5d0810a2cff06a1dfe15b25b74052f286c18d45",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_map_binding.c",
+      "bytes": 4344,
+      "sha256": "57458546fd665651fb5543a7f75b52a460c097d90a3ab18846e2e0550808025e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_map_binding.h",
+      "bytes": 413,
+      "sha256": "0a67a16991a56187ecc1f8ee9e24dacbdb0263da8ff4b99ce725c6f0a6d5cc5c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_map_call.c",
+      "bytes": 7786,
+      "sha256": "bcff65920614b5b38242d1a654639a332f32e3ba8c7d86f0d89c7eac263ddeed",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_map_call.h",
+      "bytes": 600,
+      "sha256": "27d2d627dae65842857c51aa54de2922576bd8fee3407459b73118afedd89219",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_map_path.c",
+      "bytes": 14986,
+      "sha256": "7693e4abf3b2c5ea9c595b4ee1abdee32241b7c1c1d3061337bc699688f28634",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_path_common.c",
+      "bytes": 1613,
+      "sha256": "0ede07feadf4c433315fa2d887e9d0d91db7b3301c07519dba974f63db4e1157",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_path_common.h",
+      "bytes": 305,
+      "sha256": "48b875b27d9a58f526646ced11475c1ee7709b445fc0066e43ed94b509647b9c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_plan_spec.c",
+      "bytes": 45991,
+      "sha256": "ba024e3518f5074024fb31388a89b60cd3afd6cb40cb2173e62af87ba7326959",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/sem_plan_spec.h",
+      "bytes": 3716,
+      "sha256": "63824f9e89c548ea530e9f20bb3cab1a0b12e43430c50dd67d0fdde1f4c1ba98",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/semantic_binding.c",
+      "bytes": 5640,
+      "sha256": "e92a132f67150943e4d2cb4fe41142bf493042d2ece906953045009dda6d3bbc",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/semantic_binding.h",
+      "bytes": 1260,
+      "sha256": "71a1a7859fc12beb63d7e39ea5d484539a453187b80510e5129f68918f46bdf2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/semantic_call.c",
+      "bytes": 1125,
+      "sha256": "acaad46f796482619ca3fc4c6ba6c250ff3db5f6b055afc3d5581f94ad7af4d0",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/semantic_call.h",
+      "bytes": 862,
+      "sha256": "c3512bab488acc608e7b1ee8749201a30eb718ac5a12fb8963b6c96e9ad47682",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/semantic_carrier.c",
+      "bytes": 3646,
+      "sha256": "806d1c157cb6b9d05e0688ff6eaed5a3b2275e9732d86bf893b99210ae13ff19",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/planner/semantic_carrier.h",
+      "bytes": 706,
+      "sha256": "dcd508f2d8f338353d3eac5c068b882097ee2f4063c0271ed8654e6feeaea918",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/ai_provider_port.h",
+      "bytes": 6365,
+      "sha256": "070d8bba69a601532bc9ea267db569ea358589d22f53fbecf351e835f5324f40",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/provider.c",
+      "bytes": 10295,
+      "sha256": "23dd73411846c6f103c223cf91c941b4e5b12ca336c149be658f2f704b873273",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/provider_private.h",
+      "bytes": 2396,
+      "sha256": "31483d363265df9ea300e5960e82e51f87c2fa544009d6d1560d156431fb8ee4",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/recording_provider.c",
+      "bytes": 4595,
+      "sha256": "121bf794b12a63214b09b89366df99c735af3b8383a1cf8ca7c494342caf8e2b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/uds_connection.c",
+      "bytes": 3304,
+      "sha256": "78332ba1e9b177aba13e47728766473acc2d1edcb640bc4d5893f03fae573e56",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/uds_connection.h",
+      "bytes": 275,
+      "sha256": "fb4d28dd9f0026fe76323e29fb9b89d59dfc21a4df430e7ba57955c0a018a00c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/uds_provider.c",
+      "bytes": 23049,
+      "sha256": "13d0b161296f63a627aacae973177a8aaeb1b4ac0c311b4a93a839b502f366da",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_common.c",
+      "bytes": 11782,
+      "sha256": "b658d078ddcd556afe9c1adcaf5f7f3d2f60dfca18ef1851fbe2456b03abf892",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_common.h",
+      "bytes": 1653,
+      "sha256": "f0475df2397f249b9ccd9490391e4cf21065bf2b9be45f854b8e9b87ed46fe23",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_image.c",
+      "bytes": 9271,
+      "sha256": "531c628a931d381cdc451cac3c5984ca1ae9cd983e01f0846202a0ee5c40f9cc",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_image.h",
+      "bytes": 595,
+      "sha256": "9f6e02db526a213a2c6ad00b0f0400912c45407849145330747d53c84b189a45",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_semantic.c",
+      "bytes": 32213,
+      "sha256": "fc2f04d30206dedb1f7318c46a4ed67bf31e03d56cba8992b69bd2fc45f10cdc",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_semantic.h",
+      "bytes": 1981,
+      "sha256": "1e5bad970691969aa05861413fd3b83c23394d0920a9dac5a7f9c4ca03840575",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_v2.c",
+      "bytes": 19766,
+      "sha256": "fb63e4cafe16cee0339480a01dada970e30f4cbd170a97a2ab2d56d0c63ddf50",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_v2.h",
+      "bytes": 1567,
+      "sha256": "ced92b2500549553c38eb2c7c456702ab77d2c8697b1a47d6ee45bdb8897fcbb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_v3.c",
+      "bytes": 1395,
+      "sha256": "975ed3a6f05fcaa67cc3669db22f77c7fa81c84c42530708f04e26ef77de4105",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_v3.h",
+      "bytes": 1074,
+      "sha256": "e239bc6ed58bf6563331a4eeeba8415003d8ab4a69a3f7f53e2271a8241885d6",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_v4.c",
+      "bytes": 1393,
+      "sha256": "da83a2d2ab866c8793aa628daccdbc71238e5a787583a37cb2929453bfac9951",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/provider/wire/wire_v4.h",
+      "bytes": 915,
+      "sha256": "325e15668e95797ff377c41ad07f852e0f78937c74ff10cc8a634e1785297b57",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/generation_profile.c",
+      "bytes": 3158,
+      "sha256": "b72aed8a981309d9b358a90115701fe1a7d0670ee93c5dec7433e97ad7d234a5",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/generation_profile.h",
+      "bytes": 1105,
+      "sha256": "0f587d7f57a67b8fd3a700411568a0dd179e9fd4280828b99ea96d5e84464e57",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/image_identity.c",
+      "bytes": 4619,
+      "sha256": "bde7ea2e40a8d93e40126b27d5f81b07aa9158971d0b0cc7ef35de4bf45d0139",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/image_identity.h",
+      "bytes": 669,
+      "sha256": "b97468a3fcb2e2e19d3023b2a9d88c608a8c289e88d96734c9fbcb7eb1d6b3f3",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/recording_contract.h",
+      "bytes": 443,
+      "sha256": "e1dcde79e7203115f98937b6b4d39209f60a52097c84c46f268dcf8442504640",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_filter_machine.c",
+      "bytes": 3303,
+      "sha256": "114428b02fd1b1dae09a950f2a520e4943e8dc8de219bb70ea674981784801c2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_map_machine.c",
+      "bytes": 3425,
+      "sha256": "689ca56383e28f88e2cd9cc987f664a7c6e679c9601a561c086294179c997b7c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_message_writer.c",
+      "bytes": 3307,
+      "sha256": "20a3deb4f230976ef98a75622e458658e1ad4de8dbbc7983838de7c45a06e4b2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_message_writer.h",
+      "bytes": 568,
+      "sha256": "07827d66846df036fb9af2b66a3c0e88e18528998dc873f038b687e1fa0826b3",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_operator_machine.c",
+      "bytes": 4821,
+      "sha256": "603656a3a7776259163679d69f35f9f9b9ec3e4779ef9f925a0b8d9ec87fe5c2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_operator_machine.h",
+      "bytes": 3515,
+      "sha256": "4f8758b1e4d8c01c7e15806dbacf2ff40bc4c3c0b6048b47944a5b32db2b00bc",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_text.c",
+      "bytes": 1153,
+      "sha256": "e97ce3a6da52e4306fba2fa5109dd324439a2a2561156832777ec610635d75f0",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/sem_text.h",
+      "bytes": 258,
+      "sha256": "008f37a095c87e392477c993ecbb156e47e35f23b50c39c16b4d03ee7384f6ae",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/semantic_filter_contract.h",
+      "bytes": 1630,
+      "sha256": "6e92a7d69bd1c71d902d36a7daeb6217ef7c533263d07170edb74f88cf700f68",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/semantic_image_contract.c",
+      "bytes": 431,
+      "sha256": "007a0050bb1f74e3abf5c6674770813cd22120f646bb981705c0a48aca68b257",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/semantic_image_contract.h",
+      "bytes": 694,
+      "sha256": "510f28865dc6173a4e5a9ecd846fdea1a906e3376ec3afec931f7f5b8f3d5b97",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/semantic_map_contract.c",
+      "bytes": 4933,
+      "sha256": "d57f14bb1464ee913e03193ec2b2a873b3f4e18693569e35c2cef4efb8aeb3d0",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/semantic_map_contract.h",
+      "bytes": 1987,
+      "sha256": "9771bdd092cbb4bcbf4b0d321ec121b7584d6583aa7506ddbfe8754d4cdf1b8d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/src/semantics/semantic_reference_contract.h",
+      "bytes": 291,
+      "sha256": "06348ad8388a581fc1cf4368e56ceabbff27d80a9809243d21d8f96cb15f343e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/001_semloom_pg.pl",
+      "bytes": 68163,
+      "sha256": "a345ab22a94f919e7b57aa44db6bad6206435c2e8bc5722cc66a6b16b03672ac",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/002_choice_plan.pl",
+      "bytes": 8978,
+      "sha256": "5d54d5186630673d37f51294d5c212a5856e369fe8fd555b64b40f66282064ae",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/003_choice_execution.pl",
+      "bytes": 13370,
+      "sha256": "28cf2d5917b5686999868920403c81cacd982b67d668ab158c92d6eed8ab1621",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/004_filter_insert.pl",
+      "bytes": 12653,
+      "sha256": "3bf8288503bb2b32043673c3bb2b6a460a4c78ffc2ab52a7375584844882e390",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/005_function_identity.pl",
+      "bytes": 9151,
+      "sha256": "5b651280beda5ae95c5ecb32ed11dee01582352d41168c06d5ded9d3632daf43",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/006_map_plan.pl",
+      "bytes": 31567,
+      "sha256": "38cb0d81da7bfe1b3862dd4b98cc72eadeb657ad838c68e8d1d559c6f23023ed",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/007_map_execution.pl",
+      "bytes": 16045,
+      "sha256": "fffa7779faeee5bbdeea00c74db3c95c1502bc6546212672247002f1b7fa312b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/008_filter_and.pl",
+      "bytes": 9823,
+      "sha256": "37c9a8955335cdc5ae1456390c98419a01d0f8f22692d52046aa217ee086fcfb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/009_binding.pl",
+      "bytes": 2893,
+      "sha256": "7e605e004114aa75836aef6a3454a0e3fef6debf71facfb0be3bbc62d0dab634",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/010_filter_map.pl",
+      "bytes": 11592,
+      "sha256": "28fb6c31be23a5f9780e4bd43a18104d7208795f4184aaec74dab72b388b8955",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/011_incremental_map.pl",
+      "bytes": 5007,
+      "sha256": "a6fecc98c87ee4d22f07667b037a43d255d64f92c25779e7763ae6a091f03783",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/012_incremental_window.pl",
+      "bytes": 6370,
+      "sha256": "63a838857e9ef322bec3e9e4edc8a31fec4887f904ffe60b618c5eb05e54e8c1",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/013_query_job.pl",
+      "bytes": 7247,
+      "sha256": "d434f7917da4edcbc11e7b0cf84d65c8e032bdd66b01874ff68ec4d2440806ee",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/014_map_producer_trace.pl",
+      "bytes": 3322,
+      "sha256": "b456e408e2e696b3366ab2b34ac7c3e99715c9ad2afe44a9fd4df12560dc154b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/015_map_backpressure.pl",
+      "bytes": 2987,
+      "sha256": "ad3483f11037295dee3409f38c974ed6a1e3980bf9865744f646c5b8d77f6dda",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/016_predicate_prefetch.pl",
+      "bytes": 7139,
+      "sha256": "bc53977b74a76d4d942e5eada1230147f756af4fc5410b6a01dc30e4eb91710e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/017_filter_count.pl",
+      "bytes": 6818,
+      "sha256": "75ddaa00438716dc2f3169e58d63eab667a28ada4ee599a5840f7715c53f9b9c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/018_total_window_budget.pl",
+      "bytes": 7780,
+      "sha256": "4d7069e08c862539c6958eb651678b724d2770d218bf9e332d7bacfc111dc2b2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/019_image_plan.pl",
+      "bytes": 4007,
+      "sha256": "9582ad58aa07e447036598423bd501bbaae5f30d3842975a92303889d5406d29",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/fixtures/choice_wire_peer.py",
+      "bytes": 3358,
+      "sha256": "93c01124a69874be05b479cdf57b7995b0337064032b40e188e3bc6f75ac4e5a",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/fixtures/filter_and.json",
+      "bytes": 1579,
+      "sha256": "0e248c25f164ce3c61e13d07c01d070ff186cefa339bcf506c53cb61117ac690",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/fixtures/incremental_gateway.py",
+      "bytes": 3779,
+      "sha256": "3ac185932356a8661c28aeaea71ef0210397a154c2d532bafbc449456d20c20e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/fixtures/map_wire_peer.py",
+      "bytes": 7019,
+      "sha256": "def4dd7925b2f4901dd3c406d4afb250b71c481f87d57e30c121ab328d09593d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/fixtures/openai_compatible_server.py",
+      "bytes": 7337,
+      "sha256": "c5ca012a4527c6d8f9565172cd994bb6cb24a5c3f13f2f865d947dcc1cd905cb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/plan_contract/Makefile",
+      "bytes": 605,
+      "sha256": "36834df7178166d6837b9980df1a794a497ce8466259b61cc822da3026a39170",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/plan_contract/binding_contract.c",
+      "bytes": 7252,
+      "sha256": "729e0ed1fbc020e83a2fe48a401db17782c136f2b5766f2e58f886b6b2055c6e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/plan_contract/carrier_contract.c",
+      "bytes": 2654,
+      "sha256": "6de11b8f81114f909ac69defa3a23a8a7409549c14d8c6be7273765793a34bdc",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/plan_contract/map_plan_contract.c",
+      "bytes": 5822,
+      "sha256": "dad24f48b1eb12651cbf34fa52af16d9b298fc74455374ae8759133354049d8a",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/postgres/semloom_pg/t/plan_contract/plan_contract.c",
+      "bytes": 5205,
+      "sha256": "2484becf81ef6b4bcb06a4ef721308e8d2bd4db2a1a68e5742b42b1bd182dfcb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/scripts/analysis/audit_saor_formal_readiness.py",
+      "bytes": 24537,
+      "sha256": "e2bae79c2b8f1bacc1c04c795f37b1eff4b3d27fb0b4fed1700bf55233304c96",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/analysis/audit_saor_native_system_matched.py",
+      "bytes": 2696,
+      "sha256": "cf0cb512bdb3cf76ea09c95a56b8576c94934fdd6b42b5de2d65d229df97eb6d",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/analysis/run_saor_native_system_preflight.py",
+      "bytes": 3298,
+      "sha256": "816aa101bc493547e05fc0fcc7df0dd7d17e8959713e1b5801cf02d18fd99997",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/analysis/validate_saor_native_system_rehearsal.py",
+      "bytes": 2810,
+      "sha256": "c61bce467c7fb857b62e1588957921a9df333e2cfd966fa5119b55f4f89df7bf",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/map_capacity.py",
+      "bytes": 4534,
+      "sha256": "19d88e6e2cd7d1faac2dbc346f598dd1a9b8704527464413db54efdca9018734",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/multicard_scale_ramp.py",
+      "bytes": 38256,
+      "sha256": "30266e2a436a6b866808d2b21d6ca716d3458e028f834e72cd17c9f771f30340",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/run_official_baseline.py",
+      "bytes": 388,
+      "sha256": "7c491ae225ecb627141ff92017bb23b586c1cde98bf03af20ff6efd77fb9fc19",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/run_official_baseline_gate.py",
+      "bytes": 396,
+      "sha256": "79714b31aaf55660516a1eb181a18b53eb6a77d09db4424626855c6230fc6000",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/run_text_native_matrix.py",
+      "bytes": 460,
+      "sha256": "d6000622c12b01483cd506f8e2627ae058ce3ac9809ca7471f1d9f4948498d13",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/run_text_native_multijob.py",
+      "bytes": 464,
+      "sha256": "ac5f2dd04fcc1ef4c827ab752b33a24569c024a1e00a684544701e8b1fd41f81",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/squad_database_e2e_runner.py",
+      "bytes": 58797,
+      "sha256": "55ed37deabb086cb0ac0ae4d6c12a874de32fc4ae797027aac7eefc54d207576",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/baselines/squad_pg_map_pilot.py",
+      "bytes": 3799,
+      "sha256": "c4213aa3136d6ad135ef72a572b4a26e6910502c2879e1d0fb79e591446820e0",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/data/prepare_phase_change_workload.py",
+      "bytes": 20025,
+      "sha256": "1eab21e0874c62be02f6ddb236dbba28639b9ba93bb90f6729ed11db491abe55",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/data/prepare_vtc_compatible_workload.py",
+      "bytes": 7274,
+      "sha256": "719cf093f86d34d68856736c9b2f022cbc08ce7a1833b681d154896546f74ddc",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/database_queries.py",
+      "bytes": 189,
+      "sha256": "e7a34de5c78eb839219d9e94ec90a8c50a274eb12b793ace7450075765f212df",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/pg_result_buffer_probe.py",
+      "bytes": 5787,
+      "sha256": "117aa66826ddbf5395e89ce0c14c6f50078833a500c74a5eb3aa022d8c5ab0da",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_choice_resource_checks.py",
+      "bytes": 290,
+      "sha256": "b7d2433b63b62cfa40106d923701ad9a6dbe149aea9f568a5f2b59286efcd4ad",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_choice_service_checks.py",
+      "bytes": 297,
+      "sha256": "972180b5c101e66950c41456fc361a9c533172786ec8533f8d35a68b2aa8827f",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_kmax_interference_experiment.py",
+      "bytes": 18379,
+      "sha256": "993f4e8d5627c0834dc96f57e05b601219550eabd71e8010f51c5c0cce8494ef",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_phase_change.py",
+      "bytes": 3353,
+      "sha256": "68c707c83d87a11914497a069f89fada72778d22e435391693339b69a89c3d53",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_native_system_matched.py",
+      "bytes": 5713,
+      "sha256": "e5cbfb95059eb8a59a0aa6100e2abcbc8a4a05e753eca66d415620b5d1d9cee6",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_sembench_animals.py",
+      "bytes": 216,
+      "sha256": "34be71145b3e350725d44846e734c9e8c0e1616fcd8f6aa3eb28170a7e80456e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_sembench_lotus_queries.py",
+      "bytes": 321,
+      "sha256": "f9bc9825b69beae764d422d57c462f4362484214c4f9acf67eb31fc2a984d10a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_semmap_resource_checks.py",
+      "bytes": 327,
+      "sha256": "198561ee327e8a809f02c5318f9592b2d4d4e8fc5d754f7eb157b4cd1811ff52",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_shared_vllm_experiment.py",
+      "bytes": 790,
+      "sha256": "f15842fbe3d7b7bb8d0217d2436a4c8c5e584ed9e4623d323308991d2c85c382",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/experiments/run_vtc_compatible.py",
+      "bytes": 3859,
+      "sha256": "8d72e0456913fb707853465f86e621873d2bd0145864311d06ed8bb9d4bed302",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/scripts/profiling/pgai_sql_operator_profile.py",
+      "bytes": 8694,
+      "sha256": "0a8e2da45cad7d5d31337daae48d4a7d09c3de02cddb286d8b59d072307cad0d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/scripts/profiling/postgres_ai_operator_profile.py",
+      "bytes": 160337,
+      "sha256": "af1e1e70eb3665d094853c90066ab36309480292b2897e8d61d76552ec07c3c0",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/baselines/common/private_artifacts.py",
+      "bytes": 1325,
+      "sha256": "9f1ad6f4b15b3af09b47d9e65a0e13e523e8049b16bb0e098d9d9cfbc42a3c8c",
+      "category": "retired_http_or_shared_alias"
+    },
+    {
+      "path": "code/src/baselines/common/redact.py",
+      "bytes": 284,
+      "sha256": "2edb1988b2788f72a3e46f7f6ad7c466c297d0483a51f7acba2832b3f8896ee2",
+      "category": "retired_http_or_shared_alias"
+    },
+    {
+      "path": "code/src/baselines/text/controls/__init__.py",
+      "bytes": 519,
+      "sha256": "71d5139274e7248cf6a8b6ef9796b4d6084d741015885c6431c343f745217092",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/controls/async_http.py",
+      "bytes": 20207,
+      "sha256": "ac26584f7122921b8605da35f09c5b81e75181ca33a074eb8fdf5bd9f7e71a88",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/controls/batched_completions.py",
+      "bytes": 8128,
+      "sha256": "141f2983e4ae084d27bbfc92989987f41d4607ff7123b4966a3e2870ce275ba1",
+      "category": "retired_http_or_shared_alias"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_pg_http.py",
+      "bytes": 3805,
+      "sha256": "09374229114c98be6ff31a12001462b8204b6cd72a011a781529a1f162853164",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_prompt.py",
+      "bytes": 3447,
+      "sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_pg.py",
+      "bytes": 5038,
+      "sha256": "adc52630cccbf2737a101ae856416337b3e19724047c1baba050572709547d8d",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/native_calls.py",
+      "bytes": 41127,
+      "sha256": "feda16056833e1efbb4b53f57556dad3d0a014105363618a8fbe30a1c4b70aa1",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/prepared_map.py",
+      "bytes": 1869,
+      "sha256": "8019fc872a9a721e7eb3b2cc4d8f002c7031ec16d56fa363f398414073c8a194",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/ray_data_http.py",
+      "bytes": 6081,
+      "sha256": "bd2f3245dc27291ae5e1d55c60de1decbd1b5ca31a0cd9dada5a4c76ff3c7e20",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/ray_data_pg_http.py",
+      "bytes": 4150,
+      "sha256": "7b8dfe2c32eac8fff22899f61511140c803cfc1bf88524063c8eed20bea8732c",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/orchestration/cli.py",
+      "bytes": 41203,
+      "sha256": "8a820297d88ecae2a33905d84c2db1d9a406207b0f8b3ba455f8a99fe0e868bd",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/orchestration/gate_runner.py",
+      "bytes": 48055,
+      "sha256": "af67ad80d722f1904010a005d2bed993690ab7ed791cd9585aa85e45d7d26b57",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/orchestration/native_matrix.py",
+      "bytes": 21305,
+      "sha256": "78555ea34a0600f5bdf58e063dac0619ae344405a0bd8fa36830ed02056aef03",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/orchestration/native_multijob.py",
+      "bytes": 54787,
+      "sha256": "7aab100219237dc5d7db4834315c1a57b52063544741e0f73ee6b44f2d120e46",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/baselines/text/orchestration/postgres_manifest.py",
+      "bytes": 7625,
+      "sha256": "8bab7eb95fa8386874055efc287412475e51468f9cd454173eeb97906860b5e7",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/baselines/text/products/project_static.py",
+      "bytes": 526,
+      "sha256": "960290cdaf2e8dea298e39e21a1db7a63b5323f414a7ab91ec9c13579e3efb20",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/data/sinks/__init__.py",
+      "bytes": 481,
+      "sha256": "3e557bcd58926812b65e0c94f87dd00b9521788b60a2114803842bfcaa1f58ea",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/data/sinks/postgres.py",
+      "bytes": 5319,
+      "sha256": "cd6f6a8f3ac5059278b322d552ead3aa71a9f2d9cfbff28a99bf7ce046f75cf4",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/data/sources/__init__.py",
+      "bytes": 360,
+      "sha256": "413bb39f7010289bb5efa528989559176dc0bb17caca94a78838818e78c3a81f",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/data/sources/postgres_text.py",
+      "bytes": 6217,
+      "sha256": "e5638e194afddce755c2c8d3c6ce81568802df289022e2f450ac8d91b4b95a65",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/choice_resource_checks.py",
+      "bytes": 12333,
+      "sha256": "2183c4ca0b54a0a18aa755d5f39f077db33b4f2fd6654847de89a45269b380e0",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/choice_service_checks.py",
+      "bytes": 11001,
+      "sha256": "fdeed63d27c61fae329317071fa1f7f0066e28a10a6a61b7fb19059d993cc173",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/postgresql/__init__.py",
+      "bytes": 56,
+      "sha256": "7e43c2cefc7a1d0379e690f618b78b6185eff48a376296f40c2e669b29a715ba",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/cell_evidence.py",
+      "bytes": 3063,
+      "sha256": "1b857ab13a9437a09f849a32dde6d8149f172c8420f222bb0a79224aec67dc9a",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/filter_bindings.py",
+      "bytes": 2389,
+      "sha256": "9ef0180b0abc356c8be516affb07171f0f6e8f165757f50ac7b40849337d6657",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/flow_timing.py",
+      "bytes": 7090,
+      "sha256": "b8c4f7ef32922aa654831fce3f5da9fa3fb1893d7a6a26208fd73fc523fda872",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/m1_campaign.py",
+      "bytes": 23996,
+      "sha256": "4c68e592f6460f5c144ce14a5d91ecdea25ba45eb4e1fdac946e729d405d413b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/m1_measurement.py",
+      "bytes": 3260,
+      "sha256": "6d0339b376e90dac09053f826d766c33b8b3052cab0e4615a1a141edd4ee578d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/m1_selection.py",
+      "bytes": 8371,
+      "sha256": "111f632535be6dd44fb198791ce795a24782c7ab828801d21851e1ca5861a2cb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/m2_runner.py",
+      "bytes": 10957,
+      "sha256": "de10e28c8b3f0d1f8195b1860adc6d69ea41f64fb7240b66e5b17d7501ec4632",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/m2_source.py",
+      "bytes": 11435,
+      "sha256": "12a39f322bdd1b2b5e1fcc24db2ec6842e2f1635a94c698c6e6c0dbb292e5045",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/map_bindings.py",
+      "bytes": 6187,
+      "sha256": "c3f6d49790a299d6e212af8e20b44fc1b4452b07579c203f018f134fb2f8355e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/map_capacity_runner.py",
+      "bytes": 20320,
+      "sha256": "dc9552fa70b53330c6834ea0a97e6d35c065d6784b558dd1c70e623b922dfc9c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/map_direct.py",
+      "bytes": 3624,
+      "sha256": "8d8cdeb0f2a6e4c2f54934b468fcc279827fef68b2637a0e90c1d44f3d7d59d2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/map_query_recording.py",
+      "bytes": 22353,
+      "sha256": "f82c6b6f86697297603dd606f039ac36c34784b1a7674aa98e90ea248adba4c5",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/movie_partition.py",
+      "bytes": 4552,
+      "sha256": "de7dab7c041069efec29cc0288ef0208cdf2a67d97eda3d1dc5bc3e9c9ef0318",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/movie_queries.py",
+      "bytes": 1314,
+      "sha256": "bd5897fccfab151df946410d987feae61f619e98046db07e16b144c088d98503",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/native_adapter_metrics.py",
+      "bytes": 11871,
+      "sha256": "0d415716a0f515a3aff10407f81097cf72bad7126c22f48f138078ec55009860",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/native_adapter_query.py",
+      "bytes": 4232,
+      "sha256": "a2b327d42512319fa3051ad0887f9f3fce8419bd09c572eabd61f4a32d9e9dcf",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/native_map_bindings.py",
+      "bytes": 4404,
+      "sha256": "438d54dab0a380da4f005f1aca5a4e3efc79f3354529c3756c2af106093ae882",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/organization_evaluation.py",
+      "bytes": 16861,
+      "sha256": "a7d7f0a0633b51642089a3fc0aa9364c2f8ffabe6288d2a1d1a661adc344f0cd",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/persistent_gateway.py",
+      "bytes": 12949,
+      "sha256": "ded63411bc20ea447c7b1adeaf24043d7409383632fe90b7c8e777ed8db49542",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/persistent_native_adapter_query.py",
+      "bytes": 24599,
+      "sha256": "1bb4ce0de78be06041ce26d5b419c07022cec533131a41ff767fefdf839576ac",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/pg_source_direct.py",
+      "bytes": 5103,
+      "sha256": "52820b142b5762d02378876f0b201fa896b390f7832619c944c97cf08482d40b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/provider_session_attribution.py",
+      "bytes": 9259,
+      "sha256": "aedb997947a3615a78346ab5e62278c4321af612c958956a3aa684e716707cb7",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_cli.py",
+      "bytes": 5159,
+      "sha256": "ea6a0e66931e63a4a8cfadaf6529f64309798638c24213223c0fd9f12ae695b2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_config.py",
+      "bytes": 8737,
+      "sha256": "e440482571f34512384cd9423818922c4b213200bdf37ed9607e7d4fc54f7af8",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_daft.py",
+      "bytes": 3019,
+      "sha256": "a388ff180dab4e8f9eebac583dd3f484f95f513804a1af38ebe5a535bccc274c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_deadline.py",
+      "bytes": 2391,
+      "sha256": "6fd411baffee5c86682c4b50550498c38ed9836d43aad84434eb76f3ba82210e",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_evaluation.py",
+      "bytes": 13502,
+      "sha256": "921a71e33f0cbb3552cc6c63e464520888e5a4dff9ebd0aa83a0c0c3a6e1c973",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_execution.py",
+      "bytes": 18134,
+      "sha256": "cf15bd741c08efacf13ceeea5b550a74393cd300691ddcd49d6a93212620158d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_inputs.py",
+      "bytes": 3295,
+      "sha256": "5a2c8fa7dab7b8b9c3cb08e2baca02f5e68edc810cd0cf3a1c4408fb920e068d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_runner.py",
+      "bytes": 5695,
+      "sha256": "6d224ab7cb9be3bfa8e2792a6b413f7767fb00d332c2a94ec9cd384801396a98",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_supervisor.py",
+      "bytes": 5615,
+      "sha256": "6a809747322d033a7c19a3be12603bdbd4fa7343c002fd477627ebfffc19ad98",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_tables.py",
+      "bytes": 4397,
+      "sha256": "c882857aeb9f9f1a5cf9d58521fe49437e924a8547b4bae4910b2e30ede4f204",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/query_workloads.py",
+      "bytes": 6571,
+      "sha256": "6933959fb0186983b6de58b9c57b0ddc4ad6b857589a34e0e14b66d66660f879",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/ready_query_recording.py",
+      "bytes": 6870,
+      "sha256": "b60062958208414ff6b633cf319c56dda680894065dd89b34f315d8f2217b4fc",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/resource_client_v3.c",
+      "bytes": 6476,
+      "sha256": "94aa5ccdf6a9c63a841b1e5b9b48e830c01d7f31c4506d6bf96a0e7b1020e412",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/resource_lifecycle.py",
+      "bytes": 6518,
+      "sha256": "7454e4338f914ab409a77f6ad825ba165f44a829994ed61c738e66a36e92db7c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/resource_phase.py",
+      "bytes": 11163,
+      "sha256": "5bbd67ae27df2232b7687e920b98a5d7b59720a1b272334f46963cc87262115f",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/resource_qualification.py",
+      "bytes": 20570,
+      "sha256": "833fa8c37345d52877fd6a82a873ec2f3dff38dac0b57918322f932747e4c59d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/runtime_helpers.py",
+      "bytes": 4333,
+      "sha256": "bef6cdb9714120061fd7951251681b97b4c5922bcda190f8c1ffeb058325bf90",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/sembench_queries.py",
+      "bytes": 12794,
+      "sha256": "e9f8e2038bdbdea809dbdb22ec7e717f94ca47f9ca0983d24d8969052ce3251c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/sembench_query_cli.py",
+      "bytes": 14233,
+      "sha256": "b83f57aafdc8e34328aa1b5a485970fb70091911cc1587325a426292ff1ca67a",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/semmap_resource_gateway_observer.py",
+      "bytes": 2023,
+      "sha256": "8676fbc19fc3aca6948dd90955fd8406352f51fdbfded85c3902f2f61cb757c2",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/semmap_resource_runner.py",
+      "bytes": 21142,
+      "sha256": "6afca106baa51df076781e674c076f5abf8208509ab492022a5feeafea21a96d",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/supplier_adapter_query.py",
+      "bytes": 36092,
+      "sha256": "092c5f47b1e26da1f822eaa9704e49bbcea87516adfe2a2e3b8f8902c80a572f",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/text_map_campaign.py",
+      "bytes": 13461,
+      "sha256": "c3e80a7d0ec0189d1d92bca4d72ebc243b14adf72b567a8fcfaa1a76fe286227",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/text_map_candidates.py",
+      "bytes": 3129,
+      "sha256": "f257bfe85b2e7fad5839c43189dc11cda4e9f289ed788e49708f39be3af4726a",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/text_map_comparison.py",
+      "bytes": 10023,
+      "sha256": "bee0facfafd6431241e94aef7fd35d67f7aa3bbb63f0181ace2b04e6777bfdfb",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/waiting_positions.py",
+      "bytes": 5236,
+      "sha256": "2ee57344f6178345ebf239f6127e88446c72fd85069dfd9e38673bed235f1925",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/postgresql/window_memory.py",
+      "bytes": 2279,
+      "sha256": "470c478a551a51e98575966c014c73355f3025b205dedb3fc420d639c7c67436",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/experiments/project_static.py",
+      "bytes": 22902,
+      "sha256": "ae21928f3d7d09d141e39041a78319cf9e542b09eaef1550e4ee39366be6afb7",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/saor/native_system_bindings.py",
+      "bytes": 14631,
+      "sha256": "befc8551cd5877dd6ac3d42ce7e39206bd72d6ca8cd79068f9827682fa51d7e0",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/saor/native_system_execution.py",
+      "bytes": 29213,
+      "sha256": "74664a7b7c82c0a03ad0b448340fcda117fe1e3f1e321256ae75d799c59fffd3",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/saor/native_system_readiness.py",
+      "bytes": 13298,
+      "sha256": "9282534bc128b8a4e27da43535de0361f3dc6188f99fb8027aeb5b9d3e357853",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/sembench_animals.py",
+      "bytes": 30321,
+      "sha256": "a0b1e1ef01ae3a66a01cca064b94636684428fc374884fb9ec31e5e491a0086c",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/shared_vllm/__init__.py",
+      "bytes": 1174,
+      "sha256": "cb198d815734597ef0004b9a250f3583ab95648b317c6d43320b6ff0433a7adb",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/shared_vllm/direct_control.py",
+      "bytes": 19027,
+      "sha256": "71b3c4ea4a6008bf13909dcff84184cb3304dec3406277e26e7326c93004bf08",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/shared_vllm/runner.py",
+      "bytes": 65104,
+      "sha256": "8d588b25329014cf35ef9d396a9f2654ab0dabb655fb311be59433811d259a0f",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/vtc_compatible/__init__.py",
+      "bytes": 421,
+      "sha256": "c383e1077ceb6a98d023c85f3a2d7a6797051bdac118595cecd83c7f4b5fd93e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/experiments/vtc_compatible/workload.py",
+      "bytes": 9094,
+      "sha256": "a4391473c09589e9817d09ca49e8f32ec1ade05ac0044dbdde0dff4fec0551c3",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/infrastructure/native_ray_runtime.py",
+      "bytes": 4102,
+      "sha256": "f6606391c9593d8147876054e2b47f3faa341ae6a3c5b894ff101f64ad76195c",
+      "category": "paused_postgresql_runtime"
+    },
+    {
+      "path": "code/src/observability/profiling/manifest_guard.py",
+      "bytes": 10365,
+      "sha256": "0d0b70bf752391dab2bf47c53b4eab81f94b690ac92c607f36205752dfe16314",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/batch.py",
+      "bytes": 14607,
+      "sha256": "f711bfd5eda2856788ad76ac0406c748673752f6686b92dbd203336ba5849ce3",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/native.py",
+      "bytes": 11048,
+      "sha256": "957602004537cb29d15e42be949a3c1be5d141cfa5a2e2ee1afcfa5dbc795116",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/common/test_partition_policy.py",
+      "bytes": 14468,
+      "sha256": "2a05361b8a8751b904078841fc32267ab4ca6ca3757c6f5bda830c268507b9c7",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/test_multicard_scale_ramp_helpers.py",
+      "bytes": 18628,
+      "sha256": "52904dd943187870901e6280938731e098eb44f90a31d0571add9c9c71aa7272",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/test_native_call_cleanup.py",
+      "bytes": 12157,
+      "sha256": "8f748dbc48b262f3f43858c643bbbd33d589a1cbd6ac6f63e543b7815d853fa2",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/test_native_calls.py",
+      "bytes": 17656,
+      "sha256": "797a9c3e02773a22d9643aa0b9d81391eb38ff191645eb017558499e1f0897eb",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/test_squad_database_e2e_runner.py",
+      "bytes": 29809,
+      "sha256": "d8d810477ce3d49ddc48bb61b5d8726ffe66f7c4c2dbd38edb2f4a9b4a84ca98",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_baseline_async_http.py",
+      "bytes": 17118,
+      "sha256": "64f74e57aedffe30e8fcc0ef42d1230d3505fa788ce5ff472e286debe1df53a2",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_baseline_batched_completions.py",
+      "bytes": 3809,
+      "sha256": "5f5a2189b9162c21155d3b36f7edc95583a48f578035fde036dfe85a10cd4fbb",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_native_matrix.py",
+      "bytes": 11685,
+      "sha256": "3c9a47ad8c82f2d16287e756bdb4ab09641d9d64606df9d7fac700aa8814a2d8",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_native_multijob.py",
+      "bytes": 39781,
+      "sha256": "bdd88dcf133ce2cc6c0fe12a9ae3618b46bb0531ca3a0bd996cafdd5fcaa4215",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_official_baseline_cli.py",
+      "bytes": 26474,
+      "sha256": "f8854be0981416ea0234c68ecbeb250bcd0cb5110c2e62c5b06dea81567c73e5",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_official_baseline_gate_runner.py",
+      "bytes": 36413,
+      "sha256": "43584c9a8eb01562ad9f998f0539c230604e6d3e63d88dd4e4ae5ae2930bd3e6",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/baselines/text/test_postgres_baseline_manifest.py",
+      "bytes": 6453,
+      "sha256": "03bc8764d0c59b78bcc9fad749f97f059f77403c3801c6e051d515ff91055a44",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/data/test_prepare_phase_change_workload.py",
+      "bytes": 5458,
+      "sha256": "c39879fb1c7f1a03413ad6ec5b1c7b2b8b138566aae03046f91368707fe6747e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/data/test_sinks.py",
+      "bytes": 4155,
+      "sha256": "6c7a4764606d8cdf26d8ab0609b2662fc0b70d6e258263a1da406ffa77796a71",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/data/test_sources.py",
+      "bytes": 6441,
+      "sha256": "6cd7311460b0b9b393a2752d34d927ea0d44e5d3d643173b2b82bc0df349027d",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_async_recording_deadline.py",
+      "bytes": 6614,
+      "sha256": "260568671833f0d7fba4e29cab72ace159d500f0b12bbe18b4849d04c1977c7e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_choice_gateway_observer.py",
+      "bytes": 8435,
+      "sha256": "efce9384e9650a45df187473cbb60b64d101d4bb6d0764d69d2db2e3e1a12199",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_choice_service_checks.py",
+      "bytes": 2840,
+      "sha256": "1c89f12d5d87d33177e4ac1f5af035ca390dfe3299e7b38a3704a81591527ca9",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_database_query_inputs_integration.py",
+      "bytes": 10770,
+      "sha256": "fac32b79c96d60994906f89a81e865a97f879b6cf47f34d65d26445b6cc2da38",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_database_query_runner_integration.py",
+      "bytes": 37649,
+      "sha256": "a908592b7b9c17c41357b3b1fbfb512a50fa4b112a7e6535b90af13685297465",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_filter_bindings.py",
+      "bytes": 1934,
+      "sha256": "920bbc4f8e337b01522769e84510b71bdfe00f3a1d906785c62aa3600ba05c1b",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_flow_timing.py",
+      "bytes": 4352,
+      "sha256": "7e9aa7f3f3c948e37cced1264e2a1fc3976a869173e55a725a6a274a98543195",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_gateway_observation.py",
+      "bytes": 12566,
+      "sha256": "4e2e23d6d2043e18041bb0fd605421557988e71d40b499ff94c12bb7f39a69a0",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_information_paths_integration.py",
+      "bytes": 8044,
+      "sha256": "92a2d6079e2f8d32864982d93e96c4650228160d766c0f81a4888fb590a42664",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_kmax_interference_script.py",
+      "bytes": 11956,
+      "sha256": "853bcbe44f61a4285ab2afe158f9d8c2de6b61fe79e361825506d5f898fc9f1e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_lotus_observation_modes.py",
+      "bytes": 22357,
+      "sha256": "6c1bc3e002dc99e85e74b25812e81d8e372677ff4e192ffac57e03e64a83f241",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_lotus_runtime_composition.py",
+      "bytes": 4336,
+      "sha256": "76d5bf4403de135d625eac878bdd47129aecd36f6db2c0651a86792bff23836e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_m1_campaign.py",
+      "bytes": 20385,
+      "sha256": "a7f16ffe4f5249788ea6a57e1b178e81fba39177fa2380dc5eeab0bf4a00fd9a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_m2_source.py",
+      "bytes": 6144,
+      "sha256": "1c99e50f74d25ff899ede998abd525aae3b43a383786f296e9883f263faa4f47",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_map_bindings.py",
+      "bytes": 4737,
+      "sha256": "d576446f5aed36f110dba7b0afff3b3d7ef7d3434f844e4ca180fb1b09763bff",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_map_capacity_runner.py",
+      "bytes": 11094,
+      "sha256": "cf6f30ad9c80e5a6b4cf08bd371c4e40141b819868126b3363bb184508368f96",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_map_query_recording.py",
+      "bytes": 23033,
+      "sha256": "3e5b69b017561b830eb626d427046b331c705ab4eef433ca514e2a7f61fddc23",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_movie_completion_deadlines.py",
+      "bytes": 16689,
+      "sha256": "246aaa001d7fe84aece911ad36d7e55e8c2b0676b89ce4390af8399535d1648a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_movie_partition.py",
+      "bytes": 2054,
+      "sha256": "b8eab48b0769d939e37f58c404e3f55d83bccb1a4519bbae0698cea285e2b750",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_native_adapter_metrics.py",
+      "bytes": 5325,
+      "sha256": "b0da3de37367630898366bad0eb0a1ae7d9c6e3b59b8d3bb2aaece1428ef0a7c",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_native_query_entry.py",
+      "bytes": 4614,
+      "sha256": "616441d67136009c7aee7d451cb73bb7e514a94d79b9778ec62daf424e2b3203",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_organization_evaluation.py",
+      "bytes": 12545,
+      "sha256": "b0dd133413472db8ab734d561528edb703e327781f0cf2705a113d555ad65d5a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_persistent_adapter_cleanup.py",
+      "bytes": 10348,
+      "sha256": "a5a3b4c8eaa9f97884a9db0b8fd5efc908c98d3293153cd49468ad182e32a83a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_persistent_gateway.py",
+      "bytes": 3445,
+      "sha256": "8a6b5b0d32248af9974b1fdf49a1f7bf807df1b1dcc1a7026d8b2f706a2b4c0b",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_persistent_native_adapter_query.py",
+      "bytes": 11855,
+      "sha256": "87093ae1bd978e6bec86af9fd4f5013556120a9f1538d9ac0e5accadb5f921f1",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_pg_query_execution_integration.py",
+      "bytes": 7916,
+      "sha256": "0e60d767585eef86c341cfc7e1975c5e8f3653a5d74148303ee4b65c78305ee2",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_pg_result_buffer_probe.py",
+      "bytes": 3624,
+      "sha256": "74a3f4e266ff377d1b35468e4ae8f503f42b00cedeb44c42d31e576776c62710",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_pg_source_direct.py",
+      "bytes": 7919,
+      "sha256": "822fbfc993baa794b0ccdc36ef195de4a9b9ddbc0088a28b6b1fc9fe4930c2f3",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_phase_change_configs.py",
+      "bytes": 5544,
+      "sha256": "a7236a2d05d720aaa2a006eb25bea63da71cbc46261c8372f2d83d728d4a00ea",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_phase_change_contract.py",
+      "bytes": 5286,
+      "sha256": "ffcc9119fca7c6aadf20e1e757a4638843f41406ed747f735eaf32e03d7be515",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_postgresql_runtime_helpers.py",
+      "bytes": 2010,
+      "sha256": "d01c931072d36f99add63230fb939a253d842641195fc6a61d0a4f811d9fad0e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_provider_session_attribution.py",
+      "bytes": 14001,
+      "sha256": "c5de616413f1945375b0daf7b95a3fcf590b12b12448a6eba0bcfbd297b4a85d",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_query_supervisor.py",
+      "bytes": 4199,
+      "sha256": "946f9835193b182cb4b25895062df8793c4bb580692e5141987ea9153e1da333",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_query_validation.py",
+      "bytes": 9170,
+      "sha256": "bd3d9a65ec34839814921381a679580c26930c6f3af319816f127701f77c1199",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_query_workloads.py",
+      "bytes": 1280,
+      "sha256": "cf81467b51be5e3e0b513172a22a011f4f8705f78d0db2e4036cddb480bd3e88",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_ray_transport_observation.py",
+      "bytes": 4115,
+      "sha256": "98da3b8efb044d4128b0def4ef95b814304dc56f84786730b9b0b2120a382a7a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_ready_query_recording.py",
+      "bytes": 12089,
+      "sha256": "3e49a89bd7a1c3197933a4273956dd38b78976af2350e6e2af09ed672d4ebc0b",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_resource_lifecycle.py",
+      "bytes": 16217,
+      "sha256": "5a4b1092fb4b20c917905b4a241a661853ecf67e2ceaa13fae2deb1479432018",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_resource_measurement_contracts.py",
+      "bytes": 7671,
+      "sha256": "f93200211baf032f93b8c5e0ec594611c966aef3fcb685b1c95f344f26f129f7",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_resource_qualification.py",
+      "bytes": 13406,
+      "sha256": "6e3bc53a89052f0e48a19aa6a1c24a801a8c986f502ba17cf1aa3e827c8ecc2b",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_saor_formal_tools.py",
+      "bytes": 116418,
+      "sha256": "bff971e13d28d61639089386a42cc8d4e605369ea2bf1a242c063330c2c5c7da",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_saor_native_system_matched.py",
+      "bytes": 69985,
+      "sha256": "f637160ac4dbfcdb13a6efa3ab1b48ad10283484dda68639f7983988c9f145d6",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_saor_native_system_observation.py",
+      "bytes": 6634,
+      "sha256": "7ddc7e93b20d5870d14c6c64cc9818a3e0a5d3d47de6a35d39d55f9ed55086a1",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_saor_shared_vllm_config.py",
+      "bytes": 20967,
+      "sha256": "30eaed08855b3179b4eec15cf5f34e16bef1f02d82724a21d5e94e68a5c382fe",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_sembench_animals.py",
+      "bytes": 30571,
+      "sha256": "3380f2f68aed4403c05aa969c6d45bc35c288832a5616bf88d02feeb53254082",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_sembench_animals_q7_contracts.py",
+      "bytes": 1383,
+      "sha256": "3d09d04927633dc408f1f7dd4caf3b3973bde119ddc6db97dcc53a59f4d22ef1",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_sembench_lotus_libraries.py",
+      "bytes": 14480,
+      "sha256": "c2187f52871d33ae6f8e49b4f6a1a58842107245ada849db6cfb2782b23a42cf",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_sembench_queries.py",
+      "bytes": 12501,
+      "sha256": "63c1e5d641ac3e2901c2480965b2414281530c701b21e64a45dadaae69f214f6",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_semmap_resource_cli.py",
+      "bytes": 1739,
+      "sha256": "b7eabedb354e715710b3d785d2e9c67c5b3ec36e4dccbc1f733dc76f311b5609",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_semmap_resource_gateway_observer.py",
+      "bytes": 3534,
+      "sha256": "a22433905889b92aafb1993fcf736c85f94deef7f7c57367619cef2e79512db3",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_semmap_resource_runner.py",
+      "bytes": 5916,
+      "sha256": "4b7e37b76f7552e2457e610557801a2261d12e42667b0ac24d2b3fac65153581",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_shared_query_integration.py",
+      "bytes": 16380,
+      "sha256": "c847d849d5a6e65314a9753ddb7f3636b3e13c01744a913dfbb979cdc64fe1e2",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_shared_vllm_experiment.py",
+      "bytes": 133833,
+      "sha256": "ada250833556489d155a1876ff9ce8062c114e863c01242561079232a87970cd",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_shared_vllm_runtime.py",
+      "bytes": 5845,
+      "sha256": "64cc7273eaf39814e98bb2dcb1c0cbe6920dd1b83d47e65acdb5f882f199e742",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_supplier_http_preservation.py",
+      "bytes": 6533,
+      "sha256": "2195c0fa0aa565b4da070e225984649a92033bd7a93be5ab5729a55bc0a76345",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_supplier_native_errors.py",
+      "bytes": 7274,
+      "sha256": "4e849e2fdc11366f153b0e121d5cd003332801b3d2c4dcd2e148e3563a3f9843",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_text_map_campaign.py",
+      "bytes": 11278,
+      "sha256": "158639f5da2406b84a3d4b8872ff1eb8cd5f576d89a02149731eeedbc9ba964d",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_text_map_candidates.py",
+      "bytes": 3118,
+      "sha256": "c65db304f6d704cd132f799aaabf8c89f7c35b4334742d06c520b3d3ce7a4091",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_text_map_comparison.py",
+      "bytes": 13466,
+      "sha256": "642711bc46da10ffe991f607d32c6b7fc4a31136de1da4da4126dce15f66e094",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_text_map_native_supply.py",
+      "bytes": 6989,
+      "sha256": "fe89ca8358167a0fc7698be233d10348be776351bdfe93d235efcc1897d8f32c",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_text_map_shared_integration.py",
+      "bytes": 18852,
+      "sha256": "a1b21b317797247401bc624490969632c3e92d923ce993e8d749e665f1ab2d89",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_vtc_compatible_workload.py",
+      "bytes": 4767,
+      "sha256": "50ba70e0a8ea27c853002762d89ab37d81a93d38f13f9adf94be3ec722fbc19a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_waiting_positions.py",
+      "bytes": 3832,
+      "sha256": "0036da1fc2e767fb0fdcbc4ad9db33a1a7a14b1b7ebbee3d60caee25a8656ec3",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/experiments/test_window_memory.py",
+      "bytes": 1756,
+      "sha256": "99bb9df67ad6bb65b643bcc6e3842219718e28aed7b5934c9c38c5b2ed6f1673",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/observability/test_gateway_query_archive.py",
+      "bytes": 20089,
+      "sha256": "2d9fb6869a5cd844708a6b2c73e4e56406c7f769eb4924dffaaff32050c28ca9",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/observability/test_postgres_profile_scheduling.py",
+      "bytes": 177012,
+      "sha256": "470e4b20bc7ff176bfa64793f02983efb55def6beee9beb3e41b0e6278c80b9e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/observability/test_process_resources_linux.py",
+      "bytes": 5498,
+      "sha256": "78a3cd30b47a553f4a771f5cb4eab446acee643132b2c8ffe3f7d3702e84f71b",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/observability/test_profile_manifest_guard.py",
+      "bytes": 13588,
+      "sha256": "0c9add7890768617242ad922dc22ee2ccbbc1b72b5597512e38ff6e46eca8740",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_adapter.py",
+      "bytes": 45568,
+      "sha256": "896b5e1f126690a6471779ecb4038bc68762ea11e8e6065957853885a26bf885",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_batch_preflight.py",
+      "bytes": 10497,
+      "sha256": "a956906739af3b87c5d4ea30ffc86c33c0f2636c2777dcc42a55e8e1d7423234",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_call_limits.py",
+      "bytes": 5641,
+      "sha256": "7c17747fa7219b7e544e38431d18982a75402776508f892bdc370a3a85752aa6",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_cleanup.py",
+      "bytes": 14158,
+      "sha256": "48af1f1016854477b9ae9cce924ba0caac71b48d19c6bd87e2d832aeb703536c",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_control.py",
+      "bytes": 17626,
+      "sha256": "1e44e9535858f1afe1032706a2dbd1e42ed79ec1afc2ce74079aede4d156cca9",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_http_deadlines.py",
+      "bytes": 7866,
+      "sha256": "4c175355ba0e8cadbced5233392b04955eaa8726f801199ea98762d4704c8a03",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_native.py",
+      "bytes": 27505,
+      "sha256": "3a4d59c51463d7de26265a41ca33669072eab39700cdfad8128591fb686970b0",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_ray.py",
+      "bytes": 10482,
+      "sha256": "51e4769a2a5ac98dacea95cb5a76415f0afeefaf596b650a4647c3159cb65727",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_response_replay.py",
+      "bytes": 9486,
+      "sha256": "e7b08afc537a29e72c70f11be88d23d3c7f724ec72b23cbbb7935caf362afa4a",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_wait.py",
+      "bytes": 5779,
+      "sha256": "a4e82b259d408baf5feb07a8ad92c71c8b66901b32ba173aba189bbdb7924c5b",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "deploy/autodl/saor_native_system_matched.example.json",
+      "bytes": 14039,
+      "sha256": "c27e184e2a9d2173f5814cad12219c2b85cd6cc5d645ba16a0105da991f3cae9",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "deploy/autodl/saor_native_system_matched_native.example.json",
+      "bytes": 6489,
+      "sha256": "90589b412355bf6ead78947eb1537788e3663bcc20f05a7ced6af7c4f281b614",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "deploy/autodl/saor_native_system_matched_project.example.json",
+      "bytes": 6134,
+      "sha256": "a72cf759f249b4bf7a8964e00f4d6a8acde9e7d4c7c6dd4e2a6a7a1f320b86ca",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "deploy/autodl/single_endpoint_squad_database_e2e.example.json",
+      "bytes": 6752,
+      "sha256": "0192ff96e830a0e2cfaff68f6fba1a1e5802f2b57754b111a9ec687797594c4e",
+      "category": "retired_http_experiment"
+    },
+    {
+      "path": "deploy/pgai/AGENTS.md",
+      "bytes": 908,
+      "sha256": "1c9f4eaa7cbec7d69b504f8cc2b7fdf1b8d9de2c8df9eafbfb929588663874cd",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/pgai/README.md",
+      "bytes": 3641,
+      "sha256": "9c86ff8bf775435829687f904220f4c5a9a74bf2328851bfdabc5f7a3e3b9bea",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/pgai/compose.yaml",
+      "bytes": 824,
+      "sha256": "85889ad3b1facdf31286b68edac388d6981b23f0cb522a728bceb06fa2b574de",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/pgai/init.sql",
+      "bytes": 82,
+      "sha256": "fc825063f745cde5bf193438c74d12f2fc87fb9af8ebcc57f21022f68578916c",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/pgai/smoke_ai_embed.sql",
+      "bytes": 1068,
+      "sha256": "0e48e354b22955ae58febaca8ec4978bdc97b8aaac3a2ab532afbe6a43469db7",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/postgres18.4/AGENTS.md",
+      "bytes": 925,
+      "sha256": "da0d0e2cdd587f98238c661eca6a82ba32cb3b00a5d889378834c7afcfc86708",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/postgres18.4/README.md",
+      "bytes": 1631,
+      "sha256": "6d654dfdb7991176ff62e0d6d5fc0176c9b7c5c348ce1a313ab71439f7b62a42",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/postgres18.4/compose.yaml",
+      "bytes": 590,
+      "sha256": "5f503e80b15a3facdb7d1bd0af5b43d6ed19881841515a860091873957a4131b",
+      "category": "paused_postgresql"
+    },
+    {
+      "path": "deploy/postgres18.4/init.sql",
+      "bytes": 39,
+      "sha256": "9e9b2cfec47519f49ee73cb533c459e22f8ca54fe5ba1cbec59f3d5883fe191c",
+      "category": "paused_postgresql"
+    }
+  ]
+}

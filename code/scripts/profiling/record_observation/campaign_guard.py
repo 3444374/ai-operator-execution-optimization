@@ -23,7 +23,7 @@ REPO = HERE.parents[3]
 sys.path.insert(0, str(REPO/'code'))
 sys.path.insert(0, str(HERE))
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.private_artifacts import (
     publish_private_json, require_outside_git, write_private_json,
 )
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError

@@ -1,3 +1,7 @@
+> 当前保留 SAOR 调度算法、方案、离线分析与历史证据。依赖旧 PG／HTTP 的 native-system 启动胶水已归档，
+> 下面的旧运行命令仅在[精确冻结树](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)中解释，
+> 不能直接用于当前 SemBench 主线，也不表示已实现新的资源最优策略。
+
 # Historical SAOR experiment evidence
 
 This package contains reusable, typed experiment contracts and offline evidence

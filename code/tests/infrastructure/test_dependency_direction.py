@@ -119,8 +119,7 @@ for module in ('src.observability.execution_timing', 'src.observability.model_re
                'src.infrastructure.request_budget', 'src.modalities.image.clip',
                'src.observability.request_gateway', 'src.semantic_methods.lotus.image_rm',
                'src.semantic_methods.lotus.image_backend', 'src.baselines.image.frameworks.daft_clip',
-               'src.baselines.text.frameworks.native_calls',
-               'src.baselines.text.frameworks.ray_data_pg_http'):
+               'src.modalities.image.clip_batch_workers'):
     importlib.import_module(module)
 from src.observability.execution_timing import timing_span
 with timing_span('disabled.fixture'):
@@ -160,6 +159,7 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
         from src.baselines.text.frameworks.kalypso_native import adapter
         from src.experiments import native_query_lifecycle as sessions
         original = sessions.BACKENDS, sessions.RESIDENT
+        cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
         class Driver:
             def __init__(self, cfg, unit, path):
                 self.cfg, self.unit, self.path = cfg, unit, path
@@ -170,14 +170,14 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
         with patch.object(adapter, "load_dependencies"), \
              patch.object(adapter, "NativeQueryDriver", Driver), \
              patch.object(sessions, "run_sequence", side_effect=run):
-            result = adapter.run_attached({}, {"queries": []}, Path("unused-fixture-output"))
+            result = adapter.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
         self.assertEqual(result["status"], "passed")
         error = ValueError("fixture comparison failure")
         with patch.object(adapter, "load_dependencies"), \
              patch.object(adapter, "NativeQueryDriver", Driver), \
              patch.object(sessions, "run_sequence", side_effect=error):
             with self.assertRaises(ValueError) as caught:
-                adapter.run_attached({}, {"queries": []}, Path("unused-fixture-output"))
+                adapter.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
         self.assertIs(caught.exception, error)
         self.assertIs(sessions.BACKENDS, original[0])
         self.assertIs(sessions.RESIDENT, original[1])

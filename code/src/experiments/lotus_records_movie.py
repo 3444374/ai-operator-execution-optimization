@@ -7,8 +7,8 @@ from pathlib import Path
 import sys
 import time
 
-from src.baselines.common.private_artifacts import json_metric, new_private_directory, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import json_metric, new_private_directory, write_private_json
+from src.infrastructure.redact import redact_text
 from src.baselines.text.movie_records import (
     MovieRecordSource, RECORD_COLUMNS, prepare_movie_source, validate_movie_method,
 )

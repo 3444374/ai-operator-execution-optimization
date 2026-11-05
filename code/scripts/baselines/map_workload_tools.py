@@ -15,10 +15,11 @@ CODE_ROOT = Path(__file__).resolve().parents[2]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.common.private_artifacts import (
-    content_digest, new_private_directory, write_private_json, workload_summary,
+from src.infrastructure.private_artifacts import (
+    content_digest, new_private_directory, write_private_json,
 )
-from src.baselines.common.redact import redact_text
+from src.baselines.text.map_inputs import workload_summary
+from src.infrastructure.redact import redact_text
 from src.baselines.text.map_inputs import context_report, verify_text_roundtrip
 from src.baselines.text.sharegpt_inputs import prepare_sharegpt_manifest, validate_sharegpt_manifest
 from src.baselines.text.squad_map import validate_manifest

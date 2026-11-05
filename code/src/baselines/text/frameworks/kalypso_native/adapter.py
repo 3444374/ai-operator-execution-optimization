@@ -62,7 +62,7 @@ def load_dependencies(cfg):
         if sha(bundle/rel)!=expected:
             raise ValueError('Existing comparison dependency changed: '+rel)
     sys.path[:0]=[str(Path(cfg['baseline_source'])/'code'),cfg['baseline_packet']]
-    from src.baselines.common.private_artifacts import write_private_json
+    from src.infrastructure.private_artifacts import write_private_json
     return write_private_json
 
 

@@ -1,3 +1,8 @@
+> 2026-11-05 开发候选：当前入口／共享层清理与原生 LOTUS 本地 IPC 的范围以
+> [本轮CPU检查](../experiments/results/diagnostics/runtime_entry_cleanup_20261105/README.md)为准。
+> 旧PG／HTTP实验入口已归档，PG暂停而非放弃；新原生Movie对照不使用Core调度。
+> 本候选没有真实模型／Ray／GPU或性能资格，以下历史节点的来源与限制继续保留。
+
 # SemLoom 实现状态
 
 本页维护 main 已接纳能力与尚未验证的范围。源码与接口从[代码入口](README.md)核对，
@@ -280,7 +285,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | LOTUS 原 RM／FAISS 建库／检索与显式单卡入口 | [CLIP 接纳与资格](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)；默认精度失败、HSE 环境缺项与多卡未验证分列 |
 | 可选 vLLM 部署资源解析与身份核验 | [服务及原查询单卡复验](../experiments/results/diagnostics/main_service_auto_20261015/README.md)；不借此认证 CLIP、多卡或其他平台 |
 | 公共统计与离线结果工具 | [统计定义](src/observability/README.md#repeat-mean-confidence)、[离线输入与 CPU 范围](scripts/analysis/OFFLINE_RESULTS.md) |
-| PG 同步／增量 Map、受限 Filter→Map 与 query-job | [extension 支持形状](postgres/semloom_pg/README.md#supported-query-shapes)、[增量执行](README.md#当前-postgresql-文本-map-的执行流程)及对应报告；更宽 SQL 与真实匹配 Filter 校准另验 |
+| PG 同步／增量 Map、受限 Filter→Map 与 query-job | [extension 支持形状](https://github.com/3444374/ai-operator-execution-optimization/blob/7bf1d92baf2611925c608cfe76b4a766855bd77e/code/postgres/semloom_pg/README.md#supported-query-shapes)、[增量执行](README.md#当前-postgresql-文本-map-的执行流程)及对应报告；更宽 SQL 与真实匹配 Filter 校准另验 |
 
 接口说明只解释相应路径，模型结果仍按报告固定源码、输入、质量和生命周期使用。
 未列为 main 接纳的集成能力从[固定 9c59dc9b 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)回查。

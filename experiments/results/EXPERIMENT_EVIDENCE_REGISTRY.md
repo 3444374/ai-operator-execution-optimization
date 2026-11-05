@@ -1539,3 +1539,10 @@ Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_202
 
 最终候选再以无重叠的 9652108d 为源，完整 `code/src` 与已测组合相同，租约转交定向 1 项通过。
 [准确子树和方法](diagnostics/records_runtime_refactor_20261104/raw/legacy_latest_source_checks.json)保留来源，未重复原 105 项，仍待最终独审。
+
+
+<a id="runtime-entry-cleanup-cpu"></a>
+## 当前入口／共享层清理与原生 LOTUS 本地 IPC（CPU）
+
+[主报告与脱敏回执](diagnostics/runtime_entry_cleanup_20261105/README.md)维护具体方法集合、
+归档／历史绑定和未运行项；原始失败保留，没有新模型、Ray、GPU或查询性能结论。

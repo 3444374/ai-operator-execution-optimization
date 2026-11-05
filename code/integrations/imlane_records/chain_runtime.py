@@ -11,7 +11,7 @@ from integrations.imlane_records import owner
 from integrations.imlane_records.method_environment import preflight_method, validate_author_build
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.resource_limits import owner_limits, gpu_snapshot, gpu_exited
-from src.baselines.common.private_artifacts import require_outside_git
+from src.infrastructure.private_artifacts import require_outside_git
 from src.infrastructure import runner_lease
 
 
