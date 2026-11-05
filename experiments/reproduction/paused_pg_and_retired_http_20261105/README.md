@@ -1,7 +1,7 @@
 # 暂停 PG 与退役 HTTP 实验的准确来源
 
 当前主线为 LOTUS 方法与 SemLoom 数据执行、SemBench 实验。PG 后续仍可恢复，**暂停并非永久放弃**。
-旧 Movie HTTP 与旧固定矩阵另见[恢复记录](../native_baselines/README.md#retired-movie-http)。
+旧 Movie HTTP 与旧固定矩阵另见[恢复记录](../native_baselines/README.md#movie-http-retirement)。
 
 [MANIFEST.json](MANIFEST.json)逐项记录退出当前入口的源码／测试／部署配置路径、字节数和 SHA256。
 源树为 [`7bf1d92baf2611925c608cfe76b4a766855bd77e`](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)，
@@ -26,8 +26,22 @@
 | 退出当前执行入口 | 旧 Movie HTTP、固定五后端矩阵、prepared-call HTTP 图、PG／HTTP 查询／画像及旧部署配置 |
 | 暂停 PG | 扩展、SQL、部署源、实验接线、旧测试均以精确 Git 树保存，不触碰数据库数据／容器／卷 |
 | 保留当前共享能力 | 私有文件／脱敏、LOTUS 方法、CLIP workers、Core／IPC 和结果责任 |
-| 保留研究 | SAOR 调度算法、离线分析、方案及历史结果；依赖旧 HTTP／PG 命令的启动胶水在冻结树恢复 |
+| 保留研究 | SAOR 调度算法、离线分析、方案及历史结果；依赖旧 HTTP／PG 命令的启动胶水从原完整 Git 树恢复 |
 | 恢复原生 LOTUS 对照 | 新普通 Movie session 使用原 LOTUS LM + 本地模型 IPC，真实模型仍未验证 |
 
 五份具名历史投影继续使用原 ID、原 expected SHA 和原来源，只为受影响文件增加精确旧字节 override。
 历史成绩、失败、unknown、成本和私有原件不改写。此清理是工程职责和入口收敛，不是查询提速或质量修复。
+
+
+<a id="retired-http-observation"></a>
+## HTTP 观测代理及专属回环测试
+
+`code/src/observability/request_gateway.py` 和 `code/tests/observability/test_request_gateway.py` 已退出维护树。
+其原用途包括五臂观测、旧 PG supplier／persistent adapter 及 Animals 实验，现用 src／scripts／研究包没有代理实现消费者。
+两份原件分别为 38,221 和 49,736 字节，与本索引的准确 7bf1 源树逐字节相同，已在 MANIFEST 追加大小与 SHA256；
+恢复旧组件时使用该完整树中的配套调用方和测试，不建立现行兼容入口。
+
+trace 摘要及其纯 CPU 用例继续维护；HTTPX／native observer、request identity 和 Unix execution-provider 接口未移除。
+五份原生历史投影继续使用其既有旧来源，没有覆盖为当前文件或改写实验结果。
+[代码与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
+说明恢复、当前调用和未覆盖的模型场景。

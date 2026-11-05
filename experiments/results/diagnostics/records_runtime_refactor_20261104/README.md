@@ -2742,3 +2742,71 @@ main `6a8a2d7b`／`3fd3887e` 沿用前批公开口径，改前／当前直接重
 较宽口径分别少 26,525／35,835 行。超过千行的核心文件仍有 adaptive，其他大文件继续按实际职责处理。
 已发布的 fused 清理修复保持原字节，未重跑其十项；策略、容量、默认值和并行 poll／ACK 未动。
 原 socket／sysctl 和 CLI 未验证项没有选择或重试；没有模型、GPU、数据库、服务器或性能结论，未合并 main。
+
+
+<a id="retired-http-observation"></a>
+## 旧 HTTP 观测代理退出维护源码
+
+组件候选为 `cfe49e7629e290e711b66b950698c2a8e380ccee`，先在 dad4 上组合为 `58bf5664`；
+本次最终代码基于最新 `4376d927ada18896fc086f0c85692f28d79d110f`，候选为
+`5bf1a619aa4837407016efe5076843dab760c9dc`，树 `2a3e818aebc14d8c5e7a6b6cbb21bbc3eb6c0bf8`。
+新的基线 worker／时钟整理和来源修复都保留，冷导入列表自动合并后仅移除旧代理项。
+
+退役的 ObservationGateway／GatewayRoute 只剩专属测试消费者，现用 src／scripts／研究包没有执行调用。
+其旧用途包括五臂观测、已归档 PG supplier／persistent adapter 和 Animals 实验；两份完整原件仍可从准确 7bf1 树恢复。
+本批删除 779 行代理、941 行专属回环 HTTP 测试及唯一冷导入项；原测试里的两条共享摘要断言迁为一个纯 CPU 用例。
+保留 trace 摘要／匹配分析、HTTPX／native observer、request identity、Unix execution-provider 接口及共享研究算法。
+源索引只增加两个路径、长度及摘要，原件分别为 38,221／49,736 字节，与准确 7bf1 和退役前 7f0b 逐字节相同；
+没有新增转发层或当前兼容入口。[恢复说明](../../../reproduction/paused_pg_and_retired_http_20261105/README.md#retired-http-observation)
+使用同版本旧调用方和测试。
+
+[机器摘要](raw/http_observation_retirement_checks.json)与[脱敏原件](raw/http_observation_retirement_raw.json.gz)
+分别保留组件同选四项的改前／改后通过、dad4 组合十一项，以及最新 4376 组合十一项全部通过；无失败、错误或跳过。
+这些选择重叠，不累计为更多覆盖。组件改前已含新增纯摘要用例，生产代码仍为 7f0b；不是未经修改的旧完整测试套件。
+原私有 runner 首次仍导入已退役的 redactor 路径，启动即停止、未加载测试；修正辅助后才开始上述检查，原错误另留摘要。
+冷导入子进程使用内存 HTTPX MockTransport，未绑定端口或访问网络；没有重新执行退役的 HTTP 服务测试。
+两份组件记录的 1,020／1,018 个文件摘要、dad4 组合的 1,018 个及最新组合的 1,020 个均匹配各自声明的准确代码来源，运行期间保持。
+独立复核分别覆盖 dad4 与 4376 的准确组合，未要求修正、未重跑测试或启动服务。
+
+新 4376 基底已补齐旧 task_info 和 submission_control 包导出的十处来源，最新逐项读取 3,010／3,010 全部匹配。
+本清理没有改变 native manifest、原 expected 摘要或投影身份；此前 dad4 的十处差异仍保留在对应旧记录中。
+这只说明源码来源可核验，不是历史模型环境、原查询质量或性能已恢复。
+
+| 生产 Python 口径 | 最新基底 4376 | 当前候选 |
+|---|---:|---:|
+| HTTP 观测代理 | 779 | 0 |
+| 可比核心，含独立研究 | 58,078 | 57,299 |
+| 现用 src＋scripts，含独立研究 | 113,911 | 113,132 |
+| 超过百行的核心函数 | 46 | 44 |
+
+本批生产 Python 净减 779 行。统计含空白和注释，排除测试、说明与历史副本；核心排除 experiments／baselines，仍包含独立研究 3,008 行。
+main `6a8a2d7b`／`3fd3887e` 沿用前批公开统计，当前两树直接重算：核心分别多 3,208／少 4,329 行，较宽口径分别少 27,203／36,513 行。
+并行基底还包含其他代码调整，不能用 dad4 的总量代替本次基底或把其增量算作这次删除。
+
+### 剩余核心文件与可执行下一项
+
+| 文件 | 行数 | 当前职责及后续处理 |
+|---|---:|---|
+| scheduling/submission_control/adaptive.py | 1,157 | 批反馈、AIMD 家族及共享配置／比较；现代请求只依赖配置和比较函数，不使用其几何搜索，由策略负责人分别整理 |
+| execution_provider/adapters/lotus_record_chain_core.py | 985 | owner 配置、阶段选择、服务移交和两种清理；推进已有运行器，保留各自资源事实，容量随专项整理 |
+| serving/backends/async_engine_process.py | 925 | 子进程、通信、槽位与终态；可先移除紧接 from_dict 后返回值被丢弃的重复 kwargs，进程拆分另用实际进程行为验证 |
+| scheduling/core/scheduler.py | 844 | 两种实际调度循环和指标时刻；输入与拓扑已分开，保留不同副作用，继续查实际重复 |
+| execution_provider/adapters/records_async_model.py | 716 | actor 请求、分页、ACK 和引擎生命周期；与并行 poll／ACK 处理协调，避免多处写同一责任 |
+| scheduling/submission_control/request_scan.py | 703 | 现代供给许可与试探；解除对旧多策略文件的配置／比较函数依赖，保留单一控制器和原行为 |
+| serving/backends/completion.py | 679 | endpoint 内核、actor、Ollama／fixture；仍被请求等价核对使用，逐项核工厂后再拆或退役 |
+| observability/profiling/ray.py | 670 | typed gate 与任务／actor 提交；字典 adaptive_config 仍可进入旧 HTTP metrics 轮询，须核实际调用再退役 |
+
+普通 R 缺省仍为 2，独立预算及 R=None 的有限声明可用；auto 依据声明额度和字节推导，没有自动授予物理 RAM 或保证整查询 RSS。
+三项引擎上限可省略，BF16／显存比例 0.8 的共享缺省仍在；后续应区分未指定与显式配置，保留具名对照的实际参数。
+真实单机支持条件、未知请求、未消费结果与 ACK 责任继续保持。文件数量或长度不单独决定是否再拆分。
+
+### 模型资格与合并状态
+
+既有统一服务器运行 `rpa1r1` 的交接来自准确 `a1b5cdd38860df8ee7eed06c86e5d06a94687ad5`：完整 Q1 为 2,000 成功、0 failed／unknown。
+该轮使用 event_driven、B／C_batch／R 显式为空，逻辑请求数来自输入数 2,000；三项引擎上限省略，ready 中实际解析值不表示空闲物理资源。
+与旧动态结果有一条 Filter 判断差异，不能称质量等价；单轮结果和多个同时变更也不能支持独立性能归因。
+其原件由统一 GPU 会话保管，交接摘要、长度及 SHA-256 随本节机器记录保存；本次只读核对，未新增模型调用。
+
+旧 a1b5 的实际 Ray／模型结果不覆盖本次新提交、后续中性 worker 整理或 fused 删除失败重试；本轮只提供上述限定 CPU 证据。
+默认容量、物理授予、共享引擎缺省及当前代码的完整模型／质量检查仍未完成，PR 继续作为开发草稿，未合并 main。
+原 Unix socket／sysctl 和缺少 SemBench checkout 的用例没有在这里重试，不能改报通过；后续统一服务器检查应绑定其准确待测版本。

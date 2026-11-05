@@ -29,9 +29,11 @@ AIMD、批反馈及原生 vLLM 的 `--scheduling-policy fcfs` 保留。
 来自 `73e686aad55772535555e0b8bc7dbce078a727ce`，其 SHA 正是五份投影原预期值。
 只补来源与格式记录，维护版新增行为测试及原投影预期不变。
 这项错误更正与 parser 退役分别保存来源，不表示其他历史来源或模型环境已经恢复。
-当前 3,010 条来源中有 3,000 条匹配，剩余十处位于 `task_info.py` 和
-`submission_control/__init__.py`；完整五树恢复仍未通过。下文 2026-11-04 的零差异数字只描述当时源码。
+上述 parser 与测试整理时，3,010 条来源中有 3,000 条匹配，十处差异位于 `task_info.py` 和
+`submission_control/__init__.py`。后续[原生基线来源修复](#baseline-source-recovery)已补齐准确原件；
+最新 HTTP 观测退役组合逐项读取 3,010 条来源均匹配。旧失败和各阶段数字保留其原版本，不代表模型环境已恢复。
 
+<a id="baseline-source-recovery"></a>
 ## 原生 baseline 依赖边界拆分的历史来源
 
 时钟身份从 Core transport 抽出后，五份历史投影仍须取得原 `ray_map_transport.py` 字节。

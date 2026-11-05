@@ -1697,3 +1697,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录八个无现用调用函数退出维护源码、五个实际 Arrow 函数及当前导入迁移；同组七项 CPU 改前／改后全部通过。
 一个多行 Arrow 值用例先在旧实现通过，源与期望保持；重叠运行不累计。准确旧源供五份历史投影恢复，原十处差异保持，
 生产 Python 净减 707 行，无查询性能、真实 Ray 或模型结论。
+
+
+[旧 HTTP 观测代理退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
+保留组件同选四项前后通过、dad4 初步组合十一项及 4376 最新组合十一项通过；重复方法不累计。
+完整原件在准确 7bf1 Git 树恢复，共享 trace 摘要与被动观测继续使用原实现。新基底已补齐旧来源，最新 3,010 项全部匹配，
+较早十处差异按当时证据保留；本批没有真实 Ray／模型运行，旧 a1b5 Q1 结果不转用于新提交。

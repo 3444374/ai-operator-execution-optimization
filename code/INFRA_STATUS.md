@@ -3,9 +3,26 @@
 
 # SemLoom 实现状态
 
-本页维护 main 已接纳能力与尚未验证的范围。源码与接口从[代码入口](README.md)核对，
+本页记录所处开发分支的实现与尚未验证范围。源码与接口从[代码入口](README.md)核对，
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
-Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
+Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切片文字保留其对应版本的状态。
+
+<a id="current-refactor-status"></a>
+## 当前收尾状态（2026-11-05）
+
+当前组合保留 `4376d927` 的基线 worker／时钟整理及历史来源修复，HTTP 观测退役代码候选为 `5bf1a619`。
+仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。
+最新组合 11 项 CPU 通过，独立复核无需修正；代码仍在开发 PR，未合并 main。
+[具体改动、剩余文件与证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
+区分旧组件选择、最新组合及实际模型结果，没有累计重叠检查。
+
+原十处历史来源差异已由并行基底补齐，本次 3,010 项来源全部匹配；旧失败按原版本保存，未运行历史模型环境。
+最近完整模型 Q1 属于 `a1b5cdd`：2,000 条成功，但与旧动态结果有一条 Filter 判断差异；不覆盖当前新组合。
+本轮没有启动真实 Ray、模型、GPU 或服务器。原 socket／sysctl 与缺少 SemBench checkout 的用例仍未在这里验证。
+
+普通 R 缺省仍为 2；独立预算和 R=None 可用，auto 依据声明额度，不是物理 RAM 授予或完整查询 RSS 保证。
+三项引擎上限可省略；BF16／显存比例 0.8 的共享缺省仍需另批处理。现用路径、配置及模型验收尚未全部完成。
+剩余大文件按实际职责继续整理；旧 Ray 字典配置仍可进入 HTTP metrics 轮询，须核实际调用后再处理。
 
 原生 baseline 容量修正基于 PR90 `4376d927`：ReferenceVllmEngine 原先把未指定的三项 vLLM
 容量补成 4096 上下文／8 序列／4096 token，链、cascade 与 IMLane 还会重写上下文或据此提前拒绝。

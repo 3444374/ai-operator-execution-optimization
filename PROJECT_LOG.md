@@ -11425,3 +11425,14 @@ Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan
 [实际源码与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
 记录同组七项前后通过、原 845 行变为 138 行现用实现，生产 Python 净减 707 行。
 核心代码按一致口径为 57,993 行，src＋scripts 为 113,810 行；超过百行函数由 50 个降为 47 个，未改其他策略或宣称查询加速。
+
+
+## 2026-11-05 收尾旧 HTTP 观测代理并核对剩余状态
+
+旧 ObservationGateway 已无现用执行消费者，删除 779 行代理、941 行专属回环测试和唯一冷导入项；
+原共享 trace 摘要断言迁入纯 CPU 用例，HTTPX／native observer、request identity 和 Unix 执行接口保持。
+两份原件与准确 7bf1 源树一致，只补既有恢复索引，不复制实现或引入兼容壳。
+先核 dad4 组合，随后保留 4376 的基线 worker／时钟及历史修复，在新树重新执行相同十一项 CPU，全部通过。
+[源码、恢复与状态记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
+列出源版本、最早私有 runner 启动错误和模型资格；最新 3,010 项历史来源均匹配，旧失败仍保留。
+本批生产 Python 净减 779 行，核心为 57,299 行；R 默认、共享引擎缺省和完整物理容量仍待处理，未合并 main。
