@@ -72,7 +72,7 @@ class PreparationModeEntryTests(unittest.TestCase):
     def test_rolling_required_and_no_legacy_feedback_or_other_backends(self):
         with fixture() as case:
             config = dict(case.rolling_config(), preparation_mode='event_driven')
-            variants = [dict(config, rolling_refill=False), dict(config, prepared_batching=None),
+            variants = [dict(config, rolling_refill=False),
                 dict(config, core_profile=dict(mode='async', admission=dict(kind='legacy_resource_feedback'))),
                 dict(config, batch_feedback=dict(max_batches=2)),
                 dict(config, backend='daft-native-local-model')]
@@ -152,11 +152,11 @@ class PreparationModeEntryTests(unittest.TestCase):
         plan = dict(case.batched(), preparation_mode='event_driven', rolling_refill=False)
         for lifecycle in ('resident', 'isolated'):
             with self.subTest(lifecycle=lifecycle):
-                case.reject_before_runtime(dict(plan, lifecycle=lifecycle), reason='fixed rolling')
+                case.reject_before_runtime(dict(plan, lifecycle=lifecycle), reason='rolling')
 
     def test_direct_start_rejects_other_backends_before_directory_or_Ray(self):
         case = preflight.SessionBatchingPreflightTests();case.setUp();self.addCleanup(case.doCleanups)
-        for backend in ('semloom-static-reference', 'daft', 'ray-data', 'lotus-native', 'imlane'):
+        for backend in ('semloom-static-reference', 'daft', 'ray-data', 'imlane'):
             plan = dict(case.batched(), backend=backend, preparation_mode='event_driven')
             with self.subTest(backend=backend):
                 case.reject_before_runtime(plan, reason='preparation_mode requires semloom-core')

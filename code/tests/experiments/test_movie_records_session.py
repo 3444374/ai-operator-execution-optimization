@@ -269,6 +269,16 @@ class PlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'record batching options'):
             session.check_plan(dict(plan, rolling_refill=True))
 
+    def test_removed_native_HTTP_profile_rejects_before_owner_or_output_creation(self):
+        plan = dict(self.plan, backend='lotus-native',
+                    profile={'native_lm_max_batch_size': 4, 'transport': 'http'})
+        output = Path(self.manifests['movie-q1']).parent / 'retired-http-output'
+        with patch.object(session, '_MovieDriver') as owner:
+            with self.assertRaisesRegex(ValueError, 'native_lm_max_batch_size'):
+                session.run_movie_session(plan, {}, output)
+        owner.assert_not_called()
+        self.assertFalse(output.exists())
+
     def test_normal_driver_routes_native_queries_to_one_local_owner_and_closes_it(self):
         from src.baselines.text.frameworks import lotus_native_local as native
         from integrations.imlane_records import chain_runtime

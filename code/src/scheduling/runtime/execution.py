@@ -8,12 +8,8 @@ from dataclasses import dataclass, field
 
 from ..core.models import PayloadEnvelope, TopologySnapshot
 from ..core.policy_contracts import AdmissionPolicy, EndpointRouter, PoolRouter
-from ..core.scheduler import (
-    SchedulerConfig,
-    SchedulerResult,
-    SubmissionAdapter,
-    SynchronousScheduler,
-)
+from ..core.scheduler import SynchronousScheduler
+from ..core.scheduler_types import SchedulerConfig, SchedulerResult, SubmissionAdapter
 
 
 @dataclass(frozen=True)

@@ -115,6 +115,7 @@ class Guard(importlib.abc.MetaPathFinder):
             raise AssertionError('unexpected runtime dependency: ' + fullname)
 sys.meta_path.insert(0, Guard())
 for module in ('src.observability.execution_timing', 'src.observability.model_reuse',
+               'src.observability.native_query_timing',
                'src.observability.buffered_events', 'src.observability.httpx_observer',
                'src.infrastructure.request_budget', 'src.modalities.image.clip',
                'src.observability.request_gateway', 'src.semantic_methods.lotus.image_rm',

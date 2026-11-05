@@ -74,19 +74,14 @@ def create_records_core(method, engine, generation, resources=None, *, profile=N
         raise ValueError('service_delivery requires an actual service_budget')
     if service_allocation_bytes is not None:
         raise ValueError('service_allocation_bytes requires a service payload pool')
-    if type(interleaved_preparation) is not bool or type(event_driven_preparation) is not bool:
-        raise TypeError('preparation options must be boolean')
-    if (interleaved_preparation or event_driven_preparation) and prepared_batching is None:
-        raise ValueError('interleaved preparation requires fixed rolling token requests')
     configured = resolve_records_runtime(engine, resources, profile, capacity=capacity, async_limits=async_limits,
         prepared_batching=prepared_batching, rolling_refill=rolling_refill)
     capacity, resolved, async_limits = configured.capacity, configured.profile, configured.async_limits
     batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill,
-                                      experimental_skip_token_packing)
+        experimental_skip_token_packing, interleaved_preparation=interleaved_preparation,
+        event_driven_preparation=event_driven_preparation)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if batching is not None:
-        if capacity.budget is not None:
-            capacity.method_capacity(effective, capacity.method_limits(1))
         from .lotus_records_batches import PreparedRecordsCore
         return PreparedRecordsCore(method, engine, generation, effective, resolved, batching, async_limits,
                                    resident=resident, capacity=capacity,

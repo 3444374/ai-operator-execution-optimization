@@ -65,10 +65,12 @@ class CoreCapacityIdentityTests(unittest.TestCase):
             item_result_bytes=2*1024**2, feedback_interval_s=0.0)
         self.assertEqual(self.signature(explicit), self.signature())
 
-    def test_explicit_total_is_independent_of_result_slot_count(self):
+    def test_equivalent_result_total_shares_identity_and_a_changed_total_does_not(self):
         self.plan['async_limits'] = dict(result_slots=5, item_result_bytes=65536)
         explicit = deepcopy(self.plan)
         explicit['async_limits']['result_bytes'] = 5*65536
+        self.assertEqual(self.signature(explicit), self.signature())
+        explicit['async_limits']['result_bytes'] += 65536
         self.assertNotEqual(self.signature(explicit), self.signature())
 
     def test_feedback_interval_integer_and_float_have_one_identity(self):
@@ -99,8 +101,8 @@ class CoreCapacityIdentityTests(unittest.TestCase):
                 resources = RecordsResources(**plan['resources'])
                 limits = movie_runtime(plan, resources=resources).async_limits
                 self.assertEqual(limits.max_inflight,resources.max_active_batches)
-                self.assertEqual(limits.input_bytes,AsyncEngineLimits().input_bytes)
-                self.assertEqual(limits.result_bytes,AsyncEngineLimits().result_bytes)
+                self.assertEqual(limits.input_bytes,resources.max_active_batches*4*1024**2)
+                self.assertEqual(limits.result_bytes,resources.max_active_batches*65536)
 
     def test_explicit_count_matching_current_C_is_not_a_derived_policy(self):
         self.plan['async_limits'] = dict(max_inflight=4)

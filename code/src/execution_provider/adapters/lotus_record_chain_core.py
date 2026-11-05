@@ -630,6 +630,8 @@ class SemLoomRecordChainCore:
                 raise ValueError("batch-stage progression currently requires count admission and FIFO")
         self.progression, self.progression_batch_rows = progression, progression_batch_rows
         self.prepared_batching = None
+        if (prepared_batching is not None or rolling_refill) and self.engine.chat_template is not None:
+            raise ValueError('prepared requests require the tokenizer-owned chat template')
         if prepared_batching is not None:
             from src.semantic_methods.lotus.prepared_batching import PreparedBatching
             if type(prepared_batching) is not PreparedBatching:
@@ -637,20 +639,20 @@ class SemLoomRecordChainCore:
             if (prepared_batching.policy == 'fixed_rows'
                     and prepared_batching.max_rows > self.resources.model_batch_rows):
                 raise ValueError('prepared batching max_rows cannot exceed model_batch_rows')
-            if self.engine.chat_template is not None:
-                raise ValueError('prepared_batching currently requires the tokenizer-owned chat template')
             self.prepared_batching = PreparedBatching(**asdict(prepared_batching))
         self._streaming_tokens = (self.prepared_batching is not None
                                   and self.prepared_batching.policy == 'token_budget' and execution == 'fused')
-        self._async_token_batches = self.prepared_batching is not None and execution == 'record_local_sections'
+        self._async_token_batches = ((self.prepared_batching is not None or rolling_refill)
+                                     and execution == 'record_local_sections')
         if type(rolling_refill) is not bool:
             raise ValueError('rolling_refill must be boolean')
         self.rolling_refill = rolling_refill
         self.batch_concurrency, self._batching_tokenizer = batch_concurrency, batching_tokenizer
         if self._async_token_batches:
-            if (self.prepared_batching.policy != 'token_budget' or self.prepared_batching.max_rows is not None
+            if (self.prepared_batching is not None and (self.prepared_batching.policy != 'token_budget'
+                    or self.prepared_batching.max_rows is not None)
                     or progression != 'record' or token_budget is not None or ready_order != 'fifo'):
-                raise ValueError('async token batches require uncapped token B, record progression, FIFO and W off')
+                raise ValueError('prepared requests require optional token B, record progression, FIFO and W off')
             if rolling_refill and (batch_concurrency is not None or batch_feedback is not None):
                 raise ValueError('rolling_refill uses request R, not batch_concurrency or batch_feedback')
             self.batch_concurrency = None if rolling_refill else 1 if batch_concurrency is None else batch_concurrency
@@ -676,12 +678,10 @@ class SemLoomRecordChainCore:
             from src.scheduling.submission_control.adaptive import ResourceRequestConfig
             if type(request_feedback) is not ResourceRequestConfig:
                 raise TypeError('request_feedback must be ResourceRequestConfig')
-            if experimental_skip_token_packing:
-                raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
             if (not self._async_token_batches or not rolling_refill
                     or ready_clock is not None or on_ready_event is not None
                     or request_feedback.poll_interval_s > request_feedback.window_s):
-                raise ValueError('request feedback requires rolling token batches and native ready clocks')
+                raise ValueError('request feedback requires rolling requests and native ready clocks')
         self.request_feedback = request_feedback
         self._interleaved_preparation = False
         self._event_driven_preparation = False
@@ -745,7 +745,7 @@ class SemLoomRecordChainCore:
                 raise TypeError("record-local sections capacity must be CoreRecordsCapacity")
             if self.capacity.budget is not None:
                 if not self._async_token_batches or not rolling_refill or progression != 'record':
-                    raise ValueError('independent resource budgets require rolling record token execution')
+                    raise ValueError('independent resource budgets require rolling record execution')
                 if resources.max_active_batches != self.capacity.budget.active_requests:
                     raise ValueError('owner resources must match the declared hard request budget')
                 if request_window is None and request_feedback is None:

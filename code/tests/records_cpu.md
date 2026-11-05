@@ -1,35 +1,9 @@
-# Records CPU 检查的本地资产绑定
+# Records CPU 检查
 
-本页仅用于已有CPU/SDK与合成响应回归，不加载模型、不启动GPU或SSH。使用已配置的driver解释器；本页不安装依赖或下载数据。
-
-`SEMBENCH_CHECKOUT`指向固定SemBench `c814e3807e72d4cf876b852b17e77f3cc94575c2`源码目录。
-`SEMBENCH_Q3_MANIFEST`指向本机新生成的manifest。路径只由测试环境提供，不写入生产代码或公开配置。
-固定历史CSV的SHA-256为`ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf`，
-全2000行、Q3普通谓词命中120个发生项；这是historical_sf2000 profile，不声称官方整表身份。
-
-旧封包manifest可能记录原机器绝对路径。保留旧封包与CSV字节，用现有prepare入口在新的仓库外目录重新绑定本地路径：
-
-```sh
-export CUDA_VISIBLE_DEVICES=''
-export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1
-export LITELLM_LOCAL_MODEL_COST_MAP=True
-export PYTHONPATH=code
-export SEMBENCH_CHECKOUT="$PINNED_SEMBENCH_CHECKOUT"
-"$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py prepare \
-  --input-csv "$RECORDS_CPU_INPUT_CSV" \
-  --input-sha256 ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf \
-  --max-rows 2000 --role sembench_movie_subset --task movie-q3 \
-  --output-dir "$NEW_CPU_INPUT_OUTPUT"
-export SEMBENCH_Q3_MANIFEST="$NEW_CPU_INPUT_OUTPUT/manifest.json"
-"$DRIVER_PYTHON" -B -m unittest \
-  tests.experiments.test_movie_records_matrix -v
-```
-
-调用者须提供真实CSV、固定源码及新目录变量。prepare验证CSV摘要，再由`MovieRecordSource`核对原CSV、records、references、行序和120个发生项；不伪造缺失资产，不修改旧manifest或参考标签。资产或固定SDK缺失时，既有可选用例明确skip；一旦提供无效路径/摘要，应失败，不能把失败改成skip。
-
-旧Movie HTTP专用FixtureService/MockTransport用例随入口退役，准确旧版本从[历史恢复](../../experiments/reproduction/native_baselines/README.md#retired-movie-http)读取。
-上面当前矩阵用例仅验证CPU控制流程，不构成模型质量、真实token、GPU性能或正式预算资格。
-如需保存脱敏CPU回执，可显式设置`NATIVE_CPU_EVIDENCE_DIR`，调用者须先创建新的私有目录；省略该变量不写该份回执。
+本页用于已有 CPU／SDK 与合成响应检查，不加载模型、不启动 GPU 或 SSH，也不安装依赖或下载数据。
+普通 fixture 不需要真实 CSV。旧 Movie HTTP 的 120 行检查已随其专属实现退役，
+[历史来源和恢复](../../experiments/reproduction/native_baselines/README.md#movie-http-retirement)保留原命令与数据身份。
+当前普通 Movie／Session 使用现有本地模型 IPC，不能将原 HTTP 回执解释为此源码的模型验证。
 
 Daft session回归使用真实Daft CPU图和合成kernel。其本机Unix socket须由运行环境允许；沙箱拒绝bind是环境错误，应保留失败记录并在获准的CPU环境重跑，不能替换原生图或跳过断言取得通过。
 
@@ -437,3 +411,65 @@ Ray 用例也保留。本地组合只收集并跳过这六项，没有启动真�
 旧缓存、跨查询 hint 和旧上探状态机的专属测试退出维护；共享批反馈、474 帧原样回放、未知请求、
 分页、ACK、完整语义结果及原生默认配置继续检查。[逐项迁移与原失败](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
 分别记录；旧机制从 9da 恢复，后续修订的测试按逐项清单的 3fd 来源恢复，不把删除旧专属测试称为新通过。
+
+
+### Ray 画像模块职责整理
+
+现有 profiler、Ray adapter、scheduler、架构与历史恢复五个测试模块在改前／改后各通过相同 194 项。
+单次消费惰性输入用例改调用当前选项对象入口，原断言保留；无需加载模型或启动真实 Ray。
+[检查及未运行项](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-profiler-layout)
+记录直接 helper 测试的归属变化与原公共提交用例。未新增测试方法或永久源码形状检查。
+
+
+### Core 调度值整理
+
+八模块在改前／改后各通过同一组 236 项，覆盖调度、账本、ready窗口、共享额度、画像调用、架构和历史恢复。
+未新增同义用例或运行时检查；一次性迁移核对确认原公开签名、导入对象与默认对象还原。
+[来源和未运行项](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-types-layout)
+与独立候选对应，不将其他候选的测试数字累计到本批。
+
+
+### 最新底稿上的职责整理组合
+
+[组合记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#layout-d559-composition)
+使用八个现有模块的 236 个不同 CPU 方法，包括画像、Ray adapter、调度账目、ready window、共享工作额度、
+架构与五份完整历史恢复；全部通过。被移动的生产文件及画像测试与各自已审候选逐字节相同，
+未新增测试方法，也不把此轮计数加到此前重复检查。真实 Ray、模型、GPU 和性能仍待验证。
+
+
+### 无 B 的 prepared rolling 组合
+
+当前固定／动态反馈与 interleaved／event_driven 使用同一执行器，新增检查只覆盖这次参数组合和
+完整未领取结果的额度，未新增源码形状检查。
+[原始失败与实际范围](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+记录 197 个方法中 195 成功、2 项 Reference 模拟构造在组合顺序下失败但独立通过；问题仍待处理。
+服务配置增量 21 项通过，重复方法不相加。全部是本地 CPU／替身，真实 Ray、模型、GPU 调用为零。
+
+
+### 当前源码组合的必要补跑
+
+[组合原件](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#current-runtime-cleanup-composition)
+保留首轮 721 个方法及四项失败，没有改成跳过。旧准备模式的 None B 拒绝预期已迁移，
+采样 fixture 自己设置并恢复同目录脚本导入路径；相关 26 项通过，混合关系原测试新增 None B 分支后通过。
+Kalypso registry fixture 提供现行公开启动字段，生产校验不改。auto／反馈增量 84 项通过，
+原 Reference 模拟类首次导入干扰已随测试依赖归位处理；重复方法不相加，没有二次全量运行。
+以上仅本地 CPU，不能据此给真实模型、Ray、GPU 或性能结论。
+
+
+### 普通 IPC 省略值的容量检查
+
+[本批记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+覆盖两个改前失败的方法与改后通过，以及 16 个相关模块的 151 个不同方法全部通过。
+保留真实字节不足、未消费结果、ACK 和 unknown 用例，没有加日志总数或源码形状判断。
+`test_records_capacity_config` 可单独检查普通／session 配置与本地提交；
+`test_records_capacity_defaults`、`test_lotus_resource_budget_runtime` 继续检查独立预算和资源归还。
+测试仅用 CPU fixture；真实 Ray、模型、GPU 与性能未测。
+
+
+同批共享额度去重沿用原 37 项检查，未新增源码形状用例；与容量修正整合后的 47 项也全部通过，
+[来源与计数](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
+分别记录，不累计重复方法。真实 Ray／模型仍未运行。
+
+PG／旧HTTP专用用例按[准确来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)归档。
+原生LOTUS本地IPC的新增CPU用例在`tests.baselines.text.test_lotus_native_local`，完整官方Q123和实机待验。
+旧PG画像大文件中的当前Ray scheduler用例已独立迁出；不能因历史文件名就删除现用算法覆盖。

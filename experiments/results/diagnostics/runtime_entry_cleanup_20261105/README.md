@@ -5,7 +5,7 @@
 新原生 LOTUS Movie 仍使用原算子、LM 和 LiteLLM batch_completion，只把 provider 接到现有本地模型 IPC；
 普通 Movie session 可选冷／常驻 owner。没有使用 Core 调度冒充原生对照。
 
-最终受影响集合 **455 项：449 通过，6 跳过，无失败／错误**，不是全仓全量回归。
+最终受影响集合 **685 项：679 通过，6 跳过，无失败／错误**，不是全仓全量回归。
 各轮是实际执行记录，方法重复时不能相加成独立测试数量；最终集合按方法 ID 去重。
 原生 SDK、公共 IPC、budget、来源、结果／时钟、关闭及 late accounting 使用 CPU fixture。
 4 个维护 CLI 的 `--help` 通过；静态检查无退役模块导入、无生产→baseline 实现依赖，
@@ -39,3 +39,15 @@
 用Python标准库读取回执即可按 `final_run` 的 `test_cases` 重算各状态计数；
 `source_python_sha256` 只绑定实际测试的当前Python源，不要求现代实现与历史AST形状相同。
 本次未修改任何历史实验成绩、质量标签、失败、unknown或模型调用成本，也不据CPU检查批准合并。
+
+## 与最新已发布代码的组合
+
+最终组合保留公开6754eebe的普通IPC容量、shared active-credit、Ray调度观测与类型拆分。
+冲突中的文件／摘要／查询验证只留职责层的一份实现；已有公开gzip历史源优先，不增第二份同字节来源。
+旧画像大文件中仍用于当前Ray scheduler的6个CPU方法按原行为迁出；旧PG／HTTP启动器不恢复。
+`lotus-native`现指新本地IPC对照，旧HTTP profile仍在启动前拒绝，不把其历史时钟混入新API样本。
+
+组合首轮685项发现一项旧断言“result_slots必须等于独立类型默认8”，
+已在未改动的公开6754eebe独立复现。普通factory按显式请求额度3推导为3，
+修正仅将测试对齐该合同，保留max_inflight和实际active_requests断言，没有改变生产容量或删除保护。
+最终回执包含此RED与后续GREEN，之前各轮不回填成通过。

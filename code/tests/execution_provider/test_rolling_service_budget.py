@@ -87,7 +87,23 @@ class RollingServiceBudgetTests(unittest.TestCase):
         self.assertEqual(preview.profile['service_payload_plan'],self.pool.preview(
             self.shape,delivery=declaration).describe())
         self.assertFalse(preview.profile['service_allocation_acquired'])
-        bad=[dict(options,service_delivery=None),dict(options,prepared_batching=None),
+        no_tokens = dict(options, prepared_batching=None, interleaved_preparation=True,
+            event_driven_preparation=True, profile=dict(mode='async', admission=dict(kind='resource_feedback')))
+        for bypass in (False, True):
+            selected = dict(no_tokens, experimental_skip_token_packing=bypass)
+            preview = preview_service_records_runtime(engine, None, self.pool.total_bytes, **selected)
+            owner = create_records_core(FilterMethod('fixture', instruction='Keep {reviewText}'),
+                engine, GenerationSpec(), service_budget=self.pool, **selected)
+            try:
+                self.assertEqual(owner.execution_profile['service_payload_plan'], preview.profile['service_payload_plan'])
+                self.assertIsNone(owner.execution_profile['record_batching']['B'])
+                self.assertTrue(owner.event_driven_preparation)
+                self.assertIsNone(owner.owner)
+                self.assertEqual(owner.execution_profile['record_batching'].get('experimental_skip_token_packing', False), bypass)
+            finally:
+                owner.close()
+            self.assertEqual(self.pool.snapshot()['allocated_bytes'], 0)
+        bad=[dict(options,service_delivery=None),
              dict(options,rolling_refill=False),dict(options,async_limits={}),
              dict(options,service_delivery={})]
         for value in bad:

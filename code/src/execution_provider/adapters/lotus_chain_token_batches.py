@@ -23,7 +23,8 @@ class _PreparedPrefix:
         self.organizer, self.available = organizer, available
         self.sequence = organizer._prefix_sequence
         organizer._prefix_sequence += 1
-        self.skip_tokens = getattr(organizer.owner, 'experimental_skip_token_packing', False)
+        self.skip_tokens = (organizer.owner.prepared_batching is None
+                            or organizer.owner.experimental_skip_token_packing)
         self.builder = PendingBatchBuilder(available if self.skip_tokens else None,
             0 if self.skip_tokens else organizer.owner.prepared_batching.token_budget)
         self.chosen = []
@@ -136,7 +137,8 @@ class PreparedTokenOrganizer:
 
     def _context(self, available):
         owner, limits = self.owner, self.owner._actors.limits
-        return (available, owner.deadline, owner.prepared_batching.token_budget,
+        return (available, owner.deadline,
+                None if owner.prepared_batching is None else owner.prepared_batching.token_budget,
                 getattr(owner, 'experimental_skip_token_packing', False),
                 limits.input_bytes, limits.item_input_bytes)
 
@@ -235,7 +237,8 @@ class PreparedTokenOrganizer:
         batches, requests = self.usage()
         rolling = (dict(rolling_refill=True, C_request=self.request_window,
                         admission_unit='single_model_requests') if self.owner.rolling_refill else {})
-        return dict(policy=asdict(self.owner.prepared_batching), concurrency=self.concurrency,
+        return dict(policy=None if self.owner.prepared_batching is None else asdict(self.owner.prepared_batching),
+            concurrency=self.concurrency,
             concurrency_unit='application transport batches with unsettled compute members',
             request_limit=self.owner.resources.max_active_batches, active_batches=batches, active_requests=requests,
             peak_batches=self.peak_batches, peak_requests=self.peak_requests, selected_batches=self.selected,
@@ -422,7 +425,8 @@ class BatchSupplyFeedback(RecordsNativeSampler):
         snapshot = snapshot_rpc_report(request=request, receipts=receipts, requests=requests,
             errors=errors, closed=closed, ref_retained=ref_retained, future_retained=future_retained,
             sampler_stopped=stopped)
-        return dict(**self._report_identity(), fixed_B=self.owner.prepared_batching.token_budget,
+        return dict(**self._report_identity(),
+            fixed_B=None if self.owner.prepared_batching is None else self.owner.prepared_batching.token_budget,
             phases=list(self.phases), **snapshot,
             resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
                 recent_RPC_attempts=resource_attempts, RPC_counts=resource_counts,

@@ -180,6 +180,12 @@ class RequestPolicyWiringTests(unittest.TestCase):
             options = selected['admission']
             self.assertEqual(selected['max_inflight'], 1)
             self.assertEqual(selected['owner_max_inflight'], 4)
+            automatic = resolve_core_profile(engine, resources,
+                dict(mode='async', max_inflight='auto', admission=dict(kind='resource_feedback')),
+                rolling_refill=rolling)
+            self.assertEqual(automatic['max_inflight'], 1)
+            self.assertEqual(automatic['owner_max_inflight'], 4)
+            self.assertEqual(automatic['requested']['max_inflight'], 'auto')
             self.assertNotIn('pressure_kv_usage', options)
             self.assertNotIn('search_policy', options)
             self.assertEqual(options['measurement_windows'], 3)

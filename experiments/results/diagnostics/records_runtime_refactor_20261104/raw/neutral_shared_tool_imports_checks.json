@@ -1,0 +1,93 @@
+{
+  "base": "d559b942f795af30baa3491be1b57e3af0616853",
+  "files": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_cascade_core.py",
+      "before_sha256": "b55f685c2ef85b004724e5f01d9271f7cd70523beb9885caad2472dd7387153d",
+      "after_sha256": "640892a79df666dd81b4f9cb2836adb4a0ff9091b121d842db27e457ebd96e6f"
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/record_results.py",
+      "before_sha256": "e3ee25f2f75881bca59f793400911ec3e1edbcc5f3e96caadaa982c1a31dd3c9",
+      "after_sha256": "f22677ec576e4d8d9e44ebfd92ee95dd2ee9f7202c18430ba04e7c768df8d28d"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_sync_process.py",
+      "before_sha256": "a349cc06e07057b0c1cf0ccb26d2944874ade2f3c9075ef2117b90137508c342",
+      "after_sha256": "766df0646a74fe9b03fa54c16a37baf0b460aebaf198100c9c1b9ec5a3292c90"
+    },
+    {
+      "path": "code/src/serving/backends/stage_process_cleanup.py",
+      "before_sha256": "a220f7b5d5ca7ba52ff107e1c136e13de375c60e92462e4af8e1acb1a5415136",
+      "after_sha256": "b735c94d341ca58ffd811744f8d66f7a48a53626150fd6b3f612bd4ba22979fd"
+    },
+    {
+      "path": "code/src/modalities/image/worker_identity.py",
+      "before_sha256": "e8ff5c80ebeaead12a0827706b8cde2205c52fdc0d82f5ea81bbb2017ac3275c",
+      "after_sha256": "17679197170fa25275ba3e0ef40e582bee115f0315ba03c34c82c83546f6364e"
+    },
+    {
+      "path": "code/src/observability/model_reuse.py",
+      "before_sha256": "4751bc82fce5250583b2570c1b92b5e83ea15e1c3730fd6bd2d3cbdb2c6a63eb",
+      "after_sha256": "948506bf9edf880d24c03f3f4d57c3ddd203590077eac8f4b9a5a32c9ff6f55a"
+    },
+    {
+      "path": "code/src/observability/execution_timing.py",
+      "before_sha256": "6f128848a789465c2117e0e08ae9261d4c6152c4ab3493fccbe65f5a53b468c3",
+      "after_sha256": "66a0addeb0f45ab7275303a53e361ff41ab4ff7ad740e9866a41d5e6eb277cec"
+    },
+    {
+      "path": "code/src/observability/buffered_events.py",
+      "before_sha256": "ccf14c78176bab77aa52dc022a57979fadb4cff58a4c27d07430b5e745d752c8",
+      "after_sha256": "4652b46a7cc8f2615a5eafe48b91d546dd829b9faf2c436689bc025490c0aa63"
+    },
+    {
+      "path": "code/src/observability/httpx_observer.py",
+      "before_sha256": "bca96fa31beb2efda7177e64627e115c9bc0b64b5d89c7d049600906b78a43b7",
+      "after_sha256": "2e81650cf5dcfda2507989783d0210d9cd63739d4237b72c13710d11ae06af5e"
+    },
+    {
+      "path": "code/src/observability/records_telemetry.py",
+      "before_sha256": "9e766f1386d3a1ecb84e33d0ff2ad3d0bd4f4165acc7e3529af0dafdde471b29",
+      "after_sha256": "07ea52be3313d5ec3ae1f629421dbc4db38d1c225d8654a3567536c5d3282c92"
+    },
+    {
+      "path": "code/src/observability/process_resources/recorder.py",
+      "before_sha256": "4d9668843b7b9b1264be09be310eb36ce62506be1a2804e6997214cc87909069",
+      "after_sha256": "d22ee4afe2014e11515023c3a411a7a77ac227859bfd2b7efe313f28a11d9372"
+    }
+  ],
+  "only_existing_import_paths_changed": true,
+  "new_wrappers": 0,
+  "new_helpers": 0,
+  "new_validation": 0,
+  "new_test_methods": 0,
+  "production_line_delta": 0,
+  "CPU": {
+    "first_selected": 117,
+    "first_passed": 115,
+    "first_not_passed": 2,
+    "skipped": 0,
+    "corrected_history_selected": 4,
+    "corrected_history_passed": 4,
+    "known_original_Kalypso_fixture_error_retained": true,
+    "repeated_methods_not_added": true
+  },
+  "history": {
+    "new_source_routes": 10,
+    "compressed_originals": 2,
+    "original_projection_ids_and_hashes_unchanged": true
+  },
+  "remaining": [
+    "One existing Kalypso compatibility fixture fails on the original published source as well",
+    "Remaining NativeCall/image predictor/profiler baseline dependencies are separate work",
+    "No actual Ray/model/GPU/server/performance runs; Ruff unavailable"
+  ],
+  "pushed": false,
+  "merged": false,
+  "raw": {
+    "path": "neutral_shared_tool_imports_raw.json.gz",
+    "bytes": 140208,
+    "sha256": "eb12d8c124ab67281c5e6ace9d92b0ff14e58f494110988857bd424cf963f9f9"
+  }
+}

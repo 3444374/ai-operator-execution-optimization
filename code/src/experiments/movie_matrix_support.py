@@ -8,9 +8,11 @@ import sys
 import json
 from copy import deepcopy
 import math
-from src.infrastructure.private_artifacts import file_sha256 as sha
+from src.infrastructure.private_artifacts import file_sha256 as sha, read_json as read
+from src.baselines.text.movie_tasks import validate_query_result as validate_result
 from src.infrastructure.private_artifacts import content_digest
 from src.observability.records_telemetry import RecordsTelemetry
+
 
 def _diagnostic_warning(phase,error):
     try:print(json.dumps(dict(event='diagnostic_warning',phase=phase,error_type=type(error).__name__)),file=sys.stderr,flush=True)
@@ -204,11 +206,11 @@ def bootstrap_context(context, output):
 
 
 def owner_context_contract(context):
-    """Native additionally requires the exact normal lease_path before startup."""
+    """Require the exact normal lease_path before startup."""
     from src.infrastructure.runner_lease import HOST_SCOPE_DIR_NAME,LEASE_NAME
     value=context.get('owner_context')
     if type(value) is not dict or any(key not in value for key in ('lease_path','lease_sha256','artifact_root','gpu_idle_max_mib','owner_resource_limits')):
-        raise ValueError('complete shared and Native owner context required')
+        raise ValueError('complete shared owner context required')
     expected=Path(value['artifact_root'])/HOST_SCOPE_DIR_NAME/LEASE_NAME
     path=Path(value['lease_path'])
     if (not path.is_absolute() or path!=expected or path.is_symlink() or not path.is_file()

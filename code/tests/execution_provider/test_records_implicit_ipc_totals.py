@@ -41,9 +41,9 @@ class ImplicitIPCTotalTests(unittest.TestCase):
                     with self.subTest(field=field, capacity=capacity, overrides=overrides,
                                       rolling=rolling, requests=requests):
                         config = self.resolve(capacity, overrides, rolling=rolling, requests=requests)
-                        self.assertEqual(getattr(config.async_limits, field+'_bytes'), 32*MIB)
+                        self.assertEqual(getattr(config.async_limits, field+'_bytes'), requests*32*MIB)
                         self.assertEqual(config.async_limits.max_inflight, requests)
-                        self.assertEqual(config.async_limits.result_slots, AsyncEngineLimits().result_slots)
+                        self.assertEqual(config.async_limits.result_slots, requests)
                         self.assertEqual(overrides, original)
 
     def test_explicit_totals_and_typed_IPC_are_never_enlarged(self):
@@ -82,7 +82,7 @@ class ImplicitIPCTotalTests(unittest.TestCase):
                         resources=asdict(self.resources),
                         core_capacity={'item_'+field+'_bytes':32*MIB},
                         **{key:dict(mode='async')})
-                    self.assertEqual(getattr(records_runtime(config).async_limits,field+'_bytes'),32*MIB)
+                    self.assertEqual(getattr(records_runtime(config).async_limits,field+'_bytes'),64*MIB)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
 from src.serving.backends import vllm_engine as common
 from src.semantic_methods.lotus.records import RecordsResources
 
@@ -37,9 +38,7 @@ class SequenceDefaultTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.spec(max_num_seqs=value)
 
-
     def test_finite_synchronous_constructor_retains_its_old_default_and_explicit_values(self):
-        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs:kwargs
@@ -61,7 +60,6 @@ class SequenceDefaultTests(unittest.TestCase):
     def test_unspecified_native_sequences_do_not_remove_owner_or_IPC_bounds(self):
         from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
         from src.semantic_methods.lotus.records import FilterMethod
-        from src.serving.backends.vllm_async_engine import AsyncEngineLimits
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=3)
         engine = self.spec()
         resolved = resolve_core_profile(engine, resources, dict(mode='async', max_inflight='auto'))
@@ -73,7 +71,7 @@ class SequenceDefaultTests(unittest.TestCase):
         try:
             self.assertIsNone(owner._actors.engine.max_num_seqs)
             self.assertEqual(owner._actors.limits.max_inflight, 3)
-            self.assertEqual(owner._actors.limits.result_slots, AsyncEngineLimits().result_slots)
+            self.assertEqual(owner._actors.limits.result_slots, resources.request_capacity())
             self.assertEqual(owner.capacity.limits(owner.resources).active_requests, 3)
         finally:
             owner.close(timeout=.1)

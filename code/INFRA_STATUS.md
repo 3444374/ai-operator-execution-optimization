@@ -1,7 +1,5 @@
-> 2026-11-05 开发候选：当前入口／共享层清理与原生 LOTUS 本地 IPC 的范围以
-> [本轮CPU检查](../experiments/results/diagnostics/runtime_entry_cleanup_20261105/README.md)为准。
-> 旧PG／HTTP实验入口已归档，PG暂停而非放弃；新原生Movie对照不使用Core调度。
-> 本候选没有真实模型／Ray／GPU或性能资格，以下历史节点的来源与限制继续保留。
+> 本开发组合另含旧PG／HTTP实验归档与原生LOTUS本地IPC；
+> [清理CPU报告](../experiments/results/diagnostics/runtime_entry_cleanup_20261105/README.md)区分实际实现、未运行项及历史资格。
 
 # SemLoom 实现状态
 
@@ -10,6 +8,10 @@
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
 <a id="legacy-request-retirement"></a>
+当前组合以已发布 646216fa 为源：旧 Movie HTTP 与固定 campaign 退役，普通本地 IPC、
+原 LOTUS 方法和现用 Matrix 保留；无 B 的准备／请求反馈组合与目录职责整理另见页末本轮记录。
+较早段落描述当时切片，不能据此恢复已删除的入口或将 CPU 回执当成真实模型结果。
+
 ## 旧请求反馈入口退役（2026-11-05，本地候选）
 
 首个退役候选 `e70d11ff` 基于已发布的 `3fd3887e`；后续组合 `678250ee`，105 项相关 CPU 通过；再接入无重叠的 `9652108d` 租约修复，定向 1 项通过。
@@ -156,7 +158,7 @@ native Engine 同步单项额度与显式总预算。PG 现有帧保持 1 MiB，
 records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上限分开；
 显式 async／反馈 owner 继续按调用方 `max_active_batches` 分配原有 Core、actor 与 IPC 额度，
 `max_num_seqs` 的显式值保留；本地默认修正候选在未指定／null时让SemLoom异步 Core
-省略参数，交vLLM 0.25.1自行解析；当前SemLoom同步也只转发显式值；旧Movie HTTP入口已退役。
+省略参数，交 vLLM 0.25.1 自行解析；当前 SemLoom 同步也只转发显式值。旧 Movie LOTUS HTTP 已退役。
 显式选择原生同步ReferenceVllmEngine的对照仍保留旧默认8，Kalypso不改。尚无新增真实模型资格；
 这不是自动性能调优，不改token/context/memory或外层额度，历史显式设置及原回执保留。CPU 检查覆盖高于引擎每轮
 序列上限的外层请求、真实 CPU IPC、取消与已知 usage 回收；没有 GPU 或性能资格。
@@ -164,11 +166,11 @@ records Core 容量纠偏候选将应用层请求额度与 vLLM 每轮序列上�
 由安装的 vLLM 解析有限预算；显式正值保留，启动回执始终读回实际配置，缺失仍记未知。
 普通 Movie admission 原有身份绑定完整 EngineSpec；驻留 ascending 继续绑定实际 native 配置，
 未指定与历史显式4096不会匹配同一提示身份，无需新增缓存格式。
-当前SemLoom同步的未指定token预算也由vLLM解析；
+当前 SemLoom 同步的未指定 token 预算也由 vLLM 解析；
 ReferenceVllmEngine对照保留旧默认4096，Kalypso与历史显式配置不变。
-旧Movie HTTP owner、专用测试及失效五后端固定矩阵已移出维护入口。当前矩阵仍用的结果校验、查询时钟与JSON/摘要工具分别归位到Movie任务、observability与infrastructure。
-[历史恢复](../experiments/reproduction/native_baselines/README.md#retired-movie-http)保留原版本与五份精确投影；非HTTP原生LOTUS对照尚未恢复。
-本批只做CPU验证，不修改现有Core模型策略或将旧HTTP成绩外推为当前性能。
+旧 Movie HTTP 及其冷／常驻入口现已删除，原参数省略修订只作为 Git 历史保留，
+不再构成当前默认路径。当前本地 IPC 的显式上下文早拒绝和模型实际长度核对保持；
+真实 vLLM／模型尚未验证，不据此推断性能或显存容量。
 完整记录链的 record-local 分支也经此共享 resolver 检查；其 B1、方法／角色、行／字节及
 生命周期检查仍在，fused 默认不变。不代表资源平台已找到；[接口边界](src/execution_provider/adapters/README.md#records-core-可选动态接纳)以实际路径区分。
 同一候选继续取消显式动态配置隐含的10秒、剩余32／64条与8次调整截止，默认改为
@@ -285,7 +287,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | LOTUS 原 RM／FAISS 建库／检索与显式单卡入口 | [CLIP 接纳与资格](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)；默认精度失败、HSE 环境缺项与多卡未验证分列 |
 | 可选 vLLM 部署资源解析与身份核验 | [服务及原查询单卡复验](../experiments/results/diagnostics/main_service_auto_20261015/README.md)；不借此认证 CLIP、多卡或其他平台 |
 | 公共统计与离线结果工具 | [统计定义](src/observability/README.md#repeat-mean-confidence)、[离线输入与 CPU 范围](scripts/analysis/OFFLINE_RESULTS.md) |
-| PG 同步／增量 Map、受限 Filter→Map 与 query-job | [extension 支持形状](https://github.com/3444374/ai-operator-execution-optimization/blob/7bf1d92baf2611925c608cfe76b4a766855bd77e/code/postgres/semloom_pg/README.md#supported-query-shapes)、[增量执行](README.md#当前-postgresql-文本-map-的执行流程)及对应报告；更宽 SQL 与真实匹配 Filter 校准另验 |
+| PG 同步／增量 Map、受限 Filter→Map 与 query-job | [extension 支持形状](postgres/semloom_pg/README.md#supported-query-shapes)、[增量执行](README.md#当前-postgresql-文本-map-的执行流程)及对应报告；更宽 SQL 与真实匹配 Filter 校准另验 |
 
 接口说明只解释相应路径，模型结果仍按报告固定源码、输入、质量和生命周期使用。
 未列为 main 接纳的集成能力从[固定 9c59dc9b 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)回查。
@@ -576,7 +578,7 @@ CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页�
 显式 `max_active_batches=None` 现可经普通 async／rolling 工厂使用已有完整独立预算；
 原声明保持 None，实际 Core、Method 和 IPC 许可仍有限。无完整预算时在 actor 分配前拒绝，
 不回落到 2 或解释为无限。167 项 CPU 检查成功，历史 3010 条来源全部匹配；
-普通省略默认仍为 2、默认 IPC 结果槽仍为 8，自动容量及默认迁移尚未完成。
+此处记录当时的普通 R=2 与 IPC 8 槽；当前省略 IPC 的解析见下方“普通 IPC 省略值”。
 [本次摘要](../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/unspecified_request_checks.json)保留原九项反例；
 独审、动态回执问题的另项修复和真实模型检查仍待后续。
 
@@ -819,3 +821,61 @@ Ray 资格入口另修正测试总数写死为五项的问题：按实际方法�
 保持各自已审字节，第一批和已发布 Ray 资格修复保留。
 [170 项组合 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#second-cleanup-composition)
 全部通过；没有新增测试方法、控制器或配置项，未改变 9da 服务器对照。
+
+
+Ray 画像工具另从 9652108d 独立整理：提交与 actor 状态留在 `profiling/ray.py`，
+拓扑、调度选项和既有执行器组装移到 `profiling/ray_scheduler.py`；无生产调用的旧参数包装删除。
+两文件合计净减 37 行，原／后相同 194 项 CPU 检查均通过；历史五树按原摘要重建。
+[范围与剩余项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-profiler-layout)
+说明此树未叠加待审退役候选；真实 Ray、模型、GPU 和 Ruff 未运行，没有新增控制策略。
+
+
+Core 调度文件另有独立职责整理：原七个配置／结果／提交接口定义移到 `scheduler_types.py`，
+原调度器继续负责执行、输入线程和资源记账，原公开导入保持。文件从 1,125 行变为 981 行，类型模块 165 行；
+必要导入使对应生产代码净增 17 行，未把搬动当删除。[原／后同 236 项 CPU 与历史恢复](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-types-layout)
+通过；Ruff 和真实执行未运行。本批以 965 独立保存，未叠加前两份候选，组合后再核总体数量。
+
+
+两份职责整理现以已发布 d559b942 组合，17 个已发布清理生产文件保持原字节。
+[236 项组合 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#layout-d559-composition)
+全部通过；Ray 提交／组装与 Core 调度／类型各自分开，实际调度器和公开调用保持。
+本次结构整理净减 20 行；与 3fd 的相同核心口径合计减 1,457 行，较固定 main 仍多 6,080 行。
+本记录只覆盖职责整理组合，新的配置行为修复在独立树处理，没有运行真实 Ray、模型或 GPU。
+
+
+不设应用 B 的 rolling 准备请求现接到原有执行链，固定或现代资源反馈均可组合 interleaved／event_driven。
+模型请求、MethodDriver、Core、IPC 与结果持有者不变；源关系仍先完整建立，未实现 CSV 读取交错。
+[实际修改及 CPU 原件](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+记录四种原拒绝配置现均通过且不分配 actor，197 项组合中 195 成功、2 项 Reference 夹具组合问题待处理，
+服务小增量 21 项通过；不加总重复方法，不称整轮通过。引擎默认及旧 HTTP 退役另树处理，未推送或合并。
+
+
+11 个生产消费者现直接导入已存在的中性脱敏／私有文件实现，删除经过 baseline 导出的反向导入。
+[来源与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+没有新增函数、包装或校验，也未减少生产行数；原 117 项中 115 成功，历史格式元数据修正后恢复检查 4 项通过，
+另一项原 Kalypso 夹具错误保留。历史身份不改，真实模型、性能和其余语义能力迁移未据此验证，未推送或合并。
+
+
+<a id="current-runtime-cleanup-composition"></a>
+当前组合以 646216fa 为源完成旧 Movie HTTP／固定 campaign 退役、两批职责拆分、
+无 B 的准备／请求反馈接线及 11 个中性工具消费者迁移。`auto` 配合资源反馈现在使用原有初始许可 1，
+上限仍来自实际 owner 的请求／IPC／结果声明；不会把上限设为 1，也不代表物理自动容量。
+[准确检查范围](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#current-runtime-cleanup-composition)
+记录首轮 721 方法中 717 成功、修正旧测试预期／路径后 26 方法通过、混合关系检查 1 方法通过，
+以及 auto 配置增量 84 方法通过。重叠不加总，721 个不同方法均有通过回执，未二次全量运行。
+默认 R 与存储仍有限；真实 Ray／模型／GPU、物理容量及剩余大文件尚未完成，候选未推送或合并。
+
+
+### 普通 IPC 省略值
+
+以 e7e593d6 为源，普通与 rolling async 共用同一 IPC 值解析。省略结果／命令槽按最终 IPC 请求数，
+省略输入／结果总字节按各自完整单项补齐；完整独立预算及显式字段保持，不再被 8 槽／16 MiB 压低。
+C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认仍为 2；省略存储随声明请求数变化，
+完整预算和显式存储可独立设置，尚非物理容量探测或完整 R 解耦。
+[原反例和 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+保存两个改前失败、改后通过与 151 个相关方法通过；真实模型、Ray、GPU 和性能未测。
+
+
+同批 `shared_credit.py` 已合并三处相同的活动租约统计；端点／Job 筛选、工作量和 SAOR 逐轮授予保持，
+没有新增缓存、状态或检查。两份生产源码已审，组合检查与可比代码量见
+[组合记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)。

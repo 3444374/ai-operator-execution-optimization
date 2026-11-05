@@ -13,20 +13,18 @@ def service_record_options(resources, options):
     if type(rolling) is not bool:
         raise ValueError('rolling_refill must be boolean')
     absent = ('async_limits', 'batch_concurrency', 'batch_feedback')
-    disabled = ('experimental_skip_token_packing',
-                'interleaved_preparation', 'event_driven_preparation')
-    if (any(options.get(name) is not None for name in absent)
-            or any(options.get(name, False) is not False for name in disabled)):
-        raise ValueError('service payload grants require ordinary async requests without IPC or preparation overrides')
+    if any(options.get(name) is not None for name in absent):
+        raise ValueError('service payload grants set IPC capacity and do not accept batch controls')
     delivery = options.get('service_delivery')
     if rolling:
         from src.semantic_methods.lotus.prepared_batching import PreparedBatching
         from .records_service_delivery import OrdinaryDeliveryDeclaration, OrdinaryDeliverySession
-        if (type(options.get('prepared_batching')) is not PreparedBatching
+        batching = options.get('prepared_batching')
+        if (batching is not None and type(batching) is not PreparedBatching
                 or type(delivery) not in (OrdinaryDeliveryDeclaration,OrdinaryDeliverySession)):
-            raise ValueError('rolling service requests require token batching and actual complete delivery declarations')
+            raise ValueError('rolling service requests require actual complete delivery declarations')
     elif delivery is not None or options.get('prepared_batching') is not None:
-        raise ValueError('service delivery declarations require rolling_refill and token batching')
+        raise ValueError('prepared service requests require rolling_refill and a complete delivery declaration')
     profile = options.get('profile')
     if profile is not None and type(profile) is not dict:
         raise ValueError('service payload grants require an explicit ordinary async profile')
@@ -44,7 +42,7 @@ def service_record_options(resources, options):
 
 def preview_service_records_runtime(engine, resources, total_bytes, **options):
     """Preview one complete declaration without claiming bytes or creating an owner."""
-    from .records_profile import resolve_records_runtime
+    from .records_profile import resolve_record_batching, resolve_records_runtime
     from .records_service_budget import RecordsPayloadPool
 
     resources, profile, shape = service_record_options(resources, options)
@@ -52,10 +50,11 @@ def preview_service_records_runtime(engine, resources, total_bytes, **options):
     configured = resolve_records_runtime(engine, resources, profile, capacity=plan.capacity,
         async_limits=plan.ipc_limits,prepared_batching=options.get('prepared_batching'),
         rolling_refill=options.get('rolling_refill',False))
-    if options.get('rolling_refill'):
-        from .records_profile import resolve_record_batching
-        resolve_record_batching(configured.profile,prepared_batching=options['prepared_batching'],rolling_refill=True)
-        plan.capacity.method_capacity(resources,plan.capacity.method_limits(1))
+    resolve_record_batching(configured.profile, prepared_batching=options.get('prepared_batching'),
+        rolling_refill=options.get('rolling_refill', False),
+        experimental_skip_token_packing=options.get('experimental_skip_token_packing', False),
+        interleaved_preparation=options.get('interleaved_preparation', False),
+        event_driven_preparation=options.get('event_driven_preparation', False))
     configured.profile.update(service_payload_plan=plan.describe(), service_payload_bytes=total_bytes,
         service_allocation_acquired=False,
         resource_budget_source='service declaration preview; no allocation acquired; not measured RAM')

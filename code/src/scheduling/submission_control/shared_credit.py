@@ -548,20 +548,23 @@ class FairEndpointCreditCoordinator:
                 self._cursor[endpoint_id] %= max(1, len(order))
         self._finished_jobs.remove(job_id)
 
+    def _active_usage_by_job(
+        self, endpoint_id: str,
+    ) -> tuple[dict[str, int], dict[str, int]]:
+        """Read current lease reservations for one endpoint, grouped by Job."""
+        requests: dict[str, int] = {}
+        work: dict[str, int] = {}
+        for lease in self._active.values():
+            if lease.endpoint_id != endpoint_id:
+                continue
+            requests[lease.job_id] = requests.get(lease.job_id, 0) + 1
+            work[lease.job_id] = work.get(lease.job_id, 0) + lease.estimated_work
+        return requests, work
+
     def snapshot(self, endpoint_id: str) -> EndpointCreditSnapshot:
         if endpoint_id not in self._capacities:
             raise ValueError(f"unknown endpoint_id: {endpoint_id}")
-        active_by_job: dict[str, int] = {}
-        active_work_by_job: dict[str, int] = {}
-        for lease in self._active.values():
-            if lease.endpoint_id == endpoint_id:
-                active_by_job[lease.job_id] = (
-                    active_by_job.get(lease.job_id, 0) + 1
-                )
-                active_work_by_job[lease.job_id] = (
-                    active_work_by_job.get(lease.job_id, 0)
-                    + lease.estimated_work
-                )
+        active_by_job, active_work_by_job = self._active_usage_by_job(endpoint_id)
         waiting_by_job = {
             job_id: len(queue)
             for job_id, queue in self._waiting[endpoint_id].items()
@@ -898,18 +901,7 @@ class FairEndpointCreditCoordinator:
             order_by_job = {
                 job_id: order for order, job_id in enumerate(ordered_jobs)
             }
-            active_requests_by_job: dict[str, int] = {}
-            active_work_by_job: dict[str, int] = {}
-            for lease in self._active.values():
-                if lease.endpoint_id != endpoint_id:
-                    continue
-                active_requests_by_job[lease.job_id] = (
-                    active_requests_by_job.get(lease.job_id, 0) + 1
-                )
-                active_work_by_job[lease.job_id] = (
-                    active_work_by_job.get(lease.job_id, 0)
-                    + lease.estimated_work
-                )
+            active_requests_by_job, active_work_by_job = self._active_usage_by_job(endpoint_id)
             active_set = set(ordered_jobs) | set(active_requests_by_job)
             states = []
             for job_id in sorted(active_set):
@@ -1103,15 +1095,7 @@ class FairEndpointCreditCoordinator:
         include_job_ids: tuple[str, ...] = (),
     ) -> tuple[SaorBoundedHeadState, ...]:
         request_limit, work_limit = self._capacities[endpoint_id]
-        active_requests: dict[str, int] = {}
-        active_work: dict[str, int] = {}
-        for lease in self._active.values():
-            if lease.endpoint_id != endpoint_id:
-                continue
-            active_requests[lease.job_id] = active_requests.get(lease.job_id, 0) + 1
-            active_work[lease.job_id] = (
-                active_work.get(lease.job_id, 0) + lease.estimated_work
-            )
+        active_requests, active_work = self._active_usage_by_job(endpoint_id)
         jobs = set(active_requests)
         jobs.update(
             job_id

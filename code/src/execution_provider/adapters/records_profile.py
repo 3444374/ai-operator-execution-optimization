@@ -41,7 +41,7 @@ def resolve_core_profile(engine, resources, profile=None, *, rolling_refill=Fals
     if requested == "auto":
         if mode != "async":
             raise ValueError("automatic in-flight capacity requires the existing async owner")
-        maximum = resources.max_active_batches
+        maximum = 1 if admission is not None else resources.max_active_batches
     elif type(requested) is not int or requested < 1 or requested > resources.max_active_batches:
         raise ValueError("Core in-flight limit exceeds its declared request capacity")
     else:
@@ -93,6 +93,8 @@ def resolve_records_runtime(engine, resources, profile=None, *, capacity=None, a
         raise TypeError('Core records capacity must be CoreRecordsCapacity')
     profile = {} if profile is None else profile
     mode = profile.get('mode', 'sync') if type(profile) is dict else 'sync'
+    if mode == 'async' and (prepared_batching is not None or rolling_refill) and engine.chat_template is not None:
+        raise ValueError('prepared requests require the tokenizer-owned chat template')
     derived = (mode == 'async' and capacity.budget is None
                and (prepared_batching is None or rolling_refill))
     if derived:
@@ -102,6 +104,8 @@ def resolve_records_runtime(engine, resources, profile=None, *, capacity=None, a
     effective = replace(resources, max_active_batches=resolved.get('owner_max_inflight', resolved['max_inflight']))
     if resolved['mode'] == 'async':
         async_limits = resolve_records_async_limits(effective, capacity, async_limits)
+        if capacity.budget is not None and (prepared_batching is not None or rolling_refill):
+            capacity.method_capacity(effective, capacity.method_limits(1))
     elif async_limits is not None:
         raise ValueError('async_limits requires async Core execution')
     return RecordsRuntimeConfig(capacity, resolved, async_limits)
@@ -119,7 +123,7 @@ def checked_preparation_options(batching, *, interleaved_preparation=False, even
     if interleaved_preparation and (batching is None or not batching.get('rolling_refill')
             or 'feedback' in batching or ('request_feedback' in batching
                 and batching.get('request_feedback_kind') != 'resource_feedback')):
-        raise ValueError('interleaved preparation requires fixed rolling token requests or resource feedback')
+        raise ValueError('interleaved preparation requires rolling requests')
     return dict(**(dict(interleaved_preparation=True) if interleaved_preparation else {}),
                 **(dict(event_driven_preparation=True) if event_driven_preparation else {}))
 
@@ -127,29 +131,27 @@ def checked_preparation_options(batching, *, interleaved_preparation=False, even
 def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None, batch_feedback=None,
                             rolling_refill=False, experimental_skip_token_packing=False, *,
                             interleaved_preparation=False, event_driven_preparation=False):
-    """Validate the optional fixed token batch path before allocating an owner."""
+    """Resolve prepared transport and optional token packing before allocation."""
     if type(rolling_refill) is not bool:
         raise ValueError('rolling_refill must be boolean')
     if type(experimental_skip_token_packing) is not bool:
         raise TypeError('experimental_skip_token_packing must be boolean')
-    if experimental_skip_token_packing and not (prepared_batching is not None and rolling_refill):
-        raise ValueError('experimental token packing bypass requires rolling prepared batches')
-    if prepared_batching is None:
-        if batch_concurrency is not None or batch_feedback is not None or rolling_refill:
+    if experimental_skip_token_packing and not rolling_refill:
+        raise ValueError('experimental token packing bypass requires rolling requests')
+    if prepared_batching is None and not rolling_refill:
+        if batch_concurrency is not None or batch_feedback is not None:
             raise ValueError('batch controls require prepared_batching')
         checked_preparation_options(None, interleaved_preparation=interleaved_preparation,
                                     event_driven_preparation=event_driven_preparation)
         return None
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
-    if (type(prepared_batching) is not PreparedBatching or prepared_batching.policy != 'token_budget'
-            or prepared_batching.max_rows is not None):
+    if prepared_batching is not None and (type(prepared_batching) is not PreparedBatching
+            or prepared_batching.policy != 'token_budget' or prepared_batching.max_rows is not None):
         raise ValueError('record batching requires token_budget with max_rows=None')
     if resolved['mode'] != 'async' or ('admission' in resolved and not rolling_refill) or resolved['stage_timing']:
         raise ValueError('record batching requires async execution; admission requires rolling_refill, stage_timing is unsupported')
     if 'resource_budget' in resolved and not rolling_refill:
         raise ValueError('explicit resource budgets currently support ordinary requests or rolling token requests')
-    if experimental_skip_token_packing and 'admission' in resolved:
-        raise ValueError('experimental token packing bypass requires fixed rolling request capacity')
     requests = resolved.get('owner_max_inflight', resolved['max_inflight'])
     if rolling_refill and (batch_concurrency is not None or batch_feedback is not None):
         raise ValueError('rolling_refill uses request R, not batch_concurrency or batch_feedback')
@@ -171,8 +173,10 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
             feedback['request_feedback'] = {k: v for k, v in resolved['admission'].items()
                                             if k != 'kind'}
             feedback['request_feedback_kind'] = resolved['admission']['kind']
-    batching = dict(prepared_batching=asdict(prepared_batching), batch_concurrency=concurrency,
-        request_limit=requests, B=prepared_batching.token_budget, C_batch=concurrency, R=requests,
+    batching = dict(prepared_batching=None if prepared_batching is None else asdict(prepared_batching),
+        batch_concurrency=concurrency,
+        request_limit=requests, B=None if prepared_batching is None else prepared_batching.token_budget,
+        C_batch=concurrency, R=requests,
         row_cap=None, W=None, batch_unit='application transport batch with unsettled compute members',
         request_unit=('single complete model request; C gates new admission; explicit independent storage budgets'
                       if 'resource_budget' in resolved else

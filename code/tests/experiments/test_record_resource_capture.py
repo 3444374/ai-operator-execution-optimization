@@ -495,7 +495,7 @@ class PlanTests(unittest.TestCase):
             helper_path=root/'helper.py';helper_path.write_text('# CPU host boundary\n')
             config=deepcopy(self.base)
             config.update(artifact_root=str(root),units={'native-query':1},observer_sha256={},
-                movie_plan=dict(backend='semloom-core',engine=dict(driver_python=sys.executable)),
+                movie_plan=dict(backend='ray-data',engine=dict(driver_python=sys.executable)),
                 workload=dict(name='native-quality',kind='movie_session',expected_calls=1),
                 host_helpers=dict(path=str(helper_path),sha256=hashlib.sha256(helper_path.read_bytes()).hexdigest()),
                 host_config={},limits=dict(worker_timeout_s=10,controller_timeout_s=30,

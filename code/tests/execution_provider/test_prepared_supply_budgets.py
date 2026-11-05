@@ -1,5 +1,6 @@
 """Prepared handoffs with independent declared grants and CPU child replies."""
 from dataclasses import asdict, replace
+from itertools import product
 import json
 from pathlib import Path
 import sys
@@ -181,8 +182,9 @@ class IndependentSupplyTests(unittest.TestCase):
         from src.execution_provider.adapters.lotus_record_chain_core import _SectionTransport
         from tests.execution_provider.test_records_request_feedback import CPUResourceProcess
         from tests.observability.memory_pressure_fixture import KernelMemoryFixture
-        for event_driven in (False, True):
-            with self.subTest(event_driven=event_driven):
+        for event_driven, batching in product((False, True),
+                (None, PreparedBatching('token_budget', None, 1000000))):
+            with self.subTest(event_driven=event_driven, batching=batching):
                 original = base.fixture.chain_for('F').stages[0]
                 plan = LotusRecordChain((StageSpec('filter', original.method, original.generation),),
                     query_id='prepared-feedback-'+str(event_driven))
@@ -211,10 +213,10 @@ class IndependentSupplyTests(unittest.TestCase):
                     kernel.source.clock = time.monotonic
                     owner = create_records_core(original.method, engine, original.generation, resources,
                         capacity=capacity, async_limits=limits,
-                        profile=dict(mode='async', admission=dict(kind='resource_feedback',
+                        profile=dict(mode='async', max_inflight='auto', admission=dict(kind='resource_feedback',
                             require_memory_feedback=True, poll_interval_s=.01, window_s=.04,
                             max_sample_age_s=.3, min_samples=1, measurement_windows=2)),
-                        prepared_batching=PreparedBatching('token_budget', None, 1000000), rolling_refill=True,
+                        prepared_batching=batching, rolling_refill=True,
                         interleaved_preparation=True, event_driven_preparation=event_driven)
                     try:
                         with patch.object(owner, '_tokenizer', return_value=base.CountingTokenizer()):
@@ -236,6 +238,8 @@ class IndependentSupplyTests(unittest.TestCase):
                         self.assertEqual(prepared, list(range(len(records))))
                         report = owner.last_close_report
                         self.assertTrue(report['query_completed'])
+                        self.assertEqual(report['async_token_batches']['policy'],
+                            None if batching is None else asdict(batching))
                         self.assertTrue(report['request_supply_feedback']['sampler_stopped'])
                         self.assertFalse(any(report['core_usage'].values()))
                         self.assertEqual(stream.pool.used, (0, 0))

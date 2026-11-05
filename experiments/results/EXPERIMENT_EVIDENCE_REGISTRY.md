@@ -1541,8 +1541,69 @@ Ray 资格的[实际方法结果修订](diagnostics/records_runtime_refactor_202
 [准确子树和方法](diagnostics/records_runtime_refactor_20261104/raw/legacy_latest_source_checks.json)保留来源，未重复原 105 项，仍待最终独审。
 
 
+<a id="ray-profiler-layout"></a>
+Ray 画像工具的[职责整理](diagnostics/records_runtime_refactor_20261104/README.md#ray-profiler-layout)
+以 9652108d 独立实施，提交／调度组装分开并删除旧参数包装，生产净减 37 行。
+原／后同 194 个 CPU 方法均通过，历史五树原摘要与身份保持；没有新增测试方法或真实模型运行。
+[机器摘要](diagnostics/records_runtime_refactor_20261104/raw/ray_profiling_layout_checks.json)注明未叠加待审退役候选、
+静态工具缺项及真实 Ray／性能未测范围，未推送或合并。
+
+
+<a id="scheduler-types-layout"></a>
+Core 调度值的[独立职责整理](diagnostics/records_runtime_refactor_20261104/README.md#scheduler-types-layout)
+以 9652108d 为源，七类型从执行循环分开，原导入、默认及执行行为保持。
+改前／改后各通过同 236 项 CPU 方法和五树准确恢复；必要导入净增 17 行，不把移动称作代码减少。
+[机器摘要](diagnostics/records_runtime_refactor_20261104/raw/scheduler_types_layout_checks.json)
+单列 Ruff 缺项及实际执行未测范围，未推送或合并。
+
+
+<a id="layout-d559-composition"></a>
+Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_refactor_20261104/README.md#layout-d559-composition)
+以已发布 d559b942 为源，保留全部 17 个旧入口清理生产文件和两份已审职责整理的实际源码。
+[机器摘要](diagnostics/records_runtime_refactor_20261104/raw/layout_d559_composition_checks.json)
+记录准确来源、236 项 CPU 全部通过、15 条历史来源映射和相同代码量口径。核心较 3fd 减 1,457 行，
+较固定 main 仍多 6,080 行；没有新增控制器、策略、测试方法或模型参数，尚未推送或合并。
+
+
+<a id="prepared-requests-no-token-packing"></a>
+[无 B 的 prepared rolling 组合](diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+复用原执行器，去除准备、反馈与 token 切包的非必要绑定，并合并 Method 空间预检。
+[机器摘要](diagnostics/records_runtime_refactor_20261104/raw/prepared_requests_no_token_packing_checks.json)
+保留首轮 None 报告错误、一次测试字段错误，以及 197 方法中 195 成功、2 项组合失败和独立重跑的真实状态。
+四种配置从拒绝变为可解析，模型未提前分配；服务小增量 21 项通过。无实际模型或性能结果，尚未推送或合并。
+
+
+<a id="neutral-shared-tool-imports"></a>
+[共用工具消费者归位](diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+只修改 11 个已有 import，工具主体、旧公开对象和生产行数保持；没有新增测试方法。
+[机器记录](diagnostics/records_runtime_refactor_20261104/raw/neutral_shared_tool_imports_checks.json)
+保存 117 项中 115 成功、历史格式记录修正后 4 项恢复通过及原 Kalypso 夹具错误，重复检查不加总。
+历史新增两份 gzip／10 条映射，原 ID 不变，真实 Ray、模型、GPU 与性能未运行，尚未推送或合并。
+
+
+<a id="current-runtime-cleanup-composition"></a>
+[最新运行链组合](diagnostics/records_runtime_refactor_20261104/README.md#current-runtime-cleanup-composition)
+以公开 646216fa 为源，合入四份已审切片并删除旧 Movie HTTP／固定实验入口。
+[摘要](diagnostics/records_runtime_refactor_20261104/raw/current_runtime_cleanup_composition_checks.json)和
+[原始脱敏记录](diagnostics/records_runtime_refactor_20261104/raw/current_runtime_cleanup_composition_raw.json.gz)
+保留 721 方法首轮及必要的 26／1／84 项补跑，覆盖相同 721 个不同方法，不加总重复检查。
+原 5 份历史投影身份与摘要不改；新 40 条来源／8 份 gzip 已核，未把测试删除当成通过。
+相对 3fd，全部 src＋scripts Python 减 2,887 行，较固定 main 仍多 6,423 行；真实模型与性能未测，未推送或合并。
+
+
+<a id="ordinary-ipc-omissions"></a>
+[普通 IPC 省略配置修正](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+保存 e7 来源、改前反例、实际容量推导和 CPU 回归范围。显式资源及 unknown 责任保持；
+省略存储随声明请求补齐，物理容量和整体 R 迁移尚未完成，不提供模型性能结论。
+
+
+[容量与共享额度组合](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
+关联两份已审生产源码、共享额度改前后记录及组合 CPU 原件；统计去重保留 SAOR 方法，
+普通 IPC 省略值修正不提供物理容量或性能结论。
+
+
 <a id="runtime-entry-cleanup-cpu"></a>
 ## 当前入口／共享层清理与原生 LOTUS 本地 IPC（CPU）
 
-[主报告与脱敏回执](diagnostics/runtime_entry_cleanup_20261105/README.md)维护具体方法集合、
-归档／历史绑定和未运行项；原始失败保留，没有新模型、Ray、GPU或查询性能结论。
+[主报告与脱敏回执](diagnostics/runtime_entry_cleanup_20261105/README.md)记录具体方法集合、
+归档／历史绑定和未运行项；未运行模型、Ray、GPU或查询性能实验。

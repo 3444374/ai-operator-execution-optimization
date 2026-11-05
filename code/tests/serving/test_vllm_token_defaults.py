@@ -12,6 +12,7 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends import vllm_engine as common
 
@@ -38,8 +39,7 @@ class NativeTokenDefaultTests(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.spec(max_num_batched_tokens=invalid)
 
-    def test_sync_reference_keeps_legacy_default_and_explicit_values(self):
-        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine
+    def test_sync_reference_preserves_old_default_and_explicit_values(self):
         vllm, sampling = ModuleType('vllm'), ModuleType('vllm.sampling_params')
         vllm.__version__ = common.VLLM_VERSION
         vllm.SamplingParams = lambda **kwargs: kwargs

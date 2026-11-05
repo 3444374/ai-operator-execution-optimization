@@ -1,4 +1,5 @@
 """Preparation/profile composition without model or tokenizer allocation."""
+from dataclasses import replace
 import sys
 from types import SimpleNamespace
 import unittest
@@ -33,6 +34,33 @@ class PreparationFeedbackProfileTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             checked_preparation_options(dict(rolling_refill=True, request_feedback={},
                 request_feedback_kind='legacy_resource_feedback'), interleaved_preparation=True)
+
+    def test_preparation_and_feedback_do_not_require_application_token_packing(self):
+        engine = EngineSpec('/tmp/CPU-fixture-model', sys.executable, sys.executable)
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=4)
+        for admission in (None, dict(kind='resource_feedback')):
+            profile = dict(mode='async', **({} if admission is None else dict(admission=admission)))
+            with self.subTest(admission=admission), patch.object(AsyncRecordsActorOwner, '__init__') as allocate:
+                owner = create_records_core(FilterMethod('fixture', instruction='Keep {passage}'),
+                    engine, GenerationSpec(), resources, profile=profile, rolling_refill=True,
+                    interleaved_preparation=True, event_driven_preparation=True)
+                batching = owner.execution_profile['record_batching']
+                self.assertIsNone(batching['prepared_batching'])
+                self.assertIsNone(batching['B'])
+                self.assertTrue(batching['interleaved_preparation'])
+                self.assertTrue(batching['event_driven_preparation'])
+                self.assertIs(owner.engine, engine)
+                self.assertIsNone(owner.engine.max_model_len)
+                self.assertIsNone(owner.engine.max_num_seqs)
+                self.assertIsNone(owner.engine.max_num_batched_tokens)
+                self.assertIsNone(owner.owner)
+                allocate.assert_not_called()
+        with patch.object(AsyncRecordsActorOwner, '__init__') as allocate:
+            with self.assertRaisesRegex(ValueError, 'tokenizer-owned chat template'):
+                create_records_core(FilterMethod('fixture', instruction='Keep {passage}'),
+                    replace(engine, chat_template='custom'), GenerationSpec(), resources,
+                    profile=dict(mode='async'), rolling_refill=True, interleaved_preparation=True)
+            allocate.assert_not_called()
 
 
 class EventFeedbackTurnTests(unittest.TestCase):

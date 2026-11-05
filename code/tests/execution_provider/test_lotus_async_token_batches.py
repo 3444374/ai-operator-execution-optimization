@@ -43,7 +43,7 @@ class AsyncTokenBatchTests(unittest.TestCase):
         self.tokens = CountingTokenizer()
         return SemLoomRecordChainCore(engine, resources, capacity=CoreRecordsCapacity(
             item_input_bytes=65536, item_result_bytes=65536), execution='record_local_sections',
-            actor_owner=actors, prepared_batching=PreparedBatching('token_budget', None, B),
+            actor_owner=actors, prepared_batching=None if B is None else PreparedBatching('token_budget', None, B),
             batch_concurrency=C, batching_tokenizer=self.tokens, **options)
 
     def test_one_bulk_batch_can_exceed_engine_sequence_capacity_and_read_chunks_do_not_seal(self):
@@ -117,20 +117,23 @@ class AsyncTokenBatchTests(unittest.TestCase):
                 return value
         replay = Replies(plan)
         expected = relation.reference(plan, rows, replay)
-        with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, '_process_type', return_value=query_fixture.Process):
-            owner = self.owner(plan, R=4, C=2)
-            stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
-            try:
-                actual = dict(records=list(stream), calls=owner.calls, columns=stream.columns)
-                self.assertEqual(fixture.normalized(actual), fixture.normalized(expected))
-                by_id = {v['call_id']: v for v in owner.calls}
-                for call_id, (messages, generation) in replay.requests.items():
-                    self.assertEqual(by_id[call_id]['fixture_messages'], messages)
-                    self.assertEqual(by_id[call_id]['fixture_generation']['max_tokens'], generation['max_tokens'])
-                self.assertTrue(all(p['source_exhausted'] and p['verified_success']
-                                    for p in owner.last_close_report['phase_history']))
-            finally:
-                owner.close(timeout=3)
+        for packing in (True, False):
+            with self.subTest(token_packing=packing):
+                with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, '_process_type', return_value=query_fixture.Process):
+                    owner = self.owner(plan, R=4, C=2 if packing else None,
+                            B=1000000 if packing else None, rolling_refill=not packing)
+                    stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
+                    try:
+                        actual = dict(records=list(stream), calls=owner.calls, columns=stream.columns)
+                        self.assertEqual(fixture.normalized(actual), fixture.normalized(expected))
+                        by_id = {v['call_id']: v for v in owner.calls}
+                        for call_id, (messages, generation) in replay.requests.items():
+                            self.assertEqual(by_id[call_id]['fixture_messages'], messages)
+                            self.assertEqual(by_id[call_id]['fixture_generation']['max_tokens'], generation['max_tokens'])
+                        self.assertTrue(all(p['source_exhausted'] and p['verified_success']
+                                            for p in owner.last_close_report['phase_history']))
+                    finally:
+                        owner.close(timeout=3)
 
     def test_batch_capacity_one_keeps_fast_receipt_but_waits_for_a_supply_slot(self):
         plan, rows = fixture.chain_for('MM'), fixture.source_rows(size=2)

@@ -4,8 +4,6 @@ Both run and session entries use these helpers without importing their execution
 runner. This module starts no runtime, model, data scan or request controller.
 """
 
-from dataclasses import replace
-
 from src.semantic_methods.lotus.records import RecordsResources
 
 ASYNC_CORE_BACKEND = "semloom-local-model-core-async"
@@ -71,9 +69,6 @@ def records_runtime(config, *, resources=None, engine=None):
     configured = resolve_records_runtime(engine, resources, profile, capacity=core_capacity(config),
         async_limits=config.get('async_limits'), prepared_batching=config.get('prepared_batching'),
         rolling_refill=config.get('rolling_refill', False))
-    if configured.capacity.budget is not None and config.get('prepared_batching') is not None:
-        effective = replace(resources, max_active_batches=configured.profile['owner_max_inflight'])
-        configured.capacity.method_capacity(effective, configured.capacity.method_limits(1))
     return configured
 
 
@@ -87,7 +82,7 @@ def core_profile(config):
 
 
 def record_batching_options(config):
-    """Only explicit application token batches select the existing chain core."""
+    """Select prepared transport independently from optional application token packing."""
     if not (set(config) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
                            'experimental_skip_token_packing', 'preparation_mode'}):
         return {}

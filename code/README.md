@@ -66,3 +66,9 @@ SAOR 的调度算法、离线分析与研究证据继续保留；依赖已退役
 所有历史成绩、负结果、unknown、成本和五份具名代码投影保持。
 [历史恢复入口](../experiments/reproduction/native_baselines/README.md)只恢复指定源码，不执行模型。
 当前新增 CPU 检查不转授历史 GPU 资格，不宣称清理带来查询加速。
+
+本组合保留已发布6754eebe的普通Core IPC容量推导、共享endpoint active-credit、
+Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
+[执行适配说明](src/execution_provider/adapters/README.md)和
+[重构证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
+本次清理没有把这些改动退回旧默认或重新引入另一份实现。
