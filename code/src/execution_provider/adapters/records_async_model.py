@@ -250,8 +250,6 @@ class AsyncCoreModelActor:
         audit_chain_call(rows[0])
         if token_cost is not None:
             from .lotus_chain_token_budget import verify_cost
-            if type(rows) is not list or len(rows) != 1:
-                raise ValueError("prepared Core calls need one occurrence")
             verify_cost(rows[0], generation, token_cost, engine=self.spec, model_ready=self.engine.ready_report)
         return generation
 
@@ -544,11 +542,11 @@ class AsyncCoreModelActor:
                 del self._closed_pending[key]
             if call is None:
                 return closed_ack
-            if call is not None and call.batch_key is not None and call.poll_exposed:
+            if call.batch_key is not None and call.poll_exposed:
                 # Only the consumer ACK establishes delivery of a bulk reply.
                 # A lost/failed RPC remains readable without resubmitting work.
                 call.delivered = True
-            if call is None or not call.delivered or not call.confirmed:
+            if not call.delivered or not call.confirmed:
                 return False
             del self._held[key]
             if call.ticket is not None:
