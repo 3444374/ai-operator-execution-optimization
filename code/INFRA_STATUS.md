@@ -10,7 +10,7 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 本批精简 handoff 观测：删除 poll 的重复 Future 适配／完成订阅，成员通知、driver 交接和 Core key
 时点复用原有有界缓冲，不再在该模式逐成员扫描全量 usage。事件保留入队时钟／phase，缺失 usage
 记为未知；full 模式保留详细采集，关闭仍核对 drain、fsync、错误与丢弃，见[观测说明](scripts/profiling/record_observation/README.md)。
-213 个不同 CPU 方法为 208 成功、5 个未通过方法；同一完整选择在准确基底复现这五项失败，未删除或放宽断言。
+与最新 profiler 归档组合后的 220 个不同 CPU 方法为 215 成功、5 个未通过方法；这五项失败均在准确基底的完整原工作流复现，未删除或放宽断言。
 四个单请求／批路径 off/on CPU 探针输出哈希一致，保留分页、ACK、unknown 与关闭责任；真实 Ray、模型和查询收益未测。
 Core 的单轮交付预算公平性是另一项执行问题，本批没有改变该预算或调度策略。
 
@@ -1027,3 +1027,10 @@ sink 拒收、unknown 用量和模型借用责任保持。已完成查询先排�
 [最小 CPU 反例](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
 在原生产代码上失败，修正后与原九项审计生命周期用例合计十项通过；确认目录被再次删除、调用记录和原模型关闭凭据保持。
 生产只移动两行，没有增加状态或检查，没有改 prepared／常驻模型关闭；真实 Ray、模型及原权限未验证项保持。
+
+
+旧 profiler replay 的八个无现用调用接线函数与专用导入退出维护源码；五个实际 Arrow 转换函数归 batch_envelopes。
+Ray SDK 和现用测试已迁移导入，两个仅由旧接线使用的私有关键字参数删除，共享算法与协议字段保持。
+[本批记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+保存同组七项改前／改后通过、845 行原件及五条历史来源；生产 Python 净减 707 行，十处旧历史差异未增加。
+未改 fused 修复、策略、容量、模型默认或并行 poll／ACK，没有真实 Ray／模型／性能结论。

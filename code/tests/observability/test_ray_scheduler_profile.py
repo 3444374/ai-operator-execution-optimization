@@ -2,7 +2,7 @@
 import unittest
 import pyarrow as pa
 from src.observability.profiling import ray_scheduler as profile_ray_scheduler
-from src.observability.profiling import replay as profile_replay
+from src.observability.profiling import batch_envelopes as profile_batches
 from src.scheduling.core.models import SubmissionCompletion
 from src.scheduling.core.scheduler import SchedulerResult
 from src.scheduling.submission_control.admission import StaticAdmissionController
@@ -135,9 +135,39 @@ class RaySchedulerProfileTests(unittest.TestCase):
         )
 
 
+    def test_arrow_batch_requests_preserve_costs_locality_and_arrivals(self) -> None:
+        values = {"prompt_tokens": [3, 5], "target_output_tokens": [2, 9],
+                  "prefix_key": ["shared", "shared"], "preferred_endpoint_id": ["e0", "e0"],
+                  "arrival_time_s": [2.0, 1.0]}
+        batch = pa.table(values)
+        mixed = pa.table({**values, "prefix_key": ["left", "right"],
+                          "preferred_endpoint_id": ["e0", "e1"]})
+        for mode, output_tokens in (("prompt_only", 0), ("fixed_output_cap", 16),
+                                    ("trace_target_output", 10)):
+            with self.subTest(mode=mode):
+                envelopes = profile_batches._batch_envelopes(
+                    [batch, mixed], job_id="job", operator="ai_complete",
+                    completion_max_tokens=8, output_cost_mode=mode,
+                    batch_index_start=4, prompt_token_overhead_per_request=2)
+                self.assertEqual([e.request.request_id for e in envelopes],
+                                 ["job:batch:4", "job:batch:5"])
+                self.assertIs(envelopes[0].payload, batch)
+                request = envelopes[0].request
+                self.assertEqual((request.row_count, request.prompt_tokens,
+                                  request.estimated_output_tokens), (2, 12, output_tokens))
+                self.assertEqual((request.prefix_key, request.preferred_endpoint_id), ("shared", "e0"))
+                self.assertEqual((request.first_arrival_s, request.oldest_arrival_s), (1.0, 1.0))
+                self.assertEqual((request.planning_batch_id, request.payload_id),
+                                 ("job:batch:4", "job:batch:4"))
+                self.assertEqual(request.estimated_payload_bytes, batch.nbytes)
+                self.assertEqual((request.service_quantum_index, request.service_quantum_oversized),
+                                 (-1, False))
+                self.assertEqual((envelopes[1].request.prefix_key,
+                                  envelopes[1].request.preferred_endpoint_id), ("", ""))
+
     def test_run_scheduler_consumes_a_single_pass_lazy_iterable(self) -> None:
         batch = pa.table({"doc_id": [1], "prompt_tokens": [3]})
-        envelope = profile_replay._batch_envelopes(
+        envelope = profile_batches._batch_envelopes(
             [batch],
             job_id="job",
             operator="ai_embed",

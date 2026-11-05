@@ -134,3 +134,10 @@ Session 的成员选择、单请求和原子批接收集中到
 [历史入口](../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)。
 [本批源码、检查与总量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
 保留原失败；当前多任务／SAOR 隔离由另一专项继续，本批未修改其研究策略或接线。
+
+
+旧 profiler 的八个离线／到达重放接线函数已退役；现用 Arrow 输入转换归入职责明确的
+[batch_envelopes.py](src/observability/profiling/batch_envelopes.py)，旧 replay 文件和其两项专用私有参数已删除。
+公共 Ray SDK 仍接受调用方提供的 replay_envelopes，共享 batching／flush／service-quantum 算法保持。
+[本批同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+记录前后各七项通过、准确历史原件和生产 Python 净减 707 行。

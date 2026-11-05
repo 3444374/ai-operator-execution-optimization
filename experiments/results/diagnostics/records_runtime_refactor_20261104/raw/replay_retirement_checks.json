@@ -1,0 +1,459 @@
+{
+  "schema": "semloom.replay_retirement.checks.v1",
+  "published_base": "7f0b6d42eb3e31cb45d56308feb6d0f5cd625c35",
+  "before_commit": "7f4d896cff21690a6ecb6d01f10dc8f0450f5524",
+  "candidate": "1701a03e69ba0d3efd91141f7b8f5f3e94866e79",
+  "tree": "5945af479659c7a964c4016560c6064b4375f174",
+  "runs": {
+    "replay-retirement-before": {
+      "selected": 7,
+      "executed": 7,
+      "passed": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "replay-retirement-after": {
+      "selected": 7,
+      "executed": 7,
+      "passed": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "same_selected_and_passed_methods": true,
+  "overlapping_runs_not_added": true,
+  "tests_added_before_comparison": 1,
+  "new_tests_after_baseline": 0,
+  "source_files_each": 1019,
+  "source_identity": {
+    "replay-retirement-before": {
+      "commit": "7f4d896cff21690a6ecb6d01f10dc8f0450f5524",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true
+    },
+    "replay-retirement-after": {
+      "commit": "1701a03e69ba0d3efd91141f7b8f5f3e94866e79",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true
+    }
+  },
+  "source_identity_note": "Before includes the new Arrow value case in its own test commit; production is unchanged from the published base. After hashes match the code candidate although the recorded checkout HEAD was the test commit before committing. CPU fixture durations are not query performance.",
+  "method_comparison": {
+    "before_commit": "7f4d896cff21690a6ecb6d01f10dc8f0450f5524",
+    "retired_functions": [
+      "_arrival_replay_envelopes",
+      "_arrow_envelope",
+      "_offline_batch_envelopes",
+      "_offline_request_envelopes",
+      "_request_envelopes",
+      "_requires_replay_feedback",
+      "_row_arrivals",
+      "_service_quantum_envelopes"
+    ],
+    "retired_function_lines": 665,
+    "remaining_function_names": [
+      "_batch_envelopes",
+      "_batch_envelope",
+      "_preferred_endpoint_id",
+      "_row_prompt_tokens",
+      "_row_output_tokens"
+    ],
+    "unchanged_functions": [
+      "_batch_envelopes",
+      "_preferred_endpoint_id",
+      "_row_prompt_tokens",
+      "_row_output_tokens"
+    ],
+    "batch_envelope_identical_after_restoring_only_two_retired_keywords": true,
+    "ray_AST_identical_after_import_target_migration": true,
+    "test_AST_identical_after_import_target_migration": true,
+    "new_tests_after_baseline": 0,
+    "obsolete_current_references": [],
+    "history_changes_only_five_replay_routes_and_formats": true,
+    "history_differences_identical": true,
+    "history_projection_ids_identical": true,
+    "source_lines_before_after": [
+      845,
+      138
+    ],
+    "production_Python_delta": -707,
+    "public_replay_envelopes_parameter_preserved": true,
+    "shared_algorithms_untouched": true,
+    "recorded_code_files_added": [
+      "code/src/observability/profiling/batch_envelopes.py"
+    ],
+    "recorded_code_files_removed": [
+      "code/src/observability/profiling/replay.py"
+    ],
+    "recorded_code_files_changed": [
+      "code/src/observability/profiling/ray.py",
+      "code/tests/observability/test_ray_scheduler_profile.py"
+    ]
+  },
+  "code_size": {
+    "retained_comparison_source": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/fused_close_retry_checks.json",
+    "retained_comparison_source_sha256": "71c27d86930c9e4af890ed11fb6ceb99da6fb1d6e66b7b6b2feeaf61666c40d5",
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "7f4d896cff21690a6ecb6d01f10dc8f0450f5524",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 58700
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 55692
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 92358
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114517,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "current": {
+        "commit": "1701a03e69ba0d3efd91141f7b8f5f3e94866e79",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 57993
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 54985
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 91651
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 113810,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 47
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "older_differences": 10,
+    "added_differences": 0,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "complete_restoration_passed": false,
+    "replay_source": {
+      "original_source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
+      "same_bytes_in_published_base": "7f0b6d42eb3e31cb45d56308feb6d0f5cd625c35",
+      "path": "code/src/observability/profiling/replay.py",
+      "decoded_bytes": 30485,
+      "decoded_sha256": "75af3a6acecc878f0092492129e322fcc3d563482c9ad57ed7c0cf4b7a2bc4a8",
+      "decoded_lines": 845,
+      "archive": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
+      "archive_bytes": 5234,
+      "archive_sha256": "499056297583e827823a09dc631f05e075bc06659a9a694f1f8a34490f23a997",
+      "five_source_overrides_added": 5,
+      "previous_manifest_sha256": "d0e94246e330eaa3c68a03b587dd5997e52657a852f69f37208f9f52200ceb25",
+      "new_manifest_sha256": "c39e37cc70b73f1729c96cb68546e8a8d1c9c3ce2a491b8d96abd6e9e255669e"
+    }
+  },
+  "source_sha256": {
+    "code/src/observability/profiling/batch_envelopes.py": "0000e44947b58ef303540787125e3fd9f5049775d4e0c0e925e82211a3c41a40",
+    "code/src/observability/profiling/ray.py": "7fd463be6e115797847fe3a0117abba69e688775983f4fcb062ea1d8ab079e09",
+    "code/tests/observability/test_ray_scheduler_profile.py": "286df4038a388724a8bef3983eb11b2b007f67f3ab36a97f1d76d0185d75ba96"
+  },
+  "production_python_delta": -707,
+  "shared_batching_flush_token_service_quantum_algorithms_changed": false,
+  "public_replay_envelopes_parameter_changed": false,
+  "fused_retry_fix_changed": false,
+  "concurrent_poll_ACK_files_changed": false,
+  "new_policy_capacity_or_configuration": false,
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "known_unqualified_checks": "The earlier five socket methods, two sysctl checks and three CLI cases were not selected or retried. Real Ray, models and query performance remain unverified.",
+  "independent_review_sha256": "c3f9bf3638ef071b8bae9a7a442f42475d35a17dbdff6a8201ef0683787aa1a5",
+  "design_review_sha256": "c04a7fc6bacfaaaefd4bfcaa2d4d6a7249818dbc574ee6714c6c6d7327a90532",
+  "private_originals": {
+    "replay-retirement-before.json": {
+      "bytes": 130246,
+      "sha256": "67fd13d94c2070c8f9602700e1191ef50a454414c0aee44256f63c697d02043a"
+    },
+    "replay-retirement-before.log": {
+      "bytes": 1465,
+      "sha256": "3449b36cd0afb5bebf62ac2a421aacd680723572b9104d22e53c009d8204dd1b"
+    },
+    "replay-retirement-after.json": {
+      "bytes": 130255,
+      "sha256": "0ed38a887d698dc12427aa90c5f7e516bd1f998e4d3781cb13872ea164d6424f"
+    },
+    "replay-retirement-after.log": {
+      "bytes": 1465,
+      "sha256": "b8a3e7d22f6a1f3ca34583cb237ca60d085b3739d6597ac15924ecd123e9dfe2"
+    },
+    "METHOD_COMPARISON.json": {
+      "bytes": 1598,
+      "sha256": "ad34dfbe25590df25cd1968e0f2be3392cd9d9e18724a9f9ddc417e8fb3164cf"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5530,
+      "sha256": "124f03568c66c649fca28ec5ce175bd14782ebaafd90b6b272ae514456483f7f"
+    },
+    "SOURCE_IDENTITY.json": {
+      "bytes": 406,
+      "sha256": "a344b0af6f2871e180777968fdbfb0d7dad02240f7bba2756701ce14c3c761e7"
+    },
+    "replay-history-before.json": {
+      "bytes": 6860,
+      "sha256": "b4d4496b0a4afc8722e318f7f8f89ec11b7d00bd9b6efafb4f6ba6a19d8eb876"
+    },
+    "replay-history-after.json": {
+      "bytes": 6859,
+      "sha256": "c38c1a0c5b97aba73e069724ad5478bee2ed1be7fd47ee28fcc04b4417e7a3a6"
+    },
+    "HISTORY_REPLAY_SOURCE.json": {
+      "bytes": 777,
+      "sha256": "914fa91cdbf35d3228a78b51da1b904782787f20a723d4bc380812bddd188197"
+    },
+    "REMAINING_CORE_AFTER.json": {
+      "bytes": 1073,
+      "sha256": "44c7eae8db5d211cd2a24d43a54049dda92a0b855137b84afa2f3fc83c13fec9"
+    },
+    "current-replay-references-before.txt": {
+      "bytes": 505,
+      "sha256": "1a7a89fa4fbec9b808243c682d05f3e1961df633ae1c1a3fd65b4f55e9f4bc0d"
+    },
+    "current-replay-references-after.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 3642,
+      "sha256": "c3f9bf3638ef071b8bae9a7a442f42475d35a17dbdff6a8201ef0683787aa1a5"
+    },
+    "design/HANDOFF.json": {
+      "bytes": 9122,
+      "sha256": "c04a7fc6bacfaaaefd4bfcaa2d4d6a7249818dbc574ee6714c6c6d7327a90532"
+    },
+    "review/SOURCE-EVIDENCE.json": {
+      "bytes": 5289,
+      "sha256": "598b2ca226dd83161b6b3302431f9a41a46b299fe246ad760c0d1302e2d482dc"
+    }
+  },
+  "remaining_core_files": [
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "lines": 1157
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "lines": 985
+    },
+    {
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "lines": 925
+    },
+    {
+      "path": "code/src/scheduling/core/scheduler.py",
+      "lines": 844
+    },
+    {
+      "path": "code/src/observability/request_gateway.py",
+      "lines": 779
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_async_model.py",
+      "lines": 716
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "lines": 703
+    },
+    {
+      "path": "code/src/serving/backends/completion.py",
+      "lines": 679
+    },
+    {
+      "path": "code/src/observability/profiling/ray.py",
+      "lines": 670
+    },
+    {
+      "path": "code/src/execution_provider/wire/semantic.py",
+      "lines": 661
+    },
+    {
+      "path": "code/src/planning/semfilter_reference_calibration.py",
+      "lines": 658
+    },
+    {
+      "path": "code/src/infrastructure/environment.py",
+      "lines": 653
+    }
+  ],
+  "raw": {
+    "file": "replay_retirement_raw.json.gz",
+    "bytes": 13922,
+    "sha256": "fd36c6c8c5062ab3d6538f5f17cc8c82d853ee5ea026e0ea82c61c18106efa3a",
+    "decoded_sha256": "9e46e3ccc8b14cee2afbd6a201da15bcc51eae85773c37e2cec52ac8c74e16bb"
+  }
+}

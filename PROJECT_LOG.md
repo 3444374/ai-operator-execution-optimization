@@ -11414,3 +11414,14 @@ Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan
 [改前失败与改后检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
 记录十项审计生命周期 CPU 通过，确认第二次删除同目录且不再次关闭模型；其余 31 个 owner 方法未改。
 生产 Python 总量保持，owner 仍为 985 行；这次优先修实际问题，未为降低单文件行数增加包装，其他职责和旧路径继续核对。
+
+
+## 2026-11-05 退役旧 profiler replay 接线并收敛 Arrow 转换
+
+八个旧参数／离线／到达重放接线函数已无维护执行调用，移出当前源码；共享 batching、flush、token 和 service-quantum 算法保留。
+五个实际 Arrow 转换函数移入 batch_envelopes.py，当前 Ray 和测试直接导入；旧 replay.py 删除，没有兼容转发壳。
+移除仅供旧接线的两个私有关键字参数，原请求协议默认和 SDK 的 caller-supplied replay_envelopes 保持。
+完整原件按准确 7bf1 字节先保存并补五条历史来源，原预期摘要和投影身份不改；原十处历史差异保持。
+[实际源码与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+记录同组七项前后通过、原 845 行变为 138 行现用实现，生产 Python 净减 707 行。
+核心代码按一致口径为 57,993 行，src＋scripts 为 113,810 行；超过百行函数由 50 个降为 47 个，未改其他策略或宣称查询加速。
