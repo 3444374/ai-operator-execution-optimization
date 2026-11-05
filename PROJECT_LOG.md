@@ -11489,3 +11489,12 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 [源码、328项检查与原IPC错误](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
 保留未改cde的两项关闭错误和五份3010文件恢复，真实模型／性能待验。
 核心57,003行，相对最新远端净减121行；新拆文件计入合计，不将迁移当作删除。当前不合并main。
+
+
+## 2026-11-05 清理伪模块身份并保留关闭异常原因
+
+候选9de3从82a6删除八处模块身份改写，保留现用公共导入，新标准pickle直接使用定义模块，不再加载单Filter查询host。
+关闭保持外层消息与资源责任，原finalizer异常作为cause保存；读取的精确记录类型直接复制，去掉临时describe字典。
+[69项回归、反例与原关闭线索](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
+保留原两项实际IPC错误及模拟差别，不声称根因已修或真实Ray验证通过。历史3010恢复、原摘要及manifest保持。
+核心56,985行、src＋scripts113,946行，本批均净减18行；剩余44个长函数继续按职责处理，不合并main。

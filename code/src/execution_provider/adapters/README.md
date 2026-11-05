@@ -380,7 +380,7 @@ Explicit `CoreRecordsCapacity.budget` separates the fixed request window C, hard
 method residency and IPC grants; see the [budget fields](../../experiments/movie_matrix.README.md#显式独立资源预算默认关闭本地cpu候选).
 Declarations and IPC resolution live in [records_capacity.py](records_capacity.py);
 execution selection and historical options live in [records_profile.py](records_profile.py).
-The original `lotus_records_core` imports and serialized capacity locations remain compatible.
+The existing `lotus_records_core` imports still refer to the same capacity types.
 Low-level direct constructors and nonrolling whole batches retain the old R translation.
 The ordinary async Filter/rolling factory now resolves default storage from existing
 IPC byte declarations and per-item envelopes via `resolve_records_runtime`. Soft C
@@ -399,7 +399,7 @@ Pure resource parsing and copied snapshot report fields live in
 retains locks, clocks, consumption and decisions; the organizer and its frame-size cache are unchanged.
 Shared result encoding and bounded model-owner adaptation live in
 [records_model_adapter.py](records_model_adapter.py). Async actor imports no longer
-load the records query host. Original actor imports and serialized locations remain available;
+load the records query host. Existing actor imports remain available;
 the transport, result reservations, ACK and shutdown behavior are unchanged.
 The model-side async call ledger, result retention and private IPC live in
 [records_async_model.py](records_async_model.py). Driver-side Ray allocation,
@@ -409,13 +409,13 @@ imports the same actor class directly; actor-private observations and tests use
 the implementation module, including their clock and encoding substitutions.
 Shared records I/O and producer cleanup live in [records_transport.py](records_transport.py).
 Both records query hosts use that module; the chain backend and host can load
-without importing the single-filter query host. Old transport imports and serialized
-helper locations remain available. Capacity, unknown results and receipt ACKs retain
+without importing the single-filter query host. Existing transport imports keep the
+same objects. Capacity, unknown results and receipt ACKs retain
 the same owners; this extraction introduces no scheduling loop or counter.
 Record-local source validation, MethodDriver progress, complete Extracts and result
 consumption live in [records_query_runtime.py](records_query_runtime.py). The chain
 owner assembles its model, transport and capacity; the iterator loads independently
-of those constructors and retains its original import and serialized location.
+of those constructors; its existing query-host import refers to the same iterator.
 Its preparation order, deadlines, cancellation and result release are unchanged.
 Fused batch transfer and result iteration live in
 [lotus_chain_fused_runtime.py](lotus_chain_fused_runtime.py). The chain owner retains
@@ -1513,6 +1513,19 @@ Observers and fixtures import the implementation they exercise; old serve import
 [Combined source and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
 record unchanged result/unknown responsibility and the remaining real worker/socket checks. The three files total 939 lines,
 compared with 920 before the split; the smaller parent file is a responsibility change, not a code-size reduction.
+
+### Actual serialization modules and close errors
+
+Types and functions retain the module where Python defines them. New pickle payloads name
+records_capacity, records_model_adapter or records_transport directly; no __module__ assignment
+redirects them to the single-filter host. Standard pickle round trips succeed with that host unavailable,
+while current public imports still expose the same objects. Actual Ray actor serialization remains to be checked on the server.
+
+Transport close preserves a finalizer's original exception as its cause and keeps the existing outer RuntimeError message.
+Local stop/join and retry behavior, remote terminal evidence, result ACKs and unknown responsibility keep their existing rules.
+The exact-RecordOccurrence source path copies through the original constructor using dataclasses.replace, without an intermediate describe dictionary.
+[Source, regression results and open IPC cases](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
+separate these verified changes from the two still-unclassified IPC close failures.
 
 ### Feedback data and policy imports
 

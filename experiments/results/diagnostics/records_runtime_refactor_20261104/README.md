@@ -3178,3 +3178,79 @@ adaptive为1,157→870行，stage_work为285→252行，新options108行、work9
 
 仍有44个核心函数超过100行，后续按实际职责评估，不为行数制造包装。真实IPC关闭、完整作者桥与当前模型质量／性能仍待服务器；
 物理RAM自动授予不列为本轮普通单查询重构必须新增的功能，相关研究能力继续单独保留。PR保持草稿，不合并main。
+
+
+<a id="actual-adapter-modules-and-close-causes"></a>
+## 真实模块身份与关闭异常原因
+
+本批基于 `82a66f4e36ac27db35cdb4f68c9a0be9e82ececd`，候选代码为
+`9de3db29ff02678bf6da5fe3d940b6bba7a8e3d9`，tree为`c0f634bc6dfc85bfa0738ca7ba5de9aaa90e8320`。
+[结构化记录](raw/transport_identity_close_checks.json)及[脱敏原始记录 gzip](raw/transport_identity_close_raw.json.gz)
+保留原／改方法选择、源码摘要、版本、日志、两份只读审计、纯对象探针、独立复核及代码量计算入口。
+私有原件在项目工作区外按运行标识保留，公开记录提供SHA-256，不公开本机路径；重叠运行不相加。
+raw中的close_probe脚本仅将两处本机目录改为当前工作目录和脚本目录；从准确82a源码树运行，输出写入脚本旁，原脚本摘要单列保留。
+
+### 已完成的修改
+
+| 位置 | 原问题与修改 |
+|---|---|
+| `records_capacity.py` | 两个容量类型被强制改写模块身份；删除两行赋值，新pickle使用实际定义模块 |
+| `records_model_adapter.py` | 两个actor相关类型被回指查询host；删除两行赋值，现有导入仍取得同一类型 |
+| `records_transport.py` | 四个类型／函数被回指查询host；删除四行赋值和旧说明，共八处全部移除 |
+| 三份序列化测试 | 删除“新pickle必须写旧host”的字节形状断言，保留现用导入、继承、旧导出查找与正常往返；冷探针实际禁止查询host导入 |
+| `BoundedAsyncBackend.close` | 原finalizer异常被通用RuntimeError替换，原因丢失；保持外层类型／消息，用标准异常链保存原异常 |
+| `_RecordLocalRows._pull_source` | exact RecordOccurrence检查后直接由原构造器复制，不先生成describe临时字典；原比较、覆盖及成功后释放引用的顺序保持 |
+
+公共导入仍指向真实定义对象，不新增兼容壳；本批没有删除现用API。标准pickle验证涵盖类型／函数符号和容量值，
+不承诺活动transport、锁、资源授予或actor实例能被任意复制。
+Ray在标准pickle之外还有自己的序列化过程；本机旁查的另一份Ray2.56.0源码不是项目Ray2.56.1实测。
+实际Ray actor序列化、模型及服务器功能仍待正常环境验证。
+
+关闭错误的外层消息仍为 `asynchronous transport finalization failed`。原异常作为cause可被完整traceback显示，
+local stop／join与后续close行为沿原规则，结果、ACK、终态和unknown责任未改变。
+普通poll的错误处理保持；落盘异常与命令仍使用现有脱敏流程。
+
+### 行为验证与原始记录
+
+| 选择 | 结果及范围 |
+|---|---|
+| 原82a生产代码＋新聚焦断言9项 | 6成功、3失败：两次标准pickle会加载被禁止的查询host，一项关闭错误没有cause |
+| 修改后相同方法选择9项 | 全通过；原两份冷探针文件之后整理了写法，不宣称前后测试文本逐字相同 |
+| 相关回归69项 | 全通过，无失败／错误／跳过；含已有async backend、原子批、纯async transport、容量角色、记录隔离与历史恢复 |
+
+原聚焦运行的五份生产文件逐字匹配82a；测试文件是回归断言overlay。
+最终9项和69项记录的1,053个code文件摘要全部匹配9de3；运行发生在提交前，source_commit仍写82a，
+实际内容由完整摘要表关联候选，执行期间源码不变。组件复核按此来源判断，没有把它写成干净82a执行或未经核对的新head执行。
+两份冷探针只启动新Python解释器完成导入与标准pickle，协程关闭用例只用本地线程／Future；
+本轮未启动真实IPC两例、Ray runtime、模型、GPU、数据库、服务器、sysctl或进程枚举。
+
+五份历史投影共3,010文件完整恢复，十条已有准确来源继续使用；拆出的三个模块不在旧投影文件表中。
+manifest、原expected与投影身份均保持，没有再复制一份旧源。
+
+### 两项原IPC关闭错误仍待定位
+
+此前未改cde的390项选择中两次实际IPC关闭错误仍按原运行保存，未被本批69项覆盖。
+只读核查确认：通用错误丢掉原因；sampler关闭调用在前，但close_prepared_core抛错时last_close_report尚未生成，
+所以第二次None读取错误可能遮住更早的清理错误，不能据此判断线程或RPC终态。
+
+纯对象探针还复现了一个可达组合：关闭审计已返回但结果未曾经poll暴露，恢复到本地成员后再排ACK，
+actor会拒绝；先实际poll同一关闭结果再ACK则可完成。真实Ray会停止actor，而fixture中的kill只记事件，行为也有差别。
+这些是源码／模拟线索，**不能据此认定就是原两项错误的底层原因**。本批只补原异常链，不改变ACK协议、kill顺序或资源归还判断。
+服务器后续应查看完整异常链并核对真实关闭流程；没有新增实验矩阵或额外日志总数检查。
+
+### 代码量与剩余事项
+
+统计包含注释和空行；核心为code/src Python，排除experiments／baselines、包含研究包，宽口径为code/src＋code/scripts Python。
+测试、资料、历史副本和integrations不计入这两列，本批未改integrations。
+
+| 准确来源 | 核心Python行 | src＋scripts Python行 |
+|---|---:|---:|
+| main `6a8a2d7b` | 54,091 | 140,335 |
+| 清理起点`3fd3887e` | 61,628 | 149,645 |
+| 本批起点`82a66f4e` | 57,003 | 113,964 |
+| 受测`9de3db29` | 56,985 | 113,946 |
+
+本批两种口径均净减18行；核心较main仍多2,894行、较3fd少4,643行，宽口径分别少26,389／35,699行。
+减少来自旧身份改写和说明删除；临时字典步骤减少不等于测得RSS或查询收益。
+核心仍有44个百行以上函数，后续按职责处理；原IPC关闭错误、实际Ray／模型与完整作者桥验证继续保留，不以CPU结果转授资格。
+当前PR仍为草稿，不合并main。

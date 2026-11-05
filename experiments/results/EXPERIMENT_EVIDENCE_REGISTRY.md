@@ -1733,3 +1733,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录公共配置／工作数据抽离、旧EWMA／HOL退役、三处内部临时复制精简及准确b50d328项纯对象／fixture通过。
 冷导入不再加载批策略且配置JSON保持，五份3010文件恢复；未改cde扩大390选择的两项IPC关闭错误仍开放，不被新选择覆盖。
 单查询不先增RAM管理器；真正物理授予和完整内存计量未实现，不由逻辑额度或PSI冒充。
+
+
+[真实模块身份与关闭异常](diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
+记录八处身份改写删除、序列化不加载查询host、关闭原异常链保留及读取快照临时复制精简。
+原9项中3反例、修改后9项和相关69项通过，1053源码摘要与9de3匹配，五份3010文件恢复。
+两份聚焦探针前后文本并非完全相同；原IPC关闭错误仍未定位，纯对象ACK线索不等于原失败归因或真实Ray资格。

@@ -1,0 +1,329 @@
+{
+  "base": "82a66f4e36ac27db35cdb4f68c9a0be9e82ececd",
+  "candidate": "9de3db29ff02678bf6da5fe3d940b6bba7a8e3d9",
+  "tree": "c0f634bc6dfc85bfa0738ca7ba5de9aaa90e8320",
+  "recorded_source_commit": "82a66f4e36ac27db35cdb4f68c9a0be9e82ececd",
+  "source_files": 1053,
+  "source_hash_mismatches": [],
+  "source_unchanged_during_suite": true,
+  "CPU": {
+    "selected": 69,
+    "executed": 69,
+    "passed": 69,
+    "failure_events": 0,
+    "error_events": 0,
+    "skipped": 0
+  },
+  "history": {
+    "variants": 5,
+    "source_entries": 3010,
+    "complete_restore_passed": true,
+    "manifest_unchanged": true
+  },
+  "old_IPC_failures_not_rerun_or_claimed_resolved": true,
+  "original_focused_comparison": {
+    "production_files_match_82a6": true,
+    "production_file_count": 5,
+    "same_selected_method_ids": true,
+    "test_text_changes_after_original": [
+      "code/tests/execution_provider/test_records_model_adapter.py",
+      "code/tests/execution_provider/test_records_transport.py"
+    ],
+    "note": "The two cold-probe files were simplified after the original run. Method selection and tested serialization behavior stay the same; the before/after records are not claimed to contain byte-identical test text."
+  },
+  "schema": "semloom.transport_identity_close.combination.v1",
+  "review": {
+    "decision": "no_code_changes_requested_source_note_recorded",
+    "findings": [
+      {
+        "status": "source_note_for_delivery",
+        "details": "The original focused run and final focused run select the same nine methods, but the two cold-probe test files have different recorded hashes. Describe this as the same method selection, not identical test source. All five original changed production files match 82a, while both successful runs bind every file to 9de3. No rerun is needed solely for this note."
+      }
+    ],
+    "original_sha256": "4082054878c4e88831871ca1d9f821513f589153537ba93663d3659c4ee54c8a"
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "82a66f4e36ac27db35cdb4f68c9a0be9e82ececd",
+        "core_python_lines": 57003,
+        "src_and_scripts_python_lines": 113964,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "82a66f4e36ac27db35cdb4f68c9a0be9e82ececd",
+        "core_python_lines": 57003,
+        "src_and_scripts_python_lines": 113964,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "9de3db29ff02678bf6da5fe3d940b6bba7a8e3d9",
+        "core_python_lines": 56985,
+        "src_and_scripts_python_lines": 113946,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2894,
+        "src_and_scripts_python_lines": -26389,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4643,
+        "src_and_scripts_python_lines": -35699,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": -18,
+        "src_and_scripts_python_lines": -18,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": -18,
+        "src_and_scripts_python_lines": -18,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "original_focused": {
+    "selected": 9,
+    "passed": 6,
+    "failures": [
+      {
+        "id": "tests.execution_provider.test_records_transport.RecordsTransportTests.test_chain_backend_and_host_do_not_load_single_filter_host",
+        "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 32, in test_chain_backend_and_host_do_not_load_single_filter_host\n    self.assertEqual(result.returncode, 0, result.stderr)\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"<string>\", line 15, in <module>\n_pickle.PicklingError: Can't pickle <class 'src.execution_provider.adapters.lotus_records_core._RecordTransport'>: import of module 'src.execution_provider.adapters.lotus_records_core' failed\n\n"
+      },
+      {
+        "id": "tests.execution_provider.test_records_model_adapter.RecordsModelAdapterTests.test_async_actor_does_not_import_query_host",
+        "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 30, in test_async_actor_does_not_import_query_host\n    self.assertEqual(result.returncode, 0, result.stderr)\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"<string>\", line 13, in <module>\n_pickle.PicklingError: Can't pickle <class 'src.execution_provider.adapters.lotus_records_core._ActorOwner'>: import of module 'src.execution_provider.adapters.lotus_records_core' failed\n\n"
+      },
+      {
+        "id": "tests.scheduling.test_async_backend.AsyncBackendTests.test_finalizer_error_does_not_leave_io_thread",
+        "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 237, in test_finalizer_error_does_not_leave_io_thread\n    self.assertIs(raised.exception.__cause__, original)\nAssertionError: None is not ValueError('fixture finalizer error')\n"
+      }
+    ],
+    "errors": []
+  },
+  "focused_fixed": {
+    "selected": 9,
+    "passed": 9,
+    "failures": [],
+    "errors": []
+  },
+  "original_IPC_evidence": {
+    "source": "cde87a55cc4795e33aa07d07f53adc922d8ee71c",
+    "raw_archive": "feedback_duties_clones_raw.json.gz",
+    "records": [
+      "feedback-and-combination/original-feedback.json",
+      "feedback-and-combination/original-feedback.log"
+    ],
+    "errors_not_rerun_or_resolved": true
+  },
+  "deleted_module_assignments": 8,
+  "temporary_typed_source_dictionary_removed": true,
+  "standard_pickle_checked": true,
+  "actual_Ray_actor_serialization_checked": false,
+  "finalizer_cause_preserved": true,
+  "finalizer_outer_error_message_and_close_order_unchanged": true,
+  "private_originals": {
+    "execution/CODE_SIZE.json": {
+      "bytes": 5065,
+      "sha256": "074807162fc29d6feaf77c5f78cf1a7255f2e4900286ee7df50040bb4174bd01"
+    },
+    "execution/HISTORICAL_SOURCES.json": {
+      "bytes": 2277,
+      "sha256": "658478e4bf7abdc3a4e9f9ac27be027ad1ecf2b226d30b18b99961c1648fdbfe"
+    },
+    "execution/SOURCE_IDENTITY.json": {
+      "bytes": 1227,
+      "sha256": "474c16382c05257856f8b954379760291e06b2da458c4d0030a5e33ac8a531ce"
+    },
+    "execution/focused-fixed.json": {
+      "bytes": 135371,
+      "sha256": "35bff4308c33fba3ae9108c8f7c1a0e1f0541b4af78effaf3d7d5c45fd00253c"
+    },
+    "execution/focused-fixed.log": {
+      "bytes": 1879,
+      "sha256": "b766eb497941a09451f5890f807027dc5ef8bac1f51149bb40c32bf7a2f5d6f2"
+    },
+    "execution/focused-selection.json": {
+      "bytes": 278,
+      "sha256": "25c1ff559c92fc87bfeb9a60d0ca7af38752242d227a3f7048258b5f03fb7462"
+    },
+    "execution/original-focused.json": {
+      "bytes": 136994,
+      "sha256": "b1017b30629e18190896da11f12216f7b715bb84a716a9f426db894307e3ea14"
+    },
+    "execution/original-focused.log": {
+      "bytes": 4316,
+      "sha256": "9317b6f35d58cc21a1c2459cc4ba85b953bfb691973437cdfe5e72fc07140f86"
+    },
+    "execution/selection.json": {
+      "bytes": 916,
+      "sha256": "d8f5881bdd1a87861ea96951cdf89e1a71808329a2eb2a08193891d629d279d1"
+    },
+    "execution/transport-identity-regression.json": {
+      "bytes": 153161,
+      "sha256": "ad211133fc5b3972f6fa0efa27fa6e4c16962dfbcf2e5dca54c152eec57ee0bf"
+    },
+    "execution/transport-identity-regression.log": {
+      "bytes": 14384,
+      "sha256": "5d21bca878c4851f327137a2651a52f955037ff77ec2c6bc519ec68302dbde14"
+    },
+    "module-audit/HANDOFF.json": {
+      "bytes": 6420,
+      "sha256": "c65fcaf17a2530a9a9a69cc47bdd8fe1c9239f1d0be2143d65584d45225dc3ff"
+    },
+    "module-audit/HISTORY.json": {
+      "bytes": 2400,
+      "sha256": "ee5496c98f519cfe345ac10a1dcedd0c2e9a13ccc77267c787e28a93ea406b67"
+    },
+    "module-audit/IMPORTS.json": {
+      "bytes": 7874,
+      "sha256": "b693420be33f895e03e758de3d5879991a6550ec9a7116fc5e2bf8fdb6df6de9"
+    },
+    "module-audit/SOURCE-EVIDENCE.json": {
+      "bytes": 7609,
+      "sha256": "ceb3253e6fa62f276aa361768dc33ff094a8c94f636a6787a7dfa47fd6c6ac7b"
+    },
+    "close-audit/HANDOFF.json": {
+      "bytes": 9323,
+      "sha256": "c916a947e511212c399ace0c1118909c5acfc9d4bf904bd2327dc2df27d4752d"
+    },
+    "close-audit/pure-object-results.json": {
+      "bytes": 1828,
+      "sha256": "d5c1756961a0f375ac1307457f181bff24c67cadcd3240ae7e249b3715da696a"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 4455,
+      "sha256": "4082054878c4e88831871ca1d9f821513f589153537ba93663d3659c4ee54c8a"
+    },
+    "review/SOURCE-EVIDENCE.json": {
+      "bytes": 6827,
+      "sha256": "320008c73364021d9997ba0dd537c3223e0b3ca5ad5233f9ba850ae77b588c36"
+    }
+  },
+  "raw": {
+    "file": "transport_identity_close_raw.json.gz",
+    "bytes": 21324,
+    "sha256": "16356a0af22e80219b316211bd7184844c196c262619657d8d7f3e106cf7c4ee",
+    "decoded_sha256": "e346d05583eef858b999ab5e345c34478270b17a4a1c1d5a9d1d4f698ff1b13e"
+  },
+  "delivery_review": {
+    "decision": "no_changes_requested_for_delivery",
+    "findings": [],
+    "original_record": "semloom-transport-identity-9de3-review-20261105/FINAL_HANDOFF.json",
+    "original_sha256": "8129b2c2f5b8e7d60f7f1846cf405bc95fe95328667b378274a14e38d280b0aa"
+  }
+}
