@@ -11,7 +11,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.scheduling.core.session_contract import TaskKey
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.async_engine_process import BatchSubmitResult, SubmitResult, TerminalEvent

@@ -17,7 +17,8 @@ from src.experiments import movie_cancellation_probe as probe
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError
 from src.experiments.cell_budget import CellBudgetLedger
 from src.serving.backends.vllm_engine import EngineSpec
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from tests.experiments.movie_token_resident_fixture import MovieTokenResidentFixture, with_actual_cpu_pid
 from tests.execution_provider.test_lotus_record_local_query import Process
 

@@ -98,7 +98,7 @@ class NativeSourceTests(unittest.TestCase):
         self.assertIsNone(native_sample_age(native, ready(), captured_at_s=9999.))
 
     def test_actual_actor_snapshot_captures_age_on_its_own_host(self):
-        from src.execution_provider.adapters import lotus_records_async_actor as actors
+        from src.execution_provider.adapters import records_async_model as actors
         actor = object.__new__(actors.AsyncCoreModelActor)
         actor._condition = threading.Condition()
         actor._held, actor._early_cancels = {}, {}

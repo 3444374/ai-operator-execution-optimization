@@ -254,7 +254,8 @@ class CapturedUidTests(unittest.TestCase):
 
 class NormalQueryBridgeTests(unittest.TestCase):
     def test_four_options_use_actual_resources_and_same_original_method_reference(self):
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner, AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+        from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
         from tests.execution_provider.test_lotus_record_local_tokens import QueryTokenTests
         from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
         from tests.execution_provider.test_lotus_record_local_query import Process
@@ -367,7 +368,7 @@ class ExecutionComparisonTests(unittest.TestCase):
                                   entry.make_resources(self.config), execution='fused')
 
     def test_C1_pair_uses_real_query_owners_and_one_model_per_query(self):
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
         from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
         from tests.execution_provider.test_lotus_record_local_query import Process, QueryOwnerTests

@@ -7,7 +7,7 @@ import time
 from types import SimpleNamespace
 import unittest
 
-from src.execution_provider.adapters import lotus_records_async_actor as actors
+from src.execution_provider.adapters import records_async_model as actors
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.execution_provider.adapters.lotus_chain_token_budget import audit_chain_call
 from src.execution_provider.adapters.lotus_records_core import _encode

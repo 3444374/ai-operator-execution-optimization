@@ -10,7 +10,8 @@ from unittest.mock import patch
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_record_chain_fifo import LotusChainFIFO
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.semantic_methods.driver import MethodDriver, SuccessorFirst
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.records import RecordsResources

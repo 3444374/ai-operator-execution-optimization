@@ -13,7 +13,8 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore, CoreChainCapacity
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.execution_provider.adapters import lotus_record_chain_core as chain_core
 from src.scheduling.runtime import async_backend
 from src.semantic_methods.lotus import record_chain as chains

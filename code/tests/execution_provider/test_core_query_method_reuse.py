@@ -21,7 +21,7 @@ from src.baselines.text.movie_records import MovieRecordSource, prepare_movie_so
 from src.baselines.text.movie_tasks import MovieTask
 from src.execution_provider.adapters import lotus_records_actor_owner as actors
 from src.execution_provider.adapters import lotus_records_core as core
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.experiments import movie_records_session as session
 from src.experiments.cell_budget import ClaimedUnit, Reservation
 from src.semantic_methods.lotus import engine as methods

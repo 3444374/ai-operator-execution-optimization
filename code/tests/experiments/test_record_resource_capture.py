@@ -29,6 +29,7 @@ def stubs():
     modules={}
     names=['src','src.serving','src.serving.backends','src.serving.backends.async_engine_process',
            'src.execution_provider','src.execution_provider.adapters','src.execution_provider.adapters.lotus_records_async_actor',
+           'src.execution_provider.adapters.records_async_model',
            'src.execution_provider.adapters.lotus_records_actor_owner','src.semantic_methods','src.semantic_methods.lotus',
            'src.semantic_methods.driver',
            'src.semantic_methods.lotus.record_chain','src.semantic_methods.lotus.engine',
@@ -53,7 +54,7 @@ def stubs():
     native._read_frame=read_frame
     async def serve(*args,**kwargs):return args
     native.serve=serve
-    modules['src.execution_provider.adapters.lotus_records_async_actor'].AsyncCoreModelActor=Base
+    modules['src.execution_provider.adapters.records_async_model'].AsyncCoreModelActor=Base
     modules['src.execution_provider.adapters.lotus_records_actor_owner']._PrepareActor=Base
     class Worker:
         def execute_model(self,scheduled):

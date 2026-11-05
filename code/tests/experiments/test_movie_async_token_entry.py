@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.text.movie_tasks import MovieTask
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.execution_provider.adapters.lotus_records_core import create_records_core
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus import engine as methods

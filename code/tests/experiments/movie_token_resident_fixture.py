@@ -17,7 +17,7 @@ from src.baselines.text.movie_tasks import MovieTask
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.experiments.cell_budget import ClaimedUnit, Reservation
 from src.execution_provider.adapters import lotus_records_core as core
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec

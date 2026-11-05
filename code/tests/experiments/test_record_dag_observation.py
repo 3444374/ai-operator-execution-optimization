@@ -171,7 +171,7 @@ class DAGObservationTests(unittest.TestCase):
 
     def test_actual_Core_ready_hook_on_off_keeps_results_calls_and_cleanup(self):
         from src.semantic_methods.driver import MethodDriver
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from tests.execution_provider.test_lotus_record_local_progression import ProgressionTests, ThreadedRuntime, query_fixture, fixture
         helper = ProgressionTests(); helper.setUp(); self.addCleanup(helper.doCleanups)
         chain, rows = fixture.chain_for('FM'), fixture.source_rows(size=2)

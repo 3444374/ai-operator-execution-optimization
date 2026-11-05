@@ -11,7 +11,8 @@ from unittest.mock import patch
 from src.baselines.text.movie_records import MovieRecordSource
 from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, resolve_records_async_limits
 from src.execution_provider.adapters.records_service_delivery import declare_ordinary_delivery, declare_ordinary_session
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.semantic_methods.budget import row_reservation
 from tests.experiments.movie_token_resident_fixture import MovieTokenResidentFixture
 

@@ -9,9 +9,8 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_records_core as core
-from src.execution_provider.adapters.lotus_records_async_actor import (
-    AsyncCoreModelActor, AsyncRecordsActorOwner,
-)
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import TaskKey
 from src.semantic_methods.lotus import engine as lotus_engine

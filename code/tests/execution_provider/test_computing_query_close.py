@@ -6,7 +6,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.semantic_methods.lotus import record_chain as chains
 from tests.execution_provider import test_lotus_record_local_priority as priorities
 from tests.execution_provider import test_lotus_record_local_query as queries

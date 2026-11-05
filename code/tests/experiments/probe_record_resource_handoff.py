@@ -22,7 +22,7 @@ os.environ.update(SEM_RECORD_OBSERVATION=args.mode,SEM_RECORD_OBSERVER_ROOT=str(
     SEM_RECORD_OBSERVER_CODE=str(args.public/'code'),SEM_RECORD_RUN_ID='CPU-handoff',
     SEM_RECORD_SESSION_ID='CPU-'+args.mode,LITELLM_LOCAL_MODEL_COST_MAP='True')
 sys.path[:0]=[str(args.public/'code'),str(root)]
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.execution_provider.adapters.lotus_records_actor_owner import _PrepareActor as PublicPrepareActor
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.semantic_methods.lotus.record_chain import RecordOccurrence,stage_identity

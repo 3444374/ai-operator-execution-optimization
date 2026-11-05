@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 import weakref
 
-from src.execution_provider.adapters import lotus_records_async_actor as actors
+from src.execution_provider.adapters import records_async_model as actors
 from src.execution_provider.adapters.lotus_records_core import _encode
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.serving.backends.async_engine_process import TerminalEvent

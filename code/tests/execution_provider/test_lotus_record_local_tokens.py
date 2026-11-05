@@ -15,7 +15,8 @@ from src.execution_provider.adapters.lotus_chain_token_budget import (
 )
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.modalities.text.tokenization import chat_token_count
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.records import RecordsResources

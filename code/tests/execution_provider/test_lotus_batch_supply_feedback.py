@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
 from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
 from tests.execution_provider import test_lotus_async_token_batches as batch_fixture

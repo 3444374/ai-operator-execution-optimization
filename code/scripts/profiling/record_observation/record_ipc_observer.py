@@ -296,7 +296,7 @@ def __getattr__(name):
     # The model interpreter uses install_transport only. Keep driver/Ray/LOTUS
     # actor imports out of that environment, matching the public separation.
     if name not in ('ObservedAsyncCoreModelActor','ObservedPrepareActor'):raise AttributeError(name)
-    from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+    from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
     from src.execution_provider.adapters.lotus_records_actor_owner import _PrepareActor
     class ObservedAsyncCoreModelActor(AsyncCoreModelActor):
         def __init__(self,*args,**kwargs):

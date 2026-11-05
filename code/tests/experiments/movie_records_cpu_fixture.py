@@ -7,7 +7,7 @@ from unittest.mock import patch
 from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.text.movie_tasks import MovieTask
 from src.experiments import lotus_records_movie as movie
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.semantic_methods.lotus import engine as methods
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec

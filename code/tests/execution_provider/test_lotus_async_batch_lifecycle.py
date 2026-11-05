@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_records_async_actor as actors
+from src.execution_provider.adapters import records_async_model as actors
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.execution_provider.adapters.lotus_records_core import _encode
 from src.scheduling.core.session_contract import Acceptance, BatchKey, BatchMember

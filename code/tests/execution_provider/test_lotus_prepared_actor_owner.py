@@ -10,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_records_actor_owner as actors
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.semantic_methods.lotus import engine as lotus_engine
 from src.semantic_methods.lotus.record_chain import LotusRecordMethod, MapMethod, RecordOccurrence, StageSpec, stage_identity
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources

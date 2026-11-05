@@ -64,7 +64,7 @@ class ModelGpuIdentityTests(unittest.TestCase):
                     cuda_visible_gpu_uuids(visibility, assigned_gpu_uuids=assigned)
 
     def test_actor_passes_private_model_identity_to_the_existing_sampler_once(self):
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         actor = object.__new__(AsyncCoreModelActor)
         actor._resource_sources = None
         actor._resource_lock = threading.Lock()

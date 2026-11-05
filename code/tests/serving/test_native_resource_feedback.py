@@ -26,7 +26,7 @@ class CPUFeedbackProcess(AsyncEngineProcess):
 
 class NativeFeedbackTests(unittest.TestCase):
     def test_public_CPU_actor_full_handoff_off_close_without_driver_fallback(self):
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from src.serving.backends import async_engine_process as transport
         tools=Path(__file__).resolve().parents[2]/'scripts/profiling/record_observation'
         for mode,profile in (('on','full'),('on','handoff'),('off','full')):

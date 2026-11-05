@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_records_core import create_records_core
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.execution_provider.adapters.records_profile import resolve_core_profile
 from src.execution_provider.adapters.records_request_feedback import (
     CoreResourceRequestFeedback, ResourceRequestSupplyFeedback, applied_request_limit,

@@ -4,7 +4,8 @@ from functools import partial
 from pathlib import Path
 from unittest.mock import patch
 
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 
 

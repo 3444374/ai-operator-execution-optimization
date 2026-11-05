@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from src.baselines.text.movie_records import MovieRecordSource
 from src.execution_provider.adapters import records_service_delivery as delivery
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.execution_provider.adapters.records_model_adapter import _encode
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.semantic_methods.lotus.records import identity

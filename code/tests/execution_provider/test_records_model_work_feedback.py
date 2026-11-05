@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_records_core import _CoreRows, create_records_core
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.scheduling.core.models import AdmissionObservation
 from src.scheduling.core.session_contract import TaskKey
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources

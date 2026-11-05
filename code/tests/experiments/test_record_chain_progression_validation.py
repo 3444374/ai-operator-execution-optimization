@@ -13,7 +13,7 @@ from src.experiments import record_chain_validation as checks
 from src.experiments import record_chain_validation_run as entry
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from tests.experiments import test_record_chain_validation as fixtures
 from tests.execution_provider.chain_tokenizer_fixture import tokenizer
 from tests.execution_provider.test_lotus_chain_token_budget import Process

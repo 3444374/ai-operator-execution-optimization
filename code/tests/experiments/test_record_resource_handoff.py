@@ -23,7 +23,7 @@ class HandoffTests(unittest.TestCase):
         with patch.object(self.observer,'install_actor',lambda:None):value=ipc.ObservedAsyncCoreModelActor()
         value._readers=0;value._condition=threading.Condition()
         value._held={};value._closed_pending=None;value.last_close_report=None
-        return ipc,value,sys.modules['src.execution_provider.adapters.lotus_records_async_actor'].AsyncCoreModelActor
+        return ipc,value,sys.modules['src.execution_provider.adapters.records_async_model'].AsyncCoreModelActor
 
     def test_feedback_buffer_does_no_file_IO_and_drains_through_existing_sink(self):
         with patch.object(self.observer.os,'write',side_effect=AssertionError('hot-path I/O forbidden')):

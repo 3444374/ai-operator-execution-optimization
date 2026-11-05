@@ -675,7 +675,7 @@ class SnapshotRPCEntryTests(unittest.TestCase):
         from unittest.mock import patch
         from src.baselines.text.movie_records import MovieRecordSource
         from src.experiments import lotus_records_movie as movie
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from tests.experiments.test_movie_async_token_entry import AsyncTokenEntryTests
         from tests.serving.test_native_resource_feedback import CPUFeedbackProcess
         helper = AsyncTokenEntryTests(); helper.setUp(); self.addCleanup(helper.doCleanups)

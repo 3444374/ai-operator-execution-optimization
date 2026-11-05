@@ -4,7 +4,7 @@ import json
 import unittest
 from unittest.mock import patch
 from src.execution_provider.adapters import lotus_records_core as core
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.semantic_methods.lotus.records import RecordsResources, FilterMethod
 from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec
 from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
