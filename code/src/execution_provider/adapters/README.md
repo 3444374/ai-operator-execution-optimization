@@ -1514,6 +1514,15 @@ Observers and fixtures import the implementation they exercise; old serve import
 record unchanged result/unknown responsibility and the remaining real worker/socket checks. The three files total 939 lines,
 compared with 920 before the split; the smaller parent file is a responsibility change, not a code-size reduction.
 
+### Configuration ownership
+
+The ordinary owner resolves timing and admission together once, retaining the requested timing in direct-constructor metadata.
+The chain owner validates its own combinations without calling and discarding the ordinary records profile.
+It reuses the exact immutable PreparedBatching value and leaves interval validation to ResourceRequestConfig.
+Native observed intervals, resource declarations, supplied-owner matching and mutable token-budget state keep their existing checks.
+[Counterexample, source and CPU coverage](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)
+describe the report correction; factory metadata and actual timing execution are unchanged.
+
 ### Actual serialization modules and close errors
 
 Types and functions retain the module where Python defines them. New pickle payloads name
