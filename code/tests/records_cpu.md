@@ -9,6 +9,22 @@ Daft session回归使用真实Daft CPU图和合成kernel。其本机Unix socket�
 
 普通合成fixture无需这份真实CSV。与本页相关的全部CPU通过仍不替代当前生产源码的独立source/input/token/model/env/ledger/owner绑定和GPU资格。
 
+### 2026-11-05：旧夹具与失效测试清理
+
+两个无引用夹具已删除；UCB／旧 stage-work 原型的五个维护测试及依赖已移走 PG C 源码的
+44 个检查退出当前套件。[准确历史来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)
+保留配套 PG 源码与原测试；十个 Python generation／Map 值合约检查继续维护。
+
+普通准备收尾检查曾在 LOTUS 方法绑定后、actor 创建前耗尽夹具的固定八秒启动预算。
+它验证准备、结果一致性与最终关闭，不测启动速度；当前共享夹具沿用普通 `RecordsResources` 启动预算，
+外层探针时限覆盖该预算及查询，原失败记录保留，不据此声称机器启动变快。
+仅过滤模拟模型 `openai/cpu-fixture` 重复的无价格警告。
+
+本批 78 个 CPU 方法通过，其中准备入口与最终关闭 44 项；没有模型、真实 Ray 或 GPU 运行。
+五份历史树的 3010 条原摘要全部恢复核对；首次发现的两个 LOTUS 来源缺失通过
+[原字节映射](../../experiments/reproduction/native_baselines/README.md#重复源码的共享保存)补齐。
+结果恢复另核对八份清单的 560 个原件，原运行身份、摘要和实验判断保持。
+
 <a id="resource-allocation-cpu"></a>
 ## 2026-11-03：具名 GPU 身份 RPC 与历史源码修订
 

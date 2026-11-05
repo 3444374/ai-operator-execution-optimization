@@ -48,9 +48,11 @@ class ProfiledAsyncCoreTests(async_fixture.AsyncCoreCompositionTests):
                 self.assertEqual(owner.engine.max_num_seqs, 1)
                 self.assertEqual(owner._actors.limits.max_inflight, 8)
                 self.assertEqual(owner._actors.limits.result_slots, 8)
-                self.assertEqual(stream.session.limits.active_requests, 4)
+                self.assertEqual(stream.session.limits.active_requests, 8)
+                self.assertEqual(stream.execution_profile["max_inflight"], 4)
                 self.assertEqual(engine.snapshot()["active_requests"], 4)
-                self.assertEqual(owner.core.capacity.usage().held_tasks, 4)
+                self.assertEqual(owner.core.capacity.usage().active_requests, 4)
+                self.assertEqual(owner.core.capacity.usage().held_tasks, len(rows))
                 self.assertLessEqual(engine.snapshot()["input_bytes"], owner._actors.limits.input_bytes)
                 stream.close()
                 while owner.core.capacity.usage().held_tasks:

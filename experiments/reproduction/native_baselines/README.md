@@ -7,6 +7,12 @@
 只调整重复文件读取位置，恢复继续逐项核验，不改变任何原始结果或当前运行策略。
 旧部署与实验声明另见[配方归档](../legacy_recipes_20261105/README.md)。
 
+LOTUS 职责迁移后，`image_source.py` 和 `maps.py` 的原字节分别保存在
+[图像来源](historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz)与
+[Map 来源](historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz)，来自准确
+`1f92fce59897fb7e633087ed09ddc50068cd8fd8`。五份投影仅补十条来源／gzip 映射，
+原 3010 条文件摘要和投影身份保持，维护版继续使用迁移后的模块。
+
 ## 当前源码恢复状态（2026-11-04）
 
 五份完整代码投影现已按原逐文件 SHA 全部恢复：3010 条来源不匹配为 0。
@@ -33,7 +39,7 @@
 准确 bfb 原件保存在 [historical_sources/bfb9100e/](historical_sources/bfb9100e/)：
 UCB 实现、原 `scheduling/__init__.py` 和完整原测试文件均可按 SHA-256 核对。
 五份历史投影各增加两条 override，共十条；原逐文件摘要、投影身份和既有映射不变。
-原五项 UCB 测试从准确副本读取并在原算法上运行，当前运行时不导入该副本。
+原五项 UCB 行为测试随准确历史源码保存；维护套件不再载入该退役算法重跑。
 完整历史仍有原十处不匹配；本次保留恢复材料不把它们改报通过。
 [当前整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md)分别说明删除范围、整体结构与剩余项。
 
@@ -190,7 +196,7 @@ manifest 的 `source_formats` 记录压缩摘要、准确解码长度，原逐�
 当前执行入口没有使用这两项。准确原件继续保存在
 [既有历史源码](historical_sources/6a8a2d7b/code/src/scheduling/submission_control/stage_work.py)，
 五份投影的文件摘要、恢复映射和投影 ID 均不改。
-原三项行为测试改为读取这份历史源码，不为当前执行保留兼容导出。
+原三项行为测试随历史来源保留，维护套件不再执行这个已退出生产的控制原型。
 维护模块不再支持旧类型直接导入或任意旧 pickle 对象恢复；具名历史树保留原类路径与字节。
 维护版供给／请求反馈与实际 stage broker 保留；显式历史 profile 随后按下节移出现用入口；
 [逐项依据与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)

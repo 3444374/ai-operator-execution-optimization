@@ -59,7 +59,7 @@ metric. New UNKNOWN-submit handling deliberately retains capacity; old blocking 
 | Linux candidate 2 | 312/312 pass, adds binary identity and delivery-commit rollback |
 | Linux final candidate | 314/314 pass; [summary](raw/summary.json), [log](raw/scheduling-r3.log) |
 | Local final new-core tests | 33/33 pass; [log](raw/local-final.log) |
-| Code checks | Pass; [log](raw/ruff-r3.log) |
+| Code checks | Pass; [original log recovery](raw/storage-manifest.jsonl) |
 | Source identity and cleanup | 616 files match local bytes; zero Raylet PIDs; [hashes](raw/source-hashes.json), [summary](raw/summary.json) |
 
 Earlier attempts are preserved; the missing local dependency was resolved by using the existing Linux

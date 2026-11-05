@@ -40,7 +40,7 @@ request 128, at temperature 0. The payload is a sealed public synthetic request,
 |---|---|
 | Local core and transport tests | 37/37; [log](raw/local-tests.log) |
 | Linux full scheduling suite | 318/318; [log](raw/async-full.log) |
-| Code checks | Ruff passes; [log](raw/async-ruff.log) |
+| Code checks | Ruff passes; [original log recovery](raw/storage-manifest.jsonl) |
 | Real model requests | 5/5, peak two overlapping HTTP operations, five authoritative responses |
 | Prefix/backpressure | Offer three accepts two; completing without release keeps the result reservation; release permits the third |
 | Normal first session | Three deliveries match decoded HTTP responses; seal/release finishes and closes |

@@ -713,21 +713,24 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         async def feedback_updates():
             nonlocal feedback_packet
             latest_sequence = None
-            while not closing.is_set():
-                await asyncio.sleep(limits.feedback_interval_s)
-                # One optional packet at most, leaving a slot for critical control.
-                if feedback_packet is not None or control_queue.qsize() >= control_queue.maxsize - 1:
-                    continue
+            wait_first = getattr(engine, 'wait_for_first_feedback', None)
+            if callable(wait_first):
                 try:
-                    snapshot = engine.feedback_snapshot()
-                    if snapshot is None or snapshot["sequence"] == latest_sequence:
-                        continue
-                    packet = _frame(dict(op="feedback", snapshot=snapshot), limits.control_frame_bytes)
-                    control_queue.put_nowait((packet, None))
-                    feedback_packet, latest_sequence = packet, snapshot["sequence"]
+                    await wait_first()
                 except Exception:
-                    # Performance feedback must never replace a terminal or close cause.
-                    continue
+                    pass  # Optional notification failure retains periodic sampling.
+            while not closing.is_set():
+                # One optional packet at most, leaving a slot for critical control.
+                if feedback_packet is None and control_queue.qsize() < control_queue.maxsize - 1:
+                    try:
+                        snapshot = engine.feedback_snapshot()
+                        if snapshot is not None and snapshot["sequence"] != latest_sequence:
+                            packet = _frame(dict(op="feedback", snapshot=snapshot), limits.control_frame_bytes)
+                            control_queue.put_nowait((packet, None))
+                            feedback_packet, latest_sequence = packet, snapshot["sequence"]
+                    except Exception:
+                        pass  # Optional feedback never replaces a terminal or close cause.
+                await asyncio.sleep(limits.feedback_interval_s)
 
         async def abort_requests():
             # Native ABORT may wait on the engine's own IPC. Its single bounded
