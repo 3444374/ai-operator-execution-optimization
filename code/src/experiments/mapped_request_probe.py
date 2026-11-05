@@ -27,15 +27,17 @@ def digest(sequence):
     return hashlib.sha256(f'fixture-input-{sequence % 127}'.encode()).hexdigest()
 
 
-def _worker(resource, mode, inputs, start, connection):
+def _worker(resource, mode, inputs, start, connection, deadline):
     client = None
     grants = []
     try:
         client = MappedUnitClient(resource) if mode == 'mapped' else resource
         connection.send(dict(state='ready'))
-        if not start.wait(10):
+        if not start.wait(max(0, deadline - time.monotonic())):
             raise TimeoutError('component start signal timed out')
         for sequence, value in inputs:
+            if time.monotonic() >= deadline:
+                raise TimeoutError('component grant deadline')
             grants.append((sequence, value, client.reserve(value)))
         connection.send(dict(state='completed', grants=grants))
     except BaseException as error:
@@ -46,7 +48,7 @@ def _worker(resource, mode, inputs, start, connection):
         connection.close()
 
 
-def run_case(root, mode, workers, repeat):
+def run_case(root, mode, workers, repeat, *, deadline=None):
     new_private_directory(root)
     context = multiprocessing.get_context('spawn')
     start = context.Event()
@@ -56,11 +58,15 @@ def run_case(root, mode, workers, repeat):
     write_private_json(root / 'manifest.json', report)
     values = tuple(digest(i) for i in range(ROWS))
     began = time.monotonic()
-    deadline = began + 30
+    if deadline is None:
+        deadline = began + 30
     failure, grants = None, []
     try:
         budget = AttemptBudget(f'fixture.mapped.{mode}.{workers}.{repeat}', ROWS)
-        ledger = CellBudgetLedger.create(root / 'ledger.sqlite', budget, deadline_utc=time.time() + 30)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError('component preparation deadline')
+        ledger = CellBudgetLedger.create(root / 'ledger.sqlite', budget, deadline_utc=time.time() + remaining)
         ledger.reserve_unit('case', ROWS)
         if mode == 'mapped':
             owner = MappedUnitOwner.prepare(ledger, 'case', values, root / 'mapped')
@@ -70,16 +76,17 @@ def run_case(root, mode, workers, repeat):
         for worker in range(workers):
             parent, child = context.Pipe(duplex=False)
             process = context.Process(target=_worker, args=(resource, mode,
-                tuple((i, values[i]) for i in range(worker, ROWS, workers)), start, child))
+                tuple((i, values[i]) for i in range(worker, ROWS, workers)), start, child, deadline))
             process.start()
             child.close()
             active.append(process)
             connections.append(parent)
         awaiting = set(connections)
         while awaiting:
-            if time.monotonic() >= deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 raise TimeoutError('component preparation deadline')
-            for connection in wait(awaiting, .05):
+            for connection in wait(awaiting, min(.05, remaining)):
                 result = connection.recv()
                 if result['state'] != 'ready':
                     raise RuntimeError('component caller failed during preparation')
@@ -88,9 +95,10 @@ def run_case(root, mode, workers, repeat):
         start.set()
         awaiting = set(connections)
         while awaiting:
-            if time.monotonic() >= deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 raise TimeoutError('component completion deadline')
-            for connection in wait(awaiting, .05):
+            for connection in wait(awaiting, min(.05, remaining)):
                 result = connection.recv()
                 grants.extend(result.get('grants', ()))
                 if result['state'] != 'completed':
@@ -167,15 +175,16 @@ def run_probe(output):
         http_requests=0, model_requests=0, pg_queries=0, runs=[])
     write_private_json(output / 'manifest.json', summary)
     began = time.monotonic()
+    deadline = began + summary['max_seconds']
     try:
         for repeat in range(REPEATS + 1):
             arms = ARMS if repeat == 0 else ARMS[repeat - 1:] + ARMS[:repeat - 1]
             for mode, workers in arms:
-                if time.monotonic() - began >= 270:
+                if time.monotonic() >= deadline:
                     raise TimeoutError('overall local component deadline')
                 identity = f'{repeat}-{mode}-{workers}'
                 summary['active_run'] = identity
-                run = run_case(output / identity, mode, workers, repeat)
+                run = run_case(output / identity, mode, workers, repeat, deadline=deadline)
                 summary['runs'].append(dict(run_id=identity, **run))
                 print(json.dumps({key: run[key] for key in ('mode', 'workers', 'repeat',
                     'grant_seconds', 'component_total_seconds')}), flush=True)

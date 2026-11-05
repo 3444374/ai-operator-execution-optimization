@@ -49,3 +49,11 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 
 SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本保留；依赖旧 HTTP／PG 启动器的部分随归档隔离。
 已有成绩、成本、失败和 unknown 不修改；新 CPU 测试不构成模型或查询加速证据。
+
+
+## 本地时间与额度诊断
+
+[观察探针](profiling/map_observation_probe.py)、[Core 探针](profiling/mapped_core_probe.py)和
+[预付计数探针](profiling/mapped_request_probe.py)仅使用本地 CPU 替身。每轮共用实际运行截止，
+后续单项使用剩余时间，不再提前扣 60／30 秒；停止新增后继续取消和清理，已预付计数不退还。
+单独调用 case 仍保留有限默认时限。这些诊断不代表模型或查询性能。

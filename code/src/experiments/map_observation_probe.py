@@ -228,10 +228,13 @@ def analyze(events, rows, began, ended, worker_peak):
                                                   for i in range(rows)]))
 
 
-def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, batch_rows=BATCH_ROWS):
+def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, batch_rows=BATCH_ROWS,
+             deadline=None):
     allowed = ARMS + (('mapped', 'memory'), ('mapped', 'buffered'))
     if (accounting, recording) not in allowed or not 0 < rows <= ROWS or not 0 < batch_rows <= capacity <= CAPACITY:
         raise ValueError('unsupported finite diagnostic configuration')
+    if deadline is None:
+        deadline = time.monotonic() + 60
     output = Path(output)
     new_private_directory(output)
     writer = BufferedEvents(output / 'buffered.jsonl', max_events=16384) if recording == 'buffered' else None
@@ -239,19 +242,7 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
     report = dict(accounting=accounting, recording=recording, rows=rows, capacity=capacity,
                   batch_rows=batch_rows, status='running', http_requests=0, model_requests=0, pg_queries=0)
     write_private_json(output / 'manifest.json', report)
-    accounting_started = time.monotonic_ns()
-    budget = AttemptBudget('fixture.observation', rows)
-    ledger = CellBudgetLedger.create(output / 'ledger.sqlite', budget, deadline_utc=time.time() + 60)
-    ledger.reserve_unit('case', rows)
-    mapped_owner = None
-    if accounting == 'mapped':
-        from .mapped_request_budget import MappedUnitClient, MappedUnitOwner
-        mapped_owner = MappedUnitOwner.prepare(ledger, 'case',
-            tuple(hashlib.sha256(payload(i)).hexdigest() for i in range(rows)), output / 'mapped')
-        charged_unit = MappedUnitClient(mapped_owner.descriptor)
-    else:
-        charged_unit = ledger.claim_shared_unit('case') if accounting == 'durable' else ledger.claim_unit('case')
-    report['accounting_setup_seconds'] = (time.monotonic_ns() - accounting_started) / 1e9
+    mapped_owner = charged_unit = ray = None
     expected = {payload(i): i for i in range(rows)}
     charged = {}
 
@@ -270,7 +261,6 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
             time.sleep(PREPARE_S)
             yield SyntheticTable(data[offset:offset + batch_rows])
 
-    ray = SyntheticRay(charged)
     transport = None
     execution = session = job = None
     failure = None
@@ -289,6 +279,24 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
          patch('src.execution_provider.adapters.ray_map_transport._clock_domain', return_value=CLOCK), \
          patch('socket.socket.connect', side_effect=AssertionError('network forbidden in local fixture')):
         try:
+            accounting_started = time.monotonic_ns()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('finite local case deadline')
+            budget = AttemptBudget('fixture.observation', rows)
+            ledger = CellBudgetLedger.create(output / 'ledger.sqlite', budget,
+                                             deadline_utc=time.time() + remaining)
+            ledger.reserve_unit('case', rows)
+            if accounting == 'mapped':
+                from .mapped_request_budget import MappedUnitClient, MappedUnitOwner
+                mapped_owner = MappedUnitOwner.prepare(ledger, 'case',
+                    tuple(hashlib.sha256(payload(i)).hexdigest() for i in range(rows)), output / 'mapped')
+                charged_unit = MappedUnitClient(mapped_owner.descriptor)
+            else:
+                charged_unit = ledger.claim_shared_unit('case') if accounting == 'durable' else ledger.claim_unit('case')
+            report['accounting_setup_seconds'] = (time.monotonic_ns() - accounting_started) / 1e9
+            ray = SyntheticRay(charged)
+            teardown = case_started = time.monotonic_ns()
             execution = build_fixed_model_execution(
                 FixedModelConfig('http://localhost/unused-fixture', 'fixture', 60000),
                 observer=capture, max_tasks=min(256, rows), max_active_requests=capacity,
@@ -299,7 +307,7 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
             offered, outputs, pending, first_result, reorder_peak = 0, [], {}, None, 0
             sealed = False
             while True:
-                if time.monotonic_ns() - case_started >= 60 * 1e9:
+                if time.monotonic() >= deadline:
                     raise TimeoutError('finite local case deadline')
                 available = session.limits.held_tasks - execution.engine.capacity.usage().held_tasks
                 if offered < rows and available:
@@ -363,8 +371,8 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
         except BaseException as error:
             failure = error
             report.update(status='failed', error_type=type(error).__name__,
-                          synthetic_calls=len(ray.issued), accounted_calls=len(charged),
-                          calls_when_failure_observed=len(ray.issued))
+                          synthetic_calls=len(ray.issued) if ray else 0, accounted_calls=len(charged),
+                          calls_when_failure_observed=len(ray.issued) if ray else 0)
         finally:
             cleanup_errors = []
             if failure and execution and job:
@@ -381,7 +389,7 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
                     cleanup_errors.append(dict(resource='core_drain', error_type=type(error).__name__))
             for name, close in (
                 ('backend', lambda: execution.close(5) if execution else True),
-                ('synthetic_worker', ray.close),
+                ('synthetic_worker', lambda: ray.close() if ray else None),
                 ('event_writer', lambda: writer.close() if writer else None),
             ):
                 try:
@@ -392,9 +400,9 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
                     failure = failure or error
             # A call can pass its guard while the owner is requesting cancellation.
             # Count after the drain, retaining the earlier failure observation too.
-            report['synthetic_calls'] = len(ray.issued)
+            report['synthetic_calls'] = len(ray.issued) if ray else 0
             try:
-                report['accounted_calls'] = charged_unit.attempts
+                report['accounted_calls'] = charged_unit.attempts if charged_unit else 0
             except BaseException as error:
                 report['accounted_calls'] = None
                 cleanup_errors.append(dict(resource='accounting_snapshot', error_type=type(error).__name__))
@@ -404,20 +412,21 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
                     try:
                         mapped_owner.close()
                     finally:
-                        charged_unit.close()
+                        if charged_unit is not None:
+                            charged_unit.close()
                 except BaseException as error:
                     cleanup_errors.append(dict(resource='mapped_budget', error_type=type(error).__name__))
                     failure = failure or error
                 report['mapped_handles_closed'] = (mapped_owner._lease_fd is None
-                                                   and charged_unit._mapping is None)
+                                                   and (charged_unit is None or charged_unit._mapping is None))
             report.update(teardown_seconds=(time.monotonic_ns() - teardown) / 1e9,
                           case_seconds=(time.monotonic_ns() - case_started) / 1e9,
                           projection_seconds=capture.projection_ns / 1e9,
                           writer_call_seconds=capture.writer_call_ns / 1e9,
                           writer=writer.snapshot() if writer else None,
                           cleanup_errors=cleanup_errors,
-                          synthetic_worker_stopped=not ray.thread.is_alive(),
-                          actor_disposed=ray.killed,
+                          synthetic_worker_stopped=ray is None or not ray.thread.is_alive(),
+                          actor_disposed=ray is not None and ray.killed,
                           transport_drained=transport is not None and not (
                               transport.rows or transport.blocks or transport.unknown or transport.used_bytes))
             if not failure and not (report['synthetic_worker_stopped'] and report['actor_disposed']
@@ -455,16 +464,18 @@ def run_probe(output):
         synthetic_service_seconds=[SERVICE_S, SERVICE_S + .006], measured_repeats=3, runs=[])
     write_private_json(output / 'manifest.json', report)
     began = time.monotonic()
+    deadline = began + report['max_seconds']
     try:
         for phase, repeat in [('check', -1), ('warmup', 0), ('measurement', 1),
                               ('measurement', 2), ('measurement', 3)]:
             arms = ARMS if repeat <= 0 else ARMS[repeat - 1:] + ARMS[:repeat - 1]
             for accounting, recording in arms:
-                if time.monotonic() - began >= 240:  # Reserve one case's 60 seconds.
+                if time.monotonic() >= deadline:
                     raise TimeoutError('overall local probe deadline')
                 identity = f'{phase}-{repeat}-{accounting}-{recording}'
                 report['active_run'] = identity
-                run = run_case(output / identity, accounting, recording, rows=16 if phase == 'check' else ROWS)
+                run = run_case(output / identity, accounting, recording,
+                               rows=16 if phase == 'check' else ROWS, deadline=deadline)
                 report['runs'].append(dict(run_id=identity, phase=phase, repeat=repeat, **run))
                 print(json.dumps({key: run[key] for key in
                     ('accounting', 'recording', 'rows', 'query_seconds', 'preparation_windows',
