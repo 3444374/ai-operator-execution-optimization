@@ -1,7 +1,6 @@
 {
   "source_checkpoint": "544e19b5353366cf709acd05ac9b0b7c8d5707f7",
   "source_tree": "a6ea3b23b546d707193e62ab81c21dce2d10aace",
-  "latest_upstream": "b6d6da337d1b782bc0da7abde24040fdba01e297",
   "components": {
     "campaign_cleanup": "9616fb19352b6d47a2386238fff9695e6b2da831",
     "probe_deadlines": "17193819b8d3f012c593fcf2a171eb8b7b42bb47",
@@ -314,5 +313,13 @@
     "database": 0
   },
   "live_GPU_tasks_touched": false,
-  "main_merged": false
+  "main_merged": false,
+  "verification_upstream": "b6d6da337d1b782bc0da7abde24040fdba01e297",
+  "publication_upstream": "45ee6fe46ab3daafbe949e2529a5813ff883e108",
+  "later_integration": {
+    "change": "Preserve upstream archived recipes and independent SAOR materials; retain both appended script README sections.",
+    "all_current_production_Python_matches_147_record": true,
+    "SAOR_fixture_path_migration_not_claimed_as_part_of_147": true,
+    "repeat_full_suite_for_docs_only": false
+  }
 }
