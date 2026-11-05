@@ -7,6 +7,10 @@
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 
+本地资源大步候选移除“两份物理样本／只首次大步／后续最多翻倍”限制；按真实许可、ready前沿和合格资源余量试探，
+旧慢成员未完成不单独挡住资源试探，性能确认仍基于真实可比完成工作。压力回退保留全部既有责任和查询成本，
+静态默认、B和Core／IPC硬预算不变；[规则与CPU边界](src/scheduling/runtime/calibration.README.md#当前资源请求接纳)不代表实机收益。
+
 首帧发布本地候选：异步 IPC 等待实际 scheduler 统计就绪后立即发送第一帧，后续保持原周期；
 不制造 idle、零完成或当前 session。CPU socket 检查覆盖首个请求未结束时的统计交付与关闭，
 真实 vLLM／Ray 的首帧时刻及早期扩张仍待实机复验，见[采样接点](src/execution_provider/adapters/README.md#snapshot-rpc-ownership)。
