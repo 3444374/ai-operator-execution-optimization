@@ -2,6 +2,7 @@
 from dataclasses import asdict
 import json
 from pathlib import Path
+import shutil
 import socket
 import sys
 import tempfile
@@ -167,6 +168,46 @@ class AuditLifetimeTests(unittest.TestCase):
                     self.assertEqual(bool(batch._audit_calls), not enabled)
                     outcomes.append(fixture.normalized(dict(records=records, calls=owner.calls, columns=stream.columns)))
             self.assertEqual(*outcomes)
+
+    def test_core_close_retries_failed_artifact_removal_without_restarting_model(self):
+        Owner = type("CPUOwner", (SemLoomRecordChainCore,), {"_batch_type": self.batch_type()})
+        owner = Owner(self.spec, self.resources, control_dir=self.control)
+        self.addCleanup(owner.close, timeout=3)
+        with patch.object(EngineSpec, "validate_driver_environment", return_value={}):
+            stream = owner.evaluate(iter(self.rows), self.plan, expected=self.rows,
+                                    query_id=self.plan.query_id)
+            next(stream)
+        calls = json.loads(json.dumps(owner.calls))
+        control = owner.control
+        failure = PermissionError("CPU artifact removal failure")
+        remove = shutil.rmtree
+        attempts = []
+        def remove_once(path):
+            attempts.append(path)
+            if len(attempts) == 1:
+                raise failure
+            return remove(path)
+        engine = self.created[0].engine
+        with patch("src.execution_provider.adapters.lotus_record_chain_core.shutil.rmtree",
+                   side_effect=remove_once), patch.object(engine, "close", wraps=engine.close) as closing:
+            with self.assertRaises(PermissionError) as raised:
+                owner.close(timeout=3)
+            self.assertIs(raised.exception, failure)
+            self.assertTrue(control.is_dir())
+            report = owner.close(timeout=3)
+            self.assertEqual(attempts, [control, control])
+            self.assertFalse(control.exists())
+            self.assertEqual(report["status"], "closed")
+            self.assertFalse(report["query_completed"])
+            self.assertIsNone(report["cleanup_artifacts"])
+            self.assertTrue(report["model_owner"]["process_exit_confirmed"])
+            self.assertIsNone(report["gpu_exit_confirmed"])
+            self.assertEqual(report["core_usage"]["held_tasks"], 0)
+            self.assertEqual(owner.calls, calls)
+            self.assertEqual(len(self.created), 1)
+            self.assertEqual(closing.call_count, 1)
+            self.assertEqual(owner.close(timeout=3), report)
+            self.assertEqual(attempts, [control, control])
 
     def test_invalid_option_fails_at_all_public_boundaries(self):
         for value in (None, 0, 1, "true"):

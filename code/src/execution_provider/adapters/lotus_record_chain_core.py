@@ -642,6 +642,8 @@ class SemLoomRecordChainCore:
                                                   and worker_report.get("process_exit_confirmed") is True)
         closed = (worker_closed and transport_closed and not errors
                   and (usage is None or not usage["held_tasks"]))
+        if closed and self.control is not None:
+            shutil.rmtree(self.control)
         self.last_close_report = dict(
             implementation="semloom_record_chain_core", production_core_connected=self.production_core_connected,
             status="closed" if closed else "unknown", query_completed=False,
@@ -706,8 +708,6 @@ class SemLoomRecordChainCore:
             )
             if self._streaming_tokens:
                 self.last_close_report['model_batch_mode'] = 'single_stage_cross_read_token_batches'
-        if closed and self.control is not None:
-            shutil.rmtree(self.control)
         return self.last_close_report
 
     def _evaluate_record_local(self, records, chain, expected, query_id, cancelled, columns):
