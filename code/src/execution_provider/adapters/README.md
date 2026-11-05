@@ -1471,6 +1471,11 @@ include final-count overrides, actual local IPC accounting, preparation, query r
 
 ### Query runtime data ownership
 
+Ordinary Filter input, receipt validation, delivery and query-side cleanup live in
+[records_filter_runtime.py](records_filter_runtime.py). The model owner keeps configuration, model reuse and resource
+management, and imports the actual iterator class it constructs. [Matching before/after CPU cases and source totals](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
+record the class move and retained historical source paths.
+
 `records_query_runtime` releases and observes its own query payloads after the owner validates service transfer and cleanup.
 `lotus_chain_fused_runtime` ends the consumed input/session and opens the next relation input; the query owner selects the
 next phase and assembles its result accountant. No extra owner, copy of the data ledger or facade is introduced.

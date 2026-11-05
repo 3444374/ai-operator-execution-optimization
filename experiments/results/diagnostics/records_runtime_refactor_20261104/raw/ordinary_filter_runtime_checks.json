@@ -1,0 +1,310 @@
+{
+  "schema": "semloom.ordinary_filter_runtime.checks.v1",
+  "base": "d0b19dbb0e6b90a551c5629baffbd6c5435cd823",
+  "candidate": "8cb403b5bf9b0cb4b2f131d378381775b1d6ce08",
+  "tree": "5ae010b91261d4bbb10b3ed9eaa4b38261bc9d33",
+  "runs": {
+    "ordinary-runtime-before": {
+      "selected": 81,
+      "passed": 81,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "ordinary-runtime-after": {
+      "selected": 81,
+      "passed": 81,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "same_selection": true,
+  "distinct_test_methods": 81,
+  "overlapping_runs_not_added": true,
+  "tests_added": 0,
+  "source_files_before": 1015,
+  "source_files_after": 1016,
+  "source_identity": "After source file hashes match candidate; recorded checkout HEAD was the base before committing. CPU fixture timings are not query-performance measurements.",
+  "method_comparison": {
+    "base": "d0b19dbb0e6b90a551c5629baffbd6c5435cd823",
+    "actual_classes_and_factory_identical": [
+      "SemLoomRecordsCore",
+      "_CoreRows",
+      "_StageTimings",
+      "create_records_core"
+    ],
+    "unchanged_methods": 26,
+    "owner_before_lines": 781,
+    "source_lines_after": {
+      "code/src/execution_provider/adapters/lotus_records_core.py": 539,
+      "code/src/execution_provider/adapters/records_filter_runtime.py": 259
+    },
+    "no_new_wrappers_or_state": true
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "retained_comparison_source_sha256": "e8c40ee2966b893897f0160797c2a89f42439c775e7e26f49dfe6fa01a117ffd",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "d0b19dbb0e6b90a551c5629baffbd6c5435cd823",
+        "metrics": {
+          "core": {
+            "files": 253,
+            "physical_lines": 58598
+          },
+          "main_runtime": {
+            "files": 245,
+            "physical_lines": 55590
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 395,
+            "physical_lines": 92256
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114408,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 51
+      },
+      "current": {
+        "commit": "8cb403b5bf9b0cb4b2f131d378381775b1d6ce08",
+        "metrics": {
+          "core": {
+            "files": 254,
+            "physical_lines": 58615
+          },
+          "main_runtime": {
+            "files": 246,
+            "physical_lines": 55607
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 396,
+            "physical_lines": 92273
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114425,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 51
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "older_differences": 10,
+    "added_differences": 0,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "complete_restoration_passed": false
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_core.py": "45d7c33d70d0e7a459b554536d37dd659e92781c9d58d2ee79ed21784259feb3",
+    "code/src/execution_provider/adapters/records_filter_runtime.py": "2e378ef0c62775849e5b8a56f09030075af5602521a7483a45fd2a8c470e4d19"
+  },
+  "historical_AST_paths_unchanged": true,
+  "factory_existing_exports_and_all_26_methods_unchanged": true,
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "known_unqualified_checks": "Five earlier socket methods and two sysctl process checks remain unqualified; none was selected or retried. Unknown call/cleanup outcomes remain unknown.",
+  "production_python_delta": 17,
+  "independent_review_sha256": "c7900e6b092b058072baa61ca118cf04407f9f39614477a89d65c1aaf3654e3e",
+  "design_review_sha256": "409bb027687f1b66648c7a21f59fe930b6ab22c3a5d0ede31de864a38dbd0652",
+  "private_originals": {
+    "ordinary-runtime-before.json": {
+      "sha256": "e50d26e48a69789a2d6b3b148d1b9fe64a86912bfd40a1c3c18348819c61d3ee",
+      "bytes": 152052
+    },
+    "ordinary-runtime-before.log": {
+      "sha256": "1943f35ea377f618d0fa0e5c0cbb2de67b505d27fb4835075f6e58b7d456d518",
+      "bytes": 17589
+    },
+    "ordinary-runtime-after.json": {
+      "sha256": "4e2a15011cc2f842f19207419749fcd4dd2b2c4c4ba4bbdc6236fabb4cec8dd6",
+      "bytes": 152191
+    },
+    "ordinary-runtime-after.log": {
+      "sha256": "3e258c2194a822892b853c37e28efdf3ff5ac0173fdc65d3d0ff1e2eac0609f0",
+      "bytes": 17589
+    },
+    "METHOD_COMPARISON.json": {
+      "sha256": "18be61434da7674c94fc19ac74c51cdd592a5326a889503b98e15f3d92dc24d7",
+      "bytes": 464
+    },
+    "CODE_SIZE.json": {
+      "sha256": "88862d9836423a6c3cf0d512c8e9703556f10c941b88076e833179f8c04fb1bc",
+      "bytes": 5395
+    },
+    "ordinary-runtime-history.json": {
+      "sha256": "d2827f61b23209f8e62ec6a3eed5333654c438ede288afd42056290332441296",
+      "bytes": 6863
+    },
+    "review/HANDOFF.json": {
+      "sha256": "c7900e6b092b058072baa61ca118cf04407f9f39614477a89d65c1aaf3654e3e",
+      "bytes": 3723
+    },
+    "design/HANDOFF.json": {
+      "sha256": "409bb027687f1b66648c7a21f59fe930b6ab22c3a5d0ede31de864a38dbd0652",
+      "bytes": 10998
+    }
+  },
+  "raw": {
+    "file": "ordinary_filter_runtime_raw.json.gz",
+    "bytes": 15017,
+    "sha256": "5f103c92f6b4965ca53d9801b96128e7e03e9d9f82ae3f5137e1dcc7f95a2e86",
+    "decoded_sha256": "03715fa26a3f68f4e5e23e6625383e3b64df5c2d38e9c6eda3113bdc477ea3ac"
+  }
+}

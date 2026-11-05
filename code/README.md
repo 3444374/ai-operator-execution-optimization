@@ -75,6 +75,12 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 [重构证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 本次清理没有把这些改动退回旧默认或重新引入另一份实现。
 
+普通 Filter 的 [lotus_records_core.py](src/execution_provider/adapters/lotus_records_core.py) 负责配置、模型复用与资源管理；
+[records_filter_runtime.py](src/execution_provider/adapters/records_filter_runtime.py) 持有输入接纳、结果校验、交付和查询收尾。
+两个文件共用原 Core 与 transport；现用导出和历史读取路径保持，旧迭代实现已从 owner 删除。
+[同选择检查与代码总量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
+记录改前／改后各 81 项通过，不将这次拆分记为减少总代码或性能改善。
+
 链查询 owner 负责配置、组装、阶段选择、结果记账与模型资源生命周期；融合批传输、输入阶段和结果迭代在
 [lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)。
 记录级 MethodDriver 推进及查询数据清理在 `records_query_runtime.py`；运行器操作自己持有的数据，

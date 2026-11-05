@@ -1666,3 +1666,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [socket 夹具启动异常定位](diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
 保留模拟改前失败／改后通过和唯一实际检查的 `listener.bind()` EPERM，未再次尝试被拒操作。
 夹具能报告原异常并进入原清理；五项实际 socket 功能尚未通过，没有执行或性能结论。
+
+
+[普通 Filter owner 与运行器职责整理](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
+保留同一组 81 个 CPU 方法改前／改后全部通过，原 factory 和 26 个方法保持；运行之间不累计覆盖。
+历史 3,010 个来源仍有十处旧差异，原 socket／sysctl 未验证项不变；没有实际模型或性能结论。
