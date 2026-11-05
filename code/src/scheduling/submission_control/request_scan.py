@@ -187,7 +187,7 @@ class ResourceRequestController:
         """Optional work data does not revoke a current resource permission.
 
         Keep an unconfirmed resource trial reversible on its original fallback.
-        Stop scoring and further exploration until actual work data resumes.
+        Stop scoring until actual work data resumes; fresh resource probes remain possible.
         Safety feedback and explicit budgets continue to act independently.
         """
         self._pending = self._pending_work_context = self._reference = self._anchor = None
@@ -212,7 +212,9 @@ class ResourceRequestController:
     def _pressure(self, o, permit, *, permit_current=True):
         previous = self.current_window
         target = max(1, min(previous//2, permit.request_limit if permit_current else self.maximum))
-        self._pressure_ceiling = min(self._pressure_ceiling, max(1, previous-1))
+        if self._trial is not None and previous > self._fallback_window:
+            target = min(target, self._fallback_window)
+        self._pressure_ceiling = min(self._pressure_ceiling, target+(previous-target)//2)
         self._fallback_window = target
         self._trial = self._pending = self._reference = self._anchor = None
         self._pending_work_context = None
@@ -228,8 +230,25 @@ class ResourceRequestController:
             preemptions_total=o.preemptions_total, memory_pressure=o.memory_pressure,
             rejected_requests_total=permit.rejected_requests_total,
             operational_request_limit=permit.request_limit if permit_current else None, comparison_valid=False,
-            response='halve future selections within the current permit; retain all existing work'))
+            response='return an unverified increase to fallback; narrow the failed range; retain all existing work'))
         return self._decision('resource_pressure', target, o)
+
+    def _start_trial(self, target, o, permit, opportunity, end):
+        before = (self._trial['before'] if self._trial is not None
+                  and self._reference is None else self.current_window)
+        self._early_trial_available = False
+        clip_causes = list(opportunity.evidence.get('clip_causes', ()))
+        if opportunity.probe_target_window is not None and end < opportunity.probe_target_window:
+            clip_causes.append('pressure' if end == self._pressure_ceiling else 'owner')
+        self._trial = dict(before=before, candidate=target,
+            initial_accelerated=self._reference is None and target > before*2,
+            clip_causes=sorted(set(clip_causes)), source=deepcopy(opportunity.evidence.get('source')),
+            at_applied_ceiling=self.current_window >= min(self.maximum, permit.request_limit))
+        self._record(self.step_decisions, dict(before=self.current_window, target=target,
+            reason=opportunity.reason, evidence=deepcopy(opportunity.evidence),
+            resource_suggested_target=opportunity.probe_target_window,
+            performance_reference_present=self._reference is not None, verified_gain=False))
+        return self._decision('resource_trial' if self._reference is None else 'performance_trial', target, o)
 
     def _budget_reason(self, o):
         if not self.options.allow_exploration:
@@ -566,11 +585,9 @@ class ResourceRequestController:
                 self._pause_performance(work_reason)
             return self._stop_exploration(budget, o)
         self._exploration_stop_reason = None
-        if work_reason is not None and not (self._early_trial_available
-                and self._reference is None and self._trial is None and self._pending is None):
-            return self._pause_performance(work_reason)
         if status == 'repeat':
-            return self._decision('repeated_native_sample')
+            return (self._pause_performance(work_reason) if work_reason is not None
+                    else self._decision('repeated_native_sample'))
         if self._preemption_baseline_pending:
             count = o.completed_items_total
             if self._preemption_baseline_count is None:
@@ -590,17 +607,30 @@ class ResourceRequestController:
             self._pressure_ceiling = max(self._pressure_ceiling,
                 min(self.maximum, self.current_window+1))
         if self._pending is not None:
+            if work_reason is not None:
+                return self._pause_performance(work_reason)
             return self._select(self._pending, o, s, p)
-        if self._trial is not None or self._settling:
-            return self._measure(o, s, p)
         from .resource_probe import resource_request_opportunity
         identity = self.resource_identity or (None, None)
         opportunity = resource_request_opportunity(o, s, current_window=self.current_window,
             hard_limit=self.maximum, max_age_s=self.options.max_sample_age_s,
             expected_engine_uid=identity[0], expected_session_id=identity[1], permit=p,
             physical_samples=physical_samples, resource_step=resource_step,
-            require_memory_feedback=self.options.require_memory_feedback)
+            require_memory_feedback=self.options.require_memory_feedback,
+            after_s=self.started+self.history[-1]['at_s'] if self.history else None)
         end = min(self.maximum, self._pressure_ceiling, p.request_limit)
+        target = opportunity.probe_target_window
+        resource_directed = opportunity.kind == 'idle_device_headroom'
+        if (resource_directed and target is not None and min(target, end) > self.current_window
+                and self._direction == 'up' and self._stop_reason is None and self._censored_frontier is None):
+            if work_reason is not None:
+                self._pause_performance(work_reason)
+            return self._start_trial(min(target, end), o, p, opportunity, end)
+        if work_reason is not None and not (self._early_trial_available
+                and self._reference is None and self._trial is None):
+            return self._pause_performance(work_reason)
+        if self._trial is not None or self._settling:
+            return self._measure(o, s, p)
         if self._censored_frontier is not None:
             frontier = self._censored_frontier
             measurable_end = min(opportunity.evidence.get('measurable_end', 0), end)
@@ -627,11 +657,6 @@ class ResourceRequestController:
         target = opportunity.probe_target_window
         if target is not None:
             target = min(target, end)
-            if not self._early_trial_available:
-                # Resource positioning can accelerate the first runnable trial.
-                # Subsequent comparisons keep geometric spacing; utilization
-                # cannot repeatedly skip the intervening measured positions.
-                target = min(target, self.current_window*2)
         if self._direction == 'down':
             target = None
             if (self._reference is not None and s.ready_items and not o.transition_pending
@@ -650,21 +675,7 @@ class ResourceRequestController:
                 target = max(1, self.current_window//2)
                 self._direction = 'down'
         if target is not None and target != self.current_window:
-            initial_accelerated = self._early_trial_available and target > self.current_window*2
-            self._early_trial_available = False
-            clip_causes = list(opportunity.evidence.get('clip_causes', ()))
-            if end < min(self.maximum, self.current_window*2):
-                clip_causes.append('pressure' if end == self._pressure_ceiling else 'owner')
-            self._trial = dict(before=self.current_window, candidate=target,
-                initial_accelerated=initial_accelerated, clip_causes=sorted(set(clip_causes)),
-                source=deepcopy(opportunity.evidence.get('source')),
-                at_applied_ceiling=self.current_window >= min(self.maximum, p.request_limit))
-            self._record(self.step_decisions, dict(before=self.current_window, target=target,
-                reason=opportunity.reason, evidence=deepcopy(opportunity.evidence),
-                resource_suggested_target=opportunity.probe_target_window,
-                performance_reference_present=self._reference is not None,
-                verified_gain=False))
-            return self._decision('resource_trial' if self._reference is None else 'performance_trial', target, o)
+            return self._start_trial(target, o, p, opportunity, end)
         return self._measure(o, s, p)
 
     def report(self):
