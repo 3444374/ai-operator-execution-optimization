@@ -18,7 +18,7 @@ from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import OfferedTask, State, TaskInfo
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
-from src.semantic_methods.lotus.record_chain import RecordOccurrence
+from src.semantic_methods.lotus.record_types import RecordOccurrence
 
 from .records_query_runtime import _check
 
