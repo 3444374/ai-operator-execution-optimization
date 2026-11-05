@@ -11356,3 +11356,12 @@ SessionEngine 保留回执、准备借用和单一任务表，SchedulingSession 
 [本批源码和检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
 保存 201 个不同方法通过，以及改前五项 socket 错误。核心 Python 总量保持 58,598 行，src＋scripts 净增两行，
 原 1,004 行文件变为 560 行服务与 442 行 flow，未把移动实现算作减少总代码。
+
+
+## 2026-11-05 修正 socket 夹具遮住启动异常的问题
+
+共享测试夹具在监听失败后仍可能交出路径，客户端异常又遮住原启动原因；现改为在交接前报告原异常，
+并让启动失败同样经过 stop／join 清理。一个模拟 bind／listen 失败的行为测试先复现旧错误，再验证修正。
+[唯一实际检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
+确认 `listener.bind()` 被系统以 EPERM 拒绝，原五项 socket 功能仍未通过，没有重试被拒操作或 sysctl。
+本批只改测试夹具和行为测试，生产 Python、配置、超时及资格判断均未变化。

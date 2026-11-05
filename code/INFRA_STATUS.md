@@ -973,3 +973,9 @@ SessionEngine 与 flow 的实际实现按服务回执和消费者生命周期分
 [本批记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
 保存原成功 176 项的同选择回归、另 25 项交付／额度检查和五项改前 socket 错误；不把未运行部分算作通过。
 公开类导入和运行时类型注解保持，两处诊断源码清单与真实测试接点已迁移；未改策略、容量或默认配置。
+
+
+socket 测试夹具现在先报告启动原异常再交出路径，启动失败也进入原 stop／join 清理。
+[一次最小检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
+明确停在 `listener.bind()` 的 `EPERM`，不再误报为客户端 `FileNotFoundError`；五个原 socket 方法仍未通过。
+一个模拟启动失败的行为测试通过，未重试实际绑定或 sysctl，未改生产代码、时限或跳过规则。

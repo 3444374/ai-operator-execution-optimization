@@ -102,7 +102,9 @@ Session 的成员选择、单请求和原子批接收集中到
 [session_flow.py](src/scheduling/core/session_flow.py) 管理每个 flow 的接纳、交付租约、取消和消费者关闭。
 现有 `session.SchedulingSession` 导入取得同一个实际类，没有添加 owner、代理或状态副本。
 [本批检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
-保留未通过的 socket 原底稿及尚未验证的子进程用例。链的 record-local 传输类与其实现同在
+保留未通过的 socket 原底稿及尚未验证的子进程用例。测试夹具的启动异常传递已修正，
+[一次最小定位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
+记录 Unix socket 绑定被系统拒绝，五项实际功能仍待验证。链的 record-local 传输类与其实现同在
 [lotus_chain_actor_backend.py](src/execution_provider/adapters/lotus_chain_actor_backend.py)，实际测试接点同步。
 旧 profiler 解析器已退役，准确原件与恢复说明见
 [历史入口](../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)。

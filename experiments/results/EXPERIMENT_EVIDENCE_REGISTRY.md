@@ -1661,3 +1661,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [Session 服务与 flow 职责整理](diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
 记录 176 项同选择回归及另 25 项通过，保留改前五项 socket 错误与更早的 sysctl 未验证项。
 未新增测试方法或控制器，原租约和 unknown 责任保持；历史来源仍为十处旧差异，无模型或性能结论。
+
+
+[socket 夹具启动异常定位](diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
+保留模拟改前失败／改后通过和唯一实际检查的 `listener.bind()` EPERM，未再次尝试被拒操作。
+夹具能报告原异常并进入原清理；五项实际 socket 功能尚未通过，没有执行或性能结论。
