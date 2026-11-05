@@ -11294,3 +11294,12 @@ R 默认仍为 2，省略存储随声明请求数变化；物理容量、完整�
 
 随后在独立树基于 f23ffb62 组合，保留最新 LOTUS 方法／值拆分和清理规则，新融合模块直接采用
 `record_types`。由实际依赖变化触发的相同 11 项 CPU 检查全部通过，生产默认不变，未触碰真实运行。
+
+
+## 2026-11-05 按执行责任整理 actor 与 Session
+
+模型 actor 与 driver RPC 状态分文件，实际观测／测试引用同步，删除重复条件及未使用的共享额度子包出口。
+Session 投影归入既有策略模块并迁移原扫描 oracle；有限 typed IPC 声明可为 `R=None` 提供请求数，默认 R=2 保持。
+[源码、原失败和组合 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
+保留 407／408 及唯一受影响方法修正后通过，未重跑整套或改变生产来满足旧断言。
+本批现用生产 Python 净增 21 行，职责划分和声明去重有所推进，物理容量及其他大文件仍未完成；未合并 main。

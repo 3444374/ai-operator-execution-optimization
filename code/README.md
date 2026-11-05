@@ -76,3 +76,8 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 链查询 owner 负责配置、组装、关系阶段及资源生命周期；融合批传输与结果迭代集中到
 [lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)，
 记录级 MethodDriver 推进仍在原有 `records_query_runtime.py`。此次整理不增加控制器或改变执行顺序。
+
+异步模型 actor 的请求／回执与 IPC 实现在
+[records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC
+终态许可仍由原 owner 管理。Session 的批占用投影集中到既有 `session_policy.py`，预留与回退仍在 Session。
+完整显式 `AsyncEngineLimits` 现在可为 `R=None` 提供有限请求数；默认 R=2 和物理容量问题仍待处理。

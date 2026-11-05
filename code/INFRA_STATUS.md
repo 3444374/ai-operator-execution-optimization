@@ -930,3 +930,9 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 
 该职责切片已与 f23 的 LOTUS 方法／值整理组合，新模块直接采用 `record_types`；
 相同 11 项 CPU 行为再次通过。生产默认与资源责任保持，详见同一记录的后续组合。
+
+
+异步模型 actor 与 driver RPC 状态已分文件；重复 rows／ACK 条件、共享额度子包的提前导出及旧测试预期已清理。
+Session 的无状态占用投影归入既有策略模块，整数身份上限共用原协议定义。`R=None` 可复用完整 typed IPC 声明，
+默认 R 仍为 2，尚非自动物理容量。[本轮源码和组合检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
+保留 408 项中的原失败及单项修正，未运行本候选的真实模型或服务器测试。

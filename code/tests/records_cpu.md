@@ -508,3 +508,15 @@ PG／旧HTTP专用用例按[准确来源](../../experiments/reproduction/paused_
 `test_movie_cancellation` 保留 unknown 不退额度行为；模拟 controller 接口与实际显式监控一致。
 [最新组合检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
 列出可直接复算的模块及 147 项结果，含新增反馈采样的 CPU 方法，不启动真实 Ray 或模型。
+
+
+### actor、容量与 Session 的当前接点
+
+模型内部的时钟、编码和私有调用数据测试使用 `records_async_model`；driver 的 `_runtime_env` 和分配 hook 保持。
+`test_records_default_resources` 的省略预算用例已按请求声明检查存储，显式独立预算用例保留。
+旧方法名 `test_changing_request_R_leaves_Core_Method_and_result_allocations_identical` 已改为
+`test_omitted_storage_follows_requests_for_ordinary_and_rolling`；后续仓外选择应使用新名或直接加载该模块。
+`test_core_execution_profile` 分别检查会话容量 8、查询 C=4 的实际在途及六条输入驻留，保持回执和清理检查。
+批投影测试的原扫描 oracle 直接替换实际导入函数；旧 fixture 的 `fast` 参数已删除。
+[组合记录与复算选择](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
+说明首轮 407／408 和唯一受影响用例复跑，不把不同选择累计成一次整套通过。

@@ -1628,3 +1628,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 关联原样迁移的传输／迭代与现有 11 项 CPU 行为检查；改前改后各自通过，重复方法不相加。
 这是文件职责调整，生产行数增加 18 行，不提供瘦身或性能结论。
 后续 f23 组合改用值模块的直接导入，相同 11 项再次通过；原件并入同一主报告，重复选择不相加。
+
+
+[actor／Session 职责与声明去重](diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
+记录模型端与 driver 分离、现用调用迁移、共享额度出口清理、有限 IPC 声明复用和两项旧预期更新。
+408 个不同 CPU 方法均有通过记录，原组合失败及单项补跑分别保留；不提供真实 Ray、模型或性能结论。

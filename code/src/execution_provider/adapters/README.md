@@ -371,7 +371,10 @@ Low-level direct constructors and nonrolling whole batches retain the old R tran
 The ordinary async Filter/rolling factory now resolves default storage from existing
 IPC byte declarations and per-item envelopes via `resolve_records_runtime`. Soft C
 does not resize those allocations. Explicit complete budgets and typed IPC fields
-retain their values. Request R remains caller-declared; no physical capacity is detected.
+retain their values. With `R=None`, a complete explicit `AsyncEngineLimits` object can
+supply its finite `max_inflight`, so the same request grant need not be declared twice.
+Missing or dictionary-only limits still require a complete budget, service grant or R.
+The default R remains 2; this resolution does not detect physical capacity.
 The [capacity ownership inventory and CPU evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)
 separate that remaining work from the independent budgets already supported.
 Pure resource parsing and copied snapshot report fields live in
@@ -381,6 +384,12 @@ Shared result encoding and bounded model-owner adaptation live in
 [records_model_adapter.py](records_model_adapter.py). Async actor imports no longer
 load the records query host. Original actor imports and serialized locations remain available;
 the transport, result reservations, ACK and shutdown behavior are unchanged.
+The model-side async call ledger, result retention and private IPC live in
+[records_async_model.py](records_async_model.py). Driver-side Ray allocation,
+data RPC permits and terminal observation stay in
+[lotus_records_async_actor.py](lotus_records_async_actor.py). Its allocation hook
+imports the same actor class directly; actor-private observations and tests use
+the implementation module, including their clock and encoding substitutions.
 Shared records I/O and producer cleanup live in [records_transport.py](records_transport.py).
 Both records query hosts use that module; the chain backend and host can load
 without importing the single-filter query host. Old transport imports and serialized
