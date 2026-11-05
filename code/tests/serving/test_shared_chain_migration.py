@@ -17,7 +17,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.method_workers import lotus_chain_batch as worker
+from src.serving.backends import lotus_chain_worker as worker
 from src.serving.backends import staged_generation_process as staged
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -26,7 +26,7 @@ CODE = Path(__file__).resolve().parents[2]
 LEGACY_PROCESS = "src.baselines.text.frameworks.lotus_chain_engine_process"
 PROCESS = "src.serving.backends.staged_generation_process"
 LEGACY_WORKER = "src.baselines.text.frameworks.lotus_chain_batch"
-WORKER = "src.execution_provider.method_workers.lotus_chain_batch"
+WORKER = "src.serving.backends.lotus_chain_worker"
 
 
 def spawn_identity(queue, process_type, worker_type):
@@ -64,7 +64,7 @@ class Guard(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, Guard())
 first = importlib.import_module(sys.argv[2])
 if sys.argv[2] in ('src.serving.backends.staged_generation_process',
-                   'src.execution_provider.method_workers.lotus_chain_batch'):
+                   'src.serving.backends.lotus_chain_worker'):
     assert not any(n.startswith('src.baselines.text.frameworks') for n in sys.modules)
 second = importlib.import_module(sys.argv[3])
 assert getattr(first, sys.argv[4]) is getattr(second, sys.argv[4])
@@ -85,6 +85,10 @@ assert sync.CODE_ROOT == pathlib.Path(sys.argv[1])
         self.assertIs(daft_lotus_chain.FusedChainBatch, ReferenceFusedChainBatch)
         self.assertIs(ray_data_lotus_chain.FusedChainBatch, ReferenceFusedChainBatch)
         self.assertTrue(issubclass(ReferenceFusedChainBatch, worker.FusedChainBatch))
+        from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch as CoreBatch
+        self.assertTrue(issubclass(CoreBatch, worker.FusedChainBatch))
+        self.assertFalse(issubclass(ReferenceFusedChainBatch, CoreBatch))
+        self.assertIs(pickle.loads(b"csrc.execution_provider.method_workers.lotus_chain_batch\nFusedChainBatch\n."), CoreBatch)
 
     def test_spawn_unpickles_the_same_shared_types(self):
         context = multiprocessing.get_context("spawn")

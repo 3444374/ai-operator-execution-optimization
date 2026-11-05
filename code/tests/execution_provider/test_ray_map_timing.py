@@ -112,5 +112,5 @@ class RayTimingTests(unittest.IsolatedAsyncioTestCase):
             await transport.close()
 
     def test_unavailable_linux_clock_is_reported_without_guessing_identity(self):
-        with patch('src.execution_provider.adapters.ray_map_transport.Path.read_bytes', side_effect=OSError):
+        with patch('src.observability.clock.Path.read_bytes', side_effect=OSError):
             self.assertIsNone(_clock_domain())

@@ -105,7 +105,7 @@ PLANNING_FORBIDDEN_IMPORT_PREFIXES = (
 
 MODALITY_FORBIDDEN_IMPORT_PREFIXES = ("src.scheduling",)
 
-BASELINE_FORBIDDEN_IMPORT_PREFIXES = ("src.scheduling",)
+BASELINE_FORBIDDEN_IMPORT_PREFIXES = ("src.scheduling", "src.execution_provider")
 
 
 def _python_files(root: Path) -> list[Path]:

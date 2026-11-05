@@ -8,7 +8,7 @@ import time
 from unittest.mock import patch
 
 from types import SimpleNamespace
-from src.execution_provider.method_workers import lotus_chain_batch as implementation
+from src.serving.backends import lotus_chain_worker as implementation
 from src.serving.backends import vllm_sync_process as transport
 from src.serving.backends.vllm_engine import IDENTITY_FIELDS
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec

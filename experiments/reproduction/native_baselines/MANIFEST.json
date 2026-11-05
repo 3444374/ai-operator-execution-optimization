@@ -887,7 +887,10 @@
         "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
         "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz",
         "code/src/scheduling/core/topology.py": "historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz",
-        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz"
+        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
+        "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
+        "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1045,6 +1048,21 @@
           "encoding": "gzip",
           "decoded_bytes": 30485,
           "archive_sha256": "499056297583e827823a09dc631f05e075bc06659a9a694f1f8a34490f23a997"
+        },
+        "code/src/execution_provider/adapters/ray_map_transport.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 30904,
+          "archive_sha256": "975aa5b33b4fe47170dc0ae4b6baacf5b76f83fe01e0590fbe98c39bc4e622f0"
+        },
+        "code/src/scheduling/core/task_info.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5463,
+          "archive_sha256": "afdfcfdef69292f85c6273b4d05236be3d2063f724aee431a6d7da8e56a32c07"
+        },
+        "code/src/scheduling/submission_control/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 357,
+          "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
         }
       }
     },
@@ -1960,7 +1978,10 @@
         "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
         "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz",
         "code/src/scheduling/core/topology.py": "historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz",
-        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz"
+        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
+        "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
+        "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2118,6 +2139,21 @@
           "encoding": "gzip",
           "decoded_bytes": 30485,
           "archive_sha256": "499056297583e827823a09dc631f05e075bc06659a9a694f1f8a34490f23a997"
+        },
+        "code/src/execution_provider/adapters/ray_map_transport.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 30904,
+          "archive_sha256": "975aa5b33b4fe47170dc0ae4b6baacf5b76f83fe01e0590fbe98c39bc4e622f0"
+        },
+        "code/src/scheduling/core/task_info.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5463,
+          "archive_sha256": "afdfcfdef69292f85c6273b4d05236be3d2063f724aee431a6d7da8e56a32c07"
+        },
+        "code/src/scheduling/submission_control/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 357,
+          "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
         }
       }
     },
@@ -3043,7 +3079,10 @@
         "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
         "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz",
         "code/src/scheduling/core/topology.py": "historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz",
-        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz"
+        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
+        "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
+        "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3201,6 +3240,21 @@
           "encoding": "gzip",
           "decoded_bytes": 30485,
           "archive_sha256": "499056297583e827823a09dc631f05e075bc06659a9a694f1f8a34490f23a997"
+        },
+        "code/src/execution_provider/adapters/ray_map_transport.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 30904,
+          "archive_sha256": "975aa5b33b4fe47170dc0ae4b6baacf5b76f83fe01e0590fbe98c39bc4e622f0"
+        },
+        "code/src/scheduling/core/task_info.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5463,
+          "archive_sha256": "afdfcfdef69292f85c6273b4d05236be3d2063f724aee431a6d7da8e56a32c07"
+        },
+        "code/src/scheduling/submission_control/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 357,
+          "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
         }
       }
     },
@@ -4128,7 +4182,10 @@
         "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
         "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz",
         "code/src/scheduling/core/topology.py": "historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz",
-        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz"
+        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
+        "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
+        "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4291,6 +4348,21 @@
           "encoding": "gzip",
           "decoded_bytes": 30485,
           "archive_sha256": "499056297583e827823a09dc631f05e075bc06659a9a694f1f8a34490f23a997"
+        },
+        "code/src/execution_provider/adapters/ray_map_transport.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 30904,
+          "archive_sha256": "975aa5b33b4fe47170dc0ae4b6baacf5b76f83fe01e0590fbe98c39bc4e622f0"
+        },
+        "code/src/scheduling/core/task_info.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5463,
+          "archive_sha256": "afdfcfdef69292f85c6273b4d05236be3d2063f724aee431a6d7da8e56a32c07"
+        },
+        "code/src/scheduling/submission_control/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 357,
+          "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
         }
       }
     },
@@ -5222,7 +5294,10 @@
         "code/src/scheduling/submission_control/saor.py": "historical_sources/b08936d2/code/src/scheduling/submission_control/saor.py.gz",
         "code/tests/scheduling/test_scheduler.py": "historical_sources/b08936d2/code/tests/scheduling/test_scheduler.py.gz",
         "code/src/scheduling/core/topology.py": "historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz",
-        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz"
+        "code/src/observability/profiling/replay.py": "historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz",
+        "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
+        "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
+        "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5380,6 +5455,21 @@
           "encoding": "gzip",
           "decoded_bytes": 30485,
           "archive_sha256": "499056297583e827823a09dc631f05e075bc06659a9a694f1f8a34490f23a997"
+        },
+        "code/src/execution_provider/adapters/ray_map_transport.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 30904,
+          "archive_sha256": "975aa5b33b4fe47170dc0ae4b6baacf5b76f83fe01e0590fbe98c39bc4e622f0"
+        },
+        "code/src/scheduling/core/task_info.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5463,
+          "archive_sha256": "afdfcfdef69292f85c6273b4d05236be3d2063f724aee431a6d7da8e56a32c07"
+        },
+        "code/src/scheduling/submission_control/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 357,
+          "archive_sha256": "5e2d5378554b8916057b4473f3d9a4ad31d19aba5d3583933a5c97bde6cd0eda"
         }
       }
     }

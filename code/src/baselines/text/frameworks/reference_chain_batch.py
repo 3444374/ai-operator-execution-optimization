@@ -1,7 +1,7 @@
 """Native graph parameter ownership over the shared finite method worker."""
 from dataclasses import replace
 
-from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
+from src.serving.backends.lotus_chain_worker import FusedChainBatch
 from .sync_reference_engine import ReferenceChainEngineProcess
 
 

@@ -15,6 +15,7 @@ from src.baselines.text.frameworks import daft_lotus_chain as daft_chain
 from src.baselines.text.frameworks import ray_data_lotus_chain as ray_chain
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.method_workers import lotus_chain_batch as worker
+from src.serving.backends import lotus_chain_worker as native_worker
 from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding, record_row
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
@@ -68,11 +69,11 @@ class AuditLifetimeTests(unittest.TestCase):
         for enabled in (False, True):
             batch = self.make_worker(enabled, close_on_source_complete=False)
             retained = []
-            encode = worker._json
+            encode = native_worker._json
             def encoding(value):
                 retained.append(batch._audit_calls)
                 return encode(value)
-            with patch.object(worker, "_json", encoding):
+            with patch.object(native_worker, "_json", encoding):
                 out = batch.run_rows([record_row(r) for r in self.rows])
             # Encoding and both consumers keep their own full data.
             consumers = [ChainBatchResults(self.rows, self.plan) for _ in range(2)]
@@ -106,7 +107,7 @@ class AuditLifetimeTests(unittest.TestCase):
             with self.subTest(event=event):
                 (self.control / "stop").unlink(missing_ok=True)
                 batch = self.make_worker(True, close_on_source_complete=False)
-                encode = worker._json
+                encode = native_worker._json
                 def encoding(value):
                     if event == "cancel":
                         (self.control / "stop").touch()
@@ -115,7 +116,7 @@ class AuditLifetimeTests(unittest.TestCase):
                     else:
                         raise ValueError("CPU encoding failure")
                     return encode(value)
-                with patch.object(worker, "_json", encoding):
+                with patch.object(native_worker, "_json", encoding):
                     if event == "encode_error":
                         with self.assertRaisesRegex(ValueError, "encoding failure"):
                             batch.run_rows([record_row(r) for r in self.rows])
@@ -241,7 +242,7 @@ class AuditLifetimeTests(unittest.TestCase):
                 cls, kwargs = captured[0]
                 from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch
                 self.assertIs(cls, ReferenceFusedChainBatch)
-                self.assertTrue(issubclass(cls, worker.FusedChainBatch))
+                self.assertTrue(issubclass(cls, native_worker.FusedChainBatch))
                 self.assertEqual(kwargs["fn_constructor_kwargs"]["release_completed_audit"], enabled)
                 # Instantiate the captured native constructor with only inference replaced.
                 batch = self.batch_type()(**kwargs["fn_constructor_kwargs"])

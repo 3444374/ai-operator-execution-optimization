@@ -7,6 +7,7 @@ over the execution policy it observes.
   once with no admission limit, retry, cache, route choice, or payload rewrite, then records lifecycle
   clocks and endpoint-reported token usage for cross-framework tail/fairness metrics.
 - `metrics/` contains reusable metric collectors and summaries.
+- `clock.py` owns the shared monotonic-clock identity without loading an execution adapter.
 - `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,
   bounded event output and weak model-reuse observations. Existing experiment imports share the same
   module objects; enabling flags, schemas and failure handling remain unchanged.

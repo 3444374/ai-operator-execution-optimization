@@ -14,6 +14,17 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断。
 四个单请求／批路径 off/on CPU 探针输出哈希一致，保留分页、ACK、unknown 与关闭责任；真实 Ray、模型和查询收益未测。
 Core 的单轮交付预算公平性是另一项执行问题，本批没有改变该预算或调度策略。
 
+原生 baseline 执行依赖审查将有限链无调度 worker 移到 `serving/backends/lotus_chain_worker.py`，
+Core 的 prepared batching／复用留在原执行目录的实际子类；详细计时的时钟身份改用公共观测函数，
+不再加载 Core transport。五类文本 baseline 的当前入口、共享基础与实机待验范围见
+[baseline 依赖审查](src/baselines/README.md#执行依赖审查与可测范围)。
+两份仅引用已退役 HTTP／project_static 的测试及其无效路径豁免退出当前树，准确字节与恢复入口保留；
+普通 Movie、有限链／cascade 和 CLIP 接线分别验证，不以 CPU fixture 宣称完整 SemBench／模型／性能通过。
+最终 CPU 回归 704 成功、9 跳过，无失败；跳过三项未指定原 SemBench checkout 的查询、五项原生 Daft 图像 SDK 检查和一项 processor 专项。
+禁止 Core 导入的原生入口／启用计时／完整方法批次检查通过；Core 分组、准备复用、关闭重试和启动报告写入失败仍保留原责任。
+历史五树完整 materialize 通过，3010 条绑定匹配；新增时钟旧源及基底已有十处缺失映射均固定准确旧字节，
+原 expected SHA／投影身份保持。初次导入拒绝、残留退役测试收集错误与恢复失败按各自原因保留。
+
 SAOR 与通用多任务共享额度已迁入[独立研究包](src/research/multitask/README.md)，
 普通 records 默认与核心调度测试不依赖研究策略；原同步调度／shared-vLLM 研究接线保留。
 本批不改 Session 或反馈实现，并无冲突组合核心线程的最新拆分；
@@ -281,7 +292,9 @@ PR62整合版本已通过239项CPU检查和4次取消对照；原先受目录权
 
 [PR64](https://github.com/3444374/ai-operator-execution-optimization/pull/64)已将逐阶段模型进程移到
 [`serving/backends/staged_generation_process.py`](src/serving/backends/staged_generation_process.py)，共享链执行移到
-[`execution_provider/method_workers/lotus_chain_batch.py`](src/execution_provider/method_workers/lotus_chain_batch.py)。Core、Ray和Daft共用该实现，旧路径保留兼容入口。
+[`execution_provider/method_workers/lotus_chain_batch.py`](src/execution_provider/method_workers/lotus_chain_batch.py)。这是 PR64 当时的归属；
+当前共享无调度计算位于[`serving/backends/lotus_chain_worker.py`](src/serving/backends/lotus_chain_worker.py)，
+Core 子类只拥有自身 prepared batching／复用，原生 Ray／Daft／IMLane 直接使用共享基类。
 <a id="shared-chain-ipc-scope"></a>
 冻结组合`baa45eb7`的[共享链进程通信测试](tests/serving/test_shared_chain_migration.py)已在Linux单项通过：测试0.447秒，含清理1.253秒，自有进程退出、租约释放，零失败／跳过、零模型、零重试。
 PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合检查；这不是新整合整体的Linux执行回执。Mac EPERM原失败保留，不再将该同步组件列为待测缺口。
@@ -305,7 +318,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 | 逐请求参数、先到先处理与 token 工作量限制 | `49d`已验证W阻塞和完成后恢复；PR63已含预算、FIFO和actor组件。PR71已将同角色完整F/M查询接入显式`token_budget`，Extract和角色切换仍拒绝token模式；C64输出差异和无净收益结果保留 | 已合入main；本轮两token臂各48次成功，W阻塞／恢复均42次 | [本地候选范围](#finite-query-token-candidate)、[原对照及停止原因](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#token-c64-comparability-gate) | 原接口已合并；本轮W功能通过但输出ID不完全相同，默认count保持，Extract的token支持仍待做，不将CPU结果写成模型质量或性能收益 |
 | 逐记录有限查询与 Filter／Map 局部归并 | PR63已合入main，允许显式选择`execution="record_local_sections"`；默认fused保持。原c827有17次正常成功及1次取消unknown；本轮main0689底座四配置各48次正常调用完成，失败／取消与性能另计 | 可选功能已合并；性能改善仍待验证 | [PR63及验证边界](https://github.com/3444374/ai-operator-execution-optimization/pull/63) | 后续优化在当前接口上逐项检查；不把功能成功或API重叠当作稳定加速 |
 | 减少结果审计对象存活时间 | [PR67](https://github.com/3444374/ai-operator-execution-optimization/pull/67)已合入；Core fused、Ray／Daft有限链Python入口及各Extract阶段支持同一`release_completed_audit`选项，默认False；普通Movie单Filter CLI不经过此worker，record_local_sections明确拒绝开启。成功编码且无失败、取消、unknown或清理错误时只撤掉worker自身列表引用，消费者账本保持 | 可选实现与组合检查完成；不证明RSS或查询收益 | [选项与边界](src/semantic_methods/lotus/README.md#completed-chain-audit-lifetime)、[IPC组件检查](#shared-chain-ipc-scope) | 按真实持有与消费者行为评估，区分Python引用、物理内存和查询性能；不自动开启 |
-| 共享链结果关联索引 | 原审七字段完整身份索引由Core fused、Ray／Daft有限链共用，固定、随机差分、碰撞及取消检查通过；普通Movie单Filter和record_local_sections不适用 | 实现与组合检查完成；真实查询收益仍待验证 | [范围与测试](src/semantic_methods/lotus/README.md#finite-chain-result-index)、[共享worker](src/execution_provider/method_workers/lotus_chain_batch.py) | 保留原异常、顺序和身份规则；关联操作减少不代表完整查询收益 |
+| 共享链结果关联索引 | 原审七字段完整身份索引由Core fused、Ray／Daft有限链共用，固定、随机差分、碰撞及取消检查通过；普通Movie单Filter和record_local_sections不适用 | 实现与组合检查完成；真实查询收益仍待验证 | [范围与测试](src/semantic_methods/lotus/README.md#finite-chain-result-index)、[共享worker](src/serving/backends/lotus_chain_worker.py) | 保留原异常、顺序和身份规则；关联操作减少不代表完整查询收益 |
 | 图像准备分离、字节背压与多工作进程 | main的HSE底层已有独立准备／模型额度、字节broker、ready优先提交；`hse_static`诊断入口仍在。普通LOTUS资源入口拒绝HSE和CPU>1，执行器将worker及阶段深度固定为1 | 已有实现，确有普通入口缺口 | [HSE循环](src/modalities/image/staged_execution.py)、[资源解析](src/modalities/image/resource_budget.py)、[LOTUS图像入口](src/semantic_methods/lotus/image_backend.py) | 动态接入后先恢复单GPU、多CPU准备的显式参数与转发，补CPU及输出回归；保留当前TF32和单GPU检查，不默认开启、不声称多卡或位置优化已验证 |
 | 可选图像阶段dispatcher | `StageModelDispatcher`及HSE接入仍在`reference/optional-baselines-image-runtime`，main尚无这两个模块；是可继续维护的可选实现，未成为位置／拷贝代价优化器 | 待按小范围接入核对，不整支合并 | [阶段选择器](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/scheduling/runtime/stage_dispatch.py)、[HSE接入](https://github.com/3444374/ai-operator-execution-optimization/blob/e9a54e3e43ef9ce9e3b6973530715655028b1da5/code/src/modalities/image/hse_dispatch.py) | 单独适配显式配置、容量和速率过期合同，保持默认与原生baseline边界；不因为保存在参考分支就淘汰 |
 | 私有记录方式的对照 | 原`6a263`准备记录不作为当前运行状态；已有`464`／`416`外层观察，未证明硬件瓶颈 | 已有观察；本页不表示GPU正在运行 | [既有对照的解释边界](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#record-layout-comparison-interpretation) | 复用已有事件，按阶段方案补缺失证据；启动布局、并发与实际工作量不同须单列 |

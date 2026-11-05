@@ -27,7 +27,7 @@
 | SemLoom 执行适配 | [execution_provider/adapters](src/execution_provider/adapters/README.md) | Core／有限链／rolling／admission 与结果交付接线 |
 | 调度与资源责任 | [scheduling](src/scheduling) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
 | 独立多任务研究 | [research/multitask](src/research/multitask/README.md) | 通用共享额度与 SAOR 策略；普通 records 不依赖它 |
-| 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态及进程清理 |
+| 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态、无调度的有限链计算及进程清理 |
 | 模态公共能力 | [modalities](src/modalities) | 文本／图像合同、成本、共享 CLIP workers；不拥有 baseline 图 |
 | 通用观测和工具 | [observability](src/observability)、[infrastructure](src/infrastructure) | 时钟、来源、审计、脱敏、文件／预算／运行环境 |
 | 独立对照 | [baselines](src/baselines/README.md#text-execution-boundaries) | 原生系统图、作者桥接及任务对照；不注入 Core 策略 |

@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.method_workers import lotus_chain_batch as worker
+from src.serving.backends import lotus_chain_worker as native_worker
 from src.serving.backends.model_context import model_context_record
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 from tests.serving.test_shared_chain_migration import FixtureChain, FixtureProcess
@@ -24,8 +25,8 @@ class FusedModelContextTests(unittest.TestCase):
         self.control = Path(temporary.name)
         (self.control / 'owner').write_text('CPU-owner')
         self.spec = EngineSpec('/tmp/CPU-context-model', sys.executable, sys.executable)
-        self.record = worker.RecordOccurrence('row-0', 0, 'input', {'text': 'CPU input'})
-        decoder = patch.object(worker.LotusRecordChain, 'from_dict', side_effect=lambda value: value)
+        self.record = native_worker.RecordOccurrence('row-0', 0, 'input', {'text': 'CPU input'})
+        decoder = patch.object(native_worker.LotusRecordChain, 'from_dict', side_effect=lambda value: value)
         decoder.start()
         self.addCleanup(decoder.stop)
 
@@ -37,7 +38,7 @@ class FusedModelContextTests(unittest.TestCase):
 
     def owner(self, chain=None, spec=None, *, cls=worker.FusedChainBatch, **options):
         owner = cls(chain or self.chain(), asdict(spec or self.spec),
-            [worker._source_binding(self.record)], self.control, time.monotonic() + 30, 2,
+            [native_worker._source_binding(self.record)], self.control, time.monotonic() + 30, 2,
             socket.gethostname(), 'CPU-owner', **options)
         owner._engine_type = FixtureProcess
         return owner
@@ -127,7 +128,7 @@ class FusedModelContextTests(unittest.TestCase):
         previous = owner.chain
         owner.engine.ready_report['model_context'] = model_context_record(self.spec, 'CPU-worker', 65536)
         with self.assertRaisesRegex(RuntimeError, 'changed during'):
-            owner.begin_relation_phase(self.chain('next'), [worker._source_binding(self.record)],
+            owner.begin_relation_phase(self.chain('next'), [native_worker._source_binding(self.record)],
                 initial_parents={(self.record.row_id, 0): ('first-call',)}, columns=['text'],
                 allow_nulls=False, source_exhausted=True)
         self.assertIs(owner.chain, previous)
@@ -170,6 +171,29 @@ class FusedModelContextTests(unittest.TestCase):
         self.assertEqual(owner._model_context['requested_max_model_len'], 4096)
         with self.assertRaisesRegex(ValueError, 'chain max_tokens exceeds'):
             self.owner(self.chain(output=8192), cls=ReferenceFusedChainBatch)
+
+    def test_start_report_failure_does_not_become_a_model_construction_failure(self):
+        from transformers import AutoTokenizer
+        from src.serving.backends import vllm_sync_process as transport
+
+        owner = self.owner(prepared_batching=dict(policy='token_budget', token_budget=100))
+        original = transport._publish
+
+        def publish(path, value):
+            if Path(path) == owner.worker_report and value.get('engine_allocation_started') is True:
+                raise OSError('CPU worker report write failed')
+            return original(path, value)
+
+        tokenizer = SimpleNamespace(apply_chat_template=lambda *args, **kwargs: [1, 2, 3])
+        with patch.object(AutoTokenizer, 'from_pretrained', return_value=tokenizer), \
+                patch.object(transport, '_publish', side_effect=publish), \
+                patch.object(owner, '_engine_type') as construct:
+            result = self.run_rows(owner)
+        construct.assert_not_called()
+        self.assertEqual(result['error_type'], 'OSError')
+        self.assertFalse(owner._engine_start_attempted)
+        self.assertIsNone(owner.engine)
+        self.assertEqual([c['error_type'] for c in owner._audit_calls], ['NativeTaskUnconfirmed'])
 
 
 if __name__ == '__main__':

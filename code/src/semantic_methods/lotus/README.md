@@ -104,7 +104,9 @@ HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入
 在 `SemLoomRecordChainCore(..., release_completed_audit=True)` 和
 `ray_data_lotus_chain.evaluate(..., release_completed_audit=True)`／
 `daft_lotus_chain.evaluate(..., release_completed_audit=True)` 提供相同 Python 选项，默认 `False`。
-三条路径共用一个 `FusedChainBatch`；选项会传入每个完整关系阶段，不改变原生组批、调度、模型调用或重试。
+三条路径共用[无调度 worker](../../serving/backends/lotus_chain_worker.py)的原生计算和审计生命周期；
+Core 的 prepared batching／复用由其执行子类另行实现。
+选项会传入每个完整关系阶段，不改变原生组批、调度、模型调用或重试。
 这是有限链 API 接线，普通 SemBench Movie 的单 Filter records／session CLI 不经过该 worker，
 没有给那些入口增加无效参数。Core 的 `record_local_sections` 不持有该 worker 的审计副本，显式拒绝开启此项。
 
