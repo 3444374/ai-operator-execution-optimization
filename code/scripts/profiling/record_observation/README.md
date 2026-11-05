@@ -93,6 +93,9 @@ GPU／进程空闲及 lease 已释放。下列入口继续领取原 lease 和额
 `run_resource_C2.py` 是此入口的内部监督／worker，不以直接运行 worker 绕过 Git 与资格核查。
 当前 GPU 队列和私有材料不会由本工具删除或接管。
 
+控制端将当前 `lease_path`、租约 SHA-256 和 artifact 根目录经 Movie worker 转交给原生入口；
+沿用同一租约及原监督／释放责任。CPU 接线测试使用替身，真实 Native／模型启动尚待复验。
+
 ### 多格共用的操作守卫
 
 需要整轮调用／墙钟／原件上限时，可用 [campaign_guard.py](campaign_guard.py) 包住既有入口，

@@ -128,7 +128,7 @@ def main(root):
         lease=api.acquire_runner_lease(Path(host['lease_scope']),config_fingerprint=api.HOST_SCOPE_FINGERPRINT,
                                      repository_commit=identity['head'],recover_stale=False)
         before=H.snapshot(api,host,'resource-capture-before',owned);write('BEFORE.json',before);H.assert_idle(before,host)
-        config=dict(prepared,execution_enabled=True,external_owner=dict(artifact_root=str(lease.path.parent.parent),
+        config=dict(prepared,execution_enabled=True,external_owner=dict(lease_path=str(lease.path),artifact_root=str(lease.path.parent.parent),
                     lease_sha256=hashlib.sha256(lease.path.read_bytes()).hexdigest()))
         write('config.json',config)
         cap=config['workload']['expected_calls']

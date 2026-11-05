@@ -1,8 +1,10 @@
 """Zero-model fixtures. No real torch/vLLM/Ray import, server or GPU access."""
 import asyncio
+from contextlib import redirect_stdout
 from copy import deepcopy
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -11,7 +13,7 @@ import sys
 import tempfile
 from types import ModuleType,SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT=Path(__file__).resolve().parents[2]/'scripts/profiling/record_observation'
 SECRET='DO_NOT_PERSIST_PRIVATE_PROMPT_OR_CREDENTIAL_1841'
@@ -446,6 +448,77 @@ class PlanTests(unittest.TestCase):
                 resources=dict(max_active_batches=9),profile={'mode':'async'},queries=[{'query_id':'q','task':'q3','manifest':'frozen','phase':'measured'}]),
             units={'q':120},runtime_binding={'cuda_visible_devices':'fixture-device'},external_owner={},sembench_checkout='/fixture/sembench',
             limits={'worker_timeout_s':10},worker_entry_ns=1,environment={})
+
+    def test_controller_passes_live_host_lease_through_the_Movie_worker_context(self):
+        from src.infrastructure.runner_lease import (
+            HOST_SCOPE_DIR_NAME, HOST_SCOPE_FINGERPRINT, RunnerOwner, acquire_runner_lease,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            artifacts=root/'artifacts'
+            leases=[];received=[]
+            def acquire(*args,**kwargs):
+                lease=acquire_runner_lease(*args,**kwargs,
+                    owner=RunnerOwner('CPU-fixture',os.getpid(),'fixture-start','fixture-owner'))
+                leases.append(lease)
+                return lease
+            ledger=SimpleNamespace(reserve_unit=Mock(),claim_unit=Mock(return_value='CPU-claim'))
+            def native_entry(plan,context,output,**kwargs):
+                # Native's existing entry reads this path and verifies the same
+                # digest before creating its local model service.
+                owner=context['owner_context']
+                self.assertEqual(Path(owner['lease_path']),leases[0].path)
+                self.assertEqual(owner['artifact_root'],str(artifacts))
+                self.assertEqual(owner['lease_sha256'],
+                    hashlib.sha256(Path(owner['lease_path']).read_bytes()).hexdigest())
+                received.append(owner)
+                return dict(status='completed')
+            def supervise(command,output,**kwargs):
+                config=json.loads((root/'config.json').read_text())
+                config['worker_entry_ns']=1
+                self.runner.movie_session(config,ledger,entry=native_entry,
+                    checker=lambda plan:dict(expected_calls=1,
+                        queries=[dict(query_id='native-query',expected_calls=1)]))
+                (root/'WORKER-RESULT.json').write_text(json.dumps(dict(
+                    status='completed',actual_calls=0,actual_call_count_complete=True)))
+                return {}
+            api=SimpleNamespace(acquire_runner_lease=acquire,
+                HOST_SCOPE_FINGERPRINT=HOST_SCOPE_FINGERPRINT,
+                CellBudgetLedger=SimpleNamespace(create=Mock(return_value=ledger)),
+                AttemptBudget=lambda *args:args,supervise=supervise)
+            helper=SimpleNamespace(production_api=lambda path:api,
+                snapshot=Mock(return_value={}),assert_idle=Mock(),check_lease=Mock(),
+                cleanup_owned=Mock(return_value={}),report_identities=lambda report:set(),
+                live_owned=Mock(return_value=False))
+            helper_path=root/'helper.py';helper_path.write_text('# CPU host boundary\n')
+            config=deepcopy(self.base)
+            config.update(artifact_root=str(root),units={'native-query':1},observer_sha256={},
+                movie_plan=dict(backend='lotus-native',engine=dict(driver_python=sys.executable)),
+                workload=dict(name='native-quality',kind='movie_session',expected_calls=1),
+                host_helpers=dict(path=str(helper_path),sha256=hashlib.sha256(helper_path.read_bytes()).hexdigest()),
+                host_config={},limits=dict(worker_timeout_s=10,controller_timeout_s=30,
+                    cleanup_grace_s=1,natural_exit_grace_s=1))
+            (root/'PREPARED-CONFIG.json').write_text(json.dumps(config))
+            spec=SimpleNamespace(loader=SimpleNamespace(exec_module=Mock()))
+            exit_code=0
+            with patch.object(self.controller,'check_material'), \
+                    patch.object(self.controller,'source_identity',return_value=dict(head='fixture',tree='fixture')), \
+                    patch.object(self.controller,'checked_json',return_value=dict(lease_scope=str(artifacts/HOST_SCOPE_DIR_NAME))), \
+                    patch.object(self.controller.importlib.util,'spec_from_file_location',return_value=spec), \
+                    patch.object(self.controller.importlib.util,'module_from_spec',return_value=helper), \
+                    patch.object(self.controller,'worker_environment',return_value=dict(os.environ)), \
+                    patch.dict(os.environ,dict(os.environ),clear=True), redirect_stdout(io.StringIO()):
+                try:self.controller.main(root)
+                except SystemExit as error:exit_code=error.code
+            result=json.loads((root/'RESULT.json').read_text())
+            self.assertEqual(result['status'],'completed',result)
+            self.assertEqual(exit_code,0)
+            self.assertEqual(len(received),1)
+            self.assertTrue(result['physical_cleanup_confirmed'])
+            self.assertTrue(result['lease_released'])
+            self.assertFalse(leases[0].path.exists())
+            ledger.reserve_unit.assert_called_once_with('native-query',1)
+            ledger.claim_unit.assert_called_once_with('native-query')
 
 
     def test_off_has_no_observer_env_profile_or_import(self):
