@@ -19,6 +19,15 @@ MMQA 的十二道文本查询、各变体原 JSON 评价和原文本生成方法
 三张文本表各25行、Q4 原预筛24行，每个 baseline 完整十二题预计299次调用；不生成图像或下载。
 本轮仍为 CPU 准备范围，真实模型、作者启动、质量及性能不因此通过；现有测试入口保留。
 
+[新增文本入口](scripts/experiments/run_sembench_text_query.py)现将十五道原查询的单个 F/M/E 接到
+原生 LOTUS、已有的 Ray／Daft 有限记录图和 IMLane 作者链；未重写执行器或引入 Core。
+真实 LOTUS1.2.4／LiteLLM1.95.1／OpenAI2.50.0 的离线 CPU 差分覆盖原查询、共享方法和
+原 accessor 内存传输的完整结果、提示与顺序；十五道 `check/fixture` CLI 及原评价也已运行。
+这是本地 CPU 软件组合，不是服务器 Linux LiteLLM1.95.0 或真实模型资格。
+真实 MMQA sf25 的 Q6 包含一个缺失目的地；DEFAULT 逐单元文本表示在原数据保留 NaN 的同时
+产生与原 SDK 相同的 `nan` 消息，未填值或删行。输入、限制及图像准备见
+[SemBench 扩展范围](src/baselines/README.md#additional-sembench-text)。
+
 当前组合保留 `8a2bf329` 的原生基线容量修正，以及此前 worker／时钟整理和历史来源修复。
 HTTP 代理退役代码为 `7a23e6dc`，旧 Ray 轮询退役整合代码为 `a8c7dd87`；本轮配置组合代码为 `5175cab0`。
 仅移除旧转发代理、其专属回环测试和冷导入项，共享 trace 摘要、HTTPX、request identity、Unix 执行接口保留。

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 from .native_server import check_author_source, native_launch_report, server_argv
+from src.baselines.text.movie_tasks import MovieTask
 
 
 def main():
@@ -42,7 +43,7 @@ def main():
     assert template_sha==cfg['expected_template_sha256']
     plans=[]
     for profile in ('qualification','warmup','full'):
-        for q in (1,2,3):
+        for q in sorted(MovieTask.from_config(name).query for name in cfg['reference_inputs'][profile]):
             item=cfg['reference_inputs'][profile][f'movie-q{q}']
             manifest_path=Path(item['manifest'])
             assert hashlib.sha256(manifest_path.read_bytes()).hexdigest()==item['manifest_sha256']

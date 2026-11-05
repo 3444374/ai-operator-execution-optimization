@@ -30,6 +30,12 @@ class NativeExecutionIndependenceTests(unittest.TestCase):
     def test_native_paths_import_without_core_execution_or_scheduling(self):
         self.probe("""
 for name in (
+    'src.baselines.text.sembench_source',
+    'src.baselines.text.sembench_mmqa',
+    'src.baselines.text.sembench_text',
+    'src.baselines.text.frameworks.lotus_native_stage',
+    'src.baselines.text.frameworks.sembench_text',
+    'src.experiments.sembench_text_query',
     'src.baselines.text.frameworks.lotus_native_local',
     'src.baselines.text.frameworks.ray_data_lotus_records',
     'src.baselines.text.frameworks.daft_lotus_records',

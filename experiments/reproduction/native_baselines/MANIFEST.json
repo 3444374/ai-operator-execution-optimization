@@ -891,7 +891,8 @@
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
-        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1069,6 +1070,11 @@
           "encoding": "gzip",
           "decoded_bytes": 17434,
           "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "code/src/baselines/text/sembench_movie.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5736,
+          "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
         }
       }
     },
@@ -1988,7 +1994,8 @@
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
-        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2166,6 +2173,11 @@
           "encoding": "gzip",
           "decoded_bytes": 17434,
           "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "code/src/baselines/text/sembench_movie.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5736,
+          "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
         }
       }
     },
@@ -3095,7 +3107,8 @@
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
-        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3273,6 +3286,11 @@
           "encoding": "gzip",
           "decoded_bytes": 17434,
           "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "code/src/baselines/text/sembench_movie.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5736,
+          "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
         }
       }
     },
@@ -4204,7 +4222,8 @@
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
-        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4387,6 +4406,11 @@
           "encoding": "gzip",
           "decoded_bytes": 17434,
           "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "code/src/baselines/text/sembench_movie.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5736,
+          "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
         }
       }
     },
@@ -5322,7 +5346,8 @@
         "code/src/execution_provider/adapters/ray_map_transport.py": "historical_sources/7f0b6d42/code/src/execution_provider/adapters/ray_map_transport.py.gz",
         "code/src/scheduling/core/task_info.py": "historical_sources/070cda9f/code/src/scheduling/core/task_info.py.gz",
         "code/src/scheduling/submission_control/__init__.py": "historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz",
-        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz"
+        "code/src/scheduling/runtime/ray_adapter.py": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "code/src/baselines/text/sembench_movie.py": "historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5500,6 +5525,11 @@
           "encoding": "gzip",
           "decoded_bytes": 17434,
           "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "code/src/baselines/text/sembench_movie.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5736,
+          "archive_sha256": "c6b650b98518aabe20e5cf74c0ff8fcd7c3e0b0d420dd0c1e204ec5d45c9957c"
         }
       }
     }

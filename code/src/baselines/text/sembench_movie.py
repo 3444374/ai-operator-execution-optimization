@@ -13,11 +13,6 @@ from .sembench_source import (
     verify_checkout as verify_checkout,
 )
 
-MOVIE_MAP_INSTRUCTION = ('Classify the sentiment of the movie review. Return exactly POSITIVE if the review '
-                         'is clearly positive; otherwise return exactly NEGATIVE. Do not explain.')
-MOVIE_FILTER_INSTRUCTION = 'Determine whether the movie review is clearly positive.'
-
-
 def run_original_lotus_query(checkout, query_id, load_reviews):
     """Caller configures the native LM; query code loads PG rows after release."""
     if query_id not in (1,2,3,4,8,10):

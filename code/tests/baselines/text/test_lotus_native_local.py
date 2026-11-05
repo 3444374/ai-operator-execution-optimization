@@ -311,13 +311,14 @@ class OriginalMovieQueryTests(FixtureCase):
         self.assertEqual(report['quality']['classification_audit']['false_negative'],0)
         return report,events
 
-    def test_original_pinned_Q1_Q2_Q3_query_and_gold_evaluator(self):
+    def test_original_pinned_Q1_Q2_Q3_Q4_query_and_gold_evaluator(self):
         from src.baselines.text.sembench_movie import verify_checkout
         verify_checkout(os.environ['SEMLOOM_NATIVE_TEST_CHECKOUT'])
-        for query in (1,2,3):
+        for query in (1,2,3,4):
             with self.subTest(query=query),tempfile.TemporaryDirectory() as name:
                 report,events=self.run_query(Path(name),query)
-                self.assertEqual(report['result'],dict(positive_review_cnt=2) if query==3 else
+                self.assertEqual(report['result'],dict(positivity_ratio=2/3) if query==4 else
+                    dict(positive_review_cnt=2) if query==3 else
                     dict(reviewId=['r0','r1','r1'] if query==1 else ['r1','r1']))
                 self.assertEqual(report['backend_close']['status'],'closed')
                 self.assertLess(events.index('result_ready'),events.index('owner_closed'))
@@ -325,7 +326,7 @@ class OriginalMovieQueryTests(FixtureCase):
     def test_original_queries_reuse_exact_model_owner_without_closing_it(self):
         owner=self.owner()
         owner.start();uid=owner.ready_report['engine_uid']
-        for query in (1,2,3):
+        for query in (1,2,3,4):
             with tempfile.TemporaryDirectory() as name:
                 report,events=self.run_query(Path(name),query,owner=owner)
                 self.assertEqual(report['owner_ready']['engine_uid'],uid)

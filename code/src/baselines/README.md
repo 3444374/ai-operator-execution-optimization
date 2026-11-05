@@ -44,7 +44,7 @@ SemLoom Core 的实现位于 `execution_provider/adapters/lotus_records_core.py`
 原缓存实现仍在 LOTUS；模型驻留、KV／prefix cache 和调度状态复用须分别记录。
 
 补充的普通 Movie Q4 继续使用既有 Filter 图，保留完整 taken_3 关系与原 positivity ratio，
-不提前停止。原查询／评价适配可加载 Q8、Q10，Map 执行资格仍须通过其单算子接线验证；
+不提前停止。原查询／评价适配可加载 Q8、Q10，Map 已通过下述单算子接线的 CPU 差分；
 Q10 的评价依赖原 `Movies.csv` audienceScore，不能从评论标签构造替代金标。
 [共享上游加载](text/sembench_source.py)只校验所选公开 checkout 并加载原模块；
 [MMQA 文本适配](text/sembench_mmqa.py)保留 Q1、Q3a–g、Q4、Q6a–c 的原函数与每题金标。
@@ -85,6 +85,92 @@ Ray 的 ActorPoolStrategy 参数、Daft 的原生缓冲、IMLane 的有限桥接
 | 启用详细计时会从 ray_map_transport 取得时钟身份，间接加载 Core transport／调度模块。 | 不改原 Linux 哈希／不可用回退，时钟函数移到[公共观测层](../observability/clock.py)，两边直接调用。 | 在禁止 Core 导入时创建、记录并关闭 Timing；原 transport 的时钟不可用检查保持。 |
 
 两项均是源码与可复现依赖边界问题；本次没有据此宣称查询加速。首次拒绝导入的失败记录与修复回归分别保留。
+
+<a id="additional-sembench-text"></a>
+## 补充 SemBench 文本查询
+
+[工作负载](text/sembench_text.py)直接执行固定 SemBench 的原函数，原函数仍拥有普通筛选、
+关系关联、Map 评分的原回退和最后汇总。唯一普通 Filter／Map／Extract 在其 accessor 边界交给
+[既有原生记录图](text/frameworks/sembench_text.py)或[原生 LOTUS](text/frameworks/lotus_native_stage.py)。
+不运行上游构造器的隐含暖机、下载或近似策略。入口及配置见
+[脚本说明](../../scripts/README.md#additional-sembench-text-entry)。
+
+原生 LOTUS 保留 accessor、LM、LiteLLM 原批调用与解析，provider 复用现有本地模型 IPC。
+它观察原 LM 的真实消息，不额外格式化预遍。旧 ledger 的 `lotus-filter-v1` 是保留的身份协议，
+Map／Extract 的真实类型另由 stage 和有限阶段 ID 映射记录，不把它们当 Filter 算法。
+Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们与旧普通 Filter 图是分别命名的执行布局。
+原 Q1/Q2/Q3 及 Q4 的普通 records、session、矩阵入口继续保留。
+
+下表是现成 Movie2000、原 MMQA generator 的 sf25／seed42 单次完整执行预计调用量，
+不含暖机、重试或重复。Movie 金标 `Movies.csv` 为116行、105个唯一电影 ID，覆盖评论中的全部105部电影；
+仍由原 ranking evaluator 处理 ID 与有效分值，不修改原金标或自行去重。
+
+| 数据集 | 题号 | 原方法 | 实际模型输入行数／预计调用 |
+|---|---|---|---:|
+| Movie | Q4 | taken_3 正面比例，Filter 后用完整分母 | 120 |
+| Movie | Q8 | 原 POSITIVE／NEGATIVE Map 后计数 | 120 |
+| Movie | Q10 | 全评论 Map 打分、原无效评分回退及电影汇总 | 2000 |
+| MMQA | Q1 | 整张描述表 Extract 后与演员表关联 | 25 |
+| MMQA | Q3a | 喜剧 Filter | 25 |
+| MMQA | Q3b | 科幻 Filter | 25 |
+| MMQA | Q3c | 爱情 Filter | 25 |
+| MMQA | Q3d | 恐怖 Filter | 25 |
+| MMQA | Q3e | 劫盗 Filter | 25 |
+| MMQA | Q3f | 浪漫喜剧 Filter | 25 |
+| MMQA | Q3g | 传记喜剧 Filter | 25 |
+| MMQA | Q4 | 原目标片名预筛，再 Extract 类型及原分组 | 24 |
+| MMQA | Q6a | 法兰克福航线 Filter | 25 |
+| MMQA | Q6b | 德国航线 Filter | 25 |
+| MMQA | Q6c | 欧洲航线 Filter | 25 |
+
+每个 baseline 的 MMQA 十二题合计299次，Movie 三题合计2240次。
+sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍为 NaN，记录 wire 仅保留
+原 DEFAULT formatter 的 `nan` 文字呈现。真实25行的原 SDK、记录方法和原生内存传输已逐消息相等；
+没有填目的地、删除行或扩大到其他序列化格式。更换规模／资产须由 `check` 重新计算，不能沿用常数24／299。
+
+| 对照 | 本轮接线范围 | 未验证／留空原因 |
+|---|---|---|
+| 原生 LOTUS | 上述十五题，原 accessor／LM 路径 | CPU 原查询差分通过；新的实际模型与完整生命周期未跑 |
+| Ray Data | 上述十五题，既有 Dataset／actor 有限图 | SDK／分发合同 CPU 通过；新图的实际 Ray／模型未跑 |
+| Daft | 上述十五题，既有 native class／batch 有限图 | SDK／分发合同 CPU 通过；实际 Daft／模型未跑 |
+| IMLane | 上述十五题的原作者有限记录链 | 作者构建、Arrow ABI、显式有限容量及实际启动仍需绑定／验证 |
+| Kalypso | 旧 Movie Filter 路径可组合 Q4 ratio，CPU 辅助按显式任务清单检查 | 当前原生绑定没有 Movie Map 或 MMQA；不新增算法补齐，相关项留空 |
+
+这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
+软件回复差分与全部十五题 CLI fixture 均运行；真实模型逐行一致性仍待实机检查。
+原 aggregate 分数不能排除相抵的分类错误，保留原调用文本和旧普通 Filter 的逐行审计供核对。
+Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFrame；Extract 保留实际额外／碰撞 key
+和原 Index label 写入，不补未返回的声明字段。后处理失败仍保留已完成调用与关闭回执。
+
+本地组合为 LOTUS1.2.4／LiteLLM1.95.1／OpenAI2.50.0／pandas2.3.3／Arrow24；
+它不冒充服务器 Linux LiteLLM1.95.0 的精确软件资格。物理 GPU 退出仍由现有外部 host supervisor 核查。
+
+本轮保留的可复现边界：
+
+| 现象与根因 | 处理与验证 |
+|---|---|
+| MMQA 原 runner 的 `src.runner` 与 SemLoom 已加载的 `src` 冲突，首轮无法导入。 | 仅在原模块加载期映射同一已验证上游 runner，随后恢复；十五题原查询／方法／accessor 差分及别名恢复检查通过。 |
+| sf25 Q6 有 NaN，最初的纯字符串接纳误拒绝原 SDK 可序列化输入。 | 在文本 wire 边界保留原 DEFAULT cell 呈现；真实三题各25行完整消息与结果顺序相同，原 CSV 不变。 |
+| Extract 成功后原关系后处理可能因 `{}` 缺列失败，旧的新接线未把已完成算子报告附给该异常。 | 保留原 KeyError 并转交已知调用与关闭证据；不补字段把失败变成成功。 |
+| Movie 适配扩展使五份历史投影从维护版读取旧摘要失败。 | 保存单份准确原源并补五条来源／格式映射；原3010条摘要与投影 ID 不变，完整 materialize 通过。 |
+
+### 图像查询准备范围
+
+| 原查询 | 现成资产与预计工作 | 当前接线限制 |
+|---|---|---|
+| Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64个图像输入 | 现用原查询 helper 仅 Q1/Q7，Q3/Q10 上游存在；当前视觉 provider 需另验 |
+| Animals Q7 | 同一64图，两遍原 Filter，约128个输入 | 不能用 CLIP 检索替代 VLM Filter |
+| MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 新非 HTTP 视觉 provider 尚未接通 |
+| MMQA Q2b | 同一切片，Join 后按匹配对 Extract，最多650次 | preset 单次 Extract 不是完整 Join→Extract 通过 |
+| E-Commerce／Cars 图像 | 原实现存在；本轮已查目录未定位成套数据 | 数据和每条 baseline 视觉路径待确认 |
+
+90个现有文件（64 Animals图、25 MMQA图及表文件）的当前摘要与清单相符。
+Qwen2-VL-2B-Instruct 的配置、processor、索引及两个权重分片齐全，权重合计4,418,050,768字节；
+本轮未重新哈希整份权重或加载模型。历史身份为 revision `895c3a49bc3fa70a340399125c650a463535e71c`、BF16。
+历史 Animals 的 `max_pixels=1003520` 与 MMQA／原 processor 的 `12845056` 不同，须冻结为明确的比较配置。
+Animals Q3/Q10 在此64图有三个并列最大项，保留原评价对并列项的接受行为，不强求某一精确结果帧。
+Ray／Daft 的现有 CLIP 检索、LOTUS SDK 的 image-text profile，均不能自动授予上述 VLM 查询资格；
+IMLane／Kalypso 当前视觉绑定未验证。原 LOTUS 明确不支持的音频题留空，其他系统未验证能力另记，均不计作零分。
 
 ## 已退役和暂停
 

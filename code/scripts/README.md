@@ -9,6 +9,7 @@
 | 任务 | 入口 | 范围 |
 |---|---|---|
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
+| 补充 Movie／MMQA 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 作者服务、默认与任务适配保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
@@ -33,6 +34,53 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 没有隐式暖机或通过省略关闭制造复用。原生 LOTUS 的冷查询在查询内启动 IPC owner，
 常驻查询借用现成 owner，最后由 session 关闭；完整结果的 `result_ready` 先于质量评价和最终关闭。
 `query_seconds` 若覆盖整个适配函数，不可替代纯结果可用时钟。
+
+<a id="additional-sembench-text-entry"></a>
+## 补充 SemBench 文本入口
+
+新入口保留 `prepare-mmqa-text / check / fixture / run`。`check` 不 claim 额度或创建执行图；
+`fixture` 使用真实 SDK 和原评价、明确标为零推理软件检查；`run` 不带 `--execute-model` 时只检查。
+真实 run worker 仍在现有外部 host 租约／资源 supervisor 内运行，独立进程使用现有 CLI supervisor。
+
+```sh
+PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepare-mmqa-text \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --source-dir "$MMQA_SOURCE_CSV" \
+  --scale-factor 25 --output-dir "$MMQA_TEXT_DIR"
+
+PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py check \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$SEM_QUERY_DATA_DIR" \
+  --config "$SEM_QUERY_CONFIG"
+```
+
+各变量由本机仓库外 runtime／packet 提供；准备输出必须是新的 Git 外私有目录。
+Movie 数据目录需要 `Reviews.csv`，Q10 另需原 `Movies.csv`，后者仅用于评价。
+MMQA 准备仅调用原三种文本生成方法并复制固定表，不下载、不生成图片、不调用模型。
+原 `src.runner` 导入只在固定 MMQA 模块加载期映射到同 checkout 的 canonical runner，随后恢复，
+不替换 SemLoom `src` 或修改上游源码。字母题号在 JSON 的 `query` 直接写 `3a`／`6c` 等。
+
+配置 schema 为 `semloom.sembench_text_run.v1`，必需字段为
+`scenario/query/query_id/backend/model_name/generation/engine/resources/profile`。
+`scenario` 为 `movie/mmqa`；题号和实际规模由[逐题清单](../src/baselines/README.md#additional-sembench-text)与 `check` 确定。
+引擎与生成参数继续用现有 `EngineSpec/GenerationSpec`；五项 vLLM 可选参数未指定时交原生引擎解析。
+Extract 的 `json_object` 来自原算子，`check.effective_operator_generation` 记录其有效设置。
+
+| backend | profile 归属 | 真实运行所需外部上下文 |
+|---|---|---|
+| `lotus-native` | 仅显式正整数 `native_lm_max_batch_size`，属于原 LM 客户端 | 已预留的持久 query unit；现有本地异步模型 IPC |
+| `ray-data` | 原 `ray.init` 参数；模型图的 batch／actor 资源仍由 `resources` 声明 | 独立冷 runtime；既有原生有限记录图 |
+| `daft` | 可选 `runner_threads`；空对象保留原 native 默认 | 既有 native class／batch 有限记录图 |
+| `imlane` | 空对象；使用现有作者 owner／resources | `owner_config` 指向现有作者配置、桥构建与显式有限容量 |
+
+非 IMLane 的真实运行配置另含 `budget={path,id,limit,unit_id}`，指向既有已预留 SQLite 额度；
+本入口只 claim，不创建／追加／退回额度。IMLane 沿用原 owner budget／guard。
+CLI 只允许四种已接通对照；Kalypso Map／MMQA 不设替代算法，Q4 继续用旧 Filter 入口。
+
+比较时冻结同一输入摘要、模型／有效 dtype、生成参数、DEFAULT 格式与生命周期。
+冷查询的 CSV 扫描及身份检查、启动、算子解释／关闭、原关系后处理全部计入 `query_seconds`，原评价另计；
+它不能与旧普通 records 图的其他时钟口径直接混算。新入口没有隐含预热或重试。
+上游原 LM 上限为8192且无换行 stop；若选择该原始配置，应对每条同题 baseline 一致声明。
+旧短 Filter 的8 token／换行 stop 不可直接移给 JSON Extract，也不能把更改生成配置后的差异归因于执行加速。
+只有显式上下文才提前做上限检查；未指定的实际容量与物理退出仍由模型 ready 和外部 supervisor 验证。
 
 ## 原生 LOTUS CLIP 查询
 

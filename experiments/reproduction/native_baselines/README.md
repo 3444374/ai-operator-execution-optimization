@@ -49,6 +49,16 @@ AIMD、批反馈及原生 vLLM 的 `--scheduling-policy fcfs` 保留。
 [原包导出](historical_sources/b59ce7ee/code/src/scheduling/submission_control/__init__.py.gz)。
 只增加十条来源／格式映射，未改当前调度源码或旧预期。两次恢复失败和修正后的检查分别保留。
 
+## SemBench 查询扩展的原适配来源
+
+Movie Q4/Q8/Q10 与 MMQA 接线扩展后，五份投影不能继续从维护版 `sembench_movie.py` 取旧字节。
+首次完整 materialize 的五条摘要失配已保留；准确
+`0677c7a3ef98f946d3b00772169ec636e6f1a309` 原适配保存为
+[共享 gzip](historical_sources/0677c7a3/code/src/baselines/text/sembench_movie.py.gz)，解压摘要为
+`d21f3933a83429b5b870abc352a268a3c3241a20e7d0bc405e34cfac275f823d`。
+只追加五条来源／格式映射，原3010条 expected SHA、五个投影 ID、原来源版本及其他映射保持。
+维护版使用新的原查询／评价接线，历史恢复继续使用原适配；不混写原模型结果。
+
 ## 重复源码的共享保存
 
 五份投影中内容相同的源码改由 `MANIFEST.json` 指向同一精确副本，删除 88 份重复文件，
