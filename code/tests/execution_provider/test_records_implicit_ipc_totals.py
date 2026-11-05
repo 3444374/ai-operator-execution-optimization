@@ -17,7 +17,7 @@ MIB = 1024**2
 class ImplicitIPCTotalTests(unittest.TestCase):
     def setUp(self):
         self.engine = EngineSpec('/tmp/implicit-total-model', sys.executable, sys.executable)
-        self.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        self.resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=2)
 
     def resolve(self, capacity=None, overrides=None, *, rolling=False, requests=2):
         return resolve_records_runtime(self.engine,
