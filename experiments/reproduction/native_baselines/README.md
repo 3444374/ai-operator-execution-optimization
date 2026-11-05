@@ -1,5 +1,23 @@
 # 原生基线与具名 Core 历史复现
 
+<a id="retired-profiler-parser"></a>
+## 旧 profiler 参数解析的准确来源
+
+旧 PostgreSQL profiler 执行入口退役后，维护代码没有调用 `observability/profiling/cli.py` 的
+八个解析函数。该文件现退出维护目录；准确
+`46795c0fae03ab07db15b01552884b831ee2a7c1` 原源保存在
+[单份 gzip](historical_sources/46795c0f/code/src/observability/profiling/cli.py.gz)。
+五份投影各增加一条来源和 gzip 格式记录，原文件 SHA、投影身份及其他来源保持。
+原解析参数与原工厂只在恢复出的同版本树使用；维护的 Ray SDK 仍接受调用方构造的接纳对象，
+AIMD、批反馈及原生 vLLM 的 `--scheduling-policy fcfs` 保留。
+旧参数表可从上述准确 Git 版本的 `docs/执行配置与优化开关.md#diagnostics` 读取。
+
+近期 session 行为测试扩展产生的五条历史来源漏映射另行更正：
+[原测试单份 gzip](historical_sources/73e686aa/code/tests/scheduling/test_incremental_session.py.gz)
+来自 `73e686aad55772535555e0b8bc7dbce078a727ce`，其 SHA 正是五份投影原预期值。
+只补来源与格式记录，维护版新增行为测试及原投影预期不变。
+这项错误更正与 parser 退役分别保存来源，不表示其他历史来源或模型环境已经恢复。
+
 ## 重复源码的共享保存
 
 五份投影中内容相同的源码改由 `MANIFEST.json` 指向同一精确副本，删除 88 份重复文件，
