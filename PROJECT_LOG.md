@@ -11385,3 +11385,13 @@ Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan
 [源码与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
 保存相同选择的 108 项改前／改后通过，以及三项因未配置上游 checkout 未运行。
 本批生产 Python 净减 13 行，Core evaluate 119→98 行，超过百行的核心函数由 51 个变为 50 个；未重试被拒操作，整体重构继续。
+
+
+## 2026-11-05 分开同步调度输入生产并收敛重复选择
+
+原阻塞输入生产类和常量进入 envelope_source，同步调度器直接使用该实现；两条执行循环保持各自的容量计算。
+重复服务池选择收敛为实际共用函数，普通账本移到该路径实际执行时创建，删除两处内部重复断言。
+公开配置、端点选择、结果关联、额度、unknown 与收尾保持，没有新增策略、状态或转发壳。
+[源码与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
+保存同一组 76 项改前／改后全部通过。调度文件 981→897 行，输入模块 82 行，生产 Python 合计净减 2 行。
+并行 poll／ACK、原研究模块和历史副本未改，原十处来源差异及 socket／sysctl 未验证状态保持；整体重构继续。

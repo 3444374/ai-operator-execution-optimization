@@ -1676,3 +1676,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [共享 records 扫描准备](diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
 保留 111 个选中方法中 108 个实际执行并通过、三项因缺少 SemBench checkout 未运行的前后记录；不称为 111 项通过。
 两条路径只复用原 Native 扫描代码，调度与模型管理仍各自拥有；无新增资格条件、无模型或性能结论。
+
+
+[同步调度输入职责与重复逻辑清理](diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
+保留相同 76 个 CPU 方法改前／改后全部通过的来源，输入生产原类和常量保持；没有新增测试或容量。
+原五份具名版本继续读取其原调度器副本，十处旧来源差异保持；未运行真实 Ray、模型、GPU 或性能实验。

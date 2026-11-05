@@ -1,0 +1,387 @@
+{
+  "schema": "semloom.scheduler_source.checks.v1",
+  "base": "a1b5cdd38860df8ee7eed06c86e5d06a94687ad5",
+  "candidate": "58628ab3f31daabf4454fbb6a36cdb195dc93d72",
+  "tree": "5e526b2baddd3506a6b89c805424f14d911b3c07",
+  "runs": {
+    "scheduler-source-before": {
+      "selected": 76,
+      "executed": 76,
+      "passed": 76,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "scheduler-source-after": {
+      "selected": 76,
+      "executed": 76,
+      "passed": 76,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "same_selected_and_executed_methods": true,
+  "overlapping_runs_not_added": true,
+  "tests_added": 0,
+  "source_files_before": 1018,
+  "source_files_after": 1019,
+  "source_identity": {
+    "scheduler-source-before": {
+      "commit": "a1b5cdd38860df8ee7eed06c86e5d06a94687ad5",
+      "files": 1018,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true
+    },
+    "scheduler-source-after": {
+      "commit": "58628ab3f31daabf4454fbb6a36cdb195dc93d72",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true
+    }
+  },
+  "source_identity_note": "CPU runs recorded the base HEAD before committing. Per-file source hashes were compared to the exact base and candidate. Durations are CPU fixture durations, not query-performance measurements.",
+  "method_comparison": {
+    "base": "a1b5cdd38860df8ee7eed06c86e5d06a94687ad5",
+    "source_classes_identical": [
+      "_SourceFailure",
+      "_ConcurrentEnvelopeSource"
+    ],
+    "existing_scheduler_methods_changed": [
+      "run",
+      "_run_with_shared_ready_window",
+      "_register_ready_candidate"
+    ],
+    "existing_scheduler_methods_unchanged": 11,
+    "new_actual_pool_selector": "_select_pool",
+    "source_constants_unchanged": true,
+    "old_scheduler_lines": 981,
+    "new_scheduler_lines": 897,
+    "new_source_lines": 82,
+    "new_controller_threads_or_ledgers": 0
+  },
+  "code_size": {
+    "retained_comparison_source": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/shared_record_scan_checks.json",
+    "retained_comparison_source_sha256": "c88b232b4de40ac5b63c89eb1ddd1ceaba04d073d7614e8911e6721cdfbb6e82",
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "a1b5cdd38860df8ee7eed06c86e5d06a94687ad5",
+        "metrics": {
+          "core": {
+            "files": 255,
+            "physical_lines": 58697
+          },
+          "main_runtime": {
+            "files": 247,
+            "physical_lines": 55689
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 397,
+            "physical_lines": 92355
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114514,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "current": {
+        "commit": "58628ab3f31daabf4454fbb6a36cdb195dc93d72",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 58695
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 55687
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 92353
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114512,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "older_differences": 10,
+    "added_differences": 0,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "complete_restoration_passed": false
+  },
+  "source_sha256": {
+    "code/src/scheduling/core/scheduler.py": "56a27bdc9a1ec687eae57da53fc9741e3a2f25b1a435c444a8a0b353b678efd9",
+    "code/src/scheduling/core/envelope_source.py": "b0043b2461315c6e7b45db156731a7bcffa6e31f37f6bda96b03ae547c67bfbe"
+  },
+  "production_python_delta": -2,
+  "concurrent_poll_ACK_files_changed": false,
+  "new_policy_or_configuration": false,
+  "known_unqualified_checks": "Five earlier socket methods and two sysctl checks remain unqualified and were not selected or retried. Three CLI cases still need the pinned SEMBENCH_CHECKOUT. The real Ray integration test was not selected.",
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "independent_review_sha256": "de9443c604c8eb40d111fdfcd2aece6959ec6d3986d7f0d8ec1164ca12594560",
+  "design_review_sha256": "8ac8c79f0f47e8fadaec1393d1550c5f86e9b091532c36175c8673a0d4d941d4",
+  "private_originals": {
+    "scheduler-source-before.json": {
+      "bytes": 146866,
+      "sha256": "5ec8ee6397b9d9f2adb0a746e4043f2af70c01a01f86bfd2fdd11077d822f789"
+    },
+    "scheduler-source-before.log": {
+      "bytes": 13671,
+      "sha256": "3dd268c345cfdc4808c5433b9d3f5b69f8f050254c20831d5296a1ab59e734ce"
+    },
+    "scheduler-source-after.json": {
+      "bytes": 146984,
+      "sha256": "9923a87aa1c3ff8f054fc832c261ffcf05c8852380b062f3d77810c27cd8b7e3"
+    },
+    "scheduler-source-after.log": {
+      "bytes": 13671,
+      "sha256": "3be24fb5a49923bea117c5734804aa00b63fc51c571c074eb656bdb470020da2"
+    },
+    "METHOD_COMPARISON.json": {
+      "bytes": 533,
+      "sha256": "93971f96098d606c51f4e546dfcc26525b8bf7ca1149cd74fa66a4fb01172e50"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5531,
+      "sha256": "90e32d8f5a4880ae63afe97948602c09121f99846cc4a9d22d6b1454e43b33a0"
+    },
+    "SOURCE_IDENTITY.json": {
+      "bytes": 404,
+      "sha256": "9b8232d324d2d235d259f62cf7179fd132061d60a6bf457415987c1b86f7c14f"
+    },
+    "scheduler-source-history.json": {
+      "bytes": 6863,
+      "sha256": "7482c8fece77aec982beb677f155104afedc10229455191fc88abd56c2bd93a9"
+    },
+    "SCHEDULER_HISTORY_MAPPING.json": {
+      "bytes": 1961,
+      "sha256": "636420921f16eb4a01647047a9b3e9bbb3679aa61b60f5394a7f58257d45f4e8"
+    },
+    "REMAINING_CORE_AFTER.json": {
+      "bytes": 735,
+      "sha256": "42f93ad8a76f4b7815ac1abb64f0183874a29a09846c0a54af4cc9091052b3ec"
+    },
+    "MEASUREMENT_ATTEMPT.json": {
+      "bytes": 358,
+      "sha256": "4e61787b1101ddfc7df5b65de39d6495182dbd86640859a6aad186f5bf3fe9eb"
+    },
+    "source-reference-audit.txt": {
+      "bytes": 1226,
+      "sha256": "b564317abb459257423ef09fda9d56ab5ed5e320810bb33aee59242346bd5688"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 3194,
+      "sha256": "de9443c604c8eb40d111fdfcd2aece6959ec6d3986d7f0d8ec1164ca12594560"
+    },
+    "review/SOURCE-EVIDENCE.json": {
+      "bytes": 2962,
+      "sha256": "9f4335980c6b8ca8cc13f06aa9fef0409dc4497ed58670d6c00924e14a8fd4e5"
+    },
+    "design/HANDOFF.json": {
+      "bytes": 10799,
+      "sha256": "8ac8c79f0f47e8fadaec1393d1550c5f86e9b091532c36175c8673a0d4d941d4"
+    }
+  },
+  "remaining_core_files": [
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "lines": 1157
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "lines": 985
+    },
+    {
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "lines": 925
+    },
+    {
+      "path": "code/src/scheduling/core/scheduler.py",
+      "lines": 897
+    },
+    {
+      "path": "code/src/observability/profiling/replay.py",
+      "lines": 845
+    },
+    {
+      "path": "code/src/observability/request_gateway.py",
+      "lines": 779
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_async_model.py",
+      "lines": 716
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "lines": 703
+    }
+  ],
+  "raw": {
+    "file": "scheduler_source_raw.json.gz",
+    "bytes": 16961,
+    "sha256": "14abd883c57fd477657f4badda225b7961256a6edbb41dcba274a0ae2b9324a9",
+    "decoded_sha256": "964dd361445a7803b6d90492674b1321b8bf2d8b9ce698daa2a445fc56a6fcd6"
+  }
+}

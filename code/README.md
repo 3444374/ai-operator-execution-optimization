@@ -86,6 +86,12 @@ Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
 [本批同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
 记录 108 项通过、3 项因未配置 SemBench checkout 未运行，生产 Python 净减 13 行。
 
+同步执行接口与 Ray 调度画像继续使用 [scheduler.py](src/scheduling/core/scheduler.py)；
+阻塞输入生产由 [envelope_source.py](src/scheduling/core/envelope_source.py) 的原实现负责。
+两条调度路径共用服务池选择，仍各自计算实际端点容量；窗口路径不再先创建一份未使用账本。
+[同选择 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
+记录改前／改后各 76 项通过，两个文件合计净减 2 行，没有改变策略或容量。
+
 
 链查询 owner 负责配置、组装、阶段选择、结果记账与模型资源生命周期；融合批传输、输入阶段和结果迭代在
 [lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)。

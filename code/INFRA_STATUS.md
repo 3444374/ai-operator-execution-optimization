@@ -1000,3 +1000,10 @@ sink 拒收、unknown 用量和模型借用责任保持。已完成查询先排�
 354 项 CPU 选择：349 通过，四个同步 prepared-reuse 方法和一个实验控制入口方法在准确基底
 `d0b19dbb` 同样受 PermissionError 影响，未算通过。3010 条历史绑定仍有原十处失配，无新增。
 本批未运行真实 Ray、模型或 GPU，不能据此认定原 Q1 时间差已消除；同步热点日志尚未改动。
+
+
+同步调度器的阻塞输入生产移入 envelope_source，两条调度路径的服务池选择共用原优先顺序；
+普通路径只在实际被选中后创建账本。两处由配置和公开入口已建立的内部断言删除，结果关联、
+接纳、额度与 unknown 清理保持。[本批检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
+记录同一组 76 项 CPU 改前／改后全部通过，生产 Python 净减 2 行；历史仍有十处旧来源差异。
+没有修改并行结果 poll／ACK 文件或研究策略，原 socket／sysctl 未验证项保持，未运行真实模型或服务器。
