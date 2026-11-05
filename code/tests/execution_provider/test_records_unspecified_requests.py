@@ -327,6 +327,15 @@ class UnspecifiedConfigIdentityTests(unittest.TestCase):
         self.plan = deepcopy(self.fixture.plan)
         self.plan['resources']['max_active_batches'] = None
 
+    def test_omitted_R_and_None_share_the_complete_IPC_identity(self):
+        plan = deepcopy(self.plan)
+        plan.update(profile=dict(mode='async', max_inflight='auto'),
+            core_capacity=dict(item_input_bytes=ITEM, item_result_bytes=ITEM),
+            async_limits=asdict(typed_ipc()))
+        explicit = self.fixture.identity(plan)
+        plan['resources'].pop('max_active_batches')
+        self.assertEqual(self.fixture.identity(plan), explicit)
+
     def test_config_and_offline_identity_use_the_same_complete_budget(self):
         checked = config.records_runtime(self.plan)
         self.assertIsNone(checked.profile['declared_legacy_request_budget'])
@@ -344,7 +353,8 @@ class UnspecifiedEntryTests(budget_fixture.ResourceBudgetEntryTests):
         super().setUp()
         self.plan['resources']['max_active_batches'] = None
 
-    def test_complete_JSON_IPC_passes_Movie_and_both_session_checks(self):
+    def test_omitted_R_with_complete_JSON_passes_Movie_and_both_session_checks(self):
+        self.plan['resources'].pop('max_active_batches')
         self.plan.update(profile=dict(mode='async', max_inflight='auto'),
             core_capacity=dict(item_input_bytes=ITEM, item_result_bytes=ITEM),
             async_limits=asdict(typed_ipc()))
@@ -372,7 +382,85 @@ class UnspecifiedEntryTests(budget_fixture.ResourceBudgetEntryTests):
             checked = json.loads(output.getvalue())
             self.assertEqual(checked['core_execution']['owner_max_inflight'], 5)
             self.assertEqual(checked['resolved_async_limits_before_feedback'], asdict(typed_ipc()))
+            for batching in (None, dict(policy='token_budget', max_rows=None, token_budget=10000)):
+                with self.subTest(rolling_batching=batching):
+                    checked = session.check_plan(dict(self.plan, rolling_refill=True,
+                        prepared_batching=batching, lifecycle='resident'))
+                    self.assertEqual(checked['record_batching']['R'], 5)
             allocate.assert_not_called()
+
+    def test_omitted_R_reuses_complete_Core_or_service_grants(self):
+        for service in (False, True):
+            with self.subTest(service=service):
+                plan = deepcopy(self.plan)
+                plan['resources'].pop('max_active_batches')
+                plan['profile'] = dict(mode='async', max_inflight='auto')
+                if service:
+                    plan.pop('async_limits')
+                    plan['core_capacity'] = dict(item_input_bytes=8192, item_result_bytes=8192)
+                    plan['service_payload_bytes'] = 8*1024**2
+                checked = session.check_plan(plan)
+                execution = checked['core_execution']
+                self.assertIsNone(execution['declared_legacy_request_budget'])
+                if service:
+                    self.assertGreater(execution['owner_max_inflight'], 2)
+                    self.assertFalse(execution['service_allocation_acquired'])
+                    with self.assertRaisesRegex(ValueError, 'delivery declarations'):
+                        session.check_plan(dict(plan, rolling_refill=True))
+                else:
+                    self.assertEqual(execution['owner_max_inflight'], 4)
+
+    def test_omitted_R_without_a_grant_rejects_actual_entries_before_startup(self):
+        plan = deepcopy(self.plan)
+        plan['resources'].pop('max_active_batches')
+        plan.pop('core_capacity')
+        plan.pop('async_limits')
+        ray = SimpleNamespace(init=Mock(), is_initialized=Mock())
+        with patch.dict(sys.modules, {'ray': ray}), patch.object(core, 'create_records_core') as allocate:
+            with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
+                session.check_plan(plan)
+            directory = self.root/'unstarted-driver'
+            driver = session._MovieDriver(plan, {}, directory, plan['queries'][0])
+            with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
+                driver.start()
+            self.assertIsNone(driver.owner)
+            self.assertFalse(directory.exists())
+            value = dict(schema='semloom.movie_records_run.v1', backend=config.ASYNC_CORE_BACKEND,
+                query_id='q1', task='movie-q1',
+                method=asdict(MovieTask(1).method(plan['model_name'])),
+                engine=plan['engine'], generation=plan['generation'],
+                resources=plan['resources'], core_profile=plan['profile'])
+            path = self.root/'missing-ipc-config.json'
+            path.write_text(json.dumps(value))
+            with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
+                movie.read_config(path)
+            allocate.assert_not_called()
+            ray.is_initialized.assert_not_called()
+            ray.init.assert_not_called()
+
+    def test_explicit_R_and_other_entry_defaults_keep_their_existing_meaning(self):
+        plan = deepcopy(self.plan)
+        plan['resources']['max_active_batches'] = 2
+        plan['profile'] = dict(mode='async', max_inflight='auto')
+        self.assertEqual(session.check_plan(plan)['core_execution']['owner_max_inflight'], 4)
+        plan.update(core_capacity=dict(item_input_bytes=ITEM, item_result_bytes=ITEM),
+                    async_limits=asdict(typed_ipc()))
+        checked = session.check_plan(plan)
+        self.assertEqual(checked['core_execution']['owner_max_inflight'], 2)
+        self.assertEqual(checked['core_execution']['declared_legacy_request_budget'], 2)
+        plan['resources'].pop('max_active_batches')
+        plan.pop('core_capacity')
+        plan.pop('async_limits')
+        for backend, profile in (('semloom-static-reference', dict(mode='sync')),
+                                 ('lotus-native', dict(native_lm_max_batch_size=3))):
+            with self.subTest(backend=backend):
+                candidate = dict(plan, backend=backend, profile=profile)
+                session.check_plan(candidate)
+                self.assertEqual(config.records_resources(candidate).max_active_batches, 2)
+        plan.update(lifecycle='isolated', profile=dict(mode='async', max_inflight=2),
+                    prepared_batching=dict(policy='token_budget', max_rows=None, token_budget=10000))
+        checked = session.check_plan(plan)
+        self.assertEqual(checked['record_batching']['R'], 2)
 
 
 if __name__ == '__main__':

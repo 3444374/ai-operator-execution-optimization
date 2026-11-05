@@ -10,10 +10,16 @@ ASYNC_CORE_BACKEND = "semloom-local-model-core-async"
 
 
 def records_resources(config):
-    """Only an explicit service declaration omits the inherited row/request settings."""
+    """Keep explicit resources; ordinary async resolves omitted R from finite grants."""
     values = config.get('resources', {})
     if type(values) is not dict:
         raise ValueError('resources must be an object')
+    backend = config.get('backend')
+    profile = config.get('profile', config.get('core_profile'))
+    if (backend in ('semloom-core', 'semloom-local-model-core', ASYNC_CORE_BACKEND)
+            and (backend == ASYNC_CORE_BACKEND or type(profile) is dict and profile.get('mode') == 'async')
+            and (config.get('prepared_batching') is None or config.get('rolling_refill') is True)):
+        values = dict(max_active_batches=None) | values
     if 'service_payload_bytes' in config:
         values = dict(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=None) | values
     return RecordsResources(**values)
