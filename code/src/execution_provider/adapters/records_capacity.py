@@ -6,7 +6,7 @@ retain independent counts and bytes. No hardware observation or scheduling.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, replace
 
 from src.scheduling.core.session_contract import SessionLimits, SessionTimeouts
 
@@ -168,8 +168,8 @@ def independent_default_capacity(resources, capacity, overrides=None):
     count guards sit one above that byte allowance so they cannot become a
     hidden request-window policy. Method sizes use the actual single-stage
     envelope; multi-stage low-level owners retain their explicit declarations.
-    With R omitted, a complete typed IPC declaration supplies its finite
-    request count; partial dictionaries do not establish that grant.
+    With R omitted, a complete typed or JSON IPC declaration supplies its
+    finite request count; partial dictionaries do not establish that grant.
     These are logical allocations, not available RAM or measured model limits.
     """
     from src.semantic_methods.budget import row_reservation
@@ -177,6 +177,11 @@ def independent_default_capacity(resources, capacity, overrides=None):
 
     if type(capacity) is not CoreRecordsCapacity or capacity.budget is not None:
         raise ValueError('independent defaults require a Core capacity without a complete budget')
+    if resources.max_active_batches is None and type(overrides) is dict:
+        allocation_fields = {field.name for field in fields(AsyncEngineLimits)
+                             if field.name != 'feedback_interval_s'}
+        if allocation_fields <= overrides.keys():
+            overrides = AsyncEngineLimits(**overrides)
     requests = (overrides.max_inflight
                 if resources.max_active_batches is None and type(overrides) is AsyncEngineLimits
                 else resources.request_capacity())

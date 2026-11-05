@@ -1,6 +1,9 @@
 """Unspecified legacy request count uses complete grants; CPU fixtures only."""
 from copy import deepcopy
+from contextlib import redirect_stdout
 from dataclasses import asdict, replace
+import io
+import json
 import sys
 from types import SimpleNamespace
 import unittest
@@ -10,6 +13,7 @@ from src.baselines.text.movie_tasks import MovieTask
 from src.execution_provider.adapters import lotus_records_core as core
 from src.execution_provider.adapters.records_profile import resolve_records_runtime
 from src.experiments import movie_records_config as config
+from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import GenerationSpec
@@ -143,6 +147,45 @@ class UnspecifiedRequestTests(unittest.TestCase):
             ray.init.assert_not_called()
         self.assertEqual(asdict(case.resources), before)
 
+    def test_complete_JSON_IPC_matches_typed_capacity_without_startup(self):
+        case, limits = self.fixture(), typed_ipc()
+        shape = core.CoreRecordsCapacity(item_input_bytes=ITEM, item_result_bytes=ITEM)
+        ray = SimpleNamespace(init=Mock())
+        with patch.dict(sys.modules, {'ray': ray}), patch(
+                'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
+            for rolling in (False, True):
+                for feedback in (False, True):
+                    profile = (dict(mode='async', admission=dict(kind='resource_feedback'))
+                               if feedback else dict(mode='async', max_inflight='auto'))
+                    expected = resolve_records_runtime(case.engine, case.resources, profile,
+                        capacity=shape, async_limits=limits, rolling_refill=rolling)
+                    for include_feedback_interval in (False, True):
+                        raw = asdict(limits)
+                        if not include_feedback_interval:
+                            raw.pop('feedback_interval_s')
+                        with self.subTest(rolling=rolling, feedback=feedback,
+                                          feedback_interval=include_feedback_interval):
+                            actual = resolve_records_runtime(case.engine, case.resources, profile,
+                                capacity=shape, async_limits=raw, rolling_refill=rolling)
+                            self.assertEqual(actual, expected)
+                            self.assertIsNone(case.resources.max_active_batches)
+            actor.assert_not_called()
+            ray.init.assert_not_called()
+
+    def test_invalid_complete_JSON_IPC_rejects_before_owner_or_runtime(self):
+        case = self.fixture()
+        variants = [dict(asdict(typed_ipc()), **change) for change in
+                    ({'max_inflight': True}, {'result_bytes': ITEM-1},
+                     {'control_slots': 0}, {'feedback_interval_s': float('nan')})]
+        ray = SimpleNamespace(init=Mock())
+        with patch.dict(sys.modules, {'ray': ray}), patch(
+                'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
+            for raw in variants:
+                with self.subTest(limits=raw), self.assertRaises(ValueError):
+                    case.owner(1, capacity=None, async_limits=raw)
+            actor.assert_not_called()
+            ray.init.assert_not_called()
+
     def test_public_factory_uses_the_typed_IPC_grant_without_rewriting_explicit_storage(self):
         case, limits = self.fixture(), typed_ipc()
         shape = core.CoreRecordsCapacity(item_input_bytes=ITEM, item_result_bytes=ITEM)
@@ -187,12 +230,14 @@ class UnspecifiedRequestTests(unittest.TestCase):
                         chain.close(timeout=1)
                         owner.close(timeout=1)
 
-    def test_missing_or_dictionary_IPC_is_not_a_substitute_for_a_finite_None_grant(self):
+    def test_missing_or_partial_dictionary_IPC_is_not_a_finite_None_grant(self):
         case = self.fixture()
+        partial = asdict(typed_ipc())
+        partial.pop('control_frame_bytes')
         ray = SimpleNamespace(init=Mock(side_effect=AssertionError('Ray must not initialize on rejection')))
         with patch.dict(sys.modules, {'ray': ray}), patch(
                 'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
-            for limits in (None, {}, dict(max_inflight=5), asdict(typed_ipc())):
+            for limits in (None, {}, dict(max_inflight=5), partial):
                 for rolling in (False, True):
                     with self.subTest(limits=limits, rolling=rolling), self.assertRaisesRegex(
                             ValueError, 'request capacity.*unresolved'):
@@ -215,14 +260,15 @@ class UnspecifiedRequestTests(unittest.TestCase):
                 finally:
                     owner.close(timeout=1)
 
-    def test_typed_IPC_does_not_allow_sync_or_a_window_above_its_finite_request_grant(self):
+    def test_complete_IPC_does_not_allow_sync_or_a_window_above_its_request_grant(self):
         case, limits = self.fixture(), typed_ipc()
         ray = SimpleNamespace(init=Mock(side_effect=AssertionError('Ray must not initialize on rejection')))
         with patch.dict(sys.modules, {'ray': ray}), patch(
                 'src.execution_provider.adapters.lotus_records_async_actor.AsyncRecordsActorOwner') as actor:
-            for profile in (None, dict(mode='sync', max_inflight=1), dict(mode='async', max_inflight=6)):
-                with self.subTest(profile=profile), self.assertRaises(ValueError):
-                    case.owner(1, profile=profile, capacity=None, async_limits=limits)
+            for grant in (limits, asdict(limits)):
+                for profile in (None, dict(mode='sync', max_inflight=1), dict(mode='async', max_inflight=6)):
+                    with self.subTest(profile=profile, grant=grant), self.assertRaises(ValueError):
+                        case.owner(1, profile=profile, capacity=None, async_limits=grant)
             with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
                 case.owner(1, capacity=None, async_limits=limits,
                            prepared_batching=PreparedBatching('token_budget', None, 10000))
@@ -297,6 +343,36 @@ class UnspecifiedEntryTests(budget_fixture.ResourceBudgetEntryTests):
     def setUp(self):
         super().setUp()
         self.plan['resources']['max_active_batches'] = None
+
+    def test_complete_JSON_IPC_passes_Movie_and_both_session_checks(self):
+        self.plan.update(profile=dict(mode='async', max_inflight='auto'),
+            core_capacity=dict(item_input_bytes=ITEM, item_result_bytes=ITEM),
+            async_limits=asdict(typed_ipc()))
+        with patch.object(core, 'create_records_core') as allocate:
+            for lifecycle in ('isolated', 'resident'):
+                with self.subTest(lifecycle=lifecycle):
+                    checked = session.check_plan(dict(self.plan, lifecycle=lifecycle))
+                    self.assertEqual(checked['core_execution']['owner_max_inflight'], 5)
+                    self.assertIsNone(checked['core_execution']['declared_legacy_request_budget'])
+                    self.assertEqual(checked['async_limits']['result_slots'], 1)
+            value = dict(schema='semloom.movie_records_run.v1', backend=config.ASYNC_CORE_BACKEND,
+                query_id='q1', task='movie-q1',
+                method=asdict(MovieTask(1).method(self.plan['model_name'])),
+                engine=self.plan['engine'], generation=self.plan['generation'],
+                resources=self.plan['resources'], core_profile=self.plan['profile'],
+                core_capacity=self.plan['core_capacity'], async_limits=self.plan['async_limits'])
+            path = self.root/'complete-ipc-config.json'
+            path.write_text(json.dumps(value))
+            output = io.StringIO()
+            with patch.object(movie, 'model_preflight', return_value=dict(inference_calls=0)), \
+                    redirect_stdout(output):
+                self.assertEqual(movie.main(['check', '--config', str(path),
+                    '--sembench-checkout', str(self.root),
+                    '--source-manifest', self.plan['queries'][0]['manifest']]), 0)
+            checked = json.loads(output.getvalue())
+            self.assertEqual(checked['core_execution']['owner_max_inflight'], 5)
+            self.assertEqual(checked['resolved_async_limits_before_feedback'], asdict(typed_ipc()))
+            allocate.assert_not_called()
 
 
 if __name__ == '__main__':
