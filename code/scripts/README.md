@@ -50,10 +50,17 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本保留；依赖旧 HTTP／PG 启动器的部分随归档隔离。
 已有成绩、成本、失败和 unknown 不修改；新 CPU 测试不构成模型或查询加速证据。
 
-
 ## 本地时间与额度诊断
 
 [观察探针](profiling/map_observation_probe.py)、[Core 探针](profiling/mapped_core_probe.py)和
 [预付计数探针](profiling/mapped_request_probe.py)仅使用本地 CPU 替身。每轮共用实际运行截止，
 后续单项使用剩余时间，不再提前扣 60／30 秒；停止新增后继续取消和清理，已预付计数不退还。
 单独调用 case 仍保留有限默认时限。这些诊断不代表模型或查询性能。
+
+## 独立研究与离线分析
+
+SAOR 声明与方法说明见[独立材料](../../experiments/saor/README.md)，旧双卡、开题和 phase-change 配方见
+[精确归档](../../experiments/reproduction/legacy_recipes_20261105/README.md)。
+`analysis/summarize_saor_*.py`、`replay_saor_capacity.py`及既有成本／静态曲线分析继续读取历史结果；
+`run_ai_operator_scenarios.py`保留显式 profiler 装配与 CPU 行为核验用途，旧 PG profiler 已归档，
+不能直接用旧配置恢复当前实验。历史方案、原始结果和必要失败证据保持。
