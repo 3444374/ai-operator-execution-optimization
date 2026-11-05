@@ -73,7 +73,7 @@ class ServiceOwnerTests(unittest.TestCase):
         self.assertEqual(self.pool.snapshot()['allocations'], 0)
 
     def test_conflicting_old_controls_are_rejected_before_actors_or_allocation(self):
-        for options in (dict(resources=RecordsResources(prepare_batch_rows=1, model_batch_rows=1)),
+        for options in (dict(resources=RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)),
                         dict(profile=dict(mode='sync')), dict(profile='computed-work-local-pairs'),
                         dict(async_limits={}), dict(rolling_refill=True), dict(batch_concurrency=1),
                         dict(prepared_batching=object())):

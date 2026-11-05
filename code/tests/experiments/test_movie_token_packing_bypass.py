@@ -27,7 +27,7 @@ class TokenPackingBypassEntryTests(unittest.TestCase):
 
     def test_opt_in_rejects_fused_nonrolling_and_nonboolean(self):
         engine = EngineSpec('/tmp/cpu-fixture-model', '/tmp/cpu-model-python', '/tmp/cpu-driver-python')
-        resources = RecordsResources()
+        resources = RecordsResources(max_active_batches=2)
         for options, error in (
             (dict(prepared_batching=PreparedBatching('token_budget', None, 4096)), ValueError),
             (dict(execution='record_local_sections', prepared_batching=PreparedBatching('token_budget', None, 4096)), ValueError),

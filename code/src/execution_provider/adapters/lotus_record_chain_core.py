@@ -106,6 +106,7 @@ class SemLoomRecordChainCore:
         self.release_completed_audit = release_completed_audit
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         if execution not in ("fused", "record_local_sections"):
             raise ValueError("chain execution requires fused or record_local_sections")
         self.execution = execution

@@ -41,7 +41,7 @@ class UnspecifiedRequestTests(unittest.TestCase):
         value = RecordsResources(max_active_batches=None)
         self.assertIsNone(value.describe()['max_active_batches'])
         self.assertEqual(RecordsResources(**asdict(value)), value)
-        self.assertEqual(RecordsResources().max_active_batches, 2)
+        self.assertIsNone(RecordsResources().max_active_batches)
         for bad in (False, True, 0, -1, 'auto', float('inf'), 2.5):
             with self.subTest(value=bad), self.assertRaises(ValueError):
                 RecordsResources(max_active_batches=bad)
@@ -451,12 +451,21 @@ class UnspecifiedEntryTests(budget_fixture.ResourceBudgetEntryTests):
         plan['resources'].pop('max_active_batches')
         plan.pop('core_capacity')
         plan.pop('async_limits')
-        for backend, profile in (('semloom-static-reference', dict(mode='sync')),
-                                 ('lotus-native', dict(native_lm_max_batch_size=3))):
+        native = dict(plan, backend='lotus-native', profile=dict(native_lm_max_batch_size=3))
+        session.check_plan(native)
+        self.assertIsNone(config.records_resources(native).max_active_batches)
+        for backend in ('daft', 'ray-data'):
             with self.subTest(backend=backend):
-                candidate = dict(plan, backend=backend, profile=profile)
+                candidate = dict(plan, backend=backend, lifecycle='isolated', profile={})
                 session.check_plan(candidate)
-                self.assertEqual(config.records_resources(candidate).max_active_batches, 2)
+                self.assertIsNone(config.records_resources(candidate).max_active_batches)
+        static = dict(plan, backend='semloom-static-reference', profile=dict(mode='sync'))
+        with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
+            session.check_plan(static)
+        static['resources'] = dict(plan['resources'], max_active_batches=2)
+        session.check_plan(static)
+        self.assertEqual(config.records_resources(static).max_active_batches, 2)
+        plan['resources']['max_active_batches'] = 2
         plan.update(lifecycle='isolated', profile=dict(mode='async', max_inflight=2),
                     prepared_batching=dict(policy='token_budget', max_rows=None, token_budget=10000))
         checked = session.check_plan(plan)

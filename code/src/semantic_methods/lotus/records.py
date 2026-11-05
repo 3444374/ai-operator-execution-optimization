@@ -132,7 +132,7 @@ class RecordsResources:
     gpu_workers: int = 1
     prepare_batch_rows: int = 4
     model_batch_rows: int = 4
-    max_active_batches: int | None = 2
+    max_active_batches: int | None = None
     query_timeout_s: float = 60
     startup_timeout_s: float = 120
     model_rpc_workers: int | None = None
@@ -162,13 +162,12 @@ class RecordsResources:
                 raise ValueError("records deadline must be finite and positive: " + name)
 
     def describe(self):
-        self.__post_init__()
         return asdict(self)
 
     def request_capacity(self):
         """Read an applied finite grant; None records an unresolved declaration."""
         if self.max_active_batches is None:
-            raise ValueError("request capacity is unresolved; a complete resource budget is required")
+            raise ValueError("request capacity is unresolved; declare max_active_batches or a supported finite budget")
         return self.max_active_batches
 
 

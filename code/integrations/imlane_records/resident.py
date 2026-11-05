@@ -75,7 +75,7 @@ class IMLaneResidentSession:
     def __init__(self, engine, generation, resources, *, author_args, model_environment,
                  deadline_monotonic, observer=None):
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-                or resources.max_active_batches > 2 or engine.max_model_calls is None
+                or resources.request_capacity() > 2 or engine.max_model_calls is None
                 or engine.max_model_calls > 4096 or type(deadline_monotonic) not in (int, float)
                 or not time.monotonic() < deadline_monotonic < float("inf")):
             raise ValueError("resident Filter requires an explicit finite session within the existing native capacities")

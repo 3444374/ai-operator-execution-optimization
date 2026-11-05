@@ -55,7 +55,7 @@ def configuration(value):
     generation = GenerationSpec.from_dict(value["generation"])
     resources = RecordsResources(**value["resources"])
     if (resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.prepare_batch_rows > 16
-            or resources.max_active_batches > 2):
+            or resources.request_capacity() > 2):
         raise ValueError("this CPython slice requires one worker and the existing finite bridge capacities")
     queries = value["query_ids"]
     if (type(queries) is not list or not 1 <= len(queries) <= 2 or len(set(queries)) != len(queries)

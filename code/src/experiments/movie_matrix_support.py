@@ -110,17 +110,15 @@ def validate_core_scan(plan, group, index, cpu_limit):
     """Validate declared capacities without pretending to observe hardware."""
     jobs=scan_jobs(group,index)
     if not jobs:return
-    from src.execution_provider.adapters.records_profile import resolve_core_profile
-    from src.serving.backends.vllm_protocol import EngineSpec
-    from src.semantic_methods.lotus.records import RecordsResources
+    from src.experiments.movie_records_config import records_resources, records_runtime
     profile=plan['profile']
     if type(profile) is not dict or profile.get('admission') is not None:
         raise ValueError('fixed Core calibration requires a profile object without online admission')
     if plan['backend']!='semloom-core' or profile.get('mode')!='async':
         raise ValueError('measured Core selection currently supports async only; fixed sync remains available')
-    resources=RecordsResources(**plan['resources']);engine=EngineSpec.from_dict(plan['engine'])
+    resources=records_resources(plan)
     for candidate in _calibration_candidates(group['calibration']):
-        resolve_core_profile(engine,resources,dict(profile,max_inflight=candidate['max_inflight']))
+        records_runtime(dict(plan,profile=dict(profile,max_inflight=candidate['max_inflight'])),resources=resources)
         if candidate['cpu_workers']+resources.gpu_workers+1>cpu_limit:
             raise ValueError('Core candidate exceeds declared prepare/model/driver CPU budget')
 

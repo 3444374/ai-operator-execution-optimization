@@ -311,7 +311,8 @@ class CoreRecordsTests(unittest.TestCase):
         self.spec = EngineSpec("/tmp/fixture-model", "/tmp/model-python", "/tmp/driver-python")
 
     def owner(self, **changes):
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, **changes)
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
+                                     **(dict(max_active_batches=2) | changes))
         return core.SemLoomRecordsCore(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(), resources)
 
     def drain(self, owner, predicate=lambda: False):
@@ -387,7 +388,7 @@ class CoreRecordsTests(unittest.TestCase):
         for owner_type in (static.SemLoomRecordsStaticReference, core.SemLoomRecordsCore):
             with Runtime(self.rows) as runtime:
                 owner = owner_type(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(),
-                                   RecordsResources(prepare_batch_rows=1, model_batch_rows=1))
+                                   RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1))
                 rows = list(owner.evaluate(Source(self.rows), query_id="same"))
                 results.append(sorted(rows, key=lambda v: v["source_position"]))
                 owner.close()
@@ -767,7 +768,7 @@ class CoreRecordsTests(unittest.TestCase):
                             effective_limits={"max_active_requests": 2},
                             production_core_connected=False, gpu_exit_confirmed=True)
 
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        resources = RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)
         actors = Owner(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(), resources)
         with Runtime(self.rows):
             owner = core.SemLoomRecordsCore(actors.method, self.spec, actors.generation,
@@ -784,7 +785,7 @@ class CoreRecordsTests(unittest.TestCase):
                             for key in actors.acknowledged))
 
     def test_injected_owner_configuration_is_checked_before_allocation(self):
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        resources = RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)
         with self.assertRaisesRegex(TypeError, "RecordsActorOwner"):
             core.SemLoomRecordsCore(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(),
                                    resources, actor_owner=object())

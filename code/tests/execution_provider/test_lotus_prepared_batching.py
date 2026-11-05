@@ -191,12 +191,12 @@ class PreparedBatchingTests(unittest.TestCase):
             with self.subTest(args=args), self.assertRaises(ValueError): PreparedBatching(*args)
         spec = EngineSpec('CPU-fixture', sys.executable, sys.executable)
         with self.assertRaisesRegex(ValueError, 'optional token B, record progression'):
-            Owner(spec, RecordsResources(), execution='record_local_sections', prepared_batching=PreparedBatching('fixed_rows', 1))
+            Owner(spec, RecordsResources(max_active_batches=2), execution='record_local_sections', prepared_batching=PreparedBatching('fixed_rows', 1))
         with self.assertRaisesRegex(ValueError, 'model_batch_rows'):
-            Owner(spec, RecordsResources(), prepared_batching=PreparedBatching('fixed_rows', 10000))
+            Owner(spec, RecordsResources(max_active_batches=2), prepared_batching=PreparedBatching('fixed_rows', 10000))
         custom = EngineSpec('CPU-fixture', sys.executable, sys.executable, chat_template='override')
         with self.assertRaisesRegex(ValueError, 'tokenizer-owned chat template'):
-            Owner(custom, RecordsResources(), prepared_batching=PreparedBatching('fixed_rows', 1))
+            Owner(custom, RecordsResources(max_active_batches=2), prepared_batching=PreparedBatching('fixed_rows', 1))
 
     def test_extract_or_role_changes_fail_before_source_consumption_and_engine_preflight(self):
         role_change = LotusRecordChain((self.chain.stages[0],

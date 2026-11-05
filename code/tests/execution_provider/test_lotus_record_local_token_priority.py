@@ -100,7 +100,7 @@ class JointTokenPriorityTests(token_tests.QueryTokenTests):
                 self.assertIsNone(owner._root_run)
                 self.assertEqual(runtime.async_actors, [])
         with self.assertRaisesRegex(ValueError, "record_local_sections"):
-            SemLoomRecordChainCore(self.model, RecordsResources(), token_budget=self.budget(base),
+            SemLoomRecordChainCore(self.model, RecordsResources(max_active_batches=2), token_budget=self.budget(base),
                 ready_order="successor_first", successor_first=SuccessorFirst(2, 1.0))
 
     def test_joint_W_limits_native_supply_below_C_without_reordering_accepted_calls(self):

@@ -51,7 +51,7 @@ class IMLaneChainBackend:
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.resources = RecordsResources(**asdict(resources))
         if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
-                or resources.model_batch_rows > 16 or resources.max_active_batches > 2):
+                or resources.model_batch_rows > 16 or resources.request_capacity() > 2):
             raise ValueError("IMLane chains require one author executor, 1..16 rows and at most two pending blocks")
         self.args, self.environment, self.cancelled = author_args, assigned_environment(model_environment), cancelled
         require_outside_git(Path(author_args.output))
