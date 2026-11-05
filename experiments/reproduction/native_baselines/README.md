@@ -327,3 +327,16 @@ Q2b视觉非HTTP替换未完成。历史原始ID／SHA保持，优先复用已�
 历史调度器与测试继续读既有原件，不导入新函数；十处旧来源差异保留，完整恢复仍未通过。
 [本批职责和检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
 不提供模型环境、真实 Ray 或查询性能结论。
+
+
+<a id="retired-profiler-replay"></a>
+## 旧 profiler 重放接线的准确原件
+
+当前维护代码移除 replay.py 的八个旧参数接线函数，实际五个 Arrow 转换函数由 batch_envelopes.py 负责。
+[完整原件](historical_sources/7bf1d92b/code/src/observability/profiling/replay.py.gz)来自准确
+`7bf1d92baf2611925c608cfe76b4a766855bd77e`，30485 字节、845 行，与五份投影原预期摘要及此前维护字节相同。
+只增加五条来源和 gzip 格式记录，原 3,010 个文件摘要、五个投影身份及其他映射保持；历史仍有十处旧差异。
+原 PG profiler 调用方可从同一准确 Git 树恢复，源码和恢复说明见[原实验归档](../paused_pg_and_retired_http_20261105/README.md)。
+维护 SDK 不再提供这些旧私有函数或参数；调用方提供的 typed replay_envelopes 与共享调度算法继续保留。
+[当前改动和 CPU 检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+不表示完整历史环境、模型或性能已恢复。

@@ -1691,3 +1691,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [融合批私有目录删除失败后的关闭重试](diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
 以一个新增进程内反例确认原成功缓存阻止重试，保留一次改前失败和修正后的十项通过；不是两组相同选择，也不累计为十一项覆盖。
 文件错误由测试注入，只有 CPU 替身，没有实际模型或 GPU 终态结论；原十处历史来源差异和环境未验证项保持。
+
+
+[旧 profiler replay 接线退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+记录八个无现用调用函数退出维护源码、五个实际 Arrow 函数及当前导入迁移；同组七项 CPU 改前／改后全部通过。
+一个多行 Arrow 值用例先在旧实现通过，源与期望保持；重叠运行不累计。准确旧源供五份历史投影恢复，原十处差异保持，
+生产 Python 净减 707 行，无查询性能、真实 Ray 或模型结论。

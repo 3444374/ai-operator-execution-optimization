@@ -19,6 +19,10 @@ over the execution policy it observes.
   `profiling/ray_scheduler.py` assembles endpoint topology, routing/admission options, the existing
   scheduler and result metrics. Policy and execution remain implemented in `src/scheduling/`;
   the two profiler modules share the existing scheduler rather than maintaining another one.
+  `profiling/batch_envelopes.py` converts existing Arrow batches into typed request envelopes.
+  The old `profiling/replay.py` argument-driven replay adapters have been retired; their
+  [exact source and recovery](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-replay)
+  remain separate from the maintained SDK. Caller-supplied `replay_envelopes` still work.
   The unused PostgreSQL profiler argument parser has been retired with the old entry;
   its [exact historical source](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)
   preserves the original arguments. Callers supply already constructed admission objects to the SDK.

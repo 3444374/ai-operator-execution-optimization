@@ -1020,3 +1020,10 @@ sink 拒收、unknown 用量和模型借用责任保持。已完成查询先排�
 [最小 CPU 反例](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
 在原生产代码上失败，修正后与原九项审计生命周期用例合计十项通过；确认目录被再次删除、调用记录和原模型关闭凭据保持。
 生产只移动两行，没有增加状态或检查，没有改 prepared／常驻模型关闭；真实 Ray、模型及原权限未验证项保持。
+
+
+旧 profiler replay 的八个无现用调用接线函数与专用导入退出维护源码；五个实际 Arrow 转换函数归 batch_envelopes。
+Ray SDK 和现用测试已迁移导入，两个仅由旧接线使用的私有关键字参数删除，共享算法与协议字段保持。
+[本批记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+保存同组七项改前／改后通过、845 行原件及五条历史来源；生产 Python 净减 707 行，十处旧历史差异未增加。
+未改 fused 修复、策略、容量、模型默认或并行 poll／ACK，没有真实 Ray／模型／性能结论。

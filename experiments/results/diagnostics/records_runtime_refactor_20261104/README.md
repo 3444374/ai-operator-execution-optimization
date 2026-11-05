@@ -2699,3 +2699,46 @@ prepared／常驻模型关闭及其余 31 个 owner 方法保持，没有新增�
 [统计口径](#local-occupancy-projection)继续包含独立研究，排除测试、说明与历史副本。
 原 socket／sysctl 和 CLI 未验证项没有选择或重试，未运行真实 Ray、模型、GPU、数据库或服务器。
 并行 poll／ACK、策略、容量和默认配置保持，整体核心职责和旧引用清理继续，未合并 main。
+
+
+<a id="retired-profiler-replay"></a>
+## 旧 profiler replay 接线退役，现用 Arrow 转换独立命名
+
+本批基于已发布的 `7f0b6d42eb3e31cb45d56308feb6d0f5cd625c35`，先由
+`7f4d896cff21690a6ecb6d01f10dc8f0450f5524` 补一个 Arrow 值用例并跑通旧实现；清理候选为
+`1701a03e69ba0d3efd91141f7b8f5f3e94866e79`，树 `5945af479659c7a964c4016560c6064b4375f174`。
+
+旧 replay.py 的八个函数只剩定义和彼此调用，当前 src／scripts／tests 没有外部执行调用。
+旧 PG profiler 的真实调用方和原文件都可从准确 7bf1 树恢复；旧实验与工程计划保留原叙事。
+这次退役的是 args 到 offline／arrival／feedback 算法的旧接线，未删除共享 batching、flush、token-budget、
+service-quantum 算法或研究测试，也不改变现代 Ray SDK 接受的 caller-supplied replay_envelopes。
+
+现用五个 Arrow 转换函数由 batch_envelopes.py 直接实现，原 replay 文件删除；Ray 和现用测试导入已迁移，没有转发壳。
+四个函数语法树保持，另一个仅移除由旧接线独占的两个私有关键字参数及两项显式赋值；
+BatchRequest 协议本身的 -1／false 默认保持。批请求身份、payload、成本、前缀、端点和到达时间仍用原计算。
+维护源码内的旧模块导入及八个旧函数引用已反查清理，已知 CPU 辅助无旧私有调用。
+
+[机器摘要](raw/replay_retirement_checks.json)与[脱敏原件](raw/replay_retirement_raw.json.gz)
+保存同一组七项 CPU 改前／改后全部通过，无失败、错误或跳过；重复运行不累计覆盖。
+新增的一个值用例先在旧实现通过，覆盖多行、三种输出成本、统一／混合前缀和端点、到达时间、批身份与原协议默认；
+随后只迁移导入，没有修改用例期望。其余六项仍是原 Ray 画像／调度 CPU 替身，未运行真实 Ray。
+两次各 1,019 个 code 文件摘要运行期间保持，并分别匹配准确的检查提交和清理候选。
+独立复核无需修正，确认现用调用、默认字段、共享算法及历史身份保持；复核没有重跑测试或启动服务。
+
+完整旧文件先以单份 gzip 保存：解码 30,485 字节／845 行，压缩 5,234 字节，与准确 7bf1 原件逐字节相同。
+五份历史投影只新增来源／格式映射，原预期摘要、投影身份及其他映射保持；仍为 3,010 项中 3,000 匹配、十处旧差异。
+历史树不导入维护版新模块，完整恢复未通过；原源和恢复入口见[历史说明](../../../reproduction/native_baselines/README.md#retired-profiler-replay)。
+
+| 生产 Python 口径 | 改前 | 当前 |
+|---|---:|---:|
+| replay／现用 batch_envelopes | 845 | 138 |
+| 可比核心，含独立研究 | 58,700 | 57,993 |
+| 现用 src＋scripts，含独立研究 | 114,517 | 113,810 |
+| 超过百行的核心函数 | 50 | 47 |
+
+本批净减 707 行，其中八个旧函数体共 665 行，其余为专用导入和分隔。
+统计含空白和注释，排除测试、说明和历史副本；核心排除 experiments／baselines，仍包含独立研究 3,008 行，其他现用核心为 54,985 行。
+main `6a8a2d7b`／`3fd3887e` 沿用前批公开口径，改前／当前直接重算：核心分别多 3,902／少 3,635 行，
+较宽口径分别少 26,525／35,835 行。超过千行的核心文件仍有 adaptive，其他大文件继续按实际职责处理。
+已发布的 fused 清理修复保持原字节，未重跑其十项；策略、容量、默认值和并行 poll／ACK 未动。
+原 socket／sysctl 和 CLI 未验证项没有选择或重试；没有模型、GPU、数据库、服务器或性能结论，未合并 main。
