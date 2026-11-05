@@ -486,3 +486,9 @@ PG／旧HTTP专用用例按[准确来源](../../experiments/reproduction/paused_
 整轮监控的[直接接线检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
 实际调用 controller，并经预先取得的监督函数运行 CPU 子进程；覆盖不传回调、回调和回调抛错。
 原 59 项与最终 58 项分别保存；退出的一项只检验已删除的全局函数替换机制，不计为通过。
+
+
+三份 probe 的 `test_probe_deadlines` 检查真实剩余时间和取消／迟到回执，
+`test_movie_cancellation` 保留 unknown 不退额度行为；模拟 controller 接口与实际显式监控一致。
+[最新组合检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
+列出可直接复算的模块及 147 项结果，含新增反馈采样的 CPU 方法，不启动真实 Ray 或模型。

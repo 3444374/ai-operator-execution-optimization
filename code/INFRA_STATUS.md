@@ -896,3 +896,9 @@ C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认
 整轮监控现通过 controller／CPU／collect 的实际监督调用显式传递，不再改写模块全局函数，
 也不保留该旧机制的防嵌套检查。[增量记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
 说明独审发现、缓存函数别名、已观察进程登记及原清理；真实服务器与模型仍待单独验证。
+
+
+三份现用 probe 已共享实际剩余时间，取消夹具已接上显式监控；保留最新采样修正、原生 LOTUS
+本地 IPC 及旧路径退役。[最终组合记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
+提供 147 项 CPU 检查及按同一口径的代码量，未据此验证模型或查询性能。默认 R、物理容量授予
+和剩余大文件整理仍未完成。

@@ -1616,3 +1616,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [整轮监控直接接线](diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
 补齐 d05 独审发现的私有监督函数别名问题，保存真实 CPU 子进程与监控／停止用例；
 移除全局函数替换及其专属恢复测试，源码恢复点和当前选择分别记录。
+
+
+[时间安排最终组合](diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
+记录实际剩余时间、显式监控及取消夹具迁移，147 个不同 CPU 方法全部通过；早期失败与误选记录
+保留，重叠运行不累计。PG 时间候选因生产路径退役未纳入，未恢复旧入口；真实模型、Ray、GPU
+及性能未运行，物理容量与完整 R 迁移尚未完成。

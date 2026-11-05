@@ -11274,3 +11274,12 @@ R 默认仍为 2，省略存储随声明请求数变化；物理容量、完整�
 删除全局替换及防嵌套检查；controller 先登记进程身份再调用回调，原资源清理保持。
 [源码与 CPU 原件](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
 保留 59／58 项及退役测试的 Git 恢复点，未把不同选择相加，也未触碰运行中的 GPU 任务。
+
+
+## 2026-11-05 组合现用 probe 的时间安排与显式监控
+
+以最新 b6d6da33 保留反馈采样和此前退役结果，三份 probe 使用实际剩余时间，不重复预留完整单项。
+取消夹具接收原监控回调，unknown 不退额度断言保持；PG 候选因对应生产路径已退役未纳入。
+[147 项 CPU 组合记录与代码量](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
+保留失败及完整私有原件摘要。本批生产 Python 净减 3 行；默认 R、物理容量、完整关系持有和
+剩余大文件整理继续处理，未运行模型或服务器实验，未合并 main。
