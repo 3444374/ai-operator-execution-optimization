@@ -391,6 +391,11 @@ consumption live in [records_query_runtime.py](records_query_runtime.py). The ch
 owner assembles its model, transport and capacity; the iterator loads independently
 of those constructors and retains its original import and serialized location.
 Its preparation order, deadlines, cancellation and result release are unchanged.
+Fused batch transfer and result iteration live in
+[lotus_chain_fused_runtime.py](lotus_chain_fused_runtime.py). The chain owner retains
+configuration, model assembly, relation-phase transitions and final resource cleanup.
+It imports the original transport and iterator classes directly; there is no new
+owner, facade or scheduling loop, and record-local transport is unchanged.
 The retained single native snapshot RPC and its cancellation/audit state live in
 [records_native_sampler.py](records_native_sampler.py). Feedback policies reuse
 that sampler; it imports no query constructors or window controller. Existing

@@ -2144,3 +2144,23 @@ worker 和调用记账使用实际剩余时间，移除重复的 60／30 秒启�
 大部分现用目录缩减来自此前 PG／HTTP 退役，不归功于本次三行变化，也不表示 Git 历史存储减少。
 默认 R 仍为 2；物理容量授予、完整关系／审计持有、剩余大文件及 SDK 整理继续处理。
 本批未运行真实 Ray、模型、GPU、数据库、服务器或性能实验，未修改正在运行的任务，未合并 main。
+
+
+<a id="fused-chain-runtime-roles"></a>
+## 融合批传输与迭代从查询 owner 分开
+
+以已发布 `1f92fce5` 为源，原样迁移 `_encode`、`_ChainTransport`、`_CoreChainRows` 到同目录
+`lotus_chain_fused_runtime.py`。`lotus_record_chain_core.py` 保留配置、模型组装、关系阶段切换、
+record-local 交接与最终资源清理；两个现有创建点直接导入原类，没有新增 owner、facade、回调或状态。
+对照工程计划 §8.7–8.8，本批复用已有执行与模型服务，只让文件按实际变化原因组织，不复制执行层。
+共享 `records_transport`、actor、反馈采样和调度文件不改，避免与并行执行修改交叉。
+
+[机器摘要](raw/fused_chain_runtime_roles_checks.json)与[脱敏运行原件](raw/fused_chain_runtime_roles_raw.json.gz)
+记录相同 11 个现有 CPU 方法在改前及改后各自全部通过，无失败、错误或跳过，重复方法不相加。
+它们覆盖固定／可选 token 组批、完整 Extract 及父记录、空输入、失败前缀、unknown、迟到清理与冷导入。
+源对象的函数体和类体保持；比较语法树仅作本次搬迁核对，没有加入生产或测试的源码形状判断。
+原 owner 的调用和测试仍直接使用相同类；没有新增历史 pickle 包装或兼容默认值。
+
+原文件 1,535 行变为 1,100 行，新模块 453 行，两个生产文件总计增加 18 行，来自独立导入和说明。
+本批是职责整理，不把拆文件称为减少代码。其他大文件、默认 R 与物理容量仍需继续处理；
+没有运行真实 Ray、模型、GPU、服务器或性能实验，未合并 main。

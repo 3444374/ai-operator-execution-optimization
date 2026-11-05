@@ -1,0 +1,123 @@
+{
+  "base": "1f92fce59897fb7e633087ed09ddc50068cd8fd8",
+  "change": "Move fused transfer and iteration out of query assembly without changing their bodies or adding another owner.",
+  "structure": {
+    "base": "1f92fce59897fb7e633087ed09ddc50068cd8fd8",
+    "objects_moved_unchanged": [
+      "_encode",
+      "_ChainTransport",
+      "_CoreChainRows"
+    ],
+    "all_top_level_function_and_class_ASTs_unchanged": true,
+    "owner_before_lines": 1535,
+    "owner_after_lines": 1100,
+    "runtime_lines": 453,
+    "production_net_lines": 18,
+    "objects_sha256": {
+      "CoreChainCapacity": "f418c7416436a7f0d7b6ea48f4c311e378889c759199f3e6498f7efa883348f5",
+      "_encode": "9d2417cfadd8f509c003af3a83a38cd4961465e02773ac85ef4b7cd1199aedbb",
+      "_ChainTransport": "67cb2b3f78bf9115a2a98d6dc1c7be87715e7f31ab7ff1a2517d2e8364abbeac",
+      "_CoreChainRows": "0c3fca2b6467050f9c55097636b7a40cb072a75a6b8812dcff77262d165283cd",
+      "_SectionTransport": "679395f07f670911afc3d86edf64c8fa0ed4ccc1cb5bfc671fb74b533dd662ac",
+      "SemLoomRecordChainCore": "1f1291317a6af8c1a38e5bc89ef121d7f24930ee91e56b25c26615eb0996be95"
+    },
+    "new_runtime_imports_owner": false,
+    "no_new_facade_or_owner": true
+  },
+  "CPU": {
+    "before_methods": 11,
+    "before_passed": 11,
+    "after_methods": 11,
+    "after_passed": 11,
+    "same_method_ids": true,
+    "counts_not_added": true,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "source_unchanged_during_each_run": true,
+    "current_Python_matches_after_run": true
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_chain_actor_backend.py": "052de33f4713cc4b5922ab047551ff51e6d626f9a0b54769c7e64d4c5b0803ec",
+    "code/src/execution_provider/adapters/lotus_chain_fused_runtime.py": "aad65fbf954b4c44674378097244c1e33f86ce3e9f69a58b7781f6ddcde32d0e",
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "841799f04a395e0172fc71b683c1e387620a622a28cd1186a470908471115c7b",
+    "code/src/execution_provider/adapters/records_query_runtime.py": "36b34a0778f208ebbbbee0f21236ba4914a2f3ee661e37f9eefb5e40c5ed9229",
+    "code/src/execution_provider/adapters/records_transport.py": "c790f3e6229566ab27ba516fd06ee3169b73a8de3d828108b2a52978c11e7a93",
+    "code/tests/execution_provider/test_chain_audit_lifetime.py": "1f51358cdc9be69d4cd8a6ee88a418e4ed8054a1d05155d89cb5d03c94f5d52a",
+    "code/tests/execution_provider/test_lotus_prepared_batching.py": "3109bb8368b4693739d6fc3696685b1360a23926ab4c5f700ebed0f471b34ee1",
+    "code/tests/execution_provider/test_lotus_prepared_reuse.py": "e3fe3cebdfd07e480cc415193cae9c50c2e92febef2bb15dc70a9432fef97156",
+    "code/tests/execution_provider/test_records_query_runtime.py": "2ed1ec8595c5d32ffc67b5f731a74fdd834aba3cdae7651607946e7f6cf52204",
+    "code/tests/execution_provider/test_records_transport.py": "026ab99e0c93bdca87fc707bfd06a32b9cec23008cd17c4a422eeafb05fac661",
+    "code/tests/semantic_methods/test_lotus_record_results.py": "734c95bf05de79717105834af06bba6d97d21ce37ee64a2f938daf1931dc53ae"
+  },
+  "public_raw": {
+    "path": "fused_chain_runtime_roles_raw.json.gz",
+    "bytes": 1959,
+    "sha256": "4d71434701e414da46e5a0094ea4d6404d1ebfdfef72316b875555bc188d1b63",
+    "decoded_bytes": 18961,
+    "decoded_sha256": "55b3d7ea9bb7629e2f5f3ecd7f4a6bba73775efddfca071b808d8c8ccf1cf9fb"
+  },
+  "private_originals": {
+    "fused-before-role-split.json": {
+      "bytes": 130946,
+      "sha256": "1f78ed8186b0e84b4560cff8e1c7292700680b46e68b5bccc3b3de7dbb5b022c"
+    },
+    "fused-before-role-split.log": {
+      "bytes": 2566,
+      "sha256": "51c72f37bb29578bfc1661215211a477890279921b01b1ab1b8c625505b4360a"
+    },
+    "fused-after-role-split.json": {
+      "bytes": 131086,
+      "sha256": "1643d3e5914e73c039931910082b0b452470cc7503dd2c5d3b67e2997aef4f61"
+    },
+    "fused-after-role-split.log": {
+      "bytes": 2566,
+      "sha256": "a807deb66a47f87ca1eaf3028e905f3647bdb9b2fa799d4f50559ed333f033e0"
+    }
+  },
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONPATH": "code:code/scripts/experiments",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_disabled_batching_retains_original_read_batches_and_needs_no_tokenizer",
+      "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_tail_merges_across_reads_and_larger_B_changes_groups_at_constant_C",
+      "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_later_buffer_failure_keeps_the_completed_prefix_and_stops_submission",
+      "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_idle_reaper_first_after_buffer_error_confirms_API_and_preserves_prefix",
+      "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_empty_source_and_all_filtered_rows_complete_without_phantom_calls",
+      "tests.execution_provider.test_lotus_prepared_batching.PreparedBatchingTests.test_no_row_cap_keeps_oversize_EOF_cancel_and_unknown_semantics",
+      "tests.execution_provider.test_lotus_prepared_reuse.PreparedReuseTests.test_complete_wire_payload_is_charged_and_no_prepared_rows_leak_to_metadata",
+      "tests.execution_provider.test_chain_audit_lifetime.AuditLifetimeTests.test_core_public_entry_keeps_results_usage_parents_and_relation_phases",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_core_transport_applies_shared_validation_and_releases_only_known_input",
+      "tests.execution_provider.test_records_query_runtime.RecordsQueryRuntimeTests.test_runtime_import_is_independent_of_query_owner_construction",
+      "tests.execution_provider.test_records_transport.RecordsTransportTests.test_chain_backend_and_host_do_not_load_single_filter_host"
+    ]
+  },
+  "preserved": [
+    "owner/config imports and existing transport patch points",
+    "fixed and optional token grouping",
+    "complete Extract/parent relations",
+    "known/unknown ownership, late receipts and cleanup",
+    "all shared record-local, actor, feedback and sampling code"
+  ],
+  "compatibility": "No production serialization of the live private iterator/transport found; no extra historical pickle wrapper is added.",
+  "remaining": [
+    "The owner remains 1100 lines; further duties need separate review.",
+    "Default R and physical resource grants are unchanged.",
+    "No real Ray, model, GPU, server or performance run."
+  ],
+  "real_execution": {
+    "Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "database": 0
+  },
+  "main_merged": false
+}

@@ -11283,3 +11283,11 @@ R 默认仍为 2，省略存储随声明请求数变化；物理容量、完整�
 [147 项 CPU 组合记录与代码量](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
 保留失败及完整私有原件摘要。本批生产 Python 净减 3 行；默认 R、物理容量、完整关系持有和
 剩余大文件整理继续处理，未运行模型或服务器实验，未合并 main。
+
+
+## 2026-11-05 将融合批执行细节移出链查询 owner
+
+`lotus_record_chain_core.py` 保留查询组装、阶段切换与资源生命周期，融合批传输／迭代原样进入
+`lotus_chain_fused_runtime.py`，不引入包装或新 owner。共享传输、actor 与反馈文件保持。
+[现有行为检查与准确行数](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-chain-runtime-roles)
+分别保存改前／改后 11 项全部通过；总生产代码增加 18 行，不把拆分记为减代码或性能改善。
