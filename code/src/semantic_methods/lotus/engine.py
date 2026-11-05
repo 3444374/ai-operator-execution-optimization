@@ -4,6 +4,7 @@ The execution backends receive records and return engine results. This module
 does not create a model, send HTTP, run a vendor graph, or own its scheduling.
 """
 
+from contextlib import contextmanager
 from dataclasses import asdict, replace
 from importlib.metadata import distribution, version
 import hashlib
@@ -251,3 +252,42 @@ def lm_report(lm):
     value = stats.model_dump() if hasattr(stats, "model_dump") else asdict(stats)
     return dict(stats=value, cost_available=False,
                 cost_reason="local engine compute is not assigned an API dollar price")
+
+
+@contextmanager
+def observe_filter_rows(record, record_prompts, *, before_filter=None, after_filter=None):
+    """Record native operator input/kept IDs; preserve its exact arguments/result."""
+    from lotus.sem_ops.sem_filter import SemFilterDataframe
+    from lotus.models import LM
+    original = SemFilterDataframe.__call__
+    original_lm = LM.__call__
+    active_ids = None
+    def observed(accessor,*args,**kwargs):
+        nonlocal active_ids
+        original_ids = list(accessor._obj['_execution_row_id'])
+        if before_filter is not None:
+            before_filter(original_ids)
+        active_ids = original_ids
+        try:
+            result = original(accessor,*args,**kwargs)
+        finally:
+            active_ids = None
+        kept = set(result['_execution_row_id'])
+        if len(set(original_ids)) != len(original_ids) or not kept <= set(original_ids):
+            raise ValueError('native Filter row identities are ambiguous')
+        record([(identity,identity in kept) for identity in original_ids])
+        if after_filter is not None:
+            after_filter(original_ids)
+        return result
+    def observed_lm(lm,messages,*args,**kwargs):
+        if active_ids is None or len(messages)!=len(active_ids):
+            raise ValueError('native query does not have the declared one-prompt-per-row shape')
+        record_prompts([dict(row_id=identity,messages=prompt) for identity,prompt in zip(active_ids,messages)])
+        return original_lm(lm,messages,*args,**kwargs)
+    SemFilterDataframe.__call__ = observed
+    LM.__call__ = observed_lm
+    try:
+        yield
+    finally:
+        SemFilterDataframe.__call__ = original
+        LM.__call__ = original_lm

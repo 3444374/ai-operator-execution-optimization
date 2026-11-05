@@ -81,11 +81,8 @@ class DependencyDirectionTests(unittest.TestCase):
         from src.observability import request_identity
         from src.experiments import native_http_observer
         from src.observability.httpx_observer import _observe_native_httpx_client
-        from src.experiments.postgresql import map_direct
-        from src.execution_provider.semantic_map import request_body
         self.assertIs(legacy_identity.request_identity, request_identity.request_identity)
         self.assertIs(native_http_observer._observe_native_httpx_client, _observe_native_httpx_client)
-        self.assertIs(map_direct.request_body, request_body)
 
     def test_shared_timing_uses_one_recorder_and_preserves_its_event_schema(self):
         timing = importlib.import_module("src.observability.execution_timing")

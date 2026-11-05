@@ -240,7 +240,7 @@ def fixed_response_qualification(source, checkout, method, generation, responses
     """Compare a small software fixture with unchanged native LOTUS Q3, without I/O calls."""
     import lotus
     import pandas as pd
-    from src.baselines.text.frameworks.lotus_pg import observe_filter_rows
+    from src.semantic_methods.lotus.engine import observe_filter_rows
     from src.semantic_methods.lotus.engine import (
         LotusFilterMethod, bind_filter_method, engine_response, lm_report, make_lm, validate_filter_source,
     )

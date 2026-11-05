@@ -27,7 +27,7 @@ from src.baselines.image.sembench_animals import (
     run_original_query,
     verify_animals_checkout,
 )
-from src.baselines.text.frameworks.lotus_pg import observe_filter_rows
+from src.semantic_methods.lotus.engine import observe_filter_rows
 from src.baselines.text.frameworks.native_calls import NativeCallExecutor
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.model_config import load_fixed_model_config
@@ -312,8 +312,7 @@ def run_query(
                         options.ray_async_batches_per_actor
                     )
                     import ray
-                    from src.experiments.postgresql.query_config import NativeRayRuntimeConfig
-                    from src.experiments.postgresql.query_execution import native_ray_runtime
+                    from src.infrastructure.native_ray_runtime import NativeRayRuntimeConfig, native_ray_runtime
 
                     summary["ray_runtime"] = stack.enter_context(
                         native_ray_runtime(
@@ -349,8 +348,7 @@ def run_query(
                 import ray
                 from src.execution_provider.adapters.native_tasks import build_native_execution
                 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
-                from src.experiments.postgresql.query_config import NativeRayRuntimeConfig
-                from src.experiments.postgresql.query_execution import native_ray_runtime
+                from src.infrastructure.native_ray_runtime import NativeRayRuntimeConfig, native_ray_runtime
 
                 summary["ray_runtime"] = stack.enter_context(
                     native_ray_runtime(
