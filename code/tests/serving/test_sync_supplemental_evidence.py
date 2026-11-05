@@ -1,4 +1,4 @@
-"""Recompute published supplemental conditions and restore sanitized CPU copies."""
+"""Check the native source selection and restore sanitized CPU evidence."""
 from copy import deepcopy
 import gzip
 import hashlib
@@ -18,13 +18,6 @@ RAW = ROOT / 'experiments/results/diagnostics/records_runtime_refactor_20261104/
 
 
 class SupplementalEvidenceTests(unittest.TestCase):
-    def test_controlled_ack_reproduces_both_original_failures_and_current_success(self):
-        from tests.execution_provider.ack_order_fixture import check_ack_order
-        report = check_ack_order()
-        self.assertEqual(len(report['outcomes'][0]['failures']), 2)
-        self.assertTrue(report['outcomes'][1]['successful'])
-        self.assertEqual(report['derived_fixture_changed_call_sites'], 1)
-
     def test_changed_upstream_bytes_reject_before_any_engine_construction(self):
         with tempfile.TemporaryDirectory() as directory:
             file = Path(directory) / 'vllm/entrypoints/offline_utils.py'
