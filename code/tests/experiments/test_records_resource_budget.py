@@ -121,12 +121,11 @@ class ResourceBudgetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'rolling'):
             self.owner(1, prepared_batching=PreparedBatching('token_budget', None, 10000))
 
-    def test_default_allocations_no_longer_scale_storage_from_request_R(self):
-        from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+    def test_omitted_IPC_storage_fits_the_declared_request_permission(self):
         owner = self.owner(1, capacity=None, async_limits=None)
         self.assertEqual((owner.resources.max_active_batches, owner._actors.limits.result_slots),
-                         (1, AsyncEngineLimits().result_slots))
-        self.assertEqual(owner.capacity.limits(owner.resources).input_bytes, AsyncEngineLimits().input_bytes)
+                         (1, 1))
+        self.assertEqual(owner.capacity.limits(owner.resources).input_bytes, 2*1024**2)
         with self.assertRaises(ValueError):
             self.owner(1, capacity=None, async_limits=ipc())
 

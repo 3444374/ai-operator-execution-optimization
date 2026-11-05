@@ -454,3 +454,13 @@ Ray 用例也保留。本地组合只收集并跳过这六项，没有启动真�
 Kalypso registry fixture 提供现行公开启动字段，生产校验不改。auto／反馈增量 84 项通过，
 原 Reference 模拟类首次导入干扰已随测试依赖归位处理；重复方法不相加，没有二次全量运行。
 以上仅本地 CPU，不能据此给真实模型、Ray、GPU 或性能结论。
+
+
+### 普通 IPC 省略值的容量检查
+
+[本批记录](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+覆盖两个改前失败的方法与改后通过，以及 16 个相关模块的 151 个不同方法全部通过。
+保留真实字节不足、未消费结果、ACK 和 unknown 用例，没有加日志总数或源码形状判断。
+`test_records_capacity_config` 可单独检查普通／session 配置与本地提交；
+`test_records_capacity_defaults`、`test_lotus_resource_budget_runtime` 继续检查独立预算和资源归还。
+测试仅用 CPU fixture；真实 Ray、模型、GPU 与性能未测。

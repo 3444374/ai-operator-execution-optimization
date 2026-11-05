@@ -1000,7 +1000,8 @@ capacity is inferred. CPU scope is recorded in the
 
 The public default-capacity resolver and Movie preflight/session/calibration share
 one `RecordsRuntimeConfig`. Core and Method count guards sit above the byte-based
-whole-item allowance; result slots remain an independent IPC declaration. A smaller
+whole-item allowance; explicit result slots remain an independent IPC declaration. Omitted
+slots and totals fit the final declared IPC request count and item sizes. A smaller
 explicit IPC frame/total is preserved and does not shrink a different Core item's
 required reservation. Ordinary calibration records `records_capacity_policy_v2`.
 The retired request profiles and admission cache retain their earlier allocation
@@ -1023,9 +1024,10 @@ while the applied owner count comes from `budget.active_requests`. Missing grant
 raise before actor allocation, including profiles requesting `max_inflight="auto"`.
 
 This is explicit-budget support, with CPU checks for config, CLI, session, query
-reuse and offline identity. The ordinary omitted default is still2, and default
-IPC result slots are still8. Automatic resource allocation and default migration
-remain unfinished; None does not mean unlimited memory or measured GPU capacity.
+reuse and offline identity. Ordinary R still defaults to 2. Omitted IPC result slots
+now follow the applied IPC request declaration; omitted totals fit their complete
+items. Automatic physical resource allocation remains unfinished; None does not
+mean unlimited memory or measured GPU capacity.
 See [the check summary](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/unspecified_request_checks.json).
 
 
@@ -1207,8 +1209,8 @@ Movie CLI/session entries can now declare `service_payload_bytes`; see
 [entry settings](../../experiments/movie_matrix.README.md#record-service-payload).
 Rolling Movie CLI/session persistence-copy grants, cross-process allocation and restart
 recovery remain pending. Finite ordinary Filter rolling SDK grants are described below.
-This opt-in path rejects historical profiles and IPC overrides; all callers without a pool
-retain their existing settings, including ordinary R=2 and default IPC result slots=8.
+This opt-in path rejects historical profiles and IPC overrides. Without a pool, ordinary R
+still defaults to 2; omitted IPC slots and totals now fit the declared IPC request capacity.
 See [CPU scope and evidence](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants).
 
 
@@ -1390,3 +1392,24 @@ complete-query latency. The service SDK additionally requires its complete deliv
 declaration; rolling service Movie CLI persistence remains pending.
 [Implementation and retained CPU failures](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
 separate this local candidate from actual model and performance results.
+
+
+<a id="ordinary-ipc-omissions"></a>
+### Ordinary IPC omissions follow the actual declaration
+
+Ordinary async and rolling factories no longer copy the standalone `AsyncEngineLimits()`
+8-slot/16-MiB defaults into a different declared request capacity. Both allocation paths use
+one parser: omitted result and command slots follow the final IPC `max_inflight`; omitted
+input bytes fit that request count times `item_input_bytes`, and omitted result bytes fit
+`result_slots` times `item_result_bytes`. A partial override is applied before deriving totals.
+Explicit totals/counts and complete typed objects retain their values. Complete Core budgets
+keep their own held-task, input and result grants. The direct legacy owner retains its original
+request-matching rules; a standalone IPC object without a caller declaration still has its
+original finite defaults. No extra runtime check, controller or model argument is added.
+
+This removes the accidental ceiling of 8 when R is larger. It also changes omitted storage
+for smaller R; the ordinary R=2 default remains. This is a declared logical allocation, not
+physical RAM discovery, a process RSS cap or the completion of default R separation. An
+explicit storage grant may still admit fewer requests than R. Confirmed delivery, ACK and
+unknown responsibility are unchanged. [CPU scope and original failures](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+include final-count overrides, actual local IPC accounting, preparation, query reuse and cache identity.

@@ -750,3 +750,7 @@ rolling 服务 SDK 已支持完整结果授予；Movie CLI 的 rolling 保存接
 `infrastructure.private_artifacts`；实现和公开旧导出保持同一对象，没有再经 baseline 路径转接。
 [实际范围和未迁移依赖](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
 区分工具归属与仍需单独整理的 NativeCall、图像预测器和画像 manifest 接点；不据此声称所有语义优化已接入。
+
+当前 records 普通／rolling async 的省略 IPC（进程间通信）槽位与总字节从实际请求声明和单项大小解析，
+不再继承低层组件的 8 槽／16 MiB。显式资源值仍独立，R 默认 2 和物理容量自动授予尚未处理；
+接口与检查见[容量说明](src/execution_provider/adapters/README.md#ordinary-ipc-omissions)。

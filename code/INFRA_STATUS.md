@@ -575,7 +575,7 @@ CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页�
 显式 `max_active_batches=None` 现可经普通 async／rolling 工厂使用已有完整独立预算；
 原声明保持 None，实际 Core、Method 和 IPC 许可仍有限。无完整预算时在 actor 分配前拒绝，
 不回落到 2 或解释为无限。167 项 CPU 检查成功，历史 3010 条来源全部匹配；
-普通省略默认仍为 2、默认 IPC 结果槽仍为 8，自动容量及默认迁移尚未完成。
+此处记录当时的普通 R=2 与 IPC 8 槽；当前省略 IPC 的解析见下方“普通 IPC 省略值”。
 [本次摘要](../experiments/results/diagnostics/records_runtime_refactor_20261104/raw/unspecified_request_checks.json)保留原九项反例；
 独审、动态回执问题的另项修复和真实模型检查仍待后续。
 
@@ -861,3 +861,13 @@ Core 调度文件另有独立职责整理：原七个配置／结果／提交接
 记录首轮 721 方法中 717 成功、修正旧测试预期／路径后 26 方法通过、混合关系检查 1 方法通过，
 以及 auto 配置增量 84 方法通过。重叠不加总，721 个不同方法均有通过回执，未二次全量运行。
 默认 R 与存储仍有限；真实 Ray／模型／GPU、物理容量及剩余大文件尚未完成，候选未推送或合并。
+
+
+### 普通 IPC 省略值
+
+以 e7e593d6 为源，普通与 rolling async 共用同一 IPC 值解析。省略结果／命令槽按最终 IPC 请求数，
+省略输入／结果总字节按各自完整单项补齐；完整独立预算及显式字段保持，不再被 8 槽／16 MiB 压低。
+C 的显式／auto 值与动态起步含义不变，vLLM 参数未改。R 默认仍为 2；省略存储随声明请求数变化，
+完整预算和显式存储可独立设置，尚非物理容量探测或完整 R 解耦。
+[原反例和 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+保存两个改前失败、改后通过与 151 个相关方法通过；真实模型、Ray、GPU 和性能未测。
