@@ -1600,3 +1600,8 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [容量与共享额度组合](diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
 关联两份已审生产源码、共享额度改前后记录及组合 CPU 原件；统计去重保留 SAOR 方法，
 普通 IPC 省略值修正不提供物理容量或性能结论。
+
+
+[编排最长时间误用修正](diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
+记录 600／480 秒反例、原权限错误及必要复跑；实际总时限、进程清理和 unknown 责任保持，
+仅提供 CPU 编排行为证据，不是模型实验。

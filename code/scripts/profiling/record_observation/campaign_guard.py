@@ -387,10 +387,6 @@ def run_cell(guard, cell_id):
     if effective.get('RAY_ADDRESS'):
         raise BudgetError('a campaign must not attach to an unrelated Ray cluster')
     guard.check(force=True)
-    # Retain enough of the campaign for a complete planned cell and its final
-    # cleanup/collection; no partial cell is started to spend leftover calls.
-    if guard.clock()+config['limits']['controller_timeout_s'] > guard.work_deadline:
-        guard._stop('insufficient_time_for_whole_cell')
     guard.claim(cell_id)
     saved_environment = dict(os.environ)
     error = None

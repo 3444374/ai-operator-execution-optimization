@@ -469,3 +469,11 @@ Kalypso registry fixture 提供现行公开启动字段，生产校验不改。a
 同批共享额度去重沿用原 37 项检查，未新增源码形状用例；与容量修正整合后的 47 项也全部通过，
 [来源与计数](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
 分别记录，不累计重复方法。真实 Ray／模型仍未运行。
+
+
+### 编排最长时限与实际剩余时间
+
+[本批原件](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
+保留 600／480 秒误拒、31 个相关方法的结果及两项进程查询权限错误。只复跑受影响的两项，
+没有改变生产清理逻辑或跳过原检查。运行 `test_record_campaign_guard` 与
+`test_ray_future_qualification` 可复算；两项清理用例需要允许查询其临时子进程，模型／真实 Ray 均未启动。

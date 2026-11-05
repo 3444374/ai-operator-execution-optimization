@@ -349,9 +349,9 @@ class CampaignSupervisionTests(CampaignFixture):
 class CampaignEntryTests(CampaignFixture):
     """Guard orchestration with explicit CPU replacements for model boundaries."""
 
-    def entry(self, label):
+    def entry(self, label, **campaign_options):
         self.root = self.base / label
-        manifest = self.manifest()
+        manifest = self.manifest(**campaign_options)
         cell_root = self.artifacts / label
         cell_root.mkdir()
         manifest['cells'][0]['prepared_config'] = str(cell_root / 'PREPARED-CONFIG.json')
@@ -373,6 +373,29 @@ class CampaignEntryTests(CampaignFixture):
             log_sha256=hashlib.sha256(log.read_bytes()).hexdigest(),
             evidence_scope='explicit CPU fake for guard orchestration, not real Ray qualification')
         (guard.root / 'REAL-RAY-READY.json').write_text(json.dumps(marker))
+
+    def test_cell_may_finish_with_less_time_than_its_maximum_timeout(self):
+        import workflow
+        import control_resource_C2 as controller
+        guard, cell_root, config = self.entry('cell-timeout-is-an-upper-limit', wall_seconds=600)
+        config['limits']['controller_timeout_s'] = 480
+        self.clock.now += 200
+        self.cpu_fake_ray_ready(guard)
+
+        def cpu_controller(root):
+            self.assertGreater(guard.work_deadline-guard.clock(), 0)
+            self.assertLess(guard.work_deadline-guard.clock(), 480)
+            self.query_report(root, [self.record('q:'+str(i)) for i in range(3)])
+            (root / 'RESULT.json').write_text(json.dumps(dict(status='completed',
+                physical_cleanup_confirmed=True, lease_released=True)))
+
+        with patch.object(workflow, 'check', return_value=config), \
+                patch.object(controller, 'profiled', return_value=False), \
+                patch.object(controller, 'worker_environment', return_value={}), \
+                patch.object(controller, 'main', side_effect=cpu_controller) as execute:
+            guard_module.run_cell(guard, 'first')
+        execute.assert_called_once_with(cell_root)
+        self.assertEqual(json.loads((guard.root / 'first-GUARD-END.json').read_text())['status'], 'passed')
 
     def test_run_cell_cpu_boundary_claims_once_restores_environment_and_publishes_complete_counts(self):
         import workflow
