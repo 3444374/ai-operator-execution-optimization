@@ -293,10 +293,3 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
                 errors.append("producer_retirement: " + type(error).__name__)
     return dict(model_owner=actor_report, transport_closed=transport_closed,
                 producer_retirement=retirement, cleanup_errors=errors)
-
-
-# Preserve the original import locations for serialized helpers and types.
-_await_result.__module__ = "src.execution_provider.adapters.lotus_records_core"
-_check.__module__ = "src.execution_provider.adapters.lotus_records_core"
-_RecordTransport.__module__ = "src.execution_provider.adapters.lotus_records_core"
-close_prepared_core.__module__ = "src.execution_provider.adapters.lotus_records_core"

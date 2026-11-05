@@ -10,6 +10,7 @@ class RecordsModelAdapterTests(unittest.TestCase):
     def test_async_actor_does_not_import_query_host(self):
         probe = '''
 import importlib.abc
+import pickle
 import sys
 class NoQueryHost(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
@@ -17,6 +18,9 @@ class NoQueryHost(importlib.abc.MetaPathFinder):
             raise AssertionError('model adapter imported query orchestration')
 sys.meta_path.insert(0, NoQueryHost())
 from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_model_adapter import _ActorOwner, _CoreModelActor
+for value in (_ActorOwner, _CoreModelActor):
+    assert pickle.loads(pickle.dumps(value, protocol=0)) is value
 assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
 '''
         result = subprocess.run([sys.executable, '-B', '-c', probe],
@@ -34,9 +38,10 @@ assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
             self.assertIs(getattr(public, name), getattr(model, name))
         self.assertTrue(issubclass(AsyncRecordsActorOwner, model._ActorOwner))
         for name in ('_ActorOwner', '_CoreModelActor'):
+            value = getattr(model, name)
             old = ('csrc.execution_provider.adapters.lotus_records_core\n'+name+'\n.').encode()
-            self.assertIs(pickle.loads(old), getattr(model, name))
-            self.assertIn(b'lotus_records_core', pickle.dumps(getattr(model, name), protocol=0))
+            self.assertIs(pickle.loads(old), value)
+            self.assertIs(pickle.loads(pickle.dumps(value, protocol=0)), value)
 
 
 if __name__ == '__main__':

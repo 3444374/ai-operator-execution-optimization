@@ -99,7 +99,7 @@ class _RecordLocalRows:
             raise ValueError("record-local source changed or duplicated an occurrence")
         # Own this read snapshot once; backpressure may retain the row upstream
         # of MethodDriver for several ticks while the producer reuses its data.
-        record = RecordOccurrence.from_dict(record.describe())
+        record = replace(record)
         if (record.row_id not in self.bindings
                 or record.row_id in self.offered
                 or _source_binding(record) != _source_binding(self.bindings[record.row_id])):

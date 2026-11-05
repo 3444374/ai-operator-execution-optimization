@@ -10,6 +10,7 @@ class RecordsTransportTests(unittest.TestCase):
     def test_chain_backend_and_host_do_not_load_single_filter_host(self):
         probe = '''
 import importlib.abc
+import pickle
 import sys
 class NoFilterHost(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
@@ -18,6 +19,12 @@ class NoFilterHost(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, NoFilterHost())
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
+from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, RecordsCapacityBudget
+from src.execution_provider.adapters.records_transport import _RecordTransport, _await_result, _check, close_prepared_core
+values = (_RecordTransport, _await_result, _check, close_prepared_core,
+          CoreRecordsCapacity, RecordsCapacityBudget)
+for value in values:
+    assert pickle.loads(pickle.dumps(value, protocol=0)) is value
 assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
 '''
         result = subprocess.run([sys.executable, '-B', '-c', probe],
@@ -32,10 +39,11 @@ assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
         from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
         self.assertTrue(issubclass(LotusChainActorBackend, transport._RecordTransport))
         for name in ('_RecordTransport', '_await_result', '_check', 'close_prepared_core'):
-            self.assertIs(getattr(public, name), getattr(transport, name))
-            original = ('csrc.execution_provider.adapters.lotus_records_core\n'+name+'\n.').encode()
-            self.assertIs(pickle.loads(original), getattr(transport, name))
-            self.assertIn(b'lotus_records_core', pickle.dumps(getattr(transport, name), protocol=0))
+            value = getattr(transport, name)
+            self.assertIs(getattr(public, name), value)
+            old = ('csrc.execution_provider.adapters.lotus_records_core\n'+name+'\n.').encode()
+            self.assertIs(pickle.loads(old), value)
+            self.assertIs(pickle.loads(pickle.dumps(value, protocol=0)), value)
         for name in ('TaskKey', 'BoundedAsyncBackend', 'ConfirmedTaskFailure'):
             self.assertIs(getattr(public, name), getattr(transport, name))
 

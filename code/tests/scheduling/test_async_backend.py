@@ -222,16 +222,19 @@ class AsyncBackendTests(unittest.TestCase):
         self.assertEqual(engine.capacity.usage(), Usage())
 
     def test_finalizer_error_does_not_leave_io_thread(self):
+        original = ValueError("fixture finalizer error")
+
         async def execute(request, endpoint):
             return b"ok"
 
         async def finalize():
-            raise RuntimeError("private finalizer error")
+            raise original
 
         backend = BoundedAsyncBackend(execute, max_tasks=1, notify=lambda: None, finalize=finalize)
-        with self.assertRaisesRegex(RuntimeError, "^asynchronous transport finalization failed$"):
+        with self.assertRaisesRegex(RuntimeError, "^asynchronous transport finalization failed$") as raised:
             backend.close()
         self.assertFalse(backend._thread.is_alive())
+        self.assertIs(raised.exception.__cause__, original)
 
     def test_oversized_result_is_not_delivered_as_a_safe_terminal(self):
         async def execute(request, endpoint):

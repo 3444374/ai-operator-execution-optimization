@@ -72,8 +72,3 @@ class _ActorOwner(RecordsActorOwner):
 
     def _model_actor_type(self):
         return _CoreModelActor
-
-
-# Preserve the original class locations used by serialized actor descriptions.
-_CoreModelActor.__module__ = "src.execution_provider.adapters.lotus_records_core"
-_ActorOwner.__module__ = "src.execution_provider.adapters.lotus_records_core"

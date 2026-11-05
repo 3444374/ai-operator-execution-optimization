@@ -210,9 +210,3 @@ def independent_default_capacity(resources, capacity, overrides=None):
     budget = RecordsCapacityBudget(rows+1, input_bytes, result_bytes,
         requests, method_rows+1, method_rows*envelope)
     return replace(capacity, budget=budget), limits
-
-
-
-# Keep serialized declarations compatible with the original public import.
-RecordsCapacityBudget.__module__ = "src.execution_provider.adapters.lotus_records_core"
-CoreRecordsCapacity.__module__ = "src.execution_provider.adapters.lotus_records_core"

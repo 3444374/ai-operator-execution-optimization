@@ -57,7 +57,7 @@ class BoundedAsyncBackend:
 
     execute must perform asynchronous I/O and enforce the task's response size
     limit while reading, before buffering an unbounded response. The adapter never
-    cancels an HTTP await and misrepresents that as cancellation of model work.
+    cancels an I/O await and misrepresents that as cancellation of model work.
     close is an explicit blocking teardown operation, never called by advance.
     """
 
@@ -313,16 +313,16 @@ class BoundedAsyncBackend:
                     self._closing_future = asyncio.run_coroutine_threadsafe(
                         self._finalize(), self._loop
                     )
-        error = None
+        finalizer_error = None
         if self._closing_future:
             try:
                 self._closing_future.result(timeout=timeout if until is None else max(0, until-time.monotonic()))
             except TimeoutError:
                 return False
-            except Exception:
-                error = RuntimeError("asynchronous transport finalization failed")
+            except Exception as error:
+                finalizer_error = error
         self._loop.call_soon_threadsafe(self._loop.stop)
         self._thread.join(timeout if until is None else max(0, until-time.monotonic()))
-        if error:
-            raise error
+        if finalizer_error is not None:
+            raise RuntimeError("asynchronous transport finalization failed") from finalizer_error
         return not self._thread.is_alive()
