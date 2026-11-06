@@ -324,6 +324,10 @@ E-Commerce Q3／Cars Q10 的 keyword Extract、E-Commerce Q5 的 Map suffix 需�
 
 ## 已退役和暂停
 
+旧矩阵专用的 `common/gate.py` 及其四项专测已退役；现用入口没有调用该实现。
+原文件和测试的[准确恢复来源](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-csv-and-matrix-checks)保留。
+当前原生对照的来源记录、请求身份及结果汇总／校验继续由公共模块维护。
+
 旧 `native_calls` prepared-HTTP 图、`*_pg_http`、Daft prompt／Ray HTTP 对照、Movie HTTP owner、
 PG 查询矩阵与其专用脚本／测试／配置已从现用树移除。PG 后续仍可恢复；
 准确来源、SHA 与范围见[归档索引](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。

@@ -952,7 +952,9 @@
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
         "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
         "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
-        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz",
+        "code/src/observability/profiling/traces.py": "historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz",
+        "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1405,6 +1407,16 @@
           "encoding": "gzip",
           "decoded_bytes": 10662,
           "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
+        },
+        "code/src/observability/profiling/traces.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21199,
+          "archive_sha256": "835163eacb0d26948081267cfe4f0fb5146e84a84f26351c604a1909a0b0f6ca"
+        },
+        "code/src/baselines/common/gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5952,
+          "archive_sha256": "139b64cf736ab6812d5946474263ac15c8041953223519019aea5c859fda0c81"
         }
       }
     },
@@ -2385,7 +2397,9 @@
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
         "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
         "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
-        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz",
+        "code/src/observability/profiling/traces.py": "historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz",
+        "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2838,6 +2852,16 @@
           "encoding": "gzip",
           "decoded_bytes": 10662,
           "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
+        },
+        "code/src/observability/profiling/traces.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21199,
+          "archive_sha256": "835163eacb0d26948081267cfe4f0fb5146e84a84f26351c604a1909a0b0f6ca"
+        },
+        "code/src/baselines/common/gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5952,
+          "archive_sha256": "139b64cf736ab6812d5946474263ac15c8041953223519019aea5c859fda0c81"
         }
       }
     },
@@ -3828,7 +3852,9 @@
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
         "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
         "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
-        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz",
+        "code/src/observability/profiling/traces.py": "historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz",
+        "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4281,6 +4307,16 @@
           "encoding": "gzip",
           "decoded_bytes": 10662,
           "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
+        },
+        "code/src/observability/profiling/traces.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21199,
+          "archive_sha256": "835163eacb0d26948081267cfe4f0fb5146e84a84f26351c604a1909a0b0f6ca"
+        },
+        "code/src/baselines/common/gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5952,
+          "archive_sha256": "139b64cf736ab6812d5946474263ac15c8041953223519019aea5c859fda0c81"
         }
       }
     },
@@ -5273,7 +5309,9 @@
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
         "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
         "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
-        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz",
+        "code/src/observability/profiling/traces.py": "historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz",
+        "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5731,6 +5769,16 @@
           "encoding": "gzip",
           "decoded_bytes": 10662,
           "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
+        },
+        "code/src/observability/profiling/traces.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21199,
+          "archive_sha256": "835163eacb0d26948081267cfe4f0fb5146e84a84f26351c604a1909a0b0f6ca"
+        },
+        "code/src/baselines/common/gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5952,
+          "archive_sha256": "139b64cf736ab6812d5946474263ac15c8041953223519019aea5c859fda0c81"
         }
       }
     },
@@ -6728,7 +6776,9 @@
         "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
         "code/tests/experiments/test_daft_session_wiring.py": "historical_sources/b16838c6/code/tests/experiments/test_daft_session_wiring.py.gz",
         "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
-        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz",
+        "code/src/observability/profiling/traces.py": "historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz",
+        "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7186,6 +7236,16 @@
           "encoding": "gzip",
           "decoded_bytes": 10662,
           "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
+        },
+        "code/src/observability/profiling/traces.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21199,
+          "archive_sha256": "835163eacb0d26948081267cfe4f0fb5146e84a84f26351c604a1909a0b0f6ca"
+        },
+        "code/src/baselines/common/gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5952,
+          "archive_sha256": "139b64cf736ab6812d5946474263ac15c8041953223519019aea5c859fda0c81"
         }
       }
     }

@@ -3,6 +3,23 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-profiler-csv-and-matrix-checks"></a>
+## 旧 PG profiler CSV 与矩阵校验的来源
+
+`observability/profiling/traces.py` 的八个写入／指纹函数只由已归档 PG profiler 和七项专测调用；
+`baselines/common/gate.py` 的校验只由旧矩阵入口和四项专测调用。两份实现及两份专测退出维护目录，
+当前 Ray SDK、metrics、原生观测、对照来源记录和公共结果校验保持。
+
+准确公开版本 `a0ce689bfe564438c25ecdc537f73aabb6550724` 的
+[CSV 原件](historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz)与
+[矩阵校验原件](historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz)各保存一次。
+五份投影只增加十条来源及 gzip 格式记录，原预期摘要、投影身份、来源版本和既有映射不改。
+两份专测未被这些投影读取，可从同一公开版本恢复
+[CSV／指纹专测](https://github.com/3444374/ai-operator-execution-optimization/blob/a0ce689bfe564438c25ecdc537f73aabb6550724/code/tests/observability/test_completion_evidence_trace.py)与
+[矩阵校验专测](https://github.com/3444374/ai-operator-execution-optimization/blob/a0ce689bfe564438c25ecdc537f73aabb6550724/code/tests/baselines/text/test_official_baseline_gate.py)。
+原调用方按[旧 PG 与矩阵恢复说明](../paused_pg_and_retired_http_20261105/README.md)恢复，不与当前运行代码混用；
+原始结果、性能记录和旧 schema 身份均保留。
+
 <a id="map-codec-import-sources"></a>
 ## Map 编码器直接导入前的来源
 

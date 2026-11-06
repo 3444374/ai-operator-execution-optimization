@@ -27,7 +27,7 @@ over the execution policy it observes.
   `request_identity.py` owns task-local observation identity. Durable experiment ledgers remain in
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
-- `profiling/` contains stable result schemas and directly imported profiling helpers.
+- `profiling/` contains directly imported Ray profiling helpers.
   `profiling/ray.py` owns public task/actor submission and invocation values. The old dictionary-based
   HTTP metrics polling is retired; adaptive callers provide admission objects explicitly.
   `profiling/ray_scheduler.py` assembles endpoint topology, routing/admission options, the existing
@@ -40,6 +40,9 @@ over the execution policy it observes.
   The unused PostgreSQL profiler argument parser has been retired with the old entry;
   its [exact historical source](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)
   preserves the original arguments. Callers supply already constructed admission objects to the SDK.
+  The old PG profiler CSV writers and their dedicated tests are also retired;
+  their [exact sources and recovery](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-csv-and-matrix-checks)
+  remain available with the original profiler. Current metrics, native traces and Ray helpers are unchanged.
 
 The former HTTP forwarding gateway and its exclusive loopback tests are retired. Their
 [exact recovery source](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-http-observation)
