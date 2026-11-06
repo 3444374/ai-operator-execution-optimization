@@ -123,22 +123,36 @@ class SemBenchTextQuery:
     """A finite frozen input snapshot and the unchanged original query/evaluator."""
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
-                 model_name, generation):
+                 model_name, generation, scale_factor=None):
         import pandas as pd
-        from .sembench_mmqa import TEXT_QUERY_IDS
+        from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
+        from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
 
         query = str(query_id).lower().removeprefix('q')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
-                or (scenario == 'mmqa' and query in TEXT_QUERY_IDS)):
-            raise ValueError('this entry supports Movie Q4/Q8/Q9-map/Q10 and the twelve ordinary MMQA text queries')
+                or (scenario == 'mmqa' and query in MMQA_QUERY_IDS)
+                or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)):
+            raise ValueError('this entry supports Movie Q4/Q8/Q9-map/Q10, twelve ordinary MMQA text queries '
+                             'and Medical Q1/Q4/Q10')
+        if scenario != 'medical' and scale_factor is not None:
+            raise ValueError('scale_factor applies only to the Medical authored CSV filenames')
         if type(execution_id) is not str or not execution_id.strip():
             raise ValueError('each execution needs a nonempty independent query_id')
         self.checkout = verify_checkout(checkout)
         self.scenario, self.query, self.query_id = scenario, query, execution_id
         self.model_name, self.generation = model_name, generation
         self.data_dir = Path(data_dir).resolve()
+        self.evaluation_files = set()
         if scenario == 'movie':
             names = ['Reviews.csv'] + (['Movies.csv'] if query == '10' else [])
+            self.evaluation_files.add('Movies.csv')
+        elif scenario == 'medical':
+            self.scale_factor = FULL_SCALE_FACTOR if scale_factor is None else scale_factor
+            self.symptoms_file, self.patients_file, self.labels_file = text_files(self.scale_factor)
+            names = [self.symptoms_file, self.labels_file]
+            if query == '4':
+                names.append(self.patients_file)
+            self.evaluation_files.add(self.labels_file)
         elif query == '1':
             names = ['ben_piazza.csv', 'ben_piazza_text_data.csv']
         elif query.startswith('3') or query == '4':
@@ -182,6 +196,10 @@ class SemBenchTextQuery:
             ranking = dict(ranking='map') if self.query == '9' else {}
             return run_original_lotus_query(self.checkout, int(self.query),
                 lambda: self._load('Reviews.csv'), **ranking)
+        if self.scenario == 'medical':
+            from .sembench_medical import run_original_query
+            return run_original_query(self.checkout, self.query, self._load,
+                data_dir=self.data_dir, scale_factor=self.scale_factor)
         from .sembench_mmqa import run_original_query
         return run_original_query(self.checkout, self.query, self._load)
 
@@ -191,9 +209,13 @@ class SemBenchTextQuery:
             scenario=self.scenario, query='Q' + self.query, query_id=self.query_id,
             files=self.files, operation=operation,
             **(dict(ranking='map') if self.scenario == 'movie' and self.query == '9' else {}),
+            **(dict(scale_factor=self.scale_factor, scale_unit='patient rows; model rows are query-specific')
+               if self.scenario == 'medical' else {}),
             expected_model_calls=0 if operation is None else operation['expected_model_calls'],
             policy='original exact ordinary operator; result cache disabled; no warmup or retry',
-            label_scope='original evaluation only; Movie labels excluded from execution input',
+            label_scope=('original Medical patient labels used only for evaluation'
+                         if self.scenario == 'medical' else
+                         'original evaluation only; Movie labels excluded from execution input'),
             original_selection_and_postprocessing=True)
 
     def execute(self, execute_operator):
@@ -201,9 +223,9 @@ class SemBenchTextQuery:
         import pandas as pd
 
         # Preflight reads do not replace the query's real CSV scan. Gold-only
-        # Movies.csv stays outside execution, as in the original benchmark.
+        # label relations stay outside execution, as in the original benchmark.
         for name, identity in self.files.items():
-            if name == 'Movies.csv':
+            if name in self.evaluation_files:
                 continue
             path = self.data_dir / name
             expected_identity = dict(sha256=identity['sha256'], bytes=identity['bytes'])
@@ -243,5 +265,10 @@ class SemBenchTextQuery:
             from .sembench_movie import evaluate_original
             return evaluate_original(self.checkout, int(self.query), result,
                 self.frames['Reviews.csv'], labeled_movies=self.frames.get('Movies.csv'))
+        if self.scenario == 'medical':
+            from .sembench_medical import evaluate_original
+            return evaluate_original(self.checkout, self.query, result,
+                self.frames[self.labels_file], self.frames[self.symptoms_file],
+                scale_factor=self.scale_factor)
         from .sembench_mmqa import evaluate_original
         return evaluate_original(self.checkout, self.query, result)
