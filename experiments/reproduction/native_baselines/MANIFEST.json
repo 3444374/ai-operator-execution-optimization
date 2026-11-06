@@ -909,7 +909,12 @@
         "code/src/experiments/gateway_observer.py": "historical_sources/5539a19f/code/src/experiments/gateway_observer.py.gz",
         "code/scripts/profiling/mapped_core_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/mapped_core_probe.py.gz",
         "code/scripts/profiling/request_budget_batch_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz",
-        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz"
+        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz",
+        "code/src/experiments/saor/native_system_parser.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_parser.py.gz",
+        "code/src/experiments/saor/native_system_contract.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_contract.py.gz",
+        "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
+        "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
+        "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1147,6 +1152,31 @@
           "encoding": "gzip",
           "decoded_bytes": 2171,
           "archive_sha256": "9a819f26578f258e7376013a0c7112ce62af0132bae22e4237b126b821884fdc"
+        },
+        "code/src/experiments/saor/native_system_parser.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4861,
+          "archive_sha256": "d9d6c3134fb34a0c50fe305bb11794032d08a3a241946b89bd90cf655547e9bd"
+        },
+        "code/src/experiments/saor/native_system_contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2586,
+          "archive_sha256": "9d7a8fe760548420f88b396129d8f4be924c59b40118824276b9646ff63ddb83"
+        },
+        "code/src/experiments/saor/native_system_artifacts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21027,
+          "archive_sha256": "12db76d9947bf9ca60ccb32b0ef217a7094b0c8dae57b2735f5fe4b7bab9b37b"
+        },
+        "code/src/experiments/saor/native_system_validator.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1431,
+          "archive_sha256": "279225bf645be8ee183f18543e8f641e79873d8996234f71bc5b58a240e697a0"
+        },
+        "code/src/experiments/saor/native_system_preflight.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14169,
+          "archive_sha256": "45d25e51e3f39a7ae1ea032107e9e2b2a221a15cd5403117b2ba4297c09b22ac"
         }
       }
     },
@@ -2084,7 +2114,12 @@
         "code/src/experiments/gateway_observer.py": "historical_sources/5539a19f/code/src/experiments/gateway_observer.py.gz",
         "code/scripts/profiling/mapped_core_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/mapped_core_probe.py.gz",
         "code/scripts/profiling/request_budget_batch_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz",
-        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz"
+        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz",
+        "code/src/experiments/saor/native_system_parser.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_parser.py.gz",
+        "code/src/experiments/saor/native_system_contract.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_contract.py.gz",
+        "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
+        "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
+        "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2322,6 +2357,31 @@
           "encoding": "gzip",
           "decoded_bytes": 2171,
           "archive_sha256": "9a819f26578f258e7376013a0c7112ce62af0132bae22e4237b126b821884fdc"
+        },
+        "code/src/experiments/saor/native_system_parser.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4861,
+          "archive_sha256": "d9d6c3134fb34a0c50fe305bb11794032d08a3a241946b89bd90cf655547e9bd"
+        },
+        "code/src/experiments/saor/native_system_contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2586,
+          "archive_sha256": "9d7a8fe760548420f88b396129d8f4be924c59b40118824276b9646ff63ddb83"
+        },
+        "code/src/experiments/saor/native_system_artifacts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21027,
+          "archive_sha256": "12db76d9947bf9ca60ccb32b0ef217a7094b0c8dae57b2735f5fe4b7bab9b37b"
+        },
+        "code/src/experiments/saor/native_system_validator.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1431,
+          "archive_sha256": "279225bf645be8ee183f18543e8f641e79873d8996234f71bc5b58a240e697a0"
+        },
+        "code/src/experiments/saor/native_system_preflight.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14169,
+          "archive_sha256": "45d25e51e3f39a7ae1ea032107e9e2b2a221a15cd5403117b2ba4297c09b22ac"
         }
       }
     },
@@ -3269,7 +3329,12 @@
         "code/src/experiments/gateway_observer.py": "historical_sources/5539a19f/code/src/experiments/gateway_observer.py.gz",
         "code/scripts/profiling/mapped_core_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/mapped_core_probe.py.gz",
         "code/scripts/profiling/request_budget_batch_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz",
-        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz"
+        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz",
+        "code/src/experiments/saor/native_system_parser.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_parser.py.gz",
+        "code/src/experiments/saor/native_system_contract.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_contract.py.gz",
+        "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
+        "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
+        "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3507,6 +3572,31 @@
           "encoding": "gzip",
           "decoded_bytes": 2171,
           "archive_sha256": "9a819f26578f258e7376013a0c7112ce62af0132bae22e4237b126b821884fdc"
+        },
+        "code/src/experiments/saor/native_system_parser.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4861,
+          "archive_sha256": "d9d6c3134fb34a0c50fe305bb11794032d08a3a241946b89bd90cf655547e9bd"
+        },
+        "code/src/experiments/saor/native_system_contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2586,
+          "archive_sha256": "9d7a8fe760548420f88b396129d8f4be924c59b40118824276b9646ff63ddb83"
+        },
+        "code/src/experiments/saor/native_system_artifacts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21027,
+          "archive_sha256": "12db76d9947bf9ca60ccb32b0ef217a7094b0c8dae57b2735f5fe4b7bab9b37b"
+        },
+        "code/src/experiments/saor/native_system_validator.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1431,
+          "archive_sha256": "279225bf645be8ee183f18543e8f641e79873d8996234f71bc5b58a240e697a0"
+        },
+        "code/src/experiments/saor/native_system_preflight.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14169,
+          "archive_sha256": "45d25e51e3f39a7ae1ea032107e9e2b2a221a15cd5403117b2ba4297c09b22ac"
         }
       }
     },
@@ -4456,7 +4546,12 @@
         "code/src/experiments/gateway_observer.py": "historical_sources/5539a19f/code/src/experiments/gateway_observer.py.gz",
         "code/scripts/profiling/mapped_core_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/mapped_core_probe.py.gz",
         "code/scripts/profiling/request_budget_batch_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz",
-        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz"
+        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz",
+        "code/src/experiments/saor/native_system_parser.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_parser.py.gz",
+        "code/src/experiments/saor/native_system_contract.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_contract.py.gz",
+        "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
+        "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
+        "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4699,6 +4794,31 @@
           "encoding": "gzip",
           "decoded_bytes": 2171,
           "archive_sha256": "9a819f26578f258e7376013a0c7112ce62af0132bae22e4237b126b821884fdc"
+        },
+        "code/src/experiments/saor/native_system_parser.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4861,
+          "archive_sha256": "d9d6c3134fb34a0c50fe305bb11794032d08a3a241946b89bd90cf655547e9bd"
+        },
+        "code/src/experiments/saor/native_system_contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2586,
+          "archive_sha256": "9d7a8fe760548420f88b396129d8f4be924c59b40118824276b9646ff63ddb83"
+        },
+        "code/src/experiments/saor/native_system_artifacts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21027,
+          "archive_sha256": "12db76d9947bf9ca60ccb32b0ef217a7094b0c8dae57b2735f5fe4b7bab9b37b"
+        },
+        "code/src/experiments/saor/native_system_validator.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1431,
+          "archive_sha256": "279225bf645be8ee183f18543e8f641e79873d8996234f71bc5b58a240e697a0"
+        },
+        "code/src/experiments/saor/native_system_preflight.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14169,
+          "archive_sha256": "45d25e51e3f39a7ae1ea032107e9e2b2a221a15cd5403117b2ba4297c09b22ac"
         }
       }
     },
@@ -5652,7 +5772,12 @@
         "code/src/experiments/gateway_observer.py": "historical_sources/5539a19f/code/src/experiments/gateway_observer.py.gz",
         "code/scripts/profiling/mapped_core_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/mapped_core_probe.py.gz",
         "code/scripts/profiling/request_budget_batch_probe.py": "historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz",
-        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz"
+        "code/src/execution_provider/session_dispatch.py": "historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz",
+        "code/src/experiments/saor/native_system_parser.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_parser.py.gz",
+        "code/src/experiments/saor/native_system_contract.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_contract.py.gz",
+        "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
+        "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
+        "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5890,6 +6015,31 @@
           "encoding": "gzip",
           "decoded_bytes": 2171,
           "archive_sha256": "9a819f26578f258e7376013a0c7112ce62af0132bae22e4237b126b821884fdc"
+        },
+        "code/src/experiments/saor/native_system_parser.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4861,
+          "archive_sha256": "d9d6c3134fb34a0c50fe305bb11794032d08a3a241946b89bd90cf655547e9bd"
+        },
+        "code/src/experiments/saor/native_system_contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2586,
+          "archive_sha256": "9d7a8fe760548420f88b396129d8f4be924c59b40118824276b9646ff63ddb83"
+        },
+        "code/src/experiments/saor/native_system_artifacts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21027,
+          "archive_sha256": "12db76d9947bf9ca60ccb32b0ef217a7094b0c8dae57b2735f5fe4b7bab9b37b"
+        },
+        "code/src/experiments/saor/native_system_validator.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1431,
+          "archive_sha256": "279225bf645be8ee183f18543e8f641e79873d8996234f71bc5b58a240e697a0"
+        },
+        "code/src/experiments/saor/native_system_preflight.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14169,
+          "archive_sha256": "45d25e51e3f39a7ae1ea032107e9e2b2a221a15cd5403117b2ba4297c09b22ac"
         }
       }
     }
