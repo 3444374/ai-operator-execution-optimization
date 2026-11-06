@@ -118,6 +118,11 @@ Q5 的单层与多层原算法、实际生成上限及预算失败保留均通�
 
 ### 直接原生Movie Q3的关闭与环境修复（2026-11-06）
 
+DuckDB＋作者IMLane现有[SQL／Arrow候选](integrations/imlane_duckdb/README.md)与独立shared库CPU构建；
+三件准确上游缺源恢复保留作者已有差异，原canonical源码／前缀不动。
+[本批准备记录](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md)区分22个本地Python合同方法、
+真实库构建与仍待验证的薄driver／DBEnd握手／实际Arrow16执行；没有启动GPU或给出模型资格。
+
 随后67a4各执行一次120条：[复测与IPC诊断](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
 记录Daft正常收尾，Ray查询完成但原SHM失败；Ray随后人工回收不改原失败，两组均保留七个FN，不作稳定性能排名。
 完整actor日志确认Ray正常GC时杀死了本次EngineCore，之后仍有完整MPClient关闭回执；信号量创建者尚缺栈证据。
