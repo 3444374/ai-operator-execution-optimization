@@ -13,7 +13,7 @@ from src.execution_provider.adapters.records_capacity import (
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
-from tests.execution_provider.test_lotus_records_async_actor import CPUActor, prepared
+from tests.execution_provider.test_lotus_records_async_actor import CPUActor, core_result, prepared
 
 
 class ActorCapacitySourceTests(unittest.TestCase):
@@ -42,7 +42,7 @@ class ActorCapacitySourceTests(unittest.TestCase):
         actor = CPUActor(asdict(self.spec), asdict(GenerationSpec()), 1, asdict(owner.limits))
         try:
             ready = actor.ready(time.monotonic() + 5)
-            result = json.loads(actor.run_core([prepared(text=text)], time.monotonic() + 5,
+            result = json.loads(core_result(actor, [prepared(text=text)], time.monotonic() + 5,
                                                capacity.item_result_bytes, (0, 0)))
             return ready, result, actor.engine._sequence
         finally:

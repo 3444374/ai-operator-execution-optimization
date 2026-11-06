@@ -11521,3 +11521,39 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 [原失败、79项CPU与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)分别记录1055文件源码对应、3010历史恢复、初稿遗漏和夹具迁移。
 服务器1596第一项原异常已确认来自关闭ACK拒绝；第二项加异常捕获后一次通过，先前原因尚未解明，新版本实际IPC和Ray／模型仍待验证。
 核心57,011行、src＋scripts114,240行，本批各增31行，测试另增141行，不计为瘦身；当前不合并main。
+
+## 2026-11-06 核对整体收尾与服务器关闭结果
+
+原两项CPU IPC在准确f4e服务器各通过一次，清理和运行许可归还确认；原第二项历史原因仍未解明，没有改写旧失败或宣称模型通过。
+从b574独立反查普通、prepared／rolling、resident、fused与session入口，未确认必须继续修改的生产问题，已确认重复和旧入口清理可以收尾。
+两份最小Ray测试以6c22提交，与远端448e的Medical／MMQA准备无冲突整合为5539；新符号往返与原五项Future检查使用自有零GPU本地driver，删除版本字符串拒绝。
+[源码、11通过／1跳过与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)记录1063文件摘要匹配和988份Python／3328处导入复查。
+本批生产未改、测试净增30行；核心仍57,011行，宽口径114,806行，上游增加566行单独计入。
+随后准确5539的六项真实Ray均通过，Ray2.56.1、模型调用零，21个已观察进程及许可清理确认；Core小型模型功能仍待完整回执，不合并main。
+1cfd另修正单请求观测漏记及跨查询提示断言可空通过；观测局部5项CPU通过、Core生产未改，加强后的实际提示IPC仍待服务器。旧观测胶水在迁出共享函数后继续退役。
+同步唯一[优化配置总览](docs/执行配置与优化开关.md)：当前反馈来源、无B与准备模式组合、C／R／IPC用途、五项vLLM可选值及VLM／Medical／聚合入口按源码校准；旧CLI建议改为历史说明，SAOR等研究与原效果记录保留。
+
+## 2026-11-06 完成旧观测胶水清理与本批实际验证
+
+删除旧Choice HTTP观测的三个模块及三个专属测试，唯一现用记账函数迁入已有AttemptLedger模块，两个probe直接记录新来源，不留CLI转发壳。准确5539的旧文件可从完整Git恢复；五份历史投影仅补一份共享压缩原件及对应5条来源，3010条原摘要、ID和版本保持。
+与1cfd及当前文档整合为284ec；69个不同CPU方法全部通过，无失败／错误／跳过，包含五份历史树完整恢复；7项进程／崩溃方法未选，初次系统解释器缺Ray的启动错误保留。当前982份Python的3304处项目内静态导入无缺模块。
+准确5539的普通async／rolling各8条模型功能已全部成功，0失败／unknown，无预热或请求重放；输入与输出token IDs一致，两组仍各有3条gold漏判。关闭与最终物理清理确认，真实重复close／取消未验证，C16及有限逻辑字节声明不是物理容量或性能结论。
+增强跨查询CPU IPC单项在准确b422通过，覆盖168次合成引擎提交及14个完整查询；六项真实Ray的5539身份保持，不把不同检查相加或转授版本。
+本批宽口径生产Python净减514行、测试净减336行，核心不变；当前核心57011行、src＋scripts114290行，较3fd分别少4617／35355行，较main为核心多2920行、宽口径少26045行。口径含注释与空行，历史原件、文档及测试单列。
+[收尾报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)和[唯一优化配置总览](docs/执行配置与优化开关.md)同步实际结果、删除清单及未覆盖项。原第二例历史原因仍未解明；物理RAM自动授予、完整查询RSS及新增算子仍未实现，本批不新增管理层，也不合并main。
+
+推送前保留远端e0ec的原生基线／IMLane接线并整合为2aa，组合的同一69项再次全部通过，3010份历史文件恢复；双方历史来源映射逐项保持。最新核心57011行、src＋scripts114637行，较284ec新增347行属并行基线能力，较3fd仍分别减少4617／35008行；integrations4858行另列。反查发现低层异步actor三种旧阻塞RPC仅直调用例仍消费，尚未删除，后续先迁移用例；现用owner及同步run_core保留其实际职责。
+
+## 2026-11-06 退役低层异步actor旧阻塞RPC
+
+eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行辅助及一层分发，现用try-submit／poll／ACK、reader、unknown和实际同步执行保留；没有新控制器、兼容层或默认值变更。
+七份测试／探针迁到当前接纳，原两项旧钩子检查在8efed的IndexError保留后删除，忙轮询用例随其生产循环删除；不以测试helper的sleep代替生产行为证据。
+最终27项不同纯内存方法全部通过，1067源码摘要匹配；16项实际CPU IPC另待服务器，未重试本地被拒的通信。历史清单不改，只读10条受影响来源均匹配，不重复完整3010恢复或真实Ray／模型。
+生产核心与src＋scripts各净减68行、测试净减30行，actor726→658行；当前核心56943、宽口径114569，较3fd分别减少4685／35076行，较main分别为核心多2852、宽口径少25766行。
+[本批报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)与唯一优化配置总览同步实际接口及未验范围，不将CPU清理写成查询提速或物理容量控制。
+
+## 2026-11-06 修正reader测试的触发同步
+
+87ce的16项实际CPU IPC为15通过、1失败，无错误或跳过；单列一次诊断捕获CancelledBeforeSubmission，而非预期的unknown。reader早期保护断言已通过；原始首轮完整包及完整close／retired_unknown未记，不补推测值。
+测试迁移把ready信号从阻塞调用取得结果后，移到仅排队完成后，遗漏等待夹具unknown回执。d6abc0e3只补现有IPC结果就绪同步，保持RPC仍在途、结果未消费及10项原断言；生产不改，只交该单项复测，原15项不重复执行。状态与原件在同一[旧异步RPC报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)维护，不启动真实Ray或模型。
+准确d6abc的单项随后一次通过，耗时0.758166秒，unknown、最终关闭、held归零和usage11等10项原断言完成；两个登记自有进程退出、SHM无残留、许可已归还。原87ce的15项不重跑，原失败及诊断不改写，不宣称d6abc整套16项一次通过。

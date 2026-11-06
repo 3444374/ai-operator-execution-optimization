@@ -340,7 +340,7 @@ class ChainTokens(unittest.TestCase):
         r=self.make()
         prepared=dict(row,messages_json=json.dumps([{'role':'user','content':'plain'}]))
         with self.assertRaises(ValueError):
-            r.actor.run_prepared_core([prepared],time.monotonic()+2,398,(99,0),asdict(self.stages[1].generation))
+            r.actor.try_submit_prepared_core([prepared],time.monotonic()+2,398,(99,0),asdict(self.stages[1].generation))
         self.assertEqual(r.actor.snapshot()['held_requests'],0)
         self.assertEqual(r.actor.engine._sequence,0)
 

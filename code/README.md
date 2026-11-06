@@ -110,6 +110,9 @@ owner 保留服务交接和真实资源清理确认，没有新增状态副本�
 关闭失败保留原异常原因，外层错误消息及资源责任保持；此前的[异常链修正](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)不等同于真实Ray或模型资格。
 关闭审计实际返回的回执现在登记为可交接结果；模型API停止后，先恢复结果并排空ACK，再释放actor。
 [79项CPU回归与服务器原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)区分本地修正、已确认原因及尚未解明的取消用例；unknown和真实RPC终态继续单独判断。
+原两项IPC已在f4e服务器各通过一次；[整体收尾核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
+记录普通、prepared／rolling、resident、fused的关闭接线、静态导入复查，以及准确5539六项真实Ray、普通／rolling共16条模型功能的结果；模型两组各有3条漏判，功能成功不代表质量全部通过。
+低层异步actor已[退役三种旧阻塞RPC与专用等待](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)，普通工厂沿现有try-submit／poll／ACK；同步执行及现用owner接口保留。相关27项纯内存通过；87ce实际CPU IPC为15通过、1项测试同步失败，补同步后该单项在d6abc一次通过，其余15项未重跑。
 普通 owner 的阶段计时与反馈选项一次解析；链 owner 只检查自身的配置组合，不调用后丢弃普通 profile。
 [本批反例与行为回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)记录直接构造器报告修正与保留的必要检查。
 融合批 close 在私有控制目录删除成功后才保存 closed 报告，删除异常仍向调用方传出，重试沿用原模型关闭凭据。

@@ -272,21 +272,24 @@ class CoreProducerRetirementTests(unittest.TestCase):
 
 
 class LocalProducerRetirementTests(unittest.TestCase):
-    def test_actor_reader_still_delivering_prevents_retirement_until_it_exits(self):
+    def test_active_submission_prevents_retirement_until_its_RPC_returns(self):
         case = actor_fixture.AsyncActorTests()
         case.setUp()
         self.addCleanup(case.doCleanups)
         actor = case.actor()
         ready, release = threading.Event(), threading.Event()
-        original = actor._run_core
+        original = actor._start_core
         def held_delivery(*args):
             value = original(*args)
+            # Close only after the fixture outcome arrives, while this RPC is still held.
+            case.until(actor, lambda: actor.engine.snapshot()["ready_results"] == 1)
             ready.set()
             if not release.wait(3): raise TimeoutError("fixture delivery was not released")
             return value
-        with ThreadPoolExecutor(max_workers=1) as pool, patch.object(actor, "_run_core", side_effect=held_delivery):
+        with ThreadPoolExecutor(max_workers=1) as pool, patch.object(actor, "_start_core", side_effect=held_delivery):
             try:
-                result = case.submit(pool, actor, text="unknown")
+                result = pool.submit(actor.try_submit_core, [actor_fixture.prepared(text="unknown")],
+                                     time.monotonic() + 5, 4096, (0, 0))
                 self.assertTrue(ready.wait(2))
                 report = actor.close(0.5)
                 self.assertEqual(report["status"], "unknown")
@@ -295,7 +298,9 @@ class LocalProducerRetirementTests(unittest.TestCase):
                 self.assertIn("async_actor_readers_still_active", report["cleanup_errors"])
             finally:
                 release.set()
-            self.assertEqual(json.loads(result.result(2))["status"], "unknown")
+            self.assertEqual(result.result(2), dict(status="accepted"))
+            packet = json.loads(actor.poll_prepared_batch((0, 0)))
+            self.assertEqual(packet["results"][0]["result"]["status"], "unknown")
         final = actor.close(2)
         self.assertEqual(final["status"], "closed")
         self.assertEqual(actor.snapshot()["held_requests"], 0)

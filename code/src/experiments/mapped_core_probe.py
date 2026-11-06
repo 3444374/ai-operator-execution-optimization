@@ -19,7 +19,7 @@ def run_probe(output):
     new_private_directory(output)
     repo = Path(__file__).resolve().parents[3]
     sources = ('mapped_core_probe.py', 'map_observation_probe.py', 'mapped_request_budget.py',
-               'cell_budget.py', 'shared_request_budget.py', 'choice_gateway_observer.py', 'buffered_events.py')
+               'cell_budget.py', 'shared_request_budget.py', 'attempt_ledger.py', 'buffered_events.py')
     summary = dict(schema='semloom.mapped_core_probe.v1', status='running',
         scope='local_core_transport_with_synthetic_vendor_and_service',
         reference_commit=subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip(),

@@ -1020,8 +1020,12 @@ ACK 继续拥有请求与结果，无第二套队列或责任计数。取消不�
 未获终态证据则 RPC 清理报告仍为 unknown，不把本地取消当远端完成或模型结果。
 `AsyncRecordsActorOwner.submit_core/submit_prepared_core/submit_prepared_batch`
 现在返回须在 transport loop 等待的 awaitable，不能再交给 `ray.get`；内部 transport
-已同步迁移。低层 actor 的旧 `run_core/run_prepared_core/submit_prepared_batch` 阻塞接口
-仍保留作直接调用兼容，它们不提供新工厂的数据许可保证。普通 sync 固定默认路径不变。
+已同步迁移。低层异步 actor 的旧 `run_core/run_prepared_core/submit_prepared_batch` 阻塞接口
+及专用等待循环已删除，现用 `try_submit_*` 接纳、poll交接、ACK确认沿原职责执行。
+owner的同名批提交方法仍返回awaitable，同步actor的`run_core`继续提供实际同步执行，两者不属于删除对象。
+直接actor用例已迁到现用接口，背压不占新请求；原未知结果与未结束RPC不提前归还。
+[本批27项纯内存与实际IPC结果](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)
+分别记录源码和覆盖范围，不提供额外模型或性能资格。
 `model_submit` 继续计实际 `.remote()` 交接墙钟，背压重试计入该阶段；模型与依赖等待仍单列。
 执行元数据新增解析后的 RPC worker 数、来源、控制预留及交接协议，不能将其当硬件最优值。
 [线程与责任回归](../../../tests/execution_provider/test_lotus_rpc_capacity.py)仅为 CPU 资格；
@@ -1541,6 +1545,15 @@ Known local results still drain before the model-close call. A failed or interru
 unknown cleanup and actual RPC terminal report; a local Future cancellation does not confirm remote completion.
 The first original server failure is explained by the closed-receipt ACK rejection. The second remains intermittent and unresolved;
 79 passing local CPU methods do not establish actual Ray/model shutdown or qualify the new server version.
+
+The two original CPU IPC methods subsequently passed once each on exact `f4e4868d`, with owned-process cleanup and lease release confirmed.
+This does not explain the second historical intermittent failure. A final [route and source audit](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
+found no missing close callback in ordinary, prepared/rolling, resident or fused entry points. The real-Ray symbol round trip and existing Future tests
+passed on exact `5539a19f` with Ray 2.56.1 and zero model calls. They remain separate from active model-owner shutdown;
+their standard invocation is in [the CPU test guide](../../../tests/records_cpu.md#real-ray-adapter-closeout).
+The separate model run on exact `5539a19f` completed eight ordinary-async and eight rolling requests, with confirmed call terminals and final process cleanup.
+Input and output token IDs matched across both paths, but each had three false negatives. Fixed test capacity and finite logical byte budgets do not establish dynamic-policy performance or physical memory capacity.
+The strengthened 14-query CPU IPC test passed once on exact `b422951d`; its 168 synthetic engine submissions are separate from the 16 actual model calls.
 
 ### Feedback data and policy imports
 

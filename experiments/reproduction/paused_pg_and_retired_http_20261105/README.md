@@ -1,6 +1,7 @@
 # 暂停 PG 与退役 HTTP 实验的准确来源
 
-当前主线为 LOTUS 方法与 SemLoom 数据执行、SemBench 实验。PG 后续仍可恢复，**暂停并非永久放弃**。
+本目录保存所列旧 PG／HTTP 实验的准确来源，不表示现用 PG provider 或数据库接口已退役。
+原实验仍可按完整源码恢复，**暂停并非永久放弃**。
 旧 Movie HTTP 与旧固定矩阵另见[恢复记录](../native_baselines/README.md#movie-http-retirement)。
 
 [MANIFEST.json](MANIFEST.json)逐项记录退出当前入口的源码／测试／部署配置路径、字节数和 SHA256。
@@ -45,3 +46,33 @@ trace 摘要及其纯 CPU 用例继续维护；HTTPX／native observer、request
 五份原生历史投影继续使用其既有旧来源，没有覆盖为当前文件或改写实验结果。
 [代码与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
 说明恢复、当前调用和未覆盖的模型场景。
+
+
+<a id="retired-choice-http-observers"></a>
+## 旧 Choice HTTP 观测与专属测试（2026-11-06）
+
+本批六份删除文件来自准确的
+[`5539a19ff85f9dd96524f10c8c1197b399a04fb8`完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/5539a19ff85f9dd96524f10c8c1197b399a04fb8)，
+不属于上方 `7bf1d92b` 的来源表，不把两个版本混写。
+旧 Choice CLI、`SessionObserver`／`ObservedAdapter` 和 `ExpectedRequests` 只有彼此及专属测试消费；
+其标准库 POST／异步 POST 包装也随旧 CLI 退役。恢复旧机制应选择完整5539树及配套测试，
+不要把旧模块或全局 HTTP 包装加入当前 PYTHONPATH，也不要据恢复源码重用原预算或运行许可。
+
+| 原路径 | 字节 | SHA256 |
+|---|---:|---|
+| `code/src/experiments/choice_gateway_observer.py` | 15153 | `b7a3a99bb758ec31433b148058aa053b6897de7ed4fd2e44927fcc15c78ed736` |
+| `code/src/experiments/gateway_observer.py` | 4450 | `98ea566daeddad686d3c44d9cc4c00e214485ec178e71e6bda0beb79db1199e2` |
+| `code/src/experiments/expected_requests.py` | 1929 | `b527a80abe783f0891b38a1c0c820e6323c6ed76ebf90454b438a13429203fc8` |
+| `code/tests/experiments/test_choice_http_observer.py` | 5816 | `7c2f696ff8d4e03cedd15a964ec2378f7cdb1392b515e81337f676ff43aee6e1` |
+| `code/tests/experiments/test_gateway_session_isolation.py` | 3882 | `8d5d7b01f095616fe87a769dc971c74838eb6f9b39315b0b6d396615a27b90f8` |
+| `code/tests/experiments/test_expected_requests.py` | 6151 | `aeb0532d63f04d3531088dfa19c1760ceac7de5c5b36671ceed3f4683cbd4cd0` |
+
+仍被 map probe 使用的请求守卫已原函数体迁至 `src.experiments.attempt_ledger.guard_remote_request`；
+两个现用 probe 的来源列表直接记录 `attempt_ledger.py`。原 Choice 模块没有兼容转发壳。
+`AttemptLedger`、Cell／shared／mapped预算、request identity、原生HTTPX观察和PG provider／server／异步传输继续维护，
+不是本批删除对象。服务器仅核对当前helper、e7e、0657共65份py/json/sh与17份顶层Python无旧引用，
+这个范围不代表全部仓外材料；历史完整源码副本不按活跃launcher处理。
+
+五份原生投影中只有 `gateway_observer.py` 需要新增当前来源，保存方式见
+[本次历史来源](../native_baselines/README.md#retired-choice-observer-sources)。
+既有旧来源、原3010条expected、投影ID和版本保持；原结果、失败和性能材料没有复制或改写。
