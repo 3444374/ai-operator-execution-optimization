@@ -412,7 +412,6 @@ class MatrixRuntimeReuseTests(unittest.TestCase):
             self.assertFalse((f.output/'functional-validation.json').exists())
 
 
-if __name__=='__main__':unittest.main(verbosity=2)
 
 
 class KalypsoBackendSupportTests(unittest.TestCase):
@@ -505,3 +504,6 @@ class KalypsoBackendSupportTests(unittest.TestCase):
                 for event in release.values():
                     event.set()
             self.assertEqual((sessions.BACKENDS, sessions.RESIDENT), original)
+
+
+if __name__=='__main__':unittest.main(verbosity=2)
