@@ -177,6 +177,12 @@ CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU。Ray 检�
 实现见 [Movie 取消检查](../../../src/experiments/movie_cancellation.py) 与
 [原生子进程旁路](../../experiments/probe_movie_cancellation_child.py)。
 
+子进程旁路观察实际共享的 `vllm_protocol.result_from_output` 转换。
+`native_final_observed` 早于异步引擎后续处理：合成 abort 在旁路中可为 failed、最终为 unknown；
+最终结果及 `engine_terminal_confirmed` 决定终态，不能单独采用旁路的 status 或 finished。
+[纯 CPU 转换检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
+保留旧接线缺少事件的反例，以及原返回值和异常不变的核对。
+
 按已批准功能额度制备输入。例如每种 packing 设置使用原 Q1 前两行，两段共四次额度：
 
 ```sh

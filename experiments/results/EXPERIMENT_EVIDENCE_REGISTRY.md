@@ -11,6 +11,12 @@
 的单项原反例失败，修改后16项纯CPU通过，无错误／跳过；没有模型、Ray、HTTP或socket。
 运行Python摘要与候选一致，之后只改README；零历史绑定，不改原expected。原始记录私有保存，不将工具接口修复写成当前汇总runner已采用。
 
+## 2026-11-06：取消旁路共享转换接线
+
+[本地行为反例](diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
+记录旧接线遗漏转换事件与一行修正后的结果；正常输出、合成 abort 的最终 unknown 和原异常保持。
+仅纯 CPU，无真实 IPC、模型或 Ray，不代替在途到期／abort 实测。
+
 ## 2026-11-06：准确fc1a实际socket三方法
 
 [逐方法CPU回执](diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)

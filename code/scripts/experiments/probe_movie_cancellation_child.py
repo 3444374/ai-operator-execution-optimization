@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 def install(directory):
     from src.observability.native_model_api_trace import install as install_api, writer
-    from src.serving.backends import vllm_engine as common
+    from src.serving.backends import vllm_protocol as common
     from src.serving.backends.vllm_async_engine import VllmAsyncEngine
     from vllm.v1.engine.async_llm import AsyncLLM
     emit = writer(directory)

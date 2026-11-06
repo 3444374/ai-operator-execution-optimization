@@ -1,0 +1,50 @@
+{
+  "schema": "semloom.native_trace_conversion_cpu.v1",
+  "source_base_commit": "227b2a9dbb6584e21a842ee1ef8f7c861c6bfb07",
+  "source_identity": "Base commit plus recorded working-tree file digests, checked before and after each CPU run.",
+  "change": "One child import now targets the actual shared protocol converter; native add/abort and submitted/unknown handling are unchanged.",
+  "selected_method": "tests.observability.test_native_trace_conversion.BootstrapTests.test_sidecar_observes_actual_conversion_without_changing_results_or_errors",
+  "before": {
+    "tests": 1,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "reason": "Actual conversion emitted neither native-stop nor native-abort sidecar event."
+  },
+  "after": {
+    "tests": 1,
+    "passed": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "checked_behavior": [
+    "Actual async _convert emits sidecar records for normal and synthetic-abort outputs.",
+    "Complete normal/abort return dictionaries equal the unobserved converter result.",
+    "The same original LookupError object propagates before and after observation.",
+    "Synthetic abort is intermediate failed in the sidecar and final unknown with engine_terminal_confirmed=false."
+  ],
+  "checked_source_sha256": {
+    "code/scripts/experiments/probe_movie_cancellation_child.py": "0cbe75819965021e906a7d404d1b8a1df8f18a92638b63a4e5a97b43eb76b147",
+    "code/tests/observability/test_native_trace_conversion.py": "68c44c142f732d0467ed927fee2dd036d3d53bf0d71beb97dc3bf79094553c32",
+    "code/src/observability/native_model_api_trace.py": "1a52fdab6ea4b4962ca5b33b3c065cbdee8fe8c17673789891f882f0d130e55d",
+    "code/src/serving/backends/vllm_async_engine.py": "cc70a12047623005030cafe0d75e3f0b1e5f84a63b51a9ca84b3de902479ac43",
+    "code/src/serving/backends/vllm_protocol.py": "15d47f8179ffbf7e5d5e8426033d1ba29950003bab4a2bf66c5ee345dcce77a0"
+  },
+  "all_code_files_recorded": 1033,
+  "source_unchanged_during_before": true,
+  "source_unchanged_during_after": true,
+  "private_original_sha256": {
+    "before-wiring-light.json": "b6354a0c0f526f812ba531113a27c9c4664ecabf3777ba88c01d8ae2324ce878",
+    "before-wiring-light.log": "40ef979529157f74e24331148996fafa62701b7bbeefe5d868d053cbfe75b932",
+    "after-wiring-light.json": "93b5b1337ead24b2ed6bc387a8328cc22bfd01f6eafae924651ae5d76fdf4dea",
+    "after-wiring-light.log": "c2320ad22280e750d8e40e9d4294496c99eb6209952962f57721178ffacb732e",
+    "collection-interrupted.json": "9578c26e4c5173dab4ff196d767077805f1ec5a6be4dc4411d20f93acbe21844"
+  },
+  "prior_collection": "The first placement imported unrelated tokenizer/Torch fixtures and was interrupted during collection before any test ran. Its separate record is retained; it is not counted as this method passing or failing.",
+  "actual_IPC_runs": 0,
+  "Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "limitations": "No real native request, running deadline/abort or model shutdown was executed. No private server materials are included."
+}

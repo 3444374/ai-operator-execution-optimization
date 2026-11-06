@@ -4342,3 +4342,17 @@ CLI保留参数、执行、时钟和finally关闭，`src.experiments.lotus_image
 运行记录保留提交前227b身份，全部980份Python摘要对应候选，之后只改两份README；独审确认提取外的main与参数AST保持。
 十条历史源读取保持原字节，五条指向本次CLI、五条是未改Movie对照；没有新原件或路由。未运行模型、Ray或真实socket。
 原始记录按`retrieval-evidence-before`／`retrieval-evidence-after`保留私有，六种内容对照摘要为`b3bfde50f88ba4742a9d5827f3d86d046fd7be890edef3ba2c705d910b4fb92e`。
+
+<a id="native-trace-conversion-wiring"></a>
+
+## 取消旁路的共享转换接线
+
+`probe_movie_cancellation_child.py` 改为观察实际的 `vllm_protocol.result_from_output`，
+不再只修改同步模块中已导出的独立引用。原 native add／abort 包装和最终结果规则保持。
+[必要 CPU 摘要](raw/public_native_trace_conversion_checks.json)记录一个实际转换行为用例：
+旧接线缺少事件，修正后收到事件，正常返回字典和同一原异常对象不变；
+合成 abort 的旁路中间状态为 failed，异步最终结果仍为 unknown，不能由旁路状态确认终态。
+
+此前把反例放入较重模块时，收集阶段停在 tokenizer／Torch 的导入，已中断且没有执行用例；
+该记录保留，随后改用独立轻量模块，避免为转换检查加载 tokenizer。
+未运行真实 IPC、模型、Ray 或多查询；本批不公开私有模型原件，不将 CPU 结果当作到期／abort 实测。

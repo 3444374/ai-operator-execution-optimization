@@ -13,6 +13,12 @@
 [来源、反例和16项CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)
 限于工具接口，不宣称改变线上汇总；结果消费、未知请求持有和关闭规则未改，原材料留在私有归档。
 
+## 2026-11-06：修正取消旁路的实际转换接线
+
+child 旁路直接观察共享协议转换，不再修改同步模块的独立引用。
+[行为反例与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
+保留原返回值、异常和 unknown 语义；只使用纯 CPU 对象，无模型或 IPC 重放。
+
 ## 2026-11-06：旧HTTP退出后的实际socket补验
 
 [准确fc1a三项CPU socket](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)

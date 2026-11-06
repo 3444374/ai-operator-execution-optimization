@@ -880,6 +880,9 @@ CPU 探针覆盖单请求和现有 token 批 poll／成员 ACK 路径，批页�
 审计 sink 拒收时，待补交回执及注册限额跨 ACK 保留，后续 close 持续报告未完成，成功交接后才清除；模型／Core 退休与审计交接分开，补交不重新推理或解析。实机原件时序仍未独立锁定。
 物理 GPU 清理、原生接口版本兼容和覆盖率待实机验收。修正覆盖现有 record_local_sections 关闭审计，生产默认与模型语义不变。
 
+取消 child 的旁路转换接线已改用实际共享协议模块；[纯 CPU 行为检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
+核对正常返回、合成 abort 的最终 unknown 和原异常，未改 submitted 字段、native add／abort 或终态规则，未启动模型。
+
 普通 Core 与滚动 token 公共工厂的新资源请求接线最终为 309 项中 308 成功、1 个上游 checkout 跳过，
 无失败或错误；旧 KV／busy 选项仅由显式历史策略接收，当前请求策略没有跨查询提示。
 实际许可来自已有 Core／IPC／结果字节，采样来源按同次读取绑定；历史原十处不匹配保持。
