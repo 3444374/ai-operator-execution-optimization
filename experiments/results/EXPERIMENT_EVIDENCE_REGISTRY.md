@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-06：图像检索证据写入职责
+
+[准确候选与输出对照](diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)
+记录修改前后同一11项CPU和六种解析内容对照；不重复计数，不声称压缩文件字节一致或模型结果已验证，原件私有保存。
+
 ## 2026-11-06：原生unknown观测标签
 
 [实际接口修复](diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)

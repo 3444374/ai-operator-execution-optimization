@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：图像检索结果写入归实验模块
+
+[检索CLI与证据写入分工](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)
+保留原调用和清理顺序，同一11项CPU及六种内容对照保持；不改变模型方法，也不以拆分宣称代码量下降。
+
 ## 2026-11-06：保留原生未确认结果的unknown含义
 
 观测工具不再把`unknown/submission_confirmed=False`写成`not_sent`；确认API计数、缺失时长及已知发送前拒绝保持。

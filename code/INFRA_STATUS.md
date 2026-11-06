@@ -82,6 +82,9 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 修正`model_API_samples`把unknown／未确认误写成未发送的问题；原反例失败、修改后16项CPU通过。
 这只修观测接口，仓内未见现行汇总runner直接调用；引擎结果、确认计数与资源归还没有改变，原测试材料保留私有。
 
+[图像检索实验职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)
+把结果／向量写入及原异常优先级移到实验模块，CLI保留参数、执行和关闭；同一11项CPU与六种输出对照保持，生产总量增加14行。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

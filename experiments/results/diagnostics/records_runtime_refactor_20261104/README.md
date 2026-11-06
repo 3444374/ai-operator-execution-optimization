@@ -4329,3 +4329,16 @@ runtime说明中引用已删async HTTP及asyncio.timeout的三行退出，没有
 - after JSON：`e33e6e00e120de0499695cf101910ac0a915e401991c313b2281de233ce0e6e2`。
 
 仓内复算使用现有`tests.observability.test_native_query_timing`，不需要真实模型；本批没有改配置默认或增加控制层。
+
+<a id="retrieval-evidence-responsibilities"></a>
+## 图像检索CLI与结果写入（2026-11-06）
+
+原候选`c8f318a3b53548cc5ecb719dd6c666c1ba4c042d`，tree为`9655814d24dde0b086b3100f2579917c73ebc0d4`；整合代码`6a0c903c`。
+CLI保留参数、执行、时钟和finally关闭，`src.experiments.lotus_image_reporting`拥有结果／向量／回执写入与原异常优先级。
+生产核心不依赖该实验模块，没有增加包装状态。CLI从403行到349行，main从319行到275行，新增模块68行；src与scripts合计增加14行，核心不变。
+当前核心Python为52,517行，src与scripts Python为104,166行；沿用含注释／空行、核心排除experiments及baselines且包含research的统计口径。
+修改前后是同一11项CPU，均通过，不相加；另六种确定输入覆盖成功、三种写入失败与写入／关闭中追加观测。
+解析后的结果／回执JSON、解压向量内容及保留引用一致，未声称压缩NPZ时间戳或压缩字节一致；KeyboardInterrupt处理源码保持，未单独注入。
+运行记录保留提交前227b身份，全部980份Python摘要对应候选，之后只改两份README；独审确认提取外的main与参数AST保持。
+十条历史源读取保持原字节，五条指向本次CLI、五条是未改Movie对照；没有新原件或路由。未运行模型、Ray或真实socket。
+原始记录按`retrieval-evidence-before`／`retrieval-evidence-after`保留私有，六种内容对照摘要为`b3bfde50f88ba4742a9d5827f3d86d046fd7be890edef3ba2c705d910b4fb92e`。
