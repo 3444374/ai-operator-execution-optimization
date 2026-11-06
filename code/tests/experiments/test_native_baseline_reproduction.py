@@ -21,6 +21,16 @@ PROJECTIONS = {
 
 
 class HistoricalProjectionTests(unittest.TestCase):
+    def test_historical_PID_keeps_original_bytes_and_projection_identity(self):
+        logical = 'code/src/scheduling/submission_control/pid.py'
+        original = 'historical_sources/bfb9100e/'+logical
+        expected = 'b9a4c4b4fc34f7a6d39959acc85c449ac276b8beb7884ebd7e776a2caa2a41e7'
+        self.assertEqual(hashlib.sha256((MANIFEST_DIR/original).read_bytes()).hexdigest(), expected)
+        manifest = json.loads((MANIFEST_DIR/'MANIFEST.json').read_text())
+        for spec in manifest['variants'].values():
+            self.assertEqual(spec['code_files_sha256'][logical], expected)
+            self.assertEqual(spec['overrides'][logical], original)
+
     def test_historical_calibration_keeps_exact_pre_fractional_CPU_source(self):
         path = "code/src/experiments/calibration/core.py"
         expected = "81bfbc605eec72c74f4045b5609b4131ea9ced46e163b46b920de9a603e84515"

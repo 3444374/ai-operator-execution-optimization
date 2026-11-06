@@ -255,7 +255,7 @@ LOTUS 职责迁移后，`image_source.py` 和 `maps.py` 的原字节分别保存
 ## 未接入运行入口的 UCB 原型
 
 当前生产目录移除 `scheduling/submission_control/ucb.py` 及公共 facade 的四项 UCB 导出。
-它只具有 CPU 策略测试，没有 profiler reward epoch 或维护执行调用；现行 AIMD／EWMA／HOL-age／PID 入口保持。
+It had only CPU policy tests and no maintained profiler reward epoch or execution caller. The shared AIMD implementation remains in explicit batch feedback; later admission retirements are listed below.
 准确 bfb 原件保存在 [historical_sources/bfb9100e/](historical_sources/bfb9100e/)：
 UCB 实现、原 `scheduling/__init__.py` 和完整原测试文件均可按 SHA-256 核对。
 五份历史投影各增加两条 override，共十条；原逐文件摘要、投影身份和既有映射不变。
@@ -263,9 +263,8 @@ UCB 实现、原 `scheduling/__init__.py` 和完整原测试文件均可按 SHA-
 完整历史仍有原十处不匹配；本次保留恢复材料不把它们改报通过。
 [当前整理记录](../../results/diagnostics/records_runtime_refactor_20261104/README.md)分别说明删除范围、整体结构与剩余项。
 
-维护版 PID 现在拒绝小数／布尔请求窗口及布尔数值参数。准确 bfb 的 `pid.py` 另保存在同一历史目录，
-五份投影只追加五条 override；原逐文件 SHA 与投影 ID 不变。旧配置的原解释由原源码恢复，
-维护版有效配置的 16 条轨迹保持一致，检查见当前整理记录。
+The later PID numeric-input revision and its exact recovery source are listed under [PID recovery](#retired-pid).
+The original bfb source and five historical mappings remain unchanged.
 
 上下文解析候选另保存准确`826ab3a1`的`experiments/lotus_records_chain.py`、
 `experiments/lotus_records_cascade.py`与CPU异步引擎fixture三份旧源，五个variant仅追加15条来源映射。
@@ -874,3 +873,26 @@ v6协议与旧观察probe。IncrementalExecution与NativeTask保留现有Core／
 [token_budget原件](historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz)，只加十条来源／格式。
 原batching及顶层包继续使用已有准确来源；原expected、投影身份及旧映射不改，二十条相关读源前后匹配。
 研究算法继续维护，旧结果及失败保留，没有重跑完整历史树、模型或服务。
+
+<a id="retired-pid"></a>
+## PID admission prototype recovery
+
+The standalone `PidConfig` and `PidAdmissionController` module and package exports are retired.
+No maintained runner or configuration selected them; their old profiling consumer is already historical.
+Current per-request feedback, shared AIMD batch feedback, generic admission gates and resource accounting remain.
+This removes a Python policy option without introducing a replacement algorithm or compatibility import.
+
+Recover the latest implementation, numeric-input corrections and policy tests from exact commit
+[`a8028fc90f0c391cf412356a6e03fc2c97c4ed81`](https://github.com/3444374/ai-operator-execution-optimization/tree/a8028fc90f0c391cf412356a6e03fc2c97c4ed81):
+[PID source](https://github.com/3444374/ai-operator-execution-optimization/blob/a8028fc90f0c391cf412356a6e03fc2c97c4ed81/code/src/scheduling/submission_control/pid.py),
+[configuration tests](https://github.com/3444374/ai-operator-execution-optimization/blob/a8028fc90f0c391cf412356a6e03fc2c97c4ed81/code/tests/scheduling/test_pid_configuration.py) and
+[PID behavior tests](https://github.com/3444374/ai-operator-execution-optimization/blob/a8028fc90f0c391cf412356a6e03fc2c97c4ed81/code/tests/scheduling/test_adaptive_admission.py).
+Use that separate checkout to run the old policy; the maintained path provides no forwarding shell.
+
+The five named baseline projections still use the unchanged original
+[`bfb9100e` PID source](historical_sources/bfb9100e/code/src/scheduling/submission_control/pid.py),
+SHA-256 `b9a4c4b4fc34f7a6d39959acc85c449ac276b8beb7884ebd7e776a2caa2a41e7`.
+Their original expected hashes, projection identities and source mappings are unchanged. The existing
+historical PID source check now lives with `HistoricalProjectionTests` in
+[`test_native_baseline_reproduction.py`](../../../code/tests/experiments/test_native_baseline_reproduction.py);
+its policy-execution tests are recovered with the retired implementation rather than rerun in the maintained suite.

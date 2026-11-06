@@ -50,7 +50,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "WindowDecision",
     ),
     ".organization": ("ServiceQuantumSlice", "slice_service_quanta"),
-    ".submission_control.pid": ("PidAdmissionController", "PidConfig"),
     ".runtime.observations": (
         "AdmissionTraceEvent",
         "CachedMetricsObservationProvider",

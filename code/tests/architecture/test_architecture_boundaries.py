@@ -203,7 +203,6 @@ def _check_saor_import_does_not_load_legacy_policies() -> None:
         f"sys.path.insert(0, {str(CODE_ROOT)!r}); "
         "import src.research.multitask.saor; "
         "assert 'src.scheduling.submission_control.adaptive' not in sys.modules; "
-        "assert 'src.scheduling.submission_control.pid' not in sys.modules; "
         "assert 'src.scheduling.submission_control.ucb' not in sys.modules"
     )
     subprocess.run([sys.executable, "-c", script], check=True)

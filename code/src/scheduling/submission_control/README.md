@@ -16,3 +16,7 @@
 旧指数平滑（EWMA）／队首等待（HOL）两种控制器及三个旧导出已退役，当前不提供旧位置转发；其他平滑统计和队首等待观察字段继续维护。
 旧机制从[准确历史来源](../../../../experiments/reproduction/native_baselines/README.md#retired-admission-variants)恢复，
 不将旧源码加入当前运行搜索路径。配置解析和测量说明见[配置总览](../../../../docs/执行配置与优化开关.md)。
+
+The standalone PID admission prototype no longer has a maintained runner or configuration selector.
+Its module and package exports are retired; the current request policy and explicit batch feedback remain.
+[PID recovery](../../../../experiments/reproduction/native_baselines/README.md#retired-pid) preserves the exact implementation and original tests.
