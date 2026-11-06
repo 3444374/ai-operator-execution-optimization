@@ -11,7 +11,8 @@
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
 | 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
-| 补充 Movie／MMQA 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
+| 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
+| 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 作者服务、默认与任务适配保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
@@ -42,7 +43,7 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 <a id="additional-sembench-text-entry"></a>
 ## 补充 SemBench 文本入口
 
-新入口保留 `prepare-mmqa-text / check / fixture / run`。`check` 不 claim 额度或创建执行图；
+入口支持 `prepare-mmqa-text / prepare-medical-text / check / fixture / run`。`check` 不 claim 额度或创建执行图；
 `fixture` 使用真实 SDK 和原评价、明确标为零推理软件检查；`run` 不带 `--execute-model` 时只检查。
 真实 run worker 仍在现有外部 host 租约／资源 supervisor 内运行，独立进程使用现有 CLI supervisor。
 
@@ -59,12 +60,24 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py check
 各变量由本机仓库外 runtime／packet 提供；准备输出必须是新的 Git 外私有目录。
 Movie 数据目录需要 `Reviews.csv`，Q10 另需原 `Movies.csv`，后者仅用于评价。
 MMQA 准备仅调用原三种文本生成方法并复制固定表，不下载、不生成图片、不调用模型。
+Medical 准备只复制所选已有规模的三份原 CSV，保留 `data/` 布局，不重新采样或启动图音准备：
+
+```sh
+PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepare-medical-text \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --source-dir "$SEMBENCH_CHECKOUT/files/medical/data" \
+  --scale-factor 11112 --output-dir "$MEDICAL_TEXT_DIR"
+```
+
+Medical driver 使用 Python 3.12；原查询与评价源码须在固定 checkout 中可读，稀疏 checkout 需包含
+`files/medical/query/lotus` 和所选的原文本 CSV。准备后用 `--data-dir "$MEDICAL_TEXT_DIR"`，
+配置设置 `scenario=medical`、`query=1/4/10`；可选 `scale_factor` 默认11112，仅选择已有原 CSV 文件名。
+完整资产的三题各1200次；原 `_25` 只有1条症状，不将患者数当模型行数。
 原 `src.runner` 导入只在固定 MMQA 模块加载期映射到同 checkout 的 canonical runner，随后恢复，
 不替换 SemLoom `src` 或修改上游源码。字母题号在 JSON 的 `query` 直接写 `3a`／`6c` 等。
 
 配置 schema 为 `semloom.sembench_text_run.v1`，必需字段为
 `scenario/query/query_id/backend/model_name/generation/engine/resources/profile`。
-`scenario` 为 `movie/mmqa`；题号和实际规模由[逐题清单](../src/baselines/README.md#additional-sembench-text)与 `check` 确定。
+`scenario` 为 `movie/mmqa/medical`；题号和实际规模由[逐题清单](../src/baselines/README.md#additional-sembench-text)与 `check` 确定。
 引擎与生成参数继续用现有 `EngineSpec/GenerationSpec`；五项 vLLM 可选参数未指定时交原生引擎解析。
 Extract 的 `json_object` 来自原算子，`check.effective_operator_generation` 记录其有效设置。
 
@@ -77,7 +90,7 @@ Extract 的 `json_object` 来自原算子，`check.effective_operator_generation
 
 非 IMLane 的真实运行配置另含 `budget={path,id,limit,unit_id}`，指向既有已预留 SQLite 额度；
 本入口只 claim，不创建／追加／退回额度。IMLane 沿用原 owner budget／guard。
-CLI 只允许四种已接通对照；Kalypso Map／MMQA 不设替代算法，Q4 继续用旧 Filter 入口。
+CLI 只允许四种已接通对照；Kalypso Map／MMQA／Medical 不设替代算法，Q4 继续用旧 Filter 入口。
 
 比较时冻结同一输入摘要、模型／有效 dtype、生成参数、DEFAULT 格式与生命周期。
 冷查询的 CSV 扫描及身份检查、启动、算子解释／关闭、原关系后处理全部计入 `query_seconds`，原评价另计；
@@ -85,6 +98,33 @@ CLI 只允许四种已接通对照；Kalypso Map／MMQA 不设替代算法，Q4 
 上游原 LM 上限为8192且无换行 stop；若选择该原始配置，应对每条同题 baseline 一致声明。
 旧短 Filter 的8 token／换行 stop 不可直接移给 JSON Extract，也不能把更改生成配置后的差异归因于执行加速。
 只有显式上下文才提前做上限检查；未指定的实际容量与物理退出仍由模型 ready 和外部 supervisor 验证。
+
+<a id="sembench-native-mmqa-aggregate"></a>
+## 原生 LOTUS MMQA Q5 聚合入口
+
+[run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py)调用完整原 Q5 和原 `sem_agg`，
+使用已由宿主管理的文本模型服务；`check` 截止于原 SDK 首个 LM 调用之前，记录首层完整消息、token 计数与分块。
+它不请求模型、不 claim 额度，也不代表服务已就绪。原生 SDK 批处理、层次归并和最终评价保持。
+
+配置见[示例](../configs/sembench_lotus_mmqa_aggregate.example.json)，复制到 Git 外填写实际模型、
+服务、`native_lm_max_ctx_len` 及本地 `token_counter`。上下文与 `service_profile.max_model_len` 一致；
+tokenizer JSON 的路径／摘要、ID／revision 与所声明服务绑定，仍须核对实际服务的 tokenizer 和上下文。
+示例的批大小只属于 LM 客户端，示例数值不是硬件校准或新增默认容量。
+
+```sh
+PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_mmqa_aggregate.py check \
+  --config "$NATIVE_AGG_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$MMQA_TEXT_DIR"
+
+PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_mmqa_aggregate.py run --execute-model \
+  --config "$NATIVE_AGG_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$MMQA_TEXT_DIR" \
+  --output-dir "$NEW_PRIVATE_QUERY_DIR"
+```
+
+生成项省略时用原8192 token／无 stop；不继承短 Filter 的8 token／换行 stop。
+若首层只有一个请求，总量为1；否则后续归并请求依赖实际摘要长度，预检仅给已知首层和最少调用数。
+运行读取既有 `budget={path,id,limit,unit_id}`，每次真实 POST 前消费，既不分配、退还，也不自动重试。
+单请求示例的额度仅适用于预检确认为一个首层请求的组合；多层需另定有限实验预算，耗尽时保留已发送记录并失败。
+查询子进程由现有 supervisor 监督；外部模型启动、退出及宿主资源计量另管，不能当作冷启动查询计时。
 
 <a id="sembench-image-preparation"></a>
 ## SemBench 图像查询准备

@@ -88,6 +88,21 @@ Q2b 另在原零行 Extract 返回边界保留声明列，修复空 Join 后最�
 依据 `d061df8c` 保存的零行调用记录重建空表，原评价器离线 F1=0；原失败及失败耗时保留，不补成功端到端计时。
 上述CPU验证未访问网络、加载模型或操作服务器。现象与修复见[基线说明](src/baselines/README.md#sembench-image-preparation)，修复版本的真实服务调用仍待验证。
 
+[Medical Q1／Q4／Q10](src/baselines/README.md#sembench-medical-text)新增原 CSV、原查询和原评价接线，
+复用四种既有普通 F/M/E 文本 baseline；准备仅复制已有三份作者 CSV，不运行图音 setup 或重采样。
+完整11112名患者资产有1200条症状，三题每 baseline 共3600次；原 sf25 只有1条症状，不按患者数猜调用量。
+原评价源码需要 Python 3.12。Medical 生成缺项沿用原8192 token／无 stop，显式值及旧 Movie／MMQA 默认保持。
+[MMQA Q5 聚合](src/baselines/README.md#sembench-mmqa-aggregation)另走原生 LOTUS 整查询服务入口，
+保持原分层 `sem_agg`，不放进单个 F/M/E 的记录边界。sf25 原筛选16行，正文12403个 UTF-8 字节；
+仅首层单个请求时总调用精确为1，多层总量依赖真实摘要长度，按既有有限预算逐 POST 消费。
+首层预检使用声明的本地 tokenizer 和原 SDK 计数，服务端 tokenizer／上下文、真实模型及外部物理清理仍待机器核查。
+本批不启动 GPU；Movie 大 Join／TopK 不执行，其他 baseline 的聚合及 Kalypso Medical 留空。
+组合172个不同CPU方法最终通过；首轮两个真实数据用例未给环境路径而跳过，补齐路径后单独通过，首轮记录保留。
+原生服务抽取后的14项视觉方法另复核通过；Medical 12组 query／backend 的 check＋fixture 通过，
+共14400次固定软件回复，完整1200行的原 accessor／记录／原生传输逐消息与结果相同。
+Q5 的单层与多层原算法、实际生成上限及预算失败保留均通过软件 HTTP 验证；软件 tokenizer 的单请求结果不替代实际服务分块。
+上述CPU验证的网络／真实引擎／实际推理／服务器操作均为0，原3010历史绑定匹配。
+
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；
 原生 VLM 服务、实际 processor／JSON Extract 和物理关闭尚未实机验证，不能以 CLIP 或旧 HTTP 结果补齐。

@@ -150,6 +150,39 @@ Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFr
 本地组合为 LOTUS1.2.4／LiteLLM1.95.1／OpenAI2.50.0／pandas2.3.3／Arrow24；
 它不冒充服务器 Linux LiteLLM1.95.0 的精确软件资格。物理 GPU 退出仍由现有外部 host supervisor 核查。
 
+<a id="sembench-medical-text"></a>
+### Medical 原文本查询
+
+[Medical 适配](text/sembench_medical.py)直接调用原 Q1／Q4／Q10 脚本、原金标生成和原评价：
+Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 为原疾病字段 Extract。
+原提示中的研究用途说明、Series／DataFrame 结果及无匹配时的 NaN 行为保留。
+准备入口只复制已存在的三份原 CSV，不采样、不运行图音 setup；原评价只绑定所需文本和标签关系。
+原评价源码使用 Python 3.12 的 f-string 语法，运行 driver 需要 Python 3.12。
+
+固定上游完整资产有11112名患者、1200条症状及对应标签；三题各1200次调用，每个 baseline 共3600次，
+LOTUS／Ray Data／Daft／IMLane 四种共14400次。上述四种复用既有普通 F/M/E 接线，实际模型与作者桥仍需机器验证；
+Kalypso 当前没有 Medical 绑定，留空。`scale_factor` 表示患者规模，不能直接当模型输入行数：
+原 `_25` 资产有25名患者、仅1条症状，且没有 Q1 的 allergy 或 Q4 的 acne 金标，只适合诊断。
+该诊断切片的 Q1 空集对空集可被原评价记为1，Q4 保留 NaN；不能把这些结果当作模型质量。
+原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。
+`check` 读取原关系并核算实际调用数；所有 baseline 的模型、生成和输入身份须一致。
+Medical 配置省略生成项时采用原 LM 的8192 token／无 stop，显式值保留；旧 Movie／MMQA 默认不变。
+
+<a id="sembench-mmqa-aggregation"></a>
+### MMQA Q5 原分层聚合
+
+[Q5 适配](text/sembench_mmqa_aggregate.py)保留 `_execute_q5` 的片名筛选、原 `sem_agg` 层次和 `_output` 评价，
+独立[原生入口](../../scripts/experiments/run_sembench_lotus_mmqa_aggregate.py)直接使用 LOTUS LM 与外部文本服务。
+它不经过仅接单个 F/M/E 的记录入口。原 sf25 的25行中，Q5 选16行，正文12403个 UTF-8 字节；
+Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求时，总量才精确为1；
+多首层分块的总量还依赖真实摘要长度，`check` 不把它猜成固定次数或逐行16次。
+
+预检使用本地 tokenizer JSON 和原 LM 计数，记录声明的服务上下文、完整首层消息和计数来源，零模型／零额度消耗；
+本地 tokenizer 身份不代替服务端验证。运行使用既有持久预算逐 POST 消费，保留原分层归并、失败尝试和原 JSON 评价。
+该路径计时基于已就绪的外部服务，模型启动／退出另由宿主核查，不能与普通文本冷启动成绩混算。
+当前仅原生 LOTUS 聚合已接线，另外四种 baseline 的聚合项留空，不增加替代算法。
+配置与命令见[脚本说明](../../scripts/README.md#sembench-native-mmqa-aggregate)。
+
 本轮保留的可复现边界：
 
 | 现象与根因 | 处理与验证 |
@@ -226,10 +259,10 @@ Q5/Q6 的 LIMIT10 也在完整 Join 之后，不能预裁剪、去重或按十�
 Q9 原 TopK 仍须显式选择 `ranking=topk`，不能借用本次 Map 的256次资格。
 其 `quick` 路径随机选 pivot；完整 N=256 排序的候选比较数上界32640，精确次数依赖 pivot 和模型判断，
 不能把 SDK safe-mode 估算当实际消耗或额度上界。LM seed 不设置 NumPy pivot RNG。
-MMQA Q5 使用原分层 `sem_agg`；调用数依赖上下文分块与中间生成长度，现有单 F/M/E 链未接，不能按输入行数猜次数。
-其余纯文本候选为 E-Commerce Q1/Q3/Q5、Cars Q1/Q4/Q10、Medical Q1/Q4/Q10。
-三组当前没有已核实的成套输入；先定位原 Parquet／CSV，再复用原 generator 的采样入口。
-Cars／Medical 的普通准备会顺带下载图音素材，文本准备不可盲跑整套 setup；有完整原 CSV 时调用原采样，不重写采样。
+MMQA Q5 使用[独立原生聚合入口](#sembench-mmqa-aggregation)；现有单 F/M/E 链不接聚合，不能按输入行数猜次数。
+其余纯文本候选为 E-Commerce Q1/Q3/Q5、Cars Q1/Q4/Q10，目前没有已核实的目标成套输入。
+Medical 已核实上游自带的完整文本资产，按上方原文本入口直接复制；Cars／Medical 的普通准备会顺带下载图音素材，
+文本准备不可盲跑整套 setup。需要其他规模时选择现成原 CSV 或原采样方法，不另写采样。
 E-Commerce 的嵌套 `productDescriptors` 保留原 DEFAULT 的整对象字符串，不能抽取一个 description 字段代替；
 E-Commerce Q3／Cars Q10 的 keyword Extract、E-Commerce Q5 的 Map suffix 需要单独绑定，当前有限 hook 尚未接这些参数。
 这些属于待接线／待数据，不是系统缺少原算法。E-Commerce、Cars 和 Medical 的其他原实现按各自文件与能力准备；

@@ -17,7 +17,7 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 from .sembench_image_query import check as check_inputs
 from .native_service_query import (
-    NativeServiceCalls as _NativeCalls, _audit_value, make_lm as _make_lm, run_prepaid_query,
+    NativeServiceCalls as _NativeCalls, make_lm as _make_lm, run_prepaid_query,
 )
 
 
