@@ -2,6 +2,14 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：移除整查询隐式期限并接实际启动等待
+
+records默认不设整查询期限，None贯通既有单查询调用；显式期限、取消、unknown及有限启动／通信／关闭处理保留。
+删除IMLane四处600秒二次截断和八个旧time导入；原生Ray按单Dataset自有context使用caller启动时间，
+不改全局或另建actor管理器。[准确源码、原失败与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)
+分别记录CPU和未做的实际执行。此前SDK补查在准确87ab服务器通过，不转授新版本。
+用户进一步确定SemLoom单查询及未来多查询统一本地IPC；旧fixed HTTP及专属入口正在独立清理，保留公共非HTTP和第三方原生需要的连接，未合并main。
+
 ## 2026-11-06：清理显式HTTP硬上限、Kalypso回路和图像异常收尾
 
 固定HTTP保留调用方显式期限，删除无运行依据的五分钟拒绝；records默认查询期限另批贯通，不混同两条路径。

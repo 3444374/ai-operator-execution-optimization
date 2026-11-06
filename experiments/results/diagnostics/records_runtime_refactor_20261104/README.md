@@ -4099,3 +4099,70 @@ records整查询默认60秒及其调用点正在独立树修改，此批未改�
 已观察到自有进程、GPU、共享内存及运行许可清理；driver使用自有SIGTERM，而vLLM关闭日志另记强制结束一个剩余child。
 物理清理不代替原Core unknown的权威终态。通用HTTP没有原生abort回执，本批不为多查询补做取消实现或追加模型调用。
 用户已暂停多查询新增开发和扩展测试；已完成代码、原失败及未发布cascade候选保留，后续只按实际单查询需要继续重构。
+
+<a id="caller-query-duration"></a>
+## 整查询期限由调用方设置，启动与通信分别等待（2026-11-06）
+
+原准确87ab的Core.evaluate在合成源预检推进模拟时钟61秒后，省略配置即抛TimeoutError；显式300秒可继续，显式None被拒。
+这是源码默认60秒的CPU反例，没有运行模型、Ray或数据库。[源码及各次检查记录](raw/records_optional_query_duration_checks.json)
+保留原结果和下列三个候选；本批从公开f526整合，未混入旧HTTP退役或暂停中的cascade并发候选。
+
+- `4690b4c8`：`RecordsResources.query_timeout_s`默认None，普通／静态／有限链、原生执行、IMLane和监督CLI传递同一选择。
+  显式有限正值按原检查点计时，查询取消继续检查；实际模型长度、请求和字节额度、未消费结果、unknown／ACK责任保持。
+  共用的四个无状态时间函数位于`infrastructure/deadlines.py`，没有新控制器；启动、逐命令轮询与关闭使用已有有限等待。
+- `52a2df5e`：IMLane构造、resident控制／启动参数及结果reader清理时间不再二次截到600秒，保留有限正值和原默认。
+  四处原`min(60, query_timeout_s)`调用现在采用既有10秒逐命令等待，须承认这是实际变化。
+  仓内C++将模型任务异步提交，poll检查ready、collect先查ready再get。
+  [作者源码补证](raw/imlane_try_pull_source_receipt.json)确认固定072f8257的TryPull只做零时长future就绪检查，Push将packaged_task入队，
+  安装／作者源码／Git原件的该header摘要一致；另有五个安装补丁文件，不据此宣称完整安装未修改。
+  因此10秒不是模型完成等待；整条命令的队列、锁、序列化及传输耗时仍未在本批实测。
+- `fc043446`：独审发现原生Ray只在同步模型构造返回后检查启动期限，先前外层60秒不能代替正确启动接线。
+  当前创建CSV Dataset后，将caller启动时间写入该Dataset自有context的`wait_for_min_actors_s`。
+  固定Ray2.56.1源码证明read时深拷贝context、后续变换使用该副本，actor就绪回执在UDF初始化后发送；没有改全局或自建actor池。
+  这个公开DeveloperAPI作用于每个原生actor池的就绪等待，不是整个图的单一总启动计时。实际超时、actor退出和模型启动仍未测。
+  同时删除八个迁移后未用的time导入，未保留测试专属别名。
+
+### 各次验证、原错误与缺项
+
+作者提交前工作树47项CPU通过；准确4690提交后12项针对性方法通过。有限生命周期选择先完成3项，其中1项与47重复，
+随后原token估算用例在Transformers／Torch元数据收集时中断，后续未运行，不能称整类通过。600秒增量3项、Ray接线及原readiness共6项分别通过。
+整合后的3698096a曾完成25项组合检查，包含12项查询期限方法与先前13项HTTP配置；这发生在用户进一步要求退役HTTP之前，之后未追加HTTP测试。
+这些选择有重叠，均不合计为唯一覆盖数，也不建立真实后端或性能结论。
+
+三份早期新增夹具错误分别是读取不存在报告key、引用不存在FixtureProcess属性、给native.evaluate传错参数位置；
+修正后的结果与原错误分开保存，不能把它们写成生产反例。真实生产反例是前述87ab默认60秒及601秒命令配置被旧600校验拒绝。
+单查询复算选择为`tests.execution_provider.test_records_query_deadlines`、`tests.serving.test_query_deadline`、
+`tests.experiments.test_records_query_supervision`；原Ray接线软件方法位于`tests.baselines.text.test_ray_model_readiness`。
+本机拒绝过的进程查看、socket和sysctl不重试；本批没有实际模型、Ray、IPC或GPU运行。
+
+171条受影响历史读取最初161通过、10不匹配；保存两份准确87ab旧字节并补映射后171通过。
+后续operation的15条、启动／导入的31条分别通过，原expected、投影身份及具名实验参数保持，没有重跑完整3010条物化。
+[恢复说明](../../../reproduction/native_baselines/README.md#caller-query-duration-sources)与当前默认分开。
+
+本批核心Python56,324行、src＋scripts109,718行、独立集成6774行；较f526分别增加45、64、16行，tests增加402行。
+独立集成统计Python／C++／hpp，其余统计Python，均含注释与空行；历史副本和文档另计。
+较固定main的核心增加2,233行、src＋scripts减少30,617行；较3fd分别减少5,304／39,927行，不虚报此次修正为代码减少。
+原矩阵剩余工作时间不足60秒就拒启等重复预留规则仍在另树处理；没有把该旧规则算成已清完。
+
+<a id="sembench-sdk-server-87ab"></a>
+## 准确87ab的SDK软件分派与CLI补查（2026-11-06）
+
+[服务器回执投影](raw/sembench_text_87ab_server_receipt.json)已核原件：准确87ab／4600a44，
+`SemBenchTextBackendTests`十方法全部通过，无失败／错误／跳过，图像CLI帮助退出0。
+它补回此前本机SDK收集缺项；原本机中断不改写为通过。观察到的8个自有进程退出、SHM无残留、运行许可已归还，模型／真实Ray／GPU查询均为零。
+Git一次超时后由已核验公开增量包恢复准确独立树，原Git失败保留；没有修改断言或安装依赖。
+结果仅限实际SDK Mock分派和CLI导入，不转授后续f526或本批None期限，也不证明模型质量、进程关闭或性能。
+
+<a id="fixed-http-current-consumers"></a>
+## 旧SemLoom fixed HTTP的当前调用和退役安排（2026-11-06）
+
+[逐调用核查](raw/fixed_http_usage_audit.json)确认普通records不进入FixedModelConfig或HTTP transport。
+异步为Core工厂→AsyncRecordsActorOwner→AsyncCoreModelActor→本地AsyncEngineProcess／vLLM worker；
+同步为原模型Ray actor直接调用VllmEngine，均不经fixed HTTP。
+旧HTTP仍由service脚本的显式fixed配置分支、增量provider、旧研究gateway及两个诊断探针消费；公共native task的HTTP构造在当前仓内只有测试直接调用。
+先前13项配置检查只是已保留旧接口的独立修正，不是当前records优化，也不是实际HTTP请求。
+
+用户现已明确SemLoom单查询及未来多查询都采用本地IPC，多查询目前不实现。因此上述SemLoom HTTP入口、transport、专用测试与配置正在独立清理，
+不能仅因它有旧测试就继续维护其功能；shared ImageGateway、通用Core、任务、租约、取消、UDS framing和必要数据组织按真实共享调用保留。
+第三方LOTUS VLM／MMQA、Kalypso和Ray官方HTTP baseline的原生连接另有用途，不随SemLoom旧接口删除，也不反向接入当前主线。
+此章节只记录已核事实与进行中的删除，HTTP源码尚未在本批退役，后续不追加它的测试或新模型调用。

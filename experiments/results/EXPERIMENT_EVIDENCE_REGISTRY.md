@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：调用方查询期限与原生启动等待
+
+[None贯通、IMLane二次上限清理及Ray启动接线](diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)
+保存三个准确候选、各次原错误／CPU结果和历史来源；47、12及增量选择分别解释，不累加覆盖数。
+实际IPC、Ray超时和模型仍未验证；[准确87ab SDK补查](diagnostics/records_runtime_refactor_20261104/README.md#sembench-sdk-server-87ab)
+只补原10项Mock及CLI帮助，不转授此新实现。旧fixed HTTP归属已核，按用户要求退役工作另批继续。
+
 ## 2026-11-06：显式HTTP期限、实验依赖和图像异常清理
 
 [各自源码、原失败与CPU结果](diagnostics/records_runtime_refactor_20261104/README.md#single-query-duration-and-cleanup)

@@ -4,6 +4,7 @@
 本目录提供外部执行核心；当前 records 使用 SemBench 等外部工作负载验证数据执行、供给、背压和生命周期，
 LOTUS 提供可选兼容方法与对照。这些结果不表示已接入新的 PostgreSQL 语义算子。
 普通 Movie records 通过本地 IPC 调用模型引擎；不启动旧 Movie HTTP 服务。
+整查询默认不设总期限，显式期限保留，启动和关闭分别等待；旧SemLoom fixed HTTP接线正在退役，未来多查询不以HTTP为接入方式。
 当前可选能力、默认及验证限制见[配置总览](../docs/执行配置与优化开关.md)和[代码状态](INFRA_STATUS.md)。
 
 ## 真实入口

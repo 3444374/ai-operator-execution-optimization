@@ -1,0 +1,460 @@
+{
+  "schema": "semloom.records_optional_query_duration.v1",
+  "base": "f526e6bd4701b23d9d47e44d22590593debabb9c",
+  "combined_commit": "4c5be78c79fd8b6527ab36a6ecb9cf9e03073dd6",
+  "combined_tree": "fdb85581dc22571d13d8fd799a11a8411c63e597",
+  "original_commits": [
+    {
+      "commit": "4690b4c837728b396f52b8f43f02488ff4fda6e6",
+      "tree": "e41b80b0d7ec95d73c6eed5e4bdfca1747863267",
+      "parent": "87ab621f0b788887459aadaeb6986942bd3c1a7a",
+      "purpose": "optional caller query duration"
+    },
+    {
+      "commit": "52a2df5eb8bcdbaca0526567e52251ed96543e62",
+      "tree": "0addcd5c042fa327e5a7dc5b7eed6ca71e053f36",
+      "parent": "4690b4c837728b396f52b8f43f02488ff4fda6e6",
+      "purpose": "remove four unsupported operation duration caps"
+    },
+    {
+      "commit": "fc04344645725972b4b09ac6d91412f25d553d8d",
+      "tree": "33ac74727ca9787f63eccc6e36abc59c45051e6d",
+      "parent": "52a2df5eb8bcdbaca0526567e52251ed96543e62",
+      "purpose": "native Dataset startup wait and old imports"
+    }
+  ],
+  "source_matches_original_candidate": true,
+  "source_sha256": {
+    "code/integrations/imlane_records/cascade_host.py": "d619633561b1aca5d971c1537c571a3d0365c3def84e04c6be2590d6137d6b60",
+    "code/integrations/imlane_records/cascade_udf.py": "70f1f0eba6026ab13d49e00bc3703ae8758b7b43bbeb6e39751bcd46163ce70a",
+    "code/integrations/imlane_records/chain_backend.py": "6122abfc17edca72c801d5cd1d034572676198cc0ff32064c2d4a4a495aec795",
+    "code/integrations/imlane_records/chain_host.py": "c3a48c2cad4bdef954e3008de9528936e799f823a55316f265985a42b26e0e8d",
+    "code/integrations/imlane_records/client.py": "31ab80584dc29d0aad87aae547527ae7d1605baf9b7e0a83b2889b8d849defc9",
+    "code/integrations/imlane_records/filter_udf.py": "123cee9746bdef12fb0cb030b5b9b214ee0ce5e8080a3a2a74a6d244d8ffdad7",
+    "code/integrations/imlane_records/records_host.py": "556b6a8b3c3e1874532439f046035dd84f0ca540438e095409200ab658fb9e84",
+    "code/integrations/imlane_records/resident.py": "a0f6f583f35bf4641bc8bf98b38b33e7893e1c7e32fa22da3ca275aac91f76d6",
+    "code/integrations/imlane_records/resident_model.py": "ea5a308bace4acaa619b333f8ddf457961b885d95e7e807807a4b7a09334123a",
+    "code/integrations/imlane_records/resident_udf.py": "85d6aa445f32551e7bbfe40da427d96e86a1d9f736875df890ed44f6ba214f29",
+    "code/integrations/imlane_records/verify_filter.py": "c8411090ba1d07127096e5f9f46d81b8957d60ecdcc4e32c302583864121a548",
+    "code/src/baselines/text/frameworks/daft_lotus_cascade.py": "9c0022d4ec573dd39dc2dc402fff336bb699b5760f282a850edcebb47fd52594",
+    "code/src/baselines/text/frameworks/daft_lotus_chain.py": "8267422e68b07b4f9490bc9f9f1616ffc4d2a8c8663a10158249f0898e0c73f6",
+    "code/src/baselines/text/frameworks/daft_lotus_records.py": "418732b0f175fbe93ff7428081405f0ac7139bd61c895b981581f61785166941",
+    "code/src/baselines/text/frameworks/daft_lotus_session.py": "bc9383139fb5647c049705d175159ace13d027aec65f09fae348c85067199690",
+    "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "a4d6779b4bc3286e886311406a6d7b37218d8404c5c82ee4f4c806e5a31e63e1",
+    "code/src/baselines/text/frameworks/lotus_native_local.py": "4a2ec277e13bfd6ea014bf4e4f977f9df812272acbeef018a7529a03a32d91eb",
+    "code/src/baselines/text/frameworks/lotus_native_stage.py": "e4cb5b171194f1c0395e12aef7c9dd69119485c3417734251d1cf390eb159d37",
+    "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "842ebcb89e2bfe4f51ad69d3b2f63ca37bccb6c9bdc3ccdb3c8475666a359b0b",
+    "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "8d28d7588e63c01844e97a750517693a54f2db80079e37b131d04e76dfb38b38",
+    "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "7984c06e20bc61ca086473c8031a607248db6b0fc909317da8984cce8d932598",
+    "code/src/execution_provider/adapters/lotus_cascade_core.py": "2f45bc34f3af7de5a45569435695c82e8cea0f6481a88d59e81c8c419ce3febb",
+    "code/src/execution_provider/adapters/lotus_chain_actor_backend.py": "dcf19a15453bf4d791eeb04509c811bb0d9e7c758def719366ff54e7f595b723",
+    "code/src/execution_provider/adapters/lotus_chain_fused_runtime.py": "51bf2afbc53d5f25b366210a09b8a9acb25fc1feb2ca0f66975e28e40598233c",
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "221d3e85042018b184f1b9f2418ca5369d092685d431accbc6d7bb609314cd03",
+    "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "ed77f1e5c8bbc4fedec08fc459e2fa247e37a097f694fbdbdfcaa2396278d2b6",
+    "code/src/execution_provider/adapters/lotus_records_core.py": "7b7a521e7705874c4088c220cd8d21dd2d60a56a4df07da72334613b53b97a99",
+    "code/src/execution_provider/adapters/lotus_records_static.py": "6269976c54ea74148b5ce38e56db96c674bb9cd9422547b05b8e16ccae036475",
+    "code/src/execution_provider/adapters/records_async_model.py": "d911d3dda8ad54ee3f27b48d045e987f3a74d6e7918762befc51a0df5acd012a",
+    "code/src/execution_provider/adapters/records_filter_runtime.py": "c03eb72e98e77afd300f57f6c396f944b80dd7deeff914e110e424f5d00d187d",
+    "code/src/execution_provider/adapters/records_query_runtime.py": "532cf811bc12ea5353c433b191d64920d0403b5fc3aeb559031766e533815535",
+    "code/src/execution_provider/adapters/records_transport.py": "f3495809cd8c7e1422670586b6b78af770bc475ec298abc578e7d95b2a8c2336",
+    "code/src/experiments/imlane_movie_formal.py": "679726d50d0dff10943e7279776098cbb0eb0e0283cf5cd7d68093d9797ac306",
+    "code/src/experiments/lotus_records_cascade.py": "53cbe813af654e66e668abef24b4a33d46c458a6495aa8e5c7e206e36d703387",
+    "code/src/experiments/lotus_records_chain.py": "90559625fabe0ab025d2977b981af00e51ceb363b35666180b47a46a5f6b5219",
+    "code/src/experiments/lotus_records_movie.py": "dd9ab87734010884e454b4c1c2418f93ca60263d8b55c102a9f50e12b7b81eb8",
+    "code/src/experiments/lotus_records_supervisor.py": "48b452d4e0ce0b72ec58ff05818551714e26e4f7ebf222938121b01425c59ade",
+    "code/src/experiments/movie_records_matrix.py": "18c7fa7cfd51ae780805d4fa5625a061efef440f55be32ce1803808306350972",
+    "code/src/experiments/movie_records_session.py": "8d695f835f9603cb879f140ca664049387123d83abfd06535b8d49f76d6609e5",
+    "code/src/experiments/sembench_text_query.py": "3d8acaa5897b926e40c1ada50c331553b063380939eb85dd643c622e75feea42",
+    "code/src/infrastructure/deadlines.py": "d142e306df2bfd5fae4370661033bba95cabd1189141fa1dae6b2a85034aa27f",
+    "code/src/scheduling/core/session_contract.py": "b37707674af91f6d187b4cf472320f053953eba401d519ef69c0a645a07830a0",
+    "code/src/semantic_methods/lotus/records.py": "ad667d6ade5100b1e21c644183106d5c1170e1fd329c297d39c021520dfd85d4",
+    "code/src/serving/backends/async_engine_process.py": "09cbdf5530c23869262dfcf5349296401c171b5035296db219e0a3f188fb7c7d",
+    "code/src/serving/backends/lotus_chain_worker.py": "0baa87b815a523a7867a1db2da343bb0b75dd4d86ff9fa14c26ddc25674ff683",
+    "code/src/serving/backends/staged_generation_process.py": "9e8a4170ba2d5a909c96da2905766bfb5c7512d58ecfed8a25e2b6465ebd2a96",
+    "code/src/serving/backends/vllm_async_engine.py": "cc70a12047623005030cafe0d75e3f0b1e5f84a63b51a9ca84b3de902479ac43",
+    "code/src/serving/backends/vllm_sync_process.py": "2759e477a0d852dd8cd0a9ab6d2a9b0ff31bf5f4e408fd6f7b9afb04821e7220",
+    "code/tests/execution_provider/test_records_query_deadlines.py": "f8f9f5b8932b184fffbccc14d648f330c8fa3ec8b0208a759f946b8de4602ff3",
+    "code/tests/experiments/test_record_prepare_finalization.py": "12e9df07974a66d87af949921f888e4941d79a84c779c2867d07b34f8bb5a141",
+    "code/tests/experiments/test_records_query_supervision.py": "30453effbf27233c4323fafc5d2ba4827ccf8151f2a35ae6c65fb8264f8421e8",
+    "code/tests/serving/test_query_deadline.py": "f61ff0c36045a35e16b308e35f4179f1218b022366848c1940162386de753011",
+    "experiments/reproduction/native_baselines/MANIFEST.json": "f866c5d4d5bc3f33cecacac30273565c5e7301453fc4294bf0f0e19a274862ed",
+    "experiments/reproduction/native_baselines/historical_sources/87ab621f/code/integrations/imlane_records/resident_model.py.gz": "d91cf8e67923365bed6986df8543763162b19139d13301c597ce610c84a012f2",
+    "experiments/reproduction/native_baselines/historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz": "1836c4fdb949c4f669d37a5d682901d459dfb52f54cb468bcba7775173c7b91c"
+  },
+  "original_handoff_sha256": "c694dc62e3cd606a2a22987392e763153987f07866f67a51f16c638a168decd7",
+  "behavior": {
+    "query_timeout_default": null,
+    "explicit_query_duration": "preserved; checked at the existing observation points",
+    "startup_timeout_default_s": 120,
+    "default_command_wait_s": 10,
+    "supervisor_untimed_query": "observes child exit and caller signals; exiting uses existing finite grace",
+    "model_context_and_generation": "unchanged",
+    "resource_counts_and_bytes": "remain finite and unchanged",
+    "unknown_and_ack": "remain owned until the original terminal and receipt conditions",
+    "new_stateful_controller": false,
+    "new_query_or_SAOR_features": false
+  },
+  "finite_operations": {
+    "actor_startup": "earliest caller query deadline and startup_timeout_s; the None query leaves startup finite",
+    "native_Ray": "single read_csv Dataset context.wait_for_min_actors_s receives startup_timeout_s; version 2.56.1 DeveloperAPI property",
+    "private_engine_startup": "existing finite startup timeout",
+    "polls": "existing bounded Ray, IPC and control polling intervals",
+    "cleanup": "existing actor model close allowance plus RPC reply window, existing synchronous close allowance, IMLane MODEL_CLOSE_GRACE_S, supervisor grace_s",
+    "IMLane": "query task duration may be None; individual bridge requests stay finite; explicit startup/command/close durations are no longer capped at 600"
+  },
+  "original_counterexample": {
+    "source_commit": "87ab621f0b788887459aadaeb6986942bd3c1a7a",
+    "kind": "single-query evaluate with fixture source; stops before any scan/runtime allocation",
+    "omitted": {
+      "result": "TimeoutError",
+      "message": "LOTUS Core records deadline expired",
+      "elapsed_simulated_s": 61,
+      "resolved_query_timeout_s": 60
+    },
+    "explicit_300": {
+      "result": "ReachedScan",
+      "message": "",
+      "elapsed_simulated_s": 61,
+      "resolved_query_timeout_s": 300
+    },
+    "models": 0,
+    "Ray_runs": 0,
+    "UDS_runs": 0,
+    "sysctl_commands": 0,
+    "explicit_none": {
+      "result": "ValueError",
+      "message": "records deadline must be finite and positive: query_timeout_s"
+    }
+  },
+  "checks": [
+    {
+      "artifact": "selected-regression.redacted.log",
+      "tests": 47,
+      "status": "passed",
+      "source": "precommit worktree; same functional implementation before final import tidying; retain original identity"
+    },
+    {
+      "artifact": "FINAL_TARGETED.json",
+      "tests": 12,
+      "status": "passed",
+      "exact_source_commit": "4690b4c837728b396f52b8f43f02488ff4fda6e6",
+      "models": 0,
+      "Ray_runs": 0,
+      "UDS_runs": 0
+    },
+    {
+      "artifact": "finite-lifecycle-regression.redacted.log",
+      "completed_tests": 3,
+      "overlap_with_47": 1,
+      "status": "interrupted in the first later legacy token-estimate test while importing Transformers/Torch entry_points metadata",
+      "later_selected_cases": "not run; this is not a complete FusedModelContextTests or finite-lifecycle suite pass"
+    },
+    {
+      "artifact": "OPERATION_CPU.json",
+      "tests": 3,
+      "status": "passed",
+      "source_commit": "52a2df5eb8bcdbaca0526567e52251ed96543e62",
+      "subsequent_source_edits_before_commit": false
+    },
+    {
+      "artifact": "RAY_STARTUP_CPU.json",
+      "tests": 6,
+      "status": "passed",
+      "source_commit": "fc04344645725972b4b09ac6d91412f25d553d8d",
+      "actual_Ray_runs": 0,
+      "actual_actor_timeout_or_exit_verified": false
+    },
+    {
+      "artifact": "HISTORY_FIRST.json",
+      "reads": 171,
+      "passed": 161,
+      "failed": 10,
+      "status": "original affected-source mismatch retained"
+    },
+    {
+      "artifact": "HISTORY_FINAL.json",
+      "reads": 171,
+      "passed": 171,
+      "failed": 0,
+      "expected_hashes_and_projection_identities_preserved": true
+    },
+    {
+      "artifact": "OPERATION_HISTORY.json",
+      "reads": 15,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "artifact": "RAY_STARTUP_HISTORY.json",
+      "reads": 31,
+      "passed": 31,
+      "failed": 0
+    }
+  ],
+  "validation_accounting": "Selections overlap. Do not add 47, 12, 3, and 6 as unique tests. Do not count the interrupted legacy class as passed.",
+  "fixture_errors": [
+    "targeted-first.log: new assertion used a resources key absent from check_plan report; corrected test",
+    "sync-first.log: new assertion referenced an absent attribute on existing FixtureProcess; corrected test",
+    "RAY_STARTUP_CPU_FIRST.log: new test supplied native.evaluate positional arguments in the wrong order; corrected to named arguments"
+  ],
+  "history": {
+    "archive_source_commit": "87ab621f0b788887459aadaeb6986942bd3c1a7a",
+    "new_archives": [
+      "code/integrations/imlane_records/resident_model.py",
+      "code/src/baselines/text/frameworks/lotus_chain_native_relation.py"
+    ],
+    "map_entries_added": 10,
+    "changed_expected_hashes": 0,
+    "full_3010_materialization_repeated": false
+  },
+  "Ray_API_source": {
+    "kind": "installed distribution source; no Ray import or runtime",
+    "version": "2.56.1",
+    "sources": [
+      {
+        "path": "ray/data/read_api.py",
+        "sha256": "4d7ae45598a8fcdfd1deb432d116c7e676ca51cca0ebba55ac2ec0967c9e145f",
+        "bytes": 212685
+      },
+      {
+        "path": "ray/data/context.py",
+        "sha256": "e13c27bd99fb3af7331debaf500eb71a624475eeff78e2c27e562ccb707c70e5",
+        "bytes": 52163
+      },
+      {
+        "path": "ray/data/dataset.py",
+        "sha256": "99b1d243646f060b7f70db0f9bac4a33744a518d11eb3019647b558512a499cf",
+        "bytes": 337746
+      },
+      {
+        "path": "ray/data/_internal/execution/operators/actor_pool_map_operator.py",
+        "sha256": "32a6ab0461569acbf0287b3ecd88dd74c98a7cf369d4d02d8ac0c2eb67eec500",
+        "bytes": 53738
+      }
+    ],
+    "facts": [
+      {
+        "path": "ray/data/read_api.py",
+        "lines": [
+          718,
+          720
+        ],
+        "fact": "read_datasource creates a DataContext.copy() and passes it to Dataset"
+      },
+      {
+        "path": "ray/data/context.py",
+        "lines": [
+          1146,
+          1148
+        ],
+        "fact": "DataContext.copy delegates to deepcopy"
+      },
+      {
+        "path": "ray/data/dataset.py",
+        "lines": [
+          315,
+          324,
+          7321,
+          7325
+        ],
+        "fact": "Dataset.context is a published DeveloperAPI property; transformations use parent context"
+      },
+      {
+        "path": "ray/data/context.py",
+        "lines": [
+          276,
+          278,
+          612,
+          614,
+          837
+        ],
+        "fact": "wait_for_min_actors_s is documented; distribution default is environment-derived or -1"
+      },
+      {
+        "path": "ray/data/_internal/execution/operators/actor_pool_map_operator.py",
+        "lines": [
+          279,
+          299
+        ],
+        "fact": "positive wait_for_min_actors_s is passed to ray.get on pending actor ready refs"
+      },
+      {
+        "path": "ray/data/_internal/execution/operators/actor_pool_map_operator.py",
+        "lines": [
+          625,
+          642,
+          645,
+          657,
+          668
+        ],
+        "fact": "Map worker initializes its UDF before get_location can report readiness"
+      }
+    ],
+    "implementation": "ordinary records read_csv Dataset gets resources.startup_timeout_s through its own context; native graph and actor pools unchanged",
+    "global_context_modified": false,
+    "third_party_modified": false,
+    "new_controller": false,
+    "pending": [
+      "actual Ray timeout with stalled UDF initialization",
+      "actual Ray actor shutdown and owned process outcomes",
+      "real model initialization"
+    ]
+  },
+  "independent_review": {
+    "receipt_sha256": "7a15ff88a57e79fda8ac8167734013f2072bba7dde71311e71c935f07444cfc3",
+    "code_findings_remaining": 0,
+    "former_startup_finding": "Resolved by wiring caller startup duration into the individual Dataset context, not an overall graph startup timer."
+  },
+  "original_artifact_sha256": {
+    "finite-lifecycle-regression.log": {
+      "sha256": "8bb52ca3621d131674f61d47383e925ffd05fae1ffb8d6228c76b1593ce0318e",
+      "bytes": 5513
+    },
+    "selected-regression.log": {
+      "sha256": "e064a50fe35ba3df5c8402c99935bf3beca0a7473d98d16df96488fbc364a02f",
+      "bytes": 10056
+    },
+    "ORIGINAL_COUNTEREXAMPLE.json": {
+      "sha256": "b358980074b207865d0b3ea123f8f952adc26c10afdc6127aec7209fa8717067",
+      "bytes": 679
+    },
+    "RAY_API_SOURCE.json": {
+      "sha256": "06856c8fdb8a5dfa3364d24dcdcd3e7821374f4fee3fbec018d2343538625c9c",
+      "bytes": 2560
+    },
+    "HISTORY_FIRST.json": {
+      "sha256": "9cc84d7ae89346ec143bfdb8c0c410c7b6293b397f1174bc4fc5109d037ae8af",
+      "bytes": 58584
+    },
+    "RAY_STARTUP_CPU_FIRST.log": {
+      "sha256": "36d91bdb13e51371ac7738928253a0caac931d6aec3e58e88c85dee06b20d1e5",
+      "bytes": 3639
+    },
+    "RAY_STARTUP_CPU.json": {
+      "sha256": "cb15201b560ebc3ce956b96710fb72d44f69184b08a5c32a591dec4a7710edef",
+      "bytes": 455
+    },
+    "OPERATION_ORIGINAL.json": {
+      "sha256": "ff008c9e952639e27ffbdf3bc22a7429caeb251d1074d7db1875d8d9a5739adb",
+      "bytes": 216
+    },
+    "RAY_STARTUP_CPU.log": {
+      "sha256": "02586d96fd426f250b9f00079844afcee6106ee077bb441e1c87f913548fdf13",
+      "bytes": 1425
+    },
+    "CANDIDATE_FILES.json": {
+      "sha256": "1063737080818dd4da1725da1ab73dd633f36473950c048a2ed63921a4aa260e",
+      "bytes": 11088
+    },
+    "sync-first.redacted.log": {
+      "sha256": "cefa83ec18a8c6c2dd53b8763a6dda12839ed6ea9ed7dd526c149801c676a27b",
+      "bytes": 1437
+    },
+    "sync-first.log": {
+      "sha256": "47f45b3e3a53e98f6205fb59aa537bd3ae014178b93110d56390b4b9872b29fe",
+      "bytes": 1479
+    },
+    "OPERATION_LIMIT_AUDIT.txt": {
+      "sha256": "2b7a143fd345bac9c7c8984e473fff83acb585e335ac262dbadf43fccafe77e7",
+      "bytes": 672
+    },
+    "OPERATION_CPU.log": {
+      "sha256": "6e7cec95a7f513cf339397d033f29010bcdcdbf3a6bb75fa84ae27feff38b7e5",
+      "bytes": 815
+    },
+    "RAY_STARTUP_HISTORY.json": {
+      "sha256": "b3bfab73fd3c29d360cc703bbab0fb8250160bef7ed3ea2cad928c5102ec1d07",
+      "bytes": 6593
+    },
+    "HISTORY_FINAL.json": {
+      "sha256": "fd2c8f183d244e0caebb58e5a35c4f2ab8257b2f5f82fc6b7f37f22334c30be5",
+      "bytes": 35773
+    },
+    "selected-regression.redacted.log": {
+      "sha256": "e064a50fe35ba3df5c8402c99935bf3beca0a7473d98d16df96488fbc364a02f",
+      "bytes": 10056
+    },
+    "UNUSED_TIME_IMPORTS.json": {
+      "sha256": "3a7f5c58f2cd7f43d30db57664546ccfd871bb539069c0c6ba2a71cb3198e427",
+      "bytes": 564
+    },
+    "CALLERS.json": {
+      "sha256": "1532f11e5e3bc09696a89f288984b125d379e1e9c0c10521b4220c08e019a183",
+      "bytes": 5580
+    },
+    "finite-lifecycle-regression.redacted.log": {
+      "sha256": "2abb48f7a7a918a06d92adb815959f9ddd604c8d57fcd484c347dd76e2a67f5a",
+      "bytes": 5457
+    },
+    "targeted-first.redacted.log": {
+      "sha256": "d068130463e43d18dbe313ff7a60678fd05b513769e5d11aea1d4e49b885a011",
+      "bytes": 3140
+    },
+    "FINAL_TARGETED.log": {
+      "sha256": "c7c252a226f93615a281105d845ce7c61ff6f4b1ffb354658d83fba0df12ea26",
+      "bytes": 2832
+    },
+    "FINAL_TARGETED.json": {
+      "sha256": "906905d4459c1ab698477d57d2f91ea02956021c29e074fedb383991e9ae97c5",
+      "bytes": 494
+    },
+    "targeted-first.log": {
+      "sha256": "ff7e894dddd1e49497671c7c91af44cf88405b3d062fb28830b0ba78fa61da87",
+      "bytes": 3182
+    },
+    "RAY_STARTUP_CPU_FIRST.json": {
+      "sha256": "5e8fa5ad0c24485b2e91d69eea676875a847a2e76dac3c4a152a79401356348f",
+      "bytes": 455
+    },
+    "OPERATION_HISTORY.json": {
+      "sha256": "601777a724ff079d806a18e96ff8b25ce765a0cba4741b88c4ddc9982696e19b",
+      "bytes": 3102
+    },
+    "HISTORY_ARCHIVES.json": {
+      "sha256": "3c2d2395dcd036675d30240ee8055413d180eb08ab8675b71fdc2fb31b5509a0",
+      "bytes": 3581
+    },
+    "OPERATION_CPU.json": {
+      "sha256": "68ec9b86b40dec007e1cc6bba8cb3f49244bc814d13217b929a1e75b3fbdbdfa",
+      "bytes": 511
+    }
+  },
+  "pending": [
+    "actual async child IPC with null query deadline",
+    "actual native Ray startup timeout and owned actor/process cleanup",
+    "actual Daft and IMLane null-deadline execution",
+    "native LOTUS SDK calls after this change; local metadata I/O prevented the broader old case",
+    "physical GPU/process exit after timeout or cancellation; no CPU result proves this",
+    "Actual command queue/lock, serialization and transfer latency; source-level zero-wait TryPull does not establish an all-command latency bound."
+  ],
+  "separate_matrix_rule": "movie_records_matrix still rejects launching the next owner when its explicit remaining work allowance is at most 60 seconds; not a query default and not changed here",
+  "line_counts": {
+    "all_production_including_adapters_experiments_baselines": {
+      "files": 48,
+      "before_lines": 17042,
+      "after_lines": 17122,
+      "net_lines": 80
+    },
+    "core_src_excluding_experiments_baselines": {
+      "files": 19,
+      "before_lines": 7760,
+      "after_lines": 7805,
+      "net_lines": 45
+    },
+    "tests": {
+      "files": 4,
+      "before_lines": 382,
+      "after_lines": 784,
+      "net_lines": 402
+    }
+  },
+  "scope": {
+    "models": 0,
+    "actual_Ray": 0,
+    "UDS": 0,
+    "new_multquery_features": false,
+    "new_HTTP_tests_after_user_direction": 0
+  },
+  "IMLane_command_change": "Four former min(60,query duration) call sites use the existing finite10s bridge command default. Author revision072f8257 header matches installed/source/git bytes; TryPull is a zero-duration future readiness check, and collect calls get only after readiness. Whole-command latency and actual optional-deadline queries remain untested.",
+  "author_source_receipt": "imlane_try_pull_source_receipt.json"
+}

@@ -1,0 +1,71 @@
+{
+  "schema": "semloom.imlane.try_pull.readonly.v1",
+  "status": "source_definition_confirmed",
+  "author_revision": "072f8257db80569e42c9f5727d839587df529652",
+  "public_origin": "https://github.com/IM-DM4AI/IMLane0",
+  "header_relative_path": "include/dbend/dbend_context.hpp",
+  "header_bytes": 28519,
+  "header_sha256": "f524d36e40dcfa6540a1105df65e875d6b34cf04fce3fdf631631b5d1c3fca9b",
+  "three_way_header_match": true,
+  "known_installation_note": "The installation is patched in five other tracked files. This header matches both author HEAD and installed prefix byte-for-byte. No clean whole-installation or binary reproduction claim.",
+  "other_tracked_modified_paths": [
+    "M include/backend/python/py_executor.hpp",
+    "M include/common/parameter.hpp",
+    "M src/backend/python/py_executor.cpp",
+    "M src/coordinator/coordinator.cpp",
+    "M src/main/main.cpp"
+  ],
+  "facts": [
+    {
+      "lines": "88–94",
+      "fact": "ExecAsyncFuncContext stores std::future<void>. TryPull tests wait_for(std::chrono::seconds(0)) == std::future_status::ready and returns that boolean; no wait-until-completion loop."
+    },
+    {
+      "lines": "95–97",
+      "fact": "The separate ExecuteAsyncFuncPull method calls task.wait(), which is the blocking variant. It is not the TryPull call used here."
+    },
+    {
+      "lines": "618–640",
+      "fact": "ExecuteAsyncFuncPush creates a packaged_task<void()>, obtains its future, enqueues a wrapper that executes the task, signals workers and returns the context. This is an explicitly queued packaged-task future, not a deferred std::async future."
+    },
+    {
+      "project_lines": "186–195,247–265",
+      "fact": "Project ready()/ready_blocks() call TryPull. collect() and collect_ready() require readiness before task.get(). The submitted background callable invokes ExecuteFunction; its execution can wait on author/model work without making TryPull itself a model wait. Task failure may also make the future ready; get() then propagates that exception."
+    }
+  ],
+  "deadline_implication": "The existing 10-second per-command timeout must not be described as a 10-second model-completion wait merely because poll uses TryPull: TryPull is a zero-duration readiness probe. IPC transfer, queue/lock acquisition, result serialization and other command paths are separate; this narrow source check does not prove every whole command always finishes within10seconds or certify the pending optional query-deadline change.",
+  "not_run": {
+    "model_calls": 0,
+    "real_Ray": 0,
+    "GPU_queries": 0,
+    "query_executions": 0,
+    "compilation": 0,
+    "tests": 0
+  },
+  "changes": {
+    "author_source": false,
+    "project_source": false,
+    "dependencies": false,
+    "configuration": false,
+    "services": false,
+    "leases": false,
+    "public_Git_upload": false
+  },
+  "method_definition": {
+    "file": "include/dbend/dbend_context.hpp",
+    "lines": [
+      92,
+      93,
+      94
+    ],
+    "expression": "task.wait_for(std::chrono::seconds(0)) == std::future_status::ready"
+  },
+  "project_callsite": {
+    "head": "87ab621f0b788887459aadaeb6986942bd3c1a7a",
+    "relative_path": "code/integrations/imlane_records/record_dbend_adapter.hpp",
+    "sha256": "8236cfd01ebe8c22aa383a9fbe2698ab7a574f1d8622848634f2efcc99b1dfb8",
+    "bytes": 13895
+  },
+  "original_handoff_sha256": "78bc1c190b040729a34e4980ad95dcc8554ee69f42d6fddb4db040bc047af0ed",
+  "original_results_sha256": "d1b85b2280419473b8603e4c2543cd8e594153abcd889ea65581829fa271f40d"
+}

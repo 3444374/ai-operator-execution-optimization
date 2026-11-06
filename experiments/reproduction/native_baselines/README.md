@@ -666,3 +666,12 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 本次未新增这些文件的副本或恢复映射：五份具名投影此前已读取各自准确原件，读取值保持。
 旧直接导入不再兼容；需要旧API时使用完整隔离来源，不将转发壳加回当前搜索路径。
 原图像和观测结果、失败记录以及尚在使用的HSE执行保持各自身份。
+
+<a id="caller-query-duration-sources"></a>
+## 整查询期限改动的准确旧来源
+
+当前records默认不设整查询总期限；历史具名实验继续读取原源码和显式配置。
+此次两份原文件保存在[87ab来源](historical_sources/87ab621f/)：IMLane的`resident_model.py`及原生LOTUS的`lotus_chain_native_relation.py`。
+各自准确87ab字节与原预期摘要一致，五份投影只各增两条来源／格式映射，全部expected与投影身份保持。
+完整旧接线从[87ab准确树](https://github.com/3444374/ai-operator-execution-optimization/tree/87ab621f0b788887459aadaeb6986942bd3c1a7a)恢复，
+[本批171条读取与增量核对](../../results/diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)与完整3010条物化分开记录。
