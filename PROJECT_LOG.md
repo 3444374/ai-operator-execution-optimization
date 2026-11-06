@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：同步模型关闭沿用调用时间
+
+[普通与分阶段同步worker](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)
+同步迁移父close帧和实际消费者，保留原进程清理预留、unknown和usage；十四种CPU情形通过，实际软件管道待验。
+
 ## 2026-11-07：删除Map重复转出并归还数据清理职责
 
 [Map实际编码器](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)

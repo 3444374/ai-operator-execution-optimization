@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-07：同步关闭调用时间
+
+[两条实际同步worker](diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)
+同两方法十四种情形从十二处失败变为全部通过；两种实际stage替身的内存回读单独记录。
+准确d224组合两方法也通过，不与作者结果重复计数；Linux软件管道、模型和Ray清理未由本批验证。
+
 ## 2026-11-07：Map重复转出与服务数据职责
 
 [Map导入迁移](diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)

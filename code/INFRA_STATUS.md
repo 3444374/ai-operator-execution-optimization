@@ -102,6 +102,10 @@ Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，�
 把父进程现有截止时刻传到worker，修正固定十秒替代调用方时长及正常返回后的重复清理。
 未知请求持有和原关闭证明保持；两项CPU覆盖八种情形，Linux实际IPC单项仍待补验，未据此解释全部历史关闭失败。
 
+[同步关闭调用时间](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)
+普通和分阶段同步worker也改用原API截止时刻；Reference／IMLane共用接线，原清理预留及已知usage保留。
+两项CPU十四种情形通过，两个实际stage替身另有内存读回；准确d224上的两项也通过，两项Linux软件管道仍待补验。
+
 [Map编码器直接导入](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)
 删除40行纯转出的wire/v5.py，现用调用者改用map_codec，协议5及v3／v4实现保持；同11项CPU和两种内存会话保持，真实socket待验。
 [服务数据归所属组件](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-ownership)

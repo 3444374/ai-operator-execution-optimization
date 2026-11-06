@@ -4453,3 +4453,18 @@ Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_fu
 准确`712b479ba88ea127c19c01758569b57e2e852d80`的Map＋服务组合另跑16项CPU，全部通过，无错误或跳过；不与各批重复计数。
 真实rolling服务数据及恢复两类IPC检查待服务器补验，真实模型／Ray／OS清理和性能未由本批验证。
 服务生产净增16行、测试增151行；两批相对90005生产净减24行。当前核心Python52,509行、src与scripts104,093行、测试93,244行，统计口径保持。
+
+<a id="sync-close-caller-budget"></a>
+## 普通与分阶段同步关闭时间（2026-11-07）
+
+候选`769518463f493c56c0c4706207cef380a3d31b61`，tree`7e61e8c9d79bf15072a4ed8af99b1d452959a5e8`，整合为`d22407a1`。
+EngineProcess已算出的API截止时刻传入close帧，普通serve与staged_generation_process的实际serve均使用剩余时间。
+Reference普通／链及IMLane共用这些接点，两份stage软件引擎的close签名也同步接收timeout并回传实际值；未添加兼容分支。
+已到期不调用引擎、报告unknown；意外错误的应急清理在收到close后只用剩余时间，收到前保留原调用。
+总调用时间、原进程清理预留、结果关联、已知usage和关闭证明保持；本批不改真实VllmEngine或异步实现。
+同两项CPU十四种情形，原十二处失败、修后全部通过；随后替身签名变动仅补两种内存回读，均为20秒，不重复主套。
+准确d224组合另运行同两项、十四种情形通过，四份相关Python摘要前后相同；作者原HEAD与日志保持提交前7454身份，不改写原记录。
+独审核对七份文件、原件、真实调用和Frame消费者；五份历史投影无这七路径直接读取，MANIFEST不变。
+生产Python净增20行，不报减行；真实Linux软件管道两方法待验，模型、Ray／SHM及物理GPU退出未由本批验证。
+待验方法为`SoftwareSyncCloseBudgetTests.test_sync_and_staged_pipe_return_actual_close_allowance`与
+`StageTransportTests.test_real_cpu_pipe_keeps_per_call_generation_identity_usage_and_close`；前者包含普通及分阶段两个软件子例。
