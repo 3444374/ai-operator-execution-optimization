@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：Movie实验职责与异步关闭时长
+
+[Movie参数、查询与worker](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
+分别归属明确模块，Session和IMLane迁移真实导入，删除旧CLI转出；历史源码按原摘要恢复。
+[异步关闭](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-close-caller-budget)
+沿用调用方实际剩余时间，删除正常回执后的重复清理，保留未知请求责任；组合22项CPU通过，实际IPC另验。
+
 ## 2026-11-06：离线记录窗口与来源读取分工
 
 [区间计算和记录关联](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)

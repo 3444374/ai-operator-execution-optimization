@@ -54,6 +54,11 @@ positive_review_cnt=ready['result']['positive_review_cnt'], checkout=sembench_ch
 
 ## Movie session 配置
 
+普通Movie CLI及参数保持原入口；查询评价和回执合并由
+[`movie_records_query.py`](../src/experiments/movie_records_query.py)共用，普通模型构造／运行／关闭由
+[`movie_records_worker.py`](../src/experiments/movie_records_worker.py)负责。Session、service和IMLane直接调用所属模块，
+不再从CLI取得旧私有worker或查询函数；生产核心不依赖这些实验模块。
+
 普通矩阵已有 `check`、准备、owner／附着与恢复子命令，实际帮助从上述标准入口读取。
 计划的 `backend` 可选择 `semloom-core`、`semloom-static-reference`、`lotus-native`、`daft`、`ray-data`、`imlane`。
 原生 LOTUS profile 只声明显式正整数 `native_lm_max_batch_size`；Core 的 token／rolling／admission 配置

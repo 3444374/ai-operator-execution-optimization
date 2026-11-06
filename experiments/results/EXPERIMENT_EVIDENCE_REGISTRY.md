@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-07：Movie职责与异步关闭时间
+
+[Movie拆分与实际导入](diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
+记录18项CPU、两项导入增量及八种完整输出对照；重型SDK导入中断原样保留。
+[关闭时间修复](diagnostics/records_runtime_refactor_20261104/README.md#async-close-caller-budget)
+记录同两方法的原反例与八种修后情形。准确7454组合另有22项CPU通过，不与各批重复计数；未运行真实模型或Ray。
+
 ## 2026-11-06：离线记录汇总职责
 
 [同一组纯离线用例](diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)

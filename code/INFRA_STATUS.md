@@ -94,6 +94,14 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [离线记录窗口职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)
 分离区间／样本计算与回执／事件关联，删除重复参考文件读取；同17项纯离线检查及62份完整汇总保持，没有新增运行参数或校验。
 
+[Movie查询与worker职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
+把参数预检、共享评价／回执及普通后端生命周期分开；真实调用者含IMLane集成已迁移，旧CLI转出不保留。
+Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，全部通过；重型cascade和真实服务未借用这些结果。
+
+[异步关闭调用时间](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-close-caller-budget)
+把父进程现有截止时刻传到worker，修正固定十秒替代调用方时长及正常返回后的重复清理。
+未知请求持有和原关闭证明保持；两项CPU覆盖八种情形，Linux实际IPC单项仍待补验，未据此解释全部历史关闭失败。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

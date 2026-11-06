@@ -749,3 +749,14 @@ v6协议与旧观察probe。IncrementalExecution与NativeTask保留现有Core／
 本批未重跑完整3010构造，原模型与实验结果不因源码恢复而新增资格。
 旧专测和固定Map原型使用[完整恢复树及文件摘要](../paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters)，
 不向维护路径加回旧CLI／导入。原诊断raw脚本、结果、失败和负结果继续保存。
+
+<a id="movie-query-worker-sources"></a>
+## Movie查询职责拆分时的来源读取
+
+普通Movie参数入口、共享评价与普通后端worker分开维护，旧CLI私有导出不再保留。
+当前Daft接线测试迁移了真实patch位置，五份历史投影中唯一原先读取当前测试的绑定改为
+[准确b168原测试](historical_sources/b16838c6/code/tests/experiments/test_daft_session_wiring.py.gz)；
+该gzip逐字对应`b16838c6f698560ffb1304834ab26c9b7717646f`，只增加一条来源／格式记录。
+本批17条相关读取以及IMLane导入修正的5条读取分别核对原摘要，原expected与投影身份不改。
+[具体职责、输出和检查范围](../../results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
+不代表整套历史构造或真实模型执行。

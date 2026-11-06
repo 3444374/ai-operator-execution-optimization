@@ -4396,3 +4396,36 @@ CSV旧字段仍是历史身份。source_reference改为实际选择的CSV／参�
 最终运行记录保留提交前b168身份，四份相关Python摘要对应候选；之后只改所属README。原件按before／after／after-read-reuse私有保留。
 当前文件402→330行，主函数326→292行，新计算模块89行；src与scripts合计增加17行，核心不变。这是职责整理，不宣称减行或加速。
 独审核对实际调用、原件、样本归属和节点更新；零历史绑定，MANIFEST不变；未运行模型、Ray或socket。当前src与scripts为104,074行，沿用前述口径。
+
+<a id="movie-query-worker-responsibilities"></a>
+## Movie查询、普通worker与参数入口（2026-11-07）
+
+原候选`6b284cb411da52f7eb426146273eaa4fc7d1a67f`及IMLane导入增量`b29c9b35676d2ac0e97b40f5ed1b29e71815ac00`，整合为`7eff76f3`／`36c889a0`。
+`lotus_records_movie.py`保留参数、预检与原cascade入口；新`movie_records_query.py`拥有评价／回执合并，
+`movie_records_worker.py`拥有普通后端的构造、执行和原owner关闭顺序。Session、service、IMLane及测试直接导入所属实现。
+删除_fixed_method转发、未用导入和旧CLI私有导出；独审发现的IMLane真实旧导入已修正，没有补兼容壳。
+CLI从906到424行，查询模块285行、worker224行；src与scripts净增27行，测试主体增5行、导入增量增8行，不以拆分宣称代码减少。
+
+修改后两组互不重叠的8项与10项CPU通过；另两项IMLane导入检查先复现ImportError、后通过。
+八种确定输入的完整结果及清理记录共24,094字节前后一致，摘要`053ab62b19cc575d1bfb0efc812f01a6fd1541845f7a40b4060f4de51219b071`。
+初次运行前三项通过，第四项导入LOTUS／Torch时停住后中断；它不是完整八项通过，也不是零项收集失败，重型cascade仍待验证。
+作者原CPU记录保留提交前b168身份及具体文件摘要；两新模块随后只各去掉末尾空行，AST保持，格式修正后的捕获另有记录。
+独审核对13个迁移函数及实际全仓调用；[17条历史来源与增量5条](../../../reproduction/native_baselines/README.md#movie-query-worker-sources)各自保持原摘要。
+真实模型、Ray、socket、IMLane C++和未知仓外调用未由本批验证；原始CPU材料私有保存。
+
+<a id="async-close-caller-budget"></a>
+## 异步worker使用调用方关闭时间（2026-11-07）
+
+原候选`3b30836cb04d584c08bbc88b977901500c109c88`，整合为`7454adb2`。
+父进程原关闭总时长和直接子进程预留不变，把现有API等待截止时刻随close帧传给同一worker；
+worker使用剩余时间，删除固定十秒替代及正常回执后未报告的一秒重试。已到期则unknown，不声称API已关闭。
+意外通信／worker错误发生在正常回执前时，未收到调用期限沿用原一秒应急清理，收到后仅用剩余时间；应急返回不提供成功证明。
+私有异步帧双方一起迁移，同步协议不改；请求结果、unknown持有及API／producer／原Popen／父I/O各自的退休证明保持。
+
+同两项CPU的八种情形，原实现七处失败、修后全部通过；长短时长、到期、错误及进程退出不足以证明API关闭均有覆盖。
+实际父close／I/O和worker serve通过内存帧运行，禁止socket构造；未把替身结果写成真实IPC或模型关闭。
+15条历史来源保持原摘要，无新增原件或MANIFEST修改；生产代码净增16行。
+与Movie及导入修正组合后，准确`7454adb2d4c64af2ceae05158291673cf3bd2d15`另执行22项CPU、全部通过，无错误或跳过；不与各批重复计数。
+运行前后21份相关Python摘要相同，后续仅同步文档；核心Python52,533行，src与scripts104,117行，沿用含注释／空行及排除目录口径。
+Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_full_unconsumed_results`待服务器补验；真实模型和Ray关闭未测。
+这是源码发现并用CPU复现的调用时间问题，不能据此断定历史1596关闭失败同因。
