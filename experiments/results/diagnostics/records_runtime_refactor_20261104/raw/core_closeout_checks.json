@@ -1,0 +1,859 @@
+{
+  "schema": "semloom.core_closeout.checks.v1",
+  "source": {
+    "base": "b574aeab32cddff7446a70f1209bc5272b4b0ef6",
+    "candidate": "6c22d46e5e7dfb09aea584ad51e2cb7492471719",
+    "tree": "7f0b1d6091066895f22a339e762df2be196bd30f",
+    "recorded_head": "b574aeab32cddff7446a70f1209bc5272b4b0ef6",
+    "files": 1055,
+    "all_files_match": true,
+    "production_unchanged_from_base": true,
+    "code_manifest_sha256": "fe0fc2d727778abdc404860025d5b13b1e1112d01c7f8fe9be722991e29b69de",
+    "local": {
+      "selected": 12,
+      "passed": 11,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "failures": [],
+      "errors": []
+    },
+    "scope": "Local Ray and model startup blocked. The real-Ray worker test was explicitly skipped and still requires server execution."
+  },
+  "integration": {
+    "candidate": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+    "tree": "bfea08a53003a902f94b54e34ecac7cb3ff79285",
+    "files": 1063,
+    "all_files_match": true,
+    "recorded_head": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+    "all_code_unchanged_during_suite": true,
+    "changed_from_latest_upstream": [
+      "code/tests/execution_provider/test_core_feedback_ray_future.py",
+      "code/tests/execution_provider/test_records_model_adapter.py"
+    ],
+    "production_unchanged_from_upstream": true,
+    "code_manifest_sha256": "4dfc2bc7462d187ee7b66bcd5a3462b4bfc5dc00d8b6760036bc1b8040e238d2",
+    "local": {
+      "selected": 12,
+      "passed": 11,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "failures": [],
+      "errors": []
+    }
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "f4e4868d3990793cb0149d765964147935eb0adc",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114240,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "448e6a9c3004ad77a085f0b19dd5778212bfdfea",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114806,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114806,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2920,
+        "src_and_scripts_python_lines": -25529,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4617,
+        "src_and_scripts_python_lines": -34839,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": 566,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": 0,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "import_audit": {
+    "commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+    "files": 988,
+    "local_src_imports": 3328,
+    "missing": [],
+    "syntax_errors": [],
+    "code_manifest_sha256": "01e08d7be5ed3480d728b433df4eb4ad953a60deb21abaa54679186dfd0133de",
+    "scope": "Static direct and relative src imports in current tracked source, scripts and tests; no module execution. Dynamic imports and optional external packages are not resolved."
+  },
+  "source_review": {
+    "decision": "受支持核心路径的本轮工程重构可以收尾；本次静态核查未发现必须继续修改的明确源码问题。实际 Ray 与模型验证单独完成，不把当前判断写成全系统实测完成。",
+    "source_commit": "b574aeab32cddff7446a70f1209bc5272b4b0ef6",
+    "source_tree": "5dd60321f8bb22f20de8e4d9d5ecb38e65dc5eb7",
+    "read_only": true,
+    "findings": [],
+    "required_code_changes": [],
+    "scope": "核普通 records、record_local_sections、prepared/rolling、resident 与 fused 的实际构造和关闭调用；查目标旧导入、已退役符号、当前大文件职责和已有检查。未执行项目导入、测试、真实 IPC、Ray、模型、socket 或系统探测。",
+    "upstream_preservation": {
+      "prior": "f4e4868d3990793cb0149d765964147935eb0adc",
+      "commits_since_prior": [
+        "b574aeab32cddff7446a70f1209bc5272b4b0ef6",
+        "d061df8c1e1539126d972b04c6f6c9c53648e550"
+      ],
+      "changed_files": [
+        "code/INFRA_STATUS.md",
+        "code/src/baselines/README.md",
+        "code/src/baselines/image/sembench_mmqa.py",
+        "code/tests/baselines/image/test_sembench_mmqa_original.py",
+        "code/tests/experiments/test_sembench_lotus_image_query.py"
+      ],
+      "interpretation": "两份 MMQA baseline 修正及其测试和说明仍在最新树；九份关闭相关源码逐字同已审 28ba 和已发布 f4e，没有在本审计修改。"
+    },
+    "close_routes": [
+      {
+        "entry": "create_records_core → SemLoomRecordsCore.close",
+        "details": "普通 sync/async 单条路径调用 close_prepared_core；没有批 ACK 能力时保持模型 owner 原关闭与回执恢复职责。",
+        "locations": [
+          "code/src/execution_provider/adapters/lotus_records_core.py:51",
+          "code/src/execution_provider/adapters/lotus_records_core.py:425"
+        ]
+      },
+      {
+        "entry": "create_records_core → PreparedRecordsCore._new_owner → record_local_sections",
+        "details": "prepared/rolling 使用实际 AsyncRecordsActorOwner.for_prepared；记录局部链由 _SectionTransport 标明批 ACK 能力，关闭时停模型、恢复同份审计回执、排空交付和 ACK，最后请求 actor 释放。",
+        "locations": [
+          "code/src/execution_provider/adapters/lotus_records_batches.py:176",
+          "code/src/execution_provider/adapters/lotus_record_chain_core.py:887",
+          "code/src/execution_provider/adapters/records_transport.py:234"
+        ]
+      },
+      {
+        "entry": "resident finish_query 与最终 close",
+        "details": "finish_query 在查询已耗尽时使用 retain_model，先排空并 drain_query；最终 close 仍销毁原 owner。没有将每次查询收尾误改为销毁复用模型。",
+        "locations": [
+          "code/src/execution_provider/adapters/lotus_record_chain_core.py:399",
+          "code/src/execution_provider/adapters/records_transport.py:249"
+        ]
+      },
+      {
+        "entry": "fused chain close",
+        "details": "继续走独立私有 worker 清理；不套用 Ray 批 ACK 回调。当前单次模型关闭凭据与控制目录清理职责保留。",
+        "locations": [
+          "code/src/execution_provider/adapters/lotus_record_chain_core.py:586"
+        ]
+      },
+      {
+        "entry": "Movie session isolated/resident/service",
+        "details": "现用 Movie 入口复用 create_records_core，最终资源 close 委托相同 owner；service 额外保留真实清理和结果授予检查，没有绕过新关闭路径。",
+        "locations": [
+          "code/src/experiments/movie_records_session.py:200",
+          "code/src/experiments/movie_records_session.py:280",
+          "code/src/experiments/movie_records_session.py:406"
+        ]
+      }
+    ],
+    "responsibility_checks": [
+      "关闭报告只对实际返回回执登记曝光，账本清空与报告发布同一 condition；未给缺失结果或 unknown 增添确认。",
+      "回调普通异常和 KeyboardInterrupt 仍执行原 actor 清理并透传原异常；异步 finally 汇总真实 data RPC 终态。",
+      "known 预排空、剩余绝对 deadline、resident drain 保留。未把 Future 取消、本地线程停止或 kill 请求当作远端完成。",
+      "回执 sink 出错时保留审计 payload 和延后 ACK；生产者证明仍绑定 owner、engine、完整键、call_id 和终态 Future。"
+    ],
+    "remaining_structure_and_checks": {
+      "largest_files": [
+        {
+          "file": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+          "lines": 983
+        },
+        {
+          "file": "code/src/scheduling/submission_control/adaptive.py",
+          "lines": 870
+        },
+        {
+          "file": "code/src/scheduling/core/scheduler.py",
+          "lines": 844
+        },
+        {
+          "file": "code/src/research/multitask/shared_credit.py",
+          "lines": 833
+        },
+        {
+          "file": "code/src/research/multitask/saor.py",
+          "lines": 784
+        },
+        {
+          "file": "code/src/execution_provider/adapters/records_async_model.py",
+          "lines": 726
+        },
+        {
+          "file": "code/src/scheduling/submission_control/request_scan.py",
+          "lines": 703
+        },
+        {
+          "file": "code/src/serving/backends/completion.py",
+          "lines": 679
+        }
+      ],
+      "judgment": "chain owner 仍负责有限查询、算子阶段与结果生命周期；adaptive 保留显式批反馈的 AIMD/共享逻辑，scheduler 两个实际推进循环时序不同。长度本身不是继续拆分或删除的理由，本轮未确认新的重复实现。",
+      "retired_references": "在 code/src、code/scripts、code/tests 及当前主要说明中，没有找到已删 request_gateway、BoundedStageWorkController、Ewma/HolAge、旧 ACK AST helper/CLI 或旧 redact 路由的现用引用。两个 __module__ 赋值仅为外部资源形状测试 fixture，非生产假模块身份。",
+      "retained_active_code": "stage_work/adaptive 仍服务显式 batch_feedback；现代 request feedback 已用中性 options/work，不能把有真实消费者的批策略当作被全部取代。Unix 执行 provider gateway 也不等同已退役的 HTTP 观测器。",
+      "necessary_checks": "公共构造器仍可直接接收字典或外部输入，保留有限容量、实际 owner/model 关系和输入长度检查；没有确认可直接删除且行为等价的新切片。LOTUS 来源报告只观测已安装版本和文件，不再按固定版本或源码摘要决定普通执行能否继续。"
+    },
+    "module_closeout": [
+      {
+        "module": "配置与容量",
+        "status": "当前支持路径已整理",
+        "remaining": "低层直接链/非 rolling 仍要求显式有限声明；不是无限资源或自动物理 RAM。"
+      },
+      {
+        "module": "Session 与查询推进",
+        "status": "普通/chain/rolling 的新关闭接线可达，未发现遗漏",
+        "remaining": "真实 Ray 生命周期兼容检查仍需完成。"
+      },
+      {
+        "module": "模型与 IPC",
+        "status": "sync/async、parent/worker/wire、真实定义模块与关闭责任已拆开",
+        "remaining": "两项 CPU IPC 已在 f4e 各通过一次；不能替代真实 Ray 或模型验证。"
+      },
+      {
+        "module": "算子与结果生命周期",
+        "status": "现有 LOTUS 兼容 F/M/E、原数据关系、完整 Extract、未消费结果与 unknown 责任保留",
+        "remaining": "不宣称新 Join/TopK 或新增 PostgreSQL 接入资格。"
+      },
+      {
+        "module": "研究隔离",
+        "status": "SAOR/多任务研究独立于单查询默认路径",
+        "remaining": "另拆项目可后续做。"
+      },
+      {
+        "module": "旧入口与脚本",
+        "status": "已确认取代项已退役，当前消费者未发现残留",
+        "remaining": "历史机制按原版本恢复，不新增当前兼容壳。"
+      },
+      {
+        "module": "观测与验证",
+        "status": "源码身份、原失败及本地/服务器范围区分清楚",
+        "remaining": "历史第二项间歇性原因未解明，保留记录；质量/性能按各自已有方案验证。"
+      }
+    ],
+    "server_evidence": {
+      "source": "f4e4868d3990793cb0149d765964147935eb0adc",
+      "tree": "6c0a8bc0c3e7dbb3e04433db9af376bbdcf077ba",
+      "record_sha256": "2e98ceace6e2398144fe57720e1dc3932569b9d502c30d451f24f1c9e6ff66c2",
+      "cases": [
+        {
+          "method": "tests.execution_provider.test_lotus_request_supply_feedback.RequestRollingTests.test_observation_counts_requests_separately_from_batches_and_R",
+          "status": "passed",
+          "tests_run": 1,
+          "physical_cleanup_confirmed": true,
+          "log_sha256": "2dee9da01de6d7031630fee876f3380de3634c27a7b3f79663f6789360fe2c09"
+        },
+        {
+          "method": "tests.execution_provider.test_lotus_batch_supply_feedback.BatchSupplyIntegrationTests.test_cancel_while_members_are_held_stops_sampler_and_retires_original_credits",
+          "status": "passed",
+          "tests_run": 1,
+          "physical_cleanup_confirmed": true,
+          "log_sha256": "6a3c5c621b8cf37eee7e729be82cb6ee83d6ceba2745f02a90af256d2e76aecc"
+        }
+      ],
+      "real_model_calls": 0,
+      "real_Ray_started": false,
+      "physical_cleanup_confirmed": true,
+      "lease_released": true,
+      "interpretation": "原两项 CPU IPC 在准确 f4e 各通过一次。相关关闭源码在 b574 相同，但不改写原执行身份。首例历史曝光拒绝有原异常链，第二例历史原因仍未解明，当前通过不等于追溯确认同因。"
+    },
+    "minimum_actual_validation_next": [
+      {
+        "check": "真实 Ray 定义模块与未启动模型 actor",
+        "purpose": "在正常服务器和项目要求的实际 Ray 版本下，经实际 AsyncCoreModelActor/owner 的模块定义创建 actor，读取 snapshot 并关闭从未启动模型的 actor；同时传递或取回真实定义模块的容量/键/函数对象。确认 worker 端可导入，非仅标准 pickle 在 driver 上往返。",
+        "scope": "这项不应启动模型，也不能借此声称模型已关闭。"
+      },
+      {
+        "check": "真实 Ray Future 与取消/关闭顺序",
+        "purpose": "复用已有 RealRayFeedbackFutureTests 及最小实际 owner 场景，确认取消本地等待后仍由真实 RPC 终态结束责任，最终 actor 释放发生在已验证回执与 ACK 交接之后；保留 unknown 和异常原因。",
+        "scope": "直接复用现有检查，缺少实际 owner 覆盖处才补一个小例，不另建资格管理流程。"
+      },
+      {
+        "check": "既有小型模型功能方案",
+        "purpose": "按现有服务器计划与相同资源声明验证普通及 rolling/record-local 关闭，包含未消费结果或取消场景，检查结果身份、ACK、重复关闭和清理报告。",
+        "scope": "在当前已授权模型工作安排中进行；本审计没有启动，也不建议扩大硬件或性能矩阵。"
+      }
+    ],
+    "not_required_new_features": [
+      "物理 RAM 自动授予或新的独占内存管理器。",
+      "新算子、跨进程重连能力或新的调度控制器。",
+      "为完成当前清理把多任务研究立即拆成另一个项目。"
+    ],
+    "source_evidence": "SOURCE_EVIDENCE.json"
+  },
+  "integration_review": {
+    "decision": "整合增量复核通过，可按既有授权推送草稿供服务器执行；不合并 main。",
+    "commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+    "tree": "bfea08a53003a902f94b54e34ecac7cb3ff79285",
+    "parents": [
+      "6c22d46e5e7dfb09aea584ad51e2cb7492471719",
+      "448e6a9c3004ad77a085f0b19dd5778212bfdfea"
+    ],
+    "findings": [],
+    "scope": "只核机械整合、两份已审测试与十七份上游文件保留，以及同一十二项选择的准确记录；不重新审计未改源码。",
+    "merge": {
+      "own_files": [
+        "code/tests/execution_provider/test_core_feedback_ray_future.py",
+        "code/tests/execution_provider/test_records_model_adapter.py"
+      ],
+      "upstream_files": [
+        "code/INFRA_STATUS.md",
+        "code/configs/sembench_lotus_mmqa_aggregate.example.json",
+        "code/scripts/README.md",
+        "code/scripts/experiments/run_sembench_lotus_mmqa_aggregate.py",
+        "code/scripts/experiments/run_sembench_text_query.py",
+        "code/src/baselines/README.md",
+        "code/src/baselines/text/sembench_medical.py",
+        "code/src/baselines/text/sembench_mmqa_aggregate.py",
+        "code/src/baselines/text/sembench_source.py",
+        "code/src/baselines/text/sembench_text.py",
+        "code/src/experiments/native_service_query.py",
+        "code/src/experiments/sembench_lotus_image_query.py",
+        "code/src/experiments/sembench_lotus_mmqa_aggregate.py",
+        "code/src/experiments/sembench_text_query.py",
+        "code/tests/experiments/test_sembench_lotus_mmqa_aggregate.py",
+        "code/tests/experiments/test_sembench_medical.py",
+        "code/tests/experiments/test_sembench_text_original.py"
+      ],
+      "overlap": [],
+      "own_files_same_as_6c22": true,
+      "upstream_files_same_as_448e": true,
+      "additional_changes": [],
+      "production_since_448e": "没有变化；相对上游仅两份测试。"
+    },
+    "evidence": {
+      "record": "merged-adapter-closeout-local.json",
+      "sha256": "7a6528bb46443028bce74c68667f097757fa11d58e8c49ce192c713a464aafc2",
+      "recorded_head": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+      "selected": 12,
+      "passed": 11,
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "failures": 0,
+      "errors": 0,
+      "matching_source_files": 1063,
+      "source_unchanged": true,
+      "real_Ray_runs": 0,
+      "model_calls": 0,
+      "GPU_runs": 0
+    },
+    "limits": [
+      "新增真实 Ray 符号往返方法仍为显式跳过，未计为通过；真实 Future 五项仍待服务器。",
+      "十二项组合记录不转授 Medical/MMQA 上游模型或完整工作负载资格。",
+      "当前生产关闭源码未改；原第二项历史 CPU IPC 错误原因仍未解明。"
+    ],
+    "reviewer_execution": "只读 Git 差异、源码摘要和原始记录；未执行测试、服务、模型或系统探测。"
+  },
+  "server": {
+    "status": "TWO_TARGETED_CPU_IPC_METHODS_PASSED_ONCE_EACH",
+    "head": "f4e4868d3990793cb0149d765964147935eb0adc",
+    "tree": "6c0a8bc0c3e7dbb3e04433db9af376bbdcf077ba",
+    "real_model_calls": 0,
+    "real_Ray_started": false,
+    "cases": [
+      {
+        "method": "tests.execution_provider.test_lotus_request_supply_feedback.RequestRollingTests.test_observation_counts_requests_separately_from_batches_and_R",
+        "status": "passed",
+        "tests_run": 1,
+        "elapsed_s": 10.973430518060923,
+        "physical_cleanup_confirmed": true,
+        "exception_events": [],
+        "log_sha256": "2dee9da01de6d7031630fee876f3380de3634c27a7b3f79663f6789360fe2c09"
+      },
+      {
+        "method": "tests.execution_provider.test_lotus_batch_supply_feedback.BatchSupplyIntegrationTests.test_cancel_while_members_are_held_stops_sampler_and_retires_original_credits",
+        "status": "passed",
+        "tests_run": 1,
+        "elapsed_s": 10.634338062256575,
+        "physical_cleanup_confirmed": true,
+        "exception_events": [],
+        "log_sha256": "6a3c5c621b8cf37eee7e729be82cb6ee83d6ceba2745f02a90af256d2e76aecc"
+      }
+    ],
+    "extra_close_capture_runs": 0,
+    "physical_cleanup_confirmed": true,
+    "lease_released": true,
+    "files": [
+      "RESULTS.json",
+      "CASE1.log",
+      "CASE2.log"
+    ],
+    "scope": "existing ThreadedRuntime/CPU IPC fixtures and unchanged assertions; no real Ray actor or model qualification",
+    "historical": "159 first ACK rejection retained. Historical second None failure cause remains unknown; single wrapped159 pass and current passes do not rewrite it.",
+    "production_code_changed": false,
+    "merge_performed": false
+  },
+  "real_Ray_server": {
+    "status": "SIX_REAL_RAY_CPU_METHODS_PASSED_MODEL_PREPARATION_PENDING",
+    "source": {
+      "head": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+      "tree": "bfea08a53003a902f94b54e34ecac7cb3ff79285"
+    },
+    "ray_version": "2.56.1",
+    "execution": {
+      "methods": 6,
+      "serialization_symbols": 8,
+      "passed_methods": 6,
+      "failed": 0,
+      "error": 0,
+      "skipped": 0,
+      "original_IPC_methods_repeated": 0,
+      "full_matrix_repeated": false,
+      "CUDA_VISIBLE_DEVICES": "",
+      "num_gpus": 0,
+      "address": "local",
+      "serialization_num_cpus": 1,
+      "feedback_num_cpus": 2,
+      "new_model_requests": 0
+    },
+    "results": "RESULTS.json",
+    "results_sha256": "ee0158fd73fba1ad8622b2f866897e01bcb4dbe68433d126e236c54cd42e605c",
+    "server_originals": "<local-path>",
+    "evidence_hashes": {
+      "FINAL.json": "02d5ff53d8540e7afce0d562578076810bcf77a6ce29ef824eca3ef62fca82e5",
+      "before.json": "30f3f57f81d9e6083f164431d830a6b5c75fd62d58c8e8d8abd3ac0b14455a52",
+      "after.json": "2f6ea7a5c939e6726d6663fc08726267498bb538e3b8b447fa7aa52991a04698",
+      "supervisor.json": "54f04a57d23aaefe6d8cdf79051872615cbd14d6f93e3bc81d2d723783fced3e"
+    },
+    "physical_cleanup": {
+      "owned_processes_tracked": 21,
+      "live_owned": [],
+      "idle": true,
+      "lease_released": true,
+      "ray_initialized_after": false
+    },
+    "model_plan": "CORE-FUNCTION-PLAN.json",
+    "configuration_resolution": "CORE-CONFIG-RESOLUTION.json",
+    "important_limits": [
+      "6项Ray不授予真实模型/全部Core功能资格。",
+      "新8条manifest和两臂8条新账本尚未创建，原16条只用于CPU解析，未模型重跑。",
+      "重复close的实机接点待明确；不改变生产代码凑覆盖。",
+      "当前helper和两个旧功能packet共65份py/json/sh未发现被退役HTTP模块或指定attempt_ledger观察器消费者；另17份顶层Python同样未命中，未穷尽所有历史深层文件。"
+    ],
+    "source_edits": false,
+    "private_raw_downloads": false
+  },
+  "current_handoff_source": {
+    "candidate": "1cfd077964b0d7212be5949baefbc7b6b7d0560a",
+    "tree": "fdbed517ae2f3b052c69383e6b11cd3501c80fd9",
+    "recorded_head": "8715df752acefe424eb48347fb30a455421a77e4",
+    "code_files": 1063,
+    "all_files_match": true,
+    "selected": 5,
+    "passed": 5,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true,
+    "actual_CPU_IPC_query_capacity_test": "pending server execution; not run locally",
+    "core_production_changed": false,
+    "observation_scripts_changed": true
+  },
+  "current_handoff_review": {
+    "decision": "最后候选源码复核通过，可推送草稿供服务器验证；不合并 main。",
+    "commit": "1cfd077964b0d7212be5949baefbc7b6b7d0560a",
+    "tree": "fdbed517ae2f3b052c69383e6b11cd3501c80fd9",
+    "base_commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+    "prior_code_commit": "8715df752acefe424eb48347fb30a455421a77e4",
+    "findings": [],
+    "scope": "五文件增量：两份观测脚本、三份测试。只读审查实际 await、owner/actor/transport 调用及原始记录，不改 Core 生产实现。",
+    "verified": [
+      "observe_ref_ready 对 awaitable 只包装原 await：无 create_task、无额外 future()、无重复 await；成功值、同一异常对象和 CancelledError 沿原调用继续。",
+      "协程 finally 只向原有有界 metadata 缓冲记录 driver_future_done；scope 明确是本地 awaiter settled，取消不等于远端完成。非 awaitable 原 Future 分支仍使用原完成通知。",
+      "实际 _submit_task 返回协程，包装结果由原 _execute/_await_result 等待；没有增加提交、token、容量或 ACK。",
+      "单请求探针使用真实 AsyncRecordsActorOwner、ObservedAsyncCoreModelActor、LotusChainActorBackend 与已有线程 Handle；engine 是内存替身。确认 try_submit_prepared_core、poll_prepared_batch、一次原生提交及 ACK，不走旧 blocking run_prepared_core 假接点。",
+      "actor_result_return 继续按原 poll 首次曝光产生；删除的仅是无当前探针消费者的观测 _run_core 覆盖。AsyncCoreModelActor 的 blocking 方法及同步 _CoreModelActor.run_core 均保留。",
+      "query-capacity 改捕获真实 try_submit_core；每个查询均须覆盖 source.expected 的全部行，消息键集合也须完整，原 all() 不再能靠空消息字典通过。原14查询和168次 native 序列断言保持。",
+      "用户 payload 哨兵不进入事件；已保存原单请求 off/on 结果 payload SHA 相同，未知交接事件均0。"
+    ],
+    "scope_correction": {
+      "original_field": "actor_sink_finalized_before_owner_kill",
+      "final_field": "actor_sink_finalized_at_explicit_close",
+      "resolved_by": "1cfd077964b0d7212be5949baefbc7b6b7d0560a",
+      "reason": "探针显式关闭 actor 并核 sink，但不执行实际 owner.close/kill；最后一行修正不再暗示测过该时序。"
+    },
+    "evidence": {
+      "actual-handoff-regression": {
+        "recorded_head": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+        "bound_to_commit": "8715df752acefe424eb48347fb30a455421a77e4",
+        "methods": 5,
+        "passed": 5,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "matching_source_files": 1063,
+        "source_unchanged": true,
+        "sha256": "b3c7df32fb280701e028ece298cbf33acf3574bf0689e2234cc8185834d46ca0",
+        "selected_methods": [
+          "tests.experiments.test_git_record_observation.HandoffAwaitableTests.test_observation_preserves_result_error_and_cancellation",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_bulk_probe_off_uses_constructed_owner",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_bulk_probe_on_uses_constructed_owner",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_single_probe_off_uses_constructed_owner",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_single_probe_on_uses_constructed_owner"
+        ]
+      },
+      "final-actual-handoff-regression": {
+        "recorded_head": "8715df752acefe424eb48347fb30a455421a77e4",
+        "bound_to_commit": "1cfd077964b0d7212be5949baefbc7b6b7d0560a",
+        "methods": 5,
+        "passed": 5,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "matching_source_files": 1063,
+        "source_unchanged": true,
+        "sha256": "f6c18c2e9408d3d57d0bf1012fd849221f3de804b4c30162a41b945057594317",
+        "selected_methods": [
+          "tests.experiments.test_git_record_observation.HandoffAwaitableTests.test_observation_preserves_result_error_and_cancellation",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_bulk_probe_off_uses_constructed_owner",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_bulk_probe_on_uses_constructed_owner",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_single_probe_off_uses_constructed_owner",
+          "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_single_probe_on_uses_constructed_owner"
+        ]
+      }
+    },
+    "history": {
+      "manifest_changed": false,
+      "query_capacity_routes": [
+        {
+          "variant": "native_isolated_and_imlane",
+          "route": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+          "sha256": "7cac3167a1c87f07bdb5a16873e1f49acd9cc17b756016ed3d600592808d4c85",
+          "matches_expected": true
+        },
+        {
+          "variant": "core_original_dynamic",
+          "route": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+          "sha256": "7cac3167a1c87f07bdb5a16873e1f49acd9cc17b756016ed3d600592808d4c85",
+          "matches_expected": true
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "route": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+          "sha256": "7cac3167a1c87f07bdb5a16873e1f49acd9cc17b756016ed3d600592808d4c85",
+          "matches_expected": true
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "route": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+          "sha256": "7cac3167a1c87f07bdb5a16873e1f49acd9cc17b756016ed3d600592808d4c85",
+          "matches_expected": true
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "route": "historical_sources/85f3fadb/code/tests/execution_provider/test_core_query_capacity.py",
+          "sha256": "7cac3167a1c87f07bdb5a16873e1f49acd9cc17b756016ed3d600592808d4c85",
+          "matches_expected": true
+        }
+      ],
+      "other_four_paths_in_historical_projections": false,
+      "scope": "只读取本次受影响的五条恢复路由并核对原件摘要；未重跑3010恢复测试。"
+    },
+    "server_required": {
+      "method": "tests.execution_provider.test_core_query_capacity.CoreQueryCapacityTests.test_public_search_and_cache_target_reuse_one_Core_and_model_with_actual_query_limits",
+      "status": "真实 CPU IPC 尚待服务器单项验证，未包含在本地5项通过中。",
+      "local_limit": "此前本地权限拒绝未在本审计重试；没有运行 socket、真实 IPC 或系统探测。"
+    },
+    "limits": [
+      "本地5项均为对象、内存引擎和线程/Future；真实 Ray、模型、GPU和真实 IPC均未启动。",
+      "probe 的 base close 使用内存报告替身，sink 显式关闭不替代活动 owner/Ray kill 生命周期验证。",
+      "原先单请求 on 缺 driver_future_done 的失败及原5项记录保留；最终5项不与其累计。",
+      "原始运行 HEAD 保留提交前8715；1063份摘要匹配最后1cfd。"
+    ],
+    "reviewer_execution": "仅静态源码、Git 与记录摘要；未运行任何测试或服务。",
+    "source_evidence": "SOURCE_EVIDENCE.json"
+  },
+  "private_originals": {
+    "execution/adapter-closeout-local.json": {
+      "bytes": 136718,
+      "sha256": "ce6cefd9fcaf13148ab08e9a1d1f68f7af974e3cb01e2685759339c363f4a92b"
+    },
+    "execution/adapter-closeout-local.log": {
+      "bytes": 2663,
+      "sha256": "4d74f5c7f8baa507e0232d7f5966371963859f016827caf52c4f00e2dc75b377"
+    },
+    "execution/merged-adapter-closeout-local.json": {
+      "bytes": 137745,
+      "sha256": "7a6528bb46443028bce74c68667f097757fa11d58e8c49ce192c713a464aafc2"
+    },
+    "execution/merged-adapter-closeout-local.log": {
+      "bytes": 2663,
+      "sha256": "68ef9dc61aba838231dab7d75f0a89bafaa384e87ed0804e7f5d901e6723a395"
+    },
+    "execution/SOURCE_IDENTITY.json": {
+      "bytes": 926,
+      "sha256": "d477bd4b7ad56354c6b5d00018c8bfa62e9c742d3c52061909e983df100aa599"
+    },
+    "execution/INTEGRATION_IDENTITY.json": {
+      "bytes": 960,
+      "sha256": "ab2e45487acbb37314c0c5c21c7fcc5bd56de5fea3fbe5c22f980f7b25139e7f"
+    },
+    "execution/CODE_SIZE.json": {
+      "bytes": 5059,
+      "sha256": "fca97743ed4254512244e3000124c68a9168a6bdf9dcb1a6703df1e253cbf276"
+    },
+    "execution/IMPORT_AUDIT.json": {
+      "bytes": 423,
+      "sha256": "e35591b9b945bcf7e94b0ea3cb1f7d39a64655a785b33110fe083e308c50674e"
+    },
+    "execution/IMPORT_AUDIT_INTEGRATED.json": {
+      "bytes": 423,
+      "sha256": "8cf4f1f45553742409f917651e75748797f2040a954b48a13903da8103c5c01f"
+    },
+    "audit/HANDOFF.json": {
+      "bytes": 11129,
+      "sha256": "86f49203cbe4c763e7f3c5bcbf80fecfc9185196f7204c2831273107e51bb617"
+    },
+    "audit/SOURCE_EVIDENCE.json": {
+      "bytes": 6475,
+      "sha256": "2dd8bc5a1d41b852959fc79a4e49474cc086a054e03d494839938d7854de3fbe"
+    },
+    "audit/TEST_PROPOSAL_REVIEW.json": {
+      "bytes": 1528,
+      "sha256": "f24d1dacd09b4e2b2b80a9ad4ab2f4f556c8e32fffa6bf50f09ec7fbfa528062"
+    },
+    "audit/TEST_FINAL_REVIEW.json": {
+      "bytes": 2213,
+      "sha256": "f9ededada93ebcca20e589453bd0716c7d948cd853ccbd651c1d289fc2876071"
+    },
+    "audit/INTEGRATION_REVIEW.json": {
+      "bytes": 3033,
+      "sha256": "decaf4899ff78e41ad29ca4f80cdd366391340b80908b0466a3ae98736c4b3e3"
+    },
+    "server-f4e/HANDOFF.json": {
+      "bytes": 1709,
+      "sha256": "2e98ceace6e2398144fe57720e1dc3932569b9d502c30d451f24f1c9e6ff66c2"
+    },
+    "server-f4e/RESULTS.json": {
+      "bytes": 13226,
+      "sha256": "6609a4ec3b6bd5d0bd5b1f47b70af03177516804cefd65000a61fddfeb7ba293"
+    },
+    "server-f4e/CASE1.log": {
+      "bytes": 312,
+      "sha256": "2dee9da01de6d7031630fee876f3380de3634c27a7b3f79663f6789360fe2c09"
+    },
+    "server-f4e/CASE2.log": {
+      "bytes": 348,
+      "sha256": "6a3c5c621b8cf37eee7e729be82cb6ee83d6ceba2745f02a90af256d2e76aecc"
+    },
+    "server-realray5539/HANDOFF.json": {
+      "bytes": 2012,
+      "sha256": "ee2a6488944f9fd2e77fc3f8f48c2b43c6c1910dd63589aa626ca8f639ef00fc"
+    },
+    "server-realray5539/RESULTS.json": {
+      "bytes": 5475,
+      "sha256": "ee0158fd73fba1ad8622b2f866897e01bcb4dbe68433d126e236c54cd42e605c"
+    },
+    "current-handoff/actual-single-before-off.json": {
+      "bytes": 177,
+      "sha256": "0ec1326d9da7494e79d0d7817b44e59f21c930f3181c32b4001875d90751807f"
+    },
+    "current-handoff/actual-single-before-off.log": {
+      "bytes": 605,
+      "sha256": "8b574998a56486d4b573947a6932a1a9185e41115bcbce595f0e36c10ef1b5fc"
+    },
+    "current-handoff/actual-single-before-on.json": {
+      "bytes": 175,
+      "sha256": "63c13b95c03c96f4ce173858762122ef093174481e8b65417f4a59cccd861eb5"
+    },
+    "current-handoff/actual-single-before-on.log": {
+      "bytes": 411,
+      "sha256": "ea2c6f4e719ac062765257716a9d813f559c06467e9029a3a460e98af3f796c5"
+    },
+    "current-handoff/actual-single-fixed-off.json": {
+      "bytes": 176,
+      "sha256": "334213bb32187ec59be918104119f06eb631f07c01664ab013fd8a918dd5a92a"
+    },
+    "current-handoff/actual-single-fixed-off.log": {
+      "bytes": 634,
+      "sha256": "419d4c909de94f236a4cb485163d106944a013f4b8677b4ad84885a55be3b49c"
+    },
+    "current-handoff/actual-single-fixed-on.json": {
+      "bytes": 174,
+      "sha256": "cc1dfa83d1b7e7944898bc6180c03ad7316f78e11972f4f75182d458faeaa301"
+    },
+    "current-handoff/actual-single-fixed-on.log": {
+      "bytes": 915,
+      "sha256": "be0000b10cd6a0cd34be4f08d59ebab10897360629b39cec32ec3a4ffc72c849"
+    },
+    "current-handoff/actual-handoff-regression.json": {
+      "bytes": 135483,
+      "sha256": "b3c7df32fb280701e028ece298cbf33acf3574bf0689e2234cc8185834d46ca0"
+    },
+    "current-handoff/actual-handoff-regression.log": {
+      "bytes": 1105,
+      "sha256": "0ad86828c5eb3f32d075306418891569ff039bf59c7ac558bd2de1db80bb3906"
+    },
+    "current-handoff/final-actual-handoff-regression.json": {
+      "bytes": 135489,
+      "sha256": "f6c18c2e9408d3d57d0bf1012fd849221f3de804b4c30162a41b945057594317"
+    },
+    "current-handoff/final-actual-handoff-regression.log": {
+      "bytes": 1105,
+      "sha256": "59d1ca56c8692535ef6e9a79cd53486c6e0396d3e7fdf05684286370b72d898e"
+    },
+    "current-handoff/SOURCE_IDENTITY.json": {
+      "bytes": 499,
+      "sha256": "728b0aaf10624815253c0aba4d60896e11bde916c7abb5e6df1f4b3d2c773744"
+    },
+    "current-handoff/audit.json": {
+      "bytes": 7456,
+      "sha256": "151746d907c43fe645c8480c5f3cdf4028bd8f7399d7eef0b845056cc76821c4"
+    }
+  },
+  "notes": [
+    "The two original CPU IPC methods each passed once on exact f4e, without a close wrapper. Actual model calls and real Ray startup were zero; observed owned process cleanup and lease release were confirmed.",
+    "Historical failures remain in the prior close_audit_ack evidence. The second historical cause remains unexplained; current passes do not rewrite it.",
+    "The source route audit found no missing close callback or confirmed additional production defect. Active batch feedback, providers and research remain intentionally retained.",
+    "Both local selections contain the same 12 methods: 11 passed and the new real-Ray symbol transfer was explicitly skipped. The two runs are not added together.",
+    "The initial record retains precommit b574 HEAD with all 1055 hashes matching 6c22. The merged record retains exact 5539 HEAD with all 1063 matching hashes.",
+    "The exact5539 real-Ray run passed six methods on Ray2.56.1, including eight production symbols and actual Future/cancel behavior. It made zero model calls;21 observed owned processes and lease cleanup were confirmed. It does not qualify active model-owner shutdown.",
+    "The current single handoff probe now uses the actual nonblocking owner and memory IPC. With the old observer its off run passed but its on run missed driver_future_done. The original overlay probe was still evolving; its early text is not claimed identical to the final script.",
+    "The fixed observer awaits the original coroutine once and records local settlement without treating cancellation as remote completion. Five local methods passed on exact1cfd, including single and bulk off/on and outcome propagation; the strengthened real CPU IPC query-capacity method still needs server execution.",
+    "The earlier fixed-on standalone report had an inherited field name implying owner kill. No owner kill was exercised there. Exact1cfd renames it to actor_sink_finalized_at_explicit_close; historical records retain their original bytes.",
+    "Static import checks resolve direct and relative local src modules, without executing code; dynamic imports and external packages are not covered."
+  ],
+  "raw": {
+    "file": "core_closeout_raw.json.gz",
+    "bytes": 23515,
+    "sha256": "05a864bf70d7e7a38039e933821171a7223869353387ba79b242620b978ac9f0",
+    "decoded_sha256": "a9c48153bfcd9df9bb66f4f096bd61a5ba9b351bb4084cbcb7e99a5e51ccf717"
+  }
+}

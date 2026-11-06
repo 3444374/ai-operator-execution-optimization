@@ -25,6 +25,26 @@ PYTHONPATH=code VLLM_0251_SOURCE_ROOT="$PINNED_VLLM_SOURCE" \
 旧测试改写和摘要锁定重放已从日常套件移除；[准确历史源码](../../experiments/reproduction/native_baselines/README.md#retired-ack-source-replay)保留原演示与运行记录。
 本批相关检查3成功、1项未提供固定源码而跳过，包含五份共3010文件完整恢复；未重跑直接IPC行为，不把删除旧检查算作ACK实现修复。
 
+<a id="real-ray-adapter-closeout"></a>
+### 真实Ray的模块传递与Future检查
+
+以下检查使用独立本地Ray driver和CPU worker，不加载模型或启动GPU。仅在正常许可的服务器环境运行，
+临时目录指向本机运行配置指定的数据盘位置；日常CPU选择未显式启用时会跳过真实Ray类。
+
+```sh
+CUDA_VISIBLE_DEVICES='' SEMLOOM_REAL_RAY_CPU=1 \
+SEMLOOM_REAL_RAY_TMPDIR="$RAY_CPU_TMPDIR" PYTHONPATH=code \
+"$DRIVER_PYTHON" -m unittest \
+  tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests \
+  tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests
+```
+
+第一项往返八个实际容量、模型和传输符号，验证worker可导入其定义模块；不构造模型owner。
+后五项保留真实ObjectRef／Future、失败和取消行为。实际Ray版本由运行记录保存，不再只因版本字符串不同拒绝检查；
+这不表示所有Ray版本均已验证。按各方法的成功、错误和跳过判断，不以日志总数代替结果。
+准确5539在服务器Ray2.56.1上六项均通过、无跳过，模型调用为零，已观察进程和运行许可均清理；不因此转为活动模型owner关闭证明。
+[当前源码与服务器状态](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)区分本地选择、真实Ray和模型验证。
+
 ### 2026-11-05：旧夹具与失效测试清理
 
 两个无引用夹具已删除；UCB／旧 stage-work 原型的五个维护测试及依赖已移走 PG C 源码的

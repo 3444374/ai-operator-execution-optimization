@@ -11521,3 +11521,14 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 [原失败、79项CPU与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)分别记录1055文件源码对应、3010历史恢复、初稿遗漏和夹具迁移。
 服务器1596第一项原异常已确认来自关闭ACK拒绝；第二项加异常捕获后一次通过，先前原因尚未解明，新版本实际IPC和Ray／模型仍待验证。
 核心57,011行、src＋scripts114,240行，本批各增31行，测试另增141行，不计为瘦身；当前不合并main。
+
+## 2026-11-06 核对整体收尾与服务器关闭结果
+
+原两项CPU IPC在准确f4e服务器各通过一次，清理和运行许可归还确认；原第二项历史原因仍未解明，没有改写旧失败或宣称模型通过。
+从b574独立反查普通、prepared／rolling、resident、fused与session入口，未确认必须继续修改的生产问题，已确认重复和旧入口清理可以收尾。
+两份最小Ray测试以6c22提交，与远端448e的Medical／MMQA准备无冲突整合为5539；新符号往返与原五项Future检查使用自有零GPU本地driver，删除版本字符串拒绝。
+[源码、11通过／1跳过与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)记录1063文件摘要匹配和988份Python／3328处导入复查。
+本批生产未改、测试净增30行；核心仍57,011行，宽口径114,806行，上游增加566行单独计入。
+随后准确5539的六项真实Ray均通过，Ray2.56.1、模型调用零，21个已观察进程及许可清理确认；Core小型模型功能仍待完整回执，不合并main。
+1cfd另修正单请求观测漏记及跨查询提示断言可空通过；观测局部5项CPU通过、Core生产未改，加强后的实际提示IPC仍待服务器。旧观测胶水在迁出共享函数后继续退役。
+同步唯一[优化配置总览](docs/执行配置与优化开关.md)：当前反馈来源、无B与准备模式组合、C／R／IPC用途、五项vLLM可选值及VLM／Medical／聚合入口按源码校准；旧CLI建议改为历史说明，SAOR等研究与原效果记录保留。

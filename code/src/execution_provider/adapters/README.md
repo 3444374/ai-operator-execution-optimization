@@ -1542,6 +1542,12 @@ unknown cleanup and actual RPC terminal report; a local Future cancellation does
 The first original server failure is explained by the closed-receipt ACK rejection. The second remains intermittent and unresolved;
 79 passing local CPU methods do not establish actual Ray/model shutdown or qualify the new server version.
 
+The two original CPU IPC methods subsequently passed once each on exact `f4e4868d`, with owned-process cleanup and lease release confirmed.
+This does not explain the second historical intermittent failure. A final [route and source audit](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
+found no missing close callback in ordinary, prepared/rolling, resident or fused entry points. The real-Ray symbol round trip and existing Future tests
+passed on exact `5539a19f` with Ray 2.56.1 and zero model calls. They remain separate from active model-owner shutdown;
+their standard invocation is in [the CPU test guide](../../../tests/records_cpu.md#real-ray-adapter-closeout).
+
 ### Feedback data and policy imports
 
 Request and batch option types live in [feedback_options.py](../../scheduling/submission_control/feedback_options.py).
