@@ -104,6 +104,26 @@ Q2b 另在原零行 Extract 返回边界保留声明列，修复空 Join 后最�
 Q5 的单层与多层原算法、实际生成上限及预算失败保留均通过软件 HTTP 验证；软件 tokenizer 的单请求结果不替代实际服务分块。
 上述CPU验证的网络／真实引擎／实际推理／服务器操作均为0，原3010历史绑定匹配。
 
+### 原生基线参数与直接 AI 准备（2026-11-06）
+
+普通Ray图将模型构造后的真实ready沿首个成功批次传回 `backend_close.engine_ready`，
+不从配置猜实际容量；空源／未启动仍保持未知。普通Daft及隔离session透传显式 `runner_threads`，
+省略时沿原生线程默认；专门的单线程profile保持独立。普通Ray不再静默忽略非空session profile。
+同步模型owner、单GPU actor和fused图实际支持范围保留，未声称所有baseline已经充分调优。
+
+IMLane桥的旧16行块、4096行／调用、64查询上限改为有限workload／model预算推导，
+Filter、packed链、cascade和resident保持各自wire计数；显式pending、128MiB作者Lane及SHM／RSS／字节边界保持。
+正常caller与echo fixture中的重复旧门槛已清理。实际作者桥二进制必须重建；本地C++只验证标准组件，
+没有构建／运行真实作者bridge。六份准确旧源补30条历史映射，五份完整树实际还原、3010条全部匹配，旧预期与投影身份未改。
+
+[直接原生AI Movie Q3](src/baselines/README.md#direct-native-movie-q3)另准备Daft原生prompt和Ray Data LLM公开processor，
+共享中立任务／质量合同而不加载LOTUS／Core执行。真实LOTUS消息／解析、真实Daft表达式及普通CPU关系、
+Ray API替身覆盖完整cohort筛选、一次物化和计数；原2000行CSV用120条金标软件回复通过原评价。
+这些不是实际模型质量／性能结果。DuckDB＋作者IMLane的native构建、函数alias和Arrow结果转换尚未资格，
+不把records桥或普通pip DuckDB算作该完整路径。模型依赖、实际重试／token与物理退出仍待机器验证。
+具体参数归属及有限测试条件见[配置说明](../docs/执行配置与优化开关.md#native-baseline-controls)与
+[校准计划](../experiments/plans/原生基线校准.md)，本批未启动GPU或服务器实验。
+
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；
 原生 VLM 服务、实际 processor／JSON Extract 和物理关闭尚未实机验证，不能以 CLIP 或旧 HTTP 结果补齐。

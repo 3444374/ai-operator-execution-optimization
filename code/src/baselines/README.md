@@ -100,6 +100,30 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
 
 两项均是源码与可复现依赖边界问题；本次没有据此宣称查询加速。首次拒绝导入的失败记录与修复回归分别保留。
 
+<a id="direct-native-movie-q3"></a>
+## 直接原生 AI 的 Movie Q3 准备
+
+以上 LOTUS 方法＋框架执行图继续保留；本节另准备项目 workload binding，直接使用原生 AI API，
+不称为官方 SemBench runner。范围、作者配置依据、有限调用量和执行前条件见
+[原生基线校准计划](../../../experiments/plans/原生基线校准.md)。
+
+- [中立 Q3 合同](text/sembench_movie_native.py)读取完整原 CSV，按源位置保留 occurrence_id，标签只用于后置评价。
+  `q3_messages/q3_decision` 与 LOTUS1.2.4 普通 Qwen Filter 做 CPU 差分，运行时不导入 LOTUS／Core。
+  `evaluate_q3`消费同一份保存的预测，核对原生COUNT、调用原评价器，并报告FP／FN及解析失败default=True。
+- [Daft 原生 AI](text/frameworks/daft_sembench_native.py)的 `execute_q3(rows, model=..., tokenizer=..., sampling_params=...)`
+  使用原生 `prompt(vllm-prefix-caching)`、一次 collect及原生筛选／计数；tokenizer由调用方提供匹配的本地资产。
+  native runner不重设线程；只接受确实生效的prefix／buffer／morsel选项，拒绝仅distributed生效的actor参数。
+  当前真实Daft表达式构造与普通CPU关系通过，模型表达式软件替身；实际vLLM兼容、容量／用量和退出未验。
+- [Ray Data LLM](text/frameworks/ray_data_sembench_native.py)的 `execute_q3(rows, model=..., sampling_params=...)`
+  使用公开processor和原生异步vLLM，完整cohort先做Dataset.filter，一次materialize后审计和原生count。
+  处理器默认、原生重试、实际可得usage与runtime归属分开记录；真实Ray／LLM依赖与物理尝试数未验。
+- DuckDB＋作者IMLane尚需作者构建、DBEnd函数alias、整批结果转换和关闭的无模型CPU资格；
+  固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
+
+原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，
+只证明数据、结果形状和评价接线，不是模型质量结果。首批两个新API各一次冷查询共240个逻辑请求；
+第三条接线通过后再加120。实际retry／token／资源／耗时、GPU退出和三轮交错比较按计划另验。
+
 <a id="additional-sembench-text"></a>
 ## 补充 SemBench 文本查询
 
