@@ -274,7 +274,7 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
             transport_closed = transport.backend.close(timeout=remaining, wait_pending=True)
 
     try:
-        if (transport is not None and getattr(transport, '_batch_poll_ack', False)
+        if (drain_before_release
                 and core is not None and not any(record.compute for record in core.capacity.records.values())):
             # Known local results may still owe their final batched ACK. Drain
             # it before killing the producer; unfinished/unknown work still

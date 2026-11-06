@@ -98,6 +98,12 @@ Selecting async alone does not select record-local chains or dynamic admission.
 Current defaults remain ordinary records sync, chain fused, and fixed admission.
 The research preference for record-local progression does not change those API defaults.
 
+Both `CoreRecordsCapacity` and `CoreChainCapacity` are defined in
+[`records_capacity.py`](records_capacity.py). They share validation of per-item bytes,
+metadata, progress actions and polling, while retaining their separate request/storage
+and fused stage-work calculations. The original owner imports expose the same types.
+Capacity values do not import the query owner or construct a model runtime.
+
 Record-local F/M sections use `LotusChainFIFO` over the existing Core/MethodDriver.
 Extract waits for actual source EOF, complete predecessor finals and drained result
 responsibility; the original parser and relation assembler then run once before continuation.
