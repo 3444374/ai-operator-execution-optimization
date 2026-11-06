@@ -355,7 +355,7 @@ class _MovieDriver:
                 self.last_query_failure = error
                 self.last_query_report = getattr(error, "query_report", None)
                 raise
-        from src.experiments.lotus_records_movie import run_movie_query
+        from src.experiments.movie_records_query import run_movie_query
         if backend == "ray-data" and (not self.ray.is_initialized()
                 or self.ray.get_runtime_context().get_node_id() != self.ray_identity["node_id"]):
             raise RuntimeError("owned Ray runtime changed before query execution")
@@ -452,7 +452,7 @@ class _MovieDriver:
                         publish_private_json(self.last_query_directory / 'query-accounting-final.json',
                                              redact_json_values(self.last_query_report))
                 elif (late := getattr(self.owner, "last_query_report", None)) is not None:
-                    from src.experiments.lotus_records_movie import merge_unconsumed_call_results
+                    from src.experiments.movie_records_query import merge_unconsumed_call_results
                     merge_unconsumed_call_results(self.last_query_report, self.last_expected, late,
                                                   primary=self.last_query_failure)
                     receipts["final_query_accounting"] = self.last_query_report

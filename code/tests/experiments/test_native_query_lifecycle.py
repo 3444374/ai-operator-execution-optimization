@@ -17,8 +17,8 @@ from src.experiments.movie_records_session import run_sequence
 from src.semantic_methods.lotus.records import identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.experiments import test_movie_records_session as lifecycle_fixture
+from src.experiments import movie_records_query as query
 from src.experiments import movie_records_session as session
-from src.experiments import lotus_records_movie as movie
 from src.experiments import kalypso_query_lifecycle as kalypso
 from integrations.imlane_records import chain_runtime
 
@@ -134,7 +134,7 @@ class RayDriverReuseTests(unittest.TestCase):
         stack=ExitStack();self.addCleanup(stack.close)
         stack.enter_context(patch.dict(sys.modules,{'ray':ray}))
         stack.enter_context(patch.object(chain_runtime,'check_external_lease',return_value={}))
-        stack.enter_context(patch.object(movie,'run_movie_query',side_effect=collect))
+        stack.enter_context(patch.object(query,'run_movie_query',side_effect=collect))
         stack.enter_context(patch.object(native,'evaluate',side_effect=graph))
         stack.enter_context(patch('src.baselines.text.frameworks.sync_reference_engine.ReferenceVllmEngine',Kernel))
         output=Path(case.manifests['movie-q1']).parent.parent/'ray-run'

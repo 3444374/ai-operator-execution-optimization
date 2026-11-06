@@ -15,6 +15,7 @@ from unittest.mock import Mock, patch
 
 from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.text.movie_tasks import MovieTask
+from src.experiments import movie_records_query as query
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.execution_provider.adapters.lotus_records_core import create_records_core
@@ -67,7 +68,8 @@ class AsyncTokenEntryTests(unittest.TestCase):
         stack.enter_context(patch.object(methods, 'bind_filter_method', binder))
         stack.enter_context(patch.object(AsyncCoreModelActor, '_process_type', return_value=Process))
         stack.enter_context(patch.object(movie, 'verify_checkout', return_value=self.root))
-        stack.enter_context(patch.object(movie, 'evaluate_original', return_value={'original_metric':'CPU-fixture'}))
+        stack.enter_context(patch.object(query, 'verify_checkout', return_value=self.root))
+        stack.enter_context(patch.object(query, 'evaluate_original', return_value={'original_metric':'CPU-fixture'}))
         return runtime
 
     def test_check_CLI_reports_B_C_batch_R_without_constructing_owner(self):

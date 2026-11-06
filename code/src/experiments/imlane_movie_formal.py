@@ -26,7 +26,7 @@ from src.infrastructure.private_artifacts import require_outside_git, write_priv
 from src.infrastructure.redact import redact_text
 from src.baselines.text.movie_records import MovieRecordSource
 from src.experiments.cell_budget import ClaimedUnit
-from src.experiments.lotus_records_movie import run_movie_query
+from src.experiments.movie_records_query import run_movie_query
 from src.infrastructure import runner_lease
 from src.semantic_methods.lotus.records import CallLedger, identity
 

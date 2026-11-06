@@ -11,6 +11,7 @@ from src.execution_provider.adapters import lotus_records_core as core
 from src.execution_provider.adapters.lotus_cascade_core import CoreCascadeBackend
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
+from src.experiments import movie_records_worker as worker
 from src.experiments import lotus_records_movie as movie
 from src.experiments import record_chain_validation_run as validation
 from src.experiments.movie_matrix_support import validate_core_scan
@@ -116,7 +117,7 @@ class SDKResourcesTests(unittest.TestCase):
 
         with patch.object(builtins, '__import__', guarded):
             with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
-                movie._model_worker(dict(task='movie-q1', backend='semloom-local-model-static-reference'),
+                worker.run_model_worker(dict(task='movie-q1', backend='semloom-local-model-static-reference'),
                     source, None, None, GenerationSpec(), resources, self.case.engine, None)
             with self.assertRaisesRegex(ValueError, 'request capacity.*unresolved'):
                 movie._cascade_model_worker(dict(backend='semloom-local-model-core-cascade'),

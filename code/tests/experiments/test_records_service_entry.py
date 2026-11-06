@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.movie_records import MovieRecordSource
+from src.experiments import movie_records_worker as worker, movie_records_query as query
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.experiments import movie_records_service as service_results
 from src.execution_provider.adapters import lotus_records_core as core
@@ -124,13 +125,13 @@ class ServiceEntryTests(unittest.TestCase):
         config = self.config()
         output = self.case.root/'service-worker-runtime-change'
         output.mkdir()
-        original = movie.run_movie_query
+        original = query.run_movie_query
         def replace_runtime(*args, **kwargs):
             result = original(*args, **kwargs)
             identity['job_id'] = 'replacement-service-job'
             return result
         try:
-            with patch.object(movie, 'run_movie_query', side_effect=replace_runtime), \
+            with patch.object(query, 'run_movie_query', side_effect=replace_runtime), \
                     patch.object(core.SemLoomRecordsCore, 'close', autospec=True) as close, \
                     redirect_stdout(io.StringIO()):
                 with self.assertRaises(RuntimeError) as caught:
@@ -162,7 +163,7 @@ class ServiceEntryTests(unittest.TestCase):
         events = []
         try:
             with self.assertRaises(OSError) as caught:
-                movie._model_worker(config, source, self.case.root, method, generation, resources, engine,
+                worker.run_model_worker(config, source, self.case.root, method, generation, resources, engine,
                                     directory, observer=events.append)
             error = caught.exception
             self.assertEqual(error.query_report['status'], 'failed')

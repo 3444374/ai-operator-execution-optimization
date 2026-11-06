@@ -107,7 +107,7 @@ def accept_service_results(owner, report, expected, directory, *, primary=None):
     retained = [] if query is None else deepcopy(query['unconsumed_call_results'])
     if not retained:
         return None
-    from .lotus_records_movie import merge_unconsumed_call_results
+    from .movie_records_query import merge_unconsumed_call_results
     merge_unconsumed_call_results(report, expected, query, primary=primary)
     snapshot = dict(query=deepcopy(report), expected=deepcopy(expected), retained=retained)
     path = _persist_snapshot(directory, 'service-query-accounting-', snapshot)

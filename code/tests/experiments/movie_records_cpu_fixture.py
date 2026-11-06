@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.text.movie_tasks import MovieTask
-from src.experiments import lotus_records_movie as movie
+from src.experiments import movie_records_query as query
 from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.semantic_methods.lotus import engine as methods
 from src.semantic_methods.lotus.records import RecordsResources
@@ -44,6 +44,6 @@ class MovieRecordsCPUFixture(unittest.TestCase):
         stack.enter_context(patch.object(methods,'LotusFilterMethod',formatter))
         stack.enter_context(patch.object(methods,'bind_filter_method',binder))
         stack.enter_context(patch.object(AsyncCoreModelActor,'_process_type',return_value=CPUFeedbackWithBirth))
-        stack.enter_context(patch.object(movie,'verify_checkout',return_value='CPU-upstream'))
-        stack.enter_context(patch.object(movie,'evaluate_original',return_value={'CPU_fixture_quality':True}))
+        stack.enter_context(patch.object(query,'verify_checkout',return_value='CPU-upstream'))
+        stack.enter_context(patch.object(query,'evaluate_original',return_value={'CPU_fixture_quality':True}))
         return runtime,stack

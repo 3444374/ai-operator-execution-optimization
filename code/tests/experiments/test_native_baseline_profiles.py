@@ -13,6 +13,7 @@ from integrations.imlane_records import chain_runtime
 from src.baselines.text.frameworks import daft_lotus_records, daft_lotus_cascade
 from src.baselines.text.movie_records import MovieRecordSource
 from src.baselines.text.movie_tasks import MovieTask
+from src.experiments import movie_records_worker as worker, movie_records_query as query
 from src.experiments import lotus_records_movie as movie
 from src.experiments import movie_records_session as session
 from src.experiments.movie_records_config import daft_native_profile
@@ -95,9 +96,9 @@ class NativeBaselineProfileTests(unittest.TestCase):
                 config, method, generation, resources, engine = self.read(dict(self.config(), profile=profile))
                 output = self.root / ('ordinary-' + str(index))
                 output.mkdir()
-                with patch.object(movie, 'run_movie_query', side_effect=collect), \
+                with patch.object(query, 'run_movie_query', side_effect=collect), \
                         patch.object(daft_lotus_records, 'evaluate') as evaluate:
-                    movie._model_worker(config, source, 'CPU-checkout', method, generation, resources, engine, output)
+                    worker.run_model_worker(config, source, 'CPU-checkout', method, generation, resources, engine, output)
                 evaluate.assert_called_once_with(source, method, engine, generation, resources,
                     query_id=config['query_id'], **profile)
 
@@ -117,7 +118,7 @@ class NativeBaselineProfileTests(unittest.TestCase):
                     return execute()
 
                 with patch.object(chain_runtime, 'check_external_lease', return_value={}), \
-                        patch.object(movie, 'run_movie_query', side_effect=collect), \
+                        patch.object(query, 'run_movie_query', side_effect=collect), \
                         patch.object(daft_lotus_records, 'evaluate', side_effect=failure) as evaluate:
                     with self.assertRaises(RuntimeError) as caught:
                         driver.query(plan['queries'][0], Mock())

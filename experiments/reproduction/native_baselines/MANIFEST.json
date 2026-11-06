@@ -6677,7 +6677,8 @@
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
         "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
-        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
+        "code/tests/experiments/test_daft_session_wiring.py": "historical_sources/b16838c6/code/tests/experiments/test_daft_session_wiring.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7120,6 +7121,11 @@
           "encoding": "gzip",
           "decoded_bytes": 22490,
           "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
+        },
+        "code/tests/experiments/test_daft_session_wiring.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6651,
+          "archive_sha256": "33593364f4364c4f1b001c309a964f8c9dfdd57489d683b1a18a24da755d4483"
         }
       }
     }

@@ -1,5 +1,4 @@
 """CPU wiring checks; native Daft/pipe behavior is tested separately."""
-from contextlib import ExitStack
 from copy import deepcopy
 from dataclasses import asdict
 import json
@@ -8,8 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from src.experiments import movie_records_query as query
 from src.experiments import movie_records_session as session
-from src.experiments import lotus_records_movie as movie
 from src.baselines.text.frameworks import daft_lotus_session as native
 from integrations.imlane_records import chain_runtime
 from tests.experiments import test_movie_records_session as fixtures
@@ -51,7 +50,7 @@ class DaftSessionWiringTests(unittest.TestCase):
         def run(source,checkout,method,generation,execute,*,query_id,observer):
             rows=list(execute());observer('result_ready')
             return dict(status='completed',calls=dict(records=rows))
-        with patch.object(native,'DaftNativeSession',Owner),patch.object(chain_runtime,'check_external_lease',return_value={}),patch.object(movie,'run_movie_query',side_effect=run):
+        with patch.object(native,'DaftNativeSession',Owner),patch.object(chain_runtime,'check_external_lease',return_value={}),patch.object(query,'run_movie_query',side_effect=run):
             report=session.run_sequence(f.plan['queries'],lambda d,q:session._MovieDriver(f.plan,context,d,q),
                 Path(f.manifests['movie-q1']).parent.parent/'session',backend='daft',lifecycle=f.plan['lifecycle'])
         self.assertEqual((len(owners),owners[0].closes),(1,1))
