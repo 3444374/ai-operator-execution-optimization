@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：离线汇总直接使用证据模块，旧矩阵编排退役
+
+[准确源码、13项CPU和恢复](diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)
+保留a4aae组合、旧fixture路径预期错误及修正回执；七个搬移函数和失败汇总字节保持，五树3010摘要恢复通过。
+删除三个无当前消费者的旧执行／配置／预检模块，保留SAOR算法、资料、历史完整来源和并行IMLane候选。
+另登记准确87fd九对象真实Ray方法一次通过及观察到的进程／SHM清理；不是模型、PG或全系统性能资格。
+
 ## 2026-11-06：IMLane原生Q3独立模型provider与worker候选
 
 [接线与88项CPU检查](diagnostics/imlane_duckdb_q3_20261106/README.md#独立模型provider与worker接线)
@@ -13,7 +20,7 @@ UDF和HTTP同PID／调用区间唯一配对后逐position核对；重复消息�
 
 [准确源码与组合检查](diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)登记9521的39项CPU通过、一次五树3010恢复，以及改前1方法2子例的重复关闭失败。
 两个固定套件退役，容量定义归入现有模块；现用协议、共享组件、旧结果与原身份保留。
-九对象真实Ray方法另待服务器，不转授本地通过；代码量区分本批删除和并行基线新增，不作性能判断。
+九对象真实Ray后续在准确87fd一次通过，详见上方离线整理记录；不转授本地通过；代码量区分本批删除和并行基线新增，不作性能判断。
 
 ## 2026-11-06：Ray四例零模型关闭诊断与独立HTTP候选
 

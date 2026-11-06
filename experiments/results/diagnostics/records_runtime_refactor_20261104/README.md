@@ -3,7 +3,7 @@
 本记录对应 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的执行工程整理。
 本页按各批源码与运行身份保留过程；早期结构表不表示最新接入状态。旧 PG／HTTP 实验接线已按
 [现用入口整理](../runtime_entry_cleanup_20261105/README.md)退役；当前实现与未完成项见
-[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
+[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[离线汇总与旧研究编排](#saor-offline-evidence-retirement)，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
 基准为 PR #90 的 `bfb9100e2f3fa090fdf2304359979b853236e06a`，tree 为
 `c8a86b0bcff8bf0161dcbbd005bc2660060d228e`。该 PR 当时为 Draft，未合并。
 起始切片当时只做 CPU 检查、等待审查与整合；后续发布和实机结果按各批自己的源码解释，不提供跨版本的模型性能结论。
@@ -3575,3 +3575,41 @@ Core当前56,191行、src＋scripts114,279行，tests96,772行；integrations的
 最新798e的作者DuckDB＋IMLane真实软件CPU链路已经通过，实际模型provider及额外输入／错误场景另验；
 原Ray内嵌vLLM关闭问题没有由HTTP替代profile改报已修，现有HTTP原生软件CPU结果按94367独立解释。
 当前整树的真实模型、完整质量／性能及新PG接入不由本批CPU取得资格。PR保持草稿，不合并main。
+
+
+<a id="saor-offline-evidence-retirement"></a>
+## 离线汇总与旧研究编排清理（2026-11-06）
+
+当前CLI只通过summary使用旧matched文件的8个共享符号。旧矩阵执行、配置解析和专属预检没有当前调用；
+仓内导入、现用脚本、测试及本机浅层辅助已核对，服务器会话实际使用的helper、packet、Ray／Q3与诊断驱动也未见三旧模块引用。
+仓外结论只覆盖这些已查入口，不表示扫描了所有外部存储。
+
+删除`native_system_matched.py`、`native_system_parser.py`和`native_system_preflight.py`：
+五臂身份归原contract模块，文件／JSON计量归evidence，相对路径读取归artifacts，最终队列／额度校验归validator。
+summary直接调用同一函数，删除两个只转发一次的私有函数；没有新增模块、兼容壳或执行器。
+七个搬移函数（包括两个内部helper）的语法树保持，summary其余24个函数除两个直接调用外保持；
+实际失败汇总的CSV与JSON逐字一致。SAOR／共享额度算法、14份研究材料、普通records和原生Q3不改。
+
+准确实现为`a4aae811dbfdbd9d7b6228025a7510ec739044d0`，树`a8208fa2961663eeaa7acab7002e0a51ac29151d`，
+保留并行`6aeb2b6c`的IMLane模型服务候选。13项组合CPU全部通过，耗时1.57秒；1,079份受测code文件摘要与该提交一致。
+其中包含五份历史代码树的3,010条摘要恢复。旧底稿7项首轮6通过，一项仅因fixture期待未解析的临时路径失败；
+只把预期改为`.resolve()`后原底稿7项通过，原错误及原fixture保留。子候选13项与组合13项不累计。
+公开材料中没有完整成功矩阵可回放，本次不声称成功矩阵、真实模型、PG接入或性能通过。
+
+五份准确87fd原件以gzip保存，各追加五条读取／格式路由，共25条；原ID、预期摘要及已有映射保持。
+旧直接导入不再兼容。准确退役前文件和原完整启动树分别见[恢复说明](../../../reproduction/native_baselines/README.md#retired-native-system-matrix)，
+不能把87fd中早已退出的启动器与零散新文件拼成可运行旧系统。
+[机器摘要](raw/saor_offline_retirement_checks.json)与[脱敏原始记录](raw/saor_offline_retirement_raw.json.gz)
+保存初错、修正、实际结果、最终源码摘要、fixture／CPU重跑入口和原件SHA；重复旧摘要表仅保留数量／摘要，最终组合保留完整表。
+解压JSON中`records`的`offline_cases.py`、`run_cpu.py`与`run_guarded.py`文本至同一临时目录，
+用`SAOR_OFFLINE_PHASE=after PYTHONPATH=code:<临时目录>`运行其中`run_guarded.py <新运行名> offline_cases`可复查七个离线行为；
+另六项为公开摘要列出的原测试方法，不补建旧配置执行API。
+
+本批src＋scripts Python净减2,354行，核心和测试行数不变；均按含注释／空行的物理行统计。
+当前核心56,191、宽口径112,343；较main分别为+2,100／−27,992，较3fd为−5,437／−37,302。
+总量保留并行基线新增内容，不把搬移视为删除或性能改进。共享服务配置的大文件及图像研究编排继续核对实际用途。
+
+此前待验的准确`87fdb2bc`九对象方法已在服务器Ray2.56.1一次通过，耗时11.50秒，无失败或跳过。
+新增`CoreChainCapacity`及原八对象均经真实worker往返并通过身份断言；观察到的九个自有进程退出，Ray关闭、SHM及运行许可清理通过。
+原件运行标识`realray-87fd-execution-20261106-r1`、原始结果SHA和完整用例回执保存在上述机器材料。
+该次没有模型／GPU查询，也没有运行其他方法；原Ray子进程信号量问题保持独立记录。

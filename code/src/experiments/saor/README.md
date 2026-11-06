@@ -1,6 +1,6 @@
 # SAOR 历史研究与离线证据
 
-当前保留 SAOR 调度算法、研究方案、合同、离线分析与历史证据。
+当前保留 SAOR 调度算法、研究方案、声明、离线分析与历史证据。
 通用共享额度与 SAOR 策略一起位于[独立研究组件](../../research/multitask/README.md)，
 本目录只编排、校验与分析，不向普通 records 注入研究策略。
 14 份原实验声明位于[独立材料](../../../../experiments/saor/README.md)，
@@ -14,7 +14,7 @@
 这些模块不为当前 SemBench 装配另一套执行器。
 
 依赖旧 PG／HTTP 的 bindings、readiness、execution 和启动脚本已退出维护目录；
-旧运行命令只在[精确冻结树](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)解释。
+旧运行命令只在[精确历史树](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)解释。
 原 native-system 三份 JSON 随该批归档，不在新目录补建兼容入口。
 
 未接入的 `saor_pipeline.py` 和 CPU control microbenchmark 原件仍位于

@@ -13,7 +13,7 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="refactor-completion-checklist"></a>
 ### 整体完成清单与收尾事项
 
-本轮整理针对已有外部 records 执行核心。下表保留94367并行基线结果，结合本次中性容量／关闭整理及各次准确受测源码核对，
+本轮整理针对已有外部 records 执行核心。下表保留6aeb2并行基线候选，结合中性容量／关闭整理、离线研究清理及各次准确受测源码核对，
 不把外部 SemBench 工作负载等同于新的 PostgreSQL 语义算子接入，也不把历史通过数累加为当前整树资格。
 ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
@@ -25,7 +25,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
-| 研究隔离 | SAOR 与多任务共享额度归入独立研究包；普通单查询不依赖其默认配置 | 独立拆仓尚未做；研究与图像实验仍有较大的编排文件 |
+| 研究隔离 | SAOR 与多任务共享额度归入独立研究包；普通单查询不依赖其默认配置 | 旧矩阵执行／解析／预检已退役，离线汇总直接使用证据模块；独立拆仓尚未做，共享配置与图像仍有较大的编排文件 |
 | 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放、HTTP 观测转发及异步阻塞 RPC 已退役；重复解析、内部形状／日志计数检查分批精简 | 旧 LOTUS 残留和两个固定探针套件已清理；实际 provider／v3–v6 协议、共享诊断与离线复算保留，不称全仓旧内容已穷尽 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
@@ -38,6 +38,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | b422 查询与提示检查 | 实际 CPU IPC 单项通过，168次合成提交、14个查询的完整行和消息核对 | 真实模型或调度提速 |
 | 87ce 与 d6abc 旧 RPC 退役检查 | 87ce 的16项为15通过、1项测试同步失败；d6abc 仅补同步，该单项一次通过，10项原断言不改 | 没有在 d6abc 重跑整套16项；首轮缺少的完整 close 字段仍未知 |
 | 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名 |
+| 87fd 九对象真实Ray往返 | 新增融合容量及原八个对象由真实worker往返，一次通过；观察到的九个自有进程退出、SHM和运行许可清理通过 | 未运行模型、GPU查询或其他方法；不替代查询／IPC和性能检查 |
 | 798e 作者DuckDB＋IMLane软件CPU | 真实driver／DBEnd／Arrow16的PROCESS／THREAD均通过2000→120及外层进程／SHM清理 | 真实模型、特殊空选择／错误的作者二进制资格或性能 |
 
 [重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
@@ -46,17 +47,18 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）当前为56,191行，
-全部 src＋scripts Python 为114,279行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,100行／减少26,056行；对清理起点3fd分别减少5,437／35,366行。
-本批相对最新94367核心少6行、宽口径少197行；相对6ec宽口径仅少19行，差额来自并行新增178行原生 baseline，未算作删除。
-核心没有千行以上文件，研究编排的大文件仍分别处理；拆文件不算减少总代码。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,191行，
+全部 src＋scripts Python 为112,343行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,100行／减少27,992行；对清理起点3fd分别减少5,437／37,302行。
+本批相对最新6aeb2核心不变、宽口径少2,354行，未将并行IMLane新增实现算作删除。
+核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
-[本批容量／关闭与固定探针清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
-记录准确9521的39项CPU全部通过及五树3010恢复，新增连接用例在改前有两个重复关闭子例，原记录保留。
-原11／5／22／38选择不累计成额外覆盖；新增CoreChainCapacity的九对象真实Ray往返尚待服务器，未选为本地通过。
-[上一批旧LOTUS清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)
-继续只解释其14＋16项CPU和746行删除，不转授本批或模型资格。
+[本批离线汇总与旧研究编排清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)
+记录准确a4aae的13项组合CPU和五树3010恢复，保留旧fixture路径预期错误与改正后记录。
+[此前容量／关闭与固定探针整理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
+继续只解释其39项CPU；新增九对象真实Ray在准确87fd单项一次通过，未将早期重复选择相加。
+[旧LOTUS清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)
+继续保留其14＋16项CPU和746行删除的原范围，不转授本批或模型资格。
 
 ### 此前切片记录
 
