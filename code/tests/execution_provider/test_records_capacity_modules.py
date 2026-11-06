@@ -4,6 +4,7 @@ import pickle
 import unittest
 
 from src.execution_provider.adapters import lotus_records_core as public
+from src.execution_provider.adapters import lotus_record_chain_core as chain
 from src.execution_provider.adapters import records_capacity as capacity
 from src.execution_provider.adapters import records_profile as profile
 from src.semantic_methods.lotus.records import RecordsResources
@@ -12,6 +13,7 @@ from tests.experiments.test_records_resource_budget import capacity as declared,
 
 class CapacityModuleTests(unittest.TestCase):
     def test_original_imports_refer_to_the_same_types_and_resolvers(self):
+        self.assertIs(chain.CoreChainCapacity, capacity.CoreChainCapacity)
         for module, names in ((capacity, ('RecordsCapacityBudget', 'CoreRecordsCapacity',
                 'resolve_records_async_limits')), (profile, ('resolve_core_profile', 'resolve_record_batching'))):
             for name in names:
@@ -21,10 +23,23 @@ class CapacityModuleTests(unittest.TestCase):
     def test_capacity_pickle_round_trip_preserves_types_and_values(self):
         old = b'csrc.execution_provider.adapters.lotus_records_core\nCoreRecordsCapacity\n.'
         self.assertIs(pickle.loads(old), capacity.CoreRecordsCapacity)
-        for value in (declared(), declared().budget):
+        old_chain = b'csrc.execution_provider.adapters.lotus_record_chain_core\nCoreChainCapacity\n.'
+        self.assertIs(pickle.loads(old_chain), capacity.CoreChainCapacity)
+        for value in (declared(), declared().budget, capacity.CoreChainCapacity()):
             payload = pickle.dumps(value, protocol=0)
             self.assertEqual(pickle.loads(payload), value)
             self.assertIs(type(pickle.loads(payload)), type(value))
+
+    def test_fused_capacity_keeps_single_task_and_complete_stage_work(self):
+        value = capacity.CoreChainCapacity(item_input_bytes=128, item_result_bytes=256)
+        limits = value.limits(RecordsResources(model_batch_rows=4, max_active_batches=1), 3)
+        self.assertEqual((limits.held_tasks, limits.active_requests, limits.active_work), (1, 1, 12))
+        self.assertEqual((limits.input_bytes, limits.result_bytes), (128, 256))
+        for kind in (capacity.CoreChainCapacity, capacity.CoreRecordsCapacity):
+            for options in (dict(item_input_bytes=False), dict(metadata_bytes=0),
+                            dict(poll_interval_s=float('nan'))):
+                with self.subTest(kind=kind.__name__, options=options), self.assertRaises(ValueError):
+                    kind(**options)
 
     def test_explicit_budget_fields_only_resize_their_own_resource_owner(self):
         resources = RecordsResources(max_active_batches=4)

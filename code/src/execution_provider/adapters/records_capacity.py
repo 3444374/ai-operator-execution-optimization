@@ -7,8 +7,18 @@ retain independent counts and bytes. No hardware observation or scheduling.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields, replace
+import math
 
 from src.scheduling.core.session_contract import SessionLimits, SessionTimeouts
+
+
+def _validate_item_capacity(capacity):
+    for name in ("item_input_bytes", "item_result_bytes", "metadata_bytes", "step_actions"):
+        if type(getattr(capacity, name)) is not int or getattr(capacity, name) <= 0:
+            raise ValueError(name + " must be a positive integer")
+    if (type(capacity.poll_interval_s) not in (int, float)
+            or not math.isfinite(capacity.poll_interval_s) or capacity.poll_interval_s <= 0):
+        raise ValueError("poll_interval_s must be finite and positive")
 
 
 @dataclass(frozen=True)
@@ -40,13 +50,7 @@ class CoreRecordsCapacity:
     budget: RecordsCapacityBudget | None = None
 
     def __post_init__(self):
-        for name in ("item_input_bytes", "item_result_bytes", "metadata_bytes", "step_actions"):
-            if type(getattr(self, name)) is not int or getattr(self, name) <= 0:
-                raise ValueError(name + " must be a positive integer")
-        import math
-        if (type(self.poll_interval_s) not in (int, float)
-                or not math.isfinite(self.poll_interval_s) or self.poll_interval_s <= 0):
-            raise ValueError("poll_interval_s must be finite and positive")
+        _validate_item_capacity(self)
         if type(self.budget) is dict:
             object.__setattr__(self, 'budget', RecordsCapacityBudget(**self.budget))
         if self.budget is not None:
@@ -112,6 +116,30 @@ class CoreRecordsCapacity:
             method_bytes // minimum_method + 1, method_bytes)
         return replace(self, budget=budget)
 
+
+@dataclass(frozen=True)
+class CoreChainCapacity:
+    """Per-fused-batch logical bytes and bounded owner progress actions."""
+
+    item_input_bytes: int = 2 * 1024 * 1024
+    item_result_bytes: int = 8 * 1024 * 1024
+    metadata_bytes: int = 2048
+    step_actions: int = 16
+    poll_interval_s: float = 0.01
+
+    def __post_init__(self):
+        _validate_item_capacity(self)
+
+    def limits(self, resources, stage_count):
+        return SessionLimits(
+            held_tasks=1, input_bytes=self.item_input_bytes,
+            result_bytes=self.item_result_bytes, active_requests=1,
+            active_work=resources.model_batch_rows * stage_count, offer_tasks=1,
+            item_input_bytes=self.item_input_bytes, item_result_bytes=self.item_result_bytes,
+            metadata_bytes=self.metadata_bytes, step_actions=self.step_actions,
+            wait_timeout_s=resources.query_timeout_s, poll_interval_s=self.poll_interval_s,
+            timeouts=SessionTimeouts(),
+        )
 
 
 def _complete_ipc_limits(overrides):
