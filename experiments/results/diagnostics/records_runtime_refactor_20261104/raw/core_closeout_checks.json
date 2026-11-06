@@ -25,111 +25,77 @@
     "scope": "Local Ray and model startup blocked. The real-Ray worker test was explicitly skipped and still requires server execution."
   },
   "integration": {
-    "candidate": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
-    "tree": "f08f61b6993eccfca7d3abe8284f118830a5f7ce",
+    "candidate": "2aa96f2d227af698a676dbbb042d2d117f52f049",
+    "tree": "0e26061f4c0a632a3226e3ad891e9a326b1591fd",
     "parents": [
-      "ad8282fd5f12fe47b6484c60b83f975e360e438b",
-      "d5af9e6aaf1fdae369797c706d8e3472ce3794af"
+      "22940d14e1e6f0cffe98e5ebbff53f16a48406ed",
+      "e0ec300c1c927b6882e1a934dd8efb64ab099996"
     ],
+    "upstream": "e0ec300c1c927b6882e1a934dd8efb64ab099996",
+    "cleanup_source": "22940d14e1e6f0cffe98e5ebbff53f16a48406ed",
+    "recorded_head": "2aa96f2d227af698a676dbbb042d2d117f52f049",
     "all_test_code_hashes_match": true,
-    "matching_code_files": 1057,
-    "source_recorded_head": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
-    "source_unchanged_during_suite": true,
+    "matching_code_files": 1067,
+    "source_unchanged": true,
     "selected": 69,
     "passed": 69,
-    "failed": 0,
+    "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "model_runtime_source_unchanged_from_5539": true,
-    "model_runtime_scope": "code/src Python except code/src/experiments; source equality does not relabel server execution version",
-    "retirement_commit": "d5af9e6aaf1fdae369797c706d8e3472ce3794af",
-    "non_runtime_changes_in_that_scope": [
-      "code/src/execution_provider/adapters/README.md"
-    ]
+    "skips": 0,
+    "primary_runtime_Python_unchanged_from_5539": true,
+    "primary_runtime_scope": "code/src Python excluding experiments and baselines; actual server versions are not relabelled"
   },
   "code_size": {
     "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
-    "counts": {
-      "integrated": {
-        "commit": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
-        "core_python_lines": 57011,
-        "src_and_scripts_python_lines": 114290,
-        "tests_python_lines": 94429,
-        "integration_Python_CPP_header_lines": 4561,
-        "core_functions_over_100": 44,
-        "core_files_over_1000_count": 0
-      },
-      "main": {
-        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
-        "core_python_lines": 54091,
-        "src_and_scripts_python_lines": 140335,
-        "tests_python_lines": 102763,
-        "integration_Python_CPP_header_lines": 4521,
-        "core_functions_over_100": 50,
-        "core_files_over_1000_count": 7
-      },
-      "3fd": {
-        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
-        "core_python_lines": 61628,
-        "src_and_scripts_python_lines": 149645,
-        "tests_python_lines": 130062,
-        "integration_Python_CPP_header_lines": 4528,
-        "core_functions_over_100": 57,
-        "core_files_over_1000_count": 9
-      },
-      "server-model": {
-        "commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
-        "core_python_lines": 57011,
-        "src_and_scripts_python_lines": 114806,
-        "tests_python_lines": 94714,
-        "integration_Python_CPP_header_lines": 4561,
-        "core_functions_over_100": 44,
-        "core_files_over_1000_count": 0
-      },
-      "before-retirement": {
-        "commit": "ad8282fd5f12fe47b6484c60b83f975e360e438b",
-        "core_python_lines": 57011,
-        "src_and_scripts_python_lines": 114804,
-        "tests_python_lines": 94765,
-        "integration_Python_CPP_header_lines": 4561,
-        "core_functions_over_100": 44,
-        "core_files_over_1000_count": 0
-      }
+    "current": {
+      "commit": "2aa96f2d227af698a676dbbb042d2d117f52f049",
+      "core_python_lines": 57011,
+      "src_and_scripts_python_lines": 114637,
+      "tests_python_lines": 95624,
+      "integration_Python_CPP_header_lines": 4858,
+      "core_files_over_1000": [],
+      "core_functions_over_100": 44
     },
     "deltas": {
+      "integrated": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": 347,
+        "tests_python_lines": 1195,
+        "integration_Python_CPP_header_lines": 297
+      },
       "main": {
         "core_python_lines": 2920,
-        "src_and_scripts_python_lines": -26045,
-        "tests_python_lines": -8334,
-        "integration_Python_CPP_header_lines": 40
+        "src_and_scripts_python_lines": -25698,
+        "tests_python_lines": -7139,
+        "integration_Python_CPP_header_lines": 337
       },
       "3fd": {
         "core_python_lines": -4617,
-        "src_and_scripts_python_lines": -35355,
-        "tests_python_lines": -35633,
-        "integration_Python_CPP_header_lines": 33
+        "src_and_scripts_python_lines": -35008,
+        "tests_python_lines": -34438,
+        "integration_Python_CPP_header_lines": 330
       },
       "server-model": {
         "core_python_lines": 0,
-        "src_and_scripts_python_lines": -516,
-        "tests_python_lines": -285,
-        "integration_Python_CPP_header_lines": 0
+        "src_and_scripts_python_lines": -169,
+        "tests_python_lines": 910,
+        "integration_Python_CPP_header_lines": 297
       },
       "before-retirement": {
         "core_python_lines": 0,
-        "src_and_scripts_python_lines": -514,
-        "tests_python_lines": -336,
-        "integration_Python_CPP_header_lines": 0
+        "src_and_scripts_python_lines": -167,
+        "tests_python_lines": 859,
+        "integration_Python_CPP_header_lines": 297
       }
     }
   },
   "import_audit": {
-    "commit": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
-    "files": 982,
-    "local_src_imports": 3304,
+    "commit": "2aa96f2d227af698a676dbbb042d2d117f52f049",
+    "files": 991,
+    "local_src_imports": 3336,
     "missing": [],
     "syntax_errors": [],
-    "code_manifest_sha256": "2e1164cb333a97559bb7037ddf25ca10f6107e108ca7a82b6e68ac421773b3f6",
+    "code_manifest_sha256": "6423b9c202f73eef6617a06679c3cce929baf89b6fcdfd52866ce7797ab2a30c",
     "scope": "Static direct and relative src imports in current tracked source, scripts and tests; no module execution. Dynamic imports and optional external packages are not resolved."
   },
   "source_review": {
@@ -238,8 +204,8 @@
   },
   "private_originals": {
     "record": "private_originals in the raw archive",
-    "files": 56,
-    "manifest_sha256": "4dd8f38831227a76258f7760cd4929c7e18e12c377e598cc89ebed6bbf74d935"
+    "files": 62,
+    "manifest_sha256": "33e64249c0ab3b00ca199579e0ee64e3b1e76cc93d708bafc339614d30b746da"
   },
   "notes": [
     "This extends the prior ad828 delivery without removing its records or original hashes. Prior notes describe their earlier source snapshots.",
@@ -253,22 +219,24 @@
     "All1057 test-time code hashes match284ec. Non-experiment code/src Python is unchanged from5539, but server results retain their actual5539 andb422 versions. Static982-file/3304-import checks do not cover dynamic imports or external dependencies.",
     "The final source/scripts total is114290 physical Python lines; core57011 excludes experiments/baselines and includes research. Retirement removed514 wider production lines and336 test lines. File moves are not counted as reductions.",
     "The second historical IPC cause remains unexplained. Actual model duplicate-close/cancellation/unknown injection, saturation, full query RSS, automatic physical RAM grants and cross-process reconnect remain unverified or unimplemented.",
+    "The published e0ec native-baseline/IMLane updates were retained in2aa. Both parents historical mappings, IDs, versions and3010 original file hashes remain; the same69 distinct CPU methods passed again on exact2aa because the upstream source routes changed. These are not69 additional methods. All1067 test-time code hashes match; static991 files/3336 imports found no missing local module.",
+    "Current2aa production counts are core57011 and source/scripts114637; the347 wider lines added since284ec belong to parallel baseline capabilities, not cleanup. Integrations4858 lines are separate. The old low-level async actor blocking RPCs still have direct-test consumers and await migration; current owner methods and actual sync run_core are distinct and retained.",
     "Public copies are redacted and compacted; original byte lengths and SHA256 values identify unchanged private originals. Abbreviated false-positive counts are expanded in the public text."
   ],
   "raw": {
     "file": "core_closeout_raw.json.gz",
-    "bytes": 49805,
-    "sha256": "c5db13b3992c41e03a6081db76e5ce0e6fd3504fb5924daac7e78fd7d85c007a",
-    "decoded_sha256": "1540f9cb7d8610879a9211dbb30acab83e13215ad6f4bc1bcce095c48037a7f5"
+    "bytes": 53110,
+    "sha256": "75e7a8cb1b762082d8ee7d45840c36fb4812f4c9c5d653b982ba24d9b893997a",
+    "decoded_sha256": "b4f2095f55767a89484e9ccaacbece4872952d806ef20a15b84a2ea7f76878d8"
   },
   "prior_integration": {
-    "record": "execution/INTEGRATION_IDENTITY.json"
+    "record": "final-integration/FINAL_INTEGRATION_IDENTITY.json"
   },
   "prior_import_audit": {
-    "record": "execution/IMPORT_AUDIT_INTEGRATED.json"
+    "record": "final-integration/FINAL_IMPORT_AUDIT.json"
   },
   "prior_code_size": {
-    "record": "execution/CODE_SIZE.json"
+    "record": "final-integration/FINAL_CODE_SIZE.json"
   },
   "server_model_function": {
     "record": "server-model5539/HANDOFF.json",
