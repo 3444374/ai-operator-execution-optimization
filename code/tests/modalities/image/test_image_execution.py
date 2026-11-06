@@ -27,6 +27,7 @@ from src.modalities.image.clip import l2_normalize_numpy_embeddings
 from src.modalities.image.source import ImageSourceConfig
 from src.modalities.image import clip_batch_workers
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
+from src.experiments.image_clip import reporting as image_report
 
 
 RUNNER_PATH = CODE_ROOT / "scripts" / "experiments" / "run_image_clip_e2e.py"
@@ -164,11 +165,11 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "batch_ready_residence_p95_s",
         }
 
-        self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))
+        self.assertTrue(expected.issubset(set(image_report.CSV_FIELDS)))
 
     def test_output_contract_metadata_matches_effective_arm_output(self):
         self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
+            image_report.embedding_output_contract_metadata(
                 "daft_builtin_embed",
                 "arm_default",
             ),
@@ -180,14 +181,14 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             },
         )
         self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
+            image_report.embedding_output_contract_metadata(
                 "daft_builtin_embed",
                 "l2_normalized",
             )["embedding_normalization_owner"],
             "baseline_adapter",
         )
         self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
+            image_report.embedding_output_contract_metadata(
                 "project_ray",
                 "arm_default",
             )["embedding_output_contract_effective"],
