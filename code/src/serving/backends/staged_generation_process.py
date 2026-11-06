@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 
 from src.infrastructure.deadlines import deadline_expired
 from .vllm_sync_process import EngineProcess, MAX_MESSAGE_BYTES, _encode
@@ -63,6 +64,7 @@ def serve(result_fd, *, engine_factory=None):
 
     engine_factory = VllmEngine if engine_factory is None else engine_factory
     engine = None
+    close_deadline = None
     with os.fdopen(result_fd, "wb", buffering=0) as output:
         def send(value):
             output.write(_encode(value))
@@ -82,7 +84,11 @@ def serve(result_fd, *, engine_factory=None):
                         generation=GenerationSpec.from_dict(value["generation"]),
                         deadline_monotonic=value["deadline"])))
                 elif engine is not None and value["op"] == "close":
-                    report = engine.close()
+                    close_deadline = value["deadline"]
+                    remaining = close_deadline - time.monotonic()
+                    report = (engine.close(timeout=remaining) if remaining > 0 else
+                              dict(status="unknown", engine_api_shutdown_confirmed=False,
+                                   gpu_exit_confirmed=None, error_type="CloseDeadlineExceeded"))
                     send(dict(kind="closed", report=report))
                     engine = None
                     return
@@ -92,7 +98,12 @@ def serve(result_fd, *, engine_factory=None):
             send(dict(kind="error", error_type=type(exc).__name__))
         finally:
             if engine is not None:
-                engine.close()
+                if close_deadline is None:
+                    engine.close()
+                else:
+                    remaining = close_deadline - time.monotonic()
+                    if remaining > 0:
+                        engine.close(timeout=remaining)
 
 
 if __name__ == "__main__":

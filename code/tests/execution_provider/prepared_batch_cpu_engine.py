@@ -57,9 +57,9 @@ class Engine:
                 results[0].update(invalid)
         return results
 
-    def close(self):
+    def close(self, timeout=10.):
         return dict(status='closed', engine_api_shutdown_confirmed=True,
-                    gpu_exit_confirmed=None, cleanup_errors=[])
+                    gpu_exit_confirmed=None, cleanup_errors=[], close_timeout_s=timeout)
 
 
 if __name__ == '__main__':

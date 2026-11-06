@@ -24,8 +24,9 @@ class FixtureEngine:
                      prompt_tokens=3, completion_tokens=1, total_tokens=4,
                      engine_uid="CPU-stage-pipe") for row in rows]
 
-    def close(self):
-        return dict(status="closed", engine_api_shutdown_confirmed=True, gpu_exit_confirmed=None)
+    def close(self, timeout=10.):
+        return dict(status="closed", engine_api_shutdown_confirmed=True,
+                    gpu_exit_confirmed=None, close_timeout_s=timeout)
 
 
 if __name__ == "__main__":

@@ -25,3 +25,17 @@ a successful close receipt or replace an earlier result.
 Request outcomes, retained unknown reservations, and the separate engine/producer,
 original-Popen and parent-I/O evidence required for retirement are unchanged.
 Physical GPU and descendant exit are reported by their actual external owners.
+
+## Sync close timing
+
+`vllm_sync_process.EngineProcess` sends its existing API-wait deadline to both
+the ordinary and `staged_generation_process` workers. Each passes only the
+remaining caller time to the native engine. The total caller allowance and its
+original observed-process cleanup reserve remain separate.
+
+An already expired request reports unknown without claiming API shutdown.
+If a worker error follows a received close request, emergency cleanup can use
+only the remaining caller time. A pipe failure without a close request keeps the
+native engine's original bounded cleanup call. That emergency return emits no
+successful close receipt. The private peers migrate together; sync result
+association, observed-process evidence and known usage are unchanged.

@@ -25,8 +25,7 @@ from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENT
 
 MAX_MESSAGE_BYTES = 64 * 1024**2
 CODE_ROOT = Path(__file__).resolve().parents[3]
-# The worker's existing engine.close() API allows ten seconds. Leave one more
-# second for its reply, then four seconds for bounded owned-process cleanup.
+# Default total caller allowance, including the original process-cleanup reserve.
 DEFAULT_CLOSE_TIMEOUT_S = 15.0
 CLOSE_CLEANUP_RESERVE_S = 4.0
 RESULT_PROTOCOL_ERROR = "private engine result cardinality, order or association differs"
@@ -357,7 +356,7 @@ class EngineProcess:
                 try:
                     _observe(self.owned, self.process.pid, self.created)
                     if not self._broken and not api_confirmed and self.process.poll() is None:
-                        reply = self._exchange(dict(op="close"), api_deadline, stopping=False)
+                        reply = self._exchange(dict(op="close", deadline=api_deadline), api_deadline, stopping=False)
                         if reply.get("kind") == "closed":
                             self.engine_close = reply["report"]
                             api_confirmed = self.engine_close.get("engine_api_shutdown_confirmed") is True
@@ -441,6 +440,7 @@ def serve(result_fd, *, engine_factory=None):
 
     engine_factory = VllmEngine if engine_factory is None else engine_factory
     engine = None
+    close_deadline = None
     with os.fdopen(result_fd, "wb", buffering=0) as output:
         def send(value):
             if engine is not None and engine.spec.enable_mfu_metrics and value.get("kind") == "results":
@@ -461,7 +461,11 @@ def serve(result_fd, *, engine_factory=None):
                     send(dict(kind="results", rows=engine.run_prepared(
                         value["rows"], deadline_monotonic=value["deadline"])))
                 elif engine is not None and value["op"] == "close":
-                    report = engine.close()
+                    close_deadline = value["deadline"]
+                    remaining = close_deadline - time.monotonic()
+                    report = (engine.close(timeout=remaining) if remaining > 0 else
+                              dict(status="unknown", engine_api_shutdown_confirmed=False,
+                                   gpu_exit_confirmed=None, error_type="CloseDeadlineExceeded"))
                     send(dict(kind="closed", report=report))
                     engine = None
                     return
@@ -471,7 +475,12 @@ def serve(result_fd, *, engine_factory=None):
             send(dict(kind="error", error_type=type(exc).__name__))
         finally:
             if engine is not None:
-                engine.close()
+                if close_deadline is None:
+                    engine.close()
+                else:
+                    remaining = close_deadline - time.monotonic()
+                    if remaining > 0:
+                        engine.close(timeout=remaining)
 
 
 if __name__ == "__main__":

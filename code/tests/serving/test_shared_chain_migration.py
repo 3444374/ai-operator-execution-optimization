@@ -150,6 +150,8 @@ class StageTransportTests(unittest.TestCase):
                 report = process.close(2)
                 self.assertTrue(report["process_exit_confirmed"])
                 self.assertTrue(report["engine_api"]["engine_api_shutdown_confirmed"])
+                self.assertGreater(report["engine_api"]["close_timeout_s"], 0)
+                self.assertLessEqual(report["engine_api"]["close_timeout_s"], 2)
                 self.assertIs(process.close(2), report)
             finally:
                 process.close(2)
