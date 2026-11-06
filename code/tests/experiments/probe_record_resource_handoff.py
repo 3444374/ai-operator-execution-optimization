@@ -101,7 +101,7 @@ report=dict(status='passed_actual_public_single_owner_actor_transport',mode=args
     native_reader_guard_active_at_submit=True,current_nonblocking_submit_and_poll=True,
     unknown_handoff_events=0,
     native_ack_once=True,original_actor_close_report_identity_preserved=True,
-    actor_sink_finalized_before_owner_kill=args.mode=='on',observed_boundaries=[e['event']for e in events if e['event']in expected],
+    actor_sink_finalized_at_explicit_close=args.mode=='on',observed_boundaries=[e['event']for e in events if e['event']in expected],
     output_sha256=hashlib.sha256(result).hexdigest(),serialized_classes=serialized,
     real_Ray_RPC=False,real_model_calls=0,GPU=False)
 (out/'PUBLIC-HANDOFF.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
