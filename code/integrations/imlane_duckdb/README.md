@@ -64,5 +64,11 @@ THREAD用新的coordinator／executor／输出目录独立检查。`audit_result
 在driver环境读取保存结果与回执并调用原评价。worker进程／namespace通过，不替代外部GPU、SHM和完整质量核查。
 空结果、错误及清理失败保留原件；软件COUNT14只验证接线，不是模型质量。
 
+准确798e的真实PROCESS／THREAD软件运行均已通过：2000→120、一次COUNT／batch-provider、
+Arrow16.1往返及外层进程／SHM清理。作者默认4 executor共需4×128MiB Lane和8个控制队列；
+实测队列逻辑8592B、各占3页，合计512MiB＋96KiB，不能套用只计Lane的512MiB预算。
+DuckDB默认16线程仍在显式8核亲和性内，未注入单线程。完整来源和边界见上述准备报告，
+特殊空选择／错误的真实二进制路径和模型服务生命周期仍未资格。
+
 真正模型provider的服务所有权、作者推荐配置、预算与实机资格仍须单列准备；
 当前CPU入口不会启动模型。执行前范围见[原生基线校准](../../../experiments/plans/原生基线校准.md)。

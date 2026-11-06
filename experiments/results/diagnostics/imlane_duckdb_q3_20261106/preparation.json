@@ -1,6 +1,6 @@
 {
   "schema": "semloom.imlane-duckdb-preparation.v1",
-  "state": "shared_library_built; thin driver and actual SQL/DBEnd CPU tests pending",
+  "state": "shared library and thin driver built; native PROCESS and THREAD software-fixture CPU runs passed; real model provider pending",
   "models_started": 0,
   "source_recovery_manifest_sha256": "3319f4e5a1bb45fb81991a027d5294648144ff52ca90b212b4130256c1fd71d6",
   "library_build": {
@@ -25,7 +25,7 @@
     "two_case_recheck_log_sha256": "b45655a23d4da348bf28cc795bf257fdc5fe34ed15c411dd4b20ae3956786552",
     "two_case_recheck": "passed after fixture root path normalization; not additional distinct methods",
     "arrow_version": "24.0.0",
-    "native_author_arrow_16_cpu_qualification": "pending"
+    "native_author_arrow_16_cpu_qualification": "passed in two actual author DuckDB/DBEnd runs; see native_cpu.json"
   },
   "preserved_preparation_failures": [
     {
@@ -43,6 +43,15 @@
     {
       "attempt": "r4",
       "cause": "author CMake target omitted transitive Boost/SDK header search paths"
+    },
+    {
+      "attempt": "native-r1",
+      "cause": "shared Git clone from incomplete historical object set failed before native startup; fresh exact commit fetch succeeded"
+    },
+    {
+      "attempt": "native-r2",
+      "cause": "default four 128 MiB lanes plus eight Boost queues exceed old 512 MiB SHM allowance by 96 KiB; stopped and cleaned, no inference"
     }
-  ]
+  ],
+  "native_cpu_evidence": "native_cpu.json"
 }

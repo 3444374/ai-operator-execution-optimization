@@ -27,7 +27,7 @@ third_party的889件同源文件相同，仅缺该mbedtls头。各Git blob／SHA
 不改prediction算法、普通优化器调用、作者batch／scheduler／执行器实现。
 `r5`增量编译返回0，已观察进程退出、资源回执通过、SHM新增残留为0；共享库44,524,536字节，
 SHA256 `52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`。
-这只证明shared library构建，尚不证明薄driver、实际SQL、alias、Arrow及完整资源生命周期已通过。
+随后准确`798e13771263319234df574fa04fd3c483896c39`的薄driver已链接通过，实际SQL／DBEnd结果见下节。
 
 ## 当前接线与CPU边界
 
@@ -42,16 +42,34 @@ driver结果在native析构前原子发布，进程退出和namespace资源仍�
 
 本地22个不同CPU方法最终通过：14个Arrow／provider合同和8个packet／离线审计／worker错误行为。
 初轮两项macOS路径别名fixture断言失败，归一测试根路径后只补跑这两项，不叠加通过数。
-本地Arrow24检查不替代作者Arrow16.1和真正DuckDB／DBEnd；真实C++编译及CPU运行在下一步单列。
+本地Arrow24检查不替代作者Arrow16.1和真正DuckDB／DBEnd；实际服务器资格另列如下。
 真实模型provider仍未绑定，当前worker只允许明确的软件fixture，不能把软件COUNT14当作模型结果。
 
-## 后续CPU与服务器测试
+## 实际作者CPU链路与资源关闭
 
-先用准确候选Git源码在现有shared library上编译driver，再在持有host租约、CPU资源supervisor和空闲7086端口时，
-分别以新的coordinator／executor／namespace验证PROCESS与THREAD。
-保持作者默认4 executors／原DuckDB线程数，只有显式选择的诊断才覆盖；不注入OMP/OpenBLAS单线程。
-全量Movie2000→120、固定软件回复COUNT14及原评价、尾块／Unicode／重复业务ID、空结果和错误均需核对。
-还须确认alias与实际DBEnd握手、同一份回执的完整性、CPP/CPython退出、SHM与外部物理清理。
+`imlane-duckdb-q3-native-798e-20261106-r3`在host租约及资源supervisor内，各运行一次新的PROCESS与THREAD
+coordinator／executor／namespace。[CPU机器证据](native_cpu.json)保存准确源码、完整EXPLAIN、评价及原件摘要。
+两者均为完整Movie2000→120、一次AI COUNT、一次120行batch-provider、软件COUNT14；原评价零误差，
+逐行TP14／TN106／FP0／FN0。注册alias真实完成，Arrow16.1的四VARCHAR→无NULL int8往返已验证。
+这是金标软件回复的接线检查，不能替代真实模型质量或原Daft／Ray七个FN。
+
+保持作者默认4 executors、默认DuckDB16线程、standard vector2048；CPU亲和性仍为显式分配的8核，
+未扩宽亲和性、不注入OMP／OpenBLAS单线程。所选Filter实际用作者prediction size2048，
+不消费注册API的batch参数，不能将该注册参数当成有效调优旋钮。
+PROCESS／THREAD均正常worker exit0，外层未发TERM／KILL，已观察自有进程退出、SHM无新增残留；
+最终host SHM增量0，资源回执通过。driver析构前发布的`process_exit_verified=false`保持，
+退出证据来自外层supervisor，未将API结果重写成物理退出保证。
+
+此前`native-r2`在启动阶段触发旧512MiB SHM预算，已停止并清理，原失败保留。
+作者默认分配是4×128MiB Lane和8个Boost控制队列；实测每队列逻辑8592B、实际分配12288B，
+总12个命名对象、536,969,216B＝512MiB＋96KiB。新CPU运行按此分配图声明预算，没有暗降executor数，
+20GiB sampled-RSS单独计量，不将SHM容量当作RSS或模型内存。另有一次旧不完整Git对象集的共享clone失败，
+发生在启动前；改为新仓准确SHA fetch后通过，失败日志保留。
+
+完整cohort及120行尾批已实际通过。特殊Unicode／空字符串、重复业务ID、空选择和provider异常由本地合同覆盖；
+这些额外边界尚未逐项经过真正作者二进制，不扩大本次资格范围。
+
+## 真实模型仍需准备
 
 本批不安排GPU。CPU闭环通过后，单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
 逻辑120及实际attempt预算、cold／模型常驻边界和停止条件，再由现有服务器任务执行；不复制相同已测查询。

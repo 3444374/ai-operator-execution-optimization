@@ -136,6 +136,30 @@ Ray遗留的是一个`sem.mp-`前缀的POSIX具名信号量：文件逻辑大小
 当前最小下一步是[零模型CPU复现](../../../plans/原生基线校准.md#ray-semaphore-cpu)，
 记录实际SemLock名称／创建栈、tracker进程和原生actor退出顺序后，再选择最窄修复；本轮没有安装或打补丁到Ray／vLLM。
 
+## 四例零模型生命周期诊断及公开接口边界
+
+随后服务器以准确`e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2`执行四例，每例一次、总19.443秒、
+模型／GPU推理为0。[机器摘要](ray_lifecycle_cpu.json)关联原件及创建栈，不覆盖原Q3失败。
+普通spawn和actor显式close先确认child exit0，均自动清理；actor GC与runtime场景各留4KiB。
+这两把锁的实际栈为首次tqdm→multiprocessing.RLock，inode／ctime与遗留对象匹配。
+Ray先杀已确认child及resource_tracker，再进入actor关闭回调；child最终为-9，没有对应unregister。
+只在确认原对象归属、无持有者及自有进程退出后恢复，恢复不改原`resource_original_passed=false`。
+runtime例的actor GC早于`ray.shutdown()`，因此不单独证明runtime关闭的额外因果；每例一次也不代表复现率。
+原Q3缺创建栈，不能反推其准确那把锁一定同源。
+
+固定Ray2.56.1的公开Processor没有model actor close接口；stage配置不是live actor handle。
+不能在“已经产生120条”时关闭内部引擎：输出未必完成Ray任务提交、物化或重试所需寿命。
+本批不改第三方库、不全局禁child cleanup、不抓私有actor，也不将延迟关闭或换vLLM版本当作修复。
+
+另准备[公开HTTP profile](../../../../code/src/baselines/text/frameworks/ray_data_http_sembench_native.py)
+及[候选检查摘要](ray_http_profile.json)：
+使用`HttpRequestProcessorConfig`／`build_processor`，模型服务由外部caller单独拥有，
+查询物化、原生COUNT和Ray worker退出后，再显式关闭该服务并独立核对进程／SHM／GPU。
+这改变模型服务拓扑，单列为项目原生API绑定，不能替代原local-vLLM失败结果或声称已修复它。
+HTTP原生默认batch64、concurrency1、qps=None、max_retries0保持；qps=None的批内逐条await并非64路并发。
+`ray_driver_disconnected`只记录SDK连接关闭，不证明物理退出。真实Ray＋独立软件HTTP服务CPU验证待本批执行，
+实际模型服务／质量／冷启动与模型常驻比较仍待资格。
+
 <a id="imlane-author-environment"></a>
 ## IMLane作者环境的实际准备范围
 
@@ -145,7 +169,7 @@ Ray遗留的是一个`sem.mp-`前缀的POSIX具名信号量：文件逻辑大小
 该prefix内有`imlane`、Python executor、DBEnd-C和C++共享库；C++库声明Arrow1601 ABI。
 构建身份、两库摘要、NEEDED项与修改过的五份源文件名保存在复测证据；这是库存／来源检查，没有加载库验证ABI。
 
-作者`database/duckdb`源码存在，但未有build目录或CMakeCache；所核对的release／prefix位置没有DuckDB二进制或库。
+当时作者`database/duckdb`源码存在，但未有build目录或CMakeCache；所核对的release／prefix位置没有DuckDB二进制或库。
 仓内也没有DuckDB原生Q3 driver；`semantic-benchmarks`检查普通pip DuckDB不证明作者修改版已构建。
 因此“DBEnd-C库缺失”不准确，实际缺项是作者DuckDB的构建、链接、SQL函数／coordinator alias和Arrow结果资格。
 现有records客户端只链接C++ runtime，不能替代这一条数据库路径。
@@ -155,3 +179,7 @@ Ray遗留的是一个`sem.mp-`前缀的POSIX具名信号量：文件逻辑大小
 `SCHEDULE_PREDICTION`的Filter空实现不能用来凑接通；同名函数alias与作者默认coordinator连接必须真实生效。
 先验证非空整数0／1＋SQL`=1`，避免未经资格的Arrow位图分支；覆盖2000→120发生项、尾批、Unicode、重复业务ID、
 软件回复COUNT14和错误／进程／SHM清理。以上完成前不安排IMLane原生Q3模型查询。
+
+后续[独立构建和798e真实作者CPU运行](../imlane_duckdb_q3_20261106/README.md)已通过shared库／薄driver、
+函数alias和PROCESS／THREAD的完整2000→120 Arrow16.1软件闭环及外层清理。
+真实模型provider尚未绑定；特殊错误／空选择的实际二进制资格与模型生命周期另列，不改本节原库存时点。
