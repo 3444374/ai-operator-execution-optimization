@@ -43,6 +43,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 87fd 九对象真实Ray往返 | 新增融合容量及原八个对象由真实worker往返，一次通过；观察到的九个自有进程退出、SHM和运行许可清理通过 | 未运行模型、GPU查询或其他方法；不替代查询／IPC和性能检查 |
 | 798e 作者DuckDB＋IMLane软件CPU | 真实driver／DBEnd／Arrow16的PROCESS／THREAD均通过2000→120及外层进程／SHM清理 | 真实模型、特殊空选择／错误的作者二进制资格或性能 |
 | e5 四项真实CPU IPC及一项模拟时钟 | None随同一查询两记录经socketpair／子进程传递；反序完成、取消、显式已到期拒绝、未消费结果与unknown占额通过，18个已观察自有进程退出、SHM增量0、许可归还 | 替身不解释模型期限；未验证真实vLLM在途到期／abort、Ray启动／actor退出或性能 |
+| fc1a 三项实际socket CPU | 单查询图像reference／staged结果字节相同、坏载荷不发worker及选定profile的socketpair各通过一次；10个已观察自有进程退出、socket无残留、SHM增量0、许可归还 | FakeRay和SelectedCompletionAdapter不等于真实Ray／模型／PG；未运行其他三个图像连接方法与可选PG／Ray |
 
 [重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
 保存逐批源码、失败与 CPU／IPC 范围；[原生 Q3 复测](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
@@ -74,7 +75,7 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [HSE职责提取](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
 保存17项原CPU前后结果和三组完整输出对照；没有运行真实Ray或模型，不作性能结论。
 [本地IPC职责与旧HTTP完整退出](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)
-记录四批删除、70项实际组合CPU、160条受影响历史读取及现用源码反查；图像实际Unix socket检查另交服务器。
+记录四批删除、70项实际组合CPU、160条受影响历史读取及现用源码反查；随后[准确fc1a三项实际socket](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)均已通过。
 核心不依赖实验入口，没有为退出HTTP新增网关或多查询实现；实际模型、物理内存授予及历史Ray清理仍按各自来源判断。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)

@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：旧HTTP退出后的实际socket补验
+
+[准确fc1a三项CPU socket](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)
+各运行一次通过，覆盖两项单查询图像方法及选定profile的socketpair；没有模型、真实Ray、PG或HTTP。
+本轮进程／socket／SHM和许可收尾确认，原始材料留在仓外，只登记必要CPU摘要；不改写原e5失败或转授模型资格。
+
 ## 2026-11-06：旧SemLoom HTTP退出并收敛实际调用
 
 图像owner直接拥有连接与方法生命周期，帧处理独立；通用增量执行只保留现有Core任务组合。

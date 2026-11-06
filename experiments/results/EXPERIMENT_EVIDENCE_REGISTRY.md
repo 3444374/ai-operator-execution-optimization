@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：准确fc1a实际socket三方法
+
+[逐方法CPU回执](diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)
+记录两项单查询图像Unix socket和一项选定profile的socketpair，各一次全通过，26份私有原件摘要匹配。
+10个已观察进程退出、socket无残留、SHM增量0、许可归还；模型／真实Ray／PG／HTTP／多查询均0。
+只公开必要fixture摘要，其他图像连接及可选PG／Ray、模型到期／abort不由此通过。
+
 ## 2026-11-06：旧HTTP完整退出与实际组合CPU
 
 [分批删除、职责与恢复](diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)

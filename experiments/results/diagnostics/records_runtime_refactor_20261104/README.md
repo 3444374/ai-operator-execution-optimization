@@ -4290,3 +4290,21 @@ runtime说明中引用已删async HTTP及asyncio.timeout的三行退出，没有
 
 实际图像UDS方法、选定profile的服务socket及可选PG／Ray方法仍按各自运行解释，不能由CPU替身宣布通过。
 下一批服务器仅执行单查询图像的现有socket方法，不新增多查询或模型请求；原生Ray物理清理、真实到期／abort和物理RAM自动授予仍分别处理。
+这是派单时记录；随后三项实际结果见下节，其他未执行范围保持。
+
+<a id="post-http-socket-verification"></a>
+## HTTP退出后单查询实际socket补验（2026-11-06）
+
+准确受测提交`fc1a9673122b223b24918ba19cf89ec40cf1c54d`，tree为`72c0a30287367b9ea44f93aa42ffdb89c5861ffc`。
+[必要CPU回执](raw/http_retirement_fc1a_socket_receipt.json)记录三个既有方法各执行一次，全通过，无失败、错误或跳过：
+
+- 单查询reference／staged图像Unix socket返回相同结果字节；
+- 坏图像载荷在worker提交前拒绝；
+- socketpair使用所选执行profile完成原会话协议，而非已经删除的HTTP常量。
+
+本轮没有实际模型、Ray、GPU查询、PostgreSQL、HTTP或多查询；目录名postgres和FakeRay不表示启动对应服务。
+源码在三次执行中不变，1032份运行源码摘要相同；26份私有原件逐字节匹配，详细日志、命令和机器观察继续留在仓外。
+观察到的10个自有进程退出，socket无残留、SHM增量0、运行许可归还；自建临时目录的收尾在原退出／空闲确认后、许可归还前。
+本轮helper没有发现需删除的socket节点，不能据此重写较早e5模型运行的清理失败。
+其余三个图像连接／并发方法、九项可选PG／Ray、真实模型到期／abort、质量和性能未执行，不累加旧回执或外推。
+后续本提交只登记CPU结果，生产代码没有改动。
