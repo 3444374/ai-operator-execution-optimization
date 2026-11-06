@@ -6,13 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from src.experiments.calibration.contracts import (
-    CalibrationContract,
-    JsonScalar,
-)
-from src.scheduling.core.control import CapacityArm
+from src.experiments.calibration.contracts import CalibrationContract
 from src.research.multitask.saor_capacity import (
-    LinearCostFeature,
     SaorArmEstimate,
     SaorObservationModel,
 )
