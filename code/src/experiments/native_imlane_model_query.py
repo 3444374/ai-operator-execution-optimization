@@ -1,4 +1,4 @@
-"""One author DuckDB Q3 query with an independently owned vLLM HTTP service.
+"""One author DuckDB Q3 query with an independently owned vLLM IPC service.
 
 This is a project baseline binding. The author database owns ordinary operators,
 prediction batches and CPython execution. No SemLoom execution policy is used.
@@ -21,18 +21,18 @@ from src.infrastructure.private_artifacts import (
 )
 from src.infrastructure.redact import redact_text
 
-CONFIG_SCHEMA = 'semloom.imlane.duckdb.q3.model_run.v1'
+CONFIG_SCHEMA = 'semloom.imlane.duckdb.q3.model_run.v2'
 READY_SCHEMA = 'semloom.imlane.duckdb.q3.model_result_ready.v1'
 CLEANUP_SCHEMA = 'semloom.imlane.duckdb.q3.cleanup_started.v1'
 
 
 def configuration(value):
     fields = {'schema', 'provider_mode', 'reviews_csv', 'model_service', 'sampling_params',
-              'request_timeout_s', 'api_key_env'}
+              'request_timeout_s'}
     if type(value) is not dict or set(value) != fields or value['schema'] != CONFIG_SCHEMA:
         raise ValueError('an explicit native IMLane model-run configuration is required')
-    if value['provider_mode'] not in {'model', 'software_http'}:
-        raise ValueError('declare model or software_http explicitly')
+    if value['provider_mode'] not in {'model', 'software_ipc'}:
+        raise ValueError('declare model or software_ipc explicitly')
     if type(value['reviews_csv']) is not str or not value['reviews_csv']:
         raise ValueError('declare the complete original Reviews.csv')
     if type(value['model_service']) is not dict:
@@ -125,7 +125,9 @@ class QueryWindow:
 
 
 def audit_model_result(directory, checkout):
-    """Join saved native/HTTP evidence without another model or graph execution."""
+    """Join saved native/IPC evidence without another model or graph execution."""
+    from integrations.imlane_duckdb.model_wire import SCHEMA
+
     directory = Path(directory)
     provider = read_json(directory / 'model-provider.json')
     mode = provider['provider_mode']
@@ -140,22 +142,44 @@ def audit_model_result(directory, checkout):
     for name in sorted(ends):
         path = calls_dir / (name + '.terminal.json')
         receipt = read_json(path, max_bytes=path.stat().st_size)
-        if (receipt['schema'] != 'semloom.imlane.duckdb.q3.model_batch.v1'
+        if (receipt['schema'] != 'semloom.imlane.duckdb.q3.model_batch.v2'
                 or receipt['provider_mode'] != mode or receipt['status'] != 'succeeded'
                 or receipt['client_closed'] is not True):
-            raise ValueError('native model-provider execution or HTTP client close remains incomplete')
-        if receipt['http_post_attempts'] != len(receipt['calls']):
-            raise ValueError('native HTTP attempt observations differ from the same batch')
+            raise ValueError('native model-provider execution or IPC client close remains incomplete')
+        request, response = receipt['request'], receipt['response']
+        if (receipt['ipc_attempted'] is not True
+                or receipt['engine_generate_invocations'] != len(receipt['calls'])
+                or content_digest(request) != receipt['request_sha256']
+                or content_digest(response) != receipt['response_sha256']
+                or request['schema'] != SCHEMA or response['schema'] != SCHEMA
+                or request['batch_id'] != receipt['batch_id']
+                or response['batch_id'] != request['batch_id']
+                or response['status'] != 'succeeded'
+                or request['model'] != provider['model'] or response['model'] != provider['model']
+                or len(response['calls']) != len(receipt['calls'])
+                or request['messages_batch'] != [c['requested_payload']['messages'] for c in receipt['calls']]
+                or request['sampling_params'] != dict(provider['sampling_params'], n=1)):
+            raise ValueError('native IPC request/result identity differs from its same batch')
         for position, call in enumerate(receipt['calls']):
             payload = call['requested_payload']
             sampling = {key: value for key, value in payload.items() if key != 'messages'}
-            expected_sampling = dict(provider['sampling_params'], model=provider['model'], n=1, stream=False)
+            expected_sampling = dict(provider['sampling_params'], model=provider['model'], n=1)
             if (call['position'] != position or call['attempted'] is not True or call['status'] != 'succeeded'
-                    or sampling != expected_sampling or call['http_status'] != 200
+                    or sampling != expected_sampling
                     or content_digest(payload) != call['request_payload_sha256']
                     or content_digest(payload['messages']) != call['messages_sha256']
-                    or call['response']['model'] != provider['model']):
-                raise ValueError('native HTTP request/result differs from the declared Q3 model binding')
+                    or call['response'] != response['calls'][position]
+                    or call['response']['position'] != position
+                    or call['response']['attempted'] is not True
+                    or call['response']['status'] != 'succeeded'
+                    or type(call['response']['generated_text']) is not str
+                    or call['response']['finish_reason'] not in ('stop', 'length')
+                    or call['response']['requested_max_tokens'] != provider['sampling_params']['max_tokens']
+                    or call['response']['resolved_max_tokens'] != provider['sampling_params']['max_tokens']
+                    or call['response_id'] != call['response']['request_id']
+                    or call['usage'] != call['response']['usage']
+                    or call['truncated'] != (call['response']['finish_reason'] == 'length')):
+                raise ValueError('native IPC request/result differs from the declared Q3 model binding')
             calls.append(call)
         batches[name] = receipt
     for path in sorted((directory / 'udf-receipts').glob('q3-batch-*.json')):
@@ -166,23 +190,26 @@ def audit_model_result(directory, checkout):
             and invocation['started_monotonic_ns'] <= batch['started_monotonic_ns']
                 <= batch['finished_monotonic_ns'] <= invocation['finished_monotonic_ns']]
         if len(matches) != 1:
-            raise ValueError('UDF call must identify exactly one same-worker HTTP batch')
+            raise ValueError('UDF call must identify exactly one same-worker IPC batch')
         batch = batches.pop(matches[0])
         for source, prediction, call in zip(udf['sources'], udf['predictions'], batch['calls'], strict=True):
             if (any(source[key] != prediction[key] for key in ('occurrence_id', 'id', 'reviewId', 'messages_sha256'))
                     or source['messages_sha256'] != call['messages_sha256']
-                    or prediction['generated_text'] != call['response']['choices'][0]['message']['content']):
-                raise ValueError('HTTP response position differs from its native Q3 occurrence')
+                    or prediction['generated_text'] != call['response']['generated_text']):
+                raise ValueError('IPC response position differs from its native Q3 occurrence')
     if batches:
-        raise ValueError('HTTP batches remain unassociated with a native Q3 invocation')
-    audit['http'] = dict(post_invocations=len(calls), logical_rows=len(audit['predictions']),
+        raise ValueError('IPC batches remain unassociated with a native Q3 invocation')
+    ids = [call['response_id'] for call in calls]
+    if len(ids) != len(set(ids)):
+        raise ValueError('IPC model request identities repeat across occurrences')
+    audit['ipc'] = dict(batch_rpc_invocations=len(ends), engine_generate_invocations=len(calls),
+        logical_rows=len(audit['predictions']),
         physical_model_attempts=None, truncated=sum(call['truncated'] for call in calls),
-        request_ids=[call['response_id'] for call in calls],
+        request_ids=ids,
         usage=[call['usage'] for call in calls], batches=len(ends),
         sampling_params=provider['sampling_params'], model=provider['model'],
         declared_query_deadline_monotonic=provider.get('deadline_monotonic'),
-        effective_request_timeout_s=[call.get('effective_request_timeout_s') for call in calls],
-        transport='independent baseline loopback HTTP; database/executor uses author ArrowLane')
+        transport='independent AF_UNIX IPC to one AsyncLLM; database/executor uses author ArrowLane')
     audit['comparison_qualified'] = False
     audit['comparison_scope'] = 'single query; quality, external GPU/SHM exit and repetition assessed separately'
     return audit
@@ -191,7 +218,7 @@ def audit_model_result(directory, checkout):
 def run_worker(args, *, service_factory=None):
     from integrations.imlane_duckdb.model_provider import configuration as provider_configuration
     from integrations.imlane_duckdb.model_service import ModelService
-    from integrations.imlane_duckdb.runtime import DuckDBScope, PORT
+    from integrations.imlane_duckdb.runtime import DuckDBScope
     from integrations.imlane_records import owner
 
     for name in ('config', 'output', 'author_root', 'driver', 'sembench_checkout'):
@@ -212,34 +239,25 @@ def run_worker(args, *, service_factory=None):
     try:
         config = configuration(read_json(args.config))
         mode = config['provider_mode']
-        if mode == 'software_http' and service_factory is None:
-            raise ValueError('software_http validation requires an explicit no-model test service factory')
-        if config['model_service'].get('port') == PORT:
-            raise ValueError('model service and author coordinator require separate ports')
-        report.update(provider_mode=mode, model_requests=0 if mode == 'software_http' else None)
+        if mode == 'software_ipc' and service_factory is None:
+            raise ValueError('software_ipc validation requires an explicit no-model test service factory')
+        report.update(provider_mode=mode, model_requests=0 if mode == 'software_ipc' else None)
         report['source'] = prepare_input(Path(config['reviews_csv']).resolve(), args.output / 'input',
                                          provider_mode=mode)['source']
         for name in ('udf-receipts', 'model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
         service_environment = dict(os.environ)
-        key_env = config['api_key_env']
-        if key_env is None:
-            service_environment.pop('VLLM_API_KEY', None)
-        else:
-            if not os.environ.get(key_env):
-                raise ValueError('configured API credential is absent from the environment')
-            service_environment['VLLM_API_KEY'] = os.environ[key_env]
         service = (ModelService if service_factory is None else service_factory)(
             config['model_service'], args.output / 'model-service', environment=service_environment,
             deadline=window.query_deadline, cleanup_deadline=window.begin_cleanup,
             stop_budget=args.stop_budget, stop_grace_s=args.stop_grace_seconds)
         # This validation happens before allocating the model service. No
         # GenerationSpec constructor may inject short-output/stop defaults.
-        provider = provider_configuration(dict(schema='semloom.imlane.duckdb.q3.model_provider.v1',
-            provider_mode=mode, url=service.url, model=service.served_model_name,
+        provider = provider_configuration(dict(schema='semloom.imlane.duckdb.q3.model_provider.v2',
+            provider_mode=mode, socket_path=str(service.socket_path), model=service.served_model_name,
             sampling_params=config['sampling_params'], request_timeout_s=config['request_timeout_s'],
             deadline_monotonic=window.query_deadline,
-            api_key_env=key_env, receipt_dir=str(args.output / 'model-calls')))
+            receipt_dir=str(args.output / 'model-calls')))
         report['service'] = service.report
         with service:
             remaining = window.query_deadline - time.monotonic()
@@ -299,7 +317,7 @@ def run_worker(args, *, service_factory=None):
                             if code is not None:
                                 writer.join(1)
                                 if code:
-                                    raise RuntimeError('native model Q3 driver failed; retain author/HTTP evidence')
+                                    raise RuntimeError('native model Q3 driver failed; retain author/IPC evidence')
                                 if window.ready_ns is None:
                                     raise ValueError('native model Q3 exited without a qualified ready result')
                                 break
@@ -319,7 +337,7 @@ def run_worker(args, *, service_factory=None):
         write_private_json(args.output / 'audit.json', audit)
         report['audit_ended_monotonic_ns'] = time.monotonic_ns()
         report.update(status='completed', positive_review_cnt=audit['native_result']['positive_review_cnt'],
-            logical_model_requests=len(audit['predictions']), http=audit['http'],
+            logical_model_requests=len(audit['predictions']), ipc=audit['ipc'],
             quality=audit['quality'], process_exit_scope='model/author owners; outer GPU/SHM verification pending')
     except BaseException as error:
         primary = error

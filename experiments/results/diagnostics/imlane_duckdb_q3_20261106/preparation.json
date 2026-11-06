@@ -1,6 +1,6 @@
 {
   "schema": "semloom.imlane-duckdb-preparation.v1",
-  "state": "author PROCESS/THREAD fixture CPU and e420 software HTTP CPU complete; author-native transport audit complete; real model pending",
+  "state": "native fixture and historical HTTP software CPU complete; IPC adapter locally checked; real author IPC software and real model pending",
   "models_started": 0,
   "source_recovery_manifest_sha256": "3319f4e5a1bb45fb81991a027d5294648144ff52ca90b212b4130256c1fd71d6",
   "library_build": {
@@ -55,18 +55,19 @@
   ],
   "native_cpu_evidence": "native_cpu.json",
   "model_provider_preparation": {
-    "state": "provider/owner/worker implemented; e420 actual author plus software HTTP CPU complete; real HTTP model test paused",
+    "state": "local IPC implemented with 124 related CPU methods passed; actual author software IPC pending",
     "GPU_runs": 0,
     "models_started": 0,
-    "provider_transport": "loopback HTTP for independent baseline only; database/executor ArrowLane preserved",
+    "provider_transport": "AF_UNIX batch RPC to one native AsyncLLM; author ArrowLane preserved",
     "semloom_mainline_transport": "local IPC",
     "native_ready_clock": "new driver CLOCK_MONOTONIC before native destructors; must rebuild thin binary",
     "generation_config": "vllm, explicit common SamplingParams project choice",
-    "resolved_capacity_source": "/v1/models for model/context; ordinary server_info404 remains unknown",
+    "resolved_capacity_source": "constructed AsyncLLM.vllm_config; not free capacity",
     "whole_query_retries": 0,
     "author_Q7_provider": "not found in fixed current author Git tree; model API is a project binding",
     "native_transport_audit": "native_transport_audit.json",
     "software_HTTP_CPU_evidence": "http_software_cpu.json",
-    "custom_IPC_status": "unvalidated drafts paused, not integrated"
+    "custom_IPC_status": "implemented, software local CPU checked",
+    "current_components": "ipc_components.json"
   }
 }

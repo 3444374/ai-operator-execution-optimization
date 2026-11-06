@@ -34,8 +34,8 @@ def _export_source(source, directory):
 
 def prepare_input(reviews_csv, directory, *, provider_mode):
     """Export the full gold-free model input without constructing software replies."""
-    if provider_mode not in {'model', 'software_http'}:
-        raise ValueError('declare model or software_http input explicitly')
+    if provider_mode not in {'model', 'software_ipc'}:
+        raise ValueError('declare model or software_ipc input explicitly')
     source = load_q3_source(reviews_csv)
     directory = Path(directory)
     _export_source(source, directory)
@@ -82,7 +82,7 @@ def audit_result(packet_dir, result_path, receipt_dir, checkout, *, provider_mod
     packet = read_json(packet_dir / 'packet.json')
     schema = ('semloom.imlane.duckdb.q3.fixture.v1' if provider_mode == 'software_fixture'
               else 'semloom.imlane.duckdb.q3.input.v1')
-    if (provider_mode not in {'software_fixture', 'software_http', 'model'}
+    if (provider_mode not in {'software_fixture', 'software_ipc', 'model'}
             or packet['schema'] != schema or packet['provider_mode'] != provider_mode):
         raise ValueError('an explicit matching native IMLane input packet is required')
     source = load_q3_source(packet['original_csv'])

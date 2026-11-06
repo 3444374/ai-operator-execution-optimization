@@ -1,7 +1,7 @@
 {
   "schema": "semloom.imlane.duckdb.q3.model_components.v1",
   "integration_base": "87fdb2bc7",
-  "state": "98 local CPU methods passed; actual author plus software HTTP CPU completed at e420; author-native audit complete; real HTTP model testing paused",
+  "state": "historical HTTP component checks at e420/e86; replaced by IPC; restore source_commit e420a0abbc02782a919340a3a83179f077f2598a",
   "methods": 98,
   "passed": 98,
   "models": 0,
@@ -52,5 +52,6 @@
     "log_sha256": "4cfba19499d7f2893fddd652a351a04fd7191605f1849e8d5af3d2100426fa58",
     "models": 0,
     "GPU_runs": 0
-  }
+  },
+  "current_replacement": "ipc_components.json"
 }

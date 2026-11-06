@@ -1,24 +1,23 @@
-"""Owned-service contracts with process/HTTP doubles; no SDK or model starts."""
+"""IPC owner contracts with process/socket-file doubles; no model or server starts."""
 
 import builtins
-from copy import deepcopy
 import importlib
-import io
-import json
+import os
 from pathlib import Path
 import signal
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
 from unittest.mock import Mock, patch
-from urllib.error import HTTPError, URLError
 
 import psutil
 
 from integrations.imlane_duckdb import model_service as service_module
+from src.infrastructure.private_artifacts import read_json, write_private_json
 
 
 class Process:
@@ -26,8 +25,8 @@ class Process:
         self.pid, self.birth = pid, birth
         self.returncode = None
         self.exit_on_term = exit_on_term
-        self.signals = []
-        self.family = []
+        self.signals, self.family = [], []
+        self.on_signal = None
 
     @property
     def info(self):
@@ -52,6 +51,8 @@ class Process:
         self.signals.append(number)
         if number == signal.SIGKILL or self.exit_on_term:
             self.returncode = -signal.SIGKILL if number == signal.SIGKILL else 0
+        if self.on_signal is not None:
+            self.on_signal(number)
 
     def poll(self):
         return self.returncode
@@ -68,12 +69,13 @@ class ModelServiceTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.config = dict(model_python=sys.executable, model=str(self.root),
-            served_model_name='cpu-fixture', host='127.0.0.1', port=18091,
-            dtype='bfloat16', server_options=[])
+            served_model_name='cpu-fixture', dtype='bfloat16', engine_options={})
         self.process = Process(31001, 10.0)
         self.writer = Mock(is_alive=Mock(return_value=False))
-        self.spawn = Mock(return_value=(self.process, self.writer))
-        original_import = builtins.__import__
+        self.services, self.socket_directories, self.fake_sockets = [], [], set()
+        self.ready_transform = lambda ready: ready
+        self.publish_ready = self.worker_unlinks = self.socket_file_is_socket = True
+        original_import, original_lstat = builtins.__import__, Path.lstat
 
         def guarded_import(name, *args, **kwargs):
             if (name.split('.', 1)[0] in {'vllm', 'ray', 'torch', 'daft', 'lotus', 'transformers'}
@@ -87,217 +89,249 @@ class ModelServiceTests(unittest.TestCase):
                     return candidate
             raise psutil.NoSuchProcess(pid)
 
+        def socket_stat(path, *args, **kwargs):
+            info = original_lstat(path, *args, **kwargs)
+            if path in self.fake_sockets and self.socket_file_is_socket:
+                fields = list(info)
+                fields[stat.ST_MODE] = stat.S_IFSOCK | stat.S_IMODE(info.st_mode)
+                return os.stat_result(fields)
+            return info
+
+        def spawn(command, environment, log):
+            service = self.services[-1]
+            self.fake_sockets.add(service.socket_path)
+            service.socket_path.write_bytes(b'fixture socket inode')
+            service.socket_path.chmod(0o600)
+            if self.publish_ready:
+                self.publish(service)
+
+            def stop(number):
+                if self.process.returncode is not None and self.worker_unlinks:
+                    service.socket_path.unlink(missing_ok=True)
+            self.process.on_signal = stop
+            return self.process, self.writer
+
+        self.spawn = Mock(side_effect=spawn)
+        self.addCleanup(self.cleanup_directories)
         for guard in (
                 patch.object(builtins, '__import__', side_effect=guarded_import),
                 patch.object(subprocess, 'Popen', side_effect=AssertionError('real process start')),
-                patch.object(socket.socket, 'connect', side_effect=AssertionError('network connect')),
-                patch.object(socket.socket, 'bind', side_effect=AssertionError('network bind')),
+                patch.object(socket.socket, 'connect', side_effect=AssertionError('socket connect')),
+                patch.object(socket.socket, 'bind', side_effect=AssertionError('socket bind')),
                 patch.object(service_module, 'spawn', self.spawn),
-                patch.object(service_module, '_check_port'),
                 patch.object(service_module.psutil, 'Process', side_effect=process),
                 patch.object(service_module.psutil, 'process_iter', side_effect=lambda *a:
                              [self.process, *self.process.family]),
-                patch.object(service_module.os, 'getpgid', return_value=self.process.pid)):
+                patch.object(service_module.os, 'getpgid', return_value=self.process.pid),
+                patch.object(Path, 'lstat', socket_stat)):
             guard.start()
             self.addCleanup(guard.stop)
+
+    def cleanup_directories(self):
+        # These exact paths were allocated by this test; never scan a /tmp prefix.
+        for directory in self.socket_directories:
+            if directory.is_dir():
+                for child in directory.iterdir():
+                    child.unlink()
+                directory.rmdir()
+
+    def publish(self, service):
+        ready = dict(schema=service_module.READY_SCHEMA, worker_pid=self.process.pid,
+            served_model_name='cpu-fixture', max_model_len=32768, engine_instances=1,
+            native_capacity=dict(scheduler_config=dict(max_num_seqs=43)), vllm_version='CPU-fixture',
+            socket_identity=service_module._identity(service.socket_path.lstat()))
+        write_private_json(service.ready_path, self.ready_transform(ready))
 
     def service(self, **kwargs):
         values = dict(environment={'CUDA_VISIBLE_DEVICES': 'allocated-device'},
                       deadline=time.monotonic() + 5,
                       cleanup_deadline=lambda: time.monotonic() + .05, stop_grace_s=.01)
         values.update(kwargs)
-        result = service_module.ModelService(self.config, self.root / 'service', **values)
-
-        def get(path, *, json_body=True):
-            if path == '/health':
-                return 200
-            if path == '/v1/models':
-                return dict(data=[dict(id='cpu-fixture', max_model_len=32768)])
-            raise HTTPError(result.base_url + path, 404, 'not enabled', {}, None)
-
-        result._get = Mock(side_effect=get)
+        result = service_module.ModelService(self.config, self.root / ('service-' + str(len(self.services))), **values)
+        self.services.append(result)
+        self.socket_directories.append(result.socket_directory)
         return result
 
     def final(self, service):
-        return json.loads((service.directory / 'model_service.final.json').read_text())
+        return read_json(service.directory / 'model_service.final.json')
 
-    def test_import_and_constructor_allocate_no_process_directory_or_network(self):
+    def test_import_and_constructor_allocate_no_process_directory_or_socket(self):
         importlib.reload(service_module)
-        # Reload imports the same pure spawn helper; restore this test's seam.
         with patch.object(service_module, 'spawn', self.spawn):
             service = self.service()
         self.assertFalse(service.directory.exists())
+        self.assertFalse(service.socket_directory.exists())
+        self.assertLess(len(os.fsencode(service.socket_path)), 108)
+        self.assertEqual(service.socket_directory.parent, Path('/tmp'))
         self.spawn.assert_not_called()
-        self.assertIsNone(service.process)
+        self.assertFalse(hasattr(service, 'url'))
         self.assertEqual(service.report['status'], 'configured')
 
-    def test_native_command_omits_capacity_and_thread_defaults_and_keeps_environment(self):
-        self.config['server_options'] = ['--max-num-seqs', '43', '--enable-prefix-caching']
-        service = self.service()
+    def test_native_command_config_and_environment_preserve_explicit_options(self):
+        self.config['engine_options'] = dict(max_num_seqs=43, enable_prefix_caching=True)
+        service = self.service(environment={'CUDA_VISIBLE_DEVICES': 'allocated-device', 'PYTHONPATH': 'fixture-import'})
         with service:
             command, environment, log = self.spawn.call_args.args
-            self.assertEqual(command[:3], [str(Path(sys.executable).absolute()), '-m',
-                                          'vllm.entrypoints.openai.api_server'])
-            self.assertEqual(command[command.index('--generation-config') + 1], 'vllm')
-            self.assertEqual(command[-3:], self.config['server_options'])
-            self.assertNotIn('--max-model-len', command)
-            self.assertNotIn('--max-num-batched-tokens', command)
-            self.assertNotIn('--tensor-parallel-size', command)
-            self.assertEqual(environment, {'CUDA_VISIBLE_DEVICES': 'allocated-device'})
+            self.assertEqual(command, [str(Path(sys.executable).absolute()), '-m',
+                'integrations.imlane_duckdb.model_ipc_worker', '--config', str(service.config_path)])
+            child = read_json(service.config_path)
+            self.assertEqual(set(child), {'model', 'served_model_name', 'dtype', 'engine_options',
+                                         'socket_path', 'ready_path', 'shutdown_path'})
+            self.assertEqual(child['engine_options'], self.config['engine_options'])
+            self.assertNotIn('max_model_len', child['engine_options'])
+            self.assertNotIn('max_num_batched_tokens', child['engine_options'])
+            self.assertNotIn('tensor_parallel_size', child['engine_options'])
+            self.assertEqual(environment['CUDA_VISIBLE_DEVICES'], 'allocated-device')
+            self.assertEqual(environment['PYTHONPATH'], str(service_module.CODE) + os.pathsep + 'fixture-import')
+            self.assertNotIn('OMP_NUM_THREADS', environment)
             self.assertEqual(log.name, 'model_service.log')
-        self.assertIsNone(service.report['physical_resources_confirmed'])
+            self.assertEqual(stat.S_IMODE(service.socket_directory.stat().st_mode), 0o700)
+            self.assertEqual(stat.S_IMODE(service.config_path.stat().st_mode), 0o600)
         self.assertEqual(service.report['status'], 'closed')
+        self.assertIsNone(service.report['physical_resources_confirmed'])
 
-    def test_identity_topology_and_config_overrides_fail_before_start(self):
-        for option in ('--port=18092', '--model', '--generation_config', '--generation-conf',
-                       '--config', '-c', '--api-key', '--api-server-count', '-tp',
-                       '--tensor-parallel-size=2', '--data-parallel-size-local', '--uds', '--'):
-            with self.subTest(option=option), self.assertRaisesRegex(ValueError, 'override'):
-                self.config['server_options'] = [option]
-                self.service()
-        self.spawn.assert_not_called()
-
-    def test_invalid_boundary_values_and_remote_model_name_are_rejected(self):
-        for key, value in (('host', '0.0.0.0'), ('port', 0), ('port', True),
-                           ('dtype', 'float16'), ('server_options', None),
-                           ('model', 'not-a-local-model-directory')):
-            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
-                configured = deepcopy(self.config)
-                configured[key] = value
-                service_module.ModelService(configured, self.root / 'unused',
+    def test_reserved_options_legacy_http_and_invalid_values_fail_before_start(self):
+        changes = [dict(engine_options={key: 'override'}) for key in
+                   ('model', 'dtype', 'generation_config', 'override_generation_config', 'served_model_name')]
+        changes += [dict(dtype='float16'), dict(engine_options=[]), dict(engine_options={1: 'bad'}),
+                    dict(engine_options=dict(gpu_memory_utilization=float('nan'))),
+                    dict(model='not-a-local-model'), dict(host='127.0.0.1', port=18091, server_options=[])]
+        for change in changes:
+            with self.subTest(change=change), self.assertRaises((ValueError, TypeError)):
+                service_module.ModelService(dict(self.config, **change), self.root / 'unused',
                     environment={}, deadline=time.monotonic() + 1)
+        self.spawn.assert_not_called()
         self.assertFalse((self.root / 'unused').exists())
 
-    def test_readiness_is_get_only_and_keeps_unavailable_server_info_unknown(self):
+    def test_engine_options_are_snapshotted_at_the_configuration_boundary(self):
+        self.config['engine_options'] = dict(compilation_config=dict(mode=0))
+        service = self.service()
+        self.config['engine_options']['compilation_config']['mode'] = 3
+        with service:
+            self.assertEqual(read_json(service.config_path)['engine_options']['compilation_config'], dict(mode=0))
+
+    def test_file_ready_attests_owner_and_socket_without_any_model_probe(self):
         service = self.service()
         with service:
-            self.assertEqual([call.args[0] for call in service._get.call_args_list],
-                             ['/health', '/v1/models', '/server_info?config_format=json'])
             self.assertEqual(service.ready_info['max_model_len'], 32768)
-            self.assertEqual(service.ready_info['server_info']['status'], 'unknown')
-            self.assertIsNone(service.ready_info['server_info']['resolved'])
+            self.assertEqual(service.ready_info['engine_instances'], 1)
+            self.assertEqual(service.ready_info['native_capacity']['scheduler_config']['max_num_seqs'], 43)
+            self.assertEqual(service.socket_identity, service_module._identity(service.socket_path.lstat()))
+            self.assertEqual(service.ready_info['worker_pid'], self.process.pid)
             for phase in ('started', 'ready'):
                 self.assertTrue((service.directory / ('model_service.' + phase + '.json')).is_file())
-        saved = self.final(service)
-        self.assertTrue(saved['cleanup']['observed_owned_exit_confirmed'])
-        self.assertFalse(saved['cleanup']['forced_kill'])
-        self.assertEqual(self.process.signals, [signal.SIGTERM])
+        cleanup = self.final(service)['cleanup']
+        self.assertTrue(cleanup['observed_owned_exit_confirmed'])
+        self.assertTrue(cleanup['socket_cleanup']['directory_removed'])
+        self.assertFalse(service.socket_directory.exists())
 
-    def test_server_info_saves_only_resolved_fields_and_never_environment(self):
+    def test_delayed_ready_waits_only_within_the_work_deadline(self):
+        self.publish_ready = False
         service = self.service()
-        service._get.side_effect = [200, dict(data=[dict(id='cpu-fixture')]),
-            dict(vllm_config=dict(model_config=dict(dtype='bfloat16', max_model_len=50000,
-                generation_config='vllm', hf_token='fixture-private-value'),
-                scheduler_config=dict(max_num_seqs=77, max_num_batched_tokens=12345),
-                unrelated='private'), vllm_env=dict(private='fixture-private-value'),
-                system_env=dict(private='fixture-private-value'))]
-        with service:
-            resolved = service.ready_info['server_info']['resolved']
-            self.assertEqual(resolved['scheduler_config']['max_num_seqs'], 77)
-            self.assertIsNone(service.ready_info['max_model_len'])
-        self.assertNotIn('fixture-private-value', json.dumps(self.final(service)))
-        self.assertNotIn('vllm_env', json.dumps(service.report))
-        self.assertNotIn('hf_token', json.dumps(service.report))
-
-    def test_http_get_disables_proxies_and_uses_only_the_declared_service_key(self):
-        service = self.service(environment={'VLLM_API_KEY': 'fixture-private-value'})
-        opener = Mock()
-        response = io.BytesIO(b'{"data": []}')
-        opener.open.return_value = response
-        with patch.object(service_module, 'build_opener', return_value=opener) as factory:
-            result = service_module.ModelService._get(service, '/v1/models')
-        request = opener.open.call_args.args[0]
-        self.assertEqual(request.get_method(), 'GET')
-        self.assertEqual(request.get_header('Authorization'), 'Bearer fixture-private-value')
-        self.assertEqual(factory.call_args.args[0].proxies, {})
-        self.assertEqual(result, dict(data=[]))
-        self.assertNotIn('fixture-private-value', json.dumps(service.report))
-
-    def test_transient_health_failure_retries_but_model_identity_failure_is_preserved(self):
-        service = self.service()
-        original = ValueError('ready service does not expose the requested served_model_name')
-        service._get.side_effect = [URLError('not listening'), 200, dict(data=[])]
-        with self.assertRaisesRegex(ValueError, str(original)):
+        with patch.object(service_module.time, 'sleep', side_effect=lambda unused: self.publish(service)) as wait:
             service.__enter__()
-        self.assertEqual(service._get.call_count, 3)
-        self.assertEqual(self.final(service)['status'], 'failed')
-        self.assertEqual(self.process.signals, [signal.SIGTERM])
+        wait.assert_called_once()
+        service.close()
 
-    def test_auth_error_is_not_retried_until_the_work_deadline(self):
+    def test_wrong_ready_owner_model_context_and_socket_identity_are_rejected(self):
+        for changed in (dict(worker_pid=31003), dict(served_model_name='wrong'), dict(engine_instances=2),
+                        dict(max_model_len=None), dict(native_capacity=None),
+                        dict(socket_identity=dict(device=1, inode=-1))):
+            self.process.returncode = None
+            self.ready_transform = lambda ready, changed=changed: dict(ready, **changed)
+            service = self.service()
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                service.__enter__()
+            self.assertEqual(self.final(service)['status'], 'failed')
+            self.assertFalse(service.socket_directory.exists())
+
+    def test_regular_file_cannot_attest_a_bound_unix_socket(self):
+        self.socket_file_is_socket = False
         service = self.service()
-        error = HTTPError(service.base_url, 401, 'fixture unauthorized', {}, None)
-        service._get.side_effect = error
-        with self.assertRaises(HTTPError) as caught:
+        with self.assertRaisesRegex(ValueError, 'Unix socket'):
             service.__enter__()
-        self.assertIs(caught.exception, error)
-        self.assertEqual(service._get.call_count, 1)
         self.assertEqual(self.final(service)['status'], 'failed')
 
-    def test_expired_startup_preserves_a_final_record_without_starting(self):
+    def test_socket_with_group_or_world_access_cannot_become_ready(self):
+        service = self.service()
+
+        def expose(ready):
+            service.socket_path.chmod(0o666)
+            return ready
+
+        self.ready_transform = expose
+        with self.assertRaisesRegex(ValueError, 'mode-0600'):
+            service.__enter__()
+        self.assertEqual(self.final(service)['status'], 'failed')
+
+    def test_preexisting_private_directory_is_never_removed_on_startup_failure(self):
+        service = self.service()
+        service.socket_directory.mkdir(mode=0o700)
+        marker = service.socket_directory / 'previous-owner'
+        marker.write_bytes(b'keep unrelated previous object')
+        with self.assertRaises(FileExistsError):
+            service.__enter__()
+        self.spawn.assert_not_called()
+        self.assertEqual(marker.read_bytes(), b'keep unrelated previous object')
+        self.assertFalse(self.final(service)['cleanup']['socket_cleanup']['directory_created'])
+
+    def test_expired_startup_writes_final_without_allocating_socket_or_process(self):
         service = self.service(deadline=time.monotonic() - 1)
         with self.assertRaises(TimeoutError):
             service.__enter__()
         self.spawn.assert_not_called()
+        self.assertFalse(service.socket_directory.exists())
         self.assertEqual(self.final(service)['status'], 'failed')
-        self.assertTrue(self.final(service)['cleanup']['observed_owned_exit_confirmed'])
 
-    def test_explicit_close_rebinds_the_total_deadline_without_a_new_stage_budget(self):
-        service = self.service(cleanup_deadline=lambda: (_ for _ in ()).throw(AssertionError('wrong deadline')))
+    def test_shutdown_is_published_once_before_owner_term_with_the_absolute_deadline(self):
+        service = self.service()
         service.__enter__()
+        old_stop = self.process.on_signal
+        observed = []
+
+        def stop(number):
+            observed.append(read_json(service.shutdown_path))
+            old_stop(number)
+
+        self.process.on_signal = stop
         deadline = time.monotonic() + .03
         service.close(deadline=deadline)
+        before = service.shutdown_path.read_bytes()
+        service.close(deadline=deadline + 100)
+        self.assertEqual(observed, [dict(schema=service_module.SHUTDOWN_SCHEMA,
+                                       native_shutdown_deadline=deadline - service.stop_grace_s)])
+        self.assertEqual(service.shutdown_path.read_bytes(), before)
         self.assertEqual(self.final(service)['cleanup']['deadline'], deadline)
-        self.assertEqual(service.close(), service.report)
-        self.assertEqual(self.process.signals, [signal.SIGTERM])
 
-    def test_native_ready_rebinds_monitor_to_the_shared_cleanup_window(self):
+    def test_repeated_ready_handoff_preserves_the_initial_cleanup_start(self):
         service = self.service()
         initial = service.deadline
         with service:
             deadline = time.monotonic() + 20
-            service.begin_cleanup(deadline)
-            with patch.object(service_module.time, 'monotonic', return_value=initial + 1):
-                service.check()
-            self.assertEqual(service.report['query_deadline_initial'], initial)
-            self.assertEqual(service.report['cleanup_window_deadline'], deadline)
-            failure = TimeoutError('original query deadline already failed')
-            service.observation_error = failure
-            service.begin_cleanup(deadline + 1)
-            with self.assertRaises(TimeoutError) as caught:
-                service.check()
-            self.assertIs(caught.exception, failure)
-            # The saved failure must also make close fail; preserve it explicitly.
-            service.observation_error = None
-
-    def test_repeated_ready_observation_keeps_the_first_cleanup_start(self):
-        service = self.service()
-        with service:
-            deadline = time.monotonic() + 20
             with patch.object(service_module.time, 'monotonic', return_value=123.0):
                 service.begin_cleanup(deadline)
-            with patch.object(service_module.time, 'monotonic', return_value=124.0):
+            with patch.object(service_module.time, 'monotonic', return_value=initial + 1):
                 service.begin_cleanup(deadline)
+                service.check()
             self.assertEqual(service.report['cleanup_began_monotonic'], 123.0)
+            self.assertEqual(service.report['query_deadline_initial'], initial)
             self.assertEqual(service.deadline, deadline)
-            self.assertEqual(service.report['active_deadline'], deadline)
 
-    def test_observer_does_not_turn_delayed_native_ready_observation_into_query_timeout(self):
+    def test_observer_does_not_permanently_timeout_before_native_ready_is_read(self):
         service = self.service()
         with service:
             service.stop_observer.set()
             service.observer.join()
             service.deadline = time.monotonic() - .001
-            service.stop_observer = Mock(wait=Mock(side_effect=[False, True]),
-                                         is_set=Mock(return_value=False))
+            service.stop_observer = Mock(wait=Mock(side_effect=[False, True]), is_set=Mock(return_value=False))
             service._sample()
             self.assertIsNone(service.observation_error)
-            with self.assertRaisesRegex(TimeoutError, 'work deadline'):
+            with self.assertRaises(TimeoutError):
                 service.check()
             service.begin_cleanup(time.monotonic() + 20)
             service.check()
-        self.assertEqual(self.final(service)['status'], 'closed')
 
-    def test_native_shutdown_exceeding_stop_reserve_does_not_terminate_children_early(self):
+    def test_native_shutdown_longer_than_stop_reserve_does_not_term_children_early(self):
         child = Process(31002, 11.0)
         self.process.family = [child]
         self.process.exit_on_term = False
@@ -308,12 +342,12 @@ class ModelServiceTests(unittest.TestCase):
         now = [100.0]
 
         def native_shutdown(identities, pgid, created, deadline, **unused):
-            native_done = 120.0  # The native close takes 20s, exceeding the 8s reserve.
-            self.assertLessEqual(native_done, deadline)
             self.assertEqual(deadline, 212.0)
+            self.assertLessEqual(120.0, deadline)
             self.assertEqual(child.signals, [])
-            now[0] = native_done
+            now[0] = 120.0  # Native close takes20s, exceeding the8s final reserve.
             self.process.returncode = child.returncode = 0
+            service.socket_path.unlink()
 
         with patch.object(service_module.time, 'monotonic', side_effect=lambda: now[0]), \
              patch.object(service_module.owned, '_wait', side_effect=native_shutdown) as wait:
@@ -321,91 +355,87 @@ class ModelServiceTests(unittest.TestCase):
         wait.assert_called_once()
         self.assertEqual(self.process.signals, [signal.SIGTERM])
         self.assertEqual(child.signals, [])
-        final = self.final(service)
-        self.assertEqual(final['status'], 'closed')
-        self.assertFalse(final['cleanup']['fallback_term'])
-        self.assertFalse(final['cleanup']['forced_kill'])
+        self.assertEqual(self.final(service)['status'], 'closed')
 
-    def test_leftover_child_is_recovered_by_matched_term_but_cleanup_still_fails(self):
+    def test_leftover_child_term_recovers_resources_but_remains_failed(self):
         child = Process(31002, 11.0)
         self.process.family = [child]
         service = self.service()
         with self.assertRaisesRegex(RuntimeError, 'TERM fallback'):
             with service:
                 pass
-        self.assertEqual(self.process.signals, [signal.SIGTERM])
+        cleanup = self.final(service)['cleanup']
         self.assertEqual(child.signals, [signal.SIGTERM])
-        final = self.final(service)
-        cleanup = final['cleanup']
-        self.assertEqual(final['status'], 'failed')
         self.assertTrue(cleanup['fallback_term'])
-        self.assertEqual(cleanup['fallback_term_identities'], [dict(pid=31002, create_time=11.0)])
-        self.assertFalse(cleanup['forced_kill'])
         self.assertEqual(cleanup['owned_survivors'], [])
-        self.assertTrue(cleanup['observed_owned_exit_confirmed'])
+        self.assertTrue(cleanup['socket_cleanup']['directory_removed'])
         event, = [event for event in cleanup['signal_events'] if event['pid'] == child.pid]
         self.assertGreaterEqual(event['requested_monotonic'], cleanup['native_shutdown_deadline'])
-        self.assertLessEqual(cleanup['fallback_term_deadline'], cleanup['deadline'])
 
-    def test_forced_kill_marks_failure_even_when_all_observed_processes_exit(self):
+    def test_forced_kill_is_failed_even_when_all_observed_processes_exit(self):
         self.process.family = [Process(31002, 11.0, exit_on_term=False)]
         service = self.service()
         with self.assertRaisesRegex(RuntimeError, 'forced SIGKILL'):
             with service:
                 pass
-        final = self.final(service)
-        self.assertEqual(final['status'], 'failed')
-        self.assertTrue(final['cleanup']['forced_kill'])
-        self.assertEqual(final['cleanup']['owned_survivors'], [])
+        cleanup = self.final(service)['cleanup']
+        self.assertTrue(cleanup['forced_kill'])
+        self.assertEqual(cleanup['owned_survivors'], [])
         self.assertEqual(self.process.family[0].signals, [signal.SIGTERM, signal.SIGKILL])
 
-    def test_nonzero_owner_exit_fails_even_when_all_processes_are_gone(self):
-        original_signal = self.process.send_signal
-
-        def exit_nonzero(number):
-            original_signal(number)
-            self.process.returncode = 3
-
-        service = self.service()
-        with patch.object(self.process, 'send_signal', side_effect=exit_nonzero):
-            with self.assertRaisesRegex(RuntimeError, 'did not exit zero: 3'):
-                with service:
-                    pass
-        final = self.final(service)
-        self.assertEqual(final['status'], 'failed')
-        self.assertEqual(final['cleanup']['owner_returncode'], 3)
-        self.assertEqual(final['cleanup']['owned_survivors'], [])
-        self.assertFalse(final['cleanup']['forced_kill'])
-
-    def test_term_wait_failures_still_write_final_and_keep_the_primary_exception(self):
-        service = self.service()
-        original = LookupError('original query failed')
-        failure = PermissionError('fixture TERM denied')
-        with self.assertRaises(LookupError) as caught:
-            with service:
-                with patch.object(service_module.owned, '_signal', side_effect=failure), \
-                     patch.object(self.process, 'wait', side_effect=RuntimeError('fixture wait failed')):
-                    # Call the real context exit while the cleanup faults remain installed.
-                    service.__exit__(LookupError, original, None)
-                    raise original
-        self.assertIs(caught.exception, original)
-        final = self.final(service)
-        self.assertEqual(final['status'], 'failed')
-        self.assertEqual(final['error']['type'], 'LookupError')
-        self.assertTrue(any(item['type'] == 'PermissionError' for item in final['cleanup']['cleanup_errors']))
-        self.assertTrue(any('wait failed' in item['error'] for item in final['cleanup']['cleanup_errors']))
-        self.assertTrue(any('TERM denied' in note for note in original.__notes__))
-
-    def test_reused_owner_identity_is_never_signalled_or_reported_clean(self):
+    def test_nonzero_owner_exit_is_failure_even_when_all_resources_exit(self):
         service = self.service()
         service.__enter__()
-        self.process.birth = 20.0
-        with self.assertRaisesRegex(RuntimeError, 'reused'):
-            service.close()
-        self.assertEqual(self.process.signals, [])
-        self.assertFalse(self.final(service)['cleanup']['observed_owned_exit_confirmed'])
+        stop = self.process.on_signal
 
-    def test_unknown_initial_birth_identity_does_not_claim_clean_or_blindly_signal(self):
+        def fail_close(number):
+            stop(number)
+            self.process.returncode = 3
+
+        self.process.on_signal = fail_close
+        with self.assertRaisesRegex(RuntimeError, 'did not exit zero: 3'):
+            service.close()
+        cleanup = self.final(service)['cleanup']
+        self.assertEqual(cleanup['owner_returncode'], 3)
+        self.assertEqual(cleanup['owned_survivors'], [])
+        self.assertTrue(cleanup['socket_cleanup']['directory_removed'])
+
+    def test_matching_leftover_socket_is_removed_only_after_confirmed_exit(self):
+        self.worker_unlinks = False
+        service = self.service()
+        with service:
+            pass
+        self.assertTrue(self.final(service)['cleanup']['socket_cleanup']['socket_removed_by_owner'])
+        self.assertFalse(service.socket_directory.exists())
+
+    def test_replaced_socket_is_retained_with_failure(self):
+        self.worker_unlinks = False
+        service = self.service()
+        service.__enter__()
+        old = service.socket_directory / 'old-socket'
+        service.socket_path.rename(old)
+        service.socket_path.write_bytes(b'replacement must not be removed')
+        service.socket_path.chmod(0o600)
+        with self.assertRaisesRegex(RuntimeError, 'ownership changed'):
+            service.close()
+        self.assertTrue(service.socket_path.exists())
+        self.assertTrue(old.exists())
+        self.assertEqual(self.final(service)['status'], 'failed')
+
+    def test_replaced_socket_directory_is_retained_even_when_empty(self):
+        self.worker_unlinks = False
+        service = self.service()
+        service.__enter__()
+        moved = service.socket_directory.with_name(service.socket_directory.name + '-moved')
+        service.socket_directory.rename(moved)
+        self.socket_directories.append(moved)
+        service.socket_directory.mkdir(mode=0o700)
+        with self.assertRaisesRegex(RuntimeError, 'directory ownership changed'):
+            service.close()
+        self.assertTrue(service.socket_directory.is_dir())
+        self.assertTrue(moved.is_dir())
+
+    def test_unknown_initial_birth_never_signals_or_removes_a_live_socket(self):
         service = self.service()
         original = psutil.AccessDenied(self.process.pid)
         with patch.object(service_module.psutil, 'Process', side_effect=original):
@@ -413,10 +443,20 @@ class ModelServiceTests(unittest.TestCase):
                 service.__enter__()
         self.assertIs(caught.exception, original)
         self.assertEqual(self.process.signals, [])
+        self.assertTrue(service.socket_path.exists())
         self.assertFalse(self.final(service)['cleanup']['observed_owned_exit_confirmed'])
-        self.assertIn('identity is unconfirmed', self.final(service)['cleanup']['cleanup_errors'][0]['error'])
 
-    def test_spawn_failure_preserves_the_original_error_without_claiming_an_empty_owner(self):
+    def test_reused_owner_birth_is_never_signalled_or_reported_clean(self):
+        service = self.service()
+        service.__enter__()
+        self.process.birth = 20.0
+        with self.assertRaisesRegex(RuntimeError, 'reused'):
+            service.close()
+        self.assertEqual(self.process.signals, [])
+        self.assertTrue(service.socket_directory.exists())
+        self.assertFalse(self.final(service)['cleanup']['observed_owned_exit_confirmed'])
+
+    def test_spawn_failure_keeps_original_error_and_unknown_ownership(self):
         original = OSError('fixture process factory failed')
         self.spawn.side_effect = original
         service = self.service()
@@ -424,9 +464,22 @@ class ModelServiceTests(unittest.TestCase):
             service.__enter__()
         self.assertIs(caught.exception, original)
         self.assertFalse(self.final(service)['cleanup']['observed_owned_exit_confirmed'])
-        self.assertEqual(self.final(service)['status'], 'failed')
 
-    def test_observer_and_log_writer_failure_is_not_resource_success(self):
+    def test_term_wait_failures_write_final_and_preserve_query_exception(self):
+        service = self.service()
+        service.__enter__()
+        original = LookupError('original native query failed')
+        with patch.object(service_module.owned, '_signal', side_effect=PermissionError('fixture TERM denied')), \
+             patch.object(self.process, 'wait', side_effect=RuntimeError('fixture wait failed')):
+            self.assertFalse(service.__exit__(LookupError, original, None))
+        final = self.final(service)
+        self.assertEqual(final['error']['type'], 'LookupError')
+        self.assertEqual(final['status'], 'failed')
+        self.assertTrue(any('TERM denied' in note for note in original.__notes__))
+        self.assertTrue(any('wait failed' in item['error'] for item in final['cleanup']['cleanup_errors']))
+        self.assertTrue(service.socket_path.exists())
+
+    def test_log_writer_not_stopped_is_not_resource_success(self):
         self.writer.is_alive.return_value = True
         service = self.service()
         with self.assertRaisesRegex(RuntimeError, 'thread did not stop'):

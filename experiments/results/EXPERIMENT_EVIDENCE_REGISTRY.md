@@ -1,5 +1,15 @@
 # 实验与机制证据台账
 
+## 2026-11-06：作者IMLane执行上的本地IPC模型适配
+
+[IPC实现与124项CPU](diagnostics/imlane_duckdb_q3_20261106/README.md#当前本地ipc模型接线)
+复用纯进程归属／统一期限，保留作者DuckDB／ArrowLane／默认4 executor，不加载Core或record准入。
+现有多client gateway不是中立本地模型服务，单父AsyncEngineProcess也不能直接共享，因此补最窄batch RPC。
+四客户端barrier／129行、abort／drain、context边界、late-final unknown和socket准确回收通过软件CPU；
+真实作者软件闭环、实际vLLM模型／GPU与质量仍待验证，不借软件结果外推。
+历史e420 HTTP软件正常／503及98项合同准确保留，作者Q7原客户端仍未找到。
+
+
 ## 2026-11-06：共享服务旧配置加载与命令接线退役
 
 [准确源码、现用类型与恢复](diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)

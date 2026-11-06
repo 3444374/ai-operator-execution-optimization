@@ -1,4 +1,4 @@
-"""Cold-scope input, native readiness and saved HTTP evidence; no models."""
+"""Cold-scope input, native readiness and saved IPC evidence; no models."""
 
 import csv
 from copy import deepcopy
@@ -181,7 +181,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
                 dict(id='other', reviewId='same', reviewText='', scoreSentiment='NEGATIVE'),
                 dict(id='taken_3', reviewId='same', reviewText='好\n"review"', scoreSentiment='POSITIVE'),
                 dict(id='taken_3', reviewId='same', reviewText='bad', scoreSentiment='NEGATIVE')])
-        self.input = prepare_input(self.csv, self.root / 'input', provider_mode='software_http')
+        self.input = prepare_input(self.csv, self.root / 'input', provider_mode='software_ipc')
         source = load_q3_source(self.csv)
         self.rows = source['rows'][1:]
         self.calls = self.root / 'model-calls'
@@ -189,14 +189,14 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         self.receipts = self.root / 'udf-receipts'
         self.receipts.mkdir()
         self.sampling = dict(temperature=0, top_p=1, max_tokens=8192, stop=None)
-        write_private_json(self.root / 'model-provider.json', dict(provider_mode='software_http',
+        write_private_json(self.root / 'model-provider.json', dict(provider_mode='software_ipc',
             model='CPU-model', sampling_params=self.sampling))
         replies = ['Answer: True', 'Answer: False']
         predictions = [dict(occurrence_id=row['occurrence_id'], id=row['id'], reviewId=row['reviewId'],
             messages_sha256=content_digest(q3_messages(row['reviewText'])), generated_text=text,
             decision=int(i == 0)) for i, (row, text) in enumerate(zip(self.rows, replies, strict=True))]
         write_private_json(self.receipts / 'q3-batch-cpu.json', dict(
-            schema='semloom.imlane.duckdb.q3.batch.v1', provider_mode='software_http', status='succeeded',
+            schema='semloom.imlane.duckdb.q3.batch.v1', provider_mode='software_ipc', status='succeeded',
             worker_pid=1729, logical_rows=2, sources=[{key: value for key, value in p.items()
                                      if key not in {'generated_text', 'decision'}} for p in predictions],
             predictions=predictions, provider_calls=[dict(logical_rows=2, status='succeeded', returned=True,
@@ -205,18 +205,20 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
             source_rows=3, eligible_rows=2, positive_review_cnt=1))
         requests = []
         for i, (row, reply) in enumerate(zip(self.rows, replies, strict=True)):
-            payload = dict(self.sampling, model='CPU-model', stream=False, n=1,
+            payload = dict(self.sampling, model='CPU-model', n=1,
                            messages=q3_messages(row['reviewText']))
-            requests.append(dict(position=i, attempted=True, status='succeeded', http_status=200,
+            requests.append(dict(position=i, attempted=True, status='succeeded',
                 messages_sha256=content_digest(payload['messages']), requested_payload=payload,
                 request_payload_sha256=content_digest(payload), truncated=False, response_id='CPU-' + str(i),
-                usage=dict(completion_tokens=2), response=dict(model='CPU-model',
-                    choices=[dict(message=dict(content=reply), finish_reason='stop')])) )
+                usage=dict(completion_tokens=2), response=dict(position=i, request_id='CPU-' + str(i),
+                    attempted=True, status='succeeded', generated_text=reply, finish_reason='stop',
+                    requested_max_tokens=8192, resolved_max_tokens=8192,
+                    usage=dict(completion_tokens=2))))
         self.terminal = self.calls / 'model-batch-cpu.terminal.json'
         write_private_json(self.calls / 'model-batch-cpu.started.json', dict(status='unknown'))
-        write_private_json(self.terminal, dict(schema='semloom.imlane.duckdb.q3.model_batch.v1',
-            provider_mode='software_http', status='succeeded', client_closed=True,
-            http_post_attempts=2, calls=requests, worker_pid=1729,
+        self.replace_terminal(dict(schema='semloom.imlane.duckdb.q3.model_batch.v2',
+            provider_mode='software_ipc', status='succeeded', client_closed=True,
+            ipc_attempted=True, engine_generate_invocations=2, calls=requests, worker_pid=1729,
             started_monotonic_ns=110, finished_monotonic_ns=190))
 
     def audit(self):
@@ -224,7 +226,15 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
             return audit_model_result(self.root, 'CPU-checkout')
 
     def replace_terminal(self, value):
-        self.terminal.unlink()
+        request = dict(schema='semloom.imlane.duckdb.q3.model_ipc.v1', batch_id='cpu',
+            model='CPU-model', sampling_params=dict(self.sampling, n=1),
+            messages_batch=[c['requested_payload']['messages'] for c in value['calls']],
+            deadline_monotonic=300)
+        response = dict(schema=request['schema'], batch_id='cpu', model='CPU-model', status='succeeded',
+                        calls=[c['response'] for c in value['calls']])
+        value.update(batch_id='cpu', request=request, request_sha256=content_digest(request),
+                     response=response, response_sha256=content_digest(response))
+        self.terminal.unlink(missing_ok=True)
         write_private_json(self.terminal, value)
 
     def test_real_input_export_never_contains_software_gold_replies(self):
@@ -235,13 +245,13 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         self.assertEqual(rows, load_q3_source(self.csv)['rows'])
         self.assertNotIn('model_requests', self.input)
 
-    def test_same_saved_http_and_udf_responses_use_original_evaluator_without_model(self):
+    def test_same_saved_ipc_and_udf_responses_use_original_evaluator_without_model(self):
         result = self.audit()
-        self.assertEqual(result['http']['post_invocations'], 2)
+        self.assertEqual(result['ipc']['batch_rpc_invocations'], 1)
         self.assertEqual(result['quality']['classification']['true_positive'], 1)
         self.assertEqual(result['quality']['classification']['true_negative'], 1)
         self.assertFalse(result['comparison_qualified'])
-        self.assertIsNone(result['http']['physical_model_attempts'])
+        self.assertIsNone(result['ipc']['physical_model_attempts'])
 
     def test_started_without_terminal_leaves_attempts_unknown(self):
         self.terminal.unlink()
@@ -258,7 +268,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
                 value['calls'][0]['requested_payload']['max_tokens'] = 8
                 value['calls'][0]['request_payload_sha256'] = content_digest(value['calls'][0]['requested_payload'])
             else:
-                value['calls'][0]['response']['choices'][0]['message']['content'] = 'Answer: False'
+                value['calls'][0]['response']['generated_text'] = 'Answer: False'
             self.replace_terminal(value)
             with self.subTest(change=change), self.assertRaises(ValueError):
                 self.audit()
@@ -266,10 +276,10 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
     def test_length_text_is_evaluated_and_truncation_is_reported_separately(self):
         value = read_json(self.terminal)
         value['calls'][0]['truncated'] = True
-        value['calls'][0]['response']['choices'][0]['finish_reason'] = 'length'
+        value['calls'][0]['response']['finish_reason'] = 'length'
         self.replace_terminal(value)
         result = self.audit()
-        self.assertEqual(result['http']['truncated'], 1)
+        self.assertEqual(result['ipc']['truncated'], 1)
         self.assertEqual(result['native_result']['positive_review_cnt'], 1)
 
     def test_duplicate_messages_cannot_exchange_occurrence_responses_behind_same_count(self):
@@ -284,7 +294,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         # occurrences. Both requests now have identical model messages.
         import shutil
         shutil.rmtree(self.root / 'input')
-        prepare_input(self.csv, self.root / 'input', provider_mode='software_http')
+        prepare_input(self.csv, self.root / 'input', provider_mode='software_ipc')
         path = self.receipts / 'q3-batch-cpu.json'
         udf = read_json(path)
         udf['sources'][1]['messages_sha256'] = udf['sources'][0]['messages_sha256']
@@ -312,7 +322,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         path.unlink()
         write_private_json(path, udf)
         model = read_json(self.terminal)
-        model['calls'][0]['response']['choices'][0]['message']['content'] = text
+        model['calls'][0]['response']['generated_text'] = text
         self.replace_terminal(model)
         self.assertGreater(path.stat().st_size, 8 * 1024**2)
         self.assertGreater(self.terminal.stat().st_size, 8 * 1024**2)
@@ -320,9 +330,9 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         self.assertEqual(result['native_result']['positive_review_cnt'], 1)
 
     def test_model_config_is_explicit_and_does_not_add_generation_defaults(self):
-        value = dict(schema='semloom.imlane.duckdb.q3.model_run.v1', provider_mode='model',
+        value = dict(schema='semloom.imlane.duckdb.q3.model_run.v2', provider_mode='model',
             reviews_csv=str(self.csv), model_service={}, sampling_params=self.sampling,
-            request_timeout_s=60, api_key_env=None)
+            request_timeout_s=60)
         self.assertEqual(configuration(value), value)
         with self.assertRaises(ValueError):
             configuration(dict(value, provider_mode='software_fixture'))
@@ -337,12 +347,12 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         self.root = Path(temporary.name).resolve()
         self.csv = self.root / 'Reviews.csv'
         self.csv.write_text('id,reviewId,reviewText,scoreSentiment\ntaken_3,1,good,POSITIVE\n')
-        self.config = dict(schema='semloom.imlane.duckdb.q3.model_run.v1', provider_mode='software_http',
+        self.config = dict(schema='semloom.imlane.duckdb.q3.model_run.v2', provider_mode='software_ipc',
             reviews_csv=str(self.csv), model_service=dict(model_python=sys.executable,
-                model=str(self.root), served_model_name='CPU-model', host='127.0.0.1', port=18081,
-                dtype='bfloat16', server_options=[]),
+                model=str(self.root), served_model_name='CPU-model',
+                dtype='bfloat16', engine_options={}),
             sampling_params=dict(temperature=0, top_p=1, max_tokens=8192, stop=None),
-            request_timeout_s=60, api_key_env=None)
+            request_timeout_s=60)
         write_private_json(self.root / 'config.json', self.config)
         self.args = SimpleNamespace(config=self.root / 'config.json', output=self.root / 'run',
             author_root=self.root / 'author', method_python=Path(sys.executable),
@@ -351,7 +361,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
             stop_grace_seconds=8)
         self.events = []
         self.service = MagicMock()
-        self.service.url = 'http://127.0.0.1:18081/v1/chat/completions'
+        self.service.socket_path = Path('/tmp/software-model/rpc.sock')
         self.service.served_model_name = 'CPU-model'
         self.service.ready_info = dict(max_model_len=32768)
         self.service.report = dict(status='configured', software_fixture=True)
@@ -387,7 +397,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
             return self.process, self.writer
 
         self.audit = Mock(return_value=dict(native_result=dict(positive_review_cnt=1),
-            predictions=[{}], http=dict(post_invocations=1), quality=dict(CPU=True)))
+            predictions=[{}], ipc=dict(batch_rpc_invocations=1), quality=dict(CPU=True)))
         for guard in (
             patch('integrations.imlane_duckdb.runtime.DuckDBScope', side_effect=scope_factory),
             patch('integrations.imlane_records.owner.spawn', side_effect=spawn),
@@ -405,7 +415,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         self.assertEqual(self.events[:5], ['model-start', 'author-start', 'native-query',
                                          'author-close', 'model-close'])
         self.audit.assert_called_once()
-        self.assertNotIn('VLLM_API_KEY', self.factory.call_args.kwargs['environment'])
+        self.assertNotIn('api_key_env', read_json(self.args.output / 'model-provider.json'))
         self.assertTrue((self.args.output / 'result-ready.json').exists())
         self.assertEqual(report['model_requests'], 0)
         self.assertIsNone(report['physical_gpu_exit_confirmed'])
@@ -431,11 +441,11 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         self.audit.assert_not_called()
         self.assertEqual(read_json(self.args.output / 'worker.json')['status'], 'failed')
 
-    def test_model_port_cannot_consume_the_author_coordinator_port(self):
-        self.config['model_service']['port'] = 7086
+    def test_retired_http_configuration_cannot_launch_a_service(self):
+        self.config['api_key_env'] = None
         (self.root / 'config.json').unlink()
         write_private_json(self.root / 'config.json', self.config)
-        with self.assertRaisesRegex(ValueError, 'separate ports'):
+        with self.assertRaises(ValueError):
             run_worker(self.args, service_factory=self.factory)
         self.factory.assert_not_called()
 
@@ -472,7 +482,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
     def test_failed_model_batch_stops_waiting_for_an_author_scalar_and_retains_failure(self):
         def failed_batch(command, environment, log):
             write_private_json(self.args.output / 'model-calls/model-batch-error.terminal.json',
-                dict(status='failed', client_closed=True, error_type='HTTPStatusError'))
+                dict(status='failed', client_closed=True, error_type='ModelBatchError'))
             return self.process, self.writer
 
         with patch('integrations.imlane_records.owner.spawn', side_effect=failed_batch):
@@ -480,7 +490,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
                 run_worker(self.args, service_factory=self.factory)
         self.process.poll.assert_not_called()
         report = read_json(self.args.output / 'worker.json')
-        self.assertEqual(report['model_batch_failure']['error_type'], 'HTTPStatusError')
+        self.assertEqual(report['model_batch_failure']['error_type'], 'ModelBatchError')
         self.assertEqual(report['status'], 'failed')
         self.assertFalse((self.args.output / 'result-ready.json').exists())
 

@@ -144,16 +144,15 @@ DuckDB＋作者IMLane现有[SQL／Arrow候选](integrations/imlane_duckdb/README
 [本批准备记录](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md)区分22个本地Python合同方法、
 真实库构建与798e实际薄driver／DBEnd握手／Arrow16 PROCESS和THREAD执行通过；完整2000→120软件COUNT14、外层进程／SHM清理通过，无GPU或模型资格。
 作者默认4 executor／DuckDB16线程保留；IPC实测512MiB＋96KiB，原512MiB启动预算失败不改写。
-后续[独立模型provider／服务owner与worker](integrations/imlane_duckdb/README.md#真实模型worker与独立http对照)
-保留作者ArrowLane，仅UDF至独立模型服务用HTTP；SemLoom主线继续本地IPC。provider同批异步提交、无额外连接上限／重试，
-服务明确generation-config=vllm，GET回读模型和上下文，未开放dev route的其他容量unknown。
-新driver增加析构前CLOCK_MONOTONIC READY，外层监督绑定一次关闭窗口；
-准确e420的[真实作者＋软件HTTP](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/http_software_cpu.json)
-完成正常120POST／COUNT14及一行503，模型0；错误native client被TERM取消、标量unknown及失败状态保留，资源回收与成功分开。
-用户后续选择原生优先，已核对当前作者072f完整公开树及调用：
-未找到论文Q7模型客户端，不能把HTTP或项目IPC称为作者原协议。
-现有官方vLLM API薄接线保留，自建IPC草稿暂停、不集成；真实HTTP模型测试仍暂停，
-来源与具体边界见[原生连接核查](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md#作者原生模型连接核查)。
+当前[本地IPC模型provider／服务owner与worker](integrations/imlane_duckdb/README.md#本地ipc模型接线)
+保留作者ArrowLane，四executor连接一个独立AsyncLLM，baseline不加载Core／records协议或LOTUS ledger。
+现成UDS gateway普通分支仍转HTTP并有RequestAdmission，单父AsyncEngineProcess也不能四进程直接复用；
+因此只复用纯process birth／StopBudget／统一deadline，新增最窄batch socket接线。
+[124项CPU](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/ipc_components.json)通过，
+含四客户端／129行及abort／drain／late-final unknown；完整prompt＋8192与实际context拟合，不隐式缩输出。
+历史e420的[真实作者＋软件HTTP](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/http_software_cpu.json)
+正常120POST／COUNT14和一行503原失败保留。当前IPC实际作者软件闭环单列待验，真实模型／GPU尚未启动；
+原Q7客户端未公开，HTTP与IPC均为项目模型适配，不冒称作者原协议。
 另准备[Ray公开HTTP绑定](src/baselines/text/frameworks/ray_data_http_sembench_native.py)，外部caller显式拥有服务；
 35个CPU替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；实际120＋1次POST，
 外层无强制信号、显式服务关闭和SHM检查通过。此profile不改原local-vLLM关闭缺口，SDK断开不等同物理退出，真实模型服务待验。

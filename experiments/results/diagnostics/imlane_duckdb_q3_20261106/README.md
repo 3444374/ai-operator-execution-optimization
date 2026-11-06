@@ -71,7 +71,9 @@ PROCESS／THREAD均正常worker exit0，外层未发TERM／KILL，已观察自�
 
 ## 独立模型provider与worker接线
 
-[模型provider／服务owner／worker](../../../../code/integrations/imlane_duckdb/README.md#真实模型worker与独立http对照)
+本节保存历史HTTP候选e420／e86及98项组件资格；当前IPC实现见下节，不改写历史源码摘要。
+
+[模型provider／服务owner／worker](../../../../code/integrations/imlane_duckdb/README.md#本地ipc模型接线)
 已实现，数据库／executor保留作者ArrowLane，只有UDF至一个外部模型服务使用loopback HTTP。
 SemLoom主线不加入HTTP模型路径。这是作者原生API的项目工作负载绑定，不宣称作者Q7未公开的客户端实现。
 HTTPX按同batch异步发出原消息，不加固定并发门槛／线程池、重定向或重试；每batch显式关闭client，错误后drain同批，
@@ -129,16 +131,31 @@ coordinator及服务owner均exit0，无fallback、强杀或残留SHM；其自动
 [论文§6.1，印刷页4231–4232](https://www.vldb.org/pvldb/vol19/p4223-xu.pdf)
 说明远程Qwen3-1.7B、vLLM0.19.1及默认百万行，未定义连接协议或原Q7客户端。
 
-本地IPC共享一个AsyncLLM在API上可行，但仍是新的项目provider。
-直接共享现AsyncEngineProcess的单父socketpair不可行，四worker各构造又会变四模型；
-另造多客户端服务、取消与生命周期协议目前没有实机资格，因此草稿暂停并单独保留，未作为baseline实现发布。
-HTTP对照与IPC也没有匹配开销测量；IPC仍需JSON／socket复制，不能声称零拷贝或性能提升。
+当前选择本地IPC作为项目模型客户端。它仍保留作者原生执行，不声称原论文Q7客户端复现。
+HTTP不是作者已证实的强制条件；[官方HTTP接口](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/serving/online_serving/openai_compatible_server.md)
+的旧候选及必要软件证据按e420原样保留，现行入口不并存HTTP fallback。
 
-当前最小方案保留作者DuckDB／DBEnd／ArrowLane／默认4 executor，使用官方vLLM服务的公开模型API；
-[vLLM0.25.1文档](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/serving/online_serving/openai_compatible_server.md)
-明确支持普通HTTP client与直接JSON参数，因此现有HTTPX是公开API接线。
-准确身份是“作者原生执行＋项目Q3／官方vLLM API绑定”，不是原论文Q7客户端复现；
-HTTP不是已证实的作者强制条件。真实HTTP模型测试仍暂停，执行条件先交接用户及既有服务器任务。
+## 当前本地IPC模型接线
+
+[源码与124项CPU](ipc_components.json)固定当前实现及日志摘要。
+现有UDS gateway经RequestAdmission，普通分支还转发HTTP，incremental分支绑定Core；
+LOTUS本地对象使用单父三socketpair，带LOTUS账本与transport limits，不能直接交四作者worker共用。
+所以只复用纯进程birth／StopBudget／既有统一deadline与外层监督，不加载Core、records协议或LOTUS ledger。
+一个作者batch发一次AF_UNIX RPC，服务单event loop将各行及不同batch异步送入同一个AsyncLLM；
+没有新Semaphore、每批重载、统一并发8、4096容量或固定请求总量。
+
+原生调用依据为vLLM0.25.1[异步renderer](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/renderers/base.py)
+及[原chat参数](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/offline_utils.py)，
+[AsyncLLM generate／abort／shutdown](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/async_llm.py)。
+模型ready记录构造后的真实native capacity；请求保留共同SamplingParams、requested/resolved max_tokens、
+原文本／usage／finish reason。完整rendered prompt＋8192超过实际context便明确失败，不截prompt。
+直接API可能按context提前length cap，故该真实边界不能用静默缩输出掩盖。
+
+124个不同本地方法全部通过：真实Unix socket四客户端barrier及同批129行、断连／错误／deadline abort＋drain、
+late-final unknown、8192 context exact／超一token零generate、原始异常与关闭错误并存、单一关闭期限和inode准确清理。
+首次sandbox不允许bind的环境拒绝保留；放行同一零模型fixture后成功，未修改测试跳过或改成假socket。
+软件引擎与CPU结果不证明真实模型／物理GPU关闭；真实作者＋软件IPC下一步按计划在独立新目录验证。
+HTTP与IPC没有匹配开销测量，IPC仍需JSON／socket复制，不声称零拷贝或性能收益。
 
 ## 真实模型仍需验证
 

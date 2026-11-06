@@ -135,7 +135,15 @@
     ],
     "behavior": "ordinary HTTP clients and direct JSON payloads supported; switching from HTTPX to OpenAI SDK is not required"
   },
-  "current_binding": {
+  "IPC": {
+    "API_feasibility": "one AsyncLLM may serve four local clients; native model batching may remain",
+    "changes_required": "new multi-client Unix socket provider, protocol, cancellation and owner lifecycle; existing single-parent AsyncEngineProcess cannot be shared directly",
+    "status": "implemented; 124 related local software CPU methods passed; real author plus software IPC and actual GPU pending",
+    "performance_comparison": "not measured; IPC still has JSON serialization/socket copies, no zero-copy or speed claim"
+  },
+  "decision": "use project local IPC while retaining author execution; reuse pure process ownership/deadlines, exclude Core and record admission",
+  "GPU_runs": 0,
+  "prior_HTTP_binding": {
     "identity": "author native DuckDB/DBEnd/ArrowLane/CPython execution plus project Q3 semantic UDF and official vLLM API",
     "author_Q7_client_reproduction": false,
     "author_HTTP_requirement_confirmed": false,
@@ -145,12 +153,15 @@
     "configured_model_owners": 1,
     "real_model_instances_verified": null
   },
-  "IPC": {
-    "API_feasibility": "one AsyncLLM may serve four local clients; native model batching may remain",
-    "changes_required": "new multi-client Unix socket provider, protocol, cancellation and owner lifecycle; existing single-parent AsyncEngineProcess cannot be shared directly",
-    "status": "unvalidated drafts retained outside current entry; not integrated/tested/pushed",
-    "performance_comparison": "not measured; IPC still has JSON serialization/socket copies, no zero-copy or speed claim"
-  },
-  "decision": "prefer actual author execution and minimal official model API binding; do not publish a custom IPC path as author-native",
-  "GPU_runs": 0
+  "current_binding": {
+    "identity": "author DuckDB/DBEnd/ArrowLane/CPython execution plus project AF_UNIX model client and one native AsyncLLM",
+    "author_Q7_client_reproduction": false,
+    "author_HTTP_requirement_confirmed": false,
+    "default_executors": 4,
+    "configured_model_owners": 1,
+    "real_model_instances_verified": null,
+    "semloom_scheduling": false,
+    "software_CPU_methods": 124,
+    "real_model_test": "not started"
+  }
 }
