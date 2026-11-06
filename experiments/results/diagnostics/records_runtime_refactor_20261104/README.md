@@ -4053,3 +4053,49 @@ Linux身份方法实际通过，探针没有加载research／vLLM／Torch／Ray�
 观察到的CPU组7个、Ray组9个自有进程均退出，新增共享内存无残留、运行许可释放，GPU空闲；模型调用为零。
 正常Git获取曾两次超时，随后通过已核验的公开Git增量包恢复准确提交和干净工作树，原失败保留。
 这些结果属于5b，与本次图像／观测候选分开。真实固定模型双查询、受限records并发完整LOTUS及质量／性能未由本轮证明。
+
+<a id="single-query-duration-and-cleanup"></a>
+## 显式HTTP期限、实验依赖和图片异常清理（2026-11-06）
+
+本批从准确87ab开始，保留已发布图像拆分，不带入暂停中的cascade并发候选。
+[配置与入口记录](raw/single_query_config_cleanup.json)和[图片异常记录](raw/image_exception_cleanup_checks.json)
+分别保存准确受测源码、测试原件摘要及整合后的相同文件摘要。
+
+### 实际改动和验证
+
+- `5f51a19b`只移除`FixedModelConfig.timeout_ms`的300000ms拒绝上限，仍要求调用方显式正整数。
+  原单方法在600000ms配置处报错；修后13个相关CPU方法通过，无错误或跳过。
+  同一配置经native工厂传入601秒的原backend等待，sync／async没有第二处五分钟截断。
+  HTTP请求期限、默认由其加一秒派生的排空等待及records整查询是不同用途；本批没有改变旧unknown或加远程取消。
+- Kalypso原候选`6d9fbecc`以`a0479e7d`加入，七文件补丁相同：实验脚本直接用实验流程，
+  删除baseline的两处反向转发和导入检查特例。原候选53个CPU／Mock方法通过，CLI帮助及缺参／未知参数输出前后相同，
+  五份历史来源读取保持。不为这次无重叠整合重复执行53方法，没有运行作者服务。
+- 图片原候选`1fcba970`补异常清理，但清理再报错时替换主异常；原测试曾错误接受该行为。
+  后续`4d1878df`保留原执行异常或KeyboardInterrupt作为同一顶层对象，并尝试已启动sampler、worker及CLI SDK的清理。
+  后续清理错误作为诊断保留；只有清理失败时仍抛出首个清理错误。
+  修正后的两个行为方法在旧1fc上均未通过，留存7条失败／3条错误子记录；修后两方法及最终相关26方法通过，0.018秒。
+  两方法与26方法重叠，不累加。五条历史来源读取前后相同，无新增来源副本。
+
+配置检查复算：`PYTHONPATH=code python -B -m unittest tests.execution_provider.test_http_configuration`。
+图片检查复算：`PYTHONPATH=code python -B -m unittest tests.modalities.image.test_image_execution tests.modalities.image.test_image_clip_matrix`。
+Kalypso六模块选择保存在原CPU回执；关键依赖检查为`tests.infrastructure.test_dependency_direction`。
+这些均为软件替身／纯输出，不能证明实际Ray、sampler线程、模型进程退出或GPU性能；原信号量问题与1596第二项原因保持未解决。
+
+records整查询默认60秒及其调用点正在独立树修改，此批未改变默认值，不能声称省略配置已无查询时限。
+本批核心Python仍56,279行，src＋scripts为109,654行，较87ab分别增加0／43行；tests增加226行。
+较固定main的核心增加2,188行、src＋scripts减少30,681行；较3fd分别减少5,349／39,991行。
+口径含注释／空行；核心排除experiments／baselines并保留research，测试、文档和历史副本另计。
+
+<a id="model-5b-timeout-partial"></a>
+## 原5b模型部分失败与期限来源（2026-11-06）
+
+[原件投影和摘要](raw/model_5b_partial_timeout_receipt.json)对应运行`multquery-model-5b25-execution-20261106-r1`：
+准确5b源码共5次模型请求，4条结果内容和归属正确，1条unknown，正常Core排空未通过；不得改写为模型全通过。
+测试worker显式给60000ms，HTTPX没有另设默认超时；长请求约60.064秒后超时，Core保留其输入、结果及计算责任。
+模型日志在此期间持续报告生成；从保存源码重建的请求为`max_tokens=4096, stream=false, stop=null`，
+不是原始HTTP抓包，原生request ID、最终输出及该请求最终token数没有留存。
+因此已有证据能解释期限与生成规模不匹配，不能确定请求本来会何时结束。
+
+已观察到自有进程、GPU、共享内存及运行许可清理；driver使用自有SIGTERM，而vLLM关闭日志另记强制结束一个剩余child。
+物理清理不代替原Core unknown的权威终态。通用HTTP没有原生abort回执，本批不为多查询补做取消实现或追加模型调用。
+用户已暂停多查询新增开发和扩展测试；已完成代码、原失败及未发布cascade候选保留，后续只按实际单查询需要继续重构。

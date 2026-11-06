@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-06：显式HTTP期限、实验依赖和图像异常清理
+
+[各自源码、原失败与CPU结果](diagnostics/records_runtime_refactor_20261104/README.md#single-query-duration-and-cleanup)
+记录移除HTTP五分钟硬上限的13项CPU、Kalypso实验入口的53项原CPU及图片主错修正的26项CPU，各自按准确来源解释。
+records整查询默认60秒仍由另批处理；图片软件清理不代表物理退出。
+[5b模型部分失败与超时来源](diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
+保留5请求中4正确、1unknown及未通过正常排空，后续多查询开发和扩展测试暂停，未追加调用。
+
 ## 2026-11-06：CLIP职责迁移、SDK观测与5b服务器结果
 
 [图像结构、14组前后输出与22项现有CPU](diagnostics/records_runtime_refactor_20261104/README.md#image-clip-module-owners)

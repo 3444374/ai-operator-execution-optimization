@@ -14,7 +14,7 @@
 | 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
 | 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
-| 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 作者服务、默认与任务适配保持 |
+| 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 查询脚本直接调用实验生命周期；baseline客户端不反向导入实验，作者服务与默认保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | CLIP 外部执行对照／诊断 | [run_image_clip_e2e.py](experiments/run_image_clip_e2e.py) | 参数与组装留在脚本，准备、执行观测和报告归[独立模块](../src/experiments/image_clip/README.md)；原实验选项保持 |
 | 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |

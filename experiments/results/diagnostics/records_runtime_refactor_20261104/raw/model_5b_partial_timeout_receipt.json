@@ -1,0 +1,56 @@
+{
+  "run_id": "multquery-model-5b25-execution-20261106-r1",
+  "originals": {
+    "HANDOFF.json": {
+      "sha256": "e0f5fc593583f7dce14b003e967efebef24428f51af3b8cfd29e1b747949d752",
+      "data": {
+        "status": "partial_functionality_observed_not_full_pass",
+        "source_head": "5b25197dafc03d6ae7fa48e7c0f7460122e85e51",
+        "source_tree": "afd406117a4f04b6cdd88e6b49e7962359010189",
+        "actual_model_requests": 5,
+        "successful_model_responses": 4,
+        "unknown": 1,
+        "warmup": 0,
+        "submitted_request_retries": 0,
+        "positive_findings": [
+          "Two actual registered Jobs used one fixed-model service and one HTTP transport.",
+          "All four delivered echo results passed exact content and production completion-evidence validation.",
+          "Core active request peak2 matched its declared2; per-Job storage and response reservations were retained.",
+          "At cancellation native running1 / waiting0 was observed; B completed a new request0.140686s afterward."
+        ],
+        "blocking_finding": "Cancelled A request exceeded the configured60s HTTP total deadline at60.064010s and became uncertain; Core retained held1/input397B/result1MiB/compute1 at transport close. Only B drained normally.",
+        "physical_cleanup": {
+          "passed": true,
+          "observed_processes_exited": 13,
+          "remaining_new_SHM": [],
+          "GPU_idle": true,
+          "lease_released": true,
+          "controller_exited": true,
+          "model_API_exit": 0,
+          "model_service_stopped_by_owned_SIGTERM": true
+        },
+        "unknown_charge_preserved": true,
+        "no_more_requests_submitted": true
+      }
+    },
+    "RESULTS.json": {
+      "sha256": "9585a91e3ddf652fcd21ae7529386250fe8ba9aca1af695c349a1c8248f36e7f",
+      "data": {
+        "status": "partial_functionality_observed_not_full_pass"
+      }
+    }
+  },
+  "new_model_calls_for_this_batch": 0,
+  "multi_query_followup": "Paused by the user; no further implementation or expanded tests.",
+  "diagnosis": {
+    "timeout_origin": "Private worker explicitly supplied 60000ms, HTTPX had no separate timeout.",
+    "model_observation": "The existing model log continued reporting generation for roughly one minute. It did not preserve that request final output, request ID or final token count.",
+    "reconstructed_request": "max_tokens=4096, stream=false, stop=null; reconstructed from retained test source, not an original captured HTTP body.",
+    "shutdown_observation": "The driver sent owned SIGTERM; the vLLM shutdown log additionally reports forcibly ending one remaining child. Final observed resources were clear, and Core still retained unknown."
+  },
+  "not_claimed": [
+    "Normal Core drain passed",
+    "A production model cancellation mechanism was added",
+    "The records path uses this HTTP timeout"
+  ]
+}

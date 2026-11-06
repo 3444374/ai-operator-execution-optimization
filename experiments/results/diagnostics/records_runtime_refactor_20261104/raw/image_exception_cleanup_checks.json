@@ -1,0 +1,105 @@
+{
+  "source_candidate": "4d1878df3d4ea2707154213eff9a7492aea633c4",
+  "source_tree": "06e4ec1606ee9fb680c2ec820c5621cf62041a23",
+  "combined_commit": "a9265eb51ab555d6ba3bcbf42a55a2f68716183c",
+  "combined_tree": "782533fffc8520b42ec2a1af68831edb1eb7609e",
+  "source_sha256": {
+    "code/src/experiments/image_clip/execution.py": "70ca5b5350dc9535d58561a5eb88f819a0dc0be3137aa1046e44143a744c8afb",
+    "code/scripts/experiments/run_image_clip_e2e.py": "30b7c55757e94db3b25582e739b6d0d6240cd5ceda4a42a92b08aec1b4c56a48",
+    "code/tests/modalities/image/test_image_execution.py": "e9ae0b0aab2d374ae16cefb0bcb0dbcae1e4cf3161d857c602bf2d7da64dc001"
+  },
+  "original_handoff_sha256": "42c2f40408b4fc161dc18ff7690ce828f8fb5ea2d62b546e60e6be454e196795",
+  "behavior": [
+    "Warmup or formal RuntimeError and KeyboardInterrupt remain the same top-level objects when worker or sampler cleanup also fails.",
+    "Existing GPU-sampler, CPU-sampler, then worker termination requests are all attempted once for reached resources. Cleanup errors are attached to the primary exception as notes and image_cleanup_errors tuples of stage and actual exception objects.",
+    "The CLI preserves the primary error and existing cleanup diagnostics when SDK disconnection raises; it appends its own diagnostic instead of replacing them.",
+    "With no execution error, the first cleanup error is raised. Additional cleanup errors are attached to that error. Normal successful timing, order and result fields stay unchanged."
+  ],
+  "CPU": {
+    "original_1fc": {
+      "selected_methods": 2,
+      "successful_methods": 0,
+      "failure_records": 7,
+      "error_records": 3,
+      "skipped": 0,
+      "seconds": 0.007476000115275383
+    },
+    "focused_fix": {
+      "selected_methods": 2,
+      "successful_methods": 2,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": 0,
+      "seconds": 0.00486295809969306
+    },
+    "final_related_selection": {
+      "selected_methods": 26,
+      "successful_methods": 26,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": 0,
+      "seconds": 0.01844350015744567
+    },
+    "not_added_together": true,
+    "scope": "22 existing image software methods plus the four existing cleanup behavior methods with corrected expectations and RuntimeError/KeyboardInterrupt/multiple-error cases. Fake framework modules, samplers and workers; actual image execution and CLI methods."
+  },
+  "retained_original_evidence": {
+    "original-cleanup-primary-errors.json": "d8f6edd7f2278cabb4284a512179a7bfc955f1a57df32201765f1b7b322d7104",
+    "original-cleanup-primary-errors.log": "ac8c5fa37d5a81c28e3c7226f002fff0812d9778ae5ecfe45c20b2f694799c5a",
+    "fixed-cleanup-primary-errors.json": "87183433866ba3ac48a8dd57d7ebbb6b2f9fea6c81920e967efd2945471ed9f8",
+    "fixed-cleanup-primary-errors.log": "3e51a4b4193e46d921c426956008617eb3258c1837dfe77db09df3814ab41ed0",
+    "final-cleanup-primary-errors.json": "1de7bf83121f995607a4b5e7a1e21d51131213dfbb9df8e1c0493ab260d2d4a2",
+    "final-cleanup-primary-errors.log": "a5956f5d1c191d38830921a4facb9da6575542024e0fec0cbbd6b771c7eff38b",
+    "SOURCE_IDENTITY.json": "d9e31deaa0fe074172001048912fc803a08b49565726ea3dd0c70b72bab2f4bc",
+    "HISTORY_SOURCE_CHECKS.json": "931a20195e3a3c5efd51c336f1b9910a9f41081f7cde924c8a334db209550aff"
+  },
+  "history": {
+    "bindings_before_after": 5,
+    "all_equal": true,
+    "absent_pairs": 10,
+    "manifest_changed": false,
+    "new_archives": 0,
+    "full_3010_materialization_repeated": false
+  },
+  "scope_limits": {
+    "models": 0,
+    "Ray_initializations": 0,
+    "actual_sampler_threads": 0,
+    "actual_socket_or_IPC": 0,
+    "network_or_server_operations": 0,
+    "sysctl": 0,
+    "pushes": 0,
+    "main_merges": 0
+  },
+  "remaining": "Existing finite sampler joins and actor termination request semantics are unchanged. No physical process exit, original Ray semaphore repair, or resolution of the original second 1596 close cause is claimed. Central documentation is left to the parent integration.",
+  "line_counts": {
+    "base": {
+      "core_python": 56279,
+      "src_and_scripts_python": 109611,
+      "tests_python": 98526,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "current": {
+      "core_python": 56279,
+      "src_and_scripts_python": 109654,
+      "tests_python": 98752,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "delta": {
+      "core_python": 0,
+      "src_and_scripts_python": 43,
+      "tests_python": 226,
+      "integrations_python_cpp_hpp": 0
+    },
+    "scope": "Tracked physical lines including comments and blank lines; core excludes experiments and baselines and includes research. Historical source archives and docs excluded."
+  },
+  "independent_review": {
+    "reviewed_commit": "4d1878df3d4ea2707154213eff9a7492aea633c4",
+    "reviewed_tree": "06e4ec1606ee9fb680c2ec820c5621cf62041a23",
+    "review_sha256": "6e845cdfdc1702b1fad87e852399435c192eb63fc49fe6ec10f10e3312b647cc",
+    "code_findings": 0,
+    "task_findings": 0,
+    "source_unchanged_on_composition": true,
+    "new_tests_in_review": 0
+  }
+}

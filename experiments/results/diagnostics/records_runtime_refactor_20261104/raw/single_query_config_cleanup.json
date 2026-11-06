@@ -1,0 +1,97 @@
+{
+  "source_head": "5f51a19b2e45a19398a8df8d417bcaf91bee2317",
+  "source_tree": "32fac05436560f43df5765341038305fb1b87562",
+  "scope": [
+    "Explicit fixed-HTTP configuration duration",
+    "Kalypso experiment entry dependency direction"
+  ],
+  "changes": {
+    "http": "Remove only the five-minute validation ceiling; a positive integer timeout_ms is still explicitly supplied by the caller. No default duration or remote cancellation behavior is added.",
+    "kalypso": "Use experiment lifecycle from the experiment CLI, remove the baseline back-call wrappers and remove the import-check exemption."
+  },
+  "http_CPU": {
+    "source_head": "a0479e7d7304cfcff8c45d5fdb5fa2dedc95cee5",
+    "dirty": true,
+    "test_names": [
+      "tests.execution_provider.test_http_configuration"
+    ],
+    "tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_s": 0.03390625002793968,
+    "log_sha256": "64b41a62dddaf58ed366767becb1718a3740bab4cdef6897853e143183712621",
+    "changed_sources": {
+      "code/src/execution_provider/adapters/model_config.py": "78d6c4406b5e0788fe64fa4a3d7845b9b73200c8547e695c288ea56c7096ad36",
+      "code/tests/execution_provider/test_http_configuration.py": "13150f02eb2124e4814d8e5d7c3cefcd14b875da97baca0bc4deba98a3ba7132"
+    },
+    "model_requests": 0,
+    "real_ray": false,
+    "socket_creation": false
+  },
+  "original_http_counterexample": {
+    "kind": "tool_output_excerpt",
+    "source_head": "a0479e7d7304cfcff8c45d5fdb5fa2dedc95cee5",
+    "changed_test": true,
+    "production_matches": "87ab621f0b788887459aadaeb6986942bd3c1a7a",
+    "exit_code": 1,
+    "tests": 1,
+    "errors": 1,
+    "output": "E\nERROR: test_explicit_request_timeout_has_no_five_minute_ceiling (tests.execution_provider.test_http_configuration.HttpConfigurationTests.test_explicit_request_timeout_has_no_five_minute_ceiling)\nTraceback (most recent call last):\n  File \"<source>/code/tests/execution_provider/test_http_configuration.py\", line 67, in test_explicit_request_timeout_has_no_five_minute_ceiling\n    model = load_fixed_model_config(path)\n  File \"<source>/code/src/execution_provider/adapters/model_config.py\", line 94, in load_fixed_model_config\n    return FixedModelConfig(\n  File \"<string>\", line 9, in __init__\n  File \"<source>/code/src/execution_provider/adapters/model_config.py\", line 57, in __post_init__\n    raise ValueError(\"timeout_ms must be an integer from 1 to 300000\")\nValueError: timeout_ms must be an integer from 1 to 300000\nRan 1 test in 0.002s\nFAILED (errors=1)\n",
+    "projection": "Command output excerpt copied from the captured tool result; absolute source path shortened. This is not a separately saved raw command log."
+  },
+  "kalypso": {
+    "original_candidate": "6d9fbecc2f0d5bdcff58ccf41e8133cfcaf24394",
+    "integrated_commit": "a0479e7d7304cfcff8c45d5fdb5fa2dedc95cee5",
+    "cpu_methods": 53,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "original_receipt_sha256": "d6a413741184263bc58e4322da7eb7a8fcd3a720d8b28aac3275daf61e23fd7e",
+    "cli_comparison_sha256": "582ce3292cd530b5eed0954ce86a5699e180265bb6b078d14bb2fe2022f8525c",
+    "historical_source_read_sha256": "db108d2054485635de86b2495c5361b020d35616fa4f1b7ee178dee40a213ee4",
+    "cpu_selection": [
+      "tests.infrastructure.test_dependency_direction",
+      "tests.experiments.test_baseline_closure_entries",
+      "tests.experiments.test_native_query_lifecycle",
+      "tests.experiments.test_kalypso_owner_cli_binding",
+      "tests.baselines.text.test_kalypso_native_launch",
+      "tests.baselines.text.test_kalypso_native_observation"
+    ]
+  },
+  "scope_limits": [
+    "The old multi-query model failure and unknown charge are unchanged.",
+    "No model, real Ray or GPU was run for this batch.",
+    "The records default query duration is a separate change still being implemented.",
+    "No cascade concurrency change is included."
+  ],
+  "combined_commit": "a9265eb51ab555d6ba3bcbf42a55a2f68716183c",
+  "combined_tree": "782533fffc8520b42ec2a1af68831edb1eb7609e",
+  "line_counts": {
+    "base": {
+      "core_python": 56279,
+      "src_and_scripts_python": 109611,
+      "tests_python": 98526,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "current": {
+      "core_python": 56279,
+      "src_and_scripts_python": 109654,
+      "tests_python": 98752,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "delta": {
+      "core_python": 0,
+      "src_and_scripts_python": 43,
+      "tests_python": 226,
+      "integrations_python_cpp_hpp": 0
+    },
+    "scope": "Tracked physical lines including comments and blank lines; core excludes experiments and baselines and includes research. Historical source archives and docs excluded."
+  },
+  "independent_review": {
+    "reviewed_commit": "5f51a19b2e45a19398a8df8d417bcaf91bee2317",
+    "receipt_sha256": "bae3efd2a21de56b47c626f2695e587b8f2b19a8acac51c81569af763065a93e",
+    "blocking_code_issues": 0,
+    "scope": "Read-only review; no repeated tests. Leaf README clarification applied; tested code unchanged."
+  }
+}

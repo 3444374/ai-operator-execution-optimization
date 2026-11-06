@@ -21,8 +21,10 @@ The three private assembly factories form one capacity closure;
 keeps logical input, prepared suffix, SDK/proxy copies and process RSS distinct.
 
 `FixedModelConfig.timeout_ms` is an explicitly supplied positive integer, with no five-minute
-ceiling. Synchronous and asynchronous fixed-endpoint HTTP requests use that value; it is
-separate from control-frame, startup and cleanup waits and from the records query duration.
+ceiling. Synchronous and asynchronous fixed-endpoint HTTP requests use that value.
+The fixed/native builder derives its default backend and drain waits as HTTP timeout plus
+one second; Ray HTTP worker close uses that same duration. Control-frame and startup waits
+and the records query duration have their own settings.
 
 `FixedModelConfig.max_response_bytes` defaults to 1 MiB and accepts 1 byte through 8 MiB.
 For native execution it selects `SessionLimits.item_result_bytes`; selecting more than 1 MiB

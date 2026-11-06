@@ -2,6 +2,15 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：清理显式HTTP硬上限、Kalypso回路和图像异常收尾
+
+固定HTTP保留调用方显式期限，删除无运行依据的五分钟拒绝；records默认查询期限另批贯通，不混同两条路径。
+Kalypso实验脚本直接调用实验流程，删除baseline的反向转发及导入检查豁免。图片执行和报告失败后清理已启动资源，
+原异常与KeyboardInterrupt保持主错误，后续清理问题附加诊断，不增管理层或停止期限。
+[准确源码与CPU范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-duration-and-cleanup)
+分开记录原失败和修正；[5b模型部分结果](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
+保留unknown。按用户新要求暂停多查询新增实现与扩展测试，cascade候选留存未发布；未合并main。
+
 ## 2026-11-06：分开CLIP运行职责并修正Ray观测含义
 
 原图像命令分别调用准备、执行观测和报告模块，保留19个定义的行为、参数及输出，旧私有调用一并迁移。
