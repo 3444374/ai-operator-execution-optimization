@@ -229,10 +229,13 @@ SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本
 
 ## 本地时间与额度诊断
 
-[观察探针](profiling/map_observation_probe.py)、[Core 探针](profiling/mapped_core_probe.py)和
-[预付计数探针](profiling/mapped_request_probe.py)仅使用本地 CPU 替身。每轮共用实际运行截止，
+[观察探针](profiling/map_observation_probe.py)和[预付计数探针](profiling/mapped_request_probe.py)
+仅使用本地 CPU 替身。每轮共用实际运行截止，
 后续单项使用剩余时间，不再提前扣 60／30 秒；停止新增后继续取消和清理，已预付计数不退还。
 单独调用 case 仍保留有限默认时限。这些诊断不代表模型或查询性能。
+固定 mapped Core 对照套件和批量持久记账矩阵已退出当前入口，
+完整旧源码及恢复方式见[本地固定套件来源](../../experiments/reproduction/native_baselines/README.md#retired-fixed-local-probe-suites)。
+共享执行路径、映射计数和单次行为检查继续保留。
 
 ## 独立研究与离线分析
 

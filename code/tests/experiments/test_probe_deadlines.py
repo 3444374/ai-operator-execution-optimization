@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from src.experiments import map_observation_probe, mapped_core_probe, mapped_request_probe
+from src.experiments import map_observation_probe, mapped_request_probe
 
 
 class ProbeSuiteDeadlineTests(unittest.TestCase):
@@ -43,7 +43,6 @@ class ProbeSuiteDeadlineTests(unittest.TestCase):
     def test_next_case_uses_remaining_suite_time_instead_of_reserving_a_whole_case(self):
         for probe, first_seconds, expected_runs in (
             (map_observation_probe, 245, 20),
-            (mapped_core_probe, 245, 10),
             (mapped_request_probe, 275, 16),
         ):
             with self.subTest(probe=probe.__name__):
@@ -53,7 +52,7 @@ class ProbeSuiteDeadlineTests(unittest.TestCase):
                 self.assertEqual(deadlines, [400.0] * expected_runs)
 
     def test_exhausted_total_stops_before_another_case_and_preserves_the_summary(self):
-        for probe in (map_observation_probe, mapped_core_probe, mapped_request_probe):
+        for probe in (map_observation_probe, mapped_request_probe):
             with self.subTest(probe=probe.__name__), tempfile.TemporaryDirectory() as root:
                 clock = SimpleNamespace(now=100.0)
                 calls = []
