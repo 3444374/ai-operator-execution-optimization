@@ -6,13 +6,7 @@ import copy
 import json
 import socket
 import threading
-import os
-from pathlib import Path
 import struct
-import subprocess
-import sys
-import tempfile
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from src.execution_provider.adapters.openai_compatible_fixed import (
@@ -281,70 +275,9 @@ class ChoiceFixedAdapterTests(unittest.TestCase):
             adapter.complete(self.request(self.profile))
         self.assertEqual(self.http.requests, [])
 
-    def through_gateway(self, codec, *, choice_support=True):
-        code_root = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
-        with tempfile.TemporaryDirectory() as directory:
-            socket_path = Path(directory) / "gateway.sock"
-            config_path = Path(directory) / "fixed.json"
-            config = {"endpoint_url": self.endpoint, "model_id": "fixed-test-model", "timeout_ms": 1000}
-            if choice_support:
-                config["choice_format"] = "vllm_structured_outputs"
-            config_path.write_text(json.dumps(config))
-            environment = os.environ.copy()
-            environment.pop("PYTHONPATH", None)
-            gateway = subprocess.Popen([sys.executable, str(code_root / "scripts/services/run_execution_provider_gateway.py"),
-                "--socket", str(socket_path), "--once", "--fixed-model-config", str(config_path)],
-                cwd=directory, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            client.settimeout(3)
-            try:
-                deadline = time.monotonic() + 3
-                while not socket_path.exists() and time.monotonic() < deadline and gateway.poll() is None:
-                    time.sleep(0.01)
-                self.assertTrue(socket_path.exists(), "canonical CLI starts without PYTHONPATH")
-                client.connect(str(socket_path))
-                profile = self.profile if codec is v4 else None
-                plan = codec.SemanticFilterPlan("Classify input.", "fixed-test-model", profile)
-                identity = "semloom.provider.openai-compatible-fixed.uds.v4" if codec is v4 else "semloom.provider.openai-compatible-fixed.uds.v3"
-                client.sendall(encode_frame(codec.build_open_message(plan, provider_execution_id=identity)))
-                opened = read_frame(client)
-                self.assertEqual(opened["type"], "opened")
-                client.sendall(encode_frame(codec.build_task_message(plan, sequence=0, input_value="输入🙂",
-                                                                    provider_execution_id=identity)))
-                return read_frame(client)
-            finally:
-                client.close()
-                try:
-                    gateway.communicate(timeout=3)
-                except subprocess.TimeoutExpired:
-                    gateway.terminate()
-                    gateway.communicate(timeout=3)
-                self.assertFalse(socket_path.exists(), "gateway releases its listener after the session")
 
-    def test_canonical_gateway_serves_both_versions_without_rewriting_results(self):
-        for codec in (v3, v4):
-            result = self.through_gateway(codec)
-            self.assertEqual(result["protocol_version"], codec.PROTOCOL_VERSION)
-            self.assertEqual(result["raw_output"], "UNKNOWN")
-            self.assertEqual(result["prompt_tokens"], "19")
-        old, choice = self.http.requests
-        self.assertEqual(choice.pop("structured_outputs"), {"choice": ["TRUE", "FALSE", "UNKNOWN"]})
-        self.assertEqual(old, choice)
 
-    def test_service_rejection_is_terminal_without_unconstrained_retry(self):
-        self.http.status = 400
-        result = self.through_gateway(v4)
-        self.assertEqual(result, {"type": "error", "protocol_version": 4, "sequence": "0", "code": "MODEL_REQUEST_REJECTED"})
-        self.assertEqual(len(self.http.requests), 1)
-        self.assertEqual(self.http.requests[0]["structured_outputs"], {"choice": ["TRUE", "FALSE", "UNKNOWN"]})
-        self.http.status = 200
-        self.http.raw_output = "bad"
-        self.assertEqual(self.through_gateway(v4)["raw_output"], "bad", "gateway does not repair an invalid semantic label")
 
-    def test_gateway_refuses_undeclared_choice_without_model_request(self):
-        result = self.through_gateway(v4, choice_support=False)
-        self.assertEqual(result["code"], "MODEL_REQUEST_REJECTED")
-        self.assertEqual(self.http.requests, [])
 
 
 if __name__ == "__main__":

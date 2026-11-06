@@ -5,10 +5,7 @@ from __future__ import annotations
 import http.client
 import io
 import json
-import os
 import socket
-import subprocess
-import sys
 import threading
 import tempfile
 import time
@@ -18,7 +15,6 @@ from pathlib import Path
 from unittest import mock
 
 from src.execution_provider.adapters.openai_compatible_fixed import (
-    FIXED_EXECUTION_ID,
     FixedModelConfig,
     OpenAICompatibleFixedAdapter,
     load_fixed_model_config,
@@ -31,18 +27,8 @@ from src.execution_provider.wire.framing import encode_frame, read_frame
 from src.execution_provider.request_admission import RequestAdmission, RequestCapacity
 from src.execution_provider.wire.v3 import (
     GENERATION_CONSTRAINTS,
-    SemanticFilterPlan,
-    build_open_message,
-    build_task_message,
 )
 
-
-CODE_ROOT = next(
-    parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir()
-)
-CANONICAL_GATEWAY_CLI = (
-    CODE_ROOT / "scripts" / "services" / "run_execution_provider_gateway.py"
-)
 
 
 class _CompletionHandler(BaseHTTPRequestHandler):
@@ -528,92 +514,6 @@ class FixedModelAdapterTests(unittest.TestCase):
             generation_constraints=dict(GENERATION_CONSTRAINTS),
         )
 
-    def test_canonical_gateway_routes_wire_v3_through_the_fixed_adapter(self) -> None:
-        plan = SemanticFilterPlan(
-            instruction="The input describes a database system.",
-            model_id="fixed-model-v1",
-        )
-        with tempfile.TemporaryDirectory(prefix="sf4b-", dir="/tmp") as directory:
-            root = Path(directory)
-            socket_path = root / "gateway.sock"
-            config_path = root / "fixed-model.json"
-            config_path.write_text(
-                json.dumps(
-                    {
-                        "endpoint_url": (
-                            f"http://127.0.0.1:{self.httpd.server_port}"
-                            "/v1/chat/completions"
-                        ),
-                        "model_id": plan.model_id,
-                        "timeout_ms": 1_000,
-                        "bearer_token_env": "SEMLOOM_TEST_MODEL_TOKEN",
-                    }
-                ),
-                encoding="utf-8",
-            )
-            environment = os.environ.copy()
-            environment.pop("PYTHONPATH", None)
-            environment["SEMLOOM_TEST_MODEL_TOKEN"] = "test-token"
-            process = subprocess.Popen(
-                [
-                    sys.executable,
-                    str(CANONICAL_GATEWAY_CLI),
-                    "--socket",
-                    str(socket_path),
-                    "--fixed-model-config",
-                    str(config_path),
-                    "--once",
-                ],
-                cwd=tempfile.gettempdir(),
-                env=environment,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            self.addCleanup(process.kill)
-            client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.addCleanup(client.close)
-            for _ in range(200):
-                try:
-                    client.connect(str(socket_path))
-                    break
-                except (FileNotFoundError, ConnectionRefusedError):
-                    time.sleep(0.01)
-            else:
-                _stdout, stderr = process.communicate(timeout=2)
-                self.fail(f"fixed gateway did not accept a connection: {stderr}")
-
-            client.sendall(
-                encode_frame(
-                    build_open_message(
-                        plan,
-                        provider_execution_id=FIXED_EXECUTION_ID,
-                    )
-                )
-            )
-            self.assertEqual(read_frame(client)["type"], "opened")
-            client.sendall(
-                encode_frame(
-                    build_task_message(
-                        plan,
-                        sequence=0,
-                        input_value="PostgreSQL is a database.",
-                        provider_execution_id=FIXED_EXECUTION_ID,
-                    )
-                )
-            )
-            completion = read_frame(client)
-            self.assertEqual(completion["raw_output"], "TRUE")
-            self.assertEqual(completion["response_model_id"], plan.model_id)
-            self.assertEqual(completion["prompt_tokens"], "17")
-            self.assertEqual(completion["output_tokens"], "1")
-            client.close()
-            stdout, stderr = process.communicate(timeout=2)
-            self.assertEqual(process.returncode, 0, stderr)
-            self.assertEqual(stdout, "")
-            self.assertEqual(stderr, "")
-            self.assertFalse(socket_path.exists())
-            self.assertEqual(_CompletionHandler.request_count, 1)
 
 
 if __name__ == "__main__":

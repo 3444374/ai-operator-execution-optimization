@@ -24,10 +24,10 @@ SemLoom 主线保留简单多查询运行，不需要导入本包：固定份额
 | 入口 | 当前范围 |
 |---|---|
 | `SessionEngine`／注册的查询组 | 默认固定预算与普通轮转可推进多个 Job；CPU fixture 覆盖独立完成、取消、晚到结果与 unknown 占用 |
-| 固定模型增量 Map gateway | 主线 `--max-active-jobs` 大于一不再要求研究工厂；文本 socket fixture 使用默认工厂验证多个查询 |
+| 旧固定 HTTP 服务入口 | 固定模型、增量 Map、Ray Map transport 与 organization 四个 CLI 选择已退役；历史场景从完整f526恢复 |
 | typed image gateway | 主线也有基础多 Job 默认；当前只有本地替身与方法／socket 检查，真实图像服务多查询待验证 |
 | records resident | 原 owner 只接受一个 active query；模型常驻后的顺序查询复用不表示并发完整 LOTUS 查询 |
-| 提前准备与 organization | `preparation_factory` 加多 Job 仍明确拒绝，`--organization-config` 仍限单 Job；没有删除这些保护 |
+| 提前准备与 organization | 库内准备／组织尚在后续清理；本批未改变其资源行为，也不重新提供旧 HTTP CLI |
 | 原生 Ray payload transport | 真实多查询组合未在本次执行；不能由 gateway 的 fixture 结果转授资格 |
 
 旧固定 HTTP 研究 CLI 与其专属服务测试已退役；完整来源和原字节摘要见

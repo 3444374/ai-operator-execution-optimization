@@ -10,6 +10,8 @@ import sys
 import tempfile
 import time
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from src.execution_provider.completion import Completion
 from src.execution_provider.semantic_map import SemanticMapPlan
@@ -97,6 +99,45 @@ class MapGatewayTests(unittest.TestCase):
                 if process.poll() is None:
                     process.kill()
                 process.communicate(timeout=3)
+
+
+class ProviderServiceCliTests(unittest.TestCase):
+    def test_golden_and_image_profiles_reach_the_existing_adapters(self):
+        from src.execution_provider import server, image_gateway
+        from src.execution_provider.adapters.golden import GoldenCompletionAdapter
+        from src.execution_provider.adapters.image_execution import ImageServiceConfig
+
+        for profile in ("golden", "image"):
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as directory:
+                args = ["--socket", str(Path(directory, "provider.sock"))]
+                if profile == "image":
+                    config_path = Path(directory, "image.json")
+                    config_path.write_text("{}")
+                    args.extend(["--image-config", str(config_path), "--max-held-tasks", "4"])
+                image_config = SimpleNamespace(mode="reference", plan=SimpleNamespace(result_bytes=8))
+                adapter = Mock()
+                selected = []
+                stopped_before_listener = RuntimeError("fixture stops after adapter selection")
+
+                def observe_selection(value):
+                    selected.append(value)
+                    raise stopped_before_listener
+
+                with patch.object(ImageServiceConfig, "from_record", return_value=image_config), \
+                     patch.object(image_gateway, "ImageGateway", return_value=adapter) as build_image, \
+                     patch.object(server.socket, "socket", side_effect=AssertionError("unexpected socket")):
+                    with self.assertRaises(RuntimeError) as caught:
+                        server.main(args, adapter_wrapper=observe_selection)
+                self.assertIs(caught.exception, stopped_before_listener)
+                if profile == "golden":
+                    self.assertIsInstance(selected[0], GoldenCompletionAdapter)
+                    build_image.assert_not_called()
+                else:
+                    self.assertIs(selected[0], adapter)
+                    self.assertIs(build_image.call_args.args[0], image_config)
+                    self.assertEqual(build_image.call_args.kwargs["max_tasks"], 4)
+                    self.assertEqual(build_image.call_args.kwargs["result_bytes"], 32)
+                    adapter.close.assert_called_once_with()
 
 
 if __name__ == "__main__":

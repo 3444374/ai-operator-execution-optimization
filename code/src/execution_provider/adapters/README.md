@@ -1,5 +1,10 @@
 # Native task execution
 
+The fixed HTTP service selection and its research launcher have been retired.
+Ordinary records use local IPC/native engines. The remaining internal HTTP builders
+and transports below are being removed separately from the shared typed image/Core
+and opaque task/session interfaces; they are not a replacement records path.
+
 This module accepts prepared single-model request bytes through the existing Core.
 It does not interpret prompts, change generation parameters, or replace a supplier's parser.
 The implementation is adopted from integration source `671a22dd4285319209396ece3572bb89ff5ab74e`;
@@ -33,8 +38,8 @@ creation. A producer still declares each task's `max_result_bytes` within that i
 Complete HTTP results charge metadata and body together, and stay charged until consumer release.
 The synchronous `OpenAICompatibleFixedAdapter` instead applies the same configuration field to
 the raw HTTP body it reads. Overflow reports an error and keeps unknown remote work charged.
-Increasing the total alone retains the default per-item capacity. PG factories and the gateway
-reject configured responses above 1 MiB; a larger PG representation requires a new wire profile.
+Increasing the total alone retains the default per-item capacity. The old PG factory still
+rejects configured responses above 1 MiB; its fixed HTTP service selection has been retired.
 Worker identity includes the configured response capacity, so a changed capacity requires a
 matching worker pool. [CPU configuration cases](../../../tests/execution_provider/test_http_configuration.py)
 use in-memory responses and Core; actual Ray, model and PG execution require separate checks.

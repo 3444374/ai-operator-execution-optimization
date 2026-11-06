@@ -1,7 +1,6 @@
 """Window-one lifecycle uses the same production service as multi-Job execution."""
 
 import asyncio
-import json
 import threading
 import unittest
 from src.execution_provider.wire import v5, v6
@@ -106,52 +105,8 @@ class IncrementalWindowOneTests(unittest.TestCase):
             wait_for(lambda: any(e["event"] == "job_drained" for e in events))
             self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
 
-    def test_gateway_setup_failure_closes_transport(self):
-        import tempfile
-        from pathlib import Path
-        from src.execution_provider import server as gateway
 
-        before = {t.ident for t in threading.enumerate() if t.name == "semloom-async-io"}
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "occupied").write_text("owned")
-            config = root / "model.json"
-            config.write_text(
-                json.dumps(
-                    {
-                        "model_id": "model",
-                        "endpoint_url": "http://localhost/v1/chat/completions",
-                        "timeout_ms": 1000,
-                    }
-                )
-            )
-            with self.assertRaises(SystemExit):
-                gateway.main(
-                    [
-                        "--socket",
-                        str(root / "occupied"),
-                        "--fixed-model-config",
-                        str(config),
-                        "--incremental-map",
-                        "--max-held-tasks",
-                        "1",
-                    ]
-                )
-            self.assertEqual((root / "occupied").read_text(), "owned")
-        self.assertEqual(
-            {t.ident for t in threading.enumerate() if t.name == "semloom-async-io"}, before
-        )
-
-    def test_retired_cli_and_execution_identity_are_rejected(self):
-        from contextlib import redirect_stderr
-        from io import StringIO
-        from src.execution_provider.server import parse_args
-
-        error = StringIO()
-        with redirect_stderr(error), self.assertRaises(SystemExit) as caught:
-            parse_args(["--socket", "/unused", "--incremental-map-window-one"])
-        self.assertEqual(caught.exception.code, 2)
-        self.assertIn("unrecognized arguments", error.getvalue())
+    def test_retired_execution_identity_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "unsupported Map execution identity"):
             v5.provider_execution_digest(
                 "model", provider_execution_id="semloom.provider.incremental-map-window-one.uds.v5"

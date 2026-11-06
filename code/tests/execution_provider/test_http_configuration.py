@@ -13,7 +13,6 @@ from unittest.mock import Mock, patch
 
 import httpx
 
-from src.execution_provider import server
 from src.execution_provider.adapters.full_response import FullResponseTransport, decode_full_response
 from src.execution_provider.adapters.incremental_execution import build_fixed_model_execution
 from src.execution_provider.adapters.model_config import FixedModelConfig, load_fixed_model_config
@@ -180,17 +179,6 @@ class HttpConfigurationTests(unittest.TestCase):
         finally:
             self.assertTrue(execution.close())
 
-    def test_pg_cli_rejects_larger_profile_before_socket_or_transport(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory, "model.json")
-            path.write_text(json.dumps(dict(endpoint_url=MODEL.endpoint_url,
-                model_id=MODEL.model_id, timeout_ms=180000, max_response_bytes=MIB + 1)))
-            for extra in ([], ["--incremental-map"]):
-                with self.subTest(extra=extra), patch.object(server.socket, "socket") as socket:
-                    with self.assertRaisesRegex(SystemExit, "PG.*1 MiB"):
-                        server.main(["--socket", str(Path(directory, "gateway.sock")),
-                                     "--fixed-model-config", str(path), *extra])
-                    socket.assert_not_called()
 
     def complete(self, model, raw):
         adapter = OpenAICompatibleFixedAdapter(model)

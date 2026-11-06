@@ -101,3 +101,13 @@ typed image provider、SAOR策略和共享额度函数未删除；普通records�
 这批只删除旧入口，fixed HTTP工厂、服务选项和共用网关装配留待后续清理，不表示整条旧路径已清空。
 五份历史投影的10条相关来源继续保持原字节；只有同名CLI的五条来源需要新增准确f526压缩原件，
 其余既有来源不变，见[来源读取说明](../native_baselines/README.md#fixed-http-launcher-source)。
+
+
+### 同一旧 HTTP 服务选择的退役
+
+随后从provider服务命令移除 `--fixed-model-config`、`--incremental-map`、
+`--map-transport-config` 和 `--organization-config`，以及只为它们服务的工厂分派和旧路由专测。
+这些参数不再进入配置解析，也不静默改选Golden；原默认Golden夹具与typed image仍使用既有UDS入口。
+需要重现这些旧CLI路由时，从上方完整f526树恢复 `server.py`、原测试和依赖，不拼接新服务源码。
+本批仍未删除全部内部HTTP运输／Map装配；它们与共享Core、image、opaque task/session的后续清理分别处理。
+五条受影响历史读取继续使用已有原件，没有新增归档或改写expected／投影身份。
