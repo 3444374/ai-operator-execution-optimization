@@ -91,7 +91,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 调度 | [scheduler.py](src/scheduling/core/scheduler.py) 负责普通提交与真实完成；[envelope_source.py](src/scheduling/core/envelope_source.py) 读取阻塞输入；[topology.py](src/scheduling/core/topology.py) 选择端点和投影本地占用；共享研究通过显式交接接入 |
 | 反馈 | [submission_control](src/scheduling/submission_control/README.md) 分开配置、供给、请求试探、批反馈和计量；现用请求与批策略各有明确消费者 |
 | 引擎与 IPC | [vllm_protocol.py](src/serving/backends/vllm_protocol.py) 保存中性规范；sync／async 各自构造引擎；[async_engine_process.py](src/serving/backends/async_engine_process.py)、[async_engine_worker.py](src/serving/backends/async_engine_worker.py)、[async_engine_wire.py](src/serving/backends/async_engine_wire.py) 分管父进程、子进程和帧编码 |
-| 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 仍被LOTUS图像和CLIP入口使用；增量图像backend另有任务协议，不互相冒充替代 |
+| 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 继续服务现用HSE执行；[CLIP实验模块](src/experiments/image_clip/README.md)分别准备输入、执行观测与生成报告；增量图像backend继续使用自身任务协议 |
 | 观测 | [文件职责](src/observability/README.md#current-observation-owners) 归集时钟、事件与模型复用；[phase_sampler.py](src/observability/process_resources/phase_sampler.py) 保存分阶段RSS／CPU采样，图像CLI直接导入实际实现 |
 | 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
 | 独立研究 | [research/multitask](src/research/multitask/README.md) 保存共享额度和 SAOR；实验编排不进入单查询默认配置 |

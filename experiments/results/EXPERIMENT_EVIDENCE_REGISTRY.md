@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-06：CLIP职责迁移、SDK观测与5b服务器结果
+
+[图像结构、14组前后输出与22项现有CPU](diagnostics/records_runtime_refactor_20261104/README.md#image-clip-module-owners)
+记录cdc的19定义迁移、五条历史来源修正及生产净增27行；不是搬移减总代码或性能结论。
+原生Ray观测按36947的16项Mock与未执行的10项分别记录，当前SDK字段更准确，原信号量和旧关闭问题仍在。
+[准确5b服务器原件投影](diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)
+确认28方法、12重叠探针及独立Ray方法通过，观察到的进程／SHM／许可清理；零模型，不转授当前图像候选。
+
 ## 2026-11-06：基础多查询组合及历史来源修正
 
 [组合源码、CPU与待测范围](diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)

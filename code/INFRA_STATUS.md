@@ -25,9 +25,9 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
-| 图像与数据 | 现用LOTUS图像后端、静态HSE和CLIP入口继续使用原执行；数据组织仍归materializer，不归观测器 | 增量图像接口与HSE批流水用途不同；没有借清理增加新算子或扩大模型资格 |
+| 图像与数据 | 现用LOTUS图像后端与HSE执行保持；CLIP脚本的配置准备、执行观测与报告分别归入实验模块，命令保留 | 图像异常收尾仍需单独检查；增量图像接口与HSE用途不同，没有扩大模型资格 |
 | 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；采样归observability；四个旧转发及重复时钟定义删除；准确4d六项服务器CPU通过 | 结果限其实际采样／软件传输和子进程范围；不是后续组合、真实Ray或模型资格，本机此前拒绝的操作不重试 |
-| 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；共享计算、服务目标与候选窗口由显式研究适配处理 | 本地组合832方法通过，socket相关27项及Linux身份检查待服务器；records并发完整查询和SAOR增量接入尚未验证 |
+| 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器28方法、12导入探针及独立Ray方法通过，共享研究显式接入 | 前两组有重叠；真实模型双查询、records并发完整查询和SAOR增量接入尚未验证 |
 | 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放、HTTP 观测转发及异步阻塞 RPC 已退役；重复解析、内部形状／日志计数检查分批精简 | 旧 LOTUS 残留和两个固定探针套件已清理；实际 provider／v3–v6 协议、共享诊断与离线复算保留，不称全仓旧内容已穷尽 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
@@ -47,13 +47,15 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 保存逐批源码、失败与 CPU／IPC 范围；[原生 Q3 复测](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
 保存最新模型对照结果。随后 e566 的零模型 CPU 隔离在 actor GC 场景复现残留：
 Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
-原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
+原 Q3 对象缺少创建栈，不能逐一追溯；Ray2.56.1公开Processor又没有运行中的模型actor关闭句柄，
+当前原生图上的关闭修复仍未完成。SDK断开改记为`ray_driver_disconnected`，不再用字段名暗示物理退出；
+现有16项Mock通过，另一类10项因本机LOTUS／Torch收集未完成而待补查。CPU与模型运行分别解释。
 
 核心 `code/src`（排除 experiments、baselines，保留 research）为56,279行，
-全部 src＋scripts Python 为109,584行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,188行／减少30,751行；对清理起点3fd分别减少5,349／40,061行。
-本批相对8891生产Python增加26行、测试增加149行，独立集成不变；研究代码移动不算删除。
-主线预算与普通轮转保留，研究适配通过原执行循环交接；同步／异步模型构造、参数与序列化保持。
+全部 src＋scripts Python 为109,611行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,188行／减少30,724行；对清理起点3fd分别减少5,349／40,034行。
+本批相对5b生产Python增加27行、测试增加1行，独立集成不变；移动代码不算删除。
+CLIP命令由1544行收敛为281行，三个实际模块分别负责准备、执行观测和报告；19个定义保持原行为。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
@@ -63,7 +65,9 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 记录直接调用迁移、33项轻量CPU、两次收集问题及SDK／实际IPC未验证范围；旧pickle专属检查退出，当前序列化保留。
 并行375修复已保留，准确组合da675的相同33项通过；后续基础多查询补丁已加入独立组合候选。
 [组合核对与待测方法](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)
-分开832项通过、27个socket报错方法、一个Linux跳过及后续策略／夹具修正，没有称当前整树全数通过。
+保留832项通过、27个socket报错方法、一个Linux跳过及后续修正；
+[准确5b服务器回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)
+补回28方法、12隔离探针及一项真实Ray通过，观察到的进程／SHM／许可已清理，不转授后续整树或模型资格。
 [准确efac七项CPU回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)
 为首轮六成功、一个私有驱动问题修正后单项通过；项目断言保持，两轮资源清理确认，不转授新组合。
 [准确4d六项服务器回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-observation-server-six)
@@ -294,7 +298,7 @@ Core 的 prepared batching／复用留在原执行目录的实际子类；详细
 [独立研究包](src/research/multitask/README.md)。
 当前组合候选的各入口范围、独立导入检查及本地 CPU／fixture 回执见
 [基础多查询组合](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)。
-records resident 仍只支持顺序复用；提前准备／organization 仍限单 Job；组合版本的真实服务与服务器检查尚未运行。
+records resident 仍只支持顺序复用；提前准备／organization 仍限单 Job；5b的CPU／Ray服务器检查已有回执，真实固定模型双查询另验。
 
 本地资源大步候选移除“两份物理样本／只首次大步／后续最多翻倍”限制；按真实许可、ready前沿和合格资源余量试探，
 旧慢成员未完成不单独挡住资源试探，性能确认仍基于真实可比完成工作。压力回退保留全部既有责任和查询成本，

@@ -2,6 +2,14 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：分开CLIP运行职责并修正Ray观测含义
+
+原图像命令分别调用准备、执行观测和报告模块，保留19个定义的行为、参数及输出，旧私有调用一并迁移。
+原生Ray与SemBench文本的SDK断开字段改为准确名称，物理退出继续由自身来源证明；没有将其写成信号量残留修复。
+[迁移、输出比较与实际缺项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-clip-module-owners)
+保留各自受测源码及历史原件；[准确5b服务器回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)
+另记基础多查询CPU和Ray结果，不借作图像／模型资格。cascade与异常收尾另批处理，未合并main。
+
 ## 2026-11-06：整合基础多查询与显式研究适配
 
 在8891上整合职责迁移，基础固定份额／轮转留在主线，共享研究通过现有执行接点使用同一核心。

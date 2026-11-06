@@ -3,6 +3,17 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="image-clip-script-source"></a>
+## CLIP 命令拆分前的来源
+
+旧 `run_image_clip_e2e.py` 的19个定义迁入所属实验模块后，五份历史投影继续读取原完整脚本。
+准确 `5b25197dafc03d6ae7fa48e7c0f7460122e85e51` 的原件以
+[单份gzip](historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz)保存；
+五条来源和格式映射只更换读取位置，全部预期摘要、投影身份及已有映射保持。
+首次五条摘要不匹配与修正后的五条读取通过分别保留，没有重跑整套物化或模型。
+[职责、原字节与检查](../../results/diagnostics/records_runtime_refactor_20261104/README.md#image-clip-module-owners)
+说明当前命令和历史脚本的使用方式。
+
 <a id="basic-multiquery-sources"></a>
 ## 基础多查询与研究拆分前的源码
 

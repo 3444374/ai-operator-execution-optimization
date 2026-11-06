@@ -3995,3 +3995,61 @@ SAOR 的阶段观测转换、决策动作与增量执行资格仍需单独实现
 原10秒等待和退出断言、项目源码、关闭处理保持，其余六项未重复；不改写首轮为无错误的七项通过。
 两轮均确认观察到的自有进程退出、共享内存增量为零、无剩余具名共享内存及运行许可释放。
 这些是准确 `efac26ae` 的CPU管道／spawn／软件引擎证据，模型、Ray集群、GPU查询与作者二进制运行均为零，不转授到新组合。
+
+<a id="image-clip-module-owners"></a>
+## CLIP 命令职责拆分与准确SDK断开标记（2026-11-06）
+
+本批基于已发布5b，独立工作树保留正在进行的服务器检查。当前CLIP矩阵与embedding比较仍使用原命令，
+因此保留入口并按真实职责迁移，没有因脚本较长就删除其功能。
+
+| 所属位置 | 实际责任／代码行数 |
+|---|---|
+| `run_image_clip_e2e.py` | 解析参数并组装调用，1544→281行 |
+| `experiments/image_clip/setup.py` | 来源与预热输入、实验选项、CPU／阶段资源声明，279行 |
+| `experiments/image_clip/execution.py` | 框架初始化、工作进程、预热／查询切换和观测，323行 |
+| `experiments/image_clip/reporting.py` | CSV字段、派生指标、embedding副本及manifest，683行 |
+
+包初始化只保存共同代码目录，不加载模型。报告中的执行类型只供类型工具使用，没有运行时反向导入。
+旧私有调用与测试引用已迁移到实际所属模块，没有新增转发副本。
+源码cdc211aa的19个定义按名称迁移后语法树相同；原参数、默认、执行顺序、提示和输出字段保持。
+[机器记录](raw/image_clip_module_owners_checks.json)保存准确源码、来源摘要、独审及各组结果。
+
+### 已做检查和原缺项
+
+- 14组纯输出比较覆盖六条执行路径、两种归一化选项及HSE选项；帮助、完整CSV、结果行和manifest前后相同。
+- cdc211aa的两个现有图像模块22方法通过，0.014秒，无错误或跳过；没有新增同义测试。
+- 五份历史投影原先读取当前完整脚本，迁移后五条摘要不匹配。准确5b原脚本单份gzip保存，
+  五条来源／格式映射补齐后读取通过；全部预期摘要、投影身份和已有映射保持，没有重跑整套物化。
+- Ray观测字段原候选36947a98的16个既有Mock方法通过，0.012秒；另一类10方法在LOTUS／Torch元数据收集期间未执行，原中断和栈保留，未绕过或重试库加载。
+  此候选以dcbf78a6加入，四文件字节与受测来源相同；它与图像迁移无文件重叠，测试数字不合计为整树覆盖。
+
+可运行 `PYTHONPATH=code python -B -m unittest tests.modalities.image.test_image_execution tests.modalities.image.test_image_clip_matrix`
+复查现有图像方法；观测方法选择 `tests.baselines.text.test_ray_data_sembench_native.NativeRayQ3Tests`。
+[压缩前后结果投影](raw/image_clip_characterization.json.gz)保存14组输出与短驱动源码，重复的原指标说明以SHA-256表示，完整原输出在私有证据中保持；将驱动提取到Git外目录后，
+分别传入准确5b完整树和当前树路径进行比较。驱动仅使用合成输入及模块替身，不连接数据库或运行模型。
+
+### 观测字段含义和仍未处理的问题
+
+原生Ray与普通SemBench文本现在记录 `ray_driver_disconnected`，只表示SDK断开；
+原生Q3的 `model_process_exit_confirmed` 继续按真实来源保持未知。旧 `ray_runtime_closed` 不保留重复别名。
+仓内消费者和指定仓外Python辅助均已反查；历史结果仍按当时源码解释，不批量改写原件。
+这14处字段修正净增0行，未改变引擎关闭或资源责任。
+
+Ray2.56.1的公开Processor仍没有运行中模型actor的close句柄；已复现的actor GC杀child／tracker与信号量残留未修复。
+不能用额外析构钩子、前缀unlink或改动原生执行图代替该能力。原Q3对象缺创建栈、1596第二次关闭原因未知的状态保持。
+图像异常收尾和cascade并发随机状态各自继续处理，未混入本次结构迁移。
+
+生产Python净增27行、测试增1行；核心56,279行、src＋scripts109,611行，独立集成不变。
+统计包含注释／空行，核心排除experiments／baselines并包含research；历史副本另计。移动文件不算代码删除。
+较固定main的核心增加2,188行、src＋scripts减少30,724行；较3fd分别减少5,349／40,034行。
+本批没有真实Ray、模型、GPU或数据库运行，目录整理不代表查询加速。
+
+<a id="basic-multquery-server-5b"></a>
+## 准确5b基础多查询服务器回执（2026-11-06）
+
+[原交接投影及原件摘要](raw/basic_multquery_server_5b_receipt.json)已读回：准确5b25197d／afd40611，
+28项CPU方法、12项隔离导入探针、独立1项真实Ray CPU方法均通过，无失败、错误或跳过；前两组重叠，不相加。
+Linux身份方法实际通过，探针没有加载research／vLLM／Torch／Ray；真实Ray返回r0和r1各2行、目标e1，并执行原关闭。
+观察到的CPU组7个、Ray组9个自有进程均退出，新增共享内存无残留、运行许可释放，GPU空闲；模型调用为零。
+正常Git获取曾两次超时，随后通过已核验的公开Git增量包恢复准确提交和干净工作树，原失败保留。
+这些结果属于5b，与本次图像／观测候选分开。真实固定模型双查询、受限records并发完整LOTUS及质量／性能未由本轮证明。
