@@ -494,3 +494,30 @@ SDK、driver 和 limits 继续取已有 `historical_sources/5ff54bfe/` 原件，
 因此不增加压缩副本、不改 MANIFEST、原3010条摘要、投影身份、来源版本或既有读取位置。
 本批14个现有 CPU 方法全部通过；其中[完整恢复用例](../../../code/tests/experiments/test_native_baseline_reproduction.py)
 实际构造五份投影并逐文件核对3010份摘要，未运行旧模型或历史实验命令。
+
+<a id="retired-fixed-local-probe-suites"></a>
+## 本地固定测量套件的准确来源
+
+`mapped_core_probe` 只编排既有 `map_observation_probe.run_case` 的固定两组对照，
+`request_budget_batch_probe` 只测量固定规模的 SQLite 预留循环；两者没有当前生产调用。
+这四份源码退出维护入口，不表示公共 Map／UDS provider、共享预算或观察方法退役。
+现用 `run_case` 的 mapped 模式、`reserve_many`、计数失败和 unknown 处理均保留，
+`mapped_request_probe` 的独立跨进程组件诊断也继续维护。
+
+恢复旧固定矩阵应使用完整 Git 树
+[`6ec2dde0e626c72f53b38a4f46222a4801f865f1`](https://github.com/3444374/ai-operator-execution-optimization/tree/6ec2dde0e626c72f53b38a4f46222a4801f865f1)
+及其配套测试。不要将单个旧模块放回当前导入路径；恢复源码不代表已执行旧矩阵或重新取得模型结果。
+
+| 删除路径的准确 Git 来源 | 字节 | SHA-256 |
+|---|---:|---|
+| [code/src/experiments/mapped_core_probe.py](https://github.com/3444374/ai-operator-execution-optimization/blob/6ec2dde0e626c72f53b38a4f46222a4801f865f1/code/src/experiments/mapped_core_probe.py) | 3593 | `4c39db5e14dd89aa0befca4d48b3b10fd0997c16718dc30e524f5a2aa2ac6d6b` |
+| [code/src/experiments/request_budget_probe.py](https://github.com/3444374/ai-operator-execution-optimization/blob/6ec2dde0e626c72f53b38a4f46222a4801f865f1/code/src/experiments/request_budget_probe.py) | 5713 | `39d822c50b52459d6f06ff10338107d7853e6c8c69f0c4b49160fb92bcafde1c` |
+| [code/scripts/profiling/mapped_core_probe.py](https://github.com/3444374/ai-operator-execution-optimization/blob/6ec2dde0e626c72f53b38a4f46222a4801f865f1/code/scripts/profiling/mapped_core_probe.py) | 166 | `46c9bdd86d781c9b8e8ea0b9800e50b1969e6b02c1e958b956366d8e224cda3d` |
+| [code/scripts/profiling/request_budget_batch_probe.py](https://github.com/3444374/ai-operator-execution-optimization/blob/6ec2dde0e626c72f53b38a4f46222a4801f865f1/code/scripts/profiling/request_budget_batch_probe.py) | 166 | `c84315ad515813aad7532a5735e8cf881637e1cea03334f7fd96718a00dc0649` |
+
+五份历史投影的两个源实现已从各自原有 `7bf1d92b` 来源读取，本次不改这些映射。
+原来依赖当前文件的两个 CLI 分别保存为
+[Core CLI 原件](historical_sources/6ec2dde0/code/scripts/profiling/mapped_core_probe.py.gz)和
+[批记账 CLI 原件](historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz)。
+只增加十条来源及 gzip 格式记录；原 3,010 条文件摘要、五个投影身份、原来源版本和已有映射保持。
+旧测量数据、失败记录与离线复算脚本继续保留；本次不重跑旧性能测量。
