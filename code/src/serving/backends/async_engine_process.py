@@ -20,7 +20,8 @@ import uuid
 
 from src.infrastructure.deadlines import deadline_expired
 from . import vllm_protocol as common
-from .vllm_async_engine import AsyncEngineLimits, result_record
+from .vllm_async_engine import AsyncEngineLimits
+from .vllm_protocol import result_record
 from .async_engine_wire import _HEADER, _OPEN_FRAME_BYTES, _frame, _compact_result
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
@@ -281,10 +282,11 @@ class AsyncEngineProcess:
                 return BatchSubmitResult("backpressure", reason="request, result or command capacity exhausted")
             keys = tuple(self._owner_uid + ':' + str(self._sequence+i) for i in range(count))
             items = [dict(request_id=key, row=row) for key, row in zip(keys, snapshots)]
+            generation_values = asdict(effective)
             for item in items:
-                _frame(dict(op='submit', **item, generation=asdict(effective), deadline=deadline_monotonic),
+                _frame(dict(op='submit', **item, generation=generation_values, deadline=deadline_monotonic),
                        self.limits.item_input_bytes)
-            data = _frame(dict(op='submit_batch', requests=items, generation=asdict(effective),
+            data = _frame(dict(op='submit_batch', requests=items, generation=generation_values,
                                deadline=deadline_monotonic), min(self.limits.input_bytes, (1 << 32)-1))
             size = len(data)-4
             if used['input_bytes'] + size > self.limits.input_bytes:

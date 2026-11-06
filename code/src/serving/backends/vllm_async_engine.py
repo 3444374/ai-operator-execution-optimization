@@ -56,12 +56,6 @@ class AsyncEngineLimits:
             raise ValueError("result and control frames require at least 4096 bytes")
 
 
-def result_record(identity, *, engine_uid, start, end, status, submitted, error_type=None):
-    """Call the owner's shared constructor; never maintain a second usage schema."""
-    return common.result_record(identity, engine_uid=engine_uid, start=start, end=end,
-                                status=status, submitted=submitted, error_type=error_type)
-
-
 class VllmAsyncEngine:
     """Single-event-loop engine; generation is per request, not per drained batch."""
 
@@ -77,11 +71,6 @@ class VllmAsyncEngine:
             raise ValueError("max_tokens exceeds max_model_len")
         identity = self.spec.validate_local()
         common._validate_current_runtime(identity)
-        # These functions are extracted by the single shared-engine owner.
-        if not callable(getattr(common, "result_from_output", None)) or not callable(
-            getattr(common, "result_record", None)
-        ):
-            raise RuntimeError("the shared engine result conversion is required")
         os.environ["HF_HUB_OFFLINE"] = os.environ["TRANSFORMERS_OFFLINE"] = "1"
         import vllm
         if (getattr(vllm, "__version__", None) != common.VLLM_VERSION
@@ -220,7 +209,7 @@ class VllmAsyncEngine:
             raise RuntimeError("async engine input capacity exhausted")
         started = time.monotonic()
         if deadline_monotonic is not None and started >= deadline_monotonic:
-            result = result_record(identity, engine_uid=self.engine_uid, start=started,
+            result = common.result_record(identity, engine_uid=self.engine_uid, start=started,
                 end=started, status="failed", submitted=False, error_type="DeadlineExceeded")
             result.update(deadline_expired=True, engine_terminal_confirmed=True)
             return result
@@ -241,7 +230,7 @@ class VllmAsyncEngine:
             state["expected_ids"] = expected_ids
             expired = deadline_expired(deadline_monotonic)
             if state["abort_requested"] or expired or self._closing_task is not None:
-                result = result_record(identity, engine_uid=self.engine_uid, start=started,
+                result = common.result_record(identity, engine_uid=self.engine_uid, start=started,
                     end=time.monotonic(), status="failed", submitted=False,
                     error_type="DeadlineExceeded" if expired else "CancelledBeforeSubmission")
                 result.update(engine_terminal_confirmed=True, deadline_expired=expired)
@@ -275,7 +264,7 @@ class VllmAsyncEngine:
             if not work.done():
                 work.cancel()
             confirmed = not state["entered"] and work.done()
-            result = result_record(identity, engine_uid=self.engine_uid, start=started,
+            result = common.result_record(identity, engine_uid=self.engine_uid, start=started,
                 end=time.monotonic(), status="failed" if confirmed else "unknown",
                 submitted=False, error_type=type(error).__name__)
             if state["output"] is not None:
