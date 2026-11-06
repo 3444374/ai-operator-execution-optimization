@@ -14,7 +14,7 @@ class ProtocolImportsTests(unittest.TestCase):
     def test_old_imports_and_old_pickle_names_resolve_to_the_same_shared_values(self):
         from src.serving.backends import vllm_engine as sync, vllm_protocol as protocol
 
-        for name in ('EngineSpec', 'GenerationSpec', 'IDENTITY_FIELDS', 'result_record',
+        for name in ('EngineSpec', 'GenerationSpec', 'result_record',
                      'result_from_output', '_prepared', '_token_ids'):
             self.assertIs(getattr(sync, name), getattr(protocol, name), name)
         for name in ('EngineSpec', 'GenerationSpec'):

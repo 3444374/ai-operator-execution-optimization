@@ -23,7 +23,7 @@ from integrations.imlane_records.model_lifecycle import close_owned_model, model
 from integrations.imlane_records.method_owner import owned_worker, slot as _slot
 from integrations.imlane_records.transport_limits import TransportLimits
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, RecordScan
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
 
 
 class FilterWorker:

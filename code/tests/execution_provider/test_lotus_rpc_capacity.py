@@ -19,7 +19,7 @@ from src.serving.backends.async_engine_process import BatchSubmitResult, SubmitR
 from src.execution_provider.adapters.lotus_records_core import _encode
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, result_record
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS, result_record
 from tests.execution_provider.test_lotus_records_async_actor import prepared
 
 

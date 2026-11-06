@@ -12,7 +12,7 @@ from src.scheduling.core.session_contract import TaskKey
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
 
 
 # Frozen 72fe2ed9 selection oracle; production never imports this implementation.

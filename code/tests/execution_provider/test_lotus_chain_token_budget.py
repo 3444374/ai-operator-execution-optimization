@@ -24,7 +24,7 @@ from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec,
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 from tests.scheduling.test_incremental_session import setup
 from tests.execution_provider.chain_tokenizer_fixture import tokenizer, TEMPLATE
 

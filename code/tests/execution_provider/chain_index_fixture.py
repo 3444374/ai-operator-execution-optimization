@@ -10,7 +10,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 from src.serving.backends import lotus_chain_worker as implementation
 from src.serving.backends import vllm_sync_process as transport
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 from src.serving.backends.model_context import model_context_record
 

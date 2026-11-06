@@ -5,7 +5,7 @@ import json
 from copy import deepcopy
 
 from src.semantic_methods.lotus.records import identity
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 PROTOCOL = "imlane.records.v2"
 

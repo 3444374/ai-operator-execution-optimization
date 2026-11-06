@@ -5,7 +5,7 @@ import sys
 from unittest.mock import patch
 
 from src.serving.backends import staged_generation_process, vllm_engine
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
 class FixtureEngine:
