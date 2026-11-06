@@ -30,6 +30,36 @@ class ServiceRecoveryTests(unittest.TestCase):
     _run = snapshots.ServiceSnapshotRetentionTests._run
     _owner_and_query = snapshots.ServiceSnapshotRetentionTests._owner_and_query
 
+    def test_pre_ready_failure_retries_original_owner_without_returning_unknown_bytes(self):
+        with RecoveryRuntime([]) as runtime:
+            owner = self.owner()
+            grant = owner._service_allocation
+            original = dict(runtime.identity)
+            before = self.pool.snapshot()
+            failure = LookupError('pre-ready remote declaration failure')
+            with patch.object(runtime.ray, 'remote', side_effect=failure):
+                with self.assertRaises(LookupError) as caught:
+                    owner.start()
+            self.assertIs(caught.exception, failure)
+            self.assertEqual(owner._runtime_binding.original[1], original)
+            self.assertIsNone(grant._runtime_identity)
+            self.assertIsNone(owner._actors.model_ready)
+            self.assertIsNone(owner._actors.model_actor)
+            with patch.object(owner, 'close', wraps=owner.close) as close:
+                runtime.identity = dict(original, job_id='replacement-job')
+                with self.assertRaisesRegex(RuntimeError, 'runtime'):
+                    self.pool.retry_cleanup(grant.allocation_id, timeout=1)
+                close.assert_not_called()
+                runtime.identity = original
+                report = self.pool.retry_cleanup(grant.allocation_id, timeout=1)
+                close.assert_called_once_with(timeout=1)
+            self.assertEqual(report['status'], 'unknown')
+            self.assertEqual(grant.describe()['status'], 'bound')
+            self.assertEqual(self.pool.snapshot()['allocated_bytes'], before['allocated_bytes'])
+            self.assertEqual(self.pool.snapshot()['allocations'], before['allocations'])
+            self.assertEqual(runtime.async_actors, [])
+            self.assertEqual(runtime.engines, [])
+
     def test_lost_caller_reference_keeps_the_actual_owner_available_for_cleanup(self):
         with RecoveryRuntime([]) as runtime:
             owner = self.owner()

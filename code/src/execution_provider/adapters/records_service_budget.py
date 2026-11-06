@@ -224,7 +224,7 @@ class RecordsPayloadPool:
                 or actors.prepare_actors or actors.model_ready is not None):
             observed = self._runtime_observation(owner)
             original = ((grant._runtime_module, grant._runtime_identity)
-                        if grant._runtime_identity is not None else getattr(owner, '_model_runtime', None))
+                        if grant._runtime_identity is not None else owner._runtime_binding.original)
             if (original is None or observed is None
                     or observed[0] is not original[0] or observed[1] != original[1]):
                 raise RuntimeError('original Ray runtime identity is unavailable or changed; recovery cannot reconnect it')
