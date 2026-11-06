@@ -324,17 +324,6 @@ def __getattr__(name):
                     except Exception:
                         emit_buffered('native_feedback_audit_unavailable',reason='actor_snapshot_metadata_unavailable')
                 return value
-        def _run_core(self,rows,deadline,maximum,request_key,generation=None):
-            if not handoff_profile():return super()._run_core(rows,deadline,maximum,request_key,generation)
-            key=core_key(request_key)
-            try:result=super()._run_core(rows,deadline,maximum,request_key,generation)
-            except BaseException as error:
-                emit('actor_result_raise',key=key,identities=ids(rows),error_type=type(error).__name__)
-                raise
-            # Native _serve_core still owns its reader guard at this point.
-            emit('actor_result_return',key=key,identities=ids(rows),
-                 scope='before native reader guard releases; Ray serialization/return still follow')
-            return result
         def poll_prepared_batch(self,batch_key,acknowledgements=None):
             extra=()if acknowledgements is None else(acknowledgements,)
             if not handoff_profile():

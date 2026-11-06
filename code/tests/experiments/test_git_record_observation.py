@@ -1,5 +1,6 @@
 """Git gates, private on/off preparation and exact original-file recovery; no model."""
 from copy import deepcopy
+import asyncio
 import importlib.util
 import json
 import os
@@ -214,10 +215,37 @@ class PrivateCaptureFlowTests(unittest.TestCase):
             self.assertEqual(ready['handoff_CPU_paths'],dict(single_request=True,token_batch=supported))
 
 
+class HandoffAwaitableTests(unittest.IsolatedAsyncioTestCase):
+    async def test_observation_preserves_result_error_and_cancellation(self):
+        spec=importlib.util.spec_from_file_location('record_handoff_test',TOOL/'record_observer.py')
+        observer=importlib.util.module_from_spec(spec)
+        with patch.dict(os.environ,SEM_RECORD_OBSERVATION='off'):
+            spec.loader.exec_module(observer)
+        value=object()
+        for error in (None,RuntimeError('fixture failure'),asyncio.CancelledError()):
+            with self.subTest(error=type(error).__name__):
+                calls=[];events=[]
+                async def operation():
+                    calls.append('called')
+                    if error is not None:raise error
+                    return value
+                with patch.object(observer,'handoff_profile',return_value=True), \
+                     patch.object(observer,'emit_buffered',side_effect=lambda event,**kw:events.append(event)):
+                    result=observer.observe_ref_ready(operation(),dict(session_id=1,sequence=0),[])
+                    if error is None:
+                        self.assertIs(await result,value)
+                    else:
+                        with self.assertRaises(type(error)) as raised:
+                            await result
+                        self.assertIs(raised.exception,error)
+                self.assertEqual(calls,['called'])
+                self.assertEqual(events,['driver_future_done'])
+
+
 class PublicBulkProbeIntegrationTests(unittest.TestCase):
-    def run_probe(self,mode):
+    def run_probe(self,mode,*,single=False):
         source=Path(__file__).resolve().parents[3]
-        probe=Path(__file__).with_name('probe_record_resource_batch_handoff.py')
+        probe=Path(__file__).with_name('probe_record_resource_handoff.py' if single else 'probe_record_resource_batch_handoff.py')
         env=dict(os.environ,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',
                  LITELLM_LOCAL_MODEL_COST_MAP='True',CUDA_VISIBLE_DEVICES='')
         with tempfile.TemporaryDirectory()as directory:
@@ -225,7 +253,15 @@ class PublicBulkProbeIntegrationTests(unittest.TestCase):
             result=subprocess.run([sys.executable,'-B',str(probe),str(source),str(output),mode],
                 env=env,cwd=source,capture_output=True,text=True,timeout=30)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            report=json.loads((output/'PUBLIC-BATCH-HANDOFF.json').read_text())
+            report=json.loads((output/('PUBLIC-HANDOFF.json' if single else 'PUBLIC-BATCH-HANDOFF.json')).read_text())
+            if single:
+                self.assertEqual(report['status'],'passed_actual_public_single_owner_actor_transport')
+                self.assertTrue(report['current_nonblocking_submit_and_poll'])
+                self.assertTrue(report['result_values_preserved'] and report['native_ack_once'])
+                self.assertEqual(report['unknown_handoff_events'],0)
+                self.assertFalse(report['real_Ray_RPC'])
+                self.assertEqual(report['real_model_calls'],0)
+                return
             self.assertEqual(report['status'],'passed_actual_public_bulk_owner_actor_transport')
             self.assertTrue(report['outputs_preserved'])
             self.assertTrue(report['confirmed_ACKs_carried_by_poll'])
@@ -240,6 +276,12 @@ class PublicBulkProbeIntegrationTests(unittest.TestCase):
 
     def test_current_public_bulk_probe_on_uses_constructed_owner(self):
         self.run_probe('on')
+
+    def test_current_public_single_probe_off_uses_constructed_owner(self):
+        self.run_probe('off',single=True)
+
+    def test_current_public_single_probe_on_uses_constructed_owner(self):
+        self.run_probe('on',single=True)
 
 
 class OriginalIntegrityTests(unittest.TestCase):
