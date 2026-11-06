@@ -1,7 +1,7 @@
 {
   "schema": "semloom.imlane.duckdb.q3.model_components.v1",
   "integration_base": "87fdb2bc7",
-  "state": "98 local CPU methods passed; real author plus software HTTP CPU validation pending",
+  "state": "98 local CPU methods passed; actual author plus software HTTP CPU completed at e420; author-native audit complete; real HTTP model testing paused",
   "methods": 98,
   "passed": 98,
   "models": 0,
@@ -42,5 +42,15 @@
     "fallback": "remaining-child TERM and KILL both recover but remain failed",
     "first_component_methods": 88,
     "final_distinct_methods": 98
+  },
+  "actual_author_software_HTTP_evidence": "http_software_cpu.json",
+  "author_native_transport_audit": "native_transport_audit.json",
+  "post_integration_recheck": {
+    "source_commit": "e86afedb91e5d913ebb2f988cbfd5f305b4c0482",
+    "methods": 98,
+    "passed": 98,
+    "log_sha256": "4cfba19499d7f2893fddd652a351a04fd7191605f1849e8d5af3d2100426fa58",
+    "models": 0,
+    "GPU_runs": 0
   }
 }

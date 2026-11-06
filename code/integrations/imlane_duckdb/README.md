@@ -74,6 +74,16 @@ DuckDB默认16线程仍在显式8核亲和性内，未注入单线程。完整�
 
 ## 真实模型worker与独立HTTP对照
 
+最新选择为**作者原生执行优先**。固定作者HEAD仍为072f；已核对完整23809文件及实际UDF调用，
+公开artifact未提供Q7模型客户端，不能声称HTTP或项目新IPC是作者原协议。
+作者executor只负责Arrow→注册Python callable→Arrow；模型连接由UDF决定。
+最小必要适配是保留作者DuckDB／ArrowLane／4 executor，让UDF直接调用一个官方vLLM服务。
+vLLM0.25.1[官方接口](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/serving/online_serving/openai_compatible_server.md)
+支持普通HTTP client及直接JSON参数；现有HTTPX接线属于该公开接口，无需为“原生”更换SDK或自建RPC。
+它仍标为“作者原生执行＋项目Q3／官方vLLM API绑定”，不声称原论文Q7客户端复现。
+IPC技术可行，但当前草稿暂停、不集成、不授予运行资格；完整来源见[原生连接核查](../../../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md#作者原生模型连接核查)。
+真实HTTP模型测试保持暂停，本批没有启动GPU。
+
 [模型worker](../../src/experiments/native_imlane_model_query.py)与原软件fixture入口分开，
 前者明确拥有一个外部vLLM服务；作者coordinator／4个CPython executor不加载4份GPU模型。
 数据库→executor仍用作者ArrowLane／共享内存；仅UDF→独立模型服务为loopback HTTP，SemLoom主线保持本地IPC。
@@ -133,8 +143,10 @@ API原生关闭可用整个剩余graceful窗口，不能把末尾8秒误作正�
 作者既有close仍有分段等待，因此必须用本模块`supervised_run(command, output, supervision_dir, monitor=...)`
 绑定READY期限；supervision目录与worker输出分开。调用方持有host租约，并将`ResourceMonitor.finish().passed`
 及GPU退出检查纳入最终成功，不能仅凭worker completed或API返回。构建／新接线资格见准备报告，
-真实模型、物理GPU关闭、质量与性能仍待本轮后续实测。
+真实模型、物理GPU关闭、质量与性能仍待后续实测。
 
 软件HTTP CPU验证必须显式`provider_mode=software_http`并通过Python测试factory返回真实ModelService、
 仅替换其spawn为无模型软件服务；普通CLI拒绝该mode，不能因写了software便意外启动GPU。
 执行前范围见[原生基线校准](../../../experiments/plans/原生基线校准.md)。
+准确e420的真实作者＋软件HTTP正常／503两例已完成，见[软件证据](../../../experiments/results/diagnostics/imlane_duckdb_q3_20261106/http_software_cpu.json)；
+错误例原生client由外层TERM取消，标量与原生错误传播仍unknown，不将自动资源清理写成查询成功。

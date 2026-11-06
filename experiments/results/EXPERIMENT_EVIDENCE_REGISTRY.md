@@ -20,8 +20,14 @@
 覆盖同batch异步HTTP、原消息／生成参数、无额外8／100连接门槛、错误后drain、client关闭、started／terminal unknown、
 模型owner的birth／异常／非零退出、native READY期限及软件CLI防误启模型。完整自有回执按实际大小读，
 UDF和HTTP同PID／调用区间唯一配对后逐position核对；重复消息与同COUNT不能掩盖交换。
-本次本地没有启动真实进程、HTTP服务、模型或GPU；真实作者＋软件服务／新薄driver的CPU闭环单列待验，
-不将组件通过当作真实8192输出、模型质量、GPU回收或性能结论。保留87fdb并行重构，未改SemLoom主线传输。
+本地组件测试没有启动真实进程、HTTP服务、模型或GPU；准确e420的
+[真实作者＋软件服务](diagnostics/imlane_duckdb_q3_20261106/http_software_cpu.json)随后完成正常120POST／软件COUNT14、
+独立1POST／503，原错误worker exit1、supervisor failed和native TERM取消／标量unknown保留。
+服务及作者资源自动回收，最终SHM增量0；软件context和usage不当实际vLLM容量／token。
+用户后续要求原生优先，[当前作者源码核查](diagnostics/imlane_duckdb_q3_20261106/README.md#作者原生模型连接核查)
+未找到Q7模型客户端；现有HTTP为官方vLLM API的项目绑定，不称作者强制协议；自建IPC草稿及真实HTTP模型测试暂停。
+e86整合后相同98方法通过，受测组件源码未变；不将其当真实8192输出、模型质量、GPU回收或性能结论。
+保留并行重构，未改SemLoom主线传输。
 
 ## 2026-11-06：中性容量与固定探针、连接关闭整理
 
