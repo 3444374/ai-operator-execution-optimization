@@ -64,24 +64,35 @@ def describe_inputs(checkout, data_dir, query_id):
 
 
 @contextmanager
-def _native_join_strategy():
-    """Bind the pinned runner's spelling to the current SDK in its isolated worker."""
+def _native_query_api():
+    """Bind the pinned runner's strategy and empty Extract schema in its worker."""
+    from lotus.sem_ops.sem_extract import SemExtractDataFrame
     from lotus.sem_ops.sem_join import SemJoinDataframe
     from lotus.types import ReasoningStrategy
 
-    original = SemJoinDataframe.__call__
+    original_join = SemJoinDataframe.__call__
+    original_extract = SemExtractDataFrame.__call__
 
-    @wraps(original)
-    def call(accessor, *args, **kwargs):
+    @wraps(original_join)
+    def join(accessor, *args, **kwargs):
         if kwargs.get("strategy") == "zs-cot":
             kwargs["strategy"] = ReasoningStrategy.ZS_COT
-        return original(accessor, *args, **kwargs)
+        return original_join(accessor, *args, **kwargs)
 
-    SemJoinDataframe.__call__ = call
+    @wraps(original_extract)
+    def extract(accessor, input_cols, output_cols, *args, **kwargs):
+        result = original_extract(accessor, input_cols, output_cols, *args, **kwargs)
+        if len(result.index) == 0:
+            return result.reindex(columns=result.columns.union(output_cols, sort=False))
+        return result
+
+    SemJoinDataframe.__call__ = join
+    SemExtractDataFrame.__call__ = extract
     try:
         yield
     finally:
-        SemJoinDataframe.__call__ = original
+        SemJoinDataframe.__call__ = original_join
+        SemExtractDataFrame.__call__ = original_extract
 
 
 def run_original_query(checkout, data_dir, query_id):
@@ -102,7 +113,7 @@ def run_original_query(checkout, data_dir, query_id):
         return pd.read_csv(data / name, **kwargs)
 
     owner.load_data = load
-    with _native_join_strategy():
+    with _native_query_api():
         return getattr(owner, "_execute_q" + query)()
 
 

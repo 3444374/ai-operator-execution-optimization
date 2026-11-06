@@ -112,23 +112,35 @@ class OriginalMMQAImageTests(unittest.TestCase):
                     self.assertIn(expected, message[0]["content"])
 
     def test_native_join_receives_enum_and_restores_its_accessor_on_success_and_failure(self):
+        from lotus.sem_ops.sem_extract import SemExtractDataFrame
         from lotus.sem_ops.sem_join import SemJoinDataframe
         from lotus.types import ReasoningStrategy
 
         original, seen = SemJoinDataframe.__call__, []
+        original_extract, extract_rows = SemExtractDataFrame.__call__, []
 
         def observe(accessor, *args, **kwargs):
             seen.append(kwargs["strategy"])
             return original(accessor, *args, **kwargs)
 
-        with patch.object(SemJoinDataframe, "__call__", observe):
+        def observe_extract(accessor, *args, **kwargs):
+            extract_rows.append(len(accessor._obj))
+            return original_extract(accessor, *args, **kwargs)
+
+        with (patch.object(SemJoinDataframe, "__call__", observe),
+              patch.object(SemExtractDataFrame, "__call__", observe_extract)):
             self._run("2a")
             self.assertIs(SemJoinDataframe.__call__, observe)
+            self._run("2b", none_match=True)
+            self.assertIs(SemExtractDataFrame.__call__, observe_extract)
             with self.assertRaises(KeyError):
                 self._run("2b", extract_text="{}")
             self.assertIs(SemJoinDataframe.__call__, observe)
+            self.assertIs(SemExtractDataFrame.__call__, observe_extract)
         self.assertIs(SemJoinDataframe.__call__, original)
-        self.assertEqual(seen, [ReasoningStrategy.ZS_COT, ReasoningStrategy.ZS_COT])
+        self.assertIs(SemExtractDataFrame.__call__, original_extract)
+        self.assertEqual(seen, [ReasoningStrategy.ZS_COT] * 3)
+        self.assertEqual(extract_rows, [0, 5])
 
     def test_q2b_runs_join_then_extract_for_every_actual_match(self):
         result, batches = self._run("2b")
@@ -151,9 +163,20 @@ class OriginalMMQAImageTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             self._run("2b", extract_text="{}")
 
-    def test_q2b_no_matches_keeps_upstream_missing_color_failure(self):
-        with self.assertRaises(KeyError):
-            self._run("2b", none_match=True)
+    def test_q2b_no_matches_returns_empty_declared_schema_without_extract_requests(self):
+        import pandas as pd
+
+        result, batches = self._run("2b", none_match=True)
+        self.assertEqual([len(messages) for messages, _ in batches], [10, 0])
+        self.assertEqual(batches[1][1]["response_format"], {"type": "json_object"})
+        self.assertTrue(result.empty)
+        self.assertEqual(list(result.columns), ["ID", "image_id", "color"])
+        saved = self.data / "empty-q2b.json"
+        saved.write_text(result.to_json(orient="split"))
+        restored = pd.read_json(saved, orient="split")
+        self.assertEqual(list(restored.columns), list(result.columns))
+        metric = evaluate_original(CHECKOUT, "2b", restored)["original_metric"]
+        self.assertEqual(metric["f1_score"], 0)
 
     def test_q7_preserves_original_all_airline_join_and_separate_gold(self):
         import pandas as pd

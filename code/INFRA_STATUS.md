@@ -82,8 +82,11 @@ Daft 补充文本图现先配置 Native runner、再创建 source DataFrame，�
 
 MMQA Q2a/Q2b/Q7 另修复原 `"zs-cot"` 字符串在 LOTUS1.2.4 枚举接口静默进入非 CoT 提示的问题：
 仅在独立查询调用边界映射为 `ReasoningStrategy.ZS_COT`，保留原 Join／Extract／解析与评价。
-65项相关离线CPU检查通过、无跳过，含原生 API 枚举、实际 HTTP 消息完整 CoT 提示、正常／异常恢复及原最终 Answer 解析；
-未访问网络、加载模型或操作服务器。现象与修复见[基线说明](src/baselines/README.md#sembench-image-preparation)，三题模型验证仍待服务器执行。
+Q2b 另在原零行 Extract 返回边界保留声明列，修复空 Join 后最终投影缺 `color` 的错误；
+非空 `{}` 缺字段仍失败，Join、Extract 的调用与请求计数不变。
+66项相关离线CPU检查通过、无跳过，覆盖原生策略、HTTP 消息、零行 schema／零次 Extract POST、离线评价和正常／异常恢复。
+依据 `d061df8c` 保存的零行调用记录重建空表，原评价器离线 F1=0；原失败及失败耗时保留，不补成功端到端计时。
+上述CPU验证未访问网络、加载模型或操作服务器。现象与修复见[基线说明](src/baselines/README.md#sembench-image-preparation)，修复版本的真实服务调用仍待验证。
 
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；

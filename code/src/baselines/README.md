@@ -156,9 +156,10 @@ Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFr
 |---|---|
 | Daft source DataFrame 提前选择 Native runner，随后显式线程配置被当成外部覆盖而拒绝，发生在模型启动前。 | 在创建 DataFrame 前调用同一个 Native 配置入口；省略时保持 Daft 默认，已有 runner 仍不被暗中重配。原失败及零模型复现保留，原生图／核不改。 |
 | MMQA 原 runner 的 `src.runner` 与 SemLoom 已加载的 `src` 冲突，首轮无法导入。 | 仅在原模块加载期映射同一已验证上游 runner，随后恢复；十六题原查询／方法／accessor 差分及别名恢复检查通过。 |
-| MMQA Q2a/Q2b/Q7 的原 `"zs-cot"` 字符串与 LOTUS1.2.4 的枚举不相等，静默生成非 CoT 提示。旧软件回复检查未覆盖策略分支。 | 在独立查询 worker 调用原 Join 的边界转为 `ReasoningStrategy.ZS_COT`，正常及异常返回均恢复 accessor；不改原查询源码、候选对、顺序、Extract 或解析器。回归检查实际原生 API 参数与 HTTP 消息中的完整 CoT 提示，模型结果仍待实机验证。 |
+| MMQA Q2a/Q2b/Q7 的原 `"zs-cot"` 字符串与 LOTUS1.2.4 的枚举不相等，静默生成非 CoT 提示。旧软件回复检查未覆盖策略分支。 | 在独立查询 worker 调用原 Join 的边界转为 `ReasoningStrategy.ZS_COT`，正常及异常返回均恢复 accessor；不改原查询源码、候选对、顺序、Extract 或解析器。回归检查实际原生 API 参数与 HTTP 消息中的完整 CoT 提示，后续 `d061df8c` 实测确认该提示。 |
+| Q2b 空 Join 后，LOTUS Extract 仅从实际回复字典创建新列，零行结果没有声明的 `color`，原最终投影报错。 | 仍执行原零行 Extract，在返回边界保留声明列；不填值、不补行、不发送 Extract 请求。保存的零行调用记录可重建空表并用原评价器离线评价，原失败与失败耗时继续保留。 |
 | sf25 Q6 有 NaN，最初的纯字符串接纳误拒绝原 SDK 可序列化输入。 | 在文本 wire 边界保留原 DEFAULT cell 呈现；真实三题各25行完整消息与结果顺序相同，原 CSV 不变。 |
-| Extract 成功后原关系后处理可能因 `{}` 缺列失败，旧的新接线未把已完成算子报告附给该异常。 | 保留原 KeyError 并转交已知调用与关闭证据；不补字段把失败变成成功。 |
+| 非空 Extract 成功后原关系后处理可能因 `{}` 缺列失败，旧的新接线未把已完成算子报告附给该异常。 | 保留原 KeyError 并转交已知调用与关闭证据；不补字段把失败变成成功。 |
 | Movie 适配扩展使五份历史投影从维护版读取旧摘要失败。 | 保存单份准确原源并补五条来源／格式映射；原3010条摘要与投影 ID 不变，完整 materialize 通过。 |
 
 <a id="sembench-image-preparation"></a>
@@ -178,7 +179,7 @@ Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFr
 | Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64次 Filter | 原查询／原评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
 | Animals Q7 | 同一64图，两遍完整原 Filter，共128次 | 两遍原模型输入都保留，不能替为 CLIP 检索 |
 | MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 原生 Join／评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
-| MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 通过；preset 单次 Extract 仍不构成完整模型资格 |
+| MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 及零行 schema 通过；d061实测的空结果返回失败与离线评价单列，preset 单次 Extract 不构成完整模型资格 |
 | MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；原生服务入口已接，实际服务待绑定／验证 |
 | E-Commerce／Cars 图像 | 原实现存在；此前已查目录未定位成套数据 | 数据缺口与视觉 provider 缺口分别记录，不能记零分 |
 
@@ -207,8 +208,12 @@ Ray／Daft 已有 CLIP 图不构成上述 VLM Filter／Join／Extract 支持；I
 
 CPU 视觉夹具使用真实 ImageArray、原 PNG 格式化、原 Filter／Join／Extract 解析与关系结果。
 MMQA 同一图片的多个匹配行仍逐个 Extract，JSON response_format 保留原值。
-原 Q2b 在无匹配或 Extract 返回 `{}` 时可能因 `color` 缺列抛出 KeyError；测试保留原异常，
-不补字段把失败变为成功。这些软件回复不构成 VLM 质量或性能结果。
+Q2b 无匹配时，原零行 Extract 返回后保留声明的 `color` 列，最终结果仍为零行，额外 POST 为0；
+非空 Extract 返回 `{}` 缺列时仍抛出原 KeyError。正常及异常结束均恢复原 Join／Extract accessor。
+`d061df8c` 实测失败的保存记录为325个 Join 成功响应、Extract 输入0行／POST 0次；
+据此重建带 `ID/image_id/color` schema 的空表，原评价器离线得到 precision／recall／F1 均为0。
+原失败记录及46.740秒失败耗时保留，离线评价不补记正常 API 返回或成功端到端计时。
+这些软件回复检查与离线恢复不授予修复版本新的 VLM 质量或性能资格。
 
 ### 后续 Join、TopK 与缺失数据
 
