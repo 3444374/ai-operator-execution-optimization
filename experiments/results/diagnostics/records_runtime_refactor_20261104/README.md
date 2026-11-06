@@ -3434,7 +3434,7 @@ reader的finally、控制RPC、逐成员结果额度、取消和unknown责任保
 
 最终27个不同纯内存方法全部通过，无失败／错误／跳过，执行中不变的1,067份code摘要匹配eab。
 覆盖八项批生命周期、四项配置、owner元数据、两项现用poll观测、批探针开关及原十项RPC进展／背压／取消检查；其中的2,000请求是ControlledEngine合成工作，不是真实Ray或模型请求。
-较早17项迁移检查另存原件，不与最终选择重复相加。16项受影响实际子进程CPU IPC尚未运行，不计作跳过或通过；本机没有重试此前被拒的通信操作。
+较早17项迁移检查另存原件，不与最终选择重复相加。该27项记录时，16项实际子进程CPU IPC尚未运行；其后服务器结果见下文，本机没有重试此前被拒的通信操作。
 
 历史清单及其原3010条摘要不改。通过现有materializer只读核对受影响10条来源，均继续取已有准确旧字节；新生产模块和其余修改文件不在原投影。
 本批没有重跑五份完整历史树，也没有重跑服务器Ray、实际模型或性能实验。
@@ -3443,3 +3443,16 @@ reader的finally、控制RPC、逐成员结果额度、取消和unknown责任保
 `records_async_model.py`由726减至658行；核心和src＋scripts各净减68行，测试净减30行，未新增模块或控制层。
 当前核心56,943行、src＋scripts114,569行；较3fd分别减少4,685／35,076行，较main分别为核心增加2,852行、宽口径减少25,766行。
 物理行口径含注释和空行，tests／docs／历史原件排除，integrations仍4,858行单列。该缩减不代表提速或物理内存下降。
+
+### 实际IPC与reader夹具同步
+
+准确87ce07b2d0381c6edee0afb589c4f435af6ac33a、tree574e4d12ce036e5c364526154916541242a729a5的16项指定实际CPU IPC各执行一次：15通过、1失败，0错误、0跳过，真实Ray／模型调用均为零；19个登记进程、共享内存和许可清理确认。
+失败在reader用例最后的unknown断言，实际为failed；此前“在途reader仍在、没有producer退休证明、额度继续持有”等断言已通过，后续最终关闭和usage11断言未到达。原失败不改报通过。
+另一次单列诊断只观察原poll且不改返回字节，复现失败并捕获`CancelledBeforeSubmission`、submission_confirmed=false、engine_terminal_confirmed=true、prompt_tokens=null。
+这与worker在`generate_prepared`前响应取消的分支一致，不能据此断言IPC子进程没有收到帧。原始首轮没有保存该包的完整内容；完整close对象和retired_unknown字段也未记录，不补为零。
+
+原阻塞调用在结果到达后才返回；迁移后的`_start_core`仅排入IPC就返回，测试紧接着触发close，可能先取消而未进入夹具的unknown分支。
+d6abc0e327aabdceb74c669e506727352f2c0513、tree4e90089e19c6f5b71762377ff60f63de53fb4a58只在测试中增加现有`case.until`，等待IPC快照的ready_results为1后才发出ready信号，RPC仍被原事件持有。
+等待不消费结果或发送ACK，不释放reader；10项原断言逐字保持，包括unknown、最终closed、held归零和prompt_tokens11。生产代码、其余15项及容量默认均未改，没有新观测钩子或固定sleep。
+准确d6abc的该单项已一次通过，0错误／失败／跳过，方法耗时0.758166秒；全部10项原断言完成，包含unknown、RPC回返前继续持有、最终closed／held归零与prompt_tokens11。两个登记自有进程均退出，SHM无残留、许可归还；没有Ray、GPU worker或模型启动。
+其余15项不重跑、仍按87ce身份解释，原15通过／1失败和一次诊断不改写。因此16个原方法各有通过证据，但没有在d6abc重跑一整套16项。27项纯内存和历史10条来源继续按eab原身份解释，未重新执行；测试增加两行，生产代码量保持。

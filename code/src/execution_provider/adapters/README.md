@@ -1024,7 +1024,7 @@ ACK 继续拥有请求与结果，无第二套队列或责任计数。取消不�
 及专用等待循环已删除，现用 `try_submit_*` 接纳、poll交接、ACK确认沿原职责执行。
 owner的同名批提交方法仍返回awaitable，同步actor的`run_core`继续提供实际同步执行，两者不属于删除对象。
 直接actor用例已迁到现用接口，背压不占新请求；原未知结果与未结束RPC不提前归还。
-[本批27项纯内存检查与待执行IPC](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)
+[本批27项纯内存与实际IPC结果](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)
 分别记录源码和覆盖范围，不提供额外模型或性能资格。
 `model_submit` 继续计实际 `.remote()` 交接墙钟，背压重试计入该阶段；模型与依赖等待仍单列。
 执行元数据新增解析后的 RPC worker 数、来源、控制预留及交接协议，不能将其当硬件最优值。

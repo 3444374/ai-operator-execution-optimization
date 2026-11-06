@@ -76,7 +76,8 @@
     "status": "not_run",
     "real_model_calls": 0,
     "real_Ray_runs": 0,
-    "GPU_runs": 0
+    "GPU_runs": 0,
+    "historical_snapshot": "Pre-server plan; actual87ce results and reader followup are recorded below."
   },
   "earlier_errors": {
     "record": "before/retired-blocking-observer-before.json",
@@ -84,25 +85,95 @@
     "errors": 2
   },
   "private_originals": {
-    "files": 14,
     "record": "private_originals in the raw archive",
-    "manifest_sha256": "b5ccf887ef0c31f6a288a30b1953d2016313078a2d3762491c0d3dcb646b9436"
+    "files": 22,
+    "manifest_sha256": "abbc24c6b2c934d53f1c674eed6b4a6bee9e7acb95972a5094c78c5cc301790f"
   },
   "notes": [
-    "The exact eab source retirement removed three old blocking async actor RPCs and their private wait path. The current try/poll/ACK path, reader finally, unknown ownership, current owner methods and actual sync run_core remain.",
-    "The final27 distinct pure-memory methods passed on exacteab with1067 matching code hashes and no failure/error/skip. ControlledEngine2000 is synthetic and is not a Ray cluster or model workload.",
-    "The earlier17-method migration run recorded a dirty8efed working tree before two later test-only cleanups. It is retained by its source hashes and is not relabelled as an exacteab run or added to final27 coverage.",
-    "Two obsolete hook tests each raised IndexError against exact8efed because the retired observer hook emitted no event. Their originals remain. Existing poll tests already cover return identity, same business exception and unconsumed iterator; no legacy hook was restored.",
-    "The old busy-poll method checked a removed production wait loop. The migrated caller helper sleeps in tests, so that method was deleted instead of pretending to prove current production polling behavior.",
-    "The sixteen affected actual CPU child/IPC methods remain planned, not skipped or passed. No local socket/sysctl retry, real Ray, GPU, model call, download or environment installation occurred.",
-    "The original3010 source hashes and historical mappings were not changed. Only ten affected existing bindings were read through the materializer and matched their original bytes; the five full projections were not rerun.",
-    "Current core56943 and source/scripts114569 are physical Python lines including blanks/comments. This slice removes68 core/wider lines and30 test lines; integrations4858 are separate. No performance or physical-memory result is inferred.",
-    "Current source review covers the exact production bytes and two final test-only edits. Public records are redacted/compacted; private original hashes identify the retained originals."
+    "The original14 public records remain unchanged. Earlier notes describe the pre-server eab snapshot and its27 pure-memory methods.",
+    "The exact87ce actual CPU IPC run executed all16 requested methods once:15 passed and one failed, with zero errors/skips/Ray/model calls. A separately labelled single diagnostic repeated the failure; it is not additional unique coverage.",
+    "Only the diagnostic captured the failed/CancelledBeforeSubmission receipt with submittedfalse, terminalconfirmedtrue and usage null. The first-run packet and full close/retired_unknown fields were not serialized; absent values are not filledzero.",
+    "The diagnostic is consistent with worker cancellation before generate_prepared. It does not prove that the child never received the IPC frame. Early reader-retirement assertions passed; later final-close/usage11 assertions were not reached in the original failure.",
+    "The test migration signalled after queue registration rather than after the fixture outcome. D6abc adds only a test wait for the existing IPC ready_results before signalling; it consumes no result/ACK and keeps the reader held. All ten original assertions and production source are unchanged.",
+    "Syntax/diff/privacy and independent source review passed. No denied local socket/sysctl operation was retried. Only the failed method was requested for server verification; the other15 and earlier27 are not rerun or relabelled.",
+    "Production counts remain core56943/source-scripts114569/integrations4858; only two test lines were added. No model, performance, automatic physical capacity or complete-query quality claim follows.",
+    "The separately recorded d6abc followup is the sole retested method; its actual source, test result and cleanup are preserved in server-d6abc/HANDOFF.json. The original87ce failure remains unchanged."
   ],
   "raw": {
     "file": "async_rpc_retirement_raw.json.gz",
-    "bytes": 12729,
-    "sha256": "8bed40518e8e1a1582ba0c7459ca3245dac4ee620905326f6fe9cf9550f657cf",
-    "decoded_sha256": "ef2f2987745081a735310737aaa463dcfe3de728f52ca5bca233dcf0f94ce9e9"
+    "bytes": 21969,
+    "sha256": "a760d8fe54f9664c46e768e86b3c0ca53096e9aacf3fe5bf015bdeeb2f3a6fca",
+    "decoded_sha256": "16b4f8bd46892cc8a25e8da91d3b754dcab223915752ca219e51a46df4ff0a20"
+  },
+  "server_CPU_IPC_87ce": {
+    "source": "87ce07b2d0381c6edee0afb589c4f435af6ac33a",
+    "record": "server-87ce/HANDOFF.json",
+    "methods": 16,
+    "passed": 15,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "separate_diagnostic_repeats": 1,
+    "real_model_calls": 0,
+    "real_Ray_runs": 0
+  },
+  "reader_sync": {
+    "source": {
+      "base": "87ce07b2d0381c6edee0afb589c4f435af6ac33a",
+      "candidate": "d6abc0e327aabdceb74c669e506727352f2c0513",
+      "tree": "4e90089e19c6f5b71762377ff60f63de53fb4a58",
+      "changed_file": "code/tests/execution_provider/test_async_producer_retirement.py",
+      "file_sha256": "e9a4c39bcf4dda902b3663c66848e51346ecc72e0732b40da31169e6e5f8ced4",
+      "original_assertions": 10,
+      "assertions_unchanged": true,
+      "production_unchanged": true,
+      "syntax": "passed",
+      "local_actual_IPC_runs": 0,
+      "server_retest_methods": 1,
+      "unaffected15_rerun": false
+    },
+    "review_record": "reader-sync/review.json",
+    "review_original_sha256": "bd5c6046064210937a5f3f7b086dd7be89e2573444e6e2b0532118d57be41f5a",
+    "status": "passed",
+    "unaffected15_rerun": false,
+    "server_source": {
+      "head": "d6abc0e327aabdceb74c669e506727352f2c0513",
+      "tree": "4e90089e19c6f5b71762377ff60f63de53fb4a58",
+      "production_diff_from_87ce": [],
+      "source_clean": true,
+      "test_file_sha256": "e9a4c39bcf4dda902b3663c66848e51346ecc72e0732b40da31169e6e5f8ced4"
+    },
+    "server_result": {
+      "method_status": "passed",
+      "seconds": 0.7581660440191627,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "supervisor_status": "passed",
+      "supervisor_elapsed_s": 1.4482529498636723,
+      "worker_exit": 0,
+      "timeout_s": 600,
+      "retries": 0,
+      "traceback": null
+    },
+    "server_scope": {
+      "method": "tests.execution_provider.test_async_producer_retirement.LocalProducerRetirementTests.test_active_submission_prevents_retirement_until_its_RPC_returns",
+      "executions": 1,
+      "other_15_methods_rerun": false,
+      "diagnostic_reruns": 0,
+      "real_model_calls": 0,
+      "real_Ray_clusters": 0,
+      "GPU_runs": 0,
+      "environment_installations": 0,
+      "production_edits": false,
+      "test_edits": false,
+      "assertions_modified": false,
+      "close_wrapped": false,
+      "poll_wrapped": false,
+      "push_or_merge": false
+    },
+    "server_cleanup_record": "server-d6abc/HANDOFF.json: cleanup",
+    "server_record": "server-d6abc/HANDOFF.json",
+    "server_handoff_original_sha256": "22f133f3df8bdb238bc3bd07d84ef613d4574ea7072b8e5b4a2c823524030192"
   }
 }

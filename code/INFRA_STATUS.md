@@ -23,7 +23,7 @@ ACK指结果已交接的确认，IPC指进程间通信，RPC指远程调用；�
 | 模型与 IPC | sync／async构造分开，父进程／worker／帧编码分工，序列化使用定义模块；回执在actor释放前交接 | 5539的八符号Ray worker往返及原五项Future／取消检查均通过；原第二项历史错误原因仍未解明 |
 | 算子与结果 | 共享LOTUS方法、F／M／E、原数据、记录身份、完整Extract、未消费结果和unknown责任 | 现有方法行为保持；Join／TopK等未接入能力不列为已完成 |
 | 研究隔离 | SAOR／多任务实现独立，核心只消费可选中性协议 | 独立拆仓可后续做，不让研究配置进入单查询默认路径 |
-| 旧入口与脚本 | 旧PG／HTTP实验、旧动态变体、重复导出和旧ACK重放退出当前入口；旧choice观测六文件删除，共享函数迁回预算模块；低层异步actor三种旧阻塞RPC及专用等待也已删除 | 新RPC清理27项纯内存通过，16项实际CPU IPC待服务器；现用owner、同步run_core、批反馈、provider和研究能力保留 |
+| 旧入口与脚本 | 旧PG／HTTP实验、旧动态变体、重复导出和旧ACK重放退出当前入口；旧choice观测六文件删除，共享函数迁回预算模块；低层异步actor三种旧阻塞RPC及专用等待也已删除 | 27项纯内存通过；87ce实际IPC为15通过、1项测试同步失败，修正后该单项在d6abc一次通过；现用owner、同步run_core、批反馈、provider和研究能力保留 |
 | 观测与验证 | 来源／时钟、真实压力与声明额度分开；1cfd修正单请求观测漏记和提示检查空通过；b422跨查询实际CPU IPC单项通过 | 原第二项历史错误原因未解明；模型功能通过不代表gold全正确或调度提速 |
 
 关闭修正以实际返回回执登记结果可见性，并在释放actor前恢复结果、排空ACK；异常或中断仍保存unknown及真实RPC终态。
@@ -38,6 +38,8 @@ ACK指结果已交接的确认，IPC指进程间通信，RPC指远程调用；�
 最新组合核心仍57,011行，src＋scripts114,637行；相对284ec新增347行属于并行基线工作。较3fd分别减少4,617／35,008行，较main核心仍增加2,920行、宽口径减少25,698行。未把拆文件或并行新能力算成本批减少。
 随后eab7e246退役低层异步actor三种阻塞RPC、两个专用执行辅助与一层分发，非阻塞接纳、poll／ACK、unknown和reader责任保持。旧钩子两项报错用例删除，原8efed的两项空事件IndexError保留；旧忙轮询检查随其生产循环删除，未用测试helper的sleep替代生产证据。
 本批27项不同纯内存方法通过，1,067份code摘要匹配，16项实际CPU IPC未运行；受影响10条历史来源仍与原摘要一致，不改原3010映射，也不重跑五树。当前核心56,943行、src＋scripts114,569行，本批各减68行、测试减30行；较3fd分别少4,685／35,076行，较main为核心多2,852行、宽口径少25,766行。详情见[旧异步RPC退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)。
+后续准确87ce的16项实际CPU IPC已各执行一次：15通过、1失败，无错误或跳过；独立一次诊断仍失败并捕获预发送取消。原因是reader用例迁移后只等应用排队就触发close，未等其原定unknown回执，不是reader保护提前放行。
+d6abc0e3只增加两行测试同步，先观察现有IPC结果就绪再触发close，不消费结果、不释放reader、不改生产及10项原断言；该单项在准确d6abc一次通过，原unknown、最终关闭及usage11断言均完成。其余15项不重跑，继续按87ce身份解释；原失败和缺失的完整close／retired_unknown字段保留，不补推测值。此次两个登记进程退出、SHM无残留、许可已归还，真实Ray／模型为零。
 没有明确重复、职责混杂或正确性问题的长函数可以保留。自动物理容量、额外算子和独立研究拆仓是尚未实现或后续工作，不为完成本轮重构临时新增控制层。
 [整体收尾核对与待验范围](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)记录最新状态；
 [关闭修正及原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)保留当时记录；

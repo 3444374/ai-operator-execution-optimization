@@ -11551,3 +11551,9 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 最终27项不同纯内存方法全部通过，1067源码摘要匹配；16项实际CPU IPC另待服务器，未重试本地被拒的通信。历史清单不改，只读10条受影响来源均匹配，不重复完整3010恢复或真实Ray／模型。
 生产核心与src＋scripts各净减68行、测试净减30行，actor726→658行；当前核心56943、宽口径114569，较3fd分别减少4685／35076行，较main分别为核心多2852、宽口径少25766行。
 [本批报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)与唯一优化配置总览同步实际接口及未验范围，不将CPU清理写成查询提速或物理容量控制。
+
+## 2026-11-06 修正reader测试的触发同步
+
+87ce的16项实际CPU IPC为15通过、1失败，无错误或跳过；单列一次诊断捕获CancelledBeforeSubmission，而非预期的unknown。reader早期保护断言已通过；原始首轮完整包及完整close／retired_unknown未记，不补推测值。
+测试迁移把ready信号从阻塞调用取得结果后，移到仅排队完成后，遗漏等待夹具unknown回执。d6abc0e3只补现有IPC结果就绪同步，保持RPC仍在途、结果未消费及10项原断言；生产不改，只交该单项复测，原15项不重复执行。状态与原件在同一[旧异步RPC报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)维护，不启动真实Ray或模型。
+准确d6abc的单项随后一次通过，耗时0.758166秒，unknown、最终关闭、held归零和usage11等10项原断言完成；两个登记自有进程退出、SHM无残留、许可已归还。原87ce的15项不重跑，原失败及诊断不改写，不宣称d6abc整套16项一次通过。
