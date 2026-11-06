@@ -5,9 +5,7 @@ import json
 import math
 from pathlib import Path
 
-
-def _number(value):
-    return type(value) in (int, float) and math.isfinite(value)
+from .record_dag_windows import interval_duration, interval_peak, is_number, summarize_windows
 
 
 def _event_time(event):
@@ -15,7 +13,7 @@ def _event_time(event):
     if 'observation_ns' not in event:
         return written
     observed = event['observation_ns']
-    return (observed if _number(observed) and _number(written) and 0 <= observed <= written else None)
+    return (observed if is_number(observed) and is_number(written) and 0 <= observed <= written else None)
 
 
 def _opaque(value):
@@ -36,42 +34,6 @@ def _file(root, relative):
     if not target.resolve().is_relative_to(root):
         raise ValueError('capture path escapes root')
     return target
-
-
-def _read(root, reference):
-    value = json.loads(_file(root, reference['path']).read_text())
-    for part in reference.get('pointer', []):
-        value = value[part]
-    return value
-
-
-def _union(intervals):
-    result = []
-    for a, b in sorted(intervals):
-        if result and a <= result[-1][1]:
-            result[-1][1] = max(b, result[-1][1])
-        else:
-            result.append([a, b])
-    return result
-
-
-def _duration(intervals):
-    return sum(b - a for a, b in _union(intervals))
-
-
-def _overlap(left, right):
-    return _duration([(max(a, c), min(b, d)) for a, b in _union(left)
-                      for c, d in _union(right) if max(a, c) < min(b, d)])
-
-
-def _peak(intervals):
-    points = sorted([(a, 1) for a, b in intervals if a < b] +
-                    [(b, -1) for a, b in intervals if a < b])
-    active = peak = 0
-    for _, delta in points:
-        active += delta
-        peak = max(peak, active)
-    return peak
 
 
 def summarize_capture(root, description, *, cpu_spans=()):
@@ -97,9 +59,14 @@ def summarize_capture(root, description, *, cpu_spans=()):
         provenance[path] = dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
         return data
 
+    def read_reference(reference):
+        value = json.loads(remember(reference['path']).decode())
+        for part in reference.get('pointer', []):
+            value = value[part]
+        return value
+
     for ref in description.get('calls', []):
-        remember(ref['path'])
-        value = _read(root, ref)
+        value = read_reference(ref)
         if not isinstance(value, list):
             raise ValueError('calls reference must select a list')
         calls.extend(value)
@@ -182,7 +149,7 @@ def summarize_capture(root, description, *, cpu_spans=()):
                 type(v) is int and v >= 0 for v in values) else None
 
     if description.get('animals_summary'):
-        ref = description['animals_summary']; remember(ref['path']); summary = _read(root, ref)
+        ref = description['animals_summary']; summary = read_reference(ref)
         if summary.get('query_id') != 7 or [s.get('stage_id') for s in summary.get('stages', [])] != ['filter-0', 'filter-1']:
             raise ValueError('Animals adapter requires explicit original Q7 stages')
         for stage in summary['stages']:
@@ -193,7 +160,7 @@ def summarize_capture(root, description, *, cpu_spans=()):
                 and len(decisions) == count and all(isinstance(v, (list, tuple)) and len(v) == 2
                     and type(v[1]) is bool for v in decisions) else None)
             a, b = stage.get('started_monotonic_ns'), stage.get('terminal_monotonic_ns')
-            if _number(a) and _number(b) and a <= b:
+            if is_number(a) and is_number(b) and a <= b:
                 intervals[stage['stage_id']][domain(ref['path'])].append((a, b))
         structure = dict(stages=[dict(stage_id=s) for s in ('source', 'filter-0', 'filter-1', 'intersection')],
             edges=[dict(source=a, target=b, kind='data') for a, b in
@@ -248,9 +215,9 @@ def summarize_capture(root, description, *, cpu_spans=()):
                 footer_sources.add(path)
             else: issues.append('sink_incomplete')
     for e in sorted(events, key=lambda e: (e['_domain'], _event_time(e)
-                    if _number(_event_time(e)) else math.inf)):
+                    if is_number(_event_time(e)) else math.inf)):
         t, d = _event_time(e), e['_domain']
-        if not _number(t) or t < 0:
+        if not is_number(t) or t < 0:
             issues.append('event_clock_unknown'); continue
         name = e.get('event')
         if name and name.startswith('Core_'):
@@ -324,49 +291,10 @@ def summarize_capture(root, description, *, cpu_spans=()):
                 wall_ns=span.get('wall_ns'), exclusive_thread_CPU_ns=span.get('exclusive_thread_CPU_ns'),
                 shared_stage_members=stages, attribution='shared_span_not_per_member_cost'))
 
-    for stage, domains in intervals.items():
-        n = node(stage)
-        for d, windows in domains.items():
-            merged = _union(windows)
-            n['windows'].append(dict(clock_domain=d, union_ns=_duration(merged),
-                envelope_ns=max(b for a, b in merged) - min(a for a, b in merged),
-                peak_observed_API_intervals=_peak(windows), kind='API_or_operator_window_not_GPU_time'))
-            for path in description.get('samples', []):
-                selected = [v for v in samples if v['_source'] == path and v['_domain'] == d
-                    and _number(v.get('sample_start_monotonic_ns')) and _number(v.get('sample_end_monotonic_ns'))
-                    and any(a <= v['sample_start_monotonic_ns'] <= v['sample_end_monotonic_ns'] <= b for a, b in merged)]
-                values = {}
-                for metric in ('gpu_utilization_pct', 'gpu_memory_used_mib', 'host_cpu_busy_cores',
-                               'host_memory_available_mib', 'vllm_num_requests_running', 'vllm_num_requests_waiting',
-                               'vllm_kv_cache_usage_perc'):
-                    measured = []
-                    for v in selected:
-                        group = 'gpu' if metric.startswith('gpu_') else 'host' if metric.startswith('host_') else 'native'
-                        source = v.get('sources', {}).get(group, {})
-                        status = source.get('status')
-                        unavailable = isinstance(status, str) and status.split(':', 1)[0] in ('unavailable', 'unknown', 'unqualified')
-                        valid = metric not in v.get('missing', {}) and not unavailable
-                        if metric.startswith('gpu_'):
-                            expected = description.get('gpu_uuids')
-                            actual = source.get('physical_gpu_uuids')
-                            valid = valid and bool(expected) and actual == expected and bool(status) and not status.startswith('unavailable')
-                        measured.append(v.get('values', {}).get(metric) if valid else None)
-                    known = [v for v in measured if _number(v)]
-                    values[metric] = dict(observed=len(known), missing=len(measured)-len(known),
-                        minimum=min(known) if known else None, maximum=max(known) if known else None,
-                        unavailable_reason=None if known else 'metric_missing_or_unbound_device' if selected
-                            else 'no_same_domain_contained_sample')
-                n['resources'].append(dict(source=path, sample_count=len(selected), values=values,
-                    attribution='shared_source_samples_inside_window_not_stage_exclusive',
-                    status='observed_sample_overlap' if selected else 'unknown:no_qualified_samples'))
-    overlaps = []
-    for a in sorted(intervals):
-        for b in sorted(intervals):
-            if a >= b: continue
-            common = set(intervals[a]) & set(intervals[b])
-            overlaps.append(dict(stages=[a, b], status='observed' if common else 'unknown:clock_domains_unjoined',
-                by_domain=[dict(clock_domain=d, overlap_ns=_overlap(intervals[a][d], intervals[b][d])) for d in sorted(common)],
-                meaning='API_or_operator_overlap_not_proof_of_concurrent_GPU_kernels'))
+    windows, overlaps = summarize_windows(intervals, samples,
+        source_paths=description.get('samples', []), gpu_uuids=description.get('gpu_uuids'))
+    for stage, observations in windows.items():
+        node(stage).update(observations)
     for n in nodes.values():
         n['unavailable'] = {}
         for field, reason in [('input_rows', 'source_input_progress_not_recorded'),
@@ -382,8 +310,8 @@ def summarize_capture(root, description, *, cpu_spans=()):
         for w in n['waits']:
             wait_domains[w['clock_domain']].append((w['start_ns'], w['end_ns']))
         n['ready_wait_summary'] = [dict(clock_domain=d, closed_intervals=len(w),
-            request_wait_sum_ns=sum(b-a for a,b in w), wall_union_ns=_duration(w),
-            observed_closed_ready_peak=_peak(w)) for d,w in sorted(wait_domains.items())]
+            request_wait_sum_ns=sum(b-a for a,b in w), wall_union_ns=interval_duration(w),
+            observed_closed_ready_peak=interval_peak(w)) for d,w in sorted(wait_domains.items())]
     return dict(schema='semloom.record_dag_observation.v1', status='observations_with_explicit_limits',
         capture_kind=description.get('kind', 'unspecified'), source_commit=description.get('source_commit'),
         comparability='common observation schema only; model/generation/workload/cache/lifecycle equivalence not established here',

@@ -349,7 +349,11 @@ Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feed
 ### 完成原件的离线 DAG 观察
 
 已有 `workflow.py` 的 `summarize` 子命令只读取完成并回收的原件，不启动模型或采样器。
-它复用 `manifest/verify` 和 CPU span 汇总；输出必须在原件目录外，已有输出不覆盖：
+
+[记录关联](../../../src/experiments/record_dag_observation.py)拥有回执、事件和CPU关联；[窗口计算](../../../src/experiments/record_dag_windows.py)只计算时间并集、重叠和区间内样本。
+每次参考读取使用同一份字节计算摘要并解析，删除重复文件读取；样本先按来源和时钟分组，输出字段及未知量读法保持。
+
+命令复用 `manifest/verify` 和 CPU span 汇总；输出必须在原件目录外，已有输出不覆盖：
 
 ```sh
 "$DRIVER_PYTHON" -B "$TOOL" summarize --root "$RECOVERED_CELL" \
