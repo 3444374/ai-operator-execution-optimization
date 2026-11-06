@@ -20,6 +20,10 @@ The three private assembly factories form one capacity closure;
 [boundary and lifecycle qualification](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)
 keeps logical input, prepared suffix, SDK/proxy copies and process RSS distinct.
 
+`FixedModelConfig.timeout_ms` is an explicitly supplied positive integer, with no five-minute
+ceiling. Synchronous and asynchronous fixed-endpoint HTTP requests use that value; it is
+separate from control-frame, startup and cleanup waits and from the records query duration.
+
 `FixedModelConfig.max_response_bytes` defaults to 1 MiB and accepts 1 byte through 8 MiB.
 For native execution it selects `SessionLimits.item_result_bytes`; selecting more than 1 MiB
 requires an explicit `result_bytes` total fitting at least one complete result before transport

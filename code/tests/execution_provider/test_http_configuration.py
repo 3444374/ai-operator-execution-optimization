@@ -59,6 +59,24 @@ def response(raw):
 
 
 class HttpConfigurationTests(unittest.TestCase):
+    def test_explicit_request_timeout_has_no_five_minute_ceiling(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory, "model.json")
+            path.write_text(json.dumps(dict(endpoint_url=MODEL.endpoint_url,
+                model_id=MODEL.model_id, timeout_ms=600_000)))
+            model = load_fixed_model_config(path)
+        self.assertEqual(model.timeout_ms, 600_000)
+        execution = build_native_execution(model, physical=None)
+        try:
+            self.assertEqual(execution.engine.capacity.limits.timeouts.backend_s, 601)
+        finally:
+            self.assertTrue(execution.close())
+
+    def test_request_timeout_requires_explicit_positive_integer(self):
+        for timeout in (None, True, 0, -1, 1.5, "600000"):
+            with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                replace(MODEL, timeout_ms=timeout)
+
     def test_strict_external_config_loads_optional_response_capacity(self):
         for limit in (511, MIB, MIB + 1, 8 * MIB):
             with self.subTest(limit=limit), tempfile.TemporaryDirectory() as directory:

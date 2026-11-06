@@ -53,8 +53,8 @@ class FixedModelConfig:
             1 <= len(self.model_id.encode("utf-8")) <= 128
         ):
             raise ValueError("model_id length is outside the plan contract")
-        if type(self.timeout_ms) is not int or not (1 <= self.timeout_ms <= 300_000):
-            raise ValueError("timeout_ms must be an integer from 1 to 300000")
+        if type(self.timeout_ms) is not int or self.timeout_ms <= 0:
+            raise ValueError("timeout_ms must be a positive integer")
         if (type(self.max_response_bytes) is not int
                 or not 1 <= self.max_response_bytes <= MAX_SUPPORTED_MODEL_RESPONSE_BYTES):
             raise ValueError("max_response_bytes must be an integer from 1 byte to 8 MiB")
