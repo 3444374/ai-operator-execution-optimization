@@ -127,6 +127,9 @@ provider的一个HTTPX async client处理一个作者batch；连接池明确不�
 
 新driver在析构前写Linux `CLOCK_MONOTONIC`结果时钟，运行模型worker前须重建；旧798e二进制没有此字段。
 结果出现后一个120秒窗口覆盖native析构、作者关闭与服务关闭，末尾8秒留给外层强制停止。
+无结果失败时另写cleanup-start标记，让parent按首次失败固定期限监督；marker写失败仍继续回收并保留原异常。
+每个POST还检查同机绝对query期限，过期不再发送，实际timeout不超过剩余时间。
+API原生关闭可用整个剩余graceful窗口，不能把末尾8秒误作正常shutdown仅8秒；child TERM fallback／KILL均保留失败。
 作者既有close仍有分段等待，因此必须用本模块`supervised_run(command, output, supervision_dir, monitor=...)`
 绑定READY期限；supervision目录与worker输出分开。调用方持有host租约，并将`ResourceMonitor.finish().passed`
 及GPU退出检查纳入最终成功，不能仅凭worker completed或API返回。构建／新接线资格见准备报告，

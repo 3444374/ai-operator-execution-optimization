@@ -124,6 +124,7 @@ class IMLaneModelProviderTests(unittest.TestCase):
         self.assertTrue(terminal['client_closed'])
         self.assertTrue(terminal['client_is_closed'])
         self.assertEqual(terminal['provider_mode'], 'software_http')
+        self.assertIsNone(terminal['requested_config']['deadline_monotonic'])
         self.assertIsNone(terminal['physical_model_attempts'])
         for position, (request, call) in enumerate(zip(self.requests, terminal['calls'], strict=True)):
             payload = json.loads(request.content)
@@ -140,6 +141,7 @@ class IMLaneModelProviderTests(unittest.TestCase):
             self.assertEqual(call['finish_reason'], 'stop')
             self.assertFalse(call['truncated'])
             self.assertTrue(call['attempted'])
+            self.assertEqual(call['effective_request_timeout_s'], 1)
             self.assertLessEqual(call['http_attempt_started_monotonic_ns'], call['http_attempt_finished_monotonic_ns'])
         self.assertTrue(all(path.stat().st_mode & 0o777 == 0o600 for path in self.receipts.iterdir()))
 
@@ -322,6 +324,66 @@ class IMLaneModelProviderTests(unittest.TestCase):
         self.assertTrue(terminal['client_closed'])
         self.assertEqual(terminal['calls'][0]['error_type'], 'TimeoutError')
 
+    def test_expired_or_exact_deadline_sends_zero_posts_and_records_not_started(self):
+        self.configure(deadline_monotonic=100)
+        self.install()
+        for now in (100, 101):
+            with self.subTest(now=now), patch.object(provider, 'monotonic', return_value=now):
+                with self.assertRaisesRegex(TimeoutError, 'before HTTP POST'):
+                    provider.infer_batch(self.messages)
+            self.assertEqual(self.requests, [])
+            terminal = self.saved('terminal')[-1]
+            self.assertEqual(terminal['requested_config']['deadline_monotonic'], 100)
+            self.assertEqual(terminal['http_post_attempts'], 0)
+            self.assertEqual(terminal['status'], 'failed')
+            self.assertTrue(terminal['client_closed'])
+            for call in terminal['calls']:
+                self.assertFalse(call['attempted'])
+                self.assertEqual(call['status'], 'not_started')
+                self.assertEqual(call['effective_request_timeout_s'], 0)
+                self.assertIsNone(call['http_attempt_started_monotonic_ns'])
+                self.assertIsNone(call['http_attempt_finished_monotonic_ns'])
+
+    def test_deadline_is_rechecked_per_request_and_caps_the_positive_remaining_timeout(self):
+        self.configure(deadline_monotonic=100)
+        self.install()
+        with patch.object(provider, 'monotonic', side_effect=[99.75, 100]):
+            with self.assertRaisesRegex(TimeoutError, 'before HTTP POST'):
+                provider.infer_batch(self.messages)
+        self.assertEqual(len(self.requests), 1)
+        self.assertEqual(self.requests[0].extensions['timeout'],
+                         dict(connect=.25, read=.25, write=.25, pool=.25))
+        terminal, = self.saved('terminal')
+        self.assertEqual(terminal['http_post_attempts'], 1)
+        self.assertEqual([call['status'] for call in terminal['calls']], ['succeeded', 'not_started'])
+        self.assertEqual([call['effective_request_timeout_s'] for call in terminal['calls']], [.25, 0])
+
+    def test_deadline_larger_than_request_timeout_does_not_extend_the_request(self):
+        self.configure(deadline_monotonic=100)
+        self.install()
+        with patch.object(provider, 'monotonic', return_value=90):
+            self.assertEqual(provider.infer_batch(self.messages), self.texts)
+        terminal, = self.saved('terminal')
+        self.assertTrue(all(call['effective_request_timeout_s'] == 1 for call in terminal['calls']))
+
+    def test_deadline_remaining_bounds_the_entire_post_not_just_admission(self):
+        self.configure(deadline_monotonic=100)
+
+        async def handler(request):
+            self.requests.append(request)
+            await asyncio.sleep(1)
+
+        self.install(handler)
+        with patch.object(provider, 'monotonic', return_value=99.99):
+            with self.assertRaises(TimeoutError):
+                provider.infer_batch(self.messages[:1])
+        terminal, = self.saved('terminal')
+        call, = terminal['calls']
+        self.assertEqual(terminal['status'], 'unknown')
+        self.assertTrue(call['attempted'])
+        self.assertAlmostEqual(call['effective_request_timeout_s'], .01)
+        self.assertTrue(terminal['client_closed'])
+
     def test_close_error_preserves_primary_and_does_not_claim_transport_closed(self):
         first = httpx.ReadError('request fixture failed')
         cleanup = RuntimeError('transport close fixture failed')
@@ -445,6 +507,8 @@ class IMLaneModelProviderTests(unittest.TestCase):
         invalid = [dict(schema='another'), dict(url='http://example.com/v1/chat/completions'),
             dict(url='http://localhost:invalid/v1/chat/completions'), dict(url='http://localhost:9000/health'),
             dict(provider_mode='unspecified'), dict(request_timeout_s=0), dict(request_timeout_s=float('inf')),
+            dict(deadline_monotonic=0), dict(deadline_monotonic=-1), dict(deadline_monotonic=True),
+            dict(deadline_monotonic=float('inf')), dict(deadline_monotonic=float('nan')),
             dict(sampling_params=dict(max_tokens=1, temperature=0)),
             dict(sampling_params=dict(max_tokens=1, temperature=0, top_p=1, model='override')),
             dict(sampling_params=dict(max_tokens=1, temperature=0, top_p=1, stream=False)),

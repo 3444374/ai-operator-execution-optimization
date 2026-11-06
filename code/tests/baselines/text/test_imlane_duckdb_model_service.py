@@ -297,15 +297,55 @@ class ModelServiceTests(unittest.TestCase):
             service.check()
         self.assertEqual(self.final(service)['status'], 'closed')
 
-    def test_descendant_term_follows_owner_grace_and_is_birth_matched(self):
+    def test_native_shutdown_exceeding_stop_reserve_does_not_terminate_children_early(self):
+        child = Process(31002, 11.0)
+        self.process.family = [child]
+        self.process.exit_on_term = False
+        service = self.service(stop_grace_s=8)
+        service.__enter__()
+        service.stop_observer.set()
+        service.observer.join()
+        now = [100.0]
+
+        def native_shutdown(identities, pgid, created, deadline, **unused):
+            native_done = 120.0  # The native close takes 20s, exceeding the 8s reserve.
+            self.assertLessEqual(native_done, deadline)
+            self.assertEqual(deadline, 212.0)
+            self.assertEqual(child.signals, [])
+            now[0] = native_done
+            self.process.returncode = child.returncode = 0
+
+        with patch.object(service_module.time, 'monotonic', side_effect=lambda: now[0]), \
+             patch.object(service_module.owned, '_wait', side_effect=native_shutdown) as wait:
+            service.close(deadline=220.0)
+        wait.assert_called_once()
+        self.assertEqual(self.process.signals, [signal.SIGTERM])
+        self.assertEqual(child.signals, [])
+        final = self.final(service)
+        self.assertEqual(final['status'], 'closed')
+        self.assertFalse(final['cleanup']['fallback_term'])
+        self.assertFalse(final['cleanup']['forced_kill'])
+
+    def test_leftover_child_is_recovered_by_matched_term_but_cleanup_still_fails(self):
         child = Process(31002, 11.0)
         self.process.family = [child]
         service = self.service()
-        with service:
-            pass
+        with self.assertRaisesRegex(RuntimeError, 'TERM fallback'):
+            with service:
+                pass
         self.assertEqual(self.process.signals, [signal.SIGTERM])
         self.assertEqual(child.signals, [signal.SIGTERM])
-        self.assertFalse(self.final(service)['cleanup']['forced_kill'])
+        final = self.final(service)
+        cleanup = final['cleanup']
+        self.assertEqual(final['status'], 'failed')
+        self.assertTrue(cleanup['fallback_term'])
+        self.assertEqual(cleanup['fallback_term_identities'], [dict(pid=31002, create_time=11.0)])
+        self.assertFalse(cleanup['forced_kill'])
+        self.assertEqual(cleanup['owned_survivors'], [])
+        self.assertTrue(cleanup['observed_owned_exit_confirmed'])
+        event, = [event for event in cleanup['signal_events'] if event['pid'] == child.pid]
+        self.assertGreaterEqual(event['requested_monotonic'], cleanup['native_shutdown_deadline'])
+        self.assertLessEqual(cleanup['fallback_term_deadline'], cleanup['deadline'])
 
     def test_forced_kill_marks_failure_even_when_all_observed_processes_exit(self):
         self.process.family = [Process(31002, 11.0, exit_on_term=False)]

@@ -23,6 +23,7 @@ from src.infrastructure.redact import redact_text
 
 CONFIG_SCHEMA = 'semloom.imlane.duckdb.q3.model_run.v1'
 READY_SCHEMA = 'semloom.imlane.duckdb.q3.model_result_ready.v1'
+CLEANUP_SCHEMA = 'semloom.imlane.duckdb.q3.cleanup_started.v1'
 
 
 def configuration(value):
@@ -41,7 +42,8 @@ def configuration(value):
 
 class QueryWindow:
     """A query deadline and one cleanup allowance starting at native readiness."""
-    def __init__(self, query_seconds, cleanup_seconds, stop_grace_seconds, *, clock=time.monotonic):
+    def __init__(self, query_seconds, cleanup_seconds, stop_grace_seconds, *, clock=time.monotonic,
+                 cleanup_path=None):
         for value in (query_seconds, cleanup_seconds, stop_grace_seconds):
             if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError('query and cleanup allowances must be finite and positive')
@@ -52,6 +54,8 @@ class QueryWindow:
         self.query_deadline = self.started + query_seconds
         self.cleanup_seconds, self.stop_grace_seconds = cleanup_seconds, stop_grace_seconds
         self.ready_ns = self.cleanup_deadline = None
+        self.cleanup_path = None if cleanup_path is None else Path(cleanup_path)
+        self.cleanup_started_ns = self.cleanup_publication_error = None
 
     def observe(self, query_path, ready_path):
         if self.ready_ns is not None or not Path(query_path).exists():
@@ -75,15 +79,38 @@ class QueryWindow:
         if ready / 1e9 > self.query_deadline:
             raise TimeoutError('native IMLane result exceeded the query allowance')
         self.ready_ns = ready
-        self.cleanup_deadline = ready / 1e9 + self.cleanup_seconds
+        until = ready / 1e9 + self.cleanup_seconds
+        self.cleanup_deadline = until if self.cleanup_deadline is None else min(self.cleanup_deadline, until)
 
     def begin_cleanup(self):
         if self.cleanup_deadline is None:
-            self.cleanup_deadline = min(self.clock(), self.query_deadline) + self.cleanup_seconds
+            now = self.clock()
+            self.cleanup_started_ns = int(now * 1e9)
+            self.cleanup_deadline = min(self.cleanup_started_ns / 1e9, self.query_deadline) + self.cleanup_seconds
+            if self.cleanup_path is not None:
+                try:
+                    publish_private_json(self.cleanup_path, dict(schema=CLEANUP_SCHEMA,
+                        cleanup_started_monotonic_ns=self.cleanup_started_ns,
+                        cleanup_deadline_monotonic=self.cleanup_deadline, clock='CLOCK_MONOTONIC'))
+                except BaseException as error:
+                    # Evidence failure must not skip partially started resource
+                    # cleanup. The worker preserves it after teardown.
+                    self.cleanup_publication_error = error
         return self.cleanup_deadline
 
+    def accept_cleanup(self, value):
+        started = value['cleanup_started_monotonic_ns']
+        until = value['cleanup_deadline_monotonic']
+        if (value['schema'] != CLEANUP_SCHEMA or value['clock'] != 'CLOCK_MONOTONIC'
+                or type(started) is not int or not self.started <= started / 1e9 <= self.clock()
+                or type(until) not in (int, float) or not math.isfinite(until) or until <= 0
+                or until > started / 1e9 + self.cleanup_seconds):
+            raise ValueError('invalid native failure cleanup deadline')
+        self.cleanup_started_ns = started
+        self.cleanup_deadline = min(until, self.query_deadline + self.cleanup_seconds)
+
     def check(self):
-        until = (self.query_deadline if self.ready_ns is None
+        until = (self.query_deadline if self.cleanup_deadline is None
                  else self.cleanup_deadline - self.stop_grace_seconds)
         if self.clock() >= until:
             raise TimeoutError('native IMLane query or graceful post-result allowance exhausted')
@@ -91,6 +118,9 @@ class QueryWindow:
     def report(self):
         return dict(worker_started_monotonic=self.started, query_deadline_monotonic=self.query_deadline,
             result_ready_monotonic_ns=self.ready_ns, cleanup_deadline_monotonic=self.cleanup_deadline,
+            cleanup_started_monotonic_ns=self.cleanup_started_ns,
+            cleanup_marker_error_type=(None if self.cleanup_publication_error is None
+                                       else type(self.cleanup_publication_error).__name__),
             cleanup_seconds=self.cleanup_seconds, forced_stop_reserved_seconds=self.stop_grace_seconds)
 
 
@@ -150,6 +180,8 @@ def audit_model_result(directory, checkout):
         request_ids=[call['response_id'] for call in calls],
         usage=[call['usage'] for call in calls], batches=len(ends),
         sampling_params=provider['sampling_params'], model=provider['model'],
+        declared_query_deadline_monotonic=provider.get('deadline_monotonic'),
+        effective_request_timeout_s=[call.get('effective_request_timeout_s') for call in calls],
         transport='independent baseline loopback HTTP; database/executor uses author ArrowLane')
     audit['comparison_qualified'] = False
     audit['comparison_scope'] = 'single query; quality, external GPU/SHM exit and repetition assessed separately'
@@ -166,7 +198,8 @@ def run_worker(args, *, service_factory=None):
         setattr(args, name, Path(getattr(args, name)).resolve())
     args.method_python = Path(args.method_python).absolute()
     new_private_directory(args.output)
-    window = QueryWindow(args.query_seconds, args.cleanup_seconds, args.stop_grace_seconds)
+    window = QueryWindow(args.query_seconds, args.cleanup_seconds, args.stop_grace_seconds,
+                         cleanup_path=args.output / 'cleanup-start.json')
     report = dict(schema=CONFIG_SCHEMA, status='failed', performance_claim=False, cleanup=[],
         model_requests=None, physical_gpu_exit_confirmed=None, outer_host_lease_required=True,
         kind=args.kind, warmup_semantic_requests=0, whole_query_retries=0,
@@ -205,6 +238,7 @@ def run_worker(args, *, service_factory=None):
         provider = provider_configuration(dict(schema='semloom.imlane.duckdb.q3.model_provider.v1',
             provider_mode=mode, url=service.url, model=service.served_model_name,
             sampling_params=config['sampling_params'], request_timeout_s=config['request_timeout_s'],
+            deadline_monotonic=window.query_deadline,
             api_key_env=key_env, receipt_dir=str(args.output / 'model-calls')))
         report['service'] = service.report
         with service:
@@ -310,6 +344,13 @@ def run_worker(args, *, service_factory=None):
             signal.signal(number, handler)
         report['deadline'] = window.report()
         report['worker_ended_monotonic_ns'] = time.monotonic_ns()
+        if window.cleanup_publication_error is not None:
+            error = window.cleanup_publication_error
+            if primary is None:
+                primary = error
+                report.update(status='failed', error_type=type(error).__name__, error=redact_text(str(error)))
+            else:
+                primary.add_note('failure cleanup marker publication also failed: ' + type(error).__name__)
         try:
             write_private_json(args.output / 'worker.json', report)
         except BaseException as error:
@@ -345,6 +386,9 @@ def supervised_run(command, output, supervision_dir, *, query_seconds=1200,
             if value['schema'] != READY_SCHEMA:
                 raise ValueError('unexpected native IMLane result-ready schema')
             window.accept_ready(value['result_ready_monotonic_ns'], clock=value['clock'])
+        cleanup = output / 'cleanup-start.json'
+        if window.cleanup_deadline is None and cleanup.exists():
+            window.accept_cleanup(read_json(cleanup))
         window.check()
 
     primary = None

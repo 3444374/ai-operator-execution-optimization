@@ -113,6 +113,60 @@ class NativeIMLaneModelWindowTests(unittest.TestCase):
             with self.subTest(supervision=supervision), self.assertRaises(ValueError):
                 supervised_run(['CPU-worker'], output, supervision)
 
+    def test_outer_supervisor_observes_early_failure_cleanup_without_any_ready_result(self):
+        output, supervision = self.root / 'worker', self.root / 'supervision'
+
+        def supervise(command, directory, **kwargs):
+            Path(directory).mkdir()
+            output.mkdir()
+            write_private_json(output / 'cleanup-start.json', dict(
+                schema='semloom.imlane.duckdb.q3.cleanup_started.v1',
+                cleanup_started_monotonic_ns=105_000_000_000,
+                cleanup_deadline_monotonic=115, clock='CLOCK_MONOTONIC'))
+            self.now = 112
+            kwargs['monitor'](())
+            self.now = 113
+            kwargs['monitor'](())
+
+        with patch('src.experiments.native_imlane_model_query.QueryWindow', return_value=self.window), \
+                patch('src.experiments.lotus_records_supervisor.supervise', side_effect=supervise):
+            with self.assertRaises(TimeoutError):
+                supervised_run(['CPU-worker'], output, supervision, query_seconds=20,
+                    cleanup_seconds=10, stop_grace_seconds=2)
+        value = read_json(supervision / 'native-deadline.json')
+        self.assertIsNone(value['result_ready_monotonic_ns'])
+        self.assertEqual(value['cleanup_deadline_monotonic'], 115)
+
+    def test_failure_marker_publication_error_does_not_skip_or_restart_cleanup(self):
+        self.window.cleanup_path = self.root / 'cleanup-start.json'
+        self.now = 105
+        failure = OSError('CPU marker unavailable')
+        with patch('src.experiments.native_imlane_model_query.publish_private_json', side_effect=failure) as write:
+            self.assertEqual(self.window.begin_cleanup(), 115)
+            self.now = 109
+            self.assertEqual(self.window.begin_cleanup(), 115)
+        write.assert_called_once()
+        self.assertIs(self.window.cleanup_publication_error, failure)
+
+    def test_later_ready_cannot_restart_an_existing_failure_cleanup_allowance(self):
+        self.now = 105
+        self.assertEqual(self.window.begin_cleanup(), 115)
+        self.now = 112
+        self.window.accept_ready(110_000_000_000, clock='CLOCK_MONOTONIC')
+        self.assertEqual(self.window.cleanup_deadline, 115)
+
+    def test_fractional_clock_failure_marker_round_trips_without_adding_time_tolerance(self):
+        for position in range(12):
+            with self.subTest(position=position):
+                clock = [5_000_000.0]
+                path = self.root / ('cleanup-' + str(position) + '.json')
+                child = QueryWindow(20, 10, 2, clock=lambda: clock[0], cleanup_path=path)
+                parent = QueryWindow(20, 10, 2, clock=lambda: clock[0])
+                clock[0] += .01010101 * (position + 1)
+                expected = child.begin_cleanup()
+                parent.accept_cleanup(read_json(path))
+                self.assertEqual(parent.cleanup_deadline, expected)
+
 
 class NativeIMLaneModelAuditTests(unittest.TestCase):
     def setUp(self):
@@ -438,6 +492,18 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         report = read_json(self.args.output / 'worker.json')
         self.assertEqual(report['status'], 'failed')
         self.assertTrue((self.args.output / 'result-ready.json').exists())
+
+    def test_startup_failure_preserves_primary_even_if_early_cleanup_marker_cannot_publish(self):
+        failure = RuntimeError('CPU startup failure')
+        self.service.__enter__.side_effect = failure
+        with patch('src.experiments.native_imlane_model_query.publish_private_json',
+                   side_effect=OSError('CPU marker unavailable')):
+            with self.assertRaises(RuntimeError) as caught:
+                run_worker(self.args, service_factory=self.factory)
+        self.assertIs(caught.exception, failure)
+        self.service.close.assert_called_once()
+        self.assertIn('failure cleanup marker publication also failed', failure.__notes__[0])
+        self.assertEqual(read_json(self.args.output / 'worker.json')['deadline']['cleanup_marker_error_type'], 'OSError')
 
 
 if __name__ == '__main__':

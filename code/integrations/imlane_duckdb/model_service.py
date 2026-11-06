@@ -253,8 +253,10 @@ class ModelService:
         except BaseException as error:
             errors.append(error)
             until = time.monotonic()
-        cleanup = dict(deadline=until, forced_kill=False, signal_events=[], exit_events=[],
-                       cleanup_errors=[], observed_owned_exit_confirmed=False)
+        cleanup = dict(deadline=until, native_shutdown_deadline=until - self.stop_grace_s,
+                       fallback_term=False, fallback_term_identities=[], forced_kill=False,
+                       signal_events=[], exit_events=[], cleanup_errors=[],
+                       observed_owned_exit_confirmed=False)
         self.report['cleanup'] = cleanup
         self.report['active_deadline'] = self.deadline
 
@@ -288,13 +290,21 @@ class ModelService:
                         attempt(self._observe)
                         if self.report['status'] == 'ready' and self.process.poll() is not None:
                             errors.append(RuntimeError('model service exited before owner close'))
-                        # Let the API owner perform native shutdown before descendants.
+                        # Native shutdown owns the whole graceful window. The
+                        # final stop_grace_s is reserved only for failed teardown.
                         attempt(lambda: send({(self.process.pid, self.created)}, signal.SIGTERM))
-                        attempt(lambda: wait(min(until, time.monotonic() + self.stop_grace_s), 'owner_term'))
+                        attempt(lambda: wait(cleanup['native_shutdown_deadline'], 'native_shutdown'))
                         remaining = attempt(lambda: owned._live(self.known))
                         if remaining:
+                            cleanup['fallback_term'] = True
+                            cleanup['fallback_term_identities'] = attempt(lambda:
+                                [dict(pid=p.pid, create_time=p.create_time()) for p in remaining])
+                            # Split only the remaining final reserve; never
+                            # extend the caller's absolute cleanup deadline.
+                            cleanup['fallback_term_deadline'] = min(
+                                until, (time.monotonic() + until) / 2)
                             attempt(lambda: send(self.known, signal.SIGTERM))
-                            attempt(lambda: wait(max(time.monotonic(), until - self.stop_grace_s), 'descendants_term'))
+                            attempt(lambda: wait(cleanup['fallback_term_deadline'], 'fallback_term'))
                         remaining = attempt(lambda: owned._live(self.known))
                         if remaining:
                             cleanup['forced_kill'] = True
@@ -323,6 +333,8 @@ class ModelService:
                     and cleanup['observer_stopped'] and cleanup['log_writer_stopped'] and not errors)
                 if cleanup['forced_kill']:
                     errors.append(RuntimeError('model service required forced SIGKILL'))
+                if cleanup['fallback_term']:
+                    errors.append(RuntimeError('model service required TERM fallback after native shutdown'))
                 if cleanup.get('owned_survivors'):
                     errors.append(RuntimeError('model service owned processes remain alive'))
             except BaseException as error:

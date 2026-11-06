@@ -2,7 +2,7 @@
 
 ## 2026-11-06：IMLane原生Q3独立模型provider与worker候选
 
-[接线与88项CPU检查](diagnostics/imlane_duckdb_q3_20261106/README.md#独立模型provider与worker接线)
+[接线与98项CPU检查](diagnostics/imlane_duckdb_q3_20261106/README.md#独立模型provider与worker接线)
 覆盖同batch异步HTTP、原消息／生成参数、无额外8／100连接门槛、错误后drain、client关闭、started／terminal unknown、
 模型owner的birth／异常／非零退出、native READY期限及软件CLI防误启模型。完整自有回执按实际大小读，
 UDF和HTTP同PID／调用区间唯一配对后逐position核对；重复消息与同COUNT不能掩盖交换。

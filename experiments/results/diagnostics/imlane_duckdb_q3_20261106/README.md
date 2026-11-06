@@ -88,8 +88,11 @@ UDF调用与HTTP批次用PID／调用时间唯一配对后逐position核对，�
 作者close既有分段等待未改，硬截止须由外层supervised_run按READY绑定；非零服务退出、强杀或未知身份不当作正常关闭。
 软件模式必须提供显式测试factory，普通CLI拒绝它；不因写了software配置而意外启动真实模型。
 
-相关88个不同本地CPU方法全部通过，[源码／日志摘要](model_components.json)关联完整范围；
-22个provider、22个owner、22个模型worker／审计、原8个fixture worker及14个Arrow内核方法不重复累计。
+相关98个不同本地CPU方法全部通过，[源码／日志摘要](model_components.json)关联完整范围；
+26个provider、23个owner、27个模型worker／审计、原8个fixture worker及14个Arrow内核方法不重复累计。
+初轮6aeb的88项保持来源，后续明确失败cleanup marker让parent也观察首次失败的固定收尾期限；
+每个POST发送前复核同机绝对query期限，过期不产生新请求。原生模型关闭使用整个剩余graceful窗口，
+最后预留8秒不再当成初始正常关闭的8秒限制；残留child TERM或KILL均保留失败。
 真实作者＋软件HTTP CPU闭环待本批下一步，当前没有加载模型或启动GPU。完整消息、8192生成条件、
 cold／ready／关闭与下一次120逻辑请求的范围见同一校准计划，不将本地组件通过当作GPU资格。
 

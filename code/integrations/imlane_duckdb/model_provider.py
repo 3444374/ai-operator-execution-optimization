@@ -16,6 +16,7 @@ import math
 import os
 from pathlib import Path
 import time
+from time import monotonic
 from urllib.parse import urlsplit
 import uuid
 
@@ -36,7 +37,7 @@ def configuration(value):
     """Validate before service allocation; do not read secrets or create paths."""
     required = {'schema', 'url', 'model', 'sampling_params', 'request_timeout_s', 'receipt_dir', 'provider_mode'}
     if (type(value) is not dict or required - value.keys()
-            or value.keys() - (required | {'api_key_env'}) or value['schema'] != CONFIG_SCHEMA):
+            or value.keys() - (required | {'api_key_env', 'deadline_monotonic'}) or value['schema'] != CONFIG_SCHEMA):
         raise ValueError('an explicit native IMLane Q3 model-provider configuration is required')
     if type(value['url']) is not str:
         raise ValueError('model provider URL must be a string')
@@ -69,12 +70,16 @@ def configuration(value):
     timeout = value['request_timeout_s']
     if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError('request_timeout_s must be finite positive seconds')
+    deadline = value.get('deadline_monotonic')
+    if deadline is not None and (type(deadline) not in (int, float) or not math.isfinite(deadline) or deadline <= 0):
+        raise ValueError('deadline_monotonic must be finite positive seconds or null')
     key_env = value.get('api_key_env')
     if key_env is not None and (type(key_env) is not str or not key_env):
         raise ValueError('api_key_env must name an environment variable or be null')
     directory = Path(value['receipt_dir']).resolve()
     require_outside_git(directory)
-    return dict(value, sampling_params=deepcopy(sampling), receipt_dir=str(directory), api_key_env=key_env)
+    return dict(value, sampling_params=deepcopy(sampling), receipt_dir=str(directory),
+                api_key_env=key_env, deadline_monotonic=deadline)
 
 
 @cache
@@ -124,19 +129,33 @@ def _response(response, call, model):
 
 
 async def _request(client, config, payload, call):
-    call.update(attempted=True, http_attempt_started_monotonic_ns=time.monotonic_ns())
     try:
-        async with asyncio.timeout(config['request_timeout_s']):
-            response = await client.post(config['url'], json=payload)
+        timeout = config['request_timeout_s']
+        if config['deadline_monotonic'] is not None:
+            remaining = config['deadline_monotonic'] - monotonic()
+            call['effective_request_timeout_s'] = max(0.0, min(timeout, remaining))
+            if remaining <= 0:
+                raise TimeoutError('Q3 query deadline exhausted before HTTP POST')
+            timeout = min(timeout, remaining)
+        call.update(attempted=True, effective_request_timeout_s=timeout,
+                    http_attempt_started_monotonic_ns=time.monotonic_ns())
+        async with asyncio.timeout(timeout):
+            response = await client.post(config['url'], json=payload, timeout=timeout)
             text = _response(response, call, config['model'])
         call['status'] = 'succeeded'
         return text
     except BaseException as error:
-        call.update(status='unknown' if isinstance(error, (httpx.RequestError, TimeoutError, asyncio.CancelledError))
-                    else 'failed', error_type=type(error).__name__)
+        if not call['attempted']:
+            status = 'not_started'
+        elif isinstance(error, (httpx.RequestError, TimeoutError, asyncio.CancelledError)):
+            status = 'unknown'
+        else:
+            status = 'failed'
+        call.update(status=status, error_type=type(error).__name__)
         raise
     finally:
-        call['http_attempt_finished_monotonic_ns'] = time.monotonic_ns()
+        if call['attempted']:
+            call['http_attempt_finished_monotonic_ns'] = time.monotonic_ns()
 
 
 async def _run_batch(config, payloads, receipt):
@@ -211,17 +230,18 @@ def infer_batch(messages_batch):
         started_monotonic_ns=time.monotonic_ns(), client_created=False, client_closed=None, client_is_closed=None,
         physical_model_attempts=None, http_post_attempts=None,
         requested_config={name: deepcopy(config[name]) for name in
-            ('url', 'model', 'sampling_params', 'request_timeout_s', 'api_key_env')},
+            ('url', 'model', 'sampling_params', 'request_timeout_s', 'api_key_env', 'deadline_monotonic')},
         transport=dict(client='httpx.AsyncClient', max_connections=None, max_keepalive_connections=None,
             pool_policy='project choice: one author batch; no additional concurrency cap',
             retries=0, follow_redirects=False, trust_env=False,
-            timeout_scope='whole POST/body read wall time; httpx per-operation timeout uses the same value',
+            timeout_scope='whole POST/body read: min(request timeout, absolute deadline remaining); httpx phases use the same value',
             attempt_semantics='client.post invocation, not verified wire or physical model execution',
             missing_terminal='all attempt/results remain unknown; started is a pre-dispatch snapshot'),
         calls=[dict(position=index, messages_sha256=content_digest(payload['messages']),
             request_payload_sha256=content_digest(payload), requested_payload=payload,
             attempted=False, status='unknown', http_status=None, response=None,
-            error_type=None, http_attempt_started_monotonic_ns=None, http_attempt_finished_monotonic_ns=None)
+            error_type=None, effective_request_timeout_s=None,
+            http_attempt_started_monotonic_ns=None, http_attempt_finished_monotonic_ns=None)
             for index, payload in enumerate(payloads)])
     destination = Path(config['receipt_dir']) / ('model-batch-' + batch_id)
     publish_private_json(destination.with_suffix('.started.json'), receipt)
