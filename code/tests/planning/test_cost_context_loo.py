@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import io
+import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -16,6 +21,37 @@ SPEC.loader.exec_module(MODULE)
 
 
 class CostContextLooTests(unittest.TestCase):
+    def test_comparison_scripts_require_one_explicit_source(self) -> None:
+        from scripts.analysis import compare_cost_estimators_full
+
+        for module in (MODULE, compare_cost_estimators_full):
+            for arguments in ([], ["--data-csv", "chosen.csv", "--ref-json", "chosen.json"]):
+                with self.subTest(script=module.__file__, arguments=arguments):
+                    with patch.object(sys, "argv", [module.__file__, *arguments]), redirect_stderr(io.StringIO()):
+                        with self.assertRaises(SystemExit) as error:
+                            module.parse_args()
+                    self.assertEqual(error.exception.code, 2)
+
+    def test_external_csv_is_passed_directly_without_a_temporary_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            csv_path = Path(directory) / "runs.csv"
+            csv_path.write_text("status,phase\nok,formal\n")
+            output = Path(directory) / "result.json"
+            payload = {
+                "dataset_coverage": {
+                    "row_count": 1, "decision_context_count": 1, "multi_candidate_context_count": 0,
+                },
+                "estimators": {},
+            }
+            arguments = [str(SCRIPT), "--data-csv", str(csv_path), "--output", str(output)]
+            with patch.object(sys, "argv", arguments), redirect_stdout(io.StringIO()):
+                with patch.object(MODULE, "evaluate", return_value=payload) as evaluate:
+                    with patch.object(MODULE, "_write_output") as write:
+                        with patch("tempfile.NamedTemporaryFile", side_effect=AssertionError("unexpected ref file")):
+                            MODULE.main()
+            evaluate.assert_called_once_with([csv_path], source_reference=str(csv_path.resolve()))
+            write.assert_called_once_with(output, payload, False)
+
     def test_candidate_repeats_are_averaged_before_ranking(self) -> None:
         aggregated = MODULE.aggregate_candidate_repeats(
             np.asarray([10.0, 12.0, 20.0, 22.0]),

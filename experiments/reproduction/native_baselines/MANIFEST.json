@@ -948,7 +948,9 @@
         "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
         "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
-        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1381,6 +1383,16 @@
           "encoding": "gzip",
           "decoded_bytes": 1578,
           "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
+        },
+        "code/scripts/analysis/compare_cost_estimators_full.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9237,
+          "archive_sha256": "f93f7b7e8b2e97d5292953ed54ffe2e6b3cb79ffc22af50284653dbcea43dcd2"
+        },
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 22490,
+          "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
         }
       }
     },
@@ -2357,7 +2369,9 @@
         "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
         "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
-        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2790,6 +2804,16 @@
           "encoding": "gzip",
           "decoded_bytes": 1578,
           "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
+        },
+        "code/scripts/analysis/compare_cost_estimators_full.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9237,
+          "archive_sha256": "f93f7b7e8b2e97d5292953ed54ffe2e6b3cb79ffc22af50284653dbcea43dcd2"
+        },
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 22490,
+          "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
         }
       }
     },
@@ -3776,7 +3800,9 @@
         "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
         "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
-        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4209,6 +4235,16 @@
           "encoding": "gzip",
           "decoded_bytes": 1578,
           "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
+        },
+        "code/scripts/analysis/compare_cost_estimators_full.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9237,
+          "archive_sha256": "f93f7b7e8b2e97d5292953ed54ffe2e6b3cb79ffc22af50284653dbcea43dcd2"
+        },
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 22490,
+          "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
         }
       }
     },
@@ -5197,7 +5233,9 @@
         "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
         "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
-        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5635,6 +5673,16 @@
           "encoding": "gzip",
           "decoded_bytes": 1578,
           "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
+        },
+        "code/scripts/analysis/compare_cost_estimators_full.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9237,
+          "archive_sha256": "f93f7b7e8b2e97d5292953ed54ffe2e6b3cb79ffc22af50284653dbcea43dcd2"
+        },
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 22490,
+          "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
         }
       }
     },
@@ -6627,7 +6675,9 @@
         "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
         "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
-        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7060,6 +7110,16 @@
           "encoding": "gzip",
           "decoded_bytes": 1578,
           "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
+        },
+        "code/scripts/analysis/compare_cost_estimators_full.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9237,
+          "archive_sha256": "f93f7b7e8b2e97d5292953ed54ffe2e6b3cb79ffc22af50284653dbcea43dcd2"
+        },
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 22490,
+          "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
         }
       }
     }
