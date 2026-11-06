@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-07：旧画像输出与矩阵检查退役
+
+[实际调用、恢复及计量](diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)
+记录相同八项baseline检查前后通过、原版十一项退役专测及十条历史读取保持。
+准确40a8另检查八项baseline和十条读源，不重复累计；无模型、真实Ray、socket或原始实验改写。
+
 ## 2026-11-07：同步关闭调用时间
 
 [两条实际同步worker](diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)

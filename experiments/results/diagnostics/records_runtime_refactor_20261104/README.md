@@ -4468,3 +4468,22 @@ Reference普通／链及IMLane共用这些接点，两份stage软件引擎的clo
 生产Python净增20行，不报减行；真实Linux软件管道两方法待验，模型、Ray／SHM及物理GPU退出未由本批验证。
 待验方法为`SoftwareSyncCloseBudgetTests.test_sync_and_staged_pipe_return_actual_close_allowance`与
 `StageTransportTests.test_real_cpu_pipe_keeps_per_call_generation_identity_usage_and_close`；前者包含普通及分阶段两个软件子例。
+
+<a id="retired-profile-output-and-matrix-checks"></a>
+## 旧画像CSV输出与旧矩阵检查退役（2026-11-07）
+
+候选`4cfa018402a83d01ac41cdaf336ae0c2f45a4f76`，tree`1f78165283f61dcf6f196ebd75e85d12136f9a29`，整合为`40a8b73d`。
+全仓符号、导入、动态路径和脚本核对确认：traces.py八个函数只有七项专测及归档PG入口调用，
+gate.py只供四项专测及旧矩阵入口；两实现和专测退出维护树，没有增加新运行代码、检查或兼容壳。
+原始实验、性能记录、当前native观测以及baseline的来源／结果校验保持；本批仍保留的Ray画像模块不是新的调度策略。
+[两份准确a0ce原件与恢复](../../../reproduction/native_baselines/README.md#retired-profiler-csv-and-matrix-checks)
+供五份投影读取，只增加十条来源和十条格式映射；全部3010个expected、投影身份及原映射不改。
+两份专测没有投影读取，使用同一公开Git版本恢复，没有再压缩一份重复副本。
+
+相同八项baseline来源／结果检查在改前后各通过一次；原十一项待退役专测只在原版通过，不计入修后测试数。
+准确`40a8b73dcc4aafee151fd5be30ade9f2f97d278e`另运行八项baseline及十条读源，全部通过；十个整合路径与独审候选字节相同。
+同步关闭检查的四份运行源码摘要仍保持，未因这次无共享调用的删除重复运行十四种情形。
+独审核对1021份现行Python、原件及读取映射；未运行真实模型、Ray、socket、网络、系统探测或完整历史构造。
+本批核心Python减560行，baseline减173行，src与scripts共减733行；两份专测减334行，原始记录不删。
+当前核心51,969行、src与scripts103,380行、测试93,079行；含注释／空行，核心排除experiments及baselines并包含research，压缩历史原件另计。
+相对固定main6a8a核心减2,122行、src与scripts减36,955行；相对3fd分别减9,659和46,265行，不把单纯搬文件算作代码减少。

@@ -112,6 +112,10 @@ Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，�
 把传输、准备组织及actor字段清理交回各自对象，链owner保留交接／证明和顺序；五项轻量检查保持，中断重试与实际字段读取不改。
 两批准确712b组合16项CPU通过，未运行真实Ray、模型或socket；服务IPC重试仍待服务器补验。
 
+[旧profiler输出和矩阵校验退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)
+删除无现用调用的traces.py、gate.py及两份专测；当前baseline来源／结果校验保留，十条历史读取仍取原字节。
+准确40a8的八项baseline检查和十条历史读源通过；核心减560行、baseline减173行，未新增运行检查或替代包装。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

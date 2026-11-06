@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：旧画像输出与矩阵检查退役
+
+[旧PG profiler写入与旧矩阵检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)
+只剩专测和归档入口调用，现用副本及专测移除；准确源码、原始结果和指标身份可恢复。
+当前对照来源／结果校验保留，生产净减733行、测试减334行，八项baseline检查及十条历史读源通过。
+
 ## 2026-11-07：同步模型关闭沿用调用时间
 
 [普通与分阶段同步worker](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)
