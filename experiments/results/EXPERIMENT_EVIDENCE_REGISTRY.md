@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：旧baseline转发退役及4d服务器回执
+
+[五个转发删除、调用迁移和33项轻量CPU](diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
+按准确9f登记；两次收集问题、SDK与实际IPC等未运行项另列，旧名称pickle停止支持而当前序列化保留。
+[准确4d六项服务器结果](diagnostics/records_runtime_refactor_20261104/README.md#global-observation-server-six)
+已读原回执，六项通过及自有进程／SHM／租约清理确认；不是新版本或模型测试，不累加覆盖数。
+
 ## 2026-11-06：IMLane全运行SHM范围与控制器终态修复
 
 [原失败／修复与恢复](diagnostics/imlane_duckdb_q3_20261106/README.md#真实模型启动后的shm范围错误与控制器修复)

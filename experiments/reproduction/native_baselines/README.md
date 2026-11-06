@@ -1,5 +1,20 @@
 # 原生基线与具名 Core 历史复现
 
+本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
+较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
+
+<a id="retired-baseline-worker-forwarders"></a>
+## 已由公共实现替代的五个baseline转发模块
+
+当前维护代码删除`daft_engine_process.py`、`lotus_cascade_process.py`、`lotus_chain_batch.py`、
+`lotus_chain_engine_process.py`和`lotus_chain_results.py`五个薄转发文件；它们不再提供直接导入或旧pickle名称。
+原生执行图、当前序列化、模型进程和结果处理继续使用实际所属的`serving/backends`及`semantic_methods/lotus`实现。
+五份具名投影的25条相关源码读取已全部走既有override，原字节与预期摘要保持，不需要新增副本或映射。
+这55行转发本身可从准确`608a32ddfc846a5512acd33225913363846a0d7c`的
+`code/src/baselines/text/frameworks/`回查；历史实验仍按MANIFEST恢复当时真正实现，不能拿转发替代旧实现。
+[现用调用迁移与CPU范围](../../results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
+记录删除的实际影响及未运行项。
+
 ## SAOR 与多任务研究迁移的原源码
 
 SAOR／共享额度迁入[独立研究包](../../../code/src/research/multitask/README.md)后，

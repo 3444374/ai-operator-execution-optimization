@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：删除旧baseline模型转发并补记原服务器结果
+
+五个薄转发删除，五个IMLane调用文件和八个测试文件改用实际所属实现；现有结果与清理逻辑不改。
+[33项轻量CPU、两次收集问题及恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
+记录生产少55行、测试少81行及SDK／真实进程未验证范围，SAOR交专门会话而未混入本批。
+同时读取并登记[准确4d六项服务器回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-observation-server-six)，没有重复执行或合并main。
+
 ## 2026-11-06：删除被覆盖的查询时钟定义
 
 同一观测文件的首个QueryClock与最后定义逐字相同且未被引用，删除前者及Movie Session三个无用导入。

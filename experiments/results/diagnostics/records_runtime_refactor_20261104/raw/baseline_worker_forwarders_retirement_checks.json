@@ -1,0 +1,267 @@
+{
+  "base_commit": "608a32ddfc846a5512acd33225913363846a0d7c",
+  "code_commit": "9f906c135112abe6a96afdb3a72291d2b247a30c",
+  "code_tree": "127c646cf87e2216091b2ce68caa77e59871974b",
+  "forwarders": [
+    {
+      "old": "src.baselines.text.frameworks.lotus_chain_results",
+      "owner": "src.semantic_methods.lotus.record_results",
+      "source_sha256": "b94f87a6885de050e0865b5913a31a4459cb12e92d2d5475b42985051d9eab9c",
+      "lines": 11,
+      "forwarded_names": [
+        "ChainBatchResults",
+        "ChainExecutionError",
+        "IDENTITY_FIELDS",
+        "RecordOccurrence",
+        "_json",
+        "_metadata",
+        "_ordered_columns",
+        "_parent_seeds",
+        "_source_binding",
+        "deepcopy",
+        "deque",
+        "hashlib",
+        "json",
+        "record_row",
+        "stage_identity"
+      ],
+      "objects_already_identical": true
+    },
+    {
+      "old": "src.baselines.text.frameworks.lotus_chain_batch",
+      "owner": "src.serving.backends.lotus_chain_worker",
+      "source_sha256": "3d11756cb7924b83c8751326d6b38d7db9188a48eaa2dec978fee34119394e40",
+      "lines": 9,
+      "forwarded_names": [
+        "FusedChainBatch",
+        "LotusRecordChain",
+        "RecordOccurrence",
+        "EngineSpec",
+        "IDENTITY_FIELDS",
+        "_check",
+        "_json",
+        "_ordered_columns",
+        "_parent_seeds",
+        "_phase_values",
+        "_source_binding"
+      ],
+      "objects_already_identical": true
+    },
+    {
+      "old": "src.baselines.text.frameworks.lotus_chain_engine_process",
+      "owner": "src.serving.backends.staged_generation_process",
+      "source_sha256": "85fd905a57b329f849400f6328639639f6818b33c94ac425e52f6a6de11e6c2a",
+      "lines": 14,
+      "forwarded_names": [
+        "ChainEngineProcess",
+        "EngineProcess",
+        "EngineSpec",
+        "GenerationSpec",
+        "MAX_MESSAGE_BYTES",
+        "_encode",
+        "_prepared",
+        "serve"
+      ],
+      "objects_already_identical": true
+    },
+    {
+      "old": "src.baselines.text.frameworks.daft_engine_process",
+      "owner": "src.serving.backends.vllm_sync_process",
+      "source_sha256": "2d1789661b12fe7cf0ffbf68164ca2a02b3c9df90f78b5f6f80e17117d5024e3",
+      "lines": 18,
+      "forwarded_names": [
+        "CLOSE_CLEANUP_RESERVE_S",
+        "CODE_ROOT",
+        "DEFAULT_CLOSE_TIMEOUT_S",
+        "EngineProcess",
+        "EngineSpec",
+        "GenerationSpec",
+        "IDENTITY_FIELDS",
+        "MAX_MESSAGE_BYTES",
+        "RESULT_PROTOCOL_ERROR",
+        "_encode",
+        "_publish",
+        "_verified_terminal",
+        "serve"
+      ],
+      "objects_already_identical": true
+    },
+    {
+      "old": "src.baselines.text.frameworks.lotus_cascade_process",
+      "owner": "src.serving.backends.stage_process_cleanup",
+      "source_sha256": "420eddc07fee5d4d2fd5614ee4f2732b1a8b17a333f27c62d553119e04b9e27f",
+      "lines": 3,
+      "forwarded_names": [
+        "StageEngineCleanup"
+      ],
+      "objects_already_identical": true
+    }
+  ],
+  "production_rewiring": [
+    "integrations/imlane_records/chain_host.py",
+    "integrations/imlane_records/chain_workload.py",
+    "integrations/imlane_records/model_lifecycle.py",
+    "integrations/imlane_records/filter_udf.py",
+    "integrations/imlane_records/cascade_udf.py"
+  ],
+  "regression": {
+    "selectors": [
+      "tests.semantic_methods.test_lotus_record_results.ResultMigrationTests",
+      "tests.serving.test_sync_process_migration.MigrationTests.test_current_class_pickles_resolve_to_their_owning_modules",
+      "tests.serving.test_sync_process_migration.MigrationTests.test_current_imports_and_empty_cleanup_do_not_load_vendor_runtime",
+      "tests.serving.test_sync_process_migration.MigrationTests.test_native_consumers_import_without_loading_models",
+      "tests.serving.test_sync_process_migration.StageCleanupTests",
+      "tests.serving.test_shared_chain_migration.MigrationTests.test_current_workers_import_without_loading_policy_or_models",
+      "tests.serving.test_shared_chain_migration.MigrationTests.test_native_adapters_share_worker_without_importing_core_policy",
+      "tests.serving.test_shared_chain_migration.MigrationTests.test_new_worker_state_pickle_is_readable_in_a_fresh_interpreter",
+      "tests.serving.test_shared_chain_migration.StageTransportTests.test_bad_reply_keeps_unknown_call_identity_and_cleanup_error",
+      "tests.serving.test_shared_chain_migration.WorkerLifecycleTests",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_filter_map_keeps_occurrences_usage_and_declared_output_order",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_out_of_order_batches_and_tail_preserve_distinct_repeated_labels",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_empty_source_requires_no_calls_but_still_requires_explicit_eof",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_missing_occurrence_and_duplicate_batch_are_not_success",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_changed_input_or_call_identity_and_duplicate_call_are_rejected",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_missing_stage_bad_parent_and_changed_final_occurrence_are_rejected",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_failure_and_unknown_keep_known_calls_and_never_verify_success",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_raw_duplicates_or_foreign_responses_cannot_pass_success_gate",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_recovery_is_idempotent_and_conflicts_remain_visible",
+      "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_cleanup_errors_and_seeded_parent_mismatch_remain_authoritative"
+    ],
+    "tests_run": 33,
+    "passed": 33,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "seconds": 1.390092374989763,
+    "source_unchanged": true,
+    "changed_source_sha256": {
+      "code/integrations/imlane_records/cascade_udf.py": "28bc75c2f4e945130e3ba2787e8d6fb48a80f14f2208a51458526daec187a440",
+      "code/integrations/imlane_records/chain_host.py": "170f4821c0447a0bcc90eac9f2678a932954840812474c481743d1e1a2a243bd",
+      "code/integrations/imlane_records/chain_workload.py": "bf586eb26b84f51caaa16bce10a76e187fb9191169639b064eb1ac23a34e7c97",
+      "code/integrations/imlane_records/filter_udf.py": "b51841168093429575734d09e761623443640f4c37273dca4137a4d24db0cd8d",
+      "code/integrations/imlane_records/model_lifecycle.py": "90ab0ad0ffdefcd6742ce4991d438b0bc1121ca24d13fd29892c4523a8507e16",
+      "code/tests/baselines/text/test_daft_native_session.py": "549dd28bdf7d95cc1f17a62c6b69c2ae472b96153fa2dd77368815f7d5b8d515",
+      "code/tests/execution_provider/test_lotus_chain_token_budget.py": "aed0369278821c0ca057ac655b96eb008d86dddfed8230b9406205358f4a157c",
+      "code/tests/execution_provider/test_lotus_record_local_query.py": "56b661a3af76ad5ef5b88f8248df582b01b5e6091f87dfda0a3cb4114fb15bcd",
+      "code/tests/infrastructure/test_owned_processes.py": "d51708bf0701b4efc7b6e610e650d16b664b6ff5112c723c1d1d4853f0420bae",
+      "code/tests/semantic_methods/test_lotus_chain_composition_oracle.py": "39238e3f173f952e276629d43951c214cccbf7cf01b13d6055e4715e1adaabd0",
+      "code/tests/semantic_methods/test_lotus_record_results.py": "ba7a883d5198eb2f3e65e85490d2982e95da33085d05a2c742aea352d3c96b58",
+      "code/tests/serving/test_shared_chain_migration.py": "d316a40a2a9cd8dec40981682889047ad797198a19a5dba5cb2a3e7621f3bc14",
+      "code/tests/serving/test_sync_process_migration.py": "df6242546f6e209ab7f2ecb8944defec6af2f9122e741cf707abc9e9ddbe9855"
+    },
+    "full_source_map": {
+      "files": 1069,
+      "sha256": "206509aa88b5fb5e9c87f537938e2b57949d96f1617569414a1f39ce76fa0734",
+      "matches_code_commit": true
+    },
+    "original_result_sha256": "2123a24cd61f8d9157378144db4f4362eb9b4fa35aebfe82f621c29c326e6436",
+    "original_log_sha256": "de92c399bd6685d2c2a801b2eaee3002fef1e2cdd0f0655b869c4841e2af9ae5"
+  },
+  "collection_attempts": [
+    {
+      "source_commit": "ae6b618bb83afa5d1d8527cbca9fa8b2235a0e47",
+      "status": "interrupted_during_test_collection",
+      "selected_list": "SELECTORS.json",
+      "test_methods_started": 0,
+      "result_file_created": false,
+      "observed_stack": [
+        "unittest.TestLoader.loadTestsFromNames",
+        "tests.execution_provider.test_lotus_chain_token_budget",
+        "tests.execution_provider.chain_tokenizer_fixture",
+        "transformers.PreTrainedTokenizerFast",
+        "torch._import_device_backends",
+        "importlib.metadata.entry_points",
+        "Path.read_text(entry_points.txt)"
+      ],
+      "termination": "KeyboardInterrupt delivered through the owned exec session; session returned exit1. No repeated case or model request.",
+      "next_CPU_environment": {
+        "TORCH_DEVICE_BACKEND_AUTOLOAD": "0",
+        "CUDA_VISIBLE_DEVICES": ""
+      },
+      "installed_source": "torch.__init__ explicitly supports disabling optional device extension autoload with this process environment variable. No package or production configuration modified.",
+      "original_summary_sha256": "8998dce1926610129ca234021cf73f3973da5f01605a5048e5bc7671d6d4d4a1"
+    },
+    {
+      "status": "failed_during_test_collection",
+      "source": "ae6b618bb83afa5d1d8527cbca9fa8b2235a0e47",
+      "label": "forwarders-cpu-r2",
+      "test_methods_started": 0,
+      "result_file_created": false,
+      "exit_code": 1,
+      "error": "OSError errno89 Operation canceled",
+      "observed_stack": [
+        "unittest.TestLoader.loadTestsFromNames",
+        "tests.execution_provider.test_imlane_transport_limits import lotus",
+        "lotus.models -> litellm -> pydantic",
+        "pydantic.plugin._loader.get_plugins",
+        "importlib.metadata Distribution.entry_points",
+        "Path.read_text(entry_points.txt)"
+      ],
+      "CPU_environment": "TORCH_DEVICE_BACKEND_AUTOLOAD=0 avoided the first torch autoload scan. No package source was changed. This attempt then failed in a distinct package metadata read before running any method.",
+      "decision": "Do not install packages or add further plugin bypasses here. Preserve failure, select unaffected lightweight fixtures; SDK/tokenizer-dependent tests remain unverified.",
+      "original_summary_sha256": "201d354159bee565031ce3647f6ec2d26e451aa7f02d98a6c63c68f237807bf3"
+    }
+  ],
+  "not_run": [
+    "tests.semantic_methods.test_lotus_chain_composition_oracle",
+    "tests.execution_provider.test_lotus_chain_token_budget.ChainTokens.test_chain_outputs_feed_canonical_result_accounting",
+    "tests.execution_provider.test_imlane_transport_limits",
+    "tests.semantic_methods.test_lotus_record_results.ResultContractTests.test_native_iterator_consumers_use_the_shared_audit",
+    "tests.execution_provider.test_lotus_record_local_query.QueryOwnerTests.test_default_fused_owner_matches_shared_kernel_reference"
+  ],
+  "retained_process_tests_not_run_here": [
+    "tests.serving.test_sync_process_migration.RealProcessTests",
+    "tests.serving.test_sync_process_migration.MigrationTests.test_current_cli_validates_descriptors_and_exits_on_empty_input",
+    "tests.serving.test_shared_chain_migration.MigrationTests.test_current_cli_preserves_error_and_descriptor_eof",
+    "tests.serving.test_shared_chain_migration.MigrationTests.test_spawn_unpickles_the_same_shared_types",
+    "tests.serving.test_shared_chain_migration.StageTransportTests.test_real_cpu_pipe_keeps_per_call_generation_identity_usage_and_close",
+    "tests.infrastructure.test_owned_processes.SupervisorProcessTests",
+    "tests.baselines.text.test_daft_native_session.DaftNativeSessionTests.test_real_engine_process_and_native_wrapper_reuse_child_then_close_api_once"
+  ],
+  "compatibility": "Old direct module imports and GLOBAL names retired; current class/state pickle and worker commands use owning modules. Canonical implementation bodies, native scheduling and current input/result/cleanup behavior unchanged.",
+  "history": {
+    "original_paths": 25,
+    "all_use_existing_overrides": true,
+    "all_match": true,
+    "manifest_or_archive_changed": false,
+    "new_archive_added": false,
+    "original_audit_sha256": "320215944addb5b1b92e9e8f0bbe1cdc5c0d2241c60244dc3574f82e172bcc53"
+  },
+  "reviews": {
+    "source_ae6b_sha256": "f17d45b20c83becc449e55f12a05d0f0307ac4e8b46cd16b68795f8fe8b8e61c",
+    "increment_9f90_and_cpu_sha256": "d1e5aae23864333d37625a7ce816cd2dd2a89f4567ce3f387d0c02de3984cd0a"
+  },
+  "size": {
+    "base": "608a32ddfc846a5512acd33225913363846a0d7c",
+    "candidate": "9f906c135112abe6a96afdb3a72291d2b247a30c",
+    "base_counts": {
+      "core_Python": 56260,
+      "src_and_scripts_Python": 109620,
+      "tests_Python": 98380,
+      "integrations_Python_CPP_HPP": 6758
+    },
+    "delta": {
+      "core_Python": 0,
+      "src_and_scripts_Python": -55,
+      "tests_Python": -81,
+      "integrations_Python_CPP_HPP": 0
+    },
+    "final_counts": {
+      "core_Python": 56260,
+      "src_and_scripts_Python": 109565,
+      "tests_Python": 98299,
+      "integrations_Python_CPP_HPP": 6758
+    },
+    "scope": "Physical lines including comments/blanks. Core excludes src/experiments and src/baselines, includes src/research. Tests/integration/docs/historical copies separate."
+  },
+  "scope": {
+    "actual_engine_IPC_runs": 0,
+    "actual_Ray_runs": 0,
+    "model_calls": 0,
+    "GPU_queries": 0,
+    "server_runs_in_this_batch": 0,
+    "main_merged": false,
+    "research_changed": false
+  },
+  "prior_server_six": "Separate original4d receipt recorded in global_entry_observation_server_4d_receipt.json; not qualification of this newer source."
+}

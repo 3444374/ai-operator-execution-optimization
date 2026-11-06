@@ -26,7 +26,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
 | 图像与数据 | 现用LOTUS图像后端、静态HSE和CLIP入口继续使用原执行；数据组织仍归materializer，不归观测器 | 增量图像接口与HSE批流水用途不同；没有借清理增加新算子或扩大模型资格 |
-| 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；分阶段RSS／CPU采样及三份测试归到observability；四个旧转发删除 | 实际进程采样、异步传输和一项CPU IPC待正常服务器验证，本机此前拒绝的操作不重试 |
+| 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；采样归observability；四个旧转发及重复时钟定义删除；准确4d六项服务器CPU通过 | 结果限其实际采样／软件传输和子进程范围；不是后续组合、真实Ray或模型资格，本机此前拒绝的操作不重试 |
 | 研究隔离 | SAOR与多任务共享额度继续独立维护；旧共享runner证据／采样胶水、batched观察钩子和两份专属类型已退役 | 六个现用值类、公共批预留、指标与原负结果保留；不将独立拆仓或新研究能力当作清理前置项 |
 | 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放、HTTP 观测转发及异步阻塞 RPC 已退役；重复解析、内部形状／日志计数检查分批精简 | 旧 LOTUS 残留和两个固定探针套件已清理；实际 provider／v3–v6 协议、共享诊断与离线复算保留，不称全仓旧内容已穷尽 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
@@ -50,10 +50,16 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
 核心 `code/src`（排除 experiments、baselines，保留 research）为56,260行，
-全部 src＋scripts Python 为109,620行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,169行／减少30,715行；对清理起点3fd分别减少5,368／40,025行。
-本批相对f2df生产Python少31行，未增删测试：删除被覆盖的相同时钟类和三个无用导入。此前共享状态修复和11项重复测试清理保持，并行IMLane源码不改；目录搬移不算删除。
+全部 src＋scripts Python 为109,565行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,169行／减少30,770行；对清理起点3fd分别减少5,368／40,080行。
+本批相对608a删除五个baseline转发模块，生产Python少55行、测试少81行，核心及独立集成行数不变。
+五个IMLane文件只改所属模块导入；当前原生执行、结果和清理实现保持，目录搬移不算删除。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
+
+[旧模型worker转发退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
+记录直接调用迁移、33项轻量CPU、两次收集问题及SDK／实际IPC未验证范围；旧pickle专属检查退出，当前序列化保留。
+[准确4d六项服务器回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-observation-server-six)
+已补回原进程／软件传输检查，不累计为当前整树或模型测试数量。
 
 [时钟重复定义清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)
 记录逐字保持的实际时钟类、Movie导入核对和51项CPU；暂停中的研究迁出候选不包含在本批。
@@ -61,7 +67,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原生生命周期逐次声明](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
 记录最终74项CPU回归、两种原失败、重复测试清理和直接入口验证；
 [此前全项目核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)
-继续解释其48方法、21子例及历史恢复。此前六项服务器检查由测试会话核对回执，本批未重复派发或转授其资格。
+继续解释其48方法、21子例及历史恢复。此后收到的六项服务器检查均在准确4d通过，本批只登记原回执，没有重跑。
 [此前共享加载器](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)、
 [离线矩阵](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)与
 [容量及固定探针](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)

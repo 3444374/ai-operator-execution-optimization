@@ -29,6 +29,11 @@ SemLoom Core 的实现位于 `execution_provider/adapters/lotus_records_core.py`
 - [CLIP batch workers](../modalities/image/clip_batch_workers.py)归图像公共层；
   [Daft](image/frameworks/daft_clip.py)和[Ray 图](image/frameworks/ray_data.py)保留原生图所有权。
 
+旧的链结果、链worker、同步／分阶段模型进程和阶段清理共五个baseline转发模块已删除。
+当前IMLane及测试直接从`semantic_methods`或`serving`的实际所属模块导入；这些实现和原生调度不改。
+旧模块直接导入及引用旧模块名的pickle停止支持；当前类／状态序列化保留，历史实验按
+[准确来源恢复](../../../experiments/reproduction/native_baselines/README.md#retired-baseline-worker-forwarders)。
+
 原生 LOTUS 的 `native_lm_max_batch_size` 是原 LM 客户端的并发批设置，必须显式声明；
 它不是 vLLM 内部批大小，也不是 Core 的 C／R。模型引擎未指定的参数交引擎解析，实际值从 owner ready 回执取得。
 原生 Ray／Daft／IMLane 的[同步模型入口](text/frameworks/sync_reference_engine.py)与

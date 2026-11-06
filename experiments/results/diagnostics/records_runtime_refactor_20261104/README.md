@@ -3767,3 +3767,41 @@ QueryClock文件不在五份具名旧投影中；五次Movie源码读取均走�
 统计含注释和空行，核心排除experiments／baselines、包含research；文档、测试、历史副本及集成源码另计。
 不因删除重复定义宣称性能改善。本批没有模型、GPU、实际Ray／IPC、数据库或服务器运行，不合并main。
 此前六项服务器检查仍由原测试会话核对回执；研究迁出候选已交独立会话，未混入本批。
+
+<a id="baseline-worker-forwarders-retirement"></a>
+## 2026-11-06：旧baseline模型转发停止维护
+
+基于608a，`ae6b618b`删除五个薄转发文件：`daft_engine_process.py`、`lotus_cascade_process.py`、
+`lotus_chain_batch.py`、`lotus_chain_engine_process.py`和`lotus_chain_results.py`。
+删除前逐项导入比较，全部转出已经是所属公共实现的同一对象；这55行没有独立算法或执行用途。
+五个IMLane文件直接从`serving/backends`或`semantic_methods/lotus`取原对象，八个测试文件同步迁移；
+原生图、Core专用worker、共享模型／结果实现及研究组件不改。
+真实子进程命令原来就使用两个serving入口，不会因转发删除换到另一执行器。
+
+只检查旧转出同对象、旧GLOBAL名称和双向导入顺序的测试已退出；当前类／状态pickle、spawn、CLI错误与EOF、
+结果审计和清理测试保留。旧模块直接导入及引用旧模块的pickle停止支持；
+五份具名投影的25条相关读源全部走已有override且摘要匹配，原MANIFEST和归档不改。
+[恢复说明](../../../reproduction/native_baselines/README.md#retired-baseline-worker-forwarders)区分55行转发与当年真正实现，未新增无用源码副本。
+
+`9f906c135112abe6a96afdb3a72291d2b247a30c`只在现有冷导入用例中加入五个真实IMLane模块。
+该准确代码的20个轻量选择器共33项方法全部通过，耗时1.39秒，无失败、错误或跳过；1,069项code摘要均匹配提交且执行中不变。
+范围是当前导入、序列化、结果校验与软件worker／清理；测试Python净少81行，生产Python少55行，核心及独立集成行数不变。
+当前核心56,260、src＋scripts共109,565行；同口径较main为+2,169／−30,770，较3fd为−5,368／−40,080。
+
+最初两轮均未开始执行测试：第一轮在PyTorch可选后端元数据扫描时中止；第二轮用其现成CPU进程选项跳过该扫描，
+随后LOTUS／LiteLLM／Pydantic读取安装包元数据时收到`OSError(89)`。
+原工具回执和诊断摘要保留，没有改第三方库或把收集问题计成测试通过；最后轻量选择不需这些重型导入。
+SDK／tokenizer、实际引擎IPC、CLI及spawn用例仍在源码，本轮未验证，后续由现有服务器会话复查。
+本轮没有实际Ray、模型、GPU、数据库或服务器运行，不合并main。
+[机器摘要](raw/baseline_worker_forwarders_retirement_checks.json)保存准确选择、删除前对象比较、原始结果校验值、两次收集问题、未运行项及独审来源。
+可在9f代码按`regression.selectors`列出的unittest选择器复查，不能把33项外推为整套或SDK资格。
+
+<a id="global-observation-server-six"></a>
+## 补回准确4d的六项服务器CPU结果
+
+此后收到并读取了`4d0269404d121b539362e96af3945e1cb8549ed2`、树
+`889b16f4473f0f1d7aff916e71c7bf0a6aa894e5`的原回执：指定六项全部通过，零失败／错误／跳过，原断言未改。
+它们是进程采样、软件HTTPX／异步传输与CPU子进程检查，真实模型、GPU查询和Ray集群均为零。
+监督器实际观测的五个自有进程退出，剩余共享内存为空、host SHM增量为零、租约已释放；未观测到的游离后代不据此获退出证明。
+[脱敏回执](raw/global_entry_observation_server_4d_receipt.json)包含六项ID、实际结果、清理及原HANDOFF／RESULTS校验值。
+这里只补记已有结果，没有重新执行；旧待核状态作为当时记录保留，不与9f的33项或其他版本数量相加。
