@@ -124,7 +124,7 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   外部caller拥有独立模型服务；query／Ray driver断开与物理进程／服务关闭分开核对，不声称修复旧local actor。
   35个替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；120＋1次实际POST、显式关闭和SHM检查通过。真实模型服务仍待验。
 - [DuckDB＋作者IMLane](../../integrations/imlane_duckdb/README.md)在准确798e通过真实shared库／薄driver、
-  DBEnd函数alias、Arrow16.1及PROCESS／THREAD软件CPU链路和外层清理，2000→120软件COUNT14；模型provider仍待接；
+  DBEnd函数alias、Arrow16.1及PROCESS／THREAD软件CPU链路和外层清理，2000→120软件COUNT14；后续[模型provider／服务owner／worker](../../integrations/imlane_duckdb/README.md#真实模型worker与独立http对照)已接，软件HTTP真实作者闭环与GPU仍分别待验；
   固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
 
 原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，

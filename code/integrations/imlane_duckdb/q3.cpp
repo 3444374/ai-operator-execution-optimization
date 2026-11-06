@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
 #include <fcntl.h>
 #include <iostream>
 #include <map>
@@ -170,6 +171,16 @@ void execute(const std::map<std::string, std::string> &args, Json &report, int d
     report["native_query_seconds"] = seconds_since(query_start);
     report["driver_until_result_seconds"] = seconds_since(start);
     report["status"] = "query_returned";
+    // Python's qualified Linux worker uses this same clock for the single
+    // post-result cleanup allowance, including these native destructors.
+    struct timespec ready;
+    if (::clock_gettime(CLOCK_MONOTONIC, &ready) == 0) {
+        report["result_ready_monotonic_ns"] = int64_t(ready.tv_sec) * 1000000000 + ready.tv_nsec;
+    } else {
+        report["result_ready_monotonic_ns"] = nullptr;
+        report["result_clock_error_errno"] = errno;
+    }
+    report["result_clock"] = "CLOCK_MONOTONIC";
     // Publish the count before native destructors: a later crash/timeout must not
     // erase returned predictions. The supervisor verifies actual process exit.
     write_attempted = true;

@@ -1,0 +1,37 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.model_components.v1",
+  "integration_base": "87fdb2bc7",
+  "state": "88 local CPU methods passed; real author plus software HTTP and new driver CPU validation pending",
+  "methods": 88,
+  "passed": 88,
+  "models": 0,
+  "GPU_runs": 0,
+  "real_process_or_HTTP_services_in_local_suite": 0,
+  "source_files": {
+    "code/integrations/imlane_duckdb/q3.cpp": "bac35ec063e3393331a02151a3ad3f029eb360fa4a061ffac3dc5939fd6e2a85",
+    "code/integrations/imlane_duckdb/model_provider.py": "5eb58c22436f7a278f249af785739f3983062bdeb89b11444742bb10ed9b3fb0",
+    "code/integrations/imlane_duckdb/model_service.py": "81e2b19de3e5248b1e721e9e44c9ec425f62ae2af2e2a3991b530a98ef707f61",
+    "code/src/experiments/native_imlane_query.py": "d7079162470d0e3d72568c25836bc37f3743c0b9ab550a2e0c028ae1d9f6c45a",
+    "code/src/experiments/native_imlane_model_query.py": "3e92d2765a96f1e679c85a22b547ca2f3683221beee399ccb5f278cfcd01b970",
+    "code/tests/experiments/test_native_imlane_model_query.py": "f717b97464e331ad06a885a5d68e6b70fe3f716989caa9780d5df90b30c11471",
+    "code/tests/baselines/text/test_imlane_duckdb_model_provider.py": "0fcfb190dbd9c65457fb6a66e37fe0437c75fdb5c1d93e7d559e9d0c586f19c6",
+    "code/tests/baselines/text/test_imlane_duckdb_model_service.py": "438c4f0b23097e19523f4b8b6f4036daa3faaa32777b7004b8ee60c60a17e0b0"
+  },
+  "raw_log_sha256": "cb6884dff2e4f166fbe382fb88b0b7fcb6b761c9ff2fa0047f8b8f0f318460cb",
+  "source_boundaries": [
+    "independent IMLane model service HTTP; SemLoom mainline unchanged",
+    "database to executor author ArrowLane preserved",
+    "length replies preserved for original parser, truncation separate",
+    "no implicit8/4096 or client8/100 connections",
+    "CLOCK_MONOTONIC native READY; parent supervisor binds one cleanup window",
+    "owned receipt size read from completed artifact; overall RSS supervised",
+    "worker PID and nested time interval pair batches; position checks preserve duplicate-message occurrences"
+  ],
+  "limits": [
+    "software/mocked HTTPX and process owner checks do not qualify real GPU/vLLM lifetime",
+    "9MiB retained software-reply case tests artifact reading, not actual8192-token model output",
+    "author close retains phased waits; hard close bound needs outer supervised_run",
+    "original author/generation/version differences remain labeled",
+    "agent owner first HTTP context-manager fixture error was corrected before final22 owner methods; not a production run"
+  ]
+}

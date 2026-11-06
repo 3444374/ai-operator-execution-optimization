@@ -43,7 +43,7 @@ driver结果在native析构前原子发布，进程退出和namespace资源仍�
 本地22个不同CPU方法最终通过：14个Arrow／provider合同和8个packet／离线审计／worker错误行为。
 初轮两项macOS路径别名fixture断言失败，归一测试根路径后只补跑这两项，不叠加通过数。
 本地Arrow24检查不替代作者Arrow16.1和真正DuckDB／DBEnd；实际服务器资格另列如下。
-真实模型provider仍未绑定，当前worker只允许明确的软件fixture，不能把软件COUNT14当作模型结果。
+798e的原worker只允许明确的软件fixture，不能把软件COUNT14当作模型结果；后续模型接线另列如下。
 
 ## 实际作者CPU链路与资源关闭
 
@@ -69,7 +69,31 @@ PROCESS／THREAD均正常worker exit0，外层未发TERM／KILL，已观察自�
 完整cohort及120行尾批已实际通过。特殊Unicode／空字符串、重复业务ID、空选择和provider异常由本地合同覆盖；
 这些额外边界尚未逐项经过真正作者二进制，不扩大本次资格范围。
 
-## 真实模型仍需准备
+## 独立模型provider与worker接线
+
+[模型provider／服务owner／worker](../../../../code/integrations/imlane_duckdb/README.md#真实模型worker与独立http对照)
+已实现，数据库／executor保留作者ArrowLane，只有UDF至一个外部模型服务使用loopback HTTP。
+SemLoom主线不加入HTTP模型路径。这是作者原生API的项目工作负载绑定，不宣称作者Q7未公开的客户端实现。
+HTTPX按同batch异步发出原消息，不加固定并发门槛／线程池、重定向或重试；每batch显式关闭client，错误后drain同批，
+started缺terminal仍unknown。length原文本保留给原parser并标记截断；错误JSON／身份错／abort等保留后失败。
+
+服务明确generation-config=vllm，避免repo生成默认改变共同SamplingParams；这是项目选择。
+普通服务GET模型／实际上下文，未启用dev mode时其他resolved容量unknown，不靠调大8／4096来凑接通。
+实际现有driver与Arrow16.1方法环境均具备HTTPX0.28.1，不安装或混装环境。
+审计修正了两个真实边界：不再把完整自有大回执套用配置JSON默认8MiB限制；
+UDF调用与HTTP批次用PID／调用时间唯一配对后逐position核对，重复消息交换回复不能躲在同COUNT／多重集中。
+
+新薄driver在析构前给出CLOCK_MONOTONIC READY；模型worker原查询期限包含输入物化及启动，
+结果后只有一个关闭窗口。模型owner期限随READY交接，sampler不抢先用观测延迟判wall超时。
+作者close既有分段等待未改，硬截止须由外层supervised_run按READY绑定；非零服务退出、强杀或未知身份不当作正常关闭。
+软件模式必须提供显式测试factory，普通CLI拒绝它；不因写了software配置而意外启动真实模型。
+
+相关88个不同本地CPU方法全部通过，[源码／日志摘要](model_components.json)关联完整范围；
+22个provider、22个owner、22个模型worker／审计、原8个fixture worker及14个Arrow内核方法不重复累计。
+真实作者＋软件HTTP CPU闭环待本批下一步，当前没有加载模型或启动GPU。完整消息、8192生成条件、
+cold／ready／关闭与下一次120逻辑请求的范围见同一校准计划，不将本地组件通过当作GPU资格。
+
+## 真实模型仍需验证
 
 本批不安排GPU。CPU闭环通过后，单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
 逻辑120及实际attempt预算、cold／模型常驻边界和停止条件，再由现有服务器任务执行；不复制相同已测查询。

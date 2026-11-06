@@ -53,5 +53,16 @@
       "cause": "default four 128 MiB lanes plus eight Boost queues exceed old 512 MiB SHM allowance by 96 KiB; stopped and cleaned, no inference"
     }
   ],
-  "native_cpu_evidence": "native_cpu.json"
+  "native_cpu_evidence": "native_cpu.json",
+  "model_provider_preparation": {
+    "state": "provider, external service owner and worker implemented; actual author plus software HTTP CPU validation pending",
+    "GPU_runs": 0,
+    "models_started": 0,
+    "provider_transport": "loopback HTTP for independent baseline only; database/executor ArrowLane preserved",
+    "semloom_mainline_transport": "local IPC",
+    "native_ready_clock": "new driver CLOCK_MONOTONIC before native destructors; must rebuild thin binary",
+    "generation_config": "vllm, explicit common SamplingParams project choice",
+    "resolved_capacity_source": "/v1/models for model/context; ordinary server_info404 remains unknown",
+    "whole_query_retries": 0
+  }
 }

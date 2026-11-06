@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+## 2026-11-06：IMLane原生Q3独立模型provider与worker候选
+
+[接线与88项CPU检查](diagnostics/imlane_duckdb_q3_20261106/README.md#独立模型provider与worker接线)
+覆盖同batch异步HTTP、原消息／生成参数、无额外8／100连接门槛、错误后drain、client关闭、started／terminal unknown、
+模型owner的birth／异常／非零退出、native READY期限及软件CLI防误启模型。完整自有回执按实际大小读，
+UDF和HTTP同PID／调用区间唯一配对后逐position核对；重复消息与同COUNT不能掩盖交换。
+本次本地没有启动真实进程、HTTP服务、模型或GPU；真实作者＋软件服务／新薄driver的CPU闭环单列待验，
+不将组件通过当作真实8192输出、模型质量、GPU回收或性能结论。保留87fdb并行重构，未改SemLoom主线传输。
+
 ## 2026-11-06：中性容量与固定探针、连接关闭整理
 
 [准确源码与组合检查](diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)登记9521的39项CPU通过、一次五树3010恢复，以及改前1方法2子例的重复关闭失败。

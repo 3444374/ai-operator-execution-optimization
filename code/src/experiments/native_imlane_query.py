@@ -23,15 +23,34 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 
 
-def prepare_fixture(reviews_csv, directory):
-    """Export all source rows; gold determines only explicit software replies."""
-    source = load_q3_source(reviews_csv)
+def _export_source(source, directory):
     directory = Path(directory)
     new_private_directory(directory)
     with open_private_text(directory / 'input.csv', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=('occurrence_id', 'id', 'reviewId', 'reviewText'))
         writer.writeheader()
         writer.writerows(source['rows'])
+
+
+def prepare_input(reviews_csv, directory, *, provider_mode):
+    """Export the full gold-free model input without constructing software replies."""
+    if provider_mode not in {'model', 'software_http'}:
+        raise ValueError('declare model or software_http input explicitly')
+    source = load_q3_source(reviews_csv)
+    directory = Path(directory)
+    _export_source(source, directory)
+    packet = dict(schema='semloom.imlane.duckdb.q3.input.v1', provider_mode=provider_mode,
+        original_csv=str(Path(reviews_csv).resolve()), source=source['source'],
+        input=file_identity(directory / 'input.csv'))
+    write_private_json(directory / 'packet.json', packet)
+    return packet
+
+
+def prepare_fixture(reviews_csv, directory):
+    """Export all source rows; gold determines only explicit software replies."""
+    source = load_q3_source(reviews_csv)
+    directory = Path(directory)
+    _export_source(source, directory)
     replies = {}
     for row, labeled in zip(source['rows'], source['labeled'], strict=True):
         if row['id'] != 'taken_3':
@@ -57,12 +76,15 @@ def software_reply(messages_batch):
     return [replies[content_digest(messages)] for messages in messages_batch]
 
 
-def audit_result(packet_dir, result_path, receipt_dir, checkout):
+def audit_result(packet_dir, result_path, receipt_dir, checkout, *, provider_mode='software_fixture'):
     """Evaluate the saved scalar and the same inference receipts, never the graph."""
     packet_dir = Path(packet_dir)
     packet = read_json(packet_dir / 'packet.json')
-    if packet['schema'] != 'semloom.imlane.duckdb.q3.fixture.v1':
-        raise ValueError('an explicit native IMLane CPU fixture packet is required')
+    schema = ('semloom.imlane.duckdb.q3.fixture.v1' if provider_mode == 'software_fixture'
+              else 'semloom.imlane.duckdb.q3.input.v1')
+    if (provider_mode not in {'software_fixture', 'software_http', 'model'}
+            or packet['schema'] != schema or packet['provider_mode'] != provider_mode):
+        raise ValueError('an explicit matching native IMLane input packet is required')
     source = load_q3_source(packet['original_csv'])
     if source['source'] != packet['source'] or file_identity(packet_dir / 'input.csv') != packet['input']:
         raise ValueError('native IMLane source changed after preparation')
@@ -74,9 +96,12 @@ def audit_result(packet_dir, result_path, receipt_dir, checkout):
         raise ValueError('native SQL source/predicate differs from the prepared full cohort')
     predictions, calls = [], []
     for path in sorted(Path(receipt_dir).glob('q3-batch-*.json')):
-        receipt = read_json(path)
+        # These are complete, exclusively published owned artifacts. Their
+        # actual retained bytes, rather than the generic config-file limit,
+        # determine the read boundary; outer process RSS remains supervised.
+        receipt = read_json(path, max_bytes=path.stat().st_size)
         if (receipt['schema'] != 'semloom.imlane.duckdb.q3.batch.v1'
-                or receipt['provider_mode'] != 'software_fixture' or receipt['status'] != 'succeeded'):
+                or receipt['provider_mode'] != provider_mode or receipt['status'] != 'succeeded'):
             raise ValueError('native IMLane has a failed or mismatched batch receipt')
         count = len(receipt['predictions'])
         batch_calls = receipt['provider_calls']
@@ -94,8 +119,12 @@ def audit_result(packet_dir, result_path, receipt_dir, checkout):
     quality = evaluate_q3(source, predictions,
         positive_review_cnt=result['positive_review_cnt'], checkout=checkout)
     return dict(quality=quality, predictions=predictions, provider_calls=calls,
-        source=source['source'], native_result=result, model_requests=0,
-        performance_claim=False, qualification='CPU software replies through author database path')
+        source=source['source'], native_result=result,
+        model_requests=None if provider_mode == 'model' else 0,
+        physical_model_attempts=None, provider_mode=provider_mode,
+        performance_claim=False, qualification=(
+            'model responses through author database path; external physical cleanup separate'
+            if provider_mode == 'model' else 'CPU software replies through author database path'))
 
 
 def run_fixture(args):
