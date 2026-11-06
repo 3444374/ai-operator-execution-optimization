@@ -933,7 +933,13 @@
         "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
         "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
         "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
-        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz",
+        "code/src/serving/backends/completion.py": "historical_sources/e5e65fdb/code/src/serving/backends/completion.py.gz",
+        "code/src/serving/backends/embedding.py": "historical_sources/e5e65fdb/code/src/serving/backends/embedding.py.gz",
+        "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
+        "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
+        "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1291,6 +1297,36 @@
           "encoding": "gzip",
           "decoded_bytes": 3907,
           "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
+        },
+        "code/src/serving/backends/completion.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25429,
+          "archive_sha256": "4990654542b1096ef69264b1ef230bc118a265b79a480c532d0474fe4a881d40"
+        },
+        "code/src/serving/backends/embedding.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4753,
+          "archive_sha256": "b742b98c4e58674dbb1673bea601ccf2547c0f1cb27d37f6c1b54e70ea65f024"
+        },
+        "code/src/serving/backends/common.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2221,
+          "archive_sha256": "91801000a6317486722d540eadc7c81f6c914ccab83a883944082e318e94c4bd"
+        },
+        "code/src/baselines/text/products/direct_client.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7085,
+          "archive_sha256": "0d7bcb17e963b875740f4b76863d5c3e3a1d9c9f1ef25292cf9f9c9546d91a24"
+        },
+        "code/scripts/baselines/request_equivalence_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12417,
+          "archive_sha256": "e755dd3b0afd148d3fdc6a8a116a6dce317ac9a47dfd8f810e48ab75666210d5"
+        },
+        "code/src/baselines/common/provenance.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 8271,
+          "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
         }
       }
     },
@@ -2252,7 +2288,13 @@
         "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
         "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
         "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
-        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz",
+        "code/src/serving/backends/completion.py": "historical_sources/e5e65fdb/code/src/serving/backends/completion.py.gz",
+        "code/src/serving/backends/embedding.py": "historical_sources/e5e65fdb/code/src/serving/backends/embedding.py.gz",
+        "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
+        "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
+        "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2610,6 +2652,36 @@
           "encoding": "gzip",
           "decoded_bytes": 3907,
           "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
+        },
+        "code/src/serving/backends/completion.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25429,
+          "archive_sha256": "4990654542b1096ef69264b1ef230bc118a265b79a480c532d0474fe4a881d40"
+        },
+        "code/src/serving/backends/embedding.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4753,
+          "archive_sha256": "b742b98c4e58674dbb1673bea601ccf2547c0f1cb27d37f6c1b54e70ea65f024"
+        },
+        "code/src/serving/backends/common.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2221,
+          "archive_sha256": "91801000a6317486722d540eadc7c81f6c914ccab83a883944082e318e94c4bd"
+        },
+        "code/src/baselines/text/products/direct_client.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7085,
+          "archive_sha256": "0d7bcb17e963b875740f4b76863d5c3e3a1d9c9f1ef25292cf9f9c9546d91a24"
+        },
+        "code/scripts/baselines/request_equivalence_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12417,
+          "archive_sha256": "e755dd3b0afd148d3fdc6a8a116a6dce317ac9a47dfd8f810e48ab75666210d5"
+        },
+        "code/src/baselines/common/provenance.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 8271,
+          "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
         }
       }
     },
@@ -3581,7 +3653,13 @@
         "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
         "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
         "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
-        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz",
+        "code/src/serving/backends/completion.py": "historical_sources/e5e65fdb/code/src/serving/backends/completion.py.gz",
+        "code/src/serving/backends/embedding.py": "historical_sources/e5e65fdb/code/src/serving/backends/embedding.py.gz",
+        "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
+        "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
+        "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3939,6 +4017,36 @@
           "encoding": "gzip",
           "decoded_bytes": 3907,
           "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
+        },
+        "code/src/serving/backends/completion.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25429,
+          "archive_sha256": "4990654542b1096ef69264b1ef230bc118a265b79a480c532d0474fe4a881d40"
+        },
+        "code/src/serving/backends/embedding.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4753,
+          "archive_sha256": "b742b98c4e58674dbb1673bea601ccf2547c0f1cb27d37f6c1b54e70ea65f024"
+        },
+        "code/src/serving/backends/common.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2221,
+          "archive_sha256": "91801000a6317486722d540eadc7c81f6c914ccab83a883944082e318e94c4bd"
+        },
+        "code/src/baselines/text/products/direct_client.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7085,
+          "archive_sha256": "0d7bcb17e963b875740f4b76863d5c3e3a1d9c9f1ef25292cf9f9c9546d91a24"
+        },
+        "code/scripts/baselines/request_equivalence_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12417,
+          "archive_sha256": "e755dd3b0afd148d3fdc6a8a116a6dce317ac9a47dfd8f810e48ab75666210d5"
+        },
+        "code/src/baselines/common/provenance.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 8271,
+          "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
         }
       }
     },
@@ -4912,7 +5020,13 @@
         "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
         "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
         "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
-        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz",
+        "code/src/serving/backends/completion.py": "historical_sources/e5e65fdb/code/src/serving/backends/completion.py.gz",
+        "code/src/serving/backends/embedding.py": "historical_sources/e5e65fdb/code/src/serving/backends/embedding.py.gz",
+        "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
+        "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
+        "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5275,6 +5389,36 @@
           "encoding": "gzip",
           "decoded_bytes": 3907,
           "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
+        },
+        "code/src/serving/backends/completion.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25429,
+          "archive_sha256": "4990654542b1096ef69264b1ef230bc118a265b79a480c532d0474fe4a881d40"
+        },
+        "code/src/serving/backends/embedding.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4753,
+          "archive_sha256": "b742b98c4e58674dbb1673bea601ccf2547c0f1cb27d37f6c1b54e70ea65f024"
+        },
+        "code/src/serving/backends/common.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2221,
+          "archive_sha256": "91801000a6317486722d540eadc7c81f6c914ccab83a883944082e318e94c4bd"
+        },
+        "code/src/baselines/text/products/direct_client.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7085,
+          "archive_sha256": "0d7bcb17e963b875740f4b76863d5c3e3a1d9c9f1ef25292cf9f9c9546d91a24"
+        },
+        "code/scripts/baselines/request_equivalence_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12417,
+          "archive_sha256": "e755dd3b0afd148d3fdc6a8a116a6dce317ac9a47dfd8f810e48ab75666210d5"
+        },
+        "code/src/baselines/common/provenance.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 8271,
+          "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
         }
       }
     },
@@ -6252,7 +6396,13 @@
         "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
         "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
         "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
-        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz",
+        "code/src/serving/backends/completion.py": "historical_sources/e5e65fdb/code/src/serving/backends/completion.py.gz",
+        "code/src/serving/backends/embedding.py": "historical_sources/e5e65fdb/code/src/serving/backends/embedding.py.gz",
+        "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
+        "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
+        "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6610,6 +6760,36 @@
           "encoding": "gzip",
           "decoded_bytes": 3907,
           "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
+        },
+        "code/src/serving/backends/completion.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25429,
+          "archive_sha256": "4990654542b1096ef69264b1ef230bc118a265b79a480c532d0474fe4a881d40"
+        },
+        "code/src/serving/backends/embedding.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4753,
+          "archive_sha256": "b742b98c4e58674dbb1673bea601ccf2547c0f1cb27d37f6c1b54e70ea65f024"
+        },
+        "code/src/serving/backends/common.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2221,
+          "archive_sha256": "91801000a6317486722d540eadc7c81f6c914ccab83a883944082e318e94c4bd"
+        },
+        "code/src/baselines/text/products/direct_client.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7085,
+          "archive_sha256": "0d7bcb17e963b875740f4b76863d5c3e3a1d9c9f1ef25292cf9f9c9546d91a24"
+        },
+        "code/scripts/baselines/request_equivalence_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12417,
+          "archive_sha256": "e755dd3b0afd148d3fdc6a8a116a6dce317ac9a47dfd8f810e48ab75666210d5"
+        },
+        "code/src/baselines/common/provenance.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 8271,
+          "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
         }
       }
     }
