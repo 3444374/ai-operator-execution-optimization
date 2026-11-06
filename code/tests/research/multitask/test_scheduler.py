@@ -2,6 +2,7 @@
 
 import unittest
 import time
+from dataclasses import replace
 
 from src.research.multitask.saor import SaorReleaseConfig
 from src.research.multitask.shared_credit import FairEndpointCreditCoordinator
@@ -97,29 +98,43 @@ class SharedCreditSchedulerTests(unittest.TestCase):
                 self.attempts = 0
                 self.released: list[tuple[str, str]] = []
 
-            def try_acquire(self, **_kwargs):
+            def try_acquire(self, *, request_id, **_kwargs):
                 self.attempts += 1
-                return self.attempts >= 2
+                return self.attempts >= 2 and (request_id == "r0" or bool(self.released))
 
             def release(self, request_id, *, job_id, actual_work=None):
                 self.released.append((job_id, request_id, actual_work))
 
-        shared = DelayedSharedCredit()
-        adapter = FakeSubmissionAdapter()
-        scheduler = SharedCreditScheduler(
-            admission=StaticAdmissionController(limit=1),
-            router=RoundRobinEndpointRouter(),
-            adapter=adapter,
-            pool_id="default",
-            shared_credit=shared,
-            shared_credit_poll_s=0.0001,
-        )
+        for outcome in ("completed", "wait-error", "wrong-handle"):
+            with self.subTest(outcome=outcome):
+                class Adapter(FakeSubmissionAdapter):
+                    def wait_one(self, pending):
+                        if outcome == "wait-error":
+                            raise RuntimeError("fixture wait failed")
+                        collected = super().wait_one(pending)
+                        return replace(collected, handle=object()) if outcome == "wrong-handle" else collected
 
-        result = scheduler.run([envelope(0)], topology())
-
-        self.assertEqual(result.operator_invocations, 1)
-        self.assertEqual(shared.attempts, 2)
-        self.assertEqual(shared.released, [("j1", "r0", None)])
+                shared = DelayedSharedCredit()
+                adapter = Adapter()
+                scheduler = SharedCreditScheduler(
+                    admission=StaticAdmissionController(limit=2),
+                    router=RoundRobinEndpointRouter(),
+                    adapter=adapter,
+                    pool_id="default",
+                    shared_credit=shared,
+                    shared_credit_poll_s=0.0001,
+                )
+                if outcome == "completed":
+                    result = scheduler.run([envelope(0), envelope(1)], topology())
+                    self.assertEqual(result.operator_invocations, 2)
+                    self.assertEqual(shared.attempts, 4)
+                    self.assertEqual(shared.released, [("j1", "r0", None), ("j1", "r1", None)])
+                else:
+                    message = "fixture wait failed" if outcome == "wait-error" else "unknown or duplicate pending handle"
+                    with self.assertRaisesRegex(RuntimeError, message):
+                        scheduler.run([envelope(0), envelope(1)], topology())
+                    self.assertEqual(adapter.submitted, [("r0", "e1")])
+                    self.assertEqual(shared.released, [])
 
 
     def test_shared_ready_window_registers_multiple_candidates_before_waiting(
