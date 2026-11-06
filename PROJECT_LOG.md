@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：删除Map重复转出并归还数据清理职责
+
+[Map实际编码器](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)
+取代纯转出模块，协议和既有实现保持；历史来源继续准确读取。
+[服务数据释放](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-ownership)
+由传输、准备组织和actor各自实现，链owner不再改其它对象的私有字段；组合16项CPU通过，实际IPC另验。
+
 ## 2026-11-07：Movie实验职责与异步关闭时长
 
 [Movie参数、查询与worker](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)

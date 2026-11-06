@@ -102,6 +102,12 @@ Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，�
 把父进程现有截止时刻传到worker，修正固定十秒替代调用方时长及正常返回后的重复清理。
 未知请求持有和原关闭证明保持；两项CPU覆盖八种情形，Linux实际IPC单项仍待补验，未据此解释全部历史关闭失败。
 
+[Map编码器直接导入](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)
+删除40行纯转出的wire/v5.py，现用调用者改用map_codec，协议5及v3／v4实现保持；同11项CPU和两种内存会话保持，真实socket待验。
+[服务数据归所属组件](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-ownership)
+把传输、准备组织及actor字段清理交回各自对象，链owner保留交接／证明和顺序；五项轻量检查保持，中断重试与实际字段读取不改。
+两批准确712b组合16项CPU通过，未运行真实Ray、模型或socket；服务IPC重试仍待服务器补验。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

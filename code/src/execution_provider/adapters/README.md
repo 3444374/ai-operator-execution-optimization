@@ -8,6 +8,10 @@ source, tests and historical measurements remain available through the
 [complete recovery notes](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters).
 LOTUS VLM/MMQA, Kalypso and the official Ray HTTP baseline retain their own native connections.
 
+Map sessions and their golden metadata import [`map_codec.py`](../wire/map_codec.py)
+directly. The redundant `wire/v5.py` export module is removed; protocol version 5,
+its actual encoder and the distinct v3/v4 implementations remain.
+
 ## Python consumer
 
 [IncrementalExecution](incremental_execution.py) holds an existing Core, the caller's
@@ -1377,6 +1381,9 @@ An empty retry can finish outstanding cleanup because it transfers no unique pay
 Final service close first creates an independent caller report. Complete actual cleanup
 and result transfer then allow retirement of the private chain/iterator payload references;
 the wrapper retains only scalar cleanup metadata, `calls_count` and `payload_transferred`.
+The transport, prepared organizer and actor owner each release their own retained fields;
+the chain owner keeps the transfer order and proof checks. The actor owner also reads its
+actual retained close reports, so cleanup does not rely on an extra completion marker.
 Later reports therefore do not retain full `calls` arrays. Previously returned reports and
 rows keep their values. Private cyclic references must release their arrays explicitly,
 without waiting for Python garbage collection, before the pool can return bytes. A same-process

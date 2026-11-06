@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-07：Map重复转出与服务数据职责
+
+[Map导入迁移](diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)
+同11项CPU与两种完整内存会话保持，15条历史来源准确；[服务数据释放](diagnostics/records_runtime_refactor_20261104/README.md#service-payload-ownership)
+五项轻量CPU及完整清理记录保持。准确712b组合16项通过，不累计原批方法；socket／Ray／模型未由本批验证。
+
 ## 2026-11-07：Movie职责与异步关闭时间
 
 [Movie拆分与实际导入](diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)

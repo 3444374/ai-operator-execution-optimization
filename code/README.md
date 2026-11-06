@@ -86,6 +86,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 |---|---|
 | 普通 Filter | [lotus_records_core.py](src/execution_provider/adapters/lotus_records_core.py) 负责配置、模型复用与资源；[records_filter_runtime.py](src/execution_provider/adapters/records_filter_runtime.py) 负责接纳、结果和查询收尾 |
 | 算子链 | [lotus_record_chain_core.py](src/execution_provider/adapters/lotus_record_chain_core.py) 负责组装和资源生命周期；[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py) 负责融合批传输；[records_query_runtime.py](src/execution_provider/adapters/records_query_runtime.py) 持有记录级方法和关系数据 |
+| 服务数据释放 | [传输](src/execution_provider/adapters/lotus_chain_actor_backend.py)、[准备组织](src/execution_provider/adapters/lotus_chain_token_batches.py)与[actor owner](src/execution_provider/adapters/lotus_records_actor_owner.py)各清理自身字段；链owner核实交接并按原顺序调用，不再直接改写这些私有字段 |
 | 容量声明 | [records_capacity.py](src/execution_provider/adapters/records_capacity.py) 定义普通记录／融合链容量、独立预算和 IPC 解析；查询 owner 只消费这些值 |
 | 扫描与模型适配 | [records_scan.py](src/execution_provider/adapters/records_scan.py) 共用 Daft Native 扫描；[records_async_model.py](src/execution_provider/adapters/records_async_model.py) 接非阻塞请求与回执，owner 保留 Ray 分配和 RPC 终态责任 |
 | Session | [session.py](src/scheduling/core/session.py) 管服务回执、准备借用和任务表；[session_dispatch.py](src/scheduling/core/session_dispatch.py) 管成员选择与提交；[session_flow.py](src/scheduling/core/session_flow.py) 管交付、取消和消费者关闭 |

@@ -3,6 +3,7 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="map-codec-import-sources"></a>
 ## Map 编码器直接导入前的来源
 
 维护代码直接使用 `execution_provider/wire/map_codec.py`，删除了仅重新导出的 `wire/v5.py`。

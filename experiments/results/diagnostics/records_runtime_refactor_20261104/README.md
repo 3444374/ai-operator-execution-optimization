@@ -4429,3 +4429,27 @@ worker使用剩余时间，删除固定十秒替代及正常回执后未报告�
 运行前后21份相关Python摘要相同，后续仅同步文档；核心Python52,533行，src与scripts104,117行，沿用含注释／空行及排除目录口径。
 Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_full_unconsumed_results`待服务器补验；真实模型和Ray关闭未测。
 这是源码发现并用CPU复现的调用时间问题，不能据此断定历史1596关闭失败同因。
+
+<a id="map-codec-direct-import"></a>
+## Map编码器直接导入（2026-11-07）
+
+候选`364b1dd2abf910a3a8ae9baf3a64ba8260384b77`，tree`751daa6e0df01b5add8fb3e5ad93bfc2b047361b`，整合为`ee2f625f`。
+删除40行仅转出的wire/v5.py，两处生产调用和实际测试直接导入map_codec；移除旧ownership断言，未增加删除形状检查或兼容壳。
+协议5、Map会话及map_codec／v3／v4／framing／语义实现六份文件字节保持，旧wire.v5直接导入主动退出。
+修改前后同11项CPU各一次通过；两种内存字节会话的结果、元数据、请求和关闭次数完全一致，不算真实socket。
+[两份准确原件及十条来源／格式映射](../../../reproduction/native_baselines/README.md#map-codec-import-sources)
+保留十五条历史读取的原摘要；整合时仅并入二十个映射字段，保留既有Movie测试来源，expected和投影身份不改。
+代码和原件经独审核对；真实socket十一方法、完整服务CLI及完整历史构造未运行。生产净减40行、测试净减1行。
+
+<a id="service-payload-ownership"></a>
+## 服务查询数据由持有组件释放（2026-11-07）
+
+候选`fd76b3f6b519a24f2225473a300ae32fef899188`，tree`1de9b9c55586ad2dcb6a89411c27502693b0abec`，整合为`712b479b`。
+链owner原先直接写传输、准备组织和actor的私有字段，现由各组件释放自身数据，actor也自行读取实际保留的两份报告。
+链owner仍负责原服务交接、锁、清理次序和证明，未新增标记、控制器、重试、检查或预算；unknown／ACK／RPC责任保持。
+三项状态行为检查与两项已有轻量owner检查通过，含两处中断子场景；完整报告及清理顺序3,645字节前后一致，
+摘要`b6bd5dc994e9d4453bd7bf9c445ac1484fd4ac773643338737bcb7019a3eec5d`。同期未导入Torch／LOTUS／Ray／vLLM，原件私有保存。
+独审核实真实继承和调用；四份生产文件展开组件方法后AST保持，十条受影响历史读取保持原摘要，MANIFEST无需再改。
+准确`712b479ba88ea127c19c01758569b57e2e852d80`的Map＋服务组合另跑16项CPU，全部通过，无错误或跳过；不与各批重复计数。
+真实rolling服务数据及恢复两类IPC检查待服务器补验，真实模型／Ray／OS清理和性能未由本批验证。
+服务生产净增16行、测试增151行；两批相对90005生产净减24行。当前核心Python52,509行、src与scripts104,093行、测试93,244行，统计口径保持。
