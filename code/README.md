@@ -18,6 +18,7 @@ LOTUS 提供可选兼容方法与对照。这些结果不表示已接入新的 P
 | 原生 LOTUS 图像查询 | [run_sembench_lotus_image_query.py](scripts/experiments/run_sembench_lotus_image_query.py) | 已有独立 VLM 服务上的原查询、评价、逐 POST 预算和查询监督 |
 | SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals 四题与 MMQA Q2a/Q2b/Q7 的输入／预算检查；原生 LOTUS 服务运行入口已接；当前模型实机资格待验证 |
 | LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
+| DuckDB＋作者 IMLane Q3 准备 | [构建与接线](integrations/imlane_duckdb/README.md) | 隔离 shared 库与薄 SQL／Arrow 候选；实际 driver／DBEnd／Arrow16 尚待验证 |
 | 观测与有限测试 | [record_observation](scripts/profiling/record_observation/README.md) | 使用既有监督与回执，不增加执行容量 |
 
 命令与正常配置入口见[脚本说明](scripts/README.md)。输入、私有 packet、模型环境、GPU 租约和实际版本应由每次运行绑定，

@@ -19,6 +19,9 @@ main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 [原生Movie Q3进程收尾与环境资格](native_sembench_q3_20261106/README.md)：保留Daft120条已返回但进程退出失败，
 记录公共shutdown修复、CPU反例、结果可用时钟，以及Ray现有环境的CPU API通过／发布extra不符；修复后GPU待验。
 
+[DuckDB＋作者IMLane Q3准备](imlane_duckdb_q3_20261106/README.md)：真实作者缺源恢复与shared库构建、
+四列Arrow／native SQL接线和软件CPU资格；模型、driver与实际作者执行按报告各阶段解释。
+
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
 [main可选vLLM部署资源](main_service_auto_20261015/README.md)：四生产文件、候选服务资格与main2041原Movie Q2／Animals Q1四臂单卡auto／显式1复验分列；完整响应／质量／物理退出和原件恢复已核，多卡及其他接点另验。

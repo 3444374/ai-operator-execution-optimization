@@ -7,6 +7,14 @@
 20条历史读取和两个来源 profile 保持，原预期及映射不改；原生环境结果不因本批清理转授当前整树资格。
 代码量、仍用算法接点、未实现物理授予及原生 Ray 关闭问题见主报告，不以清理行数作性能结论。
 
+## 2026-11-06：作者DuckDB＋IMLane原生Q3构建准备
+
+[来源、构建与CPU边界](diagnostics/imlane_duckdb_q3_20261106/README.md)保存固定072f作者版本、
+准确5ebd缺源恢复及56份既有差异，shared库已在隔离目录编译通过，canonical作者环境保持。
+22个本地Python合同方法最终通过，两个路径别名fixture初失败及补跑保留，不重复计数；
+Arrow24合同不替代作者Arrow16.1／DBEnd／实际SQL资格，薄driver与真实CPU链路仍待本批后续验证。
+本次无模型、GPU、软件安装或性能结论；原配置／构建失败与库摘要由主报告和机器摘要关联。
+
 ## 2026-11-06：67a4直接原生Q3复测与Ray IPC残留
 
 [单次复测与诊断](diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)及`retest.json`

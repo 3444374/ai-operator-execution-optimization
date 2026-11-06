@@ -13,7 +13,7 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="refactor-completion-checklist"></a>
 ### 整体完成清单与收尾事项
 
-本轮整理针对已有外部 records 执行核心。下表按 e566 开发组合、本次5f2清理及各次准确受测源码核对，
+本轮整理针对已有外部 records 执行核心。下表保留798e原生 IMLane 准备，结合本次5f2清理及各次准确受测源码核对，
 不把外部 SemBench 工作负载等同于新的 PostgreSQL 语义算子接入，也不把历史通过数累加为当前整树资格。
 ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
@@ -37,7 +37,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 5539 真实 Ray／模型功能 | 六项 Ray 检查通过；普通 async 与 rolling 各8条模型功能成功；输入／输出 token IDs 一致 | 未启用动态反馈，各组仍有3条漏判；不是当前整树、全质量或性能通过 |
 | b422 查询与提示检查 | 实际 CPU IPC 单项通过，168次合成提交、14个查询的完整行和消息核对 | 真实模型或调度提速 |
 | 87ce 与 d6abc 旧 RPC 退役检查 | 87ce 的16项为15通过、1项测试同步失败；d6abc 仅补同步，该单项一次通过，10项原断言不改 | 没有在 d6abc 重跑整套16项；首轮缺少的完整 close 字段仍未知 |
-| 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名；IMLane 原生 DuckDB 路径仍待构建与接线 |
+| 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名；IMLane 已有隔离 shared 库构建，薄 driver／DBEnd／Arrow16 实际执行仍待验证 |
 
 [重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
 保存逐批源码、失败与 CPU／IPC 范围；[原生 Q3 复测](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
@@ -46,10 +46,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
 核心 `code/src`（排除 experiments、baselines，保留 research）在本次清理后为56,197行，
-全部 src＋scripts Python 为114,096行；含注释与空行，tests／docs／历史副本不计入。
-对 main 6a8a 分别为增加2,106行／减少26,239行；对清理起点3fd分别减少5,431／35,549行。
+全部 src＋scripts Python 为114,298行；含注释与空行，tests／docs／历史副本不计入。
+对 main 6a8a 分别为增加2,106行／减少26,037行；对清理起点3fd分别减少5,431／35,347行。
 当前核心没有千行以上文件，但全仓研究编排仍有大文件；不能把移动、拆文件或并行新增能力计为删除。
-本次生产 Python 净减746行；[本批源码和检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)保留14项相关 CPU 与16项图像行为检查的实际范围。
+与最新798e相比，本次生产 Python 净减746行；并行新增202行实验入口另计。[本批源码和检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)保留14项相关 CPU 与16项图像行为检查的实际范围。
 
 ### 此前切片记录
 
@@ -127,6 +127,11 @@ Q5 的单层与多层原算法、实际生成上限及预算失败保留均通�
 上述CPU验证的网络／真实引擎／实际推理／服务器操作均为0，原3010历史绑定匹配。
 
 ### 直接原生Movie Q3的关闭与环境修复（2026-11-06）
+
+DuckDB＋作者IMLane现有[SQL／Arrow候选](integrations/imlane_duckdb/README.md)与独立shared库CPU构建；
+三件准确上游缺源恢复保留作者已有差异，原canonical源码／前缀不动。
+[本批准备记录](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md)区分22个本地Python合同方法、
+真实库构建与仍待验证的薄driver／DBEnd握手／实际Arrow16执行；没有启动GPU或给出模型资格。
 
 随后67a4各执行一次120条：[复测与IPC诊断](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
 记录Daft正常收尾，Ray查询完成但原SHM失败；Ray随后人工回收不改原失败，两组均保留七个FN，不作稳定性能排名。

@@ -120,7 +120,8 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   使用公开processor和原生异步vLLM，完整cohort先做Dataset.filter，一次materialize后审计和原生count。
   处理器默认、原生重试、实际可得usage与runtime归属分开记录；现有0.25.1守卫CPU API通过，
   Ray2.56.1发布extra仍要求0.22.0；67a4候选已实际执行120条，SHM残留使完整生命周期失败，物理attempt总数未证实。
-- DuckDB＋作者IMLane尚需作者构建、DBEnd函数alias、整批结果转换和关闭的无模型CPU资格；
+- [DuckDB＋作者IMLane](../../integrations/imlane_duckdb/README.md)已有隔离shared库构建与薄SQL／Arrow候选，
+  真实driver、DBEnd函数alias、整批结果转换和关闭的无模型CPU资格仍逐项验证；
   固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
 
 原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，

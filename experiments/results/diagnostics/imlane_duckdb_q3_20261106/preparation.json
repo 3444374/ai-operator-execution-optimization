@@ -1,0 +1,48 @@
+{
+  "schema": "semloom.imlane-duckdb-preparation.v1",
+  "state": "shared_library_built; thin driver and actual SQL/DBEnd CPU tests pending",
+  "models_started": 0,
+  "source_recovery_manifest_sha256": "3319f4e5a1bb45fb81991a027d5294648144ff52ca90b212b4130256c1fd71d6",
+  "library_build": {
+    "upstream_author": "072f8257db80569e42c9f5727d839587df529652",
+    "source_repair": "three exact official files from 5ebd8ca697099859239ba85e0de07dac7e1b7c04; existing author changes kept",
+    "library_bytes": 44524536,
+    "library_sha256": "52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf",
+    "resume_supervisor_exit": 0,
+    "resume_resource_passed": true,
+    "remaining_new_shm_names": [],
+    "final_host_shm_used_delta_bytes": 0,
+    "resume_peak_sampled_owned_rss_bytes": 3718602752,
+    "raw_final_sha256": "53577edd8d655da7c9017a12f533a6a159b93af344f7c8b6b0c87b91fa340cf8",
+    "canonical_author_source_and_prefix_modified": false,
+    "dependencies_installed": false
+  },
+  "local_python_checks": {
+    "distinct_methods": 22,
+    "final_passed": 22,
+    "full_group_log_sha256": "93fd4a79847d832524b054359b85e6bbc5ce4bc73c8c9a5bdc915e0861978be2",
+    "first_group": "20 passed; 2 fixture path-alias assertions failed on macOS",
+    "two_case_recheck_log_sha256": "b45655a23d4da348bf28cc795bf257fdc5fe34ed15c411dd4b20ae3956786552",
+    "two_case_recheck": "passed after fixture root path normalization; not additional distinct methods",
+    "arrow_version": "24.0.0",
+    "native_author_arrow_16_cpu_qualification": "pending"
+  },
+  "preserved_preparation_failures": [
+    {
+      "attempt": "r1",
+      "cause": "controller passed unsupported env argument to supervise; no CMake started"
+    },
+    {
+      "attempt": "r2",
+      "cause": "IMLane CMake export installed directly at lib/cmake; needs explicit IMLane_DIR"
+    },
+    {
+      "attempt": "r3",
+      "cause": "author build* ignore rule omitted required optimizer source/header"
+    },
+    {
+      "attempt": "r4",
+      "cause": "author CMake target omitted transitive Boost/SDK header search paths"
+    }
+  ]
+}
