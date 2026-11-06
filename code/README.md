@@ -104,7 +104,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 离线记录汇总 | [record_dag_observation.py](src/experiments/record_dag_observation.py)关联回执、事件与CPU片段；[record_dag_windows.py](src/experiments/record_dag_windows.py)计算时间区间及样本重叠，读取内容同时用于解析和来源摘要 |
 | Movie实验执行 | [lotus_records_movie.py](src/experiments/lotus_records_movie.py)保留参数与预检；[movie_records_query.py](src/experiments/movie_records_query.py)共享查询评价／回执合并；[movie_records_worker.py](src/experiments/movie_records_worker.py)拥有普通后端的构造、运行与关闭，Session和IMLane直接导入实际实现 |
 | 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
-| 独立研究 | [research/multitask](src/research/multitask/README.md) 保存共享额度和 SAOR；实验编排不进入单查询默认配置 |
+| 独立研究 | [研究索引](src/research/README.md)分别登记[多任务／SAOR](src/research/multitask/README.md)和[文本组织原型](src/research/data_organization/README.md)；生产payload直接用公共运行组件，研究不进入普通records默认配置 |
 | 离线代价 | [operator_costs](src/experiments/operator_costs/README.md)分别拥有CSV／profile特征和既有估计比较；三个分析CLI只管输入、评估及输出，通用数学仍在planning/costs，运行链估算与反馈保持 |
 
 SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、

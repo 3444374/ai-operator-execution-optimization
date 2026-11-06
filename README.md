@@ -13,6 +13,7 @@ SemLoom 面向 LOTUS 等语义 API 与数据库前端；各前端拥有语义与
 | 实现状态与重构收尾 | [模块清单与待处理项](code/INFRA_STATUS.md#refactor-completion-checklist) |
 | 实现、接口与命令 | [代码入口](code/README.md)、[IPC 文件职责](code/src/execution_provider/adapters/README.md#async-ipc-layout)、[反馈模块职责](code/src/scheduling/submission_control/README.md)、[观测文件职责](code/src/observability/README.md#current-observation-owners)、[现用脚本职责](code/scripts/README.md#current-entry-roles)，[历史工具](experiments/reproduction/native_baselines/README.md#retired-oneoff-tools)从具名来源恢复 |
 | 基础多查询与独立研究 | [主线 Session](code/src/scheduling/core/session_jobs.py)保留固定份额与普通轮转；[SAOR 研究包](code/src/research/multitask/README.md)保存可选共享策略与接入说明 |
+| 文本数据组织研究 | [独立原型](code/src/research/data_organization/README.md)保留Arrow／Daft、长度／前缀排序与装箱研究；普通执行使用自身数据接点 |
 | 图像实验职责 | [CLIP 模块](code/src/experiments/image_clip/README.md)分开配置准备、执行观测和结果报告，命令入口保持 |
 | 离线代价分析 | [profile 与估计比较](code/src/experiments/operator_costs/README.md)服务三个分析命令，不进入单查询执行链 |
 | 架构与实验设计 | [方案入口](experiments/plans/README.md)、[对照规范](experiments/plans/reference/对照规范.md) |

@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：文本数据组织原型独立维护
+
+[研究目录及原样算法](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)
+保留长度／前缀排序、装箱与Arrow／Daft原型，普通payload只用公共运行组件；研究计划准确区分原型与当前准备组批。
+根、代码和研究README登记现有入口；源码移动不算减少，十五项原型及三项接线检查通过，真实Ray未运行。
+
 ## 2026-11-07：payload直接使用公共Daft配置
 
 [实际函数归属](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)

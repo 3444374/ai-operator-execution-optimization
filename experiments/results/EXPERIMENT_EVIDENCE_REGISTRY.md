@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-07：文本数据组织研究归位
+
+[原型、实际接线和历史来源](diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)
+相同十五项原型CPU改前后通过，另三项既有接线检查通过；源码逐字迁移，三十条历史读取保持，真实Ray方法未选。
+整合全部Python字节与已审候选一致，未重复运行十八项，也不把研究移动计作代码删减。
+
 ## 2026-11-07：payload的Daft配置直接导入
 
 [同一实现与既有检查](diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)

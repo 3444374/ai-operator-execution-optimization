@@ -4528,3 +4528,19 @@ payloads.py只把configure_daft_runner由.text的转借改为infrastructure.daft
 一份准确81df原件与五条来源／格式保留二十条相关历史读取，原expected和已有映射不改；原件和实际函数身份经独审核对。
 该批行数不变、没有改text原型或算法；长度／前缀排序与BFD研究仍有用途，当前PreparedTokenOrganizer未全部采用它们。
 未运行模型、Ray、socket、系统探测或完整历史构造；整合树等于已审候选，未重复运行同两项CPU。
+
+<a id="text-organization-research-relocation"></a>
+## 文本数据组织原型独立研究归位（2026-11-07）
+
+候选`e45f4e1d0ad4e801b26bc7bbee5717502bed6308`，tree`a751568acad68d0205dbfe63fba34027b27e17ab`，整合为`041da47c`。
+旧data/materializers/text.py的514行原型逐字迁入research/data_organization/text_materializers.py，不留旧路径转发；两份专测迁到对应研究目录。
+原长度／前缀排序、BFD递减最佳适配及行数感知装箱、Arrow／Daft组装和指标行为保留；主线PreparedTokenOrganizer只处理已有合法就绪请求，未全部采用这些研究策略。
+生产payload沿用上一批的公共运行配置直连，不导入研究；scalar packing、token成本、Daft runtime、records_scan与准备组批代码保持，未新写算法或模型执行器。
+根、代码、研究README及新目录说明登记职责，配置总览和数据组织计划改用真实研究位置；五份具名历史投影读取准确原件，旧来源身份不变。
+两份准确81df原件只增十条来源／格式，先前payload映射保留；三十条相关读取逐项匹配，测试旧源可从公开Git恢复，没有重复压缩。
+
+相同十五项原型CPU改前后通过，另有一个native payload和两个既有架构检查覆盖旧路径移除，共十八项，无错误或跳过；实际Ray方法只迁移、未选择执行。
+独审核对原型字节、两专测AST、七份保护源码与所有原件；未运行模型、真实Ray、socket或系统探测。
+整合`041da47c69c73e82751fcb4e4fa80eb85274366a`的全部1,455份受Git管理Python与已审候选相同，后续只补中央导航和事实，未重复运行十八项CPU。
+本批源码净增1行、测试增5行，来自包说明和导入排版；文件移动不算删除。当前核心50,482行、src与scripts101,893行、测试92,485行，统计口径保持。
+相对main6a8a核心减3,609行、src与scripts减38,442行；相对准确3fd3887分别减11,146和47,752行；相对本轮b168分别减2,035和2,164行。

@@ -123,7 +123,11 @@ Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，�
 
 [payload配置函数归属](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)
 改为直接导入实际Daft运行配置函数，去掉经text原型转借的依赖；同两项真实Daft／Arrow CPU改前后通过，二十条历史读源保持，行数不变。
-text中的排序研究能力仍保留，未声称已全部接入当前准备组批；其研究归位另行处理。
+text中的排序研究能力继续保留，未声称已全部接入当前准备组批。
+
+[文本组织原型研究归位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)
+原型逐字迁入research/data_organization，两份专测和真实引用同步；生产payload不导入研究，核心packing／cost／runtime保持。
+原型十五项前后通过，另三项既有接线检查通过；三十条历史读取保持，真实Ray方法未选。整合的全部Python文件与独审候选相同，未重复跑十八项；本批源码增1行，属于职责整理。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
