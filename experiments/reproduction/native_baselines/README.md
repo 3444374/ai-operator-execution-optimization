@@ -3,6 +3,16 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-local-embedding-helper"></a>
+## 旧文本嵌入 HTTP 辅助服务来源
+
+`local_embedding_server.py` 仅服务于早期 PostgreSQL／GPU 嵌入画像，已移出当前服务脚本。
+当前本地 IPC、typed 图像执行及第三方原生服务不使用它；旧 GPU 结果与原始命令保持。
+准确公开 `af63c0e56dab8cbd3f13649375bffa8f6eb92422` 的
+[162 行原件](historical_sources/af63c0e5/code/scripts/services/local_embedding_server.py.gz)保存一次。
+五份投影各增加该文件的来源和 gzip 格式记录，原预期摘要、投影身份、来源版本和已有映射保持。
+复查旧画像时先按本页恢复对应准确源码，不用旧服务命令解释当前运行方式。
+
 <a id="semfilter-reference-calibration-sources"></a>
 ## SemFilter 参考校准归离线分析前的来源
 
