@@ -80,7 +80,7 @@ class SessionEngine:
         preparation: TaskPreparation | None = None,
         choose_flow: Callable[
             [tuple[ReadyJob, ...], JobSelectionHistory], FlowChoice
-        ] = round_robin_flow,
+        ] | None = None,
     ):
         if credit is not None and not getattr(credit, "incremental_safe", False):
             raise ValueError("credit must qualify local bounded incremental operation")
@@ -96,7 +96,7 @@ class SessionEngine:
         self.error: str | None = None
         self._sessions: dict[int, SchedulingSession] = {}
         self.jobs = JobRegistry(self.capacity, max_jobs)
-        self.choose_flow = choose_flow
+        self.choose_flow = round_robin_flow if choose_flow is None else choose_flow
         self._last_job = None
         self._last_flow = {}
         self._next_session = 0

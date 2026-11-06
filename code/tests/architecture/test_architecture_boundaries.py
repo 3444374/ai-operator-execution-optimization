@@ -223,11 +223,11 @@ sys.meta_path.insert(0, RejectResearch())
 from src.execution_provider.adapters.incremental_session import IncrementalMapProtocol
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.scheduler_types import SchedulerConfig
-from src.observability.profiling.ray_scheduler import _shared_credit_client
+from src.observability.profiling import ray, ray_scheduler
 import src.scheduling as scheduling
 
-assert SchedulerConfig().shared_credit.policy is None
-assert _shared_credit_client(None, [], None) is None
+assert SchedulerConfig().lifecycle is None
+assert not hasattr(SchedulerConfig(), "shared_credit")
 assert not {"FairEndpointCreditCoordinator", "SaorPolicy", "OrderedReleaseCoordinator"}.intersection(
     scheduling.__all__
 )

@@ -9,7 +9,7 @@ from typing import Callable
 from ...planning.work import StageWork, WorkDescriptor
 from ...scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from ...scheduling.core.session import SessionEngine
-from ...scheduling.core.session_jobs import equal_share_job_budget, round_robin_flow
+from ...scheduling.core.session_jobs import equal_share_job_budget
 from ...scheduling.core.session_contract import (
     OfferedTask,
     SessionLimits,
@@ -127,7 +127,7 @@ def build_fixed_model_execution(
     timeouts=None,
     max_jobs=1,
     allocate_job=equal_share_job_budget,
-    choose_flow=round_robin_flow,
+    choose_flow=None,
     transport_factory=None,
     preparation_factory=None,
 ):
@@ -163,7 +163,7 @@ def _build_model_execution(
     timeouts=None,
     max_jobs=1,
     allocate_job=equal_share_job_budget,
-    choose_flow=round_robin_flow,
+    choose_flow=None,
     transport_factory=None,
     preparation_factory=None,
 ):

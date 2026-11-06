@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -528,24 +529,28 @@ class SaorPolicyTests(unittest.TestCase):
         self.assertTrue(any(not action.releases for action in actions))
 
     def test_action_builder_rejects_missing_cost_configuration(self) -> None:
-        arm = CapacityArm(1, 100)
+        @dataclass(frozen=True)
+        class Capacity:
+            request_limit: int
+            work_limit: int
 
-        with self.assertRaisesRegex(ValueError, "missing energy delta"):
-            build_single_release_actions(
-                endpoint_id="gpu0",
-                arms=(arm,),
-                current_arm=arm,
-                ready_heads=(
-                    SaorReleaseCandidate("r0", "a", "gpu0", 100),
-                ),
-                active_requests=0,
-                active_work=0,
-                predicted_incremental_service_by_request={"r0": 50.0},
-                predicted_goodput_delta_by_arm={arm: 10.0},
-                tail_risk_delta_by_arm={arm: 0.0},
-                energy_delta_by_arm={},
-                switch_cost_by_arm={arm: 0.0},
-            )
+        for capacity_type in (CapacityArm, Capacity):
+            with self.subTest(capacity_type=capacity_type.__name__):
+                arms = (capacity_type(1, 100), capacity_type(2, 200))
+                with self.assertRaisesRegex(ValueError, "missing energy delta"):
+                    build_single_release_actions(
+                        endpoint_id="gpu0",
+                        arms=arms,
+                        current_arm=arms[0],
+                        ready_heads=(SaorReleaseCandidate("r0", "a", "gpu0", 100),),
+                        active_requests=0,
+                        active_work=0,
+                        predicted_incremental_service_by_request={"r0": 50.0},
+                        predicted_goodput_delta_by_arm=dict.fromkeys(arms, 10.0),
+                        tail_risk_delta_by_arm=dict.fromkeys(arms, 0.0),
+                        energy_delta_by_arm={},
+                        switch_cost_by_arm=dict.fromkeys(arms, 0.0),
+                    )
 
     def test_weighted_fairness_debt_uses_only_active_jobs(self) -> None:
         jobs = (

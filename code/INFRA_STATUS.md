@@ -285,10 +285,12 @@ Core 的 prepared batching／复用留在原执行目录的实际子类；详细
 历史五树完整 materialize 通过，3010 条绑定匹配；新增时钟旧源及基底已有十处缺失映射均固定准确旧字节，
 原 expected SHA／投影身份保持。初次导入拒绝、残留退役测试收集错误与恢复失败按各自原因保留。
 
-SAOR 与通用多任务共享额度已迁入[独立研究包](src/research/multitask/README.md)，
-普通 records 默认与核心调度测试不依赖研究策略；原同步调度／shared-vLLM 研究接线保留。
-本批不改 Session 或反馈实现，并无冲突组合核心线程的最新拆分；
-源码保持核对与 CPU 范围见[整理记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)。
+主线保留基础多查询的原固定份额与普通轮转，默认工厂不依赖研究包；注册、单查询多 flow、
+全局记账、取消、晚到与 unknown 责任保持。共享额度研究、权重／服务目标及候选窗口归
+[独立研究包](src/research/multitask/README.md)。
+当前未提交候选的各入口范围、独立导入检查及本地 CPU／fixture 回执见
+[基础多查询记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-defaults)。
+records resident 仍只支持顺序复用；提前准备／organization 仍限单 Job；真实服务与服务器检查尚未运行。
 
 本地资源大步候选移除“两份物理样本／只首次大步／后续最多翻倍”限制；按真实许可、ready前沿和合格资源余量试探，
 旧慢成员未完成不单独挡住资源试探，性能确认仍基于真实可比完成工作。压力回退保留全部既有责任和查询成本，

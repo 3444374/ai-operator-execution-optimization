@@ -4,6 +4,8 @@ Disabling the call-local snapshot exercises the original per-member scan path.
 All comparisons include rejected-member position, routing state and ownership.
 """
 
+from tests.scheduling.test_multisession import choose_first_flow
+
 from dataclasses import asdict, replace
 import random
 import threading
@@ -120,7 +122,7 @@ class BatchDispatchSnapshotTests(unittest.TestCase):
                     template, previous, backend, clock = fixture()
                     previous.close()
                     e = SessionEngine(template.capacity.limits, backend, template.policies,
-                                      clock=clock, max_jobs=2)
+                                      clock=clock, max_jobs=2, choose_flow=choose_first_flow)
                     budget = JobBudget(32, 256, 256, 64, 256, 2)
                     a = e.register_job("a", replace(budget,
                         active_requests=3 if scope == "job_requests" else 64,

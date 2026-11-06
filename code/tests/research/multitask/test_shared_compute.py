@@ -4,7 +4,8 @@ import unittest
 
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import SessionSpec, TaskKey, Uncertain
-from src.scheduling.core.session_jobs import shared_compute_job_budget, equal_share_job_budget
+from src.research.multitask.semloom.session import shared_compute_job_budget
+from src.scheduling.core.session_jobs import equal_share_job_budget, round_robin_flow
 from tests.scheduling.test_incremental_session import setup, limits, Backend, Clock, task
 
 
@@ -15,7 +16,7 @@ def build(jobs=4, capacity=4):
     core = SessionEngine(limits(held_tasks=jobs*capacity, input_bytes=jobs*capacity*4,
         result_bytes=jobs*capacity*4, item_input_bytes=4, item_result_bytes=4,
         active_requests=capacity, active_work=capacity),
-        backend, previous.policies, clock=clock, max_jobs=jobs)
+        backend, previous.policies, clock=clock, max_jobs=jobs, choose_flow=round_robin_flow)
     return core, backend, clock
 
 

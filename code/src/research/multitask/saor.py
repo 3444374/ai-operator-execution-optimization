@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass, replace
 from typing import Literal, Mapping
 
-from src.scheduling.core.control import CapacityArm
+from .interfaces import CapacityChoice
 
 
 @dataclass(frozen=True)
@@ -448,7 +448,7 @@ class SaorAction:
 
     action_id: str
     endpoint_id: str
-    arm: CapacityArm
+    arm: CapacityChoice
     releases: tuple[SaorReleaseCandidate, ...] = ()
     predicted_service_by_job: tuple[tuple[str, float], ...] = ()
     predicted_goodput_delta: float = 0.0
@@ -494,7 +494,7 @@ class SaorControlState:
     jobs: tuple[SaorJobState, ...]
     actions: tuple[SaorAction, ...]
     fallback_action: SaorAction
-    current_arm: CapacityArm
+    current_arm: CapacityChoice
     observed_at_s: float
     calibration_signature: str
     valid: bool = True
@@ -705,16 +705,16 @@ def update_fairness_debts(
 def build_single_release_actions(
     *,
     endpoint_id: str,
-    arms: tuple[CapacityArm, ...],
-    current_arm: CapacityArm,
+    arms: tuple[CapacityChoice, ...],
+    current_arm: CapacityChoice,
     ready_heads: tuple[SaorReleaseCandidate, ...],
     active_requests: int,
     active_work: int,
     predicted_incremental_service_by_request: Mapping[str, float],
-    predicted_goodput_delta_by_arm: Mapping[CapacityArm, float],
-    tail_risk_delta_by_arm: Mapping[CapacityArm, float],
-    energy_delta_by_arm: Mapping[CapacityArm, float],
-    switch_cost_by_arm: Mapping[CapacityArm, float],
+    predicted_goodput_delta_by_arm: Mapping[CapacityChoice, float],
+    tail_risk_delta_by_arm: Mapping[CapacityChoice, float],
+    energy_delta_by_arm: Mapping[CapacityChoice, float],
+    switch_cost_by_arm: Mapping[CapacityChoice, float],
 ) -> tuple[SaorAction, ...]:
     """Enumerate actions using explicit marginal predictions versus hold."""
 
@@ -746,7 +746,8 @@ def build_single_release_actions(
     for name, values in predictions:
         missing_arms = set(arms) - set(values)
         if missing_arms:
-            raise ValueError(f"missing {name} for arms: {sorted(missing_arms)}")
+            ordered = sorted(missing_arms, key=lambda arm: (arm.request_limit, arm.work_limit))
+            raise ValueError(f"missing {name} for arms: {ordered}")
         if any(not math.isfinite(float(values[arm])) for arm in arms):
             raise ValueError(f"{name} predictions must be finite")
     if any(float(switch_cost_by_arm[arm]) < 0 for arm in arms):

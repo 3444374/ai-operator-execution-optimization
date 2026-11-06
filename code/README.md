@@ -32,7 +32,7 @@ LOTUS 提供可选兼容方法与对照。这些结果不表示已接入新的 P
 | LOTUS 方法 | [semantic_methods/lotus](src/semantic_methods/lotus/README.md) | formatter、parser、方法状态、关系屏障与逐行结果协议 |
 | SemLoom 执行适配 | [execution_provider/adapters](src/execution_provider/adapters/README.md) | Core／有限链／rolling／admission 与结果交付接线 |
 | 调度与资源责任 | [scheduling](src/scheduling)、[反馈模块职责](src/scheduling/submission_control/README.md) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
-| 独立多任务研究 | [research/multitask](src/research/multitask/README.md) | 通用共享额度与 SAOR 策略；普通 records 不依赖它 |
+| 基础多查询与独立研究 | [主线 Session](src/scheduling/core/session_jobs.py)、[research/multitask](src/research/multitask/README.md) | 主线保留固定份额、普通轮转和查询资源责任；共享额度研究、服务目标及候选编排独立维护 |
 | 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态、无调度的有限链计算及进程清理 |
 | 模态公共能力 | [modalities](src/modalities) | 文本／图像协议、成本、共享 CLIP workers；不拥有 baseline 图 |
 | 通用观测和工具 | [observability](src/observability)、[infrastructure](src/infrastructure) | 时钟、来源、审计、脱敏、文件／预算／运行环境 |
@@ -88,7 +88,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 容量声明 | [records_capacity.py](src/execution_provider/adapters/records_capacity.py) 定义普通记录／融合链容量、独立预算和 IPC 解析；查询 owner 只消费这些值 |
 | 扫描与模型适配 | [records_scan.py](src/execution_provider/adapters/records_scan.py) 共用 Daft Native 扫描；[records_async_model.py](src/execution_provider/adapters/records_async_model.py) 接非阻塞请求与回执，owner 保留 Ray 分配和 RPC 终态责任 |
 | Session | [session.py](src/scheduling/core/session.py) 管服务回执、准备借用和任务表；[session_dispatch.py](src/scheduling/core/session_dispatch.py) 管成员选择与提交；[session_flow.py](src/scheduling/core/session_flow.py) 管交付、取消和消费者关闭 |
-| 调度 | [scheduler.py](src/scheduling/core/scheduler.py) 推进已就绪任务；[envelope_source.py](src/scheduling/core/envelope_source.py) 读取阻塞输入；[topology.py](src/scheduling/core/topology.py) 选择端点和投影本地占用 |
+| 调度 | [scheduler.py](src/scheduling/core/scheduler.py) 负责普通提交与真实完成；[envelope_source.py](src/scheduling/core/envelope_source.py) 读取阻塞输入；[topology.py](src/scheduling/core/topology.py) 选择端点和投影本地占用；共享研究通过显式交接接入 |
 | 反馈 | [submission_control](src/scheduling/submission_control/README.md) 分开配置、供给、请求试探、批反馈和计量；现用请求与批策略各有明确消费者 |
 | 引擎与 IPC | [vllm_protocol.py](src/serving/backends/vllm_protocol.py) 保存中性规范；sync／async 各自构造引擎；[async_engine_process.py](src/serving/backends/async_engine_process.py)、[async_engine_worker.py](src/serving/backends/async_engine_worker.py)、[async_engine_wire.py](src/serving/backends/async_engine_wire.py) 分管父进程、子进程和帧编码 |
 | 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 仍被LOTUS图像和CLIP入口使用；增量图像backend另有任务协议，不互相冒充替代 |

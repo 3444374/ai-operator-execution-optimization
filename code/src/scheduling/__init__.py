@@ -97,11 +97,8 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
     ".core.policy_contracts": ("AdmissionPolicy", "EndpointRouter", "PoolRouter"),
     ".core.scheduler": (
         "EndpointCapacityConfig",
-        "JobSchedulingContract",
-        "ReadyWindowConfig",
         "SchedulerConfig",
         "SchedulerResult",
-        "SharedCreditConfig",
         "SubmissionAdapter",
         "SynchronousScheduler",
     ),

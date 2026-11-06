@@ -2,6 +2,20 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：按用户补充保留主线基础多查询
+
+前一候选将普通预算／轮转也迁到研究目录，现恢复基底原有实现，普通固定模型gateway无需研究工厂即可运行多个query。
+高级共享策略保持独立，沿既有分配、选择、credit与真实完成接入，不新增控制器。
+[实际入口、准确CPU与服务器待测](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-defaults)
+保留此前候选和误选记录；未把records顺序复用或准备／organization扩展成并发完整LOTUS能力。未推送或合并main。
+
+## 2026-11-06：将跨查询分配与共享编排移入显式研究接入
+
+在既有隔离工作区接续未完成迁移，不新建仓库。研究算法继续只消费本包输入接口，
+跨 Job 分配／轮转、同步共享等待和候选窗口归研究适配；普通提交循环、单查询注册、多 flow 与资源终态责任保留。
+[本次源码、实际回归及缺项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#multitask-execution-separation)
+与早期 163 项分开记录。并行核心及 IMLane 的代码、文档草稿和测试资格未覆盖或借用；本次未提交、推送或合并 main。
+
 ## 2026-11-06：同步模型模块移除未用协议转出
 
 同步引擎删除七个未用转入，九处真实调用改取中性协议对象；保留本层实际使用的类型和全部实现。

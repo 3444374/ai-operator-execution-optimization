@@ -1,9 +1,9 @@
 """Actual socket workers share one owner; slow or failed clients cannot own another Job's slice."""
 
-import asyncio
 from contextlib import contextmanager
 from functools import partial
 import json
+import asyncio
 from pathlib import Path
 import socket
 import tempfile
@@ -56,7 +56,7 @@ def service(
     execute,
     *,
     unknown=False,
-    max_jobs=2,
+    max_jobs=1,
     execution_factory=None,
     max_tasks=4,
     max_active_requests=2,
@@ -203,6 +203,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
             wait_for(lambda: len([e for e in events if e["event"] == "job_drained"]) == 2)
             self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
 
+
     def test_execution_policy_owns_job_grants(self):
         from src.execution_provider.adapters.incremental_execution import (
             build_fixed_model_execution,
@@ -223,7 +224,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
         async def execute(task, endpoint):
             return completion("ok")
 
-        with service(execute, execution_factory=factory) as (path, gateway, events):
+        with service(execute, execution_factory=factory, max_jobs=2) as (path, gateway, events):
             a, b = Client(path, window=3), Client(path, window=1)
             try:
                 for index in range(3):
@@ -235,6 +236,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
             finally:
                 a.close()
                 b.close()
+
 
     def test_concurrent_connections_share_capacity_and_keep_results(self):
         active = set()
@@ -248,7 +250,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
             active.remove(task.key)
             return completion(json.loads(task.task.payload)["messages"][-1]["content"])
 
-        with service(execute) as (path, gateway, events):
+        with service(execute, max_jobs=2) as (path, gateway, events):
             a, b = Client(path), Client(path)
             try:
                 for value in ("A0", "A1"):
@@ -271,11 +273,12 @@ class MultiSessionGatewayTests(unittest.TestCase):
             wait_for(lambda: len([e for e in events if e["event"] == "job_drained"]) == 2)
             self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
 
+
     def test_full_input_and_pending_registration_do_not_block_other_job(self):
         async def execute(task, endpoint):
             return completion("B-ok")
 
-        with service(execute) as (path, gateway, events):
+        with service(execute, max_jobs=2) as (path, gateway, events):
             a, b = Client(path), Client(path)
             c = None
             try:
@@ -298,6 +301,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
                 if c:
                     c.close()
 
+
     def test_slow_send_retains_lease_while_other_job_runs(self):
         sending = threading.Event()
         original = socket.socket.sendall
@@ -314,7 +318,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
 
         with (
             patch.object(socket.socket, "sendall", send),
-            service(execute) as (path, gateway, events),
+            service(execute, max_jobs=2) as (path, gateway, events),
         ):
             a, b = Client(path), Client(path)
             try:
@@ -334,6 +338,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
                 a.close()
                 b.close()
 
+
     def test_identified_model_timeout_is_local_and_keeps_unknown_credit(self):
         async def execute(task, endpoint):
             value = json.loads(task.task.payload)["messages"][-1]["content"]
@@ -341,7 +346,7 @@ class MultiSessionGatewayTests(unittest.TestCase):
                 raise TimeoutError("remote outcome unknown")
             return completion("B-ok")
 
-        with service(execute, unknown=True) as (path, gateway, events):
+        with service(execute, unknown=True, max_jobs=2) as (path, gateway, events):
             a, b = Client(path), Client(path)
             try:
                 a.offer("A")

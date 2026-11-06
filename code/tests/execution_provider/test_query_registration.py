@@ -36,7 +36,7 @@ class QueryRegistrationTests(unittest.TestCase):
                 conn, opened = control(path, 2)
                 try:
                     for flow in (0, 1):
-                        client = Client(path, window=1, binding=binding(opened["token"], flow))
+                        client = Client(path, window=2, binding=binding(opened["token"], flow))
                         try:
                             self.assertEqual(client.offer(str(flow)), 1)
                             client.poll()
@@ -53,7 +53,7 @@ class QueryRegistrationTests(unittest.TestCase):
                     joined = [e for e in events if e["event"] == "query_flow_joined"]
                     self.assertEqual(len(jobs), 1)
                     self.assertEqual({e["job_id"] for e in joined}, {jobs[0]["job_id"]})
-                    self.assertEqual(jobs[0]["job_budget"]["held_tasks"], 2)
+                    self.assertEqual(jobs[0]["job_budget"]["held_tasks"], 4)
                     self.assertEqual(jobs[0]["job_budget"]["max_sessions"], 2)
                     self.assertNotIn(opened["token"], repr(events))
                 finally:
@@ -65,7 +65,7 @@ class QueryRegistrationTests(unittest.TestCase):
             raise AssertionError("registration must not call model")
 
         with patch("src.execution_provider.multiplexed_gateway.trusted_peer", return_value=(1, 42)):
-            with service(forbidden) as (path, gateway, events):
+            with service(forbidden, max_tasks=2) as (path, gateway, events):
                 conn, opened = control(path, 3)
                 conn.close()
                 self.assertEqual(
@@ -73,11 +73,34 @@ class QueryRegistrationTests(unittest.TestCase):
                 )
                 self.assertFalse(any(e["event"] == "job_opened" for e in events))
 
+
+
+    def test_registration_schema_is_strict(self):
+        for count in (True, 0, -1, "2", 2**31):
+            with self.subTest(count=count), self.assertRaises(ProtocolError):
+                validate_registration(
+                    {"type": "query_open", "binding_version": 1, "flow_count": count}
+                )
+        with self.assertRaises(ProtocolError):
+            validate_registration({"type": "query_open", "binding_version": True, "flow_count": 1})
+
+    @unittest.skipUnless(hasattr(socket, "SO_PEERCRED"), "Linux peer credential test")
+    def test_kernel_peer_identity(self):
+        import os
+
+        a, b = socket.socketpair()
+        try:
+            self.assertEqual(trusted_peer(a), (os.getuid(), os.getpid()))
+        finally:
+            a.close()
+            b.close()
+
+
     def test_invalid_membership_cannot_cancel_owner_or_other_query(self):
         with patch(
             "src.execution_provider.multiplexed_gateway.trusted_peer", return_value=(1, 42)
         ) as peer:
-            with service(echo, max_connections=6) as (path, gateway, events):
+            with service(echo, max_connections=6, max_jobs=2) as (path, gateway, events):
                 conn, opened = control(path, 2)
                 try:
                     for token, flow, credentials in (
@@ -124,6 +147,7 @@ class QueryRegistrationTests(unittest.TestCase):
                 finally:
                     conn.close()
 
+
     def test_query_cancel_retains_remote_credit_and_other_query_progresses(self):
         started, release = threading.Event(), threading.Event()
 
@@ -136,7 +160,7 @@ class QueryRegistrationTests(unittest.TestCase):
             return completion(text)
 
         with patch("src.execution_provider.multiplexed_gateway.trusted_peer", return_value=(1, 42)):
-            with service(blocked, max_connections=6) as (path, gateway, events):
+            with service(blocked, max_connections=6, max_jobs=2) as (path, gateway, events):
                 conn, opened = control(path, 2)
                 client = Client(path, window=1, binding=binding(opened["token"], 0))
                 try:
@@ -159,23 +183,3 @@ class QueryRegistrationTests(unittest.TestCase):
                     release.set()
                 wait_for(lambda: len([e for e in events if e["event"] == "job_drained"]) == 2)
                 self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
-
-    def test_registration_schema_is_strict(self):
-        for count in (True, 0, -1, "2", 2**31):
-            with self.subTest(count=count), self.assertRaises(ProtocolError):
-                validate_registration(
-                    {"type": "query_open", "binding_version": 1, "flow_count": count}
-                )
-        with self.assertRaises(ProtocolError):
-            validate_registration({"type": "query_open", "binding_version": True, "flow_count": 1})
-
-    @unittest.skipUnless(hasattr(socket, "SO_PEERCRED"), "Linux peer credential test")
-    def test_kernel_peer_identity(self):
-        import os
-
-        a, b = socket.socketpair()
-        try:
-            self.assertEqual(trusted_peer(a), (os.getuid(), os.getpid()))
-        finally:
-            a.close()
-            b.close()

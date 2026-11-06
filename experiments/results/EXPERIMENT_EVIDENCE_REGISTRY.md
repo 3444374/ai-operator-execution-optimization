@@ -1,5 +1,19 @@
 # 实验与机制证据台账
 
+## 2026-11-06：主线基础多查询默认修正
+
+[源码、入口范围、823项CPU与独立探针](diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-defaults)
+登记3b393上未提交工作树：恢复基底固定份额和普通轮转，默认多个query不加载研究包；资源责任与单query多flow保持。
+既有nonmodel driver已执行此前PyArrow相关检查；真实Ray误选被防启动保护拒绝、Linux跳过与旧失败分列。
+records顺序复用、准备／organization单Job限制不扩大，SAOR接入与服务器、模型资格仍待后续核验。
+
+## 2026-11-06：跨查询职责与普通执行接入拆分
+
+[源码、逐节点 CPU／fixture 结果与原错误](diagnostics/records_runtime_refactor_20261104/README.md#multitask-execution-separation)
+登记以 3b393 为 HEAD 的未提交工作树，算法／输入八文件保持，既有跨 Job 分配、轮转和共享候选编排迁入研究适配。
+保留单查询注册、多 flow、R／C、统一资源表与真实终态；独立包及普通入口导入探针分开记录。
+PyArrow 缺项、Linux 专属跳过、原沙箱拒绝和迁移 fixture 错误均保留；不转授此前 163 项或服务器、模型、性能资格。
+
 ## 2026-11-06：同步协议多余转出清理
 
 [七个转出删除、九处导入迁移及5项CPU](diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)

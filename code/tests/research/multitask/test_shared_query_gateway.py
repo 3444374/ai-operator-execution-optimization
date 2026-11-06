@@ -7,8 +7,9 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters.incremental_execution import build_fixed_model_execution
-from src.execution_provider.server import main, parse_args
-from src.scheduling.core.session_jobs import shared_compute_job_budget
+from src.execution_provider.server import parse_args
+from src.research.multitask.semloom.gateway import main
+from src.research.multitask.semloom.session import shared_compute_job_budget
 from tests.execution_provider.test_multisession_gateway import service, Client, completion, wait_for
 from tests.execution_provider.test_query_registration import control, binding
 
@@ -68,9 +69,26 @@ class SharedQueryGatewayTests(unittest.TestCase):
                         self.assertEqual(len(gateway.engine.jobs.jobs), 0)
 
     def test_shared_cli_requires_incremental_execution(self):
-        self.assertEqual(parse_args(['--socket', '/tmp/unused']).job_compute_policy, 'equal-share')
+        self.assertFalse(hasattr(parse_args(['--socket', '/tmp/unused']), 'job_compute_policy'))
         with self.assertRaisesRegex(SystemExit, 'shared compute requires incremental'):
             main(['--socket', '/tmp/unused', '--job-compute-policy', 'shared'])
         with self.assertRaisesRegex(SystemExit, 'without a custom factory'):
             main(['--socket', '/tmp/unused', '--incremental-map', '--job-compute-policy', 'shared'],
                  incremental_execution_factory=lambda: None)
+
+    def test_research_cli_selects_existing_policy_and_forwards_transport_options(self):
+        from src.research.multitask.semloom import gateway
+        from src.scheduling.core.session_jobs import equal_share_job_budget
+
+        for policy, allocate in (("equal-share", equal_share_job_budget),
+                                 ("shared", shared_compute_job_budget)):
+            with self.subTest(policy=policy), patch.object(gateway.server, "main", return_value=0) as serve:
+                arguments = ["--socket", "/tmp/unused", "--incremental-map",
+                             "--fixed-model-config", "fixture.json", "--max-active-jobs", "2",
+                             "--job-compute-policy", policy]
+                self.assertEqual(main(arguments), 0)
+                forwarded = serve.call_args.args[0]
+                self.assertNotIn("--job-compute-policy", forwarded)
+                factory = serve.call_args.kwargs["incremental_execution_factory"]
+                self.assertIs(factory.func, build_fixed_model_execution)
+                self.assertIs(factory.keywords["allocate_job"], allocate)

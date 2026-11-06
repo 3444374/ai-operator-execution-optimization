@@ -191,33 +191,6 @@ class NativeTaskTests(unittest.TestCase):
         self.assertFalse(first.engine.jobs.jobs)
         self.assertFalse(second.engine.jobs.jobs)
 
-    def test_query_cancel_leaves_other_query_job_and_remote_work_independent(self):
-        original,backend,clock=fixture(held_tasks=4,input_bytes=4096,result_bytes=2048,
-                                      active_requests=4,active_work=4)
-        execution=replace(original,engine=SessionEngine(original.engine.capacity.limits,backend,
-            original.engine.policies,max_jobs=2,clock=clock))
-        first=native_tasks.NativeQueryJob(execution,'first-query')
-        with native_tasks.NativeQueryJob(execution,'other-query') as other:
-            a=first.open_session('map');b=other.open_session('map')
-            a.offer((task(0),));b.offer((task(0),));a.advance(2)
-            first.request_cancel()
-            self.assertEqual(a.advance(1).state,State.CANCELLED)
-            a.close();first.close()
-            self.assertFalse(execution.engine.jobs.jobs[other.job].closing)
-            self.assertEqual(b.session.spec.job_id,other.job.job_id)
-            b.end_input()
-            key=TaskKey(b.session.session_id,0)
-            backend.complete(key,encode_full_response(FullModelResponse(200,(),b'other-result')))
-            delivery=b.advance(1).deliveries[0]
-            self.assertEqual(decode_full_response(delivery.result).body,b'other-result')
-            b.release((delivery.lease_id,));b.close(clean=True)
-            self.assertIn(other.job,execution.engine.jobs.jobs)
-            self.assertEqual(execution.engine.capacity.usage().active_requests,1)
-        for key in tuple(backend.pending):
-            backend.complete(key,encode_full_response(FullModelResponse(200,(),b'late-first-result')))
-        execution.engine.advance()
-        self.assertEqual(execution.engine.capacity.usage(),Usage())
-        self.assertFalse(execution.engine.jobs.jobs)
 
     def test_batch_offer_dispatches_nothing_and_caller_retains_suffix(self):
         execution, backend, _ = fixture(held_tasks=3)
@@ -336,6 +309,36 @@ class NativeTaskTests(unittest.TestCase):
         self.assertEqual(len(flow.advance(1).deliveries), 1)
         flow.close()
         self.assertEqual(execution.engine.capacity.usage(), Usage())
+
+
+    def test_query_cancel_leaves_other_query_job_and_remote_work_independent(self):
+        original,backend,clock=fixture(held_tasks=4,input_bytes=4096,result_bytes=2048,
+                                      active_requests=4,active_work=4)
+        execution=replace(original,engine=SessionEngine(original.engine.capacity.limits,backend,
+            original.engine.policies,max_jobs=2,clock=clock))
+        first=native_tasks.NativeQueryJob(execution,'first-query')
+        with native_tasks.NativeQueryJob(execution,'other-query') as other:
+            a=first.open_session('map');b=other.open_session('map')
+            a.offer((task(0),));b.offer((task(0),));a.advance(2)
+            first.request_cancel()
+            self.assertEqual(a.advance(1).state,State.CANCELLED)
+            a.close();first.close()
+            self.assertFalse(execution.engine.jobs.jobs[other.job].closing)
+            self.assertEqual(b.session.spec.job_id,other.job.job_id)
+            b.end_input()
+            key=TaskKey(b.session.session_id,0)
+            backend.complete(key,encode_full_response(FullModelResponse(200,(),b'other-result')))
+            delivery=b.advance(1).deliveries[0]
+            self.assertEqual(decode_full_response(delivery.result).body,b'other-result')
+            b.release((delivery.lease_id,));b.close(clean=True)
+            self.assertIn(other.job,execution.engine.jobs.jobs)
+            self.assertEqual(execution.engine.capacity.usage().active_requests,1)
+        for key in tuple(backend.pending):
+            backend.complete(key,encode_full_response(FullModelResponse(200,(),b'late-first-result')))
+        execution.engine.advance()
+        self.assertEqual(execution.engine.capacity.usage(),Usage())
+        self.assertFalse(execution.engine.jobs.jobs)
+
 
 
 class NativeServiceCloseTests(unittest.TestCase):

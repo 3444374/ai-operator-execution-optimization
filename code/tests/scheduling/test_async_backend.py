@@ -1,5 +1,7 @@
 """Controlled async I/O validates bounded admission, order, and uncertain outcomes."""
 
+from tests.scheduling.test_multisession import choose_first_flow
+
 import asyncio
 import threading
 import time
@@ -180,7 +182,7 @@ class AsyncBackendTests(unittest.TestCase):
         backend = BoundedAsyncBackend(execute, max_tasks=2, notify=lambda: engine.wake.notify(),
                                       isolate_failures=True)
         engine = SessionEngine(template.capacity.limits, backend, template.policies,
-                               max_jobs=2, clock=clock)
+                               max_jobs=2, choose_flow=choose_first_flow, clock=clock)
         first = engine.register_job('failed-job', JobBudget(2, 8, 8, 2, 2))
         other = engine.register_job('other-job', JobBudget(2, 8, 8, 2, 2))
         failed = engine.open(SessionSpec('first', 'flow', 'fixture'), job=first)

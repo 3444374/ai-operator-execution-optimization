@@ -31,7 +31,7 @@ from src.execution_provider.semantic_map import SemanticMapPlan
 from src.execution_provider.session_dispatch import run_session
 from src.execution_provider.wire import v6
 from src.execution_provider.wire.framing import encode_frame, read_frame
-from src.scheduling.core.session_jobs import shared_compute_job_budget
+from src.research.multitask.semloom.session import shared_compute_job_budget
 from .map_observation_probe import SyntheticRay, SyntheticTable, CLOCK
 
 

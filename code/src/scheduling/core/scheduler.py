@@ -23,19 +23,15 @@ from .policy_contracts import (
     AdmissionPolicy as AdmissionPolicy,
     EndpointRouter as EndpointRouter,
     PoolRouter as PoolRouter,
-    SharedCreditPolicy as SharedCreditPolicy,
 )
 from .scheduler_types import (
-    DEFAULT_SHARED_CREDIT_POLL_S as DEFAULT_SHARED_CREDIT_POLL_S,
+    DEFAULT_SOURCE_POLL_S,
+    SubmissionLifecycle,
     EndpointCapacityConfig as EndpointCapacityConfig,
-    JobSchedulingContract as JobSchedulingContract,
-    ReadyWindowConfig as ReadyWindowConfig,
     SchedulerConfig as SchedulerConfig,
     SchedulerResult as SchedulerResult,
-    SharedCreditConfig as SharedCreditConfig,
     SubmissionAdapter as SubmissionAdapter,
 )
-from .ready_window import BoundedReadyWindow, ReadySubmission
 from .topology import with_local_inflight
 from .envelope_source import _ConcurrentEnvelopeSource
 
@@ -53,17 +49,8 @@ class SynchronousScheduler:
         per_endpoint_limit: int | None = None,
         per_endpoint_work_limit: int | None = None,
         per_endpoint_admission: Mapping[str, AdmissionPolicy] | None = None,
-        shared_credit: SharedCreditPolicy | None = None,
-        shared_credit_poll_s: float = DEFAULT_SHARED_CREDIT_POLL_S,
-        shared_credit_acquire_timeout_s: float | None = None,
-        shared_ready_request_limit: int = 1,
-        shared_ready_work_limit: int | None = None,
-        shared_ready_payload_bytes_limit: int | None = None,
-        job_weight: int = 1,
-        job_priority: int = 0,
-        job_slo_target_s: float | None = None,
-        job_priority_window_s: float | None = None,
-        job_fairness_debt_cap: float | None = None,
+        source_poll_interval_s: float = DEFAULT_SOURCE_POLL_S,
+        lifecycle: SubmissionLifecycle | None = None,
         actual_work_extractor: Callable[[SubmissionCompletion], int | None] | None = None,
     ):
         config = SchedulerConfig(
@@ -72,23 +59,8 @@ class SynchronousScheduler:
                 work_limit=per_endpoint_work_limit,
                 admission_by_endpoint=per_endpoint_admission or {},
             ),
-            shared_credit=SharedCreditConfig(
-                policy=shared_credit,
-                poll_interval_s=shared_credit_poll_s,
-                acquire_timeout_s=shared_credit_acquire_timeout_s,
-                ready_window=ReadyWindowConfig(
-                    request_limit=shared_ready_request_limit,
-                    work_limit=shared_ready_work_limit,
-                    payload_bytes_limit=shared_ready_payload_bytes_limit,
-                ),
-                job=JobSchedulingContract(
-                    weight=job_weight,
-                    priority=job_priority,
-                    slo_target_s=job_slo_target_s,
-                    priority_window_s=job_priority_window_s,
-                    fairness_debt_cap=job_fairness_debt_cap,
-                ),
-            ),
+            source_poll_interval_s=source_poll_interval_s,
+            lifecycle=lifecycle,
             actual_work_extractor=actual_work_extractor,
         )
         self._initialize(
@@ -139,9 +111,6 @@ class SynchronousScheduler:
         config: SchedulerConfig,
     ) -> None:
         endpoint_capacity = config.endpoint_capacity
-        shared_credit = config.shared_credit
-        ready_window = shared_credit.ready_window
-        job = shared_credit.job
         self.admission = admission
         self.router = router
         self.adapter = adapter
@@ -151,17 +120,8 @@ class SynchronousScheduler:
         self.per_endpoint_limit = endpoint_capacity.request_limit
         self.per_endpoint_work_limit = endpoint_capacity.work_limit
         self.per_endpoint_admission = dict(endpoint_capacity.admission_by_endpoint)
-        self.shared_credit = shared_credit.policy
-        self.shared_credit_poll_s = shared_credit.poll_interval_s
-        self.shared_credit_acquire_timeout_s = shared_credit.acquire_timeout_s
-        self.shared_ready_request_limit = ready_window.request_limit
-        self.shared_ready_work_limit = ready_window.work_limit
-        self.shared_ready_payload_bytes_limit = ready_window.payload_bytes_limit
-        self.job_weight = job.weight
-        self.job_priority = job.priority
-        self.job_slo_target_s = job.slo_target_s
-        self.job_priority_window_s = job.priority_window_s
-        self.job_fairness_debt_cap = job.fairness_debt_cap
+        self.source_poll_interval_s = config.source_poll_interval_s
+        self.lifecycle = config.lifecycle
         self.actual_work_extractor = config.actual_work_extractor
 
     def run(
@@ -169,25 +129,7 @@ class SynchronousScheduler:
         envelopes: Iterable[PayloadEnvelope],
         topology: TopologySnapshot,
     ) -> SchedulerResult:
-        endpoints_by_id = {endpoint.endpoint_id: endpoint for endpoint in topology.endpoints}
-        unknown_admission_endpoints = set(self.per_endpoint_admission) - set(endpoints_by_id)
-        if unknown_admission_endpoints:
-            raise ValueError(
-                "per-endpoint admission contains endpoints outside topology: "
-                + ", ".join(sorted(unknown_admission_endpoints))
-            )
-        if self.per_endpoint_admission and (
-            set(self.per_endpoint_admission) != set(endpoints_by_id)
-        ):
-            raise ValueError(
-                "per-endpoint admission must define exactly one policy for every topology endpoint"
-            )
-        if self.shared_credit is not None and self.shared_ready_request_limit > 1:
-            return self._run_with_shared_ready_window(
-                envelopes,
-                topology,
-                endpoints_by_id,
-            )
+        endpoints_by_id = self.validate_topology(topology)
         ledger = SubmissionExecutionLedger(
             actual_work_extractor=self.actual_work_extractor,
         )
@@ -196,15 +138,14 @@ class SynchronousScheduler:
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
         submit_s = 0.0
-        shared_credit_jobs: set[str] = set()
 
         source = _ConcurrentEnvelopeSource(
             envelopes,
-            poll_interval_s=self.shared_credit_poll_s,
+            poll_interval_s=self.source_poll_interval_s,
         )
         for source_item in source:
             if source_item is _ConcurrentEnvelopeSource._POLL:
-                collected = self._poll_one(ledger)
+                collected = self.poll_one(ledger)
                 if collected is not None:
                     bounded_wait_samples.append(collected.wait_s)
                     fanin_s += collected.result_s
@@ -212,10 +153,7 @@ class SynchronousScheduler:
             if not isinstance(source_item, PayloadEnvelope):
                 raise ValueError("envelopes must contain PayloadEnvelope values")
             envelope = source_item
-            if self.shared_credit is not None:
-                shared_credit_jobs.add(envelope.request.job_id)
 
-            request_id = envelope.request.request_id
             ledger.observe(envelope)
             pool_id: str | None = None
             route: RoutingDecision | None = None
@@ -236,7 +174,7 @@ class SynchronousScheduler:
                     request_work=envelope.request.estimated_work_units,
                 )
                 if self.per_endpoint_admission:
-                    capacity_topology = self._topology_with_endpoint_admission(
+                    capacity_topology = self.topology_with_endpoint_admission(
                         capacity_topology,
                         ledger.contexts,
                     )
@@ -244,7 +182,7 @@ class SynchronousScheduler:
                     endpoint.healthy and endpoint.available
                     for endpoint in capacity_topology.endpoints
                 ):
-                    pool_id = self._select_pool(
+                    pool_id = self.select_pool(
                         envelope.request, capacity_topology, endpoints_by_id
                     )
                     try:
@@ -263,7 +201,7 @@ class SynchronousScheduler:
                         "in-flight submission to collect; the scheduler cannot "
                         "make progress"
                     )
-                collected = self._collect_one(ledger)
+                collected = self.collect_one(ledger)
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
             if pool_id is None or route is None:
@@ -271,55 +209,22 @@ class SynchronousScheduler:
             endpoint = endpoints_by_id.get(route.endpoint_id)
             if endpoint is None:
                 raise RuntimeError("router selected an endpoint outside the topology")
-            credit_wait_started_s = time.monotonic()
-            while self.shared_credit is not None and not (
-                self.shared_credit.try_acquire(
-                    request_id=request_id,
-                    job_id=envelope.request.job_id,
-                    endpoint_id=route.endpoint_id,
-                    estimated_work=max(
-                        1,
-                        envelope.request.estimated_work_units,
-                    ),
-                    weight=self.job_weight,
-                    priority=self.job_priority,
-                    **self._bounded_credit_arguments(envelope.request),
-                )
-            ):
-                if (
-                    self.shared_credit_acquire_timeout_s is not None
-                    and time.monotonic() - credit_wait_started_s
-                    >= self.shared_credit_acquire_timeout_s
-                ):
-                    cancel_waiter = getattr(
-                        self.shared_credit,
-                        "cancel_waiter",
-                        None,
-                    )
-                    if cancel_waiter is not None:
-                        cancel_waiter(
-                            request_id,
-                            job_id=envelope.request.job_id,
-                        )
-                    raise TimeoutError(
-                        "shared credit acquire timed out for "
-                        f"{envelope.request.job_id}/{request_id}"
-                    )
-                if ledger.pending:
-                    collected = self._collect_one(ledger)
+            if self.lifecycle is not None:
+                def collect_pending():
+                    nonlocal fanin_s
+                    if not ledger.pending:
+                        return False
+                    collected = self.collect_one(ledger)
                     bounded_wait_samples.append(collected.wait_s)
                     fanin_s += collected.result_s
-                else:
-                    time.sleep(self.shared_credit_poll_s)
+                    return True
+                self.lifecycle.before_submit(envelope, route.endpoint_id, collect_pending)
             submit_start = time.perf_counter()
             try:
                 handle = self.adapter.submit(envelope, route.endpoint_id)
             except Exception:
-                if self.shared_credit is not None:
-                    self.shared_credit.release(
-                        request_id,
-                        job_id=envelope.request.job_id,
-                    )
+                if self.lifecycle is not None:
+                    self.lifecycle.submit_failed(envelope)
                 raise
             submit_s += time.perf_counter() - submit_start
             ledger.submitted(
@@ -337,17 +242,11 @@ class SynchronousScheduler:
             )
 
         while ledger.pending:
-            collected = self._collect_one(ledger)
+            collected = self.collect_one(ledger)
             fanin_s += collected.result_s
 
-        finish_shared_job = (
-            getattr(self.shared_credit, "finish_job", None)
-            if self.shared_credit is not None
-            else None
-        )
-        if finish_shared_job is not None:
-            for job_id in sorted(shared_credit_jobs):
-                finish_shared_job(job_id)
+        if self.lifecycle is not None:
+            self.lifecycle.finish()
 
         completions = ledger.ordered_completions()
         return SchedulerResult(
@@ -365,239 +264,23 @@ class SynchronousScheduler:
             max_active_work_per_endpoint_seen=(max_active_work_per_endpoint_seen),
         )
 
-    def _run_with_shared_ready_window(
-        self,
-        envelopes: Iterable[PayloadEnvelope],
-        topology: TopologySnapshot,
-        endpoints_by_id: Mapping[str, EndpointSnapshot],
-    ) -> SchedulerResult:
-        """Pre-register a bounded concrete ready set before waiting on credit.
+    def validate_topology(self, topology: TopologySnapshot) -> dict[str, EndpointSnapshot]:
+        endpoints_by_id = {endpoint.endpoint_id: endpoint for endpoint in topology.endpoints}
+        unknown_admission_endpoints = set(self.per_endpoint_admission) - set(endpoints_by_id)
+        if unknown_admission_endpoints:
+            raise ValueError(
+                "per-endpoint admission contains endpoints outside topology: "
+                + ", ".join(sorted(unknown_admission_endpoints))
+            )
+        if self.per_endpoint_admission and (
+            set(self.per_endpoint_admission) != set(endpoints_by_id)
+        ):
+            raise ValueError(
+                "per-endpoint admission must define exactly one policy for every topology endpoint"
+            )
+        return endpoints_by_id
 
-        The shared coordinator remains the admission owner.  This loop only
-        makes more than one already-arrived candidate per Job visible to it;
-        it does not speculate beyond the configured request/work window.
-        """
-
-        ledger = SubmissionExecutionLedger(
-            actual_work_extractor=self.actual_work_extractor,
-        )
-        ready = BoundedReadyWindow(
-            request_limit=self.shared_ready_request_limit,
-            work_limit=self.shared_ready_work_limit,
-            payload_bytes_limit=self.shared_ready_payload_bytes_limit,
-        )
-        deferred_envelope: PayloadEnvelope | None = None
-        source_exhausted = False
-        shared_credit_jobs: set[str] = set()
-        max_ready_requests_seen = 0
-        max_ready_work_seen = 0
-        max_ready_payload_bytes_seen = 0
-        ready_requests_transition_samples = [0]
-        ready_work_transition_samples = [0]
-        ready_payload_bytes_transition_samples = [0]
-        max_inflight_seen = 0
-        max_active_work_per_endpoint_seen = 0
-        bounded_wait_samples: list[float] = []
-        fanin_s = 0.0
-        submit_s = 0.0
-        source = _ConcurrentEnvelopeSource(
-            envelopes,
-            poll_interval_s=self.shared_credit_poll_s,
-        )
-        source_iter = iter(source)
-
-        try:
-            while not source_exhausted or deferred_envelope is not None or ready:
-                made_progress = False
-                source_waiting = False
-
-                while len(ready) < self.shared_ready_request_limit:
-                    if deferred_envelope is None:
-                        if source_exhausted:
-                            break
-                        try:
-                            source_item = next(source_iter)
-                        except StopIteration:
-                            source_exhausted = True
-                            break
-                        if source_item is _ConcurrentEnvelopeSource._POLL:
-                            source_waiting = True
-                            break
-                        if not isinstance(source_item, PayloadEnvelope):
-                            raise ValueError("envelopes must contain PayloadEnvelope values")
-                        deferred_envelope = source_item
-
-                    envelope = deferred_envelope
-                    request_work = max(
-                        1,
-                        envelope.request.estimated_work_units,
-                    )
-                    request_payload_bytes = envelope.request.estimated_payload_bytes
-                    if not ready.can_accept(
-                        request_work,
-                        request_payload_bytes,
-                    ):
-                        break
-
-                    ready_epoch_s = self.epoch_clock()
-                    ledger.observe(envelope, ready_epoch_s=ready_epoch_s)
-                    shared_credit_jobs.add(envelope.request.job_id)
-                    candidate = self._register_ready_candidate(
-                        envelope,
-                        topology,
-                        endpoints_by_id,
-                        ledger,
-                        ready,
-                    )
-                    ready.append(candidate)
-                    deferred_envelope = None
-                    made_progress = True
-                    max_ready_requests_seen = max(
-                        max_ready_requests_seen,
-                        len(ready),
-                    )
-                    max_ready_work_seen = max(
-                        max_ready_work_seen,
-                        ready.work,
-                    )
-                    max_ready_payload_bytes_seen = max(
-                        max_ready_payload_bytes_seen,
-                        ready.payload_bytes,
-                    )
-                    ready_requests_transition_samples.append(len(ready))
-                    ready_work_transition_samples.append(ready.work)
-                    ready_payload_bytes_transition_samples.append(ready.payload_bytes)
-
-                now_monotonic_s = time.monotonic()
-                for candidate in ready.snapshot():
-                    request = candidate.envelope.request
-                    request_id = request.request_id
-                    if (
-                        not candidate.credit_granted
-                        and self.shared_credit_acquire_timeout_s is not None
-                        and now_monotonic_s - candidate.wait_started_s
-                        >= self.shared_credit_acquire_timeout_s
-                    ):
-                        raise TimeoutError(
-                            f"shared credit acquire timed out for {request.job_id}/{request_id}"
-                        )
-                    if not candidate.credit_granted:
-                        candidate.credit_granted = self.shared_credit.try_acquire(
-                            request_id=request_id,
-                            job_id=request.job_id,
-                            endpoint_id=candidate.endpoint_id,
-                            estimated_work=candidate.estimated_work,
-                            weight=self.job_weight,
-                            priority=self.job_priority,
-                            **candidate.credit_arguments,
-                        )
-                        if candidate.credit_granted:
-                            ledger.credit_granted(
-                                request_id,
-                                epoch_s=self.epoch_clock(),
-                            )
-                            made_progress = True
-                    if not candidate.credit_granted or not self._can_submit_ready(
-                        candidate,
-                        topology,
-                        ledger,
-                    ):
-                        continue
-
-                    submit_start = time.perf_counter()
-                    try:
-                        handle = self.adapter.submit(
-                            candidate.envelope,
-                            candidate.endpoint_id,
-                        )
-                    except Exception:
-                        self.shared_credit.release(
-                            request_id,
-                            job_id=request.job_id,
-                        )
-                        ready.remove(candidate)
-                        raise
-                    submit_s += time.perf_counter() - submit_start
-                    ledger.submitted(
-                        handle,
-                        candidate.envelope,
-                        pool_id=candidate.pool_id,
-                        endpoint_id=candidate.endpoint_id,
-                        gpu_id=candidate.gpu_id,
-                        submit_epoch_s=self.epoch_clock(),
-                    )
-                    ready.remove(candidate)
-                    ready_requests_transition_samples.append(len(ready))
-                    ready_work_transition_samples.append(ready.work)
-                    ready_payload_bytes_transition_samples.append(ready.payload_bytes)
-                    made_progress = True
-                    max_inflight_seen = max(
-                        max_inflight_seen,
-                        ledger.inflight_count,
-                    )
-                    max_active_work_per_endpoint_seen = max(
-                        max_active_work_per_endpoint_seen,
-                        max(
-                            ledger.active_work_by_endpoint().values(),
-                            default=0,
-                        ),
-                    )
-
-                while True:
-                    collected = self._poll_one(ledger)
-                    if collected is None:
-                        break
-                    bounded_wait_samples.append(collected.wait_s)
-                    fanin_s += collected.result_s
-                    made_progress = True
-
-                if not made_progress:
-                    if source_waiting and not source_exhausted:
-                        continue
-                    if ledger.pending:
-                        collected = self._collect_one(ledger)
-                        bounded_wait_samples.append(collected.wait_s)
-                        fanin_s += collected.result_s
-                    elif ready:
-                        time.sleep(self.shared_credit_poll_s)
-
-            while ledger.pending:
-                collected = self._collect_one(ledger)
-                fanin_s += collected.result_s
-        except BaseException:
-            self._cancel_ready_candidates(ready)
-            raise
-        finally:
-            source.close()
-
-        finish_shared_job = getattr(self.shared_credit, "finish_job", None)
-        if finish_shared_job is not None:
-            for job_id in sorted(shared_credit_jobs):
-                finish_shared_job(job_id)
-
-        completions = ledger.ordered_completions()
-        return SchedulerResult(
-            completions=completions,
-            submission_events=ledger.ordered_events(),
-            operator_invocations=len(completions),
-            max_inflight_seen=max_inflight_seen,
-            applied_limit=self.admission.limit,
-            bounded_wait_s=sum(bounded_wait_samples),
-            avg_bounded_wait_s=(
-                statistics.mean(bounded_wait_samples) if bounded_wait_samples else 0.0
-            ),
-            fanin_s=fanin_s,
-            submit_s=submit_s,
-            max_active_work_per_endpoint_seen=(max_active_work_per_endpoint_seen),
-            max_ready_requests_seen=max_ready_requests_seen,
-            max_ready_work_seen=max_ready_work_seen,
-            max_ready_payload_bytes_seen=max_ready_payload_bytes_seen,
-            ready_requests_transition_samples=tuple(ready_requests_transition_samples),
-            ready_work_transition_samples=tuple(ready_work_transition_samples),
-            ready_payload_bytes_transition_samples=tuple(ready_payload_bytes_transition_samples),
-        )
-
-    def _select_pool(
+    def select_pool(
         self,
         request: BatchRequest,
         topology: TopologySnapshot,
@@ -610,159 +293,7 @@ class SynchronousScheduler:
             return self.pool_router.route(request, topology).pool_id
         return self.pool_id
 
-    def _register_ready_candidate(
-        self,
-        envelope: PayloadEnvelope,
-        topology: TopologySnapshot,
-        endpoints_by_id: Mapping[str, EndpointSnapshot],
-        ledger: SubmissionExecutionLedger,
-        ready: BoundedReadyWindow,
-    ) -> ReadySubmission:
-        routing_context = {
-            **ledger.contexts,
-            **ready.routing_contexts(),
-        }
-        routing_topology = with_local_inflight(
-            topology,
-            routing_context,
-        )
-        pool_id = self._select_pool(
-            envelope.request, routing_topology, endpoints_by_id
-        )
-        route = self.router.route(
-            envelope.request,
-            routing_topology,
-            pool_id,
-        )
-        endpoint = endpoints_by_id.get(route.endpoint_id)
-        if endpoint is None:
-            raise RuntimeError("router selected an endpoint outside the topology")
-        request = envelope.request
-        credit_arguments = self._bounded_credit_arguments(request)
-        registered_epoch_s = self.epoch_clock()
-        ledger.credit_registered(
-            request.request_id,
-            epoch_s=registered_epoch_s,
-        )
-        granted = self.shared_credit.try_acquire(
-            request_id=request.request_id,
-            job_id=request.job_id,
-            endpoint_id=route.endpoint_id,
-            estimated_work=max(1, request.estimated_work_units),
-            weight=self.job_weight,
-            priority=self.job_priority,
-            **credit_arguments,
-        )
-        if granted:
-            ledger.credit_granted(
-                request.request_id,
-                epoch_s=self.epoch_clock(),
-            )
-        return ReadySubmission(
-            envelope=envelope,
-            pool_id=pool_id,
-            endpoint_id=route.endpoint_id,
-            gpu_id=endpoint.gpu_id,
-            wait_started_s=time.monotonic(),
-            credit_arguments=credit_arguments,
-            credit_granted=granted,
-        )
-
-    def _can_submit_ready(
-        self,
-        candidate: ReadySubmission,
-        topology: TopologySnapshot,
-        ledger: SubmissionExecutionLedger,
-    ) -> bool:
-        hol_age_s = (
-            ledger.oldest_inflight_age_s(now_s=self.epoch_clock()) if ledger.contexts else 0.0
-        )
-        if not self.admission.decide(
-            ledger.inflight_count,
-            hol_age_s=hol_age_s,
-        ).allowed:
-            return False
-        capacity_topology = with_local_inflight(
-            topology,
-            ledger.contexts,
-            per_endpoint_limit=self.per_endpoint_limit,
-            per_endpoint_work_limit=self.per_endpoint_work_limit,
-            request_work=candidate.estimated_work,
-        )
-        if self.per_endpoint_admission:
-            capacity_topology = self._topology_with_endpoint_admission(
-                capacity_topology,
-                ledger.contexts,
-            )
-        endpoint = next(
-            item
-            for item in capacity_topology.endpoints
-            if item.endpoint_id == candidate.endpoint_id
-        )
-        return endpoint.healthy and endpoint.available
-
-    def _cancel_ready_candidates(
-        self,
-        ready: Iterable[ReadySubmission],
-    ) -> None:
-        if self.shared_credit is None:
-            return
-        cancel_waiter = getattr(self.shared_credit, "cancel_waiter", None)
-        for candidate in tuple(ready):
-            request = candidate.envelope.request
-            if candidate.credit_granted:
-                self.shared_credit.release(
-                    request.request_id,
-                    job_id=request.job_id,
-                )
-                continue
-            cancelled = (
-                cancel_waiter(
-                    request.request_id,
-                    job_id=request.job_id,
-                )
-                if cancel_waiter is not None
-                else False
-            )
-            if not cancelled:
-                acquired = self.shared_credit.try_acquire(
-                    request_id=request.request_id,
-                    job_id=request.job_id,
-                    endpoint_id=candidate.endpoint_id,
-                    estimated_work=candidate.estimated_work,
-                    weight=self.job_weight,
-                    priority=self.job_priority,
-                    **candidate.credit_arguments,
-                )
-                if acquired:
-                    self.shared_credit.release(
-                        request.request_id,
-                        job_id=request.job_id,
-                    )
-
-    def _bounded_credit_arguments(self, request: BatchRequest) -> dict[str, float | None]:
-        if (
-            self.job_slo_target_s is None
-            and self.job_priority_window_s is None
-            and self.job_fairness_debt_cap is None
-        ):
-            return {}
-        if self.job_priority_window_s is not None:
-            if request.oldest_arrival_epoch_s is None:
-                raise ValueError("bounded priority requires an explicit oldest arrival epoch")
-            remaining_slo_budget_s = self.job_slo_target_s - max(
-                0.0,
-                self.epoch_clock() - request.oldest_arrival_epoch_s,
-            )
-        else:
-            remaining_slo_budget_s = None
-        return {
-            "slo_budget_remaining_s": remaining_slo_budget_s,
-            "priority_window_s": self.job_priority_window_s,
-            "fairness_debt_cap": self.job_fairness_debt_cap,
-        }
-
-    def _topology_with_endpoint_admission(
+    def topology_with_endpoint_admission(
         self,
         topology: TopologySnapshot,
         submission_context: Mapping[str, SubmissionContext],
@@ -804,7 +335,7 @@ class SynchronousScheduler:
             ),
         )
 
-    def _collect_one(
+    def collect_one(
         self,
         ledger: SubmissionExecutionLedger,
     ) -> CollectedSubmission:
@@ -820,16 +351,11 @@ class SynchronousScheduler:
             collected,
             completion_epoch_s=self.epoch_clock(),
         )
-        request_id = recorded.envelope.request.request_id
-        if self.shared_credit is not None:
-            self.shared_credit.release(
-                request_id,
-                job_id=recorded.envelope.request.job_id,
-                actual_work=recorded.actual_work,
-            )
+        if self.lifecycle is not None:
+            self.lifecycle.completed(recorded)
         return collected
 
-    def _poll_one(
+    def poll_one(
         self,
         ledger: SubmissionExecutionLedger,
     ) -> CollectedSubmission | None:

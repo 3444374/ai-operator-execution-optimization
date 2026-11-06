@@ -6,8 +6,7 @@ import math
 from dataclasses import dataclass, replace
 from typing import Mapping
 
-from src.planning.work import RuntimeStateSnapshot
-from src.scheduling.core.control import CapacityArm
+from .interfaces import CapacityChoice, RuntimeObservation
 from .saor import (
     SaorAction,
     SaorControlState,
@@ -71,7 +70,7 @@ class SaorObservationModel:
 @dataclass(frozen=True)
 class SaorArmEstimate:
     name: str
-    arm: CapacityArm
+    arm: CapacityChoice
     goodput: float
     tail_risk: float
     energy: float
@@ -89,7 +88,7 @@ class SaorArmEstimate:
 @dataclass(frozen=True)
 class SaorCapacityDecision:
     arm_name: str
-    arm: CapacityArm
+    arm: CapacityChoice
     action: str
     reason: str
     action_scores: tuple[tuple[str, float], ...]
@@ -115,7 +114,9 @@ class SaorCapacityController:
         names = tuple(item.name for item in arms)
         if not names or len(names) != len(set(names)):
             raise ValueError("SAOR capacity arms must be unique and non-empty")
-        ordered = tuple(sorted(arms, key=lambda item: item.arm))
+        ordered = tuple(sorted(
+            arms, key=lambda item: (item.arm.request_limit, item.arm.work_limit)
+        ))
         if tuple(item.name for item in ordered) != names:
             raise ValueError("SAOR capacity arms must be ordered by capacity")
         if initial_arm not in names or fallback_arm not in names:
@@ -148,7 +149,7 @@ class SaorCapacityController:
 
     def select(
         self,
-        snapshot: RuntimeStateSnapshot,
+        snapshot: RuntimeObservation,
         *,
         observed_goodput: float,
         observed_tail_risk: float,

@@ -13,7 +13,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.scheduling.core.models import BatchRequest, PayloadEnvelope  # noqa: E402
-from src.scheduling.core.ready_window import (  # noqa: E402
+from src.research.multitask.semloom.ready_window import (  # noqa: E402
     BoundedReadyWindow,
     ReadySubmission,
 )

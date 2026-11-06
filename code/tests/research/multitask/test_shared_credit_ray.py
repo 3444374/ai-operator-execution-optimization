@@ -68,6 +68,30 @@ class _FakeRay:
 
 
 class SharedCreditRayTests(unittest.TestCase):
+    def test_saor_client_acquires_and_returns_shared_capacity(self):
+        client = get_or_create_shared_credit_client(
+            _FakeRay(),
+            name="research-credit",
+            namespace="fixture",
+            capacities={"e1": (1, 100)},
+            quantum=100,
+            policy="saor",
+            saor_release_config=SaorReleaseConfig(
+                entitlement_weight=1.0,
+                queue_weight=0.0,
+                fairness_weight=1.0,
+                slo_weight=0.0,
+            ),
+        )
+        self.assertTrue(client.try_acquire(
+            request_id="r", job_id="j", endpoint_id="e1", estimated_work=20,
+        ))
+        self.assertEqual(client.snapshot("e1").active_work, 20)
+        client.release("r", job_id="j", actual_work=15)
+        self.assertEqual(client.snapshot("e1").active_work, 0)
+        client.finish_job("j")
+
+
     def test_ready_lifecycle_identity_cannot_be_changed_on_actor_reuse(self) -> None:
         ray = _FakeRay()
         get_or_create_shared_credit_client(

@@ -222,32 +222,6 @@ class RaySchedulerProfileTests(unittest.TestCase):
         self.assertEqual(metrics["adaptive_limit_mean"], 4)
 
 
-    def test_bounded_ready_window_is_derived_from_existing_k_and_w(self) -> None:
-        self.assertEqual(
-            profile_ray_scheduler._shared_ready_window_limits(
-                256,
-                ["endpoint-0", "endpoint-1"],
-                {
-                    "policy": "fifo",
-                    "work_limit": 65536,
-                    "ready_observation_contract": (
-                        "bounded_concrete_pre_registration"
-                    ),
-                    "ready_payload_bytes_limit": 1048576,
-                },
-            ),
-            (256, 131072, 1048576),
-        )
-        self.assertEqual(
-            profile_ray_scheduler._shared_ready_window_limits(
-                256,
-                ["endpoint-0", "endpoint-1"],
-                {"policy": "saor_bounded_priority", "work_limit": 65536},
-            ),
-            (1, None, None),
-        )
-
-
     def test_arrow_batch_requests_preserve_costs_locality_and_arrivals(self) -> None:
         values = {"prompt_tokens": [3, 5], "target_output_tokens": [2, 9],
                   "prefix_key": ["shared", "shared"], "preferred_endpoint_id": ["e0", "e0"],

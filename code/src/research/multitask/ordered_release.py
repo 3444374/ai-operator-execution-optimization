@@ -6,8 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Mapping
 
-from src.scheduling.core.control import CapacityArm
-from src.scheduling.core.models import PayloadEnvelope
+from .interfaces import CapacityChoice, WorkEnvelope
 from .saor import (
     SaorDecision,
     SaorJobState,
@@ -19,7 +18,7 @@ from .saor import (
 class ReleasedSubmission:
     release_seq: int
     endpoint_id: str
-    envelope: PayloadEnvelope
+    envelope: WorkEnvelope
 
     @property
     def request_id(self) -> str:
@@ -43,7 +42,7 @@ class OrderedReleaseSnapshot:
     ready_by_job: tuple[tuple[str, int, int], ...]
     active_by_job: tuple[tuple[str, int, int], ...]
     active_by_endpoint: tuple[tuple[str, int, int], ...]
-    current_arms: tuple[tuple[str, CapacityArm], ...]
+    current_arms: tuple[tuple[str, CapacityChoice], ...]
     next_release_seq: int
 
 
@@ -56,14 +55,14 @@ class OrderedReleaseCoordinator:
         if len(endpoint_ids) != len(set(endpoint_ids)):
             raise ValueError("endpoint IDs must be unique")
         self._endpoint_ids = endpoint_ids
-        self._ready: dict[str, deque[PayloadEnvelope]] = {}
+        self._ready: dict[str, deque[WorkEnvelope]] = {}
         self._active: dict[str, ReleasedSubmission] = {}
         self._seen_request_ids: set[str] = set()
         self._completed_work: dict[str, int] = {}
-        self._current_arms: dict[str, CapacityArm] = {}
+        self._current_arms: dict[str, CapacityChoice] = {}
         self._next_release_seq = 0
 
-    def enqueue(self, envelope: PayloadEnvelope) -> None:
+    def enqueue(self, envelope: WorkEnvelope) -> None:
         request_id = envelope.request.request_id
         if request_id in self._seen_request_ids:
             raise ValueError(f"duplicate request_id: {request_id}")
@@ -234,9 +233,9 @@ class OrderedReleaseCoordinator:
     def _validate_action(
         self,
         endpoint_id: str,
-        arm: CapacityArm,
+        arm: CapacityChoice,
         releases: tuple[SaorReleaseCandidate, ...],
-    ) -> list[tuple[SaorReleaseCandidate, PayloadEnvelope]]:
+    ) -> list[tuple[SaorReleaseCandidate, WorkEnvelope]]:
         request_count = self.active_requests(endpoint_id)
         work = self.active_work(endpoint_id)
         offsets: dict[str, int] = {}

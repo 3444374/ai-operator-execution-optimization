@@ -17,7 +17,6 @@ from .ray_scheduler import (
     _run_dynamic_scheduler,
     _run_per_endpoint_dynamic_scheduler,
     _run_static_scheduler,
-    _static_scheduler_options,
 )
 from .batch_envelopes import _batch_envelopes
 
@@ -103,7 +102,6 @@ def submit_with_backpressure(
     submission_state: ActorSubmissionState | None = None,
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
-    shared_credit_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     actor_pools, endpoint_urls = _resolve_actor_pool_inputs(
         actor_pools,
@@ -203,20 +201,13 @@ def submit_with_backpressure(
                 scheduler_options,
             )
     else:
-        static_options = _static_scheduler_options(
-            ray_module,
-            endpoint_ids,
-            max_inflight,
-            scheduler_options,
-            shared_credit_config,
-        )
         results, metrics = _run_static_scheduler(
             ray_module,
             envelopes,
             topology,
             submitters,
             max_inflight,
-            static_options,
+            scheduler_options,
         )
     metrics.update(
         {
@@ -342,7 +333,6 @@ def submit_ray_tasks(
     completion_prompt_token_overhead: int = 0,
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
-    shared_credit_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     task_config = _RemoteTaskConfig(
         operator=operator,
@@ -434,18 +424,11 @@ def submit_ray_tasks(
             adaptive_config,
             scheduler_options,
         )
-    static_options = _static_scheduler_options(
-        ray_module,
-        endpoint_ids,
-        max_inflight,
-        scheduler_options,
-        shared_credit_config,
-    )
     return _run_static_scheduler(
         ray_module,
         envelopes,
         topology,
         submitters,
         max_inflight,
-        static_options,
+        scheduler_options,
     )
