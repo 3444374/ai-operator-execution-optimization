@@ -958,7 +958,8 @@
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
         "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
-        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz",
+        "code/src/data/materializers/payloads.py": "historical_sources/81dfc727/code/src/data/materializers/payloads.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1441,6 +1442,11 @@
           "encoding": "gzip",
           "decoded_bytes": 59,
           "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
+        },
+        "code/src/data/materializers/payloads.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3453,
+          "archive_sha256": "4512947c8d70fe6cf77681114fa624c2354be1f0b5cbba74c7e2cfb6bae45110"
         }
       }
     },
@@ -2427,7 +2433,8 @@
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
         "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
-        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz",
+        "code/src/data/materializers/payloads.py": "historical_sources/81dfc727/code/src/data/materializers/payloads.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2910,6 +2917,11 @@
           "encoding": "gzip",
           "decoded_bytes": 59,
           "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
+        },
+        "code/src/data/materializers/payloads.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3453,
+          "archive_sha256": "4512947c8d70fe6cf77681114fa624c2354be1f0b5cbba74c7e2cfb6bae45110"
         }
       }
     },
@@ -3906,7 +3918,8 @@
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
         "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
-        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz",
+        "code/src/data/materializers/payloads.py": "historical_sources/81dfc727/code/src/data/materializers/payloads.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4389,6 +4402,11 @@
           "encoding": "gzip",
           "decoded_bytes": 59,
           "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
+        },
+        "code/src/data/materializers/payloads.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3453,
+          "archive_sha256": "4512947c8d70fe6cf77681114fa624c2354be1f0b5cbba74c7e2cfb6bae45110"
         }
       }
     },
@@ -5387,7 +5405,8 @@
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
         "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
-        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz",
+        "code/src/data/materializers/payloads.py": "historical_sources/81dfc727/code/src/data/materializers/payloads.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5875,6 +5894,11 @@
           "encoding": "gzip",
           "decoded_bytes": 59,
           "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
+        },
+        "code/src/data/materializers/payloads.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3453,
+          "archive_sha256": "4512947c8d70fe6cf77681114fa624c2354be1f0b5cbba74c7e2cfb6bae45110"
         }
       }
     },
@@ -6878,7 +6902,8 @@
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
         "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
-        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz",
+        "code/src/data/materializers/payloads.py": "historical_sources/81dfc727/code/src/data/materializers/payloads.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7366,6 +7391,11 @@
           "encoding": "gzip",
           "decoded_bytes": 59,
           "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
+        },
+        "code/src/data/materializers/payloads.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3453,
+          "archive_sha256": "4512947c8d70fe6cf77681114fa624c2354be1f0b5cbba74c7e2cfb6bae45110"
         }
       }
     }

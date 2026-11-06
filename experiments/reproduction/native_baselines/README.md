@@ -3,6 +3,15 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="payload-daft-runtime-source"></a>
+## 二进制物化直接使用共享 Daft runtime 时的来源
+
+`data/materializers/payloads.py` 直接从 `infrastructure.daft_runtime` 导入已有运行配置函数，
+不再经文本组织原型转借；完整输入、字节表示、批次和已有 native 线程配置保持。
+五份投影改读[准确 81df 原件](historical_sources/81dfc727/code/src/data/materializers/payloads.py.gz)，
+只增加五条来源及 gzip 格式记录，原预期摘要、投影身份、来源版本和已有映射保持。
+文本组织研究原型和其排序、packing、cost 组件未随本次导入整理删除。
+
 <a id="retired-profiler-application"></a>
 ## 旧 PG 画像应用的来源
 
