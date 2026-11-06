@@ -3,6 +3,7 @@ import os
 import pickle
 import subprocess
 import sys
+import tempfile
 import unittest
 
 
@@ -42,6 +43,37 @@ assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
             old = ('csrc.execution_provider.adapters.lotus_records_core\n'+name+'\n.').encode()
             self.assertIs(pickle.loads(old), value)
             self.assertIs(pickle.loads(pickle.dumps(value, protocol=0)), value)
+
+
+@unittest.skipUnless(os.environ.get('SEMLOOM_REAL_RAY_CPU') == '1', 'explicit real Ray CPU driver required')
+class RealRayAdapterSerializationTests(unittest.TestCase):
+    def test_production_objects_round_trip_through_a_real_worker(self):
+        import ray
+        from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, RecordsCapacityBudget
+        from src.execution_provider.adapters.records_model_adapter import _ActorOwner, _CoreModelActor
+        from src.execution_provider.adapters.records_transport import _RecordTransport, _await_result, _check, close_prepared_core
+
+        if ray.is_initialized():
+            raise RuntimeError('serialization regression requires its own fresh driver')
+        values = (CoreRecordsCapacity, RecordsCapacityBudget, _ActorOwner, _CoreModelActor,
+                  _RecordTransport, _await_result, _check, close_prepared_core)
+        with tempfile.TemporaryDirectory(prefix='ras-',
+                dir=os.environ.get('SEMLOOM_REAL_RAY_TMPDIR', '/tmp')) as directory:
+            try:
+                ray.init(address='local', num_cpus=1, num_gpus=0, include_dashboard=False, log_to_driver=False,
+                    _temp_dir=directory, object_store_memory=80*1024**2)
+
+                @ray.remote(num_cpus=1, max_retries=0)
+                def echo(objects):
+                    return objects
+
+                returned = ray.get(echo.remote(values), timeout=30)
+                self.assertEqual(len(returned), len(values))
+                for expected, actual in zip(values, returned):
+                    with self.subTest(name=expected.__name__):
+                        self.assertIs(actual, expected)
+            finally:
+                ray.shutdown()
 
 
 if __name__ == '__main__':
