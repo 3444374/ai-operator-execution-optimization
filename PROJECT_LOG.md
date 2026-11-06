@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：复用运行身份并保留失败清理重试
+
+[普通／prepared身份与重试](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)
+共用原ModelRuntimeBinding，独审找到的旧字段消费者已修，准确c9aa纯内存复核保持unknown额度；旧四项、增量一项及rolling导入中断分别记录，软件IPC继续补验。
+当前源码／脚本较af63减223行，测试增92行，迁移不算算法删除；没有为一次重复profile解析增加构造分支或引入新资源框架。
+
 ## 2026-11-07：请求组批与到达回放研究分开
 
 [生产构建器与回放原型](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)

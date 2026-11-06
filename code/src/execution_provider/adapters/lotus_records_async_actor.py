@@ -131,8 +131,8 @@ class AsyncRecordsActorOwner(_ActorOwner):
         return AsyncCoreModelActor
 
     def _model_close_timeout_s(self):
-        # Child API shutdown owns ten seconds, followed by bounded task/IPC
-        # teardown. Match the private process owner's complete close window.
+        # Actor RPC allowance covers private-engine close and task/IPC teardown.
+        # The private child uses its caller's actual API deadline.
         return 15.0
 
     def execution_metadata(self):

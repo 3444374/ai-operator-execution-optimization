@@ -2090,3 +2090,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [请求组批与到达回放研究分开](diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)
 记录4b80到b4fa的同五十项CPU、原算法／Builder身份、冷导入和二十条历史读取；组合保留新增来源并实际读取四十条，未重复行为套件或新增真实运行资格。
+
+[运行身份绑定复用与失败启动重试](diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)
+记录2b21原四项CPU、独审发现的旧字段恢复回归、c9aa新增一项与独立原入口复核；unknown额度保持，原失败／导入中断分列，六项实际软件IPC另待验证。
