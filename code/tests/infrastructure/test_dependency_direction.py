@@ -134,7 +134,7 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
             results.append(run.stdout)
         self.assertEqual(results[0].split("\n\n", 1)[1], results[1].split("\n\n", 1)[1])
 
-    def test_kalypso_compatibility_dispatch_restores_comparison_registry_after_success_or_error(self):
+    def test_kalypso_dispatch_keeps_default_backends_on_success_or_error(self):
         from src.baselines.text.frameworks.kalypso_native import adapter
         from src.experiments import native_query_lifecycle as sessions
         original = sessions.BACKENDS, sessions.RESIDENT
@@ -143,7 +143,7 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
             def __init__(self, cfg, unit, path):
                 self.cfg, self.unit, self.path = cfg, unit, path
         def run(queries, factory, output, **kwargs):
-            self.assertIn("kalypso-native", sessions.BACKENDS)
+            self.assertNotIn("kalypso-native", sessions.BACKENDS)
             self.assertIsInstance(factory(output, None), Driver)
             return {"queries": [], "status": "passed"}
         with patch.object(adapter, "load_dependencies"), \
@@ -160,3 +160,64 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
         self.assertIs(caught.exception, error)
         self.assertIs(sessions.BACKENDS, original[0])
         self.assertIs(sessions.RESIDENT, original[1])
+
+    def test_kalypso_observer_setup_failure_does_not_register_a_backend(self):
+        from src.baselines.text.frameworks.kalypso_native import adapter
+        from src.experiments import native_query_lifecycle as sessions
+        from src.observability import native_query_timing
+        original = sessions.BACKENDS, sessions.RESIDENT
+        error = ValueError('fixture observer setup failure')
+        cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
+        with patch.object(sessions, 'BACKENDS', original[0]), \
+             patch.object(sessions, 'RESIDENT', original[1]), \
+             patch.object(adapter, 'load_dependencies'), \
+             patch.object(native_query_timing, 'ObservationStore', side_effect=error):
+            with self.assertRaises(ValueError) as caught:
+                adapter.run_attached(cfg, {'queries': []}, Path('unused-fixture-output'))
+            self.assertIs(caught.exception, error)
+            self.assertEqual((sessions.BACKENDS, sessions.RESIDENT), original)
+
+    def test_overlapping_kalypso_sessions_keep_default_backend_support(self):
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        from src.baselines.text.frameworks.kalypso_native import adapter
+        from src.experiments import native_query_lifecycle as sessions
+        original = sessions.BACKENDS, sessions.RESIDENT
+        entered = {name: threading.Event() for name in ('first', 'second')}
+        release = {name: threading.Event() for name in entered}
+        class Driver:
+            def __init__(self, cfg, unit, directory):
+                self.name = unit['name']
+            def start(self):
+                entered[self.name].set()
+                if not release[self.name].wait(5):
+                    raise TimeoutError('fixture session was not released')
+                return {'engine_uid': self.name, 'physical_model': False}
+            def query(self, spec, emit):
+                emit('result_ready')
+                return {'status': 'completed'}
+            def close(self):
+                return {'status': 'closed'}
+        cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
+        query = dict(query_id='fixture', task='fixture', phase='measured')
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(sessions, 'BACKENDS', original[0]), \
+             patch.object(sessions, 'RESIDENT', original[1]), \
+             patch.object(adapter, 'load_dependencies'), \
+             patch.object(adapter, 'NativeQueryDriver', Driver), \
+             ThreadPoolExecutor(max_workers=2) as pool:
+            try:
+                first = pool.submit(adapter.run_attached, cfg,
+                    {'name': 'first', 'queries': [query]}, Path(directory) / 'first')
+                self.assertTrue(entered['first'].wait(5))
+                second = pool.submit(adapter.run_attached, cfg,
+                    {'name': 'second', 'queries': [query]}, Path(directory) / 'second')
+                self.assertTrue(entered['second'].wait(5))
+                release['first'].set()
+                self.assertEqual(first.result(timeout=5)['status'], 'completed')
+                release['second'].set()
+                self.assertEqual(second.result(timeout=5)['status'], 'completed')
+            finally:
+                for event in release.values():
+                    event.set()
+            self.assertEqual((sessions.BACKENDS, sessions.RESIDENT), original)
