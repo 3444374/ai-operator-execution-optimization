@@ -604,10 +604,12 @@ def install_model():
     @functools.wraps(convert)
     def converted(identity,output,*a,**kw):
         result=convert(identity,output,*a,**kw)
-        metrics=getattr(output,'metrics',None)
-        measured={key:getattr(metrics,key,None) for key in ('arrival_time','queued_ts','scheduled_ts','first_token_ts','last_token_ts','num_generation_tokens')}
-        emit('native_result',identities=ids([identity]),request_id=output.request_id,engine_uid=result['engine_uid'],
-             metrics=measured,prompt_tokens=result.get('prompt_tokens'),output_tokens=result.get('completion_tokens'))
+        try:
+            metrics=getattr(output,'metrics',None)
+            measured={key:getattr(metrics,key,None) for key in ('arrival_time','queued_ts','scheduled_ts','first_token_ts','last_token_ts','num_generation_tokens')}
+            emit('native_result',identities=ids([identity]),request_id=output.request_id,engine_uid=result['engine_uid'],
+                 metrics=measured,prompt_tokens=result.get('prompt_tokens'),output_tokens=result.get('completion_tokens'))
+        except Exception:pass
         return result
     common.result_from_output=converted
     @functools.wraps(close)

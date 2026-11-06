@@ -17,7 +17,10 @@ class BootstrapTests(unittest.TestCase):
     def test_record_observer_observes_actual_conversion_without_changing_results_or_errors(self):
         self.assert_conversion(record_observer=True)
 
-    def assert_conversion(self, *, record_observer):
+    def test_optional_metric_error_does_not_change_successful_actual_conversion(self):
+        self.assert_conversion(record_observer=True, broken_metrics=True)
+
+    def assert_conversion(self, *, record_observer, broken_metrics=False):
         from types import SimpleNamespace
         from src.serving.backends import vllm_async_engine as serving, vllm_engine as legacy
         from src.serving.backends import vllm_protocol as protocol
@@ -39,6 +42,11 @@ class BootstrapTests(unittest.TestCase):
         outputs={finish:SimpleNamespace(request_id='native-'+finish,finished=True,prompt_token_ids=[1],
             outputs=[SimpleNamespace(index=0,token_ids=[2],text='fixture',finish_reason=finish)])
             for finish in ('stop','abort')}
+        if broken_metrics:
+            class Metrics:
+                @property
+                def arrival_time(self):raise LookupError('optional observer metrics')
+            outputs['stop'].metrics=Metrics()
         def convert(output):
             return owner._convert(occurrence,output,output.request_id,[1],protocol.GenerationSpec(),1.,None)
         business_error=LookupError('fixture native result property')
@@ -82,9 +90,11 @@ class BootstrapTests(unittest.TestCase):
                     for line in file.read_text().splitlines()]
         final_event='native_api_native_final_observed' if record_observer else 'native_final_observed'
         finals={row['request_id']:row for row in events if row['event']==final_event}
-        self.assertEqual(set(finals),{'native-stop','native-abort'})
-        self.assertEqual(finals['native-stop']['status'],'succeeded')
+        self.assertEqual(set(finals),{'native-abort'} if broken_metrics else {'native-stop','native-abort'})
+        if not broken_metrics:self.assertEqual(finals['native-stop']['status'],'succeeded')
         self.assertEqual(finals['native-abort']['status'],'failed')
+        self.assertEqual(after['stop']['status'],'succeeded')
+        self.assertTrue(after['stop']['engine_terminal_confirmed'])
         self.assertEqual(after['abort']['status'],'unknown')
         self.assertFalse(after['abort']['engine_terminal_confirmed'])
 
