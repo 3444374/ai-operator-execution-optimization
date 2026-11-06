@@ -939,7 +939,16 @@
         "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
         "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
         "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
-        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz",
+        "code/scripts/profiling/map_observation_probe.py": "historical_sources/e5e65fdb/code/scripts/profiling/map_observation_probe.py.gz",
+        "code/src/execution_provider/adapters/async_fixed_model.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/async_fixed_model.py.gz",
+        "code/src/execution_provider/adapters/completion_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/completion_response.py.gz",
+        "code/src/execution_provider/adapters/full_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/full_response.py.gz",
+        "code/src/execution_provider/adapters/incremental_session.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/incremental_session.py.gz",
+        "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
+        "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
+        "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1327,6 +1336,51 @@
           "encoding": "gzip",
           "decoded_bytes": 8271,
           "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
+        },
+        "code/scripts/profiling/map_observation_probe.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 160,
+          "archive_sha256": "e546fc6480d50c33f43f802fc2f4113a969c5686f4f632f69ad6b5113fd3be39"
+        },
+        "code/src/execution_provider/adapters/async_fixed_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6200,
+          "archive_sha256": "788b987d20a6ad1e11ea968800327fdc7f2638362f89b301d7aeab4233d236b0"
+        },
+        "code/src/execution_provider/adapters/completion_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2021,
+          "archive_sha256": "7a0943b849df3fe20dece5a9abba986d52442f357648f019c326fe290851e378"
+        },
+        "code/src/execution_provider/adapters/full_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3991,
+          "archive_sha256": "37cca41fb7d0d452e5950768ee460cae4322fe90418607013a1286386e04bb35"
+        },
+        "code/src/execution_provider/adapters/incremental_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6809,
+          "archive_sha256": "2714c6d67894426f124f676f58efbba6000c84a8e647a9fe04590f7c427e42f2"
+        },
+        "code/src/execution_provider/adapters/map_preparation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 16065,
+          "archive_sha256": "fddca944d7a4a63526f07f7eadbbcf89425fd7e450b31777451e794fabb1e44f"
+        },
+        "code/src/execution_provider/wire/map_codec.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17732,
+          "archive_sha256": "7fcce2b17f1bc12e9a2813b02ac20fa4500b0dab411563e8f3e0fd5c5a11b4b7"
+        },
+        "code/src/execution_provider/wire/v5.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1806,
+          "archive_sha256": "23aa6589d88451f172edf576f33ef1a9c1ba70578bb0275b0bac8fd694d5dd54"
+        },
+        "code/src/execution_provider/wire/v6.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1578,
+          "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
         }
       }
     },
@@ -2294,7 +2348,16 @@
         "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
         "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
         "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
-        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz",
+        "code/scripts/profiling/map_observation_probe.py": "historical_sources/e5e65fdb/code/scripts/profiling/map_observation_probe.py.gz",
+        "code/src/execution_provider/adapters/async_fixed_model.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/async_fixed_model.py.gz",
+        "code/src/execution_provider/adapters/completion_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/completion_response.py.gz",
+        "code/src/execution_provider/adapters/full_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/full_response.py.gz",
+        "code/src/execution_provider/adapters/incremental_session.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/incremental_session.py.gz",
+        "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
+        "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
+        "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2682,6 +2745,51 @@
           "encoding": "gzip",
           "decoded_bytes": 8271,
           "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
+        },
+        "code/scripts/profiling/map_observation_probe.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 160,
+          "archive_sha256": "e546fc6480d50c33f43f802fc2f4113a969c5686f4f632f69ad6b5113fd3be39"
+        },
+        "code/src/execution_provider/adapters/async_fixed_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6200,
+          "archive_sha256": "788b987d20a6ad1e11ea968800327fdc7f2638362f89b301d7aeab4233d236b0"
+        },
+        "code/src/execution_provider/adapters/completion_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2021,
+          "archive_sha256": "7a0943b849df3fe20dece5a9abba986d52442f357648f019c326fe290851e378"
+        },
+        "code/src/execution_provider/adapters/full_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3991,
+          "archive_sha256": "37cca41fb7d0d452e5950768ee460cae4322fe90418607013a1286386e04bb35"
+        },
+        "code/src/execution_provider/adapters/incremental_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6809,
+          "archive_sha256": "2714c6d67894426f124f676f58efbba6000c84a8e647a9fe04590f7c427e42f2"
+        },
+        "code/src/execution_provider/adapters/map_preparation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 16065,
+          "archive_sha256": "fddca944d7a4a63526f07f7eadbbcf89425fd7e450b31777451e794fabb1e44f"
+        },
+        "code/src/execution_provider/wire/map_codec.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17732,
+          "archive_sha256": "7fcce2b17f1bc12e9a2813b02ac20fa4500b0dab411563e8f3e0fd5c5a11b4b7"
+        },
+        "code/src/execution_provider/wire/v5.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1806,
+          "archive_sha256": "23aa6589d88451f172edf576f33ef1a9c1ba70578bb0275b0bac8fd694d5dd54"
+        },
+        "code/src/execution_provider/wire/v6.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1578,
+          "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
         }
       }
     },
@@ -3659,7 +3767,16 @@
         "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
         "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
         "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
-        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz",
+        "code/scripts/profiling/map_observation_probe.py": "historical_sources/e5e65fdb/code/scripts/profiling/map_observation_probe.py.gz",
+        "code/src/execution_provider/adapters/async_fixed_model.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/async_fixed_model.py.gz",
+        "code/src/execution_provider/adapters/completion_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/completion_response.py.gz",
+        "code/src/execution_provider/adapters/full_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/full_response.py.gz",
+        "code/src/execution_provider/adapters/incremental_session.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/incremental_session.py.gz",
+        "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
+        "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
+        "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4047,6 +4164,51 @@
           "encoding": "gzip",
           "decoded_bytes": 8271,
           "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
+        },
+        "code/scripts/profiling/map_observation_probe.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 160,
+          "archive_sha256": "e546fc6480d50c33f43f802fc2f4113a969c5686f4f632f69ad6b5113fd3be39"
+        },
+        "code/src/execution_provider/adapters/async_fixed_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6200,
+          "archive_sha256": "788b987d20a6ad1e11ea968800327fdc7f2638362f89b301d7aeab4233d236b0"
+        },
+        "code/src/execution_provider/adapters/completion_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2021,
+          "archive_sha256": "7a0943b849df3fe20dece5a9abba986d52442f357648f019c326fe290851e378"
+        },
+        "code/src/execution_provider/adapters/full_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3991,
+          "archive_sha256": "37cca41fb7d0d452e5950768ee460cae4322fe90418607013a1286386e04bb35"
+        },
+        "code/src/execution_provider/adapters/incremental_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6809,
+          "archive_sha256": "2714c6d67894426f124f676f58efbba6000c84a8e647a9fe04590f7c427e42f2"
+        },
+        "code/src/execution_provider/adapters/map_preparation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 16065,
+          "archive_sha256": "fddca944d7a4a63526f07f7eadbbcf89425fd7e450b31777451e794fabb1e44f"
+        },
+        "code/src/execution_provider/wire/map_codec.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17732,
+          "archive_sha256": "7fcce2b17f1bc12e9a2813b02ac20fa4500b0dab411563e8f3e0fd5c5a11b4b7"
+        },
+        "code/src/execution_provider/wire/v5.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1806,
+          "archive_sha256": "23aa6589d88451f172edf576f33ef1a9c1ba70578bb0275b0bac8fd694d5dd54"
+        },
+        "code/src/execution_provider/wire/v6.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1578,
+          "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
         }
       }
     },
@@ -5026,7 +5188,16 @@
         "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
         "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
         "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
-        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz",
+        "code/scripts/profiling/map_observation_probe.py": "historical_sources/e5e65fdb/code/scripts/profiling/map_observation_probe.py.gz",
+        "code/src/execution_provider/adapters/async_fixed_model.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/async_fixed_model.py.gz",
+        "code/src/execution_provider/adapters/completion_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/completion_response.py.gz",
+        "code/src/execution_provider/adapters/full_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/full_response.py.gz",
+        "code/src/execution_provider/adapters/incremental_session.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/incremental_session.py.gz",
+        "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
+        "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
+        "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5419,6 +5590,51 @@
           "encoding": "gzip",
           "decoded_bytes": 8271,
           "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
+        },
+        "code/scripts/profiling/map_observation_probe.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 160,
+          "archive_sha256": "e546fc6480d50c33f43f802fc2f4113a969c5686f4f632f69ad6b5113fd3be39"
+        },
+        "code/src/execution_provider/adapters/async_fixed_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6200,
+          "archive_sha256": "788b987d20a6ad1e11ea968800327fdc7f2638362f89b301d7aeab4233d236b0"
+        },
+        "code/src/execution_provider/adapters/completion_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2021,
+          "archive_sha256": "7a0943b849df3fe20dece5a9abba986d52442f357648f019c326fe290851e378"
+        },
+        "code/src/execution_provider/adapters/full_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3991,
+          "archive_sha256": "37cca41fb7d0d452e5950768ee460cae4322fe90418607013a1286386e04bb35"
+        },
+        "code/src/execution_provider/adapters/incremental_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6809,
+          "archive_sha256": "2714c6d67894426f124f676f58efbba6000c84a8e647a9fe04590f7c427e42f2"
+        },
+        "code/src/execution_provider/adapters/map_preparation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 16065,
+          "archive_sha256": "fddca944d7a4a63526f07f7eadbbcf89425fd7e450b31777451e794fabb1e44f"
+        },
+        "code/src/execution_provider/wire/map_codec.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17732,
+          "archive_sha256": "7fcce2b17f1bc12e9a2813b02ac20fa4500b0dab411563e8f3e0fd5c5a11b4b7"
+        },
+        "code/src/execution_provider/wire/v5.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1806,
+          "archive_sha256": "23aa6589d88451f172edf576f33ef1a9c1ba70578bb0275b0bac8fd694d5dd54"
+        },
+        "code/src/execution_provider/wire/v6.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1578,
+          "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
         }
       }
     },
@@ -6402,7 +6618,16 @@
         "code/src/serving/backends/common.py": "historical_sources/e5e65fdb/code/src/serving/backends/common.py.gz",
         "code/src/baselines/text/products/direct_client.py": "historical_sources/e5e65fdb/code/src/baselines/text/products/direct_client.py.gz",
         "code/scripts/baselines/request_equivalence_gate.py": "historical_sources/e5e65fdb/code/scripts/baselines/request_equivalence_gate.py.gz",
-        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz"
+        "code/src/baselines/common/provenance.py": "historical_sources/e5e65fdb/code/src/baselines/common/provenance.py.gz",
+        "code/scripts/profiling/map_observation_probe.py": "historical_sources/e5e65fdb/code/scripts/profiling/map_observation_probe.py.gz",
+        "code/src/execution_provider/adapters/async_fixed_model.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/async_fixed_model.py.gz",
+        "code/src/execution_provider/adapters/completion_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/completion_response.py.gz",
+        "code/src/execution_provider/adapters/full_response.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/full_response.py.gz",
+        "code/src/execution_provider/adapters/incremental_session.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/incremental_session.py.gz",
+        "code/src/execution_provider/adapters/map_preparation.py": "historical_sources/e5e65fdb/code/src/execution_provider/adapters/map_preparation.py.gz",
+        "code/src/execution_provider/wire/map_codec.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/map_codec.py.gz",
+        "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
+        "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6790,6 +7015,51 @@
           "encoding": "gzip",
           "decoded_bytes": 8271,
           "archive_sha256": "057ba94f1b7dd1e415e4219f57a287236c3f7d740147e3e5a1994e818e550c4d"
+        },
+        "code/scripts/profiling/map_observation_probe.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 160,
+          "archive_sha256": "e546fc6480d50c33f43f802fc2f4113a969c5686f4f632f69ad6b5113fd3be39"
+        },
+        "code/src/execution_provider/adapters/async_fixed_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6200,
+          "archive_sha256": "788b987d20a6ad1e11ea968800327fdc7f2638362f89b301d7aeab4233d236b0"
+        },
+        "code/src/execution_provider/adapters/completion_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2021,
+          "archive_sha256": "7a0943b849df3fe20dece5a9abba986d52442f357648f019c326fe290851e378"
+        },
+        "code/src/execution_provider/adapters/full_response.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3991,
+          "archive_sha256": "37cca41fb7d0d452e5950768ee460cae4322fe90418607013a1286386e04bb35"
+        },
+        "code/src/execution_provider/adapters/incremental_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6809,
+          "archive_sha256": "2714c6d67894426f124f676f58efbba6000c84a8e647a9fe04590f7c427e42f2"
+        },
+        "code/src/execution_provider/adapters/map_preparation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 16065,
+          "archive_sha256": "fddca944d7a4a63526f07f7eadbbcf89425fd7e450b31777451e794fabb1e44f"
+        },
+        "code/src/execution_provider/wire/map_codec.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 17732,
+          "archive_sha256": "7fcce2b17f1bc12e9a2813b02ac20fa4500b0dab411563e8f3e0fd5c5a11b4b7"
+        },
+        "code/src/execution_provider/wire/v5.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1806,
+          "archive_sha256": "23aa6589d88451f172edf576f33ef1a9c1ba70578bb0275b0bac8fd694d5dd54"
+        },
+        "code/src/execution_provider/wire/v6.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1578,
+          "archive_sha256": "4cef3c8176be1d2dafc6ba35033ab6876f996d034453c8d11b980cefd3c59ebd"
         }
       }
     }

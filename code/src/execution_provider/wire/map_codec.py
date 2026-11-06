@@ -25,8 +25,6 @@ from .framing import MAX_FRAME_BYTES, ProtocolError, has_duplicate_fields
 PROTOCOL_VERSION = 5
 PLAN_SCHEMA_VERSION = 4
 GOLDEN_EXECUTION_ID = "semloom.provider.golden.uds.v5"
-FIXED_EXECUTION_ID = "semloom.provider.openai-compatible-fixed.uds.v5"
-ASYNC_EXECUTION_ID = "semloom.provider.incremental-map.uds.v6"
 MAX_INFLIGHT_TASKS = 1
 
 _OPEN_VALUES = {
@@ -140,11 +138,7 @@ def provider_execution_digest(
     model_id: str, *, provider_execution_id: str = GOLDEN_EXECUTION_ID, protocol_version: int = 5
 ) -> str:
     SemanticMapPlan("validation", model_id, 1)
-    allowed = {
-        5: (GOLDEN_EXECUTION_ID, FIXED_EXECUTION_ID),
-        6: (ASYNC_EXECUTION_ID,),
-    }
-    if provider_execution_id not in allowed.get(protocol_version, ()):
+    if protocol_version != 5 or provider_execution_id != GOLDEN_EXECUTION_ID:
         raise ValueError("unsupported Map execution identity")
     return hashlib.sha256(
         b"semloom-provider-execution-v5\0"

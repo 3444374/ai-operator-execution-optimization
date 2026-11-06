@@ -1,102 +1,42 @@
-# Native task execution
+# Prepared task execution
 
-The fixed HTTP service selection and its research launcher have been retired.
-Ordinary records use local IPC/native engines. The remaining internal HTTP builders
-and transports below are being removed separately from the shared typed image/Core
-and opaque task/session interfaces; they are not a replacement records path.
-
-This module accepts prepared single-model request bytes through the existing Core.
-It does not interpret prompts, change generation parameters, or replace a supplier's parser.
-The implementation is adopted from integration source `671a22dd4285319209396ece3572bb89ff5ab74e`;
-[main qualification](../../../../experiments/results/diagnostics/main_foundation_20261015/README.md)
-records the composed main source and the checks it actually passed.
+Ordinary records use local model IPC and native engines. Typed image requests use
+[ImageGateway](../image_gateway.py), [image frames](../image_connection.py) and
+[image_execution](image_execution.py). The old fixed-endpoint HTTP factories,
+transports, Map configuration and v6 transport protocol are retired. Their exact
+source, tests and historical measurements remain available through the
+[complete recovery notes](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters).
+LOTUS VLM/MMQA, Kalypso and the official Ray HTTP baseline retain their own native connections.
 
 ## Python consumer
 
-`prepare_native_task` produces an `OfferedTask` with call, row and stage identity.
-Its default work estimate counts requests; it is not a token or GPU cost estimate.
-`build_native_execution(config, physical=RayMapConfig(...))` uses existing Daft payload batches
-and Ray HTTP workers. `physical=None` selects the local diagnostic transport.
-The builder retains the existing capacity and scheduling policies. Native input defaults to 1 MiB.
-`max_request_bytes` may explicitly select at most 8 MiB; a nondefault value requires an explicit
-`input_bytes` total at least as large. Ray window, object and optional preparation capacities must
-fit that choice before transport creation. PG public factories and wire framing remain at 1 MiB.
-The three private assembly factories form one capacity closure;
-[boundary and lifecycle qualification](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)
-keeps logical input, prepared suffix, SDK/proxy copies and process RSS distinct.
+[IncrementalExecution](incremental_execution.py) holds an existing Core, the caller's
+prepared-task function and service cleanup callback. Its original Job allocation
+and flow partition methods remain. It imports no fixed HTTP transport and does not
+supply a backend or invent an extra request queue.
 
-`FixedModelConfig.timeout_ms` is an explicitly supplied positive integer, with no five-minute
-ceiling. Synchronous and asynchronous fixed-endpoint HTTP requests use that value.
-The fixed/native builder derives its default backend and drain waits as HTTP timeout plus
-one second; Ray HTTP worker close uses that same duration. Control-frame and startup waits
-and the records query duration have their own settings.
+[prepare_native_task](native_tasks.py) produces an OfferedTask carrying caller-owned
+bytes, call/row/stage identity and a declared work description. The default estimate
+counts requests; it is not a token or GPU cost estimate. Its default complete-result
+reservation remains 1 MiB, now named by the existing frame-size constant rather than
+an HTTP model configuration. Core retains its independent item and total capacities.
 
-`FixedModelConfig.max_response_bytes` defaults to 1 MiB and accepts 1 byte through 8 MiB.
-For native execution it selects `SessionLimits.item_result_bytes`; selecting more than 1 MiB
-requires an explicit `result_bytes` total fitting at least one complete result before transport
-creation. A producer still declares each task's `max_result_bytes` within that item capacity.
-Complete HTTP results charge metadata and body together, and stay charged until consumer release.
-The synchronous `OpenAICompatibleFixedAdapter` instead applies the same configuration field to
-the raw HTTP body it reads. Overflow reports an error and keeps unknown remote work charged.
-Increasing the total alone retains the default per-item capacity. The old PG factory still
-rejects configured responses above 1 MiB; its fixed HTTP service selection has been retired.
-Worker identity includes the configured response capacity, so a changed capacity requires a
-matching worker pool. [CPU configuration cases](../../../tests/execution_provider/test_http_configuration.py)
-use in-memory responses and Core; actual Ray, model and PG execution require separate checks.
+NativeTaskSession transfers only the accepted prefix, keeps the suffix with the
+caller, and returns opaque completion-order result bytes. The consumer discards the
+bytes and releases the result lease. Empty releases retain progress; source EOF alone
+does not release a result or seal a method that can produce continuation tasks.
+NativeQueryJob reuses one existing grant across its declared flows and closes that
+Job after its consumers stop. Cancellation does not prove remote completion.
 
-The retired HTTP Map connection owner, query registration and its dedicated socket tests are
-recoverable from the [complete historical source](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd).
-Their organization/quota results retain that source identity; they are not current image tests.
-Typed image connections now use [ImageGateway](../image_gateway.py), the actual
-[image frame reader](../image_connection.py), and [connection runtime](../gateway_runtime.py).
-The v7 image protocol, method result reservations and Core cancellation remain in use.
-Internal HTTP builders and the HTTP-only Map codec/configuration are still pending removal;
-image construction still imports the mixed IncrementalExecution module until that next slice.
+Service cleanup belongs to the injected owner. Closing a flow does not close the
+shared backend; unknown work remains accounted for until Core receives an actual
+terminal. The generic task API does not add retries or a replacement HTTP/IPC gateway.
+The existing Image backend owns its typed prepare/model lifecycle and worker cleanup.
 
-`NativeTaskSession` registers a query Job and one operator flow. `offer` transfers only its
-accepted prefix, leaving the caller responsible for the suffix; offering sends no request.
-`advance` returns completion-order deliveries, and `wait` uses Core progress and deadlines.
-The consumer decodes a delivery, discards the returned bytes, then releases its lease.
-Results remain charged until that release. Empty releases preserve the progress generation;
-invalid batches and closed handles remain errors.
-
-`NativeQueryJob` borrows one existing query grant across declared operator flows.
-Closing a borrowed session keeps the query grant. The query owner closes the Job after its
-consumers stop. `request_cancel` is the cross-thread cancellation signal; the owner thread
-performs other Core mutations. Source EOF is not sufficient to seal a method that can still
-produce continuation tasks.
-
-Closing a flow does not close the shared backend. Unknown remote work remains charged;
-the service owner continues to advance/reap the Engine until it can settle the work.
-`execution.close()` returns false while any Job or task remains. Identified Ray payload
-failures prove that HTTP was not entered and can settle that task; HTTP transport failures,
-worker loss and cancellation alone do not prove remote completion. There is no automatic retry.
-
-## Complete HTTP responses
-
-`FullResponseTransport` carries status, duplicate-preserving header pairs, HTTP version and raw
-body bytes in the existing result reservation. The envelope permits at most 8192 encoded header
-bytes and 128 pairs; `max_result_bytes` covers both header and body. SDK-specific decompression,
-JSON interpretation, usage accounting and error policy belong to the consumer.
-
-`AsyncFixedModelTransport` retains its completion response and HTTP error mapping.
-`RayMapConfig.response_mode` defaults to `completion`; the native builder selects `full`.
-A separately owned native worker pool must also select `full`. Worker identity includes this
-mode, so an incompatible pool cannot be borrowed. Confirmed pre-send failures have no invented
-HTTP status and raise `CompletionAdapterError` when decoded.
-
-Both transports reuse an HTTPX client and connection pool. A standard `CookieJar` belongs to
-one execute task, including redirects within that request. Concurrent calls and later queries
-cannot inherit its cookies. Redirect following remains disabled by default; cancellation
-releases that request's cookie context, and the transport owner closes the client.
-
-These are engineering decisions within the existing Core and transport interfaces.
-[Native lifecycle tests](../../../tests/execution_provider/test_native_tasks.py),
-[HTTPX isolation tests](../../../tests/execution_provider/test_httpx_request_cookies.py),
-[complete response tests](../../../tests/execution_provider/test_full_response.py) and
-[real CPU Ray tests](../../../tests/execution_provider/test_native_ray_integration.py)
-exercise the implementation. Supplier adapters, a complete LOTUS query, GPU benefits and PG
-integration on this composed source require their own qualification.
+The [native SDK HTTPX observer](../../experiments/native_http_observer.py) and
+shared request budgets remain independent of these removed factories. The offline
+SemFilter calibration reader still recognizes its historical profile name; that
+artifact identity does not restore the retired service selection.
 
 ## Optional single-model finite record plans
 

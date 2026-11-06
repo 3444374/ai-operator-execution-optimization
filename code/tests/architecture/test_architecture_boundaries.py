@@ -220,7 +220,7 @@ class RejectResearch(importlib.abc.MetaPathFinder):
             raise AssertionError(f"default execution imported research: {fullname}")
 
 sys.meta_path.insert(0, RejectResearch())
-from src.execution_provider.adapters.incremental_session import IncrementalMapProtocol
+from src.execution_provider.adapters.incremental_execution import IncrementalExecution
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.scheduler_types import SchedulerConfig
 from src.observability.profiling import ray, ray_scheduler

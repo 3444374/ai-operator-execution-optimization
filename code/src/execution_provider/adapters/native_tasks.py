@@ -5,66 +5,19 @@ import threading
 
 from ...planning.work import StageWork, WorkDescriptor
 from ...scheduling.core.session_contract import OfferedTask, SessionSpec, TaskInfo
-from .full_response import FullResponseTransport
-from .incremental_execution import _build_model_execution
-from .model_config import MAX_MODEL_RESPONSE_BYTES
-from .ray_map_transport import RayMapConfig, _ray_transport_options
 from ..wire.framing import MAX_FRAME_BYTES
-
-
-MAX_NATIVE_REQUEST_BYTES = 8 * 1024 * 1024
 
 
 def prepare_native_task(payload: bytes, sequence: int, *, row_sequence: int, call_id: str,
                         stage_id: str = "model", work: WorkDescriptor | None = None,
-                        max_result_bytes: int = MAX_MODEL_RESPONSE_BYTES) -> OfferedTask:
-    # Payload is already the supplier's non-streaming, single-model HTTP body.
-    # In particular, LiteLLM's parameter conversion belongs to its own adapter.
+                        max_result_bytes: int = MAX_FRAME_BYTES) -> OfferedTask:
+    # The caller owns the sealed request bytes and their semantic interpretation.
     if type(payload) is not bytes:
         raise ValueError("native request payload must be bytes")
     if work is None:
         work = WorkDescriptor((StageWork("model", 1, "work_units"),), "model", "request-count")
     return OfferedTask(sequence, payload, work.primary.units, max_result_bytes,
                        info=TaskInfo(call_id, row_sequence, stage_id, work))
-
-
-def build_native_execution(config, *, physical: RayMapConfig | None, execute=None,
-                           transport_factory=None, max_request_bytes=MAX_FRAME_BYTES, **options):
-    """Use the declared Ray payload backend; physical=None selects a local diagnostic."""
-    if type(max_request_bytes) is not int or not 1 <= max_request_bytes <= MAX_NATIVE_REQUEST_BYTES:
-        raise ValueError("native request capacity must be between one byte and eight MiB")
-    if 'item_input_bytes' in options:
-        raise ValueError("native item capacity is selected only by max_request_bytes")
-    if 'item_result_bytes' in options:
-        raise ValueError("native item result capacity comes from max_response_bytes in model configuration")
-    if max_request_bytes != MAX_FRAME_BYTES:
-        total = options.get('input_bytes')
-        if type(total) is not int or total < max_request_bytes:
-            raise ValueError("nondefault native request capacity requires explicit total input_bytes fitting one item")
-    if config.max_response_bytes > MAX_MODEL_RESPONSE_BYTES:
-        total = options.get('result_bytes')
-        if type(total) is not int or total < config.max_response_bytes:
-            raise ValueError("larger native response capacity requires explicit total result_bytes fitting one item")
-    if physical is None:
-        execution = _build_model_execution(config, item_input_bytes=max_request_bytes,
-            item_result_bytes=config.max_response_bytes, execute=execute,
-            transport_factory=transport_factory or (None if execute else FullResponseTransport), **options)
-    else:
-        if execute is not None or transport_factory is not None or type(physical) is not RayMapConfig:
-            raise ValueError("native Ray execution requires RayMapConfig and its own transport")
-        selected = _ray_transport_options(replace(physical, response_mode="full"), max_request_bytes)
-        selected.update(options)
-        execution = _build_model_execution(config, item_input_bytes=max_request_bytes,
-            item_result_bytes=config.max_response_bytes, **selected)
-
-    def close(timeout=5.0):
-        # Backend teardown cannot claim service cleanup while a flow or unknown
-        # remote request still owns the Engine's storage/capacity.
-        if execution.engine.capacity.records or execution.engine.jobs.jobs:
-            return False
-        return execution.close(timeout)
-
-    return replace(execution, close=close)
 
 
 class NativeQueryJob:
@@ -112,7 +65,7 @@ class NativeTaskSession:
     """One query/operator flow; no extra task, result, or capacity queue.
 
     The caller supplies finite OfferedTask tuples, retains the unaccepted suffix,
-    consumes Delivery.result with decode_full_response, then releases its LeaseId.
+    consumes the opaque Delivery.result bytes, then releases its LeaseId.
     close is called only after the consumer has discarded all delivery bytes.
     The service owner retains the execution and reaps remote unknown work.
     """

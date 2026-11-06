@@ -537,10 +537,11 @@ SDK、driver 和 limits 继续取已有 `historical_sources/5ff54bfe/` 原件，
 <a id="retired-fixed-local-probe-suites"></a>
 ## 本地固定测量套件的准确来源
 
-`mapped_core_probe` 只编排既有 `map_observation_probe.run_case` 的固定两组对照，
+`mapped_core_probe` 当时只编排 `map_observation_probe.run_case` 的固定两组对照，
 `request_budget_batch_probe` 只测量固定规模的 SQLite 预留循环；两者没有当前生产调用。
 这四份源码退出维护入口，不表示公共 Map／UDS provider、共享预算或观察方法退役。
-现用 `run_case` 的 mapped 模式、`reserve_many`、计数失败和 unknown 处理均保留，
+当时保留的 `run_case` 随后与旧HTTP工厂一起退役，见[后续来源](#fixed-http-adapter-sources)。
+公共 `reserve_many`、计数失败和unknown处理保持，
 `mapped_request_probe` 的独立跨进程组件诊断也继续维护。
 
 恢复旧固定矩阵应使用完整 Git 树
@@ -722,3 +723,20 @@ multiplexed_gateway、query_registration与connection_capacity退出当前树；
 其余旧专测不在这五份原投影中，完整恢复见
 [原源码／测试记录](../paused_pg_and_retired_http_20261105/README.md#retired-http-map-owner)。
 本次只复查受影响来源，不把它写成3010条完整构造或真实图像服务验证。
+
+
+<a id="fixed-http-adapter-sources"></a>
+## Fixed HTTP工厂与旧Map协议的历史读取
+
+维护路径删除固定HTTP配置、同步／异步传输、完整HTTP响应包装、Ray HTTP Map装配、准备／组织、
+v6协议与旧观察probe。IncrementalExecution与NativeTask保留现有Core／Job／结果／取消能力，
+不再从HTTP模块取得容器、默认结果容量或测试结果包装。
+
+删除前45份相关文件逐字核对准确公开
+[e5e65fdb完整来源](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd)。
+五份投影共85条受影响read_source读取前后一致；九份原先取当前文件的源码各增加五条来源／格式记录，
+保存于[准确e5原件目录](historical_sources/e5e65fdb/)。既有来源、原expected、投影ID与版本不改。
+该目录同时保留此前Image owner的六份原件，不能把两批新增数量混计。
+本批未重跑完整3010构造，原模型与实验结果不因源码恢复而新增资格。
+旧专测和固定Map原型使用[完整恢复树及文件摘要](../paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters)，
+不向维护路径加回旧CLI／导入。原诊断raw脚本、结果、失败和负结果继续保存。

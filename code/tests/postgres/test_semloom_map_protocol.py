@@ -52,14 +52,7 @@ class MapProtocolTests(unittest.TestCase):
                     semantic_payload_sha256=payload, sequence=sequence, raw_output=value,
                     finish_reason="stop", response_model_id="golden-map-v1", prompt_tokens=prompt, output_tokens=output)
                 self.assertEqual(evidence, evidence_expected)
-        fixed = v5.provider_execution_digest("golden-map-v1", provider_execution_id=v5.FIXED_EXECUTION_ID)
-        self.assertEqual(fixed, "6782bdee3092bc43c885e0c90e57c602bd08364f20946bacc4dc9d8283feae24")
-        self.assertEqual(v5.completion_evidence_digest(
-            semantic_spec_sha256=SemanticMapPlan("Echo the input.", "golden-map-v1", 128).digest,
-            physical_algorithm_sha256=physical, provider_execution_sha256=fixed,
-            semantic_payload_sha256=vectors[0][5], sequence=0, raw_output="hello", finish_reason="stop",
-            response_model_id="golden-map-v1", prompt_tokens=17, output_tokens=1),
-            "1d6007a0388e09464262e7cceabd102bbd441ffdba9bf377dc0a2c944a8b0cbb")
+
 
     def test_identity_encoding_rejects_invalid_representations_and_binds_metadata(self) -> None:
         from src.execution_provider.wire import v5

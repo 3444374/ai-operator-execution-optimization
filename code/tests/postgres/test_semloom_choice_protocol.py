@@ -7,11 +7,7 @@ import json
 import socket
 import threading
 import struct
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from src.execution_provider.adapters.openai_compatible_fixed import (
-    FixedModelConfig, OpenAICompatibleFixedAdapter,
-)
 from src.execution_provider.adapters.semantic_session import CompletionRequest, CompletionAdapterError
 
 from src.execution_provider.adapters.golden import GoldenCompletionAdapter
@@ -214,66 +210,8 @@ class ChoiceProtocolTests(unittest.TestCase):
                 v4.build_task_message(self.plan, sequence=0, input_value=text)
 
 
-class _ModelServer(BaseHTTPRequestHandler):
-    def do_POST(self):
-        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        self.server.requests.append(body)
-        self.send_response(self.server.status)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps({
-            "model": "fixed-test-model",
-            "choices": [{"index": 0, "message": {"content": self.server.raw_output}, "finish_reason": "stop"}],
-            "usage": {"prompt_tokens": 19, "completion_tokens": 2},
-        }).encode())
-
-    def log_message(self, *args):
-        pass
 
 
-class ChoiceFixedAdapterTests(unittest.TestCase):
-    def setUp(self):
-        self.http = ThreadingHTTPServer(("127.0.0.1", 0), _ModelServer)
-        self.http.requests = []
-        self.http.status = 200
-        self.http.raw_output = "UNKNOWN"
-        self.thread = threading.Thread(target=self.http.serve_forever)
-        self.thread.start()
-        self.endpoint = f"http://127.0.0.1:{self.http.server_port}/v1/chat/completions"
-        self.profile = GenerationProfile(
-            profile_id="semloom.generation.choice.tristate", profile_version=1,
-            constraint_kind="CHOICE", choices=("TRUE", "FALSE", "UNKNOWN"))
-
-    def tearDown(self):
-        self.http.shutdown()
-        self.http.server_close()
-        self.thread.join(3)
-
-    def request(self, profile=None):
-        return CompletionRequest(
-            semantic_payload_digest="0" * 64, model_id="fixed-test-model",
-            canonical_messages=({"role": "system", "content": "Classify."}, {"role": "user", "content": "输入🙂"}),
-            generation_constraints={"temperature": 0, "top_p": 1, "max_tokens": 8, "n": 1, "stream": False, "stop": ["\n"]},
-            generation_profile=profile)
-
-    def test_choice_mapping_changes_only_the_explicit_constraint(self):
-        config = FixedModelConfig(endpoint_url=self.endpoint, model_id="fixed-test-model", timeout_ms=1000,
-                                  choice_format="vllm_structured_outputs")
-        adapter = OpenAICompatibleFixedAdapter(config)
-        old_result = adapter.complete(self.request())
-        result = adapter.complete(self.request(self.profile))
-        self.assertEqual(result, old_result)
-        self.assertEqual(result.raw_output, "UNKNOWN")
-        self.assertEqual(len(self.http.requests), 2)
-        old, choice = self.http.requests
-        self.assertEqual(choice.pop("structured_outputs"), {"choice": ["TRUE", "FALSE", "UNKNOWN"]})
-        self.assertEqual(choice, old)
-
-    def test_undeclared_choice_support_fails_before_http(self):
-        adapter = OpenAICompatibleFixedAdapter(FixedModelConfig(self.endpoint, "fixed-test-model", 1000))
-        with self.assertRaisesRegex(CompletionAdapterError, "^MODEL_REQUEST_REJECTED$"):
-            adapter.complete(self.request(self.profile))
-        self.assertEqual(self.http.requests, [])
 
 
 

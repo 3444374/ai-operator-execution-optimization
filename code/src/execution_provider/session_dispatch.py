@@ -20,7 +20,6 @@ def run_session(
     tamper_evidence_digest: bool,
     disconnect_on_task: bool,
     completion_fixture: str | None,
-    incremental_handler=None,
     open_message=None,
 ) -> bool | None:
     try:
@@ -31,13 +30,6 @@ def run_session(
         if opened is None:
             return
         protocol_version = opened.get("protocol_version")
-        if (
-            type(protocol_version) is int
-            and protocol_version == 6
-            and incremental_handler is not None
-        ):
-            incremental_handler(connection, opened)
-            return
         if type(protocol_version) is int and protocol_version in (3, 4, 5):
             run_session = {3: run_v3_session, 4: run_v4_session, 5: run_v5_session}[
                 protocol_version

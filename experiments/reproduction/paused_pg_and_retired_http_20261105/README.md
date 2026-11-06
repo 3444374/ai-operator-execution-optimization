@@ -144,3 +144,61 @@ Golden、当前图像v7与通用UDS帧读写、Core／Job／任务／租约／�
 五份具名投影的35条相关来源读取前后相同。六份原来直接读取维护文件的源码各增加五条准确旧源映射，
 原3010条expected、投影身份、来源版本与已有映射不变；本批没有重跑完整3010构造。
 HTTP工厂／传输和混合IncrementalExecution仍需后续清理，不把这批写成所有HTTP内容已清空。
+
+
+<a id="retired-fixed-http-adapters"></a>
+## 固定HTTP工厂、传输和旧Map观察probe
+
+准确来源仍为上节的公开
+[`e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd` 完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd)。
+以下源码／专测不再留兼容壳。恢复旧HTTP实验时使用该树中的整套依赖及配套测试，不把旧模块拼回当前入口。
+SyntheticTable／WORK的现用消费者也全部随旧装配退役，没有为它们新造fixture模块。
+两个原诊断raw脚本及其原结果、失败、负结果没有编辑；旧复算应在上述完整来源中进行。
+
+| 原路径 | 字节 | SHA256 |
+|---|---:|---|
+| `code/src/execution_provider/adapters/model_config.py` | 4549 | `78d6c4406b5e0788fe64fa4a3d7845b9b73200c8547e695c288ea56c7096ad36` |
+| `code/src/execution_provider/adapters/openai_compatible_fixed.py` | 13626 | `66a611592c2b153c1ebd09e2c4006568a70c8fa09982b6d304dd3d9270ff7792` |
+| `code/src/execution_provider/adapters/async_fixed_model.py` | 6200 | `3e86526be43decdbc96811442c769efecc9b697255e820d17bdf045bb83a8e4b` |
+| `code/src/execution_provider/adapters/full_response.py` | 3991 | `ef0bdfeb99bd5aab1c1b4002ee1f61469ee270966437d71eac66b2ddbd99ebde` |
+| `code/src/execution_provider/adapters/ray_map_transport.py` | 30562 | `0cfb5a0262d2857c6705d51147db7a93bd4af2cabeca967089466d1b08f33dff` |
+| `code/src/execution_provider/adapters/map_preparation.py` | 16065 | `890af84238be5d6e0a4829286a3c50c4d10f4708c20f9e76c6a557b85537c03e` |
+| `code/src/execution_provider/adapters/map_organization.py` | 8182 | `8279088919fcc53ef210781efe27fa8ba8a178c9b689a3a667bc87ddcaaea1ac` |
+| `code/src/execution_provider/adapters/incremental_session.py` | 6809 | `0b0baea54597b414abc6b46226cc7e08fd2e4af461f5960817982c3c92f6aeb9` |
+| `code/src/execution_provider/adapters/completion_response.py` | 2021 | `b6da1a0f59d8833a60f39a5d787af460d92b622273ce3c7de0d95148e9455cb0` |
+| `code/src/experiments/map_observation_probe.py` | 27178 | `d9633f79ac297c84eafdf542abe089a52af5774d6cd978914655346a73357586` |
+| `code/scripts/profiling/map_observation_probe.py` | 160 | `bf6872d7ab0f00f30d27d5b0c61a9fc1adc22057a5c9b29801c4a44dab774c03` |
+| `code/src/execution_provider/wire/v6.py` | 1578 | `6b6396d8380c5158e11d4761e895ed8c2c8666ba43cfe7bfb1692e6823d0520f` |
+| `code/tests/execution_provider/test_ray_map_transport.py` | 11339 | `851f0d2f62405e6371eacd03c100dd4014243daf586667a8cd6c29914135de13` |
+| `code/tests/execution_provider/test_ray_map_worker_pool.py` | 12712 | `522d6ce89ff791f987fa71a9d3d767c4cc1c3060ed30bfe2b473a48ade2e2c65` |
+| `code/tests/execution_provider/test_ray_map_payload_failure.py` | 10775 | `ee7e874938722f99907c24073eaae17a89e3d51bfd1bb1cc3767c24599278dfb` |
+| `code/tests/execution_provider/test_ray_map_errors.py` | 7546 | `f6543cd6174a3d455380e3693e9874593a034adbb93453dac574f04b38195771` |
+| `code/tests/execution_provider/test_ray_map_timing.py` | 6391 | `8e1ffce00ad22166e73be940d2176bdcc4f6a03c364ae5964009652de5e213a1` |
+| `code/tests/execution_provider/test_ray_map_failure_integration.py` | 12611 | `12f0ec8f679d604e56f28e51a6a7f3452185a6cc049c2254e98da8ade228d3de` |
+| `code/tests/execution_provider/test_native_ray_integration.py` | 7821 | `e2e2020cfb5b280697c4d9dfba986c52095808775b53e14cd9c5395d2e3ca712` |
+| `code/tests/execution_provider/test_map_preparation.py` | 35577 | `446f2a6dd31bc79b16e1101b66ad9194ab3c28df748d4c10c37f8176d62ead61` |
+| `code/tests/execution_provider/test_full_response.py` | 6068 | `1050c288afecfd0f93301519d1030c7a7b92e7dbfb6b0d1da20e95b432804713` |
+| `code/tests/execution_provider/test_http_configuration.py` | 11374 | `dd9b28981ec0a9aaf8f70896eeec9b6d5f564a6ddc9d68e6bc779ad743f8860f` |
+| `code/tests/execution_provider/test_httpx_request_cookies.py` | 8855 | `6949068bf14dcb69317eb16d9db6e42c3f8dd8afa57d788dbba89caae0df0207` |
+| `code/tests/execution_provider/test_async_transport.py` | 5200 | `96b512bf3d80972b9c0fad5b60f4624c5a0bdd9a6fd4203cb143e4c78ff0af42` |
+| `code/tests/execution_provider/test_async_request_guard.py` | 4071 | `7b21fc39db9eabf228dce8626bbcfb1712ba867b2ba0e92ec05a3a985a325e4f` |
+| `code/tests/execution_provider/test_native_request_capacity.py` | 18333 | `4c2e7a019258a4aaeae91a832e6772743ed125e46348b41dc8d88a624d00dbe7` |
+| `code/tests/postgres/test_semloom_fixed_model_adapter.py` | 22806 | `bcb5e5780e1ffd488952845b0c09a4406f35adb8efd5fd93fd5e0f09b47a60c3` |
+| `code/tests/experiments/test_map_observation_probe.py` | 11036 | `51451e12938cff1b11b88a64b8f68152fce5f3a71962112a096da0652a2372a2` |
+| `code/tests/experiments/test_map_preparation_probe.py` | 3777 | `7ca8041a33d9fe79bc93d987d237e5dd315c8f9305910c27a6f5129460b72cba` |
+| `code/tests/experiments/test_ray_return_wait_probe.py` | 3892 | `ab4680ebce72d212d1bbfd03e4c6dd54d5db4b3474d897fada057df7dca96bc4` |
+| `code/tests/execution_provider/transport_accounting.py` | 1994 | `13108e27b3756a40001f901e1e53cd8fb9a22659544a869bb3c1080c72752019` |
+
+IncrementalExecution原有的Job分配／flow分区、NativeQueryJob和NativeTaskSession保留；
+其现用Core测试直接传递opaque bytes，不再借HTTP envelope作为无关夹具。
+空release与等待推进另由现有Core／MethodDriver行为测试覆盖；不为删除的HTTP工厂保留运输线程专测。
+原v3／v4／v5 Golden和v7 Image保持；只删除无现用入口的Fixed／v6身份与分派，不增加新协议或多查询功能。
+纯向量、通用payload materializer、StageBroker、任务／额度／租约／取消和独立记账继续维护。
+原生LOTUS VLM/MMQA、Kalypso与Ray官方HTTP连接及native HTTPX观察保持，不反向接入SemLoom执行器。
+
+删除前49个所选CPU方法中48成功，旧别名检查因scheduler已不再导出SharedCreditPolicy而报错；原记录保留。
+删除该过时要求并迁移真实消费者后，51项纯CPU全部成功，额外两项为现有空release／等待行为；
+没有运行真实HTTP／UDS／Ray／PG／模型或本机SDK收集。修改后的selected-profile socket用例仍待服务器核对。
+五份历史投影的85条相关来源保持，九份新增旧源及45条读取位置见
+[来源读取记录](../native_baselines/README.md#fixed-http-adapter-sources)；没有重跑完整3010构造。
+离线校准读取器仍保留旧profile身份，用于解释历史产物，不恢复HTTP运行入口。

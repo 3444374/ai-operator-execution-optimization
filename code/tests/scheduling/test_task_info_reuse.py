@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from src.scheduling.core.session_contract import Usage, TaskProfile, Uncertain
-from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
 from src.scheduling.core import task_info
 from tests.execution_provider.test_native_tasks import fixture
 
@@ -51,8 +50,7 @@ class TaskInfoReuseTests(unittest.TestCase):
     def test_new_invalid_suffix_rejects_even_cached_head_before_any_transfer(self):
         pending = self.pending()
         self.flow.advance(1)
-        self.backend.complete(next(iter(self.backend.pending)), encode_full_response(
-            FullModelResponse(200, (), b'ok')))
+        self.backend.complete(next(iter(self.backend.pending)), b'ok')
         delivery = self.flow.advance(1).deliveries[0]
         self.flow.release((delivery.lease_id,))
         bad = replace(task(2), info=replace(task(2).info, call_id=''))
@@ -164,8 +162,7 @@ class TaskInfoReuseTests(unittest.TestCase):
         pending = self.pending()
         with patch.object(task_info, 'asdict', wraps=task_info.asdict) as encode:
             self.flow.advance(1)
-            self.backend.complete(next(iter(self.backend.pending)), encode_full_response(
-                FullModelResponse(200, (), b'ok')))
+            self.backend.complete(next(iter(self.backend.pending)), b'ok')
             delivery = self.flow.advance(1).deliveries[0]
             self.assertEqual(self.flow.offer((pending,)).accepted_prefix_count, 0)
             self.flow.release((delivery.lease_id,))

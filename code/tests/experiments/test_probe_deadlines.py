@@ -11,11 +11,12 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from src.experiments import map_observation_probe, mapped_request_probe
+from src.experiments import mapped_request_probe
 
 
 class ProbeSuiteDeadlineTests(unittest.TestCase):
-    def run_suite(self, probe, first_seconds):
+    def run_suite(self, first_seconds):
+        probe = mapped_request_probe
         clock = SimpleNamespace(now=100.0)
         calls = []
 
@@ -29,8 +30,7 @@ class ProbeSuiteDeadlineTests(unittest.TestCase):
                           grant_seconds=0, component_total_seconds=0, query_seconds=0,
                           accounting_setup_seconds=0, preparation_windows=0,
                           core_active_mean=0, synthetic_worker_active_mean=0)
-            if probe is mapped_request_probe:
-                result['repeat'] = args[0]
+            result['repeat'] = args[0]
             return result
 
         with tempfile.TemporaryDirectory() as root:
@@ -41,91 +41,39 @@ class ProbeSuiteDeadlineTests(unittest.TestCase):
             return result, calls
 
     def test_next_case_uses_remaining_suite_time_instead_of_reserving_a_whole_case(self):
-        for probe, first_seconds, expected_runs in (
-            (map_observation_probe, 245, 20),
-            (mapped_request_probe, 275, 16),
-        ):
-            with self.subTest(probe=probe.__name__):
-                result, deadlines = self.run_suite(probe, first_seconds)
-                self.assertEqual(result['status'], 'passed')
-                self.assertEqual(len(result['runs']), expected_runs)
-                self.assertEqual(deadlines, [400.0] * expected_runs)
+        result, deadlines = self.run_suite(275)
+        self.assertEqual(result['status'], 'passed')
+        self.assertEqual(len(result['runs']), 16)
+        self.assertEqual(deadlines, [400.0] * 16)
 
     def test_exhausted_total_stops_before_another_case_and_preserves_the_summary(self):
-        for probe in (map_observation_probe, mapped_request_probe):
-            with self.subTest(probe=probe.__name__), tempfile.TemporaryDirectory() as root:
-                clock = SimpleNamespace(now=100.0)
-                calls = []
+        probe = mapped_request_probe
+        with tempfile.TemporaryDirectory() as root:
+            clock = SimpleNamespace(now=100.0)
+            calls = []
 
-                def first_case(*args, **kwargs):
-                    calls.append(kwargs.get('deadline'))
-                    clock.now = 400.0
-                    result = dict(accounting='durable', recording='memory', rows=16,
-                                  synthetic_calls=16, mode='durable', workers=1,
-                                  received_grants=16, grant_seconds=0, component_total_seconds=0,
-                                  query_seconds=0, accounting_setup_seconds=0, preparation_windows=0,
-                                  core_active_mean=0, synthetic_worker_active_mean=0)
-                    if probe is mapped_request_probe:
-                        result['repeat'] = 0
-                    return result
+            def first_case(*args, **kwargs):
+                calls.append(kwargs.get('deadline'))
+                clock.now = 400.0
+                return dict(accounting='durable', recording='memory', rows=16,
+                    synthetic_calls=16, mode='durable', workers=1, repeat=0,
+                    received_grants=16, grant_seconds=0, component_total_seconds=0,
+                    query_seconds=0, accounting_setup_seconds=0, preparation_windows=0,
+                    core_active_mean=0, synthetic_worker_active_mean=0)
 
-                output = Path(root) / 'expired'
-                with patch.object(probe, 'time', SimpleNamespace(monotonic=lambda: clock.now)), \
-                     patch.object(probe, 'run_case', side_effect=first_case), redirect_stdout(io.StringIO()):
-                    with self.assertRaises(TimeoutError):
-                        probe.run_probe(output)
-                self.assertEqual(len(calls), 1)
-                summary = json.loads((output / 'summary.json').read_text())
-                self.assertEqual((summary['status'], summary['error_type']), ('failed', 'TimeoutError'))
-                self.assertEqual(len(summary['runs']), 1)
+            output = Path(root) / 'expired'
+            with patch.object(probe, 'time', SimpleNamespace(monotonic=lambda: clock.now)), \
+                 patch.object(probe, 'run_case', side_effect=first_case), redirect_stdout(io.StringIO()):
+                with self.assertRaises(TimeoutError):
+                    probe.run_probe(output)
+            self.assertEqual(len(calls), 1)
+            summary = json.loads((output / 'summary.json').read_text())
+            self.assertEqual((summary['status'], summary['error_type']), ('failed', 'TimeoutError'))
+            self.assertEqual(len(summary['runs']), 1)
 
 
 class ProbeCaseDeadlineTests(unittest.TestCase):
-    def test_observation_expiry_after_dispatch_stops_intake_and_preserves_settled_calls(self):
-        dispatched = threading.Event()
-        submit = map_observation_probe.SyntheticRay._submit
 
-        def observed_submit(ray, *args):
-            future = submit(ray, *args)
-            dispatched.set()
-            return future
-
-        clock = SimpleNamespace(monotonic=lambda: time.monotonic() + (10 if dispatched.is_set() else 0),
-                                monotonic_ns=time.monotonic_ns, time=time.time, sleep=time.sleep)
-        with tempfile.TemporaryDirectory() as root:
-            output = Path(root) / 'observation'
-            until = time.monotonic() + 1
-            wall_until = time.time() + 1
-            with patch.object(map_observation_probe, 'time', clock), \
-                 patch.object(map_observation_probe.SyntheticRay, '_submit', observed_submit):
-                with self.assertRaisesRegex(RuntimeError, 'evidence retained'):
-                    map_observation_probe.run_case(output, 'memory', 'buffered', rows=8,
-                                                   capacity=4, batch_rows=2, deadline=until)
-            result = json.loads((output / 'result.json').read_text())
-            self.assertEqual(result['error_type'], 'TimeoutError')
-            self.assertGreater(result['synthetic_calls'], 0)
-            self.assertEqual(result['accounted_calls'], result['synthetic_calls'])
-            self.assertTrue(result['transport_drained'] and result['synthetic_worker_stopped'])
-            self.assertTrue(result['writer']['closed'])
-            self.assertFalse(result['cleanup_errors'])
-            with sqlite3.connect(output / 'ledger.sqlite') as connection:
-                allocated, saved_until = connection.execute('SELECT allocated,deadline FROM budget').fetchone()
-            self.assertEqual(allocated, 8)
-            self.assertAlmostEqual(saved_until, wall_until, delta=.1)
-
-    def test_expired_observation_case_records_failure_and_closes_writer_before_worker_start(self):
-        with tempfile.TemporaryDirectory() as root:
-            output = Path(root) / 'expired'
-            with patch.object(map_observation_probe, 'SyntheticRay') as worker:
-                with self.assertRaisesRegex(RuntimeError, 'evidence retained'):
-                    map_observation_probe.run_case(output, 'memory', 'buffered', rows=8,
-                                                   capacity=4, batch_rows=2, deadline=time.monotonic() - 1)
-            worker.assert_not_called()
-            result = json.loads((output / 'result.json').read_text())
-            self.assertEqual((result['status'], result['error_type']), ('failed', 'TimeoutError'))
-            self.assertEqual((result['synthetic_calls'], result['accounted_calls']), (0, 0))
-            self.assertTrue(result['writer']['closed'] and result['synthetic_worker_stopped'])
-            self.assertFalse(result['cleanup_errors'])
 
     def test_component_workers_wait_only_until_the_shared_deadline(self):
         start = Mock()
