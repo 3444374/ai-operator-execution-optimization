@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-06：同步协议多余转出清理
+
+[七个转出删除、九处导入迁移及5项CPU](diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
+按准确434d登记；后续仅合并同模块fixture导入，未重复用例。模型构造、协议实现、旧类型解码及20条历史来源保持。
+生产少7行、测试少1行；未运行模型或服务器，不转授efac补查资格，也未混入多查询拆分。
+
 ## 2026-11-06：旧baseline转发退役及4d服务器回执
 
 [五个转发删除、调用迁移和33项轻量CPU](diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)

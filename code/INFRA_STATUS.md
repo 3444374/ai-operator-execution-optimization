@@ -49,12 +49,15 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,260行，
-全部 src＋scripts Python 为109,565行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,169行／减少30,770行；对清理起点3fd分别减少5,368／40,080行。
-本批相对608a删除五个baseline转发模块，生产Python少55行、测试少81行，核心及独立集成行数不变。
-五个IMLane文件只改所属模块导入；当前原生执行、结果和清理实现保持，目录搬移不算删除。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,253行，
+全部 src＋scripts Python 为109,558行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,162行／减少30,777行；对清理起点3fd分别减少5,375／40,087行。
+本批相对efac移除同步模块七个未用转出，生产Python少7行、测试少1行，独立集成行数不变。
+两生产调用和七测试／fixture改从中性协议模块导入；同步构造、类型、参数与序列化实现保持，目录搬移不算删除。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
+
+[同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
+记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 
 [旧模型worker转发退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
 记录直接调用迁移、33项轻量CPU、两次收集问题及SDK／实际IPC未验证范围；旧pickle专属检查退出，当前序列化保留。

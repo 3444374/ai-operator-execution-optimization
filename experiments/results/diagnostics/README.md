@@ -6,6 +6,7 @@
 [查询时钟重复清理](records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)记录被覆盖的相同定义、遗留导入与51项现有CPU验证。
 [旧baseline模型转发退役](records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)记录当前直接调用、33项轻量CPU和未运行范围；
 [4d六项服务器原回执](records_runtime_refactor_20261104/README.md#global-observation-server-six)单列源码和清理结果。
+[同步协议转出清理](records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)记录中性协议直接导入和5项轻量CPU，不改模型构造。
 
 [Records 配置模块整理](records_config_refactor_20261103/README.md)：普通运行与 Session 共享配置解释，
 保留旧导入与执行职责；源码、55组差分回放、CPU检查及后续上下文设计分别记录。

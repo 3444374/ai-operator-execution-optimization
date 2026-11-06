@@ -1,0 +1,168 @@
+{
+  "code": {
+    "base": "efac26aef1b5ded580cc0188fe910a68f7322cf0",
+    "tested_code": "434d11fabdf06abc7799420dfee651fbb31fe8ff",
+    "final_code": "e80f135949e49aea9dc7bf3ea7d360fb0bf34b3b",
+    "only_post_test_code_change": "code/tests/execution_provider/chain_index_fixture.py",
+    "same_import_bindings_and_other_AST": true,
+    "tests_not_repeated_for_import_line_merge": true,
+    "counts": {
+      "core_python": 56253,
+      "src_and_scripts_python": 109558,
+      "tests_python": 98376,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "delta_base": {
+      "core_python": -7,
+      "src_and_scripts_python": -7,
+      "tests_python": -1,
+      "integrations": 0
+    }
+  },
+  "unused_sync_imports_removed": [
+    "IDENTITY_FIELDS",
+    "_PROBE",
+    "_integer",
+    "_string",
+    "_probe_python",
+    "_prefix",
+    "_chat_logprobs"
+  ],
+  "actual_definitions_changed": false,
+  "EngineSpec_GenerationSpec_retained": true,
+  "import_migrations": [
+    {
+      "file": "code/integrations/imlane_records/filter_udf.py",
+      "names": [
+        "EngineSpec",
+        "GenerationSpec",
+        "IDENTITY_FIELDS",
+        "_prepared"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "b51841168093429575734d09e761623443640f4c37273dca4137a4d24db0cd8d",
+      "after_sha256": "8ed3a3bc1ca2efe3d7c6fba52b54d114de8996098269d9fc26bcb48f1e6b6cf3"
+    },
+    {
+      "file": "code/integrations/imlane_records/filter_workload.py",
+      "names": [
+        "IDENTITY_FIELDS"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "6476f34e9db5a0facf5f4a895a10e2d33f6acc85829cdeda3e7093ca9f64cf2f",
+      "after_sha256": "211dce3048050993b3a1a5b182dde4f84552fa8053ead6a043acd843bb1c84ba"
+    },
+    {
+      "file": "code/tests/execution_provider/chain_index_fixture.py",
+      "names": [
+        "IDENTITY_FIELDS"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "4881c9e7fa2cfea93ba09f7614e821ef7f32899860cc48e9b888b6f6c88faf17",
+      "after_sha256": "7c9999f539b4c43bfd2e36a8ad852163297fee9e67404555697de141f1c387bc"
+    },
+    {
+      "file": "code/tests/execution_provider/test_lotus_chain_token_budget.py",
+      "names": [
+        "EngineSpec",
+        "GenerationSpec",
+        "IDENTITY_FIELDS"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "aed0369278821c0ca057ac655b96eb008d86dddfed8230b9406205358f4a157c",
+      "after_sha256": "769cabbf77cf754f476121d689adb9f92abced2ae9d2cc1ef89d0cc85e3e4010"
+    },
+    {
+      "file": "code/tests/execution_provider/test_lotus_records_async_core.py",
+      "names": [
+        "EngineSpec",
+        "GenerationSpec",
+        "IDENTITY_FIELDS"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "6c3398308e375fab380fbc25b5e160a975e86305d8cf06de5932e367c42a5ddc",
+      "after_sha256": "8a61480be1a05c9cc2dc77b1341bb862517ae43c804868e9c95e8fd73847bcb6"
+    },
+    {
+      "file": "code/tests/execution_provider/test_lotus_request_frame_metering.py",
+      "names": [
+        "EngineSpec",
+        "GenerationSpec",
+        "IDENTITY_FIELDS",
+        "_prepared"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "11d51758427e1bb607c973c9f5b17f8058d6399735a71132c4dec39d56c034b4",
+      "after_sha256": "f77618c36b90598d1f5c9f2f31d4683ecf6f0e3f2148f0d03b40555720c8246b"
+    },
+    {
+      "file": "code/tests/execution_provider/test_lotus_rpc_capacity.py",
+      "names": [
+        "EngineSpec",
+        "GenerationSpec",
+        "IDENTITY_FIELDS",
+        "result_record"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "e583598a64b8325e15c79d04075ce3633a5a96887b8d56c0f23b5a7c12ccd4b3",
+      "after_sha256": "7cec56cdcf8f9eda286c62cfe0d17310338740002bb85c50ef03c139ca79325f"
+    },
+    {
+      "file": "code/tests/semantic_methods/test_lotus_chain_composition.py",
+      "names": [
+        "GenerationSpec",
+        "IDENTITY_FIELDS"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "ffd49a0a8dcd87a2d9aad0440333d169a6a214257b4e68f786d509614b00ee9b",
+      "after_sha256": "8271cbcf0f38bc013c6af35a86845a9386afb526216cd3425c3af9912c72c9ef"
+    },
+    {
+      "file": "code/tests/serving/staged_generation_cpu_engine.py",
+      "names": [
+        "IDENTITY_FIELDS"
+      ],
+      "only_module_source_changed": true,
+      "before_sha256": "ef410923aed299a0228d8a0d70c445dd6a889f6e73fd65dfdd4963f4f95864bc",
+      "after_sha256": "764cd19c20b9ab124b6996f4f5945009a32287f1fcf600e5c3febe9f98997d5a"
+    }
+  ],
+  "regression": {
+    "selectors": [
+      "tests.serving.test_vllm_protocol_imports",
+      "tests.serving.test_sync_process_migration.MigrationTests.test_native_consumers_import_without_loading_models",
+      "tests.semantic_methods.test_lotus_record_results.ResultMigrationTests.test_current_results_import_without_core_or_model_dependencies"
+    ],
+    "methods": 5,
+    "passed": 5,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "seconds": 0.6405384580139071,
+    "source_unchanged": true,
+    "source_files": 1069,
+    "source_map_sha256": "60c261d026b5826141c2d3636cfc462b389c8b4e68c63e2a2012ada0d8bafc01",
+    "all_hashes_match_tested_code": true,
+    "original_result_sha256": "8867cf44787b56d704b140a1310bacca48052e5408024a6e98084aead3e3b6a5",
+    "original_log_sha256": "212e53f2a1da27ffcbfeca75af65a8eda815da9d4773ef2bca10eb0cd721415d"
+  },
+  "history": {
+    "actual_reads": 20,
+    "all_match": true,
+    "all_use_existing_overrides": true,
+    "manifest_changed": false,
+    "new_archives": 0,
+    "read_only_audit_sha256": "77b42583d81c4362f36258fd149ac333030471ce8f4ea436c14a89c670b9e0b6"
+  },
+  "source_review_sha256": "a6ad46b50193588ceedc474ae4b31a79a74748a5646849d0ecd997a91c02350c",
+  "scope": {
+    "actual_engine_IPC": 0,
+    "real_Ray": 0,
+    "models": 0,
+    "GPU_queries": 0,
+    "server_runs": 0,
+    "SAOR_changes": 0,
+    "main_merge": false
+  },
+  "prior_server_followup": "Seven existing CPU fixture methods requested for exact efac; execution not yet confirmed. This cleanup did not resubmit them or claim their results."
+}

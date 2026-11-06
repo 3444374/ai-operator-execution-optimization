@@ -3811,3 +3811,22 @@ INFRA自动合并，原Q3失败与控制器修复证据完整保留。两轮33�
 监督器实际观测的五个自有进程退出，剩余共享内存为空、host SHM增量为零、租约已释放；未观测到的游离后代不据此获退出证明。
 [脱敏回执](raw/global_entry_observation_server_4d_receipt.json)包含六项ID、实际结果、清理及原HANDOFF／RESULTS校验值。
 这里只补记已有结果，没有重新执行；旧待核状态作为当时记录保留，不与9f的33项或其他版本数量相加。
+
+<a id="sync-protocol-reexports-cleanup"></a>
+## 2026-11-06：同步引擎只保留实际使用的协议名称
+
+基于已发布efac，`434d11fabdf06abc7799420dfee651fbb31fe8ff`从同步模块移除七个仅导入而未使用的名称：
+`IDENTITY_FIELDS`、`_PROBE`、`_integer`、`_string`、`_probe_python`、`_prefix`及`_chat_logprobs`。
+它们的协议层定义与调用不改；仍被同步构造器使用的`EngineSpec`、`GenerationSpec`保留。
+两个IMLane调用文件和七个测试／fixture直接从`vllm_protocol`读取相同对象，协议测试的转出循环只去掉常量项。
+未新增转发、模型参数、计数策略或控制器，真实worker命令和同步／异步执行不改。
+
+准确434d的5项现有CPU方法全部通过，0.64秒，无失败、错误或跳过；1,069项code摘要匹配且执行中不变。
+范围为共享值／序列化、异步不依赖同步owner的导入，以及现用IMLane入口和中性结果模块的冷导入。
+随后`e80f135949e49aea9dc7bf3ea7d360fb0bf34b3b`只合并fixture相邻的两条同模块导入；名称绑定和其余语法树相同，未因此重跑测试。
+20条相关历史读源均走已有override并匹配预期，原MANIFEST和原件保持，无新增归档。
+[来源与选择](raw/protocol_reexports_cleanup_checks.json)保存准确代码、原结果校验值、导入证明及独审来源，可用`regression.selectors`复查。
+
+本批生产Python净少7行、测试少1行；核心56,253、src＋scripts共109,558行，口径与前文相同。
+没有模型、GPU、实际Ray或引擎IPC运行。此前请求的efac七项服务器CPU补查独立排队，未重发或转授结果。
+多查询拆分仍由专门会话处理，本批未混入；本批未修改现有查询注册和C／R控制。
