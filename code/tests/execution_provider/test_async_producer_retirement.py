@@ -281,6 +281,8 @@ class LocalProducerRetirementTests(unittest.TestCase):
         original = actor._start_core
         def held_delivery(*args):
             value = original(*args)
+            # Close only after the fixture outcome arrives, while this RPC is still held.
+            case.until(actor, lambda: actor.engine.snapshot()["ready_results"] == 1)
             ready.set()
             if not release.wait(3): raise TimeoutError("fixture delivery was not released")
             return value
