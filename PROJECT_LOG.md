@@ -2,6 +2,18 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：运行身份六项软件补验
+
+[准确a802的普通／rolling检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)
+六项各一次通过、原断言与源码保持，逐项确认进程／socket／SHM清理，最终许可释放；没有模型、真实Ray、HTTP、并发多查询或新增测试脚本。
+原CPU导入中断与审查反例保留，不把旧四项或87cf三项重复计作本次通过，也不代替真实Ray回收和模型／质量验证。
+
+## 2026-11-07：三项软件IPC按准确源码补验
+
+[准确87cf的有序检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)
+批提交、默认请求数／原解析及Map-first各一次通过，逐项确认清理后继续；没有模型、真实Ray、HTTP、多查询或新测试脚本。
+结果只属于87cf，后续a802运行身份六项另派，不将两个源码版本合成一次整树通过。
+
 ## 2026-11-07：复用运行身份并保留失败清理重试
 
 [普通／prepared身份与重试](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)

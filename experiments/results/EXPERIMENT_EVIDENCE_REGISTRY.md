@@ -2093,3 +2093,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [运行身份绑定复用与失败启动重试](diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)
 记录2b21原四项CPU、独审发现的旧字段恢复回归、c9aa新增一项与独立原入口复核；unknown额度保持，原失败／导入中断分列，六项实际软件IPC另待验证。
+
+[准确87cf的三项有序软件IPC](diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)
+各一次通过，原断言与源码保持，逐项清理及许可归还确认；零模型／真实Ray／HTTP，不转授a802绑定修订或完整查询性能。
+
+[准确a802的六项运行身份软件检查](diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)
+普通三项／rolling三项各一次通过，FakeRay与实际软件IPC的身份／失败恢复／未启动归还保持；零模型／真实Ray，逐项清理和许可释放确认，不与87cf合成整树资格。

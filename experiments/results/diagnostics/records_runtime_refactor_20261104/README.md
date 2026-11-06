@@ -4666,3 +4666,29 @@ rolling测试首次因公共tokenizer fixture导入Torch停住而中断，尚未
 本批生产Python减34行、测试增58行，合看af63后的四批为源码减223行、测试增92行；当前核心49,768行、src＋scripts101,673行、测试92,603行，口径保持。
 工厂与直接构造的两次profile解析也已核查：两份结果的requested、C／R及来源不同，简单删除覆盖会改变报告；本轮保留共用解析，不为省一次标量／字典处理新增构造分支。
 本批只有上述纯CPU证据，尚无真实Ray、模型、实际IPC或性能结果；原Processor回收及历史第二项关闭原因不由本修订解释。
+
+<a id="ordered-software-ipc-87cf"></a>
+## 准确87cf的三项有序软件IPC
+
+准确`87cf01bfcf782666dab481475de5a9e2e6ac4292`、tree`9c8784d11406650b63fc7edb5e4feb7c4829498b`，原三项方法顺序各执行一次，全部通过，无失败、错误或跳过，运行中源码保持。
+
+| 原方法 | 软件fixture测试时间 |
+|---|---:|
+| EngineBatchTests.test_bulk_has_one_frame_and_fast_terminal_does_not_wait_for_slow_member | 0.203秒 |
+| ChainTokens.test_default_request_count_and_same_original_parser_results | 15.086秒 |
+| QueryOwnerTests.test_Map_first_mixed_plan_matches_reference_on_one_real_CPU_child | 9.879秒 |
+
+每项的已观察进程、socket及SHM清理确认后才继续，运行许可最终释放；模型、真实Ray、GPU、HTTP和多查询均为零。
+复用原记录入口，未新增测试脚本、未修改断言或环境，也没有重复本地生成／回放／Builder套件；以上时间不是实际模型查询性能。
+私有交接SHA-256为`493373dd20baa676128fc593f334a243aa970879a76bf0582579c774dbdfe283`，完整原件和索引保留私有。
+结果仅对应准确87cf及这三个软件方法，不包含后续a802的普通／prepared运行身份修订；其六项软件检查另行记录，旧2b21未作为单独受测head。
+
+<a id="runtime-binding-software-ipc-a802"></a>
+## 准确a802的六项运行身份软件检查
+
+准确`a8028fc90f0c391cf412356a6e03fc2c97c4ed81`、tree`aabf0f8b58ba733db3ae302e9dafaa48de333422`，六项原有方法各执行一次、全部通过，无失败、错误或跳过，运行中源码保持。
+CoreStartupRuntimeTests三项核对原请求及ready身份保持、ready后拒绝换连接、启动中上下文变化不发布ready；RollingServiceLifecycleTests三项核对缺失初始身份不被补写、失败后恢复原连接再清理、未启动时归还grant而不观察runtime／分配模型。
+它们是实际软件子进程／IPC与FakeRay方法，模型、真实Ray、GPU、HTTP和并发多查询均为零；不能据此声称真实Ray actor退出或原生Processor回收已修复。
+每项清理确认后才继续，自有进程、socket、SHM及最终运行许可清理通过；未新增环境、依赖或测试脚本，没有重跑87cf三项、2b原四项或c9纯内存回归。
+私有交接SHA-256为`9172183d1c1700f69ab4b6278d19a543ac4e576b33088af32216686297d29457`，原始记录与索引继续私有保存；原导入中断和审查反例保留。
+这六项与87cf三项分别按源码解释，不合并成一次最新整树／模型／质量或性能通过。
