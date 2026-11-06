@@ -93,10 +93,54 @@ UDF调用与HTTP批次用PID／调用时间唯一配对后逐position核对，�
 初轮6aeb的88项保持来源，后续明确失败cleanup marker让parent也观察首次失败的固定收尾期限；
 每个POST发送前复核同机绝对query期限，过期不产生新请求。原生模型关闭使用整个剩余graceful窗口，
 最后预留8秒不再当成初始正常关闭的8秒限制；残留child TERM或KILL均保留失败。
-真实作者＋软件HTTP CPU闭环待本批下一步，当前没有加载模型或启动GPU。完整消息、8192生成条件、
+准确e420的真实作者＋软件HTTP CPU闭环已完成，见下节；当前没有加载模型或启动GPU。完整消息、8192生成条件、
 cold／ready／关闭与下一次120逻辑请求的范围见同一校准计划，不将本地组件通过当作GPU资格。
+
+## 真实作者与软件模型服务闭环
+
+[紧凑机器证据](http_software_cpu.json)保存`imlane-model-wire-e420-cpu-20261106-r1`：
+准确源码e420、重新编译的CLOCK_MONOTONIC薄driver、实际作者CPython／Arrow16.1及真实服务owner生命周期。
+仅替换模型服务spawn为软件HTTP程序，未执行记录中的vLLM启动命令；preflight和构建单列，未安装依赖或修改第三方。
+
+正常THREAD例完整2000→120，一次120行作者batch、120次软件POST、COUNT14，原评价零误差；
+软件回复由金标固定，不是模型质量。worker exit0，作者及服务自动关闭、无外层TERM/KILL、
+无fallback或强杀，最终SHM增量0。软件服务观察peak inflight109只说明本次软件重叠，不是原生模型容量。
+
+独立1行错误例仅1次POST，503不重试。worker exit1、supervisor failed与author cleanup passed=false保留。
+已知provider失败后native client被TERM取消（-15）；原生标量／自身错误传播仍unknown，不判正常结果。
+coordinator及服务owner均exit0，无fallback、强杀或残留SHM；其自动资源回收与失败身份分别记录。
+两例都在首次READY／失败绑定的同一cleanup期限内结束，host租约释放，模型／GPU运行0。
+
+软件context32768与usage占位均不作为实际vLLM解析值；导入阻止器仅覆盖worker／软件服务解释器，
+不扩大为嵌入作者CPython、preflight或编译进程的逐import审计。
+
+## 作者原生模型连接核查
+
+用户后续要求原生优先，因此没有把自建IPC替换进当前运行入口。
+[固定作者审计](native_transport_audit.json)关联完整Git树、独立公开tree及关键源码摘要；
+当日`git ls-remote`确认作者HEAD／main仍为072f。审计读取固定Git blob，
+与实际安装树中既存构建兼容补丁分开，不改作者源码或前缀。
+
+作者[模块加载](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/src/backend/py_code_manager.cpp#L94-L114)
+只从模块取得callable；[执行器](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/src/backend/python/py_executor.cpp#L196-L238)
+负责Arrow→同步call／异步await→Arrow，没有内置vLLM模型连接。
+公开例子是加法、identity及Flights RF；完整23809文件未找到Q7／SemBench模型provider，
+根benchmark目录未入公开tree，`.gitignore`提到论文dataset路径也不等于该实现已公开。
+[论文§6.1，印刷页4231–4232](https://www.vldb.org/pvldb/vol19/p4223-xu.pdf)
+说明远程Qwen3-1.7B、vLLM0.19.1及默认百万行，未定义连接协议或原Q7客户端。
+
+本地IPC共享一个AsyncLLM在API上可行，但仍是新的项目provider。
+直接共享现AsyncEngineProcess的单父socketpair不可行，四worker各构造又会变四模型；
+另造多客户端服务、取消与生命周期协议目前没有实机资格，因此草稿暂停并单独保留，未作为baseline实现发布。
+HTTP对照与IPC也没有匹配开销测量；IPC仍需JSON／socket复制，不能声称零拷贝或性能提升。
+
+当前最小方案保留作者DuckDB／DBEnd／ArrowLane／默认4 executor，使用官方vLLM服务的公开模型API；
+[vLLM0.25.1文档](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/serving/online_serving/openai_compatible_server.md)
+明确支持普通HTTP client与直接JSON参数，因此现有HTTPX是公开API接线。
+准确身份是“作者原生执行＋项目Q3／官方vLLM API绑定”，不是原论文Q7客户端复现；
+HTTP不是已证实的作者强制条件。真实HTTP模型测试仍暂停，执行条件先交接用户及既有服务器任务。
 
 ## 真实模型仍需验证
 
-本批不安排GPU。CPU闭环通过后，单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
+本批不安排GPU。下一次单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
 逻辑120及实际attempt预算、cold／模型常驻边界和停止条件，再由现有服务器任务执行；不复制相同已测查询。

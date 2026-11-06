@@ -1,0 +1,156 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.native_transport_audit.v1",
+  "checked_utc_date": "2026-11-06",
+  "author_repository": "https://github.com/IM-DM4AI/IMLane0",
+  "source_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "remote_HEAD_and_main": "072f8257db80569e42c9f5727d839587df529652",
+  "git_blob_count": 23809,
+  "independent_GitHub_tree": {
+    "truncated": false,
+    "entries": 25904,
+    "blob_count": 23809,
+    "tree_count": 2095,
+    "sha256": "b9482528ab13628c33b26053150eba17801d51ec077218f7d8a71d50ef075d2d",
+    "private_artifact_id": "semloom-imlane-native-q3-author-tree"
+  },
+  "installed_source_has_existing_compatibility_changes": true,
+  "inspection_source": "fixed Git blobs, not uncommitted installed compatibility patches",
+  "root_benchmark_directory_present": false,
+  "model_provider_search": {
+    "file_name_terms": [
+      "vllm",
+      "qwen",
+      "sembench",
+      "openai",
+      "sentiment"
+    ],
+    "dedicated_files_found": 0,
+    "content_search": {
+      "vllm|Qwen|SemBench|taken_3|clearly positive|OpenAI|AsyncOpenAI|aiohttp|httpx": {
+        "exit": 0,
+        "match_count": 5,
+        "matches": [
+          {
+            "file": "database/duckdb/data/json/5000.jsonl",
+            "line": 1153
+          },
+          {
+            "file": "database/duckdb/data/json/5000.jsonl",
+            "line": 2245
+          },
+          {
+            "file": "database/duckdb/extension/tpcds/dsdgen/answers/sf1/98.csv",
+            "line": 1269
+          },
+          {
+            "file": "database/oceanbase/tools/deploy/mysql_test/test_suite/direct_load_data/data/bugfix/48958402.csv",
+            "line": 3
+          },
+          {
+            "file": "database/oceanbase/tools/deploy/mysql_test/test_suite/direct_load_data/data/bugfix/48958402.csv",
+            "line": 27
+          }
+        ]
+      },
+      "requests[.]post|chat[.]completions": {
+        "exit": 1,
+        "match_count": 0,
+        "matches": []
+      }
+    },
+    "noncode_hits": "five substring hits are ordinary test data/answer CSV or JSON, not clients; Q70..79 names are TPCDS unrelated to IMLane Q7"
+  },
+  "source_digests": {
+    ".gitignore": {
+      "bytes": 554,
+      "sha256": "9f816e906e7e7d3538d2d764ecf0a582754f986b05c376e03839343032ace07e"
+    },
+    "README.md": {
+      "bytes": 3298,
+      "sha256": "8e4aa5011623a98a30d5073a92e4ca7b2cc53d4047be23544eaaab99a24e65da"
+    },
+    "test/py_codes/func_add.py": {
+      "bytes": 224,
+      "sha256": "3d3aa7b9a6e9f8448989dff90a8f99c66f6a22e7ad64397994a0388b2f905fd1"
+    },
+    "src/backend/py_code_manager.cpp": {
+      "bytes": 3926,
+      "sha256": "4e7dc3e629bde8a1063bb7194c395a5b1161344a05712587a6a6d0aac868e0fb"
+    },
+    "src/backend/python/py_executor.cpp": {
+      "bytes": 11269,
+      "sha256": "c880830a32396e962322fd8d12bbcd070e02c9b43326fa17786ec6d73985887f"
+    },
+    "contrib/pythonpkg/imxx/udf.py": {
+      "bytes": 2085,
+      "sha256": "b7158eb0ba434de1ec5e407f0d51bf601857e1010808fcdc078ecd0e838cb615"
+    }
+  },
+  "confirmed_author_seam": [
+    {
+      "path": "src/backend/py_code_manager.cpp",
+      "lines": "94-114",
+      "behavior": "import module basename and select supplied function attribute"
+    },
+    {
+      "path": "src/backend/python/py_executor.cpp",
+      "lines": "196-238",
+      "behavior": "wrap Arrow table; call supplied sync function or await it; unwrap Arrow table"
+    },
+    {
+      "path": "test/py_codes/func_add.py",
+      "lines": "1-9",
+      "behavior": "two-column addition"
+    },
+    {
+      "path": "database/oceanbase/imlane_server/code.py",
+      "lines": "13-36",
+      "behavior": "Flights random-forest model, not Q7/vLLM"
+    }
+  ],
+  "paper": {
+    "url": "https://www.vldb.org/pvldb/vol19/p4223-xu.pdf",
+    "section": "6.1",
+    "printed_pages": "4231-4232",
+    "confirmed": {
+      "workload": "SemBench Movie Q3",
+      "model": "Qwen3-1.7B",
+      "vllm_version": "0.19.1",
+      "location": "remote GPU servers",
+      "default_rows": 1000000
+    },
+    "unavailable": [
+      "Q7 provider implementation",
+      "model transport/client API",
+      "exact generation params and chat template"
+    ]
+  },
+  "official_model_API": {
+    "url": "https://github.com/vllm-project/vllm/blob/v0.25.1/docs/serving/online_serving/openai_compatible_server.md",
+    "lines": [
+      2,
+      60,
+      61,
+      62
+    ],
+    "behavior": "ordinary HTTP clients and direct JSON payloads supported; switching from HTTPX to OpenAI SDK is not required"
+  },
+  "current_binding": {
+    "identity": "author native DuckDB/DBEnd/ArrowLane/CPython execution plus project Q3 semantic UDF and official vLLM API",
+    "author_Q7_client_reproduction": false,
+    "author_HTTP_requirement_confirmed": false,
+    "default_executors": 4,
+    "semloom_scheduling": false,
+    "real_HTTP_model_test": "paused; no GPU started",
+    "configured_model_owners": 1,
+    "real_model_instances_verified": null
+  },
+  "IPC": {
+    "API_feasibility": "one AsyncLLM may serve four local clients; native model batching may remain",
+    "changes_required": "new multi-client Unix socket provider, protocol, cancellation and owner lifecycle; existing single-parent AsyncEngineProcess cannot be shared directly",
+    "status": "unvalidated drafts retained outside current entry; not integrated/tested/pushed",
+    "performance_comparison": "not measured; IPC still has JSON serialization/socket copies, no zero-copy or speed claim"
+  },
+  "decision": "prefer actual author execution and minimal official model API binding; do not publish a custom IPC path as author-native",
+  "GPU_runs": 0
+}
