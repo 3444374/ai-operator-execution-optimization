@@ -135,6 +135,7 @@ text中的排序研究能力继续保留，未声称已全部接入当前准备�
 
 [链批次回执单次复制](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)
 去掉同步链owner对accountant副本的第二次深拷贝，关闭报告用原账本的只读条数；公开列表及嵌套成员隔离保持。原12项纯CPU保持，新增一项计数／隔离检查通过，五条历史读源保持；本批源码增5行，不作性能结论。
+随后准确e6的[既有服务器软件IPC单项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-server)一次通过，7.504秒；两种组批、回执、输出及关闭断言保持，已观察进程／socket／SHM和许可清理确认，零模型／真实Ray。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。

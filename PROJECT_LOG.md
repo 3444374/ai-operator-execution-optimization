@@ -11800,3 +11800,6 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 原十项CPU改前后通过，十条历史读源保持；整合再核十五条来源和各批受测Python摘要，不重复整套或运行模型。
 本批实际删2行，迁移不当作删除；合看链回执后，相对a39全部src＋scripts增3行，核心减653行中包含658行重新归类，测试增26行。
 当前核心49,829、宽口径101,896行，口径与明细见[同一记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)。
+
+准确e6的既有软件IPC单项随后在服务器一次通过，7.504秒，fixed_rows／token_budget的批次成员、回执、输出和关闭断言保持；没有重复本地十三项或新增测试脚本。
+自有进程／socket／SHM和许可已清理，模型／真实Ray／HTTP／多查询为零；[准确源码与私有原件摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-server)单独登记，不转授后续组合。

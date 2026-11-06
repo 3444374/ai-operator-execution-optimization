@@ -4584,6 +4584,16 @@ service已有保留owner及原连接的恢复对象，单独跳过ray.shutdown�
 检查使用纯CPU内存fixture，没有模型、Ray或socket；三个受测文件摘要与提交一致，未重跑整套或将其当作实际关闭证明。
 五条相关历史读取均由已有原件提供，MANIFEST未改。源码净增5行、测试增26行；这项简化减少重复操作，不以行数或未测耗时表述收益。
 
+<a id="chain-batch-snapshot-server"></a>
+## 准确e6的服务器软件IPC补验
+
+准确`e6f8cfa06b1d99e48658ef3454b25ee2edbb2e92`、tree`cfd2169c82f53e7e4eb72e8fd3334ed0fc28980a`，
+原`PreparedBatchingTests.test_real_native_facing_batch_boundaries_change_without_changing_semantics`仅执行一次，7.504秒通过，无失败、错误或跳过，运行中源码保持。
+fixed_rows与token_budget两种软件子进程IPC的批次成员、calls、回执、输出及关闭断言均通过；原测试未改，也未重复本地十二加一项检查或新增测试脚本。
+模型、真实Ray、GPU、HTTP及多查询均为零。已观察自有进程退出，socket／SHM和运行许可清理通过；没有创建新的vLLM环境或安装依赖。
+私有交接SHA-256为`b642786a5c56c7921a781ac8414e82065e1203b188cd0ab18221f4f2421dd870`，原始报告与索引继续私有保存。
+结果只属于该准确源码和软件fixture，不转授后续校准迁移、当前整树或实际模型／原生Ray关闭。
+
 <a id="offline-reference-calibration-owner"></a>
 ## 离线参考校准归所属分析模块
 
