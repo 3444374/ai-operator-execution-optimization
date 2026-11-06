@@ -250,6 +250,8 @@ running-sequence capacity; the adapter does not cut it at `max_num_seqs`.
 `owner.request_batches` retains group IDs, membership, token/output-cap costs,
 flush reasons (`token_budget`, `max_rows`, `max_bytes`, `source_exhausted`) and
 oversize flags. Per-call results remain authoritative for acceptance and usage.
+The returned list owns independent nested batch records. The result accountant
+provides a scalar count for close reporting without constructing these snapshots.
 Failed/malformed replies, cancellation or deadline stop further batches. Known
 prefix facts survive; unsent source rows do not become unknown model work. An
 uncertain attempted batch keeps the original Core credit and cleanup responsibility.

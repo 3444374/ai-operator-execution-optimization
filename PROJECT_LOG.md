@@ -11787,3 +11787,9 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 准确a39的原cascade parser／factory单项在服务器一次通过，原本地Torch导入中断保留；实际使用Mock，没有模型、真实Ray、GPU或HTTP调用，私有原件不发布。
 三路径只读核查区分Core显式关闭、自有UDF末批关闭和官方Processor原生回收；没有已核公开提前关闭接点，不增加退出重试或关闭子进程清理保护。原生物理回收和1596第二项历史原因仍未解决。
 状态页顶部改用准确a39的代码量，避免把早期读数当作当前结果；详细来源见[同一重构记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-profile-factory-server-check)。
+
+## 2026-11-06 精简链批次回执复制
+
+1a6b去掉owner对accountant深副本的再次复制，关闭报告改读原账本条数；公开list和嵌套成员隔离保持。
+原十二项纯CPU与新增一项隔离／计数检查通过，五条历史读源匹配；源码增5行、测试增26行，不声称查询性能或真实退出已验证。
+具体实现与检查见[链批次回执记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)。

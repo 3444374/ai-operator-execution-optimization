@@ -131,6 +131,9 @@ text中的排序研究能力继续保留，未声称已全部接入当前准备�
 原型逐字迁入research/data_organization，两份专测和真实引用同步；生产payload不导入研究，核心packing／cost／runtime保持。
 原型十五项前后通过，另三项既有接线检查通过；三十条历史读取保持，真实Ray方法未选。整合的全部Python文件与独审候选相同，未重复跑十八项；本批源码增1行，属于职责整理。
 
+[链批次回执单次复制](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)
+去掉同步链owner对accountant副本的第二次深拷贝，关闭报告用原账本的只读条数；公开列表及嵌套成员隔离保持。原12项纯CPU保持，新增一项计数／隔离检查通过，五条历史读源保持；本批源码增5行，不作性能结论。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

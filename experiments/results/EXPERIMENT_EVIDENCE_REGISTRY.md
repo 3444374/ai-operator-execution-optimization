@@ -2074,3 +2074,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [准确a39的cascade配置接线补查](diagnostics/records_runtime_refactor_20261104/README.md#native-profile-factory-server-check)
 记录原有parser／factory单项一次通过及其私有原件摘要；这是Mock配置检查，未启动模型、真实Ray或实际Daft后端。
 [三种Ray关闭路径复核](diagnostics/records_runtime_refactor_20261104/README.md#ray-close-three-paths)只核源码和既有记录，没有新运行或安全的Processor项目补丁，原物理回收问题保持未解决。
+
+[链批次回执单次复制](diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)
+记录1a6b的原十二项与新增一项纯CPU结果、嵌套副本隔离及五条历史读源；关闭计数直接取原账本，没有新增状态或运行参数。
