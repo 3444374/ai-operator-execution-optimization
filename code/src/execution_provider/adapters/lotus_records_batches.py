@@ -15,7 +15,7 @@ from src.semantic_methods.lotus.records import CallLedger, FilterMethod, identit
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
 from .lotus_record_chain_core import SemLoomRecordChainCore
 from .lotus_records_async_actor import AsyncRecordsActorOwner
-from .records_runtime_identity import retired_close_metadata as _retired_metadata
+from .records_runtime_identity import ModelRuntimeBinding, retired_close_metadata as _retired_metadata
 
 
 
@@ -41,7 +41,8 @@ class PreparedRecordsCore:
         self._expected = {}
         self._delivered = set()
         self._thread = threading.get_ident()
-        self._service_allocation = self._runtime_binding = self._delivery = None
+        self._service_allocation = self._delivery = None
+        self._runtime_binding = ModelRuntimeBinding()
         self._retired_report = self._service_retirement = None
 
     def _control(self):
@@ -50,18 +51,7 @@ class PreparedRecordsCore:
 
     def bind_model_runtime(self, observed=None):
         self._control()
-        if self._runtime_binding is None:
-            from .records_runtime_identity import ModelRuntimeBinding
-            self._runtime_binding = ModelRuntimeBinding()
         self._runtime_binding.bind(observed)
-
-    @property
-    def _model_runtime(self):
-        return None if self._runtime_binding is None else self._runtime_binding.original
-
-    @property
-    def _model_runtime_capture_attempted(self):
-        return self._runtime_binding is not None and self._runtime_binding.attempted
 
     def _service_ready(self):
         self._service_allocation.observe_ready(self)
@@ -198,9 +188,6 @@ class PreparedRecordsCore:
         owner._interleaved_preparation = self.interleaved_preparation
         owner._event_driven_preparation = self.event_driven_preparation
         if self._service_allocation is not None:
-            from .records_runtime_identity import ModelRuntimeBinding
-            if self._runtime_binding is None:
-                self._runtime_binding = ModelRuntimeBinding()
             self.owner = owner
             owner._service_wrapper_ref = weakref.ref(self)
             self._service_allocation.adopt_producer(self, owner)

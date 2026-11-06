@@ -1288,8 +1288,9 @@ rewrite the earlier session timeline. Driver shutdown also checks its original R
 Core records its first observable connection before actor startup, verifies it again after
 startup and before remote cleanup, and never replaces an unavailable first observation with
 a later connection. Entries bind the verified connection immediately after their own Ray
-initialization; a replacement before the first model start is rejected too. This read-only
-operation lives in `records_runtime_identity.py`, separately from optional byte allocation.
+initialization; a replacement before the first model start is rejected too. Each ordinary or prepared
+records owner stores its observation in `ModelRuntimeBinding` from `records_runtime_identity.py`;
+service readiness reads that same object. Constructing it does not inspect Ray or allocate model resources.
 Startup cleanup errors are notes on the original exception. Old fixtures without an observable
 identity retain normal operation but provide no reconnect proof. A never-started owner still
 can close locally. These checks do not establish actual Ray recovery or physical GPU exit.

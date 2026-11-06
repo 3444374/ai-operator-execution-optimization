@@ -415,8 +415,9 @@ class RecordsPayloadGrant:
             if self._identity is not None and self._identity != identity:
                 raise ValueError('payload allocation cannot replace its actual model or producer identity')
             observed = self._pool._runtime_observation(owner)
-            if getattr(owner, '_model_runtime_capture_attempted', False):
-                original = owner._model_runtime
+            binding = owner._runtime_binding
+            if binding.attempted:
+                original = binding.original
                 if original is None:
                     observed = None
                 elif (observed is None or observed[0] is not original[0] or observed[1] != original[1]):

@@ -44,7 +44,7 @@ from .records_profile import (
 from .records_transport import (
     _await_result as _await_result, _check, _RecordTransport, close_prepared_core,
 )
-from .records_runtime_identity import observe_ray_runtime
+from .records_runtime_identity import ModelRuntimeBinding
 from .records_filter_runtime import _CoreRows
 from .records_scan import prepare_native_records_scan
 
@@ -199,8 +199,7 @@ class SemLoomRecordsCore:
         self._deadline = None
         self.last_query_report = self.last_close_report = None
         self._service_allocation = None
-        self._model_runtime = None
-        self._model_runtime_capture_attempted = False
+        self._runtime_binding = ModelRuntimeBinding()
 
     @property
     def production_core_connected(self):
@@ -224,40 +223,19 @@ class SemLoomRecordsCore:
     def bind_model_runtime(self, observed=None):
         """Bind once to an existing connection; an unavailable first read stays unknown."""
         self._control()
-        if observed is not None and (type(observed) is not tuple or len(observed) != 2
-                or type(observed[1]) is not dict or set(observed[1]) != {'job_id', 'node_id'}
-                or any(type(value) is not str or not value.strip() for value in observed[1].values())):
-            raise ValueError('model runtime requires the observed module, job and node identity')
-        if self._model_runtime_capture_attempted:
-            original = self._model_runtime
-            if observed is not None and (original is None or observed[0] is not original[0]
-                    or observed[1] != original[1]):
-                raise RuntimeError('model runtime cannot be rebound after its first observation')
-            try:
-                self._check_model_runtime()
-            except RuntimeError as error:
-                allocation = self._service_allocation
-                if allocation is not None and allocation._runtime_identity is not None:
-                    raise ValueError('payload allocation cannot replace its original Ray runtime identity') from error
-                raise
-            return
-        if observed is None:
-            import sys
-            current = observe_ray_runtime(sys.modules.get('ray'))
-        else:
-            current = observe_ray_runtime(observed[0])
-            if current is None or current[0] is not observed[0] or current[1] != observed[1]:
-                raise RuntimeError('supplied model runtime identity is unavailable or changed')
-        self._model_runtime_capture_attempted = True
-        self._model_runtime = None if current is None else (current[0], dict(current[1]))
-
-    def _check_model_runtime(self):
-        original = self._model_runtime
-        if original is None:
-            return  # Preserve existing callers which supplied no observable runtime identity.
-        current = observe_ray_runtime(original[0])
-        if current is None or current[0] is not original[0] or current[1] != original[1]:
-            raise RuntimeError('original model Ray runtime is unavailable or changed')
+        binding = self._runtime_binding
+        try:
+            binding.bind(observed)
+        except RuntimeError as error:
+            allocation = self._service_allocation
+            original = binding.original
+            # Only connection loss at the original service binding uses ValueError.
+            same_observation = (observed is None or original is not None
+                and observed[0] is original[0] and observed[1] == original[1])
+            if (binding.attempted and same_observation and allocation is not None
+                    and allocation._runtime_identity is not None):
+                raise ValueError('payload allocation cannot replace its original Ray runtime identity') from error
+            raise
 
     def start(self):
         """Load the existing model owner without reading or executing a query."""
@@ -271,7 +249,7 @@ class SemLoomRecordsCore:
         self._deadline = deadline
         self.bind_model_runtime()
         ready = self._actors.start(deadline)
-        self._check_model_runtime()
+        self._runtime_binding.check()
         if self._service_allocation is not None:
             self._service_allocation.observe_ready(self)
         return ready
@@ -340,7 +318,7 @@ class SemLoomRecordsCore:
                 self.bind_model_runtime()
                 self._actors.start(earliest_deadline(deadline, time.monotonic() + self.resources.startup_timeout_s),
                                    cancelled)
-                self._check_model_runtime()
+                self._runtime_binding.check()
                 if self._service_allocation is not None:
                     self._service_allocation.observe_ready(self)
             else:
@@ -432,7 +410,7 @@ class SemLoomRecordsCore:
         actors = self._actors
         if (actors.ray is not None or actors.model_actor is not None
                 or actors.prepare_actors or actors.model_ready is not None):
-            self._check_model_runtime()
+            self._runtime_binding.check()
         self._closing = True
         errors = []
         if self._active is not None:

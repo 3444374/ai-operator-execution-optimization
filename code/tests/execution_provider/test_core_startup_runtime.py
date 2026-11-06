@@ -75,7 +75,7 @@ class CoreStartupRuntimeTests(unittest.TestCase):
                     with self.assertRaisesRegex(RuntimeError, 'runtime'):
                         self.pool.retry_cleanup(allocation, timeout=.02)
                     self.assertEqual(runtime.events, before_error)
-                    self.assertEqual(owner._model_runtime[1], original_identity)
+                    self.assertEqual(owner._runtime_binding.original[1], original_identity)
                     if entry == 'evaluate':
                         self.assertTrue(any('cleanup' in note and 'runtime' in note
                             for note in getattr(original_error, '__notes__', [])))
@@ -128,7 +128,7 @@ class CoreStartupRuntimeTests(unittest.TestCase):
         with recovery.RecoveryRuntime(rows) as runtime:
             owner = self.owner()
             owner.start()
-            identity = deepcopy(owner._model_runtime[1])
+            identity = deepcopy(owner._runtime_binding.original[1])
             before = list(runtime.events)
             try:
                 runtime.identity = dict(identity, job_id='replacement-job')
@@ -141,7 +141,7 @@ class CoreStartupRuntimeTests(unittest.TestCase):
                 remote = lambda events: [event for event in events
                     if event[0] in ('actor', 'submit', 'driver_get', 'kill', 'cancel')]
                 self.assertEqual(remote(runtime.events), remote(before))
-                self.assertEqual(owner._model_runtime[1], identity)
+                self.assertEqual(owner._runtime_binding.original[1], identity)
                 self.assertEqual(self.pool.snapshot()['allocations'], 1)
             finally:
                 runtime.identity = identity
@@ -161,7 +161,7 @@ class CoreStartupRuntimeTests(unittest.TestCase):
                     with self.assertRaisesRegex(RuntimeError, 'runtime'):
                         owner.start()
                 self.assertIsNone(owner._service_allocation.describe()['model_identity'])
-                self.assertEqual(owner._model_runtime[1], identity)
+                self.assertEqual(owner._runtime_binding.original[1], identity)
                 self.assertEqual(self.pool.snapshot()['allocations'], 1)
             finally:
                 runtime.identity = identity
@@ -173,12 +173,12 @@ class CoreStartupRuntimeTests(unittest.TestCase):
             owner = self.owner()
             try:
                 ready = owner.start()
-                self.assertTrue(owner._model_runtime_capture_attempted)
-                self.assertIsNone(owner._model_runtime)
+                self.assertTrue(owner._runtime_binding.attempted)
+                self.assertIsNone(owner._runtime_binding.original)
                 context = SimpleNamespace(get_job_id=lambda: 'later-job', get_node_id=lambda: 'later-node')
                 with patch.object(runtime.ray, 'get_runtime_context', return_value=context, create=True):
                     self.assertEqual(owner.start(), ready)
-                    self.assertIsNone(owner._model_runtime)
+                    self.assertIsNone(owner._runtime_binding.original)
                     self.assertIsNone(owner._service_allocation._runtime_identity)
                     with self.assertRaisesRegex(RuntimeError, 'runtime'):
                         self.pool.retry_cleanup(owner._service_allocation.allocation_id, timeout=1)
@@ -203,9 +203,9 @@ class CoreStartupRuntimeTests(unittest.TestCase):
             from src.execution_provider.adapters.records_service_budget import RecordsPayloadPool
             observed = RecordsPayloadPool._ray_runtime_observation(runtime.ray)
             owner.bind_model_runtime(observed)
-            original = dict(owner._model_runtime[1])
+            original = dict(owner._runtime_binding.original[1])
             observed[1]['job_id'] = 'mutated-input-copy'
-            self.assertEqual(owner._model_runtime[1], original)
+            self.assertEqual(owner._runtime_binding.original[1], original)
             runtime.identity = dict(original, job_id='replacement-before-first-start')
             try:
                 with patch.object(owner._actors, 'start', wraps=owner._actors.start) as start:
@@ -222,13 +222,13 @@ class CoreStartupRuntimeTests(unittest.TestCase):
         with service.fixtures.ThreadedRuntime([]) as runtime:
             owner = self.owner()
             owner.bind_model_runtime()
-            self.assertIsNone(owner._model_runtime)
+            self.assertIsNone(owner._runtime_binding.original)
             context = SimpleNamespace(get_job_id=lambda: 'later-job', get_node_id=lambda: 'later-node')
             try:
                 with patch.object(runtime.ray, 'get_runtime_context', return_value=context, create=True):
                     with self.assertRaisesRegex(RuntimeError, 'rebound'):
                         owner.bind_model_runtime((runtime.ray, dict(job_id='later-job', node_id='later-node')))
-                self.assertIsNone(owner._model_runtime)
+                self.assertIsNone(owner._runtime_binding.original)
             finally:
                 owner.close(timeout=1)
         with recovery.RecoveryRuntime([]) as runtime:
@@ -238,8 +238,8 @@ class CoreStartupRuntimeTests(unittest.TestCase):
                 runtime.identity = dict(runtime.identity, node_id='changed-before-binding')
                 with self.assertRaisesRegex(RuntimeError, 'runtime'):
                     owner.bind_model_runtime(observed)
-                self.assertFalse(owner._model_runtime_capture_attempted)
-                self.assertIsNone(owner._model_runtime)
+                self.assertFalse(owner._runtime_binding.attempted)
+                self.assertIsNone(owner._runtime_binding.original)
             finally:
                 owner.close(timeout=1)
 
@@ -256,10 +256,38 @@ class CoreStartupRuntimeTests(unittest.TestCase):
                 self.assertEqual(results[0]['engine_uid'], ready['engine_uid'])
                 self.assertEqual(results[0]['prompt_tokens'], 11)
                 self.assertEqual(len(runtime.async_actors), 1)
-                self.assertEqual(owner._model_runtime[1], observed[1])
-                self.assertIsNot(owner._model_runtime[1], observed[1])
+                self.assertEqual(owner._runtime_binding.original[1], observed[1])
+                self.assertIsNot(owner._runtime_binding.original[1], observed[1])
             finally:
                 owner.close(timeout=3)
+
+    def test_service_binding_keeps_rebind_and_connection_error_types_distinct(self):
+        with recovery.RecoveryRuntime([]) as runtime:
+            owner = self.owner()
+            observed = (runtime.ray, dict(runtime.identity))
+            owner.bind_model_runtime(observed)
+            # A recorded service identity is the premise; no model is started.
+            allocation = owner._service_allocation
+            allocation._runtime_identity = dict(runtime.identity)
+            try:
+                runtime.identity = dict(runtime.identity, job_id='replacement-job')
+                for supplied in (None, observed):
+                    with self.subTest(supplied=supplied is not None), self.assertRaisesRegex(ValueError, 'runtime'):
+                        owner.bind_model_runtime(supplied)
+                ready = dict(engine_uid='fixture-engine', producer_owner_uid='fixture-producer')
+                with patch.object(owner._actors, 'ray', runtime.ray), \
+                        patch.object(owner._actors, 'model_ready', ready):
+                    with self.assertRaisesRegex(ValueError, 'startup Ray runtime'):
+                        allocation.observe_ready(owner)
+                with self.assertRaisesRegex(RuntimeError, 'rebound'):
+                    owner.bind_model_runtime((runtime.ray, dict(runtime.identity)))
+                with self.assertRaises(ValueError):
+                    owner.bind_model_runtime((runtime.ray, []))
+                self.assertEqual(runtime.async_actors, [])
+            finally:
+                runtime.identity = dict(observed[1])
+                allocation._runtime_identity = None
+                owner.close(timeout=1)
 
     def test_confirmed_service_close_repeats_after_shutdown_without_another_actor_action(self):
         with recovery.RecoveryRuntime([]) as runtime:

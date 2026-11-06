@@ -194,7 +194,7 @@ class RollingServiceLifecycleTests(unittest.TestCase):
                     self.assertEqual(f.runtime.events, blocked)
                     self.assertFalse(grant.released)
                     self.assertIs(owner.owner, grant.producer)
-                    self.assertEqual(owner._model_runtime[1], identity)
+                    self.assertEqual(owner._runtime_binding.original[1], identity)
                     with self.assertRaisesRegex(RuntimeError, 'runtime'):
                         owner.close(timeout=.02)
                     self.assertEqual(f.runtime.events, blocked)
@@ -208,15 +208,15 @@ class RollingServiceLifecycleTests(unittest.TestCase):
         f, owner, source, grant, _ = self.setup_owner()
         with patch.object(f.runtime.ray, 'get_runtime_context', return_value=None):
             owner.bind_model_runtime()
-        self.assertTrue(owner._model_runtime_capture_attempted)
-        self.assertIsNone(owner._model_runtime)
+        self.assertTrue(owner._runtime_binding.attempted)
+        self.assertIsNone(owner._runtime_binding.original)
         with self.assertRaisesRegex(RuntimeError, 'runtime'):
             owner.bind_model_runtime((f.runtime.ray, dict(job_id='fixture-original-job',
                                                         node_id='fixture-original-node')))
         with self.assertRaisesRegex(RuntimeError, 'runtime'):
             owner.evaluate(source, query_id='service-first')
         self.assertEqual(f.events(), [])
-        self.assertIsNone(owner._model_runtime)
+        self.assertIsNone(owner._runtime_binding.original)
         self.assertTrue(grant.released)
 
     def test_terminal_cleanup_still_requires_actual_data_RPC_and_audit_handoff(self):
