@@ -14,7 +14,9 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.data.materializers.text import OrganizerConfig, batch_metrics, make_organizer
+from src.research.data_organization.text_materializers import (
+    OrganizerConfig, batch_metrics, make_organizer,
+)
 
 
 def sample_table(row_count: int = 10) -> pa.Table:

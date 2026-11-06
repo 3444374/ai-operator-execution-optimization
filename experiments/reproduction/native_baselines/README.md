@@ -3,6 +3,21 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="text-organization-research-sources"></a>
+## 文本组织原型研究归位前的来源
+
+Arrow／Daft 文本组织原型逐字迁入[独立研究目录](../../../code/src/research/data_organization/README.md)，
+原配置、排序、装箱和指标函数保持；两份专测随真实用途迁移，旧 `data.materializers.text` 不再提供导入。
+二进制物化继续直接使用共享 Daft runtime，当前 prepared 组批没有因此接入该原型的排序或装箱策略。
+
+准确公开 `81dfc7273efce377be386543562fad577b83f53e` 的
+[文本原件](historical_sources/81dfc727/code/src/data/materializers/text.py.gz)与
+[原包说明](historical_sources/81dfc727/code/src/data/materializers/__init__.py.gz)各保存一次。
+五份投影只增加十条来源及 gzip 格式记录，全部原预期摘要、投影身份、来源版本和已有映射保持；
+先前二进制物化的五条读取继续使用同目录原件。
+两份专测不在投影文件列表中，从同一准确公开树按旧路径恢复，不重复保存副本。
+历史结果、标量 packing／cost 组件及输出成本汇总脚本均保留。
+
 <a id="payload-daft-runtime-source"></a>
 ## 二进制物化直接使用共享 Daft runtime 时的来源
 

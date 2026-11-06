@@ -1,7 +1,9 @@
-"""Current Daft payloads through the actual Ray submission adapter (real Ray test)."""
+"""Research Daft batches through the actual Ray submission adapter (real Ray test)."""
 import unittest
 import pyarrow as pa
-from src.data.materializers.text import DaftOrganizer, OrganizerConfig
+from src.research.data_organization.text_materializers import (
+    DaftOrganizer, OrganizerConfig,
+)
 from src.scheduling.submission_control.admission import StaticAdmissionController
 from src.scheduling.core.models import BatchRequest, EndpointSnapshot, PayloadEnvelope, TopologySnapshot
 from src.scheduling.runtime.ray_adapter import RaySubmissionAdapter
