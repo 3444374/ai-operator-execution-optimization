@@ -29,10 +29,9 @@ from src.execution_provider.adapters.ray_map_transport import RayMapConfig, RayM
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.session_contract import SessionSpec, State
 from src.scheduling.core.session_contract import OfferedTask, TaskInfo
-from .attempt_ledger import AttemptBudget
+from .attempt_ledger import AttemptBudget, guard_remote_request as _guard_remote_request
 from .buffered_events import BufferedEvents, compact_event
 from .cell_budget import CellBudgetLedger
-from .choice_gateway_observer import _guard_remote_request
 
 
 ROWS, CAPACITY, BATCH_ROWS = 1024, 64, 16
@@ -448,7 +447,7 @@ def run_probe(output):
     new_private_directory(output)
     repo = Path(__file__).resolve().parents[3]
     sources = ('code/src/experiments/map_observation_probe.py',
-               'code/src/experiments/choice_gateway_observer.py', 'code/src/experiments/cell_budget.py',
+               'code/src/experiments/attempt_ledger.py', 'code/src/experiments/cell_budget.py',
                'code/src/experiments/shared_request_budget.py', 'code/src/experiments/buffered_events.py',
                'code/src/execution_provider/adapters/ray_map_transport.py',
                'code/src/execution_provider/adapters/incremental_execution.py',

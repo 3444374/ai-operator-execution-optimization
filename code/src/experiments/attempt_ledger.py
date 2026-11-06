@@ -1,4 +1,4 @@
-"""Durably reserve a configured experiment budget before HTTP I/O.
+"""Durably reserve a configured experiment budget before request dispatch.
 
 Only experiment runners use this ledger. A failed or uncertain attempt is never
 refunded; a missing or corrupt existing ledger cannot silently create a new one.
@@ -8,12 +8,12 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 import fcntl
 import hashlib
-import http.client
 import json
 import os
 from pathlib import Path
 import re
 import stat
+import time
 
 
 from src.infrastructure.request_budget import BudgetError, BudgetExhausted
@@ -61,59 +61,28 @@ def required_ledger_bytes(budget: AttemptBudget) -> int:
     return header + budget.limit * (row - 1) + digits
 
 
-@contextmanager
-def observe_http_posts(ledger: "AttemptLedger", record):
-    """Reserve and observe POST bytes in one isolated qualification process.
-
-    Headers are never recorded. The original HTTP implementation sends the
-    unchanged body only after reservation and the observer have succeeded.
-    """
-    original = http.client.HTTPConnection.request
-    if getattr(original, "_choice_observer", False):
-        raise BudgetError("nested HTTP budget observers are not supported")
-
-    def request(connection, method, url, body=None, headers=None, *, encode_chunked=False):
-        if method.upper() == "POST":
-            payload = body.encode("utf-8") if isinstance(body, str) else body
-            if not isinstance(payload, bytes):
-                raise BudgetError("smoke POST must have a complete byte body")
-            attempt = ledger.reserve(hashlib.sha256(payload).hexdigest())
-            record(attempt, payload)
-        return original(connection, method, url, body, headers or {}, encode_chunked=encode_chunked)
-
-    request._choice_observer = True
-    http.client.HTTPConnection.request = request
+def guard_remote_request(task, ledger, observe_request, record):
+    """Measure durable accounting and request recording before dispatch."""
+    started = time.monotonic_ns()
+    hashed = reserved = observed = None
+    status = 'failed'
     try:
-        yield
+        body = task.task.payload
+        digest = hashlib.sha256(body).hexdigest()
+        hashed = time.monotonic_ns()
+        attempt = ledger.reserve(digest)
+        reserved = time.monotonic_ns()
+        observe_request(attempt, body)
+        observed = time.monotonic_ns()
+        status = 'completed'
     finally:
-        http.client.HTTPConnection.request = original
-
-
-@contextmanager
-def observe_async_http_posts(ledger: "AttemptLedger", record):
-    """Budget complete async POST bodies before send; never observe auth headers."""
-    import httpx
-
-    original = httpx.AsyncClient.send
-    if getattr(original, "_choice_observer", False):
-        raise BudgetError("nested HTTP budget observers are not supported")
-
-    async def send(client, request, *args, **kwargs):
-        if request.method.upper() == "POST":
-            try:
-                payload = request.content
-            except httpx.RequestNotRead:
-                raise BudgetError("smoke POST must have a complete byte body") from None
-            attempt = ledger.reserve(hashlib.sha256(payload).hexdigest())
-            record(attempt, payload)
-        return await original(client, request, *args, **kwargs)
-
-    send._choice_observer = True
-    httpx.AsyncClient.send = send
-    try:
-        yield
-    finally:
-        httpx.AsyncClient.send = original
+        ended = time.monotonic_ns()
+        record(dict(event='remote_request_guard',
+                    key=dict(session_id=task.key.session_id, sequence=task.key.sequence),
+                    status=status, hash_ns=hashed-started if hashed is not None else None,
+                    reserve_ns=reserved-hashed if reserved is not None else None,
+                    request_observe_ns=observed-reserved if observed is not None else None,
+                    elapsed_ns=ended-started))
 
 
 def _unique_object(pairs):

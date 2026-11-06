@@ -436,3 +436,22 @@ IPC 拆分涉及的四个历史文件继续使用已有19条准确路由，没�
 在独立树恢复，不把旧策略重新加入当前搜索路径，也不自动恢复历史模型环境。
 [本批源码、328项检查及原失败](../../results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
 包含全部五份共3,010文件的完整恢复；现用批反馈、AIMD基类、其他平滑统计与观察字段保持。
+
+
+<a id="retired-choice-observer-sources"></a>
+## 旧 HTTP 观测清理后的来源（2026-11-06）
+
+旧 Choice 观测模块和专属测试退出维护树；仍被使用的请求守卫迁入现有 AttemptLedger 模块，
+当前 native HTTPX观察、mapped预算和PG provider不改行为。
+删除清单、完整Git恢复与旧机制用途见[准确5539来源](../paused_pg_and_retired_http_20261105/README.md#retired-choice-http-observers)。
+
+修改前以 `materialize_native_baseline.read_source` 读取全部30条受影响绑定，
+其余文件已有原overrides或不在五份投影中；只有 `gateway_observer.py` 原先取维护树，须保存一份准确旧源：
+
+- 来源：`5539a19ff85f9dd96524f10c8c1197b399a04fb8`。
+- 原字节：4450；解压SHA256：`98ea566daeddad686d3c44d9cc4c00e214485ec178e71e6bda0beb79db1199e2`。
+- 共享原件：[`gateway_observer.py.gz`](historical_sources/5539a19f/code/src/experiments/gateway_observer.py.gz)；五份投影只追加对应的5条来源／gzip映射。
+
+原五个来源版本、投影ID、3010条expected和所有已有overrides／格式声明不改。
+本批纯CPU检查已完整构造五树并逐文件核对3010份摘要，不执行历史模型或实验命令；
+当前代码不导入这个压缩原件。旧结果、负结果与原失败继续按原身份解释。
