@@ -6,9 +6,7 @@ Shared-service coordination and SAOR policies live in
 
 - `config.py` keeps the typed scenarios, work-cost values, control settings, capacity arithmetic
   and argument readers used by research methods and offline evidence audits.
-- `runtime.py` retains host/resource sampling helpers; `preflight.py` supplies the idle reader
-  used by the maintained scenario script.
-- `evidence.py` validates stored Job records and replay identity.
+- `preflight.py` supplies the idle reader used by the maintained scenario script.
 - `metrics.py` exports group-level service deltas and shared-credit utilization.
 - `fairness_metrics.py` derives service rates and completion-accounted fairness.
 - `resource_metrics.py` summarizes recorded GPU, vLLM, CPU, memory and energy samples.
@@ -21,3 +19,8 @@ Import metric functions from `metrics.py`. The old JSON loader, profiler Job com
 and runner CLI have left the maintained code. Their exact sources and the earlier complete
 launcher tree are recorded in the [recovery notes](../../../../experiments/reproduction/native_baselines/README.md#retired-shared-vllm-loader).
 Original measurements and the 14 research assets remain unchanged.
+
+The old group runner's resume/observer helpers and opt-in batched observation hook have also
+retired. Current host/GPU readers, metric derivation and the public batch reservation remain.
+Their exact original sources and tests are in the
+[runner-support recovery notes](../../../../experiments/reproduction/native_baselines/README.md#retired-shared-runner-support).

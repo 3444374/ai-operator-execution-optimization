@@ -581,3 +581,49 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 恢复更早的完整执行接线应使用
 [`7bf1d92baf2611925c608cfe76b4a766855bd77e`完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)
 和[原恢复说明](../paused_pg_and_retired_http_20261105/README.md)，不能将旧 loader 单文件接到当前执行器。
+
+<a id="retired-shared-runner-support"></a>
+## 旧共享运行器辅助和批量观察接线
+
+旧共享运行器退出后，`shared_vllm/evidence.py` 和 `runtime.py` 没有当前执行入口，
+后者只剩一项旧采样适配测试。两模块及该专属测试退出当前代码；公共主机／GPU读数、
+现用指标、`preflight.wait_for_idle`、工作证据和 SAOR／共享额度算法保留。
+`shared_vllm.config` 中只被该旧运行器使用的 `RunnerOptions`／`GroupRunIdentity` 一并退役；
+现用场景 CLI 自己定义的同名 `RunnerOptions` 保持。
+
+`BatchedRequestGuard` 原接于已退役的 Choice 观察器，现随专属测试退出当前代码。
+公共 `reserve_many` 和普通请求守卫保留，[原批记账负结果](../../results/diagnostics/request_budget_batch_20261003/README.md)
+及原始证据不改；本次没有重跑旧测量或改变请求、结果、unknown 的实际处理。
+
+此次删除前的完整准确源码为
+[`e86afedb91e5d913ebb2f988cbfd5f305b4c0482`](https://github.com/3444374/ai-operator-execution-optimization/tree/e86afedb91e5d913ebb2f988cbfd5f305b4c0482)。
+
+| 删除路径 | 字节 | SHA-256 |
+|---|---:|---|
+| [code/src/experiments/shared_vllm/evidence.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e86afedb91e5d913ebb2f988cbfd5f305b4c0482/code/src/experiments/shared_vllm/evidence.py) | 29389 | `c83e2f707d07b3ae7582bbe4690585da0f167023178c59d69c8a4bf35848adf8` |
+| [code/src/experiments/shared_vllm/runtime.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e86afedb91e5d913ebb2f988cbfd5f305b4c0482/code/src/experiments/shared_vllm/runtime.py) | 13188 | `5e03d4af0276076085250046505489b62b73efce14137c2e078ea590b3612c4c` |
+| [code/src/experiments/batched_request_guard.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e86afedb91e5d913ebb2f988cbfd5f305b4c0482/code/src/experiments/batched_request_guard.py) | 3833 | `3596b70e501e4738979e1f6e5ef6e4f9c5f8fef5eb74aecfb96b75c8dc57c4a2` |
+| [code/tests/execution_provider/test_batched_request_guard.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e86afedb91e5d913ebb2f988cbfd5f305b4c0482/code/tests/execution_provider/test_batched_request_guard.py) | 7464 | `ee929c5d89e3526a7e27904789a1586a39886b3b2d364344258643f2898132b0` |
+
+五份代码投影原已从 `b08936d2` 读取 runtime 和 config；专属Guard测试与新增采样测试不在其原文件列表中。
+本次只为 evidence 和 Guard 两份原件增加10条来源及gzip格式记录，保存于
+[`historical_sources/e86afedb/code/src/experiments/`](historical_sources/e86afedb/code/src/experiments/)。
+原3,010条文件摘要、五个投影身份、来源版本和已有映射保持。
+恢复旧运行器的整套启动接线仍使用
+[`7bf1d92baf2611925c608cfe76b4a766855bd77e`完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)
+及[原恢复说明](../paused_pg_and_retired_http_20261105/README.md)，不将旧单文件接回当前执行器。
+
+
+<a id="retired-observation-aliases"></a>
+## 观测旧导入和分阶段采样归位
+
+图像CLI、观察器和当前测试直接导入`src.observability`的时钟、事件、模型复用与请求身份。
+`src.experiments.buffered_events`、`execution_timing`、`image_reuse`、`request_identity`四个转发路径删除，
+`ProcessSampler`移至`src.observability.process_resources.phase_sampler`，旧`experiments.process_sampling`不再导出。
+类逻辑、事件字段和采样默认保持；三份观测测试归入`tests/observability`。
+
+准确退役前文件、旧测试及当时所有调用在
+[e86afedb完整来源](https://github.com/3444374/ai-operator-execution-optimization/tree/e86afedb91e5d913ebb2f988cbfd5f305b4c0482)恢复。
+本次未新增这些文件的副本或恢复映射：五份具名投影此前已读取各自准确原件，读取值保持。
+旧直接导入不再兼容；需要旧API时使用完整隔离来源，不将转发壳加回当前搜索路径。
+原图像和观测结果、失败记录以及尚在使用的HSE执行保持各自身份。

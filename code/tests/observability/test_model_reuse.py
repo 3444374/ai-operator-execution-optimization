@@ -15,7 +15,7 @@ import weakref
 import numpy as np
 from PIL import Image
 
-from src.experiments import image_reuse as reuse
+from src.observability import model_reuse as reuse
 from src.modalities.image.clip import ClipTensorActor
 from src.modalities.image.contracts import ImageEmbeddingBatch
 from src.modalities.image.clip_batch_workers import RayDataClipPredictor

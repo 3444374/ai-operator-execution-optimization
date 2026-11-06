@@ -115,7 +115,7 @@ def main(argv=None):
                 direct.close()
             except BaseException as exc:
                 report["cleanup_error"] = type(exc).__name__
-                from src.experiments.execution_timing import is_timing_error
+                from src.observability.execution_timing import is_timing_error
                 if error is None or (is_timing_error(error) and not is_timing_error(exc)):
                     if error is not None:
                         exc.add_note("Prior image timing failure: " + type(error).__name__)

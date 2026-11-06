@@ -179,7 +179,7 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     from src.experiments.attempt_ledger import AttemptBudget
     from src.experiments.cell_budget import CellBudgetLedger
     from src.observability.records_telemetry import RecordsTelemetry
-    from src.experiments.process_sampling import ProcessSampler
+    from src.observability.process_resources.phase_sampler import ProcessSampler
     import psutil
     import ray
 

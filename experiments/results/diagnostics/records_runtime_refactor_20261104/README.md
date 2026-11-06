@@ -3,7 +3,7 @@
 本记录对应 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的执行工程整理。
 本页按各批源码与运行身份保留过程；早期结构表不表示最新接入状态。旧 PG／HTTP 实验接线已按
 [现用入口整理](../runtime_entry_cleanup_20261105/README.md)退役；当前实现与未完成项见
-[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[共享加载器退役](#shared-service-loader-retirement)，此前[离线汇总与旧研究编排](#saor-offline-evidence-retirement)保持原范围，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
+[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新核对见[全项目入口与观测整理](#global-entry-observation-cleanup)，此前[共享加载器退役](#shared-service-loader-retirement)保留原范围，此前[离线汇总与旧研究编排](#saor-offline-evidence-retirement)保持原范围，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
 基准为 PR #90 的 `bfb9100e2f3fa090fdf2304359979b853236e06a`，tree 为
 `c8a86b0bcff8bf0161dcbbd005bc2660060d228e`。该 PR 当时为 Draft，未合并。
 起始切片当时只做 CPU 检查、等待审查与整合；后续发布和实机结果按各批自己的源码解释，不提供跨版本的模型性能结论。
@@ -3648,3 +3648,53 @@ CLI的准确3,007字节原件只保存一次并增加五条读取／格式路由
 各口径含注释和空行，文档／测试／压缩历史副本不混入；并行IMLane新增内容保留，不算作本批删除或性能收益。
 本批未运行服务、数据库、真实Ray、模型或GPU，没有验证旧共享服务执行器或新的模型功能。
 原生Ray子进程收尾、无声明物理RAM自动授予和完整查询RSS计量仍不因本批清理解决。
+
+
+<a id="global-entry-observation-cleanup"></a>
+## 全项目入口、观测职责与旧运行器支持清理（2026-11-06）
+
+本轮按现用入口核对代码、图像适配、观测、脚本、研究组件和部署，不把新增PG接入、物理RAM授予或新算子当作重构前置项。
+这是入口与受影响调用的核查，不表示逐行证明全仓已无可改进代码。
+
+| 对象 | 实际处理与保留原因 |
+|---|---|
+| 图像CLI、HTTP观测和Map探针 | 直接使用现有observability实现；删除四份experiments转发，真实HTTP观测器保留 |
+| 分阶段进程采样 | 原ProcessSampler归入process_resources/phase_sampler，三份观测测试归到tests/observability；类逻辑、默认与字段不改 |
+| 旧共享runner支持 | 删除无当前入口的evidence、runtime及两份仅由它们使用的值类；现用工作量、主机／GPU读数和指标保持 |
+| 旧batched观察钩子 | 旧Choice观察器已退役，移除其专属钩子与测试；公共reserve_many、普通guard和原负结果保留 |
+| 现用HSE、语义与数据组织 | LOTUS图像后端和CLIP脚本仍实际调用HSE，增量图像接口未替代它；方法、materializer、调度与模型算法不改 |
+| 部署与研究 | 仍被README／测试使用、以exec保持PID的启动器保留；SAOR／多任务算法、14份研究材料与当前分析保留 |
+
+Map探针的源码清单也改为真正的buffered_events实现。先删转发再检查时，旧清单会在首个派发前报FileNotFoundError；
+原错误保留，修正后实际run_probe保留同一业务异常、零派发及准确来源摘要。
+两个只检查旧转发身份的测试退出；真实事件顺序、持久写入、取消、模型复用和时钟行为继续测试。
+
+首轮本地选择误纳一项真实IPC推进用例；它先在Transformers延迟导入时遇到旧fixture伪造的torch版本`CPU-fixture`，尚未启动IPC。
+该夹具现只替换ray／vllm，其他包版本交给原函数，原断言不放宽；整项移到正常服务器验证。
+没有重试本机此前被拒绝的Unix socket或sysctl操作，也未把这一项写成本地通过。
+
+准确整合源码为`743f0476da436a79aaf20148d0befcefb4c012ef`，树`d173c6be38b9e7aeb447d276ef5fe13188f7e5e8`，
+保留远端`402cdda3`的IMLane材料。最终48个测试方法、21个子例全部通过，耗时3.81秒；1,070份受测code摘要与该提交匹配。
+包括一次五份代码树的3,010条完整摘要恢复；早期37项、子候选12项和其他补跑不加总为新覆盖。
+标准JUnit共有69条（含子例），通过判断来自实际测试结果，不按日志文字或固定总数判定。
+本机未选择真实进程采样和异步传输／CPU IPC，服务器检查仍待准确发布后安排。
+
+独立审查确认四个观测实现逐字不变，ProcessSampler除未用os导入外原样，六个研究值类／四个读取函数和其余遥测测试保持。
+根观测切片的45条受影响历史读取及旧运行器20条读取保留原值；完整3,010恢复另有实际用例。
+旧evidence和batched钩子仅各保存一份e86准确原件，新增10条读取／格式路由；其他源已有准确副本，未重复保存或改原ID／摘要。
+[观测旧导入恢复](../../../reproduction/native_baselines/README.md#retired-observation-aliases)与
+[旧runner支持恢复](../../../reproduction/native_baselines/README.md#retired-shared-runner-support)解释旧API及完整来源。
+4份本地驱动与10份服务器helper／packet／配置／命令无待删调用；不把该有限仓外检查扩大为所有外部存储。
+
+[机器摘要](raw/global_entry_observation_cleanup_checks.json)与[脱敏原始记录](raw/global_entry_observation_cleanup_raw.json.gz)
+保存两次原错误、精确选择、来源、恢复与审查摘要。机器摘要的`local_cpu.collected_node_ids`是48个公开pytest参数，
+可在相应源码和依赖下以`PYTHONPATH=code PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -B -m pytest -q <逐个node ID>`复查；
+真实进程／IPC另运行，不在该本地选择中。模型、GPU和真实Ray启动均为0。
+
+本轮src＋scripts Python净减1,324行，测试少161行；分阶段采样从experiments移入观测使核心口径增加98行，搬移不算删除。
+当前核心56,289、宽口径109,636；较固定main分别为+2,198／−30,699，较3fd为−5,339／−40,009。
+口径为含注释／空行的物理Python行，测试、文档及压缩旧源另计；未把并行新增或代码量变化写成性能收益。
+
+本批停止修改的条件是已确认旧消费者和替代关系的项目处理完、现用行为与历史读取保持、相关检查可复核。
+实际进程／CPU IPC等待服务器回执；原生Ray子进程收尾、模型质量／性能及物理RAM自动授予不因代码清理完成。
+后续新增研究能力按实际任务推进，不为了让重构一直运行而增加控制器、兼容壳或固定限制。

@@ -28,7 +28,7 @@ from src.semantic_methods.lotus.image_workflow import RetrievalQuery, image_fram
 
 
 def _retain_failure(report, error, failure, scope, *, cleanup=False):
-    from src.experiments.execution_timing import is_timing_error
+    from src.observability.execution_timing import is_timing_error
     if error is None or (cleanup and is_timing_error(error) and not is_timing_error(failure)):
         if error is not None:
             failure.add_note("Prior image timing failure: " + type(error).__name__)
@@ -130,7 +130,7 @@ def main(argv=None):
         report["model_reuse_observations"] = []
 
     def observe_phase(phase, *, allow_workers=True):
-        from src.experiments.image_reuse import snapshot_models
+        from src.observability.model_reuse import snapshot_models
         at = time.monotonic_ns()
         snapshot = dict(phase=phase, observed_monotonic_ns=at, local_models=snapshot_models(), worker_models=[])
         if args.arm in ("semloom_static", "semloom_hse") and executor is not None and executor.pool is not None:
@@ -180,7 +180,7 @@ def main(argv=None):
             max_batch_size=args.stock_outer_batch_size, normalize_embeddings=True, device=stock_device)
         stock.transformer.to(dtype=__import__("torch").__dict__[args.dtype])
         if reuse_enabled:
-            from src.experiments.image_reuse import observe_stock_model
+            from src.observability.model_reuse import observe_stock_model
             observe_stock_model(stock.transformer[0].model, device=stock_device)
         report["stock_rm_device"] = stock_device
         report["image_model_lifecycle"] = ("cold_native_graph_per_rm_call" if args.arm == "ray_data"

@@ -306,18 +306,6 @@ class RecordsTelemetryTests(unittest.TestCase):
         self.assertNotIn("host_metrics_status", old)
         self.assertEqual(observed["host_metrics_status"], "unavailable:PermissionError")
 
-    def test_existing_shared_runner_reuses_host_reader_without_model_probe(self):
-        from src.experiments.shared_vllm.runtime import _resource_sample
-        host = dict(host_cpu_busy_cores=1, host_cpu_per_core_max_pct=25,
-                    host_memory_used_pct=40, host_memory_available_mib=200)
-        gpu = dict(gpu_metrics_status="snapshot", gpu_utilization_pct="50", gpu_memory_used_mib="12", gpu_power_w="90")
-        with patch("src.experiments.shared_vllm.runtime.host_metadata", return_value=host) as reader, \
-                patch("src.experiments.shared_vllm.runtime.gpu_metadata", return_value=gpu), \
-                patch("src.experiments.shared_vllm.runtime.scrape_prometheus_metrics", return_value={}):
-            sample = _resource_sample(("http://127.0.0.1/metrics",), time.time())[0]
-        reader.assert_called_once_with()
-        self.assertEqual({field: sample[field] for field in host}, host)
-
     def test_session_start_query_and_close_literal_events_form_distinct_windows(self):
         events = [dict(event=event, query_id=query, monotonic_ns=i*10) for i, (event, query) in enumerate([
             ("session_start", None), ("session_ready", None), ("query_start", "q1"),

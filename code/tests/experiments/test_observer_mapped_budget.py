@@ -16,7 +16,7 @@ from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.mapped_request_budget import MappedUnitOwner
 from src.experiments.native_http_observer import NativeSessionFactory, observe_native_httpx
 from src.experiments.request_budget_client import open_request_budget
-from src.experiments.request_identity import RAY_IDENTITY_FIELD
+from src.observability.request_identity import RAY_IDENTITY_FIELD
 
 
 class MappedObserverTests(unittest.TestCase):

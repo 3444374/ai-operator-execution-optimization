@@ -111,6 +111,24 @@ class ObservationProbeTests(unittest.TestCase):
                 run_case(root, 'memory', 'memory', rows=8, capacity=4, batch_rows=2)
             self.assertEqual(sentinel.read_text(), 'kept')
 
+    def test_probe_failure_keeps_current_source_identity_without_starting_the_suite(self):
+        import hashlib
+        from src.experiments import map_observation_probe as probe
+        error = RuntimeError('fixture stops before any synthetic dispatch')
+        with tempfile.TemporaryDirectory() as root:
+            output = Path(root) / 'probe'
+            with patch.object(probe, 'run_case', side_effect=error), self.assertRaises(RuntimeError) as caught:
+                probe.run_probe(output)
+            self.assertIs(caught.exception, error)
+            manifest = json.loads((output / 'manifest.json').read_text())
+            source = 'code/src/observability/buffered_events.py'
+            repository = Path(probe.__file__).resolve().parents[3]
+            self.assertEqual(manifest['source_sha256'][source],
+                             hashlib.sha256((repository / source).read_bytes()).hexdigest())
+            summary = json.loads((output / 'summary.json').read_text())
+            self.assertEqual(summary['status'], 'failed')
+            self.assertEqual(summary['synthetic_calls_completed'], 0)
+
     def test_failure_accounting_includes_calls_that_settle_during_cleanup(self):
         sent = threading.Event()
         submit = SyntheticRay._submit

@@ -14,30 +14,6 @@ from src.research.multitask.saor_capacity import (
 
 
 @dataclass(frozen=True)
-class RunnerOptions:
-    config_path: Path
-    profiler_path: Path
-    python_executable: Path
-    output_dir: Path
-    health_url: str
-    metrics_urls: tuple[str, ...]
-    ray_address: str
-    idle_timeout_s: float
-    start_delay_s: float = 15.0
-    max_start_lateness_s: float = 2.0
-    max_start_skew_s: float = 0.5
-    resume: bool = False
-    recover_stale_lease: bool = False
-    rehearsal: bool = False
-    observation_endpoint_urls_by_job: tuple[tuple[str, ...], ...] = ()
-
-@dataclass(frozen=True)
-class GroupRunIdentity:
-    phase: str
-    repeat_index: int
-    order_index: int
-
-@dataclass(frozen=True)
 class SharedVllmScenario:
     scenario_id: str
     policy: str

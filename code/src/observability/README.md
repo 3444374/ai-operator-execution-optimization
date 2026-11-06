@@ -10,9 +10,16 @@ over the execution policy it observes.
   preserves the original implementation used by the external Kalypso owner helper;
   it imports no execution provider or retired experiment. Limits come from that owner.
   Host SHM delta is not creator attribution, and summed RSS can count shared pages twice.
+<a id="current-observation-owners"></a>
+
 - `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,
-  bounded event output and weak model-reuse observations. Existing experiment imports share the same
-  module objects; enabling flags, schemas and failure handling remain unchanged.
+  bounded event output and weak model-reuse observations. Image CLIs and experiment observers import
+  these implementations directly. The former `src.experiments` forwarding modules are retired;
+  enabling flags, schemas and failure handling remain unchanged.
+- `process_resources/phase_sampler.py` owns the explicitly started `ProcessSampler`: phase-labelled
+  process RSS and CPU counters, optional child discovery and disk output. Its body is unchanged;
+  importing it starts no sampler. The implementation and its tests now live with observability.
+  This reader does not grant RAM or replace the supervisor's separate `ResourceMonitor`.
 - `httpx_observer.py` observes complete POSTs using a caller-supplied request allowance;
   `request_identity.py` owns task-local observation identity. Durable experiment ledgers remain in
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.

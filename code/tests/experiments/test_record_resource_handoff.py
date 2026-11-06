@@ -565,7 +565,7 @@ class HandoffTests(unittest.TestCase):
             seen.append(deepcopy(value));return dict(status='completed',calls=[dict(fixtures.IDENTITY,call_id=str(i))for i in range(12)])
         native_import=__import__
         def guard(name,*a,**k):
-            if name in ('src.experiments.process_sampling','src.observability.records_telemetry','torch','vllm'):
+            if name in ('src.observability.process_resources.phase_sampler','src.observability.records_telemetry','torch','vllm'):
                 raise AssertionError('light worker imported heavy observation')
             return native_import(name,*a,**k)
         with patch.dict(sys.modules,modules),patch.object(sys,'path',list(sys.path)),patch.object(runner,'dispatch',dispatch),patch.object(self.observer,'install_driver',lambda:None),patch('builtins.__import__',side_effect=guard):

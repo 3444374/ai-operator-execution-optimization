@@ -2,7 +2,7 @@
 
 [Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
 当前[完成范围和未完成项](../../../code/INFRA_STATUS.md#refactor-completion-checklist)与
-[共享研究配置清理](records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)分开实现、历史恢复、CPU和实机证据；不按起始切片概括当前状态。
+[全项目入口与观测整理](records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)分开实现、历史恢复、CPU和实机证据；不按起始切片概括当前状态。
 
 [Records 配置模块整理](records_config_refactor_20261103/README.md)：普通运行与 Session 共享配置解释，
 保留旧导入与执行职责；源码、55组差分回放、CPU检查及后续上下文设计分别记录。
