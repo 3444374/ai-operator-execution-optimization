@@ -106,6 +106,8 @@ helper 元数据无效时仍保留已知用量并让查询失败。阶段解释�
 
 [公开命令](../../../scripts/README.md#原生-lotus-clip-查询)包括文件manifest、模型资格producer及完整查询。
 `--observe-model-reuse`显式保存真实构造身份与整数调用计数，默认关闭；已导出的观测可回收，返回矩阵独立拥有。
+检索的文件写出由[实验报告模块](../../experiments/lotus_image_reporting.py)负责，
+保持原结果／回执字段及成功写出后的引用释放；CLI仍持有执行与清理顺序，方法模块不反向导入实验层。
 可选resource配置只开放static／Ray／Daft单卡、CPU1和外置TF32关闭环境，模型启动前拒绝HSEauto及多卡。
 HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入。
 [本批来源与检查](../../../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)明确区分当前CPU接入、

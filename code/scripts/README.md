@@ -215,6 +215,8 @@ MMQA 配置改为 `scenario=mmqa`、选择 `Q2a/Q2b/Q7`，参数改用 `--data-d
 
 [run_lotus_image_retrieval.py](experiments/run_lotus_image_retrieval.py)与
 [qualify_lotus_clip.py](experiments/qualify_lotus_clip.py)使用明确的模型、输入和执行 owner。
+检索CLI保留参数、执行和资源清理；[实验报告模块](../src/experiments/lotus_image_reporting.py)
+负责向量、结果与写入回执，只释放已写出的观测快照。方法与执行模块不导入该实验层。
 支持和实机范围见[方法说明](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)，
 不因共享 CLIP worker 就互授多卡、任意 DAG 或新模型性能资格。
 
