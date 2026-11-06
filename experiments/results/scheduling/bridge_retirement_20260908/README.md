@@ -1,5 +1,8 @@
 # Consumer deadline fix and v5 incremental bridge retirement
 
+Historical HTTP execution report. The gateway options below are retired; use the
+[complete historical source and recovery notes](../../../reproduction/paused_pg_and_retired_http_20261105/README.md#retired-http-map-owner) for this experiment.
+
 Status: deadline regression fixed; v5 incremental window-one bridge retired after qualification.
 Baseline: `e803e659`; the [plan](../../../plans/增量执行.md#session-20-consumer-deadline-publication-and-window-one-bridge-retirement-2026-09-08)
 records the ordered checks. Synchronous semantic references and wire v5 remain supported.

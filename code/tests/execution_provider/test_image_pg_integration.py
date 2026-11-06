@@ -62,7 +62,7 @@ def image_service(root, mode, ray_api, **fixture_options):
             listener.bind(socket_path)
             listener.listen(3)
             started.set()
-            gateway.serve(listener, stop, handler=None)
+            gateway.serve(listener, stop)
         except BaseException as failure:
             failures.append(failure)
             started.set()

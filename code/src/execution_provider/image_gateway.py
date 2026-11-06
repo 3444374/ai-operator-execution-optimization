@@ -1,15 +1,22 @@
-"""Image protocol specialization of the shared bounded connection owner."""
+"""Own typed image connections, method reservations and the existing Core."""
 
-from __future__ import annotations
+from collections import deque
+from dataclasses import asdict, dataclass, replace
+import socket
+import threading
+import time
 
-from dataclasses import dataclass, replace
-
-from .multiplexed_gateway import MultiSessionMapGateway, MapConnection, PendingOffer
 from .adapters.image_execution import build_image_execution
 from .adapters.image_method import ImageEmbeddingMethod
 from .completion import CompletionAdapterError
+from .gateway_runtime import (
+    _EMPTY, ConnectionCapacity, ConnectionEnd, ConnectionMailbox, ConnectionState,
+    ConnectionWorkers, accept_connection, interrupt_connection,
+)
+from .image_connection import ImageConnection
 from .wire import image
-from .wire.framing import ProtocolError, encode_frame, has_duplicate_fields, read_frame
+from .wire.framing import MAX_FRAME_BYTES, ProtocolError, encode_frame, read_frame
+from ..scheduling.core.session import WakeSignal
 from ..scheduling.core.session_contract import SessionSpec, State, TaskProfile, OfferResult, AdvanceResult
 from ..semantic_methods.budget import MethodBudgetPool, MethodCapacity, row_reservation
 from ..semantic_methods.continuation import MethodLimits
@@ -23,86 +30,74 @@ class ImageAdvance:
     results: tuple[MethodResult, ...]
 
 
-class ImageConnection(MapConnection):
-    def run_image(self, opened):
-        plan = self.gateway.image_config.plan
-        mode, window = image.validate_open(opened, plan)
-        sequence = 0
-        pending = {}
-        if mode != self.gateway.image_config.mode or window > self.max_tasks:
-            raise ProtocolError("INVALID_OPEN")
-        self.connection.sendall(encode_frame(dict(type="opened", protocol_version=7,
-            **image.identities(plan, mode), max_inflight_tasks=window)))
-
-        def deliver():
-            if not pending:
-                raise ProtocolError("INVALID_TASK")
-            while True:
-                if self._peer_stopped():
-                    raise ConnectionResetError("image peer stopped")
-                update = self._session.advance(1)
-                result = update.progress
-                if result.state in (State.FAILED, State.CANCELLED):
-                    raise ProtocolError("IMAGE_EXECUTION_FAILED")
-                if update.results:
-                    item = update.results[0]
-                    try:
-                        if item.row.sequence not in pending:
-                            raise ProtocolError("IMAGE_EXECUTION_FAILED")
-                        payload_digest = pending[item.row.sequence]
-                        message = image.completion_message(plan, mode, item.row.sequence,
-                                                           payload_digest, item.value)
-                        self.connection.sendall(encode_frame(message))
-                        del pending[item.row.sequence]
-                    finally:
-                        # A blocked send retains this result lease. Failed send
-                        # relinquishes the local consumer before core cleanup.
-                        self._session.release((item.row,))
-                    return
-                if not result.has_immediate_work:
-                    self.wait_for_progress(result)
-
-        while True:
-            message = read_frame(self.connection)
-            if message is None:
-                return not pending
-            if has_duplicate_fields(message):
-                raise ProtocolError("INVALID_TASK")
-            if type(message.get("protocol_version")) is not int or message["protocol_version"] != 7:
-                raise ProtocolError("INVALID_TASK")
-            if message == {"type": "close", "protocol_version": 7}:
-                return not pending
-            if message == {"type": "receive", "protocol_version": 7} and mode == "staged":
-                deliver()
-                continue
-            request = image.validate_task(message, plan, mode, sequence)
-            if len(pending) >= window:
-                raise ProtocolError("INVALID_TASK")
-            offered = self._session.offer((PendingOffer(request, sequence),))
-            accepted = offered.accepted_prefix_count == 1
-            if not accepted and offered.status != "BACKPRESSURE":
-                raise ProtocolError("IMAGE_EXECUTION_FAILED")
-            if accepted:
-                pending[sequence] = request.payload_digest
-                sequence += 1
-            if mode == "reference":
-                if not accepted:
-                    raise ProtocolError("IMAGE_EXECUTION_FAILED")
-                deliver()
-            else:
-                self.connection.sendall(encode_frame(dict(type="offered", protocol_version=7,
-                    sequence=str(sequence - 1 if accepted else sequence), accepted=accepted)))
-
-
-class ImageGateway(MultiSessionMapGateway):
-    def __init__(self, config, *, execution_factory=None, **kwargs):
+class ImageGateway:
+    def __init__(
+        self,
+        config,
+        *,
+        max_jobs,
+        max_connections,
+        max_tasks,
+        max_active_requests,
+        frame_timeout_ms,
+        input_bytes=None,
+        result_bytes=None,
+        observer=None,
+        execution_factory=None,
+        execute=None,
+    ):
         self.image_config = config
-        super().__init__(config, execution_factory=execution_factory or build_image_execution, **kwargs)
-        self.connection_buffer_bytes += kwargs["max_tasks"] * 128
+        if any(
+            type(value) is not int or value <= 0
+            for value in (
+                max_jobs,
+                max_connections,
+                max_tasks,
+                max_active_requests,
+                frame_timeout_ms,
+            )
+        ):
+            raise ValueError("gateway capacities and deadlines must be positive integers")
+        if max_jobs > max_connections:
+            raise ValueError("active Job count must fit connection capacity")
+        if any(
+            value is not None and (type(value) is not int or value <= 0)
+            for value in (input_bytes, result_bytes)
+        ):
+            raise ValueError("gateway byte budgets must be positive integers")
+        total_input = max_tasks * MAX_FRAME_BYTES if input_bytes is None else input_bytes
+        total_result = (
+            max_tasks * MAX_FRAME_BYTES if result_bytes is None else result_bytes
+        )
+        self.model_id = config.model_id
+        self.max_connections, self.frame_timeout = max_connections, frame_timeout_ms / 1000
+        self._observer, self._observer_lock = observer, threading.Lock()
+        self.progress = WakeSignal()
+        self.connections = {}
+        self.workers = ConnectionWorkers()
+        self.waiting = deque()
+        self._known_jobs = set()
+        self.execution = (execution_factory or build_image_execution)(
+            config,
+            max_tasks=max_tasks,
+            max_active_requests=max_active_requests,
+            input_bytes=total_input,
+            result_bytes=total_result,
+            observer=self.observe,
+            max_jobs=max_jobs,
+            execute=execute,
+        )
+        self.engine = self.execution.engine
+        self.connection_capacity = ConnectionCapacity(max_connections)
+        if self.engine.jobs.maximum != max_jobs:
+            self.execution.close()
+            raise ValueError("execution factory Job capacity differs from gateway registration")
+        # Reserved independently of task leases, including transient encode/decode copies.
+        self.connection_buffer_bytes = 5 * MAX_FRAME_BYTES + max_tasks * 128
         self.method_limits = MethodLimits(262144, 1, config.plan.result_bytes, 1)
         self.row_reservation = row_reservation(self.method_limits)
-        self.method_pool = MethodBudgetPool(MethodCapacity(kwargs["max_tasks"],
-            kwargs["max_tasks"] * self.row_reservation))
+        self.method_pool = MethodBudgetPool(MethodCapacity(max_tasks,
+            max_tasks * self.row_reservation))
         self.method_drivers = {}
 
     def validate_opening_message(self, opened):
@@ -115,9 +110,16 @@ class ImageGateway(MultiSessionMapGateway):
         return SessionSpec("registered", "image", digest, "ai_embed", "pixels",
                            (TaskProfile("image", digest, "ai_embed"),))
 
-    def _register(self, state, operation, args):
-        result = super()._register(state, operation, args)
-        session = state.mailbox.session
+    def _register(self, state):
+        if state.job is not None:
+            raise ValueError("connection already registered")
+        job, session, budget = self.execution.open_job("pg-connection", self.standalone_spec())
+        state.job, state.mailbox.session = job, session
+        session.set_dispatch_enabled(False)
+        self._known_jobs.add(job.job_id)
+        self.observe({"event": "job_opened", "job_id": job.job_id,
+            "engine_session_id": session.session_id, "job_budget": asdict(budget),
+            "connection_buffer_bytes": self.connection_buffer_bytes})
         grant = self.method_pool.allocate(MethodCapacity(
             session.limits.held_tasks, session.limits.held_tasks * self.row_reservation))
         plan = self.image_config.plan
@@ -134,7 +136,6 @@ class ImageGateway(MultiSessionMapGateway):
             grant.close()
             raise
         self._observe_method("image_method_opened", session.session_id)
-        return result
 
     def _observe_method(self, event, session_id):
         self.observe({"event": event, "engine_session_id": session_id,
@@ -180,19 +181,227 @@ class ImageGateway(MultiSessionMapGateway):
             driver.close()
             self._observe_method("image_method_closed", session.session_id)
 
+    def observe(self, event):
+        if self._observer:
+            with self._observer_lock:
+                self._observer(event)
+
+    def _accept(self, connection, sequence):
+        connection.settimeout(self.frame_timeout)
+        mailbox = ConnectionMailbox(None, self.engine.wake, self.frame_timeout)
+        state = ConnectionState(connection, mailbox, None, None, connection_id=sequence)
+        self.connections[sequence] = state
+        self.connection_capacity.accept(sequence)
+        try:
+            state.worker = self.workers.start(
+                connection, lambda _: self._run_connection(state)
+            )
+        except BaseException:
+            self.connection_capacity.release(sequence)
+            del self.connections[sequence]
+            connection.close()
+            raise
+        return True
+
+    def _run_connection(self, state):
+        mailbox, connection = state.mailbox, state.connection
+        try:
+            opened = read_frame(connection)
+            if opened is None:
+                return
+            self.validate_opening_message(opened)
+            mailbox.call("standalone", (), 0)
+            session = mailbox.session
+            adapter = ImageConnection(self, connection, mailbox, state.job, session.limits)
+            try:
+                mailbox.clean = bool(adapter.run_image(opened))
+            except (ProtocolError, ValueError, CompletionAdapterError):
+                connection.sendall(encode_frame({"type": "error", "protocol_version": 7,
+                                                 "code": "IMAGE_EXECUTION_FAILED"}))
+                raise
+        except Exception:
+            mailbox.clean = False
+        finally:
+            if state.end_reason is None:
+                state.end_reason = (ConnectionEnd.STREAM_CLEAN_END if mailbox.clean
+                                    else ConnectionEnd.PEER_FAILURE)
+            if not mailbox.clean:
+                mailbox.cancel()
+            connection.close()
+            mailbox.done.set()
+            self.engine.wake.notify()
+
+    def _command(self, state):
+        mailbox, session = state.mailbox, state.mailbox.session
+        with mailbox.condition:
+            if mailbox.command is None or mailbox.cancelled.is_set():
+                return
+            operation, args = mailbox.command
+            mailbox.command = None
+            try:
+                if operation == "standalone":
+                    self.connection_capacity.admit_standalone(state.connection_id)
+                    if len(self.engine.jobs.jobs) >= self.engine.jobs.maximum:
+                        mailbox.command = (operation, args)
+                        return
+                    result = self._register(state)
+                else:
+                    result = self.session_command(state, operation, args)
+            except Exception:
+                if session is not None and session.state not in (State.FINISHED, State.FAILED, State.CANCELLED):
+                    session.fail("owner command failed")
+                result = CompletionAdapterError("MODEL_UNAVAILABLE")
+            mailbox.reply = result
+            mailbox.condition.notify_all()
+
+    @staticmethod
+    def _interrupt(state):
+        if state.interrupted:
+            return
+        # Repeated cancel notifications would self-wake the drain loop and starve I/O exit.
+        state.interrupted = True
+        state.mailbox.cancel()
+        interrupt_connection(state.connection)
+
+    def _end_connection(self, state, *, consumer_stopped=False):
+        session = state.mailbox.session
+        if consumer_stopped and session is not None:
+            session.close_consumer(clean=state.end_reason == ConnectionEnd.STREAM_CLEAN_END)
+        if state.job in self.engine.jobs.jobs:
+            self.engine.close_job(state.job)
+
+    def _controls(self):
+        self.workers.reap()
+        for connection_id, state in tuple(self.connections.items()):
+            mailbox, session = state.mailbox, state.mailbox.session
+            job = self.engine.jobs.jobs.get(state.job)
+            if job is not None and job.closing and not state.closing:
+                self._interrupt(state)
+            if mailbox.cancelled.is_set() and not state.closing:
+                state.closing = True
+                self._end_connection(state)
+                self._interrupt(state)
+            if not mailbox.done.is_set():
+                continue
+            state.worker.join()
+            self.before_connection_release(state)
+            self._end_connection(state, consumer_stopped=True)
+            self.connection_capacity.release(connection_id)
+            with mailbox.condition:
+                mailbox.command = None
+                mailbox.reply = _EMPTY
+            del self.connections[connection_id]
+            if state.job is not None:
+                self.observe(
+                    {
+                        "event": "connection_closed",
+                        "job_id": state.job.job_id,
+                        "engine_session_id": session.session_id if session else None,
+                        "usage": asdict(
+                            self.engine.capacity.usage(
+                                session.session_id if session else None, job_id=state.job.job_id
+                            )
+                        ),
+                    }
+                )
+
+    def serve(self, listener, stopping, *, session_limit=0):
+        listener.setblocking(False)
+        served, deadline = 0, None
+        try:
+            while True:
+                generation = self.engine.wake.generation
+                if self.engine.error:
+                    stopping.set()
+                if stopping.is_set():
+                    while self.waiting:
+                        self.waiting.popleft()[0].close()
+                    deadline = deadline or time.monotonic() + self.execution.drain_timeout_s
+                    for state in tuple(self.connections.values()):
+                        state.end_reason = ConnectionEnd.SERVICE_STOP
+                        self._interrupt(state)
+                admissions_done = bool(session_limit and served >= session_limit)
+                if (
+                    not stopping.is_set()
+                    and not admissions_done
+                    and self.connection_capacity.may_accept()
+                ):
+                    connection = accept_connection(
+                        listener,
+                        occupied=lambda: len(self.connections) + len(self.waiting),
+                        maximum=self.max_connections,
+                        timeout_s=self.frame_timeout,
+                    )
+                    if connection is not None:
+                        connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, MAX_FRAME_BYTES)
+                        connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, MAX_FRAME_BYTES)
+                        self.waiting.append((connection, time.monotonic(), served))
+                        served += 1
+                self._controls()
+                if self.waiting:
+                    connection, arrived, number = self.waiting[0]
+                    if time.monotonic() >= arrived + self.frame_timeout:
+                        self.waiting.popleft()[0].close()
+                    elif self._accept(connection, number):
+                        self.waiting.popleft()
+                for state in tuple(self.connections.values()):
+                    self._command(state)
+                progress = self.engine.advance()
+                live = {job.job_id for job in self.engine.jobs.jobs}
+                for job_id in self._known_jobs - live:
+                    self.observe(
+                        {
+                            "event": "job_drained",
+                            "job_id": job_id,
+                            "usage": asdict(self.engine.capacity.usage(job_id=job_id)),
+                        }
+                    )
+                self._known_jobs.intersection_update(live)
+                if progress.events:
+                    self.progress.notify()
+                if (
+                    (stopping.is_set() or admissions_done)
+                    and not self.connections
+                    and not self.waiting
+                ):
+                    if not self.engine.capacity.usage().held_tasks:
+                        break
+                    deadline = deadline or time.monotonic() + self.execution.drain_timeout_s
+                if deadline and time.monotonic() >= deadline:
+                    raise RuntimeError("remote outcome unconfirmed; remaining capacity quarantined")
+                if not progress.has_immediate_work:
+                    timeout = self.engine.capacity.limits.poll_interval_s
+                    if progress.next_deadline is not None:
+                        timeout = min(timeout, max(0.0, progress.next_deadline - self.engine.clock()))
+                    if deadline is not None:
+                        timeout = min(timeout, max(0.0, deadline - time.monotonic()))
+                    self.engine.wake.wait(generation, timeout)
+            if self.engine.error:
+                raise RuntimeError("shared execution pool quarantined")
+        finally:
+            while self.waiting:
+                self.waiting.popleft()[0].close()
+            for state in tuple(self.connections.values()):
+                self._interrupt(state)
+            for state in tuple(self.connections.values()):
+                state.worker.join(self.frame_timeout)
+            self._controls()
+
+    def request_stop(self):
+        for state in tuple(self.connections.values()):
+            state.end_reason = ConnectionEnd.SERVICE_STOP
+            self._interrupt(state)
+        self.engine.wake.notify()
+
     def close(self):
-        closed = super().close()
+        closed = self.execution.close()
+        self.observe(
+            {
+                "event": "transport_closed",
+                "closed": closed,
+                "usage": asdict(self.engine.capacity.usage()),
+            }
+        )
         return (closed and not self.method_drivers and self.method_pool.used == (0, 0)
                 and self.method_pool.allocated == (0, 0)
                 and self.engine.capacity.usage().held_tasks == 0)
-
-    def make_connection(self, connection, mailbox, job, limits):
-        return ImageConnection(self, connection, mailbox, job, limits)
-
-    def run_connection_protocol(self, state, adapter, connection, opened, handler):
-        try:
-            state.mailbox.clean = bool(adapter.run_image(opened))
-        except (ProtocolError, ValueError, CompletionAdapterError):
-            connection.sendall(encode_frame({"type": "error", "protocol_version": 7,
-                                             "code": "IMAGE_EXECUTION_FAILED"}))
-            raise

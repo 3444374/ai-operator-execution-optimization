@@ -111,3 +111,36 @@ typed image provider、SAOR策略和共享额度函数未删除；普通records�
 需要重现这些旧CLI路由时，从上方完整f526树恢复 `server.py`、原测试和依赖，不拼接新服务源码。
 本批仍未删除全部内部HTTP运输／Map装配；它们与共享Core、image、opaque task/session的后续清理分别处理。
 五条受影响历史读取继续使用已有原件，没有新增归档或改写expected／投影身份。
+
+
+<a id="retired-http-map-owner"></a>
+## 旧 HTTP Map owner 与注册连接退役
+
+这批旧实现及专测来自准确
+[`e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd` 完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd)，
+删除前逐文件核对与该公开来源相同。恢复旧Map／注册协议与其研究结果时使用完整树，
+不把旧模块或测试夹具接回当前图像／records入口。原始结果、失败与负结果没有改写。
+
+| 原路径 | 字节 | SHA256 |
+|---|---:|---|
+| `code/src/execution_provider/multiplexed_gateway.py` | 25964 | `55d498c179b9b8ee51577ba091f26ed65d5707518d5e86df30f24cd59e7620af` |
+| `code/src/execution_provider/connection_capacity.py` | 2211 | `0ed6188a5b6f2ae1aa38b78ca01ac34bd5ebcca5e6f125def33874649615bbb9` |
+| `code/src/execution_provider/query_registration.py` | 5375 | `f90a05125b781bacc579d844136ba61ace7f22a7fca2aa7c9c900f6e7b49ce28` |
+| `code/tests/execution_provider/test_multisession_gateway.py` | 14425 | `865e67d9a3fdf4de426f82dcd59dc49bd5ebbc8065e4a6cf21ece722ea1a83ae` |
+| `code/tests/execution_provider/test_query_registration.py` | 8498 | `8812f8e1d28d81840e58f306ff35ef0626d8141c45ff8dd6367bf53df4cdbffc` |
+| `code/tests/execution_provider/test_query_lifecycle.py` | 5933 | `ccae265f058803816df21f3a2cbe473726a33e6d7a7b65fb5ba40a9aacbfa42f` |
+| `code/tests/execution_provider/test_incremental_session.py` | 8866 | `e887493a2cc75f40b4edb233df25e8256cebddea04be2bf0c4b2fd817a8ab883` |
+| `code/tests/execution_provider/test_incremental_window_one.py` | 5152 | `050694930c4f4141693f5642f4143413318e97333d7e93d2da7d8b84ba053312` |
+| `code/tests/execution_provider/test_map_organization.py` | 6578 | `da818b1f762869df5850cc52965bfe099a62d86ffc19513037d46986bcb243c5` |
+| `code/tests/execution_provider/test_organized_response_capacity.py` | 4457 | `288a83af5d74e356decbf3c7ceaf726f7c67db9b61db4bb8ed33078eb03cade6` |
+
+ImageGateway现在直接持有现用v7图像连接；帧处理在image_connection，连接消息与分类计数在既有gateway_runtime。
+图像验证先于Job登记，因此旧query_open／stream_join不能进入图像登记分支。
+直接调用旧私有_register时的错误不代表当前图像入口存在该缺陷；没有为此增加多查询协议。
+Golden、当前图像v7与通用UDS帧读写、Core／Job／任务／租约／取消保持。
+旧专测中唯一通用的dispatch关闭检查迁入现用test_map_gateway，方法内容相同；图像真实UDS测试保留并改为当前所属导入。
+本机只执行纯对象图像与既有软件fixture，真实图像UDS／PG／Ray仍待单独核对。
+
+五份具名投影的35条相关来源读取前后相同。六份原来直接读取维护文件的源码各增加五条准确旧源映射，
+原3010条expected、投影身份、来源版本与已有映射不变；本批没有重跑完整3010构造。
+HTTP工厂／传输和混合IncrementalExecution仍需后续清理，不把这批写成所有HTTP内容已清空。

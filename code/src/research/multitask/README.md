@@ -49,8 +49,9 @@ SAOR 的阶段观测与决策需在显式适配中转换成上述输入和动作
 
 ## 测试与资料
 
-基础多查询用例留在核心 [Session 测试](../../../tests/scheduling/test_multisession.py)
-和 [provider 测试](../../../tests/execution_provider/test_multisession_gateway.py)。
+基础多查询用例留在核心 [Session 测试](../../../tests/scheduling/test_multisession.py)。
+旧HTTP provider专测已退役，完整来源见
+[恢复说明](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-http-map-owner)。
 研究测试在 [tests/research/multitask](../../../tests/research/multitask)，只为可选研究接线依赖本包。
 候选与组合版本的源码、本地检查、原错误及服务器待测项分别记录，
 当前进展见[组合记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)。

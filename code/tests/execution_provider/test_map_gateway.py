@@ -15,6 +15,7 @@ from unittest.mock import Mock, patch
 
 from src.execution_provider.completion import Completion
 from src.execution_provider.semantic_map import SemanticMapPlan
+from src.execution_provider.session_dispatch import run_session
 from src.execution_provider.wire import v5
 from src.execution_provider.wire.framing import MAX_FRAME_BYTES, encode_frame, read_frame
 
@@ -139,6 +140,18 @@ class ProviderServiceCliTests(unittest.TestCase):
                     self.assertEqual(build_image.call_args.kwargs["result_bytes"], 32)
                     adapter.close.assert_called_once_with()
 
+
+class DispatchCloseTests(unittest.TestCase):
+    def test_invalid_or_exhausted_open_closes_once_without_dispatch(self):
+        for opened in (None, ValueError('invalid fixture frame')):
+            with self.subTest(opened=opened):
+                connection = Mock()
+                with patch('src.execution_provider.session_dispatch.read_frame', side_effect=[opened]), \
+                        patch('src.execution_provider.session_dispatch.run_recording_session') as dispatch:
+                    self.assertIsNone(run_session(connection, completion_adapter=object(), response_delay_ms=0,
+                        tamper_evidence_digest=False, disconnect_on_task=False, completion_fixture=None))
+                connection.close.assert_called_once_with()
+                dispatch.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

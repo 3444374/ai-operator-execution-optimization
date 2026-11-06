@@ -64,7 +64,7 @@ B没有出现同等250毫秒延迟，但未进行统计等价检验，也未覆�
 
 状态准备注入`execution.prepare_task`，线程为`fixture-gateway-owner`；它拥有Core状态，B接纳和C排空一同等待。
 observer注入第一次`ray_first_submit`，线程为`semloom-async-io`。
-[gateway观察入口](../../../../code/src/execution_provider/multiplexed_gateway.py)在调用observer时持有同一互斥锁，
+[gateway观察入口](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/multiplexed_gateway.py)在调用observer时持有同一互斥锁，
 状态线程也通过该入口记录事件，因此I/O线程中的阻塞仍可拖住状态操作。
 不能据注入结果声称生产默认存在250毫秒或旧实验约5秒的固定开销。
 
@@ -120,7 +120,7 @@ PYTHONPATH=code python3 code/scripts/profiling/gateway_isolation_probe.py --repl
 PYTHONPATH=code python3 experiments/results/diagnostics/gateway_isolation_20261004/raw/analyze_waits.py --evidence /tmp/new-gateway-evidence/suite-1 --output /tmp/new-gateway-waits.json
 ```
 
-主指标由[诊断入口的`analyze/aggregate`](../../../../code/src/experiments/gateway_isolation_probe.py)计算；
+主指标由[诊断入口的`analyze/aggregate`](https://github.com/3444374/ai-operator-execution-optimization/blob/f526e6bd4701b23d9d47e44d22590593debabb9c/code/src/experiments/gateway_isolation_probe.py)计算；
 阶段等待、容量快照和批次分布由[独立脚本](raw/analyze_waits.py)计算。
 每个时长为对应结束观测减开始观测，三次中位数由`statistics.median`计算；负差另计，不静默剔除。
 

@@ -710,3 +710,15 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 原expected、来源版本、投影身份及已有映射保持；与同版包导入原件共用`e5e65fdb`目录。
 [17项原CPU、完整输出与恢复](../../results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
 只覆盖本批实际职责提取，不代表真实Ray／模型或整套3010物化。
+
+<a id="http-map-owner-sources"></a>
+## HTTP Map owner退役后的来源读取
+
+multiplexed_gateway、query_registration与connection_capacity退出当前树；图像使用自己的真实owner与帧读取实现。
+旧gateway_runtime、image_gateway与framing的原字节和这三份删除源码共同保存在
+[准确e5原件目录](historical_sources/e5e65fdb/code/src/execution_provider/)。
+共六份gzip、三十条新增来源／格式记录，只有原先读取当前文件的条目改变读取位置。
+五份投影共35条受影响绑定逐项保持，原expected、来源版本、投影ID和所有既有映射未改。
+其余旧专测不在这五份原投影中，完整恢复见
+[原源码／测试记录](../paused_pg_and_retired_http_20261105/README.md#retired-http-map-owner)。
+本次只复查受影响来源，不把它写成3010条完整构造或真实图像服务验证。

@@ -44,11 +44,14 @@ Worker identity includes the configured response capacity, so a changed capacity
 matching worker pool. [CPU configuration cases](../../../tests/execution_provider/test_http_configuration.py)
 use in-memory responses and Core; actual Ray, model and PG execution require separate checks.
 
-`organization_factory` passes the configured response allowance to both prepared task reservation
-and the typed result-work description in all three Map organization modes. A small PG allowance
-therefore uses the same storage budget through preparation and intake.
-[Organization quota cases](../../../tests/execution_provider/test_organized_response_capacity.py)
-cover preparation, acceptance and fixture result delivery at 4 KiB without raising the quota.
+The retired HTTP Map connection owner, query registration and its dedicated socket tests are
+recoverable from the [complete historical source](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd).
+Their organization/quota results retain that source identity; they are not current image tests.
+Typed image connections now use [ImageGateway](../image_gateway.py), the actual
+[image frame reader](../image_connection.py), and [connection runtime](../gateway_runtime.py).
+The v7 image protocol, method result reservations and Core cancellation remain in use.
+Internal HTTP builders and the HTTP-only Map codec/configuration are still pending removal;
+image construction still imports the mixed IncrementalExecution module until that next slice.
 
 `NativeTaskSession` registers a query Job and one operator flow. `offer` transfers only its
 accepted prefix, leaving the caller responsible for the suffix; offering sends no request.

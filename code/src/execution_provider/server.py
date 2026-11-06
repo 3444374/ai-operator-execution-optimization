@@ -232,7 +232,7 @@ def main(
             GatewayRuntime(handler, limits).serve(listener, stopping, session_limit=session_limit)
         else:
             incremental_adapter.serve(
-                listener, stopping, handler=handler, session_limit=session_limit
+                listener, stopping, session_limit=session_limit
             )
     finally:
         listener.close()

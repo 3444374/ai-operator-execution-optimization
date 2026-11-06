@@ -927,7 +927,13 @@
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
         "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
-        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz",
+        "code/src/execution_provider/connection_capacity.py": "historical_sources/e5e65fdb/code/src/execution_provider/connection_capacity.py.gz",
+        "code/src/execution_provider/gateway_runtime.py": "historical_sources/e5e65fdb/code/src/execution_provider/gateway_runtime.py.gz",
+        "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
+        "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
+        "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1255,6 +1261,36 @@
           "encoding": "gzip",
           "decoded_bytes": 21290,
           "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
+        },
+        "code/src/execution_provider/connection_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2211,
+          "archive_sha256": "b3243d412aeb464dc96cf263993a4c3411379f4599b9139cd56904b5a9983ddf"
+        },
+        "code/src/execution_provider/gateway_runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4265,
+          "archive_sha256": "6fee5d5b9ce4a2d421811f455d32da4d0f114e09a1443f1ef02c8671a0d5a937"
+        },
+        "code/src/execution_provider/image_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9841,
+          "archive_sha256": "26cd9f8e0b9811038764cad129af59abe27b611d362bbca529bf1b6d28ef7c29"
+        },
+        "code/src/execution_provider/multiplexed_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25964,
+          "archive_sha256": "e5a147ebc76994a18fdf3e908243cbfae57474d3c3ee7289b08eec8b5938f2f5"
+        },
+        "code/src/execution_provider/query_registration.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5375,
+          "archive_sha256": "ad4bb180657989943aeb1b7e19e799720dc7dd5cdcb307793c3dac274b90ec83"
+        },
+        "code/src/execution_provider/wire/framing.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3907,
+          "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
         }
       }
     },
@@ -2210,7 +2246,13 @@
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
         "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
-        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz",
+        "code/src/execution_provider/connection_capacity.py": "historical_sources/e5e65fdb/code/src/execution_provider/connection_capacity.py.gz",
+        "code/src/execution_provider/gateway_runtime.py": "historical_sources/e5e65fdb/code/src/execution_provider/gateway_runtime.py.gz",
+        "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
+        "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
+        "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2538,6 +2580,36 @@
           "encoding": "gzip",
           "decoded_bytes": 21290,
           "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
+        },
+        "code/src/execution_provider/connection_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2211,
+          "archive_sha256": "b3243d412aeb464dc96cf263993a4c3411379f4599b9139cd56904b5a9983ddf"
+        },
+        "code/src/execution_provider/gateway_runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4265,
+          "archive_sha256": "6fee5d5b9ce4a2d421811f455d32da4d0f114e09a1443f1ef02c8671a0d5a937"
+        },
+        "code/src/execution_provider/image_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9841,
+          "archive_sha256": "26cd9f8e0b9811038764cad129af59abe27b611d362bbca529bf1b6d28ef7c29"
+        },
+        "code/src/execution_provider/multiplexed_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25964,
+          "archive_sha256": "e5a147ebc76994a18fdf3e908243cbfae57474d3c3ee7289b08eec8b5938f2f5"
+        },
+        "code/src/execution_provider/query_registration.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5375,
+          "archive_sha256": "ad4bb180657989943aeb1b7e19e799720dc7dd5cdcb307793c3dac274b90ec83"
+        },
+        "code/src/execution_provider/wire/framing.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3907,
+          "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
         }
       }
     },
@@ -3503,7 +3575,13 @@
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
         "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
-        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz",
+        "code/src/execution_provider/connection_capacity.py": "historical_sources/e5e65fdb/code/src/execution_provider/connection_capacity.py.gz",
+        "code/src/execution_provider/gateway_runtime.py": "historical_sources/e5e65fdb/code/src/execution_provider/gateway_runtime.py.gz",
+        "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
+        "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
+        "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3831,6 +3909,36 @@
           "encoding": "gzip",
           "decoded_bytes": 21290,
           "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
+        },
+        "code/src/execution_provider/connection_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2211,
+          "archive_sha256": "b3243d412aeb464dc96cf263993a4c3411379f4599b9139cd56904b5a9983ddf"
+        },
+        "code/src/execution_provider/gateway_runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4265,
+          "archive_sha256": "6fee5d5b9ce4a2d421811f455d32da4d0f114e09a1443f1ef02c8671a0d5a937"
+        },
+        "code/src/execution_provider/image_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9841,
+          "archive_sha256": "26cd9f8e0b9811038764cad129af59abe27b611d362bbca529bf1b6d28ef7c29"
+        },
+        "code/src/execution_provider/multiplexed_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25964,
+          "archive_sha256": "e5a147ebc76994a18fdf3e908243cbfae57474d3c3ee7289b08eec8b5938f2f5"
+        },
+        "code/src/execution_provider/query_registration.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5375,
+          "archive_sha256": "ad4bb180657989943aeb1b7e19e799720dc7dd5cdcb307793c3dac274b90ec83"
+        },
+        "code/src/execution_provider/wire/framing.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3907,
+          "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
         }
       }
     },
@@ -4798,7 +4906,13 @@
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
         "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
-        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz",
+        "code/src/execution_provider/connection_capacity.py": "historical_sources/e5e65fdb/code/src/execution_provider/connection_capacity.py.gz",
+        "code/src/execution_provider/gateway_runtime.py": "historical_sources/e5e65fdb/code/src/execution_provider/gateway_runtime.py.gz",
+        "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
+        "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
+        "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5131,6 +5245,36 @@
           "encoding": "gzip",
           "decoded_bytes": 21290,
           "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
+        },
+        "code/src/execution_provider/connection_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2211,
+          "archive_sha256": "b3243d412aeb464dc96cf263993a4c3411379f4599b9139cd56904b5a9983ddf"
+        },
+        "code/src/execution_provider/gateway_runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4265,
+          "archive_sha256": "6fee5d5b9ce4a2d421811f455d32da4d0f114e09a1443f1ef02c8671a0d5a937"
+        },
+        "code/src/execution_provider/image_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9841,
+          "archive_sha256": "26cd9f8e0b9811038764cad129af59abe27b611d362bbca529bf1b6d28ef7c29"
+        },
+        "code/src/execution_provider/multiplexed_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25964,
+          "archive_sha256": "e5a147ebc76994a18fdf3e908243cbfae57474d3c3ee7289b08eec8b5938f2f5"
+        },
+        "code/src/execution_provider/query_registration.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5375,
+          "archive_sha256": "ad4bb180657989943aeb1b7e19e799720dc7dd5cdcb307793c3dac274b90ec83"
+        },
+        "code/src/execution_provider/wire/framing.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3907,
+          "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
         }
       }
     },
@@ -6102,7 +6246,13 @@
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
         "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
-        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz",
+        "code/src/execution_provider/connection_capacity.py": "historical_sources/e5e65fdb/code/src/execution_provider/connection_capacity.py.gz",
+        "code/src/execution_provider/gateway_runtime.py": "historical_sources/e5e65fdb/code/src/execution_provider/gateway_runtime.py.gz",
+        "code/src/execution_provider/image_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/image_gateway.py.gz",
+        "code/src/execution_provider/multiplexed_gateway.py": "historical_sources/e5e65fdb/code/src/execution_provider/multiplexed_gateway.py.gz",
+        "code/src/execution_provider/query_registration.py": "historical_sources/e5e65fdb/code/src/execution_provider/query_registration.py.gz",
+        "code/src/execution_provider/wire/framing.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/framing.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6430,6 +6580,36 @@
           "encoding": "gzip",
           "decoded_bytes": 21290,
           "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
+        },
+        "code/src/execution_provider/connection_capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 2211,
+          "archive_sha256": "b3243d412aeb464dc96cf263993a4c3411379f4599b9139cd56904b5a9983ddf"
+        },
+        "code/src/execution_provider/gateway_runtime.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 4265,
+          "archive_sha256": "6fee5d5b9ce4a2d421811f455d32da4d0f114e09a1443f1ef02c8671a0d5a937"
+        },
+        "code/src/execution_provider/image_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9841,
+          "archive_sha256": "26cd9f8e0b9811038764cad129af59abe27b611d362bbca529bf1b6d28ef7c29"
+        },
+        "code/src/execution_provider/multiplexed_gateway.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 25964,
+          "archive_sha256": "e5a147ebc76994a18fdf3e908243cbfae57474d3c3ee7289b08eec8b5938f2f5"
+        },
+        "code/src/execution_provider/query_registration.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5375,
+          "archive_sha256": "ad4bb180657989943aeb1b7e19e799720dc7dd5cdcb307793c3dac274b90ec83"
+        },
+        "code/src/execution_provider/wire/framing.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3907,
+          "archive_sha256": "e17502594f7938ba43b545b34c070aea3b51766800a31ac0a5ef2eb31a6e3a8d"
         }
       }
     }
