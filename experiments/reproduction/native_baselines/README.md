@@ -689,3 +689,15 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 当前既有IPC生命周期用例改用未指定查询期限；旧五份投影仍需原测试字节，因此共用
 [准确6fc旧测试](historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz)。
 只补五条来源／格式映射，旧expected和投影身份保持；当前用例仍待服务器实际IPC执行。
+
+
+<a id="backend-package-import-source"></a>
+## 后端包去除 HTTP 聚合导入时的源码
+
+中性vLLM规范的导入不再自动加载本仓completion／embedding HTTP实现；
+具体实现由真正需要它的调用方从所属模块显式导入，未增加惰性转发表。
+五份历史投影中的 `code/src/serving/backends/__init__.py` 继续使用准确
+[`e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd` 完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd)
+的[原件](historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz)。
+只新增读取位置和压缩格式；原expected、来源版本、投影身份及已有映射不变。
+本批仅检查五条读取与纯CPU导入／值行为，没有重跑3010物化或模型，也未删除全部HTTP实现。

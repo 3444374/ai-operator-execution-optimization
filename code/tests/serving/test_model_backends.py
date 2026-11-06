@@ -18,18 +18,20 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.serving.backends import (
+from src.serving.backends.completion import (
     CompatibleAsyncHTTPCompletionActor,
     FakeCompletionActor,
     call_compatible_completion_endpoint,
     fake_complete_batch,
-    fake_embed_batch,
     format_completion_prompts,
+    ollama_generate_url,
+)
+from src.serving.backends.common import (
     model_request_wall_time,
     normalize_completion_backend,
     normalize_embedding_backend,
-    ollama_generate_url,
 )
+from src.serving.backends.embedding import fake_embed_batch
 
 
 def sample_table() -> pa.Table:

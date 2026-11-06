@@ -42,7 +42,8 @@ class ProtocolImportsTests(unittest.TestCase):
 import importlib.abc, sys
 class ForbiddenImports(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
-        if (fullname == 'src.serving.backends.vllm_engine'
+        if (fullname in ('src.serving.backends.vllm_engine',
+                         'src.serving.backends.completion', 'src.serving.backends.embedding')
                 or fullname.split('.')[0] in ('vllm', 'ray', 'lotus', 'torch', 'transformers')):
             raise AssertionError('unexpected runtime import: '+fullname)
 sys.meta_path.insert(0, ForbiddenImports())
