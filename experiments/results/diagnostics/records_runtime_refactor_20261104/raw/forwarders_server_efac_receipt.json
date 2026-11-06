@@ -1,0 +1,135 @@
+{
+  "schema": "semloom.server_CPU_followup_handoff.v1",
+  "status": "seven_requested_methods_have_pass_evidence_after_private_runner_fix",
+  "head": "efac26aef1b5ded580cc0188fe910a68f7322cf0",
+  "tree": "50a2953ad3f3b4a2db28c94136ac37b268ee2abb",
+  "selection": [
+    {
+      "id": "tests.infrastructure.test_owned_processes.ProcessWiringTests.test_existing_worker_commands_and_code_root_start_and_exit_on_empty_input",
+      "first_status": "passed",
+      "effective_status": "passed",
+      "pass_evidence_run": "first",
+      "seconds": 0.6512665273621678,
+      "assertions_unchanged": true
+    },
+    {
+      "id": "tests.serving.test_shared_chain_migration.MigrationTests.test_spawn_unpickles_the_same_shared_types",
+      "first_status": "error",
+      "effective_status": "passed",
+      "pass_evidence_run": "spawn_recheck",
+      "seconds": 0.349604238756001,
+      "assertions_unchanged": true
+    },
+    {
+      "id": "tests.serving.test_sync_process_migration.RealProcessTests.test_migrated_transport_preserves_call_identity_usage_and_idempotent_close",
+      "first_status": "passed",
+      "effective_status": "passed",
+      "pass_evidence_run": "first",
+      "seconds": 0.06221866514533758,
+      "assertions_unchanged": true
+    },
+    {
+      "id": "tests.serving.test_shared_chain_migration.StageTransportTests.test_real_cpu_pipe_keeps_per_call_generation_identity_usage_and_close",
+      "first_status": "passed",
+      "effective_status": "passed",
+      "pass_evidence_run": "first",
+      "seconds": 0.3159422278404236,
+      "assertions_unchanged": true
+    },
+    {
+      "id": "tests.execution_provider.test_imlane_transport_limits.TransportBoundsTests.test_actual_filter_arrow_udf_uses_declared_17_rows_and_rejects_row_18_before_worker",
+      "first_status": "passed",
+      "effective_status": "passed",
+      "pass_evidence_run": "first",
+      "seconds": 0.01591844391077757,
+      "assertions_unchanged": true
+    },
+    {
+      "id": "tests.execution_provider.test_imlane_transport_limits.TransportBoundsTests.test_transport_failure_preserves_primary_and_cleanup_evidence_without_reuse",
+      "first_status": "passed",
+      "effective_status": "passed",
+      "pass_evidence_run": "first",
+      "seconds": 0.0017640413716435432,
+      "assertions_unchanged": true
+    },
+    {
+      "id": "tests.execution_provider.test_imlane_transport_limits.TransportBoundsTests.test_packed_chain_4097_logical_rows_have_241_wire_rows_at_batch_17",
+      "first_status": "passed",
+      "effective_status": "passed",
+      "pass_evidence_run": "first",
+      "seconds": 0.5160109922289848,
+      "assertions_unchanged": true
+    }
+  ],
+  "diagnosis": {
+    "component": "private runner, not project source",
+    "cause": "First file-based runner executed preflight/tests at module top level. multiprocessing spawn re-imported that main script, replaying preflight before reaching spawn_identity; original queue.get(timeout=10) expired.",
+    "evidence": [
+      "First persistent worker.log contains a second environment preflight during the spawn method.",
+      "First runner.py has no __main__ guard, as preserved in its original hash.",
+      "Only the private runner was wrapped in main/__main__; same selected source and unchanged10s/exit/type assertions then passed in0.349604s."
+    ],
+    "source_or_test_assertions_modified": false,
+    "other_six_methods_repeated": false
+  },
+  "scope": {
+    "real_model_calls": 0,
+    "real_Ray_clusters": 0,
+    "GPU_queries": 0,
+    "author_binary_executions": 0,
+    "real_Q3_queries": 0,
+    "no_real_data": true,
+    "source_or_assertions_modified": false,
+    "close_wrapped": false,
+    "old_4d_six_or_old_matrices_repeated": false,
+    "overall_supervisor_timeout_each_seconds": 180,
+    "tests_based_on_actual_method_results": true
+  },
+  "cleanup": {
+    "first_observed_processes": 15,
+    "recheck_observed_processes": 6,
+    "all_observed_birth_matched_processes_exited": true,
+    "both_controllers_exited": true,
+    "both_runs_SHM_delta_zero": true,
+    "both_runs_remaining_SHM_names": [],
+    "both_runs_lease_released": true,
+    "GPU_compute_processes": 0,
+    "GPU_final_memory_MiB": 1,
+    "supervisor_cleanup_errors": [],
+    "source_and_model_budget_unchanged": true,
+    "scope": "supervisor-observed birth-matched processes; arbitrary unobserved detached descendants not independently proven"
+  },
+  "limitations": [
+    "This is selected CPU/SoftwareEngine and real CPU pipe/spawn evidence, not actual model/Ray/GPU or author native execution.",
+    "The first seven-method invocation remains failed; do not relabel it as7/7 single-run success.",
+    "Only the failed spawn method was rechecked after fixing the private harness; the six successful methods were not repeated.",
+    "No unsupported dependency installation, longer business assertion timeout, modified close wrapper, or production compatibility alias was used."
+  ],
+  "source_kind": "projection of original server HANDOFF and RESULTS; originals retained privately",
+  "original_handoff_sha256": "758006827144dd7a448f37e216c55e39733dd4fdee5ed5759b7dac6635843fde",
+  "original_results_sha256": "2acfcf4931b17efaf492fcc850a112c36ed566e3843fdb180fd99d447d3eff5e",
+  "first_run": {
+    "requested": 7,
+    "passed": 6,
+    "errors": 1,
+    "failures": 0,
+    "skips": 0,
+    "supervised_elapsed_seconds": 32.85402887593955,
+    "worker_exit": 1,
+    "resource_passed": true,
+    "physical_idle": true,
+    "lease_released": true,
+    "original_FINAL_sha256": "158bf310b3992594fae3300fb5944aec346103650e9824f044d86a725ac76f53"
+  },
+  "single_recheck": {
+    "method": "tests.serving.test_shared_chain_migration.MigrationTests.test_spawn_unpickles_the_same_shared_types",
+    "status": "passed",
+    "method_seconds": 0.349604238756001,
+    "supervised_elapsed_seconds": 5.528391860425472,
+    "worker_exit": 0,
+    "resource_passed": true,
+    "physical_idle": true,
+    "lease_released": true,
+    "original_FINAL_sha256": "c5cefd524e82a53dee263fd777407755226a286ccc90e8acea156bc62fd6b45e"
+  }
+}

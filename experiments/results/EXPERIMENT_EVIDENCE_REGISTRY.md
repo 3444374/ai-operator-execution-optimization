@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-06：基础多查询组合及历史来源修正
+
+[组合源码、CPU与待测范围](diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)
+登记2f8的860方法：832成功、27方法报错、1个Linux跳过；后续CLI策略、夹具启动与共享交接检查按1f8／9cb分列，不累计覆盖数。
+保留socket权限和图像连接错误，28方法待服务器；三份历史原件修正15条读源，60条受影响读取通过，原预期身份保持。
+[准确efac服务器七项](diagnostics/records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)
+为六项首轮通过加一项私有驱动修正后通过，原错误、断言和两轮资源清理分别保留，不作为新组合或模型资格。
+
 ## 2026-11-06：主线基础多查询默认修正
 
 [源码、入口范围、823项CPU与独立探针](diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-defaults)

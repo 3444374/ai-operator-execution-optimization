@@ -3,6 +3,19 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="basic-multiquery-sources"></a>
+## 基础多查询与研究拆分前的源码
+
+当前主线保留固定份额与普通轮转，原共享计算选项和候选窗口迁入研究适配。
+五份具名投影仍需原 `image_execution.py`、`ready_window.py` 与 `session_jobs.py`：
+首次受影响路径核查发现15条摘要不匹配，准确公开版本
+`8891c41b85e322fc83fb9fede4d27e466fb6654e` 的三份字节均与原预期相符。
+原件按各自路径压缩保存在 `historical_sources/8891c41b/`，仅增加15条来源及格式记录，
+全部预期摘要、投影身份、原版本和已有映射保持；当前导入不加载这些历史副本。
+修正后60条受影响来源读取通过，没有重跑完整3,010条物化或模型。
+[原错误、原件摘要与复核](../../results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)
+与当前多查询代码分别解释。
+
 <a id="retired-baseline-worker-forwarders"></a>
 ## 已由公共实现替代的五个baseline转发模块
 

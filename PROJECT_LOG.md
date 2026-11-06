@@ -2,6 +2,14 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：整合基础多查询与显式研究适配
+
+在8891上整合职责迁移，基础固定份额／轮转留在主线，共享研究通过现有执行接点使用同一核心。
+修正研究图像入口忽略预算选择及图像测试夹具掩盖启动异常；历史来源增加三份准确原件，预期身份保持。
+[组合结果、原错误与待测项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)
+按各自准确来源记录，不把目录移动算作代码减少。
+另补读[准确efac七项服务器回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)，首轮错误与私有驱动修正分开保留；未合并main。
+
 ## 2026-11-06：按用户补充保留主线基础多查询
 
 前一候选将普通预算／轮转也迁到研究目录，现恢复基底原有实现，普通固定模型gateway无需研究工厂即可运行多个query。

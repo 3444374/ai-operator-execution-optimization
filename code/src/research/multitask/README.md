@@ -50,9 +50,9 @@ SAOR 的阶段观测与决策需在显式适配中转换成上述输入和动作
 基础多查询用例留在核心 [Session 测试](../../../tests/scheduling/test_multisession.py)
 和 [provider 测试](../../../tests/execution_provider/test_multisession_gateway.py)。
 研究测试在 [tests/research/multitask](../../../tests/research/multitask)，只为可选研究接线依赖本包。
-独立进程禁止研究包与模型运行时导入后，12 项基础功能探针通过。
-准确源码、全部本地检查、首次误选与服务器待测项见
-[当前记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-defaults)。
+候选与组合版本的源码、本地检查、原错误及服务器待测项分别记录，
+当前进展见[组合记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)。
+普通入口不依赖研究包；原候选的全部检查保留在该报告前节，不能代替组合后的实际服务检查。
 
 研究声明、离线分析和历史来源继续分别在
 [experiments/saor](../../../../experiments/saor/README.md)、
