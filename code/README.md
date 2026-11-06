@@ -95,6 +95,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 本地服务与任务接点 | [image_gateway.py](src/execution_provider/image_gateway.py)拥有图像连接与方法生命周期；[image_connection.py](src/execution_provider/image_connection.py)处理图像帧，[gateway_runtime.py](src/execution_provider/gateway_runtime.py)保存连接消息与状态；[incremental_execution.py](src/execution_provider/adapters/incremental_execution.py)只组合现有Core任务对象，已无HTTP工厂 |
 | 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 负责HSE调度与清理，[staged_metrics.py](src/modalities/image/staged_metrics.py)累计计时／字节／峰值并装配原结果；[CLIP实验模块](src/experiments/image_clip/README.md)分别准备输入、执行观测与生成报告；[检索结果写入](src/experiments/lotus_image_reporting.py)留在实验层，增量图像backend继续使用自身任务协议 |
 | 观测 | [文件职责](src/observability/README.md#current-observation-owners) 归集时钟、事件与模型复用；[phase_sampler.py](src/observability/process_resources/phase_sampler.py) 保存分阶段RSS／CPU采样，图像CLI直接导入实际实现 |
+| 离线记录汇总 | [record_dag_observation.py](src/experiments/record_dag_observation.py)关联回执、事件与CPU片段；[record_dag_windows.py](src/experiments/record_dag_windows.py)计算时间区间及样本重叠，读取内容同时用于解析和来源摘要 |
 | 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
 | 独立研究 | [research/multitask](src/research/multitask/README.md) 保存共享额度和 SAOR；实验编排不进入单查询默认配置 |
 | 离线代价 | [operator_costs](src/experiments/operator_costs/README.md)分别拥有CSV／profile特征和既有估计比较；三个分析CLI只管输入、评估及输出，通用数学仍在planning/costs，运行链估算与反馈保持 |

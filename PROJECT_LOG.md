@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：离线记录窗口与来源读取分工
+
+[区间计算和记录关联](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)
+分别维护；同次读取计算来源摘要并解析，去掉重复读取。原输出和未知量含义保持，未新增采样器、模型调用或策略。
+
 ## 2026-11-06：离线预测共用实现归实验模块
 
 [三个分析入口与历史来源](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)

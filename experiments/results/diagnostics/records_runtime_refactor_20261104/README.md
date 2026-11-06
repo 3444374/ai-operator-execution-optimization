@@ -4383,3 +4383,16 @@ CSV旧字段仍是历史身份。source_reference改为实际选择的CSV／参�
 75,075字节捕获摘要为`069a5aac16fed097412eba96177b648d947bb46890bc5f68c51c5d8194741c7a`，原件私有保存。外部CSV的main用例只核参数交接，完整外部ref CLI未执行；LightGBM拟合与真实数据重新拟合未运行。
 独审核对原件、搬移函数和增量评估函数保持、当前无运行主线反向依赖；[十条新增读源及原件](../../../reproduction/native_baselines/README.md#offline-cost-analysis-sources)使四十条相关历史读取保持原摘要，不改expected。
 本批src与scripts净减111行，核心不变；当前核心Python为52,517行，src与scripts为104,057行，含注释／空行并沿用前述目录口径。
+
+<a id="record-observation-windows"></a>
+## 离线记录关联与区间计算（2026-11-06）
+
+候选`b141acbb28ca74e31554a5b6f14280f7c5a31b89`，tree为`95c3362352efdb3f90a0864007bcb88da79cd2e0`，整合为`716e5ae6`。
+原模块保留回执／事件／CPU片段关联，新`record_dag_windows.py`拥有区间并集、峰值、重叠与窗口内资源样本计算。
+样本按来源和时钟分组，保留原顺序及重复项；参考内容使用同一份读出字节计算来源摘要和JSON解析，删除私有_read及重复读取。
+公开summarize_capture、CLI、输出字段、未知量读法、路径检查和模型执行均未改，没有新状态类、兼容入口或额外校验。
+原实现、拆区间后及读数复用后，同一17项纯离线方法各执行一次、全部通过；不累加三轮，也不宣称运行未选的实际Core方法。
+62份完整run_capture报告共170,550字节前后一致，摘要`ddb590114fdaffef0e5a2c3aa360b11d6df95d0b8e540ba3e7cf4dea39fd574a`；未比较整个CLI collection的动态来源字段。
+最终运行记录保留提交前b168身份，四份相关Python摘要对应候选；之后只改所属README。原件按before／after／after-read-reuse私有保留。
+当前文件402→330行，主函数326→292行，新计算模块89行；src与scripts合计增加17行，核心不变。这是职责整理，不宣称减行或加速。
+独审核对实际调用、原件、样本归属和节点更新；零历史绑定，MANIFEST不变；未运行模型、Ray或socket。当前src与scripts为104,074行，沿用前述口径。

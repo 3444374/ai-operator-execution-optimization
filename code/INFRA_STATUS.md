@@ -91,6 +91,9 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [离线预测职责整理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
 分开profile数据与既有估计比较，删除脚本互载、临时参考文件和全局输入改写；输入／输出由调用方选择。主体28项、输出增量2项各自通过，未重新拟合真实数据或改变运行链估算。
 
+[离线记录窗口职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)
+分离区间／样本计算与回执／事件关联，删除重复参考文件读取；同17项纯离线检查及62份完整汇总保持，没有新增运行参数或校验。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

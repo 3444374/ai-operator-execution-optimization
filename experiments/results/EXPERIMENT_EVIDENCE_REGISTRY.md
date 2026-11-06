@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-06：离线记录汇总职责
+
+[同一组纯离线用例](diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)
+在原实现、区间拆分及读数复用后三次各通过17项；62份完整run_capture汇总字节相同，不相加计数，实际Core方法未选。
+
 ## 2026-11-06：离线代价分析职责整理
 
 [确定输入与历史复算](diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
