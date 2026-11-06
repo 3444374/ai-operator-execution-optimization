@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：保留原生未确认结果的unknown含义
+
+观测工具不再把`unknown/submission_confirmed=False`写成`not_sent`；确认API计数、缺失时长及已知发送前拒绝保持。
+[来源、反例和16项CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)
+限于工具接口，不宣称改变线上汇总；结果消费、未知请求持有和关闭规则未改，原材料留在私有归档。
+
 ## 2026-11-06：旧HTTP退出后的实际socket补验
 
 [准确fc1a三项CPU socket](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)

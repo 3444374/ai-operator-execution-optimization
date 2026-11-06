@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-06：原生unknown观测标签
+
+[实际接口修复](diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)
+的单项原反例失败，修改后16项纯CPU通过，无错误／跳过；没有模型、Ray、HTTP或socket。
+运行Python摘要与候选一致，之后只改README；零历史绑定，不改原expected。原始记录私有保存，不将工具接口修复写成当前汇总runner已采用。
+
 ## 2026-11-06：准确fc1a实际socket三方法
 
 [逐方法CPU回执](diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)

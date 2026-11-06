@@ -78,6 +78,10 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 记录四批删除、70项实际组合CPU、160条受影响历史读取及现用源码反查；随后[准确fc1a三项实际socket](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)均已通过。
 核心不依赖实验入口，没有为退出HTTP新增网关或多查询实现；实际模型、物理内存授予及历史Ray清理仍按各自来源判断。
 
+[原生未确认回执的观测读法](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)
+修正`model_API_samples`把unknown／未确认误写成未发送的问题；原反例失败、修改后16项CPU通过。
+这只修观测接口，仓内未见现行汇总runner直接调用；引擎结果、确认计数与资源归还没有改变，原测试材料保留私有。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

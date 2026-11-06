@@ -4308,3 +4308,24 @@ runtime说明中引用已删async HTTP及asyncio.timeout的三行退出，没有
 本轮helper没有发现需删除的socket节点，不能据此重写较早e5模型运行的清理失败。
 其余三个图像连接／并发方法、九项可选PG／Ray、真实模型到期／abort、质量和性能未执行，不累加旧回执或外推。
 后续本提交只登记CPU结果，生产代码没有改动。
+
+<a id="native-unconfirmed-observation"></a>
+## 原生未确认回执保持unknown（2026-11-06）
+
+原候选`e67bcd995e3b337abbb5abbf34553da45b1d6295`，tree为`fd60a3a479e82e278cbdddc2aa28674da1cd0a95`；整合代码`4848209a`。
+`model_API_samples`处理原生本地IPC回执时，原先把`submission_confirmed=False`一律当作`not_sent`，
+但真实异步异常分支可能已进入生成、仍持有未结清工作并返回unknown。该布尔值只表示没有确认，不能证明从未发送。
+现在unknown保持unknown，仍不计为已确认API调用、不提供未测得的模型时长；已知发送前失败、确认提交的原读法保持。
+这没有改动引擎结果、终态证明、消费或资源归还。仓内只找到该函数定义与单元测试调用，未见维护中的汇总runner直接调用；外部使用者未检查。
+
+反例`test_local_native_unconfirmed_unknown_is_not_reported_as_unsent`在原实现单项失败，修改后整个模块16项通过，无错误或跳过。
+1032份运行源码摘要中全部979份Python与候选一致；记录内HEAD为提交前227b，之后只改所属README，不冒称记录自带最终提交。
+独审复核了可达producer、原生LOTUS回执导出、确认／未确认／发送前拒绝的行为及源码身份；容量校验用example未当作实际回执。
+无模型、Ray、HTTP或真实socket，零受影响历史绑定，MANIFEST及原expected不变。
+
+原始记录按`native-unknown-before`／`native-unknown-after`保留在本次会话私有归档；按标识和下列摘要取得原件，公开仓库不放原始日志：
+
+- before JSON：`b1b8f057037e635c04e0e3fe8b771339a52ec38aee81299f99c5bf73fc10d3c8`。
+- after JSON：`e33e6e00e120de0499695cf101910ac0a915e401991c313b2281de233ce0e6e2`。
+
+仓内复算使用现有`tests.observability.test_native_query_timing`，不需要真实模型；本批没有改配置默认或增加控制层。
