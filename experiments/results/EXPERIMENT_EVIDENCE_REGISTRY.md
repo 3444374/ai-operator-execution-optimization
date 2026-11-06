@@ -2084,3 +2084,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [旧文本嵌入画像HTTP脚本退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)
 记录已独审86d77的准确脚本删除、原件与五份历史读源；脚本减162行，src和测试不变，本批没有新增运行或行为测试，原生第三方HTTP及原始结果保持。
+
+[异步生成快照与结果直导入](diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)
+记录d0b5到f23d的六文件精简，原四项CPU及四组内存帧／额度保持；原验证脚本错误分列保留，实际IPC／模型未由该记录验证。

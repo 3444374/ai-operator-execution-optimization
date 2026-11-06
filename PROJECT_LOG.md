@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：异步生成参数快照与结果调用精简
+
+[同帧参数快照及中性结果转换](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)
+保留原规范及额度，只删除重复转换与旧转发；四项CPU／四组帧对照和原私有脚本错误分别记录，实际软件IPC随后补验。
+
 ## 2026-11-07：旧文本嵌入画像服务退出当前脚本
 
 [已独审的旧HTTP辅助脚本退役](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)
