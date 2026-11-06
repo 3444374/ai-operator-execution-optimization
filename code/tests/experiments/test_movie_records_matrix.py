@@ -162,11 +162,56 @@ class GroupFixture:
         self.modules = imported_modules(**{'src.experiments.lotus_records_supervisor': {'supervise': self.supervise}})
         self.args = (cfg, 'packet', 0, group, types.SimpleNamespace(path=root / 'lease'), time.monotonic() + 10000, Mock())
 
-    def run(self):
+    def run(self, **kwargs):
         with patch.dict(sys.modules, self.modules):
-            return self.ns['run_group'](*self.args)
+            return self.ns['run_group'](*self.args, **kwargs)
 
 class GroupTests(unittest.TestCase):
+
+    def test_actual_remaining_work_time_controls_owner_and_audit_waits(self):
+        for available, audit_remaining, calibration in ((.5, .5, False), (55., .25, True), (2000., 2000., False)):
+            with self.subTest(available=available, calibration=calibration), \
+                    tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, {}):
+                fixture = GroupFixture(Path(folder))
+                clock = [100.]
+                fixture.ns['time'] = types.SimpleNamespace(monotonic=lambda: clock[0])
+                args = list(fixture.args)
+                args[5] = 100. + declared_budget()['cleanup_reserve_s'] + (2000. if calibration else available)
+                fixture.args = tuple(args)
+                def supervised(*args, **kwargs):
+                    clock[0] = 100. + available - audit_remaining
+                    return dict(status='passed')
+                fixture.supervise.side_effect = supervised
+                result = fixture.run(**(dict(work_deadline=100. + available) if calibration else {}))
+                self.assertEqual(result['status'], 'completed')
+                self.assertEqual(fixture.supervise.call_args.kwargs['timeout_s'], available)
+                self.assertEqual(fixture.supervise.call_args.kwargs['grace_s'], 15)
+                self.assertEqual(fixture.supervise.call_args.kwargs['natural_exit_grace_s'], 1)
+                self.assertEqual(fixture.ns['subprocess'].run.call_args.kwargs['timeout'], audit_remaining)
+                fixture.cleanup.assert_called_once()
+
+    def test_expired_work_time_never_launches_another_operation(self):
+        for stage in ('before_setup', 'before_launch', 'before_audit'):
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, {}):
+                fixture = GroupFixture(Path(folder))
+                clock = [100.]
+                fixture.ns['time'] = types.SimpleNamespace(monotonic=lambda: clock[0])
+                available = 0. if stage == 'before_setup' else 55.
+                args = list(fixture.args)
+                args[5] = 100. + declared_budget()['cleanup_reserve_s'] + available
+                fixture.args = tuple(args)
+                def consume(*args, **kwargs):
+                    clock[0] = 100. + available
+                    return fixture.performance if stage == 'before_launch' else dict(status='passed')
+                if stage == 'before_launch':
+                    fixture.ns['original'].optional_performance.side_effect = consume
+                if stage == 'before_audit':
+                    fixture.supervise.side_effect = consume
+                with self.assertRaisesRegex(TimeoutError, 'matrix work time exhausted'):
+                    fixture.run()
+                self.assertEqual(fixture.supervise.call_count, int(stage == 'before_audit'))
+                fixture.ns['subprocess'].run.assert_not_called()
+                self.assertEqual(fixture.cleanup.call_count, int(stage != 'before_setup'))
 
     def test_optional_sampler_close_cannot_skip_physical_cleanup(self):
         with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, {}):
@@ -568,6 +613,7 @@ class SharedLaunchTests(unittest.TestCase):
             self.assertEqual(context['owner_context']['lease_path'],str(self.lease))
             self.assertEqual(context['ipc_receipts'],str(Path(folder)/'units/g000/ipc'))
             self.assertEqual(context['runtime_binding']['model_path'],self.binding['model_path'])
+            self.assertEqual(context['worker_deadline_monotonic'], deadline-declared_budget()['cleanup_reserve_s'])
 
 
 class SharedFinalizerTests(unittest.TestCase):

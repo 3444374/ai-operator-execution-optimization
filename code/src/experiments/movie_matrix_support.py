@@ -221,7 +221,7 @@ def build_launch_context(cfg,packet_sha,index,group,lease,output,unit_deadline,g
     shared=declared_shared_resources(cfg,packet)
     prefix='/s'+format(int(cfg['ipc_prefix_base'][2:],16)+index,'08x')+'0'
     return dict(packet_sha256=packet_sha,plan_sha256=packet.sha(packet.HERE/group['plan']),
-        assigned_gpu_uuid=gpu['uuid'],worker_deadline_monotonic=unit_deadline-60,
+        assigned_gpu_uuid=gpu['uuid'],worker_deadline_monotonic=unit_deadline,
         ipc_prefix=prefix,ipc_receipts=str(output/'ipc'),
         budget=dict(path=str(budget_path),id=budget_id,limit=cfg['budget_limit']),
         owner_context=dict(lease_path=str(lease.path),lease_sha256=sha(lease.path),

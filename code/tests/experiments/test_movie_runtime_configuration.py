@@ -199,7 +199,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
                 self.assertEqual(resources.max_active_batches,7)
                 self.assertEqual(d.core_execution['max_inflight'],3)
 
-    def test_configured_timeouts_and_output_scratch_replace_input_size_heuristic(self):
+    def test_matrix_work_time_and_output_scratch_do_not_inherit_query_timeout(self):
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{}):
             f=fixtures.GroupFixture(Path(folder))
             original=f.ns['read']
@@ -210,8 +210,10 @@ class RuntimeConfigurationTests(unittest.TestCase):
                 if path.name=='matrix.json':value['budget']=budget(1,1)
                 return value
             f.ns['read']=read
+            f.ns['time']=SimpleNamespace(monotonic=lambda:100.)
+            args=list(f.args);args[5]=1000.;f.args=tuple(args)
             f.run()
-            self.assertEqual(f.supervise.call_args.kwargs['timeout_s'],70)
+            self.assertEqual(f.supervise.call_args.kwargs['timeout_s'],780.)
             self.assertEqual(os.environ['TMPDIR'],str(Path(folder)/'runtime/tmp'))
             self.assertTrue(Path(os.environ['MPLCONFIGDIR']).is_dir())
             self.assertFalse((Path(folder)/'packet/runtime').exists())

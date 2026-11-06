@@ -295,18 +295,11 @@ class MovieMatrix:
                 checked=plan_binding['checked'])
             write_private_json(output/'execution-plan.json',plan)
         budget = matrix_budget(self.packet.read(self.packet.HERE / 'matrix.json'))
-        remaining = deadline - time.monotonic()
-        resources = plan['resources']
-        starts = len(plan['queries']) if plan['lifecycle'] == 'isolated' else 1
-        owner_bound = (None if resources['query_timeout_s'] is None else
-                       starts * (resources['startup_timeout_s'] + 60) + len(plan['queries']) * resources['query_timeout_s'])
-        limit = remaining - budget['cleanup_reserve_s']
-        if owner_bound is not None:
-            limit = min(owner_bound, limit)
-        if work_deadline is not None:limit=min(limit,work_deadline-time.monotonic())
-        if limit <= 60:
-            raise TimeoutError('remaining execution/cleanup window cannot cover next owner')
-        unit_deadline = time.monotonic() + limit
+        unit_deadline = deadline - budget['cleanup_reserve_s']
+        if work_deadline is not None:
+            unit_deadline = min(unit_deadline, work_deadline)
+        if time.monotonic() >= unit_deadline:
+            raise TimeoutError('matrix work time exhausted before owner setup')
         context = self.build_context(cfg, packet_sha, slot, group, lease, output, unit_deadline, gpu)
         context.update(plan_index=index,slot_index=slot)
         if plan_binding is not None:
@@ -330,7 +323,12 @@ class MovieMatrix:
         start = time.monotonic()
         emit(dict(event='owner_group_started', index=index, backend=group['backend'], profile=group['profile'], repetition=group['repetition'], max_calls=group['max_calls'], queries=[q['query_id'] for q in plan['queries']]))
         try:
-            supervised = supervise(self.worker_argv(cfg, packet_sha, index, output / 'context.json', output), output, timeout_s=limit - 60, grace_s=15, natural_exit_grace_s=1, monitor=monitor)
+            remaining = unit_deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('matrix work time exhausted before owner launch')
+            supervised = supervise(
+                self.worker_argv(cfg, packet_sha, index, output / 'context.json', output), output,
+                timeout_s=remaining, grace_s=15, natural_exit_grace_s=1, monitor=monitor)
         except BaseException as failure:
             error = failure
             supervised = getattr(failure, 'report', None)
@@ -352,8 +350,13 @@ class MovieMatrix:
             raise error
         assert physical['original_supervisor_passed'] and physical['independent_physical_exit']
         assert self.packet.read(output / 'functional-validation.json')['status'] == 'passed'
-        audit_deadline=work_deadline if work_deadline is not None else deadline-60
-        audited = subprocess.run(self.audit_argv(cfg, output / 'query.json', output / 'token-audit.json'), env=dict(os.environ, CUDA_VISIBLE_DEVICES=''), capture_output=True, text=True, timeout=min(90, max(1, audit_deadline - time.monotonic())))
+        remaining = unit_deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError('matrix work time exhausted before token audit')
+        audited = subprocess.run(
+            self.audit_argv(cfg, output / 'query.json', output / 'token-audit.json'),
+            env=dict(os.environ, CUDA_VISIBLE_DEVICES=''), capture_output=True, text=True,
+            timeout=remaining)
         self.packet.save(output / 'token-audit-command.json', dict(returncode=audited.returncode, stdout=audited.stdout, stderr=audited.stderr))
         assert audited.returncode == 0 and self.packet.read_report(output / 'token-audit.json')['status'] == 'passed'
         report = self.packet.read_report(output / 'query.json')
