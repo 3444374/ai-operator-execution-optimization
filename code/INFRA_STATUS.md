@@ -49,11 +49,14 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,289行，
-全部 src＋scripts Python 为109,651行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,198行／减少30,684行；对清理起点3fd分别减少5,339／39,994行。
-本批相对3c807生产Python少3行、测试少54行；修复两类共享状态遗留，功能用例归位并删除11项完整重复测试。此前目录搬移不算删除，并行IMLane新增另按其源码核算。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,260行，
+全部 src＋scripts Python 为109,620行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,169行／减少30,715行；对清理起点3fd分别减少5,368／40,025行。
+本批相对f2df生产Python少31行，未增删测试：删除被覆盖的相同时钟类和三个无用导入。此前共享状态修复和11项重复测试清理保持，并行IMLane源码不改；目录搬移不算删除。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
+
+[时钟重复定义清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)
+记录逐字保持的实际时钟类、Movie导入核对和51项CPU；暂停中的研究迁出候选不包含在本批。
 
 [原生生命周期逐次声明](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
 记录最终74项CPU回归、两种原失败、重复测试清理和直接入口验证；

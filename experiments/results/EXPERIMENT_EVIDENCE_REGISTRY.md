@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-06：删除重复查询时钟及遗留导入
+
+[两份相同定义、引用与51项CPU](diagnostics/records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)
+登记准确859253的现有测试通过、最后时钟类逐字保持及五份Movie旧源摘要保持。
+生产Python净少31行，未新增测试、模型或服务器运行；SAOR迁出候选不含在本批。
+
 ## 2026-11-06：原生查询逐次声明支持路径
 
 [源码、两种复现与回归](diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)

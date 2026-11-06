@@ -1,0 +1,234 @@
+{
+  "base_commit": "f2df243533c601741259e1f477caf69034c6b90e",
+  "code_commit": "859253aa831c9d5fc406f8097c78b208c8c18020",
+  "code_tree": "365060acdc546b2017266fde77b44667057cb5c4",
+  "duplicate_proof": {
+    "base": "f2df243533c601741259e1f477caf69034c6b90e",
+    "file": "code/src/observability/native_query_timing.py",
+    "original_file_sha256": "904de42d3c48d60340d28170a2e0c00f53b74850278486c4903c8a62d8470662",
+    "original_definition_lines": [
+      [
+        11,
+        39
+      ],
+      [
+        197,
+        225
+      ]
+    ],
+    "same_class_AST": true,
+    "class_AST_sha256": "59ac6135559e60340ce3a4c00754ecbb227a8bc38b9f35a68e0b31a98fdb906a",
+    "class_reference_between_definitions": false,
+    "surviving_class_bytes_unchanged": true,
+    "surviving_class_sha256": "0e5e64853e610ceb26218c39a312b33c89c6dd0d64cd2c4fd9eeca4c00aa8dfb",
+    "physical_lines_removed": 29,
+    "changed_file_sha256": "a8b136e4f019c196c9552159be37d04b7a1051fc0dedb8f5240ee686ef89db58"
+  },
+  "unused_import_review": {
+    "source_commit": "f2df243533c601741259e1f477caf69034c6b90e",
+    "decision": "The three unused imports can be removed from the maintained Movie session module. Keep the actual native lifecycle definitions/imports and the other Movie exports.",
+    "local_name_loads": {
+      "_lifecycle_timing": [],
+      "traceback": [],
+      "uuid": []
+    },
+    "direct_external_imports": [],
+    "external_attribute_or_literal_targets": [],
+    "unresolved_module_introspection": [],
+    "actual_owner": "native_query_lifecycle imports and uses traceback/uuid, defines _lifecycle_timing, and owns the globals of _failure/run_sequence. Those functions do not consult Movie module aliases.",
+    "current_test": "The only external _lifecycle_timing call found is through native_query_lifecycle in test_baseline_closure_entries, not the Movie module.",
+    "history": [
+      {
+        "variant": "native_isolated_and_imlane",
+        "source": "variants/core_local_window_pairs/code/src/experiments/movie_records_session.py",
+        "sha256": "fdd7bb1f04f978aaf02379f0dcbf82da055c33c90e85ae065fda59054b5a41d9",
+        "match": true
+      },
+      {
+        "variant": "core_original_dynamic",
+        "source": "variants/core_local_window_pairs/code/src/experiments/movie_records_session.py",
+        "sha256": "fdd7bb1f04f978aaf02379f0dcbf82da055c33c90e85ae065fda59054b5a41d9",
+        "match": true
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "source": "variants/core_local_window_pairs/code/src/experiments/movie_records_session.py",
+        "sha256": "fdd7bb1f04f978aaf02379f0dcbf82da055c33c90e85ae065fda59054b5a41d9",
+        "match": true
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "source": "variants/ray_runtime_reuse/code/src/experiments/movie_records_session.py",
+        "sha256": "b41492e2ee007392ad7ebb974fa3ed95f45699e0f08078d03258cb7ebd069c5b",
+        "match": true
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "source": "variants/daft_single_thread_session/code/src/experiments/movie_records_session.py",
+        "sha256": "9e58403e5b0bde7a5d429435494a3b15765c00365025b77d521d3d0920c50086",
+        "match": true
+      }
+    ],
+    "all_historical_reads_use_overrides": true,
+    "new_archive_needed": false,
+    "scope": "Current repository Python module imports, known aliases/attributes, literal patch targets and direct module introspection were inspected. No claim is made about all outside storage or unrecorded external users. _lifecycle_timing is a private incidental re-export; no current API documentation/consumer establishes these three as a required Movie interface.",
+    "operations": "Read-only AST/source plus five historical read_source calls. No tests, server, service/model/actual Ray, IPC/socket/sysctl or source edits. Paused research candidate untouched."
+  },
+  "unused_import_review_original_sha256": "f894a86cff53c2fc423ef141adc8bf7e159b73d321454eb01b47473663b2e43c",
+  "regression": {
+    "label": "clock-cleanup",
+    "selected_method_ids": [
+      "tests.observability.test_native_query_timing.QueryTests.test_bad_clock_order_is_missing_not_clamped",
+      "tests.observability.test_native_query_timing.QueryTests.test_callback_result_and_policy_cleanup_preserved",
+      "tests.observability.test_native_query_timing.QueryTests.test_clock_failure_does_not_kill_result",
+      "tests.observability.test_native_query_timing.QueryTests.test_isolated_initialization_not_omitted",
+      "tests.observability.test_native_query_timing.QueryTests.test_no_exact_clock_never_uses_terminal",
+      "tests.observability.test_native_query_timing.QueryTests.test_primary_error_identity_and_evidence",
+      "tests.observability.test_native_query_timing.UnitTests.test_HTTP_and_LM_batch_are_different_units",
+      "tests.observability.test_native_query_timing.UnitTests.test_chat_batch_not_copied_per_row",
+      "tests.observability.test_native_query_timing.UnitTests.test_conflicting_offline_identity_rejected",
+      "tests.observability.test_native_query_timing.UnitTests.test_duplicate_offline_event_charged_once",
+      "tests.observability.test_native_query_timing.UnitTests.test_failed_and_unknown_API_units_kept",
+      "tests.observability.test_native_query_timing.UnitTests.test_independent_Core_calls_not_merged_by_same_clock",
+      "tests.observability.test_native_query_timing.UnitTests.test_local_native_keeps_presubmit_rejections_without_counting_model_API_calls",
+      "tests.observability.test_native_query_timing.UnitTests.test_local_native_uses_actual_independent_model_receipts",
+      "tests.observability.test_native_query_timing.UnitTests.test_missing_batch_identity_never_invents_row_API_units",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_checkpoint_and_final_owner_close_are_not_model_or_query_api_time",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_existing_native_constructor_receipt_is_separate_from_runtime_start",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_failed_call_has_no_invented_normal_return_or_zero_cost",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_generic_clock_keeps_existing_imlane_result_timing_semantics",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_invalid_backend_report_is_not_masked_by_optional_lifetime_metrics",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_isolated_startup_is_already_inside_each_driver_return",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_missing_native_model_duration_is_not_backfilled_from_query_time",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_partial_start_keeps_unknown_start_duration_and_cleanup_evidence",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_resident_rejection_is_about_this_adapter_not_a_vendor_capability_claim",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_resident_startup_is_once_and_driver_return_is_after_evaluation",
+      "tests.experiments.test_query_lifecycle.ComparableLifecycleTimingTests.test_runtime_only_readiness_does_not_claim_model_load_or_residency",
+      "tests.experiments.test_movie_records_session.CoreReadinessTests.test_public_start_loads_before_source_and_two_queries_reuse_the_real_core",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_cleanup_failure_does_not_replace_query_failure",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_different_tasks_keep_fresh_ledgers_and_one_owner",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_existing_evidence_is_never_overwritten",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_failure_stops_later_queries_and_preserves_original_receipts_before_cleanup",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_isolated_mode_keeps_loading_inside_each_query_and_closes_each_owner",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_missing_result_boundary_is_a_failure",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_partial_start_failure_is_closed_without_running_a_query",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_recording_failure_preserves_primary_exception",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_resident_reads_each_full_query_loads_once_and_separates_time_boundaries",
+      "tests.experiments.test_movie_records_session.LifecycleTests.test_unsupported_residency_rejects_before_resources_or_output",
+      "tests.experiments.test_movie_records_session.PlanTests.test_core_differing_instructions_are_bound_per_query_in_one_session",
+      "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_defers_omitted_context_to_actual_readiness",
+      "tests.experiments.test_movie_records_session.PlanTests.test_current_sync_session_keeps_explicit_context_presubmit_check",
+      "tests.experiments.test_movie_records_session.PlanTests.test_engine_limit_covers_all_warmup_and_measured_queries",
+      "tests.experiments.test_movie_records_session.PlanTests.test_isolated_core_driver_binds_the_current_query_method_and_leaves_foreign_ray_alive",
+      "tests.experiments.test_movie_records_session.PlanTests.test_native_final_accounting_survives_a_failed_publication_and_retries_without_model_work",
+      "tests.experiments.test_movie_records_session.PlanTests.test_native_late_closing_usage_is_saved_without_promoting_source_unknown",
+      "tests.experiments.test_movie_records_session.PlanTests.test_native_lotus_isolated_driver_leaves_model_lifecycle_inside_query",
+      "tests.experiments.test_movie_records_session.PlanTests.test_native_lotus_plan_requires_its_native_profile_without_core_options",
+      "tests.experiments.test_movie_records_session.PlanTests.test_native_session_defers_unspecified_context_to_native_readiness",
+      "tests.experiments.test_movie_records_session.PlanTests.test_normal_driver_routes_native_queries_to_one_local_owner_and_closes_it",
+      "tests.experiments.test_movie_records_session.PlanTests.test_owner_api_validates_fresh_claims_before_allocating_and_restores_device_environment",
+      "tests.experiments.test_movie_records_session.PlanTests.test_q1_q2_share_preparation_method_with_fresh_task_counts",
+      "tests.experiments.test_movie_records_session.PlanTests.test_removed_native_HTTP_profile_rejects_before_owner_or_output_creation"
+    ],
+    "unittest_testsRun": 51,
+    "successful_methods": 51,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "elapsed_s": 1.9220029171556234,
+    "Python": "3.12.6",
+    "platform": "Darwin",
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "pyarrow": "24.0.0",
+      "litellm": "1.95.0",
+      "openai": "2.50.0"
+    },
+    "source_commit": "859253aa831c9d5fc406f8097c78b208c8c18020",
+    "source_unchanged_during_suite": true,
+    "real_Ray_runs": 0,
+    "model_calls": 0,
+    "GPU_runs": 0,
+    "selectors": [
+      "tests.observability.test_native_query_timing",
+      "tests.experiments.test_query_lifecycle",
+      "tests.experiments.test_movie_records_session"
+    ],
+    "source_sha256": {
+      "code/src/observability/native_query_timing.py": "a8b136e4f019c196c9552159be37d04b7a1051fc0dedb8f5240ee686ef89db58",
+      "code/src/experiments/movie_records_session.py": "80c3b533cee4e0ec6e37097673e6dd3f1f5804799e96140311639170ac5fc62e",
+      "code/tests/observability/test_native_query_timing.py": "7ea80a76408097469dff79cc65457fc6235dab571238a728bebe167e0f636942",
+      "code/tests/experiments/test_query_lifecycle.py": "27c3824677147be5af901a9db1dfb657863fa3d31636b31a1be0c2e98713bd80",
+      "code/tests/experiments/test_movie_records_session.py": "6840fa18327a86a9b4240250e621390ff1f31e47d4cc626dd94357061155a031"
+    },
+    "full_source_map": {
+      "files": 1074,
+      "sha256": "a9b6523123ca391f8211289d2bdaf851979397d64af68a325243cde5a1e6ca45",
+      "publication": "Selected source/test hashes shown; original full map retained with the original run. All measured files match the stated code commit."
+    },
+    "original_result_sha256": "00001a0b5f8b85451095ad622c9dfda2ab2b3b6e744e6717345b9ac17f69751f",
+    "original_log_sha256": "98d4e4a18128eb85cf668db17e8ddf77a51c5e5d8091a85660cf1c346c01dcb4",
+    "result_projection": "Successful IDs equal the selected IDs; duplicate list omitted. Original result and log hashes retained."
+  },
+  "independent_source_review": {
+    "original_sha256": "7a4d58abce52a9f5c0c7995fb6d02ef2506247eaf8ffdb57c9db2067bd1afbd8",
+    "decision": "No change needed; retained class bytes and Movie function/class AST unchanged, exact source identity and historical reads verified. Reviewer did not rerun tests."
+  },
+  "old_content_audit": {
+    "original_sha256": "ead66d74595a92ca4b86c879d0890b7e8137eed49e1da1a8eb358e5a6fd0da04",
+    "Python_files": 149,
+    "duplicate_top_level_definitions_found": 1,
+    "scope": "The selected relevant directories, not every project file."
+  },
+  "size": {
+    "scope": "Physical Python lines including blanks/comments. Core excludes src/experiments and src/baselines but includes src/research. Tests/integration sources/docs/historical copies separate.",
+    "base_commit": "f2df243533c601741259e1f477caf69034c6b90e",
+    "base": {
+      "core_Python": 56289,
+      "src_and_scripts_Python": 109651,
+      "tests_Python": 98380,
+      "integrations_Python_CPP_HPP": 6758
+    },
+    "candidate": {
+      "commit": "859253aa831c9d5fc406f8097c78b208c8c18020",
+      "core_Python": 56260,
+      "src_and_scripts_Python": 109620,
+      "tests_Python": 98380,
+      "integrations_Python_CPP_HPP": 6758
+    },
+    "main": {
+      "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+      "core_Python": 54091,
+      "src_and_scripts_Python": 140335,
+      "tests_Python": 102763,
+      "integrations_Python_CPP_HPP": 4521
+    },
+    "cleanup_start": {
+      "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+      "core_Python": 61628,
+      "src_and_scripts_Python": 149645,
+      "tests_Python": 130062,
+      "integrations_Python_CPP_HPP": 4528
+    },
+    "delta_base": {
+      "core_Python": -29,
+      "src_and_scripts_Python": -31,
+      "tests_Python": 0,
+      "integrations_Python_CPP_HPP": 0
+    }
+  },
+  "scope": {
+    "new_tests": 0,
+    "real_Ray": 0,
+    "actual_IPC": 0,
+    "model_calls": 0,
+    "GPU": 0,
+    "server_runs": 0,
+    "SAOR_changes": 0,
+    "main_merge": false
+  },
+  "prior_server_six": "Pending receipt in the existing test task; not resubmitted by this batch.",
+  "paused_research_candidate": "Separate unpushed 3b393 candidate, handed to its dedicated task; absent from this code tree."
+}

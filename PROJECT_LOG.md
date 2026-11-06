@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：删除被覆盖的查询时钟定义
+
+同一观测文件的首个QueryClock与最后定义逐字相同且未被引用，删除前者及Movie Session三个无用导入。
+[来源、51项现有CPU与旧源核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)
+记录净少31行生产Python，实际时钟、当前查询行为及旧原件保持；没有新增测试或研究策略。
+SAOR迁出候选另行交接，本批没有模型、服务器或main合并。
+
 ## 2026-11-06：消除原生比较的临时全局注册
 
 Kalypso把支持路径及模型复用信息随调用传入中性生命周期，不再改写Movie默认集合。
