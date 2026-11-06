@@ -6,6 +6,7 @@
     "recorded_head_before_commit": "e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2",
     "tested_code_files": 1069,
     "tested_content_matches_production_commit": true,
+    "fixture_checkout_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
     "passed_methods": 14,
     "errors": 0,
     "failures": 0,
@@ -218,9 +219,9 @@
   },
   "raw": {
     "file": "lotus_http_retirement_raw.json.gz",
-    "bytes": 114037,
-    "sha256": "d0616873888187e86622bf94bb78d62a3c7c10fb6204e677911beb831d50b0a8",
-    "decoded_bytes": 339885,
-    "decoded_sha256": "29835c37e4c4cb0ba26bfe1b068ae129b64655ea90e4359d937fee1e1b1d5850"
+    "bytes": 114367,
+    "sha256": "7381815f24b438a41b56ce0a62537f3b79e6cf6080e471abb7da46909a59573c",
+    "decoded_bytes": 340803,
+    "decoded_sha256": "e494f269d0f6bfea8ce724616bca6d25cb2246b502e46335d374ef3934d12ce5"
   }
 }
