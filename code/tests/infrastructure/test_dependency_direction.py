@@ -19,21 +19,14 @@ CODE = Path(__file__).resolve().parents[2]
 
 class DependencyDirectionTests(unittest.TestCase):
     def test_runtime_sources_do_not_import_tests_scripts_or_experiment_entry_points(self):
-        # The baseline orchestration package and two explicit legacy comparison
-        # entry points are harnesses; their callers choose a comparison run.
+        # The baseline orchestration package contains comparison harnesses.
         violations = []
         for path in (CODE / "src").rglob("*.py"):
             relative = str(path.relative_to(CODE / "src"))
             if relative.startswith(("experiments/", "baselines/text/orchestration/")):
                 continue
             tree = ast.parse(path.read_text())
-            cli_compatibility = set()
-            if relative == "baselines/text/frameworks/kalypso_native/adapter.py":
-                cli_compatibility = {id(n) for fn in tree.body if isinstance(fn, ast.FunctionDef)
-                                     and fn.name in {"main", "run_attached"} for n in ast.walk(fn)}
             for node in ast.walk(tree):
-                if id(node) in cli_compatibility:
-                    continue
                 names = ([node.module or ""] if isinstance(node, ast.ImportFrom)
                          else [item.name for item in node.names] if isinstance(node, ast.Import) else [])
                 for name in names:
@@ -98,7 +91,8 @@ for module in ('src.observability.execution_timing', 'src.observability.model_re
                'src.infrastructure.request_budget', 'src.modalities.image.clip',
                'src.semantic_methods.lotus.image_rm',
                'src.semantic_methods.lotus.image_backend', 'src.baselines.image.frameworks.daft_clip',
-               'src.modalities.image.clip_batch_workers'):
+               'src.modalities.image.clip_batch_workers',
+               'src.baselines.text.frameworks.kalypso_native.adapter'):
     importlib.import_module(module)
 from src.observability.execution_timing import timing_span
 with timing_span('disabled.fixture'):
@@ -121,15 +115,21 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
                              capture_output=True, text=True, timeout=20)
         self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_old_and_new_kalypso_cli_help_do_not_load_the_author_runtime(self):
+    def test_kalypso_query_script_and_experiment_cli_keep_help_and_required_arguments(self):
         environment = dict(os.environ, PYTHONPATH=str(CODE), PYTHONDONTWRITEBYTECODE="1")
+        entries = ([sys.executable, "-B", str(CODE / "scripts/experiments/run_kalypso_sembench_query.py")],
+                   [sys.executable, "-B", "-m", "src.experiments.kalypso_query_lifecycle"])
         results = []
-        for module in ("src.baselines.text.frameworks.kalypso_native.adapter",
-                       "src.experiments.kalypso_query_lifecycle"):
-            run = subprocess.run([sys.executable, "-B", "-m", module, "--help"],
-                                 env=environment, text=True, capture_output=True, timeout=15)
-            self.assertEqual(run.returncode, 0, run.stderr)
-            self.assertIn("--config", run.stdout)
-            self.assertIn("--unit", run.stdout)
-            results.append(run.stdout)
+        for entry in entries:
+            with self.subTest(entry=entry[-1]):
+                help_run = subprocess.run(entry + ["--help"], env=environment, text=True,
+                                          capture_output=True, timeout=15)
+                self.assertEqual(help_run.returncode, 0, help_run.stderr)
+                for flag in ("--config", "--unit", "--output"):
+                    self.assertIn(flag, help_run.stdout)
+                missing = subprocess.run(entry, env=environment, text=True,
+                                         capture_output=True, timeout=15)
+                self.assertEqual(missing.returncode, 2, missing.stderr)
+                self.assertIn("required: --config, --unit, --output", missing.stderr)
+                results.append(help_run.stdout)
         self.assertEqual(results[0].split("\n\n", 1)[1], results[1].split("\n\n", 1)[1])

@@ -4,7 +4,7 @@
 
 `adapter.py`只负责输入、完整发生项核验、源序恢复和观测接入；作者服务继续拥有Filter执行、生成设置、批处理和调度。原生parser以结果不含`false`判通过，与LOTUS不同。`native_server.py`保留实际worker模型元数据及物理设备旁录；客户端关闭不代表服务退出。`cpu_native.py`需要已有作者环境和模型tokenizer；本次没有安装或启动它们。
 
-attached比较流程维护在`src/experiments/kalypso_query_lifecycle.py`；`adapter.run_attached`和原模块CLI只作兼容转发。实际客户端不导入实验流程，调用方只有显式运行比较入口时才加载该编排。
+attached比较流程与CLI维护在`src/experiments/kalypso_query_lifecycle.py`，查询脚本`run_kalypso_sembench_query.py`直接调用该模块。`adapter.py`保留作者服务客户端，不导入实验编排。旧`adapter.run_attached`与原模块CLI可从Git提交`5b25197dafc03d6ae7fa48e7c0f7460122e85e51`的完整树恢复。
 
 原程序以独立的`adapter`和`native_server`模块名解析worker扩展。以后在私有运行副本执行时，将本目录加入该进程的`PYTHONPATH`并提供明确配置；不要只改扩展名而声称继承原worker测试。`load_dependencies`还需要具名历史源码及对应packet依赖，新私有运行绑定尚未完成。
 

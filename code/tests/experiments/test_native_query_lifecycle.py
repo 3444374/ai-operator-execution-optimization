@@ -19,6 +19,7 @@ from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.experiments import test_movie_records_session as lifecycle_fixture
 from src.experiments import movie_records_session as session
 from src.experiments import lotus_records_movie as movie
+from src.experiments import kalypso_query_lifecycle as kalypso
 from integrations.imlane_records import chain_runtime
 
 
@@ -313,14 +314,14 @@ class KalypsoBackendSupportTests(unittest.TestCase):
         with patch.object(adapter, "load_dependencies"), \
              patch.object(adapter, "NativeQueryDriver", Driver), \
              patch.object(sessions, "run_sequence", side_effect=run):
-            result = adapter.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
+            result = kalypso.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
         self.assertEqual(result["status"], "passed")
         error = ValueError("fixture comparison failure")
         with patch.object(adapter, "load_dependencies"), \
              patch.object(adapter, "NativeQueryDriver", Driver), \
              patch.object(sessions, "run_sequence", side_effect=error):
             with self.assertRaises(ValueError) as caught:
-                adapter.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
+                kalypso.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
         self.assertIs(caught.exception, error)
         self.assertIs(sessions.BACKENDS, original[0])
         self.assertIs(sessions.RESIDENT, original[1])
@@ -338,7 +339,7 @@ class KalypsoBackendSupportTests(unittest.TestCase):
              patch.object(adapter, 'load_dependencies'), \
              patch.object(native_query_timing, 'ObservationStore', side_effect=error):
             with self.assertRaises(ValueError) as caught:
-                adapter.run_attached(cfg, {'queries': []}, Path('unused-fixture-output'))
+                kalypso.run_attached(cfg, {'queries': []}, Path('unused-fixture-output'))
             self.assertIs(caught.exception, error)
             self.assertEqual((sessions.BACKENDS, sessions.RESIDENT), original)
 
@@ -373,10 +374,10 @@ class KalypsoBackendSupportTests(unittest.TestCase):
              patch.object(adapter, 'NativeQueryDriver', Driver), \
              ThreadPoolExecutor(max_workers=2) as pool:
             try:
-                first = pool.submit(adapter.run_attached, cfg,
+                first = pool.submit(kalypso.run_attached, cfg,
                     {'name': 'first', 'queries': [query]}, Path(directory) / 'first')
                 self.assertTrue(entered['first'].wait(5))
-                second = pool.submit(adapter.run_attached, cfg,
+                second = pool.submit(kalypso.run_attached, cfg,
                     {'name': 'second', 'queries': [query]}, Path(directory) / 'second')
                 self.assertTrue(entered['second'].wait(5))
                 release['first'].set()

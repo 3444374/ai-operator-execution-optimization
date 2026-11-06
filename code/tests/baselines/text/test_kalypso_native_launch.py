@@ -14,6 +14,7 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.frameworks.kalypso_native import adapter, cpu_native, native_server as server
+from src.experiments import kalypso_query_lifecycle as kalypso
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -209,7 +210,7 @@ class NativeLaunchTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'fresh'):
                     runpy.run_path(str(ROOT/'code/scripts/experiments/run_kalypso_sembench_query.py'),run_name='__main__')
                 with self.assertRaisesRegex(ValueError,'fresh'):
-                    adapter.run_attached(dict(binding(),engine={}),{},Path(root)/'direct-output')
+                    kalypso.run_attached(dict(binding(),engine={}),{},Path(root)/'direct-output')
                 deps.assert_not_called()
             self.assertFalse((Path(root)/'output').exists())
 
