@@ -111,7 +111,7 @@ Core提交观察至RPC开始的逐行中位数为15.550／12.796／21.403／10.5
 双Job／Daft第三次reserve累计557.900毫秒、next恢复432.984毫秒，慢样本完整保留，未解释为算法效果。
 
 **工程推断：** 多Job供给和同Job选择共同参与小窗口形成。
-源码[`RayMapTransport._flush`](../../../../code/src/execution_provider/adapters/ray_map_transport.py)遇到其他Job即结束当前连续选取；
+源码[`RayMapTransport._flush`](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/ray_map_transport.py)遇到其他Job即结束当前连续选取；
 这与双Job近乎逐行的观察相符。下方新增完整pending快照后，仅少量窗口还有被隔开的同Job行，
 本签名先不实现重排；保留逐行容量、完整请求、结果交付、取消和未知执行责任。
 逐行RPC暂未获得改成成组RPC的净收益依据。

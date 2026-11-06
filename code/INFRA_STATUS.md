@@ -28,7 +28,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 图像与数据 | 现用LOTUS图像后端保持；HSE调度／清理与指标累计／结果装配分开；CLIP准备、执行观测和报告分开，异常时停止已启动资源并保留主错误 | 这批HSE及异常清理只有软件替身检查；不证明实际采样线程、Ray或模型进程退出，增量图像与HSE用途仍不同 |
 | 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；采样归observability；四个旧转发及重复时钟定义删除；准确4d六项服务器CPU通过 | 结果限其实际采样／软件传输和子进程范围；不是后续组合、真实Ray或模型资格，本机此前拒绝的操作不重试 |
 | 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器CPU与独立Ray方法通过，共享研究显式接入 | 5b模型5请求中4条正确、1条unknown，正常排空未通过；按用户要求暂停多查询新增实现与扩展测试，现有代码和失败保留 |
-| 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放及异步阻塞RPC已退役；删除旧HTTP隔离探针／研究启动器及专测、四个旧服务CLI选择；中性后端包不再加载HTTP实现 | 底层fixed HTTP工厂／transport及余下专用配置仍在清理；共享Image／Core／IPC和第三方原生HTTP保留，不称全仓已清完 |
+| 旧实现与检查 | 旧PG／HTTP实验入口、fixed HTTP后端／工厂／Map装配、专用配置与测试已退出；图像owner直接拥有本地流程；无现用者的aiohttp包装、旧pickle／别名形状要求删除 | 保留当前Image／Core／IPC、原生LOTUS／Kalypso／Ray连接及离线旧校准身份；不把第三方原生HTTP误作SemLoom旧路径 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留；Kalypso实验脚本直接调用实验流程，baseline不再反向导入 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
 ### 真实环境证据按源码解释
@@ -61,10 +61,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,196行，
-全部 src＋scripts Python 为108,979行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,105行／减少31,356行；对清理起点3fd分别减少5,432／40,666行。
-本批HSE指标提取相对90aaa增加23行，没有新增测试；包导入此前减少21行，两批不声称减少总量；不把历史副本算作代码减少。
+核心 `code/src`（排除 experiments、baselines，保留 research）为52,517行，
+全部 src＋scripts Python 为104,152行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别减少1,574行／36,183行；对清理起点3fd分别减少9,111／45,493行。
+本批旧HTTP及无用包装清理相对45595核心减少3,679行、src＋scripts减少4,827行、测试减少6,114行；历史副本不算作代码减少。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
@@ -73,6 +73,9 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 记录导入反例、五项轻量CPU和原来源恢复，不运行旧HTTP套件，也不把导入依赖称为HTTP请求。
 [HSE职责提取](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
 保存17项原CPU前后结果和三组完整输出对照；没有运行真实Ray或模型，不作性能结论。
+[本地IPC职责与旧HTTP完整退出](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)
+记录四批删除、70项实际组合CPU、160条受影响历史读取及现用源码反查；图像实际Unix socket检查另交服务器。
+核心不依赖实验入口，没有为退出HTTP新增网关或多查询实现；实际模型、物理内存授予及历史Ray清理仍按各自来源判断。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
@@ -437,7 +440,7 @@ Session 直接使用该模块；旧导入名保留。请求准备、接纳、派
 <a id="http-call-configuration-cpu"></a>
 ## 独立 HTTP 请求配置候选（2026-11-03）
 
-> 此节为当时的开发记录；现用records通过本地IPC，旧fixed HTTP入口已进入[退役处理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fixed-http-retirement-and-matrix-time)，不作为当前配置指南。
+> 此节为当时的开发记录；现用records通过本地IPC，旧fixed HTTP入口及实现已[退出当前树](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)，不作为当前配置指南。
 
 本地候选基于 `5ff54bfe`，尚未合入：独立 LOTUS HTTP 接点接受显式 180 秒请求／批／两阶段查询期限，
 有限正数、模型匹配、较短调用方期限及未知结果责任保持。fixed HTTP 读取层采用可配置单条响应额度；

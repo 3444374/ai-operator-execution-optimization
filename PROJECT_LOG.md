@@ -2,6 +2,15 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：旧SemLoom HTTP退出并收敛实际调用
+
+图像owner直接拥有连接与方法生命周期，帧处理独立；通用增量执行只保留现有Core任务组合。
+旧fixed HTTP后端／工厂、Map组织／传输／注册、无runner对照及专属测试删除，原生LOTUS／Kalypso／Ray连接保持。
+退役无现用者的aiohttp包装，去掉手工旧pickle、私有别名同一性与已删模块名称等多余测试要求。
+[实际组合、分批检查与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)
+记录70项现有纯CPU通过和160条受影响历史读取；相对45595维护中src＋scripts减少4,827行，图像实际socket另验。
+现行配置与runtime说明同步，13处旧文件链接改指准确Git成员；历史运行身份、数字、原失败和研究材料保持，未合并main。
+
 ## 2026-11-06：分开HSE执行与指标职责
 
 HSE执行继续拥有调度与清理，计时／字节／峰值和原结果装配移到独立模块；没有新增控制器或测试。

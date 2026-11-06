@@ -64,9 +64,6 @@ SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1
 `lotus-ai==1.2.4`、`litellm==1.95.0`与`openai==2.50.0`；来源报告记录实际版本及源码摘要，
 普通执行不再强制这些版本／字节相等，其他版本仍须各自验证。仅安装LOTUS不会锁定整个组合，
 已有可导入模块也不会由`install-python`自动纠正。运行前保留[原入口的来源与环境预检](../../code/src/experiments/lotus_records_movie.py)。
-机器profile的Python3.10下界也不证明所有可选路径可用：当前[异步HTTP transport](../../code/src/execution_provider/adapters/async_fixed_model.py)
-使用Python3.11新增的`asyncio.timeout`。选择该路径须使用满足此API的解释器；机器check未做此路径的API资格检查。
-此处不提高所有能力的Python下界，也不据开发机版本升级整套依赖。
 若旧driver缺评价依赖，先审查安装预览，再建独立venv，不混装模型服务环境；
 [本轮环境与验证记录](../../experiments/results/postgresql/database_queries_20260910/README.md)。
 

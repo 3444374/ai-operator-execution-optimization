@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：旧HTTP完整退出与实际组合CPU
+
+[分批删除、职责与恢复](diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)
+保存ce39／2a3a／104e／a15各自13、6、51、7项CPU及独审，前后与重叠选择不累加。
+准确组合一次70项现有纯CPU通过，160条受影响历史读取通过；没有实际HTTP／UDS／Ray／模型。
+旧别名错误和夹具／准备脚本错误原件保持；当前第三方原生HTTP、Core／Image／NativeTask／IPC和历史身份保留，真实图像socket另交服务器。
+
 ## 2026-11-06：HSE执行与指标职责提取
 
 [HSE指标与原执行](diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
@@ -339,7 +346,7 @@ IMLane旧边界来源按[准确历史映射](../reproduction/native_baselines/RE
 候选基于 `5ff54bfe774f5cdabb5b67bb5a2696dca2b84e08`；适用接口见
 [代码状态](../../code/INFRA_STATUS.md#http-call-configuration-cpu)。
 运行 `http-config-20261103-related-3` 共 221 项，174 通过、47 跳过；其中
-[HTTP 配置检查](../../code/tests/execution_provider/test_http_configuration.py)与
+[HTTP 配置检查](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/tests/execution_provider/test_http_configuration.py)与
 [历史期限检查](https://github.com/3444374/ai-operator-execution-optimization/blob/7bf1d92baf2611925c608cfe76b4a766855bd77e/code/tests/semantic_methods/test_lotus_http_deadlines.py)合计 19 项，使用内存 HTTP、SDK 替身与真实 Core，
 旧 HTTP／PG Python 协议使用回环 HTTP／临时 Unix socket，未启动数据库或写入外部服务。
 覆盖 120／180 秒声明、较短调用方期限、1 MiB 前后结果、显式小额度、单项／总量、结果租约、
@@ -355,7 +362,7 @@ LOTUS 本地模型启动、Kalypso 或现有 PG wire schema。
 
 独审 `b16b5a95` 发现组织化 PG 的准备函数仍给任务预留 1 MiB，以及九份共享源改变引入
 45 处历史绑定不匹配。修订使三种组织模式的任务额度与 result work 同取用户配置；新增
-[组织化 4 KiB 检查](../../code/tests/execution_provider/test_organized_response_capacity.py)覆盖准备、接纳和替身交付。
+[组织化 4 KiB 检查](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/tests/execution_provider/test_organized_response_capacity.py)覆盖准备、接纳和替身交付。
 按准确 `5ff54bfe` 保存上述九份及新增受影响的 `map_organization.py`，五份投影只追加 50 条来源映射，
 未改旧摘要、投影标识、来源版本、已有映射或原始证据。
 [HTTP 历史来源检查](../../code/tests/experiments/test_http_historical_bindings.py)只还原明确选定的十份源，

@@ -11,7 +11,7 @@
 输入记录在准备线程、共享数据或未知模型结果仍持有时继续记账；关闭consumer后，Core reap可以继续确认本地归还。
 准备失败走原后端错误交付，模型结果确认和本地归还短暂错开时延后交付，保留输入，不错误判定为查询失败。
 
-[`MapInputPreparation`](../../../../code/src/execution_provider/adapters/map_preparation.py)复用[`BoundedStageBroker`](../../../../code/src/scheduling/runtime/stage_broker.py)，
+[`MapInputPreparation`](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/map_preparation.py)复用[`BoundedStageBroker`](../../../../code/src/scheduling/runtime/stage_broker.py)，
 按已到达前段与相同Job/工作量签名组织有限准备块。最多一个准备线程，先预留编码数据与两份Arrow/Ray表示的复制空间；
 完成后持有一个Ray对象，各行仍独立发送完整请求和返回结果，不等未来行，不合并模型请求。
 同块快行结束不会释放慢行或未提交行仍需的对象；未知Ray结果保留对象和work，取消不能冒充远端结束。

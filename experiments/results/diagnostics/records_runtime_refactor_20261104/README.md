@@ -4251,3 +4251,42 @@ after CPU记录没有内联源码表，其准确候选由交接和所存源码�
 整合只合并新增MANIFEST键，保留已推包导入及先前恢复来源，没有重跑整套3010物化。
 当前核心56,196行、src＋scripts108,979行，分别较main增加2,105／减少31,356，较3fd减少5,432／40,666，口径同前。
 没有真实Ray／模型／GPU检查；原具名信号量残留和历史关闭原因未由本次提取改变。
+
+<a id="local-ipc-and-http-retirement"></a>
+## 本地IPC职责与旧HTTP退出当前树（2026-11-06）
+
+本批在公开45595之后整合四个已独审候选，删除确认无现用入口的SemLoom HTTP实现；
+当前records仍为actor→AsyncEngineProcess／worker→本地vLLM，图像为ImageGateway→方法driver→Core→typed image。
+没有新增另一套控制器、IPC网关或多查询功能。第三方原生LOTUS、Kalypso作者服务与Ray官方HTTP连接保持。
+
+| 原候选 | 实际改动 | 分批CPU与来源 |
+|---|---|---|
+| `ce39cc9e` | 图像owner直接拥有生命周期；帧处理移入image_connection，连接状态归现有gateway_runtime；旧Map owner／注册／保留流胶水及七个专测模块退出 | [13项CPU及16处原样搬移](raw/image_owner_http_retirement_checks.json) |
+| `2a3a4a08` | 删除三个旧HTTP backend、无runner的direct client与请求比较CLI／专测；两个旧登记退出，其余八项原生登记不变 | [6项保留CPU及30历史读取](raw/backend_http_retirement_checks.json) |
+| `104e1e63` | 删除固定HTTP工厂／transport、Map准备／组织、v6接线、synthetic probe及专测；增量执行只组合原Core任务，NativeTask方法保持 | [51项CPU与85历史读取](raw/http_factory_retirement_checks.json) |
+| `a15ba613` | 删除仅旧专测使用的三个aiohttp包装；真实HTTPX函数、Mapped预算与原生调用保持 | [7项CPU与10历史读取](raw/unused_aiohttp_observer_retirement_checks.json) |
+
+前后相同选择、各批交叉的方法不相加。Image新增两个生命周期反例最初因夹具未推进engine而失败，纠正后在原owner通过；
+HTTP工厂原49项为48成功／1个已不存在SharedCreditPolicy转出要求，后者已删；私有准备helper的SyntaxError另保留，均不说成生产修复。
+两个纯形状／旧兼容方法进一步退出：不再要求手工旧pickle名称、私有转出同一性或永久保留已删模块的名称黑名单；
+实际值往返已有独立检查，当前导入分离和采样行为保留。两份测试合计减少39行，生产代码未改。
+
+[准确组合CPU记录](raw/http_retirement_combined_cpu_checks.json)在实际代码提交上一次运行70个不同方法，全通过、无跳过，运行期间源码未变。
+选择覆盖现用Core／NativeTask、图像、结果与取消unknown责任、预算、协议、中性导入和原生登记；
+没有运行旧HTTP套件或真实HTTP／UDS／Ray／模型。记录内含运行源码表摘要；之后code内只改README与INFRA说明。
+独审逐一核对实际方法、运行Python字节、来源原件及声明的README后改，不把记录中的旧HEAD当最终候选身份。
+
+各方MANIFEST只合并新增来源／格式键，原expected、来源版本、投影身份及全部旧映射保持。
+最终160条受影响来源读取通过，不重跑整套3010物化；[恢复入口](../../../reproduction/native_baselines/README.md)
+与[完整退役源码](../../../reproduction/paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters)各自说明保留内容。
+全仓反查发现13处指向已删文件的Markdown链接，已改指存在的准确Git成员：设计审查用原c7b1，其他阅读／恢复链接用最后公开e5；
+原运行身份、数字与原始证据不改，也不把最后公开源码当作每次旧运行的准确版本。
+runtime说明中引用已删async HTTP及asyncio.timeout的三行退出，没有增设解释器检查。
+
+维护中src＋scripts相对45595减少4,827行，其中核心减少3,679行；tests另减6,114行。
+核心为52,517行，全部src＋scripts为104,152行；分别较main减少1,574／36,183行，较3fd减少9,111／45,493行。
+统计包括注释和空行；核心排除experiments／baselines并包含research，测试、文档与历史副本另计，移动或压缩不算减量。
+离线校准产物保留`openai-compatible-fixed`历史身份，这不是当前HTTP执行入口。
+
+实际图像UDS方法、选定profile的服务socket及可选PG／Ray方法仍按各自运行解释，不能由CPU替身宣布通过。
+下一批服务器仅执行单查询图像的现有socket方法，不新增多查询或模型请求；原生Ray物理清理、真实到期／abort和物理RAM自动授予仍分别处理。

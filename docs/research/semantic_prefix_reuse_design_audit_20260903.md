@@ -56,7 +56,7 @@ SPEAR 是本次有界补充检索发现的直接相关工作，不并入 Top 15 
 | [server.py](../../code/src/execution_provider/server.py)、[semantic_session.py](../../code/src/execution_provider/adapters/semantic_session.py) | 单固定 Adapter，按完整 session 串行服务；一个 session 对应一份 spec | 是多节点接入前的进展限制，不是已经测出的模型性能瓶颈；不能偷偷把两个算子塞进一个 spec |
 | [wire/v5.py](../../code/src/execution_provider/wire/v5.py) | protocol 5 / plan schema 4 / max inflight 1 已用于同步生成 Map | 新布局或异步不占用这些身份，不能只给旧帧增加字段 |
 | [models.py](../../code/src/scheduling/core/models.py)、[policies.py](../../code/src/scheduling/endpoint_routing/policies.py) | kv_usage 可为空，是 endpoint 总量；prefix_key 是不透明分组；HRW 目标不可用时可以转到其他 endpoint | 有字段不等于已测逐前缀驻留；相同 key 不保证同 endpoint，更不保证命中 |
-| [fixed HTTP Adapter](../../code/src/execution_provider/adapters/openai_compatible_fixed.py) | 当前只返回 raw/model/finish/两类 usage，没有转发 cached_tokens | 不能写“加一行即可有可靠逐任务命中证据”；先核对服务版本和指标语义 |
+| [当时的fixed HTTP Adapter](https://github.com/3444374/ai-operator-execution-optimization/blob/c7b1e9e6a7785069c874a63999fca94d07bcdbdc/code/src/execution_provider/adapters/openai_compatible_fixed.py) | 该版只返回 raw/model/finish/两类 usage，没有转发 cached_tokens；此实现现已退役 | 不能写“加一行即可有可靠逐任务命中证据”；先核对服务版本和指标语义 |
 | [sem_filter_cost.h](https://github.com/3444374/ai-operator-execution-optimization/blob/c7b1e9e6a7785069c874a63999fca94d07bcdbdc/code/postgres/semloom_pg/src/sem_filter_cost.h)、[work.py](../../code/src/planning/work.py) | 已有代价与校准表示、分阶段 work；没有布局质量证明 | 质量、成本、可执行能力分别管理；不把新证书塞进 Filter cost struct 伪造通用对象 |
 
 本次 9 项无网络源码/符号检查复核了上述消息、版本、摘要分组、telemetry 和 HRW 行为，并检查了下文

@@ -1,0 +1,175 @@
+{
+  "commit": "104e1e63615d12c2cb18d1f057cb40c400351156",
+  "tree": "b9e540e02af0b942ec0e0be12d92ab4f43106ce5",
+  "base": "ce39cc9e4936f3277eb7e78d47f393908f99a57d",
+  "source_delete": [
+    "code/src/execution_provider/adapters/model_config.py",
+    "code/src/execution_provider/adapters/openai_compatible_fixed.py",
+    "code/src/execution_provider/adapters/async_fixed_model.py",
+    "code/src/execution_provider/adapters/full_response.py",
+    "code/src/execution_provider/adapters/ray_map_transport.py",
+    "code/src/execution_provider/adapters/map_preparation.py",
+    "code/src/execution_provider/adapters/map_organization.py",
+    "code/src/execution_provider/adapters/incremental_session.py",
+    "code/src/execution_provider/adapters/completion_response.py",
+    "code/src/experiments/map_observation_probe.py",
+    "code/scripts/profiling/map_observation_probe.py",
+    "code/src/execution_provider/wire/v6.py"
+  ],
+  "test_delete": [
+    "code/tests/execution_provider/test_ray_map_transport.py",
+    "code/tests/execution_provider/test_ray_map_worker_pool.py",
+    "code/tests/execution_provider/test_ray_map_payload_failure.py",
+    "code/tests/execution_provider/test_ray_map_errors.py",
+    "code/tests/execution_provider/test_ray_map_timing.py",
+    "code/tests/execution_provider/test_ray_map_failure_integration.py",
+    "code/tests/execution_provider/test_native_ray_integration.py",
+    "code/tests/execution_provider/test_map_preparation.py",
+    "code/tests/execution_provider/test_full_response.py",
+    "code/tests/execution_provider/test_http_configuration.py",
+    "code/tests/execution_provider/test_httpx_request_cookies.py",
+    "code/tests/execution_provider/test_async_transport.py",
+    "code/tests/execution_provider/test_async_request_guard.py",
+    "code/tests/execution_provider/test_native_request_capacity.py",
+    "code/tests/postgres/test_semloom_fixed_model_adapter.py",
+    "code/tests/experiments/test_map_observation_probe.py",
+    "code/tests/experiments/test_map_preparation_probe.py",
+    "code/tests/experiments/test_ray_return_wait_probe.py",
+    "code/tests/execution_provider/transport_accounting.py"
+  ],
+  "modified_source": [
+    "code/src/execution_provider/adapters/incremental_execution.py",
+    "code/src/execution_provider/adapters/native_tasks.py",
+    "code/src/execution_provider/session_dispatch.py",
+    "code/src/execution_provider/wire/map_codec.py",
+    "code/src/execution_provider/wire/v5.py"
+  ],
+  "behavior_retained": {
+    "IncrementalExecution": {
+      "unchanged_methods": 2,
+      "method_names": [
+        "open_job",
+        "open_query_job"
+      ]
+    },
+    "NativeQueryJob": {
+      "unchanged_methods": 6,
+      "method_names": [
+        "__init__",
+        "open_session",
+        "request_cancel",
+        "close",
+        "__enter__",
+        "__exit__"
+      ]
+    },
+    "NativeTaskSession": {
+      "unchanged_methods": 9,
+      "method_names": [
+        "__init__",
+        "limits",
+        "offer",
+        "advance",
+        "wait",
+        "release",
+        "end_input",
+        "request_cancel",
+        "close"
+      ]
+    },
+    "native_http_observer": {
+      "unchanged_from_public_origin": true
+    },
+    "numeric_result_default": {
+      "old_max_model_response_bytes": 1048576,
+      "new_max_frame_bytes": 1048576,
+      "same_default": true
+    }
+  },
+  "scope": [
+    "remove only the old own fixed-endpoint HTTP factories/transports, Ray HTTP Map preparation/organization and v6 transport glue",
+    "retain current Golden and typed Image protocols; no replacement IPC gateway or multiquery implementation",
+    "keep generic Execution, NativeTask, Core/Job/leases/cancel/unknown and neutral data/StageBroker functionality",
+    "retire synthetic Map probe and the only current SyntheticTable/WORK consumers; retain historical raw scripts/results",
+    "current neutral Core tests consume opaque bytes instead of unrelated HTTP envelopes",
+    "move the existing four-line guard task fixture to its remaining local test consumer"
+  ],
+  "tests": {
+    "reference": {
+      "file": "http-factories-before.json",
+      "methods": 49,
+      "passed": 48,
+      "errors": 1,
+      "reason": "existing scheduler.SharedCreditPolicy alias expectation refers to a removed export; no new production failure"
+    },
+    "final": {
+      "file": "http-factories-after.json",
+      "methods": 51,
+      "passed": 51,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 0.3168690830934793,
+      "recorded_head": "ce39cc9e4936f3277eb7e78d47f393908f99a57d",
+      "actual_python_bound_to": "104e1e63615d12c2cb18d1f057cb40c400351156",
+      "source_unchanged": true
+    },
+    "additional_existing_methods": 2,
+    "counts_not_accumulated": true,
+    "source_files": 1034,
+    "actual_HTTP": 0,
+    "actual_UDS": 0,
+    "Ray_init": 0,
+    "models": 0,
+    "SDK_collection": 0
+  },
+  "historical_sources": {
+    "actual_bindings": 85,
+    "new_archives": 9,
+    "new_routes": 45,
+    "origin": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+    "public_originals_compared": 45,
+    "existing_routes_and_metadata_unchanged": true,
+    "complete_3010_rerun": false,
+    "previous_ce39_archives_preserved": true
+  },
+  "code_size": {
+    "core_python": -2376,
+    "src_python": -2884,
+    "script_python": -6,
+    "test_python": -4249
+  },
+  "checks": {
+    "modified_markdown": 4,
+    "local_link_targets": 248,
+    "missing": [],
+    "all_python_parsed": 981,
+    "new_word_hits": [],
+    "new_private_path_or_ipv4_hits": [],
+    "source_changes_after_cpu_only_markdown": [
+      "code/scripts/README.md",
+      "code/src/execution_provider/adapters/README.md"
+    ],
+    "actual_Ray": 0,
+    "model_calls": 0,
+    "sockets_created": 0,
+    "secret_scan_staged_non_deleted": 28,
+    "decoded_archives": 9,
+    "decoded_secret_hits": [],
+    "diff_check_passed": true
+  },
+  "untouched": [
+    "serving/backends/completion.py",
+    "serving/backends/embedding.py",
+    "serving/backends/common.py",
+    "baselines/text/products/direct_client.py",
+    "scripts/baselines/request_equivalence_gate.py",
+    "modalities/image/staged_execution.py",
+    "research/multitask algorithms",
+    "RecordsResources and native/None deadline sources"
+  ],
+  "original_handoff_sha256": "d7a69a1c512783331487c41185519e13085690f3e71ffc366fe329bf931321ea",
+  "independent_review_sha256": "8eb19d996a320f268a6f5cdfd013b4f9581846548b318227e5e6824772a140a2",
+  "actual_runtime": "Only CPU objects, stubs and local import subprocesses; no real HTTP, UDS, Ray, model or GPU run.",
+  "corrected_current_documentation": "The integration removes the obsolete async HTTP asyncio.timeout explanation and dead link from deploy/runtime/README.md; no new interpreter check is added."
+}

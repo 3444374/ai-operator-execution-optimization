@@ -29,7 +29,7 @@
 源码入口：[容量统计](../../../../code/src/scheduling/core/session_capacity.py)、
 [共享额度](../../../../code/src/experiments/shared_request_budget.py)、
 [有限二进制批次](../../../../code/src/data/materializers/payloads.py)、
-[Ray文本传输](../../../../code/src/execution_provider/adapters/ray_map_transport.py)。
+[Ray文本传输](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/ray_map_transport.py)。
 这是工程改进，不将分批、对象引用或已有调度机制表述为论文创新。
 
 ## 全部诊断记录

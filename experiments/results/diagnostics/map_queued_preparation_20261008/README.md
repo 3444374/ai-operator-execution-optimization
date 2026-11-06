@@ -22,8 +22,8 @@
 
 ## 可选实现与行为
 
-[`RayMapConfig.coalesce_queued_preparation`](../../../../code/src/execution_provider/adapters/ray_map_transport.py)默认`False`，开启仍要求已有准备配置。
-[`MapInputPreparation`](../../../../code/src/execution_provider/adapters/map_preparation.py)只追加到同session、同Job、同工作量签名且未取准备lease的队尾。
+[`RayMapConfig.coalesce_queued_preparation`](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/ray_map_transport.py)默认`False`，开启仍要求已有准备配置。
+[`MapInputPreparation`](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/map_preparation.py)只追加到同session、同Job、同工作量签名且未取准备lease的队尾。
 开始准备、已经就绪、存在取消成员或版本/会话不同的块不扩展；稀疏输入立即开始，不设置凑批计时器。
 尾块容不下而新块容得下一行时，另建有限块；原每行完整请求、模型名额和Core动作额度保持。
 
