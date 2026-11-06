@@ -63,10 +63,11 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按准确`a39cec74`统计：核心`code/src`为50,482行，全部src＋scripts为101,893行，测试为92,485行。
+代码量按准确`475b3d60`统计：核心`code/src`为49,829行，全部src＋scripts为101,896行，测试为92,511行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少3,609／38,442行，相对清理起点3fd减少11,146／47,752行。
-各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)，文件移动不算代码删除。
+核心／宽口径相对固定main6a8a减少4,262／38,439行，相对清理起点3fd减少11,799／47,749行。
+相对a39，核心减653行，其中658行只是离线校准归位；全部src＋scripts净增3行、测试增26行。
+各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)，文件移动不算代码删除。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
@@ -91,6 +92,7 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 
 [离线预测职责整理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
 分开profile数据与既有估计比较，删除脚本互载、临时参考文件和全局输入改写；输入／输出由调用方选择。主体28项、输出增量2项各自通过，未重新拟合真实数据或改变运行链估算。
+[参考校准归位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)将仅由分析CLI消费的实现和专测迁入已有离线目录，删除CLI重复校验；原十项前后通过，数学与PG产物身份保持，实际源码净减2行。
 
 [离线记录窗口职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)
 分离区间／样本计算与回执／事件关联，删除重复参考文件读取；同17项纯离线检查及62份完整汇总保持，没有新增运行参数或校验。

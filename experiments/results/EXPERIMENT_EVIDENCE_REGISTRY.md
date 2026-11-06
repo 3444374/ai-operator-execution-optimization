@@ -2077,3 +2077,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [链批次回执单次复制](diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)
 记录1a6b的原十二项与新增一项纯CPU结果、嵌套副本隔离及五条历史读源；关闭计数直接取原账本，没有新增状态或运行参数。
+
+[离线参考校准归位](diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)
+记录8a49到475b的模块／专测迁移、原十项CPU前后结果和十条历史读取；算法逐字保持，CLI删除同对象重复校验，迁移不计入项目删码。

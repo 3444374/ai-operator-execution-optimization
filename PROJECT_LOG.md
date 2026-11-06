@@ -11793,3 +11793,10 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 1a6b去掉owner对accountant深副本的再次复制，关闭报告改读原账本条数；公开list和嵌套成员隔离保持。
 原十二项纯CPU与新增一项隔离／计数检查通过，五条历史读源匹配；源码增5行、测试增26行，不声称查询性能或真实退出已验证。
 具体实现与检查见[链批次回执记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)。
+
+## 2026-11-06 离线参考校准归位
+
+8a49整合为475b，658行实现和原十项专测归已有operator_costs，分析CLI改为直接导入并删除同对象重复验证；数学和PG产物身份保持，没有旧转发壳。
+原十项CPU改前后通过，十条历史读源保持；整合再核十五条来源和各批受测Python摘要，不重复整套或运行模型。
+本批实际删2行，迁移不当作删除；合看链回执后，相对a39全部src＋scripts增3行，核心减653行中包含658行重新归类，测试增26行。
+当前核心49,829、宽口径101,896行，口径与明细见[同一记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)。
