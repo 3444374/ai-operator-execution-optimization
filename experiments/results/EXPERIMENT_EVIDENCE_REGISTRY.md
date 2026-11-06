@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-07：payload的Daft配置直接导入
+
+[同一实现与既有检查](diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)
+两项真实Daft／Arrow CPU改前后通过，二十条相关读源保持；一份准确原件及五条来源／格式不改变旧expected，未新增同义测试。
+
 ## 2026-11-07：旧画像应用退役与软件IPC补验
 
 [六份旧实现及空包](diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-application-components)

@@ -4518,3 +4518,13 @@ RollingPrivatePayloadTests五项、RollingTransferRecoveryTests四项与MapGatew
 三组均零模型、真实Ray及GPU查询；已观察进程退出、socket、SHM和运行许可清理通过，测试源码及原断言未改写。
 私有交接摘要依次为`cd2e5de565f7665cada28d8ea93da98ca80e8d19795033bf796f690272e0db83`、`c73c07750917e6ac16c810b64be0dd36bd1f7ab787493e30da9515d403e05469`和`f5853aa343f3b03878b4820bba0ffc3d18a3c9821be90ac02fdd24cf20289415`，原件不发布。
 这些结果只属于所列源码和软件fixture，不替代当前整树、真实模型关闭或Ray原生actor回收。此前中断的cascade profile单项仍待派送／回执。
+
+<a id="payload-daft-runtime-owner"></a>
+## payload直接调用Daft运行配置（2026-11-07）
+
+候选`f862205ca924b1019447054160c02444c684ec57`，tree`75f4e5bfca18cf1276e18b75dd7e9e5d18fabbaf`，整合为`80a10e33`且Git树完全相同。
+payloads.py只把configure_daft_runner由.text的转借改为infrastructure.daft_runtime的真实函数；调用位置、参数、物化、迭代和清理保持。
+同两项既有CPU在改前后通过：真实Daft线程配置后的完整sealed rows，以及Arrow二进制／尾批／独立buffer；零跳过，没有为导入变化新增测试。
+一份准确81df原件与五条来源／格式保留二十条相关历史读取，原expected和已有映射不改；原件和实际函数身份经独审核对。
+该批行数不变、没有改text原型或算法；长度／前缀排序与BFD研究仍有用途，当前PreparedTokenOrganizer未全部采用它们。
+未运行模型、Ray、socket、系统探测或完整历史构造；整合树等于已审候选，未重复运行同两项CPU。

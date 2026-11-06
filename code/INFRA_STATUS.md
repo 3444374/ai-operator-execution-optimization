@@ -121,6 +121,10 @@ Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，�
 清理无现用调用的Ray画像、旧配置／总字段、专用请求时钟和轨迹模型，删除旧导出、专测与空包；当前共享时钟、核心事件和Ray运行适配保持。
 最终作者四项CPU、三十条历史读取保持；准确4e0c的十二项组合CPU及三十条读源通过，源码净减1,488行，未新增运行机制。
 
+[payload配置函数归属](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)
+改为直接导入实际Daft运行配置函数，去掉经text原型转借的依赖；同两项真实Daft／Arrow CPU改前后通过，二十条历史读源保持，行数不变。
+text中的排序研究能力仍保留，未声称已全部接入当前准备组批；其研究归位另行处理。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

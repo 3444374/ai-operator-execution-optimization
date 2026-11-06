@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：payload直接使用公共Daft配置
+
+[实际函数归属](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)
+取代经文本组织原型转借的导入，函数对象与物化行为保持；保留尚未接入的长度／前缀排序研究，未将原型整体删除。
+
 ## 2026-11-07：旧画像应用整组退役与软件IPC回执
 
 [剩余画像模块](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-application-components)
