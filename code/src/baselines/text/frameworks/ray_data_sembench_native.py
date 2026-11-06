@@ -95,7 +95,7 @@ def execute_q3(
         retry_policy=dict(adapter_overrides={}, native_source_version="2.56.1",
                           actor_pool_source_defaults=dict(max_restarts=-1, max_task_retries=-1),
                           physical_attempts=None),
-        lifecycle=dict(profile="query", runtime_owner="none", ray_runtime_closed=None,
+        lifecycle=dict(profile="query", runtime_owner="none", ray_driver_disconnected=None,
                        model_process_exit_confirmed=None),
     )
     result = dict(predictions=[], positive_review_cnt=0, metadata=metadata)
@@ -145,7 +145,7 @@ def execute_q3(
             try:
                 ray.shutdown()
                 closed = not ray.is_initialized()
-                metadata["lifecycle"]["ray_runtime_closed"] = closed
+                metadata["lifecycle"]["ray_driver_disconnected"] = closed
                 if not closed:
                     raise RuntimeError("native Ray runtime remains initialized after shutdown")
             except BaseException as error:

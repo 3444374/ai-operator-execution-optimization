@@ -88,11 +88,11 @@ def execute_records(operation, *, backend, engine, resources, query_id, profile,
                 else:
                     primary.add_note('native operator accounting failed: ' + type(error).__name__)
         if created_ray:
-            report['ray_runtime_closed'] = None
+            report['ray_driver_disconnected'] = None
             try:
                 ray.shutdown()
-                report['ray_runtime_closed'] = not ray.is_initialized()
-                if not report['ray_runtime_closed']:
+                report['ray_driver_disconnected'] = not ray.is_initialized()
+                if not report['ray_driver_disconnected']:
                     raise RuntimeError('the original query Ray runtime is still active')
             except BaseException as error:
                 report['status'] = 'failed'

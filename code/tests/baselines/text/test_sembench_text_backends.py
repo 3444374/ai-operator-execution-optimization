@@ -205,7 +205,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
         self.assert_graph_binding(evaluate.call_args, operation, dataset)
         self.assertEqual(ray.init.call_args.kwargs, profile)
         self.assertFalse(state.initialized)
-        self.assertTrue(report["ray_runtime_closed"])
+        self.assertTrue(report["ray_driver_disconnected"])
         self.assertTrue(stream.closed)
         self.assertEqual(report["calls"], self.calls(operation))
         pd.testing.assert_frame_equal(report["frame"], operation.frame.iloc[[0, 2]])
@@ -311,7 +311,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
         self.assertEqual(report["calls"], calls)
         self.assertEqual(report["backend_close"]["engine_reports"], physical["engine_reports"])
         self.assertEqual(report["backend_close"]["status"], "unknown")
-        self.assertIsNone(report["ray_runtime_closed"])
+        self.assertIsNone(report["ray_driver_disconnected"])
         self.assertTrue(state.shutdown_requested)
         self.assertTrue(any("native operator close failed: OSError" in note for note in primary.__notes__))
         self.assertTrue(any("Ray runtime close failed: LookupError" in note for note in primary.__notes__))
@@ -326,7 +326,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
         self.assertIs(caught.exception, error)
         self.assertFalse(state.initialized)
         self.assertTrue(state.shutdown_requested)
-        self.assertTrue(error.operator_report["ray_runtime_closed"])
+        self.assertTrue(error.operator_report["ray_driver_disconnected"])
         self.assertEqual(error.operator_report["calls"], [])
 
     def test_partial_ray_init_and_shutdown_failure_keeps_original_error_and_unknown_state(self):
@@ -338,7 +338,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
             self.run_operator(operation, "ray-data")
         self.assertIs(caught.exception, error)
         self.assertTrue(state.shutdown_requested)
-        self.assertIsNone(error.operator_report["ray_runtime_closed"])
+        self.assertIsNone(error.operator_report["ray_driver_disconnected"])
         self.assertEqual(error.operator_report["status"], "failed")
         self.assertTrue(any("Ray runtime close failed: LookupError" in note for note in error.__notes__))
 
@@ -350,7 +350,7 @@ class SemBenchTextBackendTests(unittest.TestCase):
             self.run_operator(operation, "ray-data")
         self.assertTrue(state.initialized)
         self.assertFalse(state.shutdown_requested)
-        self.assertNotIn("ray_runtime_closed", caught.exception.operator_report)
+        self.assertNotIn("ray_driver_disconnected", caught.exception.operator_report)
 
     def test_empty_relations_do_not_allocate_any_framework_or_model(self):
         operation = self.operation(empty=True)

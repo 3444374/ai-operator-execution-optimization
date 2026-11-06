@@ -183,7 +183,7 @@ class NativeRayQ3Tests(unittest.TestCase):
         self.assertFalse(metadata["retry_policy"]["actor_task_retry_on_errors"])
         self.assertIsNone(metadata["retry_policy"]["physical_attempts"])
         self.assertEqual(metadata["lifecycle"]["runtime_owner"], "binding")
-        self.assertTrue(metadata["lifecycle"]["ray_runtime_closed"])
+        self.assertTrue(metadata["lifecycle"]["ray_driver_disconnected"])
         self.assertIsNone(metadata["lifecycle"]["model_process_exit_confirmed"])
 
     def test_applied_options_and_generation_reach_public_callbacks_unchanged(self):
@@ -260,7 +260,7 @@ class NativeRayQ3Tests(unittest.TestCase):
         self.ray.shutdown.assert_not_called()
         self.assertTrue(self.initialized)
         self.assertEqual(result["metadata"]["lifecycle"]["runtime_owner"], "caller")
-        self.assertIsNone(result["metadata"]["lifecycle"]["ray_runtime_closed"])
+        self.assertIsNone(result["metadata"]["lifecycle"]["ray_driver_disconnected"])
 
     def test_native_build_or_inference_failure_is_preserved_and_owned_runtime_closes(self):
         for failure_stage in ("build_error", "run_error"):
@@ -271,7 +271,7 @@ class NativeRayQ3Tests(unittest.TestCase):
                 with self.assertRaises(RuntimeError) as caught:
                     self.execute()
                 self.assertIs(caught.exception, failure)
-                self.assertTrue(failure.native_q3_report["metadata"]["lifecycle"]["ray_runtime_closed"])
+                self.assertTrue(failure.native_q3_report["metadata"]["lifecycle"]["ray_driver_disconnected"])
                 self.assertIsNone(failure.native_q3_report["positive_review_cnt"])
                 self.ray.shutdown.assert_called_once_with()
                 setattr(self, failure_stage, None)
@@ -284,7 +284,7 @@ class NativeRayQ3Tests(unittest.TestCase):
                 with patch.object(target, name, side_effect=failure), self.assertRaises(ValueError) as caught:
                     self.execute()
                 self.assertIs(caught.exception, failure)
-                self.assertTrue(failure.native_q3_report["metadata"]["lifecycle"]["ray_runtime_closed"])
+                self.assertTrue(failure.native_q3_report["metadata"]["lifecycle"]["ray_driver_disconnected"])
 
     def test_missing_generated_text_is_an_error_without_shared_parser_fallback(self):
         with self.assertRaises(KeyError) as caught:
