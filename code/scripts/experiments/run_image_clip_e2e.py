@@ -233,6 +233,7 @@ def main() -> None:
     import torch
     import transformers
 
+    failure = None
     try:
         setup = load_image_run_setup(
             args,
@@ -274,9 +275,20 @@ def main() -> None:
             encoding="utf-8",
         )
         print(json.dumps(manifest, sort_keys=True))
+    except BaseException as error:
+        failure = error
+        raise
     finally:
-        if ray.is_initialized():
-            ray.shutdown()
+        try:
+            if ray.is_initialized():
+                ray.shutdown()
+        except BaseException as cleanup_error:
+            if failure is None:
+                raise
+            failure.add_note(f"Ray SDK disconnect raised {type(cleanup_error).__name__}: {cleanup_error}")
+            failure.image_cleanup_errors = (
+                *getattr(failure, "image_cleanup_errors", ()), ("ray_sdk", cleanup_error),
+            )
 
 
 if __name__ == "__main__":

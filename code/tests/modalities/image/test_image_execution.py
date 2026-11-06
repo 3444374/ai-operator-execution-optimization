@@ -391,41 +391,67 @@ class ImageRunCleanupTests(unittest.TestCase):
                 expected_worker_stops = 2 if failed_stage in (None, "capture", "formal") else 1
                 self.assertEqual(execution.stop_project_workers.call_count, expected_worker_stops)
 
-    def test_sampler_stop_error_keeps_other_cleanup_and_original_error(self):
-        failure = RuntimeError("formal execution failed")
-        cleanup_error = RuntimeError("GPU sampling stop failed")
-        execution = Mock()
-        execution.execute.side_effect = [None, failure]
-        gpu, cpu = Mock(), Mock()
-        gpu.stop.side_effect = cleanup_error
-        args = SimpleNamespace(
-            gpu_sample_interval_s=0.5, cpu_sample_interval_s=0.25,
-            gpu_workers=1, save_embeddings="", limit=2, dataset_passes=1,
-        )
-        setup = SimpleNamespace(warmup_count=1, warmup_ids=frozenset({"w"}),
-                                formal_ids=frozenset({"a", "b"}))
-        with patch.multiple(clip_execution, NvidiaSmiSampler=Mock(return_value=gpu),
-                            SystemCpuSampler=Mock(return_value=cpu),
-                            wait_for_formal_start=Mock(return_value=(0.0, 1.0))):
-            with self.assertRaises(RuntimeError) as raised:
-                clip_execution.run_observed_image_execution(
-                    args, setup, execution, daft_module=None, ray_module=None,
-                    torch_module=None, transformers_module=None,
+    def test_cleanup_errors_preserve_primary_and_attempt_all_reached_stops(self):
+        cases = (("warmup", RuntimeError), ("warmup", KeyboardInterrupt),
+                 ("formal", RuntimeError), ("formal", KeyboardInterrupt), (None, None))
+        for failed_stage, failure_type in cases:
+            with self.subTest(failed_stage=failed_stage, failure_type=failure_type):
+                failure = failure_type("execution failed") if failure_type else None
+                gpu_error = RuntimeError("GPU sampling stop failed")
+                cpu_error = ValueError("CPU sampling stop failed")
+                worker_error = RuntimeError("worker termination request failed")
+                execution = Mock()
+                execution.execute.side_effect = (failure if failed_stage == "warmup"
+                                                 else [None, failure or object()])
+                execution.stop_project_workers.side_effect = (worker_error if failed_stage == "warmup"
+                                                               else [None, worker_error])
+                gpu, cpu = Mock(), Mock()
+                gpu.stop.side_effect = gpu_error
+                cpu.stop.side_effect = cpu_error
+                args = SimpleNamespace(
+                    arm="project_ray", embedding_output_contract="arm_default",
+                    gpu_sample_interval_s=0.5, cpu_sample_interval_s=0.25,
+                    gpu_workers=1, save_embeddings="", limit=2, dataset_passes=1,
                 )
-        self.assertIs(raised.exception, cleanup_error)
-        self.assertIs(raised.exception.__context__, failure)
-        gpu.stop.assert_called_once_with()
-        cpu.stop.assert_called_once_with()
-        self.assertEqual(execution.stop_project_workers.call_count, 2)
+                setup = SimpleNamespace(warmup_count=1, warmup_ids=frozenset({"w"}),
+                                        formal_ids=frozenset({"a", "b"}))
+                with patch.multiple(clip_execution, NvidiaSmiSampler=Mock(return_value=gpu),
+                                    SystemCpuSampler=Mock(return_value=cpu),
+                                    wait_for_formal_start=Mock(return_value=(0.0, 1.0))):
+                    expected = failure or gpu_error
+                    with self.assertRaises(type(expected)) as raised:
+                        clip_execution.run_observed_image_execution(
+                            args, setup, execution, daft_module=None, ray_module=None,
+                            torch_module=None, transformers_module=None,
+                        )
+                self.assertIs(raised.exception, expected)
+                if failed_stage == "warmup":
+                    self.assertEqual(expected.image_cleanup_errors, (("warmup_workers", worker_error),))
+                    gpu.stop.assert_not_called()
+                    cpu.stop.assert_not_called()
+                    execution.stop_project_workers.assert_called_once_with()
+                else:
+                    errors = (("gpu_sampler", gpu_error),) if failure else ()
+                    errors += (("cpu_sampler", cpu_error), ("formal_workers", worker_error))
+                    self.assertEqual(expected.image_cleanup_errors, errors)
+                    gpu.stop.assert_called_once_with()
+                    cpu.stop.assert_called_once_with()
+                    self.assertEqual(execution.stop_project_workers.call_count, 2)
 
     def test_cli_disconnects_after_initialization_execution_and_report_errors(self):
-        for failed_stage in (None, "initialize", "execute", "row", "csv", "manifest"):
-            with self.subTest(failed_stage=failed_stage):
-                failure = RuntimeError("fixture failure")
+        cases = ((None, None), ("initialize", RuntimeError), ("execute", KeyboardInterrupt),
+                 ("row", RuntimeError), ("csv", RuntimeError), ("manifest", RuntimeError))
+        for failed_stage, failure_type, shutdown_fails in (
+            (stage, error_type, fail_shutdown)
+            for stage, error_type in cases for fail_shutdown in (False, True)
+        ):
+            with self.subTest(failed_stage=failed_stage, shutdown_fails=shutdown_fails):
+                failure = failure_type("fixture failure") if failure_type else None
+                cleanup_error = RuntimeError("SDK disconnect failed")
                 modules = {name: ModuleType(name) for name in ("daft", "ray", "torch", "transformers")}
                 ray = modules["ray"]
                 ray.is_initialized = Mock(return_value=True)
-                ray.shutdown = Mock()
+                ray.shutdown = Mock(side_effect=cleanup_error if shutdown_fails else None)
                 args = SimpleNamespace(out_csv="fixture.csv", out_manifest="fixture.json")
                 hooks = {
                     "parse_args": Mock(return_value=args),
@@ -442,15 +468,23 @@ class ImageRunCleanupTests(unittest.TestCase):
                                 "row": "build_image_result_row", "csv": "append_csv"}
                 if failed_stage in failure_hook:
                     hooks[failure_hook[failed_stage]].side_effect = failure
+                    prior_cleanup_error = RuntimeError("earlier worker cleanup failed")
+                    failure.image_cleanup_errors = (("formal_workers", prior_cleanup_error),)
                 if failed_stage == "manifest":
                     hooks["Path"].return_value.write_text.side_effect = failure
                 with patch.dict(sys.modules, modules), patch.multiple(RUNNER_MODULE, **hooks), patch("builtins.print"):
-                    if failed_stage is None:
+                    expected = failure or (cleanup_error if shutdown_fails else None)
+                    if expected is None:
                         RUNNER_MODULE.main()
                     else:
-                        with self.assertRaises(RuntimeError) as raised:
+                        with self.assertRaises(type(expected)) as raised:
                             RUNNER_MODULE.main()
-                        self.assertIs(raised.exception, failure)
+                        self.assertIs(raised.exception, expected)
+                if failure is not None:
+                    expected_errors = (("formal_workers", prior_cleanup_error),) if failed_stage in failure_hook else ()
+                    if shutdown_fails:
+                        expected_errors += (("ray_sdk", cleanup_error),)
+                    self.assertEqual(getattr(failure, "image_cleanup_errors", ()), expected_errors)
                 ray.shutdown.assert_called_once_with()
 
 

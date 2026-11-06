@@ -276,10 +276,22 @@ def run_observed_image_execution(
     torch_module,
     transformers_module,
 ) -> ObservedImageRun:
+    warmup_error = None
     try:
         execution.execute(setup.warmup_count, setup.warmup_ids)
+    except BaseException as error:
+        warmup_error = error
+        raise
     finally:
-        execution.stop_project_workers()
+        try:
+            execution.stop_project_workers()
+        except BaseException as cleanup_error:
+            if warmup_error is None:
+                raise
+            warmup_error.add_note(f"warmup worker cleanup raised {type(cleanup_error).__name__}: {cleanup_error}")
+            warmup_error.image_cleanup_errors = (
+                *getattr(warmup_error, "image_cleanup_errors", ()), ("warmup_workers", cleanup_error),
+            )
     planned_start_epoch_s, actual_start_epoch_s = wait_for_formal_start(args)
     gpu_sampler = NvidiaSmiSampler(
         args.gpu_sample_interval_s,
@@ -289,6 +301,7 @@ def run_observed_image_execution(
     gpu_sampler.start()
     cpu_started = False
     workers_started = False
+    failure = None
     try:
         cpu_sampler.start()
         cpu_started = True
@@ -316,16 +329,34 @@ def run_observed_image_execution(
                 torch_module=torch_module,
                 transformers_module=transformers_module,
             )
+    except BaseException as error:
+        failure = error
     finally:
+        cleanup_errors = []
         try:
             gpu_metrics = gpu_sampler.stop()
-        finally:
+        except BaseException as error:
+            cleanup_errors.append(("gpu_sampler", error))
+        if cpu_started:
             try:
-                if cpu_started:
-                    cpu_metrics = cpu_sampler.stop()
-            finally:
-                if workers_started:
-                    execution.stop_project_workers()
+                cpu_metrics = cpu_sampler.stop()
+            except BaseException as error:
+                cleanup_errors.append(("cpu_sampler", error))
+        if workers_started:
+            try:
+                execution.stop_project_workers()
+            except BaseException as error:
+                cleanup_errors.append(("formal_workers", error))
+        for stage, cleanup_error in cleanup_errors:
+            if failure is None:
+                failure = cleanup_error
+            else:
+                failure.add_note(f"{stage} cleanup raised {type(cleanup_error).__name__}: {cleanup_error}")
+                failure.image_cleanup_errors = (
+                    *getattr(failure, "image_cleanup_errors", ()), (stage, cleanup_error),
+                )
+    if failure is not None:
+        raise failure
     return ObservedImageRun(
         result=result,
         worker_setup_s=worker_setup_s,
