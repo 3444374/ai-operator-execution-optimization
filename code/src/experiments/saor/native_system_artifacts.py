@@ -466,3 +466,24 @@ def validate_archive_mirror(root: Path, archive_path: Path) -> None:
         raise RuntimeError("matrix archive is not a readable tar") from exc
     if observed != expected:
         raise RuntimeError("matrix archive is not an exact mirror of the root")
+
+
+def resolve_matrix_evidence_path(
+    matrix_root: Path,
+    stored_path: object,
+    evidence_name: str,
+) -> Path:
+    """Resolve one stored root-relative artifact without allowing path escape."""
+
+    relative = Path(str(stored_path))
+    if relative.is_absolute() or not relative.parts:
+        raise ValueError(f"{evidence_name} must be matrix-root relative")
+    root = matrix_root.resolve()
+    resolved = (root / relative).resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError(f"{evidence_name} escapes the matrix evidence root") from error
+    if not resolved.exists() or (resolved.is_file() and resolved.stat().st_size <= 0):
+        raise ValueError(f"{evidence_name} is missing or empty")
+    return resolved

@@ -532,3 +532,31 @@ SDK、driver 和 limits 继续取已有 `historical_sources/5ff54bfe/` 原件，
 `79ece85a85eb7e04e635f35d0028d452842314400946f2d4ca0b2e62f002af48`，保存于
 [压缩原件](historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz)。
 五份投影仅追加该原件的5条读取及gzip格式路由，原文件摘要、身份、来源版本和已有映射保持；固定端点适配器继续读取原有5ff来源。
+
+<a id="retired-native-system-matrix"></a>
+## 旧 SAOR 矩阵执行与配置接线
+
+旧启动器退役后，维护代码没有调用 `run_matched_system`、配置 loader／parser 或专属 preflight。
+三个模块退出当前入口；SAOR 和多任务共享额度算法、14份研究资料、原始结果及离线汇总保持。
+汇总所需的三个身份常量归入 `native_system_contract.py`，文件／JSON 摘要归入 `native_system_evidence.py`，
+结果文件读取归入 `native_system_artifacts.py`，最终队列／额度核对归入 `native_system_validator.py`。
+函数内容和摘要字节规则保持；没有为旧配置保留转发入口，也没有重新签发实验许可。
+
+退役前的准确完整 Git 树为
+[`87fdb2bc723a0b5fc8f743cc8faa62020a7c0864`](https://github.com/3444374/ai-operator-execution-optimization/tree/87fdb2bc723a0b5fc8f743cc8faa62020a7c0864)。
+恢复旧机制应使用完整同版本树和其历史说明，不能将单个旧 runner 接到当前 provider。
+该版本本身已经没有更早的启动脚本；原启动实验的完整接线从
+[`7bf1d92baf2611925c608cfe76b4a766855bd77e`完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)
+及[原恢复说明](../paused_pg_and_retired_http_20261105/README.md)读取，不与87fd单文件拼接。
+本次不把旧许可模板或旧实验结果当作新的运行安排。
+
+| 删除路径 | 字节 | SHA-256 |
+|---|---:|---|
+| [code/src/experiments/saor/native_system_matched.py](https://github.com/3444374/ai-operator-execution-optimization/blob/87fdb2bc723a0b5fc8f743cc8faa62020a7c0864/code/src/experiments/saor/native_system_matched.py) | 84734 | `39022e04da155c9be19ba758aa53c8176c853f606969f0b4795469745b057868` |
+| [code/src/experiments/saor/native_system_parser.py](https://github.com/3444374/ai-operator-execution-optimization/blob/87fdb2bc723a0b5fc8f743cc8faa62020a7c0864/code/src/experiments/saor/native_system_parser.py) | 4861 | `0a6a4780b96e8039e33db830f65d0c983e6a9942e9d7e6f8665818da647817fc` |
+| [code/src/experiments/saor/native_system_preflight.py](https://github.com/3444374/ai-operator-execution-optimization/blob/87fdb2bc723a0b5fc8f743cc8faa62020a7c0864/code/src/experiments/saor/native_system_preflight.py) | 14169 | `b64c79d0fd90fc2fb9ea49a83c83f5a694870f094a83b9eebacfd75a136eabe4` |
+
+五份历史代码投影原已从 `7bf1d92b` 读取 matched、summary 和 evidence，本次不改已有来源。
+parser、contract、artifacts、validator 和 preflight 的准确原件分别保存在
+[`historical_sources/87fdb2bc/code/src/experiments/saor/`](historical_sources/87fdb2bc/code/src/experiments/saor/)。
+五份投影只增加25条来源及gzip格式记录，原3,010条文件摘要、五个投影身份、来源版本和其他映射保持。
