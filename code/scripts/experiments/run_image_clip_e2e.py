@@ -233,48 +233,50 @@ def main() -> None:
     import torch
     import transformers
 
-    setup = load_image_run_setup(
-        args,
-        processor=processor,
-        embedding_target=embedding_target,
-        embedding_sidecar=embedding_sidecar,
-        provenance=provenance,
-    )
-    execution = ImageExecution(
-        args,
-        setup,
-        daft_module=daft,
-        ray_module=ray,
-    )
-    observed = run_observed_image_execution(
-        args,
-        setup,
-        execution,
-        daft_module=daft,
-        ray_module=ray,
-        torch_module=torch,
-        transformers_module=transformers,
-    )
-    row = build_image_result_row(
-        args,
-        setup,
-        observed,
-        daft_module=daft,
-        ray_module=ray,
-        torch_module=torch,
-        transformers_module=transformers,
-    )
-    append_csv(Path(args.out_csv), row)
-    manifest = build_image_manifest(args, setup, row)
-    manifest_path = Path(args.out_manifest)
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    print(json.dumps(manifest, sort_keys=True))
-    if ray.is_initialized():
-        ray.shutdown()
+    try:
+        setup = load_image_run_setup(
+            args,
+            processor=processor,
+            embedding_target=embedding_target,
+            embedding_sidecar=embedding_sidecar,
+            provenance=provenance,
+        )
+        execution = ImageExecution(
+            args,
+            setup,
+            daft_module=daft,
+            ray_module=ray,
+        )
+        observed = run_observed_image_execution(
+            args,
+            setup,
+            execution,
+            daft_module=daft,
+            ray_module=ray,
+            torch_module=torch,
+            transformers_module=transformers,
+        )
+        row = build_image_result_row(
+            args,
+            setup,
+            observed,
+            daft_module=daft,
+            ray_module=ray,
+            torch_module=torch,
+            transformers_module=transformers,
+        )
+        append_csv(Path(args.out_csv), row)
+        manifest = build_image_manifest(args, setup, row)
+        manifest_path = Path(args.out_manifest)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(json.dumps(manifest, sort_keys=True))
+    finally:
+        if ray.is_initialized():
+            ray.shutdown()
 
 
 if __name__ == "__main__":

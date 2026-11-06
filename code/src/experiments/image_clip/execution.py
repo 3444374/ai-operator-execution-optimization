@@ -276,8 +276,10 @@ def run_observed_image_execution(
     torch_module,
     transformers_module,
 ) -> ObservedImageRun:
-    execution.execute(setup.warmup_count, setup.warmup_ids)
-    execution.stop_project_workers()
+    try:
+        execution.execute(setup.warmup_count, setup.warmup_ids)
+    finally:
+        execution.stop_project_workers()
     planned_start_epoch_s, actual_start_epoch_s = wait_for_formal_start(args)
     gpu_sampler = NvidiaSmiSampler(
         args.gpu_sample_interval_s,
@@ -285,33 +287,45 @@ def run_observed_image_execution(
     )
     cpu_sampler = SystemCpuSampler(args.cpu_sample_interval_s)
     gpu_sampler.start()
-    cpu_sampler.start()
-    worker_setup_s = execution.start_formal_workers()
-    capture = EmbeddingCapture() if args.save_embeddings else None
-    result = execution.execute(
-        args.limit,
-        setup.formal_ids,
-        dataset_passes=args.dataset_passes,
-        embedding_capture=capture,
-    )
-    output_contract_metadata = embedding_output_contract_metadata(
-        args.arm,
-        args.embedding_output_contract,
-    )
-    if capture is not None:
-        write_embedding_capture(
-            args,
-            setup,
-            capture,
-            output_contract_metadata,
-            daft_module=daft_module,
-            ray_module=ray_module,
-            torch_module=torch_module,
-            transformers_module=transformers_module,
+    cpu_started = False
+    workers_started = False
+    try:
+        cpu_sampler.start()
+        cpu_started = True
+        worker_setup_s = execution.start_formal_workers()
+        workers_started = True
+        capture = EmbeddingCapture() if args.save_embeddings else None
+        result = execution.execute(
+            args.limit,
+            setup.formal_ids,
+            dataset_passes=args.dataset_passes,
+            embedding_capture=capture,
         )
-    gpu_metrics = gpu_sampler.stop()
-    cpu_metrics = cpu_sampler.stop()
-    execution.stop_project_workers()
+        output_contract_metadata = embedding_output_contract_metadata(
+            args.arm,
+            args.embedding_output_contract,
+        )
+        if capture is not None:
+            write_embedding_capture(
+                args,
+                setup,
+                capture,
+                output_contract_metadata,
+                daft_module=daft_module,
+                ray_module=ray_module,
+                torch_module=torch_module,
+                transformers_module=transformers_module,
+            )
+    finally:
+        try:
+            gpu_metrics = gpu_sampler.stop()
+        finally:
+            try:
+                if cpu_started:
+                    cpu_metrics = cpu_sampler.stop()
+            finally:
+                if workers_started:
+                    execution.stop_project_workers()
     return ObservedImageRun(
         result=result,
         worker_setup_s=worker_setup_s,
