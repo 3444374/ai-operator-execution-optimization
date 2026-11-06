@@ -11543,3 +11543,11 @@ IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移
 [收尾报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)和[唯一优化配置总览](docs/执行配置与优化开关.md)同步实际结果、删除清单及未覆盖项。原第二例历史原因仍未解明；物理RAM自动授予、完整查询RSS及新增算子仍未实现，本批不新增管理层，也不合并main。
 
 推送前保留远端e0ec的原生基线／IMLane接线并整合为2aa，组合的同一69项再次全部通过，3010份历史文件恢复；双方历史来源映射逐项保持。最新核心57011行、src＋scripts114637行，较284ec新增347行属并行基线能力，较3fd仍分别减少4617／35008行；integrations4858行另列。反查发现低层异步actor三种旧阻塞RPC仅直调用例仍消费，尚未删除，后续先迁移用例；现用owner及同步run_core保留其实际职责。
+
+## 2026-11-06 退役低层异步actor旧阻塞RPC
+
+eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行辅助及一层分发，现用try-submit／poll／ACK、reader、unknown和实际同步执行保留；没有新控制器、兼容层或默认值变更。
+七份测试／探针迁到当前接纳，原两项旧钩子检查在8efed的IndexError保留后删除，忙轮询用例随其生产循环删除；不以测试helper的sleep代替生产行为证据。
+最终27项不同纯内存方法全部通过，1067源码摘要匹配；16项实际CPU IPC另待服务器，未重试本地被拒的通信。历史清单不改，只读10条受影响来源均匹配，不重复完整3010恢复或真实Ray／模型。
+生产核心与src＋scripts各净减68行、测试净减30行，actor726→658行；当前核心56943、宽口径114569，较3fd分别减少4685／35076行，较main分别为核心多2852、宽口径少25766行。
+[本批报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)与唯一优化配置总览同步实际接口及未验范围，不将CPU清理写成查询提速或物理容量控制。

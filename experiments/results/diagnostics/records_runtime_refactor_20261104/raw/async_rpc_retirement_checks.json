@@ -1,0 +1,108 @@
+{
+  "schema": "semloom.async_rpc_retirement.checks.v1",
+  "source": {
+    "candidate": "eab7e246cda54f12d7b7db590b132f24a1c0b037",
+    "tree": "61e6f0efa348b382b474fb8aea2daf730b7c81bd",
+    "base": "8efed87fe3dba715f087dd5b8cf326637bd411a5",
+    "recorded_head": "eab7e246cda54f12d7b7db590b132f24a1c0b037",
+    "matching_code_files": 1067,
+    "all_test_code_hashes_match": true,
+    "source_unchanged": true,
+    "selected": 27,
+    "passed": 27,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "base": {
+        "commit": "8efed87fe3dba715f087dd5b8cf326637bd411a5",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114637,
+        "tests_python_lines": 95624,
+        "integration_Python_CPP_header_lines": 4858,
+        "core_files_over_1000": [],
+        "core_functions_over_100": 44,
+        "actor_lines": 726
+      },
+      "candidate": {
+        "commit": "eab7e246cda54f12d7b7db590b132f24a1c0b037",
+        "core_python_lines": 56943,
+        "src_and_scripts_python_lines": 114569,
+        "tests_python_lines": 95594,
+        "integration_Python_CPP_header_lines": 4858,
+        "core_files_over_1000": [],
+        "core_functions_over_100": 44,
+        "actor_lines": 658
+      }
+    },
+    "deltas": {
+      "base": {
+        "core_python_lines": -68,
+        "src_and_scripts_python_lines": -68,
+        "tests_python_lines": -30,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "main": {
+        "core_python_lines": 2852,
+        "src_and_scripts_python_lines": -25766,
+        "tests_python_lines": -7169,
+        "integration_Python_CPP_header_lines": 337
+      },
+      "3fd": {
+        "core_python_lines": -4685,
+        "src_and_scripts_python_lines": -35076,
+        "tests_python_lines": -34468,
+        "integration_Python_CPP_header_lines": 330
+      }
+    }
+  },
+  "review": {
+    "record": "migration/FINAL_SOURCE_REVIEW.json",
+    "original_sha256": "45bd4ee13eac178952346b7689002d068fb691cd152c74be872a24c6bb3a8c2a"
+  },
+  "historical_sources": {
+    "record": "current/HISTORY_SOURCES.json",
+    "affected": 10,
+    "all_matched": true,
+    "original_manifest_unchanged": true,
+    "full3010_projections_rerun": false
+  },
+  "planned_actual_CPU_IPC": {
+    "record": "current/SERVER_CPU_PLAN.json",
+    "methods": 16,
+    "status": "not_run",
+    "real_model_calls": 0,
+    "real_Ray_runs": 0,
+    "GPU_runs": 0
+  },
+  "earlier_errors": {
+    "record": "before/retired-blocking-observer-before.json",
+    "source": "8efed87fe3dba715f087dd5b8cf326637bd411a5",
+    "errors": 2
+  },
+  "private_originals": {
+    "files": 14,
+    "record": "private_originals in the raw archive",
+    "manifest_sha256": "b5ccf887ef0c31f6a288a30b1953d2016313078a2d3762491c0d3dcb646b9436"
+  },
+  "notes": [
+    "The exact eab source retirement removed three old blocking async actor RPCs and their private wait path. The current try/poll/ACK path, reader finally, unknown ownership, current owner methods and actual sync run_core remain.",
+    "The final27 distinct pure-memory methods passed on exacteab with1067 matching code hashes and no failure/error/skip. ControlledEngine2000 is synthetic and is not a Ray cluster or model workload.",
+    "The earlier17-method migration run recorded a dirty8efed working tree before two later test-only cleanups. It is retained by its source hashes and is not relabelled as an exacteab run or added to final27 coverage.",
+    "Two obsolete hook tests each raised IndexError against exact8efed because the retired observer hook emitted no event. Their originals remain. Existing poll tests already cover return identity, same business exception and unconsumed iterator; no legacy hook was restored.",
+    "The old busy-poll method checked a removed production wait loop. The migrated caller helper sleeps in tests, so that method was deleted instead of pretending to prove current production polling behavior.",
+    "The sixteen affected actual CPU child/IPC methods remain planned, not skipped or passed. No local socket/sysctl retry, real Ray, GPU, model call, download or environment installation occurred.",
+    "The original3010 source hashes and historical mappings were not changed. Only ten affected existing bindings were read through the materializer and matched their original bytes; the five full projections were not rerun.",
+    "Current core56943 and source/scripts114569 are physical Python lines including blanks/comments. This slice removes68 core/wider lines and30 test lines; integrations4858 are separate. No performance or physical-memory result is inferred.",
+    "Current source review covers the exact production bytes and two final test-only edits. Public records are redacted/compacted; private original hashes identify the retained originals."
+  ],
+  "raw": {
+    "file": "async_rpc_retirement_raw.json.gz",
+    "bytes": 12729,
+    "sha256": "8bed40518e8e1a1582ba0c7459ca3245dac4ee620905326f6fe9cf9550f657cf",
+    "decoded_sha256": "ef2f2987745081a735310737aaa463dcfe3de728f52ca5bca233dcf0f94ce9e9"
+  }
+}

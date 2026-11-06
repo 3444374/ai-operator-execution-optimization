@@ -23,7 +23,7 @@ ACK指结果已交接的确认，IPC指进程间通信，RPC指远程调用；�
 | 模型与 IPC | sync／async构造分开，父进程／worker／帧编码分工，序列化使用定义模块；回执在actor释放前交接 | 5539的八符号Ray worker往返及原五项Future／取消检查均通过；原第二项历史错误原因仍未解明 |
 | 算子与结果 | 共享LOTUS方法、F／M／E、原数据、记录身份、完整Extract、未消费结果和unknown责任 | 现有方法行为保持；Join／TopK等未接入能力不列为已完成 |
 | 研究隔离 | SAOR／多任务实现独立，核心只消费可选中性协议 | 独立拆仓可后续做，不让研究配置进入单查询默认路径 |
-| 旧入口与脚本 | 旧PG／HTTP实验、旧动态变体、重复导出和旧ACK语法树重放退出当前入口；再删除旧choice观测三个模块及三个专属测试，共享函数迁回预算模块，历史源码可恢复 | 低层异步actor的三种旧阻塞RPC尚待迁移直调用例后处理；现用owner、同步run_core、批反馈、provider和研究能力另有实际用途 |
+| 旧入口与脚本 | 旧PG／HTTP实验、旧动态变体、重复导出和旧ACK重放退出当前入口；旧choice观测六文件删除，共享函数迁回预算模块；低层异步actor三种旧阻塞RPC及专用等待也已删除 | 新RPC清理27项纯内存通过，16项实际CPU IPC待服务器；现用owner、同步run_core、批反馈、provider和研究能力保留 |
 | 观测与验证 | 来源／时钟、真实压力与声明额度分开；1cfd修正单请求观测漏记和提示检查空通过；b422跨查询实际CPU IPC单项通过 | 原第二项历史错误原因未解明；模型功能通过不代表gold全正确或调度提速 |
 
 关闭修正以实际返回回执登记结果可见性，并在释放actor前恢复结果、排空ACK；异常或中断仍保存unknown及真实RPC终态。
@@ -36,6 +36,8 @@ ACK指结果已交接的确认，IPC指进程间通信，RPC指远程调用；�
 旧观测清理d5已整合为284ec，69个不同CPU方法全部通过，含五份3010文件历史恢复；1,057份源码摘要匹配，982份Python／3,304处本地静态导入无缺模块。7项进程／崩溃方式未选，不计为跳过或通过。
 旧观测清理组合284ec的核心57,011行、src＋scripts114,290行，本批分别为不变／减少514行。随后保留远端e0ec的原生基线与IMLane接线，整合2aa的相同69项全部通过；1,067份code摘要匹配，991份Python／3,336处静态引用无缺模块，原3010份历史文件摘要保持。
 最新组合核心仍57,011行，src＋scripts114,637行；相对284ec新增347行属于并行基线工作。较3fd分别减少4,617／35,008行，较main核心仍增加2,920行、宽口径减少25,698行。未把拆文件或并行新能力算成本批减少。
+随后eab7e246退役低层异步actor三种阻塞RPC、两个专用执行辅助与一层分发，非阻塞接纳、poll／ACK、unknown和reader责任保持。旧钩子两项报错用例删除，原8efed的两项空事件IndexError保留；旧忙轮询检查随其生产循环删除，未用测试helper的sleep替代生产证据。
+本批27项不同纯内存方法通过，1,067份code摘要匹配，16项实际CPU IPC未运行；受影响10条历史来源仍与原摘要一致，不改原3010映射，也不重跑五树。当前核心56,943行、src＋scripts114,569行，本批各减68行、测试减30行；较3fd分别少4,685／35,076行，较main为核心多2,852行、宽口径少25,766行。详情见[旧异步RPC退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)。
 没有明确重复、职责混杂或正确性问题的长函数可以保留。自动物理容量、额外算子和独立研究拆仓是尚未实现或后续工作，不为完成本轮重构临时新增控制层。
 [整体收尾核对与待验范围](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)记录最新状态；
 [关闭修正及原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)保留当时记录；

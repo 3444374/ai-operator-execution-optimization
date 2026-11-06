@@ -3350,6 +3350,8 @@ PR保持草稿，未合并main；CPU检查和静态历史核对均不提供查�
 <a id="core-closeout-verification"></a>
 ## 整体收尾复查与实际验证（2026-11-06）
 
+本节保留各次检查的准确身份；下方列为待清理的低层旧阻塞RPC，后续处理见[旧异步RPC退役](#retired-blocking-async-rpcs)。
+
 从最新b574复查当前受支持records主线，普通、prepared／rolling、resident、fused以及Movie session的构造和关闭调用均已反查。
 独立审查未发现必须继续修改的生产代码问题：回调接线完整，已知结果预排空、未知请求责任、实际RPC终态、原剩余时间和resident复用保持。
 退役HTTP观测、旧动态变体、旧ACK改写helper及假模块身份没有残余消费者；仍被实际使用的批反馈、同步调度循环、Unix provider和独立研究能力保留。
@@ -3416,3 +3418,28 @@ single handoff探针也不再调用旧阻塞RPC，而使用实际owner、actor�
 反查还确认低层`AsyncCoreModelActor.run_core/run_prepared_core/submit_prepared_batch`保留旧阻塞兼容实现，仓内已无生产调用、仍被直接actor测试使用，尚未删除。后续须先迁移这些行为用例，再退役旧RPC及只为它们存在的等待分支；现用owner的同名提交方法及同步actor的`run_core`仍有真实消费者，不能一起删除。
 物理RAM自动授予、完整查询RSS计量、跨进程重连、未接入的新算子和研究拆仓仍为未实现或后续功能；本次不以这些新功能延长既有结构整理。
 当前支持records主线的职责整理、本批旧观测胶水和空通过测试已处理，针对本批的组合CPU、原两项IPC、六项Ray及16条模型功能分别有准确来源。底层旧阻塞兼容接口仍待清理；旧第二例原因、真实模型重复关闭／取消、其他配置的质量与性能保留未验证状态，不声称所有历史内容或所有实机组合已检查。PR保持草稿，不合并main。
+
+<a id="retired-blocking-async-rpcs"></a>
+## 退役低层异步actor阻塞RPC（2026-11-06）
+
+源码eab7e246cda54f12d7b7db590b132f24a1c0b037、tree61e6f0efa348b382b474fb8aea2daf730b7c81bd基于已发布8efed。
+仓内生产工厂已使用非阻塞接纳；仅直接actor测试还调用旧`run_core/run_prepared_core/submit_prepared_batch`。
+本批删除这三个旧RPC及专用`_serve_core/_run_core`，把只有一次使用的分发辅助并入现用批接纳入口，移除`wait=True`专属等待分支，没有把旧循环搬到另一层生产代码。
+当前`try_submit_core/try_submit_prepared_core/try_submit_prepared_batch`维持原一次尝试；背压不建立新held或ticket，结果按poll与ACK交接。
+reader的finally、控制RPC、逐成员结果额度、取消和unknown责任保持；现用owner同名批提交仍返回awaitable，同步actor的`run_core`仍有生产消费者，不随旧异步RPC删除。
+
+七份测试／探针迁移到实际接口。输入字节背压现在明确核对未接纳、持有请求仍为1；零接纳后取消再重试，只有未取消成员取得真实ticket。
+活跃RPC回返前的延迟继续阻止producer退休。两项旧`_run_core`观测钩子检查在准确8efed复放均因空事件列表报IndexError，原错误保留；现用poll已有返回身份、同一异常及key迭代器不被消费的检查，因此直接删除重复旧检查，不恢复旧钩子。
+原忙轮询用例针对已删生产等待循环；迁移后它只会测到测试helper固定sleep，也随旧机制删除，不把该结果充作生产轮询证据。恢复旧API和配套测试时使用完整8efed树，不建立兼容壳。
+
+最终27个不同纯内存方法全部通过，无失败／错误／跳过，执行中不变的1,067份code摘要匹配eab。
+覆盖八项批生命周期、四项配置、owner元数据、两项现用poll观测、批探针开关及原十项RPC进展／背压／取消检查；其中的2,000请求是ControlledEngine合成工作，不是真实Ray或模型请求。
+较早17项迁移检查另存原件，不与最终选择重复相加。16项受影响实际子进程CPU IPC尚未运行，不计作跳过或通过；本机没有重试此前被拒的通信操作。
+
+历史清单及其原3010条摘要不改。通过现有materializer只读核对受影响10条来源，均继续取已有准确旧字节；新生产模块和其余修改文件不在原投影。
+本批没有重跑五份完整历史树，也没有重跑服务器Ray、实际模型或性能实验。
+[源码、原错误与27项检查](raw/async_rpc_retirement_checks.json)及[脱敏明细](raw/async_rpc_retirement_raw.json.gz)记录各自范围。
+
+`records_async_model.py`由726减至658行；核心和src＋scripts各净减68行，测试净减30行，未新增模块或控制层。
+当前核心56,943行、src＋scripts114,569行；较3fd分别减少4,685／35,076行，较main分别为核心增加2,852行、宽口径减少25,766行。
+物理行口径含注释和空行，tests／docs／历史原件排除，integrations仍4,858行单列。该缩减不代表提速或物理内存下降。
