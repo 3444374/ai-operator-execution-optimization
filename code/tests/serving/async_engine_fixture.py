@@ -8,7 +8,7 @@ import time
 
 from src.serving.backends.async_engine_worker import serve
 from src.serving.backends.vllm_async_engine import result_record
-from src.serving.backends.vllm_engine import _prepared
+from src.serving.backends.vllm_protocol import _prepared
 
 
 class FixtureEngine:
@@ -65,7 +65,8 @@ class FixtureEngine:
         self.closed = True
         for gate in self.gates.values():
             gate.set()
-        return dict(status="closed", engine_api_shutdown_confirmed=True, gpu_exit_confirmed=None)
+        return dict(status="closed", engine_api_shutdown_confirmed=True,
+                    gpu_exit_confirmed=None, close_timeout_s=timeout)
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         sock.set_inheritable(False)
     loop = asyncio.get_running_loop()
     engine = None
+    close_deadline = report = None
     tasks = []
     owned = {}
     waiter = None
@@ -197,6 +198,7 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                     failure.set_result(error)
 
         async def control_commands():
+            nonlocal close_deadline
             while not closing.is_set():
                 value, _ = await _read_frame(control, limits.control_frame_bytes)
                 op = value.get("op")
@@ -223,6 +225,9 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                 elif op == "drain":
                     await reply(dict(op="drained", pending=len(owned)))
                 elif op == "close":
+                    deadline = value["deadline"]
+                    common._number(deadline, "close deadline", low=0, inclusive_low=False)
+                    close_deadline = deadline
                     closing.set()
                 else:
                     raise ValueError("unexpected async engine control command")
@@ -250,7 +255,10 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
             task.cancel()
         await asyncio.gather(*tasks[2:4], return_exceptions=True)
         # Native shutdown and result writes are independent of command reading.
-        report = await engine.close(timeout=10)
+        remaining = close_deadline - time.monotonic()
+        report = (await engine.close(timeout=remaining) if remaining > 0 else
+                  dict(status="unknown", engine_api_shutdown_confirmed=False,
+                       gpu_exit_confirmed=None, error_type="CloseDeadlineExceeded"))
         pending = [slot["task"] for slot in owned.values() if slot["task"] is not None]
         if pending:
             done, waiting = await asyncio.wait(pending, timeout=1)
@@ -279,8 +287,12 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-        if engine is not None:
-            await engine.close(timeout=1)
+        if engine is not None and report is None:
+            # An unexpected peer failure still needs bounded best-effort cleanup.
+            # It has no normal close receipt and cannot establish API success.
+            remaining = 1 if close_deadline is None else close_deadline - time.monotonic()
+            if remaining > 0:
+                await engine.close(timeout=remaining)
         pending = [slot["task"] for slot in owned.values() if slot["task"] is not None]
         if waiter is not None:
             pending.append(waiter)

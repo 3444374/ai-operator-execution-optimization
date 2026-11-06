@@ -92,6 +92,7 @@ class AsyncEngineProcess:
         self._condition = threading.Condition()
         self._stop, self._io_done = threading.Event(), threading.Event()
         self._closing = self._close_sent = self._drain_requested = False
+        self._close_deadline = None
         self._broken = None
         self.ready_report = self.engine_close_report = self.last_close_report = None
         self._drain_report = None
@@ -455,7 +456,7 @@ class AsyncEngineProcess:
                             outgoing[self._control] = memoryview(self._controls.popleft())
                         elif self._closing and not self._close_sent:
                             self._close_sent = True
-                            outgoing[self._control] = memoryview(_frame(dict(op="close"),
+                            outgoing[self._control] = memoryview(_frame(dict(op="close", deadline=self._close_deadline),
                                 self.limits.control_frame_bytes))
                         elif self._drain_requested:
                             self._drain_requested = False
@@ -515,13 +516,16 @@ class AsyncEngineProcess:
     def close(self, timeout=15):
         common._number(timeout, "close timeout", low=0, inclusive_low=False)
         deadline = time.monotonic() + timeout
+        api_deadline = deadline - min(1, timeout / 3)
         errors = []
         try:
             with self._condition:
+                if not self._close_sent:
+                    self._close_deadline = api_deadline
                 self._closing = True
                 while self.engine_close_report is None and self.process is not None and self.process.poll() is None:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= min(1, timeout / 3):
+                    remaining = api_deadline - time.monotonic()
+                    if remaining <= 0:
                         break
                     self._condition.wait(min(0.05, remaining))
             if self.process is not None:

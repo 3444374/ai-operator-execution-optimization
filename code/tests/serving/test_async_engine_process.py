@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 def row(index=0, text="fast", query="q"):
@@ -106,6 +106,8 @@ class AsyncProcessTests(unittest.TestCase):
         self.assertTrue(report["process_exit_confirmed"])
         self.assertTrue(report["io_thread_closed"])
         self.assertTrue(report["engine_api"]["engine_api_shutdown_confirmed"])
+        self.assertGreater(report["engine_api"]["close_timeout_s"], 0)
+        self.assertLessEqual(report["engine_api"]["close_timeout_s"], 3)
         self.assertIsNone(report["gpu_exit_confirmed"])
         self.assertEqual(sum(event.result["prompt_tokens"] for event in owner.poll(2)), 22)
 
