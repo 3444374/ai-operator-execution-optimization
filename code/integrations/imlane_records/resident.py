@@ -126,7 +126,7 @@ class IMLaneResidentSession:
         block, rows = control_block(operation, query, **payload)
         call = rows[0]["call_id"]
         self.client.submit(block, rows, deadline=deadline)
-        ready = self.client.wait_ready(timeout_s=min(600, max(.001, deadline - time.monotonic())))
+        ready = self.client.wait_ready(timeout_s=max(.001, deadline - time.monotonic()))
         if ready != [block]:
             raise ValueError("resident control requires the fully drained author lane")
         rows = self.client.collect(block, deadline=deadline)
@@ -191,7 +191,7 @@ class IMLaneResidentSession:
                 if owner.resource_state(self.scope)["resources_confirmed"] is not True:
                     raise RuntimeError("resident author resources remain unconfirmed")
 
-            self.client = RecordsBridge(self.process, abort_owner=abort, timeout_s=min(600, self.resources.startup_timeout_s),
+            self.client = RecordsBridge(self.process, abort_owner=abort, timeout_s=self.resources.startup_timeout_s,
                 protocol=PROTOCOL, max_pending=self.resources.request_capacity(), limits=self.limits)
             query = self.session_id + ":startup"
             self.client.begin(query)

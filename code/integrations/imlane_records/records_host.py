@@ -27,7 +27,7 @@ allocates a model, a worker pool or a vendor scheduler.
         if (type(block_rows) is not int or block_rows < 1
                 or not callable(close_owner) or not callable(cleanup_scope)
                 or type(close_timeout_s) not in (int, float) or not math.isfinite(close_timeout_s)
-                or not MODEL_CLOSE_GRACE_S <= close_timeout_s <= 600
+                or close_timeout_s < MODEL_CLOSE_GRACE_S
                 or deadline is not None and (type(deadline) not in (int, float) or not math.isfinite(deadline))
                 or client.meta.get("protocol") != PROTOCOL):
             raise ValueError("records carrier requires the explicit v2 bridge, bounded capacity and author finalizer")

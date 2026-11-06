@@ -152,5 +152,51 @@ class QueryDeadlineTests(unittest.TestCase):
         self.assertEqual(client.timeout_s, 10.)
 
 
+class IMLaneOperationDurationTests(unittest.TestCase):
+    def test_command_and_cleanup_accept_explicit_finite_durations_above_six_hundred(self):
+        from integrations.imlane_records.client import RecordsBridge
+        from integrations.imlane_records.records_host import RecordsResults
+        from integrations.imlane_records.filter_workload import PROTOCOL
+        limits = SimpleNamespace(max_pending_blocks=1, describe=lambda: dict(fixture=True))
+        stream = SimpleNamespace(fileno=lambda: -1)
+        process = SimpleNamespace(stdin=stream, stdout=stream)
+        ready = dict(event='ready', protocol=PROTOCOL, max_pending_blocks=1,
+                     transport_limits=limits.describe())
+        for options, expected in (({}, 10.), (dict(timeout_s=601.), 601.)):
+            with self.subTest(options=options), \
+                    patch('integrations.imlane_records.client.os.set_blocking'), \
+                    patch.object(RecordsBridge, '_read', return_value=ready) as read, \
+                    patch('time.monotonic', return_value=100.):
+                bridge = RecordsBridge(process, abort_owner=lambda: None, max_pending=1, limits=limits,
+                                       protocol=PROTOCOL, **options)
+                self.assertEqual(bridge.timeout_s, expected)
+                read.assert_called_once_with(100. + expected)
+        for value in (None, 0, -1, True, float('inf'), float('nan')):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                RecordsBridge(process, abort_owner=lambda: None, max_pending=1, limits=limits,
+                              timeout_s=value)
+        rows = RecordsResults([], bridge, query_id='q', mapping=None, stage_id='filter', block_prefix='b',
+                              control_dir='/tmp/cpu-no-allocation', deadline=None,
+                              close_owner=lambda: {}, close_timeout_s=601.)
+        self.assertEqual(rows.close_timeout_s, 601.)
+
+    def test_existing_start_control_uses_the_whole_explicit_remaining_duration(self):
+        from integrations.imlane_records.resident import IMLaneResidentSession, control_block
+        from integrations.imlane_records.filter_workload import PROTOCOL
+        session = object.__new__(IMLaneResidentSession)
+        block, inputs = control_block('session_start', 'q')
+        result = dict(kind='resident_control', operation='session_start',
+                      _occurrence_id=inputs[0]['call_id'], _position=0)
+        reply = dict(call_id=inputs[0]['call_id'], row_id=0, outcome_json=json.dumps(dict(
+            protocol=PROTOCOL, query_id='q', stage_id='filter', status='ok', result=result)))
+        session.client = SimpleNamespace(submit=Mock(), wait_ready=Mock(return_value=[block]),
+                                         collect=Mock(return_value=[reply]))
+        session.ready = None
+        with patch('time.monotonic', return_value=100.):
+            self.assertEqual(session._control('session_start', 'q', deadline=701.), result)
+        session.client.wait_ready.assert_called_once_with(timeout_s=601.)
+        self.assertEqual(session.client.submit.call_args.kwargs['deadline'], 701.)
+
+
 if __name__ == '__main__':
     unittest.main()

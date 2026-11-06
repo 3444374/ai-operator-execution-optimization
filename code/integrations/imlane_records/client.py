@@ -19,7 +19,8 @@ class RecordsRejected(RuntimeError):
 class RecordsBridge:
     def __init__(self, process, *, abort_owner: Callable[[], None], max_pending, limits: TransportLimits, timeout_s=10.0, log=None,
                  protocol="imlane.records.v1"):
-        if (not callable(abort_owner) or not 0 < timeout_s <= 600
+        if (not callable(abort_owner) or type(timeout_s) not in (int, float)
+                or not math.isfinite(timeout_s) or timeout_s <= 0
                 or type(max_pending) is not int or max_pending <= 0):
             raise ValueError("records bridge requires a supervisor and finite timeout")
         if protocol not in ("imlane.records.v1", "imlane.records.v2"):
