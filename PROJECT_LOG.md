@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：分开HSE执行与指标职责
+
+HSE执行继续拥有调度与清理，计时／字节／峰值和原结果装配移到独立模块；没有新增控制器或测试。
+[17项原CPU、三组完整输出和来源恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
+前后一致，职责更集中，生产总量增加23行，不报减量或性能收益，未合并main。
+
 ## 2026-11-06：记录单查询IPC回执并清理中性包导入
 
 准确e5的四项真实CPU socketpair／子进程方法与一项模拟时钟方法各运行一次通过；没有模型、真实Ray或HTTP调用。

@@ -25,7 +25,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
-| 图像与数据 | 现用LOTUS图像后端与HSE执行保持；CLIP脚本的准备、执行观测和报告分开，异常时停止已启动资源并保留主错误 | 异常清理只有软件替身检查；不证明实际采样线程、Ray或模型进程退出，增量图像与HSE用途仍不同 |
+| 图像与数据 | 现用LOTUS图像后端保持；HSE调度／清理与指标累计／结果装配分开；CLIP准备、执行观测和报告分开，异常时停止已启动资源并保留主错误 | 这批HSE及异常清理只有软件替身检查；不证明实际采样线程、Ray或模型进程退出，增量图像与HSE用途仍不同 |
 | 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；采样归observability；四个旧转发及重复时钟定义删除；准确4d六项服务器CPU通过 | 结果限其实际采样／软件传输和子进程范围；不是后续组合、真实Ray或模型资格，本机此前拒绝的操作不重试 |
 | 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器CPU与独立Ray方法通过，共享研究显式接入 | 5b模型5请求中4条正确、1条unknown，正常排空未通过；按用户要求暂停多查询新增实现与扩展测试，现有代码和失败保留 |
 | 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放及异步阻塞RPC已退役；删除旧HTTP隔离探针／研究启动器及专测、四个旧服务CLI选择；中性后端包不再加载HTTP实现 | 底层fixed HTTP工厂／transport及余下专用配置仍在清理；共享Image／Core／IPC和第三方原生HTTP保留，不称全仓已清完 |
@@ -61,16 +61,18 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,173行，
-全部 src＋scripts Python 为108,956行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,082行／减少31,379行；对清理起点3fd分别减少5,455／40,689行。
-本批包导入清理相对e5生产减少21行、测试增加3行，独立集成不变；不把历史副本算作代码减少。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,196行，
+全部 src＋scripts Python 为108,979行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,105行／减少31,356行；对清理起点3fd分别减少5,432／40,666行。
+本批HSE指标提取相对90aaa增加23行，没有新增测试；包导入此前减少21行，两批不声称减少总量；不把历史副本算作代码减少。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
 [e5单查询IPC服务器回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)
 按准确受测版本保存五方法及清理结果；[后端包导入清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#backend-package-http-import-cleanup)
 记录导入反例、五项轻量CPU和原来源恢复，不运行旧HTTP套件，也不把导入依赖称为HTTP请求。
+[HSE职责提取](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
+保存17项原CPU前后结果和三组完整输出对照；没有运行真实Ray或模型，不作性能结论。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。

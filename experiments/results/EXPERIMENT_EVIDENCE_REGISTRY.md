@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-06：HSE执行与指标职责提取
+
+[HSE指标与原执行](diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
+保存同一17项CPU前后通过、三个完整输出对照及5条历史来源；没有真实Ray／模型，生产合计增加23行。
+独审核对原调度、资源和unknown责任保持，不转授模型或性能资格。
+
 ## 2026-11-06：准确e5单查询IPC与后端包导入
 
 [服务器五方法](diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)

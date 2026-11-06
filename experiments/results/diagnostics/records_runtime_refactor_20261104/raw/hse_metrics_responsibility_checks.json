@@ -1,0 +1,85 @@
+{
+  "base": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+  "commit": "3d1b34cdf455e606e771bed069f574c4c9039532",
+  "tree": "2e00a3f6fce17993647c21bdc4632ba65cf71f09",
+  "scope": "Separate staged image timing/byte/peak accumulation and result assembly; no scheduling or cleanup change",
+  "preserved": [
+    "public function signature and exact alias",
+    "hse_static dispatch and stage reservations",
+    "failure cleanup and unknown retained calls",
+    "EmbeddingAudit and ExecutionResult semantics",
+    "28 result fields and engine_stats JSON",
+    "finite existing cleanup waits"
+  ],
+  "cpu": {
+    "existing_unique_tests": 17,
+    "before_passed": 17,
+    "after_passed": 17,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "new_tests_added": 0,
+    "deterministic_cases": [
+      "fifo",
+      "reverse",
+      "empty"
+    ],
+    "complete_case_outputs_equal": true,
+    "real_ray_used": false,
+    "model_used": false
+  },
+  "history": {
+    "affected_reads": 5,
+    "all_passed": true,
+    "original_expected_sha256": "5c75eba6e85b8f304e171dd821d9666ff0de8fb92fd50f2d3c341ec2a7687839",
+    "expected_projection_revision_unchanged": true,
+    "complete_materialization_run": false
+  },
+  "size": {
+    "previous_production_lines": 497,
+    "current_execution_lines": 411,
+    "current_metrics_lines": 109,
+    "current_production_lines": 520,
+    "net_production_line_change": 23,
+    "previous_public_function_lines": 392,
+    "current_public_function_lines": 306
+  },
+  "artifacts": {
+    "historical-read-checks.json": "3fa25598fda7d362cf152bd58be6cdd8ca79900f341f455dae7f51491a961a12",
+    "behavior-after.json": "5f93d458ffded36f40c2b441f46e6658e00094d07b80b2f8527579031b596b19",
+    "behavior-before.json": "5f93d458ffded36f40c2b441f46e6658e00094d07b80b2f8527579031b596b19",
+    "historical-mapping.json": "514e4f886dc66291bf439bfa20d992437bc1a5691e59f5f359bf42cef57173bc",
+    "characterize.py": "24d28e50582a3eeee4db5cf09c850164472462a3eaa127a48ac3a9af43cda362",
+    "cpu-before.json": "a1a3680d0367997aa7ce45e35c84880681766328e336ab45818a95a56de2d991",
+    "MANIFEST-before.json": "596bee16c797c2237c981495080ea53d8fd520362f567fb44fefd3680c51cd69",
+    "source-checks.json": "db152b190c019af31d95e4f18b57f76c978a109eca99724f830650d0c89847d0",
+    "cpu-after.json": "3a3a9d0041e618d0dc1691076c75745c1e0c4ae6bea9344ed6bbdc4671077498",
+    "behavior-comparison.json": "1748c7cba4fb6d48dbe933277996fc68c716c8e7481a0547b61b3563b08258f9"
+  },
+  "source_sha256": {
+    "code/src/modalities/image/staged_execution.py": "91b43019da2dd633cce6856fdd60d17894ab8bbf6c2cfc7cc7da3e06a2ea093d",
+    "code/src/modalities/image/staged_metrics.py": "e249fdf7d9c6963e60933d8fd2ba046d5234353357326e464cf7d0df071a4b68"
+  },
+  "original_candidate_files_sha256": {
+    "code/src/modalities/image/staged_execution.py": "91b43019da2dd633cce6856fdd60d17894ab8bbf6c2cfc7cc7da3e06a2ea093d",
+    "code/src/modalities/image/staged_metrics.py": "e249fdf7d9c6963e60933d8fd2ba046d5234353357326e464cf7d0df071a4b68",
+    "experiments/reproduction/native_baselines/MANIFEST.json": "b77d2d63c5ff41c2cf7b3510332d1dd2c875178d05175c1bce9d7fccc7e9c1f7",
+    "experiments/reproduction/native_baselines/historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
+  },
+  "original_handoff_sha256": "2dc29ef23250fdd45a410f7c7ec2522bef16fda20fb6c41e5d2c11f3a53ff5fa",
+  "independent_review": {
+    "sha256": "59a8b39e0a81fd41d5acd89378e9f7976f3ef163f8f3b750b219410e2c907daa",
+    "findings": [],
+    "scheduling_and_resource_calls_preserved": 18,
+    "complete_result_fields": 28,
+    "deterministic_clock_calls": [
+      52,
+      55,
+      6
+    ],
+    "additional_test_runs": 0
+  },
+  "evidence_identity": "The after CPU file has no inline source map; its candidate identity is supplied by the handoff and preserved source digests. The same 17 methods ran before and after, not 34 distinct tests.",
+  "integration": "Only MANIFEST additions were combined with the already published package-import routes; prior source hashes and projection identities are unchanged.",
+  "remaining": "No real Ray/model/GPU run. This metrics extraction does not repair the historical named-semaphore residue or unknown shutdown cause."
+}

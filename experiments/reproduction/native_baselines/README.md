@@ -688,7 +688,7 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 
 当前既有IPC生命周期用例改用未指定查询期限；旧五份投影仍需原测试字节，因此共用
 [准确6fc旧测试](historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz)。
-只补五条来源／格式映射，旧expected和投影身份保持；当前用例仍待服务器实际IPC执行。
+只补五条来源／格式映射，旧expected和投影身份保持；后续准确e5的实际IPC结果见[服务器回执](../../results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)。
 
 
 <a id="backend-package-import-source"></a>
@@ -701,3 +701,12 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 的[原件](historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz)。
 只新增读取位置和压缩格式；原expected、来源版本、投影身份及已有映射不变。
 本批仅检查五条读取与纯CPU导入／值行为，没有重跑3010物化或模型，也未删除全部HTTP实现。
+
+<a id="hse-metrics-source"></a>
+## HSE指标提取时的来源读取
+
+现用HSE的调度／资源清理继续由`staged_execution.py`负责，指标累计及原结果装配移至`staged_metrics.py`。
+五份历史投影继续读取[准确e5原执行文件](historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz)，
+原expected、来源版本、投影身份及已有映射保持；与同版包导入原件共用`e5e65fdb`目录。
+[17项原CPU、完整输出与恢复](../../results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
+只覆盖本批实际职责提取，不代表真实Ray／模型或整套3010物化。
