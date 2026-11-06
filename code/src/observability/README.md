@@ -5,6 +5,9 @@ over the execution policy it observes.
 
 - `metrics/` contains reusable metric collectors and summaries.
 - `clock.py` owns the shared monotonic-clock identity without loading an execution adapter.
+- `native_query_timing.py` reads existing query and model receipts. An unconfirmed native
+  submission whose outcome is `unknown` remains unknown; it is not proof that nothing was sent.
+  Such a receipt contributes neither a confirmed API-call count nor a measured model duration.
 - `process_resources/supervised.py` samples the supervisor's birth-matched process RSS,
   declared affinity and host SHM delta under an exclusive lease. Its `ResourceMonitor`
   preserves the original implementation used by the external Kalypso owner helper;

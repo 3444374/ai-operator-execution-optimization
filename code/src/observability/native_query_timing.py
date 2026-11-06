@@ -144,8 +144,8 @@ def model_API_samples(backend,report):
             submitted = first.get('submission_confirmed')
             countable = submitted is True
             if not countable:
-                status = 'not_sent' if submitted is False else 'unknown'
-                complete = False  # Local rejection intervals are not model API durations.
+                status = 'not_sent' if submitted is False and status != 'unknown' else 'unknown'
+                complete = False  # Unconfirmed submission has no measured model API interval.
         samples.append(dict(api_id=repr(key),unit='single_generate' if backend=='semloom-core' or native_local else 'native_chat_batch',
             countable_API_unit=countable,
             records=len(batch),status=status,start_ns=int(start*1e9) if complete else None,

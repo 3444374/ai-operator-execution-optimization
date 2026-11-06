@@ -111,6 +111,14 @@ class UnitTests(unittest.TestCase):
             self.assertIsNone(sample['elapsed_s'])
             self.assertIsNone(sample['start_ns'])
 
+    def test_local_native_unconfirmed_unknown_is_not_reported_as_unsent(self):
+        report = dict(protocol='local_async_model_IPC', native_transport_receipts=[
+            dict(self.rows('unknown')[0], submission_confirmed=False)])
+        sample = model_API_samples('lotus-native', report)[0]
+        self.assertEqual(sample['status'], 'unknown')
+        self.assertFalse(sample['countable_API_unit'])
+        self.assertIsNone(sample['elapsed_s'])
+
     def test_duplicate_offline_event_charged_once(self):
         event=dict(event_id='scan',actual_scan_calls=10,actual_scan_wall_s=2.)
         self.assertEqual(offline_scan_total([event,dict(event)]),dict(events=1,calls=10,wall_s=2.))
