@@ -612,3 +612,18 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 恢复旧运行器的整套启动接线仍使用
 [`7bf1d92baf2611925c608cfe76b4a766855bd77e`完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)
 及[原恢复说明](../paused_pg_and_retired_http_20261105/README.md)，不将旧单文件接回当前执行器。
+
+
+<a id="retired-observation-aliases"></a>
+## 观测旧导入和分阶段采样归位
+
+图像CLI、观察器和当前测试直接导入`src.observability`的时钟、事件、模型复用与请求身份。
+`src.experiments.buffered_events`、`execution_timing`、`image_reuse`、`request_identity`四个转发路径删除，
+`ProcessSampler`移至`src.observability.process_resources.phase_sampler`，旧`experiments.process_sampling`不再导出。
+类逻辑、事件字段和采样默认保持；三份观测测试归入`tests/observability`。
+
+准确退役前文件、旧测试及当时所有调用在
+[e86afedb完整来源](https://github.com/3444374/ai-operator-execution-optimization/tree/e86afedb91e5d913ebb2f988cbfd5f305b4c0482)恢复。
+本次未新增这些文件的副本或恢复映射：五份具名投影此前已读取各自准确原件，读取值保持。
+旧直接导入不再兼容；需要旧API时使用完整隔离来源，不将转发壳加回当前搜索路径。
+原图像和观测结果、失败记录以及尚在使用的HSE执行保持各自身份。

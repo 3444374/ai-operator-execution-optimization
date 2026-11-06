@@ -1,0 +1,155 @@
+{
+  "production_commit": "743f0476da436a79aaf20148d0befcefb4c012ef",
+  "base": "402cdda3a5e7e43ced4b46f5666df731d8250a14",
+  "local_cpu": {
+    "collected_methods": 48,
+    "junit_entries_including_subtests": 69,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "seconds": 3.813364999834448,
+    "collected_node_ids": [
+      "code/tests/observability/test_buffered_events.py::BufferedEventTests::test_compact_batch_and_guard_events_preserve_accounting_identity",
+      "code/tests/observability/test_buffered_events.py::BufferedEventTests::test_compact_events_retain_hashes_without_input_or_output_text",
+      "code/tests/observability/test_buffered_events.py::BufferedEventTests::test_order_durability_and_no_writes_on_callback_thread",
+      "code/tests/observability/test_buffered_events.py::BufferedEventTests::test_overflow_is_explicit_and_does_not_append_a_partial_event",
+      "code/tests/observability/test_buffered_events.py::BufferedEventTests::test_write_failure_is_not_reported_as_a_successful_close",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_constructor_write_error_is_explicit_and_not_registered",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_counter_rejects_invalid_rows_and_kind_without_changing_state",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_default_off_reads_no_clock_writes_no_event_and_attaches_no_hook",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_hook_input_observation_failure_does_not_replace_output_or_native_error",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_one_durable_construction_and_plain_integer_counters_for_same_model",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_private_directory_rejects_git_before_recording",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_probe_and_registry_do_not_keep_model_or_actor_alive",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_ray_driver_does_not_truncate_fractional_counters_into_reuse_evidence",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_ray_driver_preserves_distinct_native_counts_without_forcing_graph_reuse",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_ray_driver_rejects_partial_metadata_instead_of_claiming_reuse",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_ray_predictor_metadata_follows_actual_success_and_default_has_no_columns",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_stock_actual_submodule_calls_keep_outputs_and_count_image_text_separately",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_stock_hooks_do_not_retain_the_actual_model",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_stock_native_error_remains_original_with_unreturned_attempt",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_stock_partial_hook_setup_error_removes_installed_hooks",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_tensor_actor_counts_completed_numpy_return_and_preserves_model_error",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_tensor_actor_default_schema_and_math_are_unchanged",
+      "code/tests/observability/test_model_reuse.py::ImageReuseTests::test_tensor_actor_numpy_failure_does_not_count_as_a_success",
+      "code/tests/infrastructure/test_dependency_direction.py::DependencyDirectionTests::test_cold_runtime_imports_and_httpx_fixture_work_with_experiment_imports_blocked",
+      "code/tests/infrastructure/test_dependency_direction.py::DependencyDirectionTests::test_kalypso_compatibility_dispatch_restores_comparison_registry_after_success_or_error",
+      "code/tests/infrastructure/test_dependency_direction.py::DependencyDirectionTests::test_old_and_new_kalypso_cli_help_do_not_load_the_author_runtime",
+      "code/tests/infrastructure/test_dependency_direction.py::DependencyDirectionTests::test_request_claim_errors_and_old_pickle_globals_keep_the_same_identity",
+      "code/tests/infrastructure/test_dependency_direction.py::DependencyDirectionTests::test_runtime_sources_do_not_import_tests_scripts_or_experiment_entry_points",
+      "code/tests/infrastructure/test_dependency_direction.py::DependencyDirectionTests::test_shared_timing_uses_one_recorder_and_preserves_its_event_schema",
+      "code/tests/semantic_methods/test_lotus_image_resident_cli.py::test_cancelled_query_does_not_poll_busy_workers_before_close",
+      "code/tests/semantic_methods/test_lotus_image_resident_cli.py::test_phase_snapshots_exclude_live_models_from_another_owner_directory",
+      "code/tests/experiments/test_map_observation_probe.py::ObservationProbeTests::test_probe_failure_keeps_current_source_identity_without_starting_the_suite",
+      "code/tests/experiments/test_observer_mapped_budget.py::MappedObserverTests::test_close_stops_an_existing_observer_without_refund",
+      "code/tests/experiments/test_observer_mapped_budget.py::MappedObserverTests::test_existing_live_budget_stays_caller_owned",
+      "code/tests/experiments/test_record_chain_validation.py::ExecutionComparisonTests::test_worker_uses_the_selected_path_and_does_not_boot_Ray_for_fused",
+      "code/tests/experiments/test_record_resource_handoff.py::HandoffTests::test_light_worker_main_skips_sampling_preserves_input_generation_and_close",
+      "code/tests/experiments/test_native_baseline_reproduction.py::HistoricalProjectionTests::test_all_named_projections_materialize_with_original_ids_and_exact_bytes",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_complete_matrix_attributes_a_work_envelope_gap",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_config_freezes_d0_d1_p0_without_job_fairness_in_d1",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_four_way_classification_is_frozen",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_malformed_threshold_and_metric_fail_closed",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_repository_contract_preserves_failed_feeding_lock",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_structured_clean_gate_requires_all_three_subsystems",
+      "code/tests/experiments/test_saor_feeding_gap_diagnostic.py::FeedingGapDiagnosticTests::test_text_contract_hash_ignores_only_crlf_translation",
+      "code/tests/observability/test_records_telemetry.py::RecordsTelemetryTests::test_probes_are_independent_and_missing_is_not_zero",
+      "code/tests/observability/test_records_telemetry.py::RecordsTelemetryTests::test_GPU_probe_permission_failure_does_not_discard_native_or_host_fields",
+      "code/tests/experiments/test_shared_request_budget.py::BatchRequestBudgetTests::test_order_duplicate_bodies_and_single_tail_survive_reopen",
+      "code/tests/experiments/test_shared_request_budget.py::BatchRequestBudgetTests::test_close_and_deadline_stop_new_batches_without_refund"
+    ],
+    "source_files": 1070,
+    "source_matches_commit": true,
+    "models": 0,
+    "real_Ray": 0,
+    "real_IPC": 0
+  },
+  "original_errors": {
+    "probe_source_list": "After retiring the alias, the old source manifest path caused FileNotFoundError before dispatch; current source entry corrected, original retained.",
+    "selection": "One real IPC method was mistakenly selected locally. It failed during lazy Transformers import because a broad version fixture labelled torch CPU-fixture, before any IPC startup. Version fixture narrowed; full method moved to server validation."
+  },
+  "independent_root_review": {
+    "commits": [
+      "704751b20f74a3339bfca9d0b5fe0cbdbeef68eb",
+      "b64b0b5009cd9a8f547f924f0847fcb8a49a9643"
+    ],
+    "original_sha256": "8dccb4295f30775f803ff629b70781924ea8cfadfcea9ceb0db19bf19faa51b3",
+    "findings": []
+  },
+  "metrics": {
+    "production_commit": "743f0476da436a79aaf20148d0befcefb4c012ef",
+    "source_files_match_commit": 1070,
+    "exact_new_archives": 2,
+    "counts": {
+      "latest_remote": {
+        "commit": "402cdda3a5e7e43ced4b46f5666df731d8250a14",
+        "core_Python": 56191,
+        "src_and_scripts_Python": 110960,
+        "tests_Python": 98290,
+        "integrations_Python_CPP_HPP": 6286
+      },
+      "candidate": {
+        "commit": "743f0476da436a79aaf20148d0befcefb4c012ef",
+        "core_Python": 56289,
+        "src_and_scripts_Python": 109636,
+        "tests_Python": 98129,
+        "integrations_Python_CPP_HPP": 6286
+      },
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_Python": 54091,
+        "src_and_scripts_Python": 140335,
+        "tests_Python": 102763,
+        "integrations_Python_CPP_HPP": 4521
+      },
+      "cleanup_start": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_Python": 61628,
+        "src_and_scripts_Python": 149645,
+        "tests_Python": 130062,
+        "integrations_Python_CPP_HPP": 4528
+      }
+    },
+    "deltas": {
+      "latest_remote": {
+        "core_Python": 98,
+        "src_and_scripts_Python": -1324,
+        "tests_Python": -161,
+        "integrations_Python_CPP_HPP": 0
+      },
+      "main": {
+        "core_Python": 2198,
+        "src_and_scripts_Python": -30699,
+        "tests_Python": -4634,
+        "integrations_Python_CPP_HPP": 1765
+      },
+      "cleanup_start": {
+        "core_Python": -5339,
+        "src_and_scripts_Python": -40009,
+        "tests_Python": -31933,
+        "integrations_Python_CPP_HPP": 1758
+      }
+    },
+    "sampler_class_AST_unchanged": true,
+    "root_observer_25_history_readings_unchanged": true,
+    "support_20_history_readings_unchanged": true,
+    "original_expected_3010_hashes_preserved": true,
+    "scope": "Physical Python lines incl blanks/comments; core excludes experiments/baselines, includes research. Tests/docs/archives separate."
+  },
+  "history": {
+    "new_originals": 2,
+    "new_routes": 10,
+    "new_format_rows": 10,
+    "original_3010_hashes_and_projection_ids_preserved": true,
+    "observation_originals_already_mapped": true
+  },
+  "server_validation": "Pending on the published exact source: real process sampler, actual CPU IPC progression and affected asynchronous observation/transport fixtures. No new model/GPU run required by this cleanup.",
+  "counting": "Earlier root37/child12 selections and original failures are separate records, not added to final48 methods. JUnit also reports21 subtest entries.",
+  "raw": {
+    "file": "global_entry_observation_cleanup_raw.json.gz",
+    "bytes": 67147,
+    "sha256": "790ef9f4ad637fa301c82a0f4975098690b04f577002c66911513b35d31eed6d",
+    "decoded_bytes": 277855,
+    "decoded_sha256": "d575dfb7807939148f06ab1bbcef86c23386845c97e15e0c60198890093f6b11"
+  }
+}

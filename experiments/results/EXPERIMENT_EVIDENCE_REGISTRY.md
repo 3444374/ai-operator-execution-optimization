@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：全项目入口与观测职责继续整理
+
+[准确组合、原错误与恢复](diagnostics/records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)
+登记743f的48个本地方法、21子例及一次五树3010恢复，包含图像、观测、预算和研究值读取。
+四份转发、旧runner支持和batched观察钩子退役；类逻辑／事件字段、公共预留、研究算法与原负结果保持。
+真实进程采样、异步传输与CPU IPC另待服务器；首轮IPC误选及版本夹具错误保留，未冒充模型或性能资格。
+
 ## 2026-11-06：共享服务旧配置加载与命令接线退役
 
 [准确源码、现用类型与恢复](diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)

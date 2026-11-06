@@ -8,12 +8,12 @@
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切片文字保留其对应版本的状态。
 
 <a id="current-refactor-status"></a>
-## 当前收尾状态（2026-11-06）
+## 当前实施状态（2026-11-06）
 
 <a id="refactor-completion-checklist"></a>
-### 整体完成清单与收尾事项
+### 已处理清单与剩余事项
 
-本轮整理针对已有外部 records 执行核心。下表保留e420并行基线候选，结合中性容量／关闭整理、离线研究清理及各次准确受测源码核对，
+本页覆盖外部执行核心、图像适配、观测与实验入口。下表保留402c并行基线材料，结合本轮全项目入口核对及各次准确受测源码，
 不把外部 SemBench 工作负载等同于新的 PostgreSQL 语义算子接入，也不把历史通过数累加为当前整树资格。
 ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
@@ -25,7 +25,9 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
-| 研究隔离 | SAOR 与多任务共享额度归入独立研究包；普通单查询不依赖其默认配置 | 旧矩阵执行／解析／预检已退役，离线汇总直接使用证据模块；共享配置仅保留现用类型／读取函数，旧加载与命令构造已删除；独立拆仓尚未做，图像长函数仍按实际用途维护 |
+| 图像与数据 | 现用LOTUS图像后端、静态HSE和CLIP入口继续使用原执行；数据组织仍归materializer，不归观测器 | 增量图像接口与HSE批流水用途不同；没有借清理增加新算子或扩大模型资格 |
+| 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；分阶段RSS／CPU采样及三份测试归到observability；四个旧转发删除 | 实际进程采样、异步传输和一项CPU IPC待正常服务器验证，本机此前拒绝的操作不重试 |
+| 研究隔离 | SAOR与多任务共享额度继续独立维护；旧共享runner证据／采样胶水、batched观察钩子和两份专属类型已退役 | 六个现用值类、公共批预留、指标与原负结果保留；不将独立拆仓或新研究能力当作清理前置项 |
 | 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放、HTTP 观测转发及异步阻塞 RPC 已退役；重复解析、内部形状／日志计数检查分批精简 | 旧 LOTUS 残留和两个固定探针套件已清理；实际 provider／v3–v6 协议、共享诊断与离线复算保留，不称全仓旧内容已穷尽 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
@@ -47,20 +49,18 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,191行，
-全部 src＋scripts Python 为110,960行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,100行／减少29,375行；对清理起点3fd分别减少5,437／38,685行。
-旧矩阵和共享加载器两批分别净减2,354／1,427行，核心和测试不变；后者相对最新e420核算，未把并行IMLane新增算作删除。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,289行，
+全部 src＋scripts Python 为109,636行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,198行／减少30,699行；对清理起点3fd分别减少5,339／40,009行。
+本轮相对402c宽口径少1,324行、测试少161行；采样实现从experiments归入观测使核心口径增加98行，搬移不算删除。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
-[共享加载器清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)
-记录准确c2cde的9项CPU、五树3010恢复及现用类型／默认保持；此前
-[离线汇总清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)
-保留准确a4aae的13项及原fixture路径预期错误，各批不累加为整树通过。
-[此前容量／关闭与固定探针整理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
-继续只解释其39项CPU；新增九对象真实Ray在准确87fd单项一次通过，未将早期重复选择相加。
-[旧LOTUS清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)
-继续保留其14＋16项CPU和746行删除的原范围，不转授本批或模型资格。
+[本轮全项目核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)
+记录准确743f的48个本地CPU方法与子例、完整历史恢复、首轮错误和服务器待验项。
+[此前共享加载器](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)、
+[离线矩阵](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)与
+[容量及固定探针](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
+继续按各自源码解释，不累加为当前整树资格。准确87fd的九对象真实Ray一次通过不替代新IPC或模型检查。
 
 ### 此前切片记录
 
