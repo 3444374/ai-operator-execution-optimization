@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：删除旧HTTP启动接线并使用矩阵实际剩余时间
+
+旧网关隔离探针／CLI及研究HTTP启动器和专测删除；服务CLI的四个HTTP选择退出，Golden和typed image的现有Unix socket流程保持。
+矩阵按显式工作结束时刻计算剩余时间，删除重复60秒预留及派生外层上限，保留原总预算、次数和清理时间。
+[分批源码、CPU和恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fixed-http-retirement-and-matrix-time)
+记录底层HTTP仍待清理；既有单查询CPU IPC用例改用None，保留全部原断言，实际socket执行另交服务器，不重试本机拒绝操作。
+
 ## 2026-11-06：移除整查询隐式期限并接实际启动等待
 
 records默认不设整查询期限，None贯通既有单查询调用；显式期限、取消、unknown及有限启动／通信／关闭处理保留。

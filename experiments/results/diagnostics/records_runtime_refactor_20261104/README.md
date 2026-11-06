@@ -4166,3 +4166,36 @@ Git一次超时后由已核验公开增量包恢复准确独立树，原Git失�
 不能仅因它有旧测试就继续维护其功能；shared ImageGateway、通用Core、任务、租约、取消、UDS framing和必要数据组织按真实共享调用保留。
 第三方LOTUS VLM／MMQA、Kalypso和Ray官方HTTP baseline的原生连接另有用途，不随SemLoom旧接口删除，也不反向接入当前主线。
 此章节只记录已核事实与进行中的删除，HTTP源码尚未在本批退役，后续不追加它的测试或新模型调用。
+
+<a id="fixed-http-retirement-and-matrix-time"></a>
+## 删除旧HTTP入口与重复运行预留（2026-11-06）
+
+本批从已发布6fc继续整合三个已审候选；仍不合并main，不把CPU与恢复检查解释成模型功能或性能。
+
+| 原候选 | 实际删除或修正 | 验证来源 |
+|---|---|---|
+| `a37d182d` | 删除旧`gateway_isolation_probe`实现、同名profiling CLI、专测，以及研究HTTP gateway／专测，共五文件；typed Image、Session、SAOR策略及共享fixture保持 | [14项原CPU、恢复和外部引用](raw/fixed_http_first_retirement_checks.json) |
+| `835c7457` | 服务CLI删除四个HTTP选择及分派／request guard，退出六个专测和一个HTTP helper；Golden／typed Image Unix socket及原协议检查保持 | [10项原CPU、实际选择与保留项](raw/fixed_http_service_retirement_checks.json) |
+| `fb90ad82` | 矩阵按实际工作结束时间启动owner／audit，不再重复扣60秒、由startup／query推外限或在耗尽后补一秒、另加90秒帽 | [16项原CPU、预算和前后行为](raw/matrix_remaining_time_checks.json) |
+
+HTTP第一批的14方法包含当时仍共享的synthetic map fixture，不执行退役socket或真实HTTP。
+第二批10方法只检查现有服务选择和协议，新增选择方法在listener前停止；此前单方法与十方法重叠，不累加。
+矩阵较早十方法与最终十六方法也重叠。原清理reserve、supervisor的grace15／natural1、独立清理15及预算／次数保持；
+12个既有预算／controller／清理定义语法树相同。旧重型配置方法只更新过时断言，未重试本机SDK导入。
+具体软件反例为：剩余55秒原拒启、现在传55；200秒原传140、现在传200；2000秒原被派生限额截到780、现在传2000。
+这修正的是实验编排对显式总时间的使用，没有给模型请求增加时限。
+
+两处旧入口的仓外引用只核23份服务器与6份本地记录；三处命中全为已完成87ab检查的源码摘要键，没有活跃直接调用。
+不由此声称穷尽外部存储或所有传递依赖。旧CLI按f526完整来源恢复，157字节原件压缩为147字节，五条来源路由补齐；原十条历史读取相同。
+与6fc期限来源合并时，两侧MANIFEST增加项合并，旧expected与投影身份保持。
+
+既有CPU IPC生命周期方法的两次提交改为`deadline_monotonic=None`，仍为同一query的两个记录，原queued、反序结果、取消及容量断言保留。
+本机只做语法和独立审阅，不重试已拒绝的socket；[待执行的准确方法](raw/untimed_ipc_fixture_pending.json)交服务器。
+fixture不解释模型期限，因此即使实际IPC通过，也不外推真实vLLM无期限行为。
+该测试更改造成旧五份投影摘要不匹配，原201条读取为196通过／5不匹配；保存准确6fc旧测试共用副本后201条全部通过，原失败保留。
+矩阵原二十条与HTTP第二批原五条历史读取也分别通过，没有重跑整套3010物化。
+
+本批相对6fc核心Python减少130行、src＋scripts减少741行、tests减少304行，独立集成不变。
+当前核心56,194行、src＋scripts108,977行；较固定main分别增加2,103行／减少31,358行，较3fd分别减少5,434／40,668行。
+统计含空行和注释，核心排除experiments／baselines并包含research；测试、文档和历史副本另计，不把压缩或移动算作减代码。
+底层HTTP factory／transport与旧Map装配仍在独立清理，第一批删除不等于全仓HTTP清完；第三方原生HTTP连接保持。

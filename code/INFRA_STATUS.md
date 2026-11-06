@@ -28,7 +28,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 图像与数据 | 现用LOTUS图像后端与HSE执行保持；CLIP脚本的准备、执行观测和报告分开，异常时停止已启动资源并保留主错误 | 异常清理只有软件替身检查；不证明实际采样线程、Ray或模型进程退出，增量图像与HSE用途仍不同 |
 | 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；采样归observability；四个旧转发及重复时钟定义删除；准确4d六项服务器CPU通过 | 结果限其实际采样／软件传输和子进程范围；不是后续组合、真实Ray或模型资格，本机此前拒绝的操作不重试 |
 | 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器CPU与独立Ray方法通过，共享研究显式接入 | 5b模型5请求中4条正确、1条unknown，正常排空未通过；按用户要求暂停多查询新增实现与扩展测试，现有代码和失败保留 |
-| 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放、HTTP 观测转发及异步阻塞 RPC 已退役；重复检查分批精简 | 旧fixed HTTP gateway／transport及其专用测试、配置仍在退役；公共非HTTP资源／IPC和第三方原生HTTP保留，不称全仓已清完 |
+| 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放及异步阻塞RPC已退役；本批删除旧HTTP隔离探针／研究启动器及专测，移除四个旧服务CLI选择 | 底层fixed HTTP工厂／transport及余下专用配置仍在清理；共享Image／Core／IPC和第三方原生HTTP保留，不称全仓已清完 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留；Kalypso实验脚本直接调用实验流程，baseline不再反向导入 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
 ### 真实环境证据按源码解释
@@ -60,10 +60,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,324行，
-全部 src＋scripts Python 为109,718行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,233行／减少30,617行；对清理起点3fd分别减少5,304／39,927行。
-本批相对f526核心增加45行、src＋scripts增加64行、独立集成增加16行、测试增加402行；四个时间运算函数共22行，未新增控制器。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,194行，
+全部 src＋scripts Python 为108,977行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,103行／减少31,358行；对清理起点3fd分别减少5,434／40,668行。
+本批相对6fc核心减少130行、src＋scripts减少741行、测试减少304行，独立集成不变；不把历史副本算作代码减少。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
@@ -429,6 +429,8 @@ Session 直接使用该模块；旧导入名保留。请求准备、接纳、派
 
 <a id="http-call-configuration-cpu"></a>
 ## 独立 HTTP 请求配置候选（2026-11-03）
+
+> 此节为当时的开发记录；现用records通过本地IPC，旧fixed HTTP入口已进入[退役处理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fixed-http-retirement-and-matrix-time)，不作为当前配置指南。
 
 本地候选基于 `5ff54bfe`，尚未合入：独立 LOTUS HTTP 接点接受显式 180 秒请求／批／两阶段查询期限，
 有限正数、模型匹配、较短调用方期限及未知结果责任保持。fixed HTTP 读取层采用可配置单条响应额度；

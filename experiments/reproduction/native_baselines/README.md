@@ -685,3 +685,7 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 [准确f526原件](historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz)。
 其他五条继续读取已有原件；原expected、投影身份、版本和旧来源映射保持。
 只复查受影响来源，不把本批检查写成整套3010物化或真实服务验证。
+
+当前既有IPC生命周期用例改用未指定查询期限；旧五份投影仍需原测试字节，因此共用
+[准确6fc旧测试](historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz)。
+只补五条来源／格式映射，旧expected和投影身份保持；当前用例仍待服务器实际IPC执行。

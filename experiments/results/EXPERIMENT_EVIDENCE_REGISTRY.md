@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-06：旧HTTP入口退役与实际剩余时间
+
+[两批HTTP删除及矩阵修正](diagnostics/records_runtime_refactor_20261104/README.md#fixed-http-retirement-and-matrix-time)
+按a37／835／fb90各自来源保存14、10、16项CPU和历史读取，不合计为整树覆盖；底层HTTP工厂尚未全部移除。
+现有真实CPU IPC方法仅改两次提交为None，其原结果／取消／容量断言保持；本机未执行socket，服务器回执另列，不能预报通过。
+
 ## 2026-11-06：调用方查询期限与原生启动等待
 
 [None贯通、IMLane二次上限清理及Ray启动接线](diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)

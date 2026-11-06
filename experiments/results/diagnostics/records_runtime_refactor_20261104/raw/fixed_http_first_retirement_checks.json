@@ -1,0 +1,186 @@
+{
+  "schema": "semloom.fixed_http_entry_retirement.v1",
+  "base": "f526e6bd4701b23d9d47e44d22590593debabb9c",
+  "candidate": "a37d182de7d44db2c21fac94e2d31daa849032a0",
+  "tree": "3f2eebcd9c16556e73de8cbf0f84a17c570aec1d",
+  "deleted": [
+    {
+      "file": "code/src/experiments/gateway_isolation_probe.py",
+      "bytes": 33302,
+      "lines": 608,
+      "sha256": "c09490018aeec96b02fa9c88358f238e129337306d3698b3e104a15f20bf9a80"
+    },
+    {
+      "file": "code/scripts/profiling/gateway_isolation_probe.py",
+      "bytes": 157,
+      "lines": 6,
+      "sha256": "a0cd8c44f3c2dc622e0d9eed9102aacddb1dab1b06fcca48a82085e572c833d4"
+    },
+    {
+      "file": "code/tests/experiments/test_gateway_isolation_probe.py",
+      "bytes": 3818,
+      "lines": 70,
+      "sha256": "fe2ee078c9779cf65c3d4fdc865ffea16377306adea055e1bcac2fd9ed71ce02"
+    },
+    {
+      "file": "code/src/research/multitask/semloom/gateway.py",
+      "bytes": 3204,
+      "lines": 64,
+      "sha256": "406f45e32ecf680eee43e7ad671197d76b5275c1d380a73ada919323155efa91"
+    },
+    {
+      "file": "code/tests/research/multitask/test_shared_query_gateway.py",
+      "bytes": 6280,
+      "lines": 103,
+      "sha256": "e20783e3107b5565557df2c1a3a0ba2d162f66da806993488d960b613ca7cdf4"
+    }
+  ],
+  "current_call_proof": [
+    "Gateway isolation probe is called by its own profiling CLI and three dedicated tests. Its SyntheticRay/Table inputs remain in the shared map probe, not copied here.",
+    "Research gateway CLI is called by its own dedicated tests. Its image branch only forwards equal-share to the existing service factory; deleting that wrapper does not remove the typed image service.",
+    "No remaining current Python import or launcher command references the two retired modules. Known external helper use awaits parent confirmation; no claim about all external storage."
+  ],
+  "preserved": [
+    "typed ImageGateway and its shared mailbox/query registration/lease/cancel/Core code",
+    "IncrementalExecution and native task/session resource types",
+    "map_observation_probe shared SyntheticTable/WORK and preparation/payload fixtures",
+    "SAOR/shared-credit algorithms and semloom/session allocation functions",
+    "third-party LOTUS VLM/MMQA, Kalypso and native Ray HTTP baseline connections",
+    "original results, failures, negative observations and all historical expected/projection identities"
+  ],
+  "CPU": {
+    "selected_methods": 14,
+    "successful_methods": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 5.545428375015035,
+    "selection": [
+      "tests.execution_provider.test_module_ownership.ModuleOwnershipTests.test_incremental_imports_do_not_load_legacy_implementations",
+      "tests.observability.test_buffered_events",
+      "tests.experiments.test_map_observation_probe.ObservationProbeTests"
+    ],
+    "scope": "existing cold-import, buffered-event and synthetic map lifecycle fixtures; no retired socket/HTTP tests executed",
+    "source_identity": "a37d182de7d44db2c21fac94e2d31daa849032a0"
+  },
+  "history": {
+    "read_bindings_before": 10,
+    "read_bindings_after": 10,
+    "all_same": true,
+    "new_override_routes": 5,
+    "new_archives": 1,
+    "archive_bytes": 147,
+    "archive_role": "exact original six-line profiling CLI from f526; five pre-existing implementation sources stay on their old routes",
+    "absent_pairs": 15,
+    "full_3010_materialization_repeated": false,
+    "all_prior_manifest_fields_routes_expected_and_projection_identity_preserved": true
+  },
+  "size": {
+    "production_python_removed": 678,
+    "core_python_removed_including_research": 64,
+    "tests_python_removed": 173,
+    "claim": "only actual deleted Python lines; no performance claim"
+  },
+  "checks": {
+    "surviving_Python_byte_changes": [],
+    "local_Markdown_file_targets": 113,
+    "broken_local_file_targets": 0,
+    "new_anchor_checks_passed": true,
+    "new_wording_hits": 0,
+    "diff_check": true,
+    "secret_scan_changed_non_deleted_files": 5,
+    "secret_scan_violations": 0,
+    "working_tree_clean": true
+  },
+  "evidence": {
+    "RETIREMENT_BEFORE.json": "01f149d7f63ba32a75fdc94d8a663c64461f3f31abd8d1a3d8830908d217e3d6",
+    "RETIREMENT_ACTIONS.json": "8e23fe8f625aa7a72d077764aff9d9fc4b66e7c0e5523569d26c780fd34fa3d5",
+    "HISTORY_AFTER.json": "5a5c6321b948a52bd6028a066a91a02fdfb04dbf59399ec2e46888643b6d3492",
+    "fixed-http-entry-retirement.json": "8ffc951e2e98fe3e3a238fcc86baba1a303426f5628a9de7c09618e055c0913b",
+    "fixed-http-entry-retirement.log": "df4a5b4ec42e08845a5ecd8bce5840d44ca06787352c3dbf29ef421322775d18",
+    "SOURCE_IDENTITY.json": "384cbc77cf84e08451e798bf26fd1e6e159801fb830604fdb77964e064b281f4",
+    "DELIVERY_CHECKS.json": "20dc51d3e0739e7b1f7ca6053b4eeee7a405bf69ed43f229d58b7332bf55cb80"
+  },
+  "remaining_HTTP_cleanup": [
+    "service fixed-model/incremental Map options and synchronous adapter selection",
+    "AsyncFixedModelTransport, FullResponseTransport, RayMapTransport and FixedModelConfig consumers",
+    "generic gateway assembly still shared with typed image; must preserve the existing non-HTTP owner and protocol logic",
+    "map observation shared fixtures and native task/organization consumers require per-call separation before removing HTTP factories"
+  ],
+  "limitations": {
+    "models": 0,
+    "real_Ray_initializations": 0,
+    "external_HTTP": 0,
+    "UDS": 0,
+    "sysctl": 0,
+    "ps_commands": 0,
+    "server_operations": 0,
+    "pushes": 0,
+    "main_merges": 0
+  },
+  "combined_commit": "57be5654ba775bf1c12f29297994455f9c7edb26",
+  "combined_tree": "1c7d15560be79676ff1a987b70b5b4c7bb0c0de3",
+  "original_handoff_sha256": "79e917aa61fe22de16f75c264862b002187e530f5ed338dcf71bd7148bc4c9af",
+  "independent_review_sha256": "e30aa00fcc48615188b94cf0ef50a8e512362ba7b4ff1f2e92c5de40886a59ee",
+  "new_model_or_Ray_calls": 0,
+  "external_reference_supplement": {
+    "original_receipt_sha256": "4705ee97c9fd4fd2c9de518bc4d6452a8daee592b844d31a5f069b825a6d19fb",
+    "status": "no_active_direct_reference_found_in_checked_scope",
+    "searched_exact_names": [
+      "gateway_isolation_probe",
+      "src.research.multitask.semloom.gateway"
+    ],
+    "corrected_CLI": "code/scripts/profiling/gateway_isolation_probe.py",
+    "server_file_count": 23,
+    "local_file_count": 6,
+    "actual_hits": {
+      "file": "sembench_mock.json",
+      "hits": [
+        {
+          "location": ".source_sha256.code/scripts/profiling/gateway_isolation_probe.py",
+          "kind": "dictionary key",
+          "value_is_sha256": true
+        },
+        {
+          "location": ".source_sha256.code/src/experiments/gateway_isolation_probe.py",
+          "kind": "dictionary key",
+          "value_is_sha256": true
+        },
+        {
+          "location": ".source_sha256.code/tests/experiments/test_gateway_isolation_probe.py",
+          "kind": "dictionary key",
+          "value_is_sha256": true
+        }
+      ],
+      "classification": "source_sha256 inventory metadata from completed87ab CPU suite, not executable import or queued command"
+    },
+    "operation_counts": {
+      "models": 0,
+      "Ray": 0,
+      "queries": 0,
+      "HTTP_requests": 0,
+      "helpers_executed": 0,
+      "tests": 0
+    },
+    "scope_limit": "Known maintained helper/binding, latest completed87ab launch+packet, and preserved5b-r4 private controller/config/packet only; no complete external-storage scan. Local checks cover only the stated queue, handoffs and exact current/historical drivers. No whole-external-storage or transitive-dependency compatibility claim."
+  },
+  "merged_history_checks": {
+    "reads": 206,
+    "passed": 206,
+    "failed": 0,
+    "manifest_sha256": "596bee16c797c2237c981495080ea53d8fd520362f567fb44fefd3680c51cd69",
+    "original_after_IPC_repair_read_count": 201,
+    "includes_later_HTTP_service_source": true,
+    "new_archives_for_IPC_case": {
+      "commit": "6fc10c212575cc5be2f8caee5851f41b66f2c65c",
+      "file": "code/tests/serving/test_async_engine_process.py",
+      "source_sha256": "8bcfd15d4291f26c6b31c16f32b87f8d60953b342bb8b1e760ea2b24974b63e4",
+      "source_bytes": 13850,
+      "archive": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
+      "archive_bytes": 2958,
+      "archive_sha256": "eda995d8130e061af6d7f7b0cf8e4ab86de0af7437b7548d56b6b2e1e3699aee",
+      "source_routes_added": 5,
+      "expected_and_projection_identities_changed": false
+    }
+  }
+}

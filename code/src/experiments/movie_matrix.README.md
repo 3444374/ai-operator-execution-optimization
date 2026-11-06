@@ -34,8 +34,9 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/run_movie_records_m
 提供经过核验的解释器、CPU affinity、GPU 分配、离线环境和有限计划。本候选不连接 SSH、
 寻找旧连接或自动恢复实验。调用者可通过正常外层传输执行同一 argv，不再运行嵌入 Python 的历史 SSH launcher。
 `worker` 与 `audit` 是同一入口的内部动作；worker 的必填 index/context/output 参数在读 packet 前检查。
-worker 使用 driver Python，CPU token audit 使用 model Python 和空 CUDA mask。owner 超时由现有
-startup/query timeout 和查询数推导，服从总墙钟与 cleanup reserve；supervisor 的清理余量保留。
+worker 使用 driver Python，CPU token audit 使用 model Python 和空 CUDA mask。owner 与 audit 使用
+显式matrix／calibration工作结束时间中较早者，启动前按实际剩余时间传入supervisor；不再额外扣60秒或从startup/query推总限。
+总墙钟、原cleanup reserve及supervisor／独立清理余量保留；时间耗尽不再启动新owner或audit。
 
 输入是显式、不可变、当前自足的 sealed packet，不是历史目录名。仍需 packet 中的
 `q3_packet.py`、`q3_host.py`、`host_helpers.py`、`execution_policy.py`、`active_failure_evidence.py`、
