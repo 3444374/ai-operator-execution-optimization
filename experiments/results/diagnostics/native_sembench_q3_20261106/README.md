@@ -157,8 +157,21 @@ runtime例的actor GC早于`ray.shutdown()`，因此不单独证明runtime关闭
 查询物化、原生COUNT和Ray worker退出后，再显式关闭该服务并独立核对进程／SHM／GPU。
 这改变模型服务拓扑，单列为项目原生API绑定，不能替代原local-vLLM失败结果或声称已修复它。
 HTTP原生默认batch64、concurrency1、qps=None、max_retries0保持；qps=None的批内逐条await并非64路并发。
-`ray_driver_disconnected`只记录SDK连接关闭，不证明物理退出。真实Ray＋独立软件HTTP服务CPU验证待本批执行，
-实际模型服务／质量／冷启动与模型常驻比较仍待资格。
+`ray_driver_disconnected`只记录SDK连接关闭，不证明物理退出。实际模型服务／质量／冷启动与模型常驻比较仍待资格。
+
+准确6996已在Ray2.56.1环境完成[真实HTTP软件CPU两例](ray_http_cpu.json)，每例独立服务与Ray runtime。
+完整Movie2000→120、实际120次POST、软件COUNT14及原评价通过；另一例1次POST返回明确error JSON，
+保留RayTaskError／COUNT=null、worker exit1和原supervisor failed，没有误走default=True。
+两例的服务在Ray worker退出后仍存活，再由caller显式TERM并正常exit0；serve线程join、已观察自有进程和SHM均通过。
+独立读回还要求正确service nonce、supervisor无signals／signal_events／cleanup_errors、无服务forced kill，
+没有把预期查询失败与强制回收混为通过。初版私有probe未自行将这些全部并入阴性例pass，
+本轮由独立原件复核补齐；其初始化缺报告／TERM异常路径未注入，限制及准确源码摘要仍保留，不冒称覆盖。
+
+原HTTP默认batch64／concurrency1／qps=None未改，正常例实际peak inflight=2，说明批大小或actor数量不能当模型请求容量。
+本轮调用方显式创建8CPU／0GPU／512MiB object store的Ray runtime并在finally shutdown；
+绑定metadata保持runtime_owner=caller、physical model exit未知，真实退出判断来自外层。
+SDK实际导入Torch／Transformers／vLLM模块，但只构造HTTP处理器，没有加载权重／模型推理；未安装或修改依赖。
+软件服务不是模型，其质量／时钟不参与基线性能比较，原local-vLLM失败保持。
 
 <a id="imlane-author-environment"></a>
 ## IMLane作者环境的实际准备范围

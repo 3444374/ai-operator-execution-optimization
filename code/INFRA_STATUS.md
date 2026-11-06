@@ -135,7 +135,8 @@ DuckDB＋作者IMLane现有[SQL／Arrow候选](integrations/imlane_duckdb/README
 真实库构建与798e实际薄driver／DBEnd握手／Arrow16 PROCESS和THREAD执行通过；完整2000→120软件COUNT14、外层进程／SHM清理通过，无GPU或模型资格。
 作者默认4 executor／DuckDB16线程保留；IPC实测512MiB＋96KiB，原512MiB启动预算失败不改写。
 另准备[Ray公开HTTP绑定](src/baselines/text/frameworks/ray_data_http_sembench_native.py)，外部caller显式拥有服务；
-35个CPU替身方法通过，真实Ray＋独立软件服务待验。此profile不改原local-vLLM关闭缺口，SDK断开不等同物理退出。
+35个CPU替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；实际120＋1次POST，
+外层无强制信号、显式服务关闭和SHM检查通过。此profile不改原local-vLLM关闭缺口，SDK断开不等同物理退出，真实模型服务待验。
 
 随后67a4各执行一次120条：[复测与IPC诊断](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
 记录Daft正常收尾，Ray查询完成但原SHM失败；Ray随后人工回收不改原失败，两组均保留七个FN，不作稳定性能排名。

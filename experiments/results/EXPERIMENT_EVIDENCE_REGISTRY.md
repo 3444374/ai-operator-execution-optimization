@@ -7,7 +7,11 @@ spawn／显式close自动清理，GC／runtime各留4KiB，实际创建栈与身
 原资源失败和单对象恢复分别保留。每例一次，不代表复现率；runtime例先GC，不能分离shutdown额外因果；
 原Q3缺创建栈，不反向断言同源。没有模型、GPU推理、第三方补丁或安装。
 公开HTTP处理器＋外部caller拥有服务的独立候选保留原默认、Q3语义和一次物化，35个CPU替身方法通过；
-真实Ray＋软件服务待验，真实模型服务更待资格，不将不同拓扑候选写成旧local actor修复。
+准确6996的[真实Ray＋独立软件服务](diagnostics/native_sembench_q3_20261106/ray_http_cpu.json)
+正常2000→120／COUNT14和错误JSON一例均通过各自合同；实际POST为120＋1，原错误worker exit1／supervisor failed保持。
+独立读回另外确认两例无supervisor强制信号、正确服务nonce、服务显式关闭／exit0和SHM通过，
+补足初版probe阴性例汇总的检查缺口；异常TERM／启动缺报告的probe限制及源码摘要保留，没有重跑查询。
+真实模型服务仍待资格，不将不同拓扑候选写成旧local actor修复。
 
 ## 2026-11-06：旧 LOTUS HTTP 残留退役与完成范围核对
 

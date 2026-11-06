@@ -122,7 +122,7 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   Ray2.56.1发布extra仍要求0.22.0；67a4候选已实际执行120条，SHM残留使完整生命周期失败，物理attempt总数未证实。
 - [Ray公开HTTP profile](text/frameworks/ray_data_http_sembench_native.py)保留原HTTP处理器默认与Q3语义，
   外部caller拥有独立模型服务；query／Ray driver断开与物理进程／服务关闭分开核对，不声称修复旧local actor。
-  35个替身方法通过，真实Ray＋软件HTTP服务和模型服务退出分别待验。
+  35个替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；120＋1次实际POST、显式关闭和SHM检查通过。真实模型服务仍待验。
 - [DuckDB＋作者IMLane](../../integrations/imlane_duckdb/README.md)在准确798e通过真实shared库／薄driver、
   DBEnd函数alias、Arrow16.1及PROCESS／THREAD软件CPU链路和外层清理，2000→120软件COUNT14；模型provider仍待接；
   固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。

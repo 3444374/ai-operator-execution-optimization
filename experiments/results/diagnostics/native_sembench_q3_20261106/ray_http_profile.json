@@ -1,6 +1,6 @@
 {
   "schema": "semloom.ray-http-native-preparation.v1",
-  "state": "35 CPU double methods passed; real Ray plus external software HTTP service pending",
+  "state": "35 CPU double methods passed; real Ray plus external software HTTP normal/error CPU cases passed after independent lifecycle readback",
   "external_real_model_qualification": "pending",
   "third_party_library_changes": false,
   "old_local_vllm_failure_preserved": true,
@@ -22,5 +22,7 @@
     "qps": null,
     "max_retries": 0
   },
-  "connection_flag_is_physical_exit_proof": false
+  "connection_flag_is_physical_exit_proof": false,
+  "real_cpu_evidence": "ray_http_cpu.json",
+  "real_model_service_qualification": "pending"
 }
