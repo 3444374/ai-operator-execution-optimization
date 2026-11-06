@@ -4427,7 +4427,7 @@ worker使用剩余时间，删除固定十秒替代及正常回执后未报告�
 15条历史来源保持原摘要，无新增原件或MANIFEST修改；生产代码净增16行。
 与Movie及导入修正组合后，准确`7454adb2d4c64af2ceae05158291673cf3bd2d15`另执行22项CPU、全部通过，无错误或跳过；不与各批重复计数。
 运行前后21份相关Python摘要相同，后续仅同步文档；核心Python52,533行，src与scripts104,117行，沿用含注释／空行及排除目录口径。
-Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_full_unconsumed_results`待服务器补验；真实模型和Ray关闭未测。
+Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_full_unconsumed_results`随后在准确90005通过；真实模型和Ray关闭未由此验证。
 这是源码发现并用CPU复现的调用时间问题，不能据此断定历史1596关闭失败同因。
 
 <a id="map-codec-direct-import"></a>
@@ -4439,7 +4439,7 @@ Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_fu
 修改前后同11项CPU各一次通过；两种内存字节会话的结果、元数据、请求和关闭次数完全一致，不算真实socket。
 [两份准确原件及十条来源／格式映射](../../../reproduction/native_baselines/README.md#map-codec-import-sources)
 保留十五条历史读取的原摘要；整合时仅并入二十个映射字段，保留既有Movie测试来源，expected和投影身份不改。
-代码和原件经独审核对；真实socket十一方法、完整服务CLI及完整历史构造未运行。生产净减40行、测试净减1行。
+代码和原件经独审核对；原列十一项真实socket中，Map CLI单项随后在准确a0ce通过，其余十项和完整历史构造未运行。生产净减40行、测试净减1行。
 
 <a id="service-payload-ownership"></a>
 ## 服务查询数据由持有组件释放（2026-11-07）
@@ -4451,7 +4451,7 @@ Linux真实IPC用例`AsyncProcessTests.test_close_and_drain_control_work_with_fu
 摘要`b6bd5dc994e9d4453bd7bf9c445ac1484fd4ac773643338737bcb7019a3eec5d`。同期未导入Torch／LOTUS／Ray／vLLM，原件私有保存。
 独审核实真实继承和调用；四份生产文件展开组件方法后AST保持，十条受影响历史读取保持原摘要，MANIFEST无需再改。
 准确`712b479ba88ea127c19c01758569b57e2e852d80`的Map＋服务组合另跑16项CPU，全部通过，无错误或跳过；不与各批重复计数。
-真实rolling服务数据及恢复两类IPC检查待服务器补验，真实模型／Ray／OS清理和性能未由本批验证。
+真实rolling服务数据及恢复两类共九项IPC随后在准确a0ce通过，OS资源清理确认；真实模型／Ray及性能未由本批验证。
 服务生产净增16行、测试增151行；两批相对90005生产净减24行。当前核心Python52,509行、src与scripts104,093行、测试93,244行，统计口径保持。
 
 <a id="sync-close-caller-budget"></a>
@@ -4465,7 +4465,7 @@ Reference普通／链及IMLane共用这些接点，两份stage软件引擎的clo
 同两项CPU十四种情形，原十二处失败、修后全部通过；随后替身签名变动仅补两种内存回读，均为20秒，不重复主套。
 准确d224组合另运行同两项、十四种情形通过，四份相关Python摘要前后相同；作者原HEAD与日志保持提交前7454身份，不改写原记录。
 独审核对七份文件、原件、真实调用和Frame消费者；五份历史投影无这七路径直接读取，MANIFEST不变。
-生产Python净增20行，不报减行；真实Linux软件管道两方法待验，模型、Ray／SHM及物理GPU退出未由本批验证。
+生产Python净增20行，不报减行；随后准确68065的两项真实Linux软件管道通过，所观察的进程、socket和SHM清理确认；真实模型与Ray未由本批验证。
 待验方法为`SoftwareSyncCloseBudgetTests.test_sync_and_staged_pipe_return_actual_close_allowance`与
 `StageTransportTests.test_real_cpu_pipe_keeps_per_call_generation_identity_usage_and_close`；前者包含普通及分阶段两个软件子例。
 
@@ -4487,3 +4487,34 @@ gate.py只供四项专测及旧矩阵入口；两实现和专测退出维护树�
 本批核心Python减560行，baseline减173行，src与scripts共减733行；两份专测减334行，原始记录不删。
 当前核心51,969行、src与scripts103,380行、测试93,079行；含注释／空行，核心排除experiments及baselines并包含research，压缩历史原件另计。
 相对固定main6a8a核心减2,122行、src与scripts减36,955行；相对3fd分别减9,659和46,265行，不把单纯搬文件算作代码减少。
+
+<a id="retired-profiler-application-components"></a>
+## 旧画像应用、专用轨迹和空包退役（2026-11-07）
+
+主体`8988085a11bb3065eb80f2df9d294779b9b26c64`及增量`3c9066add0be0f40a7fe52907dd4040bf386113b`，最终tree`e8eb7aa189b52a27610ca15325fec42528bae77c`；整合为`54b465f9`／`4e0cfe81`。
+基于上一批无用CSV写入退出，再逐个核查全仓导入、动态接点、脚本和研究调用：Ray画像提交／组装、Arrow封装、旧HTTP／共享额度配置、CSV总字段以及专用请求轨迹均无当前消费者。
+六份实现、五个旧lazy导出及两份专测退出维护树，架构测试去掉只服务画像的导入；最后59字节说明空包也删除，不保留旧导入兼容壳。
+真实`observability.clock.monotonic_clock_domain`、核心SubmissionLifecycleEvent／模型、Runtime Ray适配及SAOR研究树保持；没有改模型协议、反馈策略或新建运行层。
+[四份准确a0ce原件及完整恢复](../../../reproduction/native_baselines/README.md#retired-profiler-application)
+只增加二十条来源和二十条gzip格式，旧Ray文件继续用原压缩件，其他无投影的helper／测试从同一公开Git恢复。
+原3010个expected、投影身份、旧来源映射及研究／原始结果树均保持；三十条受影响读取全部匹配，不等于完整历史物化。
+
+作者原实现、主体及空包删除后的选择始终是同四项CPU，各自通过，不累计为十二项；五个保留对象的实际导入身份另核。
+准确`4e0cfe81258adb9280005eaa258156f2fce49c5d`的整合选择是这四项加八项baseline来源／结果检查，共十二项，全部通过，无错误或跳过；七份运行源码摘要前后相同。
+十八个整合路径与最终独审候选一致，三十条读源在整合树再次匹配。原件私有保留；未运行真实模型、Ray、socket、系统探测或完整历史构造。
+本批src与scripts净减1,488行、测试减599行，包含六模块、旧导出及空包；不与上批733行重复计数。
+当前核心Python50,481行，src与scripts101,892行，测试92,480行；沿用含注释／空行，核心排除experiments及baselines、包含research，压缩历史原件另计的口径。
+相对固定main6a8a核心减3,610行、src与scripts减38,443行；相对3fd分别减11,147和47,753行；相对本轮b168分别减2,036和2,165行。
+核心没有超过千行的Python文件；整个src与scripts仅SAOR研究汇总仍为1,332行，本批保留其研究用途，不按行数机械拆分。核心超过百行函数仍有35个，各自按实际职责评估。
+
+<a id="continuation-server-software-ipc"></a>
+## 关闭、服务数据与Map CLI的服务器软件IPC（2026-11-07）
+
+准确`90005ab71da7114bea06f4eee947e4de7f59ccbf`、tree`e71fe14b67a97cd7c567d8a04bad47992b62218a`：
+`AsyncProcessTests.test_close_and_drain_control_work_with_full_unconsumed_results`单项通过一次，覆盖实际fixture child的关闭时间与未消费结果。
+准确`a0ce689bfe564438c25ecdc537f73aabb6550724`、tree`1c916ee08c07e1a380b47f85669c12dd7602dbd3`：
+RollingPrivatePayloadTests五项、RollingTransferRecoveryTests四项与MapGatewayTests实际CLI单项共十项全通过，零失败／错误／跳过；没有重跑90005单项。
+准确`68065d1f9342e658741b1e4934128af63826cc48`、tree`39e927fdec706ec0cc80394823b9e792b9d64d4d`另补两项同步软件管道，全部通过，无失败／错误／跳过；普通及分阶段worker均覆盖。
+三组均零模型、真实Ray及GPU查询；已观察进程退出、socket、SHM和运行许可清理通过，测试源码及原断言未改写。
+私有交接摘要依次为`cd2e5de565f7665cada28d8ea93da98ca80e8d19795033bf796f690272e0db83`、`c73c07750917e6ac16c810b64be0dd36bd1f7ab787493e30da9515d403e05469`和`f5853aa343f3b03878b4820bba0ffc3d18a3c9821be90ac02fdd24cf20289415`，原件不发布。
+这些结果只属于所列源码和软件fixture，不替代当前整树、真实模型关闭或Ray原生actor回收。此前中断的cascade profile单项仍待派送／回执。

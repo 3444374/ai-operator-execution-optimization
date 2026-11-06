@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：旧画像应用整组退役与软件IPC回执
+
+[剩余画像模块](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-application-components)
+无现用或独立研究调用，连同专测、旧导出和空包移除；当前时钟、核心事件、Ray适配及研究记录保留，准确来源可恢复。
+[服务器软件IPC](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#continuation-server-software-ipc)
+90005一项、a0ce十项和68065同步两项分别通过，零模型／真实Ray，实际资源清理确认；SDK单项仍待安排。
+
 ## 2026-11-07：旧画像输出与矩阵检查退役
 
 [旧PG profiler写入与旧矩阵检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)

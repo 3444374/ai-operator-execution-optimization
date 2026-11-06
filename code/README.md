@@ -68,6 +68,10 @@ PG 扩展 C／SQL、部署源和实验接线按准确 Git 树归档，**暂停�
 不把历史源重新加入当前生产搜索路径。逐文件摘要与恢复方法见
 [归档索引](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。
 
+无现用调用的旧PG画像接线、HTTP／共享额度画像配置、CSV总字段和专用请求轨迹模型也已退役，
+专测、旧导出及空包随实现移除；[准确来源与恢复](../experiments/reproduction/native_baselines/README.md#retired-profiler-application)
+保留历史格式，实际Core事件、时钟及Ray运行适配继续由所属模块维护。
+
 SAOR 与多任务共享额度一起由 [research/multitask](src/research/multitask/README.md) 维护，
 离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
 当前源码不再承诺这些旧命令可运行。独立 PG provider／通用传输内核和有研究价值的模态／调度组件若仍有消费者则保留，

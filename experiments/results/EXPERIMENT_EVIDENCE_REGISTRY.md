@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-07：旧画像应用退役与软件IPC补验
+
+[六份旧实现及空包](diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-application-components)
+最终四项CPU与三十条历史读取保持，准确4e0c的十二项组合CPU和三十条读源通过，不累计作者各轮。
+[90005／a0ce／68065服务器](diagnostics/records_runtime_refactor_20261104/README.md#continuation-server-software-ipc)
+分别完成一项异步关闭、十项服务／Map CLI及两项同步管道检查；全部通过且清理确认，无模型／真实Ray，不转授后续整树。
+
 ## 2026-11-07：旧画像输出与矩阵检查退役
 
 [实际调用、恢复及计量](diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)

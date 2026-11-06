@@ -100,21 +100,26 @@ Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，�
 
 [异步关闭调用时间](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-close-caller-budget)
 把父进程现有截止时刻传到worker，修正固定十秒替代调用方时长及正常返回后的重复清理。
-未知请求持有和原关闭证明保持；两项CPU覆盖八种情形，Linux实际IPC单项仍待补验，未据此解释全部历史关闭失败。
+未知请求持有和原关闭证明保持；两项CPU覆盖八种情形，准确90005的Linux实际IPC单项已通过，未据此解释全部历史关闭失败。
 
 [同步关闭调用时间](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)
 普通和分阶段同步worker也改用原API截止时刻；Reference／IMLane共用接线，原清理预留及已知usage保留。
-两项CPU十四种情形通过，两个实际stage替身另有内存读回；准确d224上的两项也通过，两项Linux软件管道仍待补验。
+两项CPU十四种情形通过，两个实际stage替身另有内存读回；准确d224上的两项也通过，随后准确68065两项Linux软件管道通过，不转授后续整树。
 
 [Map编码器直接导入](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)
-删除40行纯转出的wire/v5.py，现用调用者改用map_codec，协议5及v3／v4实现保持；同11项CPU和两种内存会话保持，真实socket待验。
+删除40行纯转出的wire/v5.py，现用调用者改用map_codec，协议5及v3／v4实现保持；同11项CPU和两种内存会话保持，准确a0ce的实际CLI单项已通过，其余Map socket方法未测。
 [服务数据归所属组件](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-ownership)
 把传输、准备组织及actor字段清理交回各自对象，链owner保留交接／证明和顺序；五项轻量检查保持，中断重试与实际字段读取不改。
-两批准确712b组合16项CPU通过，未运行真实Ray、模型或socket；服务IPC重试仍待服务器补验。
+两批准确712b的16项纯CPU通过；随后[准确a0ce服务器](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#continuation-server-software-ipc)
+九项服务IPC与一项Map CLI全部通过，零模型／真实Ray，进程、socket、SHM和许可清理确认；不转授当前整树。
 
 [旧profiler输出和矩阵校验退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)
 删除无现用调用的traces.py、gate.py及两份专测；当前baseline来源／结果校验保留，十条历史读取仍取原字节。
 准确40a8的八项baseline检查和十条历史读源通过；核心减560行、baseline减173行，未新增运行检查或替代包装。
+
+[剩余旧画像应用退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-application-components)
+清理无现用调用的Ray画像、旧配置／总字段、专用请求时钟和轨迹模型，删除旧导出、专测与空包；当前共享时钟、核心事件和Ray运行适配保持。
+最终作者四项CPU、三十条历史读取保持；准确4e0c的十二项组合CPU及三十条读源通过，源码净减1,488行，未新增运行机制。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
