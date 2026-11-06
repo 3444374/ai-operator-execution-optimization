@@ -93,6 +93,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 引擎与 IPC | [vllm_protocol.py](src/serving/backends/vllm_protocol.py) 保存中性规范；sync／async 各自构造引擎；[async_engine_process.py](src/serving/backends/async_engine_process.py)、[async_engine_worker.py](src/serving/backends/async_engine_worker.py)、[async_engine_wire.py](src/serving/backends/async_engine_wire.py) 分管父进程、子进程和帧编码 |
 | 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 仍被LOTUS图像和CLIP入口使用；增量图像backend另有任务协议，不互相冒充替代 |
 | 观测 | [文件职责](src/observability/README.md#current-observation-owners) 归集时钟、事件与模型复用；[phase_sampler.py](src/observability/process_resources/phase_sampler.py) 保存分阶段RSS／CPU采样，图像CLI直接导入实际实现 |
+| 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
 | 独立研究 | [research/multitask](src/research/multitask/README.md) 保存共享额度和 SAOR；实验编排不进入单查询默认配置 |
 
 SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、

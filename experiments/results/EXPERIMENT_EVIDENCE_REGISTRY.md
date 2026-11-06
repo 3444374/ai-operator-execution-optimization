@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：原生查询逐次声明支持路径
+
+[源码、两种复现与回归](diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
+登记Kalypso观察器构造失败和交错退出的共享状态遗留；Movie默认及查询／关闭处理保持。
+最终b742的74项CPU通过，删除11项AST相同的重复测试且保留全部断言；此前85项和3b1直接入口三项按各自来源另列，不累加覆盖数。
+3,010历史摘要保持，无模型／GPU／服务器资格转授；此前4d六项实机回执另由测试会话核对。
+
 ## 2026-11-06：作者IMLane执行上的本地IPC模型适配
 
 [IPC实现与124项CPU](diagnostics/imlane_duckdb_q3_20261106/README.md#当前本地ipc模型接线)

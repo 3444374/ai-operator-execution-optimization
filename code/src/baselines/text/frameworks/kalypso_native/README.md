@@ -54,3 +54,12 @@ patch --batch --forward -p1 -d "$NEW_PRIVATE_PACKET" -i "$VERIFIED_REPO/deploy/a
 补丁不改变作者服务、提示、生成、parser、容量、CPU placement 或清理规则。
 实际辅助源码的隔离副本已完成 CPU 导入检查：禁止 Core／调度、退役模块、模型库、子进程与网络，
 仍能加载 host、读取原 scope 配置并取得公共监督 API。此检查不启动作者服务，也不提供 GPU 资格。
+
+
+## 每次查询的支持声明
+
+attached入口把自己的后端标识和模型复用能力随调用交给`native_query_lifecycle.run_sequence`。
+不再临时改写共享模块的支持集合；Movie默认支持、查询时钟和关闭处理保持。
+声明来自适配代码，没有新增CLI／JSON配置项，也不改变作者Filter、生成或服务调度。
+[复现、回归与源码](../../../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
+记录观察器构造失败和两个会话交错退出的CPU反例；它们不代表真实作者服务并发或模型资格。

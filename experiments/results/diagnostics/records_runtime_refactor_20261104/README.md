@@ -3,7 +3,7 @@
 本记录对应 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的执行工程整理。
 本页按各批源码与运行身份保留过程；早期结构表不表示最新接入状态。旧 PG／HTTP 实验接线已按
 [现用入口整理](../runtime_entry_cleanup_20261105/README.md)退役；当前实现与未完成项见
-[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新核对见[全项目入口与观测整理](#global-entry-observation-cleanup)，此前[共享加载器退役](#shared-service-loader-retirement)保留原范围，此前[离线汇总与旧研究编排](#saor-offline-evidence-retirement)保持原范围，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
+[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新切片见[原生生命周期逐次声明](#native-lifecycle-call-support)，此前[全项目入口与观测整理](#global-entry-observation-cleanup)保留原范围，此前[共享加载器退役](#shared-service-loader-retirement)保留原范围，此前[离线汇总与旧研究编排](#saor-offline-evidence-retirement)保持原范围，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
 基准为 PR #90 的 `bfb9100e2f3fa090fdf2304359979b853236e06a`，tree 为
 `c8a86b0bcff8bf0161dcbbd005bc2660060d228e`。该 PR 当时为 Draft，未合并。
 起始切片当时只做 CPU 检查、等待审查与整合；后续发布和实机结果按各批自己的源码解释，不提供跨版本的模型性能结论。
@@ -3698,3 +3698,47 @@ Map探针的源码清单也改为真正的buffered_events实现。先删转发�
 本批停止修改的条件是已确认旧消费者和替代关系的项目处理完、现用行为与历史读取保持、相关检查可复核。
 实际进程／CPU IPC等待服务器回执；原生Ray子进程收尾、模型质量／性能及物理RAM自动授予不因代码清理完成。
 后续新增研究能力按实际任务推进，不为了让重构一直运行而增加控制器、兼容壳或固定限制。
+
+
+<a id="native-lifecycle-call-support"></a>
+## 原生查询的支持声明按调用传入（2026-11-06）
+
+恢复连接后以PR90准确`3c8073167310127036d10dddf68300ef722fe503`另建工作树，保留并行IMLane本地IPC候选。
+确认Kalypso的attached入口会临时扩充共享模块的BACKENDS／RESIDENT，调用后再恢复。
+观察器在try之前构造，构造失败会留下注册；两个会话交错且先启动者先结束时，后结束者又会恢复扩大的名单。
+若Movie恰在该期间首次导入，还会持有那份错误集合。两个纯CPU反例在改前分别失败，原记录和准确fixture保留。
+
+`run_sequence`现从每次调用取得`supported_backends`和`resident_backends`，默认仍是原frozenset对象。
+Kalypso显式传自己的唯一标识，删除临时全局赋值及恢复，不新增注册器、锁、控制器或兼容层。
+Movie导出、默认名单、输入检查次序和错误文字保持；查询执行、完整结果计时、持久记录及关闭处理从原检查之后逐字相同。
+这两个声明是调用方代码的能力信息，不是新的CLI／JSON选项；模型、生成、C／R／B及作者调度不改。
+
+实现提交`5917bb6e2801e3ff7650e5ed194c038871f389df`经独立审查，修后三个针对性用例通过。
+三项功能测试归入已有`test_native_query_lifecycle.py`，不继续混在导入方向测试里。
+准确`2c929aeaf643b520f7df9f475b17786081eb2389`的85个不同CPU方法全部通过，耗时4.45秒，
+无失败／错误／跳过，1,074份code摘要逐项匹配；包括原Movie默认／错误、原生driver／计时、异常关闭及五树3,010条完整恢复。
+此前85项和针对性补跑不累计成新覆盖。
+
+审查随后发现本批迁移把测试类放在原`unittest.main`之后，模块发现可运行，直接文件入口却找不到新类。
+发布前将main移回文件末尾；准确`3b1ff7031b9cec3557c52bb6c54babe7e55c61d7`直接执行该类的三项通过，耗时0.29秒。
+所有33个类方法的语法树及生产代码与85项受测源相同，未为入口位置再次重跑全套。
+原直接入口错误与修正记录保留；85项和直接入口三项按各自源码解释，不写成88项整树回归。
+
+最后反查还发现`test_query_lifecycle.py`与native测试文件的时钟类完整重复，11项测试及fixture的12个方法语法树全部相同，异常场景两边也都有。
+保留纯CPU版本，直接删除native重复类及四个未用测试导入，不迁移或删减任何断言。
+最终准确`b742706426582d65a54f6d0a34ed6e3dbfd1322e`的74项全部通过，耗时4.36秒，无失败／错误／跳过；
+完整历史恢复仍在选择中，原85项记录保留，不把重复ID对应的相同断言当成额外覆盖。
+所有运行代码、测试及配置摘要与b742一致；采集表共1,074项，其中1,071项匹配提交，三份未提交的Markdown草稿另存原采样摘要。
+这些文档不参与行为测试；之后只更新说明与证据，不因此重复执行行为用例。
+
+[机器摘要](raw/native_lifecycle_call_support_checks.json)与[脱敏原始记录](raw/native_lifecycle_call_support_raw.json.gz)
+保存原两失败、准确fixture文本／摘要、最终74项完整选择与原code摘要、重复证明、直接入口原错和修后结果及审查来源。
+原两生命周期生产文件不在五份具名投影内，不新增无用归档或映射；旧原件与预期3,010摘要保持。
+可在对应源码用机器摘要`regression.selectors`列出的unittest模块重跑最终74项；
+直接入口为`PYTHONPATH=code python -B code/tests/experiments/test_native_query_lifecycle.py -q KalypsoBackendSupportTests`。
+
+本批生产Python净少3行、测试少54行；重点是去掉共享状态、重复测试和归并职责，不以行数宣称收益。
+按同口径当前核心56,289、src＋scripts合计109,651；较固定main为+2,198／−30,684，较3fd为−5,339／−39,994。
+并行IMLane新增单独保留，统计包含空行／注释，测试／文档／历史副本另计。
+本批没有服务器、真实Ray／IPC、模型、GPU或数据库运行，不能据此证明作者服务并发、质量或性能。
+此前准确4d的六项服务器检查正由测试会话核对已有回执，本批不重复派发；结果仍按其实际源码登记。

@@ -13,7 +13,7 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="refactor-completion-checklist"></a>
 ### 已处理清单与剩余事项
 
-本页覆盖外部执行核心、图像适配、观测与实验入口。下表保留402c并行基线材料，结合本轮全项目入口核对及各次准确受测源码，
+本页覆盖外部执行核心、图像适配、观测与实验入口。下表保留3c807并行IMLane本地IPC候选，结合本轮全项目入口核对及各次准确受测源码，
 不把外部 SemBench 工作负载等同于新的 PostgreSQL 语义算子接入，也不把历史通过数累加为当前整树资格。
 ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
@@ -21,7 +21,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 |---|---|---|
 | 引擎配置 | 中性规范从同步引擎移出；sync／async 分别构造和释放；五项可选 vLLM 参数省略时交引擎解析，实际上下文反馈给长度检查及身份 | 不能由一次 ready 记录推断所有模型、版本及图像路径 |
 | C／R／存储额度 | 普通／融合容量在同一中性模块定义；SDK、Movie／Session 的 R 默认 None；普通 async 与已支持 rolling 分开请求窗口、驻留、输入／结果字节和未消费结果槽；默认结果槽不再固定8 | 静态与低层整批仍要求其支持的有限声明；无声明的物理 RAM 自动授予、完整查询内存计量未实现 |
-| 查询与 Session | owner、普通 Filter 运行器、融合批、记录级关系数据、Session 提交与 flow 各有职责；共享扫描和端点占用投影只保留一份 | 真实模型重复关闭、取消／unknown 注入以及 resident／fused 完整组合未全覆盖 |
+| 查询与 Session | owner、普通Filter、融合批、记录级关系数据、Session提交与flow各有职责；原生比较的支持声明改为逐次传入，Kalypso不改写共享默认名单 | 真实模型重复关闭、取消／unknown 注入以及 resident／fused 完整组合未全覆盖 |
 | 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
@@ -50,13 +50,15 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
 
 核心 `code/src`（排除 experiments、baselines，保留 research）为56,289行，
-全部 src＋scripts Python 为109,636行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,198行／减少30,699行；对清理起点3fd分别减少5,339／40,009行。
-本轮相对402c宽口径少1,324行、测试少161行；采样实现从experiments归入观测使核心口径增加98行，搬移不算删除。
+全部 src＋scripts Python 为109,651行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,198行／减少30,684行；对清理起点3fd分别减少5,339／39,994行。
+本批相对3c807生产Python少3行、测试少54行；修复两类共享状态遗留，功能用例归位并删除11项完整重复测试。此前目录搬移不算删除，并行IMLane新增另按其源码核算。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
-[本轮全项目核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)
-记录准确743f的48个本地CPU方法与子例、完整历史恢复、首轮错误和服务器待验项。
+[原生生命周期逐次声明](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
+记录最终74项CPU回归、两种原失败、重复测试清理和直接入口验证；
+[此前全项目核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)
+继续解释其48方法、21子例及历史恢复。此前六项服务器检查由测试会话核对回执，本批未重复派发或转授其资格。
 [此前共享加载器](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)、
 [离线矩阵](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)与
 [容量及固定探针](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
