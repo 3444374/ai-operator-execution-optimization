@@ -235,13 +235,6 @@ class AsyncCoreModelActor:
                 call.value = self._receipt(call.identity, "failed", "AsyncInputNotAccepted")
                 call.confirmed = True
 
-    def run_core(self, rows, deadline, maximum, request_key):
-        return self._serve_core(rows, deadline, maximum, request_key)
-
-    def run_prepared_core(self, rows, deadline, maximum, request_key, generation, token_cost=None):
-        generation = self._prepared_generation(rows, generation, token_cost)
-        return self._serve_core(rows, deadline, maximum, request_key, generation)
-
     def _prepared_generation(self, rows, generation, token_cost):
         generation = GenerationSpec.from_dict(generation)
         from .lotus_chain_token_budget import audit_chain_call
@@ -264,7 +257,7 @@ class AsyncCoreModelActor:
         with self._condition:
             self._readers += 1
         try:
-            call, rejected = self._start_core(rows, deadline, maximum, request_key, generation, wait=False)
+            call, rejected = self._start_core(rows, deadline, maximum, request_key, generation)
             if rejected is not None:
                 return dict(status='rejected', result=json.loads(rejected))
             if call is None:
@@ -275,26 +268,20 @@ class AsyncCoreModelActor:
                 self._readers -= 1
                 self._condition.notify_all()
 
-    def submit_prepared_batch(self, payload):
-        return self._accept_prepared_batch(payload, wait=True)
-
     def try_submit_prepared_batch(self, payload):
-        return self._accept_prepared_batch(payload, wait=False)
-
-    def _accept_prepared_batch(self, payload, *, wait):
         if type(payload) is not bytes or len(payload) > self.limits.input_bytes:
             raise ValueError('bulk RPC exceeds its byte allowance')
         packet = json.loads(payload)
         with self._condition:
             self._readers += 1
         try:
-            return self._submit_prepared_batch(packet['calls'], packet['batch_key'], packet['deadline'], wait=wait)
+            return self._submit_prepared_batch(packet['calls'], packet['batch_key'], packet['deadline'])
         finally:
             with self._condition:
                 self._readers -= 1
                 self._condition.notify_all()
 
-    def _submit_prepared_batch(self, calls, batch_key, deadline, *, wait=True):
+    def _submit_prepared_batch(self, calls, batch_key, deadline):
         """One data RPC/IPC handoff. Results are polled and acknowledged per key."""
         from .lotus_chain_token_budget import audit_chain_call
         _deadline(deadline)
@@ -317,12 +304,9 @@ class AsyncCoreModelActor:
         with self._condition:
             slots = min(self.limits.max_inflight, self.limits.result_slots,
                         self.limits.result_bytes//self.limits.item_result_bytes)
-            while (len(self._held)+len(calls) > slots or batch_key[0] > self._session and self._held):
-                if self._closing or self._unhealthy or time.monotonic() >= deadline:
-                    break
-                if not wait:
+            if len(self._held)+len(calls) > slots or batch_key[0] > self._session and self._held:
+                if not (self._closing or self._unhealthy or time.monotonic() >= deadline):
                     return dict(status='backpressure')
-                self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
             expired = time.monotonic() >= deadline
             if self._closing or self._unhealthy or self.engine is None or expired or batch_key[0] < self._session:
                 return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
@@ -330,17 +314,11 @@ class AsyncCoreModelActor:
                                   expired=expired), call['maximum'])) for key, call in zip(keys, calls)])
             if any(key in self._held for key in keys):
                 raise ValueError('batch repeats an owned Core key')
-            while True:
-                live = [(key, call) for key, call in zip(keys, calls) if key not in self._early_cancels]
-                submitted = (self.engine.submit_batch([c['row'] for _, c in live], generation=generation,
-                    deadline_monotonic=deadline) if live else None)
-                if submitted is None or submitted.status != 'backpressure':
-                    break
-                if not wait:
-                    return dict(status='backpressure')
-                if self._closing or self._unhealthy or time.monotonic() >= deadline:
-                    break
-                self._condition.wait(min(.01, max(0, deadline-time.monotonic())))
+            live = [(key, call) for key, call in zip(keys, calls) if key not in self._early_cancels]
+            submitted = (self.engine.submit_batch([c['row'] for _, c in live], generation=generation,
+                deadline_monotonic=deadline) if live else None)
+            if submitted is not None and submitted.status == 'backpressure':
+                return dict(status='backpressure')
             if submitted is not None and submitted.status != 'queued':
                 return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
                     self._receipt({n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted'),
@@ -446,49 +424,7 @@ class AsyncCoreModelActor:
                     self._closed_pending[key] = True
             return payload
 
-    def _serve_core(self, rows, deadline, maximum, request_key, generation=None):
-        with self._condition:
-            self._readers += 1
-        try:
-            return self._run_core(rows, deadline, maximum, request_key, generation)
-        finally:
-            with self._condition:
-                self._readers -= 1
-                self._condition.notify_all()
-
-    def _run_core(self, rows, deadline, maximum, request_key, generation=None):
-        call, rejected = self._start_core(rows, deadline, maximum, request_key, generation, wait=True)
-        if rejected is not None:
-            return rejected
-        key = _request_key(request_key)
-        occurrence = call.identity
-        while True:
-            with self._condition:
-                self._collect()
-                expired = time.monotonic() >= deadline
-                if call.value is None and call.ticket is None:
-                    if call.aborted or expired or self._closing or self._unhealthy:
-                        call.value = self._receipt(occurrence, "failed",
-                            "DeadlineExceeded" if expired else "CancelledBeforeSubmission", expired=expired)
-                        call.confirmed = True
-                    else:
-                        self._submit(key, call, rows[0], deadline, generation)
-                if call.value is not None:
-                    encoded = self._bounded(call.value, maximum)
-                    call.delivered = True
-                    self._condition.notify_all()
-                    return encoded
-                if expired:
-                    call.aborted = True
-                if call.aborted and not call.abort_queued:
-                    call.abort_queued = self.engine.abort(call.ticket)
-                broken = self.engine.snapshot()["broken"] is not None
-                if broken:
-                    self._condition.wait(0.01)
-            if not broken:
-                self.engine.wait(0.01)
-
-    def _start_core(self, rows, deadline, maximum, request_key, generation, *, wait):
+    def _start_core(self, rows, deadline, maximum, request_key, generation):
         _deadline(deadline)
         key = _request_key(request_key)
         if type(rows) is not list or len(rows) != 1:
@@ -499,16 +435,12 @@ class AsyncCoreModelActor:
         with self._condition:
             slots = min(self.limits.max_inflight, self.limits.result_slots,
                         self.limits.result_bytes // self.limits.item_result_bytes)
-            # The Core releases a known terminal before its asynchronous ack
-            # necessarily reaches this threaded actor. A following session can
-            # already be valid; keep its finite handoff waiting for that ack.
-            while len(self._held) >= slots or (key[0] > self._session and self._held):
+            # The transport retries after the prior result's ACK reaches this actor.
+            if len(self._held) >= slots or (key[0] > self._session and self._held):
                 if self._closing or self._unhealthy or time.monotonic() >= deadline:
                     return None, self._bounded(self._receipt(occurrence, "failed", "CapacityUnavailable",
                         expired=time.monotonic() >= deadline), maximum)
-                if not wait:
-                    return None, None
-                self._condition.wait(min(0.01, max(0, deadline - time.monotonic())))
+                return None, None
             if self._closing or self._unhealthy or self.engine is None:
                 return None, self._bounded(self._receipt(occurrence, "failed", "AsyncOwnerUnavailable"), maximum)
             if key in self._held:
@@ -520,8 +452,8 @@ class AsyncCoreModelActor:
                 self._cancel_session = max(self._cancel_session, key[0])
                 self._early_cancels = {item for item in self._early_cancels if item[0] >= key[0]}
             call = self._held[key] = _Call(occurrence, aborted=key in self._early_cancels,
-                chain_call=generation is not None, batch_key=None if wait else key,
-                max_result_bytes=None if wait else maximum, deadline=None if wait else deadline)
+                chain_call=generation is not None, batch_key=key,
+                max_result_bytes=maximum, deadline=deadline)
             expired = time.monotonic() >= deadline
             if call.aborted or expired:
                 call.value = self._receipt(occurrence, "failed",
@@ -529,7 +461,7 @@ class AsyncCoreModelActor:
                 call.confirmed = True
             else:
                 self._submit(key, call, rows[0], deadline, generation)
-            if not wait and call.value is None and call.ticket is None:
+            if call.value is None and call.ticket is None:
                 # Explicit NOT_ACCEPTED: no model work owns this key yet.
                 del self._held[key]
                 return None, None

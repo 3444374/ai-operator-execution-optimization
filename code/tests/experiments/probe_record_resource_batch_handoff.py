@@ -112,8 +112,7 @@ owner=native.AsyncRecordsActorOwner.for_prepared(engine,generation,
     RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=3),limits=limits)
 coalesced_ACK=getattr(owner,'supports_prepared_batch_ack',False)
 owner.model_actor=SimpleNamespace(
-    submit_prepared_batch=Remote(actor.submit_prepared_batch,'submit'),
-    try_submit_prepared_batch=Remote(getattr(actor,'try_submit_prepared_batch',actor.submit_prepared_batch),'submit'),
+    try_submit_prepared_batch=Remote(actor.try_submit_prepared_batch,'submit'),
     poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'),
     snapshot=Remote(model_snapshot,'snapshot'))
 notified=threading.Event();received=[]

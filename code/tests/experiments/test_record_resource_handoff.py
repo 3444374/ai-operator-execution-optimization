@@ -324,28 +324,6 @@ class HandoffTests(unittest.TestCase):
             self.assertIs(value._receive(expected,results=True),expected)
         self.assertFalse(any(e['event']in ('socket_io','cpu_span_start')for e in self.events()))
 
-    def test_actor_return_preserves_original_arguments_and_payload_identity(self):
-        ipc,actor,base=self.actor();rows=[dict(fixtures.IDENTITY,messages_json=fixtures.SECRET)]
-        generation={'stop':[fixtures.SECRET]};result=fixtures.SECRET.encode();calls=[]
-        def native(instance,*args):calls.append((instance,args));return result
-        actor._readers=1
-        with patch.object(base,'_run_core',native,create=True):
-            self.assertIs(actor._run_core(rows,123,4096,[1,2],generation),result)
-        self.assertIs(calls[0][1][0],rows);self.assertIs(calls[0][1][-1],generation)
-        event=self.events()[-1];self.assertEqual(event['event'],'actor_result_return')
-        self.assertEqual(event['key'],{'session_id':1,'sequence':2});self.assertEqual(actor._readers,1)
-        self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
-
-    def test_actor_business_exception_and_invalid_key_are_not_replaced_or_logged(self):
-        ipc,actor,base=self.actor();business=LookupError(fixtures.SECRET);calls=[]
-        def native(instance,*args):calls.append(args);raise business
-        rows=iter([fixtures.SECRET])
-        with patch.object(base,'_run_core',native,create=True):
-            with self.assertRaises(LookupError)as caught:actor._run_core(rows,123,4096,[fixtures.SECRET,'invalid'])
-        self.assertIs(caught.exception,business);self.assertEqual(len(calls),1)
-        self.assertEqual(next(rows),fixtures.SECRET)
-        self.assertIsNone(self.events()[-1]['key']);self.assertNotIn(fixtures.SECRET,json.dumps(self.events()))
-
     def test_proved_actor_close_flushes_before_owner_kill_and_is_idempotent(self):
         ipc,actor,base=self.actor();proof=dict(schema='semloom.async_actor_quiescence.v1',confirmed=True,input_gate_closed=True,active_readers=0)
         report=dict(status='closed',producer_quiescence=proof);calls=[]
