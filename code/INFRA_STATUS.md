@@ -37,7 +37,8 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 5539 真实 Ray／模型功能 | 六项 Ray 检查通过；普通 async 与 rolling 各8条模型功能成功；输入／输出 token IDs 一致 | 未启用动态反馈，各组仍有3条漏判；不是当前整树、全质量或性能通过 |
 | b422 查询与提示检查 | 实际 CPU IPC 单项通过，168次合成提交、14个查询的完整行和消息核对 | 真实模型或调度提速 |
 | 87ce 与 d6abc 旧 RPC 退役检查 | 87ce 的16项为15通过、1项测试同步失败；d6abc 仅补同步，该单项一次通过，10项原断言不改 | 没有在 d6abc 重跑整套16项；首轮缺少的完整 close 字段仍未知 |
-| 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名；IMLane 已有隔离 shared 库构建，薄 driver／DBEnd／Arrow16 实际执行仍待验证 |
+| 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名 |
+| 798e 作者DuckDB＋IMLane软件CPU | 真实driver／DBEnd／Arrow16的PROCESS／THREAD均通过2000→120及外层进程／SHM清理 | 真实模型、特殊空选择／错误的作者二进制资格或性能 |
 
 [重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
 保存逐批源码、失败与 CPU／IPC 范围；[原生 Q3 复测](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
@@ -131,13 +132,18 @@ Q5 的单层与多层原算法、实际生成上限及预算失败保留均通�
 DuckDB＋作者IMLane现有[SQL／Arrow候选](integrations/imlane_duckdb/README.md)与独立shared库CPU构建；
 三件准确上游缺源恢复保留作者已有差异，原canonical源码／前缀不动。
 [本批准备记录](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md)区分22个本地Python合同方法、
-真实库构建与仍待验证的薄driver／DBEnd握手／实际Arrow16执行；没有启动GPU或给出模型资格。
+真实库构建与798e实际薄driver／DBEnd握手／Arrow16 PROCESS和THREAD执行通过；完整2000→120软件COUNT14、外层进程／SHM清理通过，无GPU或模型资格。
+作者默认4 executor／DuckDB16线程保留；IPC实测512MiB＋96KiB，原512MiB启动预算失败不改写。
+另准备[Ray公开HTTP绑定](src/baselines/text/frameworks/ray_data_http_sembench_native.py)，外部caller显式拥有服务；
+35个CPU替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；实际120＋1次POST，
+外层无强制信号、显式服务关闭和SHM检查通过。此profile不改原local-vLLM关闭缺口，SDK断开不等同物理退出，真实模型服务待验。
 
 随后67a4各执行一次120条：[复测与IPC诊断](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
 记录Daft正常收尾，Ray查询完成但原SHM失败；Ray随后人工回收不改原失败，两组均保留七个FN，不作稳定性能排名。
 完整actor日志确认Ray正常GC时杀死了本次EngineCore，之后仍有完整MPClient关闭回执；信号量创建者尚缺栈证据。
-现有IMLane作者源码／DBEnd-C/C++库与Arrow16.1可定位，但作者DuckDB未有已核对的构建产物，原生Q3接线待CPU资格。
-当前下一步为零模型CPU生命周期隔离，未改第三方库、安装或追加推理。
+最初IMLane库存不含作者DuckDB构建；后续实际CPU资格见上方新记录，模型仍待验。
+四例Ray零模型隔离已完成：spawn／显式关闭自动清理，GC／runtime各4KiB残留的创建栈及身份对应tqdm RLock；
+runtime例不隔离额外shutdown因果，原Q3缺创建栈。未改第三方库、安装或追加推理。
 
 [首测与修复记录](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)保留e0ec的120条Daft输出及进程收尾失败；
 模型质量仍为COUNT7／gold14，不作正常完整JCT。独立单查询进程以公共vLLM工厂／shutdown作用域关闭实际引擎，

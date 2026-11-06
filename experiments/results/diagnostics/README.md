@@ -20,7 +20,7 @@ main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 记录公共shutdown修复、CPU反例、结果可用时钟，以及Ray现有环境的CPU API通过／发布extra不符；修复后GPU待验。
 
 [DuckDB＋作者IMLane Q3准备](imlane_duckdb_q3_20261106/README.md)：真实作者缺源恢复与shared库构建、
-四列Arrow／native SQL接线和软件CPU资格；模型、driver与实际作者执行按报告各阶段解释。
+四列Arrow／native SQL及PROCESS／THREAD实际Arrow16软件CPU闭环；模型资格与特殊边界按报告解释。
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
