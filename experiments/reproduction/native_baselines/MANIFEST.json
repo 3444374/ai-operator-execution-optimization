@@ -957,7 +957,8 @@
         "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz",
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
-        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz"
+        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1435,6 +1436,11 @@
           "encoding": "gzip",
           "decoded_bytes": 12328,
           "archive_sha256": "5e1955eeba5bb7640733eb3aa1835695363bdf12962e9db7d7c39f460f6198b7"
+        },
+        "code/src/observability/profiling/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 59,
+          "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
         }
       }
     },
@@ -2420,7 +2426,8 @@
         "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz",
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
-        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz"
+        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2898,6 +2905,11 @@
           "encoding": "gzip",
           "decoded_bytes": 12328,
           "archive_sha256": "5e1955eeba5bb7640733eb3aa1835695363bdf12962e9db7d7c39f460f6198b7"
+        },
+        "code/src/observability/profiling/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 59,
+          "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
         }
       }
     },
@@ -3893,7 +3905,8 @@
         "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz",
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
-        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz"
+        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4371,6 +4384,11 @@
           "encoding": "gzip",
           "decoded_bytes": 12328,
           "archive_sha256": "5e1955eeba5bb7640733eb3aa1835695363bdf12962e9db7d7c39f460f6198b7"
+        },
+        "code/src/observability/profiling/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 59,
+          "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
         }
       }
     },
@@ -5368,7 +5386,8 @@
         "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz",
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
-        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz"
+        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5851,6 +5870,11 @@
           "encoding": "gzip",
           "decoded_bytes": 12328,
           "archive_sha256": "5e1955eeba5bb7640733eb3aa1835695363bdf12962e9db7d7c39f460f6198b7"
+        },
+        "code/src/observability/profiling/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 59,
+          "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
         }
       }
     },
@@ -6853,7 +6877,8 @@
         "code/src/baselines/common/gate.py": "historical_sources/a0ce689b/code/src/baselines/common/gate.py.gz",
         "code/src/observability/profiling/config.py": "historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz",
         "code/src/observability/profiling/schema.py": "historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz",
-        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz"
+        "code/src/scheduling/core/lifecycle.py": "historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz",
+        "code/src/observability/profiling/__init__.py": "historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7336,6 +7361,11 @@
           "encoding": "gzip",
           "decoded_bytes": 12328,
           "archive_sha256": "5e1955eeba5bb7640733eb3aa1835695363bdf12962e9db7d7c39f460f6198b7"
+        },
+        "code/src/observability/profiling/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 59,
+          "archive_sha256": "d1d0b3c2d50e7593d04c7b35712c2d8e08d6c8ec5eda6edaa691f702d357279c"
         }
       }
     }

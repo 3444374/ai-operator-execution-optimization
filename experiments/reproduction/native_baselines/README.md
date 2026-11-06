@@ -7,6 +7,7 @@
 ## 旧 PG 画像应用的来源
 
 旧 PG profiler 的 Ray 提交、调度组装、Arrow 封装、参数配置和 CSV schema 已退出维护目录；
+最后仅含说明文字的包文件一并退役，不保留旧导入空壳。
 原 CSV 写入退役后，专用的请求轨迹模型及 `MonotonicEpochClock` 也不再提供当前导入。
 两份专测随对应实现退役，架构测试继续检查实际 Core 默认导入。
 共享的 `SubmissionLifecycleEvent`、模型及 Runtime Ray 适配保持；
@@ -15,8 +16,9 @@
 准确公开版本 `a0ce689bfe564438c25ecdc537f73aabb6550724` 的
 [配置原件](historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz)、
 [CSV 字段原件](historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz)与
-[请求轨迹原件](historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz)各保存一次。
-五份投影只为这三份原件增加十五条来源及 gzip 格式记录，原预期摘要、投影身份、来源版本和已有映射保持。
+[请求轨迹原件](historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz)各保存一次，
+另保存准确的[包说明原件](historical_sources/a0ce689b/code/src/observability/profiling/__init__.py.gz)。
+五份投影只为这四份原件增加二十条来源及 gzip 格式记录，原预期摘要、投影身份、来源版本和已有映射保持。
 `ray.py` 的五条读取继续使用原有 `9652108d` 压缩件；两个后拆出的 helper 与两份专测未被这些投影读取，
 可从[准确 a0ce 完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/a0ce689bfe564438c25ecdc537f73aabb6550724)按原路径恢复，不重复保存压缩副本。
 
