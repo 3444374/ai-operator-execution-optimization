@@ -1,5 +1,8 @@
 # SAOR native-system matched formal 授权 artifact 模板（2026-08-19）
 
+历史模板：旧执行和配置接线已退役，现用离线汇总不签发许可。
+恢复来源见[完整旧机制说明](../../../reproduction/native_baselines/README.md#retired-native-system-matrix)，以下原模板与原研究身份保留。
+
 > **性质**：`run_saor_native_system_matched.py` 非 rehearsal 运行所要求的
 > `--formal-authorization` JSON 的签发模板。**本文件本身不是授权**——字段值在
 > 合同分支 merge 进 main 之后、由签发人（项目开发者）按下述步骤计算并独立落盘，
