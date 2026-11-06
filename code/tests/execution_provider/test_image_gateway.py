@@ -56,13 +56,14 @@ def service(mode="staged", actors=None, *, max_jobs=1, execution_factory=build_i
         worker = threading.Thread(target=run)
         worker.start()
         assert ready.wait(3)
-        if not gateways:
-            raise failures[0]
         try:
+            if failures:
+                raise failures[0]
             yield path, gateways[0]
         finally:
             stop.set()
-            gateways[0].request_stop()
+            if gateways:
+                gateways[0].request_stop()
             worker.join(5)
             assert not worker.is_alive()
         if failures:

@@ -92,3 +92,12 @@ class SharedQueryGatewayTests(unittest.TestCase):
                 factory = serve.call_args.kwargs["incremental_execution_factory"]
                 self.assertIs(factory.func, build_fixed_model_execution)
                 self.assertIs(factory.keywords["allocate_job"], allocate)
+
+        for policy_args in ([], ["--job-compute-policy", "equal-share"]):
+            with self.subTest(image_policy=policy_args), patch.object(gateway.server, "main", return_value=0) as serve:
+                self.assertEqual(main(["--socket", "/tmp/unused", "--image-config", "fixture.json",
+                                       "--max-active-jobs", "2", *policy_args]), 0)
+                self.assertNotIn("--job-compute-policy", serve.call_args.args[0])
+                factory = serve.call_args.kwargs["incremental_execution_factory"]
+                self.assertIs(factory.func, gateway.build_image_execution)
+                self.assertIs(factory.keywords["allocate_job"], equal_share_job_budget)

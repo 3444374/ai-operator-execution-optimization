@@ -54,7 +54,7 @@ def main(argv=None, *, incremental_execution_factory=None, **options):
         remaining = forwarded
     elif factory is None:
         if args.image_config:
-            factory = partial(build_image_execution, allocate_job=shared_compute_job_budget)
+            factory = partial(build_image_execution, allocate_job=allocate)
         elif args.incremental_map:
             factory = partial(build_fixed_model_execution, allocate_job=allocate)
     return server.main(remaining, incremental_execution_factory=factory, **options)
