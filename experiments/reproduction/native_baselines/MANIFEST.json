@@ -926,7 +926,8 @@
         "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz",
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
-        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz"
+        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1249,6 +1250,11 @@
           "encoding": "gzip",
           "decoded_bytes": 979,
           "archive_sha256": "7455e4b76b7219aac80d4fe934a96748fb6e4a6aec718cc438d3da9e2b9724e3"
+        },
+        "code/src/modalities/image/staged_execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21290,
+          "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
         }
       }
     },
@@ -2203,7 +2209,8 @@
         "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz",
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
-        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz"
+        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2526,6 +2533,11 @@
           "encoding": "gzip",
           "decoded_bytes": 979,
           "archive_sha256": "7455e4b76b7219aac80d4fe934a96748fb6e4a6aec718cc438d3da9e2b9724e3"
+        },
+        "code/src/modalities/image/staged_execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21290,
+          "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
         }
       }
     },
@@ -3490,7 +3502,8 @@
         "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz",
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
-        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz"
+        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3813,6 +3826,11 @@
           "encoding": "gzip",
           "decoded_bytes": 979,
           "archive_sha256": "7455e4b76b7219aac80d4fe934a96748fb6e4a6aec718cc438d3da9e2b9724e3"
+        },
+        "code/src/modalities/image/staged_execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21290,
+          "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
         }
       }
     },
@@ -4779,7 +4797,8 @@
         "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz",
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
-        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz"
+        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5107,6 +5126,11 @@
           "encoding": "gzip",
           "decoded_bytes": 979,
           "archive_sha256": "7455e4b76b7219aac80d4fe934a96748fb6e4a6aec718cc438d3da9e2b9724e3"
+        },
+        "code/src/modalities/image/staged_execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21290,
+          "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
         }
       }
     },
@@ -6077,7 +6101,8 @@
         "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz",
         "code/scripts/profiling/gateway_isolation_probe.py": "historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz",
         "code/tests/serving/test_async_engine_process.py": "historical_sources/6fc10c21/code/tests/serving/test_async_engine_process.py.gz",
-        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz"
+        "code/src/serving/backends/__init__.py": "historical_sources/e5e65fdb/code/src/serving/backends/__init__.py.gz",
+        "code/src/modalities/image/staged_execution.py": "historical_sources/e5e65fdb/code/src/modalities/image/staged_execution.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6400,6 +6425,11 @@
           "encoding": "gzip",
           "decoded_bytes": 979,
           "archive_sha256": "7455e4b76b7219aac80d4fe934a96748fb6e4a6aec718cc438d3da9e2b9724e3"
+        },
+        "code/src/modalities/image/staged_execution.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21290,
+          "archive_sha256": "70a8d580eef0950eb7419d67bf13c24f7204cfe8508ca7d891791a279f3325c5"
         }
       }
     }
