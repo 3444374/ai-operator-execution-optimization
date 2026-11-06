@@ -5,12 +5,7 @@ from __future__ import annotations
 import math
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Literal
-
-from ..core.models import AdmissionObservation
-
-if TYPE_CHECKING:
-    from .feedback_work import SupplyState
+from typing import Literal
 
 
 @dataclass(frozen=True)

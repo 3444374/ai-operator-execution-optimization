@@ -15,7 +15,7 @@ import time
 from dataclasses import asdict, replace
 from statistics import median
 from pathlib import Path
-from typing import Callable, Mapping, Protocol
+from typing import Mapping, Protocol
 
 from .linux_procfs import sample_tick, process_start_time_ticks
 from src.infrastructure.redact import redact_text

@@ -4,11 +4,9 @@ Local comparisons are operational evidence, not a causal hardware cost model.
 """
 from copy import deepcopy
 from dataclasses import asdict
-import math
 
 from .feedback_work import _local_pair_evidence
 from .resource_probe import request_supply_blocked
-from ..runtime.calibration import select_near_peak
 
 
 class ResourceRequestController:

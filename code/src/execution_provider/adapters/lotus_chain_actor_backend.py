@@ -11,7 +11,7 @@ import asyncio
 import json
 import math
 
-from src.scheduling.core.session_contract import Acceptance, BatchSubmission, TaskKey, Terminal
+from src.scheduling.core.session_contract import Acceptance, TaskKey, Terminal
 from src.serving.backends.vllm_protocol import GenerationSpec, IDENTITY_FIELDS, _prepared
 from .records_model_adapter import _check_result_capacity
 from .records_transport import _RecordTransport, _await_result
