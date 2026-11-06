@@ -863,3 +863,14 @@ v6协议与旧观察probe。IncrementalExecution与NativeTask保留现有Core／
 本批17条相关读取以及IMLane导入修正的5条读取分别核对原摘要，原expected与投影身份不改。
 [具体职责、输出和检查范围](../../results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
 不代表整套历史构造或真实模型执行。
+
+<a id="arrival-replay-research-sources"></a>
+## 到达回放、等待与B原型的历史来源
+
+维护路径将ArrivalReplayBatcher与等待／B原型归入research/data_organization；生产组批类型仍在原模块。
+旧调度包的研究导出退出，旧导入、pickle及测试可从[准确af63来源](https://github.com/3444374/ai-operator-execution-optimization/tree/af63c0e56dab8cbd3f13649375bffa8f6eb92422)恢复。
+五份具名投影原先直接读取的两模块保存为
+[flush原件](historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz)和
+[token_budget原件](historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz)，只加十条来源／格式。
+原batching及顶层包继续使用已有准确来源；原expected、投影身份及旧映射不改，二十条相关读源前后匹配。
+研究算法继续维护，旧结果及失败保留，没有重跑完整历史树、模型或服务。

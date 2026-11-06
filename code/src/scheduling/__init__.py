@@ -14,14 +14,9 @@ from typing import Any
 
 _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
     ".organization.batching": (
-        "ArrivalReplayBatcher",
-        "FlushTraceEvent",
         "PendingBatch",
         "PendingBatchBuilder",
-        "ReplayClock",
-        "ReplayServiceObservation",
         "RowArrival",
-        "SystemReplayClock",
     ),
     ".submission_control.adaptive": (
         "AimdAdmissionController",
@@ -31,15 +26,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "DynamicAdmissionGate",
         "StaticAdmissionController",
         "WindowController",
-    ),
-    ".submission_control.flush": (
-        "FixedTimeoutFlush",
-        "FlushDecision",
-        "FlushObservation",
-        "FlushWindow",
-        "ImmediateFlush",
-        "QueueAdaptiveFlush",
-        "SloAwareEwmaFlush",
     ),
     ".core.errors": ("EndpointCapacityUnavailable",),
     ".core.control": ("CapacityArm",),
@@ -101,13 +87,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "CapacityDecision",
     ),
     ".core.topology": ("healthy_endpoints", "schedulable_endpoints"),
-    ".organization.token_budget": (
-        "ArrivalRateEwma",
-        "ServiceQuantumTokenBudgetController",
-        "StaticTokenBudgetController",
-        "TokenBudgetDecision",
-        "TokenBudgetObservation",
-    ),
 }
 
 _EXPORTS = {name: module for module, names in _EXPORT_GROUPS.items() for name in names}

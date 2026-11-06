@@ -12,7 +12,7 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.organization.token_budget import (  # noqa: E402
+from src.research.data_organization.token_budget import (  # noqa: E402
     ArrivalRateEwma,
     ServiceQuantumTokenBudgetController,
     StaticTokenBudgetController,
