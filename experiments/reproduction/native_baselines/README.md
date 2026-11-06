@@ -521,3 +521,14 @@ SDK、driver 和 limits 继续取已有 `historical_sources/5ff54bfe/` 原件，
 [批记账 CLI 原件](historical_sources/6ec2dde0/code/scripts/profiling/request_budget_batch_probe.py.gz)。
 只增加十条来源及 gzip 格式记录；原 3,010 条文件摘要、五个投影身份、原来源版本和已有映射保持。
 旧测量数据、失败记录与离线复算脚本继续保留；本次不重跑旧性能测量。
+
+
+<a id="dispatch-close-source"></a>
+## 连接关闭整理前的派发源码
+
+`session_dispatch.py` 的空输入／坏帧路径删除重复关闭，连接仍由原 `finally` 负责；版本派发、返回和错误处理不变。
+同处不可达的 `return` 与固定端点适配器中未使用、未列入 `__all__` 的常量导入一并删除；实际 v3／v4／v5 会话和固定端点执行器保留。
+派发原件来自完整 `6ec2dde0e626c72f53b38a4f46222a4801f865f1`，2,171字节，SHA-256 为
+`79ece85a85eb7e04e635f35d0028d452842314400946f2d4ca0b2e62f002af48`，保存于
+[压缩原件](historical_sources/6ec2dde0/code/src/execution_provider/session_dispatch.py.gz)。
+五份投影仅追加该原件的5条读取及gzip格式路由，原文件摘要、身份、来源版本和已有映射保持；固定端点适配器继续读取原有5ff来源。

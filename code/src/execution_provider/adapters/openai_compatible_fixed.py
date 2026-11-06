@@ -12,7 +12,6 @@ from urllib import parse
 from .model_config import (
     FixedModelConfig as FixedModelConfig,
     load_fixed_model_config as load_fixed_model_config,
-    MAX_MODEL_RESPONSE_BYTES as MAX_MODEL_RESPONSE_BYTES,
     VLLM_CHOICE_FORMAT as VLLM_CHOICE_FORMAT,
 )
 from ..generation_profile import GenerationProfile

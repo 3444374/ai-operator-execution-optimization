@@ -27,10 +27,8 @@ def run_session(
         try:
             opened = read_frame(connection) if open_message is None else open_message
         except (ProtocolError, ValueError, RecursionError):
-            connection.close()
             return
         if opened is None:
-            connection.close()
             return
         protocol_version = opened.get("protocol_version")
         if (
@@ -53,7 +51,6 @@ def run_session(
                 disconnect_on_task=disconnect_on_task,
                 completion_fixture=completion_fixture,
             )
-            return
         run_recording_session(
             connection,
             open_message=opened,
