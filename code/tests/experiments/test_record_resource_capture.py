@@ -366,7 +366,7 @@ class CaptureTests(unittest.TestCase):
     def test_model_hook_preserves_requests_generation_and_does_not_retry_profiler(self):
         extras={}
         names=['vllm.engine','vllm.engine.arg_utils','vllm.v1.engine','vllm.v1.engine.async_llm',
-               'src.serving.backends.vllm_async_engine','src.serving.backends.vllm_engine',
+               'src.serving.backends.vllm_async_engine','src.serving.backends.vllm_protocol',
                'src.observability','src.observability.native_model_api_trace']
         for name in names:
             m=ModuleType(name);m.__path__=[];extras[name]=m
@@ -383,7 +383,7 @@ class CaptureTests(unittest.TestCase):
         extras['vllm.engine.arg_utils'].AsyncEngineArgs=Args
         extras['vllm.v1.engine.async_llm'].AsyncLLM=type('AsyncLLM',(),{})
         extras['src.serving.backends.vllm_async_engine'].VllmAsyncEngine=Engine
-        common=extras['src.serving.backends.vllm_engine'];common._prepared=lambda rows:([rows[0]],[])
+        common=extras['src.serving.backends.vllm_protocol'];common._prepared=lambda rows:([rows[0]],[])
         common.result_from_output=lambda identity,output,*a,**k:dict(engine_uid='native-engine')
         extras['src.observability.native_model_api_trace'].install=lambda *a,**k:None
         attempts=[]

@@ -183,6 +183,10 @@ CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU。Ray 检�
 [纯 CPU 转换检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
 保留旧接线缺少事件的反例，以及原返回值和异常不变的核对。
 
+full 记录观察器的 `install_model` 同样接入上述协议转换，记录
+`native_api_native_final_observed`。[轻量用例](../../../tests/observability/test_native_trace_conversion.py)
+核对 stop／abort 事件、原返回值和异常对象；CUDA／NVTX 接点未改，当前接线的真实模型运行尚待核对。
+
 按已批准功能额度制备输入。例如每种 packing 设置使用原 Q1 前两行，两段共四次额度：
 
 ```sh

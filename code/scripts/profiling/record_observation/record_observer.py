@@ -560,7 +560,7 @@ def install_model():
     install_transport(child=True)
     from vllm.engine.arg_utils import AsyncEngineArgs
     from src.serving.backends.vllm_async_engine import VllmAsyncEngine
-    from src.serving.backends import vllm_engine as common
+    from src.serving.backends import vllm_protocol as common
     from src.observability.native_model_api_trace import install as install_native_api
     from vllm.v1.engine.async_llm import AsyncLLM
     import torch
