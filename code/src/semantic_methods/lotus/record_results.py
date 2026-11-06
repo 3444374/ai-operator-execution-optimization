@@ -93,6 +93,10 @@ class ChainBatchResults:
     def request_batches(self):
         return tuple(deepcopy(batch) for batch in self._request_batches.values())
 
+    @property
+    def request_batch_count(self):
+        return len(self._request_batches)
+
     def _record_request_batches(self, envelope):
         for batch in envelope.get('request_batches', []):
             batch_id, calls = batch['request_batch_id'], batch['call_ids']

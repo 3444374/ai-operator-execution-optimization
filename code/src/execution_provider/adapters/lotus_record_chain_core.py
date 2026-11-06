@@ -382,7 +382,7 @@ class SemLoomRecordChainCore:
     @property
     def request_batches(self):
         """Logical groups declared for the synchronous native batch API."""
-        return [deepcopy(batch) for result in self._accountants.values()
+        return [batch for result in self._accountants.values()
                 for batch in result.request_batches]
 
     @property
@@ -644,7 +644,8 @@ class SemLoomRecordChainCore:
             self._active.last_close_report = self.last_close_report
         if self.prepared_batching is not None:
             self.last_close_report['prepared_batching'] = asdict(self.prepared_batching)
-            self.last_close_report['request_batch_count'] = len(self.request_batches)
+            self.last_close_report['request_batch_count'] = sum(
+                result.request_batch_count for result in self._accountants.values())
             self.last_close_report['cross_read_token_batches'] = self._streaming_tokens
             if self._streaming_tokens:
                 self.last_close_report.update(

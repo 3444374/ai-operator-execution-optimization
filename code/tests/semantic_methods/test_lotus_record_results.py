@@ -221,6 +221,32 @@ class ResultContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit.verify_success(source_exhausted=True)
 
+    def test_request_batch_snapshots_keep_membership_and_stable_counts(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
+
+        audit = self.audit()
+        self.assertEqual(audit.request_batch_count, 0)
+        value = envelope(self.records, self.chain)
+        value['request_batches'] = [
+            dict(request_batch_id=stage.stage_id, call_ids=[
+                call['call_id'] for call in value['calls']
+                if call['algorithm_stage'] == stage.stage_id])
+            for stage in self.chain.stages
+        ]
+        audit.accept(value)
+        audit.recover(value)
+        self.assertEqual(audit.request_batch_count, 2)
+
+        owner = object.__new__(SemLoomRecordChainCore)
+        owner._accountants = {tuple(stage.stage_id for stage in self.chain.stages): audit}
+        snapshot = owner.request_batches
+        self.assertIsInstance(snapshot, list)
+        self.assertEqual(snapshot, value['request_batches'])
+        snapshot[0]['call_ids'].clear()
+        snapshot.clear()
+        self.assertEqual(owner.request_batches, value['request_batches'])
+        self.assertEqual(audit.request_batch_count, 2)
+
     def test_cleanup_errors_and_seeded_parent_mismatch_remain_authoritative(self):
         parents = {(r.row_id, r.source_position): ("prior-" + r.row_id,) for r in self.records}
         audit = self.audit(initial_parents=parents)
