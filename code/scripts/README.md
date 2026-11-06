@@ -95,7 +95,8 @@ CLI 只允许四种已接通对照；Kalypso Map／MMQA／Medical 不设替代�
 比较时冻结同一输入摘要、模型／有效 dtype、生成参数、DEFAULT 格式与生命周期。
 冷查询的 CSV 扫描及身份检查、启动、算子解释／关闭、原关系后处理全部计入 `query_seconds`，原评价另计；
 它不能与旧普通 records 图的其他时钟口径直接混算。新入口没有隐含预热或重试。
-上游原 LM 上限为8192且无换行 stop；若选择该原始配置，应对每条同题 baseline 一致声明。
+上游原 LM 上限为8192且无换行 stop；本补充入口三种 scenario 的省略生成项现均按该值解析，显式值保持。
+旧补充 Movie／MMQA 的省略项行为随此修正改变；公共类型及旧普通 Filter 的默认值不变。
 旧短 Filter 的8 token／换行 stop 不可直接移给 JSON Extract，也不能把更改生成配置后的差异归因于执行加速。
 只有显式上下文才提前做上限检查；未指定的实际容量与物理退出仍由模型 ready 和外部 supervisor 验证。
 

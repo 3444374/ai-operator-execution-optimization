@@ -192,7 +192,7 @@ class MedicalOriginalBindingTests(unittest.TestCase):
             execution_id='medical-q10', model_name='fixture',
             generation=GenerationSpec(max_tokens=8192, stop=()), scale_factor=25)
 
-    def test_medical_generation_defaults_and_explicit_overrides_keep_legacy_defaults(self):
+    def test_original_query_generation_defaults_and_explicit_overrides(self):
         config = dict(schema='semloom.sembench_text_run.v1', scenario='medical', query='10',
             query_id='medical-q10', backend='lotus-native', model_name='fixture', generation={},
             engine=dict(model_path='/tmp/model', model_python='/tmp/python', driver_python='/tmp/python',
@@ -209,12 +209,15 @@ class MedicalOriginalBindingTests(unittest.TestCase):
                     self.assertEqual(generation.max_tokens, expected_tokens)
                     self.assertEqual(generation.stop, expected_stop)
                     self.assertEqual(generation.temperature, supplied.get('temperature', 0.0))
-            config['generation'] = {}
             for scenario in ('movie', 'mmqa'):
                 config['scenario'] = scenario
-                path.write_text(json.dumps(config))
-                _, _, generation, _ = entry.configuration(path)
-                self.assertEqual(generation, GenerationSpec())
+                for supplied, expected in (({}, GenerationSpec(max_tokens=8192, stop=())),
+                        ({'max_tokens': 8, 'stop': ['\n']}, GenerationSpec())):
+                    with self.subTest(scenario=scenario, generation=supplied):
+                        config['generation'] = supplied
+                        path.write_text(json.dumps(config))
+                        _, _, generation, _ = entry.configuration(path)
+                        self.assertEqual(generation, expected)
 
 
 if __name__ == '__main__':

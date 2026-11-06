@@ -35,9 +35,9 @@ def configuration(path):
         raise ValueError('an explicit single-operator SemBench text configuration is required')
     engine = EngineSpec.from_dict(value['engine'])
     generation_config = value['generation']
-    if value['scenario'] == 'medical' and isinstance(generation_config, dict):
-        # Original GenericLotusRunner uses 8192 tokens and no stop sequence.
-        # Retain explicit experiment overrides and the older entry defaults.
+    if isinstance(generation_config, dict):
+        # The original SemBench runner uses 8192 tokens and no stop sequence.
+        # Short Filter sampling remains an explicit experiment override.
         generation_config = {'max_tokens': 8192, 'stop': [], **generation_config}
     generation = GenerationSpec.from_dict(generation_config)
     resources = RecordsResources(**value['resources'])

@@ -91,7 +91,8 @@ Q2b 另在原零行 Extract 返回边界保留声明列，修复空 Join 后最�
 [Medical Q1／Q4／Q10](src/baselines/README.md#sembench-medical-text)新增原 CSV、原查询和原评价接线，
 复用四种既有普通 F/M/E 文本 baseline；准备仅复制已有三份作者 CSV，不运行图音 setup 或重采样。
 完整11112名患者资产有1200条症状，三题每 baseline 共3600次；原 sf25 只有1条症状，不按患者数猜调用量。
-原评价源码需要 Python 3.12。Medical 生成缺项沿用原8192 token／无 stop，显式值及旧 Movie／MMQA 默认保持。
+原评价源码需要 Python 3.12。补充 Movie／MMQA／Medical 生成缺项均沿用原8192 token／无 stop，显式值保持；
+旧补充 Movie／MMQA 的省略项解析已修正，公共类型与旧普通 Filter 默认不变，历史结果不改写。
 [MMQA Q5 聚合](src/baselines/README.md#sembench-mmqa-aggregation)另走原生 LOTUS 整查询服务入口，
 保持原分层 `sem_agg`，不放进单个 F/M/E 的记录边界。sf25 原筛选16行，正文12403个 UTF-8 字节；
 仅首层单个请求时总调用精确为1，多层总量依赖真实摘要长度，按既有有限预算逐 POST 消费。

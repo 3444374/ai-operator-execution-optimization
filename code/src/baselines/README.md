@@ -180,7 +180,8 @@ Kalypso 当前没有 Medical 绑定，留空。`scale_factor` 表示患者规模
 该诊断切片的 Q1 空集对空集可被原评价记为1，Q4 保留 NaN；不能把这些结果当作模型质量。
 原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。
 `check` 读取原关系并核算实际调用数；所有 baseline 的模型、生成和输入身份须一致。
-Medical 配置省略生成项时采用原 LM 的8192 token／无 stop，显式值保留；旧 Movie／MMQA 默认不变。
+补充文本入口的 Movie／MMQA／Medical 配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
+这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
 
 <a id="sembench-mmqa-aggregation"></a>
 ### MMQA Q5 原分层聚合
