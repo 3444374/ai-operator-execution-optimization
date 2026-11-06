@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-06：中性容量与固定探针、连接关闭整理
+
+[准确源码与组合检查](diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)登记9521的39项CPU通过、一次五树3010恢复，以及改前1方法2子例的重复关闭失败。
+两个固定套件退役，容量定义归入现有模块；现用协议、共享组件、旧结果与原身份保留。
+九对象真实Ray方法另待服务器，不转授本地通过；代码量区分本批删除和并行基线新增，不作性能判断。
+
 ## 2026-11-06：Ray四例零模型关闭诊断与独立HTTP候选
 
 [四例原件摘要](diagnostics/native_sembench_q3_20261106/ray_lifecycle_cpu.json)保存准确e566：

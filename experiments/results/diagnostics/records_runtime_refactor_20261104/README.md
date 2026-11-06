@@ -3,7 +3,7 @@
 本记录对应 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的执行工程整理。
 本页按各批源码与运行身份保留过程；早期结构表不表示最新接入状态。旧 PG／HTTP 实验接线已按
 [现用入口整理](../runtime_entry_cleanup_20261105/README.md)退役；当前实现与未完成项见
-[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[旧 LOTUS 残留处理](#retired-lotus-http-methods)。
+[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
 基准为 PR #90 的 `bfb9100e2f3fa090fdf2304359979b853236e06a`，tree 为
 `c8a86b0bcff8bf0161dcbbd005bc2660060d228e`。该 PR 当时为 Draft，未合并。
 起始切片当时只做 CPU 检查、等待审查与整合；后续发布和实机结果按各批自己的源码解释，不提供跨版本的模型性能结论。
@@ -3521,3 +3521,57 @@ Python 物理行含注释和空行；核心为 `code/src` 排除 experiments、b
 CPU 复现锁的创建栈指向 tqdm→multiprocessing.RLock，Ray 的子进程／tracker kill 先于关闭回调，子进程退出码为-9且未注销。
 原Q3锁没有创建栈；第四例也先发生GC再调用ray.shutdown，不能单独归因runtime关闭。两项原清理失败与人工回收分别保存，不改报自动通过。
 PR保持草稿，不合并main；本清单不把已整理模块、未实现功能和待验证环境混为全部完成。
+
+
+<a id="neutral-capacity-and-fixed-probes"></a>
+## 中性容量、连接关闭和固定探针清理（2026-11-06）
+
+基于已发布6ec2，容量源码411b804cefc6fc46ac7b36c269e2257c1f3fce75将`CoreChainCapacity`从查询owner移到现有
+`records_capacity.py`，与`CoreRecordsCapacity`共用同种字段检查；字段、默认、limits及旧公开类型导入保持。
+查询owner由983变为953行，容量模块相应增加；两文件合计只少2行，不将移动30行说成删除。
+查询owner整类行为未改，普通请求额度、融合单任务／阶段工作量、独立存储和方法预算仍各自负责。
+新类型的实际定义位置参与今后的序列化，旧owner符号继续取得同一对象；原五条历史读取保持。
+203c2b115b5b484b0c98acb170c138562956babd另复用关闭入口已确定的批ACK交接模式，删除第二次读取，
+没有改动未知结果、在途请求、结果恢复和actor释放顺序。
+
+旧内容的调用反查区分共享组件与固定编排。源码20b42f84571ab2e276376697b306ccdd1c65f36b删除四文件、共191行Python：
+`code/src/experiments/mapped_core_probe.py`、`code/src/experiments/request_budget_probe.py`，
+以及`code/scripts/profiling/`内的`mapped_core_probe.py`、`request_budget_batch_probe.py`。
+它们只有固定对照／SQLite计时编排，没有当前生产调用；保留的Map观察、映射计数、真实预算与unknown处理未改。
+其中`SyntheticTable`／`WORK`仍被执行测试使用，`analyze/_distribution`仍有两份历史复算消费者，未按旧文件名整体删除。
+[准确恢复](../../../reproduction/native_baselines/README.md#retired-fixed-local-probe-suites)说明两个旧CLI的压缩原件与十条历史路由，原源实现继续使用既有原件。
+
+9521a971af4c1e01a4f5bd59d88bc7c7e9fab572再清理provider派发：空输入／坏帧由原finally关闭一次，
+删除前两个分支会先关闭、随后finally再次关闭；同处不可达return和固定端点适配器的未用常量导入删除。
+版本选择、正常返回、实际HTTP请求和unknown规则保留，未将这些当前服务当成废弃胶水。
+新软件用例改前选1个方法、两个子例均复现重复关闭，不记作两个方法；原失败保留。
+派发的2,171字节原件及新增5条历史读取见[关闭前源码](../../../reproduction/native_baselines/README.md#dispatch-close-source)。
+现用v3／v4／v5与独立v6协议仍有实际服务和公开导入用途，不能只因名称或转发形式删除。
+
+### 最终组合与实际范围
+
+保留94367ea86197178055e8602a66fe86f0db44e965的并行原生后端准备／CPU结果，生产文件没有冲突。
+准确9521的最终39个不同CPU方法全部通过，无错误／失败／跳过，7.353秒，1,076份code摘要匹配提交且运行中不变。
+覆盖容量与Session预检、5个纯对象ACK关闭案例、保留的探针和预算fixture、新连接案例及一次完整历史恢复。
+五树3010份摘要实际恢复；原expected、投影身份和版本不改，新增路由仅为两个CLI和派发原件共15条。
+没有运行UDS监听、spawn组件、实际Ray或模型；原11／5／22／38选择与原2项套件选择保留，但不再累加覆盖。
+[紧凑摘要](raw/neutral_capacity_probe_retirement_checks.json)与[公开记录](raw/neutral_capacity_probe_retirement_raw.json.gz)
+保存准确源码、原输出、原失败、来源映射与统计。最终源码摘要全量保留，其余重复摘要表只留数量与摘要，完整原件按各文件SHA交接。
+
+Core当前56,191行、src＋scripts114,279行，tests96,772行；integrations的Python／C++／头文件仍为5,638行，另列。
+相对最新94367本批分别净减6／197行生产Python、测试增29行；相对6ec宽口径仅减19行，因并行基线另增178行。
+相对固定main6a8a核心仍多2,100行、宽口径少26,056行；相对清理起点3fd分别少5,437／35,366行。
+口径含注释和空行，排除文档／历史副本，保留research；没有把文件拆分或新能力说成代码减少，更不推导运行提速。
+
+### 服务器后续与尚未完成项
+
+容量类型增加到现有真实Ray往返方法，九个生产对象仍逐项核对身份；只有该新增实机覆盖待执行，不重复模型查询。
+服务器按准确发布源码、新driver和已有环境检查执行原方法，1CPU／0GPU、原80MiB object store和30秒结果等待保持；
+用原finally shutdown，并独立确认本次自有进程／SHM清理。忙碌时排队，不干预其他租约或模型服务。
+本批本地没有执行该项，不将其算作通过或跳过；生产代码通过不等于Ray worker已加载新类型。
+
+物理RAM自动授予、完整关系／副本内存计量、跨进程恢复和更广多GPU复用仍未实现；当前None／auto继续解析已有有限声明。
+研究编排的大文件与有用途的优化方法仍分别保留，不为行数继续拆包装。
+最新798e的作者DuckDB＋IMLane真实软件CPU链路已经通过，实际模型provider及额外输入／错误场景另验；
+原Ray内嵌vLLM关闭问题没有由HTTP替代profile改报已修，现有HTTP原生软件CPU结果按94367独立解释。
+当前整树的真实模型、完整质量／性能及新PG接入不由本批CPU取得资格。PR保持草稿，不合并main。

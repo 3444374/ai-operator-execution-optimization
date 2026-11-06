@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：收拢容量职责并继续清理固定编排
+
+普通／融合容量归入现有容量模块，共享字段检查；查询owner、实际limits和旧公开导入保持。
+退役两个没有当前独立用途的固定套件，保留现用Map／provider和历史复算；派发连接由finally统一关闭。
+[来源、原复现与39项组合CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
+记录相对94367净减197行生产Python及原3010身份保持。新增类型的真实Ray检查仍待服务器，未追加模型或合并main。
+
 ## 2026-11-06：继续删除旧 LOTUS HTTP 残留并核对完成范围
 
 在 e566 上查明孤立的请求准备／回复重放和固定两阶段 Map，删除三个旧模块并将 SDK 收敛为实际来源记录。
