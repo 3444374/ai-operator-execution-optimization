@@ -164,7 +164,7 @@ class FilterWorker:
                 if faulty:
                     self.broken = True
                     associated[0]["imlane_protocol_error"] = "ValueError"
-                    from src.baselines.text.frameworks.daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
                     try:
                         _publish(self.control / ("filter-audit-" + uuid.uuid4().hex + ".json"), dict(
                             query_id=self.query_id, engine_uid=ready_uid, expected=identities,

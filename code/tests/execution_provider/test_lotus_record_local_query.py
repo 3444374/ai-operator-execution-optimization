@@ -528,7 +528,7 @@ class QueryOwnerTests(unittest.TestCase):
         self.assertEqual(len(default.calls), 2)
 
     def fused_result(self, cls, plan, rows, config):
-        from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+        from src.serving.backends.lotus_chain_worker import FusedChainBatch
         from tests.semantic_methods.test_lotus_record_chain import engine_result
         class Engine:
             def __init__(self, spec, *_args):

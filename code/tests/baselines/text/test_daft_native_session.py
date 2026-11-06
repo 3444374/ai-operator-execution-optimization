@@ -13,7 +13,7 @@ from unittest.mock import patch
 from src.baselines.text.frameworks import daft_lotus_records as original
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity, RecordScan
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
-from src.baselines.text.frameworks.daft_engine_process import EngineProcess
+from src.serving.backends.vllm_sync_process import EngineProcess
 
 
 class Source:

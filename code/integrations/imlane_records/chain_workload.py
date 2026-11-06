@@ -3,7 +3,7 @@
 import json
 
 from integrations.imlane_records.filter_workload import PROTOCOL
-from src.baselines.text.frameworks.lotus_chain_results import _source_binding, record_row
+from src.semantic_methods.lotus.record_results import _source_binding, record_row
 from src.semantic_methods.lotus.record_chain import RecordOccurrence
 
 

@@ -107,7 +107,7 @@ class CascadeWorker(FilterWorker):
                 if faulty:
                     self.broken = True
                     associated[0]["imlane_protocol_error"] = "CascadeResultProtocolError"
-                    from src.baselines.text.frameworks.daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
                     try:
                         _publish(self.control / ("cascade-audit-" + uuid.uuid4().hex + ".json"), dict(
                             query_id=self.query_id, stage=self.stage.name, model_role=self.stage.model_role,

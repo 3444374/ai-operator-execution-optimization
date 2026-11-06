@@ -1,6 +1,5 @@
 """Shared sync transport and stage cleanup migration; CPU fixtures only."""
 
-import importlib
 import json
 import os
 from pathlib import Path
@@ -19,57 +18,24 @@ from src.serving.backends import stage_process_cleanup, vllm_sync_process
 
 
 CODE = Path(__file__).resolve().parents[2]
-LEGACY_SYNC = "src.baselines.text.frameworks.daft_engine_process"
 SYNC = "src.serving.backends.vllm_sync_process"
-LEGACY_CLEANUP = "src.baselines.text.frameworks.lotus_cascade_process"
-CLEANUP = "src.serving.backends.stage_process_cleanup"
 
 
 class MigrationTests(unittest.TestCase):
-    def test_existing_imports_reexport_the_same_classes_functions_and_constants(self):
-        old = importlib.import_module(LEGACY_SYNC)
-        for name in ("EngineProcess", "EngineSpec", "GenerationSpec", "IDENTITY_FIELDS", "CODE_ROOT",
-                     "MAX_MESSAGE_BYTES", "DEFAULT_CLOSE_TIMEOUT_S", "CLOSE_CLEANUP_RESERVE_S",
-                     "RESULT_PROTOCOL_ERROR", "_encode", "_publish", "_verified_terminal", "serve"):
-            with self.subTest(name=name):
-                self.assertIs(getattr(old, name), getattr(vllm_sync_process, name))
-        self.assertIs(importlib.import_module(LEGACY_CLEANUP).StageEngineCleanup,
-                      stage_process_cleanup.StageEngineCleanup)
 
-    def test_legacy_pickle_globals_and_new_class_pickles_resolve_to_same_objects(self):
-        for old, new, name in (
-            (LEGACY_SYNC, SYNC, "EngineProcess"),
-            (LEGACY_CLEANUP, CLEANUP, "StageEngineCleanup"),
-        ):
-            with self.subTest(name=name):
-                expected = getattr(importlib.import_module(new), name)
-                self.assertIs(pickle.loads(("c" + old + "\n" + name + "\n.").encode()), expected)
-                self.assertIs(pickle.loads(pickle.dumps(expected)), expected)
+    def test_current_class_pickles_resolve_to_their_owning_modules(self):
+        for value in (vllm_sync_process.EngineProcess, stage_process_cleanup.StageEngineCleanup):
+            with self.subTest(name=value.__name__):
+                self.assertIs(pickle.loads(pickle.dumps(value)), value)
 
-    def test_cold_import_orders_preserve_identity(self):
-        program = '''
-import importlib, sys
-sys.path.insert(0, sys.argv[1])
-first, second = [importlib.import_module(name) for name in sys.argv[2:4]]
-assert getattr(first, sys.argv[4]) is getattr(second, sys.argv[4])
-'''
-        for old, new, name in ((LEGACY_SYNC, SYNC, "EngineProcess"),
-                               (LEGACY_CLEANUP, CLEANUP, "StageEngineCleanup")):
-            for order in ((old, new), (new, old)):
-                with self.subTest(order=order):
-                    run = subprocess.run([sys.executable, "-I", "-B", "-c", program,
-                                          str(CODE), *order, name], text=True, capture_output=True, timeout=15)
-                    self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_canonical_imports_and_empty_cleanup_do_not_depend_on_legacy_workers_or_vendor_runtime(self):
+    def test_current_imports_and_empty_cleanup_do_not_load_vendor_runtime(self):
         program = '''
 import importlib, importlib.abc, pathlib, sys, tempfile
 sys.path.insert(0, sys.argv[1])
 class Guard(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, *args):
-        forbidden = ('src.experiments', 'src.baselines.text.frameworks.daft_engine_process',
-                     'src.baselines.text.frameworks.lotus_cascade_process',
-                     'src.baselines.text.frameworks.lotus_chain_batch', 'src.execution_provider',
+        forbidden = ('src.experiments', 'src.execution_provider',
                      'src.scheduling', 'ray', 'daft', 'vllm', 'torch', 'lotus')
         if any(fullname == p or fullname.startswith(p + '.') for p in forbidden):
             raise AssertionError('unexpected dependency: ' + fullname)
@@ -84,16 +50,13 @@ with tempfile.TemporaryDirectory() as directory:
                              text=True, capture_output=True, timeout=15)
         self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_maintained_consumers_import_without_legacy_worker_shims(self):
+    def test_native_consumers_import_without_loading_models(self):
         program = '''
 import importlib, importlib.abc, sys
 sys.path.insert(0, sys.argv[1])
-legacy = ('src.baselines.text.frameworks.daft_engine_process',
-          'src.baselines.text.frameworks.lotus_cascade_process',
-          'src.baselines.text.frameworks.lotus_chain_engine_process')
 class Guard(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, *args):
-        forbidden = (*legacy, 'ray', 'daft', 'vllm', 'torch', 'lotus')
+        forbidden = ('ray', 'daft', 'vllm', 'torch', 'lotus')
         if any(fullname == p or fullname.startswith(p + '.') for p in forbidden):
             raise AssertionError('unexpected dependency: ' + fullname)
 sys.meta_path.insert(0, Guard())
@@ -104,41 +67,39 @@ for name in ('src.execution_provider.adapters.lotus_cascade_core',
              'src.baselines.text.frameworks.daft_lotus_session',
              'src.baselines.text.frameworks.ray_data_lotus_cascade'):
     importlib.import_module(name)
-assert not any(name in sys.modules for name in legacy)
 '''
         run = subprocess.run([sys.executable, "-I", "-B", "-c", program, str(CODE)],
                              text=True, capture_output=True, timeout=15)
         self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_old_and_new_cli_validate_descriptors_and_exit_on_empty_input(self):
+    def test_current_cli_validates_descriptors_and_exits_on_empty_input(self):
         environment = dict(os.environ, PYTHONPATH=str(CODE), PYTHONDONTWRITEBYTECODE="1",
                            CUDA_VISIBLE_DEVICES="", HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
-        for module in (LEGACY_SYNC, SYNC):
-            with self.subTest(module=module):
-                invalid = subprocess.run([sys.executable, "-B", "-m", module], env=environment,
-                                         text=True, capture_output=True, timeout=15)
-                self.assertEqual(invalid.returncode, 1)
-                self.assertEqual(invalid.stderr.strip(),
-                                 "private engine worker requires an inherited result descriptor")
-                read_fd, write_fd = os.pipe()
+        module = SYNC
+        invalid = subprocess.run([sys.executable, "-B", "-m", module], env=environment,
+                                 text=True, capture_output=True, timeout=15)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertEqual(invalid.stderr.strip(),
+                         "private engine worker requires an inherited result descriptor")
+        read_fd, write_fd = os.pipe()
+        try:
+            with subprocess.Popen([sys.executable, "-B", "-m", module, "--serve", str(write_fd)],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    pass_fds=(write_fd,), env=environment) as child:
+                os.close(write_fd)
+                write_fd = None
                 try:
-                    with subprocess.Popen([sys.executable, "-B", "-m", module, "--serve", str(write_fd)],
-                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            pass_fds=(write_fd,), env=environment) as child:
-                        os.close(write_fd)
-                        write_fd = None
-                        try:
-                            _, error = child.communicate(timeout=15)
-                        except BaseException:
-                            child.kill()
-                            child.communicate()
-                            raise
-                    self.assertEqual(child.returncode, 0, error.decode())
-                    self.assertEqual(os.read(read_fd, 1), b"")
-                finally:
-                    os.close(read_fd)
-                    if write_fd is not None:
-                        os.close(write_fd)
+                    _, error = child.communicate(timeout=15)
+                except BaseException:
+                    child.kill()
+                    child.communicate()
+                    raise
+            self.assertEqual(child.returncode, 0, error.decode())
+            self.assertEqual(os.read(read_fd, 1), b"")
+        finally:
+            os.close(read_fd)
+            if write_fd is not None:
+                os.close(write_fd)
 
 
 class StageCleanupTests(unittest.TestCase):

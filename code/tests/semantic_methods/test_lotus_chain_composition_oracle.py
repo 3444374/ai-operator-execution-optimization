@@ -15,7 +15,7 @@ from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.record_continuation import LotusChainProgram
 from src.semantic_methods.lotus.record_relation import complete_extract_relation
 from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding
-from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+from src.serving.backends.lotus_chain_worker import FusedChainBatch
 from src.serving.backends.vllm_engine import GenerationSpec
 
 

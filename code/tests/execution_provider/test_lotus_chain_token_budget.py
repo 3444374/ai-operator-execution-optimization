@@ -362,10 +362,8 @@ class ChainTokens(unittest.TestCase):
         self.assertEqual((got['status'],got['prompt_tokens'],got['completion_tokens']),('failed',11,3))
         self.assertEqual(got['call_id'],wanted['call_id'])
 
-    def test_chain_outputs_feed_canonical_result_accounting_and_legacy_alias(self):
+    def test_chain_outputs_feed_canonical_result_accounting(self):
         from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding
-        from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults as Legacy
-        self.assertIs(ChainBatchResults,Legacy)
         source=[self.record(0,'plain'),self.record(1,'STOP_ME')]
         r=self.make()
         for record in source:r.driver.offer_record(record)

@@ -2,7 +2,7 @@
 
 import threading
 
-from src.baselines.text.frameworks.daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
+from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
 
 
 # Includes the engine's API/owned-process close, reaper join and carrier reply.
