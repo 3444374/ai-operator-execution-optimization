@@ -915,7 +915,9 @@
         "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
         "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
         "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz",
-        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz"
+        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz",
+        "code/src/experiments/shared_vllm/evidence.py": "historical_sources/e86afedb/code/src/experiments/shared_vllm/evidence.py.gz",
+        "code/src/experiments/batched_request_guard.py": "historical_sources/e86afedb/code/src/experiments/batched_request_guard.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1183,6 +1185,16 @@
           "encoding": "gzip",
           "decoded_bytes": 3007,
           "archive_sha256": "817feaf86239511aa292d1710db5a4e7ff5d92103d55a2216db1c2ec054d2a43"
+        },
+        "code/src/experiments/shared_vllm/evidence.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29389,
+          "archive_sha256": "6ed10f74b0d9a3648db17f05368ad87862a36349bee9c56837e047dd24ad164c"
+        },
+        "code/src/experiments/batched_request_guard.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3833,
+          "archive_sha256": "4371fefe0ee091d3f412c0b59bf9faee42289e57e944e0e733a42b9e7de94c1e"
         }
       }
     },
@@ -2126,7 +2138,9 @@
         "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
         "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
         "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz",
-        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz"
+        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz",
+        "code/src/experiments/shared_vllm/evidence.py": "historical_sources/e86afedb/code/src/experiments/shared_vllm/evidence.py.gz",
+        "code/src/experiments/batched_request_guard.py": "historical_sources/e86afedb/code/src/experiments/batched_request_guard.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2394,6 +2408,16 @@
           "encoding": "gzip",
           "decoded_bytes": 3007,
           "archive_sha256": "817feaf86239511aa292d1710db5a4e7ff5d92103d55a2216db1c2ec054d2a43"
+        },
+        "code/src/experiments/shared_vllm/evidence.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29389,
+          "archive_sha256": "6ed10f74b0d9a3648db17f05368ad87862a36349bee9c56837e047dd24ad164c"
+        },
+        "code/src/experiments/batched_request_guard.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3833,
+          "archive_sha256": "4371fefe0ee091d3f412c0b59bf9faee42289e57e944e0e733a42b9e7de94c1e"
         }
       }
     },
@@ -3347,7 +3371,9 @@
         "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
         "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
         "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz",
-        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz"
+        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz",
+        "code/src/experiments/shared_vllm/evidence.py": "historical_sources/e86afedb/code/src/experiments/shared_vllm/evidence.py.gz",
+        "code/src/experiments/batched_request_guard.py": "historical_sources/e86afedb/code/src/experiments/batched_request_guard.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3615,6 +3641,16 @@
           "encoding": "gzip",
           "decoded_bytes": 3007,
           "archive_sha256": "817feaf86239511aa292d1710db5a4e7ff5d92103d55a2216db1c2ec054d2a43"
+        },
+        "code/src/experiments/shared_vllm/evidence.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29389,
+          "archive_sha256": "6ed10f74b0d9a3648db17f05368ad87862a36349bee9c56837e047dd24ad164c"
+        },
+        "code/src/experiments/batched_request_guard.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3833,
+          "archive_sha256": "4371fefe0ee091d3f412c0b59bf9faee42289e57e944e0e733a42b9e7de94c1e"
         }
       }
     },
@@ -4570,7 +4606,9 @@
         "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
         "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
         "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz",
-        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz"
+        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz",
+        "code/src/experiments/shared_vllm/evidence.py": "historical_sources/e86afedb/code/src/experiments/shared_vllm/evidence.py.gz",
+        "code/src/experiments/batched_request_guard.py": "historical_sources/e86afedb/code/src/experiments/batched_request_guard.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4843,6 +4881,16 @@
           "encoding": "gzip",
           "decoded_bytes": 3007,
           "archive_sha256": "817feaf86239511aa292d1710db5a4e7ff5d92103d55a2216db1c2ec054d2a43"
+        },
+        "code/src/experiments/shared_vllm/evidence.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29389,
+          "archive_sha256": "6ed10f74b0d9a3648db17f05368ad87862a36349bee9c56837e047dd24ad164c"
+        },
+        "code/src/experiments/batched_request_guard.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3833,
+          "archive_sha256": "4371fefe0ee091d3f412c0b59bf9faee42289e57e944e0e733a42b9e7de94c1e"
         }
       }
     },
@@ -5802,7 +5850,9 @@
         "code/src/experiments/saor/native_system_artifacts.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_artifacts.py.gz",
         "code/src/experiments/saor/native_system_validator.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_validator.py.gz",
         "code/src/experiments/saor/native_system_preflight.py": "historical_sources/87fdb2bc/code/src/experiments/saor/native_system_preflight.py.gz",
-        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz"
+        "code/src/experiments/shared_vllm/cli.py": "historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz",
+        "code/src/experiments/shared_vllm/evidence.py": "historical_sources/e86afedb/code/src/experiments/shared_vllm/evidence.py.gz",
+        "code/src/experiments/batched_request_guard.py": "historical_sources/e86afedb/code/src/experiments/batched_request_guard.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6070,6 +6120,16 @@
           "encoding": "gzip",
           "decoded_bytes": 3007,
           "archive_sha256": "817feaf86239511aa292d1710db5a4e7ff5d92103d55a2216db1c2ec054d2a43"
+        },
+        "code/src/experiments/shared_vllm/evidence.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 29389,
+          "archive_sha256": "6ed10f74b0d9a3648db17f05368ad87862a36349bee9c56837e047dd24ad164c"
+        },
+        "code/src/experiments/batched_request_guard.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3833,
+          "archive_sha256": "4371fefe0ee091d3f412c0b59bf9faee42289e57e944e0e733a42b9e7de94c1e"
         }
       }
     }
