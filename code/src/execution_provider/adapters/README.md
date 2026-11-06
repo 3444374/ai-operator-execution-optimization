@@ -1547,6 +1547,9 @@ This does not explain the second historical intermittent failure. A final [route
 found no missing close callback in ordinary, prepared/rolling, resident or fused entry points. The real-Ray symbol round trip and existing Future tests
 passed on exact `5539a19f` with Ray 2.56.1 and zero model calls. They remain separate from active model-owner shutdown;
 their standard invocation is in [the CPU test guide](../../../tests/records_cpu.md#real-ray-adapter-closeout).
+The separate model run on exact `5539a19f` completed eight ordinary-async and eight rolling requests, with confirmed call terminals and final process cleanup.
+Input and output token IDs matched across both paths, but each had three false negatives. Fixed test capacity and finite logical byte budgets do not establish dynamic-policy performance or physical memory capacity.
+The strengthened 14-query CPU IPC test passed once on exact `b422951d`; its 168 synthetic engine submissions are separate from the 16 actual model calls.
 
 ### Feedback data and policy imports
 

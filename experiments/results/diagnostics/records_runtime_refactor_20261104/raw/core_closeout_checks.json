@@ -25,39 +25,45 @@
     "scope": "Local Ray and model startup blocked. The real-Ray worker test was explicitly skipped and still requires server execution."
   },
   "integration": {
-    "candidate": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
-    "tree": "bfea08a53003a902f94b54e34ecac7cb3ff79285",
-    "files": 1063,
-    "all_files_match": true,
-    "recorded_head": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
-    "all_code_unchanged_during_suite": true,
-    "changed_from_latest_upstream": [
-      "code/tests/execution_provider/test_core_feedback_ray_future.py",
-      "code/tests/execution_provider/test_records_model_adapter.py"
+    "candidate": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
+    "tree": "f08f61b6993eccfca7d3abe8284f118830a5f7ce",
+    "parents": [
+      "ad8282fd5f12fe47b6484c60b83f975e360e438b",
+      "d5af9e6aaf1fdae369797c706d8e3472ce3794af"
     ],
-    "production_unchanged_from_upstream": true,
-    "code_manifest_sha256": "4dfc2bc7462d187ee7b66bcd5a3462b4bfc5dc00d8b6760036bc1b8040e238d2",
-    "local": {
-      "selected": 12,
-      "passed": 11,
-      "skipped": [
-        {
-          "id": "tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker",
-          "reason": "explicit real Ray CPU driver required",
-          "scope": "method"
-        }
-      ],
-      "failures": [],
-      "errors": []
-    }
+    "all_test_code_hashes_match": true,
+    "matching_code_files": 1057,
+    "source_recorded_head": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
+    "source_unchanged_during_suite": true,
+    "selected": 69,
+    "passed": 69,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "model_runtime_source_unchanged_from_5539": true,
+    "model_runtime_scope": "code/src Python except code/src/experiments; source equality does not relabel server execution version",
+    "retirement_commit": "d5af9e6aaf1fdae369797c706d8e3472ce3794af",
+    "non_runtime_changes_in_that_scope": [
+      "code/src/execution_provider/adapters/README.md"
+    ]
   },
   "code_size": {
     "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
     "counts": {
+      "integrated": {
+        "commit": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114290,
+        "tests_python_lines": 94429,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000_count": 0
+      },
       "main": {
         "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
         "core_python_lines": 54091,
         "src_and_scripts_python_lines": 140335,
+        "tests_python_lines": 102763,
         "integration_Python_CPP_header_lines": 4521,
         "core_functions_over_100": 50,
         "core_files_over_1000_count": 7
@@ -66,30 +72,25 @@
         "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
         "core_python_lines": 61628,
         "src_and_scripts_python_lines": 149645,
+        "tests_python_lines": 130062,
         "integration_Python_CPP_header_lines": 4528,
         "core_functions_over_100": 57,
         "core_files_over_1000_count": 9
       },
-      "base": {
-        "commit": "f4e4868d3990793cb0149d765964147935eb0adc",
-        "core_python_lines": 57011,
-        "src_and_scripts_python_lines": 114240,
-        "integration_Python_CPP_header_lines": 4561,
-        "core_functions_over_100": 44,
-        "core_files_over_1000_count": 0
-      },
-      "upstream": {
-        "commit": "448e6a9c3004ad77a085f0b19dd5778212bfdfea",
-        "core_python_lines": 57011,
-        "src_and_scripts_python_lines": 114806,
-        "integration_Python_CPP_header_lines": 4561,
-        "core_functions_over_100": 44,
-        "core_files_over_1000_count": 0
-      },
-      "candidate": {
+      "server-model": {
         "commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
         "core_python_lines": 57011,
         "src_and_scripts_python_lines": 114806,
+        "tests_python_lines": 94714,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000_count": 0
+      },
+      "before-retirement": {
+        "commit": "ad8282fd5f12fe47b6484c60b83f975e360e438b",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114804,
+        "tests_python_lines": 94765,
         "integration_Python_CPP_header_lines": 4561,
         "core_functions_over_100": 44,
         "core_files_over_1000_count": 0
@@ -98,33 +99,37 @@
     "deltas": {
       "main": {
         "core_python_lines": 2920,
-        "src_and_scripts_python_lines": -25529,
+        "src_and_scripts_python_lines": -26045,
+        "tests_python_lines": -8334,
         "integration_Python_CPP_header_lines": 40
       },
       "3fd": {
         "core_python_lines": -4617,
-        "src_and_scripts_python_lines": -34839,
+        "src_and_scripts_python_lines": -35355,
+        "tests_python_lines": -35633,
         "integration_Python_CPP_header_lines": 33
       },
-      "base": {
+      "server-model": {
         "core_python_lines": 0,
-        "src_and_scripts_python_lines": 566,
+        "src_and_scripts_python_lines": -516,
+        "tests_python_lines": -285,
         "integration_Python_CPP_header_lines": 0
       },
-      "upstream": {
+      "before-retirement": {
         "core_python_lines": 0,
-        "src_and_scripts_python_lines": 0,
+        "src_and_scripts_python_lines": -514,
+        "tests_python_lines": -336,
         "integration_Python_CPP_header_lines": 0
       }
     }
   },
   "import_audit": {
-    "commit": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
-    "files": 988,
-    "local_src_imports": 3328,
+    "commit": "284ec8b0b7ac92cb27a80d1c93778a1392b1fe14",
+    "files": 982,
+    "local_src_imports": 3304,
     "missing": [],
     "syntax_errors": [],
-    "code_manifest_sha256": "01e08d7be5ed3480d728b433df4eb4ad953a60deb21abaa54679186dfd0133de",
+    "code_manifest_sha256": "2e1164cb333a97559bb7037ddf25ca10f6107e108ca7a82b6e68ac421773b3f6",
     "scope": "Static direct and relative src imports in current tracked source, scripts and tests; no module execution. Dynamic imports and optional external packages are not resolved."
   },
   "source_review": {
@@ -233,25 +238,132 @@
   },
   "private_originals": {
     "record": "private_originals in the raw archive",
-    "files": 34,
-    "manifest_sha256": "0e15e46d60a2d0903c8ada49da78b432dcb2b8530218eccbe2b2ccaf66c922ce"
+    "files": 56,
+    "manifest_sha256": "4dd8f38831227a76258f7760cd4929c7e18e12c377e598cc89ebed6bbf74d935"
   },
   "notes": [
-    "The two original CPU IPC methods each passed once on exact f4e, without a close wrapper. Actual model calls and real Ray startup were zero; observed owned process cleanup and lease release were confirmed.",
-    "Historical failures remain in the prior close_audit_ack evidence. The second historical cause remains unexplained; current passes do not rewrite it.",
-    "The source route audit found no missing close callback or confirmed additional production defect. Active batch feedback, providers and research remain intentionally retained.",
-    "Both local selections contain the same 12 methods: 11 passed and the new real-Ray symbol transfer was explicitly skipped. The two runs are not added together.",
-    "The initial record retains precommit b574 HEAD with all 1055 hashes matching 6c22. The merged record retains exact 5539 HEAD with all 1063 matching hashes.",
-    "The exact5539 real-Ray run passed six methods on Ray2.56.1, including eight production symbols and actual Future/cancel behavior. It made zero model calls;21 observed owned processes and lease cleanup were confirmed. It does not qualify active model-owner shutdown.",
-    "The current single handoff probe now uses the actual nonblocking owner and memory IPC. With the old observer its off run passed but its on run missed driver_future_done. The original overlay probe was still evolving; its early text is not claimed identical to the final script.",
-    "The fixed observer awaits the original coroutine once and records local settlement without treating cancellation as remote completion. Five local methods passed on exact1cfd, including single and bulk off/on and outcome propagation; the strengthened real CPU IPC query-capacity method still needs server execution.",
-    "The earlier fixed-on standalone report had an inherited field name implying owner kill. No owner kill was exercised there. Exact1cfd renames it to actor_sink_finalized_at_explicit_close; historical records retain their original bytes.",
-    "Static import checks resolve direct and relative local src modules, without executing code; dynamic imports and external packages are not covered."
+    "This extends the prior ad828 delivery without removing its records or original hashes. Prior notes describe their earlier source snapshots.",
+    "The exact5539 model run completed16 requests, eight ordinary and eight rolling, with zero failed or unknown requests, no warmup and no replay. Each path had three false negatives; matching outputs do not establish all-gold quality.",
+    "Both model paths omitted application B and all five optional engine arguments. Actual ready values were BF16/.92/128seq/2048step/context32768. Explicit C16 and finite logical budgets are functional fixtures, not physical free capacity or performance qualification.",
+    "Two model-check driver stops came from reading owner fields at the query level. Original stopped states and diagnostics remain. The correction used existing originals and continued only previously unclaimed requests; no production change or model replay occurred.",
+    "The model receipts retain ClosedWithoutConfirmedTerminal as a close fallback diagnostic, while all actual calls were independently terminal and held/unknown/RPC counts were zero. API GPU/descendant exit flags remain null; final physical inventory separately confirmed cleanup.",
+    "The strengthened query-capacity CPU IPC method passed once on exactb422. Its168 synthetic engine submissions and14 full-query row/message checks are not model requests or real-Ray tests.",
+    "The reviewed d5 retirement deletes three old observation modules and three dedicated test files. The one live guard body moved unchanged to attempt_ledger; public providers and independent research consumers remain.",
+    "Exact284ec integrated69 distinct CPU methods all passed without skips, including full restoration of five historical trees and3010 expected hashes. The seven process/crash methods were not selected. The initial system-interpreter startup error began zero tests and remains in raw evidence.",
+    "All1057 test-time code hashes match284ec. Non-experiment code/src Python is unchanged from5539, but server results retain their actual5539 andb422 versions. Static982-file/3304-import checks do not cover dynamic imports or external dependencies.",
+    "The final source/scripts total is114290 physical Python lines; core57011 excludes experiments/baselines and includes research. Retirement removed514 wider production lines and336 test lines. File moves are not counted as reductions.",
+    "The second historical IPC cause remains unexplained. Actual model duplicate-close/cancellation/unknown injection, saturation, full query RSS, automatic physical RAM grants and cross-process reconnect remain unverified or unimplemented.",
+    "Public copies are redacted and compacted; original byte lengths and SHA256 values identify unchanged private originals. Abbreviated false-positive counts are expanded in the public text."
   ],
   "raw": {
     "file": "core_closeout_raw.json.gz",
-    "bytes": 23515,
-    "sha256": "05a864bf70d7e7a38039e933821171a7223869353387ba79b242620b978ac9f0",
-    "decoded_sha256": "a9c48153bfcd9df9bb66f4f096bd61a5ba9b351bb4084cbcb7e99a5e51ccf717"
+    "bytes": 49805,
+    "sha256": "c5db13b3992c41e03a6081db76e5ce0e6fd3504fb5924daac7e78fd7d85c007a",
+    "decoded_sha256": "1540f9cb7d8610879a9211dbb30acab83e13215ad6f4bc1bcce095c48037a7f5"
+  },
+  "prior_integration": {
+    "record": "execution/INTEGRATION_IDENTITY.json"
+  },
+  "prior_import_audit": {
+    "record": "execution/IMPORT_AUDIT_INTEGRATED.json"
+  },
+  "prior_code_size": {
+    "record": "execution/CODE_SIZE.json"
+  },
+  "server_model_function": {
+    "record": "server-model5539/HANDOFF.json",
+    "source": {
+      "head": "5539a19ff85f9dd96524f10c8c1197b399a04fb8",
+      "tree": "bfea08a53003a902f94b54e34ecac7cb3ff79285"
+    },
+    "calls": 16,
+    "succeeded": 16,
+    "failed": 0,
+    "unknown": 0,
+    "warmup": 0,
+    "replays": 0,
+    "pair": {
+      "source_positions": 8,
+      "identical_input_messages": 8,
+      "identical_prompt_token_ids": 8,
+      "identical_raw_outputs": 8,
+      "identical_output_token_ids": 8,
+      "native_owners_distinct": true
+    },
+    "ready_config": {
+      "max_num_seqs": 128,
+      "max_num_batched_tokens": 2048,
+      "max_model_len": 32768,
+      "dtype": "torch.bfloat16",
+      "gpu_memory_utilization": 0.92
+    },
+    "per_path": [
+      {
+        "mode": "ordinary-async",
+        "calls": 8,
+        "terminals": 8,
+        "classification": {
+          "true_positive": 4,
+          "false_positive": 0,
+          "true_negative": 1,
+          "false_negative": 3,
+          "invalid": 0,
+          "evaluated_rows": 8,
+          "missing_rows": 0,
+          "count_error_from_classifications": -3
+        }
+      },
+      {
+        "mode": "rolling-record-local",
+        "calls": 8,
+        "terminals": 8,
+        "classification": {
+          "true_positive": 4,
+          "false_positive": 0,
+          "true_negative": 1,
+          "false_negative": 3,
+          "invalid": 0,
+          "evaluated_rows": 8,
+          "missing_rows": 0,
+          "count_error_from_classifications": -3
+        }
+      }
+    ],
+    "test_driver_errors_retained": true,
+    "repeated_close_not_exercised": true,
+    "scope": "FixedC16 functional fixtures with finite logical budgets, no dynamic-policy or performance qualification; physical inventory confirmed cleanup separately from null API GPU/descendant exit flags.",
+    "results_sha256": "835b7776f635e9c7860a7d2130920f4bb7b0f9892ca73cfbbbfd411da6d2a549"
+  },
+  "server_query_IPC": {
+    "status": "ONE_REQUESTED_CPU_IPC_METHOD_PASSED_ONCE",
+    "source": {
+      "head": "b422951d8427287e094fefdf1b4b176bb065d911",
+      "tree": "8901aa74c44bb897b8339454d51903dca3e848e8"
+    },
+    "method": {
+      "id": "tests.execution_provider.test_core_query_capacity.CoreQueryCapacityTests.test_public_search_and_cache_target_reuse_one_Core_and_model_with_actual_query_limits",
+      "status": "passed",
+      "seconds": 2.584864204749465
+    },
+    "real_model_calls": 0,
+    "real_Ray_clusters": 0,
+    "fixture_CPU_engine_submissions_asserted": 168,
+    "actual_queries_whose_full_rows_and_messages_checked": 14,
+    "tests_run": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "production_identical_to_5539": true,
+    "test_source_sha256": "f7ad6ae10ffd3be032e45a9ee24442e06a2707d03869e137e644e5fbe4aac0a0",
+    "results_sha256": "cbe6c490e369e5f736b9987d7083ac2a9922c41e7973fee72ad9f4a995e7a43c"
+  },
+  "retirement": {
+    "commit": "d5af9e6aaf1fdae369797c706d8e3472ce3794af",
+    "record": "retired-observers/HANDOFF.json",
+    "parent_review": "final-integration/OLD_OBSERVER_PARENT_REVIEW.json",
+    "source_records_retained": true,
+    "deleted_modules": 3,
+    "deleted_test_files": 3,
+    "combined_test_record": "final-integration/combined-observer-closeout.json"
   }
 }

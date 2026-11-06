@@ -45,6 +45,17 @@ SEMLOOM_REAL_RAY_TMPDIR="$RAY_CPU_TMPDIR" PYTHONPATH=code \
 准确5539在服务器Ray2.56.1上六项均通过、无跳过，模型调用为零，已观察进程和运行许可均清理；不因此转为活动模型owner关闭证明。
 [当前源码与服务器状态](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)区分本地选择、真实Ray和模型验证。
 
+### 跨查询提示的实际CPU IPC检查
+
+```sh
+CUDA_VISIBLE_DEVICES='' PYTHONPATH=code "$DRIVER_PYTHON" -m unittest \
+  tests.execution_provider.test_core_query_capacity.CoreQueryCapacityTests.test_public_search_and_cache_target_reuse_one_Core_and_model_with_actual_query_limits
+```
+
+该方法需要运行环境允许本地子进程与IPC；使用现有ThreadedRuntime及合成引擎，不启动真实Ray或模型。
+准确b422在服务器通过一次，逐查询核对14组完整行集与提示消息，并保留168次合成引擎提交及容量断言。
+提示事件来自实际`try_submit_core`，不再以旧`run_core`空集合通过；未重跑原两项IPC或六项Ray检查。
+
 ### 2026-11-05：旧夹具与失效测试清理
 
 两个无引用夹具已删除；UCB／旧 stage-work 原型的五个维护测试及依赖已移走 PG C 源码的
