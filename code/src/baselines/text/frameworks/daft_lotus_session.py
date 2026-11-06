@@ -4,7 +4,6 @@ from dataclasses import asdict
 import json
 import os
 from pathlib import Path
-import time
 
 from src.infrastructure.deadlines import deadline_after, deadline_expired, earliest_deadline
 from .daft_lotus_records import _DaftRows, _graph, _check, DEFAULT_PREPARED_BATCH_BYTES

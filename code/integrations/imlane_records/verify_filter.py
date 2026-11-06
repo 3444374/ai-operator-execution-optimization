@@ -14,7 +14,6 @@ import signal
 import subprocess
 import sys
 import threading
-import time
 
 OWNED = Path(__file__).resolve().parent
 CODE = OWNED.parents[1]

@@ -359,6 +359,7 @@ def evaluate(
             name: types[dtype] for name, dtype in scan.csv_schema
         }, strings_can_be_null=False, null_values=[]),
     )
+    dataset.context.wait_for_min_actors_s = resources.startup_timeout_s
     if scan.predicate is not None:
         column, value = scan.predicate
         dataset = dataset.filter(lambda row: row[column] == value, max_retries=0)

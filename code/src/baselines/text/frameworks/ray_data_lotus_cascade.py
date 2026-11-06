@@ -12,7 +12,6 @@ import json
 import os
 from pathlib import Path
 import tempfile
-import time
 
 from src.infrastructure.deadlines import deadline_after
 from src.semantic_methods.lotus.cascade import (

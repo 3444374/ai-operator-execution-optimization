@@ -198,5 +198,54 @@ class IMLaneOperationDurationTests(unittest.TestCase):
         self.assertEqual(session.client.submit.call_args.kwargs['deadline'], 701.)
 
 
+class NativeRayStartupDurationTests(unittest.TestCase):
+    def test_native_graph_uses_its_own_context_for_caller_startup_wait(self):
+        from src.baselines.text.frameworks import ray_data_lotus_records as native
+        global_context = SimpleNamespace(wait_for_min_actors_s=-1)
+        datasets = []
+        class Dataset:
+            def __init__(self):
+                self.context = SimpleNamespace(**vars(global_context))
+                self.maps = []
+                datasets.append(self)
+            def select_columns(self, *_):
+                return self
+            def map(self, *_, **__):
+                return self
+            def map_batches(self, function, **options):
+                self.maps.append((function, options))
+                return self
+        ray, data = ModuleType('ray'), ModuleType('ray.data')
+        ray.__path__, ray.__version__, ray.is_initialized, ray.data = [], '2.56.1', lambda: True, data
+        data.read_csv = lambda *_, **__: Dataset()
+        data.ActorPoolStrategy = lambda **options: options
+        sdk = ModuleType('src.semantic_methods.lotus.engine')
+        sdk.bind_filter_method = lambda value: value
+        sdk.validate_generation = lambda *_: None
+        from pathlib import Path
+        from src.semantic_methods.lotus.records import identity
+        source = SimpleNamespace(csv_path=Path('/tmp/cpu-no-read.csv'), preflight=lambda _: None,
+            expected=lambda query: [identity(query, 'row', 0)],
+            scan_spec=lambda _: RecordScan((('row_id', 'string'), ('source_position', 'int64'),
+                                           ('text', 'string')), ('text',)))
+        method = FilterMethod('fixture', 'Keep {text}', resolved_input_columns=('text',))
+        for startup, query_duration in ((120., None), (.25, None), (601., 300.)):
+            with self.subTest(startup=startup, query_duration=query_duration), \
+                    patch.dict(sys.modules, {'ray': ray, 'ray.data': data, sdk.__name__: sdk}), \
+                    patch.object(EngineSpec, 'validate_driver_environment', return_value={}), \
+                    patch('time.monotonic', return_value=100.):
+                result = native.evaluate(source, method,
+                    engine=EngineSpec('/tmp/cpu-model', sys.executable, sys.executable),
+                    generation=GenerationSpec(),
+                    resources=RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=1,
+                        startup_timeout_s=startup, query_timeout_s=query_duration), query_id='q')
+            self.assertEqual(datasets[-1].context.wait_for_min_actors_s, startup)
+            self.assertEqual(global_context.wait_for_min_actors_s, -1)
+            self.assertEqual([function for function, _ in datasets[-1].maps],
+                             [native.PrepareBatch, native.InferBatch])
+            self.assertEqual(result.deadline, None if query_duration is None else 100. + query_duration)
+        self.assertEqual([dataset.context.wait_for_min_actors_s for dataset in datasets], [120., .25, 601.])
+
+
 if __name__ == '__main__':
     unittest.main()

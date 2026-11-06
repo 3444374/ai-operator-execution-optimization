@@ -11,7 +11,6 @@ import json
 import os
 from pathlib import Path
 import sys
-import time
 
 from src.infrastructure.deadlines import deadline_expired
 from .vllm_sync_process import EngineProcess, MAX_MESSAGE_BYTES, _encode
