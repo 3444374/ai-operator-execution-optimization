@@ -49,13 +49,15 @@ assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
 class RealRayAdapterSerializationTests(unittest.TestCase):
     def test_production_objects_round_trip_through_a_real_worker(self):
         import ray
-        from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, RecordsCapacityBudget
+        from src.execution_provider.adapters.records_capacity import (
+            CoreChainCapacity, CoreRecordsCapacity, RecordsCapacityBudget,
+        )
         from src.execution_provider.adapters.records_model_adapter import _ActorOwner, _CoreModelActor
         from src.execution_provider.adapters.records_transport import _RecordTransport, _await_result, _check, close_prepared_core
 
         if ray.is_initialized():
             raise RuntimeError('serialization regression requires its own fresh driver')
-        values = (CoreRecordsCapacity, RecordsCapacityBudget, _ActorOwner, _CoreModelActor,
+        values = (CoreChainCapacity, CoreRecordsCapacity, RecordsCapacityBudget, _ActorOwner, _CoreModelActor,
                   _RecordTransport, _await_result, _check, close_prepared_core)
         with tempfile.TemporaryDirectory(prefix='ras-',
                 dir=os.environ.get('SEMLOOM_REAL_RAY_TMPDIR', '/tmp')) as directory:
