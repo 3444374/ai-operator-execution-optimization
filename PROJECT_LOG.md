@@ -6,6 +6,7 @@
 
 [三个分析入口与历史来源](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
 删除脚本互载与临时参考接线，显式选择输入和context-LOO输出，保留原数值／历史原件及运行链估算；未新增研究算法。
+配置总览登记其离线用途，旧指标调研保留原日期并指向现行代码，不把历史补采建议继续当作当前欠项。
 
 ## 2026-11-06：异步观测跟随实际转换
 
