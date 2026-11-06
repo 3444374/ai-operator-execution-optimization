@@ -59,9 +59,13 @@ class AsyncProcessTests(unittest.TestCase):
 
     def test_hold_first_accept_second_and_return_reverse_order(self):
         owner = self.owner()
-        first = self.submit(owner, 0, "hold")
+        first = owner.submit(row(0, "hold"), deadline_monotonic=None)
+        self.assertEqual(first.status, "queued", first)
+        first = first.request_id
         self.until(owner, lambda: owner.snapshot()["accepted_requests"] == 1)
-        second = self.submit(owner, 1)
+        second = owner.submit(row(1), deadline_monotonic=None)
+        self.assertEqual(second.status, "queued", second)
+        second = second.request_id
         self.until(owner, lambda: owner.snapshot()["ready_results"] == 1)
         result = owner.poll()[0]
         self.assertEqual(result.request_id, second)
