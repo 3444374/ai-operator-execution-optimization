@@ -3,6 +3,16 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+## Map 编码器直接导入前的来源
+
+维护代码直接使用 `execution_provider/wire/map_codec.py`，删除了仅重新导出的 `wire/v5.py`。
+协议版本 5、Map 会话、编码算法与校验行为保持。
+五份投影的旧 `v5.py` 已有独立压缩副本，继续使用原来源。
+调用方 `golden.py` 与 `semantic_session.py` 的准确 `6707371f64b7b9f7f0e388f1c1458b0606156f75` 字节另存为
+[golden 原件](historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz)与
+[会话原件](historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz)。
+只增加十条来源与 gzip 格式记录，全部预期摘要、投影身份及原来源版本保持。
+
 <a id="offline-cost-analysis-sources"></a>
 ## 离线代价分析拆分前的来源
 

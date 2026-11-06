@@ -950,7 +950,9 @@
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
         "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
-        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
+        "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1393,6 +1395,16 @@
           "encoding": "gzip",
           "decoded_bytes": 22490,
           "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
+        },
+        "code/src/execution_provider/adapters/golden.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1737,
+          "archive_sha256": "79cea9022f523896ed8b627f837acb709d9e2c57abea118def13985e88a63a72"
+        },
+        "code/src/execution_provider/adapters/semantic_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10662,
+          "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
         }
       }
     },
@@ -2371,7 +2383,9 @@
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
         "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
-        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
+        "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2814,6 +2828,16 @@
           "encoding": "gzip",
           "decoded_bytes": 22490,
           "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
+        },
+        "code/src/execution_provider/adapters/golden.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1737,
+          "archive_sha256": "79cea9022f523896ed8b627f837acb709d9e2c57abea118def13985e88a63a72"
+        },
+        "code/src/execution_provider/adapters/semantic_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10662,
+          "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
         }
       }
     },
@@ -3802,7 +3826,9 @@
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
         "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
-        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
+        "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4245,6 +4271,16 @@
           "encoding": "gzip",
           "decoded_bytes": 22490,
           "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
+        },
+        "code/src/execution_provider/adapters/golden.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1737,
+          "archive_sha256": "79cea9022f523896ed8b627f837acb709d9e2c57abea118def13985e88a63a72"
+        },
+        "code/src/execution_provider/adapters/semantic_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10662,
+          "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
         }
       }
     },
@@ -5235,7 +5271,9 @@
         "code/src/execution_provider/wire/v5.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v5.py.gz",
         "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
-        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz"
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
+        "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5683,6 +5721,16 @@
           "encoding": "gzip",
           "decoded_bytes": 22490,
           "archive_sha256": "ec8076fe89f06a1ef44cc107112f743615557679c5756e64b088248b5ef18a33"
+        },
+        "code/src/execution_provider/adapters/golden.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1737,
+          "archive_sha256": "79cea9022f523896ed8b627f837acb709d9e2c57abea118def13985e88a63a72"
+        },
+        "code/src/execution_provider/adapters/semantic_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10662,
+          "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
         }
       }
     },
@@ -6678,7 +6726,9 @@
         "code/src/execution_provider/wire/v6.py": "historical_sources/e5e65fdb/code/src/execution_provider/wire/v6.py.gz",
         "code/scripts/analysis/compare_cost_estimators_full.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz",
         "code/scripts/analysis/compare_cost_estimators_contextloo.py": "historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz",
-        "code/tests/experiments/test_daft_session_wiring.py": "historical_sources/b16838c6/code/tests/experiments/test_daft_session_wiring.py.gz"
+        "code/tests/experiments/test_daft_session_wiring.py": "historical_sources/b16838c6/code/tests/experiments/test_daft_session_wiring.py.gz",
+        "code/src/execution_provider/adapters/golden.py": "historical_sources/6707371f/code/src/execution_provider/adapters/golden.py.gz",
+        "code/src/execution_provider/adapters/semantic_session.py": "historical_sources/6707371f/code/src/execution_provider/adapters/semantic_session.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7126,6 +7176,16 @@
           "encoding": "gzip",
           "decoded_bytes": 6651,
           "archive_sha256": "33593364f4364c4f1b001c309a964f8c9dfdd57489d683b1a18a24da755d4483"
+        },
+        "code/src/execution_provider/adapters/golden.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1737,
+          "archive_sha256": "79cea9022f523896ed8b627f837acb709d9e2c57abea118def13985e88a63a72"
+        },
+        "code/src/execution_provider/adapters/semantic_session.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10662,
+          "archive_sha256": "49f168bc9269e722586b45498c23688dc6cdb772e86709527087fb1e67802895"
         }
       }
     }

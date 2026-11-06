@@ -17,7 +17,6 @@ from src.execution_provider.image_gateway import ImageGateway
 from src.scheduling.core.session import SessionEngine
 for name in (
     "src.execution_provider.adapters.semantic_session",
-    "src.execution_provider.wire.v5",
     "src.scheduling.core.scheduler",
 ):
     assert name not in sys.modules, name

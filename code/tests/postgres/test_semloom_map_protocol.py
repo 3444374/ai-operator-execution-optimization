@@ -20,12 +20,12 @@ def _socket_pair():
 
 class MapProtocolTests(unittest.TestCase):
     def test_execution_payload_and_completion_match_independent_vectors(self) -> None:
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.semantic_map import SemanticMapPlan, canonical_messages
 
-        physical = v5.physical_algorithm_digest()
+        physical = map_codec.physical_algorithm_digest()
         self.assertEqual(physical, "558e50ae5e2716d2e699e09ddb8ffb953f772ba9a1be9dbb15379d9bfcf08d66")
-        execution = v5.provider_execution_digest("golden-map-v1")
+        execution = map_codec.provider_execution_digest("golden-map-v1")
         self.assertEqual(execution, "8c104ecf5cbf44ca11e13f71d4ef8723a362df26a4743939a5357d788b564dd2")
         vectors = (
             ("Echo the input.", "hello", 0, 17, 1,
@@ -44,10 +44,10 @@ class MapProtocolTests(unittest.TestCase):
         for instruction, value, sequence, prompt, output, payload_expected, evidence_expected in vectors:
             with self.subTest(instruction=instruction, value=value, sequence=sequence):
                 plan = SemanticMapPlan(instruction, "golden-map-v1", 128)
-                payload = v5.semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value=value,
+                payload = map_codec.semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value=value,
                     canonical_messages_utf8=canonical_messages(instruction, value))
                 self.assertEqual(payload, payload_expected)
-                evidence = v5.completion_evidence_digest(semantic_spec_sha256=plan.digest,
+                evidence = map_codec.completion_evidence_digest(semantic_spec_sha256=plan.digest,
                     physical_algorithm_sha256=physical, provider_execution_sha256=execution,
                     semantic_payload_sha256=payload, sequence=sequence, raw_output=value,
                     finish_reason="stop", response_model_id="golden-map-v1", prompt_tokens=prompt, output_tokens=output)
@@ -55,116 +55,116 @@ class MapProtocolTests(unittest.TestCase):
 
 
     def test_identity_encoding_rejects_invalid_representations_and_binds_metadata(self) -> None:
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.semantic_map import SemanticMapPlan, canonical_messages
 
         plan = SemanticMapPlan("Echo the input.", "golden-map-v1", 128)
-        payload = v5.semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value="hello",
+        payload = map_codec.semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value="hello",
             canonical_messages_utf8=canonical_messages(plan.instruction, "hello"))
-        args = dict(semantic_spec_sha256=plan.digest, physical_algorithm_sha256=v5.physical_algorithm_digest(),
-            provider_execution_sha256=v5.provider_execution_digest(plan.model_id), semantic_payload_sha256=payload,
+        args = dict(semantic_spec_sha256=plan.digest, physical_algorithm_sha256=map_codec.physical_algorithm_digest(),
+            provider_execution_sha256=map_codec.provider_execution_digest(plan.model_id), semantic_payload_sha256=payload,
             sequence=0, raw_output="hello", finish_reason="stop", response_model_id=plan.model_id,
             prompt_tokens=17, output_tokens=1)
-        original = v5.completion_evidence_digest(**args)
+        original = map_codec.completion_evidence_digest(**args)
         for field, value in (("sequence", 1), ("raw_output", " hello"), ("finish_reason", "length"),
                              ("response_model_id", "different-model"), ("prompt_tokens", 18), ("output_tokens", 2)):
             with self.subTest(field=field):
-                self.assertNotEqual(v5.completion_evidence_digest(**{**args, field: value}), original)
+                self.assertNotEqual(map_codec.completion_evidence_digest(**{**args, field: value}), original)
         for field, value in (("semantic_spec_sha256", "A" * 64), ("semantic_payload_sha256", "0" * 63),
                              ("sequence", True), ("sequence", 2**64), ("prompt_tokens", -1), ("output_tokens", None),
                              ("raw_output", "x\0y"), ("finish_reason", ""), ("response_model_id", "\ud800")):
             with self.subTest(field=field):
                 with self.assertRaises((ValueError, TypeError)):
-                    v5.completion_evidence_digest(**{**args, field: value})
+                    map_codec.completion_evidence_digest(**{**args, field: value})
         with self.assertRaises(ValueError):
-            v5.provider_execution_digest(plan.model_id, provider_execution_id="semloom.provider.golden.uds.v4")
+            map_codec.provider_execution_digest(plan.model_id, provider_execution_id="semloom.provider.golden.uds.v4")
         with self.assertRaises(ValueError):
-            v5.semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value="hello",
+            map_codec.semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value="hello",
                                        canonical_messages_utf8=b"x" * 1048577)
 
     def test_strict_open_and_task_bind_the_actual_instruction_and_sequence(self) -> None:
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import ProtocolError, encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("原样返回输入。", "golden-map-v1", 128)
-        opened = v5.build_open_message(plan)
+        opened = map_codec.build_open_message(plan)
         self.assertEqual(len(opened), 22)
         self.assertEqual(opened["generation_constraints"],
             {"temperature": 0, "top_p": 1, "max_tokens": 128, "n": 1, "stream": False, "stop": None})
         self.assertEqual((opened["max_input_bytes"], opened["max_output_bytes"]), (163840, 65536))
-        context = v5.validate_open(opened)
+        context = map_codec.validate_open(opened)
         self.assertEqual(context.semantic_spec_digest, plan.digest)
         for sequence in (0, 1):
-            task = v5.build_task_message(plan, sequence=sequence, input_value="")
+            task = map_codec.build_task_message(plan, sequence=sequence, input_value="")
             self.assertEqual(len(task), 8)
             self.assertEqual(task["sequence"], str(sequence))
             with _socket_pair() as pair:
                 pair[0].sendall(encode_frame(task))
                 decoded = read_frame(pair[1])
-            self.assertEqual(v5.validate_task(decoded, expected_sequence=sequence, open_context=context),
+            self.assertEqual(map_codec.validate_task(decoded, expected_sequence=sequence, open_context=context),
                              (sequence, task["semantic_payload_digest"]))
         with self.assertRaises(ProtocolError):
-            v5.validate_task(v5.build_task_message(plan, sequence=0, input_value=""), expected_sequence=1, open_context=context)
+            map_codec.validate_task(map_codec.build_task_message(plan, sequence=0, input_value=""), expected_sequence=1, open_context=context)
         altered = SemanticMapPlan("different instruction", plan.model_id, 128)
         with self.assertRaises(ProtocolError):
-            v5.validate_task(v5.build_task_message(altered, sequence=1, input_value=""), expected_sequence=1, open_context=context)
+            map_codec.validate_task(map_codec.build_task_message(altered, sequence=1, input_value=""), expected_sequence=1, open_context=context)
         opened["semantic_spec_digest"] = "0" * 64
-        unverified_context = v5.validate_open(opened)
-        task = v5.build_task_message(plan, sequence=0, input_value="")
+        unverified_context = map_codec.validate_open(opened)
+        task = map_codec.build_task_message(plan, sequence=0, input_value="")
         task["semantic_spec_digest"] = "0" * 64
         with self.assertRaises(ProtocolError):
-            v5.validate_task(task, expected_sequence=0, open_context=unverified_context)
+            map_codec.validate_task(task, expected_sequence=0, open_context=unverified_context)
 
     def test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields(self) -> None:
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import ProtocolError, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
-        opened = v5.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))
+        opened = map_codec.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))
         for field, value in (("protocol_version", 4), ("protocol_version", True), ("semantic_spec_version", True),
                              ("model_id", "x\0y"), ("semantic_spec_digest", "A" * 64),
                              ("provider_execution_id", "semloom.provider.golden.uds.v4"),
                              ("max_input_bytes", 163841), ("max_output_bytes", 65535), ("operator_kind", "SEM_FILTER")):
             with self.subTest(field=field, value=value):
                 with self.assertRaises(ProtocolError):
-                    v5.validate_open({**opened, field: value})
+                    map_codec.validate_open({**opened, field: value})
         for field, value in (("stop", []), ("stop", "\n"), ("stream", 0), ("n", True),
                              ("max_tokens", 0), ("max_tokens", 4097), ("temperature", 0.1)):
             with self.subTest(field=field, value=value):
                 mutated = copy.deepcopy(opened)
                 mutated["generation_constraints"][field] = value
                 with self.assertRaises(ProtocolError):
-                    v5.validate_open(mutated)
+                    map_codec.validate_open(mutated)
         for field in opened:
             mutated = dict(opened)
             del mutated[field]
             with self.subTest(missing=field), self.assertRaises(ProtocolError):
-                v5.validate_open(mutated)
+                map_codec.validate_open(mutated)
         with self.assertRaises(ProtocolError):
-            v5.validate_open({**opened, "generation_profile": None})
+            map_codec.validate_open({**opened, "generation_profile": None})
         payload = json.dumps(opened).replace('"max_tokens": 128', '"max_tokens": 128, "max_tokens": 128').encode()
         with _socket_pair() as pair:
             pair[0].sendall(struct.pack("!I", len(payload)) + payload)
             decoded = read_frame(pair[1])
         with self.assertRaises(ProtocolError):
-            v5.validate_open(decoded)
+            map_codec.validate_open(decoded)
 
     def test_task_rejects_wire_counter_types_and_nested_mutations(self) -> None:
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import ProtocolError
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("echo", "golden-map-v1", 128)
-        context = v5.validate_open(v5.build_open_message(plan))
-        task = v5.build_task_message(plan, sequence=0, input_value="hello")
+        context = map_codec.validate_open(map_codec.build_open_message(plan))
+        task = map_codec.build_task_message(plan, sequence=0, input_value="hello")
         for label, value in (("number", 0), ("boolean", True), ("null", None), ("empty", ""),
                              ("leading-zero", "00"), ("positive-sign", "+0"), ("negative", "-1"),
                              ("fraction", "0.0"), ("exponent", "0e0"), ("non-ascii", "０"),
                              ("uint64-overflow", "18446744073709551616"), ("too-long", "1" * 5000)):
             with self.subTest(invalid_sequence=label):
                 with self.assertRaises(ProtocolError):
-                    v5.validate_task({**task, "sequence": value}, expected_sequence=0, open_context=context)
+                    map_codec.validate_task({**task, "sequence": value}, expected_sequence=0, open_context=context)
         mutations = []
         for field in task:
             mutated = copy.deepcopy(task)
@@ -181,83 +181,83 @@ class MapProtocolTests(unittest.TestCase):
         mutations.append(("extra-message-field", mutated))
         for label, mutated in mutations:
             with self.subTest(mutation=label), self.assertRaises(ProtocolError):
-                v5.validate_task(mutated, expected_sequence=0, open_context=context)
+                map_codec.validate_task(mutated, expected_sequence=0, open_context=context)
 
     def test_error_frames_are_strict_and_only_v5_admits_output_too_large(self) -> None:
-        from src.execution_provider.wire import v3, v4, v5
+        from src.execution_provider.wire import v3, v4, map_codec
         from src.execution_provider.wire.framing import ProtocolError
 
-        error = v5.build_error_message("OUTPUT_TOO_LARGE", sequence=0)
+        error = map_codec.build_error_message("OUTPUT_TOO_LARGE", sequence=0)
         self.assertEqual(error, {"type": "error", "protocol_version": 5, "sequence": "0", "code": "OUTPUT_TOO_LARGE"})
-        self.assertEqual(v5.validate_error(error, expected_sequence=0), "OUTPUT_TOO_LARGE")
-        self.assertEqual(v5.validate_error(v5.build_error_message("INVALID_OPEN", sequence=None), expected_sequence=None), "INVALID_OPEN")
+        self.assertEqual(map_codec.validate_error(error, expected_sequence=0), "OUTPUT_TOO_LARGE")
+        self.assertEqual(map_codec.validate_error(map_codec.build_error_message("INVALID_OPEN", sequence=None), expected_sequence=None), "INVALID_OPEN")
         mutations = [{**error, "extra": 1}, {"type": "error"}, {**error, "sequence": None},
                      {**error, "sequence": 0}, {**error, "sequence": "01"}, {**error, "sequence": "1"},
                      {**error, "protocol_version": 4}, {**error, "code": "secret-provider-output"}]
         for mutated in mutations:
             with self.subTest(fields=sorted(mutated)), self.assertRaises(ProtocolError):
-                v5.validate_error(mutated, expected_sequence=0)
+                map_codec.validate_error(mutated, expected_sequence=0)
         for codec in (v3, v4):
             with self.subTest(version=codec.PROTOCOL_VERSION), self.assertRaises(ValueError):
                 codec.build_error_message("OUTPUT_TOO_LARGE", sequence=0)
 
     def test_output_too_large_requires_a_current_task(self) -> None:
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import ProtocolError
 
         with self.subTest(interface="encode"), self.assertRaises(ValueError):
-            v5.build_error_message("OUTPUT_TOO_LARGE", sequence=None)
+            map_codec.build_error_message("OUTPUT_TOO_LARGE", sequence=None)
         open_error = {
             "type": "error", "protocol_version": 5,
             "sequence": None, "code": "OUTPUT_TOO_LARGE",
         }
         with self.subTest(interface="decode"), self.assertRaises(ProtocolError):
-            v5.validate_error(open_error, expected_sequence=None)
+            map_codec.validate_error(open_error, expected_sequence=None)
 
     def test_completion_metadata_and_wire_counters_survive_without_text_changes(self) -> None:
         from src.execution_provider.completion import Completion
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import ProtocolError
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("echo", "golden-map-v1", 128)
-        context = v5.validate_open(v5.build_open_message(plan))
-        payload = v5.build_task_message(plan, sequence=0, input_value="hello")["semantic_payload_digest"]
+        context = map_codec.validate_open(map_codec.build_open_message(plan))
+        payload = map_codec.build_task_message(plan, sequence=0, input_value="hello")["semantic_payload_digest"]
         result = Completion(" \nTRUE\t", plan.model_id, 19, 3, "length")
-        frame = v5.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
+        frame = map_codec.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
         self.assertEqual(len(frame), 13)
         self.assertEqual((frame["sequence"], frame["prompt_tokens"], frame["output_tokens"]), ("0", "19", "3"))
         self.assertEqual(frame["raw_output"], " \nTRUE\t")
         self.assertEqual(frame["finish_reason"], "length")
-        self.assertEqual(v5.validate_completion(frame, expected_sequence=0, payload_digest=payload, open_context=context), result)
+        self.assertEqual(map_codec.validate_completion(frame, expected_sequence=0, payload_digest=payload, open_context=context), result)
         for field, value in (("raw_output", "different"), ("response_model_id", "other-model"), ("prompt_tokens", 19),
                              ("output_tokens", "129"), ("sequence", "1"), ("finish_reason", "")):
             with self.subTest(field=field), self.assertRaises(ProtocolError):
-                v5.validate_completion({**frame, field: value}, expected_sequence=0, payload_digest=payload, open_context=context)
+                map_codec.validate_completion({**frame, field: value}, expected_sequence=0, payload_digest=payload, open_context=context)
 
     def test_usage_fields_have_independent_uint64_ranges(self) -> None:
         from src.execution_provider.completion import Completion
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("echo", "golden-map-v1", 128)
-        context = v5.validate_open(v5.build_open_message(plan))
-        payload = v5.build_task_message(plan, sequence=0, input_value="hello")["semantic_payload_digest"]
+        context = map_codec.validate_open(map_codec.build_open_message(plan))
+        payload = map_codec.build_task_message(plan, sequence=0, input_value="hello")["semantic_payload_digest"]
         result = Completion("hello", plan.model_id, 18446744073709551615, 1, "stop")
-        frame = v5.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
+        frame = map_codec.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
         self.assertEqual(frame["prompt_tokens"], "18446744073709551615")
         self.assertEqual(frame["output_tokens"], "1")
-        self.assertEqual(v5.validate_completion(frame, expected_sequence=0,
+        self.assertEqual(map_codec.validate_completion(frame, expected_sequence=0,
             payload_digest=payload, open_context=context), result)
 
     def test_frame_bounds_use_decimal_strings_and_output_policy_order(self) -> None:
         from src.execution_provider.completion import Completion
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import ProtocolError, encode_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("\x01" * 4096, "golden-map-v1", 4096)
-        task = v5.build_task_message(plan, sequence=2**64 - 1, input_value="\x01" * 163840)
+        task = map_codec.build_task_message(plan, sequence=2**64 - 1, input_value="\x01" * 163840)
         framed = encode_frame(task)
         self.assertEqual(struct.unpack("!I", framed[:4])[0], 1008142)
         self.assertEqual(len(framed) - 4, 1008142)
@@ -274,13 +274,13 @@ class MapProtocolTests(unittest.TestCase):
         self.assertEqual(len(encode_frame(completion)) - 4, 394857)
         completion["output_tokens"] = "4096"
         self.assertEqual(len(encode_frame(completion)) - 4, 394841)
-        context = v5.validate_open(v5.build_open_message(plan))
+        context = map_codec.validate_open(map_codec.build_open_message(plan))
         payload = task["semantic_payload_digest"]
         for result, code in ((Completion("x" * 65537, plan.model_id, 1, 1, "length"), "OUTPUT_TOO_LARGE"),
                              (Completion("x" * 65537, "wrong-model", 1, 1, "length"), "MODEL_RESPONSE_INVALID")):
             with self.subTest(code=code):
                 with self.assertRaises(ProtocolError) as caught:
-                    v5.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
+                    map_codec.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
                 self.assertEqual(caught.exception.code, code)
 
 
@@ -289,14 +289,14 @@ class MapSessionTests(unittest.TestCase):
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v3_session, run_v4_session, run_v5_session
         from src.execution_provider.generation_profile import GenerationProfile
-        from src.execution_provider.wire import v3, v4, v5
+        from src.execution_provider.wire import v3, v4, map_codec
         from src.execution_provider.wire.framing import MAX_FRAME_BYTES, encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         payload = b'{"nested":' + b"[" * 10000 + b"0" + b"]" * 10000 + b"}"
         self.assertLess(len(payload), MAX_FRAME_BYTES)
-        cases = (("v5-open", run_v5_session, v5, None, "INVALID_OPEN", None),
-                 ("v5-task", run_v5_session, v5, SemanticMapPlan("echo", "model", 128), "INVALID_TASK", "0"),
+        cases = (("v5-open", run_v5_session, map_codec, None, "INVALID_OPEN", None),
+                 ("v5-task", run_v5_session, map_codec, SemanticMapPlan("echo", "model", 128), "INVALID_TASK", "0"),
                  ("v3-task", run_v3_session, v3, v3.SemanticFilterPlan("echo", "model"), "GATEWAY_INTERNAL", None),
                  ("v4-task", run_v4_session, v4,
                   v4.SemanticFilterPlan("echo", "model", GenerationProfile(
@@ -321,7 +321,7 @@ class MapSessionTests(unittest.TestCase):
         import sys
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v3_session, run_v5_session
-        from src.execution_provider.wire import v3, v5
+        from src.execution_provider.wire import v3, map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
@@ -329,7 +329,7 @@ class MapSessionTests(unittest.TestCase):
         sys.set_int_max_str_digits(4300)
         self.addCleanup(sys.set_int_max_str_digits, previous_limit)
         cases = ((run_v3_session, v3, v3.SemanticFilterPlan("echo", "model"), "GATEWAY_INTERNAL"),
-                 (run_v5_session, v5, SemanticMapPlan("echo", "model", 128), "INVALID_TASK"))
+                 (run_v5_session, map_codec, SemanticMapPlan("echo", "model", 128), "INVALID_TASK"))
         for runner, codec, plan, code in cases:
             with self.subTest(version=codec.PROTOCOL_VERSION), _socket_pair() as pair:
                 pair[0].settimeout(3)
@@ -341,7 +341,7 @@ class MapSessionTests(unittest.TestCase):
                 pair[0].sendall(struct.pack("!I", len(payload)) + payload)
                 error = read_frame(pair[0])
                 self.assertEqual(error["code"], code)
-                if codec is v5:
+                if codec is map_codec:
                     self.assertEqual(error["sequence"], "0")
                 self.assertIsNone(read_frame(pair[0]))
                 worker.join(3)
@@ -350,7 +350,7 @@ class MapSessionTests(unittest.TestCase):
     def test_adapter_value_and_recursion_errors_remain_internal_and_redacted(self) -> None:
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v5_session
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
@@ -368,9 +368,9 @@ class MapSessionTests(unittest.TestCase):
                 pair[0].settimeout(3)
                 worker = threading.Thread(target=run_v5_session, args=(pair[1], BrokenAdapter(error_type)), daemon=True)
                 worker.start()
-                pair[0].sendall(encode_frame(v5.build_open_message(plan)))
+                pair[0].sendall(encode_frame(map_codec.build_open_message(plan)))
                 self.assertEqual(read_frame(pair[0])["type"], "opened")
-                pair[0].sendall(encode_frame(v5.build_task_message(plan, sequence=0, input_value="hello")))
+                pair[0].sendall(encode_frame(map_codec.build_task_message(plan, sequence=0, input_value="hello")))
                 self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": 5,
                                                     "sequence": "0", "code": "GATEWAY_INTERNAL"})
                 self.assertIsNone(read_frame(pair[0]))
@@ -381,12 +381,12 @@ class MapSessionTests(unittest.TestCase):
         from src.execution_provider.completion import Completion
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v5_session
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("Echo the input.", "golden-map-v1", 128)
-        task = v5.build_task_message(plan, sequence=0, input_value="")
+        task = map_codec.build_task_message(plan, sequence=0, input_value="")
         cases = (
             ("legacy raw output", "GOLDEN_FIXTURE_INVALID"),
             (None, "GOLDEN_FIXTURE_MISSING"),
@@ -401,7 +401,7 @@ class MapSessionTests(unittest.TestCase):
                 fixtures = {} if result is None else {task["semantic_payload_digest"]: result}
                 worker = threading.Thread(target=run_v5_session, args=(pair[1], GoldenCompletionAdapter(fixtures)), daemon=True)
                 worker.start()
-                pair[0].sendall(encode_frame(v5.build_open_message(plan)))
+                pair[0].sendall(encode_frame(map_codec.build_open_message(plan)))
                 self.assertEqual(read_frame(pair[0])["type"], "opened")
                 pair[0].sendall(encode_frame(task))
                 error = read_frame(pair[0])
@@ -413,7 +413,7 @@ class MapSessionTests(unittest.TestCase):
     def test_version_mismatch_and_legacy_adapter_never_fall_back(self) -> None:
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v3_session, run_v4_session, run_v5_session
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
@@ -425,7 +425,7 @@ class MapSessionTests(unittest.TestCase):
             def complete(self, request):
                 raise AssertionError("unsupported version reached adapter")
 
-        opened = v5.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))
+        opened = map_codec.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))
         cases = ((run_v3_session, GoldenCompletionAdapter({}), 3, "INVALID_OPEN"),
                  (run_v4_session, GoldenCompletionAdapter({}), 4, "INVALID_OPEN"),
                  (run_v5_session, LegacyAdapter(), 5, "MODEL_REQUEST_REJECTED"))
@@ -443,7 +443,7 @@ class MapSessionTests(unittest.TestCase):
     def test_invalid_json_task_reports_current_sequence_and_closes(self) -> None:
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v5_session
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
@@ -451,7 +451,7 @@ class MapSessionTests(unittest.TestCase):
             pair[0].settimeout(3)
             worker = threading.Thread(target=run_v5_session, args=(pair[1], GoldenCompletionAdapter({})), daemon=True)
             worker.start()
-            pair[0].sendall(encode_frame(v5.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))))
+            pair[0].sendall(encode_frame(map_codec.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))))
             self.assertEqual(read_frame(pair[0])["type"], "opened")
             payload = b'{"secret-payload":'
             pair[0].sendall(struct.pack("!I", len(payload)) + payload)
@@ -464,12 +464,12 @@ class MapSessionTests(unittest.TestCase):
         from src.execution_provider.completion import Completion
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v5_session
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         plan = SemanticMapPlan("Echo the input.", "golden-map-v1", 128)
-        task = v5.build_task_message(plan, sequence=0, input_value="hello")
+        task = map_codec.build_task_message(plan, sequence=0, input_value="hello")
         raw = Completion(" hello\n\"世界\" ", plan.model_id, 17, 5, "stop")
 
         class CountingGolden(GoldenCompletionAdapter):
@@ -486,14 +486,14 @@ class MapSessionTests(unittest.TestCase):
             pair[0].settimeout(3)
             worker = threading.Thread(target=run_v5_session, args=(pair[1], adapter), daemon=True)
             worker.start()
-            pair[0].sendall(encode_frame(v5.build_open_message(plan)))
+            pair[0].sendall(encode_frame(map_codec.build_open_message(plan)))
             opened = read_frame(pair[0])
             self.assertEqual(opened["type"], "opened")
             self.assertEqual((opened["max_input_bytes"], opened["max_output_bytes"]), (163840, 65536))
             pair[0].sendall(encode_frame(task))
             result = read_frame(pair[0])
-            self.assertEqual(v5.validate_completion(result, expected_sequence=0, payload_digest=task["semantic_payload_digest"],
-                open_context=v5.validate_open(v5.build_open_message(plan))), raw)
+            self.assertEqual(map_codec.validate_completion(result, expected_sequence=0, payload_digest=task["semantic_payload_digest"],
+                open_context=map_codec.validate_open(map_codec.build_open_message(plan))), raw)
             pair[0].sendall(encode_frame(task))
             error = read_frame(pair[0])
             self.assertEqual(error["code"], "INVALID_TASK")
@@ -507,7 +507,7 @@ class MapSessionTests(unittest.TestCase):
     def test_invalid_semantic_identity_never_calls_adapter(self) -> None:
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v5_session
-        from src.execution_provider.wire import v5
+        from src.execution_provider.wire import map_codec
         from src.execution_provider.wire.framing import encode_frame, read_frame
         from src.execution_provider.semantic_map import SemanticMapPlan
 
@@ -521,9 +521,9 @@ class MapSessionTests(unittest.TestCase):
                 raise AssertionError("unverified task reached adapter")
 
         plan = SemanticMapPlan("echo", "golden-map-v1", 128)
-        opened = v5.build_open_message(plan)
+        opened = map_codec.build_open_message(plan)
         opened["semantic_spec_digest"] = "0" * 64
-        task = v5.build_task_message(plan, sequence=0, input_value="hello")
+        task = map_codec.build_task_message(plan, sequence=0, input_value="hello")
         task["semantic_spec_digest"] = "0" * 64
         adapter = NeverCalled()
         with _socket_pair() as pair:

@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 from src.execution_provider.completion import Completion
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.execution_provider.session_dispatch import run_session
-from src.execution_provider.wire import v5
+from src.execution_provider.wire import map_codec
 from src.execution_provider.wire.framing import MAX_FRAME_BYTES, encode_frame, read_frame
 
 
@@ -27,7 +27,7 @@ CLI = CODE_ROOT / "scripts/services/run_execution_provider_gateway.py"
 class MapGatewayTests(unittest.TestCase):
     def test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata(self) -> None:
         plan = SemanticMapPlan("Echo the input.", "golden-map-v1", 128)
-        task = v5.build_task_message(plan, sequence=0, input_value="hello")
+        task = map_codec.build_task_message(plan, sequence=0, input_value="hello")
         expected = Completion(' \nTRUE 世界\t ', plan.model_id, 23, 7, "stop")
         fixture = {task["semantic_payload_digest"]: {
             "raw_output": expected.raw_output, "response_model_id": plan.model_id,
@@ -62,7 +62,7 @@ class MapGatewayTests(unittest.TestCase):
                         time.sleep(0.01)
                 else:
                     self.fail(f"gateway did not start: {process.communicate(timeout=1)[1]!r}")
-                opened = v5.build_open_message(plan)
+                opened = map_codec.build_open_message(plan)
                 for index, (label, payload, after_open) in enumerate(invalid_frames):
                     with self.subTest(invalid_frame=label):
                         if index > 0:
@@ -88,8 +88,8 @@ class MapGatewayTests(unittest.TestCase):
                         for sequence in (0, 1):
                             task["sequence"] = str(sequence)
                             client.sendall(encode_frame(task))
-                            actual = v5.validate_completion(read_frame(client), expected_sequence=sequence,
-                                payload_digest=task["semantic_payload_digest"], open_context=v5.validate_open(opened))
+                            actual = map_codec.validate_completion(read_frame(client), expected_sequence=sequence,
+                                payload_digest=task["semantic_payload_digest"], open_context=map_codec.validate_open(opened))
                             self.assertEqual(actual, expected)
                         client.close()
                 stdout, stderr = process.communicate(timeout=3)
