@@ -63,11 +63,12 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按准确`475b3d60`统计：核心`code/src`为49,829行，全部src＋scripts为101,896行，测试为92,511行。
+代码量按准确`86d77f16`统计：核心`code/src`为49,829行，全部src＋scripts为101,734行，测试为92,511行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少4,262／38,439行，相对清理起点3fd减少11,799／47,749行。
-相对a39，核心减653行，其中658行只是离线校准归位；全部src＋scripts净增3行、测试增26行。
-各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)，文件移动不算代码删除。
+核心／宽口径相对固定main6a8a减少4,262／38,601行，相对清理起点3fd减少11,799／47,911行。
+相对a39，核心减653行，其中658行只是离线校准归位；全部src＋scripts净减159行、测试增26行。
+各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
+本批只移出无现用调用的旧文本嵌入HTTP画像脚本，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 

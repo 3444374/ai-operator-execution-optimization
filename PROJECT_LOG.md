@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：旧文本嵌入画像服务退出当前脚本
+
+[已独审的旧HTTP辅助脚本退役](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)
+保留准确原件和历史投影恢复，不新增替代服务；当前IPC与第三方原生HTTP分别保留，本批没有新增服务或模型运行。
+
 ## 2026-11-07：文本数据组织原型独立维护
 
 [研究目录及原样算法](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)

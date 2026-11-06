@@ -4609,3 +4609,14 @@ fixed_rows与token_budget两种软件子进程IPC的批次成员、calls、回�
 准确475b的核心Python为49,829行、src＋scripts为101,896行、测试为92,511行，含注释和空行；核心排除experiments／baselines且包含research。
 核心较a39减少653行主要来自这次归属变化，不表示删除了校准算法；相对main6a8a核心／宽口径减4,262／38,439行，相对3fd3887减11,799／47,749行。
 相对本轮b168分别减2,688／2,161行；原始来源、文档和压缩历史件单列，不用于扩大删码数字。
+
+<a id="retired-local-embedding-profile-service"></a>
+## 旧文本嵌入画像HTTP脚本退役
+
+已独审候选`86d77f1653209819c8f51bb9aa6e0ded79a4a1b6`基于准确`af63c0e56dab8cbd3f13649375bffa8f6eb92422`。
+仅删除无现用调用的`code/scripts/services/local_embedding_server.py`，共162行；该脚本服务于旧PostgreSQL／GPU嵌入画像，当前本地IPC及typed图像执行不使用它。
+[准确原件与恢复](../../../reproduction/native_baselines/README.md#retired-local-embedding-helper)保留一次gzip；五份投影仅增加五条来源和五条格式记录，3010个原预期摘要、投影身份及已有映射保持。
+整合保留候选的删除、原件、MANIFEST和恢复README完整内容；这里只同步现状记录，不新增替代服务或运行器。
+作者与独审已核源码用途、语法和原字节恢复；本次只核整合内容与文档，没有新增行为测试或启动模型、真实Ray、socket及网络服务，也没有重建完整历史树。
+按相同Git源码口径，af63→86d77的核心Python为49,829→49,829行，src＋scripts为101,896→101,734行，测试为92,511→92,511行；包含注释与空行，核心排除experiments／baselines且保留research。
+因此本批为脚本净减162行，src和测试均不变；原始结果、旧命令与研究／性能记录保留，第三方原生HTTP服务不受影响。
