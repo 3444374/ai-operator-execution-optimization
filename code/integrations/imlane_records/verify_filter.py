@@ -33,7 +33,7 @@ from integrations.imlane_records.transport_limits import for_owner
 from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.infrastructure.redact import redact_json_values, redact_text
 from src.baselines.text.movie_records import MovieRecordSource
-from src.experiments.lotus_records_movie import run_movie_query
+from src.experiments.movie_records_query import run_movie_query
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 

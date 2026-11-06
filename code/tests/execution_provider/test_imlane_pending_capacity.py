@@ -22,6 +22,14 @@ from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 class BridgeCapacityTests(unittest.TestCase):
+    def test_filter_resident_and_cascade_import_the_shared_movie_query(self):
+        from integrations.imlane_records import cascade_host, resident, verify_filter
+        from src.experiments import movie_records_query
+
+        self.assertIs(verify_filter.run_movie_query, movie_records_query.run_movie_query)
+        self.assertIs(resident.verify_filter, verify_filter)
+        self.assertIs(cascade_host.FilterScope, verify_filter.FilterScope)
+
     def test_Movie_filter_open_passes_its_declared_capacity_without_starting_a_bridge(self):
         from src.experiments import imlane_movie_formal as movie
 
