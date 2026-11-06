@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+## 2026-11-06：直接原生Movie Q3首测失败与关闭修复
+
+[主报告](diagnostics/native_sembench_q3_20261106/README.md)及紧凑证据保留受测e0ec的120条Daft预测、
+质量缺失、结果返回与进程收尾失败，不将其计为完整查询性能；Ray首测未运行。
+真实Daft执行器＋CPU模型替身复现资源寿命缺口，公共shutdown与新READY时钟入口通过相关CPU检查，
+修复后的物理GPU退出仍待实机确认。现有Ray2.56.1／vLLM0.25.1通过守卫CPU API审计，
+发布extra契约仍不满足，Dataset／actor／CUDA／质量／正常关闭未验；没有新模型运行或软件安装。
+旧失败、已消耗额度和所有缺项保留，下一批调用量与停止条件见原校准计划。
+
 <a id="native-baseline-calibration-preparation"></a>
 ## 2026-11-06：基线参数核查与直接原生 AI 准备
 

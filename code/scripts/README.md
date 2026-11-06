@@ -16,6 +16,7 @@
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 作者服务、默认与任务适配保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
+| 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
 | 实验原件恢复 | [restore_result_evidence.py](analysis/restore_result_evidence.py) | 按存储清单恢复原路径和字节，不重跑实验 |
@@ -27,6 +28,27 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 资源所有权、持久次数额度和最终关闭证据；`--help`／CPU 检查不证明这些实际环境已可运行。
 新原生 LOTUS 本地 IPC 已有 CPU 检查，官方完整 Q123 因本地缺 `overrides/cdlib/duckdb` 尚未通过，
 没有将 Core 替身当作原生执行资格。
+
+<a id="native-daft-q3-worker"></a>
+## 直接原生Daft Q3的worker与监督
+
+主driver在取得现有host租约、永久次数claim和当前环境preflight后，调用
+`src.experiments.native_daft_query.supervised_run(config_path, new_private_directory, model_python=..., monitor=...)`。
+`monitor`继续核对当前资源边界。该入口不安装、不claim、不重试，不替代最终GPU／SHM检查。
+监督子进程使用`python -B -m src.experiments.native_daft_query worker`；不再使用首测按结果文件轮询却未锚定READY期限的一次性控制脚本。
+所有配置／路径留仓库外；原有模型与driver环境分离。
+
+配置schema为`semloom.native_daft_q3.v1`，显式字段为`reviews_csv/model/sampling_params/engine_kwargs/provider_options`和
+`query_timeout_s=1200/cleanup_s=120/stop_grace_s=8`。生成使用temperature0、top_p1、max_tokens8192、stop[]、
+零惩罚／repetition1／单输出；engine_kwargs和provider_options省略原生覆盖时给空对象。
+读取完整Movie源，调用匹配的本地tokenizer，语义标签只用于driver侧离线评价。
+
+`result-ready.json`先保存一次完整预测，`worker.json`记录执行／关闭回执，`deadline.json`记录实际READY时钟；
+COUNT或READY已失败时保存`failed-result.json`而不报READY。附加写入失败不覆盖原异常或supervisor的清理报告。
+关闭112秒和最终TERM/KILL的8秒共用一份120秒收尾预算；没有READY时按完整1200秒查询期限停止。
+`completed`不是物理GPU退出证明。在driver环境调用`evaluate_q3(source, ready['result']['predictions'],
+positive_review_cnt=ready['result']['positive_review_cnt'], checkout=sembench_checkout)`离线评价，
+复用保存的预测，不重新运行AI图。失败和下一次规模见[诊断报告](../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
 
 ## Movie session 配置
 

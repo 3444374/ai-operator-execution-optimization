@@ -1,12 +1,18 @@
 """Real Daft CPU relations; native AI expression and SamplingParams are doubles."""
 
-import sys
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
 from src.baselines.text.frameworks.daft_sembench_native import execute_q3
 from src.baselines.text.sembench_movie_native import q3_messages
+from tests.baselines.text.native_sdk_fixtures import module_entries
+
+
+class UnusedEngine:
+    @classmethod
+    def from_engine_args(cls, *args, **kwargs):
+        raise AssertionError('literal CPU expression must not construct a model')
 
 
 class NativeDaftTests(unittest.TestCase):
@@ -19,7 +25,7 @@ class NativeDaftTests(unittest.TestCase):
         import daft
         from daft.functions.ai import prompt
 
-        with patch.dict(sys.modules, {'vllm': None}):
+        with module_entries({'vllm': None}):
             expression = prompt(daft.col('prompt'), provider='vllm-prefix-caching',
                 model='selected-model', engine_args={'dtype': 'bfloat16'}, generate_args={}, batch_size=17)
         self.assertIsInstance(expression, daft.Expression)
@@ -31,7 +37,7 @@ class NativeDaftTests(unittest.TestCase):
         sampling = dict(max_tokens=8192, temperature=0, stop=[])
         engines = dict(dtype='bfloat16')
         constructor = Mock(side_effect=lambda **kwargs: SimpleNamespace(**kwargs))
-        with patch.dict(sys.modules, {'vllm': SimpleNamespace(SamplingParams=constructor)}), \
+        with module_entries({'vllm': SimpleNamespace(SamplingParams=constructor, AsyncLLMEngine=UnusedEngine)}), \
                 patch('daft.functions.ai.prompt', return_value=daft.lit('Reasoning:\nTrue\nAnswer: False')) as prompt:
             result = execute_q3(self.rows(), model='selected-model', tokenizer=tokenizer,
                 sampling_params=sampling, engine_kwargs=engines, provider_options={'batch_size': 17})
@@ -51,7 +57,7 @@ class NativeDaftTests(unittest.TestCase):
         self.assertIsNone(result['metadata']['resolved_engine_capacity'])
 
     def test_empty_eligibility_does_not_construct_framework_or_model(self):
-        with patch.dict(sys.modules, {'daft': None, 'vllm': None}):
+        with module_entries({'daft': None, 'vllm': None}):
             for rows in ([], [self.rows()[0]]):
                 result = execute_q3(rows, model='selected-model', tokenizer=None, sampling_params={})
                 self.assertEqual(result['predictions'], [])
@@ -66,7 +72,8 @@ class NativeDaftTests(unittest.TestCase):
 
     def test_model_expression_failure_is_not_retried_or_replaced(self):
         error = RuntimeError('native AI expression construction failed')
-        with patch.dict(sys.modules, {'vllm': SimpleNamespace(SamplingParams=lambda **kwargs: kwargs)}), \
+        with module_entries({'vllm': SimpleNamespace(SamplingParams=lambda **kwargs: kwargs,
+                AsyncLLMEngine=UnusedEngine)}), \
                 patch('daft.functions.ai.prompt', side_effect=error) as prompt:
             with self.assertRaises(RuntimeError) as caught:
                 execute_q3(self.rows(), model='selected-model',

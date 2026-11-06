@@ -1,0 +1,397 @@
+{
+  "allowlisted_readonly_probes": {
+    "counts": {
+      "platform_current_python_file": 1,
+      "platform_uname_processor": 1,
+      "urllib3_ipv6_loopback_capability": 1
+    },
+    "events": [
+      {
+        "check": "sdk_imports",
+        "operation": {
+          "address_category": "loopback",
+          "family": "AF_INET6",
+          "port_category": "ephemeral_zero",
+          "socket_type": "SOCK_STREAM"
+        },
+        "probe": "urllib3_ipv6_loopback_capability",
+        "stack": [
+          {
+            "file": "exceptions.py",
+            "function": "<module>",
+            "line": 21
+          },
+          {
+            "file": "__init__.py",
+            "function": "<module>",
+            "line": 6
+          },
+          {
+            "file": "services.py",
+            "function": "<module>",
+            "line": 32
+          },
+          {
+            "file": "resource_and_label_spec.py",
+            "function": "<module>",
+            "line": 10
+          },
+          {
+            "file": "__init__.py",
+            "function": "<module>",
+            "line": 16
+          },
+          {
+            "file": "tpu.py",
+            "function": "<module>",
+            "line": 8
+          },
+          {
+            "file": "__init__.py",
+            "function": "<module>",
+            "line": 45
+          },
+          {
+            "file": "__init__.py",
+            "function": "<module>",
+            "line": 15
+          },
+          {
+            "file": "_base_connection.py",
+            "function": "<module>",
+            "line": 5
+          },
+          {
+            "file": "__init__.py",
+            "function": "<module>",
+            "line": 4
+          },
+          {
+            "file": "connection.py",
+            "function": "<module>",
+            "line": 137
+          },
+          {
+            "file": "connection.py",
+            "function": "_has_ipv6",
+            "line": 127
+          }
+        ]
+      },
+      {
+        "check": "sdk_imports",
+        "operation": {
+          "argument_categories": [
+            "executable",
+            "option"
+          ],
+          "argument_count": 2,
+          "argv_shape": "sequence",
+          "executable": "uname"
+        },
+        "probe": "platform_uname_processor",
+        "stack": [
+          {
+            "file": "platform_utils.py",
+            "function": "is_pin_memory_available",
+            "line": 46
+          },
+          {
+            "file": "cuda.py",
+            "function": "is_pin_memory_available",
+            "line": 283
+          },
+          {
+            "file": "interface.py",
+            "function": "in_wsl",
+            "line": 64
+          },
+          {
+            "file": "platform.py",
+            "function": "__iter__",
+            "line": 863
+          },
+          {
+            "file": "functools.py",
+            "function": "__get__",
+            "line": 995
+          },
+          {
+            "file": "platform.py",
+            "function": "processor",
+            "line": 858
+          },
+          {
+            "file": "platform.py",
+            "function": "get",
+            "line": 798
+          },
+          {
+            "file": "platform.py",
+            "function": "from_subprocess",
+            "line": 826
+          },
+          {
+            "file": "subprocess.py",
+            "function": "check_output",
+            "line": 466
+          },
+          {
+            "file": "subprocess.py",
+            "function": "run",
+            "line": 548
+          },
+          {
+            "file": "subprocess.py",
+            "function": "__init__",
+            "line": 1026
+          },
+          {
+            "file": "subprocess.py",
+            "function": "_execute_child",
+            "line": 1823
+          }
+        ]
+      },
+      {
+        "check": "sdk_imports",
+        "operation": {
+          "argument_categories": [
+            "executable",
+            "option",
+            "path"
+          ],
+          "argument_count": 3,
+          "argv_shape": "sequence",
+          "environment_shape": "current_environment_with_LC_ALL_C",
+          "executable": "file",
+          "target_category": "current_python_interpreter"
+        },
+        "probe": "platform_current_python_file",
+        "stack": [
+          {
+            "file": "serial_utils.py",
+            "function": "<module>",
+            "line": 37
+          },
+          {
+            "file": "utils.py",
+            "function": "<module>",
+            "line": 31
+          },
+          {
+            "file": "usage_lib.py",
+            "function": "<module>",
+            "line": 16
+          },
+          {
+            "file": "__init__.py",
+            "function": "<module>",
+            "line": 3
+          },
+          {
+            "file": "cpuinfo.py",
+            "function": "<module>",
+            "line": 165
+          },
+          {
+            "file": "cpuinfo.py",
+            "function": "DataSource",
+            "line": 166
+          },
+          {
+            "file": "platform.py",
+            "function": "architecture",
+            "line": 720
+          },
+          {
+            "file": "platform.py",
+            "function": "_syscmd_file",
+            "line": 669
+          },
+          {
+            "file": "subprocess.py",
+            "function": "check_output",
+            "line": 466
+          },
+          {
+            "file": "subprocess.py",
+            "function": "run",
+            "line": 548
+          },
+          {
+            "file": "subprocess.py",
+            "function": "__init__",
+            "line": 1026
+          },
+          {
+            "file": "subprocess.py",
+            "function": "_execute_child",
+            "line": 1823
+          }
+        ]
+      }
+    ],
+    "scope": "allowed audit events; subprocess/bind completion is not inferred"
+  },
+  "auto_install": false,
+  "checks": {
+    "guards": {
+      "allowlisted_readonly_probe_counts": {
+        "platform_current_python_file": 1,
+        "platform_uname_processor": 1,
+        "urllib3_ipv6_loopback_capability": 1
+      },
+      "model_engines_constructed": 0,
+      "model_requests": 0,
+      "prohibited_attempts": {},
+      "ray_runtime_started": false,
+      "status": "pass",
+      "weights_read": false
+    },
+    "local_tokenizer_pipeline": {
+      "config_sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "decoded_probe": "True",
+      "hidden_size": 3584,
+      "input_tokens": 23,
+      "model_type": "qwen2",
+      "native_identity_merge": true,
+      "num_hidden_layers": 28,
+      "processor_class": "Qwen2Tokenizer",
+      "prompt_sha256": "ff98b439891570341ed4e4152ae949624e50c6210f6d676ff38b4b2b919eb9b4",
+      "status": "pass",
+      "synthetic_messages": true,
+      "tokenizer_class": "CachedQwen2Tokenizer"
+    },
+    "metadata": {
+      "python": "3.12.3",
+      "readonly_probe_sources": {
+        "platform_file": {
+          "follow_symlinks": true,
+          "option": "-b",
+          "source_sha256": "e8d6ed5c7e295bcd2f28002e338d235440c74b42403f010560b32691c9d57571",
+          "status": "pass"
+        },
+        "urllib3_ipv6": {
+          "source_sha256": "2633bbdb69731e5ccb5cf4e4afd65605d86c7979cc5633126f50c92d5ad74a74",
+          "status": "pass",
+          "version": "2.7.0"
+        }
+      },
+      "status": "pass",
+      "versions": {
+        "aiohttp": "3.14.3",
+        "anyio": "4.14.2",
+        "fastapi": "0.136.3",
+        "huggingface-hub": "1.25.1",
+        "jsonref": null,
+        "jsonschema": "4.26.0",
+        "msgspec": "0.21.1",
+        "nixl": null,
+        "nixl-cu13": null,
+        "numpy": "2.3.5",
+        "openai": "2.48.0",
+        "pandas": "3.0.5",
+        "prometheus-client": "0.26.0",
+        "py-cpuinfo": "9.0.0",
+        "pyarrow": "24.0.0",
+        "pydantic": "2.13.4",
+        "ray": "2.56.1",
+        "starlette": "1.3.1",
+        "tokenizers": "0.22.2",
+        "torch": "2.11.0",
+        "transformers": "5.14.1",
+        "urllib3": "2.7.0",
+        "vllm": "0.25.1"
+      }
+    },
+    "public_signatures": {
+      "data_context_fields": true,
+      "fatal_exception_identity": true,
+      "public_keyword_bindings": true,
+      "resolved_config_field_names": true,
+      "stat_logger_import": true,
+      "status": "pass"
+    },
+    "pure_output_conversion": {
+      "constructed_sdk_output": true,
+      "metrics_dataclass_and_none": true,
+      "real_model_output": false,
+      "status": "pass",
+      "token_counts": true
+    },
+    "sampling_and_input": {
+      "native_processor_defaults": {
+        "batch_size": 32,
+        "concurrency": 1,
+        "max_concurrent_batches": 8,
+        "max_pending_requests": null,
+        "max_tasks_in_flight_per_actor": null,
+        "should_continue_on_error": false
+      },
+      "sampling": {
+        "frequency_penalty": 0,
+        "max_tokens": 8192,
+        "n": 1,
+        "presence_penalty": 0,
+        "repetition_penalty": 1,
+        "seed": null,
+        "stop": [],
+        "temperature": 0,
+        "top_p": 1
+      },
+      "status": "pass",
+      "tokens_prompt": true
+    },
+    "sdk_imports": {
+      "cuda_initialized": false,
+      "ray_initialized": false,
+      "status": "pass"
+    }
+  },
+  "diagnostic_revision": 4,
+  "guard_attempts": {},
+  "guard_events": [],
+  "missing_import_modules": [],
+  "not_checked": [
+    "actual engine construction and resolved GPU capacity",
+    "CUDA kernels/ABI",
+    "Ray Dataset/actor execution",
+    "native inference/quality/retries",
+    "physical engine shutdown",
+    "unused audio and KV connector extras"
+  ],
+  "published_extra_contract": {
+    "note": "Published extra conformance is separate from this CPU API audit; not an install list.",
+    "selected_declarations": {
+      "jsonref": {
+        "installed": null,
+        "requirement": ">=1.1.0",
+        "status": "missing"
+      },
+      "jsonschema": {
+        "installed": "4.26.0",
+        "requirement": "",
+        "status": "pass"
+      },
+      "nixl": {
+        "installed": null,
+        "requirement": "==1.1.0",
+        "status": "missing"
+      },
+      "nixl-cu13": {
+        "installed": null,
+        "requirement": "==1.1.0",
+        "status": "missing"
+      },
+      "vllm": {
+        "installed": "0.25.1",
+        "requirement": "==0.22.0",
+        "status": "fail"
+      }
+    },
+    "status": "fail"
+  },
+  "scope": "CPU API compatibility only; not official extra or native engine qualification",
+  "status": "pass"
+}
