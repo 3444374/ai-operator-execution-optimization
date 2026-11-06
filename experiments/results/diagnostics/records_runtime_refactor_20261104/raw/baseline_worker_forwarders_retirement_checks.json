@@ -263,5 +263,62 @@
     "main_merged": false,
     "research_changed": false
   },
-  "prior_server_six": "Separate original4d receipt recorded in global_entry_observation_server_4d_receipt.json; not qualification of this newer source."
+  "prior_server_six": "Separate original4d receipt recorded in global_entry_observation_server_4d_receipt.json; not qualification of this newer source.",
+  "integration": {
+    "upstream": "375fb69276754f26f14ae9e37352b8656ac6d14e",
+    "tested_own_candidate": "9f906c135112abe6a96afdb3a72291d2b247a30c",
+    "integration": "da67515735221049294dacd01916560c7683a737",
+    "manual_conflict": "Registry only; retained both independent report sections. INFRA auto-merged both changes.",
+    "protected_upstream_files": {
+      "code/integrations/imlane_duckdb/README.md": true,
+      "code/tests/observability/test_supervised_process_resources.py": true,
+      "experiments/plans/原生基线校准.md": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_cpu_check.py": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_repair.json": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_repair.patch": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/ipc_components.json": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/ipc_server_cpu.json": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/preparation.json": true,
+      "experiments/results/diagnostics/imlane_duckdb_q3_20261106/startup_shm_failure.json": true
+    },
+    "all_protected_match": true,
+    "own_code_and_tests": {
+      "code/integrations/imlane_records/cascade_udf.py": true,
+      "code/integrations/imlane_records/chain_host.py": true,
+      "code/integrations/imlane_records/chain_workload.py": true,
+      "code/integrations/imlane_records/filter_udf.py": true,
+      "code/integrations/imlane_records/model_lifecycle.py": true,
+      "code/src/baselines/text/frameworks/daft_engine_process.py": true,
+      "code/src/baselines/text/frameworks/lotus_cascade_process.py": true,
+      "code/src/baselines/text/frameworks/lotus_chain_batch.py": true,
+      "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": true,
+      "code/src/baselines/text/frameworks/lotus_chain_results.py": true,
+      "code/tests/baselines/text/test_daft_native_session.py": true,
+      "code/tests/execution_provider/test_lotus_chain_token_budget.py": true,
+      "code/tests/execution_provider/test_lotus_record_local_query.py": true,
+      "code/tests/infrastructure/test_owned_processes.py": true,
+      "code/tests/semantic_methods/test_lotus_chain_composition_oracle.py": true,
+      "code/tests/semantic_methods/test_lotus_record_results.py": true,
+      "code/tests/serving/test_shared_chain_migration.py": true,
+      "code/tests/serving/test_sync_process_migration.py": true
+    },
+    "all_own_match": true,
+    "research_patch_applied": false,
+    "simple_multijob_correction": "With dedicated owner; initial split candidate not applied.",
+    "regression": {
+      "source": "da67515735221049294dacd01916560c7683a737",
+      "tests_run": 33,
+      "passed": 33,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "seconds": 1.453716834075749,
+      "source_files": 1069,
+      "source_unchanged": true,
+      "full_source_map_sha256": "be16904082406ec145aadecec96b306fac28f8cb284db6473addc1c03df943ff",
+      "original_result_sha256": "f9f2f4a1a9e3c36815285314aded3547077dd38262057c87a3fc29b1ee82975b"
+    },
+    "note": "These33 overlap the original9f33. Separate source receipts, not66 distinct methods. Upstream375 work retained; research split patch not applied."
+  }
 }

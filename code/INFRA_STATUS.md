@@ -58,6 +58,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 
 [旧模型worker转发退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
 记录直接调用迁移、33项轻量CPU、两次收集问题及SDK／实际IPC未验证范围；旧pickle专属检查退出，当前序列化保留。
+并行375修复已保留，准确组合da675的相同33项通过；多查询拆分补丁尚未加入，正在核对普通入口支持范围。
 [准确4d六项服务器回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-observation-server-six)
 已补回原进程／软件传输检查，不累计为当前整树或模型测试数量。
 
