@@ -65,7 +65,12 @@ for name in ('src.execution_provider.adapters.lotus_cascade_core',
              'src.baselines.text.frameworks.daft_lotus_chain',
              'src.baselines.text.frameworks.daft_lotus_records',
              'src.baselines.text.frameworks.daft_lotus_session',
-             'src.baselines.text.frameworks.ray_data_lotus_cascade'):
+             'src.baselines.text.frameworks.ray_data_lotus_cascade',
+             'integrations.imlane_records.chain_host',
+             'integrations.imlane_records.chain_workload',
+             'integrations.imlane_records.model_lifecycle',
+             'integrations.imlane_records.filter_udf',
+             'integrations.imlane_records.cascade_udf'):
     importlib.import_module(name)
 '''
         run = subprocess.run([sys.executable, "-I", "-B", "-c", program, str(CODE)],
