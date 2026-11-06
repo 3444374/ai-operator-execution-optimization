@@ -123,6 +123,10 @@ Ray API替身覆盖完整cohort筛选、一次物化和计数；原2000行CSV用
 不把records桥或普通pip DuckDB算作该完整路径。模型依赖、实际重试／token与物理退出仍待机器验证。
 具体参数归属及有限测试条件见[配置说明](../docs/执行配置与优化开关.md#native-baseline-controls)与
 [校准计划](../experiments/plans/原生基线校准.md)，本批未启动GPU或服务器实验。
+合并最新并行修改后的相关检查去重249个方法最终通过，无未解决失败／跳过；首轮三项验证器的PYTHONPATH／
+CPU替身拦截设置问题，仅修正验证器后补跑三项，生产源码摘要保持。标准C++边界包含在其中。
+已知私有子进程context用例的macOS进程枚举权限问题未修、未重跑，不计通过；原失败保留。
+新原生AI仍没有真实Ray／vLLM／作者桥资格；本地软件通过不转授物理GPU退出或性能结论。
 
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；

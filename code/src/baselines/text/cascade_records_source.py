@@ -12,7 +12,6 @@ from src.semantic_methods.lotus.record_types import RecordOccurrence
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, identity
 
 
-MAX_ROWS = 4096
 MAX_CSV_BYTES = 16 * 1024 * 1024
 MAX_FIELD_CHARS = 128 * 1024
 
@@ -50,7 +49,7 @@ class MaterializedCascadeSource:
     only occurrence keys, the bound main method and immutable scan/file values.
     """
 
-    def __init__(self, directory, records, *, method, payload_columns, max_rows=MAX_ROWS):
+    def __init__(self, directory, records, *, method, payload_columns, max_rows):
         directory = Path(directory)
         if directory.is_symlink() or not directory.is_dir():
             raise ValueError("cascade source needs an existing nonsymlink private directory")
