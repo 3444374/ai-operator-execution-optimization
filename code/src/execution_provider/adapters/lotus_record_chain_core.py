@@ -26,6 +26,7 @@ import time
 import uuid
 import weakref
 
+from src.infrastructure.deadlines import deadline_after, earliest_deadline
 from src.infrastructure.private_artifacts import require_outside_git
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
@@ -39,6 +40,7 @@ from src.semantic_methods.lotus.record_chain import LotusRecordChain, ChainRun
 from src.semantic_methods.lotus.record_types import RecordOccurrence, stage_identity
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
 
 from .lotus_chain_actor_backend import _SectionTransport
 from .lotus_chain_fused_runtime import _ChainTransport, _CoreChainRows
@@ -500,7 +502,7 @@ class SemLoomRecordChainCore:
         spec = (self._phase_spec() if self.relation_barriers else
                 SessionSpec(query_id, "lotus-record-chain", "lotus-record-chain-fused-v1",
                             work_unit="stage_call_upper_bound"))
-        self.deadline = time.monotonic() + self.resources.query_timeout_s
+        self.deadline = deadline_after(self.resources.query_timeout_s)
         _check(self.deadline, cancelled)
         from src.semantic_methods.lotus.record_results import ChainBatchResults
 
@@ -563,7 +565,8 @@ class SemLoomRecordChainCore:
         self._closing = True
         if self.last_close_report is not None and self.last_close_report["status"] == "closed":
             return self.last_close_report
-        until = (time.monotonic() + timeout if timeout is not None else self.deadline)
+        until = (deadline_after(timeout) if timeout is not None else
+                 self.deadline if self.deadline is not None else deadline_after(DEFAULT_CLOSE_TIMEOUT_S))
         errors, worker_report = [], None
         if self.control is not None and self.control.exists():
             (self.control / "stop").touch(mode=0o600)
@@ -571,10 +574,10 @@ class SemLoomRecordChainCore:
             errors.extend(self._active._close_query())
         if self.transport is not None:
             try:
-                remaining = 0 if until is None else until - time.monotonic()
+                remaining = until - time.monotonic()
                 if remaining <= 0:
                     raise TimeoutError("Core chain cleanup deadline expired")
-                worker_report = self.transport.close_worker(min(15, remaining))
+                worker_report = self.transport.close_worker(min(DEFAULT_CLOSE_TIMEOUT_S, remaining))
                 errors.extend(worker_report.get("cleanup_errors", []))
             except BaseException as error:
                 errors.append("private_engine_close: " + type(error).__name__)
@@ -601,7 +604,7 @@ class SemLoomRecordChainCore:
                     errors.append("call_audit: " + type(error).__name__)
         transport_closed = self.transport is None
         if self.transport is not None:
-            remaining = 0 if until is None else until - time.monotonic()
+            remaining = until - time.monotonic()
             if remaining > 0:
                 transport_closed = self.transport.backend.close(timeout=min(0.05, remaining))
         usage = None if self.core is None else asdict(self.core.capacity.usage())
@@ -727,7 +730,7 @@ class SemLoomRecordChainCore:
         self._expected_bindings = {record.row_id: record for record in expected}
         self._root_run, self._source_expected = run, expected
         self._expected_count = len(expected)
-        self.deadline = time.monotonic() + self.resources.query_timeout_s
+        self.deadline = deadline_after(self.resources.query_timeout_s)
         _check(self.deadline, cancelled)
         if self._actors is None:
             self._actors = AsyncRecordsActorOwner.for_prepared(
@@ -743,7 +746,7 @@ class SemLoomRecordChainCore:
             # therefore close its actual actor without retiring an empty Core
             # against a model identity which the caller never received.
             try:
-                self._start_record_actors(min(self.deadline,
+                self._start_record_actors(earliest_deadline(self.deadline,
                     time.monotonic() + self.resources.startup_timeout_s), cancelled)
             except BaseException as error:
                 self._record_startup_cleanup(error)
@@ -789,7 +792,7 @@ class SemLoomRecordChainCore:
             self._active = _RecordLocalRows(self, records, run, cancelled)
             if expected:
                 if self._service_runtime_binding is None:
-                    self._start_record_actors(min(self.deadline,
+                    self._start_record_actors(earliest_deadline(self.deadline,
                         time.monotonic() + self.resources.startup_timeout_s), cancelled)
                 from src.serving.backends.model_context import model_context_limit
                 context_limit = model_context_limit(self.engine, self._actors.model_ready)

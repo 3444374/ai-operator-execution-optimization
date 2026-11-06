@@ -19,6 +19,7 @@ import uuid
 from dataclasses import asdict
 from copy import deepcopy
 
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
@@ -137,7 +138,7 @@ class EngineProcess:
             read_fd = None
             self.ready_report = self._exchange(
                 dict(op="open", engine=asdict(engine), generation=asdict(generation)),
-                min(deadline, started + startup_timeout_s),
+                earliest_deadline(deadline, started + startup_timeout_s),
             )
             if self.ready_report.get("kind") != "ready":
                 raise RuntimeError("private engine initialization failed: " +
@@ -165,7 +166,7 @@ class EngineProcess:
     def _check(self, deadline, *, stopping=True):
         if stopping and (self.control / "stop").exists():
             raise InterruptedError("Daft records query cancelled")
-        if time.monotonic() >= deadline:
+        if deadline_expired(deadline):
             raise TimeoutError("Daft records engine deadline expired")
 
     def _exchange(self, value, deadline, *, stopping=True):
@@ -223,7 +224,7 @@ class EngineProcess:
 
     def _reap_idle(self):
         while not self._reaper_stop.wait(0.02):
-            if (self.control / "stop").exists() or time.monotonic() >= self.deadline:
+            if (self.control / "stop").exists() or deadline_expired(self.deadline):
                 with self._lock:
                     # An idle stop forbids reuse without breaking a healthy
                     # IPC channel before it can acknowledge engine shutdown.

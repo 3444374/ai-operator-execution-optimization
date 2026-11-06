@@ -14,6 +14,7 @@ import socket
 import threading
 import time
 
+from src.infrastructure.deadlines import remaining_time
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import OfferedTask, State, TaskInfo
@@ -449,8 +450,7 @@ class _CoreChainRows:
                     report["query_completed"] = True
                     raise StopIteration
                 if not progress.has_immediate_work:
-                    wait = min(self.owner.capacity.poll_interval_s,
-                               max(0, self.owner.deadline - time.monotonic()))
+                    wait = remaining_time(self.owner.deadline, self.owner.capacity.poll_interval_s)
                     self.owner.core.wake.wait(progress.generation, wait)
         except StopIteration:
             raise

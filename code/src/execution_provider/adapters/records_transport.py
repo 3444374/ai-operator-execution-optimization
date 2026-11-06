@@ -12,6 +12,7 @@ import json
 import threading
 import time
 
+from src.infrastructure.deadlines import deadline_expired
 from src.scheduling.core.session_contract import TaskKey
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
 from src.semantic_methods.lotus.records import CallLedger, identity
@@ -27,7 +28,7 @@ async def _await_result(value):
 def _check(deadline, cancelled=None):
     if cancelled is not None and cancelled():
         raise InterruptedError("LOTUS Core records cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("LOTUS Core records deadline expired")
 
 
@@ -247,7 +248,8 @@ def close_prepared_core(actors, transport, core, capacity, *, deadline, timeout=
             raise ValueError("cleanup timeout must be finite and positive")
         actors.close_deadline = time.monotonic() + timeout
     else:
-        actors.close_deadline = deadline
+        actors.close_deadline = (deadline if deadline is not None else
+                                 time.monotonic() + actors._model_close_timeout_s() + 1.)
     if retain_model:
         remaining = max(0., actors.close_deadline - time.monotonic())
         transport_closed = transport is None or transport.backend.close(timeout=remaining, wait_pending=True)

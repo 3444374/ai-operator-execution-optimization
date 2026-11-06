@@ -20,8 +20,8 @@ from .records_transport import _RecordTransport, _await_result
 class LotusChainActorBackend(_RecordTransport):
     def __init__(self, actors, maximum, notify, *, deadline_monotonic, on_result, token_budget=None, bulk=False,
                  handoff_progress=False):
-        if not math.isfinite(deadline_monotonic) or deadline_monotonic <= 0:
-            raise ValueError("a finite request deadline is required")
+        if deadline_monotonic is not None and (not math.isfinite(deadline_monotonic) or deadline_monotonic <= 0):
+            raise ValueError("request deadline must be finite and positive or None")
         if not callable(on_result):
             raise TypeError("an owner-held receipt sink is required")
         if handoff_progress and not bulk:

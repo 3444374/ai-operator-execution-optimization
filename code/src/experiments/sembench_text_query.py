@@ -275,5 +275,5 @@ def main(argv=None):
             'run','--config',str(Path(args.config).resolve()),'--data-dir',str(Path(args.data_dir).resolve()),
             '--sembench-checkout',str(Path(args.sembench_checkout).resolve()),'--output-dir',str(root),
             '--execute-model','--worker']
-        supervise(command,root,timeout_s=resources.startup_timeout_s+resources.query_timeout_s+30)
+        supervise(command,root,timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s+resources.query_timeout_s+30)
     return 0

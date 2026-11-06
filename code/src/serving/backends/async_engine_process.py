@@ -18,6 +18,7 @@ import threading
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_expired
 from . import vllm_protocol as common
 from .vllm_async_engine import AsyncEngineLimits, result_record
 from .async_engine_wire import _HEADER, _OPEN_FRAME_BYTES, _frame, _compact_result
@@ -201,7 +202,8 @@ class AsyncEngineProcess:
                     result=_compact_result(example)), self.limits.item_result_bytes)
 
     def submit(self, row, *, generation=None, deadline_monotonic):
-        common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
+        if deadline_monotonic is not None:
+            common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
         effective = self.generation if generation is None else generation
         if not isinstance(effective, common.GenerationSpec):
             raise TypeError("generation must be GenerationSpec")
@@ -220,7 +222,7 @@ class AsyncEngineProcess:
                 self._broken = self._broken or "ChildUnavailable"
             if self._broken is not None or self._closing:
                 return SubmitResult("rejected", reason="owner unavailable")
-            if time.monotonic() >= deadline_monotonic:
+            if deadline_expired(deadline_monotonic):
                 return SubmitResult("rejected", reason="deadline expired before acceptance")
             if self._slots and self._query_id != identity["query_id"]:
                 return SubmitResult("rejected", reason="previous query still owns inputs or results")
@@ -247,7 +249,8 @@ class AsyncEngineProcess:
 
     def submit_batch(self, rows, *, generation, deadline_monotonic):
         """One bounded data frame, atomic local acceptance, independent terminals."""
-        common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
+        if deadline_monotonic is not None:
+            common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
         if not rows or len(rows) > self.limits.max_inflight:
             return BatchSubmitResult("backpressure", reason="member request capacity exhausted")
         effective = common.GenerationSpec.from_dict(asdict(generation))
@@ -263,7 +266,7 @@ class AsyncEngineProcess:
         with self._condition:
             if self._io_done.is_set() or self.process is None or self.process.poll() is not None:
                 self._broken = self._broken or "ChildUnavailable"
-            if self._broken is not None or self._closing or time.monotonic() >= deadline_monotonic:
+            if self._broken is not None or self._closing or deadline_expired(deadline_monotonic):
                 return BatchSubmitResult("rejected", reason="owner unavailable or deadline expired")
             if self._slots and self._query_id != identities[0]['query_id']:
                 return BatchSubmitResult("rejected", reason="previous query still owns work")

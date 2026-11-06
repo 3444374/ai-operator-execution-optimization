@@ -14,6 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired, earliest_deadline
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
@@ -31,7 +32,7 @@ def _runtime_env(python: str) -> dict[str, Any]:
 
 
 def _check_deadline(deadline: float) -> None:
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("LOTUS records query deadline expired")
 
 
@@ -84,7 +85,7 @@ class InferBatch:
         self.completed = 0
         self.engine = None
         self._ready_emitted = False
-        startup_deadline = min(deadline, time.monotonic() + startup_timeout_s)
+        startup_deadline = earliest_deadline(deadline, time.monotonic() + startup_timeout_s)
         try:
             self.engine = VllmEngine(
                 EngineSpec.from_dict(engine), GenerationSpec.from_dict(generation)
@@ -320,7 +321,7 @@ def evaluate(
     """
 
     resources = RecordsResources(**asdict(resources))
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     method = FilterMethod.from_dict(asdict(method))
     generation = GenerationSpec.from_dict(asdict(generation))
     engine = EngineSpec.from_dict(asdict(engine))

@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import selectors
 import time
 from typing import Callable
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired, remaining_time
 from integrations.imlane_records.transport_limits import TransportLimits
 
 
@@ -124,14 +126,15 @@ class RecordsBridge:
         return self.request("collect", block_id=block_id, deadline=deadline)["rows"]
 
     def wait_ready(self, *, timeout_s):
-        if not 0 < timeout_s <= 600:
-            raise ValueError("records task deadline must be positive and finite")
-        deadline = time.monotonic() + timeout_s
-        while time.monotonic() < deadline:
+        if timeout_s is not None and (type(timeout_s) not in (int, float)
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise ValueError("records task duration must be finite and positive or None")
+        deadline = deadline_after(timeout_s)
+        while not deadline_expired(deadline):
             try:
                 blocks = self.ready(deadline=deadline)
             except TimeoutError as cause:
-                if time.monotonic() < deadline:
+                if not deadline_expired(deadline):
                     raise
                 error = TimeoutError("records native task deadline exceeded; owner must stop")
                 for note in getattr(cause, "__notes__", ()):
@@ -139,7 +142,7 @@ class RecordsBridge:
                 raise error from cause
             if blocks:
                 return blocks
-            time.sleep(min(.01, max(0, deadline - time.monotonic())))
+            time.sleep(remaining_time(deadline, .01))
         self._terminal = True
         error = TimeoutError("records native task deadline exceeded; owner must stop")
         try:

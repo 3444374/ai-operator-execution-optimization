@@ -63,7 +63,7 @@ class SessionLimits:
     item_result_bytes: int
     metadata_bytes: int
     step_actions: int
-    wait_timeout_s: float
+    wait_timeout_s: float | None
     poll_interval_s: float
     timeouts: SessionTimeouts | None = None
 
@@ -72,6 +72,8 @@ class SessionLimits:
             if name == "timeouts":
                 if value is not None and type(value) is not SessionTimeouts:
                     raise ValueError("timeouts must be SessionTimeouts or None")
+                continue
+            if name == "wait_timeout_s" and value is None:
                 continue
             if name.endswith("_s"):
                 if (

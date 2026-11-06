@@ -103,7 +103,7 @@ def execute_native(frame, stage, records, *, invoke, engine, resources,
     finally:
         if owner is not None:
             try:
-                report["backend_close"] = owner.close(timeout=resources.query_timeout_s)
+                report["backend_close"] = owner.close(**({} if resources.query_timeout_s is None else dict(timeout=resources.query_timeout_s)))
                 if report["backend_close"]["status"] != "closed" and failure is None:
                     failure = RuntimeError("native model physical cleanup is unconfirmed")
             except BaseException as error:

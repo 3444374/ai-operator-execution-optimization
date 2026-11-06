@@ -4,6 +4,7 @@ LOTUS/LiteLLM retain formatting, caching, batch_completion and parsing. Only
 the provider transport is local. No Core, policy, HTTP service or retry pool is
 constructed here. Native provider registration is scoped to an isolated query.
 """
+
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
@@ -16,6 +17,7 @@ import uuid
 
 from litellm import CustomLLM
 
+from src.infrastructure.deadlines import deadline_expired, remaining_time
 from src.semantic_methods.lotus.engine import engine_response, validate_engine_protocol
 from src.semantic_methods.lotus.records import CallLedger, identity
 from src.serving.backends.async_engine_process import AsyncEngineProcess
@@ -230,7 +232,8 @@ class _LocalProvider(CustomLLM):
         if model != self.lm.model:
             raise ValueError('native provider changed the original LM model identity')
         generation = self._generation(optional_params)
-        deadline = time.monotonic() + self.owner.resources.query_timeout_s
+        started = time.monotonic()
+        deadline = None if self.owner.resources.query_timeout_s is None else started + self.owner.resources.query_timeout_s
         with self._condition:
             if self._stopped:
                 raise RuntimeError('native query is no longer accepting model calls')
@@ -250,7 +253,7 @@ class _LocalProvider(CustomLLM):
             while request_id is None:
                 with self._condition:
                     self._collect()
-                    if self._stopped or time.monotonic() >= deadline:
+                    if self._stopped or deadline_expired(deadline):
                         raise TimeoutError('native query ended before model submission')
                     queued = self.owner.transport.submit(row, generation=generation, deadline_monotonic=deadline)
                     if queued.status == 'queued':
@@ -259,7 +262,7 @@ class _LocalProvider(CustomLLM):
                     elif queued.status != 'backpressure':
                         raise RuntimeError('native model submission rejected: ' + str(queued.reason))
                 if request_id is None:
-                    self.owner.transport.wait(min(.05, max(.001, deadline - time.monotonic())))
+                    self.owner.transport.wait(max(.001, remaining_time(deadline, .05)))
             while True:
                 with self._condition:
                     self._collect()
@@ -272,7 +275,7 @@ class _LocalProvider(CustomLLM):
                         result = event.result
                         if result is None:
                             result = result_record(request_identity, engine_uid=self.owner.ready_report['engine_uid'],
-                                start=deadline-self.owner.resources.query_timeout_s, end=time.monotonic(),
+                                start=started, end=time.monotonic(),
                                 status='unknown', submitted=True, error_type=event.error_type or 'MissingModelReceipt')
                         self.receipts[request_id] = deepcopy(result)
                         del self._pending[request_id]
@@ -281,22 +284,22 @@ class _LocalProvider(CustomLLM):
                             raise LocalModelFailure(result)
                         validate_engine_protocol(result)
                         return engine_response(result, SimpleNamespace(model=model))
-                    if self._stopped or time.monotonic() >= deadline:
+                    if self._stopped or deadline_expired(deadline):
                         self.owner.transport.abort(request_id)
                         raise TimeoutError('native model terminal receipt is still unconfirmed')
-                self.owner.transport.wait(min(.05, max(.001, deadline - time.monotonic())))
+                self.owner.transport.wait(max(.001, remaining_time(deadline, .05)))
         except BaseException as error:
             self.owner._tainted = True
             if request_id is None:
                 result = result_record(request_identity, engine_uid=self.owner.ready_report['engine_uid'],
-                    start=deadline-self.owner.resources.query_timeout_s, end=time.monotonic(),
+                    start=started, end=time.monotonic(),
                     status='failed', submitted=False, error_type='RejectedBeforeModelSubmission')
                 result.update(prompt_tokens=0, completion_tokens=0, total_tokens=0)
                 self.receipts['not-submitted-' + str(sequence)] = result
             elif request_id not in self.receipts:
                 self.receipts[request_id] = result_record(request_identity,
                     engine_uid=self.owner.ready_report['engine_uid'],
-                    start=deadline-self.owner.resources.query_timeout_s, end=time.monotonic(),
+                    start=started, end=time.monotonic(),
                     status='unknown', submitted=True, error_type=type(error).__name__)
             raise
 
@@ -445,7 +448,7 @@ def run(source, checkout, method, generation, engine, resources, *, query_id, pr
     finally:
         if model is not None and shared_model is None:
             try:
-                report['backend_close'] = model.close(timeout=resources.query_timeout_s)
+                report['backend_close'] = model.close(**({} if resources.query_timeout_s is None else dict(timeout=resources.query_timeout_s)))
                 emit('owner_closed')
                 if report['backend_close']['status'] != 'closed' and failure is None:
                     failure = RuntimeError('native model physical cleanup is unconfirmed')

@@ -20,6 +20,7 @@ OWNED = Path(__file__).resolve().parent
 CODE = OWNED.parents[1]
 sys.path.insert(0, str(CODE))
 
+from src.infrastructure.deadlines import deadline_after
 from integrations.imlane_records import owner, verify
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_host import FilterResults
@@ -116,7 +117,7 @@ def run_one(args, value, report, components, query_id):
     limits = for_owner(args, resources, max_query_rows=len(source.expected(query_id)) + 1)
     preflight_transport(source, method, resources, query_id, limits)
     report["transport_limits"] = limits.describe()
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     args.filter_config = args.output / ("worker-" + str(len(report["queries"])) + ".json")
     args.cuda_visible_devices = value.get("model_environment", {}).get("CUDA_VISIBLE_DEVICES", "")
     udf = (OWNED / "filter_udf.py" if value["mode"] == "local-model"
@@ -149,7 +150,7 @@ def run_one(args, value, report, components, query_id):
                 process.wait(timeout=3)
                 if not state["resources_confirmed"]:
                     raise RuntimeError("Filter scope resources remain unconfirmed")
-            client = RecordsBridge(process, abort_owner=abort_owner, timeout_s=min(60, resources.query_timeout_s),
+            client = RecordsBridge(process, abort_owner=abort_owner,
                                    protocol=PROTOCOL, max_pending=resources.request_capacity(), limits=limits)
             rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
                          **{name: row[name] for name in scan.payload_columns})

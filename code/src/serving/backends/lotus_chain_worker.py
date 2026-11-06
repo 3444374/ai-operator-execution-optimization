@@ -13,6 +13,7 @@ import socket
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_expired
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.record_types import (
     RecordOccurrence, _ordered_columns, _parent_seeds,
@@ -24,7 +25,7 @@ from src.semantic_methods.lotus.record_results import _json, _source_binding
 def _check(deadline, control):
     if (Path(control) / "stop").exists():
         raise InterruptedError("LOTUS chain cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("LOTUS chain query deadline expired")
 
 
@@ -322,7 +323,7 @@ class FusedChainBatch:
                 and ("engine_close" not in envelope or
                      envelope["engine_close"]["status"] == "closed"
                      and not envelope["engine_close"]["cleanup_errors"])
-                and not (self.control / "stop").exists() and time.monotonic() < self.deadline):
+                and not (self.control / "stop").exists() and not deadline_expired(self.deadline)):
             # Encoding and audit recovery no longer need this worker's copy.
             # Rebind so any other owner of the list keeps its complete data.
             self._audit_calls = []

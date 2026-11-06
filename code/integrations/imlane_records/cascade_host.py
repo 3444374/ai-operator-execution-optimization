@@ -9,6 +9,7 @@ import subprocess
 import time
 from types import SimpleNamespace
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired
 from integrations.imlane_records import owner, verify
 from integrations.imlane_records.cascade_workload import CascadeOccurrences, input_record, stage_values
 from integrations.imlane_records.client import RecordsBridge
@@ -136,7 +137,7 @@ class IMLaneCascadeBackend:
         if not Path(author_args.output).is_dir():
             raise ValueError("caller must supply a fresh private query output and its existing owner supervision")
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self._checked, self._active, self._startup_failed = False, None, False
         self._reports, self._author_states, self.author_report = {}, {}, dict(cleanup=[])
         self._author_failed, self._query_id = False, None
@@ -150,7 +151,7 @@ class IMLaneCascadeBackend:
     def check_lifecycle(self):
         self.author_args.stop_budget.check()
         self._check_author_evidence()
-        if time.monotonic() >= self.deadline:
+        if deadline_expired(self.deadline):
             raise TimeoutError("IMLane cascade query deadline expired")
         if self.cancelled is not None and self.cancelled():
             raise InterruptedError("IMLane cascade query cancelled")
@@ -307,7 +308,7 @@ class IMLaneCascadeBackend:
                 process.wait(timeout=3)
                 if not state["resources_confirmed"]:
                     raise RuntimeError("cascade author scope resources remain unconfirmed")
-            return RecordsBridge(process, abort_owner=abort, timeout_s=min(60,self.resources.query_timeout_s),
+            return RecordsBridge(process, abort_owner=abort,
                                  protocol=PROTOCOL,max_pending=self.resources.request_capacity(), limits=limits), finalizer
         except BaseException as error:
             try:

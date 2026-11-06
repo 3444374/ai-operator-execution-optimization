@@ -6,6 +6,7 @@ import subprocess
 import time
 from types import SimpleNamespace
 
+from src.infrastructure.deadlines import deadline_after
 from integrations.imlane_records import owner, verify
 from integrations.imlane_records.chain_host import ChainResults, ChainScope, configuration
 from integrations.imlane_records.chain_workload import ChainBatches, STAGE
@@ -79,7 +80,7 @@ class IMLaneChainBackend:
         if self._used:
             raise RuntimeError("IMLane chain backend owns one query")
         self._used = True
-        self.deadline = time.monotonic() + self.resources.query_timeout_s
+        self.deadline = deadline_after(self.resources.query_timeout_s)
         if self._cancelled():
             raise InterruptedError("IMLane chain cancelled before author allocation")
         chain = LotusRecordChain.from_dict(chain.describe())
@@ -171,7 +172,7 @@ class IMLaneChainBackend:
                 if not state["resources_confirmed"]:
                     raise RuntimeError("IMLane chain author scope remains unconfirmed")
 
-            return RecordsBridge(process,abort_owner=abort,timeout_s=min(60,self.resources.query_timeout_s),
+            return RecordsBridge(process,abort_owner=abort,
                                  protocol=PROTOCOL,max_pending=self.resources.request_capacity(), limits=limits),finalizer,physical
         except BaseException as error:
             try:

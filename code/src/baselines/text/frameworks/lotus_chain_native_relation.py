@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import time
 
+from src.infrastructure.deadlines import deadline_expired
 from src.semantic_methods.lotus.record_relation import complete_extract_relation
 
 
@@ -58,7 +59,7 @@ class NativeExtractRelationRows:
     def _check(self):
         if self.cancelled is not None and self.cancelled():
             raise InterruptedError("native Extract relation query cancelled")
-        if time.monotonic() >= self.deadline:
+        if deadline_expired(self.deadline):
             raise TimeoutError("native Extract relation query deadline expired")
 
     def _start_phase(self):

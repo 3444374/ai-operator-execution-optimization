@@ -16,6 +16,7 @@ import tempfile
 import threading
 import time
 
+from src.infrastructure.deadlines import deadline_after
 from src.semantic_methods.lotus.cascade import (
     CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
@@ -358,7 +359,7 @@ class DaftCascadeBackend:
             raise ValueError("max_prepared_batch_bytes must be a positive integer")
         self.resources = RecordsResources(**asdict(resources))
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self.runner_threads, self.max_prepared_batch_bytes = runner_threads, max_prepared_batch_bytes
         self.close_reports, self._checked = [], False
         self._methods, self._scans = {}, {}

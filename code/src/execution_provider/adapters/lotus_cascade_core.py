@@ -25,6 +25,7 @@ from pathlib import Path
 import tempfile
 import time
 
+from src.infrastructure.deadlines import deadline_after
 from src.infrastructure.private_artifacts import file_identity, open_private_text
 from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
 from src.serving.backends.stage_process_cleanup import StageEngineCleanup
@@ -366,7 +367,7 @@ class CoreCascadeBackend:
         if type(self.capacity) is not CoreRecordsCapacity:
             raise TypeError("cascade Core capacity must be CoreRecordsCapacity")
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self._checked = self._production_connected = False
         self._active, self._startup_failure, self._reports = None, None, {}
         self._reserved = dict(main=0, helper=0)
@@ -498,7 +499,7 @@ class CoreCascadeBackend:
         control = Path(tempfile.mkdtemp(prefix="semloom-cascade-core-"))
         source = _StageSource(stage, bound, control, self.capacity.item_input_bytes)
         source.materialization_seconds = time.monotonic() - started
-        resources = replace(self.resources, query_timeout_s=max(0.000001, self.deadline - time.monotonic()))
+        resources = replace(self.resources, query_timeout_s=None if self.deadline is None else max(0.000001, self.deadline - time.monotonic()))
         # The unchanged preparation/Core seam is ordinary. Only the trusted
         # model specialization receives actual per-stage helper generation.
         ordinary_generation = replace(local_generation(stage), logprobs=None)

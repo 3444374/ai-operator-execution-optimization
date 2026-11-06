@@ -17,6 +17,7 @@ from copy import deepcopy
 
 import pyarrow as pa
 
+from src.infrastructure.deadlines import deadline_expired
 from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_workload import PROTOCOL, input_record, validate_terminal
 from integrations.imlane_records.model_lifecycle import close_owned_model, model_closed
@@ -44,7 +45,8 @@ class FilterWorker:
         self.control = Path(config["control_dir"])
         self.model_environment = config.get("model_environment", {})
         if (not isinstance(self.query_id, str) or not self.query_id or not self.control.is_dir()
-                or type(self.deadline) not in (int, float) or not time.monotonic() < self.deadline < float("inf")
+                or self.deadline is not None and (type(self.deadline) not in (int, float)
+                    or not time.monotonic() < self.deadline < float("inf"))
                 or self.engine.max_model_calls is None
                 or self.resources.cpu_workers != 1):
             raise ValueError("IMLane Filter requires a bounded query, control directory and call budget")
@@ -64,7 +66,7 @@ class FilterWorker:
             raise RuntimeError("Filter worker cannot infer after failure or close")
         if (self.control / "stop").exists():
             raise InterruptedError("IMLane Filter query cancelled")
-        if time.monotonic() >= self.deadline:
+        if deadline_expired(self.deadline):
             raise TimeoutError("IMLane Filter query deadline expired")
 
     def _kernel(self):

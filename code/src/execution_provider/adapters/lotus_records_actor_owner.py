@@ -14,6 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable
 
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline, remaining_time
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
@@ -32,11 +33,13 @@ def _check(deadline: float, cancelled: Callable[[], bool] | None = None) -> None
     # Keep the existing actors' exception semantics for the static caller.
     if cancelled is not None and cancelled():
         raise InterruptedError("LOTUS records actors cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("LOTUS records actors deadline expired")
 
 
-def _deadline(value: float) -> None:
+def _deadline(value: float | None, *, optional=False) -> None:
+    if optional and value is None:
+        return
     if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
         raise ValueError("actor deadline must be finite and positive; bool is not accepted")
 
@@ -181,13 +184,13 @@ class RecordsActorOwner:
         self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None = None,
     ) -> Any:
         if self.close_deadline is not None:
-            deadline = min(deadline, self.close_deadline)
-        _deadline(deadline)
+            deadline = earliest_deadline(deadline, self.close_deadline)
+        _deadline(deadline, optional=True)
         while True:
             _check(deadline, cancelled)
             ready, _ = self.ray.wait(
                 [ref], num_returns=1,
-                timeout=min(0.05, max(0.0, deadline - time.monotonic())),
+                timeout=remaining_time(deadline, 0.05),
                 fetch_local=False,
             )
             if ready:

@@ -21,6 +21,7 @@ import threading
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.record_types import (
     RecordOccurrence, _ordered_columns,
@@ -50,7 +51,7 @@ class RayChainExecutionError(RuntimeError):
 def _check(deadline, control):
     if (Path(control) / "stop").exists():
         raise InterruptedError("Ray LOTUS chain cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("Ray LOTUS chain query deadline expired")
 
 
@@ -310,7 +311,7 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     resources = RecordsResources(**asdict(resources))
     if resources.cpu_workers != 1:
         raise ValueError("the fused Ray chain supports cpu_workers=1 only")
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
     if len({stage.method.model_name for stage in chain.stages}) != 1:

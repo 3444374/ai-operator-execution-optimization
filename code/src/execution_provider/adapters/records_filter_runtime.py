@@ -12,6 +12,7 @@ import json
 import time
 from typing import Any, Iterator
 
+from src.infrastructure.deadlines import remaining_time
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import OfferedTask, SessionSpec, State, TaskInfo
@@ -207,8 +208,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
                         raise RuntimeError("Core source cleanup is unconfirmed")
                     raise StopIteration
                 if not progress.has_immediate_work:
-                    wait = min(self.owner.capacity.poll_interval_s,
-                               max(0, self.deadline - time.monotonic()))
+                    wait = remaining_time(self.deadline, self.owner.capacity.poll_interval_s)
                     if progress.next_deadline is not None:
                         wait = min(wait, max(0, progress.next_deadline - time.monotonic()))
                     with _measure(self.timings, "control_wait"):

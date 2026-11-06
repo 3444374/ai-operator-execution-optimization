@@ -11,6 +11,7 @@ from subprocess import PIPE, Popen
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_after, earliest_deadline
 from integrations.imlane_records import owner, verify, verify_filter
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_host import FilterResults
@@ -86,9 +87,10 @@ class IMLaneResidentSession:
     def __init__(self, engine, generation, resources, *, author_args, model_environment,
                  deadline_monotonic, query_calls, observer=None):
         resources.request_capacity()
-        if (resources.cpu_workers != 1 or type(deadline_monotonic) not in (int, float)
-                or not time.monotonic() < deadline_monotonic < float("inf")):
-            raise ValueError("resident Filter requires one author worker and a finite session deadline")
+        if (resources.cpu_workers != 1 or deadline_monotonic is not None and (
+                type(deadline_monotonic) not in (int, float)
+                or not time.monotonic() < deadline_monotonic < float("inf"))):
+            raise ValueError("resident Filter requires one author worker and a future session deadline or None")
         self.query_calls = query_call_plan(query_calls, engine.max_model_calls)
         self.engine, self.generation, self.resources = engine, generation, resources
         self.args, self.environment = author_args, assigned_environment(model_environment)
@@ -196,7 +198,7 @@ class IMLaneResidentSession:
             self.native_query = query
             self.model_start_requested = True
             self.ready = self._control("session_start", query,
-                deadline=min(self.deadline, time.monotonic() + self.resources.startup_timeout_s))
+                deadline=earliest_deadline(self.deadline, time.monotonic() + self.resources.startup_timeout_s))
             self.client.end()
             self.native_query = None
             self._emit("owner_ready")
@@ -218,7 +220,7 @@ class IMLaneResidentSession:
         control = self.control / ("query-" + str(len(self.used_queries)))
         control.mkdir(mode=0o700)
         self.used_queries.add(query_id)
-        deadline = min(self.deadline, time.monotonic() + self.resources.query_timeout_s)
+        deadline = earliest_deadline(self.deadline, deadline_after(self.resources.query_timeout_s))
         config = dict(method=asdict(method), engine=asdict(replace(self.engine, max_model_calls=len(expected))),
             generation=asdict(self.generation), resources=asdict(self.resources), query_id=query_id,
             control_dir=str(control), deadline_monotonic=deadline, scan=scan.describe(), model_environment=self.environment,

@@ -921,7 +921,9 @@
         "code/src/execution_provider/adapters/image_execution.py": "historical_sources/8891c41b/code/src/execution_provider/adapters/image_execution.py.gz",
         "code/src/scheduling/core/ready_window.py": "historical_sources/8891c41b/code/src/scheduling/core/ready_window.py.gz",
         "code/src/scheduling/core/session_jobs.py": "historical_sources/8891c41b/code/src/scheduling/core/session_jobs.py.gz",
-        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz"
+        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz",
+        "code/integrations/imlane_records/resident_model.py": "historical_sources/87ab621f/code/integrations/imlane_records/resident_model.py.gz",
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1219,6 +1221,16 @@
           "encoding": "gzip",
           "decoded_bytes": 57398,
           "archive_sha256": "6f9ccd307a1439ef280611e38dd79eaa40374ab9dceb13fc959942b7e22fb4b3"
+        },
+        "code/integrations/imlane_records/resident_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1736,
+          "archive_sha256": "d91cf8e67923365bed6986df8543763162b19139d13301c597ce610c84a012f2"
+        },
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10651,
+          "archive_sha256": "1836c4fdb949c4f669d37a5d682901d459dfb52f54cb468bcba7775173c7b91c"
         }
       }
     },
@@ -2168,7 +2180,9 @@
         "code/src/execution_provider/adapters/image_execution.py": "historical_sources/8891c41b/code/src/execution_provider/adapters/image_execution.py.gz",
         "code/src/scheduling/core/ready_window.py": "historical_sources/8891c41b/code/src/scheduling/core/ready_window.py.gz",
         "code/src/scheduling/core/session_jobs.py": "historical_sources/8891c41b/code/src/scheduling/core/session_jobs.py.gz",
-        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz"
+        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz",
+        "code/integrations/imlane_records/resident_model.py": "historical_sources/87ab621f/code/integrations/imlane_records/resident_model.py.gz",
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -2466,6 +2480,16 @@
           "encoding": "gzip",
           "decoded_bytes": 57398,
           "archive_sha256": "6f9ccd307a1439ef280611e38dd79eaa40374ab9dceb13fc959942b7e22fb4b3"
+        },
+        "code/integrations/imlane_records/resident_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1736,
+          "archive_sha256": "d91cf8e67923365bed6986df8543763162b19139d13301c597ce610c84a012f2"
+        },
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10651,
+          "archive_sha256": "1836c4fdb949c4f669d37a5d682901d459dfb52f54cb468bcba7775173c7b91c"
         }
       }
     },
@@ -3425,7 +3449,9 @@
         "code/src/execution_provider/adapters/image_execution.py": "historical_sources/8891c41b/code/src/execution_provider/adapters/image_execution.py.gz",
         "code/src/scheduling/core/ready_window.py": "historical_sources/8891c41b/code/src/scheduling/core/ready_window.py.gz",
         "code/src/scheduling/core/session_jobs.py": "historical_sources/8891c41b/code/src/scheduling/core/session_jobs.py.gz",
-        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz"
+        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz",
+        "code/integrations/imlane_records/resident_model.py": "historical_sources/87ab621f/code/integrations/imlane_records/resident_model.py.gz",
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3723,6 +3749,16 @@
           "encoding": "gzip",
           "decoded_bytes": 57398,
           "archive_sha256": "6f9ccd307a1439ef280611e38dd79eaa40374ab9dceb13fc959942b7e22fb4b3"
+        },
+        "code/integrations/imlane_records/resident_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1736,
+          "archive_sha256": "d91cf8e67923365bed6986df8543763162b19139d13301c597ce610c84a012f2"
+        },
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10651,
+          "archive_sha256": "1836c4fdb949c4f669d37a5d682901d459dfb52f54cb468bcba7775173c7b91c"
         }
       }
     },
@@ -4684,7 +4720,9 @@
         "code/src/execution_provider/adapters/image_execution.py": "historical_sources/8891c41b/code/src/execution_provider/adapters/image_execution.py.gz",
         "code/src/scheduling/core/ready_window.py": "historical_sources/8891c41b/code/src/scheduling/core/ready_window.py.gz",
         "code/src/scheduling/core/session_jobs.py": "historical_sources/8891c41b/code/src/scheduling/core/session_jobs.py.gz",
-        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz"
+        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz",
+        "code/integrations/imlane_records/resident_model.py": "historical_sources/87ab621f/code/integrations/imlane_records/resident_model.py.gz",
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4987,6 +5025,16 @@
           "encoding": "gzip",
           "decoded_bytes": 57398,
           "archive_sha256": "6f9ccd307a1439ef280611e38dd79eaa40374ab9dceb13fc959942b7e22fb4b3"
+        },
+        "code/integrations/imlane_records/resident_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1736,
+          "archive_sha256": "d91cf8e67923365bed6986df8543763162b19139d13301c597ce610c84a012f2"
+        },
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10651,
+          "archive_sha256": "1836c4fdb949c4f669d37a5d682901d459dfb52f54cb468bcba7775173c7b91c"
         }
       }
     },
@@ -5952,7 +6000,9 @@
         "code/src/execution_provider/adapters/image_execution.py": "historical_sources/8891c41b/code/src/execution_provider/adapters/image_execution.py.gz",
         "code/src/scheduling/core/ready_window.py": "historical_sources/8891c41b/code/src/scheduling/core/ready_window.py.gz",
         "code/src/scheduling/core/session_jobs.py": "historical_sources/8891c41b/code/src/scheduling/core/session_jobs.py.gz",
-        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz"
+        "code/scripts/experiments/run_image_clip_e2e.py": "historical_sources/5b25197d/code/scripts/experiments/run_image_clip_e2e.py.gz",
+        "code/integrations/imlane_records/resident_model.py": "historical_sources/87ab621f/code/integrations/imlane_records/resident_model.py.gz",
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "historical_sources/87ab621f/code/src/baselines/text/frameworks/lotus_chain_native_relation.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6250,6 +6300,16 @@
           "encoding": "gzip",
           "decoded_bytes": 57398,
           "archive_sha256": "6f9ccd307a1439ef280611e38dd79eaa40374ab9dceb13fc959942b7e22fb4b3"
+        },
+        "code/integrations/imlane_records/resident_model.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1736,
+          "archive_sha256": "d91cf8e67923365bed6986df8543763162b19139d13301c597ce610c84a012f2"
+        },
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10651,
+          "archive_sha256": "1836c4fdb949c4f669d37a5d682901d459dfb52f54cb468bcba7775173c7b91c"
         }
       }
     }

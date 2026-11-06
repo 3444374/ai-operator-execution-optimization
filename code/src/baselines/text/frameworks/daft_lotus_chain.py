@@ -17,6 +17,7 @@ import threading
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.record_types import RecordOccurrence, _ordered_columns
 from src.semantic_methods.lotus.records import RecordsResources
@@ -38,7 +39,7 @@ class DaftChainExecutionError(ChainExecutionError):
 def _check(deadline, control):
     if (Path(control) / "stop").exists():
         raise InterruptedError("Daft LOTUS chain cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("Daft LOTUS chain query deadline expired")
 
 
@@ -296,7 +297,7 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
         raise ValueError("the fused Daft chain supports cpu_workers=1 only")
     if runner_threads is not None and (type(runner_threads) is not int or runner_threads < 1):
         raise ValueError("runner_threads must be a positive integer or None")
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
     if len({stage.method.model_name for stage in chain.stages}) != 1:

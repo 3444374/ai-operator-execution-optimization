@@ -868,7 +868,7 @@ def main(argv=None):
                 "cascade-run", "--source-manifest", str(source.manifest_path),
                 "--sembench-checkout", str(Path(args.sembench_checkout).resolve()),
                 "--config", str(Path(args.config).resolve()), "--output-dir", str(root), "--execute-model", "--worker"]
-            supervise(command, root, timeout_s=resources.startup_timeout_s + resources.query_timeout_s + 30)
+            supervise(command, root, timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s + resources.query_timeout_s + 30)
         return 0
     config, method, generation, resources, engine = read_config(args.config)
     if config.get("task", "movie-q3") != source.task.name:
@@ -902,5 +902,5 @@ def main(argv=None):
                    "--sembench-checkout", str(Path(args.sembench_checkout).resolve()),
                    "--config", str(Path(args.config).resolve()), "--output-dir", str(root),
                    "--execute-model", "--worker"]
-        supervise(command, root, timeout_s=resources.startup_timeout_s + resources.query_timeout_s + 30)
+        supervise(command, root, timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s + resources.query_timeout_s + 30)
     return 0

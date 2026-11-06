@@ -14,6 +14,7 @@ from pathlib import Path
 import tempfile
 import time
 
+from src.infrastructure.deadlines import deadline_after
 from src.semantic_methods.lotus.cascade import (
     CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
@@ -298,7 +299,7 @@ class RayCascadeBackend:
             raise ValueError("this cascade deployment requires distinct explicit model paths")
         self.resources = RecordsResources(**asdict(resources))
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self.close_reports = []
         self._checked = False
         self._methods, self._instructions, self._effective = {}, {}, {}

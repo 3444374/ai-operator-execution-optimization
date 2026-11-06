@@ -219,7 +219,8 @@ class _MovieDriver:
             return self.owner.start()
         if backend == "daft" and self.plan["lifecycle"] == "native_single_thread_session":
             from src.baselines.text.frameworks.daft_lotus_session import DaftNativeSession
-            deadline = (time.monotonic() + self.resources.startup_timeout_s
+            deadline = (None if self.resources.query_timeout_s is None else
+                        time.monotonic() + self.resources.startup_timeout_s
                         + len(self.plan["queries"]) * self.resources.query_timeout_s)
             self.owner = DaftNativeSession(self.engine, self.generation, self.resources,
                 control_dir=self.directory / "model", deadline_monotonic=deadline)
@@ -249,7 +250,8 @@ class _MovieDriver:
             self.imlane_handlers = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
             for number in self.imlane_handlers:
                 signal.signal(number, args.stop_budget.signal)
-            deadline = (time.monotonic() + self.resources.startup_timeout_s
+            deadline = (None if self.resources.query_timeout_s is None else
+                        time.monotonic() + self.resources.startup_timeout_s
                         + len(self.plan["queries"]) * self.resources.query_timeout_s + 2 * MODEL_CLOSE_GRACE_S)
             self.owner = IMLaneResidentSession(self.engine, self.generation, self.resources,
                 author_args=args, model_environment=value["model_environment"], deadline_monotonic=deadline,

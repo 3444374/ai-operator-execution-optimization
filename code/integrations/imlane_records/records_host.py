@@ -8,6 +8,7 @@ from contextlib import nullcontext
 from pathlib import Path
 import time
 
+from src.infrastructure.deadlines import remaining_time
 from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S, model_closed
 from integrations.imlane_records.transport_limits import close_block
@@ -27,7 +28,7 @@ allocates a model, a worker pool or a vendor scheduler.
                 or not callable(close_owner) or not callable(cleanup_scope)
                 or type(close_timeout_s) not in (int, float) or not math.isfinite(close_timeout_s)
                 or not MODEL_CLOSE_GRACE_S <= close_timeout_s <= 600
-                or type(deadline) not in (int, float) or not math.isfinite(deadline)
+                or deadline is not None and (type(deadline) not in (int, float) or not math.isfinite(deadline))
                 or client.meta.get("protocol") != PROTOCOL):
             raise ValueError("records carrier requires the explicit v2 bridge, bounded capacity and author finalizer")
         self.source, self.client = iter(rows), client
@@ -52,10 +53,10 @@ allocates a model, a worker pool or a vendor scheduler.
         return next(self._values)
 
     def _remaining(self):
-        value = self.deadline - time.monotonic()
-        if value <= 0:
+        value = remaining_time(self.deadline)
+        if value is not None and value <= 0:
             raise TimeoutError("IMLane records query deadline expired")
-        return min(600, value)
+        return value
 
     def _fill(self):
         while not (self.failed or self.exhausted) and len(self.pending) < self.max_pending:

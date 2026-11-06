@@ -133,7 +133,7 @@ class RecordsResources:
     prepare_batch_rows: int = 4
     model_batch_rows: int = 4
     max_active_batches: int | None = None
-    query_timeout_s: float = 60
+    query_timeout_s: float | None = None
     startup_timeout_s: float = 120
     model_rpc_workers: int | None = None
 
@@ -154,6 +154,8 @@ class RecordsResources:
             raise ValueError("model_rpc_workers must be a positive integer or None")
         for name in ("query_timeout_s", "startup_timeout_s"):
             value = getattr(self, name)
+            if name == "query_timeout_s" and value is None:
+                continue
             try:
                 valid = type(value) in (int, float) and math.isfinite(value) and value > 0
             except OverflowError:

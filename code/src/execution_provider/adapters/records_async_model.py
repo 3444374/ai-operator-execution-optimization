@@ -10,6 +10,7 @@ import json
 import threading
 import time
 
+from src.infrastructure.deadlines import deadline_expired
 from src.semantic_methods.lotus.records import CallLedger
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
@@ -284,7 +285,7 @@ class AsyncCoreModelActor:
     def _submit_prepared_batch(self, calls, batch_key, deadline):
         """One data RPC/IPC handoff. Results are polled and acknowledged per key."""
         from .lotus_chain_token_budget import audit_chain_call
-        _deadline(deadline)
+        _deadline(deadline, optional=True)
         batch_key = _request_key(batch_key)
         if type(calls) is not list or not 0 < len(calls) <= self.limits.max_inflight:
             raise ValueError('bulk prepared handoff must fit the request grant')
@@ -305,9 +306,9 @@ class AsyncCoreModelActor:
             slots = min(self.limits.max_inflight, self.limits.result_slots,
                         self.limits.result_bytes//self.limits.item_result_bytes)
             if len(self._held)+len(calls) > slots or batch_key[0] > self._session and self._held:
-                if not (self._closing or self._unhealthy or time.monotonic() >= deadline):
+                if not (self._closing or self._unhealthy or deadline_expired(deadline)):
                     return dict(status='backpressure')
-            expired = time.monotonic() >= deadline
+            expired = deadline_expired(deadline)
             if self._closing or self._unhealthy or self.engine is None or expired or batch_key[0] < self._session:
                 return dict(status='rejected', results=[dict(request_key=list(key), result=self._bounded_call_result(
                     self._receipt({n: call['row'][n] for n in IDENTITY_FIELDS}, 'failed', 'BatchNotSubmitted',
@@ -425,7 +426,7 @@ class AsyncCoreModelActor:
             return payload
 
     def _start_core(self, rows, deadline, maximum, request_key, generation):
-        _deadline(deadline)
+        _deadline(deadline, optional=True)
         key = _request_key(request_key)
         if type(rows) is not list or len(rows) != 1:
             raise ValueError("Async Core model actor requires one prepared occurrence")
@@ -437,9 +438,9 @@ class AsyncCoreModelActor:
                         self.limits.result_bytes // self.limits.item_result_bytes)
             # The transport retries after the prior result's ACK reaches this actor.
             if len(self._held) >= slots or (key[0] > self._session and self._held):
-                if self._closing or self._unhealthy or time.monotonic() >= deadline:
+                if self._closing or self._unhealthy or deadline_expired(deadline):
                     return None, self._bounded(self._receipt(occurrence, "failed", "CapacityUnavailable",
-                        expired=time.monotonic() >= deadline), maximum)
+                        expired=deadline_expired(deadline)), maximum)
                 return None, None
             if self._closing or self._unhealthy or self.engine is None:
                 return None, self._bounded(self._receipt(occurrence, "failed", "AsyncOwnerUnavailable"), maximum)
@@ -454,7 +455,7 @@ class AsyncCoreModelActor:
             call = self._held[key] = _Call(occurrence, aborted=key in self._early_cancels,
                 chain_call=generation is not None, batch_key=key,
                 max_result_bytes=maximum, deadline=deadline)
-            expired = time.monotonic() >= deadline
+            expired = deadline_expired(deadline)
             if call.aborted or expired:
                 call.value = self._receipt(occurrence, "failed",
                     "DeadlineExceeded" if expired else "CancelledBeforeSubmission", expired=expired)

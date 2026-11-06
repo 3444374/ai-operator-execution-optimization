@@ -10,6 +10,7 @@ import time
 from dataclasses import asdict
 from typing import Any, Callable, Iterator
 
+from src.infrastructure.deadlines import deadline_after, earliest_deadline, remaining_time
 from src.execution_provider.adapters.lotus_records_actor_owner import (
     RecordsActorOwner, _ModelActor, _PrepareActor, _check, _runtime_env,
 )
@@ -88,7 +89,7 @@ class _StaticRows(Iterator[dict[str, Any]]):
                 refs = [item[0] for item in self.pending]
                 ready, _ = self.owner.ray.wait(
                     refs, num_returns=1,
-                    timeout=min(0.05, max(0.0, self.deadline - time.monotonic())),
+                    timeout=remaining_time(self.deadline, 0.05),
                     fetch_local=False,
                 )
                 if not ready:
@@ -221,7 +222,7 @@ class SemLoomRecordsStaticReference:
             raise RuntimeError("static reference has closing or unconfirmed model ownership")
         if self._active is not None and not self._active.finished:
             raise RuntimeError("static reference already owns an active query")
-        deadline = time.monotonic() + self.resources.query_timeout_s
+        deadline = deadline_after(self.resources.query_timeout_s)
         from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
 
         source.preflight(self.method)
@@ -238,7 +239,7 @@ class SemLoomRecordsStaticReference:
         _check(deadline, cancelled)
         frame, ray = prepare_native_records_scan(source, scan, owner_name="static reference")
         if expected:
-            startup_deadline = min(deadline, time.monotonic() + self.resources.startup_timeout_s)
+            startup_deadline = earliest_deadline(deadline, time.monotonic() + self.resources.startup_timeout_s)
             try:
                 self._start(startup_deadline, cancelled)
             except BaseException as exc:

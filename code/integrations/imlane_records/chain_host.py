@@ -43,8 +43,9 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
         raise ValueError("reserve the finite chain's worst case request allowance before author allocation")
     if engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
-    if type(deadline) not in (int, float) or not math.isfinite(deadline) or deadline <= time.monotonic():
-        raise ValueError("finite chain needs an absolute finite work deadline")
+    if deadline is not None and (type(deadline) not in (int, float)
+            or not math.isfinite(deadline) or deadline <= time.monotonic()):
+        raise ValueError("chain work deadline must be in the future or None")
     model_environment = assigned_environment(model_environment)
     if type(allow_nulls) is not bool:
         raise TypeError("allow_nulls must be a boolean")

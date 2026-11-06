@@ -298,8 +298,11 @@ class MovieMatrix:
         remaining = deadline - time.monotonic()
         resources = plan['resources']
         starts = len(plan['queries']) if plan['lifecycle'] == 'isolated' else 1
-        owner_bound = starts * (resources['startup_timeout_s'] + 60) + len(plan['queries']) * resources['query_timeout_s']
-        limit = min(owner_bound, remaining - budget['cleanup_reserve_s'])
+        owner_bound = (None if resources['query_timeout_s'] is None else
+                       starts * (resources['startup_timeout_s'] + 60) + len(plan['queries']) * resources['query_timeout_s'])
+        limit = remaining - budget['cleanup_reserve_s']
+        if owner_bound is not None:
+            limit = min(owner_bound, limit)
         if work_deadline is not None:limit=min(limit,work_deadline-time.monotonic())
         if limit <= 60:
             raise TimeoutError('remaining execution/cleanup window cannot cover next owner')

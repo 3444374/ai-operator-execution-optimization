@@ -35,7 +35,8 @@ class CascadeWorker(FilterWorker):
         self.control, self.model_environment = Path(config["control_dir"]), dict(config["model_environment"])
         if (config.get("schema") != "imlane.cascade.stage.v1" or not self.stage.records
                 or any(r["query_id"] != self.query_id for r in self.stage.records)
-                or not self.control.is_dir() or not time.monotonic() < self.deadline < float("inf")
+                or not self.control.is_dir() or self.deadline is not None and (type(self.deadline) not in (int, float)
+                    or not time.monotonic() < self.deadline < float("inf"))
                 or self.resources.cpu_workers != 1
                 or self.engine.max_model_calls != len(self.stage.records)
                 or self.engine.max_model_len is not None and self.generation.max_tokens > self.engine.max_model_len):

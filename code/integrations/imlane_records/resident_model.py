@@ -7,6 +7,7 @@ the existing synchronous finite-batch engine; the author schedules every UDF.
 from pathlib import Path
 import time
 
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline
 from integrations.imlane_records.model_process import IMLaneEngineProcess
 
 
@@ -16,7 +17,7 @@ class ResidentEngineProcess(IMLaneEngineProcess):
             # Read the binding while holding the same lock as run_query. An
             # expired previous query must not close a newly rebound engine.
             with self._lock:
-                if (self.control / "stop").exists() or time.monotonic() >= self.deadline:
+                if (self.control / "stop").exists() or deadline_expired(self.deadline):
                     self._broken = True
                     self.close()
                     return
@@ -24,7 +25,7 @@ class ResidentEngineProcess(IMLaneEngineProcess):
     def run_query(self, rows, *, control, deadline):
         with self._lock:
             original = self.control, self.deadline
-            self.control, self.deadline = Path(control), min(deadline, self.deadline)
+            self.control, self.deadline = Path(control), earliest_deadline(deadline, self.deadline)
             try:
                 return super().run_prepared(rows)
             finally:

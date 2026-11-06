@@ -13,6 +13,7 @@ from pathlib import Path
 import sys
 import time
 
+from src.infrastructure.deadlines import deadline_expired
 from .vllm_sync_process import EngineProcess, MAX_MESSAGE_BYTES, _encode
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prepared
 
@@ -27,7 +28,7 @@ class ChainEngineProcess(EngineProcess):
     def _check(self, deadline, *, stopping=True):
         if stopping and (Path(self.control) / "stop").exists():
             raise InterruptedError("Ray LOTUS chain cancelled")
-        if time.monotonic() >= deadline:
+        if deadline_expired(deadline):
             raise TimeoutError("Ray LOTUS chain engine deadline expired")
 
     def run_prepared(self, rows, *, generation):

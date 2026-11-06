@@ -1,10 +1,12 @@
 """Opt-in Daft single-native-thread session; original process-pool stays separate."""
+
 from dataclasses import asdict
 import json
 import os
 from pathlib import Path
 import time
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired, earliest_deadline
 from .daft_lotus_records import _DaftRows, _graph, _check, DEFAULT_PREPARED_BATCH_BYTES
 from src.infrastructure.private_artifacts import new_private_directory
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
@@ -51,7 +53,7 @@ class DaftNativeSession:
             def run(self,prepared,query_ids,query_deadlines):
                 rows=prepared.to_pylist();ids=query_ids.to_pylist();deadlines=query_deadlines.to_pylist()
                 if not rows:return daft.Series.from_pylist([]).cast(dtype)
-                query_deadline=min(deadline,*deadlines)
+                query_deadline=earliest_deadline(deadline,*deadlines)
                 _check(query_deadline,control)
                 if any(row['query_id']!=qid for row,qid in zip(rows,ids,strict=True)):
                     raise ValueError('prepared rows belong to another Daft query')
@@ -96,7 +98,7 @@ class DaftNativeSession:
         validate_generation(method,self.generation);method=bind_filter_method(method)
         validate_lm(make_lm(method,self.generation),method,self.generation)
         self.engine.validate_driver_environment()
-        deadline=min(self.deadline,time.monotonic()+self.resources.query_timeout_s)
+        deadline=earliest_deadline(self.deadline, deadline_after(self.resources.query_timeout_s))
         _check(deadline,self.control)
         if cancelled is not None and cancelled():raise InterruptedError('Daft query cancelled before graph allocation')
         expected=source.expected(query_id)
@@ -178,7 +180,7 @@ class _SessionRows(_DaftRows):
             if close is not None:close()
         except BaseException as error:errors.append('iterator_close: '+type(error).__name__)
         complete=(self.received==set(self.expected) and self._failure is None
-                  and time.monotonic()<self.deadline and not self.session.closing
+                  and not deadline_expired(self.deadline) and not self.session.closing
                   and not self.session.broken and not errors
                   and not (self.cancelled is not None and self.cancelled()))
         self.session.active=None

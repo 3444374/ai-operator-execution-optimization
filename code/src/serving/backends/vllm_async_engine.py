@@ -15,6 +15,7 @@ import sys
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_expired, remaining_time
 from . import vllm_protocol as common
 
 
@@ -194,7 +195,8 @@ class VllmAsyncEngine:
     async def generate_prepared(self, row, *, request_id, generation=None,
                                 deadline_monotonic):
         self._control()
-        common._number(deadline_monotonic, "deadline_monotonic", low=0, inclusive_low=False)
+        if deadline_monotonic is not None:
+            common._number(deadline_monotonic, "deadline_monotonic", low=0, inclusive_low=False)
         common._string(request_id, "request_id")
         if len(request_id.encode()) > 256:
             raise ValueError("request_id exceeds 256 bytes")
@@ -217,7 +219,7 @@ class VllmAsyncEngine:
                 or self._input_bytes + size > self.limits.input_bytes):
             raise RuntimeError("async engine input capacity exhausted")
         started = time.monotonic()
-        if started >= deadline_monotonic:
+        if deadline_monotonic is not None and started >= deadline_monotonic:
             result = result_record(identity, engine_uid=self.engine_uid, start=started,
                 end=started, status="failed", submitted=False, error_type="DeadlineExceeded")
             result.update(deadline_expired=True, engine_terminal_confirmed=True)
@@ -237,7 +239,7 @@ class VllmAsyncEngine:
             if len(expected_ids) + effective.max_tokens > context['max_model_len']:
                 raise ValueError('rendered prompt and output cap exceed effective model context')
             state["expected_ids"] = expected_ids
-            expired = time.monotonic() >= deadline_monotonic
+            expired = deadline_expired(deadline_monotonic)
             if state["abort_requested"] or expired or self._closing_task is not None:
                 result = result_record(identity, engine_uid=self.engine_uid, start=started,
                     end=time.monotonic(), status="failed", submitted=False,
@@ -260,7 +262,7 @@ class VllmAsyncEngine:
         work = state["task"] = asyncio.create_task(execute())
         work.add_done_callback(lambda task: None if task.cancelled() else task.exception())
         try:
-            done, _ = await asyncio.wait((work,), timeout=max(0, deadline_monotonic - time.monotonic()))
+            done, _ = await asyncio.wait((work,), timeout=remaining_time(deadline_monotonic))
             if not done:
                 # AsyncLLM catches cancellation and awaits ABORT. Notify the
                 # caller now; retain this bounded task and all unknown ownership.
@@ -314,7 +316,7 @@ class VllmAsyncEngine:
         # v0.25.1 synthesizes abort output before sending ABORT to the core.
         if result.get("finish_reason") == "abort":
             result.update(status="unknown", text=None, error_type="AbortNotConfirmed")
-        if time.monotonic() >= deadline:
+        if deadline_expired(deadline):
             result.update(status="failed" if result["status"] != "unknown" else "unknown",
                           text=None, deadline_expired=True, error_type="DeadlineExceeded")
         result["engine_terminal_confirmed"] = result["status"] != "unknown"

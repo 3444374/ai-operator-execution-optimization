@@ -13,6 +13,7 @@ import threading
 import time
 from typing import Callable
 
+from src.infrastructure.deadlines import deadline_after, earliest_deadline
 from src.infrastructure.json_content import json_content_equal
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
@@ -308,7 +309,7 @@ class SemLoomRecordsCore:
             self._active.close()
             if self._service_allocation is not None and self._active.unconsumed_call_results:
                 raise RuntimeError('take unconsumed results before replacing their service query')
-        deadline = time.monotonic() + self.resources.query_timeout_s
+        deadline = deadline_after(self.resources.query_timeout_s)
         self._deadline = deadline
         from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
         query_method = self.method if method is None else FilterMethod.from_dict(asdict(method))
@@ -337,7 +338,7 @@ class SemLoomRecordsCore:
         try:
             if expected:
                 self.bind_model_runtime()
-                self._actors.start(min(deadline, time.monotonic() + self.resources.startup_timeout_s),
+                self._actors.start(earliest_deadline(deadline, time.monotonic() + self.resources.startup_timeout_s),
                                    cancelled)
                 self._check_model_runtime()
                 if self._service_allocation is not None:

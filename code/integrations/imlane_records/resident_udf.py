@@ -10,6 +10,7 @@ import uuid
 
 import pyarrow as pa
 
+from src.infrastructure.deadlines import deadline_expired
 from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_udf import FilterWorker
 from integrations.imlane_records.filter_workload import PROTOCOL
@@ -36,9 +37,10 @@ class ResidentWorker:
         identity(self.query_id, "session", 0)
         self.control, self.deadline = Path(config["control_dir"]), config["deadline_monotonic"]
         if (not self.control.is_dir() or self.control.is_symlink()
-                or type(self.deadline) not in (float, int) or not time.monotonic() < self.deadline < float("inf")
+                or self.deadline is not None and (type(self.deadline) not in (float, int)
+                    or not time.monotonic() < self.deadline < float("inf"))
                 or self.resources.cpu_workers != 1):
-            raise ValueError("resident Filter requires one author worker and a finite session deadline")
+            raise ValueError("resident Filter requires one author worker and a future session deadline or None")
         self.environment = dict(config["model_environment"])
         self.engine_type, self.prepare_type = engine_type, prepare_type
         self.uid = uuid.uuid4().hex
@@ -54,7 +56,7 @@ class ResidentWorker:
             raise RuntimeError("resident owner is terminal")
         if (self.control / "stop").exists():
             raise InterruptedError("IMLane resident session cancelled")
-        if time.monotonic() >= self.deadline:
+        if deadline_expired(self.deadline):
             raise TimeoutError("IMLane resident session expired")
 
     def snapshot(self):
@@ -97,8 +99,11 @@ class ResidentWorker:
                 or control.is_symlink() or not control.is_dir()
                 or not control.resolve().is_relative_to(self.control.resolve())
                 or control.resolve() == self.control.resolve() or str(control.resolve()) in self.controls
-                or type(config["deadline_monotonic"]) not in (float, int)
-                or not time.monotonic() < config["deadline_monotonic"] <= self.deadline
+                or config["deadline_monotonic"] is not None and (
+                    type(config["deadline_monotonic"]) not in (float, int)
+                    or not time.monotonic() < config["deadline_monotonic"] < float("inf"))
+                or self.deadline is not None and (config["deadline_monotonic"] is None
+                    or config["deadline_monotonic"] > self.deadline)
                 or {k: v for k, v in asdict(spec).items() if k != "max_model_calls"}
                 != {k: v for k, v in asdict(self.engine).items() if k != "max_model_calls"}
                 or asdict(GenerationSpec.from_dict(config["generation"])) != asdict(self.generation)

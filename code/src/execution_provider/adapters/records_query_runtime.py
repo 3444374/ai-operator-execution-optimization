@@ -11,6 +11,7 @@ from dataclasses import asdict, replace
 import json
 import time
 
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline, remaining_time
 from src.scheduling.core.session_contract import SessionSpec, TaskKey, TaskProfile
 from src.semantic_methods.lotus.record_results import _source_binding
 from src.semantic_methods.lotus.record_types import RecordOccurrence
@@ -19,7 +20,7 @@ from src.semantic_methods.lotus.record_types import RecordOccurrence
 def _check(deadline, cancelled=None):
     if cancelled is not None and cancelled():
         raise InterruptedError("Core LOTUS chain cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("Core LOTUS chain deadline expired")
 
 
@@ -344,7 +345,7 @@ class _RecordLocalRows:
                     deadlines.append(feedback.next_poll)
                 # Keep the existing owner cancellation/consumer wait bound.
                 deadlines.append(time.monotonic()+self.owner.capacity.poll_interval_s)
-                self.owner.core.wake.wait(generation, max(0., min(deadlines)-time.monotonic()))
+                self.owner.core.wake.wait(generation, max(0., earliest_deadline(*deadlines)-time.monotonic()))
 
     def _tick(self):
         _check(self.owner.deadline, self.cancelled)
@@ -383,7 +384,7 @@ class _RecordLocalRows:
             self._finish_phase()
         elif not progress.has_immediate_work:
             self.owner.core.wake.wait(progress.generation,
-                min(self.owner.capacity.poll_interval_s, max(0, self.owner.deadline - time.monotonic())))
+                remaining_time(self.owner.deadline, self.owner.capacity.poll_interval_s))
 
     def __next__(self):
         self.owner._control()
