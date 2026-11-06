@@ -109,6 +109,12 @@ class LotusChainActorBackend(_RecordTransport):
                             pass  # The ordinary result poll won the same transfer.
         return errors
 
+    def release_query_payloads(self):
+        """Drop retained query data after the owner confirms result transfer."""
+        with self._lock:
+            self._outcomes, self._requests, self._refs = {}, {}, {}
+            self._consumed_receipts, self._bulk = set(), {}
+
     async def _finish_batches(self):
         tasks = [c['driver'] for c in self._bulk.values() if 'driver' in c]
         if tasks:

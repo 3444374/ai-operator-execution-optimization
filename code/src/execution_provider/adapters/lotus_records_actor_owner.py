@@ -307,3 +307,14 @@ class RecordsActorOwner:
                 "cleanup_errors": errors,
             }
         return self.last_close_report
+
+    def release_query_payloads(self, metadata):
+        """Keep close metadata after its result payloads have transferred."""
+        self.last_close_report = metadata
+        self._model_close_report = metadata.get('engine_close_report')
+        self._model_close_ref = None
+
+    def query_payloads_retired(self):
+        """Read retained result data rather than a separate completion marker."""
+        return all(not ({'unconsumed_call_results', 'unconsumed_core_results', 'calls'} & set(value or {}))
+                   for value in (self.last_close_report, self._model_close_report))

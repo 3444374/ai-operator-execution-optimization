@@ -340,19 +340,13 @@ class SemLoomRecordChainCore:
         self._phase_parents = self._phase_columns = None
         self.phase_history = []
         if self.transport is not None:
-            with self.transport._lock:
-                self.transport._outcomes, self.transport._requests, self.transport._refs = {}, {}, {}
-                self.transport._consumed_receipts, self.transport._bulk = set(), {}
+            self.transport.release_query_payloads()
         organizer = getattr(self, '_token_organizer', None)
         if organizer is not None:
-            organizer._prefix = organizer._prefix_context = None
-            organizer._estimates, organizer._frontier, organizer._frontier_set = {}, [], set()
-            organizer._header_estimate = organizer._header_context = None
+            organizer.release_query_payloads()
             self._token_organizer = None
             self.core.policies = replace(self.core.policies, organize=None)
-        self._actors.last_close_report = actor
-        self._actors._model_close_report = actor.get('engine_close_report')
-        self._actors._model_close_ref = None
+        self._actors.release_query_payloads(actor)
         self._service_payloads_retired = True
 
     def _service_payloads_retired_confirmed(self):
@@ -365,8 +359,7 @@ class SemLoomRecordChainCore:
         stream = None if self._service_retired_stream_ref is None else self._service_retired_stream_ref()
         if stream is not None and not stream.query_payloads_retired():
             return False
-        return all(not ({'unconsumed_call_results', 'unconsumed_core_results', 'calls'} & set(value or {}))
-                   for value in (self._actors.last_close_report, self._actors._model_close_report))
+        return self._actors.query_payloads_retired()
 
     def finish_query(self, *, timeout=None):
         self._control()

@@ -75,6 +75,12 @@ class PreparedTokenOrganizer:
         self._frontier, self._frontier_set = [], set()
         self._prefix_sequence = 0
 
+    def release_query_payloads(self):
+        """Release completed query candidates while retaining batch statistics."""
+        self._prefix = self._prefix_context = None
+        self._estimates, self._frontier, self._frontier_set = {}, [], set()
+        self._header_estimate = self._header_context = None
+
     def usage(self):
         active = [r for r in self.owner.core.capacity.records.values() if r.compute]
         batches = {r.member.batch_key for r in active if r.member is not None}
