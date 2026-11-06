@@ -97,6 +97,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 观测 | [文件职责](src/observability/README.md#current-observation-owners) 归集时钟、事件与模型复用；[phase_sampler.py](src/observability/process_resources/phase_sampler.py) 保存分阶段RSS／CPU采样，图像CLI直接导入实际实现 |
 | 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
 | 独立研究 | [research/multitask](src/research/multitask/README.md) 保存共享额度和 SAOR；实验编排不进入单查询默认配置 |
+| 离线代价 | [operator_costs](src/experiments/operator_costs/README.md)分别拥有CSV／profile特征和既有估计比较；三个分析CLI只管输入、评估及输出，通用数学仍在planning/costs，运行链估算与反馈保持 |
 
 SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、
 JSON 中显式的 `max_inflight` 或服务 payload 声明取得有限额度；缺少来源在启动前报告。

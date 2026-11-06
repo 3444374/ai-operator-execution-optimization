@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：离线预测共用实现归实验模块
+
+[三个分析入口与历史来源](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
+删除脚本互载与临时参考接线，显式选择输入和context-LOO输出，保留原数值／历史原件及运行链估算；未新增研究算法。
+
 ## 2026-11-06：异步观测跟随实际转换
 
 [观察器实际接线与原反例](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)

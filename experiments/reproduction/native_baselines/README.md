@@ -3,6 +3,15 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="offline-cost-analysis-sources"></a>
+## 离线代价分析拆分前的来源
+
+三个当前命令改为直接调用[离线模块](../../../code/src/experiments/operator_costs/README.md)。
+准确`6f15358ea8836567bf9f26c860c0fd71c85eab25`的[full原件](historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_full.py.gz)
+和[context-LOO原件](historical_sources/6f15358e/code/scripts/analysis/compare_cost_estimators_contextloo.py.gz)保留各自完整字节。
+五份投影增加十条读取／gzip映射，原expected、投影身份及已有bfb的Ridge脚本来源保持；四十条相关来源读取通过，未重跑完整物化或旧模型实验。
+[数值对照与现行参数](../../results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)与历史命令分别解释。
+
 <a id="image-clip-script-source"></a>
 ## CLIP 命令拆分前的来源
 

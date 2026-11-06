@@ -88,6 +88,9 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [异步结果观测接线](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
 接到真实协议转换；可选指标读取错误只留下观测缺项，业务结果与原异常保持。原反例保留，最终四项CPU通过，未运行GPU观察器。
 
+[离线预测职责整理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
+分开profile数据与既有估计比较，删除脚本互载、临时参考文件和全局输入改写；输入／输出由调用方选择。主体28项、输出增量2项各自通过，未重新拟合真实数据或改变运行链估算。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

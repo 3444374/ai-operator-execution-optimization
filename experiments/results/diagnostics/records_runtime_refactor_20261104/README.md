@@ -4369,3 +4369,17 @@ record观察器与取消child有相同旧引用问题；观察器也改用实际
 零历史绑定，未改MANIFEST或原expected；未运行真实模型、CUDA／NVTX、Ray或IPC。指标缺项仍是缺项，不从缺失的观测推断模型终态。
 原件按`optional-metrics-original`／`optional-metrics-fixed`私有保存，修后JSON摘要为`2efde5d3af520591df60398958b62846c6b6beb55568944a0c97e6be0031a1a3`。
 本次仅脚本增加两行，核心仍52,517行，src与scripts为104,168行，沿用上节统计口径。
+
+<a id="offline-cost-responsibilities"></a>
+## 离线预测与分析入口（2026-11-06）
+
+候选`891ca2f286cf6b3c466127587d9a3fa218046e51`及增量`93bce27d47df1cfd58f59716cdfadb01ec21a622`，最终tree为`7ae71eb3e07dfbeb145fcf775a83bd9b5b915c74`；整合为`39eb3012`／`0610d504`。
+当前Ridge、LightGBM等仅有离线分析与专测调用；通用数学留在planning/costs，profile读取／身份／23维特征和原fit_predict分别归experiments/operator_costs的两个模块。
+三个CLI保留参数、评估与输出，删除脚本动态互载、临时参考JSON、跨模块REF_JSON改写和两处转发；运行链token/work与实测反馈未改。
+比较入口必须显式选CSV或参考JSON，context-LOO输出也由调用方给出；旧默认输入不存在，旧默认输出会把新数据写入历史日期目录，均不保留。
+CSV旧字段仍是历史身份。source_reference改为实际选择的CSV／参考JSON，code_evidence记录真正参与计算的模块，原指标含义保持。
+主体修改前26项、修改后28项CPU各一次通过；最终输出参数增量只运行受影响2项，不宣称最终重跑28项或累加为新总数。
+同一小fixture的特征／顺序／身份、五种估计预测、完整Ridge与context-LOO报告在去掉源码摘要元数据后字节相同；其显式参考路径保持相同。
+75,075字节捕获摘要为`069a5aac16fed097412eba96177b648d947bb46890bc5f68c51c5d8194741c7a`，原件私有保存。外部CSV的main用例只核参数交接，完整外部ref CLI未执行；LightGBM拟合与真实数据重新拟合未运行。
+独审核对原件、搬移函数和增量评估函数保持、当前无运行主线反向依赖；[十条新增读源及原件](../../../reproduction/native_baselines/README.md#offline-cost-analysis-sources)使四十条相关历史读取保持原摘要，不改expected。
+本批src与scripts净减111行，核心不变；当前核心Python为52,517行，src与scripts为104,057行，含注释／空行并沿用前述目录口径。

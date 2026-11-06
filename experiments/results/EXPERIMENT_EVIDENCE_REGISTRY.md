@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-06：离线代价分析职责整理
+
+[确定输入与历史复算](diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
+保存主体26／28项前后检查、显式输出增量的2项检查与完整数值捕获；分别说明来源，不累加，未运行LightGBM拟合或真实模型。
+
 ## 2026-11-06：异步观察器转换与可选指标
 
 [实际转换行为](diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
