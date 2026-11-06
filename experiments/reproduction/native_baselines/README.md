@@ -560,3 +560,24 @@ SDK、driver 和 limits 继续取已有 `historical_sources/5ff54bfe/` 原件，
 parser、contract、artifacts、validator 和 preflight 的准确原件分别保存在
 [`historical_sources/87fdb2bc/code/src/experiments/saor/`](historical_sources/87fdb2bc/code/src/experiments/saor/)。
 五份投影只增加25条来源及gzip格式记录，原3,010条文件摘要、五个投影身份、来源版本和其他映射保持。
+
+<a id="retired-shared-vllm-loader"></a>
+## 共享 vLLM 旧加载与命令接线
+
+当前离线分析和研究方法只使用 `config.py` 中的类型、字段默认值、容量运算和参数读取函数。
+没有当前调用的21个 JSON 加载／命令函数、4个专用字段表和 `cli.py` 已退役；
+共享额度、SAOR 算法、现用证据／指标函数以及图像的同名命令构造器保持。
+不为旧 runner 或已不存在的包导出恢复转发入口，原始结果和14份研究资料不改。
+
+此次准确原源码来自完整
+[`128f64e052152fef2a5a3291517746661553cedf`](https://github.com/3444374/ai-operator-execution-optimization/tree/128f64e052152fef2a5a3291517746661553cedf)。
+旧 `config.py` 可从该树直接读取；它在五份历史投影中继续使用已有 `b08936d2` 准确原件，
+本次没有重复保存或修改已有映射。删除的 CLI 为 `3007` 字节，SHA-256 为
+`d5d99efb9db4f8006cb52b96d08a7e25779545bb561eeeb06187b08d558906ca`，准确原件见
+[cli.py.gz](historical_sources/128f64e0/code/src/experiments/shared_vllm/cli.py.gz)。
+五份投影只增加该原件的5条来源及gzip格式记录，原3,010条文件摘要、投影身份和来源版本保持。
+
+128f保存的是此次退役前的库文件，原 runner／direct control 启动器此前已经移出当前代码。
+恢复更早的完整执行接线应使用
+[`7bf1d92baf2611925c608cfe76b4a766855bd77e`完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)
+和[原恢复说明](../paused_pg_and_retired_http_20261105/README.md)，不能将旧 loader 单文件接到当前执行器。
