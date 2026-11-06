@@ -11,7 +11,7 @@ SemLoom 主线保留简单多查询运行，不需要导入本包：固定份额
 | 主线基础多查询 | [session_jobs.py](../../scheduling/core/session_jobs.py)、[Session](../../scheduling/core/session.py) | `equal_share_job_budget` 按声明的最大 Job 数分配固定存储与执行额度；`round_robin_flow` 先轮转查询组，再轮转组内 flow |
 | 可迁移的研究输入 | [interfaces.py](interfaces.py) | 调用方容量、请求、工作封装和阶段观测的只读字段接口（Protocol） |
 | 可迁移的既有研究算法 | [shared_credit.py](shared_credit.py)、[credit_policies.py](credit_policies.py)、[saor.py](saor.py)、[ordered_release.py](ordered_release.py)、[saor_capacity.py](saor_capacity.py)、[shared_credit_ray.py](shared_credit_ray.py) | 共享额度、权重、优先级、债务、服务目标、按序释放和容量消融；不导入 SemLoom 值类，Ray 运行时由调用方传入 |
-| 显式 SemLoom 研究适配 | [semloom/session.py](semloom/session.py)、[semloom/gateway.py](semloom/gateway.py) | 原共享计算上限选项与研究 CLI；使用主线工厂，不另建模型 owner 或普通执行循环 |
+| 显式 SemLoom 研究适配 | [semloom/session.py](semloom/session.py) | 原共享计算授予函数；保留算法接点，不提供固定 HTTP 服务启动入口 |
 | 显式同步共享接入 | [semloom/scheduler.py](semloom/scheduler.py)、[配置](semloom/scheduler_types.py)、[候选窗口](semloom/ready_window.py) | 共享等待、候选注册与未提交候选清理；通过真实完成交接记账 |
 
 固定预算的分母是已声明的 `max_jobs`，并非当前活跃数量；空闲份额不自动借出。
@@ -30,8 +30,10 @@ SemLoom 主线保留简单多查询运行，不需要导入本包：固定份额
 | 提前准备与 organization | `preparation_factory` 加多 Job 仍明确拒绝，`--organization-config` 仍限单 Job；没有删除这些保护 |
 | 原生 Ray payload transport | 真实多查询组合未在本次执行；不能由 gateway 的 fixture 结果转授资格 |
 
-`--job-compute-policy` 只在研究入口 `python -m src.research.multitask.semloom.gateway` 中解析。
-普通主线 gateway 使用基础固定份额；研究入口可显式选择既有共享计算选项。
+旧固定 HTTP 研究 CLI 与其专属服务测试已退役；完整来源和原字节摘要见
+[恢复说明](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-launchers)。
+该入口的图像分支只转发原固定份额；typed image 仍由既有 provider 服务入口提供，未新增图像或多查询实现。
+SAOR、共享额度和同步接入函数继续保留；本批不扩展或运行多查询测试。
 
 ## 后续 SAOR 接入的位置
 

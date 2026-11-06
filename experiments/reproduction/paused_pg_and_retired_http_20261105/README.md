@@ -76,3 +76,28 @@ trace 摘要及其纯 CPU 用例继续维护；HTTPX／native observer、request
 五份原生投影中只有 `gateway_observer.py` 需要新增当前来源，保存方式见
 [本次历史来源](../native_baselines/README.md#retired-choice-observer-sources)。
 既有旧来源、原3010条expected、投影ID和版本保持；原结果、失败和性能材料没有复制或改写。
+
+
+<a id="retired-fixed-http-launchers"></a>
+## 旧 Fixed HTTP 隔离诊断与研究服务入口
+
+本批五份文件来自准确的
+[`f526e6bd4701b23d9d47e44d22590593debabb9c` 完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/f526e6bd4701b23d9d47e44d22590593debabb9c)，
+与上方7bf／5539来源分开。gateway isolation只为旧固定HTTP网关组织隔离／取消诊断；
+研究服务CLI只装配同一HTTP网关，其图像分支没有独立执行能力。两份入口和专属测试直接退出当前树。
+恢复旧诊断、分析和结果复算时使用完整f526及配套依赖，不把旧服务入口拼接到当前单查询路径。
+原结果、失败、unknown和负结果继续保留，不因源码退役改写。
+
+| 原路径 | 字节 | SHA256 |
+|---|---:|---|
+| `code/src/experiments/gateway_isolation_probe.py` | 33302 | `c09490018aeec96b02fa9c88358f238e129337306d3698b3e104a15f20bf9a80` |
+| `code/scripts/profiling/gateway_isolation_probe.py` | 157 | `a0cd8c44f3c2dc622e0d9eed9102aacddb1dab1b06fcca48a82085e572c833d4` |
+| `code/tests/experiments/test_gateway_isolation_probe.py` | 3818 | `fe2ee078c9779cf65c3d4fdc865ffea16377306adea055e1bcac2fd9ed71ce02` |
+| `code/src/research/multitask/semloom/gateway.py` | 3204 | `406f45e32ecf680eee43e7ad671197d76b5275c1d380a73ada919323155efa91` |
+| `code/tests/research/multitask/test_shared_query_gateway.py` | 6280 | `e20783e3107b5565557df2c1a3a0ba2d162f66da806993488d960b613ca7cdf4` |
+
+共享的 `SyntheticTable`／`WORK`、`IncrementalExecution`、Core任务／资源／租约／取消、
+typed image provider、SAOR策略和共享额度函数未删除；普通records仍使用本地IPC／原生模型。
+这批只删除旧入口，fixed HTTP工厂、服务选项和共用网关装配留待后续清理，不表示整条旧路径已清空。
+五份历史投影的10条相关来源继续保持原字节；只有同名CLI的五条来源需要新增准确f526压缩原件，
+其余既有来源不变，见[来源读取说明](../native_baselines/README.md#fixed-http-launcher-source)。

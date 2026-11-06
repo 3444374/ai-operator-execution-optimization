@@ -675,3 +675,13 @@ parser、contract、artifacts、validator 和 preflight 的准确原件分别保
 各自准确87ab字节与原预期摘要一致，五份投影只各增两条来源／格式映射，全部expected与投影身份保持。
 完整旧接线从[87ab准确树](https://github.com/3444374/ai-operator-execution-optimization/tree/87ab621f0b788887459aadaeb6986942bd3c1a7a)恢复，
 [本批171条读取与增量核对](../../results/diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)与完整3010条物化分开记录。
+
+<a id="fixed-http-launcher-source"></a>
+## 旧 Fixed HTTP 入口退役时的来源读取
+
+旧网关隔离诊断与研究服务入口的五份文件从当前树删除；
+[完整f526恢复说明](../paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-launchers)保存各自用途、字节数和摘要。
+历史读取实际涉及10条绑定；五条同名CLI原先取当前文件，现改读
+[准确f526原件](historical_sources/f526e6bd/code/scripts/profiling/gateway_isolation_probe.py.gz)。
+其他五条继续读取已有原件；原expected、投影身份、版本和旧来源映射保持。
+只复查受影响来源，不把本批检查写成整套3010物化或真实服务验证。
