@@ -123,12 +123,10 @@ class RealRayFeedbackFutureTests(unittest.TestCase):
         import ray
         if ray.is_initialized():
             raise RuntimeError('real Future regression requires its own fresh driver')
-        if ray.__version__ != '2.56.1':
-            raise RuntimeError('real Future regression requires Ray 2.56.1')
         cls.ray = ray
         cls.directory = tempfile.TemporaryDirectory(prefix='rff-',
             dir=os.environ.get('SEMLOOM_REAL_RAY_TMPDIR', '/tmp'))
-        ray.init(num_cpus=2, num_gpus=0, include_dashboard=False, log_to_driver=False,
+        ray.init(address='local', num_cpus=2, num_gpus=0, include_dashboard=False, log_to_driver=False,
                  _temp_dir=cls.directory.name, object_store_memory=80*1024**2)
         @ray.remote(num_cpus=0, max_restarts=0, max_concurrency=8)
         class Snapshots:

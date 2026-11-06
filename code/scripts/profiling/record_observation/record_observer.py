@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict
 import functools
+import inspect
 import hashlib
 import json
 import math
@@ -164,14 +165,22 @@ def core_key(value):
 
 
 def observe_ref_ready(ref, key, identities, *, batch_key=None, scope=None):
-    if not handoff_profile():return
+    if not handoff_profile():return ref
+    awaitable=inspect.isawaitable(ref)
     def completed(unused):
         emit_buffered('driver_future_done',
              key=key,identities=identities,batch_key=batch_key,
-             scope=scope or 'Python Future completion notification; original await determines outcome')
+             scope=scope or ('native owner awaiter settled; cancellation is not remote completion' if awaitable
+                            else 'Python Future completion notification; original await determines outcome'))
+    if awaitable:
+        async def observed():
+            try:return await ref
+            finally:completed(None)
+        return observed()
     try:ref.future().add_done_callback(completed)
     except Exception as error:
         emit('handoff_probe_unknown',key=key,error_type=type(error).__name__)
+    return ref
 
 
 def _safe(value):
@@ -464,7 +473,7 @@ def install_driver():
         result=original(self,task,*args,**kwargs)
         try:
             point('Ray_submit_return',key=asdict(task.key),batch_key=batch,retained_refs=self.retained_refs())
-            if handoff_profile():observe_ref_ready(result,asdict(task.key),members,batch_key=batch,
+            if handoff_profile():result=observe_ref_ready(result,asdict(task.key),members,batch_key=batch,
                 scope=('local member Future ready after native batch-page decode; not Ray RPC completion'
                        if batch is not None else None))
         except Exception as error:point('handoff_probe_unknown',error_type=type(error).__name__)
