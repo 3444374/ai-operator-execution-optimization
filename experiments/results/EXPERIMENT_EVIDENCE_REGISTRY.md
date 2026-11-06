@@ -1,16 +1,23 @@
 # 实验与机制证据台账
 
+## 2026-11-06：准确e5单查询IPC与后端包导入
+
+[服务器五方法](diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)
+为四项真实CPU IPC与一项模拟时钟，各运行一次全部通过，18个已观察进程及socket／SHM／许可清理确认；没有真实模型或Ray。
+[包导入清理](diagnostics/records_runtime_refactor_20261104/README.md#backend-package-http-import-cleanup)
+分别保存原冷导入失败、修后五项轻量CPU、独审及五条历史来源，不将导入等同HTTP请求，也不追加旧HTTP测试。
+
 ## 2026-11-06：旧HTTP入口退役与实际剩余时间
 
 [两批HTTP删除及矩阵修正](diagnostics/records_runtime_refactor_20261104/README.md#fixed-http-retirement-and-matrix-time)
 按a37／835／fb90各自来源保存14、10、16项CPU和历史读取，不合计为整树覆盖；底层HTTP工厂尚未全部移除。
-现有真实CPU IPC方法仅改两次提交为None，其原结果／取消／容量断言保持；本机未执行socket，服务器回执另列，不能预报通过。
+现有真实CPU IPC方法仅改两次提交为None，其原结果／取消／容量断言保持；本机未执行socket，随后准确e5服务器结果见上条。
 
 ## 2026-11-06：调用方查询期限与原生启动等待
 
 [None贯通、IMLane二次上限清理及Ray启动接线](diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)
 保存三个准确候选、各次原错误／CPU结果和历史来源；47、12及增量选择分别解释，不累加覆盖数。
-实际IPC、Ray超时和模型仍未验证；[准确87ab SDK补查](diagnostics/records_runtime_refactor_20261104/README.md#sembench-sdk-server-87ab)
+该批当时未验证实际IPC、Ray超时和模型；后续e5只补上述CPU IPC。[准确87ab SDK补查](diagnostics/records_runtime_refactor_20261104/README.md#sembench-sdk-server-87ab)
 只补原10项Mock及CLI帮助，不转授此新实现。旧fixed HTTP归属已核，按用户要求退役工作另批继续。
 
 ## 2026-11-06：显式HTTP期限、实验依赖和图像异常清理

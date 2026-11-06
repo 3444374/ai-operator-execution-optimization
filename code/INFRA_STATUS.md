@@ -21,14 +21,14 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 |---|---|---|
 | 引擎配置 | 中性规范从同步引擎移出；sync／async 分别构造和释放；五项可选 vLLM 参数省略时交引擎解析，实际上下文反馈给长度检查及身份 | 不能由一次 ready 记录推断所有模型、版本及图像路径 |
 | C／R／存储额度 | 普通／融合容量在同一中性模块定义；SDK、Movie／Session 的 R 默认 None；普通 async 与已支持 rolling 分开请求窗口、驻留、输入／结果字节和未消费结果槽；默认结果槽不再固定8 | 静态与低层整批仍要求其支持的有限声明；无声明的物理 RAM 自动授予、完整查询内存计量未实现 |
-| 查询与 Session | owner、普通Filter、融合批、记录级关系数据、Session提交与flow各有职责；整查询期限默认未指定，显式值保留；启动、通信和关闭分别计时 | None期限的真实IPC、模型重复关闭及resident／fused完整组合未全覆盖 |
+| 查询与 Session | owner、普通Filter、融合批、记录级关系数据、Session提交与flow各有职责；整查询期限默认未指定，显式值保留；启动、通信和关闭分别计时；准确e5的四项真实CPU IPC和一项模拟时钟通过 | 真实模型期限／abort、模型重复关闭及resident／fused完整组合未全覆盖 |
 | 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
 | 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任；连接空输入／坏帧关闭统一由原finally执行 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
 | 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
 | 图像与数据 | 现用LOTUS图像后端与HSE执行保持；CLIP脚本的准备、执行观测和报告分开，异常时停止已启动资源并保留主错误 | 异常清理只有软件替身检查；不证明实际采样线程、Ray或模型进程退出，增量图像与HSE用途仍不同 |
 | 观测职责 | 图像CLI／观察器直接用实际时钟、事件、模型复用和请求身份；采样归observability；四个旧转发及重复时钟定义删除；准确4d六项服务器CPU通过 | 结果限其实际采样／软件传输和子进程范围；不是后续组合、真实Ray或模型资格，本机此前拒绝的操作不重试 |
 | 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器CPU与独立Ray方法通过，共享研究显式接入 | 5b模型5请求中4条正确、1条unknown，正常排空未通过；按用户要求暂停多查询新增实现与扩展测试，现有代码和失败保留 |
-| 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放及异步阻塞RPC已退役；本批删除旧HTTP隔离探针／研究启动器及专测，移除四个旧服务CLI选择 | 底层fixed HTTP工厂／transport及余下专用配置仍在清理；共享Image／Core／IPC和第三方原生HTTP保留，不称全仓已清完 |
+| 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放及异步阻塞RPC已退役；删除旧HTTP隔离探针／研究启动器及专测、四个旧服务CLI选择；中性后端包不再加载HTTP实现 | 底层fixed HTTP工厂／transport及余下专用配置仍在清理；共享Image／Core／IPC和第三方原生HTTP保留，不称全仓已清完 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留；Kalypso实验脚本直接调用实验流程，baseline不再反向导入 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
 ### 真实环境证据按源码解释
@@ -42,6 +42,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名 |
 | 87fd 九对象真实Ray往返 | 新增融合容量及原八个对象由真实worker往返，一次通过；观察到的九个自有进程退出、SHM和运行许可清理通过 | 未运行模型、GPU查询或其他方法；不替代查询／IPC和性能检查 |
 | 798e 作者DuckDB＋IMLane软件CPU | 真实driver／DBEnd／Arrow16的PROCESS／THREAD均通过2000→120及外层进程／SHM清理 | 真实模型、特殊空选择／错误的作者二进制资格或性能 |
+| e5 四项真实CPU IPC及一项模拟时钟 | None随同一查询两记录经socketpair／子进程传递；反序完成、取消、显式已到期拒绝、未消费结果与unknown占额通过，18个已观察自有进程退出、SHM增量0、许可归还 | 替身不解释模型期限；未验证真实vLLM在途到期／abort、Ray启动／actor退出或性能 |
 
 [重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
 保存逐批源码、失败与 CPU／IPC 范围；[原生 Q3 复测](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
@@ -56,16 +57,20 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 分别记录13项配置CPU、原Kalypso53项及图片26项，不累加为整树覆盖。固定HTTP不再拒绝超过五分钟的显式期限；
 该批没有改records期限；后续[调用方拥有整查询期限](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)
 已贯通None、显式期限和原取消／unknown责任。固定Ray2.56.1的Dataset自有context接caller启动时间，作用于每个原生actor池的就绪等待，
-不是整个图的一份总启动时间。实际Ray超时／退出、原生IPC和模型仍待补查；HTTP退出另批处理，不追加HTTP测试。
+不是整个图的一份总启动时间。实际Ray超时／退出与模型仍待补查；准确e5的CPU IPC结果见下方，HTTP退出另批处理，不追加HTTP测试。
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为56,194行，
-全部 src＋scripts Python 为108,977行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别为增加2,103行／减少31,358行；对清理起点3fd分别减少5,434／40,668行。
-本批相对6fc核心减少130行、src＋scripts减少741行、测试减少304行，独立集成不变；不把历史副本算作代码减少。
+核心 `code/src`（排除 experiments、baselines，保留 research）为56,173行，
+全部 src＋scripts Python 为108,956行；含注释与空行，tests／docs／历史副本不计入。
+对固定 main 6a8a 分别为增加2,082行／减少31,379行；对清理起点3fd分别减少5,455／40,689行。
+本批包导入清理相对e5生产减少21行、测试增加3行，独立集成不变；不把历史副本算作代码减少。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
+
+[e5单查询IPC服务器回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)
+按准确受测版本保存五方法及清理结果；[后端包导入清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#backend-package-http-import-cleanup)
+记录导入反例、五项轻量CPU和原来源恢复，不运行旧HTTP套件，也不把导入依赖称为HTTP请求。
 
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。

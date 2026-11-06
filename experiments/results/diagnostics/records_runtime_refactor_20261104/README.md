@@ -4191,6 +4191,7 @@ HTTP第一批的14方法包含当时仍共享的synthetic map fixture，不执�
 
 既有CPU IPC生命周期方法的两次提交改为`deadline_monotonic=None`，仍为同一query的两个记录，原queued、反序结果、取消及容量断言保留。
 本机只做语法和独立审阅，不重试已拒绝的socket；[待执行的准确方法](raw/untimed_ipc_fixture_pending.json)交服务器。
+这是派单时记录；随后准确e5的实际运行见[服务器回执](#single-query-ipc-e5-server)，原待执行文件保留。
 fixture不解释模型期限，因此即使实际IPC通过，也不外推真实vLLM无期限行为。
 该测试更改造成旧五份投影摘要不匹配，原201条读取为196通过／5不匹配；保存准确6fc旧测试共用副本后201条全部通过，原失败保留。
 矩阵原二十条与HTTP第二批原五条历史读取也分别通过，没有重跑整套3010物化。
@@ -4199,3 +4200,37 @@ fixture不解释模型期限，因此即使实际IPC通过，也不外推真实v
 当前核心56,194行、src＋scripts108,977行；较固定main分别增加2,103行／减少31,358行，较3fd分别减少5,434／40,668行。
 统计含空行和注释，核心排除experiments／baselines并包含research；测试、文档和历史副本另计，不把压缩或移动算作减代码。
 底层HTTP factory／transport与旧Map装配仍在独立清理，第一批删除不等于全仓HTTP清完；第三方原生HTTP连接保持。
+
+<a id="single-query-ipc-e5-server"></a>
+## 单查询IPC服务器检查（2026-11-06）
+
+受测提交`e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd`，tree为`39223fb3ad74091167012776c709dee110e24061`。
+[逐方法回执、原件摘要和实际范围](raw/single_query_ipc_e5e6_server_receipt.json)保存四项真实CPU IPC与一项模拟时钟，
+各运行一次全部通过，没有失败、错误、跳过或重试。没有真实模型、Ray、GPU查询、HTTP或新增多查询。
+
+- 同一query的两个记录以None期限经过真实socketpair和子进程，原排队、身份、反序完成与取消断言保持。
+- 既有方法验证输入超限／显式已到期在交接前拒绝，未消费结果持续占额直到消费，abort返回unknown时保留责任。
+- 模拟时钟方法检查默认None、显式None／300及显式60；没有实际等待60秒或启动模型。
+
+观察到的18个自有进程已退出，临时目录无socket文件、SHM增量0，运行许可已归还；不推断未观察后代进程。
+原Git取源503和超时保留，核对过的公开Git bundle恢复同一源码，源码在每次方法期间未变。
+fixture不解释真实模型期限，本批没有验证真实vLLM在途到期／abort、Ray启动／actor退出、模型质量或性能。
+后续源码按自己的检查解释，不把e5回执改挂到整树。
+
+<a id="backend-package-http-import-cleanup"></a>
+## 中性后端包不再加载HTTP实现（2026-11-06）
+
+原候选`0e071c682aed26012baf6e45e48c9d3bc4c19468`，tree为`bb23afceba365f0772d3a98deed33c614c1caa3a`；
+基于e5，整合代码为`f33ad6fe`。[检查与独审](raw/backend_package_http_import_cleanup.json)保存原冷导入失败及修后五项CPU。
+普通／链records加载vllm_protocol时，Python原先还执行包初始化并导入completion／embedding；这只是导入依赖，不证明发送过HTTP请求。
+现在包初始化只保留既有common共享值，删除21行聚合导入；没有惰性转发或兼容壳。
+
+实际direct_client与request-equivalence的请求体构造仍直接导入completion所属模块，未改变第三方原生调用。
+test_model_backends只迁移导入，其余语法树相同；现有冷导入方法同时拒绝两份旧HTTP实现。
+原e5的一项失败明确来自completion导入；修后五项覆盖中性协议、共享值／采样替身及纯提示格式／墙钟值，
+不运行旧HTTP actor方法或整套HTTP测试。1078源码摘要、九份原证据和五条历史绑定经独审核对，没有新增具体问题。
+
+旧初始化979字节原件压缩为378字节，五条历史来源保持原摘要与投影身份；不重跑完整3010物化。
+相对e5生产Python减少21行、tests增加3行。当前核心56,173行、src＋scripts108,956行，
+分别较固定main增加2,082／减少31,379，较3fd减少5,455／40,689，统计口径同前节。
+completion／embedding实现及旧Map装配仍待按实际消费者清理；这次导入修正不表示全部HTTP已退出。

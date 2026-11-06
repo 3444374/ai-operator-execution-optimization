@@ -2,6 +2,15 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：记录单查询IPC回执并清理中性包导入
+
+准确e5的四项真实CPU socketpair／子进程方法与一项模拟时钟方法各运行一次通过；没有模型、真实Ray或HTTP调用。
+[原回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)
+保留源码身份、方法和清理范围，不能推成真实模型期限／abort已验证。
+中性后端包删除HTTP聚合导入，现用调用方直接用所属模块；
+[原反例与五项轻量检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#backend-package-http-import-cleanup)
+只证明导入与值行为，不继续运行旧HTTP套件。底层HTTP退出仍在进行，未合并main。
+
 ## 2026-11-06：删除旧HTTP启动接线并使用矩阵实际剩余时间
 
 旧网关隔离探针／CLI及研究HTTP启动器和专测删除；服务CLI的四个HTTP选择退出，Golden和typed image的现有Unix socket流程保持。
