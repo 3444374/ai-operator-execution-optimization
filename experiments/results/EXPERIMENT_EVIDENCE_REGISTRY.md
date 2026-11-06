@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+## 2026-11-06：67a4直接原生Q3复测与Ray IPC残留
+
+[单次复测与诊断](diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)及`retest.json`
+关联准确67a4：Daft120条正常收尾，Ray0.25.1候选120条查询完成但原资源检查失败；人工回收不转为自动通过。
+当前两组逐条相同、各七个FN，不作质量达标或稳定性能判断；原e0ec失败和新240逻辑claim均保留。
+原actor／core-worker日志与固定Ray源码确认正常GC先杀本次EngineCore的顺序，具体具名信号量创建者仍待栈证据。
+只读作者环境盘点确认IMLane DBEnd-C/C++库和Arrow16.1，未有已核对的作者DuckDB构建／原生Q3资格。
+本次诊断没有新模型、Ray集群、安装或第三方补丁；下一步是有限零模型CPU复现，原件按各角色摘要交接。
+
 ## 2026-11-06：直接原生Movie Q3首测失败与关闭修复
 
 [主报告](diagnostics/native_sembench_q3_20261106/README.md)及紧凑证据保留受测e0ec的120条Daft预测、

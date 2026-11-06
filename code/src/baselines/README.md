@@ -115,17 +115,17 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   native runner不重设线程；只接受确实生效的prefix／buffer／morsel选项，拒绝仅distributed生效的actor参数。
   首测返回120条但进程收尾失败，原质量和失败保留在[诊断报告](../../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
   独立进程用[公共工厂／shutdown作用域](text/frameworks/daft_native_owner.py)关闭实际创建引擎；
-  `on_result_ready`在关闭前发布结果，异常保留已物化预测。真实执行器＋CPU模型替身已验，修复后GPU退出待验。
+  `on_result_ready`在关闭前发布结果，异常保留已物化预测。67a4已一次120条正常收尾，质量七个FN仍保留。
 - [Ray Data LLM](text/frameworks/ray_data_sembench_native.py)的 `execute_q3(rows, model=..., sampling_params=...)`
   使用公开processor和原生异步vLLM，完整cohort先做Dataset.filter，一次materialize后审计和原生count。
   处理器默认、原生重试、实际可得usage与runtime归属分开记录；现有0.25.1守卫CPU API通过，
-  Ray2.56.1发布extra仍要求0.22.0；当前仅列项目资格候选，真实actor／模型／物理尝试数未验。
+  Ray2.56.1发布extra仍要求0.22.0；67a4候选已实际执行120条，SHM残留使完整生命周期失败，物理attempt总数未证实。
 - DuckDB＋作者IMLane尚需作者构建、DBEnd函数alias、整批结果转换和关闭的无模型CPU资格；
   固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
 
 原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，
 只证明数据、结果形状和评价接线，不是模型质量结果。首批两个新API各一次冷查询共240个逻辑请求；
-第三条接线通过后再加120。实际retry／token／资源／耗时、GPU退出和三轮交错比较按计划另验。
+第三条接线通过后再加120。67a4单次复测不作稳定性能，实际retry／资源／完整退出和三轮交错比较按计划另验。
 Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)，另追加120且保留原消耗；
 外部调用方继续负责host租约、永久额度、preflight、离线评价和最终物理GPU／SHM检查。
 

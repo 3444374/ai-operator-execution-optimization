@@ -118,6 +118,12 @@ Q5 的单层与多层原算法、实际生成上限及预算失败保留均通�
 
 ### 直接原生Movie Q3的关闭与环境修复（2026-11-06）
 
+随后67a4各执行一次120条：[复测与IPC诊断](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
+记录Daft正常收尾，Ray查询完成但原SHM失败；Ray随后人工回收不改原失败，两组均保留七个FN，不作稳定性能排名。
+完整actor日志确认Ray正常GC时杀死了本次EngineCore，之后仍有完整MPClient关闭回执；信号量创建者尚缺栈证据。
+现有IMLane作者源码／DBEnd-C/C++库与Arrow16.1可定位，但作者DuckDB未有已核对的构建产物，原生Q3接线待CPU资格。
+当前下一步为零模型CPU生命周期隔离，未改第三方库、安装或追加推理。
+
 [首测与修复记录](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)保留e0ec的120条Daft输出及进程收尾失败；
 模型质量仍为COUNT7／gold14，不作正常完整JCT。独立单查询进程以公共vLLM工厂／shutdown作用域关闭实际引擎，
 READY前后的预测／终态分开保存；新监督入口按实际READY启动120秒收尾，含8秒强制终止，查询窗口1200秒不重复扣减。
