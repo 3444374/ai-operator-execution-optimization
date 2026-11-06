@@ -1,6 +1,6 @@
 # Observability cores
 
-This package owns passive measurement and stable profiling schemas. Measurement code must not take
+This package owns passive measurement and result observation. Measurement code must not take
 over the execution policy it observes.
 
 - `metrics/` contains reusable metric collectors and summaries.
@@ -27,22 +27,10 @@ over the execution policy it observes.
   `request_identity.py` owns task-local observation identity. Durable experiment ledgers remain in
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
-- `profiling/` contains directly imported Ray profiling helpers.
-  `profiling/ray.py` owns public task/actor submission and invocation values. The old dictionary-based
-  HTTP metrics polling is retired; adaptive callers provide admission objects explicitly.
-  `profiling/ray_scheduler.py` assembles endpoint topology, routing/admission options, the existing
-  scheduler and result metrics. Policy and execution remain implemented in `src/scheduling/`;
-  the two profiler modules share the existing scheduler rather than maintaining another one.
-  `profiling/batch_envelopes.py` converts existing Arrow batches into typed request envelopes.
-  The old `profiling/replay.py` argument-driven replay adapters have been retired; their
-  [exact source and recovery](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-replay)
-  remain separate from the maintained SDK. Caller-supplied `replay_envelopes` still work.
-  The unused PostgreSQL profiler argument parser has been retired with the old entry;
-  its [exact historical source](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)
-  preserves the original arguments. Callers supply already constructed admission objects to the SDK.
-  The old PG profiler CSV writers and their dedicated tests are also retired;
-  their [exact sources and recovery](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-csv-and-matrix-checks)
-  remain available with the original profiler. Current metrics, native traces and Ray helpers are unchanged.
+- The old PostgreSQL profiler's Ray submission, Arrow conversion, configuration, CSV schema and
+  request-trace models are retired. Their [exact sources and recovery](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-application)
+  preserve the original experiments. Current collectors and native timing remain in their owning
+  observability modules; scheduling and Runtime Ray adapters remain in `src/scheduling/`.
 
 The former HTTP forwarding gateway and its exclusive loopback tests are retired. Their
 [exact recovery source](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-http-observation)
@@ -147,7 +135,9 @@ batch, not an atomic snapshot. PostgreSQL session attribution and threshold poli
 
 ## 运行指标的读法
 
-测量字段以[profiler schema](profiling/schema.py)和各采集器为准。报告同时解释请求形状、服务压力、
+现行指标按[对照规范](../../../experiments/plans/reference/对照规范.md)和[报告核对](../../../experiments/plans/reference/报告核对.md)，
+并以各采集器的实际字段解释；旧 PG profiler CSV 字段保留为[历史格式来源](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-application)。
+报告同时解释请求形状、服务压力、
 完整结果、资源与任务质量：prompt/output token、批次行数与字节说明工作量；排队、在途与缓存
 说明服务状态；完整查询时间及首token、逐token等待说明用户实际等待；CPU、GPU和能耗说明资源使用。
 

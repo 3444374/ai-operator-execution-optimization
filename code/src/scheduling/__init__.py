@@ -48,13 +48,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "SubmissionContext",
         "SubmissionExecutionLedger",
     ),
-    ".core.lifecycle": (
-        "MonotonicEpochClock",
-        "RequestLifecycleSeed",
-        "RequestTraceRow",
-        "SubmissionServiceTiming",
-        "build_request_trace_rows",
-    ),
     ".core.models": (
         "AdmissionDecision",
         "AdmissionObservation",

@@ -3,12 +3,34 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-profiler-application"></a>
+## 旧 PG 画像应用的来源
+
+旧 PG profiler 的 Ray 提交、调度组装、Arrow 封装、参数配置和 CSV schema 已退出维护目录；
+原 CSV 写入退役后，专用的请求轨迹模型及 `MonotonicEpochClock` 也不再提供当前导入。
+两份专测随对应实现退役，架构测试继续检查实际 Core 默认导入。
+共享的 `SubmissionLifecycleEvent`、模型及 Runtime Ray 适配保持；
+当前观测仍使用 `observability.clock.monotonic_clock_domain`，它不负责构造旧请求轨迹。
+
+准确公开版本 `a0ce689bfe564438c25ecdc537f73aabb6550724` 的
+[配置原件](historical_sources/a0ce689b/code/src/observability/profiling/config.py.gz)、
+[CSV 字段原件](historical_sources/a0ce689b/code/src/observability/profiling/schema.py.gz)与
+[请求轨迹原件](historical_sources/a0ce689b/code/src/scheduling/core/lifecycle.py.gz)各保存一次。
+五份投影只为这三份原件增加十五条来源及 gzip 格式记录，原预期摘要、投影身份、来源版本和已有映射保持。
+`ray.py` 的五条读取继续使用原有 `9652108d` 压缩件；两个后拆出的 helper 与两份专测未被这些投影读取，
+可从[准确 a0ce 完整树](https://github.com/3444374/ai-operator-execution-optimization/tree/a0ce689bfe564438c25ecdc537f73aabb6550724)按原路径恢复，不重复保存压缩副本。
+
+历史 CSV 字段、原始观测和研究计划继续按各自来源解释；源码恢复不增加新的运行结果。
+现行指标使用[对照规范](../../plans/reference/对照规范.md)、[报告核对](../../plans/reference/报告核对.md)和实际采集器，
+不再以旧画像应用的总字段表解释当前每条执行路径。
+
 <a id="retired-profiler-csv-and-matrix-checks"></a>
 ## 旧 PG profiler CSV 与矩阵校验的来源
 
 `observability/profiling/traces.py` 的八个写入／指纹函数只由已归档 PG profiler 和七项专测调用；
 `baselines/common/gate.py` 的校验只由旧矩阵入口和四项专测调用。两份实现及两份专测退出维护目录，
-当前 Ray SDK、metrics、原生观测、对照来源记录和公共结果校验保持。
+当时的 Ray SDK 保留；其后续退役见[旧画像应用来源](#retired-profiler-application)。
+metrics、原生观测、对照来源记录和公共结果校验继续由各自现用模块负责。
 
 准确公开版本 `a0ce689bfe564438c25ecdc537f73aabb6550724` 的
 [CSV 原件](historical_sources/a0ce689b/code/src/observability/profiling/traces.py.gz)与
