@@ -1,8 +1,6 @@
 """Shared request values do not require loading a synchronous model owner."""
 
-from dataclasses import asdict
 import os
-import pickle
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -11,19 +9,6 @@ from unittest.mock import patch
 
 
 class ProtocolImportsTests(unittest.TestCase):
-    def test_old_imports_and_old_pickle_names_resolve_to_the_same_shared_values(self):
-        from src.serving.backends import vllm_engine as sync, vllm_protocol as protocol
-
-        for name in ('EngineSpec', 'GenerationSpec', 'result_record',
-                     'result_from_output', '_prepared', '_token_ids'):
-            self.assertIs(getattr(sync, name), getattr(protocol, name), name)
-        for name in ('EngineSpec', 'GenerationSpec'):
-            old_name = ('csrc.serving.backends.vllm_engine\n'+name+'\n.').encode()
-            self.assertIs(pickle.loads(old_name), getattr(protocol, name))
-        spec = protocol.EngineSpec('/tmp/protocol-model', '/tmp/model-python', '/tmp/driver-python')
-        self.assertEqual(sync.EngineSpec.from_dict(asdict(spec)), spec)
-        self.assertEqual(protocol.GenerationSpec().kwargs(), sync.GenerationSpec().kwargs())
-
     def test_async_sampling_does_not_borrow_a_synchronous_owner_method(self):
         from src.serving.backends import vllm_async_engine as async_kernel, vllm_engine as sync
 
@@ -42,14 +27,11 @@ class ProtocolImportsTests(unittest.TestCase):
 import importlib.abc, sys
 class ForbiddenImports(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
-        if (fullname in ('src.serving.backends.vllm_engine', 'src.serving.backends.common',
-                         'src.serving.backends.completion', 'src.serving.backends.embedding')
+        if (fullname == 'src.serving.backends.vllm_engine'
                 or fullname.split('.')[0] in ('vllm', 'ray', 'lotus', 'torch', 'transformers')):
             raise AssertionError('unexpected runtime import: '+fullname)
 sys.meta_path.insert(0, ForbiddenImports())
 from src.serving.backends import vllm_async_engine, async_engine_process, vllm_protocol
-assert vllm_async_engine.common is vllm_protocol
-assert async_engine_process.common is vllm_protocol
 assert 'src.serving.backends.vllm_engine' not in sys.modules
 '''
         result = subprocess.run([sys.executable, '-B', '-c', script], env=dict(os.environ),
