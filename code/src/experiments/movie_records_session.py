@@ -10,18 +10,16 @@ The explicit ``isolated`` mode retains per-query driver startup and shutdown.
 from dataclasses import asdict, replace
 from pathlib import Path
 import time
-import traceback
-import uuid
 
 from src.infrastructure.private_artifacts import new_private_directory, write_private_json, publish_private_json
 from src.infrastructure.redact import redact_json_values
 from src.experiments.movie_records_config import daft_native_profile
 
 
-# Compatibility exports: existing callers retain their module API.
+# Shared lifecycle implementation and values used by this entry.
 from src.experiments.native_query_lifecycle import (
     RESIDENT, BACKENDS, LIFECYCLES, DAFT_SESSION_PROFILE,
-    _failure, _lifecycle_timing, run_sequence,
+    _failure, run_sequence,
 )
 
 

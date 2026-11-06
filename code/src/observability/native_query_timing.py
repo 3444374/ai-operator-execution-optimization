@@ -8,35 +8,6 @@ import time
 from src.infrastructure.redact import redact_text
 
 
-class QueryClock:
-    def __init__(self, *, event_sink=None):
-        self.events = []
-        self.event_sink, self.event_sink_errors = event_sink, []
-
-    def __call__(self, event):
-        self.record(dict(event=event, monotonic_ns=time.monotonic_ns()))
-
-    def record(self, entry):
-        """Observe an existing owner timestamp without retiming session/query events."""
-        if (type(entry) is not dict or type(entry.get("event")) is not str
-                or type(entry.get("monotonic_ns")) is not int or entry["monotonic_ns"] < 0):
-            raise ValueError("owner event requires an event name and monotonic timestamp")
-        entry = dict(entry)
-        self.events.append(entry)
-        if self.event_sink is not None:
-            try:
-                self.event_sink(dict(entry, epoch_ns=entry.get("epoch_ns", time.time_ns())))
-            except Exception as error:
-                self.event_sink_errors.append(redact_text(type(error).__name__ + ": " + str(error)))
-
-    def result(self, invoked_ns, finished_ns):
-        found = [e["monotonic_ns"] for e in self.events if e["event"] == "result_ready"]
-        if len(found) != 1 or not invoked_ns <= found[0] <= finished_ns:
-            raise ValueError("one complete pre-evaluation result_ready timestamp is required")
-        return dict(query_result_seconds=(found[0] - invoked_ns) / 1e9,
-            application_e2e_seconds=(finished_ns - invoked_ns) / 1e9, events=self.events,
-            scope="worker invocation through complete task result; application includes worker-owned evaluation/close",
-            resident_query_seconds=None)
 
 class ObservationStore:
     def __init__(self, clock=time.monotonic_ns):
