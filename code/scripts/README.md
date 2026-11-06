@@ -252,6 +252,10 @@ SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本
 比较命令必须选择`--data-csv`或`--ref-json`，context-LOO还须显式给`--output`；Ridge原参数保持。
 新结果不默认写入历史日期目录，旧完整来源从具名投影恢复；这些估计不控制当前单查询。
 
+[SemFilter参考校准命令](analysis/build_semfilter_reference_calibration.py)直接使用
+[离线构建器](../src/experiments/operator_costs/semfilter_reference_calibration.py)，保留显式`--source`／`--output`。
+它只处理汇总观测和产物文件，历史固定服务身份不提供当前模型或数据库执行入口。
+
 SAOR 声明与方法说明见[独立材料](../../experiments/saor/README.md)，旧双卡、开题和 phase-change 配方见
 [精确归档](../../experiments/reproduction/legacy_recipes_20261105/README.md)。
 `analysis/summarize_saor_*.py`、`replay_saor_capacity.py`及既有成本／静态曲线分析继续读取历史结果；

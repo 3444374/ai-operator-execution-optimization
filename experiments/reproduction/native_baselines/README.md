@@ -3,6 +3,23 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="semfilter-reference-calibration-sources"></a>
+## SemFilter 参考校准归离线分析前的来源
+
+校准实现逐字迁入[离线算子代价目录](../../../code/src/experiments/operator_costs/README.md)，
+CLI 直接导入真实模块，原命令、参数、数学算法和 PostgreSQL 产物身份保持。
+构建器已校验完整结果，CLI 不再对同一未修改对象重复校验；专测随用途迁入 `tests/experiments`。
+原 `planning.semfilter_reference_calibration` 没有转发文件。
+
+准确公开 `a39cec7404e92f0828bcbbe5d10b90b8d9652888` 的
+[原校准模块](historical_sources/a39cec74/code/src/planning/semfilter_reference_calibration.py.gz)和
+[原 CLI](historical_sources/a39cec74/code/scripts/analysis/build_semfilter_reference_calibration.py.gz)各保存一次。
+五份投影只增加十条来源及 gzip 格式记录，原预期摘要、投影身份、来源版本及已有映射保持。
+专测不在投影列表中，可从同一公开树恢复
+[原测试和 fixture](https://github.com/3444374/ai-operator-execution-optimization/blob/a39cec7404e92f0828bcbbe5d10b90b8d9652888/code/tests/planning/test_semfilter_reference_calibration.py)。
+旧 raw 采集、秩检查复现、失败报告和数值记录保持，按各自准确源码运行，不混用当前目录与历史脚本。
+658 行实现只改变所属目录，不计作删除了算法代码。
+
 <a id="text-organization-research-sources"></a>
 ## 文本组织原型研究归位前的来源
 
