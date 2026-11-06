@@ -2087,3 +2087,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [异步生成快照与结果直导入](diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)
 记录d0b5到f23d的六文件精简，原四项CPU及四组内存帧／额度保持；原验证脚本错误分列保留，实际IPC／模型未由该记录验证。
+
+[请求组批与到达回放研究分开](diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)
+记录4b80到b4fa的同五十项CPU、原算法／Builder身份、冷导入和二十条历史读取；组合保留新增来源并实际读取四十条，未重复行为套件或新增真实运行资格。

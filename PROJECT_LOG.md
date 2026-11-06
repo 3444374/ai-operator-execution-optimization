@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：请求组批与到达回放研究分开
+
+[生产构建器与回放原型](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)
+按实际调用归位，原五十项检查和算法保持；与生成精简／旧脚本删除组合后，四十条历史来源和受测文件摘要保持，没有新增运行策略或重复行为测试。
+
 ## 2026-11-07：异步生成参数快照与结果调用精简
 
 [同帧参数快照及中性结果转换](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)
