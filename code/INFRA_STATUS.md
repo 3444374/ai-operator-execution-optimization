@@ -13,37 +13,47 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 <a id="refactor-completion-checklist"></a>
 ### 整体完成清单与收尾事项
 
-下表覆盖当前支持的records单查询执行及保留的对照。Core职责整理、已确认旧HTTP观测胶水和提示／观测脚本修正已完成，分别保留真实验证身份；不据此宣称全仓历史内容或新增数据库接入均已完成。
-ACK指结果已交接的确认，IPC指进程间通信，RPC指远程调用；未消费结果和未知远端执行继续分别保留责任。
+本轮整理针对已有外部 records 执行核心。下表按 e566 开发组合、本次5f2清理及各次准确受测源码核对，
+不把外部 SemBench 工作负载等同于新的 PostgreSQL 语义算子接入，也不把历史通过数累加为当前整树资格。
+ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
-| 模块 | 已整理 | 仍需处理或验证 |
+| 部分 | 已完成的实现整理 | 仍未完成或未验证 |
 |---|---|---|
-| 配置与容量 | 中性规范、一次解析、未指定参数保留；普通 async／rolling 的 C／R／结果槽／字节分别负责；5539实际ready解析已记录 | 低层直接链与非 rolling 整批仍用其显式有限声明；物理 RAM 自动授予未实现 |
-| Session 与查询推进 | Session、owner、数据运行器分工；普通、prepared／rolling、resident、fused关闭入口均已反查；5539两路径16条模型功能及关闭通过 | f4e原两项IPC各通过一次；真实模型重复close、取消／unknown注入未覆盖 |
-| 模型与 IPC | sync／async构造分开，父进程／worker／帧编码分工，序列化使用定义模块；回执在actor释放前交接 | 5539的八符号Ray worker往返及原五项Future／取消检查均通过；原第二项历史错误原因仍未解明 |
-| 算子与结果 | 共享LOTUS方法、F／M／E、原数据、记录身份、完整Extract、未消费结果和unknown责任 | 现有方法行为保持；Join／TopK等未接入能力不列为已完成 |
-| 研究隔离 | SAOR／多任务实现独立，核心只消费可选中性协议 | 独立拆仓可后续做，不让研究配置进入单查询默认路径 |
-| 旧入口与脚本 | 旧PG／HTTP实验、旧动态变体、重复导出和旧ACK重放退出当前入口；旧choice观测六文件删除，共享函数迁回预算模块；低层异步actor三种旧阻塞RPC及专用等待也已删除 | 27项纯内存通过；87ce实际IPC为15通过、1项测试同步失败，修正后该单项在d6abc一次通过；现用owner、同步run_core、批反馈、provider和研究能力保留 |
-| 观测与验证 | 来源／时钟、真实压力与声明额度分开；1cfd修正单请求观测漏记和提示检查空通过；b422跨查询实际CPU IPC单项通过 | 原第二项历史错误原因未解明；模型功能通过不代表gold全正确或调度提速 |
+| 引擎配置 | 中性规范从同步引擎移出；sync／async 分别构造和释放；五项可选 vLLM 参数省略时交引擎解析，实际上下文反馈给长度检查及身份 | 不能由一次 ready 记录推断所有模型、版本及图像路径 |
+| C／R／存储额度 | SDK、Movie／Session 的 R 默认 None；普通 async 与已支持 rolling 分开请求窗口、驻留、输入／结果字节和未消费结果槽；默认结果槽不再固定8 | 静态与低层整批仍要求其支持的有限声明；无声明的物理 RAM 自动授予、完整查询内存计量未实现 |
+| 查询与 Session | owner、普通 Filter 运行器、融合批、记录级关系数据、Session 提交与 flow 各有职责；共享扫描和端点占用投影只保留一份 | 真实模型重复关闭、取消／unknown 注入以及 resident／fused 完整组合未全覆盖 |
+| 准备与反馈 | 无 B、rolling、交错／事件驱动准备及请求反馈可组合；真实反馈与声明额度、来源时钟与测量窗分开 | 动态 B／C 联合控制、完整链性能及不同部署校准不由当前功能检查证明 |
+| 结果和清理 | 非阻塞接纳、poll／ACK 是当前异步路径；先恢复关闭回执和排空 ACK 再释放 actor；未消费结果及未知远端执行各自保留责任 | 原1596第二项关闭失败原因仍未恢复；当前通过不改写原失败 |
+| 语义与对照 | Filter／Map／Extract 的原数据、关系屏障和解析保持；共享方法移出 baselines，原生系统各自拥有调度 | Join／TopK 等未接入 records；LOTUS cascade 仍需其现用算法接点，不能称全部解耦 |
+| 研究隔离 | SAOR 与多任务共享额度归入独立研究包；普通单查询不依赖其默认配置 | 独立拆仓尚未做；研究与图像实验仍有较大的编排文件 |
+| 旧实现与检查 | 旧 PG／HTTP 实验接线、旧动态变体、重复导出、ACK 语法重放、HTTP 观测转发及异步阻塞 RPC 已退役；重复解析、内部形状／日志计数检查分批精简 | 本次继续删除旧 LOTUS HTTP 准备／回复重放和固定两阶段 Map 残留；现用来源报告保留，不称全仓旧内容已穷尽 |
+| 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
 
-关闭修正以实际返回回执登记结果可见性，并在释放actor前恢复结果、排空ACK；异常或中断仍保存unknown及真实RPC终态。
-原79项本地回归属于28ba；准确f4e服务器两项IPC各通过一次，清理和运行许可归还确认，真实Ray／模型均为零。原1596首例ACK拒绝有异常链，第二例旧原因仍未解明，当前通过不改写旧记录。
-新的5539组合只增改两份测试，保留448e的Medical／MMQA准备；12项本地选择为11通过、1真实Ray项跳过，1,063份摘要匹配准确源码，不累计旧运行。
-合并后静态核查988份Python、3,328处项目内导入，未发现指向缺失模块的静态引用；动态导入和可选外部依赖不在该结论内。
-准确5539在Ray2.56.1的六项检查全部通过，八个生产符号完成worker往返，21个已观察进程清理和许可归还确认，模型调用为零。
-1cfd将单请求handoff探针迁到实际非阻塞owner，修正观测器对awaitable的处理；单／批开关和原结果／异常／取消传播5项通过。b422的增强CPU IPC单项随后通过，核对168次合成引擎提交、14个查询的完整行与消息，无模型或Ray。
-准确5539普通async与record-local各8条模型功能全部成功、0失败／unknown，无预热或重放；输入／输出token IDs一致，但各有3条漏判，不能称全部gold通过。五项引擎可选参数省略后实际解析值已记录，未启用动态反馈，不作性能结论。
-旧观测清理d5已整合为284ec，69个不同CPU方法全部通过，含五份3010文件历史恢复；1,057份源码摘要匹配，982份Python／3,304处本地静态导入无缺模块。7项进程／崩溃方式未选，不计为跳过或通过。
-旧观测清理组合284ec的核心57,011行、src＋scripts114,290行，本批分别为不变／减少514行。随后保留远端e0ec的原生基线与IMLane接线，整合2aa的相同69项全部通过；1,067份code摘要匹配，991份Python／3,336处静态引用无缺模块，原3010份历史文件摘要保持。
-最新组合核心仍57,011行，src＋scripts114,637行；相对284ec新增347行属于并行基线工作。较3fd分别减少4,617／35,008行，较main核心仍增加2,920行、宽口径减少25,698行。未把拆文件或并行新能力算成本批减少。
-随后eab7e246退役低层异步actor三种阻塞RPC、两个专用执行辅助与一层分发，非阻塞接纳、poll／ACK、unknown和reader责任保持。旧钩子两项报错用例删除，原8efed的两项空事件IndexError保留；旧忙轮询检查随其生产循环删除，未用测试helper的sleep替代生产证据。
-本批27项不同纯内存方法通过，1,067份code摘要匹配，16项实际CPU IPC未运行；受影响10条历史来源仍与原摘要一致，不改原3010映射，也不重跑五树。当前核心56,943行、src＋scripts114,569行，本批各减68行、测试减30行；较3fd分别少4,685／35,076行，较main为核心多2,852行、宽口径少25,766行。详情见[旧异步RPC退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)。
-后续准确87ce的16项实际CPU IPC已各执行一次：15通过、1失败，无错误或跳过；独立一次诊断仍失败并捕获预发送取消。原因是reader用例迁移后只等应用排队就触发close，未等其原定unknown回执，不是reader保护提前放行。
-d6abc0e3只增加两行测试同步，先观察现有IPC结果就绪再触发close，不消费结果、不释放reader、不改生产及10项原断言；该单项在准确d6abc一次通过，原unknown、最终关闭及usage11断言均完成。其余15项不重跑，继续按87ce身份解释；原失败和缺失的完整close／retired_unknown字段保留，不补推测值。此次两个登记进程退出、SHM无残留、许可已归还，真实Ray／模型为零。
-没有明确重复、职责混杂或正确性问题的长函数可以保留。自动物理容量、额外算子和独立研究拆仓是尚未实现或后续工作，不为完成本轮重构临时新增控制层。
-[整体收尾核对与待验范围](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)记录最新状态；
-[关闭修正及原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)保留当时记录；
-[此前历史检查退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)仍只描述删除范围。PR继续为草稿，不合并main。
+### 真实环境证据按源码解释
+
+| 受测源码／范围 | 已有结果 | 尚不能据此声称 |
+|---|---|---|
+| f4e 两项实际 CPU IPC | 两项各通过一次，进程、共享内存和运行许可清理确认 | 原1596第二项历史原因已查明 |
+| 5539 真实 Ray／模型功能 | 六项 Ray 检查通过；普通 async 与 rolling 各8条模型功能成功；输入／输出 token IDs 一致 | 未启用动态反馈，各组仍有3条漏判；不是当前整树、全质量或性能通过 |
+| b422 查询与提示检查 | 实际 CPU IPC 单项通过，168次合成提交、14个查询的完整行和消息核对 | 真实模型或调度提速 |
+| 87ce 与 d6abc 旧 RPC 退役检查 | 87ce 的16项为15通过、1项测试同步失败；d6abc 仅补同步，该单项一次通过，10项原断言不改 | 没有在 d6abc 重跑整套16项；首轮缺少的完整 close 字段仍未知 |
+| 67a4 原生 Movie Q3 | Daft120条正常收尾；Ray120条结果完成，但一个具名信号量残留；两组逐条结果相同且各有7条漏判 | Ray 自动清理成功、质量达标或稳定性能排名；IMLane 原生 DuckDB 路径仍待构建与接线 |
+
+[重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
+保存逐批源码、失败与 CPU／IPC 范围；[原生 Q3 复测](../experiments/results/diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)
+保存最新模型对照结果。随后 e566 的零模型 CPU 隔离在 actor GC 场景复现残留：
+Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
+原 Q3 对象缺少创建栈，不能逐一追溯；生产接线修复尚未完成。CPU 与模型运行分别解释。
+
+核心 `code/src`（排除 experiments、baselines，保留 research）在本次清理后为56,197行，
+全部 src＋scripts Python 为114,096行；含注释与空行，tests／docs／历史副本不计入。
+对 main 6a8a 分别为增加2,106行／减少26,239行；对清理起点3fd分别减少5,431／35,549行。
+当前核心没有千行以上文件，但全仓研究编排仍有大文件；不能把移动、拆文件或并行新增能力计为删除。
+本次生产 Python 净减746行；[本批源码和检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)保留14项相关 CPU 与16项图像行为检查的实际范围。
+
+### 此前切片记录
+
+以下保留原受测版本与当时未完成项；后续状态以上方清单和所链主报告为准。
 
 此前一次解析切片代码为 `91fb08d1`，已保留并行基线提交 `295065c6`：普通 owner 只解析一次执行配置，直接构造时的阶段计时选项与动态反馈报告一致；公共工厂的最终报告与实际计时行为保持。
 链 owner 删除未使用的普通 profile 解析及已由类型构造器完成的重复检查，直接保存不可变分包配置；资源、模型与可变 token 预算的归一化和复制保持。
@@ -360,7 +370,7 @@ Session 直接使用该模块；旧导入名保留。请求准备、接纳、派
 有限正数、模型匹配、较短调用方期限及未知结果责任保持。fixed HTTP 读取层采用可配置单条响应额度；
 native Engine 同步单项额度与显式总预算。PG 现有帧保持 1 MiB，更大配置在创建传输前拒绝。
 接口与适用范围见 [HTTP 说明](src/execution_provider/adapters/README.md#python-consumer)和
-[LOTUS 接点](src/semantic_methods/lotus/README.md#接口与所有权)。
+[LOTUS 接点](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/src/semantic_methods/lotus/README.md#接口与所有权)。
 
 初次本地 CPU 回归 174 项通过；34 项缺少固定版本 LOTUS、12 项缺少 Daft／Arrow，另 1 项真实 CPU Ray
 资格未选择，共跳过 47 项。新增 19 项使用内存 HTTP 响应、SDK 转换替身和真实 Core。
@@ -438,13 +448,13 @@ ReferenceVllmEngine对照保留旧默认4096，Kalypso与历史显式配置不�
 
 [PR73](https://github.com/3444374/ai-operator-execution-optimization/pull/73)已合入 main `a421c9d4`，将固定四配置的完整记录查询检查入口纳入Git；机器配置、额度、输入与结果仍在仓外。
 复用现有监督函数，不迁入历史原件或改变生产算法／默认。
-[入口与私有配置边界](scripts/README.md#通过-git-同步完整记录查询检查)、21项CPU检查及独审不代替当前源码的GPU验收。
+[原入口与私有配置说明](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/scripts/README.md#通过-git-同步完整记录查询检查)、21项CPU检查及独审不代替当前源码的GPU验收。
 原W129零调用失败保留；修复改用排序后最小两项之和减1，并将count与token资格分开，迁移未改生产算法或默认。
 main0689底座配合已审现场验收入口完成四臂各48次；两token臂W134均有42个不同调用阻塞后恢复，后继竞争未触发。
 W134是刻意触发阻塞／恢复的功能测试值，不是每批 token 目标或推荐运行值；常规限流应为按实际容量确定的宽松安全护栏，防止下游过量排队。
 上述交付时Git入口组合只有CPU回归；`check`不加载真实tokenizer。2026-10-29后续当前源码的模型功能复验及严格输出／性能边界见[配置总览的证据索引](../docs/执行配置与优化开关.md#e1)，不将小功能检查推广为稳定性能。
 
-[PR75](https://github.com/3444374/ai-operator-execution-optimization/pull/75)已合入的[同容量检查](scripts/README.md#matched-record-chain-execution)固定fused／逐记录两臂C1、B1和每查询一个新模型，
+[PR75](https://github.com/3444374/ai-operator-execution-optimization/pull/75)已合入的[同容量检查](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/scripts/README.md#matched-record-chain-execution)固定fused／逐记录两臂C1、B1和每查询一个新模型，
 保留默认四配置、fused容量限制和真实Ray归属；增加owner阶段及worker的Ray启停计时，并拒绝混用资源／模型生命周期的回执。
 CPU检查覆盖完整F→M的相同结果／父调用和每查询一次模型创建；模型与Ray RPC为替身，逐记录子进程IPC实际运行。
 这不增加跨查询模型复用或纯粒度／性能资格；新增对照尚未部署或GPU验证。
@@ -559,7 +569,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 可选实现的当前归属见上表；固定来源只用于恢复当时版本，不能据此判定整个优化方向已经结束。
 
 文本 Map 的 worker／gateway 复用、Arrow、准备分段、尾块追加与计数诊断已有独立结果；
-默认与接口见[诊断选项](README.md#文本map诊断选项)，完整失败与重复从原报告读取；既有单轮诊断结束不表示同类优化方向被淘汰。
+默认与接口见[诊断选项](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/README.md#文本map诊断选项)，完整失败与重复从原报告读取；既有单轮诊断结束不表示同类优化方向被淘汰。
 2026-10-08 及更早的实现流水、历史调度默认与完成度表见[精简前状态](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/code/INFRA_STATUS.md#原-main-实现记录)。
 
 <a id="record-local-sections-c827"></a>
@@ -591,7 +601,7 @@ PR67整合`563bb65b`复用相同同步IPC组件字节，并通过定向CPU组合
 原默认fused及Extract关系屏障保留；Ray继续由调用环境持有，该batch-stage组合每查询模型仍新建并关闭，不提供跨查询借用。独立rolling resident候选见[模型寿命范围](#model-query-reuse-scope)。
 CPU检查与差分范围见[接口与测试](src/execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)；
 GPU／质量资格仍按各固定源码的报告解释；新main组合尚未GPU复测，不作完整质量或启动提速／稳定加速结论。该组屏障为内部机制消融，不替代原生完整对照。
-PR74同时提供[同一Git入口的双策略套件](scripts/README.md#record-progression-validation)，
+PR74同时提供[同一Git入口的双策略套件](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/scripts/README.md#record-progression-validation)，
 将策略／组大小传入真实owner，并检查实际策略、同C、held／行／字节grant和配置摘要；默认四臂保持。
 
 <a id="finite-query-token-candidate"></a>

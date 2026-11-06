@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：旧 LOTUS HTTP 残留退役与完成范围核对
+
+[源码与检查](diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)关联5f2源码和各次测试摘要。
+14项相关 CPU 通过，包含一次五树3010文件恢复；另16项图像软件图检查通过，未启动真实 Ray／模型。
+20条历史读取和两个来源 profile 保持，原预期及映射不改；原生环境结果不因本批清理转授当前整树资格。
+代码量、仍用算法接点、未实现物理授予及原生 Ray 关闭问题见主报告，不以清理行数作性能结论。
+
 ## 2026-11-06：67a4直接原生Q3复测与Ray IPC残留
 
 [单次复测与诊断](diagnostics/native_sembench_q3_20261106/README.md#retest-and-ray-ipc)及`retest.json`

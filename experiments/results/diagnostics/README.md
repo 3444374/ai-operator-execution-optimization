@@ -1,10 +1,8 @@
 # Feasibility Results
 
-[Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：基于 PR90 bfb 的容量／执行配置提取，
-保留默认、旧导入、序列化与生命周期；列明 R 耦合、已有独立预算、并行职责和 CPU 证据。
-第二批纯观测／报告回放保持一致；整组新增的时序相关失败、原有错误及兼容检查分别保留，尚不具备发布条件。
-同页给出整体职责图与两条迁移路线；未接入运行入口的 UCB 已退出当前模块，原件和五项原测试保留，相关 61 项成功。
-继续批次登记完整模块／脚本清单，并解除模型适配对查询 host 的反向依赖；该批最终 130 项 CPU 检查成功，仍待独审。
+[Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
+当前[完成范围和未完成项](../../../code/INFRA_STATUS.md#refactor-completion-checklist)与
+[旧 LOTUS HTTP 残留清理](records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)分开实现、历史恢复、CPU和实机证据；不按起始切片概括当前状态。
 
 [Records 配置模块整理](records_config_refactor_20261103/README.md)：普通运行与 Session 共享配置解释，
 保留旧导入与执行职责；源码、55组差分回放、CPU检查及后续上下文设计分别记录。

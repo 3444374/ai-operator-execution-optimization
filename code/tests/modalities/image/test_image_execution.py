@@ -2,6 +2,8 @@ import unittest
 import sys
 import importlib.util
 from pathlib import Path
+from types import ModuleType
+from unittest.mock import Mock, call, patch
 
 import numpy as np
 
@@ -22,6 +24,8 @@ from src.modalities.image.execution import (
 from src.modalities.image import execution as image_execution
 from src.modalities.image import staged_execution as staged_image_execution
 from src.modalities.image.clip import l2_normalize_numpy_embeddings
+from src.modalities.image.source import ImageSourceConfig
+from src.modalities.image import clip_batch_workers
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
 
 
@@ -242,33 +246,40 @@ class ExecutionResultTest(unittest.TestCase):
 
 
 class RayDataBaselineValidationTest(unittest.TestCase):
-    def test_native_ray_data_graph_has_no_project_active_batch_knob(self):
-        import inspect
-
-        parameters = inspect.signature(build_ray_data_clip_pipeline).parameters
-
-        self.assertNotIn("max_active_batches", parameters)
-
-    def test_native_ray_data_graph_contains_no_project_task_scheduler(self):
-        import inspect
-
-        source = inspect.getsource(build_ray_data_clip_pipeline)
-
-        for forbidden in (
-            "max_tasks_in_flight_per_actor",
-            "ray.wait",
-            "ray.get",
-            "@ray.remote",
-        ):
-            self.assertNotIn(forbidden, source)
-
-    def test_native_ray_data_graph_can_use_framework_autoscaling_actor_pools(self):
-        import inspect
-
-        source = inspect.getsource(build_ray_data_clip_pipeline)
-
-        self.assertIn("ActorPoolStrategy(min_size=1, max_size=cpu_workers)", source)
-        self.assertIn("ActorPoolStrategy(min_size=1, max_size=gpu_workers)", source)
+    def test_native_graph_uses_framework_pools_for_cpu_and_gpu_stages(self):
+        for autoscaling in (False, True):
+            with self.subTest(autoscaling=autoscaling):
+                dataset = Mock()
+                dataset.map_batches.return_value = dataset
+                ray, data = ModuleType("ray"), ModuleType("ray.data")
+                ray.data = data
+                data.read_sql = Mock(return_value=dataset)
+                data.ActorPoolStrategy = Mock(side_effect=lambda **kwargs: kwargs)
+                psycopg = ModuleType("psycopg")
+                psycopg.connect = Mock(side_effect=AssertionError("unexpected SQL execution"))
+                with patch.dict(sys.modules, {"ray": ray, "ray.data": data, "psycopg": psycopg}):
+                    graph = build_ray_data_clip_pipeline(
+                        database_url="postgresql://localhost/fixture",
+                        source_config=ImageSourceConfig("fixture", 8),
+                        source_shards=1, processor_revision="fixture", model_revision="fixture",
+                        dtype="float32", batch_size=4, cpu_workers=2, gpu_workers=3,
+                        autoscaling_actor_pools=autoscaling,
+                    )
+                pools = [{"min_size": 1, "max_size": n} if autoscaling else {"size": n}
+                         for n in (2, 3)]
+                self.assertIs(graph, dataset)
+                self.assertEqual(data.ActorPoolStrategy.call_args_list, [call(**pool) for pool in pools])
+                data.read_sql.assert_called_once()
+                maps = dataset.map_batches.call_args_list
+                self.assertEqual([item.args[0] for item in maps], [
+                    clip_batch_workers.RayDataClipPreprocessor, clip_batch_workers.RayDataClipPredictor,
+                ])
+                for item, pool in zip(maps, pools, strict=True):
+                    self.assertEqual(item.kwargs["compute"], pool)
+                    self.assertEqual(item.kwargs["batch_size"], 4)
+                    self.assertEqual(item.kwargs["num_cpus"], 1)
+                self.assertNotIn("num_gpus", maps[0].kwargs)
+                self.assertEqual(maps[1].kwargs["num_gpus"], 1)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,14 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：继续删除旧 LOTUS HTTP 残留并核对完成范围
+
+在 e566 上查明孤立的请求准备／回复重放和固定两阶段 Map，删除三个旧模块并将 SDK 收敛为实际来源记录。
+现用方法、原生图像及五份历史投影保持；软件图行为测试替代源码字符串检查。
+[本批来源、30项分组 CPU 和代码量](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)
+记录生产 Python 净减746行、原失败和未实现能力；代码入口改为职责表，当前状态只由完成清单维护。
+原生 Ray 关闭、作者 DuckDB、物理 RAM 授予和当前整树的实机比较仍分别处理，未宣布整体完成或合并main。
+
 ## 2026-11-05：多任务共享额度与 SAOR 一起独立维护
 
 按用户要求，将两者整理到[独立研究包](code/src/research/multitask/README.md)，
@@ -255,7 +263,7 @@ G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d�
 
 ## 2026-10-26：明确目录职责与候选来源
 
-在main380cfbda上选择性重放已审文档，落实[目录职责](experiments/plans/系统架构.md#code-directory-boundaries)、[代码导航](code/README.md#目录结构)及[baseline交接表](code/src/baselines/README.md#text-execution-boundaries)。明确main现有请求／SQL接点与PR #52候选records／模型／Kalypso／具名复现的来源，不以框架名、HTTP或目录存在推导能力与资格。
+在main380cfbda上选择性重放已审文档，落实[目录职责](experiments/plans/系统架构.md#code-directory-boundaries)、[代码导航](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/README.md#目录结构)及[baseline交接表](code/src/baselines/README.md#text-execution-boundaries)。明确main现有请求／SQL接点与PR #52候选records／模型／Kalypso／具名复现的来源，不以框架名、HTTP或目录存在推导能力与资格。
 
 33条路径与11项建议分别核对：五个候选共享接点另批兼容归位，三个旧请求桥保留入口，实验名／历史容器／还原CLI无需物理改名。根入口和索引同步，未移动源码、修改默认或历史字节，未改变45d184df受测源码；未来纯Core产品目录也仍是拟议。本文不新增模型运行或接纳records实现。
 
@@ -484,7 +492,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 
 ## 2026-10-08：查询归属、分布式请求与计数范围说明
 
-- 按用户要求更新现有文档，依据当前源码区分查询/流/任务归属、Ray worker实际发送、累计实验预算、在途容量与观察事件；详细说明归[代码README](code/README.md#query-accounting-scopes)。
+- 按用户要求更新现有文档，依据当前源码区分查询/流/任务归属、Ray worker实际发送、累计实验预算、在途容量与观察事件；详细说明归[原代码README](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/code/README.md#query-accounting-scopes)。
 - [数据库接入](experiments/plans/数据库接入.md#query-job)明确多个PG backend分别登记查询，以及同一查询流加入仍要求同一可信peer；多个gateway总容量和跨PG并行执行进程登记继续标为pending。
 - [查询调优](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#同机共享预付计数的本地原型)、代码状态及总纲同步候选已完成的Linux/真实Ray检查，区分现有PG查询共享与共享映射候选尚未完成的PG/模型检查。
 - 本次只修订说明与现行引用，实验结论继续引用原报告，没有新增实现或运行。

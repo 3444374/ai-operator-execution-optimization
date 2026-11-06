@@ -1,6 +1,8 @@
 # SemLoom 数据执行工程
 
-当前实验主线是 SemBench：LOTUS 提供原方法与语义，SemLoom 提供数据执行、供给、背压与生命周期管理。
+研究对象是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
+本目录提供外部执行核心；当前 records 使用 SemBench 等外部工作负载验证数据执行、供给、背压和生命周期，
+LOTUS 提供可选兼容方法与对照。这些结果不表示已接入新的 PostgreSQL 语义算子。
 普通 Movie records 通过本地 IPC 调用模型引擎；不启动旧 Movie HTTP 服务。
 当前可选能力、默认及验证限制见[配置总览](../docs/执行配置与优化开关.md)和[代码状态](INFRA_STATUS.md)。
 
@@ -20,18 +22,18 @@
 
 命令与正常配置入口见[脚本说明](scripts/README.md)。输入、私有 packet、模型环境、GPU 租约和实际版本应由每次运行绑定，
 不能把示例值、历史成绩或 CPU 替身当成当前实机资格。原生 LOTUS 非 HTTP 适配已有 CPU 检查，
-官方完整 Q1/Q2/Q3 尚受本地缺失的 `overrides/cdlib/duckdb` 依赖限制，真实模型／性能未验证。
+完整查询、真实模型、质量与性能按各自源码和环境核对，不能从单项 CPU 检查转授。
 
 ## 执行与语义分层
 
 | 层 | 维护位置 | 拥有的责任 |
 |---|---|---|
-| LOTUS 方法 | [semantic_methods/lotus](src/semantic_methods/lotus/README.md) | formatter、parser、方法状态、关系屏障与逐行结果合同 |
+| LOTUS 方法 | [semantic_methods/lotus](src/semantic_methods/lotus/README.md) | formatter、parser、方法状态、关系屏障与逐行结果协议 |
 | SemLoom 执行适配 | [execution_provider/adapters](src/execution_provider/adapters/README.md) | Core／有限链／rolling／admission 与结果交付接线 |
 | 调度与资源责任 | [scheduling](src/scheduling)、[反馈模块职责](src/scheduling/submission_control/README.md) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
 | 独立多任务研究 | [research/multitask](src/research/multitask/README.md) | 通用共享额度与 SAOR 策略；普通 records 不依赖它 |
 | 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态、无调度的有限链计算及进程清理 |
-| 模态公共能力 | [modalities](src/modalities) | 文本／图像合同、成本、共享 CLIP workers；不拥有 baseline 图 |
+| 模态公共能力 | [modalities](src/modalities) | 文本／图像协议、成本、共享 CLIP workers；不拥有 baseline 图 |
 | 通用观测和工具 | [observability](src/observability)、[infrastructure](src/infrastructure) | 时钟、来源、审计、脱敏、文件／预算／运行环境 |
 | 独立对照 | [baselines](src/baselines/README.md#text-execution-boundaries) | 原生系统图、作者桥接及任务对照；不注入 Core 策略 |
 | 实验编排 | [experiments](src/experiments) | SemBench 工作负载、生命周期与证据组合；不是生产依赖 |
@@ -67,107 +69,33 @@ PG 扩展 C／SQL、部署源和实验接线按准确 Git 树归档，**暂停�
 SAOR 与多任务共享额度一起由 [research/multitask](src/research/multitask/README.md) 维护，
 离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
 当前源码不再承诺这些旧命令可运行。独立 PG provider／通用传输内核和有研究价值的模态／调度组件若仍有消费者则保留，
-不因停止旧实验而删除其公共合同，也不宣称它们已接入当前 SemBench。
+不因停止旧实验而删除其公共协议，也不宣称它们已接入当前 SemBench。
 
 所有历史成绩、负结果、unknown、成本和五份具名代码投影保持。
 [历史恢复入口](../experiments/reproduction/native_baselines/README.md)只恢复指定源码，不执行模型。
 当前新增 CPU 检查不转授历史 GPU 资格，不宣称清理带来查询加速。
 
-本组合保留已发布6754eebe的普通Core IPC容量推导、共享endpoint active-credit、
-Ray调度观测和scheduler类型拆分；其实际接口与各自CPU范围见
-[执行适配说明](src/execution_provider/adapters/README.md)和
-[重构证据](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
-本次清理没有把这些改动退回旧默认或重新引入另一份实现。
+## 核心文件职责
 
-普通 Filter 的 [lotus_records_core.py](src/execution_provider/adapters/lotus_records_core.py) 负责配置、模型复用与资源管理；
-[records_filter_runtime.py](src/execution_provider/adapters/records_filter_runtime.py) 持有输入接纳、结果校验、交付和查询收尾。
-两个文件共用原 Core 与 transport；现用导出和历史读取路径保持，旧迭代实现已从 owner 删除。
-[同选择检查与代码总量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
-记录改前／改后各 81 项通过，不将这次拆分记为减少总代码或性能改善。
+下列文件承担不同的可独立修改职责，直接使用现有对象，不增加转发层或重复状态。
+完整改动、原失败、准确受测源码与恢复方式见[重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 
-两条 records 路径的 Daft Native 扫描准备现在共用 [records_scan.py](src/execution_provider/adapters/records_scan.py)，
-语义预检、模型启动和各自迭代仍由原 owner 处理；重复扫描块已删除。
-[本批同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
-记录 108 项通过、3 项因未配置 SemBench checkout 未运行，生产 Python 净减 13 行。
+| 所属部分 | 文件与责任 |
+|---|---|
+| 普通 Filter | [lotus_records_core.py](src/execution_provider/adapters/lotus_records_core.py) 负责配置、模型复用与资源；[records_filter_runtime.py](src/execution_provider/adapters/records_filter_runtime.py) 负责接纳、结果和查询收尾 |
+| 算子链 | [lotus_record_chain_core.py](src/execution_provider/adapters/lotus_record_chain_core.py) 负责组装和资源生命周期；[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py) 负责融合批传输；[records_query_runtime.py](src/execution_provider/adapters/records_query_runtime.py) 持有记录级方法和关系数据 |
+| 扫描与模型适配 | [records_scan.py](src/execution_provider/adapters/records_scan.py) 共用 Daft Native 扫描；[records_async_model.py](src/execution_provider/adapters/records_async_model.py) 接非阻塞请求与回执，owner 保留 Ray 分配和 RPC 终态责任 |
+| Session | [session.py](src/scheduling/core/session.py) 管服务回执、准备借用和任务表；[session_dispatch.py](src/scheduling/core/session_dispatch.py) 管成员选择与提交；[session_flow.py](src/scheduling/core/session_flow.py) 管交付、取消和消费者关闭 |
+| 调度 | [scheduler.py](src/scheduling/core/scheduler.py) 推进已就绪任务；[envelope_source.py](src/scheduling/core/envelope_source.py) 读取阻塞输入；[topology.py](src/scheduling/core/topology.py) 选择端点和投影本地占用 |
+| 反馈 | [submission_control](src/scheduling/submission_control/README.md) 分开配置、供给、请求试探、批反馈和计量；现用请求与批策略各有明确消费者 |
+| 引擎与 IPC | [vllm_protocol.py](src/serving/backends/vllm_protocol.py) 保存中性规范；sync／async 各自构造引擎；[async_engine_process.py](src/serving/backends/async_engine_process.py)、[async_engine_worker.py](src/serving/backends/async_engine_worker.py)、[async_engine_wire.py](src/serving/backends/async_engine_wire.py) 分管父进程、子进程和帧编码 |
+| 独立研究 | [research/multitask](src/research/multitask/README.md) 保存共享额度和 SAOR；实验编排不进入单查询默认配置 |
 
-同步执行接口与 Ray 调度画像继续使用 [scheduler.py](src/scheduling/core/scheduler.py)；
-阻塞输入生产由 [envelope_source.py](src/scheduling/core/envelope_source.py) 的原实现负责。
-两条调度路径共用服务池选择，仍各自计算实际端点容量；窗口路径不再先创建一份未使用账本。
-[同选择 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
-记录改前／改后各 76 项通过，两个文件合计净减 2 行，没有改变策略或容量。
-端点查询与本地占用投影共用已有 [topology.py](src/scheduling/core/topology.py)，三处调度调用直接使用它；
-原静态方法已删除，端点接纳的时钟／策略回调仍归调度器。[本批 89 项检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
-保留原函数体及历史来源，本批生产 Python 净增 5 行，不计作减少代码。
+SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、
+JSON 中显式的 `max_inflight` 或服务 payload 声明取得有限额度；缺少来源在启动前报告。
+C 是当前请求窗口，结果槽与输入／结果字节各自计量，均不是 vLLM 内部调度参数。
+静态／低层链仍需其支持的有限声明；cgroup／内存压力采样不能代替物理 RAM 授予或完整查询内存计量。
 
-
-链查询 owner 负责配置、组装、阶段选择、结果记账与模型资源生命周期；融合批传输、输入阶段和结果迭代在
-[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py)。
-记录级 MethodDriver 推进及查询数据清理在 `records_query_runtime.py`；运行器操作自己持有的数据，
-owner 保留服务交接和真实资源清理确认，没有新增状态副本或转发层。
-[本批职责与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
-记录中断重试、完整 Extract 及仍受系统权限影响的同步子进程用例。
-容量、模型适配及传输对象的新序列化直接使用定义模块，不再通过修改 __module__ 回指单Filter查询host；现有公共导入仍是同一对象。
-关闭失败保留原异常原因，外层错误消息及资源责任保持；此前的[异常链修正](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)不等同于真实Ray或模型资格。
-关闭审计实际返回的回执现在登记为可交接结果；模型API停止后，先恢复结果并排空ACK，再释放actor。
-[79项CPU回归与服务器原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)区分本地修正、已确认原因及尚未解明的取消用例；unknown和真实RPC终态继续单独判断。
-原两项IPC已在f4e服务器各通过一次；[整体收尾核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
-记录普通、prepared／rolling、resident、fused的关闭接线、静态导入复查，以及准确5539六项真实Ray、普通／rolling共16条模型功能的结果；模型两组各有3条漏判，功能成功不代表质量全部通过。
-低层异步actor已[退役三种旧阻塞RPC与专用等待](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)，普通工厂沿现有try-submit／poll／ACK；同步执行及现用owner接口保留。相关27项纯内存通过；87ce实际CPU IPC为15通过、1项测试同步失败，补同步后该单项在d6abc一次通过，其余15项未重跑。
-普通 owner 的阶段计时与反馈选项一次解析；链 owner 只检查自身的配置组合，不调用后丢弃普通 profile。
-[本批反例与行为回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)记录直接构造器报告修正与保留的必要检查。
-融合批 close 在私有控制目录删除成功后才保存 closed 报告，删除异常仍向调用方传出，重试沿用原模型关闭凭据。
-[最小反例和回归](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
-保存改前失败和改后 10 项 CPU 通过，未增加清理状态或模型重启。
-
-异步模型 actor 的请求／回执接线在
-[records_async_model.py](src/execution_provider/adapters/records_async_model.py)，driver 侧 Ray 分配和 RPC
-终态许可仍由原 owner 管理。Session 的批占用投影集中到既有 `session_policy.py`，预留与回退仍在 Session。
-本地 IPC 的父进程管理在 [async_engine_process.py](src/serving/backends/async_engine_process.py)，
-子进程循环与入口在 [async_engine_worker.py](src/serving/backends/async_engine_worker.py)，
-共享帧编码在 [async_engine_wire.py](src/serving/backends/async_engine_wire.py)；旧 worker 导入与观测接点已迁移。
-IMLane 桥的在途数量由当前资源声明传入，ready 回执核对同一数值，Python 不再另补两块窗口；实际桥需重新构建。
-[源码、381 项 CPU 与尚未验证项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
-区分标准 C++ 组件编译、完整作者桥和真实模型，不将拆文件算作总代码减少。
-SDK 与 Movie／Session 的 R 默认均为 None；普通 async 及已支持 rolling 从完整 Core 预算、typed IPC、JSON 中显式的 `max_inflight` 或服务 payload 声明解析有限请求数，缺来源在启动前拒绝。
-底层 IPC 必须接收明确额度，省略的总字节按声明槽数及完整单项计算；显式小额度保留。静态／低层链仍需其支持的有限声明。[当前范围与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)不表示自动物理容量。
-
-
-共享额度的租约、队列、容量与公共事件归于研究包的 `shared_credit.py`，策略选择、VTC 入队修正及完成记账集中到
-[credit_policies.py](src/research/multitask/credit_policies.py)；旧 scheduling 策略导入和提前导出已移除，
-现用研究调用方已迁移。执行层只消费原 credit 协议，没有新增账本或代理。
-Session 的 registered Job 关闭状态只由 JobRegistry 保存，legacy Job 仍记住待回收身份。
-[源码与 CPU 检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
-保存释放顺序修正、重复检查清理及 140 项组合结果；物理容量、R 和反馈试探不属于本批。
-
-
-Session 的成员选择、单请求和原子批接收集中到
-[session_dispatch.py](src/scheduling/core/session_dispatch.py)，成功接收后的游标前移只处理一次。
-[session.py](src/scheduling/core/session.py) 管理服务回执、准备借用和单一任务表；
-[session_flow.py](src/scheduling/core/session_flow.py) 管理每个 flow 的接纳、交付租约、取消和消费者关闭。
-现有 `session.SchedulingSession` 导入取得同一个实际类，没有添加 owner、代理或状态副本。
-[本批检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
-保留未通过的 socket 原底稿及尚未验证的子进程用例。测试夹具的启动异常传递已修正，
-[一次最小定位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
-记录 Unix socket 绑定被系统拒绝，五项实际功能仍待验证。链的 record-local 传输类与其实现同在
-[lotus_chain_actor_backend.py](src/execution_provider/adapters/lotus_chain_actor_backend.py)，实际测试接点同步。
-旧 profiler 解析器已退役，准确原件与恢复说明见
-[历史入口](../experiments/reproduction/native_baselines/README.md#retired-profiler-parser)。
-[本批源码、检查与总量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
-保留原失败；当前多任务／SAOR 隔离由另一专项继续，本批未修改其研究策略或接线。
-
-
-旧 profiler 的八个离线／到达重放接线函数已退役；现用 Arrow 输入转换归入职责明确的
-[batch_envelopes.py](src/observability/profiling/batch_envelopes.py)，旧 replay 文件和其两项专用私有参数已删除。
-公共 Ray SDK 仍接受调用方提供的 replay_envelopes，共享 batching／flush／service-quantum 算法保持。
-[本批同选择检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
-记录前后各七项通过、准确历史原件和生产 Python 净减 707 行。
-
-
-仅服务旧实验的 HTTP 观测转发代理及其回环测试已退役，原 trace 摘要迁为不启动服务的 CPU 用例。
-现用 HTTPX 被动观测、request identity 和 Unix 执行接口保持；[准确恢复与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
-记录最新组合 11 项 CPU 通过、生产 Python 净减 779 行，当前模型资格按实际受测版本分别说明。
-
-Ray 画像 SDK 的旧字典 HTTP metrics 轮询和仅供其使用的独立轮转状态也已退役；
-static 与显式全局／端点 admission 对象、caller replay 及 actor worker 状态继续使用同一现有调度器。
-[本批代码与检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
-记录生产 Python 再减 262 行、最终 29 项 CPU 通过及准确历史来源；不保留旧符号转发层。
+当前未完成项、真实环境检查和代码量使用[整体完成清单](INFRA_STATUS.md#refactor-completion-checklist)；
+配置用途和适用范围只维护在[配置总览](../docs/执行配置与优化开关.md)，
+各批次测试数字只从主报告和证据台账读取。本页不重复逐批发布历史。
