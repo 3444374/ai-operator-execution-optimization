@@ -96,6 +96,20 @@ class TransportBoundsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Arrow byte'):
                 replace(limits, max_output_bytes=exact).check_output(result)
 
+    def test_no_model_echo_accepts_the_declared_17_row_cpu_block(self):
+        from integrations.imlane_records.echo_udf import infer_records
+
+        rows = [dict(call_id='echo-'+str(i), row_id=i, query_id='query', stage_id='filter',
+            record_json=json.dumps({'text':'source '+str(i)})) for i in range(17)]
+        self.limits().check_input(rows)
+        output = infer_records(pa.Table.from_pylist(rows, schema=INPUT)).to_pylist()
+        self.assertEqual(len(output), 17)
+        for source, result in zip(rows, output, strict=True):
+            envelope = json.loads(result['outcome_json'])
+            self.assertFalse(envelope['model_entry_attempted'])
+            self.assertEqual(envelope['result']['record'], json.loads(source['record_json']))
+            self.assertEqual(result['call_id'], source['call_id'])
+
     def test_lane_shm_rss_and_command_exact_boundaries(self):
         limits = self.limits(max_input_bytes=LANE_BYTES - 2*ARROW_IPC_OVERHEAD_BYTES - 1048576)
         with self.assertRaisesRegex(ValueError, 'Lane'):
