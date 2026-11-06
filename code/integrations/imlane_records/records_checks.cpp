@@ -47,19 +47,28 @@ template<class F> void rejects(F&& f) {
     try { f(); } catch (const std::exception&) { failed = true; }
     require(failed, "records negative check unexpectedly succeeded");
 }
+Limits limits() {
+    Limits value(2);
+    value.max_block_rows = 2; value.max_query_rows = 5; value.max_queries = 2;
+    value.max_input_bytes = 65536; value.max_output_bytes = 1048576;
+    value.max_command_bytes = 131072; value.max_response_bytes = 8 * 1048576;
+    value.owner_shm_bytes = lane_bytes; value.owner_rss_bytes = 8ULL * 1024 * 1024 * 1024;
+    value.validate();
+    return value;
+}
 int main() {
     try {
         auto in = input();
-        auto ids = validate_input(in, "query", Limits{2});
+        auto ids = validate_input(in, "query", limits());
         require(ids.size() == 2 && row_at(in, 0) == row_at(in, 1), "repeat source positions were lost");
         std::vector<std::shared_ptr<arrow::Field>> fields;
         for (const auto& field : in->schema()->fields()) fields.push_back(field->WithNullable(false));
-        validate_input(arrow::Table::Make(arrow::schema(fields), in->columns()), "query", Limits{2});
-        rejects([&] { validate_input(in, "wrong-query", Limits{2}); });
-        auto small = Limits{2}; small.max_input_bytes = 1;
+        validate_input(arrow::Table::Make(arrow::schema(fields), in->columns()), "query", limits());
+        rejects([&] { validate_input(in, "wrong-query", limits()); });
+        auto small = limits(); small.max_input_bytes = 1;
         rejects([&] { validate_input(in, "query", small); });
         auto empty = in->Slice(0, 0);
-        rejects([&] { validate_input(empty, "query", Limits{2}); });
+        rejects([&] { validate_input(empty, "query", limits()); });
         IMLane::DBEnd::TableConverter<arrow::Table, ExchangeResult> converter;
         auto lane = output(in);
         auto result = std::make_shared<ExchangeResult>(); result->input = in; result->max_output_bytes = 1048576;

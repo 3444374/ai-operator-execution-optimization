@@ -151,7 +151,7 @@ inline void convert_output(const Table& table, ExchangeResult& result) {
     check(writer->WriteTable(*table));
     check(writer->Close());
     auto bytes = take(sink->Finish());
-    require(static_cast<uint64_t>(bytes->size()) <= result.max_output_bytes + 65536,
+    require(static_cast<uint64_t>(bytes->size()) <= result.max_output_bytes + arrow_ipc_overhead_bytes,
         "records IPC copy exceeds its finite allowance");
     auto reader = take(arrow::ipc::RecordBatchStreamReader::Open(std::make_shared<arrow::io::BufferReader>(bytes)));
     result.output = take(reader->ToTable());
@@ -208,14 +208,15 @@ class Session {
     std::shared_ptr<dbend::DBEndContext> context_;
     std::string alias_, query_;
     Limits limits_;
-    std::unordered_set<std::string> calls_, blocks_, queries_;
+    std::unordered_set<std::string> calls_, blocks_;
+    QueryHistory queries_;
     std::map<std::string, Pending> pending_;
     bool poisoned_ = false;
     bool terminals_v2_ = false;
 public:
     Session(std::shared_ptr<dbend::DBEndContext> context, std::string alias, Limits limits,
             bool terminals_v2 = false)
-        : context_(std::move(context)), alias_(std::move(alias)), limits_(limits),
+        : context_(std::move(context)), alias_(std::move(alias)), limits_(limits), queries_(limits.max_queries),
           terminals_v2_(terminals_v2) { limits_.validate(); }
     bool poisoned() const { return poisoned_; }
     void mark_terminal() noexcept { poisoned_ = true; }
@@ -223,8 +224,7 @@ public:
     void begin_query(const std::string& query) {
         require(!poisoned_ && query_.empty(), "records owner is terminal or a query is active");
         identity(query);
-        require(queries_.size() < limits_.max_queries && queries_.insert(query).second,
-            "records query repeats or exceeds session capacity");
+        queries_.insert(query);
         query_ = query;
     }
     void submit(const std::string& block, Table input) {
@@ -233,7 +233,7 @@ public:
         require(pending_.size() < limits_.max_pending_blocks, "records pending capacity reached");
         require(!blocks_.count(block), "records block identity repeats");
         auto ids = validate_input(input, query_, limits_);
-        require(calls_.size() + ids.size() <= limits_.max_query_rows, "records query row allowance exceeded");
+        require(calls_.size() <= limits_.max_query_rows && ids.size() <= limits_.max_query_rows - calls_.size(), "records query row allowance exceeded");
         for (const auto& id : ids) require(!calls_.count(id), "records call_id repeats across blocks");
         auto result = std::make_shared<ExchangeResult>();
         result->input = std::move(input);

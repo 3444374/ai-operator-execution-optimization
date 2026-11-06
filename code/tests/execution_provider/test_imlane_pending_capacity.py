@@ -15,6 +15,7 @@ from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.chain_backend import IMLaneChainBackend
 from integrations.imlane_records.records_host import RecordsResults
 from integrations.imlane_records.filter_workload import PROTOCOL
+from integrations.imlane_records.transport_limits import for_owner
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
@@ -28,7 +29,9 @@ class BridgeCapacityTests(unittest.TestCase):
         method = FilterMethod('openai/fixture', 'Keep {text}')
         engine = EngineSpec('/tmp/bridge-model', '/tmp/model-python', '/tmp/driver-python', max_model_calls=1)
         scan = SimpleNamespace(describe=lambda: {}, payload_columns=['text'], predicate=None)
-        source = SimpleNamespace(scan_spec=lambda _method: scan, rows=lambda: iter(()))
+        source = SimpleNamespace(scan_spec=lambda _method: scan,
+            rows=lambda: iter([dict(row_id='row', source_position=0, text='CPU')]),
+            expected=lambda query: [dict(row_id='row', source_position=0)])
         stream = SimpleNamespace(fileno=lambda: -1)
         process = SimpleNamespace(stdin=stream, stdout=stream, stderr=object(), poll=lambda: 0)
         with tempfile.TemporaryDirectory() as temporary:
@@ -37,7 +40,8 @@ class BridgeCapacityTests(unittest.TestCase):
                 __enter__=Mock(), track_root=Mock(), close=Mock())
             args = SimpleNamespace(output=root, bridge_binary=root/'bridge',
                 stop_budget=SimpleNamespace(cleanup=nullcontext))
-            ready = dict(event='ready', protocol=PROTOCOL, max_pending_blocks=4)
+            limits = for_owner(args, resources, max_query_rows=2)
+            ready = dict(event='ready', protocol=PROTOCOL, max_pending_blocks=4, transport_limits=limits.describe())
             with patch.object(movie.verify_filter, 'FilterScope', return_value=scope), \
                     patch.object(movie, 'Popen', return_value=process) as launch, \
                     patch.object(movie.verify, '_capture_stderr', return_value=None), \
@@ -46,7 +50,7 @@ class BridgeCapacityTests(unittest.TestCase):
                 carrier = movie._open_filter(args, dict(model_environment={'CUDA_VISIBLE_DEVICES': 'CPU'}),
                     (method, engine, GenerationSpec(), resources, source), 'query', {})
             self.assertEqual(launch.call_args.args[0], [str(args.bridge_binary), '1234',
-                str(movie.verify_filter.OWNED/'filter_udf.py'), 'infer_records', '4', PROTOCOL])
+                str(movie.verify_filter.OWNED/'filter_udf.py'), 'infer_records', '4', limits.argv(), PROTOCOL])
             self.assertEqual(carrier.max_pending, 4)
             scope.track_root.assert_called_once_with(process)
 
@@ -55,8 +59,8 @@ class BridgeCapacityTests(unittest.TestCase):
         from src.experiments import movie_records_session as session
         from tests.experiments.test_movie_records_session import PlanTests
 
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=4)
-        engine = EngineSpec('/tmp/bridge-main', '/tmp/model-python', '/tmp/driver-python', max_model_calls=64)
+        resources = RecordsResources(prepare_batch_rows=17, model_batch_rows=17, max_active_batches=4)
+        engine = EngineSpec('/tmp/bridge-main', '/tmp/model-python', '/tmp/driver-python', max_model_calls=16384)
         generation = GenerationSpec()
         method = FilterMethod('openai/fixture', 'Keep {text}')
         chain = LotusRecordChain((StageSpec('keep', method, generation),), query_id='query')
@@ -69,7 +73,7 @@ class BridgeCapacityTests(unittest.TestCase):
             query_id='query', method=asdict(method), helper_model_name='openai/helper',
             engines=dict(main=asdict(engine), helper=asdict(replace(engine, model_path='/tmp/bridge-helper'))),
             generations=dict(main=asdict(generation), helper=asdict(replace(generation, logprobs=1))),
-            cascade_args={}, resources=asdict(resources), max_calls=128,
+            cascade_args={}, resources=asdict(resources), max_calls=32768,
             source_sha256='0'*64, owner_sha256='0'*64)
         with patch.object(cascade_entry, 'read_json', return_value=cascade):
             self.assertEqual(cascade_entry.read_config('unused')[3].request_capacity(), 4)
@@ -78,7 +82,10 @@ class BridgeCapacityTests(unittest.TestCase):
         self.addCleanup(fixture.doCleanups)
         plan = deepcopy(fixture.plan)
         plan.update(backend='imlane', resources=asdict(resources), profile=asdict(resources))
-        self.assertEqual(session.check_plan(plan)['inference_calls'], 0)
+        plan['queries'] = [dict(plan['queries'][0], query_id='query-'+str(i)) for i in range(65)]
+        plan['engine']['max_model_calls'] = 16384
+        checked = session.check_plan(plan)
+        self.assertEqual((checked['inference_calls'], len(checked['queries'])), (0, 65))
 
     def test_native_backend_accepts_a_finite_declaration_above_the_old_window(self):
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=129)
@@ -112,19 +119,20 @@ class BridgeCapacityTests(unittest.TestCase):
     def test_ready_receipt_matches_the_requested_count_exactly(self):
         stream = SimpleNamespace(fileno=lambda: -1)
         process = SimpleNamespace(stdin=stream, stdout=stream, poll=lambda: 0)
-        for requested, actual in ((1, 1), (4, 4), (1, True), (4, 2), (4, None)):
+        for requested, actual in ((1, 1), (4, 4), (129, 129), (1, True), (4, 2), (4, None)):
             abort = Mock()
-            ready = dict(event='ready', protocol=PROTOCOL, max_pending_blocks=actual)
+            limits = for_owner(SimpleNamespace(), RecordsResources(max_active_batches=requested), max_query_rows=2)
+            ready = dict(event='ready', protocol=PROTOCOL, max_pending_blocks=actual, transport_limits=limits.describe())
             with self.subTest(requested=requested, actual=actual), \
                     patch('integrations.imlane_records.client.os.set_blocking'), \
                     patch.object(RecordsBridge, '_read', return_value=ready):
                 if type(actual) is int and actual == requested:
-                    bridge = RecordsBridge(process, abort_owner=abort, max_pending=requested, protocol=PROTOCOL)
+                    bridge = RecordsBridge(process, abort_owner=abort, max_pending=requested, protocol=PROTOCOL, limits=limits)
                     self.assertEqual(bridge.meta, ready)
                     abort.assert_not_called()
                 else:
                     with self.assertRaisesRegex(RuntimeError, 'startup differs'):
-                        RecordsBridge(process, abort_owner=abort, max_pending=requested, protocol=PROTOCOL)
+                        RecordsBridge(process, abort_owner=abort, max_pending=requested, protocol=PROTOCOL, limits=limits)
                     abort.assert_called_once()
 
 

@@ -16,6 +16,7 @@ from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.method_owner import owned_worker, slot
 from integrations.imlane_records.model_lifecycle import close_owned_model, model_closed
 from integrations.imlane_records.resident_model import QueryModel, ResidentEngineProcess
+from integrations.imlane_records.transport_limits import TransportLimits, query_call_plan
 from src.semantic_methods.lotus.records import RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -26,15 +27,18 @@ class ResidentWorker:
         self.generation = GenerationSpec.from_dict(config["generation"])
         self.resources = RecordsResources(**config["resources"])
         self.resources.request_capacity()
+        self.query_calls = query_call_plan(config["query_calls"], self.engine.max_model_calls)
+        self.limits = TransportLimits.from_dict(config["transport_limits"])
+        if (self.limits.max_query_rows != max(self.query_calls.values()) + 2
+                or self.limits.max_queries != len(self.query_calls) + 2):
+            raise ValueError("resident transport counts differ from its declared query plan")
         self.query_id = config["query_id"]  # The interpreter role belongs to the session.
         identity(self.query_id, "session", 0)
         self.control, self.deadline = Path(config["control_dir"]), config["deadline_monotonic"]
         if (not self.control.is_dir() or self.control.is_symlink()
                 or type(self.deadline) not in (float, int) or not time.monotonic() < self.deadline < float("inf")
-                or self.engine.max_model_calls is None or self.engine.max_model_calls > 4096
-                or self.resources.cpu_workers != 1 or self.resources.prepare_batch_rows > 16
-                or self.resources.model_batch_rows > 16):
-            raise ValueError("resident Filter requires the existing finite one-executor capacities")
+                or self.resources.cpu_workers != 1):
+            raise ValueError("resident Filter requires one author worker and a finite session deadline")
         self.environment = dict(config["model_environment"])
         self.engine_type, self.prepare_type = engine_type, prepare_type
         self.uid = uuid.uuid4().hex
@@ -89,7 +93,8 @@ class ResidentWorker:
         control = Path(config["control_dir"])
         spec = EngineSpec.from_dict(config["engine"])
         if (self.model is None or self.work is not None or query in self.finished or query == self.query_id
-                or len(self.finished) >= 62 or control.is_symlink() or not control.is_dir()
+                or query not in self.query_calls or self.query_calls[query] != spec.max_model_calls
+                or control.is_symlink() or not control.is_dir()
                 or not control.resolve().is_relative_to(self.control.resolve())
                 or control.resolve() == self.control.resolve() or str(control.resolve()) in self.controls
                 or type(config["deadline_monotonic"]) not in (float, int)
@@ -99,8 +104,8 @@ class ResidentWorker:
                 or asdict(GenerationSpec.from_dict(config["generation"])) != asdict(self.generation)
                 or config["resources"] != asdict(self.resources)
                 or config["model_environment"] != self.environment
+                or config["transport_limits"] != self.limits.describe()
                 or self.method_model_name is not None and config["method"]["model_name"] != self.method_model_name
-                or spec.max_model_calls is None or spec.max_model_calls > 4094
                 or self.reserved_calls + spec.max_model_calls > self.engine.max_model_calls):
             raise ValueError("query changes the resident deployment, repeats state or exceeds the session allowance")
         view = QueryModel(self.model, control, config["deadline_monotonic"])
@@ -146,7 +151,7 @@ class ResidentWorker:
 
 def infer_records(table):
     table.validate(full=True)
-    if (table.column_names != INPUT.names or table.schema.metadata or not 0 < len(table) <= 16
+    if (table.column_names != INPUT.names or table.schema.metadata or len(table) <= 0
             or any(field.type != INPUT.field(i).type or field.metadata for i, field in enumerate(table.schema))
             or any(table.column(i).null_count for i in range(table.num_columns))):
         raise ValueError("resident Filter requires the fixed bounded Arrow records schema")
@@ -154,6 +159,7 @@ def infer_records(table):
     if any((row["query_id"], row["stage_id"]) != (rows[0]["query_id"], "filter") for row in rows):
         raise ValueError("resident records cross query or stage")
     config = json.loads(Path(os.environ["IMLANE_FILTER_CONFIG"]).read_text())
+    TransportLimits.from_dict(config["transport_limits"]).check_input(rows)
     fingerprint = hashlib.sha256(json.dumps(dict(kind="resident-filter", **config), sort_keys=True).encode()).hexdigest()
     worker = owned_worker(config, fingerprint, ResidentWorker)
     payload = json.loads(rows[0]["record_json"])

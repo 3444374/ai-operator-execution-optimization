@@ -60,16 +60,15 @@ def read_config(path):
         raise ValueError("cascade_args must contain only original CascadeArgs fields")
     args = CascadeArgs.model_validate_json(json.dumps(raw), strict=True)
     cascade_identity(value["query_id"], "preflight", 0, 0, model_role="helper", stage="helper_score")
-    if type(value["max_calls"]) is not int or not 1 <= value["max_calls"] <= 12288:
-        raise ValueError("the finite global max_calls must be 1..12288")
+    if type(value["max_calls"]) is not int or value["max_calls"] < 1:
+        raise ValueError("the finite global max_calls must be positive")
     resources = RecordsResources(**value["resources"])
     resources.request_capacity()
-    if (resources.cpu_workers != 1 or resources.gpu_workers != 1 or resources.prepare_batch_rows > 16
-            or resources.model_batch_rows > 16):
-        raise ValueError("IMLane needs one executor/GPU, 1..16 rows and finite pending capacity")
+    if resources.cpu_workers != 1 or resources.gpu_workers != 1:
+        raise ValueError("IMLane needs one executor/GPU, explicit batch rows and finite pending capacity")
     engines = {role: EngineSpec.from_dict(raw) for role, raw in value["engines"].items()}
-    if any(spec.max_model_calls is None or spec.max_model_calls > 4096 for spec in engines.values()):
-        raise ValueError("both model lifetimes need explicit caps at most 4096")
+    if any(spec.max_model_calls is None for spec in engines.values()):
+        raise ValueError("both model lifetimes need explicit finite call allowances")
     if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
         raise ValueError("distinct explicit helper and main deployment paths are required")
     if any(engines[role].max_model_len is not None and generations[role].max_tokens > engines[role].max_model_len for role in engines):
@@ -135,7 +134,7 @@ def _method_preflight(config, relation, method, generations, engines, args):
     models = _models(methods, generations, engines)
     with lotus.settings.context(enable_cache=False):
         checked, upper, effective = validate_cascade(frame, models["main"], models["helper"], args,
-            instruction=method.instruction, max_rows=4096, max_calls=config["max_calls"])
+            instruction=method.instruction, max_rows=max(1, len(relation.records)), max_calls=config["max_calls"])
     sample = int(len(frame) * checked.sampling_percentage) if checked.filter_pos_cascade_threshold is None else 0
     limits = dict(helper=len(frame), main=max(len(frame), sample))
     if any(engines[role].max_model_calls < limit for role, limit in limits.items()):
@@ -180,13 +179,13 @@ def run_query(config, relation, method, generations, resources, engines, args,
             frame, columns = _frame(relation, methods)
             models = _models(methods, generations, engines)
             source = MaterializedCascadeSource(author_args.output, relation.records,
-                                               method=method, payload_columns=columns)
+                                               method=method, payload_columns=columns, max_rows=max(1, len(relation.records)))
             prepared_at = time.monotonic()
             backend = _make_backend(source, engines=engines, resources=resources,
                 author_args=author_args, model_environment=model_environment, cancelled=cancelled)
             report = run_cascade(frame, models["main"], models["helper"], args, backend,
                 instruction=method.instruction, default=method.default, system_prompt=method.system_prompt,
-                query_id=config["query_id"], max_rows=4096, max_calls=config["max_calls"])
+                query_id=config["query_id"], max_rows=max(1, len(relation.records)), max_calls=config["max_calls"])
             expected = {(row.row_id, row.source_position) for row in relation.records}
             decisions = report["decisions"]
             by_key = {(row["row_id"], row["source_position"]): row["decision"] for row in decisions}

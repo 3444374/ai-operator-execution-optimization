@@ -107,7 +107,7 @@ class Occurrences:
     """The wire int64 is an occurrence ordinal, never a coerced source ID."""
 
     def __init__(self, query_id, *, max_calls, columns):
-        if type(max_calls) is not int or not 0 < max_calls <= 4096:
+        if type(max_calls) is not int or max_calls < 1:
             raise ValueError("IMLane Filter needs a finite query call allowance")
         self.query_id, self.max_calls = query_id, max_calls
         self.columns = payload_columns(columns)
@@ -129,8 +129,8 @@ class Occurrences:
                                record_json=json.dumps(dict(identity_json=json.dumps(item, ensure_ascii=False),
                                    payload_json=json.dumps({name: source[name] for name in self.columns},
                                                            ensure_ascii=False)), ensure_ascii=False)))
-        if not 0 < len(staged) <= 16:
-            raise ValueError("IMLane Filter block must contain 1..16 occurrences")
+        if not staged:
+            raise ValueError("IMLane Filter block must contain declared occurrences")
         # A rejected suffix must not register any prefix that was never submitted.
         for row in staged:
             self.inputs[row["call_id"]] = row
@@ -186,3 +186,23 @@ class Occurrences:
             raise error
         self.collected.update(results)
         return values
+
+
+def preflight_transport(source, method, resources, query_id, limits, *, close=True):
+    """Check the actual source encoding before the cold author/model owner starts."""
+    from integrations.imlane_records.transport_limits import close_block, preflight_blocks
+
+    scan = source.scan_spec(method)
+    count = len(source.expected(query_id))
+    mapping = Occurrences(query_id, max_calls=max(1, count), columns=scan.payload_columns)
+    rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
+                 **{name: row[name] for name in scan.payload_columns})
+            for row in source.rows() if scan.predicate is None or row[scan.predicate[0]] == scan.predicate[1])
+    actual = preflight_blocks(limits, rows, block_rows=resources.prepare_batch_rows,
+                             block_prefix="filter", encode=mapping.encode)
+    if actual != count or actual + int(close) > limits.max_query_rows:
+        raise ValueError("Filter source differs from its finite expected occurrences")
+    if close:
+        block, wire = close_block(query_id, "filter", "filter")
+        limits.check_submit(block, wire)
+    return actual

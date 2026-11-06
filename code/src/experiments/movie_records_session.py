@@ -113,13 +113,10 @@ def check_plan(plan):
                             manifest_sha256=inputs["manifest_sha256"]))
     if plan["backend"] == "imlane":
         resources.request_capacity()
-        if (plan["profile"] != asdict(resources) or resources.cpu_workers != 1
-                or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16):
-            raise ValueError("IMLane retains its one author worker and existing batch/backpressure capacities")
-        if plan["lifecycle"] == "resident" and (len(checked) > 62
-                or any(not 0 < query["expected_calls"] <= 4094 for query in checked)
-                or engine.max_model_calls is None or engine.max_model_calls > 4096):
-            raise ValueError("IMLane resident control records and whole-session calls exceed finite bridge capacity")
+        if plan["profile"] != asdict(resources) or resources.cpu_workers != 1:
+            raise ValueError("IMLane retains one qualified author worker and its explicit batch/pending declaration")
+        if plan["lifecycle"] == "resident" and any(query["expected_calls"] <= 0 for query in checked):
+            raise ValueError("IMLane requires a nonempty finite call declaration for each query")
     total = sum(query["expected_calls"] for query in checked)
     if plan["backend"] == "semloom-static-reference":
         methods = [MovieTask.from_config(query["task"]).method(plan["model_name"]) for query in checked]
@@ -248,6 +245,7 @@ class _MovieDriver:
             args = SimpleNamespace(output=self.directory, scopes=[],
                 stop_budget=author_owner.StopBudget(threading.Event()),
                 owner_resource_limits=outer["owner_resource_limits"],
+                transport_limits=outer.get("transport_limits"),
                 **{key: Path(value[key]) for key in ("author_root", "method_python", "bridge_binary", "artifact_root")})
             self.imlane_guard = AuthorRunGuard(value, args)
             self.imlane_handlers = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
@@ -256,7 +254,9 @@ class _MovieDriver:
             deadline = (time.monotonic() + self.resources.startup_timeout_s
                         + len(self.plan["queries"]) * self.resources.query_timeout_s + 2 * MODEL_CLOSE_GRACE_S)
             self.owner = IMLaneResidentSession(self.engine, self.generation, self.resources,
-                author_args=args, model_environment=value["model_environment"], deadline_monotonic=deadline)
+                author_args=args, model_environment=value["model_environment"], deadline_monotonic=deadline,
+                query_calls={query["query_id"]: self.context["checked_queries"][query["query_id"]]["expected_calls"]
+                             for query in self.plan["queries"]})
             return self.owner.start()
         if backend in {"semloom-core", "semloom-static-reference", "ray-data"}:
             import ray

@@ -40,7 +40,7 @@ def read_owner(path, *, expected_sha256=None):
     required = {"schema", "author_root", "method_python", "bridge_binary", "artifact_root",
                 "preflight_report", "model_environment", "owner_resource_limits", "lease_sha256",
                 "budget", "gpu_idle_max_mib"}
-    if type(value) is not dict or set(value) != required or value["schema"] != "semloom.imlane_owner.v1":
+    if type(value) is not dict or set(value) - {"transport_limits"} != required or value["schema"] != "semloom.imlane_owner.v1":
         raise ValueError("an explicit IMLane owner context is required")
     for name in ("author_root", "method_python", "bridge_binary", "artifact_root", "preflight_report"):
         if type(value[name]) is not str or not Path(value[name]).is_absolute():

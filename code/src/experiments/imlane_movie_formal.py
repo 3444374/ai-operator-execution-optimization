@@ -19,7 +19,8 @@ from integrations.imlane_records import owner, verify, verify_filter
 from integrations.imlane_records.chain_runtime import AuthorRunGuard, check_external_lease
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_host import FilterResults
-from integrations.imlane_records.filter_workload import PROTOCOL, validate_terminal
+from integrations.imlane_records.filter_workload import PROTOCOL, validate_terminal, preflight_transport
+from integrations.imlane_records.transport_limits import for_owner
 from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.infrastructure.redact import redact_text
 from src.baselines.text.movie_records import MovieRecordSource
@@ -66,7 +67,7 @@ def _binding(source, method, generation, engine, resources, query_id, profile, c
         author_root=runtime["imlane_author_root"], method_python=runtime["imlane_method_python"],
         bridge_binary=runtime["imlane_bridge_binary"], artifact_root=str(artifact_root),
         lease_sha256=outer["lease_sha256"], owner_resource_limits=outer["owner_resource_limits"],
-        gpu_idle_max_mib=outer["gpu_idle_max_mib"],
+        gpu_idle_max_mib=outer["gpu_idle_max_mib"], transport_limits=outer.get("transport_limits"),
         model_environment=dict(CUDA_VISIBLE_DEVICES=runtime["cuda_visible_devices"]))
     for name in ("author_root", "method_python", "bridge_binary", "artifact_root"):
         path = Path(value[name])
@@ -81,6 +82,9 @@ def _binding(source, method, generation, engine, resources, query_id, profile, c
 def _open_filter(args, value, components, query_id, report):
     """The same scope/bridge/result path as verify_filter.run_one, kept lazy."""
     method, engine, generation, resources, source = components
+    limits = for_owner(args, resources, max_query_rows=len(source.expected(query_id)) + 1)
+    preflight_transport(source, method, resources, query_id, limits)
+    report["transport_limits"] = limits.describe()
     deadline = time.monotonic() + resources.query_timeout_s
     args.filter_config = args.output / "worker-0.json"
     args.cuda_visible_devices = value["model_environment"]["CUDA_VISIBLE_DEVICES"]
@@ -92,10 +96,10 @@ def _open_filter(args, value, components, query_id, report):
     write_private_json(args.filter_config, dict(method=asdict(method), engine=asdict(engine),
         generation=asdict(generation), resources=asdict(resources), query_id=query_id,
         deadline_monotonic=deadline, control_dir=str(control), scan=scan.describe(),
-        model_environment=value["model_environment"]))
+        model_environment=value["model_environment"], transport_limits=limits.describe()))
     scope.__enter__()
     process = Popen([str(args.bridge_binary), str(scope.port), str(udf),
-        "infer_records", str(resources.request_capacity()), PROTOCOL],
+        "infer_records", str(resources.request_capacity()), limits.argv(), PROTOCOL],
         env=scope.env, cwd=scope.root, stdin=PIPE, stdout=PIPE, stderr=PIPE, start_new_session=True)
     scope.track_root(process)
     writer = verify._capture_stderr(process.stderr, scope.root / "bridge-stderr.log", report)
@@ -113,7 +117,7 @@ def _open_filter(args, value, components, query_id, report):
 
     client = RecordsBridge(process, abort_owner=abort_owner,
         timeout_s=min(60, resources.query_timeout_s), protocol=PROTOCOL,
-        max_pending=resources.request_capacity())
+        max_pending=resources.request_capacity(), limits=limits)
     rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
                  **{name: row[name] for name in scan.payload_columns})
             for row in source.rows() if scan.predicate is None or row[scan.predicate[0]] == scan.predicate[1])
@@ -177,7 +181,7 @@ def run(source, checkout, method, generation, engine, resources, *, query_id, pr
             source, method, generation, engine, resources, query_id, profile, context)
         root.mkdir(mode=0o700, exist_ok=False)
         args = SimpleNamespace(output=root, scopes=[], stop_budget=owner.StopBudget(threading.Event()),
-            owner_resource_limits=value["owner_resource_limits"],
+            owner_resource_limits=value["owner_resource_limits"], transport_limits=value.get("transport_limits"),
             **{key: Path(value[key]) for key in ("author_root", "method_python", "bridge_binary", "artifact_root")})
         previous = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
         for number in previous:

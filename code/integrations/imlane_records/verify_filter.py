@@ -28,6 +28,8 @@ from integrations.imlane_records.method_environment import preflight_method, val
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.resource_limits import owner_limits, gpu_snapshot, gpu_exited
+from integrations.imlane_records.filter_workload import preflight_transport
+from integrations.imlane_records.transport_limits import for_owner
 from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.infrastructure.redact import redact_json_values, redact_text
 from src.baselines.text.movie_records import MovieRecordSource
@@ -55,13 +57,12 @@ def configuration(value):
     generation = GenerationSpec.from_dict(value["generation"])
     resources = RecordsResources(**value["resources"])
     resources.request_capacity()
-    if (resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.prepare_batch_rows > 16
-           ):
+    if resources.cpu_workers != 1:
         raise ValueError("this CPython slice requires one worker and the existing finite bridge capacities")
     queries = value["query_ids"]
-    if (type(queries) is not list or not 1 <= len(queries) <= 2 or len(set(queries)) != len(queries)
+    if (type(queries) is not list or not queries or len(set(queries)) != len(queries)
             or any(type(q) is not str or not q.strip() for q in queries)
-            or type(value["max_total_calls"]) is not int or not 0 < value["max_total_calls"] <= 4096
+            or type(value["max_total_calls"]) is not int or value["max_total_calls"] < 1
             or engine.max_model_calls is None or engine.max_model_calls * len(queries) > value["max_total_calls"]):
         raise ValueError("qualification needs distinct query IDs and a finite total permanent allowance")
     source = MovieRecordSource.from_manifest(value["source_manifest"])
@@ -112,6 +113,9 @@ def apply_final_verdict(report, *, stopped):
 
 def run_one(args, value, report, components, query_id):
     method, engine, generation, resources, source = components
+    limits = for_owner(args, resources, max_query_rows=len(source.expected(query_id)) + 1)
+    preflight_transport(source, method, resources, query_id, limits)
+    report["transport_limits"] = limits.describe()
     deadline = time.monotonic() + resources.query_timeout_s
     args.filter_config = args.output / ("worker-" + str(len(report["queries"])) + ".json")
     args.cuda_visible_devices = value.get("model_environment", {}).get("CUDA_VISIBLE_DEVICES", "")
@@ -124,14 +128,14 @@ def run_one(args, value, report, components, query_id):
     write_private_json(args.filter_config, dict(method=asdict(method), engine=asdict(engine),
         generation=asdict(generation), resources=asdict(resources), query_id=query_id,
         deadline_monotonic=deadline, control_dir=str(control), scan=scan.describe(),
-        model_environment=value.get("model_environment", {})))
+        model_environment=value.get("model_environment", {}), transport_limits=limits.describe()))
     iterator = None
     try:
         scope.__enter__()
         def execute():
             nonlocal iterator
             process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(udf),
-                "infer_records", str(resources.request_capacity()), PROTOCOL],
+                "infer_records", str(resources.request_capacity()), limits.argv(), PROTOCOL],
                 env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, start_new_session=True)
             scope.track_root(process)
@@ -146,7 +150,7 @@ def run_one(args, value, report, components, query_id):
                 if not state["resources_confirmed"]:
                     raise RuntimeError("Filter scope resources remain unconfirmed")
             client = RecordsBridge(process, abort_owner=abort_owner, timeout_s=min(60, resources.query_timeout_s),
-                                   protocol=PROTOCOL, max_pending=resources.request_capacity())
+                                   protocol=PROTOCOL, max_pending=resources.request_capacity(), limits=limits)
             rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
                          **{name: row[name] for name in scan.payload_columns})
                     for row in source.rows() if scan.predicate is None
@@ -183,6 +187,7 @@ def main(argv=None):
         setattr(args, name, path)
     args.scopes, args.stop_budget = [], owner.StopBudget(threading.Event())
     args.owner_resource_limits = owner_limits(value.get("owner_resource_limits"))
+    args.transport_limits = value.get("transport_limits")
     signal.signal(signal.SIGTERM, args.stop_budget.signal)
     signal.signal(signal.SIGINT, args.stop_budget.signal)
     report = dict(schema="imlane.filter.qualification.v1", mode=value["mode"], runtime="author-cpython",

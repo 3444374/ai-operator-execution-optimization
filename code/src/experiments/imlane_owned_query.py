@@ -26,7 +26,7 @@ def run_owned_query(root, owner, *, query_id, backend, required_requests, prefli
             "cascade-helper_score", "cascade-threshold_sample", "cascade-fallback")):
         raise ValueError("the author worker requires a new private run directory")
     args = SimpleNamespace(output=root, scopes=[], stop_budget=StopBudget(threading.Event()),
-        owner_resource_limits=owner["owner_resource_limits"],
+        owner_resource_limits=owner["owner_resource_limits"], transport_limits=owner.get("transport_limits"),
         **{key: Path(owner[key]) for key in ("author_root", "bridge_binary", "artifact_root", "method_python")})
     primary = ledger = guard = None
     report = dict(status="failed", calls=[], query_id=query_id, backend=backend)

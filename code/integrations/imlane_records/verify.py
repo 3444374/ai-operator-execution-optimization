@@ -19,6 +19,7 @@ sys.path.insert(0, str(CODE))
 from integrations.imlane_records import owner as tools
 from integrations.imlane_records.client import RecordsBridge, RecordsRejected
 from integrations.imlane_records.resource_limits import check_resources, owner_limits
+from integrations.imlane_records.transport_limits import for_owner
 from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.infrastructure.redact import redact_text
 from src.infrastructure.runner_lease import (
@@ -191,13 +192,17 @@ def _capture_stderr(pipe, path, report):
 
 
 def run_case(args, helper, report, function):
+    from src.semantic_methods.lotus.records import RecordsResources
+    limits = for_owner(args, RecordsResources(prepare_batch_rows=2, max_active_batches=2),
+        max_query_rows=5 if function == "infer_records" else 2,
+        max_queries=2 if function == "infer_records" else 1)
     scope = RecordScope(args, "cpython", helper, report, kernel=OWNED / "echo_udf.py")
-    case = dict(function=function, real_model_requests=0)
+    case = dict(function=function, real_model_requests=0, transport_limits=limits.describe())
     report["cases"].append(case)
     client = None
     try:
         scope.__enter__()
-        process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(OWNED / "echo_udf.py"), function, "2"],
+        process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(OWNED / "echo_udf.py"), function, "2", limits.argv()],
             env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, start_new_session=True)
         scope.track_root(process)
@@ -212,7 +217,7 @@ def run_case(args, helper, report, function):
             with (scope.root / "bridge-stdout.log").open("a") as stream:
                 stream.write(redact_text(line) + "\n")
         client = RecordsBridge(process, abort_owner=abort_owner, timeout_s=5,
-                               log=save_line, max_pending=2)
+                               log=save_line, max_pending=2, limits=limits)
         assert 0 < client.meta["native_task_threads"] <= 8
         if function == "infer_records":
             case.update(healthy(client))

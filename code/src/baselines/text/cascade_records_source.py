@@ -50,7 +50,7 @@ class MaterializedCascadeSource:
     only occurrence keys, the bound main method and immutable scan/file values.
     """
 
-    def __init__(self, directory, records, *, method, payload_columns):
+    def __init__(self, directory, records, *, method, payload_columns, max_rows=MAX_ROWS):
         directory = Path(directory)
         if directory.is_symlink() or not directory.is_dir():
             raise ValueError("cascade source needs an existing nonsymlink private directory")
@@ -69,8 +69,9 @@ class MaterializedCascadeSource:
         )
         if not set(self._method.resolved_input_columns).issubset(self._scan.payload_columns):
             raise ValueError("cascade source payload omits a bound method column")
-        if type(records) is not tuple or len(records) > MAX_ROWS:
-            raise ValueError("cascade source requires a finite tuple of at most 4096 occurrences")
+        if type(max_rows) is not int or max_rows < 1 or type(records) is not tuple or len(records) > max_rows:
+            raise ValueError("cascade source exceeds its finite declared occurrence allowance")
+        self._max_rows = max_rows
 
         keys, row_ids, positions = [], set(), set()
         with _BoundedCsvText() as text:
@@ -139,7 +140,7 @@ class MaterializedCascadeSource:
             schema="semloom.materialized_cascade_source.preflight.v1", status="passed",
             method=self._method.describe(), scan=self._scan.describe(),
             rows=len(self._occurrences), csv_sha256=self._csv_sha256, csv_bytes=self._csv_bytes,
-            logical_limits=dict(max_rows=MAX_ROWS, csv_bytes=MAX_CSV_BYTES,
+            logical_limits=dict(max_rows=self._max_rows, csv_bytes=MAX_CSV_BYTES,
                                 field_unicode_chars=MAX_FIELD_CHARS),
             limit_scope="finite CSV values; not an RSS or GPU memory bound",
         )
