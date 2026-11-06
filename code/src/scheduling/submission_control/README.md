@@ -20,3 +20,7 @@
 The standalone PID admission prototype no longer has a maintained runner or configuration selector.
 Its module and package exports are retired; the current request policy and explicit batch feedback remain.
 [PID recovery](../../../../experiments/reproduction/native_baselines/README.md#retired-pid) preserves the exact implementation and original tests.
+
+The offline arm-step `BoundedCapacityController` and `CapacityDecision` are retired from current modules and exports.
+Their former runners are historical; [capacity-controller recovery](../../../../experiments/reproduction/native_baselines/README.md#retired-capacity-controller)
+preserves their exact source and tests. The shared `CapacityArm` value, current resource accounting and feedback policies remain.

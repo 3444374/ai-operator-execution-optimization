@@ -896,3 +896,23 @@ Their original expected hashes, projection identities and source mappings are un
 historical PID source check now lives with `HistoricalProjectionTests` in
 [`test_native_baseline_reproduction.py`](../../../code/tests/experiments/test_native_baseline_reproduction.py);
 its policy-execution tests are recovered with the retired implementation rather than rerun in the maintained suite.
+
+<a id="retired-capacity-controller"></a>
+## Offline capacity-step controller recovery
+
+The standalone `BoundedCapacityController` and `CapacityDecision` module, two package exports and nine exclusive tests are retired.
+Its former shared-vLLM runner and control benchmark are already historical; no maintained factory or script applies its selected arm.
+This is not the current request feedback, batch feedback or Core resource account. The shared `CapacityArm` value and its public import remain,
+including the existing research and trace-replay consumers.
+
+The exact source from published `769a73074084a721e3342e505d0dd94b428f18b8` is stored once as
+[`capacity.py.gz`](historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz).
+It decodes to 7,963 bytes, SHA-256 `5ae611bb1e5f254a61cf33c09d8b6a51787d3ad8d8510bb3773727221895f02f`.
+Each of the five named projections adds only this source override and its gzip format declaration.
+Original expected hashes, projection identities, other sources and formats remain unchanged; the preserved source stays outside current imports.
+
+Recover the complete original implementation and tests in a separate
+[`769a73074084a721e3342e505d0dd94b428f18b8` checkout](https://github.com/3444374/ai-operator-execution-optimization/tree/769a73074084a721e3342e505d0dd94b428f18b8):
+[`capacity.py`](https://github.com/3444374/ai-operator-execution-optimization/blob/769a73074084a721e3342e505d0dd94b428f18b8/code/src/scheduling/submission_control/capacity.py) and
+[`test_capacity_controller.py`](https://github.com/3444374/ai-operator-execution-optimization/blob/769a73074084a721e3342e505d0dd94b428f18b8/code/tests/scheduling/test_capacity_controller.py).
+Old results, failure records and research material retain their original interpretation; this retirement does not rerun those algorithms or model environments.

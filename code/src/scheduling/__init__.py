@@ -81,10 +81,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "SynchronousScheduler",
     ),
     ".runtime.execution": ("SynchronousExecutionEngine",),
-    ".submission_control.capacity": (
-        "BoundedCapacityController",
-        "CapacityDecision",
-    ),
     ".core.topology": ("healthy_endpoints", "schedulable_endpoints"),
 }
 

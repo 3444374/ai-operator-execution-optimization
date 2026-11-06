@@ -966,7 +966,8 @@
         "code/scripts/analysis/build_semfilter_reference_calibration.py": "historical_sources/a39cec74/code/scripts/analysis/build_semfilter_reference_calibration.py.gz",
         "code/scripts/services/local_embedding_server.py": "historical_sources/af63c0e5/code/scripts/services/local_embedding_server.py.gz",
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
-        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz"
+        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
+        "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1489,6 +1490,11 @@
           "encoding": "gzip",
           "decoded_bytes": 6767,
           "archive_sha256": "627e525dc2ec3332b408c4edabb61ad121123e78477eaaf0a7ef760a55f182d6"
+        },
+        "code/src/scheduling/submission_control/capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7963,
+          "archive_sha256": "0f80d4268c4824401ec25de79504fb7cb0d77c9aed349bc3abbb3b2d4e88b5b1"
         }
       }
     },
@@ -2483,7 +2489,8 @@
         "code/scripts/analysis/build_semfilter_reference_calibration.py": "historical_sources/a39cec74/code/scripts/analysis/build_semfilter_reference_calibration.py.gz",
         "code/scripts/services/local_embedding_server.py": "historical_sources/af63c0e5/code/scripts/services/local_embedding_server.py.gz",
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
-        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz"
+        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
+        "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3006,6 +3013,11 @@
           "encoding": "gzip",
           "decoded_bytes": 6767,
           "archive_sha256": "627e525dc2ec3332b408c4edabb61ad121123e78477eaaf0a7ef760a55f182d6"
+        },
+        "code/src/scheduling/submission_control/capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7963,
+          "archive_sha256": "0f80d4268c4824401ec25de79504fb7cb0d77c9aed349bc3abbb3b2d4e88b5b1"
         }
       }
     },
@@ -4010,7 +4022,8 @@
         "code/scripts/analysis/build_semfilter_reference_calibration.py": "historical_sources/a39cec74/code/scripts/analysis/build_semfilter_reference_calibration.py.gz",
         "code/scripts/services/local_embedding_server.py": "historical_sources/af63c0e5/code/scripts/services/local_embedding_server.py.gz",
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
-        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz"
+        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
+        "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4533,6 +4546,11 @@
           "encoding": "gzip",
           "decoded_bytes": 6767,
           "archive_sha256": "627e525dc2ec3332b408c4edabb61ad121123e78477eaaf0a7ef760a55f182d6"
+        },
+        "code/src/scheduling/submission_control/capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7963,
+          "archive_sha256": "0f80d4268c4824401ec25de79504fb7cb0d77c9aed349bc3abbb3b2d4e88b5b1"
         }
       }
     },
@@ -5539,7 +5557,8 @@
         "code/scripts/analysis/build_semfilter_reference_calibration.py": "historical_sources/a39cec74/code/scripts/analysis/build_semfilter_reference_calibration.py.gz",
         "code/scripts/services/local_embedding_server.py": "historical_sources/af63c0e5/code/scripts/services/local_embedding_server.py.gz",
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
-        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz"
+        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
+        "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6067,6 +6086,11 @@
           "encoding": "gzip",
           "decoded_bytes": 6767,
           "archive_sha256": "627e525dc2ec3332b408c4edabb61ad121123e78477eaaf0a7ef760a55f182d6"
+        },
+        "code/src/scheduling/submission_control/capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7963,
+          "archive_sha256": "0f80d4268c4824401ec25de79504fb7cb0d77c9aed349bc3abbb3b2d4e88b5b1"
         }
       }
     },
@@ -7078,7 +7102,8 @@
         "code/scripts/analysis/build_semfilter_reference_calibration.py": "historical_sources/a39cec74/code/scripts/analysis/build_semfilter_reference_calibration.py.gz",
         "code/scripts/services/local_embedding_server.py": "historical_sources/af63c0e5/code/scripts/services/local_embedding_server.py.gz",
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
-        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz"
+        "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
+        "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7606,6 +7631,11 @@
           "encoding": "gzip",
           "decoded_bytes": 6767,
           "archive_sha256": "627e525dc2ec3332b408c4edabb61ad121123e78477eaaf0a7ef760a55f182d6"
+        },
+        "code/src/scheduling/submission_control/capacity.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7963,
+          "archive_sha256": "0f80d4268c4824401ec25de79504fb7cb0d77c9aed349bc3abbb3b2d4e88b5b1"
         }
       }
     }
