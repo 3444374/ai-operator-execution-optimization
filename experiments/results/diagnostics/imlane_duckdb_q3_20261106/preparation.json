@@ -1,6 +1,6 @@
 {
   "schema": "semloom.imlane-duckdb-preparation.v1",
-  "state": "native fixture and historical HTTP software CPU complete; IPC adapter locally checked; real author IPC software and real model pending",
+  "state": "native software CPU including real IPC complete; real model startup observed, Q3 stopped before dispatch; controller repair CPU checked",
   "models_started": 0,
   "source_recovery_manifest_sha256": "3319f4e5a1bb45fb81991a027d5294648144ff52ca90b212b4130256c1fd71d6",
   "library_build": {
@@ -55,9 +55,7 @@
   ],
   "native_cpu_evidence": "native_cpu.json",
   "model_provider_preparation": {
-    "state": "local IPC implemented with 124 related CPU methods passed; actual author software IPC pending",
-    "GPU_runs": 0,
-    "models_started": 0,
+    "state": "real IPC software CPU passed; model startup succeeded but original whole-stage SHM declaration stopped before Q3",
     "provider_transport": "AF_UNIX batch RPC to one native AsyncLLM; author ArrowLane preserved",
     "semloom_mainline_transport": "local IPC",
     "native_ready_clock": "new driver CLOCK_MONOTONIC before native destructors; must rebuild thin binary",
@@ -68,6 +66,14 @@
     "native_transport_audit": "native_transport_audit.json",
     "software_HTTP_CPU_evidence": "http_software_cpu.json",
     "custom_IPC_status": "implemented, software local CPU checked",
-    "current_components": "ipc_components.json"
+    "current_components": "ipc_components.json",
+    "local_CPU_models": 0,
+    "local_CPU_GPU_runs": 0,
+    "real_model_startup_observed": true,
+    "user_Q3_generate_invocations": 0,
+    "internal_GPU_profile_attempts": null,
+    "server_IPC_CPU_evidence": "ipc_server_cpu.json",
+    "real_startup_failure": "startup_shm_failure.json",
+    "controller_repair": "controller_repair.json"
   }
 }

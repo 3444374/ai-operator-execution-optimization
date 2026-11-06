@@ -118,7 +118,7 @@ coordinator及服务owner均exit0，无fallback、强杀或残留SHM；其自动
 
 ## 作者原生模型连接核查
 
-用户后续要求原生优先，因此没有把自建IPC替换进当前运行入口。
+初次原生核查时暂缓了IPC替换；当前项目IPC接线及实测状态见下节。
 [固定作者审计](native_transport_audit.json)关联完整Git树、独立公开tree及关键源码摘要；
 当日`git ls-remote`确认作者HEAD／main仍为072f。审计读取固定Git blob，
 与实际安装树中既存构建兼容补丁分开，不改作者源码或前缀。
@@ -154,10 +154,50 @@ LOTUS本地对象使用单父三socketpair，带LOTUS账本与transport limits�
 124个不同本地方法全部通过：真实Unix socket四客户端barrier及同批129行、断连／错误／deadline abort＋drain、
 late-final unknown、8192 context exact／超一token零generate、原始异常与关闭错误并存、单一关闭期限和inode准确清理。
 首次sandbox不允许bind的环境拒绝保留；放行同一零模型fixture后成功，未修改测试跳过或改成假socket。
-软件引擎与CPU结果不证明真实模型／物理GPU关闭；真实作者＋软件IPC下一步按计划在独立新目录验证。
+软件引擎与CPU结果不证明真实模型／物理GPU关闭；准确3c807316的实际作者＋软件IPC正常120／故障1已在服务器r4通过，见[软件证据](ipc_server_cpu.json)。
 HTTP与IPC没有匹配开销测量，IPC仍需JSON／socket复制，不声称零拷贝或性能收益。
+
+## 真实模型启动后的SHM范围错误与控制器修复
+
+[原失败](startup_shm_failure.json)为准确3c807316：真实模型服务ready51.035秒后，
+作者四executor启动使whole-stage SHM达到536973312B，原controller只声明作者部分536969216B；
+模型ready后、作者启动前已有4096B，采样精确对应漏项。真实机器不是只有该容量：
+只读检查/dev/shm总60GiB、当时可用64424484864B，原机器profile的512MiB同样是实验声明，不是物理容量。
+Q3 driver尚未启动、实际用户generate0，没有查询时间或质量。51.035秒只表示模型启动；
+原资源／服务关闭失败、后续19个自有进程及GPU／SHM／lease清理分别保留，不回写成成功。
+
+修复使用启动时一次statvfs的f_bavail×f_frsize作为全运行SHM物理可用空间边界，
+不再把作者分配、model-ready一页或两者之和当准入配额，也不在READY后重置baseline。
+作者／模型的实际用量仍记录，增长多页不因超过启动观测值而停止；采样边界不是预留或内核隔离，
+实际容量仍由tmpfs内核约束。原20GiB sampled RSS、8核亲和性、query1200秒／cleanup120秒
+（含末尾8秒兜底）和残留检查保留，模型参数、作者executor及算法不改。
+未来生成期的实际峰值和正常模型关闭仍未验证。
+
+私有controller另有确定性收尾错误：同名LEDGER被create-only writer重复写，跳过后续lease释放；
+合法None计数也可能在sum时抛错，捕获主错误却没有最终重抛可能导致exit0。
+[修复映射](controller_repair.json)和[可应用补丁](controller_repair.patch)只修外层控制器：
+保留LEDGER.json初始预留，另写LEDGER-TERMINAL.json；缺回执／None保unknown及已知小计；
+各收尾失败附于原异常，身份校验的lease释放始终尝试，最终原异常重新抛出，打印断线不掩盖主因。
+公共write_private_json和publish_private_json都不允许覆盖，保持原合同；不新增公共控制器框架。
+
+7项资源回放与18项[控制器CPU故障注入](controller_cpu_check.py)通过。
+前者复现旧声明失败，允许启动观测后多页／8MiB增长，仍拒绝超物理边界并检查sticky失败／最终无名残留；
+后者执行实际补丁函数AST，使用真实不可覆盖writer和lease owner-token检查，拒绝模型／网络调用。
+只读复核确认补丁逐字恢复候选，原生产runtime、作者源码和模型请求均未重放。
+
+恢复时使用SHA256为f0f4db2997d1b5865aef30fdb70384fcb3406ad39823071485ad3e6a5db07297的保留controller，
+在新的私有目录放controller.original.py及其副本controller.candidate.py，对副本应用补丁并核对映射SHA。
+CPU命令如下，两个变量分别指代码目录和该私有fixture目录：
+
+~~~sh
+SEMLOOM_CODE_ROOT="$CHECKOUT/code" IMLANE_CONTROLLER_FIXTURE_DIR="$PRIVATE_REPLAY" \
+  "$DRIVER_PYTHON" -B "$CHECKOUT/experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_cpu_check.py"
+~~~
+
+候选保留原HEAD／运行路径用于差分核对；真正执行前必须绑定新run输出与准确源码标识，
+不能执行原r1目录或覆盖其日志／120预留。完整机内controller不发布，必要增量和SHA映射已保留。
 
 ## 真实模型仍需验证
 
-本批不安排GPU。下一次单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
+本次修复未重跑GPU。下一次单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
 逻辑120及实际attempt预算、cold／模型常驻边界和停止条件，再由现有服务器任务执行；不复制相同已测查询。

@@ -1,5 +1,15 @@
 # 实验与机制证据台账
 
+## 2026-11-06：IMLane全运行SHM范围与控制器终态修复
+
+[原失败／修复与恢复](diagnostics/imlane_duckdb_q3_20261106/README.md#真实模型启动后的shm范围错误与控制器修复)
+保留真实模型ready51.035秒、旧作者-only声明触发、Q3请求0及后续外部清理，未改写成功。
+按主机实际可用SHM边界观察whole-run，作者／model页数仅作统计，不逐页追加配额。
+7项资源回放＋18项实际控制器AST故障注入通过；ledger写错、unknown计数、lease释放、
+日志二次故障及primary非零重抛覆盖，无新增公共runtime框架或模型重放。
+另核对3c服务器软件IPC r4正常120／预期失败1通过，历史失败与0真实模型资格保持分开。
+
+
 ## 2026-11-06：删除重复查询时钟及遗留导入
 
 [两份相同定义、引用与51项CPU](diagnostics/records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)

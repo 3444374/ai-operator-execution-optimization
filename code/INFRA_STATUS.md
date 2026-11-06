@@ -1298,3 +1298,13 @@ Ray SDK 和现用测试已迁移导入，两个仅由旧接线使用的私有关
 [本批记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
 保存同组七项改前／改后通过、845 行原件及五条历史来源；生产 Python 净减 707 行，十处旧历史差异未增加。
 未改 fused 修复、策略、容量、模型默认或并行 poll／ACK，没有真实 Ray／模型／性能结论。
+
+### IMLane原生启动的SHM范围与外层控制器（2026-11-06）
+
+准确3c的真实作者＋软件IPC在r4正常120／故障1通过。首次真实模型ready51.035秒后，
+作者启动触发旧SHM声明，Q3 driver／用户generate均未开始；真实主机/dev/shm有60GiB，
+漏计的是模型阶段4096B，原失败与外部恢复保持，不能记为正常模型关闭。
+[修复证据／可应用补丁](../experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md#真实模型启动后的shm范围错误与控制器修复)
+改为启动时实际可用SHM边界，分配仅作统计；18控制器＋7资源CPU方法通过。
+控制器独立终态ledger、unknown小计、lease释放与原异常非零重抛已验证；
+不改公共runtime／不可覆盖writer／作者和模型参数，本轮未重放GPU。

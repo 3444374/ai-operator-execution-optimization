@@ -1,0 +1,72 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.controller_repair.v1",
+  "original_controller": {
+    "artifact": "controller.py",
+    "sha256": "f0f4db2997d1b5865aef30fdb70384fcb3406ad39823071485ad3e6a5db07297",
+    "bytes": 11809,
+    "unchanged": true
+  },
+  "candidate_controller": {
+    "bytes": 17997,
+    "sha256": "7990eb12f151d95dc54aa940da43484a8f37cfb3f788ee8ab819028bedafaf90"
+  },
+  "patch": {
+    "file": "controller_repair.patch",
+    "sha256": "3306f7927b7184fb3ce2d0e5b2e980939d611c3f18bf8a3e2446ad820d3f35c0",
+    "bytes": 12010,
+    "format": "zero-context unified diff; apply with patch --batch to the fixed-SHA fresh copy"
+  },
+  "CPU_check": {
+    "file": "controller_cpu_check.py",
+    "sha256": "ee0887e0dad26164b786fe59dcb404e6489753a206a4f160abbc3c7869d6aa92",
+    "bytes": 19628,
+    "methods": 18,
+    "passed": 18,
+    "log_sha256": "a730a8c4ad46b3c28f0ceec94ba0412c01fa90f6ce118d92feb71af88d0a4dfc",
+    "scope": "compile actual candidate helper ASTs, preserving main workload AST except the actual available SHM boundary; real private writers/lease ownership, fake supervisor/idle snapshots, one isolated CPU rethrow child",
+    "candidate_top_level_executed": false,
+    "model_imports": 0,
+    "GPU_runs": 0
+  },
+  "resource_replay": {
+    "methods": 7,
+    "passed": 7,
+    "module": "tests.observability.test_supervised_process_resources",
+    "test_sha256": "97948b7787fd1167e3bd68fa9855ed79a12fcedd6a692e6890e6487344d60001",
+    "log_sha256": "0d6653413f55f7cf64dbfab59b6b29c640ade8e63585414ab2a44a0892a5ed0a",
+    "no_actual_kernel_SHM_or_model_allocated": true
+  },
+  "changes": [
+    "whole-run SHM safety boundary is the actual available filesystem bytes at run start; author/model bytes remain statistics, not quotas; no READY baseline reset",
+    "LEDGER.json reservation preserved; terminal goes to fresh LEDGER-TERMINAL.json",
+    "None counts or missing terminal stay unknown with a separate known subtotal",
+    "summary/monitor/final receipt errors cannot skip owner-token checked lease release",
+    "original error preserved; cleanup/logging errors become notes; final primary is rethrown for nonzero exit"
+  ],
+  "unchanged": [
+    "model and sampling parameters",
+    "author executor count and algorithm",
+    "DuckDB query and scalar semantics",
+    "resource monitor",
+    "shared create-only artifact writers",
+    "shared lease API",
+    "original failed artifacts and claimed120"
+  ],
+  "preparation_only": true,
+  "execution_warning": "Candidate keeps original HEAD/run paths for review. Apply to a COPY, then bind a fresh run/output identity and exact source before any authorized execution. Do not run the preserved r1 path.",
+  "replay_requirements": {
+    "SEMLOOM_CODE_ROOT": "path to the checked project code directory",
+    "IMLANE_CONTROLLER_FIXTURE_DIR": "private directory containing controller.original.py and patched controller.candidate.py"
+  },
+  "recovery": "Use the original private controller matching the fixed SHA, apply controller_repair.patch to a fresh copy, and verify the candidate SHA. No full machine-bound controller or runtime paths are published.",
+  "real_model_replayed": false,
+  "generation_phase_capacity_verified": false,
+  "resource_boundary": {
+    "SHM": "read actual /dev/shm f_bavail*f_frsize at run start; do not hardcode the observed snapshot",
+    "RSS_bytes": 21474836480,
+    "CPU_affinity_cores": 8,
+    "query_seconds": 1200,
+    "cleanup_seconds": 120,
+    "forced_reserve_inside_cleanup_seconds": 8
+  }
+}
