@@ -11781,3 +11781,9 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 87ce的16项实际CPU IPC为15通过、1失败，无错误或跳过；单列一次诊断捕获CancelledBeforeSubmission，而非预期的unknown。reader早期保护断言已通过；原始首轮完整包及完整close／retired_unknown未记，不补推测值。
 测试迁移把ready信号从阻塞调用取得结果后，移到仅排队完成后，遗漏等待夹具unknown回执。d6abc0e3只补现有IPC结果就绪同步，保持RPC仍在途、结果未消费及10项原断言；生产不改，只交该单项复测，原15项不重复执行。状态与原件在同一[旧异步RPC报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)维护，不启动真实Ray或模型。
 准确d6abc的单项随后一次通过，耗时0.758166秒，unknown、最终关闭、held归零和usage11等10项原断言完成；两个登记自有进程退出、SHM无残留、许可已归还。原87ce的15项不重跑，原失败及诊断不改写，不宣称d6abc整套16项一次通过。
+
+## 2026-11-06 补记配置接线结果并复查Ray关闭职责
+
+准确a39的原cascade parser／factory单项在服务器一次通过，原本地Torch导入中断保留；实际使用Mock，没有模型、真实Ray、GPU或HTTP调用，私有原件不发布。
+三路径只读核查区分Core显式关闭、自有UDF末批关闭和官方Processor原生回收；没有已核公开提前关闭接点，不增加退出重试或关闭子进程清理保护。原生物理回收和1596第二项历史原因仍未解决。
+状态页顶部改用准确a39的代码量，避免把早期读数当作当前结果；详细来源见[同一重构记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-profile-factory-server-check)。

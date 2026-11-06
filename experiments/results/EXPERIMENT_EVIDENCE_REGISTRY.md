@@ -2070,3 +2070,7 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 记录eab删除三种旧RPC及专用等待、七份测试／探针迁移；准确8efed的两项旧钩子IndexError保留，旧忙轮询测试随其生产循环删除，不恢复兼容钩子。
 最终27个不同纯内存方法全部通过，1067源码摘要匹配；16项实际CPU IPC未运行，原十条受影响历史来源只读匹配，不重跑3010树、Ray或模型。本批核心与宽口径各减68行，测试减30行，无性能结论。
 后续87ce的指定16项实际CPU IPC为15通过、1失败，无错误／跳过；一次独立诊断复现并捕获确定的预发送取消，原首轮完整包和close／retired_unknown未记，不能补值。d6abc只在reader夹具等实际结果就绪后触发close，10项断言及生产保持；仅该单项已一次通过，原15项未重跑，失败记录保留。当前16个方法分别有通过证据，不改称d6abc全16项一次通过；两个登记进程、SHM和许可清理确认，真实Ray／模型为零。
+
+[准确a39的cascade配置接线补查](diagnostics/records_runtime_refactor_20261104/README.md#native-profile-factory-server-check)
+记录原有parser／factory单项一次通过及其私有原件摘要；这是Mock配置检查，未启动模型、真实Ray或实际Daft后端。
+[三种Ray关闭路径复核](diagnostics/records_runtime_refactor_20261104/README.md#ray-close-three-paths)只核源码和既有记录，没有新运行或安全的Processor项目补丁，原物理回收问题保持未解决。

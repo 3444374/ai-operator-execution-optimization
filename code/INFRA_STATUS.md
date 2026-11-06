@@ -51,6 +51,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提前关闭的对照通过。
 原 Q3 对象缺少创建栈，不能逐一追溯；Ray2.56.1公开Processor又没有运行中的模型actor关闭句柄，
 当前原生图上的关闭修复仍未完成。SDK断开改记为`ray_driver_disconnected`，不再用字段名暗示物理退出；
+[三种关闭路径复核](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-close-three-paths)区分Core显式RPC、自有UDF末批主动关闭和官方Processor回收；后者尚无已核公开提前关闭接点，本轮没有新试跑或项目补丁。
 现有16项Mock通过；此前本机未完成收集的另一类10项已在准确87ab服务器通过，图像CLI帮助退出0，
 观察到的8个自有进程、SHM和许可已清理。原本机中断保留；该回执不转授当前期限修改或模型运行。
 
@@ -62,10 +63,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-核心 `code/src`（排除 experiments、baselines，保留 research）为52,517行，
-全部 src＋scripts Python 为104,152行；含注释与空行，tests／docs／历史副本不计入。
-对固定 main 6a8a 分别减少1,574行／36,183行；对清理起点3fd分别减少9,111／45,493行。
-本批旧HTTP及无用包装清理相对45595核心减少3,679行、src＋scripts减少4,827行、测试减少6,114行；历史副本不算作代码减少。
+代码量按准确`a39cec74`统计：核心`code/src`为50,482行，全部src＋scripts为101,893行，测试为92,485行。
+口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
+核心／宽口径相对固定main6a8a减少3,609／38,442行，相对清理起点3fd减少11,146／47,752行。
+各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)，文件移动不算代码删除。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
@@ -97,6 +98,7 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [Movie查询与worker职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
 把参数预检、共享评价／回执及普通后端生命周期分开；真实调用者含IMLane集成已迁移，旧CLI转出不保留。
 Movie18项、导入增量2项及关闭2项组成准确7454的22项CPU检查，全部通过；重型cascade和真实服务未借用这些结果。
+随后准确a39的[原cascade配置接线单项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-profile-factory-server-check)在服务器通过；它使用Mock，不证明实际Daft线程或模型执行。
 
 [异步关闭调用时间](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-close-caller-budget)
 把父进程现有截止时刻传到worker，修正固定十秒替代调用方时长及正常返回后的重复清理。

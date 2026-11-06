@@ -4409,6 +4409,7 @@ CLI从906到424行，查询模块285行、worker224行；src与scripts净增27�
 修改后两组互不重叠的8项与10项CPU通过；另两项IMLane导入检查先复现ImportError、后通过。
 八种确定输入的完整结果及清理记录共24,094字节前后一致，摘要`053ab62b19cc575d1bfb0efc812f01a6fd1541845f7a40b4060f4de51219b071`。
 初次运行前三项通过，第四项导入LOTUS／Torch时停住后中断；它不是完整八项通过，也不是零项收集失败，重型cascade仍待验证。
+该配置接线单项后续在准确a39补验通过，范围见[服务器接线结果](#native-profile-factory-server-check)；原本地中断记录保留。
 作者原CPU记录保留提交前b168身份及具体文件摘要；两新模块随后只各去掉末尾空行，AST保持，格式修正后的捕获另有记录。
 独审核对13个迁移函数及实际全仓调用；[17条历史来源与增量5条](../../../reproduction/native_baselines/README.md#movie-query-worker-sources)各自保持原摘要。
 真实模型、Ray、socket、IMLane C++和未知仓外调用未由本批验证；原始CPU材料私有保存。
@@ -4544,3 +4545,31 @@ payloads.py只把configure_daft_runner由.text的转借改为infrastructure.daft
 整合`041da47c69c73e82751fcb4e4fa80eb85274366a`的全部1,455份受Git管理Python与已审候选相同，后续只补中央导航和事实，未重复运行十八项CPU。
 本批源码净增1行、测试增5行，来自包说明和导入排版；文件移动不算删除。当前核心50,482行、src与scripts101,893行、测试92,485行，统计口径保持。
 相对main6a8a核心减3,609行、src与scripts减38,442行；相对准确3fd3887分别减11,146和47,752行；相对本轮b168分别减2,035和2,164行。
+
+<a id="native-profile-factory-server-check"></a>
+## 准确a39的cascade配置接线补查
+
+准确`a39cec7404e92f0828bcbbe5d10b90b8d9652888`、tree`4f84c02f84c32abf1453628f45de7e679c98619b`，
+原有`NativeBaselineProfileTests.test_cascade_parser_and_factory_use_the_same_existing_daft_thread_option`仅执行一次，8.869秒通过，无失败、错误或跳过；运行中源码保持。
+它核对`runner_threads`省略、显式None及2的parser到factory传递，并保留不支持后端及布尔值拒绝断言。
+DaftCascadeBackend为Mock，实际框架导入拦截保持；模型、真实Ray、GPU查询、HTTP和多查询均为零，不证明实际Daft线程分配或cascade模型路径。
+已观察自有进程退出，socket／SHM和运行许可清理通过，公共环境未改。私有交接SHA-256为`03cf7dd04491d0e391ec953929b0c6b4d9eef1e0e2987468f156a279a23527a5`，原件继续私有保存。
+这项结果补充Movie拆分时的本地导入中断，不改写原记录，也不扩大成完整重型cascade验证；没有重复运行其他已通过项。
+
+<a id="ray-close-three-paths"></a>
+## 三种Ray模型关闭路径分别核对
+
+本次仅核准确a39源码与既有原件，没有新增Ray、模型、socket或系统探测。
+SemLoom自有Core会等待真实模型actor的close RPC；仅API确认关闭才请求释放模型actor，未知时保留句柄和远程回执引用。
+自有Ray Data推理函数在最后一个声明批次内部先关闭引擎、再交出最后结果；提前取消或错误可使执行器强制结束，仍须报告unknown。
+官方LLM Processor则由原生图拥有模型actor寿命，materialize收尾时即可释放worker，不必等到driver执行COUNT或finally。
+
+在已核固定Ray源码中，普通worker退出先处理直接子进程，再进入Python actor关闭回调；现有模型析构中的shutdown并非没有执行，而是可能晚于子进程处理。
+公开Processor的阶段查询返回配置和函数类型，没有已核的运行中模型actor提前关闭接口；完成通知也在算子关闭之后。
+依据为[固定构建的退出顺序](https://github.com/ray-project/ray/blob/06729817574615e25afe8f20902b37660c2e6962/src/ray/core_worker/core_worker_shutdown_executor.cc#L137-L152)及已保留的e566零模型原件。
+它们解释该隔离场景，不补出原67a4具名信号量缺少的创建栈；当前driver安装身份也不能代替旧actor／模型环境身份。
+
+普通非service调用在关闭未知后仍可能结束Ray，由外层既有进程观察器处理已观察对象并保留失败／unknown；这不证明所有未观察后代、GPU或具名SHM均已清理。
+service已有保留owner及原连接的恢复对象，单独跳过ray.shutdown不能代替完整对象寿命管理。
+目前没有找到安全的项目侧Processor修复：不关闭Ray原有子进程清理，也不增加重复shutdown、延迟或按名称删除信号量。
+原生Processor物理回收与1596第二项历史关闭原因仍待处理；本轮没有把源码核查记为新运行通过。
