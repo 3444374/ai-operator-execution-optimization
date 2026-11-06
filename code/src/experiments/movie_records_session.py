@@ -15,6 +15,7 @@ import uuid
 
 from src.infrastructure.private_artifacts import new_private_directory, write_private_json, publish_private_json
 from src.infrastructure.redact import redact_json_values
+from src.experiments.movie_records_config import daft_native_profile
 
 
 # Compatibility exports: existing callers retain their module API.
@@ -69,6 +70,10 @@ def check_plan(plan):
     if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
                                                        'experimental_skip_token_packing', 'preparation_mode'}):
         raise ValueError('record batching options require semloom-core')
+    if plan['backend'] == 'daft' and plan['lifecycle'] != 'native_single_thread_session':
+        daft_native_profile(plan['profile'])
+    if plan['backend'] == 'ray-data' and plan['profile'] != {}:
+        raise ValueError('the existing Ray Movie session uses an empty profile; configure resources explicitly')
     if plan["backend"] == "semloom-static-reference":
         resources.request_capacity()
         if plan["profile"] != {"mode": "sync"}:
@@ -382,10 +387,12 @@ class _MovieDriver:
         else:
             if backend == "ray-data":
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
+                options = {}
             else:
                 from src.baselines.text.frameworks.daft_lotus_records import evaluate
+                options = daft_native_profile(self.plan['profile'])
             execute = lambda: evaluate(source, method, self.engine, self.generation, self.resources,
-                                       query_id=spec["query_id"])
+                                       query_id=spec["query_id"], **options)
         self.last_expected, self.last_query_directory = source.expected(spec["query_id"]), directory
         self.last_query_failure = None
         self.last_query_report = None

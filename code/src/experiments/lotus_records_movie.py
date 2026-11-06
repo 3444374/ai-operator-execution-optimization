@@ -20,6 +20,7 @@ from src.semantic_methods.lotus.records import CallLedger, FilterMethod, Records
 # Shared configuration for this runner and session execution.
 from src.experiments.movie_records_config import (
     ASYNC_CORE_BACKEND as _ASYNC_BACKEND,
+    daft_native_profile as _daft_native_profile,
     core_capacity as _core_capacity,
     core_profile as _core_profile, record_batching_options as _record_batching_options,
     records_runtime as _records_runtime,
@@ -311,13 +312,17 @@ def read_config(path):
     from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode", "service_payload_bytes"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode", "service_payload_bytes", "profile"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
         raise ValueError("unsupported ordinary Movie records configuration")
     if "core_profile" in value and value["backend"] not in ("semloom-local-model-core", _ASYNC_BACKEND):
         raise ValueError("core_profile requires a Core backend")
+    if value['backend'] == 'daft-native-local-model':
+        _daft_native_profile(value.get('profile', {}))
+    elif 'profile' in value:
+        raise ValueError('profile requires the Daft native backend')
     method = FilterMethod.from_dict(value["method"])
     _fixed_method(method, value.get("task", "movie-q3"))
     generation = GenerationSpec.from_dict(value.get("generation", {}))
@@ -374,10 +379,14 @@ def read_cascade_config(path):
     value = json.loads(Path(path).read_text())
     required = {"schema", "backend", "query_id", "method", "helper_model_name", "engines",
                 "generations", "cascade_args", "resources", "max_calls"}
-    if (type(value) is not dict or set(value) != required
+    if (type(value) is not dict or not required <= set(value) or set(value) - required - {'profile'}
             or value["schema"] != "semloom.movie_records_cascade_run.v1"
             or value["backend"] not in CASCADE_BACKENDS):
         raise ValueError("unsupported Movie helper-cascade configuration")
+    if value['backend'] == 'daft-native-local-model-cascade':
+        _daft_native_profile(value.get('profile', {}))
+    elif 'profile' in value:
+        raise ValueError('profile requires the Daft native cascade backend')
     method = FilterMethod.from_dict(value["method"])
     _fixed_method(method)
     helper = replace(method, model_name=value["helper_model_name"])
@@ -469,15 +478,17 @@ def cascade_model_preflight(config, source, checkout, method, generations, engin
 
 
 def _cascade_backend(config, source, engines, resources):
+    options = {}
     if config["backend"] == "ray-data-local-model-cascade":
         from src.baselines.text.frameworks.ray_data_lotus_cascade import RayCascadeBackend as Backend
     elif config["backend"] == "daft-native-local-model-cascade":
         from src.baselines.text.frameworks.daft_lotus_cascade import DaftCascadeBackend as Backend
+        options = _daft_native_profile(config.get('profile', {}))
     elif config["backend"] == "semloom-local-model-core-cascade":
         from src.execution_provider.adapters.lotus_cascade_core import CoreCascadeBackend as Backend
     else:
         raise ValueError("unsupported cascade backend")
-    return Backend(source, engines=engines, resources=resources)
+    return Backend(source, engines=engines, resources=resources, **options)
 
 
 def _cascade_model_worker(config, source, checkout, method, generations, resources, engines, cascade_args, root):
@@ -633,7 +644,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             nonlocal owner
             if config["backend"] == "daft-native-local-model":
                 from src.baselines.text.frameworks.daft_lotus_records import evaluate
-                return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
+                return evaluate(source, method, engine, generation, resources, query_id=config["query_id"],
+                                **_daft_native_profile(config.get('profile', {})))
             if config["backend"] == "ray-data-local-model":
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])

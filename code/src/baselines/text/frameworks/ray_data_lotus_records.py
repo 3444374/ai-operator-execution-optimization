@@ -20,6 +20,7 @@ from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 _CODE_ROOT = Path(__file__).resolve().parents[4]
 _CLOSE_COLUMN = "__engine_close_report_json"
+_READY_COLUMN = "__engine_ready_report_json"
 
 
 def _runtime_env(python: str) -> dict[str, Any]:
@@ -82,11 +83,13 @@ class InferBatch:
         self.expected_count = expected_count
         self.completed = 0
         self.engine = None
+        self._ready_emitted = False
         startup_deadline = min(deadline, time.monotonic() + startup_timeout_s)
         try:
             self.engine = VllmEngine(
                 EngineSpec.from_dict(engine), GenerationSpec.from_dict(generation)
             )
+            self.engine_ready_report = self.engine.ready()
             _check_deadline(startup_deadline)
         except BaseException as exc:
             self._close_on_error(exc)
@@ -112,6 +115,12 @@ class InferBatch:
         self.completed += len(rows)
         for row in rows:
             row[_CLOSE_COLUMN] = ""
+            row[_READY_COLUMN] = ""
+        if rows and not self._ready_emitted:
+            # Send the actual constructed model receipt once, before a later
+            # batch failure can prevent the normal terminal close envelope.
+            rows[0][_READY_COLUMN] = json.dumps(self.engine_ready_report, sort_keys=True)
+            self._ready_emitted = True
         if self.completed >= self.expected_count and rows:
             try:
                 report = self.engine.close()
@@ -139,6 +148,7 @@ class _RayRows(Iterator[dict[str, Any]]):
         self.iterator = None if result is not None else iter(())
         self._started = False
         self.received: set[str] = set()
+        self.engine_ready_report: dict[str, Any] | None = None
         self.engine_close_report: dict[str, Any] | None = None
         self.last_close_report: dict[str, Any] | None = None
         self._iterator_closed = False
@@ -191,6 +201,9 @@ class _RayRows(Iterator[dict[str, Any]]):
                 self._started = True
                 self.iterator = iter(self.result.iter_rows())
             row = dict(next(self.iterator))
+            ready_report = row.pop(_READY_COLUMN, "")
+            if ready_report:
+                self.engine_ready_report = json.loads(ready_report)
             close_report = row.pop(_CLOSE_COLUMN, "")
             if close_report:
                 self.engine_close_report = json.loads(close_report)
@@ -279,6 +292,7 @@ class _RayRows(Iterator[dict[str, Any]]):
             "iterator_closed": self._iterator_closed,
             "executor_shutdown_confirmed": self._executor_closed,
             "watchdog_stopped": watchdog_stopped,
+            "engine_ready": self.engine_ready_report,
             "engine_close_report": self.engine_close_report,
             "gpu_exit_confirmed": gpu_exit,
             "received_occurrences": len(self.received),
