@@ -21,6 +21,7 @@ from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_workload import PROTOCOL, input_record, validate_terminal
 from integrations.imlane_records.model_lifecycle import close_owned_model, model_closed
 from integrations.imlane_records.method_owner import owned_worker, slot as _slot
+from integrations.imlane_records.transport_limits import TransportLimits
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, RecordScan
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
 
@@ -44,8 +45,8 @@ class FilterWorker:
         self.model_environment = config.get("model_environment", {})
         if (not isinstance(self.query_id, str) or not self.query_id or not self.control.is_dir()
                 or type(self.deadline) not in (int, float) or not time.monotonic() < self.deadline < float("inf")
-                or self.engine.max_model_calls is None or self.engine.max_model_calls > 4096
-                or self.resources.model_batch_rows > 16 or self.resources.cpu_workers != 1):
+                or self.engine.max_model_calls is None
+                or self.resources.cpu_workers != 1):
             raise ValueError("IMLane Filter requires a bounded query, control directory and call budget")
         self.prepare = (prepare_type or LotusFilterMethod)(self.method)
         self.engine_type = engine_type
@@ -225,7 +226,7 @@ class FilterWorker:
 
 def infer_records(table):
     table.validate(full=True)
-    if (table.column_names != INPUT.names or table.schema.metadata or not 0 < len(table) <= 16
+    if (table.column_names != INPUT.names or table.schema.metadata or not 0 < len(table)
             or any(field.type != INPUT.field(i).type or field.metadata for i, field in enumerate(table.schema))
             or any(table.column(i).null_count for i in range(table.num_columns))):
         raise ValueError("Filter requires the fixed bounded records schema")
@@ -233,8 +234,9 @@ def infer_records(table):
     if any((row["query_id"], row["stage_id"]) != (rows[0]["query_id"], "filter") for row in rows):
         raise ValueError("Filter table crosses query or stage")
     config = json.loads(Path(os.environ["IMLANE_FILTER_CONFIG"]).read_text())
+    TransportLimits.from_dict(config["transport_limits"]).check_input(rows)
     signature = hashlib.sha256(json.dumps(dict(kind="filter", **{key: config[key] for key in (
-        "method", "engine", "generation", "resources", "model_environment", "scan")}), sort_keys=True).encode()).hexdigest()
+        "method", "engine", "generation", "resources", "model_environment", "scan", "transport_limits")}), sort_keys=True).encode()).hexdigest()
     work = owned_worker(config, signature, FilterWorker)
     if config["query_id"] != work.query_id or any(row["query_id"] != work.query_id for row in rows):
         raise ValueError("Filter input does not belong to this interpreter query")

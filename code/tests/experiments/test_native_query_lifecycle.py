@@ -228,6 +228,8 @@ class RayDriverReuseTests(unittest.TestCase):
                 state['models'].append(self)
                 case.assertEqual(asdict(engine),case.plan['engine'])
                 case.assertEqual(asdict(generation),case.plan['generation'])
+            def ready(self):
+                return dict(engine_uid=self.uid,native_capacity=dict(status='CPU fixture',max_num_seqs=37))
             def run_prepared(self,rows,**kwargs):
                 return [dict(row,status='succeeded',text='True',engine_uid=self.uid) for row in rows]
             def close(self):
@@ -321,6 +323,8 @@ class FiniteRayKernelLifecycleTests(unittest.TestCase):
             def __init__(self,spec,generation):
                 self.uid='CPU-kernel-'+str(len(instances));self.closed=0;self.calls=[]
                 instances.append(self)
+            def ready(self):
+                return dict(engine_uid=self.uid,native_capacity=dict(status='CPU fixture',max_num_seqs=37))
             def run_prepared(self,rows,*,deadline_monotonic):
                 if self.closed:raise RuntimeError('closed fixture kernel')
                 self.calls.extend(row['call_id'] for row in rows)

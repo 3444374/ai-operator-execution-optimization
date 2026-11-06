@@ -9,6 +9,16 @@ from src.semantic_methods.lotus.records import RecordsResources
 ASYNC_CORE_BACKEND = "semloom-local-model-core-async"
 
 
+def daft_native_profile(profile):
+    """The existing Daft graphs accept only an optional native thread count."""
+    if type(profile) is not dict or profile.keys() - {'runner_threads'}:
+        raise ValueError('Daft native profile accepts runner_threads only')
+    threads = profile.get('runner_threads')
+    if threads is not None and (type(threads) is not int or threads < 1):
+        raise ValueError('runner_threads must be a positive integer or None')
+    return dict(profile)
+
+
 def records_resources(config):
     """Keep caller declarations; service allocation supplies its single-row shape."""
     values = config.get('resources', {})

@@ -98,7 +98,8 @@ Q2b 另在原零行 Extract 返回边界保留声明列，修复空 Join 后最�
 [Medical Q1／Q4／Q10](src/baselines/README.md#sembench-medical-text)新增原 CSV、原查询和原评价接线，
 复用四种既有普通 F/M/E 文本 baseline；准备仅复制已有三份作者 CSV，不运行图音 setup 或重采样。
 完整11112名患者资产有1200条症状，三题每 baseline 共3600次；原 sf25 只有1条症状，不按患者数猜调用量。
-原评价源码需要 Python 3.12。Medical 生成缺项沿用原8192 token／无 stop，显式值及旧 Movie／MMQA 默认保持。
+原评价源码需要 Python 3.12。补充 Movie／MMQA／Medical 生成缺项均沿用原8192 token／无 stop，显式值保持；
+旧补充 Movie／MMQA 的省略项解析已修正，公共类型与旧普通 Filter 默认不变，历史结果不改写。
 [MMQA Q5 聚合](src/baselines/README.md#sembench-mmqa-aggregation)另走原生 LOTUS 整查询服务入口，
 保持原分层 `sem_agg`，不放进单个 F/M/E 的记录边界。sf25 原筛选16行，正文12403个 UTF-8 字节；
 仅首层单个请求时总调用精确为1，多层总量依赖真实摘要长度，按既有有限预算逐 POST 消费。
@@ -109,6 +110,30 @@ Q2b 另在原零行 Extract 返回边界保留声明列，修复空 Join 后最�
 共14400次固定软件回复，完整1200行的原 accessor／记录／原生传输逐消息与结果相同。
 Q5 的单层与多层原算法、实际生成上限及预算失败保留均通过软件 HTTP 验证；软件 tokenizer 的单请求结果不替代实际服务分块。
 上述CPU验证的网络／真实引擎／实际推理／服务器操作均为0，原3010历史绑定匹配。
+
+### 原生基线参数与直接 AI 准备（2026-11-06）
+
+普通Ray图将模型构造后的真实ready沿首个成功批次传回 `backend_close.engine_ready`，
+不从配置猜实际容量；空源／未启动仍保持未知。普通Daft及隔离session透传显式 `runner_threads`，
+省略时沿原生线程默认；专门的单线程profile保持独立。普通Ray不再静默忽略非空session profile。
+同步模型owner、单GPU actor和fused图实际支持范围保留，未声称所有baseline已经充分调优。
+
+IMLane桥的旧16行块、4096行／调用、64查询上限改为有限workload／model预算推导，
+Filter、packed链、cascade和resident保持各自wire计数；显式pending、128MiB作者Lane及SHM／RSS／字节边界保持。
+正常caller与echo fixture中的重复旧门槛已清理。实际作者桥二进制必须重建；本地C++只验证标准组件，
+没有构建／运行真实作者bridge。六份准确旧源补30条历史映射，五份完整树实际还原、3010条全部匹配，旧预期与投影身份未改。
+
+[直接原生AI Movie Q3](src/baselines/README.md#direct-native-movie-q3)另准备Daft原生prompt和Ray Data LLM公开processor，
+共享中立任务／质量合同而不加载LOTUS／Core执行。真实LOTUS消息／解析、真实Daft表达式及普通CPU关系、
+Ray API替身覆盖完整cohort筛选、一次物化和计数；原2000行CSV用120条金标软件回复通过原评价。
+这些不是实际模型质量／性能结果。DuckDB＋作者IMLane的native构建、函数alias和Arrow结果转换尚未资格，
+不把records桥或普通pip DuckDB算作该完整路径。模型依赖、实际重试／token与物理退出仍待机器验证。
+具体参数归属及有限测试条件见[配置说明](../docs/执行配置与优化开关.md#native-baseline-controls)与
+[校准计划](../experiments/plans/原生基线校准.md)，本批未启动GPU或服务器实验。
+合并最新并行修改后的相关检查去重249个方法最终通过，无未解决失败／跳过；首轮三项验证器的PYTHONPATH／
+CPU替身拦截设置问题，仅修正验证器后补跑三项，生产源码摘要保持。标准C++边界包含在其中。
+已知私有子进程context用例的macOS进程枚举权限问题未修、未重跑，不计通过；原失败保留。
+新原生AI仍没有真实Ray／vLLM／作者桥资格；本地软件通过不转授物理GPU退出或性能结论。
 
 [图像检查入口](scripts/experiments/check_sembench_image_query.py)另覆盖原 Animals Q1/Q3/Q7/Q10 与 MMQA Q2a/Q2b/Q7。
 原 ImageArray／PNG 消息、Filter／完整 Join→Extract 与原评价只做 CPU 软件回复验证；

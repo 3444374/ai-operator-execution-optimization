@@ -72,6 +72,20 @@ SemLoom 的任务／会话调度、credit、路由、准入、token 分组和准
 Ray 的 ActorPoolStrategy 参数、Daft 的原生缓冲、IMLane 的有限桥接块以及累计模型调用额度
 分别保留原归属；它们不是 SemLoom 的在途额度或反馈控制。
 
+IMLane 的[有限传输声明](../../integrations/imlane_records/transport_limits.py)由实际工作推导：
+Filter／cascade 每个原生查询为 N 个调用记录加一条关闭记录；链以 `model_batch_rows` 打包，
+每批一条 Arrow 记录，再加一条关闭记录；驻留会话按已声明的 `query_calls` 推导每查询最多
+`max(N)+2` 条记录、全会话 `Q+2` 个原生查询 ID。模型额度仍独立计数且不退款。
+单个 CPython／模型 owner、同步模型方法、重叠查询拒绝和 `max_pending` grant／ready 等值要求保留。
+owner 配置／context 可选 `transport_limits`，仅覆盖 `max_input_bytes`、`max_output_bytes`、
+`max_command_bytes`、`max_response_bytes`；默认分别为 64 KiB、1 MiB、128 KiB、8 MiB。
+输入／输出及两份 64 KiB IPC 余量须容于作者 128 MiB Lane；待办／保留缓冲及管道声明须容于
+owner 的 RSS／SHM 额度。完整进程内存仍由原采样器检查，声明不是模型吞吐或硬件资格。
+Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字节保护保留。
+本次桥接 CLI／ready 新增完整声明，须[重新构建](../../integrations/imlane_records/build.py)并保留新来源回执；
+历史二进制和结果不改写。[CPU 边界测试](../../tests/execution_provider/test_imlane_transport_limits.py)
+不启动作者运行时或模型，也不授予新的实机资格。
+
 [真实依赖检查](../../tests/baselines/test_execution_independence.py)禁止加载
 `execution_provider`、`scheduling` 和 `research`，覆盖五类文本入口、有限链／cascade、图像入口与启用的计时。
 另用实际 LOTUS 方法和 CPU 响应执行原生完整批次，验证结果身份、整批调用、用量和关闭；
@@ -85,6 +99,30 @@ Ray 的 ActorPoolStrategy 参数、Daft 的原生缓冲、IMLane 的有限桥接
 | 启用详细计时会从 ray_map_transport 取得时钟身份，间接加载 Core transport／调度模块。 | 不改原 Linux 哈希／不可用回退，时钟函数移到[公共观测层](../observability/clock.py)，两边直接调用。 | 在禁止 Core 导入时创建、记录并关闭 Timing；原 transport 的时钟不可用检查保持。 |
 
 两项均是源码与可复现依赖边界问题；本次没有据此宣称查询加速。首次拒绝导入的失败记录与修复回归分别保留。
+
+<a id="direct-native-movie-q3"></a>
+## 直接原生 AI 的 Movie Q3 准备
+
+以上 LOTUS 方法＋框架执行图继续保留；本节另准备项目 workload binding，直接使用原生 AI API，
+不称为官方 SemBench runner。范围、作者配置依据、有限调用量和执行前条件见
+[原生基线校准计划](../../../experiments/plans/原生基线校准.md)。
+
+- [中立 Q3 合同](text/sembench_movie_native.py)读取完整原 CSV，按源位置保留 occurrence_id，标签只用于后置评价。
+  `q3_messages/q3_decision` 与 LOTUS1.2.4 普通 Qwen Filter 做 CPU 差分，运行时不导入 LOTUS／Core。
+  `evaluate_q3`消费同一份保存的预测，核对原生COUNT、调用原评价器，并报告FP／FN及解析失败default=True。
+- [Daft 原生 AI](text/frameworks/daft_sembench_native.py)的 `execute_q3(rows, model=..., tokenizer=..., sampling_params=...)`
+  使用原生 `prompt(vllm-prefix-caching)`、一次 collect及原生筛选／计数；tokenizer由调用方提供匹配的本地资产。
+  native runner不重设线程；只接受确实生效的prefix／buffer／morsel选项，拒绝仅distributed生效的actor参数。
+  当前真实Daft表达式构造与普通CPU关系通过，模型表达式软件替身；实际vLLM兼容、容量／用量和退出未验。
+- [Ray Data LLM](text/frameworks/ray_data_sembench_native.py)的 `execute_q3(rows, model=..., sampling_params=...)`
+  使用公开processor和原生异步vLLM，完整cohort先做Dataset.filter，一次materialize后审计和原生count。
+  处理器默认、原生重试、实际可得usage与runtime归属分开记录；真实Ray／LLM依赖与物理尝试数未验。
+- DuckDB＋作者IMLane尚需作者构建、DBEnd函数alias、整批结果转换和关闭的无模型CPU资格；
+  固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
+
+原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，
+只证明数据、结果形状和评价接线，不是模型质量结果。首批两个新API各一次冷查询共240个逻辑请求；
+第三条接线通过后再加120。实际retry／token／资源／耗时、GPU退出和三轮交错比较按计划另验。
 
 <a id="additional-sembench-text"></a>
 ## 补充 SemBench 文本查询
@@ -166,7 +204,8 @@ Kalypso 当前没有 Medical 绑定，留空。`scale_factor` 表示患者规模
 该诊断切片的 Q1 空集对空集可被原评价记为1，Q4 保留 NaN；不能把这些结果当作模型质量。
 原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。
 `check` 读取原关系并核算实际调用数；所有 baseline 的模型、生成和输入身份须一致。
-Medical 配置省略生成项时采用原 LM 的8192 token／无 stop，显式值保留；旧 Movie／MMQA 默认不变。
+补充文本入口的 Movie／MMQA／Medical 配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
+这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
 
 <a id="sembench-mmqa-aggregation"></a>
 ### MMQA Q5 原分层聚合

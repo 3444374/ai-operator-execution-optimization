@@ -1,5 +1,19 @@
 # 实验与机制证据台账
 
+<a id="native-baseline-calibration-preparation"></a>
+## 2026-11-06：基线参数核查与直接原生 AI 准备
+
+[实现范围](../../code/INFRA_STATUS.md)区分既有LOTUS方法＋框架执行图与新的原生AI Movie Q3绑定。
+[有限校准计划](../plans/原生基线校准.md)保留作者／SDK默认、未应用的配置、输入身份、模型依赖与停止条件；
+本项是源码与CPU合同资格，没有新模型／GPU／服务器实验，也不支持基线性能排名。
+真实LOTUS普通Filter消息与解析差分、真实Daft表达式／普通CPU关系和Ray公开API替身分别解释；
+原Movie2000数据的120条金标软件回复只验证原评价与逐行审计，不能称为模型质量。
+作者DuckDB＋IMLane的构建／函数alias／结果转换仍待CPU资格，未实施替代UDF凑结果。
+IMLane旧边界来源按[准确历史映射](../reproduction/native_baselines/README.md)保存，
+3010条摘要及五份完整代码树恢复通过；原expected SHA、投影ID与旧失败／模型结果保持。
+组合源码相关249个不同CPU方法最终通过；首轮三项验证器设置失败保留，仅补跑相同三项后通过，
+不叠加重复计数。没有模型／网络访问或服务器操作；已知受macOS权限限制的私有IPC方法未纳入此通过数。
+
 ## 2026-11-05：SAOR 与多任务共享额度独立维护
 
 与核心线程 `7d34d447` 无冲突组合的 `6c8aad0d` 通过 308 项去重 CPU 方法；
