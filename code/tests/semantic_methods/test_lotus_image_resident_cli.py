@@ -6,7 +6,7 @@ import sys
 from types import SimpleNamespace
 from PIL import Image
 
-from src.experiments import image_reuse
+from src.observability import model_reuse
 from tests.semantic_methods.test_lotus_image_cli import base_args, load_cli
 
 
@@ -17,8 +17,8 @@ def test_cancelled_query_does_not_poll_busy_workers_before_close(tmp_path, monke
         monkeypatch.setattr(cli, name, lambda *a, **k: {})
     monkeypatch.setattr(cli, "version", lambda name: "fixture")
     monkeypatch.setattr(cli, "configure_torch_thread_pools", lambda *a: {})
-    monkeypatch.setattr(image_reuse, "observe_stock_model", lambda *a, **k: None)
-    monkeypatch.setattr(image_reuse, "snapshot_models", lambda: [])
+    monkeypatch.setattr(model_reuse, "observe_stock_model", lambda *a, **k: None)
+    monkeypatch.setattr(model_reuse, "snapshot_models", lambda: [])
 
     class Transformer(list):
         def to(self, **kwargs):
@@ -80,9 +80,9 @@ def test_phase_snapshots_exclude_live_models_from_another_owner_directory(tmp_pa
     first_model, second_model = Model(), Model()
     first_directory, second_directory = tmp_path / "first", tmp_path / "second"
     monkeypatch.setenv("SEMLOOM_IMAGE_REUSE_DIR", str(first_directory))
-    first = image_reuse.observe_model(first_model, role="fixture", device="cpu")
+    first = model_reuse.observe_model(first_model, role="fixture", device="cpu")
     monkeypatch.setenv("SEMLOOM_IMAGE_REUSE_DIR", str(second_directory))
-    second = image_reuse.observe_model(second_model, role="fixture", device="cpu")
-    assert [item["model_uid"] for item in image_reuse.snapshot_models()] == [second.model_uid]
+    second = model_reuse.observe_model(second_model, role="fixture", device="cpu")
+    assert [item["model_uid"] for item in model_reuse.snapshot_models()] == [second.model_uid]
     monkeypatch.setenv("SEMLOOM_IMAGE_REUSE_DIR", str(first_directory))
-    assert [item["model_uid"] for item in image_reuse.snapshot_models()] == [first.model_uid]
+    assert [item["model_uid"] for item in model_reuse.snapshot_models()] == [first.model_uid]

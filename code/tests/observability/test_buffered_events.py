@@ -7,7 +7,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from src.experiments.buffered_events import BufferedEvents, EventRecordingError, compact_event
+from src.observability.buffered_events import BufferedEvents, EventRecordingError, compact_event
 
 
 class BufferedEventTests(unittest.TestCase):

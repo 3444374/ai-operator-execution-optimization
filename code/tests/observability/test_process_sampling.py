@@ -8,7 +8,7 @@ import tempfile
 import time
 import unittest
 
-from src.experiments.process_sampling import ProcessSampler
+from src.observability.process_resources.phase_sampler import ProcessSampler
 
 
 class ProcessSamplingTests(unittest.TestCase):

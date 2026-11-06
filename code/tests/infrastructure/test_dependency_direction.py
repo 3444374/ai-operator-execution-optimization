@@ -48,18 +48,6 @@ class DependencyDirectionTests(unittest.TestCase):
                                 violations.append((relative, node.lineno, value))
         self.assertEqual(violations, [])
 
-    def test_observation_compatibility_imports_share_one_module_and_mutable_state(self):
-        for old, new in (
-            ("src.experiments.execution_timing", "src.observability.execution_timing"),
-            ("src.experiments.image_reuse", "src.observability.model_reuse"),
-            ("src.experiments.buffered_events", "src.observability.buffered_events"),
-        ):
-            with self.subTest(module=old):
-                legacy, canonical = importlib.import_module(old), importlib.import_module(new)
-                self.assertIs(legacy, canonical)
-                with patch.object(legacy, "_migration_marker", "shared", create=True):
-                    self.assertEqual(canonical._migration_marker, "shared")
-
     def test_request_claim_errors_and_old_pickle_globals_keep_the_same_identity(self):
         canonical = importlib.import_module("src.infrastructure.request_budget")
         cell = importlib.import_module("src.experiments.cell_budget")
@@ -75,24 +63,15 @@ class DependencyDirectionTests(unittest.TestCase):
         with self.assertRaises(canonical.BudgetExhausted):
             claim.reserve("b" * 64)
 
-    def test_request_identity_http_observation_and_map_values_are_not_duplicated(self):
-        from src.experiments import request_identity as legacy_identity
-        from src.observability import request_identity
-        from src.experiments import native_http_observer
-        from src.observability.httpx_observer import _observe_native_httpx_client
-        self.assertIs(legacy_identity.request_identity, request_identity.request_identity)
-        self.assertIs(native_http_observer._observe_native_httpx_client, _observe_native_httpx_client)
-
     def test_shared_timing_uses_one_recorder_and_preserves_its_event_schema(self):
         timing = importlib.import_module("src.observability.execution_timing")
-        legacy = importlib.import_module("src.experiments.execution_timing")
         with tempfile.TemporaryDirectory() as directory, \
              patch.dict(os.environ, {"SEMLOOM_DETAILED_TIMING_DIR": directory}), \
              patch.object(timing, "_shared", None):
             recorder = timing.get_timing()
             try:
-                self.assertIs(legacy.get_timing(), recorder)
-                with legacy.timing_span("fixture.operation", query_id="fixture"):
+                self.assertIs(timing.get_timing(), recorder)
+                with timing.timing_span("fixture.operation", query_id="fixture"):
                     pass
             finally:
                 timing.close_timing()

@@ -12,8 +12,8 @@ from pathlib import Path
 import time
 import uuid
 
-from .buffered_events import BufferedEvents
-from .request_identity import RAY_IDENTITY_FIELD
+from src.observability.buffered_events import BufferedEvents
+from src.observability.request_identity import RAY_IDENTITY_FIELD
 from .request_budget_client import open_request_budget
 from src.infrastructure.private_artifacts import content_digest
 from src.observability.httpx_observer import _observe_native_httpx_client

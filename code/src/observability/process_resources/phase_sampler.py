@@ -1,5 +1,4 @@
 """Bounded disk-only process RSS sampling; labels distinguish query and evaluation."""
-import os
 from pathlib import Path
 import threading
 import time

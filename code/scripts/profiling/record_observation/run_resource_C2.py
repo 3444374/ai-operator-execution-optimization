@@ -166,7 +166,7 @@ def main(root):
         from record_observer import install_driver,memory_snapshot,emit,close_events
         install_driver()
         if not light:
-            from src.experiments.process_sampling import ProcessSampler
+            from src.observability.process_resources.phase_sampler import ProcessSampler
             from src.observability.records_telemetry import RecordsTelemetry,MetricSources
             memory_snapshot('worker_entry');probe=config['observation']
             sampler=ProcessSampler(root/'rss.jsonl',{'driver':os.getpid()},interval=probe['sample_interval_s'],max_samples=probe['max_samples'],include_children=True)

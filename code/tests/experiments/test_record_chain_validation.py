@@ -350,7 +350,7 @@ class ExecutionComparisonTests(unittest.TestCase):
                     patch.object(entry, 'replay_native_answers', return_value={'model_calls': 0}), \
                     patch('integrations.imlane_records.chain_runtime.check_external_lease'), \
                     patch('src.experiments.cell_budget.CellBudgetLedger') as ledger, \
-                    patch('src.experiments.process_sampling.ProcessSampler', return_value=sampler), \
+                    patch('src.observability.process_resources.phase_sampler.ProcessSampler', return_value=sampler), \
                     patch('src.observability.records_telemetry.RecordsTelemetry', return_value=telemetry):
                 report = entry.execute_worker(self.path, self.root / 'ready.json', case['case_id'])
                 self.assertEqual(run.call_args.kwargs['execution'], case['execution'])

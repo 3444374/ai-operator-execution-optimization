@@ -100,7 +100,7 @@ class ProgressionEntryTests(unittest.TestCase):
                 patch.object(entry.metadata, 'version', side_effect=lambda name:'2.56.1' if name=='ray' else 'CPU-fixture'), \
                 patch('integrations.imlane_records.chain_runtime.check_external_lease'), \
                 patch('src.infrastructure.request_budget.ClaimedUnit.bind_execution'), \
-                patch('src.experiments.process_sampling.ProcessSampler', return_value=sampler), \
+                patch('src.observability.process_resources.phase_sampler.ProcessSampler', return_value=sampler), \
                 patch('src.observability.records_telemetry.RecordsTelemetry', return_value=telemetry), \
                 redirect_stdout(io.StringIO()):
             state = [False]

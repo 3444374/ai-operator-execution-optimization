@@ -9,7 +9,7 @@ import httpx
 
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig, RayMapTransport, _HttpActor, _Block, _Row
-from src.experiments.buffered_events import compact_event
+from src.observability.buffered_events import compact_event
 from src.scheduling.core.session_contract import BackendTask, OfferedTask, SessionSpec, TaskKey
 from tests.execution_provider.test_ray_map_transport import FakeRay
 

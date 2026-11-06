@@ -7,7 +7,7 @@ from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import (
     RayMapConfig, RayMapTransport, _Block, _RemoteResult, _Row, _clock_domain,
 )
-from src.experiments.buffered_events import compact_event
+from src.observability.buffered_events import compact_event
 from tests.execution_provider.test_ray_map_transport import FakeRay, task
 
 
