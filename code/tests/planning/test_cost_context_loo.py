@@ -25,12 +25,17 @@ class CostContextLooTests(unittest.TestCase):
         from scripts.analysis import compare_cost_estimators_full
 
         for module in (MODULE, compare_cost_estimators_full):
+            output = ["--output", "selected-output.json"] if module is MODULE else []
             for arguments in ([], ["--data-csv", "chosen.csv", "--ref-json", "chosen.json"]):
                 with self.subTest(script=module.__file__, arguments=arguments):
-                    with patch.object(sys, "argv", [module.__file__, *arguments]), redirect_stderr(io.StringIO()):
+                    with patch.object(sys, "argv", [module.__file__, *output, *arguments]), redirect_stderr(io.StringIO()):
                         with self.assertRaises(SystemExit) as error:
                             module.parse_args()
                     self.assertEqual(error.exception.code, 2)
+        with patch.object(sys, "argv", [str(SCRIPT), "--data-csv", "chosen.csv"]), redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as error:
+                MODULE.parse_args()
+        self.assertEqual(error.exception.code, 2)
 
     def test_external_csv_is_passed_directly_without_a_temporary_reference(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

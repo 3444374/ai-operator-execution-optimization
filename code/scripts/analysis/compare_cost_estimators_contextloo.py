@@ -44,16 +44,12 @@ from src.planning.costs.regression import (  # noqa: E402
     top_k_precision,
 )
 
-DEFAULT_OUTPUT = (
-    REPO_ROOT / "experiments" / "results" / "operator_cost_estimation_20260726"
-    / "ce_context_loo_20260804.json"
-)
 TARGET = "e2e_s"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--overwrite", action="store_true")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--data-csv", type=Path, help="profile runs.csv to evaluate")

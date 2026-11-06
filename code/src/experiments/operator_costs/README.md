@@ -22,6 +22,7 @@ python -B code/scripts/analysis/compare_cost_estimators_contextloo.py \
 
 两个比较 CLI 必须选择 `--data-csv` 或 `--ref-json` 之一。后者读取含 `source_csvs` 列表的 JSON；
 绝对 CSV 路径保持原意，相对路径仍从仓库根目录解析。不存在的旧默认参考 JSON 不再用作输入。
+context-LOO 还须显式指定 `--output`，避免将新输入的结果写入历史目录；原 `--overwrite` 规则保持。
 Ridge CLI 原有 `--input-csv`、target、split、seed 和 alpha 参数保持。
 
 context-LOO 的 `source_reference` 指向所选 CSV 或参考 JSON，`source_csvs` 继续记录 CSV 摘要。
