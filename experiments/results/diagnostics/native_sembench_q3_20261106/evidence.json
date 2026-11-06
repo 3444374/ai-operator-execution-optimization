@@ -162,6 +162,21 @@
       "before_fix": "one method failed in two subcases: caller-handled exception hid a new write failure",
       "before_fix_log_sha256": "17215b5341835a724308926a6b0c40b88c7727fd1440d7e4fba204483ad746f4",
       "after_fix": "passed in the final 46-method selection"
+    },
+    "integration": {
+      "peer_commit": "c2b2cad23a29c0f8656ecca1f0a4be1492730846",
+      "merge_commit": "8377975ea51812cd6ab71b17a4420bb23f9ee105",
+      "all_seven_tested_source_files_unchanged": true,
+      "peer_python_files_exactly_preserved_or_deleted": 17,
+      "conflict": "one status paragraph in execution configuration docs; newer measured qualification retained; other peer text unchanged"
+    },
+    "historical_recovery": {
+      "methods": 4,
+      "status": "passed",
+      "full_named_trees": 5,
+      "original_file_digests": 3010,
+      "log_sha256": "7bd4e081037983d95cd8c0bd7ade311ac4667b4f73dd3d805fca922f610aaa7b",
+      "expected_digests_and_projection_ids_changed": false
     }
   }
 }
