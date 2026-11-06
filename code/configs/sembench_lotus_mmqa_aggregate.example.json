@@ -1,0 +1,40 @@
+{
+  "schema": "semloom.sembench_lotus_mmqa_aggregate_run.v1",
+  "query_id": "mmqa-q5-native-aggregate",
+  "model_name": "openai/replace-with-served-text-model",
+  "api_base": "http://localhost:8000/v1",
+  "api_key_env": "NATIVE_TEXT_API_KEY",
+  "generation": {
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": []
+  },
+  "native_lm_max_batch_size": 64,
+  "native_lm_max_ctx_len": 32768,
+  "token_counter": {
+    "kind": "huggingface_tokenizer_file",
+    "path": "/replace-with-local-tokenizer/tokenizer.json",
+    "sha256": "replace-with-tokenizer-file-sha256",
+    "tokenizer_id": "replace-with-tokenizer-id",
+    "tokenizer_revision": "replace-with-tokenizer-revision"
+  },
+  "query_timeout_s": 300,
+  "service_profile": {
+    "model_id": "replace-with-model-id",
+    "revision": "replace-with-model-revision",
+    "dtype": "bfloat16",
+    "max_model_len": 32768,
+    "tokenizer_id": "replace-with-tokenizer-id",
+    "tokenizer_revision": "replace-with-tokenizer-revision",
+    "context_source": "replace-with-actual-service-readiness-evidence",
+    "evidence_scope": "declaration only; verify actual model, tokenizer, context and lifecycle before execution"
+  },
+  "budget": {
+    "path": "/replace-with-private-artifact-root/budget.sqlite",
+    "id": "replace-with-existing-budget-id",
+    "limit": 1,
+    "unit_id": "replace-with-already-reserved-unit"
+  }
+}

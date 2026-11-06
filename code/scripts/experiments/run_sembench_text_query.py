@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Original Movie/MMQA single-operator text queries; native owners retain execution."""
+"""Original SemBench single-operator text queries; native owners retain execution."""
 
 from pathlib import Path
 import sys

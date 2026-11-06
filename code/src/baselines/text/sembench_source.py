@@ -47,7 +47,7 @@ def verify_checkout(checkout):
     git = ['git', '-c', 'safe.directory=' + str(root), '-C', str(root)]
     commit = subprocess.check_output(git + ['rev-parse', 'HEAD'], text=True, timeout=10).strip()
     dirty = subprocess.check_output(git + ['status', '--porcelain', '--untracked-files=no',
-        '--', 'src', 'files/movie/query', 'files/mmqa/query'], text=True, timeout=10)
+        '--', 'src', 'files/movie/query', 'files/mmqa/query', 'files/medical/query'], text=True, timeout=10)
     if commit != SEMBENCH_COMMIT or dirty:
         raise ValueError('SemBench query/evaluator checkout does not match its pinned source')
     return root

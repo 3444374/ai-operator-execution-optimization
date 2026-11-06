@@ -35,6 +35,7 @@ from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prep
 
 CHECKOUT = os.environ.get("SEMLOOM_NATIVE_TEST_CHECKOUT")
 REAL_MMQA_DATA = os.environ.get("SEMLOOM_NATIVE_TEST_MMQA_DATA")
+REAL_MEDICAL_DATA = os.environ.get("SEMLOOM_NATIVE_TEST_MEDICAL_DATA")
 HAS_SDK = all(importlib.util.find_spec(name) is not None for name in ("lotus", "litellm"))
 READY = bool(CHECKOUT and Path(CHECKOUT).is_dir() and HAS_SDK)
 
@@ -68,6 +69,13 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         scope = patch.object(socket.socket, "connect", forbid_network)
         scope.start()
         self.addCleanup(scope.stop)
+        from src.serving.backends.vllm_async_engine import VllmAsyncEngine
+        from src.serving.backends.vllm_engine import VllmEngine
+        for engine in (VllmEngine, VllmAsyncEngine):
+            scope = patch.object(engine, '__init__', side_effect=AssertionError(
+                'software query parity must not construct a real model engine'))
+            scope.start()
+            self.addCleanup(scope.stop)
         import lotus
         scope = lotus.settings.context(enable_cache=False)
         scope.__enter__()
@@ -122,6 +130,17 @@ class OriginalSemBenchTextTests(unittest.TestCase):
             Destinations=["Frankfurt, Berlin", None, "Frankfurt, Berlin"],
             Airport=[None, "Unused airport", "Different unused airport"])).to_csv(
                 self.data / "tampa_international_airport.csv", index=False)
+        medical = self.data / 'data'
+        medical.mkdir()
+        pd.DataFrame(dict(patient_id=[10, 30, 30, 70], symptom_id=[0, 1, 2, 3],
+            symptoms=['allergy fixture', 'acne fixture', 'acne fixture', None])).to_csv(
+                medical / 'text_symptoms_data.csv', index=False)
+        patients = pd.DataFrame(dict(patient_id=[900, 30, 10, 800, 70], age=[70, 52, 20, 65, 41],
+            gender=['M', 'F', 'F', 'M', 'M'], smoking_history=['Never'] * 5,
+            did_family_have_cancer=[0] * 5))
+        patients.to_csv(medical / 'patient_data.csv', index=False)
+        patients['text_diagnosis'] = ['none', 'acne', 'allergy', 'none', 'migraine']
+        patients.to_csv(medical / 'patient_data_with_labels.csv', index=False)
 
     def _query(self, scenario, query):
         return SemBenchTextQuery(CHECKOUT, self.data, scenario, query,
@@ -296,9 +315,13 @@ class OriginalSemBenchTextTests(unittest.TestCase):
             [hashlib.sha256(_messages_key(message).encode()).hexdigest() for message in messages])
         self.assertTrue(all(generation.response_format == query.operation.stage.generation.response_format
                             for _, generation in requests))
+        self.assertTrue(all(generation == query.operation.stage.generation for _, generation in requests))
+        self.assertTrue(all(generation == asdict(query.operation.stage.generation)
+                            for _, generation in chain_batches))
         for _, options in reference_batches:
             self.assertEqual(options["max_completion_tokens"], query.operation.stage.generation.max_tokens)
             self.assertEqual(options.get("response_format"), query.operation.stage.generation.response_format)
+            self.assertEqual(options.get('stop'), list(query.operation.stage.generation.stop))
         return (expected if error is None else None), chain_reports[0], reports[0]
 
     def test_upstream_src_runner_aliases_are_scoped_and_original_bytes_stay_unchanged(self):
@@ -442,6 +465,164 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 self.assertEqual(query.operation.describe()["model_columns"], ["text"])
                 _, _, native = self._parity(query, [], error=KeyError)
                 self.assertNotIn("owner_ready", native)
+
+    def test_medical_original_queries_match_native_accessor_and_record_chain(self):
+        answers = {'1': ['True', 'False', 'False', 'False'],
+                   '4': ['True', 'True', 'False', 'False'],
+                   '10': [json.dumps(dict(text_diagnosis=value)) for value in
+                          ('ALLERGY', 'ACNE', 'ACNE', 'MIGRAINE')]}
+        for key, responses in answers.items():
+            with self.subTest(query=key), redirect_stdout(io.StringIO()):
+                query = self._query('medical', key)
+                result, _, _ = self._parity(query, responses)
+                self.assertEqual(query.describe()['scale_factor'], 11112)
+                self.assertEqual(query.describe()['expected_model_calls'], 4)
+                self.assertEqual(query.operation.describe()['model_columns'], ['symptoms'])
+                self.assertNotIn('text_diagnosis', query.operation.frame.columns)
+                self.assertTrue(all(set(row.values) == {'symptoms'} for row in query.operation.records))
+                instruction = (query.operation.stage.method.output_columns['text_diagnosis'] if key == '10'
+                               else query.operation.stage.method.instruction)
+                self.assertIn('The results are not used for human health evaluation', instruction)
+                quality = query.evaluate(result)['original_metric']
+                if key == '1':
+                    self.assertIsInstance(result, pd.Series)
+                    self.assertEqual(result.name, 'patient_id')
+                    self.assertEqual(result.tolist(), [10])
+                    self.assertEqual(quality, dict(precision=1.0, recall=1.0, f1_score=1.0))
+                elif key == '4':
+                    self.assertEqual(result['average_acne_age'].tolist(), [52.0])
+                    self.assertEqual(query.operation.frame.index.tolist(), [1, 1, 2, 4])
+                    self.assertEqual(quality['absolute_error'], 0.0)
+                else:
+                    self.assertEqual(result.columns.tolist(), ['patient_id', 'text_diagnosis'])
+                    self.assertEqual(quality, dict(precision=1.0, recall=1.0, f1_score=1.0))
+
+    def test_medical_q4_keeps_duplicate_patient_rows_and_original_join_labels(self):
+        path = self.data / 'data/patient_data.csv'
+        patients = pd.read_csv(path)
+        additional = patients.loc[patients.patient_id == 30].copy()
+        additional['age'] = 54
+        pd.concat((patients, additional), ignore_index=True).to_csv(path, index=False)
+        query = self._query('medical', '4')
+        self.assertEqual(query.operation.frame.index.tolist(), [1, 1, 5, 2, 4, 5])
+        self.assertEqual([row.source_index for row in query.operation.records], [1, 1, 5, 2, 4, 5])
+        result, _, _ = self._parity(query, ['True', 'True', 'True', 'False', 'False', 'True'])
+        self.assertEqual(result['average_acne_age'].tolist(), [53.0])
+
+    def test_medical_all_negative_and_empty_filters_keep_native_series_and_nan(self):
+        for empty in (False, True):
+            if empty:
+                path = self.data / 'data/text_symptoms_data.csv'
+                pd.read_csv(path).iloc[:0].to_csv(path, index=False)
+            for key in ('1', '4'):
+                with self.subTest(empty=empty, query=key):
+                    query = self._query('medical', key)
+                    result, _, native = self._parity(query, ['False'] * len(query.operation.records))
+                    if key == '1':
+                        self.assertIsInstance(result, pd.Series)
+                        self.assertEqual(result.name, 'patient_id')
+                        self.assertEqual(len(result), 0)
+                    else:
+                        self.assertTrue(pd.isna(result['average_acne_age'].iloc[0]))
+                    if empty:
+                        self.assertNotIn('owner_ready', native)
+
+    def test_medical_q10_missing_keys_and_empty_extract_preserve_original_keyerror(self):
+        query = self._query('medical', '10')
+        _, chain, native = self._parity(query, ['{}'] * 4, error=KeyError)
+        self.assertEqual(len(chain['calls']), 4)
+        self.assertEqual(native['calls']['counts']['succeeded'], 4)
+        self.assertNotIn('text_diagnosis', native['frame'].columns)
+        path = self.data / 'data/text_symptoms_data.csv'
+        pd.read_csv(path).iloc[:0].to_csv(path, index=False)
+        _, _, native = self._parity(self._query('medical', '10'), [], error=KeyError)
+        self.assertNotIn('owner_ready', native)
+
+    def test_medical_q10_evaluator_preserves_missing_result_length_error(self):
+        query = self._query('medical', '10')
+        with self.assertRaisesRegex(ValueError, 'inconsistent numbers of samples'):
+            query.evaluate(pd.DataFrame(dict(patient_id=[10], text_diagnosis=['ALLERGY'])))
+
+    def test_medical_q10_keeps_partial_json_and_actual_extra_or_collision_keys(self):
+        query = self._query('medical', '10')
+        result, _, _ = self._parity(query,
+            ['{"text_diagnosis":"ALLERGY"}', '{}', '{}', '{"text_diagnosis":"MIGRAINE"}'])
+        self.assertEqual(result.text_diagnosis.tolist(), ['ALLERGY', None, None, 'MIGRAINE'])
+        result, chain, native = self._parity(query,
+            ['{"text_diagnosis":"ALLERGY"}',
+             '{"text_diagnosis":"ACNE","patient_id":44,"extra":"retained"}',
+             '{"text_diagnosis":"ACNE","patient_id":44,"extra":"retained"}',
+             '{"text_diagnosis":"MIGRAINE"}'])
+        self.assertEqual(result.patient_id.tolist(), [10, '44', '44', 70])
+        self.assertEqual(result.columns.tolist(), ['patient_id', 'text_diagnosis'])
+        self.assertEqual(chain['frame'].extra.tolist(), [None, 'retained', 'retained', None])
+        pd.testing.assert_frame_equal(chain['frame'], native['frame'])
+
+    def test_medical_nondefault_scale_uses_original_suffixed_csv_paths(self):
+        for path in (self.data / 'data').glob('*.csv'):
+            path.rename(path.with_name(path.stem + '_25.csv'))
+        query = SemBenchTextQuery(CHECKOUT, self.data, 'medical', '1', execution_id='medical-sf25',
+            model_name='openai/local-fixture', generation=self.generation, scale_factor=25)
+        result, _, _ = self._parity(query, ['True', 'False', 'False', 'False'])
+        self.assertEqual(result.tolist(), [10])
+        self.assertEqual(query.describe()['scale_factor'], 25)
+        self.assertEqual(query.evaluate(result)['original_metric']['f1_score'], 1.0)
+
+    def test_medical_labels_stay_outside_execution_scan_and_input_mutation_is_rejected(self):
+        query = self._query('medical', '1')
+        (self.data / 'data/patient_data_with_labels.csv').unlink()
+        execute, _, _ = self._chain(query, ['True', 'False', 'False', 'False'])
+        result, _ = query.execute(execute)
+        self.assertEqual(query.evaluate(result)['original_metric']['f1_score'], 1.0)
+        path = self.data / 'data/text_symptoms_data.csv'
+        path.write_text(path.read_text() + '\n')
+        with self.assertRaisesRegex(ValueError, 'changed after preflight'):
+            query.execute(Mock(side_effect=AssertionError('changed input must not reach model execution')))
+
+    def test_medical_configured_generation_reaches_record_and_native_model_boundary(self):
+        from src.experiments.sembench_text_query import configuration
+        config = dict(schema='semloom.sembench_text_run.v1', scenario='medical', query='10',
+            query_id='medical-generation', backend='lotus-native', model_name='openai/local-fixture',
+            generation={}, engine=dict(model_path='/tmp/model', model_python='/tmp/python',
+                driver_python='/tmp/python', max_model_calls=4), resources={},
+            profile=dict(native_lm_max_batch_size=2))
+        path = self.data / 'config.json'
+        for options in ({}, dict(max_tokens=128, stop=['DONE'], temperature=0.25, seed=7)):
+            with self.subTest(generation=options):
+                config['generation'] = options
+                path.write_text(json.dumps(config))
+                _, _, generation, _ = configuration(path)
+                query = SemBenchTextQuery(CHECKOUT, self.data, 'medical', '10',
+                    execution_id='medical-generation', model_name='openai/local-fixture', generation=generation)
+                self._parity(query, ['{"text_diagnosis":"ALLERGY"}'] * 4)
+
+    @unittest.skipUnless(REAL_MEDICAL_DATA and Path(REAL_MEDICAL_DATA).is_dir(),
+                         'requires SEMLOOM_NATIVE_TEST_MEDICAL_DATA with authored full Medical CSVs')
+    def test_real_medical_inputs_match_original_messages_results_and_evaluator(self):
+        self.data = Path(REAL_MEDICAL_DATA).resolve()
+        symptoms = pd.read_csv(self.data / 'data/text_symptoms_data.csv')
+        labels = pd.read_csv(self.data / 'data/patient_data_with_labels.csv').set_index('patient_id')
+        original = {path: path.read_bytes() for path in (self.data / 'data').glob('*.csv')}
+        self.assertEqual(len(symptoms), 1200)
+        self.assertEqual(len(labels), 11112)
+        self.assertEqual(int((labels.text_diagnosis == 'allergy').sum()), 50)
+        self.assertEqual(int((labels.text_diagnosis == 'acne').sum()), 50)
+        for key in ('1', '4', '10'):
+            with self.subTest(query=key):
+                query = self._query('medical', key)
+                self.assertEqual(query.describe()['expected_model_calls'], 1200)
+                # Oracle labels provide fixed software replies only in this
+                # test. Execution records retain the original symptoms alone.
+                diagnoses = [labels.loc[patient_id, 'text_diagnosis']
+                             for patient_id in query.operation.frame.patient_id]
+                answers = ([str(diagnosis == ('allergy' if key == '1' else 'acne'))
+                            for diagnosis in diagnoses] if key != '10' else
+                           [json.dumps(dict(text_diagnosis=diagnosis.upper())) for diagnosis in diagnoses])
+                result, _, _ = self._parity(query, answers)
+                metric = query.evaluate(result)['original_metric']
+                self.assertEqual(metric['absolute_error'] if key == '4' else metric['f1_score'],
+                                 0.0 if key == '4' else 1.0)
+        self.assertEqual(original, {path: path.read_bytes() for path in original})
 
 
 if __name__ == "__main__":

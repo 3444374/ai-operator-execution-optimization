@@ -29,12 +29,17 @@ def configuration(path):
     required = {'schema', 'scenario', 'query', 'query_id', 'backend', 'model_name',
                 'generation', 'engine', 'resources', 'profile'}
     if (type(value) is not dict or not required <= value.keys()
-            or value.keys() - required - {'budget', 'owner_config'}
+            or value.keys() - required - {'budget', 'owner_config', 'scale_factor'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
         raise ValueError('an explicit single-operator SemBench text configuration is required')
     engine = EngineSpec.from_dict(value['engine'])
-    generation = GenerationSpec.from_dict(value['generation'])
+    generation_config = value['generation']
+    if value['scenario'] == 'medical' and isinstance(generation_config, dict):
+        # Original GenericLotusRunner uses 8192 tokens and no stop sequence.
+        # Retain explicit experiment overrides and the older entry defaults.
+        generation_config = {'max_tokens': 8192, 'stop': [], **generation_config}
+    generation = GenerationSpec.from_dict(generation_config)
     resources = RecordsResources(**value['resources'])
     profile = value['profile']
     if value['backend'] == 'lotus-native':
@@ -58,7 +63,7 @@ def query_from_config(config, checkout, data_dir, generation):
 
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
         execution_id=config['query_id'], model_name=config['model_name'],
-        generation=generation)
+        generation=generation, scale_factor=config.get('scale_factor'))
 
 
 def check(config, query, engine):
@@ -72,7 +77,7 @@ def check(config, query, engine):
         effective_operator_generation=(None if query.operation is None else
                                        asdict(query.operation.stage.generation)),
         profile=config['profile'], unsupported_backends={
-            'kalypso': 'current binding is Movie Filter only; use existing Q4 route; MMQA/Map/Extract not bound'},
+            'kalypso': 'current binding is Movie Filter only; use existing Q4 route; MMQA/Medical/Map/Extract not bound'},
         execution_layout=('original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
                           else 'existing native finite record-chain graph; one terminal F/M/E operator'),
         lifecycle='isolated cold query; native runtime/model startup and close included',
@@ -211,6 +216,12 @@ def main(argv=None):
     prepare.add_argument('--sembench-checkout', required=True)
     prepare.add_argument('--output-dir', required=True)
     prepare.add_argument('--scale-factor', required=True, type=int)
+    prepare_medical = commands.add_parser('prepare-medical-text',
+        help='copy three existing Medical CSVs without multimodal preparation or downloads')
+    prepare_medical.add_argument('--source-dir', required=True)
+    prepare_medical.add_argument('--sembench-checkout', required=True)
+    prepare_medical.add_argument('--output-dir', required=True)
+    prepare_medical.add_argument('--scale-factor', type=int, default=11112)
     for name in ('check','fixture','run'):
         command = commands.add_parser(name)
         for field in ('config','data-dir','sembench-checkout'):
@@ -225,6 +236,11 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.action == 'prepare-mmqa-text':
         from src.baselines.text.sembench_mmqa import prepare_text_inputs
+        report = prepare_text_inputs(args.sembench_checkout,args.source_dir,args.output_dir,args.scale_factor)
+        print(json.dumps(report, ensure_ascii=False))
+        return 0
+    if args.action == 'prepare-medical-text':
+        from src.baselines.text.sembench_medical import prepare_text_inputs
         report = prepare_text_inputs(args.sembench_checkout,args.source_dir,args.output_dir,args.scale_factor)
         print(json.dumps(report, ensure_ascii=False))
         return 0
