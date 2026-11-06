@@ -49,7 +49,7 @@ PYTHONPATH=code python -m unittest tests.scheduling.test_scheduler tests.schedul
 
 实验声明仍在 [experiments/saor](../../../../experiments/saor/README.md)，
 历史读取与离线分析仍在 [src/experiments/saor](../../experiments/saor/README.md)，
-共享 vLLM 编排仍在 [src/experiments/shared_vllm](../../experiments/shared_vllm/README.md)。
+共享服务的研究数据类型与离线指标仍在 [src/experiments/shared_vllm](../../experiments/shared_vllm/README.md)。
 声明、结果、失败和 unknown 均保留原身份；迁移不恢复已退役的 HTTP／PG 启动命令，
 也不表示完成真实 Ray、模型或性能验证。源码保持核对与 CPU 范围见
 [整理记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)。
