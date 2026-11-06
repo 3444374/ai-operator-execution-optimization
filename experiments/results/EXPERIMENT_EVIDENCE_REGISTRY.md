@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-06：异步观察器转换与可选指标
+
+[实际转换行为](diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
+记录漏记反例及独审补出的可选指标异常；最终同四项CPU通过，不累加先前选择，原错误与修后原件均私有保留。
+
 ## 2026-11-06：图像检索证据写入职责
 
 [准确候选与输出对照](diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)

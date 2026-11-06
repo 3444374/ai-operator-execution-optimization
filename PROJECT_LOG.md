@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-06：异步观测跟随实际转换
+
+[观察器实际接线与原反例](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
+修正同步模块独立引用；业务转换完成后的可选指标异常不再改变原结果，四项CPU通过，生成与资源代码保持。
+
 ## 2026-11-06：图像检索结果写入归实验模块
 
 [检索CLI与证据写入分工](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)

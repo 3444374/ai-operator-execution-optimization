@@ -85,6 +85,9 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [图像检索实验职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)
 把结果／向量写入及原异常优先级移到实验模块，CLI保留参数、执行和关闭；同一11项CPU与六种输出对照保持，生产总量增加14行。
 
+[异步结果观测接线](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
+接到真实协议转换；可选指标读取错误只留下观测缺项，业务结果与原异常保持。原反例保留，最终四项CPU通过，未运行GPU观察器。
+
 [同步协议多余转出清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
 记录九处直接导入迁移、5项现有CPU及相邻导入合并；没有改同步／异步模型构造或增加兼容包装。
 

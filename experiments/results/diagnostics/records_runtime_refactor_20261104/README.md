@@ -4356,3 +4356,16 @@ CLI保留参数、执行、时钟和finally关闭，`src.experiments.lotus_image
 此前把反例放入较重模块时，收集阶段停在 tokenizer／Torch 的导入，已中断且没有执行用例；
 该记录保留，随后改用独立轻量模块，避免为转换检查加载 tokenizer。
 未运行真实 IPC、模型、Ray 或多查询；本批不公开私有模型原件，不将 CPU 结果当作到期／abort 实测。
+
+<a id="record-observer-conversion"></a>
+## 异步观察器实际转换与可选指标（2026-11-06）
+
+候选`fe19fd985f14be42e3ca5dd0735a079f26620d17`及增量`b63f0ed7e39948ccdb8b153f819d938e1a51c16d`，最终tree为`a0f01d5931eb331e7c12b47a3b77876d8e6926ee`；整合为`05661d60`／`3f24e16c`。
+record观察器与取消child有相同旧引用问题；观察器也改用实际异步协议转换，现有模型hook替身相应迁移两处模块名。
+首次三方法修复漏记后，独审补出可选metrics getter异常会把已成功的转换改成异常；该候选没有原样发布。
+增量仅处理原业务转换之后的可选读取／发事件，业务转换在try外，原结果直接返回；没有新增重试、超时、结果兜底或状态。
+相同四方法从三通过一错误变为四通过；覆盖实际stop／合成abort的完整结果、原业务异常对象，以及指标坏值不改变成功结果。
+四方法包含此前child用例，不与它累加；首次漏记反例及独审反例均原样保留。运行记录HEAD仍为提交前fe19，全部980份Python摘要对应最终候选，之后只改README。
+零历史绑定，未改MANIFEST或原expected；未运行真实模型、CUDA／NVTX、Ray或IPC。指标缺项仍是缺项，不从缺失的观测推断模型终态。
+原件按`optional-metrics-original`／`optional-metrics-fixed`私有保存，修后JSON摘要为`2efde5d3af520591df60398958b62846c6b6beb55568944a0c97e6be0031a1a3`。
+本次仅脚本增加两行，核心仍52,517行，src与scripts为104,168行，沿用上节统计口径。
