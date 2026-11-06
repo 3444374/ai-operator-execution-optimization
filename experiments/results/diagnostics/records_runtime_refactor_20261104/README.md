@@ -3,7 +3,7 @@
 本记录对应 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的执行工程整理。
 本页按各批源码与运行身份保留过程；早期结构表不表示最新接入状态。旧 PG／HTTP 实验接线已按
 [现用入口整理](../runtime_entry_cleanup_20261105/README.md)退役；当前实现与未完成项见
-[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[离线汇总与旧研究编排](#saor-offline-evidence-retirement)，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
+[整体清单](../../../../code/INFRA_STATUS.md#refactor-completion-checklist)，最新清理见[共享加载器退役](#shared-service-loader-retirement)，此前[离线汇总与旧研究编排](#saor-offline-evidence-retirement)保持原范围，此前[中性容量与固定探针整理](#neutral-capacity-and-fixed-probes)保留原范围，[此前旧LOTUS处理](#retired-lotus-http-methods)保留原范围。
 基准为 PR #90 的 `bfb9100e2f3fa090fdf2304359979b853236e06a`，tree 为
 `c8a86b0bcff8bf0161dcbbd005bc2660060d228e`。该 PR 当时为 Draft，未合并。
 起始切片当时只做 CPU 检查、等待审查与整合；后续发布和实机结果按各批自己的源码解释，不提供跨版本的模型性能结论。
@@ -3613,3 +3613,38 @@ summary直接调用同一函数，删除两个只转发一次的私有函数；�
 新增`CoreChainCapacity`及原八对象均经真实worker往返并通过身份断言；观察到的九个自有进程退出，Ray关闭、SHM及运行许可清理通过。
 原件运行标识`realray-87fd-execution-20261106-r1`、原始结果SHA和完整用例回执保存在上述机器材料。
 该次没有模型／GPU查询，也没有运行其他方法；原Ray子进程信号量问题保持独立记录。
+
+
+<a id="shared-service-loader-retirement"></a>
+## 共享服务研究配置收敛为现用类型与读取函数（2026-11-06）
+
+旧共享服务runner已退出，`shared_vllm/config.py`中的JSON加载器、Job命令构造和专属解析仅互相调用，
+`cli.py`没有当前消费者。仓内实际导入、所有保留定义的名称依赖和本会话所用的14份仓外辅助／驱动／配置／命令已核对；
+待删API没有命中。该结论仅覆盖已查入口，不表示所有外部存储。
+图像研究中的同名`build_job_command`属于另一条现用路径，不删除。
+
+删除21个旧函数、4个专属常量及整份旧CLI，不再保留旧profiler参数拼接和加载检查。
+保留八个数据类、全部字段／默认、四个实际使用的参数与容量读取函数；
+`RunnerOptions`和`GroupRunIdentity`仍被现有evidence使用，不按旧名称删除。
+`CompletionWorkCostConfig`继续用于离线计量CLI和work证据；现用metric、SAOR算法、图像及普通records不改。
+README改为真实文件职责，去掉已不存在runner、direct-control和`__init__.py`的说明，不补转发层。
+
+最新并行基底为`e420a0abbc02782a919340a3a83179f077f2598a`，受测源码为
+`c2cdefe8f341085c1ddb3f67b41ade843f2a5a10`，树`bdc86fbd7987213dbcb2241ce628bf2d3c113d97`。
+独立复核还删除三项只供旧加载器使用的导入。所有12个保留定义的语法树、实际类字段／默认、方法签名和解析后的类型注解与128f逐项相同。
+最终9项现有CPU方法全部通过，耗时1.50秒；1,078份受测code摘要与该提交一致，包含五份历史树的3,010条摘要恢复。
+原底稿8项与子候选9项均成功，重复选择不增加覆盖数；没有补建旧配置API或新同义测试。
+
+CLI的准确3,007字节原件只保存一次并增加五条读取／格式路由；config沿用已有b089原件，不重复归档。
+原摘要、ID、来源版本和既有映射不改。旧直接导入不再兼容，完整来源和不能混用新旧执行器的说明见
+[恢复入口](../../../reproduction/native_baselines/README.md#retired-shared-vllm-loader)。
+[机器摘要](raw/shared_service_loader_retirement_checks.json)与[脱敏原始记录](raw/shared_service_loader_retirement_raw.json.gz)
+保留原8项、子候选9项和最终9项、准确最终源码、接口快照及14入口回执。
+公开摘要中的九个原测试ID可用`PYTHONPATH=code python -B -m unittest <ID...>`重跑；
+类型快照脚本在原始记录的`snapshot_interface.py`文本中，不需要恢复旧CLI。
+
+配置文件1,740→388行，旧CLI75行删除，合计src＋scripts Python净减1,427行，核心／测试行数不变。
+当前核心56,191、宽口径110,960；较固定main分别为+2,100／−29,375，较3fd为−5,437／−38,685。
+各口径含注释和空行，文档／测试／压缩历史副本不混入；并行IMLane新增内容保留，不算作本批删除或性能收益。
+本批未运行服务、数据库、真实Ray、模型或GPU，没有验证旧共享服务执行器或新的模型功能。
+原生Ray子进程收尾、无声明物理RAM自动授予和完整查询RSS计量仍不因本批清理解决。

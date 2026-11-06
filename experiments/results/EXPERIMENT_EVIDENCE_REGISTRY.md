@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-06：共享服务旧配置加载与命令接线退役
+
+[准确源码、现用类型与恢复](diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)
+关联c2cde的9项现有CPU方法和五树3010恢复，八类／四函数的字段、默认及解析注解保持。
+21个旧函数、4常量和CLI退出；净减1427行Python，普通records／研究算法／现用证据及并行IMLane不改。
+十四份已查仓外入口无待删调用；不转授旧执行器、真实模型、PG或性能资格。
+
 ## 2026-11-06：离线汇总直接使用证据模块，旧矩阵编排退役
 
 [准确源码、13项CPU和恢复](diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)

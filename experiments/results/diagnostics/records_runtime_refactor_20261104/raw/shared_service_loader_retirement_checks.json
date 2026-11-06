@@ -1,0 +1,116 @@
+{
+  "production_commit": "c2cdefe8f341085c1ddb3f67b41ade843f2a5a10",
+  "cpu": {
+    "methods": 9,
+    "passed": 9,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "seconds": 1.4972682499792427,
+    "sources": 1078,
+    "source_matches_commit": true,
+    "models": 0,
+    "real_Ray": 0
+  },
+  "review": {
+    "production_commit": "c2cdefe8f341085c1ddb3f67b41ade843f2a5a10",
+    "base": "e420a0abbc02782a919340a3a83179f077f2598a",
+    "retained_definitions_identical": [
+      "RunnerOptions",
+      "GroupRunIdentity",
+      "SharedVllmScenario",
+      "StateAwareControlConfig",
+      "SaorCapacityControlConfig",
+      "SaorReleaseControlConfig",
+      "CompletionWorkCostConfig",
+      "SharedVllmConfig",
+      "_local_limits",
+      "_partition_share",
+      "_argument_value",
+      "_csv_argument_values"
+    ],
+    "actual_fields_defaults_and_hints_identical": true,
+    "removal_set_matches_audit": true,
+    "exact_CLI_original": true,
+    "source_files_match_commit": 1078,
+    "protected_production_and_research_changes": [],
+    "counts": {
+      "latest_remote": {
+        "commit": "e420a0abbc02782a919340a3a83179f077f2598a",
+        "core_Python": 56191,
+        "src_and_scripts_Python": 112387,
+        "tests_Python": 98290,
+        "integrations_Python_CPP_HPP": 6286
+      },
+      "candidate": {
+        "commit": "c2cdefe8f341085c1ddb3f67b41ade843f2a5a10",
+        "core_Python": 56191,
+        "src_and_scripts_Python": 110960,
+        "tests_Python": 98290,
+        "integrations_Python_CPP_HPP": 6286
+      },
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_Python": 54091,
+        "src_and_scripts_Python": 140335,
+        "tests_Python": 102763,
+        "integrations_Python_CPP_HPP": 4521
+      },
+      "cleanup_start": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_Python": 61628,
+        "src_and_scripts_Python": 149645,
+        "tests_Python": 130062,
+        "integrations_Python_CPP_HPP": 4528
+      }
+    },
+    "deltas": {
+      "latest_remote": {
+        "core_Python": 0,
+        "src_and_scripts_Python": -1427,
+        "tests_Python": 0,
+        "integrations_Python_CPP_HPP": 0
+      },
+      "main": {
+        "core_Python": 2100,
+        "src_and_scripts_Python": -29375,
+        "tests_Python": -4473,
+        "integrations_Python_CPP_HPP": 1765
+      },
+      "cleanup_start": {
+        "core_Python": -5437,
+        "src_and_scripts_Python": -38685,
+        "tests_Python": -31772,
+        "integrations_Python_CPP_HPP": 1758
+      }
+    },
+    "remaining_config_lines": 388
+  },
+  "history": {
+    "original_CLI_bytes": 3007,
+    "new_originals": 1,
+    "new_routes": 5,
+    "new_formats": 5,
+    "original_3010_hashes_and_identities_preserved": true,
+    "config_existing_source_reused": true
+  },
+  "scope": {
+    "original": 8,
+    "child_candidate": 9,
+    "final_combination": 9,
+    "repeats_not_additional_coverage": true,
+    "success_applies_to_existing_offline_fixtures_not_the_retired_executor": true
+  },
+  "independent_increment_review": {
+    "commit": "c2cdefe8f341085c1ddb3f67b41ade843f2a5a10",
+    "original_sha256": "dc7b8012cdce1b877bd53650e1f79748e40d4f8a9eee44f416cb6b16866a8dd7",
+    "finding": "No issue in removed loader-only imports; actual type fields/defaults/hints match; recorded tests verified without rerun."
+  },
+  "raw": {
+    "file": "shared_service_loader_retirement_raw.json.gz",
+    "bytes": 66268,
+    "sha256": "fce3c2ecf7f3365ee2f73d091d898cb4862e78cbda3aa19b8cf29931990635a5",
+    "decoded_bytes": 243491,
+    "decoded_sha256": "7e4095c66502a65c7fdecbf2a971c522d86581be5994dda1bc34a30383ac3db1"
+  }
+}
