@@ -34,7 +34,9 @@ terminal. The generic task API does not add retries or a replacement HTTP/IPC ga
 The existing Image backend owns its typed prepare/model lifecycle and worker cleanup.
 
 The [native SDK HTTPX observer](../../experiments/native_http_observer.py) and
-shared request budgets remain independent of these removed factories. The offline
+shared request budgets remain independent of these removed factories. Its unused
+aiohttp session/response wrappers and their three dedicated tests are retired;
+the actual HTTPX observation function and its caller-owned accounting are unchanged. The offline
 SemFilter calibration reader still recognizes its historical profile name; that
 artifact identity does not restore the retired service selection.
 

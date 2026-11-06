@@ -202,3 +202,24 @@ IncrementalExecution原有的Job分配／flow分区、NativeQueryJob和NativeTas
 五份历史投影的85条相关来源保持，九份新增旧源及45条读取位置见
 [来源读取记录](../native_baselines/README.md#fixed-http-adapter-sources)；没有重跑完整3010构造。
 离线校准读取器仍保留旧profile身份，用于解释历史产物，不恢复HTTP运行入口。
+
+
+<a id="retired-unused-aiohttp-observer"></a>
+## 无现用调用的aiohttp观察包装
+
+native_http_observer中的NativeSessionFactory、ObservedSession、ObservedResponse三类只由三项专测调用，
+当前VLM／MMQA消费者只用同文件的observe_native_httpx。此次只删除这三类、专属依赖和三项专测；
+HTTPX观察函数、MappedUnit／预算和余下四项行为保持。没有更换或包装第三方原生连接。
+
+删除前两份完整文件与准确公开
+[e5e65fdb来源](https://github.com/3444374/ai-operator-execution-optimization/tree/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd)相同，
+旧实验恢复使用完整树，不向维护模块加回旧导出。
+
+| 修改前完整路径 | 字节 | SHA256 |
+|---|---:|---|
+| `code/src/experiments/native_http_observer.py` | 5976 | `2a95cd57e93019b5c85c55a51e2ab8e1a3970d6f7b6c6ea1e5c4773717328a3a` |
+| `code/tests/experiments/test_observer_mapped_budget.py` | 7798 | `1cddae575dd5b9417e0683132b6f55da4d292a978f74bbc0e4f30babc4c5414d` |
+
+五份投影共十条相关来源读取前后一致：旧实现原已读存档，未改的HTTPX测试仍读原来源；
+因此不新增压缩副本或MANIFEST映射，也没有重跑3010完整构造。
+保留的七项纯CPU／HTTPX Mock在修改前后均通过，没有实际网络、模型、Ray或UDS运行。
