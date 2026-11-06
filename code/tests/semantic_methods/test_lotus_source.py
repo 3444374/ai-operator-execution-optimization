@@ -58,22 +58,6 @@ class ExecutionSourceIndependenceTests(unittest.TestCase):
                 engine_result(row, "rewritten") for row in batch])
             self.assertEqual([r.values["summary"] for r in result["records"]], ["rewritten"] * 3)
 
-    def test_sdk_preparation_keeps_request_guards_without_consulting_source_metadata(self):
-        from src.semantic_methods.lotus.sdk import prepare_call
-
-        lm = SimpleNamespace(model="openai/gpt-4o-mini")
-        kwargs = dict(api_base="http://localhost:8000/v1", api_key="fixture-unused", timeout=2,
-                      temperature=0, max_tokens=8)
-        with patch.object(source, "distribution", side_effect=AssertionError("runtime source read")):
-            call = prepare_call(lm, [{"role": "user", "content": "fixture"}], kwargs)
-            self.assertIn(b'"messages"', call.payload)
-            with self.assertRaisesRegex(ValueError, "zero retries"):
-                prepare_call(lm, [{"role": "user", "content": "fixture"}],
-                             dict(kwargs, num_retries=1))
-            with self.assertRaisesRegex(ValueError, "message profile"):
-                prepare_call(lm, [{"role": "user", "content": "fixture"}], kwargs,
-                             message_profile="unsupported")
-
 
 if __name__ == "__main__":
     unittest.main()

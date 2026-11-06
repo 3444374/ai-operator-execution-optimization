@@ -80,7 +80,7 @@ LOTUS 职责迁移后，`image_source.py` 和 `maps.py` 的原字节分别保存
 [图像来源](historical_sources/1f92fce5/code/src/semantic_methods/lotus/image_source.py.gz)与
 [Map 来源](historical_sources/1f92fce5/code/src/semantic_methods/lotus/maps.py.gz)，来自准确
 `1f92fce59897fb7e633087ed09ddc50068cd8fd8`。五份投影仅补十条来源／gzip 映射，
-原 3010 条文件摘要和投影身份保持，维护版继续使用迁移后的模块。
+原 3010 条文件摘要和投影身份保持。图像来源继续独立记录，固定两 Map 原型的后续处理见[退役说明](#retired-lotus-http-methods)。
 
 ## 2026-11-04 的恢复记录（历史）
 
@@ -465,3 +465,32 @@ IPC 拆分涉及的四个历史文件继续使用已有19条准确路由，没�
 原五个来源版本、投影ID、3010条expected和所有已有overrides／格式声明不改。
 本批纯CPU检查已完整构造五树并逐文件核对3010份摘要，不执行历史模型或实验命令；
 当前代码不导入这个压缩原件。旧结果、负结果与原失败继续按原身份解释。
+
+<a id="retired-lotus-http-methods"></a>
+## 旧 LOTUS HTTP 执行与固定两 Map 原型（2026-11-06）
+
+维护目录删除孤立的 HTTP 请求准备、响应重放、固定两 Map 方法及其专用 driver／limits。
+当前 records 使用原生模型 IPC，有限记录链、通用 MethodDriver、Filter cascade、图像原方法及基线执行保留。
+[sdk.py](../../../code/src/semantic_methods/lotus/sdk.py)只记录已安装 SDK 的来源，继续支持
+`text` 和 `lotus-image-text-v1`，供[原查询复算](../../results/diagnostics/main_queries_20261015/recompute.py)
+与[原服务复算](../../results/diagnostics/main_service_auto_20261015/recompute.py)读取。
+`source.py` 的 provider 来源观察另被当前 MMQA 聚合使用，没有随旧执行实现删除。
+
+退役前源码位于完整 Git 树 `e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2`：
+
+| 文件 | 原字节数 | SHA-256 |
+|---|---:|---|
+| [sdk.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2/code/src/semantic_methods/lotus/sdk.py) | 16669 | `1f83e75775e7396ee30bc1125255eda32c52946eb53daf80ccf8294e1a5385e2` |
+| [maps.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2/code/src/semantic_methods/lotus/maps.py) | 5832 | `a66442c2a7746cb58b5139e1fcbb98a5b6782c5c8da6625cf8a2d1b5b49cd702` |
+| [driver.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2/code/src/semantic_methods/lotus/driver.py) | 4664 | `730b8eab338e7cac9394201c48653c95a7f13e9944c867f4b253798550a45ced` |
+| [limits.py](https://github.com/3444374/ai-operator-execution-optimization/blob/e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2/code/src/semantic_methods/lotus/limits.py) | 2824 | `cb26796e580f23ed0925aaceec2a6b64ef06876357ebbab61d07a65f26363af1` |
+
+两 Map 研究源码从完整 e566 树恢复，不把旧模块复制到当前导入路径，也不据源码快照补记运行资格。
+历史实验仍按其原结果指定的版本和环境复算。
+
+删除前已实际调用 `materialize_native_baseline.read_source` 核对四模块的20条历史绑定。
+SDK、driver 和 limits 继续取已有 `historical_sources/5ff54bfe/` 原件，Map 取已有
+`historical_sources/1f92fce5/` gzip；均与原预期摘要一致，两份维护测试不在旧投影。
+因此不增加压缩副本、不改 MANIFEST、原3010条摘要、投影身份、来源版本或既有读取位置。
+本批14个现有 CPU 方法全部通过；其中[完整恢复用例](../../../code/tests/experiments/test_native_baseline_reproduction.py)
+实际构造五份投影并逐文件核对3010份摘要，未运行旧模型或历史实验命令。

@@ -21,7 +21,6 @@ from unittest.mock import patch
 from src.baselines.image import sembench_animals as animals
 from src.infrastructure.private_artifacts import content_digest
 from src.semantic_methods.lotus.records import identity
-from src.semantic_methods.lotus.sdk import IMAGE_TEXT_PROFILE, _validate_messages
 from src.serving.backends.vllm_protocol import _prepared
 
 
@@ -241,10 +240,9 @@ class OriginalAnimalsImageTests(unittest.TestCase):
                 self.assertRaisesRegex(ValueError, "Species"):
             animals.run_original_query(self.checkout, lambda: self.dataset.frame(references=True), 1)
 
-    def test_native_image_messages_are_valid_for_image_sdk_and_rejected_by_text_ipc(self):
+    def test_native_image_messages_from_software_query_are_rejected_by_text_ipc(self):
         _, _, batches = self.run_query(1, ["True", "True", "False", "False"])
         conversation = batches[0][0]
-        _validate_messages(conversation, message_profile=IMAGE_TEXT_PROFILE)
         row = dict(identity("CPU-image", "row", 0), messages_json=json.dumps(conversation))
         with self.assertRaisesRegex(ValueError, "text content only"):
             _prepared([row])

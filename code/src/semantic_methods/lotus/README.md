@@ -33,7 +33,9 @@ SemLoom 执行适配直接依赖本层，
 
 旧 `LotusBatchExecutor`／`LotusNativeBatchExecutor` 完整 HTTP 前端及 PG／HTTP 实验入口已退役，
 源码、接线和历史测试从[精确归档](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)恢复。
-`sdk.py` 的仍用方法／响应工具与有研究价值的独立模块保留；不把历史 HTTP 接点说成当前 records 模型连接。
+[sdk.py](sdk.py)只为历史复算记录已安装 SDK 的来源，保留 text 与 image-message 两种 profile。
+孤立的 HTTP 请求准备／响应重放与固定两 Map 原型已退出当前目录，
+准确源码和原投影读取位置见[恢复说明](../../../../experiments/reproduction/native_baselines/README.md#retired-lotus-http-methods)。
 Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代码和历史证据分别解释。
 
 查询结果以实际 `result_ready` 为边界；原评价、API 返回、owner 关闭及模型复用成本另记。
@@ -47,8 +49,8 @@ Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代�
 `reference_lotus_commit` 只标识既有资格所用的参考实现，不能冒充当前安装包的 Git 身份。
 现有历史结果及其固定版本要求保持原身份；本次变化不证明其他发行版已经兼容。
 
-普通 formatter、方法绑定和 SDK 请求准备不读取这些来源摘要。实际调用继续使用 LOTUS 原实现；
-输入列、DEFAULT 序列化、适用的缓存／重试政策、生成选项、请求／结果身份、用量和资源边界继续校验。
+普通 formatter 和方法绑定不读取这些来源摘要。实际调用继续使用 LOTUS 原实现，
+输入列、DEFAULT 序列化、适用的缓存／重试政策、生成选项、请求／结果身份、用量和资源交接继续检查。
 Filter cascade 仍使用原 accessor 和阈值学习器的私有全局绑定，保留后端准备原始记录的接点。
 这处代码对象耦合仍在：直接换成公开 DataFrame 调用会把完整提示展开移到 driver，
 不能算等价简化。同进程并发 cascade 的随机数与 LM 记账隔离尚未验证。
@@ -63,9 +65,9 @@ helper 元数据无效时仍保留已知用量并让查询失败。阶段解释�
 
 下列记录保留可复核的触发条件、原因和处理，供后续兼容性与性能排查使用；依据为改动前源码及本批 CPU 检查。
 
-| 问题与触发条件 | 原因与处理 | 必要验证与边界 |
+| 问题与触发条件 | 原因与处理 | 必要检查及其范围 |
 |---|---|---|
-| 旧接点在安装版本或源码字节与固定列表不等时，于方法绑定／准备前拒绝执行，即使差异不影响所用语义。 | 实验来源相等被用作普通运行的接纳条件。现由 `source.py` 记录实际来源，执行边界继续验证真实输入、请求与结果合同。 | [来源边界测试](../../../tests/semantic_methods/test_lotus_source.py)核对变化的版本元数据、源码及缺失元数据不会充当拒绝条件，非法请求选项仍拒绝；未安装验证其他版本。 |
+| 旧接点在安装版本或源码字节与固定列表不等时，于方法绑定／准备前拒绝执行，即使差异不影响所用语义。 | 实验来源相等被用作普通运行的接纳条件。现由 `source.py` 记录实际来源，执行方法继续检查真实输入、请求和结果。旧 HTTP SDK 执行实现随后退役。 | [来源记录检查](../../../tests/semantic_methods/test_lotus_source.py)核对版本元数据、源码及缺失元数据只进入报告，formatter 与有限链不读取来源摘要；未安装验证其他版本。 |
 | 旧 cascade 的每个成功响应在阶段解释中转换为原生响应两次。 | `dispatch` 为记账先转换，随后 `cascade_response` 再转换一次。现在复用首次验证的响应，仅为 helper 附加 token 元数据。 | [原生差分](../../../tests/semantic_methods/test_lotus_cascade.py)核对固定／学习阈值、重复抽样、fallback、提示、决策和用量，并覆盖 helper 元数据失败后的记账。没有查询耗时或性能收益实测。 |
 
 本地消费端首次检查另出现进程查看权限错误，启用该权限后的同范围重跑通过；这是环境限制，
