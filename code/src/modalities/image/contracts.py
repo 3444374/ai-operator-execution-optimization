@@ -21,6 +21,49 @@ from ...planning.work import (
 ImageInputKind = Literal["encoded_bytes", "preprocessed_tensor"]
 
 
+@dataclass(frozen=True)
+class ImageSourceConfig:
+    workload_name: str
+    limit: int
+    offset: int = 0
+    dataset_passes: int = 1
+
+    def __post_init__(self) -> None:
+        if not self.workload_name:
+            raise ValueError("workload_name must be non-empty")
+        if self.limit <= 0:
+            raise ValueError("limit must be positive")
+        if self.offset < 0:
+            raise ValueError("offset must be non-negative")
+        if self.dataset_passes <= 0:
+            raise ValueError("dataset_passes must be positive")
+
+
+def split_image_source_config(
+    config: ImageSourceConfig,
+    shards: int,
+) -> tuple[ImageSourceConfig, ...]:
+    """Split one ordered source range into non-overlapping balanced shards."""
+    if shards <= 0:
+        raise ValueError("shards must be positive")
+    shard_count = min(shards, config.limit)
+    base, remainder = divmod(config.limit, shard_count)
+    result: list[ImageSourceConfig] = []
+    next_offset = config.offset
+    for index in range(shard_count):
+        shard_limit = base + (1 if index < remainder else 0)
+        result.append(
+            ImageSourceConfig(
+                workload_name=config.workload_name,
+                limit=shard_limit,
+                offset=next_offset,
+                dataset_passes=config.dataset_passes,
+            )
+        )
+        next_offset += shard_limit
+    return tuple(result)
+
+
 def image_work_calibration_signature(
     *,
     model_revision: str,

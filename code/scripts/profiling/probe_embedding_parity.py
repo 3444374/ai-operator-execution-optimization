@@ -4,7 +4,7 @@
 Verifiable goal
 ---------------
 Given two ``.npz`` dumps (each with ``embeddings`` + ``doc_ids``) produced by
-``run_image_clip_e2e.py --save-embeddings``, decide whether the two arms produce
+the archived PG image capture (``run_image_clip_e2e.py --save-embeddings``), decide whether the two arms produce
 **the same embedding up to scale/normalization** (→ a unified L2-normalized
 AI_EMBED contract is defensible) or a **composite semantic difference**
 (processor/dtype/pooling differ → separate-boundary track; do not rank together,

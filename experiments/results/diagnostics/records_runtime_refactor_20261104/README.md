@@ -5172,3 +5172,19 @@ DuckDB诊断使用其原生HTTP，CLIP阶段画像保留独立测量含义，本
 修前因凭据原值写入而失败，修后通过。没有读取真实凭据、调用模型、启动worker子进程、Ray或GPU，也未重跑另外两个进程控制用例。
 [原脚本及恢复](../../../reproduction/native_baselines/README.md#clip-harness-environment-source)保留3870原字节；
 五个既有来源读取均保持原expected和投影身份。本批不修改旧日志、模型成绩或生产Core／IPC代码。
+
+<a id="pg-image-runtime-isolation"></a>
+## PG图像读取与文件图像分开
+
+本批按[18个原件及恢复索引](../../../reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)移出PG专属读取、实验和两个专测文件。
+`ImageSourceConfig`和分片函数的语法树与原定义相同，只迁入现有图像contracts；文件图像直接导入，旧SQL读取导出退出，
+公共CLIP、HSE及文件LOTUS入口保留，没有增加替代执行器或改变模型参数。
+
+迁移前31个现有软件方法通过；迁移后30个直接通过，一项别名检查仍引用已归档CLI而报NameError。
+移出该项的两条旧CLI名称断言，保留五条公共worker/pipeline别名断言后，单独复验该项通过；其余30项未重复运行，原失败保留。
+COCO导入器仍在使用，其主键测试迁至数据测试目录后单项通过，不随图像SQL源退出。
+两个现有依赖方向检查、文件清单CLI的帮助入口与60条受影响历史来源读取通过，原expected及投影身份不变。
+只使用临时JPEG和有限数组，没有连接数据库、启动模型、真实Ray或GPU；没有扩大为实机或性能结论。
+
+活动Python中的4351行随PG文件归档，属于有来源可恢复的移出，不是删除研究原件。
+旧PG数据导入、SQuAD诊断、PG画像和可选环境组仍单独保留，本批不宣称整个项目已经没有PG代码。

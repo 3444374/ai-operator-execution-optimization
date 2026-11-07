@@ -3,7 +3,7 @@
   "source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
   "source_tree": "7c173c960426365f62b2a21e1e729b5184d25559",
   "status": "not active Python/CLI/deployment entry points; restore only into an isolated exact Git tree",
-  "future_postgresql_work": "paused, not abandoned; source/config/build/tests remain in source_commit",
+  "future_postgresql_work": "archived and inactive; future PostgreSQL work requires a separate decision; source/config/build/tests remain in source_commit",
   "historical_results_changed": false,
   "model_calls": 0,
   "paths": [
@@ -2089,6 +2089,186 @@
       "bytes": 2484,
       "sha256": "cad52ac6da6dafe4242358e236a576aefcbe4ae26607cce8109689679c45751e",
       "category": "paused_postgresql"
+    },
+    {
+      "path": "code/src/modalities/image/source.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/modalities/image/source.py.gz",
+      "bytes": 5573,
+      "sha256": "bc9b06bcc303b63e62552491c30d662084f4f13ebdff06ca59f5e8a8ac64ad93",
+      "encoding": "gzip",
+      "archive_sha256": "3229450e398987309da70a45c63200ed4089e9ad4df97b8d76d893ad03bf38f9",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/baselines/image/frameworks/ray_data.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/ray_data.py.gz",
+      "bytes": 4621,
+      "sha256": "74f1762197b140027abc5fd208bad1e0c92a08aae33411e7b6676e501a728c76",
+      "encoding": "gzip",
+      "archive_sha256": "5fb2b3eeab4ecbb7b15708399c11ef5eccfad6f08cd45da16259815cb877611e",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_clip/__init__.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_clip/__init__.py.gz",
+      "bytes": 136,
+      "sha256": "0a96c15ad15c3efd036024b33e0b02c3eb88d79e008e3f43c9827900c893c3ee",
+      "encoding": "gzip",
+      "archive_sha256": "e2dad2d5c4d7f7116bf7f1d2c8cd4bf653c84425c41006eacaa6c2f6f0deea56",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_clip/setup.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_clip/setup.py.gz",
+      "bytes": 9976,
+      "sha256": "8053dee949ab8bd8671e9250d8be66194224a5b702e486f4b7bfe9812f4ca2c2",
+      "encoding": "gzip",
+      "archive_sha256": "7b5095e72950f435c110db04ba30fdb810d2fcdd4ff55075d3e2e06e390ebb56",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_clip/execution.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_clip/execution.py.gz",
+      "bytes": 14349,
+      "sha256": "70ca5b5350dc9535d58561a5eb88f819a0dc0be3137aa1046e44143a744c8afb",
+      "encoding": "gzip",
+      "archive_sha256": "ca549f559639bd113290b211c6a66820b8bc8918fa597065a9c3df9381e13f0f",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_clip/reporting.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_clip/reporting.py.gz",
+      "bytes": 25855,
+      "sha256": "81bdea5fcda62adf96fc56a6e85929ee02a563f0114d7c8c358ea3d231865cf8",
+      "encoding": "gzip",
+      "archive_sha256": "7b6da223982710879940af43199255168ef9d997fb65b0e8fc23f9c0c5a45870",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_clip/README.md",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_clip/README.md.gz",
+      "bytes": 1308,
+      "sha256": "668d9a2920f8907c86cbc5f11ee0b3904655b3eb4022aae5bd6d27129913694a",
+      "encoding": "gzip",
+      "archive_sha256": "54a7d9924c035a76a4a7291f9ff6de73cf0e507bb6dd95d2cda1c18cae834f74",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_multijob/__init__.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/__init__.py.gz",
+      "bytes": 473,
+      "sha256": "57482cdf059e67a9eae9627ad2cb8962eb74e286ffd5ef1ede12ba257d785ca6",
+      "encoding": "gzip",
+      "archive_sha256": "81f82f95e30b0081fb4a8b3ae79566e4e558e203b8935573a2bedca17bf6e7cb",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_multijob/manifest.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/manifest.py.gz",
+      "bytes": 6495,
+      "sha256": "3a9758c4956213b1f6b16e1d6150a592ed19fb7002f18a1bf2599693122bbcda",
+      "encoding": "gzip",
+      "archive_sha256": "24ae47029004b8f70f0234a587174c132aa3359c47e83f9d19b8c30402358b79",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_multijob/native.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/native.py.gz",
+      "bytes": 21448,
+      "sha256": "8456ec217f673151baa7a8bcb8ec6bb7d037fd00af892d7ca47e03729dfb80ec",
+      "encoding": "gzip",
+      "archive_sha256": "951b5dfe85cf10ea485c6fbdcd17f7ccc2895e5761a47e1fdf1d4cafc753b2e5",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/src/experiments/image_multijob/project.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/project.py.gz",
+      "bytes": 34725,
+      "sha256": "54d7814af495fee9c57933ae4b01ca498591ee1e877a5bb78d55639fa06e6b8d",
+      "encoding": "gzip",
+      "archive_sha256": "f8b58dba8bab82411865343ad0043899c3db621e49973a605518e0cc4eac7bcd",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/scripts/experiments/run_image_clip_e2e.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_e2e.py.gz",
+      "bytes": 10620,
+      "sha256": "30b7c55757e94db3b25582e739b6d0d6240cd5ceda4a42a92b08aec1b4c56a48",
+      "encoding": "gzip",
+      "archive_sha256": "d4f42667c994319ab3676f5c2516599f49eecf490fb288319e92cb8ae1f83164",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/scripts/experiments/run_image_clip_matrix.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_matrix.py.gz",
+      "bytes": 12309,
+      "sha256": "291d87bb115aa2b015c895d5cee3903c9de6144bf8aad7247793026098986ae9",
+      "encoding": "gzip",
+      "archive_sha256": "7940a55763fcd5d814abcc012570adb285132f06c3c48da44865eec769ba4d5c",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/scripts/experiments/run_image_native_multijob.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_native_multijob.py.gz",
+      "bytes": 1061,
+      "sha256": "c504a396422c021e74392ebec32ea42f5a59ac0e493bd6f815621ce0b0609fe4",
+      "encoding": "gzip",
+      "archive_sha256": "5323d8b9341c94d413acc0323a89986d1c30f640c656c015302f480339e1d194",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/scripts/experiments/run_image_project_multijob.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_project_multijob.py.gz",
+      "bytes": 1083,
+      "sha256": "bb34c50cf7c65026e3311aa83c8b533e3a372e7ee609bd93ef0e9f5c306896aa",
+      "encoding": "gzip",
+      "archive_sha256": "e62c11f79309f960a7c61458ee0c436f0fcd5038f40deddc3f1c2fe6631f0921",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/scripts/data/build_image_multijob_manifest.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/scripts/data/build_image_multijob_manifest.py.gz",
+      "bytes": 1457,
+      "sha256": "36ec2f282e1e70c451196d72c49284b45d2484f298597c5f3e97af2b0ebcda1e",
+      "encoding": "gzip",
+      "archive_sha256": "b166955d5ea24b52ad01d76a286acab0ff957a2a80e5ef34b35596cab02ac3b1",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/tests/experiments/test_image_multijob_contract.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/tests/experiments/test_image_multijob_contract.py.gz",
+      "bytes": 10357,
+      "sha256": "1265050d3bc4970bccd30ad3e4d02ec9374bdb3c428e077e8310ba11bbbc9032",
+      "encoding": "gzip",
+      "archive_sha256": "56593882ba9ad9346d8ca2a844d29ab4f25898ff210c4cae2c680cf9690775db",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/tests/modalities/image/test_image_clip_matrix.py",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_image_94db4a3b/code/tests/modalities/image/test_image_clip_matrix.py.gz",
+      "bytes": 7086,
+      "sha256": "2e244891f52973c589cb1ec2c9cb180996bd84a5cfd6a5955b819911acc9c4bc",
+      "encoding": "gzip",
+      "archive_sha256": "29ad34d40f1bc91c9b2a6c945c64c1fa3aa59fa3aeb1f61e0853b649587a845f",
+      "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
+      "category": "retired_postgresql_image"
     }
   ]
 }

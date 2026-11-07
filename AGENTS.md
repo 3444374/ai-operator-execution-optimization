@@ -31,8 +31,9 @@
 ## 2. 项目范围
 
 研究对象是：**AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**。
-SemLoom 是执行层，面向 LOTUS 等语义 API 与数据库等前端；PostgreSQL 是数据库接入场景之一，
-不是所有任务的唯一前端。下述 SQL、snapshot、权限与 carrier 要求只适用于对应数据库接入，
+SemLoom 是执行层，当前以 LOTUS 等语义 API 和外部工作负载为主线。
+PostgreSQL 的实现、接线与资料按历史来源保留，当前不作为开发或验收前提，是否恢复以后另行决定。
+下述 SQL、snapshot、权限与 carrier 要求仅在未来恢复相应数据库接入时适用；
 各前端的实际支持与验证范围仍以固定源码和报告为准。
 
 - 系统名称为 **SemLoom**；DB-AIEL（Database-Aware AI Execution Layer）只表示架构层，不作为
@@ -60,7 +61,7 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 
 区分独立研发、数据库接入和方法结论的前置条件，不把某一算子的质量实验设为所有工程工作的串行前置项：
 
-1. 自有数据库载体锁定 `REL_18_3`。每个真实算子由数据库拥有 instruction、prompt/parser、
+1. 若未来恢复 PG 接入，自有数据库载体锁定 `REL_18_3`。每个真实算子由数据库拥有 instruction、prompt/parser、
    model/generation 与 NULL/error/order policy，并先建立可验证的同步 reference 与中立 provider seam。
 2. SemLoom 核心可在公开 sealed-task producer、fixture 或现有外部 workload 上独立开展行为表征、
    增量 session、数据组织、有界提交、多 Job 和路由研发；不等待 SemFilter 语义质量、真实成本校准、

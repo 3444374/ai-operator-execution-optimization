@@ -27,7 +27,7 @@ SemLoom Core 的实现位于 `execution_provider/adapters/lotus_records_core.py`
   Ray、Daft、IMLane 的原生图不导入该子类。
 - [脱敏](../infrastructure/redact.py)、[私有文件和摘要](../infrastructure/private_artifacts.py)归通用层。
 - [CLIP batch workers](../modalities/image/clip_batch_workers.py)归图像公共层；
-  [Daft](image/frameworks/daft_clip.py)和[Ray 图](image/frameworks/ray_data.py)保留原生图所有权。
+  [Daft](image/frameworks/daft_clip.py)保留通用原生图所有权；绑定PG读取的[原Ray图](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)独立归档，公共CLIP workers继续维护。
 
 旧的链结果、链worker、同步／分阶段模型进程和阶段清理共五个baseline转发模块已删除。
 当前IMLane及测试直接从`semantic_methods`或`serving`的实际所属模块导入；这些实现和原生调度不改。

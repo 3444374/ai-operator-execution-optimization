@@ -6,6 +6,9 @@
 
 ## 0. 当前优先级与历史记录范围
 
+当前主线是 SemLoom 外部执行核心与语义 API 工作负载。PG 实现、接线和资料归档保留，
+当前不作为开发或验收前提，是否恢复以后另行决定。
+
 近期首先回答：**同一查询／一批数据，能否通过少准备、少搬运和少做重复计算更早得到全部必要结果？**
 完整任务时间与有效吞吐是主要结果，GPU 利用率用于解释供给与等待。
 优先采用原生可复用模型 worker、索引已存在的完整查询；启动、首次建库与退出另报，
@@ -46,9 +49,9 @@ Semantic API / database AI operator
 
 对外口径：AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化；PostgreSQL 是其中一种接入。
 
-PostgreSQL 路径由 extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
+未来若恢复 PostgreSQL 路径，由 extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
 或 lifecycle 出现可复现阻断，允许维护 `REL_18_3` 最小 core semantic patch。默认语义由中立
-plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
+plan/task/result 协议定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
 是物理执行与验证平台，不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构
 或 GPU kernel，也不回到传统 GPU 查询算子。
 

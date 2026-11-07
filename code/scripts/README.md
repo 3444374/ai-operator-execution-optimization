@@ -16,7 +16,7 @@
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 查询脚本直接调用实验生命周期；baseline客户端不反向导入实验，作者服务与默认保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
-| CLIP 外部执行对照／诊断 | [run_image_clip_e2e.py](experiments/run_image_clip_e2e.py) | 参数与组装留在脚本，准备、执行观测和报告归[独立模块](../src/experiments/image_clip/README.md)；原实验选项保持 |
+| 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 不要求PG，公共CLIP实现保持；原PG矩阵按[准确来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)恢复 |
 | CLIP 离线阶段画像 | [阶段](profiling/profile_clip_preproc_stages.py)、[准备变体](profiling/profile_image_clip_preprocess_variants.py)、[全流程](profiling/profile_image_clip_bottleneck.py) | 保留各自画像计算；前两者按完整包名共用读取函数，连接错误脱敏，不改生产参数 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[修正与历史来源](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
 | 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |

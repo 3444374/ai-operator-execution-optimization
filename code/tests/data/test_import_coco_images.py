@@ -14,6 +14,33 @@ from scripts.data import import_coco_images as importer
 
 
 class CocoImportResourceTests(unittest.TestCase):
+    def test_coco_import_reads_ordered_workload_scoped_primary_key(self) -> None:
+        class Cursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def execute(self, _query, parameters):
+                self.parameters = parameters
+
+            def fetchall(self):
+                return [("workload_name",), ("doc_id",)]
+
+        class Connection:
+            def __init__(self):
+                self.current = Cursor()
+
+            def cursor(self):
+                return self.current
+
+        connection = Connection()
+        columns = importer.primary_key_columns(connection, "image_documents")
+
+        self.assertEqual(columns, ("workload_name", "doc_id"))
+        self.assertEqual(connection.current.parameters, ("image_documents",))
+
     def test_zip_and_connection_close_on_success_and_raised_errors(self):
         for case in ('success', 'connect', 'commit', 'load', 'verify'):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:

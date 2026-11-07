@@ -30,8 +30,8 @@ data source/materializer
   成员与准入由组织及调度负责。scripts 解析配置并调用 src，可复用实现放回 src；experiments
   编排既有实现，生产策略放回所属模块。模态 adapter 不另实现公共 credit、routing、flush 策略。
 - 新 backend 保留遵循同一协议的旧 backend 作为对照或回退。生产 runner 不反向 import profiling 脚本。
-- PostgreSQL 语义层与外部物理 backend 分开：数据库 plan/task/result 协议定义默认语义，scheduler
-  不重定义 prompt、output parser 或关系行为；LOTUS parity 只由可选 compatibility adapter 验证。
+- 语义层与外部物理 backend 分开：当前语义 API 拥有方法、prompt/parser 和关系行为，scheduler 不重定义这些语义。
+  未来恢复 PostgreSQL 接入时，由数据库 plan/task/result 协议定义其默认语义；LOTUS parity 只由可选 compatibility adapter 验证。
 - 为自有方法向公司系统移植保持职责可分：可独立表达的算子策略、prompt/parser 与 work 计算留在
   相应语义 Module，PG 的 SQL/Plan/Datum/slot 与生命周期适配留在 carrier；provider 接通不等于
   planner 已支持算子优化。实际移植差异由对应 Adapter 处理，不提前建立跨数据库万能框架。

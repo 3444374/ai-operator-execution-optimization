@@ -1061,3 +1061,10 @@ Old results, failure records and research material retain their original interpr
 [清单](MANIFEST.json)保留原expected摘要、投影身份、原字节数与gzip摘要，只新增五条来源和格式声明。
 原脚本曾直接记录所选环境值，保留仅为恢复原来源，不作为现行带凭据环境的运行入口。
 当前脚本复用公共脱敏函数，模型、超时和退出语义保持；原模型日志及成绩未改写。
+
+<a id="pg-image-shared-source"></a>
+## PG图像实现移出后的原来源
+
+PG专属驱动与旧公共文件的原字节集中在[94db图像来源](historical_sources/pg_image_94db4a3b)，
+受影响的60条既有读取只新增来源与gzip格式；原expected摘要、具名投影身份及其他覆盖保持。
+[PG归档清单](../paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)区分18个移出文件与仍维护的文件图像和CLIP能力。

@@ -982,7 +982,19 @@
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
         "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
-        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz",
+        "code/src/modalities/image/source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/source.py.gz",
+        "code/src/experiments/image_multijob/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/__init__.py.gz",
+        "code/src/experiments/image_multijob/manifest.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/manifest.py.gz",
+        "code/src/experiments/image_multijob/native.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/native.py.gz",
+        "code/scripts/experiments/run_image_clip_matrix.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_matrix.py.gz",
+        "code/scripts/experiments/run_image_native_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_native_multijob.py.gz",
+        "code/scripts/experiments/run_image_project_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_project_multijob.py.gz",
+        "code/scripts/data/build_image_multijob_manifest.py": "historical_sources/pg_image_94db4a3b/code/scripts/data/build_image_multijob_manifest.py.gz",
+        "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
+        "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
+        "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1585,6 +1597,66 @@
           "encoding": "gzip",
           "decoded_bytes": 3870,
           "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
+        },
+        "code/src/modalities/image/source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5573,
+          "archive_sha256": "3229450e398987309da70a45c63200ed4089e9ad4df97b8d76d893ad03bf38f9"
+        },
+        "code/src/experiments/image_multijob/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 473,
+          "archive_sha256": "81f82f95e30b0081fb4a8b3ae79566e4e558e203b8935573a2bedca17bf6e7cb"
+        },
+        "code/src/experiments/image_multijob/manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6495,
+          "archive_sha256": "24ae47029004b8f70f0234a587174c132aa3359c47e83f9d19b8c30402358b79"
+        },
+        "code/src/experiments/image_multijob/native.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21448,
+          "archive_sha256": "951b5dfe85cf10ea485c6fbdcd17f7ccc2895e5761a47e1fdf1d4cafc753b2e5"
+        },
+        "code/scripts/experiments/run_image_clip_matrix.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12309,
+          "archive_sha256": "7940a55763fcd5d814abcc012570adb285132f06c3c48da44865eec769ba4d5c"
+        },
+        "code/scripts/experiments/run_image_native_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1061,
+          "archive_sha256": "5323d8b9341c94d413acc0323a89986d1c30f640c656c015302f480339e1d194"
+        },
+        "code/scripts/experiments/run_image_project_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1083,
+          "archive_sha256": "e62c11f79309f960a7c61458ee0c436f0fcd5038f40deddc3f1c2fe6631f0921"
+        },
+        "code/scripts/data/build_image_multijob_manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1457,
+          "archive_sha256": "b166955d5ea24b52ad01d76a286acab0ff957a2a80e5ef34b35596cab02ac3b1"
+        },
+        "code/src/modalities/image/contracts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10221,
+          "archive_sha256": "062dffc2e94bd1a2fe693c52cfdc78f39bdfe81d9abb8b19be0f9cb40af79698"
+        },
+        "code/src/modalities/image/file_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9898,
+          "archive_sha256": "dbda7e22048364fc27596b2f8fa8087a8d46ffae798c681db893738af48dec63"
+        },
+        "code/src/modalities/image/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1608,
+          "archive_sha256": "44ef2400cf45999dfb1e2e21f3056a836063da442f84066dd0559645d7f8d02d"
+        },
+        "code/src/baselines/image/frameworks/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 604,
+          "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
         }
       }
     },
@@ -2595,7 +2667,19 @@
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
         "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
-        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz",
+        "code/src/modalities/image/source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/source.py.gz",
+        "code/src/experiments/image_multijob/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/__init__.py.gz",
+        "code/src/experiments/image_multijob/manifest.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/manifest.py.gz",
+        "code/src/experiments/image_multijob/native.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/native.py.gz",
+        "code/scripts/experiments/run_image_clip_matrix.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_matrix.py.gz",
+        "code/scripts/experiments/run_image_native_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_native_multijob.py.gz",
+        "code/scripts/experiments/run_image_project_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_project_multijob.py.gz",
+        "code/scripts/data/build_image_multijob_manifest.py": "historical_sources/pg_image_94db4a3b/code/scripts/data/build_image_multijob_manifest.py.gz",
+        "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
+        "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
+        "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3198,6 +3282,66 @@
           "encoding": "gzip",
           "decoded_bytes": 3870,
           "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
+        },
+        "code/src/modalities/image/source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5573,
+          "archive_sha256": "3229450e398987309da70a45c63200ed4089e9ad4df97b8d76d893ad03bf38f9"
+        },
+        "code/src/experiments/image_multijob/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 473,
+          "archive_sha256": "81f82f95e30b0081fb4a8b3ae79566e4e558e203b8935573a2bedca17bf6e7cb"
+        },
+        "code/src/experiments/image_multijob/manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6495,
+          "archive_sha256": "24ae47029004b8f70f0234a587174c132aa3359c47e83f9d19b8c30402358b79"
+        },
+        "code/src/experiments/image_multijob/native.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21448,
+          "archive_sha256": "951b5dfe85cf10ea485c6fbdcd17f7ccc2895e5761a47e1fdf1d4cafc753b2e5"
+        },
+        "code/scripts/experiments/run_image_clip_matrix.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12309,
+          "archive_sha256": "7940a55763fcd5d814abcc012570adb285132f06c3c48da44865eec769ba4d5c"
+        },
+        "code/scripts/experiments/run_image_native_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1061,
+          "archive_sha256": "5323d8b9341c94d413acc0323a89986d1c30f640c656c015302f480339e1d194"
+        },
+        "code/scripts/experiments/run_image_project_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1083,
+          "archive_sha256": "e62c11f79309f960a7c61458ee0c436f0fcd5038f40deddc3f1c2fe6631f0921"
+        },
+        "code/scripts/data/build_image_multijob_manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1457,
+          "archive_sha256": "b166955d5ea24b52ad01d76a286acab0ff957a2a80e5ef34b35596cab02ac3b1"
+        },
+        "code/src/modalities/image/contracts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10221,
+          "archive_sha256": "062dffc2e94bd1a2fe693c52cfdc78f39bdfe81d9abb8b19be0f9cb40af79698"
+        },
+        "code/src/modalities/image/file_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9898,
+          "archive_sha256": "dbda7e22048364fc27596b2f8fa8087a8d46ffae798c681db893738af48dec63"
+        },
+        "code/src/modalities/image/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1608,
+          "archive_sha256": "44ef2400cf45999dfb1e2e21f3056a836063da442f84066dd0559645d7f8d02d"
+        },
+        "code/src/baselines/image/frameworks/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 604,
+          "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
         }
       }
     },
@@ -4218,7 +4362,19 @@
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
         "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
-        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz",
+        "code/src/modalities/image/source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/source.py.gz",
+        "code/src/experiments/image_multijob/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/__init__.py.gz",
+        "code/src/experiments/image_multijob/manifest.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/manifest.py.gz",
+        "code/src/experiments/image_multijob/native.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/native.py.gz",
+        "code/scripts/experiments/run_image_clip_matrix.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_matrix.py.gz",
+        "code/scripts/experiments/run_image_native_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_native_multijob.py.gz",
+        "code/scripts/experiments/run_image_project_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_project_multijob.py.gz",
+        "code/scripts/data/build_image_multijob_manifest.py": "historical_sources/pg_image_94db4a3b/code/scripts/data/build_image_multijob_manifest.py.gz",
+        "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
+        "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
+        "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4821,6 +4977,66 @@
           "encoding": "gzip",
           "decoded_bytes": 3870,
           "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
+        },
+        "code/src/modalities/image/source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5573,
+          "archive_sha256": "3229450e398987309da70a45c63200ed4089e9ad4df97b8d76d893ad03bf38f9"
+        },
+        "code/src/experiments/image_multijob/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 473,
+          "archive_sha256": "81f82f95e30b0081fb4a8b3ae79566e4e558e203b8935573a2bedca17bf6e7cb"
+        },
+        "code/src/experiments/image_multijob/manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6495,
+          "archive_sha256": "24ae47029004b8f70f0234a587174c132aa3359c47e83f9d19b8c30402358b79"
+        },
+        "code/src/experiments/image_multijob/native.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21448,
+          "archive_sha256": "951b5dfe85cf10ea485c6fbdcd17f7ccc2895e5761a47e1fdf1d4cafc753b2e5"
+        },
+        "code/scripts/experiments/run_image_clip_matrix.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12309,
+          "archive_sha256": "7940a55763fcd5d814abcc012570adb285132f06c3c48da44865eec769ba4d5c"
+        },
+        "code/scripts/experiments/run_image_native_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1061,
+          "archive_sha256": "5323d8b9341c94d413acc0323a89986d1c30f640c656c015302f480339e1d194"
+        },
+        "code/scripts/experiments/run_image_project_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1083,
+          "archive_sha256": "e62c11f79309f960a7c61458ee0c436f0fcd5038f40deddc3f1c2fe6631f0921"
+        },
+        "code/scripts/data/build_image_multijob_manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1457,
+          "archive_sha256": "b166955d5ea24b52ad01d76a286acab0ff957a2a80e5ef34b35596cab02ac3b1"
+        },
+        "code/src/modalities/image/contracts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10221,
+          "archive_sha256": "062dffc2e94bd1a2fe693c52cfdc78f39bdfe81d9abb8b19be0f9cb40af79698"
+        },
+        "code/src/modalities/image/file_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9898,
+          "archive_sha256": "dbda7e22048364fc27596b2f8fa8087a8d46ffae798c681db893738af48dec63"
+        },
+        "code/src/modalities/image/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1608,
+          "archive_sha256": "44ef2400cf45999dfb1e2e21f3056a836063da442f84066dd0559645d7f8d02d"
+        },
+        "code/src/baselines/image/frameworks/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 604,
+          "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
         }
       }
     },
@@ -5843,7 +6059,19 @@
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
         "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
-        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz",
+        "code/src/modalities/image/source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/source.py.gz",
+        "code/src/experiments/image_multijob/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/__init__.py.gz",
+        "code/src/experiments/image_multijob/manifest.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/manifest.py.gz",
+        "code/src/experiments/image_multijob/native.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/native.py.gz",
+        "code/scripts/experiments/run_image_clip_matrix.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_matrix.py.gz",
+        "code/scripts/experiments/run_image_native_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_native_multijob.py.gz",
+        "code/scripts/experiments/run_image_project_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_project_multijob.py.gz",
+        "code/scripts/data/build_image_multijob_manifest.py": "historical_sources/pg_image_94db4a3b/code/scripts/data/build_image_multijob_manifest.py.gz",
+        "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
+        "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
+        "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6451,6 +6679,66 @@
           "encoding": "gzip",
           "decoded_bytes": 3870,
           "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
+        },
+        "code/src/modalities/image/source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5573,
+          "archive_sha256": "3229450e398987309da70a45c63200ed4089e9ad4df97b8d76d893ad03bf38f9"
+        },
+        "code/src/experiments/image_multijob/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 473,
+          "archive_sha256": "81f82f95e30b0081fb4a8b3ae79566e4e558e203b8935573a2bedca17bf6e7cb"
+        },
+        "code/src/experiments/image_multijob/manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6495,
+          "archive_sha256": "24ae47029004b8f70f0234a587174c132aa3359c47e83f9d19b8c30402358b79"
+        },
+        "code/src/experiments/image_multijob/native.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21448,
+          "archive_sha256": "951b5dfe85cf10ea485c6fbdcd17f7ccc2895e5761a47e1fdf1d4cafc753b2e5"
+        },
+        "code/scripts/experiments/run_image_clip_matrix.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12309,
+          "archive_sha256": "7940a55763fcd5d814abcc012570adb285132f06c3c48da44865eec769ba4d5c"
+        },
+        "code/scripts/experiments/run_image_native_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1061,
+          "archive_sha256": "5323d8b9341c94d413acc0323a89986d1c30f640c656c015302f480339e1d194"
+        },
+        "code/scripts/experiments/run_image_project_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1083,
+          "archive_sha256": "e62c11f79309f960a7c61458ee0c436f0fcd5038f40deddc3f1c2fe6631f0921"
+        },
+        "code/scripts/data/build_image_multijob_manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1457,
+          "archive_sha256": "b166955d5ea24b52ad01d76a286acab0ff957a2a80e5ef34b35596cab02ac3b1"
+        },
+        "code/src/modalities/image/contracts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10221,
+          "archive_sha256": "062dffc2e94bd1a2fe693c52cfdc78f39bdfe81d9abb8b19be0f9cb40af79698"
+        },
+        "code/src/modalities/image/file_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9898,
+          "archive_sha256": "dbda7e22048364fc27596b2f8fa8087a8d46ffae798c681db893738af48dec63"
+        },
+        "code/src/modalities/image/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1608,
+          "archive_sha256": "44ef2400cf45999dfb1e2e21f3056a836063da442f84066dd0559645d7f8d02d"
+        },
+        "code/src/baselines/image/frameworks/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 604,
+          "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
         }
       }
     },
@@ -7479,7 +7767,19 @@
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
         "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
-        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz",
+        "code/src/modalities/image/source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/source.py.gz",
+        "code/src/experiments/image_multijob/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/__init__.py.gz",
+        "code/src/experiments/image_multijob/manifest.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/manifest.py.gz",
+        "code/src/experiments/image_multijob/native.py": "historical_sources/pg_image_94db4a3b/code/src/experiments/image_multijob/native.py.gz",
+        "code/scripts/experiments/run_image_clip_matrix.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_clip_matrix.py.gz",
+        "code/scripts/experiments/run_image_native_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_native_multijob.py.gz",
+        "code/scripts/experiments/run_image_project_multijob.py": "historical_sources/pg_image_94db4a3b/code/scripts/experiments/run_image_project_multijob.py.gz",
+        "code/scripts/data/build_image_multijob_manifest.py": "historical_sources/pg_image_94db4a3b/code/scripts/data/build_image_multijob_manifest.py.gz",
+        "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
+        "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
+        "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -8092,6 +8392,66 @@
           "encoding": "gzip",
           "decoded_bytes": 3870,
           "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
+        },
+        "code/src/modalities/image/source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 5573,
+          "archive_sha256": "3229450e398987309da70a45c63200ed4089e9ad4df97b8d76d893ad03bf38f9"
+        },
+        "code/src/experiments/image_multijob/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 473,
+          "archive_sha256": "81f82f95e30b0081fb4a8b3ae79566e4e558e203b8935573a2bedca17bf6e7cb"
+        },
+        "code/src/experiments/image_multijob/manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6495,
+          "archive_sha256": "24ae47029004b8f70f0234a587174c132aa3359c47e83f9d19b8c30402358b79"
+        },
+        "code/src/experiments/image_multijob/native.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 21448,
+          "archive_sha256": "951b5dfe85cf10ea485c6fbdcd17f7ccc2895e5761a47e1fdf1d4cafc753b2e5"
+        },
+        "code/scripts/experiments/run_image_clip_matrix.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12309,
+          "archive_sha256": "7940a55763fcd5d814abcc012570adb285132f06c3c48da44865eec769ba4d5c"
+        },
+        "code/scripts/experiments/run_image_native_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1061,
+          "archive_sha256": "5323d8b9341c94d413acc0323a89986d1c30f640c656c015302f480339e1d194"
+        },
+        "code/scripts/experiments/run_image_project_multijob.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1083,
+          "archive_sha256": "e62c11f79309f960a7c61458ee0c436f0fcd5038f40deddc3f1c2fe6631f0921"
+        },
+        "code/scripts/data/build_image_multijob_manifest.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1457,
+          "archive_sha256": "b166955d5ea24b52ad01d76a286acab0ff957a2a80e5ef34b35596cab02ac3b1"
+        },
+        "code/src/modalities/image/contracts.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 10221,
+          "archive_sha256": "062dffc2e94bd1a2fe693c52cfdc78f39bdfe81d9abb8b19be0f9cb40af79698"
+        },
+        "code/src/modalities/image/file_source.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9898,
+          "archive_sha256": "dbda7e22048364fc27596b2f8fa8087a8d46ffae798c681db893738af48dec63"
+        },
+        "code/src/modalities/image/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 1608,
+          "archive_sha256": "44ef2400cf45999dfb1e2e21f3056a836063da442f84066dd0559645d7f8d02d"
+        },
+        "code/src/baselines/image/frameworks/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 604,
+          "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
         }
       }
     }

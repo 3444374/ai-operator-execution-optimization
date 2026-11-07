@@ -2,6 +2,18 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：PG图像读取与文件图像分别维护
+
+[图像PG归档](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)移出18个专属文件，
+原件来自准确94db树；中性选择类型与分片函数保留在图像contracts，文件输入及公共CLIP实现继续维护。
+原PG六臂与多Job入口不再列为当前命令，SQL导入和PG画像另行整理。
+
+## 2026-11-07：当前主线与PG历史资料分别维护
+
+按用户最新选择，当前主线为 SemLoom 外部执行核心与语义 API 工作负载，PG 不作为开发或验收前提。
+PG 实现、接线和资料按原来源归档保留，是否恢复以后另行决定；恢复时再适用数据库专属要求。
+其余项目规则继续适用。本次只对齐规则与现行说明，没有新增CI、修改可执行源码或运行模型。
+
 ## 2026-11-07：公开CLIP工具的环境记录脱敏
 
 [结构化记录修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording)

@@ -2,6 +2,7 @@
 
 研究 **AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**。
 SemLoom 面向 LOTUS 等语义 API 与数据库前端；各前端拥有语义与查询生命周期，执行层组织合法工作。
+当前主线不依赖 PostgreSQL；PG 的实现和资料归档保留，是否恢复以后另行决定。
 近期问题与推进顺序由[项目大纲](PROJECT_OUTLINE.md)维护。
 
 ## 内容与文档职责
@@ -14,7 +15,7 @@ SemLoom 面向 LOTUS 等语义 API 与数据库前端；各前端拥有语义与
 | 实现、接口与命令 | [代码入口](code/README.md)、[IPC 文件职责](code/src/execution_provider/adapters/README.md#async-ipc-layout)、[反馈模块职责](code/src/scheduling/submission_control/README.md)、[观测文件职责](code/src/observability/README.md#current-observation-owners)、[现用脚本职责](code/scripts/README.md#current-entry-roles)，[历史工具](experiments/reproduction/native_baselines/README.md#retired-oneoff-tools)从具名来源恢复 |
 | 基础多查询与独立研究 | [主线 Session](code/src/scheduling/core/session_jobs.py)保留固定份额与普通轮转；[SAOR 研究包](code/src/research/multitask/README.md)保存可选共享策略与接入说明 |
 | 文本数据组织研究 | [独立原型](code/src/research/data_organization/README.md)保留Arrow／Daft、长度／前缀排序与装箱研究；普通执行使用自身数据接点 |
-| 图像实验职责 | [CLIP 模块](code/src/experiments/image_clip/README.md)分开配置准备、执行观测和结果报告，命令入口保持 |
+| 图像能力与历史 | [文件图像](code/src/modalities/image/file_source.py)、[LOTUS检索](code/scripts/experiments/run_lotus_image_retrieval.py)继续维护；[PG图像实验](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)独立归档 |
 | 离线代价分析 | [profile 与估计比较](code/src/experiments/operator_costs/README.md)服务三个分析命令，不进入单查询执行链 |
 | 架构与实验设计 | [方案入口](experiments/plans/README.md)、[对照规范](experiments/plans/reference/对照规范.md) |
 | 运行身份、共享证据与结论 | [证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)、[结果导航](experiments/results/README.md)；完整数字、重复与失败只在主报告维护 |

@@ -16,9 +16,6 @@ CODE_ROOT = next(
 )
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
-SCRIPTS_ROOT = CODE_ROOT / "scripts"
-if str(SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from src.modalities.image.clip import (  # noqa: E402
     configure_torch_thread_pools,
@@ -29,19 +26,12 @@ from src.modalities.image.contracts import (  # noqa: E402
     ImageBatchTelemetry,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
+    ImageSourceConfig,
     build_image_runtime_snapshot,
     build_image_work_descriptor,
-)
-from src.modalities.image.source import (  # noqa: E402
-    ImageSourceConfig,
-    image_documents_query,
     split_image_source_config,
 )
-from scripts.data.import_coco_images import (  # noqa: E402
-    coco_doc_id,
-    list_zip_images,
-    primary_key_columns,
-)
+from src.data.coco import coco_doc_id, list_zip_images  # noqa: E402
 
 
 class ImageContractTests(unittest.TestCase):
@@ -141,24 +131,6 @@ class ImageContractTests(unittest.TestCase):
 
         self.assertIs(extract_clip_image_features(output), projected)
 
-    def test_image_source_query_escapes_workload_without_driver_collect(self) -> None:
-        query = image_documents_query(
-            ImageSourceConfig("coco_'heldout", limit=32, offset=4)
-        )
-
-        self.assertIn("coco_''heldout", query)
-        self.assertIn("LIMIT 32 OFFSET 4", query)
-        self.assertNotIn("to_arrow", query)
-
-    def test_image_source_query_can_repeat_unique_images_with_execution_ids(self) -> None:
-        query = image_documents_query(
-            ImageSourceConfig("coco", limit=32, offset=4, dataset_passes=2)
-        )
-
-        self.assertIn("generate_series(1, 2)", query)
-        self.assertIn("'#pass='", query)
-        self.assertIn("LIMIT 32 OFFSET 4", query)
-
     def test_image_source_shards_cover_range_without_overlap(self) -> None:
         shards = split_image_source_config(
             ImageSourceConfig("coco", limit=10, offset=7),
@@ -197,34 +169,6 @@ class ImageContractTests(unittest.TestCase):
             self.assertEqual(coco_doc_id(paths[0]), 1)
             self.assertEqual(payload, b"one")
             self.assertFalse((Path(directory) / "train2017").exists())
-
-    def test_coco_import_reads_ordered_workload_scoped_primary_key(self) -> None:
-        class Cursor:
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *_args):
-                return None
-
-            def execute(self, _query, parameters):
-                self.parameters = parameters
-
-            def fetchall(self):
-                return [("workload_name",), ("doc_id",)]
-
-        class Connection:
-            def __init__(self):
-                self.current = Cursor()
-
-            def cursor(self):
-                return self.current
-
-        connection = Connection()
-        columns = primary_key_columns(connection, "image_documents")
-
-        self.assertEqual(columns, ("workload_name", "doc_id"))
-        self.assertEqual(connection.current.parameters, ("image_documents",))
-
 
 if __name__ == "__main__":
     unittest.main()

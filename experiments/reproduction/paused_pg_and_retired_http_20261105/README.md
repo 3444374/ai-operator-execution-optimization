@@ -1,11 +1,11 @@
 # 暂停 PG 与退役 HTTP 实验的准确来源
 
-本目录保存所列旧 PG／HTTP 实验的准确来源，不表示现用 PG provider 或数据库接口已退役。
-原实验仍可按完整源码恢复，**暂停并非永久放弃**。
+本目录保存所列旧 PG／HTTP 实验的准确来源，PG 相关工作当前不作为主线或验收前提。
+原实验仍可按完整源码恢复，是否恢复以后另行决定。
 旧 Movie HTTP 与旧固定矩阵另见[恢复记录](../native_baselines/README.md#movie-http-retirement)。
 
 [MANIFEST.json](MANIFEST.json)逐项记录退出当前入口的源码／测试／部署配置路径、字节数和 SHA256。
-源树为 [`7bf1d92baf2611925c608cfe76b4a766855bd77e`](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)，
+未注明单项来源时，源树为 [`7bf1d92baf2611925c608cfe76b4a766855bd77e`](https://github.com/3444374/ai-operator-execution-optimization/tree/7bf1d92baf2611925c608cfe76b4a766855bd77e)，
 包含退役前的 PG C／SQL、build、测试、Python 接线、旧 HTTP 对照、相连启动脚本及部署源。
 在新的隔离 checkout 中选择该精确提交即可恢复整套依赖；不要把存档目录加入当前 PYTHONPATH，
 不要只取单文件并与新 owner 或协议混用。恢复源码不授权启动数据库、服务、模型或恢复旧预算。
@@ -232,3 +232,25 @@ HTTPX观察函数、MappedUnit／预算和余下四项行为保持。没有更�
 五份投影共十条相关来源读取前后一致：旧实现原已读存档，未改的HTTPX测试仍读原来源；
 因此不新增压缩副本或MANIFEST映射，也没有重跑3010完整构造。
 保留的七项纯CPU／HTTPX Mock在修改前后均通过，没有实际网络、模型、Ray或UDS运行。
+
+<a id="pg-image-isolation"></a>
+## PG图像读取与实验的独立归档
+
+本批18个文件来自完整的[94db来源树](https://github.com/3444374/ai-operator-execution-optimization/tree/94db4a3b914b0841ced21f02fe7c8216ab031323)，
+单项`source_commit`优先于本清单的默认来源，不能把这批与7bf1源码混用。原件复用
+[独立压缩目录](../native_baselines/historical_sources/pg_image_94db4a3b)，每项记录原字节数、原摘要及gzip摘要。
+当前Python搜索路径不包含该目录；恢复旧实验须使用完整94db树及其配套测试，不启动数据库或模型。
+
+| 移出活动目录的部分 | 原职责 |
+|---|---|
+| `modalities/image/source.py`、`baselines/image/frameworks/ray_data.py` | 固定PG表读取、元数据与PG来源的原生Ray图 |
+| `experiments/image_clip`、`experiments/image_multijob` | 依赖PG输入的六臂与多Job实验装配 |
+| `run_image_clip_e2e.py`、`run_image_clip_matrix.py`、两个图像多Job CLI | 上述PG实验的公开运行入口 |
+| `build_image_multijob_manifest.py`及两个专测文件 | PG切片准备与对应驱动检查 |
+
+共享`ImageSourceConfig`及分片函数逐字迁入[现有中性图像类型](../../../code/src/modalities/image/contracts.py)，
+[文件图像源](../../../code/src/modalities/image/file_source.py)直接调用它们。公共CLIP workers、HSE、通用Daft图、
+LOTUS文件检索及其他非PG图像入口保留。混合测试中移出已归档实现的九个方法及两条旧CLI名称断言；仍在使用的COCO导入器主键测试迁入数据测试目录。
+原定义仍由完整94db树恢复，公共行为检查保持。
+
+本批尚未归档独立SQL导入、旧SQuAD/PG诊断与三个PG画像工具，它们不由普通records自动调用，后续另按实际消费者整理。
