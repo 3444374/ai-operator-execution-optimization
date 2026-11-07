@@ -1,0 +1,261 @@
+{
+  "schema": "semloom.filter_parser_sdk_cpu.v1",
+  "run_id": "filter-parser-dbc421-cpu-20261107-r1",
+  "type": "actual installed LOTUS SDK with deterministic CPU responses; no model execution",
+  "source": {
+    "server_base": "83d7889642aa26c56555cfd0de6189203f41eb20",
+    "server_base_tree": "0ed00b386ca497904803b8ef79b58db8addc0195",
+    "candidate_components_from": "dbc421f11bd0477b6d164f7325889ceb0ee31821",
+    "production_module_sha256": {
+      "filter_answers.py": "0d7b01579a66d967ceff423d1020a3189097296de5544806e8a819e13253e49a",
+      "records.py": "78c7366ba48b833f25a3162fc73e3fc67e2e66c35509af6836e7a17a69473351",
+      "engine.py": "c5de4ec43e46d88e9e74a42253033a7744fa6a23696bfcdda370c6e637ad72f3",
+      "record_method.py": "292f96213585c965c92356bc9734ea9bf8555e16b64173ced89141863afc411f",
+      "cascade.py": "ac0418a468dac99cb60246ab171b794b367f352c5a264c29f227b3fc74810a01"
+    },
+    "whole_candidate_tree_executed": false,
+    "native_baseline_source_or_scores_changed": false
+  },
+  "environment": {
+    "python": "3.12.3 | packaged by Anaconda, Inc. | (main, May  6 2024, 19:46:43) [GCC 11.2.0]",
+    "packages": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "pandas": "2.3.3"
+    },
+    "postprocessors_relative_path": "lotus/sem_ops/postprocessors.py",
+    "postprocessors_sha256": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+    "dependency_import_checks": {
+      "python:semantic-benchmarks:pandas": "ok",
+      "python:semantic-benchmarks:duckdb": "ok",
+      "python:semantic-benchmarks:scipy": "ok",
+      "python:semantic-benchmarks:cdlib": "ok",
+      "python:semantic-benchmarks:overrides": "ok",
+      "python:semantic-benchmarks:lotus": "ok"
+    },
+    "machine_check_status": "missing",
+    "machine_check_missing": [
+      "environment:GPU_IDS"
+    ],
+    "machine_check_note": "The general NVIDIA profile reports unused GPU_IDS as missing for this CPU task. Six required dependency imports passed; original report is retained. CUDA_VISIBLE_DEVICES was empty.",
+    "CUDA_VISIBLE_DEVICES": "",
+    "GPU_visibility_evidence": "Explicit environment passed to subprocess.run in each original submitted command; first failure receipt also records the value. No retrospective process inspection."
+  },
+  "text_attempts": [
+    {
+      "id": "text-incomplete-fixture",
+      "status": "failed",
+      "error_type": "AttributeError",
+      "error": "'types.SimpleNamespace' object has no attribute 'get_model_name'",
+      "failure_location": "installed native postprocessor called get_model_name on the incomplete fixture, before production delegation",
+      "network_attempts": []
+    },
+    {
+      "id": "text-actual-LM-fixture",
+      "status": "passed",
+      "fixture_change": "Actual LOTUS LM with in-memory cache; no LM call or generation",
+      "cases": [
+        "Answer: False\nExplanation: The claim is not true.",
+        "Answer: True\nExplanation: Calling it false would be wrong.",
+        "Reasoning: true for another row.\nAnswer: False",
+        "False",
+        "undecided",
+        "Answer: True or False"
+      ],
+      "native_outputs": [
+        true,
+        true,
+        false,
+        false,
+        false,
+        true
+      ],
+      "corrected_outputs": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "native_delegation_checks": [
+        "outputs",
+        "raw_outputs",
+        "explanations"
+      ],
+      "corrected_raw_outputs_preserved": true,
+      "bare_answer_explanation_empty": true,
+      "network_attempts": [],
+      "command_elapsed_seconds": 10.026141694746912,
+      "default": false,
+      "output_tokens": [
+        "True",
+        "False"
+      ]
+    }
+  ],
+  "cascade": {
+    "id": "cascade-both-parsers",
+    "status": "passed",
+    "modes": [
+      {
+        "parser": "lotus-native",
+        "run": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reports": [
+          "completed",
+          "failed",
+          "completed"
+        ]
+      },
+      {
+        "parser": "answer-field-v1",
+        "run": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "reports": [
+          "completed",
+          "failed",
+          "completed"
+        ]
+      }
+    ],
+    "case_methods": [
+      "test_fixed_thresholds_keep_helper_and_fallback_prompts_decisions_and_usage",
+      "test_learned_thresholds_keep_repeated_sample_occurrences_and_original_learning",
+      "test_invalid_helper_metadata_retains_known_usage_without_main_fallback"
+    ],
+    "input_rows_per_case": 12,
+    "adapter_fixture_call_limit_per_case": 36,
+    "native_control": "The installed LOTUS controller, threshold learner and parser run on fixed local response functions; existing assertions compare prompts, decisions, explanations, sampling, stats and usage.",
+    "negative_case": "The malformed-helper case deliberately produces one failed query report per parser while its test passes.",
+    "command_elapsed_seconds": 10.212698871269822
+  },
+  "activity": {
+    "model_requests": 0,
+    "model_weights_loaded": 0,
+    "GPU_runs": 0,
+    "Ray_runtimes": 0,
+    "network_attempts": [],
+    "baseline_checkout_modified": false,
+    "GPU_compute_processes_after": 0,
+    "test_process_exit_codes": [
+      0,
+      0
+    ]
+  },
+  "runners": {
+    "source_count": 2,
+    "output_location_change": "Use each runner directory for reports on the data disk.",
+    "text_fixture_corrected_after_first_failure": true,
+    "single_hang_timeout_seconds_per_runner": 60,
+    "additional_cases_or_full_suite": false,
+    "executed_sources": [
+      {
+        "name": "SDK-PARSER.py",
+        "sha256": "1943a3bea098278487671ee2974cf9997bb462b7bc0203f92e1ddf3f7a52c619",
+        "source_available": "Retained privately with this run id."
+      },
+      {
+        "name": "CASCADE-SDK.py",
+        "sha256": "25c4797642f408cadeec6a111e58627d2b92c56d4cb2eb50e6ebf292305afd0f",
+        "source_available": "Retained privately with this run id."
+      }
+    ]
+  },
+  "timing_note": "Elapsed command times include SDK import and exit; no performance comparison. Absolute start/ready/end timestamps were not collected.",
+  "not_verified": [
+    "Whole dbc candidate tree",
+    "Actual Session/service completion or calibration execution",
+    "Real model quality, throughput, in-flight deadline/abort or reclamation",
+    "Original a780 Reset, historical second-close or native Ray baseline reclamation causes",
+    "Physical RAM grants or whole-query RSS"
+  ],
+  "private_originals": {
+    "location": "Retained outside Git by the project owner under this run id; available through the original project test records.",
+    "files": [
+      {
+        "path": "DEPLOYMENT.json",
+        "bytes": 3509,
+        "server_sha256": "fc3c8703e525551a08c2b65846bd1aaa8ee500fdadc05f2e1118fdf96559e544",
+        "local_sanitized_sha256": "fc3c8703e525551a08c2b65846bd1aaa8ee500fdadc05f2e1118fdf96559e544"
+      },
+      {
+        "path": "checks/preflight.json",
+        "bytes": 4009,
+        "server_sha256": "3ad69e560d8e8fa8b03dfcf225795f9c2e1186f372143d600fe0b8b176bf0ea8",
+        "local_sanitized_sha256": "3ad69e560d8e8fa8b03dfcf225795f9c2e1186f372143d600fe0b8b176bf0ea8"
+      },
+      {
+        "path": "checks/preflight-command.json",
+        "bytes": 5208,
+        "server_sha256": "90c8cd647e222bacfeb7fffbc05e274ddd9dc8720effcd26feeda4c0e69e41cd",
+        "local_sanitized_sha256": "90c8cd647e222bacfeb7fffbc05e274ddd9dc8720effcd26feeda4c0e69e41cd"
+      },
+      {
+        "path": "checks/SDK-PARSER.py.first-failure",
+        "bytes": 3268,
+        "server_sha256": "b5529e5df2380fdd68ea3bbafbc5ab6778d596c95fa17ea43092aa860e914b82",
+        "local_sanitized_sha256": "b5529e5df2380fdd68ea3bbafbc5ab6778d596c95fa17ea43092aa860e914b82"
+      },
+      {
+        "path": "checks/SDK-PARSER-CURRENT.json.first-failure",
+        "bytes": 1154,
+        "server_sha256": "451f77f76e88f9e70f53b8dcbd3ab29ea8500c5da08932ff30696358d0d50358",
+        "local_sanitized_sha256": "451f77f76e88f9e70f53b8dcbd3ab29ea8500c5da08932ff30696358d0d50358"
+      },
+      {
+        "path": "checks/SDK-PARSER-CURRENT.log.first-failure",
+        "bytes": 0,
+        "server_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "local_sanitized_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "checks/parser-command.json.first-failure",
+        "bytes": 686,
+        "server_sha256": "e7a764452166eebd0d60617c6d55346b1585509d109f0f4f6c9d1fff0565737a",
+        "local_sanitized_sha256": "e7a764452166eebd0d60617c6d55346b1585509d109f0f4f6c9d1fff0565737a"
+      },
+      {
+        "path": "checks/SDK-PARSER-CURRENT.json",
+        "bytes": 967,
+        "server_sha256": "8f6e94d6667a3a07e31263fbddb0c3e621c9f28c4ba6ade5cec217707596a5ed",
+        "local_sanitized_sha256": "8f6e94d6667a3a07e31263fbddb0c3e621c9f28c4ba6ade5cec217707596a5ed"
+      },
+      {
+        "path": "checks/SDK-PARSER-CURRENT.log",
+        "bytes": 164,
+        "server_sha256": "94eed2c89ef65f5fc50b84116afe73b07c5bea7e48ed552888f8a637a8fdc172",
+        "local_sanitized_sha256": "94eed2c89ef65f5fc50b84116afe73b07c5bea7e48ed552888f8a637a8fdc172"
+      },
+      {
+        "path": "checks/parser-command.json",
+        "bytes": 827,
+        "server_sha256": "6d5e2568fbdaff29ce0cfab6ea4dd97200511c29dc94702e935627387c2c3ef6",
+        "local_sanitized_sha256": "6d5e2568fbdaff29ce0cfab6ea4dd97200511c29dc94702e935627387c2c3ef6"
+      },
+      {
+        "path": "checks/CASCADE-SDK.json",
+        "bytes": 613,
+        "server_sha256": "1ba189285cfc65ef1e4eae8c04fd2329898616befb0464c386eb0b5d2eb2e2c8",
+        "local_sanitized_sha256": "1ba189285cfc65ef1e4eae8c04fd2329898616befb0464c386eb0b5d2eb2e2c8"
+      },
+      {
+        "path": "checks/CASCADE-SDK.log",
+        "bytes": 7160,
+        "server_sha256": "21c76b1fb50a64a8b96134a65c410b24e5bd8962fcce242254a1774ad7f3002b",
+        "local_sanitized_sha256": "21c76b1fb50a64a8b96134a65c410b24e5bd8962fcce242254a1774ad7f3002b"
+      },
+      {
+        "path": "checks/cascade-command.json",
+        "bytes": 884,
+        "server_sha256": "5cb9afc18ed548654c6910c617bd1f3dbe8a14c1b504e83c18df6886f4c6b9a9",
+        "local_sanitized_sha256": "5cb9afc18ed548654c6910c617bd1f3dbe8a14c1b504e83c18df6886f4c6b9a9"
+      }
+    ]
+  }
+}

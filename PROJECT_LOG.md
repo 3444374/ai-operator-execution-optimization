@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：服务器实际LOTUS解析与cascade
+
+[五组件实测](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)
+复用服务器现有LOTUS环境，文本原生委托／修正版及六个既有cascade用例通过。
+先修复并保留不完整身份夹具的原失败；源码五文件保持。仅作CPU组件核对，
+本机下载不再是验证前提；完整候选、Session／service和模型运行分开安排，原生baseline与历史成绩保持。
+
 ## 2026-11-07：SDK实际导入状态与解释字段修正
 
 [后续核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)区分已安装元数据、导入超时与实际调用证据。真实SDK尚未进入解析，不重复运行cascade；本地修正一行解释字段，两个原有方法通过，并补核当次Session query的参数转交。原始文本、布尔值、default、原生SDK与历史成绩保持，没有安装、上传或模型操作。

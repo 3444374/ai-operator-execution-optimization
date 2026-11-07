@@ -28,12 +28,12 @@ Movie Session在plan中提供同名字段，预检、owner和每次查询使用�
 普通records、有限链及cascade dispatch共用一个选择函数；cascade的采样、阈值学习与回退仍由原方法执行。
 `run_cascade(answer_parser=...)`及其配置调用者记录相同身份，模型请求参数不接收该字段。
 修正版会改变选行和后续工作量，不能把与原生结果的耗时差都称为执行优化；原生LOTUS成绩单独保留，
-修正对照另记语义版本。修正版cascade的完整SDK差分、学习阈值及模型质量仍为pending。
+修正对照另记语义版本。实际LOTUS1.2.4的文本委托对照及两种解析各三例cascade已通过，包含阈值学习；模型质量仍为pending。
 
 [本批CPU范围](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)
 区分纯解析、替身接线和原生委派；前批没有执行真实SDK流程。
 [后续导入核对](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)
-确认已有SDK分发元数据，但实际导入在依赖元数据读取时超时，完整SDK和模型仍未验证。
+保留当时本机依赖读取超时的记录；后续[服务器实际SDK检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)已完成文本和六例cascade，范围仅为83d基底上的dbc五组件，真实Session／service及模型仍未验证。
 
 ## 当前入口和所有权
 

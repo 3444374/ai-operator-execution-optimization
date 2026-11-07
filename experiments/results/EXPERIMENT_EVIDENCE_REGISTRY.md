@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-07：实际LOTUS文本与双解析cascade
+
+[服务器五组件检查](diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)
+在83d基底覆盖dbc五语义模块；实际LOTUS1.2.4文本对照及两种解析各三例cascade通过。
+首轮不完整LM身份夹具的失败保留，修正夹具后重跑；生产源码、原生SDK与原成绩未改。
+零模型／GPU／Ray／网络，不转授完整dbc、Session／service或模型质量结论。
+
 ## 2026-11-07：SDK导入读取与解释字段补核
 
 [环境实证及局部检查](diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)

@@ -5109,6 +5109,41 @@ launcher + resource tests -> serving.vllm_resources
 
 另在31ad上使用现有两行CSV的PlanTests fixture执行当次`_MovieDriver.query`参数转交：数据预检和调用路径实际执行，lease检查、query runner和owner为替身；runner与owner收到同一`answer-field-v1`方法对象。该检查不证明真实SDK、模型或service完成；已有四项Session配置／预检／owner和校准检查没有重复运行。后续实际service需要可读取候选及对应既有运行配置，由父会话安排；当前发布继续停止。
 
+<a id="filter-parser-sdk-server-cpu"></a>
+
+## LOTUS解析与cascade的服务器CPU核对
+
+[机器可读记录](filter_parser_sdk_cpu.json)关联本次两个文本尝试和一次双解析cascade运行。
+服务器独立worktree以`83d7889642aa26c56555cfd0de6189203f41eb20`为底，
+只覆盖来自`dbc421f11bd0477b6d164f7325889ceb0ee31821`的五个语义模块；
+实际`src`来自该worktree，五文件运行前后摘要相同。原baseline目录保持干净，完整dbc树没有执行。
+
+环境为Python3.12.3、LOTUS1.2.4、LiteLLM1.95.0、OpenAI2.50.0和pandas2.3.3，未安装或修改依赖。
+所需六项依赖导入通过；通用NVIDIA描述因CPU任务未填写`GPU_IDS`报告缺项，原报告保留。
+两个校验进程均令GPU不可见，未启动模型、Ray或服务，没有网络请求。
+
+第一次文本校验在安装包原生postprocessor调用夹具的`get_model_name()`时抛AttributeError；
+当时只有SimpleNamespace，尚未调用项目委托。保留原脚本、JSON、日志和命令回执，
+只把夹具改为真实LOTUS LM及内存缓存，并在解析前记录实际phase／版本，再执行同名单项。
+两份脚本另各改一行输出位置，让报告保存到各自所在的数据盘目录；生产五文件没有随失败修改。
+
+修正后六段固定文本通过原生直接调用、原生委托和修正版对照。委托的布尔值、原文与解释
+逐项等于安装包原函数；修正版排除解释中的布尔词，保留原文，未知／歧义使用显式default，裸答案解释为空。
+原生输出为`[true,true,false,false,false,true]`，修正版为`[false,true,false,false,false,false]`。
+这组差异只说明解析选择不同，不改历史成绩，也不能用其工作量差异声称调度收益。
+
+随后对原生及修正版各运行三个既有cascade方法：固定阈值和回退、学习阈值与重复采样、
+坏helper元数据的异常记账。合计六例均通过，无错误或跳过；每种解析保留两个完成报告及
+一个预期失败报告。既有断言继续比较提示、选行、解释、采样、统计与用量，原SDK controller和learner未改。
+模型响应来自固定CPU函数，不是实际推理。文本和cascade命令分别用时10.026秒、10.213秒，
+含导入及退出；绝对开始／ready／结束时间未采集，不作性能比较。两个进程正常退出，运行后GPU无计算进程；
+没有新增共享内存全量差分观察，不据此扩充物理回收结论。
+
+本次只补五组件的真实SDK执行证据。完整dbc、实际Session／service、模型质量、在途期限／abort、
+原a780 Reset与历史第二次关闭原因、原生Ray回收及物理RAM／全查询RSS仍分别保留原状态。
+原始13份材料在仓库外按运行标识保存，公开JSON记录原件及脱敏副本摘要，可向项目维护者获取；
+没有将私有机器路径或连接信息写入本报告。
+
 <a id="squad-input-ownership-audit"></a>
 ## SQuAD输入职责及归档入口核对
 
