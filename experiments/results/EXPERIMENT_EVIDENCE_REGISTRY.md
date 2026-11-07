@@ -2203,3 +2203,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [实际下载路径、短传反例及恢复核对](diagnostics/records_runtime_refactor_20261104/README.md#asset-download-short-read)
 标准库内存HTTP应答复现不足声明长度仍报ready；三项相同下载方法从两个子场景失败变为通过，两个既有原件恢复方法一次通过。
 只增加本次响应长度核对，断点／206续传／200重下保持；没有真实下载、数据库、模型或服务器运行，历史清单及来源不改。
+
+## 2026-11-07：模型快照下载恢复职责
+
+[目录提前返回反例及原生处理职责](diagnostics/records_runtime_refactor_20261104/README.md#snapshot-native-recovery)
+显式snapshot动作不再因临时文件超过最小字节数而跳过SDK，HTTP单文件磁盘计算只归HTTP类型。
+一个模拟SDK方法相同字节修前失败、修后通过；只读核对0.36.2源码，不执行真实下载、不证明实际模型完整性，也不重跑上一批检查。

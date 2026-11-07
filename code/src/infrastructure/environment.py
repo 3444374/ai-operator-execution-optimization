@@ -280,7 +280,7 @@ def download_asset(
     asset = matches[0]
     kind = _required_string(asset, "kind")
     target = Path(expand_text(_required_string(asset, "target"), asset_id, environment=environment))
-    if _check_asset(asset, environment).status == "ok":
+    if kind != "huggingface_snapshot" and _check_asset(asset, environment).status == "ok":
         return target
     if kind == "manual":
         raise RuntimeError(
@@ -288,16 +288,16 @@ def download_asset(
             + _required_string(asset, "instructions")
         )
     target.parent.mkdir(parents=True, exist_ok=True)
-    expected_bytes = int(asset.get("minimum_bytes", 1))
-    partial = target.with_suffix(target.suffix + ".partial")
-    already_present = partial.stat().st_size if partial.exists() else 0
-    free_bytes = shutil.disk_usage(_nearest_existing_parent(target.parent)).free
-    if free_bytes < max(0, expected_bytes - already_present):
-        raise RuntimeError(
-            f"insufficient disk for {asset_id}: free={free_bytes}, "
-            f"minimum_remaining={max(0, expected_bytes - already_present)}"
-        )
     if kind == "http_file":
+        expected_bytes = int(asset.get("minimum_bytes", 1))
+        partial = target.with_suffix(target.suffix + ".partial")
+        already_present = partial.stat().st_size if partial.exists() else 0
+        free_bytes = shutil.disk_usage(_nearest_existing_parent(target.parent)).free
+        if free_bytes < max(0, expected_bytes - already_present):
+            raise RuntimeError(
+                f"insufficient disk for {asset_id}: free={free_bytes}, "
+                f"minimum_remaining={max(0, expected_bytes - already_present)}"
+            )
         _download_http(_required_string(asset, "url"), target)
     elif kind == "huggingface_snapshot":
         try:

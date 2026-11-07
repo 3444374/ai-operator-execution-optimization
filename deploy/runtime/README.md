@@ -97,7 +97,8 @@ PYTHONPATH=code python code/scripts/environment/manage_environment.py \
   --python-executable <driver-venv>/bin/python --dry-run
 # 核对命令后去掉 --dry-run。
 
-# 每次只下载一个明确资产；已有且达到完整性门槛时直接返回 ready。
+# 每次只下载一个明确资产；HTTP文件和人工资产满足清单检查时直接复用。
+# 模型快照由原生SDK处理已有缓存、缺文件及中断恢复。
 PYTHONPATH=code <driver-venv>/bin/python code/scripts/environment/manage_environment.py \
   --env-file <runtime.env> --assets-manifest deploy/runtime/assets.json \
   download --asset qwen25-15b
@@ -108,7 +109,11 @@ PYTHONPATH=code <driver-venv>/bin/python code/scripts/environment/manage_environ
 HTTP 大文件使用 `.partial` 断点文件并在完成后原子改名；服务端忽略 Range 时会从头覆盖，
 不会把两份文件错误拼接。响应声明 `Content-Length` 时，先核对本次接收字节；未收全则报错并保留
 断点文件，不改为最终目标。再次执行可续传；没有声明长度时继续使用清单的最小大小与可选摘要核验。
-Hugging Face snapshot 需要先安装 `download` 能力。
+Hugging Face snapshot 需要先安装 `download` 能力。显式下载始终调用原生 `snapshot_download`，
+不因目录累计字节足够就跳过；缓存、文件续传和文件级空间处理由SDK负责，不使用HTTP单文件的
+`.partial`空间计算。没有强制重下或自建完成标记，SDK返回和离线回退按其自身实现解释。
+只读`check`仍核对目录／最小大小及已声明摘要，不联网枚举模型文件，也不证明模型能加载；实际模型
+身份与加载结果由服务启动记录确认。
 
 `imagenet-1k` 是受许可的 `manual` 资产：检查会明确报缺失，下载命令会拒绝绕过授权。
 这类资产必须由用户接受条款后放入清单指定目录。

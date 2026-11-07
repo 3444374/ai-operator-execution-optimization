@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：模型快照恢复交回原生下载器
+
+[模型目录恢复职责](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#snapshot-native-recovery)修复临时文件累计超过最小大小便跳过SDK的问题；显式snapshot下载调用原生缓存处理，HTTP单文件断点／最低磁盘检查只归HTTP分支。一个模拟SDK方法改前失败、改后通过，源码净行数不变；没有自建完成标记、重试或强制重下，也不把目录检查当模型加载成功。
+
 ## 2026-11-07：下载响应未收全时保留断点文件
 
 [公开资产短传修复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#asset-download-short-read)复现响应声明10字节、实际5字节却被改名并报成功的问题。现在只核对本次响应的声明长度，短传报错并保留`.partial`；206续传和忽略Range的200完整应答保持。三个下载CPU方法从两个子场景失败变为通过，两个既有原件恢复方法一次通过；没有真实下载、数据库或模型操作。
