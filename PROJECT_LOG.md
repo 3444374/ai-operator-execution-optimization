@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：父进程使用已有就绪字段
+
+[就绪状态读取](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)去掉构造器已保证字段的缺省兜底，两个原手工夹具补初态。原两项CPU前后通过，没有新增检查、测试方法或服务器派单；None的上下文处理和现用额度不变。
+
 ## 2026-11-07：清除旧HTTP worker资源选项
 
 [旧Ray选项清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)删除没有现用消费者的类型、导出和四个专测，源码减37行、测试减70行。原公共导入用例和历史字节保持，恢复来源独立保存；不新增资源框架、不改当前Ray关闭，也不重复已经通过的原用例。

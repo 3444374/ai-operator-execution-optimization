@@ -2131,3 +2131,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [旧HTTP Ray worker选项退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)
 记录951b到0a421的类型／单一导出／四专测删除，原公共导入方法前后通过、十个历史绑定前后字节一致；3010项预期摘要保持，准确原件可恢复，Python净减107行。当前Ray资源与关闭实现不变，没有新增真实运行或复跑。
+
+[IPC父进程直接读已有状态](diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)
+记录ace7到f934的两处缺省兜底精简与两夹具初态补齐；两项原CPU前后通过、五条旧源保持，整合树相同，没有新测试方法或实际IPC／模型运行，源码行数不变。

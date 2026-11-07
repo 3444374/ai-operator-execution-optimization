@@ -4830,3 +4830,11 @@ CLI按既有项目包正常导入，移除spec_from_file_location自载及对应
 准确1067字节原件仅保存一份420字节gzip，五条来源与五条格式接到同一原件；原facade与专测可从946412e6恢复，见[恢复说明](../../../reproduction/native_baselines/README.md#retired-ray-http-worker-options)。整合六文件与受测／已审候选字节相同，观察器三文件保持。
 本批核心及src＋scripts净减37行、测试减70行，Python净减107行，压缩原件另计；当前核心49,115行、src＋scripts101,214行、测试92,000行，三目录合计193,214行，相对固定main少49,884行，相对3fd少86,493行。
 未启动真实Ray、模型、HTTP、GPU或socket；这次删除不解释或修复原生Ray关闭问题，服务器四项软件IPC仍按[946登录记录](#software-ipc-946-dispatch)待执行。
+
+<a id="async-parent-ready-state"></a>
+## IPC父进程直接读取已有就绪状态
+
+独审候选`ace7a0dca587899a47c3f177ea93f9358034a476`整合为`f9346e543b222867c1fce0d2a4d071f4a476a785`，整树与受测／已审候选相同。
+AsyncEngineProcess构造器在socket／子进程启动前建立ready_report；单项与批提交直接读该字段，不再用缺省getattr兜底。两个绕过构造器的原CPU夹具补同一None初态，原有测试体与方法数保持。
+原两项CPU在修改前后各通过一次，覆盖完整声明槽位、未消费结果继续占额、单项／批提交的None期限；没有socket、子进程、真实Ray或模型。五条已有历史来源读回匹配，清单未改，整合没有重复这些检查。
+源码行数不变，夹具增2行且没有新增测试方法；当前三目录Python为193,216行。None仍交原上下文解析，接纳、未知执行及资源归还规则未改，也没有新增服务器测试。

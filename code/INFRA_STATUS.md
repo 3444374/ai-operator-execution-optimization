@@ -63,13 +63,14 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按准确`0a42198b`统计：核心`code/src`为49,115行，全部src＋scripts为101,214行，测试为92,000行。
+代码量按准确`f9346e54`统计：核心`code/src`为49,115行，全部src＋scripts为101,214行，测试为92,002行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
 核心／宽口径相对固定main6a8a减少4,976／39,121行，相对清理起点3fd减少12,513／48,431行。
-相对a39，核心减1,367行，包含参考校准、特征和CSV包装归位；全部src＋scripts净减679行、测试减485行。
+相对a39，核心减1,367行，包含参考校准、特征和CSV包装归位；全部src＋scripts净减679行、测试减483行。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
+[父进程直接读取就绪状态](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)删除两个构造器已保证字段的缺省兜底，补齐原手工夹具；两项原CPU前后通过，没有新增测试方法或改变上下文／额度处理。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。
 [请求组批与到达回放分开](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)让主线只导入原构建器，回放／等待／B原型归已有研究目录；同五十项CPU保持，两个策略文件逐字保留，没有新增生产策略。
 [运行身份只保留一份](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)复用现有绑定对象，修正ready前失败的清理重试旧字段；纯内存反例保持unknown额度，准确a802的[六项普通／rolling软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)随后全部通过，零模型／真实Ray。
@@ -91,7 +92,7 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 [本地IPC职责与旧HTTP完整退出](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)
 记录四批删除、70项实际组合CPU、160条受影响历史读取及现用源码反查；随后[准确fc1a三项实际socket](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)均已通过。
 核心不依赖实验入口，没有为退出HTTP新增网关或多查询实现；实际模型、物理内存授予及历史Ray清理仍按各自来源判断。
-[旧HTTP worker选项退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)再移除无现用消费者的RayWorkerOptions、单一导出及四个专测；现用Ray适配与资源配置保持，五份历史来源可恢复，原有公共导入用例前后通过。三目录Python合计193,214行，相对main减少49,884行。
+[旧HTTP worker选项退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)再移除无现用消费者的RayWorkerOptions、单一导出及四个专测；现用Ray适配与资源配置保持，五份历史来源可恢复，原有公共导入用例前后通过。当前三目录Python合计193,216行，相对main减少49,882行。
 
 [原生未确认回执的观测读法](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)
 修正`model_API_samples`把unknown／未确认误写成未发送的问题；原反例失败、修改后16项CPU通过。
