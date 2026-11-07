@@ -2339,6 +2339,126 @@
       "sha256": "a0a872de8976c5f0ecd760858215e060cbb8bcd11fc051c9a4dafa6c56835227",
       "encoding": "gzip",
       "archive_sha256": "f655ae589cbb1bc15d08e775b81a6b71232da1ac8c24edf4448d0331a92f74b2"
+    },
+    {
+      "path": "code/scripts/data/import_ai_complete_workload.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_ai_complete_workload.py.gz",
+      "bytes": 34431,
+      "sha256": "3eddc0f2f1775d49656fcf9e554beeaf63a5af9b9743511ebd29cbb3e4107240",
+      "encoding": "gzip",
+      "archive_sha256": "f4e019b354aec783772577cf6491edaf761e34a83abec3be1fc680e2c3dd76ed"
+    },
+    {
+      "path": "code/scripts/data/import_bounded_output_workload.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_bounded_output_workload.py.gz",
+      "bytes": 5065,
+      "sha256": "6c37ea97e52e43b2384915e864bd13375aa158a35696488c7d6f0318465ae9e1",
+      "encoding": "gzip",
+      "archive_sha256": "7e45be4dc6cadb6ab12d233f49b8ada52f6cd9b9c5817839a6958f57f205b4df"
+    },
+    {
+      "path": "code/scripts/data/import_squad_workload.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_squad_workload.py.gz",
+      "bytes": 11414,
+      "sha256": "da6f4796fb53cfa6885fae9f3830ec2450d30925aeb174350890c0ca19f99dc3",
+      "encoding": "gzip",
+      "archive_sha256": "3765336d456220709cf3c614f487e0d1cdb78c5c857da75633564686c7b7995a"
+    },
+    {
+      "path": "code/scripts/baselines/duckdb_ai_sentence_count_gate.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/duckdb_ai_sentence_count_gate.py.gz",
+      "bytes": 9862,
+      "sha256": "fa0c9c0dafb4b13dd73e77e4af0eac0b14aaa2f97720831bd1601c17b2f4798c",
+      "encoding": "gzip",
+      "archive_sha256": "266ac9e7641c1096763675c53a5764a1112c3b60764473ddc65275178ac54906"
+    },
+    {
+      "path": "code/scripts/baselines/squad_capability_gate.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_capability_gate.py.gz",
+      "bytes": 25710,
+      "sha256": "f61186eed5cb407d3b5ed9b1ab93184b49c5869fd4d4dbbff2053e396b18ff67",
+      "encoding": "gzip",
+      "archive_sha256": "5b492a1f09472ad86e2c83cc47bfc5e0319baa2b3ec7d438118e94ec3bd8fd54"
+    },
+    {
+      "path": "code/scripts/baselines/squad_truncation_diagnostic.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_truncation_diagnostic.py.gz",
+      "bytes": 11237,
+      "sha256": "5366ad698bf46dd6dab1b1482a7afb1d4c1a50ee1ff5b6874cde9de63b13bbdf",
+      "encoding": "gzip",
+      "archive_sha256": "b35566056f0c7cc27ceb7688facf75322a99bb851537d8f75060b6aea4ef1e99"
+    },
+    {
+      "path": "code/src/baselines/common/squad_identity.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/src/baselines/common/squad_identity.py.gz",
+      "bytes": 8423,
+      "sha256": "f4b64d6eced9b294924958a9bd18aa0075d777b215f6d5007fe72331945136c0",
+      "encoding": "gzip",
+      "archive_sha256": "1dd7280da28ff3990617bbd8af6029613fda1ca8e3116d8f07efb80539e10d85"
+    },
+    {
+      "path": "code/tests/data/test_import_ai_complete_workload.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/tests/data/test_import_ai_complete_workload.py.gz",
+      "bytes": 20034,
+      "sha256": "0a1d74a27e94804b7f509bd95a15800d7571305353b5e3d2e970b83e6eae944c",
+      "encoding": "gzip",
+      "archive_sha256": "982eac830633736504a48e59e96a853457d7a75628755da3c8acfd5a4c3d30c9"
+    },
+    {
+      "path": "code/tests/data/test_import_squad_workload.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/tests/data/test_import_squad_workload.py.gz",
+      "bytes": 5708,
+      "sha256": "6bdc8a1698567faf6ede40db969fbf208835e7cdc80271888c3e5bd6f16f3fa2",
+      "encoding": "gzip",
+      "archive_sha256": "8dcfaef2e43f52de2617f796ad79f750a148a38d3c21bd575695bc1e34d297ee"
+    },
+    {
+      "path": "code/tests/baselines/test_duckdb_ai_sentence_count_gate.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/tests/baselines/test_duckdb_ai_sentence_count_gate.py.gz",
+      "bytes": 2916,
+      "sha256": "fba4b984aa98a604bf7948b8062116fae4c010c000338dc9ba413bdee70f7690",
+      "encoding": "gzip",
+      "archive_sha256": "fc6275f14e7dd1d1ec1601e7b68f0d6d1f7744bb26b7eb1cb52fc262f19ce814"
+    },
+    {
+      "path": "code/tests/baselines/test_squad_capability_gate.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/tests/baselines/test_squad_capability_gate.py.gz",
+      "bytes": 24881,
+      "sha256": "1e0b176a52360952786ebd072d2e5a5969ee15c6718acc0b535a96a43151d7b4",
+      "encoding": "gzip",
+      "archive_sha256": "ab4aa89cd3d819463a85a9ed79441386a94c1201fb6fdab39c83d3f4ee643b96"
+    },
+    {
+      "path": "code/tests/baselines/test_squad_truncation_diagnostic.py",
+      "category": "retired_postgresql_text_tools",
+      "source_commit": "c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a",
+      "retained_path": "experiments/reproduction/native_baselines/historical_sources/pg_text_tools_c2c2d351/code/tests/baselines/test_squad_truncation_diagnostic.py.gz",
+      "bytes": 2470,
+      "sha256": "f5035c371a9dd41b173635346c8f8a3beba503318ea76822ff7c25c8aa62e8bf",
+      "encoding": "gzip",
+      "archive_sha256": "b6bf38073edc6a3007de0bac6e73860150168d3ae11457573c7f5b73ab2a0e6b"
     }
   ]
 }

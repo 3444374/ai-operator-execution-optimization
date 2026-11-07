@@ -18,6 +18,7 @@
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 不要求PG，公共CLIP实现保持；原PG矩阵按[准确来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)恢复 |
 | 历史 PG 图像导入与画像 | [准确原件和恢复方法](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools) | COCO 导入器、配套 SQL 及三个 PG 画像工具独立归档；当前文件图像不调用它们 |
+| 历史 PG 文本导入与诊断 | [准确原件和恢复方法](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools) | 三个导入器与旧PG取数诊断独立归档；当前文件工作负载和原生DuckDB实现保留 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[修正与历史来源](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
 | 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |

@@ -1068,3 +1068,13 @@ Old results, failure records and research material retain their original interpr
 PG专属驱动与旧公共文件的原字节集中在[94db图像来源](historical_sources/pg_image_94db4a3b)，
 受影响的60条既有读取只新增来源与gzip格式；原expected摘要、具名投影身份及其他覆盖保持。
 [PG归档清单](../paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)区分18个移出文件与仍维护的文件图像和CLIP能力。
+
+<a id="pg-text-data-tools-source"></a>
+## PG文本工具的独立来源
+
+三个PG文本导入器、三个PG取数诊断、专用身份助手及五份专测已[按完整c2c2d35来源归档](../paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)。
+本目录复用[十二份压缩原件](historical_sources/pg_text_tools_c2c2d351)，不让历史投影依赖已经移出的活动文件。
+
+五份投影中，SQuAD导入、sentence-count诊断与truncation诊断原来各直接读取当前文件，现为这三份补十五条准确来源及gzip格式。
+其余四实现原已指向旧来源，映射保持；所有expected、投影身份及原始版本保持。
+本批35条相关来源读取逐项匹配原摘要，没有重跑3010文件完整构造，也没有启动旧工具、数据库或模型。

@@ -253,7 +253,7 @@ HTTPX观察函数、MappedUnit／预算和余下四项行为保持。没有更�
 LOTUS文件检索及其他非PG图像入口保留。混合测试中移出已归档实现的九个方法及两条旧CLI名称断言；仍在使用的COCO导入器主键测试迁入数据测试目录。
 原定义仍由完整94db树恢复，公共行为检查保持。
 
-这批之后，COCO导入与三个PG画像工具继续按[配套原件](#pg-image-data-tools)归档；文本SQL导入及旧SQuAD/PG诊断另行整理。
+这批之后，COCO导入与三个PG画像工具按[图像工具原件](#pg-image-data-tools)归档；文本SQL导入及旧SQuAD/PG诊断按[文本工具原件](#pg-text-data-tools)归档。
 
 <a id="pg-image-data-tools"></a>
 ## COCO数据库导入与PG画像工具
@@ -273,3 +273,23 @@ LOTUS文件检索及其他非PG图像入口保留。混合测试中移出已归�
 共1370行Python及55行SQL移至可恢复原件；没有删除原始图像、ZIP或研究结果。
 恢复使用完整e5c36c9树及其依赖，不能将压缩代码目录加入当前Python搜索路径。
 当前文件图像准备方式见[数据入口](../../../data/README.md#image-workload-clip-current-multimodal-workload)；公共COCO文件选择、CLIP与LOTUS入口保持。
+
+<a id="pg-text-data-tools"></a>
+## PG文本数据准备与旧诊断
+
+本批十二文件来自完整的[c2c2d35来源树](https://github.com/3444374/ai-operator-execution-optimization/tree/c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a)，共4167行Python移出活动目录。
+原件保存在[配套来源目录](../native_baselines/historical_sources/pg_text_tools_c2c2d351)；逐项原路径、字节数与原／压缩摘要见本目录MANIFEST。
+恢复旧工具使用完整来源树及其依赖，当前任务不加载这些压缩文件。
+
+| 移出的原路径 | 原职责 |
+|---|---|
+| `code/scripts/data/import_ai_complete_workload.py`、`import_bounded_output_workload.py`、`import_squad_workload.py` | PG文本表准备、包装与写入 |
+| `code/scripts/baselines/duckdb_ai_sentence_count_gate.py`、`squad_capability_gate.py`、`squad_truncation_diagnostic.py` | 从PG取数后运行旧对照／诊断 |
+| `code/src/baselines/common/squad_identity.py` | 仅供上述SQuAD PG诊断使用的摘要及服务归属函数 |
+| `code/tests/data/test_import_ai_complete_workload.py`、`test_import_squad_workload.py` | 两个导入器的专测 |
+| `code/tests/baselines/test_duckdb_ai_sentence_count_gate.py`、`test_squad_capability_gate.py`、`test_squad_truncation_diagnostic.py` | 旧PG取数诊断的专测 |
+
+现行`map_workload_tools`、SQuAD／ShareGPT文件输入、SQuAD质量与容量函数，以及原生DuckDB adapter保持。
+`test_squad_pg_map_pilot.py`虽沿用旧名称，九项方法实际检查文件任务、消息、分组、身份及EM／F1评价，不访问PG，故保留；既有输入身份也不改名。
+三份直接来源新增十五条准确读取映射，其他来源与投影身份保持，详见[读取记录](../native_baselines/README.md#pg-text-data-tools-source)。
+旧本机数据库状态只从[原数据说明](https://github.com/3444374/ai-operator-execution-optimization/blob/c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a/data/README.md#local-import)回查；原始语料、派生输入和研究结果未移动或删除。

@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：PG文本工具与文件任务分别维护
+
+三个导入器、三个PG取数诊断、专用身份助手及五份专测按[十二份准确原件](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)归档。
+文件SQuAD／ShareGPT与原生DuckDB实现逐字保持；11项现有纯软件检查改前后通过，15处新历史读取与已有身份核对完成。
+数据和runtime指引不再要求文件任务先导入PG，原始数据和既有成绩未改。
+
 ## 2026-11-07：PG图像数据工具退出当前入口
 
 COCO导入、主键SQL、三个PG画像及两份专测按[e5c36c9原件](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)保存。

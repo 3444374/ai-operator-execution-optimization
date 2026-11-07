@@ -994,7 +994,10 @@
         "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
         "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
         "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
-        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz",
+        "code/scripts/data/import_squad_workload.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_squad_workload.py.gz",
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/duckdb_ai_sentence_count_gate.py.gz",
+        "code/scripts/baselines/squad_truncation_diagnostic.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_truncation_diagnostic.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1657,6 +1660,21 @@
           "encoding": "gzip",
           "decoded_bytes": 604,
           "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
+        },
+        "code/scripts/data/import_squad_workload.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11414,
+          "archive_sha256": "3765336d456220709cf3c614f487e0d1cdb78c5c857da75633564686c7b7995a"
+        },
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9862,
+          "archive_sha256": "266ac9e7641c1096763675c53a5764a1112c3b60764473ddc65275178ac54906"
+        },
+        "code/scripts/baselines/squad_truncation_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11237,
+          "archive_sha256": "b35566056f0c7cc27ceb7688facf75322a99bb851537d8f75060b6aea4ef1e99"
         }
       }
     },
@@ -2679,7 +2697,10 @@
         "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
         "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
         "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
-        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz",
+        "code/scripts/data/import_squad_workload.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_squad_workload.py.gz",
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/duckdb_ai_sentence_count_gate.py.gz",
+        "code/scripts/baselines/squad_truncation_diagnostic.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_truncation_diagnostic.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3342,6 +3363,21 @@
           "encoding": "gzip",
           "decoded_bytes": 604,
           "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
+        },
+        "code/scripts/data/import_squad_workload.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11414,
+          "archive_sha256": "3765336d456220709cf3c614f487e0d1cdb78c5c857da75633564686c7b7995a"
+        },
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9862,
+          "archive_sha256": "266ac9e7641c1096763675c53a5764a1112c3b60764473ddc65275178ac54906"
+        },
+        "code/scripts/baselines/squad_truncation_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11237,
+          "archive_sha256": "b35566056f0c7cc27ceb7688facf75322a99bb851537d8f75060b6aea4ef1e99"
         }
       }
     },
@@ -4374,7 +4410,10 @@
         "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
         "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
         "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
-        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz",
+        "code/scripts/data/import_squad_workload.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_squad_workload.py.gz",
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/duckdb_ai_sentence_count_gate.py.gz",
+        "code/scripts/baselines/squad_truncation_diagnostic.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_truncation_diagnostic.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -5037,6 +5076,21 @@
           "encoding": "gzip",
           "decoded_bytes": 604,
           "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
+        },
+        "code/scripts/data/import_squad_workload.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11414,
+          "archive_sha256": "3765336d456220709cf3c614f487e0d1cdb78c5c857da75633564686c7b7995a"
+        },
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9862,
+          "archive_sha256": "266ac9e7641c1096763675c53a5764a1112c3b60764473ddc65275178ac54906"
+        },
+        "code/scripts/baselines/squad_truncation_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11237,
+          "archive_sha256": "b35566056f0c7cc27ceb7688facf75322a99bb851537d8f75060b6aea4ef1e99"
         }
       }
     },
@@ -6071,7 +6125,10 @@
         "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
         "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
         "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
-        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz",
+        "code/scripts/data/import_squad_workload.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_squad_workload.py.gz",
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/duckdb_ai_sentence_count_gate.py.gz",
+        "code/scripts/baselines/squad_truncation_diagnostic.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_truncation_diagnostic.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6739,6 +6796,21 @@
           "encoding": "gzip",
           "decoded_bytes": 604,
           "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
+        },
+        "code/scripts/data/import_squad_workload.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11414,
+          "archive_sha256": "3765336d456220709cf3c614f487e0d1cdb78c5c857da75633564686c7b7995a"
+        },
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9862,
+          "archive_sha256": "266ac9e7641c1096763675c53a5764a1112c3b60764473ddc65275178ac54906"
+        },
+        "code/scripts/baselines/squad_truncation_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11237,
+          "archive_sha256": "b35566056f0c7cc27ceb7688facf75322a99bb851537d8f75060b6aea4ef1e99"
         }
       }
     },
@@ -7779,7 +7851,10 @@
         "code/src/modalities/image/contracts.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/contracts.py.gz",
         "code/src/modalities/image/file_source.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/file_source.py.gz",
         "code/src/modalities/image/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/modalities/image/__init__.py.gz",
-        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz"
+        "code/src/baselines/image/frameworks/__init__.py": "historical_sources/pg_image_94db4a3b/code/src/baselines/image/frameworks/__init__.py.gz",
+        "code/scripts/data/import_squad_workload.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/data/import_squad_workload.py.gz",
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/duckdb_ai_sentence_count_gate.py.gz",
+        "code/scripts/baselines/squad_truncation_diagnostic.py": "historical_sources/pg_text_tools_c2c2d351/code/scripts/baselines/squad_truncation_diagnostic.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -8452,6 +8527,21 @@
           "encoding": "gzip",
           "decoded_bytes": 604,
           "archive_sha256": "b78268f3a245ac47a22b01c73808531585c02b0c8557734c388d438911713ea7"
+        },
+        "code/scripts/data/import_squad_workload.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11414,
+          "archive_sha256": "3765336d456220709cf3c614f487e0d1cdb78c5c857da75633564686c7b7995a"
+        },
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9862,
+          "archive_sha256": "266ac9e7641c1096763675c53a5764a1112c3b60764473ddc65275178ac54906"
+        },
+        "code/scripts/baselines/squad_truncation_diagnostic.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 11237,
+          "archive_sha256": "b35566056f0c7cc27ceb7688facf75322a99bb851537d8f75060b6aea4ef1e99"
         }
       }
     }

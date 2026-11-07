@@ -21,7 +21,7 @@ experiment.
 SQuAD v1.1 dev 的来源为 [官方文件](https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json)，
 共 10,570 个问题、4,854,279 bytes，SHA256 为
 `95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9`。
-[历史导入器](../code/scripts/data/import_squad_workload.py)保留原问答标识、多参考答案、提示和内容摘要，仍服务旧工作负载导入与纯数据核对。
+[历史导入器及PG诊断](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)保留原问答标识、多参考答案、提示和内容摘要，已退出当前命令。
 普通记录单查询不通过该脚本取数；先前登记的[PostgreSQL Map脚本](../experiments/reproduction/native_baselines/historical_sources/7bf1d92b/code/scripts/baselines/squad_pg_map_pilot.py)
 仅保留为准确历史来源，不列作当前入口。完整文件和派生输入留在机器自己的仓库外数据目录，
 单台机器已有文件不能证明其他机器已下载，不同机器需分别按来源、摘要与行数核对。
@@ -30,8 +30,7 @@ Raw files are gitignored — **every environment (local machine, server, cloud) 
 
 跨机器时优先使用 `deploy/runtime/assets.json` 与
 `code/scripts/environment/manage_environment.py` 检查/下载；本节保留人工核验来源和
-应急命令。资产下载完成不代表 PostgreSQL workload 已导入，仍需执行本目录对应 importer
-并通过 runner 的 schema、行数与唯一性检查。
+应急命令。当前文本任务使用实际CSV／JSON来源或记录了来源摘要的文件清单；下载完成不代表输入已经通过对应查询的字段、身份与行数检查。
 
 | Dataset | Exact URL | Repo |
 |---|---|---|
@@ -129,35 +128,16 @@ python code/scripts/data/build_image_file_manifest.py \
 清单保留 COCO 数字 ID、相对路径、大小和内容摘要。不同 split 分别声明 workload，不能通过数字偏移伪造原始 ID。
 旧 PG 主键迁移、ZIP 导入事务及专测随原件归档；已有原始 ZIP、图像、结果和失败记录没有移动或删除。
 
-## Boundary
+## Comparable file inputs
 
-Do not use the earlier synthetic `documents` seed as the final comparison
-workload. The comparable baseline and optimized runs should be generated from
-the same normalized ShareGPT/BurstGPT workload table.
+Comparable baseline and optimized runs use the same source and selected rows.
+The current [file workload tools](../code/scripts/baselines/map_workload_tools.py)
+record source identity and retain the original input text; historical database
+tables do not establish the input identity of a new run.
 
-## Local Import
+## Historical database preparation
 
-The current local PostgreSQL rehearsal database has a normalized
-`sharegpt_multiturn` workload imported into `documents`:
-
-```text
-rows=2048
-doc_id range: 300000..302047
-prompt_tokens range: 3..1486
-target_output_tokens range: 1..256
-```
-
-`prompt_tokens` are counted with the local Qwen2.5-1.5B-Instruct tokenizer
-when `--tokenizer-path models\Qwen2.5-1.5B-Instruct` is passed to
-`code/scripts/data/import_ai_complete_workload.py`.
-
-`--controlled-prefix-source-workload` 的 `--dry-run` 只读取现有 workload 并打印概要，
-不创建或修改表，也不插入数据；正常导入仍先准备表结构，再读取与写入。
-
-Use `--source-workload-name sharegpt_multiturn` in
-`code/scripts/profiling/postgres_ai_operator_profile.py` to read only this workload.
-
-Legacy: the older `sharegpt_burstgpt` workload (previously rows=1024, doc_id
-starting at 1000000, target_output_tokens up to 2048, filtered by
-`prompt_tokens + completion_max_tokens <= 2048`) is retained in the database
-for 0725-0728 experiment reproduction but is no longer the main workload.
+ShareGPT／BurstGPT、有限输出包装和SQuAD的PG导入器，以及只供PG取数的旧诊断，按
+[准确来源单独保存](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)。
+旧本机数据库说明、计数和命令保留在[当时的数据说明](https://github.com/3444374/ai-operator-execution-optimization/blob/c2c2d3513915a2a7b1a8ec10935a9e38d4af5e0a/data/README.md#local-import)，不作为当前机器状态或输入准备步骤。
+原始数据与派生工作负载没有移动或删除；未来如恢复PG实验，再按对应完整来源树读取与核对。

@@ -5197,3 +5197,15 @@ COCO导入器、配套SQL、三个PG画像及两份专测共七文件移出活�
 
 七原件逐字核对、20条既有历史来源读取通过，native_baselines清单、expected和投影身份未改；八份现行图像实现及专测逐字保持。
 只做归档读取和引用核对，没有重跑前批31项、模型、数据库、真实Ray或服务器任务，不扩大既有质量或性能结论。
+
+<a id="pg-text-tools-isolation"></a>
+## PG文本工具与文件任务分别维护
+
+[十二份准确原件](../../../reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)保存三个PG导入器、三个PG取数诊断、专用身份助手及五份专测，活动Python移出4167行。
+现行SQuAD／ShareGPT文件输入、SQuAD评价与容量、map_workload_tools及原生DuckDB实现与专测共十份文件逐字未改。
+旧名称test_squad_pg_map_pilot的九个方法实际检查文件任务，未因名称含PG而移出；输入身份也保持。
+
+改前、改后分别选择同一十一项：九项SQuAD消息／分组／评价、一项真实临时文件CLI往返、一项DuckDB假连接执行与关闭，均通过，无错误或跳过。
+未重跑归档工具的专测，没有实际HTTP、数据库、模型、Ray或GPU调用；这些软件结果不代表真实推理或性能。
+十二原件逐字匹配c2c2d35，十五条新来源与二十条既有来源合计35条读取匹配原摘要；旧expected、投影身份与其他来源不变。
+数据和runtime入口现按实际CSV／JSON／文件清单说明准备，不再把PG导入作为文件任务前提；原始资产和既有模型成绩未改。

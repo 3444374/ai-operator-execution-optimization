@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-07：PG文本导入与取数诊断归档
+
+[实现、恢复与检查](diagnostics/records_runtime_refactor_20261104/README.md#pg-text-tools-isolation)记录十二原件、十五条新来源和35条相关历史读取。
+11项现有文件任务／DuckDB假连接检查改前后通过，当前非PG实现及原始数据保持，没有真实服务或数据库操作。
+
 ## 2026-11-07：PG图像数据工具单独保存
 
 [归档与读取核对](diagnostics/records_runtime_refactor_20261104/README.md#pg-image-tools-isolation)记录七份准确原件及20条既有历史读取。
