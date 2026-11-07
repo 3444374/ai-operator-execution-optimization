@@ -10,7 +10,12 @@ import unittest
 from src.experiments.async_request_guard import ThreadedRequestGuard
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError
 from src.experiments.cell_budget import CellBudgetLedger
-from tests.execution_provider.test_ray_map_transport import task
+from src.scheduling.core.session_contract import BackendTask, OfferedTask, SessionSpec, TaskKey
+
+
+def task(sequence, payload=b'payload'):
+    return BackendTask(TaskKey(0, sequence), SessionSpec('job', 'flow', 'fixture'),
+                       OfferedTask(sequence, payload, 1, 100))
 
 
 class ThreadedGuardTests(unittest.IsolatedAsyncioTestCase):

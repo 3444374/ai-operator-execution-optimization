@@ -1,0 +1,131 @@
+{
+  "schema": "semloom.legacy_source_handoff_followup.v1",
+  "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+  "production_provider_or_controller_changed": false,
+  "independent_review": {
+    "head": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+    "source_sha256": "f9fc94fb29b1d44269615851adc42dc7131b2cc0ecd93e48ba2175d1abbe3620",
+    "original_failure_reproduced_on_7702_and_f208": true,
+    "unique_original_failure_cause_proven": false,
+    "deterministic_witness": {
+      "baseline": {
+        "no_pending_changes": 2,
+        "pending_changes": 0
+      },
+      "candidate": {
+        "no_pending_changes": 2,
+        "pending_changes": 0
+      },
+      "scope": "Production legacy provider/gate/controller with synthetic clock/poll order; not the original failed-run event trace"
+    }
+  },
+  "new_CPU_trace": {
+    "commit": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+    "label": "one original128-row CPU query with observation-only provider subclass",
+    "legacy_search": {
+      "changes": 2,
+      "stop_reason": null,
+      "decision_calls": 247,
+      "reasons": {
+        "missing_or_stale_feedback": 234,
+        "priming_measurement": 1,
+        "initial_progress_window": 1,
+        "confirming_performance": 4,
+        "insufficient_progress": 1,
+        "performance_probe": 2,
+        "transition_settled": 2,
+        "cooldown": 2
+      },
+      "samples": 428,
+      "snapshot_requests": 429
+    },
+    "semantic_checks": {
+      "returned": 128,
+      "unique_calls": 128,
+      "engine_requests": 128,
+      "held_tasks": 0,
+      "retained_transport_refs": 0,
+      "original_identities_match": true
+    },
+    "events": 1963,
+    "provider_reasons": {
+      "sampler_unavailable": 430,
+      "missing_snapshot": 213,
+      "sample_updated": 161,
+      "duplicate_or_older_source_sequence": 267,
+      "fresh_for_consumer": 34
+    },
+    "instrumentation_errors": 0,
+    "pending_regular_poll_returns_None": 428,
+    "trace": {
+      "bytes": 305211,
+      "sha256": "2b087fc267fef850292eedb56be28008a5d616bcc62a1120c31b51a9c733fd75",
+      "archive_bytes": 16591,
+      "archive_sha256": "446094eed263aa3d83d45a5a1c3ae479bd0f1ef2cf098e3f6ad8dce5da5a8b7d"
+    },
+    "limitations": [
+      "Observational tracing can affect scheduling; this is not a performance comparison.",
+      "Callback timestamps do not uniquely establish the ordering of every cross-thread publication/consumption.",
+      "This run does not prove the unique cause of any original failed run.",
+      "Modern requests share this provider; its complete handoff qualification is still pending."
+    ],
+    "model_calls": 0,
+    "real_Ray_runs": 0,
+    "GPU_runs": 0
+  },
+  "archive": "legacy_provider_trace.json.gz",
+  "unchanged_sources": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "sha256": "4426ccb379d78a9bb401ebba1c738fa56e396d8ebaa0351a9534a9469ce1f366"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_request_feedback.py",
+      "sha256": "edb000f54e07b0a74c48ff08e8fafabf705f072c79ea9f50cc75968a6d70693d"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_native_sampler.py",
+      "sha256": "d1b60125b7ef1de73b2d431404ebd708591671219366ca0c976f07e6f440fe99"
+    },
+    {
+      "path": "code/src/scheduling/runtime/observations.py",
+      "sha256": "6c0bfed70893158c64b835b849d5fe09eb0d7adf63576a21d389e0779184234f"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+    },
+    {
+      "path": "code/tests/execution_provider/test_core_geometric_admission.py",
+      "sha256": "d29fd8c07142e25ce56326ec6783ed0c61969e51de55bdaef1129b7c9bb84d34"
+    }
+  ],
+  "blocking_scope": [
+    "Legacy geometric functionality remains unqualified; original full CPU result still has the retained failure.",
+    "Ordinary modern requests and rolling batches share the provider; complete handoff impact is not qualified merely by a different controller.",
+    "Scoped pressure-repair CPU checks remain separate; no whole-owner/model/GPU or performance qualification is implied."
+  ],
+  "next_engineering_work": [
+    "Distinguish a pending read from unavailable/invalid telemetry without changing controller thresholds.",
+    "Preserve original source timestamps and consume each accepted generation at most once; do not refresh stale/duplicate data.",
+    "Keep epoch/UID/session rejection and unknown RPC ownership intact."
+  ],
+  "initial_trace_attempt": {
+    "usable": false,
+    "reason": "diagnostic wrapper used a modern-only lock on the legacy class and raised; corrected diagnostics do not alter returned values",
+    "summary_sha256": "6e745e7c842d91f6146852bd30e93024384568ecabcf76ad9a89e4e962ea90a8",
+    "excluded_from_conclusions": true
+  },
+  "first_close_failure_scope": "The adjusted late-known fixture covers already-successful work before delivery. It does not prove the unique cause of the first ModelCallFailed or qualify accepted-but-computing close races.",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}

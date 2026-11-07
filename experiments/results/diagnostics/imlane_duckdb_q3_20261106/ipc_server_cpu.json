@@ -1,0 +1,121 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.server_software_ipc.v1",
+  "source_commit": "3c8073167310127036d10dddf68300ef722fe503",
+  "source_tree": "b444dfeee38e12e352b55d2053eb9d42e8cf1bd9",
+  "status": "passed",
+  "run_id": "imlane-model-ipc-cpu-20261106-r4",
+  "lease_released": true,
+  "real_models": 0,
+  "GPU_queries": 0,
+  "software_invocations_this_run": 121,
+  "software_invocations_including_retained_failed_attempts": 241,
+  "quality_scope": "good fixture answers were generated from existing gold solely to validate transport/parser/identity; COUNT14 and exact labels do not measure model quality",
+  "cases": [
+    {
+      "case": "good",
+      "passed": true,
+      "worker_status": "completed",
+      "worker_error_type": null,
+      "payloads_match": true,
+      "fixed_cleanup_deadline_met": true,
+      "author_automatic_resource_cleanup": true,
+      "native_client_returncodes": [
+        0
+      ],
+      "native_error_propagation": "not_applicable",
+      "software_engine": {
+        "instances": 1,
+        "attempts": 120,
+        "completed": 120,
+        "inflight": 0,
+        "peak_inflight": 120,
+        "shutdown_calls": 1,
+        "serve_returned": true,
+        "socket_exists": false,
+        "models": 0,
+        "GPU_runs": 0
+      },
+      "software_engine_event_status_counts": {
+        "returned": 120
+      },
+      "resources": {
+        "passed": true,
+        "failure_count": 0,
+        "peak_observed_RSS_sum_bytes": 521416704,
+        "remaining_new_shm_names": [],
+        "host_shm_used_delta_bytes": 0,
+        "supervisor_exit": 0,
+        "observed_owned_exit_confirmed": true,
+        "remaining_owned_pids": [],
+        "supervisor_cleanup_errors": []
+      },
+      "service_cleanup": {
+        "owner_returncode": 0,
+        "fallback_term": false,
+        "forced_kill": false,
+        "cleanup_errors": [],
+        "observed_owned_exit_confirmed": true,
+        "owned_survivors": [],
+        "observer_stopped": true,
+        "log_writer_stopped": true
+      }
+    },
+    {
+      "case": "error",
+      "passed": true,
+      "worker_status": "failed",
+      "worker_error_type": "RuntimeError",
+      "payloads_match": true,
+      "fixed_cleanup_deadline_met": true,
+      "author_automatic_resource_cleanup": true,
+      "native_client_returncodes": [
+        -15
+      ],
+      "native_error_propagation": "TERM_cancelled_after_known_provider_failure; native scalar remains unknown",
+      "software_engine": {
+        "instances": 1,
+        "attempts": 1,
+        "completed": 1,
+        "inflight": 0,
+        "peak_inflight": 1,
+        "shutdown_calls": 1,
+        "serve_returned": true,
+        "socket_exists": false,
+        "models": 0,
+        "GPU_runs": 0
+      },
+      "software_engine_event_status_counts": {
+        "failed": 1
+      },
+      "resources": {
+        "passed": true,
+        "failure_count": 0,
+        "peak_observed_RSS_sum_bytes": 474972160,
+        "remaining_new_shm_names": [],
+        "host_shm_used_delta_bytes": 0,
+        "supervisor_exit": 1,
+        "observed_owned_exit_confirmed": true,
+        "remaining_owned_pids": [],
+        "supervisor_cleanup_errors": []
+      },
+      "service_cleanup": {
+        "owner_returncode": 0,
+        "fallback_term": false,
+        "forced_kill": false,
+        "cleanup_errors": [],
+        "observed_owned_exit_confirmed": true,
+        "owned_survivors": [],
+        "observer_stopped": true,
+        "log_writer_stopped": true
+      }
+    }
+  ],
+  "results_sha256": "6af748378f89889b78be28b0e235053a4a9d2fc89954c1f20e2cab59407fd283",
+  "handoff_sha256": "cda9ab86544727da798d458ce3ae0180a3a6dc836b4ce788eb7d2c70dbaf67b5",
+  "earlier_attempts": [
+    "r1 BrokenPipe before stages",
+    "r2 fixture used nonexistent library path field before cases",
+    "r3 software candidate lacked native output index;120 calls failed/unknown; original retained"
+  ],
+  "qualification": "real author/Arrow16.1 and real Unix IPC/lifecycle with a software engine; not actual vLLM/GPU qualification"
+}

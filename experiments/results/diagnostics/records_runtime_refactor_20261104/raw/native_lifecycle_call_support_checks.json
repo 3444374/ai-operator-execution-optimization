@@ -1,0 +1,136 @@
+{
+  "code_candidate": "b742706426582d65a54f6d0a34ed6e3dbfd1322e",
+  "regression_commit": "b742706426582d65a54f6d0a34ed6e3dbfd1322e",
+  "regression": {
+    "methods": 74,
+    "passed": 74,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "seconds": 4.3630961671005934,
+    "selectors": [
+      "tests.infrastructure.test_dependency_direction",
+      "tests.experiments.test_movie_records_session",
+      "tests.experiments.test_native_query_lifecycle",
+      "tests.experiments.test_query_lifecycle",
+      "tests.observability.test_native_query_timing",
+      "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes"
+    ],
+    "source_files": 1074,
+    "all_runtime_test_and_config_hashes_match_commit": true,
+    "document_hash_differences": [
+      "code/INFRA_STATUS.md",
+      "code/README.md",
+      "code/src/baselines/text/frameworks/kalypso_native/README.md"
+    ]
+  },
+  "direct_entry": {
+    "label": "direct-after-main-move",
+    "returncode": 0,
+    "seconds": 0.2894476670771837,
+    "stdout": "",
+    "stderr": "----------------------------------------------------------------------\nRan 3 tests in 0.029s\n\nOK\n",
+    "source_commit": "3b1ff7031b9cec3557c52bb6c54babe7e55c61d7",
+    "target_sha256": "e99d995e7546338a1c3c01b5a19d7a19b9ca2be45eb79313ae3f70e23278bdbc",
+    "real_Ray": 0,
+    "models": 0,
+    "GPU": 0
+  },
+  "validation_note": "Final74 passes atb742 after removing11 identical duplicate tests. All runtime/test/config source hashes match that commit; three documentation files were uncommitted and their measured hashes remain in the original full map. Earlier85 and direct3 records are separate, not extra coverage.",
+  "original_failures": {
+    "production": "Two deterministic new CPU cases failed against unchanged3c production; fixture added in working tree and recovered exactly by its original hash.",
+    "review": "The intermediate test move placed main before its new class. Direct selection failed before correction; fixed before publication."
+  },
+  "independent_reviews": {
+    "production_sha256": "1bcde8cd3dd42e40a1ac017fdb8c50a33de82b82e9c1b669566d4aec5dd9065b",
+    "main_placement_sha256": "d60f852e7130fa0e2f73900b326c4173ed982dfe38b500808dbb614dc68c4a63",
+    "findings_remaining": []
+  },
+  "duplicate_tests": {
+    "removed": 11,
+    "assertions_preserved": true,
+    "proof_original_sha256": "f89d37c8c8fdd718cd40167950469e95d72f782c6c6c8f71ffd58e4b5320fd46",
+    "independent_audit_sha256": "d34c9708d75c75ddbeff97bf401699e5067c36b25a385fb4c5282f5f1efdef19"
+  },
+  "history": "Two production lifecycle modules are absent from the five original projections; no new archive/routes. Complete3010 restore is one final85 method.",
+  "size": {
+    "code_candidate": "b742706426582d65a54f6d0a34ed6e3dbfd1322e",
+    "regression_source": "b742706426582d65a54f6d0a34ed6e3dbfd1322e",
+    "measured_code_files": 1074,
+    "all_non_markdown_files_match_commit": true,
+    "uncommitted_document_hashes_at_test": [
+      "code/INFRA_STATUS.md",
+      "code/README.md",
+      "code/src/baselines/text/frameworks/kalypso_native/README.md"
+    ],
+    "matching_files": 1071,
+    "duplicate_tests_removed": 11,
+    "all_remaining_native_classes_AST_unchanged": true,
+    "main_is_last": true,
+    "counts": {
+      "base": {
+        "commit": "3c8073167310127036d10dddf68300ef722fe503",
+        "core_Python": 56289,
+        "src_and_scripts_Python": 109654,
+        "tests_Python": 98434,
+        "integrations_Python_CPP_HPP": 6758
+      },
+      "candidate": {
+        "commit": "b742706426582d65a54f6d0a34ed6e3dbfd1322e",
+        "core_Python": 56289,
+        "src_and_scripts_Python": 109651,
+        "tests_Python": 98380,
+        "integrations_Python_CPP_HPP": 6758
+      },
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_Python": 54091,
+        "src_and_scripts_Python": 140335,
+        "tests_Python": 102763,
+        "integrations_Python_CPP_HPP": 4521
+      },
+      "cleanup_start": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_Python": 61628,
+        "src_and_scripts_Python": 149645,
+        "tests_Python": 130062,
+        "integrations_Python_CPP_HPP": 4528
+      }
+    },
+    "deltas": {
+      "base": {
+        "core_Python": 0,
+        "src_and_scripts_Python": -3,
+        "tests_Python": -54,
+        "integrations_Python_CPP_HPP": 0
+      },
+      "main": {
+        "core_Python": 2198,
+        "src_and_scripts_Python": -30684,
+        "tests_Python": -4383,
+        "integrations_Python_CPP_HPP": 2237
+      },
+      "cleanup_start": {
+        "core_Python": -5339,
+        "src_and_scripts_Python": -39994,
+        "tests_Python": -31682,
+        "integrations_Python_CPP_HPP": 2230
+      }
+    }
+  },
+  "scope": {
+    "real_Ray": 0,
+    "actual_IPC": 0,
+    "model_calls": 0,
+    "GPU": 0,
+    "server_operations": 0
+  },
+  "prior_server_six": "Separate existing task is checking its4d receipt after reconnection; this batch did not resubmit and has no new result to transfer.",
+  "raw": {
+    "file": "native_lifecycle_call_support_raw.json.gz",
+    "bytes": 70463,
+    "sha256": "ce97c65089ac3a1b02868a94a482a1405b48a0bd4b3ac10c89f962c077df12d1",
+    "decoded_bytes": 334616,
+    "decoded_sha256": "28ea979c15af3d2904ad4d2e81b6c336fee03d15097773ef42cbe7140d57151d"
+  }
+}

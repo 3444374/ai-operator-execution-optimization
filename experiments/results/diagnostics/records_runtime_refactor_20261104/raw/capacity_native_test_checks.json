@@ -1,0 +1,29 @@
+{
+  "base": "29de82bee05a2a143e03e9631c124ea1f150327e",
+  "scope": "existing native-parameter tests after public resource defaults changed",
+  "before": {
+    "selected": 14,
+    "passed": 10,
+    "failures": 17,
+    "errors": 5
+  },
+  "after": {
+    "selected": 47,
+    "passed": 47,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "production_code_changed": false,
+  "cache_requires_explicit_legacy": true,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "raw_artifacts": {
+    "native_settings_before.json": "b100464fd04a3eaa9e0ae00320c4935e7f7d71cbc6033d6826ca9a82a8fca80c",
+    "native_settings_before.log": "e73404276763f39d49184498cf9b57a42452c078bfe1914be5b1e668cdfaa756",
+    "native_settings_after.log": "23cc9ddbdcd9f58f027d04a70507460c13c4f0e7259fdf44be50c71d0b4d421f",
+    "native_settings_after.json": "31fecd05c00ea23b35128e58496f2e04e7bf28a708a9a5ef1e7f797fd5076603"
+  }
+}

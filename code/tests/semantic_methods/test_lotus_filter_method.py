@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.semantic_methods.lotus.records import FilterMethod, identity
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, identity
 
 
 class InstructionContractTests(unittest.TestCase):
@@ -29,6 +29,21 @@ class InstructionContractTests(unittest.TestCase):
                             resolved_input_columns=('category', 'description'))
         self.assertEqual(FilterMethod.from_dict(asdict(method)), method)
         self.assertEqual(method.resolved_input_columns, ('category', 'description'))
+
+    def test_scan_snapshots_lists_and_round_trips_through_json(self):
+        schema=[['row_id', 'string'], ['source_position', 'int64'], ['body', 'string']]
+        columns, predicate=['body'], ['body', 'botany']
+        scan=RecordScan(schema, columns, predicate)
+        expected=scan.describe()
+        schema[-1][0]='changed'
+        columns.append('changed')
+        predicate[1]='changed'
+        self.assertEqual(scan.describe(), expected)
+        encoded=json.loads(json.dumps(expected))
+        self.assertEqual(RecordScan.from_dict(encoded), scan)
+        encoded['payload_columns']=['missing']
+        with self.assertRaisesRegex(ValueError, 'payload'):
+            RecordScan.from_dict(encoded)
 
 
 class CallerFieldFormattingTests(unittest.TestCase):

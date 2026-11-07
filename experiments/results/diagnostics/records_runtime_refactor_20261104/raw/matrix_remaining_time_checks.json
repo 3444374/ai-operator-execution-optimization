@@ -1,0 +1,178 @@
+{
+  "task": "Remove duplicate matrix timing reserves",
+  "base_commit": "4c5be78c79fd8b6527ab36a6ecb9cf9e03073dd6",
+  "commit": "fb90ad82d94a2b39eedb4b4ed34adb4b8f612f33",
+  "tree": "bd186876a19cd97ae08406530e333db7b011fa36",
+  "source": {
+    "path": "code/src/experiments/movie_records_matrix.py",
+    "run_group_line": 282
+  },
+  "files": [
+    {
+      "path": "code/src/experiments/movie_matrix_support.py",
+      "sha256": "f00b8b9baf86faf60e1929c302c418448c1ec350ab674b66276ff4ad7caec849",
+      "bytes": 17222
+    },
+    {
+      "path": "code/src/experiments/movie_records_matrix.py",
+      "sha256": "56f39ad0af984dba8757dfaaffb1d99b44299f3675d4038da3fe80d78e031635",
+      "bytes": 46794
+    },
+    {
+      "path": "code/tests/experiments/test_movie_records_matrix.py",
+      "sha256": "0a52aebd37f0f5e6df7f9c4756e8ed11352d6e7cb6339886270b417bc699169c",
+      "bytes": 41157
+    },
+    {
+      "path": "code/tests/experiments/test_movie_runtime_configuration.py",
+      "sha256": "af8f78029c496720ddcb546cdce8249525c944975c174c4a6664e9acb343f237",
+      "bytes": 14949
+    }
+  ],
+  "line_counts": {
+    "production": {
+      "files": 2,
+      "before_lines": 1001,
+      "after_lines": 1004,
+      "net_lines": 3
+    },
+    "tests": {
+      "files": 2,
+      "before_lines": 825,
+      "after_lines": 873,
+      "net_lines": 48
+    }
+  },
+  "original": {
+    "rejection": "a positive available work time of 55 seconds was rejected",
+    "duplicate_timing": [
+      "require limit greater than 60",
+      "supervise limit minus 60",
+      "worker context unit deadline minus 60",
+      "resource startup/query durations plus 60 deriving another total owner limit"
+    ],
+    "audit": "default total deadline minus 60; capped at 90; at least one second even after expiry"
+  },
+  "resulting": {
+    "work_end": "min(matrix total end minus its declared cleanup_reserve_s, existing calibration work end when present)",
+    "owner": "use actual remaining work time immediately before launching",
+    "context": "pass that work end directly",
+    "audit": "use the same actual remaining work time; do not launch when it is exhausted",
+    "new_numeric_limit": false,
+    "new_wrapper": false,
+    "new_controller": false
+  },
+  "preserved": {
+    "explicit_matrix_total_budget": true,
+    "declared_launch_deadline": true,
+    "declared_cleanup_reserve": true,
+    "model_query_and_startup_configuration": true,
+    "supervisor_grace_s": 15,
+    "supervisor_natural_exit_grace_s": 1,
+    "supervisor_small_budget_formula": "existing min(grace_s, timeout_s / 3)",
+    "independent_owned_cleanup_s": 15,
+    "call_budget_and_claims": true,
+    "zero_automatic_retries": true,
+    "unknown_resource_and_lease_behavior": true,
+    "historical_results": true
+  },
+  "CPU": {
+    "artifact": "CPU_FINAL.json",
+    "tests": 16,
+    "passed": 16,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "real_processes_started": 0,
+    "models": 0,
+    "Ray_runs": 0,
+    "UDS_runs": 0,
+    "covered": [
+      "positive 0.5, 55 and 2000 second allowances",
+      "earlier calibration work end",
+      "less than one second remaining for audit",
+      "expiry before setup, before launch and before audit",
+      "original cleanup failures, unknown outcomes, lease retention and total wall overrun"
+    ],
+    "accounting": "the 10 test first selection is part of the later 16, not additional unique tests"
+  },
+  "before_after": {
+    "original": "ORIGINAL.json",
+    "after": "AFTER.json"
+  },
+  "unchanged": "UNCHANGED_BUDGET_AND_CLEANUP.json: 12 existing budget/controller/cleanup definitions have identical ASTs",
+  "history": {
+    "artifact": "HISTORY_FIRST.json",
+    "affected_reads": 20,
+    "passed": 20,
+    "failed": 0,
+    "new_archives": 0,
+    "expected_sha_changes": 0,
+    "projection_identity_changes": 0,
+    "full_materialization_repeated": false
+  },
+  "updated_test": {
+    "path": "code/tests/experiments/test_movie_runtime_configuration.py",
+    "name": "test_matrix_work_time_and_output_scratch_do_not_inherit_query_timeout",
+    "old_expected_timeout_s": 70,
+    "new_expected_timeout_s": 780,
+    "reason": "fixed clock 100 and declared end 1000 minus original cleanup 120 gives actual work time 780; query/startup durations stay separate",
+    "status": "source expectation updated; its broader module was not loaded because it imports the previously blocked SDK fixtures; the affected behavior is covered by lightweight GroupFixture cases"
+  },
+  "checks": [
+    "AST on four changed Python files",
+    "whitespace diff",
+    "new-text term scan",
+    "secret scan on four staged files",
+    "old fixed-reserve expression and old test-name reference search"
+  ],
+  "pending": [
+    "independent review",
+    "actual server matrix execution if selected; no experiment budget consumed"
+  ],
+  "untouched": [
+    "original 4690/52a/fc worktree",
+    "HTTP server/adapters cleanup",
+    "query/model backend defaults",
+    "all original budget/result files"
+  ],
+  "artifacts": {
+    "ORIGINAL.json": {
+      "sha256": "06d884291ffb55d68284bd528e8ee10f2e847c15904756859d9513a8ed69c2df",
+      "bytes": 909
+    },
+    "CPU_FINAL.log": {
+      "sha256": "f73c66443267308c98cc0785e80c65c03077986dff60c3fd8210d6eeae71d585",
+      "bytes": 2924
+    },
+    "HISTORY_FIRST.json": {
+      "sha256": "d24b9d40fdc3463e979111a0b272deb82067388fc0b6ee021786edea4c993903",
+      "bytes": 6600
+    },
+    "AFTER.json": {
+      "sha256": "1678e4c0123a3d043da563d5ccd5877a510e3b24120cd3795f3b440ef3556b24",
+      "bytes": 895
+    },
+    "CPU_FINAL.json": {
+      "sha256": "3fc3d9f136ae6e2369f3196a3dd19c3c510e687ee8620ccdee67f2be4611583b",
+      "bytes": 400
+    },
+    "CPU_FIRST.json": {
+      "sha256": "f9472a083b8585e99a196c9f2ddabdeeb6793ccc8bb88074e7f332d8241603b4",
+      "bytes": 334
+    },
+    "UNCHANGED_BUDGET_AND_CLEANUP.json": {
+      "sha256": "d7f505c09084b08b1968e4fb0ed72f43ac93e961f11fd8844b1750f1cb8ccb78",
+      "bytes": 1769
+    },
+    "CPU_FIRST.log": {
+      "sha256": "0f247ac54ae48b07d25101701e78d16d4888ec17076ddf095ccecfa05d90d63e",
+      "bytes": 1852
+    }
+  },
+  "combined_commit": "57be5654ba775bf1c12f29297994455f9c7edb26",
+  "combined_tree": "1c7d15560be79676ff1a987b70b5b4c7bb0c0de3",
+  "original_handoff_sha256": "a4bd3304292089e01c733ace20b346134973a76d72e5dca79e42c2fc8e3e2447",
+  "independent_review_sha256": "9224e0207e44a290485a88a82eec35931b33ccdaca735da71e9e35aeaaf12237",
+  "new_model_or_Ray_calls": 0
+}

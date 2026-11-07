@@ -12,10 +12,9 @@ CODE_ROOT = Path(__file__).resolve().parents[2]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.planning.semfilter_reference_calibration import (  # noqa: E402
+from src.experiments.operator_costs.semfilter_reference_calibration import (  # noqa: E402
     build_reference_calibration,
     load_json_document,
-    validate_reference_calibration,
 )
 
 
@@ -36,7 +35,6 @@ def main() -> int:
     try:
         source = load_json_document(args.source.read_text(encoding="utf-8"))
         artifact = build_reference_calibration(source)
-        validate_reference_calibration(artifact)
         encoded = json.dumps(
             artifact,
             ensure_ascii=False,

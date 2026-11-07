@@ -12,6 +12,7 @@ from ...planning.work import WorkDescriptor
 
 
 MAX_TASK_PROFILES = 32
+UINT64_MAX = (1 << 64) - 1
 
 
 class State(str, Enum):
@@ -20,6 +21,9 @@ class State(str, Enum):
     FINISHED = "FINISHED"
     CANCELLED = "CANCELLED"
     FAILED = "FAILED"
+
+
+TERMINAL_STATES = (State.CANCELLED, State.FAILED, State.FINISHED)
 
 
 class Acceptance(str, Enum):
@@ -59,7 +63,7 @@ class SessionLimits:
     item_result_bytes: int
     metadata_bytes: int
     step_actions: int
-    wait_timeout_s: float
+    wait_timeout_s: float | None
     poll_interval_s: float
     timeouts: SessionTimeouts | None = None
 
@@ -68,6 +72,8 @@ class SessionLimits:
             if name == "timeouts":
                 if value is not None and type(value) is not SessionTimeouts:
                     raise ValueError("timeouts must be SessionTimeouts or None")
+                continue
+            if name == "wait_timeout_s" and value is None:
                 continue
             if name.endswith("_s"):
                 if (

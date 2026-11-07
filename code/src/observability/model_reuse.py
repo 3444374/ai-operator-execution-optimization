@@ -12,7 +12,7 @@ import time
 import uuid
 import weakref
 
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 
 
 _models = weakref.WeakValueDictionary()

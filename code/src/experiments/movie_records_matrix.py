@@ -20,9 +20,11 @@ import psutil
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.movie_records_session import check_plan, run_movie_session
-from src.experiments.sembench_records_formal import validate_result, QueryClock, read, sha
+from src.baselines.text.movie_tasks import validate_query_result as validate_result
+from src.observability.native_query_timing import QueryClock
+from src.infrastructure.private_artifacts import read_json as read, file_sha256 as sha
 from src.baselines.text.movie_records import MovieRecordSource
-from src.baselines.common.private_artifacts import require_outside_git,write_private_json,content_digest
+from src.infrastructure.private_artifacts import require_outside_git,write_private_json,content_digest
 from src.semantic_methods.lotus.records import CallLedger
 from src.observability.records_telemetry import TelemetryEvents
 from src.experiments.movie_matrix_support import (
@@ -293,15 +295,11 @@ class MovieMatrix:
                 checked=plan_binding['checked'])
             write_private_json(output/'execution-plan.json',plan)
         budget = matrix_budget(self.packet.read(self.packet.HERE / 'matrix.json'))
-        remaining = deadline - time.monotonic()
-        resources = plan['resources']
-        starts = len(plan['queries']) if plan['lifecycle'] == 'isolated' else 1
-        owner_bound = starts * (resources['startup_timeout_s'] + 60) + len(plan['queries']) * resources['query_timeout_s']
-        limit = min(owner_bound, remaining - budget['cleanup_reserve_s'])
-        if work_deadline is not None:limit=min(limit,work_deadline-time.monotonic())
-        if limit <= 60:
-            raise TimeoutError('remaining execution/cleanup window cannot cover next owner')
-        unit_deadline = time.monotonic() + limit
+        unit_deadline = deadline - budget['cleanup_reserve_s']
+        if work_deadline is not None:
+            unit_deadline = min(unit_deadline, work_deadline)
+        if time.monotonic() >= unit_deadline:
+            raise TimeoutError('matrix work time exhausted before owner setup')
         context = self.build_context(cfg, packet_sha, slot, group, lease, output, unit_deadline, gpu)
         context.update(plan_index=index,slot_index=slot)
         if plan_binding is not None:
@@ -325,7 +323,12 @@ class MovieMatrix:
         start = time.monotonic()
         emit(dict(event='owner_group_started', index=index, backend=group['backend'], profile=group['profile'], repetition=group['repetition'], max_calls=group['max_calls'], queries=[q['query_id'] for q in plan['queries']]))
         try:
-            supervised = supervise(self.worker_argv(cfg, packet_sha, index, output / 'context.json', output), output, timeout_s=limit - 60, grace_s=15, natural_exit_grace_s=1, monitor=monitor)
+            remaining = unit_deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('matrix work time exhausted before owner launch')
+            supervised = supervise(
+                self.worker_argv(cfg, packet_sha, index, output / 'context.json', output), output,
+                timeout_s=remaining, grace_s=15, natural_exit_grace_s=1, monitor=monitor)
         except BaseException as failure:
             error = failure
             supervised = getattr(failure, 'report', None)
@@ -347,8 +350,13 @@ class MovieMatrix:
             raise error
         assert physical['original_supervisor_passed'] and physical['independent_physical_exit']
         assert self.packet.read(output / 'functional-validation.json')['status'] == 'passed'
-        audit_deadline=work_deadline if work_deadline is not None else deadline-60
-        audited = subprocess.run(self.audit_argv(cfg, output / 'query.json', output / 'token-audit.json'), env=dict(os.environ, CUDA_VISIBLE_DEVICES=''), capture_output=True, text=True, timeout=min(90, max(1, audit_deadline - time.monotonic())))
+        remaining = unit_deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError('matrix work time exhausted before token audit')
+        audited = subprocess.run(
+            self.audit_argv(cfg, output / 'query.json', output / 'token-audit.json'),
+            env=dict(os.environ, CUDA_VISIBLE_DEVICES=''), capture_output=True, text=True,
+            timeout=remaining)
         self.packet.save(output / 'token-audit-command.json', dict(returncode=audited.returncode, stdout=audited.stdout, stderr=audited.stderr))
         assert audited.returncode == 0 and self.packet.read_report(output / 'token-audit.json')['status'] == 'passed'
         report = self.packet.read_report(output / 'query.json')
@@ -362,22 +370,29 @@ class MovieMatrix:
         """Adapt workload callbacks; all scan/cache/choice sequencing is public API."""
         group_started=time.monotonic()
         from src.scheduling.runtime.calibration import ScanBudget,IncreasingSearch,run_calibrated,calibrate
-        from src.experiments.calibration.core import build_core_identity,core_measurement,core_runtime_measurement
+        from src.experiments.calibration.core import (
+            build_core_identity,core_measurement,core_runtime_measurement,core_session_model_ready,core_context_failure,
+        )
+        from src.serving.backends.vllm_protocol import EngineSpec
         spec=group['calibration'];base=self.packet.read(self.packet.HERE/group['plan']);checked=check_plan(base)
         require_outside_git(Path(spec['cache_dir']))
         observed=core_observations(cfg,self.packet,self.host.assigned_gpu(cfg))
-        identity=build_core_identity(base,checked,**observed)
         jobs=scan_jobs(group,index)
         validate_core_scan(base,group,index,observed['hardware']['cpu_limit'])
+        delegated=EngineSpec.from_dict(base['engine']).max_model_len is None
+        identity=None if delegated else build_core_identity(base,checked,**observed)
         work=checked['expected_calls'];directory=self.root/'calibration'/('g'+str(index).zfill(3))
         directory.mkdir(parents=True,mode=0o700)
         rows=[];self.last_calibration_physical=True
+        premeasured={};confirmation=None
+        confirmation_deadline=min(group_started+spec['timeout_s'],deadline-
+            matrix_budget(self.packet.read(self.packet.HERE/'matrix.json'))['cleanup_reserve_s'])
         common=dict(cache_dir=Path(spec['cache_dir']),work_per_sample=work,repetitions=spec['repetitions'],
                     near_peak_ratio=spec['near_peak_ratio'])
         if 'search' in spec:common['search']=IncreasingSearch(**spec['search'])
 
         def binding(kind,configuration,**extra):
-            return dict(kind=kind,configuration=configuration,observed=observed,checked=checked,
+            return dict(kind=kind,configuration=configuration,observed=deepcopy(observed),checked=checked,
                 declared_plan_sha256=self.packet.sha(self.packet.HERE/group['plan']),**extra)
 
         def native(plan_binding,slot,work_deadline=None):
@@ -395,12 +410,10 @@ class MovieMatrix:
             self.last_calibration_physical=True
             return value
 
-        def measure(configuration,*,repeat_index,deadline_monotonic,work_limit):
-            if work_limit!=work:raise ValueError('scan work_limit differs from complete workload')
-            position=next(i for i,j in enumerate(jobs)
-                if j['repeat_index']==repeat_index and j['configuration']==configuration)
+        def collect_sample(position,deadline_monotonic,*,resolve_context=False):
             job=jobs[position];slot=slot_index+1+position
-            sample_binding=binding('scan',configuration,sample_id=job['sample_id'])
+            sample_binding=binding('scan',job['configuration'],sample_id=job['sample_id'],
+                **(dict(resolve_model_context=True) if resolve_context else {}))
             sample_plan=materialize_core_plan(base,group,index,sample_binding,source_revision=self.packet.COMMIT,checked=checked)
             output=self.root/'units'/('g'+str(slot).zfill(3));primary=None
             try:
@@ -411,14 +424,27 @@ class MovieMatrix:
                 value=None
             report=(self.packet.read_report(output/'query.json') if (output/'query.json').exists()
                     else dict(backend='semloom-core',lifecycle=base['lifecycle'],status='failed',queries=[]))
+            return slot,output,sample_plan,report,value,primary
+
+        def record_sample(position,receipt):
+            slot,output,sample_plan,report,value,primary=receipt
             sample=core_measurement(sample_plan,check_plan(sample_plan),report,identity=identity,
-                repeat_index=repeat_index,resources_passed=primary is None)
+                repeat_index=jobs[position]['repeat_index'],resources_passed=primary is None,
+                model_ready=observed.get('model_ready'))
             self.packet.save(output/'core-scan-measurement.json',sample)
             rows.append(dict(slot_index=slot,measurement=sample,result=value,
                 error=None if primary is None else self.host.helper.error_record(primary)))
             if primary is not None and (sample['unknown_model_calls'] or sample['recorded_model_calls']<work):
                 raise primary
             return core_runtime_measurement(sample)
+
+        def measure(configuration,*,repeat_index,deadline_monotonic,work_limit):
+            if work_limit!=work:raise ValueError('scan work_limit differs from complete workload')
+            position=next(i for i,j in enumerate(jobs)
+                if j['repeat_index']==repeat_index and j['configuration']==configuration)
+            if position in premeasured:
+                return premeasured.pop(position)
+            return record_sample(position,collect_sample(position,deadline_monotonic))
 
         def execute(configuration):
             resolution=calibrate(identity,spec['candidates'],measure=None,**common)
@@ -434,18 +460,50 @@ class MovieMatrix:
                 selection_sha256=resolution['selection_sha256'],policy=json.loads(receipt)['policy'],resolution=resolution)
             return native(selected_binding,slot_index)
 
-        frontend_preparation_s=time.monotonic()-group_started
         try:
+            if delegated:
+                # This is existing reserved sample work, not a separate model probe.
+                confirmation_started=time.monotonic()
+                receipt=collect_sample(0,confirmation_deadline,resolve_context=True)
+                try:
+                    observed['model_ready']=core_session_model_ready(base,receipt[3])
+                except (ValueError, RuntimeError) as context_error:
+                    failed=core_context_failure(checked,receipt[3])
+                    self.packet.save(receipt[1]/'core-context-failure.json',failed)
+                    rows.append(dict(slot_index=receipt[0],measurement=failed,result=receipt[4],
+                        error=self.host.helper.error_record(receipt[5] or context_error)))
+                    if receipt[5] is not None:
+                        receipt[5].add_note('model context confirmation: '+type(context_error).__name__)
+                        raise receipt[5] from context_error
+                    raise
+                identity=build_core_identity(base,checked,**observed)
+                premeasured[0]=record_sample(0,receipt)
+                confirmation=dict(sample_id=jobs[0]['sample_id'],slot_index=receipt[0],
+                    elapsed_s=time.monotonic()-confirmation_started,
+                    recorded_model_calls=rows[-1]['measurement']['recorded_model_calls'],
+                    unknown_model_calls=rows[-1]['measurement']['unknown_model_calls'],
+                    model_context=identity['execution']['model_context'],
+                    cost_scope='existing first declared sample; already in scan_units and frontend_preparation_s')
+                if receipt[5] is not None:
+                    raise receipt[5]
+            frontend_preparation_s=time.monotonic()-group_started
             result=run_calibrated(identity,spec['candidates'],execute,measure=measure,
-                budget=ScanBudget(timeout_s=min(spec['timeout_s'],deadline-time.monotonic()-matrix_budget(self.packet.read(self.packet.HERE/'matrix.json'))['cleanup_reserve_s']),
+                budget=ScanBudget(timeout_s=(confirmation_deadline-time.monotonic() if delegated else
+                    min(spec['timeout_s'],deadline-time.monotonic()-matrix_budget(self.packet.read(self.packet.HERE/'matrix.json'))['cleanup_reserve_s'])),
                                   max_work=work*len(jobs)),**common)
         except BaseException as error:
             report=getattr(error,'calibration_report',getattr(error,'report',{}))
             self.last_calibration_failure=dict(index=index,report=report,scan_units=rows)
+            if delegated:
+                self.last_calibration_failure['model_context_confirmation']=confirmation
             try:self.packet.save(directory/'failed.json',self.last_calibration_failure)
             except Exception as recording:error.add_note('calibration report write failed: '+type(recording).__name__)
             raise
         result.update(frontend_preparation_s=frontend_preparation_s,frontend_total_wall_s=time.monotonic()-group_started)
+        if confirmation is not None:
+            result['model_context_confirmation']=dict(confirmation,
+                sample_in_public_scan_cost=0 not in premeasured,
+                timing_scope='confirmation precedes public selector; frontend_total_wall_s includes it once')
         self.packet.save(directory/'public-result.json',result)
         target=result['result']
         target['calibration_run']={k:v for k,v in result.items() if k!='result'}

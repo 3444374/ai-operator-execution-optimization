@@ -16,7 +16,7 @@ import pytest
 from src.modalities.image import clip
 from src.modalities.image.contracts import EmbeddingSemantics, ImageEmbeddingResult
 from src.semantic_methods.lotus import image_backend, image_rm
-from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor, RayDataClipPredictor
+from src.modalities.image.clip_batch_workers import RayDataClipImagePredictor, RayDataClipPredictor
 
 
 def png(image):

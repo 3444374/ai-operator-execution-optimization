@@ -16,14 +16,15 @@ import tempfile
 import threading
 import time
 
+from src.infrastructure.deadlines import deadline_after
 from src.semantic_methods.lotus.cascade import (
     CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 from .daft_lotus_records import DEFAULT_PREPARED_BATCH_BYTES, _DaftRows, _check
-from .lotus_cascade_process import StageEngineCleanup
+from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 
 
 DAFT_VERSION = "0.7.21"
@@ -117,7 +118,7 @@ def _stage_graph(source, stage, engine, generation, resources, deadline, control
                 raise BufferError("actual Daft cascade batch exceeds its logical input allowance")
             _check(deadline, control)
             if self.kernel is None:
-                from .daft_engine_process import EngineProcess
+                from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
 
                 self.kernel = (engine_type or EngineProcess)(
                     EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),
@@ -142,7 +143,7 @@ def _stage_graph(source, stage, engine, generation, resources, deadline, control
                     self.kernel.close()
                 except BaseException as error:
                     # A cleanup observer cannot discard completed rows or usage.
-                    from .daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
 
                     try:
                         _publish(Path(control) / "engine-close-failure.json", dict(
@@ -358,7 +359,7 @@ class DaftCascadeBackend:
             raise ValueError("max_prepared_batch_bytes must be a positive integer")
         self.resources = RecordsResources(**asdict(resources))
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self.runner_threads, self.max_prepared_batch_bytes = runner_threads, max_prepared_batch_bytes
         self.close_reports, self._checked = [], False
         self._methods, self._scans = {}, {}
@@ -403,7 +404,7 @@ class DaftCascadeBackend:
                 lm.model, binding.instruction, binding.default, binding.system_prompt,
                 binding.output_tokens, effective[role], (), binding.resolved_input_columns)
             generation = local_generation(dummy)
-            if generation.max_tokens > spec.max_model_len:
+            if spec.max_model_len is not None and generation.max_tokens > spec.max_model_len:
                 raise ValueError("cascade max_tokens exceeds max_model_len")
             methods[role], scans[role] = binding, scan
             instructions[role] = nle2str(binding.instruction, list(binding.resolved_input_columns))
@@ -440,7 +441,7 @@ class DaftCascadeBackend:
         spec = self.engines[stage.model_role]
         if spec.max_model_calls is not None and spec.max_model_calls < len(calls):
             raise ValueError("engine lifetime budget cannot cover this cascade stage")
-        if generation.max_tokens > spec.max_model_len:
+        if spec.max_model_len is not None and generation.max_tokens > spec.max_model_len:
             raise ValueError("cascade max_tokens exceeds max_model_len")
         spec = replace(spec, max_model_calls=len(calls))
         control = Path(tempfile.mkdtemp(prefix="daft-cascade-stage-"))

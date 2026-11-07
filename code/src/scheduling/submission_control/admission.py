@@ -29,17 +29,22 @@ class ObservationProvider(Protocol):
         ...
 
 
+def _request_count(value, name, *, minimum=0):
+    if type(value) is not int:
+        raise ValueError(name + " must be an integer")
+    if value < minimum:
+        raise ValueError(name + (" must be positive" if minimum else " must be non-negative"))
+
+
 class StaticAdmissionController:
     def __init__(self, limit: int):
-        if limit <= 0:
-            raise ValueError("limit must be positive")
+        _request_count(limit, "limit", minimum=1)
         self.limit = limit
 
     def decide(
         self, inflight: int, *, hol_age_s: float | None = None
     ) -> AdmissionDecision:
-        if inflight < 0:
-            raise ValueError("inflight must be non-negative")
+        _request_count(inflight, "inflight")
         allowed = inflight < self.limit
         return AdmissionDecision(
             allowed=allowed,
@@ -60,14 +65,18 @@ class DynamicAdmissionGate:
         min_update_interval_s: float = 0.0,
         clock: Callable[[], float] = time.monotonic,
     ):
-        if controller.current_window <= 0:
-            raise ValueError("controller current_window must be positive")
+        _request_count(controller.current_window, "controller current_window", minimum=1)
         self.controller = controller
         self.observation_provider = observation_provider
         self.trace_sink = trace_sink
         self.endpoint_id = endpoint_id
         self.limit = controller.current_window
-        if not math.isfinite(min_update_interval_s) or min_update_interval_s < 0:
+        try:
+            valid_interval = (type(min_update_interval_s) in (int, float)
+                and math.isfinite(min_update_interval_s) and min_update_interval_s >= 0)
+        except OverflowError:
+            valid_interval = False
+        if not valid_interval:
             raise ValueError("min_update_interval_s must be finite and non-negative")
         self.min_update_interval_s, self.clock = min_update_interval_s, clock
         self.reset_cadence()
@@ -75,14 +84,14 @@ class DynamicAdmissionGate:
     def decide(
         self, inflight: int, *, hol_age_s: float | None = None
     ) -> AdmissionDecision:
-        if inflight < 0:
-            raise ValueError("inflight must be non-negative")
+        _request_count(inflight, "inflight")
         now = self.clock() if self.min_update_interval_s else None
         due = (not self.min_update_interval_s or self._next_update_at is None
                or now >= self._next_update_at)
         if due:
             observation = self.observation_provider.latest(inflight, hol_age_s=hol_age_s)
             window_decision = self.controller.update(observation)
+            _request_count(window_decision.window, "controller window", minimum=1)
             self.limit = window_decision.window
             self._last_reason = window_decision.reason
             if self.min_update_interval_s:

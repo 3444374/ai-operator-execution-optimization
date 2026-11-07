@@ -1,0 +1,345 @@
+{
+  "schema": "semloom.session_flow.checks.v1",
+  "base": "c1303148046afbb16951aac3624d8464af61b4ef",
+  "candidate": "afbeff8e15711e7f43f9fba5e0f5d30c148aa2fa",
+  "tree": "64b24de7fb2b258bc6e7f06ffaedf920be89adb2",
+  "cpu": {
+    "session-flow-before": {
+      "selected": 181,
+      "passed": 176,
+      "failed": 0,
+      "error_records": 8,
+      "error_methods": 5,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "session-flow-after": {
+      "selected": 176,
+      "passed": 176,
+      "failed": 0,
+      "error_records": 0,
+      "error_methods": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "session-flow-delivery": {
+      "selected": 25,
+      "passed": 25,
+      "failed": 0,
+      "error_records": 0,
+      "error_methods": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "same_retained_selection": true,
+  "after_selections_disjoint": true,
+  "distinct_passed_methods": 201,
+  "source_manifest_files": 1015,
+  "scope": "CPU fixtures only. No actual Ray, model, GPU, database or external server. Checkout base recorded by the runs; file hashes bind their source to the candidate.",
+  "original_socket_errors": "Five methods, eight error records before edits; fixture socket connect raised FileNotFoundError, cause unresolved. These five methods were not rerun or classified as passed.",
+  "earlier_process_checks": "The earlier two sysctl EPERM checks were not retried. Calls and cleanup remain unknown.",
+  "method_comparison": {
+    "base": "c1303148046afbb16951aac3624d8464af61b4ef",
+    "method_names_unchanged": true,
+    "unchanged_methods": 43,
+    "changed_methods": [
+      "SchedulingSession._validate_batch",
+      "SchedulingSession.offer"
+    ],
+    "engine_lines": 560,
+    "flow_lines": 442,
+    "class_count_before": 3,
+    "class_count_after": 3
+  },
+  "import_checks": [
+    {
+      "returncode": 0,
+      "stdout": "{\"first_import\": \"src.scheduling.core.session\", \"same_public_class\": true, \"runtime_annotations_resolve\": true, \"constant_import_matches\": true}\n",
+      "stderr": ""
+    },
+    {
+      "returncode": 0,
+      "stdout": "{\"first_import\": \"src.scheduling.core.session_flow\", \"same_public_class\": true, \"runtime_annotations_resolve\": true, \"constant_import_matches\": true}\n",
+      "stderr": ""
+    }
+  ],
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    }
+  },
+  "history_older_differences": 10,
+  "history_added_differences": 0,
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "c1303148046afbb16951aac3624d8464af61b4ef",
+        "metrics": {
+          "core": {
+            "files": 252,
+            "physical_lines": 58598
+          },
+          "main_runtime": {
+            "files": 244,
+            "physical_lines": 55590
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 394,
+            "physical_lines": 92254
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114406,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1004
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 51
+      },
+      "current": {
+        "commit": "afbeff8e15711e7f43f9fba5e0f5d30c148aa2fa",
+        "metrics": {
+          "core": {
+            "files": 253,
+            "physical_lines": 58598
+          },
+          "main_runtime": {
+            "files": 245,
+            "physical_lines": 55590
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 395,
+            "physical_lines": 92256
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114408,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 51
+      }
+    },
+    "retained_comparison_source_sha256": "e507f0337990a7aad1cfc4c6b7f429a758afc294827eadcbe71cb9af6e6b9e79"
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/records_service_delivery.py": "8ead611d1df9959104454d6d3a1927b2e9b804ca421bb673e6dfe556432c93c4",
+    "code/src/experiments/gateway_isolation_probe.py": "6a958a9dd1407d14bd4ef3ffe466496cc08a0477849c485201c5a1e06adfb570",
+    "code/src/experiments/map_observation_probe.py": "8d9a2da0f4ca4c77396b4a96ecd071089e76824054273a05d50307c3f66eff82",
+    "code/src/scheduling/core/session.py": "ad911101ee9baa27c3615654a6abeb5e69e9e126f60b1a008245e1588ad917e9",
+    "code/src/scheduling/core/session_contract.py": "d81d340d8cf624e48a873c4025899f8c2f363b75b6c2ae12776b319f1ea8e1fa",
+    "code/src/scheduling/core/session_flow.py": "07f7b040f2a748d998d716c2bb166bd66e6c3439cd14538048330d466fda6b0e",
+    "code/tests/scheduling/test_incremental_session.py": "e06be5b90609a29c483d48cab78b653a3cc1fc313b32356c654c79091ca9a717"
+  },
+  "independent_review_sha256": "c9680a421d161da0a0145573965157d74f1f118e1c0d301b44ce4c46e1908b3b",
+  "design_review_sha256": "8d63b000d19d3b3a9a7e4e59959f08929abe9aa27f513ddcd9dafb37521424e2",
+  "private_originals": {
+    "session-flow-before.json": {
+      "bytes": 179982,
+      "sha256": "e990429db8c820654a06bd50a8cf2b31aa1c955317748f7fe0bc56abb788842f"
+    },
+    "session-flow-before.log": {
+      "bytes": 42587,
+      "sha256": "7cdae504fad74600951ddb44bfca637034aa7361e6966b3537b84927fe25a960"
+    },
+    "session-flow-after.json": {
+      "bytes": 195290,
+      "sha256": "75674b7c566e1beefa8aee85272e144f2a4a00e1f2a0e2be38495a2a2e19c0ca"
+    },
+    "session-flow-after.log": {
+      "bytes": 33424,
+      "sha256": "33568039537b30d509256b2cfc64e011b3475c10afd5dc24f7900df6a674c5bd"
+    },
+    "session-flow-delivery.json": {
+      "bytes": 135537,
+      "sha256": "02742f4ac8c37febbe30f6c62c68bd488756903856fd2962e55021a4c487fd59"
+    },
+    "session-flow-delivery.log": {
+      "bytes": 5694,
+      "sha256": "e8f09636dfbdf204c775d122233dcdc0b4cd0c02e889f8c323e9968e7674a208"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 5378,
+      "sha256": "c9680a421d161da0a0145573965157d74f1f118e1c0d301b44ce4c46e1908b3b"
+    },
+    "design/HANDOFF.json": {
+      "bytes": 13294,
+      "sha256": "8d63b000d19d3b3a9a7e4e59959f08929abe9aa27f513ddcd9dafb37521424e2"
+    },
+    "METHOD_COMPARISON.json": {
+      "bytes": 314,
+      "sha256": "497dbfe4e3d0cb3f8810676aac60bea3957972ca34136a32daa67301c7764adb"
+    },
+    "IMPORT_CHECKS.json": {
+      "bytes": 450,
+      "sha256": "277f51643f0d56d5dab71db750c36400c6bb3164ae347168664b060fede28293"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5506,
+      "sha256": "e8c40ee2966b893897f0160797c2a89f42439c775e7e26f49dfe6fa01a117ffd"
+    },
+    "session-flow-history.json": {
+      "bytes": 6859,
+      "sha256": "cb0c6c77f87a6dce650dd451a7aea12ccf4e924de954f0b5b65901e7bc7ad916"
+    }
+  },
+  "raw": {
+    "file": "session_flow_raw.json.gz",
+    "bytes": 29667,
+    "sha256": "bb4c9ec02178e9d605c56c7e8fa8515f19acf7766b8e20fb5946218015c03453",
+    "decoded_sha256": "b878c8216edf399e99b5583f48419933532fa2932a9198536aed991c86b8ce4b"
+  }
+}

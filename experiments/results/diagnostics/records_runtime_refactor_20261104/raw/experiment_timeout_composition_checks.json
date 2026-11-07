@@ -1,0 +1,325 @@
+{
+  "source_checkpoint": "544e19b5353366cf709acd05ac9b0b7c8d5707f7",
+  "source_tree": "a6ea3b23b546d707193e62ab81c21dce2d10aace",
+  "components": {
+    "campaign_cleanup": "9616fb19352b6d47a2386238fff9695e6b2da831",
+    "probe_deadlines": "17193819b8d3f012c593fcf2a171eb8b7b42bb47",
+    "b142_combination": "3bdbf1aaf4a855427d7b9d1beb218b039ab06b12"
+  },
+  "changes": [
+    "Remove campaign startup refusal that treated a maximum duration as required runtime.",
+    "Pass the existing monitor at each actual supervision call; remove the global function replacement and its dedicated restoration test.",
+    "Three retained probes share one absolute monotonic suite deadline; components use the actual remainder instead of fixed reservations.",
+    "Migrate the cancellation fixture to the explicit callback while retaining unknown/no-refund assertions.",
+    "Preserve upstream feedback source bytes, native LOTUS local IPC, SAOR and PG/old HTTP retirement."
+  ],
+  "CPU": {
+    "final_selected_methods": 147,
+    "final_passed": 147,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged_during_final_run": true,
+    "all_recorded_code_files_match_checkpoint": true,
+    "final_recorded_source_commit_note": "Run occurred before committing the upstream merge; file hashes identify the combined source, and every recorded code file matches this checkpoint.",
+    "earlier_79_138_and_probe_59_overlap_not_added": true,
+    "cancellation_before": "Correct selector reproduces unknown_records 0 versus expected 1 before fixture migration.",
+    "preserved_selection_mistake": "The earlier before-cancellation-fixture used the wrong class selector; retained separately from the real counterexample.",
+    "preserved_probe_fixture_mistakes": "Initial new-fixture errors retained; corrected before-run shows one false early stop per probe."
+  },
+  "retired_PG_patch": {
+    "commit": "f832c8b6e8597958630f55836e11d66ba94171c9",
+    "included": false,
+    "reason": "The upstream retired its four production paths. Do not restore them to repair historical timing. Separate review also found the submillisecond SQL timeout conversion issue; its evidence remains private.",
+    "its_98_methods_not_counted_in_current_results": true
+  },
+  "raw": {
+    "path": "experiment_timeout_composition_raw.json.gz",
+    "bytes": 22146,
+    "sha256": "b20bc9d8adf7db2d58c3e7603d8169ae8b484e2f07566b36516284dd9e5301b6",
+    "decoded_bytes": 287248,
+    "decoded_sha256": "e94619ffc7465efc9f7e93687888c38cd37c8b145ce3e66e54de7ea66b376a49"
+  },
+  "private_originals": {
+    "composition/before-cancellation-fixture.json": {
+      "bytes": 167232,
+      "sha256": "b0e20410fca94e602f461ab3b2b4a5a01ca33f0e8bc1afe255245a7c560b485c"
+    },
+    "composition/before-cancellation-fixture.log": {
+      "bytes": 548,
+      "sha256": "911ec12ef4bc7a53574fd76a823004b646cf8956a69162fd4aa3e666b6690a98"
+    },
+    "composition/before-cancellation-keyword.json": {
+      "bytes": 167622,
+      "sha256": "0ac6ab89288de1f410e96e18c5b2e897e390963496948b2e68898dcd574c1727"
+    },
+    "composition/before-cancellation-keyword.log": {
+      "bytes": 1042,
+      "sha256": "8fff8f905984e1fa05a6a05bd42c364d98e9724459187703591b4949010db80f"
+    },
+    "composition/b142-campaign-regression.json": {
+      "bytes": 148448,
+      "sha256": "28100667b078b3447f1fb72012ac4f9023bcf8989c59bfcaa88e2f33b5ff207b"
+    },
+    "composition/b142-campaign-regression.log": {
+      "bytes": 16921,
+      "sha256": "57736d3e8cee2c3adc2d5ef7f608b3028cca4ac167f48fffc6a83305a973ece3"
+    },
+    "composition/timeout-final-composition.json": {
+      "bytes": 163931,
+      "sha256": "71c19b0f6bc9aed24fef3c41abcc213ca3a17fbd53671969434e9a56bb1467eb"
+    },
+    "composition/timeout-final-composition.log": {
+      "bytes": 28001,
+      "sha256": "eeef69dd01567d366d81caeab71705aafe653d47759e1233f6d6494d16e01b70"
+    },
+    "composition/timeout-b6-final-composition.json": {
+      "bytes": 167047,
+      "sha256": "516baa03381ebde58f679759b249289e7a2a2f63001091536221bce1e1b28d0b"
+    },
+    "composition/timeout-b6-final-composition.log": {
+      "bytes": 30110,
+      "sha256": "722e2833b86d81dcb94f582718d47ebe30618f9c979ff1601b4628ecd992561c"
+    },
+    "probe/before-existing-regression.json": {
+      "bytes": 159541,
+      "sha256": "5df01cb6982e17ae95eafc221f294779a06da1cd3170081332339ba7b1662521"
+    },
+    "probe/before-existing-regression.log": {
+      "bytes": 9460,
+      "sha256": "427c4dba8436c5885059afd8a320ade33e3a5a3bbfaa417cdf13f11c4cf22245"
+    },
+    "probe/before-deadline-counterexamples.json": {
+      "bytes": 151498,
+      "sha256": "407082223f44875bad396814444d40c1ab7f0c4a822be3ecdd220cd9ed502a86"
+    },
+    "probe/before-deadline-counterexamples.log": {
+      "bytes": 7381,
+      "sha256": "a7cfacd8792db8a06a4e583e5660b14981e1077ee3219481483a2b9dcc3435be"
+    },
+    "probe/before-deadline-counterexamples-corrected.json": {
+      "bytes": 149781,
+      "sha256": "d624716707fe8f4287ea181ea301e38cd0b342511af6513e669e65cb8f6303a4"
+    },
+    "probe/before-deadline-counterexamples-corrected.log": {
+      "bytes": 4650,
+      "sha256": "e9088dcf37e878f3d7b2f6e6e2cd0b71ad542e6fcc74d21fb2ad820532cd460b"
+    },
+    "probe/after-suite-and-owner.json": {
+      "bytes": 149626,
+      "sha256": "3f78f6a5d82daa808ee4de92b4f8292414795e3e485c1c7cefdc405f67a3f4c4"
+    },
+    "probe/after-suite-and-owner.log": {
+      "bytes": 2371,
+      "sha256": "959a634af6c0da51c569ed341f1a0a0ebe1b9045a6e702774d65951ea004f590"
+    },
+    "probe/after-runtime-deadlines.json": {
+      "bytes": 148513,
+      "sha256": "6ae95d9dbc006ffdc2035f57d60c8f1a037c0463d63ec27acd7e21b8226c07d5"
+    },
+    "probe/after-runtime-deadlines.log": {
+      "bytes": 1613,
+      "sha256": "949d2b4234e29dbc5b47e9a2f155584264d452d9051e211f5d970c9efaaae15d"
+    },
+    "probe/final-related-regression.json": {
+      "bytes": 161842,
+      "sha256": "ade02d1a5bdf0546d8faa3fcd2075a0139e162ce92a3e8f39cc70b912e9915a0"
+    },
+    "probe/final-related-regression.log": {
+      "bytes": 11178,
+      "sha256": "e5d45c72aca012d6201978e20f17711594a34e1e350d8939700202ead2fe2f85"
+    }
+  },
+  "source_sha256": {
+    "code/AGENTS.md": "074064c1d627fb3e8842831d069d411fdb51ac022b546509a0806a38261cdfbe",
+    "code/INFRA_STATUS.md": "18848ed40e89a06f3899fb52738a784cf299448366df1b67431356bd2016092f",
+    "code/scripts/README.md": "f5478ad2c8854f970d45dd6e88d2f64bab7b8a912cb8df893c3ea93b68241e99",
+    "code/scripts/profiling/record_observation/README.md": "137af2f52a33a645d8256ee994de62d0bdf73940d23dab111e0b5076d6c99a82",
+    "code/scripts/profiling/record_observation/campaign_guard.py": "c66f9c82b1d3e4cb9230ab599112fa05a5275a30822355fcb0820f04c3e3c7cc",
+    "code/scripts/profiling/record_observation/control_resource_C2.py": "b391bdc7ce7ab5e2e9e17e7fa8054cf8751f2c75564e2ff38bcda47418b1abd4",
+    "code/scripts/profiling/record_observation/ray_future_qualification.py": "6b83d1bab6cdc6a1186bead327aff8b66e2c9813a57468e16326fa75633ff3b9",
+    "code/src/execution_provider/adapters/lotus_chain_token_batches.py": "47840f2da8d1cfd98e1ac37363b6816385b9f5961ed64340dd580f0837bcfda0",
+    "code/src/execution_provider/adapters/records_native_sampler.py": "e938d740db0d8cd77107337589ac518650a56b88e7c09c79dd9931e2aff13d20",
+    "code/src/execution_provider/adapters/records_request_feedback.py": "2f9ed92e5df28247e20652a0291f0ba74282d55883b737a8c8cd98133175ce4b",
+    "code/src/experiments/lotus_records_supervisor.py": "2ca5b5ab8bffc8cab7b9e5611d0fcca08a54aceaaec41efe7e4dda28363ae71d",
+    "code/src/experiments/map_observation_probe.py": "c021b1c71f7e339c75ab01200d0aa02631b5352ad1c9ab8dcecd02267b99eee0",
+    "code/src/experiments/mapped_core_probe.py": "0023d9266190d07fc7ae2d94c6ad9e9f7e6b22cd4b24fbfb0ab8850b52d92a5d",
+    "code/src/experiments/mapped_request_probe.py": "1a60af78a39cd103eb6db571c8888b6fb41d50117232c2c3aaaf42b6c0069e4e",
+    "code/src/infrastructure/owned_processes.py": "f06070e76e98a00cd9d5f31bc02901d943fcc01e3c46ddbfae1b66f2de8eec4b",
+    "code/src/infrastructure/redact.py": "eea2b1435144bd2206f6a1f289a379661d2f1737e92d162e137d5d5efb1c9c0d",
+    "code/src/scheduling/runtime/observations.py": "fa805746d64bc918d301d7dfda70db969dea75f9f3ca5dd7abb784a287d01b09",
+    "code/tests/execution_provider/test_core_feedback_ray_future.py": "0d113ee40462fd8d230b7873e819fb4d635f5408d0be8525513507def172bcf2",
+    "code/tests/execution_provider/test_records_feedback_cadence.py": "8223b9cf7cac8ca7c8b8ab42e7b23e907c51ba84cf8dfc3be58607e9554525dc",
+    "code/tests/experiments/test_movie_cancellation.py": "cb1dac8e2f875cf2a8ff0ae3a50ae31bfe4d94185ac89c0c94ca942215885600",
+    "code/tests/experiments/test_probe_deadlines.py": "808fa1a7c25c10aa2c895434bdb2b80281a8fd6bfc9d76631e7c4f270183da6a",
+    "code/tests/experiments/test_record_campaign_guard.py": "91062cb1cd0ef8f4eb304742696b99c40d870e1eae7dc41d795df5810ab79ea6",
+    "code/tests/experiments/test_record_resource_capture.py": "7578c0c54865e4e539314db9e3a80b1dd0ac5df3ed7acae3f2432869196412db",
+    "code/tests/records_cpu.md": "ab9017308173ce75fa35e88499d8cf07979d2e16d081d317ececba863e001ee0"
+  },
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONPATH": "code:code/scripts/experiments",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.experiments.test_record_campaign_guard",
+      "tests.experiments.test_ray_future_qualification",
+      "tests.experiments.test_record_resource_capture.PlanTests",
+      "tests.experiments.test_git_record_observation",
+      "tests.experiments.test_movie_cancellation",
+      "tests.experiments.test_probe_deadlines",
+      "tests.experiments.test_map_observation_probe",
+      "tests.experiments.test_mapped_request_budget",
+      "tests.experiments.test_cell_budget",
+      "tests.experiments.test_shared_request_budget",
+      "tests.experiments.test_buffered_events",
+      "tests.execution_provider.test_records_feedback_cadence",
+      "tests.execution_provider.test_core_feedback_ray_future.ProviderShapeTests"
+    ],
+    "process_inspection_for_temporary_CPU_children_required": true
+  },
+  "physical_Python_lines": {
+    "scope": "Physical Python lines including blank lines/comments. Exclude tests/docs/archive. Core excludes experiments and baselines; wider metric is live code/src plus code/scripts. Directory moves to history reduce live scope but not repository history size.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "src_all": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "src_all": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645
+      },
+      "6754": {
+        "commit": "6754eebea91d452b534245c43e6259be9253b67d",
+        "metrics": {
+          "core": {
+            "files": 250,
+            "physical_lines": 60163
+          },
+          "src_all": {
+            "files": 470,
+            "physical_lines": 115164
+          },
+          "scripts": {
+            "files": 130,
+            "physical_lines": 31563
+          }
+        },
+        "src_and_scripts": 146727
+      },
+      "b142": {
+        "commit": "b1429923caa886c4b8cd91996fc88372c2304c60",
+        "metrics": {
+          "core": {
+            "files": 244,
+            "physical_lines": 59085
+          },
+          "src_all": {
+            "files": 386,
+            "physical_lines": 92715
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22176
+          }
+        },
+        "src_and_scripts": 114891
+      },
+      "b6": {
+        "commit": "b6d6da337d1b782bc0da7abde24040fdba01e297",
+        "metrics": {
+          "core": {
+            "files": 244,
+            "physical_lines": 59100
+          },
+          "src_all": {
+            "files": 386,
+            "physical_lines": 92730
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22176
+          }
+        },
+        "src_and_scripts": 114906
+      },
+      "current": {
+        "commit": "544e19b5353366cf709acd05ac9b0b7c8d5707f7",
+        "metrics": {
+          "core": {
+            "files": 244,
+            "physical_lines": 59100
+          },
+          "src_all": {
+            "files": 386,
+            "physical_lines": 92752
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22151
+          }
+        },
+        "src_and_scripts": 114903
+      }
+    }
+  },
+  "current_batch_vs_latest_upstream": {
+    "production_Python_net_lines": -3,
+    "core_Python_net_lines": 0
+  },
+  "remaining": [
+    "Default R is 2; physical host capacity grants are not implemented.",
+    "Complete relation/audit holding and remaining large-module duties need further work.",
+    "No real Ray, model, GPU, server or performance validation in this batch."
+  ],
+  "real_execution": {
+    "Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "database": 0
+  },
+  "live_GPU_tasks_touched": false,
+  "main_merged": false,
+  "verification_upstream": "b6d6da337d1b782bc0da7abde24040fdba01e297",
+  "publication_upstream": "45ee6fe46ab3daafbe949e2529a5813ff883e108",
+  "later_integration": {
+    "change": "Preserve upstream archived recipes and independent SAOR materials; retain both appended script README sections.",
+    "all_current_production_Python_matches_147_record": true,
+    "SAOR_fixture_path_migration_not_claimed_as_part_of_147": true,
+    "repeat_full_suite_for_docs_only": false
+  }
+}

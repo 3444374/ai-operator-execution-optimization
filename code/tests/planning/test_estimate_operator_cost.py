@@ -9,12 +9,11 @@ CODE_ROOT = next(
     for parent in Path(__file__).resolve().parents
     if (parent / "src").is_dir()
 )
-SCRIPTS_ROOT = CODE_ROOT / "scripts"
-for path in (CODE_ROOT, SCRIPTS_ROOT):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
 
-from scripts.analysis.estimate_operator_cost import (  # noqa: E402
+from src.experiments.operator_costs.profiles import (  # noqa: E402
+    FEATURE_NAMES,
     decision_context_payload,
     feature_vector,
     is_formal_profile_row,
@@ -53,6 +52,15 @@ def profile_row() -> dict[str, str]:
 
 
 class EstimateOperatorCostTests(unittest.TestCase):
+    def test_feature_schema_excludes_post_execution_measurements(self) -> None:
+        forbidden = ("actual", "e2e", "service_s", "vllm", "energy", "mfu")
+
+        for feature in FEATURE_NAMES:
+            self.assertFalse(
+                any(marker in feature for marker in forbidden),
+                feature,
+            )
+
     def test_formal_filter_excludes_warmup_and_missing_phase(self) -> None:
         self.assertTrue(is_formal_profile_row({"phase": "formal"}))
         self.assertTrue(is_formal_profile_row({"phase": "FORMAL"}))

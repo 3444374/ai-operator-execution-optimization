@@ -11,7 +11,7 @@ from integrations.imlane_records import owner
 from integrations.imlane_records.method_environment import preflight_method, validate_author_build
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.resource_limits import owner_limits, gpu_snapshot, gpu_exited
-from src.baselines.common.private_artifacts import require_outside_git
+from src.infrastructure.private_artifacts import require_outside_git
 from src.infrastructure import runner_lease
 
 
@@ -40,7 +40,7 @@ def read_owner(path, *, expected_sha256=None):
     required = {"schema", "author_root", "method_python", "bridge_binary", "artifact_root",
                 "preflight_report", "model_environment", "owner_resource_limits", "lease_sha256",
                 "budget", "gpu_idle_max_mib"}
-    if type(value) is not dict or set(value) != required or value["schema"] != "semloom.imlane_owner.v1":
+    if type(value) is not dict or set(value) - {"transport_limits"} != required or value["schema"] != "semloom.imlane_owner.v1":
         raise ValueError("an explicit IMLane owner context is required")
     for name in ("author_root", "method_python", "bridge_binary", "artifact_root", "preflight_report"):
         if type(value[name]) is not str or not Path(value[name]).is_absolute():

@@ -1,0 +1,95 @@
+{
+  "schema": "semloom.computing_close_checks.v1",
+  "base": "55d8776d50511898fe0459ddbee38289b154361e",
+  "scope": "CPU lifecycle qualification only; no runtime implementation changes",
+  "new_methods": 3,
+  "controlled_scenarios": 6,
+  "ready_orders": [
+    "fifo",
+    "successor_first"
+  ],
+  "actual_fixture_outcomes": [
+    "succeeded",
+    "failed",
+    "unknown"
+  ],
+  "cases_use_actual_Core_actor_owner_and_child_IPC": true,
+  "Ray_and_inference_are_substitutes": true,
+  "CPU": [
+    {
+      "label": "computing_close_cases",
+      "selected": 3,
+      "run": 3,
+      "passed": 0,
+      "failed_ids": [],
+      "error_ids": [
+        "tests.execution_provider.test_computing_query_close.ComputingQueryCloseTests.test_close_collects_actual_failure_after_the_computing_child_stops (order='fifo', outcome='failed')",
+        "tests.execution_provider.test_computing_query_close.ComputingQueryCloseTests.test_close_collects_actual_failure_after_the_computing_child_stops (order='successor_first', outcome='failed')",
+        "tests.execution_provider.test_computing_query_close.ComputingQueryCloseTests.test_close_collects_actual_success_after_the_computing_child_stops (order='fifo', outcome='succeeded')",
+        "tests.execution_provider.test_computing_query_close.ComputingQueryCloseTests.test_close_collects_actual_success_after_the_computing_child_stops (order='successor_first', outcome='succeeded')",
+        "tests.execution_provider.test_computing_query_close.ComputingQueryCloseTests.test_close_keeps_unknown_outcome_after_the_computing_producer_stops (order='fifo', outcome='unknown')",
+        "tests.execution_provider.test_computing_query_close.ComputingQueryCloseTests.test_close_keeps_unknown_outcome_after_the_computing_producer_stops (order='successor_first', outcome='unknown')"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1311,
+      "original_json_sha256": "d96f9540ca1690a3245b1f3191e69094009410d35cd7568a094251a709365baf"
+    },
+    {
+      "label": "computing_close_recheck",
+      "selected": 3,
+      "run": 3,
+      "passed": 3,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1311,
+      "original_json_sha256": "c3b68d55d707a410a53036c385d722180c0026375d3439d381e84a52f17ff6ff"
+    },
+    {
+      "label": "computing_close_related",
+      "selected": 66,
+      "run": 66,
+      "passed": 66,
+      "failed_ids": [],
+      "error_ids": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "code_files": 1311,
+      "original_json_sha256": "414b40aa60c44df9b09a91f61900892a333f7d43715a615360c92c6a50ab195d"
+    }
+  ],
+  "counts_overlap_do_not_sum": true,
+  "initial_error": "The first test read process_exit_confirmed one level above the existing ipc_close report; only that test field lookup changed. All six original error records remain.",
+  "verified": [
+    "The child has started and has not ended when the first timed close returns unknown.",
+    "Core request, input and result reservations remain charged until the same child ends and owner cleanup is confirmed.",
+    "The original success, failure or unknown reply and total_tokens=14 are retained once.",
+    "No parser, successor, query-completion claim or duplicate call occurs.",
+    "Core, local reference and Method row reservations are empty after confirmed producer retirement; repeated close is stable."
+  ],
+  "existing_runtime_Python_files_unchanged": 489,
+  "final_code_files": 1311,
+  "all_final_code_hashes_match": true,
+  "archive": {
+    "path": "raw/computing_close_methods.json.gz",
+    "bytes": 6907,
+    "sha256": "7141c84f7ba23fb36cadceb9dea7c567eb39344f7413748b052231b0116ae9b7",
+    "decoded_bytes": 52532,
+    "decoded_sha256": "cf074d9b3e02b3c7754de73fe5f10f87f3b69ad3908c324b40a36949132cfacd",
+    "all_original_JSON_exactly_restored": 3,
+    "personal_home_prefix_hits": 0
+  },
+  "limits": [
+    "Controlled CPU cases do not prove all shutdown races or the unique cause of the older intermittent failure.",
+    "No actual Ray, model, GPU exit or performance qualification.",
+    "R=2, default IPC result slots=8 and automatic service-exclusive byte grants remain unchanged.",
+    "Old geometric instability remains open."
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

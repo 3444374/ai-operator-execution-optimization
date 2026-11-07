@@ -254,7 +254,8 @@ class CapturedUidTests(unittest.TestCase):
 
 class NormalQueryBridgeTests(unittest.TestCase):
     def test_four_options_use_actual_resources_and_same_original_method_reference(self):
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner, AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+        from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
         from tests.execution_provider.test_lotus_record_local_tokens import QueryTokenTests
         from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
         from tests.execution_provider.test_lotus_record_local_query import Process
@@ -349,7 +350,7 @@ class ExecutionComparisonTests(unittest.TestCase):
                     patch.object(entry, 'replay_native_answers', return_value={'model_calls': 0}), \
                     patch('integrations.imlane_records.chain_runtime.check_external_lease'), \
                     patch('src.experiments.cell_budget.CellBudgetLedger') as ledger, \
-                    patch('src.experiments.process_sampling.ProcessSampler', return_value=sampler), \
+                    patch('src.observability.process_resources.phase_sampler.ProcessSampler', return_value=sampler), \
                     patch('src.observability.records_telemetry.RecordsTelemetry', return_value=telemetry):
                 report = entry.execute_worker(self.path, self.root / 'ready.json', case['case_id'])
                 self.assertEqual(run.call_args.kwargs['execution'], case['execution'])
@@ -367,7 +368,7 @@ class ExecutionComparisonTests(unittest.TestCase):
                                   entry.make_resources(self.config), execution='fused')
 
     def test_C1_pair_uses_real_query_owners_and_one_model_per_query(self):
-        from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+        from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
         from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
         from tests.execution_provider.test_lotus_record_local_query import Process, QueryOwnerTests
@@ -385,7 +386,11 @@ class ExecutionComparisonTests(unittest.TestCase):
         events = []
 
         class Engine:
-            def __init__(self, *args): events.append('construct')
+            def __init__(self, spec, *args):
+                from src.serving.backends.model_context import model_context_record
+                self.ready_report = dict(engine_uid='CPU-comparison', model_context=model_context_record(
+                    spec, 'CPU-comparison', spec.max_model_len or 32768))
+                events.append('construct')
             def run_prepared(self, prepared, *, generation):
                 from src.serving.backends.vllm_engine import _prepared
                 identities, _ = _prepared(prepared)

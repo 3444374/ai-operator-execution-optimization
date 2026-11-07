@@ -1,4 +1,5 @@
 """Whole-query Core/actor/child IPC; only Ray RPC and inference are substitutes."""
+import asyncio
 from copy import deepcopy
 from dataclasses import replace
 import json
@@ -12,7 +13,10 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore, CoreChainCapacity
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
+from src.execution_provider.adapters import lotus_chain_actor_backend as chain_backend
+from src.scheduling.runtime import async_backend
 from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.async_engine_process import AsyncEngineProcess
@@ -259,15 +263,33 @@ class QueryOwnerTests(unittest.TestCase):
         plan, rows = fixture.chain_for("MF"), fixture.source_rows(size=1)
         self.config_for(plan, rows)
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        reply_released, expired = threading.Event(), threading.Event()
+        original = AsyncCoreModelActor.poll_prepared_batch
+        interpreted = []
+        original_interpret = chains.LotusRecordMethod.interpret_results
+        def capture_interpret(method, results):
+            interpreted.append(method.stage.stage_id)
+            return original_interpret(method, results)
         def hold_delivery(actor, *args):
             value = original(actor, *args)
-            ready.set()
-            if not release.wait(5):
-                raise TimeoutError("CPU test did not release the known result")
+            receipts = json.loads(value)['results']
+            if receipts:
+                self.assertEqual(len(receipts), 1)
+                with actor._condition:
+                    held = actor._held[tuple(receipts[0]['request_key'])]
+                    self.assertTrue(held.confirmed)
+                    self.assertFalse(held.delivered)
+                    self.assertEqual(held.value['status'], 'succeeded')
+                    self.assertEqual(held.value['total_tokens'], 14)
+                ready.set()
+                if not release.wait(5):
+                    expired.set()
+                    raise TimeoutError("CPU test did not release the known poll result")
+                reply_released.set()
             return value
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_delivery):
+                patch.object(AsyncCoreModelActor, "poll_prepared_batch", hold_delivery), \
+                patch.object(chains.LotusRecordMethod, "interpret_results", capture_interpret):
             owner = self.owner(plan, C=1)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
@@ -277,10 +299,13 @@ class QueryOwnerTests(unittest.TestCase):
                     if time.monotonic() >= deadline:
                         self.fail("known CPU receipt was not ready")
                 first = deepcopy(owner.close(timeout=0.02))
+                self.assertFalse(expired.is_set(), "poll result expired before the controlled release")
+                self.assertFalse(reply_released.is_set())
                 self.assertEqual(first["status"], "unknown")
                 self.assertEqual(first["core_usage"]["held_tasks"], 1)
                 release.set()
                 report = owner.close(timeout=3)
+                self.assertTrue(reply_released.is_set())
                 self.assertEqual(report["status"], "closed")
                 self.assertEqual(len(owner.calls), 1)
                 self.assertEqual(owner.calls[0]["status"], "succeeded")
@@ -288,10 +313,65 @@ class QueryOwnerTests(unittest.TestCase):
                 self.assertFalse(report["query_completed"])
                 self.assertEqual(stream.run.position, 0)
                 self.assertEqual(stream.run.stats, {})
+                self.assertEqual(interpreted, [])
                 self.assertEqual(report["core_usage"]["held_tasks"], 0)
                 self.assertEqual(first["core_usage"]["held_tasks"], 1)
             finally:
                 release.set()
+                owner.close(timeout=3)
+
+    def test_close_waits_for_local_delivery_after_model_RPCs_have_finished(self):
+        plan, rows = fixture.chain_for("MF"), fixture.source_rows(size=1)
+        config = self.config_for(plan, rows)
+        config["responses"]["step_0|occ-0"].update(status="unknown")
+        self.config.write_text(json.dumps(config))
+        reached, gates, waited = threading.Event(), [], []
+        execute = chain_backend._SectionTransport._execute
+        wait = async_backend.wait
+        async def hold_local_delivery(transport, *args):
+            try:
+                return await execute(transport, *args)
+            finally:
+                gate = asyncio.Event()
+                gates.append(gate)
+                reached.set()
+                await gate.wait()
+        with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
+                patch.object(chain_backend._SectionTransport, "_execute", hold_local_delivery):
+            owner = self.owner(plan, C=1)
+            stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
+            try:
+                until = time.monotonic() + 4
+                while not reached.is_set():
+                    stream._tick()
+                    if time.monotonic() >= until:
+                        self.fail("CPU receipt did not reach the local delivery boundary")
+                def finish_delivery(futures, *, timeout):
+                    self.assertTrue(owner._actors._model_close_report["engine_api_shutdown_confirmed"])
+                    with owner._actors._rpc_state_lock:
+                        self.assertEqual(owner._actors._rpc_pending, 0)
+                    self.assertTrue(any(not future.done() for future in futures))
+                    waited.append(True)
+                    owner.transport.backend._loop.call_soon_threadsafe(gates[0].set)
+                    return wait(futures, timeout=timeout)
+                with patch.object(async_backend, "wait", finish_delivery):
+                    report = owner.close(timeout=3)
+                self.assertTrue(report["transport_closed"])
+                self.assertEqual(waited, [True])
+                self.assertEqual(report["status"], "closed")
+                self.assertEqual(report["core_usage"]["held_tasks"], 0)
+                self.assertEqual(report["retained_remote_inputs"], 0)
+                self.assertFalse(report["producer_retirement"]["outcome_confirmation"])
+                self.assertEqual([(call["status"], call["total_tokens"]) for call in owner.calls], [("unknown", 14)])
+                self.assertFalse(report["query_completed"])
+                self.assertEqual(stream.run.position, 0)
+                self.assertEqual(stream.run.stats, {})
+                self.assertEqual(owner.close(timeout=3)["core_usage"]["held_tasks"], 0)
+                self.assertEqual(len(owner.calls), 1)
+            finally:
+                if gates and owner.transport.backend._thread.is_alive():
+                    owner.transport.backend._loop.call_soon_threadsafe(gates[0].set)
+                owner.transport.backend.close(3, wait_pending=True)
                 owner.close(timeout=3)
 
     def test_foreign_close_receipt_cannot_be_assigned_by_reused_call_id(self):
@@ -425,7 +505,7 @@ class QueryOwnerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.owner(base, C=0)
             larger = self.owner(base, C=9)
-            self.assertEqual(larger.engine.max_num_seqs, 8)
+            self.assertIsNone(larger.engine.max_num_seqs)
             self.assertEqual(larger._actors.limits.max_inflight, 9)
             self.assertEqual(runtime.async_actors, [])
             larger.close()
@@ -448,11 +528,13 @@ class QueryOwnerTests(unittest.TestCase):
         self.assertEqual(len(default.calls), 2)
 
     def fused_result(self, cls, plan, rows, config):
-        from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+        from src.serving.backends.lotus_chain_worker import FusedChainBatch
         from tests.semantic_methods.test_lotus_record_chain import engine_result
         class Engine:
-            def __init__(self, *_args):
-                pass
+            def __init__(self, spec, *_args):
+                from src.serving.backends.model_context import model_context_record
+                self.ready_report = dict(engine_uid='CPU-local-query', model_context=model_context_record(
+                    spec, 'CPU-local-query', spec.max_model_len or 32768))
             def run_prepared(self, prepared, *, generation):
                 return [engine_result(row, config["responses"][row["algorithm_stage"] + "|" + row["row_id"]]["text"])
                         for row in reversed(prepared)]

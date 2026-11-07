@@ -8,9 +8,10 @@ The nonterminal Extract guard remains until that owner supplies this boundary.
 
 from copy import deepcopy
 from dataclasses import dataclass
+from numbers import Integral
 
-from .record_chain import RecordOccurrence, StageSpec, _name, stage_identity
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from .record_types import RecordOccurrence, StageSpec, _name, _ordered_columns, stage_identity
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
 @dataclass(frozen=True)
@@ -96,3 +97,59 @@ def complete_extract_relation(
     except Exception as error:
         error.chain_calls = deepcopy(snapshot)
         raise
+
+
+def records_to_frame(records, *, columns=None, source_index=None, empty_prototype=None):
+    """One final relation assembly, with original Extract label assignment.
+
+The union of Extract's actual keys defines added columns, as in its accessor;
+no declared-schema filtering or missing-key completion is applied to parsing.
+Pass the original pandas Index to retain its dtype/name when filtering removes
+all occurrences. Surviving records cannot recover that metadata by themselves.
+An optional zero-row DataFrame supplies the final empty relation's column dtypes
+and metadata. Its columns must exactly match explicit columns; source_index, if
+given, still owns the index. It never casts or filters nonempty record values.
+"""
+    import pandas as pd
+
+    records = sorted(records, key=lambda record: record.source_position)
+    if empty_prototype is not None:
+        if not isinstance(empty_prototype, pd.DataFrame):
+            raise TypeError("empty_prototype must be a pandas DataFrame")
+        if len(empty_prototype):
+            raise ValueError("empty_prototype must have zero rows")
+        if isinstance(empty_prototype.index, pd.MultiIndex):
+            raise TypeError("empty_prototype must have a single pandas Index")
+        _ordered_columns([], list(empty_prototype.columns))
+    if columns is None:
+        columns = (list(empty_prototype.columns) if not records and empty_prototype is not None
+                   else list(dict.fromkeys(k for record in records for k in record.values)))
+    else:
+        columns = list(columns)
+    if not records and empty_prototype is not None and list(empty_prototype.columns) != columns:
+        raise ValueError("columns must match empty_prototype columns in order")
+    labels = [record.source_index for record in records]
+    if source_index is None:
+        index = (empty_prototype.index.copy(deep=True)
+                 if not records and empty_prototype is not None else labels)
+    else:
+        if not isinstance(source_index, pd.Index) or isinstance(source_index, pd.MultiIndex):
+            raise TypeError("source_index must be a single pandas Index")
+        index = (pd.Index(labels, dtype=source_index.dtype, name=source_index.name)
+                 if records else source_index[:0])
+        for label, value in zip(labels, index.tolist(), strict=True):
+            if ((type(label) is int and (isinstance(value, bool) or not isinstance(value, Integral)))
+                    or (type(label) is str and type(value) is not str) or value != label):
+                raise ValueError("source_index dtype changed occurrence labels")
+    if not records and empty_prototype is not None:
+        frame = empty_prototype.copy(deep=True)
+        frame.index = index
+    else:
+        frame = pd.DataFrame([{k: r.values.get(k) for k in columns} for r in records],
+                             index=index, columns=columns)
+    for record in records:
+        for key, value in record.index_updates.items():
+            if key not in frame.columns:
+                frame[key] = None
+            frame.loc[record.source_index, key] = value
+    return frame

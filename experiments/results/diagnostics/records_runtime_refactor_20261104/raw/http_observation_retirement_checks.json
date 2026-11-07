@@ -1,0 +1,740 @@
+{
+  "schema": "semloom.http_observation_retirement.checks.v1",
+  "base": "4376d927ada18896fc086f0c85692f28d79d110f",
+  "component_candidate": "cfe49e7629e290e711b66b950698c2a8e380ccee",
+  "preliminary_combined": "58bf56649254d01a632fd4632d23bac36b9f6a13",
+  "candidate": "5bf1a619aa4837407016efe5076843dab760c9dc",
+  "tree": "2a3e818aebc14d8c5e7a6b6cbb21bbc3eb6c0bf8",
+  "runs": {
+    "component_before": {
+      "selected": 4,
+      "executed": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "component_after": {
+      "selected": 4,
+      "executed": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "preliminary_combined": {
+      "selected": 11,
+      "executed": 11,
+      "passed": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "latest_combined": {
+      "selected": 11,
+      "executed": 11,
+      "passed": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "unique_selected_methods": 11,
+  "overlapping_runs_not_added": true,
+  "component_before_scope": "Original 7f0b production plus the new pure summary case; the dedicated HTTP suite was not selected.",
+  "summary_assertions_preserved": true,
+  "source_identity": {
+    "component_before": {
+      "commit": "7f0b6d42eb3e31cb45d56308feb6d0f5cd625c35",
+      "recorded_files": 1020,
+      "mismatches": [],
+      "source_unchanged_during_suite": true,
+      "source_scope": "Base production plus the new pure summary test from the component candidate."
+    },
+    "component_after": {
+      "commit": "cfe49e7629e290e711b66b950698c2a8e380ccee",
+      "recorded_files": 1018,
+      "mismatches": [],
+      "source_unchanged_during_suite": true,
+      "source_scope": "Exact committed code and tests."
+    },
+    "preliminary_combined": {
+      "commit": "58bf56649254d01a632fd4632d23bac36b9f6a13",
+      "recorded_files": 1018,
+      "mismatches": [],
+      "source_unchanged_during_suite": true,
+      "source_scope": "Exact committed code and tests."
+    },
+    "latest_combined": {
+      "commit": "5bf1a619aa4837407016efe5076843dab760c9dc",
+      "recorded_files": 1020,
+      "mismatches": [],
+      "source_unchanged_during_suite": true,
+      "source_scope": "Exact latest combined code and tests."
+    }
+  },
+  "source_identity_note": "Recorded checkout HEAD may predate the source commit. Per-file hashes bind each declared source, including the explicit component-before test addition. CPU fixture durations are not query performance.",
+  "restoration": {
+    "restore_records": [
+      {
+        "path": "code/src/observability/request_gateway.py",
+        "source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
+        "bytes": 38221,
+        "sha256": "0672373690db7f45aa2139732cde6677c69860e71f3362202e7d7fd25ae6ecad",
+        "exact_original_bytes_match_published_base": true,
+        "indexed_bytes_and_hash_match": true,
+        "published_base_commit": "4376d927ada18896fc086f0c85692f28d79d110f"
+      },
+      {
+        "path": "code/tests/observability/test_request_gateway.py",
+        "source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
+        "bytes": 49736,
+        "sha256": "5398653cb119510f6dcb06d38bdad936e6670064c8a62a120f5e735d8ad859fe",
+        "exact_original_bytes_match_published_base": true,
+        "indexed_bytes_and_hash_match": true,
+        "published_base_commit": "4376d927ada18896fc086f0c85692f28d79d110f"
+      }
+    ],
+    "paused_index_changes_only_two_records": true,
+    "native_history_bindings": 3010,
+    "native_history_matched": 3010,
+    "native_projection_ids_identical": true,
+    "native_index_unchanged_against_latest_base": true,
+    "native_history_differences": 0,
+    "old_preliminary_differences": 10,
+    "old_source_repair_in_parallel_base": true,
+    "dependency_test_preserves_latest_peer_changes": true,
+    "code_change_inventory": [
+      "D\tcode/src/observability/request_gateway.py",
+      "A\tcode/tests/experiments/test_native_system_observation.py",
+      "M\tcode/tests/infrastructure/test_dependency_direction.py",
+      "D\tcode/tests/observability/test_request_gateway.py"
+    ],
+    "source_changes_only_gateway_deletion": true,
+    "base_commit": "4376d927ada18896fc086f0c85692f28d79d110f"
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "retained_comparison_source": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/replay_retirement_checks.json",
+    "retained_comparison_source_sha256": "bdff874a6e72994b034c9c9d0301d8ca4c9045e4f15b1bc053b51a05957b7d82",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "4376d927ada18896fc086f0c85692f28d79d110f",
+        "metrics": {
+          "core": {
+            "files": 258,
+            "physical_lines": 58078
+          },
+          "main_runtime": {
+            "files": 250,
+            "physical_lines": 55070
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 400,
+            "physical_lines": 91744
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22167
+          }
+        },
+        "src_and_scripts": 113911,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 46
+      },
+      "current": {
+        "commit": "5bf1a619aa4837407016efe5076843dab760c9dc",
+        "metrics": {
+          "core": {
+            "files": 257,
+            "physical_lines": 57299
+          },
+          "main_runtime": {
+            "files": 249,
+            "physical_lines": 54291
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 399,
+            "physical_lines": 90965
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22167
+          }
+        },
+        "src_and_scripts": 113132,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 44
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3010,
+    "differences": 0,
+    "old_preliminary_differences": 10,
+    "source_repair_in_parallel_base": true,
+    "native_manifest_changed_by_this_cleanup": false,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "source_read_check_only": true,
+    "historical_model_environment_run": false
+  },
+  "production_python_delta": -779,
+  "retired_production_lines": 779,
+  "retired_exclusive_test_lines": 941,
+  "pure_summary_test_lines": 39,
+  "obsolete_current_Python_references": 0,
+  "remaining_core_files": [
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "lines": 1157
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "lines": 985
+    },
+    {
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "lines": 925
+    },
+    {
+      "path": "code/src/scheduling/core/scheduler.py",
+      "lines": 844
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_async_model.py",
+      "lines": 716
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "lines": 703
+    },
+    {
+      "path": "code/src/serving/backends/completion.py",
+      "lines": 679
+    },
+    {
+      "path": "code/src/observability/profiling/ray.py",
+      "lines": 670
+    },
+    {
+      "path": "code/src/execution_provider/wire/semantic.py",
+      "lines": 661
+    },
+    {
+      "path": "code/src/planning/semfilter_reference_calibration.py",
+      "lines": 658
+    },
+    {
+      "path": "code/src/infrastructure/environment.py",
+      "lines": 653
+    },
+    {
+      "path": "code/src/execution_provider/adapters/ray_map_transport.py",
+      "lines": 634
+    }
+  ],
+  "core_status_audit": {
+    "schema": "semloom.core_source_audit.v1",
+    "audit_kind": "只读源码与既有结果核对；未运行测试、项目导入、环境探测或服务",
+    "source": {
+      "published_base": "4376d927ada18896fc086f0c85692f28d79d110f",
+      "inspected_head": "5bf1a619aa4837407016efe5076843dab760c9dc",
+      "inspected_tree": "2a3e818aebc14d8c5e7a6b6cbb21bbc3eb6c0bf8",
+      "worktree_status": "干净；本审计未改源码",
+      "candidate_status": "gateway 退役候选；发布状态由父会话核对"
+    },
+    "modules": [
+      {
+        "file": "code/src/scheduling/submission_control/adaptive.py",
+        "lines": 1157,
+        "current_role": "批反馈策略、其几何搜索与 AIMD 基类；另包含现代请求配置和两路径共用的工作量比较函数",
+        "disposition": "值得按真实策略和共用计算拆分；不能整体当作旧代码删除",
+        "next": "将 ResourceRequestConfig 归入现代请求策略，将 _local_pair_evidence 放入共用计算位置；批反馈仍保留 _GeometricSearch 与所用 AIMD 字段",
+        "evidence": [
+          "ResourceRequestConfig:306",
+          "_local_pair_evidence:351",
+          "_GeometricSearch:405",
+          "ResourceFeedbackController:549",
+          "stage_work.py:85 的 SupplyFeedbackController 继承该批反馈实现"
+        ]
+      },
+      {
+        "file": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+        "lines": 985,
+        "current_role": "链 owner 配置、阶段责任选择、服务移交与不同存储模式的清理",
+        "disposition": "主要职责已集中；数据推进和 fused 执行已在独立模块",
+        "next": "保留 prepared/resident 与 fused 各自的清理证明；容量声明可随容量工作统一整理，暂不为文件长度新增层次",
+        "dependencies": [
+          "records_query_runtime.py",
+          "lotus_chain_fused_runtime.py",
+          "records_capacity.py"
+        ]
+      },
+      {
+        "file": "code/src/serving/backends/async_engine_process.py",
+        "lines": 925,
+        "current_role": "私有模型子进程、命令与控制通信、帧和槽位计量、accepted/unknown 回执、结果消费和关闭",
+        "disposition": "真实进程与资源责任集中；有一处确定的重复内部校验可先删",
+        "next": "先删除构造中的丢弃式 generation.kwargs()；协议编解码与进程循环的大拆分应另有进程行为验证，不能混入本次只读结论",
+        "evidence": [
+          "125: GenerationSpec.from_dict 已构造并校验新对象",
+          "126: kwargs() 再校验并构造未使用的字典"
+        ]
+      },
+      {
+        "file": "code/src/scheduling/core/scheduler.py",
+        "lines": 844,
+        "current_role": "普通窗口与共享 ready 窗口两种真实调度循环、endpoint 接纳和结果责任、时钟与指标",
+        "disposition": "主职责清楚；两循环不能简单合并",
+        "next": "保留不同接纳副作用与指标时刻；source 和纯拓扑已有独立实现，暂不加指标构造器或状态转发壳"
+      },
+      {
+        "file": "code/src/execution_provider/adapters/records_async_model.py",
+        "lines": 716,
+        "current_role": "模型 actor 的在途调用、tickets、回执分页、取消意图、ACK 和引擎生命周期",
+        "disposition": "与 driver 侧 lotus_records_async_actor 已分开；confirmed 与 delivered 不能合成一个状态",
+        "next": "先保留；父会话另有 poll/ACK 工作，避免并行改同一所有权代码"
+      },
+      {
+        "file": "code/src/scheduling/submission_control/request_scan.py",
+        "lines": 703,
+        "current_role": "现代请求试探及查询内工作量比较，接收实际 owner 的供给许可",
+        "disposition": "本体内聚；与 adaptive 的配置和纯函数依赖值得解除",
+        "next": "只调整配置和共用比较函数归属；不新建控制器，不复制几何搜索",
+        "evidence": [
+          "9: 导入 _local_pair_evidence",
+          "28: 导入 ResourceRequestConfig",
+          "509: 调用工作量比较函数",
+          "不导入或实例化 _GeometricSearch"
+        ]
+      },
+      {
+        "file": "code/src/serving/backends/completion.py",
+        "lines": 679,
+        "current_role": "请求格式、兼容 endpoint 调用、Ray actor 适配、Ollama 与 fixture 实现",
+        "disposition": "有可分离职责，但不能按 HTTP 名称整体删除",
+        "next": "保留 request_equivalence_gate 当前调用的 endpoint 内核；其余导出 actor 须先查工厂与动态调用，再逐项退役或拆出",
+        "evidence": [
+          "code/scripts/baselines/request_equivalence_gate.py:150,154 调用 call_compatible_completion_endpoint",
+          "serving/backends/__init__.py 仍导出多个 actor"
+        ]
+      },
+      {
+        "file": "code/src/observability/profiling/ray.py",
+        "lines": 670,
+        "current_role": "typed gate 调度适配、actor/task 提交以及仍可从字典配置触发的旧 metrics 轮询分支",
+        "disposition": "旧轮询分支是下一项明确的调用核查对象；尚不能仅凭 legacy 名称删除",
+        "next": "检查所有正常配置及公共 SDK 调用，确认无现用 untyped adaptive_config 后移除该分支；保留 typed gate、replay_envelopes 和共享调度算法",
+        "evidence": [
+          "submit_with_backpressure 与 submit_ray_tasks 按 admission_gate/per_endpoint_gates 是否存在选择两分支",
+          "adaptive_inflight_limit:646 从 metrics_url 取数据、选择 min/max 并 sleep",
+          "当前 src/scripts 对旧 helper 的直接引用只在本文件，公共函数仍可进入该分支"
+        ]
+      }
+    ],
+    "dependency_findings": {
+      "modern_request_search": "现代 ResourceRequestController 不使用 _GeometricSearch，也不继承 AIMD。其对 adaptive 的直接依赖仅为 ResourceRequestConfig 与 _local_pair_evidence。",
+      "batch_search": "ResourceFeedbackController 使用 _GeometricSearch；SupplyFeedbackController 仍继承前者。批反馈读取 AIMD 基类的多个配置字段并调用 _hold，不能把基类当成只剩一个辅助函数。",
+      "possible_comparison_home": "scheduling/runtime/calibration.py 已提供 select_near_peak，且不依赖 adaptive 或 request_scan。可先确认计算归属后接收共享比较函数，避免循环或新转发模块。",
+      "config_callers": [
+        "records_profile.py",
+        "records_request_feedback.py",
+        "lotus_records_batches.py",
+        "lotus_record_chain_core.py"
+      ],
+      "optional_algorithms": "独立 EWMA/HOL/AIMD 类型仍公开导出并有专项测试。当前主线直接构造证据不足，应与批反馈继承分开核查，不能称为全部无用。"
+    },
+    "redundant_checks": [
+      {
+        "confidence": "高",
+        "location": "async_engine_process.py:125-126",
+        "action": "删除紧接 from_dict 的 kwargs() 调用；其返回值未使用",
+        "reason": "GenerationSpec.from_dict 调用数据类构造，__post_init__ 已校验并复制可变 response_format。紧接着再次校验和转字典没有新增输入。",
+        "keep": "保留真实 SamplingParams 物化处使用 kwargs() 及其校验；response_format 仍是可变字典。",
+        "verification": "用既有 GenerationSpec/模型上下文 fixture 检查非法值仍在对象构造时拒绝；进程专项留给允许子进程通信的环境。"
+      },
+      {
+        "confidence": "待窄范围确认",
+        "location": "semantic_methods/lotus/records.py:164-166",
+        "action": "评估删除 RecordsResources.describe 中重复的 __post_init__ 调用",
+        "reason": "对象为 frozen 数据类，字段为原始值；正常构造和 replace 已校验。未发现现用字段突变路径。",
+        "keep": "不扩展到包含可变字典、schema 或 predicate 的其他 records 类型；也不机械删除 validate_local 的环境检查。",
+        "verification": "核对 describe 的实际调用及子类使用，复用 test_records_default_resources 的配置行为覆盖。"
+      }
+    ],
+    "current_features": {
+      "R_default": "RecordsResources.max_active_batches 仍默认 2。",
+      "independent_budget": "完整 RecordsCapacityBudget 可独立声明持有任务、输入字节、结果字节、请求及 Method 责任。普通异步路径亦可通过完整 typed IPC 声明解析 R=None；零散字典不代表完整授予。",
+      "IPC_defaults": "省略 result_slots 时按声明请求量或 held_tasks 解析，不再一律沿用 8；单项输入和结果默认仍各 2 MiB，字节总量来自声明的槽位或显式预算。",
+      "auto_capacity": "auto 使用声明额度及字节推导，不是物理可用内存探测；未提供全 Python/Ray/关系数据 RSS 上限保证。",
+      "engine_defaults": "EngineSpec.dtype 仍为 bfloat16，gpu_memory_utilization 仍为 0.8，供同步和异步共享。",
+      "omittable_engine_caps": [
+        "max_model_len",
+        "max_num_seqs",
+        "max_num_batched_tokens"
+      ],
+      "legacy_reference": "reference 的历史 fallback 仍需按实际基线用途单独处理，不能视为当前异步 Core 的隐式上限。",
+      "support": "单 GPU worker 的现有实现条件仍在；未据此声称通用多卡支持。"
+    },
+    "existing_model_evidence": {
+      "kind": "既有服务器结果摘要；本审计未运行模型",
+      "source_head": "a1b5cdd38860df8ee7eed06c86e5d06a94687ad5",
+      "result": "完整 Q1 2000 条成功，0 failed/unknown；与旧动态结果有 1 条 Filter 判断差异，不能称质量等价。",
+      "configuration": "event_driven；B、C_batch、R 显式为 None；逻辑请求量来自输入数 2000；三项引擎上限省略。",
+      "limits": "仅覆盖该旧源码；不覆盖当前 4376 或 5bf1。实际引擎配置不是空闲物理资源或持续性能证明。"
+    },
+    "recommended_next_slice": {
+      "first": "去掉构造中被丢弃的重复 kwargs()；用针对性对象与配置行为覆盖验证。",
+      "second": "由策略负责人统一移动现代请求配置及共用比较计算，更新现用导入，不改变默认值或搜索行为。",
+      "third": "核实 Ray profiling 的旧字典轮询调用后退役；其公共 SDK 仍可达，暂不提前宣布已删除。",
+      "existing_CPU_coverage_not_run": [
+        "tests.scheduling.test_resource_request_controller",
+        "tests.scheduling.test_resource_request_search",
+        "tests.scheduling.test_resource_feedback",
+        "tests.scheduling.test_supply_feedback",
+        "tests.execution_provider.test_records_request_feedback",
+        "tests.execution_provider.test_resource_request_supply_bridge",
+        "tests.execution_provider.test_records_default_resources",
+        "tests.serving.test_model_context",
+        "tests.serving.test_sync_model_context",
+        "tests.serving.test_fused_model_context",
+        "tests.observability.test_ray_scheduler_profile"
+      ],
+      "keep_separate": [
+        "并行 poll/ACK 实现",
+        "主机物理容量与默认 R 策略变化",
+        "同步/reference 历史默认值迁移",
+        "当前源码的真实模型质量与性能测试",
+        "进程/socket/sysctl 验证"
+      ]
+    },
+    "limitations": [
+      "只读静态调用核查不能证明所有第三方公共 SDK 调用已消失。",
+      "未执行测试，不提供本次通过数。",
+      "文件拆分只按职责判断，不将搬移行数作为代码减少。"
+    ]
+  },
+  "existing_model_qualification": {
+    "evidence_kind": "Read-only summary of the existing server handoff. No new model or server action.",
+    "source": {
+      "head": "a1b5cdd38860df8ee7eed06c86e5d06a94687ad5",
+      "tree": "f6f490e526a99bb852ccd211e9253ec1175933d4"
+    },
+    "source_artifact_sha256": "3c551e74bbde8d86e9bfc0ff920838f9c63abe8d1b8a5bf1ce98b3a43c13bf85",
+    "source_artifact_bytes": 47598,
+    "qualification": {
+      "ACK_targeted_CPU_passed": 13,
+      "provider_shape_passed": 3,
+      "real_Ray_passed": 5,
+      "full_CPU_suite_rerun": false
+    },
+    "model_calls": 2000,
+    "configuration": {
+      "preparation_mode": "event_driven",
+      "SemLoom_B": null,
+      "prepared_batching": null,
+      "C_batch": null,
+      "C_initial": 1,
+      "R_explicit_config": null,
+      "logical_request_limit_from_input_count": 2000,
+      "omitted_engine_args": [
+        "max_num_seqs",
+        "max_num_batched_tokens",
+        "max_model_len"
+      ],
+      "actual_native_capacity": {
+        "schema": "semloom.native_effective_capacity.v1",
+        "status": "observed_effective_config",
+        "max_num_seqs": 128,
+        "max_num_batched_tokens": 2048,
+        "max_model_len": 32768,
+        "kv_cache_blocks": 4871,
+        "kv_cache_block_tokens": 16,
+        "kv_free_bytes": null,
+        "physical_free_bytes": null,
+        "source": "constructed AsyncLLM.vllm_config; not free capacity or a measured performance plateau"
+      }
+    },
+    "counts": {
+      "expected": 2000,
+      "recorded": 2000,
+      "missing": 0,
+      "succeeded": 2000,
+      "failed": 0,
+      "unknown": 0,
+      "submission_confirmed": 2000,
+      "submission_unconfirmed": 0
+    },
+    "classification_decision_changes": 1,
+    "output_token_sequence_changes": 29,
+    "full_model_quality_equal": false,
+    "comparison_limitations": [
+      "one run per configuration, separate owners at separate times; not counterbalanced or statistical evidence",
+      "109 files changed since b089; includes multiple refactors, not isolated ACK treatment",
+      "all 2000 row identities, messages hashes, prompt token IDs and generation configuration matched",
+      "new cached prompt tokens +16, computed prompt tokens -16; actual cache work not identical",
+      "29 output token-ID sequences differ from b089 dynamic; 1 Filter decision differs and adds one false negative",
+      "LIMIT5 F1 1.0 covers only projected five rows; full 2000 classification accuracy is 77.70%",
+      "historical b089 fixed 22.051428062s remains faster than new dynamic 23.602619167s",
+      "model API envelope and zero-API-inflight gaps do not prove GPU busy/idle or queue starvation",
+      "actor_result_return denotes first result-page exposure; actual poll-send/actor-entry/ACK RPC start counts not fully instrumented",
+      "C history at_s is the observation input anchor; it is not a separately recorded post-application decision timestamp",
+      "no verified performance window or local plateau; two safety-unknown trial reversions retained",
+      "host input/result budgets are logical responsibilities, not preallocated RSS or physical GPU capacity"
+    ],
+    "current_refactor_head_not_covered_by_this_model_run": true,
+    "current_subthread_model_runs": 0,
+    "existing_run_id": "rpa1r1",
+    "source_artifact_label": "pr90-ack-a1b5-execution-20261105-r1/HANDOFF.json",
+    "original_retained_by": "Unified GPU test thread",
+    "current_base": "4376d927ada18896fc086f0c85692f28d79d110f",
+    "current_code_candidate": "5bf1a619aa4837407016efe5076843dab760c9dc"
+  },
+  "new_real_Ray_model_GPU_database_server_runs": 0,
+  "known_unqualified_checks": "Earlier Unix socket/sysctl and pinned-SemBench CLI cases were not selected or retried. The a1b5 model result does not qualify this new head.",
+  "independent_review_sha256": "67069691b581882b7e62deca649cdeea63cf99a68fb015ed1c7cb72dbce0c594",
+  "preliminary_review_sha256": "6ad06081da07c40a72a9ce3d77e001415c556c20a21f465837abbea64177053d",
+  "private_originals": {
+    "component/before-gateway-retirement.json": {
+      "bytes": 130162,
+      "sha256": "67d3f60439d775f6145f77cfba97d541677caba1dae2cf0e805445fc01303e0d"
+    },
+    "component/before-gateway-retirement.log": {
+      "bytes": 1008,
+      "sha256": "aeb10de08da7389a3a4a8cc43dc5cf13b7ef6b087f14a5d633f6ae34f5c05f16"
+    },
+    "component/after-gateway-retirement.json": {
+      "bytes": 129920,
+      "sha256": "83b1368371cfa64e3e2c977790f97d2dd13897f2acc00e9c39a3ae08e6f7ecad"
+    },
+    "component/after-gateway-retirement.log": {
+      "bytes": 1008,
+      "sha256": "e3c272b067ad6481d95a95e7cfed3acf43c8ee553107e008bb191ab0897d82d8"
+    },
+    "preliminary/http-observation-combined.json": {
+      "bytes": 131892,
+      "sha256": "972b09b14a45323f23c2a7fb0a58c2eba8f91ff467844b740de0a7144570d2a0"
+    },
+    "preliminary/http-observation-combined.log": {
+      "bytes": 2376,
+      "sha256": "dc9022f5a2c2e2e990d1004df0a9718b0c868dba6b87d075c1ce9af4460f0b6b"
+    },
+    "http-observation-latest.json": {
+      "bytes": 132119,
+      "sha256": "9be0d53debcc0fd6ac1caeffbb3c933f552d72fb16b0c6d0420e8862e0220595"
+    },
+    "http-observation-latest.log": {
+      "bytes": 2376,
+      "sha256": "f51c95d4070acba6ff80a8becc12ce29cec945b4e33dd7b5099c5ef8af8d7348"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5530,
+      "sha256": "463e4bede1d6a68133537acd819e51da3a9945a4a2ff2a016330a735a52f820f"
+    },
+    "SOURCE_IDENTITY.json": {
+      "bytes": 992,
+      "sha256": "5f758cae64078895756129c4560b0359ae0f569c2b65b6415afcb47d502a9b6b"
+    },
+    "RESTORATION_CHECKS.json": {
+      "bytes": 1652,
+      "sha256": "4dbd13ccb2bb7ddc52feb1ed7ed7e7c1545d6c4a12a6ba754917322393071dad"
+    },
+    "http-observation-history-latest.json": {
+      "bytes": 2362,
+      "sha256": "782b2b4aa48e89629d351edebf3d494ed59bbf02fdeed728b4954ba5839cdf30"
+    },
+    "MODEL_QUALIFICATION_SCOPE.json": {
+      "bytes": 3396,
+      "sha256": "50071d72dcf0bd0bf6b42b0e3d950c2f25a51e33c5265b3d1a797751f3b8f796"
+    },
+    "CORE_STATUS_AUDIT.json": {
+      "bytes": 11355,
+      "sha256": "f32d62bf8c563c3d4ca56187c0a4d92dc787c6239a11ceecbb93164d61a3792f"
+    },
+    "REMAINING_CORE_AFTER.json": {
+      "bytes": 1089,
+      "sha256": "5e11d03c0dc78c71d074a023c31b102a05f8685371db6362ca8e28995a1306e3"
+    },
+    "component/RUNNER_BOOTSTRAP_FIRST_FAILURE.log": {
+      "bytes": 277,
+      "sha256": "747f3c757f01ba1994a68ebe915cd226b75e2b94bc9a335b7b2219a6c008da6c"
+    },
+    "preliminary/http-observation-history.json": {
+      "bytes": 6863,
+      "sha256": "c719382704b23f22fbf34ae1067370093f2014be215b37b2bc0151cdc7cbb81a"
+    },
+    "latest-review/HANDOFF.json": {
+      "bytes": 3554,
+      "sha256": "67069691b581882b7e62deca649cdeea63cf99a68fb015ed1c7cb72dbce0c594"
+    },
+    "preliminary-review/HANDOFF.json": {
+      "bytes": 4025,
+      "sha256": "6ad06081da07c40a72a9ce3d77e001415c556c20a21f465837abbea64177053d"
+    },
+    "latest-review/SOURCE-EVIDENCE.json": {
+      "bytes": 11059,
+      "sha256": "a339c0e6f12886dcf26f8c582e3325f07037e4fc09c34f756ffd65333d333b58"
+    },
+    "preliminary-review/SOURCE-EVIDENCE.json": {
+      "bytes": 10660,
+      "sha256": "27403e17002e044b2301a606914f586bea2aff1976c822d1a18a91f8cd6afdb1"
+    }
+  },
+  "raw": {
+    "file": "http_observation_retirement_raw.json.gz",
+    "bytes": 20413,
+    "sha256": "0925b2d7e30551103e64e519b94f0b97a8d50a2489593f3ec993c72f18d0a324",
+    "decoded_sha256": "aa18bde42d42c73d12d6f3576023957459ec6466d0f510ab6f9a700eeb25acea"
+  }
+}

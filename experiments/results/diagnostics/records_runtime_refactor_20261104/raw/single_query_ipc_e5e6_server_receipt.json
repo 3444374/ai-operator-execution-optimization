@@ -1,0 +1,261 @@
+{
+  "run_id": "single-query-ipc-e5e6-cpu-execution-20261106-r1",
+  "head": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+  "tree": "39223fb3ad74091167012776c709dee110e24061",
+  "status": "passed_selected_methods",
+  "selected_methods": [
+    {
+      "id": "tests.serving.test_async_engine_process.AsyncProcessTests.test_hold_first_accept_second_and_return_reverse_order",
+      "passed": true,
+      "unittest_elapsed_s": 0.36466635577380657,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": []
+    },
+    {
+      "id": "tests.serving.test_async_engine_process.AsyncProcessTests.test_oversize_input_and_expired_request_have_no_handoff",
+      "passed": true,
+      "unittest_elapsed_s": 0.39776327181607485,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": []
+    },
+    {
+      "id": "tests.serving.test_async_engine_process.AsyncProcessTests.test_full_results_hold_capacity_until_consumption_then_recover",
+      "passed": true,
+      "unittest_elapsed_s": 0.3851350247859955,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": []
+    },
+    {
+      "id": "tests.serving.test_async_engine_process.AsyncProcessTests.test_aborted_unknown_retains_input_and_result_reservations",
+      "passed": true,
+      "unittest_elapsed_s": 0.3599060419946909,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": []
+    },
+    {
+      "id": "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_core_and_static_preflight_can_exceed_sixty_seconds_unless_caller_sets_duration",
+      "passed": true,
+      "unittest_elapsed_s": 0.0061272261664271355,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": []
+    }
+  ],
+  "actual_execution": {
+    "real_model_calls": 0,
+    "real_Ray_runtimes": 0,
+    "GPU_queries": 0,
+    "HTTP_requests": 0,
+    "query_replays": 0,
+    "method_retries": 0,
+    "multiquery_scenarios": 0,
+    "actual_CPU_fixture_processes": true,
+    "Mock_clock_for_fifth_method": true
+  },
+  "cleanup": {
+    "physical_idle": true,
+    "lease_released": true,
+    "observed_owned_processes": 18,
+    "live_owned_remaining": [],
+    "remaining_filesystem_socket_paths": [],
+    "socket_scope": "unnamed socketpair endpoints close with observed parent/child exits; private temporary directory checked for filesystem sockets",
+    "remaining_new_SHM_names": [],
+    "host_SHM_delta_bytes": 0,
+    "signals": [],
+    "finalization_errors": [],
+    "arbitrary_unobserved_descendants_confirmed": false
+  },
+  "source_integrity": {
+    "all_method_runs_record_exact_head": true,
+    "all_method_hash_maps_equal": true,
+    "source_file_hash_count": 1078,
+    "source_hash_map_sha256": "d2ba4c8589911de7f598254fb23a221d426764fb6bd86d228eb37098cff9838f",
+    "source_unchanged_during_each_method": true,
+    "checkout_clean": true
+  },
+  "versions": {
+    "Python": "3.12.3",
+    "lotus-ai": "1.2.4",
+    "daft": "0.7.21",
+    "ray": "2.56.1",
+    "pyarrow": "24.0.0",
+    "litellm": "1.95.0",
+    "openai": "2.50.0"
+  },
+  "limits": {
+    "overall_controller_timeout_s": 180,
+    "new_per_method_timeout": false,
+    "original_startup_until_close_waits_unchanged": true,
+    "extra_count_gate": false,
+    "extra_HTTP_qualification": false,
+    "assertions_modified": false,
+    "close_wrapped": false
+  },
+  "acquisition": {
+    "head": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+    "tree": "39223fb3ad74091167012776c709dee110e24061",
+    "clean": true,
+    "bundle_sha256": "31b1d68da6433d2406dce806f0b1b74f677221515763cbe27c565cfa91f8ab06",
+    "bundle_bytes": 141858,
+    "normal_Git_failures_preserved": [
+      128,
+      124
+    ],
+    "fresh_independent_source": true
+  },
+  "originals_sha256": {
+    "HANDOFF.json": "a937bb11866d5da98626fb75161560248546954be4e85f9398384b78ea35f04b",
+    "RESULTS.json": "e12ae18a2d0a24a751e8294dbfe3520d18b710764f3b9849a5e5da2607b5f1c8",
+    "SERVER-ORIGINAL-MANIFEST.json": "3425db68649def6dff17b96531c2988bb3e16be962c38a928032b0918bf36305"
+  },
+  "server_original_count": 39,
+  "downloaded_logs": [
+    {
+      "file": "controller.log",
+      "bytes": 3111,
+      "sha256": "7164e9368c8d088880a77e08f894e05eb7439d13ddd8e25f018b56c00bb53b3d",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "git-fetch-r2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "git-fetch.log",
+      "bytes": 132,
+      "sha256": "9af6b14c13b791047831ba6d881aa39514e9afbcaaba06457fb355760d9d0b29",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_1-supervisor.json",
+      "bytes": 2132,
+      "sha256": "48e9becb3b4628ac0958d17b6dd3235512356e9c30f375e3303c18c97a9464c9",
+      "matches_server_manifest": false,
+      "original_serialization_sha256": "bd9b3c7f2a6db5c5af391bc8fea7c039c838789874e3c3ab32cd25fc31cb0ce0",
+      "original_serialization_matches_manifest": true,
+      "serialization": "The local JSON copy is reserialized; indent=2 plus a trailing newline reproduces the original digest with unchanged values."
+    },
+    {
+      "file": "method_1-worker.log",
+      "bytes": 319,
+      "sha256": "df9bf61c997b15123743db7f425b47244be2e099d0a8c061f867f7eef964b169",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_1.log",
+      "bytes": 274,
+      "sha256": "9297577443c5a0f940d3d9fb8d284cceabbbd301b5974a4bfa14e6b738202d02",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_2-supervisor.json",
+      "bytes": 2135,
+      "sha256": "1237adff82b0c60554d57d5ca0fe7565c6ee0b062954740896f3a1772a4c6434",
+      "matches_server_manifest": false,
+      "original_serialization_sha256": "421541cdad6a4dd5e518c864f74d1c5e74fd1ae72f305abce5a4786aa24b6c2c",
+      "original_serialization_matches_manifest": true,
+      "serialization": "The local JSON copy is reserialized; indent=2 plus a trailing newline reproduces the original digest with unchanged values."
+    },
+    {
+      "file": "method_2-worker.log",
+      "bytes": 320,
+      "sha256": "e80ab24b14022eb983a7e6d5c62f1787c2d7c847667ceb91da1dd41335af383e",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_2.log",
+      "bytes": 276,
+      "sha256": "8c41993f557b99423eafca540e9106011b09242ce17741a9beb70f140bcef77d",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_3-supervisor.json",
+      "bytes": 2141,
+      "sha256": "540f1cabd44fb7905cead957a54d92801b3e5b4252922f41e9911e49265d06fe",
+      "matches_server_manifest": false,
+      "original_serialization_sha256": "7bd9fe143ade0a46021059234900192720ea58be07a1c8596dbb68dac7455fc4",
+      "original_serialization_matches_manifest": true,
+      "serialization": "The local JSON copy is reserialized; indent=2 plus a trailing newline reproduces the original digest with unchanged values."
+    },
+    {
+      "file": "method_3-worker.log",
+      "bytes": 326,
+      "sha256": "485918e8e144c0348d304021fd87ed6e94cc747307094d895b1ebedc7822843f",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_3.log",
+      "bytes": 290,
+      "sha256": "a72a973b89373f1c271aed443ef9c3803181ba488c6791225954032e4e4e7aa1",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_4-supervisor.json",
+      "bytes": 2205,
+      "sha256": "68db662efcc90a6dc9ba6b360933f02397f42ffe045127807ec3aa61b736d78f",
+      "matches_server_manifest": false,
+      "original_serialization_sha256": "53006f0a02b15ea491140f24032be730bc4d624dc7c50883720cd39981f52543",
+      "original_serialization_matches_manifest": true,
+      "serialization": "The local JSON copy is reserialized; indent=2 plus a trailing newline reproduces the original digest with unchanged values."
+    },
+    {
+      "file": "method_4-worker.log",
+      "bytes": 322,
+      "sha256": "7e8e6af94e955c84d927b10dbd57554a69e6bc2200e25ace5ef5288826fe82c7",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_4.log",
+      "bytes": 282,
+      "sha256": "8191ff9ecfd8412873c5bf980591f0b8ef8c76b474f6423c1337b54bd22abe30",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_5-supervisor.json",
+      "bytes": 2109,
+      "sha256": "5d7a8998a2b09fe565bb27a4d8304f3ce5742239ba0703da430f09fca4917a15",
+      "matches_server_manifest": false,
+      "original_serialization_sha256": "47cb018b0fde574466590bd8c713a138ac99e8735cbb242836c6df2b6a0bb89c",
+      "original_serialization_matches_manifest": true,
+      "serialization": "The local JSON copy is reserialized; indent=2 plus a trailing newline reproduces the original digest with unchanged values."
+    },
+    {
+      "file": "method_5-worker.log",
+      "bytes": 365,
+      "sha256": "76340ca1d5bd38e68d5022ca1f3f51db100f38463b5bbe8a5e25f1f30e0046ef",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "method_5.log",
+      "bytes": 347,
+      "sha256": "079935ac0f0d3919eb188a8517971c96e9f3d3f7e0360c6c8e4480b75137d47f",
+      "matches_server_manifest": true
+    },
+    {
+      "file": "preflight-supervisor.json",
+      "bytes": 2218,
+      "sha256": "3349196b5536b98b1c0ecf7662996d187e73ef59a9a682684e60f49c8bd736dc",
+      "matches_server_manifest": false,
+      "original_serialization_sha256": "0cd77ed336e7445d0ff47d4591192165e5a1823317a3c9948a98e82639d6e7dc",
+      "original_serialization_matches_manifest": true,
+      "serialization": "The local JSON copy is reserialized; indent=2 plus a trailing newline reproduces the original digest with unchanged values."
+    }
+  ],
+  "downloaded_log_provenance": "Thirteen exact log files match the original manifest. Six local supervisor JSON copies differ in serialization only; reserializing them reproduces their original manifest digests. Private originals and local copies are unchanged.",
+  "scope": "Four actual CPU socketpair/child-process methods and one Mock-clock method, once each, without retries.",
+  "expiration_scope": "The explicit-expiration method rejects a request already expired before handoff. It does not test a real-model in-flight abort.",
+  "no_duration_scope": "Two records of the same query carry deadline_monotonic=None through actual IPC; the child fixture does not implement real model deadlines.",
+  "clock_scope": "The fifth method checks default None, explicit None/300 and explicit 60 with a simulated clock; no 60-second real wait.",
+  "remaining": "Real vLLM deadline/abort, Ray startup/actor exit, model quality and performance were not run. Later source changes retain their own test identity."
+}

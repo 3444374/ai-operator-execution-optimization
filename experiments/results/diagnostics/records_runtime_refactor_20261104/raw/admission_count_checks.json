@@ -1,0 +1,36 @@
+{
+  "base": "7b2adbb",
+  "changed_behavior": "invalid request counts and cadence rejected; invalid policy output cannot replace current gate limit",
+  "new_capacity_caps": false,
+  "thresholds_or_defaults_changed": false,
+  "invalid_input_before": {
+    "selected": 4,
+    "passed": 0,
+    "failure_events": 15,
+    "error_events": 7
+  },
+  "CPU": {
+    "selected": 291,
+    "passed": 291,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "historical": {
+    "existing_overrides_preserved": true,
+    "new_overrides": 0
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "admission_counts_before.json": "d871fd9c84f5c9d5faefd9161ea78026f5d9c6ecc0b29cbdfdedd2ceb12fb61a",
+    "admission_counts_before.log": "84d828ba3214b422d0a695664cc1dd240c1e187c3b15b2ebc030c4aea442b8b1",
+    "admission_counts_after.json": "0c04fbfcfc6239602b95215da6cc94f5a0711ef9284321784de14043ec317f55",
+    "admission_counts_after.log": "38fa2b6791cfcf55bf13e948086bbf75e321798afdc1e80bb4babcb08238b4ff",
+    "local_import_audit.json": "ccad9cdcc08b49b72600cec29a85345340d83e3b53b2b5b9447a6f8b5a0e1b2e"
+  }
+}

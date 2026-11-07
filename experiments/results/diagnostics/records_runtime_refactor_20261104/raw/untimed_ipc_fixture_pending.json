@@ -1,0 +1,14 @@
+{
+  "source_commit": "57be5654ba775bf1c12f29297994455f9c7edb26",
+  "source_tree": "1c7d15560be79676ff1a987b70b5b4c7bb0c0de3",
+  "file": "code/tests/serving/test_async_engine_process.py",
+  "sha256": "3e3a5898528922b0f6fcab5d7114cf9c07fd45a42eeedc6f500d227fd9e0bed2",
+  "method": "tests.serving.test_async_engine_process.AsyncProcessTests.test_hold_first_accept_second_and_return_reverse_order",
+  "change": "The two submissions use deadline_monotonic=None directly, retain queued checks and the existing reverse-result/cancel/capacity assertions.",
+  "query_identity": "Both rows belong to the same query q; no new multi-query scenario.",
+  "local_validation": "AST parse and independent source review only; no local socket or child execution.",
+  "server_execution": "pending on exact reviewed source",
+  "fixture_scope": "The existing CPU child fixture does not interpret model deadlines; actual IPC serialization and ownership only, not real vLLM timer behavior.",
+  "models": 0,
+  "new_test_classes_or_methods": 0
+}

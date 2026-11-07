@@ -1,0 +1,124 @@
+{
+  "schema": "semloom.workflow_json_type_checks.v1",
+  "run_id": "semloom-workflow-json-types-20261105",
+  "base": "a255574fadba9f8106082de272055895b392a905",
+  "classification": "CPU fixtures only; no actual Ray runtime, model, GPU, network or server execution",
+  "old_behavior": {
+    "selected": 1,
+    "passed": 0,
+    "failures": [
+      {
+        "id": "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_prepared_generation_or_C_change_cannot_borrow_original_ready (section='generation', key='seed', value=False)",
+        "traceback": "Traceback (most recent call last):\n  File \"<worktree>/code/tests/experiments/test_git_record_observation.py\", line 130, in test_prepared_generation_or_C_change_cannot_borrow_original_ready\n    with self.assertRaises(ValueError): workflow.run(path)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+      }
+    ],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true,
+    "source_sha256": {
+      "code/scripts/profiling/record_observation/workflow.py": "a863b55d57e41ceca1ae59662badc401df660663b7cdb38357d07fe11f6a2c64",
+      "code/tests/experiments/test_git_record_observation.py": "00990dc62848334d3fed58e41906bf844288c910486fee1da3b5a6428a3a2640",
+      "code/src/infrastructure/json_content.py": "f01aaad16626e5568641f9cf5bc0f4fa238d268489a4941fde5fb7639a6036a1"
+    }
+  },
+  "after": {
+    "selected": 27,
+    "passed": 27,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "modules": [
+      "tests.experiments.test_git_record_observation",
+      "tests.infrastructure.test_json_content"
+    ],
+    "successful_method_ids": [
+      "tests.experiments.test_git_record_observation.GitSourceTests.test_exact_head_tree_and_untracked_code_guard",
+      "tests.experiments.test_git_record_observation.MovieInputBindingTests.test_real_target_preflight_distinguishes_two_valid_inputs_at_same_manifest_path",
+      "tests.experiments.test_git_record_observation.OriginalIntegrityTests.test_changed_missing_and_extra_files_are_each_rejected",
+      "tests.experiments.test_git_record_observation.OriginalIntegrityTests.test_escape_duplicate_and_tampered_manifest_are_rejected",
+      "tests.experiments.test_git_record_observation.OriginalIntegrityTests.test_exact_bytes_including_failed_attempts_roundtrip_and_manifest_is_exclusive",
+      "tests.experiments.test_git_record_observation.OriginalIntegrityTests.test_symlink_does_not_escape_original_root",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_CPU_failure_retains_output_and_does_not_launch_probes_or_models",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_CPU_qualification_runs_batch_probes_and_keeps_unsupported_scope_explicit",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_base_change_during_CPU_qualification_never_publishes_ready",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_changed_cell_or_run_identity_is_rejected_again_before_execution",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_changed_input_and_invalid_budget_fail_before_model_or_output",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_changed_legal_Movie_manifest_cannot_reuse_ready",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_changed_qualified_base_or_observer_rejects_before_creating_cell",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_existing_cell_is_never_overwritten",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_fresh_controller_environment_imports_target_not_cached_tool_modules",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_native_budget_mismatch_is_rejected_not_silently_rewritten",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_on_off_preserve_work_and_site_bindings_without_changing_C",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_prepared_generation_or_C_change_cannot_borrow_original_ready",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_run_checks_ready_source_and_only_invokes_existing_controller",
+      "tests.experiments.test_git_record_observation.PrivateCaptureFlowTests.test_run_without_execute_flag_fails_before_controller",
+      "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_bulk_probe_off_uses_constructed_owner",
+      "tests.experiments.test_git_record_observation.PublicBulkProbeIntegrationTests.test_current_public_bulk_probe_on_uses_constructed_owner",
+      "tests.infrastructure.test_json_content.JsonContentTests.test_array_order_keys_and_missing_values_are_significant",
+      "tests.infrastructure.test_json_content.JsonContentTests.test_boolean_integer_float_and_signed_zero_do_not_alias",
+      "tests.infrastructure.test_json_content.JsonContentTests.test_cyclic_or_too_deep_content_is_not_accepted",
+      "tests.infrastructure.test_json_content.JsonContentTests.test_nonfinite_and_nonjson_values_fail_even_when_the_same_object",
+      "tests.infrastructure.test_json_content.JsonContentTests.test_reordered_objects_and_shared_subtrees_keep_the_same_content"
+    ],
+    "source_unchanged": true,
+    "source_sha256": {
+      "code/scripts/profiling/record_observation/workflow.py": "9d081982d3f032fed0c15193df64c389cbd191688a8d9a4524b6fbcf3bb8780c",
+      "code/tests/experiments/test_git_record_observation.py": "00990dc62848334d3fed58e41906bf844288c910486fee1da3b5a6428a3a2640",
+      "code/src/infrastructure/json_content.py": "f01aaad16626e5568641f9cf5bc0f4fa238d268489a4941fde5fb7639a6036a1"
+    }
+  },
+  "preserved_cases": [
+    "Unchanged legal business configuration is accepted.",
+    "Object key order and JSON whitespace changes are accepted.",
+    "Changed generation values and request capacities are rejected before the controller."
+  ],
+  "new_test_methods": 0,
+  "new_comparison_framework": false,
+  "reused_function": "src.infrastructure.json_content.json_content_equal",
+  "expected_diagnostic": "The existing missing --execute-model case emits argparse usage and passes its SystemExit assertion.",
+  "Python": "3.12.6",
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "daft": "0.7.21",
+    "ray": "2.56.1",
+    "pyarrow": "24.0.0",
+    "litellm": "1.95.0",
+    "openai": "2.50.0"
+  },
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "private_originals": [
+    {
+      "name": "workflow-json-before.json",
+      "bytes": 170539,
+      "sha256": "c23e810f61c106489cdd45c46268dc16e8adfa6293afb262d8cb18bc53d30a4f"
+    },
+    {
+      "name": "workflow-json-before.log",
+      "bytes": 1351,
+      "sha256": "45ee14b1b87683cdd60fd58801281660e5485347914a2a0cb6b6849082028149"
+    },
+    {
+      "name": "workflow-json-after.json",
+      "bytes": 177085,
+      "sha256": "2c7942529d5e22918c6dedcac0f375dfaa5724cf6ac00e1d4d2a1f7211f2ec9e"
+    },
+    {
+      "name": "workflow-json-after.log",
+      "bytes": 5482,
+      "sha256": "c21cdb58367d05a84f203e059bd22078ab8521b1e26f4694bcd68ce92157f8ee"
+    },
+    {
+      "name": "run_cpu.py",
+      "bytes": 3154,
+      "sha256": "36730e6c9175cf3363fc623af6d5e1e2e0ab87cd5dcce761aa9088b45eaacad5"
+    },
+    {
+      "name": "run_guarded.py",
+      "bytes": 617,
+      "sha256": "76adb2dc909ab05bd7e0978b16a9055d8ba0b167233f8d02675dfbff32886ac0"
+    }
+  ],
+  "rerun": "With the existing CPU dependencies, set PYTHONPATH=code, CUDA_VISIBLE_DEVICES empty, HF_HUB_OFFLINE=1, TRANSFORMERS_OFFLINE=1 and real-Ray opt-ins to zero; run python -B -m unittest tests.experiments.test_git_record_observation tests.infrastructure.test_json_content."
+}

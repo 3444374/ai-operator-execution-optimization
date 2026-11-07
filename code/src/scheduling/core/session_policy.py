@@ -8,7 +8,7 @@ from typing import Callable, Protocol
 from .errors import EndpointCapacityUnavailable
 from .models import BatchRequest, TopologySnapshot
 from .policy_contracts import AdmissionPolicy, EndpointRouter, PoolRouter, SharedCreditPolicy
-from .session_capacity import TaskRecord
+from .session_capacity import SessionCapacity, TaskRecord
 from .session_contract import OfferedTask, SessionSpec, TaskKey
 
 
@@ -81,6 +81,19 @@ class SessionPolicies:
         oldest = max((now - r.since for r in active), default=0.0)
         if not self.admission.decide(len(active), hol_age_s=max(0.0, oldest)).allowed:
             return None
+        endpoints = tuple(
+            replace(
+                e,
+                running=e.running + sum(r.endpoint == e.endpoint_id for r in active),
+                estimated_active_work=e.estimated_active_work
+                + sum(r.task.estimated_work for r in active if r.endpoint == e.endpoint_id),
+            )
+            for e in self.topology.endpoints
+        )
+        return self._route(record, endpoints)
+
+    def _route(self, record: TaskRecord, endpoints) -> str | None:
+        """Route with caller-derived occupancy; admission remains per member."""
         request = BatchRequest(
             request_id=f"{record.key.session_id}:{record.key.sequence}",
             job_id=record.spec.job_id,
@@ -97,15 +110,6 @@ class SessionPolicies:
             estimated_payload_bytes=len(record.task.payload),
             work_descriptor=record.task.info.work if record.task.info else None,
         )
-        endpoints = tuple(
-            replace(
-                e,
-                running=e.running + sum(r.endpoint == e.endpoint_id for r in active),
-                estimated_active_work=e.estimated_active_work
-                + sum(r.task.estimated_work for r in active if r.endpoint == e.endpoint_id),
-            )
-            for e in self.topology.endpoints
-        )
         topology = replace(self.topology, endpoints=endpoints)
         pool = (
             self.pool_router.route(request, topology).pool_id if self.pool_router else self.pool_id
@@ -120,3 +124,38 @@ class SessionPolicies:
         ):
             raise ValueError("policy selected unavailable endpoint")
         return route.endpoint_id
+
+
+def _batch_dispatch_snapshot(capacity, policies, *, session_id, limits, job_id, member_count, now):
+    """Derive call-local counts only for the fixed, single-endpoint policy.
+
+    The non-reentrant owner cannot settle completions during reservation.
+    Custom policies retain the record-based path, including their callbacks.
+    """
+    if member_count < 2:
+        return None
+    from ..endpoint_routing.policies import RoundRobinEndpointRouter
+    from ..submission_control.admission import StaticAdmissionController
+
+    if (type(capacity) is not SessionCapacity or type(policies) is not SessionPolicies
+            or type(policies.admission) is not StaticAdmissionController
+            or type(policies.router) is not RoundRobinEndpointRouter
+            or policies.pool_router is not None or len(policies.topology.endpoints) != 1):
+        return None
+    scopes = [(capacity.usage(), capacity.limits),
+              (capacity.usage(session_id), limits)]
+    if job_id in capacity.job_limits:
+        scopes.append((capacity.usage(job_id=job_id), capacity.job_limits[job_id]))
+    bounds = [[usage.active_requests, usage.active_work, limit] for usage, limit in scopes]
+    endpoint = policies.topology.endpoints[0]
+    running = work = 0
+    oldest = 0.0
+    for record in capacity.records.values():
+        if record.compute:
+            oldest = max(oldest, now - record.since)
+            if record.endpoint == endpoint.endpoint_id:
+                running += 1
+                work += record.task.estimated_work
+    endpoint = replace(endpoint, running=endpoint.running + running,
+                       estimated_active_work=endpoint.estimated_active_work + work)
+    return bounds, endpoint, oldest

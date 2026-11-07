@@ -16,17 +16,20 @@ import threading
 import time
 from urllib.parse import urlsplit
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
-from src.baselines.common.redact import redact_json_values, redact_text
-from src.observability.metrics.resources import gpu_metadata, host_metadata, resource_sample_stats
+from src.infrastructure.redact import redact_json_values, redact_text
+from src.observability.metrics.resources import (
+    AllocatedCPUCounterSource, gpu_metadata, host_metadata, resource_sample_stats,
+)
 from src.observability.metrics.vllm import scrape_prometheus_metrics
 
 
 GPU_FIELDS = ("gpu_utilization_pct", "gpu_memory_used_mib", "gpu_memory_total_mib", "gpu_power_w")
 HOST_FIELDS = ("host_cpu_busy_cores", "host_cpu_per_core_max_pct",
-               "host_memory_used_pct", "host_memory_available_mib")
+               "host_memory_used_pct", "host_memory_available_mib",
+               "cpu_allocation_busy_cores", "cpu_allocation_utilization_pct")
 NATIVE_FIELDS = {
     "vllm_num_requests_running": "vllm:num_requests_running",
     "vllm_num_requests_waiting": "vllm:num_requests_waiting",
@@ -133,16 +136,35 @@ class TelemetryEvents:
 class MetricSources:
     """Reuse the existing GPU/host/Prometheus readers without a model endpoint."""
 
-    def __init__(self, gpu_ids, native_metrics_url=None):
+    def __init__(self, gpu_ids, native_metrics_url=None, *, gpu_binding_error=None,
+                 gpu_binding_source="explicit_gpu_ids"):
         self.gpu_ids, self.native_metrics_url = tuple(gpu_ids), native_metrics_url
-        self._first_cpu = True
-        if not self.gpu_ids:
+        self.gpu_binding_error = gpu_binding_error
+        self.gpu_binding_source = gpu_binding_source
+        self._cpu_source = AllocatedCPUCounterSource()
+        from src.observability.metrics.memory_pressure import CgroupMemoryPressureSource
+        self._memory_source = CgroupMemoryPressureSource()
+        if not self.gpu_ids and gpu_binding_error is None:
             raise ValueError("explicit assigned physical GPU IDs are required")
         if native_metrics_url is not None:
             parsed = urlsplit(native_metrics_url)
             if (parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost", "::1")
                     or parsed.username is not None or parsed.password is not None):
                 raise ValueError("native metrics URL must be an explicitly supplied credential-free loopback HTTP URL")
+
+    @classmethod
+    def from_cuda_visibility(cls, visibility=None, *, assigned_gpu_uuids=None):
+        """Resolve once; the UUID-only reader still verifies every sample."""
+        from src.infrastructure.gpu_allocation import cuda_visible_gpu_uuids
+        try:
+            ids = cuda_visible_gpu_uuids(os.environ.get("CUDA_VISIBLE_DEVICES", "")
+                                         if visibility is None else visibility,
+                                         assigned_gpu_uuids=assigned_gpu_uuids)
+        except Exception as error:
+            return cls((), gpu_binding_error="unavailable:CUDA_UUID_binding:" + _error(error),
+                       gpu_binding_source="unavailable_cuda_binding")
+        return cls(ids, gpu_binding_source=("native_worker_receipt" if assigned_gpu_uuids is not None
+                                           else "cuda_visibility_without_worker_receipt"))
 
     def __call__(self):
         values, missing, sources = {}, {}, {}
@@ -161,13 +183,24 @@ class MetricSources:
                 values[field] = _number(raw.get(field))
                 if values[field] is None:
                     missing[field] = reason or name + ":field_not_exposed_or_unsupported:" + source_status
+            return raw
 
-        collect("gpu", GPU_FIELDS, lambda: gpu_metadata(self.gpu_ids, use_nvml=True))
-        collect("host", HOST_FIELDS, lambda: host_metadata(include_status=True))
-        if self._first_cpu and all(values[field] is not None for field in HOST_FIELDS[:2]):
-            for field in HOST_FIELDS[:2]:
-                values[field], missing[field] = None, "cpu_percent_baseline_priming"
-            self._first_cpu = False
+        collect("gpu", GPU_FIELDS, lambda: dict(gpu_metrics_status=self.gpu_binding_error)
+                if self.gpu_binding_error is not None else gpu_metadata(self.gpu_ids, use_nvml=True))
+        sources["gpu"]["physical_gpu_uuids"] = list(self.gpu_ids)
+        sources["gpu"]["binding_source"] = self.gpu_binding_source
+        host = collect("host", HOST_FIELDS,
+                       lambda: host_metadata(include_status=True, cpu_source=self._cpu_source))
+        from src.infrastructure.cgroup import memory_observation
+        sources["host"].update({name: value for name, value in host.items() if name.startswith("cpu_")})
+        sources["host"].update(memory_observation(), memory_observation_scope="host_context_and_separate_cgroup_headroom")
+        sources["host"]["memory_pressure"] = self._memory_source()
+        for field in HOST_FIELDS[:2]:
+            if values[field] is None and host.get("cpu_metrics_status"):
+                missing[field] = ("cpu_per_core_unavailable_in_cgroup_scope"
+                    if host.get("cpu_metrics_status") == "observed"
+                    and host.get("cpu_observation_scope") == "current_cgroup_per_effective_CPU"
+                    else host["cpu_metrics_status"])
 
         def native():
             if self.native_metrics_url is None:

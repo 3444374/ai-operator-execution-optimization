@@ -1,0 +1,104 @@
+{
+  "schema": "semloom.sync_public_evidence_revision.v1",
+  "behavior_source": "f577370b0d2a366351839a3deb693aa9b6e0a34d",
+  "scope": "Public copy normalization, tracked CPU reproducers and stale sync documentation. Existing runtime Python files unchanged.",
+  "runtime": {
+    "base": "f577370b0d2a366351839a3deb693aa9b6e0a34d",
+    "existing_runtime_Python_files_unchanged": 489,
+    "no_controller_capacity_or_close_runtime_changes": true
+  },
+  "CPU": [
+    {
+      "label": "public_paths_before",
+      "selected": 1,
+      "run": 1,
+      "passed": 0,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true,
+      "private_original_json_sha256": "c80cbf7737849c9454d477f073d75ab2675d4c849e06810c12f152a81cda2512"
+    },
+    {
+      "label": "public_evidence_after",
+      "selected": 4,
+      "run": 4,
+      "passed": 3,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true,
+      "private_original_json_sha256": "ec789c4b6848205e2925bd325421f73f41a8d9b1cb079860234ec6dc9f9a8851"
+    },
+    {
+      "label": "public_evidence_recheck",
+      "selected": 4,
+      "run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true,
+      "private_original_json_sha256": "a8d769b0ce97ae9eafe348a1b68e26532de4fe23ada31435c5c948e235236ac7"
+    },
+    {
+      "label": "public_evidence_related",
+      "selected": 53,
+      "run": 53,
+      "passed": 53,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true,
+      "private_original_json_sha256": "849f59212353a83f5e8c76b65a44ba30b576cbf530a31bd53023cd690bbee80b"
+    },
+    {
+      "label": "public_evidence_final",
+      "selected": 4,
+      "run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true,
+      "private_original_json_sha256": "1b14e0bd87a56367c8fb9e013551db3f1d402a58563bf57315ef542e54c8eefc"
+    }
+  ],
+  "final_source_fingerprints": 1310,
+  "final_source_hashes_match": true,
+  "private_original_JSON_restored": 24,
+  "public_JSON_restored": 24,
+  "original_outcomes_and_source_hashes_preserved": true,
+  "removed_personal_prefixes": 40,
+  "normalization": "raw/cpu_public_path_normalization.json",
+  "reproduction": "raw/sync_supplemental_reproduction.json",
+  "native_source_correction": "Private v1 inputs had one additional trailing newline. Current byte pins match official v0.25.1 source; all eleven selected method AST digests are unchanged.",
+  "initial_new_test_failure": "The first golden JSON comparison retained a Python tuple; the test now compares serialized JSON representations. Runtime and expected semantic fields unchanged.",
+  "history_bindings": 3010,
+  "independent_prior_review": {
+    "selected": 163,
+    "passed": 160,
+    "runtime_import_guard_failure": 1,
+    "missing_Daft_errors": 2,
+    "new_feature_methods_passed": 29,
+    "qualification": "Scoped f577 review; missing/guarded methods remain unqualified and are not reclassified by this revision."
+  },
+  "limitations": [
+    "Original f577 full suite was audited; this evidence-only revision does not rerun or relabel the1898-pass result.",
+    "Original real Ray/Daft gaps, actual model/tokenizer/GPU checks and performance remain unqualified.",
+    "R2/defaultIPC8, physical auto capacity, old geometric instability and accepted-but-still-computing close remain open."
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "additional_log_path_normalization": {
+    "path": "PROJECT_LOG.md",
+    "personal_prefixes_replaced": 1,
+    "already_present_in_published_base": true,
+    "private_original_bytes": 1080385,
+    "private_original_sha256": "c660bd3a617c603bf72ff40f27c518a069923515fb674712796bbfdfa20c3309",
+    "public_copy_sha256": "2a1f0a1916d0c29ccd73fda362f29f101187bc4d5ed6da2e22ac30e650ca38ff"
+  }
+}

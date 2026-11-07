@@ -1,9 +1,6 @@
-import copy
-from contextlib import contextmanager
-from types import SimpleNamespace
 import unittest
 
-from src.observability.native_query_timing import (ObservationStore,model_API_samples,native_observation,
+from src.observability.native_query_timing import (ObservationStore,model_API_samples,
                              offline_scan_total,query_timing,timed_driver_type)
 
 
@@ -61,58 +58,6 @@ class QueryTests(unittest.TestCase):
         self.assertIsNone(timing['API_return_s']);self.assertIn('ordering',timing['reason'])
 
 
-class NativeTests(unittest.TestCase):
-    def fixture(self,failure=None):
-        invocations=[];sentinel=object();lm=SimpleNamespace()
-        def original(*args,**kwargs):
-            invocations.append((args,kwargs))
-            if failure:raise failure
-            return sentinel
-        lm.batch_completion=original
-        class Calls:
-            def __init__(self):
-                self.expected=[{'query_id':'q','row_id':str(i)} for i in range(4)]
-                self.events={7:dict(http_started={'monotonic_ns':100},http_response={'monotonic_ns':400},
-                                   http_finished={'monotonic_ns':500})}
-            def receipts(self):return [dict(attempt=7,http_status=200,response={'id':'original'},http_started=True)]
-            @contextmanager
-            def observe_batch(self):yield
-        return SimpleNamespace(_Calls=Calls),lm,invocations,sentinel,original
-
-    def test_original_POST_clocks_retained_no_new_sends(self):
-        module,lm,calls,sentinel,original=self.fixture();instance=module._Calls()
-        before=copy.deepcopy(instance.events)
-        with native_observation(module,lm,ObservationStore()):receipt=instance.receipts()[0]
-        self.assertEqual(receipt['external_HTTP_timing']['started_ns'],100)
-        self.assertEqual(receipt['external_HTTP_timing']['finished_ns'],500)
-        self.assertEqual(receipt['response'],{'id':'original'});self.assertEqual(instance.events,before)
-        self.assertEqual(calls,[])
-
-    def test_missing_HTTP_finish_not_faked(self):
-        module,lm,*_=self.fixture();instance=module._Calls();del instance.events[7]['http_finished']
-        with native_observation(module,lm,ObservationStore()):receipt=instance.receipts()[0]
-        self.assertIsNone(receipt['external_HTTP_timing']['elapsed_s'])
-        self.assertFalse(receipt['external_HTTP_timing']['complete'])
-
-    def test_one_native_batch_is_one_span_with_original_arguments(self):
-        module,lm,calls,sentinel,original=self.fixture();instance=module._Calls()
-        store=ObservationStore(Clock(100,900));args=[['a','b','c','d']];option=object()
-        with native_observation(module,lm,store):
-            with instance.observe_batch():self.assertIs(lm.batch_completion(*args,option=option),sentinel)
-        self.assertEqual(len(calls),1);self.assertIs(calls[0][0][0],args[0]);self.assertIs(calls[0][1]['option'],option)
-        self.assertEqual(len(store.batches['q']),1);self.assertEqual(store.batches['q'][0]['input_records'],4)
-        self.assertIs(lm.batch_completion,original)
-
-    def test_batch_exception_restored_and_preserved(self):
-        error=RuntimeError('original native')
-        module,lm,calls,_,original=self.fixture(error);instance=module._Calls()
-        old=(module._Calls.receipts,module._Calls.observe_batch);store=ObservationStore(Clock(100,900))
-        with self.assertRaises(RuntimeError) as caught:
-            with native_observation(module,lm,store):
-                with instance.observe_batch():lm.batch_completion(1)
-        self.assertIs(caught.exception,error);self.assertIs(lm.batch_completion,original)
-        self.assertEqual(old,(module._Calls.receipts,module._Calls.observe_batch))
-        self.assertEqual(store.batches['q'][0]['status'],'failed')
 
 
 class UnitTests(unittest.TestCase):
@@ -146,6 +91,33 @@ class UnitTests(unittest.TestCase):
             comparison_timing=dict(native_batch_API=[dict(input_records=4,elapsed_s=1.)]))
         samples=model_API_samples('lotus-native',report)
         self.assertEqual(len(samples),1);self.assertEqual(samples[0]['unit'],'HTTP_POST')
+
+    def test_local_native_uses_actual_independent_model_receipts(self):
+        report = dict(protocol='local_async_model_IPC', native_transport_receipts=[
+                          dict(row, submission_confirmed=True) for row in self.rows()],
+                      calls=dict(records=[]))
+        samples = model_API_samples('lotus-native', report)
+        self.assertEqual(len(samples), 4)
+        self.assertTrue(all(row['unit'] == 'single_generate' and row['records'] == 1 for row in samples))
+        self.assertTrue(all(row['elapsed_s'] == 1 for row in samples))
+
+    def test_local_native_keeps_presubmit_rejections_without_counting_model_API_calls(self):
+        for submitted in (False, None):
+            report = dict(protocol='local_async_model_IPC', native_transport_receipts=[
+                dict(self.rows('failed')[0], submission_confirmed=submitted)])
+            sample = model_API_samples('lotus-native', report)[0]
+            self.assertFalse(sample['countable_API_unit'])
+            self.assertEqual(sample['status'], 'not_sent' if submitted is False else 'unknown')
+            self.assertIsNone(sample['elapsed_s'])
+            self.assertIsNone(sample['start_ns'])
+
+    def test_local_native_unconfirmed_unknown_is_not_reported_as_unsent(self):
+        report = dict(protocol='local_async_model_IPC', native_transport_receipts=[
+            dict(self.rows('unknown')[0], submission_confirmed=False)])
+        sample = model_API_samples('lotus-native', report)[0]
+        self.assertEqual(sample['status'], 'unknown')
+        self.assertFalse(sample['countable_API_unit'])
+        self.assertIsNone(sample['elapsed_s'])
 
     def test_duplicate_offline_event_charged_once(self):
         event=dict(event_id='scan',actual_scan_calls=10,actual_scan_wall_s=2.)

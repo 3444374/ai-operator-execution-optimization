@@ -13,7 +13,7 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.common.redact import (  # noqa: E402
+from src.infrastructure.redact import (  # noqa: E402
     redact_argument_list,
     redact_database_url,
     redact_text,

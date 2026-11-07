@@ -1,0 +1,105 @@
+{
+  "schema": "semloom.fixed_http_service_selection_retirement.v1",
+  "base": "a37d182de7d44db2c21fac94e2d31daa849032a0",
+  "candidate": "835c745739613faa3fcf019c9fc28b2f82077eb2",
+  "tree": "f5cd614cd73b95433ecc86c12fbde91a655ee74d",
+  "history": {
+    "read_bindings_before": 5,
+    "read_bindings_after": 5,
+    "all_same": true,
+    "new_archives": 0,
+    "manifest_unchanged": true,
+    "full_3010_materialization_repeated": false,
+    "original_source": "Changed pre-existing files matched the public f526 bytes before this batch; current same-profile test was then added for the before/after comparison."
+  },
+  "checks": {
+    "local_markdown_targets": 148,
+    "broken_targets": 0,
+    "new_wording_hits": 0,
+    "affected_Python_AST_parse_passed": true,
+    "diff_check": true,
+    "staged_secret_scan_files": 9,
+    "secret_scan_violations": 0,
+    "working_tree_clean": true
+  },
+  "evidence": {
+    "SOURCE_BEFORE.json": "3f4357e4a74c91350a001f2cc54575a958deb72bc5e24e5d2e36b0269e5f4ab5",
+    "RETIRED_TEST_METHODS.json": "198698b20fd1989e4c817b6d150235bf6ee1e9209095723c3f0a8dfb07b7c26d",
+    "HISTORY_AFTER.json": "5f697366c2442d258a50200c0a0e04f933ef8420bcc34744f4019f9aabba8f00",
+    "original-current-service-profiles.json": "b7b415c1a290a6f509eb3a4b0fb68facdc491d42ccb87288c1464c198c793b3f",
+    "original-current-service-profiles.log": "bcdf6a99cd3a0f883b2e434856d53980ee65668018474939ea85cca6e7c0129e",
+    "current-service-profiles.json": "14ee0465691a32afe89b48311eea6f952fde6c8be8f006920470bf6c643108ed",
+    "current-service-profiles.log": "f58199b56a43235a33babad1a09e57601a9eea6ea4e8e6185c4eb579ed73acec",
+    "SOURCE_IDENTITY.json": "fbde111c43c50137f62f9fa486936484520bf2c2f00d16621357a068aa6663a2",
+    "DELIVERY_CHECKS.json": "ae551847ef3356dd99886f46040bf795d71c37289681458e366512e6cf5e677a"
+  },
+  "preserved": "Existing default Golden fixture, typed image service, UDS framing, startup/listener lifecycle, resource checks for those profiles and general observer hooks. No new IPC gateway or multiquery behavior.",
+  "remaining": [
+    "Internal synchronous/async Fixed HTTP adapters, complete-response/Ray HTTP transport, configs, and dedicated tests still await removal.",
+    "ImageGateway shares mailbox/registration/lease/owner code with the old Map gateway; preserve those actual non-HTTP responsibilities while removing Map-specific branches and constants.",
+    "map_observation synthetic assembly still depends on the old builder; shared non-HTTP fixture data must move to the real consumer owner before retiring that assembly.",
+    "Native task/session values are separate from the unused HTTP native builder; no new model or IPC replacement is intended."
+  ],
+  "combined_commit": "ae6d859121bf68c4168fa6138c823cf2341661da",
+  "combined_tree": "41256a7e01e40ff866db81f7408042b1eb6f7c33",
+  "original_handoff_sha256": "371f5e8121f7332f949f4038e3a2ab4dd091608ff6ddeaad3cc1b536b79baf7b",
+  "independent_review_sha256": "72870dfcb50c4ffe872e673d851f332511c022ab7ba1837a0e8e3baa0901937a",
+  "source_scope": "Explicit fixed HTTP service options removed; Golden and typed Image UDS retained. Internal HTTP factories remain for the next deletion batch.",
+  "retired_options": [
+    "--fixed-model-config",
+    "--incremental-map",
+    "--map-transport-config",
+    "--organization-config"
+  ],
+  "production_change": "Remove the four dedicated HTTP CLI selections, config loaders/factory dispatch and unused remote_request_guard argument from server.py. The strict existing parse_args remains; retired options fail before selection and never silently choose Golden.",
+  "tests": {
+    "retired_tests": 6,
+    "retired_shared_HTTP_gateway_helper": 1,
+    "obsolete_CLI_only_negative_assertion_removed": true,
+    "retained_protocol_negative_case": true,
+    "new_behavior_method": {
+      "name": "ProviderServiceCliTests.test_golden_and_image_profiles_reach_the_existing_adapters",
+      "scope": "actual server main selects Golden or the existing image constructor; a local observation hook stops before listener creation, using a Mock image config/constructor and rejecting any socket creation",
+      "before_selected": 1,
+      "before_passed": 1,
+      "before_seconds": 0.28527937503531575
+    },
+    "final": {
+      "selected": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 0.22159312502481043,
+      "selectors": [
+        "tests.execution_provider.test_map_gateway.ProviderServiceCliTests",
+        "tests.postgres.test_semloom_choice_protocol.ChoiceProtocolTests.test_v4_plan_uses_the_independent_pg_schema3_vector",
+        "tests.postgres.test_semloom_choice_protocol.ChoiceProtocolTests.test_exported_options_cannot_change_effective_wire_parameters",
+        "tests.postgres.test_semloom_choice_protocol.ChoiceProtocolTests.test_execution_payload_and_completion_match_independent_vectors",
+        "tests.postgres.test_semloom_choice_protocol.ChoiceProtocolTests.test_versions_and_complete_profile_are_strict",
+        "tests.postgres.test_semloom_choice_protocol.ChoiceProtocolTests.test_task_checks_profile_sequence_and_actual_instruction",
+        "tests.postgres.test_semloom_semantic_protocol.SemloomSemanticProtocolTests.test_v3_digest_and_prompt_golden_vectors",
+        "tests.postgres.test_semloom_semantic_protocol.SemloomSemanticProtocolTests.test_v3_error_message_has_a_strict_versioned_schema",
+        "tests.postgres.test_semloom_semantic_protocol.SemloomSemanticProtocolTests.test_golden_adapter_returns_fixture_bound_completion",
+        "tests.execution_provider.test_module_ownership.ModuleOwnershipTests.test_incremental_imports_do_not_load_legacy_implementations"
+      ]
+    },
+    "not_summed": "One before/after method and the final ten-method selection overlap; counts are not added."
+  },
+  "size_delta_from_a37": {
+    "production_python": -66,
+    "tests_python": -183,
+    "claim": "actual line changes including comments and blank lines; no performance conclusion"
+  },
+  "limits": {
+    "real_Ray": 0,
+    "models": 0,
+    "network": 0,
+    "UDS": 0,
+    "ps_commands": 0,
+    "sysctl": 0,
+    "server_operations": 0,
+    "pushes": 0,
+    "main_merges": 0
+  }
+}

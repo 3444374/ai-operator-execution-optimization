@@ -137,7 +137,7 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
     allowed={q['query_id']:q['expected_calls'] for q in unit['queries']}
     counters=dict(reserved_calls=0,cap=unit['call_cap'],query_calls=dict.fromkeys(allowed,0),
                   observation_errors=[],model_uid=None)
-    from src.baselines.common.redact import redact_json_values
+    from src.infrastructure.redact import redact_json_values
 
     def event(name,**fields):
         try:

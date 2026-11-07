@@ -1,0 +1,66 @@
+{
+  "base": "0e071c682aed26012baf6e45e48c9d3bc4c19468",
+  "commit": "2a3a4a083534f311e50da2b59ee7361793d7e968",
+  "tree": "5c4d1935345e7cc683a35fd824a285d13d5d6523",
+  "changes": [
+    "Delete unused completion/embedding/common backends and their dedicated HTTP tests",
+    "Delete obsolete direct client and old request comparison CLI, with its dedicated client tests",
+    "Remove only direct_client and project_static runtime registry entries; keep all other entries exact",
+    "Keep backend package initializer as package documentation only",
+    "Extend existing cold-import exclusion to the deleted backend common module"
+  ],
+  "cpu": {
+    "before_pure_metadata_and_import_tests": 8,
+    "after_retained_tests": 6,
+    "retired_metadata_tests_removed": 2,
+    "after_failures": 0,
+    "after_errors": 0,
+    "after_skips": 0,
+    "old_HTTP_suite_run": false,
+    "real_HTTP_Ray_model_GPU_used": false
+  },
+  "history": {
+    "accurate_original_revision": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+    "originals": 6,
+    "new_source_routes": 30,
+    "affected_reads_passed": 30,
+    "expected_projection_revision_and_existing_keys_unchanged": true,
+    "complete_materialization_run": false
+  },
+  "line_deltas": {
+    "scripts": -311,
+    "baseline": -198,
+    "production": -876,
+    "tests": -652
+  },
+  "src_and_scripts_delta": -1385,
+  "source_count_scope": "Physical Python lines including comments and blanks; current code only, historical gzip files excluded",
+  "checks": {
+    "retained_provenance_entries_AST_equal": true,
+    "new_text_rule_passed": true,
+    "privacy_scan_files": 11,
+    "privacy_violations": 0,
+    "diff_check_passed": true,
+    "initial_whitespace_finding_corrected": "One trailing blank line in the shortened metadata test; preserved in diff-check-initial.txt"
+  },
+  "limitations": [
+    "No actual HTTP/network/Ray/model/GPU execution",
+    "No new multi-query behavior",
+    "No fallback aliases or replacement HTTP helper",
+    "Historical byte restoration is verified; original model environments and experimental conclusions are not retested"
+  ],
+  "artifacts": {
+    "historical-read-checks.json": "2fbde8bbb6a9c5966b43a899e681e9de6f084688cdad8915779b8355a137f472",
+    "diff-check-initial.txt": "a9b8032b19100d3aa0d4ce21993d6b6c2e53fae27193b667784d1f929ecdb9c4",
+    "original-sources.json": "fb9c501956cd7f9bcfd45d4171c633515c5d7f178496f83315118db1e76283ca",
+    "CALLERS.json": "eaf3bf93c8d02b8642c9503fba50f1165668448ca7ff098e6812ebac7ffca9cd",
+    "cpu-before.json": "0c4819f725a5c899976f152d58248a0d3c22dbb6618de6b029b4ded6daa48eba",
+    "MANIFEST-before.json": "a6f4f7831e053fbebeab19ca53ab5b9e25f7e5909597767518b3f6785d771e4c",
+    "source-checks.json": "e38454284844b922696576d945cb5b3a4e24f4d8724de81c3c5d613b08a4bc8f",
+    "cpu-after.json": "10b622975ab475cc0d71a6381d90b9767acc6792c9259618faaec39605938e9e"
+  },
+  "original_handoff_sha256": "881cba675e1cf3d59c61a50e9566183906c2ace3437a092ec91b2cb2d6986baf",
+  "independent_review_sha256": "1be06896888a4a199cce7fd52231f0d88ba43147853a1d7445fbfd5379fcbd78",
+  "actual_runtime": "Only CPU objects, stubs and local import subprocesses; no real HTTP, UDS, Ray, model or GPU run.",
+  "evidence_identity": "The after CPU result lacks an inline source snapshot; the handoff binds its artifact and exact changed-file hashes. Independent review verified that linkage."
+}

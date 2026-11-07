@@ -2,6 +2,8 @@ import unittest
 import sys
 import importlib.util
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
+from unittest.mock import Mock, call, patch
 
 import numpy as np
 
@@ -22,7 +24,11 @@ from src.modalities.image.execution import (
 from src.modalities.image import execution as image_execution
 from src.modalities.image import staged_execution as staged_image_execution
 from src.modalities.image.clip import l2_normalize_numpy_embeddings
+from src.modalities.image.source import ImageSourceConfig
+from src.modalities.image import clip_batch_workers
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
+from src.experiments.image_clip import reporting as image_report
+from src.experiments.image_clip import execution as clip_execution
 
 
 RUNNER_PATH = CODE_ROOT / "scripts" / "experiments" / "run_image_clip_e2e.py"
@@ -160,11 +166,11 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "batch_ready_residence_p95_s",
         }
 
-        self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))
+        self.assertTrue(expected.issubset(set(image_report.CSV_FIELDS)))
 
     def test_output_contract_metadata_matches_effective_arm_output(self):
         self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
+            image_report.embedding_output_contract_metadata(
                 "daft_builtin_embed",
                 "arm_default",
             ),
@@ -176,14 +182,14 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             },
         )
         self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
+            image_report.embedding_output_contract_metadata(
                 "daft_builtin_embed",
                 "l2_normalized",
             )["embedding_normalization_owner"],
             "baseline_adapter",
         )
         self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
+            image_report.embedding_output_contract_metadata(
                 "project_ray",
                 "arm_default",
             )["embedding_output_contract_effective"],
@@ -242,33 +248,244 @@ class ExecutionResultTest(unittest.TestCase):
 
 
 class RayDataBaselineValidationTest(unittest.TestCase):
-    def test_native_ray_data_graph_has_no_project_active_batch_knob(self):
-        import inspect
+    def test_native_graph_uses_framework_pools_for_cpu_and_gpu_stages(self):
+        for autoscaling in (False, True):
+            with self.subTest(autoscaling=autoscaling):
+                dataset = Mock()
+                dataset.map_batches.return_value = dataset
+                ray, data = ModuleType("ray"), ModuleType("ray.data")
+                ray.data = data
+                data.read_sql = Mock(return_value=dataset)
+                data.ActorPoolStrategy = Mock(side_effect=lambda **kwargs: kwargs)
+                psycopg = ModuleType("psycopg")
+                psycopg.connect = Mock(side_effect=AssertionError("unexpected SQL execution"))
+                with patch.dict(sys.modules, {"ray": ray, "ray.data": data, "psycopg": psycopg}):
+                    graph = build_ray_data_clip_pipeline(
+                        database_url="postgresql://localhost/fixture",
+                        source_config=ImageSourceConfig("fixture", 8),
+                        source_shards=1, processor_revision="fixture", model_revision="fixture",
+                        dtype="float32", batch_size=4, cpu_workers=2, gpu_workers=3,
+                        autoscaling_actor_pools=autoscaling,
+                    )
+                pools = [{"min_size": 1, "max_size": n} if autoscaling else {"size": n}
+                         for n in (2, 3)]
+                self.assertIs(graph, dataset)
+                self.assertEqual(data.ActorPoolStrategy.call_args_list, [call(**pool) for pool in pools])
+                data.read_sql.assert_called_once()
+                maps = dataset.map_batches.call_args_list
+                self.assertEqual([item.args[0] for item in maps], [
+                    clip_batch_workers.RayDataClipPreprocessor, clip_batch_workers.RayDataClipPredictor,
+                ])
+                for item, pool in zip(maps, pools, strict=True):
+                    self.assertEqual(item.kwargs["compute"], pool)
+                    self.assertEqual(item.kwargs["batch_size"], 4)
+                    self.assertEqual(item.kwargs["num_cpus"], 1)
+                self.assertNotIn("num_gpus", maps[0].kwargs)
+                self.assertEqual(maps[1].kwargs["num_gpus"], 1)
 
-        parameters = inspect.signature(build_ray_data_clip_pipeline).parameters
 
-        self.assertNotIn("max_active_batches", parameters)
+class ImageRunCleanupTests(unittest.TestCase):
+    def test_formal_failure_stops_started_samplers_and_workers(self):
+        failure = RuntimeError("formal execution failed")
+        execution = Mock()
+        execution.execute.side_effect = [None, failure]
+        gpu, cpu = Mock(), Mock()
+        args = SimpleNamespace(
+            gpu_sample_interval_s=0.5, cpu_sample_interval_s=0.25,
+            gpu_workers=1, save_embeddings="", limit=2, dataset_passes=1,
+        )
+        setup = SimpleNamespace(warmup_count=1, warmup_ids=frozenset({"w"}),
+                                formal_ids=frozenset({"a", "b"}))
+        with patch.multiple(clip_execution, NvidiaSmiSampler=Mock(return_value=gpu),
+                            SystemCpuSampler=Mock(return_value=cpu),
+                            wait_for_formal_start=Mock(return_value=(0.0, 1.0))):
+            with self.assertRaises(RuntimeError) as raised:
+                clip_execution.run_observed_image_execution(
+                    args, setup, execution, daft_module=None, ray_module=None,
+                    torch_module=None, transformers_module=None,
+                )
+        self.assertIs(raised.exception, failure)
+        gpu.stop.assert_called_once_with()
+        cpu.stop.assert_called_once_with()
+        self.assertEqual(execution.stop_project_workers.call_count, 2)
 
-    def test_native_ray_data_graph_contains_no_project_task_scheduler(self):
-        import inspect
+    def test_startup_capture_and_interrupt_cleanup_keep_normal_order(self):
+        for failed_stage in (None, "warmup", "barrier", "gpu_start", "cpu_start",
+                             "worker_start", "capture", "formal"):
+            with self.subTest(failed_stage=failed_stage):
+                events = []
+                failure = (KeyboardInterrupt("interrupted") if failed_stage == "formal"
+                           else RuntimeError("fixture failure"))
 
-        source = inspect.getsource(build_ray_data_clip_pipeline)
+                def action(stage, value=None):
+                    def invoke(*args, **kwargs):
+                        events.append(stage)
+                        if stage == failed_stage:
+                            raise failure
+                        return value
+                    return invoke
 
-        for forbidden in (
-            "max_tasks_in_flight_per_actor",
-            "ray.wait",
-            "ray.get",
-            "@ray.remote",
+                result = object()
+                execution = Mock()
+
+                def execute_phase(limit, *args, **kwargs):
+                    return action("warmup" if limit == 1 else "formal", result)(*args, **kwargs)
+
+                execution.execute.side_effect = execute_phase
+                execution.stop_project_workers.side_effect = action("workers_stop")
+                execution.start_formal_workers.side_effect = action("worker_start", 0.125)
+                gpu, cpu = Mock(), Mock()
+                gpu.start.side_effect = action("gpu_start")
+                cpu.start.side_effect = action("cpu_start")
+                gpu_metrics, cpu_metrics = {"gpu": 1}, {"cpu": 2}
+                gpu.stop.side_effect = action("gpu_stop", gpu_metrics)
+                cpu.stop.side_effect = action("cpu_stop", cpu_metrics)
+                args = SimpleNamespace(
+                    arm="project_ray", embedding_output_contract="arm_default",
+                    gpu_sample_interval_s=0.5, cpu_sample_interval_s=0.25,
+                    gpu_workers=1, save_embeddings="fixture.npz", limit=2, dataset_passes=1,
+                )
+                setup = SimpleNamespace(warmup_count=1, warmup_ids=frozenset({"w"}),
+                                        formal_ids=frozenset({"a", "b"}))
+                metadata = {"output": "fixture"}
+                with patch.multiple(
+                    clip_execution, NvidiaSmiSampler=Mock(return_value=gpu),
+                    SystemCpuSampler=Mock(return_value=cpu),
+                    wait_for_formal_start=Mock(side_effect=action("barrier", (0.0, 1.0))),
+                    embedding_output_contract_metadata=Mock(return_value=metadata),
+                    write_embedding_capture=Mock(side_effect=action("capture")),
+                ):
+                    if failed_stage is None:
+                        observed = clip_execution.run_observed_image_execution(
+                            args, setup, execution, daft_module=None, ray_module=None,
+                            torch_module=None, transformers_module=None,
+                        )
+                        self.assertIs(observed.result, result)
+                        self.assertIs(observed.gpu_metrics, gpu_metrics)
+                        self.assertIs(observed.cpu_metrics, cpu_metrics)
+                        self.assertIs(observed.output_contract_metadata, metadata)
+                        self.assertEqual(observed.worker_setup_s, 0.125)
+                        self.assertEqual((observed.planned_start_epoch_s, observed.actual_start_epoch_s),
+                                         (0.0, 1.0))
+                        self.assertEqual(events, [
+                            "warmup", "workers_stop", "barrier", "gpu_start", "cpu_start",
+                            "worker_start", "formal", "capture", "gpu_stop", "cpu_stop", "workers_stop",
+                        ])
+                    else:
+                        with self.assertRaises(type(failure)) as raised:
+                            clip_execution.run_observed_image_execution(
+                                args, setup, execution, daft_module=None, ray_module=None,
+                                torch_module=None, transformers_module=None,
+                            )
+                        self.assertIs(raised.exception, failure)
+                if failed_stage in ("warmup", "barrier", "gpu_start"):
+                    gpu.stop.assert_not_called()
+                    cpu.stop.assert_not_called()
+                elif failed_stage == "cpu_start":
+                    self.assertEqual(events[-1:], ["gpu_stop"])
+                    cpu.stop.assert_not_called()
+                elif failed_stage == "worker_start":
+                    self.assertEqual(events[-2:], ["gpu_stop", "cpu_stop"])
+                else:
+                    self.assertEqual(events[-3:], ["gpu_stop", "cpu_stop", "workers_stop"])
+                expected_worker_stops = 2 if failed_stage in (None, "capture", "formal") else 1
+                self.assertEqual(execution.stop_project_workers.call_count, expected_worker_stops)
+
+    def test_cleanup_errors_preserve_primary_and_attempt_all_reached_stops(self):
+        cases = (("warmup", RuntimeError), ("warmup", KeyboardInterrupt),
+                 ("formal", RuntimeError), ("formal", KeyboardInterrupt), (None, None))
+        for failed_stage, failure_type in cases:
+            with self.subTest(failed_stage=failed_stage, failure_type=failure_type):
+                failure = failure_type("execution failed") if failure_type else None
+                gpu_error = RuntimeError("GPU sampling stop failed")
+                cpu_error = ValueError("CPU sampling stop failed")
+                worker_error = RuntimeError("worker termination request failed")
+                execution = Mock()
+                execution.execute.side_effect = (failure if failed_stage == "warmup"
+                                                 else [None, failure or object()])
+                execution.stop_project_workers.side_effect = (worker_error if failed_stage == "warmup"
+                                                               else [None, worker_error])
+                gpu, cpu = Mock(), Mock()
+                gpu.stop.side_effect = gpu_error
+                cpu.stop.side_effect = cpu_error
+                args = SimpleNamespace(
+                    arm="project_ray", embedding_output_contract="arm_default",
+                    gpu_sample_interval_s=0.5, cpu_sample_interval_s=0.25,
+                    gpu_workers=1, save_embeddings="", limit=2, dataset_passes=1,
+                )
+                setup = SimpleNamespace(warmup_count=1, warmup_ids=frozenset({"w"}),
+                                        formal_ids=frozenset({"a", "b"}))
+                with patch.multiple(clip_execution, NvidiaSmiSampler=Mock(return_value=gpu),
+                                    SystemCpuSampler=Mock(return_value=cpu),
+                                    wait_for_formal_start=Mock(return_value=(0.0, 1.0))):
+                    expected = failure or gpu_error
+                    with self.assertRaises(type(expected)) as raised:
+                        clip_execution.run_observed_image_execution(
+                            args, setup, execution, daft_module=None, ray_module=None,
+                            torch_module=None, transformers_module=None,
+                        )
+                self.assertIs(raised.exception, expected)
+                if failed_stage == "warmup":
+                    self.assertEqual(expected.image_cleanup_errors, (("warmup_workers", worker_error),))
+                    gpu.stop.assert_not_called()
+                    cpu.stop.assert_not_called()
+                    execution.stop_project_workers.assert_called_once_with()
+                else:
+                    errors = (("gpu_sampler", gpu_error),) if failure else ()
+                    errors += (("cpu_sampler", cpu_error), ("formal_workers", worker_error))
+                    self.assertEqual(expected.image_cleanup_errors, errors)
+                    gpu.stop.assert_called_once_with()
+                    cpu.stop.assert_called_once_with()
+                    self.assertEqual(execution.stop_project_workers.call_count, 2)
+
+    def test_cli_disconnects_after_initialization_execution_and_report_errors(self):
+        cases = ((None, None), ("initialize", RuntimeError), ("execute", KeyboardInterrupt),
+                 ("row", RuntimeError), ("csv", RuntimeError), ("manifest", RuntimeError))
+        for failed_stage, failure_type, shutdown_fails in (
+            (stage, error_type, fail_shutdown)
+            for stage, error_type in cases for fail_shutdown in (False, True)
         ):
-            self.assertNotIn(forbidden, source)
-
-    def test_native_ray_data_graph_can_use_framework_autoscaling_actor_pools(self):
-        import inspect
-
-        source = inspect.getsource(build_ray_data_clip_pipeline)
-
-        self.assertIn("ActorPoolStrategy(min_size=1, max_size=cpu_workers)", source)
-        self.assertIn("ActorPoolStrategy(min_size=1, max_size=gpu_workers)", source)
+            with self.subTest(failed_stage=failed_stage, shutdown_fails=shutdown_fails):
+                failure = failure_type("fixture failure") if failure_type else None
+                cleanup_error = RuntimeError("SDK disconnect failed")
+                modules = {name: ModuleType(name) for name in ("daft", "ray", "torch", "transformers")}
+                ray = modules["ray"]
+                ray.is_initialized = Mock(return_value=True)
+                ray.shutdown = Mock(side_effect=cleanup_error if shutdown_fails else None)
+                args = SimpleNamespace(out_csv="fixture.csv", out_manifest="fixture.json")
+                hooks = {
+                    "parse_args": Mock(return_value=args),
+                    "validate_image_run_args": Mock(return_value=(None, None, None, None)),
+                    "load_image_run_setup": Mock(),
+                    "ImageExecution": Mock(),
+                    "run_observed_image_execution": Mock(),
+                    "build_image_result_row": Mock(return_value={"row": "fixture"}),
+                    "append_csv": Mock(),
+                    "build_image_manifest": Mock(return_value={"manifest": "fixture"}),
+                    "Path": Mock(),
+                }
+                failure_hook = {"initialize": "ImageExecution", "execute": "run_observed_image_execution",
+                                "row": "build_image_result_row", "csv": "append_csv"}
+                if failed_stage in failure_hook:
+                    hooks[failure_hook[failed_stage]].side_effect = failure
+                    prior_cleanup_error = RuntimeError("earlier worker cleanup failed")
+                    failure.image_cleanup_errors = (("formal_workers", prior_cleanup_error),)
+                if failed_stage == "manifest":
+                    hooks["Path"].return_value.write_text.side_effect = failure
+                with patch.dict(sys.modules, modules), patch.multiple(RUNNER_MODULE, **hooks), patch("builtins.print"):
+                    expected = failure or (cleanup_error if shutdown_fails else None)
+                    if expected is None:
+                        RUNNER_MODULE.main()
+                    else:
+                        with self.assertRaises(type(expected)) as raised:
+                            RUNNER_MODULE.main()
+                        self.assertIs(raised.exception, expected)
+                if failure is not None:
+                    expected_errors = (("formal_workers", prior_cleanup_error),) if failed_stage in failure_hook else ()
+                    if shutdown_fails:
+                        expected_errors += (("ray_sdk", cleanup_error),)
+                    self.assertEqual(getattr(failure, "image_cleanup_errors", ()), expected_errors)
+                ray.shutdown.assert_called_once_with()
 
 
 if __name__ == "__main__":

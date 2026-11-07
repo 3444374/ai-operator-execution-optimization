@@ -13,7 +13,6 @@ import itertools
 import json
 import os
 import subprocess
-import sys
 import time
 import traceback
 
@@ -21,9 +20,9 @@ from src.infrastructure.private_artifacts import (
     file_identity, require_outside_git, write_private_json,
 )
 from src.infrastructure.redact import redact_text
-from src.semantic_methods.lotus.record_chain import RecordOccurrence
+from src.semantic_methods.lotus.record_types import RecordOccurrence
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 from src.experiments.record_chain_validation import (
     make_chain, make_budget, run_case, replay_native_answers, compare,
 )
@@ -45,6 +44,7 @@ def make_resources(config):
     if suite not in ('options', 'matched-execution', 'progression'):
         raise ValueError('unknown validation suite')
     resources = RecordsResources(**config['resources'])
+    resources.request_capacity()
     if suite != 'progression':
         capacity = 1 if suite == 'matched-execution' else 4
         if resources.max_active_batches != capacity:
@@ -179,7 +179,7 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
     from src.experiments.attempt_ledger import AttemptBudget
     from src.experiments.cell_budget import CellBudgetLedger
     from src.observability.records_telemetry import RecordsTelemetry
-    from src.experiments.process_sampling import ProcessSampler
+    from src.observability.process_resources.phase_sampler import ProcessSampler
     import psutil
     import ray
 

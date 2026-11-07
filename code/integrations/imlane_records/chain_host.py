@@ -15,8 +15,8 @@ from integrations.imlane_records.method_environment import preflight_method
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.records_host import RecordsResults
-from src.baselines.common.private_artifacts import require_outside_git
-from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults, _source_binding
+from src.infrastructure.private_artifacts import require_outside_git
+from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns, _parent_seeds
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
@@ -27,8 +27,9 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
     """Freeze caller values and preflight before constructing an author owner."""
     chain = LotusRecordChain.from_dict(chain.describe())
     engine, resources = EngineSpec.from_dict(asdict(engine)), RecordsResources(**asdict(resources))
-    if resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.max_active_batches > 2:
-        raise ValueError("IMLane finite chain requires one worker, 1..16 batch rows and at most two pending blocks")
+    resources.request_capacity()
+    if resources.cpu_workers != 1:
+        raise ValueError("IMLane finite chain requires one worker, explicit batch rows and a finite pending declaration")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("IMLane finite chain requires one model deployment")
     if any(stage.kind == "extract" for stage in chain.stages[:-1]):
@@ -37,13 +38,14 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
             or any(len({getattr(row, key) for row in expected}) != len(expected)
                    for key in ("row_id", "source_position"))):
         raise ValueError("finite chain requires globally unique source occurrence identities")
-    if (engine.max_model_calls is None or engine.max_model_calls > 4096
+    if (engine.max_model_calls is None
             or len(expected) * len(chain.stages) > engine.max_model_calls):
         raise ValueError("reserve the finite chain's worst case request allowance before author allocation")
-    if any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
+    if engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
-    if type(deadline) not in (int, float) or not math.isfinite(deadline) or deadline <= time.monotonic():
-        raise ValueError("finite chain needs an absolute finite work deadline")
+    if deadline is not None and (type(deadline) not in (int, float)
+            or not math.isfinite(deadline) or deadline <= time.monotonic()):
+        raise ValueError("chain work deadline must be in the future or None")
     model_environment = assigned_environment(model_environment)
     if type(allow_nulls) is not bool:
         raise TypeError("allow_nulls must be a boolean")
@@ -94,9 +96,9 @@ class ChainResults:
         self.control = Path(control_dir)
         self.cancelled = cancelled
         self.carrier = RecordsResults(records, client, query_id=self.chain.query_id,
-            mapping=ChainBatches(self.chain.query_id, expected), stage_id=STAGE, block_prefix="chain",
+            mapping=ChainBatches(self.chain.query_id, expected, max_batch_rows=resources.model_batch_rows), stage_id=STAGE, block_prefix="chain",
             control_dir=control_dir, deadline=deadline, close_owner=close_owner, cleanup_scope=cleanup_scope,
-            block_rows=resources.model_batch_rows, max_pending=resources.max_active_batches)
+            block_rows=resources.model_batch_rows)
         self.completed = self._done = False
         self.last_close_report = None
 

@@ -1,0 +1,48 @@
+{
+  "base": "9da299e90f79fd0b71f2a4983a90884f8ba960b5",
+  "sources": {
+    "code/src/execution_provider/adapters/records_service_budget.py": "6ce7f21323657a8e0a6e8364c524b787cdeb8795909fb15240487a01ce336319",
+    "code/src/execution_provider/adapters/records_service_delivery.py": "0dd71ebbcc10f419af491a8602c5dbe56a11c51b2214d40ece0b870d941a29df",
+    "code/src/execution_provider/adapters/records_capacity.py": "53b43927da451ccda5609df1e42709dfb5ad37a9fba8b0f808c8799ac1fd5f17",
+    "code/src/execution_provider/adapters/records_transport.py": "c790f3e6229566ab27ba516fd06ee3169b73a8de3d828108b2a52978c11e7a93",
+    "code/src/scheduling/core/session.py": "25d16a40de301864693cc56945a493c2c280548a45eddf6d45c7e8eaa3039f4c",
+    "code/src/scheduling/core/models.py": "0c69526de947366b71bf314c4f42a0e46d890580cb78dd0b5e89b084e58702c1",
+    "code/src/experiments/movie_records_service.py": "5fdc33fa4585de0bd845d0d1e398f4433422ab10c852ef600e60d8e45caab404",
+    "code/src/semantic_methods/lotus/record_chain.py": "90d0238f260b958f441836f67b9c41cc9fd8666eeec4862192649a2c84912f66",
+    "code/src/serving/backends/async_engine_process.py": "8e6ecb31d23eebc26846851c0dc02775db19f2f8de57eafb27902bd56093c6d8"
+  },
+  "status": "design_dependencies_only_no_physical_allocator",
+  "blockers": [
+    {
+      "item": "Physical payload storage",
+      "actual": "RecordsPayloadPool partitions declared bytes; task payloads, IPC frames and Python reports still allocate their own storage",
+      "needs": "An owned backing store used by actual readers/writers, including failure and last-consumer proof; do not allocate an unused shadow buffer"
+    },
+    {
+      "item": "Whole relations",
+      "actual": "Source/expected and original relational rows are outside the logical delivery grant",
+      "needs": "Accounted source/cursor/spool preserving original Filter/Map data and complete Extract relations before claiming whole-query storage"
+    },
+    {
+      "item": "Multiple host roles",
+      "actual": "New source observes the model actor visible hierarchy; driver/Ray/worker membership and physical allocations are not all established",
+      "needs": "Identify actual host/group ownership and separate or shared accounted stores; no sum of RSS or free-headroom grant"
+    },
+    {
+      "item": "Kernel deployment",
+      "actual": "No kernel setting or actual cgroup change was performed",
+      "needs": "Environment-specific operator setup and real Linux tests through the dedicated execution plan; hard cgroup maxima still are not exclusive memory reservations"
+    },
+    {
+      "item": "Persistence/recovery",
+      "actual": "Separate streamed JSON WIP remains unchanged; anonymous socketpair is not reconnect support",
+      "needs": "Durable complete snapshot/consumer receipt and original-owner transfer before restart recovery"
+    }
+  ],
+  "safety": "A clean pressure interval is not capacity. Unknown stops growth only; existing verified window/initial request can continue. No universal OOM-prevention or RSS ceiling.",
+  "no_kernel_writes": true,
+  "no_models": true,
+  "no_real_Ray": true,
+  "pushed": false,
+  "merged": false
+}

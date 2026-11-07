@@ -1,23 +1,119 @@
 # Observability cores
 
-This package owns passive measurement and stable profiling schemas. Measurement code must not take
+This package owns passive measurement and result observation. Measurement code must not take
 over the execution policy it observes.
 
-- `request_gateway.py` is the five-arm Job-labelled HTTP pass-through. It forwards each body exactly
-  once with no admission limit, retry, cache, route choice, or payload rewrite, then records lifecycle
-  clocks and endpoint-reported token usage for cross-framework tail/fairness metrics.
 - `metrics/` contains reusable metric collectors and summaries.
+- `clock.py` owns the shared monotonic-clock identity without loading an execution adapter.
+- `native_query_timing.py` reads existing query and model receipts. An unconfirmed native
+  submission whose outcome is `unknown` remains unknown; it is not proof that nothing was sent.
+  Such a receipt contributes neither a confirmed API-call count nor a measured model duration.
+- `process_resources/supervised.py` samples the supervisor's birth-matched process RSS,
+  declared affinity and host SHM delta under an exclusive lease. Its `ResourceMonitor`
+  preserves the original implementation used by the external Kalypso owner helper;
+  it imports no execution provider or retired experiment. Limits come from that owner.
+  Host SHM delta is not creator attribution, and summed RSS can count shared pages twice.
+<a id="current-observation-owners"></a>
+
 - `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,
-  bounded event output and weak model-reuse observations. Existing experiment imports share the same
-  module objects; enabling flags, schemas and failure handling remain unchanged.
+  bounded event output and weak model-reuse observations. Image CLIs and experiment observers import
+  these implementations directly. The former `src.experiments` forwarding modules are retired;
+  enabling flags, schemas and failure handling remain unchanged.
+- `process_resources/phase_sampler.py` owns the explicitly started `ProcessSampler`: phase-labelled
+  process RSS and CPU counters, optional child discovery and disk output. Its body is unchanged;
+  importing it starts no sampler. The implementation and its tests now live with observability.
+  This reader does not grant RAM or replace the supervisor's separate `ResourceMonitor`.
 - `httpx_observer.py` observes complete POSTs using a caller-supplied request allowance;
   `request_identity.py` owns task-local observation identity. Durable experiment ledgers remain in
   `src/experiments/`; process-local prepaid claims live in `src/infrastructure/request_budget.py`.
 - `records_telemetry.py` provides explicitly started, optional GPU/host/native sampling. Missing fields and observer failures remain separate from business results; no sampler starts on import.
-- `profiling/` contains the PostgreSQL AI operator profiler's stable result schema and helpers.
+- The old PostgreSQL profiler's Ray submission, Arrow conversion, configuration, CSV schema and
+  request-trace models are retired. Their [exact sources and recovery](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-application)
+  preserve the original experiments. Current collectors and native timing remain in their owning
+  observability modules; scheduling and Runtime Ray adapters remain in `src/scheduling/`.
 
-The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
-backpressure, batching, or retry belongs in the measured system and must not be added here.
+The former HTTP forwarding gateway and its exclusive loopback tests are retired. Their
+[exact recovery source](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-http-observation)
+remains available with the old experiment code. Shared HTTPX observation, request identity, native
+traces and trace-summary analysis keep their existing implementations.
+
+Records `MetricSources` owns one locked cumulative CPU counter baseline. In a visible Linux cgroup,
+`AllocatedCPUCounterSource` reads group CPU time and divides its rate by the smaller of process
+affinity and visible CPU quotas, preserving fractional CPUs. It also checks usage of capped ancestors
+and retains the largest observed percentage, so sibling usage of a shared quota is visible. The source
+reports group CPU pressure rather than an actor's CPU time or a per-core maximum. Separate v1 cpuacct
+groups cannot establish the same quota membership and remain unknown. Without cgroup scoping, host
+counters are restricted to process affinity. Legacy `host_metadata()` callers retain their reader.
+
+Successive calls on different RPC threads share the counter and monotonic clock. First reads, counter
+rollback, allocation changes and invalid intervals stay unknown. The feedback report retains interval,
+source, effective CPUs and quota; the existing field `host_peak_cpu_pct` carries the qualified CPU
+percentage for compatibility. Host RAM remains explicitly host context, with separately named visible
+cgroup memory limit and headroom. The latter also checks ancestor usage; host available RAM is never
+reported as container headroom. Kernel interfaces follow [cgroup v2](https://docs.kernel.org/admin-guide/cgroup-v2.html)
+and [v1 bandwidth control](https://docs.kernel.org/scheduler/sched-bwc.html). Tests and limits are listed
+in the [CPU check record](../../tests/records_cpu.md#resource-allocation-cpu).
+
+With native feedback enabled, `worker_extension_cls` registers
+`src.infrastructure.gpu_allocation.SemLoomGpuIdentityWorkerExtension` before engine construction.
+Startup calls the named `semloom_gpu_identity` method through ordinary `collective_rpc`; request
+arguments and the reply contain primitive values. The original callable request was rejected by the
+fixed default encoder and has been replaced. Default serialization settings remain unchanged.
+Only an already initialized single CUDA device is read. The private readiness frame carries its UUID
+to the actor's existing sampler. `sources.gpu.binding_source` distinguishes `native_worker_receipt`
+from `cuda_visibility_without_worker_receipt`; the latter retains the prior explicit UUID mask or
+unambiguous single-NVML-device resolution, and does not claim a worker receipt. Numeric multi-device
+ambiguity stays unknown. Feedback off registers no extension and adds no native observation RPC.
+
+`metrics/memory_pressure.py` reads memory pressure stall information (PSI, 内核压力停顿统计)
+and reclaim/out-of-memory (OOM, 内存耗尽) event
+counters from the current process's visible cgroup v2 hierarchy. The first read,
+unsupported systems, incomplete ancestors, I/O errors, counter reversals and
+membership changes stay unknown. One source owns its locked baseline across RPC
+threads; a hierarchy change starts a new source identity. No kernel files are
+written and no total/headroom value becomes a storage grant.
+
+`MetricSources` retains the kernel report under `sources.host.memory_pressure`.
+Its false value means no observed increments between consecutive reads. This is
+neither an absence-of-OOM guarantee nor measured spare capacity. A model actor
+adds its actual PID, query identity and capture clock in the existing resource
+RPC. The records adapter checks that identity and conservatively maps source age;
+optional guard use is separate from these passive readings. Cgroup siblings can
+contribute pressure, and allocations outside this hierarchy are not covered.
+The [CPU record](../../tests/records_cpu.md#host-memory-pressure) covers the reader,
+binding and existing public owners; real Linux/Ray/model validation is pending.
+
+The RPC carries `timeout=1.0`; the current uni executor does not enforce it around synchronous worker
+code. The 1.5-second `asyncio.wait_for` bounds local client waiting, not worker completion or physical
+termination. Timeout leaves the optional identity unknown; existing model ownership and cleanup apply.
+The supported interface is verified against the fixed [worker extension implementation](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/worker_base.py),
+[default encoder](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/serial_utils.py) and
+[uni executor](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/executor/uniproc_executor.py).
+The [CPU source probe](../../tests/serving/test_vllm_identity_protocol.py) runs real MessagePack with
+hash-checked source definitions and CPU model substitutes. Full vLLM, real Ray and GPU execution of
+this candidate remain pending.
+
+The request-feedback report also keeps `recent_RPC_attempts` for the current bound Core session:
+at most 64 fixed-metadata records plus cumulative `RPC_counts` for returned resource attempts,
+including evictions and audit errors. The existing snapshot receipts still own the complete RPC ledger.
+The same optional `observe_native` callback carries this metadata for rejected and valid RPCs.
+Request/current/response session IDs and RPC indices join existing query boundaries; timestamps name
+their driver, actor-counter and native clock domains without asserting a cross-host clock mapping.
+An unbound actor, absent native frame and rejected CPU interval remain separate facts. This audit
+does not retain prompts, input rows or model outputs, refresh a native timestamp, or feed rejected
+resources into policy. `recent_samples` and the two physical policy samples still require the
+original session/native qualification. Bind resets the new diagnostics; close retains terminal
+evidence. Native validation in an audit is the RPC-validation result, not provider/controller adoption;
+a subsequent query switch still invokes the original session guard. Reference profiles keep
+resources off; omitting feedback remains disabled. Turning the
+external observation tool off still permits existing production feedback and its bounded report;
+this change starts no extra readers or RPCs.
+New diagnostic IDs use the existing 32 lowercase hexadecimal engine identity and uint64
+integer ranges (with -1 for an unbound session). Malformed fields become null with fixed
+`invalid_fields` names before retention or callbacks; values already unavailable at this boundary
+stay unknown/null. No original text or oversized integer is retained in the new diagnostic row.
+The [CPU rejection cases](../../tests/execution_provider/test_resource_rpc_rejection_audit.py)
+check these boundaries with local Futures, not Ray or model execution.
 
 Native scheduled-work MFU helpers live in `metrics/mfu.py`, `mfu_trace.py` and the explicitly invoked
 `mfu_native_bootstrap.py`. They require one verified engine/GPU, complete token/terminal watermarks
@@ -39,7 +135,9 @@ batch, not an atomic snapshot. PostgreSQL session attribution and threshold poli
 
 ## 运行指标的读法
 
-测量字段以[profiler schema](profiling/schema.py)和各采集器为准。报告同时解释请求形状、服务压力、
+现行指标按[对照规范](../../../experiments/plans/reference/对照规范.md)和[报告核对](../../../experiments/plans/reference/报告核对.md)，
+并以各采集器的实际字段解释；旧 PG profiler CSV 字段保留为[历史格式来源](../../../experiments/reproduction/native_baselines/README.md#retired-profiler-application)。
+报告同时解释请求形状、服务压力、
 完整结果、资源与任务质量：prompt/output token、批次行数与字节说明工作量；排队、在途与缓存
 说明服务状态；完整查询时间及首token、逐token等待说明用户实际等待；CPU、GPU和能耗说明资源使用。
 
@@ -95,3 +193,15 @@ t=2.776，不属于本次跨档错误。
 [`test_statistics.py`](../../tests/observability/test_statistics.py)，覆盖 df 档位、极小与大样本、
 非法 df/非有限观测及实际 CSV 调用者的 warm-up 排除、分组计数和配对退化统计。
 另覆盖接近浮点上限的可序列化区间，以及极小非正规数的非零区间。
+
+
+共用脱敏和私有文件输出直接依赖 `src.infrastructure.redact`、`src.infrastructure.private_artifacts`，
+与现有实现使用同一对象；baseline 的原公开导出仍供比较和历史调用使用。
+[本次消费者迁移](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+只调整导入归属，不增加观测、落盘步骤或执行策略。
+
+
+Native startup reports also expose dtype and GPU memory utilization from the constructed
+model/cache configuration through the existing `native_capacity` snapshot. Missing fields remain
+null. These values describe engine settings; they neither grant RAM nor report free GPU memory.
+Requested optional parameters stay separate in `constructor_parameters`.

@@ -1,0 +1,174 @@
+{
+  "base_commit": "9652108d781bd85dc254f20149e40a99d67e9447",
+  "not_stacked_on": [
+    "c5a76e80056e8cbd71a8573530d91ca249620b48",
+    "b591abd113b8f91c0d053f317972ad612dcc6680"
+  ],
+  "before_lines": {
+    "code/src/scheduling/core/scheduler.py": 1125,
+    "code/src/scheduling/runtime/execution.py": 45
+  },
+  "after_lines": {
+    "code/src/scheduling/core/scheduler.py": 981,
+    "code/src/scheduling/core/scheduler_types.py": 165,
+    "code/src/scheduling/runtime/execution.py": 41
+  },
+  "net_production_physical_lines": 17,
+  "moved_types": 7,
+  "all_original_scheduler_definitions_unchanged": 10,
+  "runtime_class_unchanged": true,
+  "new_wrappers": 0,
+  "new_validators": 0,
+  "new_test_methods": 0,
+  "CPU": {
+    "same_method_selection": true,
+    "before_passed": 236,
+    "after_passed": 236,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "repeated_methods_not_summed": true
+  },
+  "history": {
+    "variants": [
+      "native_isolated_and_imlane",
+      "core_original_dynamic",
+      "core_local_window_pairs",
+      "ray_runtime_reuse",
+      "daft_single_thread_session"
+    ],
+    "new_overrides": 10,
+    "original_file_hashes_and_projection_ids_unchanged": true,
+    "full_materialization_in_existing_suite": true
+  },
+  "public_compatibility": {
+    "signatures_and_adapter_annotations_equal": true,
+    "old_module_and_package_exports_same_objects": true,
+    "old_default_pickles_load": true,
+    "new_type_modules": {
+      "SubmissionAdapter": "src.scheduling.core.scheduler_types",
+      "EndpointCapacityConfig": "src.scheduling.core.scheduler_types",
+      "ReadyWindowConfig": "src.scheduling.core.scheduler_types",
+      "JobSchedulingContract": "src.scheduling.core.scheduler_types",
+      "SharedCreditConfig": "src.scheduling.core.scheduler_types",
+      "SchedulerConfig": "src.scheduling.core.scheduler_types",
+      "SchedulerResult": "src.scheduling.core.scheduler_types"
+    }
+  },
+  "final_source_sha256": {
+    "code/src/scheduling/core/scheduler.py": "8a7ce3f95ab69d8353c6f971020ae9ee0950942a6f9f9114410fe63d2f567ac3",
+    "code/src/scheduling/core/scheduler_types.py": "6c461b98b0e690c2e1802ba7679272fdb48a0d88b96ab1f233359ae9f80b4984",
+    "code/src/scheduling/runtime/execution.py": "050b660a1ca436f5b39e57a1659b6ed94f836ba2e6f19c94a22f209354159398"
+  },
+  "size": {
+    "main": {
+      "core": {
+        "files": 227,
+        "physical_lines": 54091,
+        "nonempty_lines": 48889,
+        "files_over_1000": 7,
+        "functions_over_100": 50
+      },
+      "src_all": {
+        "files": 444,
+        "physical_lines": 109118,
+        "nonempty_lines": 99548,
+        "files_over_1000": 15,
+        "functions_over_100": 134
+      },
+      "scripts": {
+        "files": 134,
+        "physical_lines": 31217,
+        "nonempty_lines": 28486,
+        "files_over_1000": 3,
+        "functions_over_100": 45
+      }
+    },
+    "bfb": {
+      "core": {
+        "files": 232,
+        "physical_lines": 57793,
+        "nonempty_lines": 52338,
+        "files_over_1000": 7,
+        "functions_over_100": 54
+      },
+      "src_all": {
+        "files": 452,
+        "physical_lines": 113820,
+        "nonempty_lines": 103919,
+        "files_over_1000": 15,
+        "functions_over_100": 143
+      },
+      "scripts": {
+        "files": 135,
+        "physical_lines": 32218,
+        "nonempty_lines": 29415,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    },
+    "3fd": {
+      "core": {
+        "files": 248,
+        "physical_lines": 61628,
+        "nonempty_lines": 55819,
+        "files_over_1000": 9,
+        "functions_over_100": 57
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 118067,
+        "nonempty_lines": 107770,
+        "files_over_1000": 17,
+        "functions_over_100": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    },
+    "current_worktree": {
+      "core": {
+        "files": 249,
+        "physical_lines": 61658,
+        "nonempty_lines": 55845,
+        "files_over_1000": 8,
+        "functions_over_100": 57
+      },
+      "src_all": {
+        "files": 472,
+        "physical_lines": 118097,
+        "nonempty_lines": 107796,
+        "files_over_1000": 16,
+        "functions_over_100": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    }
+  },
+  "raw": {
+    "path": "scheduler_types_layout_raw.json.gz",
+    "bytes": 102027,
+    "sha256": "8bebcfb739a4fd9b91b2614298e76271d7c8e2ac8aa8c163998355693a092a8e"
+  },
+  "remaining": [
+    "Ruff unavailable in the selected unchanged environment",
+    "No actual Ray, model, GPU, server or performance run",
+    "Moving public types changes their defining module; old import names remain aliases and existing default pickles still load",
+    "Independent candidate only; do not add its counts to other candidate tests"
+  ],
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "server_runs": 0,
+  "pushed": false,
+  "merged": false
+}

@@ -1,0 +1,523 @@
+{
+  "original_base": "46795c0fae03ab07db15b01552884b831ee2a7c1",
+  "latest_upstream": "b08936d2808999a3d9da7ca47e8a940207d99184",
+  "integration_checkpoint": "1920fc18231653c499ac70242bce0a45b81ceeff",
+  "integration_tree": "86337c007da86825ccef01c5fcbe4bdc7ff9b49b",
+  "final_runtime_cleanup": "07878cfb539727ff2194a62966b1ca974b017fa0",
+  "final_runtime_tree": "6524973c38b6e418747fe67eccab79e7a638f09e",
+  "components": {
+    "session": "08b90c35a39cda11e663430543d53f769f317b78",
+    "transport": "bf3bf152032e136a1e86bdb7ea3a96d5d919aee7",
+    "trial_composition": "01ed2597b257975742db6d8605169a3721559379",
+    "parser_original": "6cbc3af755825b82416e53b1d844208d27b16d52",
+    "parser_applied": "1920fc18231653c499ac70242bce0a45b81ceeff"
+  },
+  "changes": [
+    "Move existing member selection and single/atomic handoff into session_dispatch; the original flow and task table retain all state.",
+    "Advance the successful single-request cursor at its original post-event point in one place; remove duplicate caller updates and the clear immediately before cleanup.",
+    "Move the exact Section transport class into the existing backend module and migrate every known private hook/import; no new wrapper or owner.",
+    "Retire the unused 581-line profiler parser and save one exact original with five history source routes.",
+    "Repair the five history source routes missed by the recent session-test addition using the exact 73e test original. Expected digests and current tests are unchanged.",
+    "Keep the newly published resource-directed trial sources unchanged. Shared-credit and SAOR research isolation is assigned separately; no source from that area was edited here."
+  ],
+  "CPU": {
+    "session_before": 144,
+    "session_after": 144,
+    "session_failures": 0,
+    "session_errors": 0,
+    "session_skips": 0,
+    "chain_before_selected": 61,
+    "chain_before_passed": 59,
+    "chain_before_failed_methods": 2,
+    "chain_after_selected": 65,
+    "chain_after_passed": 65,
+    "chain_after_failures": 0,
+    "chain_after_errors": 0,
+    "chain_after_skips": 0,
+    "old_message_method_after": 1,
+    "final_unused_import_method_after": 1,
+    "after_65_runtime_edit": "Remove the unused Acceptance import left in the query owner; one existing success-oracle method then passed. Parser retirement is recorded separately.",
+    "history_before_selected": 10,
+    "history_before_passed": 9,
+    "history_after_selected": 10,
+    "history_after_passed": 9,
+    "history_error_methods": 1,
+    "history_error_subcases": 5,
+    "history_skips": 0,
+    "counts_overlap_not_added": true,
+    "no_second_65_run": true
+  },
+  "preserved_issues": {
+    "obsolete_text": "A ValueError was raised correctly, but a test required obsolete fixed rolling wording. It now checks the actual rejection type.",
+    "memory_wait": "The original four-second high-event wait failed once. A single independent method execution passed all four cases, and the later changed-source run passed. Precise original cause remains undetermined; no timeout or pressure-policy change was made.",
+    "memory_hypotheses": "Concurrent fixture write_text can expose a transient incomplete file, or a later safe interval may overwrite a pressure interval before consumption. Neither occurred in the captured once-only execution; neither is claimed as the cause.",
+    "history": "Ten older bindings remain different in task_info.py and submission_control/__init__.py. The five additional recent session-test omissions were corrected. Full five-tree materialization remains unsuccessful."
+  },
+  "history": {
+    "bindings": 3010,
+    "before_matched": 2995,
+    "before_differences": 15,
+    "after_matched": 3000,
+    "after_differences": 10,
+    "corrected_recent_omissions": 5,
+    "new_parser_routes": 5,
+    "added_routes_total": 10,
+    "original_expected_digests_and_projection_ids_unchanged": true
+  },
+  "structure": {
+    "session_before": 1181,
+    "session_after": 1004,
+    "dispatch_module": 188,
+    "chain_owner_before": 1101,
+    "chain_owner_after": 1028,
+    "backend_before": 319,
+    "backend_after": 392,
+    "transport_class_AST_equal": true,
+    "original_backend_prefix_unchanged": true,
+    "parser_removed_lines": 581,
+    "no_new_owner_or_controller": true
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Core is code/src except experiments and baselines; wider is code/src plus code/scripts. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "4679": {
+        "commit": "46795c0fae03ab07db15b01552884b831ee2a7c1",
+        "metrics": {
+          "core": {
+            "files": 250,
+            "physical_lines": 59179
+          },
+          "all_src": {
+            "files": 392,
+            "physical_lines": 92835
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114987,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1181
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1101
+          }
+        ],
+        "core_functions_over_100": 53
+      },
+      "latest_upstream": {
+        "commit": "b08936d2808999a3d9da7ca47e8a940207d99184",
+        "metrics": {
+          "core": {
+            "files": 250,
+            "physical_lines": 59198
+          },
+          "all_src": {
+            "files": 392,
+            "physical_lines": 92854
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 115006,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1181
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1101
+          }
+        ],
+        "core_functions_over_100": 53
+      },
+      "current": {
+        "commit": "1920fc18231653c499ac70242bce0a45b81ceeff",
+        "metrics": {
+          "core": {
+            "files": 250,
+            "physical_lines": 58628
+          },
+          "all_src": {
+            "files": 392,
+            "physical_lines": 92284
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114436,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1028
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1004
+          }
+        ],
+        "core_functions_over_100": 51
+      }
+    }
+  },
+  "batch_production_delta": {
+    "core": -570,
+    "src_and_scripts": -570
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_chain_actor_backend.py": "93c352a9a666c77e6b5da033e5c9a1d6d2c741698b679f52a112e74a08e02246",
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "0ce0142d9818bd6d02dfdab1b72458f1f00bc79a906bc87da454cc438881f419",
+    "code/src/scheduling/core/session.py": "9eb5da49752014e7ccf10174ec976bdccc899d138fcdf69e98c3170c03d38d4d",
+    "code/src/scheduling/core/session_dispatch.py": "5155862c368b9ef4dd57328eaf158b701b46f710f30fcb927d285caf76ce9ab8",
+    "code/tests/execution_provider/test_event_state_preparation.py": "79a0df39a42c84f979d0c5083d09a1db3cb17419d17e5640706eb58a10b3d077",
+    "code/tests/execution_provider/test_lotus_batch_request_reuse.py": "07ecfeff046cff998d9bbd6a9076c09ed9f726f19667af74aab92b9c8139c1c7",
+    "code/tests/execution_provider/test_lotus_record_local_query.py": "ccec40ec86884345272d4f89c993f210b592f1d9231859307f17c226efc01812",
+    "code/tests/execution_provider/test_prepared_supply_budgets.py": "6be4da54fe5372abaa61543b339336e3eb728a95fd229c797037ae81c5600fe9",
+    "code/tests/execution_provider/test_ready_state_preparation.py": "e440cd356a5977d975389d7ca7e533931a036dd860c6962281d8583c67261c10",
+    "code/tests/experiments/test_movie_cancellation.py": "01faaf67898c4e9bfb7021bab2f79ece048d8273caa86ce7fe7f21be7e35d7b3",
+    "code/tests/scheduling/test_batch_dispatch_snapshot.py": "cc2deb1b682220955311c017c9ce5f50974b3b007d194633b2d2bb7da22276a1"
+  },
+  "raw": {
+    "path": "core_duties_4679_raw.json.gz",
+    "sha256": "bf27be6a18e3419ceb7e756b3867405002f894d1cf4d90ee3d7cedc839f79834",
+    "bytes": 49825,
+    "decoded_sha256": "5b90623673eb607127718df01c4679a30cee1ca70cfd67313c43d66b475b2ead"
+  },
+  "private_originals": [
+    {
+      "group": "core",
+      "file": "session-handoff-before.json",
+      "bytes": 163181,
+      "sha256": "b2f58d5c15aa8ae9af38d16a38b37b382ded33909c97f2c50cfd9ed011c7ea69"
+    },
+    {
+      "group": "core",
+      "file": "session-handoff-before.log",
+      "bytes": 26893,
+      "sha256": "70dd2bb6525877c32e808af29bde3b36ff73294c01e5c8168eeab0af2fac26a0"
+    },
+    {
+      "group": "core",
+      "file": "session-handoff-after.json",
+      "bytes": 163300,
+      "sha256": "5aca50cbd54d30339c86af2e90650e41033f864090c4101edf713eb1f28c67b9"
+    },
+    {
+      "group": "core",
+      "file": "session-handoff-after.log",
+      "bytes": 26893,
+      "sha256": "5ac51ea9ea4ef1b282e1e2dd47153421f683fbcd0cbf3ca4fa5670c3fefce5c0"
+    },
+    {
+      "group": "core",
+      "file": "chain-section-before.json",
+      "bytes": 145878,
+      "sha256": "fe36e0ef95fafb41ca541443128fda151b6579659d1fbd8d7ff8ef910b3292e6"
+    },
+    {
+      "group": "core",
+      "file": "chain-section-before.log",
+      "bytes": 15508,
+      "sha256": "d22c3b3e2a07f913ff8051fb773fd923e1dc60ab62bad9078c4b8ac564ee0508"
+    },
+    {
+      "group": "core",
+      "file": "chain-section-current-trials-after.json",
+      "bytes": 146598,
+      "sha256": "2e181e8db6bd89dc336a2273274bc75ee9910545771d4dc308f5ac20acbc76d4"
+    },
+    {
+      "group": "core",
+      "file": "chain-section-current-trials-after.log",
+      "bytes": 14137,
+      "sha256": "c56329dc62514545a2fa24c87ae03a42a47bb80fe60f3a104a11f58c99de1f17"
+    },
+    {
+      "group": "core",
+      "file": "old-preparation-wording-after.json",
+      "bytes": 126874,
+      "sha256": "ea294ee70d69f993f66a37ab808905f0d813e8858d013908728ef8ca1974c4d0"
+    },
+    {
+      "group": "core",
+      "file": "old-preparation-wording-after.log",
+      "bytes": 290,
+      "sha256": "9f5f452d8e2b9e70ea9a674df73eba62e5e4b350eba926db95046bc2f61b3f06"
+    },
+    {
+      "group": "core",
+      "file": "final-unused-import-after.json",
+      "bytes": 126918,
+      "sha256": "d3c398bba83c8638162593253c0c87b904296584551a36854e2a223a8f6c2e57"
+    },
+    {
+      "group": "core",
+      "file": "final-unused-import-after.log",
+      "bytes": 312,
+      "sha256": "dd5244118c3a97dd1b3bac3e39fc36029da4032f46c07ff4df9cc1d1902e7834"
+    },
+    {
+      "group": "retirement",
+      "file": "before-profile-parser-retirement.json",
+      "bytes": 129530,
+      "sha256": "5324a6b55b58c1aacc2b2d58d8378e1d0896128ae8ca9676cb57f5cafe1d780e"
+    },
+    {
+      "group": "retirement",
+      "file": "before-profile-parser-retirement.log",
+      "bytes": 9568,
+      "sha256": "cee8181d18c3566d933e3fb6f8d8793137aa6d86b91028c92dd7880f000727bb"
+    },
+    {
+      "group": "retirement",
+      "file": "after-profile-parser-retirement.json",
+      "bytes": 129800,
+      "sha256": "487655ce702c4bb004c6a3cafc8c5a145adbfeb047a06bf48067c922957bee23"
+    },
+    {
+      "group": "retirement",
+      "file": "after-profile-parser-retirement.log",
+      "bytes": 9568,
+      "sha256": "eeb9d30b1c4497fcaae95f26d44bb10e9ce466b0695cc8b4821c3eda404ccade"
+    },
+    {
+      "group": "retirement",
+      "file": "before-history-sources.json",
+      "bytes": 9169,
+      "sha256": "c965e3bc987dc39d474957275a546e509d182915de1b8823302e780ad41b706f"
+    },
+    {
+      "group": "retirement",
+      "file": "after-history-sources.json",
+      "bytes": 6860,
+      "sha256": "252b0e4a5aae993d310a53aa9762bd0edb233c913c65f83979491a61ffa11988"
+    },
+    {
+      "group": "retirement",
+      "file": "INCREMENTAL_TEST_SOURCE_PROOF.json",
+      "bytes": 2278,
+      "sha256": "12308ee3bdd640dfba8df922d899b487bf4e1fa96f2923f5a25bbb1489239728"
+    },
+    {
+      "group": "retirement",
+      "file": "ARCHIVE_CHANGES.json",
+      "bytes": 1323,
+      "sha256": "0c4a7bf50b2c3a5bcace4d6ab205369636d69f721c84ec3667097d049e193e75"
+    },
+    {
+      "group": "composition",
+      "file": "core-composition-history-sources.json",
+      "bytes": 6871,
+      "sha256": "32aa27cac457ab61876771ea71a95a622c944e75a8dc86b50d42d492681728ca"
+    },
+    {
+      "group": "session-review",
+      "file": "HANDOFF.json",
+      "bytes": 5441,
+      "sha256": "bc1b33130aa53b55a3699652a27973fbf95d4ea1b3fb2e9519bb1c52b35449f3"
+    },
+    {
+      "group": "transport-review",
+      "file": "HANDOFF.json",
+      "bytes": 7312,
+      "sha256": "4e5450c1f138abef553679df12a36e165da8497641e9d46cc90742e1adceda8e"
+    },
+    {
+      "group": "parser-review",
+      "file": "HANDOFF.json",
+      "bytes": 5541,
+      "sha256": "9dce286658ecbffe680de9383c86e5d47ddbf1e16248e388ed44930fa5daefd2"
+    },
+    {
+      "group": "transport-review",
+      "file": "UNUSED_ACCEPTANCE_ADDENDUM.json",
+      "bytes": 1217,
+      "sha256": "44c6789fba3c78bf4e08155ec06d1cfd9b73c5b2947c8bea48dd97e1ca5445ca"
+    },
+    {
+      "group": "memory-once",
+      "file": "HANDOFF.json",
+      "bytes": 8635,
+      "sha256": "796441d630f68baa96db0c7fb3ab7822d945c90f0bbf0271fb48f106df2d0d55"
+    },
+    {
+      "group": "memory-once",
+      "file": "TRACE.json",
+      "bytes": 537371,
+      "sha256": "3e53e0174bf123e943f559fd8e55442c614a56d356b818d81fe4cf561d0ff313"
+    },
+    {
+      "group": "memory-once",
+      "file": "feedback-memory-once.json",
+      "bytes": 126840,
+      "sha256": "a7b3808b5eaac80fc071bfb15fd388086bc2e58af1eddb8c08d6640065187f2e"
+    },
+    {
+      "group": "memory-once",
+      "file": "feedback-memory-once.log",
+      "bytes": 353,
+      "sha256": "6dacaaa7a25bcfb0c9d8ea6bf34e6d39aed9d7e153c80dd768ba8cc526ea7cf8"
+    },
+    {
+      "group": "recompute",
+      "file": "run_cpu.py",
+      "bytes": 3152,
+      "sha256": "ead13841cbbb7825f948ced64b265ebcba516bc9bec2932d9a881a0dddc5b7b8"
+    },
+    {
+      "group": "recompute",
+      "file": "run_guarded.py",
+      "bytes": 617,
+      "sha256": "76adb2dc909ab05bd7e0978b16a9055d8ba0b167233f8d02675dfbff32886ac0"
+    },
+    {
+      "group": "recompute",
+      "file": "check_history_sources.py",
+      "bytes": 1940,
+      "sha256": "1b794dee51b79fb18e3d0b314c786a46857d82ae5762f3e841dac2c0854d31e3"
+    }
+  ],
+  "original_access": "The original is retained by the run group, filename and SHA-256. No original was removed.",
+  "limits": [
+    "CPU fixtures only; no actual Ray, vLLM model, GPU, database or server execution.",
+    "No performance claim, no physical-capacity detection, no default R change.",
+    "Multi-Job/shared-credit/SAOR isolation is separate ongoing work; those files were not changed by this batch.",
+    "The original intermittent memory wait and ten historical source differences remain open.",
+    "Main is unmerged."
+  ],
+  "real_execution": {
+    "real_Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "servers": 0
+  },
+  "active_server_tasks_touched": false,
+  "main_merged": false
+}

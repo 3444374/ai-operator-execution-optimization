@@ -6,7 +6,7 @@ from collections.abc import Mapping
 
 from ..wire.v3 import GOLDEN_EXECUTION_ID
 from ..wire.v4 import GOLDEN_EXECUTION_ID as CHOICE_EXECUTION_ID
-from ..wire.v5 import GOLDEN_EXECUTION_ID as MAP_EXECUTION_ID
+from ..wire.map_codec import GOLDEN_EXECUTION_ID as MAP_EXECUTION_ID
 from ..completion import (
     CompletionAdapterError,
     Completion,

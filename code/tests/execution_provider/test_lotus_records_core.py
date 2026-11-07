@@ -19,6 +19,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters.records_model_adapter import _capacity_failure, _encode
 from src.execution_provider.adapters import lotus_records_static as static
 from src.execution_provider.adapters.lotus_records_actor_owner import RecordsActorOwner
 from src.infrastructure import daft_runtime
@@ -69,7 +70,7 @@ class Runtime:
             def __init__(self, actor, name):
                 self.actor, self.name = actor, name
 
-            def remote(self, *args):
+            def remote(self, *args, **kwargs):
                 tag = type(self.actor.instance).__name__ + "." + self.name
                 runtime.events.append(("submit", tag, threading.get_ident(), args))
                 if runtime.slow_submit is not None and self.name == "run_core":
@@ -77,7 +78,9 @@ class Runtime:
 
                 def invoke():
                     resolved = [arg.value.result() if isinstance(arg, Ref) else arg for arg in args]
-                    return getattr(self.actor.instance, self.name)(*resolved)
+                    keywords = {key: value.value.result() if isinstance(value, Ref) else value
+                                for key, value in kwargs.items()}
+                    return getattr(self.actor.instance, self.name)(*resolved, **keywords)
                 return Ref(self.actor.pool.submit(invoke), tag)
 
         class Actor:
@@ -216,6 +219,12 @@ class Runtime:
             sys.modules[name] = module
         self.stack.enter_context(patch.object(daft_runtime, "_configured", None))
         self.stack.enter_context(patch.dict(os.environ))
+        from src.infrastructure.cpu_allocation import CpuCapacity
+        self.stack.enter_context(patch('src.infrastructure.cpu_allocation.observe_cpu_capacity',
+            return_value=CpuCapacity(64, None, 64, 'CPU_graph_fixture')))
+        from src.observability.records_telemetry import MetricSources
+        self.stack.enter_context(patch.object(MetricSources, 'from_cuda_visibility',
+            side_effect=lambda: MetricSources((), gpu_binding_error='unavailable:CPU_inference_fixture')))
         os.environ.pop("DAFT_RUNNER", None)
         self.stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         self.stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
@@ -303,7 +312,8 @@ class CoreRecordsTests(unittest.TestCase):
         self.spec = EngineSpec("/tmp/fixture-model", "/tmp/model-python", "/tmp/driver-python")
 
     def owner(self, **changes):
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, **changes)
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
+                                     **(dict(max_active_batches=2) | changes))
         return core.SemLoomRecordsCore(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(), resources)
 
     def drain(self, owner, predicate=lambda: False):
@@ -379,7 +389,7 @@ class CoreRecordsTests(unittest.TestCase):
         for owner_type in (static.SemLoomRecordsStaticReference, core.SemLoomRecordsCore):
             with Runtime(self.rows) as runtime:
                 owner = owner_type(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(),
-                                   RecordsResources(prepare_batch_rows=1, model_batch_rows=1))
+                                   RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1))
                 rows = list(owner.evaluate(Source(self.rows), query_id="same"))
                 results.append(sorted(rows, key=lambda v: v["source_position"]))
                 owner.close()
@@ -418,13 +428,14 @@ class CoreRecordsTests(unittest.TestCase):
     def test_shared_owner_wait_keeps_the_core_cleanup_deadline_clamp(self):
         owner = self.owner()
         ref = object()
-        with patch.object(RecordsActorOwner, "wait_ready", return_value={}) as wait:
+        with patch('src.execution_provider.adapters.lotus_records_actor_owner.time.monotonic',
+                   return_value=150.0):
             owner._actors.close_deadline = 100.0
-            owner._actors.wait_ready(ref, 200.0)
-            wait.assert_called_once_with(ref, 100.0, None)
-            wait.reset_mock()
-            owner._actors.wait_ready(ref, 50.0)
-            wait.assert_called_once_with(ref, 50.0, None)
+            with self.assertRaises(TimeoutError):
+                owner._actors.wait_ready(ref, 200.0)
+            owner._actors.close_deadline = 200.0
+            with self.assertRaises(TimeoutError):
+                owner._actors.wait_ready(ref, 100.0)
         owner.close()
 
     def test_slow_consumer_limits_source_pull_and_core_reservations(self):
@@ -758,7 +769,7 @@ class CoreRecordsTests(unittest.TestCase):
                             effective_limits={"max_active_requests": 2},
                             production_core_connected=False, gpu_exit_confirmed=True)
 
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        resources = RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)
         actors = Owner(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(), resources)
         with Runtime(self.rows):
             owner = core.SemLoomRecordsCore(actors.method, self.spec, actors.generation,
@@ -775,7 +786,7 @@ class CoreRecordsTests(unittest.TestCase):
                             for key in actors.acknowledged))
 
     def test_injected_owner_configuration_is_checked_before_allocation(self):
-        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        resources = RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)
         with self.assertRaisesRegex(TypeError, "RecordsActorOwner"):
             core.SemLoomRecordsCore(FilterMethod("fixture", instruction="Keep {reviewText}"), self.spec, GenerationSpec(),
                                    resources, actor_owner=object())
@@ -890,7 +901,7 @@ class ActorCloseReceiptTests(unittest.TestCase):
     def test_actual_unknown_receipt_is_never_upgraded_by_close(self):
         unknown = dict(self.value, status="unknown", text=None,
                        completion_tokens=None, total_tokens=None)
-        self.transport._outcomes[self.key] = core._encode(unknown, 4096)
+        self.transport._outcomes[self.key] = _encode(unknown, 4096)
         self.assertEqual(len(self.transport.recover_actor_receipts([self.receipt()])), 1)
         self.assertEqual(json.loads(self.transport.failure_receipts()[0][1]), unknown)
         self.transport.take_receipts(4)
@@ -899,7 +910,7 @@ class ActorCloseReceiptTests(unittest.TestCase):
         self.assertIs(self.transport._refs[self.key], self.refs)
 
     def test_oversized_receipt_retains_usage_in_reserved_failure_bytes(self):
-        maximum = len(core._encode(core._capacity_failure(self.value), 4096))
+        maximum = len(_encode(_capacity_failure(self.value), 4096))
         self.transport._requests[self.key] = self.expected, maximum
         large = dict(self.value, text="x" * 8192)
         self.assertEqual(self.transport.recover_actor_receipts([self.receipt(large)]), [])

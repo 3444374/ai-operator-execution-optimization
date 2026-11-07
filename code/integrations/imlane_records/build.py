@@ -8,8 +8,8 @@ import sys
 
 OWNED = Path(__file__).resolve().parent
 sys.path.insert(0, str(OWNED.parents[1]))
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 
 AUTHOR = "072f8257db80569e42c9f5727d839587df529652"
 
@@ -58,7 +58,8 @@ def main(argv=None):
     record = dict(upstream_commit=AUTHOR, returncode=result.returncode, author_modified=False,
                   compiler_output=redact_text(result.stdout + result.stderr), real_model_requests=0,
                   sources_sha256={p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                                  for p in (OWNED / selected, OWNED / "record_dbend_adapter.hpp")},
+                                  for p in (OWNED / selected, OWNED / "record_dbend_adapter.hpp",
+                                            OWNED / "record_limits.hpp")},
                   binary_sha256=hashlib.sha256(output.read_bytes()).hexdigest() if output.is_file() else None)
     write_private_json(output.with_suffix(".build.json"), record)
     if result.returncode:

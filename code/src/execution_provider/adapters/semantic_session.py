@@ -7,7 +7,7 @@ import socket
 import time
 
 from ..wire.framing import ProtocolError, encode_frame, read_frame
-from ..wire import v3, v4, v5
+from ..wire import v3, v4, map_codec
 from ..completion import (
     Completion as Completion,
     CompletionRequest as CompletionRequest,
@@ -97,7 +97,7 @@ def _run_semantic_session(
     completion_fixture: str | None = None,
 ) -> bool | None:
     """Serve one strict synchronous semantic session through an adapter."""
-    codec = {3: v3, 4: v4, 5: v5}[wire_version]
+    codec = {3: v3, 4: v4, 5: map_codec}[wire_version]
     error_sequence: str | None = None
     open_context = None
     try:

@@ -9,11 +9,11 @@ import time
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters.lotus_records_async_actor import (
-    AsyncCoreModelActor, AsyncRecordsActorOwner,
-)
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
-from src.serving.backends.async_engine_process import AsyncEngineProcess, _frame
+from src.serving.backends.async_engine_process import AsyncEngineProcess
+from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -33,6 +33,25 @@ class CPUActor(AsyncCoreModelActor):
 def prepared(index=0, text="fast", query="same-query"):
     return dict(identity(query, "row-" + str(index), index),
                 messages_json=json.dumps([dict(role="user", content=text)]))
+
+
+def core_result(actor, rows, deadline, maximum, request_key):
+    while True:
+        response = actor.try_submit_core(rows, deadline, maximum, request_key)
+        if response["status"] != "backpressure":
+            break
+        if time.monotonic() >= deadline:
+            raise TimeoutError("CPU Core submission did not progress")
+        time.sleep(0.005)
+    if response["status"] == "rejected":
+        return json.dumps(response["result"])
+    while True:
+        packet = json.loads(actor.poll_prepared_batch(request_key))
+        if packet["results"]:
+            return json.dumps(packet["results"][0]["result"])
+        if time.monotonic() >= deadline:
+            raise TimeoutError("CPU Core result did not arrive")
+        time.sleep(0.005)
 
 
 class AsyncActorTests(unittest.TestCase):
@@ -64,7 +83,7 @@ class AsyncActorTests(unittest.TestCase):
             time.sleep(0.005)
 
     def submit(self, pool, actor, index=0, text="fast", *, session=0, query="same-query"):
-        return pool.submit(actor.run_core, [prepared(index, text, query)],
+        return pool.submit(core_result, actor, [prepared(index, text, query)],
                            time.monotonic() + 5, 4096, (session, index))
 
     def test_late_second_input_finishes_while_first_still_active(self):
@@ -114,7 +133,7 @@ class AsyncActorTests(unittest.TestCase):
         self.assertTrue(actor.abort_core((0, 1))["requested"])
         self.assertTrue(actor.abort_core((0, 0))["requested"])
         self.assertFalse(actor.abort_core((0, 2))["requested"])
-        result = json.loads(actor.run_core([prepared()], time.monotonic() + 3, 4096, (0, 0)))
+        result = json.loads(core_result(actor, [prepared()], time.monotonic() + 3, 4096, (0, 0)))
         self.assertEqual(result["error_type"], "CancelledBeforeSubmission")
         self.assertFalse(result["submission_confirmed"])
         self.assertTrue(result["engine_terminal_confirmed"])
@@ -169,7 +188,7 @@ class AsyncActorTests(unittest.TestCase):
         self.assertTrue(actor.abort_core((1, 0))["requested"])
         self.assertFalse(actor.abort_core((0, 0))["requested"])
         self.assertEqual(actor.snapshot()["early_cancellations"], 1)
-        result = json.loads(actor.run_core([prepared()], time.monotonic() + 3, 4096, (1, 0)))
+        result = json.loads(core_result(actor, [prepared()], time.monotonic() + 3, 4096, (1, 0)))
         self.assertEqual(result["error_type"], "CancelledBeforeSubmission")
         self.assertEqual(actor.engine._sequence, 2)
         self.assertTrue(actor.acknowledge_core((1, 0)))
@@ -200,9 +219,11 @@ class AsyncActorTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=4) as pool:
             first = self.submit(pool, actor, 0, "hold" + "x" * 2200)
             self.until(actor, lambda: actor.engine.snapshot()["accepted_requests"] == 1)
+            self.assertEqual(actor.try_submit_core([prepared(1, "fast" + "x" * 2200)],
+                time.monotonic() + 5, 4096, (0, 1)), dict(status="backpressure"))
             second = self.submit(pool, actor, 1, "fast" + "x" * 2200)
             try:
-                self.until(actor, lambda: actor.snapshot()["held_requests"] == 2)
+                self.assertEqual(actor.snapshot()["held_requests"], 1)
                 self.assertEqual(actor.engine._sequence, 1)
                 self.assertFalse(second.done())
                 actor.abort_core((0, 0))
@@ -230,25 +251,6 @@ class AsyncActorTests(unittest.TestCase):
                 self.assertEqual(json.loads(second.result(3))["prompt_tokens"], 11)
                 actor.acknowledge_core((0, 0))
                 actor.acknowledge_core((0, 1))
-            finally:
-                actor.close(2)
-
-    def test_unknown_peer_does_not_busy_poll_other_still_active_work(self):
-        actor = self.actor()
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            unknown = self.submit(pool, actor, 0, "hold-unknown")
-            other = self.submit(pool, actor, 1, "hold")
-            try:
-                self.until(actor, lambda: actor.engine.snapshot()["accepted_requests"] == 2)
-                actor.abort_core((0, 0))
-                self.assertEqual(json.loads(unknown.result(3))["status"], "unknown")
-                with patch.object(actor.engine, "poll", wraps=actor.engine.poll) as polls:
-                    started = time.monotonic()
-                    time.sleep(0.05)
-                    self.assertLess(polls.call_count, max(30, int((time.monotonic() - started) / 0.01) * 3 + 10))
-                self.assertFalse(other.done())
-                actor.abort_core((0, 1))
-                self.assertEqual(json.loads(other.result(3))["prompt_tokens"], 11)
             finally:
                 actor.close(2)
 
@@ -303,7 +305,7 @@ class AsyncActorTests(unittest.TestCase):
                                         resources, limits=self.limits)
         options = owner._model_actor_options()
         self.assertEqual(options["num_gpus"], 1)
-        self.assertGreaterEqual(options["max_concurrency"], self.limits.max_inflight + 2)
+        self.assertEqual(options["max_concurrency"], resources.cpu_workers + 2)
         self.assertIn(self.spec.driver_python, options["runtime_env"]["py_executable"])
         self.assertEqual(options["max_task_retries"], 0)
         self.assertEqual(len(owner._model_actor_arguments()), 4)

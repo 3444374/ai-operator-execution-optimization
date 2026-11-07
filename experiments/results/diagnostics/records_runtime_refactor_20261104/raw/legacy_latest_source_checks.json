@@ -1,0 +1,29 @@
+{
+  "base_commit": "9652108d781bd85dc254f20149e40a99d67e9447",
+  "prior_composition": "e4b09dcf1f67ce4156faee50a5a48d9e3880beed",
+  "prior_code_src_tree": "0047866739d03c1bf38dbafb9498d8a75f2337bf",
+  "current_code_src_tree": "0047866739d03c1bf38dbafb9498d8a75f2337bf",
+  "complete_code_src_identical": true,
+  "latest_files_preserved": {
+    "code/scripts/profiling/record_observation/README.md": true,
+    "code/scripts/profiling/record_observation/control_resource_C2.py": true,
+    "code/tests/experiments/test_record_resource_capture.py": true
+  },
+  "cpu": {
+    "methods": [
+      "tests.experiments.test_record_resource_capture.PlanTests.test_controller_passes_live_host_lease_through_the_Movie_worker_context"
+    ],
+    "successful": 1,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged_during_suite": true,
+    "private_original_sha256": "203ba58db9934cd9a44e5502670555baf7c08101fb0e82bcca28ce63a53d82a9"
+  },
+  "interpretation": "The complete code/src tree equals the tested e4b composition. Preserve the three disjoint latest files exactly; run its one host-lease fixture only. Do not repeat or add earlier overlapping methods.",
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

@@ -29,16 +29,11 @@ def run_attached(cfg,unit,output,observer=None):
     native.load_dependencies(cfg)
     from src.experiments import native_query_lifecycle as sessions
     from src.observability.native_query_timing import ObservationStore,timed_driver_type,query_timing
-    # Register this external lifecycle identity; the original sequence logic is unchanged.
-    previous=sessions.BACKENDS,sessions.RESIDENT
-    sessions.BACKENDS=previous[0]|{'kalypso-native'}
-    sessions.RESIDENT=previous[1]|{'kalypso-native'}
     store=ObservationStore();driver=timed_driver_type(native.NativeQueryDriver,store)
-    try:
-        result=sessions.run_sequence(unit['queries'],lambda path,first:driver(cfg,unit,path),
-            output,backend='kalypso-native',lifecycle='resident',observer=observer)
-    finally:
-        sessions.BACKENDS,sessions.RESIDENT=previous
+    backends=('kalypso-native',)
+    result=sessions.run_sequence(unit['queries'],lambda path,first:driver(cfg,unit,path),
+        output,backend='kalypso-native',lifecycle='resident',observer=observer,
+        supported_backends=backends,resident_backends=backends)
     for q in result['queries']:
         q['complete_query_timing']=query_timing(q)
     result['service_lifecycle_scope']='external GPU owner: startup/warmup/queries/shutdown all charged to unit total'

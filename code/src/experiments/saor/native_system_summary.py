@@ -12,18 +12,12 @@ from urllib.parse import urlsplit
 
 from src.baselines.common.database_identity import DatabaseIdentity
 from src.baselines.common.manifests import read_manifest
-from src.baselines.common.redact import redact_text
+from src.infrastructure.redact import redact_text
 
-from .native_system_matched import (
-    FORMAL_AUTHORIZATION_SCOPE,
-    REQUIRED_ARM_IDS,
-    SYSTEM_ARM_IDS,
-    sha256_file,
-    sha256_payload,
-    resolve_matrix_evidence_path,
-    validate_native_final_queue,
-    validate_project_final_credit,
-)
+from .native_system_contract import FORMAL_AUTHORIZATION_SCOPE, REQUIRED_ARM_IDS, SYSTEM_ARM_IDS
+from .native_system_evidence import sha256_file, sha256_payload
+from .native_system_artifacts import resolve_matrix_evidence_path
+from .native_system_validator import validate_native_final_queue, validate_project_final_credit
 from .native_system_publisher import (
     RANKING_OUTPUT_NAMES,
     publish_failed_generation,
@@ -283,14 +277,6 @@ def _positive(value: object, name: str) -> float:
     return parsed
 
 
-def _native_queue_empty(value: object, run_id: str) -> None:
-    validate_native_final_queue(value, run_id)
-
-
-def _project_credit_empty(value: object, run_id: str, *, frozen_static: bool) -> None:
-    validate_project_final_credit(value, run_id, frozen_static=frozen_static)
-
-
 def _validate_source(job: dict[str, Any], run_id: str) -> None:
     provenance = job.get("shard_provenance")
     if not isinstance(provenance, list) or not provenance:
@@ -443,9 +429,9 @@ def _normalize_cell(
     if end <= start:
         raise ValueError(f"{run_id} has invalid common timing boundary")
     if arm_id in SYSTEM_ARM_IDS[:3] and "queue_final" in cell:
-        _native_queue_empty(cell["queue_final"], run_id)
+        validate_native_final_queue(cell["queue_final"], run_id)
     elif arm_id not in SYSTEM_ARM_IDS[:3] and "shared_credit_final" in cell:
-        _project_credit_empty(
+        validate_project_final_credit(
             cell["shared_credit_final"], run_id,
             frozen_static=arm_id == "project_frozen_static",
         )

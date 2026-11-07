@@ -14,8 +14,9 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable
 
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline, remaining_time
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
@@ -32,11 +33,13 @@ def _check(deadline: float, cancelled: Callable[[], bool] | None = None) -> None
     # Keep the existing actors' exception semantics for the static caller.
     if cancelled is not None and cancelled():
         raise InterruptedError("LOTUS records actors cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("LOTUS records actors deadline expired")
 
 
-def _deadline(value: float) -> None:
+def _deadline(value: float | None, *, optional=False) -> None:
+    if optional and value is None:
+        return
     if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
         raise ValueError("actor deadline must be finite and positive; bool is not accepted")
 
@@ -131,6 +134,7 @@ class RecordsActorOwner:
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.generation = GenerationSpec.from_dict(asdict(generation))
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         self.ray = None
         self.prepare_actors: list[Any] = []
         self.model_actor = None
@@ -172,17 +176,21 @@ class RecordsActorOwner:
     def _model_close_timeout_s(self) -> float:
         return 10.0
 
+    def _kill_actor(self, actor: Any) -> None:
+        """Termination boundary for the optional lifecycle observer."""
+        self.ray.kill(actor, no_restart=True)
+
     def wait_ready(
         self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None = None,
     ) -> Any:
         if self.close_deadline is not None:
-            deadline = min(deadline, self.close_deadline)
-        _deadline(deadline)
+            deadline = earliest_deadline(deadline, self.close_deadline)
+        _deadline(deadline, optional=True)
         while True:
             _check(deadline, cancelled)
             ready, _ = self.ray.wait(
                 [ref], num_returns=1,
-                timeout=min(0.05, max(0.0, deadline - time.monotonic())),
+                timeout=remaining_time(deadline, 0.05),
                 fetch_local=False,
             )
             if ready:
@@ -230,7 +238,7 @@ class RecordsActorOwner:
             self._start_failed = True
             raise
 
-    def close(self) -> dict[str, Any]:
+    def close(self, *, before_actor_release=None) -> dict[str, Any]:
         """Close the API/request scope; OS and GPU exit need independent observation."""
 
         self._closing = True
@@ -257,38 +265,56 @@ class RecordsActorOwner:
                 if not isinstance(exc, TimeoutError):
                     self._model_close_ref = None
                 errors.append("model_close: " + type(exc).__name__)
-        actors = list(self.prepare_actors)
-        if (self._model_close_report or {}).get("engine_api_shutdown_confirmed") is True:
-            actors.append(self.model_actor)
-        for actor in actors:
-            if id(actor) in self._killed:
-                continue
-            try:
-                self.ray.kill(actor, no_restart=True)
-                self._killed.add(id(actor))
-            except BaseException as exc:
-                errors.append("actor_kill_request: " + type(exc).__name__)
-        empty = self.model_actor is None and not self._start_failed
-        if self.model_actor is None and self._start_failed:
-            errors.append("model_actor_startup_unconfirmed")
-        # An actor reply and ray.kill acknowledge requests, not physical exit.
-        gpu_exit = True if empty else None
-        owned_actors = list(self.prepare_actors)
-        if self.model_actor is not None:
-            owned_actors.append(self.model_actor)
-        actors_requested = all(id(actor) in self._killed for actor in owned_actors)
-        settled = not errors and actors_requested and (empty or (
-            (self._model_close_report or {}).get("engine_api_shutdown_confirmed") is True
-        ))
-        self.last_close_report = {
-            "status": "closed" if settled else "unknown",
-            "cleanup_scope": "ray_actor_kill_requests_and_engine_api",
-            "model_ready": self.model_ready,
-            "engine_close_report": self._model_close_report,
-            "gpu_exit_confirmed": gpu_exit,
-            "process_exit_confirmed": True if empty and not self.prepare_actors else None,
-            "actor_kill_requests_confirmed": actors_requested,
-            "model_actor_handle_retained": self.model_actor is not None,
-            "cleanup_errors": errors,
-        }
+        try:
+            if before_actor_release is not None:
+                before_actor_release(self._model_close_report)
+        except BaseException as error:
+            errors.append('result_handoff: ' + type(error).__name__)
+            raise
+        finally:
+            actors = list(self.prepare_actors)
+            if (self._model_close_report or {}).get("engine_api_shutdown_confirmed") is True:
+                actors.append(self.model_actor)
+            for actor in actors:
+                if id(actor) in self._killed:
+                    continue
+                try:
+                    self._kill_actor(actor)
+                    self._killed.add(id(actor))
+                except BaseException as exc:
+                    errors.append("actor_kill_request: " + type(exc).__name__)
+            empty = self.model_actor is None and not self._start_failed
+            if self.model_actor is None and self._start_failed:
+                errors.append("model_actor_startup_unconfirmed")
+            # An actor reply and ray.kill acknowledge requests, not physical exit.
+            gpu_exit = True if empty else None
+            owned_actors = list(self.prepare_actors)
+            if self.model_actor is not None:
+                owned_actors.append(self.model_actor)
+            actors_requested = all(id(actor) in self._killed for actor in owned_actors)
+            settled = not errors and actors_requested and (empty or (
+                (self._model_close_report or {}).get("engine_api_shutdown_confirmed") is True
+            ))
+            self.last_close_report = {
+                "status": "closed" if settled else "unknown",
+                "cleanup_scope": "ray_actor_kill_requests_and_engine_api",
+                "model_ready": self.model_ready,
+                "engine_close_report": self._model_close_report,
+                "gpu_exit_confirmed": gpu_exit,
+                "process_exit_confirmed": True if empty and not self.prepare_actors else None,
+                "actor_kill_requests_confirmed": actors_requested,
+                "model_actor_handle_retained": self.model_actor is not None,
+                "cleanup_errors": errors,
+            }
         return self.last_close_report
+
+    def release_query_payloads(self, metadata):
+        """Keep close metadata after its result payloads have transferred."""
+        self.last_close_report = metadata
+        self._model_close_report = metadata.get('engine_close_report')
+        self._model_close_ref = None
+
+    def query_payloads_retired(self):
+        """Read retained result data rather than a separate completion marker."""
+        return all(not ({'unconsumed_call_results', 'unconsumed_core_results', 'calls'} & set(value or {}))
+                   for value in (self.last_close_report, self._model_close_report))

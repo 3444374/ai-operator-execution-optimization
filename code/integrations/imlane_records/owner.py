@@ -18,8 +18,8 @@ import threading
 import time
 import uuid
 
-from src.baselines.common.private_artifacts import write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import write_private_json
+from src.infrastructure.redact import redact_text
 from src.observability.process_resources.linux_procfs import process_start_time_ticks
 
 AUTHOR = "072f8257db80569e42c9f5727d839587df529652"

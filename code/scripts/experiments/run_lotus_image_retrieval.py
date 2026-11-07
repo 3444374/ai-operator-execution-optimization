@@ -16,8 +16,9 @@ import time
 CODE_ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").is_dir())
 sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.common.private_artifacts import require_outside_git
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git
+from src.infrastructure.redact import redact_text
+from src.experiments.lotus_image_reporting import retain_failure, write_retrieval_evidence
 from src.modalities.image.clip import decode_rgb_image, configure_torch_thread_pools
 from src.modalities.image.file_source import load_image_file_manifest
 from src.semantic_methods.lotus.image_backend import DirectImageExecutor, SemLoomImageExecutor, RayDataImageExecutor
@@ -25,17 +26,6 @@ from src.semantic_methods.lotus.image_rm import make_image_rm, observe_stock_rm,
 from src.semantic_methods.lotus.image_source import validate_image_source
 from src.semantic_methods.lotus.image_identity import validate_embedding_identity, validate_executor_identity
 from src.semantic_methods.lotus.image_workflow import RetrievalQuery, image_frame, run_workflow
-
-
-def _retain_failure(report, error, failure, scope, *, cleanup=False):
-    from src.experiments.execution_timing import is_timing_error
-    if error is None or (cleanup and is_timing_error(error) and not is_timing_error(failure)):
-        if error is not None:
-            failure.add_note("Prior image timing failure: " + type(error).__name__)
-        report.update(status="failed", error_type=type(failure).__name__, reason=redact_text(str(failure)))
-        return failure
-    error.add_note(scope + " also raised " + type(failure).__name__)
-    return error
 
 
 def parser():
@@ -130,7 +120,7 @@ def main(argv=None):
         report["model_reuse_observations"] = []
 
     def observe_phase(phase, *, allow_workers=True):
-        from src.experiments.image_reuse import snapshot_models
+        from src.observability.model_reuse import snapshot_models
         at = time.monotonic_ns()
         snapshot = dict(phase=phase, observed_monotonic_ns=at, local_models=snapshot_models(), worker_models=[])
         if args.arm in ("semloom_static", "semloom_hse") and executor is not None and executor.pool is not None:
@@ -180,7 +170,7 @@ def main(argv=None):
             max_batch_size=args.stock_outer_batch_size, normalize_embeddings=True, device=stock_device)
         stock.transformer.to(dtype=__import__("torch").__dict__[args.dtype])
         if reuse_enabled:
-            from src.experiments.image_reuse import observe_stock_model
+            from src.observability.model_reuse import observe_stock_model
             observe_stock_model(stock.transformer[0].model, device=stock_device)
         report["stock_rm_device"] = stock_device
         report["image_model_lifecycle"] = ("cold_native_graph_per_rm_call" if args.arm == "ray_data"
@@ -294,13 +284,13 @@ def main(argv=None):
                 report["native_batch_model_reuse"] = getattr(executor, "reuse_observations", [])
             except BaseException as exc:
                 report["reuse_observation_error"] = type(exc).__name__
-                error = _retain_failure(report, error, exc, "model reuse observations", cleanup=True)
+                error = retain_failure(report, error, exc, "model reuse observations", cleanup=True)
         if startup_failure is not None:
             try:
                 startup_failure.request_termination()
             except BaseException as exc:
                 report["startup_cleanup_error"] = type(exc).__name__
-                error = _retain_failure(report, error, exc, "partial startup cleanup", cleanup=True)
+                error = retain_failure(report, error, exc, "partial startup cleanup", cleanup=True)
             report["startup_actor_count"] = len(startup_failure.actor_handles)
             report["startup_termination_requests"] = startup_failure.termination_request_outcomes
             report["startup_physical_exit"] = startup_failure.physical_exit_status
@@ -310,13 +300,13 @@ def main(argv=None):
             except BaseException as exc:
                 report["execution_observation_error"] = type(exc).__name__
                 if not isinstance(exc, Exception):
-                    error = _retain_failure(report, error, exc, "execution observations", cleanup=True)
+                    error = retain_failure(report, error, exc, "execution observations", cleanup=True)
             try:
                 close_at = time.monotonic_ns()
                 executor.close()
             except BaseException as exc:
                 report["cleanup_error"] = type(exc).__name__
-                error = _retain_failure(report, error, exc, "executor cleanup", cleanup=True)
+                error = retain_failure(report, error, exc, "executor cleanup", cleanup=True)
             finally:
                 report["executor_close_s"] = (time.monotonic_ns() - close_at) / 1e9
         if owned_ray is not None:
@@ -326,7 +316,7 @@ def main(argv=None):
                 report["ray_shutdown_returned"] = True
             except BaseException as exc:
                 report["ray_cleanup_error"] = type(exc).__name__
-                error = _retain_failure(report, error, exc, "Ray shutdown", cleanup=True)
+                error = retain_failure(report, error, exc, "Ray shutdown", cleanup=True)
             finally:
                 report["owned_ray_shutdown_s"] = (time.monotonic_ns() - shutdown_at) / 1e9
         report["cleanup_s"] = (time.monotonic_ns() - cleanup_at) / 1e9
@@ -339,53 +329,9 @@ def main(argv=None):
                 if executor is not None and hasattr(executor, "worker_readiness"):
                     report["worker_readiness"] = executor.worker_readiness
             except BaseException as exc:
-                error = _retain_failure(report, error, exc, "resource worker evidence", cleanup=True)
+                error = retain_failure(report, error, exc, "resource worker evidence", cleanup=True)
         resource_stack.close()
-        sink = time.monotonic_ns()
-        if rm is not None:
-            report["rm_calls"] = list(rm.observation.calls)
-        if execution_records is not None:
-            report["execution_observations"] = list(execution_records)
-        if rm is not None and rm.observation.vectors:
-            import numpy as np
-            try:
-                vectors = dict(rm.observation.vectors)
-                np.savez_compressed(args.output_dir / "rm-vectors.npz", **vectors)
-                if isinstance(rm.observation, RMObservation):
-                    rm.observation.release_exported(vectors=vectors)
-            except BaseException as exc:
-                report.setdefault("evidence_write_errors", []).append("vectors: " + type(exc).__name__)
-                error = _retain_failure(report, error, exc, "vector evidence write")
-        report_path = args.output_dir / "result.json"
-        report_written = False
-        try:
-            report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
-            report_written = True
-        except BaseException as exc:
-            report.setdefault("evidence_write_errors", []).append("result: " + type(exc).__name__)
-            error = _retain_failure(report, error, exc, "result evidence write")
-        try:
-            (args.output_dir / "evidence-write.json").write_text(json.dumps({
-                "elapsed_s": (time.monotonic_ns() - sink) / 1e9,
-                "errors": report.get("evidence_write_errors", []),
-            }) + "\n")
-        except BaseException as exc:
-            report.setdefault("evidence_write_errors", []).append("receipt: " + type(exc).__name__)
-            error = _retain_failure(report, error, exc, "receipt evidence write")
-            report_written = False
-            try:
-                report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
-                report_written = True
-            except BaseException as update_error:
-                error.add_note("updated result evidence write also raised " + type(update_error).__name__)
-        if report_written:
-            if rm is not None and isinstance(rm.observation, RMObservation):
-                rm.observation.release_exported(calls=report["rm_calls"])
-            if isinstance(execution_records, list):
-                exported = report["execution_observations"]
-                if len(exported) <= len(execution_records) and all(
-                        left is right for left, right in zip(exported, execution_records)):
-                    del execution_records[:len(exported)]
+        error = write_retrieval_evidence(args.output_dir, report, rm, execution_records, error)
         if reuse_enabled:
             if previous_reuse_directory is None:
                 os.environ.pop("SEMLOOM_IMAGE_REUSE_DIR", None)

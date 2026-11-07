@@ -1,0 +1,117 @@
+{
+  "schema": "semloom.native_pipeline_source_check.v2",
+  "version": "0.25.1",
+  "upstream": "https://github.com/vllm-project/vllm/tree/v0.25.1",
+  "source_kind": "pinned public upstream function bodies; CPU renderer and queue stubs",
+  "source_files": {
+    "vllm/entrypoints/offline_utils.py": {
+      "sha256": "688fbad0af9c2180b83aa77dcd0dbda85ca076a6c72bffa61840896d950cf458",
+      "methods": {
+        "_preprocess_chat": {
+          "line": 158,
+          "end_line": 214,
+          "ast_sha256": "9244e8ad698f75255aa97a44f7441678adb2a17523e341134c9c0bd26fed662a"
+        },
+        "_preprocess_chat_one": {
+          "line": 216,
+          "end_line": 240,
+          "ast_sha256": "49ef985f7c41cfe7b14a189c544c46eb52266ecdd88bebfb034c2855cc13bd32"
+        },
+        "_params_to_seq": {
+          "line": 242,
+          "end_line": 256,
+          "ast_sha256": "b2ebaed4683b5532e9a67cc4e3885398703f5d4f78dcb161804ced3c363b661a"
+        },
+        "_lora_request_to_seq": {
+          "line": 258,
+          "end_line": 272,
+          "ast_sha256": "e86259f80e01465b2874421977a98533eca401ce9d3040604d2fa9efae7f62f3"
+        },
+        "_priority_to_seq": {
+          "line": 274,
+          "end_line": 288,
+          "ast_sha256": "df4dcf1fa7a376577c3e392111b1516655cd726e880873dbd83dda11b7aa15b1"
+        },
+        "_run_chat": {
+          "line": 351,
+          "end_line": 385,
+          "ast_sha256": "bf36ae24f6b6190ec2ef670f949d3a9c074ab4ed7d423d3d125c6ae106784088"
+        },
+        "_add_chat_requests": {
+          "line": 387,
+          "end_line": 445,
+          "ast_sha256": "e9512b397f0dd9c57cbad0958b7877973ce9ddfaa965583f5db345a9ce71126e"
+        },
+        "_render_and_add_requests": {
+          "line": 523,
+          "end_line": 550,
+          "ast_sha256": "9f9cefcde31e0948d91d90aef43df5df2564f93461d526b9b65e6ff4fbfda2bb"
+        },
+        "_add_request": {
+          "line": 552,
+          "end_line": 571,
+          "ast_sha256": "f589b45c0dcadf196045f4eaf78654da42801c9e9c6df1217d740ddc2f69dace"
+        }
+      }
+    },
+    "vllm/entrypoints/llm.py": {
+      "sha256": "3a7b7cf9c0e5f0920d1c7f06475809280848d247c5044933a75dbde2fd4cff55",
+      "methods": {
+        "chat": {
+          "line": 616,
+          "end_line": 708,
+          "ast_sha256": "7b197f8566b9c195d95d64ffe9ddaa78ab317f5688d086dfdc5331c7be2f5844"
+        },
+        "wait_for_completion": {
+          "line": 547,
+          "end_line": 569,
+          "ast_sha256": "c28146b5d267e227d49712a42c4ab4490b80a67a14eb4045ea904948e4f4929f"
+        }
+      }
+    }
+  },
+  "requested": {
+    "model_path": "/tmp/CPU-source-method-model",
+    "model_python": "/tmp/model-python",
+    "driver_python": "/tmp/driver-python",
+    "tokenizer_path": null,
+    "dtype": "bfloat16",
+    "max_model_len": 1024,
+    "max_num_seqs": 3,
+    "max_num_batched_tokens": 2048,
+    "gpu_memory_utilization": 0.8,
+    "seed": 0,
+    "chat_template": null,
+    "max_model_calls": null,
+    "enable_mfu_metrics": false
+  },
+  "generation": {
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": null,
+    "stop": [
+      "\n"
+    ],
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "logprobs": null,
+    "response_format": null
+  },
+  "requests": 2,
+  "render_options_equal": true,
+  "prepared_engine_inputs_equal": true,
+  "sampling_and_queue_parameters_equal": true,
+  "normalized_results_equal": true,
+  "actual_native_runtime_verified": false,
+  "normalized_results_excluded": [
+    "engine_uid",
+    "model_start_monotonic",
+    "model_end_monotonic",
+    "model_elapsed_s"
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}

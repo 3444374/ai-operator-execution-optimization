@@ -1,715 +1,117 @@
-# AI 任务研究工程
+# SemLoom 数据执行工程
 
-本页说明目录、接口与执行流程；接纳及验证范围见[实现状态](INFRA_STATUS.md)，
-运行命令只在[脚本入口](scripts/README.md)维护，方法与后端细节从所属模块读取。
+研究对象是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
+本目录提供外部执行核心；当前 records 使用 SemBench 等外部工作负载验证数据执行、供给、背压和生命周期，
+LOTUS 提供可选兼容方法与对照。这些结果不表示已接入新的 PostgreSQL 语义算子。
+普通 Movie records 通过本地 IPC 调用模型引擎；不启动旧 Movie HTTP 服务。
+整查询默认不设总期限，显式期限保留，启动和关闭分别等待；旧SemLoom fixed HTTP接线已退出当前树，未来多查询不以HTTP为接入方式。
+当前可选能力、默认及验证限制见[配置总览](../docs/执行配置与优化开关.md)和[代码状态](INFRA_STATUS.md)。
 
-| 对象 | 接口说明 |
-|---|---|
-| 执行优化的配置与开关 | [统一总览](../docs/执行配置与优化开关.md)：默认、开启时机、组合限制、实测效果及开发中边界 |
-| LOTUS 完整请求、records、链与原评价 | [方法模块](src/semantic_methods/lotus/README.md) |
-| Core 与完整响应 | [provider adapters](src/execution_provider/adapters/README.md) |
-| 模型引擎 | [同步引擎](src/serving/backends/vllm_engine.py)、[异步引擎](src/serving/backends/vllm_async_engine.py) |
-| PG 载体与 SQL 支持形状 | [extension](postgres/semloom_pg/README.md) |
-| 观测定义与离线结果 | [observability](src/observability/README.md)、[离线工具](scripts/analysis/OFFLINE_RESULTS.md) |
+## 真实入口
 
-## 文本Map诊断选项
-
-worker复用、Daft／Arrow物化、准备分段、尾块追加和实验记账的默认、约束与原测试效果统一见[配置总览的PG／HTTP部分](../docs/执行配置与优化开关.md#pg-http)，本页不维护第二份开关表。
-
-新 RPC 组合和共享准备的采用条件归[数据组织方案](../experiments/plans/数据组织.md#execution-engineering-hypotheses)。
-
-## 当前 PostgreSQL 文本 Map 的执行流程
-
-下面描述已接入的增量 Map 路径；外部 runner 的历史流程按末尾固定来源读取。
-
-```mermaid
-flowchart LR
-    SQL[SQL语义调用] --> Plan[PG计划中的SemMap]
-    Plan --> Child[普通子计划读取行]
-    Child --> Task[PG生成带序号的语义任务]
-    Task --> Gateway[外部gateway与共享执行核心]
-    Gateway --> Batch[Arrow批次：Daft或直接分批]
-    Batch --> Worker[Ray HTTP worker]
-    Worker --> Model[外部模型服务]
-    Model --> Result[结果核对与容量归还]
-    Result --> PG[PG解析结果并恢复行序]
-    PG --> Client[SQL结果]
-```
-
-1. PostgreSQL将支持的`ai_semantic.map(text, instruction, options)`调用放入可见的`SemMap`执行节点。
-   版本化语义计划保存instruction、prompt/parser、模型、生成参数及NULL/错误/顺序政策。
-   普通子计划负责数据读取、常规谓词、snapshot和权限；外部执行器消费PG生成的任务。
-2. PG执行节点按有限窗口保留输入与序号，通过本地Unix socket发送任务。无法安全预取的子计划会
-   将有效窗口降为1。提交被拒时保留对应行，接纳前不前移已接受序号。
-3. gateway核对协议、语义与任务身份，注册查询Job和session；共享执行核心限制请求数、输入与结果容量。
-   当前Ray选择默认经Daft分批，可显式选择直接Arrow批次；Ray对象容量另行记账。
-4. Ray worker取出每行完整payload，通过HTTP调用外部模型服务。一个传输批次可包含多行；每行仍为
-   一个独立请求，Ray worker不负责GPU推理，也不修改数据库拥有的生成语义。
-5. 返回结果核对任务身份、长度和解析规则，再经provider回到PG；PG关联原始行并按输入序号交付。
-   查询结束或取消停止新增任务；已发送调用确认后归还资源，未知远端结果继续保留计费。
-
-| 步骤 | 当前源码入口 |
-|---|---|
-| SQL识别与计划构建 | [sem_map_call.c](postgres/semloom_pg/src/planner/sem_map_call.c)、[sem_map_path.c](postgres/semloom_pg/src/planner/sem_map_path.c) |
-| PG输入绑定、窗口、结果关联 | [sem_pump.c](postgres/semloom_pg/src/executor/sem_pump.c)、[uds_provider.c](postgres/semloom_pg/src/provider/uds_provider.c) |
-| gateway注册及Job/session接入 | [multiplexed_gateway.py](src/execution_provider/multiplexed_gateway.py)、[incremental_session.py](src/execution_provider/adapters/incremental_session.py) |
-| 公共容量、接纳、提交与交付 | [session.py](src/scheduling/core/session.py)、[async_backend.py](src/scheduling/runtime/async_backend.py) |
-| 数据批次、Ray对象和HTTP worker | [payloads.py](src/data/materializers/payloads.py)、[ray_map_transport.py](src/execution_provider/adapters/ray_map_transport.py)、[async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) |
-
-本轮使用固定请求计数与单模型endpoint；工作量描述和策略装配入口是
-[incremental_execution.py](src/execution_provider/adapters/incremental_execution.py)。
-Core没有自动改写prompt或拆分单行推理，也没有在本轮执行自适应模型路由或GPU/kernel优化。
-
-HTTP执行路径仍可选；默认Ray worker由查询创建，可选服务由调用方创建并供查询独占借用。
-实验中的共享gateway已验证顺序查询复用；query-job模式的并发查询另见[查询共享检查](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)，两者不自动替换默认部署方式。
-当前SQL支持形态见[extension说明](postgres/semloom_pg/README.md#supported-query-shapes)：
-单个Filter→单个生成型Map的受限组合已有[绑定验证](../experiments/results/postgresql/filter_map_binding_20260907/README.md)，
-可选`query-job`将受支持的算子流归属同一个查询Job；本次耗时诊断只运行单Map。
-多Map、任意组合、join及更宽SQL接入尚未实现，不以当前文本Map验证代替这些能力。
-
-<a id="query-accounting-scopes"></a>
-### 查询归属、请求发送与计数范围
-
-多个PG backend进程可以分别登记查询，共享同一个gateway/Engine；同一查询的多个受支持算子流归属一份Job预算。
-查询、算子流和任务分别由Job（查询调度组）、session/flow（算子任务流）与任务key（流内关联键）关联，worker进程数量不增加查询份额。
-当前[PG登记协议](../experiments/plans/数据库接入.md#query-job-版本化登记层)要求各流与控制连接来自同一可信`uid/pid`（用户号/进程号）；
-同一查询的PG并行执行进程共用登记、PG算子流的网络登记与查询身份跨机传递仍pending。
-
-当前gateway由一个控制线程推进一个Engine，[异步backend](src/scheduling/runtime/async_backend.py)维护独立输入输出（I/O）循环，
-[Ray HTTP actor](src/execution_provider/adapters/ray_map_transport.py)在worker进程取payload并发送请求。
-统一维护资源责任与分布式发送可以同时成立。当前SemLoom文本Map的Ray实验路径在远程调用（RPC）前记账，原生Ray/Daft从各自HTTP调用进程记账；
-计数设施需要支持这些进程共享同一额度。这一差异不表示并行能力不同，也不决定生产服务进程数或payload传输拓扑。
-
-| 类型 | 当前实现与作用范围 | 完成或取消后的处理 |
+| 任务 | 入口 | 职责 |
 |---|---|---|
-| 累计实验请求预算 | [SharedClaimedUnit](src/experiments/shared_request_budget.py)用SQLite事务统一领取编号；[共享映射候选](src/experiments/mapped_request_budget.py)先持久预付有限单元，再供同机进程共享领取 | 同摘要的独立调用分别计费；已领取但未发送仍消费预算，不因完成、取消或失败退还 |
-| 在途请求与工作量容量 | [SessionCapacity](src/scheduling/core/session_capacity.py)依据任务记录检查同一Engine内的总量、Job和session上限；工作量单位由执行组装声明 | 权威终态结清后归还计算名额；未知远端结果继续保留占用，记录的活动数不等于实际GPU活动 |
-| 统计与观测 | [HTTP观察器](src/experiments/native_http_observer.py)记录获准编号、调用开始、响应和错误，Core及PG另记录提交、终态与结果交付 | 事件用于核对调用和结果，不发放额外执行容量；客户端调用开始不能证明服务端已接收或模型只执行一次 |
+| Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](scripts/experiments/run_lotus_records_movie.py) | 原输入、任务与评价，选择执行适配；Q4 为完整输入上的正面比例 |
+| Movie Q4/Q8/Q9-map/Q10 与 MMQA 十二道文本题 | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询选择／汇总与原评价，单个 F/M/E 交既有原生图；[逐题范围](src/baselines/README.md#additional-sembench-text) |
+| 完整查询矩阵／连续查询 | [run_movie_records_matrix.py](scripts/experiments/run_movie_records_matrix.py) | 显式 backend、生命周期、额度与时钟 |
+| 原生 LOTUS 对照 | [lotus_native_local.py](src/baselines/text/frameworks/lotus_native_local.py) | 原算子／LM／LiteLLM batch_completion；仅 provider 使用现有模型 IPC |
+| 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |
+| 原生 LOTUS 图像查询 | [run_sembench_lotus_image_query.py](scripts/experiments/run_sembench_lotus_image_query.py) | 已有独立 VLM 服务上的原查询、评价、逐 POST 预算和查询监督 |
+| SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals 四题与 MMQA Q2a/Q2b/Q7 的输入／预算检查；原生 LOTUS 服务运行入口已接；当前模型实机资格待验证 |
+| LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
+| DuckDB＋作者 IMLane Q3 准备 | [构建与接线](integrations/imlane_duckdb/README.md) | 隔离构建与 PROCESS／THREAD 软件CPU链路已验证；模型和额外输入／错误场景仍待验证 |
+| 观测与有限测试 | [record_observation](scripts/profiling/record_observation/README.md) | 使用既有监督与回执，不增加执行容量 |
 
-[Ray actor配置](src/execution_provider/adapters/ray_map_transport.py)明确禁用自动重启及任务重试；远端错误按未确认结果保留记录。
-这不构成故障条件下模型执行恰好一次的保证。获准调用、客户端发送、服务端接收、确认完成与结果交付须按实际证据分别核对，
-不能要求取消或未知结果时所有计数相等。记账与记录会改变提交节奏和准备窗口，不能直接从完整时间扣除其累计耗时。
+命令与正常配置入口见[脚本说明](scripts/README.md)。输入、私有 packet、模型环境、GPU 租约和实际版本应由每次运行绑定，
+不能把示例值、历史成绩或 CPU 替身当成当前实机资格。原生 LOTUS 非 HTTP 适配已有 CPU 检查，
+完整查询、真实模型、质量与性能按各自源码和环境核对，不能从单项 CPU 检查转授。
 
-[服务级协调分析](../docs/research/优化方法依据.md#workflow-621-多-job-共享服务必须使用服务级协调)已说明局部容量之和的问题；
-[通用Ray共享协调器](src/scheduling/runtime/shared_credit_ray.py)保留在既有外部执行路径，但[当前PG增量组装](src/execution_provider/adapters/incremental_execution.py)未接入它。
-多个gateway使用同一模型服务时，单实例上限不代表整个部署的总上限；该接入及故障验证仍pending。
-原生Ray/Daft从各自调用进程接入共同实验预算和观测，执行与调度仍由原生系统拥有，不经过SemLoom任务选择和容量策略。
+## 执行与语义分层
 
-现有PG查询共享的受控与有限真实模型检查由[查询共享报告](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)维护，
-其中执行、关联和回收检查与复述质量负结果分别解释。共享映射候选的Linux/真实Ray SDK及本机HTTP检查由
-[计数接入报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)维护，其PG/真实模型检查尚未完成，不能混用两项资格。
+| 层 | 维护位置 | 拥有的责任 |
+|---|---|---|
+| LOTUS 方法 | [semantic_methods/lotus](src/semantic_methods/lotus/README.md) | formatter、parser、方法状态、关系屏障与逐行结果协议 |
+| SemLoom 执行适配 | [execution_provider/adapters](src/execution_provider/adapters/README.md) | Core／有限链／rolling／admission 与结果交付接线 |
+| 调度与资源责任 | [scheduling](src/scheduling)、[反馈模块职责](src/scheduling/submission_control/README.md) | 就绪选择、在途额度、背压、预算和 unknown 责任 |
+| 基础多查询与独立研究 | [主线 Session](src/scheduling/core/session_jobs.py)、[research/multitask](src/research/multitask/README.md) | 主线保留固定份额、普通轮转和查询资源责任；共享额度研究、服务目标及候选编排独立维护 |
+| 模型与传输 | [serving/backends](src/serving/backends) | 引擎构造、本地 IPC、逐请求终态、无调度的有限链计算及进程清理 |
+| 模态公共能力 | [modalities](src/modalities) | 文本／图像协议、成本、共享 CLIP workers；不拥有 baseline 图 |
+| 通用观测和工具 | [observability](src/observability)、[infrastructure](src/infrastructure) | 时钟、来源、审计、脱敏、文件／预算／运行环境 |
+| 独立对照 | [baselines](src/baselines/README.md#text-execution-boundaries) | 原生系统图、作者桥接及任务对照；不注入 Core 策略 |
+| 实验编排 | [experiments](src/experiments) | SemBench 工作负载、生命周期与证据组合；不是生产依赖 |
 
-## 目录结构
+生产的 scheduling／serving／execution_provider／semantic_methods／modalities／observability／infrastructure
+不从 `baselines` 取得实现。共用代码直接放在所属共享层，SemLoom 和对照分别调用；
+框架专用的 Ray Data／Daft 图留在基线模块。CLIP 共享批处理 workers 已从 Ray 基线图迁至
+[clip_batch_workers.py](src/modalities/image/clip_batch_workers.py)，生产不再导入该 baseline 图。
 
-```
-code/
-├── src/
-│   ├── data/                     ← PostgreSQL/Daft source、Arrow/Daft materializer、sink、workload
-│   ├── planning/                 ← 纯 cost estimator 与 work-unit packing；不依赖执行引擎
-│   ├── semantic_methods/         ← 原方法、SDK、records与关系处理；共享结果已归位
-│   ├── scheduling/
-│   │   ├── core/                 ← typed state、capacity contract、execution ledger、scheduler loop
-│   │   ├── organization/         ← pending batching、token/work budget、service quantum
-│   │   ├── submission_control/   ← request/work准入与容量策略；不是外部原生baseline执行器
-│   │   ├── endpoint_routing/     ← pinned/queue/work/prefix routing
-│   │   └── runtime/              ← Ray adapter、服务观测缓存、SAOR 容量/多阶段薄适配
-│   ├── serving/                  ← backend、同步/阶段生成IPC、模型进程清理与probe
-│   ├── modalities/
-│   │   ├── text/                 ← prompt/output-token work 语义
-│   │   └── image/                ← encoded bytes/tensor/CLIP/source/audit 合同
-│   ├── observability/            ← metrics 与 profiler 配置/replay/trace/Ray 接线
-│   ├── baselines/
-│   │   ├── common/               ← manifest/result/provenance/validity gate
-│   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
-│   │   └── image/                ← provenance 与 Daft/Ray Data native graph
-│   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   ├── execution_provider/       ← gateway/wire、前端→Core适配与无策略共享method_workers
-│   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
-├── scripts/
-│   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
-│   └── profiling|experiments|analysis|environment/ ← 画像、编排、分析、跨机器检查
-├── tests/                        ← 按生产域镜像；测试数量随代码变化，以 unittest discovery 为准
-├── configs/                      ← vendor baseline pin 与可复现实验配置
-└── requirements.txt
-```
+## 独立对照和可比范围
 
-目录职责与采用决定见[架构§8.1.2](../experiments/plans/系统架构.md#code-directory-boundaries)，各接点的接纳状态见[baseline交接边界表](src/baselines/README.md#text-execution-boundaries)。上图列现有根目录；records／链模型worker、Kalypso接线及`experiments/reproduction/native_baselines/`已随PR52进入main，[原45d184df实机来源](https://github.com/3444374/ai-operator-execution-optimization/tree/45d184dfaf0ef3a85ccccc805be7fc38e646b527)保持独立，源码接纳不扩大其验证范围。
+原生 LOTUS、Daft、Ray Data、IMLane 是不同执行路径。Daft 用原生 class／UDF，Ray Data 用 Dataset／actor 池，
+IMLane 保留作者桥接；它们可共享 LOTUS 方法、模型内核、IPC 与清理组件，不能因此说共用了 Core 调度。
+原生 LOTUS 使用原 LM 的 `max_batch_size`，配置必须显式声明；没有用 Core 请求窗口代替它。
 
-`semantic_methods/lotus/`拥有原方法与SDK解释，`execution_provider/adapters/lotus_*core*.py`属于SemLoom适配，`baselines/text/frameworks/`保留原生系统执行owner。普通records在worker准备／执行，查询调用方收齐并重排完整回执后调用原LOTUS parser。Kalypso是独立作者系统；五份具名历史树含两种Core版本，是还原材料，不是native backend注册目录。
+首次查询、模型常驻复用、仅 Ray runtime 复用及 Daft 单线程 session 要分别命名。
+查询结果可用时间以实际 `query_start_ns → result_ready` 为准，评价、API 返回及最终 owner 关闭另记；
+不通过减去估算启动成本构造查询时间，也不把旧 API 包络当作新查询时钟。
+输入、输出质量、请求／token 工作量、缓存和实测版本仍是比较条件。
 
-PR56已将纯结果模块归位到`semantic_methods/lotus/record_results.py`；同步模型进程与阶段清理分别归`serving/backends/vllm_sync_process.py`和`stage_process_cleanup.py`，旧import与同步进程CLI保留。逐阶段生成进程归`serving/backends/staged_generation_process.py`，Core／Ray／Daft共用的链worker归`execution_provider/method_workers/lotus_chain_batch.py`；旧路径只作同对象导入及历史命令兼容，不保存第二份执行实现。三个旧请求桥保留入口；实验名、历史容器与还原CLI无需为改名再造副本。CSV／本地records目标无需PG，对应能力预检修复已随PR52接纳；旧SQL路径保留为显式可选接入，实际实现和验证范围仍从源码及报告读取。
+原生 Ray／Daft／IMLane 的 [sync_reference_engine.py](src/baselines/text/frameworks/sync_reference_engine.py)
+和 [reference_chain_batch.py](src/baselines/text/frameworks/reference_chain_batch.py)保留原生 chat 调用。
+三项 vLLM 容量未指定时交引擎解析，显式值保持；[参数归属](src/baselines/README.md#共享层和参数)
+区分模型容量、LOTUS 客户端批大小和原生图批大小。作者 Kalypso 调度、模型提示和输出上限保持。
 
-通用[脱敏](src/infrastructure/redact.py)和[私有产物 I/O](src/infrastructure/private_artifacts.py)归`infrastructure/`；旧`baselines/common`路径保留兼容转发。两种工作负载格式的公开摘要仍在原模块，不进入通用文件工具。
+## 退役、暂停和研究保留
 
-跨机器运行不要直接对着 `requirements.txt` 反复试装。先按
-`deploy/runtime/README.md` 选择 machine profile 与能力组，保存只读 preflight 报告；
-可选能力分别维护在 `requirements/`，例如 learned estimator 与通用下载工具不会被
-强制装入每个 driver 或 vLLM 环境。
+旧 Movie HTTP owner、旧固定五后端矩阵、PG／HTTP 实验 CLI、相连旧对照脚本／配置和专用测试已退出维护树。
+PG 扩展 C／SQL、部署源和实验接线按准确 Git 树归档，**暂停而非放弃 PG**；恢复须在隔离树中进行，
+不把历史源重新加入当前生产搜索路径。逐文件摘要与恢复方法见
+[归档索引](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。
 
-图像 baseline 的来源合同由 `src/baselines/image/provenance.py` 统一维护。正式 native
-baseline 当前为 Daft 内置 `embed_image` 和由 Ray Data 自己调度的官方
-`read_sql → map_batches(CPU) → map_batches(GPU)` graph；项目自写的 Daft fused/staged
-UDF 只保留为机制诊断 reference。所有 runner CSV/manifest 必须记录 scheduler owner、
-upstream source、是否包含项目调度代码和 formal eligibility。
+无现用调用的旧PG画像接线、HTTP／共享额度画像配置、CSV总字段和专用请求轨迹模型也已退役，
+专测、旧导出及空包随实现移除；[准确来源与恢复](../experiments/reproduction/native_baselines/README.md#retired-profiler-application)
+保留历史格式，实际Core事件、时钟及Ray运行适配继续由所属模块维护。
 
-Daft 官方 803,580-row ResNet18 vendor-code baseline 固定在
-`configs/image_vendor_baselines.json`。该轨道直接运行固定 commit 的官方 Daft/Ray Data
-入口；允许的适配只有凭证/路径、物理 GPU 数、外部指标采集和结果审计，禁止加入项目
-actor pool、credit、active window、routing 或 backpressure。
+SAOR 与多任务共享额度一起由 [research/multitask](src/research/multitask/README.md) 维护，
+离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
+当前源码不再承诺这些旧命令可运行。独立 PG provider／通用传输内核和有研究价值的模态／调度组件若仍有消费者则保留，
+不因停止旧实验而删除其公共协议，也不宣称它们已接入当前 SemBench。
 
-目录化后的完整测试发现必须指定 top-level，避免 `tests/experiments` 与
-`src/experiments` 被 Python 当成同名顶级包：
+所有历史成绩、负结果、unknown、成本和五份具名代码投影保持。
+[历史恢复入口](../experiments/reproduction/native_baselines/README.md)只恢复指定源码，不执行模型。
+当前新增 CPU 检查不转授历史 GPU 资格，不宣称清理带来查询加速。
 
-```bash
-python -m unittest discover -s code/tests -t code -p 'test_*.py'
-```
+## 核心文件职责
 
-## PostgreSQL data source backends
+下列文件承担不同的可独立修改职责，直接使用现有对象，不增加转发层或重复状态。
+完整改动、原失败、准确受测源码与恢复方式见[重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 
-`code/src/data/sources/postgres_text.py` defines the data entry boundary used by
-`code/scripts/profiling/postgres_ai_operator_profile.py`:
-
-- `arrow_postgres`: baseline psycopg read plus Arrow table construction.
-- `daft_postgres`: Daft `read_sql` PostgreSQL entry; it requires `sqlglot` and
-  `connectorx`.
-
-Data entry can use either the baseline psycopg path or Daft:
-
-```powershell
-.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
-  --dry-run --data-source daft_postgres --organizer daft `
-  --output tmp\postgres_profile_dry_run.csv
-```
-
-Current writeback remains `none`, `json_text`, or `pgvector`. Lance is a future
-optional sink backend and is not part of this implementation.
-
-## Runtime code boundaries
-
-The main profiling script should stay as orchestration code. Reusable behavior
-now lives under `code/src/`:
-
-- `data/sources/postgres_text.py`: PostgreSQL/Daft data entry.
-- `data/materializers/text.py`: Arrow/Daft batch organization.
-- `modalities/text/costs.py`: strict, shared output-cost modes/provenance and the
-  completion actual-token-work extractor injected into the generic scheduler.
-- `planning/work.py`: modality-neutral staged `WorkDescriptor` and atomic
-  `RuntimeStateSnapshot`; preserves scalar credit compatibility while exposing
-  prepare/model/result demand, locality, deadline/SLO, uncertainty and
-  calibration identity.
-- `planning/blocks.py` + `scheduling/runtime/stage_broker.py`: engine-neutral physical
-  block identity and a real encoded/prepare/ready/model lifecycle. Ready bytes/work are
-  reserved before CPU work starts, so concurrent completions cannot exceed declared caps.
-- `planning/packing/scalar.py`: deterministic, modality-neutral classic BFD and a
-  row-cap-first placement candidate sharing the same validation and ordering.
-- `serving/backends/`: 公共 backend 合同、embedding backend 与
-  completion/async/Ollama backend；包入口保持原公开 import 不变。
-- `modalities/image/shared_media.py`: finite image URI retention by source/profile and declared consumers;
-  LOTUS observation stays in `baselines/image/lotus_media_observation.py`, without a separate scheduler.
-- `modalities/image/`: engine-independent image batch/result semantics, a lazy Daft
-  PostgreSQL image source, CPU CLIP preprocessing, and a tensor-only GPU actor.
-  The actor owns no hidden batching; organizer/scheduler remains the batching
-  owner. Native framework baselines are deliberately separate under
-  `baselines/image/frameworks/`.
-  `modalities/image/metrics.py` only derives scale-aware unit-resource and
-  streaming-onset fields from observed totals; it does not infer hidden engine
-  queues or relabel text TTFT/ITL as image metrics.
-  `staged.py` validates representation/signatures; `staged_execution.py` adds the optional
-  static HSE path. CPU actors return descriptor and prepared tensor as separate Ray objects,
-  so the driver observes only metadata while the tensor stays in the object store until a
-  real ready lease is issued. Enable it explicitly with
-  `--arm project_ray --project-execution-mode hse_static`; the default direct-dependency
-  path remains the matched static control.
-- `infrastructure/gpu_allocation.py` and `serving/vllm_resources.py`: explicit deployment GPU scope, UUID mask intersection and optional native vLLM DP configuration; [launcher and qualification](../experiments/results/diagnostics/main_service_auto_20261015/README.md) keep requested topology separate from live single-card proof.
-- `infrastructure/runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
-  OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
-  subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
-  worker before any model request is sent.
-- `infrastructure/owned_processes.py`: birth-matched process observation, signalling and bounded
-  exit waits. The records supervisor owns CLI orchestration and retains its existing helper imports;
-  the shared serving process and cleanup modules import the neutral helpers directly.
-- `infrastructure/request_budget.py`: process-local spending of prepaid request allowances;
-  persistent ledgers and comparison setup remain under `experiments/`. Shared timing, buffered events,
-  model-reuse and HTTPX observations belong to `observability/`, with legacy experiment imports retained.
-- `serving/backends/vllm_sync_process.py` and `stage_process_cleanup.py`: synchronous private model
-  IPC and registered stage-process cleanup. Existing baseline paths reexport the same objects;
-  the old synchronous child CLI remains available alongside the new serving entry point.
-- `infrastructure/config_env.py` and `infrastructure/environment.py`: strict
-  `${ENV_VAR}` config expansion plus read-only machine/Python/model/dataset
-  preflight. Missing values fail closed; installs/downloads remain explicit CLI
-  actions.
-- Image workers apply the same rule inside long-lived Ray/Daft processes:
-  `experiments/run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
-  records them in schema v8, and the SemLoom Ray pool verifies the observed
-  values before admitting work. Ray `num_cpus` remains an admission token, not
-  an OS thread quota; actor count and per-actor thread count are separate
-  experiment variables.
-  The image runner passes the shared `ray_runtime_env()` contract at every
-  `ray.init`, so workers receive repository imports and numeric thread limits
-  without relying on an interactive shell's `PYTHONPATH`.
-  Schema v8 also separates Ray cluster slots from external Daft source threads
-  and includes both in the host physical-resource budget.
-  `--source-cpu-threads` is independent from preprocess `--cpu-workers`, so
-  capacity sweeps change one stage at a time.
-  SemLoom execution additionally times source iterator waits, driver batch
-  materialization, and Ray submission so the residual framework gap is not
-  mislabeled as GPU or PCIe time.
-- `baselines/`: vLLM Bench service ceiling、项目自写 bounded controls、Daft/Ray Data
-  framework-native adapters、OceanBase product-native adapter、immutable manifest 和
-  fail-closed 双 endpoint gate。`text/frameworks/` 只封装 vendor API graph，不注入 SemLoom
-  credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
-- `data/sinks/postgres.py`: PostgreSQL embedding/completion result normalization and
-  batched SQL execution are separate from transaction ownership. SemLoom runners build a
-  `PostgresWritePlan`, execute it, and commit explicitly; historical `write_*` functions
-  remain compatibility wrappers with their original implicit-commit behavior.
-- `observability/metrics/`: `timing.py`、`csv.py`、`statistics.py`、`resources.py`、
-  `vllm.py`、`retrieval.py`、`squad.py` 分别负责计时、schema-safe CSV、重复统计、
-  GPU/能耗/MFU、vLLM TTFT/ITL/cache 指标、显式真值检索质量和 SQuAD v1.1
-  Exact Match/token-F1；
-  包入口保持原公开 import 不变。Formal runs preflight the main
-  output against dry-run keys before database or GPU work. Empty files receive
-  a header; non-empty files reject appended rows whose ordered keys do not
-  exactly match the existing header.
-  `model_request_tokens_per_s` isolates the model-submission window,
-  `operator_tokens_per_s` uses the operator wall, and legacy `tokens_per_s`
-  remains the complete E2E rate; comparisons must not mix these time bases.
-- `observability/profiling/traces.py`: versioned control/flush/submission/request/resource CSV
-  serializers. Control schema 2 records the actual `hol_age_s` input;
-  submission schema 3 uses scheduler lifecycle IDs and records pool,
-  endpoint, GPU, status, and error instead of synthesizing batch IDs for
-  request-granularity runs.
-- `observability/profiling/cli.py`: the profiler command-line surface only; it does not start
-  Ray, connect to PostgreSQL, or inspect the environment beyond argument
-  defaults.
-- `observability/profiling/config.py`: post-parse endpoint/metrics precedence and Ray worker
-  resource resolution. Explicit CLI values win over plural/single environment
-  defaults.
-- `observability/profiling/schema.py`: the ordered formal summary-row contract and schema-drift
-  guard, separate from runtime orchestration.
-- `observability/profiling/replay.py`: offline/replayed Arrow envelope construction,
-  token-budget row grouping, batch/request submission expansion, and request
-  lifecycle seed assembly. It does not submit Ray work or call model services.
-- `observability/profiling/ray.py`: Ray task/actor submitters, endpoint topology, typed
-  profiling wiring, credit release/fan-in, and the explicitly retained legacy
-  adaptive baselines. It does not parse CLI arguments or write trace CSVs.
-- `data/workloads/text.py`: small built-in seed workloads for smoke/dev only.
-- `scheduling/`: engine-independent typed core split by decision boundary:
-  `core/`, `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
-  `core/control.py` owns the neutral capacity-arm contract;
-  `core/scheduler.py` groups endpoint capacity, shared credit, ready-window limits, and
-  Job policy values into self-validating configuration objects while keeping the legacy
-  constructor compatible. `runtime/execution.py` is the reusable physical-execution
-  facade consumed by profiling and future operator adapters;
-  `core/execution.py` owns exactly-once pending/completion/lifecycle state and accepts a
-  modality-specific actual-work extractor. `submission_control/saor.py` contains only the
-  finite-action DPP policy and typed inputs; `ordered_release.py` is the single owner of
-  per-Job ready queues, active work and monotonic `release_seq`. Neither module contains
-  K128/K160, KV thresholds, endpoint counts or text/image branches: calibrated arms,
-  predicted service and admissible actions are caller inputs.
-  `submission_control/stage_work.py` is a bounded candidate that moves only one
-  offline-calibrated work-credit step and falls back to the workload-specific
-  static point on stale or mismatched state; it is not yet a performance claim.
-  Duplicate root compatibility modules have been removed. The formal
-  payload/execution path remains Daft -> Arrow -> Ray.
-
-`fake` is retained only as a local control backend for offline smoke tests and
-pipeline debugging. It is not a model-service result source. For vLLM-compatible
-experiments, use `--model-backend compatible_http`; the older `http_openai`
-name is accepted only as a compatibility alias. `AI_COMPLETE` is selected with
-`--operator ai_complete`. Use `/v1/completions` for the original multi-prompt
-mechanism path, or `/v1/chat/completions` with
-`--completion-protocol chat_completions` for product/official-runtime
-compatibility. `--completion-http-transport httpx_async` creates one persistent,
-bounded async connection pool per Ray actor. In Completions mode one actor call
-keeps the original multi-prompt HTTP body; in Chat mode a multi-row actor call
-dispatches one independent Chat request per row with `asyncio.gather`. For local
-Ollama smoke runs, use
-`--model-backend ollama --completion-endpoint-url http://localhost:11434`.
-
-`src/observability/profiling/` owns profiler implementation. The obsolete root
-`src/profile_*.py` compatibility modules have been removed; production and test callers now
-use the owning subpackage directly, and an AST architecture test prevents the old paths from returning.
-
-## Shared execution implementation
-
-The versioned adapters now depend on shared modules directly:
-
-| Owner | Responsibility |
+| 所属部分 | 文件与责任 |
 |---|---|
-| [execution_provider/completion.py](src/execution_provider/completion.py) | Request/result values, adapter interface and redacted errors; no session loop |
-| [execution_provider/adapters/model_config.py](src/execution_provider/adapters/model_config.py) | Fixed endpoint/model configuration and validation for both HTTP implementations |
-| [execution_provider/multiplexed_gateway.py](src/execution_provider/multiplexed_gateway.py) | Shared owner loop and bounded connection proxies; public session operations own failure and consumer closure |
-| [execution_provider/adapters/incremental_execution.py](src/execution_provider/adapters/incremental_execution.py) | Fixed-model assembly; existing policies, work descriptions and backend can be supplied independently of wire handling |
-| [execution_provider/adapters/async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) | Bounded HTTP I/O, model timeout and client cleanup |
-| [execution_provider/adapters/ray_map_transport.py](src/execution_provider/adapters/ray_map_transport.py) | Daft payload batches, query-owned workers and optional caller-owned named workers with exclusive query claims |
-| [execution_provider/wire/map_codec.py](src/execution_provider/wire/map_codec.py) | Common Map semantic validation and digest construction |
-| [scheduling/core/policy_contracts.py](src/scheduling/core/policy_contracts.py) | Admission/routing/shared-credit interfaces used by both scheduling loops |
+| 普通 Filter | [lotus_records_core.py](src/execution_provider/adapters/lotus_records_core.py) 负责配置、模型复用与资源；[records_filter_runtime.py](src/execution_provider/adapters/records_filter_runtime.py) 负责接纳、结果和查询收尾 |
+| 算子链 | [lotus_record_chain_core.py](src/execution_provider/adapters/lotus_record_chain_core.py) 负责组装和资源生命周期；[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py) 负责融合批传输；[records_query_runtime.py](src/execution_provider/adapters/records_query_runtime.py) 持有记录级方法和关系数据 |
+| 服务数据释放 | [传输](src/execution_provider/adapters/lotus_chain_actor_backend.py)、[准备组织](src/execution_provider/adapters/lotus_chain_token_batches.py)与[actor owner](src/execution_provider/adapters/lotus_records_actor_owner.py)各清理自身字段；链owner核实交接并按原顺序调用，不再直接改写这些私有字段 |
+| 容量声明 | [records_capacity.py](src/execution_provider/adapters/records_capacity.py) 定义普通记录／融合链容量、独立预算和 IPC 解析；查询 owner 只消费这些值 |
+| payload物化 | [payloads.py](src/data/materializers/payloads.py)处理sealed rows与Arrow／Daft物化；Daft配置直接调用[infrastructure.daft_runtime](src/infrastructure/daft_runtime.py)，不再经文本组织原型转借 |
+| 扫描与模型适配 | [records_scan.py](src/execution_provider/adapters/records_scan.py) 共用 Daft Native 扫描；[records_async_model.py](src/execution_provider/adapters/records_async_model.py) 接非阻塞请求与回执，owner 保留 Ray 分配和 RPC 终态责任 |
+| Session | [session.py](src/scheduling/core/session.py) 管服务回执、准备借用和任务表；[session_dispatch.py](src/scheduling/core/session_dispatch.py) 管成员选择与提交；[session_flow.py](src/scheduling/core/session_flow.py) 管交付、取消和消费者关闭 |
+| 调度 | [scheduler.py](src/scheduling/core/scheduler.py) 负责普通提交与真实完成；[envelope_source.py](src/scheduling/core/envelope_source.py) 读取阻塞输入；[topology.py](src/scheduling/core/topology.py) 选择端点和投影本地占用；共享研究通过显式交接接入 |
+| 反馈 | [submission_control](src/scheduling/submission_control/README.md) 分开配置、供给、请求试探、批反馈和计量；现用请求与批策略各有明确消费者 |
+| 引擎与 IPC | [vllm_protocol.py](src/serving/backends/vllm_protocol.py) 保存中性规范；sync／async 各自构造引擎；[父进程、worker与帧编码](src/serving/backends/README.md)各管自身生命周期，两种关闭均沿用调用方实际剩余时间 |
+| 本地服务与任务接点 | [image_gateway.py](src/execution_provider/image_gateway.py)拥有图像连接与方法生命周期；[image_connection.py](src/execution_provider/image_connection.py)处理图像帧，[gateway_runtime.py](src/execution_provider/gateway_runtime.py)保存连接消息与状态；[incremental_execution.py](src/execution_provider/adapters/incremental_execution.py)只组合现有Core任务对象，已无HTTP工厂 |
+| 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 负责HSE调度与清理，[staged_metrics.py](src/modalities/image/staged_metrics.py)累计计时／字节／峰值并装配原结果；[CLIP实验模块](src/experiments/image_clip/README.md)分别准备输入、执行观测与生成报告；[检索结果写入](src/experiments/lotus_image_reporting.py)留在实验层，增量图像backend继续使用自身任务协议 |
+| 观测 | [文件职责](src/observability/README.md#current-observation-owners) 归集时钟、事件与模型复用；[phase_sampler.py](src/observability/process_resources/phase_sampler.py) 保存分阶段RSS／CPU采样，图像CLI直接导入实际实现 |
+| 离线记录汇总 | [record_dag_observation.py](src/experiments/record_dag_observation.py)关联回执、事件与CPU片段；[record_dag_windows.py](src/experiments/record_dag_windows.py)计算时间区间及样本重叠，读取内容同时用于解析和来源摘要 |
+| Movie实验执行 | [lotus_records_movie.py](src/experiments/lotus_records_movie.py)保留参数与预检；[movie_records_query.py](src/experiments/movie_records_query.py)共享查询评价／回执合并；[movie_records_worker.py](src/experiments/movie_records_worker.py)拥有普通后端的构造、运行与关闭，Session和IMLane直接导入实际实现 |
+| 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
+| 独立研究 | [研究索引](src/research/README.md)分别登记[多任务／SAOR](src/research/multitask/README.md)和[文本组织／到达回放原型](src/research/data_organization/README.md)；生产payload及请求组批直接用公共运行组件，研究不进入普通records默认配置 |
+| 离线代价 | [operator_costs](src/experiments/operator_costs/README.md)拥有CSV／profile特征、既有估计比较与SemFilter参考校准；分析CLI负责输入、评估及输出，通用数学仍在planning/costs，运行链估算与反馈保持 |
 
-`incremental_session.py` contains the shared v6 protocol handler; obsolete standalone runtime and adapter classes have been removed.
-`v5.py` preserves its public imports; v6 binds the common codec directly. The synchronous scheduler
-also preserves its old type exports, while the incremental core imports their owner directly.
-Existing synchronous runners and recording/Filter/reference protocols still have consumers.
-Historical experiment records are retained. This changes code ownership, not supported SQL or scheduling policy.
-[Cleanup verification](../experiments/results/scheduling/shared_modules_20260908/README.md) covers
-import isolation, compatibility aliases, full scheduling/PG checks and a fresh 12-request model run.
+SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、
+JSON 中显式的 `max_inflight` 或服务 payload 声明取得有限额度；缺少来源在启动前报告。
+C 是当前请求窗口，结果槽与输入／结果字节各自计量，均不是 vLLM 内部调度参数。
+静态／低层链仍需其支持的有限声明；cgroup／内存压力采样不能代替物理 RAM 授予或完整查询内存计量。
 
-Session owners use `fail(reason)`, `set_dispatch_enabled(enabled)` and `close_consumer(clean=...)`.
-Call `close_consumer` only after the sender has stopped accessing all deliveries; ordinary `close()`
-continues to retain unreleased leases. A remote request still needs an authoritative terminal to release capacity.
-`SessionEngine(choose_flow=...)` and the fixed-model execution factory accept a Job/flow selector over
-immutable ready identities and history. The default remains Job-first round robin; the Engine validates
-selection and owns all capacity checks. Old standalone adapter imports are intentionally retired;
-embedded users should use the same `MultiSessionMapGateway` with `max_jobs=1`.
-
-
-## PostgreSQL Map through the incremental core
-
-The `incremental-map` profile now adds the v6 task acknowledgement/completion port and a bounded
-PG row window. It reuses the existing organizer, core and HTTP adapter. Plain input expressions
-can have multiple model requests in flight; other expressions retain window one. See the
-[configuration and checks](../experiments/results/postgresql/async_window_20260908/README.md)
-for exact supported shapes, 1958 PG TAP checks, lifecycle checks and 12 real model requests.
-Filter/composed v6 paths remain pending. Multiple registered Jobs and sessions share the external core.
-
-The transitional `incremental-map-window-one` bridge has been retired. Use the same
-`incremental-map` v6 profile for both one-row and larger windows; set gateway held tasks,
-backend requests and PG `provider_window_tasks` to 1 for single-row operation. See the
-[migration and checks](../experiments/results/scheduling/bridge_retirement_20260908/README.md).
-Synchronous v5 Map and its semantic reference remain supported. Historical bridge evidence
-continues to describe its original source version.
-
-## Incremental execution context
-
-`SessionEngine` and `SchedulingSession` in `scheduling/core/session.py` provide a controlled single-flow
-implementation of `offer`, `advance`, `seal`, `cancel`, `release` and `close`. They reuse existing local
-admission, routing and FIFO credit policies. Task choice is configurable over an immutable bounded
-candidate window; resource ownership is managed by the engine. Result leases remain charged until
-released, and uncertain remote work remains charged after session close.
-
-This is where later data organization and submission strategies cooperate, rather than a parallel
-submitter outside the execution layer. The current reference submits one task at a time. Multi-member
-submissions and prepare-stage buffers need explicit member/result mapping and shared budgets before
-integration. Existing staged block descriptors and brokers remain reusable inputs to that work.
-The [design](../experiments/plans/增量执行.md#session) and
-[verification](../experiments/results/scheduling/incremental_session_20260908/README.md) distinguish this tested core from pending real backend/PG integration.
-`scheduling/runtime/async_backend.py` now supplies a bounded coroutine transport. It uses one async I/O
-thread, retains uncertain outcomes and only releases a slot after poll transfers the terminal event.
-[Real-model checks](../experiments/results/scheduling/incremental_real_20260908/README.md) pass five requests through SessionEngine, including two concurrent
-HTTP operations, release backpressure and late-result cleanup across sessions. The diagnostic client
-reuses the existing request builder and bounds response reads. Production PG bridging and multi-member
-submission remain pending. The old synchronous runtime still serves existing callers with its original outputs.
-
-The [semantic method module](src/semantic_methods/README.md) adds bounded sequential continuations
-and predeclared per-task capabilities. It supports a method returning another request after a result,
-while the existing session retains scheduling and lease ownership. The opt-in `MethodDriver` now
-bounds multiple rows and retained payloads using fixed grants from a shared `MethodBudgetPool`.
-Cascade algorithms, dynamic method budget allocation, production model capability routing, and
-PG method integration remain pending. See the [V1 plan](../experiments/plans/增量执行.md#method-driver).
-
-The opt-in `WorkWindowOrganizer` now connects the existing complete-task work slicing to accepted
-session tasks. `TaskInfo` carries row/call/stage identity and `WorkDescriptor`; `BatchMember` preserves
-organization membership through backend submission and delivery. The current backend expands a group
-into independent one-member requests, each charged separately. A pending group retains only task keys
-across backpressure. Unconfigured callers keep their existing single-task behavior. See
-[the organized-window design](../experiments/plans/增量执行.md#session-organized-window).
-
-## Scheduling foundation
-
-`code/src/scheduling/` contains immutable request metadata, endpoint topology,
-data-organization policies, request/work admission, shared multi-job credit,
-endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
-adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
-adapters receive the active Ray module explicitly.
-
-`PayloadEnvelope` is generic in its engine-owned payload type; the scheduling core never
-uses `object` as a payload escape hatch. `SynchronousExecutionEngine` composes admission,
-routing, submission and grouped capacity contracts. Profiling remains an observation and
-experiment caller of that execution capability; it no longer constructs the scheduler
-directly.
-
-The first SAOR core revision selects among caller-enumerated safe actions using queue and
-weighted-fairness debt. The executable `saor_release` path now runs inside the existing named
-shared-credit coordinator: it keeps the calibrated request/work envelope fixed, recomputes
-weighted dominant-share entitlement over the active Job set, grants only fitting Job heads,
-and updates fairness debt from actual completion work. It is completion-driven and
-non-preemptive, so vLLM still owns FCFS, continuous batching, chunked prefill, and KV
-management. The runner records `actuated_saor_release`, per-Job debt, and an observed
-bulk-borrow/foreground-reclaim/bulk-reborrow phase audit. SLO-weighted release is deliberately
-rejected until per-Job SLO debt is connected; the current executable default uses
-`slo_weight=0`.
-
-The separate development policy `saor_bounded_priority` now implements the frozen
-v0.5.1 lexicographic contract without changing `saor_release`: debt-critical fitting
-heads receive one completion-corrected recovery lease; a debt-critical ready head that
-does not fit can open a head-specific reclaim barrier; an SLO priority window is evaluated
-next; all remaining opportunities use the original SAOR selector. Per-Job priority, SLO,
-window, and debt cap are explicit configuration, never inferred from Job names or arrival
-order. Scheduler timeout cancellation removes the waiter and closes any targeted hold.
-The coordinator emits a monotonic, lossless release-event ledger; 250 ms snapshots remain
-phase/resource diagnostics and are not mechanism truth. This path is locally verified and
-development-only: no new GPU rehearsal or formal performance claim exists yet.
-
-`saor_bounded_ready` is the observation-contract revision and deliberately has a
-different policy name. The old bounded-priority path remains a single-head regression
-baseline. For the new path, each Job pre-registers only concrete, already-arrived
-requests inside a finite window derived from its existing effective K and the sum of
-per-endpoint shared W; there is no extra tuned queue-size knob and no unbounded payload
-prefetch. The coordinator therefore sees a bounded ready set while vLLM still receives
-ordinary complete requests and retains FCFS/continuous-batching ownership. Submission
-trace schema 6 separates `ready`, credit `registered`, credit `granted`, `submit`, service,
-and completion time. Release-event schema 2 records actor-side registration and grant
-events with request IDs and epoch timestamps. The group runner uses submission traces to
-prove the concrete-ready lifecycle, then pairs foreground register-to-grant events inside
-the coordinator's single clock domain and fails closed on foreign fallback;
-`max_ready_requests_seen`/`max_ready_work_seen` audit the actual
-window. Local tests cover multi-candidate visibility, exactly-once ordering, finite-work
-validation, timeout cancellation, config routing, and fail-closed gate profiles. Two independent
-GPU development rehearsals now make the 0.125K guard a formal-registration candidate; the
-0.25K guard failed its bulk-SLO bound in both rounds. This is not a completed formal comparison
-or a fairness theorem.
-
-The pure ordered-release fast path publishes validated Job-head requests with a monotonic
-sequence and releases capacity on completion. Release work and predicted epoch service are separate fields, so a
-long request is not silently treated as service completed within the current control slot.
-The convenience action builder requires every service/goodput/tail/energy/switch prediction;
-release-action values are explicit marginal deltas against the zero-delta hold reference.
-GPU utilization, `waiting`, KV thresholds and phase labels remain observation/experiment
-inputs outside the policy; no single metric is hard-coded into the action selector.
-`scheduling/runtime/saor_capacity.py` is a capacity-only development adapter wired to the
-existing shared-vLLM named-credit actor. It learns only the current safe arm, evaluates
-adjacent configured arms, and fails back to a configured frozen point on stale/signature/
-invalid observations. This does not yet wire ordered release or fairness debt into the
-formal runtime. This capacity-only adapter remains `not-promoted` and separate from
-fixed-envelope `saor_release`; it must not be described as full SAOR.
-
-`scheduling/runtime/saor_pipeline.py` is an engine-neutral two-stage differential-
-backpressure core for image/heterogeneous pipelines. It changes only bounded flow limits
-for prestarted worker pools; it does not create Ray actors. The current image runner still
-submits unresolved CPU futures directly to GPU actors, so the controller remains unwired
-until an explicit pending-prepare → ready-tensor → pending-model broker exposes true stage
-queues. Its tests prove selection/fallback invariants only, not image performance.
-
-The package facade now resolves compatibility exports lazily, so importing SAOR does not
-load AIMD/PID/UCB or Ray adapters. This removes an import-time dependency, but it does not
-yet make the repository SAOR-only: the profiler, shared-vLLM runner, image multi-Job runner,
-and observability wiring still import legacy baselines directly. Those callers must migrate
-to a tested SAOR runtime profile before legacy files can be archived or removed.
-
-Endpoint state separates service health (`healthy`) from request-specific
-admission capacity (`available`). Routers use `schedulable_endpoints()` for
-selection, while `healthy_endpoints()` remains a pure health query. Temporary
-request/work-credit exhaustion raises typed backpressure so the scheduler
-collects a completion and retries; a manifest-pinned request keeps both its
-endpoint and that endpoint's pool.
-Arrival replay is produced through a one-element bounded source queue so waiting for
-the next source arrival cannot block Ray completion collection. The scheduler
-keeps submit/routing/credit/lifecycle state on its main thread: it prioritizes
-an already-ready arrival, polls `ray.wait(timeout=0)` during arrival gaps, and
-uses blocking collection only when admission or active-work capacity is full.
-This preserves offered-load saturation while releasing request-level credit
-and recording completion timestamps promptly under sparse or bursty replay.
-Only `saor_bounded_ready` adds a second, independently bounded scheduler window in
-front of shared credit; its count/work limits are inherited from the frozen K/W contract.
-
-The shared-vLLM experiment runner can pin a distinct immutable request manifest
-and source offset for every job. This is required for staggered short/long or
-otherwise heterogeneous-job evidence; reusing the same rows for all jobs only
-validates concurrency semantics and cannot support a work-aware fairness claim.
-`shared_fifo` in that runner is a project-owned global ready-enqueue FIFO under the same
-shared envelope; it is not the no-project control. The shared-vLLM runner now treats
-`direct_no_job` as an in-process arm: it merges timed immutable Job arrivals and applies only
-one endpoint-local HTTP concurrency bound before unmodified vLLM FCFS, while reusing the same
-interleaving, service counters, resource samples and idle gates. It is a formal control (not a
-vendor-native baseline), explicitly records that no work-credit envelope was applied, and
-uses its own matched-solo normalization. The standalone `run-jobs-control` CLI remains useful
-for diagnostics but is no longer the formal matrix boundary. Workload lifecycle and credit
-borrow/reclaim/reborrow are separate gates; static/direct have no applicable credit mechanism.
-For a causal single-short control, a static scenario may declare
-`static_partition_count` larger than its active `job_count`. The unused fixed
-partition stays reserved, so `job_count=1, static_partition_count=2` reproduces
-the K/work quota available to one job in a two-job static partition without
-launching a synthetic competing job. Other policies reject this field.
-The lifecycle module joins complete-row replay seeds, immutable submission
-events, backend service timestamps, and explicitly sourced token counts into
-exactly-once request trace rows.
-
-The historical PostgreSQL-source profiler configuration used:
-
-```text
-PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint
-```
-
-The synchronous fake adapter used in unit tests is not a formal execution path.
-The profiler's static `ray_task` and `ray_actor` paths now delegate to the
-typed scheduler through `RaySubmissionAdapter`. The Daft-to-Ray contract tests
-use a real `DaftOrganizer`, Arrow batches, and local single-node Ray task and
-actor execution:
-
-A model-service endpoint is not a Ray actor worker. One endpoint is an
-independently addressed HTTP service; `--actor-workers-per-endpoint` creates
-that many Ray HTTP client actors for each endpoint. The configured upper bound
-on simultaneous actor method execution is:
-
-```text
-effective actor concurrency =
-  endpoint_count * actor_workers_per_endpoint * ray_actor_max_concurrency
-```
-
-These HTTP client workers reserve CPU but explicitly reserve `0` Ray GPUs,
-because the external model-service endpoint owns the GPU. Ray task retries,
-actor restarts, and actor task retries remain disabled for formal completion
-accounting. The profiler CSV records the Ray version, resolved worker/resource
-settings, service endpoint count, actor worker count, and per-worker submission
-counts. Python executor rows leave `ray_version` empty and use the explicit
-non-applicable sentinels `ray_actor_max_concurrency=0` and
-`ray_worker_num_cpus=0.0`. Ray task rows record their effective
-CPU reservation but use `ray_actor_max_concurrency=0`, because an actor-only
-constraint is not applicable to a task. Internally the task worker options
-still use their safe task definition. Fake Ray task/actor definitions receive
-the same CPU, zero-GPU, and retry/restart options as other Ray workers; this
-does not make the fake backend an HTTP or performance path.
-Endpoint-local worker rotation and the legacy endpoint round-robin submitter
-are created once per run, so fetch chunks do not reset either position.
-Per-worker metrics remain chunk-local deltas for correct run-level merging.
-Jobs created before Ray initialization or submission failures are marked
-`failed` without masking the original exception.
-
-The bounded actor submitter owns explicit per-worker slots and supports stable
-round-robin or least-active-work assignment. A canonical Ray handle releases
-the selected worker exactly once after either success or failure. Summary rows
-record configured/effective slots, per-worker peaks/failures and slot-held
-utilization; submission trace schema 4 records planning-batch, service-quantum,
-worker identity, credit-held and Ray-to-service timing. Slot-held utilization
-includes queue, HTTP and service time and must not be interpreted as GPU
-compute utilization.
-
-`submission_granularity=service_quantum` uses the same complete-row slicer in
-offline and arrival-replay paths. It preserves planning-batch identity while
-allowing smaller HTTP/Ray completions to release active-work credit
-independently; an oversized row remains intact and is explicitly marked.
-
-```powershell
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ray_adapter.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_adaptive_admission.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_dynamic_admission.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
-.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_token_budget_controller.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit_ray.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_execution_ledger.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_saor.py
-.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ordered_release.py
-```
-
-Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray
-task/actor scheduler. Service metrics are sampled by a background provider, so
-network scrapes never run on the admission-decision path. Stale samples do not
-update controller state; every decision can be written to a control-trace CSV
-with the exact sample age. The legacy `queue_adaptive` branch remains an
-explicit baseline. UCB has a tested finite-action policy and SLO-aware reward,
-but is not exposed in the profiler until epoch-level request metrics are
-available. None of these code tests is evidence of a throughput or latency
-improvement.
-
-Static token budget remains the default. The optional `service_quantum`
-controller chooses only from an offline-calibrated action set and changes by at
-most one step per closed batch using arrival/service-rate feedback. Endpoint
-admission can additionally bound estimated prompt+output active work, so
-different batch sizes and request lengths do not consume identical credits.
-Least-work routing uses predicted outstanding work rather than request count.
-For concurrent database jobs, an optional named Ray actor owns shared
-per-endpoint request/work credits and applies deficit-round-robin fairness with
-work-conserving borrowing. These mechanisms are implemented and unit-tested but
-remain GPU-unvalidated until the staged dual-GPU matrices complete.
-
-Data organization exposes `token_budget` (sequential),
-`best_fit_token_budget` (classic BFD), and
-`row_cap_aware_token_budget` (decreasing order with row-cap-first placement).
-All three enforce the same token and row constraints, and Arrow/Daft call the
-same pure packing functions. Sequential remains the default until repeated
-GPU experiments show that another mechanism generalizes.
-
-Pool and endpoint routing support request-cost pools, least-queued selection,
-deterministic prefix affinity, health fallback, and explicit per-endpoint pool
-and GPU identifiers. The independent flush policy core supports immediate,
-fixed-timeout, queue-adaptive, and SLO-aware EWMA decisions with a hard maximum
-wait. `slo_ewma` smooths arrival and per-endpoint service rates, floors the
-service denominator with a capacity value calibrated by the saturated-work
-curve, interpolates the wait window around aggregate load ratio 1.0, and
-enforces oldest-request SLO slack plus hysteresis. Missing/stale feedback falls
-back to the configured maximum fixed window.
-Least-queued routing includes scheduler-local in-flight submissions instead of
-reusing the profiler's static startup snapshot. Multi-endpoint vLLM runs should
-pass every Prometheus endpoint through `--model-metrics-urls`; counters and
-request gauges are aggregated across endpoints, while KV-cache pressure uses
-the maximum endpoint value. GPU snapshots aggregate all visible devices.
-`--source-order arrival_time` only defines source order; it does not reproduce
-arrival gaps. Online flush experiments must additionally enable
-`--arrival-replay`. The replay path normalizes the first arrival to zero,
-preserves subsequent gaps with a monotonic clock, builds complete-row pending
-batches, and writes a separate flush trace. Batching decides which rows belong
-together, flush decides when a partial batch closes, and admission limits how
-many submissions may be in flight. The default
-`--submission-granularity batch` preserves the historical multi-row HTTP call.
-`--submission-granularity request` keeps the same organization and flush
-boundaries but expands each closed group into complete one-row HTTP requests,
-so every completed request immediately releases one admission slot and the
-scheduler can continuously replenish vLLM. In request mode, `max_inflight`
-counts requests rather than multi-row batches; results from the two modes must
-not be compared as if the same numeric K represented the same offered load.
-
-Optional request tracing records one client-observed row per prompt with
-explicit request- or submission-granularity completion timing and SLO metrics.
-Epoch timestamps are
-derived from a single wall-clock anchor plus monotonic elapsed time. Aggregate
-endpoint token usage is never divided across prompts. For vLLM, the explicit
-`--completion-return-token-ids` opt-in records genuine per-choice output-token
-counts and finish reasons; generic compatible endpoints keep the extension
-disabled and those fields remain unavailable.
-Backend service epochs are marked as a separate clock domain; cross-domain
-submit-to-service time remains empty when the clocks cannot be ordered.
-Request trace schema 3 retains the explicit `submission_id` join key and adds
-`finish_reason`; consumers do not reconstruct identity from row position.
-
-Typed adaptive controllers consume each asynchronous vLLM metrics sample at
-most once. A still-recent cached sample remains visible for diagnostics but is
-marked non-fresh after its first decision, preventing AIMD/EWMA/PID from
-reapplying one scrape at scheduler-loop speed. The HOL-age controller uses the
-configured sample interval as its control clock; its current signal is still
-the age of the oldest in-flight submission and should not be described as pure
-pre-submit queueing delay.
-
-`code/src/experiments/scenarios/core.py` and
-`code/scripts/experiments/run_ai_operator_scenarios.py` provide deterministic formal-run
-interleaving, per-run service-idle gates, failure incidents, redacted commands,
-and an atomically updated manifest. Scenario argument strings may reference
-explicit `${ENV_NAME}` values; an unset variable fails before health checks or
-profiler subprocesses, so model, endpoint, database, and dataset-facing config
-can change without editing Python. Each profiler subprocess uses explicit
-phase/repeat identity and writes isolated request/submission/time-series files.
-
-The real contract test covers Daft `RecordBatch`/Arrow conversion and local Ray
-task/actor exactly-once execution. It is integration evidence only. GPU
-performance claims require the real PostgreSQL source and vLLM endpoint.
-
-## 命令与历史实现
-
-工作负载导入、组织 smoke、PG 画像和 baseline 运行从[脚本入口](scripts/README.md)选择，不在本页重复命令。
-已停止的 SAOR 实现、旧运行配方及其来源见[精简前代码说明](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/code/README.md#stopped-saor-native-system-implementation-record)。
-
-<a id="代码组织的读法"></a>
-
-## 代码组织的读法
-
-代码按执行职责和输入模态组织。数据库载体拥有语义与查询生命周期，provider负责传输，
-数据源与物化负责准备输入，组织与调度使用工作量描述，外部服务执行模型，观测模块记录过程。
-文本token与图像frame、像素、字节的换算放在模态适配中；公共调度消费明确的工作量。
-
-阅读当前路径先核对源码与实现状态，再沿任务生成、提交、外部执行、返回和写回定位耗时。
-SQL、Ray任务、模型服务与结果消费具有各自的生命周期，不能把一个阶段的完成当成完整查询完成。
-原生候选由被测执行引擎拥有执行与调度；项目内部策略对照从原始身份和来源记录解释。
+当前未完成项、真实环境检查和代码量使用[整体完成清单](INFRA_STATUS.md#refactor-completion-checklist)；
+配置用途和适用范围只维护在[配置总览](../docs/执行配置与优化开关.md)，
+各批次测试数字只从主报告和证据台账读取。本页不重复逐批发布历史。

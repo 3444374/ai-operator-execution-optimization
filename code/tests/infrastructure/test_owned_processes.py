@@ -145,8 +145,8 @@ with patch.object(psutil, 'Process', side_effect=AssertionError('eager process r
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_existing_worker_commands_and_code_root_start_and_exit_on_empty_input(self):
-        from src.baselines.text.frameworks.daft_engine_process import CODE_ROOT, EngineProcess
-        from src.baselines.text.frameworks.lotus_chain_engine_process import ChainEngineProcess
+        from src.serving.backends.vllm_sync_process import CODE_ROOT, EngineProcess
+        from src.serving.backends.staged_generation_process import ChainEngineProcess
         self.assertEqual(CODE_ROOT, CODE)
         environment = dict(os.environ, PYTHONPATH=str(CODE), CUDA_VISIBLE_DEVICES="",
                            HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
@@ -180,7 +180,7 @@ with patch.object(psutil, 'Process', side_effect=AssertionError('eager process r
 
 class SupervisorProcessTests(unittest.TestCase):
     def test_existing_private_pipe_transport_closes_its_cpu_child_once(self):
-        from src.baselines.text.frameworks.daft_engine_process import EngineProcess
+        from src.serving.backends.vllm_sync_process import EngineProcess
         from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
         class CPUProcess(EngineProcess):
             @staticmethod

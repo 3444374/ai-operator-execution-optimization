@@ -8,9 +8,11 @@ import sys
 import json
 from copy import deepcopy
 import math
-from src.experiments.sembench_records_formal import sha
-from src.baselines.common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import file_sha256 as sha, read_json as read
+from src.baselines.text.movie_tasks import validate_query_result as validate_result
+from src.infrastructure.private_artifacts import content_digest
 from src.observability.records_telemetry import RecordsTelemetry
+
 
 def _diagnostic_warning(phase,error):
     try:print(json.dumps(dict(event='diagnostic_warning',phase=phase,error_type=type(error).__name__)),file=sys.stderr,flush=True)
@@ -108,17 +110,15 @@ def validate_core_scan(plan, group, index, cpu_limit):
     """Validate declared capacities without pretending to observe hardware."""
     jobs=scan_jobs(group,index)
     if not jobs:return
-    from src.execution_provider.adapters.lotus_records_core import expand_core_profile, resolve_core_profile
-    from src.serving.backends.vllm_engine import EngineSpec
-    from src.semantic_methods.lotus.records import RecordsResources
-    profile=expand_core_profile(plan['profile'])
-    if profile.get('admission') is not None:
-        raise ValueError('fixed Core calibration cannot also run online admission')
+    from src.experiments.movie_records_config import records_resources, records_runtime
+    profile=plan['profile']
+    if type(profile) is not dict or profile.get('admission') is not None:
+        raise ValueError('fixed Core calibration requires a profile object without online admission')
     if plan['backend']!='semloom-core' or profile.get('mode')!='async':
         raise ValueError('measured Core selection currently supports async only; fixed sync remains available')
-    resources=RecordsResources(**plan['resources']);engine=EngineSpec.from_dict(plan['engine'])
+    resources=records_resources(plan)
     for candidate in _calibration_candidates(group['calibration']):
-        resolve_core_profile(engine,resources,dict(profile,max_inflight=candidate['max_inflight']))
+        records_runtime(dict(plan,profile=dict(profile,max_inflight=candidate['max_inflight'])),resources=resources)
         if candidate['cpu_workers']+resources.gpu_workers+1>cpu_limit:
             raise ValueError('Core candidate exceeds declared prepare/model/driver CPU budget')
 
@@ -127,6 +127,8 @@ def core_observations(cfg, packet, gpu):
     """Reuse fresh host/model preflight, never infer a measured performance value."""
     from src.infrastructure.environment import observe_machine
     machine=observe_machine()
+    if machine.cpu_slots is None:
+        raise ValueError("Core calibration requires an observed effective CPU allocation")
     shared=declared_shared_resources(cfg,packet)
     receipt=packet.read(packet.HERE/'runtime/model-preflight.json')
     if (receipt['status']!='passed' or receipt['source_commit']!=packet.COMMIT
@@ -144,7 +146,7 @@ def core_observations(cfg, packet, gpu):
 
 def materialize_core_plan(base, group, index, binding, *, source_revision, checked=None):
     """Rebuild only declared candidate parameters; cache/proof validation is shared."""
-    from src.experiments.calibration.core import build_core_identity,core_candidate_plan
+    from src.experiments.calibration.core import build_core_identity,core_candidate_plan,core_context_plan
     from src.scheduling.runtime.calibration import resolve_calibration
     if checked is None:
         from src.experiments.movie_records_session import check_plan
@@ -152,7 +154,6 @@ def materialize_core_plan(base, group, index, binding, *, source_revision, check
     observed=binding['observed']
     if observed['software']['source_revision']!=source_revision:
         raise ValueError('Core calibration source differs')
-    identity=build_core_identity(base,checked,**observed)
     if binding['kind']=='scan':
         jobs=scan_jobs(group,index)
         job=next((j for j in jobs if j['sample_id']==binding['sample_id']),None)
@@ -160,13 +161,21 @@ def materialize_core_plan(base, group, index, binding, *, source_revision, check
             raise ValueError('scan job was not predeclared')
         sample_id=job['sample_id']
     elif binding['kind']=='selected':
+        identity=build_core_identity(base,checked,**observed)
         proof=resolve_calibration(Path(binding['selection_path']),identity,policy=binding['policy'])
         if (proof['status']!='ready' or proof['selection_sha256']!=binding['selection_sha256']
                 or proof['candidate']!=binding['configuration']):
             raise ValueError('Core measured selection proof differs')
         sample_id=None
     else:raise ValueError('unsupported Core plan binding')
-    result=core_candidate_plan(base,checked,binding['configuration'],identity=identity)
+    if binding.get('resolve_model_context') is True:
+        if binding['kind']!='scan' or binding['sample_id']!=scan_jobs(group,index)[0]['sample_id']:
+            raise ValueError('only the first declared scan sample can confirm omitted context')
+        result=core_context_plan(base,checked,binding['configuration'],**observed)
+    else:
+        identity=build_core_identity(base,checked,**observed)
+        result=core_candidate_plan(base,checked,binding['configuration'],identity=identity,
+            model_ready=observed.get('model_ready'))
     if sample_id is not None:result['queries']=sample_queries(result,sample_id)
     return result
 
@@ -195,11 +204,11 @@ def bootstrap_context(context, output):
 
 
 def owner_context_contract(context):
-    """Native additionally requires the exact normal lease_path before startup."""
+    """Require the exact normal lease_path before startup."""
     from src.infrastructure.runner_lease import HOST_SCOPE_DIR_NAME,LEASE_NAME
     value=context.get('owner_context')
     if type(value) is not dict or any(key not in value for key in ('lease_path','lease_sha256','artifact_root','gpu_idle_max_mib','owner_resource_limits')):
-        raise ValueError('complete shared and Native owner context required')
+        raise ValueError('complete shared owner context required')
     expected=Path(value['artifact_root'])/HOST_SCOPE_DIR_NAME/LEASE_NAME
     path=Path(value['lease_path'])
     if (not path.is_absolute() or path!=expected or path.is_symlink() or not path.is_file()
@@ -212,7 +221,7 @@ def build_launch_context(cfg,packet_sha,index,group,lease,output,unit_deadline,g
     shared=declared_shared_resources(cfg,packet)
     prefix='/s'+format(int(cfg['ipc_prefix_base'][2:],16)+index,'08x')+'0'
     return dict(packet_sha256=packet_sha,plan_sha256=packet.sha(packet.HERE/group['plan']),
-        assigned_gpu_uuid=gpu['uuid'],worker_deadline_monotonic=unit_deadline-60,
+        assigned_gpu_uuid=gpu['uuid'],worker_deadline_monotonic=unit_deadline,
         ipc_prefix=prefix,ipc_receipts=str(output/'ipc'),
         budget=dict(path=str(budget_path),id=budget_id,limit=cfg['budget_limit']),
         owner_context=dict(lease_path=str(lease.path),lease_sha256=sha(lease.path),
@@ -298,72 +307,3 @@ def declared_shared_resources(cfg,packet):
     if 'shared_resources' in cfg:
         return cfg['shared_resources']
     return packet.read(packet.SOURCE/'deploy/autodl/sembench_records/comparison.json')['shared_resources']
-
-
-def validate_record_admission_cache(value, resolved):
-    """Validate metadata only; policy validation remains in the public Core API."""
-    if value is None:
-        return None
-    if (type(value) is not dict or set(value) - {'identity','cache_dir','reuse','workload_features'}
-            or not {'identity','cache_dir'}.issubset(value)
-            or type(value.get('reuse',True)) is not bool
-            or type(value['cache_dir']) is not str or not Path(value['cache_dir']).is_absolute()):
-        raise ValueError('admission_cache needs identity, absolute cache_dir and optional boolean reuse')
-    if resolved is None or resolved.get('mode')!='async' or 'admission' not in resolved:
-        raise ValueError('admission_cache requires explicit async resource-feedback admission')
-    from src.scheduling.runtime.calibration import identity_signature
-    identity_signature(value['identity'])
-    if resolved['admission'].get('work_basis') == 'computed' or 'workload_features' in value:
-        from src.scheduling.runtime.calibration import admission_identity
-        admission_identity(value['identity'], workload_features=value.get('workload_features'))
-    return value
-
-
-def run_record_admission(cache, resolved, source, method, generation, engine, resources,
-                         execute_query, *, warmup=False):
-    """Cache only after the existing complete query callback returns and drains.
-
-    The caller still owns model startup/final close and actual return timing.
-    Identity metadata is supplied by the run manifest; actual source, method,
-    generation and configured capacities are additionally bound below.
-    """
-    from dataclasses import asdict
-    import time
-    from src.scheduling.runtime.calibration import run_admission_query
-    from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig
-    entered=time.monotonic()
-    cache=validate_record_admission_cache(cache,resolved)
-    options=ResourceFeedbackConfig(**{k:v for k,v in resolved['admission'].items()
-                                     if k not in ('kind','gpu_ids')})
-    initial,maximum=resolved['max_inflight'],resolved['owner_max_inflight']
-    if warmup:
-        result=execute_query(initial,allow_exploration=False,search_hint=None)
-        result['admission_selection']=dict(cache_hit=False,configuration_source='warmup_initial',
-            cache_read_or_write=False,scan_cost=dict(wall_s=0.,samples=0))
-        return result
-    identity=deepcopy(cache['identity'])
-    identity['model']=dict(declared=identity['model'],actual=asdict(engine))
-    identity['generation']=dict(declared=identity['generation'],actual=asdict(generation))
-    identity['execution']=dict(declared=identity['execution'],profile=resolved['requested'],
-                               resources=asdict(resources))
-    identity['workload']=dict(declared=identity['workload'],manifest_sha256=sha(source.manifest_path),
-                             method=asdict(method))
-    def execute(window, *, allow_exploration, search_hint=None):
-        result=execute_query(window,allow_exploration=allow_exploration,search_hint=search_hint)
-        close=result.get('backend_close') or {}
-        usage=close.get('core_usage') or {}
-        counts=(result.get('calls') or {}).get('counts') or {}
-        eligible=(result.get('status')=='completed' and close.get('status')=='closed'
-                  and usage.get('held_tasks')==0 and close.get('source_closed') is True
-                  and not close.get('cleanup_errors')
-                  and all(counts.get(k)==0 for k in ('failed','unknown','missing')))
-        return dict(status=result.get('status'),reuse_eligible=eligible,
-            admission_feedback=close.get('admission_feedback'),query_report=result)
-    selection=run_admission_query(identity,execute,initial_window=initial,maximum=maximum,
-        cache_dir=cache['cache_dir'],reuse=cache.get('reuse',True),options=options,
-        workload_features=cache.get('workload_features'), request_started_monotonic=entered)
-    result=selection.pop('result')['query_report']
-    result['admission_selection']=selection
-    selection['entry_work_wall_s']=time.monotonic()-entered
-    selection['entry_work_scope']='binding through complete query and cache write, before payload return; caller measures actual return'
-    return result

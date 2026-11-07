@@ -12,16 +12,16 @@ import json
 import os
 from pathlib import Path
 import tempfile
-import time
 
+from src.infrastructure.deadlines import deadline_after
 from src.semantic_methods.lotus.cascade import (
     CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_protocol import EngineSpec
 
 from .ray_data_lotus_records import _RayRows, _CLOSE_COLUMN, _check_deadline, _runtime_env, _table
-from .lotus_cascade_process import StageEngineCleanup
+from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 
 
 def _selected(row, *, selected, input_columns):
@@ -52,8 +52,8 @@ class InferCascade:
     """Ray Data's GPU callable owns a private, supervised local engine process."""
 
     def __init__(self, engine, generation, expected_count, deadline, startup_timeout_s, control):
-        from .daft_engine_process import EngineProcess
-        from src.serving.backends.vllm_engine import GenerationSpec
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
+        from src.serving.backends.vllm_protocol import GenerationSpec
 
         _check_deadline(deadline)
         self.deadline, self.expected_count = deadline, expected_count
@@ -298,7 +298,7 @@ class RayCascadeBackend:
             raise ValueError("this cascade deployment requires distinct explicit model paths")
         self.resources = RecordsResources(**asdict(resources))
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self.close_reports = []
         self._checked = False
         self._methods, self._instructions, self._effective = {}, {}, {}
@@ -343,7 +343,7 @@ class RayCascadeBackend:
                                  role, lm.model, binding.instruction, binding.default,
                                  binding.system_prompt, binding.output_tokens,
                                  effective[role], (), binding.resolved_input_columns)
-            if local_generation(dummy).max_tokens > spec.max_model_len:
+            if spec.max_model_len is not None and local_generation(dummy).max_tokens > spec.max_model_len:
                 raise ValueError("cascade max_tokens exceeds max_model_len")
             self._methods[role] = binding
             self._instructions[role] = nle2str(binding.instruction, list(binding.resolved_input_columns))

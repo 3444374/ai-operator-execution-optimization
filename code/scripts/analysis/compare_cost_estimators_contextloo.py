@@ -10,9 +10,7 @@ be independently recomputed instead of copied from console output.
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
-import importlib.util
 import json
 import platform
 import statistics
@@ -30,20 +28,14 @@ CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (paren
 REPO_ROOT = CODE_ROOT.parent
 sys.path.insert(0, str(CODE_ROOT))
 
-_driver_spec = importlib.util.spec_from_file_location(
-    "estimate_operator_cost", CODE_ROOT / "scripts" / "analysis" / "estimate_operator_cost.py"
+from src.experiments.operator_costs.profiles import (  # noqa: E402
+    build_profile_matrix,
+    candidate_payload,
+    decision_context_payload,
+    load_profile_rows,
+    reference_csv_paths,
 )
-_driver = importlib.util.module_from_spec(_driver_spec)
-assert _driver_spec and _driver_spec.loader
-_driver_spec.loader.exec_module(_driver)
-
-_full_spec = importlib.util.spec_from_file_location(
-    "compare_cost_estimators_full",
-    CODE_ROOT / "scripts" / "analysis" / "compare_cost_estimators_full.py",
-)
-_full = importlib.util.module_from_spec(_full_spec)
-assert _full_spec and _full_spec.loader
-_full_spec.loader.exec_module(_full)
+from src.experiments.operator_costs.comparison import ESTIMATORS, fit_predict  # noqa: E402
 
 from src.planning.costs.regression import (  # noqa: E402
     pairwise_accuracy,
@@ -52,41 +44,16 @@ from src.planning.costs.regression import (  # noqa: E402
     top_k_precision,
 )
 
-REF_JSON = (
-    REPO_ROOT
-    / "experiments"
-    / "results"
-    / "operator_cost_estimation_20260726"
-    / "e2e_cost_model.json"
-)
-DEFAULT_OUTPUT = REF_JSON.parent / "ce_context_loo_20260804.json"
 TARGET = "e2e_s"
-ESTIMATORS = _full.ESTIMATORS
-load_rows = _full.load_rows
-build = _full.build
-fit_predict = _full._fit_predict
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--overwrite", action="store_true")
-    # Reproducibility (audit F3/F6): the historical REF_JSON points at a deleted ref + REPO_ROOT-
-    # relative source_csvs, so the committed LOO JSON was not regenerable. --data-csv lets the
-    # evaluator consume any runs.csv directly; --ref-json overrides the ref-json path. Both make
-    # _source_evidence / source_reference robust to out-of-repo paths (no more relative_to crash).
-    parser.add_argument(
-        "--data-csv",
-        type=Path,
-        default=None,
-        help="runs.csv to evaluate (e.g. the v2 cost-profile runs.csv); overrides REF_JSON",
-    )
-    parser.add_argument(
-        "--ref-json",
-        type=Path,
-        default=None,
-        help="ref-json to read source_csvs from (defaults to the historical REF_JSON)",
-    )
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--data-csv", type=Path, help="profile runs.csv to evaluate")
+    source.add_argument("--ref-json", type=Path, help="JSON with repository-relative or absolute source_csvs")
     return parser.parse_args()
 
 
@@ -97,46 +64,6 @@ def _repo_relpath(path: Path) -> str:
         return str(path.resolve().relative_to(REPO_ROOT))
     except ValueError:
         return str(path.resolve())
-
-
-def _apply_data_source(args: argparse.Namespace) -> Callable[[], None] | None:
-    """Point _full.REF_JSON + this module's REF_JSON at the requested data source.
-
-    Returns an atexit cleanup for any temp ref created, or None. With neither --data-csv nor
-    --ref-json given, leaves the historical REF_JSON untouched (legacy behavior).
-    """
-
-    global REF_JSON
-    cleanup: Callable[[], None] | None = None
-    ref_path: Path | None = args.ref_json
-    if args.data_csv is not None:
-        if not args.data_csv.is_file():
-            raise SystemExit(f"--data-csv not found: {args.data_csv}")
-        import tempfile
-
-        tmp = Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
-        tmp.write_text(
-            json.dumps(
-                {
-                    "source_csvs": [str(args.data_csv.resolve())],
-                    "experiment_id": args.data_csv.stem,
-                }
-            ),
-            encoding="utf-8",
-        )
-        ref_path = tmp
-
-        def _cleanup(tmp: Path = tmp) -> None:
-            try:
-                tmp.unlink()
-            except OSError:
-                pass
-
-        cleanup = _cleanup
-    if ref_path is not None:
-        REF_JSON = ref_path
-        _full.REF_JSON = ref_path  # _full.load_rows reads this at call time
-    return cleanup
 
 
 def aggregate_candidate_repeats(
@@ -218,14 +145,6 @@ def pool_fold_selection(folds: list[dict[str, Any]]) -> dict[str, float | int | 
     }
 
 
-def _context_payload(row: dict[str, str]) -> dict[str, str]:
-    return _driver.decision_context_payload(row)
-
-
-def _candidate_payload(row: dict[str, str]) -> dict[str, str]:
-    return _driver.candidate_payload(row)
-
-
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -241,10 +160,7 @@ def _package_version(distribution: str) -> str:
         return "unavailable"
 
 
-def _source_evidence() -> list[dict[str, str]]:
-    reference = json.loads(REF_JSON.read_text(encoding="utf-8"))
-    paths = [Path(value).resolve() if Path(value).is_absolute() else (REPO_ROOT / value.replace("\\", "/"))
-             for value in reference["source_csvs"]]
+def _source_evidence(paths: list[Path]) -> list[dict[str, str]]:
     return [
         {
             "path": _repo_relpath(path),
@@ -319,9 +235,9 @@ def _promotion_contract(metrics: dict[str, list[float]]) -> dict[str, object]:
     }
 
 
-def evaluate() -> dict[str, Any]:
-    rows = load_rows()
-    features, targets, _groups, contexts, candidates = build(rows)
+def evaluate(paths: list[Path], *, source_reference: str) -> dict[str, Any]:
+    rows, _excluded = load_profile_rows(paths, TARGET)
+    features, targets, _groups, contexts, candidates = build_profile_matrix(rows, TARGET)
     context_indices: dict[str, list[int]] = defaultdict(list)
     for index, context in enumerate(contexts):
         context_indices[context].append(index)
@@ -351,7 +267,7 @@ def evaluate() -> dict[str, Any]:
 
         candidate_payloads: dict[str, dict[str, str]] = {}
         for index in test:
-            candidate_payloads[candidates[index]] = _candidate_payload(rows[index])
+            candidate_payloads[candidates[index]] = candidate_payload(rows[index])
 
         for name in ESTIMATORS:
             if estimators[name]["status"] != "ok":
@@ -398,7 +314,7 @@ def evaluate() -> dict[str, Any]:
             estimators[name]["folds"].append(
                 {
                     "context_id": context,
-                    "context": _context_payload(rows[test_indices[0]]),
+                    "context": decision_context_payload(rows[test_indices[0]]),
                     "train_row_count": len(train),
                     "test_row_count": len(test),
                     "candidate_count": len(aggregated),
@@ -478,11 +394,17 @@ def evaluate() -> dict[str, Any]:
         "evaluation": "leave_one_decision_context_out",
         "target": TARGET,
         "interpretation": "unseen decision-context generalization; not necessarily unseen candidates",
-        "source_reference": _repo_relpath(REF_JSON),
+        "source_reference": source_reference,
         "code_evidence": {
             "context_loo_script_sha256": _sha256(Path(__file__).resolve()),
-            "full_driver_sha256": _sha256(
-                CODE_ROOT / "scripts" / "analysis" / "compare_cost_estimators_full.py"
+            "profiles_module_sha256": _sha256(
+                CODE_ROOT / "src" / "experiments" / "operator_costs" / "profiles.py"
+            ),
+            "comparison_module_sha256": _sha256(
+                CODE_ROOT / "src" / "experiments" / "operator_costs" / "comparison.py"
+            ),
+            "profile_estimator_module_sha256": _sha256(
+                CODE_ROOT / "src" / "experiments" / "operator_costs" / "estimators.py"
             ),
             "estimator_module_sha256": _sha256(
                 CODE_ROOT / "src" / "planning" / "costs" / "estimators.py"
@@ -491,7 +413,7 @@ def evaluate() -> dict[str, Any]:
                 CODE_ROOT / "src" / "planning" / "costs" / "regression.py"
             ),
         },
-        "source_csvs": _source_evidence(),
+        "source_csvs": _source_evidence(paths),
         "dataset_coverage": _dataset_coverage(rows, contexts, candidates),
         "environment": {
             "python": sys.version.split()[0],
@@ -517,12 +439,18 @@ def _write_output(path: Path, payload: dict[str, Any], overwrite: bool) -> None:
 
 def main() -> None:
     args = parse_args()
-    cleanup = _apply_data_source(args)
-    try:
-        payload = evaluate()
-    finally:
-        if cleanup is not None:
-            cleanup()
+    if args.data_csv is not None:
+        if not args.data_csv.is_file():
+            raise SystemExit(f"--data-csv not found: {args.data_csv}")
+        paths = [args.data_csv]
+        source_reference = args.data_csv
+    else:
+        paths = reference_csv_paths(args.ref_json, REPO_ROOT)
+        source_reference = args.ref_json
+    missing = [path for path in paths if not path.exists()]
+    if missing:
+        raise SystemExit(f"MISSING input csvs: {[str(path) for path in missing[:3]]}")
+    payload = evaluate(paths, source_reference=_repo_relpath(source_reference))
     _write_output(args.output, payload, args.overwrite)
     print(
         f"rows={payload['dataset_coverage']['row_count']} "

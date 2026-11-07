@@ -19,7 +19,7 @@ from src.experiments.saor.vllm_0251_source_audit import (  # noqa: E402
     audit_installed_vllm_0251,
     load_expected_service_identity,
 )
-from src.baselines.common.redact import redact_text  # noqa: E402
+from src.infrastructure.redact import redact_text  # noqa: E402
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

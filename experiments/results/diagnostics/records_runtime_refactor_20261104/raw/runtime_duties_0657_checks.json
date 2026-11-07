@@ -1,0 +1,614 @@
+{
+  "base": "61f136e91fd900cf61819f76b185db3d077abf8f",
+  "original_base": "06570988b2b4172d9936e18216943e8ce537c0b4",
+  "production_checkpoint": "87a0c2f2856345d227333b905328b1bec32a27fc",
+  "production_tree": "e1c03b5afa5d584fce430d5d08fd7343007a0a15",
+  "components": {
+    "actor_structure": "db2f5c369e9ff407d3b75107e2a927d69c5fa1ad",
+    "stale_default_expectation": "756fb42b97d0bd71579aa19a3fe70c6146890bb8",
+    "actor_repeated_checks": "9c49bbe2cd8f5ba2ec2ee58614ce2947ded82cf5",
+    "credit_export_original": "fbb8c567a747a3d1274de25b460d50bdf5bc0d1d",
+    "typed_IPC_original": "50e2fe9594e09f29db6d2a32fa9b134b877e7f66",
+    "session_projection_original": "a396fea73b59a19fb90ac0e063dcf605dd54966a",
+    "session_integer_original": "239bde20e896be63f16d111f16a528aa9b70c506"
+  },
+  "changes": [
+    "Model actor call/receipt/IPC state moves to records_async_model; the existing driver keeps Ray allocation and RPC completion permits.",
+    "Production observations and actor-specific tests use the canonical implementation; driver _runtime_env and its real factory class import remain.",
+    "Remove three redundant prepared-row/ACK conditions after the earlier validation/return.",
+    "Move call-local batch occupancy projection to existing session_policy and remove the old method/fixture fast option; reservation and rollback stay in SchedulingSession.",
+    "Share one UINT64_MAX in existing session_contract while retaining the two original import names.",
+    "Remove the unused eager SaorReleaseEvent subpackage export; root lazy and defining-module imports remain.",
+    "R=None can use a complete explicit typed IPC max_inflight without another R declaration; explicit budgets/counts/storage keep priority.",
+    "Update two stale test expectations to existing request-derived defaults and independent soft-C versus resident storage behavior."
+  ],
+  "CPU": {
+    "combination_selected": 408,
+    "combination_passed": 407,
+    "combination_failed": 1,
+    "combination_errors": 0,
+    "combination_skips": 0,
+    "failure": "tests.execution_provider.test_core_execution_profile.ProfiledAsyncCoreTests.test_outer_requests_above_native_iteration_capacity_keep_IPC_limits_and_terminal_accounting",
+    "failure_cause": "The old assertion treated per-query C4 as the hard8 capacity and assumed only4 of6 inputs could reside. Actual admission remains4; storage and request grant remain8.",
+    "production_modified_after_combination": false,
+    "only_Python_change_after_combination": [
+      "code/tests/execution_provider/test_core_execution_profile.py"
+    ],
+    "affected_method_recheck_selected": 1,
+    "affected_method_recheck_passed": 1,
+    "distinct_methods_with_success_records": 408,
+    "not_one_all_green_408_run": true,
+    "all_source_unchanged_during_each_recorded_run": true,
+    "current_Python_matches_affected_method_recheck": true,
+    "component_counts_overlap_not_added": true,
+    "component_records": {
+      "actor_before_and_after": [
+        136,
+        136
+      ],
+      "fixture_dedup": 2,
+      "actor_simplification": 23,
+      "typed_IPC": 118,
+      "credit_before_and_after": [
+        60,
+        60
+      ],
+      "session_before_after_integer": [
+        9,
+        19,
+        4
+      ],
+      "stale_default_after": 6
+    }
+  },
+  "preserved_failures": {
+    "stale_default": "The original inconsistent-default expectation fails locally as on the earlier server source; the old result is retained.",
+    "capacity_original_refusal": "Three methods / nine ordinary and rolling subcases reject on the old source.",
+    "capacity_initial_environment": "Missing psutil/tokenizers before switching to the already available nonmodel driver; no installation.",
+    "credit_initial_runner": "Temporary runner referenced a retired redaction module before test execution; only that runner was fixed.",
+    "actor_local_migration": "Temporary import migration stopped on indentation before testing; safely resumed, then a repeated stub entry was removed and two relevant methods rechecked."
+  },
+  "layout": {
+    "actor_before": 1019,
+    "driver_after": 350,
+    "model_after": 684,
+    "session_before": 1208,
+    "session_after": 1174,
+    "session_policy_after": 161,
+    "shared_credit_still": 1397,
+    "no_new_owner_ledger_wrapper_or_mixin": true
+  },
+  "code_size": {
+    "scope": "Physical Python lines, including blanks/comments; excludes tests/docs/history. Core excludes experiments and baselines. Wider scope is live code/src plus code/scripts. Archive/history storage is not deleted by leaving this live scope.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          }
+        ]
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          }
+        ]
+      },
+      "0657": {
+        "commit": "06570988b2b4172d9936e18216943e8ce537c0b4",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 59100
+          },
+          "all_src": {
+            "files": 390,
+            "physical_lines": 92755
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114907,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1397
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1101
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          }
+        ]
+      },
+      "latest_upstream": {
+        "commit": "61f136e91fd900cf61819f76b185db3d077abf8f",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 59110
+          },
+          "all_src": {
+            "files": 390,
+            "physical_lines": 92765
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114917,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1397
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1101
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          }
+        ]
+      },
+      "current": {
+        "commit": "87a0c2f2856345d227333b905328b1bec32a27fc",
+        "metrics": {
+          "core": {
+            "files": 249,
+            "physical_lines": 59130
+          },
+          "all_src": {
+            "files": 391,
+            "physical_lines": 92786
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114938,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1397
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1174
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1101
+          }
+        ]
+      }
+    }
+  },
+  "batch_Python_line_delta": {
+    "core": 20,
+    "src_and_scripts": 21
+  },
+  "source_sha256": {
+    "code/scripts/profiling/record_observation/record_ipc_observer.py": "b39e2627e9996e10f708f78f4ef1a36cf344c2a26021cd7f0152de8307404e18",
+    "code/src/execution_provider/adapters/lotus_records_async_actor.py": "c38b8307f72f7f7866c66bb4dd3c7d3b66d73f0c3a1b43e7312af270c11895a8",
+    "code/src/execution_provider/adapters/records_async_model.py": "6e616d4d88f61fbdfd31ec556190fbe11e230772b925a62a1058c97b0c12b90f",
+    "code/src/execution_provider/adapters/records_capacity.py": "bee46fb21faf55faeb24e88c7498b60988c9bcc3c029b9d0893e37abaa84bfd1",
+    "code/src/execution_provider/adapters/records_model_adapter.py": "d09688e4e8666a8e067bf70ca8a84a71fb45fed196cc7974d1ee18b2ca8d44e1",
+    "code/src/execution_provider/adapters/records_profile.py": "f86ef46f50d6ffd9146922ff8f11a88b911d715e33a659ee33e4e9dc0afc3f4b",
+    "code/src/execution_provider/adapters/records_query_runtime.py": "de9790ca2eb2dcb4d30a8631b3ce873569432d4333ca3b011aef62f7df8b51ef",
+    "code/src/execution_provider/adapters/records_transport.py": "c790f3e6229566ab27ba516fd06ee3169b73a8de3d828108b2a52978c11e7a93",
+    "code/src/experiments/movie_cancellation_probe.py": "57a518ea7b9c9b8b4679db66eca6d76474e19ca1cab2ff69c6922af44d809f90",
+    "code/src/scheduling/core/session.py": "88b1918e994fc861db1938077d3a101a366518f90dc906f402e8129bf1a8dd93",
+    "code/src/scheduling/core/session_contract.py": "e56e8261adaff50e8d21d743c2de7ae50e333b2b6cc55af4a32e4cfad1919ce7",
+    "code/src/scheduling/core/session_policy.py": "74697ddae2ff436c3ec7e89d35d2318129c18b5292b7df02c593dac727bb3faa",
+    "code/src/scheduling/core/task_info.py": "a4a660ed4480049e683054ee9c6a44a9e945c4ec891239390acc70cf80b04ef0",
+    "code/src/scheduling/submission_control/__init__.py": "ace04c9156ac493941e6e7d27aa0edb8d1a7d88e3d928555534d79ab3a4ed6e1",
+    "code/src/scheduling/submission_control/saor.py": "37465c3ed9ba3185f8122168f98a47d25c2f7e0aa7669bf65ded7dd1c64ecdc4",
+    "code/src/scheduling/submission_control/shared_credit.py": "d41edd7e8331241ad391c3ab56a9c093bb25dc64a2f0562cee473095f58ac666",
+    "code/src/serving/backends/async_engine_process.py": "5afce2ee5dd05c50d59393c18484116163a67b2bcd3f7d780deae6ea4b2e8a08",
+    "code/src/serving/backends/vllm_async_engine.py": "38b8fa79230db93ed205ba88695ed1238490d00524e773a950ec7033459840cb",
+    "code/tests/execution_provider/test_actor_resource_probe.py": "1f3d08192d002512bf2495260a1c74388ff1e459924affa5f8cae31a8e4ef999",
+    "code/tests/execution_provider/test_computing_query_close.py": "365f4b1804725d5fd75597b985b5e9153771bac68151e6867f4d6495e7ee0718",
+    "code/tests/execution_provider/test_core_execution_profile.py": "02804b3228f794cfa55df919ccc26e415b4d8f00b5265af070de75fa1ea5b2b2",
+    "code/tests/execution_provider/test_core_query_method_reuse.py": "edf0ceadaa462b6284de61af38708b4807f460fe22549abb853b59549c73e4d8",
+    "code/tests/execution_provider/test_core_resource_feedback.py": "c3f50801f2e7857c83f0ac32d2b8e817375f9a4036745857f75cab258abc86d4",
+    "code/tests/execution_provider/test_lotus_async_batch_lifecycle.py": "9a5e93858a9223510dcc22292baa0449f588b8ae6e12c144b1ab42c295148ae8",
+    "code/tests/execution_provider/test_lotus_async_token_batches.py": "bd5684fd070236567158fd42835f5cf5045f4327c39e72d27d064e3fdff5ec7f",
+    "code/tests/execution_provider/test_lotus_batch_poll_encoding.py": "a8612be576db4aa575c1df8bff1ac7e2d65002a601853f0ae87e230beddd62ed",
+    "code/tests/execution_provider/test_lotus_batch_supply_feedback.py": "eb4f6699680c14d20898bde15fedc021e763d95e4b68280b8a3ff64d2d542369",
+    "code/tests/execution_provider/test_lotus_chain_token_budget.py": "c336ce995b9c17c7350cd756308d480cec58c50bee3116fa72617754aa438c18",
+    "code/tests/execution_provider/test_lotus_closed_batch_pages.py": "21667d68b8ccb1f88593d37e4f7f183d72bf055d0312b793daff13053d27984c",
+    "code/tests/execution_provider/test_lotus_prepared_actor_owner.py": "db91f33a33cb2e4ba533974096112790deab4a3efc7f72b5f1eb7fb49cdfe97d",
+    "code/tests/execution_provider/test_lotus_record_local_priority.py": "eb82101fd8ede7bf5989699ae32b0850274fb3ccb043572c4f7609b057eadb95",
+    "code/tests/execution_provider/test_lotus_record_local_progression.py": "5a6b12c166a93abf3edacf36d31f81f838407e2d1afff1bab6e26bfda0f6eb2a",
+    "code/tests/execution_provider/test_lotus_record_local_query.py": "14f4c101adae3c729563974d410c8f528803ceb2a60d32f69b4b7f60d24632ec",
+    "code/tests/execution_provider/test_lotus_record_local_token_priority.py": "fb8abbbda96b1e8d6c51cb416c61f02205789dcbdf2d96394fd02ed01a116371",
+    "code/tests/execution_provider/test_lotus_record_local_tokens.py": "e7890590b8a45cf573060a64e9de63a67581100f74136c733087b3e7f92bf942",
+    "code/tests/execution_provider/test_lotus_records_async_actor.py": "712b00a99fb50bbcdd3985ef9b67b9467a8814b1e6be8f508b0f8d67fb27d0e1",
+    "code/tests/execution_provider/test_lotus_records_async_core.py": "6c3398308e375fab380fbc25b5e160a975e86305d8cf06de5932e367c42a5ddc",
+    "code/tests/execution_provider/test_lotus_resource_budget_runtime.py": "24b54f3b52beacfa425dcfb8fdf66f147120c278f544022b4bdbf60bdd3c4366",
+    "code/tests/execution_provider/test_lotus_rpc_capacity.py": "e583598a64b8325e15c79d04075ce3633a5a96887b8d56c0f23b5a7c12ccd4b3",
+    "code/tests/execution_provider/test_lotus_snapshot_rpc_receipts.py": "191979cc39c6fc6ee4a02a71a1268405cddbfd3d48e93cba5dbd7428ba57c9ac",
+    "code/tests/execution_provider/test_prepared_delivery_copies.py": "e0d7587e89c5f578f03057bd419e9bb49e6400471a0d2edddc7e90014b16736c",
+    "code/tests/execution_provider/test_prepared_supply_budgets.py": "d6b76829ff985bd9dc2af82297fe5b308c96b82572025f92f24db038266bfe10",
+    "code/tests/execution_provider/test_records_default_resources.py": "bcb6b315104058f415ec9b33682309e8ab44acb10d0092331e21050e67473d9a",
+    "code/tests/execution_provider/test_records_memory_pressure.py": "87d2816c18549e4ce002809ff7d7383526d8dd6d394df5398793a83833a1e837",
+    "code/tests/execution_provider/test_records_model_work_feedback.py": "6116e594a41e65d07379802b12f35f5a8598e16827f90c82e7049ed23ef8c5b7",
+    "code/tests/execution_provider/test_records_native_source.py": "ed55d74b409c1db52ea2a3787565610fff9e70c859318e840bdb0384453c2737",
+    "code/tests/execution_provider/test_records_request_feedback.py": "6375f00514e04874e860932dec9e08d28459ea6833518afc67bcd96ac51d7e38",
+    "code/tests/execution_provider/test_records_unspecified_requests.py": "cdcf139fc111773ba5c9191eb1ec75865e5c084aec9c64b68508c08f0abbf950",
+    "code/tests/execution_provider/test_rolling_service_lifecycle.py": "522d30db6d7f6c1b802f9b41c9d48e0453e955cb7515d2d264c5318134de5834",
+    "code/tests/experiments/movie_records_cpu_fixture.py": "a9e530b93325538d9e8ce86a5408ac90c307e80dd72e12db903f5a38a34f56df",
+    "code/tests/experiments/movie_token_resident_fixture.py": "2432507a016e8baf95b43447c7b028502c889a019ab1df2c0916f9201ef79c5e",
+    "code/tests/experiments/probe_record_resource_handoff.py": "08e5bd643d8c5be24e7c6364a6d69c4c7c4fe6253814a50cb044dc0333ff5fa5",
+    "code/tests/experiments/test_movie_async_token_entry.py": "1e4e66359bd80abb58b183b86d4f5377d76eda9a793695b4c07ec4f3b81fbd81",
+    "code/tests/experiments/test_movie_calibration_cli.py": "4e81429bc378bf6c7d39362c474a492dd91b8247f1aced388016fa00128865c2",
+    "code/tests/experiments/test_movie_cancellation.py": "e26a6014a6a21097bb595157109f24a67c7dbeb9a95867fd3af45af9410a4538",
+    "code/tests/experiments/test_record_chain_progression_validation.py": "781f0c3107ef453a6dad1fb246f3646dd0abddfd652b6cd582cef2ba410251e0",
+    "code/tests/experiments/test_record_chain_validation.py": "f1024da72f9611361fde071c4cec1f67b0d4517120ce811dcf5e115a112c13ad",
+    "code/tests/experiments/test_record_dag_observation.py": "f8e2319b2861cc6f26eef536a5558361769dcb5cd4b8c74ed39f139003df6c6e",
+    "code/tests/experiments/test_record_resource_capture.py": "c609195b8406109322fdddf68141ab08ac91f30ed961ef7ce63d9eb8862b064a",
+    "code/tests/experiments/test_record_resource_handoff.py": "de8ff6d26e9d265038d34076a63d0cd7a26522b92fc2b1aeffc7d5e2e45cbd5c",
+    "code/tests/infrastructure/test_model_gpu_identity.py": "8fcf4e40688118f45e400fec83c2b264417e66521041a48d525ab2ba2109de71",
+    "code/tests/scheduling/test_batch_dispatch_snapshot.py": "c788256d6cb86f6ad5cb22d4d9b7d2b5a4a9b39c78cc920b6a9a6e5154442226",
+    "code/tests/serving/test_native_resource_feedback.py": "15d3a5cef431e2ae0d1d337d116047d98248b0ca8a76c1949b101119349ddd4e"
+  },
+  "raw": {
+    "path": "runtime_duties_0657_raw.json.gz",
+    "bytes": 96626,
+    "sha256": "68175e03c641e3c7e5df0e7fd395e64ae8d3fb3ef579e12e5e316e9a22b94740",
+    "decoded_bytes": 724327,
+    "decoded_sha256": "6f7b85ec273200cfad0112bde3ed4740ed6c348b3022c7fc078b413a8433e904"
+  },
+  "private_originals": {
+    "actor_and_combination/actor-before-role-split.json": {
+      "bytes": 165085,
+      "sha256": "b7e4eb77d087211a4c744da517264ff84ad16956cdd299d89c757cb9a51331f2"
+    },
+    "actor_and_combination/actor-before-role-split.log": {
+      "bytes": 28233,
+      "sha256": "90d4e45eb7291373d43629535b8fe07d269118c530ee00c93b1a1a62db48e6b3"
+    },
+    "actor_and_combination/actor-after-role-split.json": {
+      "bytes": 165219,
+      "sha256": "45b0db78aa82b08dc81c6ff90ab5219fc0d0ea40fbebf99e2226bb5932361729"
+    },
+    "actor_and_combination/actor-after-role-split.log": {
+      "bytes": 28233,
+      "sha256": "f2df91b9f4f257d029e5b2da107fd6d2043f238a9f47f0d4d8762b8335f1296f"
+    },
+    "actor_and_combination/actor-stub-dedup-check.json": {
+      "bytes": 127662,
+      "sha256": "5eaac48e0d7d90c5a1a94d8bc56a71c3c7c3097bb3ae50fb361a74b8ae3a02ae"
+    },
+    "actor_and_combination/actor-stub-dedup-check.log": {
+      "bytes": 520,
+      "sha256": "2f24a2f771e25dbf4a2e028e4a85899916ce4019b6c1ee8730de5b8faf3ee100"
+    },
+    "actor_and_combination/actor-before-check-simplification.json": {
+      "bytes": 128123,
+      "sha256": "93beb1693ab71846c10eda7cd6f08cbbc99d310c73d778d75b67724379c7c1e9"
+    },
+    "actor_and_combination/actor-before-check-simplification.log": {
+      "bytes": 736,
+      "sha256": "56f560a8119c1fcb8d77254345800101bd75ad3e69e38c7641a3d053092e489b"
+    },
+    "actor_and_combination/actor-after-check-simplification.json": {
+      "bytes": 134311,
+      "sha256": "ca1d7bd6c48e3917cf1dadae13e950713855e0e5c0b3a893bf2880355e6e7d64"
+    },
+    "actor_and_combination/actor-after-check-simplification.log": {
+      "bytes": 5106,
+      "sha256": "817869a0e9ae27e9f37c94597cbe6d6a3b2e91de5f3cc130058d77876f701f66"
+    },
+    "actor_and_combination/stale-default-test-before.json": {
+      "bytes": 127679,
+      "sha256": "e1696e7fed0c17b184363922127aa8ba35708af7b67b64da20c712cd89b597b9"
+    },
+    "actor_and_combination/stale-default-test-before.log": {
+      "bytes": 1047,
+      "sha256": "2bf85ca2ce9c9c7b5159bee1a6d627f3a45b3db9f4c2540a0d7c3a8a921b4185"
+    },
+    "actor_and_combination/stale-default-test-after.json": {
+      "bytes": 128631,
+      "sha256": "566579ba9228f6712ecbcb58e3db49b7f73996dfe59ec1e12c3704b8b877867c"
+    },
+    "actor_and_combination/stale-default-test-after.log": {
+      "bytes": 1338,
+      "sha256": "5e852014833b0f857d318f845de9b38736b4638081f1044431807b8d0fec842e"
+    },
+    "actor_and_combination/runtime-duties-61f-combination.json": {
+      "bytes": 244642,
+      "sha256": "bdb560d322e8b6210b657606fa1ebc2f6fad1d8b1ab8e96f12bcc01077546dd9"
+    },
+    "actor_and_combination/runtime-duties-61f-combination.log": {
+      "bytes": 85195,
+      "sha256": "0b08a0579a8d0d65e18f23dd7cdaa9625064ea9ef42e7934b4105700c620eeab"
+    },
+    "actor_and_combination/profiled-window-expectation-after.json": {
+      "bytes": 126739,
+      "sha256": "ef816aecfe53202f360fe82fcff15c669da3ab6c10026f65700eee12e84be44b"
+    },
+    "actor_and_combination/profiled-window-expectation-after.log": {
+      "bytes": 366,
+      "sha256": "6238d9603119b6a25a60b1e2dfb408cb6b2764df5aac48b58e98bc3ea866cf1d"
+    },
+    "capacity/before-typed-IPC-None.json": {
+      "bytes": 140219,
+      "sha256": "0da9831ef53d842bc790b47cff4bb81906bfbca4ad7e830340a39339347e81ed"
+    },
+    "capacity/before-typed-IPC-None.log": {
+      "bytes": 22471,
+      "sha256": "fa9dc3bc3eb3b1408bf6d7e0e44b660cb8c5b5349a099d1bff86c5c2278ffa05"
+    },
+    "capacity/before-existing-capacity.json": {
+      "bytes": 135326,
+      "sha256": "bd1d2c598f2bbf93482492fd2e32cee1bcf8d0c773056bb8b477a3892c467cd3"
+    },
+    "capacity/before-existing-capacity.log": {
+      "bytes": 11847,
+      "sha256": "0dcc2bd1e15cccf8051071a276d0f1f4b3e71032c41f4b5d68d93e519cc34249"
+    },
+    "capacity/final-typed-IPC-capacity-no-B.json": {
+      "bytes": 157060,
+      "sha256": "e6e3b25917829bfda832a16e8b99045c8007982cfeac91f4b14918c84666f8b6"
+    },
+    "capacity/final-typed-IPC-capacity-no-B.log": {
+      "bytes": 52526,
+      "sha256": "7b58911f5a17951711ae8f96d65f5269b1e16690e94127959139f3e329db271c"
+    },
+    "credit/before-export-cleanup.json": {
+      "bytes": 141487,
+      "sha256": "034e2fce5acaed42c7001961645c8069a50d67dc69aa12f04d8c992914205f52"
+    },
+    "credit/before-export-cleanup.log": {
+      "bytes": 10985,
+      "sha256": "5dd9eba9806c7fe466e7cda4ce262d51fcde7e2fff713b17dd5e120cfb2a87cb"
+    },
+    "credit/after-export-cleanup.json": {
+      "bytes": 141485,
+      "sha256": "2e0add7f1bf26e5e0b01b4cfc46e322463fd70c7e6722f9d3bc45c52d92f8bc6"
+    },
+    "credit/after-export-cleanup.log": {
+      "bytes": 10985,
+      "sha256": "5dd9eba9806c7fe466e7cda4ce262d51fcde7e2fff713b17dd5e120cfb2a87cb"
+    },
+    "session/snapshot-before.json": {
+      "bytes": 129387,
+      "sha256": "d165ec14ad5a343e42d2f6609751e1ea96e50e84badbe6147b3708da38e9ada4"
+    },
+    "session/snapshot-before.log": {
+      "bytes": 2038,
+      "sha256": "f2a9e974ccee3bdf6b5824261372640b0409a12ad13e7ca5829c1ca024bf855d"
+    },
+    "session/snapshot-after.json": {
+      "bytes": 132992,
+      "sha256": "018fc91b6f0c691fc4bfe30073475408abe5ad8648b1d56ea3cd16cd93bf7975"
+    },
+    "session/snapshot-after.log": {
+      "bytes": 3917,
+      "sha256": "c6a80fc4453e02d6aefd2033b6ce4a537210277904da1b1c69262dfaf1686b56"
+    },
+    "session/uint64-after.json": {
+      "bytes": 128201,
+      "sha256": "22fb5b6ba0b3990994ceea563753c02d74578bc91cd4982865b55ec56302d6aa"
+    },
+    "session/uint64-after.log": {
+      "bytes": 835,
+      "sha256": "94d2ef286d8fa2d10096812b43412fe75fa1e25c556267418f1bef784987b125"
+    },
+    "credit/before-cold-import.json": {
+      "bytes": 1714,
+      "sha256": "e6a1f6fea0dac304fa0cda6f29db3c9e42b77529229c5daada8895836744612d"
+    },
+    "credit/after-cold-import.json": {
+      "bytes": 1712,
+      "sha256": "9ea780ebff681b3508c5bb17f191452144e71713aa2469a9c7b36cfb62529a48"
+    },
+    "credit/HARNESS-INITIAL-FAILURES.json": {
+      "bytes": 1046,
+      "sha256": "1d308c0b7b8ac328407ee8949980a1c7bb4f66a6053fc2871c603776221af812"
+    },
+    "local_tools/actor-import-migration-tool-error.log": {
+      "bytes": 393,
+      "sha256": "f0a60831f1147046986017b42181997c6814f91075b24a979e1ae379fd192a18"
+    },
+    "local_tools/runtime-duties-61f-combination.console.log": {
+      "bytes": 30969,
+      "sha256": "5bd523c64fa81610a32ea893d0c5685c0ae1e3d78e95cf0cc901f2d21398e764"
+    }
+  },
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONPATH": "code:code/scripts/experiments",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.execution_provider.test_lotus_records_async_actor",
+      "tests.execution_provider.test_lotus_async_batch_lifecycle",
+      "tests.execution_provider.test_records_native_source",
+      "tests.execution_provider.test_lotus_batch_poll_encoding",
+      "tests.execution_provider.test_lotus_closed_batch_pages",
+      "tests.execution_provider.test_lotus_rpc_capacity",
+      "tests.execution_provider.test_lotus_rpc_terminal",
+      "tests.experiments.test_record_resource_capture.CaptureTests",
+      "tests.experiments.test_record_resource_handoff.HandoffTests",
+      "tests.infrastructure.test_model_gpu_identity",
+      "tests.execution_provider.test_records_unspecified_requests",
+      "tests.execution_provider.test_records_capacity_defaults",
+      "tests.experiments.test_records_capacity_config",
+      "tests.experiments.test_session_capacity_preflight",
+      "tests.execution_provider.test_prepared_supply_budgets",
+      "tests.experiments.test_records_resource_budget",
+      "tests.execution_provider.test_records_service_budget",
+      "tests.execution_provider.test_records_service_owner",
+      "tests.experiments.test_records_budget_query_identity",
+      "tests.scheduling.test_shared_credit",
+      "tests.scheduling.test_shared_credit_ray",
+      "tests.scheduling.test_saor",
+      "tests.scheduling.test_batch_dispatch_snapshot",
+      "tests.scheduling.test_atomic_transport_batches",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_prefix_transfer_release_backpressure_and_no_eager_dispatch",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_cancel_keeps_leases_and_unknown_compute",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unknown_submit_exception_retains_no_handle_reservation",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_reentrant_backend_is_rejected_before_nested_offer",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_other_thread_only_requests_cancel",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_partial_delivery_commit_rolls_back_unreturned_leases",
+      "tests.scheduling.test_multisession.MultiSessionTests.test_two_flows_do_not_double_job_opportunities",
+      "tests.scheduling.test_multisession.MultiSessionTests.test_cancelling_one_job_keeps_late_work_and_other_job_live",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_whole_batch_permanent_validation",
+      "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_boolean_terminal_identity_cannot_alias_integer_key",
+      "tests.scheduling.test_organized_session.OrganizedSessionTests.test_invalid_metadata_rejects_whole_input_before_transfer",
+      "tests.scheduling.test_task_info_reuse.TaskInfoReuseTests.test_equal_values_with_different_types_or_nonprimitive_fields_do_not_hit",
+      "tests.execution_provider.test_records_default_resources",
+      "tests.execution_provider.test_core_execution_profile",
+      "tests.execution_provider.test_records_query_runtime",
+      "tests.execution_provider.test_records_model_adapter",
+      "tests.experiments.test_movie_async_token_entry",
+      "tests.experiments.test_record_prepare_finalization",
+      "tests.serving.test_native_first_feedback",
+      "tests.execution_provider.test_lotus_chain_token_budget.ChainTokens.test_changed_full_identity_messages_generation_and_config_rejected",
+      "tests.execution_provider.test_lotus_chain_token_budget.ChainTokens.test_W_blocks_below_C_and_real_terminal_releases_then_allows_successor",
+      "tests.execution_provider.test_lotus_chain_token_budget.ChainTokens.test_unknown_retains_Core_W_actor_receipt_and_original_known_usage"
+    ],
+    "current_test_name": "DefaultResourceTests.test_omitted_storage_follows_requests_for_ordinary_and_rolling"
+  },
+  "limits": [
+    "Default R remains2; complete typed IPC grants are logical, not detected hardware.",
+    "The general shared coordinator and large Session/other modules still need work.",
+    "Real Ray class distribution, models, GPU/server execution and performance are untested for this candidate."
+  ],
+  "real_execution": {
+    "Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "database": 0
+  },
+  "active_server_tasks_touched": false,
+  "main_merged": false
+}

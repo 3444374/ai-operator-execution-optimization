@@ -1,0 +1,424 @@
+{
+  "schema": "semloom.topology_capacity.checks.v1",
+  "base": "1d38e256bf3d5abf52ed6cc9af9814362bf93297",
+  "candidate": "e8fb2b24a8346e5a410d10660c72ac368879cde6",
+  "tree": "2a3c9825fb4b757380a871905fb859d38353e7ed",
+  "runs": {
+    "topology-capacity-before": {
+      "selected": 89,
+      "executed": 89,
+      "passed": 89,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "topology-capacity-after": {
+      "selected": 89,
+      "executed": 89,
+      "passed": 89,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "same_selected_and_executed_methods": true,
+  "overlapping_runs_not_added": true,
+  "tests_added": 0,
+  "source_files_before": 1019,
+  "source_files_after": 1019,
+  "source_identity": {
+    "topology-capacity-before": {
+      "commit": "1d38e256bf3d5abf52ed6cc9af9814362bf93297",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true
+    },
+    "topology-capacity-after": {
+      "commit": "e8fb2b24a8346e5a410d10660c72ac368879cde6",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true
+    }
+  },
+  "source_identity_note": "CPU runs recorded the base HEAD before committing. Per-file source hashes were compared to the exact base and candidate. CPU fixture durations are not query-performance measurements.",
+  "method_comparison": {
+    "base": "1d38e256bf3d5abf52ed6cc9af9814362bf93297",
+    "moved_function_body_identical": true,
+    "moved_function_arguments_identical": true,
+    "moved_function_return_annotation_identical": true,
+    "existing_topology_functions_unchanged": true,
+    "scheduler_old_projection_removed": true,
+    "scheduler_methods_after_normalizing_only_three_calls": {
+      "__init__": true,
+      "from_config": true,
+      "_initialize": true,
+      "run": true,
+      "_run_with_shared_ready_window": true,
+      "_select_pool": true,
+      "_register_ready_candidate": true,
+      "_can_submit_ready": true,
+      "_cancel_ready_candidates": true,
+      "_bounded_credit_arguments": true,
+      "_topology_with_endpoint_admission": true,
+      "_collect_one": true,
+      "_record_collected": true,
+      "_poll_one": true
+    },
+    "all_remaining_scheduler_methods_equivalent": true,
+    "history_changes_only_five_topology_routes_and_formats": true,
+    "history_before_after": {
+      "bindings_before": 3010,
+      "bindings_after": 3010,
+      "matched_before": 3000,
+      "matched_after": 3000,
+      "differences_identical": true,
+      "projection_ids_identical": true
+    },
+    "scheduler_lines_before_after": [
+      897,
+      844
+    ],
+    "topology_lines_before_after": [
+      25,
+      83
+    ]
+  },
+  "code_size": {
+    "retained_comparison_source": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/scheduler_source_checks.json",
+    "retained_comparison_source_sha256": "8c20008187ee56011c0220cec485dbd0529770badd0e67eab0d70be470252d18",
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "1d38e256bf3d5abf52ed6cc9af9814362bf93297",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 58695
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 55687
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 92353
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114512,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "current": {
+        "commit": "e8fb2b24a8346e5a410d10660c72ac368879cde6",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 58700
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 55692
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 92358
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114517,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "older_differences": 10,
+    "added_differences": 0,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "complete_restoration_passed": false,
+    "topology_source": {
+      "original_source_commit": "1d38e256bf3d5abf52ed6cc9af9814362bf93297",
+      "path": "code/src/scheduling/core/topology.py",
+      "decoded_bytes": 691,
+      "decoded_sha256": "5e93a371a7653a05e1770494ab99f1fe18229f992361bc2024a575fde32a616c",
+      "archive": "historical_sources/1d38e256/code/src/scheduling/core/topology.py.gz",
+      "archive_bytes": 289,
+      "archive_sha256": "d7670d5125714dd63e1696e6f22e794ca2c921f0adc737a9eab21235931c92e5",
+      "five_source_overrides_added": 5,
+      "original_expected_hashes_and_projection_ids_unchanged": true,
+      "previous_manifest_sha256": "f1f35c4fe57d1579de0e6c87fe047bd473c4ca6f5079c1cfb9d47e89e08c840f",
+      "new_manifest_sha256": "d0e94246e330eaa3c68a03b587dd5997e52657a852f69f37208f9f52200ceb25"
+    }
+  },
+  "source_sha256": {
+    "code/src/scheduling/core/scheduler.py": "30874959addc7763158156e89a49a3c7fc7fd6f3e7ecaff4404fe1f26956b4d7",
+    "code/src/scheduling/core/topology.py": "7acb221382192d1b89e99e2ef01c9c4e588f6b08c957384ca457668be7ddb38f",
+    "code/tests/scheduling/test_scheduler.py": "81ddae88a2c332f650bcabaf1d23847cf77fa9eac7baec3c667c43688f45a66c"
+  },
+  "production_python_delta": 5,
+  "concurrent_poll_ACK_files_changed": false,
+  "new_policy_or_configuration": false,
+  "known_unqualified_checks": "Five earlier socket methods and two sysctl checks remain unqualified and were not selected or retried. Three CLI cases still need the pinned SEMBENCH_CHECKOUT. The real Ray integration test was not selected.",
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "independent_review_sha256": "931a7c3aa641127072fe3c18eeb8e229cfbbd22e89e593fe88f2427927ce5e87",
+  "design_review_sha256": "cf633e7163211daa389a467da5f0607566bd8bd7d4c776b38414d3c1935f03d9",
+  "private_originals": {
+    "topology-capacity-before.json": {
+      "bytes": 150226,
+      "sha256": "f782902f5ad16069416a679fbf320894dd10a6c4b741bdd218a8ccc79b90b0f4"
+    },
+    "topology-capacity-before.log": {
+      "bytes": 15964,
+      "sha256": "cc86d2fb77e887b089319f651b97dde7c645d43a27d29ec968ba9aa89beb6985"
+    },
+    "topology-capacity-after.json": {
+      "bytes": 150224,
+      "sha256": "d2c170326ef67fd7e84aba7c49b5af4c261a79d681111dfadbbf24e4ca959fa7"
+    },
+    "topology-capacity-after.log": {
+      "bytes": 15964,
+      "sha256": "642c84ab840378f21c652551b308e0c8330d71abb717c062a0109a61e1d70199"
+    },
+    "METHOD_COMPARISON.json": {
+      "bytes": 1236,
+      "sha256": "3dfcab9d7963fbd47b535c38f868ba0e47eafef30106fd7ec9847a8b81271619"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5529,
+      "sha256": "18068dce7d1c8e977cc1ed18290afd6ea18184a8f0178c6484d6779015d27a92"
+    },
+    "SOURCE_IDENTITY.json": {
+      "bytes": 406,
+      "sha256": "d00eaf2540c738fac840857003f0cb2182d13fde42866ad579b54cb2e45fbb0e"
+    },
+    "topology-history-before.json": {
+      "bytes": 6862,
+      "sha256": "cdd9154ef320c65ccbc6c4fc5926ba22625faaa7a9e0d89a73785508d3aab533"
+    },
+    "topology-history-after.json": {
+      "bytes": 6861,
+      "sha256": "53aecce67ea3c78db94f24ba100b8c37d48a44e664df1ffee202df765d249de7"
+    },
+    "HISTORY_TOPOLOGY_SOURCE.json": {
+      "bytes": 725,
+      "sha256": "6482755ed16ee7ac53e779ab12d80f9a5d94eb761f7cbfbe5198f6749702661d"
+    },
+    "REMAINING_CORE_AFTER.json": {
+      "bytes": 735,
+      "sha256": "32fd260c104a2d1713934ad6b7cde2314168d51fd45a323cdd80ba26a479abc1"
+    },
+    "source-reference-audit.txt": {
+      "bytes": 628,
+      "sha256": "27a27d5d20148b3bc54840e9678ee4acd42ae108e385177f1baf0459a3de2779"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 2994,
+      "sha256": "931a7c3aa641127072fe3c18eeb8e229cfbbd22e89e593fe88f2427927ce5e87"
+    },
+    "design/HANDOFF.json": {
+      "bytes": 10204,
+      "sha256": "cf633e7163211daa389a467da5f0607566bd8bd7d4c776b38414d3c1935f03d9"
+    },
+    "review/SOURCE-EVIDENCE.json": {
+      "bytes": 3892,
+      "sha256": "3fd8c5992e9886a2bd572f4ed40f646fc52716ea3bb863484f26d207a07c1d73"
+    }
+  },
+  "remaining_core_files": [
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "lines": 1157
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "lines": 985
+    },
+    {
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "lines": 925
+    },
+    {
+      "path": "code/src/observability/profiling/replay.py",
+      "lines": 845
+    },
+    {
+      "path": "code/src/scheduling/core/scheduler.py",
+      "lines": 844
+    },
+    {
+      "path": "code/src/observability/request_gateway.py",
+      "lines": 779
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_async_model.py",
+      "lines": 716
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "lines": 703
+    }
+  ],
+  "raw": {
+    "file": "topology_capacity_raw.json.gz",
+    "bytes": 17111,
+    "sha256": "8b566fda2ad070ac74d398983705014e24a73d5b460cb1e2cbc263faf5cca3ec",
+    "decoded_sha256": "d16b32af37ed533fe49ea9d718a9649cfe7775f3b2c34479fa49cebf436fa902"
+  }
+}

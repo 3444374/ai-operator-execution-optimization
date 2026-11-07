@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .config_env import ENV_REFERENCE, expand_text
+from .cpu_allocation import observe_cpu_capacity
 
 
 @dataclass(frozen=True)
@@ -36,10 +37,13 @@ class MachineObservation:
     machine_id: str
     platform: str
     python: str
-    cpu_slots: int
+    cpu_slots: float | None
     gpu_names: tuple[str, ...]
     gpu_memory_mib: tuple[int, ...]
     gpu_driver_versions: tuple[str, ...]
+    cpu_allocation_status: str = "legacy_unspecified"
+    cpu_affinity_slots: int | None = None
+    cpu_quota_slots: float | None = None
 
 
 def load_env_file(path: Path) -> dict[str, str]:
@@ -102,11 +106,7 @@ def load_json_contract(path: Path, expected_kind: str) -> dict[str, Any]:
 def observe_machine() -> MachineObservation:
     """Observe stable host capabilities without exposing hostname or GPU UUIDs."""
 
-    cpu_slots = (
-        len(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else (os.cpu_count() or 1)
-    )
+    cpu = observe_cpu_capacity()
     gpu_names: list[str] = []
     gpu_memories: list[int] = []
     gpu_drivers: list[str] = []
@@ -150,10 +150,13 @@ def observe_machine() -> MachineObservation:
         machine_id=machine_id,
         platform=platform.system(),
         python=platform.python_version(),
-        cpu_slots=cpu_slots,
+        cpu_slots=cpu.effective_slots,
         gpu_names=tuple(gpu_names),
         gpu_memory_mib=tuple(gpu_memories),
         gpu_driver_versions=tuple(gpu_drivers),
+        cpu_allocation_status=cpu.status,
+        cpu_affinity_slots=cpu.affinity_slots,
+        cpu_quota_slots=cpu.quota_slots,
     )
 
 
@@ -380,17 +383,14 @@ def _check_profile(
             f"observed={platform.python_version()}; minimum={'.'.join(map(str, minimum_python))}",
         )
     )
-    cpu_slots = (
-        len(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else (os.cpu_count() or 1)
-    )
+    cpu = observe_cpu_capacity()
+    cpu_slots = cpu.effective_slots
     minimum_cpu = int(profile.get("minimum_cpu_slots", 1))
     results.append(
         CheckResult(
             "machine:cpu_slots",
-            "ok" if cpu_slots >= minimum_cpu else "missing",
-            f"observed={cpu_slots}; minimum={minimum_cpu}",
+            "ok" if cpu_slots is not None and cpu_slots >= minimum_cpu else "missing",
+            f"observed={cpu_slots}; minimum={minimum_cpu}; status={cpu.status}; affinity={cpu.affinity_slots}; quota={cpu.quota_slots}",
         )
     )
     required_environment = list(profile.get("required_environment", []))

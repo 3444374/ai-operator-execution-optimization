@@ -12,7 +12,7 @@ HTTP、PG、GPU及模型请求均为0，未连接服务器、安装依赖或下�
 
 ## 改动及最小复现
 
-本地候选对[Ray Map传输](../../../../code/src/execution_provider/adapters/ray_map_transport.py)增加显式`RayMapConfig.ready_wait_ms`：
+本地候选对[Ray Map传输](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/ray_map_transport.py)增加显式`RayMapConfig.ready_wait_ms`：
 仅在同Job还有等待交付的已发出调用、当前就绪行不足一批时，给予一个固定等待期限。
 达到行数或字节条件、遇到其他Job或取消、该Job没有仍在等待交付的已发出调用时及时继续。
 首批立即推进；新到达或唤醒不延长本次期限。期限由事件循环处理，事件循环被其他工作占用时可能较晚恢复。

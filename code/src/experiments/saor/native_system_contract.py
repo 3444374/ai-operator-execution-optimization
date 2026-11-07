@@ -98,3 +98,13 @@ class ScheduledMatchedCell:
     order_index: int
     arm_id: str
     report_blocks: tuple[str, ...]
+
+
+SYSTEM_ARM_IDS = (
+    "daft_native", "daft_ray", "ray_data_http",
+    "project_frozen_static", "project_bounded_ready_saor_0125we",
+)
+
+REQUIRED_ARM_IDS = SYSTEM_ARM_IDS
+
+FORMAL_AUTHORIZATION_SCOPE = "saor_native_system_matched_formal"

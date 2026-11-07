@@ -49,7 +49,7 @@ def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int, b
                   for start in range(0, len(rows), batch_rows))
     else:
         import daft
-        from .text import configure_daft_runner
+        from src.infrastructure.daft_runtime import configure_daft_runner
         configure_daft_runner("native")
         stream = daft.from_arrow(table_from(rows)).into_batches(batch_rows).to_arrow_iter(results_buffer_size=1)
     expected = iter(rows)

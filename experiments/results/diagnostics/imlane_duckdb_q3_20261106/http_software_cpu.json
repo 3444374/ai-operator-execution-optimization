@@ -1,0 +1,334 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.http_software_cpu.v1",
+  "source_commit": "e420a0abbc02782a919340a3a83179f077f2598a",
+  "run_id": "imlane-model-wire-e420-cpu-20261106-r1",
+  "state": "completed software HTTP only; real HTTP model testing paused; latest user requests author-native execution first",
+  "models": 0,
+  "GPU_runs": 0,
+  "performance_claim": false,
+  "lease_released": true,
+  "artifacts": {
+    "artifacts/FINAL.json": "b65f5f57bcbf556971c5358f1af7b0d43877b72ddcf0b0828805885173346372",
+    "artifacts/preflight-summary.json": "cd869c0e496833c1de000ab02d19f022ab72ff040bf6437339ce32c62931fd07",
+    "artifacts/driver-build-summary.json": "f1f40cc26676c3435fc3636ba88b4b95d09f1b2be5d3f3b4eff1de32a81248b3",
+    "run.py": "4a514a6912d7a37c5fc57e630b4f94d86430767cf01c38b7a87222ca5c836553"
+  },
+  "scope": {
+    "real_author_DuckDB": true,
+    "real_author_CPython_Arrow": "16.1.0",
+    "real_model_service_process_owner": true,
+    "spawn_replacement": "only model-service spawn launches a software HTTP server; requested vLLM command was not executed",
+    "model_import_guard": "worker and software-service interpreters only; embedded author CPython and build/preflight subprocesses not covered",
+    "software_context_length": 32768,
+    "software_context_is_not_actual_vllm_capacity": true,
+    "token_usage": "software placeholders; no real generation",
+    "resource_limits": {
+      "sampled_RSS_bytes": 21474836480,
+      "host_SHM_delta_bytes": 536969216,
+      "cpu_affinity_cores": 8,
+      "query_seconds": 60,
+      "cleanup_seconds": 30,
+      "forced_stop_reserved_seconds": 8
+    },
+    "author_defaults": {
+      "executors": 4,
+      "duckdb_threads": 16,
+      "standard_vector_size": 2048,
+      "registered_batch_parameter_used_by_filter": false
+    }
+  },
+  "cases": {
+    "good": {
+      "expected_behavior_observed": true,
+      "summary_sha256": "71fdc14b49f4fb6cba11c487bc235e859ec2690b65f1197360c69905e476d2a3",
+      "source": {
+        "sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+        "bytes": 654791,
+        "rows": 2000,
+        "unique_review_ids": 1865,
+        "eligible_rows": 120,
+        "logical_model_requests": 120,
+        "eligible_empty_reviews": 0,
+        "prompt_profile": "lotus-1.2.4-default-non-cot-filter",
+        "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+        "predicate": {
+          "column": "id",
+          "operator": "eq",
+          "value": "taken_3"
+        },
+        "result_column": "positive_review_cnt"
+      },
+      "worker": {
+        "status": "completed",
+        "error_type": null,
+        "positive_review_cnt": 14,
+        "logical_model_requests": 120,
+        "model_requests": 0,
+        "warmup_semantic_requests": 0,
+        "whole_query_retries": 0,
+        "worker_ended_monotonic_ns": 5096099218011267,
+        "deadline": {
+          "worker_started_monotonic": 5096090.971001805,
+          "query_deadline_monotonic": 5096150.971001805,
+          "result_ready_monotonic_ns": 5096095730420208,
+          "cleanup_deadline_monotonic": 5096125.730420208,
+          "cleanup_started_monotonic_ns": null,
+          "cleanup_marker_error_type": null,
+          "cleanup_seconds": 30,
+          "forced_stop_reserved_seconds": 8
+        }
+      },
+      "supervisor": {
+        "status": "passed",
+        "worker_exit": 0,
+        "signals": [],
+        "signal_events": [],
+        "cleanup_errors": [],
+        "remaining_owned_pids": [],
+        "observed_owned_exit_confirmed": true,
+        "elapsed_s": 8.817302082665265,
+        "ended_monotonic": 5096099.566191639
+      },
+      "resource": {
+        "passed": true,
+        "failures": [],
+        "remaining_new_shm_names": [],
+        "final_host_shm_used_delta_bytes": 0
+      },
+      "resource_peaks": {
+        "rss": 543109120,
+        "shm": 536969216
+      },
+      "software_service": {
+        "attempts": 120,
+        "inflight": 0,
+        "peak_inflight": 109,
+        "completed": 120,
+        "serve_thread_alive": false,
+        "software_fixture": true,
+        "token_usage_is_placeholder": true,
+        "models": 0,
+        "GPU_runs": 0
+      },
+      "model_close": {
+        "fallback_term": false,
+        "forced_kill": false,
+        "cleanup_errors": [],
+        "observed_owned_exit_confirmed": true,
+        "owned_survivors": [],
+        "owner_returncode": 0,
+        "observer_stopped": true,
+        "log_writer_stopped": true
+      },
+      "checks": {
+        "payloads_match": true,
+        "fixed_cleanup_deadline_met": true,
+        "author_automatic_resource_cleanup": true,
+        "native_client_returncodes": [
+          0
+        ],
+        "native_error_propagation": "not_applicable"
+      },
+      "author_cleanup": [
+        {
+          "passed": true,
+          "coordinator": {
+            "returncode": 0,
+            "forced": false
+          },
+          "client-0": {
+            "returncode": 0,
+            "forced": false
+          },
+          "forced_identities": [],
+          "owned_survivors": [],
+          "unconfirmed_root_pids": [],
+          "remaining_shm": {},
+          "forced_shared_memory": [],
+          "owned_threads_stopped": true,
+          "errors": []
+        }
+      ],
+      "quality": {
+        "result": {
+          "index": [
+            0
+          ],
+          "columns": [
+            "positive_review_cnt"
+          ],
+          "data": [
+            [
+              14
+            ]
+          ]
+        },
+        "classification": {
+          "true_positive": 14,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0,
+          "unparsed_default_true": 0
+        },
+        "official": {
+          "original_metric": {
+            "relative_error": 0,
+            "absolute_error": 0,
+            "mean_absolute_percentage_error": 0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+        }
+      },
+      "transport": {
+        "post_invocations": 120,
+        "logical_rows": 120,
+        "physical_model_attempts": null,
+        "truncated": 0,
+        "batches": 1,
+        "sampling_params": {
+          "temperature": 0,
+          "top_p": 1,
+          "max_tokens": 8192,
+          "n": 1,
+          "stop": null,
+          "presence_penalty": 0,
+          "frequency_penalty": 0,
+          "repetition_penalty": 1
+        },
+        "transport": "independent baseline loopback HTTP; database/executor uses author ArrowLane"
+      },
+      "native_query": {
+        "positive_review_cnt": 14,
+        "source_rows": 2000,
+        "eligible_rows": 120,
+        "native_ai_query_attempts": 1,
+        "native_ai_query_returns": 1,
+        "result_clock": "CLOCK_MONOTONIC",
+        "result_ready_monotonic_ns": 5096095730420208,
+        "kind": "THREAD_SCHEDULE_PREDICTION",
+        "duckdb_threads": 16,
+        "registered_batch_size_used_by_selected_filter": false,
+        "library_version": "unknown",
+        "library_source_id": "072f8257db"
+      }
+    },
+    "error": {
+      "expected_behavior_observed": true,
+      "summary_sha256": "df51d4a55ec46dc19f955d98b9a18ee191145a981074812dec56e2c63ee24033",
+      "source": {
+        "sha256": "0fc00845cdfd3927514ce05310de361062c76773bf6434c45520e344d9dad294",
+        "bytes": 564,
+        "rows": 1,
+        "unique_review_ids": 1,
+        "eligible_rows": 1,
+        "logical_model_requests": 1,
+        "eligible_empty_reviews": 0,
+        "prompt_profile": "lotus-1.2.4-default-non-cot-filter",
+        "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+        "predicate": {
+          "column": "id",
+          "operator": "eq",
+          "value": "taken_3"
+        },
+        "result_column": "positive_review_cnt"
+      },
+      "worker": {
+        "status": "failed",
+        "error_type": "RuntimeError",
+        "positive_review_cnt": null,
+        "logical_model_requests": null,
+        "model_requests": 0,
+        "warmup_semantic_requests": 0,
+        "whole_query_retries": 0,
+        "worker_ended_monotonic_ns": 5096103877755769,
+        "deadline": {
+          "worker_started_monotonic": 5096099.96729311,
+          "query_deadline_monotonic": 5096159.96729311,
+          "result_ready_monotonic_ns": null,
+          "cleanup_deadline_monotonic": 5096132.614324173,
+          "cleanup_started_monotonic_ns": 5096102614324173,
+          "cleanup_marker_error_type": null,
+          "cleanup_seconds": 30,
+          "forced_stop_reserved_seconds": 8
+        }
+      },
+      "supervisor": {
+        "status": "failed",
+        "worker_exit": 1,
+        "signals": [],
+        "signal_events": [],
+        "cleanup_errors": [],
+        "remaining_owned_pids": [],
+        "observed_owned_exit_confirmed": true,
+        "elapsed_s": 4.2417852664366364,
+        "ended_monotonic": 5096103.939036492
+      },
+      "resource": {
+        "passed": true,
+        "failures": [],
+        "remaining_new_shm_names": [],
+        "final_host_shm_used_delta_bytes": 0
+      },
+      "resource_peaks": {
+        "rss": 487321600,
+        "shm": 536969216
+      },
+      "software_service": {
+        "attempts": 1,
+        "inflight": 0,
+        "peak_inflight": 1,
+        "completed": 1,
+        "serve_thread_alive": false,
+        "software_fixture": true,
+        "token_usage_is_placeholder": true,
+        "models": 0,
+        "GPU_runs": 0
+      },
+      "model_close": {
+        "fallback_term": false,
+        "forced_kill": false,
+        "cleanup_errors": [],
+        "observed_owned_exit_confirmed": true,
+        "owned_survivors": [],
+        "owner_returncode": 0,
+        "observer_stopped": true,
+        "log_writer_stopped": true
+      },
+      "checks": {
+        "payloads_match": true,
+        "fixed_cleanup_deadline_met": true,
+        "author_automatic_resource_cleanup": true,
+        "native_client_returncodes": [
+          -15
+        ],
+        "native_error_propagation": "TERM_cancelled_after_known_provider_failure; native scalar remains unknown"
+      },
+      "author_cleanup": [
+        {
+          "passed": false,
+          "coordinator": {
+            "returncode": 0,
+            "forced": false
+          },
+          "client-0": {
+            "returncode": -15,
+            "forced": false
+          },
+          "forced_identities": [],
+          "owned_survivors": [],
+          "unconfirmed_root_pids": [],
+          "remaining_shm": {},
+          "forced_shared_memory": [],
+          "owned_threads_stopped": true,
+          "errors": []
+        }
+      ]
+    }
+  },
+  "error_interpretation": "The software HTTP503 produced one failed provider batch. Outer worker exited1; the author native client was TERM-cancelled (-15) after known provider failure, so native scalar/error propagation is unknown. Resource cleanup was automatic with no fallback or new SHM residue, but author cleanup 'passed' remains false and was not rewritten.",
+  "next": "Keep author DuckDB/DBEnd/ArrowLane execution. No published author Q7 model client was found. Retain the tested official vLLM API project binding; custom IPC drafts paused and not integrated. Do not start GPU in this batch."
+}

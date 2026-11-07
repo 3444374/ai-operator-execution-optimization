@@ -6,16 +6,17 @@ directly to a single model actor. The driver receives only compact terminal rows
 
 from __future__ import annotations
 
-import os
 import time
 from dataclasses import asdict
 from typing import Any, Callable, Iterator
 
+from src.infrastructure.deadlines import deadline_after, earliest_deadline, remaining_time
 from src.execution_provider.adapters.lotus_records_actor_owner import (
     RecordsActorOwner, _ModelActor, _PrepareActor, _check, _runtime_env,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+from .records_scan import prepare_native_records_scan
 
 
 class _StaticRows(Iterator[dict[str, Any]]):
@@ -88,7 +89,7 @@ class _StaticRows(Iterator[dict[str, Any]]):
                 refs = [item[0] for item in self.pending]
                 ready, _ = self.owner.ray.wait(
                     refs, num_returns=1,
-                    timeout=min(0.05, max(0.0, self.deadline - time.monotonic())),
+                    timeout=remaining_time(self.deadline, 0.05),
                     fetch_local=False,
                 )
                 if not ready:
@@ -221,7 +222,7 @@ class SemLoomRecordsStaticReference:
             raise RuntimeError("static reference has closing or unconfirmed model ownership")
         if self._active is not None and not self._active.finished:
             raise RuntimeError("static reference already owns an active query")
-        deadline = time.monotonic() + self.resources.query_timeout_s
+        deadline = deadline_after(self.resources.query_timeout_s)
         from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
 
         source.preflight(self.method)
@@ -236,33 +237,9 @@ class SemLoomRecordsStaticReference:
         self.engine.validate_driver_environment()
         expected = source.expected(query_id)
         _check(deadline, cancelled)
-        import daft
-        import ray
-        from daft.runners import _get_runner, get_or_create_runner
-        from src.infrastructure.daft_runtime import configure_daft_runner
-
-        if ray.__version__ != "2.56.1" or not ray.is_initialized():
-            raise RuntimeError("static reference requires caller-owned Ray 2.56.1")
-        if daft.__version__ != "0.7.21":
-            raise RuntimeError("static reference requires Daft 0.7.21 Native")
-        # get_or_create_runner infers Ray when Ray is already initialized.
-        # Select Native first, while preserving an existing process runner.
-        if _get_runner() is None:
-            if os.environ.get("DAFT_RUNNER") not in (None, "native"):
-                raise RuntimeError("static reference requires an explicit Daft Native configuration")
-            configure_daft_runner("native")
-        if get_or_create_runner().name != "native":
-            raise RuntimeError("static reference requires Daft 0.7.21 Native")
-        types = {"string": daft.DataType.string(), "int64": daft.DataType.int64()}
-        frame = daft.read_csv(str(source.csv_path), infer_schema=False, schema={
-            name: types[dtype] for name, dtype in scan.csv_schema
-        })
-        if scan.predicate is not None:
-            column, value = scan.predicate
-            frame = frame.filter(daft.col(column) == value)
-        frame = frame.select("row_id", "source_position", *scan.payload_columns)
+        frame, ray = prepare_native_records_scan(source, scan, owner_name="static reference")
         if expected:
-            startup_deadline = min(deadline, time.monotonic() + self.resources.startup_timeout_s)
+            startup_deadline = earliest_deadline(deadline, time.monotonic() + self.resources.startup_timeout_s)
             try:
                 self._start(startup_deadline, cancelled)
             except BaseException as exc:

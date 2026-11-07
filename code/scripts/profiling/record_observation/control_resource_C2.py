@@ -23,6 +23,17 @@ def checked_json(binding):
     return json.loads(path.read_text())
 
 
+def owner_resource_context(config, host):
+    """Carry declared host limits to the native author owner without new defaults."""
+    if (config.get('movie_plan') or {}).get('backend') != 'imlane':
+        return {}
+    shared = host['shared_resources']
+    return dict(gpu_idle_max_mib=host['gpu_idle_max_mib'],
+        owner_resource_limits=dict(cpu_cores=len(config['cpu_affinity']),
+            rss_bytes=shared['max_sampled_owned_rss_bytes'],
+            shm_bytes=shared['max_owned_shm_bytes']))
+
+
 def source_identity(config):
     root=Path(config['source_root'])
     def git(*args):return subprocess.check_output(['git',*args],cwd=root,text=True).strip()
@@ -78,6 +89,19 @@ def check_material(config):
     if config.get('execution_enabled') is not False:raise ValueError('prepared cell must not already be enabled')
 
 
+def trace_storage_bytes(directories):
+    total = 0
+    for directory in directories:
+        for path in directory.rglob('*'):
+            try:
+                if path.is_file():
+                    total += path.stat().st_size
+            except FileNotFoundError:
+                # Nsight removes transient injection metadata while profiling.
+                continue
+    return total
+
+
 def capture_status(root):
     sinks=[];parse_errors=0;sample_known=sample_unknown=0
     for path in (Path(root)/'events').glob('*.jsonl'):
@@ -96,7 +120,7 @@ def capture_status(root):
                 scope='observed sink receipts only; inspect profiler export/drop diagnostics and process identities before qualification')
 
 
-def main(root):
+def main(root, *, monitor=None):
     root=Path(root);prepared=json.loads((root/'PREPARED-CONFIG.json').read_text())
     check_material(prepared);identity=source_identity(prepared)
     binding=prepared['host_helpers'];path=Path(binding['path'])
@@ -115,8 +139,9 @@ def main(root):
         lease=api.acquire_runner_lease(Path(host['lease_scope']),config_fingerprint=api.HOST_SCOPE_FINGERPRINT,
                                      repository_commit=identity['head'],recover_stale=False)
         before=H.snapshot(api,host,'resource-capture-before',owned);write('BEFORE.json',before);H.assert_idle(before,host)
-        config=dict(prepared,execution_enabled=True,external_owner=dict(artifact_root=str(lease.path.parent.parent),
-                    lease_sha256=hashlib.sha256(lease.path.read_bytes()).hexdigest()))
+        config=dict(prepared,execution_enabled=True,external_owner=dict(lease_path=str(lease.path),artifact_root=str(lease.path.parent.parent),
+                    lease_sha256=hashlib.sha256(lease.path.read_bytes()).hexdigest(),
+                    **owner_resource_context(prepared,host)))
         write('config.json',config)
         cap=config['workload']['expected_calls']
         ledger=api.CellBudgetLedger.create(root/'budget.sqlite',api.AttemptBudget(config['run_id'],cap),
@@ -133,12 +158,13 @@ def main(root):
         os.environ.clear();os.environ.update(env)
         if prepared.get('cpu_affinity') is not None:os.sched_setaffinity(0,set(prepared['cpu_affinity']))
         last_sample=[0.0];snapshots=[]
-        def monitor(identities):
+        def worker_monitor(identities):
             owned.update(identities);H.check_lease(lease)
+            if monitor is not None:monitor(identities)
             if time.monotonic()-started>config['limits']['controller_timeout_s']:raise TimeoutError('controller operational timeout')
             if profiled(config):
                 directories={root/'trace',Path(config['nsys_tmp'])}
-                total=sum(p.stat().st_size for directory in directories for p in directory.rglob('*') if p.is_file())
+                total=trace_storage_bytes(directories)
                 if total>config['observation']['trace_storage_bytes']:raise RuntimeError('trace storage bound')
                 if time.monotonic()-last_sample[0]>=config['observation']['physical_gpu_interval_s']:
                     lower=time.monotonic_ns()
@@ -148,7 +174,7 @@ def main(root):
                     snapshots.append(dict(lower_monotonic_ns=lower,upper_monotonic_ns=time.monotonic_ns(),values=sample.stdout.strip()))
                     (root/'GPU-SNAPSHOTS.json').write_text(json.dumps(snapshots));last_sample[0]=time.monotonic()
         supervision=api.supervise(command,root/'supervision',timeout_s=config['limits']['worker_timeout_s'],
-                   grace_s=config['limits']['cleanup_grace_s'],natural_exit_grace_s=config['limits']['natural_exit_grace_s'],monitor=monitor)
+                   grace_s=config['limits']['cleanup_grace_s'],natural_exit_grace_s=config['limits']['natural_exit_grace_s'],monitor=worker_monitor)
         owned.update(H.report_identities(supervision))
         report=json.loads((root/'WORKER-RESULT.json').read_text())
         result.update(status=report['status'],actual_known_model_requests=report['actual_calls'],actual_call_count_complete=report['actual_call_count_complete'])

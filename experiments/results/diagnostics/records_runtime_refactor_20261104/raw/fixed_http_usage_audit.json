@@ -1,0 +1,59 @@
+{
+  "status": "read_only_source_audit",
+  "inspected_commit": "4f7a04ff4fb8ffc541d011bad1dda151bd581a73",
+  "published_head": "f526e6bd4701b23d9d47e44d22590593debabb9c",
+  "native_query_changes_not_published": true,
+  "current_records_path": [
+    "experiments/lotus_records_movie.py:605-611 -> create_records_core",
+    "adapters/lotus_records_core.py:89-94 -> AsyncRecordsActorOwner for async",
+    "adapters/records_async_model.py:15,47-71 -> AsyncEngineProcess -> local worker/vLLM",
+    "Sync records uses RecordsActorOwner._ModelActor at lotus_records_actor_owner.py:70-88 and a native VllmEngine inside its Ray actor; it does not call the fixed HTTP adapter."
+  ],
+  "optional_fixed_HTTP_paths": [
+    {
+      "kind": "Explicit service CLI, not the records default",
+      "chain": [
+        "scripts/services/run_execution_provider_gateway.py:13 -> execution_provider.server.main",
+        "server.py:67 --fixed-model-config; no supplied file chooses GoldenCompletionAdapter at:214",
+        "server.py:243 -> OpenAICompatibleFixedAdapter for synchronous fixed-model selection"
+      ]
+    },
+    {
+      "kind": "Explicit incremental provider selection",
+      "chain": [
+        "server.py:223-238 --incremental-map + fixed-model config -> MultiSessionMapGateway",
+        "multiplexed_gateway.py:233 -> build_fixed_model_execution",
+        "incremental_execution.py:225 -> AsyncFixedModelTransport by default",
+        "async_fixed_model.py:123 -> configured complete HTTP-request timeout"
+      ]
+    },
+    {
+      "kind": "Optional Ray HTTP worker or Map organization",
+      "chain": [
+        "server.py:150-160 -> ray_map_factory / organization_factory only when explicit configuration supplied",
+        "ray_map_transport.py:101 chooses full/completion HTTP transport; map_organization.py:143 uses existing fixed execution builder"
+      ]
+    },
+    {
+      "kind": "Research and fixture callers",
+      "chain": [
+        "research/multitask/semloom/gateway.py:59 explicitly injects allocation policy",
+        "experiments/gateway_isolation_probe.py:334,349 and map_observation_probe.py:299-300 use fixture configurations/transports"
+      ]
+    }
+  ],
+  "native_tasks": {
+    "build_native_execution": "No caller outside tests or its definition was found in the tracked current Python sources by direct symbol search. Public API existence and previous qualification are not evidence that current Movie queries call it.",
+    "full_response": "Native task API and optional Ray response_mode use FullResponseTransport; this is not imported by the normal records model path."
+  },
+  "why_tested": "An independently identified five-minute config cap was fixed on its own retained provider API. The13 in-memory CPU methods verify that change. It is not native records optimization or a live HTTP/model test.",
+  "latest_user_scope": "Stop treating fixed HTTP as a main refactor/performance priority and do not add tests before usage is settled. Multi-query additions remain paused.",
+  "cleanup_decision": "Implementation assigned to an independent tree from f526. No HTTP retirement source change is included in this optional-duration batch; typed ImageGateway and generic Core/session/lease/cancel helpers are shared and must survive.",
+  "third_party_HTTP_to_keep": [
+    "Kalypso author-service client in baselines/text/frameworks/kalypso_native/adapter.py",
+    "Optional Ray native HTTP Processor profile in baselines/text/frameworks/ray_data_http_sembench_native.py",
+    "Existing native LOTUS VLM and MMQA aggregation service connections in experiments/sembench_lotus_image_query.py and sembench_lotus_mmqa_aggregate.py; these are distinct from FixedModelConfig."
+  ],
+  "private_audit_sha256": "66dccb3a1f35035e1b8e1858f9857b3306faa96426c53f183db30e49d87ef080",
+  "latest_user_direction": "Remove SemLoom fixed HTTP gateway/transport and exclusively related tests/configuration. Single-query and future multi-query use local IPC; do not implement multi-query now. Keep actual shared non-HTTP and third-party baseline HTTP."
+}

@@ -1,4 +1,4 @@
-"""Engine-independent AIMD admission controllers.
+"""Measured batch feedback and engine-independent AIMD admission.
 
 Ref: Clipper (NSDI 2017) provides the AIMD pattern. The asymmetric +2/x0.5
 defaults follow the CONCUR-style candidate recorded in the project experiment
@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+
+from .feedback_work import _local_pair_evidence
 
 from ..core.models import (
     AdmissionObservation,
@@ -113,247 +115,8 @@ class AimdAdmissionController:
         )
 
 
-class EwmaAimdAdmissionController(AimdAdmissionController):
-    def __init__(
-        self,
-        config: AimdConfig | None = None,
-        initial_window: int | None = None,
-        *,
-        alpha: float = 0.3,
-        smoothed_waiting_threshold: float = 0.5,
-    ):
-        super().__init__(config, initial_window)
-        if not 0.0 < alpha <= 1.0:
-            raise ValueError("alpha must be between 0 and 1")
-        if smoothed_waiting_threshold <= 0:
-            raise ValueError("smoothed_waiting_threshold must be positive")
-        self.alpha = alpha
-        self.smoothed_waiting_threshold = smoothed_waiting_threshold
-        self._running: float | None = None
-        self._waiting: float | None = None
-        self._kv_usage: float | None = None
-
-    def update(self, observation: AdmissionObservation) -> WindowDecision:
-        if not observation.fresh:
-            return self._hold("stale_observation", self._diagnostics())
-        if not observation.has_service_metrics:
-            return self._hold("missing_metrics", self._diagnostics())
-
-        self._running = self._smooth(self._running, float(observation.running))
-        self._waiting = self._smooth(self._waiting, float(observation.waiting))
-        self._kv_usage = self._smooth(self._kv_usage, float(observation.kv_usage))
-        diagnostics = self._diagnostics()
-        return self._apply_signals(
-            running=self._running,
-            waiting_congested=self._waiting >= self.smoothed_waiting_threshold,
-            waiting_clear=self._waiting < self.smoothed_waiting_threshold,
-            kv_usage=self._kv_usage,
-            diagnostics=diagnostics,
-        )
-
-    def _smooth(self, previous: float | None, sample: float) -> float:
-        if previous is None:
-            return sample
-        return self.alpha * sample + (1.0 - self.alpha) * previous
-
-    def _diagnostics(self) -> ControlDiagnostics:
-        return ControlDiagnostics(
-            smoothed_running=self._running,
-            smoothed_waiting=self._waiting,
-            smoothed_kv_usage=self._kv_usage,
-        )
-
-
-@dataclass(frozen=True)
-class HolAgeAimdConfig:
-    min_window: int = 4
-    max_window: int = 16
-    additive_increase: int = 2
-    multiplicative_decrease: float = 0.5
-    congestion_hol_age_s: float = 2.0
-    low_load_hol_age_s: float = 0.5
-
-    def __post_init__(self) -> None:
-        if self.min_window <= 0 or self.max_window < self.min_window:
-            raise ValueError("window bounds must satisfy 0 < min_window <= max_window")
-        if self.additive_increase <= 0:
-            raise ValueError("additive_increase must be positive")
-        if not 0.0 < self.multiplicative_decrease < 1.0:
-            raise ValueError("multiplicative_decrease must be between 0 and 1")
-        if (
-            not math.isfinite(self.low_load_hol_age_s)
-            or not math.isfinite(self.congestion_hol_age_s)
-            or not 0.0
-            <= self.low_load_hol_age_s
-            < self.congestion_hol_age_s
-        ):
-            raise ValueError("HOL-age thresholds must define a valid deadband")
-
-
-class HolAgeAimdAdmissionController:
-    """AIMD keyed on Ray-side head-of-line age rather than vLLM queue depth.
-
-    The service-metric controllers (AIMD/EWMA/PID) read
-    ``vllm:num_requests_waiting``, which stays at 0 when requests queue on the
-    Ray side, so they never decrease and saturate to ``max_window``. Head-of-line
-    age (the age of the oldest in-flight submission) is observable directly
-    from the scheduler. It includes normal model service time and therefore is
-    not a pure Ray queue-delay signal. This controller is a diagnostic
-    candidate whose thresholds must be calibrated against normal service
-    latency; it does not by itself establish a production congestion signal.
-    """
-
-    def __init__(
-        self,
-        config: HolAgeAimdConfig | None = None,
-        initial_window: int | None = None,
-    ):
-        self.config = config or HolAgeAimdConfig()
-        initial = self.config.min_window if initial_window is None else initial_window
-        if not self.config.min_window <= initial <= self.config.max_window:
-            raise ValueError("initial_window must be within configured bounds")
-        self.current_window = initial
-
-    def update(self, observation: AdmissionObservation) -> WindowDecision:
-        if not observation.fresh:
-            return self._hold("stale_observation")
-        hol_age_s = observation.hol_age_s
-        if hol_age_s is None:
-            return self._hold("missing_hol_age")
-        if hol_age_s >= self.config.congestion_hol_age_s:
-            updated = max(
-                self.config.min_window,
-                int(self.current_window * self.config.multiplicative_decrease),
-            )
-            if updated == self.current_window:
-                return self._hold("at_minimum")
-            self.current_window = updated
-            return WindowDecision(updated, "decrease", "hol_age_congestion")
-        if hol_age_s <= self.config.low_load_hol_age_s:
-            updated = min(
-                self.config.max_window,
-                self.current_window + self.config.additive_increase,
-            )
-            if updated == self.current_window:
-                return self._hold("at_maximum")
-            self.current_window = updated
-            return WindowDecision(updated, "increase", "hol_age_low_load")
-        return self._hold("deadband")
-
-    def _hold(self, reason: str) -> WindowDecision:
-        return WindowDecision(self.current_window, "hold", reason, ControlDiagnostics())
-
-
-@dataclass(frozen=True)
-class ResourceFeedbackConfig:
-    """Opt-in feedback; explicit legacy budgets are not platform criteria."""
-    poll_interval_s: float = 0.25
-    window_s: float = 1.0
-    min_samples: int = 16
-    min_remaining: int = 0
-    exploration_s: float | None = None
-    max_changes: int | None = None
-    allow_exploration: bool = False
-    min_gain: float = 0.03
-    memory_floor_bytes: int = 0
-    search_mode: str = "local"
-    work_tolerance: float = 0.03
-    max_candidate_attempts: int = 2
-    work_basis: str = "delivered"
-    work_comparison: str = "envelope"
-
-    def __post_init__(self):
-        for name in ("poll_interval_s", "window_s", "exploration_s"):
-            value = getattr(self, name)
-            if name == "exploration_s" and value is None:
-                continue
-            if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
-                raise ValueError(name + " must be finite and positive")
-        for name in ("min_samples", "min_remaining", "max_changes"):
-            value = getattr(self, name)
-            if name == "max_changes" and value is None:
-                continue
-            if type(value) is not int or value < (0 if name == "min_remaining" else 1):
-                raise ValueError(name + " must be a non-negative integer" if name == "min_remaining"
-                                 else name + " must be a positive integer")
-        if type(self.allow_exploration) is not bool:
-            raise ValueError("allow_exploration must be boolean")
-        if not 0 <= self.min_gain < 1:
-            raise ValueError("min_gain must be between zero and one")
-        if type(self.memory_floor_bytes) is not int or self.memory_floor_bytes < 0:
-            raise ValueError("memory_floor_bytes must be non-negative")
-        if self.search_mode not in ("local", "geometric"):
-            raise ValueError("search_mode must be local or geometric")
-        if not 0 <= self.work_tolerance < 1:
-            raise ValueError("work_tolerance must be between zero and one")
-        if type(self.max_candidate_attempts) is not int or not 1 <= self.max_candidate_attempts <= 4:
-            raise ValueError("max_candidate_attempts must be between one and four")
-        if self.work_basis not in ("delivered", "computed"):
-            raise ValueError("work_basis must be delivered or computed")
-        if self.work_basis == "computed" and self.search_mode != "geometric":
-            raise ValueError("computed work requires geometric search")
-        if self.work_comparison not in ("envelope", "local_pairs"):
-            raise ValueError("work_comparison must be envelope or local_pairs")
-        if self.work_comparison == "local_pairs" and self.work_basis != "computed":
-            raise ValueError("local pairs require measured computed work")
-
-
-def _local_pair_evidence(reference, candidate, margin):
-    """Match work direction before reading rate, never fit token-cost weights.
-
-    Larger logical input/uncached input/output are assumed not cheaper locally.
-    Means omit distribution and execution-state effects; this is operational
-    evidence from original work, not a causal estimate or a confidence interval.
-    """
-    names = ("input", "computed", "output")
-    reference_ranges=[(w['completed_begin'],w['completed_end']) for w in reference['windows'] if 'completed_begin' in w]
-    candidate_ranges=[(w['completed_begin'],w['completed_end']) for w in candidate['windows'] if 'completed_begin' in w]
-    if any(a[0]<b[1] and b[0]<a[1] for a in reference_ranges for b in candidate_ranges):
-        return dict(outcome=None,not_lighter_pairs=[],not_heavier_pairs=[],support_pairs=0,
-                    lower=None,upper=None,rule='overlapping completed prefixes are not independent evidence')
-    def pairs(direction):
-        used, used_candidate, result = [], [], []
-        span=lambda w,i:(w.get('completed_begin',i),w.get('completed_end',i+1))
-        overlaps=lambda a,b:a[0]<b[1] and b[0]<a[1]
-        for j, b in enumerate(candidate["windows"]):
-            b_span=span(b,j)
-            if any(overlaps(b_span,old) for old in used_candidate):continue
-            eligible=[i for i,a in enumerate(reference['windows'])
-                      if not any(overlaps(span(a,i),old) for old in used)
-                      and not ('completed_begin' in a and 'completed_begin' in b
-                               and overlaps(span(a,i),b_span))
-                      and all(direction*(b[n]-a[n]) >= 0 for n in names)]
-            if eligible:
-                # Work-only matching: nearest logical input, uncached input,
-                # then output; chronological ties. Never pick by faster rate.
-                i=min(eligible,key=lambda i:tuple(abs(b[n]-reference['windows'][i][n]) for n in names))
-                a=reference['windows'][i]
-                used.append(span(a,i));used_candidate.append(b_span)
-                result.append(dict(reference=i,candidate=j,gain=b["rate"]/a["rate"]-1,
-                    reference_phase=reference["control_phase_id"],candidate_phase=candidate["control_phase_id"],
-                    reference_prefix=span(a,i),candidate_prefix=b_span,
-                    equal_work=all(a[n]==b[n] for n in names)))
-        return result
-    heavier, lighter = pairs(1), pairs(-1)
-    gain = (len(heavier)>=2 and min(p['gain'] for p in heavier)>margin)
-    loss = (len(lighter)>=2 and max(p['gain'] for p in lighter)<-margin)
-    opposing_loss = any(p['gain'] < -margin for p in lighter)
-    opposing_gain = any(p['gain'] > margin for p in heavier)
-    equal = [p for p in heavier if p['equal_work']]
-    outcome = ('gain' if gain and not opposing_loss else
-               'regression' if loss and not opposing_gain else
-               'no_gain' if len(equal)>=2 and all(abs(p['gain'])<=margin for p in equal)
-                   and not opposing_gain and not opposing_loss else None)
-    evidence = heavier if outcome=='gain' else lighter if outcome=='regression' else equal
-    return dict(outcome=outcome,not_lighter_pairs=heavier,not_heavier_pairs=lighter,
-        support_pairs=max(len(heavier),len(lighter)),
-        lower=None if not evidence else min(p['gain'] for p in evidence),
-        upper=None if not evidence else max(p['gain'] for p in evidence),
-        rule='disjoint work-direction matches, work-only nearest descriptors and chronological ties; no rate-based selection or token normalization')
-
-
 class _GeometricSearch:
-    """Finite candidate progress, not an executor or a store of reusable rates."""
+    """Geometric candidate progress, not an executor or a store of reusable rates."""
     resolved = {"gain", "no_gain", "regression", "pressure"}
     outcomes = resolved | {"pending", "noise", "incomparable"}
 
@@ -390,7 +153,8 @@ class _GeometricSearch:
             for row in rows:
                 key, count, outcome = row["window"], row["attempts"], row["outcome"]
                 if (type(key) is not int or key not in self.points or key in restored
-                        or type(count) is not int or not 0 <= count <= attempts or outcome not in self.outcomes
+                        or type(count) is not int or count < 0
+                        or attempts is not None and count > attempts or outcome not in self.outcomes
                         or count == 0 and outcome not in ("pending", "pressure")):
                     raise ValueError("invalid geometric point")
                 restored[key] = dict(attempts=count, outcome=outcome)
@@ -440,7 +204,8 @@ class _GeometricSearch:
 
     def rebase_work(self, context):
         # Rates/outcomes obtained under other cache/work conditions are not
-        # evidence about this condition. Per-query attempts and budgets remain.
+        # evidence about this condition. Point-local attempts restart for the
+        # new context; elapsed/change budgets and costs live in the controller.
         self.work_context = context
         self.verified_window = None
         for row in self.points.values():
@@ -449,11 +214,13 @@ class _GeometricSearch:
 
     def available(self):
         return [key for key, row in self.points.items() if key <= self.ceiling
-                and row["outcome"] not in self.resolved and row["attempts"] < self.limit]
+                and row["outcome"] not in self.resolved
+                and (self.limit is None or row["attempts"] < self.limit)]
 
     def next(self):
-        values = [key for key in self.available() if key not in self.here]
-        # Cover unvisited points before retrying unresolved ones on a later query.
+        values = [key for key in self.available() if self.limit is None or key not in self.here]
+        # Finite legacy scans visit once per query; an unlimited scan may
+        # remeasure unresolved points without resetting their attempt counters.
         return min(values, key=lambda key: (self.points[key]["attempts"] > 0, key)) if values else None
 
     def begin(self, window):
@@ -464,6 +231,11 @@ class _GeometricSearch:
     def finish(self, window, outcome):
         if window in self.here:
             self.points[window]["outcome"] = outcome
+
+    def interrupt(self, window):
+        self.finish(window, 'incomparable')
+        if window in self.available():
+            self.here.discard(window)
 
     def stop_reason(self):
         if self.available():
@@ -494,10 +266,18 @@ class ResourceFeedbackController(AimdAdmissionController):
     min/max bands are conservative local evidence, never confidence intervals.
     """
 
-    def __init__(self, maximum, initial_window, options, *, clock=None):
+    def __init__(self, maximum, initial_window, options, *, clock=None, source_stale_after_s=None):
         import time
+        try:
+            valid_age = (source_stale_after_s is None or type(source_stale_after_s) in (int, float)
+                         and math.isfinite(source_stale_after_s) and source_stale_after_s >= 0)
+        except OverflowError:
+            valid_age = False
+        if not valid_age:
+            raise ValueError('source_stale_after_s must be finite and non-negative or unspecified')
         super().__init__(AimdConfig(min_window=1, max_window=maximum,
             low_load_running=maximum), initial_window)
+        self.source_stale_after_s = source_stale_after_s
         self.options, self.clock = options, clock or time.monotonic
         self.reset(initial_window, 0)
 
@@ -510,6 +290,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         self._reference_recheck_used = False
         self._confirmed_window = initial_window
         self._preemptions = None
+        self._pressure_sample_sequence = self._pressure_sample_at = None
         self._needs_settle = False
         self._pressure_windows = self._cooldown = 0
         self._changes = self._decisions = self._accepted_steps = 0
@@ -584,6 +365,8 @@ class ResourceFeedbackController(AimdAdmissionController):
         return limit is None or self._changes + reserve <= limit
 
     def sampling_interval_s(self, pending_items):
+        if self.options.pressure_response == "sample":
+            return self.options.poll_interval_s
         has_candidate = bool(self._search.available()) if self._search is not None else self.current_window < self.config.max_window
         exploring = (self.options.allow_exploration and not self._growth_stopped
             and (self._probe_at is not None or has_candidate)
@@ -610,16 +393,33 @@ class ResourceFeedbackController(AimdAdmissionController):
         if provisional:
             # Do not skip an unresolved adjacent point just to chase a larger C.
             candidates = [key for key in self._search.points
-                          if self.current_window < key <= self._search.ceiling]
+                          if self.current_window < key <= self._search.ceiling
+                          and (self._search.limit is not None
+                               or self._search.points[key]['outcome'] not in self._search.resolved)]
             adjacent = min(candidates) if candidates else None
-            if adjacent is not None and adjacent not in self._search.here and adjacent in self._search.available():
+            if (adjacent is not None and adjacent in self._search.available()
+                    and (self._search.limit is None or adjacent not in self._search.here)):
                 higher = adjacent
-            else:
+            elif self._search.limit is not None or adjacent is not None:
                 return self._stop("adjacent_trial_unavailable", o)
         if higher is None:
             return self._stop(self._search.stop_reason(),o)
         if higher == self.current_window:
             return self._stop("capacity_limit",o)
+        decision = self._trial_budget(higher, o)
+        if decision is not None:
+            return decision
+        self._probe_loss_base = self.estimated_trial_loss_s
+        self._probe_at = o.observed_at_s
+        self._reference_recheck_used = False
+        if self._search is not None:
+            self._search.begin(higher)
+        return self._change(higher,"performance_probe",o)
+
+    def _trial_budget(self, higher, o):
+        """Shared explicit trial limits; absent budgets add no stopping rule."""
+        point = self._reference
+        provisional = not point.get("comparison_eligible", True)
         # Reserve a possible rollback; resource-pressure reductions are independent.
         reserve = 2  # trial plus a return to the last safe setting
         if not self._within_change_budget(reserve):
@@ -632,7 +432,8 @@ class ResourceFeedbackController(AimdAdmissionController):
                    + max(self.options.window_s,o.hol_age_s or 0)+self.options.window_s)
         # Measurement consumes wall time, but continues useful original work.
         # Reserve that time, then value only the work left after reference-rate
-        # progress. Controller CPU is observed; other future losses are unknown.
+        # progress. Controller-function wall time is observed; outer sampling,
+        # IPC and other future losses are not covered by this measurement.
         after_trial = max(0.,remaining-point["rate"]*trial_s)
         later_saving = after_trial/point["rate"]*max(0.,1-self.current_window/higher)
         control_estimate = (self.control_seconds/max(1,self._decisions)
@@ -652,12 +453,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if self.options.min_remaining and (after_trial <= self.options.min_remaining
                 or higher > self.current_window and later_saving <= control_estimate):
             return self._stop("insufficient_remaining_benefit",o)
-        self._probe_loss_base = self.estimated_trial_loss_s
-        self._probe_at = o.observed_at_s
-        self._reference_recheck_used = False
-        if self._search is not None:
-            self._search.begin(higher)
-        return self._change(higher,"performance_probe",o)
+        return None
 
     def _point(self):
         import statistics
@@ -836,12 +632,68 @@ class ResourceFeedbackController(AimdAdmissionController):
         return (self._change(self._confirmed_window,"trial_"+outcome,o)
                 if self.current_window != self._confirmed_window else self._hold("trial_"+outcome))
 
+    def _measurement_enabled(self):
+        return not self._growth_stopped
+
+    def _pressure_event(self, observation):
+        """Confirmed pressure invalidates evidence even at the minimum quota."""
+
+    def _new_pressure_sample(self, o):
+        if o.sample_sequence is not None:
+            return (self._pressure_sample_sequence is None
+                    or o.sample_sequence > self._pressure_sample_sequence)
+        sampled_at = o.observed_at_s - (o.sample_age_s or 0.)
+        return self._pressure_sample_at is None or sampled_at > self._pressure_sample_at + 1e-9
+
+    def _remember_pressure_sample(self, o):
+        if o.sample_sequence is not None:
+            self._pressure_sample_sequence = o.sample_sequence
+        self._pressure_sample_at = o.observed_at_s - (o.sample_age_s or 0.)
+        if o.preemptions_total is not None:
+            self._preemptions = o.preemptions_total
+
+    def _reduce_for_pressure(self, o):
+        self._end_probe(o.observed_at_s)
+        self._reference = None
+        if self.options.pressure_response == "sample":
+            self._anchor, self._windows = None, []
+        lower = max(1, int(self.current_window*self.config.multiplicative_decrease))
+        self._confirmed_window = lower
+        if self._search is not None:
+            if self.options.work_basis == "computed":
+                self._search.record_pressure(self.current_window, lower)
+            else:
+                self._search.finish(self.current_window, "pressure")
+            self._search.verified_window = None
+            self._search.ceiling = min(self._search.ceiling, max(1, self.current_window-1))
+            self._growth_stopped, self._stop_reason = True, "resource_pressure"
+        self._pressure_event(o)
+        return (self._change(lower, "resource_pressure", o) if lower < self.current_window
+                else self._hold("at_minimum"))
+
     def _update(self, o):
-        if not o.fresh or not o.has_service_metrics:
+        sample_clock = self.options.pressure_response == "sample"
+        # A bound provider owns source recency; the work window measures progress.
+        # Unbound callers keep the existing age rule until they supply that limit.
+        age_limit = self.options.window_s if self.source_stale_after_s is None else self.source_stale_after_s
+        stale_age = (sample_clock and o.sample_age_s is not None
+                     and o.sample_age_s > min(o.observed_at_s, age_limit))
+        if not o.fresh or not o.has_service_metrics or stale_age:
             if self._probe_at is not None and self._exploration_time_left(o.observed_at_s) <= 0:
                 return self._stop("exploration_budget",o,rollback=True)
             return self._hold("missing_or_stale_feedback")
         now = o.observed_at_s
+        if sample_clock:
+            if not self._new_pressure_sample(o):
+                if self._probe_at is not None and self._exploration_time_left(now) <= 0:
+                    return self._stop("exploration_budget", o, rollback=True)
+                return self._hold("repeated_feedback_sample")
+            preempted = (o.preemptions_total is not None and self._preemptions is not None
+                         and o.preemptions_total > self._preemptions)
+            self._remember_pressure_sample(o)
+            if preempted or o.memory_pressure is True:
+                self._window_at = now
+                return self._reduce_for_pressure(o)
         if self._preemptions is None:
             self._preemptions = o.preemptions_total
         if now-self._window_at < self.options.window_s:
@@ -862,19 +714,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if pressured:
             if self._pressure_windows < 2 and not preempted and o.memory_pressure is not True:
                 return self._hold("confirming_pressure")
-            self._end_probe(now)
-            self._reference = None
-            lower = max(1,int(self.current_window*self.config.multiplicative_decrease))
-            self._confirmed_window = lower
-            if self._search is not None:
-                if self.options.work_basis == "computed":
-                    self._search.record_pressure(self.current_window, lower)
-                else:
-                    self._search.finish(self.current_window,"pressure")
-                self._search.verified_window = None
-                self._search.ceiling = min(self._search.ceiling,max(1,self.current_window-1))
-                self._growth_stopped, self._stop_reason = True, "resource_pressure"
-            return self._change(lower,"resource_pressure",o) if lower < self.current_window else self._hold("at_minimum")
+            return self._reduce_for_pressure(o)
         if (self.options.work_basis == "computed" and self._search.pressure_recovery is not None
                 and self.options.allow_exploration and o.waiting == 0
                 and o.kv_usage <= self.config.low_load_kv_usage
@@ -910,7 +750,7 @@ class ResourceFeedbackController(AimdAdmissionController):
         if self.total_items < self.options.min_remaining or o.pending_items <= self.options.min_remaining:
             return self._stop("no_pending_work" if not self.options.min_remaining
                               else "short_tail_or_fixed",o,rollback=True)
-        if self._growth_stopped:
+        if not self._measurement_enabled():
             return self._hold(self._stop_reason or "exploration_stopped")
         if self.options.memory_floor_bytes and o.memory_pressure is None:
             return self._hold("missing_memory_feedback")
@@ -952,6 +792,9 @@ class ResourceFeedbackController(AimdAdmissionController):
             return self._hold("confirming_performance")
         point = self._point()
         self.measurements=(self.measurements+[point])[-64:]
+        return self._accept_measurement(point, o)
+
+    def _accept_measurement(self, point, o):
         if self._probe_candidate is not None:
             candidate, self._probe_candidate = self._probe_candidate, None
             self._reference = point

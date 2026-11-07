@@ -1,0 +1,132 @@
+{
+  "base_commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+  "historical_mechanism_commit": "9da299e90f79fd0b71f2a4983a90884f8ba960b5",
+  "production_files": 17,
+  "retired_test_fixture_files": 24,
+  "cpu": {
+    "unique_selected_methods": 567,
+    "successful_methods": 561,
+    "skipped_methods": 6,
+    "union_first": {
+      "selected": 566,
+      "passed": 559,
+      "failed_methods": 1,
+      "skipped": 6
+    },
+    "correction_passed": 1,
+    "sole_policy_increment_passed": 24,
+    "restored_original_method_passed": 1,
+    "rerun_policy": "Targeted corrections only; do not add repeated methods or claim an unchanged whole-suite rerun",
+    "original_failures_preserved": true
+  },
+  "size": {
+    "main": {
+      "core": {
+        "files": 227,
+        "physical_lines": 54091,
+        "nonempty_lines": 48889,
+        "files_over_1000": 7,
+        "functions_over_100": 50
+      },
+      "src_all": {
+        "files": 444,
+        "physical_lines": 109118,
+        "nonempty_lines": 99548,
+        "files_over_1000": 15,
+        "functions_over_100": 134
+      },
+      "scripts": {
+        "files": 134,
+        "physical_lines": 31217,
+        "nonempty_lines": 28486,
+        "files_over_1000": 3,
+        "functions_over_100": 45
+      }
+    },
+    "3fd": {
+      "core": {
+        "files": 248,
+        "physical_lines": 61628,
+        "nonempty_lines": 55819,
+        "files_over_1000": 9,
+        "functions_over_100": 57
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 118067,
+        "nonempty_lines": 107770,
+        "files_over_1000": 17,
+        "functions_over_100": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    },
+    "retirement_candidate": {
+      "core": {
+        "files": 248,
+        "physical_lines": 60177,
+        "nonempty_lines": 54450,
+        "files_over_1000": 7,
+        "functions_over_100": 55
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 116430,
+        "nonempty_lines": 106229,
+        "files_over_1000": 15,
+        "functions_over_100": 143
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    }
+  },
+  "source_layout_counting": {
+    "core": "code/src/**/*.py excluding code/src/experiments and code/src/baselines",
+    "src_all": "code/src/**/*.py",
+    "scripts": "code/scripts/**/*.py",
+    "excluded_directory_parts": [
+      "__pycache__",
+      "archive",
+      "archives",
+      "docs",
+      "historical",
+      "history",
+      "raw",
+      "tests"
+    ],
+    "file_selection": "Git-tracked plus nonignored untracked ordinary .py files; no symlink following",
+    "historical_copies": "No reference/baseline filename is excluded by name; only declared excluded directory parts. Inspect excluded paths for each snapshot.",
+    "physical_lines": "len(bytes.splitlines()), including a final unterminated line",
+    "nonempty_lines": "count(line.strip() != b\"\") over the same splitlines; comments and docstrings included",
+    "long_files": "physical_lines > 1000",
+    "long_functions": "FunctionDef and AsyncFunctionDef AST end_lineno-lineno+1 > 100; methods and nested functions included, decorators excluded, lambdas excluded",
+    "alternate_counts": "Also record nonnested functions and decorator-inclusive spans; enclosing/nested function spans can overlap and are never summed as source line totals"
+  },
+  "raw": {
+    "path": "legacy_entry_retirement_raw.json.gz",
+    "bytes": 296894,
+    "sha256": "fd27f072de57ac3b8f96d810c5ad6fb583efe140d2520f6527f0bcc3350612e5"
+  },
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "server_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "remaining": [
+    "Independent review of the final combined candidate",
+    "Actual Ray and model validation on the reviewed source",
+    "Physical RAM grants, complete relation storage and cross-process recovery",
+    "Further cohesive organization of large modules; moves are not source deletion"
+  ]
+}

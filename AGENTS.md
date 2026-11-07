@@ -177,7 +177,7 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
   和日志进入公开仓库或 AutoDL 等外部环境前，须有覆盖材料和目标环境的明确授权。未获授权时留在
   获批内网环境，公开实现依据公开接口/资料并保留可说明的来源。
 - 新连接串使用环境变量；示例只允许 localhost 公共默认值或明显占位符。
-- evidence 中的命令、异常和 traceback 在落盘前使用 `code/src/baselines/common/redact.py` 脱敏。
+- evidence 中的命令、异常和 traceback 在落盘前使用 `code/src/infrastructure/redact.py` 脱敏。
 - commit 前运行 `python code/scripts/environment/scan_git_secrets.py`；误报只以最小正则登记到
   `code/scripts/environment/secret_scan_baseline.txt`，真实泄漏立即轮换。
 - `.gitignore` 已放行历史 `postgres:postgres@localhost` 公共本地默认；新增内容仍优先使用环境变量。

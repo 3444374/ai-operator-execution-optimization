@@ -1,0 +1,184 @@
+{
+  "schema": "semloom.sync_and_capacity_source_audit.v1",
+  "source_kind": "read-only current candidate source",
+  "sources": [
+    {
+      "path": "code/src/execution_provider/adapters/records_capacity.py",
+      "sha256": "e9f5bcd4a9685f012d11a63eb13238745851db1ebab8b2052056bbec4c03708f",
+      "finding": "Independent complete logical budgets exist. Ordinary defaults retain request R and finite IPC byte declarations; no observed deployment grant is created."
+    },
+    {
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8",
+      "finding": "AsyncEngineLimits default result_slots and byte totals are configured logical allocations. Native scheduler and KV configuration are separate observations."
+    },
+    {
+      "path": "code/src/infrastructure/cgroup.py",
+      "sha256": "ca12e7a4dec9ac5ad55e659b0271c882784dbd8c9d41d3a677a9e0cbea0c7e60",
+      "finding": "Ancestor limit and headroom are shared observations, without an exclusive allocation to Core, Method or IPC."
+    },
+    {
+      "path": "code/src/experiments/sembench_records_formal_resources.py",
+      "sha256": "9d5f1e4c9182f08572fcb63af57d206e17d21e8804a6805bc9bdac8122b64080",
+      "finding": "ResourceMonitor is a sampled owned-RSS watchdog; kernel_memory_limit_enforced is false."
+    },
+    {
+      "path": "code/src/execution_provider/adapters/incremental_execution.py",
+      "sha256": "187175941b71beb72de7c8f417dbb9b8bc4750808e5e9bd3c8cd633d908a99a7",
+      "finding": "Existing job/session assembly consumes typed finite caller grants and partitions them across flows. It does not mint a hardware-derived grant."
+    },
+    {
+      "path": "code/src/scheduling/core/session_capacity.py",
+      "sha256": "58aca24a342ee0b450cb9912919c6d733fd312bd394656dcee77be276bf2bf2a",
+      "finding": "Existing ledger retains storage until consumer release and unknown compute until settlement; reuse it rather than a second allocator."
+    }
+  ],
+  "automatic_capacity_implemented": false,
+  "ordinary_default_R": 2,
+  "default_IPC_result_slots": 8,
+  "missing": "An authoritative service/deployment grant with ownership and non-overlap across simultaneous input, prepared state, continuation and unconsumed results.",
+  "prohibited_inferences": [
+    "native max_num_seqs is not external request permission",
+    "shared cgroup headroom is not an exclusive byte grant",
+    "sampled RSS watchdog is not a hard memory allocation"
+  ],
+  "existing_components_to_reuse": [
+    "CoreRecordsCapacity",
+    "RecordsCapacityBudget",
+    "SessionCapacity",
+    "MethodCapacity",
+    "AsyncEngineLimits"
+  ],
+  "legacy_references": [
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+      "line": 406,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+      "line": 443,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "line": 310,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_records.py",
+      "line": 386,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/daft_lotus_session.py",
+      "line": 27,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 73,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 74,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+      "line": 478,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+      "line": 346,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "line": 325,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/reference_chain_batch.py",
+      "line": 13,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/sync_reference_engine.py",
+      "line": 17,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/sync_reference_engine.py",
+      "line": 18,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/baselines/text/frameworks/sync_reference_engine.py",
+      "line": 19,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_cascade.py",
+      "line": 74,
+      "category": "native_backend_only_preflight"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_chain.py",
+      "line": 57,
+      "category": "native_backend_only_preflight"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_movie.py",
+      "line": 412,
+      "category": "native_backend_only_preflight"
+    },
+    {
+      "path": "code/src/experiments/movie_records_session.py",
+      "line": 52,
+      "category": "native_backend_only_preflight"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "line": 182,
+      "category": "compatibility_spec_properties"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "line": 187,
+      "category": "compatibility_spec_properties"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "line": 192,
+      "category": "compatibility_spec_properties"
+    },
+    {
+      "path": "code/integrations/imlane_records/cascade_host.py",
+      "line": 127,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/integrations/imlane_records/cascade_udf.py",
+      "line": 31,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/integrations/imlane_records/chain_backend.py",
+      "line": 52,
+      "category": "explicit_native_reference_parameters"
+    },
+    {
+      "path": "code/integrations/imlane_records/chain_host.py",
+      "line": 30,
+      "category": "explicit_native_reference_parameters"
+    }
+  ],
+  "legacy_reference_count": 25,
+  "native_reference_preserved": true,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}

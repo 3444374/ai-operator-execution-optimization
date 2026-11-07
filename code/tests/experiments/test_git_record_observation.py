@@ -1,5 +1,6 @@
 """Git gates, private on/off preparation and exact original-file recovery; no model."""
 from copy import deepcopy
+import asyncio
 import importlib.util
 import json
 import os
@@ -118,13 +119,19 @@ class PrivateCaptureFlowTests(unittest.TestCase):
     def test_prepared_generation_or_C_change_cannot_borrow_original_ready(self):
         path = self.prepare()
         original = json.loads(path.read_text())
-        for key, value in (('generation',dict(seed=99)),('resources',dict(max_active_batches=3))):
+        self.assertEqual(workflow.check(path), original)
+        for section, key, value in (('generation', 'seed', 99),
+                                    ('resources', 'max_active_batches', 3),
+                                    ('generation', 'seed', False)):
             changed = deepcopy(original)
-            changed[key] = value
+            changed[section][key] = value
             path.write_text(json.dumps(changed))
-            with patch.object(workflow.subprocess, 'run') as controller:
-                with self.assertRaises(ValueError): workflow.run(path)
-                controller.assert_not_called()
+            with self.subTest(section=section, key=key, value=value):
+                with patch.object(workflow.subprocess, 'run') as controller:
+                    with self.assertRaises(ValueError): workflow.run(path)
+                    controller.assert_not_called()
+        path.write_text(json.dumps(original, sort_keys=True, indent=2))
+        self.assertEqual(workflow.check(path), original)
 
     def test_changed_cell_or_run_identity_is_rejected_again_before_execution(self):
         path=self.prepare()
@@ -206,6 +213,75 @@ class PrivateCaptureFlowTests(unittest.TestCase):
                 ready=workflow.qualify(self.base_path,self.root/('cpu-'+str(supported)),self.tools['head'])
             self.assertEqual(len(calls),5)
             self.assertEqual(ready['handoff_CPU_paths'],dict(single_request=True,token_batch=supported))
+
+
+class HandoffAwaitableTests(unittest.IsolatedAsyncioTestCase):
+    async def test_observation_preserves_result_error_and_cancellation(self):
+        spec=importlib.util.spec_from_file_location('record_handoff_test',TOOL/'record_observer.py')
+        observer=importlib.util.module_from_spec(spec)
+        with patch.dict(os.environ,SEM_RECORD_OBSERVATION='off'):
+            spec.loader.exec_module(observer)
+        value=object()
+        for error in (None,RuntimeError('fixture failure'),asyncio.CancelledError()):
+            with self.subTest(error=type(error).__name__):
+                calls=[];events=[]
+                async def operation():
+                    calls.append('called')
+                    if error is not None:raise error
+                    return value
+                with patch.object(observer,'handoff_profile',return_value=True), \
+                     patch.object(observer,'emit_buffered',side_effect=lambda event,**kw:events.append(event)):
+                    result=observer.observe_ref_ready(operation(),dict(session_id=1,sequence=0),[])
+                    if error is None:
+                        self.assertIs(await result,value)
+                    else:
+                        with self.assertRaises(type(error)) as raised:
+                            await result
+                        self.assertIs(raised.exception,error)
+                self.assertEqual(calls,['called'])
+                self.assertEqual(events,['driver_future_done'])
+
+
+class PublicBulkProbeIntegrationTests(unittest.TestCase):
+    def run_probe(self,mode,*,single=False):
+        source=Path(__file__).resolve().parents[3]
+        probe=Path(__file__).with_name('probe_record_resource_handoff.py' if single else 'probe_record_resource_batch_handoff.py')
+        env=dict(os.environ,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',
+                 LITELLM_LOCAL_MODEL_COST_MAP='True',CUDA_VISIBLE_DEVICES='')
+        with tempfile.TemporaryDirectory()as directory:
+            output=Path(directory)/mode
+            result=subprocess.run([sys.executable,'-B',str(probe),str(source),str(output),mode],
+                env=env,cwd=source,capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            report=json.loads((output/('PUBLIC-HANDOFF.json' if single else 'PUBLIC-BATCH-HANDOFF.json')).read_text())
+            if single:
+                self.assertEqual(report['status'],'passed_actual_public_single_owner_actor_transport')
+                self.assertTrue(report['current_nonblocking_submit_and_poll'])
+                self.assertTrue(report['result_values_preserved'] and report['native_ack_once'])
+                self.assertEqual(report['unknown_handoff_events'],0)
+                self.assertFalse(report['real_Ray_RPC'])
+                self.assertEqual(report['real_model_calls'],0)
+                return
+            self.assertEqual(report['status'],'passed_actual_public_bulk_owner_actor_transport')
+            self.assertTrue(report['outputs_preserved'])
+            self.assertTrue(report['confirmed_ACKs_carried_by_poll'])
+            self.assertTrue(report['snapshot_RPC_terminal_complete'])
+            self.assertTrue(report['native_source_age_qualified'])
+            self.assertEqual(report['snapshot_RPC_requests'],1)
+            self.assertFalse(report['real_Ray_RPC'])
+            self.assertEqual(report['real_model_calls'],0)
+
+    def test_current_public_bulk_probe_off_uses_constructed_owner(self):
+        self.run_probe('off')
+
+    def test_current_public_bulk_probe_on_uses_constructed_owner(self):
+        self.run_probe('on')
+
+    def test_current_public_single_probe_off_uses_constructed_owner(self):
+        self.run_probe('off',single=True)
+
+    def test_current_public_single_probe_on_uses_constructed_owner(self):
+        self.run_probe('on',single=True)
 
 
 class OriginalIntegrityTests(unittest.TestCase):
@@ -304,7 +380,7 @@ class MovieInputBindingTests(unittest.TestCase):
             engine=asdict(EngineSpec(str(model),sys.executable,sys.executable,max_model_calls=2))
             plan=dict(schema='semloom.movie_session_plan.v1',backend='semloom-core',lifecycle='isolated',
                 model_name='openai/cpu-fixture',generation=asdict(GenerationSpec(max_tokens=4)),engine=engine,
-                resources=asdict(RecordsResources(prepare_batch_rows=1,model_batch_rows=1)),
+                resources=asdict(RecordsResources(max_active_batches=2, prepare_batch_rows=1,model_batch_rows=1)),
                 profile=dict(mode='async',max_inflight=1),queries=[dict(query_id='q1',task='movie-q1',
                     manifest=str(manifests[0]),phase='measured')])
             config=dict(source_root=str(workflow.REPO),movie_plan=plan,

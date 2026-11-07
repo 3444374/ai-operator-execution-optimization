@@ -14,12 +14,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired, earliest_deadline
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[4]
 _CLOSE_COLUMN = "__engine_close_report_json"
+_READY_COLUMN = "__engine_ready_report_json"
 
 
 def _runtime_env(python: str) -> dict[str, Any]:
@@ -30,7 +32,7 @@ def _runtime_env(python: str) -> dict[str, Any]:
 
 
 def _check_deadline(deadline: float) -> None:
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("LOTUS records query deadline expired")
 
 
@@ -75,18 +77,20 @@ class InferBatch:
         deadline: float,
         startup_timeout_s: float,
     ):
-        from src.serving.backends.vllm_engine import VllmEngine
+        from src.baselines.text.frameworks.sync_reference_engine import ReferenceVllmEngine as VllmEngine
 
         _check_deadline(deadline)
         self.deadline = deadline
         self.expected_count = expected_count
         self.completed = 0
         self.engine = None
-        startup_deadline = min(deadline, time.monotonic() + startup_timeout_s)
+        self._ready_emitted = False
+        startup_deadline = earliest_deadline(deadline, time.monotonic() + startup_timeout_s)
         try:
             self.engine = VllmEngine(
                 EngineSpec.from_dict(engine), GenerationSpec.from_dict(generation)
             )
+            self.engine_ready_report = self.engine.ready()
             _check_deadline(startup_deadline)
         except BaseException as exc:
             self._close_on_error(exc)
@@ -112,6 +116,12 @@ class InferBatch:
         self.completed += len(rows)
         for row in rows:
             row[_CLOSE_COLUMN] = ""
+            row[_READY_COLUMN] = ""
+        if rows and not self._ready_emitted:
+            # Send the actual constructed model receipt once, before a later
+            # batch failure can prevent the normal terminal close envelope.
+            rows[0][_READY_COLUMN] = json.dumps(self.engine_ready_report, sort_keys=True)
+            self._ready_emitted = True
         if self.completed >= self.expected_count and rows:
             try:
                 report = self.engine.close()
@@ -139,6 +149,7 @@ class _RayRows(Iterator[dict[str, Any]]):
         self.iterator = None if result is not None else iter(())
         self._started = False
         self.received: set[str] = set()
+        self.engine_ready_report: dict[str, Any] | None = None
         self.engine_close_report: dict[str, Any] | None = None
         self.last_close_report: dict[str, Any] | None = None
         self._iterator_closed = False
@@ -191,6 +202,9 @@ class _RayRows(Iterator[dict[str, Any]]):
                 self._started = True
                 self.iterator = iter(self.result.iter_rows())
             row = dict(next(self.iterator))
+            ready_report = row.pop(_READY_COLUMN, "")
+            if ready_report:
+                self.engine_ready_report = json.loads(ready_report)
             close_report = row.pop(_CLOSE_COLUMN, "")
             if close_report:
                 self.engine_close_report = json.loads(close_report)
@@ -279,6 +293,7 @@ class _RayRows(Iterator[dict[str, Any]]):
             "iterator_closed": self._iterator_closed,
             "executor_shutdown_confirmed": self._executor_closed,
             "watchdog_stopped": watchdog_stopped,
+            "engine_ready": self.engine_ready_report,
             "engine_close_report": self.engine_close_report,
             "gpu_exit_confirmed": gpu_exit,
             "received_occurrences": len(self.received),
@@ -306,7 +321,7 @@ def evaluate(
     """
 
     resources = RecordsResources(**asdict(resources))
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     method = FilterMethod.from_dict(asdict(method))
     generation = GenerationSpec.from_dict(asdict(generation))
     engine = EngineSpec.from_dict(asdict(engine))
@@ -344,6 +359,7 @@ def evaluate(
             name: types[dtype] for name, dtype in scan.csv_schema
         }, strings_can_be_null=False, null_values=[]),
     )
+    dataset.context.wait_for_min_actors_s = resources.startup_timeout_s
     if scan.predicate is not None:
         column, value = scan.predicate
         dataset = dataset.filter(lambda row: row[column] == value, max_retries=0)

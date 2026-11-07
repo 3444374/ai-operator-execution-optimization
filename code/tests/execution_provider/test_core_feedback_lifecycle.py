@@ -4,9 +4,10 @@ import threading
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
-from src.execution_provider.adapters import lotus_records_core as core
 from src.scheduling.runtime.observations import ServiceMetricsSnapshot,NonBlockingMetricsObservationProvider
+from tests.execution_provider.test_core_feedback_ray_future import (
+    bind_feedback, eligible_samples, make_feedback, native_frame,
+)
 
 
 class Ref:
@@ -16,37 +17,22 @@ class Ref:
     def future(self):return self.value
 
 
-class Provider:
-    is_running=False
-    def __init__(self,*a,**kw):self.stale_after_s=kw['stale_after_s']
-    def pause(self):pass
-    def resume(self):pass
-    def close(self):pass
-
-
 class FeedbackLifetimeTests(unittest.TestCase):
-    def feedback(self,gpu=False):
-        self.refs=[];self.cancels=[]
+    def feedback(self):
+        self.refs=[];self.cancels=[];self.sequence=0
         def remote():
             ref=Ref();self.refs.append(ref);return ref
         owner=SimpleNamespace(resources=SimpleNamespace(max_active_batches=4),
             _actors=SimpleNamespace(model_ready=dict(engine_uid='same-model'),
                 model_actor=SimpleNamespace(snapshot=SimpleNamespace(remote=remote)),
                 ray=SimpleNamespace(cancel=lambda ref,**kw:self.cancels.append(ref))))
-        options=dict(kind='resource_feedback',poll_interval_s=.01)
-        if gpu:options['gpu_ids']=['GPU-CPU-fixture']
-        fb=core._CoreFeedback(owner,options)
-        patcher=patch.object(core,'NonBlockingMetricsObservationProvider',Provider)
-        patcher.start();self.addCleanup(patcher.stop)
-        fb.begin(100,2);fb.stream=self.stream(1)
+        fb=make_feedback(owner,session=1,poll_interval_s=.01,max_sample_age_s=.5)
+        self.addCleanup(fb.stop)
         return fb
 
-    def stream(self,session):return SimpleNamespace(session=SimpleNamespace(session_id=session))
-
     def snapshot(self,session=1,stamp=None):
-        return dict(session_id=session,ipc=dict(native_feedback=dict(engine_uid='same-model',
-            sequence=1,observed_at_s=time.monotonic() if stamp is None else stamp,
-            running=1,waiting=0,kv_usage=.1,preemptions_total=0,generation_tokens_total=2)))
+        self.sequence+=1
+        return native_frame(session=session,uid='same-model',sequence=self.sequence,source_at_s=stamp)
 
     def test_expiring_rpc_is_cancelled_once_and_retained_until_it_settles(self):
         for cancel_fails in (False,True):
@@ -57,11 +43,11 @@ class FeedbackLifetimeTests(unittest.TestCase):
                         self.cancels.append(value)
                         raise RuntimeError('CPU cancellation transport failure')
                     fb.owner._actors.ray.cancel=cancel
-                fb.ref_deadline=time.monotonic()-1
+                fb.expiry=time.monotonic()-1
                 for _ in range(4):self.assertIsNone(fb.sample())
                 self.assertEqual(self.cancels,[ref]);self.assertEqual(self.refs,[ref])
-                self.assertEqual(fb.sample_errors,int(cancel_fails))
-                fb.pause();fb.begin(100,2);fb.stream=self.stream(2)
+                self.assertEqual(fb.errors,int(cancel_fails))
+                fb.pause();bind_feedback(fb,2)
                 self.assertIsNone(fb.sample());self.assertEqual(self.refs,[ref])
                 ref.value.set_result(self.snapshot())
                 self.assertIsNone(fb.sample());self.assertIsNone(fb.ref)
@@ -71,24 +57,25 @@ class FeedbackLifetimeTests(unittest.TestCase):
         fb=self.feedback()
         for value in (self.snapshot(session=17),self.snapshot(stamp=fb.started-1)):
             fb.sample();fb.ref.value.set_result(value)
-            self.assertIsNone(fb.sample());self.assertEqual(fb.samples,0)
+            self.assertIsNone(fb.sample());self.assertEqual(eligible_samples(fb),0)
         fb.sample();fb.ref.value.set_result(self.snapshot())
-        self.assertIsNotNone(fb.sample());self.assertEqual(fb.samples,1)
+        self.assertIsNotNone(fb.sample());self.assertEqual(eligible_samples(fb),1)
 
-    def test_late_reader_success_and_failure_cannot_overwrite_next_query_rpc(self):
+    def test_late_optional_audit_cannot_overwrite_next_query_rpc(self):
         for fail in (False,True):
-            fb=self.feedback(gpu=True);fb.sample();fb.ref.value.set_result(self.snapshot())
+            fb=self.feedback();fb.sample();fb.ref.value.set_result(self.snapshot())
             entered,release=threading.Event(),threading.Event()
-            def read(*a,**kw):
+            def audit(*a,**kw):
                 entered.set();release.wait(2)
-                if fail:raise RuntimeError('CPU optional reader failure')
-                return dict(gpu_memory_used_mib='1',gpu_memory_total_mib='10')
-            with patch('src.observability.metrics.resources.gpu_metadata',side_effect=read),ThreadPoolExecutor(max_workers=1) as pool:
+                if fail:raise RuntimeError('CPU optional audit failure')
+            fb.provider.observe_native=audit
+            with ThreadPoolExecutor(max_workers=1) as pool:
                 old=pool.submit(fb.sample);self.assertTrue(entered.wait(1))
-                old_stream=fb.stream;fb.finish(old_stream);fb.begin(100,3);fb.stream=self.stream(2)
+                old_stream=fb.stream;fb.finish(old_stream);bind_feedback(fb,2)
                 self.assertIsNone(fb.sample());new_ref=fb.ref
                 release.set();self.assertIsNone(old.result(1))
-                self.assertIs(fb.ref,new_ref);self.assertEqual(fb.sample_errors,0);self.assertEqual(fb.samples,0)
+                self.assertIs(fb.ref,new_ref);self.assertEqual(fb.errors,0)
+                self.assertIsNone(fb.last_native)
             fb.stop()
 
     def test_pause_resume_discards_inflight_sample_and_reuses_one_thread(self):

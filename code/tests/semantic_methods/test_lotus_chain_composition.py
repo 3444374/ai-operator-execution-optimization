@@ -15,7 +15,7 @@ from src.semantic_methods.lotus.record_relation import complete_extract_relation
 from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding
 from src.execution_provider.adapters.lotus_record_chain_fifo import LotusChainFIFO
 from src.scheduling.core.session_contract import SessionSpec, TaskProfile
-from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import GenerationSpec, IDENTITY_FIELDS
 from tests.scheduling.test_incremental_session import setup
 
 

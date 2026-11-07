@@ -15,7 +15,7 @@ from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.record_continuation import LotusChainProgram
 from src.semantic_methods.lotus.record_relation import complete_extract_relation
 from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding
-from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+from src.serving.backends.lotus_chain_worker import FusedChainBatch
 from src.serving.backends.vllm_engine import GenerationSpec
 
 
@@ -172,6 +172,7 @@ class CompositionOracleTests(unittest.TestCase):
         worker._owner_close_started=False;worker.close_on_source_complete=False
         worker._used_stage_ids={s.stage_id for s in first.stages};worker._model_name=first.stages[0].method.model_name
         worker.engine_spec=SimpleNamespace(max_model_len=4096);worker.deadline=time.monotonic()+10
+        worker.engine=None
         before=deepcopy(first.describe());ids=set(worker._used_stage_ids)
         with tempfile.TemporaryDirectory() as directory:
             worker.control=Path(directory)

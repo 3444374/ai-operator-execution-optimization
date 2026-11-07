@@ -1,0 +1,47 @@
+{
+  "schema": "semloom.sync_supplemental_reproduction.v1",
+  "entry": "code/scripts/analysis/check_sync_cpu_evidence.py",
+  "helpers": [
+    "code/tests/serving/sync_native_source_fixture.py",
+    "code/tests/execution_provider/ack_order_fixture.py"
+  ],
+  "artifacts": [
+    {
+      "path": "raw/sync_native_pipeline_source_check.json",
+      "private_original": {
+        "bytes": 3732,
+        "sha256": "360992ba01ab095ea5b67be5a68b4a59875991e8e4db84abddc0ec0d8269c067"
+      },
+      "public_recomputed": {
+        "bytes": 3688,
+        "sha256": "944956f275aae52cf550100d58510e5be1322b107a942d5329f327bb4593567e"
+      }
+    },
+    {
+      "path": "raw/sync_ack_order_control.json",
+      "private_original": {
+        "bytes": 1552,
+        "sha256": "42b1f75e61639a78e099aa0b3c24143ad1e9ff8bdef820719e777189cdef02ff"
+      },
+      "public_recomputed": {
+        "bytes": 1848,
+        "sha256": "cb50748deea9c5ddc6481fe31652bea425cafa969e039b21f2d7f2abfe328212"
+      }
+    }
+  ],
+  "upstream": {
+    "tag": "v0.25.1",
+    "URLs": {
+      "vllm/entrypoints/offline_utils.py": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/entrypoints/offline_utils.py",
+      "vllm/entrypoints/llm.py": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/entrypoints/llm.py"
+    },
+    "prior_private_source": "Prior local copies had one extra trailing newline; all eleven selected method AST digests match the original upstream bytes.",
+    "byte_pins": "code/tests/serving/sync_native_source_fixture.py:SOURCE_HASHES"
+  },
+  "ACK_source": "Derive one reversed wait call from the current fixture; verify its AST digest equals the original129c method before executing both controls.",
+  "actual_native_runtime_verified": false,
+  "actual_Ray_or_Daft_runtime_verified": false,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}

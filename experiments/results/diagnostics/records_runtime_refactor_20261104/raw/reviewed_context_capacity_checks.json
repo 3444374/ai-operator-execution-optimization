@@ -1,0 +1,93 @@
+{
+  "schema": "semloom.reviewed_context_capacity_cpu.v1",
+  "source_commit": "f928f74af6a34320dd79f7ec1b643e976fc62151",
+  "composed_from": [
+    "58be4756e0496e5c0aa0db6e8d7d368faea13276",
+    "7a312188726519a6a6a98b2679732e4a967e1691"
+  ],
+  "production_bytes_match": [
+    {
+      "path": "code/src/experiments/movie_records_session.py",
+      "reviewed_commit": "58be4756e0496e5c0aa0db6e8d7d368faea13276",
+      "sha256": "58b1575158b94ad7afa0a2cb3a1e37089de4d34ceb968d3351f67061119c7a60"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "reviewed_commit": "7a312188726519a6a6a98b2679732e4a967e1691",
+      "sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    }
+  ],
+  "document_merge": {
+    "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+    "ours": "58be4756e0496e5c0aa0db6e8d7d368faea13276",
+    "theirs": "7a312188726519a6a6a98b2679732e4a967e1691",
+    "files": [
+      {
+        "path": "PROJECT_LOG.md",
+        "exact_shared_prefix": true,
+        "retained_ours_suffix": true,
+        "retained_theirs_suffix": true
+      },
+      {
+        "path": "code/INFRA_STATUS.md",
+        "exact_shared_prefix": true,
+        "retained_ours_suffix": true,
+        "retained_theirs_suffix": true
+      },
+      {
+        "path": "code/tests/records_cpu.md",
+        "exact_shared_prefix": true,
+        "retained_ours_suffix": true,
+        "retained_theirs_suffix": true
+      },
+      {
+        "path": "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+        "exact_shared_prefix": true,
+        "retained_ours_suffix": true,
+        "retained_theirs_suffix": true
+      },
+      {
+        "path": "experiments/results/diagnostics/records_runtime_refactor_20261104/README.md",
+        "exact_shared_prefix": true,
+        "retained_ours_suffix": true,
+        "retained_theirs_suffix": true
+      }
+    ]
+  },
+  "CPU": {
+    "run_id": "reviewed_context_capacity",
+    "selected": 322,
+    "run": 319,
+    "passed": 319,
+    "failures": [],
+    "errors": [],
+    "skipped": [
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      }
+    ],
+    "unexecuted_class_methods": 3,
+    "code_files_matching": 1291,
+    "source_unchanged": true,
+    "json_sha256": "44eebf0ecac84c5b7865f8d29e8a4cec760ae316738efe7ab52a5d327fcafa97",
+    "log_sha256": "760084096a53f5a1f34df17228de5820f54ac0142352c4f8dacf86ea3352ade2"
+  },
+  "independent_review": {
+    "siblings": "scoped accepted; combination not independently reviewed",
+    "sync_review_class_error": "missing duckdb; three methods unexecuted",
+    "author_class_skip": "missing pinned upstream checkout; three methods unexecuted; not counted as independently qualified"
+  },
+  "remaining": [
+    "retained geometric failure, shared pending sample handoff and unproven unique original cause",
+    "unchecked invalid batch_concurrency may initialize Ray before factory rejection",
+    "sync legacy defaults and full context propagation",
+    "automatic resource capacity and ordinary default migration"
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

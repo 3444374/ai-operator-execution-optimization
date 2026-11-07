@@ -9,13 +9,13 @@ import sys
 import time
 
 from integrations.imlane_records.chain_runtime import digest, read_json, read_owner, preflight_owner, AuthorRunGuard
-from src.baselines.common.private_artifacts import new_private_directory, require_outside_git, write_private_json
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import new_private_directory, require_outside_git, write_private_json
+from src.infrastructure.redact import redact_text
 from src.semantic_methods.lotus.records import RecordsResources
-from src.semantic_methods.lotus.record_chain import (
-    LotusRecordChain, RecordOccurrence, _ordered_columns, records_to_frame, validate_chain_source,
-)
-from src.serving.backends.vllm_engine import EngineSpec
+from src.semantic_methods.lotus.record_chain import LotusRecordChain, validate_chain_source
+from src.semantic_methods.lotus.record_types import RecordOccurrence, _ordered_columns
+from src.semantic_methods.lotus.record_relation import records_to_frame
+from src.serving.backends.vllm_protocol import EngineSpec
 
 BACKENDS = ("imlane-author-local-model-chain",)
 _DTYPES = {"object", "string", "bool", "boolean", "int64", "Int64", "uint64", "UInt64", "float64", "Float64"}
@@ -48,13 +48,12 @@ def read_config(path):
     with lotus.settings.context(enable_cache=False):
         chain = LotusRecordChain.from_dict(value["chain"])
     engine, resources = EngineSpec.from_dict(value["engine"]), RecordsResources(**value["resources"])
-    if (resources.cpu_workers != 1 or resources.gpu_workers != 1
-            or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-            or resources.max_active_batches > 2):
-        raise ValueError("the IMLane selector requires one executor/GPU, batch rows 1..16 and pending at most two")
-    if (engine.max_model_calls is None or engine.max_model_calls > 4096
+    resources.request_capacity()
+    if resources.cpu_workers != 1 or resources.gpu_workers != 1:
+        raise ValueError("the IMLane selector requires one executor/GPU, explicit batch rows and finite pending capacity")
+    if (engine.max_model_calls is None
             or len({stage.method.model_name for stage in chain.stages}) != 1
-            or any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages)):
+            or engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages)):
         raise ValueError("one deployment and a finite compatible engine lifetime allowance are required")
     return value, chain, engine, resources
 
@@ -65,7 +64,7 @@ def read_relation(path, *, expected_sha256=None):
     value = read_json(path, expected_sha256=expected_sha256)
     required = {"schema", "records", "columns", "source_index", "empty_prototype"}
     if (type(value) is not dict or set(value) != required or value["schema"] != "semloom.record_relation.v1"
-            or type(value["records"]) is not list or len(value["records"]) > 4096):
+            or type(value["records"]) is not list):
         raise ValueError("a finite declared ordinary-record relation is required")
     records = tuple(RecordOccurrence.from_dict(row) for row in value["records"])
     if (len({r.row_id for r in records}) != len(records)
@@ -253,5 +252,5 @@ def main(argv=None):
                    "--source-json", str(Path(args.source_json).resolve()),
                    "--owner-config", str(Path(args.owner_config).resolve()), "--output-dir", str(root),
                    "--execute-model", "--worker"]
-        supervise(command, root, timeout_s=resources.startup_timeout_s + resources.query_timeout_s + 30)
+        supervise(command, root, timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s + resources.query_timeout_s + 30)
     return 0

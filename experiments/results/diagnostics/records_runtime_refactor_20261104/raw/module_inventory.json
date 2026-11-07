@@ -1,0 +1,3015 @@
+{
+  "source_module_groups": {
+    "__init__.py": {
+      "Python_files": 1,
+      "files": [
+        "code/src/__init__.py"
+      ]
+    },
+    "baselines": {
+      "Python_files": 73,
+      "files": [
+        "code/src/baselines/__init__.py",
+        "code/src/baselines/common/__init__.py",
+        "code/src/baselines/common/cell_instrumentation.py",
+        "code/src/baselines/common/contracts.py",
+        "code/src/baselines/common/database_identity.py",
+        "code/src/baselines/common/gate.py",
+        "code/src/baselines/common/manifests.py",
+        "code/src/baselines/common/private_artifacts.py",
+        "code/src/baselines/common/provenance.py",
+        "code/src/baselines/common/redact.py",
+        "code/src/baselines/common/results.py",
+        "code/src/baselines/common/squad_identity.py",
+        "code/src/baselines/image/__init__.py",
+        "code/src/baselines/image/frameworks/__init__.py",
+        "code/src/baselines/image/frameworks/daft.py",
+        "code/src/baselines/image/frameworks/daft_clip.py",
+        "code/src/baselines/image/frameworks/ray_data.py",
+        "code/src/baselines/image/lotus_media_observation.py",
+        "code/src/baselines/image/provenance.py",
+        "code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/__init__.py",
+        "code/src/baselines/text/cascade_records_source.py",
+        "code/src/baselines/text/ceilings/__init__.py",
+        "code/src/baselines/text/ceilings/vllm_bench.py",
+        "code/src/baselines/text/controls/__init__.py",
+        "code/src/baselines/text/controls/async_http.py",
+        "code/src/baselines/text/controls/batched_completions.py",
+        "code/src/baselines/text/frameworks/__init__.py",
+        "code/src/baselines/text/frameworks/common.py",
+        "code/src/baselines/text/frameworks/daft_engine_process.py",
+        "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/daft_lotus_records.py",
+        "code/src/baselines/text/frameworks/daft_lotus_session.py",
+        "code/src/baselines/text/frameworks/daft_pg_http.py",
+        "code/src/baselines/text/frameworks/daft_prompt.py",
+        "code/src/baselines/text/frameworks/kalypso_native/__init__.py",
+        "code/src/baselines/text/frameworks/kalypso_native/adapter.py",
+        "code/src/baselines/text/frameworks/kalypso_native/cpu_native.py",
+        "code/src/baselines/text/frameworks/kalypso_native/native_server.py",
+        "code/src/baselines/text/frameworks/kalypso_native/qualification.py",
+        "code/src/baselines/text/frameworks/lotus_cascade_process.py",
+        "code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "code/src/baselines/text/frameworks/lotus_chain_engine_process.py",
+        "code/src/baselines/text/frameworks/lotus_chain_native_relation.py",
+        "code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "code/src/baselines/text/frameworks/lotus_pg.py",
+        "code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/baselines/text/frameworks/prepared_map.py",
+        "code/src/baselines/text/frameworks/ray_data_http.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+        "code/src/baselines/text/frameworks/ray_data_pg_http.py",
+        "code/src/baselines/text/map_inputs.py",
+        "code/src/baselines/text/movie_records.py",
+        "code/src/baselines/text/movie_tasks.py",
+        "code/src/baselines/text/orchestration/__init__.py",
+        "code/src/baselines/text/orchestration/cli.py",
+        "code/src/baselines/text/orchestration/gate_runner.py",
+        "code/src/baselines/text/orchestration/native_matrix.py",
+        "code/src/baselines/text/orchestration/native_multijob.py",
+        "code/src/baselines/text/orchestration/postgres_manifest.py",
+        "code/src/baselines/text/products/__init__.py",
+        "code/src/baselines/text/products/direct_client.py",
+        "code/src/baselines/text/products/duckdb_ai.py",
+        "code/src/baselines/text/products/oceanbase.py",
+        "code/src/baselines/text/products/project_static.py",
+        "code/src/baselines/text/sembench_movie.py",
+        "code/src/baselines/text/sharegpt_inputs.py",
+        "code/src/baselines/text/squad_capacity.py",
+        "code/src/baselines/text/squad_map.py"
+      ]
+    },
+    "data": {
+      "Python_files": 11,
+      "files": [
+        "code/src/data/__init__.py",
+        "code/src/data/coco.py",
+        "code/src/data/materializers/__init__.py",
+        "code/src/data/materializers/payloads.py",
+        "code/src/data/materializers/text.py",
+        "code/src/data/sinks/__init__.py",
+        "code/src/data/sinks/postgres.py",
+        "code/src/data/sources/__init__.py",
+        "code/src/data/sources/postgres_text.py",
+        "code/src/data/workloads/__init__.py",
+        "code/src/data/workloads/text.py"
+      ]
+    },
+    "execution_provider": {
+      "Python_files": 62,
+      "files": [
+        "code/src/execution_provider/__init__.py",
+        "code/src/execution_provider/adapters/__init__.py",
+        "code/src/execution_provider/adapters/async_fixed_model.py",
+        "code/src/execution_provider/adapters/completion_response.py",
+        "code/src/execution_provider/adapters/full_response.py",
+        "code/src/execution_provider/adapters/golden.py",
+        "code/src/execution_provider/adapters/image_execution.py",
+        "code/src/execution_provider/adapters/image_method.py",
+        "code/src/execution_provider/adapters/incremental_execution.py",
+        "code/src/execution_provider/adapters/incremental_session.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py",
+        "code/src/execution_provider/adapters/lotus_chain_actor_backend.py",
+        "code/src/execution_provider/adapters/lotus_chain_token_batches.py",
+        "code/src/execution_provider/adapters/lotus_chain_token_budget.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+        "code/src/execution_provider/adapters/lotus_record_chain_fifo.py",
+        "code/src/execution_provider/adapters/lotus_records_actor_owner.py",
+        "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+        "code/src/execution_provider/adapters/lotus_records_batches.py",
+        "code/src/execution_provider/adapters/lotus_records_core.py",
+        "code/src/execution_provider/adapters/lotus_records_static.py",
+        "code/src/execution_provider/adapters/map_organization.py",
+        "code/src/execution_provider/adapters/map_preparation.py",
+        "code/src/execution_provider/adapters/model_config.py",
+        "code/src/execution_provider/adapters/native_tasks.py",
+        "code/src/execution_provider/adapters/openai_compatible_fixed.py",
+        "code/src/execution_provider/adapters/ray_map_transport.py",
+        "code/src/execution_provider/adapters/recording.py",
+        "code/src/execution_provider/adapters/records_capacity.py",
+        "code/src/execution_provider/adapters/records_feedback_observation.py",
+        "code/src/execution_provider/adapters/records_model_adapter.py",
+        "code/src/execution_provider/adapters/records_native_sampler.py",
+        "code/src/execution_provider/adapters/records_profile.py",
+        "code/src/execution_provider/adapters/records_query_runtime.py",
+        "code/src/execution_provider/adapters/records_transport.py",
+        "code/src/execution_provider/adapters/semantic_session.py",
+        "code/src/execution_provider/completion.py",
+        "code/src/execution_provider/connection_capacity.py",
+        "code/src/execution_provider/gateway_runtime.py",
+        "code/src/execution_provider/generation_profile.py",
+        "code/src/execution_provider/image_gateway.py",
+        "code/src/execution_provider/limits.py",
+        "code/src/execution_provider/message_encoding.py",
+        "code/src/execution_provider/method_workers/__init__.py",
+        "code/src/execution_provider/method_workers/lotus_chain_batch.py",
+        "code/src/execution_provider/multiplexed_gateway.py",
+        "code/src/execution_provider/query_registration.py",
+        "code/src/execution_provider/request_admission.py",
+        "code/src/execution_provider/semantic_image.py",
+        "code/src/execution_provider/semantic_map.py",
+        "code/src/execution_provider/server.py",
+        "code/src/execution_provider/session_dispatch.py",
+        "code/src/execution_provider/wire/__init__.py",
+        "code/src/execution_provider/wire/framing.py",
+        "code/src/execution_provider/wire/image.py",
+        "code/src/execution_provider/wire/map_codec.py",
+        "code/src/execution_provider/wire/semantic.py",
+        "code/src/execution_provider/wire/v2.py",
+        "code/src/execution_provider/wire/v3.py",
+        "code/src/execution_provider/wire/v4.py",
+        "code/src/execution_provider/wire/v5.py",
+        "code/src/execution_provider/wire/v6.py"
+      ]
+    },
+    "experiments": {
+      "Python_files": 147,
+      "files": [
+        "code/src/experiments/__init__.py",
+        "code/src/experiments/async_request_guard.py",
+        "code/src/experiments/attempt_ledger.py",
+        "code/src/experiments/batched_request_guard.py",
+        "code/src/experiments/buffered_events.py",
+        "code/src/experiments/calibration/__init__.py",
+        "code/src/experiments/calibration/contracts.py",
+        "code/src/experiments/calibration/core.py",
+        "code/src/experiments/cell_budget.py",
+        "code/src/experiments/choice_gateway_observer.py",
+        "code/src/experiments/choice_resource_checks.py",
+        "code/src/experiments/choice_service_checks.py",
+        "code/src/experiments/evidence_storage.py",
+        "code/src/experiments/execution_timing.py",
+        "code/src/experiments/expected_requests.py",
+        "code/src/experiments/gateway_isolation_probe.py",
+        "code/src/experiments/gateway_observer.py",
+        "code/src/experiments/image_multijob/__init__.py",
+        "code/src/experiments/image_multijob/manifest.py",
+        "code/src/experiments/image_multijob/native.py",
+        "code/src/experiments/image_multijob/project.py",
+        "code/src/experiments/image_reuse.py",
+        "code/src/experiments/imlane_movie_formal.py",
+        "code/src/experiments/imlane_owned_query.py",
+        "code/src/experiments/kalypso_query_lifecycle.py",
+        "code/src/experiments/lotus_cascade_movie.py",
+        "code/src/experiments/lotus_records_cascade.py",
+        "code/src/experiments/lotus_records_chain.py",
+        "code/src/experiments/lotus_records_movie.py",
+        "code/src/experiments/lotus_records_supervisor.py",
+        "code/src/experiments/map_observation_probe.py",
+        "code/src/experiments/mapped_core_probe.py",
+        "code/src/experiments/mapped_request_budget.py",
+        "code/src/experiments/mapped_request_probe.py",
+        "code/src/experiments/movie_cancellation.py",
+        "code/src/experiments/movie_cancellation_probe.py",
+        "code/src/experiments/movie_matrix_support.py",
+        "code/src/experiments/movie_records_config.py",
+        "code/src/experiments/movie_records_matrix.py",
+        "code/src/experiments/movie_records_session.py",
+        "code/src/experiments/native_http_observer.py",
+        "code/src/experiments/native_query_lifecycle.py",
+        "code/src/experiments/phase_change/__init__.py",
+        "code/src/experiments/phase_change/contract.py",
+        "code/src/experiments/postgresql/__init__.py",
+        "code/src/experiments/postgresql/cell_evidence.py",
+        "code/src/experiments/postgresql/filter_bindings.py",
+        "code/src/experiments/postgresql/flow_timing.py",
+        "code/src/experiments/postgresql/m1_campaign.py",
+        "code/src/experiments/postgresql/m1_measurement.py",
+        "code/src/experiments/postgresql/m1_selection.py",
+        "code/src/experiments/postgresql/m2_runner.py",
+        "code/src/experiments/postgresql/m2_source.py",
+        "code/src/experiments/postgresql/map_bindings.py",
+        "code/src/experiments/postgresql/map_capacity_runner.py",
+        "code/src/experiments/postgresql/map_direct.py",
+        "code/src/experiments/postgresql/map_query_recording.py",
+        "code/src/experiments/postgresql/movie_partition.py",
+        "code/src/experiments/postgresql/movie_queries.py",
+        "code/src/experiments/postgresql/native_adapter_metrics.py",
+        "code/src/experiments/postgresql/native_adapter_query.py",
+        "code/src/experiments/postgresql/native_map_bindings.py",
+        "code/src/experiments/postgresql/organization_evaluation.py",
+        "code/src/experiments/postgresql/persistent_gateway.py",
+        "code/src/experiments/postgresql/persistent_native_adapter_query.py",
+        "code/src/experiments/postgresql/pg_source_direct.py",
+        "code/src/experiments/postgresql/provider_session_attribution.py",
+        "code/src/experiments/postgresql/query_cli.py",
+        "code/src/experiments/postgresql/query_config.py",
+        "code/src/experiments/postgresql/query_daft.py",
+        "code/src/experiments/postgresql/query_deadline.py",
+        "code/src/experiments/postgresql/query_evaluation.py",
+        "code/src/experiments/postgresql/query_execution.py",
+        "code/src/experiments/postgresql/query_inputs.py",
+        "code/src/experiments/postgresql/query_runner.py",
+        "code/src/experiments/postgresql/query_supervisor.py",
+        "code/src/experiments/postgresql/query_tables.py",
+        "code/src/experiments/postgresql/query_workloads.py",
+        "code/src/experiments/postgresql/ready_query_recording.py",
+        "code/src/experiments/postgresql/resource_lifecycle.py",
+        "code/src/experiments/postgresql/resource_phase.py",
+        "code/src/experiments/postgresql/resource_qualification.py",
+        "code/src/experiments/postgresql/runtime_helpers.py",
+        "code/src/experiments/postgresql/sembench_queries.py",
+        "code/src/experiments/postgresql/sembench_query_cli.py",
+        "code/src/experiments/postgresql/semmap_resource_gateway_observer.py",
+        "code/src/experiments/postgresql/semmap_resource_runner.py",
+        "code/src/experiments/postgresql/supplier_adapter_query.py",
+        "code/src/experiments/postgresql/text_map_campaign.py",
+        "code/src/experiments/postgresql/text_map_candidates.py",
+        "code/src/experiments/postgresql/text_map_comparison.py",
+        "code/src/experiments/postgresql/waiting_positions.py",
+        "code/src/experiments/postgresql/window_memory.py",
+        "code/src/experiments/process_sampling.py",
+        "code/src/experiments/project_static.py",
+        "code/src/experiments/query_resources.py",
+        "code/src/experiments/record_chain_validation.py",
+        "code/src/experiments/record_chain_validation_run.py",
+        "code/src/experiments/record_dag_observation.py",
+        "code/src/experiments/request_budget_client.py",
+        "code/src/experiments/request_budget_probe.py",
+        "code/src/experiments/request_identity.py",
+        "code/src/experiments/saor/__init__.py",
+        "code/src/experiments/saor/feeding_ceiling.py",
+        "code/src/experiments/saor/feeding_gap_diagnostic.py",
+        "code/src/experiments/saor/feeding_gap_preflight.py",
+        "code/src/experiments/saor/native_system_artifacts.py",
+        "code/src/experiments/saor/native_system_bindings.py",
+        "code/src/experiments/saor/native_system_completion.py",
+        "code/src/experiments/saor/native_system_contract.py",
+        "code/src/experiments/saor/native_system_evidence.py",
+        "code/src/experiments/saor/native_system_execution.py",
+        "code/src/experiments/saor/native_system_matched.py",
+        "code/src/experiments/saor/native_system_observation.py",
+        "code/src/experiments/saor/native_system_parser.py",
+        "code/src/experiments/saor/native_system_preflight.py",
+        "code/src/experiments/saor/native_system_publisher.py",
+        "code/src/experiments/saor/native_system_readiness.py",
+        "code/src/experiments/saor/native_system_summary.py",
+        "code/src/experiments/saor/native_system_validator.py",
+        "code/src/experiments/saor/project_mechanism_formal.py",
+        "code/src/experiments/saor/trace_replay.py",
+        "code/src/experiments/saor/vllm_0251_source_audit.py",
+        "code/src/experiments/scenarios/__init__.py",
+        "code/src/experiments/scenarios/core.py",
+        "code/src/experiments/sembench_animals.py",
+        "code/src/experiments/sembench_records_formal.py",
+        "code/src/experiments/sembench_records_formal_resources.py",
+        "code/src/experiments/shared_request_budget.py",
+        "code/src/experiments/shared_vllm/__init__.py",
+        "code/src/experiments/shared_vllm/active_set.py",
+        "code/src/experiments/shared_vllm/cli.py",
+        "code/src/experiments/shared_vllm/config.py",
+        "code/src/experiments/shared_vllm/direct_control.py",
+        "code/src/experiments/shared_vllm/evidence.py",
+        "code/src/experiments/shared_vllm/fairness_metrics.py",
+        "code/src/experiments/shared_vllm/metrics.py",
+        "code/src/experiments/shared_vllm/preflight.py",
+        "code/src/experiments/shared_vllm/ready_event_metrics.py",
+        "code/src/experiments/shared_vllm/resource_metrics.py",
+        "code/src/experiments/shared_vllm/runner.py",
+        "code/src/experiments/shared_vllm/runtime.py",
+        "code/src/experiments/shared_vllm/saor_event_metrics.py",
+        "code/src/experiments/shared_vllm/saor_projection_evidence.py",
+        "code/src/experiments/shared_vllm/work_evidence.py",
+        "code/src/experiments/vtc_compatible/__init__.py",
+        "code/src/experiments/vtc_compatible/workload.py"
+      ]
+    },
+    "infrastructure": {
+      "Python_files": 15,
+      "files": [
+        "code/src/infrastructure/__init__.py",
+        "code/src/infrastructure/cgroup.py",
+        "code/src/infrastructure/config_env.py",
+        "code/src/infrastructure/cpu_allocation.py",
+        "code/src/infrastructure/daft_runtime.py",
+        "code/src/infrastructure/environment.py",
+        "code/src/infrastructure/gpu_allocation.py",
+        "code/src/infrastructure/owned_processes.py",
+        "code/src/infrastructure/private_artifacts.py",
+        "code/src/infrastructure/ray_runtime_preflight.py",
+        "code/src/infrastructure/redact.py",
+        "code/src/infrastructure/request_budget.py",
+        "code/src/infrastructure/runner_lease.py",
+        "code/src/infrastructure/runtime_env.py",
+        "code/src/infrastructure/vllm_preflight.py"
+      ]
+    },
+    "modalities": {
+      "Python_files": 20,
+      "files": [
+        "code/src/modalities/__init__.py",
+        "code/src/modalities/image/__init__.py",
+        "code/src/modalities/image/clip.py",
+        "code/src/modalities/image/contracts.py",
+        "code/src/modalities/image/execution.py",
+        "code/src/modalities/image/file_source.py",
+        "code/src/modalities/image/incremental_backend.py",
+        "code/src/modalities/image/metrics.py",
+        "code/src/modalities/image/operator.py",
+        "code/src/modalities/image/resource_budget.py",
+        "code/src/modalities/image/resource_sampling.py",
+        "code/src/modalities/image/shared_media.py",
+        "code/src/modalities/image/source.py",
+        "code/src/modalities/image/staged.py",
+        "code/src/modalities/image/staged_execution.py",
+        "code/src/modalities/image/worker_identity.py",
+        "code/src/modalities/text/__init__.py",
+        "code/src/modalities/text/contracts.py",
+        "code/src/modalities/text/costs.py",
+        "code/src/modalities/text/tokenization.py"
+      ]
+    },
+    "observability": {
+      "Python_files": 34,
+      "files": [
+        "code/src/observability/__init__.py",
+        "code/src/observability/buffered_events.py",
+        "code/src/observability/execution_timing.py",
+        "code/src/observability/httpx_observer.py",
+        "code/src/observability/metrics/__init__.py",
+        "code/src/observability/metrics/csv.py",
+        "code/src/observability/metrics/mfu.py",
+        "code/src/observability/metrics/mfu_native_bootstrap.py",
+        "code/src/observability/metrics/mfu_trace.py",
+        "code/src/observability/metrics/offline_results.py",
+        "code/src/observability/metrics/resources.py",
+        "code/src/observability/metrics/retrieval.py",
+        "code/src/observability/metrics/squad.py",
+        "code/src/observability/metrics/statistics.py",
+        "code/src/observability/metrics/timing.py",
+        "code/src/observability/metrics/vllm.py",
+        "code/src/observability/model_reuse.py",
+        "code/src/observability/native_model_api_trace.py",
+        "code/src/observability/native_query_timing.py",
+        "code/src/observability/process_resources/__init__.py",
+        "code/src/observability/process_resources/linux_procfs.py",
+        "code/src/observability/process_resources/model.py",
+        "code/src/observability/process_resources/recorder.py",
+        "code/src/observability/profiling/__init__.py",
+        "code/src/observability/profiling/cli.py",
+        "code/src/observability/profiling/config.py",
+        "code/src/observability/profiling/manifest_guard.py",
+        "code/src/observability/profiling/ray.py",
+        "code/src/observability/profiling/replay.py",
+        "code/src/observability/profiling/schema.py",
+        "code/src/observability/profiling/traces.py",
+        "code/src/observability/records_telemetry.py",
+        "code/src/observability/request_gateway.py",
+        "code/src/observability/request_identity.py"
+      ]
+    },
+    "planning": {
+      "Python_files": 9,
+      "files": [
+        "code/src/planning/__init__.py",
+        "code/src/planning/blocks.py",
+        "code/src/planning/costs/__init__.py",
+        "code/src/planning/costs/estimators.py",
+        "code/src/planning/costs/regression.py",
+        "code/src/planning/packing/__init__.py",
+        "code/src/planning/packing/scalar.py",
+        "code/src/planning/semfilter_reference_calibration.py",
+        "code/src/planning/work.py"
+      ]
+    },
+    "scheduling": {
+      "Python_files": 47,
+      "files": [
+        "code/src/scheduling/__init__.py",
+        "code/src/scheduling/core/__init__.py",
+        "code/src/scheduling/core/control.py",
+        "code/src/scheduling/core/errors.py",
+        "code/src/scheduling/core/execution.py",
+        "code/src/scheduling/core/lifecycle.py",
+        "code/src/scheduling/core/models.py",
+        "code/src/scheduling/core/policy_contracts.py",
+        "code/src/scheduling/core/ready_window.py",
+        "code/src/scheduling/core/scheduler.py",
+        "code/src/scheduling/core/session.py",
+        "code/src/scheduling/core/session_capacity.py",
+        "code/src/scheduling/core/session_contract.py",
+        "code/src/scheduling/core/session_jobs.py",
+        "code/src/scheduling/core/session_policy.py",
+        "code/src/scheduling/core/task_info.py",
+        "code/src/scheduling/core/topology.py",
+        "code/src/scheduling/endpoint_routing/__init__.py",
+        "code/src/scheduling/endpoint_routing/policies.py",
+        "code/src/scheduling/organization/__init__.py",
+        "code/src/scheduling/organization/batching.py",
+        "code/src/scheduling/organization/service_quantum.py",
+        "code/src/scheduling/organization/session_window.py",
+        "code/src/scheduling/organization/token_budget.py",
+        "code/src/scheduling/runtime/__init__.py",
+        "code/src/scheduling/runtime/async_backend.py",
+        "code/src/scheduling/runtime/calibration.py",
+        "code/src/scheduling/runtime/execution.py",
+        "code/src/scheduling/runtime/observations.py",
+        "code/src/scheduling/runtime/ray_adapter.py",
+        "code/src/scheduling/runtime/ray_runtime.py",
+        "code/src/scheduling/runtime/saor_capacity.py",
+        "code/src/scheduling/runtime/shared_credit_ray.py",
+        "code/src/scheduling/runtime/stage_broker.py",
+        "code/src/scheduling/submission_control/__init__.py",
+        "code/src/scheduling/submission_control/adaptive.py",
+        "code/src/scheduling/submission_control/admission.py",
+        "code/src/scheduling/submission_control/capacity.py",
+        "code/src/scheduling/submission_control/flush.py",
+        "code/src/scheduling/submission_control/ordered_release.py",
+        "code/src/scheduling/submission_control/pid.py",
+        "code/src/scheduling/submission_control/request_scan.py",
+        "code/src/scheduling/submission_control/resource_probe.py",
+        "code/src/scheduling/submission_control/resource_step.py",
+        "code/src/scheduling/submission_control/saor.py",
+        "code/src/scheduling/submission_control/shared_credit.py",
+        "code/src/scheduling/submission_control/stage_work.py"
+      ]
+    },
+    "semantic_methods": {
+      "Python_files": 24,
+      "files": [
+        "code/src/semantic_methods/__init__.py",
+        "code/src/semantic_methods/budget.py",
+        "code/src/semantic_methods/continuation.py",
+        "code/src/semantic_methods/driver.py",
+        "code/src/semantic_methods/lotus/__init__.py",
+        "code/src/semantic_methods/lotus/batch.py",
+        "code/src/semantic_methods/lotus/cascade.py",
+        "code/src/semantic_methods/lotus/driver.py",
+        "code/src/semantic_methods/lotus/engine.py",
+        "code/src/semantic_methods/lotus/image_backend.py",
+        "code/src/semantic_methods/lotus/image_identity.py",
+        "code/src/semantic_methods/lotus/image_rm.py",
+        "code/src/semantic_methods/lotus/image_source.py",
+        "code/src/semantic_methods/lotus/image_workflow.py",
+        "code/src/semantic_methods/lotus/limits.py",
+        "code/src/semantic_methods/lotus/maps.py",
+        "code/src/semantic_methods/lotus/native.py",
+        "code/src/semantic_methods/lotus/prepared_batching.py",
+        "code/src/semantic_methods/lotus/record_chain.py",
+        "code/src/semantic_methods/lotus/record_continuation.py",
+        "code/src/semantic_methods/lotus/record_relation.py",
+        "code/src/semantic_methods/lotus/record_results.py",
+        "code/src/semantic_methods/lotus/records.py",
+        "code/src/semantic_methods/lotus/sdk.py"
+      ]
+    },
+    "serving": {
+      "Python_files": 15,
+      "files": [
+        "code/src/serving/__init__.py",
+        "code/src/serving/backends/__init__.py",
+        "code/src/serving/backends/async_engine_process.py",
+        "code/src/serving/backends/common.py",
+        "code/src/serving/backends/completion.py",
+        "code/src/serving/backends/embedding.py",
+        "code/src/serving/backends/model_context.py",
+        "code/src/serving/backends/stage_process_cleanup.py",
+        "code/src/serving/backends/staged_generation_process.py",
+        "code/src/serving/backends/vllm_async_engine.py",
+        "code/src/serving/backends/vllm_engine.py",
+        "code/src/serving/backends/vllm_sync_process.py",
+        "code/src/serving/probes/__init__.py",
+        "code/src/serving/probes/vllm.py",
+        "code/src/serving/vllm_resources.py"
+      ]
+    }
+  },
+  "scripts": [
+    {
+      "path": "code/scripts/analysis/audit_chat_prompt_overhead.py",
+      "lines": 73,
+      "local_imports": [
+        "src.experiments.saor.project_mechanism_formal",
+        "src.experiments.shared_vllm.config",
+        "src.experiments.shared_vllm.work_evidence"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/audit_phase_change.py",
+      "lines": 678,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/analysis/test_audit_phase_change.py",
+        "deploy/autodl/README.md",
+        "deploy/autodl/phase_change_state_aware_RUNBOOK.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/audit_saor_formal_readiness.py",
+      "lines": 648,
+      "local_imports": [
+        "src.baselines.common.contracts",
+        "src.baselines.common.manifests",
+        "src.experiments.shared_vllm.config",
+        "src.experiments.shared_vllm.direct_control",
+        "src.infrastructure.config_env"
+      ],
+      "current_literal_references": [
+        "code/scripts/experiments/run_saor_project_mechanism.py",
+        "code/tests/experiments/test_saor_formal_tools.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md",
+        "experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/audit_saor_native_system_matched.py",
+      "lines": 73,
+      "local_imports": [
+        "src.baselines.common.redact",
+        "src.experiments.saor.native_system_readiness"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/experiments/test_saor_native_system_matched.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/analysis/audit_vllm_0251_source.py",
+      "lines": 55,
+      "local_imports": [
+        "src.baselines.common.redact",
+        "src.experiments.saor.vllm_0251_source_audit"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/src/experiments/saor/native_system_readiness.py",
+        "code/tests/experiments/test_saor_native_system_matched.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/augment_image_observability.py",
+      "lines": 123,
+      "local_imports": [
+        "src.modalities.image.metrics"
+      ],
+      "current_literal_references": [
+        "code/tests/modalities/image/test_image_metrics.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/image_ai_embed_operator_formal_20260803/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/build_semfilter_reference_calibration.py",
+      "lines": 58,
+      "local_imports": [
+        "src.planning.semfilter_reference_calibration"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/planning/test_semfilter_reference_calibration.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/compare_cost_estimators_contextloo.py",
+      "lines": 555,
+      "local_imports": [
+        "src.planning.costs.regression"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/tests/planning/test_cost_context_loo.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/compare_cost_estimators_full.py",
+      "lines": 217,
+      "local_imports": [
+        "src.planning.costs.estimators",
+        "src.planning.costs.regression"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/README_full_allphases_audit.md",
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/ce_hierarchy_table_20260804.md"
+      ],
+      "historical_literal_references": [
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/README_full_allphases_audit.md",
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/ce_hierarchy_table_20260804.md"
+      ]
+    },
+    {
+      "path": "code/scripts/analysis/estimate_operator_cost.py",
+      "lines": 389,
+      "local_imports": [
+        "src.planning.costs.regression"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/scripts/analysis/compare_cost_estimators_contextloo.py",
+        "code/scripts/analysis/compare_cost_estimators_full.py",
+        "code/tests/planning/test_estimate_operator_cost.py",
+        "docs/research/evaluation_metrics_survey_20260731.md",
+        "docs/research/reading_notes/learned_cost_models_sigmod2025.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/EXPERIMENT_DATA_ANALYSIS_20260727.md",
+        "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/README_full_allphases_audit.md",
+        "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-26-single-gpu-text-closure-implementation.md",
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/README_full_allphases_audit.md"
+      ]
+    },
+    {
+      "path": "code/scripts/analysis/evaluate_embedding_retrieval.py",
+      "lines": 99,
+      "local_imports": [
+        "src.observability.metrics"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain saved-vector quality evaluation"
+    },
+    {
+      "path": "code/scripts/analysis/multicard_ramp_aggregate.py",
+      "lines": 650,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/analysis/test_multicard_ramp_aggregate.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/duckdb_direct_scale_diagnostic_20260807/README.md",
+        "experiments/results/duckdb_gateway_scale_diagnostic_20260807/README.md",
+        "experiments/results/multicard_proj_scale_ramp_formal_20260807/README.md",
+        "experiments/results/multicard_scale_ramp_20260806/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/multicard_rich_aggregate.py",
+      "lines": 363,
+      "local_imports": [
+        "src.observability.metrics.squad"
+      ],
+      "current_literal_references": [
+        "code/tests/analysis/test_multicard_rich_aggregate.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/multicard_saturated_2048_20260806/README.md",
+        "experiments/results/text_service_pressure_diagnostic_2048_20260806/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/replay_saor_capacity.py",
+      "lines": 56,
+      "local_imports": [
+        "src.experiments.saor.trace_replay"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain noncausal offline aggregate trace replay"
+    },
+    {
+      "path": "code/scripts/analysis/restore_result_evidence.py",
+      "lines": 20,
+      "local_imports": [
+        "src.experiments.evidence_storage"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/request_budget_batch_20261003/README.md",
+        "experiments/results/postgresql/text_map_arrow_real_20261003/README.md",
+        "experiments/results/postgresql/text_map_preparation_validation_20261004/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/run_saor_native_system_preflight.py",
+      "lines": 85,
+      "local_imports": [
+        "src.baselines.common.redact",
+        "src.experiments.saor.native_system_preflight",
+        "src.experiments.saor.native_system_readiness"
+      ],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_native_system_matched.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/sample_capacity_service.py",
+      "lines": 65,
+      "local_imports": [
+        "src.baselines.common.private_artifacts"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/select_strategy_calibration.py",
+      "lines": 474,
+      "local_imports": [
+        "src.experiments.calibration.core",
+        "src.scheduling.runtime.calibration"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/experiments/test_core_calibration.py",
+        "code/tests/experiments/test_strategy_calibration.py",
+        "deploy/autodl/README.md",
+        "deploy/runtime/README.md",
+        "experiments/reproduction/native_baselines/compatibility/explicit_instruction/ec3fc2c06a8b/code/tests/experiments/test_core_calibration.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_formal_repeats.py",
+      "lines": 149,
+      "local_imports": [
+        "src.observability.metrics"
+      ],
+      "current_literal_references": [
+        "code/src/observability/README.md",
+        "code/tests/observability/test_statistics.py",
+        "deploy/autodl/text_serving.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_image_multijob.py",
+      "lines": 260,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/image_native_four_job_observation_20260810/README.md"
+      ],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain historical matched image-job audit"
+    },
+    {
+      "path": "code/scripts/analysis/summarize_offline_results.py",
+      "lines": 39,
+      "local_imports": [
+        "src.observability.metrics.offline_results"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/scripts/analysis/OFFLINE_RESULTS.md",
+        "code/tests/observability/test_offline_results.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_output_aware_bfd.py",
+      "lines": 210,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/experiments/test_output_aware_summary.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-26-output-aware-bfd-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/analysis/summarize_project_multijob_eager.py",
+      "lines": 436,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain indirect current config/test arm-ID relationship"
+    },
+    {
+      "path": "code/scripts/analysis/summarize_project_short_all_at_t0.py",
+      "lines": 711,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/analysis/test_summarize_project_short_all_at_t0.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_active_set.py",
+      "lines": 411,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_formal_tools.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_bounded_priority_gate.py",
+      "lines": 350,
+      "local_imports": [
+        "src.experiments.shared_vllm.metrics"
+      ],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_formal_tools.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_feeding_ceiling.py",
+      "lines": 48,
+      "local_imports": [
+        "src.experiments.saor.feeding_ceiling",
+        "src.experiments.saor.project_mechanism_formal"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/state_aware_work_unit/saor_project_feeding_ceiling_20260814/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_feeding_gap_diagnostic.py",
+      "lines": 71,
+      "local_imports": [
+        "src.experiments.saor.feeding_gap_diagnostic"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/state_aware_work_unit/saor_feeding_gap_diagnostic_rerun_20260818/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_matched_ready_ablation.py",
+      "lines": 342,
+      "local_imports": [
+        "src.experiments.saor.project_mechanism_formal"
+      ],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_formal_tools.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_native_system_matched.py",
+      "lines": 38,
+      "local_imports": [
+        "src.experiments.saor.native_system_summary"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_priority_reachability.py",
+      "lines": 251,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_formal_tools.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_project_mechanism_formal.py",
+      "lines": 892,
+      "local_imports": [
+        "src.experiments.saor.project_mechanism_formal",
+        "src.experiments.shared_vllm.config",
+        "src.experiments.shared_vllm.metrics",
+        "src.experiments.shared_vllm.work_evidence"
+      ],
+      "current_literal_references": [
+        "code/scripts/experiments/run_saor_project_mechanism.py",
+        "code/tests/experiments/test_saor_formal_tools.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_saor_ready_observation_bridge.py",
+      "lines": 297,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_formal_tools.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_static_credit_workload_surface.py",
+      "lines": 566,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/experiments/test_static_credit_workload_surface.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/static_credit_prompt_length_screen_20260730/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_static_k_workload_surface.py",
+      "lines": 241,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/experiments/test_static_k_workload_surface.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_text_native_multijob.py",
+      "lines": 265,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/analysis/test_summarize_text_native_multijob.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/summarize_vtc_compatible.py",
+      "lines": 193,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/analysis/test_summarize_vtc_compatible.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/analysis/validate_saor_native_system_rehearsal.py",
+      "lines": 83,
+      "local_imports": [
+        "src.baselines.common.redact",
+        "src.baselines.text.orchestration.native_multijob",
+        "src.experiments.saor.native_system_matched"
+      ],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_native_system_matched.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/duckdb_ai_sentence_count_gate.py",
+      "lines": 255,
+      "local_imports": [
+        "src.baselines.common.contracts",
+        "src.baselines.text.products.duckdb_ai"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/baselines/test_duckdb_ai_sentence_count_gate.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/map_capacity.py",
+      "lines": 84,
+      "local_imports": [
+        "scripts.data.import_squad_workload",
+        "src.baselines.common.private_artifacts",
+        "src.baselines.text.squad_capacity",
+        "src.experiments.attempt_ledger",
+        "src.experiments.cell_budget",
+        "src.experiments.postgresql.map_capacity_runner"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/baselines/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/postgresql/map_capacity_20260910/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/map_workload_tools.py",
+      "lines": 135,
+      "local_imports": [
+        "src.baselines.common.private_artifacts",
+        "src.baselines.common.redact",
+        "src.baselines.text.map_inputs",
+        "src.baselines.text.sharegpt_inputs",
+        "src.baselines.text.squad_map"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/baselines/test_map_workload_tools.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/multicard_scale_ramp.py",
+      "lines": 803,
+      "local_imports": [
+        "src.baselines.common.cell_instrumentation",
+        "src.baselines.common.manifests",
+        "src.baselines.text.orchestration.gate_runner",
+        "src.baselines.text.products.project_static",
+        "src.infrastructure.config_env",
+        "src.infrastructure.vllm_preflight"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/src/baselines/common/provenance.py",
+        "code/src/experiments/project_static.py",
+        "code/src/infrastructure/vllm_preflight.py",
+        "code/src/scheduling/runtime/ray_adapter.py",
+        "code/tests/baselines/test_multicard_scale_ramp_helpers.py",
+        "code/tests/baselines/text/test_project_static.py",
+        "code/tests/infrastructure/test_vllm_preflight.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/multicard_concurrency_sweep/phase2_2048_tb/README.md",
+        "experiments/results/multicard_lbrr_scale_ramp/README.md",
+        "experiments/results/multicard_lbrr_scale_ramp_formal_20260806/README.md",
+        "experiments/results/multicard_proj256_gate_20260807/README.md",
+        "experiments/results/multicard_scale_ramp_20260806/README.md",
+        "experiments/results/multicard_scale_ramp_formal_20260806/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/request_equivalence_gate.py",
+      "lines": 311,
+      "local_imports": [
+        "src.observability.metrics",
+        "src.serving.backends.completion"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/squad_database_e2e_direct_client_20260805/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/run_official_baseline.py",
+      "lines": 19,
+      "local_imports": [
+        "src.baselines.text.orchestration.cli"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/scripts/baselines/multicard_scale_ramp.py",
+        "code/src/baselines/text/orchestration/gate_runner.py",
+        "code/src/baselines/text/orchestration/native_multijob.py",
+        "code/tests/baselines/text/test_native_multijob.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/multicard_scale_ramp_20260806/README.md",
+        "experiments/results/text_four_job_interference_20260809/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-29-official-baseline-matrix-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/baselines/run_official_baseline_gate.py",
+      "lines": 19,
+      "local_imports": [
+        "src.baselines.text.orchestration.gate_runner"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "deploy/autodl/README.md",
+        "deploy/autodl/text_serving.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/run_text_native_matrix.py",
+      "lines": 19,
+      "local_imports": [
+        "src.baselines.text.orchestration.native_matrix"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/run_text_native_multijob.py",
+      "lines": 17,
+      "local_imports": [
+        "src.baselines.text.orchestration.native_multijob"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/text_four_job_interference_20260809/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/squad_capability_gate.py",
+      "lines": 625,
+      "local_imports": [
+        "src.baselines.common.contracts",
+        "src.baselines.common.redact",
+        "src.baselines.common.squad_identity",
+        "src.baselines.text.products.duckdb_ai",
+        "src.observability.metrics"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/scripts/baselines/squad_database_e2e_runner.py",
+        "code/src/baselines/common/squad_identity.py",
+        "code/tests/baselines/test_squad_capability_gate.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/squad_capability_256_v3_20260805/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/squad_database_e2e_runner.py",
+      "lines": 1293,
+      "local_imports": [
+        "src.baselines.common.contracts",
+        "src.baselines.common.provenance",
+        "src.baselines.common.redact",
+        "src.baselines.common.squad_identity",
+        "src.baselines.text.products.direct_client",
+        "src.baselines.text.products.duckdb_ai",
+        "src.baselines.text.products.project_static",
+        "src.data.sinks.postgres",
+        "src.observability.metrics"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/src/baselines/common/squad_identity.py",
+        "code/tests/baselines/test_squad_database_e2e_runner.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/squad_database_e2e_duckdb_ai_20260805/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/squad_pg_map_pilot.py",
+      "lines": 81,
+      "local_imports": [
+        "scripts.data.import_squad_workload",
+        "src.baselines.common.private_artifacts",
+        "src.baselines.common.redact",
+        "src.baselines.text.map_inputs",
+        "src.baselines.text.squad_map"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/baselines/README.md",
+        "data/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/postgresql/data_execution_pilot_20260909/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/squad_truncation_diagnostic.py",
+      "lines": 266,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/baselines/test_squad_truncation_diagnostic.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/squad_database_e2e_duckdb_ai_20260805/README.md",
+        "experiments/results/diagnostics/squad_truncation_diag_572700c8_20260805/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/baselines/time_duckdb_ai_baseline.py",
+      "lines": 207,
+      "local_imports": [
+        "src.baselines.text.orchestration.postgres_manifest",
+        "src.baselines.text.products.duckdb_ai",
+        "src.observability.metrics"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/benchmarks/arrow_recordbatch_serialization_benchmark.py",
+      "lines": 83,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/benchmarks/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/benchmarks/common.py",
+      "lines": 69,
+      "local_imports": [],
+      "current_literal_references": [
+        "AGENTS.md",
+        "PROJECT_LOG.md",
+        "code/README.md",
+        "code/integrations/imlane_records/build.py",
+        "code/integrations/imlane_records/cascade_host.py",
+        "code/integrations/imlane_records/chain_backend.py",
+        "code/integrations/imlane_records/chain_host.py",
+        "code/integrations/imlane_records/chain_runtime.py",
+        "code/integrations/imlane_records/owner.py",
+        "code/integrations/imlane_records/resident.py",
+        "code/integrations/imlane_records/verify.py",
+        "code/integrations/imlane_records/verify_filter.py",
+        "code/postgres/semloom_pg/README.md",
+        "code/scripts/analysis/audit_saor_formal_readiness.py",
+        "code/scripts/analysis/audit_saor_native_system_matched.py",
+        "code/scripts/analysis/audit_vllm_0251_source.py",
+        "code/scripts/analysis/run_saor_native_system_preflight.py",
+        "code/scripts/analysis/sample_capacity_service.py",
+        "code/scripts/analysis/summarize_static_credit_workload_surface.py",
+        "code/scripts/analysis/validate_saor_native_system_rehearsal.py",
+        "code/scripts/baselines/duckdb_ai_sentence_count_gate.py",
+        "code/scripts/baselines/map_capacity.py",
+        "code/scripts/baselines/map_workload_tools.py",
+        "code/scripts/baselines/multicard_scale_ramp.py",
+        "code/scripts/baselines/squad_capability_gate.py",
+        "code/scripts/baselines/squad_database_e2e_runner.py",
+        "code/scripts/baselines/squad_pg_map_pilot.py",
+        "code/scripts/benchmarks/AGENTS.md",
+        "code/scripts/benchmarks/arrow_recordbatch_serialization_benchmark.py",
+        "code/scripts/benchmarks/ray_arrow_fanout_fanin_benchmark.py",
+        "code/scripts/benchmarks/ray_many_objects_benchmark.py",
+        "code/scripts/benchmarks/ray_object_transfer_benchmark.py",
+        "code/scripts/benchmarks/ray_small_task_benchmark.py",
+        "code/scripts/data/prepare_phase_change_workload.py",
+        "code/scripts/data/prepare_vtc_compatible_workload.py",
+        "code/scripts/environment/scan_git_secrets.py",
+        "code/scripts/experiments/pg_result_buffer_probe.py",
+        "code/scripts/experiments/probe_movie_cancellation_child.py",
+        "code/scripts/experiments/qualify_lotus_clip.py",
+        "code/scripts/experiments/run_ai_operator_scenarios.py",
+        "code/scripts/experiments/run_lotus_image_retrieval.py",
+        "code/scripts/experiments/run_saor_native_system_matched.py",
+        "code/scripts/profiling/probe_embedding_parity.py",
+        "code/scripts/profiling/record_observation/campaign_guard.py",
+        "code/scripts/profiling/record_observation/record_observer.py",
+        "code/scripts/profiling/record_observation/run_resource_C2.py",
+        "code/scripts/profiling/record_observation/workflow.py",
+        "code/src/baselines/README.md",
+        "code/src/baselines/__init__.py",
+        "code/src/baselines/common/provenance.py",
+        "code/src/baselines/image/frameworks/daft.py",
+        "code/src/baselines/image/sembench_animals.py",
+        "code/src/baselines/text/cascade_records_source.py",
+        "code/src/baselines/text/ceilings/vllm_bench.py",
+        "code/src/baselines/text/controls/async_http.py",
+        "code/src/baselines/text/controls/batched_completions.py",
+        "code/src/baselines/text/frameworks/common.py",
+        "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "code/src/baselines/text/frameworks/daft_lotus_session.py",
+        "code/src/baselines/text/frameworks/daft_prompt.py",
+        "code/src/baselines/text/frameworks/kalypso_native/adapter.py",
+        "code/src/baselines/text/frameworks/kalypso_native/native_server.py",
+        "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "code/src/baselines/text/frameworks/native_calls.py",
+        "code/src/baselines/text/frameworks/ray_data_http.py",
+        "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "code/src/baselines/text/map_inputs.py",
+        "code/src/baselines/text/movie_records.py",
+        "code/src/baselines/text/orchestration/cli.py",
+        "code/src/baselines/text/orchestration/gate_runner.py",
+        "code/src/baselines/text/orchestration/native_matrix.py",
+        "code/src/baselines/text/orchestration/native_multijob.py",
+        "code/src/baselines/text/orchestration/postgres_manifest.py",
+        "code/src/baselines/text/products/direct_client.py",
+        "code/src/baselines/text/products/duckdb_ai.py",
+        "code/src/baselines/text/products/oceanbase.py",
+        "code/src/baselines/text/sharegpt_inputs.py",
+        "code/src/baselines/text/squad_capacity.py",
+        "code/src/baselines/text/squad_map.py",
+        "code/src/execution_provider/adapters/lotus_cascade_core.py",
+        "code/src/execution_provider/wire/v5.py",
+        "code/src/experiments/cell_budget.py",
+        "code/src/experiments/choice_gateway_observer.py",
+        "code/src/experiments/choice_service_checks.py",
+        "code/src/experiments/evidence_storage.py",
+        "code/src/experiments/expected_requests.py",
+        "code/src/experiments/gateway_isolation_probe.py",
+        "code/src/experiments/imlane_movie_formal.py",
+        "code/src/experiments/imlane_owned_query.py",
+        "code/src/experiments/lotus_cascade_movie.py",
+        "code/src/experiments/lotus_records_cascade.py",
+        "code/src/experiments/lotus_records_chain.py",
+        "code/src/experiments/lotus_records_movie.py",
+        "code/src/experiments/lotus_records_supervisor.py",
+        "code/src/experiments/map_observation_probe.py",
+        "code/src/experiments/mapped_core_probe.py",
+        "code/src/experiments/mapped_request_budget.py",
+        "code/src/experiments/mapped_request_probe.py",
+        "code/src/experiments/movie_matrix_support.py",
+        "code/src/experiments/movie_records_matrix.py",
+        "code/src/experiments/movie_records_session.py",
+        "code/src/experiments/native_http_observer.py",
+        "code/src/experiments/native_query_lifecycle.py",
+        "code/src/experiments/phase_change/contract.py",
+        "code/src/experiments/postgresql/README.md",
+        "code/src/experiments/postgresql/m1_campaign.py",
+        "code/src/experiments/postgresql/m2_runner.py",
+        "code/src/experiments/postgresql/m2_source.py",
+        "code/src/experiments/postgresql/map_capacity_runner.py",
+        "code/src/experiments/postgresql/map_direct.py",
+        "code/src/experiments/postgresql/map_query_recording.py",
+        "code/src/experiments/postgresql/movie_partition.py",
+        "code/src/experiments/postgresql/native_map_bindings.py",
+        "code/src/experiments/postgresql/persistent_gateway.py",
+        "code/src/experiments/postgresql/persistent_native_adapter_query.py",
+        "code/src/experiments/postgresql/query_cli.py",
+        "code/src/experiments/postgresql/query_daft.py",
+        "code/src/experiments/postgresql/query_evaluation.py",
+        "code/src/experiments/postgresql/query_execution.py",
+        "code/src/experiments/postgresql/query_runner.py",
+        "code/src/experiments/postgresql/query_supervisor.py",
+        "code/src/experiments/postgresql/query_workloads.py",
+        "code/src/experiments/postgresql/ready_query_recording.py",
+        "code/src/experiments/postgresql/sembench_queries.py",
+        "code/src/experiments/postgresql/sembench_query_cli.py",
+        "code/src/experiments/postgresql/supplier_adapter_query.py",
+        "code/src/experiments/postgresql/text_map_campaign.py",
+        "code/src/experiments/postgresql/text_map_comparison.py",
+        "code/src/experiments/process_sampling.py",
+        "code/src/experiments/project_static.py",
+        "code/src/experiments/record_dag_observation.py",
+        "code/src/experiments/request_budget_probe.py",
+        "code/src/experiments/saor/README.md",
+        "code/src/experiments/saor/native_system_bindings.py",
+        "code/src/experiments/saor/native_system_evidence.py",
+        "code/src/experiments/saor/native_system_execution.py",
+        "code/src/experiments/saor/native_system_matched.py",
+        "code/src/experiments/saor/native_system_observation.py",
+        "code/src/experiments/saor/native_system_publisher.py",
+        "code/src/experiments/saor/native_system_summary.py",
+        "code/src/experiments/sembench_animals.py",
+        "code/src/experiments/sembench_records_formal.py",
+        "code/src/experiments/shared_vllm/cli.py",
+        "code/src/experiments/shared_vllm/direct_control.py",
+        "code/src/experiments/shared_vllm/runner.py",
+        "code/src/experiments/vtc_compatible/workload.py",
+        "code/src/modalities/image/worker_identity.py",
+        "code/src/observability/buffered_events.py",
+        "code/src/observability/execution_timing.py",
+        "code/src/observability/httpx_observer.py",
+        "code/src/observability/metrics/resources.py",
+        "code/src/observability/metrics/squad.py",
+        "code/src/observability/model_reuse.py",
+        "code/src/observability/native_model_api_trace.py",
+        "code/src/observability/process_resources/recorder.py",
+        "code/src/observability/profiling/manifest_guard.py",
+        "code/src/observability/records_telemetry.py",
+        "code/src/scheduling/runtime/calibration.py",
+        "code/src/scheduling/submission_control/saor.py",
+        "code/src/semantic_methods/lotus/record_results.py",
+        "code/src/semantic_methods/lotus/sdk.py",
+        "code/src/serving/backends/__init__.py",
+        "code/src/serving/backends/async_engine_process.py",
+        "code/src/serving/backends/completion.py",
+        "code/src/serving/backends/embedding.py",
+        "code/src/serving/backends/stage_process_cleanup.py",
+        "code/src/serving/backends/vllm_async_engine.py",
+        "code/src/serving/backends/vllm_sync_process.py",
+        "code/src/serving/probes/vllm.py",
+        "code/tests/baselines/common/test_cell_instrumentation.py",
+        "code/tests/baselines/common/test_partition_policy.py",
+        "code/tests/baselines/common/test_private_artifacts.py",
+        "code/tests/baselines/common/test_redact.py",
+        "code/tests/baselines/test_cell_instrumentation.py",
+        "code/tests/baselines/test_map_workload_tools.py",
+        "code/tests/baselines/test_multicard_scale_ramp_helpers.py",
+        "code/tests/baselines/test_native_calls.py",
+        "code/tests/baselines/test_squad_capability_gate.py",
+        "code/tests/baselines/test_squad_database_e2e_runner.py",
+        "code/tests/baselines/text/test_baseline_async_http.py",
+        "code/tests/baselines/text/test_baseline_batched_completions.py",
+        "code/tests/baselines/text/test_baseline_contracts.py",
+        "code/tests/baselines/text/test_baseline_provenance.py",
+        "code/tests/baselines/text/test_direct_client.py",
+        "code/tests/baselines/text/test_duckdb_ai_adapter.py",
+        "code/tests/baselines/text/test_lotus_native_local_model.py",
+        "code/tests/baselines/text/test_native_matrix.py",
+        "code/tests/baselines/text/test_native_multijob.py",
+        "code/tests/baselines/text/test_oceanbase_baseline.py",
+        "code/tests/baselines/text/test_official_baseline_cli.py",
+        "code/tests/baselines/text/test_official_baseline_gate.py",
+        "code/tests/baselines/text/test_official_baseline_gate_runner.py",
+        "code/tests/baselines/text/test_official_runtime_adapters.py",
+        "code/tests/baselines/text/test_postgres_baseline_manifest.py",
+        "code/tests/baselines/text/test_vllm_bench_adapter.py",
+        "code/tests/data/test_prepare_phase_change_workload.py",
+        "code/tests/execution_provider/test_core_feedback_cadence.py",
+        "code/tests/execution_provider/test_core_query_capacity.py",
+        "code/tests/execution_provider/test_core_resource_feedback.py",
+        "code/tests/experiments/test_core_calibration.py",
+        "code/tests/experiments/test_database_query_inputs_integration.py",
+        "code/tests/experiments/test_database_query_runner_integration.py",
+        "code/tests/experiments/test_expected_requests.py",
+        "code/tests/experiments/test_experiment_scenarios.py",
+        "code/tests/experiments/test_map_query_recording.py",
+        "code/tests/experiments/test_persistent_native_adapter_query.py",
+        "code/tests/experiments/test_pg_query_execution_integration.py",
+        "code/tests/experiments/test_query_validation.py",
+        "code/tests/experiments/test_record_resource_capture.py",
+        "code/tests/experiments/test_record_resource_handoff.py",
+        "code/tests/experiments/test_saor_formal_tools.py",
+        "code/tests/experiments/test_saor_native_system_matched.py",
+        "code/tests/experiments/test_sembench_animals.py",
+        "code/tests/experiments/test_sembench_lotus_libraries.py",
+        "code/tests/experiments/test_sembench_queries.py",
+        "code/tests/experiments/test_shared_query_integration.py",
+        "code/tests/experiments/test_supplier_native_errors.py",
+        "code/tests/experiments/test_text_map_campaign.py",
+        "code/tests/experiments/test_text_map_candidates.py",
+        "code/tests/experiments/test_text_map_comparison.py",
+        "code/tests/experiments/test_text_map_native_supply.py",
+        "code/tests/experiments/test_text_map_shared_integration.py",
+        "code/tests/infrastructure/test_shared_artifact_tools.py",
+        "code/tests/modalities/image/test_image_preprocessing_identity.py",
+        "code/tests/modalities/image/test_staged_image_blocks.py",
+        "code/tests/observability/test_postgres_profile_scheduling.py",
+        "code/tests/observability/test_profile_manifest_guard.py",
+        "code/tests/observability/test_records_telemetry.py",
+        "code/tests/planning/test_organizers.py",
+        "code/tests/scheduling/test_record_feedback_variants.py",
+        "code/tests/scheduling/test_request_lifecycle.py",
+        "code/tests/semantic_methods/test_lotus_ray.py",
+        "code/tests/serving/test_model_context.py",
+        "code/tests/serving/test_native_resource_feedback.py",
+        "code/tests/serving/test_vllm_sequence_defaults.py",
+        "code/tests/serving/test_vllm_token_defaults.py",
+        "deploy/autodl/README.md",
+        "docs/research/evaluation_metrics_survey_20260731.md",
+        "docs/research/existing_ai_operator_execution_chains.md",
+        "docs/research/sema_native_semantic_operator_architecture_reference_20260827.md",
+        "docs/research/semantic_prefix_reuse_design_audit_20260903.md",
+        "docs/research/vllm_continuous_batching_reference.md",
+        "experiments/reproduction/native_baselines/compatibility/explicit_instruction/86b8aac9459b/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/compatibility/explicit_instruction/a2fe15ae2cc3/code/src/experiments/lotus_cascade_movie.py",
+        "experiments/reproduction/native_baselines/compatibility/explicit_instruction/b16169cc93b2/code/tests/baselines/text/test_lotus_native_local_model.py",
+        "experiments/reproduction/native_baselines/compatibility/explicit_instruction/ec3fc2c06a8b/code/tests/experiments/test_core_calibration.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/experiments/movie_records_session.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/scheduling/runtime/calibration.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/serving/backends/async_engine_process.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/serving/backends/vllm_async_engine.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/tests/execution_provider/test_core_feedback_cadence.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/tests/execution_provider/test_core_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/tests/scheduling/test_probe_opportunity_cost.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/tests/scheduling/test_work_mix_recovery.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/tests/serving/test_native_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/experiments/movie_records_session.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/scheduling/runtime/calibration.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/serving/backends/async_engine_process.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/serving/backends/vllm_async_engine.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/tests/execution_provider/test_core_feedback_cadence.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/tests/execution_provider/test_core_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/tests/scheduling/test_probe_opportunity_cost.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/tests/scheduling/test_work_mix_recovery.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/tests/serving/test_native_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/movie_records_session.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/scheduling/runtime/calibration.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/serving/backends/async_engine_process.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/serving/backends/vllm_async_engine.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/tests/execution_provider/test_core_feedback_cadence.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/tests/execution_provider/test_core_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/tests/scheduling/test_probe_opportunity_cost.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/tests/scheduling/test_work_mix_recovery.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/tests/serving/test_native_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/native_isolated_and_imlane/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/native_isolated_and_imlane/code/src/experiments/movie_records_session.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/movie_records_session.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/scheduling/runtime/calibration.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/serving/backends/async_engine_process.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/serving/backends/vllm_async_engine.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/tests/execution_provider/test_core_feedback_cadence.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/tests/execution_provider/test_core_resource_feedback.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/tests/scheduling/test_probe_opportunity_cost.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/tests/scheduling/test_work_mix_recovery.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/tests/serving/test_native_resource_feedback.py",
+        "figures/architecture/editable/01_research_gap.audit.md",
+        "figures/audit/submission_control_strategy_mechanism_audit.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/cost_profile_cacheon_gate_20260805/README.md",
+        "experiments/results/diagnostics/main_queries_20261015/recompute.py",
+        "experiments/results/diagnostics/map_preparation_shape_20261004/README.md",
+        "experiments/results/multicard_scale_ramp_20260806/README.md",
+        "experiments/results/postgresql/choice_gateway_v4_20260902/collect_local.py",
+        "experiments/results/postgresql/choice_pg_wire_20260902/collect_local.py",
+        "experiments/results/postgresql/semantic_binding_20260907/README.md",
+        "experiments/results/postgresql/semantic_call_extraction_20260907/README.md",
+        "experiments/results/postgresql/semfilter_insert_20260902/collect_local.py",
+        "experiments/results/scheduling/incremental_session_20260908/README.md",
+        "experiments/results/scheduling/shared_modules_20260908/README.md",
+        "experiments/results/state_aware_work_unit/saor_native_system_matched_gateway_rehearsal_20260821/README.md",
+        "experiments/results/state_aware_work_unit/saor_project_feeding_ceiling_20260814/README.md",
+        "experiments/results/text_native_framework_capability_check_20260808/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/designs/2026-07-25-runtime-scheduling-strategy-suite-design.md",
+        "docs/archive/engineering/designs/2026-08-13-saor-native-system-matched-comparison-design.md",
+        "docs/archive/engineering/plans/2026-07-25-adaptive-flush-window-implementation.md",
+        "docs/archive/engineering/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-output-aware-bfd-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-single-gpu-text-closure-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-same-condition-project-runtime-comparison-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md",
+        "docs/archive/engineering/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/benchmarks/ray_arrow_fanout_fanin_benchmark.py",
+      "lines": 139,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/benchmarks/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/benchmarks/ray_many_objects_benchmark.py",
+      "lines": 68,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/benchmarks/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/benchmarks/ray_object_transfer_benchmark.py",
+      "lines": 90,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/benchmarks/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/benchmarks/ray_small_task_benchmark.py",
+      "lines": 80,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/benchmarks/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/build_image_file_manifest.py",
+      "lines": 31,
+      "local_imports": [
+        "src.modalities.image.file_source"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/modalities/image/file_source.py",
+        "code/tests/modalities/image/test_image_file_source.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/build_image_multijob_manifest.py",
+      "lines": 41,
+      "local_imports": [
+        "src.experiments.image_multijob.manifest"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/build_opening_multijob_manifests.py",
+      "lines": 166,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/import_ai_complete_workload.py",
+      "lines": 931,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/tests/data/test_import_ai_complete_workload.py",
+        "data/README.md",
+        "deploy/autodl/README.md",
+        "deploy/runtime/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/prefix_cache_data_org_20260730/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-26-single-gpu-text-closure-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/data/import_bounded_output_workload.py",
+      "lines": 132,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/import_coco_images.py",
+      "lines": 210,
+      "local_imports": [
+        "src.data.coco"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/modalities/image/test_image_contracts.py",
+        "data/README.md",
+        "deploy/autodl/image_serving.md",
+        "deploy/runtime/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/motivation/gpu/image_clip_bottleneck_profile_20260801.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/import_squad_workload.py",
+      "lines": 309,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/baselines/map_capacity.py",
+        "code/scripts/baselines/squad_pg_map_pilot.py",
+        "code/src/baselines/common/squad_identity.py",
+        "code/tests/baselines/test_squad_capability_gate.py",
+        "code/tests/data/test_import_squad_workload.py",
+        "data/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/squad_capability_256_v3_20260805/README.md",
+        "experiments/results/diagnostics/squad_capability_256_v4_20260805/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/prepare_phase_change_workload.py",
+      "lines": 602,
+      "local_imports": [
+        "src.baselines.common.contracts",
+        "src.baselines.common.manifests",
+        "src.baselines.text.orchestration.postgres_manifest",
+        "src.experiments.phase_change.contract"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/data/test_prepare_phase_change_workload.py",
+        "code/tests/experiments/test_phase_change_contract.py",
+        "deploy/autodl/phase_change_state_aware_RUNBOOK.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/data/prepare_vtc_compatible_workload.py",
+      "lines": 181,
+      "local_imports": [
+        "src.baselines.common.manifests",
+        "src.experiments.vtc_compatible"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/environment/manage_environment.py",
+      "lines": 144,
+      "local_imports": [
+        "src.infrastructure.environment"
+      ],
+      "current_literal_references": [
+        "AGENTS.md",
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/tests/infrastructure/test_environment_capabilities.py",
+        "data/README.md",
+        "deploy/autodl/README.md",
+        "deploy/autodl/phase_change_state_aware_RUNBOOK.md",
+        "deploy/runtime/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/environment/scan_git_secrets.py",
+      "lines": 202,
+      "local_imports": [],
+      "current_literal_references": [
+        "AGENTS.md",
+        "PROJECT_LOG.md",
+        "code/tests/environment/test_scan_git_secrets.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md",
+        "docs/archive/engineering/plans/2026-08-23-opening-report-cost-estimation-enhancement-plan.md",
+        "docs/archive/engineering/plans/2026-08-23-opening-report-minimal-figure-corrections.md"
+      ]
+    },
+    {
+      "path": "code/scripts/experiments/check_kalypso_native_cpu.py",
+      "lines": 5,
+      "local_imports": [
+        "src.baselines.text.frameworks.kalypso_native.cpu_native"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/baselines/text/frameworks/kalypso_native/README.md",
+        "code/src/experiments/kalypso_query_lifecycle.py",
+        "code/tests/baselines/text/test_kalypso_native_launch.py",
+        "code/tests/experiments/test_kalypso_owner_cli_binding.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/database_queries.py",
+      "lines": 5,
+      "local_imports": [
+        "src.experiments.postgresql.query_cli"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/postgresql/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/postgresql/database_queries_20260910/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/materialize_native_baseline.py",
+      "lines": 74,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/experiments/test_baseline_closure_entries.py",
+        "code/tests/experiments/test_http_historical_bindings.py",
+        "code/tests/experiments/test_native_baseline_reproduction.py",
+        "experiments/reproduction/native_baselines/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/pg_result_buffer_probe.py",
+      "lines": 117,
+      "local_imports": [
+        "src.baselines.common.private_artifacts",
+        "src.baselines.common.redact"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/experiments/test_pg_result_buffer_probe.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/scheduling/capacity_wait_empty_map_20260912/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/probe_movie_cancellation_child.py",
+      "lines": 32,
+      "local_imports": [
+        "src.observability.native_model_api_trace",
+        "src.serving.backends",
+        "src.serving.backends.async_engine_process",
+        "src.serving.backends.vllm_async_engine"
+      ],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/README.md",
+        "code/src/experiments/movie_cancellation_probe.py",
+        "code/tests/experiments/test_movie_cancellation.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/qualify_lotus_clip.py",
+      "lines": 141,
+      "local_imports": [
+        "src.baselines.common.private_artifacts",
+        "src.baselines.common.redact",
+        "src.experiments.execution_timing",
+        "src.modalities.image.clip",
+        "src.modalities.image.file_source",
+        "src.semantic_methods.lotus.image_backend",
+        "src.semantic_methods.lotus.image_identity",
+        "src.semantic_methods.lotus.image_rm",
+        "src.semantic_methods.lotus.image_source"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/semantic_methods/test_lotus_image_lifecycle.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_ai_operator_scenarios.py",
+      "lines": 921,
+      "local_imports": [
+        "src.baselines.common.redact",
+        "src.experiments.calibration.contracts",
+        "src.experiments.scenarios.core",
+        "src.experiments.shared_vllm.preflight",
+        "src.infrastructure.config_env",
+        "src.infrastructure.runner_lease",
+        "src.infrastructure.vllm_preflight",
+        "src.serving.probes.vllm"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/README.md",
+        "code/scripts/README.md",
+        "code/scripts/baselines/multicard_scale_ramp.py",
+        "code/scripts/experiments/run_phase_change.py",
+        "code/scripts/experiments/run_saor_project_mechanism.py",
+        "code/scripts/experiments/run_vtc_compatible.py",
+        "code/src/infrastructure/vllm_preflight.py",
+        "code/tests/experiments/test_experiment_scenarios.py",
+        "code/tests/infrastructure/test_vllm_preflight.py",
+        "code/tests/observability/test_postgres_profile_scheduling.py",
+        "code/tests/serving/test_vllm_probe.py",
+        "deploy/autodl/README.md",
+        "deploy/autodl/text_serving.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+        "experiments/results/adaptive_admission_controller_20260726/README.md",
+        "experiments/results/dual_gpu_active_work_saturation_20260729/README.md",
+        "experiments/results/dual_gpu_actor_pool_shape_20260729/README.md",
+        "experiments/results/dual_gpu_service_quantum_20260729/README.md",
+        "experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/README.md",
+        "experiments/results/hol_age_diagnostic_512_20260727/README.md",
+        "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md",
+        "experiments/results/operator_cost_profile_pilot_20260804/README.md",
+        "experiments/results/output_aware_bfd_512_20260726/README.md",
+        "experiments/results/output_aware_bfd_gate_20260726/README.md",
+        "experiments/results/output_aware_bfd_gate_v2_20260726/README.md",
+        "experiments/results/vllm_cuda_graph_512_20260726/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-output-aware-bfd-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-vllm-ray-tuning-experiments.md",
+        "docs/archive/engineering/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/experiments/run_choice_resource_checks.py",
+      "lines": 10,
+      "local_imports": [
+        "src.experiments.choice_resource_checks"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/postgresql/choice_resources_20260902/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_choice_service_checks.py",
+      "lines": 10,
+      "local_imports": [
+        "src.experiments.choice_service_checks"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/postgresql/choice_service_20260902/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_image_clip_e2e.py",
+      "lines": 1544,
+      "local_imports": [
+        "src.baselines.image.frameworks.daft",
+        "src.baselines.image.frameworks.ray_data",
+        "src.baselines.image.provenance",
+        "src.infrastructure.runtime_env",
+        "src.modalities.image",
+        "src.modalities.image.execution",
+        "src.modalities.image.metrics",
+        "src.modalities.image.resource_budget",
+        "src.modalities.image.resource_sampling",
+        "src.modalities.image.source",
+        "src.modalities.image.staged_execution",
+        "src.scheduling.runtime.stage_broker"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/README.md",
+        "code/scripts/experiments/run_image_clip_matrix.py",
+        "code/scripts/profiling/probe_embedding_parity.py",
+        "code/tests/modalities/image/test_image_execution.py",
+        "deploy/autodl/image_serving.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/image_staged_resource_gate_20260802/README.md",
+        "experiments/results/motivation/gpu/image_clip_project_udf_diagnostic_20260801/README.md",
+        "experiments/results/motivation/gpu/image_embedding_parity_20260803/README.md",
+        "experiments/results/motivation/gpu/image_host_path_screening_20260802/README.md",
+        "experiments/results/motivation/gpu/ray_data_calibration_20260803/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_image_clip_matrix.py",
+      "lines": 349,
+      "local_imports": [
+        "src.experiments.scenarios.core",
+        "src.infrastructure.config_env",
+        "src.infrastructure.runner_lease"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/modalities/image/test_image_clip_matrix.py",
+        "deploy/autodl/image_serving.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/image_ai_embed_operator_formal_20260803/README.md",
+        "experiments/results/motivation/gpu/ray_data_calibration_20260803/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_image_native_multijob.py",
+      "lines": 33,
+      "local_imports": [
+        "src.experiments.image_multijob.native"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/image_native_four_job_observation_20260810/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_image_project_multijob.py",
+      "lines": 33,
+      "local_imports": [
+        "src.experiments.image_multijob.project"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_kalypso_native_server.py",
+      "lines": 5,
+      "local_imports": [
+        "src.baselines.text.frameworks.kalypso_native.native_server"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/baselines/text/frameworks/kalypso_native/README.md",
+        "code/src/experiments/kalypso_query_lifecycle.py",
+        "code/tests/baselines/text/test_kalypso_native_launch.py",
+        "code/tests/experiments/test_kalypso_owner_cli_binding.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_kalypso_sembench_query.py",
+      "lines": 5,
+      "local_imports": [
+        "src.baselines.text.frameworks.kalypso_native.adapter"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/baselines/text/frameworks/kalypso_native/README.md",
+        "code/src/experiments/kalypso_query_lifecycle.py",
+        "code/tests/baselines/text/test_kalypso_native_launch.py",
+        "code/tests/experiments/test_kalypso_owner_cli_binding.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_kmax_interference_experiment.py",
+      "lines": 471,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/experiments/test_kmax_interference_script.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/hol_age_diagnostic_512_20260727/README.md",
+        "experiments/results/local_vllm_qwen15b_baseline/README.md",
+        "experiments/results/shared_vllm_adaptive_admission_20260726/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/experiments/run_lotus_image_retrieval.py",
+      "lines": 403,
+      "local_imports": [
+        "src.baselines.common.private_artifacts",
+        "src.baselines.common.redact",
+        "src.baselines.image.frameworks.daft_clip",
+        "src.experiments.execution_timing",
+        "src.experiments.image_reuse",
+        "src.modalities.image.clip",
+        "src.modalities.image.file_source",
+        "src.modalities.image.resource_budget",
+        "src.modalities.image.worker_identity",
+        "src.semantic_methods.lotus.image_backend",
+        "src.semantic_methods.lotus.image_identity",
+        "src.semantic_methods.lotus.image_rm",
+        "src.semantic_methods.lotus.image_source",
+        "src.semantic_methods.lotus.image_workflow"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/semantic_methods/test_lotus_image_cli.py",
+        "code/tests/semantic_methods/test_lotus_image_lifecycle.py",
+        "code/tests/semantic_methods/test_lotus_image_native_input.py",
+        "code/tests/semantic_methods/test_lotus_image_observation_release.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_lotus_records_movie.py",
+      "lines": 17,
+      "local_imports": [
+        "src.experiments.lotus_records_movie"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/scripts/profiling/record_observation/README.md",
+        "code/src/experiments/lotus_records_cascade.py",
+        "code/src/experiments/lotus_records_chain.py",
+        "code/src/experiments/lotus_records_movie.py",
+        "code/src/experiments/movie_matrix.README.md",
+        "code/tests/records_cpu.md",
+        "experiments/reproduction/native_baselines/compatibility/explicit_instruction/86b8aac9459b/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/lotus_records_movie.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/lotus_records_movie.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/records_config_refactor_20261103/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_movie_records_matrix.py",
+      "lines": 11,
+      "local_imports": [
+        "src.experiments.movie_records_matrix"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/scripts/experiments/materialize_native_baseline.py",
+        "code/src/experiments/movie_matrix.README.md",
+        "code/src/experiments/movie_records_matrix.py",
+        "code/src/scheduling/runtime/calibration.README.md",
+        "code/tests/experiments/test_movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/README.md",
+        "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/movie_matrix.README.md",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/native_isolated_and_imlane/code/src/experiments/movie_records_matrix.py",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/movie_matrix.README.md",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/movie_records_matrix.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_phase_change.py",
+      "lines": 83,
+      "local_imports": [
+        "scripts.experiments.run_ai_operator_scenarios",
+        "src.experiments.phase_change",
+        "src.experiments.shared_vllm"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "deploy/autodl/phase_change_state_aware_RUNBOOK.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_feeding_ceiling.py",
+      "lines": 79,
+      "local_imports": [
+        "src.experiments.saor.feeding_ceiling",
+        "src.experiments.saor.project_mechanism_formal",
+        "src.experiments.shared_vllm.cli",
+        "src.experiments.shared_vllm.config",
+        "src.experiments.shared_vllm.preflight",
+        "src.experiments.shared_vllm.runner"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/state_aware_work_unit/saor_project_feeding_ceiling_20260814/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py",
+      "lines": 99,
+      "local_imports": [
+        "src.experiments.saor.feeding_gap_diagnostic",
+        "src.experiments.saor.feeding_gap_preflight",
+        "src.experiments.shared_vllm.cli",
+        "src.experiments.shared_vllm.config",
+        "src.experiments.shared_vllm.preflight",
+        "src.experiments.shared_vllm.runner"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_native_system_matched.py",
+      "lines": 140,
+      "local_imports": [
+        "src.baselines.common.database_identity",
+        "src.baselines.common.redact",
+        "src.experiments.saor.native_system_execution"
+      ],
+      "current_literal_references": [
+        "code/tests/experiments/test_saor_native_system_matched.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/state_aware_work_unit/saor_native_system_matched_manifest_20260819/AUTHORIZATION_TEMPLATE.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_project_mechanism.py",
+      "lines": 103,
+      "local_imports": [
+        "scripts.analysis.audit_saor_formal_readiness",
+        "scripts.analysis.summarize_saor_project_mechanism_formal",
+        "scripts.experiments.run_ai_operator_scenarios",
+        "scripts.experiments.run_shared_vllm_experiment",
+        "src.experiments.saor.project_mechanism_formal",
+        "src.experiments.shared_vllm.config",
+        "src.experiments.shared_vllm.runner"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_sembench_animals.py",
+      "lines": 7,
+      "local_imports": [
+        "src.experiments.sembench_animals"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/semantic_methods/lotus/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_sembench_lotus_queries.py",
+      "lines": 11,
+      "local_imports": [
+        "src.experiments.postgresql.sembench_query_cli"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/semantic_methods/lotus/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_sembench_records_formal.py",
+      "lines": 15,
+      "local_imports": [
+        "src.experiments.sembench_records_formal"
+      ],
+      "current_literal_references": [
+        "code/src/experiments/sembench_records_formal.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_semmap_resource_checks.py",
+      "lines": 10,
+      "local_imports": [
+        "src.experiments.postgresql.semmap_resource_runner"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/experiments/test_semmap_resource_cli.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/run_shared_vllm_experiment.py",
+      "lines": 34,
+      "local_imports": [
+        "src.experiments.shared_vllm.cli",
+        "src.experiments.shared_vllm.preflight",
+        "src.experiments.shared_vllm.runner"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md",
+        "code/scripts/experiments/run_saor_project_mechanism.py",
+        "code/tests/experiments/test_shared_vllm_experiment.py",
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md",
+        "experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260813/README.md",
+        "experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/plans/2026-07-29-shared-vllm-fairness-implementation.md"
+      ]
+    },
+    {
+      "path": "code/scripts/experiments/run_vtc_compatible.py",
+      "lines": 90,
+      "local_imports": [
+        "scripts.experiments.run_ai_operator_scenarios",
+        "src.experiments.shared_vllm",
+        "src.experiments.vtc_compatible"
+      ],
+      "current_literal_references": [
+        "deploy/autodl/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/experiments/validate_record_chain_options.py",
+      "lines": 12,
+      "local_imports": [
+        "src.experiments.record_chain_validation_run"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/record_chain_validation_run.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/daft_text_organizer_smoke.py",
+      "lines": 129,
+      "local_imports": [
+        "src.data.materializers.text"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/gate_vllm_clip_pooling.py",
+      "lines": 227,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py",
+        "code/tests/serving/test_vllm_clip_pooling_gate.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/gateway_isolation_probe.py",
+      "lines": 6,
+      "local_imports": [
+        "src.experiments.gateway_isolation_probe"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/gateway_isolation_probe.py",
+        "code/tests/experiments/test_gateway_isolation_probe.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/gateway_isolation_20261004/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/map_observation_probe.py",
+      "lines": 6,
+      "local_imports": [
+        "src.experiments.map_observation_probe"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/gateway_isolation_probe.py",
+        "code/src/experiments/map_observation_probe.py",
+        "code/src/experiments/mapped_core_probe.py",
+        "code/tests/execution_provider/test_map_preparation.py",
+        "code/tests/experiments/test_map_observation_probe.py",
+        "code/tests/experiments/test_map_preparation_probe.py",
+        "code/tests/experiments/test_ray_return_wait_probe.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/mapped_core_probe.py",
+      "lines": 6,
+      "local_imports": [
+        "src.experiments.mapped_core_probe"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/mapped_core_probe.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/mapped_request_probe.py",
+      "lines": 6,
+      "local_imports": [
+        "src.experiments.mapped_request_probe"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/mapped_request_probe.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/pgai_sql_operator_profile.py",
+      "lines": 258,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/trigger_surface_validation_20260714.md"
+      ],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain SQL profiling; defer optional database import"
+    },
+    {
+      "path": "code/scripts/profiling/postgres_ai_operator_profile.py",
+      "lines": 4135,
+      "local_imports": [
+        "src.data.materializers.text",
+        "src.data.sinks",
+        "src.data.sources",
+        "src.data.workloads",
+        "src.infrastructure.runtime_env",
+        "src.modalities.text.costs",
+        "src.observability.metrics",
+        "src.observability.profiling.cli",
+        "src.observability.profiling.config",
+        "src.observability.profiling.manifest_guard",
+        "src.observability.profiling.ray",
+        "src.observability.profiling.replay",
+        "src.observability.profiling.schema",
+        "src.observability.profiling.traces",
+        "src.planning.packing.scalar",
+        "src.scheduling.core.lifecycle",
+        "src.scheduling.core.models",
+        "src.scheduling.endpoint_routing.policies",
+        "src.scheduling.organization.batching",
+        "src.scheduling.runtime.observations",
+        "src.scheduling.runtime.ray_adapter",
+        "src.scheduling.submission_control.adaptive",
+        "src.scheduling.submission_control.admission",
+        "src.scheduling.submission_control.pid",
+        "src.serving.backends"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/README.md",
+        "code/scripts/README.md",
+        "code/scripts/baselines/squad_database_e2e_runner.py",
+        "code/scripts/experiments/run_kmax_interference_experiment.py",
+        "code/scripts/profiling/pgai_sql_operator_profile.py",
+        "code/src/baselines/common/provenance.py",
+        "code/src/experiments/project_static.py",
+        "code/src/observability/profiling/cli.py",
+        "code/tests/observability/test_postgres_profile_scheduling.py",
+        "code/tests/scheduling/test_scheduling_daft_ray_contract.py",
+        "data/README.md",
+        "deploy/autodl/README.md",
+        "deploy/autodl/phase_change_state_aware_RUNBOOK.md",
+        "deploy/autodl/text_serving.md",
+        "deploy/pgai/README.md",
+        "deploy/postgres18.4/README.md",
+        "figures/scripts/generate_request_shape_evolution.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+        "experiments/results/adaptive_admission_controller_20260726/README.md",
+        "experiments/results/adaptive_flush_window_20260725/README.md",
+        "experiments/results/diagnostics/pgai_sql_smoke_20260714.md",
+        "experiments/results/diagnostics/trigger_surface_validation_20260714.md",
+        "experiments/results/dual_gpu_active_work_saturation_20260729/README.md",
+        "experiments/results/dual_gpu_actor_pool_shape_20260729/README.md",
+        "experiments/results/dual_gpu_service_quantum_20260729/README.md",
+        "experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/README.md",
+        "experiments/results/local_vllm_qwen15b_baseline/README.md",
+        "experiments/results/motivation/cpu/cpu_vs_gpu_embed_comparison_20260712.md",
+        "experiments/results/motivation/gpu/ai_embed_profile.md",
+        "experiments/results/motivation/gpu/pgai_integrated_key_rerun_20260714.md",
+        "experiments/results/motivation/gpu/pgvector_writeback_20260714.md",
+        "experiments/results/motivation/pg18_4_fake/baseline_matrix.md",
+        "experiments/results/motivation/pg18_4_fake/pgvector_scaling.md",
+        "experiments/results/motivation/pg18_4_fake/simulated_embed_test_20260712.md",
+        "experiments/results/motivation/pg18_4_fake/system_profile.md",
+        "experiments/results/motivation/pg18_4_fake/vector_writeback.md",
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/README_full_allphases_audit.md",
+        "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md",
+        "experiments/results/operator_cost_profile_pilot_20260804/README.md",
+        "experiments/results/output_aware_bfd_512_20260726/README.md",
+        "experiments/results/output_aware_bfd_gate_20260726/README.md",
+        "experiments/results/output_aware_bfd_gate_v2_20260726/README.md",
+        "experiments/results/prefix_routing/routing_4ep_hitrate_20260731/README.md",
+        "experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/README.md",
+        "experiments/results/state_aware_work_unit/saor_project_feeding_ceiling_20260814/README.md",
+        "experiments/results/vllm_cuda_graph_512_20260726/README.md"
+      ],
+      "historical_literal_references": [
+        "docs/archive/engineering/designs/2026-07-25-adaptive-admission-controller-design.md",
+        "docs/archive/engineering/designs/2026-07-26-row-cap-aware-packing-and-observation-design.md",
+        "docs/archive/engineering/plans/2026-07-17-daft-postgres-entry-existing-writeback.md",
+        "docs/archive/engineering/plans/2026-07-25-accelerated-arrival-replay-implementation.md",
+        "docs/archive/engineering/plans/2026-07-25-adaptive-flush-window-implementation.md",
+        "docs/archive/engineering/plans/2026-07-25-arrival-replay-flush-runtime-implementation.md",
+        "docs/archive/engineering/plans/2026-07-25-ray-static-wiring-implementation.md",
+        "docs/archive/engineering/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-output-aware-bfd-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-ray-execution-foundation-implementation.md",
+        "docs/archive/engineering/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md",
+        "docs/archive/engineering/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-official-baseline-matrix-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-same-condition-project-runtime-comparison-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-shared-vllm-fairness-implementation.md",
+        "docs/archive/engineering/plans/2026-07-29-slo-aware-ewma-flush-implementation.md",
+        "experiments/results/operator_cost_estimation_20260726/archive/allphases_pre_20260804/README_full_allphases_audit.md"
+      ]
+    },
+    {
+      "path": "code/scripts/profiling/probe_embedding_parity.py",
+      "lines": 240,
+      "local_imports": [],
+      "current_literal_references": [
+        "PROJECT_LOG.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/motivation/gpu/image_embedding_parity_20260803/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/profile_clip_preproc_stages.py",
+      "lines": 254,
+      "local_imports": [
+        "src.modalities.image.clip"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain explicit historical pt preprocessing diagnosis"
+    },
+    {
+      "path": "code/scripts/profiling/profile_clip_transfer_ceiling.py",
+      "lines": 228,
+      "local_imports": [
+        "src.modalities.image.clip",
+        "src.modalities.image.resource_sampling"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/modalities/image/test_clip_transfer_ceiling.py",
+        "deploy/autodl/image_serving.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/motivation/gpu/image_clip_transfer_ceiling_20260803/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/profile_image_clip_bottleneck.py",
+      "lines": 384,
+      "local_imports": [
+        "src.modalities.image.clip"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/scripts/profiling/profile_clip_preproc_stages.py",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/motivation/gpu/image_clip_bottleneck_profile_20260801.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/profile_image_clip_preprocess_variants.py",
+      "lines": 343,
+      "local_imports": [
+        "src.modalities.image",
+        "src.modalities.image.clip"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/tests/modalities/image/test_image_clip_preprocess_variants.py",
+        "deploy/autodl/image_serving.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/campaign_guard.py",
+      "lines": 583,
+      "local_imports": [
+        "src.baselines.common.private_artifacts",
+        "src.experiments",
+        "src.experiments.attempt_ledger",
+        "src.experiments.cell_budget",
+        "src.experiments.movie_cancellation"
+      ],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/README.md",
+        "code/tests/experiments/test_record_campaign_guard.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/control_resource_C2.py",
+      "lines": 190,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/README.md",
+        "code/scripts/profiling/record_observation/campaign_guard.py",
+        "code/scripts/profiling/record_observation/workflow.py",
+        "code/tests/experiments/test_git_record_observation.py",
+        "code/tests/experiments/test_movie_cancellation.py",
+        "code/tests/experiments/test_record_campaign_guard.py",
+        "code/tests/experiments/test_record_resource_capture.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/record_gpu_observer.py",
+      "lines": 126,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/control_resource_C2.py",
+        "code/scripts/profiling/record_observation/record_observer.py",
+        "code/tests/experiments/test_record_resource_capture.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/record_ipc_observer.py",
+      "lines": 413,
+      "local_imports": [
+        "src.execution_provider.adapters.lotus_records_actor_owner",
+        "src.execution_provider.adapters.lotus_records_async_actor",
+        "src.serving.backends",
+        "src.serving.backends.async_engine_process"
+      ],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/control_resource_C2.py",
+        "code/scripts/profiling/record_observation/record_observer.py",
+        "code/tests/execution_provider/test_actor_resource_cpu_ray.py",
+        "code/tests/experiments/probe_record_prepare_finalization.py",
+        "code/tests/experiments/probe_record_resource_batch_handoff.py",
+        "code/tests/experiments/probe_record_resource_handoff.py",
+        "code/tests/experiments/test_record_prepare_finalization.py",
+        "code/tests/experiments/test_record_resource_capture.py",
+        "code/tests/experiments/test_record_resource_handoff.py",
+        "code/tests/serving/test_native_resource_feedback.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/record_model_bootstrap.py",
+      "lines": 11,
+      "local_imports": [
+        "src.serving.backends.async_engine_process"
+      ],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/control_resource_C2.py",
+        "code/scripts/profiling/record_observation/record_ipc_observer.py",
+        "code/tests/experiments/test_record_resource_capture.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/record_observer.py",
+      "lines": 643,
+      "local_imports": [
+        "src.execution_provider.adapters",
+        "src.execution_provider.adapters.lotus_chain_actor_backend",
+        "src.observability.native_model_api_trace",
+        "src.scheduling.runtime.observations",
+        "src.semantic_methods.driver",
+        "src.semantic_methods.lotus",
+        "src.semantic_methods.lotus.record_chain",
+        "src.serving.backends",
+        "src.serving.backends.vllm_async_engine"
+      ],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/control_resource_C2.py",
+        "code/scripts/profiling/record_observation/record_gpu_observer.py",
+        "code/scripts/profiling/record_observation/record_ipc_observer.py",
+        "code/scripts/profiling/record_observation/record_model_bootstrap.py",
+        "code/scripts/profiling/record_observation/run_resource_C2.py",
+        "code/scripts/profiling/record_observation/workflow.py",
+        "code/tests/execution_provider/test_actor_resource_cpu_ray.py",
+        "code/tests/experiments/probe_record_prepare_finalization.py",
+        "code/tests/experiments/probe_record_resource_batch_handoff.py",
+        "code/tests/experiments/probe_record_resource_handoff.py",
+        "code/tests/experiments/test_record_dag_observation.py",
+        "code/tests/experiments/test_record_prepare_finalization.py",
+        "code/tests/experiments/test_record_resource_capture.py",
+        "code/tests/observability/test_feedback_identity.py",
+        "code/tests/serving/test_native_resource_feedback.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/run_resource_C2.py",
+      "lines": 216,
+      "local_imports": [
+        "src.baselines.common.private_artifacts",
+        "src.execution_provider.adapters.lotus_record_chain_core",
+        "src.experiments.attempt_ledger",
+        "src.experiments.cell_budget",
+        "src.experiments.movie_cancellation",
+        "src.experiments.movie_records_session",
+        "src.experiments.process_sampling",
+        "src.experiments.record_chain_validation",
+        "src.observability.records_telemetry",
+        "src.semantic_methods.lotus.record_chain",
+        "src.semantic_methods.lotus.records",
+        "src.serving.backends.vllm_engine"
+      ],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/README.md",
+        "code/scripts/profiling/record_observation/control_resource_C2.py",
+        "code/tests/experiments/test_movie_cancellation.py",
+        "code/tests/experiments/test_record_resource_capture.py",
+        "code/tests/experiments/test_record_resource_handoff.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/sitecustomize.py",
+      "lines": 1,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/profiling/record_observation/control_resource_C2.py",
+        "code/src/baselines/text/frameworks/kalypso_native/native_server.py",
+        "code/src/experiments/movie_matrix.README.md",
+        "code/src/experiments/movie_matrix_support.py",
+        "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/src/experiments/movie_matrix.README.md",
+        "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/src/experiments/movie_matrix.README.md"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/record_observation/workflow.py",
+      "lines": 380,
+      "local_imports": [
+        "src.experiments.attempt_ledger",
+        "src.experiments.movie_cancellation",
+        "src.experiments.record_dag_observation",
+        "src.infrastructure.private_artifacts",
+        "src.infrastructure.redact"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/README.md",
+        "code/scripts/README.md",
+        "code/scripts/profiling/record_observation/README.md",
+        "code/scripts/profiling/record_observation/campaign_guard.py",
+        "code/src/semantic_methods/lotus/image_workflow.py",
+        "code/tests/experiments/test_git_record_observation.py",
+        "code/tests/experiments/test_movie_cancellation.py",
+        "code/tests/experiments/test_record_campaign_guard.py",
+        "code/tests/experiments/test_record_dag_observation.py",
+        "code/tests/semantic_methods/test_lotus_image_cli.py",
+        "code/tests/semantic_methods/test_lotus_image_lifecycle.py",
+        "code/tests/semantic_methods/test_lotus_image_native_input.py",
+        "code/tests/semantic_methods/test_lotus_image_observation_release.py",
+        "code/tests/semantic_methods/test_lotus_image_resident.py",
+        "code/tests/semantic_methods/test_lotus_image_resident_cli.py",
+        "docs/research/reading_notes/leads_pvldb2024.md",
+        "figures/README.md",
+        "figures/audit/ayo_deep_reading_figures_audit_20260822.md",
+        "figures/audit/local_reference_figure_reading_notes.md",
+        "figures/audit/parrot_deep_reading_figures_audit_20260825.md",
+        "figures/scripts/generate_system_architecture_figure.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+        "experiments/results/diagnostics/main_lotus_clip_20261015/README.md",
+        "experiments/results/diagnostics/records_runtime_refactor_20261104/README.md",
+        "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/request_budget_batch_probe.py",
+      "lines": 6,
+      "local_imports": [
+        "src.experiments.request_budget_probe"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/src/experiments/request_budget_probe.py"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/request_budget_batch_20261003/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/profiling/run_vllm_clip_pooling_gate.py",
+      "lines": 125,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/tests/serving/test_vllm_clip_pooling_harness.py",
+        "deploy/autodl/image_serving.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/vllm_clip_pooling_gate_20260804/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/services/launch_vllm_with_identity.py",
+      "lines": 96,
+      "local_imports": [
+        "src.serving.vllm_resources"
+      ],
+      "current_literal_references": [
+        "code/scripts/README.md",
+        "code/tests/infrastructure/test_vllm_preflight.py",
+        "deploy/autodl/start_endpoints.sh"
+      ],
+      "result_literal_references": [
+        "experiments/results/diagnostics/main_service_auto_20261015/README.md",
+        "experiments/results/postgresql/filter_map_real_20260908/README.md"
+      ],
+      "historical_literal_references": []
+    },
+    {
+      "path": "code/scripts/services/local_embedding_server.py",
+      "lines": 162,
+      "local_imports": [],
+      "current_literal_references": [
+        "code/scripts/README.md"
+      ],
+      "result_literal_references": [
+        "experiments/results/motivation/cpu/cpu_vs_gpu_embed_comparison_20260712.md",
+        "experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.md",
+        "experiments/results/motivation/gpu/ai_embed_profile.md",
+        "experiments/results/motivation/gpu/pgai_integrated_key_rerun_20260714.md",
+        "experiments/results/motivation/gpu/pgvector_writeback_20260714.md"
+      ],
+      "historical_literal_references": [],
+      "references_before_maintenance": [],
+      "maintenance_decision": "retain existing local embedding-service profiling support"
+    },
+    {
+      "path": "code/scripts/services/run_execution_provider_gateway.py",
+      "lines": 17,
+      "local_imports": [
+        "src.execution_provider.server"
+      ],
+      "current_literal_references": [
+        "PROJECT_LOG.md",
+        "code/postgres/semloom_pg/README.md",
+        "code/scripts/README.md",
+        "code/tests/execution_provider/test_gateway_migration.py",
+        "code/tests/execution_provider/test_gateway_sessions.py",
+        "code/tests/execution_provider/test_map_gateway.py",
+        "code/tests/postgres/test_semloom_choice_protocol.py",
+        "code/tests/postgres/test_semloom_fixed_model_adapter.py"
+      ],
+      "result_literal_references": [],
+      "historical_literal_references": []
+    }
+  ],
+  "limitations": "Literal references and static imports only; no references alone do not prove an entry unused. Historical raw evidence and opening archives not scanned.",
+  "source_inventory_stage": "native sampler extraction before modern factory wiring"
+}

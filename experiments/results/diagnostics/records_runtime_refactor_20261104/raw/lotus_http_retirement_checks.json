@@ -1,0 +1,227 @@
+{
+  "base": "e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2",
+  "production_commit": "5f2fb59ad58dfc27e74e59f882c14c63a4124c40",
+  "production_candidate_tree": "481514872779359b78704fca1e60ca78335fce0f",
+  "regression": {
+    "recorded_head_before_commit": "e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2",
+    "tested_code_files": 1069,
+    "tested_content_matches_production_commit": true,
+    "fixture_checkout_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "passed_methods": 14,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "selectors": [
+      "tests.semantic_methods.test_lotus_source",
+      "tests.baselines.image.test_sembench_animals_original.OriginalAnimalsImageTests",
+      "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes"
+    ],
+    "elapsed_s": 24.495420374907553,
+    "historical_materialization_is_one_of_the_fourteen_methods": true
+  },
+  "image_graph_behavior": {
+    "production_commit": "5f2fb59ad58dfc27e74e59f882c14c63a4124c40",
+    "test_sha256": "4eb2ea6255fd200e1d67f401ba9e7ad074893cfe8bee3adf04d72a8b0ff18852",
+    "selection": "tests.modalities.image.test_image_execution",
+    "run": 16,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "elapsed_seconds": 0.021459833020344377,
+    "real_ray": 0,
+    "model_calls": 0
+  },
+  "history": {
+    "bindings_read": 20,
+    "before_and_after_read_sources_equal": true,
+    "manifest_unchanged": true,
+    "expected_files": 3010,
+    "additional_archives": 0,
+    "source_profiles_equal": true
+  },
+  "metrics_before_parallel_integration": {
+    "scope": "Physical lines including blanks/comments. Core excludes code/src/experiments and code/src/baselines, includes research. Wider includes all code/src and code/scripts Python. Tests and integrations are separate.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_Python": 54091,
+        "src_and_scripts_Python": 140335,
+        "tests_Python": 102763,
+        "integrations_Python_CPP_HPP": 4521,
+        "core_files_over1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "core_functions_over100": 50
+      },
+      "cleanup_start": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_Python": 61628,
+        "src_and_scripts_Python": 149645,
+        "tests_Python": 130062,
+        "integrations_Python_CPP_HPP": 4528,
+        "core_files_over1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "core_functions_over100": 57
+      },
+      "before_batch": {
+        "commit": "e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2",
+        "core_Python": 56943,
+        "src_and_scripts_Python": 114842,
+        "tests_Python": 95990,
+        "integrations_Python_CPP_HPP": 4858,
+        "core_files_over1000": [],
+        "core_functions_over100": 44
+      },
+      "candidate": {
+        "production_commit": "5f2fb59ad58dfc27e74e59f882c14c63a4124c40",
+        "core_Python": 56197,
+        "src_and_scripts_Python": 114096,
+        "tests_Python": 95983,
+        "integrations_Python_CPP_HPP": 4858,
+        "core_files_over1000": [],
+        "core_functions_over100": 43
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_Python": 2106,
+        "src_and_scripts_Python": -26239,
+        "tests_Python": -6780,
+        "integrations_Python_CPP_HPP": 337
+      },
+      "cleanup_start": {
+        "core_Python": -5431,
+        "src_and_scripts_Python": -35549,
+        "tests_Python": -34079,
+        "integrations_Python_CPP_HPP": 330
+      },
+      "before_batch": {
+        "core_Python": -746,
+        "src_and_scripts_Python": -746,
+        "tests_Python": -7,
+        "integrations_Python_CPP_HPP": 0
+      }
+    }
+  },
+  "combined_metrics": {
+    "parents": [
+      "d9161f09b4b2e67402d25bcf4c7d6ee254fc1109",
+      "798e13771263319234df574fa04fd3c483896c39"
+    ],
+    "counts": {
+      "core_Python": 56197,
+      "src_and_scripts_Python": 114298,
+      "tests_Python": 96409,
+      "integrations_Python_CPP_HPP": 5638
+    },
+    "latest_remote_before_batch": {
+      "core_Python": 56943,
+      "src_and_scripts_Python": 115044,
+      "tests_Python": 96416,
+      "integrations_Python_CPP_HPP": 5638
+    },
+    "deltas_from_latest_remote": {
+      "core_Python": -746,
+      "src_and_scripts_Python": -746,
+      "tests_Python": -7,
+      "integrations_Python_CPP_HPP": 0
+    },
+    "deltas_from_fixed_references": {
+      "main": {
+        "core_Python": 2106,
+        "src_and_scripts_Python": -26037,
+        "tests_Python": -6354,
+        "integrations_Python_CPP_HPP": 1117
+      },
+      "cleanup_start": {
+        "core_Python": -5431,
+        "src_and_scripts_Python": -35347,
+        "tests_Python": -33653,
+        "integrations_Python_CPP_HPP": 1110
+      }
+    },
+    "parallel_additions_from_798": {
+      "core_Python": 0,
+      "src_and_scripts_Python": 202,
+      "tests_Python": 426,
+      "integrations_Python_CPP_HPP": 780
+    }
+  },
+  "scope": {
+    "new_model_calls": 0,
+    "new_GPU_runs": 0,
+    "new_real_Ray_runs_for_cleanup": 0,
+    "server_diagnostic_is_a_separate_existing_run": "ray-sem-e566-1106-r2",
+    "earlier_image_run_is_not_additional_method_coverage": true
+  },
+  "raw": {
+    "file": "lotus_http_retirement_raw.json.gz",
+    "bytes": 114367,
+    "sha256": "7381815f24b438a41b56ce0a62537f3b79e6cf6080e471abb7da46909a59573c",
+    "decoded_bytes": 340803,
+    "decoded_sha256": "e494f269d0f6bfea8ce724616bca6d25cb2246b502e46335d374ef3934d12ce5"
+  }
+}

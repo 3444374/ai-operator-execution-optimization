@@ -1,0 +1,46 @@
+{
+  "status": "completed_selected_zero_model_checks",
+  "source_head": "5b25197dafc03d6ae7fa48e7c0f7460122e85e51",
+  "source_tree": "afd406117a4f04b6cdd88e6b49e7962359010189",
+  "result_summary": {
+    "CPU28": {
+      "passed": 28,
+      "failed": 0,
+      "error": 0,
+      "skipped": 0
+    },
+    "isolated_probe12": {
+      "passed": 12,
+      "failed": 0,
+      "error": 0,
+      "skipped": 0,
+      "overlaps_CPU28": true
+    },
+    "real_Ray": {
+      "passed": 1,
+      "failed": 0,
+      "error": 0,
+      "skipped": 0,
+      "Ray_version": "2.56.1",
+      "CPUs": 1,
+      "GPUs": 0
+    }
+  },
+  "real_Ray_contract": "r0 and r1 each returned rows=2 at endpoint e1; observed API inflight=2; original method shut down the owned runtime",
+  "cleanup": {
+    "CPU_observed_owned_processes": 7,
+    "Ray_observed_owned_processes": 9,
+    "all_observed_exited": true,
+    "new_SHM_remaining": [],
+    "leases_released": true,
+    "GPU_idle_after": true,
+    "controllers_exited": true
+  },
+  "new_real_model_calls": 0,
+  "source_recovery": "two normal Git fetch timeouts; verified 1,310,996-byte public bundle imported to a fresh independent checkout, exact commit/tree and clean source confirmed",
+  "pending": "Real fixed-model gateway two-query/cancel functionality remains separate; input preparation/organization multi-Job and full records LOTUS concurrency are not covered.",
+  "no_performance_or_quality_conclusion": true,
+  "source_kind": "projection of original server HANDOFF and RESULTS; originals retained privately",
+  "original_handoff_sha256": "c14b2102e191a0b474c0f2e757fc71c8a6f0e463810696b20c8b3b88d4d4ea05",
+  "original_results_sha256": "3ea343b79c9b6ffa7c3d30a46e7bd844d5c88033bad7271f4aec8c602aa6bfff"
+}

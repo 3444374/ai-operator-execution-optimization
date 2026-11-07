@@ -16,7 +16,7 @@ from ...scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from ...scheduling.core.session import SessionEngine
 from ...scheduling.core.session_contract import OfferedTask, SessionLimits, SessionTimeouts, TaskInfo
 from ...scheduling.core.session_policy import SessionPolicies
-from ...scheduling.core.session_jobs import shared_compute_job_budget
+from ...scheduling.core.session_jobs import equal_share_job_budget
 from ...scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from ...scheduling.submission_control.admission import StaticAdmissionController
 from ...scheduling.runtime.async_backend import BoundedAsyncBackend
@@ -69,7 +69,8 @@ class ImageServiceConfig:
 
 def build_image_execution(config, *, max_tasks, max_active_requests, input_bytes, result_bytes,
                           max_jobs, observer=None, execute=None, worker_pool=None,
-                          ray_api=None, reference=None):
+                          ray_api=None, reference=None, allocate_job=equal_share_job_budget,
+                          choose_flow=None):
     if execute is not None:
         raise ValueError("image execution requires typed stages, not a chat callback")
     plan = config.plan
@@ -137,8 +138,9 @@ def build_image_execution(config, *, max_tasks, max_active_requests, input_bytes
         return True
 
     try:
-        engine = SessionEngine(limits, backend, policies, sink=observe, max_jobs=max_jobs)
-        shared_compute_job_budget(engine)
+        engine = SessionEngine(limits, backend, policies, sink=observe, max_jobs=max_jobs,
+                               choose_flow=choose_flow)
+        allocate_job(engine)
     except BaseException:
         close()
         raise
@@ -154,4 +156,4 @@ def build_image_execution(config, *, max_tasks, max_active_requests, input_bytes
         return OfferedTask(sequence, request.encoded, plan.input_size ** 2, plan.result_bytes,
                            info=TaskInfo("pg-image", sequence, "image-pipeline", work))
 
-    return IncrementalExecution(engine, prepare_task, close, timeout + 1, "pixels", shared_compute_job_budget)
+    return IncrementalExecution(engine, prepare_task, close, timeout + 1, "pixels", allocate_job)

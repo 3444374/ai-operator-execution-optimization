@@ -43,12 +43,21 @@ class _Pending:
     producer_stopped: bool = False
 
 
+@dataclass(frozen=True)
+class BackendProgress:
+    """Notification state only; it neither grants nor releases task capacity."""
+
+    generation: int
+    pending: bool
+    contended: bool
+
+
 class BoundedAsyncBackend:
     """Bound coroutine and result slots; responses and confirmed failures produce terminals.
 
     execute must perform asynchronous I/O and enforce the task's response size
     limit while reading, before buffering an unbounded response. The adapter never
-    cancels an HTTP await and misrepresents that as cancellation of model work.
+    cancels an I/O await and misrepresents that as cancellation of model work.
     close is an explicit blocking teardown operation, never called by advance.
     """
 
@@ -69,6 +78,10 @@ class BoundedAsyncBackend:
         self._cancel_pending = cancel_pending
         self._maximum, self._notify = max_tasks, notify
         self._lock = threading.Lock()
+        # Completion callbacks may run synchronously while _lock is held.
+        self._progress_lock = threading.Lock()
+        self._progress_generation = 0
+        self._progress_pending = self._progress_contended = False
         self._slots: dict[TaskKey, _Pending] = {}
         self._loop = asyncio.new_event_loop()
         self._ready = threading.Event()
@@ -91,7 +104,19 @@ class BoundedAsyncBackend:
 
     def _completed(self, key: TaskKey) -> None:
         self._slots[key].completed_order = next(self._completion_counter)
+        self._publish_progress()
+
+    def _publish_progress(self):
+        with self._progress_lock:
+            self._progress_generation += 1
+            self._progress_pending = True
+            self._progress_contended = False
         self._notify()
+
+    def progress(self) -> BackendProgress:
+        with self._progress_lock:
+            return BackendProgress(self._progress_generation,
+                                   self._progress_pending, self._progress_contended)
 
     def try_submit(self, task: BackendTask, endpoint: str) -> Submission:
         if not self._lock.acquire(blocking=False):
@@ -154,7 +179,10 @@ class BoundedAsyncBackend:
     ) -> tuple[Terminal | Uncertain, ...]:
         if type(max_events) is not int or max_events <= 0:
             raise ValueError("max_events must be positive")
+        observed = self.progress().generation
         if not self._lock.acquire(blocking=False):
+            with self._progress_lock:
+                self._progress_contended = True
             return ()
         try:
             events = []
@@ -222,6 +250,12 @@ class BoundedAsyncBackend:
             for event in result:
                 if type(event) is Terminal:
                     del self._slots[event.key]
+            with self._progress_lock:
+                if self._progress_generation == observed:
+                    # A full poll conservatively retains a drain obligation.
+                    # A later empty poll may settle it; contention never does.
+                    self._progress_pending = len(result) == max_events
+                    self._progress_contended = False
             return result
         finally:
             self._lock.release()
@@ -255,12 +289,13 @@ class BoundedAsyncBackend:
             count = sum(not slot.producer_stopped for slot in slots)
             for slot in slots:
                 slot.producer_stopped = True
-        self._notify()
+        self._publish_progress()
         return count
 
     def close(self, timeout: float = 5.0, *, wait_pending=False) -> bool:
-        if timeout <= 0:
-            raise ValueError("close timeout must be positive")
+        """Stop settled local I/O; zero permits only a nonblocking close check."""
+        if timeout < 0:
+            raise ValueError("close timeout must be nonnegative")
         until = time.monotonic()+timeout if wait_pending else None
         if wait_pending:
             with self._lock:
@@ -278,16 +313,16 @@ class BoundedAsyncBackend:
                     self._closing_future = asyncio.run_coroutine_threadsafe(
                         self._finalize(), self._loop
                     )
-        error = None
+        finalizer_error = None
         if self._closing_future:
             try:
                 self._closing_future.result(timeout=timeout if until is None else max(0, until-time.monotonic()))
             except TimeoutError:
                 return False
-            except Exception:
-                error = RuntimeError("asynchronous transport finalization failed")
+            except Exception as error:
+                finalizer_error = error
         self._loop.call_soon_threadsafe(self._loop.stop)
         self._thread.join(timeout if until is None else max(0, until-time.monotonic()))
-        if error:
-            raise error
+        if finalizer_error is not None:
+            raise RuntimeError("asynchronous transport finalization failed") from finalizer_error
         return not self._thread.is_alive()

@@ -1,11 +1,12 @@
-"""Optional native query observation adapters; no scheduler, transport, model, or file I/O.
+"""Query clocks and optional native model-call observations.
 
-Install only around the original frozen worker in a future packet. HTTP clocks
-come from the existing authoritative observer, never a new HTTP client.
+The caller owns execution and persistence. This module records existing driver
+and model receipts without creating requests or an execution loop.
 """
-from contextlib import contextmanager
 from collections import defaultdict
 import time
+from src.infrastructure.redact import redact_text
+
 
 
 class ObservationStore:
@@ -65,71 +66,6 @@ def timed_driver_type(base,store):
     return TimedDriver
 
 
-@contextmanager
-def native_observation(native_module,lm_module,store):
-    """Retain existing POST clocks and time the unchanged native LM batch call.
-
-    Pass the already-loaded native adapter and lotus.models.lm modules. Nothing
-    here reads payloads, makes a request, reserves a call, or changes HTTP options.
-    """
-    cls=native_module._Calls
-    old_receipts,old_batch=cls.receipts,cls.observe_batch
-
-    def receipts(self):
-        original=old_receipts(self)
-        try:
-            for row in original:
-                events=self.events.get(row['attempt'],{})
-                started=events.get('http_started',{}).get('monotonic_ns')
-                response=events.get('http_response',{}).get('monotonic_ns')
-                finished=events.get('http_finished',{}).get('monotonic_ns')
-                complete=(type(started) is int and type(finished) is int and finished>=started)
-                row['external_HTTP_timing']=dict(started_ns=started,response_observed_ns=response,
-                    finished_ns=finished,complete=complete,
-                    elapsed_s=(finished-started)/1e9 if complete else None,
-                    scope='existing observer http_started through http_finished; response read/receipt JSON included',
-                    records_per_POST=1)
-        except Exception as error:
-            store.warnings.append(type(error).__name__)
-        return original
-
-    @contextmanager
-    def batch(self):
-        with old_batch(self):
-            original=lm_module.batch_completion
-
-            def observed(*args,**kwargs):
-                started=store.now()
-                failure=None
-                try:
-                    return original(*args,**kwargs)
-                except BaseException as error:
-                    failure=error
-                    raise
-                finally:
-                    ended=store.now()
-                    try:
-                        qid=self.expected[0]['query_id'] if self.expected else None
-                        store.batches[qid].append(dict(kind='LOTUS_native_batch_completion',
-                            query_id=qid,started_ns=started,finished_ns=ended,
-                            input_records=len(self.expected),status='failed' if failure else 'succeeded',
-                            error_type=type(failure).__name__ if failure else None,
-                            elapsed_s=(ended-started)/1e9
-                                if started is not None and ended is not None and ended>=started else None,
-                            scope='one original LM batch_completion invocation, not per-row or per-POST latency'))
-                    except Exception as error:
-                        store.warnings.append(type(error).__name__)
-            lm_module.batch_completion=observed
-            try:
-                yield
-            finally:
-                lm_module.batch_completion=original
-
-    cls.receipts,cls.observe_batch=receipts,batch
-    try:
-        yield
-    finally:
-        cls.receipts,cls.observe_batch=old_receipts,old_batch
 
 
 def query_timing(query):
@@ -169,12 +105,14 @@ def query_timing(query):
 def model_API_samples(backend,report):
     """Return actual API units, including failed/unknown timing records.
 
-    Core rows are independent calls. Native POST attempts are independent calls.
+    Core rows are independent calls.
     Only original chat(list) rows are grouped by shared engine+interval receipt.
     """
-    rows=report.get('calls',{}).get('records',[])
+    native_local = backend == 'lotus-native' and report.get('protocol') == 'local_async_model_IPC'
+    rows = (report.get('native_transport_receipts', []) if native_local else
+            report.get('calls',{}).get('records',[]))
     samples=[]
-    if backend=='lotus-native':
+    if backend=='lotus-native' and not native_local:
         for receipt in report.get('http_receipts',[]):
             timing=receipt.get('external_HTTP_timing',{})
             sent=bool(receipt.get('http_started'))
@@ -189,7 +127,7 @@ def model_API_samples(backend,report):
     grouped=defaultdict(list)
     for index,row in enumerate(rows):
         start,end=row.get('model_start_monotonic'),row.get('model_end_monotonic')
-        if backend=='semloom-core':
+        if backend=='semloom-core' or native_local:
             key=('independent',row.get('call_id',index))
         elif start is None or end is None:
             key=('unresolved_batch_identity',row.get('engine_uid'))
@@ -199,10 +137,17 @@ def model_API_samples(backend,report):
     for key,batch in grouped.items():
         first=batch[0];start=first.get('model_start_monotonic');end=first.get('model_end_monotonic')
         complete=isinstance(start,(int,float)) and isinstance(end,(int,float)) and end>=start
+        countable = key[0]!='unresolved_batch_identity'
         statuses={x.get('status','unknown') for x in batch}
         status='succeeded' if statuses=={'succeeded'} else 'failed' if 'failed' in statuses else 'unknown'
-        samples.append(dict(api_id=repr(key),unit='single_generate' if backend=='semloom-core' else 'native_chat_batch',
-            countable_API_unit=key[0]!='unresolved_batch_identity',
+        if native_local:
+            submitted = first.get('submission_confirmed')
+            countable = submitted is True
+            if not countable:
+                status = 'not_sent' if submitted is False and status != 'unknown' else 'unknown'
+                complete = False  # Unconfirmed submission has no measured model API interval.
+        samples.append(dict(api_id=repr(key),unit='single_generate' if backend=='semloom-core' or native_local else 'native_chat_batch',
+            countable_API_unit=countable,
             records=len(batch),status=status,start_ns=int(start*1e9) if complete else None,
             end_ns=int(end*1e9) if complete else None,elapsed_s=end-start if complete else None,
             row_ids=[x.get('row_id') for x in batch]))
@@ -218,3 +163,34 @@ def offline_scan_total(events):
         unique[key]=event
     return dict(events=len(unique),calls=sum(x['actual_scan_calls'] for x in unique.values()),
                 wall_s=sum(x['actual_scan_wall_s'] for x in unique.values()))
+
+
+class QueryClock:
+    def __init__(self, *, event_sink=None):
+        self.events = []
+        self.event_sink, self.event_sink_errors = event_sink, []
+
+    def __call__(self, event):
+        self.record(dict(event=event, monotonic_ns=time.monotonic_ns()))
+
+    def record(self, entry):
+        """Observe an existing owner timestamp without retiming session/query events."""
+        if (type(entry) is not dict or type(entry.get("event")) is not str
+                or type(entry.get("monotonic_ns")) is not int or entry["monotonic_ns"] < 0):
+            raise ValueError("owner event requires an event name and monotonic timestamp")
+        entry = dict(entry)
+        self.events.append(entry)
+        if self.event_sink is not None:
+            try:
+                self.event_sink(dict(entry, epoch_ns=entry.get("epoch_ns", time.time_ns())))
+            except Exception as error:
+                self.event_sink_errors.append(redact_text(type(error).__name__ + ": " + str(error)))
+
+    def result(self, invoked_ns, finished_ns):
+        found = [e["monotonic_ns"] for e in self.events if e["event"] == "result_ready"]
+        if len(found) != 1 or not invoked_ns <= found[0] <= finished_ns:
+            raise ValueError("one complete pre-evaluation result_ready timestamp is required")
+        return dict(query_result_seconds=(found[0] - invoked_ns) / 1e9,
+            application_e2e_seconds=(finished_ns - invoked_ns) / 1e9, events=self.events,
+            scope="worker invocation through complete task result; application includes worker-owned evaluation/close",
+            resident_query_seconds=None)

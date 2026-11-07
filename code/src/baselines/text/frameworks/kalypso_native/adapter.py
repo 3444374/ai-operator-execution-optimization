@@ -2,7 +2,6 @@
 import csv
 import hashlib
 import json
-import os
 from pathlib import Path
 import sys
 import time
@@ -62,7 +61,7 @@ def load_dependencies(cfg):
         if sha(bundle/rel)!=expected:
             raise ValueError('Existing comparison dependency changed: '+rel)
     sys.path[:0]=[str(Path(cfg['baseline_source'])/'code'),cfg['baseline_packet']]
-    from src.baselines.common.private_artifacts import write_private_json
+    from src.infrastructure.private_artifacts import write_private_json
     return write_private_json
 
 
@@ -241,18 +240,3 @@ class NativeQueryDriver:
 
     def close(self):
         return dict(status='closed',cleanup_errors=[],scope='attached HTTP client only; service shutdown belongs to GPU owner')
-
-
-def run_attached(cfg,unit,output,observer=None):
-    """Compatibility entry for the comparison lifecycle harness."""
-    from src.experiments.kalypso_query_lifecycle import run_attached as run
-    return run(cfg,unit,output,observer=observer)
-
-
-def main():
-    """Retain the existing native-adapter CLI as a comparison entry point."""
-    from src.experiments.kalypso_query_lifecycle import main as run
-    return run()
-
-
-if __name__=='__main__':main()

@@ -1,0 +1,164 @@
+{
+  "base": "809fa88419edd0fa6b28601de3f334be178a3623",
+  "removed": [
+    {
+      "path": "code/scripts/experiments/run_saor_project_mechanism.py",
+      "lines": 103,
+      "bytes": 3293,
+      "sha256": "0f1061c6c5c6b5d080f9258c5434be74b3b726657c0a55e094c238955d3d379e",
+      "archive": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_project_mechanism.py.gz",
+      "archive_bytes": 1221,
+      "archive_sha256": "73756121d36cb3fcb4c026270c1e5d2174c1b36ae8f4106f5db7a96704f06d7d",
+      "current_import_callers": [],
+      "source_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a"
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_feeding_ceiling.py",
+      "lines": 79,
+      "bytes": 2929,
+      "sha256": "16f698ae098be6dd030dbac15f43427ef4df9fbbd3668dcc92b6ae289886eb61",
+      "archive": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_ceiling.py.gz",
+      "archive_bytes": 1096,
+      "archive_sha256": "c2f9dc2c537dc7e295843dcca1a7fdbcbb6e1679af2d609572a7c424306f2f1d",
+      "current_import_callers": [],
+      "source_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a"
+    },
+    {
+      "path": "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py",
+      "lines": 99,
+      "bytes": 3851,
+      "sha256": "7e78e2edd719cb7efe9305566913a789612027b4efd89a8bcd62690962600c53",
+      "archive": "historical_sources/bfb9100e/code/scripts/experiments/run_saor_feeding_gap_diagnostic.py.gz",
+      "archive_bytes": 1334,
+      "archive_sha256": "45ff13e5b2c3793092d1e45d1f25d667c25720019fc99ccdfc2094d29682ea7f",
+      "current_import_callers": [],
+      "source_commit": "bfb9100e2f3fa090fdf2304359979b853236e06a"
+    }
+  ],
+  "active_lines_removed": 281,
+  "current_direct_imports": 0,
+  "history_mappings_added": 15,
+  "historical_expected_hashes_or_projection_changed": false,
+  "raw_results_changed": false,
+  "remaining_SAOR": "offline analysis, evidence validation, native-system interfaces and all actual backends retained",
+  "CPU": {
+    "obsolete_entry_retirement_first": {
+      "selected": 50,
+      "passed": 49,
+      "failures": [],
+      "errors": [
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes (variant='native_isolated_and_imlane')",
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes (variant='core_original_dynamic')",
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes (variant='core_local_window_pairs')",
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes (variant='ray_runtime_reuse')",
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes (variant='daft_single_thread_session')"
+      ],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "obsolete_entry_retirement_qualified": {
+      "selected": 49,
+      "passed": 49,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "obsolete_entry_final": {
+      "selected": 68,
+      "passed": 68,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "mismatches": [
+      [
+        "native_isolated_and_imlane",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "native_isolated_and_imlane",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/scheduling/core/session_policy.py"
+      ]
+    ]
+  },
+  "restored_CLI_help": [
+    {
+      "entry": "code/scripts/experiments/run_saor_project_mechanism.py",
+      "returncode": 0,
+      "source_sha256": "0f1061c6c5c6b5d080f9258c5434be74b3b726657c0a55e094c238955d3d379e",
+      "log_sha256": "55772dbbc53ad64e052d4a4bcd6a3caf98011537351d62c44ef10d4b578a8229",
+      "model_imports_blocked": true,
+      "service_and_process_operations_blocked": true
+    },
+    {
+      "entry": "code/scripts/experiments/run_saor_feeding_ceiling.py",
+      "returncode": 0,
+      "source_sha256": "16f698ae098be6dd030dbac15f43427ef4df9fbbd3668dcc92b6ae289886eb61",
+      "log_sha256": "a604b642e9430171a1c5023e772b96972656f0fe9350219f74512d6f3d88a06d",
+      "model_imports_blocked": true,
+      "service_and_process_operations_blocked": true
+    },
+    {
+      "entry": "code/scripts/experiments/run_saor_feeding_gap_diagnostic.py",
+      "returncode": 0,
+      "source_sha256": "7e78e2edd719cb7efe9305566913a789612027b4efd89a8bcd62690962600c53",
+      "log_sha256": "8e4dae20bbef6aa4742f027bd081a4cd0baf809709e1ad53a07c6e48da46b7d5",
+      "model_imports_blocked": true,
+      "service_and_process_operations_blocked": true
+    }
+  ],
+  "compressed_source_format": "optional manifest source_formats per exact source; archive SHA and declared decoded length checked before raw SHA and any output",
+  "independent_review": "pending",
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "pushed": false,
+  "merged": false,
+  "artifacts": {
+    "obsolete_entry_retirement_first.json": "a4e0aceb1f11633dcfa8365884fca8202160b2ba3c708e26127cd4a88caac2ae",
+    "obsolete_entry_retirement_first.log": "293706df0cdfdc083b73db0a82b6caf1295b6c3174228c3b0062737101029b03",
+    "obsolete_entry_retirement_qualified.json": "9d47b0aebce2601001cf321b13694b3103d1bdb12277fedcbb8ddd78dde5377c",
+    "obsolete_entry_retirement_qualified.log": "188308bfd17dcba9622453d30811d4f77fe210822cd884ca3f8dacc506b4ac1e",
+    "history_bindings.json": "8af288ed6147c87a561780b4e64835fff2001991182d11a3e4ca8cb39bd292b8",
+    "retired_cli_help.json": "402b94e4f16c6f6a4f2d420fe758696c461f1c9e8b7b879ed0381eaea798a307",
+    "obsolete_entry_final.json": "28e7fa5e2a69098938edcff2764c31df7b00e663aec7b71452e5e5dc497ad5cc",
+    "obsolete_entry_final.log": "935368e33b192985bd93a9c24dd6a4dd938c676d5064c4f1414b32e4aa08ca82"
+  }
+}

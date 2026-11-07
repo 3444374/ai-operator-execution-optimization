@@ -2,13 +2,15 @@
 
 This page describes the Core continuation path below. [LOTUS adapters](lotus/README.md) have their own entry; vendor-native LOTUS backends need not pass through this driver or Core.
 
-The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` emits one semantic
+The optional image provider uses this driver. `ImageEmbeddingMethod` emits one semantic
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
 `ImageGateway` uses this driver for row association, bounded state and final-result retention through
 network send. Its service-wide `MethodBudgetPool` remains separate from core task/result storage.
-The [image verification](../../../experiments/results/postgresql/image_stage_execution_check_20260920/README.md)
-covers that specific PG consumer. The broader method programs discussed below still require their
-own PG integration and semantic verification.
+The [historical image verification](../../../experiments/results/postgresql/image_stage_execution_check_20260920/README.md)
+covers its recorded PG source. The old PG carrier is available through the
+[recovery index](../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md);
+current provider tests do not establish a new PG integration. The broader method programs below
+require their own database integration and semantic verification.
 
 This module lets an authorized semantic method produce several sequential requests for one row.
 It contains no optimization algorithm, model client, SQL binding, or independent scheduler.
@@ -96,7 +98,7 @@ row-count and work-budget FIFO groups can produce the same actual request order.
 row sequences must strictly increase; call identity is bounded text and payload equality never
 merges rows. The source calls `end_input`, then keeps advancing and consuming until `finished`.
 The service owner continues advancing the shared Engine for registered Jobs; the driver only
-submits and consumes its own session. The image gateway is its first bounded PG row consumer.
+submits and consumes its own session. The image gateway consumes bounded rows through this API.
 
 Create one `budget.MethodBudgetPool` for the service and explicitly allocate each driver's fixed
 `MethodCapacity`. All grants, including multiple flows of one Job, count against that pool.
@@ -120,7 +122,9 @@ closing all drivers the service owner still drains the Engine and closes its Job
 The [driver tests](../../tests/scheduling/test_method_driver.py) cover aggregate reservations,
 consumer backpressure, multiple Jobs and late completions. The
 [V1 plan](../../../experiments/plans/增量执行.md#method-driver) separates this engineering work from
-the first real-data Map experiment. General PG method programs and LOTUS cascades remain pending.
+the first real-data Map experiment. General PG method programs still need their own integration.
+The existing [LOTUS Filter cascade](lotus/README.md) has its own method and execution adapters;
+it is not automatically implemented by this per-row driver.
 
 The driver adds `TaskInfo` for row/call/stage association on the organized path. Optional
 `describe_work(row, stage_ordinal, request)` supplies a `WorkDescriptor` using existing work units

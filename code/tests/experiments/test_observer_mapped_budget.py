@@ -1,22 +1,20 @@
 """Descriptor accounting opens at the SDK caller and survives errors without refunds."""
 import asyncio
 import hashlib
-import json
 from pathlib import Path
 import pickle
 import tempfile
 import time
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import httpx
 
 from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.mapped_request_budget import MappedUnitOwner
-from src.experiments.native_http_observer import NativeSessionFactory, observe_native_httpx
+from src.experiments.native_http_observer import observe_native_httpx
 from src.experiments.request_budget_client import open_request_budget
-from src.experiments.request_identity import RAY_IDENTITY_FIELD
 
 
 class MappedObserverTests(unittest.TestCase):
@@ -86,60 +84,6 @@ class MappedObserverTests(unittest.TestCase):
         self.assertIs(caught.exception,original)
         self.assertEqual(self.owner.client.attempts,1)
 
-    def test_aiohttp_factory_opens_only_in_session_and_returns_handles_after_failure(self):
-        body=b'{"model":"model"}'
-        descriptor=self.prepare(body)
-        (self.root/'events').mkdir()
-        factory=pickle.loads(pickle.dumps(NativeSessionFactory(descriptor,str(self.root/'events'),'http://localhost/fixture',1)))
-        original=ConnectionError('fixture transport error')
-        session=AsyncMock();session.post.side_effect=original
-        opened=[]
-        async def call():
-            with patch('aiohttp.ClientSession',return_value=session):
-                async with factory() as observer:
-                    opened.append(observer.budget)
-                    data=json.dumps({'model':'model',RAY_IDENTITY_FIELD:{'row_id':'a','source_position':0}})
-                    await observer.post('http://localhost/fixture',data=data,headers={})
-        with self.assertRaises(ConnectionError) as caught:asyncio.run(call())
-        self.assertIs(caught.exception,original)
-        self.assertIsNone(opened[0]._state_fd)
-        self.assertIsNone(opened[0]._lease_fd)
-        self.assertIsNone(opened[0]._mapping)
-        session.close.assert_awaited_once()
-        self.assertEqual(self.owner.client.attempts,1)
-        events=[json.loads(line) for p in (self.root/'events').glob('*.jsonl') for line in p.read_text().splitlines()]
-        self.assertEqual(sum(e['event']=='request' for e in events),1)
-
-    def test_session_startup_failure_closes_opened_mapping(self):
-        descriptor=self.prepare(b'{}');(self.root/'events').mkdir()
-        observed=[]
-        from src.experiments.mapped_request_budget import MappedUnitClient
-        def open_client(d):
-            client=MappedUnitClient(d);observed.append(client);return client
-        async def call():
-            with patch('src.experiments.mapped_request_budget.MappedUnitClient',side_effect=open_client), \
-                 patch('aiohttp.ClientSession',side_effect=OSError('fixture startup')):
-                async with NativeSessionFactory(descriptor,str(self.root/'events'),'http://localhost/fixture',1)():
-                    self.fail('startup should fail')
-        with self.assertRaises(OSError):asyncio.run(call())
-        self.assertEqual(len(observed),1)
-        self.assertIsNone(observed[0]._state_fd)
-        self.assertEqual(self.owner.client.attempts,0)
-
-    def test_session_close_error_does_not_replace_cancellation_or_keep_handles(self):
-        descriptor=self.prepare(b'{}');(self.root/'events').mkdir()
-        original=asyncio.CancelledError('fixture cancellation')
-        session=AsyncMock();session.close.side_effect=OSError('fixture cleanup')
-        opened=[]
-        async def call():
-            with patch('aiohttp.ClientSession',return_value=session):
-                async with NativeSessionFactory(descriptor,str(self.root/'events'),'http://localhost/fixture',1)() as observer:
-                    opened.append(observer.budget)
-                    raise original
-        with self.assertRaises(asyncio.CancelledError) as caught:asyncio.run(call())
-        self.assertIs(caught.exception,original)
-        self.assertIsNone(opened[0]._state_fd)
-        self.assertIn('OSError',original.__notes__[0])
 
     def test_existing_live_budget_stays_caller_owned(self):
         class Budget:

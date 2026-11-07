@@ -1,0 +1,179 @@
+{
+  "schema": "semloom.async_rpc_retirement.checks.v1",
+  "source": {
+    "candidate": "eab7e246cda54f12d7b7db590b132f24a1c0b037",
+    "tree": "61e6f0efa348b382b474fb8aea2daf730b7c81bd",
+    "base": "8efed87fe3dba715f087dd5b8cf326637bd411a5",
+    "recorded_head": "eab7e246cda54f12d7b7db590b132f24a1c0b037",
+    "matching_code_files": 1067,
+    "all_test_code_hashes_match": true,
+    "source_unchanged": true,
+    "selected": 27,
+    "passed": 27,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "base": {
+        "commit": "8efed87fe3dba715f087dd5b8cf326637bd411a5",
+        "core_python_lines": 57011,
+        "src_and_scripts_python_lines": 114637,
+        "tests_python_lines": 95624,
+        "integration_Python_CPP_header_lines": 4858,
+        "core_files_over_1000": [],
+        "core_functions_over_100": 44,
+        "actor_lines": 726
+      },
+      "candidate": {
+        "commit": "eab7e246cda54f12d7b7db590b132f24a1c0b037",
+        "core_python_lines": 56943,
+        "src_and_scripts_python_lines": 114569,
+        "tests_python_lines": 95594,
+        "integration_Python_CPP_header_lines": 4858,
+        "core_files_over_1000": [],
+        "core_functions_over_100": 44,
+        "actor_lines": 658
+      }
+    },
+    "deltas": {
+      "base": {
+        "core_python_lines": -68,
+        "src_and_scripts_python_lines": -68,
+        "tests_python_lines": -30,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "main": {
+        "core_python_lines": 2852,
+        "src_and_scripts_python_lines": -25766,
+        "tests_python_lines": -7169,
+        "integration_Python_CPP_header_lines": 337
+      },
+      "3fd": {
+        "core_python_lines": -4685,
+        "src_and_scripts_python_lines": -35076,
+        "tests_python_lines": -34468,
+        "integration_Python_CPP_header_lines": 330
+      }
+    }
+  },
+  "review": {
+    "record": "migration/FINAL_SOURCE_REVIEW.json",
+    "original_sha256": "45bd4ee13eac178952346b7689002d068fb691cd152c74be872a24c6bb3a8c2a"
+  },
+  "historical_sources": {
+    "record": "current/HISTORY_SOURCES.json",
+    "affected": 10,
+    "all_matched": true,
+    "original_manifest_unchanged": true,
+    "full3010_projections_rerun": false
+  },
+  "planned_actual_CPU_IPC": {
+    "record": "current/SERVER_CPU_PLAN.json",
+    "methods": 16,
+    "status": "not_run",
+    "real_model_calls": 0,
+    "real_Ray_runs": 0,
+    "GPU_runs": 0,
+    "historical_snapshot": "Pre-server plan; actual87ce results and reader followup are recorded below."
+  },
+  "earlier_errors": {
+    "record": "before/retired-blocking-observer-before.json",
+    "source": "8efed87fe3dba715f087dd5b8cf326637bd411a5",
+    "errors": 2
+  },
+  "private_originals": {
+    "record": "private_originals in the raw archive",
+    "files": 22,
+    "manifest_sha256": "abbc24c6b2c934d53f1c674eed6b4a6bee9e7acb95972a5094c78c5cc301790f"
+  },
+  "notes": [
+    "The original14 public records remain unchanged. Earlier notes describe the pre-server eab snapshot and its27 pure-memory methods.",
+    "The exact87ce actual CPU IPC run executed all16 requested methods once:15 passed and one failed, with zero errors/skips/Ray/model calls. A separately labelled single diagnostic repeated the failure; it is not additional unique coverage.",
+    "Only the diagnostic captured the failed/CancelledBeforeSubmission receipt with submittedfalse, terminalconfirmedtrue and usage null. The first-run packet and full close/retired_unknown fields were not serialized; absent values are not filledzero.",
+    "The diagnostic is consistent with worker cancellation before generate_prepared. It does not prove that the child never received the IPC frame. Early reader-retirement assertions passed; later final-close/usage11 assertions were not reached in the original failure.",
+    "The test migration signalled after queue registration rather than after the fixture outcome. D6abc adds only a test wait for the existing IPC ready_results before signalling; it consumes no result/ACK and keeps the reader held. All ten original assertions and production source are unchanged.",
+    "Syntax/diff/privacy and independent source review passed. No denied local socket/sysctl operation was retried. Only the failed method was requested for server verification; the other15 and earlier27 are not rerun or relabelled.",
+    "Production counts remain core56943/source-scripts114569/integrations4858; only two test lines were added. No model, performance, automatic physical capacity or complete-query quality claim follows.",
+    "The separately recorded d6abc followup is the sole retested method; its actual source, test result and cleanup are preserved in server-d6abc/HANDOFF.json. The original87ce failure remains unchanged."
+  ],
+  "raw": {
+    "file": "async_rpc_retirement_raw.json.gz",
+    "bytes": 21969,
+    "sha256": "a760d8fe54f9664c46e768e86b3c0ca53096e9aacf3fe5bf015bdeeb2f3a6fca",
+    "decoded_sha256": "16b4f8bd46892cc8a25e8da91d3b754dcab223915752ca219e51a46df4ff0a20"
+  },
+  "server_CPU_IPC_87ce": {
+    "source": "87ce07b2d0381c6edee0afb589c4f435af6ac33a",
+    "record": "server-87ce/HANDOFF.json",
+    "methods": 16,
+    "passed": 15,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "separate_diagnostic_repeats": 1,
+    "real_model_calls": 0,
+    "real_Ray_runs": 0
+  },
+  "reader_sync": {
+    "source": {
+      "base": "87ce07b2d0381c6edee0afb589c4f435af6ac33a",
+      "candidate": "d6abc0e327aabdceb74c669e506727352f2c0513",
+      "tree": "4e90089e19c6f5b71762377ff60f63de53fb4a58",
+      "changed_file": "code/tests/execution_provider/test_async_producer_retirement.py",
+      "file_sha256": "e9a4c39bcf4dda902b3663c66848e51346ecc72e0732b40da31169e6e5f8ced4",
+      "original_assertions": 10,
+      "assertions_unchanged": true,
+      "production_unchanged": true,
+      "syntax": "passed",
+      "local_actual_IPC_runs": 0,
+      "server_retest_methods": 1,
+      "unaffected15_rerun": false
+    },
+    "review_record": "reader-sync/review.json",
+    "review_original_sha256": "bd5c6046064210937a5f3f7b086dd7be89e2573444e6e2b0532118d57be41f5a",
+    "status": "passed",
+    "unaffected15_rerun": false,
+    "server_source": {
+      "head": "d6abc0e327aabdceb74c669e506727352f2c0513",
+      "tree": "4e90089e19c6f5b71762377ff60f63de53fb4a58",
+      "production_diff_from_87ce": [],
+      "source_clean": true,
+      "test_file_sha256": "e9a4c39bcf4dda902b3663c66848e51346ecc72e0732b40da31169e6e5f8ced4"
+    },
+    "server_result": {
+      "method_status": "passed",
+      "seconds": 0.7581660440191627,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "supervisor_status": "passed",
+      "supervisor_elapsed_s": 1.4482529498636723,
+      "worker_exit": 0,
+      "timeout_s": 600,
+      "retries": 0,
+      "traceback": null
+    },
+    "server_scope": {
+      "method": "tests.execution_provider.test_async_producer_retirement.LocalProducerRetirementTests.test_active_submission_prevents_retirement_until_its_RPC_returns",
+      "executions": 1,
+      "other_15_methods_rerun": false,
+      "diagnostic_reruns": 0,
+      "real_model_calls": 0,
+      "real_Ray_clusters": 0,
+      "GPU_runs": 0,
+      "environment_installations": 0,
+      "production_edits": false,
+      "test_edits": false,
+      "assertions_modified": false,
+      "close_wrapped": false,
+      "poll_wrapped": false,
+      "push_or_merge": false
+    },
+    "server_cleanup_record": "server-d6abc/HANDOFF.json: cleanup",
+    "server_record": "server-d6abc/HANDOFF.json",
+    "server_handoff_original_sha256": "22f133f3df8bdb238bc3bd07d84ef613d4574ea7072b8e5b4a2c823524030192"
+  }
+}

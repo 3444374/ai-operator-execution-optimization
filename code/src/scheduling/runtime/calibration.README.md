@@ -116,92 +116,95 @@ measure 接收原 deadline/work_limit。工作预算先留出 target 的数量�
 不会因外层选参就伪称该工厂曾主动测量硬件。
 
 
-## 可选单遍动态接纳与参数提示复用
+<a id="resource-request-public-current"></a>
+## 当前资源请求接纳
 
-`run_admission_query` 保留已交付工作量扫描（原 cfdc/79e8），并接回计算工作量／局部配对版本（原 ee39/5007）的完整反馈与 hint 状态。
-它与上述 `run_query(mode="query"/"offline"/"online")` 并存：后者调用完整工作负载测量回调，
-前者在**本来要完成的查询请求**上调整 admission，不另做一遍查询。历史源码从冻结投影还原；
-维护版现在默认不设内部探索期限、剩余条数门槛或变更次数预算，比较工作量与原请求语义保留。
-默认 Core 仍固定；没有 `profile.admission` 就没有新增反馈采样任务。
+普通 Core 与 rolling token 的 `admission.kind="resource_feedback"` 使用
+`ResourceRequestConfig` 和 `ResourceRequestController`，省略 admission 仍走固定路径。
+当前可直接解析的配置如下；启用后每个查询从一个请求开始，不继承跨查询的策略提示或请求配置缓存：
 
-### 原实验配置选项
-
-`create_records_core(..., profile=name)`、普通 Movie 的 `core_profile` 和 session 的 `profile`
-均接受以下名称；显式字典配置仍可使用，普通 sync/fixed 默认不变。
-两个名称保留 **legacy 实验参数对照**；它们不是新研究
-配置的推荐，也不证明这些数值得到资源平台验证。新探索使用下面的显式字典配置。
-
-| 名称 | 对应历史实现 | 工作量与比较方式 |
-|---|---|---|
-| `delivered-work-scan` | cfdc，实际冻结源码 `79e8f103` | 已交付请求与输入／输出工作量；原范围比较 |
-| `computed-work-local-pairs` | ee39，实际冻结源码 `5007e95b` | 实际计算／缓存 token；原局部配对和状态重验证 |
-
-两项都展开为历史正式配置：async、起始8、反馈读取0.1秒、测量窗0.25秒、最少16个样本、
-剩余至少64请求、10秒探索上限、最多8次调整、增益及工作量容差各3%、几何搜索、候选最多2次尝试，
-并开启原阶段计时。当前 owner 上界来自调用方 request budget，与引擎每轮序列上限分开；复现原实验须显式声明两处容量64、
-CPU准备2、prepare/model batch均1，以及相同模型、生成、输入和缓存条件。名称不修改这些外部声明。
-未指定名称时，`ResourceFeedbackConfig` 默认 `exploration_s=None, min_remaining=0,
-max_changes=None`，不按10秒、32／64条或8次变更停止。采样与比较参数仍是未调优的工程候选。
-
-```python
-profile = {"mode": "async", "max_inflight": C0,
-           "admission": {"kind": "resource_feedback", "allow_exploration": True,
-                         "search_mode": "geometric"}}
+```json
+{
+  "mode": "async",
+  "max_inflight": 1,
+  "admission": {
+    "kind": "resource_feedback",
+    "poll_interval_s": 0.25,
+    "window_s": 1.0,
+    "max_sample_age_s": 1.0,
+    "min_samples": 16,
+    "measurement_windows": 3,
+    "min_gain": 0.03,
+    "allow_exploration": true
+  }
+}
 ```
 
-现有 `exploration_s`／`max_changes` 可显式给正值；`min_remaining>0` 显式启用旧尾段与
-未来收益摊销门槛。它们仅作为 legacy／预算对照，触发表示探索截断，不能作为平台证据。
-缺少 pending 反馈时保持未知；没有可提交工作或查询结束、样本不足时不补调用，不等待额外样本。
-`exploration_censored`／`incomplete_reason` 保留证据不足，包括从未开启 probe 的短查询。
-实验外部 wall／call 预算、取消、实际请求／字节额度、结果槽位与 unknown 责任始终独立保留。
+这些采样与比较值是工程缺省值，不表示硬件容量或已验证的性能选择。
+请求许可只来自实际 owner／Core／IPC／结果预留；未消费结果、unknown、ACK 与取消责任保持。
+vLLM ready 只声明实例归属，原生序列／token／上下文参数另由引擎解析；未知值不作为无限容量。
+普通默认 R 仍是调用方声明值，没有自动探测硬件额度。公共 async Filter／rolling 工厂的
+默认存储现从已有 IPC 字节及单项声明推导，低层直接构造和非 rolling 整批仍保留旧解释。
+新校准身份 `records_capacity_policy_v2` 记录实际资源值，不复用旧的 C／R 派生身份。
+`require_memory_feedback=true` 现显式使用模型 actor 可见 cgroup v2 的内存停顿／回收事件，缺省仍为 false。
+首次读取、缺项、来源变化和不支持的环境保持未知，不据此增长；原生拒绝计数未知时不捏造零。
+此反馈不发放 RAM、不限制 RSS，也不保证避免所有分配错误；初始一个请求和原已验证窗口仍可能继续。
+驱动、Ray 和可见层级以外的模型进程内存仍需分别管理，不能据此宣称自动容量已完成。
+当前请求选项由 `ResourceRequestConfig` 校验，不采用旧 KV／busy 百分比或历史搜索选择参数，也不保存跨查询推荐。
 
-原首次／复用条件为同一模型依次执行16条预热、完整首次和完整复用；预热不读写 hint，
-首次结束满足完整成功与关闭责任后才保存，复用须显式配置下述 `admission_cache`。
-模型常驻本身不等于配置 hint 已保存。历史实现与原样恢复入口见[具名来源](../../../../experiments/reproduction/native_baselines/README.md)。
-两项可选实现均已接main，已有原参数GPU单轮首次／复用；当前接纳与结果边界见[代码状态](../../../INFRA_STATUS.md#优化与观测进展2026-10-27)。
-这些原参数GPU观察仍绑定各自固定源码，不转授本次容量／截止规则纠偏的GPU资格。
-两版本的固定源码和负结果保留；CPU差分验证显式旧参数及保留比较逻辑，不再要求维护配置／控制器AST与旧版相同。
-当前单轮、旧短查询提示复用与历史源码n3分别保留，不相加作重复数或宣称稳定收益；CPU差分不替代真实模型验收，也不能按期望成绩修改参数或结果。
+资源引导试探不再要求两份物理样本或“首次大步”资格，也不把后续建议截为两倍。
+一份同实例／session、时间及 GPU／CPU 取值均合格的观测即可给暂定位置；有多份时使用最近观测的保守联合余量。
+当前工程规则令 `E=min(实际许可, C+ready, C+pending)`，
+`spare=min(GPU空闲比例, CPU空闲比例)`，试探 `C+floor((E-C)*spare)`；64／256不在规则中。
+它使用 busy／CPU 源而非 MFU，是搜索位置而非物理容量；没有可靠物理数据时仍保留原生受保护的几何比较。
+资源建议可扩展尚未证实的试探，不等旧慢成员完成，但实际请求占用须达到当前窗口，且数据不能早于最近一次调窗；
+缩容后占用仍高于窗口时继续排空，不借资源建议提前加回。
+`min_samples`／`measurement_windows`限制性能证明，不是资源试探必须先完成请求的门槛。
+可选工作量字段缺失不制造零或收益；已知计数回退、必需安全信号未知、压力、无ready供给仍不能授权增长。
+未证实大步遇压力回原保守位置，并收缩实际失败区间；恢复仍需真实查询进度。
+可比较的完成工作显示无收益或退化时沿用回退／较小窗口选择，完整查询时间、所有尝试和用量不清零；
+无足够比较的短查询保持未证实，不输出最优推荐。
+此更改只影响已显式选择的请求反馈，不改静态默认、B、模型内部batch或硬字节／请求责任。
+[CPU大步与责任场景](../../../tests/scheduling/test_resource_directed_probes.py)不是实机性能结论。
+准确 CPU 与实机未测范围见[接线记录](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#公共工厂与实际资源许可接线)。
 
-普通公共调用先以 `create_records_core(..., profile=profile)` 建立唯一 async owner，
-再将完整查询消费/解析/汇总和借用释放放进 `run_admission_query` 的回调；
-回调中的 `owner.evaluate(..., max_inflight=window, allow_exploration=..., search_hint=...)`
-使用同一模型。必须消费 iterator 并核对原关闭/调用账本后才报告 `reuse_eligible=True`，
-不能以创建 lazy iterator 代替查询完成。公共层不依赖 Movie、gold 或 experiments。
+## 仍维护的批反馈与共享比较
 
-`ResourceFeedbackConfig` 是 owner 与缓存 policy 的同一份选项。显式
-`allow_exploration=True, search_mode="geometric"` 才启用原几何性能试探；
-`allow_exploration=False` 可仅保留资源压力保护。缺失/过期 native 反馈不当作零压力。
-模型 `max_num_seqs` 和 owner 上界在启动前声明，控制器只调整运行时 admission，
-不热改模型容量，不把容量边界叫最优，不取消已经在途的请求来缩窗。
+非 rolling 的 token 批入口仍支持 `batch_feedback=SupplyFeedbackConfig(max_batches=...)`。
+它调整应用批窗口，B 保持固定，成员请求、字节、结果及 IPC 各自的额度继续执行。
+`ResourceFeedbackConfig` 和 `ResourceFeedbackController` 当前服务于这条批反馈路径；
+现代请求路径使用前节的 `ResourceRequestConfig` 和 `ResourceRequestController`。
+两条路径复用工作量方向的纯比较函数，批反馈继续使用有限点搜索；保留这些实现不恢复旧请求接口。
+批反馈默认与组合条件统一见[模块说明](../../execution_provider/adapters/README.md#optional-fixed-b-supply-feedback-local-cpu-candidate)。
 
-计算型选项使用原 `work_basis="computed", work_comparison="local_pairs"`。
-每次真实 RequestOutput 的缓存计数有效且无KV传输时才得到 `prompt_computed_tokens`／`prompt_cached_tokens`；
-缺失或非法保持未知，不能假设缓存为0。原交付前缀、工作量匹配、压力后重验证与有限续探一起保留。
+<a id="pressure-sample-response"></a>
+### 压力采样与吞吐测量的时钟
 
-Movie 普通 JSON 使用 `core_profile`，session/维护 plan 使用 `profile`；可选
-`admission_cache={"identity": six_group_identity, "cache_dir": absolute_directory, "reuse": true}`
-只负责薄接线到上述公共 API。identity 仍要求 hardware/model/generation/execution/workload/measurement
-六组及 `measurement.work_unit`。调用者须提供真实硬件、权重/tokenizer/软件版本和计时口径；
-适配层额外绑定实际 EngineSpec、generation、resources/profile、source manifest SHA 和 method。
-交付型沿用该输入身份；计算型缓存另须显式提供 `workload_features`，其结构为
-`{"work_unit":"tokens","input_work":{...},"output_work":{...},"cache":{"enabled":true,"scope":"..."}}`。
-调用方提供有来源的数值特征并计入获取成本；原 `admission_identity` 用这些精确特征替换 workload 组，
-其他五组身份保留。缓存命中后仍用本次实际计算工作量重验证，不复用历史速率。
-更换 query ID 不自动失效，不做相似度匹配；旧源码或不同策略的磁盘 hint 不自动迁移。
-预热不读取/写入 hint 且不探索。成功短任务可复用安全初值，但不因此称其经过调优。
-未结束的搜索 hint 按原有限预算继续，不能把未决状态当全局最佳。
+当前请求反馈用 `max_sample_age_s` 校验来源年龄，用 `window_s` 组织工作量测量。
+新鲜的抢占增量和已接入的独立内存压力先处理；重复序号不会因再次读取而重复触发降档。
+可选内存源有自己的序号和时间，原生推理统计没有进展时仍可提供保护；缺失数据不改成清洁信号。
+缩小的是后续接纳，已接受请求、未消费结果及未知调用继续保留原责任。
 
-单遍探索的请求正常贡献输出，探索耗时已在 `total_wall_s` / caller 返回中，不能再相加。
-`admission_selection.entry_work_wall_s` 覆盖绑定到完整回调和缓存写入、止于 payload 返回前；
-真实调用方返回、模型启动/暖机/最终关闭由原生命周期计时单列。历史扫描费只记一次。
-缓存写入是查询局部资格，不证明物理 GPU/后代退出；unknown、held、借用未释放或账本不完整
-不会发布新 hint。原冻结来源的功能实测与当前代码整合分别判断，见[证据台账](../../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#records-dynamic-sad24-621)；短查询提示复用不证明反馈调节或搜索收益。
+批反馈的 `pressure_response` 仍是其自身选项，按现有配置选择采样或测量窗口响应；
+这不为当前请求策略增加同名选项。控制器函数计时、采样与 RPC 开销都留在各自实际查询时间内，
+不将试探区间从完整查询耗时中扣除。CPU 检查不能代替真实模型、Ray 或 GPU 的时序和性能验证。
 
+<a id="原实验配置选项"></a>
+<a id="rolling-请求的上探与条件续扫"></a>
+<a id="physical-probe-policy"></a>
+### 历史请求策略追溯
+
+旧单遍请求接纳、两种具名配置、跨查询提示与请求缓存已经退出当前入口。
+原参数、窗口响应、条件续扫及物理采样提案的说明只从固定提交
+`9da299e90f79fd0b71f2a4983a90884f8ba960b5` 的[运行时原文](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/src/scheduling/runtime/calibration.README.md)、
+[适配层原文](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/src/execution_provider/adapters/README.md)和[配置原文](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/docs/%E6%89%A7%E8%A1%8C%E9%85%8D%E7%BD%AE%E4%B8%8E%E4%BC%98%E5%8C%96%E5%BC%80%E5%85%B3.md)恢复。
+历史章节链接保留作定位，不表示旧参数仍可传入当前工厂。更早五份具名来源投影的
+[原恢复材料](../../../../experiments/reproduction/native_baselines/README.md)及已有结果不变。
+通用 `run_query`、离线校准和精确配置缓存仍按本文前半部分的完整工作负载回调使用。
 
 维护矩阵的 `base-config.json.shared_resources` 可显式提供本轮已封存的共同资源上限
 （`cpu_affinity_slots`、`max_sampled_owned_rss_bytes`、`max_owned_shm_bytes`，及原 host
 monitor 所需字段）。未提供时维持旧 source comparison 文件合同；该文件在当前 main 中已不存在，
 因此新封包须显式提供，不能搜索历史目录或采用机器相关默认值。原资源监护和责任判断不变。
-现有 `run_movie_records_matrix.py` 是唯一 worker/audit 路径，旧 `run_sembench_movie_matrix.py`
-仍可转调同一 main；修复了原 main 与绑定检查选用不同脚本名的问题。
+`run_movie_records_matrix.py` 是唯一维护的 worker/audit CLI；重复别名
+`run_sembench_movie_matrix.py` 已退役。历史命令仍可按原提交恢复，新运行使用上述唯一入口。

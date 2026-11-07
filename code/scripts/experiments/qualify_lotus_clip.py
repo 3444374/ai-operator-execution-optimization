@@ -12,8 +12,8 @@ sys.path.insert(0, str(CODE_ROOT))
 
 import numpy as np
 from PIL import Image
-from src.baselines.common.private_artifacts import require_outside_git
-from src.baselines.common.redact import redact_text
+from src.infrastructure.private_artifacts import require_outside_git
+from src.infrastructure.redact import redact_text
 from src.modalities.image.clip import configure_torch_thread_pools, decode_rgb_image
 from src.modalities.image.file_source import load_image_file_manifest
 from src.semantic_methods.lotus.image_backend import DirectImageExecutor
@@ -115,7 +115,7 @@ def main(argv=None):
                 direct.close()
             except BaseException as exc:
                 report["cleanup_error"] = type(exc).__name__
-                from src.experiments.execution_timing import is_timing_error
+                from src.observability.execution_timing import is_timing_error
                 if error is None or (is_timing_error(error) and not is_timing_error(exc)):
                     if error is not None:
                         exc.add_note("Prior image timing failure: " + type(error).__name__)

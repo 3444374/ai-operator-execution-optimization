@@ -1,0 +1,163 @@
+{
+  "base": "e7e593d620c82e7870793aaf20314cadd9ed3aae",
+  "scope": "Ordinary async and rolling IPC omissions use final declared requests, slots and per-item bytes; explicit values and complete budgets stay independent.",
+  "production_changes": [
+    "code/src/execution_provider/adapters/records_capacity.py"
+  ],
+  "production_line_delta": -15,
+  "before": {
+    "selected_methods": 2,
+    "successful_methods": 0,
+    "failed_methods": 2,
+    "failed_subcases_or_methods": 3,
+    "errors": 0
+  },
+  "after_counterexamples": {
+    "selected_methods": 2,
+    "successful_methods": 2,
+    "errors": 0
+  },
+  "CPU": {
+    "modules": [
+      "tests.experiments.test_records_capacity_config",
+      "tests.experiments.test_records_resource_budget",
+      "tests.experiments.test_core_capacity_identity",
+      "tests.experiments.test_records_budget_query_identity",
+      "tests.execution_provider.test_records_capacity_defaults",
+      "tests.execution_provider.test_records_implicit_ipc_totals",
+      "tests.execution_provider.test_actor_capacity_source",
+      "tests.execution_provider.test_records_capacity_modules",
+      "tests.execution_provider.test_byte_derived_records_capacity",
+      "tests.execution_provider.test_lotus_resource_budget_runtime",
+      "tests.execution_provider.test_records_request_feedback",
+      "tests.execution_provider.test_records_preparation_profile",
+      "tests.experiments.test_movie_preparation_mode",
+      "tests.experiments.test_native_baseline_reproduction",
+      "tests.serving.test_async_engine_process",
+      "tests.serving.test_async_engine_batch"
+    ],
+    "distinct_selected_methods": 151,
+    "passed": 151,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged_during_suite": true,
+    "source_hashes_match_current_python": true,
+    "documentation_changed_after_suite": [
+      "code/INFRA_STATUS.md",
+      "code/README.md",
+      "code/src/execution_provider/adapters/README.md",
+      "code/src/experiments/movie_matrix.README.md",
+      "code/tests/records_cpu.md"
+    ],
+    "overlapping_counterexamples_not_added": true
+  },
+  "source_identity": "CPU ran on an uncommitted worktree based on e7. The raw code SHA table binds the exact tested sources; the later commit must match it.",
+  "declared_example": {
+    "R": 11,
+    "IPC_requests": 11,
+    "result_slots": 11,
+    "input_item_bytes": 2097152,
+    "input_total_bytes": 23068672,
+    "result_item_bytes": 2097152,
+    "result_total_bytes": 23068672
+  },
+  "partial_example": {
+    "R": 11,
+    "explicit_IPC_requests": 3,
+    "input_item_bytes": 4096,
+    "result_item_bytes": 8192,
+    "resolved_result_slots": 3,
+    "resolved_command_slots": 3,
+    "resolved_input_bytes": 12288,
+    "resolved_result_bytes": 24576
+  },
+  "preserved": [
+    "Explicit IPC counts and totals, including smaller storage",
+    "Complete typed IPC object identity",
+    "Complete Core/Method budget quantities",
+    "Real frame/byte checks and confirmed delivery/ACK",
+    "Unknown request retention",
+    "R=None with complete finite grants",
+    "Existing C/auto and feedback initial window",
+    "Native vLLM construction and baseline behavior"
+  ],
+  "remaining": [
+    "Ordinary R still defaults to 2",
+    "Omitted storage is now supplied from declared requests; default R separation and physical host allocation are unfinished",
+    "Standalone low-level IPC defaults remain finite and unchanged",
+    "Complete source relations, caller audits and RSS are not bounded by these logical amounts",
+    "Large-file responsibilities and independent SAOR accounting cleanup are separate work"
+  ],
+  "real_execution": {
+    "Ray_runs": 0,
+    "model_calls": 0,
+    "GPU_runs": 0
+  },
+  "environment_note": "LiteLLM attempted to refresh its public price metadata during import; DNS was unavailable and it used its local backup. This was not model inference. Future local checks set LITELLM_LOCAL_MODEL_COST_MAP=True; the successful suite is not rerun or relabeled.",
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "PYTHONPATH": "code:code/scripts/experiments"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.experiments.test_records_capacity_config",
+      "tests.experiments.test_records_resource_budget",
+      "tests.experiments.test_core_capacity_identity",
+      "tests.experiments.test_records_budget_query_identity",
+      "tests.execution_provider.test_records_capacity_defaults",
+      "tests.execution_provider.test_records_implicit_ipc_totals",
+      "tests.execution_provider.test_actor_capacity_source",
+      "tests.execution_provider.test_records_capacity_modules",
+      "tests.execution_provider.test_byte_derived_records_capacity",
+      "tests.execution_provider.test_lotus_resource_budget_runtime",
+      "tests.execution_provider.test_records_request_feedback",
+      "tests.execution_provider.test_records_preparation_profile",
+      "tests.experiments.test_movie_preparation_mode",
+      "tests.experiments.test_native_baseline_reproduction",
+      "tests.serving.test_async_engine_process",
+      "tests.serving.test_async_engine_batch"
+    ]
+  },
+  "archive": {
+    "path": "ordinary_ipc_omissions_raw.json.gz",
+    "bytes": 204595,
+    "sha256": "fbe4cdc9601c15fbc647a1d60516097016275f21a2ec04f84483ac45a9abaf63",
+    "decoded_bytes": 558857,
+    "decoded_sha256": "4e065fc48e72b94a6f8bc14c0e4bceb095a2568efe611a2728ed5938252b7317"
+  },
+  "private_originals": {
+    "before-default-IPC.json": {
+      "bytes": 169215,
+      "sha256": "6354afa10fe99977fb5bd7793562df916ac98a733f3505b586e3d9034b26f829"
+    },
+    "before-default-IPC.log": {
+      "bytes": 3317,
+      "sha256": "825ee81d96cda6615d8198a6e5d87a8d3497ffc41b4444d797b3d31da828f89f"
+    },
+    "after-default-IPC.json": {
+      "bytes": 167621,
+      "sha256": "dd928687714a862e9b088fe6b4eb3e1dd069c86fbe938efe41851a7aa427644e"
+    },
+    "after-default-IPC.log": {
+      "bytes": 508,
+      "sha256": "5921f3d7ac862bb09bbebe7a3dc8b96b4193ae9d6063cd536c8b06717629e67a"
+    },
+    "capacity-composition.json": {
+      "bytes": 211687,
+      "sha256": "cf10eda596eb23f9f460fc46ee35c532f04112a3da643b824fe1b8818ffecf60"
+    },
+    "capacity-composition.log": {
+      "bytes": 32261,
+      "sha256": "be891e6ee155949cda8102cc374c4194b981b464aeec594aa9660617f784f3dd"
+    }
+  },
+  "pushed": false,
+  "merged": false
+}

@@ -8,8 +8,10 @@ from contextlib import nullcontext
 from pathlib import Path
 import time
 
+from src.infrastructure.deadlines import remaining_time
 from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S, model_closed
+from integrations.imlane_records.transport_limits import close_block
 
 
 class RecordsResults:
@@ -20,14 +22,13 @@ allocates a model, a worker pool or a vendor scheduler.
 """
 
     def __init__(self, rows, client, *, query_id, mapping, stage_id, block_prefix, control_dir, deadline,
-                 close_owner, block_rows=4, max_pending=2, cleanup_scope=nullcontext,
+                 close_owner, block_rows=4, cleanup_scope=nullcontext,
                  close_timeout_s=MODEL_CLOSE_GRACE_S):
-        if (type(block_rows) is not int or not 0 < block_rows <= 16
-                or type(max_pending) is not int or not 0 < max_pending <= 2
+        if (type(block_rows) is not int or block_rows < 1
                 or not callable(close_owner) or not callable(cleanup_scope)
                 or type(close_timeout_s) not in (int, float) or not math.isfinite(close_timeout_s)
-                or not MODEL_CLOSE_GRACE_S <= close_timeout_s <= 600
-                or type(deadline) not in (int, float) or not math.isfinite(deadline)
+                or close_timeout_s < MODEL_CLOSE_GRACE_S
+                or deadline is not None and (type(deadline) not in (int, float) or not math.isfinite(deadline))
                 or client.meta.get("protocol") != PROTOCOL):
             raise ValueError("records carrier requires the explicit v2 bridge, bounded capacity and author finalizer")
         self.source, self.client = iter(rows), client
@@ -36,7 +37,7 @@ allocates a model, a worker pool or a vendor scheduler.
         self.query_id, self.control = query_id, Path(control_dir)
         self.deadline, self.close_owner = deadline, close_owner
         self.cleanup_scope, self.close_timeout_s = cleanup_scope, close_timeout_s
-        self.block_rows, self.max_pending = block_rows, max_pending
+        self.block_rows, self.max_pending = block_rows, client.meta['max_pending_blocks']
         self.pending, self.index = {}, 0
         self.exhausted = self.failed = self.started = self.closed = False
         self.primary = None
@@ -52,10 +53,10 @@ allocates a model, a worker pool or a vendor scheduler.
         return next(self._values)
 
     def _remaining(self):
-        value = self.deadline - time.monotonic()
-        if value <= 0:
+        value = remaining_time(self.deadline)
+        if value is not None and value <= 0:
             raise TimeoutError("IMLane records query deadline expired")
-        return min(600, value)
+        return value
 
     def _fill(self):
         while not (self.failed or self.exhausted) and len(self.pending) < self.max_pending:
@@ -112,11 +113,9 @@ allocates a model, a worker pool or a vendor scheduler.
     def _close_workload(self):
         # Work deadlines stop inference; cleanup receives its own finite window.
         deadline = time.monotonic() + self.close_timeout_s
-        call = "imlane-" + self.block_prefix + "-close:" + self.query_id
-        source = dict(call_id=call, row_id=0, query_id=self.query_id, stage_id=self.stage_id,
-                      record_json=json.dumps({"operation": "close"}))
-        block = self.block_prefix + "-close"
-        self.client.submit(block, [source], deadline=deadline)
+        block, sources = close_block(self.query_id, self.stage_id, self.block_prefix)
+        call = sources[0]["call_id"]
+        self.client.submit(block, sources, deadline=deadline)
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise TimeoutError("IMLane model cleanup deadline expired")

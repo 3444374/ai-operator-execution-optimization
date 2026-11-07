@@ -1,0 +1,91 @@
+{
+  "base": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+  "candidate": "0e071c682aed26012baf6e45e48c9d3bc4c19468",
+  "tree": "bb23afceba365f0772d3a98deed33c614c1caa3a",
+  "production": "Remove completion/embedding eager aggregate imports from serving/backends/__init__.py. Keep actual neutral common exports. No lazy lookup table or replacement export added.",
+  "actual_chain": "ordinary/chain records import vllm_protocol; Python previously executed the backend package initializer, which attempted to load this repository HTTP completion and embedding modules. This is an import dependency, not evidence of an HTTP request.",
+  "tests": {
+    "cold_import_before": {
+      "selected": 1,
+      "passed": 0,
+      "failures": 1,
+      "errors": 0,
+      "seconds": 0.03038437501527369
+    },
+    "after": {
+      "selected": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 0.07357600005343556,
+      "selectors": [
+        "tests.serving.test_vllm_protocol_imports",
+        "tests.serving.test_model_backends.ModelBackendTests.test_chatml_prompt_format_preserves_request_content",
+        "tests.serving.test_model_backends.ModelBackendTests.test_model_request_wall_time_uses_epoch_bounds"
+      ]
+    },
+    "scope": "Existing neutral protocol/IPC cold import now forbids the two repository HTTP modules. The other selected cases use immutable spec values, stub sampling, pure prompt formatting and wall-time values. No HTTP actor tests or whole old HTTP suite run.",
+    "test_import_migration": "test_model_backends imports existing functions/classes directly from their actual completion/embedding/common owners; all non-import AST unchanged. This is not a reason to preserve unused actors in subsequent cleanup."
+  },
+  "unchanged": [
+    "vllm_protocol, sync/async native engine implementations, RecordsResources and None-deadline code",
+    "completion/embedding implementations and direct_client_control actual body-builder caller",
+    "native LOTUS VLM/MMQA, Kalypso and native Ray HTTP service connections"
+  ],
+  "history": {
+    "bindings": 5,
+    "all_before_after_equal": true,
+    "new_archive_bytes": 378,
+    "new_archives": 1,
+    "new_routes": 5,
+    "all_prior_fields_expected_routes_and_projection_identity_preserved": true,
+    "full_3010_materialization_repeated": false
+  },
+  "size_delta_from_e5": {
+    "production_python": -21,
+    "tests_python": 3,
+    "claim": "only actual physical line changes; no performance claim"
+  },
+  "checks": {
+    "local_markdown_targets": 91,
+    "missing": [],
+    "new_wording_hits": 0,
+    "diff_check": true,
+    "staged_secret_scan_files": 6,
+    "secret_scan_violations": 0,
+    "working_tree_clean": true
+  },
+  "evidence": {
+    "backend-package-http-before.json": "59c2eb959945dc7d7b66a64ce1042d0796796ca3de5e8b5d82a60360dad27d7b",
+    "backend-package-http-before.log": "49b0f726f08b92c6c50792ce3a96ee6e523d7087f341e2d6affc0d96c2c25397",
+    "backend-package-http-after.json": "25945221f0fd26467584fd4aca16e7253bddaeaf15f13f0211e9908d04d791dc",
+    "backend-package-http-after.log": "12b8490f5225a1bd9a979d0339f815e2b2c1d64a3115e9e775bb56da8257fe12",
+    "HISTORY_BEFORE.json": "ad1100fc84977ae47a4e7cfeea7651f2b59cdc4ef23fbce8b75a970bb5c907e6",
+    "HISTORY_AFTER.json": "1d5416f3fe83a5127517ecb7ad14a50bc8e803497c454565b14a62809789a74c",
+    "TEST_IMPORT_SCOPE.json": "ac40cc6c54386b597d837bd627e09205ea256d3a4329e25be1a0711d9943a068",
+    "SOURCE_IDENTITY.json": "40153e10ccf767bdfbab763ebe45791433a3d00e683b8221bc67519c6b82d3c5",
+    "DELIVERY_CHECKS.json": "5c9db8babd265bba415281338a77bf282d2dde3c3dbf5f23036305b63165ad3d"
+  },
+  "remaining": "HTTP actor/embedding implementations, unused backend aliases, the old request-equivalence diagnostic and actual body-builder ownership still need their own consumer-based cleanup. The larger Image owner/old Map retirement remains in its separate unchanged tree. Parent synchronizes central status/config/report entries.",
+  "limits": {
+    "models": 0,
+    "real_Ray_initializations": 0,
+    "HTTP_requests": 0,
+    "UDS": 0,
+    "sysctl": 0,
+    "ps_commands": 0,
+    "server_operations": 0,
+    "pushes": 0,
+    "main_merges": 0
+  },
+  "original_handoff_sha256": "8088406ea78942230cb2c9089f65467ffea1771aaa544116c7b6d4fe977f7064",
+  "independent_review": {
+    "sha256": "0baef0d58fd1f1ffd3a9a854f65fd86db9797743f1de9b7bdd4d459c9d9c1a86",
+    "findings": [],
+    "source_records": 1078,
+    "artifact_records": 9,
+    "historical_bindings": 5,
+    "additional_test_runs": 0
+  }
+}

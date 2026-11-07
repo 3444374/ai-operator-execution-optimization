@@ -7,5 +7,5 @@ if __name__=='__main__':
     import asyncio
     from record_observer import install_model
     install_model()
-    from src.serving.backends.async_engine_process import serve
+    from src.serving.backends.async_engine_worker import serve
     asyncio.run(serve(*map(int,sys.argv[1:])))

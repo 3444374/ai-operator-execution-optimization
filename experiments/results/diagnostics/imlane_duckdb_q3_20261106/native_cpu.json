@@ -1,0 +1,271 @@
+{
+  "schema": "semloom.imlane-duckdb-native-cpu.v1",
+  "tested_head": "798e13771263319234df574fa04fd3c483896c39",
+  "status": "passed",
+  "model_requests": 0,
+  "ray_runtimes": 0,
+  "software_fixture": true,
+  "performance_claim": false,
+  "raw_final_sha256": "43231df4d1fdf373e1f48ef124f10bc5efdd1f59e7198924fbf9221a42af9fba",
+  "author_executors": 4,
+  "cpu_affinity_slot_count": 8,
+  "sampled_rss_ceiling_bytes": 21474836480,
+  "namespace_shm_ceiling_bytes": 536969216,
+  "stages": [
+    {
+      "kind": "process",
+      "passed": true,
+      "worker_status": "passed",
+      "worker_exit": 0,
+      "observed_owned_exit_confirmed": true,
+      "signals": [],
+      "remaining_owned_count": 0,
+      "resource_passed": true,
+      "remaining_new_shm_count": 0,
+      "final_host_shm_delta_bytes": 0,
+      "peak_sampled_owned_rss_bytes": 484003840,
+      "peak_namespace_allocated_bytes": 536969216,
+      "namespace_objects": [
+        {
+          "count": 8,
+          "logical_bytes_each": 8592,
+          "allocated_bytes_each": 12288
+        },
+        {
+          "count": 4,
+          "logical_bytes_each": 134217728,
+          "allocated_bytes_each": 134217728
+        }
+      ],
+      "coordinator_scope_count": 1,
+      "count": 14,
+      "predictions": 120,
+      "provider_calls": [
+        {
+          "logical_rows": 120,
+          "status": "succeeded",
+          "returned": true,
+          "started_monotonic_ns": 5090532384726375,
+          "finished_monotonic_ns": 5090532386466334
+        }
+      ],
+      "receipt_logical_rows": [
+        120
+      ],
+      "quality": {
+        "result": {
+          "index": [
+            0
+          ],
+          "columns": [
+            "positive_review_cnt"
+          ],
+          "data": [
+            [
+              14
+            ]
+          ]
+        },
+        "classification": {
+          "true_positive": 14,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0,
+          "unparsed_default_true": 0
+        },
+        "official": {
+          "original_metric": {
+            "relative_error": 0,
+            "absolute_error": 0,
+            "mean_absolute_percentage_error": 0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+        }
+      },
+      "native_result": {
+        "arrow_columns": [
+          "c0",
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "driver_until_result_seconds": 2.573743025,
+        "duckdb_threads": 16,
+        "eligible_rows": 120,
+        "explain": [
+          {
+            "key": "physical_plan",
+            "plan": "┌───────────────────────────┐\n│    UNGROUPED_AGGREGATE    │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│        count_star()       │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│         PROJECTION        │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│             42            │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│     PREDICTION FILTER     │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│      (imlane_movie_q3     │\n│(occurrence_id, id, re...  │\n│      reviewText) = 1)     │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│           EC: 8           │\n│   prediction size: 2048   │\n│      prediction kind:     │\n│     PROCESS_PREDICTION    │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│           FILTER          │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│      (id = 'taken_3')     │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│           EC: 8           │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│         READ_CSV          │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│       occurrence_id       │\n│             id            │\n│          reviewId         │\n│         reviewText        │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│           EC: 42          │\n└───────────────────────────┘                             \n"
+          }
+        ],
+        "explain_seconds": 0.002200371,
+        "input_columns": [
+          "occurrence_id",
+          "id",
+          "reviewId",
+          "reviewText"
+        ],
+        "kind": "PROCESS_PREDICTION",
+        "library_source_id": "072f8257db",
+        "library_version": "unknown",
+        "module_function": "infer_q3",
+        "native_ai_query_attempts": 1,
+        "native_ai_query_returns": 1,
+        "native_query_seconds": 1.539632393,
+        "ordinary_count_seconds": 0.020867344,
+        "positive_review_cnt": 14,
+        "process_exit_verified": false,
+        "registered_alias": "imlane_movie_q3",
+        "registered_batch_size": 2048,
+        "registered_batch_size_used_by_selected_filter": false,
+        "registration_completed": true,
+        "registration_seconds": 1.00083129,
+        "return_type": "TINYINT",
+        "schema": "semloom.imlane-duckdb-q3.v1",
+        "source_rows": 2000,
+        "sql": "SELECT count(*) AS positive_review_cnt FROM q3_reviews WHERE id='taken_3' AND imlane_movie_q3(occurrence_id,id,reviewId,reviewText)=1",
+        "standard_vector_size": 2048,
+        "status": "query_returned"
+      },
+      "query_sha256": "4e40d9d558c3af2fe1c1707a7af558d64e5745a95c743b11bdc306d450690b19",
+      "audit_sha256": "95f3dab376e463b01c52ab43aa42f2c39b5936000b4a058758552914a773c095",
+      "worker_sha256": "3d3752050dae6ad24561e2019c6140ecb5914980f5979eaf86d60911902e584c",
+      "supervision_summary_sha256": "b2118b0526fc72ef5b17e047165f5ae4df4c9478897fd299c2f6588066a75244"
+    },
+    {
+      "kind": "thread",
+      "passed": true,
+      "worker_status": "passed",
+      "worker_exit": 0,
+      "observed_owned_exit_confirmed": true,
+      "signals": [],
+      "remaining_owned_count": 0,
+      "resource_passed": true,
+      "remaining_new_shm_count": 0,
+      "final_host_shm_delta_bytes": 0,
+      "peak_sampled_owned_rss_bytes": 474390528,
+      "peak_namespace_allocated_bytes": 536969216,
+      "namespace_objects": [
+        {
+          "count": 8,
+          "logical_bytes_each": 8592,
+          "allocated_bytes_each": 12288
+        },
+        {
+          "count": 4,
+          "logical_bytes_each": 134217728,
+          "allocated_bytes_each": 134217728
+        }
+      ],
+      "coordinator_scope_count": 1,
+      "count": 14,
+      "predictions": 120,
+      "provider_calls": [
+        {
+          "logical_rows": 120,
+          "status": "succeeded",
+          "returned": true,
+          "started_monotonic_ns": 5090539830859122,
+          "finished_monotonic_ns": 5090539832263637
+        }
+      ],
+      "receipt_logical_rows": [
+        120
+      ],
+      "quality": {
+        "result": {
+          "index": [
+            0
+          ],
+          "columns": [
+            "positive_review_cnt"
+          ],
+          "data": [
+            [
+              14
+            ]
+          ]
+        },
+        "classification": {
+          "true_positive": 14,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0,
+          "unparsed_default_true": 0
+        },
+        "official": {
+          "original_metric": {
+            "relative_error": 0,
+            "absolute_error": 0,
+            "mean_absolute_percentage_error": 0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+        }
+      },
+      "native_result": {
+        "arrow_columns": [
+          "c0",
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "driver_until_result_seconds": 2.168866468,
+        "duckdb_threads": 16,
+        "eligible_rows": 120,
+        "explain": [
+          {
+            "key": "physical_plan",
+            "plan": "┌───────────────────────────┐\n│    UNGROUPED_AGGREGATE    │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│        count_star()       │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│         PROJECTION        │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│             42            │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│     PREDICTION FILTER     │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│      (imlane_movie_q3     │\n│(occurrence_id, id, re...  │\n│      reviewText) = 1)     │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│           EC: 8           │\n│   prediction size: 2048   │\n│      prediction kind:     │\n│ THREAD_SCHEDULE_PREDICTION│\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│           FILTER          │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│      (id = 'taken_3')     │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│           EC: 8           │\n└─────────────┬─────────────┘                             \n┌─────────────┴─────────────┐\n│         READ_CSV          │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│       occurrence_id       │\n│             id            │\n│          reviewId         │\n│         reviewText        │\n│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │\n│           EC: 42          │\n└───────────────────────────┘                             \n"
+          }
+        ],
+        "explain_seconds": 0.002303678,
+        "input_columns": [
+          "occurrence_id",
+          "id",
+          "reviewId",
+          "reviewText"
+        ],
+        "kind": "THREAD_SCHEDULE_PREDICTION",
+        "library_source_id": "072f8257db",
+        "library_version": "unknown",
+        "module_function": "infer_q3",
+        "native_ai_query_attempts": 1,
+        "native_ai_query_returns": 1,
+        "native_query_seconds": 1.244376095,
+        "ordinary_count_seconds": 0.005622835,
+        "positive_review_cnt": 14,
+        "process_exit_verified": false,
+        "registered_alias": "imlane_movie_q3",
+        "registered_batch_size": 2048,
+        "registered_batch_size_used_by_selected_filter": false,
+        "registration_completed": true,
+        "registration_seconds": 0.907177094,
+        "return_type": "TINYINT",
+        "schema": "semloom.imlane-duckdb-q3.v1",
+        "source_rows": 2000,
+        "sql": "SELECT count(*) AS positive_review_cnt FROM q3_reviews WHERE id='taken_3' AND imlane_movie_q3(occurrence_id,id,reviewId,reviewText)=1",
+        "standard_vector_size": 2048,
+        "status": "query_returned"
+      },
+      "query_sha256": "29a57e93afed6d3e69486b23ce5dce29ab1f3d0b126920c29e091bf606284a62",
+      "audit_sha256": "0bf3869cfb77b98686214ae9fb3e45ba1541340559d03aab1d763bf5c76284cd",
+      "worker_sha256": "9f2ba411bf2e8603633ae7d0bcd085062de634dcfe42245df6750911a86f073f",
+      "supervision_summary_sha256": "a3a215fb9863eb8c464ba176e795ca4944e0634f5acb8eef58c422e18c783fdc"
+    }
+  ],
+  "old_512_mib_startup_failure": {
+    "preserved": true,
+    "new_model_calls": 0,
+    "raw_final_sha256": "7dfa6fa985ebbc98c28b69a5550d1d9174ce7e7e394ae850ec3ce3e168e5cebf"
+  }
+}

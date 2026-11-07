@@ -1,0 +1,177 @@
+{
+  "schema": "semloom.pending_native_frame_cpu.v1",
+  "base": "64193c1effb6a8bdc97f73f431795de9ff45a471",
+  "status": "CPU_checked_legacy_pending_frame_candidate; original_geometric_problem_open",
+  "production_files": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "sha256": "d834ecb65b7ddb9e58937aa9485ea70420fe1c34c2b241f2a45f66032d9516cc"
+    }
+  ],
+  "mechanism": "Reuse one original sequenced source frame only while its same-query/model RPC is pending; existing provider retains source time and once-only generation.",
+  "public_sample_AST_unchanged": true,
+  "unchanged_sources": [
+    {
+      "path": "code/src/scheduling/runtime/observations.py",
+      "sha256": "6c0bfed70893158c64b835b849d5fe09eb0d7adf63576a21d389e0779184234f"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_native_sampler.py",
+      "sha256": "d1b60125b7ef1de73b2d431404ebd708591671219366ca0c976f07e6f440fe99"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_request_feedback.py",
+      "sha256": "edb000f54e07b0a74c48ff08e8fafabf705f072c79ea9f50cc75968a6d70693d"
+    },
+    {
+      "path": "code/tests/execution_provider/test_core_geometric_admission.py",
+      "sha256": "d29fd8c07142e25ce56326ec6783ed0c61969e51de55bdaef1129b7c9bb84d34"
+    }
+  ],
+  "CPU": {
+    "pending_frame_before": {
+      "selected": 8,
+      "run": 8,
+      "passed": 3,
+      "failed_methods": [
+        "tests.execution_provider.test_core_pending_frame_handoff.PendingFrameTests.test_model_change_and_new_query_cannot_republish_previous_source",
+        "tests.execution_provider.test_core_pending_frame_handoff.PendingFrameTests.test_optional_receipt_clock_error_does_not_remove_a_valid_pending_frame",
+        "tests.execution_provider.test_core_pending_frame_handoff.PendingFrameTests.test_pending_polls_never_refresh_age_rate_or_consume_once_generation",
+        "tests.execution_provider.test_core_pending_frame_handoff.PendingFrameTests.test_pending_regular_poll_keeps_the_unconsumed_frame_and_original_RPC",
+        "tests.execution_provider.test_core_pending_frame_handoff.PendingFrameTests.test_public_sample_retains_its_pending_None_result"
+      ],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.005487916991114616,
+      "archive": {
+        "path": "raw/pending_frame_before_methods.json.gz",
+        "decoded_bytes": 168035,
+        "decoded_sha256": "6e77c5d7244fb1a732d36da94afffd2fe0da28f149f3ab902819f118833a84f7",
+        "archive_bytes": 64381,
+        "archive_sha256": "d13fe466e8422ba76da70ab4999c7a971aba789c8555049430627fb94c07d734"
+      }
+    },
+    "pending_frame_after": {
+      "selected": 49,
+      "run": 49,
+      "passed": 43,
+      "failed_methods": [
+        "tests.execution_provider.test_core_geometric_admission.CoreGeometricTests.test_new_mode_reaches_existing_model_submission_and_keeps_original_prompts"
+      ],
+      "error_methods": [],
+      "method_skips": 5,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 31.146046959096566,
+      "archive": {
+        "path": "raw/pending_frame_after_methods.json.gz",
+        "decoded_bytes": 182131,
+        "decoded_sha256": "d3201e537a036193ab8d22d01e373c1905f9ea5580d7857ab5ab7f97c00e12f3",
+        "archive_bytes": 66922,
+        "archive_sha256": "488fb1f113c573020182e4b47e3071fad23211bfecfe99b8fffec119e31a666a"
+      }
+    },
+    "pending_frame_deterministic": {
+      "selected": 34,
+      "run": 34,
+      "passed": 34,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.022417333908379078,
+      "archive": {
+        "path": "raw/pending_frame_deterministic_methods.json.gz",
+        "decoded_bytes": 173436,
+        "decoded_sha256": "a45eeca65b3c342105c99dea9e8131ede29a7b8de27c8e3511f5e3151a87f83f",
+        "archive_bytes": 65000,
+        "archive_sha256": "ed248211a5aad6fe058339a922b4b7b4d8580d40eec99921211f9f7bccc12142"
+      }
+    },
+    "pending_frame_final": {
+      "selected": 1815,
+      "run": 1807,
+      "passed": 1777,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 246.265537166968,
+      "archive": {
+        "path": "raw/pending_frame_final_methods.json.gz",
+        "decoded_bytes": 686449,
+        "decoded_sha256": "15768037cacd8b76d09e2b42e66dc9b665a76889737b4c08e219a9213bb7fdfb",
+        "archive_bytes": 152395,
+        "archive_sha256": "aad9d8eeaa5a7a4f96170154cd3350098e7545ad0ca9c35cf1c29ec371d0cfbf"
+      }
+    }
+  },
+  "final_code_files_fingerprinted": 1298,
+  "final_code_hashes_match": true,
+  "prior_6419_independent_review": {
+    "head": "64193c1effb6a8bdc97f73f431795de9ff45a471",
+    "findings": 0,
+    "passed": 1752,
+    "Daft_error_methods": 15,
+    "class_duckdb_errors": 1,
+    "method_skips": 30,
+    "unexecuted_class_methods": 8,
+    "scope": "default-off SDK development only; Movie CLI and actual models not qualified"
+  },
+  "original_geometric": {
+    "failed_in_pending_frame_after": true,
+    "passed_in_final_suite": true,
+    "fixed": false,
+    "original_failure_retained": true,
+    "unique_original_cause_proven": false,
+    "source_age_trace": "raw/geometric_age_trace_summary.json",
+    "new_observation": "In one traced run,212 of221 fresh service inputs exceeded the configured10ms controller age and were held; no threshold was changed."
+  },
+  "modern_sampler": "Already retains last_native while a read is pending; this candidate leaves its behavior unchanged.",
+  "lifecycle": "Expired and unknown RPCs retain their original ref/future; no new RPC, credit release or cancellation policy.",
+  "history": {
+    "bindings": 3010,
+    "mismatches": [],
+    "all_five_materialization_methods_passed": true
+  },
+  "limitations": [
+    "Final CPU success does not prove the original geometric timing failure repaired.",
+    "The input trace can perturb scheduling and is not a performance comparison.",
+    "Thirty method skips and two classes with eight unexecuted methods remain.",
+    "No sync default migration, automatic capacity or Movie CLI preparation options are implemented by this change.",
+    "Earlier baseline failures, single-permit negative timing and unknown-result responsibility remain recorded."
+  ],
+  "independent_review": "pending exact final candidate",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

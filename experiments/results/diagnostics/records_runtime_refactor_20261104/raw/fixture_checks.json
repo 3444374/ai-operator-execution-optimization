@@ -1,0 +1,145 @@
+{
+  "base": "269819e705ba8ca3429551ab2b3840b8110fae88",
+  "production_changes": false,
+  "old_assertions": {
+    "code/tests/execution_provider/test_core_resource_feedback.py": {
+      "original_test_methods": 14,
+      "original_assertions_retained": true,
+      "missing_or_changed_assertions": []
+    },
+    "code/tests/execution_provider/test_lotus_record_local_tokens.py": {
+      "original_test_methods": 12,
+      "original_assertions_retained": true,
+      "missing_or_changed_assertions": []
+    },
+    "code/tests/execution_provider/test_lotus_request_frame_metering.py": {
+      "original_test_methods": 6,
+      "original_assertions_retained": true,
+      "missing_or_changed_assertions": []
+    },
+    "code/tests/execution_provider/test_lotus_token_packing_bypass.py": {
+      "original_test_methods": 9,
+      "original_assertions_retained": true,
+      "missing_or_changed_assertions": []
+    }
+  },
+  "legacy_selection_oracle_AST_unchanged": true,
+  "CPU": {
+    "frame_fixture_after": {
+      "selected": 22,
+      "passed": 18,
+      "failure_methods": [],
+      "error_methods": [
+        "tests.execution_provider.test_lotus_batch_counters.SealCounterTests.test_Core_rejection_retries_do_not_select_again_and_unknown_keeps_responsibility (final=<Acceptance.ACCEPTED: 'ACCEPTED'>)",
+        "tests.execution_provider.test_lotus_batch_counters.SealCounterTests.test_Core_rejection_retries_do_not_select_again_and_unknown_keeps_responsibility (final=<Acceptance.UNKNOWN: 'UNKNOWN'>)",
+        "tests.execution_provider.test_lotus_batch_counters.SealCounterTests.test_cancelled_selection_is_still_selected_without_an_actor_ack",
+        "tests.execution_provider.test_lotus_batch_counters.SealCounterTests.test_exact_B_at_C_does_not_imply_extra_members_or_an_accepted_packet",
+        "tests.execution_provider.test_lotus_batch_counters.SealCounterTests.test_whole_query_reasons_survive_history_eviction_and_report_is_a_snapshot"
+      ],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "frame_fixtures_verified": {
+      "selected": 31,
+      "passed": 31,
+      "failure_methods": [],
+      "error_methods": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "combined_engineering": {
+      "selected": 668,
+      "passed": 664,
+      "failure_methods": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_actual_new_method_prompts_Q1_Q3_Q2_Q3_reuse_one_model",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_W_blocks_below_C_then_successful_terminal_restores_supply",
+        "tests.execution_provider.test_lotus_record_local_tokens.QueryTokenTests.test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay"
+      ],
+      "error_methods": [],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true
+    },
+    "token_current_handoff": {
+      "selected": 2,
+      "passed": 2,
+      "failure_methods": [],
+      "error_methods": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "prompt_audit_current": {
+      "selected": 2,
+      "passed": 1,
+      "failure_methods": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results"
+      ],
+      "error_methods": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "fixtures_current_verified": {
+      "selected": 668,
+      "passed": 666,
+      "failure_methods": [
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results"
+      ],
+      "error_methods": [],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true
+    }
+  },
+  "historical_sources_unchanged": [
+    {
+      "variant": "core_original_dynamic",
+      "path": "code/tests/execution_provider/test_core_resource_feedback.py",
+      "source": "experiments/reproduction/native_baselines/variants/core_original_dynamic/code/tests/execution_provider/test_core_resource_feedback.py"
+    },
+    {
+      "variant": "core_local_window_pairs",
+      "path": "code/tests/execution_provider/test_core_resource_feedback.py",
+      "source": "experiments/reproduction/native_baselines/variants/core_local_window_pairs/code/tests/execution_provider/test_core_resource_feedback.py"
+    },
+    {
+      "variant": "ray_runtime_reuse",
+      "path": "code/tests/execution_provider/test_core_resource_feedback.py",
+      "source": "experiments/reproduction/native_baselines/variants/ray_runtime_reuse/code/tests/execution_provider/test_core_resource_feedback.py"
+    },
+    {
+      "variant": "daft_single_thread_session",
+      "path": "code/tests/execution_provider/test_core_resource_feedback.py",
+      "source": "experiments/reproduction/native_baselines/variants/daft_single_thread_session/code/tests/execution_provider/test_core_resource_feedback.py"
+    }
+  ],
+  "remaining_failure": "10ms resource-feedback growth is still timing-sensitive; controller-session investigation separate",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "frame_fixture_after.json": "f0dc71b0d13a6f4e9ea3e3e10c61f66b33004a170f24b562a63f7c1ee18e3cf3",
+    "frame_fixture_after.log": "c941c64bf1718713671f9de49a7e8c1fd935383d1dba88ac7b00e16c556e6c1a",
+    "frame_fixtures_verified.json": "c49355f2133a42c8608c7fc170967472423b277d1224ec74bcca210aafc49f0b",
+    "frame_fixtures_verified.log": "3b556eecce0eae5ecae16adcd168660a92c6b38d7bfb3a35570c0524c0d9d4f8",
+    "combined_engineering.json": "f104e49b205b7a69c5cdca515b4a7e688b837f26e1d446ea25ad9a40eaa852ea",
+    "combined_engineering.log": "610d863a4b7dc22fd706015894872daa7b6c5f5b9e10567ef645e42ec96f166f",
+    "token_current_handoff.json": "af64095f18901abee740c7529cfe2610e19cb51a78949f9ee8aad19c1e3c4ec5",
+    "token_current_handoff.log": "8dd83411f2fadd6a46139664dbec44d9ee0b1eb1de3fb18b32753e8fc579e52a",
+    "prompt_audit_current.json": "68b872840a26c6867abe4af73a1b76b8fe5af1c42969eb1bf90e36e0195f8b18",
+    "prompt_audit_current.log": "a3e07952e0ce6fc9d9f97dcd01009fdf48474e634ae3fbaf07163c39e2de4643",
+    "fixtures_current_verified.json": "4b6b778fc8165bc32bad24a1b34a69bfe0e7d8fcba5809ad759279de63e2c0ad",
+    "fixtures_current_verified.log": "5fee8ec929cb3470ec53a71ed6f0fb7c1dd83fce8589ffce85ea3e119fdf7137"
+  }
+}

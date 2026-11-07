@@ -53,7 +53,7 @@ def image_service(root, mode, ray_api, **fixture_options):
         try:
             if mode == "staged":
                 pool = ray_workers(ray_api, **fixture_options)
-            gateway = ImageGateway(config, max_jobs=2, max_connections=3, max_tasks=4,
+            gateway = ImageGateway(config, max_jobs=1, max_connections=3, max_tasks=4,
                 max_active_requests=1 if mode == "reference" else 2, frame_timeout_ms=15000,
                 input_bytes=4 * 262144, result_bytes=4 * PLAN.result_bytes, observer=events.append,
                 execution_factory=partial(build_image_execution, worker_pool=pool, ray_api=ray_api,
@@ -62,7 +62,7 @@ def image_service(root, mode, ray_api, **fixture_options):
             listener.bind(socket_path)
             listener.listen(3)
             started.set()
-            gateway.serve(listener, stop, handler=None)
+            gateway.serve(listener, stop)
         except BaseException as failure:
             failures.append(failure)
             started.set()

@@ -12,6 +12,8 @@
 每查询原生必需的重建仍计入，具体计时见[对照规范](experiments/plans/reference/对照规范.md#resident-query-timing)。
 
 LOTUS 主线由 SemBench 提供任务与评价，保留 LOTUS 原方法及全局校准。
+近期聚焦**面向语义算子链的 GPU 资源编排**：依据合法依赖、实际工作与资源状态协调模型供给，
+同时考虑 CPU 准备、传输、主机驻留和结果消费，以完整查询时间评价；职责和单卡／未来多副本边界见[架构](experiments/plans/系统架构.md#semantic-chain-gpu-orchestration)。
 近期研究集中于[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)：
 固定逻辑计划、模型、prompt 与生成规则，检验依赖范围细化及有限物理重组是否改善完整查询。
 普通／级联 Filter 是方法参照、无机会反例与全局依赖场景；[动态供给扫描](#dynamic-resource-feedback-goal)与[阶段资源编排](experiments/plans/系统架构.md#physical-stage-research-goal)分别验证，单纯增大并发本身不作为研究增量。
@@ -63,7 +65,7 @@ HTTP 路径只能利用外部可见的请求及服务信息，不能假定持有
 长度或工作量分组、准备复用与局部性选择都是候选，先与合理原生及同信息静态路径比较。
 B表示每批工作量目标，文本 token 模式以累计 token 决定成员与封批边界，替代固定行数封批，缓解各批工作量差异。
 同一查询的合法阶段内应跨读取块继续累积；仍先固定64行、再只在块内拆小，不代表已经实现该组批目标。
-B与并发C、在途保护W分别配置；当前记录链的接入缺口见[代码状态](code/INFRA_STATUS.md#finite-query-token-candidate)。
+B与并发C、在途保护W分别配置；当前记录链的接入与资格见[代码状态](code/INFRA_STATUS.md#finite-query-token-candidate)。
 以完整任务时间、有效结果吞吐及适用的质量为主要结果，准备次数、实际字节、阶段 work、
 峰值留存和 GPU 供给用于解释；没有净收益时保留静态方案。
 

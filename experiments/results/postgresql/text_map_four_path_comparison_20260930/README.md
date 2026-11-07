@@ -236,7 +236,7 @@ SQL收到`ConnectionFailure`、SQLSTATE `08006`，消息为“SemLoom model endp
 来源：[失败查询摘要](raw/real/worker/tuning/pg-daft-ray-c128-r2/unit/summary.json)、
 [公开事件](raw/real/worker/tuning/pg-daft-ray-c128-r2/unit/public-events.jsonl.gz)、
 [worker日志](raw/real/worker/tuning/pg-daft-ray-c128-r2/worker.log.txt)。
-失败时的源码[Ray传输](../../../../code/src/execution_provider/adapters/ray_map_transport.py)在远程调用异常时保留未确认任务，
+失败时的源码[Ray传输](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/ray_map_transport.py)在远程调用异常时保留未确认任务，
 但只向上转交异常类型；actor没有接入HTTP异常观测器，核心事件也没有底层原因字段。
 Ray worker日志未提供该请求的异常详情。因此这条通用SQL错误不足以认定vLLM停机、网络故障或某个具体代码缺陷。
 

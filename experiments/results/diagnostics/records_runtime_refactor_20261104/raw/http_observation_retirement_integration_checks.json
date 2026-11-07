@@ -1,0 +1,146 @@
+{
+  "schema": "semloom.http_observation_retirement.latest_integration.v1",
+  "base": "8a2bf3294342a3fb01e3216cab678e7234f97554",
+  "source_candidate": "7a23e6dc5bcfa8e73803675515f3383f383947c2",
+  "source_tree": "bcffc9fc44354c9214419f8c1eecd00dda097ccb",
+  "preceding_source_candidate": "5bf1a619aa4837407016efe5076843dab760c9dc",
+  "preceding_checks": "http_observation_retirement_checks.json",
+  "same_cpu_selection_as_preceding": [
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_arrow_batch_requests_preserve_costs_locality_and_arrivals",
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_bounded_ready_window_is_derived_from_existing_k_and_w",
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_endpoint_topology_pairs_ids_and_urls_in_default_pool",
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_endpoint_topology_preserves_pool_and_gpu_assignments",
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_endpoint_topology_rejects_mismatched_inputs",
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_run_scheduler_consumes_a_single_pass_lazy_iterable",
+    "tests.observability.test_ray_scheduler_profile.RaySchedulerProfileTests.test_scheduler_metrics_preserve_existing_profiler_schema",
+    "tests.experiments.test_native_system_observation.GatewayTraceSummaryTests.test_existing_trace_summary_remains_available_without_a_proxy",
+    "tests.infrastructure.test_dependency_direction.DependencyDirectionTests.test_runtime_sources_do_not_import_tests_scripts_or_experiment_entry_points",
+    "tests.infrastructure.test_dependency_direction.DependencyDirectionTests.test_request_identity_http_observation_and_map_values_are_not_duplicated",
+    "tests.infrastructure.test_dependency_direction.DependencyDirectionTests.test_cold_runtime_imports_and_httpx_fixture_work_with_experiment_imports_blocked"
+  ],
+  "cpu": {
+    "selected": 11,
+    "executed": 11,
+    "passed": 11,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged": true
+  },
+  "source_identity": {
+    "recorded_files": 1020,
+    "mismatches": [],
+    "source_sha256_manifest_digest": "ff645438b519f9de344e3034940e1634e5d644d7a3708cea65821ea127e90801"
+  },
+  "source_changes": [
+    "D\tcode/src/observability/request_gateway.py"
+  ],
+  "restoration": [
+    {
+      "path": "code/src/observability/request_gateway.py",
+      "source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
+      "bytes": 38221,
+      "sha256": "0672373690db7f45aa2139732cde6677c69860e71f3362202e7d7fd25ae6ecad",
+      "matches_latest_base": true
+    },
+    {
+      "path": "code/tests/observability/test_request_gateway.py",
+      "source_commit": "7bf1d92baf2611925c608cfe76b4a766855bd77e",
+      "bytes": 49736,
+      "sha256": "5398653cb119510f6dcb06d38bdad936e6670064c8a62a120f5e735d8ad859fe",
+      "matches_latest_base": true
+    }
+  ],
+  "native_history": {
+    "bindings": 3010,
+    "matched": 3010,
+    "differences": [],
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "native_manifest_unchanged": true
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "base": {
+      "core": {
+        "files": 258,
+        "physical_lines": 58057
+      },
+      "main_runtime": {
+        "files": 250,
+        "physical_lines": 55049
+      },
+      "research": {
+        "files": 8,
+        "physical_lines": 3008
+      },
+      "all_src": {
+        "files": 400,
+        "physical_lines": 91707
+      },
+      "scripts": {
+        "files": 102,
+        "physical_lines": 22167
+      },
+      "src_and_scripts": 113874,
+      "core_functions_over_100": 46
+    },
+    "candidate": {
+      "core": {
+        "files": 257,
+        "physical_lines": 57278
+      },
+      "main_runtime": {
+        "files": 249,
+        "physical_lines": 54270
+      },
+      "research": {
+        "files": 8,
+        "physical_lines": 3008
+      },
+      "all_src": {
+        "files": 399,
+        "physical_lines": 90928
+      },
+      "scripts": {
+        "files": 102,
+        "physical_lines": 22167
+      },
+      "src_and_scripts": 113095,
+      "core_functions_over_100": 44
+    },
+    "core_delta": -779,
+    "core_delta_from_main": 3187,
+    "core_delta_from_3fd": -4350,
+    "src_and_scripts_delta_from_main": -27240,
+    "src_and_scripts_delta_from_3fd": -36550
+  },
+  "parallel_base_status": {
+    "native_omitted_capacity_legacy_fallback_removed": true,
+    "broader_cpu_recorded_by_parallel_owner": {
+      "passed": 819,
+      "skipped": 15,
+      "failed": 1,
+      "failure_reproduced_on_unmodified_4376": true,
+      "failure": "Historical ACK AST method digest assertion; not repaired or rerun by this cleanup."
+    }
+  },
+  "new_actual_Ray_model_GPU_database_server_operations": 0,
+  "unverified": [
+    "Current real model and quality qualification",
+    "Default R=2 and physical auto capacity",
+    "Shared BF16 and GPU memory ratio 0.8 defaults",
+    "Earlier restricted Unix socket and process enumeration checks"
+  ],
+  "raw": {
+    "file": "http_observation_retirement_integration_raw.json.gz",
+    "bytes": 5122,
+    "sha256": "ae46f5d9a4ec3472ab25d82071331c05b3b748c6d1428a26dc1c0d2cd53fa6b0",
+    "decoded_sha256": "afbf3f3417abb39370aee04f9c889461791e68dc18bf97d56c890d41a5ac4a67"
+  }
+}

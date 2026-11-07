@@ -95,6 +95,14 @@ class UnixSocketTableTests(unittest.TestCase):
         kind, _, _ = classify_target("socket:[10]", table, "/tmp/provider.sock")
         self.assertEqual(kind, FdKind.PROVIDER_UDS_LISTENER)
 
+    def test_valid_empty_table_distinct_from_unreadable(self):
+        from unittest.mock import patch
+        with patch('pathlib.Path.read_text',return_value='Num RefCount Protocol Flags Type St Inode Path\n'):
+            self.assertEqual(unix_socket_table(),{})
+        with patch('pathlib.Path.read_text',side_effect=PermissionError()):
+            self.assertIsNone(unix_socket_table())
+
+
 
 class ModelTests(unittest.TestCase):
     def test_snapshot_unreadable_fields_stay_none(self):

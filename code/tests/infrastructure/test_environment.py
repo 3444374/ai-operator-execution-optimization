@@ -64,12 +64,15 @@ class EnvironmentContractTests(unittest.TestCase):
                     }
                 ],
             }
-            results = check_environment(
-                profile,
-                manifest,
-                {"DATA_ROOT": str(root), "ARTIFACT_ROOT": str(root)},
-                ("test",),
-            )
+            from src.infrastructure.cpu_allocation import CpuCapacity
+            with mock.patch("src.infrastructure.environment.observe_cpu_capacity",
+                            return_value=CpuCapacity(4, None, 4, "CPU_fixture")):
+                results = check_environment(
+                    profile,
+                    manifest,
+                    {"DATA_ROOT": str(root), "ARTIFACT_ROOT": str(root)},
+                    ("test",),
+                )
         self.assertTrue(all(item.status == "ok" for item in results))
 
     def test_group_list_is_deduplicated(self) -> None:

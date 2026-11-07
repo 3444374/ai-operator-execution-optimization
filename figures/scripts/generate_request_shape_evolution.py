@@ -1,7 +1,7 @@
 """
 学习配图 v3 — 请求的完整旅程：形成 → 切分 → 提交控制 → vLLM 推理
 四段：①数据进入 ②研究内容一·策略切分(token-budget) ③研究内容二·提交控制(动态调度) ④单batch进vLLM旅程
-按项目真实实现画：organizers.py / submit_with_backpressure / adaptive_inflight_limit / model_backends
+历史学习图：使用已退役的 PG profiler 与 HTTP metrics 轮询示例，不代表当前 SemLoom 执行。
 """
 from PIL import Image, ImageDraw, ImageFont
 import os
@@ -46,7 +46,7 @@ def batch1_detail():
     return [p for p in PROMPTS if p[0] in ids]
 
 # ── 标题 ──
-tc(W//2,16,"一个请求的完整旅程：形成 → 组织 → 提交控制 → vLLM 推理",f_h1,C_DARK)
+tc(W//2,16,"历史实现：请求形成 → 组织 → 提交控制 → vLLM 推理",f_h1,C_DARK)
 tc(W//2,50,"8 个 prompt（橙=prefix A / 蓝=prefix B）贯穿全程 —— 研究①组织数据  研究②控制提交  vLLM 内部不修改",f_small,C_GRAY)
 
 # ══════════ 第一段：数据进入（80~270）══════════
@@ -206,7 +206,7 @@ for i,(mk,ex) in enumerate([("vllm:num_requests_waiting","队列里等着的请�
     draw.rounded_rectangle([vm_x+14,yy,vm_x+vm_w-14,yy+18],radius=3,fill=C_WHITE,outline=C_BORDER)
     dt(vm_x+22,yy+2,mk,fill=C_VLLM,font=f_code)
     dt(vm_x+22,yy+11,ex,fill=C_GRAY,font=f_tiny)
-tc(vm_x+vm_w//2,m_bot-14,"adaptive_inflight_limit 读这些指标",f_tiny,C_VLLM)
+tc(vm_x+vm_w//2,m_bot-14,"旧 HTTP 轮询读取这些指标",f_tiny,C_VLLM)
 
 # 底注
 dt(30,S3+224,"static（K_max 固定） vs AIMD（加性增/乘性减，:512 现状双态作对照）；Router：prefix-aware←SGLang · token-aware←Parrot",fill=C_DARK,font=f_small)

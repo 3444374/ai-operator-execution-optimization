@@ -1,0 +1,79 @@
+{
+  "schema": "semloom.imlane-duckdb-preparation.v1",
+  "state": "native software CPU including real IPC complete; real model startup observed, Q3 stopped before dispatch; controller repair CPU checked",
+  "models_started": 0,
+  "source_recovery_manifest_sha256": "3319f4e5a1bb45fb81991a027d5294648144ff52ca90b212b4130256c1fd71d6",
+  "library_build": {
+    "upstream_author": "072f8257db80569e42c9f5727d839587df529652",
+    "source_repair": "three exact official files from 5ebd8ca697099859239ba85e0de07dac7e1b7c04; existing author changes kept",
+    "library_bytes": 44524536,
+    "library_sha256": "52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf",
+    "resume_supervisor_exit": 0,
+    "resume_resource_passed": true,
+    "remaining_new_shm_names": [],
+    "final_host_shm_used_delta_bytes": 0,
+    "resume_peak_sampled_owned_rss_bytes": 3718602752,
+    "raw_final_sha256": "53577edd8d655da7c9017a12f533a6a159b93af344f7c8b6b0c87b91fa340cf8",
+    "canonical_author_source_and_prefix_modified": false,
+    "dependencies_installed": false
+  },
+  "local_python_checks": {
+    "distinct_methods": 22,
+    "final_passed": 22,
+    "full_group_log_sha256": "93fd4a79847d832524b054359b85e6bbc5ce4bc73c8c9a5bdc915e0861978be2",
+    "first_group": "20 passed; 2 fixture path-alias assertions failed on macOS",
+    "two_case_recheck_log_sha256": "b45655a23d4da348bf28cc795bf257fdc5fe34ed15c411dd4b20ae3956786552",
+    "two_case_recheck": "passed after fixture root path normalization; not additional distinct methods",
+    "arrow_version": "24.0.0",
+    "native_author_arrow_16_cpu_qualification": "passed in two actual author DuckDB/DBEnd runs; see native_cpu.json"
+  },
+  "preserved_preparation_failures": [
+    {
+      "attempt": "r1",
+      "cause": "controller passed unsupported env argument to supervise; no CMake started"
+    },
+    {
+      "attempt": "r2",
+      "cause": "IMLane CMake export installed directly at lib/cmake; needs explicit IMLane_DIR"
+    },
+    {
+      "attempt": "r3",
+      "cause": "author build* ignore rule omitted required optimizer source/header"
+    },
+    {
+      "attempt": "r4",
+      "cause": "author CMake target omitted transitive Boost/SDK header search paths"
+    },
+    {
+      "attempt": "native-r1",
+      "cause": "shared Git clone from incomplete historical object set failed before native startup; fresh exact commit fetch succeeded"
+    },
+    {
+      "attempt": "native-r2",
+      "cause": "default four 128 MiB lanes plus eight Boost queues exceed old 512 MiB SHM allowance by 96 KiB; stopped and cleaned, no inference"
+    }
+  ],
+  "native_cpu_evidence": "native_cpu.json",
+  "model_provider_preparation": {
+    "state": "real IPC software CPU passed; model startup succeeded but original whole-stage SHM declaration stopped before Q3",
+    "provider_transport": "AF_UNIX batch RPC to one native AsyncLLM; author ArrowLane preserved",
+    "semloom_mainline_transport": "local IPC",
+    "native_ready_clock": "new driver CLOCK_MONOTONIC before native destructors; must rebuild thin binary",
+    "generation_config": "vllm, explicit common SamplingParams project choice",
+    "resolved_capacity_source": "constructed AsyncLLM.vllm_config; not free capacity",
+    "whole_query_retries": 0,
+    "author_Q7_provider": "not found in fixed current author Git tree; model API is a project binding",
+    "native_transport_audit": "native_transport_audit.json",
+    "software_HTTP_CPU_evidence": "http_software_cpu.json",
+    "custom_IPC_status": "implemented, software local CPU checked",
+    "current_components": "ipc_components.json",
+    "local_CPU_models": 0,
+    "local_CPU_GPU_runs": 0,
+    "real_model_startup_observed": true,
+    "user_Q3_generate_invocations": 0,
+    "internal_GPU_profile_attempts": null,
+    "server_IPC_CPU_evidence": "ipc_server_cpu.json",
+    "real_startup_failure": "startup_shm_failure.json",
+    "controller_repair": "controller_repair.json"
+  }
+}

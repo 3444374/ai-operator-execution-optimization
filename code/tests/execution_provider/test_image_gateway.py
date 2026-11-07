@@ -3,16 +3,17 @@
 import socket
 import tempfile
 import threading
-import time
 import unittest
+import json
+from unittest.mock import Mock, patch
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from unittest.mock import patch
-import json
 
 from src.execution_provider.adapters.image_execution import ImageServiceConfig, build_image_execution
-from src.execution_provider.image_gateway import ImageGateway, ImageConnection
+from src.execution_provider.image_gateway import ImageGateway
+from src.execution_provider.image_connection import ImageConnection
+from src.execution_provider.gateway_runtime import ConnectionMailbox, ConnectionState, PendingOffer
 from src.execution_provider.wire import image
 from src.execution_provider.wire.framing import ProtocolError, encode_frame, read_frame
 from src.scheduling.runtime.stage_broker import StageBrokerLimits
@@ -20,7 +21,7 @@ from tests.modalities.image.test_incremental_image_backend import Actors, FakeRa
 
 
 @contextmanager
-def service(mode="staged", actors=None):
+def service(mode="staged", actors=None, *, max_jobs=1, execution_factory=build_image_execution):
     actors = actors or Actors()
     stop, ready = threading.Event(), threading.Event()
     failures, gateways = [], []
@@ -36,16 +37,16 @@ def service(mode="staged", actors=None):
             gateway = None
             listener = socket.socket(socket.AF_UNIX)
             try:
-                gateway = ImageGateway(config, max_jobs=2, max_connections=3, max_tasks=4,
+                gateway = ImageGateway(config, max_jobs=max_jobs, max_connections=3, max_tasks=4,
                     max_active_requests=1 if mode == "reference" else 2, frame_timeout_ms=2000,
                     input_bytes=4 * 262144, result_bytes=32,
-                    execution_factory=partial(build_image_execution, worker_pool=actors.pool,
+                    execution_factory=partial(execution_factory, worker_pool=actors.pool,
                                                ray_api=FakeRay(), reference=Reference()))
                 gateways.append(gateway)
                 listener.bind(path)
                 listener.listen(3)
                 ready.set()
-                gateway.serve(listener, stop, handler=None)
+                gateway.serve(listener, stop)
             except BaseException as failure:
                 failures.append(failure)
                 ready.set()
@@ -57,13 +58,14 @@ def service(mode="staged", actors=None):
         worker = threading.Thread(target=run)
         worker.start()
         assert ready.wait(3)
-        if not gateways:
-            raise failures[0]
         try:
+            if failures:
+                raise failures[0]
             yield path, gateways[0]
         finally:
             stop.set()
-            gateways[0].request_stop()
+            if gateways:
+                gateways[0].request_stop()
             worker.join(5)
             assert not worker.is_alive()
         if failures:
@@ -95,21 +97,6 @@ class ImageGatewayTest(unittest.TestCase):
                     self.assertEqual(result, image.completion_message(PLAN, mode, 0,
                         task["semantic_payload_digest"], PLAN.encode_result([1, 0])))
 
-    def test_slow_consumer_keeps_results_charged_and_other_job_can_finish(self):
-        with service() as (path, gateway):
-            with connect(path, "staged", 2) as slow, connect(path, "staged", 2) as fast:
-                for connection in (slow, fast):
-                    for sequence in range(2):
-                        connection.sendall(encode_frame(image.task_message(PLAN, "staged", sequence, b"x")))
-                        self.assertTrue(read_frame(connection)["accepted"])
-                for _ in range(2):
-                    fast.sendall(encode_frame({"type": "receive", "protocol_version": 7}))
-                    self.assertEqual(read_frame(fast)["type"], "completion")
-                self.assertGreaterEqual(gateway.method_pool.used[0], 2)
-                self.assertGreaterEqual(gateway.method_pool.used[1], 2 * gateway.row_reservation)
-                for _ in range(2):
-                    slow.sendall(encode_frame({"type": "receive", "protocol_version": 7}))
-                    self.assertEqual(read_frame(slow)["type"], "completion")
 
     def test_invalid_payload_fails_without_worker_submission(self):
         actors = Actors()
@@ -144,6 +131,24 @@ class ImageGatewayTest(unittest.TestCase):
                 other.sendall(encode_frame({"type": "receive", "protocol_version": 7}))
                 self.assertEqual(read_frame(other)["type"], "completion")
 
+
+    def test_slow_consumer_keeps_results_charged_and_other_job_can_finish(self):
+        with service(max_jobs=2) as (path, gateway):
+            with connect(path, "staged", 2) as slow, connect(path, "staged", 2) as fast:
+                for connection in (slow, fast):
+                    for sequence in range(2):
+                        connection.sendall(encode_frame(image.task_message(PLAN, "staged", sequence, b"x")))
+                        self.assertTrue(read_frame(connection)["accepted"])
+                for _ in range(2):
+                    fast.sendall(encode_frame({"type": "receive", "protocol_version": 7}))
+                    self.assertEqual(read_frame(fast)["type"], "completion")
+                self.assertGreaterEqual(gateway.method_pool.used[0], 2)
+                self.assertGreaterEqual(gateway.method_pool.used[1], 2 * gateway.row_reservation)
+                for _ in range(2):
+                    slow.sendall(encode_frame({"type": "receive", "protocol_version": 7}))
+                    self.assertEqual(read_frame(slow)["type"], "completion")
+
+
     def test_blocked_result_send_keeps_method_reservation_after_core_release(self):
         entered, release, wrapped = threading.Event(), threading.Event(), threading.Event()
         original = ImageConnection.run_image
@@ -166,7 +171,7 @@ class ImageGatewayTest(unittest.TestCase):
                 wrapped.set()
             return original(adapter, opened)
 
-        with patch.object(ImageConnection, "run_image", run_image), service() as (path, gateway):
+        with patch.object(ImageConnection, "run_image", run_image), service(max_jobs=2) as (path, gateway):
             with connect(path, "staged", 1) as slow:
                 slow.sendall(encode_frame(image.task_message(PLAN, "staged", 0, b"x")))
                 self.assertTrue(read_frame(slow)["accepted"])
@@ -183,6 +188,88 @@ class ImageGatewayTest(unittest.TestCase):
                 finally:
                     release.set()
                 self.assertEqual(read_frame(slow)["type"], "completion")
+
+
+class ImageOwnerTest(unittest.TestCase):
+    def make_owner(self, actors):
+        config = ImageServiceConfig(PLAN, "staged", StageBrokerLimits(262144, 96, 8, 1, 1),
+                                    1, 1, 1, 1000)
+        gateway = ImageGateway(config, max_jobs=1, max_connections=3, max_tasks=2,
+            max_active_requests=1, frame_timeout_ms=2000, input_bytes=2 * 262144,
+            result_bytes=2 * PLAN.result_bytes,
+            execution_factory=partial(build_image_execution, worker_pool=actors.pool,
+                                      ray_api=FakeRay()))
+        mailbox = ConnectionMailbox(None, gateway.engine.wake, 2)
+        state = ConnectionState(Mock(), mailbox, None, Mock(), connection_id=0)
+        gateway.connections[0] = state
+        gateway.connection_capacity.accept(0)
+        mailbox.command = ("standalone", ())
+        gateway._command(state)
+        self.assertIsNone(mailbox.reply)
+        self.assertIsNotNone(mailbox.session)
+        request = image.validate_task(image.task_message(PLAN, "staged", 0, b"x"),
+                                      PLAN, "staged", 0)
+        offered = gateway.session_command(state, "offer", (PendingOffer(request, 0),))
+        self.assertEqual(offered.accepted_prefix_count, 1)
+        return gateway, state
+
+    def test_consumed_image_result_releases_method_and_query_storage(self):
+        gateway, state = self.make_owner(Actors())
+        try:
+            for _ in range(20):
+                gateway.engine.advance()
+                update = gateway.session_command(state, "advance", (1,))
+                if update.results:
+                    break
+            self.assertEqual(len(update.results), 1)
+            result = update.results[0]
+            self.assertEqual(result.value, PLAN.encode_result([1, 0]))
+            self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(gateway.method_pool.used, (1, gateway.row_reservation))
+            gateway.session_command(state, "release", ((result.row,),))
+            self.assertEqual(gateway.method_pool.used, (0, 0))
+            state.mailbox.clean = True
+            state.mailbox.done.set()
+            gateway._controls()
+            gateway.engine.advance()
+            self.assertEqual(gateway.connections, {})
+            self.assertFalse(gateway.engine.jobs.jobs)
+            self.assertEqual(gateway.method_pool.allocated, (0, 0))
+            state.worker.join.assert_called_once_with()
+            self.assertTrue(gateway.close())
+        finally:
+            gateway.close()
+
+    def test_cancelled_image_retains_compute_until_the_model_returns(self):
+        actors = Actors()
+        actors.model_ready = False
+        gateway, state = self.make_owner(actors)
+        for _ in range(20):
+            gateway.engine.advance()
+            gateway.session_command(state, "advance", (1,))
+            if actors.models:
+                break
+        self.assertEqual(len(actors.models), 1)
+        state.mailbox.cancel()
+        gateway._controls()
+        self.assertEqual(gateway.engine.capacity.usage().active_requests, 1)
+        self.assertEqual(gateway.method_pool.allocated[0], 2)
+        state.mailbox.done.set()
+        gateway._controls()
+        self.assertFalse(gateway.close())
+        self.assertEqual(gateway.engine.capacity.usage().active_requests, 1)
+        self.assertTrue(gateway.engine.jobs.jobs[state.job].closing)
+        actors.models[0].ready = True
+        for _ in range(20):
+            gateway.engine.advance()
+            if not gateway.engine.capacity.usage().held_tasks:
+                break
+        self.assertFalse(gateway.engine.jobs.jobs)
+        self.assertEqual(gateway.method_pool.used, (0, 0))
+        self.assertEqual(gateway.method_pool.allocated, (0, 0))
+        self.assertTrue(gateway.close())
+
+
 
 
 if __name__ == "__main__":

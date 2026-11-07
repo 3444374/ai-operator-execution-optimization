@@ -5,15 +5,18 @@ import sys
 from unittest.mock import patch
 
 from src.serving.backends import staged_generation_process, vllm_engine
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
 class FixtureEngine:
     def __init__(self, engine, generation):
+        self.spec = engine
         self.generation = generation
 
     def ready(self):
-        return dict(engine_uid="CPU-stage-pipe", pid=os.getpid())
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid="CPU-stage-pipe", pid=os.getpid(),
+            model_context=model_context_record(self.spec, 'CPU-stage-pipe', self.spec.max_model_len or 32768))
 
     def run_prepared(self, rows, *, generation, deadline_monotonic):
         return [dict({key: row[key] for key in IDENTITY_FIELDS}, status="succeeded",
@@ -21,8 +24,9 @@ class FixtureEngine:
                      prompt_tokens=3, completion_tokens=1, total_tokens=4,
                      engine_uid="CPU-stage-pipe") for row in rows]
 
-    def close(self):
-        return dict(status="closed", engine_api_shutdown_confirmed=True, gpu_exit_confirmed=None)
+    def close(self, timeout=10.):
+        return dict(status="closed", engine_api_shutdown_confirmed=True,
+                    gpu_exit_confirmed=None, close_timeout_s=timeout)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,43 @@
+{
+  "base": "809fa88419edd0fa6b28601de3f334be178a3623",
+  "review_sha256": "98282f3296534909a0fed80add3a22dda1d158d9c49c5d059e035999db295978",
+  "fixed": [
+    "current legacy fixture declares computed-work use; explicit legacy selector only on current side of historical differential",
+    "existing linked calibration guide shows current valid fields, start one and no cross-query hints; all old geometry/pressure/continuation sections explicitly historical",
+    "sampler extra blank line removed"
+  ],
+  "legacy_numeric_delivery_work_order_assertions_AST_unchanged": true,
+  "historical_source_files_changed": false,
+  "CPU": {
+    "selected": 30,
+    "passed": 30,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged": true
+  },
+  "original_independent_review": {
+    "selected": 309,
+    "passed": 305,
+    "error_methods": 3,
+    "skipped": 1,
+    "permission_issue": "local Unix socket bind rejected before query execution; same origin observed on clean baseline; not resolved by source change"
+  },
+  "original_added_legacy_review": {
+    "selected": 18,
+    "passed": 16,
+    "error_methods": 2
+  },
+  "ordinary_default_R": "still caller-declared and coupled when budget omitted on this review-fix tree; separate default-capacity worktree not qualified here",
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "repeat_independent_review": "pending",
+  "artifacts": {
+    "wiring_review_fixes.json": "4e030cdc848dbcd44c1a625fea8f22294aabba145adf6829f39e4eb24bb3eda3",
+    "wiring_review_fixes.log": "a31774a62425c58766a7eef957de82e55f3ce6e6b5a196a42f14b9f1cd242627",
+    "wiring_review_fixes_final.json": "5ffd218b717d23796592ef4cb476d993fb57a8db873fcd3b54d76311a4ea0067",
+    "wiring_review_fixes_final.log": "715cdc8d13ac97f0d693399569de9913965c13b22b528acee2a85d25a9608dac"
+  },
+  "final_CPU_source_unchanged": true
+}

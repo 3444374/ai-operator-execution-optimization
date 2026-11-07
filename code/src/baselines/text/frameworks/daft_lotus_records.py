@@ -16,8 +16,9 @@ import tempfile
 import threading
 import time
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
 DEFAULT_PREPARED_BATCH_BYTES = 64 * 1024**2
@@ -26,7 +27,7 @@ DEFAULT_PREPARED_BATCH_BYTES = 64 * 1024**2
 def _check(deadline, control=None):
     if control is not None and (Path(control) / "stop").exists():
         raise InterruptedError("Daft records query cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("Daft records query deadline expired")
 
 
@@ -95,7 +96,7 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                 raise BufferError("actual Daft inference batch exceeds its logical input allowance")
             _check(deadline, control)
             if self.kernel is None:
-                from .daft_engine_process import EngineProcess
+                from src.baselines.text.frameworks.sync_reference_engine import ReferenceEngineProcess as EngineProcess
 
                 self.kernel = (engine_type or EngineProcess)(
                     EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),
@@ -114,7 +115,7 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                 try:
                     self.kernel.close()
                 except BaseException as exc:
-                    from .daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
 
                     try:
                         report = dict(
@@ -365,7 +366,7 @@ def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: Gener
         raise ValueError("runner_threads must be a positive integer or None")
     if type(max_prepared_batch_bytes) is not int or max_prepared_batch_bytes < 1:
         raise ValueError("max_prepared_batch_bytes must be a positive integer")
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     method = FilterMethod.from_dict(asdict(method))
     generation = GenerationSpec.from_dict(asdict(generation))
     engine = EngineSpec.from_dict(asdict(engine))
@@ -383,7 +384,7 @@ def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: Gener
     if not set(method.resolved_input_columns).issubset(scan.payload_columns):
         raise ValueError("record scan omits Filter input columns")
     validate_lm(make_lm(method, generation), method, generation)
-    if generation.max_tokens > engine.max_model_len:
+    if engine.max_model_len is not None and generation.max_tokens > engine.max_model_len:
         raise ValueError("max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
     expected = source.expected(query_id)

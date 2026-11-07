@@ -1,0 +1,460 @@
+{
+  "base": "73e686aad55772535555e0b8bc7dbce078a727ce",
+  "production_checkpoint": "1d92a2df698896e241fb1985b9c46d29b03e72fe",
+  "production_tree": "b0c6e90b15d502ba922788e266bc62f77dc08f60",
+  "components": {
+    "release_fix": "6a8d7f1e21155aba5ce778b905525c0f4006e6be",
+    "policy_duties": "4e8beab1bfa4228bcf0c4576c3f67b8992b50ee2",
+    "redundant_checks": "16473a1c59a20e6049f2c9fc4b757684347ecfa5",
+    "session_original": "cea9c65bb32166d1969c9f2ff8f510ba338a3a9b",
+    "session_applied": "1d92a2df698896e241fb1985b9c46d29b03e72fe"
+  },
+  "changes": [
+    "Validate existing completion work before removing the stored lease; invalid completion keeps capacity and permits a corrected retry.",
+    "The existing coordinator retains leases, queues, capacity, public values, common events and activation. Existing selection, VTC floor and completion accounting move to credit_policies without wrappers or a second owner.",
+    "Remove finished-job repeated active/waiter traversal and two internal SAOR configuration checks already established by the public owner lifecycle.",
+    "Registered Job closing lives only in JobRegistry; legacy IDs remain remembered until late work settles. Read live flows and held records once per retirement call."
+  ],
+  "CPU": {
+    "selected": 140,
+    "passed": 140,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "source_unchanged_during_suite": true,
+    "recorded_source_count": 1003,
+    "Python": "3.12.6",
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "pyarrow": "24.0.0",
+      "litellm": "1.95.0",
+      "openai": "2.50.0"
+    },
+    "component_counts_overlap_not_added": true,
+    "credit_release_after": 63,
+    "credit_policy_after": 63,
+    "session_before_existing": 78,
+    "session_new_behavior_before_refactor": 1,
+    "session_after": 79,
+    "independent_session_probes": 2
+  },
+  "preserved_failures": {
+    "original_release": "One method, 12 failing subcases across three policies and four invalid actual_work values.",
+    "initial_selection": "60 real methods passed; one nonexistent guessed method produced a loader error. Correct two existing methods were then selected and included in later results.",
+    "temporary_extraction": "The first private extraction locator stopped before source edits; subsequent successful extraction recorded separately."
+  },
+  "structure": {
+    "base": "6a8d7f1e21155aba5ce778b905525c0f4006e6be",
+    "moved_methods": [
+      "_grant_waiters",
+      "_grant_fifo_waiters",
+      "_grant_vtc_waiters",
+      "_grant_strict_priority_waiters",
+      "_vtc_job_is_inactive",
+      "_active_vtc_normalized_counters",
+      "_grant_saor_waiters",
+      "_grant_bounded_saor_waiters",
+      "_resume_guard_hold",
+      "_close_guard_hold",
+      "_bounded_saor_states",
+      "_update_saor_fairness_debt"
+    ],
+    "normalized_method_bodies_equal": true,
+    "normalization": "self->credit, direct calls to moved functions, and docstring indentation only",
+    "additional_policy_blocks": [
+      "VTC floor at the same pre-enqueue point",
+      "completion correction after validated lease removal and before grants"
+    ],
+    "coordinator_before": 1397,
+    "coordinator_after": 836,
+    "policies_lines": 607,
+    "net_production_lines": 46,
+    "unchanged_common_event_service": true,
+    "new_ledger_or_policy_state_owner": false,
+    "scope": "Initial structural extraction. Subsequent formatting, two private annotations and three repeated-check removals are covered by the final 140-method combination."
+  },
+  "final_file_lines": {
+    "shared_credit.py": 833,
+    "credit_policies.py": 606,
+    "session.py": 1181
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Core is code/src except experiments and baselines; wider is code/src plus code/scripts. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "73e": {
+        "commit": "73e686aad55772535555e0b8bc7dbce078a727ce",
+        "metrics": {
+          "core": {
+            "files": 249,
+            "physical_lines": 59130
+          },
+          "all_src": {
+            "files": 391,
+            "physical_lines": 92786
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114938,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1397
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1174
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1101
+          }
+        ],
+        "core_functions_over_100": 53
+      },
+      "current": {
+        "commit": "1d92a2df698896e241fb1985b9c46d29b03e72fe",
+        "metrics": {
+          "core": {
+            "files": 250,
+            "physical_lines": 59179
+          },
+          "all_src": {
+            "files": 392,
+            "physical_lines": 92835
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114987,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1181
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1101
+          }
+        ],
+        "core_functions_over_100": 53
+      }
+    }
+  },
+  "batch_Python_line_delta": {
+    "core": 49,
+    "src_and_scripts": 49
+  },
+  "source_sha256": {
+    "code/src/scheduling/core/session.py": "cd90e86d1a22629417511f48f701d82b5226e912058e625b9be9f5e531e5a118",
+    "code/src/scheduling/submission_control/credit_policies.py": "69be34c206a60ba321d65231a2d46ce70b638000ddcc257e869e0e9a61303f2a",
+    "code/src/scheduling/submission_control/shared_credit.py": "1a522208496893123df2facb39b0d81606993b714e4df4adb89f0abcc777da75",
+    "code/tests/scheduling/test_incremental_session.py": "690cac0777c48a404c8f89c09611fb25f9b0044d7e6add36c79d9210f997d00f",
+    "code/tests/scheduling/test_shared_credit.py": "7d7f163b7a61cc1a9b0255de1d0446eb2ae866c4c1b0745dabb6c3c934b2d360"
+  },
+  "raw": {
+    "path": "credit_session_duties_raw.json.gz",
+    "sha256": "c84e85cd997d1e135986cee0ac4746af002407872a472bc6118cca22aa207713",
+    "bytes": 23845,
+    "decoded_sha256": "6b813dba79b91b32079deb1ea2759927601d0632cab76ce7366375cd3016881f"
+  },
+  "private_originals": [
+    {
+      "group": "credit",
+      "file": "credit-before-duty-split.json",
+      "bytes": 141474,
+      "sha256": "f488a702b675e587733aeab775cc675d1b57bfbd29b12bdd2cad4d34620557fb"
+    },
+    {
+      "group": "credit",
+      "file": "credit-before-duty-split.log",
+      "bytes": 11563,
+      "sha256": "1b817ac4b743c2e82e45989a4f52e0e94e3f1b9c97e60d177050ae794deebb9b"
+    },
+    {
+      "group": "credit",
+      "file": "credit-invalid-release-after.json",
+      "bytes": 142077,
+      "sha256": "842c4cbdf9ff597ffec73abd8182a5170951cb0be94598e0c7b765d3d461a1ff"
+    },
+    {
+      "group": "credit",
+      "file": "credit-invalid-release-after.log",
+      "bytes": 11583,
+      "sha256": "3f81da8fe8a2862be42cc8d24b27389d1d730ce569c93c1892a35e40e0c28e8d"
+    },
+    {
+      "group": "credit",
+      "file": "credit-invalid-release-before.json",
+      "bytes": 134513,
+      "sha256": "e0f8adf6fbdd4cabc8ec489846d243b3b4444a2c1af5c81a0ec4d56d33a4c107"
+    },
+    {
+      "group": "credit",
+      "file": "credit-invalid-release-before.log",
+      "bytes": 13129,
+      "sha256": "9146aada75dd4e642836aad92f8e67560c3f1e1dd2e3e34ea4370e3a198a74ef"
+    },
+    {
+      "group": "credit",
+      "file": "credit-policy-duties-after.json",
+      "bytes": 142208,
+      "sha256": "58509d917f0102c6a217531c5bb0c34aa4eecf9d87b8ab1a7168016c49a9d545"
+    },
+    {
+      "group": "credit",
+      "file": "credit-policy-duties-after.log",
+      "bytes": 11583,
+      "sha256": "387d8dcf4d552fcf7ff10cab9aad7940c4585c3e7eae3eb199b648aef92b5c95"
+    },
+    {
+      "group": "credit",
+      "file": "credit-retirement-before-duty-split.json",
+      "bytes": 127022,
+      "sha256": "a64d777273c2f559f3ad97364be536d3172b1944c94a2c133141cc3200e5a76f"
+    },
+    {
+      "group": "credit",
+      "file": "credit-retirement-before-duty-split.log",
+      "bytes": 492,
+      "sha256": "f8ce146cc6a2c2125d28ea825cb408c73eda58dbbbec5ab55e67fe72d2a92252"
+    },
+    {
+      "group": "credit",
+      "file": "credit-session-combined.json",
+      "bytes": 161184,
+      "sha256": "81e0a27756feb81075dc62a400a422c925d0a274988eee5913298bfc3b9cbe3d"
+    },
+    {
+      "group": "credit",
+      "file": "credit-session-combined.log",
+      "bytes": 25566,
+      "sha256": "e74242c8b60b2e94db78d1b392a9040c8817b514ee797cfcc0fafc654455dba7"
+    },
+    {
+      "group": "session",
+      "file": "retirement-before.json",
+      "bytes": 145734,
+      "sha256": "c26f5359cd91acd0de5a0ad07e4ccc9747def1d4dbb3ba073a47f3a6d75c4db0"
+    },
+    {
+      "group": "session",
+      "file": "retirement-before.log",
+      "bytes": 14298,
+      "sha256": "41972c1a4b27c541aa51a51191af58ed2d014bdb73e924305f0e5cf0067d3689"
+    },
+    {
+      "group": "session",
+      "file": "retirement-error-before.json",
+      "bytes": 126578,
+      "sha256": "5135541727890dce55850bd3ae9b0d249fa65bafb8dda31ffff9c613c5c7c932"
+    },
+    {
+      "group": "session",
+      "file": "retirement-error-before.log",
+      "bytes": 274,
+      "sha256": "65fbbc0700b721b59b970864d1974c357901def3d9d2ff515ab63f22cf95dcbc"
+    },
+    {
+      "group": "session",
+      "file": "retirement-final.json",
+      "bytes": 145982,
+      "sha256": "83736b461f56960440f52aa9885d0c8e2021b45b05366758062921bc99a1c344"
+    },
+    {
+      "group": "session",
+      "file": "retirement-final.log",
+      "bytes": 14475,
+      "sha256": "94b852ccf8803947b1be927339a97b4942099af8bd04d05d2de952c13cefef42"
+    },
+    {
+      "group": "release-review",
+      "file": "HANDOFF.json",
+      "bytes": 3097,
+      "sha256": "1237cabeda1dae6809e6a87616f3d8306593716f8873ed2973e0bcc1b15a9d56"
+    },
+    {
+      "group": "session-review",
+      "file": "HANDOFF.json",
+      "bytes": 4252,
+      "sha256": "2997e2cd452f2e6ff1a1f295faf23502723c1f3b27f445e909d0ea1cb2b1446f"
+    },
+    {
+      "group": "policies-review",
+      "file": "HANDOFF.json",
+      "bytes": 5031,
+      "sha256": "5c0dcc14f20b41d5c1a3e5b3a79428e366d506a3dd55fab7cd8dc76750f369a6"
+    },
+    {
+      "group": "session-review",
+      "file": "test_retirement_review.py",
+      "bytes": 5774,
+      "sha256": "a73610bd4d9a2c3f506ce0d87d423cf69a755011b68dc25beefa7eda33814d81"
+    },
+    {
+      "group": "session-review",
+      "file": "retirement-independent.json",
+      "bytes": 126738,
+      "sha256": "103836f90efdf360960fa3e8f055ed0187ff5a2e952841734469c7dc25884c65"
+    },
+    {
+      "group": "session-review",
+      "file": "retirement-independent.log",
+      "bytes": 500,
+      "sha256": "679b0947763220826420c91f740167b556eb76553e1eb1ee40ba85c405433262"
+    },
+    {
+      "group": "cpu-runner",
+      "file": "run_cpu.py",
+      "bytes": 3152,
+      "sha256": "ead13841cbbb7825f948ced64b265ebcba516bc9bec2932d9a881a0dddc5b7b8"
+    },
+    {
+      "group": "cpu-runner",
+      "file": "run_guarded.py",
+      "bytes": 617,
+      "sha256": "76adb2dc909ab05bd7e0978b16a9055d8ba0b167233f8d02675dfbff32886ac0"
+    }
+  ],
+  "private_original_access": "Retained under the run groups named above; request the original by group, filename and SHA-256. No original is removed.",
+  "reproduce": {
+    "from": "repository root with the documented driver dependencies",
+    "command": "PYTHONPATH=code python -m unittest -v tests.scheduling.test_shared_credit tests.scheduling.test_shared_credit_ray tests.scheduling.test_saor tests.scheduling.test_incremental_session tests.scheduling.test_multisession tests.scheduling.test_shared_compute tests.scheduling.test_input_preparation",
+    "real_Ray_in_test_module": "test_shared_credit_ray uses its existing in-process FakeRay; no actual Ray runtime."
+  },
+  "limits": [
+    "CPU fixtures only; no actual Ray, model, GPU, database or server runs.",
+    "No changes to default R, physical capacity, request trials, feedback scheduling, vLLM defaults, LOTUS semantics or baselines.",
+    "No performance result. Logical credits are not RSS or GPU limits.",
+    "Session, adaptive request control and the chain owner still need further focused simplification.",
+    "Main remains unmerged."
+  ],
+  "real_execution": {
+    "real_Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "servers": 0
+  },
+  "active_server_tasks_touched": false,
+  "main_merged": false
+}

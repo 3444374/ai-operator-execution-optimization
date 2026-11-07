@@ -1,0 +1,362 @@
+{
+  "schema": "semloom.ray_metrics_retirement.integration.v1",
+  "base": "f1c472cf7a6ec821a122faffe7758a1cd48a832c",
+  "source_candidate": "a8c7dd87912b048e2a43e30fcc181261cccf24e4",
+  "source_tree": "6ffa06b67d19bef61a2a7865d4531c3b91a0417c",
+  "component_source_candidate": "178c15741516aeba7750fbe05e610990ab30b8c8",
+  "component_source_tree": "9b379682eb63da01f556545669d32be8ad258102",
+  "CPU_reused_without_repeat": {
+    "baseline": {
+      "selected": 27,
+      "testsRun": 27,
+      "passed": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 0.27242283383384347,
+      "source_unchanged_during_suite": true,
+      "modules": [
+        "tests.observability.test_ray_scheduler_profile",
+        "tests.scheduling.test_ray_adapter"
+      ],
+      "raw_log": "baseline.log",
+      "raw_result": "baseline.json"
+    },
+    "candidate": {
+      "selected": 28,
+      "testsRun": 28,
+      "passed": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 0.25827658316120505,
+      "source_unchanged_during_suite": true,
+      "modules": [
+        "tests.observability.test_ray_scheduler_profile",
+        "tests.scheduling.test_ray_adapter"
+      ],
+      "raw_log": "candidate.log",
+      "raw_result": "candidate.json"
+    },
+    "final": {
+      "selected": 29,
+      "testsRun": 29,
+      "passed": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 1.7746667091269046,
+      "source_unchanged_during_suite": true,
+      "modules": [
+        "tests.observability.test_ray_scheduler_profile",
+        "tests.scheduling.test_ray_adapter",
+        "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes"
+      ],
+      "raw_log": "final.log",
+      "raw_result": "final.json"
+    }
+  },
+  "CPU_interpretation": {
+    "baseline": "27 项先在旧生产实现运行；此时已增加正常路径行为表征，没有加入旧字典拒绝用例。",
+    "candidate": "删除后 28 项通过，包含新增拒绝用例。",
+    "final": "修正末尾空行后，最终 29 项通过；包含同一套行为与一项完整历史树恢复。不把三次结果相加。",
+    "exact_source": "CPU runner 记录的 HEAD 为基底加未提交改动；逐文件 code SHA 与随后提交的候选相同。",
+    "candidate_matches_final_test_code_sha256": true,
+    "actual_services": "真实 Ray 初始化和 vLLM 导入由既有 runner 阻止；本批未运行真实 Ray、模型、网络服务、socket 或 sysctl。"
+  },
+  "source_identity": {
+    "recorded_files": 1020,
+    "component_mismatches": [],
+    "integrated_non_MD_mismatches": [],
+    "integrated_document_changes_only": [
+      "code/src/execution_provider/adapters/README.md"
+    ],
+    "reason": "The published parent adds only the corrected adapter README recovery link. Production, tests, fixtures, native manifest and historical source match the tested component.",
+    "full_test_source_manifest_sha256": "e82e52decbeac6603fcfcc417c2a83477f4d39566f527570964b08e40a95d1b8"
+  },
+  "history": {
+    "actual_full_projection_restore_in_final_CPU": true,
+    "restored_expected_files": 3010,
+    "projection_rows": [
+      {
+        "variant": "native_isolated_and_imlane",
+        "override": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "format": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "expected_sha256": "ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef",
+        "other_fields_unchanged": true,
+        "projection_id": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1"
+      },
+      {
+        "variant": "core_original_dynamic",
+        "override": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "format": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "expected_sha256": "ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef",
+        "other_fields_unchanged": true,
+        "projection_id": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71"
+      },
+      {
+        "variant": "core_local_window_pairs",
+        "override": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "format": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "expected_sha256": "ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef",
+        "other_fields_unchanged": true,
+        "projection_id": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6"
+      },
+      {
+        "variant": "ray_runtime_reuse",
+        "override": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "format": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "expected_sha256": "ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef",
+        "other_fields_unchanged": true,
+        "projection_id": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464"
+      },
+      {
+        "variant": "daft_single_thread_session",
+        "override": "historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+        "format": {
+          "encoding": "gzip",
+          "decoded_bytes": 17434,
+          "archive_sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe"
+        },
+        "expected_sha256": "ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef",
+        "other_fields_unchanged": true,
+        "projection_id": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+      }
+    ],
+    "component_manifest_identical": true,
+    "archive": {
+      "path": "experiments/reproduction/native_baselines/historical_sources/c5b49e85/code/src/scheduling/runtime/ray_adapter.py.gz",
+      "bytes": 4220,
+      "sha256": "c2f22f507191f2e5018f27a77f36924b854a4ec7fe32da7516729f675bc01abe",
+      "decoded_bytes": 17434,
+      "decoded_sha256": "ed88226891e5971d0904b31ca41d3fa684d381db23c5cfc94b8dfb134df37bef",
+      "decoded_matches_previous_runtime": true
+    },
+    "existing_ray_source_override_unchanged": true
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Core is code/src except experiments and baselines, including independent research. Wider is code/src plus code/scripts. Tests, figures, documents and historical copies excluded.",
+    "base": {
+      "core": {
+        "files": 257,
+        "physical_lines": 57278
+      },
+      "main_runtime": {
+        "files": 249,
+        "physical_lines": 54270
+      },
+      "research": {
+        "files": 8,
+        "physical_lines": 3008
+      },
+      "all_src": {
+        "files": 399,
+        "physical_lines": 90928
+      },
+      "scripts": {
+        "files": 102,
+        "physical_lines": 22167
+      },
+      "src_and_scripts": 113095,
+      "core_functions_over_100": 44
+    },
+    "candidate": {
+      "core": {
+        "files": 257,
+        "physical_lines": 57016
+      },
+      "main_runtime": {
+        "files": 249,
+        "physical_lines": 54008
+      },
+      "research": {
+        "files": 8,
+        "physical_lines": 3008
+      },
+      "all_src": {
+        "files": 399,
+        "physical_lines": 90666
+      },
+      "scripts": {
+        "files": 102,
+        "physical_lines": 22167
+      },
+      "src_and_scripts": 112833,
+      "core_functions_over_100": 44
+    },
+    "production_delta": -262,
+    "two_retirement_batches_delta_from_8a2b": -1041,
+    "core_delta_from_main": 2925,
+    "core_delta_from_3fd": -4612,
+    "src_and_scripts_delta_from_main": -27502,
+    "src_and_scripts_delta_from_3fd": -36812
+  },
+  "intentional_API_removal": {
+    "old_dictionary": "两个公开提交函数均拒绝不含 admission_gate/per_endpoint_gates 的非 None adaptive_config；不再把该字典用于旧 HTTP 轮询或静默改为 static。",
+    "old_symbol": "维护版不再导出或定义 RoundRobinSubmitter；历史版保留原类路径及准确字节。"
+  },
+  "preserved": [
+    "static 与 typed 全局/端点接纳",
+    "caller replay_envelopes 与单次消费",
+    "ActorSubmissionState 复用和实际 worker 轮转",
+    "远程任务参数、结果及指标 schema",
+    "shared metrics、flush、批反馈、现代请求策略和 SAOR",
+    "其他待发布候选及其工作树"
+  ],
+  "new_actual_Ray_model_GPU_database_server_operations": 0,
+  "remaining": [
+    "Default R=2, physical auto allocation and full query RSS are unresolved.",
+    "Shared BF16 and GPU memory ratio 0.8 defaults remain.",
+    "Current full real-model and quality qualification is not supplied.",
+    "Earlier restricted socket/process checks remain unverified.",
+    "The broader parallel-base CPU record still has its existing ACK AST assertion failure."
+  ],
+  "unique_selected_methods": 29,
+  "overlapping_runs_not_added": true,
+  "CPU_fixture_time_not_query_performance": true,
+  "size": {
+    "scope": "本批修改的三份 code/src 生产 Python；测试、manifest 和历史 gzip 单列，不代表整个项目总量。",
+    "production_files": [
+      {
+        "path": "code/src/observability/profiling/ray.py",
+        "before_lines": 670,
+        "after_lines": 451,
+        "net_lines": -219,
+        "sha256": "0b124d20d44a480912769f3aec611b95dab8eca22bbba79b5681967cd07e9fab"
+      },
+      {
+        "path": "code/src/scheduling/runtime/ray_adapter.py",
+        "before_lines": 479,
+        "after_lines": 437,
+        "net_lines": -42,
+        "sha256": "2fbe2f675309dd6c844a468458642b8967d6c2c9f0cff77d2e1d5bf595a5fa90"
+      },
+      {
+        "path": "code/src/scheduling/__init__.py",
+        "before_lines": 143,
+        "after_lines": 142,
+        "net_lines": -1,
+        "sha256": "934e067a39fc8f8accfcec6bc6024416903ca0a1860a2538ed78dd27b619f478"
+      }
+    ],
+    "production_net_lines": -262,
+    "test_files": [
+      {
+        "path": "code/tests/observability/test_ray_scheduler_profile.py",
+        "before_lines": 206,
+        "after_lines": 319,
+        "net_lines": 113,
+        "sha256": "473871d4d0c4d8e75e3530e3ebef64ae1116ce5b305d288f8926f974cd44ef2c"
+      }
+    ],
+    "test_net_lines": 113,
+    "all_text_net_lines": -119,
+    "historical_gzip_added_bytes": 4220
+  },
+  "figure_metadata": {
+    "kind": "Historical labelling only; no generator execution or export.",
+    "existing_images": [
+      {
+        "file": "figures/learning/request_shape_evolution.png",
+        "bytes": 250165,
+        "sha256": "a7377da081299d97c20c7a9d767bcaaaef99c188a1dd335ee04705de1c430b6a",
+        "identical_to_published_parent": true
+      },
+      {
+        "file": "figures/learning/request_shape_evolution@2x.png",
+        "bytes": 1470463,
+        "sha256": "b14e62cda42fe4019da297ce3f0c3c710ecca618adcd999afc34689a3ba104ec",
+        "identical_to_published_parent": true
+      }
+    ],
+    "generated_images": 0,
+    "new_visual_qualification": false,
+    "former_current_implementation_text_removed": true,
+    "script_syntax_parses": true
+  },
+  "independent_component_review_sha256": "91d1988c3f496beafe12bd19ea449c5d3e1a282c66428afa125b03033eadf72d",
+  "private_originals": {
+    "component/baseline.json": {
+      "bytes": 135367,
+      "sha256": "d183bfa21b99da161043858b54a24174801aef568cb4191dcdf7b3577b0252da"
+    },
+    "component/baseline.log": {
+      "bytes": 5106,
+      "sha256": "134f4034adc8247c29e60617bcf0b7ff9d9964dfae9fe156ff041f95a74ee949"
+    },
+    "component/candidate.json": {
+      "bytes": 135648,
+      "sha256": "317354f718a1a5fda9e317ed0f52395d7e580b22595436f0289e6cb83f6ae71b"
+    },
+    "component/candidate.log": {
+      "bytes": 5309,
+      "sha256": "0916259c53b226fcdb8c9f8487b7109ddd3752c2f0ea926641906344dd4fe542"
+    },
+    "component/final.json": {
+      "bytes": 136117,
+      "sha256": "c7dc991208b9512f3757361c4d7f8207ecc390ba648e02cc24fe940110157c9c"
+    },
+    "component/final.log": {
+      "bytes": 5542,
+      "sha256": "00b3999607af8ccf200acc9fa201b9b44efe795ff4a376114c56f3febafdd7e7"
+    },
+    "component/HANDOFF.json": {
+      "bytes": 7710,
+      "sha256": "2ab2bdea09b60e9cb9c6a9a917da9f0e316309910233e0e5646eb1e4a39a0b77"
+    },
+    "component/CODE_AND_HISTORY.json": {
+      "bytes": 1134,
+      "sha256": "a360e07f9aa58819ef76df059eae73b47a2eaeb53ca32482367a6ebec1347c2b"
+    },
+    "component/preliminary_diff_check.log": {
+      "bytes": 144,
+      "sha256": "4462bcd0e4f44956026412eac35d7253ae4b91ffc89285b9735fa0da1fc6d1ab"
+    },
+    "component/SECRET_SCAN.log": {
+      "bytes": 49,
+      "sha256": "5b86268c2f1306a2e376eab3d1ec0f2332cb607b28788313d0e58bf8faf6d39f"
+    },
+    "INTEGRATION_CHECKS.json": {
+      "bytes": 9343,
+      "sha256": "2a92631da5c2a56e07603316b835d76fccbab04f1994c1bdd60b4f3c0f2e9d53"
+    },
+    "FIGURE_METADATA_CHECKS.json": {
+      "bytes": 708,
+      "sha256": "64d27529effae7ce26354b2fb3af92ef76b162d2de15c6aa1fcc2390a3ae9386"
+    },
+    "CALL_GRAPH_AUDIT.json": {
+      "bytes": 14213,
+      "sha256": "2a4d8454cfa672e7a717e3776ff9fc8ac7faa882fdc92cf2be53f31e997581e8"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 2873,
+      "sha256": "91d1988c3f496beafe12bd19ea449c5d3e1a282c66428afa125b03033eadf72d"
+    },
+    "review/SOURCE-EVIDENCE.json": {
+      "bytes": 18387,
+      "sha256": "24ec396cb00bdc10b74ce24b2252380699475751709588e340328e5f055d3288"
+    }
+  },
+  "raw": {
+    "file": "ray_http_polling_retirement_raw.json.gz",
+    "bytes": 16578,
+    "sha256": "ef87f35873e146c53003f6e4194ee4921ff77fe27806c341cfdc34d7c1c1b695",
+    "decoded_sha256": "9d14d735fde85dc177c7ef4f29e00250ab18cc6a21344fba70dd65c51766d65e"
+  }
+}

@@ -21,16 +21,18 @@ import threading
 import time
 import uuid
 
-from src.semantic_methods.lotus.record_chain import (
-    LotusRecordChain, RecordOccurrence, stage_identity, _ordered_columns,
+from src.infrastructure.deadlines import deadline_after, deadline_expired
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import (
+    RecordOccurrence, _ordered_columns,
 )
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec
 
 
-from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
+from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch as FusedChainBatch
 from src.semantic_methods.lotus.record_results import (
-    ChainBatchResults, _json, _metadata, _source_binding, record_row,
+    ChainBatchResults, _json, _source_binding, record_row,
 )
 
 
@@ -49,7 +51,7 @@ class RayChainExecutionError(RuntimeError):
 def _check(deadline, control):
     if (Path(control) / "stop").exists():
         raise InterruptedError("Ray LOTUS chain cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("Ray LOTUS chain query deadline expired")
 
 
@@ -309,7 +311,7 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     resources = RecordsResources(**asdict(resources))
     if resources.cpu_workers != 1:
         raise ValueError("the fused Ray chain supports cpu_workers=1 only")
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
     if len({stage.method.model_name for stage in chain.stages}) != 1:
@@ -322,7 +324,7 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
             raise ValueError("streaming chain requires globally unique " + name)
     if chain.relation_barriers or columns is not None:
         columns = _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
-    if any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
+    if engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
     if cancelled is not None and cancelled():
@@ -336,7 +338,7 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
         raise ValueError("Ray LOTUS chain requires a single local Ray node")
     control = Path(tempfile.mkdtemp(prefix="ray-lotus-chain-", dir=control_dir))
     try:
-        from src.baselines.common.private_artifacts import require_outside_git
+        from src.infrastructure.private_artifacts import require_outside_git
 
         require_outside_git(control)
         os.chmod(control, 0o700)

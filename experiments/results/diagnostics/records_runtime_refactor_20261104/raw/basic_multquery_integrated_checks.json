@@ -1,0 +1,1554 @@
+{
+  "schema": "semloom.basic_multiquery_integration.v1",
+  "base": "8891c41b85e322fc83fb9fede4d27e466fb6654e",
+  "code_commit": "9cb0c02a8d6ec238edc1af58cae8f53134bb8c1b",
+  "code_tree": "990d22154572c21413011351f62e3c7159f70946",
+  "preferred_patch_base": "f2df243533c601741259e1f477caf69034c6b90e",
+  "preferred_patch_sha256": "5f5f51f6015658f88a030bca3f3f2e2bd9d1e84d48e33fc9852e6b47297427d7",
+  "source_integration": {
+    "base": "8891c41b85e322fc83fb9fede4d27e466fb6654e",
+    "patch_sha256": "5f5f51f6015658f88a030bca3f3f2e2bd9d1e84d48e33fc9852e6b47297427d7",
+    "candidate_python": [
+      {
+        "file": "code/src/execution_provider/adapters/image_execution.py",
+        "expected": "4d1143db9b4c6ed5f80b5483d58970265710590ba950ea760e75b5bfcf4c886e",
+        "actual": "4d1143db9b4c6ed5f80b5483d58970265710590ba950ea760e75b5bfcf4c886e",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/execution_provider/adapters/incremental_execution.py",
+        "expected": "55781cdd90229fd2363de24be22a24566486e7c0a3107e9bcdce73f370c44e5e",
+        "actual": "55781cdd90229fd2363de24be22a24566486e7c0a3107e9bcdce73f370c44e5e",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/execution_provider/server.py",
+        "expected": "f58f32f1337bbf577d8dacbec8179bef26646cedb9a9994061678ecadc35c02b",
+        "actual": "f58f32f1337bbf577d8dacbec8179bef26646cedb9a9994061678ecadc35c02b",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/experiments/gateway_isolation_probe.py",
+        "expected": "c09490018aeec96b02fa9c88358f238e129337306d3698b3e104a15f20bf9a80",
+        "actual": "c09490018aeec96b02fa9c88358f238e129337306d3698b3e104a15f20bf9a80",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/observability/profiling/ray.py",
+        "expected": "ea459a9d8e139a4fb3af3d95e7a14cee04bd92df8acfda81368bc86fdcbda75a",
+        "actual": "ea459a9d8e139a4fb3af3d95e7a14cee04bd92df8acfda81368bc86fdcbda75a",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/observability/profiling/ray_scheduler.py",
+        "expected": "868dd4617f36d5a3c715c665aebfcb4962c7d578f400c3baa58cfcf28d8252e0",
+        "actual": "868dd4617f36d5a3c715c665aebfcb4962c7d578f400c3baa58cfcf28d8252e0",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/interfaces.py",
+        "expected": "1b7a1b260c05e47d4f48e9f0ec70b3759d3c5fe97fe52aeadce3038561f69edc",
+        "actual": "1b7a1b260c05e47d4f48e9f0ec70b3759d3c5fe97fe52aeadce3038561f69edc",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/ordered_release.py",
+        "expected": "f7e2d4574e47e1d2a1b131444f3ed7a252c28004dad5731c73b4a93efc7ef6ba",
+        "actual": "f7e2d4574e47e1d2a1b131444f3ed7a252c28004dad5731c73b4a93efc7ef6ba",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/saor.py",
+        "expected": "d67c0f402740c22a44b641c2de6bf910f5ef4e4feebcf0acdb9ae00d7221e6b5",
+        "actual": "d67c0f402740c22a44b641c2de6bf910f5ef4e4feebcf0acdb9ae00d7221e6b5",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/saor_capacity.py",
+        "expected": "2b9c7ac323b482eb9e7411b996bd3c94968e5a199b9819655755f118ef45b2d4",
+        "actual": "2b9c7ac323b482eb9e7411b996bd3c94968e5a199b9819655755f118ef45b2d4",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/semloom/__init__.py",
+        "expected": "95183e12365aded426835b0713bfe325dc373a38324cee5a2db58b2d91f8514d",
+        "actual": "95183e12365aded426835b0713bfe325dc373a38324cee5a2db58b2d91f8514d",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/semloom/gateway.py",
+        "expected": "19f9635c82f22cc8d713d36ecd0323241bb2b78b89de603dc3c73dab8439164a",
+        "actual": "19f9635c82f22cc8d713d36ecd0323241bb2b78b89de603dc3c73dab8439164a",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/semloom/ready_window.py",
+        "expected": "5d81ab7d34665214049453f6d37f6f5c25ce13fda87ffbaac53a985bca141857",
+        "actual": "5d81ab7d34665214049453f6d37f6f5c25ce13fda87ffbaac53a985bca141857",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/semloom/scheduler.py",
+        "expected": "bda67db4ac2a486b136d244e8dade41e5dfbb5d9ab707dd25fbcfc4d9fbf4f7c",
+        "actual": "bda67db4ac2a486b136d244e8dade41e5dfbb5d9ab707dd25fbcfc4d9fbf4f7c",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/semloom/scheduler_types.py",
+        "expected": "c37741376c4fd5066871a202deb9bd2f954b47c61882a94db9345dbe655f5b42",
+        "actual": "c37741376c4fd5066871a202deb9bd2f954b47c61882a94db9345dbe655f5b42",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/research/multitask/semloom/session.py",
+        "expected": "cf9a4a78e861fba4249ebf695f986d72b642d5f0d9604bb6881f540ec25f1a0c",
+        "actual": "487a3d30894cf599f90f711386b09b1b3a0880f31b5769ec9f936ca47a9d8fbf",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/scheduling/__init__.py",
+        "expected": "7d14f86bcf89075de111b43ea1929dd8075ddbc0be085692a4bdd1d2a8e82502",
+        "actual": "7d14f86bcf89075de111b43ea1929dd8075ddbc0be085692a4bdd1d2a8e82502",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/scheduling/core/ready_window.py",
+        "expected": null,
+        "actual": null,
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/scheduling/core/scheduler.py",
+        "expected": "53733593d501fed49bc1597436e8d450ccb1af0cecf4e4602033965d3befa449",
+        "actual": "53733593d501fed49bc1597436e8d450ccb1af0cecf4e4602033965d3befa449",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/scheduling/core/scheduler_types.py",
+        "expected": "dbdd5612b05c46d9f2026b3ec72aa011e9fdbe9da2689e1a4230959315d36494",
+        "actual": "dbdd5612b05c46d9f2026b3ec72aa011e9fdbe9da2689e1a4230959315d36494",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/scheduling/core/session.py",
+        "expected": "10334d2449545163020364d39be5aa12900e148600e1427d06052be3525e1ae6",
+        "actual": "10334d2449545163020364d39be5aa12900e148600e1427d06052be3525e1ae6",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/src/scheduling/core/session_jobs.py",
+        "expected": "ab4af2925c95b99d2fbe535c1dce9cb2d0cdec1c5499765cd5b6a0ef2c0c18f0",
+        "actual": "ab4af2925c95b99d2fbe535c1dce9cb2d0cdec1c5499765cd5b6a0ef2c0c18f0",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/architecture/test_architecture_boundaries.py",
+        "expected": "e9407b82d5087896da710fc00c1afb26341413e7aa5c696b7ea1a5957937b30f",
+        "actual": "e9407b82d5087896da710fc00c1afb26341413e7aa5c696b7ea1a5957937b30f",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_image_gateway.py",
+        "expected": "9510c283b87758ca2828c7da30594d8b2df7ce7ba3e7d18934bffbc9b2ebe32a",
+        "actual": "9510c283b87758ca2828c7da30594d8b2df7ce7ba3e7d18934bffbc9b2ebe32a",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_image_pg_integration.py",
+        "expected": "bf0bbb6c5ce6c97d317ea4d50eade49f7167be2f2005965ad4b6d2f9823f4c9e",
+        "actual": "bf0bbb6c5ce6c97d317ea4d50eade49f7167be2f2005965ad4b6d2f9823f4c9e",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_multisession_gateway.py",
+        "expected": "865e67d9a3fdf4de426f82dcd59dc49bd5ebbc8065e4a6cf21ece722ea1a83ae",
+        "actual": "865e67d9a3fdf4de426f82dcd59dc49bd5ebbc8065e4a6cf21ece722ea1a83ae",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_native_tasks.py",
+        "expected": "bf22451a7e1deb63fef3c5bd9592a83b07deee38283580c9c8d584facd515d0a",
+        "actual": "bf22451a7e1deb63fef3c5bd9592a83b07deee38283580c9c8d584facd515d0a",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_query_registration.py",
+        "expected": "8812f8e1d28d81840e58f306ff35ef0626d8141c45ff8dd6367bf53df4cdbffc",
+        "actual": "8812f8e1d28d81840e58f306ff35ef0626d8141c45ff8dd6367bf53df4cdbffc",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_shared_query_gateway.py",
+        "expected": null,
+        "actual": null,
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/observability/test_ray_scheduler_profile.py",
+        "expected": "bd36a6c9d86f0777161682dd403203462590c9fde9771de71f26e67b92272e77",
+        "actual": "bd36a6c9d86f0777161682dd403203462590c9fde9771de71f26e67b92272e77",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_profiler_integration.py",
+        "expected": null,
+        "actual": null,
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_ready_window.py",
+        "expected": "cbe99bd28433962119466c7791d9e0806e24e152d4e1957abbb6e19d02ac5c8b",
+        "actual": "cbe99bd28433962119466c7791d9e0806e24e152d4e1957abbb6e19d02ac5c8b",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_saor.py",
+        "expected": "bb688326e9eda031067babe7a7ebf0bce85f443bc5ab57eb398e284729e5ffe3",
+        "actual": "bb688326e9eda031067babe7a7ebf0bce85f443bc5ab57eb398e284729e5ffe3",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_scheduler.py",
+        "expected": "e343f4a3a46a0baabac31e111e81ab62d70dd0ebbfc5baf787de509639605fee",
+        "actual": "e343f4a3a46a0baabac31e111e81ab62d70dd0ebbfc5baf787de509639605fee",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_shared_compute.py",
+        "expected": "3e5eae10b2ae414b284e6d999622bc8edcd23f02180f0d804057700589bb6b0a",
+        "actual": "3e5eae10b2ae414b284e6d999622bc8edcd23f02180f0d804057700589bb6b0a",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_shared_credit_ray.py",
+        "expected": "6378afcd864a0e330c6857c92b1e90a42a0295992e51f01354f507ed6137a480",
+        "actual": "6378afcd864a0e330c6857c92b1e90a42a0295992e51f01354f507ed6137a480",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/research/multitask/test_shared_query_gateway.py",
+        "expected": "0502e4f9cb21f7306b84cfe077c2047f9cf2e240237eac60049ad846f999717d",
+        "actual": "0502e4f9cb21f7306b84cfe077c2047f9cf2e240237eac60049ad846f999717d",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_async_backend.py",
+        "expected": "acfa05d1bc884ec3264a41084fa77aaf848c39faafb921a0e74e6ee8a47688ed",
+        "actual": "acfa05d1bc884ec3264a41084fa77aaf848c39faafb921a0e74e6ee8a47688ed",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_batch_dispatch_snapshot.py",
+        "expected": "ee0f9a0a3ed96488d45aeacb366e4304fe22d727ffa7d53b7fbdf3b8dc4f88de",
+        "actual": "ee0f9a0a3ed96488d45aeacb366e4304fe22d727ffa7d53b7fbdf3b8dc4f88de",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_capacity_wait.py",
+        "expected": "27b0f4babb9e94b5a63eccffea51079f56d1acae5cdf5feda67a14d799967bb4",
+        "actual": "27b0f4babb9e94b5a63eccffea51079f56d1acae5cdf5feda67a14d799967bb4",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_method_driver.py",
+        "expected": "8b2a90b638b6f664506f0777cd91c7d150edd938720efd717c01a7844080e453",
+        "actual": "8b2a90b638b6f664506f0777cd91c7d150edd938720efd717c01a7844080e453",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_multisession.py",
+        "expected": "f61d3bfab3a544e39126f9d130cf1769a49df724252db19395caf2ffa3046e2e",
+        "actual": "f61d3bfab3a544e39126f9d130cf1769a49df724252db19395caf2ffa3046e2e",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_ready_window.py",
+        "expected": null,
+        "actual": null,
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_scheduler.py",
+        "expected": "56143e5321c6ba5c827b2d89913c25c3ce873f8219473a7b31fa116d9348f77b",
+        "actual": "56143e5321c6ba5c827b2d89913c25c3ce873f8219473a7b31fa116d9348f77b",
+        "matches_except_trailing_blank": true
+      },
+      {
+        "file": "code/tests/scheduling/test_shared_compute.py",
+        "expected": null,
+        "actual": null,
+        "matches_except_trailing_blank": true
+      }
+    ],
+    "unchanged_prior_files": [
+      {
+        "file": "code/integrations/imlane_duckdb/README.md",
+        "same": true
+      },
+      {
+        "file": "code/integrations/imlane_records/cascade_udf.py",
+        "same": true
+      },
+      {
+        "file": "code/integrations/imlane_records/chain_host.py",
+        "same": true
+      },
+      {
+        "file": "code/integrations/imlane_records/chain_workload.py",
+        "same": true
+      },
+      {
+        "file": "code/integrations/imlane_records/filter_udf.py",
+        "same": true
+      },
+      {
+        "file": "code/integrations/imlane_records/filter_workload.py",
+        "same": true
+      },
+      {
+        "file": "code/integrations/imlane_records/model_lifecycle.py",
+        "same": true
+      },
+      {
+        "file": "code/src/baselines/README.md",
+        "same": true
+      },
+      {
+        "file": "code/src/baselines/text/frameworks/daft_engine_process.py",
+        "same": true
+      },
+      {
+        "file": "code/src/baselines/text/frameworks/lotus_cascade_process.py",
+        "same": true
+      },
+      {
+        "file": "code/src/baselines/text/frameworks/lotus_chain_batch.py",
+        "same": true
+      },
+      {
+        "file": "code/src/baselines/text/frameworks/lotus_chain_engine_process.py",
+        "same": true
+      },
+      {
+        "file": "code/src/baselines/text/frameworks/lotus_chain_results.py",
+        "same": true
+      },
+      {
+        "file": "code/src/experiments/movie_records_session.py",
+        "same": true
+      },
+      {
+        "file": "code/src/observability/native_query_timing.py",
+        "same": true
+      },
+      {
+        "file": "code/src/serving/backends/vllm_engine.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/baselines/text/test_daft_native_session.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/execution_provider/chain_index_fixture.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_lotus_chain_token_budget.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_lotus_record_local_query.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_lotus_records_async_core.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_lotus_request_frame_metering.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/execution_provider/test_lotus_rpc_capacity.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/infrastructure/test_owned_processes.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/observability/test_supervised_process_resources.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/semantic_methods/test_lotus_chain_composition.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/semantic_methods/test_lotus_chain_composition_oracle.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/semantic_methods/test_lotus_record_results.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/serving/staged_generation_cpu_engine.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/serving/test_shared_chain_migration.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/serving/test_sync_process_migration.py",
+        "same": true
+      },
+      {
+        "file": "code/tests/serving/test_vllm_protocol_imports.py",
+        "same": true
+      },
+      {
+        "file": "experiments/plans/原生基线校准.md",
+        "same": true
+      },
+      {
+        "file": "experiments/reproduction/native_baselines/README.md",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/README.md",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/README.md",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_cpu_check.py",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_repair.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_repair.patch",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/ipc_components.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/ipc_server_cpu.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/preparation.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/imlane_duckdb_q3_20261106/startup_shm_failure.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/baseline_worker_forwarders_retirement_checks.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/global_entry_observation_server_4d_receipt.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/protocol_reexports_cleanup_checks.json",
+        "same": true
+      },
+      {
+        "file": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/query_clock_duplicate_cleanup_checks.json",
+        "same": true
+      }
+    ],
+    "all_python_parsed": 1022,
+    "checked_tree_commit": "2f8dc94f92ac12bc0bb990af8be6dec22b22ab43"
+  },
+  "documents": {
+    "PROJECT_LOG.md": {
+      "ours_sha256": "8a3c1235817bba65c4691d1868d423088adb63f506fea01052b8c8eb16bffc44",
+      "theirs_sha256": "141980d7c3eac013c0052e1b2dae2cb17be74a07923d0189ab7eedf528f3f785",
+      "order": "new-first",
+      "both_sections_retained": true
+    },
+    "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md": {
+      "ours_sha256": "6f0e54ab040d3f5a4f9af80d40cd965982f5fc8d99c80146873d65dee4381f3c",
+      "theirs_sha256": "9358c8245f85b5e40e47a75bc1602e3d7df1f1eacaa6869ac3ffcef2bf7aad93",
+      "order": "new-first",
+      "both_sections_retained": true
+    },
+    "experiments/results/diagnostics/records_runtime_refactor_20261104/README.md": {
+      "ours_sha256": "543fc1094a574ae2b5ad07a5def37944deb9fb0847e5af256ded24f27a21875c",
+      "theirs_sha256": "9f9a7c7cd86f40862e109936c98685f83a1c3452444b4cddbf3b9ba879f0ee35",
+      "order": "old-first",
+      "both_sections_retained": true
+    },
+    "trailing_blank_cleanup": {
+      "file": "code/src/research/multitask/semloom/session.py",
+      "removed_chars": 1
+    }
+  },
+  "regression": {
+    "source_commit": "2f8dc94f92ac12bc0bb990af8be6dec22b22ab43",
+    "selected": 860,
+    "passed": 832,
+    "unpassed_methods": [
+      "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_blocked_result_send_keeps_method_reservation_after_core_release",
+      "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_invalid_payload_fails_without_worker_submission",
+      "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_method_failure_can_close_its_session_without_stopping_shared_service",
+      "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_slow_consumer_keeps_results_charged_and_other_job_can_finish",
+      "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_sync_and_staged_use_identical_result_bytes",
+      "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_injected_execution_uses_alternative_work_and_selection",
+      "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_invalid_backend_output_reports_error_and_releases_resources",
+      "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_permanent_item_rejection_is_a_wire_error_not_retryable_ack",
+      "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_result_budget_limits_intake_independently_of_request_capacity",
+      "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_two_inflight_reverse_completion_rejection_and_resubmission",
+      "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_consecutive_queries_share_engine_and_keep_task_identity",
+      "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_disconnect_retains_credit_until_authoritative_response",
+      "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_invalid_response_returns_error_and_releases_lease",
+      "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_pipelined_rpc_is_rejected_without_releasing_remote_credit",
+      "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_unknown_result_retains_job_capacity",
+      "tests.execution_provider.test_map_organization.MapOrganizationTests.test_context_rejection_and_inflight_disconnect_settle_before_next_query",
+      "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_concurrent_connections_share_capacity_and_keep_results",
+      "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_execution_policy_owns_job_grants",
+      "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_full_input_and_pending_registration_do_not_block_other_job",
+      "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_identified_model_timeout_is_local_and_keeps_unknown_credit",
+      "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_one_job_reuses_service_loop_and_recovers_for_next_connection",
+      "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_slow_send_retains_lease_while_other_job_runs",
+      "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_insufficient_query_storage_rejected_before_any_backend_call",
+      "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_invalid_membership_cannot_cancel_owner_or_other_query",
+      "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_one_grant_survives_gap_between_operator_connections",
+      "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_query_cancel_retains_remote_credit_and_other_query_progresses",
+      "tests.research.multitask.test_shared_query_gateway.SharedQueryGatewayTests.test_idle_queries_and_slow_consumer_do_not_strand_compute"
+    ],
+    "skipped": [
+      {
+        "id": "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_kernel_peer_identity",
+        "reason": "Linux peer credential test",
+        "scope": "method"
+      }
+    ],
+    "error_records_including_subtests": 32,
+    "assertion_failures": 0,
+    "elapsed_s": 4.5080308329779655,
+    "source_unchanged_during_run": true,
+    "capture_files": 1074,
+    "original_result_sha256": "306e9fc934e9789bc76fe33c9a780b0355dd005e954a6bd332364723ef4e28a4",
+    "original_log_sha256": "9bf478d171d39257f07c8c8274ab920e899b97d2608148e4aaa261ce22441090",
+    "selector_file_sha256": "815a5145e6a732295f3e857794865099c9b84f63cb2d1639ad637c73c388250a"
+  },
+  "later_changes": {
+    "source_differences_from_main_run": [
+      {
+        "file": "code/src/research/multitask/semloom/gateway.py",
+        "tested_sha256": "19f9635c82f22cc8d713d36ecd0323241bb2b78b89de603dc3c73dab8439164a",
+        "current_sha256": "406f45e32ecf680eee43e7ad671197d76b5275c1d380a73ada919323155efa91"
+      },
+      {
+        "file": "code/tests/execution_provider/test_image_gateway.py",
+        "tested_sha256": "9510c283b87758ca2828c7da30594d8b2df7ce7ba3e7d18934bffbc9b2ebe32a",
+        "current_sha256": "e670a44f7f3f881525fc453cf71015e37884f6a94aa4dd9f81c16040b6f2d9e8"
+      },
+      {
+        "file": "code/tests/research/multitask/test_scheduler.py",
+        "tested_sha256": "e343f4a3a46a0baabac31e111e81ab62d70dd0ebbfc5baf787de509639605fee",
+        "current_sha256": "5906719e3abdb65e9911a50431c990b9c35481a7d7859e28f1f23a5e7e1683ca"
+      },
+      {
+        "file": "code/tests/research/multitask/test_shared_query_gateway.py",
+        "tested_sha256": "0502e4f9cb21f7306b84cfe077c2047f9cf2e240237eac60049ad846f999717d",
+        "current_sha256": "e20783e3107b5565557df2c1a3a0ba2d162f66da806993488d960b613ca7cdf4"
+      }
+    ],
+    "policy_code_commit": "1f8d8035d3a2d944554c29cde6695f2e4d0b286c",
+    "policy_methods": [
+      "tests.research.multitask.test_shared_query_gateway.SharedQueryGatewayTests.test_shared_cli_requires_incremental_execution",
+      "tests.research.multitask.test_shared_query_gateway.SharedQueryGatewayTests.test_research_cli_selects_existing_policy_and_forwards_transport_options"
+    ],
+    "policy_passed": 2,
+    "handoff_code_commit": "9cb0c02a8d6ec238edc1af58cae8f53134bb8c1b",
+    "handoff_methods": [
+      "tests.research.multitask.test_scheduler.SharedCreditSchedulerTests.test_shared_credit_is_acquired_before_submit_and_released_after"
+    ],
+    "handoff_passed": 1,
+    "handoff_subcases": [
+      "completed",
+      "wait-error",
+      "wrong-handle"
+    ],
+    "fixture_startup_probe": {
+      "source_commit": "1f8d8035d3a2d944554c29cde6695f2e4d0b286c",
+      "fixture_sha256": "e670a44f7f3f881525fc453cf71015e37884f6a94aa4dd9f81c16040b6f2d9e8",
+      "passed": true,
+      "elapsed_s": 0.016180125065147877,
+      "simulated_bind_only": true,
+      "real_socket_bind_calls": 0,
+      "same_exception_object": true,
+      "owned_threads_returned_to_start": true,
+      "failure": null,
+      "actual_models": 0,
+      "actual_Ray": 0
+    }
+  },
+  "independent_import_probe": {
+    "source_kind": "projection of captured command stdout; full stdout remains in this task record",
+    "source_commit": "1f8d8035d3a2d944554c29cde6695f2e4d0b286c",
+    "selected": [
+      "tests.scheduling.test_multisession.SingleQueryFlowTests.test_one_query_rotates_operator_flows_and_keeps_one_storage_grant",
+      "tests.scheduling.test_multisession.SingleQueryFlowTests.test_basic_multiple_jobs_use_declared_shares_without_research",
+      "tests.scheduling.test_multisession.MultiSessionTests.test_cancelling_one_job_keeps_late_work_and_other_job_live",
+      "tests.scheduling.test_multisession.MultiSessionTests.test_identified_uncertainty_does_not_poison_other_job",
+      "tests.scheduling.test_multisession.MultiSessionTests.test_late_invalid_result_has_job_scope_after_session_close",
+      "tests.execution_provider.test_native_tasks.NativeTaskTests.test_query_cancel_leaves_other_query_job_and_remote_work_independent"
+    ],
+    "testsRun": 6,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "loaded_research": [],
+    "loaded_model_runtimes": []
+  },
+  "raw_runs": {
+    "file": "basic_multquery_integrated_runs.json.gz",
+    "sha256": "8167b267f441c8f102d9ddda1c9b1262da5c5abfcf6047397f5ec680e6d82b51",
+    "original_files_remain_private": true
+  },
+  "size": {
+    "base": "8891c41b85e322fc83fb9fede4d27e466fb6654e",
+    "head": "9cb0c02a8d6ec238edc1af58cae8f53134bb8c1b",
+    "base_counts": {
+      "core_python": 56253,
+      "src_and_scripts_python": 109558,
+      "tests_python": 98376,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "current": {
+      "core_python": 56279,
+      "src_and_scripts_python": 109584,
+      "tests_python": 98525,
+      "integrations_python_cpp_hpp": 6758
+    },
+    "delta_base": {
+      "core_python": 26,
+      "src_and_scripts_python": 26,
+      "tests_python": 149,
+      "integrations_python_cpp_hpp": 0
+    },
+    "fixed_reference_counts": {
+      "main_6a8a": {
+        "core_python": 54091,
+        "src_and_scripts_python": 140335,
+        "tests_python": 102763,
+        "integrations_python_cpp_hpp": 4521
+      },
+      "cleanup_3fd": {
+        "core_python": 61628,
+        "src_and_scripts_python": 149645,
+        "tests_python": 130062,
+        "integrations_python_cpp_hpp": 4528
+      }
+    },
+    "deltas": {
+      "main_6a8a": {
+        "core_python": 2188,
+        "src_and_scripts_python": -30751,
+        "tests_python": -4238,
+        "integrations_python_cpp_hpp": 2237
+      },
+      "cleanup_3fd": {
+        "core_python": -5349,
+        "src_and_scripts_python": -40061,
+        "tests_python": -31537,
+        "integrations_python_cpp_hpp": 2230
+      }
+    },
+    "core_files_over_1000": [],
+    "unit": "physical Python lines including comments and blanks; core excludes experiments and baselines, includes research; tests and integrations separate"
+  },
+  "pending_server_methods": [
+    "tests.research.multitask.test_shared_query_gateway.SharedQueryGatewayTests.test_idle_queries_and_slow_consumer_do_not_strand_compute",
+    "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_concurrent_connections_share_capacity_and_keep_results",
+    "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_execution_policy_owns_job_grants",
+    "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_full_input_and_pending_registration_do_not_block_other_job",
+    "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_identified_model_timeout_is_local_and_keeps_unknown_credit",
+    "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_one_job_reuses_service_loop_and_recovers_for_next_connection",
+    "tests.execution_provider.test_multisession_gateway.MultiSessionGatewayTests.test_slow_send_retains_lease_while_other_job_runs",
+    "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_insufficient_query_storage_rejected_before_any_backend_call",
+    "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_invalid_membership_cannot_cancel_owner_or_other_query",
+    "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_one_grant_survives_gap_between_operator_connections",
+    "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_query_cancel_retains_remote_credit_and_other_query_progresses",
+    "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_blocked_result_send_keeps_method_reservation_after_core_release",
+    "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_invalid_payload_fails_without_worker_submission",
+    "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_method_failure_can_close_its_session_without_stopping_shared_service",
+    "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_slow_consumer_keeps_results_charged_and_other_job_can_finish",
+    "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_sync_and_staged_use_identical_result_bytes",
+    "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_injected_execution_uses_alternative_work_and_selection",
+    "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_invalid_backend_output_reports_error_and_releases_resources",
+    "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_permanent_item_rejection_is_a_wire_error_not_retryable_ack",
+    "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_result_budget_limits_intake_independently_of_request_capacity",
+    "tests.execution_provider.test_incremental_session.IncrementalSessionTests.test_two_inflight_reverse_completion_rejection_and_resubmission",
+    "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_consecutive_queries_share_engine_and_keep_task_identity",
+    "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_disconnect_retains_credit_until_authoritative_response",
+    "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_invalid_response_returns_error_and_releases_lease",
+    "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_pipelined_rpc_is_rejected_without_releasing_remote_credit",
+    "tests.execution_provider.test_incremental_window_one.IncrementalWindowOneTests.test_unknown_result_retains_job_capacity",
+    "tests.execution_provider.test_map_organization.MapOrganizationTests.test_context_rejection_and_inflight_disconnect_settle_before_next_query",
+    "tests.execution_provider.test_query_registration.QueryRegistrationTests.test_kernel_peer_identity"
+  ],
+  "unchanged_scopes": [
+    "Session global capacity/dispatch/flow ownership",
+    "records resident sequential query guard",
+    "preparation/organization single Job checks",
+    "vLLM defaults and native baseline parameters",
+    "375 IMLane repair and earlier clock/protocol/forwarder cleanup"
+  ],
+  "actual_models": 0,
+  "actual_Ray": 0,
+  "GPU_runs": 0,
+  "main_merges": 0,
+  "historical_sources": {
+    "initial": {
+      "source_commit": "9cb0c02a8d6ec238edc1af58cae8f53134bb8c1b",
+      "base": "8891c41b85e322fc83fb9fede4d27e466fb6654e",
+      "variants": 5,
+      "affected_paths": 49,
+      "successful_reads": [
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_existing_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/execution_provider/server.py",
+          "from_existing_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_existing_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_existing_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/__init__.py",
+          "from_existing_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_existing_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/session.py",
+          "from_existing_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_existing_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_existing_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_existing_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/execution_provider/server.py",
+          "from_existing_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_existing_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_existing_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/__init__.py",
+          "from_existing_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_existing_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/session.py",
+          "from_existing_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_existing_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_existing_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_existing_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/execution_provider/server.py",
+          "from_existing_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_existing_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_existing_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/__init__.py",
+          "from_existing_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_existing_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/session.py",
+          "from_existing_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_existing_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_existing_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_existing_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/execution_provider/server.py",
+          "from_existing_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_existing_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_existing_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/__init__.py",
+          "from_existing_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_existing_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/session.py",
+          "from_existing_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_existing_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_existing_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_existing_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/execution_provider/server.py",
+          "from_existing_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_existing_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_existing_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/__init__.py",
+          "from_existing_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_existing_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/session.py",
+          "from_existing_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_existing_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_existing_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        }
+      ],
+      "errors": [
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "error": "reproduction source differs: code/src/execution_provider/adapters/image_execution.py",
+          "expected_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "original_revision": "snapshot:sha256:67d6f8018f89501c9a282bcbf770d1395e7eedd431a88099e1e681a02da156c2",
+          "base_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "error": "reproduction source differs: code/src/scheduling/core/ready_window.py",
+          "expected_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "original_revision": "snapshot:sha256:67d6f8018f89501c9a282bcbf770d1395e7eedd431a88099e1e681a02da156c2",
+          "base_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "error": "reproduction source differs: code/src/scheduling/core/session_jobs.py",
+          "expected_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "original_revision": "snapshot:sha256:67d6f8018f89501c9a282bcbf770d1395e7eedd431a88099e1e681a02da156c2",
+          "base_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "error": "reproduction source differs: code/src/execution_provider/adapters/image_execution.py",
+          "expected_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "original_revision": "snapshot:sha256:79e8f10349cff6b754a299c39982731da0cf023997f28ce5f3b52b1aa9da8eb3",
+          "base_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "error": "reproduction source differs: code/src/scheduling/core/ready_window.py",
+          "expected_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "original_revision": "snapshot:sha256:79e8f10349cff6b754a299c39982731da0cf023997f28ce5f3b52b1aa9da8eb3",
+          "base_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "error": "reproduction source differs: code/src/scheduling/core/session_jobs.py",
+          "expected_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "original_revision": "snapshot:sha256:79e8f10349cff6b754a299c39982731da0cf023997f28ce5f3b52b1aa9da8eb3",
+          "base_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "error": "reproduction source differs: code/src/execution_provider/adapters/image_execution.py",
+          "expected_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "original_revision": "snapshot:sha256:5007e95b37703458acd5ea3af9731d19240eeb6fe1a4239e196075ab5a10742d",
+          "base_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "error": "reproduction source differs: code/src/scheduling/core/ready_window.py",
+          "expected_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "original_revision": "snapshot:sha256:5007e95b37703458acd5ea3af9731d19240eeb6fe1a4239e196075ab5a10742d",
+          "base_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "error": "reproduction source differs: code/src/scheduling/core/session_jobs.py",
+          "expected_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "original_revision": "snapshot:sha256:5007e95b37703458acd5ea3af9731d19240eeb6fe1a4239e196075ab5a10742d",
+          "base_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "error": "reproduction source differs: code/src/execution_provider/adapters/image_execution.py",
+          "expected_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "original_revision": "snapshot:sha256:e7090055b0f475e314380e0cb23e7f85ef6b294f8dd7c3cbc79247a32915f28c",
+          "base_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "error": "reproduction source differs: code/src/scheduling/core/ready_window.py",
+          "expected_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "original_revision": "snapshot:sha256:e7090055b0f475e314380e0cb23e7f85ef6b294f8dd7c3cbc79247a32915f28c",
+          "base_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "error": "reproduction source differs: code/src/scheduling/core/session_jobs.py",
+          "expected_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "original_revision": "snapshot:sha256:e7090055b0f475e314380e0cb23e7f85ef6b294f8dd7c3cbc79247a32915f28c",
+          "base_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "error": "reproduction source differs: code/src/execution_provider/adapters/image_execution.py",
+          "expected_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "original_revision": "snapshot:sha256:65114360117229ee9b76ad04d4db52f87b4f51355df8212dc138c7a91b75a61f",
+          "base_sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "error": "reproduction source differs: code/src/scheduling/core/ready_window.py",
+          "expected_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "original_revision": "snapshot:sha256:65114360117229ee9b76ad04d4db52f87b4f51355df8212dc138c7a91b75a61f",
+          "base_sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "base_matches_expected": true,
+          "existing_override": null
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "error": "reproduction source differs: code/src/scheduling/core/session_jobs.py",
+          "expected_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "original_revision": "snapshot:sha256:65114360117229ee9b76ad04d4db52f87b4f51355df8212dc138c7a91b75a61f",
+          "base_sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "base_matches_expected": true,
+          "existing_override": null
+        }
+      ],
+      "absent_pairs_not_failures": 185,
+      "manifest_sha256": "1003097fbedeb89dd32be7dabd844ad904d9aa82a65b13b08e9f8226a79b5c0a",
+      "full_materialization_repeated": false,
+      "models_started": 0
+    },
+    "repair": {
+      "source_commit": "8891c41b85e322fc83fb9fede4d27e466fb6654e",
+      "initial_failed_reads": 15,
+      "archives": {
+        "code/src/execution_provider/adapters/image_execution.py": {
+          "relative_archive": "historical_sources/8891c41b/code/src/execution_provider/adapters/image_execution.py.gz",
+          "decoded_bytes": 8015,
+          "sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a",
+          "archive_sha256": "b8df3977c61bdd7f2da0edcf191ef8d7a128551137deaf911fd596a9c58ab55d"
+        },
+        "code/src/scheduling/core/ready_window.py": {
+          "relative_archive": "historical_sources/8891c41b/code/src/scheduling/core/ready_window.py.gz",
+          "decoded_bytes": 4551,
+          "sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475",
+          "archive_sha256": "8a2e41af63db5d38d1e906365415ae605023f323610de67c9e2c2c83bd17e0cf"
+        },
+        "code/src/scheduling/core/session_jobs.py": {
+          "relative_archive": "historical_sources/8891c41b/code/src/scheduling/core/session_jobs.py.gz",
+          "decoded_bytes": 5136,
+          "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5",
+          "archive_sha256": "1a374a99e89a3408aeb955361bec7d5a9f4709747bb7b6284313f2585d1d52ce"
+        }
+      },
+      "override_additions": 15,
+      "format_additions": 15,
+      "expected_hashes_projection_ids_and_other_existing_fields_unchanged": true,
+      "models_started": 0
+    },
+    "recheck": {
+      "affected_reads": [
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/execution_provider/server.py",
+          "from_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/__init__.py",
+          "from_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/session.py",
+          "from_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/execution_provider/server.py",
+          "from_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/__init__.py",
+          "from_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/session.py",
+          "from_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/execution_provider/server.py",
+          "from_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/__init__.py",
+          "from_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/session.py",
+          "from_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/execution_provider/server.py",
+          "from_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/__init__.py",
+          "from_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/session.py",
+          "from_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/execution_provider/adapters/incremental_execution.py",
+          "from_override": true,
+          "sha256": "3efbf627be00beb48a06b54db1bf1c99943c62f5f7b39bfd2276ad8a1dd79901"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/execution_provider/server.py",
+          "from_override": true,
+          "sha256": "4beb4593d00a90ec3c3ccd0e27ad1496e248f3f2eeaa7113e541d8ce6ae56183"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/experiments/gateway_isolation_probe.py",
+          "from_override": true,
+          "sha256": "ee7c926c8afa8d14ae4a8695577df3c2f6a254b74ff9b8309f83615c76619d85"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/observability/profiling/ray.py",
+          "from_override": true,
+          "sha256": "38de5f7e2371b65a2f6204cc6986872e31c67484470c4b47f24df2388fd0fc98"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/__init__.py",
+          "from_override": true,
+          "sha256": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/scheduler.py",
+          "from_override": true,
+          "sha256": "42e5230e253242ccc5cc77e0bc400e9032fca6c501e6ce8d25d5ffe0a3a7ec57"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/session.py",
+          "from_override": true,
+          "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/tests/scheduling/test_async_backend.py",
+          "from_override": true,
+          "sha256": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/tests/scheduling/test_scheduler.py",
+          "from_override": true,
+          "sha256": "51fc1d76d23e3a22cd2399dabb664601d9ebadd5c3b09fea7e096cde82daab5c"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "from_override": true,
+          "sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "from_override": true,
+          "sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475"
+        },
+        {
+          "variant": "native_isolated_and_imlane",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "from_override": true,
+          "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "from_override": true,
+          "sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "from_override": true,
+          "sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475"
+        },
+        {
+          "variant": "core_original_dynamic",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "from_override": true,
+          "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "from_override": true,
+          "sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "from_override": true,
+          "sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475"
+        },
+        {
+          "variant": "core_local_window_pairs",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "from_override": true,
+          "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "from_override": true,
+          "sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "from_override": true,
+          "sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475"
+        },
+        {
+          "variant": "ray_runtime_reuse",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "from_override": true,
+          "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/execution_provider/adapters/image_execution.py",
+          "from_override": true,
+          "sha256": "dcd763165895ae0ee0eb9015d6b5f8dea7d7a09f7a6ac639cfd604958407423a"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/ready_window.py",
+          "from_override": true,
+          "sha256": "091260bb6eb822e6e47b48481890c66aeb980ff72704834bfe12c05943045475"
+        },
+        {
+          "variant": "daft_single_thread_session",
+          "file": "code/src/scheduling/core/session_jobs.py",
+          "from_override": true,
+          "sha256": "81c8a6a02b838ff4aaced5b66123f0a6e465bdab49b07b5a3ca5c490f41856d5"
+        }
+      ],
+      "passed": 60,
+      "errors": [],
+      "repaired_original_errors": 15,
+      "expected_source_and_projection_ids_unchanged": true,
+      "full_3010_materialization_not_repeated": true,
+      "models_started": 0
+    }
+  },
+  "archive_commit": "5d434317d800badd7145ebbeecc2bca40e0f3552",
+  "archive_tree": "41b4c28a9641172d450bbb9f3ff146100ceec66d"
+}

@@ -1,0 +1,50 @@
+{
+  "base": "cdb494589b944d988b43a87e8eb52b733c6f182b",
+  "repaired": [
+    {
+      "path": "code/src/observability/metrics/resources.py",
+      "source_commit": "e8eb34555ad39d575a5d86b54260eca0e72cf701",
+      "source_sha256": "3968aaa0be32066f78e305e9a967dcfc63452f8836eb9c37210542c0631260ff",
+      "source_bytes": 13747,
+      "archive": "historical_sources/e8eb3455/code/src/observability/metrics/resources.py",
+      "existing_expected_SHA_matched": true
+    },
+    {
+      "path": "code/src/scheduling/core/session_policy.py",
+      "source_commit": "219094151c59346f106c77545730f6941e15821b",
+      "source_sha256": "403af9a6231f4cb7f7d973eafaa5295741b69403bed30c6c72ed72ac65e8b021",
+      "source_bytes": 5070,
+      "archive": "historical_sources/21909415/code/src/scheduling/core/session_policy.py",
+      "existing_expected_SHA_matched": true
+    }
+  ],
+  "mappings_added": 10,
+  "expected_file_SHA_or_projection_or_original_source_revision_changed": false,
+  "existing_mappings_changed": false,
+  "existing_compression_metadata_changed": false,
+  "original_repository_written": false,
+  "bindings": 3010,
+  "mismatches": [],
+  "prior_mismatches": 10,
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "CPU": {
+    "selected": 51,
+    "passed": 51,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_unchanged": true
+  },
+  "all_five_full_projections_materialized_and_matched": true,
+  "original_failure_evidence_preserved": true,
+  "independent_review": "pending",
+  "pushed": false,
+  "merged": false,
+  "artifacts": {
+    "source_repair.json": "66d034486db60269d143cfd5130d259cb274d9a8558dba8a24c4a3fc36bb2e75",
+    "full_history_source_repair.json": "5771e0370829bf66c6d88dd277f9881a5e1207fdacac477a991f7e020c740863",
+    "full_history_source_repair.log": "d288fe6e81b3ddb91e9032b9d227a30caba87af8797bc24be4f6a4fda0c5195a"
+  }
+}

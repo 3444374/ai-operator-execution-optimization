@@ -13,7 +13,8 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.execution_provider.adapters.lotus_chain_token_budget import ChainTokenBudget, OutputTokenEstimate, verify_cost
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.execution_provider.adapters.lotus_record_chain_fifo import LotusChainFIFO
 from src.execution_provider.adapters.lotus_chain_token_budget import fingerprint
 from src.scheduling.core.session_contract import SessionSpec, TaskProfile, TaskKey
@@ -23,7 +24,7 @@ from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec,
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 from tests.scheduling.test_incremental_session import setup
 from tests.execution_provider.chain_tokenizer_fixture import tokenizer, TEMPLATE
 
@@ -50,6 +51,33 @@ class Handle:
         return SimpleNamespace(remote=remote)
 
 class ChainTokens(unittest.TestCase):
+    def test_model_resolved_context_is_required_and_bound_into_token_work(self):
+        from dataclasses import replace
+        from src.serving.backends.model_context import model_context_record
+        row, generation = self.prepared()
+        engine = replace(self.model, max_model_len=None)
+        def budget(limit):
+            value = ChainTokenBudget(self.tok, engine, active_tokens=100000,
+                tokenizer_signature=fingerprint(self.tok.backend_tokenizer.to_str()),
+                template_signature=fingerprint(TEMPLATE),
+                expected_output={s.stage_id:OutputTokenEstimate(2,'CPU context fixture') for s in self.stages})
+            if limit is not None:
+                value.bind_model_context(dict(engine_uid='cpu-context',
+                    model_context=model_context_record(engine,'cpu-context',limit)))
+            return value
+        with self.assertRaises(RuntimeError):
+            budget(None).estimate(row,generation)
+        small, large = budget(2048), budget(32768)
+        cost = small.estimate(row,generation)
+        small.validate(row,generation,cost)
+        self.assertNotEqual(small.signature,large.signature)
+        with self.assertRaises(ValueError):
+            large.validate(row,generation,cost)
+        reservation = cost['reserved_tokens']
+        budget(reservation).estimate(row,generation)
+        with self.assertRaises(ValueError):
+            budget(reservation-1).estimate(row,generation)
+
     def setUp(self):
         import lotus
         scope=lotus.settings.context(enable_cache=False)
@@ -312,7 +340,7 @@ class ChainTokens(unittest.TestCase):
         r=self.make()
         prepared=dict(row,messages_json=json.dumps([{'role':'user','content':'plain'}]))
         with self.assertRaises(ValueError):
-            r.actor.run_prepared_core([prepared],time.monotonic()+2,398,(99,0),asdict(self.stages[1].generation))
+            r.actor.try_submit_prepared_core([prepared],time.monotonic()+2,398,(99,0),asdict(self.stages[1].generation))
         self.assertEqual(r.actor.snapshot()['held_requests'],0)
         self.assertEqual(r.actor.engine._sequence,0)
 
@@ -334,10 +362,8 @@ class ChainTokens(unittest.TestCase):
         self.assertEqual((got['status'],got['prompt_tokens'],got['completion_tokens']),('failed',11,3))
         self.assertEqual(got['call_id'],wanted['call_id'])
 
-    def test_chain_outputs_feed_canonical_result_accounting_and_legacy_alias(self):
+    def test_chain_outputs_feed_canonical_result_accounting(self):
         from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding
-        from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults as Legacy
-        self.assertIs(ChainBatchResults,Legacy)
         source=[self.record(0,'plain'),self.record(1,'STOP_ME')]
         r=self.make()
         for record in source:r.driver.offer_record(record)

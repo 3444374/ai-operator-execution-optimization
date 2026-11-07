@@ -6,9 +6,9 @@ from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import subprocess
-import time
 from types import SimpleNamespace
 
+from src.infrastructure.deadlines import deadline_after, deadline_expired
 from integrations.imlane_records import owner, verify
 from integrations.imlane_records.cascade_workload import CascadeOccurrences, input_record, stage_values
 from integrations.imlane_records.client import RecordsBridge
@@ -17,8 +17,9 @@ from integrations.imlane_records.method_environment import preflight_method
 from integrations.imlane_records.model_lifecycle import model_closed
 from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.records_host import RecordsResults
+from integrations.imlane_records.transport_limits import TransportLimits, close_block, for_owner, preflight_blocks
 from integrations.imlane_records.verify_filter import FilterScope
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.semantic_methods.lotus.cascade import CascadeStage, local_generation
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
@@ -46,7 +47,7 @@ class CascadeResults(RecordsResults):
             mapping=CascadeOccurrences(stage), stage_id=stage.name, block_prefix="cascade-" + stage.name,
             control_dir=control, deadline=backend.deadline, close_owner=close_owner,
             cleanup_scope=backend.author_args.stop_budget.cleanup,
-            block_rows=backend.resources.prepare_batch_rows, max_pending=backend.resources.max_active_batches)
+            block_rows=backend.resources.prepare_batch_rows)
 
     def __next__(self):
         self.backend.check_lifecycle()
@@ -127,15 +128,15 @@ class IMLaneCascadeBackend:
         if Path(self.engines["main"].model_path).resolve() == Path(self.engines["helper"].model_path).resolve():
             raise ValueError("cascade requires distinct explicit helper and main model paths")
         self.resources = RecordsResources(**asdict(resources))
-        if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
-                or resources.model_batch_rows > 16 or resources.max_active_batches > 2):
-            raise ValueError("IMLane uses one author executor, 1..16 rows and at most two pending blocks")
+        self.resources.request_capacity()
+        if resources.cpu_workers != 1:
+            raise ValueError("IMLane uses one author executor, explicit batch rows and a finite pending declaration")
         self.author_args, self.model_environment = author_args, assigned_environment(model_environment)
         require_outside_git(Path(author_args.output))
         if not Path(author_args.output).is_dir():
             raise ValueError("caller must supply a fresh private query output and its existing owner supervision")
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self._checked, self._active, self._startup_failed = False, None, False
         self._reports, self._author_states, self.author_report = {}, {}, dict(cleanup=[])
         self._author_failed, self._query_id = False, None
@@ -149,7 +150,7 @@ class IMLaneCascadeBackend:
     def check_lifecycle(self):
         self.author_args.stop_budget.check()
         self._check_author_evidence()
-        if time.monotonic() >= self.deadline:
+        if deadline_expired(self.deadline):
             raise TimeoutError("IMLane cascade query deadline expired")
         if self.cancelled is not None and self.cancelled():
             raise InterruptedError("IMLane cascade query cancelled")
@@ -260,6 +261,11 @@ class IMLaneCascadeBackend:
             resources=asdict(self.resources), control_dir=str(control), deadline_monotonic=self.deadline,
             model_environment=self.model_environment)
         try:
+            limits = for_owner(self.author_args, self.resources, max_query_rows=len(stage.records) + 1)
+            preflight_blocks(limits, self._source_rows(stage), block_rows=self.resources.prepare_batch_rows,
+                block_prefix="cascade-" + stage.name, encode=CascadeOccurrences(stage).encode)
+            limits.check_submit(*close_block(query_id, stage.name, "cascade-" + stage.name))
+            config["transport_limits"] = limits.describe()
             client, finalizer = self._open_stage(stage, config, control)
             self._active = CascadeResults(self._source_rows(stage), client, stage=stage, backend=self,
                                           control=control, close_owner=finalizer)
@@ -273,6 +279,7 @@ class IMLaneCascadeBackend:
 
     def _open_stage(self, stage, config, control):
         """Caller already owns the host lease; reuse the existing native scope."""
+        limits = TransportLimits.from_dict(config["transport_limits"])
         path = control / "worker.json"
         write_private_json(path, config)
         args = SimpleNamespace(**dict(vars(self.author_args), cascade_config=path,
@@ -281,7 +288,8 @@ class IMLaneCascadeBackend:
         scope = CascadeScope(args, "cpython-cascade", owner, self.author_report, kernel=kernel)
         try:
             scope.__enter__()
-            process = subprocess.Popen([str(args.bridge_binary),str(scope.port),str(kernel),"infer_records",PROTOCOL],
+            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(kernel),
+                "infer_records", str(self.resources.request_capacity()), limits.argv(), PROTOCOL],
                 env=scope.env, cwd=scope.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, start_new_session=True)
             scope.track_root(process)
@@ -299,8 +307,8 @@ class IMLaneCascadeBackend:
                 process.wait(timeout=3)
                 if not state["resources_confirmed"]:
                     raise RuntimeError("cascade author scope resources remain unconfirmed")
-            return RecordsBridge(process, abort_owner=abort, timeout_s=min(60,self.resources.query_timeout_s),
-                                 protocol=PROTOCOL), finalizer
+            return RecordsBridge(process, abort_owner=abort,
+                                 protocol=PROTOCOL,max_pending=self.resources.request_capacity(), limits=limits), finalizer
         except BaseException as error:
             try:
                 scope.close()

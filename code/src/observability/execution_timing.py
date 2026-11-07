@@ -18,7 +18,8 @@ import time
 import uuid
 
 from .buffered_events import BufferedEvents
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from .clock import monotonic_clock_domain
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 
 
 _identity = ContextVar("execution_timing_identity", default={})
@@ -77,9 +78,7 @@ class Timing:
         directory.mkdir(parents=True, exist_ok=True)
         self.directory = directory.resolve()
         self.pid, self.process_instance = os.getpid(), uuid.uuid4().hex
-        from src.execution_provider.adapters.ray_map_transport import _clock_domain
-
-        domain = _clock_domain()
+        domain = monotonic_clock_domain()
         self.clock_domain = domain or "process-" + self.process_instance
         self.clock_verified = domain is not None
         self.run_id = run_id or hashlib.sha256(str(directory.resolve()).encode()).hexdigest()[:24]

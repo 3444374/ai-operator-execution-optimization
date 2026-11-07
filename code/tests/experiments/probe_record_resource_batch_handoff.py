@@ -4,6 +4,7 @@ from collections import Counter
 from concurrent.futures import Future
 from dataclasses import asdict
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -33,8 +34,9 @@ if not hasattr(native.AsyncCoreModelActor,'poll_prepared_batch'):
     print(json.dumps(report));sys.exit(0)
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.semantic_methods.lotus.record_chain import RecordOccurrence,stage_identity
+from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec,_prepared,result_record
-from src.serving.backends.async_engine_process import AsyncEngineLimits
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.scheduling.core.session_contract import Acceptance,BatchKey,BatchMember,TaskKey,Terminal
 import record_observer as observer
 observer.install_driver()
@@ -58,6 +60,14 @@ engine=EngineSpec(str(model),sys.executable,sys.executable,max_num_seqs=1)
 actor=ObservedAsyncCoreModelActor(asdict(engine),asdict(generation),1,asdict(limits))
 submitted=[];events=[]
 class IPC:
+    # Same owner/clock fields as the actual async engine's ready report.
+    ready_report=dict(engine_uid='CPU-engine',batch_mode='independent_final_results',closed=False,
+        resource_owner=dict(schema='semloom.model_resource_owner.v1',engine_uid='CPU-engine',
+            request_memory_owner='vllm',native_feedback_clock='private_child_and_model_actor.monotonic'))
+    def snapshot(self):
+        return dict(owner_uid='CPU-producer',native_feedback=dict(engine_uid='CPU-engine',sequence=1,
+            observed_at_s=time.monotonic(),running=1,waiting=0,kv_usage=.1,
+            generation_tokens_total=3,preemptions_total=0))
     def submit_batch(self,actual_rows,**kwargs):
         assert actual_rows==rows and kwargs['generation']==generation
         submitted.append(actual_rows)
@@ -67,29 +77,44 @@ class IPC:
     def poll(self,maximum):
         result=events[:maximum];del events[:maximum];return result
 actor.engine=IPC()
-references=[];poll_pages=[];ack_attempts=Counter();acked=[];native_methods=[]
+references=[];poll_pages=[];ack_attempts=Counter();acked=[];native_methods=[];model_snapshots=[]
 class Reference:
     def __init__(self,value,label):
-        self.value=Future();self.value.set_result(value);self.label=label;self.calls=0
+        self.value=value;self.label=label;self.calls=0
         references.append(self)
-    def future(self):self.calls+=1;return self.value
+    def future(self):
+        self.calls+=1
+        future=Future();future.set_result(self.value);return future
 class Remote:
     def __init__(self,method,label):self.method=method;self.label=label
     def remote(self,*a,**k):
         native_methods.append(self.label)
         return Reference(self.method(*a,**k),self.label)
-def poll(key):
-    value=actor.poll_prepared_batch(key);poll_pages.append(json.loads(value));return value
+def poll(key,*args):
+    if args:
+        keys=[tuple(k)for k in json.loads(args[0])['acknowledgements']]
+        assert all(TaskKey(*k)in {r[0]for r in received}for k in keys),'ACK before owner sink'
+    else:keys=[]
+    value=actor.poll_prepared_batch(key,*args)
+    for key in keys:
+        ack_attempts[key]+=1
+        if key not in actor._held:acked.append(key)
+    poll_pages.append(json.loads(value));return value
+def model_snapshot(**kwargs):
+    value=actor.snapshot(**kwargs);model_snapshots.append(value);return value
 def ack(key):
     key=tuple(key);ack_attempts[key]+=1
     if key==(1,0)and ack_attempts[key]==1:return False  # First ACK never reaches actor.
     value=actor.acknowledge_core(key)
     if value:acked.append(key)
     return value
-owner=native.AsyncRecordsActorOwner.__new__(native.AsyncRecordsActorOwner)
-owner.limits=limits;owner.model_actor=SimpleNamespace(
-    submit_prepared_batch=Remote(actor.submit_prepared_batch,'submit'),
-    poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'))
+owner=native.AsyncRecordsActorOwner.for_prepared(engine,generation,
+    RecordsResources(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=3),limits=limits)
+coalesced_ACK=getattr(owner,'supports_prepared_batch_ack',False)
+owner.model_actor=SimpleNamespace(
+    try_submit_prepared_batch=Remote(actor.try_submit_prepared_batch,'submit'),
+    poll_prepared_batch=Remote(poll,'poll'),acknowledge_core=Remote(ack,'ack'),
+    snapshot=Remote(model_snapshot,'snapshot'))
 notified=threading.Event();received=[]
 backend=LotusChainActorBackend(owner,3,notified.set,deadline_monotonic=time.monotonic()+20,
     on_result=lambda key,value:received.append((key,value)),bulk=True)
@@ -112,9 +137,50 @@ assert len(submitted)==1 and native_methods.count('submit')==1
 assert [results[TaskKey(1,i)]for i in range(3)]==replies
 assert len(poll_pages)>=2 and all(len(p['results'])<3 for p in poll_pages)
 page_keys=[tuple(v['request_key'])for page in poll_pages for v in page['results']]
-assert page_keys.count((1,0))==2 and set(page_keys)=={(1,i)for i in range(3)}
+assert page_keys.count((1,0))==(1 if coalesced_ACK else 2)and set(page_keys)=={(1,i)for i in range(3)}
+assert native_methods.count('ack')==(0 if coalesced_ACK else 4)
 assert Counter(acked)==Counter({(1,i):1 for i in range(3)})and not actor._held
 assert len(received)==3 and not backend._bulk and backend.retained_refs()==0
+# Historical targets without this native keyword retain their bulk-only probe.
+resource_probe_supported='observe_resources'in inspect.signature(native.AsyncCoreModelActor.snapshot).parameters
+feedback_report=None
+if resource_probe_supported:
+    sys.path.insert(1,str(Path(__file__).resolve().parents[1]/'execution_provider'))
+    from resource_request_sampler_fixture import request_sampler
+    from src.semantic_methods.lotus.prepared_batching import PreparedBatching
+    # Actual production sampler/observed actor; IPC/Futures/readings are CPU fixtures.
+    owner.model_ready=dict(actor.engine.ready_report)
+    owner.engine=engine;owner.prepared_batching=PreparedBatching('token_budget',None,256)
+    owner.ray=SimpleNamespace(cancel=lambda *a,**k:None)
+    feedback=request_sampler(SimpleNamespace(_actors=owner,engine=engine,resources=owner.resources,
+        prepared_batching=owner.prepared_batching),1,started_at_s=time.monotonic())
+    packet=dict(engine_uid='CPU-engine',session_id=1,source_elapsed_s=0,
+        gpu_uuids=['GPU-00000000-0000-0000-0000-000000000001'],status='CPU-fixture',
+        sample=dict(values=dict(gpu_utilization_pct=10,host_cpu_per_core_max_pct=20),
+                    sources=dict(host=dict(cpu_percent_interval_s=.1)),missing={}))
+    def resources(session):
+        assert session==1 and not actor._condition._is_owned()
+        return packet
+    with patch.object(actor,'_resource_snapshot',side_effect=resources)as read_resources:
+        try:
+            snapshot=feedback.sample()
+            assert snapshot is not None,feedback.report()
+            assert (snapshot.source_uid,snapshot.source_session_id)==('CPU-engine',1)
+            read_resources.assert_called_once_with(1)
+        finally:feedback.close()
+    feedback_report=feedback.report()
+    assert feedback_report['snapshot_rpc_terminal_evidence_complete'],feedback_report
+    assert feedback_report['snapshot_rpc_cleanup_status']=='closed'and feedback_report['snapshot_rpc_pending']is None
+    assert feedback_report['snapshot_requests']==len(feedback_report['snapshot_rpc_receipts'])==1
+    assert feedback_report['snapshot_rpc_receipts'][0]['frame_disposition']=='eligible_for_provider'
+    assert feedback_report['sample_errors']==0 and native_methods.count('snapshot')==1
+    assert [r.calls for r in references if r.label=='snapshot']==[1]
+    assert len(model_snapshots)==1
+    captured=model_snapshots[0];age=captured['native_sample_age'];source=captured['ipc']['native_feedback']
+    assert age['engine_uid']==source['engine_uid']==owner.model_ready['engine_uid']
+    assert age['source_sequence']==source['sequence'] and age['source_observed_at_s']==source['observed_at_s']
+    assert age['clock_domain']==owner.model_ready['resource_owner']['native_feedback_clock']
+    assert age['age_s']==age['captured_at_s']-source['observed_at_s']>=0
 close=dict(status='closed',producer_quiescence=dict(schema='semloom.async_actor_quiescence.v1',
     confirmed=True,input_gate_closed=True,active_readers=0))
 with patch.object(native.AsyncCoreModelActor,'close',return_value=close):assert actor.close(1)is close
@@ -122,14 +188,14 @@ observer.close_events()
 markers=[json.loads(line)for p in(out/'events').glob('*.jsonl')for line in p.read_text().splitlines()]
 assert secret not in json.dumps(markers)
 expected={'actor_result_return':3,'driver_future_done':3,'driver_result_audit_enter':3,
-          'Ray_result_to_Core':3,'driver_batch_future_done':len(poll_pages)}
+          'Ray_result_to_Core':3,'driver_batch_future_done':0}
 (out/'OBSERVED-COUNTS.json').write_text(json.dumps(dict(
     event_counts={k:sum(e['event']==k for e in markers)for k in expected},
     members=3,poll_RPCS=len(poll_pages),page_member_occurrences=len(page_keys),
     business_results_and_ACKs_passed=True),indent=2)+'\n')
 for name,count in expected.items():
     assert sum(e['event']==name for e in markers)==(count if args.mode=='on'else 0),name
-assert all(r.calls==(2 if args.mode=='on'else 1)for r in references if r.label=='poll')
+assert all(r.calls==1 for r in references if r.label=='poll')
 if args.mode=='on':
     for name in ('actor_result_return','driver_future_done','Ray_result_to_Core'):
         found=[e for e in markers if e['event']==name]
@@ -141,8 +207,14 @@ if args.mode=='on':
 report=dict(status='passed_actual_public_bulk_owner_actor_transport',mode=args.mode,
     bulk_handoff_qualified=True,members=3,data_batch_RPCS=1,poll_RPCS=len(poll_pages),
     returned_page_member_occurrences=len(page_keys),first_actor_member_markers=3 if args.mode=='on'else 0,
-    lost_ACK_replayed_without_duplicate_member_completion=True,original_generation_and_rows_preserved=True,
+    lost_ACK_replayed_without_duplicate_member_completion=not coalesced_ACK,
+    confirmed_ACKs_carried_by_poll=coalesced_ACK,original_generation_and_rows_preserved=True,
     outputs_preserved=True,native_ACK_once_per_member=True,native_close_report_identity_preserved=True,
+    ascending_resource_snapshot_and_close=resource_probe_supported,
+    resource_snapshot_status='passed_CPU_fixture'if resource_probe_supported else'not_supported_by_target',
+    native_source_age_qualified=True if resource_probe_supported else None,
+    snapshot_RPC_requests=None if feedback_report is None else feedback_report['snapshot_requests'],
+    snapshot_RPC_terminal_complete=None if feedback_report is None else feedback_report['snapshot_rpc_terminal_evidence_complete'],
     event_counts={k:sum(e['event']==k for e in markers)for k in expected},
     output_sha256=hashlib.sha256(json.dumps(replies,sort_keys=True).encode()).hexdigest(),
     real_Ray_RPC=False,real_model_calls=0,GPU=False)

@@ -1,0 +1,525 @@
+{
+  "schema": "semloom.system_followup_cpu.v1",
+  "source_commit": "422ef076ab3f0a864ea46006e3445191876f48a1",
+  "composed_from": [
+    "58be4756e0496e5c0aa0db6e8d7d368faea13276",
+    "7a312188726519a6a6a98b2679732e4a967e1691",
+    "18ad4382e0552f0344f4309c670a81a8c50bcba0",
+    "ad0bdd5e4184073a52008752872006f9a2feac3a"
+  ],
+  "production_bytes_match": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_chain_actor_backend.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "052de33f4713cc4b5922ab047551ff51e6d626f9a0b54769c7e64d4c5b0803ec"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_chain_token_batches.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "8c85aa3397e69aef41f62cc21d05ca573c980b34b1b72b43576643e5abff04b2"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "801e7a75f85592399a42340b2061cb203d09cac2b9e047aecc38ac3fc67370c0"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "13551c804d4c0e5eda28291739c8dbbe533a9619d8f568a2b59b967688288405"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_batches.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "809f20ffe1b52a42eda64e3cf02f3464dedb15bfef9575f13f13989277841dad"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "1bc1cae813646c5960048acc9a0d7b8b98f8ab18f6bc4794c1fe2cf5aaaf2674"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_query_runtime.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "80bc07970410a8df29105b8f7ac3e0bcf52897013eeefa4e9da6994cf16e09eb"
+    },
+    {
+      "path": "code/src/scheduling/runtime/async_backend.py",
+      "source_commit": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+      "sha256": "a4259e036f9b1eeb182e53037de5c098ce3eb0e3ac7584eaf833d74258c4a074"
+    },
+    {
+      "path": "code/src/experiments/movie_records_session.py",
+      "source_commit": "18ad4382e0552f0344f4309c670a81a8c50bcba0",
+      "sha256": "8b398638d5565f2f0eb657ebd97c9dd34f48330427414f35c10f00d4bd530e0c"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "source_commit": "7a312188726519a6a6a98b2679732e4a967e1691",
+      "sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    }
+  ],
+  "document_merge": {
+    "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+    "ours": "18ad4382e0552f0344f4309c670a81a8c50bcba0",
+    "theirs": "ad0bdd5e4184073a52008752872006f9a2feac3a",
+    "files": [
+      {
+        "path": "PROJECT_LOG.md",
+        "shared_prefix": true,
+        "retained_both_suffixes": true
+      },
+      {
+        "path": "code/INFRA_STATUS.md",
+        "shared_prefix": true,
+        "retained_both_suffixes": true
+      },
+      {
+        "path": "code/src/execution_provider/adapters/README.md",
+        "shared_prefix": true,
+        "retained_both_suffixes": true
+      },
+      {
+        "path": "code/tests/records_cpu.md",
+        "shared_prefix": true,
+        "retained_both_suffixes": true
+      },
+      {
+        "path": "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+        "shared_prefix": true,
+        "retained_both_suffixes": true
+      },
+      {
+        "path": "experiments/results/diagnostics/records_runtime_refactor_20261104/README.md",
+        "shared_prefix": true,
+        "retained_both_suffixes": true
+      }
+    ]
+  },
+  "CPU": {
+    "run_id": "system_followup_final",
+    "selected": 1805,
+    "run": 1797,
+    "passed": 1767,
+    "failures": [],
+    "errors": [],
+    "method_skips": [
+      {
+        "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_closed_endpoint_and_real_read_timeout_keep_native_exception_and_usage",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_compressed_response_and_native_sdk_redirect_behavior_match",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_invalid_parameters_and_cancellation_before_preparation_send_zero_posts",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_map_and_cache_usage_logprobs_match_original_without_parser_http",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_observation_modes_keep_full_sem_map_results_errors_usage_and_cleanup",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_original_http_json_and_missing_content_errors_keep_type_and_usage",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_sem_map_cache_states_keep_original_miss_batches_and_usage",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_staged_two_map_keeps_whole_stage_wait_and_original_prompts",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_id_counts_must_agree_with_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_birth_change_blocks_later_sends_and_keeps_first_receipt",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_posts_use_fresh_checks_without_repeated_discovery",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_bad_authoritative_usage_fails_even_if_native_parser_accepts_text",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_boolean_token_id_is_a_protocol_error",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_controller_physical_gpu_uuid_is_forwarded_without_ordinal_remapping",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_duplicate_message_HTTP_failure_stays_unknown_with_all_wire_receipts",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_empty_original_query_returns_zero_without_service_or_inference",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluation_and_end_observer_failure_preserves_original_error",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluator_failure_retains_count_usage_and_restores_observers",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_final_accounting_failure_keeps_primary_and_validated_receipts",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_full_120_occurrence_native_http_profiles_match_original_q3",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_http_failure_keeps_every_native_receipt_and_never_retries",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_invalid_profile_budget_or_lease_precedes_service_construction",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_missing_actual_ids_fails_without_retokenizing_or_losing_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_original_accessor_lm_thread_pool_decisions_usage_and_quality",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_requests_observation_ids_and_preserves_authoritative_wire_arrays",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_result_observer_failure_still_retains_complete_count_and_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_transport_failure_keeps_successes_and_unknown_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_unconfirmed_cleanup_fails_with_completed_known_result_retained",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      }
+    ],
+    "class_skips": [
+      {
+        "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+        "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+        "scope": "class",
+        "unexecuted_methods": [
+          "tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests.test_default_encoder_rejects_old_function_RPC_before_worker_execution",
+          "tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests.test_fixed_engine_args_forward_extension_qualified_name_without_code_objects",
+          "tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests.test_fixed_worker_extension_API_rejects_method_name_collision",
+          "tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests.test_named_RPC_round_trips_default_codec_and_upstream_worker_extension",
+          "tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests.test_source_probe_rejects_a_changed_version_or_changed_bytes"
+        ]
+      },
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class",
+        "unexecuted_methods": [
+          "tests.experiments.test_static_reference_session.StaticSessionTests.test_direct_static_start_is_idempotent_and_does_not_close_at_query_eof",
+          "tests.experiments.test_static_reference_session.StaticSessionTests.test_maintained_cli_first_reuse_share_one_sync_model_and_native_batches",
+          "tests.experiments.test_static_reference_session.StaticSessionTests.test_static_rejects_method_switch_and_core_does_not_gain_batch_support"
+        ]
+      }
+    ],
+    "unexecuted_class_methods": 8,
+    "source_unchanged": true,
+    "code_files_matching": 1297,
+    "Python": "3.12.6",
+    "platform": "Darwin",
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "pyarrow": "24.0.0",
+      "litellm": "1.95.0",
+      "openai": "2.50.0"
+    },
+    "elapsed_s": 267.0101774581708,
+    "module_names": [
+      "tests.experiments.test_records_resource_budget",
+      "tests.experiments.test_records_budget_query_identity",
+      "tests.experiments.test_records_capacity_config",
+      "tests.experiments.test_core_capacity_identity",
+      "tests.execution_provider.test_core_query_capacity",
+      "tests.execution_provider.test_lotus_resource_budget_runtime",
+      "tests.execution_provider.test_lotus_records_async_actor",
+      "tests.execution_provider.test_lotus_records_async_core",
+      "tests.execution_provider.test_lotus_records_core",
+      "tests.execution_provider.test_core_resource_feedback",
+      "tests.execution_provider.test_records_capacity_modules",
+      "tests.execution_provider.test_lotus_batch_supply_feedback",
+      "tests.execution_provider.test_lotus_request_supply_feedback",
+      "tests.execution_provider.test_lotus_ascending_resources",
+      "tests.execution_provider.test_lotus_snapshot_rpc_receipts",
+      "tests.execution_provider.test_resource_rpc_rejection_audit",
+      "tests.execution_provider.test_actor_resource_cpu_ray",
+      "tests.execution_provider.test_lotus_request_frame_metering",
+      "tests.execution_provider.test_lotus_token_rolling_refill",
+      "tests.execution_provider.test_lotus_async_token_batches",
+      "tests.execution_provider.test_lotus_record_local_tokens",
+      "tests.scheduling.test_record_feedback_variants",
+      "tests.scheduling.test_resource_probe",
+      "tests.scheduling.test_pid_configuration",
+      "tests.scheduling.test_adaptive_admission",
+      "tests.scheduling.test_dynamic_admission",
+      "tests.scheduling.test_archived_control_sources",
+      "tests.observability.test_postgres_profile_scheduling",
+      "tests.scheduling.test_admission_counts",
+      "tests.scheduling.test_scheduler",
+      "tests.scheduling.test_incremental_session",
+      "tests.scheduling.test_capacity_wait",
+      "tests.execution_provider.test_core_feedback_cadence",
+      "tests.execution_provider.test_records_model_adapter",
+      "tests.execution_provider.test_lotus_records_actor_owner",
+      "tests.execution_provider.test_lotus_rpc_capacity",
+      "tests.execution_provider.test_lotus_batch_poll_encoding",
+      "tests.execution_provider.test_lotus_async_batch_lifecycle",
+      "tests.execution_provider.test_lotus_token_packing_bypass",
+      "tests.execution_provider.test_lotus_batch_counters",
+      "tests.execution_provider.test_records_transport",
+      "tests.execution_provider.test_lotus_batch_request_reuse",
+      "tests.execution_provider.test_lotus_closed_batch_pages",
+      "tests.execution_provider.test_lotus_record_local_query",
+      "tests.execution_provider.test_lotus_record_local_progression",
+      "tests.execution_provider.test_lotus_record_local_priority",
+      "tests.execution_provider.test_lotus_record_local_token_priority",
+      "tests.execution_provider.test_async_producer_retirement",
+      "tests.experiments.test_records_config_imports",
+      "tests.experiments.test_movie_records_session",
+      "tests.experiments.test_core_calibration",
+      "tests.experiments.test_movie_records_matrix",
+      "tests.experiments.test_record_feedback_profiles",
+      "tests.experiments.test_movie_runtime_configuration",
+      "tests.execution_provider.test_records_capacity_defaults",
+      "tests.experiments.test_movie_async_token_entry",
+      "tests.planning.test_estimate_operator_cost",
+      "tests.planning.test_cost_estimators",
+      "tests.planning.test_cost_estimation",
+      "tests.execution_provider.test_records_query_runtime",
+      "tests.execution_provider.test_lotus_chain_refill_wait",
+      "tests.execution_provider.test_lotus_prepared_batching",
+      "tests.semantic_methods.test_lotus_chain_relation_handoff",
+      "tests.semantic_methods.test_lotus_chain_composition_oracle",
+      "tests.semantic_methods.test_lotus_chain_composition",
+      "tests.execution_provider.test_records_request_feedback",
+      "tests.experiments.test_movie_request_feedback_entry",
+      "tests.experiments.test_movie_ascending_feedback",
+      "tests.execution_provider.test_lotus_feedback_ready_collection",
+      "tests.execution_provider.test_core_geometric_admission",
+      "tests.execution_provider.test_core_feedback_lifecycle",
+      "tests.experiments.test_core_execution_profile",
+      "tests.experiments.test_movie_token_resident_session",
+      "tests.experiments.test_records_online_config",
+      "tests.scheduling.test_resource_request_controller",
+      "tests.scheduling.test_resource_request_probe",
+      "tests.execution_provider.test_resource_request_supply_bridge",
+      "tests.execution_provider.test_records_default_resources",
+      "tests.scheduling.test_record_feedback_guide",
+      "tests.experiments.test_native_baseline_reproduction",
+      "tests.experiments.test_retired_saor_entries",
+      "tests.experiments.test_http_historical_bindings",
+      "tests.experiments.test_saor_formal_tools",
+      "tests.experiments.test_saor_feeding_gap_diagnostic",
+      "tests.experiments.test_saor_trace_replay",
+      "tests.serving.test_vllm_protocol_imports",
+      "tests.serving.test_vllm_identity_protocol",
+      "tests.serving.test_async_engine_batch",
+      "tests.serving.test_async_engine_process",
+      "tests.serving.test_model_context",
+      "tests.serving.test_native_resource_feedback",
+      "tests.serving.test_sync_process_migration",
+      "tests.serving.test_shared_chain_migration",
+      "tests.serving.test_vllm_sequence_defaults",
+      "tests.serving.test_vllm_token_defaults",
+      "tests.semantic_methods.test_lotus_filter_method",
+      "tests.semantic_methods.test_lotus_call_limits",
+      "tests.semantic_methods.test_lotus_native",
+      "tests.semantic_methods.test_lotus_control",
+      "tests.semantic_methods.test_lotus_cleanup",
+      "tests.baselines.text.test_lotus_native_local_model",
+      "tests.baselines.text.test_daft_native_session",
+      "tests.scheduling.test_request_lifecycle",
+      "tests.scheduling.test_request_scan_compatibility",
+      "tests.scheduling.test_request_scan_liveness",
+      "tests.scheduling.test_request_scan_lower_continuation",
+      "tests.scheduling.test_request_scan_physical_scope",
+      "tests.scheduling.test_request_scan_transitions",
+      "tests.scheduling.test_request_supply_feedback",
+      "tests.scheduling.test_resource_feedback",
+      "tests.scheduling.test_resource_pressure_clock",
+      "tests.scheduling.test_resource_probe_policy",
+      "tests.scheduling.test_resource_probe_search",
+      "tests.scheduling.test_resource_probe_variable_step",
+      "tests.scheduling.test_resource_step",
+      "tests.scheduling.test_supply_feedback",
+      "tests.scheduling.test_ascending_request_scan",
+      "tests.scheduling.test_resource_request_search",
+      "tests.execution_provider.test_records_model_work_feedback",
+      "tests.execution_provider.test_records_implicit_ipc_totals",
+      "tests.execution_provider.test_records_unspecified_requests",
+      "tests.execution_provider.test_records_request_feedback_safety",
+      "tests.planning.test_organizers",
+      "tests.baselines.text.test_duckdb_ai_adapter",
+      "tests.baselines.text.test_official_baseline_cli",
+      "tests.scheduling.test_async_backend_progress",
+      "tests.scheduling.test_async_backend",
+      "tests.scheduling.test_method_driver",
+      "tests.scheduling.test_organized_session",
+      "tests.scheduling.test_runtime_batching",
+      "tests.execution_provider.test_prepared_supply_opportunity",
+      "tests.execution_provider.test_event_state_preparation",
+      "tests.execution_provider.test_ready_state_preparation",
+      "tests.execution_provider.test_lotus_rpc_terminal",
+      "tests.execution_provider.test_prepared_supply_budgets",
+      "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts",
+      "tests.experiments.test_session_capacity_preflight",
+      "tests.experiments.test_native_query_lifecycle",
+      "tests.serving.test_sync_model_context",
+      "tests.experiments.test_static_reference_session",
+      "tests.experiments.test_session_batching_preflight",
+      "tests.infrastructure.test_cpu_allocation",
+      "tests.observability.test_allocated_resources"
+    ],
+    "json_sha256": "d04ccf755602cc2a0d0a869206d6cceb856ffbea81e619eca2341cc18804e59d",
+    "log_sha256": "4568fe30c3a17d2ae9ad2d296127b47243e8bc1abb9539d755e4805983c21225",
+    "method_archive": {
+      "path": "raw/system_followup_methods.json.gz",
+      "decoded_bytes": 683252,
+      "decoded_sha256": "d04ccf755602cc2a0d0a869206d6cceb856ffbea81e619eca2341cc18804e59d",
+      "archive_bytes": 151831,
+      "archive_sha256": "c6046364bd7eed56619629759aef8649b3d44397d197e3480b71834c2f8f2d68"
+    }
+  },
+  "original_full_port": {
+    "run_id": "prepared_full_combination",
+    "selected": 1733,
+    "run": 1728,
+    "passed": 1685,
+    "error_methods": 13,
+    "error_records": 24,
+    "failures": [],
+    "retained": true,
+    "all_selected_methods_present_in_final": true
+  },
+  "repaired_original_error_methods": [
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_async_member_registration_retains_its_independent_binding_validation",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_bare_backend_preserves_its_preparse_membership_checks",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_final_owner_frame_limit_still_fails_before_the_RPC",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_only_initial_handoff_parse_is_removed_and_no_new_state_fields_appear",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_owner_registration_does_not_mutate_parsed_request_or_generation",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_payload_owner_binding_and_membership_errors_keep_the_same_first_error",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_rejection_rolls_back_and_a_retry_reads_fresh_immutable_task_bytes",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_success_membership_frames_and_generation_match_frozen_oracle",
+    "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_unknown_and_backend_error_keep_owned_contexts_and_cancel_routing",
+    "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_owner_consumption_releases_budget_before_followup_refill",
+    "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_refused_input_waits_once_and_keeps_one_pending_record",
+    "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_release_result_wakes_waiter_and_next_tick_retries_without_duplicate",
+    "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_unknown_terminates_flow_without_releasing_remote_responsibility"
+  ],
+  "source_audit": {
+    "path": "raw/entry_capacity_source_audit.json",
+    "inventory_entries": 647,
+    "scripts": 129,
+    "test_and_fixture_files": 518,
+    "retired_additional_entries": 0,
+    "first_inventory_retained": true,
+    "legacy_default_reads": 22,
+    "legacy_default_files": 14,
+    "automatic_capacity": false
+  },
+  "history": {
+    "bindings": 3010,
+    "mismatches": 0,
+    "original_ids_unchanged": true,
+    "all_five_materializations_in_scope": true
+  },
+  "geometric": {
+    "selected": true,
+    "passed_this_run": true,
+    "fixed": false,
+    "original_failure_retained": true,
+    "original_unique_cause_proven": false,
+    "provider_and_controller_unchanged": true,
+    "confirmed_pending_sample_cache_clear_mechanism": true
+  },
+  "limitations": [
+    "This exact selected CPU scope passes; it is not whole-project or actual-model qualification.",
+    "The30 method skips and2 class skips with8 unexecuted methods remain explicit.",
+    "Earlier baseline failures and raw source identities are retained; this scope does not requalify all historical baselines.",
+    "Earlier late-close fixture covers already-succeeded results awaiting local delivery; accepted-but-still-computing close is not proved by that fixture.",
+    "One Core/model owner with serial resident query reuse; concurrent multiple Cores sharing one actor are not qualified.",
+    "Preparation options remain default false; Movie JSON/CLI do not expose them.",
+    "Original b258 single-permit timing regression remains evidence; no actual query performance benefit is claimed."
+  ],
+  "pending": [
+    "independent review of the exact final combination",
+    "geometric pending/unavailable sample distinction and original failure diagnosis",
+    "sync defaults and fused/context/cache propagation with partial-construction cleanup",
+    "automatic service-owned memory grants and ordinary defaultR migration",
+    "native baseline verification wiring and remaining whole-project cleanup",
+    "actual model, real Ray/GPU and complete-query comparisons through the separate test owner"
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

@@ -1,6 +1,7 @@
 """Prepared-only owner lifecycle; explicit software actors and CPU IPC only."""
 
 from dataclasses import asdict, replace
+import asyncio
 import json
 from pathlib import Path
 import sys
@@ -9,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters import lotus_records_actor_owner as actors
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.semantic_methods.lotus import engine as lotus_engine
 from src.semantic_methods.lotus.record_chain import LotusRecordMethod, MapMethod, RecordOccurrence, StageSpec, stage_identity
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
@@ -86,7 +88,9 @@ class PreparedOwnerTests(unittest.TestCase):
             method = FilterMethod("openai/fixture", "Keep {reviewText}")
             owner = SoftwareOwner(method, self.spec, GenerationSpec(), self.resources)
             self.assertEqual(set(owner.execution_metadata()),
-                             {"model_batch_mode", "native_engine_abort_supported", "async_limits"})
+                             {"model_batch_mode", "native_engine_abort_supported", "async_limits",
+                              "model_rpc_workers", "model_rpc_workers_source", "model_rpc_control_reserve",
+                              "model_rpc_handoff"})
             owner.start(time.monotonic() + 3)
             self.assertEqual(len(owner.prepare_actors), self.resources.cpu_workers)
             self.assertEqual(len(runtime.formatters), self.resources.cpu_workers)
@@ -212,7 +216,7 @@ class PreparedOwnerTests(unittest.TestCase):
                 for i, (row, stage) in enumerate(zip(rows, stages, strict=True)):
                     key = TaskKey(7, i)
                     ref = owner.submit_prepared_core([row], time.monotonic()+5, 65536, key, asdict(stage.generation))
-                    result = json.loads(runtime.ray.get(ref))
+                    result = json.loads(asyncio.run(ref))
                     self.assertEqual(result["status"], "succeeded")
                     self.assertEqual(result["engine_uid"], ready["engine_uid"])
                     self.assertEqual(result["call_id"], row["call_id"])
@@ -239,7 +243,7 @@ class PreparedOwnerTests(unittest.TestCase):
                 model = owner.model_actor
                 process = model.value.engine.process
                 key = TaskKey(8, 0)
-                result = json.loads(runtime.ray.get(owner.submit_prepared_core(
+                result = json.loads(asyncio.run(owner.submit_prepared_core(
                     [row], time.monotonic()+5, 65536, key, asdict(self.generation))))
                 self.assertEqual(result["status"], "unknown")
                 self.assertEqual(result["total_tokens"], 12)

@@ -1,0 +1,486 @@
+{
+  "original_base": "7d34d4478ec91937a67188e9e3b11db912dc01ac",
+  "latest_upstream": "e3533fbb1cff270b8ea52ea2f11704182cc4d3e5",
+  "checkpoint": "57ed4d47cee6074d2473ee9504c6f0606818f1db",
+  "tree": "eb3461c5057b9daadabab2af4cdca1d4ef762b35",
+  "components": {
+    "record_local": "0f2437d37387c6d716401329788317352b962e92",
+    "fused": "390f6ddf8e3298deb9faa144347376480eb2a5fe",
+    "rule_path": "289263be9b5b788c5308e626dc5a7f3fc1a2a8f1"
+  },
+  "changes": [
+    "Correct the active AGENTS redactor source to code/src/infrastructure/redact.py; implementation unchanged.",
+    "The record-local runtime releases and observes its own query payloads. The owner retains the exact transfer certificate, actual cleanup and weak reference before detachment.",
+    "Define the four existing optional phase-payload fields in runtime initialization. Replace external setattr/getattr lists with direct owning-object operations.",
+    "The fused runtime retires its consumed input and session, assembles complete Extract output and starts the next input; the owner retains phase selection and result accounting.",
+    "Remove the fake old-owner __module__ metadata and the one private-pickle-only test. The same actual class/function remain imported for real owner use; cold import isolation remains tested.",
+    "Preserve all upstream research isolation, scheduling and observation source bytes without editing their policies."
+  ],
+  "CPU": {
+    "record_local_before_selected": 50,
+    "record_local_before_passed": 50,
+    "record_local_after_selected": 49,
+    "record_local_after_passed": 49,
+    "intentionally_retired_test": "tests.execution_provider.test_records_query_runtime.RecordsQueryRuntimeTests.test_old_query_iterator_import_and_serialized_locations_remain_available",
+    "fused_before_selected": 3,
+    "fused_before_passed": 1,
+    "fused_before_failed": 1,
+    "fused_before_errors": 1,
+    "fused_after_selected": 1,
+    "fused_after_passed": 1,
+    "final_composition_selected": 50,
+    "final_composition_passed": 50,
+    "final_failures": 0,
+    "final_errors": 0,
+    "final_skips": 0,
+    "final_source_files": 1014,
+    "final_python_files": 970,
+    "counts_overlap_not_added": true,
+    "denied_methods_not_rerun": true
+  },
+  "permission": {
+    "action": "Read the host PID table through Darwin sysctl, as required by psutil Process.children(recursive=True) for the owned CPU fixture child.",
+    "status": "denied",
+    "errno": 1,
+    "reason": "Operation not permitted (originated from sysctl() malloc 1/3)",
+    "location": "EngineProcess._exchange during ready initialization",
+    "completed": "One diagnostic fixture execute call reproduced the original failure; the child started, but there was no native batch and both calls remained unknown.",
+    "remaining": "The two synchronous CPU-child methods are not qualified. Cleanup remains unknown; the old Popen object is unavailable for a separate returncode read.",
+    "after_diagnosis": "No further attempt, privilege change or bypass. The independent existing in-memory Engine case tests phase execution."
+  },
+  "legacy_compatibility": {
+    "retired_metadata": [
+      "records_query_runtime._check.__module__ override",
+      "records_query_runtime._RecordLocalRows.__module__ override"
+    ],
+    "recovery_commit": "7d34d4478ec91937a67188e9e3b11db912dc01ac",
+    "source": "code/src/execution_provider/adapters/records_query_runtime.py",
+    "test_source": "code/tests/execution_provider/test_records_query_runtime.py",
+    "no_replacement_alias_or_roundtrip_gate": true
+  },
+  "structure": {
+    "owner_before": 1028,
+    "owner_after": 985,
+    "record_runtime_before": 437,
+    "record_runtime_after": 455,
+    "fused_runtime_before": 453,
+    "fused_runtime_after": 493,
+    "combined_before": 1918,
+    "combined_after": 1933,
+    "no_new_file_state_owner_or_facade": true
+  },
+  "code_size": {
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "7d34": {
+        "commit": "7d34d4478ec91937a67188e9e3b11db912dc01ac",
+        "metrics": {
+          "core": {
+            "files": 250,
+            "physical_lines": 58628
+          },
+          "main_runtime": {
+            "files": 250,
+            "physical_lines": 58628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 392,
+            "physical_lines": 92284
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114436,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1028
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1004
+          }
+        ],
+        "core_functions_over_100": 51
+      },
+      "latest_upstream": {
+        "commit": "e3533fbb1cff270b8ea52ea2f11704182cc4d3e5",
+        "metrics": {
+          "core": {
+            "files": 252,
+            "physical_lines": 58583
+          },
+          "main_runtime": {
+            "files": 244,
+            "physical_lines": 55575
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 394,
+            "physical_lines": 92239
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114391,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1028
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1004
+          }
+        ],
+        "core_functions_over_100": 51
+      },
+      "current": {
+        "commit": "57ed4d47cee6074d2473ee9504c6f0606818f1db",
+        "metrics": {
+          "core": {
+            "files": 252,
+            "physical_lines": 58598
+          },
+          "main_runtime": {
+            "files": 244,
+            "physical_lines": 55590
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 394,
+            "physical_lines": 92254
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22152
+          }
+        },
+        "src_and_scripts": 114406,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1004
+          }
+        ],
+        "core_functions_over_100": 51
+      }
+    }
+  },
+  "own_production_delta": {
+    "comparable_core_including_research": 15,
+    "main_runtime": 15,
+    "research": 0,
+    "src_and_scripts": 15
+  },
+  "historical_bindings": {
+    "total": 3010,
+    "matched": 3000,
+    "remaining_differences": 10,
+    "added_differences": 0,
+    "remaining_paths": [
+      "code/src/scheduling/core/task_info.py",
+      "code/src/scheduling/submission_control/__init__.py"
+    ]
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_chain_fused_runtime.py": "6500e84d48249f3bfa57a3303de8636c7dcff8707e03d0276bd00889ea924fbf",
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "e1c6bce826901ec87f8fcc982021f188641bf04d55557f75520b8e909d4700a7",
+    "code/src/execution_provider/adapters/records_query_runtime.py": "c2fb5761bab85db6e121ad7272d1af2c948467129a2351538ea10e3529a6f776",
+    "code/tests/execution_provider/test_records_query_runtime.py": "0118ba317639fa49f7f02dd5b20a41e77ef1b1a69e49246b58658168e8bfb275",
+    "code/tests/execution_provider/test_rolling_private_payloads.py": "dc3c9325df5cd232482985c0d5d0f9730e70fafa1b22d3bc7a67c56b77417cd8"
+  },
+  "raw": {
+    "path": "runtime_query_state_raw.json.gz",
+    "bytes": 18270,
+    "sha256": "d483f1f0f082034ccd96701582156846fec6f47714d41450bdf3f85b7abac13a",
+    "decoded_sha256": "b40e463a6e556ee09ba2c23105cc12d5dd6ca90224aef6d3a0e4feca07913c07"
+  },
+  "private_originals": [
+    {
+      "group": "CPU",
+      "file": "runtime-owned-payloads-before.json",
+      "bytes": 142113,
+      "sha256": "68a19adb125d009433abb6bff6422207ad286698ea23ff30e09e78bf37d65a4e"
+    },
+    {
+      "group": "CPU",
+      "file": "runtime-owned-payloads-before.log",
+      "bytes": 11263,
+      "sha256": "8686af19cc2172ae0ab7141ede889dde0be2b83d83f7343f61212a9029ec0767"
+    },
+    {
+      "group": "CPU",
+      "file": "runtime-owned-payloads-after.json",
+      "bytes": 141798,
+      "sha256": "c7ffcce928fa4e9cfd5c7da86408698dbe2a592d4c545f07d7f293712913f7a2"
+    },
+    {
+      "group": "CPU",
+      "file": "runtime-owned-payloads-after.log",
+      "bytes": 11031,
+      "sha256": "6e42b2fb34f95c59f8b2c7a8369b69539d58500f6b28862278eba79a31bd67af"
+    },
+    {
+      "group": "CPU",
+      "file": "fused-relation-runtime-before.json",
+      "bytes": 130044,
+      "sha256": "856c5931eac0609df925b4b158c6743b7687eb8fbd9f5ddb79b452a14f188898"
+    },
+    {
+      "group": "CPU",
+      "file": "fused-relation-runtime-before.log",
+      "bytes": 3604,
+      "sha256": "1ec782d1fc34d32edc65b56ef805f14797523584ddc42612cb7e4a4c25376d5e"
+    },
+    {
+      "group": "CPU",
+      "file": "fused-relation-runtime-after.json",
+      "bytes": 126920,
+      "sha256": "21ad70fa78aec34f0a7671f0609ae4c33a63221e7dca4cbb1db920cd7e294223"
+    },
+    {
+      "group": "CPU",
+      "file": "fused-relation-runtime-after.log",
+      "bytes": 318,
+      "sha256": "9a479cd0cd008018eaa2679921786db3564db0cc7d597a6f3505a813d646655b"
+    },
+    {
+      "group": "CPU",
+      "file": "runtime-duties-research-composition.json",
+      "bytes": 143427,
+      "sha256": "3a20b1e6c9141fee123041fdfc1c4a86e39cb9f41e1df21b1b5e04d756544a86"
+    },
+    {
+      "group": "CPU",
+      "file": "runtime-duties-research-composition.log",
+      "bytes": 11252,
+      "sha256": "d95d716ff360f6b8eff0a7abcae7364e30165a11d13befb2d98f8cd43f014430"
+    },
+    {
+      "group": "payloads-review",
+      "file": "HANDOFF.json",
+      "bytes": 4989,
+      "sha256": "9a7c1fb891b4250f82f705c604b444b742f9937e5c83f702eb998dce03e21a39"
+    },
+    {
+      "group": "fused-review",
+      "file": "HANDOFF.json",
+      "bytes": 3841,
+      "sha256": "d50a13496c58900a300e7de27cc176bd45f07951f8d2ba83080a7dc0143ee348"
+    },
+    {
+      "group": "composition-review",
+      "file": "HANDOFF.json",
+      "bytes": 6745,
+      "sha256": "72a094dc1947907fbb81d333b2855827801ad6b7496482dcb1d662380d06c559"
+    },
+    {
+      "group": "permission-diagnosis",
+      "file": "HANDOFF.json",
+      "bytes": 5322,
+      "sha256": "9dc7f807426d3131fb3230b91417d5d419a65cfe58abeeaa64acc784ece89680"
+    },
+    {
+      "group": "permission-diagnosis",
+      "file": "PROBE.json",
+      "bytes": 21868,
+      "sha256": "f5298ef77bcc6c9cf0fde91307b81568cc0c3c4a6709dc474bac2f87815fe5fa"
+    },
+    {
+      "group": "history",
+      "file": "runtime-coupling-history-sources.json",
+      "bytes": 6871,
+      "sha256": "df4a619afb2ff0ba49cde69e8b9fb3a8395fe5ff53257b70a03fd496dd371efe"
+    },
+    {
+      "group": "history",
+      "file": "runtime-research-composition-history-sources.json",
+      "bytes": 6883,
+      "sha256": "722e6bd036c007f2c7efbde4c0085dc338b5916953373fa98913518a43748a83"
+    },
+    {
+      "group": "recompute",
+      "file": "run_cpu.py",
+      "bytes": 3152,
+      "sha256": "ead13841cbbb7825f948ced64b265ebcba516bc9bec2932d9a881a0dddc5b7b8"
+    },
+    {
+      "group": "recompute",
+      "file": "run_guarded.py",
+      "bytes": 617,
+      "sha256": "76adb2dc909ab05bd7e0978b16a9055d8ba0b167233f8d02675dfbff32886ac0"
+    },
+    {
+      "group": "recompute",
+      "file": "check_history_sources.py",
+      "bytes": 1940,
+      "sha256": "1b794dee51b79fb18e3d0b314c786a46857d82ae5762f3e841dac2c0854d31e3"
+    }
+  ],
+  "original_access": "Retained by run group, filename and SHA-256; no original was removed.",
+  "limits": [
+    "CPU fixture qualification only, no real Ray, model, GPU, database or server run.",
+    "The OS permission failures remain denied and unknown, not test passes.",
+    "No R, model default, semantic algorithm or resource-policy change.",
+    "Record-local runtime still consumes actual owner/model/feedback interfaces; not every private link is removed.",
+    "Research code was preserved in totals and listed separately; moving it is not code deletion.",
+    "No speedup, physical-memory bound or complete historical restoration claim. Main remains unmerged."
+  ],
+  "real_execution": {
+    "real_Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "servers": 0
+  },
+  "active_server_tasks_touched": false,
+  "main_merged": false
+}

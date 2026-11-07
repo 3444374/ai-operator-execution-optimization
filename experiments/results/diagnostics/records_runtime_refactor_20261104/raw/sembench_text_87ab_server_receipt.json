@@ -1,0 +1,78 @@
+{
+  "run_id": "sembench-text-87ab-cpu-execution-20261106-r1",
+  "head": "87ab621f0b788887459aadaeb6986942bd3c1a7a",
+  "tree": "4600a44a8250fae6357751c199f0ff3bbe9e2818",
+  "status": "passed_selected_class_and_CLI_help",
+  "scope": {
+    "selected_class": "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests",
+    "successful_methods": [
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_close_error_preserves_unknown_physical_identity_and_known_usage",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_daft_map_keeps_native_profile_and_original_business_columns",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_empty_relations_do_not_allocate_any_framework_or_model",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_existing_ray_runtime_is_rejected_without_shutting_down_another_owner",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_imlane_extract_passes_author_ownership_and_restores_actual_label_writes",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_incomplete_eof_never_publishes_a_successful_relation",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_iteration_failure_survives_close_and_ray_shutdown_failures_with_final_ledger",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_partial_ray_init_and_shutdown_failure_keeps_original_error_and_unknown_state",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_partial_ray_init_failure_still_closes_its_runtime",
+      "tests.baselines.text.test_sembench_text_backends.SemBenchTextBackendTests.test_ray_filter_passes_only_records_and_retains_filtered_call_evidence"
+    ],
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "collection_errors": [],
+    "CLI": "code/scripts/experiments/run_image_clip_e2e.py --help",
+    "CLI_exit": 0,
+    "preflight": "existing core nonmodel environment check"
+  },
+  "actual_calls": {
+    "models": 0,
+    "real_Ray_clusters": 0,
+    "GPU_queries": 0,
+    "author_binaries": 0
+  },
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "daft": "0.7.21",
+    "ray": "2.56.1",
+    "pyarrow": "24.0.0",
+    "litellm": "1.95.0",
+    "openai": "2.50.0"
+  },
+  "timing": {
+    "class_method_execution_s": 0.02822671364992857,
+    "class_worker_with_imports_s": 12.874943501316011,
+    "CLI_worker_s": 2.0689455065876245,
+    "first_stage_start_to_last_stage_end_s": 19.656337809748948,
+    "not_a_performance_result": true
+  },
+  "source_integrity": {
+    "clean": true,
+    "unchanged_during_suite": true,
+    "code_hashes_count": 1079,
+    "hash_map_sha256": "f6f4e2762cc71b4924b0de9c3cdac876a610c6a77658cf744772c17bdb8372ab"
+  },
+  "cleanup": {
+    "physical_idle": true,
+    "observed_owned_processes": 8,
+    "live_owned_remaining": [],
+    "remaining_new_SHM_names": [],
+    "SHM_used_delta_bytes": 0,
+    "signals": [],
+    "lease_released": true,
+    "scope": "Birth-matched observed own processes plus final inventory; no claim about arbitrary unobserved detached processes."
+  },
+  "source_transfer": {
+    "normal_Git_exit": 124,
+    "normal_Git_attempts": 1,
+    "normal_Git_failure_preserved": true,
+    "verified_public_bundle_bytes": 123116,
+    "verified_public_bundle_sha256": "501c717d82b59e1791a7779f52691d35cd860565cfb0b96a29216ed4037dfde0",
+    "prerequisite": "5b25197dafc03d6ae7fa48e7c0f7460122e85e51",
+    "new_independent_source": true,
+    "other_checkouts_unchanged": true
+  },
+  "original_handoff_sha256": "30b813e163377f73b451a0698ff1c8c95958828feb8a8ae376fa534a1254a293",
+  "original_results_sha256": "71df77c5e07f66a519faa407e052f54afa586d79d2df732339bad8a68707a63c",
+  "not_transferred_to": "Later f526 or optional records query duration changes; each source keeps its actual test scope."
+}

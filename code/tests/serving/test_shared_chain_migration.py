@@ -2,7 +2,6 @@
 
 import base64
 from copy import deepcopy
-import importlib
 import json
 import multiprocessing
 import os
@@ -17,16 +16,13 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.method_workers import lotus_chain_batch as worker
+from src.serving.backends import lotus_chain_worker as worker
 from src.serving.backends import staged_generation_process as staged
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 
 CODE = Path(__file__).resolve().parents[2]
-LEGACY_PROCESS = "src.baselines.text.frameworks.lotus_chain_engine_process"
 PROCESS = "src.serving.backends.staged_generation_process"
-LEGACY_WORKER = "src.baselines.text.frameworks.lotus_chain_batch"
-WORKER = "src.execution_provider.method_workers.lotus_chain_batch"
 
 
 def spawn_identity(queue, process_type, worker_type):
@@ -35,61 +31,45 @@ def spawn_identity(queue, process_type, worker_type):
 
 
 class MigrationTests(unittest.TestCase):
-    def test_legacy_functions_types_and_pickle_globals_have_one_implementation(self):
-        for old, new, names in (
-            (LEGACY_PROCESS, PROCESS, ("ChainEngineProcess", "serve", "EngineProcess", "EngineSpec",
-                                      "GenerationSpec", "MAX_MESSAGE_BYTES", "_encode", "_prepared")),
-            (LEGACY_WORKER, WORKER, ("FusedChainBatch", "_check", "_phase_values", "_source_binding",
-                                    "LotusRecordChain", "RecordOccurrence", "EngineSpec", "IDENTITY_FIELDS")),
-        ):
-            legacy, canonical = importlib.import_module(old), importlib.import_module(new)
-            for name in names:
-                with self.subTest(name=name):
-                    value = getattr(canonical, name)
-                    self.assertIs(getattr(legacy, name), value)
-                    if callable(value):
-                        self.assertIs(pickle.loads(("c" + old + "\n" + name + "\n.").encode()), value)
-                        self.assertIs(pickle.loads(pickle.dumps(value)), value)
 
-    def test_cold_import_orders_do_not_load_baseline_workers_core_tests_or_models(self):
-        program = '''
+    def test_current_workers_import_without_loading_policy_or_models(self):
+        program = """
 import importlib, importlib.abc, pathlib, sys
 sys.path.insert(0, sys.argv[1])
 class Guard(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, *args):
         forbidden = ('src.scheduling', 'src.execution_provider.adapters', 'src.experiments',
-                     'tests', 'scripts', 'ray', 'daft', 'vllm', 'torch', 'lotus')
+                     'src.baselines', 'tests', 'scripts', 'ray', 'daft', 'vllm', 'torch', 'lotus')
         if any(fullname == p or fullname.startswith(p + '.') for p in forbidden):
             raise AssertionError('unexpected dependency: ' + fullname)
 sys.meta_path.insert(0, Guard())
-first = importlib.import_module(sys.argv[2])
-if sys.argv[2] in ('src.serving.backends.staged_generation_process',
-                   'src.execution_provider.method_workers.lotus_chain_batch'):
-    assert not any(n.startswith('src.baselines.text.frameworks') for n in sys.modules)
-second = importlib.import_module(sys.argv[3])
-assert getattr(first, sys.argv[4]) is getattr(second, sys.argv[4])
+process = importlib.import_module('src.serving.backends.staged_generation_process')
+worker = importlib.import_module('src.serving.backends.lotus_chain_worker')
+assert process.ChainEngineProcess.__module__ == process.__name__
+assert worker.FusedChainBatch.__module__ == worker.__name__
 sync = importlib.import_module('src.serving.backends.vllm_sync_process')
 assert sync.CODE_ROOT == pathlib.Path(sys.argv[1])
-'''
-        for old, new, name in ((LEGACY_PROCESS, PROCESS, "ChainEngineProcess"),
-                               (LEGACY_WORKER, WORKER, "FusedChainBatch")):
-            for order in ((old, new), (new, old)):
-                with self.subTest(order=order):
-                    run = subprocess.run([sys.executable, "-I", "-B", "-c", program,
-                                          str(CODE), *order, name], capture_output=True, text=True, timeout=15)
-                    self.assertEqual(run.returncode, 0, run.stderr)
+"""
+        run = subprocess.run([sys.executable, "-I", "-B", "-c", program, str(CODE)],
+                             capture_output=True, text=True, timeout=15)
+        self.assertEqual(run.returncode, 0, run.stderr)
 
     def test_native_adapters_share_worker_without_importing_core_policy(self):
         from src.baselines.text.frameworks import daft_lotus_chain, ray_data_lotus_chain
-        self.assertIs(daft_lotus_chain.FusedChainBatch, worker.FusedChainBatch)
-        self.assertIs(ray_data_lotus_chain.FusedChainBatch, worker.FusedChainBatch)
+        from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch
+        self.assertIs(daft_lotus_chain.FusedChainBatch, ReferenceFusedChainBatch)
+        self.assertIs(ray_data_lotus_chain.FusedChainBatch, ReferenceFusedChainBatch)
+        self.assertTrue(issubclass(ReferenceFusedChainBatch, worker.FusedChainBatch))
+        from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch as CoreBatch
+        self.assertTrue(issubclass(CoreBatch, worker.FusedChainBatch))
+        self.assertFalse(issubclass(ReferenceFusedChainBatch, CoreBatch))
+        self.assertIs(pickle.loads(b"csrc.execution_provider.method_workers.lotus_chain_batch\nFusedChainBatch\n."), CoreBatch)
 
     def test_spawn_unpickles_the_same_shared_types(self):
         context = multiprocessing.get_context("spawn")
         queue = context.Queue()
-        legacy = importlib.import_module(LEGACY_WORKER)
         child = context.Process(target=spawn_identity,
-                                args=(queue, staged.ChainEngineProcess, legacy.FusedChainBatch))
+                                args=(queue, staged.ChainEngineProcess, worker.FusedChainBatch))
         child.start()
         try:
             self.assertEqual(queue.get(timeout=10), (True, True, "src.serving.backends.vllm_sync_process"))
@@ -102,35 +82,34 @@ assert sync.CODE_ROOT == pathlib.Path(sys.argv[1])
             queue.close()
             queue.join_thread()
 
-    def test_old_and_new_cli_preserve_error_and_descriptor_eof(self):
+    def test_current_cli_preserves_error_and_descriptor_eof(self):
         environment = dict(os.environ, PYTHONPATH=str(CODE), PYTHONDONTWRITEBYTECODE="1",
                            CUDA_VISIBLE_DEVICES="", HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
-        for module in (LEGACY_PROCESS, PROCESS):
-            with self.subTest(module=module):
-                invalid = subprocess.run([sys.executable, "-B", "-m", module], env=environment,
-                                         capture_output=True, text=True, timeout=15)
-                self.assertEqual(invalid.returncode, 1)
-                self.assertEqual(invalid.stderr.strip(),
-                                 "private engine worker requires an inherited result descriptor")
-                read_fd, write_fd = os.pipe()
+        module = PROCESS
+        invalid = subprocess.run([sys.executable, "-B", "-m", module], env=environment,
+                                 capture_output=True, text=True, timeout=15)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertEqual(invalid.stderr.strip(),
+                         "private engine worker requires an inherited result descriptor")
+        read_fd, write_fd = os.pipe()
+        try:
+            with subprocess.Popen([sys.executable, "-B", "-m", module, "--serve", str(write_fd)],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    pass_fds=(write_fd,), env=environment) as child:
+                os.close(write_fd)
+                write_fd = None
                 try:
-                    with subprocess.Popen([sys.executable, "-B", "-m", module, "--serve", str(write_fd)],
-                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            pass_fds=(write_fd,), env=environment) as child:
-                        os.close(write_fd)
-                        write_fd = None
-                        try:
-                            _, error = child.communicate(timeout=15)
-                        except BaseException:
-                            child.kill()
-                            child.communicate()
-                            raise
-                    self.assertEqual(child.returncode, 0, error.decode())
-                    self.assertEqual(os.read(read_fd, 1), b"")
-                finally:
-                    os.close(read_fd)
-                    if write_fd is not None:
-                        os.close(write_fd)
+                    _, error = child.communicate(timeout=15)
+                except BaseException:
+                    child.kill()
+                    child.communicate()
+                    raise
+            self.assertEqual(child.returncode, 0, error.decode())
+            self.assertEqual(os.read(read_fd, 1), b"")
+        finally:
+            os.close(read_fd)
+            if write_fd is not None:
+                os.close(write_fd)
 
     def test_new_worker_state_pickle_is_readable_in_a_fresh_interpreter(self):
         value = object.__new__(worker.FusedChainBatch)
@@ -140,7 +119,7 @@ assert sync.CODE_ROOT == pathlib.Path(sys.argv[1])
         program = '''
 import base64, pickle, sys
 sys.path.insert(0, sys.argv[1])
-from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+from src.serving.backends.lotus_chain_worker import FusedChainBatch
 value = pickle.loads(base64.b64decode(sys.argv[2]))
 assert type(value) is FusedChainBatch
 assert value.received == {'occurrence-0'}
@@ -171,6 +150,8 @@ class StageTransportTests(unittest.TestCase):
                 report = process.close(2)
                 self.assertTrue(report["process_exit_confirmed"])
                 self.assertTrue(report["engine_api"]["engine_api_shutdown_confirmed"])
+                self.assertGreater(report["engine_api"]["close_timeout_s"], 0)
+                self.assertLessEqual(report["engine_api"]["close_timeout_s"], 2)
                 self.assertIs(process.close(2), report)
             finally:
                 process.close(2)
@@ -219,6 +200,9 @@ class FixtureChain:
 
 class FixtureProcess:
     def __init__(self, *args):
+        from src.serving.backends.model_context import model_context_record
+        self.ready_report = dict(engine_uid='CPU-worker', model_context=model_context_record(
+            args[0], 'CPU-worker', args[0].max_model_len or 32768))
         self.closes = 0
         self.calls = []
 

@@ -1,0 +1,52 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.ipc_components.v1",
+  "integration_base": "402cdda3a5e7e43ced4b46f5666df731d8250a14",
+  "state": "124 local CPU passed; actual-author/software IPC r4 passed; first real model startup failed before Q3 due whole-stage SHM budget omission",
+  "methods": 124,
+  "passed": 124,
+  "models": 0,
+  "GPU_runs": 0,
+  "source_files": {
+    "code/integrations/imlane_duckdb/model_provider.py": "3d992fdce85eb05810d48f62dcd9767536b39b1a46a826dc1454045e811b1997",
+    "code/integrations/imlane_duckdb/model_service.py": "d0534733a57e507842f15b04ec63efb7de3f02e12b3ee3e04b7792173203ad45",
+    "code/integrations/imlane_duckdb/model_ipc_worker.py": "5b5f85a53295ea4eb472130c08b52d451f18e1160a0d750d04ae464652dcbd76",
+    "code/integrations/imlane_duckdb/model_wire.py": "1173d6b152cde76d9aca1918e6869d921284c721249f06290706bc6864b7bc2e",
+    "code/integrations/imlane_duckdb/q3_udf.py": "e33613c6336e588bcff7e1c9f765ae03ece0356290aff3057954aa9ed1483470",
+    "code/integrations/imlane_duckdb/q3.cpp": "bac35ec063e3393331a02151a3ad3f029eb360fa4a061ffac3dc5939fd6e2a85",
+    "code/src/experiments/native_imlane_model_query.py": "0bee9594851a890ad54bc958f57d66d8382d2f6dccedbd09efc6c15e87692919",
+    "code/src/experiments/native_imlane_query.py": "1b8a9f0deaa4be7239dfe59b96186bf0e78dfd06cd7100c197b0010bc6480e6c",
+    "code/tests/baselines/text/test_imlane_duckdb_model_provider.py": "f46946b5162b4219fd98d6b87145c27b5a9b36cc0e045493057b92d47b32ac2f",
+    "code/tests/baselines/text/test_imlane_duckdb_model_service.py": "5887e0155c293266034153a52f19472197b915d2cb6212771f0807ae26ea6376",
+    "code/tests/baselines/text/test_imlane_duckdb_model_ipc_worker.py": "69b3b6b253278734fd96b7e9bd28908b2a0ba16e34e30a369cef30b3f4b8f86d",
+    "code/tests/baselines/text/test_imlane_duckdb_model_wire.py": "001e55979dbec784d0d67940bf3dc08f22b4fbc5579c34aaa54b5d8992b8b0a5",
+    "code/tests/experiments/test_native_imlane_model_query.py": "075d183fdac0a3148737df0d6fbe99acf8f96a6414314616f18043c535b72ae2"
+  },
+  "raw_log_sha256": "746366addd47e6a07a6649cefa959d82743d2538998548781d40fa6c0da72300",
+  "validation_scope": [
+    "real local AF_UNIX with four clients sharing one software engine; no framework/model/GPU",
+    "one batch129 rows has no added row concurrency cap",
+    "deadline/disconnect/error abort and drain; late final is unknown",
+    "native prompt plus explicit8192 cap must fit actual context; no truncation",
+    "pure process owner birth and shared absolute cleanup deadline; exact private socket cleanup"
+  ],
+  "intermediate_checks": {
+    "root_contracts": 66,
+    "first_integrated": 123,
+    "final_distinct": 124,
+    "note": "do not add repeated methods; first socket run required sandbox local-bind exception, not a model test"
+  },
+  "remaining": [
+    "actual model Q3 generation/quality and normal close; first startup stopped before dispatch",
+    "generation-phase native SHM capacity beyond the observed startup value",
+    "performance and repetition"
+  ],
+  "existing_IPC_reuse_audit": {
+    "gateway": "RequestAdmission and HTTP in ordinary path; Core in incremental path; not a neutral model server",
+    "AsyncEngineProcess": "one parent with inherited socketpairs, cannot be directly shared by four author processes",
+    "reused": "existing pure birth/StopBudget/process supervision and one absolute query/cleanup deadline; not Core admission",
+    "new": "minimal project AF_UNIX batch RPC plus public AsyncLLM calls"
+  },
+  "HTTP_history_restore": "e420a0abbc02782a919340a3a83179f077f2598a; http_software_cpu.json preserved",
+  "server_software_evidence": "ipc_server_cpu.json",
+  "real_model_startup_failure": "startup_shm_failure.json"
+}

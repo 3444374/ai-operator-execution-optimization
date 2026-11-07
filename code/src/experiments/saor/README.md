@@ -1,43 +1,24 @@
-# SAOR experiment cores
+# SAOR 历史研究与离线证据
 
-This package contains reusable, typed experiment contracts and offline evidence
-logic. Command-line scripts under `code/scripts/` must remain thin wrappers.
+当前保留 SAOR 调度算法、研究方案、声明、离线分析与历史证据。
+通用共享额度与 SAOR 策略一起位于[独立研究组件](../../research/multitask/README.md)，
+本目录只编排、校验与分析，不向普通 records 注入研究策略。
+14 份原实验声明位于[独立材料](../../../../experiments/saor/README.md)，
+其原路径与逐文件摘要见[资产清单](../../../../experiments/reproduction/legacy_recipes_20261105/MANIFEST.json)。
 
-For the current multi-Job comparison:
+`native_system_contract.py`、validator、artifacts、completion、observation、publisher 与 summary
+保留原五臂身份、完成证据、失败关闭校验和结果读取职责；feeding-gap、feeding-ceiling、project-mechanism
+模块继续支持历史研究分析。离线 summary 直接使用所属证据模块，不加载旧矩阵执行器。
+旧 matched 配置、执行编排和专属 preflight 已退役，完整来源及恢复方式见
+[历史执行接线](../../../../experiments/reproduction/native_baselines/README.md#retired-native-system-matrix)。
+这些模块不为当前 SemBench 装配另一套执行器。
 
-- `native_system_contract.py` and `native_system_parser.py` define the five-arm
-  PostgreSQL-source-to-completion identity, typed Job releases, and MFU contract.
-- `native_system_validator.py`, `native_system_evidence.py`, and
-  `native_system_publisher.py` reject mixed evidence, redact persisted text, and
-  publish fail-closed generations.
-- `native_system_bindings.py` checks the matched contract against the native and
-  Project executor configurations before dispatch.
-- `native_system_readiness.py` composes four ordered gates. The live read-only
-  system producer is `native_system_preflight.py`; it probes health/PG/Ray and
-  recomputes bounded raw evidence instead of trusting passed booleans. A static
-  or service-only pass is explicitly not rehearsal-ready.
-- `native_system_artifacts.py` deep-validates actual correctness-smoke and
-  rehearsal roots, cell artifact hashes, completion/provenance, and exact tar mirrors.
-- `native_system_execution.py` owns executor adapters; `native_system_completion.py`
-  validates executor completion traces against frozen manifest identities without
-  writing to an output sink.
-- `native_system_observation.py` validates the common pass-through gateway trace and
-  derives T0--T4, request SLO/tails, actual-token weighted fairness/service lag, and
-  explicitly within-run (not full-solo) interference observations for all five arms.
-- `native_system_matched.py` owns authorization and cell orchestration;
-  `native_system_summary.py` revalidates sealed evidence and produces only the
-  five-arm system, per-Job, and resource tables.
-- `vllm_0251_source_audit.py` checks the installed distribution and source hashes
-  for native readiness. Its three source-identity tests remain in
-  `test_vllm_0251_source_audit.py`.
+依赖旧 PG／HTTP 的 bindings、readiness、execution 和启动脚本已退出维护目录；
+旧运行命令只在[精确历史树](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)解释。
+原 native-system 三份 JSON 随该批归档，不在新目录补建兼容入口。
 
-The unexecuted official S-LoRA FCFS/VTC and four-arm cross-layer prototypes,
-including their plugin and pure policy oracle, have been retired. Their complete
-sources and templates remain at the
-[fixed historical commit](https://github.com/3444374/ai-operator-execution-optimization/tree/928a339334a4075fb2cf96a2dddc4727dec984fe).
-Runtime compatibility, Job identity transport, and custom-FCFS qualification
-were incomplete; they provide no model comparison or performance qualification.
-
-Historical Project FIFO/DRR/VTC-style/strict-priority modules and evidence stay
-available for internal attribution, but they are not native system baselines and
-are not cells in the current five-arm matrix.
+未接入的 `saor_pipeline.py` 和 CPU control microbenchmark 原件仍位于
+[历史复现来源](../../../../experiments/reproduction/native_baselines/README.md)。
+未执行的 S-LoRA FCFS／VTC 与跨层原型继续从
+[固定来源](https://github.com/3444374/ai-operator-execution-optimization/tree/928a339334a4075fb2cf96a2dddc4727dec984fe)恢复。
+这些材料、旧模板与 CPU 检查不构成模型比较、SemBench 查询或性能资格。

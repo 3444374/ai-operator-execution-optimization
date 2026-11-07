@@ -8,9 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 import asyncio
 import json
 import threading
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters import records_transport as transport_module
 from src.execution_provider.adapters import lotus_records_actor_owner as actors
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
@@ -103,6 +105,45 @@ class IPCProducerRetirementTests(unittest.TestCase):
 
 
 class CoreProducerRetirementTests(unittest.TestCase):
+    def test_expired_query_does_not_unconfirm_a_stopped_transport_on_repeated_close(self):
+        rows = fixture.AsyncCoreCompositionTests().rows(["fast"])
+        with fixture.ThreadedRuntime(rows):
+            owner = fixture.AsyncCoreCompositionTests().owner()
+            try:
+                list(owner.evaluate(fixture.Source(rows), query_id="already-closed"))
+                first = owner.close(timeout=3)
+                self.assertEqual(first["status"], "closed")
+                with patch.object(core, "time", SimpleNamespace(monotonic=lambda: owner._deadline + 1)):
+                    repeated = owner.close()
+                self.assertEqual(repeated["status"], "closed")
+                self.assertEqual(repeated["producer_retirement"], first["producer_retirement"])
+                self.assertEqual(repeated["core_usage"]["held_tasks"], 0)
+            finally:
+                owner.close(timeout=2)
+
+    def test_local_delivery_uses_only_the_remaining_cleanup_deadline(self):
+        backend = Mock()
+        backend.close.return_value = True
+        transport = SimpleNamespace(backend=backend, recover_actor_receipts=lambda receipts: [])
+        owner = SimpleNamespace(close=lambda: dict(cleanup_errors=[], status="closed"))
+        with patch.object(transport_module, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 21.5]))):
+            report = core.close_prepared_core(owner, transport, None, core.CoreRecordsCapacity(),
+                                              deadline=100., timeout=2.)
+        backend.close.assert_called_once_with(timeout=0.5, wait_pending=True)
+        self.assertTrue(report["transport_closed"])
+
+    def test_spent_actor_cleanup_deadline_cannot_start_an_extra_transport_wait(self):
+        backend = Mock()
+        backend.close.return_value = False
+        transport = SimpleNamespace(backend=backend, recover_actor_receipts=lambda receipts: [])
+        owner = SimpleNamespace(close=lambda: dict(cleanup_errors=[], status="closed"))
+        with patch.object(transport_module, "time", SimpleNamespace(monotonic=Mock(side_effect=[20., 22.]))):
+            report = core.close_prepared_core(owner, transport, None, core.CoreRecordsCapacity(),
+                                              deadline=100., timeout=2.)
+        backend.close.assert_called_once_with(timeout=0., wait_pending=True)
+        self.assertFalse(report["transport_closed"])
+        self.assertIsNone(report["producer_retirement"])
+
     def test_prepare_not_yet_in_actor_retains_until_local_delivery_stops(self):
         for preparation_fails in (False, True):
             with self.subTest(preparation_fails=preparation_fails):
@@ -231,21 +272,24 @@ class CoreProducerRetirementTests(unittest.TestCase):
 
 
 class LocalProducerRetirementTests(unittest.TestCase):
-    def test_actor_reader_still_delivering_prevents_retirement_until_it_exits(self):
+    def test_active_submission_prevents_retirement_until_its_RPC_returns(self):
         case = actor_fixture.AsyncActorTests()
         case.setUp()
         self.addCleanup(case.doCleanups)
         actor = case.actor()
         ready, release = threading.Event(), threading.Event()
-        original = actor._run_core
+        original = actor._start_core
         def held_delivery(*args):
             value = original(*args)
+            # Close only after the fixture outcome arrives, while this RPC is still held.
+            case.until(actor, lambda: actor.engine.snapshot()["ready_results"] == 1)
             ready.set()
             if not release.wait(3): raise TimeoutError("fixture delivery was not released")
             return value
-        with ThreadPoolExecutor(max_workers=1) as pool, patch.object(actor, "_run_core", side_effect=held_delivery):
+        with ThreadPoolExecutor(max_workers=1) as pool, patch.object(actor, "_start_core", side_effect=held_delivery):
             try:
-                result = case.submit(pool, actor, text="unknown")
+                result = pool.submit(actor.try_submit_core, [actor_fixture.prepared(text="unknown")],
+                                     time.monotonic() + 5, 4096, (0, 0))
                 self.assertTrue(ready.wait(2))
                 report = actor.close(0.5)
                 self.assertEqual(report["status"], "unknown")
@@ -254,7 +298,9 @@ class LocalProducerRetirementTests(unittest.TestCase):
                 self.assertIn("async_actor_readers_still_active", report["cleanup_errors"])
             finally:
                 release.set()
-            self.assertEqual(json.loads(result.result(2))["status"], "unknown")
+            self.assertEqual(result.result(2), dict(status="accepted"))
+            packet = json.loads(actor.poll_prepared_batch((0, 0)))
+            self.assertEqual(packet["results"][0]["result"]["status"], "unknown")
         final = actor.close(2)
         self.assertEqual(final["status"], "closed")
         self.assertEqual(actor.snapshot()["held_requests"], 0)

@@ -1,0 +1,151 @@
+{
+  "schema": "semloom.session_capacity_preflight_cpu.v1",
+  "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+  "status": "CPU scope passed; final candidate review pending",
+  "finding": "static None CPU preflight accepted an unresolved plan and driver started Ray before rejection",
+  "changes": [
+    "Static plan validation requires its finite request grant.",
+    "The driver validates static grants and resolves Core capacity before creating its private directory or inspecting/initializing Ray.",
+    "The same existing Core resolver runs once at the earlier point; no new capacity policy or resource detector."
+  ],
+  "positive_coverage": [
+    "finite explicit static resource declaration",
+    "ordinary async None plus complete independent budget through actual public factory",
+    "rolling None plus complete independent budget with original deferred model owner",
+    "unchanged explicit IPC/Core/Method grants and caller None intent"
+  ],
+  "negative_coverage": [
+    "resident and isolated static None",
+    "unchecked driver startup",
+    "unresolved sync/async Core declarations",
+    "invalid complete budget before Ray"
+  ],
+  "runs": [
+    {
+      "run_id": "static_capacity_before",
+      "selected": 6,
+      "run": 6,
+      "passed": 2,
+      "failure_records": 6,
+      "error_records": 1,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "45a664cfb9505b92752a5b6cc575ae93aade9b1c88fd4c556698c312f0d26b61",
+      "log_sha256": "0710f9ddb930c5479be83ff9042ff995ea62619ed72d0c8dececca39068b13ad"
+    },
+    {
+      "run_id": "static_capacity_after",
+      "selected": 77,
+      "run": 77,
+      "passed": 77,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "cfc2178b9092ed73e7b901132f2ce1637f2eba7881c059ab3db1f7599ede75e5",
+      "log_sha256": "d4e657d73f9eee087128eb540756a39d5c7ca5a19501d102d39848e5b19a0937"
+    },
+    {
+      "run_id": "static_capacity_scope",
+      "selected": 103,
+      "run": 103,
+      "passed": 103,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "4e31e721427585666acec06b7e9c250f545d56650b6d95133d377864b737d5d5",
+      "log_sha256": "2c377b33906de7c503d6e416feff0e823ad339353057f05fd6cdc7891f32667d"
+    },
+    {
+      "run_id": "static_capacity_review_scope",
+      "selected": 201,
+      "run": 201,
+      "passed": 201,
+      "failure_records": 0,
+      "error_records": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "f9d00d35993bc9d9d4caa39fd4c871c501540377a60f85f3e726b5dfd632e1d8",
+      "log_sha256": "9d76f1f2c16792654f676e4daecc0a47013c85c937adadf1dae2c2643f1f66c7"
+    }
+  ],
+  "history": {
+    "bindings": 3010,
+    "mismatches": []
+  },
+  "unchanged_control_sources": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "sha256": "4426ccb379d78a9bb401ebba1c738fa56e396d8ebaa0351a9534a9469ce1f366"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_request_feedback.py",
+      "sha256": "edb000f54e07b0a74c48ff08e8fafabf705f072c79ea9f50cc75968a6d70693d"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_native_sampler.py",
+      "sha256": "d1b60125b7ef1de73b2d431404ebd708591671219366ca0c976f07e6f440fe99"
+    },
+    {
+      "path": "code/src/scheduling/runtime/observations.py",
+      "sha256": "6c0bfed70893158c64b835b849d5fe09eb0d7adf63576a21d389e0779184234f"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+    },
+    {
+      "path": "code/tests/execution_provider/test_core_geometric_admission.py",
+      "sha256": "d29fd8c07142e25ce56326ec6783ed0c61969e51de55bdaef1129b7c9bb84d34"
+    }
+  ],
+  "geometric_status": "still unqualified; see geometric_source_handoff_checks.json",
+  "original_fixture_issue": "The first added static-positive fixture called close(timeout=...) on a no-argument static API; corrected fixture only, original output retained.",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "final_qualification": {
+    "run_id": "static_capacity_final",
+    "selected": 205,
+    "run": 205,
+    "passed": 205,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "modules": [
+      "tests.execution_provider.test_records_unspecified_requests",
+      "tests.scheduling.test_record_feedback_variants.LegacyFeedbackContracts",
+      "tests.execution_provider.test_records_request_feedback_safety",
+      "tests.execution_provider.test_lotus_record_local_tokens",
+      "tests.execution_provider.test_lotus_records_async_actor",
+      "tests.experiments.test_records_resource_budget",
+      "tests.experiments.test_records_capacity_config",
+      "tests.experiments.test_core_capacity_identity",
+      "tests.execution_provider.test_records_implicit_ipc_totals",
+      "tests.execution_provider.test_records_model_work_feedback",
+      "tests.experiments.test_core_execution_profile",
+      "tests.experiments.test_session_capacity_preflight",
+      "tests.experiments.test_movie_records_session",
+      "tests.experiments.test_native_query_lifecycle",
+      "tests.experiments.test_movie_token_resident_session",
+      "tests.experiments.test_native_baseline_reproduction"
+    ],
+    "all_code_hashes_matched": 1290,
+    "source_unchanged": true,
+    "json_sha256": "1f9ab5e3c355afc3ffd9e23fee150e0d6c1a7adf9b977299a99dd306acde26b2",
+    "log_sha256": "249037a641cde9994a97ce5ec5f865047cc95857aa37f432d86737c54954e1d0"
+  },
+  "scope_status": "205 scoped CPU methods passed; exact candidate independent review pending; no claim of full-tree qualification",
+  "whole_tree_status": "Original f208 full-suite failure remains recorded. Shared provider handoff is not fixed, and accepted-but-computing close scope remains unqualified."
+}

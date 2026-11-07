@@ -1,0 +1,26 @@
+{
+  "source": "verbatim terminal output returned by exec session 62802; additional copy, not the unittest stream file",
+  "run": "focused_after",
+  "incorrect_environment_variable": "LITELLLM_LOCAL_MODEL_COST_MAP",
+  "required_environment_variable": "LITELLM_LOCAL_MODEL_COST_MAP",
+  "observed_external_access": "LiteLLM attempted to fetch its public model cost map; hostname resolution failed, then local backup was used",
+  "identified_network_attempts_at_least": 1,
+  "model_inference_calls": 0,
+  "later_run_flags_corrected": [
+    "affected_union",
+    "local_socket_after"
+  ],
+  "warning_preserved": "focused_after.terminal.log",
+  "schema": "semloom.cpu_terminal_copy.v1",
+  "original_terminal": {
+    "bytes": 469,
+    "sha256": "d03b178a9cd1bfd343382e28b480baa373456c20b4f243273bf82f941313d8c1",
+    "private_original_retained": true
+  },
+  "public_terminal": {
+    "bytes": 469,
+    "sha256": "d03b178a9cd1bfd343382e28b480baa373456c20b4f243273bf82f941313d8c1",
+    "text": "\u001b[92m05:49:59 - LiteLLM:WARNING\u001b[0m: get_model_cost_map.py:290 - LiteLLM: Failed to fetch remote model cost map from https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json: [Errno 8] nodename nor servname provided, or not known. Falling back to local backup.\n{\"label\": \"focused_after\", \"selected\": 23, \"testsRun\": 23, \"passed\": 23, \"failed\": [], \"errors\": [], \"skipped\": 0, \"elapsed_s\": 5.205906332936138, \"source_unchanged\": true}\n"
+  },
+  "scope": "Failed public cost-map lookup during a CPU fixture run; not a model request. Corrected offline flags used subsequently."
+}
