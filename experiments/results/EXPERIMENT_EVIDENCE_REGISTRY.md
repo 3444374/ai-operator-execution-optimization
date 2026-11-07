@@ -2107,3 +2107,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [Core私有导入直接归属](diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)
 记录f93d到c628的五个旧转出撤去、九共同行为加两迁移序列化用例前后各十一CPU及二十条原来源；整合文件摘要保持，HF检查未完成和Derived IPC待验分列，不新增模型或实际Ray结论。
+
+[离线特征与通用Ridge数学分开](diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)
+记录f8e177到615f768的23维schema归位、原八项前后CPU及十条历史读源；27行迁移而非算法删除，原数值／特征顺序及历史身份保持，没有新增模型或性能证据。

@@ -4738,3 +4738,15 @@ Derived fixture的resolver局部导入和补丁位置一并迁到records_capacit
 | src＋scripts＋tests合计 | 243,098 | 279,707 | 193,542 |
 
 三目录合计相对main减少49,556行，相对3fd减少86,165行；保留研究与恢复原件，文件移动继续单列，不能把归类变化当算法删除。上述为源码统计与软件检查，不是完整模型质量／性能结论。
+
+<a id="offline-cost-feature-schema"></a>
+## 历史CSV特征与通用Ridge数学分开
+
+独审候选`f8e17799cb06086e1a4c0871b21b35f8eab3b3e9`整合为`615f768e7633e12df10ee233cc0aaab5b988db48`。
+23维FEATURE_NAMES原样归已有experiments/operator_costs/profiles.py，与feature_vector同处；CLI直接读取该离线schema，旧regression.FEATURE_NAMES入口退出，没有反向导入或兼容壳。Ridge、其余数学及当前运行时work／token估算保持。
+原schema检查迁到既有CLI测试类，断言不变；前后各八项纯CPU通过，无失败、错误或跳过。算法／特征向量及其余测试AST保持，原件落盘后没有因连接恢复而重跑。
+十条受影响历史读源通过；准确24a2的regression原件为13,698字节、gzip为4,093字节，五份清单仅增五条来源及五条格式，原预期摘要、身份、容量映射及其他来源保持。
+整合九个文件与已审候选摘要相同，先前f93十五文件保持，没有重复八项或十条读源，也没有构造完整历史树。
+
+27行只是从planning归离线：全部src＋scripts、测试及三目录Python合计净变化均为零，不是算法删除。准确615f768e的核心为49,356行，src＋scripts101,287行、测试92,255行，三目录合计193,542行；此前同口径main／3fd合计保持。
+本批没有新代价模型、真实LLM／Ray／GPU或查询性能结果；CSV行估计器的其余职责正在另行核查，不借本次归位声称都已处理。

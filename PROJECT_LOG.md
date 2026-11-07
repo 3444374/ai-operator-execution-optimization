@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：历史特征与通用代价数学分开
+
+[23维离线特征归位](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)
+CLI和schema专测直接归离线模块，Ridge数学与当前运行估算保持；原八项前后CPU、十条历史读源与独审通过，没有新增代价模型。
+27行仅在src内部归类，全部Python／测试净增减为零；准确原件及五份恢复映射保留，未重复测试或扩大模型实验。
+
 ## 2026-11-07：私有导入直达实际模块
 
 [Core导入来源整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)
