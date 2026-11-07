@@ -8,11 +8,7 @@ from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS, _prepared
 
-from .records_feedback_observation import (
-    audit_integer as audit_integer, qualify_resource_observation as qualify_resource_observation,
-    resource_probe_view as resource_probe_view, snapshot_response_header as snapshot_response_header,
-    snapshot_rpc_report,
-)
+from .records_feedback_observation import snapshot_rpc_report
 from .records_native_sampler import RecordsNativeSampler
 
 
