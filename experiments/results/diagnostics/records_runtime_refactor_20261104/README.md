@@ -4838,3 +4838,12 @@ CLI按既有项目包正常导入，移除spec_from_file_location自载及对应
 AsyncEngineProcess构造器在socket／子进程启动前建立ready_report；单项与批提交直接读该字段，不再用缺省getattr兜底。两个绕过构造器的原CPU夹具补同一None初态，原有测试体与方法数保持。
 原两项CPU在修改前后各通过一次，覆盖完整声明槽位、未消费结果继续占额、单项／批提交的None期限；没有socket、子进程、真实Ray或模型。五条已有历史来源读回匹配，清单未改，整合没有重复这些检查。
 源码行数不变，夹具增2行且没有新增测试方法；当前三目录Python为193,216行。None仍交原上下文解析，接纳、未知执行及资源归还规则未改，也没有新增服务器测试。
+
+<a id="completed-phase-input-references"></a>
+## 完成阶段后释放已不用的输入索引
+
+独审候选`d0c4841aa0b046346cfbcb3b9890fe5cc13af626`整合为`0a32913078f8416a30b8edbd639eb1343a347fcc`，保留已发布就绪状态精简。
+record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧索引跨阶段持有；现在只在原完成处理、历史／反馈记录及driver.close成功后丢弃两索引。未决传输、complete／adopt／close异常继续持有输入，run.calls、Extract结果、关系数据与ACK逻辑不改；无人读取的完成标志_method_complete同时删除，原根方法失败标志_root_failed保留。
+现有SourceRetentionTests新增一个纯内存行为用例，五个子场景；修前成功Extract后的两处弱引用仍存活，反例失败，修后同一方法通过。Extract完成及关闭异常调用实际ChainRun.complete和complete_relation，解析结果与LM统计用替身；adoption只验证原异常，不声称完整Filter/Map执行。
+没有扩跑原四个用例或全套，没有LOTUS／Torch／vLLM／Ray重导入尝试、socket或子进程。原失败保留，整合三文件与受测／已审字节相同，前批三文件保持，没有重复行为测试；历史清单保持，当前模块和专测不属于旧投影输入。
+运行时净增1行、测试增73行，新增一个有反例的生命周期用例；README补3行职责说明，没有新管理对象或检查层。当前核心49,116行、src＋scripts101,215行、测试92,075行，三目录合计193,290行，相对main少49,808行、相对3fd少86,417行。这里验证引用释放，不是实际RSS下降、完整原生LOTUS链或性能结果；服务器四项仍按946记录待执行。

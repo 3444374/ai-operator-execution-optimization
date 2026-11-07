@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：阶段输入按原生命周期释放
+
+[阶段输入持有修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)避免完成的Extract准备行与Filter/Map来源绑定跨阶段滞留，只在原成功收尾后丢索引，失败和未知执行所需数据保留。单个纯内存反例修前失败、修后通过，没有新检查层或原生模型／RSS结论；源码增1行、测试增73行如实登记。
+
 ## 2026-11-07：父进程使用已有就绪字段
 
 [就绪状态读取](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)去掉构造器已保证字段的缺省兜底，两个原手工夹具补初态。原两项CPU前后通过，没有新增检查、测试方法或服务器派单；None的上下文处理和现用额度不变。

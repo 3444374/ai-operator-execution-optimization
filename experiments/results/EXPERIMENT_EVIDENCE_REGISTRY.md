@@ -2134,3 +2134,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [IPC父进程直接读已有状态](diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)
 记录ace7到f934的两处缺省兜底精简与两夹具初态补齐；两项原CPU前后通过、五条旧源保持，整合树相同，没有新测试方法或实际IPC／模型运行，源码行数不变。
+
+[完成阶段的输入引用释放](diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)
+记录d0c到0a329的两索引释放与未读标志删除；单方法五子场景修前失败、修后通过，实际Extract完成／关系处理及异常持有保持，原四项未扩跑。运行时增1行、测试增73行，不证明真实链、模型或RSS收益，原失败私有保存。
