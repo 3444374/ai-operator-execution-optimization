@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：无现用调用的HTTP容量采样命令退役
+
+[独立采样入口清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-capacity-sampler)删除旧HTTP指标／进程／GPU采样CLI共65行；当前代码、配置、测试和文档没有调用者，第三方原生观测保持。公开279原件保存一份，五份历史投影仍读取已有7bf原件，清单及原始结果不改；没有新增测试或运行采样服务。
+
 ## 2026-11-07：校准身份复用一份实际容量解析
 
 [容量解析整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#calibration-runtime-resolution-reuse)把实际运行配置解析留在原身份构造点，归一化及准备模式直接复用，移除第二次容量／profile／IPC构造。21项既有CPU前后通过，12组合完整身份与签名一致，旧候选默认对比及模型ready语义保持；只报告调用次数减少，不外推查询加速。

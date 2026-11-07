@@ -26,6 +26,7 @@
 
 同步原生函数体检查从[现有 unittest](../tests/records_cpu.md#sync-native-source-check)运行。
 旧 ACK 语法树重放及其一次性包装脚本已退役，[同版本恢复](../../experiments/reproduction/native_baselines/README.md#retired-ack-source-replay)保留原演示。
+无现用调用的独立HTTP容量采样命令也已退役，[准确原件](../../experiments/reproduction/native_baselines/README.md#retired-http-capacity-sampler-source)单独恢复；第三方原生观测不变。
 
 CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／driver Python、源码身份、
 资源所有权、持久次数额度和最终关闭证据；`--help`／CPU 检查不证明这些实际环境已可运行。

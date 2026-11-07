@@ -2191,3 +2191,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [校准实际容量解析复用](diagnostics/records_runtime_refactor_20261104/README.md#calibration-runtime-resolution-reuse)
 21项原CPU前后通过、测试未改；12组合的完整身份JSON和签名保持。原独立预算／旧B的profile解析2→1、交错／事件3→1，必要候选默认比较与服务预览计算保留；不推断性能收益。没有新类型、控制器、模型或硬件操作，五份原5ff历史映射保持，源码净减7行。
+
+## 2026-11-07：旧独立HTTP容量采样入口退役
+
+[入口调用、保留观测及准确恢复](diagnostics/records_runtime_refactor_20261104/README.md#retired-http-capacity-sampler)
+删除无当前代码、配置、测试或文档调用的完整65行CLI；公开279原件单独保存，五条历史读取仍使用原7bf来源。
+清单及现用观测源码保持，没有新增测试、真实服务或GPU运行；不外推全项目完成或查询性能。

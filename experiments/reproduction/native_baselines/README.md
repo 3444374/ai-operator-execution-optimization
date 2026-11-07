@@ -3,6 +3,21 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-http-capacity-sampler-source"></a>
+## 旧独立HTTP容量采样命令恢复
+
+`code/scripts/analysis/sample_capacity_service.py`只按显式端口读取HTTP指标，并采集指定进程和GPU；没有模型推理。
+当前代码、配置、测试和文档没有调用此命令，维护树删除完整CLI，不保留转发入口；现用原生及第三方观测保持。
+
+[公开279原件](historical_sources/27929150/code/scripts/analysis/sample_capacity_service.py.gz)逐字对应
+`27929150d83f134ad5ad48c7aaf382ab40ae19ae`，gzip为1,310 bytes，解码3,018 bytes，
+SHA-256 `c1d34e310216ed95b9f46b1069af511e9cee219fbb760d99fae601f861ade65e`。
+解码后放入独立恢复目录；该文件不是当前脚本入口，也不会由导入或恢复操作启动采样。
+
+五份具名投影早已指向[准确7bf原件](historical_sources/7bf1d92b/code/scripts/analysis/sample_capacity_service.py)，
+其SHA-256为`a610981bad11c42ebc9cd45d5623c68bc6584de72909587de95f7a3ccd075d9c`；来源映射、预期摘要、投影身份和清单字节保持。
+五条相关历史读取及公开279解码核对通过，没有执行旧命令、HTTP、进程探测或GPU操作。
+
 <a id="retired-phase-runner-preparation"></a>
 ## 旧phase-change运行准备代码恢复
 
