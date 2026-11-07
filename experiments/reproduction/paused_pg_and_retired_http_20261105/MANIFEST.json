@@ -2082,6 +2082,13 @@
       "bytes": 39,
       "sha256": "9e9b2cfec47519f49ee73cb533c459e22f8ca54fe5ba1cbec59f3d5883fe191c",
       "category": "paused_postgresql"
+    },
+    {
+      "path": "code/configs/m1_screening.example.json",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/configs/m1_screening.example.json",
+      "bytes": 2484,
+      "sha256": "cad52ac6da6dafe4242358e236a576aefcbe4ae26607cce8109689679c45751e",
+      "category": "paused_postgresql"
     }
   ]
 }

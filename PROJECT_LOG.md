@@ -2,6 +2,13 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：旧PG示例随campaign归档
+
+原M1示例配置移至[配套历史资料](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retained-m1-config)，
+保留全部2484字节、原路径与摘要，和7bf1完整来源中的campaign一起恢复。现用配置目录不再保留孤立配方，
+PG、SAOR和历史运行记录保持；本批不改变生产Python实现，也不运行数据库或模型。
+同时更正SDK能力预检表述：模块定位与版本读取、后续实际LOTUS执行分别记录，原始失败和通过结果保持。
+
 ## 2026-11-07：服务器实际LOTUS解析与cascade
 
 [五组件实测](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)

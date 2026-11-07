@@ -5119,7 +5119,8 @@ launcher + resource tests -> serving.vllm_resources
 实际`src`来自该worktree，五文件运行前后摘要相同。原baseline目录保持干净，完整dbc树没有执行。
 
 环境为Python3.12.3、LOTUS1.2.4、LiteLLM1.95.0、OpenAI2.50.0和pandas2.3.3，未安装或修改依赖。
-所需六项依赖导入通过；通用NVIDIA描述因CPU任务未填写`GPU_IDS`报告缺项，原报告保留。
+能力预检只定位六项依赖模块并读取版本，不证明它们均已实际导入；后续文本和cascade进程单独证明LOTUS导入及执行。
+通用NVIDIA描述因CPU任务未填写`GPU_IDS`报告缺项，原报告保留。
 两个校验进程均令GPU不可见，未启动模型、Ray或服务，没有网络请求。
 
 第一次文本校验在安装包原生postprocessor调用夹具的`get_model_name()`时抛AttributeError；

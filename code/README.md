@@ -84,6 +84,9 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 旧phase-change运行器的配置对象与准备说明也已退出维护树，和[原运行来源](../experiments/reproduction/native_baselines/README.md#retired-phase-runner-preparation)一起恢复；
 现用[audit_phase_change.py](scripts/analysis/audit_phase_change.py)继续独立复算历史状态、请求和动作，不需要旧准备包。
 
+原PG campaign的[M1示例配方](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retained-m1-config)
+随配套执行代码归档，不再列于现用`configs/`；原字节、来源和恢复方法保持。
+
 ## 核心文件职责
 
 下列文件承担不同的可独立修改职责，直接使用现有对象，不增加转发层或重复状态。

@@ -26,7 +26,7 @@
     },
     "postprocessors_relative_path": "lotus/sem_ops/postprocessors.py",
     "postprocessors_sha256": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
-    "dependency_import_checks": {
+    "dependency_availability_checks": {
       "python:semantic-benchmarks:pandas": "ok",
       "python:semantic-benchmarks:duckdb": "ok",
       "python:semantic-benchmarks:scipy": "ok",
@@ -38,7 +38,7 @@
     "machine_check_missing": [
       "environment:GPU_IDS"
     ],
-    "machine_check_note": "The general NVIDIA profile reports unused GPU_IDS as missing for this CPU task. Six required dependency imports passed; original report is retained. CUDA_VISIBLE_DEVICES was empty.",
+    "machine_check_note": "The capability preflight locates six dependency modules and reads their versions; it does not import them. Actual LOTUS import and execution are shown by the separate text and cascade processes. The original preflight report, including missing GPU_IDS for this CPU task, is retained. CUDA_VISIBLE_DEVICES was empty.",
     "CUDA_VISIBLE_DEVICES": "",
     "GPU_visibility_evidence": "Explicit environment passed to subprocess.run in each original submitted command; first failure receipt also records the value. No retrospective process inspection."
   },
