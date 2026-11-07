@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：旧phase-change准备包随运行器退役
+
+[孤立准备代码清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#phase-runner-preparation-retirement)按真实调用移除旧配置读取与环境装配两文件；它们只由已归档运行器／准备器使用，现用审计脚本不依赖它们。六个原CPU方法前后通过、源码与测试保持，十条历史读取改用两份准确原件。实验源码净减172行，当前执行核心与研究原始记录保持。
+
 ## 2026-11-07：实验场景参数按完整值匹配
 
 [数值匹配修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scenario-option-value-match)把子串判断改为复用原选项解析，声明32与实际320不再混同。两个既有方法扩展空格／等号和实际strict核对场景，五个方法修前四个子场景失败、修后全过；没有新增参数检查、方法或真实服务运行，历史映射保持。

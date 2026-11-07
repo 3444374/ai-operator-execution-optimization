@@ -81,6 +81,9 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 [历史恢复入口](../experiments/reproduction/native_baselines/README.md)只恢复指定源码，不执行模型。
 当前新增 CPU 检查不转授历史 GPU 资格，不宣称清理带来查询加速。
 
+旧phase-change运行器的配置对象与准备说明也已退出维护树，和[原运行来源](../experiments/reproduction/native_baselines/README.md#retired-phase-runner-preparation)一起恢复；
+现用[audit_phase_change.py](scripts/analysis/audit_phase_change.py)继续独立复算历史状态、请求和动作，不需要旧准备包。
+
 ## 核心文件职责
 
 下列文件承担不同的可独立修改职责，直接使用现有对象，不增加转发层或重复状态。

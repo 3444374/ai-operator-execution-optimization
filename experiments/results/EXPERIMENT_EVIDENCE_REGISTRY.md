@@ -2185,3 +2185,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [实验场景参数完整值匹配](diagnostics/records_runtime_refactor_20261104/README.md#scenario-option-value-match)
 独立于结构整理修复原数值前缀误判，直接复用已有选项解析；五方法同测试字节修前四子场景失败、修后全过，没有新方法。两种参数表示和实际strict调用均覆盖；只有合成命令，无服务或模型，历史MANIFEST与归档字节保持，没有重复恢复验证。
+
+[旧phase-change运行准备退役](diagnostics/records_runtime_refactor_20261104/README.md#phase-runner-preparation-retirement)
+只移除已归档运行器专用的孤立配置／准备两文件，现用离线审计和测试逐字保持；六方法前后通过，没有新方法、服务或模型运行。两份公开279原件及十条历史读取保持，原预期／投影身份和7bf运行器来源不动；源码净减172行，未删除历史分析或重跑旧实验。

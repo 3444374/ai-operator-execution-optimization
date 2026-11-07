@@ -979,7 +979,9 @@
         "code/scripts/data/import_ai_complete_workload.py": "historical_sources/27929150/code/scripts/data/import_ai_complete_workload.py.gz",
         "code/src/infrastructure/vllm_preflight.py": "historical_sources/27929150/code/src/infrastructure/vllm_preflight.py.gz",
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
-        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz"
+        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
+        "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1567,6 +1569,16 @@
           "encoding": "gzip",
           "decoded_bytes": 8521,
           "archive_sha256": "021f781d5dc7afd3b9ec1aaa8da4eb92a558175db223b6b054397fe50ecbb739"
+        },
+        "code/src/experiments/phase_change/contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6996,
+          "archive_sha256": "0a12624d1f5f48249d75e3c65f2281fc7be69148cd88457aa4da65da3de807b3"
+        },
+        "code/src/experiments/phase_change/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 181,
+          "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
         }
       }
     },
@@ -2574,7 +2586,9 @@
         "code/scripts/data/import_ai_complete_workload.py": "historical_sources/27929150/code/scripts/data/import_ai_complete_workload.py.gz",
         "code/src/infrastructure/vllm_preflight.py": "historical_sources/27929150/code/src/infrastructure/vllm_preflight.py.gz",
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
-        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz"
+        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
+        "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3162,6 +3176,16 @@
           "encoding": "gzip",
           "decoded_bytes": 8521,
           "archive_sha256": "021f781d5dc7afd3b9ec1aaa8da4eb92a558175db223b6b054397fe50ecbb739"
+        },
+        "code/src/experiments/phase_change/contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6996,
+          "archive_sha256": "0a12624d1f5f48249d75e3c65f2281fc7be69148cd88457aa4da65da3de807b3"
+        },
+        "code/src/experiments/phase_change/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 181,
+          "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
         }
       }
     },
@@ -4179,7 +4203,9 @@
         "code/scripts/data/import_ai_complete_workload.py": "historical_sources/27929150/code/scripts/data/import_ai_complete_workload.py.gz",
         "code/src/infrastructure/vllm_preflight.py": "historical_sources/27929150/code/src/infrastructure/vllm_preflight.py.gz",
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
-        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz"
+        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
+        "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4767,6 +4793,16 @@
           "encoding": "gzip",
           "decoded_bytes": 8521,
           "archive_sha256": "021f781d5dc7afd3b9ec1aaa8da4eb92a558175db223b6b054397fe50ecbb739"
+        },
+        "code/src/experiments/phase_change/contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6996,
+          "archive_sha256": "0a12624d1f5f48249d75e3c65f2281fc7be69148cd88457aa4da65da3de807b3"
+        },
+        "code/src/experiments/phase_change/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 181,
+          "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
         }
       }
     },
@@ -5786,7 +5822,9 @@
         "code/scripts/data/import_ai_complete_workload.py": "historical_sources/27929150/code/scripts/data/import_ai_complete_workload.py.gz",
         "code/src/infrastructure/vllm_preflight.py": "historical_sources/27929150/code/src/infrastructure/vllm_preflight.py.gz",
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
-        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz"
+        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
+        "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6379,6 +6417,16 @@
           "encoding": "gzip",
           "decoded_bytes": 8521,
           "archive_sha256": "021f781d5dc7afd3b9ec1aaa8da4eb92a558175db223b6b054397fe50ecbb739"
+        },
+        "code/src/experiments/phase_change/contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6996,
+          "archive_sha256": "0a12624d1f5f48249d75e3c65f2281fc7be69148cd88457aa4da65da3de807b3"
+        },
+        "code/src/experiments/phase_change/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 181,
+          "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
         }
       }
     },
@@ -7404,7 +7452,9 @@
         "code/scripts/data/import_ai_complete_workload.py": "historical_sources/27929150/code/scripts/data/import_ai_complete_workload.py.gz",
         "code/src/infrastructure/vllm_preflight.py": "historical_sources/27929150/code/src/infrastructure/vllm_preflight.py.gz",
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
-        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz"
+        "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
+        "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -8002,6 +8052,16 @@
           "encoding": "gzip",
           "decoded_bytes": 8521,
           "archive_sha256": "021f781d5dc7afd3b9ec1aaa8da4eb92a558175db223b6b054397fe50ecbb739"
+        },
+        "code/src/experiments/phase_change/contract.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 6996,
+          "archive_sha256": "0a12624d1f5f48249d75e3c65f2281fc7be69148cd88457aa4da65da3de807b3"
+        },
+        "code/src/experiments/phase_change/__init__.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 181,
+          "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
         }
       }
     }

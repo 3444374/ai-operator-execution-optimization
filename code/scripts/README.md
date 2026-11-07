@@ -265,6 +265,10 @@ SAOR 声明与方法说明见[独立材料](../../experiments/saor/README.md)，
 其idle与命令行核对直接使用[实验服务工具](../src/experiments/shared_vllm/preflight.py)，
 0.25.1固定身份留在[源码审计模块](../src/experiments/saor/vllm_0251_source_audit.py)；通用生产工具不再保存旧矩阵的专用校验图。
 
+[audit_phase_change.py](analysis/audit_phase_change.py)保留历史状态／请求／动作的离线核对。
+旧phase-change运行器和数据准备器只从[准确来源](../../experiments/reproduction/native_baselines/README.md#retired-phase-runner-preparation)恢复，
+其孤立配置包已随旧运行器退役；不为复算结果重新接入旧PG／HTTP运行流程。
+
 <a id="实验结果恢复"></a>
 ## 实验结果恢复
 

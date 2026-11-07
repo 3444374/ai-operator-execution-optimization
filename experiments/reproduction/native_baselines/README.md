@@ -3,6 +3,22 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-phase-runner-preparation"></a>
+## 旧phase-change运行准备代码恢复
+
+旧运行器与数据准备器已归档，维护树不再保存它们专用的`experiments.phase_change`配置包或转发入口。
+现用`code/scripts/analysis/audit_phase_change.py`独立读取原始记录、状态、请求与audit数据，六个原审计方法保持。
+原两端点、240秒／60秒时钟及workload检查只属于旧配方，恢复时与原运行器一起使用。
+
+两份原件逐字对应准确公开`27929150d83f134ad5ad48c7aaf382ab40ae19ae`，各保存一份gzip：
+
+- [contract.py](historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz)，解码6,996 bytes，SHA-256 `a9580544705467321242981c266feac5a47ea354e3c89950bc161a384298f365`。
+- [包入口](historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz)，解码181 bytes，SHA-256 `cc7ee4850d6482c04504294f8d9d9f5ff6c501c85f95c186a57c3b22624ab95b`。
+
+原文扫描无命中、无豁免。五份投影只增加十条来源及格式，原预期摘要、投影身份和其它映射保持，十条读取逐字节通过，没有重跑完整恢复。
+既有[旧运行器](historical_sources/7bf1d92b/code/scripts/experiments/run_phase_change.py)及[数据准备器](historical_sources/7bf1d92b/code/scripts/data/prepare_phase_change_workload.py)仍使用原来源，不重新加入当前脚本目录。
+原研究方案、提前停止与负结果继续从原报告读取，不因删除旧准备包而更改。
+
 <a id="retired-shared-service-verifiers"></a>
 ## 旧共享服务矩阵校验图恢复
 
