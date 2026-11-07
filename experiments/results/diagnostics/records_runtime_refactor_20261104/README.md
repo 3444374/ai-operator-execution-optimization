@@ -4926,3 +4926,12 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 
 上述四批已在独立本地树整合并分别独审；已发布847及其服务器单项测试补丁保持原字节，新批尚未推送或派发，不借用847实机结果。原ea续验与847关闭单项仍由原服务器会话分别按固定版本处理。本轮没有改动多查询研究、策略阈值或物理内存授予；原生Ray回收、原1596第二项关闭原因及完整模型质量／期限／性能仍按既有未验证范围解释。
 同口径tracked Python含注释／空行统计：核心排除experiments／baselines、包含research，为49,105行；src＋scripts101,203行，测试92,247行，总计193,450行。本地四批相对847为源码少八行、测试多五十九行、合计多五十一行；归档单列，不算运行源码删减。相对main核心少4,986行、三目录合计少49,648行，相对3fd分别少12,523和86,257行；移动算法不算删除算法。当前核心无千行以上文件；不以文件长度单独决定拆分。
+
+<a id="close-order-847-server-complete"></a>
+## 发布状态与847关闭单项回执
+
+上述四批已发布为`83d7889642aa26c56555cfd0de6189203f41eb20`、tree `0ed00b386ca497904803b8ef79b58db8addc0195`，远端为原PR #90的feat/resource-feedback-control草稿分支，未合并。上节“只在本地”的文字保留当时状态，以本节发布回执更新当前事实。
+原847关闭单项已经执行完毕，不再待执行。准确基础`847df73b7cde8a6912a9611f4c1add7da097f6cb`、tree `c698b378f4235d4188a1b30ff380816681f8a217`仅加既有临时测试补丁`b4311d37c6a67d18cef77c90de9e919b70e46600b741165f848819855031eb21`，patched tree为`c2e7e1c482f41926ea28654ed472278bbb37fa2c`。方法`test_drain_then_close_has_no_late_control_command`只执行一次，0.163802861秒通过，无失败／错误／跳过或重试。
+观察到control_frames_built为close，表示帧构造而非send系统调用；io_error_before_close_report为null。最终transport_error原值仍为ClosedWithoutConfirmedTerminal，这是该旧源码close末尾写入的占位值，不是观察到的Reset。关闭API和producer停止确认、子进程返回0、I/O线程退出；三个已观察自有进程、private socket、SHM及运行租约清理通过。零submit、模型、Ray、GPU、HTTP，没有修前服务器对照或a780容量重跑；不推断未观察后代的退出，也不把producer停止证明当作模型结果确认。
+已核私有HANDOFF SHA-256 `2e255cc9df19bc637d74dc36dfddc0ca31476d0de11a8b499183280146c30862`、归档`feb8f3e1b4f05e81198e978868f98fe187d3de0e4a8afd920724ceaa19258819`及二十份原件，清单SHA-256为`eae99724fb80d05638ad676ea534ed7b762f0b3adf851c7b0c044c6e0a266320`；原始材料继续私有保存。本会话只核回执，没有新派单或重跑。
+这个847结果不转授83的新关闭诊断、wait和语义值修改，也不解释a780原Reset的唯一原因。83拟只补两项软件IPC：一条已确认但未消费结果的健康关闭，及原fast→die子进程故障方法；分别核无假传输错误／消费后wait不再等，以及已有真实错误与unknown预留保持。具体材料由父会话交原执行者，当前仅完成本地补丁语法与独审，没有新的83实机结果。

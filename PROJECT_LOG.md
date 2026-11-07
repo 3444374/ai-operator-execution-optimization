@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：发布83组合并核847既有回执
+
+[发布与回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-order-847-server-complete)确认后续四批已推到原PR #90草稿分支。847旧关闭方法一次通过，原占位诊断与私有原件保持，实际I/O错误为空、观察到的进程和资源清理通过；不重复该方法，也不将其当作83或原a780 Reset原因的证据。新83只准备两项受影响软件IPC方法，由原服务器会话执行。
+
 ## 2026-11-07：独立本地精简与历史原件恢复
 
 [后续整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)让关闭诊断只表示实际问题，保留unknown责任；不可变方法值只在构造时验证，可修改阶段数据继续建立独立副本，清除四个无消费者转导入。各批CPU与独审完成后只在本地整合，已发布847保持固定供服务器单项验证。
