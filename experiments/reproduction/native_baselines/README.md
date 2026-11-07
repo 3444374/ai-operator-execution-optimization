@@ -3,6 +3,20 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="operator-cost-feature-schema-source"></a>
+## Operator-cost profile schema source
+
+The unchanged 23-field `FEATURE_NAMES` tuple now lives beside `feature_vector` in the
+[offline profile module](../../../code/src/experiments/operator_costs/README.md). The CLI imports that module directly;
+Ridge fitting, splits, predictions and metrics remain in `planning/costs/regression.py`.
+
+The exact source from `24a2b75b2ef664f8467007b072ee44ed13e0faa4` is saved once as
+[regression.py.gz](historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz).
+Five projections add only the matching source and gzip-format entries; their expected file hashes, projection identities,
+source revisions and existing mappings remain unchanged. The old CLI mappings continue to read their existing sources.
+The former schema import has no forwarding alias. Tests are not projection inputs; recover their old paths from the same
+exact Git revision when restoring that API. Existing CSV data, field order and result artifacts are unchanged.
+
 <a id="retired-local-embedding-helper"></a>
 ## 旧文本嵌入 HTTP 辅助服务来源
 

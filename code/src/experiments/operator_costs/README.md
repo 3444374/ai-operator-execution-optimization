@@ -3,6 +3,8 @@
 本目录处理既有 profile CSV、离线估计方法和参考校准观测，不进入 records 单查询执行链。
 
 - `profiles.py` 读取 CSV、选择 formal 成功记录，并保持原上下文、候选身份和 23 维特征。
+- `FEATURE_NAMES` lives with `feature_vector` in `profiles.py`; it describes the existing offline CSV schema.
+  The CLI imports those names directly, while the shared Ridge implementation accepts numeric matrices without a profile schema.
 - `comparison.py` 复用原数学库，按已有方法名称执行 fit/predict；LightGBM 只在对应 fit 时导入。
 - profile 和估计比较命令负责参数、评估及输出，不再加载其他分析脚本或改写另一模块的输入路径。
 - [semfilter_reference_calibration.py](semfilter_reference_calibration.py) 从 training／held-out 汇总观测构建并校验
@@ -44,3 +46,5 @@ context-LOO 的 `source_reference` 指向所选 CSV 或参考 JSON，`source_csv
 
 既有研究结果和失败记录保留。完整旧来源按[历史恢复说明](../../../../experiments/reproduction/native_baselines/README.md)
 与对应清单读取；旧投影不导入当前离线模块。
+The former `planning.costs.regression.FEATURE_NAMES` import is not retained; recover its exact source with the
+[profile-schema recovery notes](../../../../experiments/reproduction/native_baselines/README.md#operator-cost-feature-schema-source).

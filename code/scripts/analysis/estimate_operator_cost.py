@@ -20,12 +20,12 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.experiments.operator_costs.profiles import (  # noqa: E402
+    FEATURE_NAMES,
     build_profile_matrix,
     load_profile_rows,
 )
 
 from src.planning.costs.regression import (  # noqa: E402
-    FEATURE_NAMES,
     RidgeCostEstimator,
     grouped_train_test_split,
     regression_metrics,
