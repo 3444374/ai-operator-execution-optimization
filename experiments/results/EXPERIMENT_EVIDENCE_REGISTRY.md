@@ -2137,3 +2137,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [完成阶段的输入引用释放](diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)
 记录d0c到0a329的两索引释放与未读标志删除；单方法五子场景修前失败、修后通过，实际Extract完成／关系处理及异常持有保持，原四项未扩跑。运行时增1行、测试增73行，不证明真实链、模型或RSS收益，原失败私有保存。
+
+[946部分结果与NoB取消入口修正](diagnostics/records_runtime_refactor_20261104/README.md#cancellation-noB-preflight)
+首项通过，第二项NoB在旧实验预检报错，后两未运行；十个已观察进程、socket／SHM及许可清理已核，零模型／真实Ray。b12e到af3只移除非空B前提，单个实际纯预检修前NoB／null报错、修后七子场景通过；原IPC方法仍待服务器，首项不重复，阶段修复与本批分开。

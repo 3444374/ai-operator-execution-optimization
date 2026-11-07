@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：修正取消实验的旧B前提
+
+[准确946部分结果](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#cancellation-noB-preflight)为一过、一项NoB预检错误、两项未执行，原件及清理记录保留。独立删除取消实验的非空B前提，实际纯CPU预检修前失败、修后通过；不改生产取消／记账或增加多查询功能，原第2／3／4项交既有服务器会话续验，不重复首项。
+
 ## 2026-11-07：阶段输入按原生命周期释放
 
 [阶段输入持有修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)避免完成的Extract准备行与Filter/Map来源绑定跨阶段滞留，只在原成功收尾后丢索引，失败和未知执行所需数据保留。单个纯内存反例修前失败、修后通过，没有新检查层或原生模型／RSS结论；源码增1行、测试增73行如实登记。

@@ -4847,3 +4847,21 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 现有SourceRetentionTests新增一个纯内存行为用例，五个子场景；修前成功Extract后的两处弱引用仍存活，反例失败，修后同一方法通过。Extract完成及关闭异常调用实际ChainRun.complete和complete_relation，解析结果与LM统计用替身；adoption只验证原异常，不声称完整Filter/Map执行。
 没有扩跑原四个用例或全套，没有LOTUS／Torch／vLLM／Ray重导入尝试、socket或子进程。原失败保留，整合三文件与受测／已审字节相同，前批三文件保持，没有重复行为测试；历史清单保持，当前模块和专测不属于旧投影输入。
 运行时净增1行、测试增73行，新增一个有反例的生命周期用例；README补3行职责说明，没有新管理对象或检查层。当前核心49,116行、src＋scripts101,215行、测试92,075行，三目录合计193,290行，相对main少49,808行、相对3fd少86,417行。这里验证引用释放，不是实际RSS下降、完整原生LOTUS链或性能结果；服务器四项仍按946记录待执行。
+
+<a id="cancellation-noB-preflight"></a>
+## 946服务器结果与NoB取消入口修正
+
+恢复登录后，准确`946412e6bd72a027e2dc1210b602d6b53c3f658f`、tree`b3e9297a3c4998feb0bae437f377b759b70428d6`按原顺序执行：首项准备／反馈检查通过，9.915秒；第二项取消／恢复检查在no_B=True时于实验入口报ValueError，9.669秒，随后停止，第三／四项未执行。没有重试，也不把第二项中未报错的B子场景另算通过方法。
+该NoB分支尚未开始取消执行；错误来自check_cancellation_plan仍要求非空prepared_batching，与公共check_plan已支持的省略／null NoB冲突，不能据此判定通用Core取消／恢复实现失败。十个已观察自有进程退出，socket／SHM无自有残留，许可归还、源码保持；不扩写为未观察到的后代退出。模型、真实Ray、GPU查询及HTTP调用均为0。
+私有HANDOFF与RESULTS已读回，交接SHA-256为`6a5bad35329b8ea77aacac22ac0e90783a1ccbf8ca022cf9248be23edab663f7`，原始失败及此前SSH认证失败记录保留，不公开机器清单。
+
+独审候选`b12e6175616d09569de31f9b292a9339905deb81`整合为`af3c4fdb410b0205479847d10a97215270328811`，整树与受测／已审候选相同；阶段输入修复已在此前0511单独发布，没有混入本批差异。
+只删除实验入口对非空B的旧前提，公共check_plan继续解析B／NoB；固定async rolling、两段measured同任务、足够C及精确调用额度的原要求保留，Core、取消、恢复、unknown和ACK实现不改。使用说明改为可选B／NoB，清掉旧token强制及packing-bypass说法，没有新增多查询能力。
+新增一个纯CPU预检用例，复用真实CSV／计划校验：修前省略B和null两个子场景报原ValueError，修后B／省略／null三个正例及warmup／搜索／C／额度四个负例通过。原测试类及服务器原IPC方法的语法树保持；没有在本机执行原IPC方法或构造tokenizer／模型。私有导入检查曾误判相对.vllm，0测试启动；只修私有检查后取得上述反例，原脚本与会话错误记录保留。
+本批Python源码行数不变、测试增38行；当前核心49,116行、src＋scripts101,215行、测试92,113行，三目录193,328行，相对main少49,770行、相对3fd少86,379行。这只证明预检修正，完整NoB取消／恢复仍待原服务器方法。
+
+由原服务器执行者在修复版本继续，每项一次，失败仍停止；不重复已在946通过的第一项，不重复派单：
+
+1. `tests.experiments.test_movie_cancellation.CancellationEntryTests.test_actual_CPU_IPC_cancel_then_fresh_recovery_preserves_unknowns_and_budgets`
+2. `tests.experiments.test_movie_prepared_requests.PreparedRequestEntryTests.test_same_public_resident_factory_runs_two_queries_and_keeps_payloads`
+3. `tests.execution_provider.test_lotus_batch_counters.PublicBatchCounterTests.test_two_public_resident_queries_reset_counters_in_both_B_modes`
