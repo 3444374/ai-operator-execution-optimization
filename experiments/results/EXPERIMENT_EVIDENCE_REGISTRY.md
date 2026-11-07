@@ -2164,3 +2164,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [现用CLIP画像入口与错误输出](diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)
 两个方法、三个场景修前记录一失败和两个导入错误，修后全部通过；两轮测试字节相同，真实DB／模型／Ray／GPU均为零。原83三份源码独立扫描、保存并核十五条历史读取，原投影身份与预期不变；没有重跑旧实验或完整恢复。
+
+[图像入队重复校验删除](diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)
+准确279基础上只删外层两行，同三个既有CPU／FakeRay方法前后各一次通过，结果关联、阻塞时接纳峰值及unknown池复用保护保持。broker及两测试文件字节未动，五历史投影继续读取原e5e归档；零真实Ray／模型，不重复83关闭检查。

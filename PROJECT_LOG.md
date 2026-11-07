@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：图像入队校验交回broker
+
+[图像入队整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)只删除一次相邻重复调用，容量与描述符仍由唯一入队实现检查；三个原CPU／FakeRay方法前后通过，未新增测试或生产状态。图像批次推进和异步worker共享循环保持各自所有权，没有按函数长度机械拆分；原历史来源与实际Ray未验证范围保持。
+
 ## 2026-11-07：修正现用画像脚本接线与错误输出
 
 [画像入口整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)让两个包入口直接导入唯一读取实现，移除连接失败时的DSN回显并脱敏异常；两个纯CPU方法修前复现、修后通过。三份准确83原件保存一次，五份历史投影只迁移对应来源；不修改模型算法或生产默认，也不以此扩展多查询。

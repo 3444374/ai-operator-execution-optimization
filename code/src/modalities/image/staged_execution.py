@@ -274,8 +274,6 @@ def run_project_ray_hse_pipeline(
                         "one HSE prepared block exceeds ready byte/work capacity; "
                         "reduce batch_size or increase the explicit limits"
                     )
-                if not broker.can_accept_encoded(descriptor):
-                    break
                 broker.enqueue_encoded(descriptor)
                 encoded_payloads[descriptor.block_id] = encoded
                 del encoded
