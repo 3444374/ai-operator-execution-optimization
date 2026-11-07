@@ -1053,3 +1053,11 @@ Recover the complete original implementation and tests in a separate
 [`capacity.py`](https://github.com/3444374/ai-operator-execution-optimization/blob/769a73074084a721e3342e505d0dd94b428f18b8/code/src/scheduling/submission_control/capacity.py) and
 [`test_capacity_controller.py`](https://github.com/3444374/ai-operator-execution-optimization/blob/769a73074084a721e3342e505d0dd94b428f18b8/code/tests/scheduling/test_capacity_controller.py).
 Old results, failure records and research material retain their original interpretation; this retirement does not rerun those algorithms or model environments.
+
+<a id="clip-harness-environment-source"></a>
+## CLIP监督脚本环境记录的原来源
+
+五份具名历史投影读取[准确8c48原脚本](historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz)，
+[清单](MANIFEST.json)保留原expected摘要、投影身份、原字节数与gzip摘要，只新增五条来源和格式声明。
+原脚本曾直接记录所选环境值，保留仅为恢复原来源，不作为现行带凭据环境的运行入口。
+当前脚本复用公共脱敏函数，模型、超时和退出语义保持；原模型日志及成绩未改写。

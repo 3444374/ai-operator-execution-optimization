@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
@@ -18,17 +20,22 @@ SPEC.loader.exec_module(MODULE)
 
 class VllmClipPoolingHarnessTests(unittest.TestCase):
     def test_only_selected_runtime_environment_is_recorded(self) -> None:
-        previous = os.environ.get("VLLM_TEST_GATE")
-        os.environ["VLLM_TEST_GATE"] = "enabled"
-        try:
-            recorded = MODULE._recorded_environment()
-        finally:
-            if previous is None:
-                os.environ.pop("VLLM_TEST_GATE", None)
-            else:
-                os.environ["VLLM_TEST_GATE"] = previous
-
+        environment = {"VLLM_TEST_GATE": "enabled", "CUDA_VISIBLE_DEVICES": "0",
+                       "VLLM_API_KEY": "fixture-key", "VLLM_S3_SECRET_ACCESS_KEY": "fixture-secret",
+                       "PATH": "fixture-path"}
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "evidence"
+            argv = [str(SCRIPT), "--output-dir", str(output), "--", "--model", "fixture-model"]
+            with patch.dict(os.environ, environment, clear=True), patch.object(sys, "argv", argv), \
+                    patch.object(MODULE, "run_process", return_value=(0, False)) as worker:
+                self.assertEqual(MODULE.main(), 0)
+            worker.assert_called_once()
+            status = json.loads((output / "process_status.json").read_text())
+        recorded = status["recorded_environment"]
         self.assertEqual(recorded["VLLM_TEST_GATE"], "enabled")
+        self.assertEqual(recorded["CUDA_VISIBLE_DEVICES"], "0")
+        self.assertEqual(recorded["VLLM_API_KEY"], "***")
+        self.assertEqual(recorded["VLLM_S3_SECRET_ACCESS_KEY"], "***")
         self.assertNotIn("PATH", recorded)
 
     def test_run_process_records_normal_exit(self) -> None:

@@ -981,7 +981,8 @@
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
-        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1579,6 +1580,11 @@
           "encoding": "gzip",
           "decoded_bytes": 181,
           "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
+        },
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3870,
+          "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
         }
       }
     },
@@ -2588,7 +2594,8 @@
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
-        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3186,6 +3193,11 @@
           "encoding": "gzip",
           "decoded_bytes": 181,
           "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
+        },
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3870,
+          "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
         }
       }
     },
@@ -4205,7 +4217,8 @@
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
-        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4803,6 +4816,11 @@
           "encoding": "gzip",
           "decoded_bytes": 181,
           "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
+        },
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3870,
+          "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
         }
       }
     },
@@ -5824,7 +5842,8 @@
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
-        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6427,6 +6446,11 @@
           "encoding": "gzip",
           "decoded_bytes": 181,
           "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
+        },
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3870,
+          "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
         }
       }
     },
@@ -7454,7 +7478,8 @@
         "code/src/experiments/shared_vllm/preflight.py": "historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz",
         "code/src/experiments/saor/vllm_0251_source_audit.py": "historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz",
         "code/src/experiments/phase_change/contract.py": "historical_sources/27929150/code/src/experiments/phase_change/contract.py.gz",
-        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz"
+        "code/src/experiments/phase_change/__init__.py": "historical_sources/27929150/code/src/experiments/phase_change/__init__.py.gz",
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": "historical_sources/8c48d07e/code/scripts/profiling/run_vllm_clip_pooling_gate.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -8062,6 +8087,11 @@
           "encoding": "gzip",
           "decoded_bytes": 181,
           "archive_sha256": "087821cbb2aa05b30e2e4bf74050cdb94c6084ac6ef9669a0e5850a274aad6db"
+        },
+        "code/scripts/profiling/run_vllm_clip_pooling_gate.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 3870,
+          "archive_sha256": "9a30fbcb2238f8c9a84e609b266e706b6811aaf6caceb551f7261dd24fd8e5e2"
         }
       }
     }

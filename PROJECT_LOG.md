@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：公开CLIP工具的环境记录脱敏
+
+[结构化记录修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording)
+让现用CLIP pooling监督脚本直接复用公共脱敏函数，保持普通环境设置和退出状态。
+原脚本按准确8c48来源保存，五份历史投影的身份和摘要保持；未重跑模型或改写历史日志。
+
 ## 2026-11-07：旧PG示例随campaign归档
 
 原M1示例配置移至[配套历史资料](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retained-m1-config)，

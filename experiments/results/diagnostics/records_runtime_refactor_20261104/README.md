@@ -5157,3 +5157,18 @@ launcher + resource tests -> serving.vllm_resources
 确认的问题是入口说明过时：[数据README](../../../../data/README.md)仍称已归档的PostgreSQL Map脚本是当前入口，共享身份助手仍称已归档的整查询运行器是当前消费者。现在说明准确区分保留工具与历史来源；[DuckDB比较参考](../../../plans/reference/DuckDB对照.md)也给旧三臂／PostgreSQL配方增加当前适用说明，方法和历史日期记录保留。没有恢复旧脚本、修改PostgreSQL扩展／Map实现或增加数据管理层；解析及摘要的当前实现保持。
 
 导入器和两份测试逐字不变，身份助手仅模块说明改变，去掉说明后的其余语法树保持；14项只在文字修改前执行一次，没有为了说明再运行。五份历史映射与清单不变：导入器仍用原当前字节，助手仍指准确7bf原件，没有新增归档或读取历史载荷。Python总数少6行全部来自说明文字，不当作函数删除或性能收益；当前核心48,478行、src＋scripts100,577行、测试92,093行，总计192,670行。同原tracked Python含注释／空行口径，相对main总计少50,428行、相对3fd少87,037行。该核查不宣称全项目完成；其他输入路径及真实环境问题仍按全局清单分别处理，本地成果未发布。
+
+<a id="clip-harness-environment-recording"></a>
+## CLIP pooling监督脚本的环境记录
+
+本轮限定核查四个baseline CLI、五个组件benchmark和八个非records画像入口。组件工具仍测量真实Arrow／Ray；
+DuckDB诊断使用其原生HTTP，CLIP阶段画像保留独立测量含义，本批没有删除这些研究工具或运行它们。
+[组件说明](../../../../code/scripts/benchmarks/README.md)原先把默认输出误写为诊断目录；五个脚本均默认`--output=None`，现在说明默认打印表格，显式提供路径才保存CSV。
+现用[监督脚本](../../../../code/scripts/profiling/run_vllm_clip_pooling_gate.py)将全部`VLLM_*`环境值直接写入
+`process_status.json`，凭据也随之原样保存。现在写入前直接复用[公共脱敏](../../../../code/src/infrastructure/redact.py)的命名参数规则，
+环境键名、普通设置、CUDA设备声明和退出状态保持，不新增日志管理层或运行检查。
+
+扩充一个[既有用例](../../../../code/tests/serving/test_vllm_clip_pooling_harness.py)，以假API key、假secret、普通设置和模拟worker实际写出报告，
+修前因凭据原值写入而失败，修后通过。没有读取真实凭据、调用模型、启动worker子进程、Ray或GPU，也未重跑另外两个进程控制用例。
+[原脚本及恢复](../../../reproduction/native_baselines/README.md#clip-harness-environment-source)保留3870原字节；
+五个既有来源读取均保持原expected和投影身份。本批不修改旧日志、模型成绩或生产Core／IPC代码。

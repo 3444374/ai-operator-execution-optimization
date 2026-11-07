@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-07：CLIP监督工具的环境记录
+
+[脚本记录修正](diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording)
+复用现有脱敏函数，结构化报告不再保存凭据环境值。一个既有文件输出用例修前失败、修后通过，
+只用假环境和模拟worker；五条历史来源读取保持，原模型结果和日志未改。
+
 ## 2026-11-07：实际LOTUS文本与双解析cascade
 
 [服务器五组件检查](diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)
