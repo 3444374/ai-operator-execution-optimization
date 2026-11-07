@@ -204,6 +204,22 @@ metrics、原生观测、对照来源记录和公共结果校验继续由各自�
 [现用调用迁移与CPU范围](../../results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
 记录删除的实际影响及未运行项。
 
+<a id="baseline-worker-consumer-source-recovery"></a>
+## 基线 worker 调用方的历史来源修复
+
+`847df73b7cde8a6912a9611f4c1add7da097f6cb` 的历史读取另有六处摘要差异：五份投影的
+`imlane_records/model_lifecycle.py`，以及 Daft 单线程投影的 `test_daft_native_session.py`。
+两份期望原件均从本地既有 Git 提交 `375fb69276754f26f14ae9e37352b8656ac6d14e` 取得，各保存一次：
+
+| 原调用位置 | 解压 SHA-256 |
+|---|---|
+| [model_lifecycle.py.gz](historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz) | `8d508181b0678df771a67d3f934087e87e3c7466a09818ae984bff2491142d11` |
+| [test_daft_native_session.py.gz](historical_sources/375fb692/code/tests/baselines/text/test_daft_native_session.py.gz) | `edba8217999d27c1d1f550f783cbc1d9c4925f59ec9ab1faeed312963d6eeb86` |
+
+只补六条来源和 gzip 格式记录；原 3,010 个预期摘要、投影身份、来源版本及其他映射保持。
+当前生产与测试仍使用各自现行导入。原六处差异及首次恢复失败保留，较早十处差异继续按其原版本解释。
+本项只恢复源码和摘要，不运行旧模型或旧 HTTP，也不提供当前生产行为或 GPU 验证结论。
+
 ## SAOR 与多任务研究迁移的原源码
 
 SAOR／共享额度迁入[独立研究包](../../../code/src/research/multitask/README.md)后，
