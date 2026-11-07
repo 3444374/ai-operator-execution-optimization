@@ -16,6 +16,10 @@
 模型 bootstrap 先安装观测，再导入 worker 的 `serve`。采集器只包装父／worker 的实际接点，
 共享 wire 的候选计量保持纯计算；编码记录不代表已发送，收发字节仍来自原 socket 返回值。
 
+The driver installs its scheduler sink on `SessionEngine` from `src.scheduling.core.session`.
+Ordinary records and record-chain owners instantiate that same class. Actor preparation and
+submit/audit/transfer/feedback hooks retain their existing owners.
+
 ## 同步、资格和最小 on/off 配置
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：

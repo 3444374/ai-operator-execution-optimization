@@ -420,7 +420,7 @@ def install_driver():
     install_feedback_observer()
     from src.execution_provider.adapters import lotus_records_actor_owner as owner,lotus_records_async_actor as async_owner
     from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
-    from src.execution_provider.adapters import lotus_records_core
+    from src.scheduling.core.session import SessionEngine
     from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor,install_prepare_close
     async_owner.AsyncRecordsActorOwner._model_actor_type=lambda self:ObservedAsyncCoreModelActor
     owner._PrepareActor=ObservedPrepareActor
@@ -450,7 +450,7 @@ def install_driver():
         core.sink=sink
     # Both public owners create their Core lazily. Observe the real construction
     # once, before open/offer, rather than dereferencing owner.core in __init__.
-    core_type=lotus_records_core.SessionEngine
+    core_type=SessionEngine
     constructor=core_type.__init__
     @functools.wraps(constructor)
     def construct(self,*args,**kwargs):

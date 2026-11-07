@@ -33,7 +33,7 @@ class HandoffPassivityTests(unittest.TestCase):
             def poll_prepared_batch(self, key): return self.ref
         backend_module = ModuleType('src.execution_provider.adapters.lotus_chain_actor_backend')
         backend_module.LotusChainActorBackend = Backend
-        core_module = ModuleType('src.execution_provider.adapters.lotus_records_core')
+        core_module = ModuleType('src.scheduling.core.session')
         core_module.SessionEngine = Core
         owner_module = sys.modules['src.execution_provider.adapters.lotus_records_actor_owner']
         async_module = sys.modules['src.execution_provider.adapters.lotus_records_async_actor']
