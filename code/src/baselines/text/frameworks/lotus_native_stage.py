@@ -13,6 +13,7 @@ from src.semantic_methods.lotus.engine import lm_report
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
 from src.semantic_methods.lotus.record_types import stage_identity
 from src.semantic_methods.lotus.records import CallLedger, identity
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
 
 
 @contextmanager
@@ -52,6 +53,8 @@ def execute_native(frame, stage, records, *, invoke, engine, resources,
     transferring each actual request to IPC. No model or network is allocated
     for an empty input.
     """
+    if stage.kind == "filter" and stage.method.answer_parser != LOTUS_NATIVE:
+        raise ValueError("lotus-native requires the unmodified LOTUS answer parser")
     started = time.monotonic()
     report = dict(schema="semloom.lotus_native_stage.v1", status="failed",
         query_id=query_id, stage=stage.describe(), protocol="local_async_model_IPC",

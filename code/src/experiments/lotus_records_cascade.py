@@ -43,8 +43,7 @@ def read_config(path):
         method = bind_filter_method(FilterMethod.from_dict(value["method"]))
     if method.resolved_input_columns != _method_columns(method.instruction):
         raise ValueError("cascade method columns must retain the original instruction order")
-    helper = FilterMethod(value["helper_model_name"], method.instruction,
-                          default=method.default, system_prompt=method.system_prompt)
+    helper = replace(method, model_name=value["helper_model_name"], resolved_input_columns=None)
     helper.describe()
     for name in ("engines", "generations"):
         if type(value[name]) is not dict or set(value[name]) != {"main", "helper"}:
@@ -77,9 +76,8 @@ def read_config(path):
 
 
 def _methods(method, helper_model, args):
-    return dict(main=method, helper=bind_filter_method(FilterMethod(helper_model,
-        args.helper_filter_instruction or method.instruction, default=method.default,
-        system_prompt=method.system_prompt, output_tokens=method.output_tokens)))
+    return dict(main=method, helper=bind_filter_method(replace(method, model_name=helper_model,
+        instruction=args.helper_filter_instruction or method.instruction, resolved_input_columns=None)))
 
 
 def _frame(relation, methods):
@@ -185,6 +183,7 @@ def run_query(config, relation, method, generations, resources, engines, args,
                 author_args=author_args, model_environment=model_environment, cancelled=cancelled)
             report = run_cascade(frame, models["main"], models["helper"], args, backend,
                 instruction=method.instruction, default=method.default, system_prompt=method.system_prompt,
+                answer_parser=method.answer_parser,
                 query_id=config["query_id"], max_rows=max(1, len(relation.records)), max_calls=config["max_calls"])
             expected = {(row.row_id, row.source_position) for row in relation.records}
             decisions = report["decisions"]

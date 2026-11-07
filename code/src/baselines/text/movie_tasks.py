@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
 
 
 MOVIE_Q3_INSTRUCTION = 'Determine if the following review is clearly positive. Review: {reviewText}'
@@ -41,8 +42,8 @@ class MovieTask:
     def accepts(self, row):
         return self.predicate is None or row["id"] == "taken_3"
 
-    def method(self, model_name):
-        return FilterMethod(model_name, instruction=self.instruction)
+    def method(self, model_name, *, answer_parser=LOTUS_NATIVE):
+        return FilterMethod(model_name, instruction=self.instruction, answer_parser=answer_parser)
 
     def validate_method(self, method):
         if type(method) is not FilterMethod:

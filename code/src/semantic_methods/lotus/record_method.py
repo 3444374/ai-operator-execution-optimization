@@ -96,7 +96,7 @@ class LotusRecordMethod:
         return result
 
     def interpret_results(self, results):
-        from lotus.sem_ops.postprocessors import extract_postprocess, filter_postprocess, map_postprocess
+        from .filter_answers import parse_filter_answers
 
         responses, invalid = [], []
         for result in results:
@@ -111,8 +111,9 @@ class LotusRecordMethod:
             raise RuntimeError("record method has failed, unknown, or invalid engine calls") from invalid[0]
         texts = [self.lm._get_top_choice(response) for response in responses]
         if self.stage.kind == "filter":
-            return filter_postprocess(texts, self.lm, self.method.default,
-                                      output_tokens=self.method.output_tokens)
+            return parse_filter_answers(texts, self.lm, self.method.default,
+                output_tokens=self.method.output_tokens, answer_parser=self.method.answer_parser)
+        from lotus.sem_ops.postprocessors import extract_postprocess, map_postprocess
         if type(self.method) is MapMethod:
             return map_postprocess(texts, self.lm, False)
         return extract_postprocess(texts, self.lm, False)

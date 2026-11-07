@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：Filter解析由语义方法明确选择
+
+[解析选择](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)将原生LOTUS与修正版分开记录，普通records、有限链与cascade共用解析入口；Session传同一语义值，校准身份区分修正选择。旧配置、原生调用和历史成绩保持。二十项受影响CPU／替身方法通过；没有安装SDK、运行模型或改写原成绩，完整SDK与cascade质量仍待验证。
+
 ## 2026-11-07：SQuAD数据职责与历史入口说明
 
 [输入核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#squad-input-ownership-audit)保留原问答标识、多答案、提示和来源摘要的现有实现；14项原纯数据检查一次通过，没有找到需修改解析逻辑的实证问题。数据入口、共享助手说明及DuckDB参考说明改为准确区分当前工具与归档PostgreSQL脚本；没有扩展数据库接入或创建数据管理层。

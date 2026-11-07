@@ -245,6 +245,11 @@ class PlanTests(unittest.TestCase):
         result = session.check_plan(self.plan)
         self.assertEqual([query["expected_calls"] for query in result["queries"]], [2, 1])
         self.assertEqual(result["inference_calls"], 0)
+        self.assertEqual(result['answer_parser'], 'lotus-native')
+        self.assertEqual(session.check_plan(dict(self.plan, answer_parser='answer-field-v1'))['answer_parser'],
+                         'answer-field-v1')
+        with self.assertRaisesRegex(ValueError, 'answer_parser'):
+            session.check_plan(dict(self.plan, answer_parser='unknown'))
 
     def test_core_differing_instructions_are_bound_per_query_in_one_session(self):
         self.plan["queries"][1].update(task="movie-q3", manifest=self.manifests["movie-q3"])
@@ -263,6 +268,8 @@ class PlanTests(unittest.TestCase):
         plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
         plan['generation']['max_tokens'] = 8192
         self.assertTrue(session.check_plan(plan)['supports_resident'])
+        with self.assertRaisesRegex(ValueError, 'original parser'):
+            session.check_plan(dict(plan, answer_parser='answer-field-v1'))
         for profile in ({}, {'native_lm_max_batch_size': True}, {'mode': 'async'}):
             with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'native_lm_max_batch_size'):
                 session.check_plan(dict(plan, profile=profile))
@@ -419,13 +426,17 @@ class PlanTests(unittest.TestCase):
             runtime_binding=dict(driver_python="/tmp/driver-python", model_python="/tmp/model-python",
                                  model_path="/tmp/model", cuda_visible_devices="0"))
         parent = Path(self.manifests["movie-q1"]).parent.parent
+        self.plan['answer_parser'] = 'answer-field-v1'
         with ExitStack() as stack:
             stack.enter_context(patch.object(chain_runtime, "check_external_lease", return_value={}))
             stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
-            stack.enter_context(patch.object(lotus_records_movie, "model_preflight", return_value={}))
+            preflight = stack.enter_context(patch.object(lotus_records_movie, "model_preflight", return_value={}))
             loop = stack.enter_context(patch.object(session, "run_sequence", return_value={"status": "completed"}))
             prior = os.environ.get("CUDA_VISIBLE_DEVICES")
             session.run_movie_session(self.plan, context, parent / "owner-api")
+            self.assertTrue(preflight.call_args_list)
+            self.assertTrue(all(call.args[2].answer_parser == 'answer-field-v1'
+                                for call in preflight.call_args_list))
             self.assertEqual(os.environ.get("CUDA_VISIBLE_DEVICES"), prior)
             self.assertEqual(loop.call_count, 1)
             setup = loop.call_args.kwargs["setup"]
@@ -442,6 +453,7 @@ class PlanTests(unittest.TestCase):
         from src.execution_provider.adapters import lotus_records_core
         import sys
         self.plan["lifecycle"] = "isolated"
+        self.plan['answer_parser'] = 'answer-field-v1'
         self.plan["queries"][1].update(task="movie-q3", manifest=self.manifests["movie-q3"])
         checked = session.check_plan(self.plan)
         state = {"initialized": False, "shutdowns": 0}
@@ -461,6 +473,7 @@ class PlanTests(unittest.TestCase):
             driver.start()
             from src.baselines.text.movie_tasks import MovieTask
             self.assertEqual(owner_type.call_args.args[0].instruction, MovieTask(3).instruction)
+            self.assertEqual(owner_type.call_args.args[0].answer_parser, 'answer-field-v1')
             self.assertEqual(driver.close()["status"], "closed")
             self.assertEqual(state["shutdowns"], 1)
             state["initialized"] = True

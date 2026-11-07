@@ -7,6 +7,7 @@ from src.infrastructure.redact import redact_text
 from src.baselines.text.movie_tasks import MovieTask
 from src.baselines.text.sembench_movie import classification_audit, evaluate_original, verify_checkout
 from src.semantic_methods.lotus.cascade import run_cascade
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
 
 
 def _backend_metadata(evaluate, report, *, primary=None):
@@ -28,10 +29,10 @@ def _backend_metadata(evaluate, report, *, primary=None):
 
 
 def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, evaluate, *,
-                            query_id, max_calls):
+                            query_id, max_calls, answer_parser=LOTUS_NATIVE):
     """Preserve Movie predicate, COUNT and original evaluator; no physical executor here."""
     import pandas as pd
-    method = MovieTask(3).method(main_lm.model)
+    method = MovieTask(3).method(main_lm.model, answer_parser=answer_parser)
     inputs = source.preflight(method)
     upstream = verify_checkout(checkout)
     frame = pd.DataFrame([
@@ -44,7 +45,8 @@ def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, 
     try:
         report = run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate,
                              instruction=method.instruction, query_id=query_id,
-                             max_rows=max(1, inputs["rows"]), max_calls=max_calls)
+                             max_rows=max(1, inputs["rows"]), max_calls=max_calls,
+                             answer_parser=method.answer_parser)
         report["positive_review_cnt"] = sum(row["decision"] for row in report["decisions"])
         result = pd.DataFrame({"positive_review_cnt": [report["positive_review_cnt"]]})
         report.update(query_seconds=time.monotonic() - started, source=inputs,

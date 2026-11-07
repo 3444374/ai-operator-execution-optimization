@@ -20,6 +20,7 @@ from litellm import CustomLLM
 from src.infrastructure.deadlines import deadline_expired, remaining_time
 from src.semantic_methods.lotus.engine import engine_response, validate_engine_protocol
 from src.semantic_methods.lotus.records import CallLedger, identity
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.vllm_protocol import AsyncEngineLimits, GenerationSpec, result_record, _prepared
 
@@ -359,6 +360,8 @@ def run(source, checkout, method, generation, engine, resources, *, query_id, pr
     starts inside this function; a session may pass its already-ready model and
     remains responsible for final close. No result clock subtracts those costs.
     """
+    if method.answer_parser != LOTUS_NATIVE:
+        raise ValueError("lotus-native requires the unmodified LOTUS answer parser")
     import lotus
     import pandas as pd
     from src.baselines.text.movie_records import MovieRecordSource, validate_movie_method

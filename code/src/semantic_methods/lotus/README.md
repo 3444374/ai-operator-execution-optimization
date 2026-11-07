@@ -9,9 +9,32 @@ SemLoom 执行适配直接依赖本层，
 启动仍使用独立有限时间；模型实际上下文、生成设置、逐命令通信及关闭等待各归实际执行者，
 不得把未指定查询时间换算为隐藏的60秒或无限资源。历史实验读取其原来源与显式配置。
 
+## Filter答案解析
+
+`FilterMethod.answer_parser`属于算子语义，随`StageSpec`和记录链序列化；普通查询报告的`method`也保存它。
+省略时保持`lotus-native`，直接调用安装包的`filter_postprocess`，不修改原生LOTUS、旧配置或原成绩。
+SemLoom修正版运行在方法配置中显式设置`"answer_parser": "answer-field-v1"`；
+需要同语义比较的Ray／Daft／IMLane记录链可以选择相同值，不由调度器或模型引擎代选。
+Movie Session在plan中提供同名字段，预检、owner和每次查询使用同一个值；原生LOTUS入口拒绝修正版声明。
+校准身份为非原生选择另记语义值，避免复用原生查询的耗时／选型；省略与显式原生保持同一身份。
+
+修正版只接受一行`Answer: True`／`Answer: False`或裸布尔值，忽略解释中的布尔词；
+允许大小写、末尾句号和换行差异。多个答案字段、字段内含两个答案及无法识别的文本沿用方法的`default`，
+不会将JSON样式输出擅自当作已声明格式。请求的failed／unknown仍由原结果处理拒绝，不进入答案解析。
+原始模型文本完整保留；切换解析方式不改提示、模型请求或用量记账。
+
+普通records、有限链及cascade dispatch共用一个选择函数；cascade的采样、阈值学习与回退仍由原方法执行。
+`run_cascade(answer_parser=...)`及其配置调用者记录相同身份，模型请求参数不接收该字段。
+修正版会改变选行和后续工作量，不能把与原生结果的耗时差都称为执行优化；原生LOTUS成绩单独保留，
+修正对照另记语义版本。修正版cascade的完整SDK差分、学习阈值及模型质量仍为pending。
+
+[本批CPU范围](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)
+区分纯解析、替身接线和原生委派；未安装SDK，不以这些检查声称真实LOTUS或模型通过。
+
 ## 当前入口和所有权
 
-- [engine.py](engine.py)维护单 Filter 的原生 formatter／parser 与 LM 记账。
+- [engine.py](engine.py)维护单 Filter 的 formatter、解析选择与 LM 记账；
+  [filter_answers.py](filter_answers.py)由不同执行后端共用，区分原生答案解释与修正版。
 - [record_types.py](record_types.py)维护方法／阶段及记录身份的序列化合同；
   [record_method.py](record_method.py)调用单阶段 LOTUS formatter／parser；
   [record_chain.py](record_chain.py)维护有限链推进、失败快照及逐记录交接。

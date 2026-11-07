@@ -16,6 +16,7 @@ from .engine import (
     engine_response, lm_report, validate_engine_protocol,
 )
 from .records import FilterMethod
+from .filter_answers import FILTER_PARSERS, LOTUS_NATIVE, parse_filter_answers
 from .source import CASCADE_FILES, source_report
 
 
@@ -297,12 +298,13 @@ class _StageCalls:
 class CascadeRun:
     """One query's original control, logical calls, and backend-owned stage results."""
 
-    def __init__(self, evaluate, *, query_id, max_calls):
+    def __init__(self, evaluate, *, query_id, max_calls, answer_parser=LOTUS_NATIVE):
         if not callable(evaluate):
             raise TypeError("cascade evaluate must be a records-stage callable")
         cascade_identity(query_id, "preflight", 0, 0, model_role="helper", stage="helper_score")
         self.evaluate = evaluate
         self.query_id, self.max_calls = query_id, max_calls
+        self.answer_parser = answer_parser
         self.stages = []
         self.events = []
         self.active_stage = None
@@ -310,7 +312,6 @@ class CascadeRun:
 
     def dispatch(self, docs, model, instruction, default=True, *, logprobs=False,
                  system_prompt=None, output_tokens=("True", "False"), **options):
-        from lotus.sem_ops.postprocessors import filter_postprocess
         from lotus.types import SemanticFilterOutput
 
         check = getattr(self.evaluate, "check_lifecycle", None)
@@ -405,7 +406,8 @@ class CascadeRun:
             except (ValueError, TypeError, KeyError) as exc:
                 raise RuntimeError("cascade stage contains malformed token metadata") from exc
         texts = [model._get_top_choice(response) for response in responses]
-        parsed = filter_postprocess(texts, model, default, output_tokens=output_tokens)
+        parsed = parse_filter_answers(texts, model, default, output_tokens=output_tokens,
+                                      answer_parser=self.answer_parser)
         logs = [model._get_top_choice_logprobs(response) for response in responses] if logprobs else None
         self.events.append(dict(event="stage_completed", stage=name, calls=len(records)))
         if check is not None:
@@ -424,6 +426,7 @@ class CascadeRun:
         usage["total_tokens"] = (None if any(usage[k] is None for k in ("prompt_tokens", "completion_tokens"))
                                  else usage["prompt_tokens"] + usage["completion_tokens"])
         return dict(schema="semloom.lotus_cascade_calls.v1", max_calls=self.max_calls,
+                    answer_parser=self.answer_parser,
                     records=deepcopy(records), usage=usage, events=deepcopy(self.events),
                     stages=[dict(name=j.stage.name, model_role=j.stage.model_role,
                                  effective_kwargs=deepcopy(j.stage.effective_kwargs),
@@ -432,7 +435,7 @@ class CascadeRun:
 
 def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instruction, query_id,
                 max_rows, max_calls, default=True, system_prompt=None, model_kwargs=None,
-                strategy=None, examples=None, helper_examples=None):
+                strategy=None, examples=None, helper_examples=None, answer_parser=LOTUS_NATIVE):
     """Run a text Filter with the original global helper controller.
 
     Input uses a position-based index internally and retains occurrence IDs. Empty
@@ -446,9 +449,10 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
         max_rows=max_rows, max_calls=max_calls,
         model_kwargs=model_kwargs, strategy=strategy, examples=examples, helper_examples=helper_examples,
     )
-    if type(default) is not bool or (system_prompt is not None and type(system_prompt) is not str):
+    if (type(default) is not bool or answer_parser not in FILTER_PARSERS
+            or (system_prompt is not None and type(system_prompt) is not str)):
         raise ValueError("invalid cascade parser or system prompt policy")
-    run = CascadeRun(evaluate, query_id=query_id, max_calls=max_calls)
+    run = CascadeRun(evaluate, query_id=query_id, max_calls=max_calls, answer_parser=answer_parser)
     run.main_lm, run.helper_lm, run.effective = main_lm, helper_lm, effective
     run.role_columns = {"main": _method_columns(instruction),
                         "helper": _method_columns(args.helper_filter_instruction or instruction)}
@@ -456,10 +460,12 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
     if preflight is not None:
         preflight(main_lm, helper_lm, effective, max_possible_calls=upper,
                   method=FilterMethod(main_lm.model, instruction=instruction, default=default,
-                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["main"]),
+                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["main"],
+                      answer_parser=answer_parser),
                   helper_method=FilterMethod(helper_lm.model,
                       instruction=args.helper_filter_instruction or instruction, default=default,
-                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["helper"]))
+                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["helper"],
+                      answer_parser=answer_parser))
     module = import_module("lotus.sem_ops.sem_filter")
     learner = _bind(module.learn_filter_cascade_thresholds, {"sem_filter": run.dispatch})
 
@@ -514,7 +520,7 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
         if check is not None:
             check()
         decisions = result.get("_filter", []).tolist() if len(result) else []
-        report = dict(schema="semloom.lotus_helper_cascade.v2", status="completed",
+        report = dict(schema="semloom.lotus_helper_cascade.v2", status="completed", answer_parser=answer_parser,
                     query_id=query_id, instruction=instruction,
                     decisions=[dict(row_id=row["row_id"], source_position=row["source_position"],
                                     decision=bool(decisions[i]),
@@ -531,7 +537,8 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
             check()
         return report
     except BaseException as exc:
-        exc.query_report = dict(status="failed", query_id=query_id, calls=run.report(),
+        exc.query_report = dict(status="failed", query_id=query_id, answer_parser=answer_parser,
+                                calls=run.report(),
                                 lm=dict(main=lm_report(main_lm), helper=lm_report(helper_lm)),
                                 error_type=type(exc).__name__)
         raise

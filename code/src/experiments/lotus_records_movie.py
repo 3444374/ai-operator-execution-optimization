@@ -243,7 +243,8 @@ def _cascade_model_worker(config, source, checkout, method, generations, resourc
         backend = _cascade_backend(config, source, engines, resources)
         with lotus.settings.context(enable_cache=False):
             report = run_movie_cascade_query(source, checkout, models["main"], models["helper"],
-                cascade_args, backend, query_id=config["query_id"], max_calls=config["max_calls"])
+                cascade_args, backend, query_id=config["query_id"], max_calls=config["max_calls"],
+                answer_parser=method.answer_parser)
         report["runtime_setup_seconds"] = runtime_seconds
     except BaseException as error:
         failure = error

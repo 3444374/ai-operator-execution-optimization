@@ -311,6 +311,11 @@ class CoreCalibrationTests(unittest.TestCase):
 
     def test_model_generation_hardware_software_inputs_and_warmup_each_change_signature(self):
         original = core_identity_signature(self.identity)
+        for parser, same in (('lotus-native', True), ('answer-field-v1', False)):
+            plan = dict(self.plan, answer_parser=parser)
+            selected = core.build_core_identity(plan, self.checked_plan(plan),
+                hardware=self.hardware, model=self.model, software=self.software)
+            self.assertEqual(core_identity_signature(selected) == original, same)
         for group, key, value in (("hardware", "gpu_ids", ["other-device"]), ("model", "model_revision", "other-model"),
                                   ("generation", "max_tokens", 16), ("execution", "lifecycle", "isolated"),
                                   ("measurement", "warmup", "other-policy")):

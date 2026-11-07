@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass
 import json
 import math
 
+from .filter_answers import FILTER_PARSERS, LOTUS_NATIVE
+
 
 _IDENTITY_FIELDS = (
     "query_id", "model_role", "algorithm_stage", "row_id", "source_position",
@@ -30,6 +32,7 @@ class FilterMethod:
     output_tokens: tuple[str, str] = ("True", "False")
     system_prompt: str | None = None
     resolved_input_columns: tuple[str, ...] | None = None
+    answer_parser: str = LOTUS_NATIVE
 
     def __post_init__(self):
         if type(self.model_name) is not str or not self.model_name.strip():
@@ -38,6 +41,8 @@ class FilterMethod:
             raise ValueError("Filter instruction must be a nonempty string")
         if type(self.default) is not bool:
             raise ValueError("Filter default must be a boolean")
+        if self.answer_parser not in FILTER_PARSERS:
+            raise ValueError("Filter answer_parser must be lotus-native or answer-field-v1")
         if type(self.output_tokens) is not tuple or self.output_tokens != ("True", "False"):
             raise ValueError("ordinary text Filter requires the original True/False output tokens")
         if self.system_prompt is not None and type(self.system_prompt) is not str:

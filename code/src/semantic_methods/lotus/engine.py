@@ -200,7 +200,7 @@ def interpret_results(results, lm, method):
     The independent query ledger also retains failed/unknown calls and known
     usage that cannot be represented as a valid native chat response.
     """
-    from lotus.sem_ops.postprocessors import filter_postprocess
+    from .filter_answers import parse_filter_answers
 
     responses, invalid = [], []
     for result in results:
@@ -218,7 +218,8 @@ def interpret_results(results, lm, method):
         error.engine_failures = invalid
         raise error from invalid[0][1]
     texts = [lm._get_top_choice(response) for response in responses]
-    parsed = filter_postprocess(texts, lm, method.default, output_tokens=method.output_tokens)
+    parsed = parse_filter_answers(texts, lm, method.default, output_tokens=method.output_tokens,
+                                  answer_parser=method.answer_parser)
     return [dict(result, decision=decision, explanation=explanation, raw_output=raw)
             for result, decision, explanation, raw in
             zip(results, parsed.outputs, parsed.explanations, parsed.raw_outputs, strict=True)]

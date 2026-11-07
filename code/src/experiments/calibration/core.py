@@ -8,6 +8,8 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 import math
 
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
+
 from src.scheduling.runtime.calibration import (
     Measurement, identity_signature as core_identity_signature, measurement_record,
     resolve_calibration as resolve_core_selection, select_calibration,
@@ -126,6 +128,9 @@ def _core_identity_fields(plan, checked, *, hardware, model, software):
         workload=dict(queries=schedule),
         measurement=dict(objective="sum_measured_full_query_seconds", warmup="explicit_plan_queries", work_unit="model_calls"),
     )
+    answer_parser = plan.get('answer_parser', LOTUS_NATIVE)
+    if answer_parser != LOTUS_NATIVE:
+        identity['workload']['answer_parser'] = answer_parser
     from src.experiments.movie_records_config import records_resources, records_runtime
     from src.serving.backends.vllm_protocol import EngineSpec
     resources = records_resources(plan)

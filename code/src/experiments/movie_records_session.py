@@ -14,6 +14,7 @@ import time
 from src.infrastructure.private_artifacts import new_private_directory, write_private_json, publish_private_json
 from src.infrastructure.redact import redact_json_values
 from src.experiments.movie_records_config import daft_native_profile
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
 
 
 # Shared lifecycle implementation and values used by this entry.
@@ -33,7 +34,7 @@ def check_plan(plan):
                 "resources", "profile", "queries"}
     optional = {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
                 'core_capacity', 'async_limits', 'preparation_mode',
-                'service_payload_bytes'}
+                'service_payload_bytes', 'answer_parser'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
@@ -54,10 +55,11 @@ def check_plan(plan):
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
     if plan["backend"] == "lotus-native" and (
-            type(plan["profile"]) is not dict or set(plan["profile"]) != {"native_lm_max_batch_size"}
+            plan.get('answer_parser', LOTUS_NATIVE) != LOTUS_NATIVE
+            or type(plan["profile"]) is not dict or set(plan["profile"]) != {"native_lm_max_batch_size"}
             or type(plan["profile"]["native_lm_max_batch_size"]) is not int
             or plan["profile"]["native_lm_max_batch_size"] < 1):
-        raise ValueError("native LOTUS requires an explicit native_lm_max_batch_size")
+        raise ValueError("native LOTUS requires its original parser and explicit native_lm_max_batch_size")
     core_profile = None
     capacity = async_limits = None
     batching = None
@@ -102,7 +104,7 @@ def check_plan(plan):
             raise ValueError("each query needs a unique ID, task, manifest and explicit phase")
         ids.add(query["query_id"])
         task = MovieTask.from_config(query["task"])
-        method = task.method(plan["model_name"])
+        method = task.method(plan["model_name"], answer_parser=plan.get('answer_parser', LOTUS_NATIVE))
         source = MovieRecordSource.from_manifest(query["manifest"])
         if source.task != task:
             raise ValueError("query task differs from source manifest")
@@ -117,12 +119,14 @@ def check_plan(plan):
             raise ValueError("IMLane requires a nonempty finite call declaration for each query")
     total = sum(query["expected_calls"] for query in checked)
     if plan["backend"] == "semloom-static-reference":
-        methods = [MovieTask.from_config(query["task"]).method(plan["model_name"]) for query in checked]
+        methods = [MovieTask.from_config(query["task"]).method(plan["model_name"],
+                   answer_parser=plan.get('answer_parser', LOTUS_NATIVE)) for query in checked]
         if any(method != methods[0] for method in methods):
             raise ValueError("a static reference session retains one method instruction")
     if engine.max_model_calls is None or engine.max_model_calls < total:
         raise ValueError("max_model_calls must explicitly cover the whole session, including warmup")
     return dict(schema="semloom.movie_session_check.v1", status="checked_cpu_only",
+                answer_parser=plan.get('answer_parser', LOTUS_NATIVE),
                 inference_calls=0, expected_calls=total, queries=checked,
                 model_cache_scope=("model owner shared by resident session; actual KV hits unavailable"
                     if plan["lifecycle"] in {"resident", "native_single_thread_session"} else
@@ -200,7 +204,8 @@ class _MovieDriver:
             from src.execution_provider.adapters.lotus_records_core import create_records_core
             from src.experiments.movie_records_config import core_capacity
             self.payload_pool = records_service_pool(self.plan, self.context)
-            method = MovieTask.from_config(self.first_query['task']).method(self.plan['model_name'])
+            method = MovieTask.from_config(self.first_query['task']).method(self.plan['model_name'],
+                answer_parser=self.plan.get('answer_parser', LOTUS_NATIVE))
             self.owner = create_records_core(method, self.engine, self.generation, self.resources,
                 profile=self.plan['profile'], capacity=core_capacity(self.plan),
                 service_budget=self.payload_pool, **options)
@@ -211,7 +216,8 @@ class _MovieDriver:
             self.context.setdefault('_records_payload_drivers', {})[allocation_id] = self
         new_private_directory(self.directory)
         if method is None:
-            method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"])
+            method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"],
+                answer_parser=self.plan.get('answer_parser', LOTUS_NATIVE))
         if backend == "lotus-native" and self.plan["lifecycle"] == "resident":
             from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
             self.owner = LocalNativeModel(self.engine, self.generation, self.resources,
@@ -327,7 +333,8 @@ class _MovieDriver:
         check_external_lease(self.context["owner_context"])
         # Every query reopens and verifies the original/materialized CSV input.
         source = MovieRecordSource.from_manifest(spec["manifest"])
-        method = MovieTask.from_config(spec["task"]).method(self.plan["model_name"])
+        method = MovieTask.from_config(spec["task"]).method(self.plan["model_name"],
+            answer_parser=self.plan.get('answer_parser', LOTUS_NATIVE))
         binding = self.context["checked_queries"][spec["query_id"]]
         if (source.task.name != spec["task"]
                 or source.preflight(method)["manifest_sha256"] != binding["manifest_sha256"]
@@ -549,7 +556,8 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
                 or claim.attempts or claim.remaining != query["expected_calls"]):
             raise ValueError("each query needs its own fresh, already-charged complete unit")
         model_preflight(MovieRecordSource.from_manifest(query["manifest"]), context["sembench_checkout"],
-            MovieTask.from_config(query["task"]).method(plan["model_name"]),
+            MovieTask.from_config(query["task"]).method(plan["model_name"],
+                answer_parser=plan.get('answer_parser', LOTUS_NATIVE)),
             GenerationSpec.from_dict(plan["generation"]), engine)
     # Whole units were permanently charged by the controller already. This
     # process-local single-use binding also covers embedded engines that do not

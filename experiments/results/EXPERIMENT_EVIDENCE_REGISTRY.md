@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-07：Filter原生与修正解析分别记录
+
+[共享解析与配置接线](diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)
+九项纯CPU／替身检查和十一项既有／扩充方法通过。修正版排除解释词，原生选择仍直接转交SDK；
+本地没有SDK运行证据，也没有模型、服务器或成绩改写，不把语义差异当作调度收益。
+
 ## 2026-11-07：文本数据组织研究归位
 
 [原型、实际接线和历史来源](diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)
