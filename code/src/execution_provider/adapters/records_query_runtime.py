@@ -40,7 +40,7 @@ class _RecordLocalRows:
         self._prepared = {}
         self._extract_results = []
         self._output = None
-        self._output_exhausted = self._method_complete = self._root_failed = False
+        self._output_exhausted = self._root_failed = False
         self._source_errors = []
         self.error = self.last_close_report = None
         self.peak_core_usage = asdict(owner.core.capacity.usage())
@@ -117,7 +117,7 @@ class _RecordLocalRows:
 
         if self.run.position == len(self.run.chain.stages):
             result = self.run.result()
-            self._method_complete, self._output = True, iter(result["records"])
+            self._output = iter(result["records"])
             return
         self._using_source = not self.source_eof
         self._phase_eof = False
@@ -222,6 +222,7 @@ class _RecordLocalRows:
             self.owner._supply_feedback.end_phase()
         self.driver.close()
         self.driver, self.section = None, None
+        self._prepared, self._phase_bindings = {}, {}
 
     @property
     def can_prepare(self):

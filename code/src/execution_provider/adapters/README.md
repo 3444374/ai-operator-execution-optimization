@@ -1444,6 +1444,9 @@ The helper returns the existing frame and caller-owned Ray module; it introduces
 keep the unexecuted cases explicit.
 
 `records_query_runtime` releases and observes its own query payloads after the owner validates service transfer and cleanup.
+A successfully completed record-local phase drops its prepared-input and source-binding indexes after the existing driver close.
+Completion, adoption or close errors keep these inputs for the owner's existing recovery. Call history, decoded Extract results
+and relation data retain their current owners.
 `lotus_chain_fused_runtime` ends the consumed input/session and opens the next relation input; the query owner selects the
 next phase and assembles its result accountant. No extra owner, copy of the data ledger or facade is introduced.
 [CPU scope, interruption recovery and pending OS checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
