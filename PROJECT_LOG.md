@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：共用IPC配置归属协议模块
+
+[共享配置整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)让唯一AsyncEngineLimits与真实调用方直连，保留同一类型、默认和JSON，不新增包装。五项原CPU保持，冷导入反例修后通过；链采样脚本的一处旧规范中转同时更正，实际新组合IPC／模型未验，原ea补验保持其版本。
+
 ## 2026-11-07：显式IPC正文按实际大小检查
 
 [小帧记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)删除无编码推导的4096最低值，同时让错误回执服从已解析控制额度；有限额度、实际编码和unknown责任保留。四方法纯CPU通过，实际小帧IPC仍未验；NoB相邻未见新误拒绝，只纠正一处旧提示，不改原ea服务器补验或输入。

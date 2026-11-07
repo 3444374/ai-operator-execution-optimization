@@ -2143,3 +2143,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [显式小IPC正文与NoB相邻核查](diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)
 登记b086到93d的统一4096最低值移除、已解析额度下错误回执修正；两阶段反例及四方法CPU结果保留，五条旧源和3010项预期不变。实际IPC／模型未验，原ea测试及输入不改；NoB相邻仅一处提示文字更正，没有新增功能或判定。
+
+[共用IPC配置归属](diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)
+记录6aeadd到07938的唯一类迁移和实际调用方直达，五项原CPU保持、冷导入反例修后通过，十五条历史读源与清单保持；704脚本仅更正同对象导入，独审与源码核对完成。字段／默认／JSON不变，新组合实际IPC／模型未验，生产减三行、测试增十九行如实登记。
