@@ -604,7 +604,14 @@ def _download_http(url: str, target: Path) -> None:
         if mode == "ab" and getattr(response, "status", None) != 206:
             mode = "wb"
         with partial.open(mode) as output:
+            offset = output.tell()
             shutil.copyfileobj(response, output, length=1024 * 1024)
+            received = output.tell() - offset
+        expected = response.headers.get("Content-Length")
+        if expected is not None and received != int(expected):
+            raise OSError(
+                f"incomplete asset download: expected {expected} bytes, received {received}"
+            )
     partial.replace(target)
 
 

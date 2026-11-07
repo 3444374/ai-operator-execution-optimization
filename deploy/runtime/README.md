@@ -106,7 +106,9 @@ PYTHONPATH=code <driver-venv>/bin/python code/scripts/environment/manage_environ
 可下载资产包括 `qwen25-15b`、`qwen25-7b`、`clip-vit-b32`、
 `sharegpt-vicuna`、`burstgpt-v2`、`coco-val2017` 和 `coco-train2017`。
 HTTP 大文件使用 `.partial` 断点文件并在完成后原子改名；服务端忽略 Range 时会从头覆盖，
-不会把两份文件错误拼接。Hugging Face snapshot 需要先安装 `download` 能力。
+不会把两份文件错误拼接。响应声明 `Content-Length` 时，先核对本次接收字节；未收全则报错并保留
+断点文件，不改为最终目标。再次执行可续传；没有声明长度时继续使用清单的最小大小与可选摘要核验。
+Hugging Face snapshot 需要先安装 `download` 能力。
 
 `imagenet-1k` 是受许可的 `manual` 资产：检查会明确报缺失，下载命令会拒绝绕过授权。
 这类资产必须由用户接受条款后放入清单指定目录。

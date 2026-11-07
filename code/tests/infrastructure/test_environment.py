@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import http.client
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from src.infrastructure.environment import (
@@ -122,6 +125,41 @@ class EnvironmentContractTests(unittest.TestCase):
                     "licensed",
                     {"DATA_ROOT": directory},
                 )
+
+    def test_interrupted_download_keeps_partial_and_can_resume(self) -> None:
+        def response(wire):
+            result = http.client.HTTPResponse(
+                SimpleNamespace(makefile=lambda *args, **kwargs: io.BytesIO(wire))
+            )
+            result.begin()
+            return result
+
+        for status in (200, 206):
+            with self.subTest(resume_status=status), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory) / 'asset.dat'
+                partial = target.with_suffix('.dat.partial')
+                manifest = {'assets': [{'id': 'fixture', 'kind': 'http_file',
+                    'target': '${DATA_ROOT}/asset.dat', 'url': 'https://localhost/asset.dat',
+                    'minimum_bytes': 4}]}
+                first = response(b'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabcde')
+                body = b'abcdefghij' if status == 200 else b'fghij'
+                headers = f'HTTP/1.1 {status} OK\r\nContent-Length: {len(body)}\r\n'
+                if status == 206:
+                    headers += 'Content-Range: bytes 5-9/10\r\n'
+                second = response((headers + '\r\n').encode() + body)
+                with mock.patch('src.infrastructure.environment.urllib.request.urlopen',
+                                side_effect=[first, second]) as request:
+                    with self.assertRaisesRegex(OSError, 'incomplete asset download'):
+                        download_asset(manifest, 'fixture', {'DATA_ROOT': directory})
+                    self.assertFalse(target.exists())
+                    self.assertEqual(partial.read_bytes(), b'abcde')
+                    self.assertTrue(first.isclosed())
+                    self.assertEqual(download_asset(manifest, 'fixture', {'DATA_ROOT': directory}), target)
+                self.assertEqual(target.read_bytes(), b'abcdefghij')
+                self.assertFalse(partial.exists())
+                self.assertTrue(second.isclosed())
+                self.assertIsNone(request.call_args_list[0].args[0].get_header('Range'))
+                self.assertEqual(request.call_args_list[1].args[0].get_header('Range'), 'bytes=5-')
 
     def test_machine_profile_selects_specific_match_before_generic(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

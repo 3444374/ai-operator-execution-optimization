@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：下载响应未收全时保留断点文件
+
+[公开资产短传修复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#asset-download-short-read)复现响应声明10字节、实际5字节却被改名并报成功的问题。现在只核对本次响应的声明长度，短传报错并保留`.partial`；206续传和忽略Range的200完整应答保持。三个下载CPU方法从两个子场景失败变为通过，两个既有原件恢复方法一次通过；没有真实下载、数据库或模型操作。
+
 ## 2026-11-07：无现用调用的HTTP容量采样命令退役
 
 [独立采样入口清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-capacity-sampler)删除旧HTTP指标／进程／GPU采样CLI共65行；当前代码、配置、测试和文档没有调用者，第三方原生观测保持。公开279原件保存一份，五份历史投影仍读取已有7bf原件，清单及原始结果不改；没有新增测试或运行采样服务。

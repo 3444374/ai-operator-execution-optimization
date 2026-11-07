@@ -2197,3 +2197,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [入口调用、保留观测及准确恢复](diagnostics/records_runtime_refactor_20261104/README.md#retired-http-capacity-sampler)
 删除无当前代码、配置、测试或文档调用的完整65行CLI；公开279原件单独保存，五条历史读取仍使用原7bf来源。
 清单及现用观测源码保持，没有新增测试、真实服务或GPU运行；不外推全项目完成或查询性能。
+
+## 2026-11-07：公开资产响应短传修复
+
+[实际下载路径、短传反例及恢复核对](diagnostics/records_runtime_refactor_20261104/README.md#asset-download-short-read)
+标准库内存HTTP应答复现不足声明长度仍报ready；三项相同下载方法从两个子场景失败变为通过，两个既有原件恢复方法一次通过。
+只增加本次响应长度核对，断点／206续传／200重下保持；没有真实下载、数据库、模型或服务器运行，历史清单及来源不改。
