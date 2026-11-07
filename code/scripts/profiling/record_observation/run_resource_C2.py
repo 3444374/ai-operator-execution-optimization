@@ -92,7 +92,7 @@ def record_chain(config,ledger):
     from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
     from src.semantic_methods.lotus.record_types import RecordOccurrence
     from src.semantic_methods.lotus.records import RecordsResources
-    from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec,GenerationSpec
     from transformers import AutoTokenizer
     import ray
     root=Path(config['artifact_root']);binding=config['workload']['input']
