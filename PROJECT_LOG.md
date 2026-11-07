@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：独立本地精简与历史原件恢复
+
+[后续整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)让关闭诊断只表示实际问题，保留unknown责任；不可变方法值只在构造时验证，可修改阶段数据继续建立独立副本，清除四个无消费者转导入。各批CPU与独审完成后只在本地整合，已发布847保持固定供服务器单项验证。
+[历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)为两份可从Git取回的原件补六处引用，不改旧摘要、身份或现用桥实现；原失败保留，五投影恢复检查随后通过，不解释为历史运行结果。
+
 ## 2026-11-07：关闭后不再派发残留排空命令
 
 [小帧原件与关闭顺序](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)核实a780软件IPC单项通过但仍有ConnectionResetError；没有清除或改写原诊断。独立修正纯内存反例中close后的多余drain，保留abort优先及全部unknown／预留责任，一方法两个场景修后通过；新组合待Linux复验，尚不能确定原Reset原因。

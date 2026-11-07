@@ -2149,3 +2149,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [a780小帧IPC原诊断与关闭顺序](diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)
 准确a780加单测试补丁一次通过，两结果／预留／已观察资源清理保持，原ConnectionResetError保留；二十份原件、补丁及来源摘要已核。7ae22到6f728独立取消close后的待发drain，一项内存方法两个场景修前失败、修后通过，没有清错误字段或改变成功判断；新组合实际Linux IPC仍待验证，不转授旧回执。
+
+[本地关闭诊断与方法值精简](diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)
+记录86ad到cb873的假传输错误与wait修正，四内存场景通过，首轮夹具错误和修前失败保留；2e7c到160f2保构造检查与阶段字典快照，十六CPU方法前后通过；ff486到799d9删四个无消费者转导入，三项原CPU保持。只在本地整合并分别独审，847服务器输入未改，没有新的模型／IPC资格。
+
+[独立历史消费者原件恢复](diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)
+记录a118到90d91为847原有六处引用差异取回两份375fb精确原件，六条读取与一次五投影3010文件恢复通过；未压缩源扫描无命中、无实际豁免。旧预期、投影身份及原失败保持，不执行历史代码，也不重定义更早十处差异。

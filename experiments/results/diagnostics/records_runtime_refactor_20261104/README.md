@@ -4894,3 +4894,35 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 源码发现真实顺序问题：active请求为零时，drain仍可留下待派发标记；父进程优先发送close后，下一轮又发送残留drain，而worker收到close已经停止控制读取。原真实父进程的纯内存反例发出`close, drain`；有已接受abort时为`abort, close, drain`。这个额外命令不是必要收尾，但现有原件只记录异常类型，没有首次异常的send／recv和通道位置，因此不能断言原服务器Reset的唯一原因。
 独审候选`7ae22d294d41fd7d14ec92a2ec7882c06860bd43`整合为`6f72815e44fc3f65e80e6d3d57da89f145d31029`，只在待派发drain的原分支加`not self._closing`；正常drain、已开始发送的帧及close前的已接受abort保持。没有吞异常、清transport_error、改变成功判断或修改unknown／ACK责任。原parent内存方法扩展两个场景，修前一次出现两项子场景失败，修后一次通过，原调用方时间、无API确认仍为unknown、输入／结果预留断言保留；整合与独审均未复跑行为或历史读取。
 本批生产Python行数不变，测试增十行，leaf说明增两行；五条历史来源与3010项预期摘要不动。当前核心49,113行、src＋scripts101,211行、测试92,188行，全部Python193,399行；按同口径相对main少49,699行、相对3fd少86,308行。新的关闭顺序和共享配置组合尚待实际Linux IPC复验，原Reset仍是待确认诊断，不能借用此前a780单项作新提交通过结论；原ea续验仍由原会话按原版本执行。
+
+<a id="close-terminal-diagnostics"></a>
+## 本地后续：关闭终止状态与传输诊断
+
+作者`86adce7ca34210409aadf44d1c7e91f430558205`已独审，整合为本地`cb873ab015f3b17bdfd13178f00b63cee9de3ab4`。原close无条件调用`_uncertain`，会让空owner或已确认但未消费结果也出现`ClosedWithoutConfirmedTerminal`。现在只为确实缺terminal的请求建立unknown；原I/O异常路径、已有Reset、关闭成功及ACK判断不改。wait使用已建立的`_io_done`，I/O尚在运行时仍可等待，结束后不再等。
+原parent内存方法扩为四场景：空owner、pending abort、实际`_receive`确认但未消费结果、内存select抛出ConnectionResetError。纠正夹具字段后，修前两项子场景因假传输错误失败，修后同一方法一次通过；输入／结果预留、消费后释放、abort先于close、缺API证明仍为unknown和30／0.25秒调用方时间保持。最初新增断言误用了不存在的`event.confirmed`，该轮两失败／一夹具错误保留；更正为`engine_terminal_confirmed`后的修前原件与最终结果分别保存，不将首轮计作通过。
+源码净增一行，测试净增三十一行。五条历史读源保持，独审与整合未重跑该方法；没有实际socket、子进程、模型或Ray资格，也没有因此认定a780的原Reset已解决。
+
+<a id="immutable-method-validation"></a>
+## 本地后续：不可变方法值不重复验证
+
+作者`2e7c4ad89d2247df9693eb5381f65feecd5993d1`已独审，整合为本地`160f23b49ffa252c5d87bf25fcc3e9b953be219b`。FilterMethod和RecordScan仍在构造时检查并归一化为不可变字段，describe只生成说明值；两个调用方不再构造随后丢弃的describe字典。LotusRecordMethod在原首次验证处建立StageSpec副本并使用一次，保留Extract.output_columns与GenerationSpec.response_format两份可修改字典的独立副本，仍先报告阶段参数错误再检查LOTUS全局设置。
+同一十六项纯CPU方法改前／后通过，包含两项新增行为检查及原native accessor完整消息、参数、计数和最终表值差分；没有推理。构造验证、输入列顺序、提示和解析保持，源码净减五行、测试净增二十八行，没有新增包装或修改默认参数。
+原历史恢复方法当时五个投影报错；静态3010输入核对发现六处差异均已存在于847，涉及两份与本批无关的文件。本批不改旧预期或桥实现，原失败保留，按下节单独处理。
+
+<a id="unused-feedback-reexports"></a>
+## 本地后续：移除无消费者的观测转导入
+
+作者`ff486fdc3399c7d16543978c46b8293aca0904aa`已独审，整合为本地`799d99a22c7f4e014ba02f10ca25dff04a2d6bf0`。lotus_chain_token_batches只移除audit_integer、qualify_resource_observation、resource_probe_view和snapshot_response_header四个转导入，保留snapshot_rpc_report；原函数及sampler自身的直接导入保持，继承方法不依赖被删除的模块名字。
+当前源码／脚本／测试及模块别名访问未找到这四个转导入的消费者，不承诺查遍未知仓外材料。三项原有sampler复用、资源快照和RPC回执CPU方法前后通过，没有新测试。源码净减四行，实际RPC、unknown、取消和清理代码不动；这两个主题文件不在五份历史投影输入，清单不变，没有额外读取历史载荷。
+
+<a id="historical-worker-source-recovery"></a>
+## 本地后续：恢复两份历史消费者原件
+
+作者`a1188df4829a3dc28785a7a7a86071db4bc9f414`已独审，整合为本地`90d91a0075f125fe59c0e0b466adc2c7c7a0b1c6`。六处847原有差异为五投影共用model_lifecycle.py，以及daft_single_thread_session的一份test_daft_native_session.py。两份期望原件均从本地Git `375fb69276754f26f14ae9e37352b8656ac6d14e`取回，未改原字节；分别只存一份gzip，六处引用及对应格式指向原件，3010个预期摘要、投影身份和当前生产／测试文件不改。
+解压SHA-256分别为`8d508181b0678df771a67d3f934087e87e3c7466a09818ae984bff2491142d11`、`edba8217999d27c1d1f550f783cbc1d9c4925f59ec9ab1faeed312963d6eeb86`，两归档共4273字节。未压缩原件和来源身份已扫描，未发现违规且没有实际豁免；独审逐字节与原Git blob核对，原失败文件未覆盖。来源和恢复入口见[已有历史说明](../../../reproduction/native_baselines/README.md#baseline-worker-consumer-source-recovery)。
+修后六条受影响读取通过，原恢复方法只运行一次，五投影3010份完整文件／摘要与原身份比较通过；没有执行任何历史代码、HTTP、模型或Ray。较早十处不匹配记录继续保留自己的源码身份，不重新定义为本次六处。整合只核元数据：其余三个源码切片涉及的十五个历史输入仍有独立原件，不重复读取3010份载荷或重跑恢复测试。
+
+### 本地组合与仍待验证
+
+上述四批已在独立本地树整合并分别独审；已发布847及其服务器单项测试补丁保持原字节，新批尚未推送或派发，不借用847实机结果。原ea续验与847关闭单项仍由原服务器会话分别按固定版本处理。本轮没有改动多查询研究、策略阈值或物理内存授予；原生Ray回收、原1596第二项关闭原因及完整模型质量／期限／性能仍按既有未验证范围解释。
+同口径tracked Python含注释／空行统计：核心排除experiments／baselines、包含research，为49,105行；src＋scripts101,203行，测试92,247行，总计193,450行。本地四批相对847为源码少八行、测试多五十九行、合计多五十一行；归档单列，不算运行源码删减。相对main核心少4,986行、三目录合计少49,648行，相对3fd分别少12,523和86,257行；移动算法不算删除算法。当前核心无千行以上文件；不以文件长度单独决定拆分。
