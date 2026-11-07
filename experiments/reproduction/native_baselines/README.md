@@ -3,6 +3,12 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="clip-profiler-entry-sources"></a>
+## CLIP画像入口修正前的来源
+
+两个现用画像脚本的同级导入改为完整包名；数据库连接失败不再回显DSN，并用现有脱敏函数处理异常。原算法、参数及失败退出码保持，旧入口没有新增转发层。
+准确公开`83d7889642aa26c56555cfd0de6189203f41eb20`的[阶段画像](historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz)、[准备变体](historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz)和[全流程画像](historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz)各保存一次。未压缩原文扫描无命中、无豁免；五投影只增加十五条来源及格式记录，原预期摘要、投影身份、来源版本与其它映射保持。十五条受影响读取逐一核对通过，没有执行旧代码或重跑整个恢复方法。
+
 <a id="operator-cost-row-estimator-source"></a>
 ## CSV-row estimator source
 

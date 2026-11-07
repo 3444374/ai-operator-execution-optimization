@@ -200,7 +200,7 @@ def main() -> None:
     import torch
     import transformers
 
-    from profile_image_clip_bottleneck import fetch_image_bytes, get_versions
+    from scripts.profiling.profile_image_clip_bottleneck import fetch_image_bytes, get_versions
 
     batch_sizes = [int(item) for item in args.batch_sizes.split(",") if item]
     if not batch_sizes or min(batch_sizes) <= 0:

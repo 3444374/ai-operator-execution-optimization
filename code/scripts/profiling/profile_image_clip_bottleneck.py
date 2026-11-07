@@ -55,6 +55,7 @@ from src.modalities.image.clip import (  # noqa: E402
     decode_rgb_image,
     extract_clip_image_features,
 )
+from src.infrastructure.redact import redact_text  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -345,7 +346,7 @@ def main():
     try:
         conn = psycopg.connect(args.pg_dsn)
     except Exception as exc:  # noqa: BLE001
-        print(f"ERROR: cannot connect to PG ({args.pg_dsn}): {exc}", file=sys.stderr)
+        print(f"ERROR: cannot connect to PG: {redact_text(str(exc))}", file=sys.stderr)
         sys.exit(2)
 
     versions = get_versions(conn)

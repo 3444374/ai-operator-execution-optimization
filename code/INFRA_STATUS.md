@@ -64,9 +64,9 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按本轮83d788后续EOF整理统计：核心`code/src`为49,105行，全部src＋scripts为101,203行，测试为92,286行，三目录合计193,489行。
+代码量按本轮83d788后续EOF及画像入口整理统计：核心`code/src`为49,105行，全部src＋scripts为101,204行，测试为92,324行，三目录合计193,528行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少4,986／39,132行，相对清理起点3fd减少12,523／48,442行。
+核心／宽口径相对固定main6a8a减少4,986／39,131行，相对清理起点3fd减少12,523／48,441行。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
@@ -76,6 +76,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [关闭命令顺序](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)不再让待派发drain跟在close后发送，已接受abort仍先于close；原错误字段、unknown和额度责任不动。原内存方法的两个场景修前失败、修后通过；[准确847关闭单项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-order-847-server-complete)随后一次通过，I/O原始错误为null、最终占位记录保留，三个已观察进程与资源清理通过，原a780 Reset的系统调用原因仍未知。
 [后续四批](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)已发布为83d788：去掉空owner／已确认结果的假传输错误，按实际I/O结束决定wait；真实Reset、unknown及未消费额度保持，四内存场景通过。另精简[不可变方法重复验证](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#immutable-method-validation)，十六CPU方法前后通过，并删除四个无消费者的观测转导入，三项原CPU保持。[83准确两项软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)已各一次通过，不再待执行。
 [EOF复用现有行计数](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)将两个空表判断交给原MethodDriver.active_rows。新增一个纯CPU方法直接覆盖两个输入结束且空表的场景，83原实现与本地替换各一次通过；原四方法前后结果保持，没有性能收益主张。
+[画像入口及错误输出修正](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)删除两个裸同级导入，保留唯一共用读取实现；连接失败不回显DSN，异常使用原脱敏函数。两个CPU方法修前一失败／两错误、修后通过，无实际DB或模型；三份原件、五投影十五条读取保持，未重复整个恢复检查。
 [两份历史原件恢复](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)单独修复847原有六处引用差异，保留旧预期／身份和原失败；一次恢复方法比较五投影3010份文件通过，当前生产代码不改。它不表示旧代码／模型已执行，也不覆盖较早十处差异的原记录。
 [阶段输入及时释放](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)在现有完成与driver关闭成功后丢两张输入索引，异常与未决传输保留数据；单个纯内存反例修前失败、修后通过，调用记录／关系／ACK不改，未测真实链或RSS。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。

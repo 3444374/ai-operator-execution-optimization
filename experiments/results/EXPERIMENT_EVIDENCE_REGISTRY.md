@@ -2161,3 +2161,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [83两项软件IPC回执与EOF计数整理](diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)
 更新上述待执行状态：准确83加原e501补丁两方法各一次通过，健康关闭无传输错误、wait不等；故障unknown和占额保持，七个观测进程及socket／SHM清理完成。另[EOF行为方法](diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)在原83与两行计数替换上各一次通过，直接覆盖两个空表结束场景，零后端请求；不重复服务器执行，不表示模型或原Ray回收问题已解决。
+
+[现用CLIP画像入口与错误输出](diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)
+两个方法、三个场景修前记录一失败和两个导入错误，修后全部通过；两轮测试字节相同，真实DB／模型／Ray／GPU均为零。原83三份源码独立扫描、保存并核十五条历史读取，原投影身份与预期不变；没有重跑旧实验或完整恢复。

@@ -124,7 +124,7 @@ def main():
     import transformers
     from transformers import CLIPProcessor
 
-    from profile_image_clip_bottleneck import fetch_image_bytes, get_versions
+    from scripts.profiling.profile_image_clip_bottleneck import fetch_image_bytes, get_versions
 
     processor = CLIPProcessor.from_pretrained(args.model)
     ip = processor.image_processor

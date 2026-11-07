@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：修正现用画像脚本接线与错误输出
+
+[画像入口整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)让两个包入口直接导入唯一读取实现，移除连接失败时的DSN回显并脱敏异常；两个纯CPU方法修前复现、修后通过。三份准确83原件保存一次，五份历史投影只迁移对应来源；不修改模型算法或生产默认，也不以此扩展多查询。
+
 ## 2026-11-07：核83回执并补EOF行为覆盖
 
 [83准确两项软件IPC](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)各一次通过，正常关闭／wait及故障unknown责任保持，原服务器已清理自有资源；不重跑或转授模型结论。[EOF计数整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)复用原公开行计数，新增一个CPU方法直接检查两种最终结果释放后的继续推进，原实现和替换后各一次通过。

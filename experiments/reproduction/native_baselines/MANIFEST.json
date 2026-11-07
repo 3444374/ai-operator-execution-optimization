@@ -971,7 +971,10 @@
         "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
         "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz",
         "code/src/scheduling/runtime/ray_runtime.py": "historical_sources/946412e6/code/src/scheduling/runtime/ray_runtime.py.gz",
-        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz"
+        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
+        "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1519,6 +1522,21 @@
           "encoding": "gzip",
           "decoded_bytes": 2156,
           "archive_sha256": "a6b91f3c115c69c802f1a486a928677999c37a03ec80f7d8f954d6ea1ac34a92"
+        },
+        "code/scripts/profiling/profile_clip_preproc_stages.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9007,
+          "archive_sha256": "8b2a7d5e8edd2b802773be3172527a22cfa0bbebde383867da253da2d038774b"
+        },
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12321,
+          "archive_sha256": "45dfe79a7da6a59df921db4ef607e853a0d18b89cec165bffacf2b7521069a9a"
+        },
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14346,
+          "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
         }
       }
     },
@@ -2518,7 +2536,10 @@
         "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
         "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz",
         "code/src/scheduling/runtime/ray_runtime.py": "historical_sources/946412e6/code/src/scheduling/runtime/ray_runtime.py.gz",
-        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz"
+        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
+        "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3066,6 +3087,21 @@
           "encoding": "gzip",
           "decoded_bytes": 2156,
           "archive_sha256": "a6b91f3c115c69c802f1a486a928677999c37a03ec80f7d8f954d6ea1ac34a92"
+        },
+        "code/scripts/profiling/profile_clip_preproc_stages.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9007,
+          "archive_sha256": "8b2a7d5e8edd2b802773be3172527a22cfa0bbebde383867da253da2d038774b"
+        },
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12321,
+          "archive_sha256": "45dfe79a7da6a59df921db4ef607e853a0d18b89cec165bffacf2b7521069a9a"
+        },
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14346,
+          "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
         }
       }
     },
@@ -4075,7 +4111,10 @@
         "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
         "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz",
         "code/src/scheduling/runtime/ray_runtime.py": "historical_sources/946412e6/code/src/scheduling/runtime/ray_runtime.py.gz",
-        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz"
+        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
+        "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4623,6 +4662,21 @@
           "encoding": "gzip",
           "decoded_bytes": 2156,
           "archive_sha256": "a6b91f3c115c69c802f1a486a928677999c37a03ec80f7d8f954d6ea1ac34a92"
+        },
+        "code/scripts/profiling/profile_clip_preproc_stages.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9007,
+          "archive_sha256": "8b2a7d5e8edd2b802773be3172527a22cfa0bbebde383867da253da2d038774b"
+        },
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12321,
+          "archive_sha256": "45dfe79a7da6a59df921db4ef607e853a0d18b89cec165bffacf2b7521069a9a"
+        },
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14346,
+          "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
         }
       }
     },
@@ -5634,7 +5688,10 @@
         "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
         "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz",
         "code/src/scheduling/runtime/ray_runtime.py": "historical_sources/946412e6/code/src/scheduling/runtime/ray_runtime.py.gz",
-        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz"
+        "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
+        "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6187,6 +6244,21 @@
           "encoding": "gzip",
           "decoded_bytes": 2156,
           "archive_sha256": "a6b91f3c115c69c802f1a486a928677999c37a03ec80f7d8f954d6ea1ac34a92"
+        },
+        "code/scripts/profiling/profile_clip_preproc_stages.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9007,
+          "archive_sha256": "8b2a7d5e8edd2b802773be3172527a22cfa0bbebde383867da253da2d038774b"
+        },
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12321,
+          "archive_sha256": "45dfe79a7da6a59df921db4ef607e853a0d18b89cec165bffacf2b7521069a9a"
+        },
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14346,
+          "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
         }
       }
     },
@@ -7204,7 +7276,10 @@
         "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz",
         "code/src/scheduling/runtime/ray_runtime.py": "historical_sources/946412e6/code/src/scheduling/runtime/ray_runtime.py.gz",
         "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
-        "code/tests/baselines/text/test_daft_native_session.py": "historical_sources/375fb692/code/tests/baselines/text/test_daft_native_session.py.gz"
+        "code/tests/baselines/text/test_daft_native_session.py": "historical_sources/375fb692/code/tests/baselines/text/test_daft_native_session.py.gz",
+        "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7762,6 +7837,21 @@
           "encoding": "gzip",
           "decoded_bytes": 12889,
           "archive_sha256": "673d60fd85898a9e220d14ff6352a34c73505abbe0ba881e8a271f6ddc1709f7"
+        },
+        "code/scripts/profiling/profile_clip_preproc_stages.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9007,
+          "archive_sha256": "8b2a7d5e8edd2b802773be3172527a22cfa0bbebde383867da253da2d038774b"
+        },
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 12321,
+          "archive_sha256": "45dfe79a7da6a59df921db4ef607e853a0d18b89cec165bffacf2b7521069a9a"
+        },
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 14346,
+          "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
         }
       }
     }
