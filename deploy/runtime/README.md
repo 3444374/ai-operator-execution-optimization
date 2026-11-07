@@ -59,6 +59,8 @@ SemBench Movie原生查询与评价使用`core,text,semantic-benchmarks`：后�
 SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1与Arrow版本。
 原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
 本轮固定Daft0.7.21的连接工厂返回SQLAlchemy Connection；psycopg通过NullPool的creator接入，只读和statement timeout仍明确设置。
+该版本的SQL／Postgres extra声明SQLGlot<30.9.0；现用`sql-readers`安装项及可选路径依赖并集统一为`sqlglot>=30,<30.9`，沿用原能力组的>=30下限。
+这只修正当前Daft0.7.21组合的安装声明。已有模块仍不会由安装器自动纠正版本；其它Daft版本应按自身依赖重新核对，不能借此声明兼容。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
 能力组的import检查不是上述接点的完整版本资格。现有LOTUS文本records／SDK的CPU资格使用
 `lotus-ai==1.2.4`、`litellm==1.95.0`与`openai==2.50.0`；来源报告记录实际版本及源码摘要，

@@ -4975,3 +4975,10 @@ records_capacity._ipc_limits删除command_slots、input_bytes及result_bytes的�
 全项目安装／数据入口核查确认，runtime和data说明仍调用import_coco_images。原main在ZIP打开后才连接数据库，连接、前置metadata提交或提交后核验出错会绕过相应手工close。现由stdlib ExitStack管理ZIP并在连接返回后立即登记conn.close，删除七处重复close；原conn.transaction、metadata commit、PK拒绝退出码5、加载退出码4、SQL／数值行ID及成功输出保持。
 同四个方法修前记录三个资源关闭断言失败，修后全部通过，无错误或跳过。新方法用真实临时ZIP与假PG检查成功、连接、提交、加载和核验五场景；在测试自己的finally补清理之前检查资源状态，保留原异常对象或退出码，并核一条(row_id=1,bytes=fixture,length=7)写入。三个原COCO身份、排序ZIP读取及复合PK方法保持；假PG只验证事务上下文／关闭调用，不证明真实数据库回滚。没有真实PG、模型、Ray、GPU、socket或子进程。
 五份历史投影只增加[精确279来源](../../../reproduction/native_baselines/README.md#coco-import-resource-source)及gzip格式；预期摘要、投影身份和其余映射保持，五条读取核对通过，不重跑3010份完整恢复。此批脚本净减八行，测试新增七十六行，原件压缩2,790字节另计；修复资源归属，不宣称查询加速。
+
+<a id="daft-sqlglot-install-range"></a>
+## 当前Daft SQL读取的安装声明
+
+本轮新查依赖并集、runtime能力组、安装入口和实际消费者：modalities/image/source调用Daft.read_sql；现有安装入口读取assets后只为缺失模块返回pip声明。原SQL读组的sqlglot>=30,<31及requirements无版本声明都允许30.9／30.10，但本地Daft0.7.21的SQL和Postgres extra均明确要求sqlglot<30.9.0。两处现统一>=30,<30.9，下限来自原能力组，上限来自该版本元数据；没有增加运行时版本拒绝。
+本地Daft METADATA SHA-256为`6a42a28bdd39abe1c5f4bf779b5bdf8e627182349b12b19b81608bb3fd620ad3`，JSON／packaging核对及29.9、30.0、30.8.9、30.9、30.10、31.0六个值验证通过，两文件与已审候选字节相同。安装器源码、其它包声明及历史清单保持；模块已经存在时不会自动校正，此结果不证明pip解析成功、服务器现装组合正确或其它Daft兼容。没有安装、联网、服务、模型或Ray运行。
+其余依赖按消费者保留：PyMySQL由OceanBase对照使用，SQLGlot／ConnectorX由SQL reader使用；aiohttp虽无旧SemLoom包装，当前原生LOTUS所用LiteLLM仍要求它。Ray serve extra还与现用LLM处理器依赖重叠，当前证据不足以删除；开发工具ruff不按无业务import移除。

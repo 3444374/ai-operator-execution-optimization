@@ -30,7 +30,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器CPU与独立Ray方法通过，共享研究显式接入 | 5b模型5请求中4条正确、1条unknown，正常排空未通过；按用户要求暂停多查询新增实现与扩展测试，现有代码和失败保留 |
 | 旧实现与检查 | 旧PG／HTTP实验入口、fixed HTTP后端／工厂／Map装配、专用配置与测试已退出；图像owner直接拥有本地流程；无现用者的aiohttp包装、旧pickle／别名形状要求删除 | 保留当前Image／Core／IPC、原生LOTUS／Kalypso／Ray连接及离线旧校准身份；不把第三方原生HTTP误作SemLoom旧路径 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留；Kalypso实验脚本直接调用实验流程，baseline不再反向导入 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
-| 安装声明与数据导入 | 本轮核对能力组、可选依赖并集及现用SQL／数据导入消费者；COCO入口统一ZIP／连接清理，四个CPU方法保持 | 依赖声明不等于服务器现装版本；其它导入器未逐函数复查，真实PG加载／回滚仍按实际环境验证 |
+| 安装声明与数据导入 | 本轮核对能力组、可选依赖并集及现用SQL／数据导入消费者；COCO统一资源清理；SQLGlot声明与当前Daft0.7.21元数据对齐 | 依赖声明不等于服务器现装版本；其它导入器未逐函数复查，真实PG加载／回滚及其它Daft版本仍须各自验证 |
 
 ### 真实环境证据按源码解释
 
@@ -81,6 +81,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [图像入队只检查一次](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)删除取源后与broker入队相邻的重复容量调用；源字节预留、描述符及入队校验保持。三个既有CPU／FakeRay方法前后通过，测试未改；unknown继续占额并阻止池复用。worker共享事件循环未机械拆分，真实Ray及模型范围不扩大。
 [IPC默认只由协议类型补齐](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ipc-defaults-owner)删除适配层三行重复补值，命令槽和总输入／结果字节交回原AsyncEngineLimits。控制槽的不同默认、显式／预算优先级及必要输入检查保持；四个既有CPU方法前后通过，没有新接口、策略或测试。
 [COCO导入资源归属](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#coco-import-resource-ownership)把ZIP及连接交给同一标准作用域，删除七处手工close；新行为方法修前复现三个资源未关闭场景，修后与原三方法全部通过。事务、SQL、行身份及退出码保持，旧源码与五历史读取保留；没有实际DB／模型运行。
+[SQL安装声明匹配当前原生依赖](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#daft-sqlglot-install-range)把两处SQLGlot声明统一到>=30,<30.9；上限来自已验证Daft0.7.21的SQL／Postgres元数据，下限沿用原能力组。JSON／版本声明核对通过，安装器代码、已有环境和历史投影未变，没有安装或运行时版本拒绝。
 [两份历史原件恢复](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)单独修复847原有六处引用差异，保留旧预期／身份和原失败；一次恢复方法比较五投影3010份文件通过，当前生产代码不改。它不表示旧代码／模型已执行，也不覆盖较早十处差异的原记录。
 [阶段输入及时释放](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)在现有完成与driver关闭成功后丢两张输入索引，异常与未决传输保留数据；单个纯内存反例修前失败、修后通过，调用记录／关系／ACK不改，未测真实链或RSS。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。

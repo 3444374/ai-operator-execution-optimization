@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：原生SQL读取的安装声明对齐
+
+[SQLGlot声明修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#daft-sqlglot-install-range)核对实际Daft.read_sql消费者和本地Daft0.7.21元数据，把能力组与可选并集的声明统一到>=30,<30.9。只改安装元数据，保留安装器按模块是否存在处理的原行为；没有安装、版本自动纠正或其它Daft兼容结论。
+
 ## 2026-11-07：现用COCO导入器统一资源管理
 
 [数据导入整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#coco-import-resource-ownership)修正连接、前置提交及核验失败绕过关闭的问题，移除分支重复close，保持事务和输出。一个临时ZIP／假PG方法的三个反例修后通过，原三个身份／读取方法保持；五历史投影改读同一份精确279原件，不执行数据库导入或模型。

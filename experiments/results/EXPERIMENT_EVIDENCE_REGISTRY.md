@@ -2173,3 +2173,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [COCO导入器资源结束](diagnostics/records_runtime_refactor_20261104/README.md#coco-import-resource-ownership)
 同四个方法、同测试字节修前出现三个资源关闭断言失败，修后全部通过；新增方法含成功／连接／前置提交／加载／核验五场景，保留异常身份与加载退出码4，原身份及ZIP／PK方法保持。真实临时ZIP配假PG，不表示实际数据库回滚；精确279原件扫描并保存，五条历史读取通过，原预期及身份不动。
+
+[Daft SQL读取的SQLGlot声明](diagnostics/records_runtime_refactor_20261104/README.md#daft-sqlglot-install-range)
+记录原两处声明允许30.9／30.10、但已验证Daft0.7.21的SQL／Postgres元数据要求<30.9.0；修后两处统一>=30,<30.9，JSON解析及六个版本值核对通过。没有pip解析、安装、联网或环境检查；现装版本不自动纠正，代码／历史输入不变，不升级为其它Daft或SQL查询实测结论。
