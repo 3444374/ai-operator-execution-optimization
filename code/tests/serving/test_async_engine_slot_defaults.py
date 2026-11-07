@@ -49,6 +49,7 @@ class AsyncEngineSlotDefaultsTests(unittest.TestCase):
                 process.spec = EngineSpec('/tmp/capacity-fixture', '/tmp/model-python',
                     '/tmp/driver-python', max_model_len=4096)
                 process.generation = GenerationSpec()
+                process.ready_report = None
                 process.limits = AsyncEngineLimits(max_inflight=16,
                     **({} if explicit_total is None else dict(result_bytes=explicit_total)))
                 process._condition, process._io_done = threading.Condition(), threading.Event()

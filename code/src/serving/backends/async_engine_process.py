@@ -211,7 +211,7 @@ class AsyncEngineProcess:
             raise TypeError("generation must be GenerationSpec")
         effective = common.GenerationSpec.from_dict(asdict(effective))
         from .model_context import model_context_limit
-        if effective.max_tokens > model_context_limit(self.spec, getattr(self, 'ready_report', None)):
+        if effective.max_tokens > model_context_limit(self.spec, self.ready_report):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared([row])
         identity = identities[0]
@@ -257,7 +257,7 @@ class AsyncEngineProcess:
             return BatchSubmitResult("backpressure", reason="member request capacity exhausted")
         effective = common.GenerationSpec.from_dict(asdict(generation))
         from .model_context import model_context_limit
-        if effective.max_tokens > model_context_limit(self.spec, getattr(self, 'ready_report', None)):
+        if effective.max_tokens > model_context_limit(self.spec, self.ready_report):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared(list(rows))
         for identity in identities:

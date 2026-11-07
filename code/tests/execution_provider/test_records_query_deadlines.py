@@ -95,6 +95,7 @@ class QueryDeadlineTests(unittest.TestCase):
         owner = object.__new__(AsyncEngineProcess)
         owner.spec = EngineSpec('/tmp/cpu-model', sys.executable, sys.executable, max_model_len=8192)
         owner.generation = GenerationSpec()
+        owner.ready_report = None
         owner.limits = AsyncEngineLimits(max_inflight=2, result_slots=2)
         owner._owner_uid, owner._sequence, owner._query_id = 'cpu', 0, None
         owner._slots = {}
