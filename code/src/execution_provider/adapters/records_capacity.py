@@ -174,10 +174,7 @@ def _ipc_limits(capacity, maximum, overrides):
     values.setdefault('result_slots', values['max_inflight'])
     for name in ('max_inflight', 'item_input_bytes', 'item_result_bytes', 'result_slots'):
         _integer(values[name], name, minimum=1)
-    values.setdefault('command_slots', values['max_inflight'])
     values.setdefault('control_slots', max(16, 2 * values['max_inflight']))
-    values.setdefault('input_bytes', values['max_inflight'] * values['item_input_bytes'])
-    values.setdefault('result_bytes', values['result_slots'] * values['item_result_bytes'])
     return AsyncEngineLimits(**values)
 
 

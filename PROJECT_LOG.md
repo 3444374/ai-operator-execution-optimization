@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：IPC默认补值收敛到原类型
+
+[IPC默认归属](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ipc-defaults-owner)只删适配层三行重复默认，由现有协议类型完成相同计算；独立预算、显式值、控制槽和原错误检查保持。四个原CPU方法前后通过，测试和协议源码未改，没有新增物理容量推断或模型配置。
+
 ## 2026-11-07：图像入队校验交回broker
 
 [图像入队整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)只删除一次相邻重复调用，容量与描述符仍由唯一入队实现检查；三个原CPU／FakeRay方法前后通过，未新增测试或生产状态。图像批次推进和异步worker共享循环保持各自所有权，没有按函数长度机械拆分；原历史来源与实际Ray未验证范围保持。

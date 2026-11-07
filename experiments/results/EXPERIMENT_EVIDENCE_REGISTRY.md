@@ -2167,3 +2167,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [图像入队重复校验删除](diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)
 准确279基础上只删外层两行，同三个既有CPU／FakeRay方法前后各一次通过，结果关联、阻塞时接纳峰值及unknown池复用保护保持。broker及两测试文件字节未动，五历史投影继续读取原e5e归档；零真实Ray／模型，不重复83关闭检查。
+
+[IPC默认重复补值删除](diagnostics/records_runtime_refactor_20261104/README.md#ipc-defaults-owner)
+只删适配层三个与AsyncEngineLimits相同的默认计算，四个既有纯CPU方法前后各一次通过，覆盖大单项、显式额度／原类型身份、非法类型和局部null；控制槽默认及预算优先级保持。协议与测试字节未变，五投影不包含该模块，不改历史来源或重跑恢复；无模型／Ray／socket。
