@@ -43,6 +43,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 87fd 九对象真实Ray往返 | 新增融合容量及原八个对象由真实worker往返，一次通过；观察到的九个自有进程退出、SHM和运行许可清理通过 | 未运行模型、GPU查询或其他方法；不替代查询／IPC和性能检查 |
 | 798e 作者DuckDB＋IMLane软件CPU | 真实driver／DBEnd／Arrow16的PROCESS／THREAD均通过2000→120及外层进程／SHM清理 | 真实模型、特殊空选择／错误的作者二进制资格或性能 |
 | e5 四项真实CPU IPC及一项模拟时钟 | None随同一查询两记录经socketpair／子进程传递；反序完成、取消、显式已到期拒绝、未消费结果与unknown占额通过，18个已观察自有进程退出、SHM增量0、许可归还 | 替身不解释模型期限；未验证真实vLLM在途到期／abort、Ray启动／actor退出或性能 |
+| 83d788 两项实际CPU IPC | 正常关闭及预期故障各一次通过，正常wait不等待；故障错误与unknown占额保持，七个已观察自有进程及资源清理完成 | 未运行模型／Ray／GPU，不解释原a780 Reset或1596历史失败原因 |
 | fc1a 三项实际socket CPU | 单查询图像reference／staged结果字节相同、坏载荷不发worker及选定profile的socketpair各通过一次；10个已观察自有进程退出、socket无残留、SHM增量0、许可归还 | FakeRay和SelectedCompletionAdapter不等于真实Ray／模型／PG；未运行其他三个图像连接方法与可选PG／Ray |
 
 [重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)
@@ -63,10 +64,9 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按准确`f258f399`统计：核心`code/src`为49,115行，全部src＋scripts为101,214行，测试为92,159行。
+代码量按本轮83d788后续EOF整理统计：核心`code/src`为49,105行，全部src＋scripts为101,203行，测试为92,286行，三目录合计193,489行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少4,976／39,121行，相对清理起点3fd减少12,513／48,431行。
-相对a39，核心减1,367行，包含参考校准、特征和CSV包装归位；全部src＋scripts净减679行、测试减326行。
+核心／宽口径相对固定main6a8a减少4,986／39,132行，相对清理起点3fd减少12,523／48,442行。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
@@ -74,7 +74,8 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [共用IPC配置归属](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)将唯一AsyncEngineLimits放回现有协议模块；父进程、容量和模型适配直达所属，旧公开导入保持同一对象。五项原CPU前后和冷导入反例修后通过，没有新增包装或变更默认；脚本中一处同步规范中转也直接更正，当前组合未运行真实IPC／模型。
 [IPC显式正文额度](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)移除无协议推导的统一4096字节最低值；错误回执也遵守已解析控制额度，默认值与逐帧／逐身份保护不变。四方法纯CPU通过；准确a780加单方法测试补丁的软件IPC单项也通过，两结果正确，但原close的ConnectionResetError另列追踪；ea的三项补验及输入保持。
 [关闭命令顺序](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)不再让待派发drain跟在close后发送，已接受abort仍先于close；原错误字段、unknown和额度责任不动。原内存方法的两个场景修前失败、修后通过；[准确847关闭单项](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-order-847-server-complete)随后一次通过，I/O原始错误为null、最终占位记录保留，三个已观察进程与资源清理通过，原a780 Reset的系统调用原因仍未知。
-[后续四批](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)已发布为83d788：去掉空owner／已确认结果的假传输错误，按实际I/O结束决定wait；真实Reset、unknown及未消费额度保持，四内存场景通过。另精简[不可变方法重复验证](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#immutable-method-validation)，十六CPU方法前后通过，并删除四个无消费者的观测转导入，三项原CPU保持。83新组合实际IPC仍待其两项最小验证，不借用847结果。
+[后续四批](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)已发布为83d788：去掉空owner／已确认结果的假传输错误，按实际I/O结束决定wait；真实Reset、unknown及未消费额度保持，四内存场景通过。另精简[不可变方法重复验证](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#immutable-method-validation)，十六CPU方法前后通过，并删除四个无消费者的观测转导入，三项原CPU保持。[83准确两项软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)已各一次通过，不再待执行。
+[EOF复用现有行计数](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)将两个空表判断交给原MethodDriver.active_rows。新增一个纯CPU方法直接覆盖两个输入结束且空表的场景，83原实现与本地替换各一次通过；原四方法前后结果保持，没有性能收益主张。
 [两份历史原件恢复](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)单独修复847原有六处引用差异，保留旧预期／身份和原失败；一次恢复方法比较五投影3010份文件通过，当前生产代码不改。它不表示旧代码／模型已执行，也不覆盖较早十处差异的原记录。
 [阶段输入及时释放](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)在现有完成与driver关闭成功后丢两张输入索引，异常与未决传输保留数据；单个纯内存反例修前失败、修后通过，调用记录／关系／ACK不改，未测真实链或RSS。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。

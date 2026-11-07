@@ -4934,4 +4934,17 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 原847关闭单项已经执行完毕，不再待执行。准确基础`847df73b7cde8a6912a9611f4c1add7da097f6cb`、tree `c698b378f4235d4188a1b30ff380816681f8a217`仅加既有临时测试补丁`b4311d37c6a67d18cef77c90de9e919b70e46600b741165f848819855031eb21`，patched tree为`c2e7e1c482f41926ea28654ed472278bbb37fa2c`。方法`test_drain_then_close_has_no_late_control_command`只执行一次，0.163802861秒通过，无失败／错误／跳过或重试。
 观察到control_frames_built为close，表示帧构造而非send系统调用；io_error_before_close_report为null。最终transport_error原值仍为ClosedWithoutConfirmedTerminal，这是该旧源码close末尾写入的占位值，不是观察到的Reset。关闭API和producer停止确认、子进程返回0、I/O线程退出；三个已观察自有进程、private socket、SHM及运行租约清理通过。零submit、模型、Ray、GPU、HTTP，没有修前服务器对照或a780容量重跑；不推断未观察后代的退出，也不把producer停止证明当作模型结果确认。
 已核私有HANDOFF SHA-256 `2e255cc9df19bc637d74dc36dfddc0ca31476d0de11a8b499183280146c30862`、归档`feb8f3e1b4f05e81198e978868f98fe187d3de0e4a8afd920724ceaa19258819`及二十份原件，清单SHA-256为`eae99724fb80d05638ad676ea534ed7b762f0b3adf851c7b0c044c6e0a266320`；原始材料继续私有保存。本会话只核回执，没有新派单或重跑。
-这个847结果不转授83的新关闭诊断、wait和语义值修改，也不解释a780原Reset的唯一原因。83拟只补两项软件IPC：一条已确认但未消费结果的健康关闭，及原fast→die子进程故障方法；分别核无假传输错误／消费后wait不再等，以及已有真实错误与unknown预留保持。具体材料由父会话交原执行者，当前仅完成本地补丁语法与独审，没有新的83实机结果。
+这个847结果不转授83的新关闭诊断、wait和语义值修改，也不解释a780原Reset的唯一原因。83随后两项软件IPC已完成，准确结果见下一节，不再待执行。
+
+<a id="close-83-software-ipc-complete"></a>
+## 83正常关闭与故障的软件IPC回执
+
+原服务器在准确`83d7889642aa26c56555cfd0de6189203f41eb20`加指定e501测试补丁上各运行一次，修改后tree `0cfcd883818b411ab3e78252d26bc4ef35a023f8`与测试文件摘要匹配计划。正常方法0.194061秒、故障方法0.184940秒通过，无失败／错误／跳过／重试，合计三个软件替身请求；零模型／Ray／GPU／HTTP。
+正常关闭的I/O及最终传输错误均为null，保留4096字节未消费结果预留，消费后归零，关闭后Condition.wait调用为0。故障子进程按预期返回7，测试driver返回0；ChildTransportClosed、unknown=1、held_requests=1、输入489字节及结果4096字节预留均保持，API／producer证明仍为空。七个已观察自有进程退出，自有socket／新增SHM无残留，运行许可归还。
+私有HANDOFF SHA-256为`037e1902e2912a11e41c8dc417f311af0b7766f17f05e73757a6e87f49278f80`，原件归档为`15c025b8b2d09d3d790301915e8f1c93ce1acbb85d91393aa22fa3bf6b6af2c7`；本轮只核已有回执、源码／补丁身份及归档摘要，没有新派单或重跑。它不解释原a780 Reset的系统调用原因、原1596关闭失败或真实Ray回收，也不表示完整模型质量与性能通过。
+
+<a id="event-eof-row-count"></a>
+## 事件推进复用现有行计数
+
+查询运行器两处空表判断复用MethodDriver.active_rows，而非读取其内部行表；实际MethodDriver及LotusChainFIFO的该计数均为原行表长度，因此收益是统一行数职责，没有减少查询次数或性能提升主张。最终结果是否仍待消费继续由当前行状态判断，没有用较早的advance结果替换，也没有新增getter、缓存或控制器。
+原四个CPU方法改前、改后通过。另只新增一个方法、两个场景：复用现有真实MethodDriver／SessionEngine和纯内存backend，分别在后端进展轮与消费轮释放最后结果，直接令输入结束且空表条件为真，验证预算归零后下一轮完成且不等待新后端事件。同一新方法在83原实现和两行替换上各运行一次均通过，无失败／错误／跳过，零后端提交、socket／子进程／模型／Ray；新测试39行，生产源码净行数不变。

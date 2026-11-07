@@ -109,3 +109,42 @@ class EventFeedbackTurnTests(unittest.TestCase):
             stream.owner.core.wake.wait.assert_not_called()
             stream._tick_event()
         stream.driver.advance.assert_called_once()
+
+    def test_eof_after_final_release_advances_without_waiting_for_a_backend_event(self):
+        from src.semantic_methods.continuation import Final
+        from src.semantic_methods.driver import RowIdentity
+        from tests.scheduling.test_method_driver import make_driver
+
+        for service in (True, False):
+            with self.subTest(service=service):
+                stream = self.turn()
+                driver, _engine, backend, pool = make_driver(
+                    rows=1, method=SimpleNamespace(start=lambda _: Final(b'{}')))
+                try:
+                    driver.offer_row(RowIdentity(0, 'last'), b'zero')
+                    driver.end_input()
+                    if not service:
+                        driver.advance(1)
+                    stream.driver, stream.session = driver, driver.session
+                    stream._event_session = stream.session.session_id
+                    stream._backend_seen = 0 if service else 1
+                    stream._method_results_pending = not service
+                    stream.section, stream._extract_results = None, []
+                    del stream._consume_method_results
+                    stream._finish_phase = Mock()
+                    self.assertEqual(driver.active_rows, 1)
+                    with patch.object(records_query_runtime, 'time', SimpleNamespace(monotonic=lambda:100.)):
+                        stream._tick_event()
+                        self.assertEqual(driver.active_rows, 0)
+                        self.assertEqual(pool.used, (0, 0))
+                        self.assertFalse(driver.finished)
+                        self.assertTrue(stream._end_input_pending)
+                        stream._tick_event()
+                    self.assertTrue(driver.finished)
+                    self.assertEqual(stream._extract_results, [{}])
+                    stream._finish_phase.assert_called_once()
+                    stream.owner.core.wake.wait.assert_not_called()
+                    self.assertEqual(backend.routes, [])
+                finally:
+                    driver.close()
+                self.assertEqual(pool.allocated, (0, 0))

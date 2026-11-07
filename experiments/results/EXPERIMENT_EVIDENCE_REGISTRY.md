@@ -2158,3 +2158,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [83发布与准确847关闭回执](diagnostics/records_runtime_refactor_20261104/README.md#close-order-847-server-complete)
 确认83d788及完整tree已发布，草稿未合并；847加b431测试补丁的旧单项一次通过，构帧仅close、原I/O错误为空、最终占位原值保留，三观察进程及资源清理通过，二十份私有原件已核。本会话零重跑／派单，不把此结果转授83或解释旧Reset；83两项最小验证仅准备完成。
+
+[83两项软件IPC回执与EOF计数整理](diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)
+更新上述待执行状态：准确83加原e501补丁两方法各一次通过，健康关闭无传输错误、wait不等；故障unknown和占额保持，七个观测进程及socket／SHM清理完成。另[EOF行为方法](diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)在原83与两行计数替换上各一次通过，直接覆盖两个空表结束场景，零后端请求；不重复服务器执行，不表示模型或原Ray回收问题已解决。

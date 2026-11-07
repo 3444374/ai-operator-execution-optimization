@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：核83回执并补EOF行为覆盖
+
+[83准确两项软件IPC](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)各一次通过，正常关闭／wait及故障unknown责任保持，原服务器已清理自有资源；不重跑或转授模型结论。[EOF计数整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)复用原公开行计数，新增一个CPU方法直接检查两种最终结果释放后的继续推进，原实现和替换后各一次通过。
+
 ## 2026-11-07：发布83组合并核847既有回执
 
 [发布与回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-order-847-server-complete)确认后续四批已推到原PR #90草稿分支。847旧关闭方法一次通过，原占位诊断与私有原件保持，实际I/O错误为空、观察到的进程和资源清理通过；不重复该方法，也不将其当作83或原a780 Reset原因的证据。新83只准备两项受影响软件IPC方法，由原服务器会话执行。
