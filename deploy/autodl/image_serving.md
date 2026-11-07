@@ -10,7 +10,7 @@
 
 CLIP embedding、独立 vLLM pooling 服务与 SemBench Movie Q2b 的视觉模型分别核对。
 已有 COCO／CLIP 结果不能代替 Q2b 接线或任意多卡、DAG 与新模型资格；当前限制见[代码状态](../../code/INFRA_STATUS.md)。
-COCO importer 仍使用[workload schema](image_documents_workload_key.sql)，因此此共享 SQL 保留。
+当前文件图像通过[文件清单](../../code/scripts/data/build_image_file_manifest.py)选择 JPEG；旧 COCO importer 与配套 SQL 已[单独归档](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)。
 
 运行需绑定输入身份、图像处理归属、系统原生图、资源 owner、质量与最终关闭证据。
 按实际边界区分 source、CPU 预处理、传输、模型、fan-in 和完整结果可用时钟。

@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：PG图像数据工具退出当前入口
+
+COCO导入、主键SQL、三个PG画像及两份专测按[e5c36c9原件](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)保存。
+当前数据与部署指引改为JPEG文件清单；公共图像实现、历史来源身份与原始资产保持，不运行数据库、模型或服务器任务。
+
 ## 2026-11-07：PG图像读取与文件图像分别维护
 
 [图像PG归档](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)移出18个专属文件，

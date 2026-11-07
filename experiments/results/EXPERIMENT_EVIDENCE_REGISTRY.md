@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-07：PG图像数据工具单独保存
+
+[归档与读取核对](diagnostics/records_runtime_refactor_20261104/README.md#pg-image-tools-isolation)记录七份准确原件及20条既有历史读取。
+当前文件图像、CLIP和LOTUS相关实现逐字不变，未重复前批用例，没有数据库或模型操作。
+
 ## 2026-11-07：PG图像读取与中性文件输入分开
 
 [代码、原件及定向检查](diagnostics/records_runtime_refactor_20261104/README.md#pg-image-runtime-isolation)记录18个归档文件、共享类型迁移和60条历史来源；文件输入与公共CLIP保留。只用临时图像和软件检查，没有数据库、模型或真实Ray运行。

@@ -1,5 +1,7 @@
 # Image CLIP AI_EMBED 分阶段瓶颈画像 + go/no-go 门禁, 2026-08-01
 
+> 2026-11-07说明：下文为历史PG图像画像，原数据与结论保持；执行脚本及配套导入现已[单独归档](../../../reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)，不作为当前图像命令。
+
 ## Question
 
 image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答一个 fatal-flaw 门禁问题（`experiments/plans/completed/图像工作负载_20260731.md` §6）：

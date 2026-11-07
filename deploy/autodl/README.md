@@ -52,7 +52,7 @@ unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
 | 显式需要 HTTP 服务的任务 | [start_endpoints.sh](start_endpoints.sh)，使用前核对模型、引擎、设备与端口；本地 IPC owner 不要求另起 endpoint |
 | Kalypso 外置 owner 的退役导入 | [迁移补丁](kalypso_owner_imports.patch)，只用于新私有 packet；范围和检查见[适配说明](../../code/src/baselines/text/frameworks/kalypso_native/README.md#外置-owner-辅助的退役引用迁移) |
 | 模型下载 | [download_model.sh](download_model.sh)，先核对来源、持久目标和完整性 |
-| COCO 导入所需 schema | [image_documents_workload_key.sql](image_documents_workload_key.sql)，由仍保留的 importer 使用 |
+| 历史 COCO 数据库导入 | [独立 PG 原件](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)，当前文件图像不要求导入数据库 |
 
 每次实验明确问题、源码、输入、模型、对照、资源上限和停止条件，并完成对应环境检查。
 结果可用、API 返回、启动、预热、探索与关闭分开计时；保留请求账本、质量、失败、unknown 和最终资源回执。

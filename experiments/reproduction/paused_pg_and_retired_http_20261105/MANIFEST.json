@@ -2269,6 +2269,76 @@
       "archive_sha256": "29ad34d40f1bc91c9b2a6c945c64c1fa3aa59fa3aeb1f61e0853b649587a845f",
       "source_commit": "94db4a3b914b0841ced21f02fe7c8216ab031323",
       "category": "retired_postgresql_image"
+    },
+    {
+      "path": "code/scripts/data/import_coco_images.py",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/code/scripts/data/import_coco_images.py.gz",
+      "bytes": 7854,
+      "sha256": "9b676b61517743c9609b236c23c4eff7fc9e9ff76447d0e23b757ae8c6b95eac",
+      "encoding": "gzip",
+      "archive_sha256": "be6ffe3f3be31d2479c00593ad406895c3531295398be83f831a8b0820c8d4b5"
+    },
+    {
+      "path": "code/tests/data/test_import_coco_images.py",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/code/tests/data/test_import_coco_images.py.gz",
+      "bytes": 4965,
+      "sha256": "b7964f326acc50c0d9bb31145a399aee978736ee991e500627327e98fc7c8b59",
+      "encoding": "gzip",
+      "archive_sha256": "10f66868f8b56e4645332bdba89d77d39e570f75a7a20cbdaa7594e19432ae94"
+    },
+    {
+      "path": "deploy/autodl/image_documents_workload_key.sql",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/deploy/autodl/image_documents_workload_key.sql.gz",
+      "bytes": 1837,
+      "sha256": "ade07e3a586fda8a5dab9ead7eadfb842be61e38a44a7ea046f3f4a984503917",
+      "encoding": "gzip",
+      "archive_sha256": "3afdbf73e7908cf69c9c698e57ad9b504c592bca0fd29d0d40801da77da12538"
+    },
+    {
+      "path": "code/scripts/profiling/profile_clip_preproc_stages.py",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
+      "bytes": 9025,
+      "sha256": "baa80e4518792689f00acdedc4af769245956a4d6b4850e5056b10505377a6cc",
+      "encoding": "gzip",
+      "archive_sha256": "b1408a3a3e827fb1c7689089e6b65011b6e23391d5e21716b276a25a983028dc"
+    },
+    {
+      "path": "code/scripts/profiling/profile_image_clip_bottleneck.py",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/code/scripts/profiling/profile_image_clip_bottleneck.py.gz",
+      "bytes": 14412,
+      "sha256": "65334e39045e9ba8480062c2c17390f8a17c5cfe9f6a8a3042eef8bcbd6c8518",
+      "encoding": "gzip",
+      "archive_sha256": "ed8e499c0c61a01b2dac85dec92872386309fcf0b51c2d1d2a8fa6523d6bb94f"
+    },
+    {
+      "path": "code/scripts/profiling/profile_image_clip_preprocess_variants.py",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
+      "bytes": 12339,
+      "sha256": "1cc80ff08cc35f107e015ae97571ebdb90a0579ff792b46667ddcee5fd9896cc",
+      "encoding": "gzip",
+      "archive_sha256": "5c6654dcf4b0df7519833fdde82eaf8d64304bed28d27a08f2b903435127320d"
+    },
+    {
+      "path": "code/tests/modalities/image/test_image_clip_preprocess_variants.py",
+      "category": "retired_postgresql_image_tools",
+      "source_commit": "e5c36c9be6a2f50620dc7b8cf161978346c638a5",
+      "retained_path": "experiments/reproduction/paused_pg_and_retired_http_20261105/sources/pg_image_tools_e5c36c9b/code/tests/modalities/image/test_image_clip_preprocess_variants.py.gz",
+      "bytes": 3528,
+      "sha256": "a0a872de8976c5f0ecd760858215e060cbb8bcd11fc051c9a4dafa6c56835227",
+      "encoding": "gzip",
+      "archive_sha256": "f655ae589cbb1bc15d08e775b81a6b71232da1ac8c24edf4448d0331a92f74b2"
     }
   ]
 }

@@ -253,4 +253,23 @@ HTTPX观察函数、MappedUnit／预算和余下四项行为保持。没有更�
 LOTUS文件检索及其他非PG图像入口保留。混合测试中移出已归档实现的九个方法及两条旧CLI名称断言；仍在使用的COCO导入器主键测试迁入数据测试目录。
 原定义仍由完整94db树恢复，公共行为检查保持。
 
-本批尚未归档独立SQL导入、旧SQuAD/PG诊断与三个PG画像工具，它们不由普通records自动调用，后续另按实际消费者整理。
+这批之后，COCO导入与三个PG画像工具继续按[配套原件](#pg-image-data-tools)归档；文本SQL导入及旧SQuAD/PG诊断另行整理。
+
+<a id="pg-image-data-tools"></a>
+## COCO数据库导入与PG画像工具
+
+本批七个文件来自完整的[e5c36c9来源树](https://github.com/3444374/ai-operator-execution-optimization/tree/e5c36c9be6a2f50620dc7b8cf161978346c638a5)。
+它们只服务PG图像输入，未被当前JPEG清单、LOTUS文件检索或普通records调用。逐项原件位于
+[独立来源目录](sources/pg_image_tools_e5c36c9b)，原路径、字节数、原摘要及压缩摘要记录在本目录MANIFEST。
+
+| 移出的原路径 | 原职责 |
+|---|---|
+| `code/scripts/data/import_coco_images.py` | ZIP或目录图像写入PG，事务与主键检查 |
+| `deploy/autodl/image_documents_workload_key.sql` | PG图像主键迁移 |
+| `code/scripts/profiling/profile_image_clip_bottleneck.py` | PG读取、CLIP阶段测量及共用取数函数 |
+| `code/scripts/profiling/profile_clip_preproc_stages.py`、`profile_image_clip_preprocess_variants.py` | 复用上述PG取数的画像入口 |
+| `code/tests/data/test_import_coco_images.py`、`code/tests/modalities/image/test_image_clip_preprocess_variants.py` | 上述工具的资源、主键、数值与入口检查 |
+
+共1370行Python及55行SQL移至可恢复原件；没有删除原始图像、ZIP或研究结果。
+恢复使用完整e5c36c9树及其依赖，不能将压缩代码目录加入当前Python搜索路径。
+当前文件图像准备方式见[数据入口](../../../data/README.md#image-workload-clip-current-multimodal-workload)；公共COCO文件选择、CLIP与LOTUS入口保持。

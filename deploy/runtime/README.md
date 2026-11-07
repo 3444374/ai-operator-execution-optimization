@@ -120,10 +120,10 @@ Hugging Face snapshot 需要先安装 `download` 能力。显式下载始终调�
 
 ## 数据下载不等于 workload 已就绪
 
-资产管理器只验证原始文件/模型目录。下载后还需运行现有 importer：
+资产管理器只验证原始文件/模型目录。下载后的准备方式由实际输入决定：
 
 - 文本：`code/scripts/data/import_ai_complete_workload.py`；
-- COCO：`code/scripts/data/import_coco_images.py`；
+- 当前 COCO 文件图像：[制作 JPEG 文件清单](../../code/scripts/data/build_image_file_manifest.py)，不要求 PG；旧数据库导入与 SQL 从[历史来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)恢复；
 - PostgreSQL workload 行数、唯一性和 schema 由实验 runner 的 gate 再验证。
 
 这样避免“ZIP 在磁盘上”被误判成“数据库里已有正式 workload”。正式结果必须同时保存

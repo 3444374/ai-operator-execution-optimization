@@ -91,10 +91,9 @@ preflight 和 `df -h` 的现场结果决定是否执行。
 
 ## Image workload (CLIP, current multimodal workload)
 
-**图像 workload**（2026-07-31 锁定，当前静态范围已完成）。图像包含较重的 JPEG
-decode/resize 与 pixel tensor，使 DB/CPU/Ray/H2D/GPU 阶段可以分别测量，但不预设哪一段一定是
-瓶颈。完成合同见 `experiments/plans/completed/图像工作负载_20260731.md`；当前动态工作见
-`experiments/plans/archive/状态感知实验_20260808.md`。
+当前图像输入使用 JPEG 文件目录与内容清单；CLIP decode、resize、模型执行和结果处理各自记录。
+2026-07-31 的 PG 图像实验及后续历史方案保留原身份，恢复入口见
+[PG 图像原件](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)，不作为当前输入准备步骤。
 
 图像 AI_EMBED workload，用于异构资源调度（CPU decode vs GPU embed）与多模态泛化验证。
 
@@ -112,26 +111,23 @@ wget -c --tries=10 --timeout=30 http://images.cocodataset.org/zips/val2017.zip \
 mkdir -p data/raw/coco_train2017
 wget -c --tries=10 --timeout=30 http://images.cocodataset.org/zips/train2017.zip \
   -O data/raw/coco_train2017/train2017.zip
-# 可直接从 ZIP 向 PostgreSQL 流式导入，不同时保留解压副本。
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f deploy/autodl/image_documents_workload_key.sql
-python code/scripts/data/import_coco_images.py \
-  --zip data/raw/coco_train2017/train2017.zip --limit 60000 \
-  --pg-dsn "$DATABASE_URL" --workload coco_train2017_60k
 # CLIP ViT-B/32（默认 embedding 模型，~600 MB）
 python -c "from huggingface_hub import snapshot_download; snapshot_download('openai/clip-vit-base-patch32', cache_dir='models')" 2>/dev/null \
   || huggingface-cli download openai/clip-vit-base-patch32 \
        --local-dir models/clip-vit-base-patch32
 ```
 
-COCO train 压缩包约 19 GB，导入 PostgreSQL 后还会再占一份 BYTEA/索引/WAL 空间。
-不要依赖文档中的历史剩余容量；每次下载前用 `df -h /root/autodl-tmp` 实测。导入器
-支持直接读取 ZIP，避免额外保留完整解压目录，但仍需为数据库与 WAL 留安全余量。
-COCO split 的 source ID 可能重叠，canonical row identity 是
-`(workload_name, doc_id)`，不是全局 `doc_id`；禁止通过 split-specific 数字偏移伪造唯一性。
+COCO train 压缩包约 19 GB。下载前按 runtime 指引实测目标磁盘空间，并为解压后的选定文件留出空间。
+对已准备好的 JPEG 目录制作一次清单，查询时按清单延迟读取，不把 ZIP 存在当作文件输入已经可用：
 
-COCO导入器统一管理ZIP与数据库连接，连接、前置提交或提交后核验抛错也会结束已取得的资源；原加载事务、SQL、行ID和退出码保持。
-[资源行为检查](../code/tests/data/test_import_coco_images.py)使用临时ZIP与假数据库，不表示真实PostgreSQL回滚或数据导入已经验证。
+```bash
+python code/scripts/data/build_image_file_manifest.py \
+  --image-root data/raw/coco_val2017/val2017 --workload-name coco_val2017 \
+  --output tmp/coco_val2017.files.json
+```
+
+清单保留 COCO 数字 ID、相对路径、大小和内容摘要。不同 split 分别声明 workload，不能通过数字偏移伪造原始 ID。
+旧 PG 主键迁移、ZIP 导入事务及专测随原件归档；已有原始 ZIP、图像、结果和失败记录没有移动或删除。
 
 ## Boundary
 
