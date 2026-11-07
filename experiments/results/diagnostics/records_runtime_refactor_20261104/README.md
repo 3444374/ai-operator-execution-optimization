@@ -4820,3 +4820,13 @@ CLI按既有项目包正常导入，移除spec_from_file_location自载及对应
 原三个HandoffPassivityTests在修改前后各通过一次，无失败、错误或跳过；只把原Fake Core登记到实际模块名，五个测试体均保持，其余两项没有扩跑。它们使用替身，不分配实际调度器或模型，不证明真实Ray／模型观测。
 五份已声明历史源码中的普通owner和Session共十条读取保持实际导入关系，不扩大到任意旧runtime；旧collector来源不是runtime资格。SOURCE.json与历史清单不变。
 整合的三文件与受测／已审字节相同，其余Core和调度源码保持，没有重复行为套件或历史读取；Python行数净变化为零，总代码量仍为193,321行。
+
+<a id="retired-ray-http-options"></a>
+## 旧HTTP worker的Ray选项退役
+
+独审候选`951b794c2b0229852e930f372491c65e1fdf4a3e`整合为`0a42198bfba32cbcf4034bbddda921c59064973d`，保留前批观察器接线。
+全仓当前调用只剩RayWorkerOptions的单一导出与四个专测；已知仓外V2辅助八份文本也无引用，未审未知仓外代码。该类型仅为已退出的外部HTTP模型worker生成Ray选项，现删除36行类型、一个导出和70行专测，不增加替代层；现用Ray adapter、IPC、typed模型／图像资源和关闭实现不变。
+原ServiceQuantum公共导入及不拆单行的组批用例前后各通过一次，无失败、错误或跳过；没有运行被删四项专测。五份历史投影的helper及原bfb facade共十个绑定前后读取相同，3010项预期摘要、身份和其它来源保持，整合不重复此用例或来源读取。
+准确1067字节原件仅保存一份420字节gzip，五条来源与五条格式接到同一原件；原facade与专测可从946412e6恢复，见[恢复说明](../../../reproduction/native_baselines/README.md#retired-ray-http-worker-options)。整合六文件与受测／已审候选字节相同，观察器三文件保持。
+本批核心及src＋scripts净减37行、测试减70行，Python净减107行，压缩原件另计；当前核心49,115行、src＋scripts101,214行、测试92,000行，三目录合计193,214行，相对固定main少49,884行，相对3fd少86,493行。
+未启动真实Ray、模型、HTTP、GPU或socket；这次删除不解释或修复原生Ray关闭问题，服务器四项软件IPC仍按[946登录记录](#software-ipc-946-dispatch)待执行。

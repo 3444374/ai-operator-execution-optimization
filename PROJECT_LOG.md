@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：清除旧HTTP worker资源选项
+
+[旧Ray选项清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)删除没有现用消费者的类型、导出和四个专测，源码减37行、测试减70行。原公共导入用例和历史字节保持，恢复来源独立保存；不新增资源框架、不改当前Ray关闭，也不重复已经通过的原用例。
+
 ## 2026-11-07：Session观察器直达调度模块
 
 [观察器接线](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-scheduler-owner)不再经普通Filter工厂取得同一SessionEngine；原三项替身检查前后通过，其余wrapper和执行保持，没有增加包装或检查。Python净变化为零，整合不重复原测试，也不把历史文件读取当成真实运行验证。

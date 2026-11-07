@@ -2128,3 +2128,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [Session观察器使用实际调度类](diagnostics/records_runtime_refactor_20261104/README.md#record-observer-scheduler-owner)
 记录45fa到aa52的直接导入、三项原替身检查前后通过和十条历史读源；原包装／五测试体／SOURCE与清单保持，整合字节一致，没有扩跑或真实Ray／模型验证，Python净增减为零。
+
+[旧HTTP Ray worker选项退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)
+记录951b到0a421的类型／单一导出／四专测删除，原公共导入方法前后通过、十个历史绑定前后字节一致；3010项预期摘要保持，准确原件可恢复，Python净减107行。当前Ray资源与关闭实现不变，没有新增真实运行或复跑。
