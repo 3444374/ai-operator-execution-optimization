@@ -63,7 +63,6 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "ActorWorkerSnapshot",
         "RaySubmissionAdapter",
     ),
-    ".runtime.ray_runtime": ("RayWorkerOptions",),
     ".endpoint_routing.policies": (
         "LeastQueuedEndpointRouter",
         "LeastWorkEndpointRouter",

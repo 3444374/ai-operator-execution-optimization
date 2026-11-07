@@ -26,6 +26,18 @@ source revisions and existing mappings remain unchanged. The old CLI mappings co
 The former schema import has no forwarding alias. Tests are not projection inputs; recover their old paths from the same
 exact Git revision when restoring that API. Existing CSV data, field order and result artifacts are unchanged.
 
+<a id="retired-ray-http-worker-options"></a>
+## 旧 HTTP Ray worker 选项来源
+
+`RayWorkerOptions` 只定义调用外部 HTTP 服务的 worker 选项，现已移出当前 runtime 和 `src.scheduling` 导出。
+当前 Ray adapter、单查询 IPC、typed 图像／模型资源分配及官方运行管理保持，不增加替代实现。
+准确公开 `946412e6bd72a027e2dc1210b602d6b53c3f658f` 的
+[36 行原件](historical_sources/946412e6/code/src/scheduling/runtime/ray_runtime.py.gz)保存一次；
+[原 facade](https://github.com/3444374/ai-operator-execution-optimization/blob/946412e6bd72a027e2dc1210b602d6b53c3f658f/code/src/scheduling/__init__.py)与
+[四项原专测](https://github.com/3444374/ai-operator-execution-optimization/blob/946412e6bd72a027e2dc1210b602d6b53c3f658f/code/tests/scheduling/test_ray_runtime.py)可按同一提交恢复。
+五份投影仍使用原 `bfb9100e` facade 源码；各增加该 helper 的准确来源与 gzip 格式，原预期摘要、投影身份和其它映射保持。
+当前不保留转发文件或专用于该旧类型的测试，现用 facade 与资源逻辑继续由各自原有检查覆盖。
+
 <a id="retired-positive-B-token-packing-bypass"></a>
 ## 旧正值 B 旁路与 CPU 消融来源
 
