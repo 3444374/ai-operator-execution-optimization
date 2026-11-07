@@ -2104,3 +2104,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 登记独审通过的两套旧实现退出、PID原九项前后CPU、容量原件与组合十五条读源；七个闲置导入和单文件fixture保持原方法及构造内容，没有新增模型／Ray／IPC或性能证据，连接中断的观察未记通过。
 
 随后准确ab088的原tokenizer构造／上下文CPU单项一次通过，8.456秒，原断言与源码保持；三个自有进程、SHM及许可清理通过，零权重加载／推理／真实Ray，不转授后续源码或性能。
+
+[Core私有导入直接归属](diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)
+记录f93d到c628的五个旧转出撤去、九共同行为加两迁移序列化用例前后各十一CPU及二十条原来源；整合文件摘要保持，HF检查未完成和Derived IPC待验分列，不新增模型或实际Ray结论。

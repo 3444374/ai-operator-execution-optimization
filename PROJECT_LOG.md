@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：私有导入直达实际模块
+
+[Core导入来源整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)
+只保留实际owner及公共入口，模型／传输／容量调用各归其模块；原始实现、当前序列化与历史来源保持，旧私有转发不再维护。
+本批src＋scripts减5行、测试减7行，十一项CPU按九共同加两迁移检查解释，Derived IPC另待服务器；新增三目录统一统计，避免只报核心源码而忽略测试。
+
 ## 2026-11-07：旧控制器退出与导入精简
 
 [两套旧控制器、七项闲置导入及测试依赖](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)
