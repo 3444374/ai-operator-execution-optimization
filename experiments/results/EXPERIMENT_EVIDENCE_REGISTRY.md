@@ -2140,3 +2140,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [946部分结果与NoB取消入口修正](diagnostics/records_runtime_refactor_20261104/README.md#cancellation-noB-preflight)
 首项通过，第二项NoB在旧实验预检报错，后两未运行；十个已观察进程、socket／SHM及许可清理已核，零模型／真实Ray。b12e到af3只移除非空B前提，单个实际纯预检修前NoB／null报错、修后七子场景通过；原IPC方法仍待服务器，首项不重复，阶段修复与本批分开。
+
+[显式小IPC正文与NoB相邻核查](diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)
+登记b086到93d的统一4096最低值移除、已解析额度下错误回执修正；两阶段反例及四方法CPU结果保留，五条旧源和3010项预期不变。实际IPC／模型未验，原ea测试及输入不改；NoB相邻仅一处提示文字更正，没有新增功能或判定。

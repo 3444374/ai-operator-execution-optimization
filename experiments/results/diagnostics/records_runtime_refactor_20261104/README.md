@@ -4865,3 +4865,13 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 1. `tests.experiments.test_movie_cancellation.CancellationEntryTests.test_actual_CPU_IPC_cancel_then_fresh_recovery_preserves_unknowns_and_budgets`
 2. `tests.experiments.test_movie_prepared_requests.PreparedRequestEntryTests.test_same_public_resident_factory_runs_two_queries_and_keeps_payloads`
 3. `tests.execution_provider.test_lotus_batch_counters.PublicBatchCounterTests.test_two_public_resident_queries_reset_counters_in_both_B_modes`
+
+<a id="explicit-small-ipc-frames"></a>
+## 按实际编码接纳显式IPC正文额度
+
+独审候选`b086e48695b4aaa9bcade149794617d76661d878`整合为`93d0997b2c89890de7f41055291b83ceceb8ab47`。编码器使用四字节无符号长度头和实际UTF-8 JSON正文大小，没有4096最低值；旧28a7来源有该保护值但无推导，最初引入的本地祖先对象缺失，不推断原作者意图或联网补取。
+移除AsyncEngineLimits的统一4096字节最低值，正整数、单项／总额、逐身份紧凑回执与逐帧检查保持；默认每项结果2MiB、控制正文64KiB不变。worker在解析合法limits后，连错误回执也用其控制额度；尚无合法limits时保留原bootstrap错误上限4096，它不是配置最低值。错误回执超额仍不发送，不形成成功关闭或确认结果，unknown责任与未消费预留沿原流程处理。
+原三个CPU方法先通过；显式2048字节的新／扩展用例修前有两项下限错误。仅去掉最低值后，旧worker仍发出超过声明额度的错误帧，单项反例失败；两处一起修后四个方法通过。检查覆盖真实内存编码、正文恰好容纳／差一字节拒绝、长身份接纳前拒绝、正常关闭、错误及bootstrap失败、unknown和未消费预留；MemoryLoop／MemorySocket与FixtureEngine均为现有替身，没有实际socket、子进程、模型、Ray或GPU。
+五条已有引擎历史来源读回保持，3010项预期摘要和清单不变，不另加恢复副本。整合五文件与受测／已审候选逐字相同，未重复测试或历史读取。原ea5842f5续验的三方法和四份相关输入fixture保持原字节，服务器仍使用其原准确提交；该回执不转授本次新组合，也没有重复派单。显式小容量的实际IPC、结果传输与模型行为仍待服务器验证。
+相邻NoB入口的静态核查未见新的合法组合被旧B条件误拒绝：ordinary、rolling、服务SDK和同步fused各按实际能力分流；服务Movie CLI仍缺完整delivery声明，按已有pending范围解释。仅错误提示仍把rolling说成token requests，另以`f258f39986ac6ed9100f80c57860edaf6c2e50b1`改为prepared requests，AST除该字符串相同，配置判断不动；此文字更正没有扩跑测试。
+本批源码净减1行、测试净增46行（新增一个方法、扩展一个旧方法），不是以少写行为验证换取行数。当前核心49,115行、src＋scripts101,214行、测试92,159行，三目录193,373行，相对main少49,725行、相对3fd少86,334行。这里不提供物理RAM、RSS或性能结论。

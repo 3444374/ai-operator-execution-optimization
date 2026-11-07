@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：显式IPC正文按实际大小检查
+
+[小帧记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)删除无编码推导的4096最低值，同时让错误回执服从已解析控制额度；有限额度、实际编码和unknown责任保留。四方法纯CPU通过，实际小帧IPC仍未验；NoB相邻未见新误拒绝，只纠正一处旧提示，不改原ea服务器补验或输入。
+
 ## 2026-11-07：修正取消实验的旧B前提
 
 [准确946部分结果](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#cancellation-noB-preflight)为一过、一项NoB预检错误、两项未执行，原件及清理记录保留。独立删除取消实验的非空B前提，实际纯CPU预检修前失败、修后通过；不改生产取消／记账或增加多查询功能，原第2／3／4项交既有服务器会话续验，不重复首项。
