@@ -4778,3 +4778,13 @@ comparison直接导入实际所属模块；三个估计器专测随CSV实现归t
 整合八个文件与受测候选相同，前批token运行路径保持；README将源码说明同步为三份离线模块，新增恢复导航，没有重复七项或完整历史构造。
 本批src＋scripts净减14行、测试增9行，三目录Python净减5行，算法全部保留。准确50c13bbd的核心49,152行、src＋scripts101,251行、测试92,043行、合计193,294行。
 累计相对固定main三目录减少49,804行，相对3fd减少86,413行；核心目录减量含归属调整，不当作算法删除，压缩原件、文档、C和SQL另计。本批没有LLM、真实Ray、GPU或查询性能运行。
+
+<a id="derived-ipc-4df3-server"></a>
+## 准确4df3的派生IPC单项回执
+
+从已保存原件核对准确`4df3ccd7a9067bc7d80dbc5db93487be9e9622ff`、tree`a7688bbe282f3366b0571f36ec47a257d834f778`，原DerivedIPCRuntimeTests.test_IPC_single_result_slot_and_state_bytes_below_row_slots_progress_to_EOF仅执行一次，通过，8.987秒，无失败、错误或跳过，运行中源码保持。
+原输出／顺序、唯一调用身份、完整EOF与closed断言通过，held_tasks为0、stream.pool.used为[0,0]，请求峰值不超过2；没有另加完整usage快照，不扩写成所有额度均已独立采集。
+六个已观察自有进程退出，socket／SHM无新增残留、运行许可释放；真实模型、Ray、GPU、HTTP及额外测试为零。
+四份原件哈希已读回匹配，私有交接SHA-256为`b7e5313d48f7aba10d23006e206a2423ee38f8a9c1561d7e6a0d8d255bd8da56`；未重跑该单项，也不转授后来4e0994的NoB/helper变更。
+
+4e0994的四项正常环境软件IPC清单已准备，读取服务器会话时返回Transport closed，尚未派送。恢复后先核现有记录再发送；顺序查询复用不扩为并发多查询，不安装等待用户同意的vLLM0.22环境。

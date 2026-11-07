@@ -2116,3 +2116,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [CSV行估计器归离线](diagnostics/records_runtime_refactor_20261104/README.md#offline-csv-cost-estimators)
 记录e95到50c的七项前后CPU、七份逐元素相同预测及十条历史读源；通用矩阵数学保持，完整context-LOO未运行，来源新增offline摘要并保planning摘要，算法迁移不作删码或新研究结论。
+
+[准确4df3派生IPC回执](diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)
+指定原方法一次通过、8.987秒，输出／EOF、held_tasks=0及流池归零等原断言保持，四份原件哈希匹配；六个观察进程、socket／SHM及许可清理完成，零模型／真实Ray，不补推完整usage快照或后续4e资格。

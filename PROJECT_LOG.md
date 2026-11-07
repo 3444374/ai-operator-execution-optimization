@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：核对既有派生IPC原件
+
+[4df3单项回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)已核准确源码与四份原始哈希，一次通过8.987秒，原EOF／held_tasks／流池断言保持，不新造完整usage结论。
+服务器会话读取返回Transport closed；最新4e的四项软件清单仅准备、未派送，不重复已完成旧项。源代码和Git通道仍可用，vLLM0.22等待明确同意，不安装。
+
 ## 2026-11-07：直接选择B／NoB并分开CSV估计器
 
 [旧旁路退出](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)保留正常配置、必要测试helper和原始消融来源；十二不同CPU与输出对照保持，四项软件IPC另待补验，不新增旧键专用拒绝检查。
