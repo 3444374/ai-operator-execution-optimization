@@ -2188,3 +2188,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [旧phase-change运行准备退役](diagnostics/records_runtime_refactor_20261104/README.md#phase-runner-preparation-retirement)
 只移除已归档运行器专用的孤立配置／准备两文件，现用离线审计和测试逐字保持；六方法前后通过，没有新方法、服务或模型运行。两份公开279原件及十条历史读取保持，原预期／投影身份和7bf运行器来源不动；源码净减172行，未删除历史分析或重跑旧实验。
+
+[校准实际容量解析复用](diagnostics/records_runtime_refactor_20261104/README.md#calibration-runtime-resolution-reuse)
+21项原CPU前后通过、测试未改；12组合的完整身份JSON和签名保持。原独立预算／旧B的profile解析2→1、交错／事件3→1，必要候选默认比较与服务预览计算保留；不推断性能收益。没有新类型、控制器、模型或硬件操作，五份原5ff历史映射保持，源码净减7行。

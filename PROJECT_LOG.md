@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：校准身份复用一份实际容量解析
+
+[容量解析整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#calibration-runtime-resolution-reuse)把实际运行配置解析留在原身份构造点，归一化及准备模式直接复用，移除第二次容量／profile／IPC构造。21项既有CPU前后通过，12组合完整身份与签名一致，旧候选默认对比及模型ready语义保持；只报告调用次数减少，不外推查询加速。
+
 ## 2026-11-07：旧phase-change准备包随运行器退役
 
 [孤立准备代码清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#phase-runner-preparation-retirement)按真实调用移除旧配置读取与环境装配两文件；它们只由已归档运行器／准备器使用，现用审计脚本不依赖它们。六个原CPU方法前后通过、源码与测试保持，十条历史读取改用两份准确原件。实验源码净减172行，当前执行核心与研究原始记录保持。

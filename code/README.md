@@ -110,6 +110,7 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 独立研究 | [研究索引](src/research/README.md)分别登记[多任务／SAOR](src/research/multitask/README.md)和[文本组织／到达回放原型](src/research/data_organization/README.md)；生产payload及请求组批直接用公共运行组件，研究不进入普通records默认配置 |
 | 离线代价 | [operator_costs](src/experiments/operator_costs/README.md)拥有CSV／profile特征、既有估计比较与SemFilter参考校准；分析CLI负责输入、评估及输出，通用数学仍在planning/costs，运行链估算与反馈保持 |
 | 实验服务核对 | [shared_vllm/preflight.py](src/experiments/shared_vllm/preflight.py)供场景脚本读取idle／命令行；[0.25.1源码审计](src/experiments/saor/vllm_0251_source_audit.py)拥有固定服务身份，旧矩阵专属live校验与专测按[准确来源](../experiments/reproduction/native_baselines/README.md#retired-shared-service-verifiers)恢复 |
+| 校准身份 | [calibration/core.py](src/experiments/calibration/core.py)适配Movie身份、模型ready及完整查询回执；实际容量只取一次现有Movie解析结果，归一化与准备模式共同读取，跨候选默认对比保持 |
 
 SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、
 JSON 中显式的 `max_inflight` 或服务 payload 声明取得有限额度；缺少来源在启动前报告。

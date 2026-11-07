@@ -36,15 +36,13 @@ def _schedule(checked):
             for query in checked["queries"]]
 
 
-def _records_capacity_policy(plan):
+def _records_capacity_policy(plan, configured, resources, engine):
     """Normalize fixed declarations, retaining limits that vary across the scan.
 
     A count equal to today's C is not equivalent to a count derived from C.
     Only drop an override equal to its default throughout the eligible C range.
     The existing resolver's defaults are monotone in owner R, so endpoints suffice.
     """
-    from src.experiments.movie_records_config import records_runtime
-    configured = records_runtime(plan)
     raw_capacity = plan.get('core_capacity', {})
     derived = (configured.capacity.budget is not None and type(raw_capacity) is dict
                and raw_capacity.get('budget') is None)
@@ -57,22 +55,12 @@ def _records_capacity_policy(plan):
     if not set(plan) & {"core_capacity", "async_limits"}:
         return None
     from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, resolve_records_async_limits
-    from src.execution_provider.adapters.records_profile import resolve_core_profile
-    from src.semantic_methods.lotus.records import RecordsResources
-    from src.serving.backends.vllm_protocol import EngineSpec
 
-    for name in ("core_capacity", "async_limits"):
-        if type(plan.get(name, {})) is not dict:
-            raise ValueError(name + " must be an object")
-    capacity = CoreRecordsCapacity(**plan.get("core_capacity", {}))
-    resources = RecordsResources(**plan["resources"])
-    engine = EngineSpec.from_dict(plan["engine"])
-    resolved = resolve_core_profile(engine, resources, plan["profile"],
-        rolling_refill=plan.get("rolling_refill", False), capacity=capacity)
+    capacity = configured.capacity
+    resolved = configured.profile
     owner = resolved.get("owner_max_inflight", resolved["max_inflight"])
     overrides = plan.get("async_limits", {})
-    actual = asdict(resolve_records_async_limits(
-        replace(resources, max_active_batches=owner), capacity, overrides))
+    actual = asdict(configured.async_limits)
     actual["feedback_interval_s"] = float(actual["feedback_interval_s"])
     if capacity.budget is not None:
         return dict(core=dict(asdict(capacity), poll_interval_s=float(capacity.poll_interval_s)),
@@ -84,8 +72,8 @@ def _records_capacity_policy(plan):
     for maximum in bounds:
         values = asdict(resolve_records_async_limits(
             replace(resources, max_active_batches=maximum), CoreRecordsCapacity()))
-        # Core may allow a smaller result than IPC's minimum, with an explicit
-        # valid IPC override. Comparing defaults must not reject that legal pair.
+        # The Core result size and an explicit IPC result size can differ.
+        # Compare the declared defaults without rejecting that valid pair.
         values.update(item_input_bytes=capacity.item_input_bytes, item_result_bytes=capacity.item_result_bytes)
         values["input_bytes"] = maximum * overrides.get("item_input_bytes", capacity.item_input_bytes)
         values["result_bytes"] = overrides.get("result_slots", maximum) * overrides.get(
@@ -138,7 +126,12 @@ def _core_identity_fields(plan, checked, *, hardware, model, software):
         workload=dict(queries=schedule),
         measurement=dict(objective="sum_measured_full_query_seconds", warmup="explicit_plan_queries", work_unit="model_calls"),
     )
-    capacity = _records_capacity_policy(plan)
+    from src.experiments.movie_records_config import records_resources, records_runtime
+    from src.serving.backends.vllm_protocol import EngineSpec
+    resources = records_resources(plan)
+    engine = EngineSpec.from_dict(plan["engine"])
+    configured = records_runtime(plan, resources=resources, engine=engine)
+    capacity = _records_capacity_policy(plan, configured, resources, engine)
     if capacity is not None:
         key = 'records_capacity_policy_v2' if capacity.get('version') == 2 else 'records_capacity_policy_v1'
         identity['execution'][key] = capacity
@@ -151,9 +144,9 @@ def _core_identity_fields(plan, checked, *, hardware, model, software):
                 prepared_batching=batching,
                 rolling_refill=plan.get('rolling_refill', False))
     if 'preparation_mode' in plan:
-        from src.experiments.movie_records_config import record_batching_options, records_runtime
+        from src.experiments.movie_records_config import record_batching_options
         from src.execution_provider.adapters.records_profile import resolve_record_batching
-        preparation = resolve_record_batching(records_runtime(plan).profile, **record_batching_options(plan))
+        preparation = resolve_record_batching(configured.profile, **record_batching_options(plan))
         flags = {name: preparation[name] for name in ('interleaved_preparation', 'event_driven_preparation')
                  if preparation is not None and name in preparation}
         if flags:

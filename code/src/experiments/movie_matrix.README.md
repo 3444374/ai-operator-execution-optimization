@@ -327,6 +327,10 @@ CPU 非默认配置与旧路径测试见 [`test_movie_runtime_configuration.py`]
 callback 有界测量、选择并执行，命中跳过测量。identity 加候选集合、参数顺序、重复数和比例共同决定缓存键。
 旧 Core 工厂的显式固定 profile 保留；不在 import/普通构造时暗自加载模型，也不把声明容量 auto 当成实测选择。
 
+Movie校准身份在原输入检查后，通过`movie_records_config.records_runtime`取得一次实际容量／profile／IPC结果，
+容量身份归一化和准备模式说明共享该局部结果。跨候选C的默认值对比仍单独计算；模型ready、候选应用和完整查询回执继续各自处理，
+不在校准层重建第二套实际容量，也不改变已有缓存身份格式。
+
 普通调用可直接使用公共 API，不需要 experiments、Movie 或 gold：
 
 ```python
