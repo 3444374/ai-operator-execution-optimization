@@ -101,6 +101,7 @@ CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执
 
 [异步结果观测接线](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
 接到真实协议转换；可选指标读取错误只留下观测缺项，业务结果与原异常保持。原反例保留，最终四项CPU通过，未运行GPU观察器。
+[Session观测直接使用调度类](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-scheduler-owner)，不再经过普通Filter工厂找同一类；原三项替身检查前后通过，Python净变化为零，其余观测和执行源码保持。
 
 [离线预测职责整理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
 分开profile数据与既有估计比较，删除脚本互载、临时参考文件和全局输入改写；输入／输出由调用方选择。主体28项、输出增量2项各自通过，未重新拟合真实数据或改变运行链估算。

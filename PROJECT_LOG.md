@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：Session观察器直达调度模块
+
+[观察器接线](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-scheduler-owner)不再经普通Filter工厂取得同一SessionEngine；原三项替身检查前后通过，其余wrapper和执行保持，没有增加包装或检查。Python净变化为零，整合不重复原测试，也不把历史文件读取当成真实运行验证。
+
 ## 2026-11-07：恢复四项软件IPC派送
 
 [准确946四项派送](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#software-ipc-946-dispatch)先核服务器会话没有该清单记录，随后交原执行者串行处理。SSH认证失败，四项均未启动，不能确认服务端现状；本地源码及Git检查继续，不反复尝试登录或安装等待同意的vLLM0.22环境。

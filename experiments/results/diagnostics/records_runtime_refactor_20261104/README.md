@@ -4811,3 +4811,12 @@ CLI按既有项目包正常导入，移除spec_from_file_location自载及对应
 执行者在SSH认证时收到`Permission denied (publickey,password)`，四项实际启动数为0；只有本机commit／tree和方法存在性已核，服务器源码、已有回执、进程及运行许可未能检查。
 未创建服务器文件、领取许可、改环境或安装依赖；模型、真实Ray、GPU及HTTP调用均未启动。本次没有测试结果，也没有确认服务端清理，不转授此前通过项。
 恢复既有登录后先核服务器状态，再继续这四项，不新增测试或重复已完成旧项。私有交接SHA-256为`c25bfc0d402fa0d1d4ed0d23709856ead7558af807ddc381d257f1b5af25f3d2`；原件留在执行会话的私有目录，不公开机器信息。
+
+<a id="record-observer-scheduler-owner"></a>
+## Session观测直接使用实际调度类
+
+独审候选`45fa34cad7c41e711ab732a3eb3e7ee0801da47e`整合为`aa52cd45fe7ae24b6f056ee349faab4346cf101d`。
+观察器的install_driver直接从scheduling.core.session导入SessionEngine，不再为取得同一类先导入普通Filter的Core工厂。普通和链owner仍实例化该调度类，原构造包装、提交／审计／交接／反馈接点保持；没有新增观察层或检查。
+原三个HandoffPassivityTests在修改前后各通过一次，无失败、错误或跳过；只把原Fake Core登记到实际模块名，五个测试体均保持，其余两项没有扩跑。它们使用替身，不分配实际调度器或模型，不证明真实Ray／模型观测。
+五份已声明历史源码中的普通owner和Session共十条读取保持实际导入关系，不扩大到任意旧runtime；旧collector来源不是runtime资格。SOURCE.json与历史清单不变。
+整合的三文件与受测／已审字节相同，其余Core和调度源码保持，没有重复行为套件或历史读取；Python行数净变化为零，总代码量仍为193,321行。

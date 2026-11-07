@@ -2125,3 +2125,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [准确946四项软件IPC派送](diagnostics/records_runtime_refactor_20261104/README.md#software-ipc-946-dispatch)
 通信恢复后核旧回执再派原四项，所选实现与4e相同；SSH认证失败，实际启动0项，服务端源码／进程／许可未能核实。没有新的测试结果、环境变更或模型／Ray运行，恢复登录后先核状态再继续。
+
+[Session观察器使用实际调度类](diagnostics/records_runtime_refactor_20261104/README.md#record-observer-scheduler-owner)
+记录45fa到aa52的直接导入、三项原替身检查前后通过和十条历史读源；原包装／五测试体／SOURCE与清单保持，整合字节一致，没有扩跑或真实Ray／模型验证，Python净增减为零。
