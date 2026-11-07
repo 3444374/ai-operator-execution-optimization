@@ -3,6 +3,15 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="operator-cost-row-estimator-source"></a>
+## CSV-row estimator source
+
+Historical CSV-row methods now live in the existing offline operator-cost directory. Their algorithm bodies are unchanged; LightGBM and public Ridge mathematics remain in planning. The three estimator behavior tests follow the CSV methods, while four numerical metric tests stay in planning. The old CSV-class imports and the unused Ridge convenience re-export have no forwarding aliases.
+
+The exact public source from `4df3ccd7a9067bc7d80dbc5db93487be9e9622ff` is saved once as
+[estimators.py.gz](historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz).
+Its decoded SHA-256 is `8e3f6949bc915af40a77e44068849a8f64cb3f8108df5c90509bcf2ae30f812e`. Five projections add only their matching source override and gzip-format record. Original file expectations, projection identities, source revisions, regression/capacity mappings and existing CLI source mappings are unchanged. The original test file is not a projection input and can be restored by its path from that same public Git revision. No unpublished author commit is needed for recovery.
+
 <a id="operator-cost-feature-schema-source"></a>
 ## Operator-cost profile schema source
 

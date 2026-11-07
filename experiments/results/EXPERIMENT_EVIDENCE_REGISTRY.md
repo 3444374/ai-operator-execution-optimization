@@ -2110,3 +2110,9 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [离线特征与通用Ridge数学分开](diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)
 记录f8e177到615f768的23维schema归位、原八项前后CPU及十条历史读源；27行迁移而非算法删除，原数值／特征顺序及历史身份保持，没有新增模型或性能证据。
+
+[旧正B旁路退役](diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)
+记录d69到b95的十二不同CPU、六组织／四配置对照及二十五条旧源；历史身份不改称NoB，preview未知options行为保持，四项当前软件IPC另待补验，无模型／真实Ray或性能新证据。
+
+[CSV行估计器归离线](diagnostics/records_runtime_refactor_20261104/README.md#offline-csv-cost-estimators)
+记录e95到50c的七项前后CPU、七份逐元素相同预测及十条历史读源；通用矩阵数学保持，完整context-LOO未运行，来源新增offline摘要并保planning摘要，算法迁移不作删码或新研究结论。

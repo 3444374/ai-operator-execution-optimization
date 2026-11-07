@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：直接选择B／NoB并分开CSV估计器
+
+[旧旁路退出](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)保留正常配置、必要测试helper和原始消融来源；十二不同CPU与输出对照保持，四项软件IPC另待补验，不新增旧键专用拒绝检查。
+[CSV行模型归位](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-csv-cost-estimators)保留原算法及通用数学，七项前后CPU与七份预测保持，来源说明增加真实offline文件；完整context-LOO未运行。
+两批组合保留已发布私有导入／特征与历史映射。三目录Python合计193,294行，相对main少49,804行；core归类变化与实际净删除分开，不借CPU或旧版本声明当前模型性能。
+
 ## 2026-11-07：历史特征与通用代价数学分开
 
 [23维离线特征归位](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)

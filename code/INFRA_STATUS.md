@@ -63,10 +63,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按准确`615f768e`统计：核心`code/src`为49,356行，全部src＋scripts为101,287行，测试为92,255行。
+代码量按准确`50c13bbd`统计：核心`code/src`为49,152行，全部src＋scripts为101,251行，测试为92,043行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少4,735／39,048行，相对清理起点3fd减少12,272／48,358行。
-相对a39，核心减1,126行，其中685行是离线校准／特征归位；全部src＋scripts净减606行、测试减230行。
+核心／宽口径相对固定main6a8a减少4,939／39,084行，相对清理起点3fd减少12,476／48,394行。
+相对a39，核心减1,330行，包含参考校准、特征和CSV包装归位；全部src＋scripts净减642行、测试减442行。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
@@ -74,8 +74,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [请求组批与到达回放分开](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)让主线只导入原构建器，回放／等待／B原型归已有研究目录；同五十项CPU保持，两个策略文件逐字保留，没有新增生产策略。
 [运行身份只保留一份](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)复用现有绑定对象，修正ready前失败的清理重试旧字段；纯内存反例保持unknown额度，准确a802的[六项普通／rolling软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)随后全部通过，零模型／真实Ray。
 [旧PID／离线容量与导入清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)移除两套无现用者的控制器及十八项专测，保留当前反馈和历史恢复；七项闲置导入删除，公共Completion保持，tokenizer夹具不再在收集时加载模型依赖，随后准确ab088的原构造／上下文CPU单项一次通过，零模型／真实Ray。
-[Core私有导入直接归所属模块](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)保留公共工厂／类型，旧私有转出撤去；九项共同CPU行为及两项当前序列化检查保持，Derived IPC另待补验。三目录Python合计193,542行，相对main减49,556行，口径与对照见同一报告。
+[Core私有导入直接归所属模块](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)保留公共工厂／类型，旧私有转出撤去；九项共同CPU行为及两项当前序列化检查保持，Derived IPC另待补验。三目录Python合计193,294行，相对main减49,804行，口径与对照见同一报告。
 [离线CSV特征归位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)保留23维schema、Ridge数学及原八项前后CPU；27行仅重新归类，全部Python净变化为零，五份历史恢复保持。
+[旧正B旁路退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)后直接选择正常B／NoB，旧校准身份保留历史解释，十二项CPU及组合源码核对完成，四项软件IPC另待补验。
+[CSV估计器与矩阵数学归位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-csv-cost-estimators)保持七项CPU与七份预测数组；当前数学和CSV字段各有所属，完整context-LOO评估未重跑。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
@@ -554,11 +556,10 @@ native Engine 同步单项额度与显式总预算。PG 现有帧保持 1 MiB，
 本轮仅本地 CPU／替身／真实本地进程通信检查，真实 Ray、模型和 GPU 验证仍 pending。
 检查、环境错误与原基线复核见[记录](tests/records_cpu.md#resource-allocation-cpu)。
 
-固定 rolling 路径新增默认关闭的 token 切包旁路实验选项；保留正值 B 配置，
-只跳过 B 封包并禁止动态请求反馈组合；旧预算模式C_request=R，显式独立budget分别约束C与硬R。FIFO、兼容性、成员/驻留与字节容量、
-独立结果和收尾责任不变，fused/默认路径不变。
-[入口及 CPU 回放边界](src/execution_provider/adapters/README.md#fixed-rolling-token-packing-ablation-cpu-experiment-only)
-与成员等价的准备/dispatch降开销补丁分开；未进行真实模型/Ray/GPU、完整 SemBench 或性能资格。
+旧固定rolling正值B旁路已退出当前构造、配置及微基准入口。当前rolling省略prepared_batching直接使用NoB，正常B与请求／字节／结果和unknown责任保持。
+原早期候选说明由[准确e2dd状态页](https://github.com/3444374/ai-operator-execution-optimization/blob/e2dd080b35280b8fb273abbbb5488807d4cb08ea/code/INFRA_STATUS.md#resource-allocation-candidate)保留；
+[旁路及CPU消融恢复](../experiments/reproduction/native_baselines/README.md#retired-positive-B-token-packing-bypass)指向准确ab088源码，旧预算、组合条件、结果和身份按各自原件解释，不作当前配置说明。
+当前十二项CPU与待补软件IPC见[退役记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)，没有新模型或性能资格。
 
 资源采样的拒绝前诊断候选在现有单个 snapshot RPC 上保留有界元数据：会话未绑定、native
 缓存缺失与 CPU 区间资格分别记录，按本次 Core session 重置计数和最近记录。拒绝数据仍不进入

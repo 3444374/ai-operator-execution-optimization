@@ -4750,3 +4750,31 @@ Derived fixture的resolver局部导入和补丁位置一并迁到records_capacit
 
 27行只是从planning归离线：全部src＋scripts、测试及三目录Python合计净变化均为零，不是算法删除。准确615f768e的核心为49,356行，src＋scripts101,287行、测试92,255行，三目录合计193,542行；此前同口径main／3fd合计保持。
 本批没有新代价模型、真实LLM／Ray／GPU或查询性能结果；CSV行估计器的其余职责正在另行核查，不借本次归位声称都已处理。
+
+<a id="retired-token-packing-bypass"></a>
+## 正值B旁路退役，当前请求直接选B或NoB
+
+独审候选`d69e89d558c86091bcf32fe5d133dce6096238b2`整合为`b95d2df8ce267164fec36ca5046d5a2190d52328`。
+十个源文件移除experimental_skip_token_packing参数、状态、分支及报告字段；rolling直接省略prepared_batching即可NoB，正常显式B保持。原微基准入口和旧旗标专测退出，实际组织／容量／取消用例及共享helper按当前职责保留。
+原正值B加旁路的配置、校准选择和结果继续按[准确ab088来源](../../../reproduction/native_baselines/README.md#retired-positive-B-token-packing-bypass)解释，不改称NoB。新校准身份删除该旧key，原false字段也不保留，旧选择不借用于当前源码。
+正常JSON／公开工厂不再接旧参数；preview原有的未知**options忽略行为保持，没有为了退役再增加专用拒绝或兼容判断。
+
+十二个不同纯CPU方法通过，原NoB单项的前后结果不另行累加；六组组织结果及四组runtime／容量声明逐项相同。旧八项输出按原工具结果保存，没有为保存记录而重跑。
+二十五条历史读源与3010个原预期摘要保持；原编辑检查和BOM解码审计错误分开保存，后者改用Python字节解析后完成语法核对，不是生产失败。
+整合两处共享生产文件的无Import AST与候选相同、导入与已发布f93相同，其他候选文件匹配；恢复README两段原文组合保留，特征归位与MANIFEST完整保持，没有重跑十二项或历史读取。
+
+本批核心减19行、实验源码减3行、测试减221行；脚本不变。准确b95的核心49,337行、src＋scripts101,265行、测试92,034行、合计193,299行。
+当前NoB准备／反馈、顺序resident复用、取消unknown恢复和查询计数重置的四项既有软件IPC方法仍须正常环境补验；没有新增模型、真实Ray、并发多查询或性能结论。
+
+<a id="offline-csv-cost-estimators"></a>
+## CSV行估计器与矩阵数学各归其模块
+
+独审候选`e95f1479db874a69b6dbddb2f5bfdc1417bea05a`整合为`50c13bbd04fc64350059e2066e96440b52442955`。
+Analytical／Lookup／Hybrid及行字段解析、Hybrid私有有符号残差辅助归已有offline estimators；LightGBM和公共Ridge保持planning定义，公式没有合并，当前执行链的work／token计量与实测请求反馈未改。
+comparison直接导入实际所属模块；三个估计器专测随CSV实现归tests/experiments，四个指标专测留planning，原测试体及五个定义保持。
+前后各七项CPU通过，实际产生的七份预测数组逐元素相同，未增加拟合用例；完整context-LOO评估未运行，其来源记录只新增真实offline摘要key并保原planning摘要，数据选择、预测／指标和旧结果不改写。
+
+准确公开4df3的原件为9,919字节、gzip为3,276字节；十条历史读源通过，清单仅新增估计器五条来源及五条格式，原身份／摘要和特征／容量映射保持。
+整合八个文件与受测候选相同，前批token运行路径保持；README将源码说明同步为三份离线模块，新增恢复导航，没有重复七项或完整历史构造。
+本批src＋scripts净减14行、测试增9行，三目录Python净减5行，算法全部保留。准确50c13bbd的核心49,152行、src＋scripts101,251行、测试92,043行、合计193,294行。
+累计相对固定main三目录减少49,804行，相对3fd减少86,413行；核心目录减量含归属调整，不当作算法删除，压缩原件、文档、C和SQL另计。本批没有LLM、真实Ray、GPU或查询性能运行。
