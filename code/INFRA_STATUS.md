@@ -36,6 +36,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 校准容量解析 | Movie身份构造只取一次实际运行配置，容量归一化及准备模式复用其结果；旧候选默认对比及缓存格式保持 | 21项既有CPU与12组合身份对照通过；调用次数减少不代表模型或查询加速 |
 | 旧独立容量采样 | 无现用调用的HTTP指标／进程／GPU采样CLI退出维护树，当前原生观测和五份历史来源保持 | 只核对引用与准确原件；不代表实际服务或GPU采样结果 |
 | 公开资产与原件恢复 | 下载响应短于Content-Length时保留断点并报错；显式模型快照下载交原生SDK处理缓存及恢复，不因目录够大跳过；原件恢复保护已有输出 | 短传三方法与原件两方法的旧结果保留，本批一个模拟SDK方法改前失败、改后通过；未真实下载或证明模型可加载 |
+| SQuAD输入说明 | 解析、原问答身份、完整参考答案与摘要保持；移除把归档PostgreSQL脚本列为当前入口的说明，旧比较方法及来源继续保留 | 14项原纯数据检查一次通过，未读取完整数据集或执行数据库；本次不推进PostgreSQL接入 |
 
 ### 真实环境证据按源码解释
 
@@ -70,9 +71,9 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按本轮模型快照恢复职责整理统计：核心`code/src`为48,478行，全部src＋scripts为100,583行，测试为92,093行，三目录合计192,676行。
+代码量按本轮SQuAD入口说明核对统计：核心`code/src`为48,478行，全部src＋scripts为100,577行，测试为92,093行，三目录合计192,670行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少5,613／39,752行，相对清理起点3fd减少13,150／49,062行。
+核心／宽口径相对固定main6a8a减少5,613／39,758行，相对清理起点3fd减少13,150／49,068行。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
@@ -95,6 +96,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [旧HTTP容量采样CLI](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-capacity-sampler)没有现用代码、配置、测试或文档调用，整份65行实现删除；保留公开279准确原件及五份原7bf来源，不增加替代包装或测试。
 [公开资产下载短传](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#asset-download-short-read)不再仅因超过清单最小大小而将未收全的响应改为最终文件；原件恢复按现有实现核对路径及已有输出，没有改写历史来源或重跑全量恢复。
 [模型快照恢复职责](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#snapshot-native-recovery)将显式snapshot动作交回原生SDK，移除目录大小导致的提前返回和不适用的HTTP磁盘算法；check仍只读清单所声明条件，不当作完整模型或实际ready证明。
+[SQuAD输入核对](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#squad-input-ownership-audit)只修正历史入口状态和助手说明；原解析器、提示、配置及全部函数实现不改。Python少6行仅来自模块说明文字，不作为实现精简或性能收益。
 [两份历史原件恢复](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)单独修复847原有六处引用差异，保留旧预期／身份和原失败；一次恢复方法比较五投影3010份文件通过，当前生产代码不改。它不表示旧代码／模型已执行，也不覆盖较早十处差异的原记录。
 [阶段输入及时释放](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)在现有完成与driver关闭成功后丢两张输入索引，异常与未决传输保留数据；单个纯内存反例修前失败、修后通过，调用记录／关系／ACK不改，未测真实链或RSS。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。

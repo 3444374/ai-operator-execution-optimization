@@ -1,14 +1,8 @@
-"""Shared identity / attribution / integrity helpers for the SQuAD baseline gates.
+"""SQuAD identity, workload integrity and service attribution for retained tools.
 
-Used by both the operator-only capability gate
-(``code/scripts/baselines/squad_capability_gate.py``) and the database-E2E runner
-(``code/scripts/baselines/squad_database_e2e_runner.py``) so that identity,
-vLLM-counter attribution, and the canonical workload-integrity / content-hash
-contract are computed by ONE implementation (no third copy).
-
-Sampling (``_answer_bucket`` / ``largest_remainder_allocation`` /
-``stratified_sample``) and ``_load_workload`` stay in the capability gate --
-only the sampled gate needs them; the E2E runner scans the full set.
+The capability script consumes these helpers; its sampling and SQL input read
+stay in that script. The former database query runner is historical, not a
+current execution entry. Importing this module performs no database or model operation.
 """
 
 from __future__ import annotations

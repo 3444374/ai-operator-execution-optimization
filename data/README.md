@@ -21,10 +21,10 @@ experiment.
 SQuAD v1.1 dev 的来源为 [官方文件](https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json)，
 共 10,570 个问题、4,854,279 bytes，SHA256 为
 `95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9`。
-原有 `code/scripts/data/import_squad_workload.py` 维护历史导入；
-当前 PG Map 的 `code/scripts/baselines/squad_pg_map_pilot.py` 复用其解析与校验，生成按 context
-分组的独立输入文件，不修改旧 workload。完整文件和派生输入留在机器自己的仓库外数据目录；
-不能从本轮服务器已有文件推断其他机器已下载。
+[历史导入器](../code/scripts/data/import_squad_workload.py)保留原问答标识、多参考答案、提示和内容摘要，仍服务旧工作负载导入与纯数据核对。
+普通记录单查询不通过该脚本取数；先前登记的[PostgreSQL Map脚本](../experiments/reproduction/native_baselines/historical_sources/7bf1d92b/code/scripts/baselines/squad_pg_map_pilot.py)
+仅保留为准确历史来源，不列作当前入口。完整文件和派生输入留在机器自己的仓库外数据目录，
+单台机器已有文件不能证明其他机器已下载，不同机器需分别按来源、摘要与行数核对。
 
 Raw files are gitignored — **every environment (local machine, server, cloud) must download them fresh**. Use these exact URLs:
 

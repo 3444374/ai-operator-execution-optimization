@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：SQuAD数据职责与历史入口说明
+
+[输入核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#squad-input-ownership-audit)保留原问答标识、多答案、提示和来源摘要的现有实现；14项原纯数据检查一次通过，没有找到需修改解析逻辑的实证问题。数据入口、共享助手说明及DuckDB参考说明改为准确区分当前工具与归档PostgreSQL脚本；没有扩展数据库接入或创建数据管理层。
+
 ## 2026-11-07：模型快照恢复交回原生下载器
 
 [模型目录恢复职责](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#snapshot-native-recovery)修复临时文件累计超过最小大小便跳过SDK的问题；显式snapshot下载调用原生缓存处理，HTTP单文件断点／最低磁盘检查只归HTTP分支。一个模拟SDK方法改前失败、改后通过，源码净行数不变；没有自建完成标记、重试或强制重下，也不把目录检查当模型加载成功。
