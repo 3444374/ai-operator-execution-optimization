@@ -72,7 +72,8 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
 [父进程直接读取就绪状态](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)删除两个构造器已保证字段的缺省兜底，补齐原手工夹具；两项原CPU前后通过，没有新增测试方法或改变上下文／额度处理。
 [共用IPC配置归属](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)将唯一AsyncEngineLimits放回现有协议模块；父进程、容量和模型适配直达所属，旧公开导入保持同一对象。五项原CPU前后和冷导入反例修后通过，没有新增包装或变更默认；脚本中一处同步规范中转也直接更正，当前组合未运行真实IPC／模型。
-[IPC显式正文额度](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)移除无协议推导的统一4096字节最低值；错误回执也遵守已解析控制额度，默认值与逐帧／逐身份保护不变。四方法纯CPU通过，实际小帧IPC未验；ea的三项补验及输入保持。
+[IPC显式正文额度](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)移除无协议推导的统一4096字节最低值；错误回执也遵守已解析控制额度，默认值与逐帧／逐身份保护不变。四方法纯CPU通过；准确a780加单方法测试补丁的软件IPC单项也通过，两结果正确，但原close的ConnectionResetError另列追踪；ea的三项补验及输入保持。
+[关闭命令顺序](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)不再让待派发drain跟在close后发送，已接受abort仍先于close；原错误字段、unknown和额度责任不动。原内存方法的两个场景修前失败、修后通过，当前组合尚未Linux复验，原Reset的系统调用位置仍未知。
 [阶段输入及时释放](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)在现有完成与driver关闭成功后丢两张输入索引，异常与未决传输保留数据；单个纯内存反例修前失败、修后通过，调用记录／关系／ACK不改，未测真实链或RSS。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。
 [请求组批与到达回放分开](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)让主线只导入原构建器，回放／等待／B原型归已有研究目录；同五十项CPU保持，两个策略文件逐字保留，没有新增生产策略。

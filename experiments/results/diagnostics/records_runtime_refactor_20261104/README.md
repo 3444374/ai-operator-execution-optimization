@@ -4885,3 +4885,12 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 反查脚本另找到仍由workflow／control使用的`run_resource_C2.record_chain`：`704462bbd998ce3b04f8adf74e5c43d25ca85195`只让其`EngineSpec/GenerationSpec`直接来自协议模块。两个类与旧导入为同一对象，其余AST相同，独审未见问题；没有为这一行扩跑模型链，脚本保持现用身份。
 本批生产Python净减三行、测试净增十九行，全部Python净增十六行；迁移本身不算删除算法。沿此前tracked Python含注释／空行口径，核心排除experiments与baselines，为49,113行；src＋scripts101,211行、测试92,178行，总计193,389行，相对main少49,709行、相对3fd少86,318行；核心分别少4,978和12,515行。
 整合未重跑行为或历史读取。原ea5842f5三项服务器补验及七份相关测试／fixture保留原字节，仍按原提交执行；这些旧回执不转授新的配置组合。本批没有运行实际IPC、模型、Ray或硬件验证，不表示全项目已完成。
+
+<a id="close-after-drain-order"></a>
+## 小帧实测诊断与关闭命令顺序
+
+服务器软件IPC使用准确`a780b5bd06268db1d65d07233ad6f41a0afd06d1`、tree `25d20fee1c57b00690118e15f78b8afb1b461539`，仅追加一个测试方法；补丁SHA-256为`6593e0f07c4ad84e03b36bda0335231f9c79a91f276367e228a6352c8cc825cb`，patched index tree为`4957c2c94d4f8dae83c05730707715c96881c0cd`，没有生产修改。该方法一次通过、无重试／跳过：2048字节结果／控制额度下，两结果正确，未消费时保留4096结果字节并拒绝第三次提交，消费后归零。drain报告drained、close报告closed，原子进程返回0、I/O线程退出，两个已观察自有进程、socket、SHM和许可清理通过；使用FixtureEngine，没有模型、真实Ray或GPU。
+原close的`engine_api_shutdown_confirmed`和`producer_quiescence.confirmed`均为true，unknown与cleanup_errors为零，但`transport_error=ConnectionResetError`保留，不能称所有关闭诊断均为空。已核私有HANDOFF、补丁、归档及二十个原件摘要：HANDOFF SHA-256为`b3a7bdc525eafb9f3b5afbb7f06eb6c627ab63219ed2b7c919a7d5d7cd2e4fd7`，归档为`958671dfce3beeeb0077079e032d88152c03e2802703795448742051545ea438`，原件清单为`d4e7612e51274f3212c10c5bda37ba094cf70ca73fcced5366e5820e76feb46a`；不发布原始私有材料，也不重跑该服务器方法。
+源码发现真实顺序问题：active请求为零时，drain仍可留下待派发标记；父进程优先发送close后，下一轮又发送残留drain，而worker收到close已经停止控制读取。原真实父进程的纯内存反例发出`close, drain`；有已接受abort时为`abort, close, drain`。这个额外命令不是必要收尾，但现有原件只记录异常类型，没有首次异常的send／recv和通道位置，因此不能断言原服务器Reset的唯一原因。
+独审候选`7ae22d294d41fd7d14ec92a2ec7882c06860bd43`整合为`6f72815e44fc3f65e80e6d3d57da89f145d31029`，只在待派发drain的原分支加`not self._closing`；正常drain、已开始发送的帧及close前的已接受abort保持。没有吞异常、清transport_error、改变成功判断或修改unknown／ACK责任。原parent内存方法扩展两个场景，修前一次出现两项子场景失败，修后一次通过，原调用方时间、无API确认仍为unknown、输入／结果预留断言保留；整合与独审均未复跑行为或历史读取。
+本批生产Python行数不变，测试增十行，leaf说明增两行；五条历史来源与3010项预期摘要不动。当前核心49,113行、src＋scripts101,211行、测试92,188行，全部Python193,399行；按同口径相对main少49,699行、相对3fd少86,308行。新的关闭顺序和共享配置组合尚待实际Linux IPC复验，原Reset仍是待确认诊断，不能借用此前a780单项作新提交通过结论；原ea续验仍由原会话按原版本执行。

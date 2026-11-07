@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：关闭后不再派发残留排空命令
+
+[小帧原件与关闭顺序](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)核实a780软件IPC单项通过但仍有ConnectionResetError；没有清除或改写原诊断。独立修正纯内存反例中close后的多余drain，保留abort优先及全部unknown／预留责任，一方法两个场景修后通过；新组合待Linux复验，尚不能确定原Reset原因。
+
 ## 2026-11-07：共用IPC配置归属协议模块
 
 [共享配置整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)让唯一AsyncEngineLimits与真实调用方直连，保留同一类型、默认和JSON，不新增包装。五项原CPU保持，冷导入反例修后通过；链采样脚本的一处旧规范中转同时更正，实际新组合IPC／模型未验，原ea补验保持其版本。

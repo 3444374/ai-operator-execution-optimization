@@ -2146,3 +2146,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [共用IPC配置归属](diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)
 记录6aeadd到07938的唯一类迁移和实际调用方直达，五项原CPU保持、冷导入反例修后通过，十五条历史读源与清单保持；704脚本仅更正同对象导入，独审与源码核对完成。字段／默认／JSON不变，新组合实际IPC／模型未验，生产减三行、测试增十九行如实登记。
+
+[a780小帧IPC原诊断与关闭顺序](diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)
+准确a780加单测试补丁一次通过，两结果／预留／已观察资源清理保持，原ConnectionResetError保留；二十份原件、补丁及来源摘要已核。7ae22到6f728独立取消close后的待发drain，一项内存方法两个场景修前失败、修后通过，没有清错误字段或改变成功判断；新组合实际Linux IPC仍待验证，不转授旧回执。
