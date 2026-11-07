@@ -45,7 +45,6 @@ class FilterMethod:
         object.__setattr__(self, "resolved_input_columns", _resolved_columns(self.resolved_input_columns))
 
     def describe(self):
-        self.__post_init__()
         return asdict(self)
 
     @classmethod
@@ -113,7 +112,6 @@ class RecordScan:
         object.__setattr__(self, "predicate", predicate)
 
     def describe(self):
-        self.__post_init__()
         return asdict(self)
 
     @classmethod

@@ -185,6 +185,19 @@ class LotusRecordChainTests(unittest.TestCase):
         self.assertEqual(chain.describe(), before)
         self.assertEqual(LotusFilterMapExtract.from_dict(before).describe(), before)
 
+    def test_method_snapshots_mutable_stage_fields_and_reports_bad_stage_first(self):
+        import lotus
+
+        stage = stages()[-1]
+        expected = stage.describe()
+        method = LotusRecordMethod(stage)
+        stage.method.output_columns["attitude"] = "changed"
+        stage.generation.response_format["type"] = "changed"
+        self.assertEqual(method.stage.describe(), expected)
+        with lotus.settings.context(enable_cache=True), self.assertRaisesRegex(
+                ValueError, "response_format supports"):
+            LotusRecordMethod(stage)
+
     def test_map_then_filter_composes_the_same_runner_and_filters_generated_text(self):
         import lotus
         import pandas as pd

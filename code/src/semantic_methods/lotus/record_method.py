@@ -22,10 +22,9 @@ class LotusRecordMethod:
         from lotus.templates import task_instructions
         from lotus.types import SerializationFormat
 
-        stage.__post_init__()
+        self.stage = StageSpec.from_dict(stage.describe())
         if lotus.settings.enable_cache or lotus.settings.serialization_format != SerializationFormat.DEFAULT:
             raise ValueError("record methods require caching disabled and DEFAULT serialization")
-        self.stage = StageSpec.from_dict(stage.describe())
         self.method = self.stage.method
         if type(self.method) in (FilterMethod, MapMethod):
             self.columns, self.instruction = _input_instruction(

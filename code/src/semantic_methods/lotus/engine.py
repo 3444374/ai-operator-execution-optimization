@@ -39,7 +39,6 @@ def make_lm(method, generation):
 def validate_generation(method, generation):
     if type(method) is not FilterMethod:
         raise TypeError("an explicit ordinary Filter method is required")
-    method.describe()
     if generation.repetition_penalty != 1 or generation.logprobs is not None:
         raise ValueError("ordinary Filter does not support repetition overrides or helper logprobs")
     if getattr(generation, "response_format", None) is not None:
@@ -84,7 +83,6 @@ def _input_instruction(instruction, resolved_input_columns, *, require_bound=Tru
 def _filter_instruction(method, *, require_bound=True):
     if type(method) is not FilterMethod:
         raise TypeError("an explicit ordinary Filter method is required")
-    method.describe()
     return _input_instruction(method.instruction, method.resolved_input_columns, require_bound=require_bound)
 
 
