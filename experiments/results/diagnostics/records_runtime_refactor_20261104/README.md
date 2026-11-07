@@ -4711,3 +4711,7 @@ PID改前、改后各九项既有轻量检查通过；容量退役只核原五�
 
 本批相对769a的生产核心／src＋scripts各减381行，测试减341行；准确0e0cfca7的核心49,387行、src＋scripts101,292行、测试92,262行，仍含注释／空行，核心排除experiments／baselines且包含research。
 相对固定main6a8a，核心／宽口径减4,704／39,043行；相对3fd3887减12,241／48,353行。新增压缩恢复件单列，不算现用源码；没有新增测试方法、模型、Ray、socket或系统探测，不作性能结论。
+
+随后准确`ab088849022f79dd4ce9f97ca7029113e826ab46`、tree`e7581a9f8383b7cf2cf171b328b9d6b7d6349467`的既有ChainTokens.test_model_resolved_context_is_required_and_bound_into_token_work单项在服务器一次通过，8.456秒，无失败、错误或跳过，运行中源码保持。
+原setUp实际构造tiny tokenizer，模板、上下文缺失拒绝、长度超限及预算签名检查通过；没有加载模型权重或推理，没有真实Ray、GPU查询、HTTP、多查询或socket实验，未新增环境／脚本，也未重复87cf／a802九项。
+观察到的三个自有进程、socket／SHM及运行许可清理通过；该时间只属软件fixture检查，不是查询性能。私有交接SHA-256为`e0d06f674ab0edeb2105578574415280f2afb8b3d4e6dcb059543846dd97f255`，原件继续私有保存。

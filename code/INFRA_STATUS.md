@@ -73,7 +73,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。
 [请求组批与到达回放分开](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)让主线只导入原构建器，回放／等待／B原型归已有研究目录；同五十项CPU保持，两个策略文件逐字保留，没有新增生产策略。
 [运行身份只保留一份](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)复用现有绑定对象，修正ready前失败的清理重试旧字段；纯内存反例保持unknown额度，准确a802的[六项普通／rolling软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)随后全部通过，零模型／真实Ray。
-[旧PID／离线容量与导入清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)移除两套无现用者的控制器及十八项专测，保留当前反馈和历史恢复；七项闲置导入删除，公共Completion保持，tokenizer夹具不再在收集时加载模型依赖。
+[旧PID／离线容量与导入清理](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)移除两套无现用者的控制器及十八项专测，保留当前反馈和历史恢复；七项闲置导入删除，公共Completion保持，tokenizer夹具不再在收集时加载模型依赖，随后准确ab088的原构造／上下文CPU单项一次通过，零模型／真实Ray。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。
 
