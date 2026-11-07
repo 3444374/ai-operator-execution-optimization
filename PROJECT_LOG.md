@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：SDK实际导入状态与解释字段修正
+
+[后续核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)区分已安装元数据、导入超时与实际调用证据。真实SDK尚未进入解析，不重复运行cascade；本地修正一行解释字段，两个原有方法通过，并补核当次Session query的参数转交。原始文本、布尔值、default、原生SDK与历史成绩保持，没有安装、上传或模型操作。
+
 ## 2026-11-07：Filter解析由语义方法明确选择
 
 [解析选择](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)将原生LOTUS与修正版分开记录，普通records、有限链与cascade共用解析入口；Session传同一语义值，校准身份区分修正选择。旧配置、原生调用和历史成绩保持。二十项受影响CPU／替身方法通过；没有安装SDK、运行模型或改写原成绩，完整SDK与cascade质量仍待验证。

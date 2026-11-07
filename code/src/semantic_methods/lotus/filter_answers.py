@@ -42,5 +42,5 @@ def parse_filter_answers(texts, model, default=True, *, output_tokens=("True", "
         else:
             answer = _BARE.fullmatch(text.strip())
         outputs.append(default if answer is None else answer[1].lower() == "true")
-        explanations.append(text[:matches[0].start()].strip() if len(matches) == 1 else text)
+        explanations.append(text[:matches[0].start()].strip() if len(matches) == 1 else "")
     return FilterAnswers(texts, outputs, explanations)

@@ -45,15 +45,17 @@ class LM:
 
 class FilterAnswerTests(unittest.TestCase):
     def test_answer_field_excludes_explanation_and_accepts_ordinary_answers(self):
-        cases = [(FALSE_WITH_EXPLANATION, False),
-                 ("Answer: True\nExplanation: Calling it false would be wrong.", True),
-                 ("Reasoning: It could be true elsewhere.\nAnswer: False", False),
-                 ("True", True), ("False", False), ("Answer: false.\r\n", False)]
-        for text, expected in cases:
+        cases = [(FALSE_WITH_EXPLANATION, False, ""),
+                 ("Answer: True\nExplanation: Calling it false would be wrong.", True, ""),
+                 ("Reasoning: It could be true elsewhere.\nAnswer: False", False,
+                  "Reasoning: It could be true elsewhere."),
+                 ("True", True, ""), ("False", False, ""), ("Answer: false.\r\n", False, "")]
+        for text, expected, explanation in cases:
             with self.subTest(text=text):
                 parsed = parse_filter_answers([text], None, answer_parser=ANSWER_FIELD)
                 self.assertEqual(parsed.outputs, [expected])
                 self.assertEqual(parsed.raw_outputs, [text])
+                self.assertEqual(parsed.explanations, [explanation])
 
     def test_ambiguous_and_unknown_answers_keep_the_declared_default(self):
         for text in ("Answer: True or False", "Answer: False\nAnswer: True",
@@ -61,8 +63,10 @@ class FilterAnswerTests(unittest.TestCase):
                      '{"answer": false, "explanation": "not true"}'):
             for default in (True, False):
                 with self.subTest(text=text, default=default):
-                    self.assertEqual(parse_filter_answers([text], None, default,
-                        answer_parser=ANSWER_FIELD).outputs, [default])
+                    parsed = parse_filter_answers([text], None, default, answer_parser=ANSWER_FIELD)
+                    self.assertEqual(parsed.outputs, [default])
+                    self.assertEqual(parsed.explanations, [""])
+                    self.assertEqual(parsed.raw_outputs, [text])
 
     def test_native_choice_delegates_original_text_and_options(self):
         texts, model, result = [FALSE_WITH_EXPLANATION], object(), object()

@@ -5098,6 +5098,17 @@ launcher + resource tests -> serving.vllm_resources
 
 修正版可能改变选行、聚合值和后继模型调用量，因此同语义执行比较须使用一致解析版本。未修改的LOTUS保留原生身份；修改解析的LOTUS派生对照需要另记身份，不能称为未修改原生系统。源码本批增加可选语义能力，不把拆文件、方法迁移或新增测试称为代码删减，完整重构仍未结束。
 
+<a id="filter-parser-sdk-import-and-explanations"></a>
+## SDK导入读取与未分离解释
+
+对准确`31ad6fcbe923b9c6536480de4c4b284e6cfbd9a4`先核现有解释器。可用解释器能读取候选，分发元数据确认LOTUS1.2.4、LiteLLM1.95.0与OpenAI2.50.0，实际postprocessors摘要为`8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956`。此前“缺SDK”的环境判断不再作为当前事实；原二十项仍只代表其CPU／替身范围。
+
+真实`import lotus`在`importlib.metadata.entry_points`读取依赖的`entry_points.txt`时超时，未到解析调用，网络尝试为零。六十秒只属于该次CPU诊断的挂起保护；生产查询设置保持。另一项目解释器的元数据命令和配置读取也未完成，已终止；没有再扫描环境、安装、修补SDK、上传候选或派发服务器。三个现有cascade差分方法分别覆盖固定阈值、学习阈值与异常记账，待导入恢复后再以两种选择运行；当前没有把方案当成运行结果。
+
+静态源码对照确认，LOTUS对裸布尔不产生解释。修正版原先把没有单一Answer字段的整段原文写进解释；现在只改一行，让零个或多个Answer字段的解释为空，覆盖裸布尔、无答案及多答案文本。`raw_outputs`仍完整保留，单字段之前的解释、布尔值、default和原生委派不变。扩充原答案方法的断言后，修前True／False两个子场景失败；改后该方法及原歧义／默认方法共两个方法通过，没有新建测试体系。
+
+另在31ad上使用现有两行CSV的PlanTests fixture执行当次`_MovieDriver.query`参数转交：数据预检和调用路径实际执行，lease检查、query runner和owner为替身；runner与owner收到同一`answer-field-v1`方法对象。该检查不证明真实SDK、模型或service完成；已有四项Session配置／预检／owner和校准检查没有重复运行。后续实际service需要可读取候选及对应既有运行配置，由父会话安排；当前发布继续停止。
+
 <a id="squad-input-ownership-audit"></a>
 ## SQuAD输入职责及归档入口核对
 

@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-07：SDK导入读取与解释字段补核
+
+[环境实证及局部检查](diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)
+确认已有SDK分发元数据，实际导入在依赖元数据文件读取时超时、未调用解析。解释字段反例改前两个子场景失败，改后两个原方法通过；另一个Session参数转交fixture通过。原始失败记录保留，未将这些检查记为真实模型或完整SDK通过。
+
 ## 2026-11-07：Filter原生与修正解析分别记录
 
 [共享解析与配置接线](diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)

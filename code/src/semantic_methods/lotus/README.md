@@ -22,6 +22,8 @@ Movie Session在plan中提供同名字段，预检、owner和每次查询使用�
 允许大小写、末尾句号和换行差异。多个答案字段、字段内含两个答案及无法识别的文本沿用方法的`default`，
 不会将JSON样式输出擅自当作已声明格式。请求的failed／unknown仍由原结果处理拒绝，不进入答案解析。
 原始模型文本完整保留；切换解析方式不改提示、模型请求或用量记账。
+没有Answer字段或有多个Answer字段时，解释为空；这包括裸布尔及无法分离答案的文本，原文仍在`raw_outputs`。
+单一Answer字段之前的解释提取保持，布尔判断及显式`default`保持。
 
 普通records、有限链及cascade dispatch共用一个选择函数；cascade的采样、阈值学习与回退仍由原方法执行。
 `run_cascade(answer_parser=...)`及其配置调用者记录相同身份，模型请求参数不接收该字段。
@@ -29,7 +31,9 @@ Movie Session在plan中提供同名字段，预检、owner和每次查询使用�
 修正对照另记语义版本。修正版cascade的完整SDK差分、学习阈值及模型质量仍为pending。
 
 [本批CPU范围](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)
-区分纯解析、替身接线和原生委派；未安装SDK，不以这些检查声称真实LOTUS或模型通过。
+区分纯解析、替身接线和原生委派；前批没有执行真实SDK流程。
+[后续导入核对](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)
+确认已有SDK分发元数据，但实际导入在依赖元数据读取时超时，完整SDK和模型仍未验证。
 
 ## 当前入口和所有权
 
