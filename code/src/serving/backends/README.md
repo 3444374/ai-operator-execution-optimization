@@ -22,6 +22,8 @@ API-wait deadline, using the same local monotonic clock as request deadlines.
 The worker supplies the remaining time to the native engine, rather than replacing
 it with a fixed ten seconds. The private parent and child migrate together; the
 old internal close frame without a deadline is not a separate supported format.
+A drain still waiting for dispatch is not sent once closing starts; accepted
+abort commands still go ahead of close.
 
 A normal close response is emitted once, including an unconfirmed response.
 An expired deadline reports unknown without claiming API shutdown. If a pipe or

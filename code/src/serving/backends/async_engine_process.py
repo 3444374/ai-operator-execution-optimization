@@ -459,7 +459,7 @@ class AsyncEngineProcess:
                             self._close_sent = True
                             outgoing[self._control] = memoryview(_frame(dict(op="close", deadline=self._close_deadline),
                                 self.limits.control_frame_bytes))
-                        elif self._drain_requested:
+                        elif self._drain_requested and not self._closing:
                             self._drain_requested = False
                             outgoing[self._control] = memoryview(_frame(dict(op="drain"),
                                 self.limits.control_frame_bytes))
