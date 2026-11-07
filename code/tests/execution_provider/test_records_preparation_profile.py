@@ -79,7 +79,7 @@ class EventFeedbackTurnTests(unittest.TestCase):
             deadline=101., _token_organizer=organizer, _supply_feedback=feedback)
         stream.session = SimpleNamespace(session_id=1, limits=SimpleNamespace(held_tasks=4),
             _pending_members=(), _retry_at=0., _records=lambda: records)
-        stream.driver = SimpleNamespace(finished=False,
+        stream.driver = SimpleNamespace(finished=False, active_rows=1,
             _rows={1:SimpleNamespace(run=SimpleNamespace(final=None))},
             advance=Mock(return_value=SimpleNamespace(next_deadline=None)))
         stream._event_session, stream._backend_seen = 1, 1

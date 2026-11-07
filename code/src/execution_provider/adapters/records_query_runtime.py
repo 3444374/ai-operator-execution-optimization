@@ -295,14 +295,14 @@ class _RecordLocalRows:
             self._method_results_pending = any(r.run.final is not None for r in self.driver._rows.values())
             self._consumer_due_at = (time.monotonic()+self.owner.capacity.poll_interval_s
                 if self._method_results_pending and not consumed else 0.)
-            if self._phase_eof and not self.driver._rows and not self.driver.finished:
+            if self._phase_eof and not self.driver.active_rows and not self.driver.finished:
                 self._end_input_pending = True
         elif self._method_results_pending and now >= self._consumer_due_at:
             consumed = self._consume_method_results(bound)
             self._method_results_pending = any(r.run.final is not None for r in self.driver._rows.values())
             self._consumer_due_at = (time.monotonic()+self.owner.capacity.poll_interval_s
                 if self._method_results_pending and not consumed else 0.)
-            if self._phase_eof and not self.driver._rows:
+            if self._phase_eof and not self.driver.active_rows:
                 self._end_input_pending = True
         prepared = False
         if self.can_prepare:
