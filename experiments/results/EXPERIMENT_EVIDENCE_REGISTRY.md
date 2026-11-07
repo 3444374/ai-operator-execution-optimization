@@ -2119,3 +2119,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [准确4df3派生IPC回执](diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)
 指定原方法一次通过、8.987秒，输出／EOF、held_tasks=0及流池归零等原断言保持，四份原件哈希匹配；六个观察进程、socket／SHM及许可清理完成，零模型／真实Ray，不补推完整usage快照或后续4e资格。
+
+[真实context-LOO JSON用例](diagnostics/records_runtime_refactor_20261104/README.md#context-loo-real-json-fixture)
+记录eda0到8babe的普通包导入、四行／两fold／CE0_mean和实际JSON六源摘要；只有平台描述为fixture，生产未改，原Popen受阻与九项非必要重复均保留且不累加，不宣称完整拟合或研究评估通过。

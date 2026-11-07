@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：用真实JSON替代实现形状检查
+
+[context-LOO现有CSV用例](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#context-loo-real-json-fixture)改为正常包导入，真实CE0均值与写文件，核四行／两fold、CSV身份和六项源码摘要；临时文件内部实现的要求移除。
+原平台进程检查受阻和修后额外重复九项如实保留，不再复跑；只固定非目标平台说明，生产不变、无拟合或新环境。测试增27行，当前三目录Python193,321行，净减少按同一口径解释。
+
 ## 2026-11-07：核对既有派生IPC原件
 
 [4df3单项回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)已核准确源码与四份原始哈希，一次通过8.987秒，原EOF／held_tasks／流池断言保持，不新造完整usage结论。
