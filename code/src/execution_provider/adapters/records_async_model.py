@@ -13,9 +13,8 @@ import time
 from src.infrastructure.deadlines import deadline_expired
 from src.semantic_methods.lotus.records import CallLedger
 from src.serving.backends.async_engine_process import AsyncEngineProcess
-from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_protocol import (
-    EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared, result_record,
+    AsyncEngineLimits, EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared, result_record,
 )
 
 from .lotus_records_actor_owner import _deadline

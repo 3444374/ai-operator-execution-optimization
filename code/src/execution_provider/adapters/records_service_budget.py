@@ -20,7 +20,7 @@ from .records_capacity import CoreRecordsCapacity, resolve_records_async_limits
 from .records_runtime_identity import observe_ray_runtime
 
 if TYPE_CHECKING:
-    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+    from src.serving.backends.vllm_protocol import AsyncEngineLimits
     from .records_service_delivery import OrdinaryDeliveryDeclaration, OrdinaryDeliverySession
 
 

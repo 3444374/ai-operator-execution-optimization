@@ -144,7 +144,7 @@ class CoreChainCapacity:
 
 def _complete_ipc_limits(overrides):
     """Materialize complete JSON grants; partial overrides retain their owner defaults."""
-    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+    from src.serving.backends.vllm_protocol import AsyncEngineLimits
 
     if type(overrides) is dict:
         allocation_fields = {field.name for field in fields(AsyncEngineLimits)
@@ -155,8 +155,7 @@ def _complete_ipc_limits(overrides):
 
 
 def _ipc_limits(capacity, maximum, overrides):
-    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-    from src.serving.backends.vllm_protocol import _integer
+    from src.serving.backends.vllm_protocol import AsyncEngineLimits, _integer
 
     overrides = _complete_ipc_limits(overrides)
     if type(overrides) is AsyncEngineLimits:
@@ -216,7 +215,7 @@ def independent_default_capacity(resources, capacity, overrides=None):
     These are logical allocations, not available RAM or measured model limits.
     """
     from src.semantic_methods.budget import row_reservation
-    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+    from src.serving.backends.vllm_protocol import AsyncEngineLimits
 
     if type(capacity) is not CoreRecordsCapacity or capacity.budget is not None:
         raise ValueError('independent defaults require a Core capacity without a complete budget')

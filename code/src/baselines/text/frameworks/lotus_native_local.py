@@ -21,8 +21,7 @@ from src.infrastructure.deadlines import deadline_expired, remaining_time
 from src.semantic_methods.lotus.engine import engine_response, validate_engine_protocol
 from src.semantic_methods.lotus.records import CallLedger, identity
 from src.serving.backends.async_engine_process import AsyncEngineProcess
-from src.serving.backends.vllm_async_engine import AsyncEngineLimits
-from src.serving.backends.vllm_protocol import GenerationSpec, result_record, _prepared
+from src.serving.backends.vllm_protocol import AsyncEngineLimits, GenerationSpec, result_record, _prepared
 
 
 _SDK_SCOPE = threading.RLock()

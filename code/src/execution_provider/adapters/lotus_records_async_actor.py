@@ -12,7 +12,7 @@ import json
 import threading
 import time
 
-from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+from src.serving.backends.vllm_protocol import AsyncEngineLimits
 
 from .lotus_records_actor_owner import _runtime_env
 from .records_capacity import CoreRecordsCapacity, resolve_records_async_limits

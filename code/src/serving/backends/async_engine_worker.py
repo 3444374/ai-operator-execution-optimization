@@ -8,8 +8,8 @@ import time
 
 from . import vllm_protocol as common
 from .async_engine_wire import _HEADER, _OPEN_FRAME_BYTES, _frame, _compact_result
-from .vllm_async_engine import AsyncEngineLimits, VllmAsyncEngine
-from .vllm_protocol import result_record
+from .vllm_async_engine import VllmAsyncEngine
+from .vllm_protocol import AsyncEngineLimits, result_record
 
 
 async def _read_frame(sock, maximum):

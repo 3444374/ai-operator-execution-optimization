@@ -44,6 +44,41 @@ def _string(value: object, name: str) -> None:
 
 
 @dataclass(frozen=True)
+class AsyncEngineLimits:
+    """Caller-declared requests; omitted totals reserve their complete items."""
+    max_inflight: int
+    input_bytes: int | None = None
+    item_input_bytes: int = 2 * 1024**2
+    result_slots: int | None = None
+    result_bytes: int | None = None
+    item_result_bytes: int = 2 * 1024**2
+    command_slots: int | None = None
+    control_slots: int = 16
+    control_frame_bytes: int = 64 * 1024
+    feedback_interval_s: float = 0.0
+
+    def __post_init__(self):
+        for name in ("result_slots", "command_slots"):
+            if getattr(self, name) is None:
+                object.__setattr__(self, name, self.max_inflight)
+        for name, value in vars(self).items():
+            if name in ('input_bytes', 'result_bytes') and value is None:
+                continue
+            if name == "feedback_interval_s":
+                _number(value, name, low=0)
+                continue
+            if type(value) is not int or value <= 0:
+                raise ValueError(name + " must be a positive integer")
+        for name, count, item in (
+                ('input_bytes', self.max_inflight, self.item_input_bytes),
+                ('result_bytes', self.result_slots, self.item_result_bytes)):
+            if getattr(self, name) is None:
+                object.__setattr__(self, name, count * item)
+        if self.input_bytes < self.item_input_bytes or self.result_bytes < self.item_result_bytes:
+            raise ValueError("total bytes must fit one reserved item")
+
+
+@dataclass(frozen=True)
 class GenerationSpec:
     max_tokens: int = 8
     temperature: float = 0.0

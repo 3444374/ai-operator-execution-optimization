@@ -1,6 +1,8 @@
 # Native engines and private IPC
 
-`vllm_protocol.py` owns engine/generation values and result conversion. Sync and
+`vllm_protocol.py` owns engine/generation values, `AsyncEngineLimits` and result
+conversion. Internal callers import shared values from this module; the native
+async engine's `AsyncEngineLimits` import refers to the same class. Sync and
 async engines construct their own native runtime. `async_engine_process.py` owns
 the parent sockets, submitted inputs, result consumption and its original child;
 `async_engine_worker.py` owns the child event loop. `async_engine_wire.py` encodes

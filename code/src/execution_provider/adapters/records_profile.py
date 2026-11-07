@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from .records_capacity import CoreRecordsCapacity, independent_default_capacity, resolve_records_async_limits
 
 if TYPE_CHECKING:
-    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+    from src.serving.backends.vllm_protocol import AsyncEngineLimits
 
 from src.scheduling.submission_control.feedback_options import ResourceRequestConfig
 

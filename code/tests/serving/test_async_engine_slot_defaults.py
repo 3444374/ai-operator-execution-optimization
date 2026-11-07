@@ -12,8 +12,8 @@ from src.execution_provider.adapters.lotus_records_core import create_records_co
 from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.async_engine_process import AsyncEngineProcess
-from src.serving.backends.vllm_async_engine import AsyncEngineLimits, VllmAsyncEngine
-from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_async_engine import AsyncEngineLimits as NativeAsyncEngineLimits, VllmAsyncEngine
+from src.serving.backends.vllm_protocol import AsyncEngineLimits, EngineSpec, GenerationSpec
 from tests.serving.test_async_engine_process import row
 
 
@@ -93,6 +93,7 @@ class AsyncEngineSlotDefaultsTests(unittest.TestCase):
         self.assertEqual((declared.control_slots, declared.control_frame_bytes), (16, 64*1024))
 
     def test_explicit_slots_and_JSON_round_trip_keep_independent_values(self):
+        self.assertIs(AsyncEngineLimits, NativeAsyncEngineLimits)
         for result_slots, command_slots in ((1, 64), (64, 2)):
             with self.subTest(result_slots=result_slots, command_slots=command_slots):
                 limits = AsyncEngineLimits(max_inflight=16, result_slots=result_slots,

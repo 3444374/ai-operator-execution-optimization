@@ -20,8 +20,7 @@ import uuid
 
 from src.infrastructure.deadlines import deadline_expired
 from . import vllm_protocol as common
-from .vllm_async_engine import AsyncEngineLimits
-from .vllm_protocol import result_record
+from .vllm_protocol import AsyncEngineLimits, result_record
 from .async_engine_wire import _HEADER, _OPEN_FRAME_BYTES, _frame, _compact_result
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
