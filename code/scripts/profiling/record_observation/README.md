@@ -176,7 +176,7 @@ CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU。Ray 检�
 
 同一工作流可显式设置 `workload.qualification="inflight_cancel_then_recover"`。
 它复用原 Movie `run_movie_session`、`_MovieDriver`、`evaluate(cancelled=...)`、额度、lease 和监督者。
-此入口只检查固定 async rolling token 路径：两个不同 query ID、同一原 Movie task，均为
+此入口检查固定 async rolling 请求路径，可选 B／NoB：两个不同 query ID、同一原 Movie task，均为
 `phase="measured"`；第一段取消，确认收尾后第二段新建 owner 恢复。没有隐式 warmup、重试或复用已退休模型。
 实现见 [Movie 取消检查](../../../src/experiments/movie_cancellation.py) 与
 [原生子进程旁路](../../experiments/probe_movie_cancellation_child.py)。
@@ -192,7 +192,7 @@ full 记录观察器的 `install_model` 同样接入上述协议转换，记录
 核对 stop／abort 事件、原返回值和异常对象；CUDA／NVTX 接点未改，当前接线的真实模型运行尚待核对。
 可选指标读取或记录出错只舍弃该次观测；业务转换在其前执行，业务异常仍直接传播。
 
-按已批准功能额度制备输入。例如每种 packing 设置使用原 Q1 前两行，两段共四次额度：
+按已批准功能额度制备输入。例如每种 B／NoB 设置使用原 Q1 前两行，两段共四次额度：
 
 ```sh
 "$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py prepare \
@@ -203,7 +203,7 @@ full 记录观察器的 `install_model` 同样接入上述协议转换，记录
 两个 query 的 manifest 均指向这个新前缀，保留原顺序、正文、prompt、parser、generation 和 gold。
 `units` 各两次，`workload.expected_calls` 与 `movie_plan.engine.max_model_calls` 均为四；
 入口把每个实际 owner 的 native 调用上限进一步缩至该段的两次，不退还取消／未知额度。
-固定 `profile.max_inflight` 至少容纳完整取消段；B、独立资源预算和 packing bypass 选项沿用本轮冻结配置。
+固定 `profile.max_inflight` 至少容纳完整取消段，独立资源预算保持。B 可选；省略 `prepared_batching` 或设为 null 即使用 NoB，旧 packing bypass 开关已退役。
 不启用 admission cache、动态并发或 batch feedback。示例的两行是功能预算，不是生产组批上限。
 
 本检查要求 `observation.mode="off"`，并复用显式正数 `max_events_per_process`、`max_event_bytes`
@@ -215,7 +215,7 @@ Core 已接受、已排队的 cancel intent 或完成后的 no-op 都不算覆�
 
 使用最终已审 Git 提交和新的 base／cell 身份，按上一节同一组
 `campaign_guard.py init → cpu(ray/qualify/prepare/check) → run-cell → collect` 命令执行。
-每种 packing 设置各一个 cell；本例两种设置共八次额度。唯一执行者须先核实既有剩余额度、期限和物理空闲，
+每种 B／NoB 设置各一个 cell；本例两种设置共八次额度。唯一执行者须先核实既有剩余额度、期限和物理空闲，
 不得重新 claim 已执行的正常检查格、重置整轮边界或把本节当作新增模型授权。
 新提交须重新生成 CPU ready 和 prepared config，不能沿用旧树资格。
 

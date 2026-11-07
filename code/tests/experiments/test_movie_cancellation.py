@@ -114,6 +114,44 @@ class NativeGateTests(unittest.TestCase):
         self.assertFalse(self.gate())
 
 
+class CancellationPlanTests(unittest.TestCase):
+    def test_fixed_cancellation_accepts_B_and_NoB_and_keeps_call_requirements(self):
+        from tests.experiments.test_movie_records_session import PlanTests
+
+        fixture = PlanTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        base = deepcopy(fixture.plan)
+        base.update(rolling_refill=True, profile=dict(mode='async', max_inflight=2))
+        base['engine']['max_model_len'] = 4096
+        for query in base['queries']:
+            query.update(task='movie-q1', manifest=fixture.manifests['movie-q1'], phase='measured')
+        for mode in ('B', 'NoB', 'null'):
+            plan = deepcopy(base)
+            if mode == 'B':
+                plan['prepared_batching'] = dict(policy='token_budget', token_budget=100000, max_rows=None)
+            elif mode == 'null':
+                plan['prepared_batching'] = None
+            with self.subTest(mode=mode):
+                checked = subject.check_cancellation_plan(plan)
+                self.assertEqual(checked['record_batching']['B'], 100000 if mode == 'B' else None)
+                self.assertEqual([query['expected_calls'] for query in checked['queries']], [2, 2])
+                self.assertEqual(checked['expected_calls'], 4)
+                self.assertEqual(checked['core_execution']['max_inflight'], 2)
+        for defect in ('warmup', 'search', 'C', 'cap'):
+            plan = deepcopy(base)
+            if defect == 'warmup':
+                plan['queries'][0]['phase'] = 'warmup'
+            elif defect == 'search':
+                plan['profile'] = dict(mode='async', admission=dict(kind='resource_feedback'))
+            elif defect == 'C':
+                plan['profile']['max_inflight'] = 1
+            else:
+                plan['engine']['max_model_calls'] = 5
+            with self.subTest(defect=defect), self.assertRaises(ValueError):
+                subject.check_cancellation_plan(plan)
+
+
 class CancellationEntryTests(unittest.TestCase):
     def fixture(self):
         fixture=MovieTokenResidentFixture(self)

@@ -36,7 +36,7 @@ def check_cancellation_plan(plan):
     from src.experiments.movie_records_session import check_plan
     checked = check_plan(plan)
     if (plan['backend'] != 'semloom-core' or plan['lifecycle'] != 'resident'
-            or plan.get('rolling_refill') is not True or not plan.get('prepared_batching')
+            or plan.get('rolling_refill') is not True
             or len(plan['queries']) != 2 or any(q['phase'] != 'measured' for q in plan['queries'])
             or plan.get('batch_feedback') is not None
             or type(plan['profile']) is not dict or plan['profile'].get('admission') is not None
