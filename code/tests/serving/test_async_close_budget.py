@@ -139,12 +139,46 @@ class CloseBudgetTests(unittest.TestCase):
                     self.assertIs(closed[0]["report"]["engine_api_shutdown_confirmed"], confirmed)
                     self.assertEqual(closed[0]["report"]["status"], "closed" if confirmed else "unknown")
 
-    def worker_case(self, deadline, required, failure_elapsed):
+    def test_small_control_frames_cover_close_and_limit_error_receipts(self):
+        capacity = AsyncEngineLimits(max_inflight=1, item_result_bytes=2048,
+                                     control_frame_bytes=2048)
+        calls, frames = self.worker_case(120., 0., None, capacity=asdict(capacity))
+        self.assertEqual(calls, [20.])
+        self.assertEqual([value['op'] for value in frames], ['ready', 'closed'])
+        self.assertTrue(frames[-1]['report']['engine_api_shutdown_confirmed'])
+        packet = _frame(frames[-1], capacity.control_frame_bytes)
+        size, = _HEADER.unpack(packet[:4])
+        self.assertEqual(size, len(packet)-4)
+        self.assertLess(size, 4096)
+        self.assertEqual(_frame(frames[-1], size), packet)
+        with self.assertRaisesRegex(ValueError, 'byte capacity'):
+            _frame(frames[-1], size-1)
+
+        calls, frames = self.worker_case(None, 0., None, capacity=asdict(capacity))
+        self.assertEqual(calls, [1.])
+        self.assertEqual([value['op'] for value in frames], ['ready', 'error'])
+        self.assertEqual(frames[-1]['error_type'], 'ValueError')
+        _frame(frames[-1], capacity.control_frame_bytes)
+
+        oversized_error = type('E'*capacity.control_frame_bytes, (RuntimeError,), {})
+        calls, frames = self.worker_case(120., 0., 0., capacity=asdict(capacity),
+                                        close_error=oversized_error)
+        self.assertEqual(calls, [20., 20.])
+        self.assertEqual([value['op'] for value in frames], ['ready'])
+
+        calls, frames = self.worker_case(None, 0., None,
+            capacity=asdict(capacity) | dict(control_slots=0))
+        self.assertFalse(calls)
+        self.assertEqual([value['op'] for value in frames], ['error'])
+        self.assertEqual(frames[0]['error_type'], 'ValueError')
+
+    def worker_case(self, deadline, required, failure_elapsed, *, capacity=None,
+                    close_error=RuntimeError):
         clock, calls = [100.], []
-        capacity = limits()
+        capacity = asdict(limits()) if capacity is None else capacity
         opening = dict(op="open", owner_uid="memory-owner", engine=asdict(EngineSpec(
             "/tmp/cpu-fixture", sys.executable, sys.executable, max_model_len=1024)),
-            generation=asdict(GenerationSpec()), limits=asdict(capacity))
+            generation=asdict(GenerationSpec()), limits=capacity)
         command = dict(op="invalid") if deadline is None else dict(op="close", deadline=deadline)
         control = MemorySocket(_frame(opening, 65536) + _frame(command, 65536))
         channels = {1: MemorySocket(), 2: control, 3: MemorySocket()}
@@ -154,7 +188,7 @@ class CloseBudgetTests(unittest.TestCase):
                 calls.append(timeout)
                 if len(calls) == 1 and failure_elapsed is not None:
                     clock[0] += failure_elapsed
-                    raise RuntimeError("fixture close error")
+                    raise close_error("fixture close error")
                 if timeout < required:
                     return dict(status="unknown", engine_api_shutdown_confirmed=False,
                                 gpu_exit_confirmed=None)

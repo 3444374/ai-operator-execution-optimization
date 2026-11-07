@@ -43,14 +43,16 @@ class AsyncEngineSlotDefaultsTests(unittest.TestCase):
                     self.assertEqual(AsyncEngineLimits(**json.loads(json.dumps(asdict(limits)))), limits)
 
     def test_real_submit_uses_all_declared_reservations_and_keeps_unconsumed_results(self):
-        for explicit_total, accepted in ((None, 16), (8*2*1024**2, 8)):
-            with self.subTest(explicit_total=explicit_total):
+        cases = ((None, 16, {}), (8*2*1024**2, 8, {}),
+                 (None, 16, dict(item_result_bytes=2048, control_frame_bytes=2048)))
+        for explicit_total, accepted, frames in cases:
+            with self.subTest(explicit_total=explicit_total, frames=frames):
                 process = object.__new__(AsyncEngineProcess)
                 process.spec = EngineSpec('/tmp/capacity-fixture', '/tmp/model-python',
                     '/tmp/driver-python', max_model_len=4096)
                 process.generation = GenerationSpec()
                 process.ready_report = None
-                process.limits = AsyncEngineLimits(max_inflight=16,
+                process.limits = AsyncEngineLimits(max_inflight=16, **frames,
                     **({} if explicit_total is None else dict(result_bytes=explicit_total)))
                 process._condition, process._io_done = threading.Condition(), threading.Event()
                 process.process = SimpleNamespace(poll=lambda: None)
@@ -58,6 +60,14 @@ class AsyncEngineSlotDefaultsTests(unittest.TestCase):
                 process._sequence, process._owner_uid, process._slots = 0, 'x'*32, {}
                 process._data_commands, process._controls, process._ready = deque(), deque(), deque()
                 deadline = time.monotonic()+60
+                if frames:
+                    too_large = row()
+                    too_large['call_id'] = 'x'*process.limits.item_result_bytes
+                    with self.assertRaisesRegex(ValueError, 'byte capacity'):
+                        process.submit(too_large, deadline_monotonic=deadline)
+                    self.assertEqual(process._sequence, 0)
+                    self.assertFalse(process._slots)
+                    self.assertFalse(process._data_commands)
                 statuses = [process.submit(row(i), deadline_monotonic=deadline).status
                             for i in range(accepted+1)]
                 self.assertEqual(statuses, ['queued']*accepted+['backpressure'])
@@ -65,6 +75,8 @@ class AsyncEngineSlotDefaultsTests(unittest.TestCase):
                     slot.producer_stopped = True
                     slot.terminal = dict(confirmed=True)
                 self.assertEqual(process._usage()['active_requests'], 0)
+                self.assertEqual(process._usage()['reserved_result_bytes'],
+                                 accepted*process.limits.item_result_bytes)
                 self.assertEqual(process.submit(row(accepted+1), deadline_monotonic=deadline).status,
                                  'backpressure')
 

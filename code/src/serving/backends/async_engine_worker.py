@@ -44,7 +44,7 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         sock.setblocking(False)
         sock.set_inheritable(False)
     loop = asyncio.get_running_loop()
-    engine = None
+    engine = limits = None
     close_deadline = report = None
     tasks = []
     owned = {}
@@ -281,7 +281,8 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
     except Exception as error:
         try:
             await asyncio.wait_for(loop.sock_sendall(control,
-                _frame(dict(op="error", error_type=type(error).__name__), 4096)), 0.2)
+                _frame(dict(op="error", error_type=type(error).__name__),
+                       limits.control_frame_bytes if limits is not None else 4096)), 0.2)
         except Exception:
             pass
     finally:

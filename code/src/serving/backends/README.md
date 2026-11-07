@@ -6,6 +6,12 @@ the parent sockets, submitted inputs, result consumption and its original child;
 `async_engine_worker.py` owns the child event loop. `async_engine_wire.py` encodes
 frames and compact terminal records without transport or scheduling.
 
+Explicit result and control frame allowances may be below 4096 bytes. Frames
+still have to fit their actual encoded bytes, and each submitted identity must
+fit its compact terminal receipt. Defaults remain 2 MiB per result and 64 KiB
+per control frame. After valid opening limits are parsed, error reports use the
+same control allowance; an oversized error report does not confirm work or close.
+
 ## Async close timing
 
 `AsyncEngineProcess.close(timeout=...)` keeps its existing total caller allowance

@@ -52,8 +52,6 @@ class AsyncEngineLimits:
                 object.__setattr__(self, name, count * item)
         if self.input_bytes < self.item_input_bytes or self.result_bytes < self.item_result_bytes:
             raise ValueError("total bytes must fit one reserved item")
-        if self.item_result_bytes < 4096 or self.control_frame_bytes < 4096:
-            raise ValueError("result and control frames require at least 4096 bytes")
 
 
 class VllmAsyncEngine:
