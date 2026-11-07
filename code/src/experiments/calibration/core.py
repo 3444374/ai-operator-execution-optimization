@@ -149,8 +149,7 @@ def _core_identity_fields(plan, checked, *, hardware, model, software):
             identity['execution']['resources']['max_active_batches'] = capacity['core']['budget']['active_requests']
             identity['execution']['record_organization_v1'] = dict(
                 prepared_batching=batching,
-                rolling_refill=plan.get('rolling_refill', False),
-                experimental_skip_token_packing=plan.get('experimental_skip_token_packing', False))
+                rolling_refill=plan.get('rolling_refill', False))
     if 'preparation_mode' in plan:
         from src.experiments.movie_records_config import record_batching_options, records_runtime
         from src.execution_provider.adapters.records_profile import resolve_record_batching

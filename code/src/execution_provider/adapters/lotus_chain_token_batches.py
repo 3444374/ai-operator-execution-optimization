@@ -23,8 +23,7 @@ class _PreparedPrefix:
         self.organizer, self.available = organizer, available
         self.sequence = organizer._prefix_sequence
         organizer._prefix_sequence += 1
-        self.skip_tokens = (organizer.owner.prepared_batching is None
-                            or organizer.owner.experimental_skip_token_packing)
+        self.skip_tokens = organizer.owner.prepared_batching is None
         self.builder = PendingBatchBuilder(available if self.skip_tokens else None,
             0 if self.skip_tokens else organizer.owner.prepared_batching.token_budget)
         self.chosen = []
@@ -145,7 +144,6 @@ class PreparedTokenOrganizer:
         owner, limits = self.owner, self.owner._actors.limits
         return (available, owner.deadline,
                 None if owner.prepared_batching is None else owner.prepared_batching.token_budget,
-                getattr(owner, 'experimental_skip_token_packing', False),
                 limits.input_bytes, limits.item_input_bytes)
 
     def _plan(self, candidates, available):
@@ -252,9 +250,7 @@ class PreparedTokenOrganizer:
             recent_batches=list(self.history), row_cap=None, native_batching='engine-owned; independent', **rolling,
             **(dict(interleaved_preparation=True) if getattr(self.owner, '_interleaved_preparation', False) else {}),
             **(dict(event_driven_preparation=True, partial_frontier_flush='data_rpc_opportunity')
-               if getattr(self.owner, '_event_driven_preparation', False) else {}),
-            **(dict(experimental_skip_token_packing=True)
-               if getattr(self.owner, 'experimental_skip_token_packing', False) else {}))
+               if getattr(self.owner, '_event_driven_preparation', False) else {}))
 
 
 class BatchSupplyFeedback(RecordsNativeSampler):

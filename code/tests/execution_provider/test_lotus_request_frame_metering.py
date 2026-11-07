@@ -119,7 +119,7 @@ def organizer(candidates, *, legacy=False, B=1000000, R=None, limits=None, rolli
         _actors=SimpleNamespace(limits=limits, model_ready=None),
         core=SimpleNamespace(capacity=SimpleNamespace(records={c.key: SimpleNamespace(compute=False, member=None)
             for c in candidates})), prepared_batching=SimpleNamespace(token_budget=B),
-        rolling_refill=rolling, request_feedback=None, experimental_skip_token_packing=False,
+        rolling_refill=rolling, request_feedback=None,
         deadline=deadline)
     return (LegacyOrganizer if legacy else batching.PreparedTokenOrganizer)(owner, CountingTokenizer(), R)
 

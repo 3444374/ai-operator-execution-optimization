@@ -37,7 +37,7 @@ def read_config(path):
     from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "experimental_skip_token_packing", "preparation_mode", "service_payload_bytes", "profile"}
+    allowed = {"schema", "backend", "query_id", "task", "method", "generation", "engine", "resources", "async_limits", "core_capacity", "core_profile", "prepared_batching", "batch_concurrency", "batch_feedback", "rolling_refill", "preparation_mode", "service_payload_bytes", "profile"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
@@ -59,7 +59,7 @@ def read_config(path):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
     is_core = value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND)
     if not is_core and (set(value) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                                     'experimental_skip_token_packing', 'preparation_mode'}):
+                                     'preparation_mode'}):
         raise ValueError('record batching options require a Core backend')
     if not is_core and 'service_payload_bytes' in value:
         raise ValueError('service_payload_bytes requires an async Core backend')

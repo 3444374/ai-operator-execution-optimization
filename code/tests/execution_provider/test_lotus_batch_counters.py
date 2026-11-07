@@ -14,7 +14,7 @@ from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecor
 from src.scheduling.core.session_contract import Acceptance, BatchKey
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
-from tests.execution_provider import test_lotus_token_packing_bypass as packing
+from tests.execution_provider import test_prepared_request_organization as packing
 from tests.experiments.movie_token_resident_fixture import MovieTokenResidentFixture, query_close
 
 
@@ -44,8 +44,8 @@ class SealCounterTests(unittest.TestCase):
     def test_exact_B_at_C_does_not_imply_extra_members_or_an_accepted_packet(self):
         rows = packing.candidates([480]*9)
         selected = []
-        for skip, reason in ((False, 'token_budget'), (True, 'request_capacity')):
-            value, _ = packing.organizer(rows, C=8, skip=skip)
+        for B, reason in ((4096, 'token_budget'), (None, 'request_capacity')):
+            value, _ = packing.organizer(rows, C=8, B=B)
             selected.append(value(rows))
             report = value.report()
             self.assertEqual(report['selected_batches'], 1)
@@ -55,10 +55,10 @@ class SealCounterTests(unittest.TestCase):
         self.assertEqual(selected[0], selected[1])
 
     def test_Core_rejection_retries_do_not_select_again_and_unknown_keeps_responsibility(self):
-        helper = packing.TokenPackingBypassTests()
+        helper = packing.PreparedRequestOrganizationTests()
         for final in (Acceptance.ACCEPTED, Acceptance.UNKNOWN):
             with self.subTest(final=final):
-                engine, session, backend, clock, value = helper.engine(True)
+                engine, session, backend, clock, value = helper.engine(B=None)
                 backend.acceptance = Acceptance.NOT_ACCEPTED
                 session.advance(8)
                 first = backend.attempts[-1]
@@ -87,8 +87,8 @@ class SealCounterTests(unittest.TestCase):
                     self.assertEqual(engine.capacity.usage().held_tasks, 0)
 
     def test_cancelled_selection_is_still_selected_without_an_actor_ack(self):
-        helper = packing.TokenPackingBypassTests()
-        engine, session, backend, _, value = helper.engine(True)
+        helper = packing.PreparedRequestOrganizationTests()
+        engine, session, backend, _, value = helper.engine(B=None)
         backend.acceptance = Acceptance.NOT_ACCEPTED
         session.advance(8)
         session.close()
@@ -221,11 +221,12 @@ class BatchAckCounterTests(unittest.IsolatedAsyncioTestCase):
 
 class PublicBatchCounterTests(unittest.TestCase):
     def test_two_public_resident_queries_reset_counters_in_both_B_modes(self):
-        for skip in (False, True):
-            with self.subTest(skip=skip):
+        for no_B in (False, True):
+            with self.subTest(no_B=no_B):
                 fixture = MovieTokenResidentFixture(self)
                 plan = fixture.plan('RF')
-                plan['experimental_skip_token_packing'] = skip
+                if no_B:
+                    plan.pop('prepared_batching')
                 report = fixture.run(plan)
                 self.assertEqual(report['status'], 'completed')
                 stats = [query_close(q)['async_token_batches'] for q in report['queries']]

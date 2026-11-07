@@ -94,7 +94,7 @@ def core_profile(config):
 def record_batching_options(config):
     """Select prepared transport independently from optional application token packing."""
     if not (set(config) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                           'experimental_skip_token_packing', 'preparation_mode'}):
+                           'preparation_mode'}):
         return {}
     from src.semantic_methods.lotus.prepared_batching import PreparedBatching
     value = config.get('prepared_batching')
@@ -112,8 +112,6 @@ def record_batching_options(config):
         options['event_driven_preparation'] = True
     if 'rolling_refill' in config:
         options['rolling_refill'] = config['rolling_refill']
-    if 'experimental_skip_token_packing' in config:
-        options['experimental_skip_token_packing'] = config['experimental_skip_token_packing']
     if 'batch_feedback' in config:
         from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
         feedback = config['batch_feedback']

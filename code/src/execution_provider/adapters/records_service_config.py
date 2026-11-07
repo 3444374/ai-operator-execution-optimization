@@ -52,7 +52,6 @@ def preview_service_records_runtime(engine, resources, total_bytes, **options):
         rolling_refill=options.get('rolling_refill',False))
     resolve_record_batching(configured.profile, prepared_batching=options.get('prepared_batching'),
         rolling_refill=options.get('rolling_refill', False),
-        experimental_skip_token_packing=options.get('experimental_skip_token_packing', False),
         interleaved_preparation=options.get('interleaved_preparation', False),
         event_driven_preparation=options.get('event_driven_preparation', False))
     configured.profile.update(service_payload_plan=plan.describe(), service_payload_bytes=total_bytes,

@@ -14,7 +14,7 @@ from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecor
 from src.scheduling.core.session_contract import Acceptance, BackendTask, BatchKey, BatchMember, BatchSubmission
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
-from tests.execution_provider import test_lotus_token_packing_bypass as packing
+from tests.execution_provider import test_prepared_request_organization as packing
 
 
 def owner(workers=1):

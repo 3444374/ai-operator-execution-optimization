@@ -141,10 +141,11 @@ class CancellationEntryTests(unittest.TestCase):
             yield
 
     def test_actual_CPU_IPC_cancel_then_fresh_recovery_preserves_unknowns_and_budgets(self):
-        for bypass in (False,True):
-            with self.subTest(bypass=bypass):
+        for no_B in (False,True):
+            with self.subTest(no_B=no_B):
                 fixture,plan,context=self.fixture()
-                plan['experimental_skip_token_packing']=bypass
+                if no_B:
+                    plan.pop('prepared_batching')
                 output=fixture.root/'session'
                 with self.cpu_boundaries(fixture):
                     result=subject.run_movie_cancellation(plan,context,output)

@@ -17,6 +17,24 @@ source revisions and existing mappings remain unchanged. The old CLI mappings co
 The former schema import has no forwarding alias. Tests are not projection inputs; recover their old paths from the same
 exact Git revision when restoring that API. Existing CSV data, field order and result artifacts are unchanged.
 
+<a id="retired-positive-B-token-packing-bypass"></a>
+## 旧正值 B 旁路与 CPU 消融来源
+
+`experimental_skip_token_packing` 已从当前构造、Movie／Session 配置和调用中移除。
+当前 rolling 省略 `prepared_batching` 即使用 NoB；显式正值 B、请求／字节额度、上下文、取消和 unknown 责任继续保留。
+
+旧正值 B 加旁路不是 NoB 配置或身份。准确公开 `ab088849022f79dd4ce9f97ca7029113e826ab46` 保留
+[原组织器](https://github.com/3444374/ai-operator-execution-optimization/blob/ab088849022f79dd4ce9f97ca7029113e826ab46/code/src/execution_provider/adapters/lotus_chain_token_batches.py)、
+[原校准身份](https://github.com/3444374/ai-operator-execution-optimization/blob/ab088849022f79dd4ce9f97ca7029113e826ab46/code/src/experiments/calibration/core.py)、
+[原 CPU 消融与微基准](https://github.com/3444374/ai-operator-execution-optimization/blob/ab088849022f79dd4ce9f97ca7029113e826ab46/code/tests/execution_provider/test_lotus_token_packing_bypass.py)及
+[原 Movie 专测](https://github.com/3444374/ai-operator-execution-optimization/blob/ab088849022f79dd4ce9f97ca7029113e826ab46/code/tests/experiments/test_movie_token_packing_bypass.py)。
+旧 `python -m tests.execution_provider.test_lotus_token_packing_bypass --microbenchmark` 只在对应旧树运行，当前不保留该命令。
+原结果和旧身份保持，不重新标为 NoB，也不把旧通过记录用于新配置。
+
+当前[组织测试与共享 helper](../../../code/tests/execution_provider/test_prepared_request_organization.py)保留实际 NoB／B、字节、拒绝和 unknown 检查，
+[Movie 用例](../../../code/tests/experiments/test_movie_prepared_requests.py)保留当前准备与 resident 行为；需要真实 tokenizer 的部分仍须在正常测试环境验证。
+本次涉及的二十五条具名投影来源均已有独立旧源码，原清单、预期摘要、身份和路由保持，未新增来源映射。
+
 <a id="retired-local-embedding-helper"></a>
 ## 旧文本嵌入 HTTP 辅助服务来源
 

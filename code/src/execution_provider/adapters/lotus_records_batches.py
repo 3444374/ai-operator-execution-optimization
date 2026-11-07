@@ -183,8 +183,7 @@ class PreparedRecordsCore:
             rolling_refill=batching.get('rolling_refill', False), request_feedback=request_feedback,
             resident=self.resident,
             **({} if self.capacity is None or self.capacity.budget is None
-               else dict(request_window=self.execution_profile['max_inflight'])),
-            experimental_skip_token_packing=batching.get('experimental_skip_token_packing', False))
+               else dict(request_window=self.execution_profile['max_inflight'])))
         owner._interleaved_preparation = self.interleaved_preparation
         owner._event_driven_preparation = self.event_driven_preparation
         if self._service_allocation is not None:
@@ -315,8 +314,6 @@ class PreparedRecordsCore:
                 valid_window = (1 <= actual['concurrency'] <= upper and actual['peak_batches'] <= upper
                                 if 'feedback' in requested else actual['concurrency'] == requested['C_batch'])
             if (actual['policy'] != requested['prepared_batching'] or not valid_window
-                    or actual.get('experimental_skip_token_packing', False)
-                       != requested.get('experimental_skip_token_packing', False)
                     or actual.get('interleaved_preparation', False)
                        != requested.get('interleaved_preparation', False)
                     or actual.get('event_driven_preparation', False)

@@ -36,11 +36,10 @@ class SessionBatchingPreflightTests(unittest.TestCase):
         cases = []
         rolling = dict(self.batched(), rolling_refill=True, batch_concurrency=1)
         cases.append((rolling, 'rolling_refill uses request R'))
-        for option in ({'batch_concurrency': 1}, {'experimental_skip_token_packing': True}):
-            plan = self.batched()
-            del plan['prepared_batching']
-            plan.update(option)
-            cases.append((plan, 'batch controls require prepared_batching|bypass requires rolling'))
+        plan = self.batched()
+        del plan['prepared_batching']
+        plan['batch_concurrency'] = 1
+        cases.append((plan, 'batch controls require prepared_batching'))
         for plan, reason in cases:
             with self.subTest(reason=reason):
                 with self.assertRaisesRegex(ValueError, reason):

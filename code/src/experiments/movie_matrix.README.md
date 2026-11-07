@@ -193,28 +193,14 @@ sync、fused和非rolling的批槽组合不接此预算候选。合法后继与E
 完整C／IPC配置资格仍由上述工厂和入口校验。普通owner跨查询保留硬容量，首查询C不锁定后续查询窗口。
 Core输入与IPC编码体积可实计；结果及方法状态是保守预留，不代表Python／Ray对象、socket缓冲或RSS实测。
 unknown、失联、取消请求及未消费结果不能按空闲释放；只有原终态／消费ACK／生产者退出证明结清相应责任。
-新预算及token组批／rolling／切包消融路径进入现有校准身份；C扫描不改变该身份，
+新预算及可选B／rolling路径进入现有校准身份；C扫描不改变该身份，
 预算或组织方式变化不得复用旧选择。token配置先按已有`PreparedBatching`校验和补齐默认字段，
 省略`max_rows`与显式`null`等有效配置共用同一身份。
 [配置／容量边界CPU检查](../../tests/experiments/test_records_resource_budget.py)和
 [CPU子进程IPC检查](../../tests/execution_provider/test_lotus_resource_budget_runtime.py)不授予真实模型、内存容量或性能资格。
 
-### 固定 rolling 的 B 切包消融（仅实验）
-
-固定 rolling 配置在普通 Movie `check/run` 或 Session plan 根部可显式加入
-`"experimental_skip_token_packing": true`。仍提供原来合法的正值 B 和
-`max_rows:null`，同时 `rolling_refill:true`；可独立选择当前 `resource_feedback`，不允许
-`batch_feedback` 或批数并发。旧预算（`core_capacity.budget`省略／null）
-固定 C_request=R；[显式独立资源预算](#显式独立资源预算默认关闭本地cpu候选)允许固定 C_request<R，
-硬请求额度 R 由 `budget.active_requests` 声明，IPC 另按其有限额度背压。
-只旁路 token 切包，仍按当前合法 ready、兼容性、C/R 空位及 RPC/IPC 字节硬限提交，
-ready 只有一条就发一条，不等待凑满或上一包全部结束。成员/驻留、输入/结果、单请求 context
-及引擎容量保护不变。R 与 native max_num_seqs 独立，后者不是应用批大小。
-
-默认省略/false 不变，fused 和其他 token 策略保持原状。B 与旁路标记均进入配置/实际报告；
-不装动态 B 或动态 C 控制器。该选项会改变包成员，须独立于成员等价的降开销补丁评审。
-当前仅支持[CPU 机制回放](../execution_provider/adapters/README.md#fixed-rolling-token-packing-ablation-cpu-experiment-only)，
-不是新 SemBench 成绩；真实模型的完整查询时间、gold、输出变化和引擎供给/排队仍待验证。
+旧正值 B 旁路与 CPU 微基准已退出当前入口，准确实现和原身份见[历史来源](../../../experiments/reproduction/native_baselines/README.md#retired-positive-B-token-packing-bypass)。
+当前 rolling 省略 `prepared_batching` 即不按 token 封包；显式正值 B 仍按原方式组批。
 
 ### 请求级动态 rolling 补位（本地CPU候选）
 

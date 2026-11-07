@@ -128,15 +128,11 @@ def checked_preparation_options(batching, *, interleaved_preparation=False, even
 
 
 def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=None, batch_feedback=None,
-                            rolling_refill=False, experimental_skip_token_packing=False, *,
+                            rolling_refill=False, *,
                             interleaved_preparation=False, event_driven_preparation=False):
     """Resolve prepared transport and optional token packing before allocation."""
     if type(rolling_refill) is not bool:
         raise ValueError('rolling_refill must be boolean')
-    if type(experimental_skip_token_packing) is not bool:
-        raise TypeError('experimental_skip_token_packing must be boolean')
-    if experimental_skip_token_packing and not rolling_refill:
-        raise ValueError('experimental token packing bypass requires rolling requests')
     if prepared_batching is None and not rolling_refill:
         if batch_concurrency is not None or batch_feedback is not None:
             raise ValueError('batch controls require prepared_batching')
@@ -182,8 +178,7 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
                       'single complete model request; soft C_request, independent resident R'
                       if 'request_feedback' in feedback else
                       'single complete model request; also the inherited resident-row limit'), **feedback,
-        **({} if 'resource_budget' not in resolved else dict(resource_budget=resolved['resource_budget'])),
-        **(dict(experimental_skip_token_packing=True) if experimental_skip_token_packing else {}))
+        **({} if 'resource_budget' not in resolved else dict(resource_budget=resolved['resource_budget'])))
     batching.update(checked_preparation_options(batching, interleaved_preparation=interleaved_preparation,
                                                event_driven_preparation=event_driven_preparation))
     return batching

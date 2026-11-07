@@ -519,34 +519,10 @@ The [CPU counter tests](../../../tests/execution_provider/test_lotus_batch_count
 cover history eviction, handoff failure/cancellation, polling and resident reuse.
 Counter qualification is CPU-only; no new model performance evidence is implied.
 
-### Fixed rolling token-packing ablation (CPU experiment only)
-
-The same factory and record-local organizer accept
-`experimental_skip_token_packing=True` with `rolling_refill=True`.
-Keep the ordinary positive-B `PreparedBatching('token_budget', None, B)` config:
-the experimental option bypasses only token-based packet sealing. Legacy budgets use C_request=R;
-the existing FIFO/compatibility, resident/member/result capacity and exact RPC/IPC
-byte bounds remain. A nonempty ready frontier is sent immediately; neither a full
-packet nor the previous packet's final member is required. The flag rejects non-rolling/fused paths; current request feedback may be selected
-independently. Omission/false retains explicit B packing. The flag installs no
-dynamic B/C controller and does not merge R with native engine sequence capacity.
-To omit token packing entirely, leave `prepared_batching` unset as described below;
-a manufactured B or experimental flag is unnecessary.
-
-`B` remains declared in the receipt, accompanied by the explicit experimental
-flag when bypassed. This changes packet membership, unlike preparation or dispatch
-overhead changes that preserve members. Compare each request's identity, prompt,
-generation and final output separately. GPU request arrival order/batching can
-change; CPU fixture equality is not a guarantee of native numerical equivalence.
-
-The [fixed-C CPU replay](../../../tests/execution_provider/test_lotus_token_packing_bypass.py)
-compares identical ready/C snapshots, records actual extra-member opportunities
-and separately drains both modes through immediate CPU stubs. Run from `code/`:
-`python -m tests.execution_provider.test_lotus_token_packing_bypass --microbenchmark`.
-Its encoding, stub-submit CPU and first-stub handoff times are not query/vLLM/GPU
-performance. Eight free slots with eight members exactly reaching B cannot admit
-a ninth member even when the token sealing reason occurs. Real-model query and
-quality qualification remain pending.
+<a id="fixed-rolling-token-packing-ablation-cpu-experiment-only"></a>
+The former positive-B token-packing bypass and its CPU microbenchmark are historical only.
+Their exact source and experiment identities are [recoverable](../../../../experiments/reproduction/native_baselines/README.md#retired-positive-B-token-packing-bypass).
+Current rolling requests omit `prepared_batching` to skip token packing; explicit B still enables packing.
 
 ### Optional request resource feedback (local CPU candidate)
 

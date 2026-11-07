@@ -46,7 +46,7 @@ from .records_scan import prepare_native_records_scan
 
 def create_records_core(method, engine, generation, resources=None, *, profile=None, async_limits=None,
                         prepared_batching=None, batch_concurrency=None, batch_feedback=None, rolling_refill=False,
-                        resident=False, experimental_skip_token_packing=False, capacity=None,
+                        resident=False, capacity=None,
                         interleaved_preparation=False, event_driven_preparation=False,
                         service_budget=None, service_allocation_bytes=None, service_delivery=None):
     """Select existing ownership; both Movie lifecycles use this same factory."""
@@ -57,7 +57,6 @@ def create_records_core(method, engine, generation, resources=None, *, profile=N
             async_limits=async_limits, prepared_batching=prepared_batching, service_delivery=service_delivery,
             batch_concurrency=batch_concurrency, batch_feedback=batch_feedback,
             rolling_refill=rolling_refill, resident=resident,
-            experimental_skip_token_packing=experimental_skip_token_packing,
             interleaved_preparation=interleaved_preparation,
             event_driven_preparation=event_driven_preparation)
     if resources is None:
@@ -70,7 +69,7 @@ def create_records_core(method, engine, generation, resources=None, *, profile=N
         prepared_batching=prepared_batching, rolling_refill=rolling_refill)
     capacity, resolved, async_limits = configured.capacity, configured.profile, configured.async_limits
     batching = resolve_record_batching(resolved, prepared_batching, batch_concurrency, batch_feedback, rolling_refill,
-        experimental_skip_token_packing, interleaved_preparation=interleaved_preparation,
+        interleaved_preparation=interleaved_preparation,
         event_driven_preparation=event_driven_preparation)
     effective = replace(resources, max_active_batches=resolved.get("owner_max_inflight", resolved["max_inflight"]))
     if batching is not None:

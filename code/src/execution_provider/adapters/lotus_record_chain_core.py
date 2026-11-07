@@ -70,7 +70,7 @@ class SemLoomRecordChainCore:
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
                  batch_feedback=None, rolling_refill=False, request_feedback=None, resident=False,
-                 experimental_skip_token_packing=False, request_window=None):
+                 request_window=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -126,11 +126,6 @@ class SemLoomRecordChainCore:
                 raise ValueError('batch_concurrency must fit the member request grant')
         elif batch_concurrency is not None or batching_tokenizer is not None or rolling_refill:
             raise ValueError('batch controls require record-local token batching')
-        if type(experimental_skip_token_packing) is not bool:
-            raise TypeError('experimental_skip_token_packing must be boolean')
-        if experimental_skip_token_packing and not (self._async_token_batches and rolling_refill):
-            raise ValueError('experimental token packing bypass requires record-local rolling batches')
-        self.experimental_skip_token_packing = experimental_skip_token_packing
         if batch_feedback is not None:
             from src.scheduling.submission_control.stage_work import SupplyFeedbackConfig
             if type(batch_feedback) is not SupplyFeedbackConfig:

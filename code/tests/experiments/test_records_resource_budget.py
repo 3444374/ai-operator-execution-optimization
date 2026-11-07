@@ -296,7 +296,7 @@ class ResourceBudgetIdentityTests(unittest.TestCase):
         larger = deepcopy(plan)
         larger['prepared_batching']['token_budget'] = 20000
         self.assertNotEqual(self.identity(larger), initial)
-        self.assertNotEqual(self.identity(dict(plan, experimental_skip_token_packing=True)), initial)
+        self.assertNotEqual(self.identity(dict(plan, prepared_batching=None)), initial)
 
 
 if __name__ == '__main__':

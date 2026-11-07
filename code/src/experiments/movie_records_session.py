@@ -32,7 +32,7 @@ def check_plan(plan):
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
     optional = {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                'experimental_skip_token_packing', 'core_capacity', 'async_limits', 'preparation_mode',
+                'core_capacity', 'async_limits', 'preparation_mode',
                 'service_payload_bytes'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
@@ -66,7 +66,7 @@ def check_plan(plan):
     if plan['backend'] != 'semloom-core' and set(plan) & {'core_capacity', 'async_limits'}:
         raise ValueError('core_capacity and async_limits require semloom-core')
     if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
-                                                       'experimental_skip_token_packing', 'preparation_mode'}):
+                                                       'preparation_mode'}):
         raise ValueError('record batching options require semloom-core')
     if plan['backend'] == 'daft' and plan['lifecycle'] != 'native_single_thread_session':
         daft_native_profile(plan['profile'])

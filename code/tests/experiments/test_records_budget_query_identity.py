@@ -99,7 +99,6 @@ class CanonicalOrganizationTests(unittest.TestCase):
     def test_implicit_and_explicit_token_defaults_have_one_effective_identity(self):
         explicit = deepcopy(self.plan)
         explicit['prepared_batching']['max_rows'] = None
-        explicit['experimental_skip_token_packing'] = False
         resources = RecordsResources(**self.plan['resources'])
         resolved = core.resolve_core_profile(EngineSpec.from_dict(self.plan['engine']), resources,
             self.plan['profile'], rolling_refill=True, capacity=capacity())
@@ -122,8 +121,7 @@ class CanonicalOrganizationTests(unittest.TestCase):
         larger_budget = deepcopy(explicit)
         larger_budget['core_capacity']['budget']['input_bytes'] += 1
         variants.append(larger_budget)
-        bypass = dict(explicit, experimental_skip_token_packing=True)
-        variants.append(bypass)
+        variants.append(dict(explicit, prepared_batching=None))
         for variant in variants:
             with self.subTest(variant=variant):
                 selection = calibration.resolve_core_selection(path, self.identity(variant))
