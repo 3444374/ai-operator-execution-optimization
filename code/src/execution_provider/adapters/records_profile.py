@@ -146,7 +146,7 @@ def resolve_record_batching(resolved, prepared_batching=None, batch_concurrency=
     if resolved['mode'] != 'async' or ('admission' in resolved and not rolling_refill) or resolved['stage_timing']:
         raise ValueError('record batching requires async execution; admission requires rolling_refill, stage_timing is unsupported')
     if 'resource_budget' in resolved and not rolling_refill:
-        raise ValueError('explicit resource budgets currently support ordinary requests or rolling token requests')
+        raise ValueError('explicit resource budgets currently support ordinary requests or rolling prepared requests')
     requests = resolved.get('owner_max_inflight', resolved['max_inflight'])
     if rolling_refill and (batch_concurrency is not None or batch_feedback is not None):
         raise ValueError('rolling_refill uses request R, not batch_concurrency or batch_feedback')
