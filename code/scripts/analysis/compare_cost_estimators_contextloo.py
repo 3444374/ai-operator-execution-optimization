@@ -403,6 +403,9 @@ def evaluate(paths: list[Path], *, source_reference: str) -> dict[str, Any]:
             "comparison_module_sha256": _sha256(
                 CODE_ROOT / "src" / "experiments" / "operator_costs" / "comparison.py"
             ),
+            "profile_estimator_module_sha256": _sha256(
+                CODE_ROOT / "src" / "experiments" / "operator_costs" / "estimators.py"
+            ),
             "estimator_module_sha256": _sha256(
                 CODE_ROOT / "src" / "planning" / "costs" / "estimators.py"
             ),

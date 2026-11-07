@@ -4,10 +4,10 @@ from __future__ import annotations
 import numpy as np
 
 from src.planning.costs.regression import RidgeCostEstimator
-from src.planning.costs.estimators import (
+from src.planning.costs.estimators import LightGBMCostEstimator
+from .estimators import (
     AnalyticalCostEstimator,
     HybridCostEstimator,
-    LightGBMCostEstimator,
     LookupCostEstimator,
 )
 

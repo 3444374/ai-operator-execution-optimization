@@ -968,7 +968,8 @@
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
         "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
         "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz",
-        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz"
+        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
+        "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1501,6 +1502,11 @@
           "encoding": "gzip",
           "decoded_bytes": 13698,
           "archive_sha256": "7db226c6a1795d36eb3974698f1961412a7dfeeb759aac056fb7334d6493d2db"
+        },
+        "code/src/planning/costs/estimators.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9919,
+          "archive_sha256": "139c1bffb797bd9c5776d52c4ab6e3a052c968aea44389f2da206aeca41c25f0"
         }
       }
     },
@@ -2497,7 +2503,8 @@
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
         "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
         "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz",
-        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz"
+        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
+        "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3030,6 +3037,11 @@
           "encoding": "gzip",
           "decoded_bytes": 13698,
           "archive_sha256": "7db226c6a1795d36eb3974698f1961412a7dfeeb759aac056fb7334d6493d2db"
+        },
+        "code/src/planning/costs/estimators.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9919,
+          "archive_sha256": "139c1bffb797bd9c5776d52c4ab6e3a052c968aea44389f2da206aeca41c25f0"
         }
       }
     },
@@ -4036,7 +4048,8 @@
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
         "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
         "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz",
-        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz"
+        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
+        "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4569,6 +4582,11 @@
           "encoding": "gzip",
           "decoded_bytes": 13698,
           "archive_sha256": "7db226c6a1795d36eb3974698f1961412a7dfeeb759aac056fb7334d6493d2db"
+        },
+        "code/src/planning/costs/estimators.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9919,
+          "archive_sha256": "139c1bffb797bd9c5776d52c4ab6e3a052c968aea44389f2da206aeca41c25f0"
         }
       }
     },
@@ -5577,7 +5595,8 @@
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
         "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
         "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz",
-        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz"
+        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
+        "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6115,6 +6134,11 @@
           "encoding": "gzip",
           "decoded_bytes": 13698,
           "archive_sha256": "7db226c6a1795d36eb3974698f1961412a7dfeeb759aac056fb7334d6493d2db"
+        },
+        "code/src/planning/costs/estimators.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9919,
+          "archive_sha256": "139c1bffb797bd9c5776d52c4ab6e3a052c968aea44389f2da206aeca41c25f0"
         }
       }
     },
@@ -7128,7 +7152,8 @@
         "code/src/scheduling/submission_control/flush.py": "historical_sources/af63c0e5/code/src/scheduling/submission_control/flush.py.gz",
         "code/src/scheduling/organization/token_budget.py": "historical_sources/af63c0e5/code/src/scheduling/organization/token_budget.py.gz",
         "code/src/scheduling/submission_control/capacity.py": "historical_sources/769a7307/code/src/scheduling/submission_control/capacity.py.gz",
-        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz"
+        "code/src/planning/costs/regression.py": "historical_sources/24a2b75b/code/src/planning/costs/regression.py.gz",
+        "code/src/planning/costs/estimators.py": "historical_sources/4df3ccd7/code/src/planning/costs/estimators.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7666,6 +7691,11 @@
           "encoding": "gzip",
           "decoded_bytes": 13698,
           "archive_sha256": "7db226c6a1795d36eb3974698f1961412a7dfeeb759aac056fb7334d6493d2db"
+        },
+        "code/src/planning/costs/estimators.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 9919,
+          "archive_sha256": "139c1bffb797bd9c5776d52c4ab6e3a052c968aea44389f2da206aeca41c25f0"
         }
       }
     }
