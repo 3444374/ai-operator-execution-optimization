@@ -8,7 +8,7 @@
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切片文字保留其对应版本的状态。
 
 <a id="current-refactor-status"></a>
-## 当前实施状态（2026-11-06）
+## 当前实施状态（2026-11-07）
 
 <a id="refactor-completion-checklist"></a>
 ### 已处理清单与剩余事项
@@ -78,7 +78,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [离线CSV特征归位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)保留23维schema、Ridge数学及原八项前后CPU；27行仅重新归类，全部Python净变化为零，五份历史恢复保持。
 [旧正B旁路退役](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)后直接选择正常B／NoB，旧校准身份保留历史解释，十二项CPU及组合源码核对完成，四项软件IPC另待补验。
 [CSV估计器与矩阵数学归位](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-csv-cost-estimators)保持七项CPU与七份预测数组；当前数学和CSV字段各有所属，完整context-LOO评估未重跑。
-[准确4df3派生IPC回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)已核原件，单项一次通过，零模型／真实Ray；4e0994四项软件验证尚未派送，服务器会话通信暂断，不重复旧项。
+[准确4df3派生IPC回执](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)已核原件，单项一次通过，零模型／真实Ray；[后续四项软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#software-ipc-946-dispatch)已派准确946412e6，但SSH认证失败，四项均未启动，不重复旧项。
 [真实CSV→JSON用例](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#context-loo-real-json-fixture)移除自载脚本与临时文件形状要求，实际验证四行、两fold及六源摘要；只用CE0_mean，平台说明明确为fixture，完整模型评估未运行。
 CLIP命令先由1544行拆为281行，补异常收尾后为295行；准备、执行观测和报告各归实际模块，成功路径参数与输出保持。
 核心没有千行以上文件；拆文件不算减少总代码，研究编排剩余大文件按真实消费者另行检查。

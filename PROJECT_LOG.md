@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：恢复四项软件IPC派送
+
+[准确946四项派送](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#software-ipc-946-dispatch)先核服务器会话没有该清单记录，随后交原执行者串行处理。SSH认证失败，四项均未启动，不能确认服务端现状；本地源码及Git检查继续，不反复尝试登录或安装等待同意的vLLM0.22环境。
+
 ## 2026-11-07：用真实JSON替代实现形状检查
 
 [context-LOO现有CSV用例](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#context-loo-real-json-fixture)改为正常包导入，真实CE0均值与写文件，核四行／两fold、CSV身份和六项源码摘要；临时文件内部实现的要求移除。

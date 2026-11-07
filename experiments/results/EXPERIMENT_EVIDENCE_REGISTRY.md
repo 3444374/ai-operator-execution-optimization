@@ -2122,3 +2122,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [真实context-LOO JSON用例](diagnostics/records_runtime_refactor_20261104/README.md#context-loo-real-json-fixture)
 记录eda0到8babe的普通包导入、四行／两fold／CE0_mean和实际JSON六源摘要；只有平台描述为fixture，生产未改，原Popen受阻与九项非必要重复均保留且不累加，不宣称完整拟合或研究评估通过。
+
+[准确946四项软件IPC派送](diagnostics/records_runtime_refactor_20261104/README.md#software-ipc-946-dispatch)
+通信恢复后核旧回执再派原四项，所选实现与4e相同；SSH认证失败，实际启动0项，服务端源码／进程／许可未能核实。没有新的测试结果、环境变更或模型／Ray运行，恢复登录后先核状态再继续。
