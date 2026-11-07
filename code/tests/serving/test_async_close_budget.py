@@ -72,22 +72,37 @@ def messages(raw):
 
 class CloseBudgetTests(unittest.TestCase):
     def test_parent_sends_remaining_api_time_and_exit_alone_keeps_unknown(self):
-        for timeout, pending_abort in ((30., False), (.25, True)):
-            with self.subTest(timeout=timeout, pending_abort=pending_abort):
+        cases = ((30., 'empty', None), (.25, 'pending_abort', 'ModelOutcomeUnknown'),
+                 (30., 'confirmed', None), (30., 'reset', 'ConnectionResetError'))
+        for timeout, case, expected_error in cases:
+            with self.subTest(timeout=timeout, case=case):
+                pending_abort = case == 'pending_abort'
+                confirmed = case == 'confirmed'
                 owner = object.__new__(parent.AsyncEngineProcess)
                 owner.limits = limits()
+                owner.spec = EngineSpec('/tmp/memory-model', sys.executable, sys.executable)
                 owner._condition = threading.Condition()
                 owner._stop, owner._io_done = threading.Event(), threading.Event()
                 owner._closing = owner._close_sent = owner._drain_requested = False
                 owner._data, owner._control, owner._results = (MemorySocket() for _ in range(3))
                 owner._sockets = [owner._data, owner._control, owner._results]
                 owner._data_commands, owner._controls, owner._ready = deque(), deque(), deque()
-                owner._slots = {"owner:0": parent._Slot({}, 9)} if pending_abort else {}
-                owner._owner_uid, owner._sequence = "owner", int(pending_abort)
+                owner._slots = {"owner:0": parent._Slot({}, 9)} if pending_abort or confirmed else {}
+                owner._owner_uid, owner._sequence = "owner", int(pending_abort or confirmed)
                 owner.ready_report, owner.engine_close_report = {"engine_uid": "memory"}, None
                 owner._producer_report = owner._producer_quiescence = None
                 owner._retired_unknown, owner._submitted_batches = set(), 0
-                owner._broken, owner._thread = "ModelOutcomeUnknown", None
+                owner._broken, owner._thread = "ModelOutcomeUnknown" if pending_abort else None, None
+                result = dict(status='succeeded', engine_terminal_confirmed=True)
+                if confirmed:
+                    owner._receive(dict(op='terminal', request_id='owner:0', confirmed=True,
+                                        result=result), results=True, encoded_bytes=23)
+                if case == 'empty':
+                    owner._closing = True
+                    with patch.object(owner._condition, 'wait') as waiting:
+                        owner.wait(.05)
+                    waiting.assert_called_once_with(.05)
+                    owner._closing = False
 
                 class Process:
                     pid = 123
@@ -104,7 +119,10 @@ class CloseBudgetTests(unittest.TestCase):
                 owner.process = owner._owned_process = Process()
                 def memory_select(reads, writes, errors, timeout):
                     sent = messages(owner._control.sent)
-                    return (reads if any(value['op'] == 'close' for value in sent) else [], writes, [])
+                    closing = any(value['op'] == 'close' for value in sent)
+                    if closing and case == 'reset':
+                        raise ConnectionResetError('memory transport reset')
+                    return (reads if closing else [], writes, [])
 
                 if pending_abort:
                     self.assertTrue(owner.abort('owner:0'))
@@ -122,10 +140,23 @@ class CloseBudgetTests(unittest.TestCase):
                 self.assertEqual(report["status"], "unknown")
                 self.assertTrue(report["process_exit_confirmed"])
                 self.assertIsNone(report["producer_quiescence"])
+                self.assertEqual(report['transport_error'], expected_error)
                 self.assertEqual(report["unknown_requests"], int(pending_abort))
                 self.assertEqual(report["input_bytes"], 9*pending_abort)
                 self.assertEqual(report['reserved_result_bytes'],
-                                 owner.limits.item_result_bytes*pending_abort)
+                                 owner.limits.item_result_bytes*(pending_abort or confirmed))
+                self.assertEqual(report['buffered_result_bytes'], 23*confirmed)
+                if pending_abort or confirmed:
+                    event, = owner.poll()
+                    self.assertIs(event.engine_terminal_confirmed, confirmed)
+                    self.assertEqual(event.result, result if confirmed else None)
+                    self.assertEqual(owner._usage()['input_bytes'], 9*pending_abort)
+                    self.assertEqual(owner._usage()['reserved_result_bytes'],
+                                     owner.limits.item_result_bytes*pending_abort)
+                self.assertTrue(owner._io_done.is_set())
+                with patch.object(owner._condition, 'wait',
+                                  side_effect=AssertionError('finished I/O cannot produce another event')):
+                    owner.wait(.05)
 
     def test_actual_worker_uses_close_time_and_keeps_failure_cleanup_separate(self):
         cases = (

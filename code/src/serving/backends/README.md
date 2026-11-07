@@ -36,6 +36,11 @@ Request outcomes, retained unknown reservations, and the separate engine/produce
 original-Popen and parent-I/O evidence required for retirement are unchanged.
 Physical GPU and descendant exit are reported by their actual external owners.
 
+Closing creates unknown outcomes only for requests still missing a terminal;
+an empty owner or confirmed unconsumed results do not invent a transport error.
+Existing transport errors and result reservations remain. `wait` can still await
+results during close, but does not wait after parent I/O has ended.
+
 ## Sync close timing
 
 `vllm_sync_process.EngineProcess` sends its existing API-wait deadline to both

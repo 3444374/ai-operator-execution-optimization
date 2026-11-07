@@ -355,7 +355,7 @@ class AsyncEngineProcess:
     def wait(self, timeout=0.05):
         common._number(timeout, "wait timeout", low=0, inclusive_low=False)
         with self._condition:
-            if not self._ready and self._broken is None:
+            if not self._ready and self._broken is None and not self._io_done.is_set():
                 self._condition.wait(timeout)
 
     def _uncertain(self, reason):
@@ -549,7 +549,8 @@ class AsyncEngineProcess:
                 errors.append("io_drain: " + type(error).__name__)
             self._finish_io(deadline, errors)
         with self._condition:
-            self._uncertain("ClosedWithoutConfirmedTerminal")
+            if any(slot.terminal is None for slot in self._slots.values()):
+                self._uncertain("ClosedWithoutConfirmedTerminal")
             usage = self._usage()
             exited = self.process is None
             try:
