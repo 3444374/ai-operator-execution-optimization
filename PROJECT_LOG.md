@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：实验场景参数按完整值匹配
+
+[数值匹配修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scenario-option-value-match)把子串判断改为复用原选项解析，声明32与实际320不再混同。两个既有方法扩展空格／等号和实际strict核对场景，五个方法修前四个子场景失败、修后全过；没有新增参数检查、方法或真实服务运行，历史映射保持。
+
 ## 2026-11-07：实验服务核对归位并移除旧矩阵校验图
 
 [服务职责整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-service-preflight-ownership)按两个实际实验调用者收拢命令行和0.25.1身份核对，删除旧live矩阵的十个无现用者函数；当前launcher及资源声明行为保留。十五个CPU用例前后通过，三份原件保存并核对十五条历史读取。源码实际净减372行、测试净减429行，不把移入实验目录的行数另算删除，也不恢复旧矩阵或运行服务器。

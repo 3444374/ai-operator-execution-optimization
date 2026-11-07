@@ -95,7 +95,7 @@ def cmdline_for_port(cmdlines, port):
 def flag_value_present(cmdline, flag, value):
     """True iff cmdline carries ``<flag> <value>`` or ``<flag>=<value>``. Pure for unit testing."""
 
-    return f"{flag} {value}" in cmdline or f"{flag}={value}" in cmdline
+    return str(value) in _option_values(cmdline, flag)
 
 
 def prefix_cache_flag_enabled(cmdline):

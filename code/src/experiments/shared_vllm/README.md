@@ -6,7 +6,7 @@ Shared-service coordination and SAOR policies live in
 
 - `config.py` keeps the typed scenarios, work-cost values, control settings, capacity arithmetic
   and argument readers used by research methods and offline evidence audits.
-- `preflight.py` supplies the idle reader, command-line matching and process reader used by the maintained scenario script.
+- `preflight.py` supplies the idle reader, exact command-line option matching and process reader used by the maintained scenario script.
 - `metrics.py` exports group-level service deltas and shared-credit utilization.
 - `fairness_metrics.py` derives service rates and completion-accounted fairness.
 - `resource_metrics.py` summarizes recorded GPU, vLLM, CPU, memory and energy samples.

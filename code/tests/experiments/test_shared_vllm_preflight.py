@@ -31,16 +31,20 @@ class VllmPreflightPureTests(unittest.TestCase):
         self.assertIsNone(prefix_cache_flag_enabled(self._cmd(8000, prefix="absent")))
 
     def test_verify_endpoint_cmdlines_strict_raises_on_missing_flag(self):
-        # port 8001's cmdline omits --max-num-seqs 256 -> strict must fail-closed.
-        pool = [self._cmd(8000), "python -m vllm.entrypoints --port=8001 --max-num-batched-tokens 8192 --enable-prefix-caching"]
-        with self.assertRaises(RuntimeError):
-            verify_endpoint_cmdlines(
-                pool,
-                ["http://127.0.0.1:8000/v1/completions", "http://127.0.0.1:8001/v1/completions"],
-                {"--max-num-seqs": "256", "--max-num-batched-tokens": "8192"},
-                strict=True,
-                tag="cost-profile",
-            )
+        commands = [
+            "python -m vllm.entrypoints --port=8001 --max-num-batched-tokens 8192 --enable-prefix-caching",
+            self._cmd(8001, seqs="2560"),
+            self._cmd(8001).replace("--max-num-seqs 256", "--max-num-seqs=2560"),
+        ]
+        for command in commands:
+            with self.subTest(command=command), self.assertRaises(RuntimeError):
+                verify_endpoint_cmdlines(
+                    [self._cmd(8000), command],
+                    ["http://127.0.0.1:8000/v1/completions", "http://127.0.0.1:8001/v1/completions"],
+                    {"--max-num-seqs": "256", "--max-num-batched-tokens": "8192"},
+                    strict=True,
+                    tag="cost-profile",
+                )
 
     def test_verify_endpoint_cmdlines_passes_when_all_declared_present(self):
         pool = [self._cmd(8000), self._cmd(8001)]
@@ -57,3 +61,6 @@ class VllmPreflightPureTests(unittest.TestCase):
         self.assertTrue(flag_value_present(c, "--max-num-seqs", "256"))
         self.assertTrue(flag_value_present(c, "--max-num-batched-tokens", "8192"))
         self.assertFalse(flag_value_present(c, "--max-num-seqs", "512"))
+        for command in ("--max-num-seqs 320", "--max-num-seqs=320"):
+            with self.subTest(command=command):
+                self.assertFalse(flag_value_present(command, "--max-num-seqs", "32"))

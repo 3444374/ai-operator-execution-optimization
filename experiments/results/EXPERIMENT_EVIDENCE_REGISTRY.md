@@ -2182,3 +2182,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [实验服务职责与旧矩阵校验图](diagnostics/records_runtime_refactor_20261104/README.md#experiment-service-preflight-ownership)
 按两个实际实验调用者迁移十个保留函数和六份常量，删除十个无现用者的旧校验函数及十个专属方法；当前launcher和四类资源行为保留。十五项纯CPU前后通过，三个原件及十五条历史读取保持；没有Linux进程采样、真实venv／子进程、服务或模型运行，原数字前缀误匹配另记未修。
+
+[实验场景参数完整值匹配](diagnostics/records_runtime_refactor_20261104/README.md#scenario-option-value-match)
+独立于结构整理修复原数值前缀误判，直接复用已有选项解析；五方法同测试字节修前四子场景失败、修后全过，没有新方法。两种参数表示和实际strict调用均覆盖；只有合成命令，无服务或模型，历史MANIFEST与归档字节保持，没有重复恢复验证。
