@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：现用COCO导入器统一资源管理
+
+[数据导入整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#coco-import-resource-ownership)修正连接、前置提交及核验失败绕过关闭的问题，移除分支重复close，保持事务和输出。一个临时ZIP／假PG方法的三个反例修后通过，原三个身份／读取方法保持；五历史投影改读同一份精确279原件，不执行数据库导入或模型。
+
 ## 2026-11-07：IPC默认补值收敛到原类型
 
 [IPC默认归属](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ipc-defaults-owner)只删适配层三行重复默认，由现有协议类型完成相同计算；独立预算、显式值、控制槽和原错误检查保持。四个原CPU方法前后通过，测试和协议源码未改，没有新增物理容量推断或模型配置。

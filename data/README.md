@@ -130,6 +130,9 @@ COCO train 压缩包约 19 GB，导入 PostgreSQL 后还会再占一份 BYTEA/�
 COCO split 的 source ID 可能重叠，canonical row identity 是
 `(workload_name, doc_id)`，不是全局 `doc_id`；禁止通过 split-specific 数字偏移伪造唯一性。
 
+COCO导入器统一管理ZIP与数据库连接，连接、前置提交或提交后核验抛错也会结束已取得的资源；原加载事务、SQL、行ID和退出码保持。
+[资源行为检查](../code/tests/data/test_import_coco_images.py)使用临时ZIP与假数据库，不表示真实PostgreSQL回滚或数据导入已经验证。
+
 ## Boundary
 
 Do not use the earlier synthetic `documents` seed as the final comparison

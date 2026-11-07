@@ -24,6 +24,7 @@ Usage
 """
 
 import argparse
+from contextlib import ExitStack
 import os
 import sys
 import time
@@ -114,93 +115,84 @@ def main():
     import psycopg
     from psycopg import sql
 
-    archive = ZipFile(args.zip) if args.zip else None
-    source_label = args.zip or args.dir
-    paths = (
-        list_zip_images(archive, args.pattern, args.limit, args.offset)
-        if archive is not None
-        else list_images(args.dir, args.pattern, args.limit, args.offset)
-    )
-    if not paths:
-        if archive is not None:
-            archive.close()
-        print(f"ERROR: no {args.pattern} under {source_label}", file=sys.stderr)
-        sys.exit(3)
-    print(f"loading {len(paths)} images from {source_label} -> {args.table} "
-          f"(workload={args.workload}, batch={args.batch})")
-
-    conn = psycopg.connect(args.pg_dsn)
-    versions = get_versions(conn)
-    print(f"versions: {versions}")
-    identity_columns = primary_key_columns(conn, args.table)
-    if identity_columns != ("workload_name", "doc_id"):
-        if archive is not None:
-            archive.close()
-        conn.close()
-        print(
-            "ERROR: image_documents identity must be PRIMARY KEY "
-            "(workload_name, doc_id); run "
-            "deploy/autodl/image_documents_workload_key.sql first "
-            f"(found {identity_columns})",
-            file=sys.stderr,
+    with ExitStack() as resources:
+        archive = resources.enter_context(ZipFile(args.zip)) if args.zip else None
+        source_label = args.zip or args.dir
+        paths = (
+            list_zip_images(archive, args.pattern, args.limit, args.offset)
+            if archive is not None
+            else list_images(args.dir, args.pattern, args.limit, args.offset)
         )
-        sys.exit(5)
-    # psycopg3 ``with conn:`` closes the connection on exit. End the implicit
-    # read transaction created by the metadata probes, then use an explicit
-    # transaction context so post-commit verification can reuse the connection.
-    conn.commit()
+        if not paths:
+            print(f"ERROR: no {args.pattern} under {source_label}", file=sys.stderr)
+            sys.exit(3)
+        print(f"loading {len(paths)} images from {source_label} -> {args.table} "
+              f"(workload={args.workload}, batch={args.batch})")
 
-    table_identifier = sql.Identifier(args.table)
-    insert_sql = sql.SQL(
-        "INSERT INTO {} (doc_id, workload_name, image, image_bytes) "
-        "VALUES (%s, %s, %s, %s)"
-    ).format(table_identifier)
-    t0 = time.perf_counter()
-    total_bytes = 0
-    try:
-        # Single transaction: replace only this workload (atomic on failure).
-        with conn.transaction():
-            with conn.cursor() as cur:
-                cur.execute(
-                    sql.SQL("DELETE FROM {} WHERE workload_name = %s").format(
-                        table_identifier
-                    ),
-                    (args.workload,),
-                )
-                buf = []
-                for i, p in enumerate(paths):
-                    b = archive.read(str(p)) if archive is not None else p.read_bytes()
-                    buf.append((coco_doc_id(p), args.workload, b, len(b)))
-                    total_bytes += len(b)
-                    if len(buf) >= args.batch:
+        conn = psycopg.connect(args.pg_dsn)
+        resources.callback(conn.close)
+        versions = get_versions(conn)
+        print(f"versions: {versions}")
+        identity_columns = primary_key_columns(conn, args.table)
+        if identity_columns != ("workload_name", "doc_id"):
+            print(
+                "ERROR: image_documents identity must be PRIMARY KEY "
+                "(workload_name, doc_id); run "
+                "deploy/autodl/image_documents_workload_key.sql first "
+                f"(found {identity_columns})",
+                file=sys.stderr,
+            )
+            sys.exit(5)
+        # psycopg3 ``with conn:`` closes the connection on exit. End the implicit
+        # read transaction created by the metadata probes, then use an explicit
+        # transaction context so post-commit verification can reuse the connection.
+        conn.commit()
+
+        table_identifier = sql.Identifier(args.table)
+        insert_sql = sql.SQL(
+            "INSERT INTO {} (doc_id, workload_name, image, image_bytes) "
+            "VALUES (%s, %s, %s, %s)"
+        ).format(table_identifier)
+        t0 = time.perf_counter()
+        total_bytes = 0
+        try:
+            # Single transaction: replace only this workload (atomic on failure).
+            with conn.transaction():
+                with conn.cursor() as cur:
+                    cur.execute(
+                        sql.SQL("DELETE FROM {} WHERE workload_name = %s").format(
+                            table_identifier
+                        ),
+                        (args.workload,),
+                    )
+                    buf = []
+                    for i, p in enumerate(paths):
+                        b = archive.read(str(p)) if archive is not None else p.read_bytes()
+                        buf.append((coco_doc_id(p), args.workload, b, len(b)))
+                        total_bytes += len(b)
+                        if len(buf) >= args.batch:
+                            cur.executemany(insert_sql, buf)
+                            buf.clear()
+                        if (i + 1) % 1000 == 0:
+                            print(f"  {i + 1}/{len(paths)} ({(i + 1) / len(paths) * 100:.0f}%)...")
+                    if buf:
                         cur.executemany(insert_sql, buf)
-                        buf.clear()
-                    if (i + 1) % 1000 == 0:
-                        print(f"  {i + 1}/{len(paths)} ({(i + 1) / len(paths) * 100:.0f}%)...")
-                if buf:
-                    cur.executemany(insert_sql, buf)
-    except Exception as exc:  # noqa: BLE001
-        print(f"ERROR during load (transaction rolled back, table preserved): {exc}",
-              file=sys.stderr)
-        if archive is not None:
-            archive.close()
-        conn.close()
-        sys.exit(4)
+        except Exception as exc:  # noqa: BLE001
+            print(f"ERROR during load (transaction rolled back, table preserved): {exc}",
+                  file=sys.stderr)
+            sys.exit(4)
 
-    if archive is not None:
-        archive.close()
 
-    # Verify (read after commit).
-    with conn.cursor() as cur:
-        cur.execute(
-            sql.SQL(
-                "SELECT count(*), count(image), min(doc_id), max(doc_id) "
-                "FROM {} WHERE workload_name = %s"
-            ).format(table_identifier),
-            (args.workload,),
-        )
-        n, ni, mn, mx = cur.fetchone()
-    conn.close()
+        # Verify (read after commit).
+        with conn.cursor() as cur:
+            cur.execute(
+                sql.SQL(
+                    "SELECT count(*), count(image), min(doc_id), max(doc_id) "
+                    "FROM {} WHERE workload_name = %s"
+                ).format(table_identifier),
+                (args.workload,),
+            )
+            n, ni, mn, mx = cur.fetchone()
     elapsed = time.perf_counter() - t0
     print(f"loaded {n} rows (image non-null {ni}, doc_id {mn}..{mx}) in {elapsed:.1f}s, "
           f"{total_bytes / 1e6:.0f} MB -> PG {versions.get('server_version')}")

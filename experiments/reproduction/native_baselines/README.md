@@ -3,6 +3,12 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="coco-import-resource-source"></a>
+## COCO导入器资源管理修正前的来源
+
+现用导入器以标准资源作用域管理ZIP与连接，移除分支中的重复close；原事务和数据身份保持。
+准确公开`27929150d83f134ad5ad48c7aaf382ab40ae19ae`的[导入器原件](historical_sources/27929150/code/scripts/data/import_coco_images.py.gz)保存一次，解码SHA-256为`2f7521d433c91ba30f3f32c74c79c73c3b23938dccf7bffd4da31bc91d2a7007`。压缩前原文扫描无命中、无豁免；五投影只新增该来源与gzip格式，原预期摘要、投影身份和其它映射保持，五条读取逐字节核对通过，没有执行旧代码或重跑全部恢复。
+
 <a id="clip-profiler-entry-sources"></a>
 ## CLIP画像入口修正前的来源
 

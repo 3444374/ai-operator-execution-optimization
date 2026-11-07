@@ -30,6 +30,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 | 研究隔离与基础多查询 | 主线保留原固定份额、Job／flow轮转和统一资源责任；准确5b的服务器CPU与独立Ray方法通过，共享研究显式接入 | 5b模型5请求中4条正确、1条unknown，正常排空未通过；按用户要求暂停多查询新增实现与扩展测试，现有代码和失败保留 |
 | 旧实现与检查 | 旧PG／HTTP实验入口、fixed HTTP后端／工厂／Map装配、专用配置与测试已退出；图像owner直接拥有本地流程；无现用者的aiohttp包装、旧pickle／别名形状要求删除 | 保留当前Image／Core／IPC、原生LOTUS／Kalypso／Ray连接及离线旧校准身份；不把第三方原生HTTP误作SemLoom旧路径 |
 | 文档和恢复 | 配置用途集中于配置总览；准确 Git 来源、具名历史投影、原失败及运行身份保留；Kalypso实验脚本直接调用实验流程，baseline不再反向导入 | 当前源与每次服务器受测源分别解释，不转授整树或新 PG 接入资格 |
+| 安装声明与数据导入 | 本轮核对能力组、可选依赖并集及现用SQL／数据导入消费者；COCO入口统一ZIP／连接清理，四个CPU方法保持 | 依赖声明不等于服务器现装版本；其它导入器未逐函数复查，真实PG加载／回滚仍按实际环境验证 |
 
 ### 真实环境证据按源码解释
 
@@ -64,9 +65,9 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按本轮83d788后续EOF、画像入口、入队及IPC默认整理统计：核心`code/src`为49,100行，全部src＋scripts为101,199行，测试为92,324行，三目录合计193,523行。
+代码量按本轮COCO导入资源整理统计：核心`code/src`为49,100行，全部src＋scripts为101,191行，测试为92,400行，三目录合计193,591行。
 口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少4,991／39,136行，相对清理起点3fd减少12,528／48,446行。
+核心／宽口径相对固定main6a8a减少4,991／39,144行，相对清理起点3fd减少12,528／48,454行。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。
@@ -79,6 +80,7 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [画像入口及错误输出修正](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)删除两个裸同级导入，保留唯一共用读取实现；连接失败不回显DSN，异常使用原脱敏函数。两个CPU方法修前一失败／两错误、修后通过，无实际DB或模型；三份原件、五投影十五条读取保持，未重复整个恢复检查。
 [图像入队只检查一次](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)删除取源后与broker入队相邻的重复容量调用；源字节预留、描述符及入队校验保持。三个既有CPU／FakeRay方法前后通过，测试未改；unknown继续占额并阻止池复用。worker共享事件循环未机械拆分，真实Ray及模型范围不扩大。
 [IPC默认只由协议类型补齐](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ipc-defaults-owner)删除适配层三行重复补值，命令槽和总输入／结果字节交回原AsyncEngineLimits。控制槽的不同默认、显式／预算优先级及必要输入检查保持；四个既有CPU方法前后通过，没有新接口、策略或测试。
+[COCO导入资源归属](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#coco-import-resource-ownership)把ZIP及连接交给同一标准作用域，删除七处手工close；新行为方法修前复现三个资源未关闭场景，修后与原三方法全部通过。事务、SQL、行身份及退出码保持，旧源码与五历史读取保留；没有实际DB／模型运行。
 [两份历史原件恢复](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)单独修复847原有六处引用差异，保留旧预期／身份和原失败；一次恢复方法比较五投影3010份文件通过，当前生产代码不改。它不表示旧代码／模型已执行，也不覆盖较早十处差异的原记录。
 [阶段输入及时释放](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)在现有完成与driver关闭成功后丢两张输入索引，异常与未决传输保留数据；单个纯内存反例修前失败、修后通过，调用记录／关系／ACK不改，未测真实链或RSS。
 随后准确87cf的[三项有序软件IPC](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)全部通过，批提交、原解析及Map-first混合计划保持；零模型／真实Ray，清理已确认，不转授后续绑定修订。

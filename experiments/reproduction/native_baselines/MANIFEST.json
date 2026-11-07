@@ -974,7 +974,8 @@
         "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
         "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
         "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
-        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz",
+        "code/scripts/data/import_coco_images.py": "historical_sources/27929150/code/scripts/data/import_coco_images.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -1537,6 +1538,11 @@
           "encoding": "gzip",
           "decoded_bytes": 14346,
           "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
+        },
+        "code/scripts/data/import_coco_images.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7725,
+          "archive_sha256": "80463230254111958e4e9f6b757ca82f44a0150f8b9677db641f8fbf1c801ed9"
         }
       }
     },
@@ -2539,7 +2545,8 @@
         "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
         "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
         "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
-        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz",
+        "code/scripts/data/import_coco_images.py": "historical_sources/27929150/code/scripts/data/import_coco_images.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -3102,6 +3109,11 @@
           "encoding": "gzip",
           "decoded_bytes": 14346,
           "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
+        },
+        "code/scripts/data/import_coco_images.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7725,
+          "archive_sha256": "80463230254111958e4e9f6b757ca82f44a0150f8b9677db641f8fbf1c801ed9"
         }
       }
     },
@@ -4114,7 +4126,8 @@
         "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
         "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
         "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
-        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz",
+        "code/scripts/data/import_coco_images.py": "historical_sources/27929150/code/scripts/data/import_coco_images.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -4677,6 +4690,11 @@
           "encoding": "gzip",
           "decoded_bytes": 14346,
           "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
+        },
+        "code/scripts/data/import_coco_images.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7725,
+          "archive_sha256": "80463230254111958e4e9f6b757ca82f44a0150f8b9677db641f8fbf1c801ed9"
         }
       }
     },
@@ -5691,7 +5709,8 @@
         "code/integrations/imlane_records/model_lifecycle.py": "historical_sources/375fb692/code/integrations/imlane_records/model_lifecycle.py.gz",
         "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
         "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
-        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz",
+        "code/scripts/data/import_coco_images.py": "historical_sources/27929150/code/scripts/data/import_coco_images.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -6259,6 +6278,11 @@
           "encoding": "gzip",
           "decoded_bytes": 14346,
           "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
+        },
+        "code/scripts/data/import_coco_images.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7725,
+          "archive_sha256": "80463230254111958e4e9f6b757ca82f44a0150f8b9677db641f8fbf1c801ed9"
         }
       }
     },
@@ -7279,7 +7303,8 @@
         "code/tests/baselines/text/test_daft_native_session.py": "historical_sources/375fb692/code/tests/baselines/text/test_daft_native_session.py.gz",
         "code/scripts/profiling/profile_clip_preproc_stages.py": "historical_sources/83d78896/code/scripts/profiling/profile_clip_preproc_stages.py.gz",
         "code/scripts/profiling/profile_image_clip_preprocess_variants.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_preprocess_variants.py.gz",
-        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz"
+        "code/scripts/profiling/profile_image_clip_bottleneck.py": "historical_sources/83d78896/code/scripts/profiling/profile_image_clip_bottleneck.py.gz",
+        "code/scripts/data/import_coco_images.py": "historical_sources/27929150/code/scripts/data/import_coco_images.py.gz"
       },
       "default_selected": false,
       "source_formats": {
@@ -7852,6 +7877,11 @@
           "encoding": "gzip",
           "decoded_bytes": 14346,
           "archive_sha256": "1724d42f63759d21e06e92a504486826ce20a0d7f85608fdb5ccc7183c492082"
+        },
+        "code/scripts/data/import_coco_images.py": {
+          "encoding": "gzip",
+          "decoded_bytes": 7725,
+          "archive_sha256": "80463230254111958e4e9f6b757ca82f44a0150f8b9677db641f8fbf1c801ed9"
         }
       }
     }

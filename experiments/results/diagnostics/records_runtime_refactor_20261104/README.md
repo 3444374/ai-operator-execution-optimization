@@ -4968,3 +4968,10 @@ record-local runtime的Extract准备行和Filter/Map来源绑定原先会被旧�
 
 records_capacity._ipc_limits删除command_slots、input_bytes及result_bytes的三个setdefault；既有AsyncEngineLimits省略时已分别按请求数、请求数乘单项输入及结果槽乘单项结果补齐。类型对象仍直接返回原对象，预算／显式配置及局部null的处理顺序保持。结果槽默认、四项正整数检查与不同的control_slots=max(16,2R)仍由原适配逻辑处理，没有机械删除输入检查或修改容量。
 四个既有纯CPU方法前后各一次通过，覆盖普通／rolling的大单项和2／11请求、显式总量不放大和类型身份、非法单项在actor分配前拒绝、局部null不等于独立授予；协议与两份测试源码字节未动。该模块不是五份历史投影的输入，没有新归档或恢复重跑；零模型／Ray／socket／子进程。收益是默认值只维护一份，不是已测性能或自动物理容量结论。
+
+<a id="coco-import-resource-ownership"></a>
+## 现用COCO导入器的ZIP与连接归属
+
+全项目安装／数据入口核查确认，runtime和data说明仍调用import_coco_images。原main在ZIP打开后才连接数据库，连接、前置metadata提交或提交后核验出错会绕过相应手工close。现由stdlib ExitStack管理ZIP并在连接返回后立即登记conn.close，删除七处重复close；原conn.transaction、metadata commit、PK拒绝退出码5、加载退出码4、SQL／数值行ID及成功输出保持。
+同四个方法修前记录三个资源关闭断言失败，修后全部通过，无错误或跳过。新方法用真实临时ZIP与假PG检查成功、连接、提交、加载和核验五场景；在测试自己的finally补清理之前检查资源状态，保留原异常对象或退出码，并核一条(row_id=1,bytes=fixture,length=7)写入。三个原COCO身份、排序ZIP读取及复合PK方法保持；假PG只验证事务上下文／关闭调用，不证明真实数据库回滚。没有真实PG、模型、Ray、GPU、socket或子进程。
+五份历史投影只增加[精确279来源](../../../reproduction/native_baselines/README.md#coco-import-resource-source)及gzip格式；预期摘要、投影身份和其余映射保持，五条读取核对通过，不重跑3010份完整恢复。此批脚本净减八行，测试新增七十六行，原件压缩2,790字节另计；修复资源归属，不宣称查询加速。
