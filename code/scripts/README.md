@@ -262,6 +262,8 @@ SAOR 声明与方法说明见[独立材料](../../experiments/saor/README.md)，
 `analysis/summarize_saor_*.py`、`replay_saor_capacity.py`及既有成本／静态曲线分析继续读取历史结果；
 `run_ai_operator_scenarios.py`保留显式 profiler 装配与 CPU 行为核验用途，旧 PG profiler 已归档，
 不能直接用旧配置恢复当前实验。历史方案、原始结果和必要失败证据保持。
+其idle与命令行核对直接使用[实验服务工具](../src/experiments/shared_vllm/preflight.py)，
+0.25.1固定身份留在[源码审计模块](../src/experiments/saor/vllm_0251_source_audit.py)；通用生产工具不再保存旧矩阵的专用校验图。
 
 <a id="实验结果恢复"></a>
 ## 实验结果恢复

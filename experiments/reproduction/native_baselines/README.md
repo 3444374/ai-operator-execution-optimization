@@ -3,6 +3,24 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-shared-service-verifiers"></a>
+## 旧共享服务矩阵校验图恢复
+
+当前场景所需的idle、命令行匹配和进程读取直接位于实验`shared_vllm/preflight.py`，固定0.25.1声明身份归源码审计自身。
+原`infrastructure/vllm_preflight.py`的旧live身份、scheduler、artifact、sidecar及包装函数退出维护树，没有兼容转导入。
+当前launcher和通用资源声明测试迁至`tests/serving/test_vllm_resources.py`，其实现不依赖旧矩阵校验。
+
+三份源均逐字对应准确公开`27929150d83f134ad5ad48c7aaf382ab40ae19ae`，各只保存一份gzip：
+
+| 原逻辑路径／原件 | 解码SHA-256 |
+|---|---|
+| [infrastructure/vllm_preflight.py](historical_sources/27929150/code/src/infrastructure/vllm_preflight.py.gz) | `d347c431e64b8b71ad009dc020962657fcbdb04be4579542207b88e1a9c77482` |
+| [experiments/shared_vllm/preflight.py](historical_sources/27929150/code/src/experiments/shared_vllm/preflight.py.gz) | `ec66b933876d72fbc4f2cb4ef5f49cc361c90f40f52558f4225ee40d03deafe4` |
+| [experiments/saor/vllm_0251_source_audit.py](historical_sources/27929150/code/src/experiments/saor/vllm_0251_source_audit.py.gz) | `8252407e89cb76d0744a96a16b32bb64b10a8423bcf08e2889b91b76fca5e6c8` |
+
+原文扫描无命中、无豁免。五份投影只新增十五条来源及格式记录，原预期摘要、投影身份、来源版本和scenario已有7bf来源保持；十五条受影响读取逐字节通过，没有重跑完整恢复或执行旧代码。
+旧专测及完整导入可从[准确279测试目录](https://github.com/3444374/ai-operator-execution-optimization/tree/27929150d83f134ad5ad48c7aaf382ab40ae19ae/code/tests/infrastructure)恢复；原失败与历史研究材料保持原解释。
+
 <a id="controlled-prefix-import-source"></a>
 ## 共享前缀导入预演修正前的来源
 

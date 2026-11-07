@@ -13,6 +13,10 @@
 [历史执行接线](../../../../experiments/reproduction/native_baselines/README.md#retired-native-system-matrix)。
 这些模块不为当前 SemBench 装配另一套执行器。
 
+`vllm_0251_source_audit.py`直接拥有该版本的声明身份与源码核对；场景脚本所用的通用命令行核对归
+[实验服务工具](../shared_vllm/preflight.py)。旧矩阵专属的live身份、scheduler、artifact和sidecar校验图
+已从通用工具目录移除，[原件和专测恢复](../../../../experiments/reproduction/native_baselines/README.md#retired-shared-service-verifiers)保留原研究依据。
+
 依赖旧 PG／HTTP 的 bindings、readiness、execution 和启动脚本已退出维护目录；
 旧运行命令只在[精确历史树](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)解释。
 原 native-system 三份 JSON 随该批归档，不在新目录补建兼容入口。

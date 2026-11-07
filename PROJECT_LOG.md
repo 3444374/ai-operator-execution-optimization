@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：实验服务核对归位并移除旧矩阵校验图
+
+[服务职责整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-service-preflight-ownership)按两个实际实验调用者收拢命令行和0.25.1身份核对，删除旧live矩阵的十个无现用者函数；当前launcher及资源声明行为保留。十五个CPU用例前后通过，三份原件保存并核对十五条历史读取。源码实际净减372行、测试净减429行，不把移入实验目录的行数另算删除，也不恢复旧矩阵或运行服务器。
+
 ## 2026-11-07：共享前缀导入预演不再写表结构
 
 [导入预演修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#controlled-prefix-import-dry-run)修复`--dry-run`仍建表、改表并提交的问题；普通写入顺序和生成行值保持。一个真实CLI解析／假PG方法覆盖预演及正常导入，与两个原算法方法共三项修后通过；旧源码保存一次、五历史来源读取保持，不连接数据库或运行模型。

@@ -4993,3 +4993,24 @@ records_capacity._ipc_limits删除command_slots、input_bytes及result_bytes的�
 测试文件SHA-256为`0a1d74a27e94804b7f509bd95a15800d7571305353b5e3d2e970b83e6eae944c`，修后导入器为`3eddc0f2f1775d49656fcf9e554beeaf63a5af9b9743511ebd29cbb3e4107240`，两轮原件分别保留，独审未重复运行。五份历史投影改读[同一份准确279源码](../../../reproduction/native_baselines/README.md#controlled-prefix-import-source)，原文扫描无命中，五条受影响读取逐字节通过；预期摘要、投影身份及其它来源不动，没有重跑完整历史恢复。
 
 本批脚本净增1行、测试净增45行，总Python净增46行，修的是预演写库问题，不以此宣称代码减量。当前核心49,100行、src＋scripts101,192行、测试92,445行，总计193,637行；按原tracked Python含注释／空行口径，相对main少49,461行、相对3fd少86,070行。没有发布此候选、派发服务器或重跑已完成的83／847软件IPC，整体重构仍未全部完成。
+
+<a id="experiment-service-preflight-ownership"></a>
+## 实验服务核对归位与旧矩阵校验图退役
+
+基于本地`5b77be848c27049460a724b7f8622ac3970abe6e`核对全仓实际调用。原`infrastructure/vllm_preflight.py`的非测试调用只有scenario脚本的命令行读取／匹配，以及0.25.1源码审计的字段／身份验证；当前生产入口没有使用它。通用目录却保存固定BF16、FCFS、compile、四分片模型和0.25.1的实验声明，且研究README已说明旧matched执行检查退役。按实际用途收拢后，调用关系为：
+
+```text
+run_ai_operator_scenarios -> experiments.shared_vllm.preflight
+                         -> idle / command matching / process reader
+source-audit CLI         -> experiments.saor.vllm_0251_source_audit
+                         -> declared identity / installed-source hashes
+launcher + resource tests -> serving.vllm_resources
+```
+
+仍用的九个命令／进程函数合并进已有实验preflight；固定身份函数与六份常量直接归源码审计，没有新增模块或转发壳。十个只服务旧矩阵的函数删除：严格选项读入二项、完整endpoint身份、模型artifact、scheduler值／endpoint／live三项、sidecar解码、live服务身份和旧live配置包装。原基础模块退出，调用方直接改所属模块；旧导入及专测从[准确279来源](../../../reproduction/native_baselines/README.md#retired-shared-service-verifiers)恢复，不改原研究方法。
+
+保留五个原命令行行为方法，一个原launcher方法，以及四个原资源JSON／类型／掩码／argv方法；资源方法直接验证现用`serving.vllm_resources`，不再经过旧sidecar解码。十个只服务退役图的方法随图删除，未新增测试方法。上述十个方法、两个原源码fixture、两个原idle方法和一项原依赖方向检查，共十五项改前／后各通过一次，无失败、错误或跳过。没有运行真实venv／子进程方法、当前机器源码探测、网络、模型或Ray；本次不把剩余测试通过数当作旧矩阵已恢复。
+
+十个保留函数与六份常量的AST和原件相同，原idle及源码审计函数保持，scenario除直接导入路径外AST一致。当前资源实现、launcher源码、IPC／ACK／unknown和额度代码未改；Linux进程采样本身没有运行。既有子串匹配可能把声明32与实际320混同，已另记原有问题，本批不借迁移宣称修复它。
+
+三份库源从准确公开279逐字保存，未压缩源扫描无命中；五历史投影只增加十五条来源和gzip格式，原3010摘要／身份与scenario原映射保持，十五条读取通过，没有重跑完整恢复。当前核心48,471行、src＋scripts100,820行、测试92,016行，合计192,836行；本批源码实际净减372行、测试净减429行，合计净减801行。核心少629行包含实验模块净增257行的职责迁移，不能把629全部计作代码删除。按原统计口径，相对main总计少50,262行、相对3fd少86,871行；旧比较基数来自已有记录，没有重新读取旧Git对象。

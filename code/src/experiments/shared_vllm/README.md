@@ -6,7 +6,7 @@ Shared-service coordination and SAOR policies live in
 
 - `config.py` keeps the typed scenarios, work-cost values, control settings, capacity arithmetic
   and argument readers used by research methods and offline evidence audits.
-- `preflight.py` supplies the idle reader used by the maintained scenario script.
+- `preflight.py` supplies the idle reader, command-line matching and process reader used by the maintained scenario script.
 - `metrics.py` exports group-level service deltas and shared-credit utilization.
 - `fairness_metrics.py` derives service rates and completion-accounted fairness.
 - `resource_metrics.py` summarizes recorded GPU, vLLM, CPU, memory and energy samples.
@@ -24,3 +24,9 @@ The old group runner's resume/observer helpers and opt-in batched observation ho
 retired. Current host/GPU readers, metric derivation and the public batch reservation remain.
 Their exact original sources and tests are in the
 [runner-support recovery notes](../../../../experiments/reproduction/native_baselines/README.md#retired-shared-runner-support).
+
+The fixed vLLM 0.25.1 service/source signature belongs to the
+[source auditor](../saor/vllm_0251_source_audit.py). The old matrix-only live service,
+scheduler, artifact and sidecar verifiers have retired with their exclusive tests;
+[exact sources](../../../../experiments/reproduction/native_baselines/README.md#retired-shared-service-verifiers)
+remain recoverable. Current launcher and resource-report tests are maintained under `tests/serving`.

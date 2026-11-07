@@ -199,7 +199,7 @@ def _verify_service_flags_match_live(config) -> None:
     host, dry-run) or COMPLETION_ENDPOINT_URLS is unset, warn + rely on declared, matching
     ``_verify_prefix_caching_matches_live``. When vLLM IS up, any per-endpoint missing/mismatched
     flag is fail-closed (strict)."""
-    from src.infrastructure.vllm_preflight import _read_live_cmdlines, verify_endpoint_cmdlines
+    from src.experiments.shared_vllm.preflight import _read_live_cmdlines, verify_endpoint_cmdlines
 
     declared_meta = dict(config.service_metadata)
     seqs = declared_meta.get("max_num_seqs")

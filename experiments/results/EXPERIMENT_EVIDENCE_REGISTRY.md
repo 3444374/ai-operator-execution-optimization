@@ -2179,3 +2179,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [共享前缀导入预演读写](diagnostics/records_runtime_refactor_20261104/README.md#controlled-prefix-import-dry-run)
 三个CPU方法使用同一测试字节，修前预演子场景执行CREATE／六条ALTER而失败，正常导入及两个原算法方法通过；修后全部通过。假PG记录实际CLI发出的SQL和插入行，没有真实数据库、网络、tokenizer或模型；五条历史来源读取逐字节保持，未重跑全部恢复。
+
+[实验服务职责与旧矩阵校验图](diagnostics/records_runtime_refactor_20261104/README.md#experiment-service-preflight-ownership)
+按两个实际实验调用者迁移十个保留函数和六份常量，删除十个无现用者的旧校验函数及十个专属方法；当前launcher和四类资源行为保留。十五项纯CPU前后通过，三个原件及十五条历史读取保持；没有Linux进程采样、真实venv／子进程、服务或模型运行，原数字前缀误匹配另记未修。
