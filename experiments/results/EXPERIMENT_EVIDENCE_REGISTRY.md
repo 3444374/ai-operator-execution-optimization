@@ -2099,3 +2099,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [准确a802的六项运行身份软件检查](diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)
 普通三项／rolling三项各一次通过，FakeRay与实际软件IPC的身份／失败恢复／未启动归还保持；零模型／真实Ray，逐项清理和许可释放确认，不与87cf合成整树资格。
+
+[旧PID／离线容量及导入精简](diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)
+登记独审通过的两套旧实现退出、PID原九项前后CPU、容量原件与组合十五条读源；七个闲置导入和单文件fixture保持原方法及构造内容，没有新增模型／Ray／IPC或性能证据，连接中断的观察未记通过。

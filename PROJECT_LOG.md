@@ -2,6 +2,12 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：旧控制器退出与导入精简
+
+[两套旧控制器、七项闲置导入及测试依赖](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)
+分别独审后整合，原件和历史身份保持，现用AIMD／请求反馈／资源记账不变；没有新增策略、兼容壳或测试方法。
+相对769a生产Python减381行、测试减341行，原九项CPU及十五条组合读源各按实际范围解释；断线观察未当作通过，不为退役代码重跑模型或专测。
+
 ## 2026-11-07：运行身份六项软件补验
 
 [准确a802的普通／rolling检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)
