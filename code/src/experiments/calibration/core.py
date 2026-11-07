@@ -56,9 +56,8 @@ def _records_capacity_policy(plan):
             source=configured.profile['resource_budget_source'])
     if not set(plan) & {"core_capacity", "async_limits"}:
         return None
-    from src.execution_provider.adapters.lotus_records_core import (
-        CoreRecordsCapacity, resolve_core_profile, resolve_records_async_limits,
-    )
+    from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, resolve_records_async_limits
+    from src.execution_provider.adapters.records_profile import resolve_core_profile
     from src.semantic_methods.lotus.records import RecordsResources
     from src.serving.backends.vllm_protocol import EngineSpec
 
@@ -284,7 +283,7 @@ def _candidate_key(candidate, identity):
     if workers + execution["resources"]["gpu_workers"] + 1 > identity["hardware"]["cpu_limit"]:
         raise ValueError("candidate exceeds the observed CPU allocation")
     if policy is not None:
-        from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity, resolve_records_async_limits
+        from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity, resolve_records_async_limits
         from src.semantic_methods.lotus.records import RecordsResources
 
         owner = (policy['core']['budget']['active_requests'] if policy['core'].get('budget') is not None

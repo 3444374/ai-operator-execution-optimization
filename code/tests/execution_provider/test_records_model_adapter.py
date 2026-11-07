@@ -30,18 +30,12 @@ assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
             text=True, capture_output=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_original_actor_locations_and_helpers_keep_the_same_objects(self):
-        from src.execution_provider.adapters import lotus_records_core as public
+    def test_actor_types_serialize_from_their_defining_module(self):
         from src.execution_provider.adapters import records_model_adapter as model
         from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
-        for name in ('_ActorOwner', '_CoreModelActor', '_encode', '_capacity_failure',
-                     '_check_result_capacity', '_measure'):
-            self.assertIs(getattr(public, name), getattr(model, name))
         self.assertTrue(issubclass(AsyncRecordsActorOwner, model._ActorOwner))
         for name in ('_ActorOwner', '_CoreModelActor'):
             value = getattr(model, name)
-            old = ('csrc.execution_provider.adapters.lotus_records_core\n'+name+'\n.').encode()
-            self.assertIs(pickle.loads(old), value)
             self.assertIs(pickle.loads(pickle.dumps(value, protocol=0)), value)
 
 

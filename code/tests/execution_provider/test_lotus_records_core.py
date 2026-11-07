@@ -19,6 +19,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters.records_model_adapter import _capacity_failure, _encode
 from src.execution_provider.adapters import lotus_records_static as static
 from src.execution_provider.adapters.lotus_records_actor_owner import RecordsActorOwner
 from src.infrastructure import daft_runtime
@@ -900,7 +901,7 @@ class ActorCloseReceiptTests(unittest.TestCase):
     def test_actual_unknown_receipt_is_never_upgraded_by_close(self):
         unknown = dict(self.value, status="unknown", text=None,
                        completion_tokens=None, total_tokens=None)
-        self.transport._outcomes[self.key] = core._encode(unknown, 4096)
+        self.transport._outcomes[self.key] = _encode(unknown, 4096)
         self.assertEqual(len(self.transport.recover_actor_receipts([self.receipt()])), 1)
         self.assertEqual(json.loads(self.transport.failure_receipts()[0][1]), unknown)
         self.transport.take_receipts(4)
@@ -909,7 +910,7 @@ class ActorCloseReceiptTests(unittest.TestCase):
         self.assertIs(self.transport._refs[self.key], self.refs)
 
     def test_oversized_receipt_retains_usage_in_reserved_failure_bytes(self):
-        maximum = len(core._encode(core._capacity_failure(self.value), 4096))
+        maximum = len(_encode(_capacity_failure(self.value), 4096))
         self.transport._requests[self.key] = self.expected, maximum
         large = dict(self.value, text="x" * 8192)
         self.assertEqual(self.transport.recover_actor_receipts([self.receipt(large)]), [])

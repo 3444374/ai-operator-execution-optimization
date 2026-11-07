@@ -1504,7 +1504,14 @@ describe the report correction; factory metadata and actual timing execution are
 Types and functions retain the module where Python defines them. New pickle payloads name
 records_capacity, records_model_adapter or records_transport directly; no __module__ assignment
 redirects them to the single-filter host. Standard pickle round trips succeed with that host unavailable,
-while current public imports still expose the same objects. Actual Ray actor serialization remains to be checked on the server.
+while supported public capacity and execution types still expose the same objects. Actual Ray actor serialization remains to be checked on the server.
+
+The query owner no longer forwards the unused private `_CoreModelActor`, `_capacity_failure`, `_encode`, `_measure`
+or `_await_result` names. Internal callers import their model, transport and capacity objects from the defining modules;
+the cascade adapter imports only its actual query owner from `lotus_records_core`. Current object serialization still names
+those defining modules. The earlier private Core imports and pickle names are recoverable in a separate
+[`0c28e246e8ce54fd5edf3375f99e2e24495d891a` tree](https://github.com/3444374/ai-operator-execution-optimization/tree/0c28e246e8ce54fd5edf3375f99e2e24495d891a),
+without a forwarding shell in the maintained path. Public factories, capacity types and resolvers keep their existing imports.
 
 Transport close preserves a finalizer's original exception as its cause and keeps the existing outer RuntimeError message.
 Local stop/join and retry behavior, remote terminal evidence, result ACKs and unknown responsibility keep their existing rules.

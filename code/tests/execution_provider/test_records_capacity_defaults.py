@@ -80,7 +80,7 @@ class DerivedIPCRuntimeTests(runtime.ResourceBudgetRuntimeTests):
     """Reuse full ownership/unknown/cancel scenarios with omitted IPC allocations."""
     def owner(self, plan, *, C=2, result_slots=1):
         resolve = capacity.resolve_records_async_limits
-        with patch('src.execution_provider.adapters.lotus_records_core.resolve_records_async_limits',
+        with patch('src.execution_provider.adapters.records_capacity.resolve_records_async_limits',
                    side_effect=lambda resources, value, overrides: resolve(
                        resources, value, dict(result_slots=result_slots))):
             return super().owner(plan, C=C, result_slots=result_slots)

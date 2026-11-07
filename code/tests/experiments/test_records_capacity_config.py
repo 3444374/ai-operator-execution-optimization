@@ -15,6 +15,7 @@ from unittest.mock import Mock, patch
 
 from src.baselines.text.movie_tasks import MovieTask
 from src.execution_provider.adapters import lotus_records_core as core
+from src.execution_provider.adapters.records_model_adapter import _encode
 from src.execution_provider.adapters import lotus_records_async_actor as actors
 from src.experiments import lotus_records_movie as movie, movie_records_session as session
 from src.semantic_methods.lotus.prepared_batching import PreparedBatching
@@ -165,9 +166,9 @@ class CapacityFactoryTests(unittest.TestCase):
                 process = queued_process(self.engine, owner._actors.limits)
                 if rejected_at == 'Core':
                     with self.assertRaisesRegex(ValueError, 'records bytes'):
-                        core._encode(request, owner.capacity.item_input_bytes)
+                        _encode(request, owner.capacity.item_input_bytes)
                 else:
-                    core._encode(request, owner.capacity.item_input_bytes)
+                    _encode(request, owner.capacity.item_input_bytes)
                     if rejected_at == 'IPC':
                         with self.assertRaisesRegex(ValueError, 'IPC item'):
                             process.submit(request, deadline_monotonic=time.monotonic()+10)
@@ -206,9 +207,9 @@ class CapacityFactoryTests(unittest.TestCase):
                 _frame(dict(op='terminal', result=result), owner._actors.limits.item_result_bytes)
             if core_bytes < 3*MIB:
                 with self.assertRaisesRegex(ValueError, 'records bytes'):
-                    core._encode(result, owner.capacity.item_result_bytes)
+                    _encode(result, owner.capacity.item_result_bytes)
             else:
-                core._encode(result, owner.capacity.item_result_bytes)
+                _encode(result, owner.capacity.item_result_bytes)
 
     def test_consecutive_queries_get_fresh_limits_and_ledgers_with_one_CPU_owner(self):
         rows = [dict(row_id='r'+str(i), source_position=i, reviewId='repeat', id='taken_3',

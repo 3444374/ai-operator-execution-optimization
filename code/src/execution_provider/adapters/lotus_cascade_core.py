@@ -34,9 +34,10 @@ from src.semantic_methods.lotus.cascade import (
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_protocol import EngineSpec
 
-from .lotus_records_core import (
-    CoreRecordsCapacity, SemLoomRecordsCore, _ActorOwner, _CoreModelActor, _check,
-)
+from .lotus_records_core import SemLoomRecordsCore
+from .records_capacity import CoreRecordsCapacity
+from .records_model_adapter import _ActorOwner, _CoreModelActor
+from .records_transport import _check
 
 
 class _StageSource:
@@ -67,7 +68,7 @@ class _StageSource:
                 provider = identity(self.query_id, "draw-" + str(index), index)
                 canonical = {name: row[name] for name in IDENTITY_FIELDS}
                 # Preflight the same raw row bytes Core will later reserve.
-                from .lotus_records_core import _encode
+                from .records_model_adapter import _encode
                 payload = {name: row[name] for name in stage.input_columns}
                 _encode(dict(payload, **provider), maximum)
                 self.expected_rows.append(provider)

@@ -25,7 +25,7 @@ class ResourceBudgetRuntimeTests(unittest.TestCase):
         engine = EngineSpec(str(self.helper.config), sys.executable, sys.executable, max_model_len=4096)
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
             max_active_batches=value.budget.active_requests, query_timeout_s=12, startup_timeout_s=8)
-        from src.execution_provider.adapters.lotus_records_core import resolve_records_async_limits
+        from src.execution_provider.adapters.records_capacity import resolve_records_async_limits
         limits = resolve_records_async_limits(resources, value, ipc(result_slots=result_slots))
         actors = AsyncRecordsActorOwner.for_prepared(engine, plan.stages[0].generation,
             resources, limits=limits, capacity=value)

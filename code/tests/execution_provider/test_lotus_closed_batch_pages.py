@@ -10,7 +10,7 @@ import unittest
 from src.execution_provider.adapters import records_async_model as actors
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
 from src.execution_provider.adapters.lotus_chain_token_budget import audit_chain_call
-from src.execution_provider.adapters.lotus_records_core import _encode
+from src.execution_provider.adapters.records_model_adapter import _encode
 from src.scheduling.core.session_contract import Acceptance, BatchKey, BatchMember, Terminal, Uncertain
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.serving.backends.vllm_engine import GenerationSpec

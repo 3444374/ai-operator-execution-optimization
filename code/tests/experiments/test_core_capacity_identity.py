@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 import unittest
 
-from src.execution_provider.adapters.lotus_records_core import (
+from src.execution_provider.adapters.records_capacity import (
     CoreRecordsCapacity, resolve_records_async_limits,
 )
 from src.experiments.calibration import core

@@ -33,16 +33,13 @@ assert 'src.execution_provider.adapters.lotus_records_core' not in sys.modules
             text=True, capture_output=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_previous_transport_imports_and_serialized_helpers_remain_available(self):
+    def test_transport_helpers_serialize_and_keep_public_types(self):
         from src.execution_provider.adapters import lotus_records_core as public
         from src.execution_provider.adapters import records_transport as transport
         from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
         self.assertTrue(issubclass(LotusChainActorBackend, transport._RecordTransport))
         for name in ('_RecordTransport', '_await_result', '_check', 'close_prepared_core'):
             value = getattr(transport, name)
-            self.assertIs(getattr(public, name), value)
-            old = ('csrc.execution_provider.adapters.lotus_records_core\n'+name+'\n.').encode()
-            self.assertIs(pickle.loads(old), value)
             self.assertIs(pickle.loads(pickle.dumps(value, protocol=0)), value)
         for name in ('TaskKey', 'BoundedAsyncBackend', 'ConfirmedTaskFailure'):
             self.assertIs(getattr(public, name), getattr(transport, name))

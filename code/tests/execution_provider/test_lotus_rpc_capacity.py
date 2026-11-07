@@ -16,7 +16,7 @@ from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecor
 from src.scheduling.core.session_contract import TaskKey
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
 from src.serving.backends.async_engine_process import BatchSubmitResult, SubmitResult, TerminalEvent
-from src.execution_provider.adapters.lotus_records_core import _encode
+from src.execution_provider.adapters.records_model_adapter import _encode
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS, result_record
