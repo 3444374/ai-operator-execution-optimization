@@ -796,7 +796,8 @@ def main() -> None:
             )
         max_prompt_tokens = args.max_model_len - args.completion_max_tokens
         with psycopg.connect(args.database_url) as conn:
-            setup_documents(conn)
+            if not args.dry_run:
+                setup_documents(conn)
             base_rows = load_existing_workload_rows(
                 conn,
                 args.controlled_prefix_source_workload,

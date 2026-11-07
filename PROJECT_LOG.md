@@ -2,6 +2,10 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-07：共享前缀导入预演不再写表结构
+
+[导入预演修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#controlled-prefix-import-dry-run)修复`--dry-run`仍建表、改表并提交的问题；普通写入顺序和生成行值保持。一个真实CLI解析／假PG方法覆盖预演及正常导入，与两个原算法方法共三项修后通过；旧源码保存一次、五历史来源读取保持，不连接数据库或运行模型。
+
 ## 2026-11-07：原生SQL读取的安装声明对齐
 
 [SQLGlot声明修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#daft-sqlglot-install-range)核对实际Daft.read_sql消费者和本地Daft0.7.21元数据，把能力组与可选并集的声明统一到>=30,<30.9。只改安装元数据，保留安装器按模块是否存在处理的原行为；没有安装、版本自动纠正或其它Daft兼容结论。

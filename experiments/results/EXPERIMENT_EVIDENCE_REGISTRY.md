@@ -2176,3 +2176,6 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 
 [Daft SQL读取的SQLGlot声明](diagnostics/records_runtime_refactor_20261104/README.md#daft-sqlglot-install-range)
 记录原两处声明允许30.9／30.10、但已验证Daft0.7.21的SQL／Postgres元数据要求<30.9.0；修后两处统一>=30,<30.9，JSON解析及六个版本值核对通过。没有pip解析、安装、联网或环境检查；现装版本不自动纠正，代码／历史输入不变，不升级为其它Daft或SQL查询实测结论。
+
+[共享前缀导入预演读写](diagnostics/records_runtime_refactor_20261104/README.md#controlled-prefix-import-dry-run)
+三个CPU方法使用同一测试字节，修前预演子场景执行CREATE／六条ALTER而失败，正常导入及两个原算法方法通过；修后全部通过。假PG记录实际CLI发出的SQL和插入行，没有真实数据库、网络、tokenizer或模型；五条历史来源读取逐字节保持，未重跑全部恢复。

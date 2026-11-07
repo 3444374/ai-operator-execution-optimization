@@ -4982,3 +4982,14 @@ records_capacity._ipc_limits删除command_slots、input_bytes及result_bytes的�
 本轮新查依赖并集、runtime能力组、安装入口和实际消费者：modalities/image/source调用Daft.read_sql；现有安装入口读取assets后只为缺失模块返回pip声明。原SQL读组的sqlglot>=30,<31及requirements无版本声明都允许30.9／30.10，但本地Daft0.7.21的SQL和Postgres extra均明确要求sqlglot<30.9.0。两处现统一>=30,<30.9，下限来自原能力组，上限来自该版本元数据；没有增加运行时版本拒绝。
 本地Daft METADATA SHA-256为`6a42a28bdd39abe1c5f4bf779b5bdf8e627182349b12b19b81608bb3fd620ad3`，JSON／packaging核对及29.9、30.0、30.8.9、30.9、30.10、31.0六个值验证通过，两文件与已审候选字节相同。安装器源码、其它包声明及历史清单保持；模块已经存在时不会自动校正，此结果不证明pip解析成功、服务器现装组合正确或其它Daft兼容。没有安装、联网、服务、模型或Ray运行。
 其余依赖按消费者保留：PyMySQL由OceanBase对照使用，SQLGlot／ConnectorX由SQL reader使用；aiohttp虽无旧SemLoom包装，当前原生LOTUS所用LiteLLM仍要求它。Ray serve extra还与现用LLM处理器依赖重叠，当前证据不足以删除；开发工具ruff不按无业务import移除。
+
+<a id="controlled-prefix-import-dry-run"></a>
+## 共享前缀导入预演只读现有数据
+
+本地候选基于`8d1fa65830f367054c254958adafa95458b9af95`。现用`import_ai_complete_workload.py`的共享前缀分支原先在`--dry-run`返回前调用`setup_documents`，实际发出CREATE、六条ALTER并显式提交。修复只在该调用前区分是否预演；正常导入仍先准备表结构，再读取源数据、生成共享前缀并按原参数写入，没有新包装或参数上限。这个预演仍需要读取已有数据库数据，不表示完全离线。
+
+新增一个CLI行为方法，实际解析参数并运行原读取、前缀变换、概要和插入函数，只替换PG连接、tokenizer加载与stdout。预演检查仅有SELECT、无插入或显式commit；正常导入检查建表／改表存在及生成的十列行值。同一测试字节与两个原前缀算法方法共三项，修前预演子场景因写SQL失败，其余场景通过；修后三项全部通过、无错误或跳过。源码同序确认正常写入顺序，测试没有另断言完整SQL顺序；假PG不证明真实事务、权限或表升级行为，没有连接数据库、加载真实tokenizer、联网或运行模型／Ray。
+
+测试文件SHA-256为`0a1d74a27e94804b7f509bd95a15800d7571305353b5e3d2e970b83e6eae944c`，修后导入器为`3eddc0f2f1775d49656fcf9e554beeaf63a5af9b9743511ebd29cbb3e4107240`，两轮原件分别保留，独审未重复运行。五份历史投影改读[同一份准确279源码](../../../reproduction/native_baselines/README.md#controlled-prefix-import-source)，原文扫描无命中，五条受影响读取逐字节通过；预期摘要、投影身份及其它来源不动，没有重跑完整历史恢复。
+
+本批脚本净增1行、测试净增45行，总Python净增46行，修的是预演写库问题，不以此宣称代码减量。当前核心49,100行、src＋scripts101,192行、测试92,445行，总计193,637行；按原tracked Python含注释／空行口径，相对main少49,461行、相对3fd少86,070行。没有发布此候选、派发服务器或重跑已完成的83／847软件IPC，整体重构仍未全部完成。

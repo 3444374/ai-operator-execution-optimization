@@ -3,6 +3,13 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="controlled-prefix-import-source"></a>
+## 共享前缀导入预演修正前的来源
+
+现用导入器的共享前缀预演不再执行表结构写入，正常导入流程保持。
+准确公开`27929150d83f134ad5ad48c7aaf382ab40ae19ae`的[导入器原件](historical_sources/27929150/code/scripts/data/import_ai_complete_workload.py.gz)保存一次，解码SHA-256为`cf9ff6dbeae717795471e41e3f963902892782173273b44afb8c52a580e7dc03`。
+原文扫描无命中、无豁免；五投影只增加此来源与gzip格式，原预期摘要、投影身份和其它映射保持。五条受影响读取逐字节通过，没有执行旧代码或重跑全部恢复。
+
 <a id="coco-import-resource-source"></a>
 ## COCO导入器资源管理修正前的来源
 

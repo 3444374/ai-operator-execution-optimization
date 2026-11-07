@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from dataclasses import replace
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
+from unittest import mock
 
 CODE_ROOT = next(
     parent
@@ -16,6 +18,7 @@ for path in (CODE_ROOT, SCRIPTS_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from scripts.data import import_ai_complete_workload as importer  # noqa: E402
 from scripts.data.import_ai_complete_workload import (  # noqa: E402
     BurstTraceRow,
     WorkloadRow,
@@ -62,6 +65,48 @@ class RecordingConnection:
 
 
 class ImportAiCompleteWorkloadTests(unittest.TestCase):
+    def test_controlled_prefix_cli_dry_run_reads_without_writing(self) -> None:
+        argv = [
+            "import_ai_complete_workload.py", "--database-url", "postgresql://localhost/fixture",
+            "--controlled-prefix-source-workload", "base", "--controlled-prefix-ratio", "1",
+            "--controlled-prefix-text", "shared", "--workload-name", "derived",
+            "--max-rows", "1", "--start-doc-id", "20", "--tokenizer-path", "fixture",
+            "--max-model-len", "100",
+        ]
+        source = (2, 0, "short_chatgpt", "original", "base", 1, 8, 0.0, "session", "original")
+        for dry_run in (True, False):
+            with self.subTest(dry_run=dry_run):
+                connection = mock.MagicMock()
+                connection.__enter__.return_value = connection
+                cursor = connection.cursor.return_value.__enter__.return_value
+                cursor.fetchall.return_value = [source]
+                output = StringIO()
+                with (
+                    mock.patch.object(sys, "argv", argv + (["--dry-run"] if dry_run else [])),
+                    mock.patch.object(importer.psycopg, "connect", return_value=connection),
+                    mock.patch.object(importer, "load_prompt_token_counter",
+                                      return_value=lambda text: len(text.split())),
+                    mock.patch.object(sys, "stdout", output),
+                ):
+                    importer.main()
+
+                summary = json.loads(output.getvalue())
+                self.assertEqual(summary["status"], "dry_run" if dry_run else "ok")
+                self.assertEqual(summary["rows"], 1)
+                statement_kinds = [call.args[0].split()[0] for call in cursor.execute.call_args_list]
+                if dry_run:
+                    self.assertEqual(statement_kinds, ["SELECT"])
+                    cursor.executemany.assert_not_called()
+                    connection.commit.assert_not_called()
+                else:
+                    self.assertIn("CREATE", statement_kinds)
+                    self.assertIn("ALTER", statement_kinds)
+                    self.assertEqual(cursor.executemany.call_count, 1)
+                    self.assertEqual(cursor.executemany.call_args.args[1], [
+                        (20, 0, "short_chatgpt", "shared\n\noriginal", "derived", 2, 8,
+                         0.0, "session", f"controlled:{prefix_key('shared')}")
+                    ])
+
     def test_controlled_prefix_materialization_is_exact_and_nested(self) -> None:
         rows = [
             WorkloadRow(

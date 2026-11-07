@@ -155,6 +155,9 @@ target_output_tokens range: 1..256
 when `--tokenizer-path models\Qwen2.5-1.5B-Instruct` is passed to
 `code/scripts/data/import_ai_complete_workload.py`.
 
+`--controlled-prefix-source-workload` 的 `--dry-run` 只读取现有 workload 并打印概要，
+不创建或修改表，也不插入数据；正常导入仍先准备表结构，再读取与写入。
+
 Use `--source-workload-name sharegpt_multiturn` in
 `code/scripts/profiling/postgres_ai_operator_profile.py` to read only this workload.
 
