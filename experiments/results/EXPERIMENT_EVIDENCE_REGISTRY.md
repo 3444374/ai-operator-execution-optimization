@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-08：链查询延迟控制RPC收尾
+
+[实际Q9失败、CPU复现与候选检查](diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)区分512条模型成功终态与暖查询API失败。
+候选只利用已有清理时间收取原控制RPC，未终态继续保留责任；38项本地软件检查不替代真实IPC／模型复测，也不补写丢失的GPU首次报告。
+
 ## 2026-11-08：没有性能参考点时的原生试探
 
 [46fd实机观察与117项CPU](diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)区分实际慢暖轮、合成状态序列与新工程选择。

@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-08：链查询等待延迟控制回执
+
+[Q9控制RPC记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)说明原模型结果齐全而暖查询API仍失败的实际情况。
+链清理复用transport已有截止时刻收取控制RPC；没有Future可继续观察时直接保留未知，EOF错误携带首次报告。容量用途另行核查，本批没有改提示、生成、R或字节预算。
+
 ## 2026-11-08：原生试探与性能测量分别推进
 
 [测量前探索记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)依据46fd慢暖轮和当前源码，允许无参考点的活动试探在新鲜原生反馈下继续上探。

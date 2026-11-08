@@ -401,7 +401,9 @@ class _RecordLocalRows:
                         self._output_exhausted = True
                         report = self.owner.finish_query()
                         if report["status"] != "closed":
-                            raise RuntimeError("record-local query cleanup remains unconfirmed")
+                            error = RuntimeError("record-local query cleanup remains unconfirmed")
+                            error.chain_cleanup_report = report
+                            raise error
                         self.completed = report["query_completed"] = True
                         raise
                 self._tick()

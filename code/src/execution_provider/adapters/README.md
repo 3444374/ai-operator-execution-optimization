@@ -619,6 +619,12 @@ business parsing and closes the owner if that parsing fails. The existing
 SessionEngine keeps monotonically increasing numeric session IDs.
 Normal EOF proves query transport/Core/actor/IPC responsibility and feedback RPCs are
 drained before reporting `model_retained=true`, `model_owner.status="retained"`.
+Record-local chain cleanup collects the existing stopped sampler's RPC within
+the transport owner's remaining absolute close time. It neither resubmits the
+RPC nor treats cancellation as completion. An EOF cleanup error retains its
+first report as `chain_cleanup_report`, even if a later owner close succeeds.
+[Delayed control-RPC checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)
+separate local Future fixtures from actual server IPC and model results.
 Completed iterator reports remain independent snapshots. Failure, cancellation, early
 consumer close or unconfirmed draining stops reuse and closes the owner; unknown
 outcomes are not cleared. Model-name changes reject before work; a different fixed

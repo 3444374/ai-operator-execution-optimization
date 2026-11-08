@@ -5338,3 +5338,31 @@ PYTHONPATH=code python3 -B -m unittest \
 本批GPU尚未运行。后续仅由原服务器会话，在现有任务结束并通知用户后，复用同Q1输入、模型／生成、NoB、动态配置、owner和额度做一冷两暖，不增模型或校准查询。
 核对完整结果、首次及后续增长前的实际来源、测量／验证身份、压力／未知与进程／socket／SHM／额度清理，分开结果可用、评价和清理时间。
 若再次拒绝物理采样，保留新的具体检查和数值；不猜旧首拒原因，不放宽原检查，不用一次实测声称最优窗口或稳定加速。
+
+
+<a id="chain-control-rpc-cleanup-20261108"></a>
+## 2026-11-08：链查询的延迟控制RPC清理
+
+准确f18c8ead的Q9使用chain Map、record_local_sections和rolling refill，一冷一暖各256条模型终态全部成功。冷查询完整时间70.906秒；暖查询在输出耗尽时因finish_query仍unknown而抛错，不能报告成功暖查询耗时。
+随后owner.close为closed、Core资源归零。真实GPU首次unknown报告没有保留，因此延迟snapshot终态不能认定为唯一根因。
+原运行标识为`semloom-q9-chain-coldwarm-1108-r1`；同组服务器四条软件IPC复现保留首次错误`resident_query_feedback_rpc_unconfirmed`，证明采样线程已停但控制RPC仍未确认，延迟返回后最终关闭成功。原件和失败记录保留。
+
+源码在停止采样后只做即时收取，没有利用仍剩余的清理时间等待原控制RPC。
+候选由[链owner](../../../../code/src/execution_provider/adapters/lotus_record_chain_core.py)把close_prepared_core已建立的绝对截止时刻交给[原采样器](../../../../code/src/execution_provider/adapters/records_native_sampler.py)，按已有轮询间隔复核原RPC。
+只有采样线程停止后，关闭线程才读取结果；不重发、不重置时间、不把取消请求或本地Future取消当成远端终态。
+到期仍保留request／ref与unknown；没有Future可继续观察时立即保留unknown，不空等剩余时间。后到的真实返回或异常仍由原收取逻辑记录。
+[结果迭代器](../../../../code/src/execution_provider/adapters/records_query_runtime.py)在EOF清理失败时，将首次report附到异常的`chain_cleanup_report`；后续owner.close新建报告不覆盖它，也不额外复制整份调用记录。
+
+本地38项SnapshotRPCReceiptTests通过，0失败、错误或跳过。新增用例覆盖清理时间内延迟返回、到期保留与后到复核、共用transport截止时刻、首次报告保留，以及没有Future时不空等。
+既有本地取消、远端异常、来源身份和采样线程未停时不得抢收的用例继续通过。初次候选被独审指出无Future时无法推进却会空等，已修正并保留反例。
+这些检查只用标准库Future、软件owner端口和迭代器；本机解释器没有LOTUS、DuckDB、Arrow或tokenizers，因此没有运行真实软件IPC、SDK或模型，也没有安装依赖。
+可复算命令：
+
+```bash
+PYTHONPATH=code python3 -B -m unittest \
+  tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests
+```
+
+下一步由原服务器会话在既有环境做两次连续、每次两条记录的CPU IPC：控制第二查询末尾snapshot返回延迟，在既有finish截止时刻内返回，要求两查询完整结束、真实RPC终态和最终资源清零。到期后仍unknown的情况已在本地直接覆盖，不把它改成成功。
+真实Q9模型复测随后由同一会话协调，保留原提示、输出与生成设置；先核正direct-chain方法状态预算，不能把原API峰值1、反馈窗口1的串行设置当作动态策略性能结论。
+本批没有增加关闭时限、生产预算、默认并发或控制器，未运行GPU或改baseline成绩。

@@ -477,8 +477,8 @@ class RecordsNativeSampler:
         return snapshot
 
     def _reap_stopped_snapshot(self, *, cancel=False):
-        # The existing provider is the single writer while sampling. Never
-        # race it or wait for RPC completion on the query/close thread.
+        # The provider is the single writer while sampling. Only a stopped
+        # provider transfers collection to the closing owner.
         if self.provider is not None and self.provider.is_running:
             return
         if self.future is not None:
@@ -487,3 +487,17 @@ class RecordsNativeSampler:
             self._cancel_snapshot('close')
             if self.future is not None:
                 self._consume_snapshot()  # Collect an immediately terminal cancel.
+
+    def wait_stopped_snapshot(self, deadline):
+        """Collect the existing RPC within the owner's remaining cleanup time."""
+        while True:
+            self._reap_stopped_snapshot()
+            with self._snapshot_lock:
+                stopped = self.provider is None or not self.provider.is_running
+                request = self._snapshot_request
+                if stopped and (request is None or self.future is None or request.get('client_future_cancelled')):
+                    return
+            remaining = deadline-time.monotonic()
+            if remaining <= 0:
+                return
+            time.sleep(min(remaining, self.options.poll_interval_s))

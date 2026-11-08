@@ -88,6 +88,89 @@ class SnapshotRPCReceiptTests(unittest.TestCase):
         self.assertEqual(len(cancels), 1)
         self.assertEqual(len(refs), 1)
 
+    def test_owner_cleanup_time_can_collect_a_late_control_terminal(self):
+        feedback, refs, cancels = self.sampler()
+        feedback.sample(); feedback.close()
+        first = deepcopy(feedback.report())
+        terminal = threading.Timer(.01, lambda: refs[0][1].set_result(self.frame()))
+        terminal.start()
+        try:
+            feedback.wait_stopped_snapshot(time.monotonic()+.2)
+        finally:
+            terminal.join()
+        report = feedback.report()
+        self.assertTrue(report['snapshot_rpc_terminal_evidence_complete'])
+        self.assertFalse(first['snapshot_rpc_terminal_evidence_complete'])
+        self.assertEqual((len(refs), len(cancels)), (1, 1))
+        self.assertEqual(report['snapshot_rpc_receipts'][0]['rpc_terminal_status'], 'returned')
+
+    def test_cleanup_deadline_keeps_unfinished_control_ownership_for_later_recheck(self):
+        feedback, refs, cancels = self.sampler()
+        feedback.sample(); feedback.close()
+        feedback.wait_stopped_snapshot(time.monotonic()+.01)
+        first = deepcopy(feedback.report())
+        self.assertFalse(first['snapshot_rpc_terminal_evidence_complete'])
+        self.assertIs(feedback.ref, refs[0][0])
+        self.assertEqual((len(refs), len(cancels)), (1, 1))
+        refs[0][1].set_result(self.frame())
+        feedback.wait_stopped_snapshot(time.monotonic()+.2)
+        self.assertTrue(feedback.report()['snapshot_rpc_terminal_evidence_complete'])
+        self.assertEqual(first['snapshot_rpc_cleanup_status'], 'unknown')
+
+    def test_stopped_sampler_without_a_future_preserves_unknown_without_idle_wait(self):
+        from unittest.mock import patch
+        feedback, refs, _ = self.sampler(future_error=True)
+        feedback.sample(); feedback.close()
+        with patch('src.execution_provider.adapters.records_native_sampler.time.sleep',
+                   side_effect=AssertionError('no Future can progress after the sampler stops')):
+            feedback.wait_stopped_snapshot(time.monotonic()+1)
+        self.assertIs(feedback.ref, refs[0][0])
+        self.assertFalse(feedback.report()['snapshot_rpc_terminal_evidence_complete'])
+
+    def test_record_owner_reuses_transport_close_deadline_for_the_retained_rpc(self):
+        from unittest.mock import patch
+        from src.execution_provider.adapters import lotus_record_chain_core as chain_core
+        feedback, refs, _ = self.sampler()
+        owner = chain_core.SemLoomRecordChainCore(feedback.owner.engine, feedback.owner.resources,
+            execution='record_local_sections', rolling_refill=True, resident=True)
+        owner._actors, owner._supply_feedback = feedback.owner._actors, feedback
+        feedback.owner = owner
+        feedback.sample()
+        deadlines = []
+        def drained(*args, **kwargs):
+            owner._actors.close_deadline = time.monotonic()+.1
+            deadlines.append(owner._actors.close_deadline)
+            terminal = threading.Timer(.01, lambda: refs[0][1].set_result(self.frame()))
+            terminal.start(); self.addCleanup(terminal.join)
+            return dict(model_owner=dict(status='retained', cleanup_errors=[]),
+                transport_closed=True, producer_retirement=None, cleanup_errors=[])
+        with patch.object(chain_core, 'close_prepared_core', side_effect=drained):
+            report = owner._close_record_local(timeout=.1, retain_model=True)
+        self.assertEqual(report['status'], 'closed')
+        self.assertEqual(owner._actors.close_deadline, deadlines[0])
+        self.assertTrue(report['batch_supply_feedback']['snapshot_rpc_terminal_evidence_complete'])
+
+    def test_query_error_keeps_the_first_cleanup_report_after_followup_close(self):
+        from src.execution_provider.adapters.records_query_runtime import _RecordLocalRows
+        from src.scheduling.core.session_contract import Usage
+        usage = Usage()
+        first = dict(status='unknown', cleanup_errors=['resident_query_feedback_rpc_unconfirmed'])
+        final = dict(status='closed', cleanup_errors=[])
+        owner = SimpleNamespace(_control=lambda: None, deadline=None, calls=[],
+            core=SimpleNamespace(capacity=SimpleNamespace(usage=lambda: usage)),
+            finish_query=lambda: first)
+        def close():
+            owner.last_close_report = final
+            return final
+        owner.close = close
+        rows = _RecordLocalRows(owner, (), SimpleNamespace(current=[], stats={}), None)
+        rows._output = iter(())
+        with self.assertRaisesRegex(RuntimeError, 'cleanup remains unconfirmed') as raised:
+            next(rows)
+        self.assertIs(raised.exception.chain_cleanup_report, first)
+        self.assertEqual(raised.exception.chain_cleanup_report['status'], 'unknown')
+        self.assertIs(owner.last_close_report, final)
+
     def test_normal_return_is_persisted_with_source_identity(self):
         feedback, refs, _ = self.sampler()
         feedback.sample(); refs[0][1].set_result(self.frame())

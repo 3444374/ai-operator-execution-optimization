@@ -871,6 +871,8 @@ class SemLoomRecordChainCore:
         else:
             closed = close_prepared_core(self._actors, self.transport, self.core, self.capacity,
                 deadline=self.deadline, timeout=timeout, retain_model=retain_model)
+            if self._supply_feedback is not None:
+                self._supply_feedback.wait_stopped_snapshot(self._actors.close_deadline)
             if binding is not None and runtime_owned:
                 binding.check(require_identity=True)
         errors += closed["cleanup_errors"]
