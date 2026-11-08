@@ -111,10 +111,6 @@ class RecordsNativeSampler:
             requested_at_s=requested_at_s, received_at_s=received_at_s)
         return qualify_resource_observation(packet, view, window_s=self._sample_age_limit())
 
-    @staticmethod
-    def _audit_integer(value, *, minimum=0):
-        return audit_integer(value, minimum=minimum)
-
     def _audit_resource_rpc(self, row, *, native, disposition, reason, request_index,
                             request_session_id, response_session_id, requested_at_s, received_at_s):
         # Only fixed metadata fields leave this boundary; never retain the RPC
@@ -130,7 +126,7 @@ class RecordsNativeSampler:
             cpu_reason = 'cpu_source_unavailable'
         invalid = []
         def integer(name, value, *, minimum=0):
-            bounded = self._audit_integer(value, minimum=minimum)
+            bounded = audit_integer(value, minimum=minimum)
             if value is not None and bounded is None:
                 invalid.append(name)
             return bounded
@@ -329,13 +325,9 @@ class RecordsNativeSampler:
         except Exception as error:
             self._note_future_timing(index, future_observer_error_type=type(error).__name__)
 
-    @staticmethod
-    def _snapshot_header(value):
-        return snapshot_response_header(value)
-
     def _finish_snapshot(self, status, disposition, *, value=None, error=None):
         observed_at, clock_error = self._snapshot_clock()
-        header = self._snapshot_header(value)
+        header = snapshot_response_header(value)
         with self._snapshot_lock:
             self.errors += int(clock_error is not None)+int(header['response_source_observed_at_error_type'] is not None)
             self.snapshot_rpc_receipts.append(dict(self._snapshot_request,

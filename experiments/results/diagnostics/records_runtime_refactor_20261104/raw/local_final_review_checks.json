@@ -1,0 +1,548 @@
+{
+  "input_commit": "cc4ad6de13da39c5b90d352ef69c9f46d8a485eb",
+  "base_commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+  "shutdown_fix_commit": "c136d10bab227d973125df2eae7419aaf50264f1",
+  "evidence_type": "local source audit and CPU fixtures; source-specific prior server evidence is not relabeled",
+  "python_files": 939,
+  "syntax_errors": [],
+  "missing_static_internal_modules": [],
+  "production_dependency_violations": [],
+  "dynamic_load_sites": [
+    [
+      "code/integrations/imlane_duckdb/q3_udf.py",
+      72,
+      "importlib.util.spec_from_file_location(name, source)"
+    ],
+    [
+      "code/scripts/experiments/run_lotus_image_retrieval.py",
+      171,
+      "__import__('torch')"
+    ],
+    [
+      "code/scripts/profiling/record_observation/control_resource_C2.py",
+      128,
+      "importlib.util.spec_from_file_location('capture_host_helpers', path)"
+    ],
+    [
+      "code/src/baselines/image/lotus_media_observation.py",
+      24,
+      "importlib.import_module('lotus.dtype_extensions.image')"
+    ],
+    [
+      "code/src/baselines/text/frameworks/kalypso_native/native_server.py",
+      125,
+      "importlib.import_module('vllm.v1.worker.gpu_model_runner')"
+    ],
+    [
+      "code/src/baselines/text/frameworks/kalypso_native/native_server.py",
+      286,
+      "runpy.run_module('vllm.entrypoints.cli.main', run_name='__main__')"
+    ],
+    [
+      "code/src/baselines/text/sembench_source.py",
+      65,
+      "importlib.util.spec_from_file_location(name, root / relative_path)"
+    ],
+    [
+      "code/src/baselines/text/sembench_source.py",
+      26,
+      "importlib.import_module(name)"
+    ],
+    [
+      "code/src/experiments/movie_records_matrix.py",
+      57,
+      "importlib.import_module('q3_packet')"
+    ],
+    [
+      "code/src/experiments/movie_records_matrix.py",
+      58,
+      "importlib.import_module('q3_host')"
+    ],
+    [
+      "code/src/experiments/movie_records_matrix.py",
+      59,
+      "importlib.import_module('active_failure_evidence')"
+    ],
+    [
+      "code/src/experiments/movie_records_matrix.py",
+      60,
+      "importlib.import_module('token_audit')"
+    ],
+    [
+      "code/src/experiments/sembench_lotus_mmqa_aggregate.py",
+      91,
+      "import_module('lotus.sem_ops.sem_agg')"
+    ],
+    [
+      "code/src/observability/metrics/mfu_native_bootstrap.py",
+      7,
+      "runpy.run_module('vllm.entrypoints.openai.api_server', run_name='__main__', alter_sys=True)"
+    ],
+    [
+      "code/src/scheduling/__init__.py",
+      96,
+      "import_module(module_name, __name__)"
+    ],
+    [
+      "code/src/semantic_methods/lotus/cascade.py",
+      469,
+      "import_module('lotus.sem_ops.sem_filter')"
+    ],
+    [
+      "code/src/semantic_methods/lotus/image_backend.py",
+      368,
+      "__import__('numpy')"
+    ],
+    [
+      "code/tests/analysis/test_multicard_ramp_aggregate.py",
+      29,
+      "importlib.util.spec_from_file_location('multicard_ramp_aggregate', _AGG_PATH)"
+    ],
+    [
+      "code/tests/analysis/test_multicard_rich_aggregate.py",
+      27,
+      "importlib.util.spec_from_file_location('multicard_rich_aggregate', _AGG_PATH)"
+    ],
+    [
+      "code/tests/analysis/test_summarize_project_short_all_at_t0.py",
+      14,
+      "importlib.util.spec_from_file_location('short_all_at_t0_summary', SCRIPT)"
+    ],
+    [
+      "code/tests/analysis/test_summarize_vtc_compatible.py",
+      17,
+      "importlib.util.spec_from_file_location('summarize_vtc_compatible', SCRIPT)"
+    ],
+    [
+      "code/tests/baselines/common/test_cell_instrumentation.py",
+      24,
+      "importlib.util.spec_from_file_location('cell_instrumentation', _CI_PATH)"
+    ],
+    [
+      "code/tests/baselines/text/test_imlane_duckdb_q3_udf.py",
+      221,
+      "importlib.import_module('q3_udf')"
+    ],
+    [
+      "code/tests/baselines/text/test_kalypso_native_launch.py",
+      193,
+      "runpy.run_path(str(ROOT / 'code/scripts/experiments/check_kalypso_native_cpu.py'), run_name='__main__')"
+    ],
+    [
+      "code/tests/baselines/text/test_kalypso_native_launch.py",
+      169,
+      "runpy.run_path(str(ROOT / 'code/scripts/experiments/run_kalypso_native_server.py'), run_name='__main__')"
+    ],
+    [
+      "code/tests/baselines/text/test_kalypso_native_launch.py",
+      211,
+      "runpy.run_path(str(ROOT / 'code/scripts/experiments/run_kalypso_sembench_query.py'), run_name='__main__')"
+    ],
+    [
+      "code/tests/environment/test_scan_git_secrets.py",
+      17,
+      "importlib.util.spec_from_file_location('scan_git_secrets', _SCANNER)"
+    ],
+    [
+      "code/tests/experiments/test_baseline_closure_entries.py",
+      92,
+      "importlib.util.spec_from_file_location('test_named_source_preparer', file)"
+    ],
+    [
+      "code/tests/experiments/test_git_record_observation.py",
+      17,
+      "importlib.util.spec_from_file_location('record_observation_workflow', TOOL / 'workflow.py')"
+    ],
+    [
+      "code/tests/experiments/test_git_record_observation.py",
+      220,
+      "importlib.util.spec_from_file_location('record_handoff_test', TOOL / 'record_observer.py')"
+    ],
+    [
+      "code/tests/experiments/test_movie_cancellation.py",
+      571,
+      "importlib.util.spec_from_file_location('cancellation_worker_test', Path(__file__).resolve().parents[2] / 'scripts/profiling/record_observation/run_resource_C2.py')"
+    ],
+    [
+      "code/tests/experiments/test_movie_cancellation.py",
+      597,
+      "importlib.util.spec_from_file_location('cancellation_bootstrap_test', path)"
+    ],
+    [
+      "code/tests/experiments/test_movie_records_session.py",
+      22,
+      "importlib.util.spec_from_file_location(name, SOURCE / relative)"
+    ],
+    [
+      "code/tests/experiments/test_ray_future_qualification.py",
+      15,
+      "importlib.util.spec_from_file_location('ray_qualification_cpu_target', TOOL)"
+    ],
+    [
+      "code/tests/experiments/test_record_campaign_guard.py",
+      21,
+      "importlib.util.spec_from_file_location('record_campaign_guard_tests_target', TOOL)"
+    ],
+    [
+      "code/tests/experiments/test_record_dag_observation.py",
+      235,
+      "importlib.util.spec_from_file_location('dag_workflow_test', path)"
+    ],
+    [
+      "code/tests/experiments/test_record_dag_observation.py",
+      204,
+      "importlib.util.spec_from_file_location('dag_fixture_observer_' + mode, observer_path)"
+    ],
+    [
+      "code/tests/experiments/test_record_resource_capture.py",
+      25,
+      "importlib.util.spec_from_file_location(name, ROOT / (name + '.py'))"
+    ],
+    [
+      "code/tests/experiments/test_sembench_text_original.py",
+      335,
+      "importlib.import_module('runner.generic_lotus_runner.generic_lotus_runner')"
+    ],
+    [
+      "code/tests/infrastructure/test_dependency_direction.py",
+      45,
+      "importlib.import_module('src.infrastructure.request_budget')"
+    ],
+    [
+      "code/tests/infrastructure/test_dependency_direction.py",
+      46,
+      "importlib.import_module('src.experiments.cell_budget')"
+    ],
+    [
+      "code/tests/infrastructure/test_dependency_direction.py",
+      47,
+      "importlib.import_module('src.experiments.attempt_ledger')"
+    ],
+    [
+      "code/tests/infrastructure/test_dependency_direction.py",
+      60,
+      "importlib.import_module('src.observability.execution_timing')"
+    ],
+    [
+      "code/tests/infrastructure/test_environment.py",
+      49,
+      "__import__('platform')"
+    ],
+    [
+      "code/tests/infrastructure/test_environment_capabilities.py",
+      21,
+      "importlib.util.spec_from_file_location('capability_environment_cli', ROOT / 'code/scripts/environment/manage_environment.py')"
+    ],
+    [
+      "code/tests/infrastructure/test_owned_processes.py",
+      121,
+      "importlib.import_module('src.experiments.lotus_records_supervisor')"
+    ],
+    [
+      "code/tests/infrastructure/test_shared_artifact_tools.py",
+      16,
+      "importlib.import_module('src.infrastructure.redact')"
+    ],
+    [
+      "code/tests/infrastructure/test_shared_artifact_tools.py",
+      25,
+      "importlib.import_module('src.infrastructure.private_artifacts')"
+    ],
+    [
+      "code/tests/modalities/image/test_clip_transfer_ceiling.py",
+      16,
+      "importlib.util.spec_from_file_location('profile_clip_transfer_ceiling', SCRIPT)"
+    ],
+    [
+      "code/tests/modalities/image/test_image_metrics.py",
+      20,
+      "importlib.util.spec_from_file_location('augment_image_observability', AUGMENT_PATH)"
+    ],
+    [
+      "code/tests/observability/test_feedback_identity.py",
+      63,
+      "importlib.util.spec_from_file_location('record_observer', path)"
+    ],
+    [
+      "code/tests/observability/test_native_trace_conversion.py",
+      75,
+      "importlib.util.spec_from_file_location('native_conversion_test', path)"
+    ],
+    [
+      "code/tests/scheduling/test_record_feedback_variants.py",
+      89,
+      "importlib.import_module(self.label + '.' + name)"
+    ],
+    [
+      "code/tests/scheduling/test_record_feedback_variants.py",
+      93,
+      "importlib.import_module('src.execution_provider.adapters.lotus_records_core')"
+    ],
+    [
+      "code/tests/semantic_methods/test_lotus_cascade.py",
+      93,
+      "import_module('lotus.sem_ops.sem_filter')"
+    ],
+    [
+      "code/tests/semantic_methods/test_lotus_image_cli.py",
+      15,
+      "importlib.util.spec_from_file_location('lotus_image_cli_fixture', path)"
+    ],
+    [
+      "code/tests/semantic_methods/test_lotus_image_cli.py",
+      52,
+      "importlib.util.spec_from_file_location('lotus_image_codec_cli_fixture', path)"
+    ],
+    [
+      "code/tests/semantic_methods/test_lotus_image_lifecycle.py",
+      32,
+      "importlib.util.spec_from_file_location('fixture_' + path.stem, path)"
+    ],
+    [
+      "code/tests/semantic_methods/test_lotus_image_native_input.py",
+      421,
+      "importlib.util.spec_from_file_location('native_image_input_cli_fixture', path)"
+    ],
+    [
+      "code/tests/semantic_methods/test_lotus_image_observation_release.py",
+      215,
+      "importlib.util.spec_from_file_location('lotus_image_release_cli_fixture', path)"
+    ],
+    [
+      "code/tests/serving/test_native_resource_feedback.py",
+      84,
+      "importlib.util.spec_from_file_location(name, tools / (name + '.py'))"
+    ],
+    [
+      "code/tests/serving/test_native_resource_feedback.py",
+      40,
+      "importlib.util.spec_from_file_location(name, tools / (name + '.py'))"
+    ],
+    [
+      "code/tests/serving/test_vllm_clip_pooling_gate.py",
+      14,
+      "importlib.util.spec_from_file_location('gate_vllm_clip_pooling', SCRIPT)"
+    ],
+    [
+      "code/tests/serving/test_vllm_clip_pooling_harness.py",
+      15,
+      "importlib.util.spec_from_file_location('run_vllm_clip_pooling_gate', SCRIPT)"
+    ],
+    [
+      "code/tests/serving/vllm_rpc_source_fixture.py",
+      100,
+      "importlib.import_module(module)"
+    ]
+  ],
+  "final_method_groups": {
+    "owner_capacity_configuration_final": 72,
+    "sampler_final": 20
+  },
+  "distinct_final_methods": 92,
+  "final_method_ids": {
+    "owner_capacity_configuration_final": [
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_actor_kill_failure_is_retryable_without_reclosing_engine",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_all_preflight_failures_precede_actor_allocation",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_cancelled_expired_and_nonfinite_deadlines_allocate_nothing",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_confirmed_api_and_kill_requests_close_only_the_declared_scope",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_constructor_failure_stays_unknown_without_reconstruction_or_model_kill",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_empty_owner_closes_without_allocating_or_importing_ray",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_explicit_close_deadline_limits_new_shutdown_calls",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_import_and_model_actor_construction_need_no_vendor_or_method_runtime",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_injected_base_owner_honors_cleanup_deadline_and_keeps_the_same_close_ref",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_model_actor_factory_selects_trusted_override_and_dynamic_default",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_never_started_model_actor_keeps_empty_close_behavior",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_partial_allocation_without_model_handle_never_claims_an_empty_exit",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_prepared_objectref_is_not_fetched_on_driver",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_private_process_owner_has_a_bounded_teardown_window",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_shared_owner_does_not_own_query_or_session_reports",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_start_failure_retains_ownership_for_explicit_close",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_start_reuses_one_engine_and_preserves_fixed_worker_settings",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_static_reexports_the_same_actor_types",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_timed_out_close_waits_on_the_same_ref_on_retry",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_trusted_owner_changes_only_model_host_and_keeps_default_preparation",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_truthy_api_values_never_confirm_shutdown_or_permit_model_kill",
+      "tests.execution_provider.test_lotus_records_actor_owner.RecordsActorOwnerTests.test_unconfirmed_engine_close_can_retry_without_claiming_gpu_exit",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_IMLane_task_wait_can_outlive_sixty_seconds_but_command_timeout_stays_finite",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_async_IPC_accepts_null_deadline_without_relaxing_slot_capacity",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_async_actor_transfers_null_query_deadline_and_keeps_abort_responsibility",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_core_and_static_preflight_can_exceed_sixty_seconds_unless_caller_sets_duration",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_default_null_and_explicit_duration_round_trip_without_changing_capacity",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_no_query_deadline_still_checks_cancel_and_polls_ready_with_finite_wait",
+      "tests.execution_provider.test_records_query_deadlines.QueryDeadlineTests.test_no_query_timer_keeps_cleanup_on_the_existing_owner_window",
+      "tests.execution_provider.test_records_query_deadlines.IMLaneOperationDurationTests.test_command_and_cleanup_accept_explicit_finite_durations_above_six_hundred",
+      "tests.execution_provider.test_records_query_deadlines.IMLaneOperationDurationTests.test_existing_start_control_uses_the_whole_explicit_remaining_duration",
+      "tests.serving.test_query_deadline.AsyncQueryDeadlineTests.test_query_without_timer_reaches_native_generation_after_sixty_seconds",
+      "tests.serving.test_query_deadline.SyncQueryDeadlineTests.test_existing_fused_worker_keeps_no_query_timer_through_model_and_cleanup",
+      "tests.serving.test_query_deadline.SyncQueryDeadlineTests.test_sync_and_stage_process_checks_keep_cancel_without_query_timer",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_actual_CPU_IPC_reuses_one_owner_with_more_than_eight_resident_rows",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_actual_Method_pool_bytes_bind_before_the_derived_run_counter",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_assigned_bytes_are_unchanged_and_counters_follow_result_storage",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_core_storage_and_method_counts_remain_independent_of_request_count",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_existing_explicit_budget_is_never_replaced_by_byte_derivation",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_explicit_method_limits_derive_actual_resident_count_independently_of_Core_items",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_missing_noninteger_or_too_small_storage_rejects_before_owner_creation",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_modern_feedback_starts_at_one_with_byte_derived_owner_permission",
+      "tests.execution_provider.test_byte_derived_records_capacity.ByteDerivedCapacityTests.test_rolling_token_factory_receives_the_same_finite_counts_and_bytes",
+      "tests.execution_provider.test_records_capacity_modules.CapacityModuleTests.test_capacity_pickle_round_trip_preserves_types_and_values",
+      "tests.execution_provider.test_records_capacity_modules.CapacityModuleTests.test_explicit_budget_fields_only_affect_their_own_resource_owner",
+      "tests.execution_provider.test_records_capacity_modules.CapacityModuleTests.test_fused_capacity_keeps_single_task_and_complete_stage_work",
+      "tests.execution_provider.test_records_capacity_modules.CapacityModuleTests.test_legacy_R_does_not_resize_any_explicit_capacity_role",
+      "tests.execution_provider.test_records_capacity_modules.CapacityModuleTests.test_original_imports_refer_to_the_same_types_and_resolvers",
+      "tests.experiments.test_records_resource_budget.ResourceBudgetTests.test_method_bytes_bind_independently_before_declared_row_slots",
+      "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_capacity_profile_and_IPC_helpers_do_not_load_owners",
+      "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_public_session_check_reads_fixture_sources_without_loading_owners",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_actual_source_preflight_drives_small_q1_q2_reservations",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_both_public_lifecycles_forward_model_paths_prepare_count_and_profile",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_fresh_campaign_reserves_declared_occurrences_not_task_name_constants",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_launch_limits_and_paths_come_from_existing_declarations",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_matrix_work_time_and_output_scratch_do_not_inherit_query_timeout",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_nondefault_query_count_and_budget_are_checked_without_requiring_old_matrix",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_three_prepare_workers_and_nondefault_async_capacity_reach_actual_cpu_child",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_token_audit_uses_selected_generation_and_model_tokenizer_fallback",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_tokenizer_accepts_template_file_and_keeps_model_fallback",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_unsupported_gpu_count_still_rejects_instead_of_fake_scaling",
+      "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_wrong_report_generation_is_rejected_before_token_success",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_cancelled_or_invalid_start_allocates_nothing",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_close_timeout_retains_the_original_RPC_until_it_finishes",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_default_Filter_still_allocates_configured_preparation_and_same_metadata",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_factory_is_explicit_and_default_None_is_still_invalid",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_preflight_and_capacity_failures_do_not_allocate_model",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_prepared_factory_rejects_record_protocol_instead_of_falling_back",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_ready_failure_retains_same_actor_and_does_not_restart",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_start_once_same_UID_no_Filter_binding_or_prepare_allocation",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_unconfirmed_model_construction_keeps_responsibility_without_kill",
+      "tests.execution_provider.test_lotus_prepared_actor_owner.PreparedOwnerTests.test_unknown_close_uses_same_model_and_only_retries_cleanup"
+    ],
+    "sampler_final": [
+      "tests.execution_provider.test_records_native_sampler.NativeSamplerModuleTests.test_existing_feedback_reuses_one_sampler_implementation",
+      "tests.execution_provider.test_records_native_sampler.NativeSamplerModuleTests.test_sampler_can_load_without_query_owner_or_window_policy",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_CPU_interval_reasons_are_independent_of_native_rejection",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_actor_unbound_and_previous_session_are_distinguishable",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_all_new_session_index_and_clock_metadata_have_bounded_JSON",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_bind_during_diagnostic_read_keeps_counter_and_history_atomic",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_capacity_eviction_keeps_totals_and_does_not_issue_more_RPCS",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_malformed_resource_UID_is_unknown_before_report_and_custom_observer",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_new_bound_query_resets_attempt_history_and_counts",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_new_rejected_audit_excludes_payload_and_unrecognized_source_text",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_observer_cannot_mutate_the_retained_diagnostic_row",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_old_pending_return_is_correlated_but_cannot_seed_the_next_query",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_optional_audit_failure_preserves_valid_native_and_single_RPC",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_priming_is_preserved_without_claiming_a_CPU_interval",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_qualified_CPU_survives_missing_native_for_diagnosis_only",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_reference_path_keeps_optional_resource_sampling_off",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_rejected_packet_integer_width_is_bounded_before_report_and_observer",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_terminal_close_retains_diagnostics_and_all_existing_terminal_proof",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_valid_mismatched_UID_and_uint64_boundaries_remain_diagnostic_facts",
+      "tests.execution_provider.test_resource_rpc_rejection_audit.RejectedResourceAuditTests.test_valid_native_snapshot_and_policy_resource_inputs_are_unchanged"
+    ]
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_chain_token_batches.py": "70e984e465cce195b4caa5c0817bd6f15284e41fc1ed399493f14f32a1b2bb56",
+    "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "5d978078e417e342222207e4ba361bbb45c07cc99d094f2f9825ed7644ca96ba",
+    "code/src/execution_provider/adapters/records_native_sampler.py": "623f253b697ffc69fe88a13ffa983f08ae3d525f1d570a07f722c2a2727c861c",
+    "code/tests/execution_provider/test_lotus_prepared_actor_owner.py": "06e30b1dfb146a2e605e79cca4e24a9207332177b9f74bfdf04287414f27cff3",
+    "code/tests/execution_provider/test_lotus_records_actor_owner.py": "75fa4ce6a6cc80753f19e3ce11b70c550046c1375514e75adff200439b27c0da",
+    "code/tests/execution_provider/test_records_capacity_modules.py": "0e2574853402306f2a8cb32d9ee3b97eb8c8086215d058f4f25b411a18842caa",
+    "code/tests/experiments/test_records_resource_budget.py": "69a8249d05feee828514dfd0c903f2769be0d2430d6f7fd9b24632eaaae1a5a3"
+  },
+  "pending": [
+    {
+      "method": "tests.execution_provider.test_records_query_deadlines.NativeRayStartupDurationTests.test_native_graph_uses_its_own_context_for_caller_startup_wait",
+      "reason": "pyarrow absent in this interpreter; first error also exposed a fixture-finally IndexError",
+      "run": "owner_capacity_configuration"
+    },
+    {
+      "scope": "original server runtime Ray/IPC and real model/GPU on the final candidate",
+      "reason": "reserved for the coordinator and original server session"
+    }
+  ],
+  "private_packet_review": "AST sites and manifest checks inspected; no external packet bytes loaded",
+  "sizes": {
+    "main": {
+      "integrations": {
+        "files": 26,
+        "lines": 3998
+      },
+      "scripts": {
+        "files": 134,
+        "lines": 31217
+      },
+      "production_src": {
+        "files": 227,
+        "lines": 54091
+      },
+      "baseline_adapters": {
+        "files": 73,
+        "lines": 16221
+      },
+      "experiment_src": {
+        "files": 144,
+        "lines": 38806
+      },
+      "tests": {
+        "files": 415,
+        "lines": 102763
+      }
+    },
+    "candidate": {
+      "integrations": {
+        "files": 34,
+        "lines": 5914
+      },
+      "scripts": {
+        "files": 83,
+        "lines": 15492
+      },
+      "production_src": {
+        "files": 221,
+        "lines": 43243
+      },
+      "baseline_adapters": {
+        "files": 61,
+        "lines": 9775
+      },
+      "experiment_src": {
+        "files": 77,
+        "lines": 19152
+      },
+      "independent_research": {
+        "files": 19,
+        "lines": 5233
+      },
+      "tests": {
+        "files": 444,
+        "lines": 90387
+      }
+    },
+    "candidate_historical_python": {
+      "files": 316,
+      "lines": 99309,
+      "compressed_py_files_not_expanded": 160,
+      "compressed_py_bytes": 442821
+    },
+    "this_audit_python_delta": "3\t3\tcode/src/execution_provider/adapters/lotus_chain_token_batches.py\n4\t1\tcode/src/execution_provider/adapters/lotus_records_actor_owner.py\n2\t10\tcode/src/execution_provider/adapters/records_native_sampler.py\n3\t2\tcode/tests/execution_provider/test_lotus_prepared_actor_owner.py\n29\t2\tcode/tests/execution_provider/test_lotus_records_actor_owner.py\n2\t2\tcode/tests/execution_provider/test_records_capacity_modules.py\n5\t2\tcode/tests/experiments/test_records_resource_budget.py\n",
+    "counting": "Tracked Python physical lines including comments and blank lines. Directory categories do not overlap. Main has no research directory: code later moved to independent research is still within its production_src count. Comparisons use production_src + independent_research as one legacy core. Integrations, archives, external third-party sources and other languages are separate. Moving or archiving is not equivalent to deleting code."
+  },
+  "runs_artifact_sha256": "c77dc5d225dc435a18f145788e208fa5edd62a67d22e6b9bd29fe278ad9ce301",
+  "actual_local_cpu_ipc": {
+    "method": "tests.experiments.test_movie_runtime_configuration.RuntimeConfigurationTests.test_three_prepare_workers_and_nondefault_async_capacity_reach_actual_cpu_child",
+    "synthetic_submissions": 4,
+    "real_model_calls": 0,
+    "ray_runtime": "threaded substitute",
+    "coverage": "CPUProcess child/socket path with cancellation and explicit cleanup; not physical descendant/GPU evidence"
+  },
+  "config_examples": {
+    "code/configs/image_vendor_baselines.json": 1,
+    "code/configs/image_provider.example.json": "typed image declaration",
+    "code/configs/sembench_lotus_image.example.json": "semloom.sembench_lotus_image_run.v1",
+    "code/configs/sembench_lotus_mmqa_aggregate.example.json": "semloom.sembench_lotus_mmqa_aggregate_run.v1"
+  },
+  "markdown_links": {
+    "entry_files": 26,
+    "links_checked": 980,
+    "missing_paths": [],
+    "missing_added_anchors": [],
+    "scope": "all current-entry local file links and added Markdown links; historic log links not rewritten"
+  }
+}

@@ -964,6 +964,14 @@ Ray CPU/GPU 预留及 vLLM 参数不因此改变；部署方可按其 CPU 预算
 `backpressure`，等待留在现有 transport 事件循环。原 `_held`、ticket、逐成员轮询和
 ACK 继续拥有请求与结果，无第二套队列或责任计数。取消不释放尚未终结的数据 RPC 许可，
 控制 RPC 不占数据许可；结果未确认仍保持 unknown 责任及原关闭回执。
+
+<a id="records-close-allowance"></a>
+
+普通 records owner 发起新的模型关闭 RPC 时，将关闭等待设为默认时长与调用方剩余时间的较小值。
+已到期时不发起新 RPC，报告 unknown 并保留 actor；已经在途的关闭继续收取原引用，后续显式时间只允许清理。
+省略期限仍使用原同步10秒／异步15秒。传给 actor 的是提交时计算的相对时长，远端排队和物理退出仍须各自观察，
+不能据此承诺远端硬期限。定向检查与待服务器范围见[独立终审](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)。
+
 许可在已发行 RPC 的非取消终态 Future 回调中归还，调用方 Task 反复取消或事件循环关闭
 不能提前退款。本地 Future 被取消或观察注册失败时，保留最多 RPC worker 数的临时引用、
 停止新数据发行并唤醒未发行等待者；关闭／drain 在原截止时间内凭 Ray 对象就绪核实。

@@ -5,6 +5,7 @@
 LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当前不作为开发或验收前提。
 普通 Movie records 通过本地 IPC 调用模型引擎；不启动旧 Movie HTTP 服务。
 整查询默认不设总期限，显式期限保留，启动和关闭分别等待；旧SemLoom fixed HTTP接线已退出当前树，未来多查询不以HTTP为接入方式。
+普通records的新关闭请求只取得调用方剩余时间，已到期和在途引用分别处理，见[关闭时长](src/execution_provider/adapters/README.md#records-close-allowance)。
 当前可选能力、默认及验证限制见[配置总览](../docs/执行配置与优化开关.md)和[代码状态](INFRA_STATUS.md)。
 
 ## 真实入口

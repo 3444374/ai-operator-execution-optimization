@@ -12042,3 +12042,12 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 
 准确e6的既有软件IPC单项随后在服务器一次通过，7.504秒，fixed_rows／token_budget的批次成员、回执、输出和关闭断言保持；没有重复本地十三项或新增测试脚本。
 自有进程／socket／SHM和许可已清理，模型／真实Ray／HTTP／多查询为零；[准确源码与私有原件摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-server)单独登记，不转授后续组合。
+
+## 2026-11-08 独立本地终审与候选修正
+
+从准确cc4建立独立工作树，核对939份现用Python、静态／动态导入、资源和配置职责及26份入口文档；未叠加其它本地候选。
+新关闭RPC改取调用方剩余时间，到期不新发，已有引用及unknown继续由原owner收取；c136d10b单独保存行为修正。
+删除两个观测私有转发并迁移实际继承调用；同步两处未跟随cc4实际方法计数的旧断言，计数与字节保护保持。
+最终92个不同CPU方法通过，含一个真实本地CPU子进程／socket方法和四次合成提交；原回归失败、首次漏迁移错误及一个缺PyArrow方法的错误输出保留。
+生产Python净减5行、测试净增31行；第三方、实验数据和归档未改，迁移不当作删除。源码范围、计量和剩余问题见[同一主报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)。
+已提出最终候选的服务器范围：一个待补CPU方法、两类owner的三种关闭交接，以及sync／async各两条模型请求；统一由原服务器会话执行，本轮未使用服务器或合并main。

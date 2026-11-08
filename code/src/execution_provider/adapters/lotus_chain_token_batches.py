@@ -8,7 +8,7 @@ from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS, _prepared
 
-from .records_feedback_observation import snapshot_rpc_report
+from .records_feedback_observation import audit_integer, snapshot_rpc_report
 from .records_native_sampler import RecordsNativeSampler
 
 
@@ -418,7 +418,7 @@ class BatchSupplyFeedback(RecordsNativeSampler):
             requests, errors, closed = self.requests, self.errors, self.closed
             ref_retained, future_retained = self.ref is not None, self.future is not None
             resource_attempts = [dict(row) for row in self.resource_rpc_audit]
-            resource_counts = {name:self._audit_integer(value) for name, value in self.resource_rpc_counts.items()}
+            resource_counts = {name:audit_integer(value) for name, value in self.resource_rpc_counts.items()}
         snapshot = snapshot_rpc_report(request=request, receipts=receipts, requests=requests,
             errors=errors, closed=closed, ref_retained=ref_retained, future_retained=future_retained,
             sampler_stopped=stopped)
@@ -427,7 +427,7 @@ class BatchSupplyFeedback(RecordsNativeSampler):
             phases=list(self.phases), **snapshot,
             resource_observation=dict(enabled=self._observes_resources(), recent_samples=list(self.resource_audit),
                 recent_RPC_attempts=resource_attempts, RPC_counts=resource_counts,
-                RPC_audit_session_id=self._audit_integer(self.session_id, minimum=-1), RPC_audit_capacity=64,
+                RPC_audit_session_id=audit_integer(self.session_id, minimum=-1), RPC_audit_capacity=64,
                 RPC_audit_scope='current bound Core session; diagnostics only, not policy input',
                 ownership='same single snapshot RPC; physical reader on model actor allocation',
                 estimated_request_cost_required=False, real_performance_benefit_proven=False,

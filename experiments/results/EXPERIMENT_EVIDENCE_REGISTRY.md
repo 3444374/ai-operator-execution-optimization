@@ -2279,3 +2279,10 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 [实际调用、保留的数据身份和入口说明](diagnostics/records_runtime_refactor_20261104/README.md#squad-input-ownership-audit)
 14项原纯数据方法一次通过；只修正归档PostgreSQL脚本的现行状态与助手说明，解析、提示、配置及函数实现保持。
 没有完整数据集、数据库、模型或查询执行，不新增测试或数据管理层，也不把文字少6行列为实现收益。
+
+## 2026-11-08：独立本地终审
+
+[独立本地终审](diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)
+以准确cc4为输入记录有限模块审查、新关闭RPC的剩余时长修正、观测直接调用及两处容量旧断言同步。
+最终92个不同本地CPU方法通过；首轮回归反例、清理漏迁移错误和缺PyArrow的方法均保留，真实Ray／模型由原服务器会话后续验证。
+不改变历史SDK／GPU资格、负结果、归档来源或原生baseline调度，不宣称全项目无工程债。

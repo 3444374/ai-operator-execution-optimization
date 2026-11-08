@@ -1,7 +1,7 @@
 """Explicit logical resource envelopes; CPU fixtures, no hardware-capacity claims."""
 from copy import deepcopy
 from contextlib import redirect_stdout
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import io
 import json
 from pathlib import Path
@@ -133,8 +133,11 @@ class ResourceBudgetTests(unittest.TestCase):
         value = capacity()
         method = MethodLimits(ITEM, 4*ITEM, 2*ITEM, 1)
         actual = value.method_capacity(self.resources, method)
-        self.assertEqual(actual.runs, 7)
+        self.assertEqual(value.budget.method_runs, 7)
+        self.assertEqual(actual.runs, 2)
         self.assertEqual(actual.bytes//row_reservation(method), 2)
+        count_limited = replace(value, budget=replace(value.budget, method_runs=1))
+        self.assertEqual(count_limited.method_capacity(self.resources, method).runs, 1)
 
     def test_short_large_and_oversize_inputs_use_declared_byte_limits(self):
         limits = capacity().limits(self.resources)

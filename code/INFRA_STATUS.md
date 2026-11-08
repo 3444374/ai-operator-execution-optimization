@@ -9,7 +9,7 @@ Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切
 当前主线是 SemLoom 外部执行与语义 API；PG 资料归档保留，当前不作为开发或验收前提，是否恢复以后另行决定。
 
 <a id="current-refactor-status"></a>
-## 当前实施状态（2026-11-07）
+## 当前实施状态（2026-11-08）
 
 <a id="refactor-completion-checklist"></a>
 ### 已处理清单与剩余事项
@@ -20,6 +20,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
 | 部分 | 已完成的实现整理 | 仍未完成或未验证 |
 |---|---|---|
+| 独立本地终审 | 核对现行入口、导入、参数、生产依赖与资源收尾；新关闭RPC只取得剩余时间，两处观测私有转发改用原纯函数；两项旧容量断言补齐字节与计数的共同作用 | [92项本地CPU及有限模块清单](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)通过；一项原生Ray启动上下文方法因缺PyArrow待服务器，真实Ray／模型仍按准确候选单独核验 |
 | 直接链的方法容量预览 | 显式实际MethodLimits进入现有总字节搜索，实际方法数量同时满足声明计数和完整状态字节；普通默认预览签名保持 | [20项CPU与Q9字节核算](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)通过；Q9 worker尚未接此新预览，未证明链取得服务授予、物理容量或性能改善 |
 | 链查询控制RPC收尾 | 采样停止后，在transport已有绝对截止时刻内收取原RPC终态；未结束继续保留引用，EOF异常保留首次清理报告 | [38项纯CPU与f18c Q9原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)分别解释；候选真实IPC／模型尚未复测，原GPU首个unknown原因不能唯一确定 |
 | 请求反馈的测量前探索 | 活动试探没有性能参考点时，可由新鲜原生反馈继续上探；已测比较保持；显式次数不足时继续当前测量 | [117项CPU与46fd实机观察](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)分别记录；新候选GPU效果尚未验证 |
@@ -81,9 +82,10 @@ Ray 先杀子进程和资源 tracker，tqdm 的多进程锁未注销；显式提
 [原5b模型部分失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
 保留60秒显式测试来源及unknown责任，不作为此次修正的模型复验。
 
-代码量按本轮SQuAD入口说明核对统计：核心`code/src`为48,478行，全部src＋scripts为100,577行，测试为92,093行，三目录合计192,670行。
-口径含Python注释与空行，核心排除experiments／baselines、保留research；文档和压缩历史原件另计。
-核心／宽口径相对固定main6a8a减少5,613／39,758行，相对清理起点3fd减少13,150／49,068行。
+代码量按本轮独立终审核对：核心`code/src`为48,476行，全部src＋scripts为92,895行，测试为90,387行，三目录合计183,282行。
+口径含Python注释与空行，核心排除experiments／baselines、保留research；integrations的5,914行、文档和压缩历史原件另计。
+核心／宽口径相对固定main6a8a减少5,615／47,440行；本批生产Python净减5行、测试净增31行。
+分目录、固定main对照和历史材料读数见[独立终审计量](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)，迁移和归档不当作删除实现。
 各批增减及当时的读数保留在[重构记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)，文件移动不算代码删除。
 旧文本嵌入HTTP画像脚本批只移出无现用调用的辅助，脚本减162行，src和测试不变；原件、五份历史投影及第三方原生HTTP用途保留，没有启动服务或新增测试。
 [异步生成参数快照精简](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)只保存一次同帧生成参数快照，结果调用直接归中性模块；四项CPU及四组内存帧／额度对照保持，源码另减8行，软件IPC按准确版本记录。

@@ -41,7 +41,7 @@ class CapacityModuleTests(unittest.TestCase):
                 with self.subTest(kind=kind.__name__, options=options), self.assertRaises(ValueError):
                     kind(**options)
 
-    def test_explicit_budget_fields_only_resize_their_own_resource_owner(self):
+    def test_explicit_budget_fields_only_affect_their_own_resource_owner(self):
         resources = RecordsResources(max_active_batches=4)
         value = declared()
         method = value.method_limits(1)
@@ -55,7 +55,7 @@ class CapacityModuleTests(unittest.TestCase):
         for name in asdict(value.budget):
             changed = replace(value, budget=replace(value.budget, **{name:getattr(value.budget, name)+1}))
             expected = (name not in ('method_runs', 'method_bytes'),
-                        name in ('method_runs', 'method_bytes'), False)
+                        name == 'method_bytes', False)
             with self.subTest(field=name):
                 self.assertEqual(tuple(a != b for a, b in zip(original, roles(changed))), expected)
 
