@@ -180,8 +180,9 @@ class PreparedOwnerTests(unittest.TestCase):
         with FakeRuntime() as runtime:
             owner = self.make()
             owner.start(time.monotonic() + 3)
-            owner.close_deadline = time.monotonic() - 1
-            self.assertEqual(owner.close()["status"], "unknown")
+            owner.close_deadline = time.monotonic() + 3
+            with patch.object(owner, "wait_ready", side_effect=TimeoutError("delayed close reply")):
+                self.assertEqual(owner.close()["status"], "unknown")
             pending = owner._model_close_ref
             self.assertIsNotNone(pending)
             self.assertFalse(pending.resolved)

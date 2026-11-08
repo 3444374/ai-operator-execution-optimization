@@ -250,7 +250,10 @@ class RecordsActorOwner:
                 timeout = self._model_close_timeout_s()
                 _deadline(timeout)
                 if self._model_close_ref is None:
-                    self._model_close_ref = self.model_actor.close.remote(timeout)
+                    _check(self.close_deadline)
+                    self._model_close_ref = self.model_actor.close.remote(
+                        remaining_time(self.close_deadline, timeout),
+                    )
                 # The default API window stays ten seconds; a private process
                 # owner can include its bounded IPC teardown in the same RPC.
                 deadline = time.monotonic() + timeout + 1.0

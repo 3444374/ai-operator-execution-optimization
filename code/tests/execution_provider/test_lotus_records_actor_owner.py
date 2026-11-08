@@ -262,8 +262,9 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
         with FakeRuntime() as runtime:
             owner = self.owner()
             owner.start(time.monotonic() + 3)
-            owner.close_deadline = time.monotonic() - 1
-            report = owner.close()
+            owner.close_deadline = time.monotonic() + 3
+            with patch.object(owner, "wait_ready", side_effect=TimeoutError("delayed close reply")):
+                report = owner.close()
             pending = owner._model_close_ref
             self.assertEqual(report["status"], "unknown")
             self.assertIsNotNone(pending)
@@ -289,6 +290,32 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
                      and event[1].endswith(".close")]
             self.assertEqual([event[2] for event in calls], [(15.0,)])
             self.assertIsNone(owner.last_close_report["gpu_exit_confirmed"])
+
+    def test_explicit_close_deadline_limits_new_shutdown_calls(self):
+        for default_timeout in (10.0, 15.0):
+            for deadline in (None, 100.25, 200.0, 99.0):
+                with self.subTest(default=default_timeout, deadline=deadline), FakeRuntime() as runtime:
+                    owner = self.owner()
+                    owner.start(time.monotonic() + 3)
+                    owner.close_deadline = deadline
+                    with patch.object(owner, "_model_close_timeout_s", return_value=default_timeout), \
+                         patch.object(actors.time, "monotonic", return_value=100.0):
+                        report = owner.close()
+                    calls = [event for event in runtime.events if event[0] == "submit"
+                             and event[1].endswith(".close")]
+                    if deadline == 99.0:
+                        self.assertEqual(calls, [])
+                        self.assertIsNone(owner._model_close_ref)
+                        self.assertEqual(report["status"], "unknown")
+                        self.assertEqual(runtime.engines[0].closes, 0)
+                        owner.close_deadline = None
+                        self.assertEqual(owner.close()["status"], "closed")
+                        self.assertEqual(runtime.engines[0].closes, 1)
+                    else:
+                        expected = 0.25 if deadline == 100.25 else default_timeout
+                        self.assertEqual([event[2] for event in calls], [(expected,)])
+                        self.assertEqual(report["status"], "closed")
+                        self.assertEqual(runtime.engines[0].closes, 1)
 
     def test_all_preflight_failures_precede_actor_allocation(self):
         for failure in ["method", "driver", "generation", "ray-version", "ray-uninitialized"]:
