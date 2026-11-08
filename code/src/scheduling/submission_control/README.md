@@ -17,6 +17,9 @@
 较小候选不可比时退回参考点；仅工作均值漂移不重开下探，既有速率变化或新资源信号仍可重开。
 保留的已测高点同时成为后续回退点：新试探遇未知反馈退回它，持有时遇未知反馈不退到旧小点；压力仍可降档。
 显式`max_changes`为新试探及可能的返回预留次数，默认仍为`None`；压力降档和未知返回照常执行。
+活动试探尚无性能参考点时，新鲜原生反馈可提前延伸，不等待完成计数；每次换窗后仍需新的来源采样。
+已有参考点、向下比较和停止状态继续原流程；次数不足以延伸并返回时，继续测量当前试探。
+物理时间或数值不合要求时保留具体检查和有限数值，原生试探不冒充设备空闲；见[测量前探索](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)。
 源码与CPU范围见[定向检查与工程选择](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#request-inconclusive-exploration-20261108)。
 
 旧指数平滑（EWMA）／队首等待（HOL）两种控制器及三个旧导出已退役，当前不提供旧位置转发；其他平滑统计和队首等待观察字段继续维护。

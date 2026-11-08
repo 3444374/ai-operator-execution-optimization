@@ -1,5 +1,7 @@
 """Permission, identity and physical-position checks with CPU fixtures only."""
 from dataclasses import replace
+import json
+import math
 import unittest
 
 from src.scheduling.core.models import AdmissionObservation
@@ -75,6 +77,34 @@ class ResourceRequestProbeTests(unittest.TestCase):
                 result = self.opportunity((self.view(1), self.view(2, **change)))
                 self.assertEqual((result.kind, result.probe_target_window), ('native_headroom', 4))
                 self.assertNotIn('physical_samples', result.evidence)
+
+    def test_rejected_physical_values_report_the_check_and_finite_observations(self):
+        cases = (
+            ({'requested_at_s': float('nan')}, 'nonfinite_time'),
+            ({'received_at_s': 21.}, 'time_order'),
+            ({'requested_at_s': 18.}, 'sample_age'),
+            ({'source_elapsed_s': 1.}, 'source_elapsed'),
+            ({'gpu_busy_pct': float('inf')}, 'utilization_range'),
+        )
+        for changes, check in cases:
+            with self.subTest(check=check):
+                result = self.opportunity((self.view(2, **changes),))
+                self.assertEqual((result.kind, result.probe_target_window), ('native_headroom', 4))
+                self.assertEqual(result.reason, 'physical_time_or_values_invalid_native_trial')
+                rejection = result.evidence['physical_rejection']
+                self.assertEqual((rejection['check'], rejection['request_index']), (check, 2))
+                self.assertEqual((rejection['observed_at_s'], rejection['max_age_s']), (20., 1.))
+                for name, value in changes.items():
+                    self.assertEqual(rejection['sample'][name], value if math.isfinite(value) else None)
+                json.dumps(result.evidence, allow_nan=False)
+
+    def test_physical_time_equalities_remain_accepted(self):
+        for changes in (
+                {'requested_at_s': 19., 'received_at_s': 20., 'source_elapsed_s': 1.},
+                {'requested_at_s': 20., 'received_at_s': 20., 'source_elapsed_s': 0.}):
+            result = self.opportunity((self.view(2, **changes),))
+            self.assertEqual(result.kind, 'idle_device_headroom')
+            self.assertNotIn('physical_rejection', result.evidence)
 
     def test_duplicate_or_conflicting_RPC_identity_does_not_make_two_samples(self):
         one = self.opportunity((self.view(1),))

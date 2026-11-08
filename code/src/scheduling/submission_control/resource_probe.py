@@ -223,12 +223,25 @@ def resource_request_opportunity(observation, supply, *, current_window, hard_li
         if devices is not None and bound != devices:
             return result('physical_devices_changed_native_trial', target=fallback)
         devices = bound
-        if (not all(_finite(v) for v in (view.requested_at_s, view.received_at_s, view.source_elapsed_s))
-                or not 0 <= view.requested_at_s <= view.received_at_s <= s.observed_at_s
-                or s.observed_at_s-view.requested_at_s > max_age_s
-                or not 0 <= view.source_elapsed_s <= view.received_at_s-view.requested_at_s
-                or not all(_finite(v) and 0 <= v <= 100
-                    for v in (view.gpu_busy_pct, view.host_peak_cpu_pct))):
+        check = None
+        if not all(_finite(v) for v in (view.requested_at_s, view.received_at_s, view.source_elapsed_s)):
+            check = 'nonfinite_time'
+        elif not 0 <= view.requested_at_s <= view.received_at_s <= s.observed_at_s:
+            check = 'time_order'
+        elif s.observed_at_s-view.requested_at_s > max_age_s:
+            check = 'sample_age'
+        elif not 0 <= view.source_elapsed_s <= view.received_at_s-view.requested_at_s:
+            check = 'source_elapsed'
+        elif not all(_finite(v) and 0 <= v <= 100
+                     for v in (view.gpu_busy_pct, view.host_peak_cpu_pct)):
+            check = 'utilization_range'
+        if check is not None:
+            sample = {name: getattr(view, name) for name in (
+                'requested_at_s', 'received_at_s', 'source_elapsed_s',
+                'gpu_busy_pct', 'host_peak_cpu_pct')}
+            evidence['physical_rejection'] = dict(check=check, request_index=view.request_index,
+                observed_at_s=s.observed_at_s, max_age_s=max_age_s,
+                sample={name: value if _finite(value) else None for name, value in sample.items()})
             return result('physical_time_or_values_invalid_native_trial', target=fallback)
     idle = min(1-max(v.gpu_busy_pct for v in pair)/100,
                1-max(v.host_peak_cpu_pct for v in pair)/100)

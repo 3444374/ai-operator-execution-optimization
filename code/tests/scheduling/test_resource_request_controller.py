@@ -67,6 +67,10 @@ class ResourceTrace:
         raise AssertionError(self.controller.report())
 
 
+    def measure_reference(self, window=2, **kwargs):
+        self.until(lambda report, _: report['measured_window'] == window,
+                   permit={'request_limit': window}, **kwargs)
+
 class ResourceRequestTests(unittest.TestCase):
     def test_resource_trial_can_jump_before_any_reference_or_completed_work(self):
         trace = ResourceTrace()
@@ -102,6 +106,68 @@ class ResourceRequestTests(unittest.TestCase):
         result = trace.tick()
         self.assertEqual(result.window, 2)
         self.assertIsNone(trace.controller.report()['verified_performance_window'])
+
+    def test_fresh_native_frames_extend_an_unmeasured_trial_without_completions(self):
+        for physical in (False, (100., 10.)):
+            with self.subTest(physical=physical):
+                trace = ResourceTrace(maximum=16)
+                windows = [trace.tick(physical=physical).window for _ in range(4)]
+                self.assertEqual(windows, [2, 4, 8, 16])
+                self.assertEqual(trace.tick(physical=physical).window, 16)
+                report = trace.controller.report()
+                self.assertIsNone(report['measured_window'])
+                self.assertIsNone(report['verified_performance_window'])
+                self.assertEqual((trace.completed, report['accepted_steps']), (0, 0))
+                self.assertEqual(trace.tick(observation={'sample_age_s': 2.}).window, 1)
+
+    def test_a_measured_reference_keeps_native_trials_on_the_measurement_clock(self):
+        trace = ResourceTrace(maximum=16)
+        trace.until(lambda r, _: r['measured_window'] == 2, permit={'request_limit': 2})
+        self.assertEqual(trace.tick().window, 4)
+        self.assertEqual(trace.tick().window, 4)
+        self.assertEqual(trace.controller.report()['measured_window'], 2)
+
+    def test_native_extension_resumes_measurement_at_the_applied_owner_limit(self):
+        trace = ResourceTrace(maximum=32)
+        windows = [trace.tick(permit={'request_limit': 6}).window for _ in range(3)]
+        self.assertEqual(windows, [2, 4, 6])
+        trace.measure_reference(6)
+        report = trace.controller.report()
+        self.assertEqual((report['window'], report['measured_window'], report['changes']), (6, 6, 3))
+        self.assertEqual(report['accepted_steps'], 0)
+        self.assertIsNone(report['verified_performance_window'])
+
+    def test_unmeasured_native_extension_keeps_source_supply_and_safety_priority(self):
+        cases = (
+            ({'sample_sequence': 1}, {}, {'sample_sequence': 1, 'native_sequence': 1}, 2),
+            ({'sample_age_s': .2}, {}, {}, 2),
+            ({'waiting': 1}, {}, {}, 2),
+            ({'transition_pending': 1}, {}, {}, 2),
+            ({'consumer_backpressure': True}, {}, {}, 2),
+            ({}, {'ready_items': 0}, {}, 2),
+            ({}, {'capacity_blocked': 'result_bytes'}, {}, 2),
+            ({}, {}, {'request_limit': 2}, 2),
+            ({'preemptions_total': 1}, {}, {}, 1),
+            ({'pending_items': 0}, {}, {}, 1),
+            ({'sample_age_s': 2.}, {}, {}, 1),
+            ({}, {}, {'engine_uid': 'foreign'}, 1),
+        )
+        for observation, supply, permit, expected in cases:
+            with self.subTest(observation=observation, supply=supply, permit=permit):
+                trace = ResourceTrace(maximum=16)
+                trace.tick()
+                decision = trace.tick(elapsed=.1, observation=observation, supply=supply, permit=permit)
+                self.assertEqual(decision.window, expected)
+                self.assertIsNone(trace.controller.report()['verified_performance_window'])
+
+    def test_extension_preserves_measurement_when_its_explicit_action_budget_is_spent(self):
+        trace = ResourceTrace(maximum=16, options=ResourceRequestConfig(max_changes=4))
+        trace.until(lambda report, _: report['stop_reason'] == 'change_budget', count=40)
+        report = trace.controller.report()
+        self.assertEqual([row['window'] for row in report['history']], [2, 4, 8])
+        self.assertEqual((report['window'], report['measured_window'], report['changes']), (8, 8, 3))
+        self.assertEqual(report['accepted_steps'], 0)
+        self.assertIsNone(report['verified_performance_window'])
 
     def test_unbound_unknown_or_foreign_safety_information_cannot_authorize_growth(self):
         for changes in (False, {'engine_uid': 'foreign'}, {'session_id': 8},
@@ -176,6 +242,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_gain_is_recorded_only_after_disjoint_actual_work_windows(self):
         trace = ResourceTrace(maximum=16)
+        trace.measure_reference()
         trace.until(lambda r, _: r['accepted_steps'] > 0, count=lambda c: 40*c)
         report = trace.controller.report()
         self.assertIsNotNone(report['verified_performance_window'])
@@ -188,6 +255,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_equal_work_and_rate_can_select_a_smaller_measured_window(self):
         trace = ResourceTrace(maximum=8)
+        trace.measure_reference()
         trace.until(lambda r, _: r['stop_reason'] == 'local_plateau')
         report = trace.controller.report()
         self.assertEqual(report['window'], 2)
@@ -196,7 +264,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_incomparable_work_does_not_turn_apparent_speed_into_verified_gain(self):
         trace = ResourceTrace(maximum=8)
-        trace.until(lambda r, _: r['measured_window'] == 2)
+        trace.measure_reference()
         incomparable = False
         for _ in range(18):
             quota = trace.controller.current_window
@@ -425,6 +493,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_held_work_changes_invalidate_the_previous_performance_selection(self):
         trace = ResourceTrace(maximum=8)
+        trace.measure_reference()
         trace.until(lambda r, _: r['stop_reason'] == 'local_plateau')
         self.assertEqual(trace.controller.report()['verified_performance_window'], 2)
         trace.until(lambda r, _: any(row['kind'] == 'held_performance_changed' for row in r['evaluations']),
@@ -502,6 +571,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_query_tail_stops_new_trials_without_erasing_a_completed_comparison(self):
         trace = ResourceTrace(maximum=8)
+        trace.measure_reference()
         trace.until(lambda r, _: r['stop_reason'] == 'local_plateau')
         result = trace.tick(observation={'pending_items': 0})
         report = trace.controller.report()
@@ -512,6 +582,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_change_budget_reserves_only_the_actions_remaining_in_an_existing_trial(self):
         trace = ResourceTrace(maximum=16, options=ResourceRequestConfig(max_changes=4))
+        trace.measure_reference()
         trace.until(lambda r, _: r['stop_reason'] == 'change_budget', count=lambda c: 40*c)
         report = trace.controller.report()
         self.assertEqual(report['window'], 8)
@@ -606,6 +677,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_a_stale_auxiliary_guard_cannot_hide_new_native_preemption(self):
         trace = ResourceTrace(maximum=16)
+        trace.measure_reference()
         trace.until(lambda r, _: r['accepted_steps'] > 0, count=lambda c: 40*c)
         trace.tick(observation={'waiting': 1}, permit={'safety_sequence': 10, 'memory_pressure': False})
         before = trace.controller.current_window
@@ -615,6 +687,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_new_native_preemption_does_not_require_a_new_operational_permit(self):
         trace = ResourceTrace(maximum=16)
+        trace.measure_reference()
         trace.until(lambda r, _: r['accepted_steps'] > 0, count=lambda c: 40*c)
         trace.tick(observation={'waiting': 1})
         before = trace.controller.current_window
@@ -651,6 +724,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_pressure_cannot_hide_a_same_frame_completed_counter_reversal(self):
         trace = ResourceTrace(maximum=16)
+        trace.measure_reference()
         trace.until(lambda r, _: r['accepted_steps'] > 0, count=lambda c: 40*c)
         before = trace.controller.current_window
         names = ('completed_items_total', 'completed_input_work_total', 'completed_output_work_total',
@@ -665,6 +739,7 @@ class ResourceRequestTests(unittest.TestCase):
 
     def test_protection_only_frames_with_no_work_fields_do_not_invent_a_reversal(self):
         trace = ResourceTrace(maximum=16)
+        trace.measure_reference()
         trace.until(lambda r, _: r['accepted_steps'] > 0, count=lambda c: 40*c)
         before = trace.controller.current_window
         names = ('completed_items_total', 'completed_input_work_total', 'completed_output_work_total',
@@ -702,7 +777,7 @@ class ResourceRequestTests(unittest.TestCase):
             'safety_sequence': 10, 'memory_pressure': False}).window
         result = trace.tick(elapsed=.001, permit={'request_limit': 16,
             'safety_sequence': 10, 'memory_pressure': False})
-        self.assertEqual(result.window, before)
+        self.assertGreaterEqual(result.window, before)
         self.assertNotIn('conflicting', result.reason)
 
     def test_first_old_guard_cannot_be_made_fresh_by_a_current_permission(self):
@@ -775,7 +850,7 @@ class ResourceRequestTests(unittest.TestCase):
         before = trace.tick(physical=True).window
         for _ in range(6):
             result = trace.tick(40, elapsed=1., observation={'completed_computed_input_work_total': None})
-            self.assertEqual(result.window, before)
+            self.assertGreaterEqual(result.window, before)
         report = trace.controller.report()
         self.assertIsNone(report['verified_performance_window'])
         self.assertIsNone(report['measured_window'])
@@ -809,7 +884,7 @@ class ResourceRequestTests(unittest.TestCase):
             'safety_observed_at_s': first_time, 'memory_pressure': False}).window
         result = trace.tick(elapsed=.1, permit={'safety_sequence': 10, 'memory_pressure': False})
         self.assertEqual(trace.permit.safety_observed_at_s, first_time)
-        self.assertEqual(result.window, before)
+        self.assertGreaterEqual(result.window, before)
         self.assertNotIn('conflicting', result.reason)
 
     def test_a_missing_work_field_cannot_hide_another_known_counter_reversal(self):
@@ -818,6 +893,7 @@ class ResourceRequestTests(unittest.TestCase):
         for index, field in enumerate(fields):
             with self.subTest(field=field):
                 trace = ResourceTrace(maximum=16)
+                trace.measure_reference()
                 trace.until(lambda r, _: r['window'] == 8 and r['verified_performance_window'] == 4,
                             count=lambda c: 40*c)
                 result = trace.tick(40, observation={field: 0, fields[(index+1)%len(fields)]: None})
@@ -828,9 +904,11 @@ class ResourceRequestTests(unittest.TestCase):
     def test_partial_known_watermarks_do_not_make_a_valid_complete_span_inconsistent(self):
         trace = ResourceTrace(maximum=16)
         before = trace.tick(physical=True).window
-        self.assertEqual(trace.tick(40, observation={'completed_computed_input_work_total': None}).window, before)
-        self.assertEqual(trace.tick(40, observation={'completed_input_work_total': None}).window, before)
-        trace.until(lambda r, _: r['measured_window'] == before, count=40)
+        self.assertEqual(trace.tick(40, observation={'completed_computed_input_work_total': None},
+            permit={'request_limit': before}).window, before)
+        self.assertEqual(trace.tick(40, observation={'completed_input_work_total': None},
+            permit={'request_limit': before}).window, before)
+        trace.measure_reference(before, count=40)
         report = trace.controller.report()
         self.assertTrue(report['work_source_valid'])
         self.assertEqual(report['accepted_steps'], 0)

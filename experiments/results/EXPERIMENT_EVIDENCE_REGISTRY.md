@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-08：没有性能参考点时的原生试探
+
+[46fd实机观察与117项CPU](diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)区分实际慢暖轮、合成状态序列与新工程选择。
+活动试探可由新鲜安全原生反馈提前延伸；原生增长不代表设备空闲，未测点不记收益；物理采样拒绝原因增加细分记录，原判定不放宽。新候选GPU尚未运行。
+
 ## 2026-11-08：不可比探索的旧实机负结果与新工程选择
 
 [原实机与新CPU记录](diagnostics/records_runtime_refactor_20261104/README.md#request-inconclusive-exploration-20261108)保留397三轮时间与工作均值触发复算；

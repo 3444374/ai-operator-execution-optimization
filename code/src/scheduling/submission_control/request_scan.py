@@ -623,7 +623,12 @@ class ResourceRequestController:
         end = min(self.maximum, self._pressure_ceiling, p.request_limit)
         target = opportunity.probe_target_window
         resource_directed = opportunity.kind == 'idle_device_headroom'
-        if (resource_directed and target is not None and min(target, end) > self.current_window
+        # Fresh native feedback can extend an unmeasured trial. If the explicit
+        # action budget cannot cover extension and return, measure it instead.
+        extend_native = (self._trial is not None and self._reference is None
+            and (self.options.max_changes is None or self._changes+2 <= self.options.max_changes))
+        if ((resource_directed or extend_native)
+                and target is not None and min(target, end) > self.current_window
                 and (self._stop_reason == 'work_not_comparable'
                      or self._direction == 'up' and self._stop_reason is None)
                 and self._censored_frontier is None):

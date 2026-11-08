@@ -35,9 +35,18 @@ def costed_prefix(trace, growth):
 
 
 class ResourceRequestSearchTests(unittest.TestCase):
+    def test_unmeasured_native_extension_uses_the_same_costed_ready_prefix(self):
+        trace = ResourceTrace(maximum=16)
+        self.assertEqual(trace.tick().window, 2)
+        self.assertEqual(trace.tick(resource_step=costed_prefix(trace, 3)).window, 5)
+        report = trace.controller.report()
+        self.assertEqual(report['resource_trials'][-1]['reason'], 'costed_ready_prefix_trial')
+        self.assertIsNone(report['measured_window'])
+        self.assertIsNone(report['verified_performance_window'])
+
     def incomparable_higher_trace(self, options=None):
         trace = ResourceTrace(maximum=16, options=options)
-        trace.until(lambda r, _: r['measured_window'] == 2)
+        trace.measure_reference()
         trace.until(lambda r, _: any(e['kind'] == 'work_comparison'
             and e['candidate']['window'] == 4 and e['evidence']['outcome'] is None
             for e in r['evaluations']), count=160, work=(200, 8, 40, 160))
@@ -120,6 +129,7 @@ class ResourceRequestSearchTests(unittest.TestCase):
         trace = ResourceTrace(maximum=136, options=options)
         trace.tick(physical=(86., 10.))
         first = trace.controller.current_window
+        trace.measure_reference(first, count=32, work=(130, 20, 55, 75), physical=(100., 10.))
         trace.until(lambda r, _: r['window'] < first, count=32,
             work=(130, 20, 55, 75), physical=(100., 10.))
         trace.until(lambda r, _: r['stop_reason'] == 'work_not_comparable', count=32,
@@ -224,6 +234,7 @@ class ResourceRequestSearchTests(unittest.TestCase):
         trace = ResourceTrace(maximum=256)
         trace.tick(physical=(20., 10.))
         first = trace.controller.current_window
+        trace.measure_reference(first, count=256)
         self.assertGreater(first, 128)
         trace.until(lambda r, _: r['stop_reason'] == 'minimum_measured_window', count=256)
         report = trace.controller.report()
@@ -248,6 +259,7 @@ class ResourceRequestSearchTests(unittest.TestCase):
         trace = ResourceTrace(maximum=256)
         trace.tick(physical=(20., 10.))
         first = trace.controller.current_window
+        trace.measure_reference(first, count=lambda c: 16*c)
         trace.until(lambda r, _: len(r['history']) >= 3, count=lambda c: 16*c)
         self.assertEqual(trace.controller.current_window, first)
         returned_at = trace.completed
@@ -277,7 +289,9 @@ class ResourceRequestSearchTests(unittest.TestCase):
         self.assertFalse(trace.controller.report()['local_plateau_confirmed'])
 
     def test_ready_censored_comparison_does_not_restart_on_busy_or_source_changes(self):
-        trace = work_sequence(ResourceTrace(maximum=256), 200, supply={'ready_items': 1})
+        trace = ResourceTrace(maximum=256)
+        trace.measure_reference()
+        work_sequence(trace, 200, supply={'ready_items': 1})
         report = trace.controller.report()
         self.assertEqual(report['stop_reason'], 'comparison_censored')
         self.assertFalse(report['local_plateau_confirmed'])
@@ -288,7 +302,9 @@ class ResourceRequestSearchTests(unittest.TestCase):
             self.assertEqual(trace.controller.report()['changes'], changes)
 
     def test_ready_expansion_reopens_with_current_reference_work(self):
-        trace = work_sequence(ResourceTrace(maximum=256), 200, supply={'ready_items': 1})
+        trace = ResourceTrace(maximum=256)
+        trace.measure_reference()
+        work_sequence(trace, 200, supply={'ready_items': 1})
         before, resumed_at = trace.controller.current_window, trace.completed
         work_sequence(trace, 100)
         report = trace.controller.report()
@@ -301,7 +317,9 @@ class ResourceRequestSearchTests(unittest.TestCase):
     def test_rate_or_work_changes_do_not_reopen_the_same_censored_range(self):
         for work in ((100, 4, 80, 20), (200, 8, 160, 40)):
             with self.subTest(work=work):
-                trace = work_sequence(ResourceTrace(maximum=256), 200, supply={'ready_items': 1})
+                trace = ResourceTrace(maximum=256)
+                trace.measure_reference()
+                work_sequence(trace, 200, supply={'ready_items': 1})
                 trace.until(lambda r, decision: decision.reason == 'held_window_measured',
                     count=lambda c: 16*c, supply={'ready_items': 1})
                 before = trace.controller.report()
@@ -315,7 +333,9 @@ class ResourceRequestSearchTests(unittest.TestCase):
                 self.assertTrue(any(row['kind'] == 'held_performance_changed' for row in report['evaluations']))
 
     def test_pending_expansion_is_a_new_opportunity_after_censored_comparison(self):
-        trace = work_sequence(ResourceTrace(maximum=256), 200, observation={'pending_items': 1})
+        trace = ResourceTrace(maximum=256)
+        trace.measure_reference()
+        work_sequence(trace, 200, observation={'pending_items': 1})
         before = trace.controller.current_window
         self.assertIn('pending', trace.controller.report()['censored_frontier']['clip_causes'])
         work_sequence(trace, 100)
@@ -324,7 +344,9 @@ class ResourceRequestSearchTests(unittest.TestCase):
     def test_mixed_held_windows_do_not_hide_a_changed_verified_selection(self):
         for work in ((100, 4, 80, 20), (200, 8, 160, 40)):
             with self.subTest(work=work):
-                trace = work_sequence(ResourceTrace(maximum=256), 200, supply={'ready_items': 1})
+                trace = ResourceTrace(maximum=256)
+                trace.measure_reference()
+                work_sequence(trace, 200, supply={'ready_items': 1})
                 before = trace.controller.report()
                 # Start between held points, so the first point contains both
                 # old and new work. Later complete points use only new work.
@@ -348,6 +370,7 @@ class ResourceRequestSearchTests(unittest.TestCase):
 
     def test_fresh_costed_prefix_can_reopen_a_censored_comparison(self):
         trace = ResourceTrace(maximum=256)
+        trace.measure_reference()
         work_sequence(trace, 200, resource_step=costed_prefix(trace, 1))
         before = trace.controller.current_window
         self.assertIn('costed_ready_prefix', trace.controller.report()['censored_frontier']['clip_causes'])
@@ -358,6 +381,7 @@ class ResourceRequestSearchTests(unittest.TestCase):
         for invalid in ('missing', 'foreign', 'old'):
             with self.subTest(invalid=invalid):
                 trace = ResourceTrace(maximum=256)
+                trace.measure_reference()
                 work_sequence(trace, 200, resource_step=costed_prefix(trace, 1))
                 changes = trace.controller.report()['changes']
                 good = costed_prefix(trace, 256)

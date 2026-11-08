@@ -20,7 +20,8 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
 | 部分 | 已完成的实现整理 | 仍未完成或未验证 |
 |---|---|---|
-| 请求反馈的不可比试探 | 新候选保留已测量但不可比的较高位置，验证字段保持未知；不可比下探仍返回，仅工作均值漂移不重开；显式次数与安全响应保持 | [109项CPU与旧实机负结果](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#request-inconclusive-exploration-20261108)分开解释；397实机功能通过但第二暖轮138.440秒，新候选GPU效果待验证 |
+| 请求反馈的测量前探索 | 活动试探没有性能参考点时，可由新鲜原生反馈继续上探；已测比较保持；显式次数不足时继续当前测量 | [117项CPU与46fd实机观察](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)分别记录；新候选GPU效果尚未验证 |
+| 请求反馈的不可比试探 | 保留已测量但不可比的较高位置，验证字段保持未知；不可比下探仍返回，仅工作均值漂移不重开；显式次数与安全响应保持 | [109项CPU与原实机负结果](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#request-inconclusive-exploration-20261108)分开解释；397和46fd的实机结果均不足以证明稳定改善 |
 | 引擎配置 | 中性规范从同步引擎移出；sync／async 分别构造和释放；五项可选 vLLM 参数省略时交引擎解析，实际上下文反馈给长度检查及身份 | 不能由一次 ready 记录推断所有模型、版本及图像路径 |
 | C／R／存储额度 | 普通／融合容量在同一中性模块定义；SDK、Movie／Session 的 R 默认 None；普通 async 与已支持 rolling 分开请求窗口、驻留、输入／结果字节和未消费结果槽；默认结果槽不再固定8 | 静态与低层整批仍要求其支持的有限声明；无声明的物理 RAM 自动授予、完整查询内存计量未实现 |
 | 查询与 Session | owner、普通Filter、融合批、记录级关系数据、Session提交与flow各有职责；整查询期限默认未指定，显式值保留；启动、通信和关闭分别计时；准确e5的四项真实CPU IPC和一项模拟时钟通过 | 真实模型期限／abort、模型重复关闭及resident／fused完整组合未全覆盖 |

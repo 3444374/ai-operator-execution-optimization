@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-08：原生试探与性能测量分别推进
+
+[测量前探索记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)依据46fd慢暖轮和当前源码，允许无参考点的活动试探在新鲜原生反馈下继续上探。
+继续复用原有许可、来源、返回和显式次数处理；物理采样只增加具体拒绝原因，不新增阈值、配置或控制器。纯CPU与实机性能结论分开，新GPU由原会话另行安排。
+
 ## 2026-11-07：PG文本工具与文件任务分别维护
 
 三个导入器、三个PG取数诊断、专用身份助手及五份专测按[十二份准确原件](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)归档。
