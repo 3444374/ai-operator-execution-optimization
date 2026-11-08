@@ -5213,7 +5213,7 @@ COCO导入器、配套SQL、三个PG画像及两份专测共七文件移出活�
 <a id="request-incomparable-retry-20261108"></a>
 ## 2026-11-08：请求反馈的不可比重复试探
 
-起点为公开`8b6e91f732bdcbf4a4a911880bc942e0a76ac084`，本批为本地候选，尚未发布或运行GPU。
+起点为公开`8b6e91f732bdcbf4a4a911880bc942e0a76ac084`，本批为CPU验证候选，实际GPU运行尚未验证。
 [request_scan.py](../../../../code/src/scheduling/submission_control/request_scan.py)在不可比试探退回后，原先会在下一次持有测量清除停止原因，同时保留向下方向；因此相同工作状态可再次触发同一下探。
 除方向路径外，实际额度处的减半路径也纳入检查，不能只清初始扫描标志解决。
 
