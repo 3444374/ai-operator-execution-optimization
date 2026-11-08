@@ -19,13 +19,13 @@ import uuid
 from dataclasses import asdict
 from copy import deepcopy
 
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
 MAX_MESSAGE_BYTES = 64 * 1024**2
 CODE_ROOT = Path(__file__).resolve().parents[3]
-# The worker's existing engine.close() API allows ten seconds. Leave one more
-# second for its reply, then four seconds for bounded owned-process cleanup.
+# Default total caller allowance, including the original process-cleanup reserve.
 DEFAULT_CLOSE_TIMEOUT_S = 15.0
 CLOSE_CLEANUP_RESERVE_S = 4.0
 RESULT_PROTOCOL_ERROR = "private engine result cardinality, order or association differs"
@@ -39,8 +39,8 @@ def _encode(value):
 
 
 def _publish(path, value):
-    from src.baselines.common.private_artifacts import write_private_json
-    from src.baselines.common.redact import redact_json_values
+    from src.infrastructure.private_artifacts import write_private_json
+    from src.infrastructure.redact import redact_json_values
 
     temporary = path.with_suffix(".tmp")
     write_private_json(temporary, redact_json_values(value))
@@ -137,7 +137,7 @@ class EngineProcess:
             read_fd = None
             self.ready_report = self._exchange(
                 dict(op="open", engine=asdict(engine), generation=asdict(generation)),
-                min(deadline, started + startup_timeout_s),
+                earliest_deadline(deadline, started + startup_timeout_s),
             )
             if self.ready_report.get("kind") != "ready":
                 raise RuntimeError("private engine initialization failed: " +
@@ -165,7 +165,7 @@ class EngineProcess:
     def _check(self, deadline, *, stopping=True):
         if stopping and (self.control / "stop").exists():
             raise InterruptedError("Daft records query cancelled")
-        if time.monotonic() >= deadline:
+        if deadline_expired(deadline):
             raise TimeoutError("Daft records engine deadline expired")
 
     def _exchange(self, value, deadline, *, stopping=True):
@@ -223,7 +223,7 @@ class EngineProcess:
 
     def _reap_idle(self):
         while not self._reaper_stop.wait(0.02):
-            if (self.control / "stop").exists() or time.monotonic() >= self.deadline:
+            if (self.control / "stop").exists() or deadline_expired(self.deadline):
                 with self._lock:
                     # An idle stop forbids reuse without breaking a healthy
                     # IPC channel before it can acknowledge engine shutdown.
@@ -234,7 +234,7 @@ class EngineProcess:
                 return
 
     def _run_prepared(self, rows):
-        from src.serving.backends.vllm_engine import _prepared
+        from src.serving.backends.vllm_protocol import _prepared
 
         identities, _ = _prepared(rows)
         self._last_raw_response_json = None
@@ -356,7 +356,7 @@ class EngineProcess:
                 try:
                     _observe(self.owned, self.process.pid, self.created)
                     if not self._broken and not api_confirmed and self.process.poll() is None:
-                        reply = self._exchange(dict(op="close"), api_deadline, stopping=False)
+                        reply = self._exchange(dict(op="close", deadline=api_deadline), api_deadline, stopping=False)
                         if reply.get("kind") == "closed":
                             self.engine_close = reply["report"]
                             api_confirmed = self.engine_close.get("engine_api_shutdown_confirmed") is True
@@ -434,11 +434,13 @@ class EngineProcess:
         return self.last_close_report
 
 
-def serve(result_fd):
+def serve(result_fd, *, engine_factory=None):
     """Run in model_python; the driver/LOTUS environment is never imported."""
     from src.serving.backends.vllm_engine import VllmEngine
 
+    engine_factory = VllmEngine if engine_factory is None else engine_factory
     engine = None
+    close_deadline = None
     with os.fdopen(result_fd, "wb", buffering=0) as output:
         def send(value):
             if engine is not None and engine.spec.enable_mfu_metrics and value.get("kind") == "results":
@@ -452,14 +454,18 @@ def serve(result_fd):
                     raise ValueError("engine IPC request exceeds its byte limit")
                 value = json.loads(raw)
                 if engine is None and value["op"] == "open":
-                    engine = VllmEngine(EngineSpec.from_dict(value["engine"]),
+                    engine = engine_factory(EngineSpec.from_dict(value["engine"]),
                                         GenerationSpec.from_dict(value["generation"]))
                     send(dict(kind="ready", **engine.ready()))
                 elif engine is not None and value["op"] == "run":
                     send(dict(kind="results", rows=engine.run_prepared(
                         value["rows"], deadline_monotonic=value["deadline"])))
                 elif engine is not None and value["op"] == "close":
-                    report = engine.close()
+                    close_deadline = value["deadline"]
+                    remaining = close_deadline - time.monotonic()
+                    report = (engine.close(timeout=remaining) if remaining > 0 else
+                              dict(status="unknown", engine_api_shutdown_confirmed=False,
+                                   gpu_exit_confirmed=None, error_type="CloseDeadlineExceeded"))
                     send(dict(kind="closed", report=report))
                     engine = None
                     return
@@ -469,7 +475,12 @@ def serve(result_fd):
             send(dict(kind="error", error_type=type(exc).__name__))
         finally:
             if engine is not None:
-                engine.close()
+                if close_deadline is None:
+                    engine.close()
+                else:
+                    remaining = close_deadline - time.monotonic()
+                    if remaining > 0:
+                        engine.close(timeout=remaining)
 
 
 if __name__ == "__main__":

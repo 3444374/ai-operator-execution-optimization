@@ -1,0 +1,100 @@
+{
+  "schema": "semloom.gateway_fixture_startup.checks.v1",
+  "base": "c197810ce7c7442a69156123b89898b699a783a1",
+  "candidate": "24efc90710a108d6f6a50e7e1534517d453cc469",
+  "tree": "659ca2ddf87a5db260ee4b9409c10a814838c330",
+  "runs": {
+    "listener-startup-before": {
+      "selected": 1,
+      "passed": 0,
+      "failed_records": 2,
+      "error_records": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "listener-startup-after": {
+      "selected": 1,
+      "passed": 1,
+      "failed_records": 0,
+      "error_records": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "listener-startup-real": {
+      "selected": 1,
+      "passed": 0,
+      "failed_records": 0,
+      "error_records": 1,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "before_source": "Base helper plus the same new regression test; not the original full-suite baseline.",
+  "after_source": "File hashes bind both after records to the candidate; recorded checkout HEAD is the pre-commit base.",
+  "source_manifest_files": 1015,
+  "test_source_sha256": {
+    "code/tests/execution_provider/test_multisession_gateway.py": "93beef9b4da291206ac9f7118d87465d5aaca166f6fa1b7734e30f7d30aa527b"
+  },
+  "real_action": {
+    "status": "os_action_denied_not_retried",
+    "action": "listener.bind(path)",
+    "target": "AF_UNIX gateway.sock in the fixture temporary directory; random directory name was not recorded",
+    "exception": "PermissionError",
+    "errno": 1,
+    "message": "Operation not permitted",
+    "completed": "Gateway constructor returned. Startup error propagated before client creation and original worker stop/join completed.",
+    "uncompleted": "No listening socket or semantic request; the original five methods remain unqualified.",
+    "approval_auto_review_rejection": false
+  },
+  "earlier_sysctl_checks": "Two earlier checks remain unqualified and were not retried. Calls and cleanup remain unknown.",
+  "previous_error_evidence": {
+    "file": "session_flow_raw.json.gz",
+    "sha256": "bb4c9ec02178e9d605c56c7e8fa8515f19acf7766b8e20fb5946218015c03453",
+    "errored_methods": 5,
+    "error_records": 8,
+    "overwritten": false
+  },
+  "production_python_delta": 0,
+  "production_python_identical_to_base": true,
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "real_socket_attempts": 1,
+  "mock_test_methods_added": 1,
+  "mock_bind_listen_subcases": 2,
+  "independent_review_sha256": "41c13cc04cde557dd2146f2158fd5fe3da940967877db682df85e4cd65c5d477",
+  "private_originals": {
+    "listener-startup-before.json": {
+      "sha256": "aaa3679572b32d1caf14ea425b612668b92d971aa96eb2bc5a7cb7b3bb20af00",
+      "bytes": 129196
+    },
+    "listener-startup-before.log": {
+      "sha256": "3eed630f620ff31d2b515741b4812d2e1096e7f79a6e84bf558ff2d53a8cc18c",
+      "bytes": 2404
+    },
+    "listener-startup-after.json": {
+      "sha256": "8b7d898b9e18cc1373369ede4ff9e5454247242a8b30c2a35250d114a02eb17b",
+      "bytes": 128157
+    },
+    "listener-startup-after.log": {
+      "sha256": "b0c9e6c3eb17f637ffadb7bae70f9cf36a7e6f64df19aa9672d554b3e8e2056f",
+      "bytes": 333
+    },
+    "listener-startup-real.json": {
+      "sha256": "2cf66dfc4f1e2ee135e59f2df6e1e8cccd54e76ebae0db323689b97cad3ce832",
+      "bytes": 129137
+    },
+    "listener-startup-real.log": {
+      "sha256": "b921199162da01f0bdc57a8a2bbd440febb71c1929e679f8250ef37a880cc654",
+      "bytes": 1552
+    },
+    "review/HANDOFF.json": {
+      "sha256": "41c13cc04cde557dd2146f2158fd5fe3da940967877db682df85e4cd65c5d477",
+      "bytes": 3056
+    }
+  },
+  "raw": {
+    "file": "gateway_fixture_startup_raw.json.gz",
+    "sha256": "43e49a5fc7b3ef8048ca9b6d82604b141d97b0557ceb574a2d05873971595caf",
+    "bytes": 4941,
+    "decoded_sha256": "02835d8e25bbf0f38324820ffe401741d829fe548af2b07b5cff64be929d562f"
+  }
+}

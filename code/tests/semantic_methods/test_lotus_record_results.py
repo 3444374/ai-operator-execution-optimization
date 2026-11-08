@@ -4,7 +4,6 @@ import ast
 import asyncio
 import base64
 from copy import deepcopy
-import importlib
 import json
 from pathlib import Path
 import pickle
@@ -24,8 +23,6 @@ from src.serving.backends.vllm_engine import GenerationSpec
 
 
 CODE = Path(__file__).resolve().parents[2]
-LEGACY = "src.baselines.text.frameworks.lotus_chain_results"
-CANONICAL = "src.semantic_methods.lotus.record_results"
 
 
 def fixture():
@@ -59,42 +56,27 @@ def envelope(records, chain, batch_id="fixture-batch", *, decisions=None, parent
 
 
 class ResultMigrationTests(unittest.TestCase):
-    def test_all_legacy_exports_are_the_same_objects(self):
-        old = importlib.import_module(LEGACY)
-        for name, value in vars(old).items():
-            if not name.startswith("__"):
-                with self.subTest(name=name):
-                    self.assertIs(value, getattr(results, name))
 
-    def test_fresh_import_orders_preserve_identity_without_core_or_model_imports(self):
-        program = '''
+    def test_current_results_import_without_core_or_model_dependencies(self):
+        program = """
 import importlib, importlib.abc, sys
 sys.path.insert(0, sys.argv[1])
 class Guard(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, *args):
-        forbidden = ('src.scheduling', 'src.execution_provider', 'src.experiments',
+        forbidden = ('src.baselines', 'src.scheduling', 'src.execution_provider', 'src.experiments',
                      'ray', 'daft', 'vllm', 'torch', 'lotus')
         if any(fullname == p or fullname.startswith(p + '.') for p in forbidden):
             raise AssertionError('unexpected dependency: ' + fullname)
 sys.meta_path.insert(0, Guard())
-first = importlib.import_module(sys.argv[2])
-if sys.argv[2] == 'src.semantic_methods.lotus.record_results':
-    assert not any(n == 'src.baselines' or n.startswith('src.baselines.') for n in sys.modules)
-second = importlib.import_module(sys.argv[3])
-assert first.ChainBatchResults is second.ChainBatchResults
-assert first.ChainExecutionError is second.ChainExecutionError
-'''
-        for order in ((CANONICAL, LEGACY), (LEGACY, CANONICAL)):
-            with self.subTest(order=order):
-                run = subprocess.run([sys.executable, "-I", "-B", "-c", program,
-                                      str(CODE), *order], capture_output=True, text=True, timeout=15)
-                self.assertEqual(run.returncode, 0, run.stderr)
+module = importlib.import_module('src.semantic_methods.lotus.record_results')
+assert module.ChainBatchResults.__module__ == module.__name__
+assert module.ChainExecutionError.__module__ == module.__name__
+"""
+        run = subprocess.run([sys.executable, "-I", "-B", "-c", program, str(CODE)],
+                             capture_output=True, text=True, timeout=15)
+        self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_old_pickle_globals_and_new_state_are_readable_in_fresh_process(self):
-        # Protocol 0 GLOBAL is the name lookup used by old class/function pickles.
-        for name in ("ChainBatchResults", "ChainExecutionError", "record_row"):
-            value = pickle.loads(("c" + LEGACY + "\n" + name + "\n.").encode())
-            self.assertIs(value, getattr(results, name))
+    def test_current_result_state_is_readable_in_a_fresh_process(self):
         records, chain = fixture()
         audit = results.ChainBatchResults(records, chain)
         audit.accept(envelope(records, chain))
@@ -104,8 +86,7 @@ import base64, importlib, json, pickle, sys
 sys.path.insert(0, sys.argv[1])
 audit = pickle.loads(base64.b64decode(sys.argv[2]))
 new = importlib.import_module('src.semantic_methods.lotus.record_results')
-old = importlib.import_module('src.baselines.text.frameworks.lotus_chain_results')
-assert type(audit) is new.ChainBatchResults is old.ChainBatchResults
+assert type(audit) is new.ChainBatchResults
 audit.verify_success(source_exhausted=True)
 print(json.dumps({'calls': len(audit.calls), 'rows': len(audit.pending)}))
 '''
@@ -115,15 +96,16 @@ print(json.dumps({'calls': len(audit.calls), 'rows': len(audit.pending)}))
         self.assertEqual(json.loads(run.stdout), {"calls": 6, "rows": 3})
 
     def test_native_consumers_inherit_the_shared_class(self):
-        from src.baselines.text.frameworks import daft_lotus_chain, lotus_chain_batch, ray_data_lotus_chain
+        from src.baselines.text.frameworks import daft_lotus_chain, ray_data_lotus_chain
+        from src.serving.backends import lotus_chain_worker
         self.assertTrue(issubclass(daft_lotus_chain._DaftChainRows, results.ChainBatchResults))
         self.assertTrue(issubclass(ray_data_lotus_chain._RayChainRows, results.ChainBatchResults))
-        self.assertIs(lotus_chain_batch._source_binding, results._source_binding)
+        self.assertIs(lotus_chain_worker._source_binding, results._source_binding)
 
     def test_moved_module_and_native_consumers_do_not_import_core(self):
         paths = [Path(results.__file__), CODE / "src/execution_provider/method_workers/lotus_chain_batch.py", *[
             CODE / "src/baselines/text/frameworks" / (name + ".py")
-            for name in ("lotus_chain_results", "lotus_chain_batch", "ray_data_lotus_chain", "daft_lotus_chain")]]
+            for name in ("ray_data_lotus_chain", "daft_lotus_chain")]]
         for path in paths:
             for node in ast.walk(ast.parse(path.read_text())):
                 names = ([node.module or ""] if isinstance(node, ast.ImportFrom)
@@ -238,6 +220,32 @@ class ResultContractTests(unittest.TestCase):
             audit.recover(conflict)
         with self.assertRaises(ValueError):
             audit.verify_success(source_exhausted=True)
+
+    def test_request_batch_snapshots_keep_membership_and_stable_counts(self):
+        from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
+
+        audit = self.audit()
+        self.assertEqual(audit.request_batch_count, 0)
+        value = envelope(self.records, self.chain)
+        value['request_batches'] = [
+            dict(request_batch_id=stage.stage_id, call_ids=[
+                call['call_id'] for call in value['calls']
+                if call['algorithm_stage'] == stage.stage_id])
+            for stage in self.chain.stages
+        ]
+        audit.accept(value)
+        audit.recover(value)
+        self.assertEqual(audit.request_batch_count, 2)
+
+        owner = object.__new__(SemLoomRecordChainCore)
+        owner._accountants = {tuple(stage.stage_id for stage in self.chain.stages): audit}
+        snapshot = owner.request_batches
+        self.assertIsInstance(snapshot, list)
+        self.assertEqual(snapshot, value['request_batches'])
+        snapshot[0]['call_ids'].clear()
+        snapshot.clear()
+        self.assertEqual(owner.request_batches, value['request_batches'])
+        self.assertEqual(audit.request_batch_count, 2)
 
     def test_cleanup_errors_and_seeded_parent_mismatch_remain_authoritative(self):
         parents = {(r.row_id, r.source_position): ("prior-" + r.row_id,) for r in self.records}

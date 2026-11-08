@@ -4,7 +4,7 @@ from collections import Counter
 import hashlib
 import re
 
-from ..common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from .map_inputs import text_rows_by_id
 
 SCHEMA = "semloom.sharegpt.first_human.v1"

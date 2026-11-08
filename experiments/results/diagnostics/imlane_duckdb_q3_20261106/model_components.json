@@ -1,0 +1,57 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.model_components.v1",
+  "integration_base": "87fdb2bc7",
+  "state": "historical HTTP component checks at e420/e86; replaced by IPC; restore source_commit e420a0abbc02782a919340a3a83179f077f2598a",
+  "methods": 98,
+  "passed": 98,
+  "models": 0,
+  "GPU_runs": 0,
+  "real_process_or_HTTP_services_in_local_suite": 0,
+  "source_files": {
+    "code/integrations/imlane_duckdb/q3.cpp": "bac35ec063e3393331a02151a3ad3f029eb360fa4a061ffac3dc5939fd6e2a85",
+    "code/integrations/imlane_duckdb/model_provider.py": "00a5be696c8404364957cc81eb007e64a190351c179888964ba6c93e1ae8265b",
+    "code/integrations/imlane_duckdb/model_service.py": "5c94835232851d006cf1c79642bd3f9a15035dc607e934d6a3d29733499adaec",
+    "code/src/experiments/native_imlane_query.py": "d7079162470d0e3d72568c25836bc37f3743c0b9ab550a2e0c028ae1d9f6c45a",
+    "code/src/experiments/native_imlane_model_query.py": "8f4354f8c52e6112e3f6d67588ca7d87bdca9c09b47f41175ed174df22f55d82",
+    "code/tests/experiments/test_native_imlane_model_query.py": "43805fb6efcae3f794c979914b32ae9f9a9d4e12c85c95a94c74557be1799bbd",
+    "code/tests/baselines/text/test_imlane_duckdb_model_provider.py": "b2bc5fb9e7ff13b2b0ddc8fa8028c8ea3b05c162c3767d4af76e99e461e70910",
+    "code/tests/baselines/text/test_imlane_duckdb_model_service.py": "77fa273e3846ee4f31274e8255c499739d4e10df513d39d595d3004df1aa8e60"
+  },
+  "raw_log_sha256": "02a83de32c94914e2e54427d73f2fb4e516faa864e8f4f9d006ef54711a1dc05",
+  "source_boundaries": [
+    "independent IMLane model service HTTP; SemLoom mainline unchanged",
+    "database to executor author ArrowLane preserved",
+    "length replies preserved for original parser, truncation separate",
+    "no implicit8/4096 or client8/100 connections",
+    "CLOCK_MONOTONIC native READY; parent supervisor binds one cleanup window",
+    "owned receipt size read from completed artifact; overall RSS supervised",
+    "worker PID and nested time interval pair batches; position checks preserve duplicate-message occurrences"
+  ],
+  "limits": [
+    "software/mocked HTTPX and process owner checks do not qualify real GPU/vLLM lifetime",
+    "9MiB retained software-reply case tests artifact reading, not actual8192-token model output",
+    "author close retains phased waits; hard close bound needs outer supervised_run",
+    "original author/generation/version differences remain labeled",
+    "agent owner first HTTP context-manager fixture error was corrected before final22 owner methods; not a production run"
+  ],
+  "first_component_commit": "6aeb2b6c41f9a6f8c72fc986f9640c1ace30aa80",
+  "deadline_followup": {
+    "early_failure": "cleanup-start marker binds parent to same first failure deadline; publication failure retained after teardown",
+    "new_requests": "each POST independently checks the declared absolute query deadline, no POST after expiration",
+    "normal_close": "native API and children receive the full graceful window; final reserve does not impose an initial8-second native close limit",
+    "fallback": "remaining-child TERM and KILL both recover but remain failed",
+    "first_component_methods": 88,
+    "final_distinct_methods": 98
+  },
+  "actual_author_software_HTTP_evidence": "http_software_cpu.json",
+  "author_native_transport_audit": "native_transport_audit.json",
+  "post_integration_recheck": {
+    "source_commit": "e86afedb91e5d913ebb2f988cbfd5f305b4c0482",
+    "methods": 98,
+    "passed": 98,
+    "log_sha256": "4cfba19499d7f2893fddd652a351a04fd7191605f1849e8d5af3d2100426fa58",
+    "models": 0,
+    "GPU_runs": 0
+  },
+  "current_replacement": "ipc_components.json"
+}

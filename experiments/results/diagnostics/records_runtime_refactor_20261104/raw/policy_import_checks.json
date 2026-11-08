@@ -1,0 +1,34 @@
+{
+  "base": "a59f4236cd8d6eabe06c1ddce1d89b7322ef18d9",
+  "base_tree": "5f436cacb611e7bf8e67a1d15a62ddb3a99d4cc3",
+  "reviewed_controller_commit": "b99d9f05ee1b9741228cc873d763327e010322d0",
+  "reviewed_controller_tree": "68219f9b2b89d419853a19460c1cffd248a18b01",
+  "patch_sha256": "31f1f7a337d4e642d5d5045752d1f983f4d2614f3b29a65a26b24b39915b30e6",
+  "all_six_files_identical_to_reviewed_candidate": true,
+  "CPU": {
+    "unique_methods": 327,
+    "passed": 327,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "original_selected_method_count": 332,
+  "selection_difference": "five old UCB prototype tests already retired from the current adaptive test module; exact originals remain tested through the existing archival recovery module",
+  "new_policy_factory_wired": false,
+  "defaults_changed": false,
+  "historical": {
+    "bindings": 3010,
+    "inherited_mismatches": 10,
+    "new_mismatches": 0
+  },
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "published": false,
+  "combined_independent_review": "pending",
+  "artifact_sha256": {
+    "reviewed_policy_on_refactor.json": "960743042985b1f108211a84267d9aef1b0edf2d028b12117fcc445f17c6db7f",
+    "reviewed_policy_on_refactor.log": "98823947beba134df8ea82e144bfc66be3d09da9ef0302bfee0f38be98d1f759"
+  }
+}

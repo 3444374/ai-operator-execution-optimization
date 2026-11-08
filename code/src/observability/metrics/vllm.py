@@ -11,6 +11,41 @@ from urllib import error, request
 _LE_LABEL = re.compile(r'(?:^|,)le="([^"]+)"(?:,|$)')
 
 
+def effective_capacity_snapshot(config, *, source=None):
+    """Read the constructed engine's config, never fill from launch requests.
+
+    KV blocks may still be unknown in the AsyncLLM parent. Even known blocks
+    are pool configuration, not available blocks or physical free memory.
+    """
+    fields = {
+        "max_num_seqs": ("scheduler_config", "max_num_seqs"),
+        "max_num_batched_tokens": ("scheduler_config", "max_num_batched_tokens"),
+        "max_model_len": ("model_config", "max_model_len"),
+        "kv_cache_blocks": ("cache_config", "num_gpu_blocks"),
+        "kv_cache_block_tokens": ("cache_config", "block_size"),
+        "dtype": ("model_config", "dtype"),
+        "gpu_memory_utilization": ("cache_config", "gpu_memory_utilization"),
+    }
+    values = {}
+    for name, (group, attribute) in fields.items():
+        try:
+            value = getattr(getattr(config, group, None), attribute, None)
+        except Exception:
+            value = None
+        if name == "dtype":
+            values[name] = None if value is None else str(value)
+        elif name == "gpu_memory_utilization":
+            values[name] = value if type(value) in (int, float) and 0 < value <= 1 else None
+        else:
+            values[name] = value if type(value) is int and value > 0 else None
+    return dict(schema="semloom.native_effective_capacity.v1",
+        status="observed_effective_config" if all(values[k] is not None for k in (
+            "max_num_seqs", "max_num_batched_tokens", "max_model_len")) else "partial_or_unavailable",
+        **values, kv_free_bytes=None, physical_free_bytes=None,
+        source=("constructed AsyncLLM.vllm_config; not free capacity or a measured performance plateau"
+                if source is None else source))
+
+
 def parse_prometheus_metrics(text: str) -> dict[str, float]:
     metrics: dict[str, float] = {}
     for raw_line in text.splitlines():

@@ -19,22 +19,14 @@ CODE = Path(__file__).resolve().parents[2]
 
 class DependencyDirectionTests(unittest.TestCase):
     def test_runtime_sources_do_not_import_tests_scripts_or_experiment_entry_points(self):
-        # The baseline orchestration package and two explicit legacy comparison
-        # entry points are harnesses; their callers choose a comparison run.
-        compatibility = "baselines/text/products/project_static.py"
+        # The baseline orchestration package contains comparison harnesses.
         violations = []
         for path in (CODE / "src").rglob("*.py"):
             relative = str(path.relative_to(CODE / "src"))
-            if relative.startswith(("experiments/", "baselines/text/orchestration/")) or relative == compatibility:
+            if relative.startswith(("experiments/", "baselines/text/orchestration/")):
                 continue
             tree = ast.parse(path.read_text())
-            cli_compatibility = set()
-            if relative == "baselines/text/frameworks/kalypso_native/adapter.py":
-                cli_compatibility = {id(n) for fn in tree.body if isinstance(fn, ast.FunctionDef)
-                                     and fn.name in {"main", "run_attached"} for n in ast.walk(fn)}
             for node in ast.walk(tree):
-                if id(node) in cli_compatibility:
-                    continue
                 names = ([node.module or ""] if isinstance(node, ast.ImportFrom)
                          else [item.name for item in node.names] if isinstance(node, ast.Import) else [])
                 for name in names:
@@ -48,18 +40,6 @@ class DependencyDirectionTests(unittest.TestCase):
                             if re.search(r"(?:^|/)(?:tests|scripts)/|^(?:tests|scripts|src\.experiments)\.", value):
                                 violations.append((relative, node.lineno, value))
         self.assertEqual(violations, [])
-
-    def test_observation_compatibility_imports_share_one_module_and_mutable_state(self):
-        for old, new in (
-            ("src.experiments.execution_timing", "src.observability.execution_timing"),
-            ("src.experiments.image_reuse", "src.observability.model_reuse"),
-            ("src.experiments.buffered_events", "src.observability.buffered_events"),
-        ):
-            with self.subTest(module=old):
-                legacy, canonical = importlib.import_module(old), importlib.import_module(new)
-                self.assertIs(legacy, canonical)
-                with patch.object(legacy, "_migration_marker", "shared", create=True):
-                    self.assertEqual(canonical._migration_marker, "shared")
 
     def test_request_claim_errors_and_old_pickle_globals_keep_the_same_identity(self):
         canonical = importlib.import_module("src.infrastructure.request_budget")
@@ -76,27 +56,15 @@ class DependencyDirectionTests(unittest.TestCase):
         with self.assertRaises(canonical.BudgetExhausted):
             claim.reserve("b" * 64)
 
-    def test_request_identity_http_observation_and_map_values_are_not_duplicated(self):
-        from src.experiments import request_identity as legacy_identity
-        from src.observability import request_identity
-        from src.experiments import native_http_observer
-        from src.observability.httpx_observer import _observe_native_httpx_client
-        from src.experiments.postgresql import map_direct
-        from src.execution_provider.semantic_map import request_body
-        self.assertIs(legacy_identity.request_identity, request_identity.request_identity)
-        self.assertIs(native_http_observer._observe_native_httpx_client, _observe_native_httpx_client)
-        self.assertIs(map_direct.request_body, request_body)
-
     def test_shared_timing_uses_one_recorder_and_preserves_its_event_schema(self):
         timing = importlib.import_module("src.observability.execution_timing")
-        legacy = importlib.import_module("src.experiments.execution_timing")
         with tempfile.TemporaryDirectory() as directory, \
              patch.dict(os.environ, {"SEMLOOM_DETAILED_TIMING_DIR": directory}), \
              patch.object(timing, "_shared", None):
             recorder = timing.get_timing()
             try:
-                self.assertIs(legacy.get_timing(), recorder)
-                with legacy.timing_span("fixture.operation", query_id="fixture"):
+                self.assertIs(timing.get_timing(), recorder)
+                with timing.timing_span("fixture.operation", query_id="fixture"):
                     pass
             finally:
                 timing.close_timing()
@@ -118,13 +86,13 @@ class Guard(importlib.abc.MetaPathFinder):
             raise AssertionError('unexpected runtime dependency: ' + fullname)
 sys.meta_path.insert(0, Guard())
 for module in ('src.observability.execution_timing', 'src.observability.model_reuse',
+               'src.observability.native_query_timing',
                'src.observability.buffered_events', 'src.observability.httpx_observer',
                'src.infrastructure.request_budget', 'src.modalities.image.clip',
-               'src.observability.request_gateway', 'src.semantic_methods.lotus.image_rm',
+               'src.semantic_methods.lotus.image_rm',
                'src.semantic_methods.lotus.image_backend', 'src.baselines.image.frameworks.daft_clip',
-               'src.baselines.text.frameworks.native_calls',
-               'src.baselines.text.frameworks.lotus_native_local_model',
-               'src.baselines.text.frameworks.ray_data_pg_http'):
+               'src.modalities.image.clip_batch_workers',
+               'src.baselines.text.frameworks.kalypso_native.adapter'):
     importlib.import_module(module)
 from src.observability.execution_timing import timing_span
 with timing_span('disabled.fixture'):
@@ -147,41 +115,21 @@ assert [e['event'] for e in events] == ['request', 'http_started', 'http_respons
                              capture_output=True, text=True, timeout=20)
         self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_old_and_new_kalypso_cli_help_do_not_load_the_author_runtime(self):
+    def test_kalypso_query_script_and_experiment_cli_keep_help_and_required_arguments(self):
         environment = dict(os.environ, PYTHONPATH=str(CODE), PYTHONDONTWRITEBYTECODE="1")
+        entries = ([sys.executable, "-B", str(CODE / "scripts/experiments/run_kalypso_sembench_query.py")],
+                   [sys.executable, "-B", "-m", "src.experiments.kalypso_query_lifecycle"])
         results = []
-        for module in ("src.baselines.text.frameworks.kalypso_native.adapter",
-                       "src.experiments.kalypso_query_lifecycle"):
-            run = subprocess.run([sys.executable, "-B", "-m", module, "--help"],
-                                 env=environment, text=True, capture_output=True, timeout=15)
-            self.assertEqual(run.returncode, 0, run.stderr)
-            self.assertIn("--config", run.stdout)
-            self.assertIn("--unit", run.stdout)
-            results.append(run.stdout)
+        for entry in entries:
+            with self.subTest(entry=entry[-1]):
+                help_run = subprocess.run(entry + ["--help"], env=environment, text=True,
+                                          capture_output=True, timeout=15)
+                self.assertEqual(help_run.returncode, 0, help_run.stderr)
+                for flag in ("--config", "--unit", "--output"):
+                    self.assertIn(flag, help_run.stdout)
+                missing = subprocess.run(entry, env=environment, text=True,
+                                         capture_output=True, timeout=15)
+                self.assertEqual(missing.returncode, 2, missing.stderr)
+                self.assertIn("required: --config, --unit, --output", missing.stderr)
+                results.append(help_run.stdout)
         self.assertEqual(results[0].split("\n\n", 1)[1], results[1].split("\n\n", 1)[1])
-
-    def test_kalypso_compatibility_dispatch_restores_comparison_registry_after_success_or_error(self):
-        from src.baselines.text.frameworks.kalypso_native import adapter
-        from src.experiments import native_query_lifecycle as sessions
-        original = sessions.BACKENDS, sessions.RESIDENT
-        class Driver:
-            def __init__(self, cfg, unit, path):
-                self.cfg, self.unit, self.path = cfg, unit, path
-        def run(queries, factory, output, **kwargs):
-            self.assertIn("kalypso-native", sessions.BACKENDS)
-            self.assertIsInstance(factory(output, None), Driver)
-            return {"queries": [], "status": "passed"}
-        with patch.object(adapter, "load_dependencies"), \
-             patch.object(adapter, "NativeQueryDriver", Driver), \
-             patch.object(sessions, "run_sequence", side_effect=run):
-            result = adapter.run_attached({}, {"queries": []}, Path("unused-fixture-output"))
-        self.assertEqual(result["status"], "passed")
-        error = ValueError("fixture comparison failure")
-        with patch.object(adapter, "load_dependencies"), \
-             patch.object(adapter, "NativeQueryDriver", Driver), \
-             patch.object(sessions, "run_sequence", side_effect=error):
-            with self.assertRaises(ValueError) as caught:
-                adapter.run_attached({}, {"queries": []}, Path("unused-fixture-output"))
-        self.assertIs(caught.exception, error)
-        self.assertIs(sessions.BACKENDS, original[0])
-        self.assertIs(sessions.RESIDENT, original[1])

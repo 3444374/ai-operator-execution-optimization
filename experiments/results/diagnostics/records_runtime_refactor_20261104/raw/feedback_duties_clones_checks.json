@@ -1,0 +1,427 @@
+{
+  "base": "cde87a55cc4795e33aa07d07f53adc922d8ee71c",
+  "upstream": "5849807ca743ca2c92665d3d699f8fe285ae219e",
+  "candidate": "b50d0b1be07d95a319ca6081fbbf31082c7b681d",
+  "tree": "10e5b8155369c534a95e84734e219d47093f7dcd",
+  "component_commits": {
+    "feedback": "146bd2562cffe91a314acd27019be8b39cb1e45c",
+    "clones": "4dd7bce4314b6a3de3f44291a59548df27cb1ecd"
+  },
+  "component_path_counts": {
+    "feedback": 35,
+    "clones": 2,
+    "peer": 15
+  },
+  "component_production_conflicts": [],
+  "component_and_peer_bytes_preserved": true,
+  "source_files": 1052,
+  "source_hash_mismatches": [],
+  "source_unchanged_during_suite": true,
+  "CPU": {
+    "selected": 328,
+    "executed": 328,
+    "passed": 328,
+    "failure_events": 0,
+    "error_events": 0,
+    "skipped": 0
+  },
+  "history": {
+    "variants": 5,
+    "entries": 3010,
+    "complete_restore_passed": true,
+    "manifest_unchanged": true
+  },
+  "schema": "semloom.feedback_duties_clones.combination.v1",
+  "reviews": {
+    "feedback": {
+      "decision": "no_further_changes_requested_after_146bd256_cleanup",
+      "findings": [
+        {
+          "id": "unused_old_location_imports",
+          "status": "resolved_in_146bd256",
+          "details": "2354 retained unused adaptive.ResourceFeedbackConfig and stage_work.SupplyState bindings. 146 deletes exactly those two import lines; moved types remain available only from their current owners and actual consumers."
+        }
+      ],
+      "original_sha256": "11f2d364becb35f9bcc02ca04f65e06061522a283cdd17e88248166ed4772021"
+    },
+    "typed-clones": {
+      "decision": "no_changes_requested_for_this_candidate",
+      "findings": [],
+      "original_sha256": "8c846e3d5043bef2a99f19b645bc2c9622e28f9d65d2822f505566a714b8e108"
+    },
+    "combination": {
+      "decision": "no_changes_requested_for_tested_code_combination",
+      "findings": [],
+      "original_sha256": "ccc22b0848d4ba749580881d747ff50659b4f9ea8cf64e1be09b95012ca504c8"
+    },
+    "delivery": {
+      "decision": "no_changes_requested_for_document_delivery",
+      "findings": [],
+      "original_record": "semloom-feedback-clones-b50d-review-20261105/FINAL_HANDOFF.json",
+      "original_sha256": "1840f37555cfb354de0ce7c5640bba004f76ccce005bff7ee04190bff07e0f53"
+    }
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "cde87a55cc4795e33aa07d07f53adc922d8ee71c",
+        "core_python_lines": 57124,
+        "src_and_scripts_python_lines": 113883,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "5849807ca743ca2c92665d3d699f8fe285ae219e",
+        "core_python_lines": 57124,
+        "src_and_scripts_python_lines": 114085,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1157
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "b50d0b1be07d95a319ca6081fbbf31082c7b681d",
+        "core_python_lines": 57003,
+        "src_and_scripts_python_lines": 113964,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2912,
+        "src_and_scripts_python_lines": -26371,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4625,
+        "src_and_scripts_python_lines": -35681,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": -121,
+        "src_and_scripts_python_lines": 81,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": -121,
+        "src_and_scripts_python_lines": -121,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "feedback_file_size": {
+    "scope": "Physical Python lines including comments and blanks in the four feedback responsibility files; moved code is counted at its destination.",
+    "rows": {
+      "before": {
+        "commit": "5849807ca743ca2c92665d3d699f8fe285ae219e",
+        "files": {
+          "code/src/scheduling/submission_control/adaptive.py": 1157,
+          "code/src/scheduling/submission_control/stage_work.py": 285
+        },
+        "total_lines": 1442
+      },
+      "after": {
+        "commit": "b50d0b1be07d95a319ca6081fbbf31082c7b681d",
+        "files": {
+          "code/src/scheduling/submission_control/adaptive.py": 870,
+          "code/src/scheduling/submission_control/stage_work.py": 252,
+          "code/src/scheduling/submission_control/feedback_options.py": 108,
+          "code/src/scheduling/submission_control/feedback_work.py": 93
+        },
+        "total_lines": 1323
+      }
+    },
+    "delta": -119
+  },
+  "cold_comparison": {
+    "public_JSON_equal": true,
+    "before_policy_modules": [
+      "src.scheduling.submission_control.adaptive",
+      "src.scheduling.submission_control.stage_work"
+    ],
+    "after_policy_modules": [],
+    "actual_model_calls": 0,
+    "Ray_runs": 0,
+    "socket_operations": 0
+  },
+  "original_expanded_selection": {
+    "selected": 390,
+    "passed": 388,
+    "failures": [],
+    "errors": [
+      {
+        "id": "tests.execution_provider.test_lotus_request_supply_feedback.RequestRollingTests.test_observation_counts_requests_separately_from_batches_and_R",
+        "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 153, in test_observation_counts_requests_separately_from_batches_and_R\n    owner.close(timeout=3)\n  File \"<local-path>\", line 595, in close\n    return self._close_record_local(timeout=timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<local-path>\", line 913, in _close_record_local\n    closed = close_prepared_core(self._actors, self.transport, self.core, self.capacity,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<local-path>\", line 283, in close_prepared_core\n    transport_closed = transport.backend.close(timeout=remaining, wait_pending=True)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<local-path>\", line 327, in close\n    raise error\nRuntimeError: asynchronous transport finalization failed\n"
+      },
+      {
+        "id": "tests.execution_provider.test_lotus_batch_supply_feedback.BatchSupplyIntegrationTests.test_cancel_while_members_are_held_stops_sampler_and_retires_original_credits",
+        "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 345, in test_cancel_while_members_are_held_stops_sampler_and_retires_original_credits\n    self.assertTrue(owner.last_close_report['batch_supply_feedback']['sampler_stopped'])\n                    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: 'NoneType' object is not subscriptable\n"
+      }
+    ],
+    "includes_local_fixture_IPC": true,
+    "errors_not_claimed_resolved": true
+  },
+  "retired": {
+    "controllers": [
+      "EwmaAimdAdmissionController",
+      "HolAgeAimdAdmissionController"
+    ],
+    "config": [
+      "HolAgeAimdConfig"
+    ],
+    "package_exports": 3,
+    "dedicated_test_methods": 8
+  },
+  "memory_decision": "Ordinary single-query refactoring does not require adding an exclusive RAM manager. Existing declared resource resolvers and necessary ownership remain; genuine physical auto allocation is not implemented.",
+  "private_originals": {
+    "feedback-and-combination/CODE_SIZE.json": {
+      "bytes": 5313,
+      "sha256": "ecf294d98463c65f327d02d94eaa43802a75d5ffd5212d9e1ae6bdd8b1dcdceb"
+    },
+    "feedback-and-combination/COLD_COMPARISON.json": {
+      "bytes": 267,
+      "sha256": "efd4e489014d63317f8a00b42930f8067bd1f3a0dc7f50aca5f6d4798d767bda"
+    },
+    "feedback-and-combination/COMBINED_SOURCE.json": {
+      "bytes": 914,
+      "sha256": "e75e92c24d2bd2a225c908d889081092d0dbc075748d0340db1f5b06276b29a9"
+    },
+    "feedback-and-combination/FEEDBACK_SIZE.json": {
+      "bytes": 873,
+      "sha256": "60e979d0bbb6f75fe05e4e115c9e2d46db64a9445df5413faa5ea4c9cd8caf5d"
+    },
+    "feedback-and-combination/HISTORICAL_SOURCE_AUDIT.json": {
+      "bytes": 8329,
+      "sha256": "c0b4343c603d5ed2bcb344a9a01d4df113d183bc71acc28870ccd656a9d5c77f"
+    },
+    "feedback-and-combination/SOURCE_IDENTITY.json": {
+      "bytes": 470,
+      "sha256": "13b1fa8e91dccb5ae9340b2e2367f13bf0b2aa186b121f7d5032d6c2cc9ba9cf"
+    },
+    "feedback-and-combination/cold-after.json": {
+      "bytes": 810,
+      "sha256": "09adccf8d4076c1ecaff005c76cf47b3150db8dc7426a0e3f139996bcc0e0257"
+    },
+    "feedback-and-combination/cold-before.json": {
+      "bytes": 914,
+      "sha256": "7e21e8ff59229f4b03e589433a22822b65201372cbf3331b05517ed1f3209a74"
+    },
+    "feedback-and-combination/combined-feedback-clones.json": {
+      "bytes": 229714,
+      "sha256": "191f0334813e6faeb26cb8a03d31e660020641238f7fd571a85233adaad52326"
+    },
+    "feedback-and-combination/combined-feedback-clones.log": {
+      "bytes": 69767,
+      "sha256": "18be872c1efde8cb1d9bb7127ba6357d935ad1f5ed889878537353b16bd037c3"
+    },
+    "feedback-and-combination/combined-selection.json": {
+      "bytes": 2224,
+      "sha256": "6a10f74a7aca13db6ccca8d5888033b7c581dafc416090c27a08f5b410330ed8"
+    },
+    "feedback-and-combination/original-feedback.json": {
+      "bytes": 249103,
+      "sha256": "4e334b5fd8595c3dddc10787d9abb269ea1fc0dad749605ba6be79990b23cd58"
+    },
+    "feedback-and-combination/original-feedback.log": {
+      "bytes": 85913,
+      "sha256": "f545a8aed3d86e52f86d10cbae9f0c7abe4e76a12eb4d26b3d9df3ab5b2acddb"
+    },
+    "feedback-and-combination/pure-feedback-moved.json": {
+      "bytes": 223216,
+      "sha256": "6a3ec8f694c63311aacc239cab296f68de3c146ce11719bbb78618b05216978f"
+    },
+    "feedback-and-combination/pure-feedback-moved.log": {
+      "bytes": 65595,
+      "sha256": "1e7d5036ba0f90fcfcc3f4bf9fa1687a0db08fe4ece8d60b50a40da02857ad31"
+    },
+    "feedback-and-combination/pure-selection.json": {
+      "bytes": 2097,
+      "sha256": "6a9b94f90eb0601cd7ea8326d322d080bc69221da22c56a2e24a12b4a8863d19"
+    },
+    "feedback-and-combination/selection.json": {
+      "bytes": 1570,
+      "sha256": "7e4d131484cd8953d7b59ca882dba1ca0f2081ea4fb66692c302a77209792eb8"
+    },
+    "typed-clones/HANDOFF.json": {
+      "bytes": 14208,
+      "sha256": "6c2fc4e9095591fbc3b30a17155c8a42a46825d682e0764ebf916afa5ee70d65"
+    },
+    "typed-clones/ORIGINAL_SOURCE.json": {
+      "bytes": 1873,
+      "sha256": "3cdd8b3dd3c080bbfe3a4dae21ca83bfcc9947992cd09963a9eebe8dd8bdc761"
+    },
+    "typed-clones/original-typed-clones.json": {
+      "bytes": 137454,
+      "sha256": "4046373a7be59053dd4ea5ed742ab1e73240b674720a1a71c4d051ecbad06748"
+    },
+    "typed-clones/original-typed-clones.log": {
+      "bytes": 4271,
+      "sha256": "a9d45dd90d0d9451dedc9ed66e825c92e01465de36cc5e8f848a3fc5a96bb3a1"
+    },
+    "typed-clones/typed-clones-fixed.json": {
+      "bytes": 137924,
+      "sha256": "786035e6ece5e8c6a6b3e578c6c5eccc8eb531068be1ad4bed3ada072358a9a7"
+    },
+    "typed-clones/typed-clones-fixed.log": {
+      "bytes": 4504,
+      "sha256": "92f8c0b0963395a4a7642adc077af88d430c4175db974b245ad71fae7e4b39f0"
+    },
+    "adaptive-audit/HANDOFF.json": {
+      "bytes": 26278,
+      "sha256": "323e25e4809c9958f025232b42a4d0cbe720a74c7a4649715340de6d49959e65"
+    },
+    "adaptive-audit/SOURCE-EVIDENCE.json": {
+      "bytes": 68868,
+      "sha256": "2e3d1b3878c360d445084e7b84296fc6c458f6ea63b5994272df53ba12726a8a"
+    },
+    "memory-necessity/HANDOFF.before-read-lifecycle-correction.json": {
+      "bytes": 16730,
+      "sha256": "76144b7a962d3003b0fe924e8db42f66ab6f703619e56aefb54ac9f0ad49d150"
+    },
+    "memory-necessity/HANDOFF.json": {
+      "bytes": 17116,
+      "sha256": "4ca99c13fca56a60d075b7fc01714b93d6064c2023ecc67e9a638c827839f5aa"
+    },
+    "reviews/feedback/HANDOFF.json": {
+      "bytes": 4505,
+      "sha256": "11f2d364becb35f9bcc02ca04f65e06061522a283cdd17e88248166ed4772021"
+    },
+    "reviews/typed-clones/HANDOFF.json": {
+      "bytes": 3531,
+      "sha256": "8c846e3d5043bef2a99f19b645bc2c9622e28f9d65d2822f505566a714b8e108"
+    },
+    "reviews/combination/HANDOFF.json": {
+      "bytes": 3474,
+      "sha256": "ccc22b0848d4ba749580881d747ff50659b4f9ea8cf64e1be09b95012ca504c8"
+    }
+  },
+  "overlapping_runs_not_added": true,
+  "raw": {
+    "file": "feedback_duties_clones_raw.json.gz",
+    "bytes": 111642,
+    "sha256": "806f8595825bb97e738b9bcfde4e8f758071f96214fcadb4d06b5aef139a5f4c",
+    "decoded_sha256": "4b560ef089e8832f991b4e677bf54e65f47d0e9b11364c801869e6cb0bac9276"
+  },
+  "remaining": [
+    "Two original cde CPU IPC close errors remain unclassified and unresolved.",
+    "Real Ray, complete native bridge rebuild and current model quality/performance remain outside these pure checks.",
+    "Whole-query physical memory accounting and physical auto grants remain separate future work when an actual managed-memory need is established.",
+    "Forty-four core functions remain over 100 physical lines; responsibility review continues without a line-count splitting rule."
+  ]
+}

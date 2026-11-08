@@ -214,47 +214,8 @@ class ActorWorkerPoolSubmitter:
         raise RuntimeError("actor worker pool capacity selection failed")
 
 
-class RoundRobinSubmitter:
-    """Persist round-robin position across independent submission calls."""
-
-    def __init__(self, submitters: Sequence[Callable[[object], object]]):
-        if not submitters:
-            raise ValueError("submitters must not be empty")
-        self._submitters = tuple(submitters)
-        self._next_index = 0
-        self._stateful_handles: list[
-            tuple[object, ActorWorkerPoolSubmitter]
-        ] = []
-
-    def __call__(self, payload: object) -> object:
-        index = self._next_index
-        self._next_index = (index + 1) % len(self._submitters)
-        submitter = self._submitters[index]
-        if isinstance(submitter, ActorWorkerPoolSubmitter):
-            handle = submitter.submit(payload, estimated_work=0)
-            self._stateful_handles.append((handle, submitter))
-            return handle
-        return submitter(payload)
-
-    def complete(self, handle: object, *, failed: bool) -> None:
-        matches = [
-            (index, canonical, submitter)
-            for index, (canonical, submitter) in enumerate(
-                self._stateful_handles
-            )
-            if canonical == handle
-        ]
-        if not matches:
-            return
-        if len(matches) != 1:
-            raise RuntimeError("duplicate round-robin worker assignment")
-        index, canonical, submitter = matches[0]
-        submitter.complete(canonical, failed=failed)
-        self._stateful_handles.pop(index)
-
-
 class ActorSubmissionState:
-    """Actor submitters whose endpoint-local and legacy positions span a run."""
+    """Actor submitters whose endpoint-local worker positions span a run."""
 
     def __init__(
         self,
@@ -284,9 +245,6 @@ class ActorSubmissionState:
             )
             for endpoint_id, actors in self._actor_pools.items()
         }
-        self.legacy_endpoint_submitter = RoundRobinSubmitter(
-            list(self.pool_submitters.values())
-        )
 
     def wait_until_ready(
         self,

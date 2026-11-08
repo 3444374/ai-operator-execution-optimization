@@ -2,6 +2,7 @@
 from dataclasses import asdict
 import json
 from pathlib import Path
+import shutil
 import socket
 import sys
 import tempfile
@@ -14,6 +15,7 @@ from src.baselines.text.frameworks import daft_lotus_chain as daft_chain
 from src.baselines.text.frameworks import ray_data_lotus_chain as ray_chain
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.method_workers import lotus_chain_batch as worker
+from src.serving.backends import lotus_chain_worker as native_worker
 from src.semantic_methods.lotus.record_results import ChainBatchResults, _source_binding, record_row
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
@@ -40,7 +42,10 @@ class AuditLifetimeTests(unittest.TestCase):
     def batch_type(self, plan=None, close_report=None):
         plan, created = plan or self.plan, self.created
         class Engine:
-            def __init__(self, *_args):
+            def __init__(self, spec, *_args):
+                from src.serving.backends.model_context import model_context_record
+                self.ready_report = dict(engine_uid='CPU-audit', model_context=model_context_record(
+                    spec, 'CPU-audit', spec.max_model_len or 32768))
                 self.infer = fixture.ResponseFixture(plan)
             def run_prepared(self, rows, *, generation):
                 return self.infer(rows, generation=generation)
@@ -64,11 +69,11 @@ class AuditLifetimeTests(unittest.TestCase):
         for enabled in (False, True):
             batch = self.make_worker(enabled, close_on_source_complete=False)
             retained = []
-            encode = worker._json
+            encode = native_worker._json
             def encoding(value):
                 retained.append(batch._audit_calls)
                 return encode(value)
-            with patch.object(worker, "_json", encoding):
+            with patch.object(native_worker, "_json", encoding):
                 out = batch.run_rows([record_row(r) for r in self.rows])
             # Encoding and both consumers keep their own full data.
             consumers = [ChainBatchResults(self.rows, self.plan) for _ in range(2)]
@@ -102,7 +107,7 @@ class AuditLifetimeTests(unittest.TestCase):
             with self.subTest(event=event):
                 (self.control / "stop").unlink(missing_ok=True)
                 batch = self.make_worker(True, close_on_source_complete=False)
-                encode = worker._json
+                encode = native_worker._json
                 def encoding(value):
                     if event == "cancel":
                         (self.control / "stop").touch()
@@ -111,7 +116,7 @@ class AuditLifetimeTests(unittest.TestCase):
                     else:
                         raise ValueError("CPU encoding failure")
                     return encode(value)
-                with patch.object(worker, "_json", encoding):
+                with patch.object(native_worker, "_json", encoding):
                     if event == "encode_error":
                         with self.assertRaisesRegex(ValueError, "encoding failure"):
                             batch.run_rows([record_row(r) for r in self.rows])
@@ -128,6 +133,9 @@ class AuditLifetimeTests(unittest.TestCase):
             return values
         engine = SimpleNamespace(run_prepared=unknown,
             close=lambda: dict(status="unknown", cleanup_errors=[]))
+        from src.serving.backends.model_context import model_context_record
+        engine.ready_report = dict(engine_uid='CPU-audit-unknown', model_context=model_context_record(
+            batch.engine_spec, 'CPU-audit-unknown', 32768))
         batch.engine = engine
         first = batch.run_rows([record_row(r) for r in self.rows])
         self.assertIsNotNone(first["error_type"])
@@ -162,6 +170,46 @@ class AuditLifetimeTests(unittest.TestCase):
                     outcomes.append(fixture.normalized(dict(records=records, calls=owner.calls, columns=stream.columns)))
             self.assertEqual(*outcomes)
 
+    def test_core_close_retries_failed_artifact_removal_without_restarting_model(self):
+        Owner = type("CPUOwner", (SemLoomRecordChainCore,), {"_batch_type": self.batch_type()})
+        owner = Owner(self.spec, self.resources, control_dir=self.control)
+        self.addCleanup(owner.close, timeout=3)
+        with patch.object(EngineSpec, "validate_driver_environment", return_value={}):
+            stream = owner.evaluate(iter(self.rows), self.plan, expected=self.rows,
+                                    query_id=self.plan.query_id)
+            next(stream)
+        calls = json.loads(json.dumps(owner.calls))
+        control = owner.control
+        failure = PermissionError("CPU artifact removal failure")
+        remove = shutil.rmtree
+        attempts = []
+        def remove_once(path):
+            attempts.append(path)
+            if len(attempts) == 1:
+                raise failure
+            return remove(path)
+        engine = self.created[0].engine
+        with patch("src.execution_provider.adapters.lotus_record_chain_core.shutil.rmtree",
+                   side_effect=remove_once), patch.object(engine, "close", wraps=engine.close) as closing:
+            with self.assertRaises(PermissionError) as raised:
+                owner.close(timeout=3)
+            self.assertIs(raised.exception, failure)
+            self.assertTrue(control.is_dir())
+            report = owner.close(timeout=3)
+            self.assertEqual(attempts, [control, control])
+            self.assertFalse(control.exists())
+            self.assertEqual(report["status"], "closed")
+            self.assertFalse(report["query_completed"])
+            self.assertIsNone(report["cleanup_artifacts"])
+            self.assertTrue(report["model_owner"]["process_exit_confirmed"])
+            self.assertIsNone(report["gpu_exit_confirmed"])
+            self.assertEqual(report["core_usage"]["held_tasks"], 0)
+            self.assertEqual(owner.calls, calls)
+            self.assertEqual(len(self.created), 1)
+            self.assertEqual(closing.call_count, 1)
+            self.assertEqual(owner.close(timeout=3), report)
+            self.assertEqual(attempts, [control, control])
+
     def test_invalid_option_fails_at_all_public_boundaries(self):
         for value in (None, 0, 1, "true"):
             with self.subTest(value=value):
@@ -192,7 +240,9 @@ class AuditLifetimeTests(unittest.TestCase):
                     expected=self.rows, query_id=self.plan.query_id, control_dir=self.control,
                     release_completed_audit=enabled)
                 cls, kwargs = captured[0]
-                self.assertIs(cls, worker.FusedChainBatch)
+                from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch
+                self.assertIs(cls, ReferenceFusedChainBatch)
+                self.assertTrue(issubclass(cls, native_worker.FusedChainBatch))
                 self.assertEqual(kwargs["fn_constructor_kwargs"]["release_completed_audit"], enabled)
                 # Instantiate the captured native constructor with only inference replaced.
                 batch = self.batch_type()(**kwargs["fn_constructor_kwargs"])
@@ -223,7 +273,7 @@ class AuditLifetimeTests(unittest.TestCase):
                     native_types.append(cls)
                     return lambda: SimpleNamespace(run=lambda _col: Expression())
                 return decorate
-            with patch.object(daft_chain, "_native_runner"), \
+            with patch.object(daft_chain, "configure_native_runner"), \
                  patch.object(daft, "__version__", daft_chain.DAFT_VERSION), \
                  patch.object(daft, "cls", native_class), \
                  patch.object(daft.method, "batch", lambda **_: lambda fn: fn), \

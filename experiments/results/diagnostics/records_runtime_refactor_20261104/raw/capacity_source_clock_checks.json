@@ -1,0 +1,337 @@
+{
+  "schema": "semloom.capacity_source_clock_composition.v1",
+  "base": "418473fb1c7278fbfb45a98e67790c92aa8b63fb",
+  "published_base": "9fc7873136469d7db0f38acb972f8041df871288",
+  "reviewed_source": "faab48cd350963bd788cb6d379ed3ab9ba3a8a81",
+  "picked_commit": "f0a34f850fbdbf85e25e1c766499186d40fd823d",
+  "source_clock_files_match_reviewed": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "sha256": "5af232fba1a10ef890883ca04ac42cff279c70859b97a30a05489efe0b734d9b",
+      "matches_reviewed_source": true
+    },
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "99be42b1f7d79d8877d1b05a3b6c524bca4e518ad91ea7753ae2d6eb48aba6b1",
+      "matches_reviewed_source": true
+    },
+    {
+      "path": "code/tests/scheduling/fixtures/README.md",
+      "sha256": "8e6b42754229843fbcbd5022f1f1e980627c7e14b3b89a3f9def5a284e8e378d",
+      "matches_reviewed_source": true
+    },
+    {
+      "path": "code/tests/scheduling/fixtures/geometric_feedback_saved_input.json.gz",
+      "sha256": "4f9a2f52050cd6384ddc06ac01e9638a7bd91901f58d87b59bb9326d534d1a4d",
+      "matches_reviewed_source": true
+    },
+    {
+      "path": "code/tests/scheduling/test_resource_feedback_source_clock.py",
+      "sha256": "a47cf2a6fa0c1296043be62a67cd2d886ff35f44c836b7c98f89f05779f29f8c",
+      "matches_reviewed_source": true
+    }
+  ],
+  "capacity_files_same_as_418": true,
+  "CPU": {
+    "selected": 2019,
+    "run": 2011,
+    "passed": 1974,
+    "failures": [],
+    "errors": [],
+    "method_skips": 37,
+    "class_skips": [
+      {
+        "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+        "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+        "scope": "class"
+      },
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      }
+    ],
+    "class_methods_unexecuted": 8,
+    "total_unexecuted": 45,
+    "real_Ray_methods_skipped": 6,
+    "specialist_real_Ray_skips_retained": 5,
+    "all_skips": [
+      {
+        "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "method"
+      },
+      {
+        "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+        "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+        "scope": "class"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_closed_endpoint_and_real_read_timeout_keep_native_exception_and_usage",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_compressed_response_and_native_sdk_redirect_behavior_match",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_invalid_parameters_and_cancellation_before_preparation_send_zero_posts",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_map_and_cache_usage_logprobs_match_original_without_parser_http",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_observation_modes_keep_full_sem_map_results_errors_usage_and_cleanup",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_original_http_json_and_missing_content_errors_keep_type_and_usage",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_sem_map_cache_states_keep_original_miss_batches_and_usage",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_staged_two_map_keeps_whole_stage_wait_and_original_prompts",
+        "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_id_counts_must_agree_with_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_birth_change_blocks_later_sends_and_keeps_first_receipt",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_posts_use_fresh_checks_without_repeated_discovery",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_bad_authoritative_usage_fails_even_if_native_parser_accepts_text",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_boolean_token_id_is_a_protocol_error",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_controller_physical_gpu_uuid_is_forwarded_without_ordinal_remapping",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_duplicate_message_HTTP_failure_stays_unknown_with_all_wire_receipts",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_empty_original_query_returns_zero_without_service_or_inference",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluation_and_end_observer_failure_preserves_original_error",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluator_failure_retains_count_usage_and_restores_observers",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_final_accounting_failure_keeps_primary_and_validated_receipts",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_full_120_occurrence_native_http_profiles_match_original_q3",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_http_failure_keeps_every_native_receipt_and_never_retries",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_invalid_profile_budget_or_lease_precedes_service_construction",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_missing_actual_ids_fails_without_retokenizing_or_losing_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_original_accessor_lm_thread_pool_decisions_usage_and_quality",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_requests_observation_ids_and_preserves_authoritative_wire_arrays",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_result_observer_failure_still_retains_complete_count_and_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_transport_failure_keeps_successes_and_unknown_usage",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_unconfirmed_cleanup_fails_with_completed_known_result_retained",
+        "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+        "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+        "scope": "class"
+      },
+      {
+        "id": "tests.execution_provider.test_core_query_method_reuse.QueryMethodReuseTests.test_public_session_passes_each_task_method_to_one_resident_core",
+        "reason": "Original evaluator integration requires explicit SEMBENCH_CHECKOUT",
+        "scope": "method"
+      },
+      {
+        "id": "tests.serving.test_sync_supplemental_evidence.NativePipelineSourceTests.test_pinned_upstream_function_bodies_match_the_current_native_inputs",
+        "reason": "set VLLM_0251_SOURCE_ROOT to the pinned source; no source download is performed",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_cancel_failure_retains_pair_across_query_until_old_read_settles",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_expired_real_ray_request_is_cancelled_once_then_drained",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_pending_then_done_keeps_one_real_future_and_yields_feedback_without_wait",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_real_ray_exception_releases_pair_and_allows_one_new_optional_read",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_wrong_query_snapshot_releases_pair_without_delivering_then_new_query_succeeds",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      }
+    ],
+    "source_unchanged": true,
+    "code_files": 1316,
+    "all_final_code_hashes_match": true
+  },
+  "archive": {
+    "path": "raw/capacity_source_clock_methods.json.gz",
+    "bytes": 103537,
+    "sha256": "7da28cdbc394bee9bb0c88dedb94a5cf2f83cd6ff495a5713172ccb48881a5c6",
+    "decoded_bytes": 618470,
+    "decoded_sha256": "c7da5f4eea3cf1fe7ff138939d98eb214813f8ebaa9608bb006537f44e009433",
+    "original_JSON_exactly_restored": true,
+    "personal_home_prefix_hits": 0
+  },
+  "recorded_input_replay": {
+    "schema": "semloom.capacity_geometric_saved_replay.v1",
+    "source_commit": "f0a34f850fbdbf85e25e1c766499186d40fd823d",
+    "reviewed_source": "faab48cd350963bd788cb6d379ed3ab9ba3a8a81",
+    "fixture_path": "tests/scheduling/fixtures/geometric_feedback_saved_input.json.gz",
+    "fixture_sha256": "4f9a2f52050cd6384ddc06ac01e9638a7bd91901f58d87b59bb9326d534d1a4d",
+    "records_sha256": "306497a7e596195dd19dacfb1b72b88d5aaa86bed58319a8abd7b2613c8dae29",
+    "observations": 474,
+    "fresh_service_inputs": 248,
+    "measurement_window_s": 0.01,
+    "exploration_s": 4,
+    "source_stale_after_s": 0.5,
+    "unbound": {
+      "decisions_exact": true,
+      "changes": 0,
+      "measurements": 0
+    },
+    "bound": {
+      "changes": 4,
+      "measurements": 7,
+      "fresh_inputs_rejected_by_measurement_age": 0
+    },
+    "original_inputs_unchanged": true,
+    "off_policy_fixed_inputs": true,
+    "actual_query_or_performance_result": false,
+    "model_calls": 0,
+    "real_Ray_runs": 0,
+    "GPU_runs": 0
+  },
+  "qualification": {
+    "path": "legacy_resource_feedback/search_mode=geometric/pressure_response=sample",
+    "source_recency": "Uses the same provider stale_after_s already declared and observed on the source.",
+    "measurement_window": "Original window_s, exploration budget and input ages are unchanged.",
+    "constructor_omission": "Original direct-call age rule is retained.",
+    "historical_window_response_unchanged": true,
+    "modern_request_policy_unchanged": true,
+    "source_review": {
+      "unique_methods": 43,
+      "passed": 43,
+      "scope": "Independent review of faab source; not an independent review of this final composition."
+    },
+    "counts_overlap_do_not_sum": true
+  },
+  "future_runtime_identity": {
+    "required_execution_source_revision": "Use the delivered final candidate commit.",
+    "fresh_cache_required_if_prior_source_identity_cannot_be_verified": true,
+    "automatic_controller_source_hashing": false,
+    "record_source_stale_after_s_with_constructor_options": true,
+    "formal_runtime_or_persistent_cache_used_here": false
+  },
+  "history": {
+    "named_projections": 5,
+    "source_bindings": 3010,
+    "mismatches": 0,
+    "original_hashes_projection_ids_and_sources_preserved": true
+  },
+  "remaining": [
+    "No cross-host native clock mapping is supplied or qualified.",
+    "Actual Ray/vLLM/model/GPU and query performance remain unqualified.",
+    "Automatic service-exclusive byte allocation is not implemented; the capacity converter only handles already-assigned logical bytes.",
+    "Ordinary omitted configuration still uses R=2 and default IPC result slots=8.",
+    "Whole-query relations, audit retention, Python/Ray objects and model memory require their own accounting.",
+    "Final composed tree still requires independent review; no push or main merge."
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

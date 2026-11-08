@@ -1,0 +1,507 @@
+{
+  "schema": "semloom.imlane.duckdb.source_repair_provenance.v1",
+  "author": {
+    "repository": "IM-DM4AI/IMLane0",
+    "commit": "072f8257db80569e42c9f5727d839587df529652",
+    "duckdb_prefix": "database/duckdb",
+    "ignore_rule": {
+      "path": ".gitignore",
+      "line": 1,
+      "pattern": "build*"
+    }
+  },
+  "recovery_reference": {
+    "repository": "duckdb/duckdb",
+    "commit": "5ebd8ca697099859239ba85e0de07dac7e1b7c04",
+    "official_tag": null,
+    "claim": "Matching upstream recovery reference for the omitted optimizer and mbedtls units; not a claim that the entire author fork is unmodified or that this is its uniquely proven original base commit."
+  },
+  "intended_recovery_files": [
+    {
+      "author_path": "database/duckdb/src/optimizer/build_probe_side_optimizer.cpp",
+      "upstream_path": "src/optimizer/build_probe_side_optimizer.cpp",
+      "upstream_git_blob": "715b4a646c77f3d818e6887507fe4823172c4403",
+      "bytes": 5546,
+      "sha256": "1835c832901873a71a0cf43a2a7afeee9ffdcca577a8529328a264aafe3f8833",
+      "raw_url": "https://raw.githubusercontent.com/duckdb/duckdb/5ebd8ca697099859239ba85e0de07dac7e1b7c04/src/optimizer/build_probe_side_optimizer.cpp"
+    },
+    {
+      "author_path": "database/duckdb/src/include/duckdb/optimizer/build_probe_side_optimizer.hpp",
+      "upstream_path": "src/include/duckdb/optimizer/build_probe_side_optimizer.hpp",
+      "upstream_git_blob": "617317e984aca66e4fd64c5aaad68476b384fa57",
+      "bytes": 932,
+      "sha256": "f5797c73c85e6328e1a3b47349e8852b8aa0dfde3d7dca75b6a58ef84f1caccc",
+      "raw_url": "https://raw.githubusercontent.com/duckdb/duckdb/5ebd8ca697099859239ba85e0de07dac7e1b7c04/src/include/duckdb/optimizer/build_probe_side_optimizer.hpp"
+    },
+    {
+      "author_path": "database/duckdb/third_party/mbedtls/include/mbedtls/build_info.h",
+      "upstream_path": "third_party/mbedtls/include/mbedtls/build_info.h",
+      "upstream_git_blob": "cef6566c3f5cd00700b9ff468f6920871e2e6fbd",
+      "bytes": 2380,
+      "sha256": "7a732f23bf8ed09a10285841544a86698093bf0264d059182870621e90864e1c",
+      "raw_url": "https://raw.githubusercontent.com/duckdb/duckdb/5ebd8ca697099859239ba85e0de07dac7e1b7c04/third_party/mbedtls/include/mbedtls/build_info.h"
+    }
+  ],
+  "source_tree_counts": {
+    "upstream_blob_count": 2589,
+    "author_blob_count": 2601,
+    "common_equal": 2531,
+    "common_different": 56,
+    "author_added": 14,
+    "upstream_only_missing": 2
+  },
+  "source_tree_common_different": [
+    {
+      "path": "src/CMakeLists.txt",
+      "upstream_git_blob": "06c0c9a0961c79180e1d8256d9a69e1667c0dca2",
+      "author_git_blob": "5764fd293bc9942fb418134c722b23fdb77e634c"
+    },
+    {
+      "path": "src/common/enums/physical_operator_type.cpp",
+      "upstream_git_blob": "4cb851c989d84472864cda56050d946b58de0dfc",
+      "author_git_blob": "536c8a4c524d1296a7f3b3614253ea6488a928ec"
+    },
+    {
+      "path": "src/common/types/data_chunk.cpp",
+      "upstream_git_blob": "50166877c0efd0bba16ecaa184c86ec736f16389",
+      "author_git_blob": "f628b85e73ab6bda9dc486144e24233a4639dd58"
+    },
+    {
+      "path": "src/execution/CMakeLists.txt",
+      "upstream_git_blob": "4988753ac08eb0f29664da1da6e77d8393038959",
+      "author_git_blob": "4e65d7334330efb1044cfbab4e596ee33c1b0ff2"
+    },
+    {
+      "path": "src/execution/expression_executor.cpp",
+      "upstream_git_blob": "8c70ca22173657e5270c85d011ece656662467e9",
+      "author_git_blob": "c3ff671131e6086ee09749781e4f670dc519ae11"
+    },
+    {
+      "path": "src/execution/expression_executor/CMakeLists.txt",
+      "upstream_git_blob": "e52a81d5b526c9fad9de59fc0b8eeb68bb664698",
+      "author_git_blob": "e97ec6f0280ce9fd06f2f531e7a033c5ce4e10b4"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_between.cpp",
+      "upstream_git_blob": "ca7d45f753e79d1e7115a8b26fed2cc8cc47775e",
+      "author_git_blob": "a567770a5273db4f78b18907d67fe1b9668db493"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_case.cpp",
+      "upstream_git_blob": "37d50af593c81a781d6604b3560891024ec38fa5",
+      "author_git_blob": "0ec4ba7cfad635c26deb20e1972be9493c5f10eb"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_cast.cpp",
+      "upstream_git_blob": "688ffbb90b14b146ec73b850ac438ea6446a323f",
+      "author_git_blob": "10df22881f6c6d895a5a4eb3b20c64b02310e410"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_comparison.cpp",
+      "upstream_git_blob": "58a4e480c0b8496f9186cb002c231fb42155a439",
+      "author_git_blob": "d47fc195d8b5865fc109694f30f1ca9fa604b556"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_conjunction.cpp",
+      "upstream_git_blob": "de1fc8017884ed2be1646e19c747fe1c5c8471b3",
+      "author_git_blob": "7d72645160ceadad0972ece4e098900d48a2a402"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_constant.cpp",
+      "upstream_git_blob": "cd9b463b820de9731d542df5111d05c721e8af3d",
+      "author_git_blob": "62d0984fa5a132f79702d5098a129653e14a6764"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_function.cpp",
+      "upstream_git_blob": "0a7d32610cc184b217ee6b47228a53aac50ad0fd",
+      "author_git_blob": "dc8841d497fc6e27a259b89251f3d3ed4e9f2094"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_operator.cpp",
+      "upstream_git_blob": "f357ff9cd34357cf40f0e662f62a565d414393ea",
+      "author_git_blob": "ea3049d753d0295cfd96040f333a6ce7f7203761"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_parameter.cpp",
+      "upstream_git_blob": "c03ca9347ab96ff2c4804309fc228ca00ab4b745",
+      "author_git_blob": "a1223c8f0b7eb9777a57f98f793b5ff8dc542281"
+    },
+    {
+      "path": "src/execution/expression_executor/execute_reference.cpp",
+      "upstream_git_blob": "4dac1539bfbaf878427cb4066d82c062992ced48",
+      "author_git_blob": "703a49332ea4f942b33268e7ea38394c2ff8844d"
+    },
+    {
+      "path": "src/execution/expression_executor_state.cpp",
+      "upstream_git_blob": "44161f94ec0c5fb7e2cd25114fe29dbfe122173a",
+      "author_git_blob": "e7e24606532bea504bcdb4f72a17e095ece736c4"
+    },
+    {
+      "path": "src/execution/operator/filter/CMakeLists.txt",
+      "upstream_git_blob": "2db2094056a636f7c89e43c34c3ce613088a54ce",
+      "author_git_blob": "b1355c7a4b8654723c73115f6630e647f8db8f73"
+    },
+    {
+      "path": "src/execution/operator/projection/CMakeLists.txt",
+      "upstream_git_blob": "6bbc988d85d99a166ebb4a12fc20391b2b51929c",
+      "author_git_blob": "bbd54eb6fc68749825ffba888f12735cd4375261"
+    },
+    {
+      "path": "src/execution/physical_operator.cpp",
+      "upstream_git_blob": "4934789ecfe71aa84211062f777b2fba7f4ef886",
+      "author_git_blob": "006d9111ac32bfd01a2a75e79617b3a78b235890"
+    },
+    {
+      "path": "src/execution/physical_plan/CMakeLists.txt",
+      "upstream_git_blob": "b9f414c9ac7ba83534ddbbcfd71137fd7f052597",
+      "author_git_blob": "cad037c45cf673a6969fcee693ffb05f8ff99cb8"
+    },
+    {
+      "path": "src/execution/physical_plan/plan_any_join.cpp",
+      "upstream_git_blob": "5e8ee62233bcdeb65d25bf93578d8939de9e159f",
+      "author_git_blob": "70908893a58dac0fbc1cc6108d29296bd801665e"
+    },
+    {
+      "path": "src/execution/physical_plan/plan_comparison_join.cpp",
+      "upstream_git_blob": "9984b909eb7f6977a3197be66fce2c60f15840c3",
+      "author_git_blob": "b2175e569847c5c5285547fe4cc6699428cbd57e"
+    },
+    {
+      "path": "src/execution/physical_plan/plan_filter.cpp",
+      "upstream_git_blob": "ea87121a32d210da3c33900c2c6eb5c19abb8d22",
+      "author_git_blob": "154983b4aef271aa63730f3cc934219a470b5019"
+    },
+    {
+      "path": "src/execution/physical_plan/plan_projection.cpp",
+      "upstream_git_blob": "76fb36df7970bff1466b35e355d7f3c76699db63",
+      "author_git_blob": "6d95f064a6b098966a1d44bc1d56e2ef486796c3"
+    },
+    {
+      "path": "src/execution/window_executor.cpp",
+      "upstream_git_blob": "139d34aa6a763ab7aee5793893895a53e653b273",
+      "author_git_blob": "339f5d1bc3a2545ffa279c0c0a726a48372de876"
+    },
+    {
+      "path": "src/function/table/arrow.cpp",
+      "upstream_git_blob": "220a9d54e730d62911a57b6317c75f0cedf02dbb",
+      "author_git_blob": "7cca8f444307e5ed729e18aec507b09d40dbfcce"
+    },
+    {
+      "path": "src/function/table/system/duckdb_extensions.cpp",
+      "upstream_git_blob": "3c7f2396b0ad64eaf612d7995554f26cc1513a0d",
+      "author_git_blob": "c61fa7431ceb571d51feb95ad676a2cbcf74316c"
+    },
+    {
+      "path": "src/function/udf_function.cpp",
+      "upstream_git_blob": "3c03dbbe3014ba216a3b4f937ab383d9cd17fe26",
+      "author_git_blob": "268f7df72771c1fde3980ffc79093d33264296d1"
+    },
+    {
+      "path": "src/include/duckdb/common/dl.hpp",
+      "upstream_git_blob": "89494fc6d4d18260e0a8475c7083f863bb92551a",
+      "author_git_blob": "0fe730bc0e7f6bc2fcf5683923d260f9d9b21ee9"
+    },
+    {
+      "path": "src/include/duckdb/common/enums/physical_operator_type.hpp",
+      "upstream_git_blob": "7aadb07b3f256549e12927d2d8fa9b667ec42eb6",
+      "author_git_blob": "cb6adfdf7f1c3199cdb768b7485aa9cc8111dd60"
+    },
+    {
+      "path": "src/include/duckdb/common/types/data_chunk.hpp",
+      "upstream_git_blob": "58f6aced3799224ef20aa18338ff6da5ad313704",
+      "author_git_blob": "9169b4255c03a6f1077593f7a32909bd89e32122"
+    },
+    {
+      "path": "src/include/duckdb/common/types/selection_vector.hpp",
+      "upstream_git_blob": "578aa25b8142060771bc94c199c747d4dc43ada5",
+      "author_git_blob": "17778a9cbac80e9e1af071da81242417539f0b50"
+    },
+    {
+      "path": "src/include/duckdb/common/types/vector.hpp",
+      "upstream_git_blob": "7150a5d720edfa3eaf59653fcd59756af81282bc",
+      "author_git_blob": "3b25bed06bcae687820bf5ac757fa33d93bdc679"
+    },
+    {
+      "path": "src/include/duckdb/execution/executor.hpp",
+      "upstream_git_blob": "7e3074250a8df83ff19e2f40abb8f2cdca391be5",
+      "author_git_blob": "ef84037109c143c9c03f9c6e0799d6e193ee84d0"
+    },
+    {
+      "path": "src/include/duckdb/execution/expression_executor.hpp",
+      "upstream_git_blob": "80c380d682c2fc43ac86dc3d402f5efb9785de2a",
+      "author_git_blob": "920e75d2c9899fb3f981206d1b5845e532729a81"
+    },
+    {
+      "path": "src/include/duckdb/execution/expression_executor_state.hpp",
+      "upstream_git_blob": "c0802db2a3084c843bf668a986e864109b9a4a88",
+      "author_git_blob": "04eb0b5d88b20818dfc727acdf635e0736aff7c8"
+    },
+    {
+      "path": "src/include/duckdb/execution/physical_operator.hpp",
+      "upstream_git_blob": "e69af8889d5dde613db9d9d28af9d77c3f342d2e",
+      "author_git_blob": "5c39ce1b9c96f8f460a31d312dd8ae7428d7a591"
+    },
+    {
+      "path": "src/include/duckdb/function/scalar_function.hpp",
+      "upstream_git_blob": "db67afc762c98aa7c68454b420ab45ee85d34678",
+      "author_git_blob": "e6114c150d1a9f60a1b5b04e0793dd50cd57dbed"
+    },
+    {
+      "path": "src/include/duckdb/function/table/arrow.hpp",
+      "upstream_git_blob": "d2ea02304402318e21783a3b96a4056c51a7413e",
+      "author_git_blob": "8319e0e39e1c6bef37d9055c8a3b3ee244ff506c"
+    },
+    {
+      "path": "src/include/duckdb/function/udf_function.hpp",
+      "upstream_git_blob": "571a49af4aa564224af4260b15791287c06f4939",
+      "author_git_blob": "f26eb760f8f78a066fc98931b4bc1f73f1c516d8"
+    },
+    {
+      "path": "src/include/duckdb/main/client_context.hpp",
+      "upstream_git_blob": "97fbe2ce1bcd6011c3290dbc4e062d3c983c7699",
+      "author_git_blob": "63cc43ce8dc4f94b12c4eb0ac07a5756d67b3ea9"
+    },
+    {
+      "path": "src/include/duckdb/main/connection.hpp",
+      "upstream_git_blob": "8b7292872693d2fa7ed07e0d7ddc9e14b448acbe",
+      "author_git_blob": "8d73b748fe86aac98c1e008c8ec8618357b00771"
+    },
+    {
+      "path": "src/include/duckdb/main/database.hpp",
+      "upstream_git_blob": "c3041a2c33d8056853550e05e94cca955c298c50",
+      "author_git_blob": "a90c2532d2998d2a446aaf0cbfa1543e94997bae"
+    },
+    {
+      "path": "src/include/duckdb/main/extension_entries.hpp",
+      "upstream_git_blob": "ffe138bfa92343732bbe7630a9de4ff57dbc793c",
+      "author_git_blob": "a95d0ab3a73c177e62a4de21fdbd7daa056279a2"
+    },
+    {
+      "path": "src/include/duckdb/main/extension_install_info.hpp",
+      "upstream_git_blob": "a1e5bad4a74c97b2469dbeca8b7f56dddafdb77b",
+      "author_git_blob": "6ccd1a1156296445f82e6b3eb394f7fc5e8dec3d"
+    },
+    {
+      "path": "src/include/duckdb/main/extension_util.hpp",
+      "upstream_git_blob": "6d790344de6305a3615b1419d1676a6c32d0b17d",
+      "author_git_blob": "f91ad2277e15d580ce4a17f9ee780053247f8b11"
+    },
+    {
+      "path": "src/include/duckdb/parallel/pipeline.hpp",
+      "upstream_git_blob": "cb53777a2d61e52bd48fa057b6c50eb68f975a14",
+      "author_git_blob": "0feb471b04f39cfce2b5400ee41afe9c86d380ac"
+    },
+    {
+      "path": "src/main/client_context.cpp",
+      "upstream_git_blob": "a6377e667c19a7f6695c60b6b8b08fead4e0efab",
+      "author_git_blob": "cc22e3d0fa4ee5b20e9c9629abd082bf382b093c"
+    },
+    {
+      "path": "src/main/connection.cpp",
+      "upstream_git_blob": "11346a3a9846f8debea17288dc87de564a8c5ee9",
+      "author_git_blob": "3d3cdb80e981de5305268abddc60cddc93d83afe"
+    },
+    {
+      "path": "src/main/database.cpp",
+      "upstream_git_blob": "4fab31dd272e4c703d78e71a7f29b45dbbcc5ebc",
+      "author_git_blob": "9fb6d629f3feb5c597c38915c6ae7a9413cf603a"
+    },
+    {
+      "path": "src/main/extension/extension_util.cpp",
+      "upstream_git_blob": "f2071c7812b23888ee9a8340a681875262354b5e",
+      "author_git_blob": "bcad314642ec9acfba5cc3c3e1fbcf5bcf55033f"
+    },
+    {
+      "path": "src/parallel/pipeline.cpp",
+      "upstream_git_blob": "4b56b36ab511976dd589670426c37bdae1e7f1f9",
+      "author_git_blob": "08b2c861140b32733c8334c532e6195e18f52b48"
+    },
+    {
+      "path": "src/parallel/pipeline_executor.cpp",
+      "upstream_git_blob": "18bb5e745f0a32ca0f1cb0bc9935f2f400a9f769",
+      "author_git_blob": "ca79617c07808e3e7d161574bdb3cfbc77002c62"
+    },
+    {
+      "path": "src/parallel/pipeline_finish_event.cpp",
+      "upstream_git_blob": "b933e7ead4086e5bb097b10d7480b0fd91d44c91",
+      "author_git_blob": "ce1e643cba0add2f34014332eb90cb0bfe3675bb"
+    },
+    {
+      "path": "src/transaction/undo_buffer.cpp",
+      "upstream_git_blob": "69a63b946b3998efa5fb0956101df71c92a5c918",
+      "author_git_blob": "ea1a212482845acb8eb67ea0d8ccb05803aba902"
+    }
+  ],
+  "modified_file_classification": {
+    "all_prediction_related": false,
+    "confirmed_non_prediction_diffs": [
+      {
+        "path": "src/execution/window_executor.cpp",
+        "description": "Bounds NULL loop by MinValue(delta, count-i)."
+      },
+      {
+        "path": "src/transaction/undo_buffer.cpp",
+        "description": "Adds DELETE_TUPLE consecutive-delete estimated-size handling."
+      },
+      {
+        "path": "src/include/duckdb/common/dl.hpp",
+        "description": "Windows null-module handling and dlclose wrapper."
+      },
+      {
+        "path": "src/function/table/system/duckdb_extensions.cpp",
+        "description": "Extension loaded/install/load-info metadata handling."
+      },
+      {
+        "path": "src/main/extension/extension_util.cpp",
+        "description": "Adds extension registration helper."
+      },
+      {
+        "path": "src/include/duckdb/main/extension_entries.hpp",
+        "description": "Adds inet extension function catalog entries."
+      },
+      {
+        "path": "src/include/duckdb/main/extension_install_info.hpp",
+        "description": "Adds ExtensionLoadedInfo."
+      },
+      {
+        "path": "src/include/duckdb/main/extension_util.hpp",
+        "description": "Declares extension registration helper."
+      }
+    ],
+    "remaining_diffs": "Listed by exact blob identity; not all manually classified. Preserve all 56 author files unchanged."
+  },
+  "matched_units": [
+    {
+      "prefix": "src/optimizer/",
+      "upstream_files": 101,
+      "common_equal": 100,
+      "common_different": 0,
+      "upstream_only_missing": [
+        "build_probe_side_optimizer.cpp"
+      ]
+    },
+    {
+      "prefix": "src/include/duckdb/optimizer/",
+      "upstream_files": 58,
+      "common_equal": 57,
+      "common_different": 0,
+      "upstream_only_missing": [
+        "build_probe_side_optimizer.hpp"
+      ]
+    },
+    {
+      "prefix": "third_party/",
+      "upstream_files": 890,
+      "common_equal": 889,
+      "common_different": 0,
+      "upstream_only_missing": [
+        "mbedtls/include/mbedtls/build_info.h"
+      ]
+    },
+    {
+      "prefix": "scripts/",
+      "upstream_files": 112,
+      "common_equal": 112,
+      "common_different": 0,
+      "upstream_only_missing": [],
+      "git_tree": "6a54ef6cbb293c082379d6dd54999e8391f01261"
+    },
+    {
+      "prefix": "benchmark/",
+      "git_tree_equal": true,
+      "git_tree": "614760f561dad1afce0ecd77db3ccecdd90c3bb6"
+    }
+  ],
+  "independent_matching_fingerprints": [
+    {
+      "path": "src/optimizer/CMakeLists.txt",
+      "git_blob": "1c036de74d1f21e0467ce8d623eb5579f6cc51e0"
+    },
+    {
+      "path": "src/optimizer/optimizer.cpp",
+      "git_blob": "c8e4096d70a6adfe751d853c500f665b07630f14"
+    },
+    {
+      "path": "src/optimizer/join_order/join_order_optimizer.cpp",
+      "git_blob": "516acd751bed2d1230132910daf81a8d741ab659"
+    },
+    {
+      "path": "src/optimizer/filter_pushdown.cpp",
+      "git_blob": "274c4114def16b6bfcb9822bd7ec178c4b51c5ea"
+    },
+    {
+      "path": "src/optimizer/column_lifetime_analyzer.cpp",
+      "git_blob": "1f514e028c9895af83b1f0880897d45cf4b3175d"
+    },
+    {
+      "path": "src/include/duckdb/common/types.hpp",
+      "git_blob": "cb70134876bc09fe25a02720b8a4e1953139e78c"
+    },
+    {
+      "path": "src/include/duckdb/common/enums/join_type.hpp",
+      "git_blob": "8ba8e27295f0d1d94ab4fa2aefa81ee9b0830f78"
+    },
+    {
+      "path": "src/include/duckdb/planner/operator/logical_comparison_join.hpp",
+      "git_blob": "8731730c3a4ea1b6da853efe85d9dae3de8eca0e"
+    },
+    {
+      "path": "src/include/duckdb/planner/operator/logical_get.hpp",
+      "git_blob": "246a83cb079224ec64fcd84b4112070504e6e5c7"
+    }
+  ],
+  "top_level_cmake": {
+    "author_git_blob": "4b8cc7ead5fc648fa1d8071ad37efe99ac3eb328",
+    "upstream_git_blob": "fc5aa535c06bb8ff258447b0b3adf992d98f0c28",
+    "difference": "Removing exactly author lines49-59 (11 inserted IMLane configuration lines, including whitespace/comments) produces byte-identical upstream CMakeLists.txt."
+  },
+  "optimizer_pair_stability": {
+    "earlier_official_commit": "0f55869ecad60238badf5280a2e13ad92fb02bc0",
+    "earlier_date": "2024-06-13",
+    "identical_git_blobs_to_recovery_reference": true,
+    "note": "This compares the two named commits; it is not an exhaustive intermediate-history assertion."
+  },
+  "unrestored_build_prefix_files": [
+    {
+      "author_path": "database/duckdb/extension/tpcds/dsdgen/dsdgen-c/build_support.cpp",
+      "upstream_git_blob": "12a13ca59fbafab5bfceebf4ba144df23912a4fb",
+      "bytes": 10257,
+      "reason": "Not restored: parent reports corresponding TPCH/TPCDS/Python/Actions path disabled for the C++ Q3 build."
+    },
+    {
+      "author_path": "database/duckdb/extension/tpcds/dsdgen/include/dsdgen-c/build_support.h",
+      "upstream_git_blob": "72e5aaf241bfc7a996c02a9e1d0a321758f10f92",
+      "bytes": 3066,
+      "reason": "Not restored: parent reports corresponding TPCH/TPCDS/Python/Actions path disabled for the C++ Q3 build."
+    },
+    {
+      "author_path": "database/duckdb/extension/tpch/dbgen/build.cpp",
+      "upstream_git_blob": "808f6c8e3d113491419e507fbf4ea1ad89b8fba1",
+      "bytes": 11326,
+      "reason": "Not restored: parent reports corresponding TPCH/TPCDS/Python/Actions path disabled for the C++ Q3 build."
+    },
+    {
+      "author_path": "database/duckdb/tools/pythonpkg/build-constraints.txt",
+      "upstream_git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "bytes": 1,
+      "reason": "Not restored: parent reports corresponding TPCH/TPCDS/Python/Actions path disabled for the C++ Q3 build."
+    },
+    {
+      "author_path": "database/duckdb/.github/actions/build_extensions/action.yml",
+      "upstream_git_blob": "8d59440ed6eea14ab864bb5e0025ca8dd95a4b45",
+      "bytes": 8972,
+      "reason": "Not restored: parent reports corresponding TPCH/TPCDS/Python/Actions path disabled for the C++ Q3 build."
+    }
+  ],
+  "qualification": {
+    "recovered_source_files_written": false,
+    "configure_or_compile_run": false,
+    "model_requests": 0,
+    "statement": "Preparation audit only. Root will restore only the three intended files into the isolated author build, verify exact hashes, preserve source patch provenance, then qualify compilation/CPU execution separately.",
+    "limits": [
+      "Cannot prove unpublished author modifications to files absent from the public commit.",
+      "No claim that all 56 common-different files are prediction-related.",
+      "No ordinary pip DuckDB substitution and no optimizer removal or stub."
+    ]
+  }
+}

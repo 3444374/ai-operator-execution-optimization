@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from PIL import Image
 from src.modalities.image.file_source import build_image_file_manifest, load_image_file_manifest
-from src.modalities.image.source import ImageSourceConfig
+from src.modalities.image.contracts import ImageSourceConfig
 
 
 class ImageFileSourceTest(unittest.TestCase):

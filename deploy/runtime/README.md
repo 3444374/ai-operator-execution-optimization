@@ -59,7 +59,13 @@ SemBench Movie原生查询与评价使用`core,text,semantic-benchmarks`：后�
 SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1与Arrow版本。
 原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
 本轮固定Daft0.7.21的连接工厂返回SQLAlchemy Connection；psycopg通过NullPool的creator接入，只读和statement timeout仍明确设置。
+该版本的SQL／Postgres extra声明SQLGlot<30.9.0；现用`sql-readers`安装项及可选路径依赖并集统一为`sqlglot>=30,<30.9`，沿用原能力组的>=30下限。
+这只修正当前Daft0.7.21组合的安装声明。已有模块仍不会由安装器自动纠正版本；其它Daft版本应按自身依赖重新核对，不能借此声明兼容。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
+能力组的import检查不是上述接点的完整版本资格。现有LOTUS文本records／SDK的CPU资格使用
+`lotus-ai==1.2.4`、`litellm==1.95.0`与`openai==2.50.0`；来源报告记录实际版本及源码摘要，
+普通执行不再强制这些版本／字节相等，其他版本仍须各自验证。仅安装LOTUS不会锁定整个组合，
+已有可导入模块也不会由`install-python`自动纠正。运行前保留[原入口的来源与环境预检](../../code/src/experiments/lotus_records_movie.py)。
 若旧driver缺评价依赖，先审查安装预览，再建独立venv，不混装模型服务环境；
 [本轮环境与验证记录](../../experiments/results/postgresql/database_queries_20260910/README.md)。
 
@@ -91,7 +97,8 @@ PYTHONPATH=code python code/scripts/environment/manage_environment.py \
   --python-executable <driver-venv>/bin/python --dry-run
 # 核对命令后去掉 --dry-run。
 
-# 每次只下载一个明确资产；已有且达到完整性门槛时直接返回 ready。
+# 每次只下载一个明确资产；HTTP文件和人工资产满足清单检查时直接复用。
+# 模型快照由原生SDK处理已有缓存、缺文件及中断恢复。
 PYTHONPATH=code <driver-venv>/bin/python code/scripts/environment/manage_environment.py \
   --env-file <runtime.env> --assets-manifest deploy/runtime/assets.json \
   download --asset qwen25-15b
@@ -100,20 +107,26 @@ PYTHONPATH=code <driver-venv>/bin/python code/scripts/environment/manage_environ
 可下载资产包括 `qwen25-15b`、`qwen25-7b`、`clip-vit-b32`、
 `sharegpt-vicuna`、`burstgpt-v2`、`coco-val2017` 和 `coco-train2017`。
 HTTP 大文件使用 `.partial` 断点文件并在完成后原子改名；服务端忽略 Range 时会从头覆盖，
-不会把两份文件错误拼接。Hugging Face snapshot 需要先安装 `download` 能力。
+不会把两份文件错误拼接。响应声明 `Content-Length` 时，先核对本次接收字节；未收全则报错并保留
+断点文件，不改为最终目标。再次执行可续传；没有声明长度时继续使用清单的最小大小与可选摘要核验。
+Hugging Face snapshot 需要先安装 `download` 能力。显式下载始终调用原生 `snapshot_download`，
+不因目录累计字节足够就跳过；缓存、文件续传和文件级空间处理由SDK负责，不使用HTTP单文件的
+`.partial`空间计算。没有强制重下或自建完成标记，SDK返回和离线回退按其自身实现解释。
+只读`check`仍核对目录／最小大小及已声明摘要，不联网枚举模型文件，也不证明模型能加载；实际模型
+身份与加载结果由服务启动记录确认。
 
 `imagenet-1k` 是受许可的 `manual` 资产：检查会明确报缺失，下载命令会拒绝绕过授权。
 这类资产必须由用户接受条款后放入清单指定目录。
 
 ## 数据下载不等于 workload 已就绪
 
-资产管理器只验证原始文件/模型目录。下载后还需运行现有 importer：
+资产管理器只验证原始文件/模型目录。下载后的准备方式由实际输入决定：
 
-- 文本：`code/scripts/data/import_ai_complete_workload.py`；
-- COCO：`code/scripts/data/import_coco_images.py`；
-- PostgreSQL workload 行数、唯一性和 schema 由实验 runner 的 gate 再验证。
+- 当前文本：使用对应查询的CSV／JSON来源，或[文件工作负载工具](../../code/scripts/baselines/map_workload_tools.py)生成的清单；
+- 当前 COCO 文件图像：[制作 JPEG 文件清单](../../code/scripts/data/build_image_file_manifest.py)，不要求 PG；旧数据库导入与 SQL 从[历史来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)恢复；
+- 旧PG文本导入及诊断已[独立归档](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)，不作为上述文件任务的准备步骤。
 
-这样避免“ZIP 在磁盘上”被误判成“数据库里已有正式 workload”。正式结果必须同时保存
+原始文件存在不代表实际输入可用；字段、行身份、来源与选定记录由对应任务核对。正式结果必须同时保存
 `preflight.json`、实验 resolved config、Git commit、服务版本和 workload manifest。
 
 ## 参数如何随机器和 workload 自适应

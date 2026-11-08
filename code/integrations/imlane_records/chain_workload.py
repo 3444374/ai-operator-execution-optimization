@@ -3,35 +3,36 @@
 import json
 
 from integrations.imlane_records.filter_workload import PROTOCOL
-from src.baselines.text.frameworks.lotus_chain_results import _source_binding, record_row
+from src.semantic_methods.lotus.record_results import _source_binding, record_row
 from src.semantic_methods.lotus.record_chain import RecordOccurrence
 
 
 STAGE = "finite-chain"
 
 
-def batch_rows(source):
+def batch_rows(source, *, max_rows):
     value = json.loads(source["record_json"])
     if (type(value) is not dict or set(value) != {"batch_json"} or type(value["batch_json"]) is not str):
         raise ValueError("chain transport requires one batch_json string")
     rows = json.loads(value["batch_json"])
-    if (type(rows) is not list or not 0 < len(rows) <= 16
+    if (type(rows) is not list or not 0 < len(rows) <= max_rows
             or any(type(row) is not dict or set(row) != {"record_json"}
                    or type(row["record_json"]) is not str for row in rows)):
-        raise ValueError("chain transport requires a finite batch of 1..16 record values")
+        raise ValueError("chain transport requires a batch within its declared logical row count")
     return rows
 
 
 class ChainBatches:
-    def __init__(self, query_id, expected):
+    def __init__(self, query_id, expected, *, max_batch_rows):
         self.query_id = query_id
+        self.max_batch_rows = max_batch_rows
         self.expected = {_source_binding(row)["row_id"]: _source_binding(row) for row in expected}
         self.sent, self.collected, self.inputs, self.index = set(), set(), {}, 0
 
     def encode(self, records):
-        if (type(records) is not list or not 0 < len(records) <= 16
+        if (type(records) is not list or not 0 < len(records) <= self.max_batch_rows
                 or any(type(row) is not RecordOccurrence for row in records)):
-            raise ValueError("chain batches require 1..16 RecordOccurrence values")
+            raise ValueError("chain batches require declared RecordOccurrence values")
         ids = [row.row_id for row in records]
         if (len(set(ids)) != len(ids) or self.sent.intersection(ids)
                 or any(self.expected.get(row.row_id) != _source_binding(row) for row in records)):
@@ -61,7 +62,7 @@ class ChainBatches:
             raise ValueError("chain batch protocol or occurrence differs")
         batch = payload["batch"]
         bindings = [_source_binding(RecordOccurrence.from_dict(json.loads(r["record_json"])))
-                    for r in batch_rows(source)]
+                    for r in batch_rows(source, max_rows=self.max_batch_rows)]
         if batch["inputs"] != bindings:
             raise ValueError("chain native batch changed its original source values")
         known = not any(call.get("status") == "unknown" for call in batch["calls"])

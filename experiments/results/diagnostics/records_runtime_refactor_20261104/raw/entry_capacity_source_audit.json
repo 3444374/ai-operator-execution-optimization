@@ -1,0 +1,345 @@
+{
+  "schema": "semloom.entry_and_capacity_source_audit.v1",
+  "source_commit": "422ef076ab3f0a864ea46006e3445191876f48a1",
+  "evidence_kind": "source audit; allocation tests use CPU fixtures, not target-machine capacity",
+  "inventory": {
+    "entries": 647,
+    "scripts": 129,
+    "tests": 518,
+    "decisions": {
+      "keep_package": 8,
+      "keep_current_entry": 117,
+      "retain_pending_use_review": 4,
+      "keep_regression_or_fixture": 518
+    },
+    "inventory_bytes": 1133980,
+    "inventory_sha256": "87ae57c3144bf79b49b238e5f7dc6bf7585ac894c0583f83eb21205dab0e1b37",
+    "archive_bytes": 74935,
+    "archive_sha256": "2d8867e47d46a1ffd13da6a4d5cfbd76bdd7bb188eb3ad74f2ca45f147857d0c",
+    "retired": [],
+    "archive_path": "raw/entry_inventory_followup.json.gz",
+    "original_archive_retained": "raw/entry_inventory.json.gz",
+    "corrected_local_imports": [
+      {
+        "path": "code/scripts/profiling/profile_clip_preproc_stages.py",
+        "line": 127,
+        "module": "profile_image_clip_bottleneck",
+        "resolution": "script_directory"
+      },
+      {
+        "path": "code/scripts/profiling/profile_image_clip_preprocess_variants.py",
+        "line": 203,
+        "module": "profile_image_clip_bottleneck",
+        "resolution": "script_directory"
+      }
+    ],
+    "zero_test_method_helpers_without_recorded_current_references": [],
+    "collector_sha256": "39fb71a7c9d6ac51c8be1cf8256f7bbc7dfca0df036b92fd076a83b40a09fdc4"
+  },
+  "individually_reviewed_scripts": [
+    {
+      "path": "code/scripts/analysis/summarize_saor_native_system_matched.py",
+      "decision": "keep_historical_evidence_reader",
+      "reason": "The wrapper calls the native-system summary validator, including original authorization and identity checks. The unified offline reader supports other layouts and is not an equivalent replacement.",
+      "source_sha256": "7dfad4c4dba654fa4344b0a9518097d953662bb78f431fd94350ca49ce90229d",
+      "evidence_paths": [
+        "code/src/experiments/saor/native_system_summary.py",
+        "code/scripts/analysis/OFFLINE_RESULTS.md"
+      ],
+      "imports": []
+    },
+    {
+      "path": "code/scripts/baselines/request_equivalence_gate.py",
+      "decision": "keep_required_validation_until_execution_wiring_is_resolved",
+      "reason": "Current native-baseline provenance still names this verification obligation; a maintained direct CLI caller was not established. This is an execution-wiring question, not proof of dead validation.",
+      "source_sha256": "d18d0cb205a9ce182f72dd321d45dc3f41eed940fbf8fd693a0bd3ff984f5862",
+      "evidence_paths": [
+        "code/src/baselines/common/provenance.py",
+        "code/src/baselines/text/products/duckdb_ai.py"
+      ],
+      "imports": []
+    },
+    {
+      "path": "code/scripts/data/import_bounded_output_workload.py",
+      "decision": "keep_unique_historical_workload_transform",
+      "reason": "It changes task instructions, output targets and stored workload identity. The generic workload importer is not an equivalent transformation; historical input provenance must remain recoverable.",
+      "source_sha256": "6c37ea97e52e43b2384915e864bd13375aa158a35696488c7d6f0318465ae9e1",
+      "evidence_paths": [
+        "code/scripts/data/import_ai_complete_workload.py",
+        "code/src/baselines/text/orchestration/native_multijob.py"
+      ],
+      "imports": []
+    },
+    {
+      "path": "code/scripts/profiling/probe_embedding_parity.py",
+      "decision": "keep_unique_offline_semantic_probe",
+      "reason": "It aligns embedding IDs and checks normalized cosine and neighbor-set agreement. The general offline result reader has no equivalent input adapter.",
+      "source_sha256": "d552ee6b044d6c83a1248040da4fde1c67c083ce8e046b0faa6090c40e144d88",
+      "evidence_paths": [
+        "code/scripts/analysis/OFFLINE_RESULTS.md",
+        "experiments/results/motivation/gpu/image_embedding_parity_20260803/README.md"
+      ],
+      "imports": []
+    },
+    {
+      "path": "code/scripts/profiling/profile_image_clip_bottleneck.py",
+      "decision": "keep_current_shared_profile_helper",
+      "reason": "Two maintained direct profiling scripts import fetch_image_bytes and get_versions from this same directory. The first absolute-only import index did not record them.",
+      "source_sha256": "e79b9de77badfa4ef3052e5f6e1f646932c0ca9d7d82f90f951af86fa47fd6da",
+      "evidence_paths": [
+        "code/scripts/profiling/profile_clip_preproc_stages.py",
+        "code/scripts/profiling/profile_image_clip_preprocess_variants.py"
+      ],
+      "imports": [
+        {
+          "path": "code/scripts/profiling/profile_clip_preproc_stages.py",
+          "line": 127,
+          "module": "profile_image_clip_bottleneck",
+          "resolution": "script_directory"
+        },
+        {
+          "path": "code/scripts/profiling/profile_image_clip_preprocess_variants.py",
+          "line": 203,
+          "module": "profile_image_clip_bottleneck",
+          "resolution": "script_directory"
+        }
+      ]
+    }
+  ],
+  "new_entries_deleted": 0,
+  "tests_deleted": 0,
+  "sync_defaults": {
+    "status": "not migrated; actual-ready publication is implemented separately",
+    "uses": [
+      {
+        "path": "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "line": 406,
+        "owner": "DaftCascadeBackend.preflight",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/daft_lotus_cascade.py",
+        "line": 443,
+        "owner": "DaftCascadeBackend.__call__",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+        "line": 310,
+        "owner": "evaluate",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/daft_lotus_records.py",
+        "line": 386,
+        "owner": "evaluate",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/daft_lotus_session.py",
+        "line": 27,
+        "owner": "DaftNativeSession.__init__",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "line": 73,
+        "owner": "LocalService.command",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "line": 73,
+        "owner": "LocalService.command",
+        "attribute": "legacy_max_num_seqs"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "line": 74,
+        "owner": "LocalService.command",
+        "attribute": "legacy_max_num_batched_tokens"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/lotus_native_local_model.py",
+        "line": 478,
+        "owner": "run",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py",
+        "line": 346,
+        "owner": "RayCascadeBackend.preflight",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+        "line": 325,
+        "owner": "evaluate",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+        "line": 956,
+        "owner": "SemLoomRecordChainCore.evaluate",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/execution_provider/method_workers/lotus_chain_batch.py",
+        "line": 107,
+        "owner": "FusedChainBatch.__init__",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/experiments/lotus_records_cascade.py",
+        "line": 74,
+        "owner": "read_config",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/experiments/lotus_records_chain.py",
+        "line": 57,
+        "owner": "read_config",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/experiments/lotus_records_movie.py",
+        "line": 411,
+        "owner": "read_cascade_config",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/experiments/movie_records_session.py",
+        "line": 54,
+        "owner": "check_plan",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "line": 48,
+        "owner": "VllmEngine.__init__",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "line": 74,
+        "owner": "VllmEngine.__init__",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "line": 84,
+        "owner": "VllmEngine.__init__",
+        "attribute": "legacy_max_model_len"
+      },
+      {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "line": 85,
+        "owner": "VllmEngine.__init__",
+        "attribute": "legacy_max_num_seqs"
+      },
+      {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "line": 86,
+        "owner": "VllmEngine.__init__",
+        "attribute": "legacy_max_num_batched_tokens"
+      }
+    ],
+    "affected_files": 14,
+    "scope": [
+      "sync constructor passes the three legacy values and checks output against the legacy context",
+      "fused worker rewrites unspecified context before starting its sync model",
+      "fused Core and non-async wrappers retain context validation from legacy properties",
+      "native reference command and Daft/Ray wrappers retain their own existing parameters",
+      "ordinary async constructor omits the three unspecified fields; explicit values and actual-ready context remain required"
+    ],
+    "next_verification": [
+      "separate current sync omission from explicitly named historical/native settings",
+      "test omitted and explicit values on actual constructor stubs without changing other backend defaults",
+      "bind prompt plus output validation and cache identity to the same actual ready instance",
+      "test failed/unknown readiness, partial allocation, shutdown retry and cross-query model identity",
+      "preserve every historical code projection and native reference parameters; actual model remains unverified"
+    ]
+  },
+  "automatic_capacity": {
+    "implemented": false,
+    "ordinary_R_default": "2",
+    "ipc_result_slots_default": "8",
+    "ipc_input_bytes_expression": "16 * 1024 ** 2",
+    "ipc_result_bytes_expression": "16 * 1024 ** 2",
+    "complete_None_budget": "supported but active_requests and independent logical grants are still finite explicit declarations",
+    "sources": [
+      {
+        "source": "psutil host available RAM",
+        "scope": "host context shared with other processes",
+        "grants_service_memory": false
+      },
+      {
+        "source": "cgroup visible ancestor limit and headroom",
+        "scope": "allocation-group observation, potentially shared with driver/model/other processes",
+        "grants_service_memory": false
+      },
+      {
+        "source": "native running/waiting/KV/preemption frames",
+        "scope": "same-model dynamic service pressure; not host payload storage",
+        "grants_service_memory": false
+      },
+      {
+        "source": "existing Core/Method/IPC budgets",
+        "scope": "finite declared logical payload reservations; not measured process RSS or discovered hardware capacity",
+        "grants_service_memory": false
+      }
+    ],
+    "required_implementation": [
+      "identify one service-owned memory grant and its driver/model scope; do not spend the same headroom twice",
+      "reuse current reservations to account input, continuation, prepared handoff and unconsumed results separately",
+      "derive permissible work from current remaining owned byte grants and actual per-item envelopes; do not replace R2 with another manual count",
+      "resolve model-dependent values after that actual owner is ready; preserve identity and recheck on owner/model changes",
+      "keep unknown/cancelled work charged until original terminal, consumer or shutdown evidence permits its corresponding release",
+      "reject absent or contradictory allocation evidence before runtime; never treat unknown as unlimited"
+    ],
+    "current_missing": [
+      "no service-owned payload-memory grant source is wired",
+      "no qualified connection from allocation-scoped observation to those independent owner grants",
+      "RSS/metadata overhead and overlapping buffers are not proved by logical byte reservations"
+    ],
+    "new_controller": false,
+    "new_percentage_or_count_policy": false
+  },
+  "source_hashes": [
+    {
+      "path": "code/src/infrastructure/cgroup.py",
+      "sha256": "ca12e7a4dec9ac5ad55e659b0271c882784dbd8c9d41d3a677a9e0cbea0c7e60"
+    },
+    {
+      "path": "code/src/infrastructure/cpu_allocation.py",
+      "sha256": "b427325c1562392011b0537981c0131e97c31cc6c5a05bd7775f97059bba804a"
+    },
+    {
+      "path": "code/src/observability/metrics/resources.py",
+      "sha256": "6e6492941589464d9efad971d927410dccb6105ffa2457e5e4ab43a08e977167"
+    },
+    {
+      "path": "code/src/observability/records_telemetry.py",
+      "sha256": "a11df0031210e40b5732fe99f69c116ef94b670000465a0c60af5c7cb9d4aaeb"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_capacity.py",
+      "sha256": "e9f5bcd4a9685f012d11a63eb13238745851db1ebab8b2052056bbec4c03708f"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_profile.py",
+      "sha256": "ceaaa2c64278ac208e6de8552e91136b8c47c75dd2c61ff72f626c6008ca411a"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "sha256": "a570b9e4e41738d51da975319c6366d2b9efd7026ae57c563bc6562bd6cd9a70"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "sha256": "39141353cdabfa83966ef122a43bc0d24cabe49fd55bf652c7d9b7aa3ac99bed"
+    }
+  ],
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0
+}

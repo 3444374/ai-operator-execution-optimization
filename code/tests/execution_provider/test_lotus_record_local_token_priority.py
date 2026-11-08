@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_record_chain_fifo import LotusChainFIFO
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
 from src.scheduling.core.session_contract import SessionSpec, TaskProfile
 from src.semantic_methods.budget import MethodBudgetPool, MethodCapacity, row_reservation
@@ -99,7 +100,7 @@ class JointTokenPriorityTests(token_tests.QueryTokenTests):
                 self.assertIsNone(owner._root_run)
                 self.assertEqual(runtime.async_actors, [])
         with self.assertRaisesRegex(ValueError, "record_local_sections"):
-            SemLoomRecordChainCore(self.model, RecordsResources(), token_budget=self.budget(base),
+            SemLoomRecordChainCore(self.model, RecordsResources(max_active_batches=2), token_budget=self.budget(base),
                 ready_order="successor_first", successor_first=SuccessorFirst(2, 1.0))
 
     def test_joint_W_limits_native_supply_below_C_without_reordering_accepted_calls(self):
@@ -116,24 +117,26 @@ class JointTokenPriorityTests(token_tests.QueryTokenTests):
         self.assertLess(W, sum(costs))
         clock, events = [0.0], []
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        original = AsyncCoreModelActor._try_core
 
         def hold_first(actor, *args):
             result = original(actor, *args)
-            if args[0][0]["algorithm_stage"] == "step_0" and args[0][0]["source_position"] == 0:
+            if (result['status'] == 'accepted' and args[0][0]["algorithm_stage"] == "step_0"
+                    and args[0][0]["source_position"] == 0):
                 ready.set()
                 if not release.wait(5):
                     raise TimeoutError("CPU test did not release the first receipt")
             return result
 
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=query_fixture.Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_first):
+                patch.object(AsyncCoreModelActor, "_try_core", hold_first):
             owner = self.owner(plan, budget=self.budget(plan, W), C=2,
                 successor_first=SuccessorFirst(2, 0.5), ready_clock=lambda: clock[0],
                 on_ready_event=events.append)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
                 self.until(stream, ready.is_set)
+                self.until(stream, lambda: any(event['event'] == 'start' for event in self.events()))
                 for _ in range(6):
                     stream._tick()
                 usage = owner.core.capacity.usage()

@@ -1,0 +1,259 @@
+{
+  "schema": "semloom.ray-http-native-cpu.v1",
+  "tested_head": "69966b71dc44c36c432ff8cf365869bb57c88a2a",
+  "state": "software HTTP CPU path qualified; real model service pending",
+  "model_requests": 0,
+  "GPU_runs": 0,
+  "third_party_modified": false,
+  "lease_released": true,
+  "probe_sha256": "4bd78b9cf8bf2c69b202808bf2e072f15bf3cca54f3e44463c88951c3a5eef4e",
+  "raw_final_sha256": "32bc9191cdbba4003ffaf88527c46fe594555bd61d6d062a940fde65e7054f5f",
+  "environment": {
+    "ray": "2.56.1",
+    "vllm": "0.25.1",
+    "torch": "2.11.0",
+    "transformers": "5.14.1",
+    "aiohttp": "3.14.3",
+    "pyarrow": "24.0.0"
+  },
+  "cases": [
+    {
+      "case": "good",
+      "independent_lifecycle_checks": {
+        "worker_exit_matches": true,
+        "observed_owned_exit": true,
+        "no_remaining_owned": true,
+        "no_supervisor_signals": true,
+        "no_signal_events": true,
+        "no_cleanup_errors": true,
+        "worker_driver_disconnected": true,
+        "external_service_survived_worker": true,
+        "service_exit_zero": true,
+        "no_service_forced_kill": true,
+        "service_TERM_observed": true,
+        "serve_thread_joined": true,
+        "resource_passed": true,
+        "no_new_shm": true,
+        "final_shm_zero": true,
+        "expected_attempts": true,
+        "payloads_matched": true
+      },
+      "original_supervisor_status": "passed",
+      "worker_exit": 0,
+      "worker_status": "query_returned",
+      "worker_error_type": null,
+      "failed_count": null,
+      "logical_rows": 120,
+      "input_rows": 2000,
+      "predictions": 120,
+      "count": 14,
+      "quality": {
+        "result": {
+          "index": [
+            0
+          ],
+          "columns": [
+            "positive_review_cnt"
+          ],
+          "data": [
+            [
+              14
+            ]
+          ]
+        },
+        "classification": {
+          "true_positive": 14,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0,
+          "unparsed_default_true": 0
+        },
+        "official": {
+          "original_metric": {
+            "relative_error": 0,
+            "absolute_error": 0,
+            "mean_absolute_percentage_error": 0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+        }
+      },
+      "actual_POST_attempts": 120,
+      "completed_POSTs": 120,
+      "peak_HTTP_inflight": 2,
+      "processor_config": {
+        "batch_size": 64,
+        "resources_per_bundle": null,
+        "accelerator_type": null,
+        "concurrency": 1,
+        "experimental": {},
+        "url": "<caller-owned-loopback-chat-endpoint>",
+        "headers": null,
+        "qps": null,
+        "max_retries": 0,
+        "base_retry_wait_time_in_s": 1,
+        "http_request_stage": true
+      },
+      "stages": [
+        "HttpRequestStage"
+      ],
+      "retry_policy": {
+        "adapter_overrides": {},
+        "native_source_version": "2.56.1",
+        "actor_pool_source_defaults": {
+          "max_restarts": -1,
+          "max_task_retries": -1
+        },
+        "physical_attempts": null,
+        "actor_init_retry_on_errors": false,
+        "actor_init_max_retries": 3,
+        "actor_task_retry_on_errors": false,
+        "retried_map_errors": false,
+        "max_map_retries": 3
+      },
+      "data_context": {
+        "max_tasks_in_flight_per_actor": null
+      },
+      "lifecycle": {
+        "profile": "query",
+        "runtime_owner": "caller",
+        "ray_driver_disconnected": null,
+        "external_service_owner": "caller",
+        "external_service_lifecycle_managed": false,
+        "model_process_exit_confirmed": null
+      },
+      "imported_inference_sdk_roots": [
+        "torch",
+        "transformers",
+        "vllm"
+      ],
+      "supervisor_seconds": 25.883061351254582,
+      "case_controller_seconds": 28.47203449718654,
+      "query_timing": {
+        "scope": "Ray query and owned Ray shutdown; excludes external service preparation and teardown",
+        "query_seconds": 18.756668052636087
+      },
+      "resource_summary": {
+        "peak_sampled_owned_rss_bytes": 3980562432,
+        "remaining_new_shm_count": 0,
+        "final_host_shm_used_delta_bytes": 0
+      },
+      "raw_summary_sha256": "bf9667460077b456cfdc375a6dbee9bcb429962bbb41950e65c1b0de8cb3f1ad",
+      "query_or_failed_query_sha256": "c259f36e6e5b76b58315f2e9d45c76871220cf24df3455c79d80f2b859f00249",
+      "service_receipt_sha256": "1a19295e11b27b51b7b27bac40fc6e1dfcbfc511bc5fa729b6158dacd3c211ea",
+      "worker_sha256": "bfad4174db088254080f402713cfea64f77be691b0823733157fcffd9e284615"
+    },
+    {
+      "case": "error",
+      "independent_lifecycle_checks": {
+        "worker_exit_matches": true,
+        "observed_owned_exit": true,
+        "no_remaining_owned": true,
+        "no_supervisor_signals": true,
+        "no_signal_events": true,
+        "no_cleanup_errors": true,
+        "worker_driver_disconnected": true,
+        "external_service_survived_worker": true,
+        "service_exit_zero": true,
+        "no_service_forced_kill": true,
+        "service_TERM_observed": true,
+        "serve_thread_joined": true,
+        "resource_passed": true,
+        "no_new_shm": true,
+        "final_shm_zero": true,
+        "expected_attempts": true,
+        "payloads_matched": true
+      },
+      "original_supervisor_status": "failed",
+      "worker_exit": 1,
+      "worker_status": "query_failed",
+      "worker_error_type": "RayTaskError(UserCodeException)",
+      "failed_count": null,
+      "logical_rows": 1,
+      "input_rows": 1,
+      "predictions": 0,
+      "count": null,
+      "quality": null,
+      "actual_POST_attempts": 1,
+      "completed_POSTs": 1,
+      "peak_HTTP_inflight": 1,
+      "processor_config": {
+        "batch_size": 64,
+        "resources_per_bundle": null,
+        "accelerator_type": null,
+        "concurrency": 1,
+        "experimental": {},
+        "url": "<caller-owned-loopback-chat-endpoint>",
+        "headers": null,
+        "qps": null,
+        "max_retries": 0,
+        "base_retry_wait_time_in_s": 1,
+        "http_request_stage": true
+      },
+      "stages": [
+        "HttpRequestStage"
+      ],
+      "retry_policy": {
+        "adapter_overrides": {},
+        "native_source_version": "2.56.1",
+        "actor_pool_source_defaults": {
+          "max_restarts": -1,
+          "max_task_retries": -1
+        },
+        "physical_attempts": null,
+        "actor_init_retry_on_errors": false,
+        "actor_init_max_retries": 3,
+        "actor_task_retry_on_errors": false,
+        "retried_map_errors": false,
+        "max_map_retries": 3
+      },
+      "data_context": {
+        "max_tasks_in_flight_per_actor": null
+      },
+      "lifecycle": {
+        "profile": "query",
+        "runtime_owner": "caller",
+        "ray_driver_disconnected": null,
+        "external_service_owner": "caller",
+        "external_service_lifecycle_managed": false,
+        "model_process_exit_confirmed": null
+      },
+      "imported_inference_sdk_roots": [
+        "torch",
+        "transformers",
+        "vllm"
+      ],
+      "supervisor_seconds": 19.363045927137136,
+      "case_controller_seconds": 19.585030464455485,
+      "query_timing": {
+        "scope": "Ray query and owned Ray shutdown; excludes external service preparation and teardown",
+        "query_seconds": 12.100633256137371
+      },
+      "resource_summary": {
+        "peak_sampled_owned_rss_bytes": 2897940480,
+        "remaining_new_shm_count": 0,
+        "final_host_shm_used_delta_bytes": 0
+      },
+      "raw_summary_sha256": "c4f440c540d32c1ef27877757c131f2b47a61656f83ca8a8aef64c6ae791ea2d",
+      "query_or_failed_query_sha256": "266d348320053c75cb0dc7e3cd2a6bda4dda29e90fd9995fa6dc27d9ffbe3857",
+      "service_receipt_sha256": "fabb2f549e1d8e9458036245dbfccb2f91107fb2139d18ec25c2ce569fb72c25",
+      "worker_sha256": "fe4a4c0f1c8f29deb903d8183203b4161d34cdd5f11c1600ac292c84bf0afce6"
+    }
+  ],
+  "tracked_clean": true,
+  "independent_original_csv_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+  "performance_claim": false,
+  "qualification_limits": [
+    "Only the normal full-cohort software response and one explicit error-JSON response were executed, once each.",
+    "Inference SDK modules were imported by the native SDK; no model was constructed or inferred.",
+    "Caller owned the Ray runtime and the external software service; binding-owned auto-init shutdown remains covered by CPU doubles only.",
+    "The original local-vLLM actor failure is preserved and has not been repaired.",
+    "Original probe negative-control pass logic did not itself reject supervisor force signals or a false health nonce. Independent readback additionally required both cases to have no supervisor signals/cleanup errors, expected exit codes, true health nonce check and automatic resource cleanup.",
+    "Probe initialization before its worker try block and exceptional TERM/kill/wait paths were not fault-injected; these probe limitations are retained, not claimed qualified.",
+    "Observed process exits and final SHM do not establish exit of arbitrary unobserved detached descendants or physical GPU model shutdown."
+  ],
+  "independent_reader_sha256": "2805c095df07610d4363e2ca4a7e0287333f5d56b0044bca720f9c3a56762b43"
+}

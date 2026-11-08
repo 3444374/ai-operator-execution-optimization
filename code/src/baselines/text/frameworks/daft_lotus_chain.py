@@ -17,11 +17,13 @@ import threading
 import time
 import uuid
 
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns
+from src.infrastructure.deadlines import deadline_after, deadline_expired
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import RecordOccurrence, _ordered_columns
 from src.semantic_methods.lotus.records import RecordsResources
-from src.serving.backends.vllm_engine import EngineSpec
-from .daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
-from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
+from src.serving.backends.vllm_protocol import EngineSpec
+from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
+from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch as FusedChainBatch
 from src.semantic_methods.lotus.record_results import ChainBatchResults, ChainExecutionError, _json, _source_binding, record_row
 
 
@@ -37,11 +39,12 @@ class DaftChainExecutionError(ChainExecutionError):
 def _check(deadline, control):
     if (Path(control) / "stop").exists():
         raise InterruptedError("Daft LOTUS chain cancelled")
-    if time.monotonic() >= deadline:
+    if deadline_expired(deadline):
         raise TimeoutError("Daft LOTUS chain query deadline expired")
 
 
-def _native_runner(runner_threads):
+def configure_native_runner(runner_threads=None):
+    """Select native threads before creating a source DataFrame."""
     from daft.runners import _get_runner, get_or_create_runner
     from src.infrastructure import daft_runtime
 
@@ -65,7 +68,7 @@ def _graph(frame, chain, engine, resources, expected, control, deadline, control
 
     if daft.__version__ != DAFT_VERSION:
         raise RuntimeError("chain requires exactly Daft Native " + DAFT_VERSION)
-    _native_runner(runner_threads)
+    configure_native_runner(runner_threads)
     if not expected:
         @daft.func.batch(return_dtype=daft.DataType.string(),
                          batch_size=resources.model_batch_rows, max_retries=0)
@@ -294,7 +297,7 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
         raise ValueError("the fused Daft chain supports cpu_workers=1 only")
     if runner_threads is not None and (type(runner_threads) is not int or runner_threads < 1):
         raise ValueError("runner_threads must be a positive integer or None")
-    deadline = time.monotonic() + resources.query_timeout_s
+    deadline = deadline_after(resources.query_timeout_s)
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
     if len({stage.method.model_name for stage in chain.stages}) != 1:
@@ -307,7 +310,7 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
             raise ValueError("streaming chain requires globally unique " + name)
     if chain.relation_barriers or columns is not None:
         columns = _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
-    if any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
+    if engine.max_model_len is not None and any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
     if cancelled is not None and cancelled():
@@ -320,7 +323,7 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
         raise ValueError("Daft chain input requires exactly one string record_json column")
     control = Path(tempfile.mkdtemp(prefix="daft-lotus-chain-", dir=control_dir))
     try:
-        from src.baselines.common.private_artifacts import require_outside_git
+        from src.infrastructure.private_artifacts import require_outside_git
 
         require_outside_git(control)
         os.chmod(control, 0o700)

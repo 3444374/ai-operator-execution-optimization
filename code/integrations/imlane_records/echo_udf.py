@@ -18,7 +18,7 @@ def infer_records(table):
     global _batches
     if (table.column_names != INPUT.names or table.schema.metadata or
             any(field.type != INPUT.field(i).type or field.metadata for i, field in enumerate(table.schema)) or
-            not 0 < len(table) <= 16):
+            len(table) <= 0):
         raise ValueError("echo requires the fixed nonempty records schema")
     table.validate(full=True)
     rows = table.to_pylist()

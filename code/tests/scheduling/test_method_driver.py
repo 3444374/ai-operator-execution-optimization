@@ -1,5 +1,7 @@
 """Adversarial producer/consumer and terminal ordering through the real method driver."""
 
+from tests.scheduling.test_multisession import choose_first_flow
+
 import unittest
 
 from src.scheduling.core.session import SessionEngine
@@ -229,7 +231,7 @@ class MethodDriverTests(unittest.TestCase):
             backend,
             template.policies,
             clock=clock,
-            max_jobs=2,
+            max_jobs=2, choose_flow=choose_first_flow,
         )
         pool = MethodBudgetPool(MethodCapacity(2, 2 * ROW_BYTES))
         drivers, jobs = [], []

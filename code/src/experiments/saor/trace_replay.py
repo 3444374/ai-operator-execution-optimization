@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 from src.scheduling.core.control import CapacityArm
-from src.scheduling.submission_control.saor import (
+from src.research.multitask.saor import (
     SaorAction,
     SaorControlState,
     SaorPolicy,

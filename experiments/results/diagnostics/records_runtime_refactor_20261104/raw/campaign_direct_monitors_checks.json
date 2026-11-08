@@ -1,0 +1,98 @@
+{
+  "base": "6754eebea91d452b534245c43e6259be9253b67d",
+  "initial_candidate": "d05f6a9c28e7a3762a3b9ba16f1cda60774bd02e",
+  "monitor_checkpoint": "4926df6dfe449be652179c20b0453722833fd354",
+  "issue_found_by_review": "A module-global supervisor replacement did not establish the callback on a privately returned cached API alias.",
+  "repair": "Controller, CPU and collection pass the campaign monitor explicitly at their actual supervisor calls. Controller records owned identities before invoking the callback; its standalone call remains valid.",
+  "removed": "Global supervisor replacement, nested-wrapper marker/check and the dedicated function-restoration test. The separate filesystem exclusion remains.",
+  "before_interface_probe": {
+    "methods": 1,
+    "error_subcases": 2,
+    "cause": "old controller has no explicit monitor parameter"
+  },
+  "CPU": {
+    "first_explicit_monitor_methods": 59,
+    "first_explicit_monitor_passed": 59,
+    "final_selected_methods": 58,
+    "final_passed": 58,
+    "final_failures": 0,
+    "final_errors": 0,
+    "final_skipped": 0,
+    "retired_method": "tests.experiments.test_record_campaign_guard.CampaignSupervisionTests.test_supervision_restores_the_original_function_after_an_unrelated_body_exception",
+    "retired_source_commit": "4926df6dfe449be652179c20b0453722833fd354",
+    "retirement_not_counted_as_a_pass": true,
+    "counts_overlap_not_added": true,
+    "source_unchanged_during_final_run": true,
+    "relevant_python_matches_final_run": true
+  },
+  "cached_alias_behavior": "Existing controller test covers standalone, callback and callback-stop using a saved real CPU supervisor and temporary child processes; it checks forwarding, pre-recorded owned identities, lease handling and failed-call reporting.",
+  "preserved": [
+    "Campaign cutoffs and storage scans",
+    "Controller own timeout, lease and owned cleanup",
+    "Call ledger and unresolved responsibility",
+    "Required real-Ray result selection and failure/skip rejection",
+    "Source/input identities"
+  ],
+  "public_source_snapshot_is_relevant_excerpt": true,
+  "raw": {
+    "path": "campaign_direct_monitors_raw.json.gz",
+    "bytes": 4960,
+    "sha256": "17cd3b50c5909cdd359f9a1c01133bb6d4520a790cff52d11183a7f95245a68f",
+    "decoded_bytes": 67226,
+    "decoded_sha256": "ffe47d3284f1f165c556fcb0aba0418ec912d86fbcb678c9d27df5f60dedfcfe"
+  },
+  "private_originals": {
+    "before-explicit-monitor.json": {
+      "bytes": 168247,
+      "sha256": "20cf5aae43f0f526b5e0c64d970ec9512384b1b4f583b7f330f2cbd32c442aee"
+    },
+    "before-explicit-monitor.log": {
+      "bytes": 2298,
+      "sha256": "e603649caf1cd19a4c489ef7bc7682d291678c3656d04f46be692236e979e222"
+    },
+    "explicit-monitor-regression.json": {
+      "bytes": 183800,
+      "sha256": "268f15239e8aac83b3537991773a796aaa24f6754a0e12a07a0826c451657ef3"
+    },
+    "explicit-monitor-regression.log": {
+      "bytes": 12563,
+      "sha256": "ae4e8f88c25e940b3a89df88ef86263d70529dbd2a569696bd45cfd259ee9b28"
+    },
+    "direct-campaign-monitors.json": {
+      "bytes": 183480,
+      "sha256": "87742f4a9b59b56176fb3ae419786497994f4ff146fe20a5fd903b4c9f64a127"
+    },
+    "direct-campaign-monitors.log": {
+      "bytes": 12320,
+      "sha256": "54aa05891db920a61b9b39cc08ba90ed935eae6b3c8e53f695036896657f69ea"
+    }
+  },
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONPATH": "code:code/scripts/experiments",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.experiments.test_record_campaign_guard",
+      "tests.experiments.test_ray_future_qualification",
+      "tests.experiments.test_record_resource_capture.PlanTests",
+      "tests.experiments.test_git_record_observation"
+    ],
+    "requires_process_inspection": true
+  },
+  "real_execution": {
+    "Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "database": 0
+  },
+  "live_GPU_tasks_touched": false,
+  "pushed": false,
+  "merged": false
+}

@@ -1,4 +1,6 @@
 """Drive real owner loops with heterogeneous FIFO work and a deterministic clock."""
+
+from tests.scheduling.test_multisession import choose_first_flow
 from dataclasses import replace
 import unittest
 from unittest.mock import patch
@@ -169,7 +171,7 @@ class CapacityWaitTests(unittest.TestCase):
     def test_other_job_release_makes_waiting_flow_immediately_eligible(self):
         original, _, backend, clock = setup(held_tasks=8, input_bytes=32, result_bytes=32,
                                              active_requests=2, active_work=10, poll_interval_s=.01)
-        engine = SessionEngine(original.capacity.limits, backend, original.policies, clock=clock, max_jobs=2)
+        engine = SessionEngine(original.capacity.limits, backend, original.policies, clock=clock, max_jobs=2, choose_flow=choose_first_flow)
         first = engine.register_job('first', JobBudget(2, 8, 8, 2, 10))
         second = engine.register_job('second', JobBudget(2, 8, 8, 2, 10))
         a = engine.open(SessionSpec(first.job_id, 'flow', 'fixture'), job=first)

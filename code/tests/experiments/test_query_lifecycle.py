@@ -1,10 +1,6 @@
 """Existing pure CPU return-clock regressions, independent of Arrow/Ray."""
-from pathlib import Path
-import tempfile
 import unittest
-from unittest.mock import patch
 from src.experiments.native_query_lifecycle import run_sequence
-from src.experiments import movie_records_session as session
 from tests.experiments import test_movie_records_session as lifecycle_fixture
 
 class ComparableLifecycleTimingTests(unittest.TestCase):

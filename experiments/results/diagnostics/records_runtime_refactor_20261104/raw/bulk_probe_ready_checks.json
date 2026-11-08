@@ -1,0 +1,278 @@
+{
+  "schema": "semloom.bulk_probe_ready_checks.v1",
+  "base": "5175fa10acaeab770b1e071d1a6b1bde4b46e98b",
+  "server_source": "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847",
+  "server_handoff_sha256": "369d90ff1fe4b1fe8a986540dbe8bca9e7d4328ed9ad5bd5dc1c9f7040418f1f",
+  "classification": "CPU IPC fixture omitted the existing ready report; latest source reproduced both failures. No production defect established; production source unchanged by this increment.",
+  "server_reported": {
+    "workflow_selected": 205,
+    "workflow_passed": 203,
+    "workflow_failed": 2,
+    "real_Ray_original_class_passed": 5,
+    "real_Ray_resource_method_passed": 1,
+    "model_calls": 0,
+    "independent_report_only": true,
+    "private_originals_not_downloaded": true
+  },
+  "old_and_latest_source_comparison": [
+    {
+      "path": "code/tests/experiments/probe_record_resource_batch_handoff.py",
+      "old_and_latest_equal": true,
+      "sha256": {
+        "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847": "376471c51f081580e23184d80703f69fc675ac933f813b30bd19420ed869389a",
+        "5175fa10acaeab770b1e071d1a6b1bde4b46e98b": "376471c51f081580e23184d80703f69fc675ac933f813b30bd19420ed869389a"
+      }
+    },
+    {
+      "path": "code/tests/experiments/test_git_record_observation.py",
+      "old_and_latest_equal": true,
+      "sha256": {
+        "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847": "39835dfabf376f96636d60e2e11ff1858432616d88ad77aa80100aec79f29951",
+        "5175fa10acaeab770b1e071d1a6b1bde4b46e98b": "39835dfabf376f96636d60e2e11ff1858432616d88ad77aa80100aec79f29951"
+      }
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "old_and_latest_equal": true,
+      "sha256": {
+        "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847": "d89148a1b76c2f3ac001696222ae3db5f8f49774c5c70d103720e4115e38efd6",
+        "5175fa10acaeab770b1e071d1a6b1bde4b46e98b": "d89148a1b76c2f3ac001696222ae3db5f8f49774c5c70d103720e4115e38efd6"
+      }
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_native_source.py",
+      "old_and_latest_equal": true,
+      "sha256": {
+        "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847": "f2de34a6c00902c3d9eeced10729bb94d7fe7f78301eed41cf7d60a515a5598c",
+        "5175fa10acaeab770b1e071d1a6b1bde4b46e98b": "f2de34a6c00902c3d9eeced10729bb94d7fe7f78301eed41cf7d60a515a5598c"
+      }
+    },
+    {
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "old_and_latest_equal": true,
+      "sha256": {
+        "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847": "8e6ecb31d23eebc26846851c0dc02775db19f2f8de57eafb27902bd56093c6d8",
+        "5175fa10acaeab770b1e071d1a6b1bde4b46e98b": "8e6ecb31d23eebc26846851c0dc02775db19f2f8de57eafb27902bd56093c6d8"
+      }
+    },
+    {
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "old_and_latest_equal": true,
+      "sha256": {
+        "c7ba0740f57de1629f7fc7b18fcf2e3bc1641847": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8",
+        "5175fa10acaeab770b1e071d1a6b1bde4b46e98b": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8"
+      }
+    }
+  ],
+  "local_before": {
+    "selected": 2,
+    "passed": 0,
+    "failed": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "focused_after": {
+    "selected": 9,
+    "passed": 9,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "overlaps_workflow": true
+  },
+  "workflow": {
+    "modules": [
+      "tests.experiments.test_record_resource_capture",
+      "tests.experiments.test_record_dag_observation",
+      "tests.experiments.test_record_resource_handoff",
+      "tests.experiments.test_record_prepare_finalization",
+      "tests.experiments.test_git_record_observation",
+      "tests.observability.test_records_telemetry",
+      "tests.observability.test_feedback_identity",
+      "tests.serving.test_native_resource_feedback",
+      "tests.experiments.test_movie_cancellation"
+    ],
+    "selected": 205,
+    "run": 205,
+    "passed": 205,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "code_files": 1338,
+    "source_unchanged": true,
+    "final_code_hashes_match": true,
+    "repository_workflow_TESTS": true
+  },
+  "public_probes": [
+    {
+      "label": "single-off",
+      "exit_code": 0,
+      "report": {
+        "status": "passed_actual_public_actor_guard_and_driver_execute",
+        "mode": "off",
+        "original_native_call_once": true,
+        "result_bytes_identity_preserved": true,
+        "original_generation_preserved": true,
+        "native_reader_guard_active_at_return": true,
+        "extra_future_subscriptions": 0,
+        "native_ack_once": true,
+        "original_actor_close_report_identity_preserved": true,
+        "actor_sink_finalized_before_owner_kill": false,
+        "observed_boundaries": [],
+        "output_sha256": "eadf100ec841405355fc1e3c7e8a638124b540a99dfb819d5fe15b12fe83e1ab",
+        "serialized_classes": [],
+        "real_Ray_RPC": false,
+        "real_model_calls": 0,
+        "GPU": false
+      }
+    },
+    {
+      "label": "single-on",
+      "exit_code": 0,
+      "report": {
+        "status": "passed_actual_public_actor_guard_and_driver_execute",
+        "mode": "on",
+        "original_native_call_once": true,
+        "result_bytes_identity_preserved": true,
+        "original_generation_preserved": true,
+        "native_reader_guard_active_at_return": true,
+        "extra_future_subscriptions": 1,
+        "native_ack_once": true,
+        "original_actor_close_report_identity_preserved": true,
+        "actor_sink_finalized_before_owner_kill": true,
+        "observed_boundaries": [
+          "actor_result_return",
+          "driver_future_done",
+          "driver_result_audit_enter",
+          "Ray_result_to_Core"
+        ],
+        "output_sha256": "eadf100ec841405355fc1e3c7e8a638124b540a99dfb819d5fe15b12fe83e1ab",
+        "serialized_classes": [
+          {
+            "actor": "ObservedAsyncCoreModelActor",
+            "bytes": 9920,
+            "actual_public_base": "AsyncCoreModelActor"
+          },
+          {
+            "actor": "ObservedPrepareActor",
+            "bytes": 4703,
+            "actual_public_base": "_PrepareActor"
+          }
+        ],
+        "real_Ray_RPC": false,
+        "real_model_calls": 0,
+        "GPU": false
+      }
+    },
+    {
+      "label": "batch-off",
+      "exit_code": 0,
+      "report": {
+        "status": "passed_actual_public_bulk_owner_actor_transport",
+        "mode": "off",
+        "bulk_handoff_qualified": true,
+        "members": 3,
+        "data_batch_RPCS": 1,
+        "poll_RPCS": 2,
+        "returned_page_member_occurrences": 4,
+        "first_actor_member_markers": 0,
+        "lost_ACK_replayed_without_duplicate_member_completion": true,
+        "original_generation_and_rows_preserved": true,
+        "outputs_preserved": true,
+        "native_ACK_once_per_member": true,
+        "native_close_report_identity_preserved": true,
+        "ascending_resource_snapshot_and_close": true,
+        "resource_snapshot_status": "passed_CPU_fixture",
+        "native_source_age_qualified": true,
+        "snapshot_RPC_requests": 1,
+        "snapshot_RPC_terminal_complete": true,
+        "event_counts": {
+          "actor_result_return": 0,
+          "driver_future_done": 0,
+          "driver_result_audit_enter": 0,
+          "Ray_result_to_Core": 0,
+          "driver_batch_future_done": 0
+        },
+        "output_sha256": "8869e536252377d7c88f836b61893b362e48a3a2ba7bd77c37a19a79ff83bbea",
+        "real_Ray_RPC": false,
+        "real_model_calls": 0,
+        "GPU": false,
+        "public_source": "5175fa10acaeab770b1e071d1a6b1bde4b46e98b"
+      }
+    },
+    {
+      "label": "batch-on",
+      "exit_code": 0,
+      "report": {
+        "status": "passed_actual_public_bulk_owner_actor_transport",
+        "mode": "on",
+        "bulk_handoff_qualified": true,
+        "members": 3,
+        "data_batch_RPCS": 1,
+        "poll_RPCS": 2,
+        "returned_page_member_occurrences": 4,
+        "first_actor_member_markers": 3,
+        "lost_ACK_replayed_without_duplicate_member_completion": true,
+        "original_generation_and_rows_preserved": true,
+        "outputs_preserved": true,
+        "native_ACK_once_per_member": true,
+        "native_close_report_identity_preserved": true,
+        "ascending_resource_snapshot_and_close": true,
+        "resource_snapshot_status": "passed_CPU_fixture",
+        "native_source_age_qualified": true,
+        "snapshot_RPC_requests": 1,
+        "snapshot_RPC_terminal_complete": true,
+        "event_counts": {
+          "actor_result_return": 3,
+          "driver_future_done": 3,
+          "driver_result_audit_enter": 3,
+          "Ray_result_to_Core": 3,
+          "driver_batch_future_done": 2
+        },
+        "output_sha256": "8869e536252377d7c88f836b61893b362e48a3a2ba7bd77c37a19a79ff83bbea",
+        "real_Ray_RPC": false,
+        "real_model_calls": 0,
+        "GPU": false,
+        "public_source": "5175fa10acaeab770b1e071d1a6b1bde4b46e98b"
+      }
+    }
+  ],
+  "raw_archive": {
+    "path": "raw/bulk_probe_ready_methods.json.gz",
+    "bytes": 37879,
+    "sha256": "bc51beee1802424614b4838fa2ac34636c36f217c9f6fccf241d0af9e5d75aeb",
+    "decoded_bytes": 225898,
+    "decoded_sha256": "2c7ef9bcf2f4d904faf4db95a7ec4aac77877d33519e6e0d7b78955960da4289",
+    "files": 29,
+    "modified_public_copies": 0,
+    "public_restoration_verified": true
+  },
+  "original_assertions_preserved": [
+    "payload and generation",
+    "one data batch RPC",
+    "paginated results",
+    "lost first ACK without duplicate completion",
+    "one ACK per member",
+    "observed events and output identity",
+    "resource actor lock released",
+    "one snapshot RPC and one Future acquisition",
+    "terminal receipt and closed sampler",
+    "native close identity"
+  ],
+  "added_assertions": [
+    "ready report shared by the fixture and owner",
+    "native sample engine, sequence and source time equal returned age identity",
+    "age equals captured minus source in declared private clock",
+    "off/on require age qualification and one snapshot RPC"
+  ],
+  "source_identity_note": "Runs record parent HEAD with local test/document edits. Final checked code bytes are pinned by source_sha256 and must match the review candidate; no clean workflow.qualify config or model path was executed.",
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "remaining": [
+    "Independent review of this increment",
+    "Server rerun on the exact reviewed integrated source before model execution",
+    "Rolling CLI persistence, whole relation storage, physical capacity and cross-process recovery remain separate unfinished work"
+  ]
+}

@@ -1,8 +1,11 @@
 """Zero-model fixtures. No real torch/vLLM/Ray import, server or GPU access."""
 import asyncio
+from contextlib import redirect_stdout
 from copy import deepcopy
 import hashlib
 import importlib.util
+import io
+from itertools import product
 import json
 import os
 from pathlib import Path
@@ -11,7 +14,7 @@ import sys
 import tempfile
 from types import ModuleType,SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT=Path(__file__).resolve().parents[2]/'scripts/profiling/record_observation'
 SECRET='DO_NOT_PERSIST_PRIVATE_PROMPT_OR_CREDENTIAL_1841'
@@ -26,8 +29,11 @@ def load(name):
 def stubs():
     modules={}
     names=['src','src.serving','src.serving.backends','src.serving.backends.async_engine_process',
+           'src.serving.backends.async_engine_worker','src.serving.backends.async_engine_wire',
            'src.execution_provider','src.execution_provider.adapters','src.execution_provider.adapters.lotus_records_async_actor',
+           'src.execution_provider.adapters.records_async_model',
            'src.execution_provider.adapters.lotus_records_actor_owner','src.semantic_methods','src.semantic_methods.lotus',
+           'src.semantic_methods.driver',
            'src.semantic_methods.lotus.record_chain','src.semantic_methods.lotus.engine',
            'vllm','vllm.v1','vllm.v1.worker','vllm.v1.worker.gpu_worker']
     for name in names:
@@ -36,17 +42,24 @@ def stubs():
     class Base:
         def __init__(self,*args,**kwargs):self.received_args=(args,kwargs)
     native=modules['src.serving.backends.async_engine_process'];native.AsyncEngineProcess=Base
-    native.socket=socket;native.json=json
+    class Driver:
+        def _ready_event(self,row,action,reason=None,key=None):
+            return self.callback(row,action,reason,key)
+    modules['src.semantic_methods.driver'].MethodDriver=Driver
+    worker=modules['src.serving.backends.async_engine_worker']
+    wire=modules['src.serving.backends.async_engine_wire']
+    native.socket=worker.socket=socket
+    native.json=worker.json=wire.json=json
     def frame(value,maximum):
         payload=json.dumps(value,ensure_ascii=False,separators=(',',':')).encode()
         if len(payload)>maximum:raise ValueError('fixture bound')
         return len(payload).to_bytes(4,'big')+payload
-    native._frame=frame
+    native._frame=worker._frame=wire._frame=frame
     async def read_frame(sock,maximum):return {},1
-    native._read_frame=read_frame
-    async def serve(*args,**kwargs):return args
-    native.serve=serve
-    modules['src.execution_provider.adapters.lotus_records_async_actor'].AsyncCoreModelActor=Base
+    worker._read_frame=read_frame
+    async def serve(*args,**kwargs):return args,kwargs
+    worker.serve=serve
+    modules['src.execution_provider.adapters.records_async_model'].AsyncCoreModelActor=Base
     modules['src.execution_provider.adapters.lotus_records_actor_owner']._PrepareActor=Base
     class Worker:
         def execute_model(self,scheduled):
@@ -63,6 +76,11 @@ def stubs():
 
 class CaptureTests(unittest.TestCase):
     def setUp(self):
+        self.script_path = patch.object(sys, 'path', [str(ROOT), *sys.path])
+        self.script_path.start()
+        provider=sys.modules.get('src.scheduling.runtime.observations')
+        self.feedback_provider=None if provider is None else provider.NonBlockingMetricsObservationProvider
+        self.feedback_constructor=None if provider is None else self.feedback_provider.__init__
         self.tmp=tempfile.TemporaryDirectory();self.directory=Path(self.tmp.name)
         config={'observation':dict(mode='on',max_events_per_process=10000,max_event_bytes=65536,max_pending_frame_metadata=50,
                                    native_runner_contracts={})}
@@ -73,7 +91,9 @@ class CaptureTests(unittest.TestCase):
         self.observer=load('record_observer')
 
     def tearDown(self):
-        self.observer.close_events();self.modules.stop();self.env.stop();self.tmp.cleanup()
+        self.observer.close_events()
+        if self.feedback_provider is not None:self.feedback_provider.__init__=self.feedback_constructor
+        self.modules.stop();self.env.stop();self.tmp.cleanup();self.script_path.stop()
 
     def events(self):
         return [json.loads(line) for path in (self.directory/'events').glob('*.jsonl') for line in path.read_text().splitlines()]
@@ -85,6 +105,35 @@ class CaptureTests(unittest.TestCase):
         worker=gpu.ObservedWorker();worker.model_runner=SimpleNamespace(execute_model_state=None)
         worker.next_state=SimpleNamespace(input_batch=SimpleNamespace(req_ids=['native-A'],num_scheduled_tokens=[5]))
         return worker
+
+    def test_ready_hook_preserves_callback_identity_state_and_observer_failure(self):
+        driver_type=sys.modules['src.semantic_methods.driver'].MethodDriver
+        self.observer.install_ready_hook()
+        driver=driver_type();driver.session=SimpleNamespace(session_id=3)
+        row=SimpleNamespace(identity=SimpleNamespace(call_id=SECRET),stages=2,ready_at=None)
+        seen=[];marker=object()
+        driver.callback=lambda *args:seen.append(args) or marker
+        self.assertIs(driver._ready_event(row,'method_ready','fifo'),marker)
+        event=next(e for e in self.events() if e['event']=='method_ready_boundary')
+        self.assertEqual(event['method_row_ref'],hashlib.sha256(SECRET.encode()).hexdigest())
+        self.assertIsNone(row.ready_at)
+        self.assertEqual(len(seen),1)
+        with patch.object(self.observer,'emit',side_effect=RuntimeError('observer failed')):
+            self.assertIs(driver._ready_event(row,'Core_backpressure','fifo'),marker)
+        self.assertEqual(len(seen),2)
+        failure=ValueError(SECRET)
+        driver.callback=lambda *a:(_ for _ in ()).throw(failure)
+        with self.assertRaises(ValueError) as caught:driver._ready_event(row,'method_ready')
+        self.assertIs(caught.exception,failure)
+        self.assertNotIn(SECRET,json.dumps(self.events()))
+
+    def test_ready_hook_off_and_handoff_do_not_wrap_original(self):
+        driver_type=sys.modules['src.semantic_methods.driver'].MethodDriver
+        original=driver_type._ready_event
+        with patch.object(self.observer,'ENABLED',False):self.observer.install_ready_hook()
+        self.assertIs(driver_type._ready_event,original)
+        with patch.object(self.observer,'handoff_profile',return_value=True):self.observer.install_ready_hook()
+        self.assertIs(driver_type._ready_event,original)
 
     def test_sample_reads_actual_consumed_state_not_last_execute(self):
         gpu=self.gpu();worker=self.worker(gpu);schedule=SimpleNamespace(num_scheduled_tokens={'native-A':5})
@@ -225,13 +274,30 @@ class CaptureTests(unittest.TestCase):
         finally:left.close();right.close()
 
     def test_encode_json_decode_preserves_payload_and_options(self):
-        ipc=load('record_ipc_observer');native=sys.modules['src.serving.backends.async_engine_process']
-        value=dict(op='submit',request_id='r',generation={'stop':[SECRET]},row={'messages_json':SECRET})
-        before=deepcopy(value);ipc.install_transport(child=False)
-        packet=native._frame(value,4096);decoded=native.json.loads(packet[4:])
-        self.assertEqual(value,before);self.assertEqual(decoded,before)
-        self.assertNotIn(SECRET,json.dumps(self.events()))
-        self.assertFalse(any(isinstance(v,bytes) for row in ipc._frames.values() for v in row.values()))
+        wire=sys.modules['src.serving.backends.async_engine_wire']
+        original=wire._frame
+        for child in (False,True):
+            with self.subTest(child=child):
+                ipc=load('record_ipc_observer')
+                native=sys.modules['src.serving.backends.async_engine_'+('worker' if child else 'process')]
+                value=dict(op='submit',request_id='r',generation={'stop':[SECRET]},row={'messages_json':SECRET})
+                before=deepcopy(value);ipc.install_transport(child=child)
+                packet=native._frame(value,4096);decoded=native.json.loads(packet[4:])
+                self.assertEqual(value,before);self.assertEqual(decoded,before)
+                self.assertIs(wire._frame,original)
+                events=len(self.events())
+                self.assertEqual(wire._frame(value,4096),packet)
+                self.assertEqual(len(self.events()),events)
+                self.assertNotIn(SECRET,json.dumps(self.events()))
+                self.assertFalse(any(isinstance(v,bytes) for row in ipc._frames.values() for v in row.values()))
+                if child:
+                    factory=object();call=native.serve(10,11,12,engine_factory=factory)
+                    with self.assertRaises(StopIteration) as done:call.send(None)
+                    self.assertEqual(done.exception.value[0],(10,11,12))
+                    self.assertIs(done.exception.value[1]['engine_factory'],factory)
+                    call=native._read_frame(ipc.ObservedSocket(object(),'data'),4096)
+                    with self.assertRaises(StopIteration) as done:call.send(None)
+                    self.assertEqual(done.exception.value,({},1))
 
     def test_sink_caps_and_flush_report_are_explicit(self):
         self.observer.settings()['max_events_per_process']=1
@@ -300,7 +366,7 @@ class CaptureTests(unittest.TestCase):
     def test_model_hook_preserves_requests_generation_and_does_not_retry_profiler(self):
         extras={}
         names=['vllm.engine','vllm.engine.arg_utils','vllm.v1.engine','vllm.v1.engine.async_llm',
-               'src.serving.backends.vllm_async_engine','src.serving.backends.vllm_engine',
+               'src.serving.backends.vllm_async_engine','src.serving.backends.vllm_protocol',
                'src.observability','src.observability.native_model_api_trace']
         for name in names:
             m=ModuleType(name);m.__path__=[];extras[name]=m
@@ -317,7 +383,7 @@ class CaptureTests(unittest.TestCase):
         extras['vllm.engine.arg_utils'].AsyncEngineArgs=Args
         extras['vllm.v1.engine.async_llm'].AsyncLLM=type('AsyncLLM',(),{})
         extras['src.serving.backends.vllm_async_engine'].VllmAsyncEngine=Engine
-        common=extras['src.serving.backends.vllm_engine'];common._prepared=lambda rows:([rows[0]],[])
+        common=extras['src.serving.backends.vllm_protocol'];common._prepared=lambda rows:([rows[0]],[])
         common.result_from_output=lambda identity,output,*a,**k:dict(engine_uid='native-engine')
         extras['src.observability.native_model_api_trace'].install=lambda *a,**k:None
         attempts=[]
@@ -353,6 +419,51 @@ class CaptureTests(unittest.TestCase):
         self.assertNotIn(SECRET,json.dumps(self.events()))
 
 
+class TraceStorageTests(unittest.TestCase):
+    def setUp(self):
+        load('run_resource_C2')
+        self.controller = load('control_resource_C2')
+
+    def test_transient_file_removed_after_is_file_keeps_existing_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stable, transient = root/'capture.nsys-rep', root/'injection_version.dat'
+            stable.write_bytes(b'captured')
+            transient.write_bytes(b'removed during traversal')
+            is_file = Path.is_file
+            def check_then_remove(path):
+                present = is_file(path)
+                if path == transient and present:
+                    path.unlink()
+                return present
+            with patch.object(Path, 'is_file', check_then_remove):
+                self.assertEqual(self.controller.trace_storage_bytes([root]), 8)
+            self.assertFalse(transient.exists())
+
+    def test_storage_probe_preserves_permission_and_io_failures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root/'capture.nsys-rep'
+            target.touch()
+            stat = Path.stat
+            for failure in (PermissionError('fixture permission denied'), OSError(5, 'fixture I/O failure')):
+                def fail_target(path, *args, **kwargs):
+                    if path == target:
+                        raise failure
+                    return stat(path, *args, **kwargs)
+                with self.subTest(failure=type(failure).__name__), patch.object(Path, 'stat', fail_target):
+                    with self.assertRaises(type(failure)):
+                        self.controller.trace_storage_bytes([root])
+
+    def test_all_existing_files_and_nested_directories_are_counted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'nested').mkdir()
+            (root/'capture.nsys-rep').write_bytes(b'12345678')
+            (root/'nested'/'injection.dat').write_bytes(b'123')
+            self.assertEqual(self.controller.trace_storage_bytes([root]), 11)
+
+
 class PlanTests(unittest.TestCase):
     def setUp(self):
         self.runner=load('run_resource_C2');self.controller=load('control_resource_C2')
@@ -362,6 +473,133 @@ class PlanTests(unittest.TestCase):
                 resources=dict(max_active_batches=9),profile={'mode':'async'},queries=[{'query_id':'q','task':'q3','manifest':'frozen','phase':'measured'}]),
             units={'q':120},runtime_binding={'cuda_visible_devices':'fixture-device'},external_owner={},sembench_checkout='/fixture/sembench',
             limits={'worker_timeout_s':10},worker_entry_ns=1,environment={})
+
+    def test_controller_passes_live_host_lease_through_the_Movie_worker_context(self):
+        from src.infrastructure.runner_lease import (
+            HOST_SCOPE_DIR_NAME, HOST_SCOPE_FINGERPRINT, RunnerOwner, acquire_runner_lease,
+        )
+        from src.experiments import lotus_records_supervisor as supervisor
+        cached_supervise = supervisor.supervise
+        for backend, mode in product(('ray-data', 'imlane'), ('standalone', 'monitor', 'stop')):
+            with self.subTest(backend=backend, mode=mode), tempfile.TemporaryDirectory() as directory:
+                root=Path(directory)
+                artifacts=root/'artifacts'
+                leases=[];received=[]
+                def acquire(*args,**kwargs):
+                    lease=acquire_runner_lease(*args,**kwargs,
+                        owner=RunnerOwner('CPU-fixture',os.getpid(),'fixture-start','fixture-owner'))
+                    leases.append(lease)
+                    return lease
+                ledger=SimpleNamespace(reserve_unit=Mock(),claim_unit=Mock(return_value='CPU-claim'))
+                def native_entry(plan,context,output,**kwargs):
+                    # Native's existing entry reads this path and verifies the same
+                    # digest before creating its local model service.
+                    owner=context['owner_context']
+                    self.assertEqual(Path(owner['lease_path']),leases[0].path)
+                    self.assertEqual(owner['artifact_root'],str(artifacts))
+                    self.assertEqual(owner['lease_sha256'],
+                        hashlib.sha256(Path(owner['lease_path']).read_bytes()).hexdigest())
+                    if backend == 'imlane':
+                        self.assertEqual(owner['owner_resource_limits'],
+                            dict(cpu_cores=2, rss_bytes=123456, shm_bytes=654321))
+                        self.assertEqual(owner['gpu_idle_max_mib'], 17)
+                    received.append(owner)
+                    return dict(status='completed')
+                def supervise(command,output,**kwargs):
+                    cached_supervise([sys.executable, '-c', 'print("CPU controller only")'], output, **kwargs)
+                    config=json.loads((root/'config.json').read_text())
+                    config['worker_entry_ns']=1
+                    self.runner.movie_session(config,ledger,entry=native_entry,
+                        checker=lambda plan:dict(expected_calls=1,
+                            queries=[dict(query_id='native-query',expected_calls=1)]))
+                    (root/'WORKER-RESULT.json').write_text(json.dumps(dict(
+                        status='completed',actual_calls=0,actual_call_count_complete=True)))
+                    return {}
+                api=SimpleNamespace(acquire_runner_lease=acquire,
+                    HOST_SCOPE_FINGERPRINT=HOST_SCOPE_FINGERPRINT,
+                    CellBudgetLedger=SimpleNamespace(create=Mock(return_value=ledger)),
+                    AttemptBudget=lambda *args:args,supervise=supervise)
+                helper=SimpleNamespace(production_api=lambda path:api,
+                    snapshot=Mock(return_value={}),assert_idle=Mock(),check_lease=Mock(),
+                    cleanup_owned=Mock(return_value={}),report_identities=lambda report:set(),
+                    live_owned=Mock(return_value=False))
+                helper_path=root/'helper.py';helper_path.write_text('# CPU host boundary\n')
+                config=deepcopy(self.base)
+                config.update(artifact_root=str(root),units={'native-query':1},observer_sha256={},
+                    movie_plan=dict(backend=backend,engine=dict(driver_python=sys.executable)),
+                    workload=dict(name='native-quality',kind='movie_session',expected_calls=1),
+                    host_helpers=dict(path=str(helper_path),sha256=hashlib.sha256(helper_path.read_bytes()).hexdigest()),
+                    host_config={},cpu_affinity=[101,103],limits=dict(worker_timeout_s=10,controller_timeout_s=30,
+                        cleanup_grace_s=1,natural_exit_grace_s=1))
+                (root/'PREPARED-CONFIG.json').write_text(json.dumps(config))
+                spec=SimpleNamespace(loader=SimpleNamespace(exec_module=Mock()))
+                exit_code=0
+                stop = TimeoutError('CPU campaign cutoff') if mode == 'stop' else None
+                callback = Mock(side_effect=stop)
+                with patch.object(self.controller,'check_material'), \
+                        patch.object(self.controller,'source_identity',return_value=dict(head='fixture',tree='fixture')), \
+                        patch.object(self.controller,'checked_json',return_value=dict(
+                            lease_scope=str(artifacts/HOST_SCOPE_DIR_NAME), gpu_idle_max_mib=17,
+                            shared_resources=dict(cpu_affinity_slots=[11,13,17,19],
+                                max_sampled_owned_rss_bytes=123456, max_owned_shm_bytes=654321))), \
+                        patch.object(self.controller.os,'sched_setaffinity',create=True), \
+                        patch.object(self.controller.importlib.util,'spec_from_file_location',return_value=spec), \
+                        patch.object(self.controller.importlib.util,'module_from_spec',return_value=helper), \
+                        patch.object(self.controller,'worker_environment',return_value=dict(os.environ)), \
+                        patch.dict(os.environ,dict(os.environ),clear=True), redirect_stdout(io.StringIO()):
+                    try:
+                        self.controller.main(root, **({} if mode == 'standalone' else dict(monitor=callback)))
+                    except SystemExit as error:exit_code=error.code
+                result=json.loads((root/'RESULT.json').read_text())
+                self.assertEqual(result['status'], 'failed' if mode == 'stop' else 'completed', result)
+                self.assertEqual(exit_code, 1 if mode == 'stop' else 0)
+                self.assertEqual(len(received), 0 if mode == 'stop' else 1)
+                if mode == 'standalone':
+                    callback.assert_not_called()
+                else:
+                    self.assertTrue(callback.called)
+                    cleaned = helper.cleanup_owned.call_args.args[1]
+                    for call in callback.call_args_list:
+                        self.assertLessEqual(set(call.args[0]), cleaned)
+                if mode == 'stop':
+                    self.assertEqual(result['error_type'], 'TimeoutError')
+                    self.assertFalse(result['actual_call_count_complete'])
+                self.assertTrue(result['physical_cleanup_confirmed'])
+                self.assertTrue(result['lease_released'])
+                self.assertFalse(leases[0].path.exists())
+                ledger.reserve_unit.assert_called_once_with('native-query',1)
+                if mode == 'stop':
+                    ledger.claim_unit.assert_not_called()
+                else:
+                    ledger.claim_unit.assert_called_once_with('native-query')
+
+
+    def test_imlane_owner_context_reaches_native_preflight_and_gpu_exit_guard(self):
+        from integrations.imlane_records import chain_runtime as native
+        host = dict(gpu_idle_max_mib=17, shared_resources=dict(
+            max_sampled_owned_rss_bytes=123456, max_owned_shm_bytes=654321))
+        config = dict(movie_plan=dict(backend='imlane'), cpu_affinity=[101, 103])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report = root / 'preflight.json'
+            report.write_text(json.dumps(dict(status='ok')))
+            value = dict(self.controller.owner_resource_context(config, host),
+                preflight_report=str(report), author_root=str(root / 'author'),
+                bridge_binary=str(root / 'bridge'), method_python=sys.executable,
+                model_environment=dict(CUDA_VISIBLE_DEVICES='CPU-fixture'))
+            args = SimpleNamespace(scopes=[], stop_budget=SimpleNamespace(check=Mock()))
+            engine = SimpleNamespace(validate_driver_environment=lambda: {})
+            with patch.object(native, 'check_external_lease', return_value={}), \
+                    patch.object(native.os, 'sched_getaffinity', return_value={101, 103}, create=True), \
+                    patch.object(native, 'validate_author_build', return_value={}), \
+                    patch.object(native, 'preflight_method', return_value={}), \
+                    patch.object(native, 'gpu_snapshot', return_value=dict(
+                        uuid='CPU-device', memory_mib=5, compute_processes=[])):
+                observed = native.preflight_owner(value, engine, chain=False)
+                self.assertEqual(observed['owner_resource_limits'], value['owner_resource_limits'])
+                guard = native.AuthorRunGuard(value, args)
+                self.assertFalse(guard())
+                self.assertTrue(guard.finish()['gpu_exit_confirmed'])
 
 
     def test_off_has_no_observer_env_profile_or_import(self):

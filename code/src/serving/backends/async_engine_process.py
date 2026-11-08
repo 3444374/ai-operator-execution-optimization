@@ -1,4 +1,4 @@
-"""Bounded private async-model IPC, separate from baseline/Core scheduling.
+"""Parent ownership for private async-model IPC, separate from scheduling.
 
 Data, control and terminal results have separate sockets. Parent I/O keeps
 reading control even when the consumer holds every reserved result slot.
@@ -6,7 +6,6 @@ reading control even when the consumer holds every reserved result slot.
 
 from __future__ import annotations
 
-import asyncio
 from collections import deque
 from dataclasses import asdict, dataclass
 import json
@@ -14,17 +13,16 @@ import os
 from pathlib import Path
 import select
 import socket
-import struct
 import subprocess
 import threading
 import time
 import uuid
 
-from . import vllm_engine as common
-from .vllm_async_engine import AsyncEngineLimits, VllmAsyncEngine, result_record
+from src.infrastructure.deadlines import deadline_expired
+from . import vllm_protocol as common
+from .vllm_protocol import AsyncEngineLimits, result_record
+from .async_engine_wire import _HEADER, _OPEN_FRAME_BYTES, _frame, _compact_result
 
-_HEADER = struct.Struct("!I")
-_OPEN_FRAME_BYTES = 64 * 1024
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -34,48 +32,6 @@ def _close_sockets(sockets, errors):
             sock.close()
         except Exception as error:
             errors.append("socket_close: " + type(error).__name__)
-
-
-def _frame(value, maximum):
-    data = bytearray()
-    for piece in json.JSONEncoder(ensure_ascii=False, allow_nan=False,
-                                  separators=(",", ":")).iterencode(value):
-        piece = piece.encode()
-        if len(data) + len(piece) > maximum:
-            raise ValueError("async engine IPC item exceeds its byte capacity")
-        data.extend(piece)
-    return _HEADER.pack(len(data)) + data
-
-
-def _compact_result(value):
-    # Preserve the shared converter's identity, usage and confirmation values.
-    # Only potentially large output representations are omitted on overflow.
-    return dict(value, text=None, prompt_token_ids_json="null", output_token_ids_json="null",
-                logprobs_json="null", status="unknown" if value["status"] == "unknown" else "failed",
-                error_type="ResultCapacityExceeded", result_fields_omitted=True)
-
-
-async def _read_frame(sock, maximum):
-    loop = asyncio.get_running_loop()
-    data = bytearray()
-    while len(data) < 4:
-        piece = await loop.sock_recv(sock, 4 - len(data))
-        if not piece:
-            raise EOFError("async engine command socket closed")
-        data.extend(piece)
-    size = _HEADER.unpack(data)[0]
-    if not 0 < size <= maximum:
-        raise ValueError("async engine IPC frame length exceeds capacity")
-    data.clear()
-    while len(data) < size:
-        piece = await loop.sock_recv(sock, min(65536, size - len(data)))
-        if not piece:
-            raise EOFError("async engine IPC frame was truncated")
-        data.extend(piece)
-    value = json.loads(data)
-    if type(value) is not dict:
-        raise ValueError("async engine IPC requires an object")
-    return value, size
 
 
 @dataclass(frozen=True)
@@ -120,11 +76,10 @@ class AsyncEngineProcess:
     This component never retries, chooses batch membership or selects routing/scheduling policy.
     """
 
-    def __init__(self, engine, generation, *, limits=None, startup_timeout_s=120):
+    def __init__(self, engine, generation, *, limits, startup_timeout_s=120):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
-        self.generation.kwargs()
-        self.limits = AsyncEngineLimits() if limits is None else limits
+        self.limits = limits
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         common._number(startup_timeout_s, "startup timeout", low=0, inclusive_low=False)
@@ -137,6 +92,7 @@ class AsyncEngineProcess:
         self._condition = threading.Condition()
         self._stop, self._io_done = threading.Event(), threading.Event()
         self._closing = self._close_sent = self._drain_requested = False
+        self._close_deadline = None
         self._broken = None
         self.ready_report = self.engine_close_report = self.last_close_report = None
         self._drain_report = None
@@ -203,7 +159,7 @@ class AsyncEngineProcess:
 
     @staticmethod
     def _command(spec, descriptors):
-        return [spec.model_python, "-m", __name__, "--serve", *map(str, descriptors)]
+        return [spec.model_python, "-m", "src.serving.backends.async_engine_worker", "--serve", *map(str, descriptors)]
 
     def _usage(self):
         return dict(held_requests=len(self._slots),
@@ -247,13 +203,14 @@ class AsyncEngineProcess:
                     result=_compact_result(example)), self.limits.item_result_bytes)
 
     def submit(self, row, *, generation=None, deadline_monotonic):
-        common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
+        if deadline_monotonic is not None:
+            common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
         effective = self.generation if generation is None else generation
         if not isinstance(effective, common.GenerationSpec):
             raise TypeError("generation must be GenerationSpec")
         effective = common.GenerationSpec.from_dict(asdict(effective))
-        effective.kwargs()
-        if effective.max_tokens > self.spec.max_model_len:
+        from .model_context import model_context_limit
+        if effective.max_tokens > model_context_limit(self.spec, self.ready_report):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared([row])
         identity = identities[0]
@@ -266,7 +223,7 @@ class AsyncEngineProcess:
                 self._broken = self._broken or "ChildUnavailable"
             if self._broken is not None or self._closing:
                 return SubmitResult("rejected", reason="owner unavailable")
-            if time.monotonic() >= deadline_monotonic:
+            if deadline_expired(deadline_monotonic):
                 return SubmitResult("rejected", reason="deadline expired before acceptance")
             if self._slots and self._query_id != identity["query_id"]:
                 return SubmitResult("rejected", reason="previous query still owns inputs or results")
@@ -293,25 +250,24 @@ class AsyncEngineProcess:
 
     def submit_batch(self, rows, *, generation, deadline_monotonic):
         """One bounded data frame, atomic local acceptance, independent terminals."""
-        common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
+        if deadline_monotonic is not None:
+            common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
         if not rows or len(rows) > self.limits.max_inflight:
             return BatchSubmitResult("backpressure", reason="member request capacity exhausted")
         effective = common.GenerationSpec.from_dict(asdict(generation))
-        effective.kwargs()
-        if effective.max_tokens > self.spec.max_model_len:
+        from .model_context import model_context_limit
+        if effective.max_tokens > model_context_limit(self.spec, self.ready_report):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared(list(rows))
         for identity in identities:
             self._check_receipt_capacity(identity)
-        if len({r['call_id'] for r in identities}) != len(identities):
-            raise ValueError("batch call identities must be distinct")
         if len({r['query_id'] for r in identities}) != 1:
             raise ValueError("batch members must belong to one query")
         snapshots = [{name: row[name] for name in (*common.IDENTITY_FIELDS, "messages_json")} for row in rows]
         with self._condition:
             if self._io_done.is_set() or self.process is None or self.process.poll() is not None:
                 self._broken = self._broken or "ChildUnavailable"
-            if self._broken is not None or self._closing or time.monotonic() >= deadline_monotonic:
+            if self._broken is not None or self._closing or deadline_expired(deadline_monotonic):
                 return BatchSubmitResult("rejected", reason="owner unavailable or deadline expired")
             if self._slots and self._query_id != identities[0]['query_id']:
                 return BatchSubmitResult("rejected", reason="previous query still owns work")
@@ -325,10 +281,11 @@ class AsyncEngineProcess:
                 return BatchSubmitResult("backpressure", reason="request, result or command capacity exhausted")
             keys = tuple(self._owner_uid + ':' + str(self._sequence+i) for i in range(count))
             items = [dict(request_id=key, row=row) for key, row in zip(keys, snapshots)]
+            generation_values = asdict(effective)
             for item in items:
-                _frame(dict(op='submit', **item, generation=asdict(effective), deadline=deadline_monotonic),
+                _frame(dict(op='submit', **item, generation=generation_values, deadline=deadline_monotonic),
                        self.limits.item_input_bytes)
-            data = _frame(dict(op='submit_batch', requests=items, generation=asdict(effective),
+            data = _frame(dict(op='submit_batch', requests=items, generation=generation_values,
                                deadline=deadline_monotonic), min(self.limits.input_bytes, (1 << 32)-1))
             size = len(data)-4
             if used['input_bytes'] + size > self.limits.input_bytes:
@@ -398,7 +355,7 @@ class AsyncEngineProcess:
     def wait(self, timeout=0.05):
         common._number(timeout, "wait timeout", low=0, inclusive_low=False)
         with self._condition:
-            if not self._ready and self._broken is None:
+            if not self._ready and self._broken is None and not self._io_done.is_set():
                 self._condition.wait(timeout)
 
     def _uncertain(self, reason):
@@ -443,6 +400,11 @@ class AsyncEngineProcess:
             elif op == "ready":
                 if self.ready_report is not None:
                     raise ValueError("duplicate model ready")
+                from .model_context import checked_model_context
+                if self.spec.max_model_len is None or 'model_context' in value['report']:
+                    context = checked_model_context(self.spec, value['report'])
+                    if self.generation.max_tokens > context['max_model_len']:
+                        raise ValueError('generation exceeds effective model context')
                 self.ready_report = value["report"]
                 if self.spec.enable_mfu_metrics:
                     self._native_mfu = self.ready_report.get("native_mfu_initial")
@@ -495,9 +457,9 @@ class AsyncEngineProcess:
                             outgoing[self._control] = memoryview(self._controls.popleft())
                         elif self._closing and not self._close_sent:
                             self._close_sent = True
-                            outgoing[self._control] = memoryview(_frame(dict(op="close"),
+                            outgoing[self._control] = memoryview(_frame(dict(op="close", deadline=self._close_deadline),
                                 self.limits.control_frame_bytes))
-                        elif self._drain_requested:
+                        elif self._drain_requested and not self._closing:
                             self._drain_requested = False
                             outgoing[self._control] = memoryview(_frame(dict(op="drain"),
                                 self.limits.control_frame_bytes))
@@ -555,13 +517,16 @@ class AsyncEngineProcess:
     def close(self, timeout=15):
         common._number(timeout, "close timeout", low=0, inclusive_low=False)
         deadline = time.monotonic() + timeout
+        api_deadline = deadline - min(1, timeout / 3)
         errors = []
         try:
             with self._condition:
+                if not self._close_sent:
+                    self._close_deadline = api_deadline
                 self._closing = True
                 while self.engine_close_report is None and self.process is not None and self.process.poll() is None:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= min(1, timeout / 3):
+                    remaining = api_deadline - time.monotonic()
+                    if remaining <= 0:
                         break
                     self._condition.wait(min(0.05, remaining))
             if self.process is not None:
@@ -584,7 +549,8 @@ class AsyncEngineProcess:
                 errors.append("io_drain: " + type(error).__name__)
             self._finish_io(deadline, errors)
         with self._condition:
-            self._uncertain("ClosedWithoutConfirmedTerminal")
+            if any(slot.terminal is None for slot in self._slots.values()):
+                self._uncertain("ClosedWithoutConfirmedTerminal")
             usage = self._usage()
             exited = self.process is None
             try:
@@ -651,263 +617,3 @@ class AsyncEngineProcess:
                 self._thread.join(max(0, deadline - time.monotonic()))
             except Exception as error:
                 errors.append("io_thread_join: " + type(error).__name__)
-
-
-async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngine):
-    """Private child entry; a fixture factory is allowed only through Python tests."""
-    sockets = [socket.socket(fileno=fd) for fd in (data_fd, control_fd, result_fd)]
-    data, control, results = sockets
-    for sock in sockets:
-        sock.setblocking(False)
-        sock.set_inheritable(False)
-    loop = asyncio.get_running_loop()
-    engine = None
-    tasks = []
-    owned = {}
-    waiter = None
-    failure = None
-    try:
-        opening, _ = await _read_frame(control, _OPEN_FRAME_BYTES)
-        if opening.get("op") != "open":
-            raise ValueError("async engine requires open before commands")
-        limits = AsyncEngineLimits(**opening["limits"])
-        spec = common.EngineSpec.from_dict(opening["engine"])
-        generation = common.GenerationSpec.from_dict(opening["generation"])
-        engine = engine_factory(spec, generation, limits=limits)
-        await loop.sock_sendall(control, _frame(dict(op="ready", report=engine.ready()), limits.control_frame_bytes))
-        control_queue = asyncio.Queue(maxsize=limits.control_slots)
-        result_queue = asyncio.Queue(maxsize=limits.result_slots)
-        abort_queue = asyncio.Queue(maxsize=limits.max_inflight)
-        early_aborts = set()
-        closing = asyncio.Event()
-        failure = loop.create_future()
-        next_sequence = 0
-
-        feedback_packet = None
-
-        async def writer(sock, queue):
-            nonlocal feedback_packet
-            while True:
-                packet, key = await queue.get()
-                try:
-                    await loop.sock_sendall(sock, packet)
-                    if packet is feedback_packet:
-                        feedback_packet = None
-                    if key is not None:
-                        owned.pop(key, None)
-                finally:
-                    queue.task_done()
-
-        async def reply(value):
-            await control_queue.put((_frame(value, limits.control_frame_bytes), None))
-
-        async def feedback_updates():
-            nonlocal feedback_packet
-            latest_sequence = None
-            while not closing.is_set():
-                await asyncio.sleep(limits.feedback_interval_s)
-                # One optional packet at most, leaving a slot for critical control.
-                if feedback_packet is not None or control_queue.qsize() >= control_queue.maxsize - 1:
-                    continue
-                try:
-                    snapshot = engine.feedback_snapshot()
-                    if snapshot is None or snapshot["sequence"] == latest_sequence:
-                        continue
-                    packet = _frame(dict(op="feedback", snapshot=snapshot), limits.control_frame_bytes)
-                    control_queue.put_nowait((packet, None))
-                    feedback_packet, latest_sequence = packet, snapshot["sequence"]
-                except Exception:
-                    # Performance feedback must never replace a terminal or close cause.
-                    continue
-
-        async def abort_requests():
-            # Native ABORT may wait on the engine's own IPC. Its single bounded
-            # worker must not stop the reader from seeing drain or close.
-            while True:
-                key = await abort_queue.get()
-                try:
-                    await engine.abort(key)
-                finally:
-                    abort_queue.task_done()
-
-        async def run(key, slot, value):
-            row = value["row"]
-            try:
-                if slot["aborted"] or closing.is_set():
-                    identities, _ = common._prepared([row])
-                    now = time.monotonic()
-                    result = result_record(identities[0], engine_uid=engine.engine_uid,
-                        start=now, end=now, status="failed", submitted=False,
-                        error_type="CancelledBeforeSubmission")
-                    result["engine_terminal_confirmed"] = True
-                else:
-                    result = await engine.generate_prepared(row, request_id=key,
-                        generation=common.GenerationSpec.from_dict(value["generation"]),
-                        deadline_monotonic=value["deadline"])
-            except Exception as error:
-                identities, _ = common._prepared([row])
-                now = time.monotonic()
-                result = result_record(identities[0], engine_uid=engine.engine_uid,
-                    start=now, end=now, status="unknown", submitted=False,
-                    error_type=type(error).__name__)
-            confirmed = result["status"] != "unknown" and result.get("engine_terminal_confirmed", True) is True
-            event = dict(op="terminal", request_id=key, confirmed=confirmed, result=result)
-            try:
-                packet = _frame(event, limits.item_result_bytes)
-            except ValueError:
-                event["result"] = _compact_result(result)
-                packet = _frame(event, limits.item_result_bytes)
-            if opening['engine'].get('enable_mfu_metrics', False):
-                from src.observability.metrics.mfu import optional_packet
-                packet = optional_packet(event, lambda: engine.mfu_snapshot(), _frame, limits.item_result_bytes)
-            await result_queue.put((packet, key))
-
-        async def input_commands():
-            nonlocal next_sequence
-            while not closing.is_set():
-                value, size = await _read_frame(data, min(limits.input_bytes, (1 << 32)-1))
-                if value.get('op') == 'submit':
-                    if size > limits.item_input_bytes:
-                        raise ValueError('single request exceeds IPC item allowance')
-                    items = [dict(request_id=value['request_id'], row=value['row'])]
-                    charges = [size]
-                elif value.get('op') == 'submit_batch':
-                    items = value.get('requests')
-                    if type(items) is not list or not 0 < len(items) <= limits.max_inflight:
-                        raise ValueError('invalid IPC batch members')
-                    charges = [len(_frame(item, limits.input_bytes))-4 for item in items]
-                    charges[0] += size-sum(charges)
-                else:
-                    raise ValueError('invalid IPC data command')
-                count = len(items)
-                if (len(owned)+count > min(limits.max_inflight, limits.result_slots)
-                        or sum(s["bytes"] for s in owned.values()) + size > limits.input_bytes
-                        or (len(owned) + count) * limits.item_result_bytes > limits.result_bytes):
-                    raise ValueError("async engine child reservation exceeded")
-                common._prepared([item['row'] for item in items])
-                for i, item in enumerate(items):
-                    if item.get('request_id') != opening['owner_uid'] + ':' + str(next_sequence+i):
-                        raise ValueError('async engine submit sequence invalid')
-                    _frame(dict(op='submit', **item, generation=value['generation'], deadline=value['deadline']),
-                           limits.item_input_bytes)
-                next_sequence += count
-                for item, charge in zip(items, charges):
-                    key = item['request_id']
-                    owned[key] = dict(bytes=charge, aborted=key in early_aborts, task=None)
-                    early_aborts.discard(key)
-                for item in items:
-                    key, slot = item['request_id'], owned[item['request_id']]
-                    await reply(dict(op='accepted', request_id=key))
-                    slot['task'] = asyncio.create_task(run(key, slot, dict(row=item['row'],
-                        generation=value['generation'], deadline=value['deadline'])))
-                    slot['task'].add_done_callback(observe_request)
-                value = items = None  # Do not retain other members after their terminal.
-
-        def observe_request(task):
-            if not task.cancelled():
-                error = task.exception()
-                if error is not None and not failure.done():
-                    failure.set_result(error)
-
-        async def control_commands():
-            while not closing.is_set():
-                value, _ = await _read_frame(control, limits.control_frame_bytes)
-                op = value.get("op")
-                if op == "abort":
-                    key = value["request_id"]
-                    requested = True
-                    if key in owned:
-                        slot = owned[key]
-                        if not slot["aborted"]:
-                            slot["aborted"] = True
-                            try:
-                                abort_queue.put_nowait(key)
-                            except asyncio.QueueFull:
-                                requested = False
-                    else:
-                        prefix, _, sequence = key.rpartition(":")
-                        if (prefix != opening["owner_uid"] or not sequence.isdecimal()
-                                or int(sequence) >= next_sequence + limits.max_inflight):
-                            raise ValueError("abort identity outside the bounded input window")
-                        if int(sequence) >= next_sequence:
-                            early_aborts.add(key)
-                    await reply(dict(op="abort_requested", request_id=key, requested=requested,
-                                     engine_terminal_confirmed=False))
-                elif op == "drain":
-                    await reply(dict(op="drained", pending=len(owned)))
-                elif op == "close":
-                    closing.set()
-                else:
-                    raise ValueError("unexpected async engine control command")
-
-        tasks = [asyncio.create_task(writer(control, control_queue)),
-                 asyncio.create_task(writer(results, result_queue)),
-                 asyncio.create_task(input_commands()), asyncio.create_task(control_commands()),
-                 asyncio.create_task(abort_requests())]
-        if limits.feedback_interval_s and callable(getattr(engine, "feedback_snapshot", None)):
-            tasks.append(asyncio.create_task(feedback_updates()))
-        waiter = asyncio.create_task(closing.wait())
-        done, _ = await asyncio.wait([*tasks, waiter, failure], return_when=asyncio.FIRST_COMPLETED)
-        for task in done:
-            if task is failure:
-                raise task.result()
-            if task is not waiter:
-                task.result()
-        closing.set()
-        if len(tasks) > 5:
-            tasks[5].cancel()
-            await asyncio.gather(tasks[5], return_exceptions=True)
-        # Freeze input before shutdown; no late data-channel frame may create
-        # another generation after the engine's close acknowledgement.
-        for task in tasks[2:4]:
-            task.cancel()
-        await asyncio.gather(*tasks[2:4], return_exceptions=True)
-        # Native shutdown and result writes are independent of command reading.
-        report = await engine.close(timeout=10)
-        pending = [slot["task"] for slot in owned.values() if slot["task"] is not None]
-        if pending:
-            done, waiting = await asyncio.wait(pending, timeout=1)
-            for task in waiting:
-                task.cancel()
-            await asyncio.gather(*pending, return_exceptions=True)
-        tasks[4].cancel()
-        await asyncio.gather(tasks[4], return_exceptions=True)
-        await asyncio.wait_for(result_queue.join(), 1)
-        tasks[1].cancel()
-        await asyncio.gather(tasks[1], return_exceptions=True)
-        await reply(dict(op="closed", report=report, producer_stopped=dict(
-            owner_uid=opening["owner_uid"], engine_uid=engine.engine_uid,
-            received_submissions=next_sequence, input_reader_stopped=tasks[2].done(),
-            request_tasks_stopped=all(task.done() for task in pending),
-            abort_worker_stopped=tasks[4].done(), result_writer_stopped=tasks[1].done())))
-        await asyncio.wait_for(control_queue.join(), 1)
-        waiter.cancel()
-    except Exception as error:
-        try:
-            await asyncio.wait_for(loop.sock_sendall(control,
-                _frame(dict(op="error", error_type=type(error).__name__), 4096)), 0.2)
-        except Exception:
-            pass
-    finally:
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        if engine is not None:
-            await engine.close(timeout=1)
-        pending = [slot["task"] for slot in owned.values() if slot["task"] is not None]
-        if waiter is not None:
-            pending.append(waiter)
-        if failure is not None:
-            failure.cancel()
-        for task in pending:
-            task.cancel()
-        await asyncio.gather(*pending, return_exceptions=True)
-        for sock in sockets:
-            sock.close()
-
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) != 5 or sys.argv[1] != "--serve":
-        raise SystemExit("async model worker requires three inherited socket descriptors")
-    asyncio.run(serve(*map(int, sys.argv[2:])))

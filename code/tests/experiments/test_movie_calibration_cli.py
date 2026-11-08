@@ -27,7 +27,7 @@ from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec
 from src.semantic_methods.lotus.records import RecordsResources
 from src.infrastructure.runner_lease import HOST_SCOPE_DIR_NAME,LEASE_NAME
 from src.infrastructure.environment import MachineObservation
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from src.experiments.calibration import core as adapter
 from src.scheduling.runtime import calibration
 from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime

@@ -1,0 +1,323 @@
+{
+  "schema": "semloom.sync_generation_context_cpu.v1",
+  "base": "8698012098d0c800e41ee0e293fd70ca889c6f54",
+  "implementation": "Ready and every synchronous run_prepared share actual same-instance context validation, under the existing execution lock before chat/call reservation.",
+  "production_files": [
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "sha256": "35ed0425cddd8929161b41916fdcdcde0c331e65b0c6c7d296e627c4497f4578"
+    }
+  ],
+  "new_methods": 8,
+  "unchanged_engine_method_AST": [
+    "__init__",
+    "mfu_snapshot",
+    "_new_sampling",
+    "_result",
+    "close"
+  ],
+  "native_chat_call_AST_unchanged": true,
+  "CLI_six_production_files_match": [
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_batches.py",
+      "sha256": "af6e031bafe9fb465116aa8b3ff90f7d6b215e07f8d77e78b46da2352ef09c76"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/records_profile.py",
+      "sha256": "99ba3fcd0c2590081d85c2816691ab53f802576c2228c4edbb55a64ac8207193"
+    },
+    {
+      "path": "code/src/experiments/calibration/core.py",
+      "sha256": "c40c832aa59638ed3300af4202f61061d39772b326e54af442e6e3400ef5d095"
+    },
+    {
+      "path": "code/src/experiments/lotus_records_movie.py",
+      "sha256": "ad9cebd2fd8c15ce08310a11b7c6772879a860993b594fcfc1d6a0af74949dd7"
+    },
+    {
+      "path": "code/src/experiments/movie_records_config.py",
+      "sha256": "4dc46a6d41984e3f6291ecf7bb10be0c97f78f8e594537ae644dbaf035479c39"
+    },
+    {
+      "path": "code/src/experiments/movie_records_session.py",
+      "sha256": "4b71eea1a36525cb1c1e2fc0d1dcfd3f1e46e4ed224a778e2f22ac39573267c3"
+    }
+  ],
+  "CLI_test_only_unused_import_removed": true,
+  "unchanged_sources": [
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "sha256": "a570b9e4e41738d51da975319c6366d2b9efd7026ae57c563bc6562bd6cd9a70"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_sync_process.py",
+      "sha256": "166638f46f3f610d3115cbf4a618c1ceb4ae158670835ed4c225f03852cc91a2"
+    },
+    {
+      "path": "code/src/serving/backends/staged_generation_process.py",
+      "sha256": "ea2a88dd77e16eeb4a49f46b2cf54a1c95351223ffb78f0b9892128f9afff2fb"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "sha256": "d834ecb65b7ddb9e58937aa9485ea70420fe1c34c2b241f2a45f66032d9516cc"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "sha256": "13551c804d4c0e5eda28291739c8dbbe533a9619d8f568a2b59b967688288405"
+    },
+    {
+      "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "sha256": "801e7a75f85592399a42340b2061cb203d09cac2b9e047aecc38ac3fc67370c0"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/stage_work.py",
+      "sha256": "d80e199974f6015071832031c79fdaa8274a2568c16e1541e4526e3d802f697d"
+    },
+    {
+      "path": "code/tests/execution_provider/test_lotus_record_local_query.py",
+      "sha256": "7e541fd0cfeb131ec6588a1eb75cd76df5e5950d94a8737b644259cad6498aca"
+    },
+    {
+      "path": "code/tests/execution_provider/test_core_geometric_admission.py",
+      "sha256": "d29fd8c07142e25ce56326ec6783ed0c61969e51de55bdaef1129b7c9bb84d34"
+    }
+  ],
+  "CPU": {
+    "sync_generation_before": {
+      "selected": 8,
+      "run": 8,
+      "passed": 1,
+      "failed_records": 11,
+      "error_records": 1,
+      "failed_methods": [
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_actual_small_context_rejects_before_native_chat_or_call_reservation",
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_context_change_after_ready_rejects_the_next_call",
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_explicit_context_mismatch_is_rejected_without_a_prior_ready_call",
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_missing_or_invalid_context_is_never_treated_as_a_legacy_allowance",
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_readiness_and_later_calls_use_the_same_actual_context",
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_rejected_stage_does_not_spend_the_next_valid_call"
+      ],
+      "error_methods": [
+        "tests.serving.test_sync_generation_context.SyncGenerationContextTests.test_actual_large_context_accepts_a_stage_output_above_the_legacy_value"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 0.02146554202772677
+    },
+    "sync_generation_after": {
+      "selected": 60,
+      "run": 60,
+      "passed": 56,
+      "failed_records": 0,
+      "error_records": 6,
+      "failed_methods": [],
+      "error_methods": [
+        "tests.serving.test_sync_model_context.SyncContextPipeTests.test_invalid_native_context_never_produces_ready_and_the_child_is_collected",
+        "tests.serving.test_sync_model_context.SyncContextPipeTests.test_ready_context_crosses_the_existing_private_pipe_with_its_identity",
+        "tests.serving.test_sync_process_migration.RealProcessTests.test_idle_stop_and_deadline_confirm_API_but_broken_channel_keeps_unknown",
+        "tests.serving.test_sync_process_migration.RealProcessTests.test_migrated_transport_preserves_call_identity_usage_and_idempotent_close"
+      ],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 4.590297041926533
+    },
+    "sync_generation_combined_final": {
+      "selected": 1834,
+      "run": 1826,
+      "passed": 1795,
+      "failed_records": 1,
+      "error_records": 0,
+      "failed_methods": [
+        "tests.execution_provider.test_lotus_record_local_priority.QueryPriorityTests.test_unconfirmed_close_retains_remote_work_until_late_receipt_without_replay"
+      ],
+      "error_methods": [],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 247.47569004213437
+    },
+    "priority_parent_control": {
+      "selected": 1,
+      "run": 1,
+      "passed": 1,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 4.6794593329541385
+    },
+    "priority_candidate_control": {
+      "selected": 1,
+      "run": 1,
+      "passed": 1,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 4.353304499993101
+    },
+    "sync_generation_priority_targeted": {
+      "selected": 43,
+      "run": 43,
+      "passed": 43,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 0,
+      "class_skips": [],
+      "source_unchanged": true,
+      "elapsed_s": 9.847218832932413
+    },
+    "sync_generation_final": {
+      "selected": 1834,
+      "run": 1826,
+      "passed": 1796,
+      "failed_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "method_skips": 30,
+      "class_skips": [
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "elapsed_s": 275.10186879104003
+    }
+  },
+  "all_code_fingerprints": 1300,
+  "all_final_code_hashes_match": true,
+  "compressed_methods": {
+    "path": "raw/sync_generation_methods.json.gz",
+    "decoded_bytes": 1082341,
+    "decoded_sha256": "52751d3e268142dacd7fcb5a1ef7a8d3c9a0cbc1cca2fb045b8d23117e432453",
+    "archive_bytes": 185790,
+    "archive_sha256": "ef653aabef65519354033a339008bd683150861d7ce6e8b9aeae6881295d6839",
+    "all_public_copies_exactly_reconstruct": true,
+    "private_originals_preserved": true,
+    "original_recovery_requires_private_archive": true,
+    "normalization": "raw/cpu_public_path_normalization.json"
+  },
+  "original_sandbox_errors": {
+    "methods": [
+      "tests.serving.test_sync_model_context.SyncContextPipeTests.test_invalid_native_context_never_produces_ready_and_the_child_is_collected",
+      "tests.serving.test_sync_model_context.SyncContextPipeTests.test_ready_context_crosses_the_existing_private_pipe_with_its_identity",
+      "tests.serving.test_sync_process_migration.RealProcessTests.test_idle_stop_and_deadline_confirm_API_but_broken_channel_keeps_unknown",
+      "tests.serving.test_sync_process_migration.RealProcessTests.test_migrated_transport_preserves_call_identity_usage_and_idempotent_close"
+    ],
+    "records": 6,
+    "reason": "macOS psutil sysctl process-list access denied in the sandbox; original errors retained",
+    "same_methods_passed_in_final": true,
+    "own_fixture_children_after_error": 0,
+    "source": "private post_sandbox_child_check.json"
+  },
+  "original_close_failure": {
+    "run": "sync_generation_combined_final",
+    "method": "tests.execution_provider.test_lotus_record_local_priority.QueryPriorityTests.test_unconfirmed_close_retains_remote_work_until_late_receipt_without_replay",
+    "observed": "failed instead of succeeded",
+    "original_failure_unique_cause_proven": false,
+    "original_fixture": "Held acceptance delivery without establishing model success; original failure and source identity are retained.",
+    "single_controls": {
+      "parent_passed": 1,
+      "candidate_passed": 1,
+      "synchronous_constructor_calls_each": 0,
+      "scope": "One replay each, not a repeated stability claim; async fixture sources unchanged."
+    },
+    "change": "Reuse the existing confirmed-success delayed-delivery test, injecting and asserting successor_first. Preserve original method identity and stronger usage/no-parser/no-successor checks; remove two unused imports.",
+    "qualification": "Completed-known result awaiting delivery only. Accepted-but-still-computing close and the unique original terminal reason remain unqualified; this is not a production close fix."
+  },
+  "history": {
+    "bindings": 3010,
+    "mismatches": 0,
+    "all_five_materialization_methods_passed": true
+  },
+  "constructor_defaults": {
+    "max_model_len": 4096,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 4096,
+    "migrated": false
+  },
+  "actual_output_cap_guard": true,
+  "complete_rendered_prompt_plus_output_preflight": false,
+  "fused_default_migration": false,
+  "automatic_capacity": {
+    "implemented": false,
+    "ordinary_R": 2,
+    "default_IPC_result_slots": 8,
+    "source_followup": {
+      "path": "code/src/experiments/sembench_records_formal_resources.py",
+      "symbol": "ResourceMonitor",
+      "field": "kernel_memory_limit_enforced=False",
+      "meaning": "Sampled owned-RSS watchdog thresholds are not an exclusively granted payload-byte pool; not used as automatic capacity."
+    },
+    "missing": "Implement the real service/deployment byte grant and reuse Core/Method/IPC reservations; no new count or percentage was substituted."
+  },
+  "geometric": {
+    "passed_in_final_CPU_run": true,
+    "fixed": false,
+    "original_failure_and_negative_timing_retained": true
+  },
+  "limitations": [
+    "CPU stubs and existing private CPU processes only; actual vLLM/model, Ray/GPU and query performance are unverified.",
+    "Thirty method skips and two classes with eight unexecuted methods remain.",
+    "Old synchronous constructor defaults and fused/context/render propagation are not removed by this increment.",
+    "The first full close failure is retained; the revised fixture does not qualify accepted-but-computing shutdown."
+  ],
+  "temporary_exec_transport_failure": {
+    "read_action": true,
+    "pending_test_result_recovered": true,
+    "targeted_methods_passed": 43,
+    "read_retry_succeeded_once": true,
+    "remaining_blocker": false
+  },
+  "independent_review": "pending exact final combination including CLI and this synchronous increment",
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

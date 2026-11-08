@@ -1,0 +1,376 @@
+{
+  "schema": "semloom.fused_close_retry.checks.v1",
+  "base": "70f04e47aa02670e2e03cfe688362362572d8f39",
+  "candidate": "2ee3c937201272fcadd89cd2dbdeecf9287aa537",
+  "tree": "45ca86d8c15f97f411b13a97753b79fa6fb24a7d",
+  "runs": {
+    "fused-close-before": {
+      "selected": 1,
+      "executed": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    },
+    "fused-close-after": {
+      "selected": 10,
+      "executed": 10,
+      "passed": 10,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true
+    }
+  },
+  "same_selected_methods": false,
+  "overlapping_runs_not_added": true,
+  "unique_selected_methods": 10,
+  "tests_added": 1,
+  "regression_fails_before_passes_after": true,
+  "file_error_is_test_injected_not_OS_permission_denial": true,
+  "source_files_each": 1019,
+  "source_identity": {
+    "fused-close-before": {
+      "commit": "70f04e47aa02670e2e03cfe688362362572d8f39",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true,
+      "source_scope": "Base production and the new regression test from the candidate; the original run was not the unmodified base test suite.",
+      "regression_test_sha256": "4fe15aa74d2c2c11664eb5397b574f7037072e998235b9a7da66caac5e9326f3"
+    },
+    "fused-close-after": {
+      "commit": "2ee3c937201272fcadd89cd2dbdeecf9287aa537",
+      "files": 1019,
+      "all_recorded_source_hashes_match": true,
+      "source_unchanged_during_suite": true,
+      "source_scope": "Full candidate code and tests",
+      "regression_test_sha256": "4fe15aa74d2c2c11664eb5397b574f7037072e998235b9a7da66caac5e9326f3"
+    }
+  },
+  "source_identity_note": "Before is base production plus the new regression test from the candidate; after is the exact candidate. Both runs recorded the base HEAD before committing and had stable file hashes. CPU fixture durations are not query performance.",
+  "method_comparison": {
+    "base": "70f04e47aa02670e2e03cfe688362362572d8f39",
+    "changed_methods": [
+      "close"
+    ],
+    "unchanged_methods": [
+      "__init__",
+      "production_core_connected",
+      "_control",
+      "_configure_record_feedback",
+      "start",
+      "_start_record_actors",
+      "_record_startup_cleanup",
+      "_service_before_start",
+      "_service_after_start",
+      "_service_cleanup_confirmed",
+      "_service_retire_payloads",
+      "_service_payloads_retired_confirmed",
+      "finish_query",
+      "phase_stage_ids",
+      "calls",
+      "request_batches",
+      "_has_next_phase",
+      "_accountant_options",
+      "_worker_phase_options",
+      "_phase_spec",
+      "_fused_limits",
+      "_advance_relation_phase",
+      "evaluate",
+      "_collect_receipts",
+      "_accountant_for",
+      "_evaluate_record_local",
+      "_register_local_task",
+      "_record_local_receipt",
+      "_collect_local_receipts",
+      "_local_calls",
+      "_close_record_local"
+    ],
+    "close_identical_after_restoring_only_artifact_removal_position": true,
+    "production_lines_before_after": [
+      985,
+      985
+    ],
+    "production_Python_delta": 0,
+    "new_state_or_check": false,
+    "history_manifest_unchanged": true,
+    "history_differences_identical_to_base_record": true,
+    "history_projection_ids_identical": true
+  },
+  "code_size": {
+    "retained_comparison_source": "experiments/results/diagnostics/records_runtime_refactor_20261104/raw/topology_capacity_checks.json",
+    "retained_comparison_source_sha256": "8fdd43aaf4d3603c325cf27e3b8adff03df1a5cee1b8956c3a770984e934a14c",
+    "scope": "Physical Python lines including blanks/comments. Comparable core is code/src except experiments and baselines, including independent research. main_runtime additionally excludes research; research is listed separately. Wider is code/src plus code/scripts including research. Tests, documents and historical copies excluded.",
+    "refs": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "metrics": {
+          "core": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "main_runtime": {
+            "files": 227,
+            "physical_lines": 54091
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 444,
+            "physical_lines": 109118
+          },
+          "scripts": {
+            "files": 134,
+            "physical_lines": 31217
+          }
+        },
+        "src_and_scripts": 140335,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1483
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1150
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1137
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1027
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "metrics": {
+          "core": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 61628
+          },
+          "research": {
+            "files": 0,
+            "physical_lines": 0
+          },
+          "all_src": {
+            "files": 471,
+            "physical_lines": 118067
+          },
+          "scripts": {
+            "files": 131,
+            "physical_lines": 31578
+          }
+        },
+        "src_and_scripts": 149645,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "physical_lines": 1585
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "physical_lines": 1413
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "physical_lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "physical_lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "physical_lines": 1125
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "physical_lines": 1064
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "physical_lines": 1025
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "physical_lines": 1019
+          }
+        ],
+        "core_functions_over_100": 57
+      },
+      "previous": {
+        "commit": "70f04e47aa02670e2e03cfe688362362572d8f39",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 58700
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 55692
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 92358
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114517,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      },
+      "current": {
+        "commit": "2ee3c937201272fcadd89cd2dbdeecf9287aa537",
+        "metrics": {
+          "core": {
+            "files": 256,
+            "physical_lines": 58700
+          },
+          "main_runtime": {
+            "files": 248,
+            "physical_lines": 55692
+          },
+          "research": {
+            "files": 8,
+            "physical_lines": 3008
+          },
+          "all_src": {
+            "files": 398,
+            "physical_lines": 92358
+          },
+          "scripts": {
+            "files": 102,
+            "physical_lines": 22159
+          }
+        },
+        "src_and_scripts": 114517,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "physical_lines": 1157
+          }
+        ],
+        "core_functions_over_100": 50
+      }
+    }
+  },
+  "history": {
+    "bindings": 3010,
+    "matched": 3000,
+    "older_differences": 10,
+    "added_differences": 0,
+    "manifest_changed": false,
+    "projection_ids": {
+      "native_isolated_and_imlane": "8a30b42aeecaa56403ec684877450e6375900a476d09d206b71cb533671dd4f1",
+      "core_original_dynamic": "9819f3ee6f2103bf407576447dc5c52be8f30ebbd787a702fd61511f97ee4e71",
+      "core_local_window_pairs": "b461f3e632db13ac81453826658fa6fc1254a608fed8e24e25145844d08b61d6",
+      "ray_runtime_reuse": "0fdf47e12d4d9c08cb289b1a357fb07b409a764ac99a78083177d794f8deb464",
+      "daft_single_thread_session": "a32a7c4354d7c2512eb3d8870fce11f94b87cf7fafaeb76edf9b3a8d43ba3349"
+    },
+    "complete_restoration_passed": false
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "87be291fa9b1ae29f8d90bf1efcda71919d0a8939bc22997e2e65535ac4c4797",
+    "code/tests/execution_provider/test_chain_audit_lifetime.py": "4fe15aa74d2c2c11664eb5397b574f7037072e998235b9a7da66caac5e9326f3"
+  },
+  "production_python_delta": 0,
+  "new_state_or_check": false,
+  "prepared_resident_close_changed": false,
+  "concurrent_poll_ACK_files_changed": false,
+  "new_policy_capacity_or_configuration": false,
+  "actual_Ray_model_GPU_database_external_server_runs": 0,
+  "known_unqualified_checks": "The earlier five socket methods, two sysctl checks and three CLI cases were not selected. Their unqualified status remains; no blocked operations were retried.",
+  "independent_review_sha256": "570e4e72301420b2afbded1747542406232ef7051af68659a6ce6ddc8e6f7852",
+  "design_review_sha256": "90ab372de7967cc4470e206973c464c0b1bbd1f4fe319912d5e0e6d07e81e663",
+  "private_originals": {
+    "fused-close-before.json": {
+      "bytes": 129987,
+      "sha256": "241800a22eb5a7acd96126efe1ed252403b2315cef65c3e4db40fec9f55d7709"
+    },
+    "fused-close-before.log": {
+      "bytes": 1905,
+      "sha256": "fa719bb3c0207619074b46ecc6029868d7face9549213a66cefcfd983fc56f2d"
+    },
+    "fused-close-after.json": {
+      "bytes": 131052,
+      "sha256": "8e3a9880d51621edfdafd9431734938ec8137d92ebe7a94c7f03dd77fa6f36d8"
+    },
+    "fused-close-after.log": {
+      "bytes": 2063,
+      "sha256": "852707181a92bae11e402daac08b0e34ae737d79e1cc5d5aaa7006b89c5e7712"
+    },
+    "METHOD_COMPARISON.json": {
+      "bytes": 1255,
+      "sha256": "8a0332e5d77a6188fc53d63cce5986869eda5b4f246c37cc4480c1331851730d"
+    },
+    "CODE_SIZE.json": {
+      "bytes": 5530,
+      "sha256": "64d834ff21172f815a29084301d6fbb3e7e4bb826995470612f1921e3520a98b"
+    },
+    "SOURCE_IDENTITY.json": {
+      "bytes": 787,
+      "sha256": "eed992ddbb403138ac6b68446eabbeb8f6d1e8be54ebfd2aa24764713f9f6722"
+    },
+    "fused-close-history.json": {
+      "bytes": 6858,
+      "sha256": "8648a4e0712bceb21995b64e89aad03273575b7a62f4318a8b8f01eac3e064b3"
+    },
+    "review/HANDOFF.json": {
+      "bytes": 3810,
+      "sha256": "570e4e72301420b2afbded1747542406232ef7051af68659a6ce6ddc8e6f7852"
+    },
+    "design/HANDOFF.json": {
+      "bytes": 11480,
+      "sha256": "90ab372de7967cc4470e206973c464c0b1bbd1f4fe319912d5e0e6d07e81e663"
+    },
+    "review/SOURCE-EVIDENCE.json": {
+      "bytes": 2472,
+      "sha256": "bd3d973a04f1fee883945be5be88ea6bff45d2383cfe740335f0429a39a92aa8"
+    }
+  },
+  "raw": {
+    "file": "fused_close_retry_raw.json.gz",
+    "bytes": 14270,
+    "sha256": "58f1e4a33dbb1815acdf119cc071db0ce4fe96b5536f2cff409493f4a738bc73",
+    "decoded_sha256": "bd9b640e347d2323a8462511e0dfe98be423ffce790c56bcb6ba4f28b944962d"
+  }
+}

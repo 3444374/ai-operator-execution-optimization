@@ -1,0 +1,53 @@
+{
+  "base": "8a0b41e705db36e135883193bb7918e3cae946a3",
+  "reviewed_policy_commit": "c4d5e5c0a66b61e117bd6a71bc13c06a4d93149b",
+  "reviewed_policy_tree": "90d888765a1e6b763b40a54b6770786c78fe4135",
+  "all_seven_imported_files_exact": {
+    "code/src/scheduling/submission_control/adaptive.py": true,
+    "code/src/scheduling/submission_control/request_scan.py": true,
+    "code/src/scheduling/submission_control/resource_probe.py": true,
+    "code/tests/execution_provider/test_resource_request_supply_bridge.py": true,
+    "code/tests/scheduling/test_resource_request_controller.py": true,
+    "code/tests/scheduling/test_resource_request_probe.py": true,
+    "code/tests/scheduling/test_resource_request_search.py": true
+  },
+  "legacy_feedback_and_existing_row_methods_AST_unchanged": true,
+  "transport_ACK_native_clock_sampler_unchanged": true,
+  "ordinary_work_source": "delivered cumulative work plus validated retained receipts for actual Core session",
+  "new_retained_result_or_credit_ledger": false,
+  "work_snapshot_precedes_observation_clock": true,
+  "unknown_or_failed_receipts_not_measured_success": true,
+  "CPU": {
+    "selected": 441,
+    "passed": 441,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "history": {
+    "bindings": 3010,
+    "mismatches": 0
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "full_cross_module_run": "separate exact-commit evidence after this targeted qualification",
+  "independent_review": "pending",
+  "unqualified": [
+    "request R remains a declared positive integer, default 2; no None/hardware discovery",
+    "default IPC result slots/bytes still cap applied permissions, not GPU capacity",
+    "sync defaults/startup cleanup and prepared-supply composition remain separate",
+    "earlier baseline failures/skips and independent-review IPC permissions retain original evidence",
+    "real model/Ray/GPU not qualified"
+  ],
+  "artifacts": {
+    "c4d_source_import.json": "eccca65dccf5301d79b95db3b3b4b75f927c2a925a7698ff7acf75f02ee83ca9",
+    "ordinary_model_work_before.json": "e3a4dfbd9b5803f220b3b883c0144a302ed3fe4a55d5fa963b418269f82469b2",
+    "ordinary_model_work_before.log": "716322aaf0a1f5577cf541addae297f44d803d3833978c4fe0394c502f79e6ab",
+    "ordinary_model_work_after.json": "b68b9c3dba391913925125520fe6e4a3db86f2ef31df58def2d5801f9f48d33e",
+    "ordinary_model_work_after.log": "e33c281fa3c4fa5180c37eb724338497cca76a06715ac361a699dbc4d52ecaea",
+    "request_policy_wiring_targets.json": "bdbd7cd0734143b4a693be0d5f5726e507fd37102f0ed225f0d2eea1a47a4ee7",
+    "request_policy_wiring_targets.log": "e9a865e9c5bb4c1926f5f4fdc52c11f8b1257dd4b52bb7d9fd3bec982fca69e9"
+  }
+}

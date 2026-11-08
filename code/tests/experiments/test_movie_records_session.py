@@ -1,5 +1,6 @@
 """Deterministic CPU lifecycle tests; real model/network/process startup forbidden."""
 
+from copy import deepcopy
 from dataclasses import asdict, replace
 import importlib.util
 import json
@@ -213,6 +214,11 @@ class CoreReadinessTests(unittest.TestCase):
 
 class PlanTests(unittest.TestCase):
     def setUp(self):
+        from src.infrastructure.cpu_allocation import CpuCapacity
+        cpu = patch('src.infrastructure.cpu_allocation.observe_cpu_capacity',
+                    return_value=CpuCapacity(64, None, 64, 'CPU_session_fixture'))
+        cpu.start()
+        self.addCleanup(cpu.stop)
         from src.baselines.text.movie_records import prepare_movie_source
         import csv
         import hashlib
@@ -230,7 +236,7 @@ class PlanTests(unittest.TestCase):
         self.plan = dict(schema="semloom.movie_session_plan.v1", backend="semloom-core", lifecycle="resident",
             model_name="openai/cpu-fixture", generation=asdict(GenerationSpec()),
             engine=asdict(EngineSpec("/tmp/model", "/tmp/model-python", "/tmp/driver-python", max_model_calls=4)),
-            resources=asdict(RecordsResources(prepare_batch_rows=1, model_batch_rows=1)), profile={},
+            resources=asdict(RecordsResources(max_active_batches=2, prepare_batch_rows=1, model_batch_rows=1)), profile={},
             queries=[dict(query_id="q1", task="movie-q1", manifest=manifests["movie-q1"], phase="warmup"),
                      dict(query_id="q2", task="movie-q2", manifest=manifests["movie-q2"], phase="measured")])
         self.manifests = manifests
@@ -239,6 +245,11 @@ class PlanTests(unittest.TestCase):
         result = session.check_plan(self.plan)
         self.assertEqual([query["expected_calls"] for query in result["queries"]], [2, 1])
         self.assertEqual(result["inference_calls"], 0)
+        self.assertEqual(result['answer_parser'], 'lotus-native')
+        self.assertEqual(session.check_plan(dict(self.plan, answer_parser='answer-field-v1'))['answer_parser'],
+                         'answer-field-v1')
+        with self.assertRaisesRegex(ValueError, 'answer_parser'):
+            session.check_plan(dict(self.plan, answer_parser='unknown'))
 
     def test_core_differing_instructions_are_bound_per_query_in_one_session(self):
         self.plan["queries"][1].update(task="movie-q3", manifest=self.manifests["movie-q3"])
@@ -251,6 +262,156 @@ class PlanTests(unittest.TestCase):
         self.plan["engine"]["max_model_calls"] = 2
         with self.assertRaisesRegex(ValueError, "whole session"):
             session.check_plan(self.plan)
+
+    def test_native_lotus_plan_requires_its_native_profile_without_core_options(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        plan['generation']['max_tokens'] = 8192
+        self.assertTrue(session.check_plan(plan)['supports_resident'])
+        with self.assertRaisesRegex(ValueError, 'original parser'):
+            session.check_plan(dict(plan, answer_parser='answer-field-v1'))
+        for profile in ({}, {'native_lm_max_batch_size': True}, {'mode': 'async'}):
+            with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'native_lm_max_batch_size'):
+                session.check_plan(dict(plan, profile=profile))
+        with self.assertRaisesRegex(ValueError, 'record batching options'):
+            session.check_plan(dict(plan, rolling_refill=True))
+
+    def test_removed_native_HTTP_profile_rejects_before_owner_or_output_creation(self):
+        plan = dict(self.plan, backend='lotus-native',
+                    profile={'native_lm_max_batch_size': 4, 'transport': 'http'})
+        output = Path(self.manifests['movie-q1']).parent / 'retired-http-output'
+        with patch.object(session, '_MovieDriver') as owner:
+            with self.assertRaisesRegex(ValueError, 'native_lm_max_batch_size'):
+                session.run_movie_session(plan, {}, output)
+        owner.assert_not_called()
+        self.assertFalse(output.exists())
+
+    def test_normal_driver_routes_native_queries_to_one_local_owner_and_closes_it(self):
+        from src.baselines.text.frameworks import lotus_native_local as native
+        from integrations.imlane_records import chain_runtime
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        checked = session.check_plan(plan)
+        claims = {row['query_id']: object() for row in plan['queries']}
+        context = dict(owner_context={}, claims=claims, sembench_checkout='CPU-callback',
+            checked_queries={row['query_id']: row for row in checked['queries']})
+        seen = []
+        class Owner:
+            def __init__(self, *args):
+                self.args, self.closes = args, 0
+            def start(self):
+                return {'engine_uid': 'CPU-local-owner', 'protocol': 'local_async_model_IPC'}
+            def close(self):
+                self.closes += 1
+                return {'status': 'closed', 'cleanup_errors': []}
+        def query(*args, **kwargs):
+            seen.append(kwargs)
+            kwargs['observer']('result_ready')
+            return {'status': 'completed', 'query_id': kwargs['query_id']}
+        directory = Path(self.manifests['movie-q1']).parent.parent / 'native-driver'
+        with patch.object(native, 'LocalNativeModel', Owner), patch.object(native, 'run', query), \
+                patch.object(chain_runtime, 'check_external_lease', return_value={}):
+            driver = session._MovieDriver(plan, context, directory, plan['queries'][0])
+            ready = driver.start()
+            events = []
+            for spec in plan['queries']:
+                self.assertEqual(driver.query(spec, events.append)['query_id'], spec['query_id'])
+            self.assertEqual(driver.close()['status'], 'closed')
+        self.assertEqual(ready['protocol'], 'local_async_model_IPC')
+        self.assertEqual(driver.owner.closes, 1)
+        self.assertTrue(all(call['shared_model'] is driver.owner for call in seen))
+        self.assertEqual([call['context']['claimed_budget'] for call in seen], list(claims.values()))
+        self.assertEqual(events, ['result_ready', 'result_ready'])
+
+    def test_native_lotus_isolated_driver_leaves_model_lifecycle_inside_query(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', lifecycle='isolated', profile={'native_lm_max_batch_size': 3})
+        directory = Path(self.manifests['movie-q1']).parent.parent / 'native-isolated'
+        driver = session._MovieDriver(plan, {}, directory, plan['queries'][0])
+        self.assertTrue(driver.start()['no_session_model'])
+        self.assertIsNone(driver.owner)
+        self.assertEqual(driver.close()['status'], 'closed')
+
+    def test_native_late_closing_usage_is_saved_without_promoting_source_unknown(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        driver = session._MovieDriver(plan, {}, Path(self.manifests['movie-q1']).parent.parent,
+                                      plan['queries'][0])
+        source_calls = {'counts': {'unknown': 1, 'succeeded': 0}}
+        driver.last_query_report = {'query_id': 'q1', 'calls': deepcopy(source_calls),
+            'native_transport_receipts': [{'status': 'unknown', 'total_tokens': None}]}
+        driver.last_query_directory = driver.directory
+        final = dict(schema='native-final-accounting', query_id='q1', calls=source_calls,
+            late_native_receipts=[{'status': 'succeeded', 'total_tokens': 13}])
+        class Owner:
+            def close(self):
+                return dict(status='closed', cleanup_errors=[], native_final_accounting=final)
+        driver.owner = Owner()
+        report = driver.close()
+        self.assertEqual(report['status'], 'closed')
+        self.assertEqual(driver.last_query_report['calls'], source_calls)
+        self.assertEqual(driver.last_query_report['native_transport_receipts'][0]['status'], 'unknown')
+        self.assertEqual(driver.last_query_report['native_final_accounting'], final)
+        self.assertNotIn('native_final_accounting', report['receipts']['model'])
+        saved = json.loads((driver.directory / 'query-accounting-final.json').read_text())
+        self.assertEqual(saved['native_final_accounting']['late_native_receipts'][0]['total_tokens'], 13)
+
+    def test_native_final_accounting_survives_a_failed_publication_and_retries_without_model_work(self):
+        plan = deepcopy(self.plan)
+        plan.update(backend='lotus-native', profile={'native_lm_max_batch_size': 3})
+        directory = Path(self.manifests['movie-q1']).parent.parent
+        driver = session._MovieDriver(plan, {}, directory, plan['queries'][0])
+        driver.last_query_report = dict(query_id='q1', calls={'counts': {'unknown': 1, 'succeeded': 0}})
+        driver.last_query_directory = directory
+        final = dict(query_id='q1', late_native_receipts=[{'total_tokens': 13}])
+        class Owner:
+            def __init__(self):
+                self.calls = 0
+            def close(self):
+                self.calls += 1
+                return dict(status='closed', cleanup_errors=[],
+                    **({'native_final_accounting': final} if self.calls == 1 else {}))
+        driver.owner = Owner()
+        with patch.object(session, 'publish_private_json', side_effect=OSError('fixture disk failure')):
+            first = driver.close()
+        self.assertEqual(first['status'], 'unknown')
+        self.assertIs(first['receipts']['final_query_accounting'], driver.last_query_report)
+        self.assertEqual(driver.last_query_report['native_final_accounting'], final)
+        self.assertEqual(driver.close()['status'], 'closed')
+        saved = json.loads((directory / 'query-accounting-final.json').read_text())
+        self.assertEqual(saved['calls']['counts'], {'unknown': 1, 'succeeded': 0})
+        self.assertEqual(saved['native_final_accounting'], final)
+
+    def test_current_sync_session_defers_omitted_context_to_actual_readiness(self):
+        for backend in ('semloom-core', 'semloom-static-reference'):
+            with self.subTest(backend=backend):
+                plan = deepcopy(self.plan)
+                plan.update(backend=backend, profile=dict(mode='sync'))
+                plan['generation']['max_tokens'] = 8192
+                checked = session.check_plan(plan)
+                self.assertEqual(checked['status'], 'checked_cpu_only')
+                self.assertEqual(checked['inference_calls'], 0)
+
+    def test_current_sync_session_keeps_explicit_context_presubmit_check(self):
+        plan = deepcopy(self.plan)
+        plan['engine']['max_model_len'] = 4096
+        plan['generation']['max_tokens'] = 8192
+        with self.assertRaisesRegex(ValueError, 'generation exceeds model context limit'):
+            session.check_plan(plan)
+
+    def test_native_session_defers_unspecified_context_to_native_readiness(self):
+        for backend in ('ray-data', 'daft'):
+            for context in ({}, dict(max_model_len=None)):
+                with self.subTest(backend=backend, context=context):
+                    plan = deepcopy(self.plan)
+                    plan.update(backend=backend, lifecycle='isolated', profile={})
+                    plan['engine'].pop('max_model_len', None)
+                    plan['engine'].update(context)
+                    plan['generation']['max_tokens'] = 8192
+                    checked = session.check_plan(plan)
+                    self.assertEqual(checked['status'], 'checked_cpu_only')
+                    self.assertEqual(checked['inference_calls'], 0)
+
 
     def test_owner_api_validates_fresh_claims_before_allocating_and_restores_device_environment(self):
         from contextlib import ExitStack
@@ -265,13 +426,17 @@ class PlanTests(unittest.TestCase):
             runtime_binding=dict(driver_python="/tmp/driver-python", model_python="/tmp/model-python",
                                  model_path="/tmp/model", cuda_visible_devices="0"))
         parent = Path(self.manifests["movie-q1"]).parent.parent
+        self.plan['answer_parser'] = 'answer-field-v1'
         with ExitStack() as stack:
             stack.enter_context(patch.object(chain_runtime, "check_external_lease", return_value={}))
             stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
-            stack.enter_context(patch.object(lotus_records_movie, "model_preflight", return_value={}))
+            preflight = stack.enter_context(patch.object(lotus_records_movie, "model_preflight", return_value={}))
             loop = stack.enter_context(patch.object(session, "run_sequence", return_value={"status": "completed"}))
             prior = os.environ.get("CUDA_VISIBLE_DEVICES")
             session.run_movie_session(self.plan, context, parent / "owner-api")
+            self.assertTrue(preflight.call_args_list)
+            self.assertTrue(all(call.args[2].answer_parser == 'answer-field-v1'
+                                for call in preflight.call_args_list))
             self.assertEqual(os.environ.get("CUDA_VISIBLE_DEVICES"), prior)
             self.assertEqual(loop.call_count, 1)
             setup = loop.call_args.kwargs["setup"]
@@ -288,6 +453,7 @@ class PlanTests(unittest.TestCase):
         from src.execution_provider.adapters import lotus_records_core
         import sys
         self.plan["lifecycle"] = "isolated"
+        self.plan['answer_parser'] = 'answer-field-v1'
         self.plan["queries"][1].update(task="movie-q3", manifest=self.manifests["movie-q3"])
         checked = session.check_plan(self.plan)
         state = {"initialized": False, "shutdowns": 0}
@@ -307,6 +473,7 @@ class PlanTests(unittest.TestCase):
             driver.start()
             from src.baselines.text.movie_tasks import MovieTask
             self.assertEqual(owner_type.call_args.args[0].instruction, MovieTask(3).instruction)
+            self.assertEqual(owner_type.call_args.args[0].answer_parser, 'answer-field-v1')
             self.assertEqual(driver.close()["status"], "closed")
             self.assertEqual(state["shutdowns"], 1)
             state["initialized"] = True

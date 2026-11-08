@@ -1,0 +1,102 @@
+{
+  "base": "6754eebea91d452b534245c43e6259be9253b67d",
+  "scope": "Delete the controller-maximum-as-minimum startup refusal; existing sampled campaign timeout, owned cleanup, call ledger and real test results remain.",
+  "production_change": {
+    "path": "code/scripts/profiling/record_observation/campaign_guard.py",
+    "lines_removed": 4,
+    "new_runtime_checks": 0,
+    "new_runtime_state": 0
+  },
+  "rule_change": "code/AGENTS.md section 6: use actual required test results, distinguish total and per-item maximum durations, do not require the full maximum before starting or subtract the same reserve repeatedly.",
+  "before_counterexample": {
+    "selected": 1,
+    "errors": 1,
+    "reason": "insufficient_time_for_whole_cell",
+    "wall_seconds": 600,
+    "controller_max_seconds": 480,
+    "CPU_elapsed_before_cell_seconds": 200
+  },
+  "CPU": {
+    "selected_methods": 31,
+    "first_successes": 29,
+    "first_errors": 2,
+    "first_error_reason": "macOS sandbox forbids psutil sysctl process enumeration",
+    "affected_rerun_selected": 2,
+    "affected_rerun_passed": 2,
+    "rerun_environment_change": "same local source and temporary CPU process fixtures, with process inspection permitted",
+    "distinct_methods_with_passing_results": 31,
+    "remaining_selected_methods_without_pass": 0,
+    "skipped": 0,
+    "no_full_suite_repeat": true,
+    "source_unchanged_during_runs": true,
+    "current_relevant_python_matches_run": true
+  },
+  "preserved": [
+    "Actual global work/collection cutoffs and finite per-worker timeout",
+    "Owned-process termination, foreign-process isolation and error records",
+    "Unknown call responsibility and one-time ledger claim",
+    "Required real-Ray test identities and unsuccessful/skip rejection",
+    "Source/input identities and ordinary quality checks"
+  ],
+  "remaining": "Other experiment timeout callers are being audited in separate worktrees; no claim all project checks have been removed or the whole refactor is complete.",
+  "reproduce": {
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "PYTHONPATH": "code:code/scripts/experiments"
+    },
+    "argv": [
+      "$DRIVER_PYTHON",
+      "-m",
+      "unittest",
+      "tests.experiments.test_record_campaign_guard",
+      "tests.experiments.test_ray_future_qualification"
+    ],
+    "process_inspection_required_for_two_methods": true
+  },
+  "raw": {
+    "path": "campaign_timeout_cleanup_raw.json.gz",
+    "bytes": 4048,
+    "sha256": "05f9fe47b1c154c74689543c855772a4c158ebb0fb32dba7d46bf2a5d2156c0e",
+    "decoded_bytes": 36957,
+    "decoded_sha256": "622e57768286e426126d1d6f0e331fa6c4240a9d7403195ba292a66f1d49f913"
+  },
+  "private_originals": {
+    "before-campaign-timeout.json": {
+      "bytes": 167969,
+      "sha256": "43ca09bad83eea2c103b0f212af9603de9f27a3d1a62c334318fb0e55fe39088"
+    },
+    "before-campaign-timeout.log": {
+      "bytes": 1369,
+      "sha256": "24b2a90b9dbef850269cf8a4d16b2c32a3d4638368e25f39f39f86aadccc174f"
+    },
+    "campaign-timeout-regression.json": {
+      "bytes": 182181,
+      "sha256": "a93011734593c417e76227463014324a4b0cd506e56c8b45f212a8a12b6a1ebf"
+    },
+    "campaign-timeout-regression.log": {
+      "bytes": 13659,
+      "sha256": "e424e54a8cda4282b6083cda25a69edddbf987ffb655041d5d0224c03fa61cfc"
+    },
+    "campaign-owned-process-rerun.json": {
+      "bytes": 167741,
+      "sha256": "351d9d5723e3071cfc82c2928ff2a22f1207c30586f6e89563e4989f116f2b3c"
+    },
+    "campaign-owned-process-rerun.log": {
+      "bytes": 582,
+      "sha256": "53106b199a7f7d20d241f2f30049d8dd70d37aca813123583d83933174950d55"
+    }
+  },
+  "public_source_snapshot_is_relevant_excerpt": true,
+  "real_execution": {
+    "Ray": 0,
+    "models": 0,
+    "GPU": 0,
+    "server": 0
+  },
+  "live_GPU_tasks_touched": false,
+  "pushed": false,
+  "merged": false
+}

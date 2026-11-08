@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .config_env import ENV_REFERENCE, expand_text
+from .cpu_allocation import observe_cpu_capacity
 
 
 @dataclass(frozen=True)
@@ -36,10 +37,13 @@ class MachineObservation:
     machine_id: str
     platform: str
     python: str
-    cpu_slots: int
+    cpu_slots: float | None
     gpu_names: tuple[str, ...]
     gpu_memory_mib: tuple[int, ...]
     gpu_driver_versions: tuple[str, ...]
+    cpu_allocation_status: str = "legacy_unspecified"
+    cpu_affinity_slots: int | None = None
+    cpu_quota_slots: float | None = None
 
 
 def load_env_file(path: Path) -> dict[str, str]:
@@ -102,11 +106,7 @@ def load_json_contract(path: Path, expected_kind: str) -> dict[str, Any]:
 def observe_machine() -> MachineObservation:
     """Observe stable host capabilities without exposing hostname or GPU UUIDs."""
 
-    cpu_slots = (
-        len(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else (os.cpu_count() or 1)
-    )
+    cpu = observe_cpu_capacity()
     gpu_names: list[str] = []
     gpu_memories: list[int] = []
     gpu_drivers: list[str] = []
@@ -150,10 +150,13 @@ def observe_machine() -> MachineObservation:
         machine_id=machine_id,
         platform=platform.system(),
         python=platform.python_version(),
-        cpu_slots=cpu_slots,
+        cpu_slots=cpu.effective_slots,
         gpu_names=tuple(gpu_names),
         gpu_memory_mib=tuple(gpu_memories),
         gpu_driver_versions=tuple(gpu_drivers),
+        cpu_allocation_status=cpu.status,
+        cpu_affinity_slots=cpu.affinity_slots,
+        cpu_quota_slots=cpu.quota_slots,
     )
 
 
@@ -277,7 +280,7 @@ def download_asset(
     asset = matches[0]
     kind = _required_string(asset, "kind")
     target = Path(expand_text(_required_string(asset, "target"), asset_id, environment=environment))
-    if _check_asset(asset, environment).status == "ok":
+    if kind != "huggingface_snapshot" and _check_asset(asset, environment).status == "ok":
         return target
     if kind == "manual":
         raise RuntimeError(
@@ -285,16 +288,16 @@ def download_asset(
             + _required_string(asset, "instructions")
         )
     target.parent.mkdir(parents=True, exist_ok=True)
-    expected_bytes = int(asset.get("minimum_bytes", 1))
-    partial = target.with_suffix(target.suffix + ".partial")
-    already_present = partial.stat().st_size if partial.exists() else 0
-    free_bytes = shutil.disk_usage(_nearest_existing_parent(target.parent)).free
-    if free_bytes < max(0, expected_bytes - already_present):
-        raise RuntimeError(
-            f"insufficient disk for {asset_id}: free={free_bytes}, "
-            f"minimum_remaining={max(0, expected_bytes - already_present)}"
-        )
     if kind == "http_file":
+        expected_bytes = int(asset.get("minimum_bytes", 1))
+        partial = target.with_suffix(target.suffix + ".partial")
+        already_present = partial.stat().st_size if partial.exists() else 0
+        free_bytes = shutil.disk_usage(_nearest_existing_parent(target.parent)).free
+        if free_bytes < max(0, expected_bytes - already_present):
+            raise RuntimeError(
+                f"insufficient disk for {asset_id}: free={free_bytes}, "
+                f"minimum_remaining={max(0, expected_bytes - already_present)}"
+            )
         _download_http(_required_string(asset, "url"), target)
     elif kind == "huggingface_snapshot":
         try:
@@ -380,17 +383,14 @@ def _check_profile(
             f"observed={platform.python_version()}; minimum={'.'.join(map(str, minimum_python))}",
         )
     )
-    cpu_slots = (
-        len(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else (os.cpu_count() or 1)
-    )
+    cpu = observe_cpu_capacity()
+    cpu_slots = cpu.effective_slots
     minimum_cpu = int(profile.get("minimum_cpu_slots", 1))
     results.append(
         CheckResult(
             "machine:cpu_slots",
-            "ok" if cpu_slots >= minimum_cpu else "missing",
-            f"observed={cpu_slots}; minimum={minimum_cpu}",
+            "ok" if cpu_slots is not None and cpu_slots >= minimum_cpu else "missing",
+            f"observed={cpu_slots}; minimum={minimum_cpu}; status={cpu.status}; affinity={cpu.affinity_slots}; quota={cpu.quota_slots}",
         )
     )
     required_environment = list(profile.get("required_environment", []))
@@ -604,7 +604,14 @@ def _download_http(url: str, target: Path) -> None:
         if mode == "ab" and getattr(response, "status", None) != 206:
             mode = "wb"
         with partial.open(mode) as output:
+            offset = output.tell()
             shutil.copyfileobj(response, output, length=1024 * 1024)
+            received = output.tell() - offset
+        expected = response.headers.get("Content-Length")
+        if expected is not None and received != int(expected):
+            raise OSError(
+                f"incomplete asset download: expected {expected} bytes, received {received}"
+            )
     partial.replace(target)
 
 

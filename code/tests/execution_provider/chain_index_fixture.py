@@ -8,9 +8,10 @@ import time
 from unittest.mock import patch
 
 from types import SimpleNamespace
-from src.execution_provider.method_workers import lotus_chain_batch as implementation
+from src.serving.backends import lotus_chain_worker as implementation
 from src.serving.backends import vllm_sync_process as transport
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+from src.serving.backends.model_context import model_context_record
 
 _ORIGINAL_INDEX = implementation._associate_declared_results
 
@@ -62,6 +63,12 @@ def worker(module,control,results,*,parents=None,error=None):
     obj._audit_calls=[];obj._audit_errors=[];obj._batch_id='CPU-BATCH'
     obj._phase_stage_ids=['s0','s1','s2'];obj._audit_path=obj.control/'audit.json'
     obj.initial_parents=parents or {};obj.engine=FakeEngine(results,error)
+    obj.prepared_batching=None;obj._source_prepared_group=None;obj._source_flush_reason=None
+    obj._model_context=None;obj._request_batcher_context=None
+    obj.engine_spec=EngineSpec('/tmp/CPU-index-model','/tmp/model-python','/tmp/driver-python')
+    obj.chain=SimpleNamespace(stages=(SimpleNamespace(generation=GenerationSpec()),))
+    obj.engine.ready_report=dict(engine_uid='CPU-index',model_context=model_context_record(
+        obj.engine_spec,'CPU-index',32768))
     return obj
 
 

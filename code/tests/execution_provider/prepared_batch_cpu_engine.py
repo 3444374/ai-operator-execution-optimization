@@ -13,13 +13,16 @@ from src.serving.backends.vllm_engine import _prepared, result_from_output
 
 class Engine:
     def __init__(self, spec, generation):
+        self.spec = spec
         self.config = json.loads(Path(spec.model_path).read_text())
         self.log = Path(spec.model_path + '.batches')
         self.count = 0
         self.uid = 'CPU-prepared-batch-' + str(os.getpid())
 
     def ready(self):
-        return dict(engine_uid=self.uid, physical_gpu=False)
+        from src.serving.backends.model_context import model_context_record
+        return dict(engine_uid=self.uid, physical_gpu=False,
+            model_context=model_context_record(self.spec, self.uid, self.spec.max_model_len or 32768))
 
     def run_prepared(self, rows, *, generation, deadline_monotonic):
         identities, conversations = _prepared(rows)
@@ -54,9 +57,9 @@ class Engine:
                 results[0].update(invalid)
         return results
 
-    def close(self):
+    def close(self, timeout=10.):
         return dict(status='closed', engine_api_shutdown_confirmed=True,
-                    gpu_exit_confirmed=None, cleanup_errors=[])
+                    gpu_exit_confirmed=None, cleanup_errors=[], close_timeout_s=timeout)
 
 
 if __name__ == '__main__':

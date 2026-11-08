@@ -1,0 +1,77 @@
+{
+  "base_commit": "678250ee341cfa710ab9a0a05c63ce67b6e3ed67",
+  "prior_candidate": "e70d11ff2ede3f3c784c75a9b72b3baeb8afd411",
+  "production_files": 17,
+  "successful_distinct_methods": 105,
+  "selected_distinct_actual_methods": 105,
+  "first_selection": {
+    "unittest_entries": 100,
+    "passed_methods": 99,
+    "loader_errors": 1
+  },
+  "corrected_module_passed": 6,
+  "actual_test_failures": 0,
+  "skipped_methods": 0,
+  "source_unchanged_during_both_suites": true,
+  "original_loader_error_preserved": true,
+  "raw": {
+    "path": "legacy_preparation_composition_raw.json.gz",
+    "bytes": 84372,
+    "sha256": "a1c21e43124c921415e80d33fd83f3de0077a9ef55e5007067e96c6ae16ceb75"
+  },
+  "size": {
+    "published_678": {
+      "core": {
+        "files": 248,
+        "physical_lines": 61641,
+        "nonempty_lines": 55832,
+        "files_over_1000": 9,
+        "functions_over_100": 57
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 118080,
+        "nonempty_lines": 107783,
+        "files_over_1000": 17,
+        "functions_over_100": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    },
+    "composed_retirement": {
+      "core": {
+        "files": 248,
+        "physical_lines": 60191,
+        "nonempty_lines": 54464,
+        "files_over_1000": 7,
+        "functions_over_100": 55
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 116444,
+        "nonempty_lines": 106243,
+        "files_over_1000": 15,
+        "functions_over_100": 143
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    }
+  },
+  "prior_scope": "The 561 successful methods and six actual-Ray skips belong to the e70 candidate; overlapping runs are not added together.",
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "server_runs": 0,
+  "pushed": false,
+  "merged": false
+}

@@ -20,23 +20,24 @@ from copy import deepcopy
 import csv
 from dataclasses import asdict, replace
 import hashlib
-import json
 from pathlib import Path
 import tempfile
 import time
 
-from src.baselines.common.private_artifacts import file_identity, open_private_text
-from src.baselines.text.frameworks.daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
-from src.baselines.text.frameworks.lotus_cascade_process import StageEngineCleanup
+from src.infrastructure.deadlines import deadline_after
+from src.infrastructure.private_artifacts import file_identity, open_private_text
+from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
+from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 from src.semantic_methods.lotus.cascade import (
     CascadeStage, IDENTITY_FIELDS, _StageCalls, cascade_identity, local_generation,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
-from src.serving.backends.vllm_engine import EngineSpec
+from src.serving.backends.vllm_protocol import EngineSpec
 
-from .lotus_records_core import (
-    CoreRecordsCapacity, SemLoomRecordsCore, _ActorOwner, _CoreModelActor, _check,
-)
+from .lotus_records_core import SemLoomRecordsCore
+from .records_capacity import CoreRecordsCapacity
+from .records_model_adapter import _ActorOwner, _CoreModelActor
+from .records_transport import _check
 
 
 class _StageSource:
@@ -67,7 +68,7 @@ class _StageSource:
                 provider = identity(self.query_id, "draw-" + str(index), index)
                 canonical = {name: row[name] for name in IDENTITY_FIELDS}
                 # Preflight the same raw row bytes Core will later reserve.
-                from .lotus_records_core import _encode
+                from .records_model_adapter import _encode
                 payload = {name: row[name] for name in stage.input_columns}
                 _encode(dict(payload, **provider), maximum)
                 self.expected_rows.append(provider)
@@ -144,7 +145,7 @@ class _CascadeCoreModelActor(_CoreModelActor):
     """Use the old bounded-byte result/audit method with stage-aware inference."""
 
     def _process_type(self):
-        from src.baselines.text.frameworks.daft_engine_process import EngineProcess
+        from src.serving.backends.vllm_sync_process import EngineProcess
         return EngineProcess
 
     def ready(self, deadline):
@@ -359,13 +360,14 @@ class CoreCascadeBackend:
         if Path(self.engines["main"].model_path).resolve() == Path(self.engines["helper"].model_path).resolve():
             raise ValueError("cascade deployments require distinct explicit model paths")
         self.resources = RecordsResources(**asdict(resources))
+        self.resources.request_capacity()
         if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
             raise ValueError("cascade Core requires prepare_batch_rows=model_batch_rows=1")
         self.capacity = CoreRecordsCapacity() if capacity is None else capacity
         if type(self.capacity) is not CoreRecordsCapacity:
             raise TypeError("cascade Core capacity must be CoreRecordsCapacity")
         self.source, self.cancelled = source, cancelled
-        self.deadline = time.monotonic() + resources.query_timeout_s
+        self.deadline = deadline_after(resources.query_timeout_s)
         self._checked = self._production_connected = False
         self._active, self._startup_failure, self._reports = None, None, {}
         self._reserved = dict(main=0, helper=0)
@@ -497,7 +499,7 @@ class CoreCascadeBackend:
         control = Path(tempfile.mkdtemp(prefix="semloom-cascade-core-"))
         source = _StageSource(stage, bound, control, self.capacity.item_input_bytes)
         source.materialization_seconds = time.monotonic() - started
-        resources = replace(self.resources, query_timeout_s=max(0.000001, self.deadline - time.monotonic()))
+        resources = replace(self.resources, query_timeout_s=None if self.deadline is None else max(0.000001, self.deadline - time.monotonic()))
         # The unchanged preparation/Core seam is ordinary. Only the trusted
         # model specialization receives actual per-stage helper generation.
         ordinary_generation = replace(local_generation(stage), logprobs=None)

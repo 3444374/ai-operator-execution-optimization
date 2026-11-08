@@ -1,0 +1,373 @@
+{
+  "schema": "semloom.prepared_supply_composition_cpu.v1",
+  "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+  "reviewed_source": "b258c5750d88112d54f040e74dd8af83e16beb86",
+  "status": "Port plus compatibility repair;86 scoped methods pass; exact full combination recheck remains pending",
+  "runs": [
+    {
+      "run_id": "prepared_port_before",
+      "selected": 2,
+      "run": 2,
+      "passed": 0,
+      "failures": [
+        "tests.execution_provider.test_ready_state_preparation.StatePreparationTests.test_default_keeps_R_frontier_and_opt_in_does_not_use_Core_action_count"
+      ],
+      "errors": [
+        "tests.execution_provider.test_ready_state_preparation.StatePreparationTests.test_prevalidated_ordinary_entry_enables_candidate_and_delivers_all_receipts"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "01ebd2be5fbe44b6b05b7e229a3b2fc0f8d4244ddfe9e77d7ea7c13d5dff0f7f",
+      "log_sha256": "67d6b7040df95664c35ede812b9d08f42f64f1240e17b4dfe3c0e145d6ab600b"
+    },
+    {
+      "run_id": "prepared_port_first",
+      "selected": 67,
+      "run": 67,
+      "passed": 65,
+      "failures": [
+        "tests.execution_provider.test_event_state_preparation.EventPreparationTests.test_peak_observation_waits_for_progress_but_close_keeps_queued_reservations",
+        "tests.execution_provider.test_event_state_preparation.EventPreparationTests.test_self_offers_do_not_poll_Core_or_rescan_an_unchanged_partial_prefix"
+      ],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "7bcbe7e961fdb5b08e4c4136bf5ee927187f611886edc04e36a8c42231c03a65",
+      "log_sha256": "051372e9c6988bfef547631053bd8e810b40aba30fe54c21ef4cb584fda614b1"
+    },
+    {
+      "run_id": "prepared_port_budgets",
+      "selected": 73,
+      "run": 73,
+      "passed": 72,
+      "failures": [],
+      "errors": [
+        "tests.execution_provider.test_prepared_supply_budgets.IndependentSupplyTests.test_public_factory_accepts_explicit_candidate_with_None_and_complete_budget"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "99a7036fa95776865a6d495610b2ffaf154eb29e1275e6ec0e82e75a76f659ac",
+      "log_sha256": "b2b1e75060615c851c500fb04dc13829fe2a5e0c1de4a81f47e34c6dca198a31"
+    },
+    {
+      "run_id": "prepared_budget_targets",
+      "selected": 8,
+      "run": 8,
+      "passed": 8,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "beba84f3af77473e62de4cd6f7906b8e79bb7b846a39c7ae3278b5270b781a36",
+      "log_sha256": "800196cfe39eaee272e66e2f8d6e60357dc7d871569464c489605d091c78443d"
+    },
+    {
+      "run_id": "prepared_full_combination",
+      "selected": 1733,
+      "run": 1728,
+      "passed": 1685,
+      "failure_records": 0,
+      "error_records": 24,
+      "failures": [],
+      "errors": [
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_async_member_registration_retains_its_independent_binding_validation",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_bare_backend_preserves_its_preparse_membership_checks",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_final_owner_frame_limit_still_fails_before_the_RPC",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_only_initial_handoff_parse_is_removed_and_no_new_state_fields_appear",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_owner_registration_does_not_mutate_parsed_request_or_generation",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_payload_owner_binding_and_membership_errors_keep_the_same_first_error",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_rejection_rolls_back_and_a_retry_reads_fresh_immutable_task_bytes",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_success_membership_frames_and_generation_match_frozen_oracle",
+        "tests.execution_provider.test_lotus_batch_request_reuse.RequestReuseTests.test_unknown_and_backend_error_keep_owned_contexts_and_cancel_routing",
+        "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_owner_consumption_releases_budget_before_followup_refill",
+        "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_refused_input_waits_once_and_keeps_one_pending_record",
+        "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_release_result_wakes_waiter_and_next_tick_retries_without_duplicate",
+        "tests.execution_provider.test_lotus_chain_refill_wait.RefillWaitTests.test_unknown_terminates_flow_without_releasing_remote_responsibility"
+      ],
+      "skipped": [
+        {
+          "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+          "reason": "explicit real Ray CPU driver required",
+          "scope": "method"
+        },
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        },
+        {
+          "id": "setUpClass (tests.serving.test_vllm_identity_protocol.PinnedIdentityProtocolTests)",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the verified official fixed-tag source",
+          "scope": "class"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_closed_endpoint_and_real_read_timeout_keep_native_exception_and_usage",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_compressed_response_and_native_sdk_redirect_behavior_match",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_invalid_parameters_and_cancellation_before_preparation_send_zero_posts",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_map_and_cache_usage_logprobs_match_original_without_parser_http",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_observation_modes_keep_full_sem_map_results_errors_usage_and_cleanup",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_original_http_json_and_missing_content_errors_keep_type_and_usage",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_sem_map_cache_states_keep_original_miss_batches_and_usage",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.semantic_methods.test_lotus_native.LotusNativeTests.test_staged_two_map_keeps_whole_stage_wait_and_original_prompts",
+          "reason": "actual pinned LOTUS/native graph validation is explicitly opt-in",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_id_counts_must_agree_with_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_birth_change_blocks_later_sends_and_keeps_first_receipt",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_actual_native_sdk_posts_use_fresh_checks_without_repeated_discovery",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_bad_authoritative_usage_fails_even_if_native_parser_accepts_text",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_boolean_token_id_is_a_protocol_error",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_controller_physical_gpu_uuid_is_forwarded_without_ordinal_remapping",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_duplicate_message_HTTP_failure_stays_unknown_with_all_wire_receipts",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_empty_original_query_returns_zero_without_service_or_inference",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluation_and_end_observer_failure_preserves_original_error",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_evaluator_failure_retains_count_usage_and_restores_observers",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_final_accounting_failure_keeps_primary_and_validated_receipts",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_full_120_occurrence_native_http_profiles_match_original_q3",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_http_failure_keeps_every_native_receipt_and_never_retries",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_invalid_profile_budget_or_lease_precedes_service_construction",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_missing_actual_ids_fails_without_retokenizing_or_losing_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_original_accessor_lm_thread_pool_decisions_usage_and_quality",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_requests_observation_ids_and_preserves_authoritative_wire_arrays",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_result_observer_failure_still_retains_complete_count_and_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_transport_failure_keeps_successes_and_unknown_usage",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        },
+        {
+          "id": "tests.baselines.text.test_lotus_native_local_model.NativeLocalTests.test_unconfirmed_cleanup_fails_with_completed_known_result_retained",
+          "reason": "requires pinned CPU SDKs and SEMBENCH_CHECKOUT",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true,
+      "json_sha256": "eddbeb40a628a8283c9b07cff13bf944cabdf059d60f8f371ff0005d4130b599",
+      "log_sha256": "79f765f9f1e2eff0d88184db112e056b065ea5a0e3885ae804e32489a890e3ff"
+    },
+    {
+      "run_id": "prepared_compatibility_targets",
+      "selected": 86,
+      "run": 86,
+      "passed": 86,
+      "failure_records": 0,
+      "error_records": 0,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "77d62e27a95d6acae5d6f9ce9b0d83ca43082f1e612001cd223fa5f99924369a",
+      "log_sha256": "2b210bfd10f6e41750d19f88f9b4a37fe3772dd5fb5de77658f3a78bce70c655"
+    }
+  ],
+  "port_source": {
+    "base": "f2089db2774a7d3efdf30f3a28240e9dc19dc7f5",
+    "reviewed_source": "b258c5750d88112d54f040e74dd8af83e16beb86",
+    "changed": [
+      "code/src/execution_provider/adapters/lotus_chain_actor_backend.py",
+      "code/src/execution_provider/adapters/lotus_chain_token_batches.py",
+      "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "code/src/execution_provider/adapters/lotus_records_batches.py",
+      "code/src/execution_provider/adapters/records_query_runtime.py",
+      "code/src/scheduling/runtime/async_backend.py"
+    ],
+    "adaptations": [
+      "query iteration lives in records_query_runtime",
+      "Method row count uses actual MethodCapacity.runs",
+      "bounded fill exits on storage rejection",
+      "native context checks and modern request-window initialization retained",
+      "handoff subscription no longer tests held_tasks as request capacity",
+      "current capacity-aware actor and ordinary wrapper constructors retained"
+    ]
+  },
+  "fixture_migrations": {
+    "event_tests": {
+      "clocks": "three patch targets moved from old core module to current query runtime",
+      "assertion_AST_unchanged": true
+    },
+    "ordinary_positive": {
+      "original_fixture_stage": "step_0",
+      "actual_adapter_stage": "filter",
+      "fix": "Build the response fixture from the same explicit Filter chain the adapter actually uses. No production error fallback was changed."
+    },
+    "original_failures_retained": [
+      "prepared_port_before",
+      "prepared_port_first",
+      "prepared_port_budgets"
+    ]
+  },
+  "protected_source_hashes": [
+    {
+      "path": "code/src/scheduling/submission_control/adaptive.py",
+      "sha256": "0cfc38131359287b176b92c4cbb704e8cd0b2bc6ba0104313ced5c682d93a1db"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/request_scan.py",
+      "sha256": "300a1afed231ee1696726e19e8426be9024d3b2b4bab247d31cb7e11e83aa4fe"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/resource_probe.py",
+      "sha256": "c5783274453e2f939883c8461581b274450f370a2a5eb60e7fc03a194ac2a321"
+    },
+    {
+      "path": "code/src/scheduling/submission_control/stage_work.py",
+      "sha256": "d80e199974f6015071832031c79fdaa8274a2568c16e1541e4526e3d802f697d"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_engine.py",
+      "sha256": "e02a588f177cdee0d765f5871d4e163cd834dae0b090d19102d0551115d959db"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8"
+    },
+    {
+      "path": "code/src/serving/backends/vllm_protocol.py",
+      "sha256": "a570b9e4e41738d51da975319c6366d2b9efd7026ae57c563bc6562bd6cd9a70"
+    },
+    {
+      "path": "code/src/serving/backends/model_context.py",
+      "sha256": "968a0153197703921476174bdb6a8330779a04f83d59f140baaf0f8457460ce8"
+    }
+  ],
+  "history": {
+    "bindings": 3010,
+    "mismatches": []
+  },
+  "pending": [
+    "exact final combined-source full CPU recheck after composing58be/7a/session preflight",
+    "independent review",
+    "combination with separate reviewed58be and7a repairs",
+    "retained geometric failure and shared provider sample handoff",
+    "automatic resources; ordinary defaultR2/defaultIPC8 remain",
+    "real model and complete query comparisons"
+  ],
+  "defaults": "two preparation options default false; Movie JSON and CLI unchanged; default factory call omits extra constructor keywords",
+  "original_performance_negative": {
+    "source": "b258 original author CPU comparison independently recomputed in its review",
+    "case": "single-permit",
+    "original_query_median_ms": 54.500667,
+    "candidate_query_median_ms": 355.590459,
+    "unique_cause": "unproven",
+    "later_nonreproduction_does_not_replace_original": true
+  },
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false,
+  "compatibility_repair": {
+    "full_run_error_methods": 13,
+    "full_run_error_records": 24,
+    "unique_causes": [
+      "section transport accessed an optional flag missing from a legacy minimally constructed owner",
+      "query iteration accessed optional flags missing from a namespace fixture"
+    ],
+    "action": "unspecified optional flags retain default false; old assertions and source fixtures remain",
+    "target_run": "prepared_compatibility_targets",
+    "passed": 86
+  },
+  "geometric_note": "The original geometric method passed in this full run; sampler/controller source was unchanged. This does not fix or erase its earlier reproduced failure.",
+  "qualification": "No full-green qualification is claimed for the repaired port before that exact-source recheck."
+}

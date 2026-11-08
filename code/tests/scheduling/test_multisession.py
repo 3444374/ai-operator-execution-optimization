@@ -11,11 +11,16 @@ from src.scheduling.core.session_contract import (
     State,
     Uncertain,
 )
-from src.scheduling.core.session_jobs import JobBudget, JobHandle
+from src.scheduling.core.session_jobs import JobBudget, JobHandle, FlowChoice
 from tests.scheduling.test_incremental_session import Backend, Clock, limits, setup, task
 
 
-def engine(requests=1):
+def choose_first_flow(ready, history):
+    """A deterministic caller choice for resource and membership tests."""
+    return FlowChoice(ready[0].job_id, ready[0].session_ids[0])
+
+
+def engine(requests=1, *, choose_flow=None):
     template, old, _, _ = setup()
     old.close()
     backend, clock = Backend(), Clock()
@@ -32,6 +37,7 @@ def engine(requests=1):
         template.policies,
         clock=clock,
         max_jobs=2,
+        choose_flow=choose_flow,
     )
     return core, backend, clock
 
@@ -113,22 +119,6 @@ class MultiSessionTests(unittest.TestCase):
         e.advance(1)
         self.assertEqual(len(backend.pending), 1)
 
-    def test_continued_global_ticks_preserve_other_job_and_cancel_opportunities(self):
-        e, backend, _ = engine(requests=2)
-        a = e.register_job("A", budget(requests=2))
-        b = e.register_job("B", budget(requests=2))
-        sa, sb = flow(e, a, "a"), flow(e, b, "b")
-        sa.offer((task(0), task(1)))
-        self.assertTrue(e.advance(1).has_immediate_work)
-        sb.offer((task(0),))
-        e.advance(1)
-        self.assertIn(TaskKey(sb.session_id, 0), backend.pending)
-        sa.request_cancel()
-        progress = e.advance(1)
-        self.assertTrue(progress.has_immediate_work)
-        e.advance(1)
-        self.assertIn(TaskKey(sa.session_id, 0), backend.cancelled)
-        self.assertEqual(sb.state, State.OPEN)
 
     def test_ready_results_do_not_claim_work_the_global_tick_cannot_do(self):
         e, backend, _ = engine()
@@ -246,53 +236,7 @@ class MultiSessionTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             e.open(SessionSpec(a.job_id, "spoof", "fixture"))
 
-    def test_two_flows_do_not_double_job_opportunities(self):
-        e, b, _ = engine()
-        a, j = e.register_job("A", budget()), e.register_job("B", budget())
-        a1, a2, b1 = flow(e, a, "a1"), flow(e, a, "a2"), flow(e, j, "b1")
-        for s, n in ((a1, 2), (a2, 2), (b1, 4)):
-            self.assertEqual(s.offer([task(i) for i in range(n)]).accepted_prefix_count, n)
-        # Polling one session cannot submit anything without the owner's global tick.
-        for _ in range(5):
-            b1.advance(1)
-        self.assertFalse(b.pending)
-        order = []
-        sessions = {s.session_id: s for s in (a1, a2, b1)}
-        for _ in range(8):
-            e.advance()
-            self.assertEqual(len(b.pending), 1)
-            key = next(iter(b.pending))
-            order.append(sessions[key.session_id].spec.job_id)
-            b.complete(key)
-            e.reap(1)
-            result = sessions[key.session_id].advance(1)
-            sessions[key.session_id].release([result.deliveries[0].lease_id])
-        self.assertEqual(order, [a.job_id, j.job_id] * 4)
-        self.assertEqual(e.capacity.usage().held_tasks, 0)
 
-    def test_job_intake_cannot_take_other_jobs_reserved_storage(self):
-        e, b, _ = engine()
-        a, j = e.register_job("A", budget()), e.register_job("B", budget())
-        a1, a2, b1 = flow(e, a, "a1"), flow(e, a, "a2"), flow(e, j, "b1")
-        self.assertEqual(a1.offer([task(i) for i in range(4)]).accepted_prefix_count, 4)
-        self.assertEqual(a2.offer([task(0)]).accepted_prefix_count, 0)
-        self.assertEqual(b1.offer([task(0)]).accepted_prefix_count, 1)
-        # A retains its completed result without releasing it; B still finishes.
-        e.advance()
-        key = next(iter(b.pending))
-        b.complete(key)
-        e.reap(1)
-        delivery = a1.advance(1).deliveries[0]
-        e.advance()
-        key = next(iter(b.pending))
-        self.assertEqual(key.session_id, b1.session_id)
-        b.complete(key)
-        e.reap(1)
-        result = b1.advance(1)
-        b1.release([result.deliveries[0].lease_id])
-        self.assertEqual(e.capacity.usage(job_id=j.job_id).held_tasks, 0)
-        self.assertGreater(e.capacity.usage(job_id=a.job_id).held_tasks, 0)
-        a1.release([delivery.lease_id])
 
     def test_cancelling_one_job_keeps_late_work_and_other_job_live(self):
         e, b, _ = engine(requests=2)
@@ -381,3 +325,145 @@ class MultiSessionTests(unittest.TestCase):
         e.reap(1)
         self.assertIsNotNone(e.error)
         self.assertEqual((a1.state, b1.state), (State.FAILED, State.FAILED))
+
+
+    def test_continued_global_ticks_preserve_other_job_and_cancel_opportunities(self):
+        e, backend, _ = engine(requests=2)
+        a = e.register_job("A", budget(requests=2))
+        b = e.register_job("B", budget(requests=2))
+        sa, sb = flow(e, a, "a"), flow(e, b, "b")
+        sa.offer((task(0), task(1)))
+        self.assertTrue(e.advance(1).has_immediate_work)
+        sb.offer((task(0),))
+        e.advance(1)
+        self.assertIn(TaskKey(sb.session_id, 0), backend.pending)
+        sa.request_cancel()
+        progress = e.advance(1)
+        self.assertTrue(progress.has_immediate_work)
+        e.advance(1)
+        self.assertIn(TaskKey(sa.session_id, 0), backend.cancelled)
+        self.assertEqual(sb.state, State.OPEN)
+
+
+    def test_two_flows_do_not_double_job_opportunities(self):
+        e, b, _ = engine()
+        a, j = e.register_job("A", budget()), e.register_job("B", budget())
+        a1, a2, b1 = flow(e, a, "a1"), flow(e, a, "a2"), flow(e, j, "b1")
+        for s, n in ((a1, 2), (a2, 2), (b1, 4)):
+            self.assertEqual(s.offer([task(i) for i in range(n)]).accepted_prefix_count, n)
+        # Polling one session cannot submit anything without the owner's global tick.
+        for _ in range(5):
+            b1.advance(1)
+        self.assertFalse(b.pending)
+        order = []
+        sessions = {s.session_id: s for s in (a1, a2, b1)}
+        for _ in range(8):
+            e.advance()
+            self.assertEqual(len(b.pending), 1)
+            key = next(iter(b.pending))
+            order.append(sessions[key.session_id].spec.job_id)
+            b.complete(key)
+            e.reap(1)
+            result = sessions[key.session_id].advance(1)
+            sessions[key.session_id].release([result.deliveries[0].lease_id])
+        self.assertEqual(order, [a.job_id, j.job_id] * 4)
+        self.assertEqual(e.capacity.usage().held_tasks, 0)
+
+
+    def test_job_intake_cannot_take_other_jobs_reserved_storage(self):
+        e, b, _ = engine()
+        a, j = e.register_job("A", budget()), e.register_job("B", budget())
+        a1, a2, b1 = flow(e, a, "a1"), flow(e, a, "a2"), flow(e, j, "b1")
+        self.assertEqual(a1.offer([task(i) for i in range(4)]).accepted_prefix_count, 4)
+        self.assertEqual(a2.offer([task(0)]).accepted_prefix_count, 0)
+        self.assertEqual(b1.offer([task(0)]).accepted_prefix_count, 1)
+        # A retains its completed result without releasing it; B still finishes.
+        e.advance()
+        key = next(iter(b.pending))
+        b.complete(key)
+        e.reap(1)
+        delivery = a1.advance(1).deliveries[0]
+        e.advance()
+        key = next(iter(b.pending))
+        self.assertEqual(key.session_id, b1.session_id)
+        b.complete(key)
+        e.reap(1)
+        result = b1.advance(1)
+        b1.release([result.deliveries[0].lease_id])
+        self.assertEqual(e.capacity.usage(job_id=j.job_id).held_tasks, 0)
+        self.assertGreater(e.capacity.usage(job_id=a.job_id).held_tasks, 0)
+        a1.release([delivery.lease_id])
+
+
+
+class SingleQueryFlowTests(unittest.TestCase):
+    def test_one_query_rotates_operator_flows_and_keeps_one_storage_grant(self):
+        from src.scheduling.core.session_jobs import equal_share_job_budget
+
+        template, old, backend, clock = setup(
+            held_tasks=4, input_bytes=16, result_bytes=16,
+            active_requests=1, active_work=1,
+        )
+        old.close()
+        core = SessionEngine(template.capacity.limits, backend, template.policies, clock=clock)
+        grant = equal_share_job_budget(core)
+        job = core.register_job("one-query", replace(grant, max_sessions=2))
+        first, second = flow(core, job, "first"), flow(core, job, "second")
+        for stream in (first, second):
+            self.assertEqual(stream.offer((task(0), task(1))).accepted_prefix_count, 2)
+        order = []
+        streams = {stream.session_id: stream for stream in (first, second)}
+        for _ in range(4):
+            core.advance()
+            self.assertEqual(core.capacity.usage().active_requests, 1)
+            key = next(iter(backend.pending))
+            order.append(key.session_id)
+            backend.complete(key)
+            core.reap(1)
+            stream = streams[key.session_id]
+            delivery = stream.advance(1).deliveries[0]
+            stream.release((delivery.lease_id,))
+        self.assertEqual(order, [first.session_id, second.session_id] * 2)
+        self.assertEqual(core.capacity.usage().held_tasks, 0)
+        self.assertEqual(core.capacity.job_limits[job.job_id].held_tasks, grant.held_tasks)
+        first.close_consumer()
+        second.close_consumer()
+        core.close_job(job)
+        self.assertFalse(core.jobs.jobs)
+
+    def test_basic_multiple_jobs_use_declared_shares_without_research(self):
+        from src.scheduling.core.session_jobs import equal_share_job_budget
+
+        template, old, backend, clock = setup(
+            held_tasks=4, input_bytes=16, result_bytes=16,
+            active_requests=2, active_work=2,
+        )
+        old.close()
+        core = SessionEngine(template.capacity.limits, backend, template.policies,
+                             clock=clock, max_jobs=2)
+        grant = equal_share_job_budget(core)
+        self.assertEqual((grant.held_tasks, grant.active_requests), (2, 1))
+        first = core.register_job("first", grant)
+        second = core.register_job("second", grant)
+        a, b = flow(core, first, "flow"), flow(core, second, "flow")
+        for stream in (a, b):
+            self.assertEqual(stream.offer((task(0),)).accepted_prefix_count, 1)
+        core.advance()
+        self.assertEqual(core.capacity.usage().active_requests, 2)
+        backend.complete(TaskKey(a.session_id, 0))
+        core.advance()
+        delivered = a.advance(1).deliveries[0]
+        a.release((delivered.lease_id,))
+        a.close_consumer()
+        core.close_job(first)
+        self.assertNotIn(first, core.jobs.jobs)
+        self.assertIn(TaskKey(b.session_id, 0), backend.pending)
+        self.assertEqual(core.capacity.usage().active_requests, 1)
+        backend.complete(TaskKey(b.session_id, 0))
+        core.advance()
+        delivered = b.advance(1).deliveries[0]
+        b.release((delivered.lease_id,))
+        b.close_consumer()
+        core.close_job(second)
+        self.assertFalse(core.jobs.jobs)
+        self.assertEqual(core.capacity.usage().held_tasks, 0)

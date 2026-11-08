@@ -5,7 +5,7 @@ import json
 from pathlib import Path, PurePosixPath
 import tarfile
 
-from src.baselines.common.private_artifacts import new_private_directory
+from src.infrastructure.private_artifacts import new_private_directory
 
 
 SCHEMA = 'semloom.evidence_storage.v2'

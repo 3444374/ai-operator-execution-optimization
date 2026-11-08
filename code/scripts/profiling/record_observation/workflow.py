@@ -17,11 +17,19 @@ from src.infrastructure.private_artifacts import (
     write_private_json,
 )
 from src.infrastructure.redact import redact_text
+from src.infrastructure.json_content import json_content_equal
 import control_resource_C2 as controller
 
 TESTS = ('tests.experiments.test_record_resource_capture',
+         'tests.experiments.test_record_dag_observation',
          'tests.experiments.test_record_resource_handoff',
-         'tests.experiments.test_git_record_observation')
+         'tests.experiments.test_record_handoff_passivity',
+         'tests.experiments.test_record_prepare_finalization',
+         'tests.experiments.test_git_record_observation',
+         'tests.observability.test_records_telemetry',
+         'tests.observability.test_feedback_identity',
+         'tests.serving.test_native_resource_feedback',
+         'tests.experiments.test_movie_cancellation')
 
 
 def read_private(path):
@@ -61,9 +69,12 @@ def target_environment(config):
 def input_binding(config):
     if config['workload']['kind'] == 'record_chain':
         return dict(kind='record_chain', input=file_identity(config['workload']['input']['csv']))
-    program = '''
+    from src.experiments.movie_cancellation import qualification_options
+    cancellation = qualification_options(config)
+    checker = ('from src.experiments.movie_cancellation import check_cancellation_plan as check_plan'
+               if cancellation is not None else 'from src.experiments.movie_records_session import check_plan')
+    program = checker + '''
 import json,sys
-from src.experiments.movie_records_session import check_plan
 value=check_plan(json.load(sys.stdin))
 print(json.dumps(dict(expected_calls=value['expected_calls'],queries=[
     {k:q[k] for k in ('query_id','manifest_sha256','expected_calls')} for q in value['queries']])))
@@ -83,6 +94,8 @@ print(json.dumps(dict(expected_calls=value['expected_calls'],queries=[
 
 def validate_base(config):
     from src.experiments.attempt_ledger import AttemptBudget
+    from src.experiments.movie_cancellation import qualification_options
+    qualification_options(config)
     require_outside_git(Path(config['artifact_root']))
     AttemptBudget(config['run_id'], config['workload']['expected_calls'])
     units = config['units']
@@ -104,6 +117,8 @@ def validate_base(config):
             raise ValueError('private input changed')
     elif config['workload']['kind'] != 'movie_session':
         raise ValueError('use an existing Movie session or finite record chain')
+    if (config.get('movie_plan') or {}).get('backend') == 'imlane':
+        controller.owner_resource_context(config, controller.checked_json(config['host_config']))
     return git_identity(config['source_root'], config['expected_source'])
 
 
@@ -116,7 +131,7 @@ def qualify(config_path, output_root, expected_tool_commit):
     output_root = Path(output_root).resolve()
     new_private_directory(output_root)
     env = {k: v for k, v in os.environ.items() if not k.startswith('SEM_RECORD_')}
-    env.update(PYTHONPATH=str(REPO / 'code'), PYTHONDONTWRITEBYTECODE='1',
+    env.update(PYTHONPATH=str(REPO / 'code') + os.pathsep + str(HERE), PYTHONDONTWRITEBYTECODE='1',
                CUDA_VISIBLE_DEVICES='', HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
                LITELLM_LOCAL_MODEL_COST_MAP='True')
     commands = [('unit', [sys.executable, '-B', '-m', 'unittest', '-v', *TESTS])]
@@ -211,7 +226,7 @@ def check(config_path):
         return value
     if (ready['tool_source'] != config['tool_source']
             or ready['public_source'] != config['expected_source']
-            or business(base) != business(config)
+            or not json_content_equal(business(base), business(config))
             or ready['input_binding'] != input_binding(config)):
         raise ValueError('CPU source binding changed')
     return config
@@ -309,6 +324,11 @@ def main(argv=None):
         command.add_argument('--config', required=True)
         if name == 'run':
             command.add_argument('--execute-model', action='store_true', required=True)
+    command = commands.add_parser('summarize', help='offline stage/wait/overlap observations; no model or server')
+    command.add_argument('--root', required=True)
+    command.add_argument('--manifest', required=True)
+    command.add_argument('--input', action='append', required=True)
+    command.add_argument('--output', required=True)
     command = commands.add_parser('manifest')
     command.add_argument('--root', required=True)
     command.add_argument('--output', required=True)
@@ -325,6 +345,30 @@ def main(argv=None):
     elif args.command == 'run':
         run(args.config)
         return
+    elif args.command == 'summarize':
+        from src.experiments.record_dag_observation import summarize_capture, _file
+        from record_observer import summarize_cpu_spans
+        verification = verify_originals(args.root, args.manifest)
+        root = Path(args.root).resolve()
+        reports, inputs = [], []
+        for input_path in args.input:
+            identity = file_identity(input_path)
+            description = read_private(input_path)
+            spans = summarize_cpu_spans([_file(root, p) for p in description.get('events', [])])['spans']
+            reports.append(summarize_capture(root, description, cpu_spans=spans))
+            if file_identity(input_path) != identity:
+                raise ValueError('analysis input changed during read')
+            inputs.append(identity)
+        # Verify unchanged bytes again after the read; output must be outside originals.
+        verify_originals(args.root, args.manifest)
+        output = Path(args.output).resolve()
+        if output.is_relative_to(root):
+            raise ValueError('analysis output must not change the original file set')
+        require_outside_git(output)
+        write_private_json(output, dict(schema='semloom.record_dag_observation.collection.v1',
+            originals=verification, analysis_inputs=inputs, captures=reports,
+            scope='common observation fields; no automatic causal ranking or universal rule'))
+        report = dict(status='offline_observations_written', captures=len(reports), models=0)
     elif args.command == 'manifest':
         report = originals_manifest(args.root, args.output)
     else:

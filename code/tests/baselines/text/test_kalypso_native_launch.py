@@ -14,6 +14,7 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.frameworks.kalypso_native import adapter, cpu_native, native_server as server
+from src.experiments import kalypso_query_lifecycle as kalypso
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -209,7 +210,7 @@ class NativeLaunchTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'fresh'):
                     runpy.run_path(str(ROOT/'code/scripts/experiments/run_kalypso_sembench_query.py'),run_name='__main__')
                 with self.assertRaisesRegex(ValueError,'fresh'):
-                    adapter.run_attached(dict(binding(),engine={}),{},Path(root)/'direct-output')
+                    kalypso.run_attached(dict(binding(),engine={}),{},Path(root)/'direct-output')
                 deps.assert_not_called()
             self.assertFalse((Path(root)/'output').exists())
 
@@ -243,6 +244,40 @@ class NativeLaunchTests(unittest.TestCase):
             self.assertEqual(report['quality']['row_audit']['true_negative'],1)
             self.assertEqual(len(json.loads((root/'client/q/decisions.json').read_text())),2)
             self.assertTrue((root/'client/q/quality.json').exists())
+
+    def test_q4_uses_complete_native_filter_then_original_ratio_and_evaluation(self):
+        from src.baselines.text.movie_records import prepare_movie_source
+        from src.baselines.text import sembench_movie
+        from tests.baselines.text.test_kalypso_native_observation import fake_events
+        with tempfile.TemporaryDirectory() as raw:
+            root=Path(raw)
+            path=root/'Reviews.csv'
+            with path.open('w',newline='') as stream:
+                writer=csv.writer(stream)
+                writer.writerow(['reviewId','id','reviewText','scoreSentiment'])
+                writer.writerows([['1','taken_3','good','POSITIVE'],['2','other','other','POSITIVE'],
+                                  ['3','taken_3','bad','NEGATIVE']])
+            manifest=Path(prepare_movie_source(path,root/'prepared',
+                expected_csv_sha256=adapter.sha(path),max_rows=3,task='movie-q4'))
+            trace=root/'trace.jsonl'
+            trace.write_text(''.join(json.dumps(e)+'\n' for e in fake_events(2,uid='CPU-model')))
+            cfg=dict(binding(),native_instruction='unchanged native instruction',native_trace=str(trace),sembench='CPU-fixture')
+            spec=dict(query_id='q',manifest=str(manifest),manifest_sha256=adapter.sha(manifest),
+                      task='movie-q4',expected_calls=2)
+            def transport(payload,qid,directory):
+                self.assertEqual(payload['ops'],[dict(op='sem_filter',args=dict(prompt=cfg['native_instruction']))])
+                with Path(payload['data_path']).open() as stream:
+                    self.assertEqual([row['data'] for row in csv.DictReader(stream)],['good','bad'])
+                return dict(model_name=cfg['model'],num_output_rows=1,results=[dict(idx=0)])
+            with patch.object(adapter,'load_dependencies',return_value=lambda p,v:p.write_text(json.dumps(v))), \
+                 patch.object(sembench_movie,'evaluate_original',return_value={'original_metric':{'relative_error':0}}) as evaluate:
+                driver=adapter.NativeQueryDriver(cfg,dict(queries=[spec]),root/'client',transport=transport)
+                driver.model_uid='CPU-model'
+                report=driver.query(spec,lambda event:None)
+            self.assertEqual(report['result'],dict(positivity_ratio=0.5))
+            self.assertEqual(report['calls'],dict(expected=2,native_completed=2))
+            self.assertEqual(evaluate.call_args.args[1],4)
+            self.assertEqual(report['quality']['row_audit']['evaluated_rows'],2)
 
     def test_new_client_binding_requires_matching_launch_and_actual_capacity(self):
         with tempfile.TemporaryDirectory() as root,patch.object(adapter,'load_dependencies'):

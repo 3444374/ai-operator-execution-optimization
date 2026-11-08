@@ -1,0 +1,55 @@
+{
+  "base": "eb8c3836eed56d9ca279f74c593f19783176dd18",
+  "tested_source_commit": "ce75c7c5c37191ceb70b4822c3fef78fefef5a0a",
+  "tested_tree": "aa69f857bd9c16626e544d9dd35b613416853b98",
+  "unique_methods": 956,
+  "passed": 955,
+  "failure_methods": [],
+  "error_methods": [],
+  "skipped": [
+    {
+      "id": "tests.execution_provider.test_actor_resource_cpu_ray.RealRayHostCPUResourceTests.test_ten_snapshots_share_host_baseline_across_queries_and_flush_light_sink",
+      "reason": "explicit real Ray CPU driver required",
+      "scope": "method"
+    }
+  ],
+  "source_unchanged": true,
+  "current_Python_source_matches_tested": true,
+  "elapsed_s": 135.5799721251242,
+  "legacy_and_complete_explicit_configuration_differences": 0,
+  "legacy_cases": 90,
+  "complete_explicit_cases": 30,
+  "CLI_help": {
+    "selected": 7,
+    "passed": 7,
+    "initial_missing_optional_driver_preserved": true,
+    "model_and_database_execution_qualified": false
+  },
+  "historical": {
+    "bindings": 3010,
+    "original_mismatches": 10,
+    "new_mismatches": 0,
+    "new_source_overrides_since_eb8c": 10,
+    "original_expected_source_revision_projection_and_overrides_unchanged": true
+  },
+  "old_growth_timing_failure_resolved": false,
+  "ordinary_R_defaults_decoupled": false,
+  "independent_budget_IPC_defaults_decoupled": true,
+  "controller_factory_switched": false,
+  "controller_b99d9f0_scoped_review_passed": true,
+  "interleaving_b258_current_budget_combination_tested": false,
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "database_connections": 0,
+  "independent_review": "pending",
+  "pushed": false,
+  "merged": false,
+  "artifact_sha256": {
+    "followup_final_union.json": "030c8b89a1e8598479fe88b5e45ff7994bb0967364ebeb8854ae91c36d3bb5fb",
+    "followup_final_union.log": "e8d1d623a6199259592d02b2d94c0b2bed8fd5b8e3f33030b4de451656982c1e",
+    "followup_with_query_runtime_final.json": "6bda7a56fbed463018a616078357923046e00a32955d6960da764f5254bcb47f",
+    "followup_with_query_runtime_final.log": "2c3399b5c1eac6a1cc0bb611bf30f7d8bb253c63faac6a2407843b85505e80ea",
+    "controller_integration_readiness.json": "b7e2e9288134755715ee696279c6fc664bb75007590d1b007fa1fc9a993af748"
+  }
+}

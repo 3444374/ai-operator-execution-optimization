@@ -1,0 +1,97 @@
+{
+  "schema": "semloom.session_batching_preflight_cpu.v1",
+  "base": "2d8579247f6f31640e10d06f7d61fe170cb3c3cd",
+  "production_delta": {
+    "path": "code/src/experiments/movie_records_session.py",
+    "added_lines": 7,
+    "removed_lines": 3,
+    "action": "reuse the existing batching resolver before directory and runtime creation; parse options once and reuse them at construction",
+    "other_driver_methods_AST_unchanged": true,
+    "module_functions_AST_unchanged": true
+  },
+  "runs": [
+    {
+      "run_id": "batching_preflight_before",
+      "selected": 9,
+      "run": 9,
+      "passed": 7,
+      "failure_records": 9,
+      "error_records": 0,
+      "failed_methods": [
+        "tests.experiments.test_session_batching_preflight.SessionBatchingPreflightTests.test_incompatible_or_missing_batch_policy_rejects_before_runtime",
+        "tests.experiments.test_session_batching_preflight.SessionBatchingPreflightTests.test_invalid_concurrency_rejects_before_runtime_without_check_plan"
+      ],
+      "error_methods": [],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "483ddba515debb4008a142ae7dbbc366c5e85cedf5f8ced1300d0d8885cbada9",
+      "log_sha256": "cb8fc605eaa2a837447eb95882551905b3c9fc2c1836f9a772bf8a82dee1b7ce"
+    },
+    {
+      "run_id": "batching_preflight_after",
+      "selected": 42,
+      "run": 42,
+      "passed": 41,
+      "failure_records": 0,
+      "error_records": 1,
+      "failed_methods": [],
+      "error_methods": [
+        "unittest.loader._FailedTest.test_movie_rolling_entry"
+      ],
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "808364959db5fbe0b38b05d328e81083341a99fce279c1981227f3ba488cd6ad",
+      "log_sha256": "0746892dda5919b8575b985805f9ffe065f1513256130060ec5d006fadd4e75a"
+    },
+    {
+      "run_id": "batching_preflight_final",
+      "selected": 325,
+      "run": 322,
+      "passed": 322,
+      "failure_records": 0,
+      "error_records": 0,
+      "failed_methods": [],
+      "error_methods": [],
+      "skipped": [
+        {
+          "id": "setUpClass (tests.experiments.test_static_reference_session.StaticSessionTests)",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "class"
+        }
+      ],
+      "source_unchanged": true,
+      "json_sha256": "4d9db56db56b29e66cd9e0ac5dfeeadbabd533784e5fac5008af96b5ffda6f21",
+      "log_sha256": "9811ddb72cb039a7ab0ac3aeef3eac41e238e4b39ac22ce80678934f159e1acc"
+    }
+  ],
+  "final_run": "batching_preflight_final",
+  "new_test_methods": 3,
+  "initial_discovery_note": "The first run also discovered six existing helper-class methods via a class import; the later module import removes that duplicate discovery.",
+  "command_error": {
+    "run": "batching_preflight_after",
+    "issue": "test_movie_rolling_entry is not a module in this tree; command corrected using rg --files",
+    "production_failure": false,
+    "selected": 42,
+    "passed": 41,
+    "loader_errors": 1
+  },
+  "code_files_matching": 1292,
+  "scope": [
+    "invalid zero,boolean and excess batch concurrency in isolated/resident direct starts",
+    "incompatible rolling/concurrency and missing batch policy reject before private directory or Ray calls",
+    "valid finite batch retains deferred model owner and exact configuration",
+    "existing legal complete async and rolling None budgets remain in the combined scope"
+  ],
+  "remaining": [
+    "geometric original failure and shared sample handoff",
+    "sync legacy defaults, full context/cache propagation and partial-construction cleanup",
+    "automatic resource allocation and defaultR migration",
+    "independent review of this delta and real model qualification"
+  ],
+  "full_tree_all_green": false,
+  "model_calls": 0,
+  "real_Ray_runs": 0,
+  "GPU_runs": 0,
+  "pushed": false,
+  "merged": false
+}

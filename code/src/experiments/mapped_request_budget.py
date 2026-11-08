@@ -21,7 +21,7 @@ import time
 import uuid
 import weakref
 
-from src.baselines.common.private_artifacts import new_private_directory
+from src.infrastructure.private_artifacts import new_private_directory
 from .attempt_ledger import BudgetError, BudgetExhausted
 
 

@@ -1,0 +1,182 @@
+{
+  "base": "bdb61f31304b1ac7ba27bc876dbe93042da93f3f",
+  "scope": "public ordinary async Filter and rolling-token factory, Movie check/run/session, offline calibration identity",
+  "default_request_R": "caller declaration; RecordsResources default2 unchanged; no automatic hardware grant",
+  "storage_source": "existing finite AsyncEngineLimits byte declarations and Core item sizes; each Core total fits at least one of its own item, without enlarging explicit IPC fields",
+  "method_source": "single-stage continuation envelope times smaller whole-item allowance of Core input and result bytes; finite count guard one above byte allowance",
+  "IPC": "request/command grants from caller R; independent existing result slots/bytes or exact explicit overrides",
+  "capacity_not_hardware": true,
+  "cache": "records_capacity_policy_v2 binds actual resolved budgets; ordinary soft-C scan does not resize them; engine iteration sequence count no longer caps new request candidates",
+  "legacy": "explicit legacy policy and two named profiles, sync and nonrolling batch defaults retain old allocations; complete explicit budgets/typed IPC retain values",
+  "not_migrated": [
+    "low-level direct constructors without a budget",
+    "nonrolling whole-batch storage defaults",
+    "sync/async shared-spec and owner lifecycle separation",
+    "b258 preparation interleaving combination"
+  ],
+  "CPU": {
+    "ordinary_default_first": {
+      "selected": 75,
+      "passed": 58,
+      "failures": [
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_consecutive_queries_get_fresh_limits_and_ledgers_with_one_CPU_owner",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=1, overrides=None)",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=1, overrides={})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=1, overrides={'feedback_interval_s': 0.1})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=3, overrides=None)",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=3, overrides={})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=3, overrides={'feedback_interval_s': 0.1})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=11, overrides=None)",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=11, overrides={})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_omitted_empty_and_feedback_only_limits_use_resolved_owner_not_eight (maximum=11, overrides={'feedback_interval_s': 0.1})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_partial_items_totals_and_result_slots_keep_distinct_units",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_small_Core_result_and_IPC_minimum_remain_independent",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_token_records_forward_capacity_to_existing_chain_and_owner",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_driver_forwards_the_same_capacity_and_limits_to_factory (lifecycle='resident')",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_driver_forwards_the_same_capacity_and_limits_to_factory (lifecycle='isolated')",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_ordinary_check_reports_capacity_without_allocating_an_owner",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_ordinary_config_and_parser_keep_explicit_capacity_and_partial_limits",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_rolling_feedback_uses_hard_owner_R_instead_of_initial_C",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_session_accepts_config_for_resident_and_isolated_lifetimes (lifecycle='resident')",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_session_accepts_config_for_resident_and_isolated_lifetimes (lifecycle='isolated')",
+        "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_small_budget_and_bad_capacity_reject_during_preflight (changes={'async_limits': {'max_inflight': 8}})",
+        "tests.experiments.test_records_resource_budget.ResourceBudgetTests.test_default_path_retains_R_derived_limits_and_strict_IPC_count_guard",
+        "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_capacity_profile_IPC_and_cache_helpers_do_not_load_owners"
+      ],
+      "errors": [
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_explicit_counts_and_invalid_totals_reject_before_actor_construction (overrides={'max_inflight': 8})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_explicit_counts_and_invalid_totals_reject_before_actor_construction (overrides={'result_slots': 2})",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_explicit_small_totals_are_not_expanded_to_R_times_item",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_explicit_typed_limits_are_preserved",
+        "tests.experiments.test_records_capacity_config.CapacityFactoryTests.test_small_IPC_total_keeps_unknown_input_and_result_charged"
+      ],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "ordinary_default_updated": {
+      "selected": 126,
+      "passed": 123,
+      "failures": [
+        "tests.experiments.test_core_capacity_identity.CoreCapacityIdentityTests.test_derived_capacity_does_not_bind_one_scanned_candidate (maximum=1)",
+        "tests.experiments.test_core_capacity_identity.CoreCapacityIdentityTests.test_derived_capacity_does_not_bind_one_scanned_candidate (maximum=2)",
+        "tests.experiments.test_core_capacity_identity.CoreCapacityIdentityTests.test_derived_capacity_does_not_bind_one_scanned_candidate (maximum=8)",
+        "tests.execution_provider.test_core_resource_feedback.CoreFeedbackTests.test_unbudgeted_feedback_grows_on_CPU_IPC_once_and_matches_fixed_results"
+      ],
+      "errors": [
+        "tests.experiments.test_core_capacity_identity.CoreCapacityIdentityTests.test_online_custom_capacity_is_canonical_and_does_not_mutate_input"
+      ],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "ordinary_default_identity": {
+      "selected": 115,
+      "passed": 113,
+      "failures": [
+        "tests.experiments.test_core_calibration.CoreCalibrationTests.test_explicit_native_sequence_capacity_still_bounds_calibration_candidates",
+        "tests.experiments.test_core_calibration.CoreCalibrationTests.test_materialized_selection_reaches_the_existing_async_owner_factory"
+      ],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "ordinary_default_final": {
+      "selected": 369,
+      "passed": 366,
+      "failures": [
+        "tests.experiments.test_core_execution_profile.CoreProfileTests.test_profile_factory_keeps_method_generation_hardware_and_legacy_owner"
+      ],
+      "errors": [
+        "tests.experiments.test_movie_async_token_entry.AsyncTokenEntryTests.test_rolling_refill_check_reports_request_window_and_rejects_mixed_units (change={'rolling_refill': 1})",
+        "tests.experiments.test_movie_async_token_entry.AsyncTokenEntryTests.test_rolling_refill_check_reports_request_window_and_rejects_mixed_units (change={'rolling_refill': None})"
+      ],
+      "skipped": [
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true
+    },
+    "ordinary_default_qualified": {
+      "selected": 388,
+      "passed": 387,
+      "failures": [],
+      "errors": [],
+      "skipped": [
+        {
+          "id": "tests.experiments.test_records_online_config.OnlineConfigurationTests.test_maintained_cli_executes_opt_in_once_and_reuses_complete_query_hint",
+          "reason": "set SEMBENCH_CHECKOUT to the pinned upstream checkout",
+          "scope": "method"
+        }
+      ],
+      "source_unchanged": true
+    }
+  },
+  "post_test_Python_sha256_match": true,
+  "historical_bindings": {
+    "count": 3010,
+    "existing_mismatches": [
+      [
+        "native_isolated_and_imlane",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "native_isolated_and_imlane",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_original_dynamic",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "core_local_window_pairs",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "ray_runtime_reuse",
+        "code/src/scheduling/core/session_policy.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/observability/metrics/resources.py"
+      ],
+      [
+        "daft_single_thread_session",
+        "code/src/scheduling/core/session_policy.py"
+      ]
+    ],
+    "new_mismatches": 0,
+    "manifest_changed": false
+  },
+  "independent_review": "pending combined default-capacity tree review",
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "pushed": false,
+  "merged": false,
+  "artifacts": {
+    "ordinary_default_first.json": "c5442de4d43abff8d810d6aa51797745d79d97689cbbdfa48fbb9f7cfd570c2a",
+    "ordinary_default_first.log": "944cd8de0ca0067292436569b5f5edef4a76808457d5f271e728bb1abcd765e1",
+    "ordinary_default_updated.json": "529795294fc88bb04a94152dc7e59c99fc7a1b43c2cfb2cda370ab05181b95b9",
+    "ordinary_default_updated.log": "e95ca718447f18fe11b225c8a31b282ba872f1ad2e25bae159f1e1ed0341c7cb",
+    "ordinary_default_identity.json": "c23245b1a0690da6c82e256dfe30221c72bbfe41b3f1602429b06bd5dcd5f014",
+    "ordinary_default_identity.log": "da9b445f3fc5a85d83e77bb374871413757d04b93dcc943b14bdab8fc11fd122",
+    "ordinary_default_final.json": "6b8311582deadd589b665be416e1d859e1a3d02657784d6a6ac9c09722e3db68",
+    "ordinary_default_final.log": "8dbdde35ad605705873d8ee23bac8b0a77b2507de74fcfbdaf9c144dafa22faf",
+    "ordinary_default_qualified.json": "5650571368926daa2e7f442a8d72357be994b27e849a663827931736ce30794b",
+    "ordinary_default_qualified.log": "ed56bc72463e87208570bc929f7dc20c149cd70daf51cf763e11d30e7010485a"
+  }
+}

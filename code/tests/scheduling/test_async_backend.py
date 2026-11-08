@@ -1,5 +1,7 @@
 """Controlled async I/O validates bounded admission, order, and uncertain outcomes."""
 
+from tests.scheduling.test_multisession import choose_first_flow
+
 import asyncio
 import threading
 import time
@@ -36,6 +38,33 @@ class AsyncBackendTests(unittest.TestCase):
             if time.monotonic() >= deadline:
                 self.fail("asynchronous fixture did not progress")
             time.sleep(0.001)
+
+    def test_zero_timeout_keeps_pending_work_and_recognizes_an_already_stopped_transport(self):
+        entered, gates = threading.Event(), []
+        async def execute(request, endpoint):
+            gate = asyncio.Event()
+            gates.append(gate)
+            entered.set()
+            await gate.wait()
+            return b"ok"
+        backend = BoundedAsyncBackend(execute, max_tasks=1, notify=lambda: None)
+        backend.try_submit(task(0), "local")
+        try:
+            self.assertTrue(entered.wait(2))
+            future = backend._slots[task(0).key].future
+            self.assertFalse(backend.close(0, wait_pending=True))
+            self.assertFalse(future.done())
+            self.assertEqual(len(backend._slots), 1)
+            backend._loop.call_soon_threadsafe(gates[0].set)
+            self.assertEqual(future.result(2), b"ok")
+            self.assertTrue(backend.close(2, wait_pending=True))
+            self.assertTrue(backend.close(0, wait_pending=True))
+            with self.assertRaises(ValueError):
+                backend.close(-1, wait_pending=True)
+        finally:
+            if gates and backend._thread.is_alive():
+                backend._loop.call_soon_threadsafe(gates[0].set)
+            backend.close(2, wait_pending=True)
 
     def test_slots_and_reverse_completion(self):
         entered = threading.Event()
@@ -153,7 +182,7 @@ class AsyncBackendTests(unittest.TestCase):
         backend = BoundedAsyncBackend(execute, max_tasks=2, notify=lambda: engine.wake.notify(),
                                       isolate_failures=True)
         engine = SessionEngine(template.capacity.limits, backend, template.policies,
-                               max_jobs=2, clock=clock)
+                               max_jobs=2, choose_flow=choose_first_flow, clock=clock)
         first = engine.register_job('failed-job', JobBudget(2, 8, 8, 2, 2))
         other = engine.register_job('other-job', JobBudget(2, 8, 8, 2, 2))
         failed = engine.open(SessionSpec('first', 'flow', 'fixture'), job=first)
@@ -195,16 +224,19 @@ class AsyncBackendTests(unittest.TestCase):
         self.assertEqual(engine.capacity.usage(), Usage())
 
     def test_finalizer_error_does_not_leave_io_thread(self):
+        original = ValueError("fixture finalizer error")
+
         async def execute(request, endpoint):
             return b"ok"
 
         async def finalize():
-            raise RuntimeError("private finalizer error")
+            raise original
 
         backend = BoundedAsyncBackend(execute, max_tasks=1, notify=lambda: None, finalize=finalize)
-        with self.assertRaisesRegex(RuntimeError, "^asynchronous transport finalization failed$"):
+        with self.assertRaisesRegex(RuntimeError, "^asynchronous transport finalization failed$") as raised:
             backend.close()
         self.assertFalse(backend._thread.is_alive())
+        self.assertIs(raised.exception.__cause__, original)
 
     def test_oversized_result_is_not_delivered_as_a_safe_terminal(self):
         async def execute(request, endpoint):

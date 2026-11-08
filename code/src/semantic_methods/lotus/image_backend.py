@@ -325,7 +325,7 @@ class RayDataImageExecutor:
     def _embed_batch(self, doc_ids, images):
         import ray
         import ray.data
-        from src.baselines.image.frameworks.ray_data import RayDataClipPredictor
+        from src.modalities.image.clip_batch_workers import RayDataClipPredictor
         if not ray.is_initialized():
             raise ValueError("caller must initialize an exclusively owned Ray runtime")
         if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
@@ -342,7 +342,7 @@ class RayDataImageExecutor:
                                    for x, y in zip(doc_ids, images, strict=True)])
         retry_options = dict(max_restarts=0, max_task_retries=0) if self.worker_options else {}
         if self.pipeline == "fused":
-            from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
+            from src.modalities.image.clip_batch_workers import RayDataClipImagePredictor
             data = data.map_batches(RayDataClipImagePredictor, batch_format="numpy", batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
                 **retry_options,

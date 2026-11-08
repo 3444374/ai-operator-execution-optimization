@@ -71,8 +71,8 @@ PG既有窗口夹具也改用统一控制循环；逆序完成、65项输入窗�
 | 停止时每轮重新cancel，通知自身造成忙循环，慢发送/读帧线程可能来不及退出 | `multiplexed_gateway.py`的每连接中断仅执行一次；`test_slow_send_retains_lease_while_other_job_runs`原失败复现与修复后50次检查，保持原超时不变 |
 
 源码回归入口：[网关生命周期测试](../../../../code/tests/execution_provider/test_gateway_sessions.py)、
-[多会话隔离测试](../../../../code/tests/execution_provider/test_multisession_gateway.py)、
-[单流兼容测试](../../../../code/tests/execution_provider/test_incremental_window_one.py)。
+[多会话隔离测试](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/tests/execution_provider/test_multisession_gateway.py)、
+[单流兼容测试](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/tests/execution_provider/test_incremental_window_one.py)。
 失败、原因、改动及回归结果保存在本报告；项目日志只保存摘要，不另建竞争的Bug状态文档。
 
 ## 复核入口与剩余工作

@@ -7,7 +7,7 @@ import hashlib
 import random
 
 from .squad_map import INSTRUCTION, INPUT_TEMPLATE, SPLITS, WORKLOAD, map_messages, validate_manifest
-from ..common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from ...modalities.text.tokenization import chat_token_count
 
 

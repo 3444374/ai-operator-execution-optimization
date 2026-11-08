@@ -3,7 +3,7 @@
 import hashlib
 import json
 
-from ..common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 from ...execution_provider.semantic_map import canonical_messages, SemanticMapPlan
 from ...modalities.text.tokenization import chat_token_count
 
@@ -55,4 +55,22 @@ def context_report(rows, instruction, tokenizer, *, model_id, model_revision,
         "model_revision": model_revision, "semantic_spec_sha256": plan.digest,
         "context_tokens": context_tokens, "output_tokens": output_tokens,
         "fits_context": all(row["fits_context"] for row in details), "rows": details,
+    }
+
+
+def workload_summary(manifest: dict) -> dict:
+    """Export only counts and hashes, never arbitrary workload fields or IDs."""
+    if manifest.get("schema") == "squad_v11_pg_map_v1":
+        counts = {key: len(manifest["splits"][key]) for key in ("tuning", "evaluation")}
+    elif manifest.get("schema") == "semloom.sharegpt.first_human.v1":
+        counts = {"selected": len(manifest["rows"])}
+    else:
+        raise ValueError("unsupported private workload schema")
+    payload = {key: value for key, value in manifest.items() if key != "sha256"}
+    if manifest.get("sha256") != content_digest(payload):
+        raise ValueError("workload identity mismatch")
+    return {
+        "schema": "semloom.workload.public_summary.v1",
+        "private_manifest_sha256": content_digest(payload),
+        "row_counts": counts,
     }

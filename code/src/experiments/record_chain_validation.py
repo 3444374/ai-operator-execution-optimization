@@ -11,8 +11,10 @@ from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecor
 from src.execution_provider.adapters.lotus_chain_token_budget import ChainTokenBudget, OutputTokenEstimate, fingerprint
 from src.semantic_methods.driver import SuccessorFirst
 from src.semantic_methods.budget import row_reservation
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, StageSpec, MapMethod, FilterMethod
-from src.serving.backends.vllm_engine import _prepared
+from src.semantic_methods.lotus.record_chain import LotusRecordChain
+from src.semantic_methods.lotus.record_types import StageSpec, MapMethod
+from src.semantic_methods.lotus.records import FilterMethod
+from src.serving.backends.vllm_protocol import _prepared
 
 
 def make_chain(model_name, generation):
@@ -32,6 +34,8 @@ def initial_window(reservations):
 
 
 def make_budget(tokenizer, engine, chain, records, active_tokens=None):
+    if engine.max_model_len is None:
+        raise ValueError('input-only validation before startup requires an explicit model context')
     estimates = {s.stage_id: OutputTokenEstimate(s.generation.max_tokens,
         'declared generation cap for functional acceptance; not measured output') for s in chain.stages}
     options = dict(tokenizer_signature=fingerprint(tokenizer.backend_tokenizer.to_str()),
@@ -189,7 +193,7 @@ def compare(root, config, *, config_sha256=None):
     matched = config.get('suite') == 'matched-execution'
     if matched:
         from src.semantic_methods.lotus.records import RecordsResources
-        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
         resources = RecordsResources(**config['resources'])
         engine = json.loads(json.dumps(asdict(EngineSpec.from_dict(config['engine']))))
         generation = json.loads(json.dumps(asdict(GenerationSpec.from_dict(config['generation']))))
@@ -201,10 +205,10 @@ def compare(root, config, *, config_sha256=None):
     progression = config.get('suite') == 'progression'
     if progression:
         from src.semantic_methods.lotus.records import RecordsResources
-        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
         resources = RecordsResources(**config['resources'])
         group = config.get('progression_batch_rows')
-        if (type(group) is not int or not 1 <= group <= resources.max_active_batches <= 4 or
+        if (type(group) is not int or not 1 <= group <= resources.request_capacity() <= 4 or
                 type(config_sha256) is not str or len(config_sha256) != 64 or
                 [(c['case_id'], c.get('progression'), c.get('progression_batch_rows'), c['token'], c['successor'])
                  for c in config['cases']] !=

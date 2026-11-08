@@ -1,5 +1,18 @@
 # Feasibility Results
 
+[Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
+[CLIP职责迁移与SDK断开标记](records_runtime_refactor_20261104/README.md#image-clip-module-owners)保留14组前后输出、22图像CPU及16观测Mock的实际来源；[5b服务器回执](records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)另记28方法、重叠探针与真实Ray，原错误不改写。
+[基础多查询组合](records_runtime_refactor_20261104/README.md#basic-multquery-integrated)分开主线预算／轮转、研究适配、组合检查原错误与历史恢复；[efac七项服务器回执](records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)按其实际版本另列。
+当前[完成范围和未完成项](../../../code/INFRA_STATUS.md#refactor-completion-checklist)与
+[原生生命周期逐次声明](records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)分开实现、历史恢复、CPU和实机证据；不按起始切片概括当前状态。
+[查询时钟重复清理](records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)记录被覆盖的相同定义、遗留导入与51项现有CPU验证。
+[旧baseline模型转发退役](records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)记录当前直接调用、33项轻量CPU和未运行范围；
+[4d六项服务器原回执](records_runtime_refactor_20261104/README.md#global-observation-server-six)单列源码和清理结果。
+[同步协议转出清理](records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)记录中性协议直接导入和5项轻量CPU，不改模型构造。
+
+[Records 配置模块整理](records_config_refactor_20261103/README.md)：普通运行与 Session 共享配置解释，
+保留旧导入与执行职责；源码、55组差分回放、CPU检查及后续上下文设计分别记录。
+
 [后继策略、records 入口及 token 候选](../EXPERIMENT_EVIDENCE_REGISTRY.md)的运行身份、失败与停止原因由证据台账维护；
 main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 
@@ -8,6 +21,12 @@ main 接纳范围见[代码状态](../../../code/INFRA_STATUS.md)。
 [main原生CLIP最小闭包](main_lotus_clip_20261015/README.md)：完整RM／index／search与显式单卡资源，分列8834 CPU／SDK、来源d2条件模型与失败、main570四路径八臂40行严格单卡实机；未扩展HSE／多卡资格。
 
 [HSE真实身份与基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)：历史B/C按hunk恢复、RM结果／导出边界与固定来源CPU／少量同任务GPU资格；组件不外推系统收益。
+
+[原生Movie Q3进程收尾与环境资格](native_sembench_q3_20261106/README.md)：保留Daft120条已返回但进程退出失败，
+记录公共shutdown修复、CPU反例、结果可用时钟，以及Ray现有环境的CPU API通过／发布extra不符；修复后GPU待验。
+
+[DuckDB＋作者IMLane Q3准备](imlane_duckdb_q3_20261106/README.md)：真实作者缺源恢复与shared库构建、
+四列Arrow／native SQL及PROCESS／THREAD实际Arrow16软件CPU闭环；模型资格与特殊边界按报告解释。
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 

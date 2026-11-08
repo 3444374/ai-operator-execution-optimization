@@ -1,0 +1,1096 @@
+{
+  "schema": "semloom.physical_capacity_recovery_plan.v1",
+  "status": "design_only",
+  "base_commit": "1ae929343f66824cf12381077d2743f71f7cb7b5",
+  "research_object": "PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化",
+  "purpose": "为自动物理容量和跨进程恢复列出可验证条件，不把观测值或描述文件当作实际资源或结果接收证明。",
+  "work_performed": {
+    "repository_edits": false,
+    "tests_run": false,
+    "ray_started": false,
+    "model_or_gpu_run": false,
+    "artifact_only": true,
+    "evidence_kind": "指定提交源码、已有研究与工程文档的只读核对；外部系统接口使用官方说明；设计为工程推断，尚未实现。"
+  },
+  "conclusions": [
+    "当前 Pool 自动推导的是声明字节内可容纳的请求数，未取得独占物理 RAM。",
+    "memory.max/current 的差值、host available、GPU busy 和瞬时 RSS 都不能授予另一个 owner 可独占的未来内存。",
+    "最小接点应消费现有资源所有者提供的有限、可核验且不可重复使用的资源凭据；仍由现有 Pool、Core 和 IPC 各自记账，不增加调度控制器。",
+    "若宣称实际驻留 RAM，数据必须实际使用已成功分配并保持驻留的存储；另占一块空存储而继续在 Python/Ray 分配 payload 会增加副本，不能证明 payload 已受保护。",
+    "跨进程先区分客户端重启与实际 owner 重启。只有原 owner、Pool、Ray 及其原 RPC 状态仍存活，才可能通过新增接线访问原状态。",
+    "当前匿名 socketpair、Python owner 引用和 ObjectRef/Future 没有持久重连能力；原 owner 死亡后应拒绝描述文件重建、自动重放和提前归还。",
+    "物理资源已停止使用、模型调用有已知终态、结果已由消费者接收是三种独立事实。资源退出不能把 unknown 改成成功，也不能证明结果已消费。"
+  ],
+  "sources": [
+    {
+      "id": "memory_observer",
+      "path": "code/src/infrastructure/cgroup.py",
+      "symbols": [
+        "controller_hierarchy",
+        "memory_observation"
+      ],
+      "lines": [
+        16,
+        127
+      ],
+      "facts": "读取可见祖先 memory.max/current 或 v1 对应字段，并返回 limit/headroom/status；没有写 cgroup、独占授予或真实分配动作。",
+      "git_blob": "b147cd25b80dfaa81e8a3430b784d315a5207fe4",
+      "sha256": "ca12e7a4dec9ac5ad55e659b0271c882784dbd8c9d41d3a677a9e0cbea0c7e60",
+      "bytes": 6696,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "controller_hierarchy": 16,
+        "memory_observation": 127
+      }
+    },
+    {
+      "id": "cpu_preflight",
+      "path": "code/src/infrastructure/cpu_allocation.py",
+      "symbols": [
+        "observe_cpu_capacity",
+        "checked_local_cpu_slots"
+      ],
+      "facts": "复用可见分配与 unknown 处理的组织方式；CPU affinity/quota 检查不能转用成 RAM 或请求容量证明。",
+      "git_blob": "bdb820618be8d26c9a8e8b9027ba78b99833d19e",
+      "sha256": "b427325c1562392011b0537981c0131e97c31cc6c5a05bd7775f97059bba804a",
+      "bytes": 2313,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "observe_cpu_capacity": 19,
+        "checked_local_cpu_slots": 47
+      }
+    },
+    {
+      "id": "payload_pool",
+      "path": "code/src/execution_provider/adapters/records_service_budget.py",
+      "symbols": [
+        "RecordsPayloadPlan",
+        "_plan",
+        "RecordsPayloadPool._select",
+        "RecordsPayloadPool.allocate",
+        "RecordsPayloadPool._process",
+        "RecordsPayloadPool.retry_cleanup",
+        "RecordsPayloadGrant.bind",
+        "RecordsPayloadGrant.observe_ready",
+        "RecordsPayloadGrant.settle"
+      ],
+      "lines": [
+        32,
+        52,
+        77,
+        94,
+        98,
+        127,
+        165,
+        250,
+        270,
+        299
+      ],
+      "facts": "total_bytes 由调用者提供；单一 Pool 实例的活跃授予互不重叠。拒绝序列化、fork 后使用、未登记 ID 和错误控制线程。恢复依赖本池强引用的实际 owner 及原 runtime。",
+      "git_blob": "ac3cef3ec7f8082a0f7a1c0f5b331bf575c76410",
+      "sha256": "d08eb28f5948a4a9e1b512706569c993583962010c4c4e7d15a2677e6bc36e4b",
+      "bytes": 16982,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "RecordsPayloadPlan": 32,
+        "_plan": 52,
+        "RecordsPayloadPool._select": 98,
+        "RecordsPayloadPool.allocate": 127,
+        "RecordsPayloadPool._process": 94,
+        "RecordsPayloadPool.retry_cleanup": 165,
+        "RecordsPayloadGrant.bind": 250,
+        "RecordsPayloadGrant.observe_ready": 270,
+        "RecordsPayloadGrant.settle": 299
+      }
+    },
+    {
+      "id": "capacity_shape",
+      "path": "code/src/execution_provider/adapters/records_capacity.py",
+      "symbols": [
+        "CoreRecordsCapacity",
+        "resolve_records_async_limits"
+      ],
+      "facts": "每项输入、结果、方法状态与 Core/IPC 的独立声明可继续复用；字节计划不等于进程 RSS 或模型 KV。",
+      "git_blob": "b969bcded7943c7d0b34bc008557e87e9d615a3e",
+      "sha256": "53b43927da451ccda5609df1e42709dfb5ad37a9fba8b0f808c8799ac1fd5f17",
+      "bytes": 10990,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "CoreRecordsCapacity": 32,
+        "resolve_records_async_limits": 117
+      }
+    },
+    {
+      "id": "delivery_bytes",
+      "path": "code/src/execution_provider/adapters/records_service_delivery.py",
+      "symbols": [
+        "OrdinaryDeliveryDeclaration.bytes_for_copies",
+        "OrdinaryDeliverySession",
+        "check_ordinary_receipts"
+      ],
+      "lines": [
+        81,
+        118,
+        131,
+        229
+      ],
+      "facts": "完整序列化数组及独立副本另计；不证明 Python/Ray 对象和模型内存。",
+      "git_blob": "76c9ad42f8b7c3848730c60aea62285423831aba",
+      "sha256": "0dd71ebbcc10f419af491a8602c5dbe56a11c51b2214d40ece0b870d941a29df",
+      "bytes": 12764,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "OrdinaryDeliveryDeclaration.bytes_for_copies": 118,
+        "OrdinaryDeliverySession": 131,
+        "check_ordinary_receipts": 229
+      }
+    },
+    {
+      "id": "runtime_identity",
+      "path": "code/src/execution_provider/adapters/records_runtime_identity.py",
+      "symbols": [
+        "observe_ray_runtime"
+      ],
+      "lines": [
+        5
+      ],
+      "facts": "只观察已连接的同一 Python 模块及 job/node，不 import/init Ray。模块对象身份只在原进程内有意义。",
+      "git_blob": "8614869eac8a37fa12c9a887b96d3b3a36a81b70",
+      "sha256": "a313e5af77d7658f0413f8526c6fb2cdaa600e502ec1367dab251399ea26413e",
+      "bytes": 733,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "observe_ray_runtime": 5
+      }
+    },
+    {
+      "id": "core_lifetime",
+      "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+      "symbols": [
+        "SemLoomRecordsCore.bind_model_runtime",
+        "SemLoomRecordsCore._check_model_runtime",
+        "SemLoomRecordsCore.cleanup_confirmed",
+        "SemLoomRecordsCore.close",
+        "SemLoomRecordsCore.take_unconsumed_results"
+      ],
+      "facts": "控制线程拥有实际 owner。关闭证明检查 actor、数据 RPC、传输、Core 及现代采样终态；本地未消费结果需要显式交接。",
+      "git_blob": "ad7e27188a540071a63b5b6bf520de7aaf0cb7c8",
+      "sha256": "45564356b8280774c18501a4f750a216cb4d4bb24ef8f7588558daeb36c94b6c",
+      "bytes": 56720,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "SemLoomRecordsCore.bind_model_runtime": 472,
+        "SemLoomRecordsCore._check_model_runtime": 502,
+        "SemLoomRecordsCore.cleanup_confirmed": 651,
+        "SemLoomRecordsCore.close": 699,
+        "SemLoomRecordsCore.take_unconsumed_results": 767
+      }
+    },
+    {
+      "id": "entry_transfer",
+      "path": "code/src/experiments/movie_records_service.py",
+      "symbols": [
+        "finish_service_runtime",
+        "_persist_snapshot",
+        "accept_service_results"
+      ],
+      "lines": [
+        37,
+        57,
+        102
+      ],
+      "facts": "未证明清理完成时保留原连接；结果内容摘要文件及文件/目录 fsync 先于 expected 比对和 take。此处尚无消费者持久 ACK 日志。",
+      "git_blob": "ed70c97719fbde36530b8ee201890b04881d2905",
+      "sha256": "5dbe9ca7db75f2580592a17143b9ca19e503fc2121aef38874d0cb93d2c1b51e",
+      "bytes": 5191,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "finish_service_runtime": 37,
+        "_persist_snapshot": 57,
+        "accept_service_results": 102
+      }
+    },
+    {
+      "id": "session_entry",
+      "path": "code/src/experiments/movie_records_session.py",
+      "symbols": [
+        "_MovieDriver.start",
+        "_MovieDriver.close",
+        "run_movie_session"
+      ],
+      "facts": "同进程 session 保留实际 driver，关闭失败可再次调用；自建 Ray 及共享字节 Pool 各自保留所有权，不提供进程重启后的接入。",
+      "git_blob": "15848f25ebd8b52aac5e462069637ccabdb0c6a6",
+      "sha256": "902b4e23dea052bad22c1e87e8184cec2360ff8350018d7235dfe9d31ca9dc05",
+      "bytes": 41338,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "_MovieDriver.start": 180,
+        "_MovieDriver.close": 428,
+        "run_movie_session": 526
+      }
+    },
+    {
+      "id": "worker_entry",
+      "path": "code/src/experiments/lotus_records_movie.py",
+      "symbols": [
+        "_model_worker"
+      ],
+      "facts": "异常带原 owner、Pool、runtime tuple 和结束函数，均是原进程内句柄；CLI worker 退出后这些 Python 引用不再可用。",
+      "git_blob": "76a0e3b2926c83ed88e9c546c6b9b9f6eb13bcd9",
+      "sha256": "a5587b17eae9a41b21145164b1de36996ac41cd74a4af0b8b7dec6c5c0aa9e17",
+      "bytes": 52799,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "_model_worker": 575
+      }
+    },
+    {
+      "id": "transport_ack",
+      "path": "code/src/execution_provider/adapters/records_transport.py",
+      "symbols": [
+        "_RecordTransport._execute",
+        "_RecordTransport.acknowledge",
+        "_RecordTransport.recover_actor_receipts",
+        "_RecordTransport.retire_producer",
+        "close_prepared_core"
+      ],
+      "lines": [
+        105,
+        124,
+        133,
+        231
+      ],
+      "facts": "先把关联校验后的结果放入本地 outcomes，再向 actor ACK；这证明进程内转交，不是外部消费者已持久接收。unknown 仍持有借用责任。",
+      "git_blob": "9fcb58b1f36525e3eacd1fe974d9c939493a896c",
+      "sha256": "c790f3e6229566ab27ba516fd06ee3169b73a8de3d828108b2a52978c11e7a93",
+      "bytes": 14335,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "_RecordTransport._execute": 93,
+        "_RecordTransport.acknowledge": 124,
+        "_RecordTransport.recover_actor_receipts": 132,
+        "_RecordTransport.retire_producer": 181,
+        "close_prepared_core": 231
+      }
+    },
+    {
+      "id": "actor_ack",
+      "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+      "symbols": [
+        "AsyncCoreModelActor._ready_report",
+        "AsyncCoreModelActor.acknowledge_core",
+        "AsyncCoreModelActor.close",
+        "AsyncRecordsActorOwner._data_rpc_progress",
+        "AsyncRecordsActorOwner._rpc_cleanup_status"
+      ],
+      "lines": [
+        118,
+        550,
+        571,
+        780,
+        921
+      ],
+      "facts": "Core request key、engine_uid、producer_owner_uid 与原 actor 状态关联；_held、_closed_pending、RPC ObjectRef 与 Future 均为内存状态，没有重启后恢复日志。",
+      "git_blob": "ac6c25fc497e4af00998df0ac9e923e896dc8b4f",
+      "sha256": "d89148a1b76c2f3ac001696222ae3db5f8f49774c5c70d103720e4115e38efd6",
+      "bytes": 53882,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "AsyncCoreModelActor._ready_report": 117,
+        "AsyncCoreModelActor.acknowledge_core": 550,
+        "AsyncCoreModelActor.close": 571,
+        "AsyncRecordsActorOwner._data_rpc_progress": 780,
+        "AsyncRecordsActorOwner._rpc_cleanup_status": 921
+      }
+    },
+    {
+      "id": "private_engine_ipc",
+      "path": "code/src/serving/backends/async_engine_process.py",
+      "symbols": [
+        "AsyncEngineProcess.__init__",
+        "AsyncEngineProcess.submit",
+        "AsyncEngineProcess.poll",
+        "AsyncEngineProcess._receive",
+        "AsyncEngineProcess.close",
+        "serve"
+      ],
+      "lines": [
+        123,
+        157,
+        249,
+        368,
+        414,
+        562,
+        823,
+        887
+      ],
+      "facts": "三组匿名 socketpair、私有 pass_fds 子进程和原 Popen；随机 owner_uid 加递增 sequence。终态、接纳和 producer_quiescence 只在原对象内，未实现监听端点、连接转移、持久提交去重或结果重放。",
+      "git_blob": "135d15bde5e83be59b482d801f9300f4d6ef70f4",
+      "sha256": "8e6ecb31d23eebc26846851c0dc02775db19f2f8de57eafb27902bd56093c6d8",
+      "bytes": 48847,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "AsyncEngineProcess.__init__": 123,
+        "AsyncEngineProcess.submit": 249,
+        "AsyncEngineProcess.poll": 368,
+        "AsyncEngineProcess._receive": 414,
+        "AsyncEngineProcess.close": 562,
+        "serve": 663
+      }
+    },
+    {
+      "id": "model_engine",
+      "path": "code/src/serving/backends/vllm_async_engine.py",
+      "symbols": [
+        "VllmAsyncEngine.__init__",
+        "VllmAsyncEngine.close"
+      ],
+      "facts": "模型权重、实例内 token/KV 和引擎请求由 vLLM 所有；主机 payload 授予不能扩大引擎能力，也不能替代实际模型上下文检查。",
+      "git_blob": "ba7996610548ecb41b19039022805330b135fd39",
+      "sha256": "790f5f095d19fcb713129b879cc973eab8cd1b7608bdc1f6e39c07d6827659b8",
+      "bytes": 22218,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "VllmAsyncEngine.__init__": 56,
+        "VllmAsyncEngine.close": 327
+      }
+    },
+    {
+      "id": "runner_lease",
+      "path": "code/src/infrastructure/runner_lease.py",
+      "symbols": [
+        "RunnerOwner",
+        "RunnerLease.release",
+        "acquire_runner_lease",
+        "acquire_host_runner_lease",
+        "_process_start_id",
+        "_lease_is_active"
+      ],
+      "lines": [
+        31,
+        60,
+        73,
+        130,
+        178,
+        255
+      ],
+      "facts": "实验输出/host runner 的原 owner_token、PID 和出生信息校验，可借鉴所有权检查；既不授予内存，也不证明模型后代退出、RPC 终态或结果消费。旧租约可回收不等于可以回收原结果。",
+      "git_blob": "bef0e483bfea8e68b237745cbcce8fea530a0c53",
+      "sha256": "e356031732845f5ab37593271426a32c57c81b341e814e0bb69c772b50abb584",
+      "bytes": 8183,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "RunnerOwner": 31,
+        "RunnerLease.release": 60,
+        "acquire_runner_lease": 73,
+        "acquire_host_runner_lease": 130,
+        "_process_start_id": 178,
+        "_lease_is_active": 255
+      }
+    },
+    {
+      "id": "owned_processes",
+      "path": "code/src/infrastructure/owned_processes.py",
+      "symbols": [
+        "_live",
+        "_observe",
+        "_signal",
+        "_wait"
+      ],
+      "lines": [
+        24,
+        38,
+        69,
+        113
+      ],
+      "facts": "对已观察 PID/create_time 做匹配与等待；不证明未观察到的 detached descendants 全部退出，也不证明 GPU 空闲或结果已消费。",
+      "git_blob": "5eda96274ec14af7c2a6c8f2401decdc02c42830",
+      "sha256": "f06070e76e98a00cd9d5f31bc02901d943fcc01e3c46ddbfae1b66f2de8eec4b",
+      "bytes": 5292,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "_live": 24,
+        "_observe": 38,
+        "_signal": 69,
+        "_wait": 113
+      }
+    },
+    {
+      "id": "worker_supervisor",
+      "path": "code/src/experiments/lotus_records_supervisor.py",
+      "symbols": [
+        "supervise"
+      ],
+      "facts": "可复用原 worker 的启动、私有证据和已观察进程退出记录；源码明确不证明未观察后代或 GPU 退出。不能将 supervisor 成功转换成调用成功。",
+      "git_blob": "68f604e3fc6a1657b16007b039f7ccbd0c105400",
+      "sha256": "216558d85cc52d5d96500f082a82a2bfe881fa51df641e6f1125b7e4a61df942",
+      "bytes": 15143,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "supervise": 91
+      }
+    },
+    {
+      "id": "stage_cleanup",
+      "path": "code/src/serving/backends/stage_process_cleanup.py",
+      "symbols": [
+        "StageEngineCleanup._read",
+        "StageEngineCleanup.stop",
+        "StageEngineCleanup._stop_registered"
+      ],
+      "facts": "已登记 PID/create-time 的停止与私有报告可作进程清理经验；JSON 报告不是新 owner 的授权凭据，不恢复原模型结果或 IPC。",
+      "git_blob": "4513934035f7245a5681d002df253fa05ad8a32a",
+      "sha256": "a220f7b5d5ca7ba52ff107e1c136e13de375c60e92462e4af8e1acb1a5415136",
+      "bytes": 8039,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "StageEngineCleanup._read": 29,
+        "StageEngineCleanup.stop": 64,
+        "StageEngineCleanup._stop_registered": 108
+      }
+    },
+    {
+      "id": "imlane_owner",
+      "path": "code/integrations/imlane_records/owner.py",
+      "symbols": [
+        "process_start_ticks",
+        "resource_state",
+        "AuthorScope.track_root",
+        "AuthorScope.snapshot",
+        "AuthorScope.close"
+      ],
+      "lines": [
+        44,
+        59,
+        134
+      ],
+      "facts": "出生 ticks、随机 namespace、未确认 root、已观察后代和共享内存清理保持独立。归属不可读时不把集合当作空，不将强制回收说成正常方法终态。",
+      "git_blob": "fc52b876b165ea9f83ec07b26f3d5503f9991444",
+      "sha256": "415b9e43c5c0a0712d3600e3caba3e7e28a9b2f2ceeb92693d4345afbd124f7d",
+      "bytes": 15135,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "process_start_ticks": 44,
+        "resource_state": 59,
+        "AuthorScope.track_root": 134,
+        "AuthorScope.snapshot": 145,
+        "AuthorScope.close": 252
+      }
+    },
+    {
+      "id": "external_owner_lease",
+      "path": "code/integrations/imlane_records/chain_runtime.py",
+      "symbols": [
+        "check_external_lease"
+      ],
+      "lines": [
+        70
+      ],
+      "facts": "工作进程只读检查实际外层租约 SHA、出生信息和 owner 祖先关系，不自行领取或释放外层资源。",
+      "git_blob": "a8f2600220c3842af46527a2bd739053a5b660c1",
+      "sha256": "606d2c9f49485e39ef3c712d52b5b2c4f370872ccc10fcf3a0a52e3f531a3261",
+      "bytes": 7874,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "check_external_lease": 70
+      }
+    },
+    {
+      "id": "mapped_counter",
+      "path": "code/src/experiments/mapped_request_budget.py",
+      "symbols": [
+        "MappedUnitDescriptor",
+        "MappedUnitClient._locked",
+        "MappedUnitClient._header",
+        "MappedUnitClient._owner_alive",
+        "MappedUnitClient.reserve",
+        "MappedUnitOwner.prepare"
+      ],
+      "lines": [
+        47,
+        110,
+        134,
+        150,
+        160,
+        229
+      ],
+      "facts": "可重接仍存活的、预先计费的实验请求计数，使用 inode/nonce/锁；DIRTY 保持未知，owner 结束禁止新增授予。它不重建 owner、不恢复模型结果，也不是断电可恢复的结果日志。",
+      "git_blob": "1086fffc7869973894edc8a0fa903968be6db536",
+      "sha256": "25d1d8bad7e0153ef8e5e2b7fdeff4fc00291913571ea1b09830a6f044aeccd2",
+      "bytes": 12801,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "MappedUnitDescriptor": 47,
+        "MappedUnitClient._locked": 110,
+        "MappedUnitClient._header": 134,
+        "MappedUnitClient._owner_alive": 150,
+        "MappedUnitClient.reserve": 160,
+        "MappedUnitOwner.prepare": 229
+      }
+    },
+    {
+      "id": "experiment_attempts",
+      "path": "code/src/experiments/cell_budget.py",
+      "symbols": [
+        "CellBudgetLedger._transaction",
+        "CellBudgetLedger.reserve_unit",
+        "CellBudgetLedger.claim_unit",
+        "CellBudgetLedger.claim_shared_unit"
+      ],
+      "lines": [
+        68,
+        105,
+        120,
+        139
+      ],
+      "facts": "SQLite 单次领取及永久计费可借鉴事务写入风格；已领取请求不能因 owner 死亡自动返还或重新领取。实验额度不等于服务请求去重、物理内存或结果接收日志。",
+      "git_blob": "66b2f77acb73fbcad51d950cdb967317eaeea312",
+      "sha256": "828a97fbd1a532ee15307e84b90bac42645a10f96ed90b408d888b5dd546f4a8",
+      "bytes": 9482,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "CellBudgetLedger._transaction": 68,
+        "CellBudgetLedger.reserve_unit": 105,
+        "CellBudgetLedger.claim_unit": 120,
+        "CellBudgetLedger.claim_shared_unit": 139
+      }
+    },
+    {
+      "id": "private_files",
+      "path": "code/src/baselines/common/private_artifacts.py",
+      "symbols": [
+        "write_private_json",
+        "content_digest",
+        "file_identity"
+      ],
+      "implementation_path": "code/src/infrastructure/private_artifacts.py",
+      "facts": "此模块兼容导出中性文件实现；文件权限与内容摘要可复用，fsync 顺序由 entry_transfer 的 _persist_snapshot 明确完成。摘要只校验内容，不授予操作实际 owner 的权限。",
+      "git_blob": "a5cc904407c5d24abba68db938e9040d1932b1f4",
+      "sha256": "9f1ad6f4b15b3af09b47d9e65a0e13e523e8049b16bb0e098d9d9cfbc42a3c8c",
+      "bytes": 1325,
+      "worktree_matches_base": true,
+      "symbol_lines": {
+        "write_private_json": 7,
+        "content_digest": 7,
+        "file_identity": 7
+      },
+      "implementation_sha256": "bf92f9757d7aced0167bf5c026cb9dd0b2a6851208dceef1f7322864fa2dced2",
+      "implementation_symbol_lines": {
+        "write_private_json": 61,
+        "content_digest": 12,
+        "file_identity": 17
+      }
+    },
+    {
+      "id": "research_position",
+      "path": "docs/research/研究定位.md",
+      "sections": [
+        "研究对象与问题",
+        "机制采用条件",
+        "判断增量所需的证据"
+      ],
+      "facts": "合法依赖、实际资源和完整查询收益分开；运行接点与字节反压本身不是新算法贡献。本文部分旧表述与本次根规则不同，研究对象按本次根规则解释。",
+      "git_blob": "1de46391f10ee65cf542ad967f1d991d75b2d1fe",
+      "sha256": "d580e4321d272108f5827ab9d315a04225b6ff9968172affaf61e5ca61c2de0d",
+      "bytes": 40108,
+      "worktree_matches_base": true
+    },
+    {
+      "id": "literature_inventory",
+      "path": "docs/research/ai_operator_literature_inventory.md",
+      "sections": [
+        "Ray Data Streaming Batch",
+        "IMLane",
+        "Kalypso"
+      ],
+      "facts": "作为已有方法与执行参照；本设计不转用论文收益、不添加新的研究控制策略，也不声称本轮进行了全文复核。",
+      "git_blob": "ea4f74e3cc778c64731b021ccbd913e23c26b98c",
+      "sha256": "2fbfabfe66df448b63a94732a130cdef4a5351ed0b37c7618e21ada53ac150e3",
+      "bytes": 37431,
+      "worktree_matches_base": true
+    },
+    {
+      "id": "architecture",
+      "path": "experiments/plans/系统架构.md",
+      "sections": [
+        "模型实例纳入数据执行（目标与分层实现）",
+        "5.4 生命周期身份与证据",
+        "6.6 身份、资源与接纳所有权"
+      ],
+      "lines": [
+        162,
+        415,
+        613
+      ],
+      "facts": "一个业务任务所有者，输入/计算/结果分别保留责任；连接结束不是任务终态，attempt 身份本身不授权重试。",
+      "git_blob": "3d907cdc5a7bc4839fd36202224e5a4362d37f30",
+      "sha256": "e424b06704cd43a505b9537fbb048d74cf1de6360310bd4110b1c1d7a314156b",
+      "bytes": 144805,
+      "worktree_matches_base": true
+    },
+    {
+      "id": "comparison",
+      "path": "experiments/plans/reference/对照规范.md",
+      "sections": [
+        "单查询／单批次与常驻完整查询",
+        "同一 LOTUS 优化算法的物理执行对照"
+      ],
+      "lines": [
+        14,
+        157
+      ],
+      "facts": "冷启动完整寿命与已就绪服务的完整查询分别计时；相同资源、模型/方法与原生 backend 自有执行必须保持。",
+      "git_blob": "95050f1caa99df5eadb1b8b6fc9af46729658a49",
+      "sha256": "7336d0387c6b95ae90dba909a53cf9c8644ab3d80296d33ba3118778765ecb73",
+      "bytes": 136838,
+      "worktree_matches_base": true
+    }
+  ],
+  "external_primary_sources": [
+    {
+      "id": "kernel_memory",
+      "url": "https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files",
+      "observed": "memory.current 是组及后代当前用量，memory.max 是用量上限并可能触发 OOM；memory.min/low 属于回收保护，受到祖先及共享配置影响。因此差值不是独占授予。",
+      "kind": "Linux 官方接口说明",
+      "implementation_tested": false
+    },
+    {
+      "id": "libc_page_lock",
+      "url": "https://snapshots.sourceware.org/glibc/trunk/2026-01-04_11-01_1767524462/manual/html_node/Page-Lock-Functions.html",
+      "observed": "成功 mlock 的指定页面有实际驻留支持；锁页可能失败，MLOCK_ONFAULT 不立即为尚未驻留的范围取得页面。该接口只支持已分配存储的证明，不证明其他 Python/Ray 分配或模型内存。",
+      "kind": "glibc 官方说明快照",
+      "implementation_tested": false,
+      "lookup_note": "gnu.org 同页读取超时后使用 sourceware 官方快照核对；未执行锁页或真实分配。"
+    },
+    {
+      "id": "linux_mlock_manual",
+      "url": "https://man7.org/linux/man-pages/man2/mlock.2.html",
+      "observed": "核对成功返回、页面粒度与错误处理，不采用 mlockall 给整个 Python/Ray 进程追加隐式策略。",
+      "kind": "Linux man-pages 项目接口说明",
+      "implementation_tested": false
+    }
+  ],
+  "capacity_design": {
+    "classification": [
+      {
+        "name": "declared_payload",
+        "current": true,
+        "meaning": "现有 Pool 的有限逻辑字节声明及副本计量。",
+        "allowed_claim": "共享同一 Pool 实例的已登记 owner 不会重复取得同一段声明字节。",
+        "not_proved": "实际 RAM、RSS、KV 或用户全查询内存。"
+      },
+      {
+        "name": "enforced_service_allocation",
+        "current": false,
+        "meaning": "可信现有 supervisor/部署所有者授予的资源子份额，实际安装并核验 OS 配置，且同一授权者对授予做原子记账。",
+        "allowed_claim": "被部署方执行的有限用量配置与不可重复分配的服务份额。",
+        "not_proved": "未来任意分配必然成功或某个字节数已独占驻留物理 RAM。"
+      },
+      {
+        "name": "backed_payload_arena",
+        "current": false,
+        "meaning": "原服务资源所有者实际持有分配成功、必要时成功锁页的 arena，并让计量的 payload 真的使用该存储。",
+        "allowed_claim": "仅被该 arena 覆盖的 payload 存储具有实际支持；证明与映射/锁页寿命一致。",
+        "not_proved": "解释器对象、Ray object store、socket 缓冲、序列化临时对象、消费者关系、日志、模型权重及 GPU/KV。"
+      }
+    ],
+    "minimal_safe_integration": {
+      "decision": "先实现资源来源接点及拒绝分支，再决定是否建设实际 arena 数据路径。仅提供一个 cgroup 数字不能完成自动物理容量。",
+      "proposed_interface_status": "pending；以下名字为设计建议，不是仓库现有公共 API",
+      "proposed_interface": "现有资源 owner 返回可消费一次的 service_payload_grant；由工厂核对后建立原 RecordsPayloadPool，total_bytes 取已授予 usable_payload_bytes。preview 仍纯读，真实领取仍在 Ray/模型启动前。",
+      "resource_owner": "现有受信部署/supervisor 所有者；不在 Core 旁增加控制器。",
+      "allocator": "复用 RecordsPayloadPool 的原子选择、组件字节计划及实际 owner 归还流程。",
+      "admission_owner": "现有 Core；不由 RAM provider 选择请求、批成员、重试、路由或模型 token。",
+      "model_owner": "原模型/vLLM；主机字节充足不会改变模型上下文、实际引擎 seq/token/KV 能力。",
+      "user_configuration": "自动模式只有取得可验证授予后才解析成功；无法取得时报告 unavailable 并保留显式声明模式，不填一个新的默认 R 或隐藏百分比。",
+      "no_maximum_guess": "OS 没有被本仓库使用的原子接口可把一次 free/headroom 快照转换成全部未来安全 RAM；本设计也不靠逐步分配到 OOM 来搜索最大值。"
+    },
+    "grant_fields": [
+      "资源授权者身份、服务 owner epoch、原 PID/出生信息和运行主机/启动身份的私有核验值",
+      "grant ID、资源类型、授予总字节、可用 payload 字节、页面大小以及明确覆盖的存储组件",
+      "原能力句柄或授权者的实时核验接口；字典、路径或 JSON 内容本身不是能力",
+      "实际 cgroup 目录句柄/设备与 inode、可见祖先配置和受管进程范围，若该模式使用 cgroup",
+      "实际 backing 对象/FD/映射身份及长度，若该模式宣称存储有实际支持",
+      "Pool plan、模型/生成/协议/表示签名；重启或模型变化不能沿用另一签名",
+      "授予状态与实际 owner 登记；同一凭据不能复制成两个独立满额 Pool"
+    ],
+    "atomic_order": [
+      "现有资源所有者先取得其有权授予的实际资源；仅能读到共享用量时返回 unavailable。",
+      "资源所有者登记未发布授予，再把对应原能力交给调用方；共享授权者须原子记账，不能让两个进程各自使用同一份 headroom。",
+      "工厂校验来源、owner、字节、范围和组件后，消费一次凭据建立原 Pool；空间不足一个完整普通 continuation 时在 Ray 前拒绝。",
+      "若使用 backed arena，输入/结果/临时副本逐项落到其实际存储；保留原 IPC 控制进展位置，不把资源额度放大成业务队列。",
+      "正常归还复用实际 Core/RPC/transport/结果接收证明；释放 arena 还须确认所有持有者和写入者已停止使用映射。",
+      "实际 owner 死亡时，资源回收与任务结果分别记录：已确认不用的物理资源可由原授权者结清，未确认调用和未接收结果仍为 unknown/pending。"
+    ],
+    "required_before_physical_claim": [
+      "真实权限和来源证明：谁安装资源配置、谁能迁移进程、是否还有未登记使用者。",
+      "现有 payload 各表示及共存副本与真实存储的一一对应；仅 _plan 的字节公式不够。",
+      "与模型环境、Ray object store、解释器和消费者保留数据分开计量，不用猜测的 overhead 倍数补足。",
+      "分配或锁页失败、资源缩减、owner 退出、映射仍有外部持有者时停止新增授予，并保留原因。",
+      "Linux/目标平台真实授权与小规模资源核验；CPU 模拟只能验证拒绝和归还顺序。"
+    ],
+    "current_gaps": [
+      "没有物理资源授予类或既有服务 RAM 授权接口。",
+      "没有实际 arena 支持的 Core/IPC payload 数据路径。",
+      "没有覆盖 Python/Ray/模型/消费者全部内存的可证明表示和回收记录。",
+      "没有检查专用 cgroup 授权或权限的生产接线；目前仅为只读观测。",
+      "普通入口仍需要显式 service_payload_bytes；不能把本方案称为当前自动物理容量。"
+    ],
+    "sources": [
+      "memory_observer",
+      "payload_pool",
+      "capacity_shape",
+      "delivery_bytes",
+      "model_engine",
+      "kernel_memory",
+      "libc_page_lock",
+      "architecture"
+    ],
+    "automatic_size_selection": {
+      "source_amount": "只有现有资源授权者实际持有的 backing 长度或原子授予余额能提供可用字节 B；cgroup 限额可核验部署用量配置，但不能独立生成 B。当前仓库没有这样的 RAM 授权者。",
+      "source_request": "所需最小量直接来自 _plan(shape, 1).bytes 及实际独立交付副本；有限声明工作对应所需上限。向现有授权者请求资源时不使用新百分比或请求数阈值，不以分配至 OOM 探索容量。",
+      "selection": "得到真实 B 后沿用 RecordsPayloadPool._select 的单调字节计划，取完整组件总和不超过 B 的最大请求数；请求数由真实授予推导，仍不意味着引擎可同时执行这些请求。",
+      "user_effect": "用户无需手工填写 R、结果槽或同源字节子额度；没有可信资源来源时自动模式明确 unavailable，显式逻辑字节模式保留原身份。",
+      "unresolved": "若部署既未提供受信资源份额，也没有已存在的 backing，无法仅从观察自动确定安全 B。本方案保留这一未实现项，不用低默认值替代。"
+    }
+  },
+  "recovery_design": {
+    "current_support": [
+      {
+        "case": "same_process_caller_reference_lost",
+        "supported": true,
+        "action": "同一 Pool 用已登记 allocation ID 访问其强引用的原 owner；核原 PID、控制线程和 runtime，再 retry_cleanup；结果单独 take。"
+      },
+      {
+        "case": "same_process_remote_cleanup_pending",
+        "supported": true,
+        "action": "service 入口保留原 Ray 和异常句柄，晚到原 RPC 可继续结清；不重新 init/import Ray。"
+      },
+      {
+        "case": "same_process_only_local_results_pending_after_shutdown",
+        "supported": true,
+        "action": "已确认远端清理后允许只用原本地回执做显式交接；Ray 丢失不作为终态证明。"
+      },
+      {
+        "case": "client_process_restarts_original_owner_survives",
+        "supported": false,
+        "action": "可作为最小后续接线，但当前没有服务监听端点、客户端 fencing 或跨进程清理/结果交付协议。"
+      },
+      {
+        "case": "actual_owner_process_restarts",
+        "supported": false,
+        "action": "当前拒绝 Pool 描述重建、匿名 socketpair 重接和 ObjectRef/Future 重建；保留 unknown，不自动模型重试。"
+      },
+      {
+        "case": "ray_runtime_or_engine_replaced",
+        "supported": false,
+        "action": "保持拒绝。新 job/node、engine_uid 或 producer_uid 不能替代原实例的清理证明。"
+      }
+    ],
+    "minimal_live_owner_slice": {
+      "status": "pending",
+      "scope": "客户端换进程，但原资源/模型服务 owner、原 Pool、Core 控制线程、Ray 和私有 engine IPC 都存活。先仅实现状态查询、原清理重试和原结果交接，不增加恢复后模型重派发。",
+      "placement": "在现有服务 owner 寿命内增加受控本地连接接点，由原控制线程执行原 Pool/Core 操作；不把 Core 控制权交给监听线程，不增加第二套业务任务控制。",
+      "transport": "使用可重新连接的私有本地端点；若复用已有 gateway，单独版本化清理/交付消息。匿名 socketpair 保留给原 engine，不假装它能重接。",
+      "owner_proof": "真实活 owner 回答自己的持有 epoch、实际资源凭据和原 engine/producer 身份；端点权限、对端身份及原租约同时核对。旧 JSON 仅用于定位，不能独立授权。",
+      "fencing": "授权者原子接纳新的客户端 epoch；旧连接继续发送的修改操作被拒绝。超时/租约期限结束本身不证明旧 writer 停止。",
+      "threading": "本地消息投递使用有界协议接线，实际操作仍在原控制线程；不得形成绕过 Core 的新请求队列或自动重试循环。",
+      "results": "原服务保留未接收结果；客户端持久接收后发送带原结果摘要、接收方身份和操作 ID 的 ACK。原服务先持久记录 ACK，再允许丢弃相应持久副本。重复 ACK 只返回同一证明。",
+      "failure": "原 owner、原 epoch 或原 runtime 不可验证时返回 unknown/unavailable；不接新 Ray，不读取别的模型实例，也不释放原未结清责任。"
+    },
+    "minimum_durable_records": [
+      {
+        "record": "service_and_resource",
+        "fields": [
+          "schema/protocol version",
+          "resource authority ID",
+          "service owner epoch",
+          "private host/boot/namespace identity",
+          "lease ID and actual authority",
+          "grant ID and bytes/component signatures",
+          "model/deployment/generation identity"
+        ],
+        "reason": "区分原服务与相同 PID、路径、模型名或配置的替代服务。实际能力还要由活授权者核对，不能只读这些字段。"
+      },
+      {
+        "record": "owned_processes",
+        "fields": [
+          "原 Popen 或等效原进程句柄",
+          "PID plus birth identity",
+          "known descendant identities",
+          "unconfirmed roots",
+          "registered mapping holders",
+          "process/API/RPC/IO observation scope and errors"
+        ],
+        "reason": "原 PID 消失、主进程退出、socket EOF、actor kill ACK 均不足以证明所有 writer/后代退出；未观察部分继续 unknown。"
+      },
+      {
+        "record": "submission",
+        "fields": [
+          "query/stage/row occurrence/call/task identity",
+          "immutable source or actual input digest and source snapshot identity",
+          "owner epoch",
+          "producer owner UID and issued sequence",
+          "model engine UID",
+          "submission intent",
+          "actual accepted/terminal evidence when present",
+          "attempt accounting"
+        ],
+        "reason": "区分未提交、可能已提交、已接纳和已确认终态；请求摘要相同不等于同一次调用，attempt 记录不授权重新执行。"
+      },
+      {
+        "record": "result",
+        "fields": [
+          "original outcome including unknown",
+          "raw result bytes or durable reachable private object",
+          "content digest and length",
+          "schema and complete task/engine identity",
+          "engine_terminal_confirmed",
+          "RPC/producer proof reference",
+          "durable publication identity"
+        ],
+        "reason": "只有摘要而没有结果字节不能恢复结果；已终止 producer 不能把未知模型输出补造出来。"
+      },
+      {
+        "record": "consumer_acceptance",
+        "fields": [
+          "consumer/sink identity",
+          "owner/client epoch",
+          "per-result acceptance operation ID",
+          "exact task and result digest",
+          "durable sink receipt or explicit disposition",
+          "ACK committed state"
+        ],
+        "reason": "传输写成功和进程内 actor ACK 不是外部结果持久接收；跨重启不能单凭 take 返回过一次判断。"
+      },
+      {
+        "record": "journal_integrity_and_ownership",
+        "fields": [
+          "private non-symlink file identity and permissions",
+          "atomic writer ownership/fencing",
+          "transaction/sequence",
+          "committed versus incomplete write",
+          "file and directory durability",
+          "bounded retention tied to declared tasks/results"
+        ],
+        "reason": "可以复用 CellBudgetLedger 的事务风格和 private_artifacts 的文件做法，但不复用其实验请求语义；损坏或写入未知时停止操作，不能创建一个空账本。"
+      }
+    ],
+    "durable_order": [
+      "外部效果前持久记录提交意图；只有真实 owner 能提供接纳证据。意图已写但接纳回执丢失时仍是可能已执行，不自动重派。",
+      "接收原模型结果并校验所有身份；在允许生产者丢弃唯一副本之前，持久发布服务侧结果字节与终态记录。",
+      "结果交给指定消费者；消费者先完成其持久接收或数据库处置，再返回精确结果 ACK。",
+      "原服务把 ACK 原子持久记录后，才丢弃对应持久结果并结清其存储责任；ACK 丢失时重发原结果/原 ACK，不重跑模型。",
+      "task 或 ACK 有空洞时逐项保留，不能仅凭最大 sequence 跳过较小未确认项。",
+      "原服务死亡后只恢复已提交的持久记录；任何缺少原结果或实际终态证据的调用保留 unknown。事务写入结果未知时不重置已用资源或实验次数。"
+    ],
+    "current_ack_gap": "_RecordTransport._execute 在本地 outcomes 留存后调用 acknowledge_core；AsyncCoreModelActor 删除其内存结果。此时后续消费者/文件尚未必持久接收，因此不能沿用当前 ACK 名称宣称跨进程恰好一次。当前入口的 fsync-before-take 修复了本地交接顺序，但没有结果服务日志或跨进程消费者 ACK 事务。",
+    "owner_restart_policy": {
+      "default": "拒绝原模型/IPC/Pool 重建和自动请求重放，输出原 epoch 的 unknown/pending 清单。",
+      "durable_results": "若已有完整、可读、身份匹配的私有结果文件，可交由原语义所有者按显式接收规则重新交接；先实现持久 ACK/去重，不能直接把旧 JSON 算作已消费。",
+      "resource_reclaim": "只有原授权者对原资源使用者和映射持有者取得相应退出/停止证据，才结清其物理分配。结果与调用记录仍独立保留。",
+      "query_retry": "新 attempt 必须另有语义许可、原状态处理、可比较的质量规则和剩余实验额度；本设计不授权或实现自动重试。",
+      "unimplemented": "尚无存活服务重连端点、持久 owner epoch/fencing、结果日志、消费者 ACK 去重、owner 重启重放或完整后代/映射登记。"
+    },
+    "sources": [
+      "payload_pool",
+      "runtime_identity",
+      "core_lifetime",
+      "entry_transfer",
+      "session_entry",
+      "worker_entry",
+      "transport_ack",
+      "actor_ack",
+      "private_engine_ipc",
+      "runner_lease",
+      "owned_processes",
+      "worker_supervisor",
+      "stage_cleanup",
+      "imlane_owner",
+      "external_owner_lease",
+      "mapped_counter",
+      "experiment_attempts",
+      "private_files",
+      "architecture"
+    ]
+  },
+  "cpu_counterexamples": {
+    "status": "proposed_not_run",
+    "fixture_rules": "临时文件、可控时钟、实际小型本机进程或 API 替身；不 import/init 真 Ray、不访问模型/GPU、不进行大内存分配。失败原件保留。",
+    "capacity": [
+      {
+        "case": "shared_headroom_twice",
+        "setup": "两个独立 Pool 读到相同 cgroup headroom",
+        "expect": "观测值不能建立物理授予；没有共同授权者时拒绝自动模式，不各自取得全额。"
+      },
+      {
+        "case": "grant_alias_or_replay",
+        "setup": "同一资源凭据被第二个工厂、进程或恢复描述再次使用",
+        "expect": "原子检查拒绝重复领取，总授予不超过实际来源。"
+      },
+      {
+        "case": "ancestor_missing_shared_or_unlimited",
+        "setup": "祖先更小、读取失败、max、namespace 挂载歧义或未证明独占",
+        "expect": "unknown 不转成无限容量，限制观测不升级为授予。"
+      },
+      {
+        "case": "allocation_or_lock_failure",
+        "setup": "分配失败、部分完成、锁页失败或只有 ONFAULT 标记",
+        "expect": "不能发布 backed grant；已取得部分由原 owner 结清并记录。"
+      },
+      {
+        "case": "backing_identity_changed",
+        "setup": "FD/inode/长度/owner epoch 改变或映射仍有持有者",
+        "expect": "停止新增授予，不沿用旧凭据，不提前回收。"
+      },
+      {
+        "case": "uncovered_copy",
+        "setup": "arena 之外另建 Python bytes、JSON、Ray 副本或完整结果数组",
+        "expect": "不称全 payload 或 RSS 有实际支持；补实计量和存储接线前拒绝对应声明。"
+      },
+      {
+        "case": "minimum_complete_item",
+        "setup": "真实授予小于一个完整普通 continuation 加控制进展存储",
+        "expect": "在 Ray 前拒绝；不悄悄增大授予、不缩短模型输出或删除控制进展位置。"
+      },
+      {
+        "case": "model_capacity_independent",
+        "setup": "RAM grant 足够，但原模型上下文/ready 能力不符",
+        "expect": "沿用原模型拒绝，不根据 RAM 推导无限上下文或 seq/token。"
+      }
+    ],
+    "recovery": [
+      {
+        "case": "same_pid_new_birth_or_boot",
+        "setup": "PID 相同而出生信息、主机启动身份或 owner epoch 不同",
+        "expect": "不得操作替代进程、接纳旧 ACK 或归还原未确认授予。"
+      },
+      {
+        "case": "client_epoch_overlap",
+        "setup": "新客户端已接纳，旧连接晚到修改消息",
+        "expect": "原授权者拒绝旧 epoch；超时不能替代旧 writer 停止证明。"
+      },
+      {
+        "case": "socket_eof_with_surviving_owner",
+        "setup": "客户端 EOF，但原模型或后代仍在运行",
+        "expect": "不声明终态或空闲；保留原 pending/unknown。"
+      },
+      {
+        "case": "original_owner_dead_socketpair_lost",
+        "setup": "原 owner 退出，只剩 Pool/IPC JSON 描述",
+        "expect": "拒绝重建、重接匿名连接和自动模型重放；不 init 新 Ray。"
+      },
+      {
+        "case": "future_cancelled_not_terminal",
+        "setup": "本地 Future 取消，但原 RPC 无返回证据",
+        "expect": "保留原 RPC 责任；原连接丢失不将未知改为结束。"
+      },
+      {
+        "case": "durable_intent_accept_receipt_lost",
+        "setup": "意图写入后原请求可能接纳，客户端在接纳回执前退出",
+        "expect": "保留可能已执行状态；不自动重新提交相同调用。"
+      },
+      {
+        "case": "result_received_before_persist_crash",
+        "setup": "结果已到但持久发布未完成",
+        "expect": "不向唯一 producer 发可丢弃 ACK；写失败保留原副本。"
+      },
+      {
+        "case": "persisted_before_ack_crash",
+        "setup": "结果文件/目录已同步，消费者 ACK 尚未提交",
+        "expect": "重发原结果且保留原 outcome；不能重跑模型或把文件存在当作已消费。"
+      },
+      {
+        "case": "ack_committed_reply_lost",
+        "setup": "原服务持久记录 ACK 后回复丢失",
+        "expect": "重复精确 ACK 幂等返回原证明，不重复交付副作用或重复释放。"
+      },
+      {
+        "case": "ack_digest_consumer_or_task_changed",
+        "setup": "ACK 摘要、消费者身份或 task key 不同",
+        "expect": "拒绝，保留原结果和存储责任。"
+      },
+      {
+        "case": "sequence_holes",
+        "setup": "较大序号已确认而较小序号仍未知",
+        "expect": "逐项保留，不能用最大序号归还全部结果。"
+      },
+      {
+        "case": "journal_dirty_corrupt_or_replaced",
+        "setup": "半写、事务结果未知、损坏文件、symlink 或 inode 替换",
+        "expect": "拒绝恢复，不创建空账本、不退回已用次数。"
+      },
+      {
+        "case": "descendant_or_mapping_unobserved",
+        "setup": "主 PID 已退出，存在未确认 root、迁出的后代或外部映射持有者",
+        "expect": "退出证明只覆盖已观察对象，不宣称所有资源可回收。"
+      },
+      {
+        "case": "resource_stop_without_model_outcome",
+        "setup": "进程/producer 已停止，原模型输出仍未知",
+        "expect": "物理资源结清不修改结果 unknown；持久结果独立等待接收。"
+      },
+      {
+        "case": "durable_descriptor_without_payload",
+        "setup": "仅有结果 hash 和元数据，没有可达结果字节",
+        "expect": "报告结果 unavailable；不补造、重算或声称已交接。"
+      },
+      {
+        "case": "old_experiment_claim",
+        "setup": "原单元已经领取，worker 在首请求前或首请求后死亡",
+        "expect": "原 CellBudgetLedger 仍禁止再次领取；恢复接线不能返还永久计费。"
+      },
+      {
+        "case": "service_cleanup_retained_then_original_future_returns",
+        "setup": "原 service owner 活着，snapshot/data RPC 先 unknown 后实际返回",
+        "expect": "通过原控制线程重试，保存/ACK 后结清；不换 owner，不启动第二 runtime。"
+      }
+    ]
+  },
+  "implementation_order": [
+    {
+      "slice": "physical_source_validation",
+      "status": "pending",
+      "work": "在现有资源所有者与 service 工厂之间实现来源凭据核对及 unavailable 分支；先只用 CPU fake grant 验证一次领取和拒绝，不把它标成实际物理分配。",
+      "does_not_edit": "动态策略和 vLLM 内部调度。"
+    },
+    {
+      "slice": "backed_storage_path",
+      "status": "pending",
+      "work": "先选一段可完整计量的 payload 数据路径接入真实 backing，覆盖表示共存和结果接收；只声明该段，不替换全部 backend，也不假称全查询 RSS 自动受管。",
+      "prerequisite": "实际目标平台能力、权限、分配失败处理及存储生命周期证据。"
+    },
+    {
+      "slice": "live_owner_cleanup_reconnect",
+      "status": "pending",
+      "work": "保持实际服务 owner 存活，只增加本地客户端重连接线及控制线程操作；版本化 epoch/fencing 和原资源身份，不提供模型自动重派。",
+      "prerequisite": "部署层能保证服务寿命独立于客户端；当前 CLI 私有 worker 还不满足。"
+    },
+    {
+      "slice": "durable_result_acceptance",
+      "status": "pending",
+      "work": "在 actor 可丢弃唯一副本前持久留存服务结果；消费者 ACK、内容摘要、去重及 crash 点事务单独验证。",
+      "prerequisite": "真实 sink/PG 语义所有者参与接收规则；工程文件落盘不能冒充数据库事务已提交。"
+    },
+    {
+      "slice": "actual_owner_restart",
+      "status": "not_supported",
+      "work": "默认保留 unknown 并拒绝重建。只有新增真实持久 owner/结果服务、原任务状态和资源回收证明后再单独评估；当前 socketpair/Pool 不具有这些能力。",
+      "prerequisite": "不得用当前方案文件存在代替实现或真实验证。"
+    }
+  ],
+  "verification_limits": [
+    "本交接不是独立代码审查放行，也不修改父候选。",
+    "CPU 反例尚未实现或运行；本轮仅验证交接文件结构、来源提交及用词。",
+    "没有目标 Linux 的委派权限、专用资源授予或真实 arena 证据；不能报告自动物理容量已完成。",
+    "没有跨进程服务重连、持久 ACK、owner 重启或真实 Ray/GPU 证据。",
+    "新接口若实施，保留同步/异步原生基线、历史参数、LOTUS 方法语义和完整查询计时；新增模式与旧声明模式分别验证。"
+  ],
+  "checked_at_utc": "2026-11-04T22:52:28.890720+00:00",
+  "source_validation": {
+    "fixed_commit_read": true,
+    "source_count": 27,
+    "external_primary_count": 3,
+    "errors": []
+  }
+}

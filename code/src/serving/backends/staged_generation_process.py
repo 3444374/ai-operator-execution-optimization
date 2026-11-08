@@ -13,8 +13,9 @@ from pathlib import Path
 import sys
 import time
 
+from src.infrastructure.deadlines import deadline_expired
 from .vllm_sync_process import EngineProcess, MAX_MESSAGE_BYTES, _encode
-from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, _prepared
+from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prepared
 
 
 class ChainEngineProcess(EngineProcess):
@@ -27,7 +28,7 @@ class ChainEngineProcess(EngineProcess):
     def _check(self, deadline, *, stopping=True):
         if stopping and (Path(self.control) / "stop").exists():
             raise InterruptedError("Ray LOTUS chain cancelled")
-        if time.monotonic() >= deadline:
+        if deadline_expired(deadline):
             raise TimeoutError("Ray LOTUS chain engine deadline expired")
 
     def run_prepared(self, rows, *, generation):
@@ -57,11 +58,13 @@ class ChainEngineProcess(EngineProcess):
                         for item in identities]
 
 
-def serve(result_fd):
+def serve(result_fd, *, engine_factory=None):
     """Execute in model_python, without importing LOTUS or Ray."""
     from src.serving.backends.vllm_engine import VllmEngine
 
+    engine_factory = VllmEngine if engine_factory is None else engine_factory
     engine = None
+    close_deadline = None
     with os.fdopen(result_fd, "wb", buffering=0) as output:
         def send(value):
             output.write(_encode(value))
@@ -72,7 +75,7 @@ def serve(result_fd):
                     raise ValueError("engine IPC request exceeds its byte limit")
                 value = json.loads(raw)
                 if engine is None and value["op"] == "open":
-                    engine = VllmEngine(EngineSpec.from_dict(value["engine"]),
+                    engine = engine_factory(EngineSpec.from_dict(value["engine"]),
                                         GenerationSpec.from_dict(value["generation"]))
                     send(dict(kind="ready", **engine.ready()))
                 elif engine is not None and value["op"] == "run":
@@ -81,7 +84,11 @@ def serve(result_fd):
                         generation=GenerationSpec.from_dict(value["generation"]),
                         deadline_monotonic=value["deadline"])))
                 elif engine is not None and value["op"] == "close":
-                    report = engine.close()
+                    close_deadline = value["deadline"]
+                    remaining = close_deadline - time.monotonic()
+                    report = (engine.close(timeout=remaining) if remaining > 0 else
+                              dict(status="unknown", engine_api_shutdown_confirmed=False,
+                                   gpu_exit_confirmed=None, error_type="CloseDeadlineExceeded"))
                     send(dict(kind="closed", report=report))
                     engine = None
                     return
@@ -91,7 +98,12 @@ def serve(result_fd):
             send(dict(kind="error", error_type=type(exc).__name__))
         finally:
             if engine is not None:
-                engine.close()
+                if close_deadline is None:
+                    engine.close()
+                else:
+                    remaining = close_deadline - time.monotonic()
+                    if remaining > 0:
+                        engine.close(timeout=remaining)
 
 
 if __name__ == "__main__":

@@ -14,10 +14,6 @@ from functools import partial
 from pathlib import Path
 
 from .adapters.golden import GoldenCompletionAdapter
-from .adapters.openai_compatible_fixed import (
-    OpenAICompatibleFixedAdapter,
-)
-from .adapters.model_config import load_fixed_model_config
 from .completion import CompletionAdapter
 from .completion import Completion
 from .gateway_runtime import GatewayLimits, GatewayRuntime
@@ -38,10 +34,6 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="registered incremental Jobs sharing one engine; storage is partitioned",
     )
     parser.add_argument(
-        "--job-compute-policy", choices=("equal-share", "shared"), default="equal-share",
-        help="fixed per-Job compute ceilings or a shared compute pool with reserved Job storage",
-    )
-    parser.add_argument(
         "--max-active-requests", type=int, default=GatewayLimits.max_active_requests
     )
     parser.add_argument(
@@ -50,27 +42,16 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="incremental accepted task budget; defaults to request capacity",
     )
     parser.add_argument("--input-buffer-bytes", type=int, help="incremental input byte budget")
-    parser.add_argument("--organization-config", type=Path, help="local Map token-work organization configuration")
-    parser.add_argument("--map-transport-config", type=Path,
-                        help="optional finite Daft/Ray Map transport configuration")
     parser.add_argument(
         "--result-buffer-bytes", type=int, help="incremental reserved result byte budget"
     )
     parser.add_argument("--frame-timeout-ms", type=int, default=GatewayLimits.frame_timeout_ms)
-    parser.add_argument(
-        "--incremental-map", action="store_true", help="serve Map with version-six bounded intake"
-    )
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
     adapter_group = parser.add_mutually_exclusive_group()
     adapter_group.add_argument(
         "--golden-fixture",
         type=Path,
         help="payload-digest to raw Filter text or explicit Map completion JSON object",
-    )
-    adapter_group.add_argument(
-        "--fixed-model-config",
-        type=Path,
-        help="repository-external fixed OpenAI-compatible endpoint configuration",
     )
     adapter_group.add_argument("--image-config", type=Path,
                                help="repository-external typed image service configuration")
@@ -120,7 +101,6 @@ def main(
     session_wrapper=None,
     incremental_observer=None,
     incremental_execution_factory=None,
-    remote_request_guard=None,
 ) -> int:
     """Serve sessions; optional decorators observe this invocation only."""
     args = parse_args(argv)
@@ -138,39 +118,10 @@ def main(
         raise SystemExit("--test-max-sessions must be non-negative")
     if not 1 <= args.max_active_jobs <= limits.max_connections:
         raise SystemExit("active Jobs must fit connection capacity")
-    if args.max_active_jobs != 1 and not (args.incremental_map or args.image_config):
-        raise SystemExit("multiple active Jobs require --incremental-map")
-    if args.image_config and (args.incremental_map or args.organization_config
-                              or args.job_compute_policy != "equal-share"):
-        raise SystemExit("image configuration selects its own typed execution profile")
+    if args.max_active_jobs != 1 and not args.image_config:
+        raise SystemExit("multiple active Jobs require --image-config")
     if args.image_ray_address and not args.image_config:
         raise SystemExit("image Ray address requires --image-config")
-    if args.map_transport_config is not None:
-        if (not args.incremental_map or not args.fixed_model_config or args.image_config
-                or args.organization_config or incremental_execution_factory is not None):
-            raise SystemExit("Ray Map transport requires fixed-model incremental Map without another factory")
-        from .adapters.ray_map_transport import RayMapConfig, ray_map_factory
-        try:
-            physical = RayMapConfig.load(args.map_transport_config)
-        except (OSError, ValueError, TypeError):
-            raise SystemExit("invalid Ray Map transport configuration") from None
-        incremental_execution_factory = ray_map_factory(physical, remote_request_guard)
-    if args.job_compute_policy != "equal-share" and (
-        not args.incremental_map or (incremental_execution_factory is not None and args.map_transport_config is None)
-    ):
-        raise SystemExit("shared compute requires incremental execution without a custom factory")
-    if args.organization_config is not None:
-        if not args.incremental_map or args.max_active_jobs != 1 or incremental_execution_factory is not None:
-            raise SystemExit("organization configuration requires single-Job incremental Map and its own factory")
-        from .adapters.map_organization import MapOrganizationConfig, organization_factory
-        incremental_execution_factory = organization_factory(MapOrganizationConfig.load(args.organization_config))
-    if args.job_compute_policy == "shared":
-        from .adapters.incremental_execution import build_fixed_model_execution
-        from ..scheduling.core.session_jobs import shared_compute_job_budget
-        incremental_execution_factory = partial(
-            incremental_execution_factory or build_fixed_model_execution,
-            allocate_job=shared_compute_job_budget,
-        )
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter
@@ -181,20 +132,14 @@ def main(
             value is not None
             for value in (args.max_held_tasks, args.input_buffer_bytes, args.result_buffer_bytes)
         )
-        and not (args.incremental_map or args.image_config)
+        and not args.image_config
     ):
-        raise SystemExit("incremental buffer budgets require --incremental-map")
+        raise SystemExit("incremental buffer budgets require --image-config")
     if any(
         value is not None and value < 1
         for value in (args.input_buffer_bytes, args.result_buffer_bytes)
     ):
         raise SystemExit("incremental byte budgets must be positive")
-    if args.incremental_map and (
-        args.fixed_model_config is None or not 1 <= held_tasks <= MAX_INCREMENTAL_TASKS
-    ):
-        raise SystemExit(
-            f"incremental Map v6 requires a fixed model, capacity 1..{MAX_INCREMENTAL_TASKS}"
-        )
     image_ray = None
     if args.image_config is not None:
         from .adapters.image_execution import ImageServiceConfig
@@ -228,31 +173,8 @@ def main(
                 image_ray.shutdown()
             raise
         completion_adapter = incremental_adapter
-    elif args.fixed_model_config is None:
-        completion_adapter = GoldenCompletionAdapter(golden_fixtures)
     else:
-        try:
-            fixed_config = load_fixed_model_config(args.fixed_model_config)
-        except ValueError:
-            raise SystemExit("invalid fixed model configuration") from None
-        if args.incremental_map:
-            from .multiplexed_gateway import MultiSessionMapGateway
-
-            incremental_adapter = MultiSessionMapGateway(
-                fixed_config,
-                max_jobs=args.max_active_jobs,
-                max_connections=limits.max_connections,
-                max_tasks=held_tasks,
-                max_active_requests=limits.max_active_requests,
-                frame_timeout_ms=limits.frame_timeout_ms,
-                input_bytes=args.input_buffer_bytes,
-                result_bytes=args.result_buffer_bytes,
-                observer=incremental_observer,
-                execution_factory=incremental_execution_factory,
-            )
-            completion_adapter = incremental_adapter
-        else:
-            completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)
+        completion_adapter = GoldenCompletionAdapter(golden_fixtures)
     try:
         if adapter_wrapper is not None:
             completion_adapter = adapter_wrapper(completion_adapter)
@@ -310,7 +232,7 @@ def main(
             GatewayRuntime(handler, limits).serve(listener, stopping, session_limit=session_limit)
         else:
             incremental_adapter.serve(
-                listener, stopping, handler=handler, session_limit=session_limit
+                listener, stopping, session_limit=session_limit
             )
     finally:
         listener.close()

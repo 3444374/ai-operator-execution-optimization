@@ -1,0 +1,86 @@
+{
+  "schema": "semloom.ray_provider_fixture_repair.v1",
+  "base": "7a4338547a95f9bf88f05793b423c5808a09b5fa",
+  "diagnosis": "IdleProvider discarded constructor arguments. The production NonBlockingMetricsObservationProvider already stores stale_after_s before its sampler thread starts; no production interface failure established.",
+  "parent_server_evidence": {
+    "source_type": "parent supplied real-Ray CPU report; not a local rerun",
+    "identifier": "pr90-7a433-gpu-functional-20261104",
+    "private_handoff_bytes": 4100,
+    "private_handoff_sha256": "68749acc4cc4ae905d15997f6268bddd4e936ae02dd9e5f5bab11d96da755e4a",
+    "source": {
+      "head": "7a4338547a95f9bf88f05793b423c5808a09b5fa",
+      "tree": "f3ed586d2360f8f8aeb48d790b16c7dfdaca0421"
+    },
+    "real_Ray_methods_executed": 5,
+    "passed": 4,
+    "errors": 1,
+    "further_method_unrun": 1,
+    "failed_method": "test_cancel_failure_retains_pair_across_query_until_old_read_settles",
+    "error": "AttributeError: 'IdleProvider' object has no attribute 'stale_after_s'",
+    "model_generation_started": false
+  },
+  "local_CPU": {
+    "selected": 148,
+    "run": 148,
+    "passed": 143,
+    "failures": [],
+    "errors": [],
+    "skipped": [
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_cancel_failure_retains_pair_across_query_until_old_read_settles",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_expired_real_ray_request_is_cancelled_once_then_drained",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_pending_then_done_keeps_one_real_future_and_yields_feedback_without_wait",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_real_ray_exception_releases_pair_and_allows_one_new_optional_read",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      },
+      {
+        "id": "tests.execution_provider.test_core_feedback_ray_future.RealRayFeedbackFutureTests.test_wrong_query_snapshot_releases_pair_without_delivering_then_new_query_succeeds",
+        "reason": "explicit real Ray CPU driver required",
+        "scope": "method"
+      }
+    ],
+    "new_counterexamples": 3,
+    "source_files": 1316,
+    "code_hashes_match_final": true,
+    "source_unchanged_during_suite": true,
+    "real_Ray_runs": 0,
+    "model_calls": 0,
+    "GPU_runs": 0
+  },
+  "initial_helper_error": "The first CPU selection reproduced two missing-duration errors; its third check incorrectly read controller.current. The check now reads current_window and verifies the provider field before mutation. That original failed run is retained.",
+  "exact_parent_fixture_counterexample": {
+    "label": "provider_parent_counterexample",
+    "mode": "In-memory substitution of the exact IdleProvider class AST read from the parent Git blob; corrected CPU checks and production files remain on disk unchanged.",
+    "errors": 3,
+    "all_error_types": "AttributeError: IdleProvider has no stale_after_s",
+    "harness_sha256": "ddf9d180ab0d86471ce38ec997a73886f30a9901ff525ca94dafc406f701990b"
+  },
+  "change_scope": "One test file; production code, sampling source duration and cancellation ownership unchanged.",
+  "raw_archive": {
+    "path": "raw/ray_provider_fixture_methods.json.gz",
+    "bytes": 13711,
+    "sha256": "73f92830d3e3f97603e2619747a73be807744ef086054840632a9da6ebb4fb7a",
+    "decoded_bytes": 81522,
+    "decoded_sha256": "71885d662cd3b94c13e572d814976f6fe00cdb813289449d19386201eb9a4408",
+    "runs": 3,
+    "exact_restoration": true,
+    "personal_home_prefixes": 0
+  },
+  "qualification": "CPU fixtures only. Re-review the patch and rerun the real-Ray selection on the subsequent exact source in the dedicated environment; keep the stopped original campaign and unclaimed model ledger.",
+  "independent_review": "pending",
+  "pushed": false,
+  "merged": false
+}

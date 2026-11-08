@@ -10,10 +10,11 @@ import time
 
 import psutil
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.deadlines import deadline_expired, earliest_deadline, remaining_time
+from src.infrastructure.private_artifacts import (
     new_private_directory, open_private_text, require_outside_git, write_private_json,
 )
-from src.baselines.common.redact import redact_argument_list, redact_json_values, redact_text
+from src.infrastructure.redact import redact_argument_list, redact_json_values, redact_text
 from src.infrastructure.owned_processes import (
     _exit_wait_identity, _live, _observe, _seconds, _signal, _wait,
 )
@@ -58,7 +59,7 @@ class _RedactedOutput:
         # Never drain until quiet: a writer may run forever or an unknown child
         # may keep the FD open. Each observation gets at most 64 KiB of reads.
         for _ in range(8):
-            if self.eof or time.monotonic() >= deadline:
+            if self.eof or deadline_expired(deadline):
                 break
             try:
                 data = os.read(self.pipe.fileno(), 8192)
@@ -88,14 +89,15 @@ class _RedactedOutput:
         )
 
 
-def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
+def supervise(command: list[str], output_dir: Path, *, timeout_s: float | None = None,
               grace_s: float = 5, natural_exit_grace_s: float = 0, monitor=None) -> dict:
-    """Run a worker within one wall budget, reserving a bounded cleanup window.
+    """Run a worker with an optional caller wall budget and finite cleanup grace.
 
     The report confirms only observed OS process exits. It cannot establish GPU
     idleness, a clean model shutdown, or the exit of unobserved detached children.
     """
-    _seconds(timeout_s, "timeout_s")
+    if timeout_s is not None:
+        _seconds(timeout_s, "timeout_s")
     _seconds(grace_s, "grace_s")
     if (type(natural_exit_grace_s) not in (int, float)
             or not math.isfinite(natural_exit_grace_s) or natural_exit_grace_s < 0):
@@ -110,9 +112,9 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
     if not output_dir.is_dir():
         raise ValueError("output_dir must be a private artifact directory")
     started = time.monotonic()
-    deadline = started + timeout_s
-    reserved = min(grace_s, timeout_s / 3)
-    worker_deadline = deadline - reserved
+    deadline = None if timeout_s is None else started + timeout_s
+    reserved = grace_s if timeout_s is None else min(grace_s, timeout_s / 3)
+    worker_deadline = None if deadline is None else deadline - reserved
     owned, process, created, failure, output = set(), None, None, None, None
     report = dict(
         schema="semloom.lotus_records.supervisor.v1", status="failed",
@@ -153,7 +155,7 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                     _observe(owned, process.pid, created)
                     if monitor is not None:
                         monitor(tuple(owned))
-                    if time.monotonic() >= worker_deadline:
+                    if deadline_expired(worker_deadline):
                         raise TimeoutError("records worker exceeded its overall work window")
                     if process.poll() is not None:
                         report.update(worker_exit_observed_monotonic=time.monotonic(),
@@ -162,12 +164,12 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                         if process.returncode:
                             raise RuntimeError("records worker failed; see private worker.log")
                         break
-                    time.sleep(min(0.02, max(0.0, worker_deadline - time.monotonic())))
+                    time.sleep(remaining_time(worker_deadline, 0.02))
             except BaseException as error:
                 failure = error
             finally:
                 if process is not None:
-                    cleanup_deadline = min(deadline, time.monotonic() + reserved)
+                    cleanup_deadline = earliest_deadline(deadline, time.monotonic() + reserved)
                     try:
                         if created is None:
                             raise RuntimeError("spawned worker creation identity is unavailable")
@@ -232,7 +234,7 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                             try:
                                 process.kill()
                                 event["outcome"] = "sent"
-                                process.wait(timeout=max(0.0, deadline - time.monotonic()))
+                                process.wait(timeout=remaining_time(deadline if deadline is not None else cleanup_deadline))
                             except BaseException as error:
                                 report["cleanup_errors"].append(error_record(error))
                             finally:

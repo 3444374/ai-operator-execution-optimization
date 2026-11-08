@@ -7,7 +7,6 @@ import threading
 import unittest
 
 from src.execution_provider.adapters.golden import GoldenCompletionAdapter
-from src.execution_provider.adapters.openai_compatible_fixed import FIXED_EXECUTION_ID
 from src.execution_provider.adapters.semantic_session import (
     Completion,
     CompletionRequest,
@@ -32,6 +31,9 @@ from src.execution_provider.wire.v3 import (
     semantic_payload_digest,
     semantic_spec_digest,
 )
+
+
+SELECTED_EXECUTION_ID = "fixture.provider.selected.uds.v3"
 
 
 class SemloomSemanticProtocolTests(unittest.TestCase):
@@ -183,8 +185,8 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
         self.assertFalse(thread.is_alive())
 
     def test_shared_session_runner_uses_the_selected_execution_profile(self) -> None:
-        class FixedCompletionAdapter:
-            execution_id = FIXED_EXECUTION_ID
+        class SelectedCompletionAdapter:
+            execution_id = SELECTED_EXECUTION_ID
             model_id = "golden-model-v1"
 
             def execution_id_for(self, version):
@@ -200,7 +202,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
                     finish_reason="stop",
                 )
 
-        adapter = FixedCompletionAdapter()
+        adapter = SelectedCompletionAdapter()
         client, server = socket.socketpair()
         thread = threading.Thread(target=run_v3_session, args=(server, adapter))
         thread.start()
@@ -209,7 +211,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
             encode_frame(
                 build_open_message(
                     self.plan,
-                    provider_execution_id=FIXED_EXECUTION_ID,
+                    provider_execution_id=SELECTED_EXECUTION_ID,
                 )
             )
         )
@@ -217,7 +219,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
         self.assertEqual(opened["type"], "opened")
         self.assertEqual(
             opened["provider_execution_digest"],
-            "3b020b703e755cbfa4cd9bd3fd0f1230b67193a4de66ad124dbf5b7837fd4506",
+            "393abbb05c98984734060c494c4433cd207636e9c35c63beb679ed16040d2b18",
         )
         client.sendall(
             encode_frame(
@@ -225,7 +227,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
                     self.plan,
                     sequence=0,
                     input_value="PostgreSQL is a database.",
-                    provider_execution_id=FIXED_EXECUTION_ID,
+                    provider_execution_id=SELECTED_EXECUTION_ID,
                 )
             )
         )

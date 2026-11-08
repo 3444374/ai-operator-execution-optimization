@@ -1,0 +1,40 @@
+--- a/q3_packet.py
++++ b/q3_packet.py
+@@ -11,3 +11,3 @@
+ def read(path):
+-    from src.experiments.sembench_records_formal import read as bounded_read
++    from src.infrastructure.private_artifacts import read_json as bounded_read
+     return bounded_read(path)
+@@ -22,4 +22,4 @@
+ def save(path, value):
+-    from src.baselines.common.private_artifacts import write_private_json
+-    from src.baselines.common.redact import redact_json_values
++    from src.infrastructure.private_artifacts import write_private_json
++    from src.infrastructure.redact import redact_json_values
+     write_private_json(Path(path), redact_json_values(value))
+@@ -46,3 +46,3 @@
+ def read_report(path):
+-    from src.experiments.sembench_records_formal import read as bounded_read
++    from src.infrastructure.private_artifacts import read_json as bounded_read
+     # Match the candidate's Q1 report allowance; configs/approval remain8MiB.
+@@ -77,3 +77,3 @@
+     payload = dict(snapshot); declared = payload.pop('revision')
+-    from src.baselines.common.private_artifacts import content_digest
++    from src.infrastructure.private_artifacts import content_digest
+     if declared != COMMIT or 'snapshot:sha256:' + content_digest(snapshot["files_sha256"]) != COMMIT:
+--- a/q3_host.py
++++ b/q3_host.py
+@@ -13,3 +13,3 @@
+ from q3_packet import HERE, SOURCE, COMMIT, read, save, sha
+-from src.experiments.sembench_records_formal_resources import ResourceMonitor as NativeResourceMonitor
++from src.observability.process_resources.supervised import ResourceMonitor as NativeResourceMonitor
+ from execution_policy import (SafetyStop, assert_gpu_idle, assert_gpu_owned, assert_ports_available,
+--- a/host_helpers.py
++++ b/host_helpers.py
+@@ -188,4 +188,4 @@
+     import psutil
+-    from src.baselines.common.private_artifacts import new_private_directory
+-    from src.baselines.common.redact import redact_json_values, redact_text
++    from src.infrastructure.private_artifacts import new_private_directory
++    from src.infrastructure.redact import redact_json_values, redact_text
+     from src.experiments.attempt_ledger import AttemptBudget

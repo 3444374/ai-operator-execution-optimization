@@ -1,4 +1,4 @@
-"""Shared tool migration: legacy identity, private bytes and dependency boundaries."""
+"""Canonical shared tools: pickle globals, private bytes and dependency boundaries."""
 
 import importlib
 import os
@@ -12,33 +12,30 @@ from unittest.mock import patch
 
 
 class SharedArtifactToolTests(unittest.TestCase):
-    def test_redaction_legacy_module_and_pickle_globals_share_one_implementation(self):
+    def test_redaction_canonical_pickle_globals_roundtrip(self):
         canonical = importlib.import_module("src.infrastructure.redact")
-        legacy = importlib.import_module("src.baselines.common.redact")
-        self.assertIs(legacy, canonical)
         for name in ("redact_text", "redact_argument_list", "redact_database_url", "redact_json_values"):
             with self.subTest(name=name):
                 function = getattr(canonical, name)
-                old_global = ("csrc.baselines.common.redact\n" + name + "\n.").encode()
-                self.assertIs(pickle.loads(old_global), function)
+                global_name = ("csrc.infrastructure.redact\n" + name + "\n.").encode()
+                self.assertIs(pickle.loads(global_name), function)
                 self.assertIs(pickle.loads(pickle.dumps(function)), function)
 
-    def test_private_artifact_legacy_functions_keep_identity_and_pickle_compatibility(self):
+    def test_private_artifact_canonical_globals_keep_pickle_roundtrip(self):
         canonical = importlib.import_module("src.infrastructure.private_artifacts")
-        legacy = importlib.import_module("src.baselines.common.private_artifacts")
         names = ("content_digest", "file_identity", "json_metric", "require_outside_git",
                  "new_private_directory", "open_private_text", "write_private_json", "publish_private_json")
         for name in names:
             with self.subTest(name=name):
                 function = getattr(canonical, name)
-                self.assertIs(getattr(legacy, name), function)
-                old_global = ("csrc.baselines.common.private_artifacts\n" + name + "\n.").encode()
-                self.assertIs(pickle.loads(old_global), function)
+                global_name = ("csrc.infrastructure.private_artifacts\n" + name + "\n.").encode()
+                self.assertIs(pickle.loads(global_name), function)
                 self.assertIs(pickle.loads(pickle.dumps(function)), function)
         self.assertFalse(hasattr(canonical, "workload_summary"))
-        self.assertEqual(legacy.workload_summary.__module__, legacy.__name__)
+        from src.baselines.text.map_inputs import workload_summary
+        self.assertIs(pickle.loads(pickle.dumps(workload_summary)), workload_summary)
 
-    def test_private_file_bytes_permissions_exclusive_creation_and_legacy_os_patch(self):
+    def test_private_file_bytes_permissions_exclusive_creation_and_fsync(self):
         from src.infrastructure.private_artifacts import open_private_text, write_private_json
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "verbatim.txt"
@@ -50,7 +47,7 @@ class SharedArtifactToolTests(unittest.TestCase):
                 with open_private_text(path):
                     self.fail("an existing private artifact must not be opened")
             target = Path(directory) / "value.json"
-            with patch("src.baselines.common.private_artifacts.os.fsync", wraps=os.fsync) as sync:
+            with patch("src.infrastructure.private_artifacts.os.fsync", wraps=os.fsync) as sync:
                 write_private_json(target, {"value": "unchanged"})
             sync.assert_called_once()
             self.assertEqual(target.read_bytes(), b'{\n  "value": "unchanged"\n}\n')

@@ -1,0 +1,91 @@
+{
+  "schema": "semloom.config_parse_simplify_checks.v1",
+  "run_id": "semloom-config-parse-simplify-20261105",
+  "base": "a255574fadba9f8106082de272055895b392a905",
+  "classification": "CPU fixtures only; no actual Ray runtime, model, GPU, server or network action",
+  "modules": [
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests",
+    "tests.experiments.test_records_config_imports",
+    "tests.experiments.test_record_feedback_profiles.ProfileEntryTests.test_normal_config_accepts_both_names_and_rejects_missing_computed_features",
+    "tests.experiments.test_records_service_entry.ServiceEntryTests.test_config_and_check_preview_allocate_no_owner_and_do_not_inherit_R",
+    "tests.experiments.test_records_service_entry.ServiceEntryTests.test_invalid_service_bytes_and_conflicts_fail_in_CPU_preflight",
+    "tests.experiments.test_records_service_entry.ServiceEntryTests.test_direct_session_start_rejects_bad_bytes_before_directory_or_Ray"
+  ],
+  "selected": 21,
+  "passed": 21,
+  "failures": [],
+  "errors": [],
+  "skipped": [],
+  "successful_method_ids": [
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_default_admission_identity_is_unchanged_when_capacity_fields_are_absent",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_driver_forwards_the_same_capacity_and_limits_to_factory",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_explicit_capacities_change_existing_admission_identity_without_mutating_config",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_ordinary_check_reports_capacity_without_allocating_an_owner",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_ordinary_config_and_parser_keep_explicit_capacity_and_partial_limits",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_other_baselines_and_sync_limits_reject_new_async_fields",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_rolling_feedback_uses_hard_owner_R_instead_of_initial_C",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_session_accepts_config_for_resident_and_isolated_lifetimes",
+    "tests.experiments.test_records_capacity_config.CapacityMovieEntryTests.test_small_budget_and_bad_capacity_reject_during_preflight",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests.test_async_request_budget_can_exceed_engine_iteration_capacity",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests.test_auto_selects_declared_request_budget_and_keeps_engine_iteration_capacity",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests.test_cli_check_reports_effective_profile_for_both_core_selectors_without_allocation",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests.test_direct_actor_injection_reports_its_actual_mode_and_timing",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests.test_empty_profile_preserves_the_synchronous_reference_and_rejects_silent_overrides",
+    "tests.experiments.test_core_execution_profile.CoreProfileTests.test_profile_factory_keeps_method_generation_hardware_and_legacy_owner",
+    "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_capacity_profile_IPC_and_cache_helpers_do_not_load_owners",
+    "tests.experiments.test_records_config_imports.RecordsConfigImportTests.test_public_session_check_reads_fixture_sources_without_loading_owners",
+    "tests.experiments.test_record_feedback_profiles.ProfileEntryTests.test_normal_config_accepts_both_names_and_rejects_missing_computed_features",
+    "tests.experiments.test_records_service_entry.ServiceEntryTests.test_config_and_check_preview_allocate_no_owner_and_do_not_inherit_R",
+    "tests.experiments.test_records_service_entry.ServiceEntryTests.test_invalid_service_bytes_and_conflicts_fail_in_CPU_preflight",
+    "tests.experiments.test_records_service_entry.ServiceEntryTests.test_direct_session_start_rejects_bad_bytes_before_directory_or_Ray"
+  ],
+  "tested_python_sha256": {
+    "code/src/execution_provider/adapters/records_profile.py": "1c2e8fcfcc24f52cfa2117fa3f13020ab480d45c344e4a4270e16e46b9d31099",
+    "code/src/experiments/lotus_records_movie.py": "1fb075180deb5678cde72b6f3338148b8c2fda56ac58bf8e8b88924462ff68c0",
+    "code/tests/experiments/test_records_capacity_config.py": "e0783b2634f2a83d495ba7638ea2a837c7dad1328b276e9cd74073f112c7665b"
+  },
+  "source_unchanged_during_suite": true,
+  "Python": "3.12.6",
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "daft": "0.7.21",
+    "ray": "2.56.1",
+    "pyarrow": "24.0.0",
+    "litellm": "1.95.0",
+    "openai": "2.50.0"
+  },
+  "elapsed_s": 0.7208255000878125,
+  "report_cases": [
+    "async_limits omitted: requested remains null while resolved remains complete",
+    "explicit empty object: requested equals complete resolved limits",
+    "explicit feedback_interval_s: requested equals complete resolved limits with original value"
+  ],
+  "original_error_or_permission_differences": [],
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "private_originals": [
+    {
+      "name": "config-parse-targeted.json",
+      "bytes": 176449,
+      "sha256": "970644adefdfd17d170ddd0aa0a83f7fc22e7d34a1205d093eee6f68d831160a"
+    },
+    {
+      "name": "config-parse-targeted.log",
+      "bytes": 4620,
+      "sha256": "f61ac6f53155a4d630fb5a6d840ae8789adc5d99281e0e87bf2e7c84bde9a122"
+    },
+    {
+      "name": "run_cpu.py",
+      "bytes": 3154,
+      "sha256": "36730e6c9175cf3363fc623af6d5e1e2e0ab87cd5dcce761aa9088b45eaacad5"
+    },
+    {
+      "name": "run_guarded.py",
+      "bytes": 617,
+      "sha256": "76adb2dc909ab05bd7e0978b16a9055d8ba0b167233f8d02675dfbff32886ac0"
+    }
+  ],
+  "rerun": "Use the listed unittest selections with the existing CPU dependencies, PYTHONPATH=code, CUDA_VISIBLE_DEVICES empty, HF_HUB_OFFLINE=1, TRANSFORMERS_OFFLINE=1, SEMLOOM_REAL_RAY_CPU=0 and SEMLOOM_NATIVE_LARGE_RAY_TEST=0."
+}

@@ -15,7 +15,8 @@ from src.execution_provider.adapters.lotus_chain_token_budget import (
 )
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.modalities.text.tokenization import chat_token_count
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.records import RecordsResources
@@ -185,20 +186,21 @@ class QueryTokenTests(unittest.TestCase):
         costs = [budget.estimate(row, plan.stages[0].generation)["reserved_tokens"] for row in run.prepared]
         W = max(costs)
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        original = AsyncCoreModelActor._try_core
         def hold_first(actor, *args):
             result = original(actor, *args)
-            if args[0][0]["source_position"] == 0:
+            if result['status'] == 'accepted' and args[0][0]["source_position"] == 0:
                 ready.set()
                 if not release.wait(5):
                     raise TimeoutError("CPU test did not release the first receipt")
             return result
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_first):
+                patch.object(AsyncCoreModelActor, "_try_core", hold_first):
             owner = self.owner(plan, budget=self.budget(plan, W))
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:
                 self.until(stream, ready.is_set)
+                self.until(stream, lambda: any(e['event'] == 'start' for e in self.events()))
                 for _ in range(6):
                     stream._tick()
                 usage = owner.core.capacity.usage()
@@ -281,17 +283,37 @@ class QueryTokenTests(unittest.TestCase):
 
     def test_unconfirmed_close_keeps_W_until_late_known_terminal_without_replay(self):
         plan, rows = fixture.chain_for("MM"), fixture.source_rows(size=1)
-        self.responses(plan, rows)
+        config = self.responses(plan, rows)
+        config['responses']['step_0|occ-0']['delay_s'] = .08
+        self.config.write_text(json.dumps(config))
         ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
+        original = AsyncCoreModelActor._try_core
         def hold_delivery(actor, *args):
             value = original(actor, *args)
-            ready.set()
-            if not release.wait(5):
-                raise TimeoutError("CPU test did not release the late receipt")
+            if value['status'] == 'accepted':
+                # Acceptance alone does not establish a successful terminal.
+                # Hold delivery only after the CPU result actually exists;
+                # close can then test retained known work without a race with
+                # native generation/shutdown. Core has not consumed this result.
+                key, until = tuple(args[3]), time.monotonic()+5
+                with actor._condition:
+                    while True:
+                        actor._collect()
+                        call = actor._held.get(key)
+                        if call is not None and call.value is not None:
+                            if call.value['status'] != 'succeeded':
+                                raise AssertionError('late-known fixture requires a successful CPU result')
+                            break
+                        remaining = until-time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError('late-known CPU result was not produced')
+                        actor._condition.wait(min(.01, remaining))
+                ready.set()
+                if not release.wait(5):
+                    raise TimeoutError("CPU test did not release the late receipt")
             return value
         with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_delivery):
+                patch.object(AsyncCoreModelActor, "_try_core", hold_delivery):
             owner = self.owner(plan, budget=self.budget(plan), C=1)
             stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
             try:

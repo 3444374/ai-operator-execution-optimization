@@ -1,0 +1,112 @@
+{
+  "schema": "semloom.ray-native-zero-model-lifecycle.v1",
+  "source": {
+    "head": "e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2",
+    "tree": "0e90780ec5538e55308378ab47cf69806d661d0d",
+    "tracked_clean": true,
+    "probe_sha256": "3a1f5bd8e093763b939d419b34414272a0cdf2a2b42e6b65a688dbd75132f89c"
+  },
+  "handoff_sha256": "a294c24e56bf0655c9f28a4f4ba69f4acd207444604dae60d8e531443566a428",
+  "execution": {
+    "modes_executed": [
+      "spawn",
+      "explicit",
+      "actor_gc",
+      "runtime"
+    ],
+    "runs_per_mode": 1,
+    "elapsed_s": 19.442991940304637,
+    "models": 0,
+    "GPU_runs": 0,
+    "CPU_Ray_runtimes": 3,
+    "no_inference_libraries_requested": true,
+    "worker_forbidden_imports": {
+      "spawn": [],
+      "explicit": [],
+      "actor_gc": [],
+      "runtime": []
+    },
+    "warmup": 0,
+    "automatic_retries": 0,
+    "dependencies_installed": false,
+    "third_party_library_files_modified": false,
+    "production_changed": false
+  },
+  "findings": {
+    "confirmed_in_CPU_reproduction": [
+      "Both exact leaked POSIX semaphore names came from the spawned child constructing its first tqdm: std.py.__new__ -> get_lock -> TqdmDefaultWriteLock.create_mp_lock -> multiprocessing.RLock -> SemLock(kind0). Creation stat inode/ctime matches each later residual and manual recovery.",
+      "Actor/driver actual default context was fork, while the explicitly chosen child Process context and the child's actual context were spawn. This was read from the live processes, not inferred from environment variables.",
+      "For actor_gc, Ray logs successful kill requests for both the exact progress-child PID and the identified resource_tracker PID before actor __ray_shutdown__ begins. Timestamp resolution is1ms; the hook is approximately2.5ms after the kill log.",
+      "The child can still report is_alive=true at callback entry because kill delivery/reaping is asynchronous; its join then reports exitcode-9. No matching cleanup/unregister or tracker cleanup ran, and the exact lock remained.",
+      "The explicit close control first permits child normal exit0 and its matching cleanup/unregister; only then is the actor handle released. Ray later kills the tracker but no lock remains."
+    ],
+    "limits": [
+      "The runtime-close case's actor-GC hook ran approximately31.1ms before driver ray.shutdown entered. This run also reproduces actor-GC leakage, but does not isolate any additional effect of runtime shutdown.",
+      "Each scenario ran once. Two leaking scenarios do not establish a statistical reproduction rate.",
+      "The original Q3 named semaphore had no captured creation stack. These matching CPU experiments provide mechanism evidence, but do not retroactively identify that exact original object with certainty.",
+      "No GPU/vLLM execution or inference-library change was needed for the minimal reproduction; no production/Ray fix has been applied.",
+      "Observed-process exit proofs do not independently cover arbitrary unobserved detached descendants."
+    ],
+    "original_Q3_lifecycle_failure_preserved": true
+  },
+  "controls": {
+    "spawn": {
+      "worker_status": "completed",
+      "worker_exit": 0,
+      "resource_original_passed": true,
+      "original_shm_delta_bytes": 0,
+      "child_unregister_count": 1,
+      "child_cleanup_count": 1,
+      "tracker_atexit_observed": true,
+      "child_exitcodes_from_close": [],
+      "original_remaining_shm_count": 0,
+      "remaining_after_recovery_count": 0
+    },
+    "explicit": {
+      "worker_status": "completed",
+      "worker_exit": 0,
+      "resource_original_passed": true,
+      "original_shm_delta_bytes": 0,
+      "child_unregister_count": 1,
+      "child_cleanup_count": 1,
+      "tracker_atexit_observed": false,
+      "child_exitcodes_from_close": [
+        0,
+        0
+      ],
+      "original_remaining_shm_count": 0,
+      "remaining_after_recovery_count": 0
+    },
+    "actor_gc": {
+      "worker_status": "completed",
+      "worker_exit": 0,
+      "resource_original_passed": false,
+      "original_shm_delta_bytes": 4096,
+      "child_unregister_count": 0,
+      "child_cleanup_count": 0,
+      "tracker_atexit_observed": false,
+      "child_exitcodes_from_close": [
+        -9
+      ],
+      "original_remaining_shm_count": 1,
+      "remaining_after_recovery_count": 0
+    },
+    "runtime": {
+      "worker_status": "completed",
+      "worker_exit": 0,
+      "resource_original_passed": false,
+      "original_shm_delta_bytes": 4096,
+      "child_unregister_count": 0,
+      "child_cleanup_count": 0,
+      "tracker_atexit_observed": false,
+      "child_exitcodes_from_close": [
+        -9
+      ],
+      "original_remaining_shm_count": 1,
+      "remaining_after_recovery_count": 0
+    }
+  },
+  "status": "diagnostic complete; two original resource failures preserved",
+  "third_party_fix_applied": false,
+  "independent_runtime_shutdown_effect_proven": false
+}

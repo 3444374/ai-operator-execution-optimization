@@ -62,8 +62,8 @@ class CoreProfileTests(unittest.TestCase):
                 self.assertEqual(resolved["declared_request_budget"], 8)
                 self.assertEqual(resolved["engine_max_num_seqs"], 4)
         feedback = core.resolve_core_profile(self.engine, self.resources,
-            dict(mode="async", max_inflight=2, admission=dict(kind="resource_feedback")))
-        self.assertEqual((feedback["initial_window"], feedback["owner_max_inflight"]), (2, 8))
+            dict(mode="async", max_inflight=1, admission=dict(kind="resource_feedback")))
+        self.assertEqual((feedback["initial_window"], feedback["owner_max_inflight"]), (1, 8))
         self.assertEqual(self.engine.max_num_seqs, 4)
         with self.assertRaises(ValueError):
             core.resolve_core_profile(self.engine, self.resources, dict(mode="async", max_inflight=9))
@@ -98,7 +98,8 @@ class CoreProfileTests(unittest.TestCase):
                 profile=dict(mode="async", max_inflight=3))
         self.assertIs(result, owner.return_value)
         self.assertEqual(actors.call_args.args[:3], (method, self.engine, generation))
-        self.assertEqual(owner.call_args.args[3], replace(self.resources, max_active_batches=3))
+        self.assertEqual(owner.call_args.args[3], self.resources)
+        self.assertEqual(result.execution_profile['max_inflight'],3)
         with patch.object(core, "SemLoomRecordsCore") as owner, \
                 patch.object(async_actor, "AsyncRecordsActorOwner") as actors:
             core.create_records_core(method, self.engine, generation, self.resources)

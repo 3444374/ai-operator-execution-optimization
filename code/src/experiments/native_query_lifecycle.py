@@ -7,10 +7,10 @@ from pathlib import Path
 import time
 import traceback
 import uuid
-from src.baselines.common.private_artifacts import new_private_directory, publish_private_json, write_private_json
-from src.baselines.common.redact import redact_json_values
+from src.infrastructure.private_artifacts import new_private_directory, publish_private_json, write_private_json
+from src.infrastructure.redact import redact_json_values
 
-RESIDENT = frozenset({"lotus-native", "semloom-core", "semloom-static-reference", "imlane"})
+RESIDENT = frozenset({"semloom-core", "semloom-static-reference", "lotus-native", "imlane"})
 BACKENDS = RESIDENT | {"ray-data", "daft", "imlane"}
 LIFECYCLES = {"resident", "isolated", "runtime_reuse_only", "native_single_thread_session"}
 DAFT_SESSION_PROFILE = dict(native_threads=1, use_process=False, max_concurrency=None)
@@ -77,7 +77,7 @@ def _lifecycle_timing(report):
 
 
 def run_sequence(queries, factory, output, *, backend, lifecycle="resident", observer=None, clock=None,
-                 setup=None, checkpoint=None):
+                 setup=None, checkpoint=None, supported_backends=BACKENDS, resident_backends=RESIDENT):
     """Run one ready owner or consecutive isolated owners, stopping on any failure.
 
     ``factory(directory, first_query)`` allocates no resources in its constructor. Its
@@ -88,14 +88,16 @@ def run_sequence(queries, factory, output, *, backend, lifecycle="resident", obs
     An optional synchronous lifecycle checkpoint runs after a complete query is
     durably published, before advancing or closing its owner. Its failure stops
     the session; diagnostic observer failures remain noncritical.
+    Callers declare adapter identities and model reuse per call. Defaults retain
+    the existing Movie adapters; declarations do not change module state.
     """
-    if backend not in BACKENDS or lifecycle not in LIFECYCLES:
+    if backend not in supported_backends or lifecycle not in LIFECYCLES:
         raise ValueError("unsupported backend or lifecycle")
     if lifecycle == "native_single_thread_session" and backend != "daft":
         raise ValueError("native_single_thread_session requires daft")
     if lifecycle == "runtime_reuse_only" and backend != "ray-data":
         raise ValueError("runtime_reuse_only is implemented only for ray-data")
-    if lifecycle == "resident" and backend not in RESIDENT:
+    if lifecycle == "resident" and backend not in resident_backends:
         raise ValueError(backend + " has no cross-query model reuse implemented by this adapter; select isolated")
     queries = tuple(dict(query) for query in queries)
     ids = [query["query_id"] for query in queries]

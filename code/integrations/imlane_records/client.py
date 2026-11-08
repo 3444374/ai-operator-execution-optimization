@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import selectors
 import time
 from typing import Callable
+
+from src.infrastructure.deadlines import deadline_after, deadline_expired, remaining_time
+from integrations.imlane_records.transport_limits import TransportLimits
 
 
 class RecordsRejected(RuntimeError):
@@ -13,12 +17,17 @@ class RecordsRejected(RuntimeError):
 
 
 class RecordsBridge:
-    def __init__(self, process, *, abort_owner: Callable[[], None], timeout_s=10.0, log=None,
+    def __init__(self, process, *, abort_owner: Callable[[], None], max_pending, limits: TransportLimits, timeout_s=10.0, log=None,
                  protocol="imlane.records.v1"):
-        if not callable(abort_owner) or not 0 < timeout_s <= 600:
+        if (not callable(abort_owner) or type(timeout_s) not in (int, float)
+                or not math.isfinite(timeout_s) or timeout_s <= 0
+                or type(max_pending) is not int or max_pending <= 0):
             raise ValueError("records bridge requires a supervisor and finite timeout")
         if protocol not in ("imlane.records.v1", "imlane.records.v2"):
             raise ValueError("unsupported records protocol")
+        if limits.max_pending_blocks != max_pending:
+            raise ValueError("bridge pending grant differs from its transport declaration")
+        self.limits = limits
         self.process, self.abort_owner, self.timeout_s = process, abort_owner, timeout_s
         self.log = log or (lambda _line: None)
         self._buffer = bytearray()
@@ -27,7 +36,10 @@ class RecordsBridge:
             os.set_blocking(process.stdin.fileno(), False)
             os.set_blocking(process.stdout.fileno(), False)
             self.meta = self._read(time.monotonic() + timeout_s)
-            if self.meta.get("event") != "ready" or self.meta.get("protocol") != protocol:
+            if (self.meta.get("event") != "ready" or self.meta.get("protocol") != protocol
+                    or type(self.meta.get('max_pending_blocks')) is not int
+                    or self.meta['max_pending_blocks'] != max_pending
+                    or self.meta.get('transport_limits') != limits.describe()):
                 raise RuntimeError("records bridge startup differs")
         except BaseException as error:
             self._terminal = True
@@ -51,6 +63,8 @@ class RecordsBridge:
             if b"\n" in self._buffer:
                 line, _, remaining = self._buffer.partition(b"\n")
                 self._buffer = bytearray(remaining)
+                if len(line) + 1 > self.limits.max_response_bytes:
+                    raise RuntimeError("records bridge frame exceeds its declared allowance")
                 text = line.decode("utf-8")
                 if text.startswith("IMLANE_RECORDS "):
                     return json.loads(text.partition(" ")[2])
@@ -61,15 +75,13 @@ class RecordsBridge:
             if not part:
                 raise RuntimeError("records bridge ended without a complete response")
             self._buffer.extend(part)
-            if len(self._buffer) > 8 * 1048576:
+            if len(self._buffer) > self.limits.max_response_bytes:
                 raise RuntimeError("records bridge frame exceeds its allowance")
 
     def request(self, op, *, deadline=None, **values):
         if self._terminal or self._closed:
             raise RuntimeError("records bridge owner is terminal or closed")
-        wire = (json.dumps(dict(op=op, **values), ensure_ascii=False, allow_nan=False) + "\n").encode()
-        if len(wire) > 131072:
-            raise ValueError("records command exceeds wire allowance before submission")
+        wire = self.limits.command(op, **values)
         deadline = min(time.monotonic() + self.timeout_s, deadline) if deadline is not None else time.monotonic() + self.timeout_s
         try:
             offset = 0
@@ -85,6 +97,8 @@ class RecordsBridge:
                 raise RuntimeError(reply.get("error", "records owner became terminal"))
             if reply.get("ok") is not True or reply.get("event") != op:
                 raise RuntimeError("records reply does not match command")
+            if op == "collect":
+                self.limits.check_output(reply["rows"])
             return reply
         except RecordsRejected:
             raise
@@ -100,6 +114,10 @@ class RecordsBridge:
         return self.request("begin", query_id=query_id, deadline=deadline)
 
     def submit(self, block_id, rows, *, deadline=None):
+        try:
+            self.limits.check_input(rows)
+        except ValueError as error:
+            raise RecordsRejected(str(error)) from error
         return self.request("submit", block_id=block_id, rows=rows, deadline=deadline)
 
     def ready(self, *, deadline=None):
@@ -109,14 +127,15 @@ class RecordsBridge:
         return self.request("collect", block_id=block_id, deadline=deadline)["rows"]
 
     def wait_ready(self, *, timeout_s):
-        if not 0 < timeout_s <= 600:
-            raise ValueError("records task deadline must be positive and finite")
-        deadline = time.monotonic() + timeout_s
-        while time.monotonic() < deadline:
+        if timeout_s is not None and (type(timeout_s) not in (int, float)
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise ValueError("records task duration must be finite and positive or None")
+        deadline = deadline_after(timeout_s)
+        while not deadline_expired(deadline):
             try:
                 blocks = self.ready(deadline=deadline)
             except TimeoutError as cause:
-                if time.monotonic() < deadline:
+                if not deadline_expired(deadline):
                     raise
                 error = TimeoutError("records native task deadline exceeded; owner must stop")
                 for note in getattr(cause, "__notes__", ()):
@@ -124,7 +143,7 @@ class RecordsBridge:
                 raise error from cause
             if blocks:
                 return blocks
-            time.sleep(min(.01, max(0, deadline - time.monotonic())))
+            time.sleep(remaining_time(deadline, .01))
         self._terminal = True
         error = TimeoutError("records native task deadline exceeded; owner must stop")
         try:

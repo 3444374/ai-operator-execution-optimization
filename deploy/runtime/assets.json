@@ -24,7 +24,7 @@
     ],
     "sql-readers": [
       {"module": "sqlalchemy", "install": "SQLAlchemy>=2,<3"},
-      {"module": "sqlglot", "install": "sqlglot>=30,<31"},
+      {"module": "sqlglot", "install": "sqlglot>=30,<30.9"},
       {"module": "connectorx", "install": "connectorx>=0.4,<0.5"},
       {"module": "psycopg", "install": "psycopg[binary]>=3.2"}
     ],

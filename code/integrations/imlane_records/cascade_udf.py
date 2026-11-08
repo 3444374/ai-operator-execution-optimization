@@ -16,6 +16,7 @@ from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_udf import FilterWorker
 from integrations.imlane_records.filter_workload import PROTOCOL, validate_terminal
 from integrations.imlane_records.method_owner import owned_worker, slot
+from integrations.imlane_records.transport_limits import TransportLimits
 from src.semantic_methods.lotus.cascade import CascadePreparer, IDENTITY_FIELDS, local_generation
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, _prepared
@@ -29,15 +30,16 @@ class CascadeWorker(FilterWorker):
         self.engine = EngineSpec.from_dict(config["engine"])
         self.generation = local_generation(self.stage)
         self.resources = RecordsResources(**config["resources"])
+        self.resources.request_capacity()
         self.query_id, self.deadline = config["query_id"], config["deadline_monotonic"]
         self.control, self.model_environment = Path(config["control_dir"]), dict(config["model_environment"])
         if (config.get("schema") != "imlane.cascade.stage.v1" or not self.stage.records
                 or any(r["query_id"] != self.query_id for r in self.stage.records)
-                or not self.control.is_dir() or not time.monotonic() < self.deadline < float("inf")
-                or self.resources.cpu_workers != 1 or self.resources.model_batch_rows > 16
-                or self.resources.prepare_batch_rows > 16 or self.resources.max_active_batches > 2
+                or not self.control.is_dir() or self.deadline is not None and (type(self.deadline) not in (int, float)
+                    or not time.monotonic() < self.deadline < float("inf"))
+                or self.resources.cpu_workers != 1
                 or self.engine.max_model_calls != len(self.stage.records)
-                or self.generation.max_tokens > self.engine.max_model_len):
+                or self.engine.max_model_len is not None and self.generation.max_tokens > self.engine.max_model_len):
             raise ValueError("cascade worker requires one finite bound role, stage and query")
         self.prepare = (prepare_type or CascadePreparer)(self.stage)
         self.engine_type, self.kernel = engine_type, None
@@ -106,7 +108,7 @@ class CascadeWorker(FilterWorker):
                 if faulty:
                     self.broken = True
                     associated[0]["imlane_protocol_error"] = "CascadeResultProtocolError"
-                    from src.baselines.text.frameworks.daft_engine_process import _publish
+                    from src.serving.backends.vllm_sync_process import _publish
                     try:
                         _publish(self.control / ("cascade-audit-" + uuid.uuid4().hex + ".json"), dict(
                             query_id=self.query_id, stage=self.stage.name, model_role=self.stage.model_role,
@@ -130,7 +132,7 @@ class CascadeWorker(FilterWorker):
 
 def infer_records(table):
     table.validate(full=True)
-    if (table.column_names != INPUT.names or table.schema.metadata or not 0 < len(table) <= 16
+    if (table.column_names != INPUT.names or table.schema.metadata or not 0 < len(table)
             or any(f.type != INPUT.field(i).type or f.metadata for i, f in enumerate(table.schema))
             or any(table.column(i).null_count for i in range(table.num_columns))):
         raise ValueError("cascade requires the existing bounded records Arrow schema")
@@ -139,11 +141,12 @@ def infer_records(table):
         raise ValueError("cascade stage configuration is not a bounded private file")
     config = json.loads(path.read_text())
     rows = table.to_pylist()
+    TransportLimits.from_dict(config["transport_limits"]).check_input(rows)
     stage = stage_values(config["stage"])
     if any((r["query_id"], r["stage_id"]) != (config["query_id"], stage.name) for r in rows):
         raise ValueError("cascade input crosses query or stage")
     fingerprint = hashlib.sha256(json.dumps(dict(kind="cascade", **{k: config[k] for k in (
-        "stage", "engine", "resources", "model_environment")}), sort_keys=True).encode()).hexdigest()
+        "stage", "engine", "resources", "model_environment", "transport_limits")}), sort_keys=True).encode()).hexdigest()
     worker = owned_worker(config, fingerprint, CascadeWorker)
     if worker.query_id != config["query_id"]:
         raise ValueError("cascade interpreter belongs to another query")

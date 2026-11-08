@@ -36,7 +36,7 @@ def stage_values(value):
             or type(stage.model_name) is not str or not stage.model_name.strip()
             or type(stage.instruction) is not str or not stage.instruction.strip()
             or stage.system_prompt is not None and type(stage.system_prompt) is not str
-            or not 0 <= len(stage.records) <= 4096):
+            or not isinstance(stage.records, (tuple, list))):
         raise ValueError("invalid bounded text cascade stage")
     seen, query = set(), None
     for row in stage.records:
@@ -95,8 +95,8 @@ class CascadeOccurrences:
                     identity_json=json.dumps(identity, ensure_ascii=False),
                     payload_json=json.dumps({c: row[c] for c in self.stage.input_columns}, ensure_ascii=False)),
                     ensure_ascii=False, allow_nan=False)))
-        if not 0 < len(staged) <= 16:
-            raise ValueError("cascade transport block must contain 1..16 occurrences")
+        if not staged:
+            raise ValueError("cascade transport block must contain declared occurrences")
         self.inputs.update((row["call_id"], row) for row in staged)
         return staged
 

@@ -15,7 +15,8 @@ from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.method_owner import owned_worker, slot as _slot
 from integrations.imlane_records.model_lifecycle import close_owned_model, model_closed
-from src.baselines.text.frameworks.lotus_chain_batch import FusedChainBatch
+from integrations.imlane_records.transport_limits import TransportLimits
+from src.baselines.text.frameworks.reference_chain_batch import ReferenceFusedChainBatch as FusedChainBatch
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 
@@ -25,9 +26,9 @@ class ChainWorker:
         from integrations.imlane_records.model_process import IMLaneChainEngineProcess
 
         resources = RecordsResources(**config["resources"])
+        resources.request_capacity()
         engine = EngineSpec.from_dict(config["engine"])
-        if (resources.cpu_workers != 1 or resources.model_batch_rows > 16 or resources.max_active_batches > 2
-                or engine.max_model_calls is None or engine.max_model_calls > 4096):
+        if (resources.cpu_workers != 1 or engine.max_model_calls is None):
             raise ValueError("IMLane chain requires one bounded worker and finite model allowance")
         environment = dict(config["model_environment"])
 
@@ -38,6 +39,7 @@ class ChainWorker:
         class OwnedBatch(FusedChainBatch):
             _engine_type = engine_type or AssignedEngine
 
+        self.max_batch_rows = resources.model_batch_rows
         self.query_id, self.uid = config["query_id"], uuid.uuid4().hex
         if config["chain"]["query_id"] != self.query_id:
             raise ValueError("chain and transport must identify the same query")
@@ -59,7 +61,7 @@ class ChainWorker:
         with self.lock:
             if self.closed:
                 raise RuntimeError("closed chain owner cannot infer again")
-            batch = self.batch.run_rows(batch_rows(source))
+            batch = self.batch.run_rows(batch_rows(source, max_rows=self.max_batch_rows))
             self.broken = self.broken or bool(batch.get("error_type"))
             return batch
 
@@ -99,11 +101,12 @@ def infer_records(table):
         raise ValueError("chain tasks require one fixed-schema transport occurrence")
     source = table.to_pylist()[0]
     config = json.loads(Path(os.environ["IMLANE_CHAIN_CONFIG"]).read_text())
+    TransportLimits.from_dict(config["transport_limits"]).check_input([source])
     if source["query_id"] != config["query_id"] or source["stage_id"] != STAGE:
         raise ValueError("chain task crosses query or workload stage")
     signature = hashlib.sha256(json.dumps(dict(kind="chain", stages=config["chain"]["stages"],
         phase=config.get("phase"),
-        **{key: config[key] for key in ("engine", "resources", "model_environment")}), sort_keys=True).encode()).hexdigest()
+        **{key: config[key] for key in ("engine", "resources", "model_environment", "transport_limits")}), sort_keys=True).encode()).hexdigest()
     work = owned_worker(config, signature, ChainWorker)
     if config["query_id"] != work.query_id:
         raise ValueError("chain input does not belong to the current interpreter query")

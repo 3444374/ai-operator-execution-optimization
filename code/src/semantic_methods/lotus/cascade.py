@@ -1,4 +1,4 @@
-"""Pinned LOTUS helper-LM control with a records-only evaluation seam.
+"""Native LOTUS helper-LM control with a records-only evaluation seam.
 
 The installed accessor and threshold learner execute their original code objects
 with private globals. Only document expansion and model evaluation are replaced;
@@ -8,38 +8,26 @@ no module, installed file, LM instance method, or threshold algorithm is patched
 from copy import deepcopy
 from dataclasses import dataclass
 from importlib import import_module
-from importlib.metadata import distribution
-import hashlib
 import json
 import math
 from types import FunctionType, SimpleNamespace
 
 from .engine import (
-    FILTER_SOURCE_HASHES, engine_response, lm_report, validate_engine_protocol, validate_filter_source,
+    engine_response, lm_report, validate_engine_protocol,
 )
 from .records import FilterMethod
-from .sdk import LOTUS_COMMIT
+from .filter_answers import FILTER_PARSERS, LOTUS_NATIVE, parse_filter_answers
+from .source import CASCADE_FILES, source_report
 
 
-CASCADE_SOURCE_HASHES = dict(FILTER_SOURCE_HASHES, **{
-    "sem_ops/cascade_utils.py": "14fc1140939567559abde71976c1f3d21906864d720aa324f983f9dc8cf3b594",
-    "types.py": "73b0ebb4a8a9606cdec6df27353d57fb28ce6e2f5800c539caee892eb4f2cc6b",
-    "utils.py": "2d8d38af8230f447a354f460e25a8f523f1dc1aa5edebf977a8297ed04458ebe",
-})
 STAGES = ("helper_score", "threshold_sample", "fallback")
 IDENTITY_FIELDS = ("query_id", "model_role", "algorithm_stage", "row_id",
                    "source_position", "call_index", "call_id")
 
 
 def validate_cascade_source():
-    validate_filter_source()
-    root = distribution("lotus-ai").locate_file("lotus")
-    for relative, expected in CASCADE_SOURCE_HASHES.items():
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
-            raise ValueError("records cascade source differs at lotus/" + relative)
-    return dict(profile="lotus-helper-cascade-records-v2", lotus_commit=LOTUS_COMMIT,
-                source_hashes=dict(CASCADE_SOURCE_HASHES),
-                control="original accessor and learner code objects; private records globals")
+    evidence = source_report("lotus-helper-cascade-records-v2", CASCADE_FILES)
+    return dict(evidence, control="original accessor and learner code objects; private records globals")
 
 
 def cascade_identity(query_id, row_id, source_position, call_index, *, model_role, stage):
@@ -95,7 +83,7 @@ def _generation_options(effective):
 
 def local_generation(stage):
     """Map only supported effective LM options; unsupported options fail before allocation."""
-    from src.serving.backends.vllm_engine import GenerationSpec
+    from src.serving.backends.vllm_protocol import GenerationSpec
 
     options = _generation_options(stage.effective_kwargs)
     return GenerationSpec(**options)
@@ -115,7 +103,7 @@ def _effective(lm, model_kwargs, logprobs):
                              ", ".join(sorted(values.keys() - allowed)))
     # Validate ordinary values without requiring local helper execution support.
     # A backend then validates actual logprobs capability before model allocation.
-    from src.serving.backends.vllm_engine import GenerationSpec
+    from src.serving.backends.vllm_protocol import GenerationSpec
     GenerationSpec(**dict(_generation_options(options), logprobs=None))
     return options
 
@@ -153,7 +141,6 @@ def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, instruction, ma
     from lotus.models import LM
     from lotus.types import CascadeArgs, ProxyModel, SerializationFormat
 
-    validate_cascade_source()
     if (not isinstance(main_lm, LM) or not isinstance(helper_lm, LM)
             or main_lm is helper_lm):
         raise ValueError("distinct original main and helper LM objects are required")
@@ -232,12 +219,15 @@ def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, instruction, ma
 
 def cascade_response(result, lm, *, logprobs):
     """Preserve original LM extraction while requiring real helper token metadata."""
-    from litellm.types.utils import ModelResponse
-
     response = engine_response(result, lm)
     validate_engine_protocol(result)
-    if not logprobs:
-        return response
+    return _helper_response(result, response) if logprobs else response
+
+
+def _helper_response(result, response):
+    """Attach validated helper metadata to an already validated engine response."""
+    from litellm.types.utils import ModelResponse
+
     content = json.loads(result.get("logprobs_json", "null"))
     token_ids = json.loads(result.get("output_token_ids_json", "null"))
     if (type(content) is not list or not content or type(token_ids) is not list
@@ -308,12 +298,13 @@ class _StageCalls:
 class CascadeRun:
     """One query's original control, logical calls, and backend-owned stage results."""
 
-    def __init__(self, evaluate, *, query_id, max_calls):
+    def __init__(self, evaluate, *, query_id, max_calls, answer_parser=LOTUS_NATIVE):
         if not callable(evaluate):
             raise TypeError("cascade evaluate must be a records-stage callable")
         cascade_identity(query_id, "preflight", 0, 0, model_role="helper", stage="helper_score")
         self.evaluate = evaluate
         self.query_id, self.max_calls = query_id, max_calls
+        self.answer_parser = answer_parser
         self.stages = []
         self.events = []
         self.active_stage = None
@@ -321,7 +312,6 @@ class CascadeRun:
 
     def dispatch(self, docs, model, instruction, default=True, *, logprobs=False,
                  system_prompt=None, output_tokens=("True", "False"), **options):
-        from lotus.sem_ops.postprocessors import filter_postprocess
         from lotus.types import SemanticFilterOutput
 
         check = getattr(self.evaluate, "check_lifecycle", None)
@@ -409,12 +399,15 @@ class CascadeRun:
             model._update_stats(response, is_cached=False)
         if failures:
             raise RuntimeError("cascade stage contains failed, unknown or malformed engine output") from failures[0]
-        try:
-            responses = [cascade_response(result, model, logprobs=logprobs) for result in results]
-        except (ValueError, TypeError, KeyError) as exc:
-            raise RuntimeError("cascade stage contains malformed token metadata") from exc
+        if logprobs:
+            try:
+                responses = [_helper_response(result, response)
+                             for result, response in zip(results, responses, strict=True)]
+            except (ValueError, TypeError, KeyError) as exc:
+                raise RuntimeError("cascade stage contains malformed token metadata") from exc
         texts = [model._get_top_choice(response) for response in responses]
-        parsed = filter_postprocess(texts, model, default, output_tokens=output_tokens)
+        parsed = parse_filter_answers(texts, model, default, output_tokens=output_tokens,
+                                      answer_parser=self.answer_parser)
         logs = [model._get_top_choice_logprobs(response) for response in responses] if logprobs else None
         self.events.append(dict(event="stage_completed", stage=name, calls=len(records)))
         if check is not None:
@@ -433,6 +426,7 @@ class CascadeRun:
         usage["total_tokens"] = (None if any(usage[k] is None for k in ("prompt_tokens", "completion_tokens"))
                                  else usage["prompt_tokens"] + usage["completion_tokens"])
         return dict(schema="semloom.lotus_cascade_calls.v1", max_calls=self.max_calls,
+                    answer_parser=self.answer_parser,
                     records=deepcopy(records), usage=usage, events=deepcopy(self.events),
                     stages=[dict(name=j.stage.name, model_role=j.stage.model_role,
                                  effective_kwargs=deepcopy(j.stage.effective_kwargs),
@@ -441,7 +435,7 @@ class CascadeRun:
 
 def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instruction, query_id,
                 max_rows, max_calls, default=True, system_prompt=None, model_kwargs=None,
-                strategy=None, examples=None, helper_examples=None):
+                strategy=None, examples=None, helper_examples=None, answer_parser=LOTUS_NATIVE):
     """Run a text Filter with the original global helper controller.
 
     Input uses a position-based index internally and retains occurrence IDs. Empty
@@ -455,9 +449,10 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
         max_rows=max_rows, max_calls=max_calls,
         model_kwargs=model_kwargs, strategy=strategy, examples=examples, helper_examples=helper_examples,
     )
-    if type(default) is not bool or (system_prompt is not None and type(system_prompt) is not str):
+    if (type(default) is not bool or answer_parser not in FILTER_PARSERS
+            or (system_prompt is not None and type(system_prompt) is not str)):
         raise ValueError("invalid cascade parser or system prompt policy")
-    run = CascadeRun(evaluate, query_id=query_id, max_calls=max_calls)
+    run = CascadeRun(evaluate, query_id=query_id, max_calls=max_calls, answer_parser=answer_parser)
     run.main_lm, run.helper_lm, run.effective = main_lm, helper_lm, effective
     run.role_columns = {"main": _method_columns(instruction),
                         "helper": _method_columns(args.helper_filter_instruction or instruction)}
@@ -465,10 +460,12 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
     if preflight is not None:
         preflight(main_lm, helper_lm, effective, max_possible_calls=upper,
                   method=FilterMethod(main_lm.model, instruction=instruction, default=default,
-                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["main"]),
+                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["main"],
+                      answer_parser=answer_parser),
                   helper_method=FilterMethod(helper_lm.model,
                       instruction=args.helper_filter_instruction or instruction, default=default,
-                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["helper"]))
+                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["helper"],
+                      answer_parser=answer_parser))
     module = import_module("lotus.sem_ops.sem_filter")
     learner = _bind(module.learn_filter_cascade_thresholds, {"sem_filter": run.dispatch})
 
@@ -523,7 +520,7 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
         if check is not None:
             check()
         decisions = result.get("_filter", []).tolist() if len(result) else []
-        report = dict(schema="semloom.lotus_helper_cascade.v2", status="completed",
+        report = dict(schema="semloom.lotus_helper_cascade.v2", status="completed", answer_parser=answer_parser,
                     query_id=query_id, instruction=instruction,
                     decisions=[dict(row_id=row["row_id"], source_position=row["source_position"],
                                     decision=bool(decisions[i]),
@@ -540,7 +537,8 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instructio
             check()
         return report
     except BaseException as exc:
-        exc.query_report = dict(status="failed", query_id=query_id, calls=run.report(),
+        exc.query_report = dict(status="failed", query_id=query_id, answer_parser=answer_parser,
+                                calls=run.report(),
                                 lm=dict(main=lm_report(main_lm), helper=lm_report(helper_lm)),
                                 error_type=type(exc).__name__)
         raise
@@ -550,7 +548,6 @@ class CascadePreparer:
     """Original dtype-aware formatter instantiated only inside a backend CPU worker."""
 
     def __init__(self, stage):
-        validate_cascade_source()
         import lotus
         from lotus.cache import InMemoryCache
         from lotus.models import LM

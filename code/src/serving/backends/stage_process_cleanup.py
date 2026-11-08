@@ -92,7 +92,7 @@ class StageEngineCleanup:
             for report in reports:
                 self.errors.extend(report.get("cleanup_errors", []))
             self.errors = list(dict.fromkeys(self.errors))
-            from src.baselines.common.private_artifacts import write_private_json
+            from src.infrastructure.private_artifacts import write_private_json
             temporary = self.control / ("driver-cleanup-" + uuid.uuid4().hex + ".tmp")
             write_private_json(temporary, dict(reports=reports, errors=self.errors))
             os.replace(temporary, self.control / "driver-cleanup.json")

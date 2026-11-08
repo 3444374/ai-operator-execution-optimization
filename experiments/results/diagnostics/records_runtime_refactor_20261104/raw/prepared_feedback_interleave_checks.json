@@ -1,0 +1,118 @@
+{
+  "base": "c5ebddc817e291492540bc2383d3892032d4c8b1",
+  "scope": "CPU fixtures with actual Core/Method/IPC; Ray RPC and inference are substitutes",
+  "production_changed": [
+    "code/src/execution_provider/adapters/records_profile.py",
+    "code/src/execution_provider/adapters/records_query_runtime.py"
+  ],
+  "production_sha256": {
+    "code/src/execution_provider/adapters/records_profile.py": "9edbaeeb43a27fcf55a8a78a7dc06d30fe5995ae99e51589a273af219942d14b",
+    "code/src/execution_provider/adapters/records_query_runtime.py": "36b34a0778f208ebbbbee0f21236ba4914a2f3ee661e37f9eefb5e40c5ed9229"
+  },
+  "full_CPU": {
+    "modules": [
+      "tests.execution_provider.test_records_preparation_profile",
+      "tests.execution_provider.test_prepared_supply_budgets",
+      "tests.execution_provider.test_ready_state_preparation",
+      "tests.execution_provider.test_event_state_preparation",
+      "tests.execution_provider.test_records_request_feedback",
+      "tests.execution_provider.test_records_request_feedback_safety",
+      "tests.execution_provider.test_records_memory_pressure",
+      "tests.experiments.test_movie_preparation_mode"
+    ],
+    "tests": 101,
+    "passed": 101,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_s": 39.66876708297059,
+    "source_unchanged": true
+  },
+  "final_target_CPU": {
+    "modules": [
+      "tests.execution_provider.test_records_preparation_profile",
+      "tests.execution_provider.test_prepared_supply_budgets"
+    ],
+    "tests": 12,
+    "passed": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_s": 8.35
+  },
+  "distinct_successful_methods": 103,
+  "repeated_methods_counted_once": true,
+  "changes_after_full": [
+    "code/tests/execution_provider/test_prepared_supply_budgets.py",
+    "code/tests/execution_provider/test_records_preparation_profile.py"
+  ],
+  "changes_after_full_scope": "only two retested test files; production bytes identical",
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "tokenizers": "0.22.2",
+    "pandas": "2.3.3",
+    "pyarrow": "24.0.0",
+    "psutil": "7.2.2"
+  },
+  "review": {
+    "standards_blocking_findings": 0,
+    "spec_blocking_findings": 0,
+    "timing_test_concern_resolved": true
+  },
+  "retained_failure_kinds": [
+    "missing local tokenizers",
+    "early fixture growth assumption",
+    "timing-dependent wait expectation"
+  ],
+  "real_Ray": 0,
+  "real_model": 0,
+  "GPU": 0,
+  "dependencies_installed": false,
+  "performance_claim": false,
+  "provenance": {
+    "artifact_id": "semloom.prepared_feedback_interleave.cpu.20261105.04c1e6c",
+    "archive": {
+      "name": "CPU-evidence-04c1e6c.tar.gz",
+      "bytes": 249253,
+      "sha256": "b50d5481ae0aa0887c2b0720d7b0cc1f90adca7c223c052ece225cbb188dac8f"
+    },
+    "index": {
+      "member": "EVIDENCE-INDEX.json",
+      "sha256": "9d150e1392ec40ed7e7ec4584bb43c6595f7ecc49e5e8f593a4683d731998604"
+    },
+    "runs": {
+      "full_CPU": {
+        "members": [
+          "CPU.json",
+          "CPU.log",
+          "run_cpu.py"
+        ],
+        "record_kind": "actual unittest result, execution log and runner; source hashes in CPU.json"
+      },
+      "final_target_CPU": {
+        "members": [
+          "target-latest.json"
+        ],
+        "record_kind": "actual unittest execution in session transcript; IDs inventoried afterward; no separate execution log retained"
+      },
+      "retained_failures": {
+        "members": [
+          "retained-failures.json"
+        ],
+        "record_kind": "structured extracts of session errors and diagnostics; not complete historical logs"
+      }
+    },
+    "member_sha256": {
+      "CPU.json": "b972422db3dce08a104e411bdbf8b11888b6cfd7790e661e407f6b5a2b4a1f1d",
+      "CPU.log": "fceeafba2f299f47e1fe54854a8c5c48fe0dd5eecccb1465e4122fea766a3507",
+      "run_cpu.py": "280224f516200b98e67c81c4bd6a3b50ba2d13b85c4b2aaffffeef124144cd2d",
+      "target-latest.json": "19093dcd76e33f9ad26e060daebfd57592331d1720c933518e4c17683e06db00",
+      "retained-failures.json": "388c20f6b81dd1efa39e206f14485db8afba64ad28297daccd2e4deb08ff5003",
+      "final-python-files.json": "0a2c3b0766ba51a65534253dae8dc5af304549ced8edd27e99ce007ef731c274"
+    },
+    "final_source_manifest": "final-python-files.json",
+    "retrieval": "向项目维护者提供 artifact_id 与归档 SHA-256，按同名任务交接中的仓外原件映射获取该归档；原始日志和机器路径不进入公开仓库。"
+  }
+}

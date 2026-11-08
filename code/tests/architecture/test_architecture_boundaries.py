@@ -37,6 +37,7 @@ TEST_DOMAINS = {
     "modalities",
     "observability",
     "planning",
+    "research",
     "scheduling",
     "serving",
 }
@@ -90,6 +91,7 @@ SCHEDULING_FORBIDDEN_IMPORT_PREFIXES = (
     "src.image",
     "src.modalities",
     "src.data",
+    "src.research",
 )
 
 PLANNING_FORBIDDEN_IMPORT_PREFIXES = (
@@ -103,7 +105,7 @@ PLANNING_FORBIDDEN_IMPORT_PREFIXES = (
 
 MODALITY_FORBIDDEN_IMPORT_PREFIXES = ("src.scheduling",)
 
-BASELINE_FORBIDDEN_IMPORT_PREFIXES = ("src.scheduling",)
+BASELINE_FORBIDDEN_IMPORT_PREFIXES = ("src.scheduling", "src.execution_provider")
 
 
 def _python_files(root: Path) -> list[Path]:
@@ -199,12 +201,49 @@ def _check_saor_import_does_not_load_legacy_policies() -> None:
     script = (
         "import sys; "
         f"sys.path.insert(0, {str(CODE_ROOT)!r}); "
-        "import src.scheduling.submission_control.saor; "
+        "import src.research.multitask.saor; "
         "assert 'src.scheduling.submission_control.adaptive' not in sys.modules; "
-        "assert 'src.scheduling.submission_control.pid' not in sys.modules; "
         "assert 'src.scheduling.submission_control.ucb' not in sys.modules"
     )
     subprocess.run([sys.executable, "-c", script], check=True)
+
+
+def _check_records_defaults_do_not_require_multitask_research() -> None:
+    script = """
+import importlib.abc
+import sys
+
+class RejectResearch(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "src.research" or fullname.startswith("src.research."):
+            raise AssertionError(f"default execution imported research: {fullname}")
+
+sys.meta_path.insert(0, RejectResearch())
+from src.execution_provider.adapters.incremental_execution import IncrementalExecution
+from src.scheduling.core.session import SessionEngine
+from src.scheduling.core.scheduler_types import SchedulerConfig
+import src.scheduling as scheduling
+
+assert SchedulerConfig().lifecycle is None
+assert not hasattr(SchedulerConfig(), "shared_credit")
+assert not {"FairEndpointCreditCoordinator", "SaorPolicy", "OrderedReleaseCoordinator"}.intersection(
+    scheduling.__all__
+)
+"""
+    subprocess.run([sys.executable, "-c", script], check=True, cwd=CODE_ROOT, timeout=10)
+
+
+def _check_multitask_research_has_no_core_shims_or_core_test_dependency() -> None:
+    for relative in (
+        "submission_control/saor.py",
+        "submission_control/shared_credit.py",
+        "submission_control/credit_policies.py",
+        "submission_control/ordered_release.py",
+        "runtime/saor_capacity.py",
+        "runtime/shared_credit_ray.py",
+    ):
+        assert not (SRC_ROOT / "scheduling" / relative).exists(), relative
+    _assert_no_forbidden_imports(TESTS_ROOT / "scheduling", ("src.research",))
 
 
 class ArchitectureBoundaryTests(unittest.TestCase):
@@ -228,3 +267,9 @@ class ArchitectureBoundaryTests(unittest.TestCase):
 
     def test_saor_import_does_not_load_legacy_policies(self) -> None:
         _check_saor_import_does_not_load_legacy_policies()
+
+    def test_records_defaults_do_not_require_multitask_research(self) -> None:
+        _check_records_defaults_do_not_require_multitask_research()
+
+    def test_multitask_research_has_no_core_shims_or_core_test_dependency(self) -> None:
+        _check_multitask_research_has_no_core_shims_or_core_test_dependency()

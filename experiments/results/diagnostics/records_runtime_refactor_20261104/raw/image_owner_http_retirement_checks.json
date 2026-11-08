@@ -1,0 +1,85 @@
+{
+  "commit": "ce39cc9e4936f3277eb7e78d47f393908f99a57d",
+  "tree": "a245905e940a931ab6da03530de152e17316d1fc",
+  "base": "835c745739613faa3fcf019c9fc28b2f82077eb2",
+  "scope": [
+    "ImageGateway directly owns its existing single-query connection and method lifecycle",
+    "ImageConnection actual v7 frame algorithm moved unchanged to image_connection",
+    "mailbox/proxy, connection state and classifier in existing gateway_runtime",
+    "retired old HTTP Map owner, control registration, authenticated-idle stream wrapper and dedicated seven test modules",
+    "generic dispatch close case moved unchanged, Golden/typed image/Core/leases/cancel retained"
+  ],
+  "no_new_controller_protocol_or_timeout": true,
+  "tests": {
+    "original_fixture_failure": {
+      "file": "image-owner-before.json",
+      "methods": 2,
+      "successes": 0,
+      "reason": "new fixture omitted owner engine.advance; not an implementation regression"
+    },
+    "original_corrected": {
+      "file": "image-owner-original-corrected.json",
+      "methods": 2,
+      "successes": 2
+    },
+    "final": {
+      "file": "image-owner-after.json",
+      "methods": 13,
+      "successes": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 0.020181499887257814,
+      "source_unchanged": true,
+      "recorded_head": "835c745739613faa3fcf019c9fc28b2f82077eb2",
+      "bound_python_commit": "ce39cc9e4936f3277eb7e78d47f393908f99a57d"
+    },
+    "source_files": 1065,
+    "real_UDS": 0,
+    "models": 0,
+    "Ray_init": 0
+  },
+  "history": {
+    "before": "HISTORY_BEFORE.json",
+    "after": "HISTORY_AFTER.json",
+    "actual_read_source_bindings": 35,
+    "new_exact_public_archives": 6,
+    "new_routes": 30,
+    "public_origin": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+    "all_existing_metadata_and_routes_preserved": true,
+    "complete_3010_rerun": false
+  },
+  "changes": {
+    "src_python": -427,
+    "tests_python": -1118,
+    "script_python": 0
+  },
+  "checks": {
+    "modified_markdown": 7,
+    "local_link_targets": 250,
+    "missing": [],
+    "all_python_parsed": 1012,
+    "new_word_hits": [],
+    "new_private_path_or_ipv4_hits": [],
+    "source_changes_after_cpu_only_markdown": [
+      "code/src/execution_provider/adapters/README.md",
+      "code/src/research/multitask/README.md"
+    ],
+    "actual_Ray": 0,
+    "model_calls": 0,
+    "sockets_created": 0,
+    "secret_scan_staged_non_deleted": 22,
+    "decoded_archives": 6,
+    "decoded_secret_violations": [],
+    "git_diff_check": true
+  },
+  "original_handoff_sha256": "7573486964e26874a522c28efa6efb24c76a5916d8b33c33f0082de6d64355be",
+  "independent_review_sha256": "60229cfafb2a43c22097a6bbdf597f0bec637381a3cf2652524d92f80cf6ab10",
+  "actual_runtime": "Only CPU objects, stubs and local import subprocesses; no real HTTP, UDS, Ray, model or GPU run.",
+  "structural_proof": {
+    "same_AST": 16,
+    "artifact_sha256": "3e16934a23cd997de310aefd947fe14c708361cf92d1ba986dcd36bbaeda825e",
+    "actual_entry_rejected_old_controls_before_registration": true,
+    "private_register_call_is_not_a_supported_entry": true
+  }
+}

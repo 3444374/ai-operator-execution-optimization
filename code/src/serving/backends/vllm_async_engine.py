@@ -7,7 +7,7 @@ lease. The caller bounds its inputs/results and supervises physical shutdown.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 import importlib.metadata
 import json
 import os
@@ -15,61 +15,26 @@ import sys
 import time
 import uuid
 
-from . import vllm_engine as common
-
-
-@dataclass(frozen=True)
-class AsyncEngineLimits:
-    max_inflight: int = 8
-    input_bytes: int = 16 * 1024**2
-    item_input_bytes: int = 2 * 1024**2
-    result_slots: int = 8
-    result_bytes: int = 16 * 1024**2
-    item_result_bytes: int = 2 * 1024**2
-    command_slots: int = 8
-    control_slots: int = 16
-    control_frame_bytes: int = 64 * 1024
-    feedback_interval_s: float = 0.0
-
-    def __post_init__(self):
-        for name, value in vars(self).items():
-            if name == "feedback_interval_s":
-                common._number(value, name, low=0)
-                continue
-            if type(value) is not int or value <= 0:
-                raise ValueError(name + " must be a positive integer")
-        if self.input_bytes < self.item_input_bytes or self.result_bytes < self.item_result_bytes:
-            raise ValueError("total bytes must fit one reserved item")
-        if self.item_result_bytes < 4096 or self.control_frame_bytes < 4096:
-            raise ValueError("result and control frames require at least 4096 bytes")
-
-
-def result_record(identity, *, engine_uid, start, end, status, submitted, error_type=None):
-    """Call the owner's shared constructor; never maintain a second usage schema."""
-    return common.result_record(identity, engine_uid=engine_uid, start=start, end=end,
-                                status=status, submitted=submitted, error_type=error_type)
+from src.infrastructure.deadlines import deadline_expired, remaining_time
+from . import vllm_protocol as common
+from .vllm_protocol import AsyncEngineLimits
 
 
 class VllmAsyncEngine:
     """Single-event-loop engine; generation is per request, not per drained batch."""
 
     def __init__(self, engine: common.EngineSpec, generation: common.GenerationSpec,
-                 *, limits: AsyncEngineLimits | None = None):
+                 *, limits: AsyncEngineLimits):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
-        self.limits = AsyncEngineLimits() if limits is None else limits
+        self.limits = limits
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         values = self.generation.kwargs()
-        if self.generation.max_tokens > self.spec.max_model_len:
+        if self.spec.max_model_len is not None and self.generation.max_tokens > self.spec.max_model_len:
             raise ValueError("max_tokens exceeds max_model_len")
         identity = self.spec.validate_local()
         common._validate_current_runtime(identity)
-        # These functions are extracted by the single shared-engine owner.
-        if not callable(getattr(common, "result_from_output", None)) or not callable(
-            getattr(common, "result_record", None)
-        ):
-            raise RuntimeError("the shared engine result conversion is required")
         os.environ["HF_HUB_OFFLINE"] = os.environ["TRANSFORMERS_OFFLINE"] = "1"
         import vllm
         if (getattr(vllm, "__version__", None) != common.VLLM_VERSION
@@ -91,6 +56,7 @@ class VllmAsyncEngine:
         self._closed = self._unhealthy = self._shutdown_failed = False
         self._closing_task = None
         self._requests = {}
+        self._context_observed = None
         self._reserved_model_calls = self._input_bytes = 0
         self._loop = asyncio.get_running_loop()
         self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics) \
@@ -98,16 +64,17 @@ class VllmAsyncEngine:
         if self.spec.enable_mfu_metrics:
             from src.observability.metrics.mfu_trace import install
             install(self.engine_uid)
+        from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_EXTENSION
         self._llm = AsyncLLM.from_engine_args(AsyncEngineArgs(
             model=self.spec.model_path, tokenizer=self.spec.tokenizer_path or self.spec.model_path,
-            dtype=self.spec.dtype, max_model_len=self.spec.max_model_len,
-            max_num_seqs=self.spec.max_num_seqs,
-            max_num_batched_tokens=self.spec.max_num_batched_tokens,
-            gpu_memory_utilization=self.spec.gpu_memory_utilization, seed=self.spec.seed,
+            seed=self.spec.seed,
             tensor_parallel_size=1, pipeline_parallel_size=1,
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
+            **self.spec.optional_kwargs(),
+            **({"worker_extension_cls": VLLM_GPU_IDENTITY_EXTENSION}
+               if self._feedback is not None else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
         ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
               if self._feedback is not None else {}))
@@ -123,17 +90,57 @@ class VllmAsyncEngine:
             raise RuntimeError("async engine requires its owning event loop")
 
     def _sampling(self, values):
-        params = common.VllmEngine._new_sampling(self, values)
+        params = common.sampling_params(values, self._sampling_type, self._structured_outputs_type)
         params.output_kind = self._final_only
         return params
 
+    async def observe_gpu_identity(self):
+        """One startup observation; the client timeout does not stop worker code."""
+        self._control()
+        if self._feedback is None:
+            self._gpu_identity = dict(status="unavailable:not_requested", gpu_uuids=None)
+            return
+        from src.infrastructure.gpu_allocation import VLLM_GPU_IDENTITY_METHOD
+        try:
+            replies = await asyncio.wait_for(
+                self._llm.collective_rpc(VLLM_GPU_IDENTITY_METHOD, timeout=1.0), timeout=1.5)
+            if (not isinstance(replies, (tuple, list)) or len(replies) != 1
+                    or not isinstance(replies[0], dict)
+                    or replies[0].get("status") != "observed_actual_CUDA_device"
+                    or not isinstance(replies[0].get("gpu_uuids"), (tuple, list))):
+                raise ValueError("actual single-worker CUDA UUID unavailable")
+            from src.infrastructure.gpu_allocation import cuda_visible_gpu_uuids
+            devices = cuda_visible_gpu_uuids(os.environ.get("CUDA_VISIBLE_DEVICES", ""),
+                                            assigned_gpu_uuids=replies[0].get("gpu_uuids"))
+            self._gpu_identity = dict(status="observed_actual_CUDA_device", gpu_uuids=list(devices))
+        except Exception as error:
+            self._gpu_identity = dict(status="unavailable:" + type(error).__name__, gpu_uuids=None)
+
+    def _context_report(self):
+        from .model_context import model_context_record
+        if self._context_observed is None:
+            model = getattr(getattr(self._llm, 'vllm_config', None), 'model_config', None)
+            context = model_context_record(self.spec, self.engine_uid, getattr(model, 'max_model_len', None))
+            if self.generation.max_tokens > context['max_model_len']:
+                raise ValueError('max_tokens exceeds effective model context')
+            self._context_observed = context
+        return dict(self._context_observed)
+
     def ready(self):
         from src.observability.metrics.mfu import configuration_snapshot
-        return dict(engine_uid=self.engine_uid, pid=os.getpid(), python=sys.executable,
+        from src.observability.metrics.vllm import effective_capacity_snapshot
+        context = self._context_report()
+        return dict(engine_uid=self.engine_uid, model_context=context, pid=os.getpid(), python=sys.executable,
+                    native_gpu_identity=dict(getattr(self, "_gpu_identity", dict(status="unavailable:not_observed", gpu_uuids=None))),
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
+                    constructor_parameters=self.spec.optional_kwargs(),
+                    resource_owner=dict(schema='semloom.model_resource_owner.v1', engine_uid=self.engine_uid,
+                        request_memory_owner='vllm',
+                        native_feedback_clock='private_child_and_model_actor.monotonic'),
                     closed=self._closed, max_model_calls=self.spec.max_model_calls,
                     reserved_model_calls=self._reserved_model_calls,
                     native_abort_is_terminal_confirmation=False,
+                    native_capacity=effective_capacity_snapshot(getattr(self._llm, "vllm_config", None)),
                     **({"native_mfu_initial": self.mfu_snapshot(),
                         "native_mfu_configuration": configuration_snapshot(self._llm.vllm_config)}
                        if self.spec.enable_mfu_metrics else {}))
@@ -141,7 +148,8 @@ class VllmAsyncEngine:
     async def generate_prepared(self, row, *, request_id, generation=None,
                                 deadline_monotonic):
         self._control()
-        common._number(deadline_monotonic, "deadline_monotonic", low=0, inclusive_low=False)
+        if deadline_monotonic is not None:
+            common._number(deadline_monotonic, "deadline_monotonic", low=0, inclusive_low=False)
         common._string(request_id, "request_id")
         if len(request_id.encode()) > 256:
             raise ValueError("request_id exceeds 256 bytes")
@@ -149,7 +157,8 @@ class VllmAsyncEngine:
         if not isinstance(effective, common.GenerationSpec):
             raise TypeError("generation must be GenerationSpec")
         effective = common.GenerationSpec.from_dict(asdict(effective))
-        if effective.max_tokens > self.spec.max_model_len:
+        context = self._context_report()
+        if effective.max_tokens > context['max_model_len']:
             raise ValueError("max_tokens exceeds max_model_len")
         sampling = self._sampling(effective.kwargs())
         identities, conversations = common._prepared([row])
@@ -163,8 +172,8 @@ class VllmAsyncEngine:
                 or self._input_bytes + size > self.limits.input_bytes):
             raise RuntimeError("async engine input capacity exhausted")
         started = time.monotonic()
-        if started >= deadline_monotonic:
-            result = result_record(identity, engine_uid=self.engine_uid, start=started,
+        if deadline_monotonic is not None and started >= deadline_monotonic:
+            result = common.result_record(identity, engine_uid=self.engine_uid, start=started,
                 end=started, status="failed", submitted=False, error_type="DeadlineExceeded")
             result.update(deadline_expired=True, engine_terminal_confirmed=True)
             return result
@@ -180,10 +189,12 @@ class VllmAsyncEngine:
             expected_ids = common._token_ids(prompts[0].get("prompt_token_ids"), "rendered token IDs")
             if not expected_ids:
                 raise ValueError("chat renderer did not provide token IDs")
+            if len(expected_ids) + effective.max_tokens > context['max_model_len']:
+                raise ValueError('rendered prompt and output cap exceed effective model context')
             state["expected_ids"] = expected_ids
-            expired = time.monotonic() >= deadline_monotonic
+            expired = deadline_expired(deadline_monotonic)
             if state["abort_requested"] or expired or self._closing_task is not None:
-                result = result_record(identity, engine_uid=self.engine_uid, start=started,
+                result = common.result_record(identity, engine_uid=self.engine_uid, start=started,
                     end=time.monotonic(), status="failed", submitted=False,
                     error_type="DeadlineExceeded" if expired else "CancelledBeforeSubmission")
                 result.update(engine_terminal_confirmed=True, deadline_expired=expired)
@@ -204,7 +215,7 @@ class VllmAsyncEngine:
         work = state["task"] = asyncio.create_task(execute())
         work.add_done_callback(lambda task: None if task.cancelled() else task.exception())
         try:
-            done, _ = await asyncio.wait((work,), timeout=max(0, deadline_monotonic - time.monotonic()))
+            done, _ = await asyncio.wait((work,), timeout=remaining_time(deadline_monotonic))
             if not done:
                 # AsyncLLM catches cancellation and awaits ABORT. Notify the
                 # caller now; retain this bounded task and all unknown ownership.
@@ -217,7 +228,7 @@ class VllmAsyncEngine:
             if not work.done():
                 work.cancel()
             confirmed = not state["entered"] and work.done()
-            result = result_record(identity, engine_uid=self.engine_uid, start=started,
+            result = common.result_record(identity, engine_uid=self.engine_uid, start=started,
                 end=time.monotonic(), status="failed" if confirmed else "unknown",
                 submitted=False, error_type=type(error).__name__)
             if state["output"] is not None:
@@ -258,7 +269,7 @@ class VllmAsyncEngine:
         # v0.25.1 synthesizes abort output before sending ABORT to the core.
         if result.get("finish_reason") == "abort":
             result.update(status="unknown", text=None, error_type="AbortNotConfirmed")
-        if time.monotonic() >= deadline:
+        if deadline_expired(deadline):
             result.update(status="failed" if result["status"] != "unknown" else "unknown",
                           text=None, deadline_expired=True, error_type="DeadlineExceeded")
         result["engine_terminal_confirmed"] = result["status"] != "unknown"
@@ -308,6 +319,10 @@ class VllmAsyncEngine:
     def feedback_snapshot(self):
         return None if self._feedback is None else self._feedback.snapshot()
 
+    async def wait_for_first_feedback(self):
+        """Wait for an actual scheduler record on this engine's event loop."""
+        await self._feedback.first_sample_ready.wait()
+
 
     def mfu_snapshot(self):
         return (dict(status="disabled") if not self.spec.enable_mfu_metrics
@@ -321,6 +336,7 @@ class NativeStats:
         self.engine_uid, self.clock = engine_uid, clock
         self.sequence = self.preemptions = self.finished = self.tokens = 0
         self.latest = None
+        self.first_sample_ready = asyncio.Event()
         from src.observability.metrics.mfu import NativeMfuTotals
         self.mfu = NativeMfuTotals(engine_uid, clock=clock) if enable_mfu_metrics else None
 
@@ -339,6 +355,8 @@ class NativeStats:
                 waiting=scheduler_stats.num_waiting_reqs, kv_usage=scheduler_stats.kv_cache_usage,
                 preemptions_total=self.preemptions, finished_total=self.finished,
                 generation_tokens_total=self.tokens)
+            if self.sequence == 1:
+                self.first_sample_ready.set()
 
     def log_engine_initialized(self):
         pass

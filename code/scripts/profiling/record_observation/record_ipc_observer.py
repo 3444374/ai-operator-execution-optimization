@@ -2,12 +2,13 @@
 from collections import OrderedDict
 import functools
 import json
+import os
 import socket
 import threading
 import time
 import uuid
 from src.serving.backends.async_engine_process import AsyncEngineProcess
-from record_observer import ROOT, ENABLED, emit, ids, core_key, settings, install_cpu_hooks, handoff_profile, close_events
+from record_observer import ROOT, ENABLED, emit, emit_feedback, emit_buffered, ids, core_key, settings, install_cpu_hooks, handoff_profile, close_events
 
 _frames=OrderedDict()
 _lock=threading.Lock()
@@ -101,7 +102,10 @@ def install_transport(*,child):
     global _installed
     if not ENABLED or handoff_profile() or _installed:return
     _installed=True
-    from src.serving.backends import async_engine_process as module
+    if child:
+        from src.serving.backends import async_engine_worker as module
+    else:
+        from src.serving.backends import async_engine_process as module
     original=module._frame
     @functools.wraps(original)
     def frame(value,maximum):
@@ -137,6 +141,87 @@ def install_transport(*,child):
     module.serve=observed_serve
 
 
+def observe_feedback(snapshot, **context):
+    snapshot=snapshot if type(snapshot)is dict else {}
+    context.setdefault('source_clock_domain','native-engine NativeStats.clock seconds')
+    context.setdefault('received_clock_domain','observer-process.time.monotonic seconds')
+    emit_feedback('native_feedback_frame',engine_uid=snapshot.get('engine_uid'),
+        source_sequence=snapshot.get('sequence'),source_observed_at_s=snapshot.get('observed_at_s'),
+        **{name:snapshot.get(name)for name in ('running','waiting','kv_usage','preemptions_total',
+                                              'finished_total','generation_tokens_total')},**context)
+
+
+def _prepare_sink_closed(sink):
+    buffer=sink.get('feedback_buffer')if type(sink)is dict else None
+    return (type(buffer)is dict and sink.get('closed')is True and sink.get('flush_confirmed')is True
+        and sink.get('footer_written')is True and type(sink.get('pid'))is int and sink['pid']>0
+        and all(type(sink.get(k))is int and sink[k]==0 for k in ('errors','dropped'))
+        and all(type(sink.get(k))is int and sink[k]>=0 for k in ('events_written','events_attempted','last_sequence'))
+        and sink['events_written']==sink['events_attempted']==sink['last_sequence']
+        and buffer.get('closed')is True and buffer.get('drain_complete')is True
+        and all(type(buffer.get(k))is int and buffer[k]>=0 for k in
+            ('attempted','enqueued','drained','peak_events','remaining','errors','dropped','event_limit','packet_byte_limit'))
+        and buffer['remaining']==buffer['errors']==buffer['dropped']==0
+        and buffer['attempted']==buffer['enqueued']==buffer['drained']<=sink['events_written']<=buffer['event_limit']
+        and buffer['peak_events']<=buffer['enqueued'] and buffer['event_limit']>0 and buffer['packet_byte_limit']>0)
+
+
+def install_prepare_close(owner):
+    """One bounded observation RPC before each existing prepare-actor kill."""
+    if not ENABLED or not callable(getattr(owner,'_kill_actor',None)):return
+    original_kill,original_close=owner._kill_actor,owner.close
+    @functools.wraps(original_kill)
+    def kill(self,actor):
+        interrupted=receipt=None
+        try:
+            if ENABLED and any(actor is p for p in self.prepare_actors):
+                with self.__dict__.setdefault('_record_prepare_close_lock',threading.Lock()):
+                    states=self.__dict__.setdefault('_record_prepare_closes',{})
+                    state=states.setdefault(id(actor),dict(ref=None,receipt=dict(
+                        actor_index=next(i for i,p in enumerate(self.prepare_actors)if p is actor),
+                        status='unknown',rpc_terminal_status='unsubmitted',dispatch_attempted=False,error_type=None)))
+                    receipt=state['receipt']
+                    try:
+                        deadline=self._record_prepare_close_deadline
+                        if not receipt['dispatch_attempted'] and time.monotonic()<deadline:
+                            receipt.update(dispatch_attempted=True,rpc_terminal_status='unknown')
+                            state['ref']=actor.close_observation.remote()
+                        if state['ref'] is not None:
+                            value=self.wait_ready(state['ref'],deadline)
+                            state['ref']=None;receipt['rpc_terminal_status']='returned'
+                            if (type(value)is not dict or value.get('role')!='prepare'
+                                    or value.get('status')not in ('closed','unknown')
+                                    or value['status']=='closed'and (value.get('error_type')is not None
+                                        or type(value.get('pid'))is not int or value['pid']<=0
+                                        or not _prepare_sink_closed(value.get('sink'))or value['pid']!=value['sink']['pid'])):
+                                raise ValueError('invalid prepare observation receipt')
+                            receipt.update({k:value[k]for k in ('status','pid','sink')if k in value})
+                            receipt['error_type']=value.get('error_type')
+                    except BaseException as error:
+                        receipt.update(status='unknown',error_type=type(error).__name__)
+                        if not isinstance(error,Exception):raise
+        except BaseException as error:
+            interrupted=error;raise
+        finally:
+            # Cleanup must run even when the optional wait is interrupted.
+            try:result=original_kill(self,actor)
+            except BaseException as error:
+                if interrupted is None:raise
+                if receipt is not None:receipt['kill_error_type']=type(error).__name__
+        return result
+    @functools.wraps(original_close)
+    def close(self,*args,**kwargs):
+        if not ENABLED or not self.prepare_actors:return original_close(self,*args,**kwargs)
+        if not hasattr(self,'_record_prepare_close_deadline'):
+            self._record_prepare_close_deadline=(self.close_deadline if self.close_deadline is not None
+                else time.monotonic()+self._model_close_timeout_s())
+        report=original_close(self,*args,**kwargs)
+        report['prepare_observation']=[dict(s['receipt'],ref_retained=s['ref']is not None)
+            for s in getattr(self,'_record_prepare_closes',{}).values()]
+        return report
+    owner._kill_actor,owner.close=kill,close
+
+
 class ObservedAsyncEngineProcess(AsyncEngineProcess):
     @staticmethod
     def _command(spec,descriptors):
@@ -150,6 +235,9 @@ class ObservedAsyncEngineProcess(AsyncEngineProcess):
         finally:
             ready=getattr(self,'ready_report',None) or {}
             emit('IPC_engine_start_return',engine_uid=ready.get('engine_uid'))
+            emit_buffered('native_startup_capacity',engine_uid=ready.get('engine_uid'),
+                native_capacity=ready.get('native_capacity'),reason='effective_config_receipt'
+                if ready.get('native_capacity')is not None else 'runtime_has_no_effective_capacity_receipt')
 
     def _io(self):
         if handoff_profile():return super()._io()
@@ -161,10 +249,31 @@ class ObservedAsyncEngineProcess(AsyncEngineProcess):
         return super()._io()
 
     def _receive(self,value,*,results,encoded_bytes=0):
-        if handoff_profile():return super()._receive(value,results=results,encoded_bytes=encoded_bytes)
-        sock=self._results if results else self._control
-        if isinstance(sock,ObservedSocket):sock.frame_decoded(value,encoded_bytes)
-        else:emit('frame_decoded',actual_socket_bytes=None,unknown='owned receive instrumentation unavailable')
+        if not handoff_profile():
+            sock=self._results if results else self._control
+            if isinstance(sock,ObservedSocket):sock.frame_decoded(value,encoded_bytes)
+            else:emit('frame_decoded',actual_socket_bytes=None,unknown='owned receive instrumentation unavailable')
+        if isinstance(value,dict) and value.get('op')=='feedback':
+            try:received=time.monotonic()
+            except Exception:received=None
+            snapshot=value.get('snapshot')
+            try:result=super()._receive(value,results=results,encoded_bytes=encoded_bytes)
+            except BaseException:
+                try:observe_feedback(snapshot,stage='IPC_cache',accepted=False,
+                    reason='native_receive_raised',received_at_s=received)
+                except Exception:pass
+                raise
+            try:
+                ready=getattr(self,'ready_report',None)
+                accepted=isinstance(snapshot,dict) and getattr(self,'_native_feedback',None)is snapshot
+                reason=('cached_for_consumer'if accepted else 'malformed_snapshot'if type(snapshot)is not dict
+                        else 'engine_not_ready'if ready is None else 'engine_uid_mismatch')
+                observe_feedback(snapshot,stage='IPC_cache',accepted=accepted,reason=reason,
+                    received_at_s=received,expected_engine_uid=(ready or {}).get('engine_uid'),
+                    owner_uid=getattr(self,'_owner_uid',None),session_id=None)
+            except Exception:
+                emit_buffered('native_feedback_audit_unavailable',reason='IPC_metadata_unavailable')
+            return result
         return super()._receive(value,results=results,encoded_bytes=encoded_bytes)
 
     def submit(self,row,*args,**kwargs):
@@ -190,29 +299,42 @@ def __getattr__(name):
     # The model interpreter uses install_transport only. Keep driver/Ray/LOTUS
     # actor imports out of that environment, matching the public separation.
     if name not in ('ObservedAsyncCoreModelActor','ObservedPrepareActor'):raise AttributeError(name)
-    from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+    from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
     from src.execution_provider.adapters.lotus_records_actor_owner import _PrepareActor
     class ObservedAsyncCoreModelActor(AsyncCoreModelActor):
         def __init__(self,*args,**kwargs):
             from record_observer import install_actor
             install_actor();super().__init__(*args,**kwargs)
         def _process_type(self):return ObservedAsyncEngineProcess
-        def _run_core(self,rows,deadline,maximum,request_key,generation=None):
-            if not handoff_profile():return super()._run_core(rows,deadline,maximum,request_key,generation)
-            key=core_key(request_key)
-            try:result=super()._run_core(rows,deadline,maximum,request_key,generation)
-            except BaseException as error:
-                emit('actor_result_raise',key=key,identities=ids(rows),error_type=type(error).__name__)
-                raise
-            # Native _serve_core still owns its reader guard at this point.
-            emit('actor_result_return',key=key,identities=ids(rows),
-                 scope='before native reader guard releases; Ray serialization/return still follow')
-            return result
-        def poll_prepared_batch(self,batch_key):
-            if not handoff_profile():return super().poll_prepared_batch(batch_key)
+        def snapshot(self,*,observe_resources=False):
+            # Retain the old no-keyword call for historical target runtimes.
+            # Native resource readers must run outside the model condition.
+            value=(super().snapshot()if observe_resources is False else
+                   super().snapshot(observe_resources=observe_resources))
+            if not ENABLED:return value
+            # Only the observer callback joins the sink's finalization gate;
+            # a native snapshot may finish after that gate has closed.
+            with self._condition:
+                if not getattr(self,'_record_sink_finalized',False):
+                    try:
+                        ipc=value.get('ipc') or {}
+                        observe_feedback(ipc.get('native_feedback'),stage='actor_snapshot',accepted=None,
+                            reason='returned_before_Ray_delivery',received_at_s=time.monotonic(),
+                            owner_uid=ipc.get('owner_uid'),session_id=value.get('session_id'))
+                    except Exception:
+                        emit_buffered('native_feedback_audit_unavailable',reason='actor_snapshot_metadata_unavailable')
+                return value
+        def poll_prepared_batch(self,batch_key,acknowledgements=None):
+            extra=()if acknowledgements is None else(acknowledgements,)
+            if not handoff_profile():
+                result=super().poll_prepared_batch(batch_key,*extra)
+                if acknowledgements is not None and self.last_close_report is not None:
+                    self._finalize_record_sink(self.last_close_report)
+                return result
             # Reuse the native first-exposure/ACK frontier, not an observer ledger.
             # Its condition is reentrant; no native ownership fields are changed.
             with self._condition:
+                if getattr(self,'_record_sink_finalized',False):return super().poll_prepared_batch(batch_key,*extra)
                 pending=None
                 try:
                     group=tuple(batch_key)if core_key(batch_key)is not None else None
@@ -224,7 +346,7 @@ def __getattr__(name):
                                 and self._closed_pending.get(key)is False):
                             pending[key]=receipt['result']
                 except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
-                try:result=super().poll_prepared_batch(batch_key)
+                try:result=super().poll_prepared_batch(batch_key,*extra)
                 except BaseException as error:
                     emit('actor_batch_poll_raise',batch_key=core_key(batch_key),error_type=type(error).__name__)
                     raise
@@ -240,21 +362,25 @@ def __getattr__(name):
                     emit('actor_batch_poll_return',batch_key=core_key(batch_key),members=exposed,
                          members_complete=False,scope='newly exposed members only; replay/empty pages are not new completions')
                 except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+                if acknowledgements is not None and self.last_close_report is not None:
+                    self._finalize_record_sink(self.last_close_report)
                 return result
         def _finalize_record_sink(self,report):
-            if not handoff_profile()or getattr(self,'_record_sink_finalized',False):return
+            if not ENABLED:return
             with self._condition:
+                if getattr(self,'_record_sink_finalized',False):return
                 proof=report.get('producer_quiescence')or {}
                 if (report.get('status')=='closed'and proof.get('schema')=='semloom.async_actor_quiescence.v1'
                         and proof.get('confirmed')is True and proof.get('input_gate_closed')is True
                         and proof.get('active_readers')==0 and self._readers==0
                         and not getattr(self,'_closed_pending',None)):
-                    emit('actor_sink_finalizing',status='closed',scope='native producer quiescence and no pending batch ACK; before owner kill request')
+                    emit('actor_sink_finalizing',status='closed',metrics=dict(snapshot_gate_closed=True),
+                        scope='native producer quiescence; ACKs consumed; snapshot observer gate closed before owner kill; later RPCs outside this sink')
                     close_events();self._record_sink_finalized=True
                 else:emit('actor_sink_not_final',status='unknown',scope='native readers, pending batch ACK or producer close not proved')
         def acknowledge_core(self,request_key):
             result=super().acknowledge_core(request_key)
-            if handoff_profile()and result and self.last_close_report is not None:
+            if ENABLED and result and self.last_close_report is not None:
                 self._finalize_record_sink(self.last_close_report)
             return result
         def close(self,*args,**kwargs):
@@ -263,6 +389,24 @@ def __getattr__(name):
             return report
     class ObservedPrepareActor(_PrepareActor):
         def __init__(self,*args,**kwargs):
+            self._record_prepare_lock=threading.RLock()
+            self._record_prepare_close_report=None
             install_cpu_hooks();super().__init__(*args,**kwargs)
+        def prepare(self,*args,**kwargs):
+            with self._record_prepare_lock:return super().prepare(*args,**kwargs)
+        def close_observation(self):
+            with self._record_prepare_lock:
+                if self._record_prepare_close_report is not None:return self._record_prepare_close_report
+                report=dict(role='prepare',pid=os.getpid(),status='unknown',sink=None,error_type=None)
+                try:
+                    emit('prepare_sink_finalizing',status='closed',scope='serialized preparation finished; observer only, before owner kill')
+                    sink=close_events()
+                    report['sink']=sink
+                    if _prepare_sink_closed(sink):report['status']='closed'
+                except BaseException as error:
+                    report['error_type']=type(error).__name__
+                    if not isinstance(error,Exception):raise
+                finally:self._record_prepare_close_report=report
+                return report
     globals().update(ObservedAsyncCoreModelActor=ObservedAsyncCoreModelActor,ObservedPrepareActor=ObservedPrepareActor)
     return globals()[name]

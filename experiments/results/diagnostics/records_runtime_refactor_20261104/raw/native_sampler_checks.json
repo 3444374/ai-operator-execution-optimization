@@ -1,0 +1,78 @@
+{
+  "base": "45b4921",
+  "extracted_methods_AST_unchanged": [
+    "_resource_view",
+    "_read_resource",
+    "_audit_integer",
+    "_audit_resource_rpc",
+    "sample",
+    "_watch_snapshot_ready",
+    "collect_ready",
+    "_cancel_snapshot",
+    "_snapshot_clock",
+    "_note_future_timing",
+    "_observe_future_ready",
+    "_snapshot_header",
+    "_finish_snapshot",
+    "_consume_snapshot",
+    "_reap_stopped_snapshot"
+  ],
+  "original_snapshot_assertions_unchanged": true,
+  "state_owner": "single retained sampler; no admission controller state moved into sampler",
+  "shared_RPC_or_shutdown_rules_changed": false,
+  "source_clock_mapping_changed": false,
+  "CPU": {
+    "native_sampler_extraction": {
+      "selected": 124,
+      "passed": 114,
+      "failure_method_ids": [
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_already_done_registration_does_not_invent_an_earlier_ready_time",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_duplicate_source_keeps_consumer_identity_of_the_adopted_RPC",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_issue_receipt_clock_failure_keeps_the_single_RPC_accounted_for",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_optional_ready_observer_failures_do_not_discard_known_results",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_ready_notification_exposes_wait_without_changing_two_poll_dispatch",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_receipt_clock_failure_does_not_break_cached_owner_close",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_receipt_clock_failure_preserves_terminal_RPC_exception",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_receipt_clock_failure_still_runs_cleanup_and_preserves_its_exception",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_supply_provenance_reaches_actual_provider_freshness_decisions",
+        "tests.execution_provider.test_lotus_snapshot_rpc_receipts.SnapshotRPCReceiptTests.test_timing_off_has_no_callback_and_preserves_results_and_ownership"
+      ],
+      "failure_events": 11,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "native_sampler_targets": {
+      "selected": 36,
+      "passed": 36,
+      "failure_method_ids": [],
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "native_sampler_final": {
+      "selected": 126,
+      "passed": 126,
+      "failure_method_ids": [],
+      "failure_events": 0,
+      "error_events": 0,
+      "skipped": [],
+      "source_unchanged": true
+    }
+  },
+  "initial_regression": "time fixture had patched only the old module; clock now injected into both actual defining modules",
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "public_factory_wired": false,
+  "independent_review": "pending",
+  "artifact_sha256": {
+    "native_sampler_extraction.json": "d2a6e86eb012403742af180d27ef4d44eaca9e6a6254dbd41a3d05c85ac99260",
+    "native_sampler_extraction.log": "1ae4b19e7f044d1de569514c4b2a8c512e5cbafbede0a9c56ba7074648acfe66",
+    "native_sampler_targets.json": "439d41cd4f9a9de241a1fd9a99b301185d282302cba623f795a0862947ccc183",
+    "native_sampler_targets.log": "565936c2dd03be34ba04c230f361b7333789635722ea790f66d075e98c778511",
+    "native_sampler_final.json": "8d95a8e5db17ad5ee3ae55ad91a4db637e7c734369250736b55d59055b42a045",
+    "native_sampler_final.log": "d2bd07cdffed7705c4c6582917ad9e880263c5cc6e1dc252852ded72cac47cb4"
+  }
+}

@@ -1,10 +1,8 @@
 """Historical ready selection through the maintained full-query CPU IPC path."""
-from copy import deepcopy
 from dataclasses import asdict, replace
 import inspect
 import json
 import sys
-import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -12,7 +10,8 @@ from unittest.mock import patch
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
 from src.execution_provider.adapters.lotus_record_chain_fifo import LotusChainFIFO
 from src.execution_provider.adapters.lotus_records_core import CoreRecordsCapacity
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor, AsyncRecordsActorOwner
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
+from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
 from src.semantic_methods.driver import MethodDriver, SuccessorFirst
 from src.semantic_methods.lotus.record_chain import LotusRecordChain
 from src.semantic_methods.lotus.records import RecordsResources
@@ -187,36 +186,14 @@ class QueryPriorityTests(unittest.TestCase):
             self.assertEqual(stream.pool.used, (0, 0))
 
     def test_unconfirmed_close_retains_remote_work_until_late_receipt_without_replay(self):
-        plan, rows = fixture.chain_for("MM"), fixture.source_rows(size=1)
-        self.config_for(plan, rows)
-        ready, release = threading.Event(), threading.Event()
-        original = AsyncCoreModelActor._run_core
-        def hold_delivery(actor, *args):
-            value = original(actor, *args)
-            ready.set()
-            if not release.wait(5):
-                raise TimeoutError("CPU test did not release the late receipt")
-            return value
-        with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, "_process_type", return_value=query_fixture.Process), \
-                patch.object(AsyncCoreModelActor, "_run_core", hold_delivery):
-            owner = self.owner(plan, C=1, **self.priority())
-            stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
-            try:
-                self.until(stream, ready.is_set)
-                first = deepcopy(owner.close(timeout=0.02))
-                self.assertEqual(first["status"], "unknown")
-                self.assertEqual(first["core_usage"]["held_tasks"], 1)
-                release.set()
-                after = owner.close(timeout=3)
-                self.assertEqual(after["status"], "closed")
-                self.assertEqual(after["core_usage"]["held_tasks"], 0)
-                self.assertEqual(len(owner.calls), 1)
-                self.assertEqual(owner.calls[0]["status"], "succeeded")
-                self.assertEqual(stream.run.position, 0)
-                self.assertFalse(after["query_completed"])
-            finally:
-                release.set()
-                owner.close(timeout=3)
+        """Confirm model success before delaying delivery under the priority policy."""
+        original = self.owner
+        def priority_owner(plan, *, C=2):
+            owner = original(plan, C=C, **self.priority())
+            self.assertEqual(owner._ready_options['ready_order'], 'successor_first')
+            return owner
+        with patch.object(self, 'owner', side_effect=priority_owner):
+            query_fixture.QueryOwnerTests.test_close_collects_late_known_receipt_without_parser_or_successor_replay(self)
 
 
 if __name__ == "__main__":

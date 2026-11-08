@@ -4,37 +4,19 @@ The execution backends receive records and return engine results. This module
 does not create a model, send HTTP, run a vendor graph, or own its scheduling.
 """
 
+from contextlib import contextmanager
 from dataclasses import asdict, replace
-from importlib.metadata import distribution, version
-import hashlib
 import json
 import os
 import time
 
 from .records import FilterMethod
-from .sdk import IMAGE_SOURCE_HASHES, LOTUS_COMMIT, SOURCE_HASHES
-
-
-FILTER_SOURCE_HASHES = {
-    name: digest for name, digest in SOURCE_HASHES.items() if name != "sem_ops/sem_map.py"
-}
-FILTER_SOURCE_HASHES["sem_ops/sem_filter.py"] = IMAGE_SOURCE_HASHES["sem_ops/sem_filter.py"]
+from .source import FILTER_FILES, source_report
 
 
 def validate_filter_source():
-    """Check the actual formatter, parser, LM accounting, and accessor source."""
-    versions = {}
-    for package, expected in (("lotus-ai", "1.2.4"), ("litellm", "1.95.0"), ("openai", "2.50.0")):
-        actual = version(package)
-        if actual != expected:
-            raise ValueError(f"records Filter requires {package} {expected}")
-        versions[package] = actual
-    root = distribution("lotus-ai").locate_file("lotus")
-    for relative, expected in FILTER_SOURCE_HASHES.items():
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
-            raise ValueError("records Filter source differs at lotus/" + relative)
-    return dict(profile="lotus-ordinary-filter-records-v1", lotus_commit=LOTUS_COMMIT,
-                versions=versions, source_hashes=dict(FILTER_SOURCE_HASHES))
+    """Compatibility entry for observed sources; execution uses native LOTUS APIs."""
+    return source_report("lotus-ordinary-filter-records-v1", FILTER_FILES)
 
 
 def make_lm(method, generation):
@@ -57,7 +39,6 @@ def make_lm(method, generation):
 def validate_generation(method, generation):
     if type(method) is not FilterMethod:
         raise TypeError("an explicit ordinary Filter method is required")
-    method.describe()
     if generation.repetition_penalty != 1 or generation.logprobs is not None:
         raise ValueError("ordinary Filter does not support repetition overrides or helper logprobs")
     if getattr(generation, "response_format", None) is not None:
@@ -102,7 +83,6 @@ def _input_instruction(instruction, resolved_input_columns, *, require_bound=Tru
 def _filter_instruction(method, *, require_bound=True):
     if type(method) is not FilterMethod:
         raise TypeError("an explicit ordinary Filter method is required")
-    method.describe()
     return _input_instruction(method.instruction, method.resolved_input_columns, require_bound=require_bound)
 
 
@@ -112,7 +92,6 @@ def bind_filter_method(method):
     A previously bound method retains that order after validating its reference
     set. Worker preparation requires this value and never binds an unbound method.
     """
-    validate_filter_source()
     columns, _ = _filter_instruction(method, require_bound=False)
     return replace(method, resolved_input_columns=tuple(columns))
 
@@ -149,7 +128,6 @@ class LotusFilterMethod(_FilterFormatter):
     """One worker-local formatter; supplied call identities remain unchanged."""
 
     def __init__(self, method):
-        validate_filter_source()
         import lotus
         from lotus.models import LM
         from lotus.types import SerializationFormat
@@ -222,7 +200,7 @@ def interpret_results(results, lm, method):
     The independent query ledger also retains failed/unknown calls and known
     usage that cannot be represented as a valid native chat response.
     """
-    from lotus.sem_ops.postprocessors import filter_postprocess
+    from .filter_answers import parse_filter_answers
 
     responses, invalid = [], []
     for result in results:
@@ -240,7 +218,8 @@ def interpret_results(results, lm, method):
         error.engine_failures = invalid
         raise error from invalid[0][1]
     texts = [lm._get_top_choice(response) for response in responses]
-    parsed = filter_postprocess(texts, lm, method.default, output_tokens=method.output_tokens)
+    parsed = parse_filter_answers(texts, lm, method.default, output_tokens=method.output_tokens,
+                                  answer_parser=method.answer_parser)
     return [dict(result, decision=decision, explanation=explanation, raw_output=raw)
             for result, decision, explanation, raw in
             zip(results, parsed.outputs, parsed.explanations, parsed.raw_outputs, strict=True)]
@@ -251,3 +230,42 @@ def lm_report(lm):
     value = stats.model_dump() if hasattr(stats, "model_dump") else asdict(stats)
     return dict(stats=value, cost_available=False,
                 cost_reason="local engine compute is not assigned an API dollar price")
+
+
+@contextmanager
+def observe_filter_rows(record, record_prompts, *, before_filter=None, after_filter=None):
+    """Record native operator input/kept IDs; preserve its exact arguments/result."""
+    from lotus.sem_ops.sem_filter import SemFilterDataframe
+    from lotus.models import LM
+    original = SemFilterDataframe.__call__
+    original_lm = LM.__call__
+    active_ids = None
+    def observed(accessor,*args,**kwargs):
+        nonlocal active_ids
+        original_ids = list(accessor._obj['_execution_row_id'])
+        if before_filter is not None:
+            before_filter(original_ids)
+        active_ids = original_ids
+        try:
+            result = original(accessor,*args,**kwargs)
+        finally:
+            active_ids = None
+        kept = set(result['_execution_row_id'])
+        if len(set(original_ids)) != len(original_ids) or not kept <= set(original_ids):
+            raise ValueError('native Filter row identities are ambiguous')
+        record([(identity,identity in kept) for identity in original_ids])
+        if after_filter is not None:
+            after_filter(original_ids)
+        return result
+    def observed_lm(lm,messages,*args,**kwargs):
+        if active_ids is None or len(messages)!=len(active_ids):
+            raise ValueError('native query does not have the declared one-prompt-per-row shape')
+        record_prompts([dict(row_id=identity,messages=prompt) for identity,prompt in zip(active_ids,messages)])
+        return original_lm(lm,messages,*args,**kwargs)
+    SemFilterDataframe.__call__ = observed
+    LM.__call__ = observed_lm
+    try:
+        yield
+    finally:
+        SemFilterDataframe.__call__ = original
+        LM.__call__ = original_lm

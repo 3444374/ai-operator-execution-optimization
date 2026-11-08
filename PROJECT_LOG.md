@@ -2,6 +2,627 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-08：直接链按完整方法状态预览
+
+[Q9方法容量记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)区分有限请求槽与真实方法状态预留。
+已有preview接受显式实际方法数据，在同一总字节内计算；没有新增工厂、控制器、预算或默认并发。普通计划身份保持，实际方法计数不再把最低计量guard当成可驻留数量。
+
+## 2026-11-08：链查询等待延迟控制回执
+
+[Q9控制RPC记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)说明原模型结果齐全而暖查询API仍失败的实际情况。
+链清理复用transport已有截止时刻收取控制RPC；没有Future可继续观察时直接保留未知，EOF错误携带首次报告。容量用途另行核查，本批没有改提示、生成、R或字节预算。
+
+## 2026-11-08：原生试探与性能测量分别推进
+
+[测量前探索记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)依据46fd慢暖轮和当前源码，允许无参考点的活动试探在新鲜原生反馈下继续上探。
+继续复用原有许可、来源、返回和显式次数处理；物理采样只增加具体拒绝原因，不新增阈值、配置或控制器。纯CPU与实机性能结论分开，新GPU由原会话另行安排。
+
+## 2026-11-07：PG文本工具与文件任务分别维护
+
+三个导入器、三个PG取数诊断、专用身份助手及五份专测按[十二份准确原件](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools)归档。
+文件SQuAD／ShareGPT与原生DuckDB实现逐字保持；11项现有纯软件检查改前后通过，15处新历史读取与已有身份核对完成。
+数据和runtime指引不再要求文件任务先导入PG，原始数据和既有成绩未改。
+
+## 2026-11-07：PG图像数据工具退出当前入口
+
+COCO导入、主键SQL、三个PG画像及两份专测按[e5c36c9原件](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools)保存。
+当前数据与部署指引改为JPEG文件清单；公共图像实现、历史来源身份与原始资产保持，不运行数据库、模型或服务器任务。
+
+## 2026-11-07：PG图像读取与文件图像分别维护
+
+[图像PG归档](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)移出18个专属文件，
+原件来自准确94db树；中性选择类型与分片函数保留在图像contracts，文件输入及公共CLIP实现继续维护。
+原PG六臂与多Job入口不再列为当前命令，SQL导入和PG画像另行整理。
+
+## 2026-11-07：当前主线与PG历史资料分别维护
+
+按用户最新选择，当前主线为 SemLoom 外部执行核心与语义 API 工作负载，PG 不作为开发或验收前提。
+PG 实现、接线和资料按原来源归档保留，是否恢复以后另行决定；恢复时再适用数据库专属要求。
+其余项目规则继续适用。本次只对齐规则与现行说明，没有新增CI、修改可执行源码或运行模型。
+
+## 2026-11-07：公开CLIP工具的环境记录脱敏
+
+[结构化记录修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording)
+让现用CLIP pooling监督脚本直接复用公共脱敏函数，保持普通环境设置和退出状态。
+原脚本按准确8c48来源保存，五份历史投影的身份和摘要保持；未重跑模型或改写历史日志。
+
+## 2026-11-07：旧PG示例随campaign归档
+
+原M1示例配置移至[配套历史资料](experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retained-m1-config)，
+保留全部2484字节、原路径与摘要，和7bf1完整来源中的campaign一起恢复。现用配置目录不再保留孤立配方，
+PG、SAOR和历史运行记录保持；本批不改变生产Python实现，也不运行数据库或模型。
+同时更正SDK能力预检表述：模块定位与版本读取、后续实际LOTUS执行分别记录，原始失败和通过结果保持。
+
+## 2026-11-07：服务器实际LOTUS解析与cascade
+
+[五组件实测](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)
+复用服务器现有LOTUS环境，文本原生委托／修正版及六个既有cascade用例通过。
+先修复并保留不完整身份夹具的原失败；源码五文件保持。仅作CPU组件核对，
+本机下载不再是验证前提；完整候选、Session／service和模型运行分开安排，原生baseline与历史成绩保持。
+
+## 2026-11-07：SDK实际导入状态与解释字段修正
+
+[后续核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)区分已安装元数据、导入超时与实际调用证据。真实SDK尚未进入解析，不重复运行cascade；本地修正一行解释字段，两个原有方法通过，并补核当次Session query的参数转交。原始文本、布尔值、default、原生SDK与历史成绩保持，没有安装、上传或模型操作。
+
+## 2026-11-07：Filter解析由语义方法明确选择
+
+[解析选择](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)将原生LOTUS与修正版分开记录，普通records、有限链与cascade共用解析入口；Session传同一语义值，校准身份区分修正选择。旧配置、原生调用和历史成绩保持。二十项受影响CPU／替身方法通过；没有安装SDK、运行模型或改写原成绩，完整SDK与cascade质量仍待验证。
+
+## 2026-11-07：SQuAD数据职责与历史入口说明
+
+[输入核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#squad-input-ownership-audit)保留原问答标识、多答案、提示和来源摘要的现有实现；14项原纯数据检查一次通过，没有找到需修改解析逻辑的实证问题。数据入口、共享助手说明及DuckDB参考说明改为准确区分当前工具与归档PostgreSQL脚本；没有扩展数据库接入或创建数据管理层。
+
+## 2026-11-07：模型快照恢复交回原生下载器
+
+[模型目录恢复职责](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#snapshot-native-recovery)修复临时文件累计超过最小大小便跳过SDK的问题；显式snapshot下载调用原生缓存处理，HTTP单文件断点／最低磁盘检查只归HTTP分支。一个模拟SDK方法改前失败、改后通过，源码净行数不变；没有自建完成标记、重试或强制重下，也不把目录检查当模型加载成功。
+
+## 2026-11-07：下载响应未收全时保留断点文件
+
+[公开资产短传修复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#asset-download-short-read)复现响应声明10字节、实际5字节却被改名并报成功的问题。现在只核对本次响应的声明长度，短传报错并保留`.partial`；206续传和忽略Range的200完整应答保持。三个下载CPU方法从两个子场景失败变为通过，两个既有原件恢复方法一次通过；没有真实下载、数据库或模型操作。
+
+## 2026-11-07：无现用调用的HTTP容量采样命令退役
+
+[独立采样入口清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-capacity-sampler)删除旧HTTP指标／进程／GPU采样CLI共65行；当前代码、配置、测试和文档没有调用者，第三方原生观测保持。公开279原件保存一份，五份历史投影仍读取已有7bf原件，清单及原始结果不改；没有新增测试或运行采样服务。
+
+## 2026-11-07：校准身份复用一份实际容量解析
+
+[容量解析整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#calibration-runtime-resolution-reuse)把实际运行配置解析留在原身份构造点，归一化及准备模式直接复用，移除第二次容量／profile／IPC构造。21项既有CPU前后通过，12组合完整身份与签名一致，旧候选默认对比及模型ready语义保持；只报告调用次数减少，不外推查询加速。
+
+## 2026-11-07：旧phase-change准备包随运行器退役
+
+[孤立准备代码清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#phase-runner-preparation-retirement)按真实调用移除旧配置读取与环境装配两文件；它们只由已归档运行器／准备器使用，现用审计脚本不依赖它们。六个原CPU方法前后通过、源码与测试保持，十条历史读取改用两份准确原件。实验源码净减172行，当前执行核心与研究原始记录保持。
+
+## 2026-11-07：实验场景参数按完整值匹配
+
+[数值匹配修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scenario-option-value-match)把子串判断改为复用原选项解析，声明32与实际320不再混同。两个既有方法扩展空格／等号和实际strict核对场景，五个方法修前四个子场景失败、修后全过；没有新增参数检查、方法或真实服务运行，历史映射保持。
+
+## 2026-11-07：实验服务核对归位并移除旧矩阵校验图
+
+[服务职责整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-service-preflight-ownership)按两个实际实验调用者收拢命令行和0.25.1身份核对，删除旧live矩阵的十个无现用者函数；当前launcher及资源声明行为保留。十五个CPU用例前后通过，三份原件保存并核对十五条历史读取。源码实际净减372行、测试净减429行，不把移入实验目录的行数另算删除，也不恢复旧矩阵或运行服务器。
+
+## 2026-11-07：共享前缀导入预演不再写表结构
+
+[导入预演修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#controlled-prefix-import-dry-run)修复`--dry-run`仍建表、改表并提交的问题；普通写入顺序和生成行值保持。一个真实CLI解析／假PG方法覆盖预演及正常导入，与两个原算法方法共三项修后通过；旧源码保存一次、五历史来源读取保持，不连接数据库或运行模型。
+
+## 2026-11-07：原生SQL读取的安装声明对齐
+
+[SQLGlot声明修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#daft-sqlglot-install-range)核对实际Daft.read_sql消费者和本地Daft0.7.21元数据，把能力组与可选并集的声明统一到>=30,<30.9。只改安装元数据，保留安装器按模块是否存在处理的原行为；没有安装、版本自动纠正或其它Daft兼容结论。
+
+## 2026-11-07：现用COCO导入器统一资源管理
+
+[数据导入整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#coco-import-resource-ownership)修正连接、前置提交及核验失败绕过关闭的问题，移除分支重复close，保持事务和输出。一个临时ZIP／假PG方法的三个反例修后通过，原三个身份／读取方法保持；五历史投影改读同一份精确279原件，不执行数据库导入或模型。
+
+## 2026-11-07：IPC默认补值收敛到原类型
+
+[IPC默认归属](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ipc-defaults-owner)只删适配层三行重复默认，由现有协议类型完成相同计算；独立预算、显式值、控制槽和原错误检查保持。四个原CPU方法前后通过，测试和协议源码未改，没有新增物理容量推断或模型配置。
+
+## 2026-11-07：图像入队校验交回broker
+
+[图像入队整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-stage-admission-owner)只删除一次相邻重复调用，容量与描述符仍由唯一入队实现检查；三个原CPU／FakeRay方法前后通过，未新增测试或生产状态。图像批次推进和异步worker共享循环保持各自所有权，没有按函数长度机械拆分；原历史来源与实际Ray未验证范围保持。
+
+## 2026-11-07：修正现用画像脚本接线与错误输出
+
+[画像入口整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-profiler-entry-cleanup)让两个包入口直接导入唯一读取实现，移除连接失败时的DSN回显并脱敏异常；两个纯CPU方法修前复现、修后通过。三份准确83原件保存一次，五份历史投影只迁移对应来源；不修改模型算法或生产默认，也不以此扩展多查询。
+
+## 2026-11-07：核83回执并补EOF行为覆盖
+
+[83准确两项软件IPC](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-83-software-ipc-complete)各一次通过，正常关闭／wait及故障unknown责任保持，原服务器已清理自有资源；不重跑或转授模型结论。[EOF计数整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#event-eof-row-count)复用原公开行计数，新增一个CPU方法直接检查两种最终结果释放后的继续推进，原实现和替换后各一次通过。
+
+## 2026-11-07：发布83组合并核847既有回执
+
+[发布与回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-order-847-server-complete)确认后续四批已推到原PR #90草稿分支。847旧关闭方法一次通过，原占位诊断与私有原件保持，实际I/O错误为空、观察到的进程和资源清理通过；不重复该方法，也不将其当作83或原a780 Reset原因的证据。新83只准备两项受影响软件IPC方法，由原服务器会话执行。
+
+## 2026-11-07：独立本地精简与历史原件恢复
+
+[后续整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-terminal-diagnostics)让关闭诊断只表示实际问题，保留unknown责任；不可变方法值只在构造时验证，可修改阶段数据继续建立独立副本，清除四个无消费者转导入。各批CPU与独审完成后只在本地整合，已发布847保持固定供服务器单项验证。
+[历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#historical-worker-source-recovery)为两份可从Git取回的原件补六处引用，不改旧摘要、身份或现用桥实现；原失败保留，五投影恢复检查随后通过，不解释为历史运行结果。
+
+## 2026-11-07：关闭后不再派发残留排空命令
+
+[小帧原件与关闭顺序](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-after-drain-order)核实a780软件IPC单项通过但仍有ConnectionResetError；没有清除或改写原诊断。独立修正纯内存反例中close后的多余drain，保留abort优先及全部unknown／预留责任，一方法两个场景修后通过；新组合待Linux复验，尚不能确定原Reset原因。
+
+## 2026-11-07：共用IPC配置归属协议模块
+
+[共享配置整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-async-limits-owner)让唯一AsyncEngineLimits与真实调用方直连，保留同一类型、默认和JSON，不新增包装。五项原CPU保持，冷导入反例修后通过；链采样脚本的一处旧规范中转同时更正，实际新组合IPC／模型未验，原ea补验保持其版本。
+
+## 2026-11-07：显式IPC正文按实际大小检查
+
+[小帧记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#explicit-small-ipc-frames)删除无编码推导的4096最低值，同时让错误回执服从已解析控制额度；有限额度、实际编码和unknown责任保留。四方法纯CPU通过，实际小帧IPC仍未验；NoB相邻未见新误拒绝，只纠正一处旧提示，不改原ea服务器补验或输入。
+
+## 2026-11-07：修正取消实验的旧B前提
+
+[准确946部分结果](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#cancellation-noB-preflight)为一过、一项NoB预检错误、两项未执行，原件及清理记录保留。独立删除取消实验的非空B前提，实际纯CPU预检修前失败、修后通过；不改生产取消／记账或增加多查询功能，原第2／3／4项交既有服务器会话续验，不重复首项。
+
+## 2026-11-07：阶段输入按原生命周期释放
+
+[阶段输入持有修正](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#completed-phase-input-references)避免完成的Extract准备行与Filter/Map来源绑定跨阶段滞留，只在原成功收尾后丢索引，失败和未知执行所需数据保留。单个纯内存反例修前失败、修后通过，没有新检查层或原生模型／RSS结论；源码增1行、测试增73行如实登记。
+
+## 2026-11-07：父进程使用已有就绪字段
+
+[就绪状态读取](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-parent-ready-state)去掉构造器已保证字段的缺省兜底，两个原手工夹具补初态。原两项CPU前后通过，没有新增检查、测试方法或服务器派单；None的上下文处理和现用额度不变。
+
+## 2026-11-07：清除旧HTTP worker资源选项
+
+[旧Ray选项清理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-options)删除没有现用消费者的类型、导出和四个专测，源码减37行、测试减70行。原公共导入用例和历史字节保持，恢复来源独立保存；不新增资源框架、不改当前Ray关闭，也不重复已经通过的原用例。
+
+## 2026-11-07：Session观察器直达调度模块
+
+[观察器接线](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-scheduler-owner)不再经普通Filter工厂取得同一SessionEngine；原三项替身检查前后通过，其余wrapper和执行保持，没有增加包装或检查。Python净变化为零，整合不重复原测试，也不把历史文件读取当成真实运行验证。
+
+## 2026-11-07：恢复四项软件IPC派送
+
+[准确946四项派送](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#software-ipc-946-dispatch)先核服务器会话没有该清单记录，随后交原执行者串行处理。SSH认证失败，四项均未启动，不能确认服务端现状；本地源码及Git检查继续，不反复尝试登录或安装等待同意的vLLM0.22环境。
+
+## 2026-11-07：用真实JSON替代实现形状检查
+
+[context-LOO现有CSV用例](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#context-loo-real-json-fixture)改为正常包导入，真实CE0均值与写文件，核四行／两fold、CSV身份和六项源码摘要；临时文件内部实现的要求移除。
+原平台进程检查受阻和修后额外重复九项如实保留，不再复跑；只固定非目标平台说明，生产不变、无拟合或新环境。测试增27行，当前三目录Python193,321行，净减少按同一口径解释。
+
+## 2026-11-07：核对既有派生IPC原件
+
+[4df3单项回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#derived-ipc-4df3-server)已核准确源码与四份原始哈希，一次通过8.987秒，原EOF／held_tasks／流池断言保持，不新造完整usage结论。
+服务器会话读取返回Transport closed；最新4e的四项软件清单仅准备、未派送，不重复已完成旧项。源代码和Git通道仍可用，vLLM0.22等待明确同意，不安装。
+
+## 2026-11-07：直接选择B／NoB并分开CSV估计器
+
+[旧旁路退出](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-token-packing-bypass)保留正常配置、必要测试helper和原始消融来源；十二不同CPU与输出对照保持，四项软件IPC另待补验，不新增旧键专用拒绝检查。
+[CSV行模型归位](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-csv-cost-estimators)保留原算法及通用数学，七项前后CPU与七份预测保持，来源说明增加真实offline文件；完整context-LOO未运行。
+两批组合保留已发布私有导入／特征与历史映射。三目录Python合计193,294行，相对main少49,804行；core归类变化与实际净删除分开，不借CPU或旧版本声明当前模型性能。
+
+## 2026-11-07：历史特征与通用代价数学分开
+
+[23维离线特征归位](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-feature-schema)
+CLI和schema专测直接归离线模块，Ridge数学与当前运行估算保持；原八项前后CPU、十条历史读源与独审通过，没有新增代价模型。
+27行仅在src内部归类，全部Python／测试净增减为零；准确原件及五份恢复映射保留，未重复测试或扩大模型实验。
+
+## 2026-11-07：私有导入直达实际模块
+
+[Core导入来源整理](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-direct-private-imports)
+只保留实际owner及公共入口，模型／传输／容量调用各归其模块；原始实现、当前序列化与历史来源保持，旧私有转发不再维护。
+本批src＋scripts减5行、测试减7行，十一项CPU按九共同加两迁移检查解释，Derived IPC另待服务器；新增三目录统一统计，避免只报核心源码而忽略测试。
+
+## 2026-11-07：旧控制器退出与导入精简
+
+[两套旧控制器、七项闲置导入及测试依赖](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-pid-capacity-and-imports)
+分别独审后整合，原件和历史身份保持，现用AIMD／请求反馈／资源记账不变；没有新增策略、兼容壳或测试方法。
+相对769a生产Python减381行、测试减341行，原九项CPU及十五条组合读源各按实际范围解释；断线观察未当作通过，不为退役代码重跑模型或专测。
+随后准确ab088的原tokenizer构造／上下文CPU方法一次通过，8.456秒；原件私有、观察到的进程／SHM和许可已清理，没有权重加载、推理或真实Ray。
+
+## 2026-11-07：运行身份六项软件补验
+
+[准确a802的普通／rolling检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-binding-software-ipc-a802)
+六项各一次通过、原断言与源码保持，逐项确认进程／socket／SHM清理，最终许可释放；没有模型、真实Ray、HTTP、并发多查询或新增测试脚本。
+原CPU导入中断与审查反例保留，不把旧四项或87cf三项重复计作本次通过，也不代替真实Ray回收和模型／质量验证。
+
+## 2026-11-07：三项软件IPC按准确源码补验
+
+[准确87cf的有序检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordered-software-ipc-87cf)
+批提交、默认请求数／原解析及Map-first各一次通过，逐项确认清理后继续；没有模型、真实Ray、HTTP、多查询或新测试脚本。
+结果只属于87cf，后续a802运行身份六项另派，不将两个源码版本合成一次整树通过。
+
+## 2026-11-07：复用运行身份并保留失败清理重试
+
+[普通／prepared身份与重试](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#records-runtime-binding-reuse)
+共用原ModelRuntimeBinding，独审找到的旧字段消费者已修，准确c9aa纯内存复核保持unknown额度；旧四项、增量一项及rolling导入中断分别记录，软件IPC继续补验。
+当前源码／脚本较af63减223行，测试增92行，迁移不算算法删除；没有为一次重复profile解析增加构造分支或引入新资源框架。
+
+## 2026-11-07：请求组批与到达回放研究分开
+
+[生产构建器与回放原型](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#pending-batches-and-arrival-replay)
+按实际调用归位，原五十项检查和算法保持；与生成精简／旧脚本删除组合后，四十条历史来源和受测文件摘要保持，没有新增运行策略或重复行为测试。
+
+## 2026-11-07：异步生成参数快照与结果调用精简
+
+[同帧参数快照及中性结果转换](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-generation-frame-simplification)
+保留原规范及额度，只删除重复转换与旧转发；四项CPU／四组帧对照和原私有脚本错误分别记录，实际软件IPC随后补验。
+
+## 2026-11-07：旧文本嵌入画像服务退出当前脚本
+
+[已独审的旧HTTP辅助脚本退役](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-local-embedding-profile-service)
+保留准确原件和历史投影恢复，不新增替代服务；当前IPC与第三方原生HTTP分别保留，本批没有新增服务或模型运行。
+
+## 2026-11-07：文本数据组织原型独立维护
+
+[研究目录及原样算法](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#text-organization-research-relocation)
+保留长度／前缀排序、装箱与Arrow／Daft原型，普通payload只用公共运行组件；研究计划准确区分原型与当前准备组批。
+根、代码和研究README登记现有入口；源码移动不算减少，十五项原型及三项接线检查通过，真实Ray未运行。
+
+## 2026-11-07：payload直接使用公共Daft配置
+
+[实际函数归属](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#payload-daft-runtime-owner)
+取代经文本组织原型转借的导入，函数对象与物化行为保持；保留尚未接入的长度／前缀排序研究，未将原型整体删除。
+
+## 2026-11-07：旧画像应用整组退役与软件IPC回执
+
+[剩余画像模块](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-application-components)
+无现用或独立研究调用，连同专测、旧导出和空包移除；当前时钟、核心事件、Ray适配及研究记录保留，准确来源可恢复。
+[服务器软件IPC](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#continuation-server-software-ipc)
+90005一项、a0ce十项和68065同步两项分别通过，零模型／真实Ray，实际资源清理确认；SDK单项仍待安排。
+
+## 2026-11-07：旧画像输出与矩阵检查退役
+
+[旧PG profiler写入与旧矩阵检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profile-output-and-matrix-checks)
+只剩专测和归档入口调用，现用副本及专测移除；准确源码、原始结果和指标身份可恢复。
+当前对照来源／结果校验保留，生产净减733行、测试减334行，八项baseline检查及十条历史读源通过。
+
+## 2026-11-07：同步模型关闭沿用调用时间
+
+[普通与分阶段同步worker](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-close-caller-budget)
+同步迁移父close帧和实际消费者，保留原进程清理预留、unknown和usage；十四种CPU情形通过，实际软件管道待验。
+
+## 2026-11-07：删除Map重复转出并归还数据清理职责
+
+[Map实际编码器](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#map-codec-direct-import)
+取代纯转出模块，协议和既有实现保持；历史来源继续准确读取。
+[服务数据释放](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-ownership)
+由传输、准备组织和actor各自实现，链owner不再改其它对象的私有字段；组合16项CPU通过，实际IPC另验。
+
+## 2026-11-07：Movie实验职责与异步关闭时长
+
+[Movie参数、查询与worker](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#movie-query-worker-responsibilities)
+分别归属明确模块，Session和IMLane迁移真实导入，删除旧CLI转出；历史源码按原摘要恢复。
+[异步关闭](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#async-close-caller-budget)
+沿用调用方实际剩余时间，删除正常回执后的重复清理，保留未知请求责任；组合22项CPU通过，实际IPC另验。
+
+## 2026-11-06：离线记录窗口与来源读取分工
+
+[区间计算和记录关联](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observation-windows)
+分别维护；同次读取计算来源摘要并解析，去掉重复读取。原输出和未知量含义保持，未新增采样器、模型调用或策略。
+
+## 2026-11-06：离线预测共用实现归实验模块
+
+[三个分析入口与历史来源](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-cost-responsibilities)
+删除脚本互载与临时参考接线，显式选择输入和context-LOO输出，保留原数值／历史原件及运行链估算；未新增研究算法。
+配置总览登记其离线用途，旧指标调研保留原日期并指向现行代码，不把历史补采建议继续当作当前欠项。
+
+## 2026-11-06：异步观测跟随实际转换
+
+[观察器实际接线与原反例](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#record-observer-conversion)
+修正同步模块独立引用；业务转换完成后的可选指标异常不再改变原结果，四项CPU通过，生成与资源代码保持。
+
+## 2026-11-06：图像检索结果写入归实验模块
+
+[检索CLI与证据写入分工](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retrieval-evidence-responsibilities)
+保留原调用和清理顺序，同一11项CPU及六种内容对照保持；不改变模型方法，也不以拆分宣称代码量下降。
+
+## 2026-11-06：保留原生未确认结果的unknown含义
+
+观测工具不再把`unknown/submission_confirmed=False`写成`not_sent`；确认API计数、缺失时长及已知发送前拒绝保持。
+[来源、反例和16项CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-unconfirmed-observation)
+限于工具接口，不宣称改变线上汇总；结果消费、未知请求持有和关闭规则未改，原材料留在私有归档。
+
+## 2026-11-06：修正取消旁路的实际转换接线
+
+child 旁路直接观察共享协议转换，不再修改同步模块的独立引用。
+[行为反例与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
+保留原返回值、异常和 unknown 语义；只使用纯 CPU 对象，无模型或 IPC 重放。
+
+## 2026-11-06：旧HTTP退出后的实际socket补验
+
+[准确fc1a三项CPU socket](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#post-http-socket-verification)
+各运行一次通过，覆盖两项单查询图像方法及选定profile的socketpair；没有模型、真实Ray、PG或HTTP。
+本轮进程／socket／SHM和许可收尾确认，原始材料留在仓外，只登记必要CPU摘要；不改写原e5失败或转授模型资格。
+
+## 2026-11-06：旧SemLoom HTTP退出并收敛实际调用
+
+图像owner直接拥有连接与方法生命周期，帧处理独立；通用增量执行只保留现有Core任务组合。
+旧fixed HTTP后端／工厂、Map组织／传输／注册、无runner对照及专属测试删除，原生LOTUS／Kalypso／Ray连接保持。
+退役无现用者的aiohttp包装，去掉手工旧pickle、私有别名同一性与已删模块名称等多余测试要求。
+[实际组合、分批检查与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-ipc-and-http-retirement)
+记录70项现有纯CPU通过和160条受影响历史读取；相对45595维护中src＋scripts减少4,827行，图像实际socket另验。
+现行配置与runtime说明同步，13处旧文件链接改指准确Git成员；历史运行身份、数字、原失败和研究材料保持，未合并main。
+
+## 2026-11-06：分开HSE执行与指标职责
+
+HSE执行继续拥有调度与清理，计时／字节／峰值和原结果装配移到独立模块；没有新增控制器或测试。
+[17项原CPU、三组完整输出和来源恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#hse-metrics-responsibilities)
+前后一致，职责更集中，生产总量增加23行，不报减量或性能收益，未合并main。
+
+## 2026-11-06：记录单查询IPC回执并清理中性包导入
+
+准确e5的四项真实CPU socketpair／子进程方法与一项模拟时钟方法各运行一次通过；没有模型、真实Ray或HTTP调用。
+[原回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-ipc-e5-server)
+保留源码身份、方法和清理范围，不能推成真实模型期限／abort已验证。
+中性后端包删除HTTP聚合导入，现用调用方直接用所属模块；
+[原反例与五项轻量检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#backend-package-http-import-cleanup)
+只证明导入与值行为，不继续运行旧HTTP套件。底层HTTP退出仍在进行，未合并main。
+
+## 2026-11-06：删除旧HTTP启动接线并使用矩阵实际剩余时间
+
+旧网关隔离探针／CLI及研究HTTP启动器和专测删除；服务CLI的四个HTTP选择退出，Golden和typed image的现有Unix socket流程保持。
+矩阵按显式工作结束时刻计算剩余时间，删除重复60秒预留及派生外层上限，保留原总预算、次数和清理时间。
+[分批源码、CPU和恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fixed-http-retirement-and-matrix-time)
+记录底层HTTP仍待清理；既有单查询CPU IPC用例改用None，保留全部原断言，实际socket执行另交服务器，不重试本机拒绝操作。
+
+## 2026-11-06：移除整查询隐式期限并接实际启动等待
+
+records默认不设整查询期限，None贯通既有单查询调用；显式期限、取消、unknown及有限启动／通信／关闭处理保留。
+删除IMLane四处600秒二次截断和八个旧time导入；原生Ray按单Dataset自有context使用caller启动时间，
+不改全局或另建actor管理器。[准确源码、原失败与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#caller-query-duration)
+分别记录CPU和未做的实际执行。此前SDK补查在准确87ab服务器通过，不转授新版本。
+用户进一步确定SemLoom单查询及未来多查询统一本地IPC；旧fixed HTTP及专属入口正在独立清理，保留公共非HTTP和第三方原生需要的连接，未合并main。
+
+## 2026-11-06：清理显式HTTP硬上限、Kalypso回路和图像异常收尾
+
+固定HTTP保留调用方显式期限，删除无运行依据的五分钟拒绝；records默认查询期限另批贯通，不混同两条路径。
+Kalypso实验脚本直接调用实验流程，删除baseline的反向转发及导入检查豁免。图片执行和报告失败后清理已启动资源，
+原异常与KeyboardInterrupt保持主错误，后续清理问题附加诊断，不增管理层或停止期限。
+[准确源码与CPU范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-query-duration-and-cleanup)
+分开记录原失败和修正；[5b模型部分结果](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#model-5b-timeout-partial)
+保留unknown。按用户新要求暂停多查询新增实现与扩展测试，cascade候选留存未发布；未合并main。
+
+## 2026-11-06：分开CLIP运行职责并修正Ray观测含义
+
+原图像命令分别调用准备、执行观测和报告模块，保留19个定义的行为、参数及输出，旧私有调用一并迁移。
+原生Ray与SemBench文本的SDK断开字段改为准确名称，物理退出继续由自身来源证明；没有将其写成信号量残留修复。
+[迁移、输出比较与实际缺项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#image-clip-module-owners)
+保留各自受测源码及历史原件；[准确5b服务器回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)
+另记基础多查询CPU和Ray结果，不借作图像／模型资格。cascade与异常收尾另批处理，未合并main。
+
+## 2026-11-06：整合基础多查询与显式研究适配
+
+在8891上整合职责迁移，基础固定份额／轮转留在主线，共享研究通过现有执行接点使用同一核心。
+修正研究图像入口忽略预算选择及图像测试夹具掩盖启动异常；历史来源增加三份准确原件，预期身份保持。
+[组合结果、原错误与待测项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-integrated)
+按各自准确来源记录，不把目录移动算作代码减少。
+另补读[准确efac七项服务器回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)，首轮错误与私有驱动修正分开保留；未合并main。
+
+## 2026-11-06：按用户补充保留主线基础多查询
+
+前一候选将普通预算／轮转也迁到研究目录，现恢复基底原有实现，普通固定模型gateway无需研究工厂即可运行多个query。
+高级共享策略保持独立，沿既有分配、选择、credit与真实完成接入，不新增控制器。
+[实际入口、准确CPU与服务器待测](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#basic-multquery-defaults)
+保留此前候选和误选记录；未把records顺序复用或准备／organization扩展成并发完整LOTUS能力。未推送或合并main。
+
+## 2026-11-06：将跨查询分配与共享编排移入显式研究接入
+
+在既有隔离工作区接续未完成迁移，不新建仓库。研究算法继续只消费本包输入接口，
+跨 Job 分配／轮转、同步共享等待和候选窗口归研究适配；普通提交循环、单查询注册、多 flow 与资源终态责任保留。
+[本次源码、实际回归及缺项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#multitask-execution-separation)
+与早期 163 项分开记录。并行核心及 IMLane 的代码、文档草稿和测试资格未覆盖或借用；本次未提交、推送或合并 main。
+
+## 2026-11-06：同步模型模块移除未用协议转出
+
+同步引擎删除七个未用转入，九处真实调用改取中性协议对象；保留本层实际使用的类型和全部实现。
+[5项CPU与导入证明](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-protocol-reexports-cleanup)
+记录生产少7行、fixture少1行及20条历史读源保持；没有为纯导入合并重跑或新增控制器。
+多查询修正与服务器补查分别交由原会话推进，未在本批执行模型或合并main。
+
+## 2026-11-06：删除旧baseline模型转发并补记原服务器结果
+
+五个薄转发删除，五个IMLane调用文件和八个测试文件改用实际所属实现；现有结果与清理逻辑不改。
+[33项轻量CPU、两次收集问题及恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#baseline-worker-forwarders-retirement)
+记录生产少55行、测试少81行及SDK／真实进程未验证范围，SAOR交专门会话而未混入本批。
+同时读取并登记[准确4d六项服务器回执](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-observation-server-six)，没有重复执行或合并main。
+
+## 2026-11-06：删除被覆盖的查询时钟定义
+
+同一观测文件的首个QueryClock与最后定义逐字相同且未被引用，删除前者及Movie Session三个无用导入。
+[来源、51项现有CPU与旧源核对](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#query-clock-duplicate-cleanup)
+记录净少31行生产Python，实际时钟、当前查询行为及旧原件保持；没有新增测试或研究策略。
+SAOR迁出候选另行交接，本批没有模型、服务器或main合并。
+
+## 2026-11-06：消除原生比较的临时全局注册
+
+Kalypso把支持路径及模型复用信息随调用传入中性生命周期，不再改写Movie默认集合。
+[原两失败、74项回归与测试归位](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
+记录两类状态遗留、11项重复测试删除及发布前修正的直接文件入口；查询计时、关闭和作者策略保持，没有新控制器或资源参数。
+保留3c807并行IMLane候选；本批生产Python少3行，原六项服务器检查由测试会话核对，未合并main。
+
+## 2026-11-06：继续全项目入口和观测职责整理
+
+图像CLI、观测与探针直接用已有实现，四份转发退出，分阶段进程采样及三份测试归入观测目录。
+删除只服务旧共享runner／Choice观察器的三模块和两值类，保留公共批预留、当前指标、HSE及研究材料。
+[调用、原错误、48项本地方法与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#global-entry-observation-cleanup)
+记录净减1324行Python、字段与历史保持，真实采样／IPC待服务器；没有把新研究功能当作重构前置项，也未合并main。
+
+## 2026-11-06：共享配置仅保留现用研究值和读取函数
+
+删除无当前消费者的JSON加载、旧profiler命令构造及专属CLI／检查，配置从1740行收敛至388行。
+[调用、默认保持和九项CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-service-loader-retirement)
+记录净减1427行、完整历史恢复及有限仓外核对；旧导入不留兼容壳，研究算法／原件与并行IMLane保持。
+未新增模型、服务器实验或main合并。
+
+## 2026-11-06：删除旧矩阵执行并保留离线证据用途
+
+八个当前使用符号归入原有证据模块，三个旧矩阵执行／配置／预检模块退役，两个私有转发函数删除。
+[来源、有限仓外核对、CPU与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-offline-evidence-retirement)
+保留13项组合CPU、3010历史摘要、原fixture错误及净减2354行的同口径统计。
+SAOR算法、研究材料、原数据和并行IMLane候选保持；准确87fd九对象真实Ray一次通过，不转授模型或性能资格，未合并main。
+
+## 2026-11-06：收拢容量职责并继续清理固定编排
+
+普通／融合容量归入现有容量模块，共享字段检查；查询owner、实际limits和旧公开导入保持。
+退役两个没有当前独立用途的固定套件，保留现用Map／provider和历史复算；派发连接由finally统一关闭。
+[来源、原复现与39项组合CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-capacity-and-fixed-probes)
+记录相对94367净减197行生产Python及原3010身份保持。新增类型的真实Ray检查随后在准确87fd一次通过，见上方记录；未追加模型或合并main。
+
+## 2026-11-06：继续删除旧 LOTUS HTTP 残留并核对完成范围
+
+在 e566 上查明孤立的请求准备／回复重放和固定两阶段 Map，删除三个旧模块并将 SDK 收敛为实际来源记录。
+现用方法、原生图像及五份历史投影保持；软件图行为测试替代源码字符串检查。
+[本批来源、30项分组 CPU 和代码量](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-lotus-http-methods)
+记录生产 Python 净减746行、原失败和未实现能力；代码入口改为职责表，当前状态只由完成清单维护。
+原生 Ray 关闭、作者 DuckDB、物理 RAM 授予和当前整树的实机比较仍分别处理，未宣布整体完成或合并main。
+
+## 2026-11-05：多任务共享额度与 SAOR 一起独立维护
+
+按用户要求，将两者整理到[独立研究包](code/src/research/multitask/README.md)，
+与 records 单查询的配置、执行导入和核心测试分开。研究消费者直接迁移，旧路径不留转发壳；
+Session 与反馈控制器本轮只读，并保留核心线程已发布的拆分。
+实现、声明和历史证据保持，未来拆仓所需的数据适配另列；
+源码与 CPU 核对见[整理记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#saor-multitask-isolation)。
+
+## 2026-11-05：精简普通 records 的重复处理
+
+基于已发布 9da299e9 独立整理等待期限、服务额度属性访问和交付声明的身份处理；
+保留实际输入检查、未知请求与未消费结果责任。运行时绑定和不同 owner 的清理差异暂不合并。
+[源码范围与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ownership-simplify)
+说明 151 项相关检查及尚未验证的实机路径；本地候选未推送或合并。
+
+## 2026-11-05：删除同次配置检查中的重复解析
+
+CLI 复用已解析的 IPC 值，共享解析器复用已展开的 profile；保留兼容入口、历史身份和启动前检查。
+[改动与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#config-parse-simplify)
+保存 21 项相关检查及其他检查的保留原因；独立本地候选未推送或合并。
+
+## 2026-11-05：观察流程保持业务配置的 JSON 类型
+
+以独立候选修正 Python 相等比较接受 0／false 的问题，复用现有 JSON 比较，不增加检查层。
+[原反例与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#workflow-json-types)
+保留旧失败和 27 项成功；本批未运行模型或真实 Ray，未推送或合并。
+
+## 2026-11-04：接入已审资源策略的准备
+
+核对上一批准确 HEAD，并保留其干净审查树。新树导入 b99 三个策略文件与三个测试文件，字节和补丁摘要相同。
+原模块选择在当前底稿为 327 项成功，五项差额来自现行 UCB 原型退出，原件及恢复检查保持。
+此批只导入原件，公共工厂与默认值尚未切换；后续按实际资源许可和源端采样接线。
+随后分离原生单 RPC 采样与策略状态，十五份原方法语法树不变，相关 126 项成功。
+模拟时钟接到两个实际模块，原断言与初轮失败输出保持；此结构整理未改变采样时钟或默认值。
+
+## 2026-11-04：系统整理 SemLoom 执行模块与容量责任
+
+按用户继续较大范围重构的要求，以 PR90 bfb 建立独立工作区，先核对现有预算和并行候选。
+首批提取容量／IPC 解析与执行配置，保持默认、旧导入、序列化及查询生命周期；
+R 默认解耦、纯观测提取、准备交错及历史策略各按实际职责分别安排，已有修正不重复实现。
+范围、原失败、CPU 证据及待独审／实机项见
+[主记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
+第二批提取纯观测／报告并同步测试读取位置，保留原并发断言；整组新增的时序相关失败仍待查，
+单项配对成功不覆盖该失败。当前只交 CPU 候选与证据，独审及剩余问题完成前不发布。
+按后续整体整理要求，核对未接入运行入口的 UCB 后退出当前模块与导出，准确原件和历史恢复保留；
+现行控制器未作无依据删除。主记录新增整体职责图、已改／未改、结构问题与两条迁移路线，
+动态专项的在改文件只读核对后单独交统一整合，未覆盖对方工作。
+随后继续整个工程清单与模型适配职责整理，在新工作树保留待审 ee367861 原件。
+切断 async actor 对查询 host 的反向依赖，保留 actor 身份、结果编码与责任规则；
+改前 110 项与最终候选 130 项 CPU 检查成功，具体模块与后续依赖由同一主记录维护。
+随后修正 PID 非法窗口／数值配置，保持默认、有效公式与历史源码；195 项相关检查成功，
+原配置反例、16 条有效轨迹及五份历史映射分别留证，没有修改动态专项的文件。
+随后补通用准入的请求计数与更新间隔检查，拒绝非法策略输出污染现有额度；291 项相关 CPU 检查成功。
+旧 eager 汇总经场景 ID 追查发现仍有现行配置测试支持，保留并登记，不按名称搜索结果误删。
+后续修正测试 fixture 与实际异步交接不一致，保留所有原断言，未改生产语义。
+668 个不同方法重跑为 666 成功、1 个动态增长失败、1 个真实 Ray 资格跳过；错误为零。
+采样时序问题与原失败原件保留，仍不声称整体回归成功。
+随后解除链 backend／host 对单 Filter 查询 host 的导入依赖，共享传输与 producer 清理归入独立模块。
+原定义、导入／序列化位置和结果责任保持；测试时钟、backend 与旧优先级暂停点接到实际模块／交接。
+相关 215 项全部成功，初轮问题保留，历史来源映射未改；仍待独审，未推送或运行模型。
+本轮最终源码合并检查覆盖 752 个不同方法：751 成功、1 个真实 Ray 资格跳过，无失败或错误。
+此前动态增长零升档仍单列，当前通过不作为解决证明；后续仍先处理容量与工厂接线，再继续查询 host 和脚本清理。
+后续独立批次解开配置预检对查询／模型 owner 的导入，实际工厂和所有非导入逻辑保持。
+两项新进程反例改前复现，改后相关 167 项成功；查询结果归还已有 wake，未另加重复唤醒。
+随后在完整独立预算路径中推导有限 IPC 缺省值，支持部分覆盖，保留所有完整显式值和原资源责任。
+相关 118 项成功，120 组旧默认／完整显式配置差分为零；普通 R 默认尚未改变，模型和硬件容量未作推断。
+随后清理代价脚本的无调用私有 helper，并将 PGAI 可选驱动移到实际连接时加载，保留准确原件。
+相关 20 项 CPU 与七项 CLI 检查成功，首次缺依赖输出保留；五份历史投影共补十条映射，原十处不匹配未改报通过。
+继续拆开记录查询迭代与 owner 组装，原主循环和期限检查按相同语法树移入独立模块。
+相关 153 项成功，原导入／序列化与历史来源保持；不重复实现或启用尚未组合验证的 b258 交错候选。
+四批最终合并去重为 956 个不同方法：955 成功、1 个真实 Ray 资格跳过，无失败或错误。
+已核动态专项 b99 增量独审通过及补丁摘要，公共工厂尚未切换；下一批按实际采样与资源许可接线，当前候选仍待独审。
+
+## 2026-11-03：修正上下文候选的owner与IMLane兼容
+
+按独审反例另开工作区，保留原候选与失败证据。token wrapper通过只读回执接口接线，
+独立查询继续在查询内分配模型；有限IMLane保留原省略值语义，不恢复异步4096。
+新增反例与实际CPU子进程回归、历史来源保留及待复审项见
+[当前记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md#owner-context-compatibility)。
+
+## 2026-11-03：离线校准使用执行owner的实际上下文
+
+在保留01297ff的独立分支中补ready接线，复用首个已声明样本取得模型解析值，
+每个执行owner在生成前核对自身回执。缓存命中仍如实记该确认样本成本；显式上下文及同步参照保持。
+没有改每轮token专线或启动真实模型；作者CPU证据和待独审项统一见
+[当前记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md#offline-model-context)。
+
+
+## 2026-11-03：按执行目标核查配置与上下文
+
+保留暂停时工作区，另以已发布b018建立独立候选；配置提取与上下文行为分别提供CPU证据。
+验收逐项对应合法依赖与原数据、准备／传输／模型／消费、输入／方法状态／结果预算、未知结果责任、
+vLLM内部默认及完整查询时钟／质量，并分别标明单卡既有实现、CPU候选与多卡设计。
+[主报告](experiments/results/diagnostics/records_config_refactor_20261103/README.md)为本轮唯一结果入口，
+[代码状态](code/INFRA_STATUS.md#records-model-context-cpu)列接纳范围；尚未独审、推送或合并。
+
+## 2026-11-03：渐进整理 Records 配置传递
+
+按用户要求另建独立工作区，以已发布PR #90准确源码盘点配置与执行职责。
+先将普通运行和Session共用的配置解释移出运行器，保留旧导入与原执行；
+上下文默认委托属于后续独立行为变更，显存比例与dtype本轮不改。
+源码、CPU证据与待实机项见[重构记录](experiments/results/diagnostics/records_config_refactor_20261103/README.md)，
+待独审与统一Git整合，不推送或合并main。
+
+## 2026-11-03：独立 HTTP 配置修复与 PG 协议分别处理
+
+按当前授权在独立工作树修复请求期限和逐响应额度传递；PG 现有 wire profile 保持原帧上限，
+不兼容配置先报错。主 records 调度、baseline graph 和模型启动未改。
+候选支持范围与 CPU／依赖缺项分别见[代码状态](code/INFRA_STATUS.md#http-call-configuration-cpu)和
+[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#http-call-configuration-cpu)；本次不推送、合并或运行模型。
+
+后续独审发现组织化 PG 的小额度传递遗漏和新增历史来源不匹配，修订分别补齐自定义准备函数与准确旧源映射。
+只处理本次引入的差异，旧摘要与原证据保留；基线已有的十处历史不匹配继续单列，完整还原仍未通过。
+新的本地候选交复审，实际 CPU 结果与缺项沿用上述代码状态和台账记录。
+
+<a id="semantic-chain-orchestration-work"></a>
+## 2026-11-03：语义算子链资源编排与并行工程分工
+
+将近期定位、单实例／未来多副本职责和独立工程假设分别归入[研究定位](docs/research/研究定位.md#研究对象与问题)、
+[架构边界](experiments/plans/系统架构.md#semantic-chain-gpu-orchestration)及[单卡供给](experiments/plans/数据组织.md#single-gpu-supply-engineering)，不新建重复报告。
+先完成可核验的供给／重复工作修复；SemBench跨DAG观察继续提供规律与反例，不把研究线变成当前工程必须一起完成的调度器重构。
+
+| 会话 | 当前职责 |
+|---|---|
+| `01a1856d` | 配置、原生序列默认与容量 identity；保留实际配置读回 |
+| `01a19b69` | 请求重复解析的等价优化与CPU证据 |
+| `01a19b6e` | Core准备／推进交错CPU候选，保留容量与方法语义 |
+| `01a18548` | 独立审查、反例与最终组合资格；作者检查不代替独审 |
+| 文档／计划／Git owner | 最小文档、配对条件、已审准确树的Git整合与开发分支发布 |
+| `01a18527` | 唯一实机执行者；仅按已审版本与明确批准预算运行、核账和清理 |
+
+本文冻结时，原生序列默认候选44cc仍在独审，容量修复及最终组合未完成资格；不改写已公开5ff的范围。
+拟议B4096／旁路token两臂各一次全Q1、各2000次，合计4000，均新模型就绪后执行、无业务预热／复用／动态／hint；具体资源、计时和停止条件须随最终已审树冻结，仍待明确批准。
+用户要求记录讨论及修后推送，不等于这4000次、F→M新增实机或未来多卡实验授权；不复用已消费的2000次或已暂停R64方案。
+本次仅Markdown候选待独审，未改执行默认或启动实验；开发分支推送也不授予main合并权限。
+
+## 2026-11-03：将明确压力响应与性能测量分开
+
+提交控制修复复用原控制器和采样器，具名历史配置保留原时钟；rolling缺少内存保护源时提前拒绝配置。
+[实现与CPU范围](code/INFRA_STATUS.md#pressure-sample-cpu-fix)和
+[证据身份](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#pressure-sample-cpu-fix)分列。
+本候选不修改vLLM或GPU资源归属，不启动真实Ray／模型／GPU实验。
+
+双50%只用于物理大步试探的判断，另以默认关闭的native_only选项隔离其作用；
+[选项与CPU范围](code/INFRA_STATUS.md#physical-probe-policy-cpu)独立审阅，不删默认检查或替换阈值。
+
+## 2026-11-03：资源归属候选按独审修订
+
+复现 `9b731ab9` 的函数 RPC 默认编码拒绝后，改为固定 vLLM 版本支持的具名 worker 扩展；客户端等待与 worker 完成分别表述。
+历史校准源码按准确旧字节共享，只追加五条来源映射，原哈希和结果保持。
+当前源码与检查分别见[代码状态](code/INFRA_STATUS.md#resource-allocation-candidate)、[历史复现说明](experiments/reproduction/native_baselines/README.md)及[CPU 记录](code/tests/records_cpu.md#resource-allocation-cpu)，尚待复审与实机验证。
+
+## 2026-11-03：资源归属按实际分配核对
+
+独立候选将可见 CPU 配额用于机器观测、SemLoom records 启动检查和校准身份，保留主机／容器观测的不同含义；
+GPU 采样通过现有原生 worker 接口传递实际设备身份，缺少证明时继续缺测。
+实现与验证范围归[代码状态](code/INFRA_STATUS.md#resource-allocation-candidate)和[检查记录](code/tests/records_cpu.md#resource-allocation-cpu)，本次不发布或运行真实模型。
+
 ## 2026-10-28：完整F/M查询token配置的独立本地接线
 
 将49d已有预算组件接入完整查询owner，保持count默认；Extract及角色切换的token支持另列待做，不改动态控制或后继选择。
@@ -97,7 +718,7 @@ G2补充Ray runtime-reuse及Daft单线程session各4条真实请求成功，45d�
 
 ## 2026-10-26：明确目录职责与候选来源
 
-在main380cfbda上选择性重放已审文档，落实[目录职责](experiments/plans/系统架构.md#code-directory-boundaries)、[代码导航](code/README.md#目录结构)及[baseline交接表](code/src/baselines/README.md#text-execution-boundaries)。明确main现有请求／SQL接点与PR #52候选records／模型／Kalypso／具名复现的来源，不以框架名、HTTP或目录存在推导能力与资格。
+在main380cfbda上选择性重放已审文档，落实[目录职责](experiments/plans/系统架构.md#code-directory-boundaries)、[代码导航](https://github.com/3444374/ai-operator-execution-optimization/blob/403f6e325c933ab9e437212fb4e360782830c892/code/README.md#目录结构)及[baseline交接表](code/src/baselines/README.md#text-execution-boundaries)。明确main现有请求／SQL接点与PR #52候选records／模型／Kalypso／具名复现的来源，不以框架名、HTTP或目录存在推导能力与资格。
 
 33条路径与11项建议分别核对：五个候选共享接点另批兼容归位，三个旧请求桥保留入口，实验名／历史容器／还原CLI无需物理改名。根入口和索引同步，未移动源码、修改默认或历史字节，未改变45d184df受测源码；未来纯Core产品目录也仍是拟议。本文不新增模型运行或接纳records实现。
 
@@ -326,7 +947,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 
 ## 2026-10-08：查询归属、分布式请求与计数范围说明
 
-- 按用户要求更新现有文档，依据当前源码区分查询/流/任务归属、Ray worker实际发送、累计实验预算、在途容量与观察事件；详细说明归[代码README](code/README.md#query-accounting-scopes)。
+- 按用户要求更新现有文档，依据当前源码区分查询/流/任务归属、Ray worker实际发送、累计实验预算、在途容量与观察事件；详细说明归[原代码README](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/code/README.md#query-accounting-scopes)。
 - [数据库接入](experiments/plans/数据库接入.md#query-job)明确多个PG backend分别登记查询，以及同一查询流加入仍要求同一可信peer；多个gateway总容量和跨PG并行执行进程登记继续标为pending。
 - [查询调优](https://github.com/3444374/ai-operator-execution-optimization/blob/0b8aca5ff599e1b6525b77608e3865b20a4fd996/experiments/plans/查询调优.md#同机共享预付计数的本地原型)、代码状态及总纲同步候选已完成的Linux/真实Ray检查，区分现有PG查询共享与共享映射候选尚未完成的PG/模型检查。
 - 本次只修订说明与现行引用，实验结论继续引用原报告，没有新增实现或运行。
@@ -2671,7 +3292,7 @@ main 代码仍为 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`：新LOTUS图像、
 - 登记 Kalypso 为 arXiv 核心补充；arXiv 官方页面核对题名、作者、query-plan-aware API、
   memory-aware scheduling 与论文自述最高 4.57×。清理时对尚未纳入 Git 的 1439 行原始笔记执行
   仅大小写变化的重命名，在大小写不敏感文件系统上意外丢失项目内副本；先生成过一份明确标记的
-  临时重建稿。用户随后指出下载目录保留原件，现已将 `/Users/junshun/Downloads/Kalypso_arxiv2026.md`
+  临时重建稿。用户随后指出下载目录保留原件，现已将 `<LOCAL_HOME>/Downloads/Kalypso_arxiv2026.md`
   正文复制回项目小写路径；目标仍为 1439 行，只去掉前言两行末尾的 Markdown 双空格以通过仓库 whitespace 检查，
   文字内容不变；临时重建稿已被下载原稿替换，
   下载目录源文件未改动。Kalypso 不进入现有 Top 15、十五篇速览或已定稿开题正文；
@@ -10597,3 +11218,836 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 无推理重试；旧8/8账本不变，模型/PG/gateway已清理。提交公开证据后对main执行快进合并，
 不改写原分支历史。正式资源、质量/校准、性能、同查询组合与异步能力仍未完成。
 [完整记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)保存准确测试身份与哈希。
+
+
+## 2026-11-04 原生采样时间接线的 CPU 增量
+
+实际 vLLM ready 声明自身分配与错误处理归属；模型 actor 提供同主机采样年龄，driver 保守映射并保留重复源年龄。
+51 项相关 CPU 检查成功，历史摘要及映射不变；公共策略尚未切换，不构成物理容量或真实模型验证。
+[主记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)保留剩余事项。
+
+
+## 2026-11-04 资源请求公共入口的 CPU 接线
+
+普通 Core、滚动 token、Movie 与 session 选择已审 b99 请求策略，许可取实际 Core／IPC／结果预留，
+同次读取保留准确采样来源。旧阈值和缓存只由显式历史选项接收，原数值和原生 baseline 保持。
+309 项中 308 成功、1 个上游 checkout 跳过；首次输出与时序问题全部保留，未推送或合并。
+[主记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)区分 CPU 接线、
+普通默认 R、准备交错和待做的整树独审／实机验证。
+
+
+## 2026-11-04 公共工厂独审修订
+
+修正当前侧历史差分 fixture／显式旧策略选择，并更新原校准说明的新配置与 hint 适用范围；
+原历史来源及数值、交付、工作量、顺序断言保持。30 项相关 CPU 检查成功，原独审环境缺项另列。
+[修订摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/wiring_review_checks.json)
+登记来源和复审状态；没有推送、合并或真实模型／Ray／GPU 运行。
+
+
+## 2026-11-04 普通默认容量与校准身份整理
+
+普通 async Filter／rolling 工厂、Movie、session 和校准共用资源解析，C 不再重分存储；
+Core／Method 字节来自已有 IPC 与单项／continuation 声明，新默认缓存身份记录实际值。
+R 默认仍为调用方声明的 2，没有自动硬件额度；显式历史策略和完整显式配置保持。
+388 项中 387 成功、1 个上游 checkout 跳过；低层、非 rolling、双模型路径规范及准备交错仍待做。
+[主记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#普通默认-r存储分配与校准身份)
+保存全部首次问题、历史原十处不匹配及未验证范围，未推送或合并。
+
+
+## 2026-11-04 清理三个旧 SAOR 启动入口
+
+移除无现用导入／调用的旧机制、供给上限及间隙启动脚本 281 行；准确原件压缩保留，
+五份历史投影新增十五条来源映射，原摘要和身份不变。现用脚本导航按职责收敛，离线分析、
+原始数据及实际 baseline 保留。49 项相关 CPU 与三个恢复后 CLI 解析检查成功。
+完整历史的十处来源问题仍保留，未推送、合并或运行模型／真实 Ray／GPU；
+[逐文件清理记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#历史启动脚本退出维护目录)列明删除范围。
+
+
+## 2026-11-04 修复历史源码恢复映射
+
+在原仓库历史找到两份与既定 SHA 相同的资源观测／session policy 原件，新增十条共享映射；
+维护实现、预期摘要、投影身份、原始来源版本及既有映射不改。3010 条来源全部匹配，
+51 项 CPU 检查及五份完整投影逐文件核对通过，原失败和先前十处问题的证据保持。
+[恢复记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#历史源码缺失映射修复)
+说明精确来源与资格范围；没有模型、真实 Ray、GPU、推送或合并。
+
+
+## 2026-11-04 补齐资源默认变化的原生参数测试
+
+在模型共享规范提取前复现四个未迁移方法，更新 R／C／结果槽的三处断言，并让旧缓存用例显式选择历史策略。
+新增当前策略拒收旧缓存的检查，参数省略／显式和身份差分保持；47 项相关 CPU 检查成功。
+没有生产代码、模型或历史摘要变化，见[补充摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/capacity_native_test_checks.json)。
+
+
+## 2026-11-04 补齐查询容量与非默认配置测试
+
+提取前原树复现七个旧假设，测试现分别核对 R、C、请求峰值和驻留额度。保留输入、usage、
+取消、小 RPC 池和调用次数检查；52 项 CPU 成功，生产源码未改。保存一份准确原件并追加五条
+恢复映射后，历史 3010 条来源全部匹配；首次问题保持，详见[摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/query_capacity_test_checks.json)。
+
+
+## 2026-11-04 拆分同步与异步共享模型规范
+
+十三份共享定义移到中性于同步／异步的 vllm_protocol，四十份文件只迁移导入；旧导入与 pickle 可用，
+异步不再借用同步 owner 的采样方法。跨模块选中 1350，实际运行 1345：1315 成功、30 方法跳过，另有
+五方法的类跳过，无失败或错误，历史 3010 条全部匹配。只拆结构，未改同步默认、BF16／显存比例或模型算法；
+IPC 大单项修复、新动态策略与同步启动清理另批处理。[记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#同步与异步共享请求值提取)保留完整范围与首次问题。
+
+
+## 2026-11-04 修复省略 IPC 总额的大单项配置
+
+未指定的输入／结果总额现在先容纳对应有效 IPC 单项，再运行原类型检查；显式小总额和 typed limits 保持。
+107 项 CPU 检查成功，作者重放原审查的 16 个构造案例全部接纳，模型分配为零。原失败保留，
+尚待复审及真实模型验证，详见[修正记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#省略-ipc-总额时容纳声明的大单项)。
+
+
+## 2026-11-04 组合已审动态策略与模型回执工作量
+
+c4d5e5c 的三份生产文件、四份测试按原字节组合到普通／rolling 入口，许可来自实际软件声明。
+普通工作量改为已交付累计值加同 session 的保留回执，在 native 观察时间前捕获，原消费、
+ACK、释放和旧策略方法保持；441 项定向 CPU 成功，历史 3010 条全部匹配。
+默认 R 仍为声明的 2，完整回归和独审单独交接；[记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#已审动态策略与真实回执工作量接线)列明未完项。
+
+
+## 2026-11-04 完整独立预算接纳未声明的旧 R
+
+显式 None 经普通／rolling 工厂解析到已有有限预算；配置原意保持，无预算则在 actor 分配前拒绝。
+CLI、session、离线身份、连续查询及相关 CPU 检查 167 项成功，历史 3010 条全部匹配；
+默认 R 仍为 2、IPC 结果槽仍为 8，自动容量尚未完成，详见[记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#已有完整预算时省去旧-r-声明)。
+
+
+## 2026-11-04 组合未知工作量的压力修正并补齐相容检查
+
+已审两文件压力修正接入 None／完整预算候选；补齐旧 namespace 资源相容及晚到 CPU 回执同步，
+66 项定向检查成功。首次完整组合三项错误和原树探针保留，生产 actor、transport 与 unknown 责任保持；
+完整回归及独审状态见[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#未知工作量下的-native-压力与容量组合)。
+
+
+## 2026-11-04 清理一次性旧工具并登记全部测试文件
+
+逐文件盘点 132 个脚本 Python 文件和 509 个测试／fixture，全部既有测试保留。
+移除入门 Daft smoke、旧 DuckDB 单分片耗时探针、旧短长 Job manifest 生成器，共 502 行；
+准确来源压缩保存，五份历史投影新增十五条映射，3010 条全部匹配。46 项相关 CPU 和
+十五次恢复后 CLI 解析检查成功；原生 adapter、组织器与实验结果保持，
+见[逐文件记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#脚本与测试逐文件清理)。
+
+
+## 2026-11-04 完成容量、压力与旧工具组合回归
+
+最终组合选中 1593、运行 1588：1557 成功、一项已在旧独审出现的 geometric 时间用例失败，无错误；
+30 方法及一个含五方法的类跳过，前轮三项错误已修。历史 3010 条匹配、原测试和旧策略保持，
+[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#未知工作量下的-native-压力与容量组合)
+列明原输出、准确代码与待独审状态；默认 R、自动容量、同步默认和准备交错继续处理，未推送或合并。
+
+
+## 2026-11-04 修复 static None 提前检查并限定采样调查结论
+
+static 计划及直接 driver 在创建目录与 Ray 初始化前验证有限额度，Core 复用原解析器
+提前检查；合法 None 加完整异步预算及显式旧值保持。公共采样交接仍有可重现问题，
+新增 128 请求 CPU 跟踪不关闭原失败，也不证明原失败的唯一原因；
+[修订与调查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#static-容量预检修订与公共采样交接调查)
+保留原输出、局部通过和仍未取得的资格。未修改控制器阈值或运行模型、真实 Ray、GPU。
+
+
+static 预检修订最终 205 项相关 CPU 全部成功，无失败、错误或跳过；原反例输出保留，
+历史 3010 条匹配及五份完整投影还原通过。准确候选仍待复审，公共 provider 和关闭时序
+未验范围保持，未将局部检查解释成完整系统通过。
+
+
+## 2026-11-04 补同步模型实际上下文回执
+
+同步 ready 读取同一原生实例上下文并使用已有身份格式，未知或不一致时拒绝，原关闭流程保持。
+16 行生产增量保留构造参数、chat、结果与关闭方法；关闭未确认时不发布 ready，确认后可查已关闭回执。
+相关 146 方法中 143 成功，三方法类跳过，
+历史 3010 条匹配。原反例与环境问题保留，同步旧默认和链／缓存迁移未完成，
+见[同步回执记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#同步模型的实际上下文回执)。
+
+
+## 2026-11-04 组合已审容量预检与同步回执
+
+两份独立候选已按各自范围完成独审，生产文件互不重叠；组合时五份文档均保留共同原文及双方追加内容。
+[组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/reviewed_context_capacity_checks.json)
+分别记录作者 CPU 结果、独审缺依赖项、准确源码及旧 geometric 失败，不将局部通过写成完整系统完成。
+
+
+## 2026-11-04 提前检查 session 的组批参数
+
+直接调用 session start 时，固定批并发与组批选项也先经已有纯解析器校验，再创建目录或启动运行时。
+正常预检原先已拒绝这些值；本批补直接调用路径，合法固定批及 rolling 完整预算保留。
+[检查摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/session_batching_preflight_checks.json)
+保留先启动 inert Ray 的原反例及一次测试模块名称写错的命令输出；未运行真实 Ray 或模型。
+
+
+## 2026-11-04 移植准备与派发交错的组合候选
+
+将已审旧候选 b258c575 的准备交错、异步完成通知和 RPC 可用通知移入当前拆分模块，
+保留帧计量缓存、实际上下文检查、当前控制器与独立资源声明。准备行数使用 Method 自身授予，
+RPC 通知不再以 held_tasks 大小决定是否订阅。公共工厂增加显式选项，均默认关闭；不接 Movie JSON／CLI。
+[组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/prepared_supply_composition_checks.json)
+保留原反例、测试迁移及与独立预算的检查，旧性能负结果和几何搜索问题继续单列。
+
+完整相关回归选中 1733、运行 1728，1685 成功、13 方法错误（24 条子用例记录），30 方法及含五方法的类跳过。
+错误来自两处新增开关属性假设；补回未声明即关闭的兼容行为后，86 项相关方法成功。
+完整最终组合尚待重跑；该次 geometric 通过也不能改写先前失败。
+
+
+## 2026-11-04 组合交错候选与来源审计
+
+准备交错候选、两份已审修正及 session 组批提前检查置于独立组合树；六份文档保留共同前缀和双方内容，
+生产改动分别按原候选核对。补查脚本同目录导入及包内相对导入，保留首轮清单和原证据，
+当前来源扫描 647 个脚本／测试文件；未发现没有测试方法又没有记录调用的非包测试 helper。
+[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/system_followup_checks.json)
+与[入口／容量审计](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/entry_capacity_source_audit.json)
+分别保存代码检查和只读来源判断。本批未再删除独有旧工具，自动容量及同步旧默认仍未完成。
+
+
+## 2026-11-04 保留 legacy 等待中原帧并继续来源核对
+
+旧反馈适配器现保留同一查询／模型的原帧，供原观察者按原时间和序号消费；公开 sample、现代采样器、
+控制器和原 geometric 断言均不改。[交接检查](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/pending_frame_checks.json)
+保留初始五项反例、修复后仍失败的一次集成及最终 CPU 结果。最终选中 1815、运行 1807，
+1777 成功、30 方法跳过，另有两个类共八方法未执行；代码运行中未变。历史 3010 绑定及五项准确还原保持。
+本次 geometric 通过不证明旧问题已修；一次输入跟踪显示另有控制器年龄拒绝，未改阈值。
+[同步与容量后续](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_capacity_followup_design.json)
+列出实际调用、原生 API 已核对部分和实现顺序；同步旧默认、自动容量及 CLI 接线尚未完成。
+
+
+## 2026-11-04 接通 Movie 的准备模式
+
+单次 check／worker run 与连续查询 session 现在以同一字段显式调用既有准备选项，省略和 serial 保持原路径。
+共用纯检查拒绝不支持组合，直接 start 也在目录／Ray 创建前拒绝；启用模式进入校准身份和实际回执。
+[CPU 接线检查](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/preparation_cli_checks.json)
+保存全部反例、fixture 修正和已审 e60c 组合结果：1826 项选中、1818 运行，1788 成功、30 方法跳过，
+两个类共八方法未运行。全部 1299 个代码摘要与结果匹配，历史 3010 绑定无差异。
+后期提示错误保留合法前缀用量，不保证默认模式零提交。同步旧默认与自动容量仍未完成；没有模型或 GPU 结论。
+
+
+## 2026-11-04 同步逐调用实际上下文与准确组合复查
+
+ready 与 run_prepared 共享实际模型上下文检查，在 chat／调用数预留前拒绝未知、变化、显式不符或过大输出。
+构造、chat、关闭及两类私有 IPC 保持；三项同步构造缺省和 fused／完整提示检查仍待迁移。
+[逐调用与组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/raw/sync_generation_checks.json)
+保留八项初始反例、psutil 受限错误、第一轮完整关闭失败及父／当前单次对照。旧优先级 fixture
+只确认接纳却期待成功，现复用已确认成功后延迟交付的检查，保留原优先级及无重放验证；
+这不证明仍在计算时的关闭，也不声称原失败唯一原因已找到。最终 1834 选中、1826 运行，
+1796 成功、30 方法跳过，两个类共八方法未执行；历史 3010 绑定准确，代码运行中未变。
+
+
+## 2026-11-04 拆分同步原生对照参数并检查完整提示
+
+当前 SemLoom 同步省略未指定的三项引擎参数，ready／fused／关系复用使用同一实际模型上下文；
+原生完整提示渲染一次，总长在加入请求队列前核对。原生 Ray／Daft／IMLane 显式保留原参数和 chat，
+共用原 IPC、方法及清理，旧导入和历史投影保持。
+[本轮证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sync-default-ownership)
+保留配置反例、fixture 迁移错误、受控 ACK 时序反例和最终组合；三份准确旧源新增十一条共享映射，
+原 3010 条摘要不改。模型清理 unknown 独立保留，原 geometric 和计算中关闭问题仍开放。
+自动容量仍无服务独占授予来源，R=2／默认结果槽=8、BF16／0.8 没有被本批改成其他猜测值；
+只有 CPU 候选，待独审，不推送或合并 main。
+
+## 2026-11-04 修订同步公开证据及复算入口
+
+按独审意见规范化两份 CPU 公开归档中的个人 home 前缀，保留 24 份仓库外原件、原摘要、公开摘要和恢复对应；
+运行失败、栈行号、用量及代码来源不改。固定上游函数体与 ACK 受控检查增加仓内入口，先核源码字节，
+原本多一个尾部换行的私有准备文件与官方文件的选定方法语法树一致。旧同步 4096 说明已改为仅原生对照。
+[修订记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#public-cpu-evidence-copy)
+保存首次失败与复查，不增加真实模型、Ray／Daft、GPU 或性能资格。旧本地版本继续保留，
+发布内容另建不包含旧个人路径节点的候选提交；未经复审不推送或合并。
+
+## 2026-11-04 核对计算中关闭与实际容量来源
+
+在公开证据修正候选之外追加独立 CPU 行为检查，实际子进程计算未结束时首次 close 保留额度，
+取得同一生产者停止证据后才归还；晚到成功、失败与 unknown 均保留原结果和用量，不解释、不重放、不补报查询完成。
+FIFO／后继优先共三项方法六个场景，66 项相关检查通过，运行时代码未变，仍待独审。
+[本轮记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#computing-close-cpu)
+保留首次测试读取报告层级错误，不声称旧关闭问题或真实 Ray／模型／GPU 退出已经全部解决。
+容量来源核对确认已有 Core Job、Method pool 和 IPC 授予可复用，但普通 records 尚未接收服务独占字节授予；
+R=2／默认结果槽=8 和 geometric 旧不稳定继续保留，未改成其他猜测数值。
+
+## 2026-11-04 统一直接 actor 的 IPC 来源并支持字节派生
+
+直接 async owner 改用公共 IPC 容量解析器，修正显式 Core 单项大小被旧 2 MiB 副本覆盖的问题；
+原省略值、显式 IPC 和控制保护保持。新增 CoreRecordsCapacity.with_storage_bytes 只转换已有有限载荷字节，
+无需再手填 R／槽数即可经 R=None 进入既有工厂，不提供实际服务独占授予或物理内存探测。
+[本轮记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actor-capacity-source)
+保留原反例、父候选同样失败的三项旧检查、迁移及最终组合；较大选择 1916 成功、40 未运行，
+组合 142 成功、1 未运行，方法数不相加。实际动态文件、vLLM 参数和历史 3010 条来源保持。
+四轮 CPU 查询未发现已消费标记累积，没有删除保护代码。普通 R=2／默认结果槽=8、服务独占授予、
+全查询保留和实际 Ray／模型／GPU 验证仍未完成；候选待独审，不推送或合并 main。
+
+成功查询的标记保留检查随后补进仓内现用测试，四轮实际 CPU IPC 复用中均归还原持有。
+最新准确组合 144 项、143 成功、1 项未运行，代码摘要匹配；原组合、原失败和私有探针均保留，结果不相加。
+
+## 2026-11-04 接入已审 geometric 来源期限修正
+
+从 418473fb 容量候选另建组合，接入 faab48cd 的五文件修正并逐字节核对；来源期限来自原 provider 声明，
+不改工作测量窗、原输入及探索时间。容量文件和现代请求策略保持，未知计算不提前归还。
+[本次组合](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#capacity-source-clock-composition)
+2019 项选中、2011 运行、1974 成功，无失败错误，45 方法未执行；代码摘要及历史 3010 条来源匹配。
+474 份旧输入绑定来源期限后为四次调整、七个测量，只是固定输入回放，不是新查询或性能结果。
+后续用交付的最终源码身份或新缓存，异机时钟、真实 Ray／模型／GPU、服务独占字节及全查询内存仍待处理。
+候选待准确组合独审，不推送或合并 main，原候选和失败记录保留。
+
+
+## 2026-11-04 服务进程内载荷授予接到普通 async owner
+
+新增静态字节池及公共工厂接线：服务显式给有限总额，实际 owner 领取互不重复的逻辑授予后才可启动，
+无需再提供 R／结果槽；未知清理及未转交结果保留授予。未配置池的旧入口、模型参数和原生 baseline 保持。
+[本轮记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-payload-grants)
+覆盖首次反例、权限失败及相同源码的本机 CPU 重跑：1998 成功、45 未执行，新增 24 项全通过；历史来源匹配。
+候选待独审，不推送或合并 main。总字节并非硬件探测，CLI／rolling／跨进程恢复和实机验证仍未完成。
+
+## 2026-11-04 补齐真实 Ray 检查的 provider 替身字段
+
+IdleProvider 先前忽略来源期限参数，导致下一查询复用时报缺字段；生产 provider 已有该字段。
+本批仅修测试替身并加三项默认 CPU 反例，相关 143 项成功、五项真实 Ray 未运行。
+[原失败和本地检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-provider-fixture)
+均保留；待独审后由专用会话按准确新源码续测，模型尚未在本批启动。
+
+
+## 2026-11-04 服务载荷授予保留至观测 RPC 终态
+
+按独审反例补查 sampler 的当前 RPC 终态，线程停止或本地 Future 取消不再提前归还服务字节。
+关闭报告与授予归还复用原 sampler／Future，旧查询报告保留，不发替代请求。
+[完整组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-snapshot-retention)
+包含独立测试替身修订：2005 项成功、45 未执行，历史来源及实际模型设置保持；候选待复审，未推送或合并。
+CLI／session、rolling 的实际结果授予、恢复和实机验证仍未完成。
+
+
+## 2026-11-04 接通普通服务入口并保留原实例清理能力
+
+从 bd527 另建候选，统一服务配置预检与工厂；普通 CLI 和连续 session 可从声明字节派生请求／结果计数，
+实际领取先于 Ray，未知清理及未转交结果继续持有。启动／清理检查原连接，重复关闭只复用完整实际证明；
+保存及文件／目录同步先于精确结果接受。未决 RPC 保留原 Ray，Ray 结束失败不丢 driver；字节归还独立处理。
+prepared 结果另减少无用拷贝和关闭迭代引用，未接 rolling 授予或重连。
+[实际证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#service-entry-recovery)
+为 2083 成功、45 未执行；代码摘要、历史来源保持，原错误与网络警告不改写。
+候选待最终树独审，未推送或合并；真实模型、自动物理容量及其余工程重构仍未完成。
+
+
+## 2026-11-04 严格 JSON 接受与 rolling 服务交付继续重构
+
+将数字／布尔值快照接受修复单独保存为 3a3a589d，原失败和准确修复记录保持。
+rolling Python SDK 接入实际完整 query 交付声明，实例 R／Method／IPC 与完整未消费结果分别计量；
+原 producer 与未知责任保留，同进程部分退休可用原对象续退，私有整批结果在归还前显式清理。
+[本轮来源、检查和未完成项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-service-delivery)
+同时保存循环引用反例、物理容量／恢复源码调查和全部旧失败。未推送、未合并，也未运行真实 Ray／模型／GPU；
+rolling CLI 保存、物理授予、跨进程恢复及全项目其余工程工作继续处理。
+
+最终 181 模块相关选择 2172 项、2127 成功，45 未执行；44 新方法通过，五个原独审反例在最终源码复放通过。
+修复完整检查暴露的旧 owner 三项服务属性访问错误；首轮权限／断言失败及一次中断保持原身份。
+全部 1337 代码摘要与 3010 具名历史来源匹配；公开归档一份本机路径脱敏副本，私有原件未变。候选待独审。
+
+
+## 2026-11-05 修订 rolling 结果返回与中断清理
+
+从 99aa 独立建树，先复现未返回结果被标记消费、部分 owner 解除后无法继续清理两项问题。
+无 expected 的非空取回现先返回行、后续 close 再归还；本地交付中断恢复旧状态，原 producer 最后解除。
+[反例与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#rolling-transfer-repair)
+保留原候选、原失败及接口时机变化。流式保存工作暂存另一树，没有混合；未推送、未合并或运行真实模型。
+
+结果交接修订的 182 模块最终检查：2176 选择、2131 成功、45 未运行，无失败或错误；
+本批四个新方法和显式 expected 原控制通过，1338 个代码摘要匹配，原候选／失败和保存 WIP 保持。
+
+
+## 2026-11-05 修复批量观察探针的就绪报告夹具
+
+只读核对 c7ba0740 服务器交接，在独立的 5175fa10 后续工作树复现 off/on 两项 CPU 失败。
+模拟 IPC 现提供实际异步协议的就绪／owner／时钟字段，保留唯一 snapshot 的原生年龄核验与原批量断言。
+[本轮证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#bulk-probe-ready-report)
+记录完整 workflow 205 项和四个公开探针通过，原失败、服务器模型停止及 5175 独审候选保持。
+只修改测试夹具与说明，没有修改生产逻辑、运行模型、推送或合并；剩余整体重构继续单独处理。
+
+
+## 2026-11-05 继续主机内存来源与公开路径接线
+
+以准确远端 9da 建立独立候选，避开 Q2b 的 MMQA 入口。先接 cgroup v2 内核停顿／回收增量、
+同一实际 actor RPC 的独立来源与查询时钟，再接既有 require_memory_feedback；缺省要求保持关闭。
+[分层实现和证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure)
+区分压力反馈和实际物理授予，记录原失败与 ordinary／rolling／resident 检查，不把逻辑载荷额度称为 RSS 上限。
+没有修改控制算法、模型参数、baseline 或 Q2b 实现，没有模型／真实 Ray／GPU 调用、推送或合并。
+物理存储授予、完整关系、持久副本与恢复继续作为未完成工作处理。
+
+最终 184 模块选择 2201 项，2156 成功，45 未运行；25 个新方法全部通过。
+标准 205 项和四个公开探针在最终代码上通过，1343 个代码摘要匹配。首轮权限与连带失败保持原身份，
+获准的 CPU 重跑没有失败或错误；只读核对没有本候选路径启动的 Python 子进程残留。准确候选待独审。
+
+## 2026-11-05 修正 Ray 资格测试总数误判
+
+服务器原模块八项通过仍被固定五项日志判断拒绝，模型未启动。修订按实际方法成功结果判断，
+保留所需五项、其他选中方法、监督清理和完整输出要求，不增加执行策略或自动重试。
+[本地相关 73 项检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-qualification-results)
+全部通过；原权限错误、服务器停止与累计调用记录保持。此批先独立交付，其余精简另行处理。
+
+## 2026-11-05 将未接入执行链的工作量原型移出生产模块
+
+核对全仓引用后移除 `BoundedStageWorkController`、专用返回类型与孤立导入；
+原三项测试改查已有历史源码，维护版供给／请求代码和五份具名投影保持。
+[逐项处理与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#stage-work-retirement)
+记录 141 项相关 CPU 通过及两项旧测试在原 9da 的复现，不改生产配置或服务器对照条件。
+仍有实际调用的显式历史策略和准备 broker 保留；后续整合、其他精简和全项目剩余工作继续单独处理。
+
+
+## 2026-11-05 组合两份已审生产清理
+
+从当时 PR 90 的准确 a255574f 建独立工作树，组合 0a2faf31、bb9ca00a；
+源码无需冲突处理，文档保留内存压力和两批清理记录。旧类型直接导入与任意旧 pickle 不再保证，
+准确历史树继续恢复原实现。[317 项组合 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#reviewed-cleanup-composition)
+全部通过；未混入测试资格修复及第二轮候选，没有模型／真实 Ray／GPU、推送或合并。
+
+
+## 2026-11-05 将已审清理接到最新已发布修复
+
+新工作树从 PR 90 的 c5ebddc8 接入原 99fa8a9 增量，保留已发布资格修复和完整文档记录。
+[本次 73 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#c5e-cleanup-composition)
+通过；清理 Python 与原 317 项通过的准确候选相同，不重复执行或累计数字。
+原候选、第二轮候选及 9da 对照均保持；未推送、合并或运行真实 Ray／模型／GPU。
+
+
+## 2026-11-05 第二轮精简内部退役交接
+
+核对实际消费者后，以无载荷原对象标记取代内部可变字典，删除其镜像字段和内容形状校验。
+实际 producer、未消费结果、私有载荷和未决 RPC 的检查保持，不另建控制结构。
+[相关 97 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retirement-marker-simplify)
+通过；没有新增测试方法或修改原 9da 对照，其他配置精简另行处理。本批待独审，未推送或合并。
+
+
+## 2026-11-05 组合第二轮已审精简
+
+在完整第一批 0f2e2141 上组合 b7e47a99、8fe566cf、a4d693ad，保留其 c5e 资格修复祖先。
+源码没有冲突，文档保留各批来源；[170 项组合 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#second-cleanup-composition)
+全部通过，没有新增测试方法。整合前远端仍 c5e、第一批发布进行中；本地候选未推送或合并，
+原候选、反例和 9da 服务器对照保持，真实 Ray／模型／GPU 未运行。
+
+交付前远端已确认 0f2e2141，第二轮候选以该准确提交为父提交。
+
+
+## 2026-11-05 接通准备交错与当前资源反馈
+
+以 #90 `c5ebddc8` 新建独立工作树，复用既有工厂、准备循环、资源请求策略和独立预算。
+事件循环先处理结果与后继，再更新反馈；窗口变化后重查准备前缀，并按原轮询时间等待。
+[CPU 组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-feedback-interleave)
+含 101 项综合检查和调整测试稳定性后的 12 项目标检查，共 103 个不同方法全部通过。
+默认及历史路径保持；原失败保留，没有额外参数、策略阈值或资源账本。未推送、合并或启动真实模型。
+
+补充同题证据来源索引，仅登记归档／成员摘要及获取方式；区分完整日志、会话转录与失败摘录，未复制日志或重跑相同检查。
+## 2026-11-05 清退旧请求反馈与推荐缓存
+
+从准确已发布 3fd3887e 独立整理普通、rolling、Movie 和 session 的旧策略选择与缓存接线，
+17 个生产文件删除被替代的实现、专属参数和无调用 helper；共享批反馈、现代控制器及资源责任保持。
+测试迁移到原采样器，24 个旧专属测试／夹具文件退出；独立逐断言复核后原样恢复一项现代完整解析测试。
+[逐文件清单、失败与代码量](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+记录去重 561 成功、6 项真实 Ray 未运行，以及空查询来源重绑修复。
+本批核心净减 1,451 行，但较固定 main 仍多 6,086 行；不把移动文件或测试删除当作生产瘦身。
+原 9da 对照、五份具名投影与模型参数不改，未推送、合并或启动真实 Ray／模型／GPU；剩余整体重构继续处理。
+
+
+## 2026-11-05 将退役候选接入最新准备交错
+
+保留干净的 e70d11ff 候选，在独立工作树以已发布 678250ee 组合旧入口清理。
+三份追加文档保留双方记录，运行时与 Movie 准备测试保留 678 原字节；恢复新消费者实际需要的策略报告字段。
+[105 项 CPU 组合检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#legacy-request-retirement)
+全部通过，测试清单的一项目录误写及原输出保留，仅补跑未载入模块。
+当前核心较 678 减少 1,450 行，较固定 main 仍多 6,100 行；候选未推送或合并，实际模型／Ray／GPU 待验证。
+
+
+退役组合再接到无重叠的 9652108d 租约修复；完整 `code/src` 与 e4b09dcf 已测组合相同，
+原修复三文件逐字节保留，仅补跑一个租约 CPU 用例通过。实际来源证明见同一主记录，未推送或合并。
+
+
+## 2026-11-05 按职责拆分 Ray 画像适配文件
+
+以 9652108d 建独立树，待审旧反馈退役候选及工作树保持不变。
+原 1,064 行文件分成 670 行提交模块和 357 行调度组装模块，直接复用已有执行器，删除旧参数包装；
+净减 37 行，迁移部分不算删除。公开函数、指标、旧轮询及五份历史投影保持。
+[改前／改后同 194 项 CPU 检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ray-profiler-layout)
+均通过，没有新增测试方法；独立复核未发现新增问题。当前 Ruff 未安装，真实 Ray／模型／GPU 未运行。
+候选未推送或合并，两批实际整合后的代码量另行复算。
+
+
+## 2026-11-05 分离 Core 调度值与执行循环
+
+在独立 965 底稿上把七个配置／结果／提交接口类型移到 `scheduler_types.py`，保留原公开导入及唯一执行器。
+原调度文件从 1,125 行变为 981 行，新增类型模块 165 行；三个生产路径合计净增 17 行必要导入／说明。
+[改前／改后同 236 项检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-types-layout)
+通过，原默认对象还原与五份历史摘要保持。本批未叠加两份旧候选，未推送、合并或运行真实 Ray／模型／GPU。
+
+
+## 2026-11-05 组合最新底稿上的文件职责整理
+
+保留独立 Ray 画像与 Core 类型候选，在已发布 d559b942 之上合成；追加记录保留双方事实，
+历史恢复映射取无冲突并集，原身份和摘要不改。六个源码／测试文件逐字节保持各自已审候选，
+17 个已发布旧代码清理生产文件保持。
+[236 项 CPU 检查与可比统计](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#layout-d559-composition)
+全部通过；本批结构整理净减 20 行，核心相对 3fd 共减 1,457 行，较固定 main 仍多 6,080 行。
+当前只交付可审候选，未推送或合并；真实 Ray、模型、GPU 和性能未测，配置耦合另树修复。
+
+
+## 2026-11-05 将 prepared rolling 与应用 token 切包分开
+
+当前准备与派发沿原执行链复用，B 可省略或为 null，固定或现代动态许可均可组合两种准备方式。
+七个生产文件处理配置、工厂及可空报告；已有上下文／字节／结果保护保留，重复 Method 预检集中到公共解析。
+[源码、失败与 CPU 范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#prepared-requests-no-token-packing)
+记录四种配置前拒绝后可解析、197 方法中 195 成功与 2 项未解决的 Reference 夹具组合失败，服务增量 21 项通过。
+没有新执行器、控制器或形式化测试包装，未推送或合并。按用户最新要求先清退不用的旧 LOTUS HTTP 接线，
+共享引擎默认值草案保留，不继续修补旧 HTTP；PG 与仍有研究用途的独立模块另行核实。
+
+
+## 2026-11-05 当前执行直接使用中性共用工具
+
+11 个执行、方法和观测消费者改为直接导入现有 infrastructure 脱敏／私有文件实现，
+不再经过 baseline 导出；无新增工具、包装、校验或测试方法，生产代码行数不变。
+[检查与遗留项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#neutral-shared-tool-imports)
+记录 117 项中 115 成功、首次历史格式字段错误及 4 项恢复重跑通过，另一项原 Kalypso 夹具问题保留。
+只调整导入所属层次，原 NativeCall／图像预测器等实际功能依赖仍待单独迁移；不声称完整继承算子优化。
+未推送或合并，没有模型、真实 Ray、GPU 或服务器操作。
+
+
+## 2026-11-05 组合当前运行链与旧 Movie 路径退役
+
+以最新已发布 646216fa 组合四份本地已审切片：画像／Core 文件职责、无 B 准备反馈、
+废弃 Movie HTTP／固定 campaign 删除，以及共用工具直接导入。现用 Matrix 四个共用定义迁移原样，
+Reference、PG、图像、Kalypso、SAOR 与 LOTUS 有效算法保持；没有临时实现 Join／Top-K／Group-by。
+[完整范围及检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#current-runtime-cleanup-composition)
+记录首轮 721 方法、26／1／84 项必要补跑及原始失败，重叠不相加。auto 与请求反馈的初始值冲突已修，
+owner 上限与字节／结果持有保持。原五树身份不改，新增 40 来源记录和 8 个准确 gzip 原件。
+核心相对 3fd 减 1,434 行，全部 src＋scripts 减 2,887 行；较固定 main 分别仍多 6,103／6,423 行。
+物理容量、完整关系存储、剩余大文件及 SDK 精简仍待后续，真实运行未测，未推送或合并。
+
+
+## 2026-11-05 普通 IPC 的省略容量按实际声明解析
+
+以已发布 e7e593d6 为源，合并两处 IPC 字典解析，移除普通路径带入的 8 槽／16 MiB。
+省略量在显式覆盖后由实际请求、结果槽与单项大小补齐；完整预算、typed 对象及资源归还保持。
+[反例与 151 项 CPU 回归](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-omissions)
+保留改前失败，C／auto、准备交错、会话和校准身份继续检查。生产模块净减 15 行。
+R 默认仍为 2，省略存储随声明请求数变化；物理容量、完整关系持有和剩余大文件尚未完成，未取得实机性能结论。
+
+
+## 2026-11-05 整合容量修正与共享额度统计
+
+两份已审源码机械整合；共享额度去除三段重复租约汇总，保留 SAOR 的方法、每轮取值与授予顺序。
+[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-ipc-shared-composition)
+保存改前后 37 项及最终组合 47 项，重复方法不相加。两个生产文件共减 31 行，不把移动或文档计作减代码。
+默认 R 与物理容量、完整关系持有和其他大文件仍未完成；本批没有模型或服务器实验，不合并 main。
+
+
+## 2026-11-05 清理编排中误用最长时限的启动判断
+
+按用户要求删除 `campaign_guard.run_cell` 的整项最大时间预检，保留实际整轮超时和资源清理；
+在最窄的 `code/AGENTS.md` 第 6 节记入真实结果与时间安排规则。
+[CPU 反例与必要复跑](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-timeout-upper-limit)
+保留原权限错误，没有通过修改清理逻辑规避。其他时间问题另树处理，本次不触碰运行中的 GPU 任务。
+
+
+## 2026-11-05 将编排监控接到实际执行者
+
+独审发现模块函数替换不能证明私有监督函数别名接入整轮监控，已改为三处显式回调。
+删除全局替换及防嵌套检查；controller 先登记进程身份再调用回调，原资源清理保持。
+[源码与 CPU 原件](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#campaign-direct-monitors)
+保留 59／58 项及退役测试的 Git 恢复点，未把不同选择相加，也未触碰运行中的 GPU 任务。
+
+
+## 2026-11-05 组合现用 probe 的时间安排与显式监控
+
+以最新 b6d6da33 保留反馈采样和此前退役结果，三份 probe 使用实际剩余时间，不重复预留完整单项。
+取消夹具接收原监控回调，unknown 不退额度断言保持；PG 候选因对应生产路径已退役未纳入。
+[147 项 CPU 组合记录与代码量](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#experiment-timeout-composition)
+保留失败及完整私有原件摘要。本批生产 Python 净减 3 行；默认 R、物理容量、完整关系持有和
+剩余大文件整理继续处理，未运行模型或服务器实验，未合并 main。
+
+
+## 2026-11-05 将融合批执行细节移出链查询 owner
+
+`lotus_record_chain_core.py` 保留查询组装、阶段切换与资源生命周期，融合批传输／迭代原样进入
+`lotus_chain_fused_runtime.py`，不引入包装或新 owner。共享传输、actor 与反馈文件保持。
+[现有行为检查与准确行数](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-chain-runtime-roles)
+分别保存改前／改后 11 项全部通过；总生产代码增加 18 行，不把拆分记为减代码或性能改善。
+
+随后在独立树基于 f23ffb62 组合，保留最新 LOTUS 方法／值拆分和清理规则，新融合模块直接采用
+`record_types`。由实际依赖变化触发的相同 11 项 CPU 检查全部通过，生产默认不变，未触碰真实运行。
+
+
+## 2026-11-05 按执行责任整理 actor 与 Session
+
+模型 actor 与 driver RPC 状态分文件，实际观测／测试引用同步，删除重复条件及未使用的共享额度子包出口。
+Session 投影归入既有策略模块并迁移原扫描 oracle；有限 typed IPC 声明可为 `R=None` 提供请求数，默认 R=2 保持。
+[源码、原失败和组合 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-duties-0657)
+保留 407／408 及唯一受影响方法修正后通过，未重跑整套或改变生产来满足旧断言。
+本批现用生产 Python 净增 21 行，职责划分和声明去重有所推进，物理容量及其他大文件仍未完成；未合并 main。
+
+
+## 2026-11-05 整理共享额度策略与 Session 收尾
+
+共享账本保留租约、容量与公共事件，策略选择和完成记账直接进入单独模块，删除被迁走的方法而不留代理。
+修复非法完成值先释放占用的问题，并删除已由构造／完成流程保证的重复检查。Session 的 registered 关闭状态只保存一份，
+legacy 待回收身份和未决责任保持。[140 项组合结果及行数](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#credit-session-duties)
+保存原失败、独审与同口径统计；本批生产 Python 净增 49 行，职责整理不能算作减少代码。
+R、物理容量和反馈试探未改，实际模型、Ray 与 GPU 尚未验证，未合并 main。
+
+
+## 2026-11-05 整理派发职责并退役无调用解析器
+
+Session 的成员选择及单请求／原子批接收移入实际派发模块，原 flow 和任务表保持一份；
+删除两处重复游标更新和立即清理前的重复清空。链的现有传输类归回 backend，实际导入与观测接点同步。
+退役无调用的 581 行 profiler parser，保留准确源，并修正上一批新增测试遗漏的五条历史来源。
+[源码与各次原件](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-duties-4679)
+记录本批生产 Python 净减 570 行；保留 b089 的并行试探实现，未改共享额度或 SAOR。
+144 项 Session 与组合上的 65 项链检查通过；原内存等待和十处旧历史来源问题仍在，未据此宣称性能改善。
+
+
+## 2026-11-05 修正长期规则中的脱敏工具路径
+
+根规则改为指向现用 [redact.py](code/src/infrastructure/redact.py)，清掉已删除目录的旧路径。
+脱敏要求保持，代码与当前 CPU 辅助已经使用该现用实现；本次没有修改脱敏逻辑。
+
+
+## 2026-11-05 让查询运行器管理自己的数据和阶段输入
+
+record-local 运行器负责释放及检查自己的查询数据，owner 不再反射改写其私有字段；
+fused 运行器结束旧输入／session 并开始新关系输入，owner 保留阶段选择和结果记账。
+原交接凭证、弱引用、中断重试、完整 Extract 和 unknown 责任保持；移除私有旧 pickle 的伪装元数据和专属测试。
+[组合记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-owned-query-state)
+保存 50 项通过及 sysctl 权限拒绝的原结果。本批生产 Python 净增 15 行，链 owner 从 1,028 行降为 985 行，
+不把拆分记为减少总代码；保留 e3533fbb 的独立研究模块与策略，未合并 main。
+
+
+## 2026-11-05 按服务与消费者拆分 Session 实现
+
+SessionEngine 保留回执、准备借用和单一任务表，SchedulingSession 的真实接纳、租约与消费者关闭实现在 session_flow.py。
+公共类导入保持；同一存储增量和重复类型判断收敛，真实交接与 unknown 检查保留。
+旧测试接点、共享常量导入和两份诊断来源清单已经迁移。
+[本批源码和检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#session-flow-ownership)
+保存 201 个不同方法通过，以及改前五项 socket 错误。核心 Python 总量保持 58,598 行，src＋scripts 净增两行，
+原 1,004 行文件变为 560 行服务与 442 行 flow，未把移动实现算作减少总代码。
+
+
+## 2026-11-05 修正 socket 夹具遮住启动异常的问题
+
+共享测试夹具在监听失败后仍可能交出路径，客户端异常又遮住原启动原因；现改为在交接前报告原异常，
+并让启动失败同样经过 stop／join 清理。一个模拟 bind／listen 失败的行为测试先复现旧错误，再验证修正。
+[唯一实际检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#socket-fixture-startup)
+确认 `listener.bind()` 被系统以 EPERM 拒绝，原五项 socket 功能仍未通过，没有重试被拒操作或 sysctl。
+本批只改测试夹具和行为测试，生产 Python、配置、超时及资格判断均未变化。
+
+
+## 2026-11-05 分开普通 Filter 查询迭代与模型管理
+
+普通 Filter 的输入接纳、回执校验、交付与查询收尾实现在 records_filter_runtime.py，原 owner 保留模型复用和资源管理。
+移动的是原实际类，owner 直接使用该类；原 factory 和 26 个方法保持，没有代理或第二份状态。
+清掉仅供旧迭代类使用的导入，保留有调用方的 TaskKey／模型／transport 导出；历史 AST 和具名原件路径没有机械迁移。
+[本批源码和证据](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#ordinary-filter-runtime)
+保存相同 81 项改前／改后全部通过。owner 781→539 行，新运行模块 259 行，生产 Python 净增 17 行，未声称减少总代码。
+原 socket 和 sysctl 拒绝未重试，策略、容量、模型配置与研究模块保持；整体重构继续。
+
+
+## 2026-11-05 收敛两条 records 路径的扫描准备
+
+Core 与静态 reference 原有两份 Native CSV 准备代码移入 records_scan，重复块与旧专用导入删除。
+保留懒导入、runner 选择、schema／predicate／projection、原错误文字及空输入的同一 Ray 模块；
+语义预检、模型和调度仍留在各自 owner。与并行结果 poll／ACK 的四份生产文件没有重叠。
+[源码与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#shared-record-scan)
+保存相同选择的 108 项改前／改后通过，以及三项因未配置上游 checkout 未运行。
+本批生产 Python 净减 13 行，Core evaluate 119→98 行，超过百行的核心函数由 51 个变为 50 个；未重试被拒操作，整体重构继续。
+
+
+## 2026-11-05 分开同步调度输入生产并收敛重复选择
+
+原阻塞输入生产类和常量进入 envelope_source，同步调度器直接使用该实现；两条执行循环保持各自的容量计算。
+重复服务池选择收敛为实际共用函数，普通账本移到该路径实际执行时创建，删除两处内部重复断言。
+公开配置、端点选择、结果关联、额度、unknown 与收尾保持，没有新增策略、状态或转发壳。
+[源码与 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#scheduler-source-duties)
+保存同一组 76 项改前／改后全部通过。调度文件 981→897 行，输入模块 82 行，生产 Python 合计净减 2 行。
+并行 poll／ACK、原研究模块和历史副本未改，原十处来源差异及 socket／sysctl 未验证状态保持；整体重构继续。
+
+
+## 2026-11-05 将本地占用投影归入现有拓扑模块
+
+调度器三处实际调用直接使用 topology.with_local_inflight，旧静态实现和测试接点已迁移，没有保留转发壳。
+原函数体、参数和返回值保持，端点接纳的时钟与策略回调、结果和额度处理仍归调度器。
+五份历史投影先补准确 1d38 topology 原件及来源映射，原文件摘要和投影身份不改。
+[源码和 CPU 记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#local-occupancy-projection)
+保存同选择的 89 项改前／改后全部通过。调度文件 897→844 行，topology 25→83 行，总生产 Python 净增 5 行；
+本批没有减少总代码或改容量，原十处历史差异和权限未验证项保持，其他核心职责整理继续。
+
+
+## 2026-11-05 修正融合批关闭的私有目录重试
+
+新增一个沿用进程内 fake Engine 的反例，确认目录删除异常后 close 错误地返回先前缓存的 closed，只有一次删除尝试。
+把原两行目录删除移到成功报告保存前，原异常、原模型关闭 Future、调用记录和额度处理保持，不新增状态或重试控制器。
+[改前失败与改后检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#fused-artifact-close-retry)
+记录十项审计生命周期 CPU 通过，确认第二次删除同目录且不再次关闭模型；其余 31 个 owner 方法未改。
+生产 Python 总量保持，owner 仍为 985 行；这次优先修实际问题，未为降低单文件行数增加包装，其他职责和旧路径继续核对。
+
+
+## 2026-11-05 退役旧 profiler replay 接线并收敛 Arrow 转换
+
+八个旧参数／离线／到达重放接线函数已无维护执行调用，移出当前源码；共享 batching、flush、token 和 service-quantum 算法保留。
+五个实际 Arrow 转换函数移入 batch_envelopes.py，当前 Ray 和测试直接导入；旧 replay.py 删除，没有兼容转发壳。
+移除仅供旧接线的两个私有关键字参数，原请求协议默认和 SDK 的 caller-supplied replay_envelopes 保持。
+完整原件按准确 7bf1 字节先保存并补五条历史来源，原预期摘要和投影身份不改；原十处历史差异保持。
+[实际源码与检查](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-profiler-replay)
+记录同组七项前后通过、原 845 行变为 138 行现用实现，生产 Python 净减 707 行。
+核心代码按一致口径为 57,993 行，src＋scripts 为 113,810 行；超过百行函数由 50 个降为 47 个，未改其他策略或宣称查询加速。
+
+
+## 2026-11-05 收尾旧 HTTP 观测代理并核对剩余状态
+
+旧 ObservationGateway 已无现用执行消费者，删除 779 行代理、941 行专属回环测试和唯一冷导入项；
+原共享 trace 摘要断言迁入纯 CPU 用例，HTTPX／native observer、request identity 和 Unix 执行接口保持。
+两份原件与准确 7bf1 源树一致，只补既有恢复索引，不复制实现或引入兼容壳。
+先核 dad4／4376 组合，随后保留 8a2b 的原生基线容量修正，在新树重新执行相同十一项 CPU，全部通过。
+[源码、恢复与状态记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-http-observation)
+列出源版本、最早私有 runner 启动错误和模型资格；最新 3,010 项历史来源均匹配，旧失败仍保留。
+本批生产 Python 净减 779 行，最终组合核心为 57,278 行；R 默认、共享引擎缺省和完整物理容量仍待处理，未合并 main。
+
+
+## 2026-11-05 退役 Ray 旧 HTTP 轮询并保留现用提交
+
+旧字典 HTTP metrics 轮询只由退役 PG profiler 构造，删除其六个定义、两处分派、专属轮转类／状态和旧导出。
+static、全局／端点 admission、replay 单次消费、跨调用 actor state 与 worker 记账继续使用原实现，没有新增调度器或兼容壳。
+[同组行为与恢复记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ray-http-polling)
+保留旧生产 27 项及最终 29 项通过，五份历史代码共 3,010 文件实际恢复；准确旧原件单独索引。
+正常 actor 主流程减少一层嵌套，ray.py 从 670 行降至 451 行，本批生产净减 262 行；
+两批 HTTP 清理共减 1,041 行，当前核心为 57,016 行，测试与图说明单列。
+旧学习图只标注历史用途、保留原 PNG；模型资格、R／物理容量和原未验证项不改报完成，未合并 main。
+
+
+## 2026-11-05 修正原生参数与普通 async 的额度省略
+
+共享 EngineSpec 的 dtype／显存比例未指定时不再补 BF16／0.8，同步与异步直接复用五项可选参数提取；
+ready 从实际 model/cache config 读取配置，未知不回填，也不表示物理可用量。
+普通 Movie／Session 的未组批 async 与已支持 rolling 入口省略 R 时复用已有有限额度；无额度在启动前报错。
+完整 JSON 和 typed IPC 使用同一路径，partial 槽位 null 视未覆盖；typed 默认槽数跟随声明请求数，显式值和字节保护保留。
+[源码、108 项组合 CPU 与历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
+记录各组件反例及修正过的辅助，不累计重叠测试。当前核心 57,097 行、src＋scripts 112,934 行，本批分别增 23／29 行，不计作代码缩减。
+SDK 全局默认 2、低层 16MiB／2MiB 完整结果预留、物理 RAM／全查询 RSS 及实际模型资格仍未解决，未合并 main。
+
+
+## 2026-11-05 统一 SDK 请求省略与 IPC 额度来源
+
+SDK 默认R=None，删除Movie专用补值和不可变值的重复检查；有限消费者缺来源在启动前报错。
+底层IPC请求数必填、引擎接收明确limits，总输入／结果字节按已声明槽数及单项大小推导，显式小额度保留。
+JSON只要显式请求数便可复用其余默认，不要求重复九字段；完整Core预算与显式R的原优先关系保持。
+[准确代码、317项CPU与历史恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#sdk-ipc-capacity-followup)保留原失败，records SDK／模型IPC不再补2／8。
+六行重复校验删除，没有新增同义测试；本批核心57106行、src＋scripts112940行，分别增9／6行，不称瘦身。
+旧诊断桥内部2、完整关系／副本的物理内存持有及实际模型资格仍待后续处理；未合并main。
+
+
+## 2026-11-05 整理记录持有、IPC文件职责与旧桥容量
+
+初始组合42253a56从已发布9ae29579推进；最新受测015c3095保留已发布08c3的原查询与数值精度接线。旧IMLane桥按资源声明传入请求数、ready核对同一数量，
+正常Movie／chain／cascade与host／worker同步迁移，内部两块默认及128上限删除，原查询／字节保护保留。
+IPC父owner、子循环和帧编码按职责拆分，现用导入和观测迁移；记录验证逐条放开旧对象引用，反序列化删除外层重复复制。
+[源码、原失败及381项CPU](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)
+保留初稿漏接线、历史恢复错误及修正，五份3010文件恢复不改原身份；完整作者桥、真实IPC和模型尚未验证。
+最新核心57124行、src＋scripts113883行，本批相对08c3分别增18／24行，上游接线另计，不能以拆分冒充代码缩减。
+物理RAM授予与完整查询RSS仍未实现；剩余adaptive及长函数继续按实际职责整理，未合并main。
+
+
+## 2026-11-05 分离反馈公共数据并退役旧变体
+
+最新组合b50d保留5849807的十五份并行文件，将公共配置、供给状态与成对计量移出批策略，现代请求入口不再加载旧批模块。
+删除无现用构造点的两种EWMA／HOL控制器、一配置、三个导出及八项专属测试，保留实际批反馈和通用gate数据传递检查。
+三处typed记录复制直接使用原构造器，保持可变字段快照及外部JSON恢复，不新增RAM管理器或调参。
+[源码、328项检查与原IPC错误](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
+保留未改cde的两项关闭错误和五份3010文件恢复，真实模型／性能待验。
+核心57,003行，相对最新远端净减121行；新拆文件计入合计，不将迁移当作删除。当前不合并main。
+
+
+## 2026-11-05 清理伪模块身份并保留关闭异常原因
+
+候选9de3从82a6删除八处模块身份改写，保留现用公共导入，新标准pickle直接使用定义模块，不再加载单Filter查询host。
+关闭保持外层消息与资源责任，原finalizer异常作为cause保存；读取的精确记录类型直接复制，去掉临时describe字典。
+[69项回归、反例与原关闭线索](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#actual-adapter-modules-and-close-causes)
+保留原两项实际IPC错误及模拟差别，不声称根因已修或真实Ray验证通过。历史3010恢复、原摘要及manifest保持。
+核心56,985行、src＋scripts113,946行，本批均净减18行；剩余44个长函数继续按职责处理，不合并main。
+
+## 2026-11-05 一次解析记录执行配置
+
+91fb08d1保留并行基线295065c6，将普通 owner 的计时和反馈选项合为一次解析，修正直接构造器报告字段与实际计时属性不一致；公共工厂结果保持。
+链 owner 删除未使用的普通 profile 调用、不可变分包配置重建和重复周期检查，保留资源交接、外部归一化及可变预算复制。
+[反例、31项相关回归及整合42项](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#single-pass-records-configuration)分别按1053文件摘要关联准确源码；未运行真实IPC／Ray／模型，原关闭错误仍待定位。
+核心56,980行、src＋scripts113,943行，本批相对2950各减5行，测试增加21行；上游基线另增两行，没有为缩短文件拆开调度循环，不合并main。
+
+## 2026-11-05 退役历史测试改写并建立收尾清单
+
+96d4a809删除旧ACK语法树改写helper、一次性证据包装脚本及一个专属重放方法；7c00f0c2保留1596视觉接线，两份共有说明自动合并。直接事件ACK、固定公开源码和公开归档恢复检查保留。
+原摘要错误保留，相关选择3成功、1缺固定源码跳过，含3010文件完整恢复；运行时源码未改，未将删除旧测试表述为ACK实现修复。
+[准确记录与恢复](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-ack-source-replay)区分55d旧演示源码与5a删除前版本；现用入口改走标准unittest。
+[整体完成清单](code/INFRA_STATUS.md#refactor-completion-checklist)区分已整理模块、关闭ACK待处理、实机待验及后续研究能力。
+整合后相同四项仍3成功／1跳过，1055摘要匹配7c，未转授上游模型资格。核心56,980行未变，src＋scripts114,209行，本批相对1596减51行，测试另减94行，上游另增317行；不合并main。
+
+## 2026-11-05 修正关闭结果与批ACK交接
+
+28ba77ca基于f973，将关闭审计实际返回的成员登记为已暴露结果，并在结果actor释放前恢复交接和排空ACK；已知结果预排空及resident路径保持。
+回调抛错或中断仍执行原清理，异步owner在finally保留RPC终态，unknown不改确认；不新增控制器、参数或推理重试。
+[原失败、79项CPU与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#close-audit-ack-handoff)分别记录1055文件源码对应、3010历史恢复、初稿遗漏和夹具迁移。
+服务器1596第一项原异常已确认来自关闭ACK拒绝；第二项加异常捕获后一次通过，先前原因尚未解明，新版本实际IPC和Ray／模型仍待验证。
+核心57,011行、src＋scripts114,240行，本批各增31行，测试另增141行，不计为瘦身；当前不合并main。
+
+## 2026-11-06 核对整体收尾与服务器关闭结果
+
+原两项CPU IPC在准确f4e服务器各通过一次，清理和运行许可归还确认；原第二项历史原因仍未解明，没有改写旧失败或宣称模型通过。
+从b574独立反查普通、prepared／rolling、resident、fused与session入口，未确认必须继续修改的生产问题，已确认重复和旧入口清理可以收尾。
+两份最小Ray测试以6c22提交，与远端448e的Medical／MMQA准备无冲突整合为5539；新符号往返与原五项Future检查使用自有零GPU本地driver，删除版本字符串拒绝。
+[源码、11通过／1跳过与服务器范围](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)记录1063文件摘要匹配和988份Python／3328处导入复查。
+本批生产未改、测试净增30行；核心仍57,011行，宽口径114,806行，上游增加566行单独计入。
+随后准确5539的六项真实Ray均通过，Ray2.56.1、模型调用零，21个已观察进程及许可清理确认；Core小型模型功能仍待完整回执，不合并main。
+1cfd另修正单请求观测漏记及跨查询提示断言可空通过；观测局部5项CPU通过、Core生产未改，加强后的实际提示IPC仍待服务器。旧观测胶水在迁出共享函数后继续退役。
+同步唯一[优化配置总览](docs/执行配置与优化开关.md)：当前反馈来源、无B与准备模式组合、C／R／IPC用途、五项vLLM可选值及VLM／Medical／聚合入口按源码校准；旧CLI建议改为历史说明，SAOR等研究与原效果记录保留。
+
+## 2026-11-06 完成旧观测胶水清理与本批实际验证
+
+删除旧Choice HTTP观测的三个模块及三个专属测试，唯一现用记账函数迁入已有AttemptLedger模块，两个probe直接记录新来源，不留CLI转发壳。准确5539的旧文件可从完整Git恢复；五份历史投影仅补一份共享压缩原件及对应5条来源，3010条原摘要、ID和版本保持。
+与1cfd及当前文档整合为284ec；69个不同CPU方法全部通过，无失败／错误／跳过，包含五份历史树完整恢复；7项进程／崩溃方法未选，初次系统解释器缺Ray的启动错误保留。当前982份Python的3304处项目内静态导入无缺模块。
+准确5539的普通async／rolling各8条模型功能已全部成功，0失败／unknown，无预热或请求重放；输入与输出token IDs一致，两组仍各有3条gold漏判。关闭与最终物理清理确认，真实重复close／取消未验证，C16及有限逻辑字节声明不是物理容量或性能结论。
+增强跨查询CPU IPC单项在准确b422通过，覆盖168次合成引擎提交及14个完整查询；六项真实Ray的5539身份保持，不把不同检查相加或转授版本。
+本批宽口径生产Python净减514行、测试净减336行，核心不变；当前核心57011行、src＋scripts114290行，较3fd分别少4617／35355行，较main为核心多2920行、宽口径少26045行。口径含注释与空行，历史原件、文档及测试单列。
+[收尾报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#core-closeout-verification)和[唯一优化配置总览](docs/执行配置与优化开关.md)同步实际结果、删除清单及未覆盖项。原第二例历史原因仍未解明；物理RAM自动授予、完整查询RSS及新增算子仍未实现，本批不新增管理层，也不合并main。
+
+推送前保留远端e0ec的原生基线／IMLane接线并整合为2aa，组合的同一69项再次全部通过，3010份历史文件恢复；双方历史来源映射逐项保持。最新核心57011行、src＋scripts114637行，较284ec新增347行属并行基线能力，较3fd仍分别减少4617／35008行；integrations4858行另列。反查发现低层异步actor三种旧阻塞RPC仅直调用例仍消费，尚未删除，后续先迁移用例；现用owner及同步run_core保留其实际职责。
+
+## 2026-11-06 退役低层异步actor旧阻塞RPC
+
+eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行辅助及一层分发，现用try-submit／poll／ACK、reader、unknown和实际同步执行保留；没有新控制器、兼容层或默认值变更。
+七份测试／探针迁到当前接纳，原两项旧钩子检查在8efed的IndexError保留后删除，忙轮询用例随其生产循环删除；不以测试helper的sleep代替生产行为证据。
+最终27项不同纯内存方法全部通过，1067源码摘要匹配；16项实际CPU IPC另待服务器，未重试本地被拒的通信。历史清单不改，只读10条受影响来源均匹配，不重复完整3010恢复或真实Ray／模型。
+生产核心与src＋scripts各净减68行、测试净减30行，actor726→658行；当前核心56943、宽口径114569，较3fd分别减少4685／35076行，较main分别为核心多2852、宽口径少25766行。
+[本批报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)与唯一优化配置总览同步实际接口及未验范围，不将CPU清理写成查询提速或物理容量控制。
+
+## 2026-11-06 修正reader测试的触发同步
+
+87ce的16项实际CPU IPC为15通过、1失败，无错误或跳过；单列一次诊断捕获CancelledBeforeSubmission，而非预期的unknown。reader早期保护断言已通过；原始首轮完整包及完整close／retired_unknown未记，不补推测值。
+测试迁移把ready信号从阻塞调用取得结果后，移到仅排队完成后，遗漏等待夹具unknown回执。d6abc0e3只补现有IPC结果就绪同步，保持RPC仍在途、结果未消费及10项原断言；生产不改，只交该单项复测，原15项不重复执行。状态与原件在同一[旧异步RPC报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#retired-blocking-async-rpcs)维护，不启动真实Ray或模型。
+准确d6abc的单项随后一次通过，耗时0.758166秒，unknown、最终关闭、held归零和usage11等10项原断言完成；两个登记自有进程退出、SHM无残留、许可已归还。原87ce的15项不重跑，原失败及诊断不改写，不宣称d6abc整套16项一次通过。
+
+## 2026-11-06 补记配置接线结果并复查Ray关闭职责
+
+准确a39的原cascade parser／factory单项在服务器一次通过，原本地Torch导入中断保留；实际使用Mock，没有模型、真实Ray、GPU或HTTP调用，私有原件不发布。
+三路径只读核查区分Core显式关闭、自有UDF末批关闭和官方Processor原生回收；没有已核公开提前关闭接点，不增加退出重试或关闭子进程清理保护。原生物理回收和1596第二项历史原因仍未解决。
+状态页顶部改用准确a39的代码量，避免把早期读数当作当前结果；详细来源见[同一重构记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-profile-factory-server-check)。
+
+## 2026-11-06 精简链批次回执复制
+
+1a6b去掉owner对accountant深副本的再次复制，关闭报告改读原账本条数；公开list和嵌套成员隔离保持。
+原十二项纯CPU与新增一项隔离／计数检查通过，五条历史读源匹配；源码增5行、测试增26行，不声称查询性能或真实退出已验证。
+具体实现与检查见[链批次回执记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-copies)。
+
+## 2026-11-06 离线参考校准归位
+
+8a49整合为475b，658行实现和原十项专测归已有operator_costs，分析CLI改为直接导入并删除同对象重复验证；数学和PG产物身份保持，没有旧转发壳。
+原十项CPU改前后通过，十条历史读源保持；整合再核十五条来源和各批受测Python摘要，不重复整套或运行模型。
+本批实际删2行，迁移不当作删除；合看链回执后，相对a39全部src＋scripts增3行，核心减653行中包含658行重新归类，测试增26行。
+当前核心49,829、宽口径101,896行，口径与明细见[同一记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#offline-reference-calibration-owner)。
+
+准确e6的既有软件IPC单项随后在服务器一次通过，7.504秒，fixed_rows／token_budget的批次成员、回执、输出和关闭断言保持；没有重复本地十三项或新增测试脚本。
+自有进程／socket／SHM和许可已清理，模型／真实Ray／HTTP／多查询为零；[准确源码与私有原件摘要](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-batch-snapshot-server)单独登记，不转授后续组合。
+
+## 2026-11-08 独立本地终审与候选修正
+
+从准确cc4建立独立工作树，核对939份现用Python、静态／动态导入、资源和配置职责及26份入口文档；未叠加其它本地候选。
+新关闭RPC改取调用方剩余时间，到期不新发，已有引用及unknown继续由原owner收取；c136d10b单独保存行为修正。
+删除两个观测私有转发并迁移实际继承调用；同步两处未跟随cc4实际方法计数的旧断言，计数与字节保护保持。
+最终92个不同CPU方法通过，含一个真实本地CPU子进程／socket方法和四次合成提交；原回归失败、首次漏迁移错误及一个缺PyArrow方法的错误输出保留。
+生产Python净减5行、测试净增31行；第三方、实验数据和归档未改，迁移不当作删除。源码范围、计量和剩余问题见[同一主报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)。
+已提出最终候选的服务器范围：一个待补CPU方法、两类owner的三种关闭交接，以及sync／async各两条模型请求；统一由原服务器会话执行，本轮未使用服务器或合并main。

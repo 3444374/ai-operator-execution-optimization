@@ -1,0 +1,514 @@
+{
+  "base": "5a19221be439d9b6d7027cef21766e4293ffb257",
+  "candidate": "96d4a809a1ca8331d2741eff2cf31f344077fa9d",
+  "tree": "34a85a67afc7bd3b2665ddce7546fce87aef4f3d",
+  "original": {
+    "selected": 1,
+    "errors": [
+      {
+        "id": "tests.serving.test_sync_supplemental_evidence.SupplementalEvidenceTests.test_controlled_ack_reproduces_both_original_failures_and_current_success",
+        "traceback": "Traceback (most recent call last):\n  File \"<local-path>\", line 23, in test_controlled_ack_reproduces_both_original_failures_and_current_success\n    report = check_ack_order()\n             ^^^^^^^^^^^^^^^^^\n  File \"<local-path>\", line 31, in check_ack_order\n    raise ValueError('derived pre-wait fixture differs from the verified original method AST')\nValueError: derived pre-wait fixture differs from the verified original method AST\n"
+      }
+    ],
+    "source_matches_base": true,
+    "recorded_head": "5a19221be439d9b6d7027cef21766e4293ffb257"
+  },
+  "retained": {
+    "selected": 4,
+    "passed": 3,
+    "skipped": [
+      {
+        "id": "tests.serving.test_sync_supplemental_evidence.NativePipelineSourceTests.test_pinned_upstream_function_bodies_match_the_current_native_inputs",
+        "reason": "set VLLM_0251_SOURCE_ROOT to the pinned source; no source download is performed",
+        "scope": "method"
+      }
+    ],
+    "failures": [],
+    "errors": [],
+    "files": 1051,
+    "hashes_match_candidate": true,
+    "recorded_head": "5a19221be439d9b6d7027cef21766e4293ffb257",
+    "source_unchanged": true
+  },
+  "no_runtime_code_changed": true,
+  "ACK_runtime_or_real_child_not_verified": true,
+  "direct_behavior_test_unchanged": true,
+  "historical_3010_restoration_in_selection": true,
+  "schema": "semloom.retired_ack_replay.combination.v1",
+  "retirement": {
+    "before_cleanup": "5a19221be439d9b6d7027cef21766e4293ffb257",
+    "replay_source": "55d8776d50511898fe0459ddbee38289b154361e",
+    "replay_derived_method_sha256": "8aa327701ad8be9f225d7e3c62ea433945d34c406089f8757952b6fa1f735124",
+    "replay_matches_original_method": true,
+    "files": {
+      "code/scripts/analysis/check_sync_cpu_evidence.py": {
+        "bytes": 2198,
+        "sha256": "ea57a289218b4b22dc49d1bcf2e5b368e4d37949b1b6a6e7541e56cd9fe6c99e"
+      },
+      "code/tests/execution_provider/ack_order_fixture.py": {
+        "bytes": 4354,
+        "sha256": "2c5828d09eb6a3b28e56216d3d00cb4af449fc4b9e0b259bb5726c5f3de21daa"
+      },
+      "code/tests/serving/test_sync_supplemental_evidence.py": {
+        "bytes": 3777,
+        "sha256": "ed1c18d655593e2cd056937a6a1d369b308a8d5ac014f84909db1beb5d7f46ec"
+      }
+    },
+    "direct_ACK_behavior_test_changed": false,
+    "native_source_fixture_changed": false,
+    "historical_result_archives_changed": false,
+    "restore": "Use a complete detached checkout of the replay source for the original demonstration; do not copy its AST transformer into current tests."
+  },
+  "code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "5a19221be439d9b6d7027cef21766e4293ffb257",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 113943,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "5a19221be439d9b6d7027cef21766e4293ffb257",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 113943,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "96d4a809a1ca8331d2741eff2cf31f344077fa9d",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 113892,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2889,
+        "src_and_scripts_python_lines": -26443,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4648,
+        "src_and_scripts_python_lines": -35753,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": -51,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": -51,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "integration": {
+    "candidate": "7c00f0c2504519d6c801fd65822258a254275f42",
+    "tree": "bcaee63661c01bd5bb86ba9a41a897400ba11414",
+    "upstream": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+    "component": "96d4a809a1ca8331d2741eff2cf31f344077fa9d",
+    "component_code_matches": true,
+    "upstream_non_markdown_matches": true,
+    "runtime_Python_matches_upstream": true,
+    "shared_documents_automatically_merged": [
+      "code/INFRA_STATUS.md",
+      "code/scripts/README.md"
+    ],
+    "retained": {
+      "selected": 4,
+      "passed": 3,
+      "skipped": [
+        {
+          "id": "tests.serving.test_sync_supplemental_evidence.NativePipelineSourceTests.test_pinned_upstream_function_bodies_match_the_current_native_inputs",
+          "reason": "set VLLM_0251_SOURCE_ROOT to the pinned source; no source download is performed",
+          "scope": "method"
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "files": 1055,
+      "recorded_head": "7c00f0c2504519d6c801fd65822258a254275f42",
+      "source_hashes_match": true,
+      "source_unchanged": true
+    },
+    "scope": "The retained four evidence/history methods only. No transfer of upstream VLM, model, real Ray, IPC or quality results."
+  },
+  "integration_code_size": {
+    "scope": "Physical lines including comments and blanks. Core: code/src Python excluding experiments and baselines, including research. Wider: code/src plus code/scripts Python. Integrations: Python, CPP and HPP reported separately. Tests, documentation and historical copies excluded.",
+    "counts": {
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_python_lines": 54091,
+        "src_and_scripts_python_lines": 140335,
+        "integration_Python_CPP_header_lines": 4521,
+        "core_functions_over_100": 50,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1483
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1137
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1150
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1027
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 913
+        }
+      },
+      "3fd": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_python_lines": 61628,
+        "src_and_scripts_python_lines": 149645,
+        "integration_Python_CPP_header_lines": 4528,
+        "core_functions_over_100": 57,
+        "core_files_over_1000": [
+          {
+            "path": "code/src/execution_provider/adapters/lotus_record_chain_core.py",
+            "lines": 1585
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_async_actor.py",
+            "lines": 1019
+          },
+          {
+            "path": "code/src/execution_provider/adapters/lotus_records_core.py",
+            "lines": 1025
+          },
+          {
+            "path": "code/src/observability/profiling/ray.py",
+            "lines": 1064
+          },
+          {
+            "path": "code/src/scheduling/core/scheduler.py",
+            "lines": 1125
+          },
+          {
+            "path": "code/src/scheduling/core/session.py",
+            "lines": 1208
+          },
+          {
+            "path": "code/src/scheduling/submission_control/adaptive.py",
+            "lines": 1167
+          },
+          {
+            "path": "code/src/scheduling/submission_control/request_scan.py",
+            "lines": 1344
+          },
+          {
+            "path": "code/src/scheduling/submission_control/shared_credit.py",
+            "lines": 1413
+          }
+        ],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 922
+        }
+      },
+      "base": {
+        "commit": "5a19221be439d9b6d7027cef21766e4293ffb257",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 113943,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "upstream": {
+        "commit": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 114260,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      },
+      "candidate": {
+        "commit": "7c00f0c2504519d6c801fd65822258a254275f42",
+        "core_python_lines": 56980,
+        "src_and_scripts_python_lines": 114209,
+        "integration_Python_CPP_header_lines": 4561,
+        "core_functions_over_100": 44,
+        "core_files_over_1000": [],
+        "ipc_files": {
+          "code/src/serving/backends/async_engine_process.py": 610,
+          "code/src/serving/backends/async_engine_wire.py": 28,
+          "code/src/serving/backends/async_engine_worker.py": 301
+        }
+      }
+    },
+    "deltas": {
+      "main": {
+        "core_python_lines": 2889,
+        "src_and_scripts_python_lines": -26126,
+        "integration_Python_CPP_header_lines": 40
+      },
+      "3fd": {
+        "core_python_lines": -4648,
+        "src_and_scripts_python_lines": -35436,
+        "integration_Python_CPP_header_lines": 33
+      },
+      "base": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": 266,
+        "integration_Python_CPP_header_lines": 0
+      },
+      "upstream": {
+        "core_python_lines": 0,
+        "src_and_scripts_python_lines": -51,
+        "integration_Python_CPP_header_lines": 0
+      }
+    }
+  },
+  "integration_review": {
+    "schema": "semloom.closeout.integration_review.v1",
+    "decision": "no_changes_requested_for_mechanical_integration",
+    "findings": [],
+    "candidate": {
+      "commit": "7c00f0c2504519d6c801fd65822258a254275f42",
+      "tree": "bcaee63661c01bd5bb86ba9a41a897400ba11414",
+      "component": "96d4a809a1ca8331d2741eff2cf31f344077fa9d",
+      "upstream": "1596321139e2ed8a661f0bcf4777c4bcdabd64e6",
+      "component_delivery_parent": "e2d6b6329ba5f04bebdde4946903514dae13f00f"
+    },
+    "scope": "Read-only mechanical merge, affected documentation and exact retained-result review. Previous retirement review reused. No test rerun, VLM execution, imports, IPC, Ray, models or system probes.",
+    "assessment": [
+      "The three retirement paths/deletion states are identical to 96d4. All six changed upstream non-Markdown paths are identical to 1596, with no overlap. All runtime source under code/src is byte-identical to upstream.",
+      "The two shared documents preserve every added upstream line. Upstream code/baseline README files are unchanged. Native VLM wiring and its earlier CPU-only qualification remain attributed to that upstream work; no VLM loading, quality or physical-service result is transferred to this check.",
+      "This exact 7c00 run selects the same four retained methods: three successes and one missing-source skip. All 1055 source hashes match committed blobs; execution kept the source unchanged. Complete 3010-source materialization is among the successes. No upstream 310-method suite was rerun or combined into these counts.",
+      "The reproduction manifest and previous archives retain their source identities. The retirement still does not repair close-audit/ACK behavior or qualify real IPC/actor serialization.",
+      "Core remains 56980 physical Python lines; the integrated wider count is 114209. Retirement removes 51 relative to 1596. The upstream addition of 317 relative to 5a19 is separate and is not called cleanup shrinkage."
+    ],
+    "records": {
+      "selected": 4,
+      "passed": 3,
+      "skipped": 1,
+      "failures": 0,
+      "errors": 0,
+      "recorded_commit": "7c00f0c2504519d6c801fd65822258a254275f42",
+      "source_files": 1055,
+      "hashes_match": true,
+      "source_unchanged": true
+    },
+    "pending": "Final public records and delivery text are being updated separately. Actual VLM/model work, current Ray/IPC validation and supported close-audit/ACK repair remain open; no merge or publication was performed by this review.",
+    "evidence": {
+      "file": "INTEGRATION_SOURCE.json",
+      "sha256": "1d306091e517aa04cddca8d0e0cef352178542b3c0d29344fa99336dcea7ea2b"
+    }
+  },
+  "review": {
+    "decision": "no_changes_requested_for_retirement_code",
+    "findings": [],
+    "original_sha256": "1310aebba67c049fec0c49c2b08c5cded17ba24646b26c1c73eb2b3b65880723"
+  },
+  "private_originals": {
+    "execution/original-stale-history-check.json": {
+      "bytes": 133759,
+      "sha256": "c03cfd948411e9ecdf49b3a0a2b7ba9d6c9ba421802c27995f37883210e74fa5"
+    },
+    "execution/original-stale-history-check.log": {
+      "bytes": 1334,
+      "sha256": "af0642e3d95e1ba19b59d8976e3698016a9e2f8d82a3cd40faa797786993fdac"
+    },
+    "execution/retained-evidence-regression.json": {
+      "bytes": 133918,
+      "sha256": "1f665ccc6ed8eaaf272498136d65a23e3141a7a53d7fb5d27f753f19b61e97ac"
+    },
+    "execution/retained-evidence-regression.log": {
+      "bytes": 1067,
+      "sha256": "5223ab19a29ce1e7fac41cebbb580882f5f28a176bc3cefd1190d2bcb38e32af"
+    },
+    "execution/AST_AUDIT.json": {
+      "bytes": 419,
+      "sha256": "9899f1d25d534eec68410008476bfb96c6bc5f4608ef6e6c2489524e200e20ef"
+    },
+    "execution/RETIREMENT.json": {
+      "bytes": 1093,
+      "sha256": "616194f0bf868b53b89a7808b476c60ca7860172dc60b980d752ab3eb3c4a00a"
+    },
+    "execution/SOURCE_IDENTITY.json": {
+      "bytes": 1910,
+      "sha256": "e16f4d9997fb6645df9ac113fe12ab0158dbb72e04c1446e146d83f8ea969fe4"
+    },
+    "execution/CODE_SIZE.json": {
+      "bytes": 5061,
+      "sha256": "c237aae92a0e9722de2f591f7b84dbf94ded4cb6287c5f7f93f91329e383e788"
+    },
+    "execution/merged-evidence-regression.json": {
+      "bytes": 134432,
+      "sha256": "d10b24ca7e4fcf307e29e02f1e67e179e29133c435e5df3008e7d9d340611995"
+    },
+    "execution/merged-evidence-regression.log": {
+      "bytes": 1067,
+      "sha256": "387a0d3d286f6f7477df85e7aa4d4a8007bec31bf1ac7edbf1809460bc512ae4"
+    },
+    "execution/INTEGRATION_IDENTITY.json": {
+      "bytes": 1157,
+      "sha256": "1a7bbbd192542ff528184d48836da2abe5cef86fe74f6b73c9239879167445b9"
+    },
+    "execution/INTEGRATION_CODE_SIZE.json": {
+      "bytes": 5061,
+      "sha256": "117481fd1d49a13a945d1859aed593bc544a521cf8e8097fdb11c84730cb19a5"
+    },
+    "audit/HANDOFF.json": {
+      "bytes": 13209,
+      "sha256": "6fe46237e5496daa989a213069cbb81b2fd2018c094e930493e7ec658de46ed1"
+    },
+    "audit/EVIDENCE_CLEANUP_REVIEW.json": {
+      "bytes": 3258,
+      "sha256": "1310aebba67c049fec0c49c2b08c5cded17ba24646b26c1c73eb2b3b65880723"
+    },
+    "audit/INTEGRATION_REVIEW.json": {
+      "bytes": 2599,
+      "sha256": "fae98d57fcda43e12cd47c68fe46921dc9d99862ba56b4f5bc0b6717d1268cbd"
+    }
+  },
+  "raw": {
+    "file": "retired_ack_replay_raw.json.gz",
+    "bytes": 13347,
+    "sha256": "a5c60b24a060eee5391d48cbec9b9a2bf0ed25b4d9c5261385535b348d5c7950",
+    "decoded_sha256": "7a3840dadf46a9ca77a03659b7d632de0f79a93587046afd742e7db35fc89d61"
+  },
+  "integration_delivery_review": {
+    "decision": "no_changes_requested_after_source_wording_clarification",
+    "original_sha256": "9aceef1fbe28e130fdd1fbecc57a7d765616026915d6b7874bbc74f04a333115"
+  }
+}

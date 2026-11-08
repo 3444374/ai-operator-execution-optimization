@@ -1,0 +1,41 @@
+{
+  "base": "082b622",
+  "scope": "record-local iteration and existing deadline check separated from owner assembly",
+  "AST": {
+    "extracted": [
+      "_RecordLocalRows",
+      "_check"
+    ],
+    "AST_identical": true,
+    "execution_order_changed": false,
+    "new_scheduling_state": false
+  },
+  "remaining_chain_owner_definitions_AST_identical": true,
+  "old_import_and_pickle_locations_preserved": true,
+  "CPU": {
+    "selected": 153,
+    "passed": 153,
+    "failures": [],
+    "errors": [],
+    "skipped": [],
+    "source_unchanged": true
+  },
+  "behavior_changes": false,
+  "interleaving_candidate_imported_or_enabled": false,
+  "historical": {
+    "bindings": 3010,
+    "original_mismatches": 10,
+    "new_mismatches": 0,
+    "new_overrides": 0
+  },
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "query_runtime_after.json": "573ca4e0d61c08b442766108444abd86bea32d453337b04d3f7a2d64ae3e2e20",
+    "query_runtime_after.log": "5defc23e31f0dcf389e1d63a358241be96c481bacc8757d19003578477591df4",
+    "query_runtime_extracted_AST.json": "641ee574c0e12d509e743f94ba8209af2dc3f97ea9be6d69370e214b95506060"
+  }
+}

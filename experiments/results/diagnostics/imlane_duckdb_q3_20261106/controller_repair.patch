@@ -1,0 +1,240 @@
+--- controller.py
++++ controller.py
+@@ -48 +48,5 @@
+-base['shared_resources']['max_owned_shm_bytes'] = 4 * (128 * 1024**2 + 2 * 12 * 1024)
++# This observer covers the whole run. The author's lane allocation and the
++# model-ready 4096B are measurements, not independent admission quotas.
++# Retain the physical filesystem boundary and final residue checks.
++shm_capacity = os.statvfs('/dev/shm')
++base['shared_resources']['max_owned_shm_bytes'] = shm_capacity.f_bavail * shm_capacity.f_frsize
+@@ -72,0 +77,40 @@
++def _retain(primary, secondary, label):
++    if primary is None:
++        return secondary
++    primary.add_note(label + ': ' + type(secondary).__name__ + ': ' + redact_text(str(secondary)))
++    return primary
++
++
++def _terminal_budget():
++    directory = ROOT / 'cell/model-calls'
++    starts = {path.name.removesuffix('.started.json') for path in directory.glob('*.started.json')}
++    ends = {path.name.removesuffix('.terminal.json') for path in directory.glob('*.terminal.json')}
++    receipts, errors = [], []
++    known = 0
++    complete = bool(starts) and starts == ends
++    for name in sorted(ends):
++        path = directory / (name + '.terminal.json')
++        try:
++            receipt = json.loads(path.read_text())
++            count = receipt['engine_generate_invocations']
++            if count is not None and (type(count) is not int or count < 0):
++                raise ValueError('invalid terminal engine_generate_invocations')
++            row = dict(file=path.name, status=receipt['status'], engine_generate_invocations=count,
++                error_type=receipt.get('error_type'), calls=len(receipt['calls']))
++            if count is None:
++                complete = False
++            else:
++                known += count
++            receipts.append(row)
++        except BaseException as error:
++            complete = False
++            errors.append((path.name, error))
++    budget = dict(report['model_budget'], engine_generate_invocations=known if complete else None,
++        known_engine_generate_invocations=known, terminal_batches=receipts,
++        started_batches=len(starts), terminal_batch_files=len(ends), accounting_complete=complete,
++        missing_terminal_batches=sorted(starts - ends), unexpected_terminal_batches=sorted(ends - starts),
++        receipt_errors=[dict(file=name, type=type(error).__name__, message=redact_text(str(error)))
++                        for name, error in errors])
++    return budget, errors
++
++
+@@ -75,0 +120 @@
++    owned, recovery, resource, live_remaining = set(), None, None, None
+@@ -102,2 +147,5 @@
+-        if path.exists():
+-            supervisor = json.loads(path.read_text())
++        try:
++            if path.exists():
++                supervisor = json.loads(path.read_text())
++        except BaseException as secondary:
++            failure = _retain(failure, secondary, 'read stage supervisor')
+@@ -105,7 +153,30 @@
+-        owned = h.report_identities(supervisor)
+-        recovery = h.cleanup_owned(api, owned, 8) if h.live_owned(api, owned) else None
+-        resource = monitor.finish()
+-        report['stages'].append(dict(name=name, supervisor=supervisor, resource=resource,
+-            cleanup=recovery, live_remaining=h.live_owned(api, owned),
+-            error=None if failure is None else dict(type=type(failure).__name__, message=redact_text(str(failure)))))
+-        write(name + '-summary.json', redact_json_values(report['stages'][-1]))
++        try:
++            owned = h.report_identities(supervisor)
++        except BaseException as error:
++            failure = _retain(failure, error, 'collect stage identities')
++        try:
++            if h.live_owned(api, owned):
++                recovery = h.cleanup_owned(api, owned, 8)
++        except BaseException as error:
++            failure = _retain(failure, error, 'recover stage processes')
++        try:
++            resource = monitor.finish()
++        except BaseException as error:
++            failure = _retain(failure, error, 'finish stage resource monitor')
++        try:
++            live_remaining = h.live_owned(api, owned)
++        except BaseException as error:
++            failure = _retain(failure, error, 'check stage remaining processes')
++        if failure is None and (resource is None or resource.get('passed') is not True or live_remaining):
++            failure = RuntimeError('stage resource cleanup not confirmed')
++        entry = dict(name=name, supervisor=supervisor, resource=resource,
++            cleanup=recovery, live_remaining=live_remaining,
++            error=None if failure is None else dict(type=type(failure).__name__, message=redact_text(str(failure))))
++        report['stages'].append(entry)
++        try:
++            write(name + '-summary.json', redact_json_values(entry))
++        except BaseException as error:
++            failure = _retain(failure, error, 'write stage summary')
++        if failure is not None:
++            entry['error'] = dict(type=type(failure).__name__, message=redact_text(str(failure)),
++                notes=[redact_text(note) for note in getattr(failure, '__notes__', [])])
+@@ -114,2 +185,96 @@
+-    if not resource['passed'] or h.live_owned(api, owned):
+-        raise RuntimeError('stage resource cleanup not confirmed')
++
++
++def finalize_run(primary):
++    errors = report['finalization_errors'] = []
++    def failed(error, label):
++        nonlocal primary
++        errors.append(dict(step=label, type=type(error).__name__, message=redact_text(str(error))))
++        primary = _retain(primary, error, label)
++        report['status'] = 'failed'
++        report['error'] = dict(type=type(primary).__name__, message=redact_text(str(primary)),
++            notes=[redact_text(note) for note in getattr(primary, '__notes__', [])])
++    all_owned = set()
++    try:
++        try:
++            budget, receipt_errors = _terminal_budget()
++            report['model_budget'] = budget
++            for name, error in receipt_errors:
++                failed(error, 'read terminal receipt ' + name)
++            if report['status'] == 'completed' and not budget['accounting_complete']:
++                failed(RuntimeError('model invocation accounting is incomplete'), 'reconcile terminal ledger')
++        except BaseException as error:
++            report['model_budget']['engine_generate_invocations'] = None
++            failed(error, 'reconcile terminal ledger')
++        try:
++            write('LEDGER-TERMINAL.json', report['model_budget'])
++        except BaseException as error:
++            failed(error, 'write terminal ledger')
++        for item in report['stages']:
++            try:
++                all_owned.update(h.report_identities(item['supervisor']))
++            except BaseException as error:
++                failed(error, 'collect final identities')
++        try:
++            if h.live_owned(api, all_owned):
++                report['final_recovery'] = h.cleanup_owned(api, all_owned, 8)
++        except BaseException as error:
++            failed(error, 'recover final processes')
++        after = None
++        try:
++            after = h.snapshot(api, base, 'imlane-model-q3-after', all_owned)
++        except BaseException as error:
++            report['physical_idle'] = None
++            failed(error, 'snapshot final resources')
++        if after is not None:
++            try:
++                write('after.json', after)
++            except BaseException as error:
++                failed(error, 'write final resource snapshot')
++            try:
++                h.assert_idle(after, base)
++                report['physical_idle'] = True
++            except BaseException as error:
++                report['physical_idle'] = False
++                failed(error, 'verify final idle resources')
++        try:
++            report['live_owned_remaining'] = h.live_owned(api, all_owned)
++        except BaseException as error:
++            report['live_owned_remaining'] = None
++            failed(error, 'check final remaining processes')
++        report['owned_process_count'] = len(all_owned)
++    except BaseException as error:
++        failed(error, 'finalize run evidence')
++    finally:
++        try:
++            h.check_lease(lease)
++        except BaseException as error:
++            failed(error, 'check runner lease identity')
++        finally:
++            # release() performs its own owner-token check; a failed evidence
++            # write or separate identity observation must not skip this attempt.
++            try:
++                lease.release()
++            except BaseException as error:
++                failed(error, 'release runner lease')
++        try:
++            report['lease_released'] = not lease.path.exists()
++        except BaseException as error:
++            report['lease_released'] = None
++            failed(error, 'observe runner lease release')
++    if primary is not None:
++        report['status'] = 'failed'
++        report['error'] = dict(type=type(primary).__name__, message=redact_text(str(primary)),
++            notes=[redact_text(note) for note in getattr(primary, '__notes__', [])])
++    try:
++        write('FINAL.json', redact_json_values(report))
++    except BaseException as error:
++        failed(error, 'write final report')
++    try:
++        print(json.dumps(dict(phase='IMLANE_REAL_Q3_TERMINAL', status=report['status'],
++            engine_generate_invocations=report['model_budget']['engine_generate_invocations'],
++            physical_idle=report.get('physical_idle'), lease_released=report['lease_released'])), flush=True)
++    except BaseException as error:
++        failed(error, 'print terminal status')
++    return primary
++
++primary = None
+@@ -170,0 +336 @@
++    primary = error
+@@ -173 +339,4 @@
+-    print(json.dumps(dict(phase='IMLANE_REAL_Q3_FAILED',type=type(error).__name__,error=redact_text(str(error)))),flush=True)
++    try:
++        print(json.dumps(dict(phase='IMLANE_REAL_Q3_FAILED',type=type(error).__name__,error=redact_text(str(error)))),flush=True)
++    except BaseException as secondary:
++        primary = _retain(primary, secondary, 'print primary failure')
+@@ -175,31 +344,3 @@
+-    receipts = []
+-    for path in (ROOT / 'cell/model-calls').glob('*.terminal.json'):
+-        receipt = json.loads(path.read_text())
+-        receipts.append(dict(file=path.name,status=receipt['status'],engine_generate_invocations=receipt['engine_generate_invocations'],
+-            error_type=receipt.get('error_type'),calls=len(receipt['calls'])))
+-    report['model_budget'].update(engine_generate_invocations=sum(r['engine_generate_invocations'] for r in receipts) if receipts else None,
+-        terminal_batches=receipts)
+-    write('LEDGER.json', report['model_budget'])
+-    all_owned = set()
+-    for item in report['stages']:
+-        all_owned.update(h.report_identities(item['supervisor']))
+-    if h.live_owned(api, all_owned):
+-        report['final_recovery'] = h.cleanup_owned(api, all_owned, 8)
+-    after = h.snapshot(api, base, 'imlane-model-q3-after', all_owned)
+-    write('after.json', after)
+-    try:
+-        h.assert_idle(after, base)
+-        report['physical_idle'] = True
+-    except BaseException as error:
+-        report['physical_idle'] = False
+-        report['cleanup_error'] = dict(type=type(error).__name__,message=redact_text(str(error)))
+-        report['status'] = 'failed'
+-    report['live_owned_remaining'] = h.live_owned(api, all_owned)
+-    report['owned_process_count'] = len(all_owned)
+-    h.check_lease(lease)
+-    lease.release()
+-    report['lease_released'] = not lease.path.exists()
+-    write('FINAL.json', redact_json_values(report))
+-    print(json.dumps(dict(phase='IMLANE_REAL_Q3_TERMINAL',status=report['status'],
+-        engine_generate_invocations=report['model_budget']['engine_generate_invocations'],
+-        physical_idle=report.get('physical_idle'),lease_released=report['lease_released'])),flush=True)
++    primary = finalize_run(primary)
++if primary is not None:
++    raise primary

@@ -1,0 +1,84 @@
+{
+  "run_id": "fc1a-socket-cpu-execution-20261106-r1",
+  "head": "fc1a9673122b223b24918ba19cf89ec40cf1c54d",
+  "tree": "72c0a30287367b9ea44f93aa42ffdb89c5861ffc",
+  "status": "passed_selected_methods",
+  "methods": [
+    {
+      "id": "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_sync_and_staged_use_identical_result_bytes",
+      "passed": true,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": [],
+      "source_commit": "fc1a9673122b223b24918ba19cf89ec40cf1c54d",
+      "source_unchanged": true,
+      "code_file_hash_count": 1032,
+      "code_hash_map_sha256": "291ff1a301979871c06d794ffbf1d7bfbebbaf1434181382ab8816466ebe035b"
+    },
+    {
+      "id": "tests.execution_provider.test_image_gateway.ImageGatewayTest.test_invalid_payload_fails_without_worker_submission",
+      "passed": true,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": [],
+      "source_commit": "fc1a9673122b223b24918ba19cf89ec40cf1c54d",
+      "source_unchanged": true,
+      "code_file_hash_count": 1032,
+      "code_hash_map_sha256": "291ff1a301979871c06d794ffbf1d7bfbebbaf1434181382ab8816466ebe035b"
+    },
+    {
+      "id": "tests.postgres.test_semloom_semantic_protocol.SemloomSemanticProtocolTests.test_shared_session_runner_uses_the_selected_execution_profile",
+      "passed": true,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "collection_errors": [],
+      "source_commit": "fc1a9673122b223b24918ba19cf89ec40cf1c54d",
+      "source_unchanged": true,
+      "code_file_hash_count": 1032,
+      "code_hash_map_sha256": "291ff1a301979871c06d794ffbf1d7bfbebbaf1434181382ab8816466ebe035b"
+    }
+  ],
+  "actual_execution": {
+    "CPU_methods": 3,
+    "method_repeats": 0,
+    "real_models": 0,
+    "real_Ray": 0,
+    "GPU_queries": 0,
+    "PG_started": 0,
+    "HTTP_requests": 0,
+    "multiquery_tests": 0,
+    "other_Image_methods": 0,
+    "PG_Ray_opt_in_tests": 0,
+    "old_run_py_executed": false
+  },
+  "cleanup": {
+    "physical_idle": true,
+    "lease_released": true,
+    "observed_owned_processes": 10,
+    "live_owned_remaining": [],
+    "remaining_socket_paths": [],
+    "private_temp_cleanup": {
+      "removed_socket_paths": [],
+      "retained_active_socket_paths": []
+    },
+    "remaining_new_SHM_names": [],
+    "SHM_final_delta_bytes": 0,
+    "supervisor_signals": [],
+    "finalization_errors": []
+  },
+  "scope": "Two selected single-query AF_UNIX image fixture methods plus one socketpair/SelectedCompletionAdapter protocol method. The postgres test module name does not imply a PG server; FakeRay is not a live Ray runtime.",
+  "source_unchanged": true,
+  "originals_sha256": {
+    "handoff": "36494253ef92aa4e64641d8ffc77e671cd5cac038b9929b807719a8e8eb7a459",
+    "results": "9b74ade892a61c2e63c7292eaaab056e60038e12d515e4579ed70f01198cf351",
+    "raw_manifest": "4f099dfafade29e194802d61c0201ecf1cad8e7c7dc0302aee71be416a7ce149"
+  },
+  "raw_originals_count": 26,
+  "raw_originals_verified": true,
+  "retained_privately": "Detailed original logs, commands, machine observations and all raw reports remain private; this projection contains only public CPU fixture identities and results.",
+  "limits": "No model, real Ray, GPU query, PG, HTTP, multiquery, other Image method or opt-in PG/Ray test. No model configuration, real-model results or blocked publication materials are included.",
+  "source_note": "This exact code/tree was tested; later changes only record this CPU result. Earlier e5 failures and model evidence are unchanged."
+}

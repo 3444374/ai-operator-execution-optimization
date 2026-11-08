@@ -3,15 +3,17 @@
 from dataclasses import asdict, replace
 from pathlib import Path
 import subprocess
-import time
 from types import SimpleNamespace
 
+from src.infrastructure.deadlines import deadline_after
 from integrations.imlane_records import owner, verify
 from integrations.imlane_records.chain_host import ChainResults, ChainScope, configuration
+from integrations.imlane_records.chain_workload import ChainBatches, STAGE
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.model_process import assigned_environment
-from src.baselines.common.private_artifacts import require_outside_git, write_private_json
+from integrations.imlane_records.transport_limits import TransportLimits, close_block, for_owner, preflight_blocks
+from src.infrastructure.private_artifacts import require_outside_git, write_private_json
 from src.baselines.text.frameworks.lotus_chain_native_relation import NativeExtractRelationRows
 from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns
 from src.semantic_methods.lotus.records import RecordsResources
@@ -50,9 +52,9 @@ class IMLaneChainBackend:
     def __init__(self, *, engine, resources, author_args, model_environment, cancelled=None):
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.resources = RecordsResources(**asdict(resources))
-        if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16
-                or resources.model_batch_rows > 16 or resources.max_active_batches > 2):
-            raise ValueError("IMLane chains require one author executor, 1..16 rows and at most two pending blocks")
+        self.resources.request_capacity()
+        if resources.cpu_workers != 1:
+            raise ValueError("IMLane chains require one author executor, explicit batch rows and a finite pending declaration")
         self.args, self.environment, self.cancelled = author_args, assigned_environment(model_environment), cancelled
         require_outside_git(Path(author_args.output))
         if not Path(author_args.output).is_dir():
@@ -77,7 +79,7 @@ class IMLaneChainBackend:
         if self._used:
             raise RuntimeError("IMLane chain backend owns one query")
         self._used = True
-        self.deadline = time.monotonic() + self.resources.query_timeout_s
+        self.deadline = deadline_after(self.resources.query_timeout_s)
         if self._cancelled():
             raise InterruptedError("IMLane chain cancelled before author allocation")
         chain = LotusRecordChain.from_dict(chain.describe())
@@ -88,9 +90,9 @@ class IMLaneChainBackend:
             raise ValueError("IMLane requires globally unique occurrence IDs and positions")
         if len({stage.method.model_name for stage in chain.stages}) != 1:
             raise ValueError("IMLane finite chains require one explicit model deployment")
-        if (self.engine.max_model_calls is None or self.engine.max_model_calls > 4096
+        if (self.engine.max_model_calls is None
                 or len(expected)*len(chain.stages) > self.engine.max_model_calls
-                or any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages)):
+                or self.engine.max_model_len is not None and any(stage.generation.max_tokens > self.engine.max_model_len for stage in chain.stages)):
             raise ValueError("IMLane chain exceeds its finite model context or permanent call allowance")
         self.engine.validate_driver_environment()
         schema = _ordered_columns(sorted(expected,key=lambda row:row.source_position),columns)
@@ -108,6 +110,13 @@ class IMLaneChainBackend:
             config = configuration(segment,spec,self.resources,inputs,control_dir=control,
                 deadline=self.deadline,model_environment=self.environment,initial_parents=initial_parents,
                 columns=columns,allow_nulls=allow_nulls)
+            batch_rows = self.resources.model_batch_rows
+            limits = for_owner(self.args, self.resources, packed=True,
+                max_query_rows=(len(inputs) + batch_rows - 1) // batch_rows + 1)
+            mapping = ChainBatches(segment.query_id, inputs, max_batch_rows=batch_rows)
+            preflight_blocks(limits, inputs, block_rows=batch_rows, block_prefix="chain", encode=mapping.encode)
+            limits.check_submit(*close_block(segment.query_id, STAGE, "chain"))
+            config["transport_limits"] = limits.describe()
             client, finalizer, physical = self._open_phase(segment,config,control)
             try:
                 return _AuthorPhaseRows(self.source if index==0 else iter(inputs),client,
@@ -129,6 +138,7 @@ class IMLaneChainBackend:
         return verify.OWNED / "chain_udf.py"
 
     def _open_phase(self, segment, config, control):
+        limits = TransportLimits.from_dict(config["transport_limits"])
         path = control / "worker.json"
         write_private_json(path,config)
         args = SimpleNamespace(**dict(vars(self.args),output=control,chain_config=path,
@@ -147,7 +157,8 @@ class IMLaneChainBackend:
 
         try:
             scope.__enter__()
-            process = subprocess.Popen([str(args.bridge_binary),str(scope.port),str(kernel),"infer_records",PROTOCOL],
+            process = subprocess.Popen([str(args.bridge_binary), str(scope.port), str(kernel),
+                "infer_records", str(self.resources.request_capacity()), limits.argv(), PROTOCOL],
                 env=scope.env,cwd=scope.root,stdin=subprocess.PIPE,stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,start_new_session=True)
             scope.track_root(process)
@@ -160,8 +171,8 @@ class IMLaneChainBackend:
                 if not state["resources_confirmed"]:
                     raise RuntimeError("IMLane chain author scope remains unconfirmed")
 
-            return RecordsBridge(process,abort_owner=abort,timeout_s=min(60,self.resources.query_timeout_s),
-                                 protocol=PROTOCOL),finalizer,physical
+            return RecordsBridge(process,abort_owner=abort,
+                                 protocol=PROTOCOL,max_pending=self.resources.request_capacity(), limits=limits),finalizer,physical
         except BaseException as error:
             try:
                 finalizer()

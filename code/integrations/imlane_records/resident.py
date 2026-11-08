@@ -11,6 +11,7 @@ from subprocess import PIPE, Popen
 import time
 import uuid
 
+from src.infrastructure.deadlines import deadline_after, earliest_deadline
 from integrations.imlane_records import owner, verify, verify_filter
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_host import FilterResults
@@ -18,8 +19,19 @@ from integrations.imlane_records.filter_workload import PROTOCOL
 from integrations.imlane_records.method_environment import preflight_method, validate_author_build
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S, model_closed
 from integrations.imlane_records.model_process import assigned_environment
-from src.baselines.common.private_artifacts import write_private_json
+from integrations.imlane_records.transport_limits import for_owner, query_call_plan
+from src.infrastructure.private_artifacts import write_private_json
 from src.semantic_methods.lotus.records import identity
+
+
+def control_block(operation, query, **payload):
+    wire = dict(operation=operation, **payload)
+    if operation == "query_begin":
+        if set(payload) != {"config"} or type(payload["config"]) is not dict:
+            raise ValueError("query_begin requires one structured local configuration")
+        wire = dict(operation=operation, config_json=json.dumps(payload["config"], allow_nan=False))
+    return "resident-" + operation, [dict(call_id="resident-" + operation + ":" + query,
+        row_id=0, query_id=query, stage_id="filter", record_json=json.dumps(wire, allow_nan=False))]
 
 
 class _QueryBridge:
@@ -73,14 +85,17 @@ class IMLaneResidentSession:
     """start/evaluate/close; only healthy, drained queries may share the model."""
 
     def __init__(self, engine, generation, resources, *, author_args, model_environment,
-                 deadline_monotonic, observer=None):
-        if (resources.cpu_workers != 1 or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-                or resources.max_active_batches > 2 or engine.max_model_calls is None
-                or engine.max_model_calls > 4096 or type(deadline_monotonic) not in (int, float)
-                or not time.monotonic() < deadline_monotonic < float("inf")):
-            raise ValueError("resident Filter requires an explicit finite session within the existing native capacities")
+                 deadline_monotonic, query_calls, observer=None):
+        resources.request_capacity()
+        if (resources.cpu_workers != 1 or deadline_monotonic is not None and (
+                type(deadline_monotonic) not in (int, float)
+                or not time.monotonic() < deadline_monotonic < float("inf"))):
+            raise ValueError("resident Filter requires one author worker and a future session deadline or None")
+        self.query_calls = query_call_plan(query_calls, engine.max_model_calls)
         self.engine, self.generation, self.resources = engine, generation, resources
         self.args, self.environment = author_args, assigned_environment(model_environment)
+        self.limits = for_owner(author_args, resources,
+            max_query_rows=max(self.query_calls.values()) + 2, max_queries=len(self.query_calls) + 2)
         self.deadline = deadline_monotonic
         self.observer, self.observer_errors = observer, []
         self.session_id = "imlane-" + uuid.uuid4().hex
@@ -108,18 +123,10 @@ class IMLaneResidentSession:
 
     def _control(self, operation, query, *, deadline=None, **payload):
         deadline = time.monotonic() + MODEL_CLOSE_GRACE_S if deadline is None else deadline
-        call = "resident-" + operation + ":" + query
-        block = "resident-" + operation
-        wire = dict(operation=operation, **payload)
-        if operation == "query_begin":
-            if set(payload) != {"config"} or type(payload["config"]) is not dict:
-                raise ValueError("query_begin requires one structured local configuration")
-            wire = dict(operation=operation,
-                        config_json=json.dumps(payload["config"], allow_nan=False))
-        row = dict(call_id=call, row_id=0, query_id=query, stage_id="filter",
-                   record_json=json.dumps(wire, allow_nan=False))
-        self.client.submit(block, [row], deadline=deadline)
-        ready = self.client.wait_ready(timeout_s=min(600, max(.001, deadline - time.monotonic())))
+        block, rows = control_block(operation, query, **payload)
+        call = rows[0]["call_id"]
+        self.client.submit(block, rows, deadline=deadline)
+        ready = self.client.wait_ready(timeout_s=max(.001, deadline - time.monotonic()))
         if ready != [block]:
             raise ValueError("resident control requires the fully drained author lane")
         rows = self.client.collect(block, deadline=deadline)
@@ -159,7 +166,10 @@ class IMLaneResidentSession:
         args.cuda_visible_devices = self.environment["CUDA_VISIBLE_DEVICES"]
         config = dict(engine=asdict(self.engine), generation=asdict(self.generation),
             resources=asdict(self.resources), query_id=self.session_id, control_dir=str(control),
-            deadline_monotonic=self.deadline, model_environment=self.environment)
+            deadline_monotonic=self.deadline, model_environment=self.environment,
+            query_calls=self.query_calls, transport_limits=self.limits.describe())
+        for operation, suffix in (("session_start", ":startup"), ("session_close", ":close")):
+            self.limits.check_submit(*control_block(operation, self.session_id + suffix))
         write_private_json(args.filter_config, config)
         # These harmless read-only checks precede any author or model launch.
         preflight_method(args.method_python, args.author_root, verify_filter.CODE)
@@ -168,7 +178,8 @@ class IMLaneResidentSession:
         self.scope = verify_filter.FilterScope(args, "cpython-filter", owner, self.author_report, kernel=udf)
         try:
             self.scope.__enter__()
-            self.process = Popen([str(args.bridge_binary), str(self.scope.port), str(udf), "infer_records", PROTOCOL],
+            self.process = Popen([str(args.bridge_binary), str(self.scope.port), str(udf),
+                "infer_records", str(self.resources.request_capacity()), self.limits.argv(), PROTOCOL],
                 env=self.scope.env, cwd=self.scope.root, stdin=PIPE, stdout=PIPE, stderr=PIPE, start_new_session=True)
             self.scope.track_root(self.process)
             writer = verify._capture_stderr(self.process.stderr, self.scope.root / "bridge-stderr.log", self.author_report)
@@ -180,14 +191,14 @@ class IMLaneResidentSession:
                 if owner.resource_state(self.scope)["resources_confirmed"] is not True:
                     raise RuntimeError("resident author resources remain unconfirmed")
 
-            self.client = RecordsBridge(self.process, abort_owner=abort, timeout_s=min(600, self.resources.startup_timeout_s),
-                                        protocol=PROTOCOL)
+            self.client = RecordsBridge(self.process, abort_owner=abort, timeout_s=self.resources.startup_timeout_s,
+                protocol=PROTOCOL, max_pending=self.resources.request_capacity(), limits=self.limits)
             query = self.session_id + ":startup"
             self.client.begin(query)
             self.native_query = query
             self.model_start_requested = True
             self.ready = self._control("session_start", query,
-                deadline=min(self.deadline, time.monotonic() + self.resources.startup_timeout_s))
+                deadline=earliest_deadline(self.deadline, time.monotonic() + self.resources.startup_timeout_s))
             self.client.end()
             self.native_query = None
             self._emit("owner_ready")
@@ -201,24 +212,29 @@ class IMLaneResidentSession:
             raise RuntimeError("resident owner requires ready, healthy, drained query state")
         identity(query_id, "preflight", 0)
         expected = source.expected(query_id)
-        if query_id in self.used_queries or not 0 < len(expected) <= 4094 or len(self.used_queries) >= 62:
-            raise ValueError("resident query repeats or exceeds native control/occurrence capacity")
-        from integrations.imlane_records.filter_workload import bind_source
+        if query_id in self.used_queries or self.query_calls.get(query_id) != len(expected):
+            raise ValueError("resident query repeats or differs from its declared call plan")
+        from integrations.imlane_records.filter_workload import bind_source, preflight_transport
         method, scan = bind_source(source, method)
+        preflight_transport(source, method, self.resources, query_id, self.limits, close=False)
         control = self.control / ("query-" + str(len(self.used_queries)))
         control.mkdir(mode=0o700)
         self.used_queries.add(query_id)
-        deadline = min(self.deadline, time.monotonic() + self.resources.query_timeout_s)
+        deadline = earliest_deadline(self.deadline, deadline_after(self.resources.query_timeout_s))
         config = dict(method=asdict(method), engine=asdict(replace(self.engine, max_model_calls=len(expected))),
             generation=asdict(self.generation), resources=asdict(self.resources), query_id=query_id,
-            control_dir=str(control), deadline_monotonic=deadline, scan=scan.describe(), model_environment=self.environment)
+            control_dir=str(control), deadline_monotonic=deadline, scan=scan.describe(), model_environment=self.environment,
+            transport_limits=self.limits.describe())
+        for operation in ("query_begin", "query_end"):
+            self.limits.check_submit(*control_block(operation, query_id,
+                **({"config": config} if operation == "query_begin" else {})))
         rows = (dict(identity(query_id, row["row_id"], row["source_position"]),
                      **{name: row[name] for name in scan.payload_columns})
                 for row in source.rows() if scan.predicate is None or row[scan.predicate[0]] == scan.predicate[1])
         self.active = _QueryResults(rows, _QueryBridge(self, config), query_id=query_id, max_calls=len(expected),
             columns=scan.payload_columns, control_dir=control, deadline=deadline,
             close_owner=lambda: {}, cleanup_scope=self.args.stop_budget.cleanup,
-            block_rows=self.resources.prepare_batch_rows, max_pending=self.resources.max_active_batches, session=self)
+            block_rows=self.resources.prepare_batch_rows, session=self)
         self.query_bindings.append(config)
         return self.active
 

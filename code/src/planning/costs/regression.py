@@ -9,33 +9,6 @@ from dataclasses import dataclass
 import numpy as np
 
 
-FEATURE_NAMES = (
-    "total_rows",
-    "prompt_token_count",
-    "completion_max_tokens",
-    "token_budget",
-    "packing_batch_count",
-    "batch_estimated_cost_p50",
-    "batch_estimated_cost_p95",
-    "batch_estimated_cost_max",
-    "max_inflight_limit",
-    "flush_timeout_ms",
-    "flush_max_wait_ms",
-    "arrival_time_scale",
-    "arrival_replay_enabled",
-    "flush_is_adaptive",
-    "flush_is_immediate",
-    "max_active_work_per_endpoint",
-    "per_endpoint_inflight_limit",
-    "actor_workers_per_endpoint",
-    "ray_actor_max_concurrency",
-    "endpoint_count",
-    "service_quantum_tokens",
-    "gpu_peak_tflops_per_gpu",
-    "gpu_memory_total_mib_per_gpu",
-)
-
-
 @dataclass(frozen=True)
 class DatasetSplit:
     train_indices: tuple[int, ...]

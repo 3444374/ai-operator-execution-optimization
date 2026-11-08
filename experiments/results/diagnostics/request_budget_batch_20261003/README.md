@@ -57,7 +57,8 @@
 
 公开只保留本报告、紧凑原始汇总和目标检查输出，按现有脱敏函数导出。
 16份临时账本、逐次输出及运行清单保留在仓库外`GPU-budget-batch-20261003`运行目录，未删除。
-可用[固定规模探针](../../../../code/scripts/profiling/request_budget_batch_probe.py)在新目录复现；计时会随机器状态变化：
+该固定规模探针已退役，准确完整源码与恢复方式见[本地套件来源](../../../reproduction/native_baselines/README.md#retired-fixed-local-probe-suites)。
+以下命令仅在完整 `6ec2dde0e626c72f53b38a4f46222a4801f865f1` checkout 中使用；计时会随机器状态变化：
 
 ```sh
 PYTHONPATH=code python3 code/scripts/profiling/request_budget_batch_probe.py --output /path/to/new-private-probe

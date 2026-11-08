@@ -5,11 +5,10 @@ from dataclasses import asdict, dataclass, fields
 from operator import attrgetter
 
 from ...planning.work import StageWork, WorkDescriptor
-from .session_contract import OfferedTask, SessionSpec, TaskInfo
+from .session_contract import OfferedTask, SessionSpec, TaskInfo, UINT64_MAX
 
 MAX_WORK_STAGES = 16
 MAX_IDENTITY_BYTES = 256
-UINT64_MAX = (1 << 64) - 1
 
 _INFO_VALUES = attrgetter(*(f.name for f in fields(TaskInfo) if f.name != 'work'))
 _WORK_VALUES = attrgetter(*(f.name for f in fields(WorkDescriptor) if f.name != 'stages'))

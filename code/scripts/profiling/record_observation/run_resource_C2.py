@@ -40,8 +40,13 @@ def safe_calls(calls):return [{k:c[k] for k in _CALL_FIELDS if k in c} for c in 
 
 def movie_session(config,ledger,*,entry=None,checker=None):
     native_entry=entry is None
+    from src.experiments.movie_cancellation import qualification_options
+    cancellation=qualification_options(config)
     if entry is None or checker is None:
-        from src.experiments.movie_records_session import run_movie_session,check_plan
+        if cancellation is not None:
+            from src.experiments.movie_cancellation import run_movie_cancellation as run_movie_session,check_cancellation_plan as check_plan
+        else:
+            from src.experiments.movie_records_session import run_movie_session,check_plan
         entry=entry or run_movie_session;checker=checker or check_plan
     plan=config['movie_plan']
     checked=checker(plan)
@@ -54,6 +59,7 @@ def movie_session(config,ledger,*,entry=None,checker=None):
                  budget=dict(path=str(Path(config['artifact_root'])/'budget.sqlite'),id=config['run_id'],limit=checked['expected_calls']),
                  sembench_checkout=config['sembench_checkout'],worker_entry_ns=config['worker_entry_ns'],
                  worker_deadline_monotonic=time.monotonic()+config['limits']['worker_timeout_s'])
+    if cancellation is not None:context['cancellation_probe']=cancellation
     observed=config['observation']['mode']=='on'
     observer=None
     if observed:
@@ -80,14 +86,13 @@ def movie_session(config,ledger,*,entry=None,checker=None):
 
 
 def record_chain(config,ledger):
-    from dataclasses import asdict
     import csv
     import itertools
     from src.experiments.record_chain_validation import make_chain,replay_native_answers
     from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
-    from src.semantic_methods.lotus.record_chain import RecordOccurrence
+    from src.semantic_methods.lotus.record_types import RecordOccurrence
     from src.semantic_methods.lotus.records import RecordsResources
-    from src.serving.backends.vllm_engine import EngineSpec,GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec,GenerationSpec
     from transformers import AutoTokenizer
     import ray
     root=Path(config['artifact_root']);binding=config['workload']['input']
@@ -150,7 +155,7 @@ def main(root):
     from integrations.imlane_records.chain_runtime import check_external_lease
     from src.experiments.attempt_ledger import AttemptBudget
     from src.experiments.cell_budget import CellBudgetLedger
-    from src.baselines.common.private_artifacts import write_private_json
+    from src.infrastructure.private_artifacts import write_private_json
     check_external_lease(config['external_owner'])
     config['worker_entry_ns']=started
     os.environ.update(observer_environment(config))
@@ -161,12 +166,14 @@ def main(root):
         from record_observer import install_driver,memory_snapshot,emit,close_events
         install_driver()
         if not light:
-            from src.experiments.process_sampling import ProcessSampler
-            from src.observability.records_telemetry import RecordsTelemetry
+            from src.observability.process_resources.phase_sampler import ProcessSampler
+            from src.observability.records_telemetry import RecordsTelemetry,MetricSources
             memory_snapshot('worker_entry');probe=config['observation']
             sampler=ProcessSampler(root/'rss.jsonl',{'driver':os.getpid()},interval=probe['sample_interval_s'],max_samples=probe['max_samples'],include_children=True)
             sampler.__enter__()
-            telemetry=RecordsTelemetry(root/'telemetry',gpu_ids=[config['runtime_binding']['cuda_visible_devices']],interval_s=probe['sample_interval_s'],max_samples=probe['max_samples']).start()
+            metrics=MetricSources.from_cuda_visibility(config['runtime_binding']['cuda_visible_devices'])
+            telemetry=RecordsTelemetry(root/'telemetry',gpu_ids=metrics.gpu_ids,sample_fn=metrics,
+                interval_s=probe['sample_interval_s'],max_samples=probe['max_samples']).start()
     cap=config['workload']['expected_calls']
     ledger=CellBudgetLedger(root/'budget.sqlite',AttemptBudget(config['run_id'],cap))
     report=dict(status='failed',actual_calls=0,observation_kind='real_model_capture',scope=config['workload']['name'],
@@ -178,6 +185,8 @@ def main(root):
         report.update(status=result['status'],actual_calls=len(calls),calls=safe_calls(calls),
                       public_result_path='session/session.json' if config['workload']['kind']=='movie_session' else None)
         if config['workload']['kind']=='record_chain':report.update(result)
+        if config['workload'].get('qualification') is not None:
+            report['cancellation_qualification']=result.get('cancellation_qualification')
         if result['status']=='completed' and len(calls)!=cap:raise RuntimeError('actual whole-workload call count differs from frozen budget')
         report['quality']=[{'query_id':q.get('query_id'),'quality':(q.get('backend_report') or {}).get('quality'),
                             'result':(q.get('backend_report') or {}).get('result')} for q in result.get('queries',[])]
@@ -194,6 +203,9 @@ def main(root):
             close_events()
         report['worker_wall_s']=(time.monotonic_ns()-started)/1e9
         report['actual_call_count_complete']=report['status']=='completed' and report['actual_calls']==cap
+        if config['workload'].get('qualification') is not None:
+            report['call_accounting_complete']=report['actual_call_count_complete']
+            report['actual_call_count_complete']=report['actual_call_count_complete'] and all(c['status']=='succeeded' for c in report.get('calls',[]))
         report['actual_calls_scope']='known ledger records; incomplete on failure'
         write_private_json(root/'WORKER-RESULT.json',report)
     print(json.dumps({key:report[key] for key in ('status','actual_calls','worker_wall_s')}),flush=True)

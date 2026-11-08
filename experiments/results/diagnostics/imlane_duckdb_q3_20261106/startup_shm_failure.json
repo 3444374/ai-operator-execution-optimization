@@ -1,0 +1,213 @@
+{
+  "schema": "semloom.imlane.duckdb.q3.startup_shm_failure.v1",
+  "production_commit": "3c8073167310127036d10dddf68300ef722fe503",
+  "production_tree": "b444dfeee38e12e352b55d2053eb9d42e8cf1bd9",
+  "run_id": "imlane-model-q3-3c80-1106-r1",
+  "state": "failed before native Q3; original failure retained; later external cleanup recovered",
+  "real_model_startup": true,
+  "model_service_startup_seconds": 51.03466370794922,
+  "native_query_started": false,
+  "user_engine_generate_invocations": 0,
+  "physical_internal_model_attempts": null,
+  "query_latency": null,
+  "query_quality": null,
+  "sampling": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 8192,
+    "n": 1,
+    "stop": null,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1
+  },
+  "engine_options": {},
+  "author_executors": 4,
+  "resource": {
+    "resource_guard_original_passed": false,
+    "resource_failures": [
+      "sampled resource/affinity ceiling exceeded"
+    ],
+    "max_sampled_RSS_sum_bytes": 6696796160,
+    "RSS_cap_bytes": 21474836480,
+    "max_host_SHM_delta_bytes": 536973312,
+    "SHM_cap_bytes": 536969216,
+    "SHM_excess_bytes": 4096,
+    "any_affinity_widening": false,
+    "model_only_SHM_delta_before_author_start_bytes": 4096,
+    "CPU_software_prior_SHM_peaks": [
+      {
+        "case": "good",
+        "max_host_SHM_delta": 536969216
+      },
+      {
+        "case": "error",
+        "max_host_SHM_delta": 536969216
+      }
+    ],
+    "worker_error_type": "TimeoutError",
+    "supervisor_elapsed_s": 53.828832941129804,
+    "controller_error_type": "FileExistsError",
+    "controller_error_cause": "private controller used create-only host_helpers.private_json to write LEDGER.json again; failed before final inventory and lease release",
+    "controller_failure_location": "controller.py write(LEDGER.json) in finally",
+    "production_code_modified": false
+  },
+  "scope": "whole-stage host /dev/shm allocated-space increment under exclusive lease; not just author named objects",
+  "verified_post_model_ready_SHM_samples": {
+    "4096_bytes": 7,
+    "343900160_bytes": 1,
+    "536973312_bytes": 1
+  },
+  "budget_correction": {
+    "policy": "use whole-run filesystem available bytes at start, not author/model allocation quotas",
+    "expression": "statvfs_snapshot.f_bavail * statvfs_snapshot.f_frsize",
+    "actual_read_only_snapshot": {
+      "fragment_bytes": 4096,
+      "total_bytes": 64424509440,
+      "available_bytes": 64424484864,
+      "RAM_available_bytes": 1019314798592
+    },
+    "next_run_recomputes_available_bytes": true,
+    "author_observed_bytes": 536969216,
+    "model_ready_observed_bytes": 4096,
+    "observed_startup_total_bytes": 536973312,
+    "baseline_reset": false,
+    "guard_removed": false,
+    "observed_model_allocation_used_as_quota": false,
+    "object_identity": "not established; no semaphore attribution",
+    "kernel_filesystem_capacity_enforced": true,
+    "monitor_is_sampled_not_kernel_enforcement": true
+  },
+  "controller_fault": {
+    "component": "private test controller, not project runtime",
+    "error": "FileExistsError",
+    "cause": "write('LEDGER.json') was called twice through create-only host_helpers.private_json. This interrupted final receipt/lease release after the primary resource stop.",
+    "controller_sha256": "f0f4db2997d1b5865aef30fdb70384fcb3406ad39823071485ad3e6a5db07297",
+    "old_records_preserved": true,
+    "recovery": "new LEDGER-TERMINAL-RECOVERED.json, RECOVERY-CLEANUP.json and FINAL-RECOVERED.json; original log/ledger/worker/resource failure unchanged",
+    "write_private_json_is_replacement_API": false,
+    "publish_private_json_is_replacement_API": false
+  },
+  "original_cleanup": {
+    "owner_returncode": -15,
+    "forced_kill": false,
+    "fallback_term": false,
+    "observed_owned_exit_confirmed": false,
+    "owned_survivors": [],
+    "cleanup_errors": [
+      {
+        "type": "TimeoutError",
+        "error": "software work has stopped"
+      },
+      {
+        "type": "RuntimeError",
+        "error": "vLLM service owner did not exit zero: -15"
+      },
+      {
+        "type": "RuntimeError",
+        "error": "retain IPC socket directory until owned process exit is confirmed"
+      }
+    ]
+  },
+  "recovery": {
+    "observed_owned_processes": 19,
+    "live_owned_remaining": 0,
+    "SHM_delta_bytes": 0,
+    "remaining_new_SHM_names": 0,
+    "GPU_compute_processes": 0,
+    "lease_released": true,
+    "unobserved_detached_descendants_independently_proven": false
+  },
+  "originals": [
+    {
+      "file": "controller.py",
+      "bytes": 11809,
+      "sha256": "f0f4db2997d1b5865aef30fdb70384fcb3406ad39823071485ad3e6a5db07297"
+    },
+    {
+      "file": "controller.log",
+      "bytes": 1082,
+      "sha256": "4d822f17e4cca4101106dd3fdb44d4205746d98b133add38a9000119cf2af852"
+    },
+    {
+      "file": "config.json",
+      "bytes": 684,
+      "sha256": "d23f1ecd9e720cdfaf8739b9ec1c5baf9a2c118b37b7f050f72f91fed5cec498"
+    },
+    {
+      "file": "PLAN.json",
+      "bytes": 1558,
+      "sha256": "970bdc6ed343e05776792bc1b1457fad08c3a73149642aaa259898ce6d247c42"
+    },
+    {
+      "file": "environment.json",
+      "bytes": 5375,
+      "sha256": "158cb05752116042f96e373dfaa8d4dacf8082cfdf8909eb889c11ed4d9e178b"
+    },
+    {
+      "file": "MODEL-IDENTITY.json",
+      "bytes": 2467,
+      "sha256": "0e89ace2cee1bd52685e90988c1be3f341bc7ef0ffb5c433a40b94572c1abb68"
+    },
+    {
+      "file": "driver-identity.json",
+      "bytes": 4822,
+      "sha256": "224b8e48a2d41fb6e71245b77aeb82cdf11e0079eee38eeaab752e19dd16f5a9"
+    },
+    {
+      "file": "LEDGER.json",
+      "bytes": 119,
+      "sha256": "2f4c82f50dffb3d066231a0d2f38e390163dee4c2c7ab68f81e7c11d1ba33259"
+    },
+    {
+      "file": "LEDGER-TERMINAL-RECOVERED.json",
+      "bytes": 474,
+      "sha256": "2ec269d4f53d6c5060cf1efa923a0ccea927e590c272126e22bef85de5eeaa97"
+    },
+    {
+      "file": "preflight-summary.json",
+      "bytes": 25665,
+      "sha256": "82c73848903e8a9026bc90f2173d63386da739fd73d49f75dd1a76df9489b7d3"
+    },
+    {
+      "file": "query-summary.json",
+      "bytes": 104689,
+      "sha256": "9c306bf67fd6c2643825a98a349ac5437d9846ef25d442bd051ef4bf2ade2da5"
+    },
+    {
+      "file": "cell/worker.json",
+      "bytes": 18025,
+      "sha256": "619b1af10cc6e28ca125a84e7638d42b41e7204704cfbd171dbfabf8ceaf9cc5"
+    },
+    {
+      "file": "cell/model-service/model_worker.ready.json",
+      "bytes": 1125,
+      "sha256": "85b9e3587913aad18c27efadf8ad16ec9c44821c6fbdccc72813ac28f42b7397"
+    },
+    {
+      "file": "RECOVERY-CLEANUP.json",
+      "bytes": 982,
+      "sha256": "94c70a84c7062b110e90f2461181928138324bacf05c9768ba8342abf964cffd"
+    },
+    {
+      "file": "after-recovery.json",
+      "bytes": 2827,
+      "sha256": "16d5fb0c0cc8623ad5a779311c8fe049aa4778dac9d7e5f8cbe7da2c97755a78"
+    }
+  ],
+  "local_handoff_sha256": "5cdf79a2b319f92e9c66322fa7483c6e79a3e63dae1c323487773204c7b72983",
+  "local_results_sha256": "f8d1f9a8f27e6c4458544cc449ea05ec4c75897a0dfa58074baf6e8bcb339e07",
+  "recovered_final_sha256": "ed23b363282f70b6780741bbd6660cf9477b202e88f3ba3f4f7f9c5824ea3d7a",
+  "runtime_changed_for_this_fix": false,
+  "models_replayed_for_this_fix": 0,
+  "CPU_replay": {
+    "test_module": "tests.observability.test_supervised_process_resources",
+    "methods": 7,
+    "passed": 7,
+    "original_cap_red_log_sha256": "449f21834ec3b7d7455b5f6a6f2861f314e2f7169925774ac8053684a41dce4e",
+    "scope": "real old resource increments replayed; model/control growth beyond startup is allowed within actual filesystem headroom; exact/over physical bound and final residue checked; no model allocation",
+    "test_sha256": "97948b7787fd1167e3bd68fa9855ed79a12fcedd6a692e6890e6487344d60001",
+    "physical_available_policy_log_sha256": "0d6653413f55f7cf64dbfab59b6b29c640ade8e63585414ab2a44a0892a5ed0a"
+  },
+  "controller_repair": "controller_repair.json"
+}

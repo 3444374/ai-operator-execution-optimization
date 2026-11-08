@@ -2,25 +2,25 @@
 
 This worker is called inside the existing owner's lease/resource supervisor.
 It creates no lease, budget, retries, detached workers, or performance claims.
-Native, Core and opt-in IMLane CPython sessions expose reusable model owners.
+Core, native LOTUS and opt-in IMLane CPython sessions expose reusable model owners.
 Ray can reuse its runtime while each native Dataset still owns a new model.
 The explicit ``isolated`` mode retains per-query driver startup and shutdown.
 """
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 import time
-import traceback
-import uuid
 
-from src.baselines.common.private_artifacts import new_private_directory, write_private_json, publish_private_json
-from src.baselines.common.redact import redact_json_values
+from src.infrastructure.private_artifacts import new_private_directory, write_private_json, publish_private_json
+from src.infrastructure.redact import redact_json_values
+from src.experiments.movie_records_config import daft_native_profile
+from src.semantic_methods.lotus.filter_answers import LOTUS_NATIVE
 
 
-# Compatibility exports: existing callers retain their module API.
+# Shared lifecycle implementation and values used by this entry.
 from src.experiments.native_query_lifecycle import (
     RESIDENT, BACKENDS, LIFECYCLES, DAFT_SESSION_PROFILE,
-    _failure, _lifecycle_timing, run_sequence,
+    _failure, run_sequence,
 )
 
 
@@ -28,12 +28,13 @@ def check_plan(plan):
     """Read-only CPU validation; never imports execution frameworks or a model."""
     from src.baselines.text.movie_records import MovieRecordSource
     from src.baselines.text.movie_tasks import MovieTask
-    from src.semantic_methods.lotus.records import RecordsResources
-    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 
     required = {"schema", "backend", "lifecycle", "model_name", "generation", "engine",
                 "resources", "profile", "queries"}
-    optional = {'admission_cache', 'prepared_batching', 'batch_concurrency'}
+    optional = {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
+                'core_capacity', 'async_limits', 'preparation_mode',
+                'service_payload_bytes', 'answer_parser'}
     if (type(plan) is not dict or not required <= set(plan) or set(plan)-required-optional
             or plan["schema"] != "semloom.movie_session_plan.v1"
             or plan["backend"] not in BACKENDS or plan["lifecycle"] not in LIFECYCLES):
@@ -46,27 +47,53 @@ def check_plan(plan):
             or plan["profile"] != DAFT_SESSION_PROFILE):
         raise ValueError("native_single_thread_session requires daft and its explicit different native profile")
     engine, generation = EngineSpec.from_dict(plan["engine"]), GenerationSpec.from_dict(plan["generation"])
-    resources = RecordsResources(**plan["resources"])
-    if generation.max_tokens > engine.max_model_len:
+    from src.experiments.movie_records_config import records_resources
+    resources = records_resources(plan)
+    context_limit = engine.max_model_len
+    if context_limit is not None and generation.max_tokens > context_limit:
         raise ValueError("generation exceeds model context limit")
     if plan["backend"] == "semloom-core" and (resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core retains its native single-row preparation/model contract")
+    if plan["backend"] == "lotus-native" and (
+            plan.get('answer_parser', LOTUS_NATIVE) != LOTUS_NATIVE
+            or type(plan["profile"]) is not dict or set(plan["profile"]) != {"native_lm_max_batch_size"}
+            or type(plan["profile"]["native_lm_max_batch_size"]) is not int
+            or plan["profile"]["native_lm_max_batch_size"] < 1):
+        raise ValueError("native LOTUS requires its original parser and explicit native_lm_max_batch_size")
     core_profile = None
+    capacity = async_limits = None
     batching = None
-    if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency'}):
+    if plan['backend'] != 'semloom-core' and 'service_payload_bytes' in plan:
+        raise ValueError('service_payload_bytes requires semloom-core')
+    if plan['backend'] != 'semloom-core' and set(plan) & {'core_capacity', 'async_limits'}:
+        raise ValueError('core_capacity and async_limits require semloom-core')
+    if plan['backend'] != 'semloom-core' and (set(plan) & {'prepared_batching', 'batch_concurrency', 'batch_feedback', 'rolling_refill',
+                                                       'preparation_mode'}):
         raise ValueError('record batching options require semloom-core')
-    if plan["backend"] == "semloom-static-reference" and plan["profile"] != {"mode": "sync"}:
-        raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
+    if plan['backend'] == 'daft' and plan['lifecycle'] != 'native_single_thread_session':
+        daft_native_profile(plan['profile'])
+    if plan['backend'] == 'ray-data' and plan['profile'] != {}:
+        raise ValueError('the existing Ray Movie session uses an empty profile; configure resources explicitly')
+    if plan["backend"] == "semloom-static-reference":
+        resources.request_capacity()
+        if plan["profile"] != {"mode": "sync"}:
+            raise ValueError("static reference uses its explicit sync profile and existing resource batch sizes")
     if plan["backend"] == "semloom-core":
-        from src.execution_provider.adapters.lotus_records_core import resolve_core_profile, resolve_record_batching
-        from src.experiments.lotus_records_movie import _record_batching_options
-        core_profile = resolve_core_profile(engine, resources, plan["profile"])
+        from src.execution_provider.adapters.records_profile import resolve_record_batching
+        from src.experiments.movie_records_config import (
+            record_batching_options as _record_batching_options,
+            records_runtime as _records_runtime,
+        )
+        configured = _records_runtime(plan, resources=resources, engine=engine)
+        capacity = (configured.capacity if 'core_capacity' in plan or configured.capacity.budget is not None
+                    else None)
+        core_profile = configured.profile
+        async_limits = (configured.async_limits if 'async_limits' in plan or configured.capacity.budget is not None
+                        else None)
         batching = resolve_record_batching(core_profile, **_record_batching_options(plan))
-        if batching is not None and (plan['lifecycle'] != 'isolated' or plan.get('admission_cache') is not None):
-            raise ValueError('record token batches require isolated fresh owners without admission_cache')
-    if plan.get("admission_cache") is not None:
-        from src.experiments.movie_matrix_support import validate_record_admission_cache
-        validate_record_admission_cache(plan["admission_cache"], core_profile)
+        if batching is not None and (plan['lifecycle'] != 'isolated' and not (
+                    plan['lifecycle'] == 'resident' and batching.get('rolling_refill'))):
+            raise ValueError('record token batches require isolated or rolling resident owners')
     if type(plan["queries"]) is not list or not plan["queries"]:
         raise ValueError("declare every complete warmup and measured query")
     checked, ids = [], set()
@@ -77,7 +104,7 @@ def check_plan(plan):
             raise ValueError("each query needs a unique ID, task, manifest and explicit phase")
         ids.add(query["query_id"])
         task = MovieTask.from_config(query["task"])
-        method = task.method(plan["model_name"])
+        method = task.method(plan["model_name"], answer_parser=plan.get('answer_parser', LOTUS_NATIVE))
         source = MovieRecordSource.from_manifest(query["manifest"])
         if source.task != task:
             raise ValueError("query task differs from source manifest")
@@ -85,29 +112,21 @@ def check_plan(plan):
         checked.append(dict(query, expected_calls=len(source.expected(query["query_id"])),
                             manifest_sha256=inputs["manifest_sha256"]))
     if plan["backend"] == "imlane":
-        from dataclasses import asdict
-        if (plan["profile"] != asdict(resources) or resources.cpu_workers != 1
-                or resources.prepare_batch_rows > 16 or resources.model_batch_rows > 16
-                or resources.max_active_batches > 2):
-            raise ValueError("IMLane retains its one author worker and existing batch/backpressure capacities")
-        if plan["lifecycle"] == "resident" and (len(checked) > 62
-                or any(not 0 < query["expected_calls"] <= 4094 for query in checked)
-                or engine.max_model_calls is None or engine.max_model_calls > 4096):
-            raise ValueError("IMLane resident control records and whole-session calls exceed finite bridge capacity")
+        resources.request_capacity()
+        if plan["profile"] != asdict(resources) or resources.cpu_workers != 1:
+            raise ValueError("IMLane retains one qualified author worker and its explicit batch/pending declaration")
+        if plan["lifecycle"] == "resident" and any(query["expected_calls"] <= 0 for query in checked):
+            raise ValueError("IMLane requires a nonempty finite call declaration for each query")
     total = sum(query["expected_calls"] for query in checked)
     if plan["backend"] == "semloom-static-reference":
-        methods = [MovieTask.from_config(query["task"]).method(plan["model_name"]) for query in checked]
+        methods = [MovieTask.from_config(query["task"]).method(plan["model_name"],
+                   answer_parser=plan.get('answer_parser', LOTUS_NATIVE)) for query in checked]
         if any(method != methods[0] for method in methods):
             raise ValueError("a static reference session retains one method instruction")
     if engine.max_model_calls is None or engine.max_model_calls < total:
         raise ValueError("max_model_calls must explicitly cover the whole session, including warmup")
-    if plan["backend"] == "lotus-native":
-        profile = plan["profile"]
-        if (not plan["model_name"].startswith("openai/") or not plan["model_name"][7:]
-                or type(profile) is not dict or set(profile) != {"native_lm_max_batch_size"}
-                or type(profile["native_lm_max_batch_size"]) is not int or profile["native_lm_max_batch_size"] < 1):
-            raise ValueError("Native retains the explicit OpenAI identity and original LM batch profile")
     return dict(schema="semloom.movie_session_check.v1", status="checked_cpu_only",
+                answer_parser=plan.get('answer_parser', LOTUS_NATIVE),
                 inference_calls=0, expected_calls=total, queries=checked,
                 model_cache_scope=("model owner shared by resident session; actual KV hits unavailable"
                     if plan["lifecycle"] in {"resident", "native_single_thread_session"} else
@@ -117,7 +136,9 @@ def check_plan(plan):
                 native_single_thread_session=plan["lifecycle"] == "native_single_thread_session",
                 supports_runtime_reuse_only=plan["backend"] == "ray-data",
                 resident_support_scope="implemented adapter paths; not a general vendor capability claim",
-                core_execution=core_profile, **({} if batching is None else dict(record_batching=batching)))
+                core_execution=core_profile, **({} if batching is None else dict(record_batching=batching)),
+                **({} if capacity is None else dict(core_capacity=asdict(capacity))),
+                **({} if async_limits is None else dict(async_limits=asdict(async_limits))))
 
 
 class _MovieDriver:
@@ -126,7 +147,7 @@ class _MovieDriver:
     def __init__(self, plan, context, directory, first_query):
         self.plan, self.context, self.directory = plan, context, Path(directory)
         self.first_query = first_query
-        self.owner = self.service = self.ray = None
+        self.owner = self.ray = None
         self.created_ray = False
         self.ray_identity = None
         self.last_query_report = self.last_query_failure = self.last_query_directory = None
@@ -134,29 +155,82 @@ class _MovieDriver:
         self.core_execution = None
         self.imlane_guard = None
         self.imlane_handlers = {}
+        self._model_ready = self._owner_ready = None
+        self.payload_pool = None
+        self.service_runtime = None
+        self._close_attempted = False
+
+    def _check_core_model_ready(self, ready):
+        from src.experiments.calibration.core import core_model_ready
+        binding = self.context['plan_binding']
+        expected = self.context.get('core_model_context_ready', binding['observed'].get('model_ready'))
+        if expected is None and binding.get('resolve_model_context') is not True:
+            raise RuntimeError('calibrated execution requires its observed model context')
+        current = core_model_ready(self.plan, ready, expected=expected)
+        if self._model_ready is not None and current['engine_uid'] != self._model_ready['engine_uid']:
+            raise ValueError('calibrated query model owner changed after readiness')
+        self._model_ready = current
+        self.context['core_model_context_ready'] = current
+        if self._owner_ready.get('no_session_model') is True:
+            self._owner_ready['query_model_ready'] = current
+        return current
 
     def start(self):
         from src.baselines.text.movie_tasks import MovieTask
-        from src.semantic_methods.lotus.records import RecordsResources
-        from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
-        new_private_directory(self.directory)
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+        from src.experiments.movie_records_config import records_resources, records_service_pool
         self.engine = EngineSpec.from_dict(self.plan["engine"])
         self.generation = GenerationSpec.from_dict(self.plan["generation"])
-        self.resources = RecordsResources(**self.plan["resources"])
+        self.resources = records_resources(self.plan)
         backend = self.plan["backend"]
-        method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"])
+        if backend != 'semloom-core' and 'service_payload_bytes' in self.plan:
+            raise ValueError('service_payload_bytes requires semloom-core')
+        if backend != 'semloom-core' and 'preparation_mode' in self.plan:
+            raise ValueError('preparation_mode requires semloom-core')
+        if backend in ('semloom-static-reference', 'imlane'):
+            self.resources.request_capacity()
+        elif backend == 'semloom-core':
+            from src.experiments.movie_records_config import (
+                records_runtime as _records_runtime,
+                record_batching_options as _record_batching_options,
+            )
+            from src.execution_provider.adapters.records_profile import resolve_record_batching
+            configured = _records_runtime(self.plan, resources=self.resources, engine=self.engine)
+            self.core_execution = configured.profile
+            options = _record_batching_options(self.plan)
+            resolve_record_batching(self.core_execution, **options)
+        method = None
+        if 'service_payload_bytes' in self.plan:
+            from src.execution_provider.adapters.lotus_records_core import create_records_core
+            from src.experiments.movie_records_config import core_capacity
+            self.payload_pool = records_service_pool(self.plan, self.context)
+            method = MovieTask.from_config(self.first_query['task']).method(self.plan['model_name'],
+                answer_parser=self.plan.get('answer_parser', LOTUS_NATIVE))
+            self.owner = create_records_core(method, self.engine, self.generation, self.resources,
+                profile=self.plan['profile'], capacity=core_capacity(self.plan),
+                service_budget=self.payload_pool, **options)
+            from .movie_records_service import verify_service_owner
+            verify_service_owner(self.owner, configured)
+            self.core_execution = self.owner.execution_profile
+            allocation_id = self.owner._service_allocation.allocation_id
+            self.context.setdefault('_records_payload_drivers', {})[allocation_id] = self
+        new_private_directory(self.directory)
+        if method is None:
+            method = MovieTask.from_config(self.first_query["task"]).method(self.plan["model_name"],
+                answer_parser=self.plan.get('answer_parser', LOTUS_NATIVE))
+        if backend == "lotus-native" and self.plan["lifecycle"] == "resident":
+            from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+            self.owner = LocalNativeModel(self.engine, self.generation, self.resources,
+                self.plan["profile"]["native_lm_max_batch_size"])
+            return self.owner.start()
         if backend == "daft" and self.plan["lifecycle"] == "native_single_thread_session":
             from src.baselines.text.frameworks.daft_lotus_session import DaftNativeSession
-            deadline = (time.monotonic() + self.resources.startup_timeout_s
+            deadline = (None if self.resources.query_timeout_s is None else
+                        time.monotonic() + self.resources.startup_timeout_s
                         + len(self.plan["queries"]) * self.resources.query_timeout_s)
             self.owner = DaftNativeSession(self.engine, self.generation, self.resources,
                 control_dir=self.directory / "model", deadline_monotonic=deadline)
             return self.owner.start()
-        if backend == "lotus-native" and self.plan["lifecycle"] == "resident":
-            from src.baselines.text.frameworks.lotus_native_local_model import LocalService
-            self.service = LocalService(self.engine, self.plan["model_name"][7:], self.resources,
-                                        self.directory, self.context["runtime_binding"]["cuda_visible_devices"])
-            return self.service.start()
         if backend == "imlane" and self.plan["lifecycle"] == "resident":
             import signal
             import threading
@@ -176,25 +250,37 @@ class _MovieDriver:
             args = SimpleNamespace(output=self.directory, scopes=[],
                 stop_budget=author_owner.StopBudget(threading.Event()),
                 owner_resource_limits=outer["owner_resource_limits"],
+                transport_limits=outer.get("transport_limits"),
                 **{key: Path(value[key]) for key in ("author_root", "method_python", "bridge_binary", "artifact_root")})
             self.imlane_guard = AuthorRunGuard(value, args)
             self.imlane_handlers = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
             for number in self.imlane_handlers:
                 signal.signal(number, args.stop_budget.signal)
-            deadline = (time.monotonic() + self.resources.startup_timeout_s
+            deadline = (None if self.resources.query_timeout_s is None else
+                        time.monotonic() + self.resources.startup_timeout_s
                         + len(self.plan["queries"]) * self.resources.query_timeout_s + 2 * MODEL_CLOSE_GRACE_S)
             self.owner = IMLaneResidentSession(self.engine, self.generation, self.resources,
-                author_args=args, model_environment=value["model_environment"], deadline_monotonic=deadline)
+                author_args=args, model_environment=value["model_environment"], deadline_monotonic=deadline,
+                query_calls={query["query_id"]: self.context["checked_queries"][query["query_id"]]["expected_calls"]
+                             for query in self.plan["queries"]})
             return self.owner.start()
         if backend in {"semloom-core", "semloom-static-reference", "ray-data"}:
             import ray
             if ray.is_initialized():
                 raise RuntimeError("session refuses an existing Ray runtime; use its private supervised worker")
+            slots = self.resources.cpu_workers + self.resources.gpu_workers + 1
+            if backend != "ray-data":
+                from src.infrastructure.cpu_allocation import checked_local_cpu_slots
+                slots = checked_local_cpu_slots(slots)
             self.ray, self.created_ray = ray, True
-            ray.init(address="local", num_cpus=self.resources.cpu_workers + self.resources.gpu_workers + 1,
+            ray.init(address="local", num_cpus=slots,
                      num_gpus=1, include_dashboard=False,
                      runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                          "LITELLM_LOCAL_MODEL_COST_MAP": "True", "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
+            if self.payload_pool is not None:
+                from .movie_records_service import service_runtime_identity
+                self.service_runtime = service_runtime_identity(ray)
+                self.owner.bind_model_runtime(self.service_runtime)
             if backend == "ray-data":
                 import os
                 self.ray_identity = dict(driver_pid=os.getpid(), node_id=ray.get_runtime_context().get_node_id())
@@ -202,15 +288,24 @@ class _MovieDriver:
                             runtime_identity=self.ray_identity)
         if backend in {"semloom-core", "semloom-static-reference"}:
             if backend == "semloom-core":
-                from src.execution_provider.adapters.lotus_records_core import create_records_core, resolve_core_profile
-                from src.experiments.lotus_records_movie import _record_batching_options
-                self.core_execution = resolve_core_profile(self.engine, self.resources, self.plan["profile"])
-                self.owner = create_records_core(method, self.engine, self.generation, self.resources,
-                                                 profile=self.plan["profile"], **_record_batching_options(self.plan))
+                from src.execution_provider.adapters.lotus_records_core import create_records_core
+                from src.experiments.movie_records_config import (
+                    core_capacity as _core_capacity,
+                )
+                if options.get('rolling_refill') and self.plan['lifecycle'] == 'resident':
+                    options['resident'] = True
+                if self.owner is None:
+                    self.owner = create_records_core(method, self.engine, self.generation, self.resources,
+                        profile=self.plan["profile"], capacity=_core_capacity(self.plan),
+                        async_limits=configured.async_limits, **options)
             else:
                 from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
                 self.owner = SemLoomRecordsStaticReference(method, self.engine, self.generation, self.resources)
             ready = self.owner.start()
+            self._owner_ready = ready
+            if backend == 'semloom-core' and self.engine.max_model_len is None and 'plan_binding' in self.context:
+                if ready.get('no_session_model') is not True:
+                    self._check_core_model_ready(ready)
             if self.plan["lifecycle"] != "resident":
                 return ready
             # Preserve the original Core receipt and observe its real process
@@ -234,12 +329,12 @@ class _MovieDriver:
     def query(self, spec, emit):
         from src.baselines.text.movie_records import MovieRecordSource
         from src.baselines.text.movie_tasks import MovieTask
-        from src.experiments.lotus_records_movie import run_movie_query
         from integrations.imlane_records.chain_runtime import check_external_lease
         check_external_lease(self.context["owner_context"])
         # Every query reopens and verifies the original/materialized CSV input.
         source = MovieRecordSource.from_manifest(spec["manifest"])
-        method = MovieTask.from_config(spec["task"]).method(self.plan["model_name"])
+        method = MovieTask.from_config(spec["task"]).method(self.plan["model_name"],
+            answer_parser=self.plan.get('answer_parser', LOTUS_NATIVE))
         binding = self.context["checked_queries"][spec["query_id"]]
         if (source.task.name != spec["task"]
                 or source.preflight(method)["manifest_sha256"] != binding["manifest_sha256"]
@@ -254,25 +349,42 @@ class _MovieDriver:
         context["output_dir"] = directory
         checkout = self.context["sembench_checkout"]
         backend = self.plan["backend"]
+        if backend == "lotus-native":
+            from src.baselines.text.frameworks.lotus_native_local import run
+            self.last_expected, self.last_query_directory = source.expected(spec["query_id"]), directory
+            self.last_query_failure = self.last_query_report = None
+            try:
+                self.last_query_report = run(source, checkout, method, self.generation, self.engine,
+                    self.resources, query_id=spec["query_id"], profile=self.plan["profile"],
+                    observer=emit, context=context, shared_model=self.owner)
+                return self.last_query_report
+            except BaseException as error:
+                self.last_query_failure = error
+                self.last_query_report = getattr(error, "query_report", None)
+                raise
+        from src.experiments.movie_records_query import run_movie_query
         if backend == "ray-data" and (not self.ray.is_initialized()
                 or self.ray.get_runtime_context().get_node_id() != self.ray_identity["node_id"]):
             raise RuntimeError("owned Ray runtime changed before query execution")
-        if backend == "lotus-native":
-            from src.baselines.text.frameworks.lotus_native_local_model import run
-            return run(source, checkout, method, self.generation, self.engine, self.resources,
-                query_id=spec["query_id"], profile=self.plan["profile"], context=context,
-                observer=emit, shared_service=self.service)
         if backend == "imlane" and self.plan["lifecycle"] == "isolated":
             from src.experiments.imlane_movie_formal import run
             engine = replace(self.engine, max_model_calls=binding["expected_calls"])
             return run(source, checkout, method, self.generation, engine, self.resources,
                 query_id=spec["query_id"], profile=self.plan["profile"], context=context, observer=emit)
-        query_options = {}
         if backend == "imlane":
             self.imlane_guard()
             execute = lambda: self.owner.evaluate(source, method, query_id=spec["query_id"])
         elif backend == "semloom-core":
-            execute = lambda: self.owner.evaluate(source, query_id=spec["query_id"], method=method, **query_options)
+            observed_context = self.engine.max_model_len is None and 'plan_binding' in self.context
+            if observed_context and (self.owner.model_ready is not None or self._model_ready is not None):
+                self._check_core_model_ready(self.owner.model_ready)
+            def execute():
+                stream = self.owner.evaluate(source, query_id=spec['query_id'], method=method)
+                if observed_context:
+                    current = self.owner.model_ready
+                    if current is not None or source.expected(spec['query_id']):
+                        self._check_core_model_ready(current)
+                return stream
         elif backend == "semloom-static-reference":
             if method != self.owner.method:
                 raise ValueError("a static reference session retains one method instruction")
@@ -282,26 +394,17 @@ class _MovieDriver:
         else:
             if backend == "ray-data":
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
+                options = {}
             else:
                 from src.baselines.text.frameworks.daft_lotus_records import evaluate
+                options = daft_native_profile(self.plan['profile'])
             execute = lambda: evaluate(source, method, self.engine, self.generation, self.resources,
-                                       query_id=spec["query_id"])
+                                       query_id=spec["query_id"], **options)
         self.last_expected, self.last_query_directory = source.expected(spec["query_id"]), directory
         self.last_query_failure = None
         self.last_query_report = None
         try:
-            if self.plan.get("admission_cache") is not None:
-                from src.experiments.movie_matrix_support import run_record_admission
-                def execute_query(window, *, allow_exploration, search_hint=None):
-                    query_options.update(max_inflight=window, allow_exploration=allow_exploration,
-                                         search_hint=search_hint)
-                    return run_movie_query(source, checkout, method, self.generation, execute,
-                                          query_id=spec["query_id"], observer=emit)
-                self.last_query_report = run_record_admission(self.plan["admission_cache"],
-                    self.core_execution, source, method, self.generation, self.engine, self.resources,
-                    execute_query, warmup=spec["phase"] == "warmup")
-            else:
-                self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
+            self.last_query_report = run_movie_query(source, checkout, method, self.generation, execute,
                                        query_id=spec["query_id"], observer=emit)
             if backend == "semloom-core":
                 from src.experiments.movie_matrix_support import record_core_selection
@@ -316,37 +419,82 @@ class _MovieDriver:
 
     def close(self):
         receipts, errors = {}, []
-        for name, resource in (("model", self.owner), ("http_service", self.service)):
-            if resource is not None:
-                try:
-                    receipts[name] = (resource.close(timeout=20)
-                        if name == "model" and self.core_execution is not None
-                        and self.core_execution["mode"] == "async" else resource.close())
-                    if receipts[name].get("status") != "closed" or receipts[name].get("cleanup_errors"):
-                        errors.append(name + " cleanup unconfirmed")
-                except BaseException as error:
-                    receipts[name] = _failure(error)
-                    errors.append(name + " close failed")
-        if self.owner is not None and self.last_query_report is not None:
-            from src.experiments.lotus_records_movie import merge_unconsumed_call_results
+        repeated = self._close_attempted
+        self._close_attempted = True
+        resource = self.owner
+        if resource is not None:
             try:
-                late = getattr(self.owner, "last_query_report", None)
-                if late is not None:
+                if self.payload_pool is not None and repeated:
+                    grant = resource._service_allocation
+                    if not resource.cleanup_confirmed() and grant.describe()['status'] != 'released':
+                        receipts["model"] = self.payload_pool.retry_cleanup(grant.allocation_id, timeout=20)
+                    else:
+                        from .movie_records_service import close_service_owner
+                        receipts["model"] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+                elif self.payload_pool is not None:
+                    from .movie_records_service import close_service_owner
+                    receipts["model"] = close_service_owner(resource, self.ray, self.service_runtime, timeout=20)
+                else:
+                    receipts["model"] = (resource.close(timeout=20)
+                        if self.core_execution is not None
+                        and self.core_execution["mode"] == "async" else resource.close())
+                if receipts["model"].get("status") != "closed" or receipts["model"].get("cleanup_errors"):
+                    errors.append("model cleanup unconfirmed")
+            except BaseException as error:
+                receipts["model"] = _failure(error)
+                errors.append("model close failed")
+        if self.owner is not None and self.last_query_report is not None:
+            try:
+                if self.plan['backend'] == 'lotus-native':
+                    final = receipts.get('model', {}).get('native_final_accounting')
+                    if final is not None:
+                        if final['query_id'] != self.last_query_report['query_id']:
+                            raise ValueError('native closing accounting belongs to another query')
+                        # Source occurrences that the original SDK did not return
+                        # stay unknown. Native late usage is separate evidence.
+                        self.last_query_report['native_final_accounting'] = final
+                        del receipts['model']['native_final_accounting']
+                    if 'native_final_accounting' in self.last_query_report:
+                        receipts['final_query_accounting'] = self.last_query_report
+                        publish_private_json(self.last_query_directory / 'query-accounting-final.json',
+                                             redact_json_values(self.last_query_report))
+                elif (late := getattr(self.owner, "last_query_report", None)) is not None:
+                    from src.experiments.movie_records_query import merge_unconsumed_call_results
                     merge_unconsumed_call_results(self.last_query_report, self.last_expected, late,
                                                   primary=self.last_query_failure)
                     receipts["final_query_accounting"] = self.last_query_report
-                    write_private_json(self.last_query_directory / "query-accounting-final.json",
-                                       redact_json_values(self.last_query_report))
+                    if self.payload_pool is None:
+                        write_private_json(self.last_query_directory / "query-accounting-final.json",
+                                           redact_json_values(self.last_query_report))
             except BaseException as error:
                 receipts["accounting_failure"] = _failure(error)
                 errors.append("post-close query accounting failed")
-        # This driver only initializes a fresh local runtime in its private worker.
-        if self.created_ray and self.ray.is_initialized():
+        if self.payload_pool is not None and self.owner is not None:
             try:
-                if (self.plan["backend"] == "ray-data" and self.ray_identity is not None
+                if self.last_query_report is not None and not errors:
+                    from .movie_records_service import accept_service_results
+                    transfer = accept_service_results(self.owner, self.last_query_report, self.last_expected,
+                        self.last_query_directory, primary=self.last_query_failure)
+                    if transfer is not None:
+                        receipts['service_result_transfer'] = transfer
+                        receipts['model'] = self.owner.last_close_report
+                receipts['service_payload_pool'] = self.payload_pool.snapshot()
+            except BaseException as error:
+                receipts['service_acceptance_failure'] = _failure(error)
+                errors.append('service result acceptance failed')
+        # This driver only initializes a fresh local runtime in its private worker.
+        if self.created_ray and (self.payload_pool is not None or self.ray.is_initialized()):
+            try:
+                if self.payload_pool is not None:
+                    from .movie_records_service import finish_service_runtime
+                    receipts['ray'] = finish_service_runtime(self.ray, self.service_runtime, self.owner)
+                    if receipts['ray']['status'] != 'closed':
+                        errors.append('original Ray retained for pending owner cleanup')
+                elif (self.plan["backend"] == "ray-data" and self.ray_identity is not None
                         and self.ray.get_runtime_context().get_node_id() != self.ray_identity["node_id"]):
                     raise RuntimeError("Ray runtime identity changed; replacement runtime left untouched")
-                self.ray.shutdown()
+                else:
+                    self.ray.shutdown()
                 if self.plan["backend"] == "ray-data":
                     stopped = not self.ray.is_initialized()
                     receipts["ray"] = dict(status="closed" if stopped else "unknown",
@@ -372,6 +520,9 @@ class _MovieDriver:
             for number, handler in self.imlane_handlers.items():
                 signal.signal(number, handler)
             self.imlane_handlers = {}
+        if (self.payload_pool is not None and self.owner is not None and not errors
+                and self.owner._service_allocation.describe()['status'] == 'released'):
+            self.context.get('_records_payload_drivers', {}).pop(self.owner._service_allocation.allocation_id, None)
         return dict(status="closed" if not errors else "unknown", cleanup_errors=errors,
                     receipts=receipts, independent_gpu_exit_confirmed=None)
 
@@ -389,7 +540,7 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
     from src.baselines.text.movie_tasks import MovieTask
     from src.experiments.lotus_records_movie import model_preflight
     from integrations.imlane_records.chain_runtime import check_external_lease
-    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+    from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
     checked = check_plan(plan)
     check_external_lease(context["owner_context"])
     engine = EngineSpec.from_dict(plan["engine"])
@@ -405,13 +556,15 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
                 or claim.attempts or claim.remaining != query["expected_calls"]):
             raise ValueError("each query needs its own fresh, already-charged complete unit")
         model_preflight(MovieRecordSource.from_manifest(query["manifest"]), context["sembench_checkout"],
-            MovieTask.from_config(query["task"]).method(plan["model_name"]),
+            MovieTask.from_config(query["task"]).method(plan["model_name"],
+                answer_parser=plan.get('answer_parser', LOTUS_NATIVE)),
             GenerationSpec.from_dict(plan["generation"]), engine)
     # Whole units were permanently charged by the controller already. This
     # process-local single-use binding also covers embedded engines that do not
     # call the HTTP per-POST reserve hook, without inventing model attempts.
     for query in checked["queries"]:
         context["claims"][query["query_id"]].bind_execution()
+    pool_owned = 'service_payload_bytes' in plan and context.get('_records_payload_pool') is None
     context = dict(context, checked_queries={query["query_id"]: query for query in checked["queries"]})
     # Explicitly bind the assigned device before a local Ray model actor starts.
     import os
@@ -433,9 +586,36 @@ def run_movie_session(plan, context, output, *, observer=None, checkpoint=None):
                 query_state="fresh source, expected calls, ledger, results and evaluation for each query",
                 model_internal_cache="native backend owns KV/prefix policy; cache hits unavailable"))
         setup["preflight_seconds"] = (setup["preflight_end_ns"] - preflight_started) / 1e9
-        report = run_sequence(plan["queries"], lambda directory, spec: _MovieDriver(plan, context, directory, spec),
-            output, backend=plan["backend"], lifecycle=plan["lifecycle"], observer=observer,
-            setup=setup, checkpoint=checkpoint)
+        try:
+            report = run_sequence(plan["queries"], lambda directory, spec: _MovieDriver(plan, context, directory, spec),
+                output, backend=plan["backend"], lifecycle=plan["lifecycle"], observer=observer,
+                setup=setup, checkpoint=checkpoint)
+        except BaseException as error:
+            pool = context.get('_records_payload_pool')
+            if pool is not None:
+                error.records_payload_pool = pool
+                error.records_payload_drivers = dict(context.get('_records_payload_drivers', {}))
+                try:
+                    if getattr(error, 'session_report', None) is not None:
+                        from .movie_records_service import finish_service_pool
+                        snapshot, artifact = finish_service_pool(pool, output, owned=pool_owned)
+                        error.session_report.update(service_payload_pool=snapshot, service_payload_pool_artifact=artifact)
+                except BaseException as recording:
+                    error.add_note('service pool evidence: '+type(recording).__name__)
+            raise
+        pool = context.get('_records_payload_pool')
+        if pool is not None:
+            from .movie_records_service import finish_service_pool
+            try:
+                snapshot, artifact = finish_service_pool(pool, output, owned=pool_owned)
+                report.update(service_payload_pool=snapshot, service_payload_pool_artifact=artifact)
+            except BaseException as error:
+                report.update(status='failed', service_pool_evidence_error=_failure(error),
+                    service_payload_pool=pool.close() if pool_owned else pool.snapshot())
+                error.session_report = report
+                error.records_payload_pool = pool
+                error.records_payload_drivers = dict(context.get('_records_payload_drivers', {}))
+                raise
         return report
     finally:
         for key, value in before.items():

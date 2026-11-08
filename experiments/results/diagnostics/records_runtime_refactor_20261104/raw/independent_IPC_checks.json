@@ -1,0 +1,58 @@
+{
+  "base": "7e3019d",
+  "scope": "finite IPC defaults from complete independent declared budget only",
+  "unchanged": [
+    "legacy budget=None defaults",
+    "complete explicit IPC fields",
+    "typed IPC object identity",
+    "Core/Method/IPC separate accounting",
+    "minimum frames, per-item checks, ACK and unknown responsibility"
+  ],
+  "CPU": {
+    "independent_IPC_defaults_before": {
+      "selected": 5,
+      "passed": 2,
+      "failures": [],
+      "errors": [
+        "tests.execution_provider.test_records_capacity_defaults.IndependentIPCDefaultTests.test_old_R_and_query_C_do_not_resize_derived_IPC_grants",
+        "tests.execution_provider.test_records_capacity_defaults.IndependentIPCDefaultTests.test_omitted_and_equivalent_explicit_IPC_have_the_same_cache_identity",
+        "tests.execution_provider.test_records_capacity_defaults.IndependentIPCDefaultTests.test_partial_IPC_values_override_only_their_own_fields"
+      ],
+      "skipped": [],
+      "source_unchanged": true
+    },
+    "independent_IPC_defaults_after": {
+      "selected": 118,
+      "passed": 118,
+      "failures": [],
+      "errors": [],
+      "skipped": [],
+      "source_unchanged": true
+    }
+  },
+  "differential": {
+    "legacy_cases": 90,
+    "complete_explicit_cases": 30,
+    "differences": 0,
+    "cases_sha256": "da30adb7890b2007a64ab51819232fbce86dbcd80565eb3990d360d9c14d61bd"
+  },
+  "historical": {
+    "bindings": 3010,
+    "original_mismatches": 10,
+    "new_mismatches": 0,
+    "manifest_unchanged": true
+  },
+  "model_calls": 0,
+  "real_Ray": 0,
+  "GPU": 0,
+  "independent_review": "pending",
+  "published": false,
+  "artifact_sha256": {
+    "independent_IPC_defaults_before.json": "eaa52fa2a316e8325bf691a24bab9d89d85e7d2b657be81f82ccfd09a04ee14a",
+    "independent_IPC_defaults_before.log": "677fea3289c358c661a5073b79a5fb7efa429d25edb1bee6d4ae613b75d11884",
+    "independent_IPC_defaults_after.json": "237f2a5d6ae5de4e3c9a5c4dc694d2ca9b4b2e3a12553bc49d3d8fbaa73d6f29",
+    "independent_IPC_defaults_after.log": "66958bcdfd60b1c66df2115711635a9abf10d2610696b5085814238b4b4b8a43",
+    "capacity_defaults_differential.json": "2f441e21fc838e890e389f043c13fe7adcafd0b395af3bca1c85f9d6382a6245",
+    "capacity_defaults_differential_cases.json": "da30adb7890b2007a64ab51819232fbce86dbcd80565eb3990d360d9c14d61bd"
+  }
+}

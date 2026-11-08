@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-from src.baselines.common.private_artifacts import file_identity, json_metric, write_private_json
+from src.infrastructure.private_artifacts import file_identity, json_metric, write_private_json
 
 
 class ArtifactValueTests(unittest.TestCase):
@@ -40,16 +40,10 @@ class ArtifactValueTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 file_identity(Path(directory) / "missing")
 
-    def test_legacy_imports_are_the_same_function_without_wrappers(self):
-        from src.experiments.postgresql.query_evaluation import json_metric as old_json_metric
-        from src.experiments.postgresql.query_workloads import file_identity as old_file_identity
-        self.assertIs(old_json_metric, json_metric)
-        self.assertIs(old_file_identity, file_identity)
-
     def test_neutral_import_does_not_load_pg_or_execution_libraries(self):
         code_root = Path(__file__).resolve().parents[3]
         script = (
-            "import sys; from src.baselines.common.private_artifacts import file_identity, json_metric; "
+            "import sys; from src.infrastructure.private_artifacts import file_identity, json_metric; "
             "assert not any(name.startswith(('src.experiments.postgresql', 'psycopg', 'ray', 'daft')) "
             "for name in sys.modules)"
         )

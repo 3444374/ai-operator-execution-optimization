@@ -1,12 +1,14 @@
 """Opt-in private record observer. No payload logging or execution policy."""
 import atexit
-from collections import defaultdict
+from collections import defaultdict,deque
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict
 import functools
+import inspect
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import threading
@@ -25,14 +27,122 @@ _ALLOWED.update(('identities','outstanding','metrics','prompt_tokens','output_to
 _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
 _ALLOWED.add('batch_key')
+_ALLOWED.update(('method_row_ref', 'stage_index', 'action', 'selection_reason'))
+_ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s received_at_s decision_at_s expected_engine_uid'.split())
+_ALLOWED.update('control_request_index source_clock_domain received_clock_domain decision_clock_domain'.split())
+_ALLOWED.update('running waiting kv_usage preemptions_total finished_total generation_tokens_total'.split())
+_ALLOWED.update('native_capacity max_num_seqs max_num_batched_tokens max_model_len kv_cache_blocks kv_cache_block_tokens kv_free_bytes physical_free_bytes'.split())
+_RESOURCE_COUNTS = set('request_index request_session_id current_session_id response_session_id resource_session_id host_cpu_counter_sequence host_cpu_read_start_ns host_cpu_read_end_ns'.split())
+_RESOURCE_FLAGS = set('actor_unbound native_frame_present native_validation_accepted host_cpu_qualified audit_only'.split())
+_RESOURCE_CLOCKS = set('requested_at_s received_at_s host_cpu_raw_interval_s'.split())
+_RESOURCE_LABELS = set('request_clock_domain resource_counter_clock_domain native_clock_domain frame_disposition native_reason host_cpu_reject_reason'.split())
+_ALLOWED.update(_RESOURCE_COUNTS | _RESOURCE_FLAGS | _RESOURCE_CLOCKS | _RESOURCE_LABELS |
+                {'resource_attempt', 'resource_engine_uid', 'invalid_fields'})
 _installed = set()
 _parent = ContextVar('record_observer_parent', default=None)
 _lock = threading.Lock()
+_close_lock = threading.Lock()
 _fd = None
 _closed = False
+_close_receipt = None
 _phase = 'online'
 _n = _attempts = _errors = _dropped = _wall = _cpu = 0
 _settings_cache = None
+_buffer = deque()
+_buffer_lock = threading.Lock()
+_buffer_closed = False
+_buffer_dropped = _buffer_errors = _buffer_drained = _buffer_peak = 0
+_buffer_attempts = _buffer_enqueued = 0
+_buffer_wall = _buffer_cpu = 0
+
+
+def emit_feedback(event, **values):
+    """Keep only bounded native identities, clocks, counters and reason codes."""
+    uid_fields={'engine_uid','expected_engine_uid','owner_uid'}
+    count_fields={'session_id','source_sequence','control_request_index','running','waiting','preemptions_total','finished_total','generation_tokens_total'}
+    clock_fields={'source_observed_at_s','received_at_s','decision_at_s','kv_usage'}
+    safe={}
+    for key,value in values.items():
+        if key == 'resource_attempt' and isinstance(value,dict):
+            resource={}
+            for name,item in value.items():
+                if name in _RESOURCE_COUNTS:
+                    minimum=-1 if name in ('request_session_id','current_session_id','response_session_id','resource_session_id') else 0
+                    resource[name]=item if type(item)is int and minimum<=item<1<<64 else None
+                elif name in _RESOURCE_FLAGS:
+                    resource[name]=item if type(item)is bool else None
+                elif name in _RESOURCE_CLOCKS:
+                    signed=name=='host_cpu_raw_interval_s'
+                    resource[name]=(item if (type(item)is int and (-(1<<64)+1 if signed else 0)<=item<1<<64
+                        or type(item)is float and math.isfinite(item) and (signed or item>=0)) else None)
+                elif name in _RESOURCE_LABELS:
+                    resource[name]=item if type(item)is str and len(item)<=128 else None
+                elif name == 'resource_engine_uid':
+                    resource[name]=item if type(item)is str and len(item)==32 and all(c in '0123456789abcdef'for c in item)else None
+                elif name == 'invalid_fields' and isinstance(item,(list,tuple)):
+                    fields=_RESOURCE_COUNTS | _RESOURCE_CLOCKS | {'resource_engine_uid'}
+                    resource[name]=list(dict.fromkeys(field for field in item[:len(fields)]
+                        if type(field)is str and field in fields))
+            safe[key]=resource
+        elif key in uid_fields:
+            safe[key]=value if type(value)is str and len(value)==32 and all(c in '0123456789abcdef'for c in value)else None
+        elif key in count_fields:
+            safe[key]=value if type(value)is int and 0<=value<1<<64 else None
+        elif key in clock_fields:
+            safe[key]=value if type(value)in(int,float)and math.isfinite(value)and value>=0 else None
+        elif key=='accepted':safe[key]=value if type(value)is bool else None
+        elif key in ('stage','reason','scope','source_clock_domain','received_clock_domain','decision_clock_domain')and type(value)is str and len(value)<=128:safe[key]=value
+    emit_buffered(event,**safe)
+
+
+def emit_buffered(event, **values):
+    """Metadata only; no file I/O or sink lock on a producer thread.
+
+    Existing event/packet bounds also bound this buffer. close_events drains it
+    through the original sink; observation_ns is the enqueue clock, while the
+    ordinary event timestamp is the later sink-write clock.
+    """
+    global _buffer_dropped, _buffer_errors, _buffer_peak, _buffer_attempts, _buffer_enqueued
+    global _buffer_wall, _buffer_cpu
+    if not ENABLED:return
+    with _buffer_lock:_buffer_attempts+=1
+    try:
+        started=time.monotonic_ns();cpu=time.thread_time_ns()
+        limits = _settings_cache
+        if limits is None:raise RuntimeError('observer settings not initialized')
+        raw = dict(event=event,observation_ns=started,phase=_phase)
+        raw.update({k:_safe(v) for k,v in values.items() if k in _ALLOWED})
+        packet = json.dumps(raw,allow_nan=False,separators=(',',':')).encode()
+        with _buffer_lock:
+            if (_buffer_closed or len(_buffer)>=limits['max_events_per_process']
+                    or len(packet)>limits['max_event_bytes']):
+                _buffer_dropped += 1
+            else:
+                _buffer.append(packet);_buffer_enqueued+=1;_buffer_peak=max(_buffer_peak,len(_buffer))
+            # Commit cost with the event so close cannot drain an accepted
+            # packet before its enqueue bookkeeping has finished.
+            try:
+                _buffer_wall+=time.monotonic_ns()-started
+                _buffer_cpu+=time.thread_time_ns()-cpu
+            except Exception:_buffer_errors+=1
+    except Exception:
+        with _buffer_lock:_buffer_errors += 1
+
+
+def _drain_buffer():
+    global _buffer_closed, _buffer_drained, _buffer_errors
+    with _buffer_lock:
+        _buffer_closed=True
+    while True:
+        with _buffer_lock:
+            if not _buffer:break
+            packet=_buffer.popleft()
+        try:
+            value=json.loads(packet);event=value.pop('event')
+            emit(event,**value)
+        except Exception:
+            with _buffer_lock:_buffer_errors+=1
+        _buffer_drained += 1
 
 
 def settings():
@@ -55,14 +165,22 @@ def core_key(value):
 
 
 def observe_ref_ready(ref, key, identities, *, batch_key=None, scope=None):
-    if not handoff_profile():return
+    if not handoff_profile():return ref
+    awaitable=inspect.isawaitable(ref)
     def completed(unused):
-        emit('driver_batch_future_done'if key is None else 'driver_future_done',
+        emit_buffered('driver_future_done',
              key=key,identities=identities,batch_key=batch_key,
-             scope=scope or 'Python Future completion notification; original await determines outcome')
+             scope=scope or ('native owner awaiter settled; cancellation is not remote completion' if awaitable
+                            else 'Python Future completion notification; original await determines outcome'))
+    if awaitable:
+        async def observed():
+            try:return await ref
+            finally:completed(None)
+        return observed()
     try:ref.future().add_done_callback(completed)
     except Exception as error:
         emit('handoff_probe_unknown',key=key,error_type=type(error).__name__)
+    return ref
 
 
 def _safe(value):
@@ -115,30 +233,63 @@ def emit(event, **values):
 
 
 def close_events():
-    global _fd, _closed, _errors
+    global _closed, _errors, _fd, _close_receipt
     if not ENABLED:
         return
+    # Draining calls emit(), which takes _lock. A separate lock keeps the whole
+    # drain/fsync/footer transaction owned by one closer without blocking enqueue.
+    with _close_lock:
+        if not _closed:
+            try:_close_receipt=_close_events()
+            except BaseException:
+                with _lock:
+                    _closed=True;_errors+=1
+                    descriptor,_fd=_fd,None
+                    if descriptor is not None:
+                        try:os.close(descriptor)
+                        except BaseException:_errors+=1
+                raise
+        return (None if _close_receipt is None else dict(_close_receipt,
+            feedback_buffer=dict(_close_receipt['feedback_buffer'])))
+
+
+def _close_events():
+    global _fd, _closed, _errors
+    _drain_buffer()
     with _lock:
-        if _closed:
-            return
         flushed = False
         if _fd is not None:
             descriptor=_fd;_fd=None
-            try:os.fsync(descriptor);flushed=True
-            except OSError:_errors+=1
-            try:os.close(descriptor)
-            except OSError:_errors+=1;flushed=False
+            try:
+                try:os.fsync(descriptor);flushed=True
+                except OSError:_errors+=1
+            finally:
+                try:os.close(descriptor)
+                except OSError:_errors+=1;flushed=False
         _closed = True
-        status = dict(events_written=_n, events_attempted=_attempts, dropped=_dropped, errors=_errors,
+        status = dict(events_written=_n, events_attempted=_attempts+_buffer_dropped+_buffer_errors,
+                       dropped=_dropped+_buffer_dropped, errors=_errors+_buffer_errors,
                       emit_wall_ns=_wall, emit_thread_cpu_ns=_cpu, closed=True,
                       flush_confirmed=flushed, last_sequence=_attempts,
                       scope='this observer sink only; not proof of complete CUPTI/process-tree capture')
+        status['feedback_buffer']=dict(attempted=_buffer_attempts,enqueued=_buffer_enqueued,
+            drained=_buffer_drained,dropped=_buffer_dropped,errors=_buffer_errors,
+            peak_events=_buffer_peak,remaining=len(_buffer),closed=_buffer_closed,
+            event_limit=settings()['max_events_per_process'],packet_byte_limit=settings()['max_event_bytes'],
+            enqueue_wall_ns=_buffer_wall if not _buffer_errors else None,
+            enqueue_thread_cpu_ns=_buffer_cpu if not _buffer_errors else None,
+            drain_complete=not _buffer and not _buffer_dropped and not _buffer_errors)
+        footer_written=False
         try:
             path=ROOT/'events'/('events-'+str(os.getpid())+'.status.json')
             with path.open('x') as stream:json.dump(status, stream)
             path.chmod(0o600)
+            footer_written=True
         except OSError:
             _errors += 1
+        # The returned transaction includes failures after the footer snapshot.
+        # Never use a readable pre-existing file as this transaction's proof.
+        return dict(status,pid=os.getpid(),footer_written=footer_written,errors=_errors+_buffer_errors)
 
 
 if ENABLED:
@@ -178,6 +329,7 @@ def observe_method(cls, name, operation, members):
     original=getattr(cls,name)
     @functools.wraps(original)
     def wrapped(self, rows, *args, **kwargs):
+        if not ENABLED or _closed:return original(self,rows,*args,**kwargs)
         identities=members(self,rows,args,kwargs)
         legacy='prepare' if operation.endswith('prepare') else 'parser' if operation.endswith('parser') else 'method_complete'
         emit(legacy+'_start',identities=identities)
@@ -194,7 +346,9 @@ def observe_method(cls, name, operation, members):
 def install_cpu_hooks():
     if not ENABLED or handoff_profile() or 'cpu' in _installed:return
     _installed.add('cpu')
-    from src.semantic_methods.lotus.record_chain import LotusRecordMethod,ChainRun,stage_identity
+    from src.semantic_methods.lotus.record_method import LotusRecordMethod
+    from src.semantic_methods.lotus.record_chain import ChainRun
+    from src.semantic_methods.lotus.record_types import stage_identity
     from src.semantic_methods.lotus import engine
     def chain_members(self,records,args,kwargs):
         if not isinstance(records,(list,tuple)):return None
@@ -235,15 +389,42 @@ def memory_snapshot(boundary):
          scope='sparse observed process snapshots; not phase peaks or additive shared RSS')
 
 
+def install_ready_hook():
+    """Observe after the original callback; never replace its clock or policy state."""
+    if not ENABLED or handoff_profile() or 'method_ready' in _installed:return
+    from src.semantic_methods.driver import MethodDriver
+    _installed.add('method_ready')
+    original=MethodDriver._ready_event
+    @functools.wraps(original)
+    def observed(self,row,action,reason=None,key=None):
+        result=original(self,row,action,reason,key)
+        if ENABLED and not _closed:
+            try:
+                emit('method_ready_boundary', action=action,
+                     method_row_ref=hashlib.sha256(row.identity.call_id.encode()).hexdigest(),
+                     stage_index=row.stages, session_id=self.session.session_id,
+                     key=None if key is None else asdict(key), selection_reason=reason,
+                     scope='after original method boundary; selection reason is not capacity diagnosis')
+            except Exception:
+                pass  # A passive observer cannot disable the existing feedback callback.
+        return result
+    MethodDriver._ready_event=observed
+
+
 def install_driver():
     if not ENABLED or 'driver' in _installed:return
     _installed.add('driver');install_cpu_hooks()
+    handoff=handoff_profile()
+    point=emit_buffered if handoff else emit
+    install_ready_hook()
+    install_feedback_observer()
     from src.execution_provider.adapters import lotus_records_actor_owner as owner,lotus_records_async_actor as async_owner
     from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
-    from src.execution_provider.adapters import lotus_records_core
-    from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor
+    from src.scheduling.core.session import SessionEngine
+    from record_ipc_observer import ObservedAsyncCoreModelActor,ObservedPrepareActor,install_prepare_close
     async_owner.AsyncRecordsActorOwner._model_actor_type=lambda self:ObservedAsyncCoreModelActor
     owner._PrepareActor=ObservedPrepareActor
+    install_prepare_close(owner.RecordsActorOwner)
     original_env=owner._runtime_env
     def runtime_env(python):
         settings=original_env(python);variables=dict(settings['env_vars'])
@@ -262,12 +443,14 @@ def install_driver():
             try:
                 reference_reader=getattr(transport,'retained_refs',None)
                 references=reference_reader() if callable(reference_reader) else None
-                emit('Core_'+kind,key=asdict(key),usage=asdict(core.capacity.usage()),retained_refs=references)
-            except Exception as error:emit('core_observation_unavailable',error_type=type(error).__name__)
+                point('Core_'+kind,key=asdict(key),
+                    usage=None if handoff else asdict(core.capacity.usage()),retained_refs=references,
+                    scope='Core key transition; per-event usage sampled only in full profile')
+            except Exception as error:point('core_observation_unavailable',error_type=type(error).__name__)
         core.sink=sink
     # Both public owners create their Core lazily. Observe the real construction
     # once, before open/offer, rather than dereferencing owner.core in __init__.
-    core_type=lotus_records_core.SessionEngine
+    core_type=SessionEngine
     constructor=core_type.__init__
     @functools.wraps(constructor)
     def construct(self,*args,**kwargs):
@@ -283,33 +466,24 @@ def install_driver():
             members=ids([json.loads(task.task.payload)['row']])
             member=getattr(task,'member',None)
             batch=None if member is None else asdict(member.batch_key)
-            emit('Ray_submit_start',identities=members,key=asdict(task.key),batch_key=batch,
+            point('Ray_submit_start',identities=members,key=asdict(task.key),batch_key=batch,
                  logical_input_bytes=len(task.task.payload),
                  scope='member transport entry; bulk data RPC is owned by the existing batch driver')
-        except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+        except Exception as error:point('handoff_probe_unknown',error_type=type(error).__name__)
         result=original(self,task,*args,**kwargs)
         try:
-            emit('Ray_submit_return',key=asdict(task.key),batch_key=batch,retained_refs=self.retained_refs())
-            if handoff_profile():observe_ref_ready(result,asdict(task.key),members,batch_key=batch,
+            point('Ray_submit_return',key=asdict(task.key),batch_key=batch,retained_refs=self.retained_refs())
+            if handoff_profile():result=observe_ref_ready(result,asdict(task.key),members,batch_key=batch,
                 scope=('local member Future ready after native batch-page decode; not Ray RPC completion'
                        if batch is not None else None))
-        except Exception as error:emit('handoff_probe_unknown',error_type=type(error).__name__)
+        except Exception as error:point('handoff_probe_unknown',error_type=type(error).__name__)
         return result
     LotusChainActorBackend._submit_task=submit
-    poll=getattr(async_owner.AsyncRecordsActorOwner,'poll_prepared_batch',None)
-    if callable(poll):
-        @functools.wraps(poll)
-        def batch_poll(self,batch_key):
-            result=poll(self,batch_key)
-            observe_ref_ready(result,None,None,batch_key=core_key(batch_key),
-                scope='Ray poll Future notification only; no result read, member count or unique page pairing')
-            return result
-        async_owner.AsyncRecordsActorOwner.poll_prepared_batch=batch_poll
     original_audit=LotusChainActorBackend._audit_result
     @functools.wraps(original_audit)
     def audit(self,expected,value):
         if handoff_profile():
-            emit('driver_result_audit_enter',identities=ids([value]),
+            point('driver_result_audit_enter',identities=ids([value]),
                  scope='after decode, before native audit; recovery may also enter this hook')
         return original_audit(self,expected,value)
     LotusChainActorBackend._audit_result=audit
@@ -317,11 +491,35 @@ def install_driver():
     @functools.wraps(transferred)
     def transfer(self,task,value):
         member=getattr(task,'member',None)
-        emit('Ray_result_to_Core',identities=ids([value]),key=asdict(task.key),
+        point('Ray_result_to_Core',identities=ids([value]),key=asdict(task.key),
              batch_key=None if member is None else asdict(member.batch_key),retained_refs=self.retained_refs())
         return transferred(self,task,value)
     LotusChainActorBackend._result_transferred=transfer
     emit('driver_observer_installed')
+
+
+def install_feedback_observer():
+    # The tool can inspect older runtimes, but must not claim their consumer
+    # freshness decisions are observed when the optional callback is absent.
+    if 'feedback' in _installed:return
+    _installed.add('feedback')
+    try:
+        import inspect
+        from src.scheduling.runtime.observations import NonBlockingMetricsObservationProvider as Provider
+        original=Provider.__init__
+        if 'observer' not in inspect.signature(original).parameters:
+            emit('native_feedback_audit_unavailable',reason='runtime_has_no_consumer_observer');return
+        @functools.wraps(original)
+        def construct(self,*args,**kwargs):
+            previous=kwargs.get('observer')
+            def record(value):
+                emit_feedback('native_feedback_consumption',**value)
+                if previous is not None:previous(value)
+            kwargs['observer']=record
+            return original(self,*args,**kwargs)
+        Provider.__init__=construct
+    except ImportError:
+        emit('native_feedback_audit_unavailable',reason='runtime_has_no_consumer_provider')
 
 
 def install_actor():
@@ -362,7 +560,7 @@ def install_model():
     install_transport(child=True)
     from vllm.engine.arg_utils import AsyncEngineArgs
     from src.serving.backends.vllm_async_engine import VllmAsyncEngine
-    from src.serving.backends import vllm_engine as common
+    from src.serving.backends import vllm_protocol as common
     from src.observability.native_model_api_trace import install as install_native_api
     from vllm.v1.engine.async_llm import AsyncLLM
     import torch
@@ -406,10 +604,12 @@ def install_model():
     @functools.wraps(convert)
     def converted(identity,output,*a,**kw):
         result=convert(identity,output,*a,**kw)
-        metrics=getattr(output,'metrics',None)
-        measured={key:getattr(metrics,key,None) for key in ('arrival_time','queued_ts','scheduled_ts','first_token_ts','last_token_ts','num_generation_tokens')}
-        emit('native_result',identities=ids([identity]),request_id=output.request_id,engine_uid=result['engine_uid'],
-             metrics=measured,prompt_tokens=result.get('prompt_tokens'),output_tokens=result.get('completion_tokens'))
+        try:
+            metrics=getattr(output,'metrics',None)
+            measured={key:getattr(metrics,key,None) for key in ('arrival_time','queued_ts','scheduled_ts','first_token_ts','last_token_ts','num_generation_tokens')}
+            emit('native_result',identities=ids([identity]),request_id=output.request_id,engine_uid=result['engine_uid'],
+                 metrics=measured,prompt_tokens=result.get('prompt_tokens'),output_tokens=result.get('completion_tokens'))
+        except Exception:pass
         return result
     common.result_from_output=converted
     @functools.wraps(close)

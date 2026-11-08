@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 import weakref
 from dataclasses import dataclass
@@ -19,6 +18,7 @@ from .execution import (
     SemLoomRayWorkerPool,
 )
 from .staged import build_encoded_image_block_descriptor, image_transform_signature
+from .staged_metrics import StagedImageMetrics
 
 
 @dataclass
@@ -183,43 +183,10 @@ def run_project_ray_hse_pipeline(
     source_sequence = 0
     available_cpu_actors = set(range(len(worker_pool.preprocessors)))
     available_gpu_actors = set(range(len(worker_pool.gpu_actors)))
-    first_output_s: float | None = None
-    batch_completion_wall_s: list[float] = []
-    batch_actor_service_s: list[float] = []
-    batch_unattributed_wait_s: list[float] = []
-    batch_preprocess_s: list[float] = []
-    batch_host_copy_s: list[float] = []
-    batch_h2d_s: list[float] = []
-    batch_forward_s: list[float] = []
-    batch_d2h_s: list[float] = []
-    batch_source_next_s: list[float] = []
-    batch_driver_materialize_s: list[float] = []
-    batch_submit_s: list[float] = []
-    batch_prepare_queue_s: list[float] = []
-    batch_ready_residence_s: list[float] = []
-    encoded_bytes = 0
-    input_tensor_bytes = 0
-    device_input_bytes = 0
-    output_bytes = 0
+    metrics = StagedImageMetrics()
     submitted_batches = 0
-    active_blocks_peak = 0
-    encoded_bytes_peak = 0
-    ready_bytes_peak = 0
-    prepare_inflight_peak = 0
-    model_inflight_peak = 0
     started = time.perf_counter()
     batches = iter(source_df.into_batches(batch_size).to_arrow_iter(results_buffer_size=2))
-
-    def record_peaks() -> None:
-        nonlocal active_blocks_peak, encoded_bytes_peak, ready_bytes_peak
-        nonlocal prepare_inflight_peak, model_inflight_peak
-        snapshot = broker.snapshot()
-        active_blocks_peak = max(active_blocks_peak, snapshot.active_blocks)
-        encoded_bytes_peak = max(encoded_bytes_peak, snapshot.encoded_held_bytes)
-        ready_bytes_peak = max(ready_bytes_peak, snapshot.ready_held_bytes)
-        prepare_inflight_peak = max(prepare_inflight_peak, snapshot.prepare_inflight)
-        model_inflight_peak = max(model_inflight_peak, snapshot.model_inflight)
-
 
     def submit_ready_models() -> bool:
         progressed = False
@@ -230,7 +197,7 @@ def run_project_ray_hse_pipeline(
             actor_index = min(available_gpu_actors)
             if lease is None:
                 break
-            batch_ready_residence_s.append(
+            metrics.batch_ready_residence_s.append(
                 max(
                     0.0,
                     lease.issued_at_s
@@ -249,11 +216,11 @@ def run_project_ray_hse_pipeline(
             active_calls[lease.lease_id] = call
             call.reference = gpu_actor.embed.remote(call.payload_ref)
             submitted_at_s = time.perf_counter()
-            batch_submit_s.append(submitted_at_s - submit_started)
+            metrics.batch_submit_s.append(submitted_at_s - submit_started)
             model_calls[call.reference] = call
             del call
             progressed = True
-            record_peaks()
+            metrics.record_peaks(broker.snapshot())
 
         return progressed
 
@@ -275,7 +242,7 @@ def run_project_ray_hse_pipeline(
                 except StopIteration:
                     source_exhausted = True
                     break
-                batch_source_next_s.append(time.perf_counter() - source_next_started)
+                metrics.batch_source_next_s.append(time.perf_counter() - source_next_started)
                 materialize_started = time.perf_counter()
                 doc_ids = tuple(str(item.as_py()) for item in record_batch["doc_id"])
                 encoded = [item.as_py() for item in record_batch["image"]]
@@ -293,7 +260,7 @@ def run_project_ray_hse_pipeline(
                     embedding_dimension=embedding_dimension,
                     preprocessing_identity=preprocessing_identity,
                 )
-                batch_driver_materialize_s.append(time.perf_counter() - materialize_started)
+                metrics.batch_driver_materialize_s.append(time.perf_counter() - materialize_started)
                 if descriptor.physical_bytes > encoded_block_bytes_upper_bound:
                     raise BufferError(
                         "HSE source block exceeded the immutable source-derived byte "
@@ -307,8 +274,6 @@ def run_project_ray_hse_pipeline(
                         "one HSE prepared block exceeds ready byte/work capacity; "
                         "reduce batch_size or increase the explicit limits"
                     )
-                if not broker.can_accept_encoded(descriptor):
-                    break
                 broker.enqueue_encoded(descriptor)
                 encoded_payloads[descriptor.block_id] = encoded
                 del encoded
@@ -316,7 +281,7 @@ def run_project_ray_hse_pipeline(
                 source_sequence += 1
                 submitted_batches += 1
                 progressed = True
-                record_peaks()
+                metrics.record_peaks(broker.snapshot())
 
             while True:
                 if not available_cpu_actors:
@@ -335,13 +300,13 @@ def run_project_ray_hse_pipeline(
                     num_returns=2
                 ).remote(lease.descriptor, encoded)
                 del encoded
-                batch_submit_s.append(time.perf_counter() - submit_started)
-                batch_prepare_queue_s.append(
+                metrics.batch_submit_s.append(time.perf_counter() - submit_started)
+                metrics.batch_prepare_queue_s.append(
                     max(0.0, lease.issued_at_s - admitted_at[lease.descriptor.block_id])
                 )
                 prepare_calls[call.reference] = call
                 del call
-                record_peaks()
+                metrics.record_peaks(broker.snapshot())
 
             progressed = submit_ready_models() or progressed
 
@@ -366,7 +331,7 @@ def run_project_ray_hse_pipeline(
                 prepare_calls.pop(reference)
                 del call
                 progressed = True
-                record_peaks()
+                metrics.record_peaks(broker.snapshot())
                 continue
 
             call = model_calls[reference]
@@ -380,28 +345,11 @@ def run_project_ray_hse_pipeline(
             call.payload_ref = None
             del call
             audit.add_result(result)
-            batch_completion_wall_s.append(completion_wall_s)
-            batch_actor_service_s.append(result.service_s)
-            telemetry = result.telemetry
-            batch_preprocess_s.append(telemetry.preprocess_s)
-            batch_unattributed_wait_s.append(
-                max(0.0, completion_wall_s - telemetry.preprocess_s - result.service_s)
-            )
-            batch_host_copy_s.append(telemetry.host_copy_s)
-            if telemetry.h2d_s > 0:
-                batch_h2d_s.append(telemetry.h2d_s)
-            if telemetry.forward_s > 0:
-                batch_forward_s.append(telemetry.forward_s)
-            if telemetry.d2h_s > 0:
-                batch_d2h_s.append(telemetry.d2h_s)
-            encoded_bytes += telemetry.encoded_bytes
-            input_tensor_bytes += telemetry.input_tensor_bytes
-            device_input_bytes += telemetry.device_input_bytes
-            output_bytes += telemetry.output_bytes
-            if first_output_s is None:
-                first_output_s = time.perf_counter() - started
+            metrics.record_model_result(result, completion_wall_s)
+            if metrics.first_output_s is None:
+                metrics.first_output_s = time.perf_counter() - started
             progressed = True
-            record_peaks()
+            metrics.record_peaks(broker.snapshot())
 
     except BaseException as error:
         execution_error = error
@@ -448,47 +396,11 @@ def run_project_ray_hse_pipeline(
     final_snapshot = broker.snapshot()
     if final_snapshot.completed != submitted_batches or not broker.is_drained():
         raise RuntimeError("HSE broker did not drain exactly once")
-    engine_stats = json.dumps(
-        {
-            "broker": "bounded_stage_broker_v1",
-            "encoded_bytes_peak": encoded_bytes_peak,
-            "execution_mode": "hse_static",
-            "model_inflight_peak": model_inflight_peak,
-            "prepare_inflight_peak": prepare_inflight_peak,
-            "ready_bytes_peak": ready_bytes_peak,
-            "ready_work_limit": limits.ready_work,
-        },
-        sort_keys=True,
-    )
-    return ExecutionResult(
+    return metrics.finish(
         total_s=total_s,
-        first_output_s=first_output_s or total_s,
-        audit=audit.finish(),
-        batch_completion_wall_s=tuple(batch_completion_wall_s),
-        batch_actor_service_s=tuple(batch_actor_service_s),
-        batch_unattributed_wait_s=tuple(batch_unattributed_wait_s),
-        batch_preprocess_s=tuple(batch_preprocess_s),
-        batch_host_copy_s=tuple(batch_host_copy_s),
-        batch_h2d_s=tuple(batch_h2d_s),
-        batch_forward_s=tuple(batch_forward_s),
-        batch_d2h_s=tuple(batch_d2h_s),
-        batch_source_next_s=tuple(batch_source_next_s),
-        batch_driver_materialize_s=tuple(batch_driver_materialize_s),
-        batch_submit_s=tuple(batch_submit_s),
-        batch_prepare_queue_s=tuple(batch_prepare_queue_s),
-        batch_ready_residence_s=tuple(batch_ready_residence_s),
-        encoded_bytes=encoded_bytes,
-        input_tensor_bytes=input_tensor_bytes,
-        device_input_bytes=device_input_bytes,
-        output_bytes=output_bytes,
         submitted_batches=submitted_batches,
-        pending_batches_peak=active_blocks_peak,
-        encoded_bytes_peak=encoded_bytes_peak,
-        ready_bytes_peak=ready_bytes_peak,
-        prepare_inflight_peak=prepare_inflight_peak,
-        model_inflight_peak=model_inflight_peak,
-        execution_mode="hse_static",
-        engine_stats=engine_stats,
+        audit=audit,
+        ready_work_limit=limits.ready_work,
     )
 
 

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import http.client
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from src.infrastructure.environment import (
@@ -64,12 +67,15 @@ class EnvironmentContractTests(unittest.TestCase):
                     }
                 ],
             }
-            results = check_environment(
-                profile,
-                manifest,
-                {"DATA_ROOT": str(root), "ARTIFACT_ROOT": str(root)},
-                ("test",),
-            )
+            from src.infrastructure.cpu_allocation import CpuCapacity
+            with mock.patch("src.infrastructure.environment.observe_cpu_capacity",
+                            return_value=CpuCapacity(4, None, 4, "CPU_fixture")):
+                results = check_environment(
+                    profile,
+                    manifest,
+                    {"DATA_ROOT": str(root), "ARTIFACT_ROOT": str(root)},
+                    ("test",),
+                )
         self.assertTrue(all(item.status == "ok" for item in results))
 
     def test_group_list_is_deduplicated(self) -> None:
@@ -119,6 +125,73 @@ class EnvironmentContractTests(unittest.TestCase):
                     "licensed",
                     {"DATA_ROOT": directory},
                 )
+
+    def test_snapshot_download_owns_interrupted_and_cached_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'model'
+            partial = target / '.cache/huggingface/download/weights.incomplete'
+            partial.parent.mkdir(parents=True)
+            partial.write_bytes(b'weights')
+            manifest = {'assets': [{'id': 'fixture', 'kind': 'huggingface_snapshot',
+                'repo_id': 'placeholder/model', 'target': '${MODEL_ROOT}/model',
+                'minimum_bytes': 4}]}
+
+            def download(**kwargs):
+                if client.call_count == 1:
+                    raise OSError('fixture interrupted')
+                if partial.exists():
+                    partial.replace(target / 'weights.bin')
+                return str(target)
+
+            client = mock.Mock(side_effect=download)
+            with mock.patch.dict('sys.modules', {'huggingface_hub': SimpleNamespace(snapshot_download=client)}), \
+                 mock.patch('src.infrastructure.environment.shutil.disk_usage',
+                            return_value=SimpleNamespace(free=0)):
+                with self.assertRaisesRegex(OSError, 'fixture interrupted'):
+                    download_asset(manifest, 'fixture', {'MODEL_ROOT': directory})
+                self.assertEqual(partial.read_bytes(), b'weights')
+                self.assertEqual(download_asset(manifest, 'fixture', {'MODEL_ROOT': directory}), target)
+                self.assertEqual((target / 'weights.bin').read_bytes(), b'weights')
+                self.assertFalse(partial.exists())
+                self.assertEqual(download_asset(manifest, 'fixture', {'MODEL_ROOT': directory}), target)
+                self.assertEqual(client.call_count, 3)
+                self.assertEqual(client.call_args_list, [mock.call(
+                    repo_id='placeholder/model', repo_type='model', local_dir=target)] * 3)
+
+    def test_interrupted_download_keeps_partial_and_can_resume(self) -> None:
+        def response(wire):
+            result = http.client.HTTPResponse(
+                SimpleNamespace(makefile=lambda *args, **kwargs: io.BytesIO(wire))
+            )
+            result.begin()
+            return result
+
+        for status in (200, 206):
+            with self.subTest(resume_status=status), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory) / 'asset.dat'
+                partial = target.with_suffix('.dat.partial')
+                manifest = {'assets': [{'id': 'fixture', 'kind': 'http_file',
+                    'target': '${DATA_ROOT}/asset.dat', 'url': 'https://localhost/asset.dat',
+                    'minimum_bytes': 4}]}
+                first = response(b'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabcde')
+                body = b'abcdefghij' if status == 200 else b'fghij'
+                headers = f'HTTP/1.1 {status} OK\r\nContent-Length: {len(body)}\r\n'
+                if status == 206:
+                    headers += 'Content-Range: bytes 5-9/10\r\n'
+                second = response((headers + '\r\n').encode() + body)
+                with mock.patch('src.infrastructure.environment.urllib.request.urlopen',
+                                side_effect=[first, second]) as request:
+                    with self.assertRaisesRegex(OSError, 'incomplete asset download'):
+                        download_asset(manifest, 'fixture', {'DATA_ROOT': directory})
+                    self.assertFalse(target.exists())
+                    self.assertEqual(partial.read_bytes(), b'abcde')
+                    self.assertTrue(first.isclosed())
+                    self.assertEqual(download_asset(manifest, 'fixture', {'DATA_ROOT': directory}), target)
+                self.assertEqual(target.read_bytes(), b'abcdefghij')
+                self.assertFalse(partial.exists())
+                self.assertTrue(second.isclosed())
+                self.assertIsNone(request.call_args_list[0].args[0].get_header('Range'))
+                self.assertEqual(request.call_args_list[1].args[0].get_header('Range'), 'bytes=5-')
 
     def test_machine_profile_selects_specific_match_before_generic(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

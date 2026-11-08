@@ -1,5 +1,9 @@
 # DuckDB对照
 
+> **当前使用范围（2026-11-07）**：本页的产品语义与计时比较方法继续作参考；§3、§5的SQuAD问答数据三臂执行配方、
+> PostgreSQL读取与旧画像器按历史材料解释。[原整查询脚本](../../reproduction/native_baselines/historical_sources/7bf1d92b/code/scripts/baselines/squad_database_e2e_runner.py)
+> 已不在当前脚本目录，不作为现行入口或待执行安排；实际实现从[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)核对。
+
 > **文档身份（2026-08-27）**：持续有效的比较协议，不是待执行计划。DuckDB 只在语义兼容的
 > bounded-output 轨中使用；是否新增运行由顶层状态文件决定。
 

@@ -1,0 +1,141 @@
+{
+  "base": "6ec2dde0e626c72f53b38a4f46222a4801f865f1",
+  "parallel_baseline_preserved": "94367ea86197178055e8602a66fe86f0db44e965",
+  "production_commit": "9521a971af4c1e01a4f5bd59d88bc7c7e9fab572",
+  "production_tree": "2513d0ea678e30666c243d33f2af61c2951d3268",
+  "final_cpu": {
+    "methods": 39,
+    "passed": 39,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "elapsed_s": 7.352895000018179,
+    "source_files": 1076,
+    "all_recorded_code_matches_commit": true,
+    "selectors": [
+      "tests.execution_provider.test_records_capacity_modules",
+      "tests.experiments.test_session_capacity_preflight",
+      "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_inflight_close_keeps_result_actor_until_transport_delivery_finishes",
+      "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_failed_or_interrupted_delivery_still_releases_actor_and_reports_RPC_state",
+      "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_final_known_result_ack_drains_before_actor_kill_with_remaining_cleanup_deadline",
+      "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_inflight_or_unknown_compute_still_stops_producer_before_waiting_for_delivery",
+      "tests.execution_provider.test_lotus_batch_poll_ack.BatchPollAckCloseTests.test_interrupted_final_ack_drain_always_runs_original_actor_cleanup",
+      "tests.experiments.test_probe_deadlines.ProbeSuiteDeadlineTests",
+      "tests.experiments.test_map_observation_probe",
+      "tests.experiments.test_probe_deadlines.ProbeCaseDeadlineTests.test_observation_expiry_after_dispatch_stops_intake_and_preserves_settled_calls",
+      "tests.experiments.test_probe_deadlines.ProbeCaseDeadlineTests.test_expired_observation_case_records_failure_and_closes_writer_before_worker_start",
+      "tests.experiments.test_probe_deadlines.ProbeCaseDeadlineTests.test_component_workers_wait_only_until_the_shared_deadline",
+      "tests.experiments.test_probe_deadlines.ProbeCaseDeadlineTests.test_late_start_signal_does_not_authorize_another_component_grant",
+      "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_order_duplicate_bodies_and_single_tail_survive_reopen",
+      "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_bad_or_unbounded_input_never_partially_charges",
+      "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_insufficient_quota_rejects_whole_batch_and_tail_can_spend",
+      "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_close_and_deadline_stop_new_batches_without_refund",
+      "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_insert_failure_rolls_back_entire_batch",
+      "tests.experiments.test_shared_request_budget.BatchRequestBudgetTests.test_commit_failure_returns_no_permission_and_preserves_actual_commit",
+      "tests.experiments.test_native_baseline_reproduction.HistoricalProjectionTests.test_all_named_projections_materialize_with_original_ids_and_exact_bytes",
+      "tests.execution_provider.test_multisession_gateway.DispatchCloseTests"
+    ],
+    "real_Ray": 0,
+    "models": 0,
+    "GPU": 0
+  },
+  "original_dispatch_case": {
+    "selected_methods": 1,
+    "failed_subcases": 2,
+    "errors": 0,
+    "fixture_added_against_original_6ec2_dispatch_source": true,
+    "cause": "empty or invalid opening frame closes inside its branch and again in the same finally"
+  },
+  "history": {
+    "capacity_read_bindings_unchanged": 5,
+    "whole_3010_file_restore_is_one_of_the_final_methods": true,
+    "added_routes": {
+      "two_retired_CLI": 10,
+      "original_dispatch": 5
+    },
+    "original_expected_hashes_and_variant_identities_unchanged": true,
+    "retired_source_implementations_keep_existing_read_locations": true
+  },
+  "metrics": {
+    "scope": "Physical Python lines with blanks/comments; core code/src excludes experiments and baselines, includes research; all src+scripts wider; tests and integrations separate.",
+    "counts": {
+      "base": {
+        "commit": "6ec2dde0e626c72f53b38a4f46222a4801f865f1",
+        "core_Python": 56197,
+        "src_and_scripts_Python": 114298,
+        "tests_Python": 96409,
+        "integrations_Python_CPP_HPP": 5638
+      },
+      "parallel": {
+        "commit": "94367ea86197178055e8602a66fe86f0db44e965",
+        "core_Python": 56197,
+        "src_and_scripts_Python": 114476,
+        "tests_Python": 96743,
+        "integrations_Python_CPP_HPP": 5638
+      },
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_Python": 54091,
+        "src_and_scripts_Python": 140335,
+        "tests_Python": 102763,
+        "integrations_Python_CPP_HPP": 4521
+      },
+      "cleanup_start": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_Python": 61628,
+        "src_and_scripts_Python": 149645,
+        "tests_Python": 130062,
+        "integrations_Python_CPP_HPP": 4528
+      },
+      "candidate": {
+        "commit": "9521a971af4c1e01a4f5bd59d88bc7c7e9fab572",
+        "core_Python": 56191,
+        "src_and_scripts_Python": 114279,
+        "tests_Python": 96772,
+        "integrations_Python_CPP_HPP": 5638
+      }
+    },
+    "deltas": {
+      "base": {
+        "core_Python": -6,
+        "src_and_scripts_Python": -19,
+        "tests_Python": 363,
+        "integrations_Python_CPP_HPP": 0
+      },
+      "parallel": {
+        "core_Python": -6,
+        "src_and_scripts_Python": -197,
+        "tests_Python": 29,
+        "integrations_Python_CPP_HPP": 0
+      },
+      "main": {
+        "core_Python": 2100,
+        "src_and_scripts_Python": -26056,
+        "tests_Python": -5991,
+        "integrations_Python_CPP_HPP": 1117
+      },
+      "cleanup_start": {
+        "core_Python": -5437,
+        "src_and_scripts_Python": -35366,
+        "tests_Python": -33290,
+        "integrations_Python_CPP_HPP": 1110
+      }
+    }
+  },
+  "real_Ray_followup": {
+    "file": "code/tests/execution_provider/test_records_model_adapter.py",
+    "sha256": "b5c3f958adeb651fceca05d63f7d4fb4c505e3a7395ef14d72371973c2c8cbac",
+    "selector": "tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker",
+    "status": "not_run_locally",
+    "expected_symbols": 9,
+    "scope": "One existing opt-in real Ray CPU test adds the relocated CoreChainCapacity type; no model."
+  },
+  "counting_note": "Earlier 11/5/22/38 selections and original two suite methods are not additional coverage beyond the final 39-method combination.",
+  "raw": {
+    "file": "neutral_capacity_probe_retirement_raw.json.gz",
+    "bytes": 62815,
+    "sha256": "2b1befd229fd4b42d77af956cbab0b2f63337e38864ed6c740500cde36551139",
+    "decoded_bytes": 243527,
+    "decoded_sha256": "0bbd9b74a6451d54d2d3ab49e0582db4b1a8e58f32e9e62c80bc0038f57d5ed8"
+  }
+}

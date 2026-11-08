@@ -18,6 +18,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+CODE_ROOT = Path(__file__).resolve().parents[2]
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.infrastructure.redact import redact_argument_list
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -42,8 +48,9 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _recorded_environment() -> dict[str, str]:
+    """Keep runtime settings and mask secrets using the shared named-option rules."""
     return {
-        key: value
+        key: redact_argument_list(["--" + key.replace("_", "-"), value])[1]
         for key, value in sorted(os.environ.items())
         if key.startswith("VLLM_") or key == "CUDA_VISIBLE_DEVICES"
     }

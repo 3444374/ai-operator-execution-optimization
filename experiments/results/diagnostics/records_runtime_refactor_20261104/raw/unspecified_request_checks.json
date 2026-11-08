@@ -1,0 +1,129 @@
+{
+  "schema": "semloom.records_unspecified_requests_cpu.v1",
+  "base": "7702f84cdd3be4ab79200d9a7eede32f6828ec9f",
+  "runs": [
+    {
+      "run_id": "unspecified_before",
+      "selected": 9,
+      "run": 9,
+      "passed": 0,
+      "failures": 0,
+      "errors": 9,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "318e770635c84d4b75ca1dfa3f3115e7124f867e8d9396fdebc3a0329631a685",
+      "log_sha256": "9bfb7e549d24e7c1dab5817dd80ef1cacfdb6b36a89db3e1d23dd32704256a7e",
+      "environment": {
+        "lotus-ai": "1.2.4",
+        "daft": null,
+        "ray": null,
+        "pyarrow": "24.0.0",
+        "litellm": "1.95.0",
+        "openai": "2.50.0"
+      }
+    },
+    {
+      "run_id": "unspecified_after",
+      "selected": 9,
+      "run": 9,
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "39bfbaf61e962c9eb570ab01ae924453dd370b6bc570af9841f02ab9b72dc723",
+      "log_sha256": "21a32ada7ac32e1f851f131181e8fcf445e1d24a5bc40d01f975e3fc2a33666a",
+      "environment": {
+        "lotus-ai": "1.2.4",
+        "daft": null,
+        "ray": null,
+        "pyarrow": "24.0.0",
+        "litellm": "1.95.0",
+        "openai": "2.50.0"
+      }
+    },
+    {
+      "run_id": "unspecified_related",
+      "selected": 123,
+      "run": 123,
+      "passed": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "d18adccd8f20b987c17cc8702847063bfd891ecf36b42ec0b9af302722c274b0",
+      "log_sha256": "44df309fbf117f47c9361fb66672f4e755676a02e02148bf5fe465e5a8ea47b8",
+      "environment": {
+        "lotus-ai": "1.2.4",
+        "daft": null,
+        "ray": null,
+        "pyarrow": "24.0.0",
+        "litellm": "1.95.0",
+        "openai": "2.50.0"
+      }
+    },
+    {
+      "run_id": "unspecified_verified",
+      "selected": 167,
+      "run": 167,
+      "passed": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": [],
+      "source_unchanged": true,
+      "json_sha256": "1585d7ce6449fbcb83b4a1624efeb96a062e39ae951d475150a61f0ce58a6120",
+      "log_sha256": "8930e78729e7b1ec91ce43cf990c959b179479d632b2ac0b54bfaf1a85fa8356",
+      "environment": {
+        "lotus-ai": "1.2.4",
+        "daft": null,
+        "ray": null,
+        "pyarrow": "24.0.0",
+        "litellm": "1.95.0",
+        "openai": "2.50.0"
+      }
+    }
+  ],
+  "scope": [
+    "explicit None retains caller intent",
+    "complete budget supplies finite Core/Method/IPC grants",
+    "ordinary and rolling factories",
+    "CLI check and resident/isolated session",
+    "offline identity and CPU IPC query reuse",
+    "missing grants reject before model actor allocation"
+  ],
+  "history": {
+    "bindings": 3010,
+    "mismatches": 0,
+    "original_projection_identities_unchanged": true
+  },
+  "unchanged": [
+    "default R remains2",
+    "default IPC result slots remain8",
+    "model parameters",
+    "native baseline execution",
+    "explicit historical configuration",
+    "source clocks and dynamic controller files"
+  ],
+  "pending": [
+    "automatic allocation from actual resource information",
+    "default-R migration",
+    "same-owner ready and remote deployment information",
+    "independent review including the separate pressure-receipt repair",
+    "real model and GPU checks"
+  ],
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "evidence_run_id": "semloom-automatic-request-capacity-20261104",
+  "final_qualification": {
+    "run_id": "unspecified_final",
+    "selected": 167,
+    "passed": 167,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "all_code_hashes_matched": 1291,
+    "json_sha256": "06f97961332ebc945e7a415088c171ab34d767a65b5f74487f268cc94385caa4",
+    "log_sha256": "7142e2a72a5050c63dc20c94694c04e320a0ba16ecb8552dcc60cce7930bd4aa"
+  }
+}

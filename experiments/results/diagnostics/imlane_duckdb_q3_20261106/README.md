@@ -1,0 +1,203 @@
+# DuckDB＋作者IMLane原生Q3准备
+
+本报告记录实际构建与CPU接线资格，不是模型质量或性能比较。
+[接线与构建入口](../../../../code/integrations/imlane_duckdb/README.md)、
+[机器摘要](preparation.json)和[准确恢复来源](source_recovery.json)分别维护接口、实测状态和来源。
+完整私有构建记录按`imlane-duckdb-q3-prep-20261106-r1`至`r5`标识及摘要交接；旧失败不覆盖。
+
+## 作者源码及构建
+
+作者为`IM-DM4AI/IMLane0@072f8257db80569e42c9f5727d839587df529652`，现有patched DBEnd-C/C++前缀、
+Python3.12.3／Arrow16.1.0保持。所有构建写在新数据盘目录，canonical源码／库均不改。
+先使用现有core环境preflight，再以GCC11.4／CMake3.22.1／Ninja1.10、C++17编译shared DuckDB。
+不安装软件、不加载模型；作者DuckDB无可核对release tag时版本如实为unknown，不填写论文0.10.1。
+
+实际发现并保存了三个构建接线问题：作者CMake包直接放在`prefix/lib/cmake`，需显式`IMLane_DIR`；
+作者根`build*`误忽略必要源；导出target没有提供Boost等SDK的传递头目录。
+另有一次控制器误传`supervise(env=...)`失败，发生在CMake启动前，已修控制器并保留原件。
+
+缺源恢复严格限于官方
+[`duckdb/duckdb@5ebd8ca697099859239ba85e0de07dac7e1b7c04`](https://github.com/duckdb/duckdb/tree/5ebd8ca697099859239ba85e0de07dac7e1b7c04)
+的optimizer cpp/header及mbedtls `build_info.h`三件。157个现存optimizer文件逐字匹配该提交，缺的恰为上述两件；
+third_party的889件同源文件相同，仅缺该mbedtls头。各Git blob／SHA256及未恢复项由来源manifest给出。
+整体src的共同相同2531、不同56、作者新增14、上游有而作者缺2；不能将整个fork声称为纯上游树，
+也不能说56项差异全是prediction改动。这些已有差异全部保留，未启用的TPCH/TPCDS/Python/Actions漏项不借机补入。
+
+恢复只写隔离副本。CMake仅将硬编码fmt前缀改为可传入的CACHE PATH；SDK头路径作为明确构建环境传入，
+不改prediction算法、普通优化器调用、作者batch／scheduler／执行器实现。
+`r5`增量编译返回0，已观察进程退出、资源回执通过、SHM新增残留为0；共享库44,524,536字节，
+SHA256 `52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`。
+随后准确`798e13771263319234df574fa04fd3c483896c39`的薄driver已链接通过，实际SQL／DBEnd结果见下节。
+
+## 当前接线与CPU边界
+
+薄C++ driver使用作者四VARCHAR注册API，保留PROCESS／THREAD两种实际路径，拒绝空实现SCHEDULE；
+普通源COUNT及EXPLAIN不执行AI，AI COUNT只执行一次。若意外落入本地C++回调便明确失败，不能偷偷替代DBEnd。
+完整gold-free CSV保留2000来源发生项，原普通筛选留在DuckDB；UDF回执再核对实际只有120 eligible输入。
+
+Arrow边界是`c0..c3`四列、同序、无NULL的单chunk int8返回；SQL比较`=1`，避开位图BOOL的已知转换风险。
+Python UDF对每个作者batch只调用一次provider，不注入逐行串行、并发门槛或重试。
+每批私密回执保留实际消息摘要、原答复、唯一发生项及调用状态；unknown不判成功，物理model attempts不推定。
+driver结果在native析构前原子发布，进程退出和namespace资源仍需外层核对。
+
+本地22个不同CPU方法最终通过：14个Arrow／provider合同和8个packet／离线审计／worker错误行为。
+初轮两项macOS路径别名fixture断言失败，归一测试根路径后只补跑这两项，不叠加通过数。
+本地Arrow24检查不替代作者Arrow16.1和真正DuckDB／DBEnd；实际服务器资格另列如下。
+798e的原worker只允许明确的软件fixture，不能把软件COUNT14当作模型结果；后续模型接线另列如下。
+
+## 实际作者CPU链路与资源关闭
+
+`imlane-duckdb-q3-native-798e-20261106-r3`在host租约及资源supervisor内，各运行一次新的PROCESS与THREAD
+coordinator／executor／namespace。[CPU机器证据](native_cpu.json)保存准确源码、完整EXPLAIN、评价及原件摘要。
+两者均为完整Movie2000→120、一次AI COUNT、一次120行batch-provider、软件COUNT14；原评价零误差，
+逐行TP14／TN106／FP0／FN0。注册alias真实完成，Arrow16.1的四VARCHAR→无NULL int8往返已验证。
+这是金标软件回复的接线检查，不能替代真实模型质量或原Daft／Ray七个FN。
+
+保持作者默认4 executors、默认DuckDB16线程、standard vector2048；CPU亲和性仍为显式分配的8核，
+未扩宽亲和性、不注入OMP／OpenBLAS单线程。所选Filter实际用作者prediction size2048，
+不消费注册API的batch参数，不能将该注册参数当成有效调优旋钮。
+PROCESS／THREAD均正常worker exit0，外层未发TERM／KILL，已观察自有进程退出、SHM无新增残留；
+最终host SHM增量0，资源回执通过。driver析构前发布的`process_exit_verified=false`保持，
+退出证据来自外层supervisor，未将API结果重写成物理退出保证。
+
+此前`native-r2`在启动阶段触发旧512MiB SHM预算，已停止并清理，原失败保留。
+作者默认分配是4×128MiB Lane和8个Boost控制队列；实测每队列逻辑8592B、实际分配12288B，
+总12个命名对象、536,969,216B＝512MiB＋96KiB。新CPU运行按此分配图声明预算，没有暗降executor数，
+20GiB sampled-RSS单独计量，不将SHM容量当作RSS或模型内存。另有一次旧不完整Git对象集的共享clone失败，
+发生在启动前；改为新仓准确SHA fetch后通过，失败日志保留。
+
+完整cohort及120行尾批已实际通过。特殊Unicode／空字符串、重复业务ID、空选择和provider异常由本地合同覆盖；
+这些额外边界尚未逐项经过真正作者二进制，不扩大本次资格范围。
+
+## 独立模型provider与worker接线
+
+本节保存历史HTTP候选e420／e86及98项组件资格；当前IPC实现见下节，不改写历史源码摘要。
+
+[模型provider／服务owner／worker](../../../../code/integrations/imlane_duckdb/README.md#本地ipc模型接线)
+已实现，数据库／executor保留作者ArrowLane，只有UDF至一个外部模型服务使用loopback HTTP。
+SemLoom主线不加入HTTP模型路径。这是作者原生API的项目工作负载绑定，不宣称作者Q7未公开的客户端实现。
+HTTPX按同batch异步发出原消息，不加固定并发门槛／线程池、重定向或重试；每batch显式关闭client，错误后drain同批，
+started缺terminal仍unknown。length原文本保留给原parser并标记截断；错误JSON／身份错／abort等保留后失败。
+
+服务明确generation-config=vllm，避免repo生成默认改变共同SamplingParams；这是项目选择。
+普通服务GET模型／实际上下文，未启用dev mode时其他resolved容量unknown，不靠调大8／4096来凑接通。
+实际现有driver与Arrow16.1方法环境均具备HTTPX0.28.1，不安装或混装环境。
+审计修正了两个真实边界：不再把完整自有大回执套用配置JSON默认8MiB限制；
+UDF调用与HTTP批次用PID／调用时间唯一配对后逐position核对，重复消息交换回复不能躲在同COUNT／多重集中。
+
+新薄driver在析构前给出CLOCK_MONOTONIC READY；模型worker原查询期限包含输入物化及启动，
+结果后只有一个关闭窗口。模型owner期限随READY交接，sampler不抢先用观测延迟判wall超时。
+作者close既有分段等待未改，硬截止须由外层supervised_run按READY绑定；非零服务退出、强杀或未知身份不当作正常关闭。
+软件模式必须提供显式测试factory，普通CLI拒绝它；不因写了software配置而意外启动真实模型。
+
+相关98个不同本地CPU方法全部通过，[源码／日志摘要](model_components.json)关联完整范围；
+26个provider、23个owner、27个模型worker／审计、原8个fixture worker及14个Arrow内核方法不重复累计。
+初轮6aeb的88项保持来源，后续明确失败cleanup marker让parent也观察首次失败的固定收尾期限；
+每个POST发送前复核同机绝对query期限，过期不产生新请求。原生模型关闭使用整个剩余graceful窗口，
+最后预留8秒不再当成初始正常关闭的8秒限制；残留child TERM或KILL均保留失败。
+准确e420的真实作者＋软件HTTP CPU闭环已完成，见下节；当前没有加载模型或启动GPU。完整消息、8192生成条件、
+cold／ready／关闭与下一次120逻辑请求的范围见同一校准计划，不将本地组件通过当作GPU资格。
+
+## 真实作者与软件模型服务闭环
+
+[紧凑机器证据](http_software_cpu.json)保存`imlane-model-wire-e420-cpu-20261106-r1`：
+准确源码e420、重新编译的CLOCK_MONOTONIC薄driver、实际作者CPython／Arrow16.1及真实服务owner生命周期。
+仅替换模型服务spawn为软件HTTP程序，未执行记录中的vLLM启动命令；preflight和构建单列，未安装依赖或修改第三方。
+
+正常THREAD例完整2000→120，一次120行作者batch、120次软件POST、COUNT14，原评价零误差；
+软件回复由金标固定，不是模型质量。worker exit0，作者及服务自动关闭、无外层TERM/KILL、
+无fallback或强杀，最终SHM增量0。软件服务观察peak inflight109只说明本次软件重叠，不是原生模型容量。
+
+独立1行错误例仅1次POST，503不重试。worker exit1、supervisor failed与author cleanup passed=false保留。
+已知provider失败后native client被TERM取消（-15）；原生标量／自身错误传播仍unknown，不判正常结果。
+coordinator及服务owner均exit0，无fallback、强杀或残留SHM；其自动资源回收与失败身份分别记录。
+两例都在首次READY／失败绑定的同一cleanup期限内结束，host租约释放，模型／GPU运行0。
+
+软件context32768与usage占位均不作为实际vLLM解析值；导入阻止器仅覆盖worker／软件服务解释器，
+不扩大为嵌入作者CPython、preflight或编译进程的逐import审计。
+
+## 作者原生模型连接核查
+
+初次原生核查时暂缓了IPC替换；当前项目IPC接线及实测状态见下节。
+[固定作者审计](native_transport_audit.json)关联完整Git树、独立公开tree及关键源码摘要；
+当日`git ls-remote`确认作者HEAD／main仍为072f。审计读取固定Git blob，
+与实际安装树中既存构建兼容补丁分开，不改作者源码或前缀。
+
+作者[模块加载](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/src/backend/py_code_manager.cpp#L94-L114)
+只从模块取得callable；[执行器](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/src/backend/python/py_executor.cpp#L196-L238)
+负责Arrow→同步call／异步await→Arrow，没有内置vLLM模型连接。
+公开例子是加法、identity及Flights RF；完整23809文件未找到Q7／SemBench模型provider，
+根benchmark目录未入公开tree，`.gitignore`提到论文dataset路径也不等于该实现已公开。
+[论文§6.1，印刷页4231–4232](https://www.vldb.org/pvldb/vol19/p4223-xu.pdf)
+说明远程Qwen3-1.7B、vLLM0.19.1及默认百万行，未定义连接协议或原Q7客户端。
+
+当前选择本地IPC作为项目模型客户端。它仍保留作者原生执行，不声称原论文Q7客户端复现。
+HTTP不是作者已证实的强制条件；[官方HTTP接口](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/serving/online_serving/openai_compatible_server.md)
+的旧候选及必要软件证据按e420原样保留，现行入口不并存HTTP fallback。
+
+## 当前本地IPC模型接线
+
+[源码与124项CPU](ipc_components.json)固定当前实现及日志摘要。
+现有UDS gateway经RequestAdmission，普通分支还转发HTTP，incremental分支绑定Core；
+LOTUS本地对象使用单父三socketpair，带LOTUS账本与transport limits，不能直接交四作者worker共用。
+所以只复用纯进程birth／StopBudget／既有统一deadline与外层监督，不加载Core、records协议或LOTUS ledger。
+一个作者batch发一次AF_UNIX RPC，服务单event loop将各行及不同batch异步送入同一个AsyncLLM；
+没有新Semaphore、每批重载、统一并发8、4096容量或固定请求总量。
+
+原生调用依据为vLLM0.25.1[异步renderer](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/renderers/base.py)
+及[原chat参数](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/offline_utils.py)，
+[AsyncLLM generate／abort／shutdown](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/async_llm.py)。
+模型ready记录构造后的真实native capacity；请求保留共同SamplingParams、requested/resolved max_tokens、
+原文本／usage／finish reason。完整rendered prompt＋8192超过实际context便明确失败，不截prompt。
+直接API可能按context提前length cap，故该真实边界不能用静默缩输出掩盖。
+
+124个不同本地方法全部通过：真实Unix socket四客户端barrier及同批129行、断连／错误／deadline abort＋drain、
+late-final unknown、8192 context exact／超一token零generate、原始异常与关闭错误并存、单一关闭期限和inode准确清理。
+首次sandbox不允许bind的环境拒绝保留；放行同一零模型fixture后成功，未修改测试跳过或改成假socket。
+软件引擎与CPU结果不证明真实模型／物理GPU关闭；准确3c807316的实际作者＋软件IPC正常120／故障1已在服务器r4通过，见[软件证据](ipc_server_cpu.json)。
+HTTP与IPC没有匹配开销测量，IPC仍需JSON／socket复制，不声称零拷贝或性能收益。
+
+## 真实模型启动后的SHM范围错误与控制器修复
+
+[原失败](startup_shm_failure.json)为准确3c807316：真实模型服务ready51.035秒后，
+作者四executor启动使whole-stage SHM达到536973312B，原controller只声明作者部分536969216B；
+模型ready后、作者启动前已有4096B，采样精确对应漏项。真实机器不是只有该容量：
+只读检查/dev/shm总60GiB、当时可用64424484864B，原机器profile的512MiB同样是实验声明，不是物理容量。
+Q3 driver尚未启动、实际用户generate0，没有查询时间或质量。51.035秒只表示模型启动；
+原资源／服务关闭失败、后续19个自有进程及GPU／SHM／lease清理分别保留，不回写成成功。
+
+修复使用启动时一次statvfs的f_bavail×f_frsize作为全运行SHM物理可用空间边界，
+不再把作者分配、model-ready一页或两者之和当准入配额，也不在READY后重置baseline。
+作者／模型的实际用量仍记录，增长多页不因超过启动观测值而停止；采样边界不是预留或内核隔离，
+实际容量仍由tmpfs内核约束。原20GiB sampled RSS、8核亲和性、query1200秒／cleanup120秒
+（含末尾8秒兜底）和残留检查保留，模型参数、作者executor及算法不改。
+未来生成期的实际峰值和正常模型关闭仍未验证。
+
+私有controller另有确定性收尾错误：同名LEDGER被create-only writer重复写，跳过后续lease释放；
+合法None计数也可能在sum时抛错，捕获主错误却没有最终重抛可能导致exit0。
+[修复映射](controller_repair.json)和[可应用补丁](controller_repair.patch)只修外层控制器：
+保留LEDGER.json初始预留，另写LEDGER-TERMINAL.json；缺回执／None保unknown及已知小计；
+各收尾失败附于原异常，身份校验的lease释放始终尝试，最终原异常重新抛出，打印断线不掩盖主因。
+公共write_private_json和publish_private_json都不允许覆盖，保持原合同；不新增公共控制器框架。
+
+7项资源回放与18项[控制器CPU故障注入](controller_cpu_check.py)通过。
+前者复现旧声明失败，允许启动观测后多页／8MiB增长，仍拒绝超物理边界并检查sticky失败／最终无名残留；
+后者执行实际补丁函数AST，使用真实不可覆盖writer和lease owner-token检查，拒绝模型／网络调用。
+只读复核确认补丁逐字恢复候选，原生产runtime、作者源码和模型请求均未重放。
+
+恢复时使用SHA256为f0f4db2997d1b5865aef30fdb70384fcb3406ad39823071485ad3e6a5db07297的保留controller，
+在新的私有目录放controller.original.py及其副本controller.candidate.py，对副本应用补丁并核对映射SHA。
+CPU命令如下，两个变量分别指代码目录和该私有fixture目录：
+
+~~~sh
+SEMLOOM_CODE_ROOT="$CHECKOUT/code" IMLANE_CONTROLLER_FIXTURE_DIR="$PRIVATE_REPLAY" \
+  "$DRIVER_PYTHON" -B "$CHECKOUT/experiments/results/diagnostics/imlane_duckdb_q3_20261106/controller_cpu_check.py"
+~~~
+
+候选保留原HEAD／运行路径用于差分核对；真正执行前必须绑定新run输出与准确源码标识，
+不能执行原r1目录或覆盖其日志／120预留。完整机内controller不发布，必要增量和SHA映射已保留。
+
+## 真实模型仍需验证
+
+本次修复未重跑GPU。下一次单列真实模型provider、共同Qwen7B消息／生成条件、作者配置依据、
+逻辑120及实际attempt预算、cold／模型常驻边界和停止条件，再由现有服务器任务执行；不复制相同已测查询。

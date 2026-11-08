@@ -10,6 +10,16 @@
 不要求为了重现旧代码把测试工具覆盖进旧 checkout。controller 也在被测解释器的新进程中运行，
 不复用工具进程缓存的 `src` 模块。
 
+本地 IPC 的[父进程 owner](../../../src/serving/backends/async_engine_process.py)、
+[子进程服务](../../../src/serving/backends/async_engine_worker.py)和
+[共享编码](../../../src/serving/backends/async_engine_wire.py)各自维护其职责。
+模型 bootstrap 先安装观测，再导入 worker 的 `serve`。采集器只包装父／worker 的实际接点，
+共享 wire 的候选计量保持纯计算；编码记录不代表已发送，收发字节仍来自原 socket 返回值。
+
+The driver installs its scheduler sink on `SessionEngine` from `src.scheduling.core.session`.
+Ordinary records and record-chain owners instantiate that same class. Actor preparation and
+submit/audit/transfer/feedback hooks retain their existing owners.
+
 ## 同步、资格和最小 on/off 配置
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：
@@ -23,17 +33,37 @@ TOOL=code/scripts/profiling/record_observation/workflow.py
 ```
 
 `qualify` 跑本仓 CPU fixture、单请求及 token 批路径的 off/on 公共基类探针，不启动 Ray RPC、真实模型或 GPU。
+批探针还串起当前 `ResourceRequestSupplyFeedback` 的资源 snapshot 调用和 RPC 收尾；IPC、Future 与资源读数
+仍为 CPU fixture，不能据此声称真实 Ray、硬件采样或模型查询已验收。
 旧版被测源码没有批 API 时，该探针明确报告不支持，`CPU-READY.handoff_CPU_paths.token_batch=false`，
 不能将单请求资格解释成该版本的批路径资格。
 失败输出保留，未通过不产生 `CPU-READY.json`。工具提交、被测源码、基准配置和七份 runtime
 代码摘要都绑定在该新回执中，后续变化须重新资格检查。Movie 路径在被测源码的新进程中调用原
 `check_plan` 零模型预检，冻结每个 manifest／输入的摘要和完整调用数；不只冻结文件路径。
+准备后的业务配置使用既有 JSON 内容比较函数核对值及类型；数值 0 与 false 不能借用同一回执。
+对象键顺序和 JSON 排版变化仍可接受，原来源、输入与操作身份检查保持。
+
+CPU 区间归属另有显式零模型 Ray 组合检查，在干净的同版本 Ray 2.56.1 driver 中运行：
+
+```sh
+SEMLOOM_REAL_RAY_CPU=1 SEMLOOM_REAL_RAY_TMPDIR="$PRIVATE_TEMP_ROOT" \
+SEMLOOM_REAL_RAY_RESOURCE_RECEIPT="$NEW_RECEIPT_JSON" PYTHONPATH=code \
+  "$DRIVER_PYTHON" -B -m unittest -v tests.execution_provider.test_actor_resource_cpu_ray
+```
+
+它最多发出 10 次 snapshot RPC，组合当前 `ResourceRequestSupplyFeedback`、观察 wrapper、host CPU 计数器、
+Ray Future 和 light sink 收尾。引擎及 native 统计是 CPU fixture，不加载模型、生成 token 或分配 GPU；
+不覆盖真实 vLLM、物理大步探测或查询性能。原 5 项 Future 检查保留为独立入口，本命令不额外运行它们。
+必须显式开启才运行；本地缺 Ray 的 skip 不能写作该资格通过。
 
 `PRIVATE_BASE_CONFIG` 使用原有成功运行的仓外配置。仍由现场一次性保留并绑定的内容包括：
 
 - `source_root`、`expected_source.head/tree`：独立、干净的被测 Git checkout。
 - `host_helpers`、`host_config` 的路径／SHA：既有站点适配及配置，含设备与监督绑定；不进仓库，
   不随每次测试重传，也不把它们改造成新的主机控制框架。
+  仓库模块迁移时同步核对实际 helper 的导入；共享私有文件与脱敏工具现归
+  `src.infrastructure.private_artifacts`、`src.infrastructure.redact`。
+  已绑定 helper 的修订保存为新副本，在新配置中更新路径与 SHA；旧绑定、失败回执与账本保留。
 - `engine`／`generation`／`resources`／`ray_options`／`runtime_binding`／`environment`：原部署、
   输入和并发配置。Movie 使用原 `movie_plan`；有限链使用原 CSV／SHA／列绑定及完整方法。
 - `workload.expected_calls`、`units`、`limits`：完整调用上限和原操作时限；native call cap 必须
@@ -76,6 +106,129 @@ GPU／进程空闲及 lease 已释放。下列入口继续领取原 lease 和额
 `run_resource_C2.py` 是此入口的内部监督／worker，不以直接运行 worker 绕过 Git 与资格核查。
 当前 GPU 队列和私有材料不会由本工具删除或接管。
 
+控制端将当前 `lease_path`、租约 SHA-256 和 artifact 根目录经 Movie worker 转交给原生入口；
+沿用同一租约及原监督／释放责任。CPU 接线测试使用替身，真实 Native／模型启动尚待复验。
+
+IMLane 还消费已有 host 配置中的 `gpu_idle_max_mib` 和 `shared_resources` 的 RSS／SHM 声明。
+控制端将它们传入同一 `external_owner`，CPU 数量取本次 `cpu_affinity` 的长度，
+不继承旧 packet 的固定 8 CPU 或 echo verifier 的资源缺省。
+这两项分别用于作者进程资源核验和 GPU 退出；不是模型容量或 IMLane 调度参数。
+CPU 准备阶段读取同一接线，缺少真实声明时不会填新阈值或等到模型启动后才发现。
+
+### 多格共用的操作守卫
+
+需要整轮调用／墙钟／原件上限时，可用 [campaign_guard.py](campaign_guard.py) 包住既有入口，
+不改 `control_resource_C2.py`、模型、调度器或每格参数。用被测 driver Python 启动新的守卫进程，
+工具和 runtime 必须是同一干净 Git head/tree。守卫只在该进程内组合原 `supervise.monitor`，
+异常仍由原监督器收尾自有 worker；原 lease、私有 host helper、native call cap 和关闭责任保留。
+这是操作边界工具，不是新的执行器，也不授予额外运行权限。
+
+仓外 manifest 使用 `schema=semloom.record_campaign.v1`，声明 `campaign_id`、`source.head/tree`、
+`call_limit`、`historical_charge`、`wall_seconds`、`max_bytes`、`scan_interval_s`、
+`cleanup_reserve_s`、`collection_reserve_s`、`artifact_roots`、`runtime_temp_root`、
+`ray_temp_root`。每个 `cells` 项声明
+`id/calls/stage/base_config/base_sha256/prepared_config/ready_dir/mode`；总调用数必须等于全部格的
+额度之和。初始化、领取额度与各入口前都会核对 prepared／ready 目录、配置中的 artifact／Nsight／
+Ray／plasma 目录及明确的临时／日志输出路径；位于监控根外就拒绝，不自动扩大扫描范围。
+CPU 子命令的 `TMPDIR`、`RAY_TMPDIR` 均绑定上述专属根，五项真实 Ray 测试还通过
+`SEMLOOM_REAL_RAY_TMPDIR` 将 `rff-*` 放在监控根内。模型、数据、源码和不可变站点绑定是输入，
+不因此纳入全盘扫描。所有产物、CPU 资格目录和新临时目录都要被声明的根覆盖；不删除历史目录。
+时限与扫描间隔来自本次已批准计划，清理／收集预留来自既有关闭和监督窗口，不作为搜索停止规则。
+
+```sh
+GUARD=code/scripts/profiling/record_observation/campaign_guard.py
+"$DRIVER_PYTHON" -B "$GUARD" init --manifest "$PRIVATE_CAMPAIGN" --root "$CAMPAIGN_ROOT"
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind ray
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind qualify --cell-id "$CELL_ID"
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind prepare --cell-id "$CELL_ID"
+"$DRIVER_PYTHON" -B "$GUARD" cpu --root "$CAMPAIGN_ROOT" --kind check --cell-id "$CELL_ID"
+"$DRIVER_PYTHON" -B "$GUARD" run-cell --root "$CAMPAIGN_ROOT" --cell-id "$CELL_ID" --execute-model
+"$DRIVER_PYTHON" -B "$GUARD" collect --root "$CAMPAIGN_ROOT"
+```
+
+CPU 子命令只调用现有资格／准备入口，显式隐藏 GPU。Ray 检查记录实际选中与通过的方法名：
+原有五项真实 Ray 方法必须通过，其他选中的方法也须通过；不再按日志中的测试总数判断。
+`ray_future_qualification.py` 运行原模块并写入 `RAY-TEST-RESULT.json`，
+原监督结果、完整日志、准确源码及资源清理检查继续保留；跳过、失败和错误不能产生通过回执。
+`run-cell` 每格只 claim 一次全局 `CellBudgetLedger` 额度，不能重新建账本退还失败或未知调用。
+格按 manifest 顺序执行，前格必须完整成功；跨 `stage` 还须由检查者写入 `GATE-<上一stage>.json`，
+其 `status=passed`、`source` 和 `cells`（上一阶段各 `GUARD-END.json` 的 SHA256）必须匹配。
+守卫不自行认证质量、资源反馈接线或性能收益。
+
+空间扫描覆盖累计根，不随新格清零；内部符号链接不重复遍历，外部链接、根丢失和权限错误停止执行。
+已枚举临时文件消失可被识别；其余扫描错误不能当零占用。每次监督轮询检查墙钟，到配置间隔再扫描文件。
+这是首次观察到边界就停止的采样守卫，**不是文件系统硬配额**：写入与清理可能在采样间产生超调；
+保留真实越界量、失败原件和清理时间，不删文件把占用压回阈值，也不将越界运行写成通过。
+模型工作在整轮截止前预留清理及收集窗口；收集只对已静止的逐格目录制作原清单并验证，
+其过程也受整轮剩余时间和空间额度管理。单项最长时限不是启动所需的最短时间；只要仍有工作时间，
+就可启动，实际执行由整轮监控与单项超时停止。controller、CPU 和 collect 均显式向实际监督调用传递
+整轮回调，不再改写公共模块函数；controller 先登记已观察身份再执行回调，后续清理保持。
+异常后不能继续下一格；失败原件的只读回收另保留故障身份。
+
+`GUARD-END` 分别记录已确认提交、成功、失败、unknown 记录及未见回执的已 claim 额度。
+缺少回执时实际提交总数为 unknown，不能把 reservation 当提交、把空记录当零调用或将未知退费。
+扫描线程 CPU／墙钟成本单列；它不是整个应用 CPU 成本，必要监督带来的资源竞争不从查询耗时中扣除。
+`off/handoff` 不启用附加观察器；已开启的 ascending 生产资源反馈继续在原 actor snapshot 路径采样。
+
+<a id="inflight-cancellation"></a>
+
+## 在途取消与新 owner 恢复的功能检查
+
+同一工作流可显式设置 `workload.qualification="inflight_cancel_then_recover"`。
+它复用原 Movie `run_movie_session`、`_MovieDriver`、`evaluate(cancelled=...)`、额度、lease 和监督者。
+此入口检查固定 async rolling 请求路径，可选 B／NoB：两个不同 query ID、同一原 Movie task，均为
+`phase="measured"`；第一段取消，确认收尾后第二段新建 owner 恢复。没有隐式 warmup、重试或复用已退休模型。
+实现见 [Movie 取消检查](../../../src/experiments/movie_cancellation.py) 与
+[原生子进程旁路](../../experiments/probe_movie_cancellation_child.py)。
+
+子进程旁路观察实际共享的 `vllm_protocol.result_from_output` 转换。
+`native_final_observed` 早于异步引擎后续处理：合成 abort 在旁路中可为 failed、最终为 unknown；
+最终结果及 `engine_terminal_confirmed` 决定终态，不能单独采用旁路的 status 或 finished。
+[纯 CPU 转换检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-trace-conversion-wiring)
+保留旧接线缺少事件的反例，以及原返回值和异常不变的核对。
+
+full 记录观察器的 `install_model` 同样接入上述协议转换，记录
+`native_api_native_final_observed`。[轻量用例](../../../tests/observability/test_native_trace_conversion.py)
+核对 stop／abort 事件、原返回值和异常对象；CUDA／NVTX 接点未改，当前接线的真实模型运行尚待核对。
+可选指标读取或记录出错只舍弃该次观测；业务转换在其前执行，业务异常仍直接传播。
+
+按已批准功能额度制备输入。例如每种 B／NoB 设置使用原 Q1 前两行，两段共四次额度：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/experiments/run_lotus_records_movie.py prepare \
+  --input-csv "$ORIGINAL_MOVIE_CSV" --input-sha256 "$ORIGINAL_MOVIE_SHA256" \
+  --max-rows 2 --task movie-q1 --role "$EXISTING_MOVIE_ROLE" --output-dir "$NEW_PREFIX2"
+```
+
+两个 query 的 manifest 均指向这个新前缀，保留原顺序、正文、prompt、parser、generation 和 gold。
+`units` 各两次，`workload.expected_calls` 与 `movie_plan.engine.max_model_calls` 均为四；
+入口把每个实际 owner 的 native 调用上限进一步缩至该段的两次，不退还取消／未知额度。
+固定 `profile.max_inflight` 至少容纳完整取消段，独立资源预算保持。B 可选；省略 `prepared_batching` 或设为 null 即使用 NoB，旧 packing bypass 开关已退役。
+不启用 admission cache、动态并发或 batch feedback。示例的两行是功能预算，不是生产组批上限。
+
+本检查要求 `observation.mode="off"`，并复用显式正数 `max_events_per_process`、`max_event_bytes`
+限制 native 证据读取；独立轻量 native API 旁路由检查入口启用，不启用 profiler 或改变 vLLM worker／生成参数。
+只有全部目标已由 native API 登记、且其活跃请求映射尚在时，才触发原取消回调。
+收尾后再次核对同一模型进程的 add／abort 身份、事件顺序和 abort 返回。
+Core 已接受、已排队的 cancel intent 或完成后的 no-op 都不算覆盖；完成过快或证据不足即失败停止，不加调用重试。
+该证据说明 native API 在途，不证明某个 GPU kernel 正在执行，也不把 vLLM abort 返回当作模型终态确认。
+
+使用最终已审 Git 提交和新的 base／cell 身份，按上一节同一组
+`campaign_guard.py init → cpu(ray/qualify/prepare/check) → run-cell → collect` 命令执行。
+每种 B／NoB 设置各一个 cell；本例两种设置共八次额度。唯一执行者须先核实既有剩余额度、期限和物理空闲，
+不得重新 claim 已执行的正常检查格、重置整轮边界或把本节当作新增模型授权。
+新提交须重新生成 CPU ready 和 prepared config，不能沿用旧树资格。
+
+输出保留取消段原来的失败／`InterruptedError` 报告、完整调用账目及 `native-cancel/native-<pid>.jsonl`。
+`session.json` 的 `cancellation_qualification` 单列覆盖与预期 unknown；新 owner 恢复段仍走原查询和质量评价。
+guard 重读原生证据及两段账目后，才允许这类明确声明的功能格带预期取消 unknown 通过；
+`unknown_records`、`unknown_responsibilities`、保守计费和提交数未知语义保持原值。
+恢复前和 guard 复核均要求原阶段的 session、query、owner-ready 与收尾账目原件齐全；
+只接纳无附加异常注记、收尾或观测失败的内置 `InterruptedError`，不以外层重写收据补齐缺件。
+任何其他失败、未知、缺回执、Core／Method 逻辑额度、数据 RPC 或本地交付责任未清零都停止恢复／后续格。
+API 收尾之外仍须由原 host supervisor 确认进程、GPU、lease 和临时目录责任；逻辑字节清零不表示 RSS 清零。
+功能通过不替代 gold 全对、性能比较或其他故障路径的验收。
+
 ## 原件回收和观察资格
 
 进程停止写入后，对整个结果目录制作独占创建的逐文件字节清单；失败尝试也会被保留。
@@ -97,23 +250,170 @@ actor，model/GPU worker 也不在轻量模式发事件。缺角色、缺 status
 无法唯一关联请求或未知 close，均不能拿“已收到的 sinks”子集冒充完整。物理退出和 lease
 由原 supervisor 单独核对。
 
+full 与 handoff 的 actor sink 都在原生生产者静止、reader 归零且最后一项批 ACK 消费后收尾，
+不依赖 Ray actor 进程的 atexit。snapshot 返回前的观察与收尾共用原 actor condition；当前
+回调先完成入缓冲，再排空、fsync 和写 footer。关闭观察入口后到达的 snapshot／poll 仍走
+原生方法，返回或异常不变，但不再写这份 sink。该边界不证明 Ray 结果已送达，也不代替
+driver 采样器／Future 回调结束。driver 仍按原 worker finally 停止采样、关闭 telemetry 和
+自身 sink；full 的原生模型／GPU 事件与 trace export 另随原监督退出流程完成，须分别核对。
+观测包装器保留原生 `observe_resources` 关键字和布尔校验；默认无资源读取时保持旧无参调用。
+原生资源读取在 model condition 外执行，只将观察回调纳入 footer 关闭门；读取期间若门已关闭，
+仍返回原生 snapshot，不再向这份 sink 写入。
+
+普通 records 的 full 路径另有准备 actor。它在原 owner 的终止接点前，通过同一单并发
+actor 队列领取 `close_observation` 回执，复用 `close_events` 排空、fsync 和 footer；
+当前准备调用结束后才关闭，后到的准备调用保留原生返回／异常并处于该 sink 观察范围之外。
+回执写入 `model_owner.prepare_observation`，分别记录 RPC 终态、引用是否保留及实际 sink 状态。
+超时、缺 footer 或刷盘失败仍继续原有 kill，观测保持未知，不改模型请求结果或把 owner 的
+API 关闭当作刷盘成功。重复关闭不重复派发，未取到的 RPC 引用由原 owner 保留。
+准备回执直接使用本次 `close_events` 的事务返回值，核对 producer PID、`footer_written`
+及最终错误／缓冲计数，不重读可读旧 footer 来证明成功。权限收尾出错也保留失败；
+中断仍在 `finally` 请求原 kill，并按原 owner 的异常规则传递和记录，两项失败都不抹去。
+等待沿用原关闭 deadline；off 和没有准备 actor 的 token 路径不增加 RPC。旧源码若缺少该终止
+接点，工具不安装这一收尾，缺失回执仍是未知，不能借用本候选的资格。
+
 标记分别表示 actor 原 reader guard 内的返回前边界、额外 Future 完成通知和 driver decode 后
 审核入口。通知与原 await 恢复不保证全序；既有 `Ray_result_to_Core` 是 transfer **入口**，
 不是 sink 已完成。跨进程仅使用同机 monotonic 边界，同线程才解释 thread CPU，重叠区间取并集。
 light 不能给出 GPU 忙／闲、硬件瓶颈或 Ray/Core 因果结论；on/off 需保留额外观察开销和所有重复。
 
-token 批路径沿用原 `submit_prepared_batch`／`poll_prepared_batch` 和逐成员 ACK。`actor_result_return`
+token 批路径沿用原 `submit_prepared_batch`／`poll_prepared_batch` 和 sink 成功后的成员 ACK；
+支持的异步 owner 将 ACK 携带到下一次有界 poll，包括最终排空。`actor_result_return`
 在原 poll 锁内、Ray 返回前按成员首次暴露记一次，附原 Core `key`、`batch_key` 和请求身份；
 复用原 `poll_exposed`／关闭后待 ACK 状态，不另建完成台账，重读分页和重复 ACK 不增加成员完成数。
 这只是首次尝试返回，不能证明该 RPC 已送达。`actor_batch_poll_return.members` 仅列首次暴露子集，
-不冒充完整页成员；`driver_batch_future_done` 每次 poll RPC 通知只带批身份，不读取 Future 结果，
-不能按该事件数统计成员或唯一配对重读页。批模式的 `driver_future_done` 则是原批 driver 解码后
+不冒充完整页成员。多余的 `driver_batch_future_done` 通知已经退出新捕获：旧包装为同一
+ObjectRef 额外调用一次 `future()`，而 [Ray 2.56.1 的实现](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/includes/object_ref.pxi#L122)
+每次都会新建适配器和完成订阅，且该事件没有
+唯一 RPC 配对。poll 返回计数继续来自 actor 事件，历史通知也不统计为成员完成。
+批模式的 `driver_future_done` 则是原批 driver 解码后
 本地成员 Future 就绪，不当作 Ray RPC 完成。actor 关闭后仍有批 ACK 待处理时 sink 不宣称收尾；
 缺失后续 ACK、sink 或有效时钟仍是未知，不能据此宣称完整捕获。
 
+handoff 的 driver 成员通知、submit/audit/transfer 和 Core key 时点复用下述有界缓冲，
+回调和 Core 操作中不做日志文件写入。Core 事件的 `usage=null` 明确表示未逐项采集，
+不再为每个成员重复扫描全部容量记录；它不是零用量或逐事件峰值证明。需要容量峰值时使用
+查询 owner 原有报告并保留其范围；full 模式继续显式采集原逐事件 usage 和详细 span。
+读取 buffered 时点使用 `observation_ns`，无该字段的历史事件仍用 `monotonic_ns`；非法入队时钟
+记录未知，不以刷盘时钟补成有效事件。时间线先按该时点在同一域内排序，不以文件写入顺序推因果。
+
+## 设备绑定与 native 反馈审计
+
+full 模式的 NVML 读取器仍只接受物理 GPU UUID。入口通过现有 GPU allocation 模块解析
+`runtime_binding.cuda_visible_devices`：UUID 列表保留顺序并核对继承分配；数字 `0` 仅在 NVML 确认恰有一个非 MIG 设备时
+解析为该设备的 UUID。多设备数字序号、空配置、无法读取或身份漂移均记录 unknown；不猜测
+CUDA ordinal 与 NVML index 的对应，不回退到全机设备，不把缺失填零。每次指标读取仍验证 UUID。
+
+CPU/RSS/NVML 的 `sample_interval_s` 是轮询间隔；报告保存实际间隔、采集起止与缺失原因。
+NVML GPU 活动率使用设备内部的采样周期，不能将每次轮询当作独立硬件样本；它不是 MFU、
+SM 占用或 HBM 带宽瓶颈证明。原 `nvidia-smi` 时间序列仍是另一份有起止括号的设备观察，
+不能与 NVML 或 CUDA trace 重复计数。handoff 模式不启动这些物理资源采样。
+
+观察开启时，native 反馈元数据和 handoff driver 时点复用原事件 sink，先写有界内存缓冲，
+`close_events` 再排空和 fsync；入队不写文件，也不等待 sink 的写锁。缓冲条数与单包字节分别受既有
+`max_events_per_process`／`max_event_bytes` 限制；达到边界丢弃新观察并在 footer 记数，不覆盖旧证据。
+footer 的 `feedback_buffer` 保存 attempted/enqueued/drained/dropped/errors、峰值、剩余与边界；
+`drain_complete` 和 sink 的 flush/error/drop 需分别核对，均不代替原生产者退出和未决 RPC 证明。
+`observation_ns` 和 phase 保存在入队时，普通事件时钟是随后写 sink 的时间；来源时钟、接收时间分别保存。
+footer 另列 `enqueue_wall_ns`／`enqueue_thread_cpu_ns`；sink 的 emit 成本仍保留。跨线程 wall 可重叠，
+不相加当作查询耗时。详细 span 的 thread CPU 仍只按原同步点解释，不能使用 buffered 事件的刷盘线程
+替代生产者线程。缓冲编码、保留元数据和最终刷盘仍有成本；将工作移到结果之后不构成执行加速结论，
+对照须使用相同 observer 版本／模式，并保留 query、关闭和完整生命周期各自时间。
+
+`native_feedback_frame` 的 `IPC_cache` 只表示原客户端接受/拒绝缓存帧；`actor_snapshot` 带实际
+Core session，表示 Ray 返回前的观察，尚无消费结论。`native_feedback_consumption` 分别记录
+`RPC_sample` 的 UID/session/查询起点校验、`sample` 的序号/源时钟校验、`consumer` 的新鲜度/重复
+消费判断。`accepted=true` 不是策略已接纳更高并发，也不证明所有工作可比。UID、session、
+源序号/源时钟缺失仍未知；仅保留规范 native UID、数值和理由码，不记录 prompt、输出或环境。
+
+供给 sampler 的可选分段观测继续使用查询关闭回执和这些消费事件，不新增日志通道。
+`control_request_index` 关联控制 RPC、provider 采纳和消费；它不是模型请求数，重复源帧不会
+刷新被采纳帧的 RPC 身份或年龄。源 `NativeStats.clock`、接收进程 monotonic 和 provider clock
+分别标注；`observation_ns`／sink 写入时钟不能替代它们。原 Future 的本地 ready 通知及
+轮询／取走时间见关闭回执，通知可能晚于实际就绪，注册时已完成或通知缺失时不补猜时间。
+同进程“通知→取走”可观察部分就绪后等待；跨进程差值仍需时钟锚点，不称精确传输时延。
+该补充只覆盖提供这些可选字段的 sampler；旧 request 路径字段缺失仍未知。观察 off 不注册
+这项计时回调，on/off 不改 RPC 发起节奏、新鲜度阈值或业务输入生成参数，实机开销待测。
+批反馈运行时另用完成通知唤醒原采样线程收取已有 RPC，观察关闭时也保留；回调不读结果或
+发新 RPC，下一定期轮询仍占用原来的收取轮次。该修正不为 rolling 增加反馈计时或动态策略。
+
+该消费审计需要被测 runtime 的可选 provider observer 接口；旧 runtime 明确发出
+`native_feedback_audit_unavailable`，不能仅凭工具版本宣称完整。main 的 request-feedback sampler
+提供完整来源元数据；独立供给 sampler 需同样传入 `ServiceMetricsSnapshot` 的可选
+`source_uid/source_session_id/received_at_s`，并在 RPC 校验处调用 `observe_native`。观察器不复制执行器，
+不为了审计开启反馈策略，观察 off 保持原路径。
+
+启用既有 native stats 的异步引擎可从原 ready 回执读取 `native_capacity`：值来自构造完成的
+`AsyncLLM.vllm_config`，不以 EngineSpec 声明补值。有效 seq/token/context 配置、KV池块数/块大小
+分别保留未知；这不是空闲 KV/显存读数，也不改变控制策略。上述新增接点仅有本地 CPU 验证，
+准确新树的 NVML/Ray/vLLM 接入与 on/off 开销仍待实机检查。
+
 ## 本地维护和清理边界
 
-可直接运行 `qualify` 中的三个 unittest 模块及两个 `probe_record_resource*_handoff.py`，不用仓库外
+### 完成原件的离线 DAG 观察
+
+已有 `workflow.py` 的 `summarize` 子命令只读取完成并回收的原件，不启动模型或采样器。
+
+[记录关联](../../../src/experiments/record_dag_observation.py)拥有回执、事件和CPU关联；[窗口计算](../../../src/experiments/record_dag_windows.py)只计算时间并集、重叠和区间内样本。
+每次参考读取使用同一份字节计算摘要并解析，删除重复文件读取；样本先按来源和时钟分组，输出字段及未知量读法保持。
+
+命令复用 `manifest/verify` 和 CPU span 汇总；输出必须在原件目录外，已有输出不覆盖：
+
+```sh
+"$DRIVER_PYTHON" -B "$TOOL" summarize --root "$RECOVERED_CELL" \
+  --manifest "$RECOVERED_CELL/ORIGINALS.json" --input "$PRIVATE_ANALYSIS_INPUT" \
+  --output "$NEW_ANALYSIS_JSON"
+```
+
+分析输入是仓外小型 JSON；路径相对 `--root`，`pointer` 明确选择原报告字段，不递归搜索私有输出。
+输出保留分析输入的字节摘要，并检查读取前后不变；冲突回执单列为冲突，不任选其一作已知成功或 token 总量。
+冲突身份不提供父子依赖、事件或 Core task 关联；仅用各份回执共同同意的字段标记阶段，无法一致归属的阶段保持未知。
+例如 Movie 单查询可以选择 `WORKER-RESULT.json` 的原 `calls` 和各进程事件：
+
+```json
+{
+  "schema": "semloom.record_dag_observation.input.v1",
+  "kind": "movie_session",
+  "calls": [{"path": "WORKER-RESULT.json", "pointer": ["calls"]}],
+  "events": ["events/events-<actual-pid>.jsonl"],
+  "samples": ["telemetry/samples.jsonl"]
+}
+```
+
+填写实际事件文件。一个原件包含多查询时，必须用 `query_id` 选择一条，不把首次／复用混成一个阶段。
+可重复 `--input` 输出多份共用字段的观察，仍分别保留输入、版本和缺失，不自动作性能排名。
+`source_commit` 可附原始版本；它是提供的来源声明，文件摘要不代替 Git 实机资格。
+原 Animals Q7 使用 `animals_summary: {"path":"实际summary文件.json"}`，复用原 `stages` 与媒体事件；
+两个 Filter 均从同一原输入出发，再交给 intersection，不由执行先后推导 Filter→Filter 数据边。
+其他结构可用 `structure.stages[].stage_id` 和 `structure.edges[]` 的 `source/target/kind` 声明，
+结构边与实际 `parent_call_ids` 分开保存，不将静态图当作实测就绪过程。
+旧 Movie 前端与模型内部的调用 ID 不同时，仅在引擎 UID、原生 request ID、查询／阶段／角色及
+完整行 occurrence 唯一一致时保存显式别名；重复／缺失身份不按行号或时间邻近补猜。
+
+缺省只在同一事件文件内配对时钟。跨进程或事件与采样关联需显式 `clock_bindings`：按相对文件名
+给出 `domain` 与 `basis`，依据应来自原冻结的同机／时钟绑定；未知就省略，不凭 UTC 或相近数字拼接。
+此声明不估计时钟偏移，也不独立认证声明真实性。GPU 样本还需 `gpu_uuids` 与样本来源完全一致；
+缺绑定、缺指标、CPU baseline priming、缺 sink 状态或未确认终态均保留未知。
+事件区间／采样关联的逐文件规则不改变既有 CPU helper 的物理 span 身份：同一唯一 span ID、PID/thread 的起止
+可分文件保存，仍只是一份物理成本。CPU 成员按显式选择或回执中的唯一查询隔离；混合／未知查询归属的 span
+不计入当前查询成本。host/native 的明确 unavailable/unknown 来源状态优先于残留数值0；合法 partial 来源仍逐字段处理。
+
+full 的新就绪钩子在原 `MethodDriver._ready_event` 返回后记录行引用摘要、阶段序号、session 和
+实际 Core key，不替换原 callback、不修改 ready 时间／队列或发新 RPC；off/handoff 不安装。
+它只能给就绪至 Core 接纳的观察区间，旧 callback 的选择理由不是实际容量拒绝原因；
+批屏障、传输、消费等没有对应事件时不猜原因。旧原件没有这些事件，等待继续不可判定。
+共享设备样本只按已知时间窗关联；模型 API／算子区间重叠不证明 GPU kernel 并行，不能把每个
+阶段的共享 CPU span 或 GPU 样本相加为独占资源。输出包含闭合 ready 区间的等待总量、墙钟并集、
+观测积压峰值及未闭合数量；这些量不是 RSS／显存或物理释放证明，也不产出 MFU/HBM 结论。
+CPU 资格覆盖身份／重复、Q7同源、时钟、共享重叠、未知／取消和真实 Core fixture 的 off/on；
+只证明观察接线与离线关联，不证明 SemBench 跨链资源规律或性能收益。
+
+可直接运行 `qualify` 中的 unittest 模块及两个 `probe_record_resource*_handoff.py`，不用仓库外
 Python 消费器。旧 `prepare_cells`、八格冻结配方和只依赖私有分析目录的联动用例未带入此入口；
 它们的原件保留在原审核／运行目录。新 `prepare` 取代旧矩阵配置拼装，但不删除 full 模式或
 任何有效优化。当前在用的私有包、历史冻结源码、运行回执、失败记录及原始数据均不清理。
+
+批量 CPU 探针的模拟 IPC 提供与实际异步引擎一致的就绪字段：同一 engine UID、请求内存归属、
+就绪状态和模型 actor 的单调时钟声明。owner 复用该报告；同一次 snapshot RPC 返回的原生年龄须与
+报告及样本身份一致。off/on 均检查资源采样、唯一 RPC 和终态证明，保留原批成员、分页及 ACK 断言。
+这仍是模拟 IPC／Future 的本地检查；真实 Ray、模型和 GPU 运行分别验证。

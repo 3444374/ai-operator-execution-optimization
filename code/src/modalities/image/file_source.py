@@ -16,7 +16,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 
 from ...data.coco import coco_doc_id, list_images
-from .source import ImageSourceConfig
+from .contracts import ImageSourceConfig
 
 
 @dataclass(frozen=True)

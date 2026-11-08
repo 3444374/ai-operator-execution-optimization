@@ -1,6 +1,5 @@
 import unittest
 import sys
-import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -22,14 +21,6 @@ from src.modalities.image.execution import (
 from src.modalities.image import execution as image_execution
 from src.modalities.image import staged_execution as staged_image_execution
 from src.modalities.image.clip import l2_normalize_numpy_embeddings
-from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
-
-
-RUNNER_PATH = CODE_ROOT / "scripts" / "experiments" / "run_image_clip_e2e.py"
-RUNNER_SPEC = importlib.util.spec_from_file_location("image_clip_e2e_runner", RUNNER_PATH)
-assert RUNNER_SPEC is not None and RUNNER_SPEC.loader is not None
-RUNNER_MODULE = importlib.util.module_from_spec(RUNNER_SPEC)
-RUNNER_SPEC.loader.exec_module(RUNNER_MODULE)
 
 
 class SemLoomImageNamingContractTest(unittest.TestCase):
@@ -54,8 +45,6 @@ class SemLoomImageNamingContractTest(unittest.TestCase):
             staged_image_execution.run_semloom_ray_hse_pipeline,
             staged_image_execution.run_project_ray_hse_pipeline,
         )
-        self.assertIn("project_ray", RUNNER_MODULE.ARMS)
-        self.assertNotIn("semloom_ray", RUNNER_MODULE.ARMS)
 
 
 class EmbeddingAuditTest(unittest.TestCase):
@@ -134,63 +123,6 @@ class EmbeddingNormalizationTest(unittest.TestCase):
             l2_normalize_numpy_embeddings(np.asarray([1.0, 2.0]))
 
 
-class ImageRunnerSchemaTest(unittest.TestCase):
-    def test_output_contract_fields_are_declared_in_csv_schema(self):
-        expected = {
-            "embedding_output_contract_requested",
-            "embedding_output_contract_effective",
-            "embedding_normalization_in_timed_boundary",
-            "embedding_normalization_owner",
-            "first_output_fraction_of_e2e",
-            "post_first_output_s",
-            "steady_state_duration_gate_met",
-            "joules_per_1k_images",
-            "gpu_seconds_per_image",
-            "images_per_cpu_core_second",
-            "ray_address_mode",
-            "formal_start_epoch_s_planned",
-            "formal_start_epoch_s_actual",
-            "formal_start_lateness_s",
-            "ray_data_actor_pool_mode",
-            "source_doc_ids_sha256",
-            "source_manifest_match",
-            "project_execution_mode",
-            "hse_ready_bytes_limit",
-            "hse_ready_bytes_peak",
-            "batch_ready_residence_p95_s",
-        }
-
-        self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))
-
-    def test_output_contract_metadata_matches_effective_arm_output(self):
-        self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
-                "daft_builtin_embed",
-                "arm_default",
-            ),
-            {
-                "embedding_output_contract_requested": "arm_default",
-                "embedding_output_contract_effective": "provider_raw",
-                "embedding_normalization_in_timed_boundary": False,
-                "embedding_normalization_owner": "provider_native_output",
-            },
-        )
-        self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
-                "daft_builtin_embed",
-                "l2_normalized",
-            )["embedding_normalization_owner"],
-            "baseline_adapter",
-        )
-        self.assertEqual(
-            RUNNER_MODULE.embedding_output_contract_metadata(
-                "project_ray",
-                "arm_default",
-            )["embedding_output_contract_effective"],
-            "l2_normalized",
-        )
-
-
 class ExecutionResultTest(unittest.TestCase):
     def test_accepts_driver_stage_timings(self):
         result = ExecutionResult(
@@ -239,36 +171,6 @@ class ExecutionResultTest(unittest.TestCase):
                 submitted_batches=1,
                 pending_batches_peak=2,
             )
-
-
-class RayDataBaselineValidationTest(unittest.TestCase):
-    def test_native_ray_data_graph_has_no_project_active_batch_knob(self):
-        import inspect
-
-        parameters = inspect.signature(build_ray_data_clip_pipeline).parameters
-
-        self.assertNotIn("max_active_batches", parameters)
-
-    def test_native_ray_data_graph_contains_no_project_task_scheduler(self):
-        import inspect
-
-        source = inspect.getsource(build_ray_data_clip_pipeline)
-
-        for forbidden in (
-            "max_tasks_in_flight_per_actor",
-            "ray.wait",
-            "ray.get",
-            "@ray.remote",
-        ):
-            self.assertNotIn(forbidden, source)
-
-    def test_native_ray_data_graph_can_use_framework_autoscaling_actor_pools(self):
-        import inspect
-
-        source = inspect.getsource(build_ray_data_clip_pipeline)
-
-        self.assertIn("ActorPoolStrategy(min_size=1, max_size=cpu_workers)", source)
-        self.assertIn("ActorPoolStrategy(min_size=1, max_size=gpu_workers)", source)
 
 
 if __name__ == "__main__":

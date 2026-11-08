@@ -1,8 +1,9 @@
 """IMLane launch assembly over the existing private engine process component."""
 import os
 
-from src.baselines.text.frameworks.daft_engine_process import EngineProcess
-from src.baselines.text.frameworks.lotus_chain_engine_process import ChainEngineProcess
+from src.baselines.text.frameworks.sync_reference_engine import (
+    ReferenceEngineProcess as EngineProcess, ReferenceChainEngineProcess as ChainEngineProcess,
+)
 
 
 def assigned_environment(value, *, check_current=False):

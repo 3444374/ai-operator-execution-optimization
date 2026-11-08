@@ -134,42 +134,6 @@ _ADAPTER_PROVENANCE = {
             "bounded_output_zero_error_extension_version_and_same_endpoint"
         ),
     ),
-    "direct_client": AdapterProvenance(
-        comparison_role="direct_client_control",
-        implementation_provenance="project_httpx_async_client",
-        scheduler_owner="project_asyncio_semaphore_control",
-        custom_scheduling_code=True,
-        formal_baseline_eligible=False,
-        formal_control_eligible=True,
-        upstream_source="project_implemented (code/src/baselines/text/products/direct_client.py)",
-        qualification_gate="request_equivalence_gate_and_same_endpoint_model_cap",
-    ),
-    "project_static": AdapterProvenance(
-        # The project's explicit frozen-static method -- the METHOD UNDER TEST,
-        # neither a vendor/product baseline nor a project control. Distinct from
-        # direct_client_control (a bare-client control that isolates framework/
-        # scheduling overhead): project_static IS the paper's frozen static
-        # scheduler (Ray actor + static per-endpoint K + token-work credit +
-        # token-budget organizer) run via the existing profiler. scheduler_owner
-        # names the complete frozen contract. formal_control_
-        # eligible=True follows this codebase's operational meaning ("eligible to
-        # enter the formal comparison matrix"), NOT "is a control arm"; the
-        # project_scheduled_method role is the discriminator that keeps it out of
-        # control/baseline groupings.
-        comparison_role="project_scheduled_method",
-        implementation_provenance="project_frozen_static_profiler",
-        scheduler_owner="project_ray_frozen_static",
-        custom_scheduling_code=True,
-        formal_baseline_eligible=False,
-        formal_control_eligible=True,
-        upstream_source=(
-            "project_implemented (postgres_ai_operator_profile.py frozen "
-            "static-K + active-work + token-budget path, called via wrapper)"
-        ),
-        qualification_gate=(
-            "request_equivalence_gate_and_same_endpoint_model_cap_and_frozen_static_contract"
-        ),
-    ),
 }
 
 

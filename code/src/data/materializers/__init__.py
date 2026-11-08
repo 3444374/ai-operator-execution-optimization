@@ -1,1 +1,1 @@
-"""Arrow and Daft materializers for policy-selected text batch membership."""
+"""Finite binary-payload materialization for caller-owned input windows."""

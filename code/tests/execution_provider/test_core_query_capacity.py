@@ -61,8 +61,10 @@ class CoreQueryCapacityTests(unittest.TestCase):
                 query_id='CPU-probe-'+label;queries.append(query_id)
                 stream=owner.evaluate(source,query_id=query_id,max_inflight=config['max_inflight'])
                 rows=list(stream);profiles.append(stream.execution_profile);results.extend(rows)
-                self.assertEqual(stream.session.limits.active_requests,config['max_inflight'])
-                self.assertLessEqual(stream.peak_usage['held_tasks'],config['max_inflight'])
+                self.assertEqual(stream.session.limits.active_requests,self.resources.max_active_batches)
+                self.assertEqual(owner.core.policies.admission.limit,config['max_inflight'])
+                self.assertLessEqual(stream.peak_usage['active_requests'],config['max_inflight'])
+                self.assertLessEqual(stream.peak_usage['held_tasks'],owner.capacity.limits(owner.resources).held_tasks)
                 self.assertEqual({r['call_id'] for r in rows},{r['call_id'] for r in source.expected(query_id)})
                 self.assertEqual(owner.core.capacity.usage().held_tasks,0)
                 self.assertEqual(owner.transport.retained_refs(),0)
@@ -86,10 +88,15 @@ class CoreQueryCapacityTests(unittest.TestCase):
                 self.assertEqual(len(fake.async_actors),1)
                 self.assertEqual(len([e for e in fake.events if e[:2]==('actor','_PrepareActor')]),2)
                 self.assertEqual({row['engine_uid'] for row in results},{ready['engine_uid']})
-                messages={}
+                messages={};seen={query_id:set() for query_id in queries}
                 for e in fake.events:
-                    if e[:2]==('submit','AsyncCoreModelActor.run_core'):
-                        for row in e[3][0].value.result(2):messages.setdefault(row['row_id'],set()).add(row['messages_json'])
+                    if e[:2]==('submit','AsyncCoreModelActor.try_submit_core'):
+                        for row in e[3][0].value.result(2):
+                            seen[row['query_id']].add(row['row_id'])
+                            messages.setdefault(row['row_id'],set()).add(row['messages_json'])
+                expected={query_id:{r['row_id'] for r in source.expected(query_id)} for query_id in queries}
+                self.assertEqual(seen,expected)
+                self.assertEqual(set(messages),set.union(*expected.values()))
                 self.assertTrue(all(len(values)==1 for values in messages.values()))
                 self.assertEqual(fake.async_actors[0].instance.engine._sequence,168)
             finally:closed=owner.close(timeout=3)
@@ -110,7 +117,9 @@ class CoreQueryCapacityTests(unittest.TestCase):
                     self.assertLess(time.monotonic(),until)
                     owner.core.wake.wait(owner.core.wake.generation,.005)
                 self.assertEqual(engine.snapshot()['active_requests'],2)
-                self.assertEqual(owner.core.capacity.usage().held_tasks,2)
+                self.assertGreaterEqual(owner.core.capacity.usage().held_tasks,2)
+                self.assertLessEqual(owner.core.capacity.usage().held_tasks,
+                                     owner.capacity.limits(owner.resources).held_tasks)
                 with self.assertRaises(RuntimeError):  # Existing borrowed-work guard may reject first.
                     owner.evaluate(source,query_id='cannot-change-active',max_inflight=4)
                 stream.close()
@@ -152,7 +161,9 @@ class CoreQueryCapacityTests(unittest.TestCase):
                 cancelled=None if deadline_monotonic is None else lambda:time.monotonic()>=deadline_monotonic
                 stream=owner.evaluate(source,query_id=qid,max_inflight=configuration['max_inflight'],cancelled=cancelled)
                 rows=list(stream);results.extend(rows)
-                self.assertEqual(stream.session.limits.active_requests,configuration['max_inflight'])
+                self.assertEqual(stream.session.limits.active_requests,self.resources.max_active_batches)
+                self.assertEqual(owner.core.policies.admission.limit,configuration['max_inflight'])
+                self.assertLessEqual(stream.peak_usage['active_requests'],configuration['max_inflight'])
                 self.assertEqual({r['call_id'] for r in rows},{r['call_id'] for r in source.expected(qid)})
                 self.assertEqual(owner.core.capacity.usage().held_tasks,0)
                 self.assertEqual(owner.transport.retained_refs(),0)

@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 
-from src.baselines.common.private_artifacts import content_digest
+from src.infrastructure.private_artifacts import content_digest
 
 
 @contextmanager

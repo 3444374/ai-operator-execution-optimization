@@ -1,0 +1,24 @@
+{
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "upstream_repository": "https://github.com/duckdb/duckdb",
+  "upstream_commit": "5ebd8ca697099859239ba85e0de07dac7e1b7c04",
+  "cause": "The author root .gitignore build* excludes required source/header files.",
+  "files": {
+    "src/optimizer/build_probe_side_optimizer.cpp": {
+      "bytes": 5546,
+      "git_blob": "715b4a646c77f3d818e6887507fe4823172c4403",
+      "sha256": "1835c832901873a71a0cf43a2a7afeee9ffdcca577a8529328a264aafe3f8833"
+    },
+    "src/include/duckdb/optimizer/build_probe_side_optimizer.hpp": {
+      "bytes": 932,
+      "git_blob": "617317e984aca66e4fd64c5aaad68476b384fa57",
+      "sha256": "f5797c73c85e6328e1a3b47349e8852b8aa0dfde3d7dca75b6a58ef84f1caccc"
+    },
+    "third_party/mbedtls/include/mbedtls/build_info.h": {
+      "bytes": 2380,
+      "git_blob": "cef6566c3f5cd00700b9ff468f6920871e2e6fbd",
+      "sha256": "7a732f23bf8ed09a10285841544a86698093bf0264d059182870621e90864e1c"
+    }
+  },
+  "scope": "Restore only files needed by the Q3 shared library; preserve all existing author files. This is a declared source repair, not a claim of a byte-identical complete upstream DuckDB tree."
+}

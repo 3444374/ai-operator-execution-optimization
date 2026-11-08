@@ -1,33 +1,108 @@
-# LOTUS 完整请求执行接点
+# LOTUS 方法与执行接点
 
-本模块保留 LOTUS 1.2.4 的原始 `LM`、算子提示、缓存判断、SDK 响应解析和后处理，
-只在完整 uncached batch 的执行接点选择原 SDK、Daft、Ray Data 或 SemLoom。
-`sdk.validate_source()` 核对实际安装源码和版本；不把可选 PG 兼容 profile 当成原 LOTUS 查询。
+这里调用已安装 LOTUS 的提示构造、解析、有限方法与结果合同；现有资格环境为 LOTUS 1.2.4。
+SemLoom 执行适配直接依赖本层，
+不从 baseline 获得生产实现；公共 Core 不选择 Movie、字段或标签默认。
+`FilterMethod(model_name, instruction)` 的 instruction 由调用方显式绑定。
 
-main已接纳请求／检索接点及PR52的records、有限链和本地模型接点；PR56另归位共享结果模块。实现、45d各入口小实机资格与尚未完成项见[当前状态](../../../INFRA_STATUS.md#pr52-g1-qualified-scope)，各来源的资格不自动互授。
+[records.py](records.py)的`RecordsResources.query_timeout_s`默认None，由调用方按需给出整查询期限。
+启动仍使用独立有限时间；模型实际上下文、生成设置、逐命令通信及关闭等待各归实际执行者，
+不得把未指定查询时间换算为隐藏的60秒或无限资源。历史实验读取其原来源与显式配置。
 
-已接纳records本地闭包的`FilterMethod(model_name, instruction)`要求调用方显式提供非空instruction；
-序列化配置同样拒绝缺失或空值，不选择Movie／字段／标签默认。调用方先按自己的列绑定方法，再交执行owner。
-Movie原提示由`baselines/text/movie_tasks.py`显式提供，公共Core不导入benchmark配置；CPU接线与各轮45d小实机资格分别解释，不转授未测任务或新源码组合。
+## Filter答案解析
 
-## 接口与所有权
+`FilterMethod.answer_parser`属于算子语义，随`StageSpec`和记录链序列化；普通查询报告的`method`也保存它。
+省略时保持`lotus-native`，直接调用安装包的`filter_postprocess`，不修改原生LOTUS、旧配置或原成绩。
+SemLoom修正版运行在方法配置中显式设置`"answer_parser": "answer-field-v1"`；
+需要同语义比较的Ray／Daft／IMLane记录链可以选择相同值，不由调度器或模型引擎代选。
+Movie Session在plan中提供同名字段，预检、owner和每次查询使用同一个值；原生LOTUS入口拒绝修正版声明。
+校准身份为非原生选择另记语义值，避免复用原生查询的耗时／选型；省略与显式原生保持同一身份。
 
-共享的[records结果合同](record_results.py)承载发生项、调用身份、父关联、coverage与失败/unknown审计，由Core、Ray Data和Daft消费者共用，不拥有模型或调度。旧`src.baselines.text.frameworks.lotus_chain_results`保留同一对象的薄重导出。新pickle使用新模块路径，旧pickle全局名仍可读取；worker须绑定同一候选源码，不能混用缺少新模块的旧worker。迁移与CPU边界见[代码状态](../../../INFRA_STATUS.md#record-results-migration)。
+修正版只接受一行`Answer: True`／`Answer: False`或裸布尔值，忽略解释中的布尔词；
+允许大小写、末尾句号和换行差异。多个答案字段、字段内含两个答案及无法识别的文本沿用方法的`default`，
+不会将JSON样式输出擅自当作已声明格式。请求的failed／unknown仍由原结果处理拒绝，不进入答案解析。
+原始模型文本完整保留；切换解析方式不改提示、模型请求或用量记账。
+没有Answer字段或有多个Answer字段时，解释为空；这包括裸布尔及无法分离答案的文本，原文仍在`raw_outputs`。
+单一Answer字段之前的解释提取保持，布尔判断及显式`default`保持。
 
-- `batch.lotus_executor(lm, executor)` 在作用域内替换 uncached 执行接点，退出时恢复；
-  `LotusBatchExecutor` 将完整请求提交给已有 native task API，并将完整响应交回原 SDK。
-- `native.LotusNativeBatchExecutor` 消费 Daft／Ray Data 自有图的完整响应。
-  vendor graph 拥有并行与缓冲；适配层不向这些 baseline 注入 SemLoom 的任务选择或 credit。
-- `limits.LotusCallLimits` 声明逐请求、整批字节与 deadline。native graph 在发送前准备并核对整批；
-  Movie runner 显式设置 `prevalidate_batch=True`，也在发送前预检整批。
-  直接使用 `LotusBatchExecutor` 的默认分窗口路径时，无效后缀被拒绝前，合法前缀可能已经执行。
-  单个请求不截断或补发；SemLoom 默认逐请求输入仍为 1 MiB。图文 profile 强制整批预检。
-- `maps.staged_two_map` 保留原阶段间整批等待；`driver.iter_two_map_rows` 是显式增量两阶段库接口，
-  保留逐行关联和方法状态。这两条路径分别测试，下面的 Movie runner 不增加两阶段查询形状。
+普通records、有限链及cascade dispatch共用一个选择函数；cascade的采样、阈值学习与回退仍由原方法执行。
+`run_cascade(answer_parser=...)`及其配置调用者记录相同身份，模型请求参数不接收该字段。
+修正版会改变选行和后续工作量，不能把与原生结果的耗时差都称为执行优化；原生LOTUS成绩单独保留，
+修正对照另记语义版本。实际LOTUS1.2.4的文本委托对照及两种解析各三例cascade已通过，包含阈值学习；模型质量仍为pending。
 
-HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，适配器不把 HTTP 错误改成合法空结果。
-取消与本地 iterator 关闭不证明远端模型停止；未确认的工作保留原 ownership，执行 owner 负责 drain。
-完整响应字节预算不等于进程 RSS 上限。接口和完整响应基础见[执行层说明](../../execution_provider/adapters/README.md)。
+[本批CPU范围](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-answer-parser-selection)
+区分纯解析、替身接线和原生委派；前批没有执行真实SDK流程。
+[后续导入核对](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-import-and-explanations)
+保留当时本机依赖读取超时的记录；后续[服务器实际SDK检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#filter-parser-sdk-server-cpu)已完成文本和六例cascade，范围仅为83d基底上的dbc五组件，真实Session／service及模型仍未验证。
+
+## 当前入口和所有权
+
+- [engine.py](engine.py)维护单 Filter 的 formatter、解析选择与 LM 记账；
+  [filter_answers.py](filter_answers.py)由不同执行后端共用，区分原生答案解释与修正版。
+- [record_types.py](record_types.py)维护方法／阶段及记录身份的序列化合同；
+  [record_method.py](record_method.py)调用单阶段 LOTUS formatter／parser；
+  [record_chain.py](record_chain.py)维护有限链推进、失败快照及逐记录交接。
+- [record_relation.py](record_relation.py)维护 Extract 的完整关系赋值与最终 DataFrame 组装。
+  旧 `record_chain` 类型与函数导入直接指向同一实现，JSON 标签和字段保持。
+  内部 worker、执行适配、对照图和脚本已按所属模块导入这些合同／方法，旧路径留作公共兼容入口。
+- [record_results.py](record_results.py)拥有调用／父关联、coverage、失败和 unknown 合同；不拥有模型或调度。
+- `execution_provider/adapters/lotus_records_core.py` 与有限链适配属于 SemLoom，负责供给、推进和背压。
+- `baselines/text/frameworks/` 中原生 Ray／Daft 图负责自己的 worker、批次与调度；不注入 Core credit。
+- 原生 LOTUS Movie 对照在[lotus_native_local.py](../../baselines/text/frameworks/lotus_native_local.py)：
+  原算子、LM、缓存逻辑和 LiteLLM batch_completion 保留，只通过公共 provider 把模型调用接到现有本地 IPC。
+
+共享的 `observe_filter_rows` 在[engine.py](engine.py)，CLIP batch workers 在
+[图像公共层](../../modalities/image/clip_batch_workers.py)，模型进程和清理在 `serving/backends/`。
+这些共享组件不拥有 baseline 图或 SemLoom 策略。
+
+`RecordOccurrence.from_dict` 由同一构造器校验并复制 values、source_refs、index_updates，不再先对完整字典重复深拷贝。
+返回的 describe 与调用方可变输入仍相互独立，检查见[记录持有与组合回归](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#runtime-structure-and-bridge-capacity)。
+
+`ChainRun`、内部记录段及待采用结果的已确认类型快照直接用 `dataclasses.replace` 调用同一构造器，
+不再为复制先生成完整 describe 字典。三个可变字段仍独立复制，外部字典和历史恢复继续用 from_dict。
+[同选择隔离检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)不提供RSS或查询性能结论。
+
+旧 `LotusBatchExecutor`／`LotusNativeBatchExecutor` 完整 HTTP 前端及 PG／HTTP 实验入口已退役，
+源码、接线和历史测试从[精确归档](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)恢复。
+[sdk.py](sdk.py)只为历史复算记录已安装 SDK 的来源，保留 text 与 image-message 两种 profile。
+孤立的 HTTP 请求准备／响应重放与固定两 Map 原型已退出当前目录，
+准确源码和原投影读取位置见[恢复说明](../../../../experiments/reproduction/native_baselines/README.md#retired-lotus-http-methods)。
+Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代码和历史证据分别解释。
+
+查询结果以实际 `result_ready` 为边界；原评价、API 返回、owner 关闭及模型复用成本另记。
+新原生 LOTUS 非 HTTP 路径只有 CPU 资格，完整官方 Q123 和真实模型尚待其依赖与实际环境检查。
+
+## 来源记录与运行合同
+
+[source.py](source.py)记录实际安装的 LOTUS、LiteLLM、OpenAI 版本及可读取源码的摘要。
+旧 `validate_*_source` 导入继续返回来源报告，但不再将固定版本或源码字节相等作为执行门槛；
+缺失的元数据或源码明确列为不可用。`lotus_commit`／图像的 `commit` 为未知值，
+`reference_lotus_commit` 只标识既有资格所用的参考实现，不能冒充当前安装包的 Git 身份。
+现有历史结果及其固定版本要求保持原身份；本次变化不证明其他发行版已经兼容。
+
+普通 formatter 和方法绑定不读取这些来源摘要。实际调用继续使用 LOTUS 原实现，
+输入列、DEFAULT 序列化、适用的缓存／重试政策、生成选项、请求／结果身份、用量和资源交接继续检查。
+Filter cascade 仍使用原 accessor 和阈值学习器的私有全局绑定，保留后端准备原始记录的接点。
+这处代码对象耦合仍在：直接换成公开 DataFrame 调用会把完整提示展开移到 driver，
+不能算等价简化。同进程并发 cascade 的随机数与 LM 记账隔离尚未验证。
+
+[cascade 差分检查](../../../tests/semantic_methods/test_lotus_cascade.py)用确定性 CPU 响应核对原生
+accessor 与 records 接点的完整提示、固定／学习阈值、重复抽样记录、fallback、决策与 LM 用量。
+helper 元数据无效时仍保留已知用量并让查询失败。阶段解释复用首次验证的响应，
+只为 helper 附加 logprobs，避免重复构造普通响应；未改原生校准、抽样和阈值算法。
+这些检查不执行模型，也不提供真实 helper 质量、服务器性能或其他发行版的资格。
+
+## 排查与回归记录
+
+下列记录保留可复核的触发条件、原因和处理，供后续兼容性与性能排查使用；依据为改动前源码及本批 CPU 检查。
+
+| 问题与触发条件 | 原因与处理 | 必要检查及其范围 |
+|---|---|---|
+| 旧接点在安装版本或源码字节与固定列表不等时，于方法绑定／准备前拒绝执行，即使差异不影响所用语义。 | 实验来源相等被用作普通运行的接纳条件。现由 `source.py` 记录实际来源，执行方法继续检查真实输入、请求和结果。旧 HTTP SDK 执行实现随后退役。 | [来源记录检查](../../../tests/semantic_methods/test_lotus_source.py)核对版本元数据、源码及缺失元数据只进入报告，formatter 与有限链不读取来源摘要；未安装验证其他版本。 |
+| 旧 cascade 的每个成功响应在阶段解释中转换为原生响应两次。 | `dispatch` 为记账先转换，随后 `cascade_response` 再转换一次。现在复用首次验证的响应，仅为 helper 附加 token 元数据。 | [原生差分](../../../tests/semantic_methods/test_lotus_cascade.py)核对固定／学习阈值、重复抽样、fallback、提示、决策和用量，并覆盖 helper 元数据失败后的记账。没有查询耗时或性能收益实测。 |
+
+本地消费端首次检查另出现进程查看权限错误，启用该权限后的同范围重跑通过；这是环境限制，
+原失败与重跑分列保留，不将其写成算法或清理协议缺陷。状态入口见[实现状态](../../../INFRA_STATUS.md)。
 
 <a id="finite-chain-result-index"></a>
 ## 有限链共享结果关联索引
@@ -48,72 +123,9 @@ HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，�
 完整链、结果合同及迁移回归为 CPU 证据；没有新模型、RSS 或完整查询性能验证。
 
 <a id="filter-execution-boundary"></a>
-## 当前 Filter 边界与目标入口
-
-当前接点接收完整 uncached messages；`PreparedLotusCall`／`NativeCall` 承载完整 HTTP 请求，
-native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请求。固定 LOTUS 的
-[`SemFilterDataframe`](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/sem_ops/sem_filter.py)
-在 LM 接点之前调用 `df2multimodal_info()`，图片展开仍在 driver；当前不能称为后端完整准备流水。
-固定 [SemBench Movie Q1–Q3](https://github.com/SemBench/SemBench/blob/c814e3807e72d4cf876b852b17e77f3cc94575c2/src/scenario/movie/runner/lotus_runner/lotus_runner.py)
-没有传 `cascade_args`，现有资格不表示已开启级联或全部 LOTUS 优化。
-
-`lotus_executor()` 已按 LM 实例挂载，helper／main 可分别复用；SDK 已支持 logprobs，LOTUS 已有作用域设置。
-现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
-记录到准备、调用与结果的文本接点已随PR52进入main；同模型有限计划的可选执行见下节。[后续设计](../../../../experiments/plans/系统架构.md#lotus-data-execution)中的媒体准备和跨模型接合仍须分别实现和验证。旧请求路径保留既有接入范围作参照和选择性复用。
-首闭环直接与原生 LOTUS 核对，不以旧 adapter 为唯一正确性定义，也不要求经过本模块的完整调用执行器。
-
-`sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
-后续文本级联也需补相应来源资格，records 扩展须保留原提交、补丁与独立校验身份；不能覆盖旧摘要后仍称原源码未改。
-当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；旧内核／图段仅可选提取，新链的输入、执行和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)独立验证。
-`prepare_call()`／完整 HTTP 接点准备和传输模型服务请求，未生成 GPU 输入或持有生成式模型引擎。
-[第二层目标](../../../../experiments/plans/系统架构.md#model-engine-execution)将常驻 LLM／VLM 纳入 worker；已有 `ClipTensorActor.embed()` 真正完成 tensor 上卡、图像特征计算与 CPU 结果返回，
-但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。records文本／本地引擎接点已接纳；[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)中的图文及其他扩展不因此取得实现或模型资格。
-
-## 原版 Movie 查询
-
-[公开入口](../../../scripts/experiments/run_sembench_lotus_queries.py)使用
-[四臂配置](../../../../deploy/autodl/sembench_lotus_queries.example.json)：
-
-| 配置臂 | 执行 owner |
-|---|---|
-| `lotus-adapted-native` | LOTUS／LiteLLM 原 request pool |
-| `lotus-method-native-daft` | Daft Native batch graph |
-| `lotus-method-native-ray-data` | Ray Data 官方 HTTP processor graph |
-| `lotus-method-semloom` | SemLoom Core／Ray workers |
-
-输入绑定 SemBench `c814e380` 的选定 Movie 关系、manifest、原 CSV 和独立 occurrence ID；
-Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
-标签仅供预检与查询结束后的评价，不进入模型输入。重试与结果缓存关闭。
-每个臂的持久 owner 可处理多个独立查询；每条查询重新绑定输入、预算和 trace，
-只有查询 trace 成功写入并确认归档后才回收网关对应观测。LM／Core 复用不复用模型答案。
-
-默认 `qualification` 模式核对准备请求值与实际 HTTP；显式 `performance` 模式保留实际 HTTP 和
-原 SDK 调用，准备前不可得的调用值标为 unavailable。两者的实际观测开销都计入查询，不作估计扣除。
-调用开始至消费者 EOF 与后续清理分别报告；owner 启停另列。
-示例使用有限 query／owner deadline。仅原 Movie 可显式同时置为 null，且调用方必须提供有限的
-故障、取消与清理监督；该配置本身不会安装 supervisor，逐请求 deadline 仍有限。
-
-依赖检查、环境变量和三种 CLI 动作见[脚本入口](../../../scripts/README.md#lotus-原版-movie-四臂)。
-本批来源、检查和未验证范围统一记录在[main 文本接入资格](../../../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
-[固定main原查询实测](../../../../experiments/results/diagnostics/main_queries_20261015/README.md)记录原Movie与Animals的完整模型请求、质量不足和单次计时；
-可选服务资源配置的后续源码资格见[同题报告](../../../../experiments/results/diagnostics/main_service_auto_20261015/README.md)。
-图像 RM／index／search 的本批工程接点见下节；PZ／IMLane继续按各自来源解释，软件 fixture不代表真实模型质量或性能收益。
-
-## 原版 Animals 图文查询
-
-[Animals Q1 入口](../../../scripts/experiments/run_sembench_animals.py)保留 SemBench 的 ImageArray、sem_filter、COUNT 和原 evaluator；
-`lotus-image-text-v1` 核对原 PNG data URI、消息结构及固定 LOTUS 图文源码。四臂名称为
-`lotus-native`、`daft`、`ray-data`、`semloom`，执行 owner 与上表一致。非法图文后缀在创建 Core flow 或原生执行图前失败。
-
-原图不缩放、拆分或转为 CLIP 输入；模型 processor 的内部处理另行固定。SemLoom 使用显式 native
-请求／总输入与 Ray window／object 字节额度，原 PG／wire 默认不变。CLI、正常 lease 和外层故障监督要求见
-[脚本说明](../../../scripts/README.md#animals-原版图文-q1)；源码闭包与实际 CPU 来源见
-[Animals 接入资格](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
-
-
 ## 原生 CLIP 图像检索
 
-`image_source.py`核对原LOTUS1.2.4；`image_identity.py`绑定模型参数、processor内容与版本。
+`image_source.py`记录实际LOTUS来源；`image_identity.py`绑定模型参数、processor内容与版本。
 `image_rm.py`把完整图像批交给原执行owner，保留RGB／源字节内容、行ID、shape／finite及独立矩阵所有权；
 `image_workflow.py`保留原生FAISS建库、重载、完整检索结果和settings恢复。
 `image_backend.py`提供固定单worker的Direct、SemLoom static／静态HSE和Ray fused／staged；
@@ -121,6 +133,8 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 
 [公开命令](../../../scripts/README.md#原生-lotus-clip-查询)包括文件manifest、模型资格producer及完整查询。
 `--observe-model-reuse`显式保存真实构造身份与整数调用计数，默认关闭；已导出的观测可回收，返回矩阵独立拥有。
+检索的文件写出由[实验报告模块](../../experiments/lotus_image_reporting.py)负责，
+保持原结果／回执字段及成功写出后的引用释放；CLI仍持有执行与清理顺序，方法模块不反向导入实验层。
 可选resource配置只开放static／Ray／Daft单卡、CPU1和外置TF32关闭环境，模型启动前拒绝HSEauto及多卡。
 HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入。
 [本批来源与检查](../../../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)明确区分当前CPU接入、
@@ -132,7 +146,9 @@ HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入
 在 `SemLoomRecordChainCore(..., release_completed_audit=True)` 和
 `ray_data_lotus_chain.evaluate(..., release_completed_audit=True)`／
 `daft_lotus_chain.evaluate(..., release_completed_audit=True)` 提供相同 Python 选项，默认 `False`。
-三条路径共用一个 `FusedChainBatch`；选项会传入每个完整关系阶段，不改变原生组批、调度、模型调用或重试。
+三条路径共用[无调度 worker](../../serving/backends/lotus_chain_worker.py)的原生计算和审计生命周期；
+Core 的 prepared batching／复用由其执行子类另行实现。
+选项会传入每个完整关系阶段，不改变原生组批、调度、模型调用或重试。
 这是有限链 API 接线，普通 SemBench Movie 的单 Filter records／session CLI 不经过该 worker，
 没有给那些入口增加无效参数。Core 的 `record_local_sections` 不持有该 worker 的审计副本，显式拒绝开启此项。
 
@@ -165,3 +181,8 @@ Extract仍用完整关系：真实EOF、所有前段结果与调用责任检查�
 原`StageSpec`、`ChainRun`／`MethodRun`、格式器和解析保持。组内过滤终结、尾组和取消不产生不存在的后继。
 这只改变提交放行时刻，不表示native请求已经按token组批；跨查询模型借用尚未实现。
 接口、范围及与原fused完整路径的区别见[同异步后端推进策略](../../execution_provider/adapters/README.md#optional-completion-progression-on-the-same-async-backend)。
+
+
+`records.py` 的 `RecordsResources` 默认保留 R=None，由实际消费者解析已有有限额度；
+它不探测硬件，也不把 None 当无限。普通异步支持 Core／IPC／服务声明，其他有限入口缺来源时在启动前拒绝。
+不可变资源值在构造时检查，`describe()` 只复制其字段；[当前范围](../../../INFRA_STATUS.md)区分原生 baseline、SDK 和诊断桥。

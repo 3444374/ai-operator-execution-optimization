@@ -1,6 +1,10 @@
 # 评估指标调研：AI 算子与推理服务文献 + 数据库厂商基准
 
 首次整理：2026-07-31；最近更新：2026-08-13
+
+本页项目实现判断按上述日期保存，文献整理继续供参考。现行实现与未完成项见[代码状态](../../code/INFRA_STATUS.md#refactor-completion-checklist)，
+当前[离线代价分析](../../code/src/experiments/operator_costs/README.md)已包含排序和选择指标；本页旧补采建议不作为当前代码清单。
+
 调研工具：`nature-academic-search` + `deep-research`（lit-review 口径），以一个后台工作流执行（15 个抽取 agent + 1 个综合 agent）。
 证据范围：项目已有 49 篇精读笔记 + `baseline_reference.md` 已核验的数据库厂商官方
 文档与标准 benchmark；论文数字优先回到本地精读笔记和一手论文，产品场景优先回到

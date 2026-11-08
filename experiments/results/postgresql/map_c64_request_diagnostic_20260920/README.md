@@ -24,7 +24,7 @@ C64表示**客户端最多64条在途请求**，包含等待连接、服务排�
 
 ## 修改与受控检查
 
-[`AsyncFixedModelTransport.execute`](../../../../code/src/execution_provider/adapters/async_fixed_model.py)
+[`AsyncFixedModelTransport.execute`](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/src/execution_provider/adapters/async_fixed_model.py)
 在异常离开传输层前发出 `http_error`；实验观察器保存为 `core_http_error`。
 事件包含task key、异常类型、最多四层原因类型，以及最内层代码的文件名、函数名和行号。
 类型/文件/函数名称有长度上限；不记录异常消息、请求正文、响应正文或认证头。
@@ -34,7 +34,7 @@ C64表示**客户端最多64条在途请求**，包含等待连接、服务排�
 原来未确认请求的资源处理和不重试行为继续由既有backend负责。
 这是补齐诊断信息的工程修改，不是已经确认的连接或模型缺陷修复。
 
-[传输测试](../../../../code/tests/execution_provider/test_async_transport.py)验证：
+[传输测试](https://github.com/3444374/ai-operator-execution-optimization/blob/e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd/code/tests/execution_provider/test_async_transport.py)验证：
 
 - 人为注入 `RemoteProtocolError` 时，恰好一次尝试、一次诊断，重新抛出同一个异常对象；消息和正文不进入诊断。
 - 原因链包含循环时仍有限；诊断观察器随后失败也不覆盖原异常。

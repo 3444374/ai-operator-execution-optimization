@@ -1,4 +1,4 @@
-"""Read-only installed-source audit for the frozen vLLM 0.25.1 boundary."""
+"""Read-only source and declared service identity checks for vLLM 0.25.1."""
 
 from __future__ import annotations
 
@@ -6,15 +6,123 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import json
+import math
+import re
 import sys
 from pathlib import Path
 
 from src.infrastructure.config_env import expand_structure
-from src.infrastructure.vllm_preflight import (
-    VLLM_DISTRIBUTION_HASH_FIELDS,
-    VLLM_SOURCE_HASH_FIELDS,
-    validate_service_identity,
-)
+
+
+SERVICE_IDENTITY_HASH_FIELDS = {
+    "model_config_sha256": "config.json",
+    "tokenizer_config_sha256": "tokenizer_config.json",
+    "tokenizer_json_sha256": "tokenizer.json",
+    "model_safetensors_index_sha256": "model.safetensors.index.json",
+    "generation_config_sha256": "generation_config.json",
+    "model_weight_00001_sha256": "model-00001-of-00004.safetensors",
+    "model_weight_00002_sha256": "model-00002-of-00004.safetensors",
+    "model_weight_00003_sha256": "model-00003-of-00004.safetensors",
+    "model_weight_00004_sha256": "model-00004-of-00004.safetensors",
+}
+
+VLLM_DISTRIBUTION_HASH_FIELDS = {
+    "vllm_metadata_sha256": "METADATA",
+    "vllm_wheel_sha256": "WHEEL",
+    "vllm_record_sha256": "RECORD",
+}
+
+VLLM_SOURCE_HASH_FIELDS = {
+    "vllm_source_config_scheduler_sha256": "config/scheduler.py",
+    "vllm_source_scheduler_sha256": "v1/core/sched/scheduler.py",
+    "vllm_source_async_scheduler_sha256": "v1/core/sched/async_scheduler.py",
+    "vllm_source_request_queue_sha256": "v1/core/sched/request_queue.py",
+    "vllm_source_request_sha256": "v1/request.py",
+}
+
+_REQUIRED_SERVICE_IDENTITY_FIELDS = {
+    "model",
+    "model_path",
+    "model_revision",
+    "dtype",
+    "service",
+    "scheduler",
+    "scheduling_policy",
+    "max_model_len",
+    "max_num_seqs",
+    "max_num_batched_tokens",
+    "chunked_prefill",
+    "prefix_caching",
+    "mfu_metrics",
+    "enforce_eager",
+    "compilation_mode",
+    "gpu_memory_utilization",
+    *SERVICE_IDENTITY_HASH_FIELDS,
+    *VLLM_DISTRIBUTION_HASH_FIELDS,
+    *VLLM_SOURCE_HASH_FIELDS,
+}
+
+_SHA256 = re.compile(r"[0-9a-f]{64}")
+
+_REVISION = re.compile(r"[0-9a-f]{40}")
+
+def validate_service_identity(identity: dict[str, object]) -> None:
+    """Validate the complete frozen model/build/runtime identity."""
+
+    missing = sorted(_REQUIRED_SERVICE_IDENTITY_FIELDS - set(identity))
+    unknown = sorted(set(identity) - _REQUIRED_SERVICE_IDENTITY_FIELDS)
+    if missing or unknown:
+        raise ValueError(
+            f"service identity fields invalid: missing={missing} unknown={unknown}"
+        )
+    for field in ("model", "model_path", "dtype", "service"):
+        if not isinstance(identity[field], str) or not identity[field]:
+            raise ValueError(f"service identity {field} must be non-empty")
+    if identity["scheduler"] != "vllm_native_fcfs":
+        raise ValueError("service identity scheduler must be vllm_native_fcfs")
+    if identity["scheduling_policy"] != "fcfs":
+        raise ValueError("service identity scheduling_policy must be fcfs")
+    if identity["dtype"] != "bfloat16":
+        raise ValueError("matched service identity dtype must be bfloat16")
+    if identity["service"] != "0.25.1":
+        raise ValueError("matched service identity vLLM version must be 0.25.1")
+    if identity["compilation_mode"] != "vllm_compile":
+        raise ValueError("matched service identity must use vllm_compile")
+    revision = identity["model_revision"]
+    if not isinstance(revision, str) or _REVISION.fullmatch(revision) is None:
+        raise ValueError("service identity model_revision must be a 40-hex commit")
+    for field in (
+        *SERVICE_IDENTITY_HASH_FIELDS,
+        *VLLM_DISTRIBUTION_HASH_FIELDS,
+        *VLLM_SOURCE_HASH_FIELDS,
+    ):
+        value = identity[field]
+        if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
+            raise ValueError(f"service identity {field} must be a SHA-256")
+    for field in ("max_model_len", "max_num_seqs", "max_num_batched_tokens"):
+        value = identity[field]
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ValueError(f"service identity {field} must be a positive integer")
+    for field in (
+        "chunked_prefill",
+        "prefix_caching",
+        "mfu_metrics",
+        "enforce_eager",
+    ):
+        if not isinstance(identity[field], bool):
+            raise ValueError(f"service identity {field} must be boolean")
+    if not identity["chunked_prefill"] or not identity["prefix_caching"]:
+        raise ValueError("matched service requires chunked prefill and prefix caching")
+    if not identity["mfu_metrics"] or identity["enforce_eager"]:
+        raise ValueError("matched service requires MFU metrics and compile mode")
+    utilization = identity["gpu_memory_utilization"]
+    if (
+        isinstance(utilization, bool)
+        or not isinstance(utilization, (int, float))
+        or not math.isfinite(float(utilization))
+        or not 0 < float(utilization) <= 1
+    ):
+        raise ValueError("service identity gpu_memory_utilization must be in (0, 1]")
 
 
 FROZEN_VLLM_VERSION = "0.25.1"

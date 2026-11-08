@@ -9,8 +9,8 @@ from copy import deepcopy
 import hashlib
 import json
 
-from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity, _ordered_columns, _parent_seeds
-from src.serving.backends.vllm_engine import IDENTITY_FIELDS
+from .record_types import RecordOccurrence, stage_identity, _ordered_columns, _parent_seeds
+from src.serving.backends.vllm_protocol import IDENTITY_FIELDS
 
 
 class ChainExecutionError(RuntimeError):
@@ -93,6 +93,10 @@ class ChainBatchResults:
     def request_batches(self):
         return tuple(deepcopy(batch) for batch in self._request_batches.values())
 
+    @property
+    def request_batch_count(self):
+        return len(self._request_batches)
+
     def _record_request_batches(self, envelope):
         for batch in envelope.get('request_batches', []):
             batch_id, calls = batch['request_batch_id'], batch['call_ids']
@@ -160,7 +164,7 @@ class ChainBatchResults:
                 self._failure_errors.append("non-successful or protocol-marked call")
             if call["call_id"] in self._call_records:
                 if recovering:
-                    from src.baselines.common.redact import redact_json_values
+                    from src.infrastructure.redact import redact_json_values
 
                     previous = self._call_records[call["call_id"]]
                     if call.get("error_type") == "NativeTaskUnconfirmed":
@@ -249,7 +253,7 @@ class ChainBatchResults:
         key = (record["batch_id"], record["raw_stage_id"])
         previous_priority = self._raw_priorities.get(key, 0)
         if priority == previous_priority:
-            from src.baselines.common.redact import redact_json_values
+            from src.infrastructure.redact import redact_json_values
 
             if redact_json_values(self.raw_result_batches[key]) != redact_json_values(record["raw_results"]):
                 raise ValueError("conflicting recovered raw response snapshot")

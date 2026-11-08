@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import threading
 
-from src.baselines.common.private_artifacts import (
+from src.infrastructure.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
 from src.semantic_methods.lotus.records import RecordScan, identity
@@ -22,7 +22,6 @@ PREDICATE = dict(column="id", operator="eq", value="taken_3")
 # The fixed input profile also used by experiments.postgresql.sembench_queries.
 MOVIE_CSV_DIGEST = "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf"
 OFFICIAL_MOVIE_CSV_DIGEST = "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21"
-MAX_ROWS = 4096
 MAX_CSV_BYTES = 16 * 1024 * 1024
 MAX_REVIEW_BYTES = 1024 * 1024
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
@@ -60,8 +59,8 @@ def _digest(value):
 
 
 def _row_limit(value):
-    if type(value) is not int or not 1 <= value <= MAX_ROWS:
-        raise ValueError("max_rows must be a positive integer at most " + str(MAX_ROWS))
+    if type(value) is not int or value < 1:
+        raise ValueError("max_rows must explicitly declare a positive finite prefix")
     return value
 
 
@@ -90,13 +89,13 @@ def _csv_reader(path):
             csv.field_size_limit(old_limit)
 
 
-def _read_csv(path, columns):
+def _read_csv(path, columns, max_rows):
     with _csv_reader(path) as reader:
         if reader.fieldnames != list(columns):
             raise ValueError("Movie materialized CSV columns differ from the declared schema")
         rows = []
         for position, row in enumerate(reader):
-            if position >= MAX_ROWS:
+            if position >= max_rows:
                 raise ValueError("Movie materialized CSV exceeds its declared row limit")
             rows.append(row)
     if any(set(row) != set(columns) or any(value is None for value in row.values()) for row in rows):
@@ -231,9 +230,9 @@ class MovieRecordSource:
                 raise ValueError("Movie manifest row counts must be nonnegative integers")
         if manifest["rows"] != min(max_rows, manifest["source_rows"]):
             raise ValueError("Movie manifest prefix row count differs")
-        records = _read_csv(self._artifact(manifest.get("records"), "records.csv"), RECORD_COLUMNS)
+        records = _read_csv(self._artifact(manifest.get("records"), "records.csv"), RECORD_COLUMNS, max_rows)
         references = _read_csv(
-            self._artifact(manifest.get("references"), "references.csv"), REFERENCE_COLUMNS,
+            self._artifact(manifest.get("references"), "references.csv"), REFERENCE_COLUMNS, max_rows,
         )
         if len(records) != manifest["rows"] or len(references) != len(records):
             raise ValueError("Movie records and references do not cover the declared prefix")
@@ -294,7 +293,7 @@ class MovieRecordSource:
             eligible_rows=manifest["eligible_rows"], records=dict(manifest["records"]),
             references=dict(manifest["references"]),
             label_scope="preflight association and post-query evaluation only",
-            logical_limits=dict(max_rows=MAX_ROWS, file_bytes=MAX_CSV_BYTES,
+            logical_limits=dict(max_rows=manifest["max_rows"], file_bytes=MAX_CSV_BYTES,
                                 review_utf8_bytes=MAX_REVIEW_BYTES,
                                 manifest_bytes=MAX_MANIFEST_BYTES),
             limit_scope="logical input limits; not RSS or GPU memory hard limits",

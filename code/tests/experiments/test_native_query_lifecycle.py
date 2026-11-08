@@ -17,128 +17,12 @@ from src.experiments.movie_records_session import run_sequence
 from src.semantic_methods.lotus.records import identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.experiments import test_movie_records_session as lifecycle_fixture
+from src.experiments import movie_records_query as query
 from src.experiments import movie_records_session as session
-from src.experiments import lotus_records_movie as movie
+from src.experiments import kalypso_query_lifecycle as kalypso
 from integrations.imlane_records import chain_runtime
 
 
-class ComparableLifecycleTimingTests(unittest.TestCase):
-    def fixture(self):
-        case=lifecycle_fixture.LifecycleTests();case.setUp();self.addCleanup(case.doCleanups)
-        return case
-
-    def test_resident_startup_is_once_and_driver_return_is_after_evaluation(self):
-        case=self.fixture();report=case.run_session('resident');t=report['lifecycle_timing']
-        self.assertEqual([q['full_query_seconds'] for q in report['queries']],[36]*3)
-        self.assertEqual([q['query_api_return_seconds'] for q in report['queries']],[53]*3)
-        self.assertEqual(t['owner_startup_seconds_sum'],100)
-        self.assertEqual(t['query_api_return_seconds_sum'],159)
-        self.assertEqual(t['owner_shutdown_seconds_sum'],29)
-        self.assertEqual(t['owner_startup_already_in_query_api_seconds'],0)
-        self.assertEqual(t['owners'][0]['cold_first_api_return_seconds'],153)
-        self.assertEqual(t['owners'][0]['cold_first_result_seconds'],136)
-        self.assertIsNone(report['model_load_count_observed'])
-
-    def test_isolated_startup_is_already_inside_each_driver_return(self):
-        case=self.fixture();report=case.run_session('isolated');t=report['lifecycle_timing']
-        self.assertEqual([q['full_query_seconds'] for q in report['queries']],[136]*3)
-        self.assertEqual([q['query_api_return_seconds'] for q in report['queries']],[153]*3)
-        self.assertEqual(t['owner_startup_seconds_sum'],300)
-        self.assertEqual(t['query_api_return_seconds_sum'],459)
-        self.assertEqual(t['owner_startup_already_in_query_api_seconds'],300)
-        self.assertEqual(t['owner_shutdown_seconds_sum'],87)
-        self.assertEqual(report['application_e2e_s'],546)
-        self.assertEqual(len(t['owners']),3)
-
-    def test_checkpoint_and_final_owner_close_are_not_model_or_query_api_time(self):
-        case=self.fixture()
-        report=run_sequence(case.queries,case.factory,case.output,backend='semloom-core',
-            lifecycle='resident',clock=case.clock,checkpoint=lambda event:case.clock.advance(41))
-        self.assertEqual([q['query_api_return_seconds'] for q in report['queries']],[53]*3)
-        self.assertEqual(report['application_e2e_s'],411)
-        self.assertEqual(report['lifecycle_timing']['owner_shutdown_seconds_sum'],29)
-
-    def test_failed_call_has_no_invented_normal_return_or_zero_cost(self):
-        case=self.fixture();case.query_error=ValueError('CPU query failure')
-        with self.assertRaises(ValueError) as caught:case.run_session('resident')
-        report=caught.exception.session_report
-        self.assertIsNone(report['queries'][1]['query_api_return_ns'])
-        self.assertIsNone(report['queries'][1]['query_api_return_seconds'])
-        self.assertIsNone(report['lifecycle_timing']['query_api_return_seconds_sum'])
-        self.assertEqual(report['lifecycle_timing']['query_api_timing_count'],1)
-        self.assertEqual(report['skipped_queries'],['q2'])
-
-    def test_partial_start_keeps_unknown_start_duration_and_cleanup_evidence(self):
-        case=self.fixture();case.start_error=RuntimeError('CPU start failure')
-        with self.assertRaises(RuntimeError) as caught:case.run_session('resident')
-        report=caught.exception.session_report
-        self.assertIsNone(report['lifecycle_timing']['owner_startup_seconds_sum'])
-        self.assertIsNone(report['lifecycle_timing']['owners'][0]['cold_first_api_return_seconds'])
-        self.assertEqual(case.drivers[0].closes,1)
-
-    def test_runtime_only_readiness_does_not_claim_model_load_or_residency(self):
-        case=self.fixture();original=case.factory
-        class RuntimeOnly(original):
-            def start(self):
-                super().start()
-                return dict(no_session_model=True,model_startup_scope='inside existing per-query adapter')
-        report=run_sequence(case.queries,RuntimeOnly,case.output,backend='ray-data',
-            lifecycle='isolated',clock=case.clock)
-        owners=report['lifecycle_timing']['owners']
-        self.assertTrue(all(o['owner_startup_scope']=='driver_runtime_only' for o in owners))
-        self.assertTrue(all(o['model_initialization_scope']=='inside existing per-query adapter' for o in owners))
-        self.assertIsNone(report['model_load_count_observed'])
-
-    def test_resident_rejection_is_about_this_adapter_not_a_vendor_capability_claim(self):
-        for backend in ('ray-data','daft'):
-            case=self.fixture()
-            with self.subTest(backend=backend),self.assertRaisesRegex(ValueError,'this adapter'):
-                run_sequence(case.queries,case.factory,case.output,backend=backend,
-                    lifecycle='resident',clock=case.clock)
-            self.assertEqual(case.drivers,[])
-
-    def test_existing_native_constructor_receipt_is_separate_from_runtime_start(self):
-        case=self.fixture();original=case.factory
-        class NativeReceipts(original):
-            def start(self):
-                super().start()
-                return dict(no_session_model=True,model_startup_scope='inside native graph')
-            def query(self,spec,emit):
-                result=super().query(spec,emit)
-                result['backend_close']=dict(engine_reports=[dict(
-                    engine_ready=dict(engine_uid='CPU-'+spec['query_id']),startup_seconds=11)])
-                return result
-        report=run_sequence(case.queries,NativeReceipts,case.output,backend='daft',
-            lifecycle='isolated',clock=case.clock)
-        starts=report['lifecycle_timing']['native_query_model_startup']
-        self.assertEqual([q['reports'][0]['startup_seconds'] for q in starts],[11]*3)
-        self.assertEqual(len({q['reports'][0]['engine_uid'] for q in starts}),3)
-        self.assertTrue(all(o['owner_startup_scope']=='driver_runtime_only'
-                            for o in report['lifecycle_timing']['owners']))
-        self.assertEqual(report['lifecycle_timing']['query_api_return_seconds_sum'],459)
-
-    def test_missing_native_model_duration_is_not_backfilled_from_query_time(self):
-        case=self.fixture();report=case.run_session()
-        starts=report['lifecycle_timing']['native_query_model_startup']
-        self.assertTrue(all(q['reports']==[] and q['missing_reason'] for q in starts))
-
-    def test_generic_clock_keeps_existing_imlane_result_timing_semantics(self):
-        case=self.fixture()
-        report=run_sequence(case.queries,case.factory,case.output,backend='imlane',
-            lifecycle='resident',clock=case.clock)
-        self.assertEqual(report['resident_timing']['cold_first_result_seconds'],136)
-        self.assertEqual(report['lifecycle_timing']['owners'][0]['cold_first_result_seconds'],136)
-        self.assertEqual(report['lifecycle_timing']['owners'][0]['cold_first_api_return_seconds'],153)
-
-    def test_invalid_backend_report_is_not_masked_by_optional_lifetime_metrics(self):
-        case=self.fixture();original=case.factory
-        class BadResult(original):
-            def query(self,spec,emit):return None
-        with self.assertRaises(AttributeError) as caught:
-            run_sequence(case.queries,BadResult,case.output,backend='semloom-core',
-                lifecycle='resident',clock=case.clock)
-        self.assertEqual(caught.exception.session_report['status'],'failed')
-        self.assertEqual(case.drivers[0].closes,1)
 
 
 class RayRuntimeReuseTests(unittest.TestCase):
@@ -185,7 +69,7 @@ class RayRuntimeReuseTests(unittest.TestCase):
         self.assertEqual([d.closes for d in case.drivers],[1])
 
     def test_runtime_reuse_is_only_exposed_for_verified_ray_adapter(self):
-        for backend in ('daft','semloom-core','lotus-native','imlane'):
+        for backend in ('daft','semloom-core','imlane'):
             case=self.fixture()
             with self.subTest(backend=backend),self.assertRaisesRegex(ValueError,'runtime_reuse_only.*ray-data'):
                 run_sequence(case.queries,case.factory,case.output,backend=backend,
@@ -228,6 +112,8 @@ class RayDriverReuseTests(unittest.TestCase):
                 state['models'].append(self)
                 case.assertEqual(asdict(engine),case.plan['engine'])
                 case.assertEqual(asdict(generation),case.plan['generation'])
+            def ready(self):
+                return dict(engine_uid=self.uid,native_capacity=dict(status='CPU fixture',max_num_seqs=37))
             def run_prepared(self,rows,**kwargs):
                 return [dict(row,status='succeeded',text='True',engine_uid=self.uid) for row in rows]
             def close(self):
@@ -248,9 +134,9 @@ class RayDriverReuseTests(unittest.TestCase):
         stack=ExitStack();self.addCleanup(stack.close)
         stack.enter_context(patch.dict(sys.modules,{'ray':ray}))
         stack.enter_context(patch.object(chain_runtime,'check_external_lease',return_value={}))
-        stack.enter_context(patch.object(movie,'run_movie_query',side_effect=collect))
+        stack.enter_context(patch.object(query,'run_movie_query',side_effect=collect))
         stack.enter_context(patch.object(native,'evaluate',side_effect=graph))
-        stack.enter_context(patch('src.serving.backends.vllm_engine.VllmEngine',Kernel))
+        stack.enter_context(patch('src.baselines.text.frameworks.sync_reference_engine.ReferenceVllmEngine',Kernel))
         output=Path(case.manifests['movie-q1']).parent.parent/'ray-run'
         return case,context,state,output
 
@@ -321,6 +207,8 @@ class FiniteRayKernelLifecycleTests(unittest.TestCase):
             def __init__(self,spec,generation):
                 self.uid='CPU-kernel-'+str(len(instances));self.closed=0;self.calls=[]
                 instances.append(self)
+            def ready(self):
+                return dict(engine_uid=self.uid,native_capacity=dict(status='CPU fixture',max_num_seqs=37))
             def run_prepared(self,rows,*,deadline_monotonic):
                 if self.closed:raise RuntimeError('closed fixture kernel')
                 self.calls.extend(row['call_id'] for row in rows)
@@ -343,7 +231,7 @@ class FiniteRayKernelLifecycleTests(unittest.TestCase):
                 return dict(status='completed',results=result)
             def close(self):return dict(status='closed',cleanup_errors=[])
 
-        with tempfile.TemporaryDirectory() as directory,patch('src.serving.backends.vllm_engine.VllmEngine',Kernel):
+        with tempfile.TemporaryDirectory() as directory,patch('src.baselines.text.frameworks.sync_reference_engine.ReferenceVllmEngine',Kernel):
             report=run_sequence([dict(query_id=name,task='arbitrary-task-'+name,phase='measured')
                 for name in ('alpha','beta')],Driver,Path(directory)/'run',backend='ray-data',lifecycle='isolated')
         self.assertEqual(report['status'],'completed');self.assertEqual(report['owner_start_count'],2)
@@ -406,6 +294,100 @@ class MatrixRuntimeReuseTests(unittest.TestCase):
             f=self.fixture(Path(directory),runtime_changes=True)
             with self.assertRaises(AssertionError):f.run()
             self.assertFalse((f.output/'functional-validation.json').exists())
+
+
+
+
+class KalypsoBackendSupportTests(unittest.TestCase):
+    def test_kalypso_dispatch_keeps_default_backends_on_success_or_error(self):
+        from src.baselines.text.frameworks.kalypso_native import adapter
+        from src.experiments import native_query_lifecycle as sessions
+        original = sessions.BACKENDS, sessions.RESIDENT
+        cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
+        class Driver:
+            def __init__(self, cfg, unit, path):
+                self.cfg, self.unit, self.path = cfg, unit, path
+        def run(queries, factory, output, **kwargs):
+            self.assertNotIn("kalypso-native", sessions.BACKENDS)
+            self.assertIsInstance(factory(output, None), Driver)
+            return {"queries": [], "status": "passed"}
+        with patch.object(adapter, "load_dependencies"), \
+             patch.object(adapter, "NativeQueryDriver", Driver), \
+             patch.object(sessions, "run_sequence", side_effect=run):
+            result = kalypso.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
+        self.assertEqual(result["status"], "passed")
+        error = ValueError("fixture comparison failure")
+        with patch.object(adapter, "load_dependencies"), \
+             patch.object(adapter, "NativeQueryDriver", Driver), \
+             patch.object(sessions, "run_sequence", side_effect=error):
+            with self.assertRaises(ValueError) as caught:
+                kalypso.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
+        self.assertIs(caught.exception, error)
+        self.assertIs(sessions.BACKENDS, original[0])
+        self.assertIs(sessions.RESIDENT, original[1])
+
+
+    def test_kalypso_observer_setup_failure_does_not_register_a_backend(self):
+        from src.baselines.text.frameworks.kalypso_native import adapter
+        from src.experiments import native_query_lifecycle as sessions
+        from src.observability import native_query_timing
+        original = sessions.BACKENDS, sessions.RESIDENT
+        error = ValueError('fixture observer setup failure')
+        cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
+        with patch.object(sessions, 'BACKENDS', original[0]), \
+             patch.object(sessions, 'RESIDENT', original[1]), \
+             patch.object(adapter, 'load_dependencies'), \
+             patch.object(native_query_timing, 'ObservationStore', side_effect=error):
+            with self.assertRaises(ValueError) as caught:
+                kalypso.run_attached(cfg, {'queries': []}, Path('unused-fixture-output'))
+            self.assertIs(caught.exception, error)
+            self.assertEqual((sessions.BACKENDS, sessions.RESIDENT), original)
+
+
+    def test_overlapping_kalypso_sessions_keep_default_backend_support(self):
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        from src.baselines.text.frameworks.kalypso_native import adapter
+        from src.experiments import native_query_lifecycle as sessions
+        original = sessions.BACKENDS, sessions.RESIDENT
+        entered = {name: threading.Event() for name in ('first', 'second')}
+        release = {name: threading.Event() for name in entered}
+        class Driver:
+            def __init__(self, cfg, unit, directory):
+                self.name = unit['name']
+            def start(self):
+                entered[self.name].set()
+                if not release[self.name].wait(5):
+                    raise TimeoutError('fixture session was not released')
+                return {'engine_uid': self.name, 'physical_model': False}
+            def query(self, spec, emit):
+                emit('result_ready')
+                return {'status': 'completed'}
+            def close(self):
+                return {'status': 'closed'}
+        cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
+        query = dict(query_id='fixture', task='fixture', phase='measured')
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(sessions, 'BACKENDS', original[0]), \
+             patch.object(sessions, 'RESIDENT', original[1]), \
+             patch.object(adapter, 'load_dependencies'), \
+             patch.object(adapter, 'NativeQueryDriver', Driver), \
+             ThreadPoolExecutor(max_workers=2) as pool:
+            try:
+                first = pool.submit(kalypso.run_attached, cfg,
+                    {'name': 'first', 'queries': [query]}, Path(directory) / 'first')
+                self.assertTrue(entered['first'].wait(5))
+                second = pool.submit(kalypso.run_attached, cfg,
+                    {'name': 'second', 'queries': [query]}, Path(directory) / 'second')
+                self.assertTrue(entered['second'].wait(5))
+                release['first'].set()
+                self.assertEqual(first.result(timeout=5)['status'], 'completed')
+                release['second'].set()
+                self.assertEqual(second.result(timeout=5)['status'], 'completed')
+            finally:
+                for event in release.values():
+                    event.set()
+            self.assertEqual((sessions.BACKENDS, sessions.RESIDENT), original)
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

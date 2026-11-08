@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass
 import json
 import math
 
+from .filter_answers import FILTER_PARSERS, LOTUS_NATIVE
+
 
 _IDENTITY_FIELDS = (
     "query_id", "model_role", "algorithm_stage", "row_id", "source_position",
@@ -30,6 +32,7 @@ class FilterMethod:
     output_tokens: tuple[str, str] = ("True", "False")
     system_prompt: str | None = None
     resolved_input_columns: tuple[str, ...] | None = None
+    answer_parser: str = LOTUS_NATIVE
 
     def __post_init__(self):
         if type(self.model_name) is not str or not self.model_name.strip():
@@ -38,6 +41,8 @@ class FilterMethod:
             raise ValueError("Filter instruction must be a nonempty string")
         if type(self.default) is not bool:
             raise ValueError("Filter default must be a boolean")
+        if self.answer_parser not in FILTER_PARSERS:
+            raise ValueError("Filter answer_parser must be lotus-native or answer-field-v1")
         if type(self.output_tokens) is not tuple or self.output_tokens != ("True", "False"):
             raise ValueError("ordinary text Filter requires the original True/False output tokens")
         if self.system_prompt is not None and type(self.system_prompt) is not str:
@@ -45,7 +50,6 @@ class FilterMethod:
         object.__setattr__(self, "resolved_input_columns", _resolved_columns(self.resolved_input_columns))
 
     def describe(self):
-        self.__post_init__()
         return asdict(self)
 
     @classmethod
@@ -113,7 +117,6 @@ class RecordScan:
         object.__setattr__(self, "predicate", predicate)
 
     def describe(self):
-        self.__post_init__()
         return asdict(self)
 
     @classmethod
@@ -132,22 +135,30 @@ class RecordsResources:
     gpu_workers: int = 1
     prepare_batch_rows: int = 4
     model_batch_rows: int = 4
-    max_active_batches: int = 2
-    query_timeout_s: float = 60
+    max_active_batches: int | None = None
+    query_timeout_s: float | None = None
     startup_timeout_s: float = 120
+    model_rpc_workers: int | None = None
 
     def __post_init__(self):
         for name in (
             "cpu_workers", "gpu_workers", "prepare_batch_rows", "model_batch_rows",
-            "max_active_batches",
         ):
             value = getattr(self, name)
             if type(value) is not int or value < 1:
                 raise ValueError("records capacity must be a positive integer: " + name)
+        if self.max_active_batches is not None and (
+                type(self.max_active_batches) is not int or self.max_active_batches < 1):
+            raise ValueError("max_active_batches must be a positive integer or None")
         if self.gpu_workers != 1:
             raise ValueError("records currently require one GPU worker and TP1")
+        if self.model_rpc_workers is not None and (
+                type(self.model_rpc_workers) is not int or self.model_rpc_workers < 1):
+            raise ValueError("model_rpc_workers must be a positive integer or None")
         for name in ("query_timeout_s", "startup_timeout_s"):
             value = getattr(self, name)
+            if name == "query_timeout_s" and value is None:
+                continue
             try:
                 valid = type(value) in (int, float) and math.isfinite(value) and value > 0
             except OverflowError:
@@ -156,8 +167,13 @@ class RecordsResources:
                 raise ValueError("records deadline must be finite and positive: " + name)
 
     def describe(self):
-        self.__post_init__()
         return asdict(self)
+
+    def request_capacity(self):
+        """Read an applied finite grant; None records an unresolved declaration."""
+        if self.max_active_batches is None:
+            raise ValueError("request capacity is unresolved; declare max_active_batches or a supported finite budget")
+        return self.max_active_batches
 
 
 def identity(query_id, row_id, source_position, call_index=0, *,

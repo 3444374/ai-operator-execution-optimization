@@ -9,9 +9,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.execution_provider.adapters import lotus_records_async_actor as actors
+from src.execution_provider.adapters import records_async_model as actors
 from src.execution_provider.adapters.lotus_chain_actor_backend import LotusChainActorBackend
-from src.execution_provider.adapters.lotus_records_core import _encode
+from src.execution_provider.adapters.records_model_adapter import _encode
 from src.scheduling.core.session_contract import Acceptance, BatchKey, BatchMember
 from src.scheduling.runtime import async_backend
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
@@ -71,7 +71,7 @@ class BatchLifecycleTests(unittest.TestCase):
             snapshot=lambda: dict(owner_uid=uid, issued_submissions=2))
         payload = _encode(dict(calls=calls, batch_key=[0, 0], deadline=time.monotonic()+3),
                           value.limits.input_bytes)
-        self.assertEqual(value.submit_prepared_batch(payload), dict(status='accepted'))
+        self.assertEqual(value.try_submit_prepared_batch(payload), dict(status='accepted'))
         return value
 
     def assert_member_results(self, receipts, *, unknown=False):
@@ -131,7 +131,7 @@ class BatchLifecycleTests(unittest.TestCase):
                 call = dict(row=row, generation=asdict(GenerationSpec()), maximum=512, request_key=[0, 0])
                 payload = _encode(dict(calls=[call], batch_key=[0, 0], deadline=time.monotonic()+3),
                                   value.limits.input_bytes)
-                response = value.submit_prepared_batch(payload)
+                response = value.try_submit_prepared_batch(payload)
                 self.assertEqual(response['status'], 'rejected')
                 result = response['results'][0]['result']
                 self.assertLessEqual(len(_encode(result, 100000)), 512)
@@ -223,11 +223,10 @@ class BatchLifecycleTests(unittest.TestCase):
             self.assertTrue(transport.backend.close(3, wait_pending=True))
 
     def test_cancel_during_zero_acceptance_retry_preserves_exact_ticket_ownership(self):
-        value, entered, available = actor(), threading.Event(), threading.Event()
-        submitted, aborted, response, errors = [], [], [], []
+        value, available = actor(), False
+        submitted, aborted = [], []
         def submit(rows, **options):
-            entered.set()
-            if not available.is_set():
+            if not available:
                 return BatchSubmitResult('backpressure')
             submitted.extend(r['row_id'] for r in rows)
             return BatchSubmitResult('queued', tuple('ticket-'+r['row_id'] for r in rows))
@@ -239,31 +238,20 @@ class BatchLifecycleTests(unittest.TestCase):
             row['messages_json'] = json.dumps([dict(role='user', content='complete prompt')])
             calls.append(dict(row=row, generation=asdict(GenerationSpec()), maximum=8192, request_key=[1, i]))
         payload = _encode(dict(calls=calls, batch_key=[1, 0], deadline=time.monotonic()+3), value.limits.input_bytes)
-        def run():
-            try: response.append(value.submit_prepared_batch(payload))
-            except BaseException as error: errors.append(error)
-        thread = threading.Thread(target=run)
-        thread.start()
-        try:
-            self.assertTrue(entered.wait(1))
-            self.assertTrue(value.abort_core((1, 0))['requested'])
-            available.set()
-            with value._condition: value._condition.notify_all()
-            thread.join(2)
-            self.assertFalse(thread.is_alive())
-            self.assertEqual(errors, [])
-            self.assertEqual(response, [dict(status='accepted')])
-            self.assertEqual(submitted, ['r1'])
-            self.assertIsNone(value._held[(1, 0)].ticket)
-            self.assertFalse(value._held[(1, 0)].value['submission_confirmed'])
-            self.assertEqual(value._held[(1, 1)].ticket, 'ticket-r1')
-            self.assertEqual(value._tickets, {'ticket-r1': (1, 1)})
-            value.abort_core((1, 1))
-            self.assertEqual(aborted, ['ticket-r1'])
-        finally:
-            available.set()
-            with value._condition: value._condition.notify_all()
-            thread.join(3)
+        self.assertEqual(value.try_submit_prepared_batch(payload), dict(status='backpressure'))
+        self.assertEqual(value._held, {})
+        self.assertEqual(value._tickets, {})
+        self.assertEqual(submitted, [])
+        self.assertTrue(value.abort_core((1, 0))['requested'])
+        available = True
+        self.assertEqual(value.try_submit_prepared_batch(payload), dict(status='accepted'))
+        self.assertEqual(submitted, ['r1'])
+        self.assertIsNone(value._held[(1, 0)].ticket)
+        self.assertFalse(value._held[(1, 0)].value['submission_confirmed'])
+        self.assertEqual(value._held[(1, 1)].ticket, 'ticket-r1')
+        self.assertEqual(value._tickets, {'ticket-r1': (1, 1)})
+        value.abort_core((1, 1))
+        self.assertEqual(aborted, ['ticket-r1'])
 
     def boundary_actor(self):
         value = actor()

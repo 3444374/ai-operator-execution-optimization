@@ -1,0 +1,151 @@
+{
+  "base_commit": "9652108d781bd85dc254f20149e40a99d67e9447",
+  "not_stacked_on": "c5a76e80056e8cbd71a8573530d91ca249620b48",
+  "before_file_lines": 1064,
+  "after_file_lines": {
+    "code/src/observability/profiling/ray.py": 670,
+    "code/src/observability/profiling/ray_scheduler.py": 357
+  },
+  "net_production_physical_lines": -37,
+  "retained_definitions_unchanged": 22,
+  "moved_definitions": 10,
+  "deleted_former_parameter_wrapper_lines": 50,
+  "CPU": {
+    "same_method_selection": true,
+    "before_passed": 194,
+    "after_passed": 194,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "final_import_increment_passed": 1,
+    "repeated_methods_not_summed": true
+  },
+  "history": {
+    "variants": [
+      "native_isolated_and_imlane",
+      "core_original_dynamic",
+      "core_local_window_pairs",
+      "ray_runtime_reuse",
+      "daft_single_thread_session"
+    ],
+    "new_overrides": 5,
+    "original_file_hashes_and_projection_ids_unchanged": true,
+    "full_materialization_in_existing_suite": true
+  },
+  "size": {
+    "main": {
+      "core": {
+        "files": 227,
+        "physical_lines": 54091,
+        "nonempty_lines": 48889,
+        "files_over_1000": 7,
+        "functions_over_100": 50
+      },
+      "src_all": {
+        "files": 444,
+        "physical_lines": 109118,
+        "nonempty_lines": 99548,
+        "files_over_1000": 15,
+        "functions_over_100": 134
+      },
+      "scripts": {
+        "files": 134,
+        "physical_lines": 31217,
+        "nonempty_lines": 28486,
+        "files_over_1000": 3,
+        "functions_over_100": 45
+      }
+    },
+    "bfb": {
+      "core": {
+        "files": 232,
+        "physical_lines": 57793,
+        "nonempty_lines": 52338,
+        "files_over_1000": 7,
+        "functions_over_100": 54
+      },
+      "src_all": {
+        "files": 452,
+        "physical_lines": 113820,
+        "nonempty_lines": 103919,
+        "files_over_1000": 15,
+        "functions_over_100": 143
+      },
+      "scripts": {
+        "files": 135,
+        "physical_lines": 32218,
+        "nonempty_lines": 29415,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    },
+    "3fd": {
+      "core": {
+        "files": 248,
+        "physical_lines": 61628,
+        "nonempty_lines": 55819,
+        "files_over_1000": 9,
+        "functions_over_100": 57
+      },
+      "src_all": {
+        "files": 471,
+        "physical_lines": 118067,
+        "nonempty_lines": 107770,
+        "files_over_1000": 17,
+        "functions_over_100": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    },
+    "current_worktree": {
+      "core": {
+        "files": 249,
+        "physical_lines": 61604,
+        "nonempty_lines": 55793,
+        "files_over_1000": 8,
+        "functions_over_100": 57
+      },
+      "src_all": {
+        "files": 472,
+        "physical_lines": 118043,
+        "nonempty_lines": 107744,
+        "files_over_1000": 16,
+        "functions_over_100": 146
+      },
+      "scripts": {
+        "files": 131,
+        "physical_lines": 31578,
+        "nonempty_lines": 28845,
+        "files_over_1000": 3,
+        "functions_over_100": 46
+      }
+    }
+  },
+  "final_source_sha256": {
+    "code/src/observability/profiling/ray.py": "d003db2e0a7acbd8264d40502855e8199a99a56715d5c7d5112d067c7e264db9",
+    "code/src/observability/profiling/ray_scheduler.py": "4778a3d8a4974fe4e96afe513f967700f99d1e9dd02c108b2001c9b167a8510d",
+    "code/tests/observability/test_postgres_profile_scheduling.py": "044082b79cbe5f22472469641eb5055316aa6084aed1f93dc811995cd6cb9851"
+  },
+  "remaining": [
+    "Final independent review of this committed candidate",
+    "Ruff is unavailable in the selected environment",
+    "Actual Ray/model/performance validation",
+    "Positive per-endpoint and shared-credit public execution coverage not added"
+  ],
+  "raw": {
+    "path": "ray_profiling_layout_raw.json.gz",
+    "bytes": 100522,
+    "sha256": "8b722ba9f28178434d581a05ab74b1a71eb54fe533d4282ee38e6db91e63f426"
+  },
+  "real_Ray_runs": 0,
+  "model_calls": 0,
+  "GPU_runs": 0,
+  "server_runs": 0,
+  "pushed": false,
+  "merged": false
+}

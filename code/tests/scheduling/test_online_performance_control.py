@@ -2,7 +2,8 @@
 from dataclasses import replace
 import unittest
 from src.scheduling.core.models import AdmissionObservation
-from src.scheduling.submission_control.adaptive import ResourceFeedbackConfig,ResourceFeedbackController
+from src.scheduling.submission_control.adaptive import ResourceFeedbackController
+from src.scheduling.submission_control.feedback_options import ResourceFeedbackConfig
 
 
 class OnlinePerformanceTests(unittest.TestCase):

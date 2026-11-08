@@ -1,0 +1,182 @@
+{
+  "schema": "semloom.native_q3_diagnostic.v1",
+  "original_run": {
+    "run_id": "native-q3-e0ec-1106-r1",
+    "source_commit": "e0ec300c1c927b6882e1a934dd8efb64ab099996",
+    "source_tree": "7c37d5280d54276a733f10f43984e23e99ac216c",
+    "status": "failed_post_result_process_exit",
+    "result_ready": true,
+    "normal_complete_jct_seconds": null,
+    "model_ready_query_seconds": null,
+    "versions": {
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "vllm": "0.25.1",
+      "torch": "2.11.0",
+      "transformers": "5.14.1"
+    },
+    "model": "Qwen2.5-7B-Instruct",
+    "dtype": "bfloat16",
+    "model_identity_sha256": "beaaaf63e5afe683fb9a37126da52855d5cdf5b6345f30f6837a03bed516978f",
+    "reviews_csv_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+    "cohort_rows": 2000,
+    "eligible_occurrences": 120,
+    "gold_positive": 14,
+    "gold_negative": 106,
+    "sampling_params": {
+      "temperature": 0,
+      "top_p": 1,
+      "max_tokens": 8192,
+      "stop": [],
+      "frequency_penalty": 0,
+      "presence_penalty": 0,
+      "repetition_penalty": 1,
+      "n": 1,
+      "seed": null
+    },
+    "engine_kwargs": {},
+    "provider_options": {},
+    "warmup": 0,
+    "whole_query_retries": 0,
+    "daft": {
+      "predictions": 120,
+      "positive_review_cnt": 7,
+      "TP": 7,
+      "FN": 7,
+      "TN": 106,
+      "FP": 0,
+      "unparsed": 0,
+      "original_evaluator": {
+        "relative_error": 0.5,
+        "absolute_error": 7,
+        "mape_percent": 50
+      },
+      "result_ready_seconds": 66.027224515,
+      "supervisor_seconds": 311.836,
+      "seconds_from_result_file_to_external_term": 242,
+      "token_estimates": {
+        "basis": "local tokenizer; not returned engine token IDs",
+        "input_sum": 14566,
+        "input_max": 191
+      },
+      "owned_processes_observed": 125,
+      "final_observed_owned_processes_gone": true,
+      "final_gpu_idle": true,
+      "final_shm_clean": true,
+      "post_result_exit": "worker and EngineCore stayed alive; external TERM required"
+    },
+    "ray": {
+      "status": "not_run_no_pinned_environment",
+      "logical_requests_reserved": 120,
+      "claimed_requests": 0,
+      "model_requests": 0
+    },
+    "physical_attempts": null,
+    "cache_condition": "fresh process/model; filesystem and JIT cache not cold",
+    "original_sha256": {
+      "query": "1e9367914983f80387d266c86e5177f1d68e497cc4163ff2d51778b13ec3cd5f",
+      "preflight": "38b7e870bc90dcf32dd204c17f52558e7e3edd0dfc78826734ce98551a9882f8",
+      "quality": "6452563a989128092ea1032328d288d0a8986b03efe6c17bcbe40ad802f6237d",
+      "terminal": "eedee711788f7c09b312b3e2f15195ef5be9e8c3a4c80d0434845f1866ed7ea6",
+      "supervisor": "517372ba273aa630922cdb34bd02a477e229d60b1e6b646eed885e780bbb2f3d",
+      "worker_log": "102e886bbe62ef1e35303b5615ed92812458263b5a28ca30bad316750409bdc0",
+      "resource_before": "3c953482a3908ba69674cb0c2e2641da777d3da6f8f1c3a5c87bc5ee6eaf4d07",
+      "resource_after": "195d8bbf94c7f1cac5db6e1287bdfe691c07932101de24d64ed6b2d43825329e",
+      "originals_manifest": "96fec5b66a19e91eb8f0882ba1ad81c682e301baee089ac7d797109455a154f6",
+      "results_client": "e4f3ae970be2c04514616681f8127e793994e47863944c4a31d41b2d8b8ea203"
+    }
+  },
+  "installed_source_sha256": {
+    "daft_execution_vllm_py": "4c4fc6c125946c67e2b20de6b11b540b12095f1da59630c7681bdf79b069df63",
+    "vllm_async_llm_py": "69ea05aea497134204f1c6fd5f53994f4f7bbc35d24f90a768553dd8d6ba0b1a"
+  },
+  "cpu_exit_reproduction": {
+    "executor": "actual Daft 0.7.21 LocalVLLMExecutor",
+    "engine": "CPU stand-in with an ordinary non-daemon multiprocessing child",
+    "model_requests": 0,
+    "modes": [
+      {
+        "mode": "original",
+        "normal_exit_within_3s": false,
+        "waited_in_multiprocessing_join": true,
+        "raw_sha256": "93e0c27f1950504a4931194f67b87b3f7142f1b1aa98819cd17bf7f6bad18770"
+      },
+      {
+        "mode": "drop_reference_and_gc",
+        "normal_exit_within_3s": false,
+        "waited_in_multiprocessing_join": true,
+        "raw_sha256": "bdc647a1ec654046a8e3877f46d73faba60b51ca663d9e08e313c76080b73b77"
+      },
+      {
+        "mode": "public_shutdown",
+        "normal_exit_within_3s": true,
+        "waited_in_multiprocessing_join": false,
+        "raw_sha256": "ebbd6b903fe0ca7177cbbcf7e642a763408fb3817860a48c7e35085db7da2f88"
+      },
+      {
+        "mode": "scoped_owner",
+        "normal_exit_within_3s": true,
+        "waited_in_multiprocessing_join": false,
+        "raw_sha256": "ebbd6b903fe0ca7177cbbcf7e642a763408fb3817860a48c7e35085db7da2f88"
+      }
+    ],
+    "same_byte_outputs_are_distinct_executions": true,
+    "reproduction_script_sha256": "e96358e3e2808b4a91c50b393b0edebb9e25956bdf07a28a345791fd47e23e20",
+    "physical_gpu_exit_qualified": false
+  },
+  "ray_cpu_audit": {
+    "revision": 4,
+    "script_sha256": "4d3ee345e814d09ade3cbb7c17adfb50dfd6ccdb23c7052e5797242609cb628f",
+    "output": "ray_cpu_api.json",
+    "status": "pass",
+    "published_extra_conformance": "fail",
+    "installed_software": 0,
+    "previous_revisions": "1-3 blocked harmless OS metadata probes; retained as audit-guard failures, not SDK incompatibility",
+    "actual_engine_construction": "not_checked",
+    "cuda_abi": "not_checked",
+    "ray_actors": "not_checked",
+    "quality": "not_checked",
+    "physical_shutdown": "not_checked",
+    "guard_counts_basis": "Script behavior, entry guards and initialization state; not independent OS/GPU counters or a system sandbox"
+  },
+  "validation": {
+    "kind": "CPU regression; actual Daft executor with model stand-ins; Ray contract stand-ins",
+    "distinct_methods": 46,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "log_sha256": "8305fc958a92ee2a25df5219669f2a95ea6a3dc0ab3620103eacd80d1f3edf65",
+    "ruff": "seven changed Python files passed",
+    "model_qualification": false,
+    "source_sha256": {
+      "code/src/baselines/text/frameworks/daft_sembench_native.py": "77745bfaf8de5c4d9ffda23a418b34e988b0102bc00e82f215416941e6ba78d1",
+      "code/src/baselines/text/frameworks/daft_native_owner.py": "1521d65e46bc99786d6df55dbefbbf7e3d3fef4f4c2fab67c11979e82cb2f6b1",
+      "code/src/experiments/native_daft_query.py": "4d4f5782a8def59ee0b1979dce529f90873853a0a7c653c3cae096de1bb67519",
+      "code/tests/baselines/text/test_daft_sembench_native.py": "01a7660108768fcedd3114a7934e85ad9e67658034743fa7aac6f8ed47498b54",
+      "code/tests/baselines/text/test_daft_native_shutdown.py": "466de743ebf01e470b8fceb6da99dac1e09fd5d3c95d7c24920c053cdf78d910",
+      "code/tests/baselines/text/native_sdk_fixtures.py": "75390f11d82a300fb7957ca9e594651fa20cebd219387bbb54673c645ed6f261",
+      "code/tests/experiments/test_native_daft_query.py": "d4ff666ef37eb8233923425174ece4a6b782bda0dda4c18715a4a1574c094834"
+    },
+    "prior_final_runs": "43 and 45 passed before additional error-preservation cases; not added to distinct method count",
+    "artifact_error_regression": {
+      "before_fix": "one method failed in two subcases: caller-handled exception hid a new write failure",
+      "before_fix_log_sha256": "17215b5341835a724308926a6b0c40b88c7727fd1440d7e4fba204483ad746f4",
+      "after_fix": "passed in the final 46-method selection"
+    },
+    "integration": {
+      "peer_commit": "c2b2cad23a29c0f8656ecca1f0a4be1492730846",
+      "merge_commit": "8377975ea51812cd6ab71b17a4420bb23f9ee105",
+      "all_seven_tested_source_files_unchanged": true,
+      "peer_python_files_exactly_preserved_or_deleted": 17,
+      "conflict": "one status paragraph in execution configuration docs; newer measured qualification retained; other peer text unchanged"
+    },
+    "historical_recovery": {
+      "methods": 4,
+      "status": "passed",
+      "full_named_trees": 5,
+      "original_file_digests": 3010,
+      "log_sha256": "7bd4e081037983d95cd8c0bd7ade311ac4667b4f73dd3d805fca922f610aaa7b",
+      "expected_digests_and_projection_ids_changed": false
+    }
+  }
+}

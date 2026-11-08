@@ -1,0 +1,292 @@
+{
+  "schema": "semloom.native_q3_retest_diagnostic.v1",
+  "run_id": "native-q3-67a4-1106-r1",
+  "source": {
+    "head": "67a4fec3d58627e1864a065b855609960f2dac2f",
+    "tree": "194b814c55949e4f5612de5653e8946c3d0a53d4",
+    "tracked_clean": true
+  },
+  "versions": {
+    "daft": "0.7.21",
+    "ray": "2.56.1",
+    "vllm": "0.25.1",
+    "torch": "2.11.0",
+    "transformers": "5.14.1"
+  },
+  "single_ordered_pair_not_stable_performance": true,
+  "current_diagnosis_started_models": false,
+  "additional_software_installed": false,
+  "sampling": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 8192,
+    "stop": null,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1,
+    "n": 1
+  },
+  "runtime_assignment": {
+    "num_cpus": 8,
+    "num_gpus": 1,
+    "object_store_memory": 536870912,
+    "cpu_affinity_slot_count": 8
+  },
+  "input_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+  "quality": {
+    "per_backend": {
+      "count": 7,
+      "gold_count": 14,
+      "true_positive": 7,
+      "false_negative": 7,
+      "true_negative": 106,
+      "false_positive": 0,
+      "unparsed": 0,
+      "missing": 0,
+      "duplicate": 0,
+      "official_relative_error": 0.5,
+      "official_absolute_error": 7,
+      "official_MAPE_percent": 50
+    },
+    "pairwise": {
+      "daft_vs_ray": {
+        "common_occurrences": 120,
+        "missing_from_left": 0,
+        "missing_from_right": 0,
+        "different_decisions": 0,
+        "different_raw_replies": 0,
+        "different_row_identity": 0
+      },
+      "daft_vs_old_daft": {
+        "common_occurrences": 120,
+        "missing_from_left": 0,
+        "missing_from_right": 0,
+        "different_decisions": 0,
+        "different_raw_replies": 2,
+        "different_row_identity": 0
+      },
+      "ray_vs_old_daft": {
+        "common_occurrences": 120,
+        "missing_from_left": 0,
+        "missing_from_right": 0,
+        "different_decisions": 0,
+        "different_raw_replies": 2,
+        "different_row_identity": 0
+      }
+    },
+    "verdict": "All120 current raw replies and decisions match between Daft and Ray. Both preserve the same7 false negatives as old Daft; old/current raw text differs on2 occurrences without decision changes. Quality is not passed."
+  },
+  "observed_engine_fields": {
+    "dtype": [
+      "torch.bfloat16"
+    ],
+    "max_model_len": [
+      "32768"
+    ],
+    "max_num_batched_tokens": [
+      "2048"
+    ],
+    "max_num_seqs": null,
+    "gpu_memory_utilization": null,
+    "KV_cache_tokens": [
+      "116,240"
+    ],
+    "engine_seed": [
+      "0"
+    ]
+  },
+  "unobserved_native_fields": [
+    "max_num_seqs",
+    "gpu_memory_utilization",
+    "actual engine input token IDs"
+  ],
+  "cache_boundary": "Fresh worker/model, not cleared filesystem/JIT caches. Daft then Ray once, using shared data-disk JIT cache. Pre-run full identity hashing15.319s warms filesystem cache. Previous e0ec used different cache location.",
+  "raw_sha256": {
+    "FINAL.json": "25b50a18f86815a3096b18a83d24dd9f2a4cf1988537e8450581db5f53c8c05c",
+    "PLAN.json": "f2625a158c8c87116532395963bf8b606e0537777144fa677477457f3537cf16",
+    "MODEL-IDENTITY.json": "40212d999ced889a1f5db10a03f53d49f78d4f0cca318cf8064b1967174551b7",
+    "environment.json": "5e46a494c2c999372efd355d2de3798f1c7756fb40be8ae1b70e03f827990c78",
+    "daft/result-ready.json": "10a6a0076768deb0f20b8c44c5460e7d6b37adbe08ba59bd72a82a6487894090",
+    "daft/worker.json": "65ee32216b5c86d150e090b604955e91b4ab637988e4307e421d6e08a30eec3d",
+    "daft/FINAL.json": "4cf80c2521d609d904bafe5e62770aa780a0b7e92a2b02df0cdc01e176492929",
+    "daft/supervision/worker.log": "25e170152530b8641f247c2c0e784f5a1854cc86bca8708a88966e3800a4b6ab",
+    "ray/result-ready.json": "5c70eb8ed0c33fa6571421c0542d8b511da85a7b8b2b54a75c432080daec00c1",
+    "ray/worker.json": "fba1be39e9b9cb73c12305d4562e119a0d3c02890f5e595ad802960c4f3eccf4",
+    "ray/FINAL.json": "1bc7311bb2c7080aec32461ee92f0ec595cd9b1fa98a714b9d7897e74a4fd917",
+    "ray/supervision/worker.log": "b861ee2705fdb5699baad632633b69630a4364a7aeb23046a6281dfccb942efb"
+  },
+  "private_handoff_sha256": "90e5fe2bdd846fb32c5e93498e963a33cabc490350b1f2de36130aa667cafc98",
+  "private_results_sha256": "0a7f6bad434213df3c3cf5a57f41ab66d9f748febe006baf22179d574398aab7",
+  "daft": {
+    "occurrences": {
+      "predictions": 120,
+      "unique": 120,
+      "missing": 0
+    },
+    "timing": {
+      "cold_result_ready_s": 77.615118694,
+      "worker_completed_s": 81.237611056,
+      "post_result_to_worker_end_s": 3.622492362,
+      "supervised_process_end_to_end_s": 83.29129564203322,
+      "model_ready_query_s": null,
+      "model_ready_clock": "not exposed; no startup subtraction"
+    },
+    "worker_status": "completed",
+    "resource": {
+      "passed": true,
+      "max_sampled_owned_rss_bytes": 6894153728,
+      "max_host_shm_delta_bytes": 12288,
+      "final_host_shm_used_delta_bytes": 0
+    },
+    "remaining_new_shm_count": 0,
+    "observed_processes": 123,
+    "worker_exit": 0,
+    "observed_owned_exit_confirmed": true,
+    "unobserved_descendants_confirmed": false,
+    "native_usage": {
+      "num_input_tokens": {
+        "present": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      },
+      "num_generated_tokens": {
+        "present": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      },
+      "request_id_present": 0,
+      "unique_request_ids": 0,
+      "unique_batch_uuids": 0
+    },
+    "public_model_close_receipt": {
+      "status": "closed",
+      "captured_models": 1,
+      "engine_api_shutdown_confirmed": true,
+      "gpu_exit_confirmed": null,
+      "scope": "public vLLM factory/shutdown; isolated native Daft query",
+      "errors": [],
+      "construction_attempts": 1,
+      "unconfirmed_constructions": 0,
+      "close_seconds": 3.619331502355635,
+      "timeout_s": 112
+    },
+    "runtime_closed": null
+  },
+  "ray": {
+    "occurrences": {
+      "predictions": 120,
+      "unique": 120,
+      "missing": 0
+    },
+    "timing": {
+      "cold_result_ready_s": 69.828121957,
+      "worker_completed_s": 71.269628204,
+      "post_result_to_worker_end_s": 1.441506247,
+      "supervised_process_end_to_end_s": 73.26432388741523,
+      "model_ready_query_s": null,
+      "model_ready_clock": "not exposed; no startup subtraction"
+    },
+    "worker_status": "completed",
+    "resource": {
+      "passed": false,
+      "max_sampled_owned_rss_bytes": 10896179200,
+      "max_host_shm_delta_bytes": 1765376,
+      "final_host_shm_used_delta_bytes": 4096
+    },
+    "remaining_new_shm_count": 1,
+    "observed_processes": 35,
+    "worker_exit": 0,
+    "observed_owned_exit_confirmed": true,
+    "unobserved_descendants_confirmed": false,
+    "native_usage": {
+      "num_input_tokens": {
+        "present": 120,
+        "sum": 14566,
+        "min": 96,
+        "max": 191
+      },
+      "num_generated_tokens": {
+        "present": 120,
+        "sum": 579,
+        "min": 4,
+        "max": 56
+      },
+      "request_id_present": 120,
+      "unique_request_ids": 120,
+      "unique_batch_uuids": 5
+    },
+    "public_model_close_receipt": null,
+    "runtime_closed": true,
+    "residual": {
+      "kind": "POSIX named semaphore",
+      "prefix": "sem.mp-",
+      "stat_bytes": 32,
+      "allocated_bytes": 4096,
+      "created_during_ray_worker": true,
+      "absent_before": true,
+      "live_mapped_holders_at_recovery": 0,
+      "manual_sem_unlink_after_observed_owned_exit": true,
+      "normal_full_resource_close": false,
+      "result_to_manual_recovery_s": 359.9003472328186,
+      "automatic_complete_cleanup_within_120s": false,
+      "original_failure_overwritten": false
+    }
+  },
+  "actor_exit_evidence": {
+    "actor_stdout_sha256": "d1089f8a0f99a9608cef78b424b8f12a9c3512d201c7dd04cf4fa2ae53d393fb",
+    "actor_stderr_sha256": "4e24f171b5a611c21d0780682e769a1d3a7f5fd48c150571f99b0bc62e644c80",
+    "core_worker_log_sha256": "6189b77c47cf48786f75f29eb7f896f610a5d3ce18620521d2280fc2dfb1b5e1",
+    "exit_reason": "all references to actor removed; INTENDED_SYSTEM_EXIT",
+    "child_kill_success_count": 2,
+    "one_killed_child_confirmed_enginecore": true,
+    "second_child_resource_tracker_identity": "not captured",
+    "mpclient_full_shutdown_logged": true,
+    "semaphore_creator_stack": "not captured",
+    "tqdm_version": "4.67.3",
+    "tqdm_lock_cause": "source-supported hypothesis only"
+  },
+  "version_contract": {
+    "ray_published_extra_vllm": "0.22.0",
+    "actual_vllm": "0.25.1",
+    "published_extra_conformance": false,
+    "vllm_022_cuda_requirement_torch": "2.11.0",
+    "actual_torch": "2.11.0",
+    "no_evidence_downgrade_fixes_leak": true
+  },
+  "imlane_inventory": {
+    "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+    "source_HEAD_verified": true,
+    "existing_build_mode": "patched",
+    "build_identity_sha256": "70afd47440a64fced6f820e93a225e2e9f97136a1b88b7bb23805fbac74cba7a",
+    "existing_author_and_records_python": "3.12.3",
+    "existing_arrow": "16.1.0",
+    "dbend_c_shared_library_exists": true,
+    "dbend_c_sha256": "bd479ff93ff1a06b915c7c508caf0a2bc91ae4e4bd08280bb767ff8f4610a22c",
+    "dbend_c_needed": [
+      "libuv.so.1",
+      "libstdc++.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "dbend_cxx_shared_library_exists": true,
+    "dbend_cxx_sha256": "e403ee5d5cec659817bf5bf8988c9347c2579eabc212c44b974d8160d7db80f1",
+    "dbend_cxx_arrow_soname": "libarrow.so.1601",
+    "author_duckdb_source_exists": true,
+    "duckdb_build_directories_in_author_source": [],
+    "duckdb_cmake_caches_in_author_source": [],
+    "duckdb_in_checked_release_and_prefix_locations": false,
+    "native_duckdb_q3_binding_in_current_repo": false,
+    "native_duckdb_cpu_qualification": false,
+    "patched_source_names": [
+      "include/backend/python/py_executor.hpp",
+      "include/common/parameter.hpp",
+      "src/backend/python/py_executor.cpp",
+      "src/coordinator/coordinator.cpp",
+      "src/main/main.cpp"
+    ],
+    "inventory_scope": "known configured author prefix and database/duckdb source; not a global search of every server filesystem; libraries inspected, not loaded"
+  }
+}

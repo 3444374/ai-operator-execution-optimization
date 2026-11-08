@@ -21,6 +21,28 @@ PROJECTIONS = {
 
 
 class HistoricalProjectionTests(unittest.TestCase):
+    def test_historical_PID_keeps_original_bytes_and_projection_identity(self):
+        logical = 'code/src/scheduling/submission_control/pid.py'
+        original = 'historical_sources/bfb9100e/'+logical
+        expected = 'b9a4c4b4fc34f7a6d39959acc85c449ac276b8beb7884ebd7e776a2caa2a41e7'
+        self.assertEqual(hashlib.sha256((MANIFEST_DIR/original).read_bytes()).hexdigest(), expected)
+        manifest = json.loads((MANIFEST_DIR/'MANIFEST.json').read_text())
+        for spec in manifest['variants'].values():
+            self.assertEqual(spec['code_files_sha256'][logical], expected)
+            self.assertEqual(spec['overrides'][logical], original)
+
+    def test_historical_calibration_keeps_exact_pre_fractional_CPU_source(self):
+        path = "code/src/experiments/calibration/core.py"
+        expected = "81bfbc605eec72c74f4045b5609b4131ea9ced46e163b46b920de9a603e84515"
+        source = "historical_sources/5ff54bfe/" + path
+        manifest = json.loads((MANIFEST_DIR / "MANIFEST.json").read_text())
+        self.assertEqual(hashlib.sha256((MANIFEST_DIR / source).read_bytes()).hexdigest(), expected)
+        for variant, identity in PROJECTIONS.items():
+            spec = manifest["variants"][variant]
+            self.assertEqual(spec["code_projection_sha256"], identity)
+            self.assertEqual(spec["code_files_sha256"][path], expected)
+            self.assertEqual(spec["overrides"][path], source)
+
     def test_all_named_projections_materialize_with_original_ids_and_exact_bytes(self):
         manifest = json.loads((MANIFEST_DIR / "MANIFEST.json").read_text())
         self.assertEqual(set(manifest["variants"]), set(PROJECTIONS))

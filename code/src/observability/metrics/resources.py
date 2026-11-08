@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 import statistics
 import subprocess
+import threading
+import time
 from collections.abc import Sequence
 
 from .statistics import percentile
@@ -354,12 +356,187 @@ def _gpu_metadata_nvml(gpu_ids):
                 pass
 
 
-def host_metadata(*, include_status=False) -> dict[str, float | str]:
+class HostCPUCounterSource:
+    """One nonblocking CPU counter baseline, independent of RPC worker threads."""
+
+    def __init__(self, *, cpu_ids=None):
+        self._baseline = None
+        self._sequence = 0
+        self._lock = threading.Lock()
+        self._cpu_ids = cpu_ids
+
+    def __call__(self):
+        # Counter read, timestamp and baseline replacement form one transaction.
+        # No polling thread or model/actor condition is owned by this source.
+        with self._lock:
+            self._sequence += 1
+            started = time.monotonic_ns()
+            result = dict(host_cpu_busy_cores=None, host_cpu_per_core_max_pct=None,
+                cpu_percent_interval_s=None, cpu_baseline_scope="sampler_instance",
+                cpu_counter_sample_sequence=self._sequence, cpu_sample_thread_id=threading.get_ident(),
+                cpu_counter_read_start_monotonic_ns=started)
+            try:
+                import psutil
+                current = tuple({name: _finite_number(value) for name, value in row._asdict().items()}
+                                for row in psutil.cpu_times(percpu=True))
+                if self._cpu_ids is not None:
+                    current = tuple(current[index] for index in self._cpu_ids)
+                if not current or any("idle" not in row or any(
+                        value is None or value < 0 for value in row.values())
+                        for row in current):
+                    raise ValueError("invalid CPU counters")
+            except (ImportError, OSError, ValueError, IndexError) as error:
+                self._baseline = None
+                result.update(cpu_counter_read_end_monotonic_ns=time.monotonic_ns(),
+                    cpu_metrics_status="cpu_counter_read_failed:" + type(error).__name__)
+                return result
+            ended = time.monotonic_ns()
+            result["cpu_counter_read_end_monotonic_ns"] = ended
+            previous, self._baseline = self._baseline, (ended, current)
+            if ended < started:
+                self._baseline = None
+                result["cpu_metrics_status"] = "cpu_counter_clock_invalid"
+                return result
+            if previous is None:
+                result["cpu_metrics_status"] = "cpu_percent_baseline_priming"
+                return result
+            previous_at, before = previous
+            interval = (ended-previous_at)/1e9
+            result["cpu_percent_interval_s"] = interval
+            if interval <= 0:
+                result["cpu_metrics_status"] = "cpu_percent_nonpositive_interval"
+                return result
+            if len(current) != len(before) or any(tuple(a) != tuple(b) for a, b in zip(current, before)):
+                result["cpu_metrics_status"] = "cpu_counter_shape_changed"
+                return result
+            percentages = []
+            for now, old in zip(current, before):
+                deltas = {name: now[name]-old[name] for name in now}
+                if any(value < 0 for value in deltas.values()):
+                    result["cpu_metrics_status"] = "cpu_counter_regressed"
+                    return result
+                # Linux guest/guest_nice are already included in user/nice;
+                # iowait, like idle, does not represent CPU execution time.
+                try:
+                    total = math.fsum(value for name, value in deltas.items()
+                                      if name not in ("guest", "guest_nice"))
+                    busy = math.fsum(value for name, value in deltas.items()
+                                     if name not in ("guest", "guest_nice", "idle", "iowait"))
+                except OverflowError:
+                    total = busy = float("nan")
+                if not math.isfinite(total) or not math.isfinite(busy) or total <= 0:
+                    result["cpu_metrics_status"] = "cpu_counter_delta_invalid"
+                    return result
+                percentages.append(round(busy/total*100., 1))
+            result.update(host_cpu_busy_cores=sum(percentages)/100.,
+                host_cpu_per_core_max_pct=max(percentages), cpu_metrics_status="observed")
+            return result
+
+
+class AllocatedCPUCounterSource:
+    """Cgroup CPU usage per effective CPU quota, or affinity-scoped host context.
+
+    The cgroup ratio includes all processes in that group. It is not an actor's
+    own CPU time, nor a per-physical-core maximum. Unknown data never becomes idle.
+    """
+
+    def __init__(self):
+        self._baseline = None
+        self._sequence = 0
+        self._lock = threading.Lock()
+        self._host = self._host_ids = None
+
+    def __call__(self):
+        import os
+        from src.infrastructure.cgroup import controller_hierarchy, cpu_quota, cpu_usage_seconds
+        from src.infrastructure.cpu_allocation import observe_cpu_capacity
+        with self._lock:
+            self._sequence += 1
+            started = time.monotonic_ns()
+            result = dict(host_cpu_busy_cores=None, host_cpu_per_core_max_pct=None,
+                cpu_allocation_busy_cores=None, cpu_allocation_utilization_pct=None,
+                cpu_percent_interval_s=None, cpu_baseline_scope="sampler_instance",
+                cpu_counter_sample_sequence=self._sequence, cpu_sample_thread_id=threading.get_ident(),
+                cpu_counter_read_start_monotonic_ns=started)
+            try:
+                capacity = observe_cpu_capacity()
+                result.update(cpu_effective_slots=capacity.effective_slots,
+                              cpu_quota_slots=capacity.quota_slots, cpu_allocation_status=capacity.status)
+                if capacity.effective_slots is None:
+                    raise ValueError("effective CPU allocation unavailable")
+                version, directories = controller_hierarchy("cpu")
+                if not directories:
+                    ids = tuple(sorted(os.sched_getaffinity(0))) if hasattr(os, "sched_getaffinity") else None
+                    if self._host is None or ids != self._host_ids:
+                        self._host, self._host_ids = HostCPUCounterSource(cpu_ids=ids), ids
+                    host = self._host()
+                    host.update(cpu_observation_scope="process_affinity_host_context",
+                        cpu_effective_slots=capacity.effective_slots, cpu_quota_slots=None,
+                        cpu_allocation_status=capacity.status)
+                    self._baseline = None
+                    return host
+                result["cpu_observation_scope"] = "current_cgroup_per_effective_CPU"
+                readings = [(directories[0], cpu_usage_seconds(version, directories[0]), capacity.effective_slots)]
+                for directory in directories[1:]:
+                    quota = cpu_quota(version, (directory,))
+                    if quota is not None:
+                        readings.append((directory, cpu_usage_seconds(version, directory), quota))
+                ended = time.monotonic_ns()
+                result["cpu_counter_read_end_monotonic_ns"] = ended
+                identity = (version, tuple((path, denominator) for path, _, denominator in readings), capacity)
+                usages = tuple(usage for _, usage, _ in readings)
+                if any(not math.isfinite(usage) or usage < 0 for usage in usages):
+                    raise ValueError("invalid cgroup CPU usage")
+                previous, self._baseline = self._baseline, (ended, usages, identity)
+                if ended < started:
+                    raise ValueError("CPU counter clock regressed")
+                if previous is None:
+                    result["cpu_metrics_status"] = "cpu_percent_baseline_priming"
+                    return result
+                before_at, before_usages, before_identity = previous
+                interval = (ended - before_at) / 1e9
+                result["cpu_percent_interval_s"] = interval
+                if before_identity != identity:
+                    result["cpu_metrics_status"] = "cpu_allocation_changed"
+                elif interval <= 0:
+                    result["cpu_metrics_status"] = "cpu_percent_nonpositive_interval"
+                elif any(now < before for now, before in zip(usages, before_usages)):
+                    result["cpu_metrics_status"] = "cpu_counter_regressed"
+                else:
+                    busy = [(now - before) / interval for now, before in zip(usages, before_usages)]
+                    percentages = [100 * value / reading[2] for value, reading in zip(busy, readings)]
+                    result.update(cpu_allocation_busy_cores=busy[0],
+                        cpu_allocation_utilization_pct=max(percentages),
+                        cpu_quota_ancestor_peak_pct=max(percentages[1:], default=None),
+                        cpu_metrics_status="observed")
+                return result
+            except (OSError, ValueError, TypeError, KeyError, OverflowError) as error:
+                self._baseline = None
+                result.update(cpu_counter_read_end_monotonic_ns=time.monotonic_ns(),
+                    cpu_metrics_status="cpu_allocation_read_failed:" + type(error).__name__)
+                return result
+
+
+def host_metadata(*, include_status=False, cpu_source=None) -> dict[str, float | int | str | None]:
     """Host-wide CPU/memory observation, shared with the records driver.
 
-    cpu_percent needs two observations on the same sampling thread; callers
-    must mark its first observation as a baseline rather than a measured zero.
+    Legacy callers use psutil's thread-local cpu_percent. Stateful collectors
+    supply their own counter source so the baseline follows the collector.
     """
+    if cpu_source is not None:
+        result = cpu_source()
+        status = result["cpu_metrics_status"]
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            result.update(host_memory_used_pct=float(memory.percent),
+                          host_memory_available_mib=float(memory.available)/(1024*1024))
+        except (ImportError, OSError) as error:
+            result.update(host_memory_used_pct=None, host_memory_available_mib=None)
+            status += ":memory_unavailable:" + type(error).__name__
+        if include_status:
+            result["host_metrics_status"] = "observed" if status == "observed" else "partial:" + status
+        return result
     try:
         import psutil
 

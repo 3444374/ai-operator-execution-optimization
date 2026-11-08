@@ -15,6 +15,22 @@ from src.experiments.calibration.contracts import core_identity_signature, load_
 
 
 class CoreCalibrationTests(unittest.TestCase):
+    def test_delegated_context_identity_needs_actual_ready_observation(self):
+        from src.serving.backends.model_context import model_context_record
+        from src.serving.backends.vllm_engine import EngineSpec
+        plan=deepcopy(self.plan)
+        plan['engine'].pop('max_model_len')
+        engine=EngineSpec.from_dict(plan['engine'])
+        with self.assertRaises(RuntimeError):
+            core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,software=self.software)
+        def identity(length):
+            ready=dict(engine_uid='CPU-offline-context',
+                model_context=model_context_record(engine,'CPU-offline-context',length))
+            return core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,
+                software=self.software,model_ready=ready)
+        self.assertNotEqual(core_identity_signature(identity(2048)),core_identity_signature(identity(32768)))
+        self.assertEqual(identity(32768)['execution']['model_context']['max_model_len'],32768)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -91,10 +107,54 @@ class CoreCalibrationTests(unittest.TestCase):
         self.assertEqual(selected["scan_cost"]["wall_s"], 2345)
         self.assertFalse(selected["scan_cost"]["target_measurement_included"])
 
+    def test_fractional_observed_CPU_capacity_is_signed_without_rounding_up(self):
+        hardware = dict(self.hardware, cpu_limit=3.5)
+        identity = core.build_core_identity(self.plan, self.checked, hardware=hardware,
+            model=self.model, software=self.software)
+        self.assertEqual(identity["hardware"]["cpu_limit"], 3.5)
+        core.core_candidate_plan(self.plan, self.checked, dict(max_inflight=1, cpu_workers=1), identity=identity)
+        with self.assertRaisesRegex(ValueError, "CPU allocation"):
+            core.core_candidate_plan(self.plan, self.checked, dict(max_inflight=1, cpu_workers=2), identity=identity)
+        self.assertNotEqual(core.core_identity_signature(identity), core.core_identity_signature(self.identity))
+
     def test_candidate_values_and_near_peak_ratio_are_configurable(self):
         scan = self.scan({(1, 1): [10.2] * 3, (3, 1): [10] * 3})
         self.assertEqual(core.build_core_selection(**scan)["selection"]["max_inflight"], 1)
         self.assertEqual(core.build_core_selection(**scan, near_peak_ratio=0.999)["selection"]["max_inflight"], 3)
+
+    def test_unspecified_native_sequences_keep_Core_capacity_and_isolate_old_identity(self):
+        explicit_signature = core.core_identity_signature(self.identity)
+        for missing in (False, True):
+            with self.subTest(missing=missing):
+                plan = deepcopy(self.plan)
+                if missing:
+                    plan['engine'].pop('max_num_seqs')
+                else:
+                    plan['engine']['max_num_seqs'] = None
+                identity = core.build_core_identity(plan, self.checked,
+                    hardware=self.hardware, model=self.model, software=self.software)
+                self.assertNotEqual(core.core_identity_signature(identity), explicit_signature)
+                chosen = core.core_candidate_plan(plan, self.checked, dict(max_inflight=8, cpu_workers=1), identity=identity)
+                self.assertEqual(chosen['profile']['max_inflight'], 8)
+                self.assertEqual(chosen['resources']['max_active_batches'], 8)
+                self.assertEqual(chosen['engine'], plan['engine'])
+                with self.assertRaisesRegex(ValueError, 'capacity'):
+                    core.core_candidate_plan(plan, self.checked, dict(max_inflight=9, cpu_workers=1), identity=identity)
+                with self.assertRaisesRegex(ValueError, 'CPU'):
+                    core.core_candidate_plan(plan, self.checked, dict(max_inflight=1, cpu_workers=7), identity=identity)
+
+    def test_native_iteration_capacity_is_separate_from_new_Core_request_candidates(self):
+        plan = deepcopy(self.plan); plan['engine']['max_num_seqs'] = 2
+        identity = core.build_core_identity(plan, self.checked,
+            hardware=self.hardware, model=self.model, software=self.software)
+        self.assertEqual(core.core_candidate_plan(plan, self.checked, dict(max_inflight=2, cpu_workers=1),
+            identity=identity)['engine']['max_num_seqs'], 2)
+        chosen=core.core_candidate_plan(plan,self.checked,dict(max_inflight=3,cpu_workers=1),identity=identity)
+        self.assertEqual(chosen['profile']['max_inflight'],3)
+        self.assertEqual(chosen['engine']['max_num_seqs'],2)
+        plan['profile']['admission']=dict(kind='legacy_resource_feedback')
+        with self.assertRaises(ValueError):
+            core.build_core_identity(plan,self.checked,hardware=self.hardware,model=self.model,software=self.software)
 
     def test_equal_capacity_prefers_fewer_prepare_workers(self):
         selected = core.build_core_selection(**self.scan({(3, 2): [10] * 3, (3, 1): [10.1] * 3}))
@@ -251,6 +311,11 @@ class CoreCalibrationTests(unittest.TestCase):
 
     def test_model_generation_hardware_software_inputs_and_warmup_each_change_signature(self):
         original = core_identity_signature(self.identity)
+        for parser, same in (('lotus-native', True), ('answer-field-v1', False)):
+            plan = dict(self.plan, answer_parser=parser)
+            selected = core.build_core_identity(plan, self.checked_plan(plan),
+                hardware=self.hardware, model=self.model, software=self.software)
+            self.assertEqual(core_identity_signature(selected) == original, same)
         for group, key, value in (("hardware", "gpu_ids", ["other-device"]), ("model", "model_revision", "other-model"),
                                   ("generation", "max_tokens", 16), ("execution", "lifecycle", "isolated"),
                                   ("measurement", "warmup", "other-policy")):
@@ -358,7 +423,9 @@ class CoreCalibrationTests(unittest.TestCase):
             records_core.create_records_core(FilterMethod("cpu-fixture-model", instruction="Keep {reviewText}"), EngineSpec.from_dict(selected["engine"]),
                 GenerationSpec.from_dict(selected["generation"]), resources, profile=selected["profile"])
         effective = actor.call_args.args[3]
-        self.assertEqual((effective.max_active_batches, effective.cpu_workers), (3, 1))
+        self.assertEqual((effective.max_active_batches, effective.cpu_workers),
+                         (selected['resources']['max_active_batches'], 1))
+        self.assertEqual(owner.return_value.execution_profile['max_inflight'],3)
         self.assertEqual(owner.call_args.args[3], effective)
 
     def test_corrupt_or_unmeasured_artifact_cannot_be_reported_as_tuned(self):
@@ -388,7 +455,7 @@ class CoreCalibrationTests(unittest.TestCase):
             load_calibration_contract(path, {"max_inflight": 2})
 
     def test_public_signature_reuses_the_existing_canonical_digest_bytes(self):
-        from src.baselines.common.private_artifacts import content_digest
+        from src.infrastructure.private_artifacts import content_digest
 
         identity = deepcopy(self.identity)
         identity["workload"]["unicode_identity"] = "输入数据"

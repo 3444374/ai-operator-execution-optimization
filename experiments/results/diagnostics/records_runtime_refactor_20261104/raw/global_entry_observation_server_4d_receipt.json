@@ -1,0 +1,107 @@
+{
+  "source_head": "4d0269404d121b539362e96af3945e1cb8549ed2",
+  "source_tree": "889b16f4473f0f1d7aff916e71c7bf0a6aa894e5",
+  "run": "cpu-global-4d02-execution-20261106-r1",
+  "status": "completed_passed",
+  "methods": [
+    {
+      "id": "tests.observability.test_process_sampling.ProcessSamplingTests.test_new_child_is_sampled_and_reused_pid_is_not_accepted",
+      "status": "passed",
+      "subtests": [],
+      "seconds": 0.04283356200903654
+    },
+    {
+      "id": "tests.experiments.test_record_chain_progression_validation.ProgressionEntryTests.test_worker_CLI_executes_real_helper_both_policies_and_comparison",
+      "status": "passed",
+      "subtests": [],
+      "seconds": 23.40438883844763
+    },
+    {
+      "id": "tests.experiments.test_observer_mapped_budget.MappedObserverTests.test_httpx_sync_async_share_prepaid_identity_and_return_handles",
+      "status": "passed",
+      "subtests": [],
+      "seconds": 0.007226983085274696
+    },
+    {
+      "id": "tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_remote_http_failure_keeps_cause_key_and_unknown_charge",
+      "status": "passed",
+      "subtests": [],
+      "seconds": 0.003291517496109009
+    },
+    {
+      "id": "tests.execution_provider.test_ray_map_timing.RayTimingTests.test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure",
+      "status": "passed",
+      "subtests": [
+        {
+          "id": "test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure) (failed=False)",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure) (failed=True)",
+          "status": "passed",
+          "traceback": null
+        }
+      ],
+      "seconds": 0.005805659107863903
+    },
+    {
+      "id": "tests.experiments.test_map_observation_probe.ObservationProbeTests.test_both_guards_and_recorders_complete_each_row_and_dispose_resources",
+      "status": "passed",
+      "subtests": [
+        {
+          "id": "test_both_guards_and_recorders_complete_each_row_and_dispose_resources (tests.experiments.test_map_observation_probe.ObservationProbeTests.test_both_guards_and_recorders_complete_each_row_and_dispose_resources) (accounting='durable', recording='memory')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_both_guards_and_recorders_complete_each_row_and_dispose_resources (tests.experiments.test_map_observation_probe.ObservationProbeTests.test_both_guards_and_recorders_complete_each_row_and_dispose_resources) (accounting='durable', recording='buffered')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_both_guards_and_recorders_complete_each_row_and_dispose_resources (tests.experiments.test_map_observation_probe.ObservationProbeTests.test_both_guards_and_recorders_complete_each_row_and_dispose_resources) (accounting='memory', recording='memory')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_both_guards_and_recorders_complete_each_row_and_dispose_resources (tests.experiments.test_map_observation_probe.ObservationProbeTests.test_both_guards_and_recorders_complete_each_row_and_dispose_resources) (accounting='memory', recording='buffered')",
+          "status": "passed",
+          "traceback": null
+        }
+      ],
+      "seconds": 0.300835863687098
+    }
+  ],
+  "tests_run": 6,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "assertions_unchanged": true,
+  "assertions_modified": false,
+  "close_wrapped": false,
+  "worker_exit": 0,
+  "cleanup": {
+    "resource_passed": true,
+    "observed_owned_processes": 5,
+    "live_remaining": [],
+    "remaining_shm": [],
+    "host_shm_delta_bytes": 0,
+    "physical_idle": true,
+    "lease_released": true,
+    "scope": "birth-matched supervisor-observed processes; detached unobserved descendants are not independently proven"
+  },
+  "scope": {
+    "real_model_calls": 0,
+    "GPU_queries": 0,
+    "real_Ray_clusters": 0,
+    "new_dependencies_installed": false,
+    "third_party_modified": false,
+    "production_code_modified": false
+  },
+  "original_sha256": {
+    "HANDOFF.json": "1000da6191652b35d5bc75796c73f7c71782997d4dec3b2567c9828c3c498696",
+    "RESULTS.json": "8e3a08d96eb01e6185335055a5b9191204b50543a3f986a5eb84e3b51a836ce9"
+  },
+  "source_note": "Results belong to this exact4d source; no tests were rerun to record the receipt. They do not qualify later source combinations or real model/query performance."
+}

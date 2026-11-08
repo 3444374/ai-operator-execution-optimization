@@ -13,7 +13,7 @@ from src.experiments import record_chain_validation as checks
 from src.experiments import record_chain_validation_run as entry
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
-from src.execution_provider.adapters.lotus_records_async_actor import AsyncCoreModelActor
+from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
 from tests.experiments import test_record_chain_validation as fixtures
 from tests.execution_provider.chain_tokenizer_fixture import tokenizer
 from tests.execution_provider.test_lotus_chain_token_budget import Process
@@ -95,12 +95,14 @@ class ProgressionEntryTests(unittest.TestCase):
         source = {'commit':'a'*40, 'tree':'b'*40}
         sampler = MagicMock(); sampler.summary.return_value = {}
         telemetry = Mock(); telemetry.start.return_value = telemetry; telemetry.close.return_value = {}
+        package_version = entry.metadata.version
         with ThreadedRuntime([]) as runtime, patch.object(AsyncCoreModelActor, '_process_type', return_value=Process), \
                 patch.object(entry, 'checkout_identity', return_value=source), \
-                patch.object(entry.metadata, 'version', side_effect=lambda name:'2.56.1' if name=='ray' else 'CPU-fixture'), \
+                patch.object(entry.metadata, 'version', side_effect=lambda name:
+                    '2.56.1' if name == 'ray' else 'CPU-fixture' if name == 'vllm' else package_version(name)), \
                 patch('integrations.imlane_records.chain_runtime.check_external_lease'), \
                 patch('src.infrastructure.request_budget.ClaimedUnit.bind_execution'), \
-                patch('src.experiments.process_sampling.ProcessSampler', return_value=sampler), \
+                patch('src.observability.process_resources.phase_sampler.ProcessSampler', return_value=sampler), \
                 patch('src.observability.records_telemetry.RecordsTelemetry', return_value=telemetry), \
                 redirect_stdout(io.StringIO()):
             state = [False]

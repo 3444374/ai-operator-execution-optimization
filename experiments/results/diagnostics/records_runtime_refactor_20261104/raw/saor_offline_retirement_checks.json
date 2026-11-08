@@ -1,0 +1,249 @@
+{
+  "production_commit": "a4aae811dbfdbd9d7b6228025a7510ec739044d0",
+  "base": "6aeb2b6c41f9a6f8c72fc986f9640c1ace30aa80",
+  "cpu": {
+    "methods": 13,
+    "passed": 13,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "seconds": 1.5686289579607546,
+    "files": 1079,
+    "sources_match_commit": true,
+    "models": 0,
+    "real_Ray": 0
+  },
+  "original_fixture": {
+    "first_selected": 7,
+    "first_passed": 6,
+    "production_failure": false,
+    "correction": "Expected the resolved temporary path; production unchanged.",
+    "corrected_passed": 7,
+    "repeated_runs_not_extra_coverage": true
+  },
+  "archive": {
+    "new_originals": 5,
+    "new_routes": 25,
+    "new_format_rows": 25,
+    "original_3010_projections_preserved": true
+  },
+  "review": {
+    "production_commit": "a4aae811dbfdbd9d7b6228025a7510ec739044d0",
+    "AST_functions_identical": [
+      "sha256_file",
+      "sha256_payload",
+      "resolve_matrix_evidence_path",
+      "_decode_json_container",
+      "_finite_number",
+      "validate_native_final_queue",
+      "validate_project_final_credit"
+    ],
+    "summary_functions_preserved": 24,
+    "exact_original_archives": 5,
+    "final_source_files_match_commit": 1079,
+    "counts": {
+      "latest_remote": {
+        "commit": "6aeb2b6c41f9a6f8c72fc986f9640c1ace30aa80",
+        "core_Python": 56191,
+        "src_and_scripts_Python": 114697,
+        "tests_Python": 98120,
+        "integrations_Python_CPP_HPP": 6254
+      },
+      "candidate": {
+        "commit": "a4aae811dbfdbd9d7b6228025a7510ec739044d0",
+        "core_Python": 56191,
+        "src_and_scripts_Python": 112343,
+        "tests_Python": 98120,
+        "integrations_Python_CPP_HPP": 6254
+      },
+      "main": {
+        "commit": "6a8a2d7b87fd9d3443c4d2eeacef028af1865b9a",
+        "core_Python": 54091,
+        "src_and_scripts_Python": 140335,
+        "tests_Python": 102763,
+        "integrations_Python_CPP_HPP": 4521
+      },
+      "cleanup_start": {
+        "commit": "3fd3887eddc8e185d8b954ac713c26f60eafbdba",
+        "core_Python": 61628,
+        "src_and_scripts_Python": 149645,
+        "tests_Python": 130062,
+        "integrations_Python_CPP_HPP": 4528
+      }
+    },
+    "deltas": {
+      "latest_remote": {
+        "core_Python": 0,
+        "src_and_scripts_Python": -2354,
+        "tests_Python": 0,
+        "integrations_Python_CPP_HPP": 0
+      },
+      "main": {
+        "core_Python": 2100,
+        "src_and_scripts_Python": -27992,
+        "tests_Python": -4643,
+        "integrations_Python_CPP_HPP": 1733
+      },
+      "cleanup_start": {
+        "core_Python": -5437,
+        "src_and_scripts_Python": -37302,
+        "tests_Python": -31942,
+        "integrations_Python_CPP_HPP": 1726
+      }
+    },
+    "ordinary_records_and_research_algorithm_changes": []
+  },
+  "server_ray": {
+    "source": {
+      "head": "87fdb2bc723a0b5fc8f743cc8faa62020a7c0864",
+      "tree": "ac9a48dbeb9c1bf3dd0f6819799433998184cd90",
+      "tracked_clean": true,
+      "test_file_sha256": "b5c3f958adeb651fceca05d63f7d4fb4c505e3a7395ef14d72371973c2c8cbac"
+    },
+    "requested_method": "tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker",
+    "result": {
+      "status": "passed",
+      "method_seconds": 11.496926929801702,
+      "supervised_seconds": 13.622898788191378,
+      "failures": 0,
+      "errors": 0,
+      "skipped": [],
+      "assertions_modified": false,
+      "executions": 1,
+      "retries": 0,
+      "subtests": [
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='CoreChainCapacity')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='CoreRecordsCapacity')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='RecordsCapacityBudget')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='_ActorOwner')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='_CoreModelActor')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='_RecordTransport')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='_await_result')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='_check')",
+          "status": "passed",
+          "traceback": null
+        },
+        {
+          "id": "test_production_objects_round_trip_through_a_real_worker (tests.execution_provider.test_records_model_adapter.RealRayAdapterSerializationTests.test_production_objects_round_trip_through_a_real_worker) (name='close_prepared_core')",
+          "status": "passed",
+          "traceback": null
+        }
+      ]
+    },
+    "configuration": {
+      "SEMLOOM_REAL_RAY_CPU": "1",
+      "CUDA_VISIBLE_DEVICES": "",
+      "ray_version": "2.56.1",
+      "ray_init": {
+        "address": "local",
+        "num_cpus": 1,
+        "num_gpus": 0,
+        "object_store_memory_bytes": 83886080,
+        "include_dashboard": false,
+        "log_to_driver": false
+      },
+      "echo_task": {
+        "num_cpus": 1,
+        "max_retries": 0
+      },
+      "result_wait_seconds": 30,
+      "outer_supervisor_seconds": 120,
+      "ray_shutdown_in_test_finally": true
+    },
+    "verified_scope": {
+      "newly_added_symbol": "src.execution_provider.adapters.records_capacity.CoreChainCapacity",
+      "other_symbols": [
+        "CoreRecordsCapacity",
+        "RecordsCapacityBudget",
+        "_ActorOwner",
+        "_CoreModelActor",
+        "_RecordTransport",
+        "_await_result",
+        "_check",
+        "close_prepared_core"
+      ],
+      "meaning": "The actual production symbols round-tripped through a separate real Ray worker and each returned object passed the original assertIs identity check.",
+      "other_methods_run": [],
+      "software_39_tests_rerun": false,
+      "real_Ray_CPU_runtime_count": 1,
+      "model_calls": 0,
+      "GPU_queries": 0,
+      "downloads_or_installs": 0,
+      "third_party_patches": false,
+      "active_source_or_other_leases_modified": false,
+      "push_or_merge": false
+    },
+    "limits": [
+      "This validates serialization and canonical object identity for this named method; it does not establish model correctness/performance, runtime capacity arithmetic or full query/IPC behavior.",
+      "The prior Ray actor-child semaphore teardown reproduction remains separate and is not repaired or revalidated by this task.",
+      "Physical exit confirmation covers the nine supervisor-observed owned identities; arbitrary unobserved detached descendants are not independently proven.",
+      "No unrelated suite, model smoke, GPU experiment, package installation or source change was performed."
+    ],
+    "cleanup": {
+      "ray_initialized_after": false,
+      "observed_owned_processes": 9,
+      "observed_owned_exit_confirmed": true,
+      "live_owned_remaining": [],
+      "supervisor_signals": [],
+      "cleanup_errors": [],
+      "lease_released": true
+    },
+    "completed_at_utc": "2026-11-06T06:07:44.260982+00:00",
+    "raw_result_sha256": "961624d00beefa8050ef54ff9e89fa5dbc481b2fa8436cc6b2ea58230844b04c"
+  },
+  "external_references": {
+    "source": "Server task read-only receipt, completed 2026-11-06; no execution or changes.",
+    "original_receipt_sha256": "7c4d3b22230bc2a338eca43b228520464379be0eea71d3e165ae538a3ff558ab",
+    "exact_modules": [
+      "native_system_matched",
+      "native_system_parser",
+      "native_system_preflight"
+    ],
+    "checked_roles": [
+      "current host helper and binding receipts",
+      "base packet and runtime configuration",
+      "nine-object Ray driver and actual command",
+      "semaphore diagnosis driver, child entry and bootstrap",
+      "native Q3 driver, configuration and both command groups"
+    ],
+    "matches": 0,
+    "active_project_Python_entries": 0,
+    "limitation": "Only actual entries used by that server task; historical copies excluded; not all external storage."
+  },
+  "raw": {
+    "file": "saor_offline_retirement_raw.json.gz",
+    "bytes": 66698,
+    "sha256": "00a09618f2c5493cf6e357006adc111f123c65eae4a6979d9bc2cdf05e466f3e",
+    "decoded_bytes": 209685,
+    "decoded_sha256": "80fb6fe37c04d25a58988387b2f8008496f80608866056ca802f766df26797d0"
+  }
+}

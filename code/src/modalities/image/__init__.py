@@ -15,14 +15,10 @@ from .contracts import (
     ImageEmbeddingBackend,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
+    ImageSourceConfig,
     build_image_runtime_snapshot,
     build_image_work_descriptor,
     image_work_calibration_signature,
-)
-from .source import (
-    DaftImageSource,
-    ImageSourceConfig,
-    image_documents_query,
     split_image_source_config,
 )
 from .staged import (
@@ -35,7 +31,6 @@ from .staged import (
 __all__ = [
     "ClipImagePreprocessor",
     "ClipTensorActor",
-    "DaftImageSource",
     "EmbeddingSemantics",
     "FastClipImagePreprocessor",
     "ImageEmbeddingBackend",
@@ -48,7 +43,6 @@ __all__ = [
     "configure_torch_thread_pools",
     "extract_clip_image_features",
     "image_work_calibration_signature",
-    "image_documents_query",
     "l2_normalize_embeddings",
     "l2_normalize_numpy_embeddings",
     "split_image_source_config",

@@ -42,30 +42,12 @@ def encode_frame(message: dict[str, Any]) -> bytes:
     return struct.pack("!I", len(payload)) + payload
 
 
-class RegisteredStream:
-    """An authenticated stream may idle between frames; partial frames remain bounded."""
-
-    def __init__(self, connection):
-        self.connection = connection
-
-    def __getattr__(self, name):
-        return getattr(self.connection, name)
-
-
 def read_frame(connection: socket.socket) -> dict[str, Any] | None:
     """Read one bounded frame; return None only for clean EOF between frames."""
     timeout = connection.gettimeout()
     deadline = None if timeout is None else time.monotonic() + timeout
     try:
-        if isinstance(connection, RegisteredStream):
-            connection.settimeout(None)
-            first = connection.recv(1)
-            if not first:
-                return None
-            deadline = None if timeout is None else time.monotonic() + timeout
-            header = first + _read_exact(connection, 3, allow_initial_eof=False, deadline=deadline)
-        else:
-            header = _read_exact(connection, 4, allow_initial_eof=True, deadline=deadline)
+        header = _read_exact(connection, 4, allow_initial_eof=True, deadline=deadline)
         if header is None:
             return None
         length = struct.unpack("!I", header)[0]

@@ -1,0 +1,74 @@
+{
+  "commit": "a15ba613fde0d00dad2401c689eec82b7e77232c",
+  "tree": "cfa3229d9c07a66a8e9444e838d2e68740c9d17f",
+  "base": "104e1e63615d12c2cb18d1f057cb40c400351156",
+  "retired_classes": [
+    "NativeSessionFactory",
+    "ObservedSession",
+    "ObservedResponse"
+  ],
+  "removed_test_methods": [
+    "test_aiohttp_factory_opens_only_in_session_and_returns_handles_after_failure",
+    "test_session_close_error_does_not_replace_cancellation_or_keep_handles",
+    "test_session_startup_failure_closes_opened_mapping"
+  ],
+  "retained": {
+    "observe_native_httpx_AST_exact": true,
+    "mapped_fixture_methods_AST_exact": true,
+    "live_budget_and_MappedUnit_unchanged": true,
+    "actual_VLM_MMQA_callers_unchanged": true,
+    "other_native_HTTP_connections_unchanged": true
+  },
+  "tests": {
+    "original_file": "observer-sessions-before.json",
+    "original_methods": 7,
+    "original_passed": 7,
+    "final_file": "observer-sessions-after.json",
+    "final_methods": 7,
+    "final_passed": 7,
+    "elapsed_s": 0.030717707937583327,
+    "failures": 0,
+    "errors": 0,
+    "skip": 0,
+    "real_network": 0,
+    "models": 0,
+    "Ray_init": 0,
+    "UDS": 0,
+    "retired_tests_not_run": true,
+    "source_recorded_head": "104e1e63615d12c2cb18d1f057cb40c400351156",
+    "actual_python_bound_to": "a15ba613fde0d00dad2401c689eec82b7e77232c"
+  },
+  "history": {
+    "actual_read_source_bindings": 10,
+    "manifest_unchanged": true,
+    "new_archives": 0,
+    "new_routes": 0,
+    "full_3010_rerun": false,
+    "origin": "e5e65fdb6db14f5f422ed4e3983e2206fbc75dfd",
+    "original_files_from_public_origin": 3
+  },
+  "code_size": {
+    "experiment_python": -125,
+    "test_python": -56
+  },
+  "source_files": 1034,
+  "checks": {
+    "modified_markdown": 2,
+    "local_link_targets": 117,
+    "missing": [],
+    "all_python_parsed": 981,
+    "new_word_hits": [],
+    "new_private_path_or_ipv4_hits": [],
+    "source_changes_after_cpu_only_markdown": [
+      "code/src/execution_provider/adapters/README.md"
+    ],
+    "actual_Ray": 0,
+    "model_calls": 0,
+    "sockets_created": 0
+  },
+  "secret_scan_staged_files": 4,
+  "diff_check_passed": true,
+  "original_handoff_sha256": "36b7a6f2462e62d340821e94749aeda3408d4211f310683798d6047d16ef445e",
+  "independent_review_sha256": "0a194bcf544870b852cf3cf6429d4605d4668a0f31b4015955a5d8170a72f984",
+  "actual_runtime": "Only CPU objects, stubs and local import subprocesses; no real HTTP, UDS, Ray, model or GPU run."
+}
