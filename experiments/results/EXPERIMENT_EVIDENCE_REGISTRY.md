@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-08：直接链的方法状态与请求槽分别计量
+
+[Q9旧设置、同额重算与20项CPU](diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)保留原单份方法状态设置，不将R136或37934宽松计数解释为实际驻留量。
+新显式预览复用实际MethodLimits和既有总池搜索，普通默认签名保持；新worker接线与真实吞吐尚未验证，不与独立清理修复混为单一因果。
+
 ## 2026-11-08：链查询延迟控制RPC收尾
 
 [实际Q9失败、CPU复现与候选检查](diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)区分512条模型成功终态与暖查询API失败。

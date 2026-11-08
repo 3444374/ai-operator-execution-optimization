@@ -30,6 +30,36 @@ class ServiceBudgetTests(unittest.TestCase):
         self.assertGreater(first.bytes, first.capacity.budget.input_bytes + first.capacity.budget.result_bytes)
         self.assertEqual(pool.snapshot()['allocated_bytes'], 0)
 
+    def test_direct_chain_preview_accounts_for_each_actual_method_envelope(self):
+        from src.semantic_methods.budget import row_reservation
+        from src.semantic_methods.lotus.records import RecordsResources
+        shape, pool = CoreRecordsCapacity(), self.pool(3 * 1024**3)
+        ordinary = pool.preview(shape)
+        self.assertEqual(ordinary.capacity.method_capacity(RecordsResources(), shape.method_limits(1)).runs, 1)
+        counts = []
+        for stages in (1, 3):
+            limits = shape.method_limits(stages)
+            plan = pool.preview(shape, method_limits=limits)
+            requests = plan.capacity.budget.active_requests
+            self.assertGreater(requests, 1)
+            self.assertLess(requests, ordinary.capacity.budget.active_requests)
+            self.assertEqual(plan.capacity.budget.method_bytes, requests * row_reservation(limits))
+            self.assertEqual(plan.capacity.method_capacity(RecordsResources(), limits).runs, requests)
+            self.assertEqual(plan.describe()['method_limits']['stages'], stages)
+            self.assertNotEqual(plan.signature, ordinary.signature)
+            self.assertLessEqual(plan.bytes, pool.total_bytes)
+            counts.append(requests)
+        self.assertGreater(counts[0], counts[1])
+        self.assertEqual(pool.snapshot()['allocated_bytes'], 0)
+
+    def test_ordinary_preview_and_allocation_keep_their_existing_plan(self):
+        shape, pool = self.shape(), self.pool()
+        plan = pool.preview(shape)
+        grant = pool.allocate(shape)
+        self.assertEqual((grant.plan, grant.plan.signature), (plan, plan.signature))
+        self.assertNotIn('method_limits', plan.describe())
+        grant.cancel()
+
     def test_full_allocation_cannot_be_spent_twice_and_unbound_cancel_returns_it(self):
         pool = self.pool()
         grant = pool.allocate(self.shape())

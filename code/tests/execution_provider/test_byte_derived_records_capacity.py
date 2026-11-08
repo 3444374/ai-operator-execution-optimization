@@ -66,12 +66,24 @@ class ByteDerivedCapacityTests(unittest.TestCase):
                 for _ in range(expected):
                     self.assertTrue(grant.reserve(row_reservation(limits)))
                 self.assertFalse(grant.reserve(row_reservation(limits)))
-                self.assertLess(grant.runs, grant.capacity.runs)
+                self.assertEqual(grant.runs, grant.capacity.runs)
                 self.assertLessEqual(grant.bytes, value.budget.method_bytes)
                 for _ in range(expected):
                     grant.release(row_reservation(limits))
                 grant.close()
                 self.assertEqual(pool.allocated, (0, 0))
+
+    def test_explicit_method_limits_derive_actual_resident_count_independently_of_Core_items(self):
+        limits = MethodLimits(200, 400, 100, 2)
+        reservation = row_reservation(limits)
+        value = self.base.with_storage_bytes(input_bytes=65536, result_bytes=65536,
+            method_bytes=2 * reservation, method_limits=limits)
+        self.assertEqual(value.budget.method_runs, 2)
+        self.assertEqual(value.method_capacity(self.resources, limits).runs, 2)
+        narrower = replace(value, budget=replace(value.budget, method_runs=1))
+        self.assertEqual(narrower.method_capacity(self.resources, limits).runs, 1)
+        with self.assertRaisesRegex(ValueError, 'complete continuation'):
+            value.method_capacity(self.resources, self.base.method_limits(1))
 
     def test_missing_noninteger_or_too_small_storage_rejects_before_owner_creation(self):
         valid = dict(input_bytes=65536, result_bytes=65536,

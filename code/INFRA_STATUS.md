@@ -20,6 +20,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
 | 部分 | 已完成的实现整理 | 仍未完成或未验证 |
 |---|---|---|
+| 直接链的方法容量预览 | 显式实际MethodLimits进入现有总字节搜索，实际方法数量同时满足声明计数和完整状态字节；普通默认预览签名保持 | [20项CPU与Q9字节核算](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)通过；Q9 worker尚未接此新预览，未证明链取得服务授予、物理容量或性能改善 |
 | 链查询控制RPC收尾 | 采样停止后，在transport已有绝对截止时刻内收取原RPC终态；未结束继续保留引用，EOF异常保留首次清理报告 | [38项纯CPU与f18c Q9原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)分别解释；候选真实IPC／模型尚未复测，原GPU首个unknown原因不能唯一确定 |
 | 请求反馈的测量前探索 | 活动试探没有性能参考点时，可由新鲜原生反馈继续上探；已测比较保持；显式次数不足时继续当前测量 | [117项CPU与46fd实机观察](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-probe-before-measurement-20261108)分别记录；新候选GPU效果尚未验证 |
 | 请求反馈的不可比试探 | 保留已测量但不可比的较高位置，验证字段保持未知；不可比下探仍返回，仅工作均值漂移不重开；显式次数与安全响应保持 | [109项CPU与原实机负结果](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#request-inconclusive-exploration-20261108)分开解释；397和46fd的实机结果均不足以证明稳定改善 |

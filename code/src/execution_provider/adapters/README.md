@@ -1064,8 +1064,11 @@ or establishes an allocation's provenance, exclusivity or ownership across servi
 IPC reserves one full `item_result_bytes` before each model request. The derived request count
 uses the complete reservations that fit `result_bytes`; Core and IPC result count guards sit one
 above that number. Input backpressure still uses the actual encoded bytes, independently.
-Method count uses the minimum `row_reservation` allowed by positive `MethodLimits`, with its guard
-one above that byte allowance, so actual continuation sizes hit their byte grant first.
+Without actual method limits, the stored count remains a loose minimum-size guard.
+`method_capacity(resources, actual_limits)` intersects it with the number of complete
+`row_reservation(actual_limits)` envelopes that fit the assigned bytes. An explicit lower
+run count stays effective. `with_storage_bytes(..., method_limits=actual_limits)` can derive
+the count directly from those actual envelopes, including custom smaller limits.
 The existing Core, Method pool, actor and IPC keep their own release and unknown handling.
 
 The returned budget works with `RecordsResources(max_active_batches=None)` and the existing
@@ -1194,6 +1197,15 @@ one ordinary continuation envelope, both IPC endpoints' input/result/control all
 actor and transport prepared/result allowances, and retained closing results. Its largest
 complete plan must fit the available pool bytes. Existing IPC frame sizes and control reserves
 are protocol declarations, not new request-window policy. `preview(shape)` acquires nothing.
+Direct record-local chains can use `preview(shape, method_limits=actual_limits)` instead of
+the ordinary single-envelope preview. The existing byte search then includes one complete
+method envelope per prospective resident record; it adds nothing outside the total pool.
+The plan records these limits, and the caller passes the same object and `plan.capacity`
+to `SemLoomRecordChainCore(..., method_limits=actual_limits)`. Use the whole finite plan's
+actual limits, not a guessed one-stage shape. The ordinary default plan/signature remains
+unchanged. This explicit preview does not acquire a service grant or add chain support to
+the ordinary grant owner. [Q9 byte accounting](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)
+separates request slots, complete method states and physical memory.
 `service_allocation_bytes` can limit one instance's share when the service creates several owners;
 allocating one grant never grants the same bytes to another owner. Pools and grant capabilities
 cannot be copied, serialized or used from a forked process. This is a static engineering choice,

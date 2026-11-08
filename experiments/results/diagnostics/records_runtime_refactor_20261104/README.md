@@ -5366,3 +5366,31 @@ PYTHONPATH=code python3 -B -m unittest \
 下一步由原服务器会话在既有环境做两次连续、每次两条记录的CPU IPC：控制第二查询末尾snapshot返回延迟，在既有finish截止时刻内返回，要求两查询完整结束、真实RPC终态和最终资源清零。到期后仍unknown的情况已在本地直接覆盖，不把它改成成功。
 真实Q9模型复测随后由同一会话协调，保留原提示、输出与生成设置；先核正direct-chain方法状态预算，不能把原API峰值1、反馈窗口1的串行设置当作动态策略性能结论。
 本批没有增加关闭时限、生产预算、默认并发或控制器，未运行GPU或改baseline成绩。
+
+
+<a id="chain-method-preview-20261108"></a>
+## 2026-11-08：直接链的方法容量预览
+
+原f18c Q9 worker在构造实际Map链之前复用普通`preview_service_records_runtime`。该普通用途只预留一份方法状态：3GiB总额得到R136，但method_bytes为29,360,896，恰好容纳一个最大单阶段状态。
+旧method_runs的37,934是按最小可能MethodLimits得到的宽松计数，不是实际方法驻留量。原实机API峰值1、反馈窗口1，因此这不是可用于比较动态策略优劣的Map容量设置；原报告和成绩保留，不改写成并行成功。
+
+[容量模块](../../../../code/src/execution_provider/adapters/records_capacity.py)现让`method_capacity(resources, actual_limits)`返回声明计数与`method_bytes // row_reservation(actual_limits)`的较小值，实际字节保护不变。
+`with_storage_bytes(..., method_limits=actual_limits)`可直接按该方法的完整预留求计数；未给实际limits的旧低层输入继续保留原宽松guard，自定义更小limits能力没有删除。
+[既有payload预览](../../../../code/src/execution_provider/adapters/records_service_budget.py)增加显式`method_limits`用途，使用同一个row_reservation和原单调搜索，为每个候选驻留记录计入完整方法状态，再将所有既有Core、IPC、actor和transport角色一起纳入总额。
+不增池总量，不按输入256或固定64设置并发，不从GPU读数估算物理容量。普通默认preview／allocate输出不增加字段；只有显式新用途记录实际limits并产生新的计划签名。
+
+默认2MiB输入／结果形状和同一3,221,225,472字节总额的纯计量如下：
+
+| 用途 | 请求槽R | 方法字节 | 完整方法可容纳数 | 规划总字节 |
+|---|---:|---:|---:|---:|
+| 原普通单状态预览 | 136 | 29,360,896 | 1 | 3,204,729,600 |
+| 显式单阶段Map形状 | 61 | 1,791,014,656 | 61 | 3,216,418,560 |
+| 显式三阶段形状 | 41 | 2,235,595,520 | 41 | 3,194,342,144 |
+
+61与41只是该声明的计算结果，不是新增默认值、真实空闲资源、模型最佳窗口或三阶段执行实验。预览后pool分配仍为0。
+普通默认签名改前后同为`5ad41bf25ce348ba8b9ff870a52c7474f7b854c579aa40f5f7a5c5f2d3720739`。显式单阶段新签名为`e77bf7acf75f4b1efac7eebb9c2718329141bea3accbf87101fc8b2dd9951267`。
+直接链调用方必须将同一份实际limits和plan.capacity交给现有owner；整个有限计划的阶段数都要包含，不能对多阶段沿用单阶段猜测。当前普通grant owner没有增加链支持，预览不取得独占服务授予；完整关系、调用方审计、Python／Ray及GPU内存不在此字节内。
+
+ServiceBudgetTests与ByteDerivedCapacityTests共20项纯CPU通过，0失败、错误或跳过，保留自定义小／大limits、较小显式runs、普通预览与分配一致、所有已声明角色及池互斥检查。
+旧“实际占用应小于宽松计数”的断言改为等于实际可容纳数，不为保留旧计数而保留误导报告。新旧容量均由真实MethodBudgetPool逐份reserve验证，未仅检查代码形状。
+独立审查和三组纯计量复核通过。本批没有加载SDK、模型、真实Ray或GPU，也没有分配服务grant。Q9 worker尚未采用此预览；服务器后续接线与模型测量必须另记新身份，与控制RPC清理补测分开。

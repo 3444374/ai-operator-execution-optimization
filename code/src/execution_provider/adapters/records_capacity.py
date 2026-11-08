@@ -78,23 +78,25 @@ class CoreRecordsCapacity:
     def method_capacity(self, resources, limits):
         from src.semantic_methods.budget import MethodCapacity, row_reservation
         budget = self.budget
-        result = (MethodCapacity(resources.request_capacity(), resources.request_capacity() * row_reservation(limits))
+        reservation = row_reservation(limits)
+        result = (MethodCapacity(resources.request_capacity(), resources.request_capacity() * reservation)
                   if budget is None else MethodCapacity(budget.method_runs, budget.method_bytes))
-        if result.bytes < row_reservation(limits):
+        if result.bytes < reservation:
             raise ValueError('method byte budget cannot hold one complete continuation envelope')
-        return result
+        return MethodCapacity(min(result.runs, result.bytes // reservation), result.bytes)
 
     def method_limits(self, stage_count):
         from src.semantic_methods.continuation import MethodLimits
         size = self.item_input_bytes + stage_count * self.item_result_bytes
         return MethodLimits(self.item_input_bytes, 2 * size, size, stage_count)
 
-    def with_storage_bytes(self, *, input_bytes, result_bytes, method_bytes):
+    def with_storage_bytes(self, *, input_bytes, result_bytes, method_bytes, method_limits=None):
         """Derive finite count guards from already-assigned payload storage.
 
         IPC reserves item_result_bytes before every request. MethodDriver uses
-        row_reservation for each live continuation; positive MethodLimits give
-        its minimum possible reservation. Their byte checks remain independent.
+        row_reservation for each live continuation. Explicit MethodLimits give
+        the actual row count; otherwise the count remains a loose guard until
+        method_capacity receives the method's limits. Bytes remain independent.
         This conversion does not acquire an exclusive service allocation or
         discover RAM, and does not cover Python/Ray objects or caller audits.
         """
@@ -108,12 +110,14 @@ class CoreRecordsCapacity:
             raise ValueError('assigned storage bytes must be positive integers')
         if input_bytes < self.item_input_bytes or result_bytes < self.item_result_bytes:
             raise ValueError('assigned storage bytes must fit one declared Core item')
-        if method_bytes < row_reservation(self.method_limits(1)):
+        reservation = row_reservation(self.method_limits(1) if method_limits is None else method_limits)
+        if method_bytes < reservation:
             raise ValueError('method byte budget cannot hold one complete continuation envelope')
         results = result_bytes // self.item_result_bytes
-        minimum_method = row_reservation(MethodLimits(1, 1, 1, 1))
+        runs = (method_bytes // row_reservation(MethodLimits(1, 1, 1, 1)) + 1
+                if method_limits is None else method_bytes // reservation)
         budget = RecordsCapacityBudget(results + 1, input_bytes, result_bytes, results,
-            method_bytes // minimum_method + 1, method_bytes)
+            runs, method_bytes)
         return replace(self, budget=budget)
 
 

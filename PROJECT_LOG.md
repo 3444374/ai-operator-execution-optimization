@@ -2,6 +2,11 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-08：直接链按完整方法状态预览
+
+[Q9方法容量记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)区分有限请求槽与真实方法状态预留。
+已有preview接受显式实际方法数据，在同一总字节内计算；没有新增工厂、控制器、预算或默认并发。普通计划身份保持，实际方法计数不再把最低计量guard当成可驻留数量。
+
 ## 2026-11-08：链查询等待延迟控制回执
 
 [Q9控制RPC记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)说明原模型结果齐全而暖查询API仍失败的实际情况。

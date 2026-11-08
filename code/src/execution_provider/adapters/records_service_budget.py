@@ -20,6 +20,7 @@ from .records_capacity import CoreRecordsCapacity, resolve_records_async_limits
 from .records_runtime_identity import observe_ray_runtime
 
 if TYPE_CHECKING:
+    from src.semantic_methods.continuation import MethodLimits
     from src.serving.backends.vllm_protocol import AsyncEngineLimits
     from .records_service_delivery import OrdinaryDeliveryDeclaration, OrdinaryDeliverySession
 
@@ -36,6 +37,7 @@ class RecordsPayloadPlan:
     ipc_limits: AsyncEngineLimits
     components: tuple[tuple[str, int], ...]
     delivery: OrdinaryDeliveryDeclaration | OrdinaryDeliverySession | None = None
+    method_limits: MethodLimits | None = None
 
     @property
     def bytes(self):
@@ -48,6 +50,10 @@ class RecordsPayloadPlan:
         if self.delivery is not None:
             value.update(delivery=self.delivery.describe(),
                 scope='rolling ordinary Filter instance and complete unconsumed delivery envelopes; excludes full source/expected relations, RSS and GPU capacity')
+        if self.method_limits is not None:
+            value['method_limits'] = asdict(self.method_limits)
+            if self.delivery is None:
+                value['scope'] = 'prepared async instance and explicit method-state envelopes; excludes full relations, caller audit, RSS and GPU capacity'
         return value
 
     @property
@@ -56,13 +62,15 @@ class RecordsPayloadPlan:
             separators=(',', ':')).encode()).hexdigest()
 
 
-def _plan(shape, requests, delivery=None):
+def _plan(shape, requests, delivery=None, method_limits=None):
     from src.semantic_methods.budget import row_reservation
     from src.semantic_methods.lotus.records import RecordsResources
 
+    method = shape.method_limits(1) if method_limits is None else method_limits
+    residents = requests if delivery is not None or method_limits is not None else 1
     capacity = shape.with_storage_bytes(input_bytes=requests * shape.item_input_bytes,
         result_bytes=requests * shape.item_result_bytes,
-        method_bytes=(requests if delivery is not None else 1)*row_reservation(shape.method_limits(1)))
+        method_bytes=residents * row_reservation(method), method_limits=method_limits)
     limits = resolve_records_async_limits(RecordsResources(max_active_batches=None), capacity)
     budget = capacity.budget
     parts = [('core_input', budget.input_bytes), ('core_result', budget.result_bytes),
@@ -89,7 +97,7 @@ def _plan(shape, requests, delivery=None):
         declarations = delivery.deliveries if hasattr(delivery,'deliveries') else (delivery,)
         item = max((max(v.item_upper_bounds,default=0) for v in declarations),default=0)
         parts.extend((('delivery_codec_text',item),('delivery_codec_bytes',item)))
-    return RecordsPayloadPlan(capacity, limits, tuple(parts), delivery)
+    return RecordsPayloadPlan(capacity, limits, tuple(parts), delivery, method_limits)
 
 
 class RecordsPayloadPool:
@@ -113,7 +121,7 @@ class RecordsPayloadPool:
         if os.getpid() != self._pid:
             raise RuntimeError('payload grants belong to their original service process')
 
-    def _select(self, shape, maximum, delivery=None):
+    def _select(self, shape, maximum, delivery=None, method_limits=None):
         self._process()
         if self._closing:
             raise RuntimeError('payload service is closing')
@@ -130,24 +138,24 @@ class RecordsPayloadPool:
                 raise ValueError('delivery model result bytes differ from the actual instance shape')
         available = self.total_bytes - sum(g.plan.bytes for g in self._grants.values())
         available = available if maximum is None else min(available, maximum)
-        # Cost is monotone: fixed continuation storage, item-sized slots and
+        # Cost is monotone: continuation storage, item-sized slots and
         # existing IPC control-frame reserves. No new request-count ceiling.
         lower, upper, best = 1, available // (shape.item_input_bytes + shape.item_result_bytes), None
         while lower <= upper:
             count = (lower + upper) // 2
-            candidate = _plan(shape, count, delivery)
+            candidate = _plan(shape, count, delivery, method_limits)
             if candidate.bytes <= available:
                 best, lower = candidate, count + 1
             else:
                 upper = count - 1
         if best is None:
-            raise ValueError('service payload bytes cannot hold a complete ordinary async allocation')
+            raise ValueError('service payload bytes cannot hold a complete async allocation')
         return best
 
-    def preview(self, shape, *, max_bytes=None, delivery=None):
+    def preview(self, shape, *, max_bytes=None, delivery=None, method_limits=None):
         self._process()
         with self._lock:
-            return self._select(shape, max_bytes, delivery)
+            return self._select(shape, max_bytes, delivery, method_limits)
 
     def allocate(self, shape, *, max_bytes=None, delivery=None):
         self._process()
