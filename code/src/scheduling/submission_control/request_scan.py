@@ -232,6 +232,9 @@ class ResourceRequestController:
         return self._decision('resource_pressure', target, o)
 
     def _start_trial(self, target, o, permit, opportunity, end):
+        # A new action must still leave one change for its possible return.
+        if self.options.max_changes is not None and self._changes+2 > self.options.max_changes:
+            return self._stop_exploration('change_budget', o)
         before = (self._trial['before'] if self._trial is not None
                   and self._reference is None else self.current_window)
         self._early_trial_available = False
@@ -478,7 +481,7 @@ class ResourceRequestController:
                 or max(w[name] for w in point['windows']) < min(w[name] for w in old['windows'])
                 for name in ('input', 'computed', 'output'))
             held_changed = (self._stop_reason in ('local_plateau', 'performance_regression', 'operational_limit',
-                                     'minimum_measured_window', 'comparison_censored')
+                                     'minimum_measured_window', 'comparison_censored', 'work_not_comparable')
                     and old is not None and (work_changed
                         or point['rate_min'] > old['rate_max']*(1+self.options.min_gain)
                         or point['rate_max'] < old['rate_min']*(1-self.options.min_gain)))
@@ -488,9 +491,6 @@ class ResourceRequestController:
                 self._verified_window = None
                 self._direction = 'down' if self._initial_lower_scan else 'up'
                 self._record(self.evaluations, dict(kind='held_performance_changed', comparison_valid=False))
-            if self._stop_reason == 'work_not_comparable':
-                self._stop_reason = None
-                self._direction = 'down' if self._initial_lower_scan else 'up'
             # Keep the held choice's original comparison context until a real
             # change is detected. Rolling mixed ranges must not absorb it.
             if old is None or self._stop_reason is None or held_changed:
@@ -509,7 +509,9 @@ class ResourceRequestController:
             candidate=deepcopy(point), evidence=evidence, comparison_valid=evidence['outcome'] is not None))
         outcome = evidence['outcome']
         if outcome is None:
-            return self._select(dict(target=before['window'], point=None,
+            # Keep the reference context so an unchanged held measurement
+            # cannot restart the same incomparable trial.
+            return self._select(dict(target=before['window'], point=before,
                 reason='work_not_comparable', verified=False, gain=False,
                 stop='work_not_comparable'), o, s, permit)
         higher = point['window'] > before['window']
@@ -620,9 +622,14 @@ class ResourceRequestController:
         target = opportunity.probe_target_window
         resource_directed = opportunity.kind == 'idle_device_headroom'
         if (resource_directed and target is not None and min(target, end) > self.current_window
-                and self._direction == 'up' and self._stop_reason is None and self._censored_frontier is None):
+                and (self._stop_reason == 'work_not_comparable'
+                     or self._direction == 'up' and self._stop_reason is None)
+                and self._censored_frontier is None):
             if work_reason is not None:
                 self._pause_performance(work_reason)
+            if self._stop_reason == 'work_not_comparable':
+                self._reference = None
+            self._direction, self._stop_reason = 'up', None
             return self._start_trial(min(target, end), o, p, opportunity, end)
         if work_reason is not None and not (self._early_trial_available
                 and self._reference is None and self._trial is None):

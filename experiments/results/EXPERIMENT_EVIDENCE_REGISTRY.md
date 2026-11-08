@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-08：请求反馈的不可比重复试探
+
+[本地源码、CPU检查与合成回放](diagnostics/records_runtime_refactor_20261104/README.md#request-incomparable-retry-20261108)
+区分已复现的重复下探与真实GPU轨迹因果；修正复用现有参考和停止状态，不增加默认请求上限，实机效果待验。
+
 ## 2026-11-07：PG文本导入与取数诊断归档
 
 [实现、恢复与检查](diagnostics/records_runtime_refactor_20261104/README.md#pg-text-tools-isolation)记录十二原件、十五条新来源和35条相关历史读取。

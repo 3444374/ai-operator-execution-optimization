@@ -13,6 +13,11 @@
 | [resource_probe.py](resource_probe.py)、[resource_step.py](resource_step.py) | 解释来源、压力与试探许可；观察不等于物理内存分配 |
 
 现代请求路径直接依赖公共配置与工作数据，不加载批策略。批反馈仍是独立显式选项。
+不可比试探退回后保留原参考上下文；工作量与速率未变化的持有测量不重新发起同一比较。
+新的合格资源观察可以重新发起向上资源试探，此时重新取得性能参考，不沿用旧点声称收益。
+显式`max_changes`为新试探及可能的返回预留次数，默认仍为`None`；压力降档和未知返回照常执行。
+源码与CPU范围见[定向检查](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#request-incomparable-retry-20261108)。
+
 旧指数平滑（EWMA）／队首等待（HOL）两种控制器及三个旧导出已退役，当前不提供旧位置转发；其他平滑统计和队首等待观察字段继续维护。
 旧机制从[准确历史来源](../../../../experiments/reproduction/native_baselines/README.md#retired-admission-variants)恢复，
 不将旧源码加入当前运行搜索路径。配置解析和测量说明见[配置总览](../../../../docs/执行配置与优化开关.md)。

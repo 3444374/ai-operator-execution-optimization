@@ -35,6 +35,103 @@ def costed_prefix(trace, growth):
 
 
 class ResourceRequestSearchTests(unittest.TestCase):
+    def incomparable_lower_trace(self, options=None):
+        trace = ResourceTrace(maximum=136, options=options)
+        trace.tick(physical=(86., 10.))
+        first = trace.controller.current_window
+        trace.until(lambda r, _: r['window'] < first, count=32,
+            work=(130, 20, 55, 75), physical=(100., 10.))
+        trace.until(lambda r, _: r['stop_reason'] == 'work_not_comparable', count=32,
+            work=(125, 12, 59, 66), physical=(100., 10.))
+        return trace, first
+
+    def test_incomparable_lower_work_does_not_repeat_without_changed_context(self):
+        for at_ceiling in (False, True):
+            with self.subTest(at_ceiling=at_ceiling):
+                trace, first = self.incomparable_lower_trace()
+                for _ in range(14):
+                    work = ((130, 20, 55, 75) if trace.controller.current_window == first
+                            else (125, 12, 59, 66))
+                    trace.tick(32, elapsed=1., work=work, physical=(100., 10.),
+                        permit={'request_limit': first} if at_ceiling else None)
+                report = trace.controller.report()
+                self.assertEqual(sum(row['before'] == first and row['window'] == first//2
+                                     for row in report['history']), 1)
+                self.assertEqual(report['window'], first)
+                self.assertEqual(report['performance_stop_reason'], 'work_not_comparable')
+                self.assertIsNone(report['verified_performance_window'])
+                self.assertEqual(report['accepted_steps'], 0)
+
+    def test_fresh_resources_reopen_incomparable_lower_work_without_new_completions(self):
+        for physical_count, transition_pending in ((2, 0), (1, 0), (2, 1)):
+            with self.subTest(physical_count=physical_count, transition_pending=transition_pending):
+                trace, first = self.incomparable_lower_trace()
+                completed = trace.completed
+                decision = trace.tick(physical=(20., 10.), physical_count=physical_count,
+                    observation={'transition_pending': transition_pending})
+                self.assertGreater(decision.window, first)
+                self.assertEqual(decision.reason, 'resource_trial')
+                self.assertEqual(trace.completed, completed)
+                report = trace.controller.report()
+                self.assertIsNone(report['verified_performance_window'])
+                self.assertEqual(report['accepted_steps'], 0)
+                self.assertFalse(report['resource_trials'][-1]['performance_reference_present'])
+
+    def test_incomparable_lower_restart_still_requires_current_resource_permission(self):
+        for case in ('stale', 'repeat', 'owner_limit', 'queue', 'backpressure', 'identity'):
+            with self.subTest(case=case):
+                trace, first = self.incomparable_lower_trace()
+                observation, permit, physical_count = {}, {}, 2
+                if case == 'stale':
+                    observation['sample_age_s'] = 2.
+                elif case == 'repeat':
+                    observation['sample_sequence'] = trace.sequence
+                    permit.update(sample_sequence=trace.sequence, native_sequence=trace.sequence)
+                elif case == 'owner_limit':
+                    permit['request_limit'] = first
+                elif case == 'queue':
+                    observation['waiting'] = 1
+                elif case == 'backpressure':
+                    observation['consumer_backpressure'] = True
+                elif case == 'identity':
+                    permit['engine_uid'] = 'other-engine'
+                decision = trace.tick(physical=(20., 10.), observation=observation,
+                    permit=permit, physical_count=physical_count)
+                self.assertEqual(decision.window, first)
+
+    def test_pressure_preempts_a_resource_restart_after_incomparable_lower_work(self):
+        for reduced_limit in (False, True):
+            with self.subTest(reduced_limit=reduced_limit):
+                trace, first = self.incomparable_lower_trace()
+                decision = trace.tick(physical=(20., 10.),
+                    observation={} if reduced_limit else {'memory_pressure': True},
+                    permit={'request_limit': first-1} if reduced_limit else None)
+                self.assertEqual(decision.reason, 'resource_pressure')
+                self.assertLess(decision.window, first)
+
+    def test_incomparable_lower_resource_restart_reserves_its_explicit_return_budget(self):
+        for max_changes in (3, 4, 5):
+            with self.subTest(max_changes=max_changes):
+                trace, first = self.incomparable_lower_trace(
+                    ResourceRequestConfig(max_changes=max_changes))
+                self.assertEqual(trace.controller.report()['changes'], 3)
+                decision = trace.tick(physical=(20., 10.))
+                if max_changes < 5:
+                    self.assertEqual((decision.window, decision.reason), (first, 'change_budget'))
+                    self.assertEqual(trace.controller.report()['changes'], 3)
+                else:
+                    self.assertGreater(decision.window, first)
+                    returned = trace.tick(observation={'sample_age_s': 2.})
+                    self.assertEqual(returned.window, first)
+                    self.assertEqual(trace.controller.report()['changes'], 5)
+
+    def test_active_resource_trial_keeps_its_last_explicit_change_for_return(self):
+        trace = ResourceTrace(maximum=136, options=ResourceRequestConfig(max_changes=2))
+        self.assertGreater(trace.tick(physical=(86., 10.)).window, 1)
+        decision = trace.tick(physical=(20., 10.))
+        self.assertEqual((decision.window, decision.reason), (1, 'change_budget'))
+        self.assertEqual(trace.controller.report()['changes'], 2)
+
     def test_full_busy_read_does_not_reduce_native_geometric_comparisons(self):
         trace = work_sequence(ResourceTrace(maximum=256), 100)
         report = trace.controller.report()
