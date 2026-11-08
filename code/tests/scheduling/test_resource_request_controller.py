@@ -197,10 +197,17 @@ class ResourceRequestTests(unittest.TestCase):
     def test_incomparable_work_does_not_turn_apparent_speed_into_verified_gain(self):
         trace = ResourceTrace(maximum=8)
         trace.until(lambda r, _: r['measured_window'] == 2)
+        incomparable = False
         for _ in range(18):
             quota = trace.controller.current_window
             trace.tick(40*quota, elapsed=1., work=(100, 4, 80, 20) if quota == 2 else (200, 8, 40, 160))
+            incomparable = any(e['kind'] == 'work_comparison' and e['evidence']['outcome'] is None
+                               for e in trace.controller.report()['evaluations'])
+            if incomparable:
+                break
+        self.assertTrue(incomparable)
         self.assertEqual(trace.controller.report()['accepted_steps'], 0)
+        self.assertIsNone(trace.controller.report()['verified_performance_window'])
         self.assertIsNone(trace.controller.export_hint())
 
     def test_empty_or_short_query_does_not_invent_a_reference_or_horizon(self):

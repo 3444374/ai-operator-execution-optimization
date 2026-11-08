@@ -35,6 +35,87 @@ def costed_prefix(trace, growth):
 
 
 class ResourceRequestSearchTests(unittest.TestCase):
+    def incomparable_higher_trace(self, options=None):
+        trace = ResourceTrace(maximum=16, options=options)
+        trace.until(lambda r, _: r['measured_window'] == 2)
+        trace.until(lambda r, _: any(e['kind'] == 'work_comparison'
+            and e['candidate']['window'] == 4 and e['evidence']['outcome'] is None
+            for e in r['evaluations']), count=160, work=(200, 8, 40, 160))
+        return trace
+
+    def test_incomparable_higher_measurement_does_not_force_a_smaller_window(self):
+        trace = self.incomparable_higher_trace()
+        report = trace.controller.report()
+        self.assertEqual(report['window'], 4)
+        self.assertEqual(report['measured_window'], 4)
+        self.assertIsNone(report['verified_performance_window'])
+        self.assertEqual(report['accepted_steps'], 0)
+        self.assertIsNone(report['performance_stop_reason'])
+        self.assertGreater(trace.tick().window, 4)
+
+    def test_work_drift_alone_does_not_restart_an_incomparable_lower_comparison(self):
+        trace, first = self.incomparable_lower_trace()
+        changes = trace.controller.report()['changes']
+        for _ in range(12):
+            trace.tick(32, elapsed=1., work=(130, 20, 54, 76), physical=(100., 10.))
+        report = trace.controller.report()
+        self.assertEqual(report['window'], first)
+        self.assertEqual(report['changes'], changes)
+        self.assertEqual(report['performance_stop_reason'], 'work_not_comparable')
+        self.assertFalse(any(e['kind'] == 'held_performance_changed'
+                             for e in report['evaluations']))
+
+    def test_inconclusive_higher_measurement_keeps_pressure_and_unknown_returns(self):
+        for signal in ('unknown', 'pressure', 'owner'):
+            with self.subTest(signal=signal):
+                trace = self.incomparable_higher_trace(ResourceRequestConfig(max_changes=4))
+                self.assertEqual(trace.controller.current_window, 4)
+                self.assertEqual(trace.tick().window, 8)
+                observation = ({'sample_age_s': 2.} if signal == 'unknown' else
+                               {'memory_pressure': True} if signal == 'pressure' else {})
+                decision = trace.tick(observation=observation,
+                    permit={'request_limit': 4} if signal == 'owner' else None)
+                self.assertEqual(decision.window, 4)
+                self.assertEqual(trace.controller.report()['changes'], 4)
+                self.assertIsNone(trace.controller.report()['verified_performance_window'])
+
+    def test_inconclusive_ascent_and_lower_return_hold_at_the_applied_ceiling(self):
+        for signal in ('owner', 'tail', 'budget', 'unknown'):
+            with self.subTest(signal=signal):
+                trace = ResourceTrace(maximum=16, options=ResourceRequestConfig(max_changes=5))
+                for _ in range(40):
+                    window = trace.controller.current_window
+                    work = (125, 12, 59, 66) if window == 4 else (130, 20, 55, 75)
+                    trace.tick(32, elapsed=1., work=work, physical=(100., 10.),
+                        permit={'request_limit': 8})
+                    report = trace.controller.report()
+                    if report['window'] == 8 and report['stop_reason'] == 'work_not_comparable':
+                        break
+                else:
+                    self.fail('incomparable ascent and lower return did not reach the applied ceiling')
+                self.assertEqual([(x['before'], x['window']) for x in report['history']],
+                                 [(1, 2), (2, 4), (4, 8), (8, 4), (4, 8)])
+                for _ in range(24):
+                    trace.tick(32, elapsed=1., work=(130, 20, 54, 76),
+                        physical=(100., 10.), permit={'request_limit': 8})
+                report = trace.controller.report()
+                self.assertEqual((report['window'], report['changes'], report['accepted_steps']), (8, 5, 0))
+                self.assertIsNone(report['verified_performance_window'])
+                observation, permit = {}, {'request_limit': 16}
+                if signal == 'owner':
+                    observation['pending_items'] = 0
+                    permit['request_limit'] = 4
+                elif signal == 'tail':
+                    observation['pending_items'] = 0
+                elif signal == 'unknown':
+                    observation['sample_age_s'] = 2.
+                decision = trace.tick(physical=(20., 10.), observation=observation, permit=permit)
+                self.assertEqual(decision.window, 4 if signal == 'owner' else 8)
+                if signal != 'unknown':
+                    self.assertEqual(decision.reason, {'owner': 'resource_pressure',
+                        'tail': 'no_pending_work', 'budget': 'change_budget'}[signal])
+                self.assertIsNone(trace.controller.report()['verified_performance_window'])
+
     def incomparable_lower_trace(self, options=None):
         trace = ResourceTrace(maximum=136, options=options)
         trace.tick(physical=(86., 10.))
@@ -177,7 +258,7 @@ class ResourceRequestSearchTests(unittest.TestCase):
         self.assertGreaterEqual(comparison['reference']['completed_begin'], returned_at)
         self.assertEqual(comparison['reference']['window'], first)
 
-    def test_incomparable_lower_work_keeps_the_smaller_position_intent(self):
+    def test_incomparable_lower_work_reopens_on_a_new_rate_context(self):
         trace = ResourceTrace(maximum=256)
         trace.tick(physical=(20., 10.))
         first = trace.controller.current_window
@@ -185,10 +266,14 @@ class ResourceRequestSearchTests(unittest.TestCase):
         trace.until(lambda r, _: r['stop_reason'] == 'work_not_comparable', count=256,
             work=(200, 8, 160, 40))
         self.assertTrue(trace.controller.report()['smaller_positions_pending'])
+        changes = trace.controller.report()['changes']
+        for _ in range(8):
+            trace.tick(256, elapsed=1., work=(200, 8, 160, 40))
+        self.assertEqual(trace.controller.report()['changes'], changes)
         trace.until(lambda r, _: any(row['kind'] == 'work_comparison'
             and row['candidate']['window'] < row['reference']['window']
             and row['evidence']['outcome'] is not None for row in r['evaluations']),
-            count=256, work=(200, 8, 160, 40))
+            count=512, work=(200, 8, 160, 40))
         self.assertFalse(trace.controller.report()['local_plateau_confirmed'])
 
     def test_ready_censored_comparison_does_not_restart_on_busy_or_source_changes(self):

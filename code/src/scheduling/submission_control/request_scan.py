@@ -480,9 +480,10 @@ class ResourceRequestController:
                 max(w[name] for w in old['windows']) < min(w[name] for w in point['windows'])
                 or max(w[name] for w in point['windows']) < min(w[name] for w in old['windows'])
                 for name in ('input', 'computed', 'output'))
+            # Work-only drift does not resolve an inconclusive comparison.
             held_changed = (self._stop_reason in ('local_plateau', 'performance_regression', 'operational_limit',
                                      'minimum_measured_window', 'comparison_censored', 'work_not_comparable')
-                    and old is not None and (work_changed
+                    and old is not None and (work_changed and self._stop_reason != 'work_not_comparable'
                         or point['rate_min'] > old['rate_max']*(1+self.options.min_gain)
                         or point['rate_max'] < old['rate_min']*(1-self.options.min_gain)))
             if held_changed:
@@ -508,13 +509,14 @@ class ResourceRequestController:
         self._record(self.evaluations, dict(kind='work_comparison', reference=deepcopy(before),
             candidate=deepcopy(point), evidence=evidence, comparison_valid=evidence['outcome'] is not None))
         outcome = evidence['outcome']
-        if outcome is None:
-            # Keep the reference context so an unchanged held measurement
-            # cannot restart the same incomparable trial.
-            return self._select(dict(target=before['window'], point=before,
-                reason='work_not_comparable', verified=False, gain=False,
-                stop='work_not_comparable'), o, s, permit)
         higher = point['window'] > before['window']
+        if outcome is None:
+            # Incomparable work cannot establish a regression. Keep a measured larger
+            # position unverified; a smaller trial still returns to its reference.
+            chosen = point if higher else before
+            return self._select(dict(target=chosen['window'], point=chosen,
+                reason='work_not_comparable', verified=False, gain=False,
+                stop=None if higher else 'work_not_comparable'), o, s, permit)
         choose_candidate = outcome == 'gain' or outcome == 'no_gain' and not higher
         chosen = point if choose_candidate else before
         finishing_lower = not higher and outcome == 'regression' and self._initial_lower_scan

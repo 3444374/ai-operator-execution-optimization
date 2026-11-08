@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-08：不可比探索的旧实机负结果与新工程选择
+
+[原实机与新CPU记录](diagnostics/records_runtime_refactor_20261104/README.md#request-inconclusive-exploration-20261108)保留397三轮时间与工作均值触发复算；
+新候选不将不可比视作已判定退化，也不将较高已测位置标为收益验证。109项CPU通过不能代替新GPU结论。
+
 ## 2026-11-08：请求反馈的不可比重复试探
 
 [本地源码、CPU检查与合成回放](diagnostics/records_runtime_refactor_20261104/README.md#request-incomparable-retry-20261108)
