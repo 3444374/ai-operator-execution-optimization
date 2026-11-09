@@ -12051,3 +12051,11 @@ eab7e246删除三种仅由直调用例消费的旧阻塞RPC、两个专用执行
 最终92个不同CPU方法通过，含一个真实本地CPU子进程／socket方法和四次合成提交；原回归失败、首次漏迁移错误及一个缺PyArrow方法的错误输出保留。
 生产Python净减5行、测试净增31行；第三方、实验数据和归档未改，迁移不当作删除。源码范围、计量和剩余问题见[同一主报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)。
 已提出最终候选的服务器范围：一个待补CPU方法、两类owner的三种关闭交接，以及sync／async各两条模型请求；统一由原服务器会话执行，本轮未使用服务器或合并main。
+
+
+## 2026-11-09 修复常驻 Extract 连续查询状态
+
+从main d58建立独立分支，仅移除内部反馈对用户ready配置的写入，并在当轮driver直接绑定当前反馈。
+原CPU复现第二轮Extract误拒；修后3项检查通过，含两轮各2条、Map重绑、显式拒绝和资源归零。
+真实CPU IPC与脚本化语义／模型／Ray身份分开；未运行模型、服务器或合并main。
+具体来源及待实机事项见[同一报告](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#extract-resident-feedback-20261109)。

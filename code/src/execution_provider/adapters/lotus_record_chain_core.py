@@ -775,8 +775,6 @@ class SemLoomRecordChainCore:
                     self._supply_feedback.event(action, key)
                 self.core.sink = sink
                 self._feedback_sink_installed = True
-            self._ready_options = dict(ready_order='fifo', successor_first=None,
-                clock=None, on_ready_event=self._supply_feedback.ready)
         try:
             self._active = _RecordLocalRows(self, records, run, cancelled)
             if expected:
